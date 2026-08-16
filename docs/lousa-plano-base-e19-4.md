@@ -1,312 +1,291 @@
-11/08/2026 — Plano-base v2 — E19.4 — Geração e materialização da landing page em `draft`
-
-> Status canônico: temporariamente superado e não executável desde 12/08/2026.
-> Motivo: o runtime deste plano dependia do contrato E19.3 `partA + partB`, substituído de forma incompatível pelo pacote v2 do Cenário D.
-> Destino: o conteúdo abaixo permanece somente como histórico; o mesmo path canônico `docs/lousa-plano-base-e19-4.md` será reaberto/replanejado posteriormente sobre `identities + modelContext + serverContext` para produzir e avaliar a primeira LP/prova de geração do Cenário D, sem reutilizar estas instruções como briefing executável.
+14/08/2026 — Rascunho vivo — E19.4 — Primeira LP real do Cenário E
 
 ## 1. Estado e decisões fixas
 
 ### 1.1. Estado
 
-- Status: plano-base histórico, temporariamente superado e não executável desde 12/08/2026.
+- Status: rascunho vivo do futuro plano-base v1; ainda não consolidado nem executável.
 - Recorte: `E19.4 — Geração e materialização da landing page em draft`.
+- Path canônico: `docs/lousa-plano-base-e19-4.md`.
+- Processo: `docs/prompt-estrategista.md` v29.
 - Plano conceitual: `docs/lp-planejamento.md`.
-- Predecessor material histórico: a API pública v1 da E19.3 foi substituída pelo pacote v2 do Cenário D; este plano não é compatível com o contrato vigente.
-- Gates A–E do debate conceitual estão encerrados.
-- Não permanece questão indispensável aberta para execução: mecanismo OpenAI, residência física, garantia transacional, boundaries e path privado foram definidos na v2 sem reabrir as decisões dos Gates A–E.
-- Base congelada da orquestração: merge commit `f3cce5f85295ab5db7d36a64bd50eed632fdb441` do PR #711; a implementação deve permanecer no único PR draft da branch `codex-app/e19-4-orquestracao`, sem stacked PR.
+- Base de abertura do PR #731: `main` após o merge do PR #729, commit `40baacbc516a80c2600408a9be63bfa33793ca85`.
+- O plano-base v2 anterior permanece somente no histórico Git como desenho superado dependente do contrato E19.3 `partA + partB`.
+- Decisão humana de 14/08/2026: o Cenário E é a única direção ativa para a primeira geração real; o Cenário D deixa de ser alternativa em desenvolvimento ou comparação obrigatória.
+- A branch `strategy/e19-4-cenario-d` conserva apenas o nome histórico de abertura do PR #731.
+- A arquitetura lógica útil da E19.3 permanece `identities + modelContext + serverContext`; sua reformulação pertence a `docs/lousa-plano-base-e19-3.md`.
+- A Preparação do taxon foi separada em dois recortes próprios anteriores à E19.3; a E19.4 apenas exige taxon previamente preparado e pacote E19.3 válido.
+- Nenhuma implementação da nova E19.4 foi iniciada neste debate.
 
 ### 1.2. Objetivo e resultado esperado
 
-- Produzir e avaliar a primeira LP real/prova de geração do Cenário D, consumindo o pacote real e autorizado da E19.3 para gerar conteúdo estruturado candidato.
-- Validar deterministicamente a candidata somente no que os contratos permitem comprovar objetivamente.
-- Materializar a primeira candidata integral válida no `draft` já existente, com estado próprio autossuficiente e snapshot imutável do contexto efetivamente disponibilizado à operação geracional válida.
-- Disponibilizar visualização privada e read-only da LP materializada para avaliação humana real.
-- Encerrar a E19.4 com a primeira LP real em `draft`, privada, reproduzível e efetivamente avaliável; conclusão da E19.4 não significa prontidão para publicação ou disponibilidade comercial.
+- Produzir e avaliar a primeira landing page real do Cenário E a partir do pacote autorizado da E19.3.
+- Dar à IA liberdade controlada para transformar contexto autorizado em jornada comercial coerente, sem delegar segurança, autorização, verdade factual, bindings operacionais, persistência ou renderer.
+- Gerar candidata estruturalmente válida, materializá-la no `draft` real existente e disponibilizar preview privado e read-only para avaliação humana.
+- Incluir na primeira prova LP completa e reconhecível como página comercial real, com Header, corpo, CTA(s), Footer, estrutura visual e conteúdo coerentes.
+- Encerrar a E19.4 quando o fluxo estiver funcional de ponta a ponta e a LP puder ser aberta no navegador e avaliada de forma real; otimização editorial intensiva poderá continuar depois da E19.5 Light por novos drafts independentes.
 
-### 1.3. Usuários e autorização
+### 1.3. Decisões aceitas no debate até aqui
 
-- A geração parte do estado operacional vigente de `/a/[account]`, atualmente restrito a `owner` ou `admin` ativo da conta elegível; a E19.4 não cria papel ou autorização paralelos.
-- Antes de iniciar a operação geracional, a E19.4 deve revalidar server-side conta ativa, membership ativo com papel autorizado e entitlement comercial vigente, reutilizando as autoridades já existentes de E9/E19 em vez de presumir autorização por ter chegado à superfície operacional.
-- A E19.4 não inventa capacidade comercial de geração. Quando a E9.7 possuir uma capability de geração de LP formalmente admitida e associada ao plano, a E19.4, como domínio consumidor, deverá aplicá-la no mesmo ponto da ação; enquanto essa capability não existir no catálogo canônico, sua ausência não pode ser suprida por hardcode ou inferência local.
-- A visualização privada reutiliza o controle de acesso tenant-aware já vigente da conta/LP e não cria ACL própria.
-- Conta piloto e cliente usam o mesmo fluxo oficial; não existe LP teste, geração administrativa paralela ou autorização especial por conta.
+- A hierarquia de autoridade é: fatos concretos E19.2/E20.2 definem a realidade da conta, oferta e LP; pesquisa integral fornece contexto consultivo; E18.4 fornece limites universais; E19.3 autoriza, organiza e transporta; E19.4 decide narrativa, estrutura, copy e candidata.
+- A pesquisa nunca pode ampliar ou contradizer a oferta concreta; em conflito, a configuração concreta prevalece.
+- Não haverá camada intermediária que resuma, atomize ou selecione semanticamente pesquisa + fatos antes da E19.4.
+- `business_buyer` não é requisito da geração da LP `end_customer`; E10.8 pode permanecer para consumidores independentes, mas fica fora do caminho E19.3 → E19.4.
+- A E19.4 consome diretamente `identities + modelContext + serverContext` da E19.3 e não conhece path, representação interna ou lifecycle da pesquisa integral.
+- A IA sintetiza o público efetivo a partir da pesquisa `end_customer` e dos fatos concretos, sem criar perfil persistido novo.
+- A LP deve possuir começo, desenvolvimento e conversão; AIDA pode servir como referência persuasiva, não como schema rígido.
+- A IA pode decidir quantidade de seções, sequência, função narrativa, copy, CTA textual, omissões, repetições legítimas e layout entre opções suportadas pelo contrato estrutural.
+- O sistema permanece responsável por autorização, fatos e evidências disponíveis, tipos estruturais, limites absolutos, bindings, destinos, consentimento, credenciais, segurança tenant-aware, schema, materialização, snapshot, versões e renderer.
+- A IA não gera HTML, CSS, React, JavaScript, scripts, componentes desconhecidos, credenciais, webhooks ou estruturas fora do contrato suportado.
+- Header e Footer pertencem ao contrato da primeira LP real.
+- A E19.4 deve usar uma única fonte canônica de estrutura, da qual sejam derivadas as projeções necessárias para Structured Output, validação, materialização e renderer.
+- O prompt de runtime será tratado como código versionado da feature, separado do contexto dinâmico validado da E19.3.
+- Alterações de prompt, modelo ou `reasoning.effort` serão avaliadas com casos representativos e critérios estáveis; a combinação final permanece em aberto conforme `docs/openai-model-snapshot.md`.
+- O prompt seguirá abordagem `outcome-first`, sem pedir cadeia de raciocínio privada.
+- A fase geracional terá participação de IA; a categoria final deve ser reconciliada com o Gestor de Automação antes da consolidação da v1.
 
-### 1.4. Automação aprovada
-
-- Automação: sim na fase geracional.
-- Categoria: Automação com IA em fluxo controlado.
-- Unidade funcional: LP completa.
-- Participação humana: uma ação humana explícita inicia cada operação geracional.
-- Função da IA: produzir somente conteúdo para os fields já autorizados pelo pacote da E19.3.
-- Função determinística: estrutura, módulos, variantes, ordem, autorização de fontes/fatos, validação pós-IA objetivamente comprovável, bindings, decisão de materialização, persistência e renderer permanecem sob autoridade do LP Factory.
-- Não adotar comportamento agentic, geração funcional independente por módulo, decisão estrutural pela IA, conversa persistente ou materialização parcial.
-- Cada invocação server-side aceita, originada por ação humana explícita, usa no máximo uma chamada síncrona e não streaming ao OpenAI Responses API, com Structured Output estrito, workload `landing_page_draft_generation`, modelo `gpt-5.4-mini`, `reasoning.effort: none`, `store: false` e sem retry automático.
-- A chamada não usa tools, busca externa, `previous_response_id`, background mode, Agents SDK, memória conversacional, job, fila, cron, webhook ou segundo revisor de IA.
-- O fluxo não promete custo exactly-once: a interface impede reenvio enquanto a tentativa estiver em voo e cada invocação aceita não repete automaticamente a chamada, mas requisições concorrentes ou replay ainda podem alcançar o provider; a unicidade protege a materialização, não a cobrança do provider.
-
-### 1.5. Decisões fixas dos Gates A–E
-
-- Gate A:
-  - uma operação humana gera a LP completa como unidade funcional;
-  - IA não escolhe módulos, variantes, ordem, capabilities, fontes ou fatos fora do pacote autorizado;
-  - uma operação funcional não obriga uma única chamada ao provider.
-- Gate B:
-  - validação bloqueante cobre somente identidade e ordem, fields admitidos, tipos, cardinalidades, obrigatoriedade, `absoluteMax`, bindings, referências técnicas e existência/autorização das fontes e evidências estruturalmente exigidas;
-  - faixas recomendadas, fidelidade factual e treatments semânticos orientam geração e revisão humana, sem falsa garantia determinística;
-  - não há provenance cognitiva declarada pela IA, segunda IA revisora, reparo semântico, omissão silenciosa ou materialização parcial.
-- Gate C:
-  - falha ou candidata inválida não materializa e permite nova tentativa humana enquanto a LP permanecer sem materialização;
-  - a primeira candidata integral válida cria uma única materialização inicial dentro da E19.4;
-  - depois dessa materialização válida, a E19.4 não sobrescreve a LP;
-  - conteúdo atual e snapshot passam a existir juntos;
-  - conteúdo materializado é autossuficiente para renderização e snapshot congela apenas identidades, versões, decisões e dados concretos efetivamente disponibilizados à operação geracional válida.
-- Gate D:
-  - preview é privada, autenticada, read-only e não publicada;
-  - renderer consome somente o estado materializado e não recompõe E19.3 nem relê E20.2, pesquisas ou perfil vigente;
-  - valores efetivos de aparência e conteúdo vêm do estado congelado; atualização futura de registry não altera silenciosamente LP já materializada;
-  - QA das interações cobre somente comportamentos já contratados, sem inventar backend de submissão, tracking ou capacidade nova.
-- Gate E:
-  - a fronteira é `gerar → validar → materializar → visualizar → avaliar humanamente`;
-  - avaliação humana é evidência de teste do recorte, não estado de domínio nem workflow de aprovação/publicação;
-  - findings podem ser registrados no PR ou relatório de execução e não exigem tabela, coluna ou lifecycle próprio;
-  - defeito comprovável do contrato da E19.4 bloqueia o fechamento; melhoria editorial, persuasiva, visual ou semântica sem violação do contrato vira aprendizado para recorte posterior.
-
-### 1.6. Fontes usadas na consolidação
+### 1.4. Fontes obrigatórias do novo debate
 
 - `README.md`.
-- `docs/lp-planejamento.md`.
-- `docs/roadmap.md`.
+- `docs/prompt-estrategista.md`.
 - `docs/template-roadmap.md`.
+- `docs/roadmap.md`.
+- `docs/lp-planejamento.md`.
 - `docs/base-tecnica.md`.
 - `docs/schema.md`.
 - `docs/design-system.md`.
-- `docs/prompt-estrategista.md`.
-- `docs/gestor-automations.md`.
-- `docs/automations.md`.
-- `docs/lousa-plano-base-e19-3.md`.
-- API pública vigente de `lib/lp-builder/`, especialmente `generationContextContracts.ts` e adapters da E19.3.
-- Contratos vigentes de E18.4 e E18.5 para semantic roles, fields, cardinalidades, policies, bindings, referências técnicas, interactions e critérios visuais.
-- Estado vigente de `lib/openai-workloads/`, `lib/commercial-capabilities/`, `account_landing_pages` e `account_landing_page_onboarding_configurations` no repositório e no Supabase `LP-Factory-10`, inspecionado em modo read-only em 11/08/2026.
-- Parecer read-only do Gestor Estrutural: aprovado com condicionantes C-01–C-07, integralmente incorporadas nesta v2.
-- Parecer read-only do Gestor de Updates: patches `supa#40`, `vercel#15`, `prod#6`, `prod#14`, `prod#16` e `prod#17`, integralmente incorporados nesta v2; oportunidades condicionais não viram implementação.
-- Parecer read-only do Gestor de Automações: patches AUTO-E19.4.3-P01–P05, integralmente incorporados nesta v2.
+- `docs/lousa-plano-base-e19-3.md` como contrato da única entrada de domínio da E19.4.
+- `docs/lousa-plano-base-e19-2.md`.
+- `docs/lousa-plano-base-e20-2.md`.
+- `docs/lousa-plano-base-e18-4.md`.
+- `docs/template-prompts.md`.
+- `docs/template-prompts-gpt-5-6.md`.
+- `docs/openai-model-snapshot.md`.
+- `docs/gestor-automations.md` e `docs/automations.md`.
+- PR #726 e `docs/lousa-plano-base-e19-5.md` somente como fonte conceitual da sucessora E19.5 Light.
+- Artefatos SQL da materialização E19.4 preservados pelo PR #729, somente como fonte real já existente para o debate de persistência.
+
+### 1.5. Questões ainda abertas e não decididas
+
+- Se a geração ocorre em uma única chamada que planeja e escreve a LP ou em mais de uma etapa/chamada controlada, sem transformar o fluxo em agente.
+- Qual é o menor conjunto de primitivas, layouts, cardinalidades e interações necessário para materializar e renderizar a primeira LP real sem HTML/CSS/JS livre.
+- Se algum metadata mínimo e seguro derivado de `identities` ou `serverContext` precisa ser projetado ao modelo para decisão estrutural.
+- Como representar no Structured Output planejamento narrativo e conteúdo final sem criar segundo DTO de domínio ou registry paralelo ao renderer.
+- Quais referências de pesquisa/fatos a candidata deve devolver para permitir validação sem exigir provenance cognitiva ou cadeia de raciocínio.
+- Quais claims podem ser validados objetivamente, quais dependem de evidência concreta e quais só podem ser avaliados humanamente.
+- Qual combinação `modelo + reasoning effort` cumpre os gates com menor complexidade, custo e latência.
+- Como adaptar o snapshot da materialização para registrar workload e contexto efetivamente exposto sem armazenar raciocínio privado.
+- Qual superfície real disponibilizará o preview privado da primeira LP.
+- Quais critérios objetivos e humanos definirão que a primeira LP é funcional e suficientemente avaliável para encerrar a E19.4.
+
+### 1.6. Direção aprovada — E → E19.5 Light → iterações
+
+- Prosseguir somente com o Cenário E até existir E19.4 funcional ponta a ponta: taxon preparado + LP concreta configurada → E19.3 válida → geração por IA → candidata estruturada → validação → materialização → renderer → preview privado.
+- Não implementar E19.4 D antes de E e não manter D como comparação obrigatória.
+- Antes da E19.4, concluir a E19.3 do Cenário E e sua prova read-only; não criar camada de inteligência intermediária.
+- Após a E19.4 funcional, E19.5 Light deverá permitir novos `drafts` independentes E1/E2/E3, sem overwrite e sem conhecer a representação interna da pesquisa.
+- O contrato detalhado da E19.5 Light pertence ao documento e ao debate próprios.
 
 ## 2. Contrato do caso
 
-### 2.1. Fluxo lógico
+### 2.1. Fluxo lógico em construção
 
 - Gatilho:
-  - `owner` ou `admin` no estado operacional da conta aciona explicitamente a geração da LP completa;
-  - o servidor revalida conta, membership e entitlement no ponto da ação; capability E9.7 de geração passa a integrar esse mesmo gate somente quando estiver formalmente admitida no catálogo canônico;
-  - enquanto não houver materialização válida, tentativa falha ou inválida não impede nova tentativa humana.
-- Boundaries e autoridade:
-  - contratos, orquestração, validator e adapters de geração/materialização pertencem a `lib/lp-builder/`; o transporte OpenAI fica em adapter server-only desse mesmo domínio e consome apenas a API pública de `lib/openai-workloads/`;
-  - `LandingPageMaterializedContentV1`, seus schemas e o renderer pertencem a `lib/conversion-content/landing-page/` e são expostos somente pela API pública necessária;
-  - Server Action fina e UI permanecem route-local em `app/a/[account]/`; componentes e action não acessam Supabase diretamente nem executam `fetch` OpenAI, delegando ao boundary público do LP Builder;
-  - a action deriva `accountId` do contexto SSR tenant-aware da rota, nunca de campo enviado pelo cliente, e chama `compileLandingPageGenerationContextForDraft` antes do provider;
-  - negações de acesso e falhas operacionais permanecem resultados distintos; qualquer gate negativo encerra a invocação antes da chamada OpenAI.
+  - ação humana explícita na jornada operacional da conta inicia a geração da LP completa;
+  - papéis, entitlement e superfície exatos serão confirmados contra o runtime vigente antes da v1.
 - Entrada:
-  - LP legítima em `draft`, vinculada à configuração concluída;
-  - sucesso completo da API E19.3, com Parte A determinística e Parte B autorizada;
-  - configuração OpenAI server-side vigente e autorizada no momento da implementação.
+  - LP legítima em `draft` e configuração E19.2 completa nos fields aplicáveis da E20.2;
+  - taxon previamente preparado pelos recortes responsáveis;
+  - sucesso integral da E19.3 do Cenário E;
+  - configuração OpenAI autorizada para o workload E19.4.
 - Processamento:
-  - a IA produz somente o conteúdo dos fields autorizados dos módulos já selecionados;
-  - estrutura, identidade, variante, ordem, bindings, destinos técnicos e demais decisões determinísticas não são delegados à IA.
-  - o adapter server-side constrói um Structured Output estrito a partir da composição E19.3, com raiz `object`, exatamente os módulos selecionados, somente fields geráveis autorizados e `additionalProperties: false` em todos os objetos;
-  - fields opcionais usam nullable quando exigido pelo contrato do provider e são normalizados deterministicamente para ausência;
-  - identidades, ordem, variantes, imagens, referências técnicas, bindings, fontes e fatos são reconstruídos pelo servidor a partir da Parte A, nunca aceitos como decisão da IA.
+  - revalidar autorização antes do provider;
+  - obter o pacote E19.3 sem reler diretamente as fontes internas do projeto;
+  - construir a requisição a partir do prompt canônico versionado e do contexto autorizado;
+  - permitir que a IA sintetize público efetivo, oferta, estágio de funil, intenção de conversão e jornada persuasiva, respeitando a precedência dos fatos concretos;
+  - produzir candidata completa dentro da fonte estrutural canônica mínima;
+  - combinar deterministicamente destinos, bindings, assets e demais valores server-side;
+  - validar integralmente a candidata antes de materialização.
 - Validação:
-  - a candidata integral é validada server-side apenas no que os contratos conseguem comprovar objetivamente;
-  - qualquer violação objetivamente verificável invalida a candidata completa.
+  - aplicar validações determinísticas somente ao que for objetivamente comprovável;
+  - separar validação estrutural/factual de avaliação humana editorial e visual.
 - Persistência:
-  - somente a primeira candidata integral válida pode gerar a materialização inicial da E19.4;
-  - conteúdo atual e snapshot imutável devem tornar-se válidos juntos;
-  - a residência é `public.account_landing_page_materializations`, agregado interno 1:1 separado de `account_landing_pages`, inserido uma única vez e sem operação de update ou delete na E19.4;
-  - um único `INSERT` torna conteúdo e snapshot válidos atomicamente; conflito concorrente é normalizado como LP já materializada, sem overwrite.
+  - reutilizar o agregado de materialização já existente se continuar adequado;
+  - não criar nova persistência sem gap real demonstrado.
 - Consumo:
-  - a LP materializada é visualizada privadamente em `/a/[account]/landing-pages/[landingPageId]/preview`, sob o gate tenant-aware vigente, por renderer determinístico e read-only;
-  - o renderer usa somente o estado próprio congelado da LP.
+  - renderer privado e read-only reproduz a LP a partir do estado materializado, sem reler fontes mutáveis.
 - Fallback:
-  - falha da E19.3 bloqueia geração;
-  - falha do provider ou candidata inválida preserva a LP sem nova materialização e permite nova tentativa humana;
-  - falha de persistência não pode aparentar sucesso parcial;
-  - identidade/versão não suportada pelo renderer falha explicitamente, sem fallback silencioso.
+  - falha de autorização, contexto, provider, schema ou validação não materializa candidata.
 
-### 2.2. Contrato da candidata e validação pós-IA
+### 2.2. Papel da IA
 
-- A candidata representa a LP completa, com exatamente a composição selecionada pela E19.3.
-- O payload probabilístico contém somente conteúdo gerável; o servidor compõe a candidata canônica completa com os valores determinísticos da Parte A antes da validação integral.
-- O validator confirma objetivamente:
-  - identidade e ordem dos módulos;
-  - variante e fields admitidos;
-  - tipos e cardinalidades;
-  - obrigatoriedade;
-  - limites absolutos de texto;
-  - bindings e referências técnicas;
-  - existência e autorização de fontes/evidências estruturalmente exigidas.
-- Destinos operacionais, assets, URLs e referências técnicas sob autoridade determinística não são inventados pela IA.
-- Para `action`, a IA pode produzir somente o conteúdo textual admitido, como label; o binding operacional permanece server-side.
-- `operational_evidence` e referências técnicas concretas exigidas são resolvidas/validadas server-side.
-- O sistema não afirma provar semanticamente, por inspeção de texto livre, fidelidade factual, ocorrência de claim ou treatment permitido/restrito/proibido.
-- Field opcional pode estar ausente; se presente e estruturalmente inválido, invalida a candidata em vez de ser removido silenciosamente.
-- O schema dinâmico respeita o subconjunto de JSON Schema aceito por Structured Outputs; os limites de coleção vêm do `effectiveRoot` e o `max_output_tokens` é calculado deterministicamente a partir dos limites de conteúdo e do envelope JSON, sem exceder o limite do modelo.
-- Testes negativos cobrem módulo extra ou ausente, ordem divergente, field não admitido, propriedade adicional, tipo/cardinalidade inválidos, excesso sobre `absoluteMax` e tentativa de a IA produzir binding ou referência técnica.
+- Interpretar o `modelContext` da E19.3 como um todo, preservando a distinção de autoridade entre pesquisa e fatos concretos.
+- Sintetizar público efetivo e manter a narrativa coerente com esse recorte.
+- Identificar oferta, intenção comercial, estágio do funil e ação desejada.
+- Escolher progressão persuasiva adequada ao caso, sem fórmula fixa obrigatória.
+- Planejar quantidade, sequência e função narrativa das seções dentro do conjunto estrutural permitido.
+- Escolher layouts somente entre alternativas suportadas.
+- Produzir copy, headings, supporting copy, CTA textual, FAQs e demais conteúdos admitidos.
+- Omitir conteúdo sem função comercial clara e repetir CTA/argumento apenas quando houver função legítima.
+- Usar somente fatos, pesquisa e evidências autorizados; não inventar credenciais, resultados, depoimentos, garantias, escassez, preços, benefícios ou capacidades.
+- Não usar metadados da antiga pesquisa estruturada como regra de composição.
 
-### 2.3. Materialização e snapshot
+### 2.3. Papel determinístico do LP Factory
 
-- A materialização inicial é write-once dentro da E19.4, mas a tentativa geracional não é.
-- `public.account_landing_page_materializations` contém `landing_page_id` como PK, `account_id`, `content_json`, `generation_context_snapshot_json`, `created_by` e `created_at`.
-- `(landing_page_id, account_id)` referencia tenant-safe `(id, account_id)` de `public.account_landing_pages`; `account_id` e `created_by` preservam as FKs canônicas da conta e do ator.
-- `content_json` e `generation_context_snapshot_json` são obrigatórios e restritos a objetos JSON.
-- O contrato runtime `LandingPageMaterializedContentV1`, validado por schema estrito antes do insert e após a leitura, possui:
-  - `schemaVersion: 1` e `family: "landing_page"`;
-  - raiz congelada com `rootVersion`, `resolvedPresetKey`, `resolvedPreset`, `effectiveSemanticRoles`, `visualRoles` e `visualCriteria` efetivamente usados;
-  - `modules` como array ordenado e não vazio; cada item contém `moduleKey`, `moduleVersion`, `variantKey`, `variantVersion`, `fieldContractKey`, `interactionContracts` e somente os valores concretos dos fields admitidos;
-  - valores de field como união discriminada estrita para `text`, `collection`, `action`, `image` e `technical_reference`; coleções preservam itens e subfields ordenados, e actions preservam label e binding/destino resolvidos deterministicamente;
-  - nenhuma referência ao registry é necessária para renderizar os valores já congelados; identidade, versão, kind ou shape desconhecido falha explicitamente.
-- O contrato runtime `LandingPageGenerationContextSnapshotV1`, também estrito, possui `snapshotVersion: 1`, `generationContextContractVersion: 1`, as identidades/versões estruturais usadas e `exposedGenerationContext`, que reproduz exatamente os dados concretos das Partes A e B enviados ao provider, excluindo instruções do prompt, secret, `safety_identifier`, resposta e conteúdo gerado.
-- O renderer recebe somente `LandingPageMaterializedContentV1`; o snapshot é evidência imutável da geração e não é recomposto nem consultado para renderizar.
-- A validação executável inclui round-trip `materialização → leitura → schema runtime → renderer`, igualdade do conteúdo/ordem/aparência e prova de zero leitura de E19.3, E20.2, pesquisas, perfil ou registries durante a renderização; versões desconhecidas e payload adicional falham fechado.
-- A tabela tem RLS habilitado e nenhuma policy; `public`, `anon`, `authenticated` e `ai_readonly` não recebem grants; `service_role` recebe somente `SELECT` e `INSERT`, sem `UPDATE` ou `DELETE`.
-- Não criar view ou RPC para esta materialização.
-- O conteúdo materializado constitui estado próprio e autossuficiente da LP para sua visualização.
-- O conteúdo deve congelar todo dado concreto necessário ao renderer que, se relido de uma fonte mutável, pudesse alterar a LP existente.
-- O snapshot preserva somente:
-  - identidades e versões relevantes;
-  - decisões estruturais usadas;
-  - dados concretos efetivamente disponibilizados à operação geracional que produziu a candidata válida.
-- O snapshot não registra prompt integral, resposta bruta, raciocínio, provenance cognitiva ou contexto autorizado que não tenha sido efetivamente exposto ao gerador.
-- Após materialização válida, edição, regeneração, histórico, overwrite e rollback pertencem a recorte posterior.
-- Antes do provider, o fluxo consulta a ausência de materialização; candidata inválida não insere; candidata válida executa um único insert; segunda inserção falha pela unicidade e é tratada sem sobrescrita.
+- Autorizar ator, conta, membership e entitlement.
+- Resolver e entregar o pacote E19.3 sem consulta direta do modelo às fontes internas.
+- Definir o menor contrato estrutural finito e derivar dele projeções para IA, validator, materialização e renderer.
+- Manter valores brutos de `serverContext` fora da matéria-prima textual e usá-los deterministicamente.
+- Resolver bindings, consentimento, credenciais e referências técnicas.
+- Validar schema, tipos, cardinalidades, limites, identidades, componentes e propriedades suportadas.
+- Bloquear factualidade objetivamente inválida ou referência a evidência inexistente quando comprovável.
+- Materializar consistentemente, congelar snapshot suficiente e renderizar deterministicamente.
+- Falhar fechado diante de versão, componente, layout ou payload não suportado.
 
-### 2.4. Visualização privada e avaliação humana
+### 2.4. Prompt e workflow de geração
 
-- A superfície parte da jornada operacional já existente da conta; o preview privado fica em `/a/[account]/landing-pages/[landingPageId]/preview`.
-- LP sem materialização pode oferecer a ação humana de geração; LP materializada conduz à visualização privada, sem nova geração pela E19.4.
-- A visualização representa a página realmente renderizada, não card ou simulação administrativa.
-- Moldura externa pode indicar `draft` e não publicação sem integrar o conteúdo materializado da LP.
-- O renderer pode conhecer identidades e versões estruturais suportadas, mas usa valores efetivos de conteúdo e aparência do estado congelado.
-- Critérios visuais vigentes da E18.4 permanecem aplicáveis:
-  - viewport mínimo 320 px;
-  - evidências em 360, 768 e 1280 px;
-  - sem truncamento ou scroll horizontal provocado por texto;
-  - targets mínimos 44×44;
-  - foco visível;
-  - hierarquia semântica;
-  - contraste, legibilidade e estados interativos.
-- Conforme `prod#17`, WCAG 2.2 é o baseline de acessibilidade do fluxo: aplicar os critérios pertinentes à LP e combinar inspeção automática com validação manual; ferramenta automática isolada não prova conformidade e a E19.4 não declara conformidade WCAG integral.
-- QA de interação cobre somente comportamento contratado, como teclado/estado/foco do accordion e estrutura/labels/consentimento/foco do form; não cria backend inexistente.
-- A avaliação humana verifica também copy, fidelidade factual e semântica da primeira LP.
-- Na avaliação humana da copy, aplicar `prod#6` como referência editorial: verificar conteúdo original, útil, confiável, orientado a pessoas e sustentado pelas pesquisas autorizadas do taxon; não criar `llms.txt`, schema especial, fragmentação artificial de texto nem alegação de otimização para busca generativa.
-- Findings ficam como evidência no PR/relatório de execução e não se tornam estado persistido da LP.
+- O runtime E19.4 é o workflow; o prompt é o contrato de inteligência da etapa geracional.
+- O prompt será derivado de `docs/template-prompts.md` e complementado por `docs/template-prompts-gpt-5-6.md` se GPT-5.6 for aprovado.
+- O prompt de produção será versionado como código próximo da feature consumidora, sem engine genérica de prompts.
+- Instruções estáveis permanecem separadas do contexto dinâmico validado.
+- O prompt declarará resultado, contexto autorizado, critérios de sucesso, limites, formato de saída, parada e validação pertinente, sem cadeia de raciocínio privada.
+- Structured Output será usado quando o consumidor exigir contrato determinístico; validator e regras de negócio permanecem no código.
+- Casos representativos estáveis permitirão comparar prompt, modelo e `reasoning.effort`.
+- Endpoint, número de chamadas, tokens, timeout, retry e tools permanecem questões do workload real.
+
+### 2.5. Fonte estrutural canônica e projeções derivadas
+
+- A E19.4 possuirá uma única fonte canônica de estrutura, finita e versionada, para controlar a forma da candidata.
+- A primeira versão conterá somente primitivas, layouts, fields, cardinalidades e interações necessárias à primeira LP real.
+- Novas capacidades entram apenas quando caso concreto demonstrar necessidade.
+- Structured Output, validação, estado materializado e renderer serão projeções derivadas dessa mesma autoridade estrutural.
+- A IA pode escolher somente estruturas/layouts pertencentes à fonte vigente.
+- Header e Footer devem ser representáveis no mesmo contrato.
+- O contrato não aceita HTML/CSS/JS livre nem componente desconhecido.
+
+### 2.6. Jornada persuasiva
+
+- A LP é sequência comercial completa, não preenchimento independente de blocos.
+- O Hero revalida atenção, confirma relevância e gera interesse.
+- O corpo desenvolve entendimento, valor percebido, desejo, confiança e tratamento de objeções.
+- CTA pode aparecer cedo e se repetir quando estágio de funil e narrativa justificarem.
+- AIDA é referência útil, não define quantidade fixa de seções ou posições obrigatórias.
+- A sequência reflete público efetivo, oferta concreta e estágio do funil presentes no pacote E19.3.
+
+### 2.7. Factualidade, pesquisa e evidência
+
+- A configuração E19.2/E20.2 define a realidade concreta; a pesquisa fornece contexto externo e não pode ampliar capacidades ou oferta.
+- Fato concreto presente pode sustentar copy; fato declarado não se torna automaticamente prova verificada.
+- Ausência de evidência permanece ausência.
+- Claims de resultado, garantia, escassez, credencial verificada, prova social ou comparação objetiva só entram com suporte real autorizado.
+- Pesquisa pode fornecer fatos externos legítimos e atuais, preservando fontes, limitações e natureza.
+- A forma de referenciar pesquisa/fatos na candidata permanece aberta, sem exigir cadeia de raciocínio.
+- Factualidade e qualidade narrativa não dependem da antiga representação atomizada.
+
+### 2.8. Materialização, snapshot e renderer
+
+- Os artefatos SQL da materialização antiga preservados pelo PR #729 devem ser avaliados antes de proposta de banco nova.
+- O estado materializado deve reproduzir a LP sem reler E19.3 ou suas fontes.
+- O snapshot preserva somente o necessário para auditar/reproduzir a geração: identidades, versões, configuração do workload e contexto exposto, sem raciocínio privado.
+- O renderer consome projeção derivada da mesma fonte estrutural canônica usada pelo Structured Output e validator.
+- Aparência, Header, Footer, seções, layouts e conteúdo são reproduzidos deterministicamente a partir do estado congelado.
+- Versão/shape exatos da materialização permanecem abertos até a inspeção do contrato mínimo.
 
 ## 3. Fases e próxima ação
 
 ### 3.1. E19.4.3 — Geração controlada e validação integral da candidata
 
-- Status: planejada.
-- Automação: sim.
-- Categoria: Automação com IA em fluxo controlado.
+- Status: rascunho; fase ainda não consolidada para execução.
+- Automação: sim em princípio pela participação central da IA; categoria final pendente da consulta obrigatória ao Gestor de Automação antes da v1.
 - Objetivo:
-  - consumir a saída E19.3 e produzir uma candidata da LP completa, submetendo-a à validação determinística objetiva antes de qualquer persistência.
-- Limites:
-  - IA somente nos fields autorizados;
-  - sem decisão estrutural, agentic, geração funcional por módulo, segunda IA revisora ou reparo semântico;
-  - cada invocação server-side aceita produz no máximo uma chamada síncrona e não streaming para a candidata completa; a UI bloqueia reenvio em voo, sem alegar exactly-once diante de concorrência ou replay;
-  - sem tools, busca externa, encadeamento, background, retry automático ou configuração paralela de modelo.
-- Critérios de aceite:
-  - ação humana autorizada inicia a operação;
-  - o gate server-side revalida conta ativa, membership autorizado e entitlement comercial antes de qualquer chamada ao provider;
-  - capability E9.7 de geração, quando formalmente admitida, é aplicada pelo consumidor neste mesmo ponto sem hardcode local;
-  - falha da E19.3 impede provider;
-  - candidata válida preserva exatamente a composição autorizada;
-  - violações objetivamente detectáveis rejeitam a candidata integral;
-  - falha ou invalidez não cria materialização e permite nova tentativa humana enquanto a LP estiver sem materialização.
-  - o workload canônico `landing_page_draft_generation` integra `lib/openai-workloads/` em nova revisão, com `gpt-5.4-mini`, esforço `none`, `OPENAI_API_KEY`, `/v1/responses`, `store: false` e `safety_identifier` estável e não reversível derivado do ator autenticado;
-  - a requisição usa Structured Output estrito e `max_output_tokens` determinístico, sem secret ou configuração de modelo no cliente;
-  - falha de autorização ou E19.3 impede provider; timeout, rate limit, quota, erro HTTP, refusal, incomplete, JSON/schema inválido ou reprovação do validator encerram a tentativa inteira;
-  - não existe retry automático; nova tentativa depende de nova ação humana;
-  - telemetria registra somente request ID, workload, revisão, modelo, response ID, resultado, categoria segura de falha, latência e usage, sem prompt, pesquisa, fatos, guidance, payload, conteúdo, PII, secret ou `safety_identifier`;
-  - quando E9.7 admitir e atribuir formalmente uma capability de geração, o consumidor passa a resolvê-la fail-closed antes do provider; nenhuma capability é criada localmente nesta E19.4.
+  - transformar o pacote E19.3 em candidata completa da primeira LP real, com planejamento narrativo e copy por IA dentro do contrato estrutural mínimo e validação determinística antes da persistência.
+- Dependências anteriores à execução:
+  - taxon preparado pelos recortes responsáveis;
+  - E19.3 do Cenário E implementada e aprovada em prova read-only;
+  - configuração E19.2 completa conforme E20.2.
+- Questões indispensáveis ainda abertas:
+  - contrato estrutural mínimo e projeções;
+  - prompt canônico;
+  - número de chamadas/etapas;
+  - `modelo + reasoning effort`;
+  - Structured Output/schema;
+  - factualidade/evidência;
+  - casos representativos;
+  - critérios de aceite da candidata.
 
 ### 3.2. E19.4.4 — Materialização inicial e snapshot imutável
 
-- Status: planejada.
-- Automação: não.
+- Status: rascunho; fase ainda não consolidada para execução.
+- Automação: não, salvo nova decisão humana baseada em necessidade real.
 - Objetivo:
-  - tornar a primeira candidata integral válida em estado próprio da LP, com snapshot suficiente e sem dependência futura de fontes mutáveis para sua reprodução.
-- Critérios de aceite:
-  - conteúdo e snapshot tornam-se válidos juntos;
-  - conteúdo é autossuficiente para o renderer;
-  - snapshot congela apenas o contexto efetivamente disponibilizado à operação geracional válida;
-  - falha de persistência não deixa estado parcial aparentando sucesso;
-  - nova tentativa é possível antes da primeira materialização válida;
-  - após materialização válida, a E19.4 não sobrescreve a LP.
-  - migration forward-only cria o agregado 1:1 com FKs tenant-safe, checks JSON, RLS sem policies e grants exclusivos de `SELECT, INSERT` para `service_role`;
-  - um único insert persiste `content_json` e `generation_context_snapshot_json`; conflito concorrente retorna estado já materializado sem update;
-  - casos executáveis cobrem double-submit, conflito, falha do provider, candidata inválida, falha de insert e renderer sem releitura de fonte mutável;
-  - conforme `supa#40`, a entrega versiona em `supabase/snippets/` um verificador SQL read-only pós-apply para objetos, constraints, RLS, policies, grants e ausência de estado parcial.
-  - o próprio probe server-side read-only de readiness seleciona a projeção runtime exata (`landing_page_id`, `account_id`, `content_json`, `generation_context_snapshot_json`, `created_by`, `created_at`) com limite de uma linha e, quando houver registro, valida ambos os JSON pelos schemas v1; relation, coluna, grant, shape ou versão ausente/inválida mantêm geração e preview indisponíveis e impedem qualquer chamada OpenAI;
-  - a migration é transacional, de modo que a projeção só fica acessível após o commit integral do agregado; projeção válida sem linha materializada também responde ready, sem flag, escrita operacional ou segundo deploy;
-  - o workflow canônico permanece responsável apenas pelo apply. O verificador SQL read-only completo é gate pós-apply da execução e da prova hospedada, mas não é apresentado como sinal consumido pelo probe nem como controle causal da UI.
+  - persistir a primeira candidata integral válida em estado próprio e reproduzível, com snapshot coerente com o Cenário E.
+- Questões indispensáveis ainda abertas:
+  - adequação dos artefatos SQL preservados;
+  - versão e shape do conteúdo materializado;
+  - versão e shape do snapshot;
+  - concorrência, nova tentativa e write-once da primeira prova.
 
 ### 3.3. E19.4.5 — Visualização privada e prova humana da primeira LP real
 
-- Status: planejada.
+- Status: rascunho; fase ainda não consolidada para execução.
 - Automação: não.
 - Objetivo:
-  - renderizar privadamente a LP materializada a partir de seu estado próprio e produzir a evidência humana necessária para concluir o recorte.
-- Critérios de aceite:
-  - acesso privado reutiliza o gate vigente da conta/LP e o probe de readiness do agregado, sem ACL paralela;
-  - renderer é determinístico, read-only e não relê fontes mutáveis nem chama IA;
-  - identidade/versão não suportada falha explicitamente;
-  - conforme `prod#16`, evidências hospedadas em Preview cobrem 360, 768 e 1280 px, TAB/foco, overflow/truncamento, contraste, legibilidade e comportamentos de interação contratados, combinando revisão manual e ferramentas disponíveis sem tornar ferramenta paga requisito;
-  - avaliação humana confirma que a primeira LP é efetivamente avaliável;
-  - conforme `prod#14`, `owner` ou `admin` reconhece inequivocamente que a LP está em `draft`, não está publicada e qual é o próximo passo disponível, sem telemetria ou estado de workflow novo;
-  - a Vercel Toolbar pode ser usada, quando já disponível ao revisor, somente como apoio à inspeção de acessibilidade, interações e layout; a conclusão não depende da ferramenta nem exige habilitação nova;
-  - findings ficam no PR/relatório de execução, sem estado de domínio novo;
-  - defeito comprovável do contrato bloqueia o fechamento e volta para correção no próprio recorte;
-  - melhoria editorial/evolutiva sem violação do contrato não amplia automaticamente a E19.4.
+  - renderizar privadamente a primeira LP materializada e produzir evidência humana suficiente para avaliar estrutura, narrativa, copy, factualidade, clareza comercial, acessibilidade e qualidade visual.
+- Questões indispensáveis ainda abertas:
+  - superfície/path real do preview privado;
+  - contrato do renderer;
+  - critérios visuais/responsivos finais;
+  - checklist humano;
+  - separação entre defeito bloqueante e melhoria editorial posterior.
 
-### 3.4. Próxima ação
+### 3.4. Próxima ação do debate
 
-- Manter este plano no mesmo path canônico como histórico temporariamente superado e não executável.
-- Reabrir/replanejar posteriormente a nova E19.4 neste path para produzir e avaliar a primeira LP/prova de geração do Cenário D a partir do pacote v2 da E19.3.
-- Não iniciar neste PR #729 o novo planejamento ou a implementação da E19.4.
+- A Preparação do taxon está delegada aos dois recortes próprios e não é detalhada neste plano.
+- O próximo passo material anterior à E19.4 é concluir e provar a E19.3 do Cenário E.
+- Depois da prova E19.3, retornar diretamente aos Gates internos da E19.4: prompt/workflow, contrato estrutural mínimo, factualidade/evidência, modelo/effort, materialização/snapshot, renderer e avaliação humana.
+- Quando a LP gerada não atingir qualidade desejada, diagnosticar nesta ordem: E19.4; pesquisa; E20.2 quando surgir dado factual necessário não previsto; E19.3 somente diante de gap real de autorização, identidade, separação ou transporte.
+- Não atualizar `docs/roadmap.md` enquanto este arquivo permanecer rascunho vivo.
+- Não iniciar implementação da E19.4 antes da prova E19.3 e da consolidação da v1 deste plano.
 
 ## 4. Escopo negativo e critérios de parada
 
-### 4.1. Fora da E19.4
+### 4.1. Fora da E19.4 neste momento
 
-- Publicação pública, domínio customizado e disponibilidade comercial.
-- Tracking, analytics, dashboard de métricas, CRM, Google Ads e A/B test.
-- Editor visual, edição manual estruturada, edição assistida por IA, regeneração, overwrite, histórico e rollback.
-- Aprovação/rejeição persistida da LP, tabela de revisão ou workflow de publicação.
-- Backend novo de submissão de lead ou capacidade operacional não prevista nos contratos vigentes.
-- Nova ACL, papel ou autorização paralela.
-- Segunda IA revisora, auditoria semântica própria ou provenance cognitiva declarada pela IA.
-- Agents SDK, multi-agent, PTC, persisted reasoning, prompt caching, agente, job, fila, cron, webhook ou automação recorrente sem necessidade material demonstrada e nova decisão aplicável.
-- Abstração geral de geração multicanal.
-- Reabertura preventiva de E18.4, E18.5, E20.2, E20.3 ou E19.2.
+- preparação do taxon, incluindo sua pesquisa selecionada, avaliação E20.2, persistência e aprovação;
+- implementação técnica da E19.3;
+- publicação pública, domínio customizado e disponibilidade comercial;
+- tracking, analytics, CRM, Ads, A/B test e engine de experimentos;
+- detalhamento/implementação da E19.5 Light dentro deste recorte;
+- editor visual, edição manual ampla, histórico e rollback;
+- implementação E19.4 D ou comparação D × E como requisito;
+- consulta direta da IA às fontes internas do projeto fora do pacote E19.3;
+- reintrodução de E18.5, E20.3 ou E10.8 como gate da geração;
+- camada intermediária de resumo, atomização ou seleção semântica;
+- HTML, CSS, React, JavaScript, scripts ou componentes arbitrários gerados pela IA;
+- catálogo estrutural amplo antecipado ou reconstrução da antiga E18.5;
+- Agents SDK, multi-agent, job, fila, cron, webhook, browsing ou tools externas sem necessidade real;
+- nova tabela, serviço, engine ou infraestrutura sem gap real demonstrado;
+- perfil persistido novo de público/persona/estratégia apenas para facilitar prompt.
 
 ### 4.2. Critérios de parada imediata
 
-- Parar e devolver ao Estrategista se:
-  - a implementação exigir decisão estrutural da IA ou comportamento agentic para cumprir o contrato;
-  - surgir necessidade de reabrir E18.4, E18.5, E20.2, E20.3 ou E19.2 por bloqueio estrutural real;
-  - o renderer só puder reproduzir a LP relendo fontes mutáveis e alterando silenciosamente seu estado visual ou de conteúdo;
-  - a persistência não puder garantir ausência de materialização parcial sem ampliar materialmente o escopo aprovado;
-  - for necessário criar backend de interação, tracking, publicação ou ACL nova para considerar a LP apenas visualizável;
-  - a avaliação humana revelar defeito sistêmico comprovável do contrato, mesmo que inicialmente aparente ser apenas questão editorial;
-  - surgir mudança que contradiga qualquer decisão fixa dos Gates A–E.
+- Parar e voltar ao debate humano se o pacote E19.3 faltar informação indispensável sem fonte canônica autorizada.
+- Parar se a solução tentar compensar pesquisa insuficiente com atomização, ranking, RAG, chunking, allowlist ou seleção semântica sem evidência.
+- Parar se a solução exigir mapa nominal crescente de nichos, fields ou componentes dentro da E19.4.
+- Parar se o contrato estrutural crescer principalmente por extensibilidade hipotética.
+- Parar se a IA precisar inventar facts, evidências, credenciais, destinos ou capacidades.
+- Parar se a materialização só puder reproduzir a LP relendo fontes mutáveis.
+- Parar se surgir necessidade de agente, automação adicional, engine ou infraestrutura não sustentada por fonte real.
+- Toda mudança material de escopo ou categoria de automação volta ao humano antes da v1.
 
-### 4.3. Critério de conclusão do recorte
+### 4.3. Critério provisório de conclusão do recorte
 
-- E19.4 está concluída quando uma LP real do fluxo oficial:
-  - é gerada por ação humana autorizada;
-  - passa pela validação objetiva do contrato;
-  - é materializada integralmente em `draft` com snapshot coerente;
-  - é reproduzida privadamente a partir de seu estado próprio;
-  - é avaliada humanamente com as evidências previstas.
-- Concluir a E19.4 prova a primeira LP real avaliável em `draft`; não prova prontidão para publicação nem disponibilidade comercial.
+- A E19.4 deverá ser considerada funcionalmente concluída quando uma LP real do fluxo oficial:
+  - for gerada a partir do pacote autorizado E19.3;
+  - apresentar jornada comercial coerente e avaliável do interesse à ação;
+  - respeitar autoridade dos fatos concretos, pesquisa, limites e evidências autorizadas;
+  - for materializada integralmente em `draft`;
+  - for reproduzida privadamente por renderer determinístico;
+  - puder ser avaliada humanamente como landing page real quanto a narrativa, copy, estrutura, responsividade, acessibilidade e qualidade visual.
+- A conclusão funcional não exige estabilização editorial completa de prompt, modelo, effort, narrativa ou visual; iterações poderão continuar após a E19.5 Light por novos drafts preservados.
+- Este critério permanece provisório enquanto o rascunho não virar plano-base v1.
