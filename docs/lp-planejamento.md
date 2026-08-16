@@ -2,279 +2,155 @@
 
 Fonte conceitual de decisão para preparar taxons, configurar contas, gerar LPs reais e liberar seu uso.
 
-Status arquitetural: reconciliado com o Cenário E em 16/08/2026. Este documento distingue o caminho canônico vigente de ativos históricos ainda preservados no projeto. Estar fora do caminho canônico não autoriza remoção física; qualquer retirada depende de auditoria de consumidores, dados e dependências no roadmap e no repositório.
+Status arquitetural: reconciliado com o Cenário E em 16/08/2026. O estado de execução, histórico dos recortes e registros operacionais pertencem a `docs/roadmap.md` e aos planos-base próprios. Este documento não substitui essas autoridades nem replica seus detalhes.
+
+Estar fora do caminho canônico não autoriza remoção física. Qualquer retirada depende de auditoria de consumidores, dados e dependências no roadmap e no repositório.
 
 Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `docs/schema.md`, planos-base vigentes da jornada e implementação atual no repositório.
 
-## 1. Jornada da base até as LPs publicadas
+## 1. Princípios e resultado da jornada
 
-### 1.1. Resultado final esperado
+### 1.1. Resultado esperado
 
-- Criar LPs testáveis e publicáveis por nicho ou ultranicho, usando o mesmo fluxo oficial para conta piloto e clientes.
-- `landing_page` é o canal; BOFU, MOFU e TOFU são intenções da LP, e a origem de tráfego permanece separada da intenção.
-- Depois de receber entitlement válido, a conta passa por onboarding e configuração factual antes da geração da primeira LP.
+- Criar LPs testáveis e publicáveis para taxons preparados, usando o mesmo fluxo oficial para conta piloto e clientes.
+- `landing_page` é o canal; BOFU, MOFU e TOFU representam intenção de funil, e a origem de tráfego permanece separada dessa intenção.
+- Depois de receber entitlement válido, a conta passa por configuração factual antes da geração da primeira LP.
 - Não deve existir fluxo, entidade ou persistência paralela para LP teste.
-- A conta é proprietária dos dados reutilizáveis do negócio; owner ou admin são atores autorizados a configurá-los.
-- A primeira LP real deve ser produzida a partir de taxon preparado, configuração factual válida e contexto autorizado, sem atalhos administrativos específicos da conta piloto.
+- A conta é proprietária dos dados reutilizáveis do negócio; os atores autorizados apenas os configuram conforme os boundaries vigentes.
 - O grau de determinismo acompanha a natureza da decisão: segurança, autorização, fatos, estado, bindings e contratos permanecem determinísticos; decisões semânticas, narrativas, criativas e persuasivas preservam flexibilidade controlada da IA.
 - Não antecipar deterministicamente uma decisão que o workload existe justamente para a IA tomar.
-- **Independência da LP materializada:** depois de materializada, a LP possui estado próprio suficiente para sua reprodução; evolução posterior das fontes canônicas não altera silenciosamente uma LP existente.
-- Edições e regenerações futuras devem adotar versões mais novas das fontes somente por ação explícita e contrato próprio.
+- Depois de materializada, a LP possui estado próprio suficiente para reprodução; evolução posterior das fontes canônicas não altera silenciosamente uma LP existente.
+- Edições ou regenerações futuras adotam versões mais novas das fontes somente por ação explícita e contrato próprio.
 
-### 1.2. Preparar o taxon para geração
+### 1.2. Separação de autoridades
 
-- A preparação do taxon ocorre antes da geração e está materializada pelos recortes E20.5 e E20.6.
-- O taxon precisa estar ativo na taxonomia autoritativa.
-- A E20.5 mantém uma versão integral `end_customer` explicitamente selecionada por decisão humana e validada por boundary server-side.
-- As versões integrais permanecem imutáveis no GitHub em `docs/pesquisas-brutas/<taxon_slug>/end_customer/vN.md`; criar nova versão não altera automaticamente a seleção vigente.
-- `business_buyer` não é requisito da preparação do taxon nem do caminho canônico de geração da LP `end_customer`.
-- A E20.6 confronta a pesquisa integral selecionada com uma versão executável E20.2 escolhida explicitamente, sem `latest` ou maior versão implícita.
-- A decisão de suficiência permanece humana; a assistência por IA não grava automaticamente a aprovação.
-- O estado `prepared` é derivado, não persistido: taxon ativo + pesquisa integral selecionada/válida + `reviewed_input_catalog_version` compatível com a versão E20.2 explicitamente requerida.
-- Gap factual real identificado na avaliação retorna à E20.2 para evolução e nova avaliação; ausência de gap não cria especialização preventiva.
-- E10.8, E18.5 e E20.3 não participam deste gate.
+- E20.2 define e resolve o catálogo factual de entradas; não fornece valores concretos nem decide narrativa.
+- E20.5 mantém a pesquisa integral `end_customer` explicitamente selecionada para o taxon.
+- E20.6 registra a versão E20.2 avaliada e deriva a preparação do taxon sem persistir um status adicional de prontidão.
+- E19.2 coleta, valida, persiste e vincula os valores concretos da configuração ao `draft` legítimo.
+- E18.4 mantém a parametrização raiz e os limites universais aplicáveis.
+- E19.3 autoriza, revalida, organiza e transporta o contexto para geração; não decide a LP.
+- E19.4 interpreta o contexto autorizado e decide narrativa, estrutura suportada e copy da candidata.
+- E9 permanece autoridade do entitlement e do plano efetivo; E9.7 é o recorte responsável pelo contrato canônico de capacidades e limites, que evolui somente com capacidades admitidas e consumidores reais.
+- Disponibilidade comercial por `taxon + plano` permanece decisão separada de preparação do taxon, entitlement, configuração factual e geração.
 
-### 1.3. Manter a base raiz da família `landing_page`
+## 2. Jornada canônica do Cenário E
 
-- A E18.4 reúne a parametrização raiz versionada de `landing_page`, incluindo papéis semânticos, faixas editoriais, limites técnicos e princípios visuais, responsivos e de acessibilidade.
-- A E18.4 permanece autoridade ativa no caminho canônico enquanto suas proteções tiverem valor comprovado.
-- A E19.3 projeta somente o subconjunto necessário à geração; não duplica a parametrização raiz.
-- A E19.4 decide a jornada narrativa e a composição dentro dos limites aplicáveis, sem transformar E18.4 em schema rígido de página.
-- A reavaliação da E18.4 depende de evidência produzida por LPs reais, como rigidez desnecessária, manutenção distribuída ou dificuldade material de extensão.
-- Ajustes devem permanecer localizados e com validação proporcional, sem nova infraestrutura por antecipação.
+### 2.1. Preparar o taxon
 
-### 1.4. Preservar o catálogo de módulos e variantes fora do caminho canônico
+- O taxon deve estar ativo na taxonomia autoritativa.
+- A E20.5 exige uma pesquisa integral `end_customer` versionada, explicitamente selecionada e válida; criar nova versão não altera automaticamente a seleção vigente.
+- `business_buyer` não é requisito da preparação nem do caminho canônico de geração da LP `end_customer`.
+- A E20.6 avalia uma versão E20.2 explicitamente indicada, sem `latest`, maior versão implícita ou promoção automática.
+- A decisão de suficiência permanece humana; assistência por IA não grava automaticamente a aprovação.
+- `prepared` é resultado derivado das autoridades vigentes, não estado persistido independente.
+- Gap do catálogo factual identificado na avaliação retorna à E20.2 para correção/evolução e nova avaliação; ausência de gap não cria especialização preventiva.
 
-- A E18.5 existe, está implementada e mantém catálogo executável, versionado e tipado de módulos e variantes.
-- **Situação arquitetural atual:** E18.5 está fora do caminho canônico E19.3 → E19.4 do Cenário E e não governa a estrutura da primeira LP real.
-- A E19.4 não deve voltar a usar E18.5 para selecionar previamente módulos, variantes, prioridade ou ordem antes da decisão da IA.
-- A implementação permanece preservada porque ainda pode possuir consumidores administrativos e dependências históricas, inclusive ligadas à E20.3.
-- Enquanto a auditoria geral do roadmap e dos consumidores não estiver concluída, não remover código, contratos, migrations ou dados de E18.5 apenas por ela ter perdido autoridade arquitetural.
-- Também não expandir E18.5 para atender o Cenário E. Nova utilização exige consumidor real e decisão explícita.
-- Se a auditoria comprovar ausência de consumidor necessário, a retirada deverá ocorrer em recorte próprio, com mapa de dependências e regressões proporcionais.
+### 2.2. Configurar os fatos da LP
 
-### 1.5. Manter o catálogo de entradas para configuração e geração da LP
-
-- A E20.2 mantém um catálogo declarativo único, versionado e separado de conteúdo, pesquisa e composição narrativa.
-- A resolução canônica usa versão explícita, plano efetivo e cadeia taxonômica autoritativa completa.
-- A herança segue `universal → segmento → nicho → ultranicho autorizado`; camadas inexistentes são simplesmente herdadas, e especializações só podem ocorrer dentro das regras do resolver canônico.
-- A E19.3 nunca reconstrói manualmente essa herança.
-- O catálogo define fields, aplicabilidade, origem esperada, tipo, validação, obrigação e demais propriedades contratuais.
-- Cada field preserva escopo entre `account`, `business`, `offer`, `campaign` e `landing_page`.
-- Valores concretos pertencem à conta, negócio, oferta, campanha ou LP e são coletados/persistidos pela E19.2, não pela E20.2.
-- A versão histórica da configuração E19.2 permanece distinta da versão E20.2 revisada para geração.
-- Na geração, a E19.3 consome `reviewed_input_catalog_version` como a versão E20.2 explicitamente revisada e resolve o catálogo E20.2 nessa versão usando o plano efetivo e a cadeia taxonômica autoritativa completa; em seguida, revalida read-only os valores históricos contra os fields efetivos resultantes.
-- Se a revalidação revelar novo field obrigatório aplicável, valor ausente ou incompatível, a E19.3 falha fechado e devolve o gap factual à E19.2 para coleta/correção.
-- Se revelar defeito no catálogo, resolver, camada ou especialização E20.2, o gap retorna à E20.2.
-- Não migrar nem regravar configuração histórica apenas para alinhar número de versão quando os valores continuam válidos.
-- A versão executável atual já evoluiu além da v2; nenhuma parte do planejamento deve presumir que maior versão disponível é automaticamente a versão consumida.
-
-### 1.6. Preservar o perfil de orientação fora do caminho canônico
-
-- A E20.3 existe, está implementada e mantém perfil versionado por taxon, lifecycle administrativo, resolução própria ou herdada e integrações com E18.5.
-- **Situação arquitetural atual:** E20.3 está fora do caminho canônico E19.3 → E19.4 do Cenário E e não é gate, fonte obrigatória de estrutura nem pré-condição da primeira LP real.
-- Perfil `active`, recomendações, variantes preferenciais, prioridade, ordem, `generation_guidance` e `item_guidance` não governam a geração atual.
-- A E19.4 não deve consultar E20.3 para decidir narrativa, seções, ordem ou layout.
-- O lifecycle administrativo E12.4.3 permanece preservado enquanto os consumidores e dados de E20.3 forem auditados.
-- Não criar novos perfis ou expandir o domínio E20.3 para sustentar o Cenário E.
-- Remoção futura de E20.3, E12.4.3 associado, tabelas, adapters ou páginas Admin exige recorte próprio e prova de ausência de consumidor necessário.
-
-### 1.7. Tratar gaps e ativos históricos sem reintroduzir a arquitetura antiga
-
-- Gaps encontrados durante geração real devem voltar ao contrato responsável, sem criar camada paralela de correção.
-- Gap factual de valores concretos retorna à E19.2; gap do catálogo factual retorna à E20.2; gap de pesquisa retorna à E20.5 ou ao processo de produção da pesquisa; gap de transporte/autorização retorna à E19.3; gap de interpretação/composição retorna à E19.4.
-- A qualidade insuficiente da LP não autoriza automaticamente reintroduzir módulos, perfis, ranking de pesquisa, RAG, chunking, `itemKey`, `priority`, `sortOrder` ou seleção semântica intermediária.
-- E10.8, E18.5, E20.3 e recortes derivados continuam preservados até auditoria geral do roadmap e dos consumidores.
-- A classificação recomendada para ativos históricos é: ativo no caminho canônico; preservado fora do caminho; candidato à depreciação; removível após prova de ausência de consumidor.
-- Primeiro retirar autoridade arquitetural; depois provar ausência de consumidor; somente então retirar implementação.
-
-### 1.8. Habilitar o onboarding após o entitlement
-
-- Entitlement válido direciona a conta ao onboarding da E19.2 antes da geração da primeira LP; disponibilidade comercial por `taxon + plano` permanece decisão separada.
-- A experiência da conta deriva estados a partir de entitlement, papel, configuração e vínculo real, sem novo status de onboarding em `accounts`.
-- O onboarding reutiliza valores autoritativos e solicita somente os ausentes.
-- O taxon primário ativo é contexto autoritativo; ausência, inatividade ou ambiguidade falha fechada.
-- Owner ou admin ativo configura a conta; os valores pertencem à conta, negócio, oferta, campanha ou LP conforme o escopo do field.
-- Dados reutilizáveis do negócio permanecem separados dos valores específicos da LP.
-- A conta piloto usa o fluxo oficial de entitlement com `liberacao_manual`, sem autorização paralela.
+- Entitlement válido direciona a conta à E19.2 antes da geração da primeira LP.
+- O onboarding reutiliza valores autoritativos e solicita somente os ausentes; não cria `onboarding_status` paralelo.
+- O taxon primário ativo é contexto autoritativo; ausência, inatividade ou ambiguidade falha fechado.
+- A configuração factual é vinculada a uma LP `draft` legítima pelo fluxo vigente da E19.1/E19.2.
+- A configuração persistida preserva sua versão histórica; plano efetivo e cadeia taxonômica são reconstruídos das autoridades atuais no runtime.
+- Dados reutilizáveis do negócio permanecem separados dos valores específicos da oferta, campanha ou LP conforme o escopo do field.
 - Configuração completa e vinculada libera o espaço operacional, mas não implica taxon preparado, disponibilidade comercial ou LP gerada.
 
-### 1.9. Configurar a LP e gerar no Cenário E
+### 2.3. Revalidar e montar o pacote E19.3
 
-- A E19.2 coleta e confirma a configuração factual mínima e vincula a configuração a um `draft` real; não gera conteúdo da LP.
-- A logo permanece opcional; a paleta confirmada e demais valores concretos seguem os contratos E19.2/E20.2.
-- Antes da geração, o taxon deve estar preparado por E20.5/E20.6.
-- A E19.3 é o menor boundary determinístico entre fontes autorizadas e a E19.4.
-- A E19.3 recebe LP/configuração legítimas, resolve a versão E20.2 explicitamente revisada usando plano efetivo + cadeia taxonômica autoritativa completa, revalida os valores E19.2 e entrega exatamente `identities + modelContext + serverContext`.
-- A pesquisa integral `end_customer` selecionada chega ao contexto sem atomização, resumo intermediário, RAG, chunking ou dependência de E10.8.
+- A E19.3 recebe LP/configuração legítimas e taxon preparado e entrega exatamente `identities + modelContext + serverContext` em contrato próprio do Cenário E.
+- A E19.3 consome `reviewed_input_catalog_version` como a versão E20.2 explicitamente revisada e resolve o catálogo E20.2 nessa versão usando o plano efetivo e a cadeia taxonômica autoritativa completa.
+- O resolver E20.2 permanece a única autoridade para compor a herança `universal → segmento → nicho → ultranicho autorizado`, aplicar especializações válidas e filtrar por plano.
+- A E19.3 nunca reconstrói manualmente essa herança.
+- Os valores históricos E19.2 são revalidados read-only contra os fields efetivos resultantes; a versão histórica da configuração permanece distinta da versão E20.2 usada na geração.
+- Novo field obrigatório aplicável, valor ausente ou incompatível falha fechado e retorna à E19.2 para coleta/correção.
+- Defeito de catálogo, camada, especialização ou resolver retorna à E20.2.
+- Não migrar nem regravar configuração histórica apenas para alinhar números de versão quando os valores continuam válidos.
+- Nenhuma versão E20.2 é inferida por ser a maior disponível; o consumidor usa a versão explicitamente autorizada pelo contrato responsável.
+- A pesquisa integral selecionada chega ao `modelContext` sem atomização, resumo intermediário, RAG, chunking, ranking ou seleção semântica.
+- A E19.3 projeta somente os limites E18.4 necessários à geração e separa valores semanticamente visíveis de valores operacionais server-side conforme o contrato vigente.
 - A E19.3 não escolhe módulos, variantes, ordem, função narrativa, seções, layout, intensidade comercial ou copy e não chama OpenAI.
-- A E19.4 recebe somente o pacote autorizado E19.3 e interpreta o conjunto respeitando a hierarquia: fatos concretos E19.2/E20.2 definem a realidade; pesquisa integral fornece contexto consultivo; E18.4 fornece limites universais.
+
+### 2.4. Gerar a candidata E19.4
+
+- A E19.4 recebe somente o pacote autorizado E19.3 e não relê diretamente as fontes internas para reconstruir o contexto.
+- A hierarquia de autoridade é: fatos concretos E19.2/E20.2 definem a realidade; pesquisa integral fornece contexto consultivo; E18.4 fornece limites universais; E19.3 transporta; E19.4 decide.
 - A pesquisa nunca pode ampliar ou contradizer a oferta concreta.
-- A IA da E19.4 pode sintetizar público efetivo, progressão narrativa, quantidade e sequência de seções, função narrativa, copy, CTA textual, omissões, repetições legítimas e layout entre estruturas suportadas pelo contrato vigente.
-- O sistema permanece responsável por autorização, facts disponíveis, evidências disponíveis, estruturas suportadas, limites absolutos, bindings, destinos, consentimento, credenciais, schema, validação objetiva, persistência e renderer.
+- A IA pode sintetizar público efetivo, progressão narrativa, quantidade e sequência de seções, função narrativa, copy, CTA textual, omissões, repetições legítimas e layout entre estruturas suportadas pelo contrato vigente.
+- O sistema permanece responsável por autorização, fatos e evidências disponíveis, estruturas suportadas, limites absolutos, bindings, destinos, consentimento, credenciais, schema, validação objetiva, persistência e renderer.
 - A IA não gera HTML, CSS, React, JavaScript, scripts, componentes desconhecidos, credenciais ou fatos não autorizados.
-- A E19.4 deve usar a menor fonte estrutural canônica necessária à primeira LP real; novas primitivas ou layouts só entram quando caso concreto demonstrar necessidade.
-- A candidata válida é materializada em estado próprio suficiente para reprodução; o snapshot registra somente identidades, versões, configuração do workload e contexto efetivamente exposto necessários à auditoria/reprodução, sem raciocínio privado.
-- O shape exato de candidata, materialização, snapshot, concorrência e renderer pertence ao plano E19.4 e não deve ser antecipado neste documento.
+- A E19.4 deve usar a menor fonte estrutural canônica suficiente à primeira LP real; novas primitivas ou layouts entram somente quando caso concreto demonstrar necessidade.
+- A candidata válida é materializada em estado próprio suficiente para reprodução.
+- O shape exato da candidata, materialização, snapshot, concorrência e renderer pertence ao plano E19.4 e não deve ser antecipado neste documento.
 
-### 1.10. Validar e disponibilizar por plano
+### 2.5. Disponibilidade comercial e capacidades
 
-- Disponibilidade comercial por `taxon + plano` permanece separada de preparação técnica do taxon, entitlement da conta e prontidão factual da LP concreta.
-- O `platform_admin` deve decidir disponibilização, suspensão ou reativação por combinação explícita e justificativa, conforme os recortes próprios de E20.4/E12.4.5–12.4.6 quando forem retomados.
-- A LP real é evidência preferencial para a primeira liberação, mas o critério final pertence ao recorte de disponibilidade comercial.
-- Suspensão comercial não cancela automaticamente entitlements ou LPs existentes.
-- O caminho crítico atual é produzir e avaliar a primeira LP real antes de ampliar disponibilidade, publicação, tracking ou outros recursos.
+- Disponibilidade comercial por `taxon + plano` permanece decisão futura e separada. Ator, evidências, lifecycle e efeitos pertencem ao recorte próprio quando retomado.
+- A primeira LP real deve ser produzida e avaliada antes de ampliar o caminho crítico para publicação, tracking, disponibilidade comercial ou outros recursos não necessários à prova.
+- E9 informa entitlement e plano efetivo; E9.7 evolui o contrato de capacidades e limites sem presumir capacidades ainda não admitidas.
+- E20.2 define informações factuais necessárias e não define quantidade de LPs, publicação, tracking, relatórios, leads ou CRM.
+- Cada domínio consumidor implementa e aplica server-side suas próprias capacidades e limites quando houver contrato admitido e consumidor real.
 
-### 1.11. Governar capacidades e limites por plano
+## 3. Mapa de autoridades arquiteturais
 
-- A E9 mantém entitlement, plano efetivo e o catálogo canônico de capacidades e limites.
-- Disponibilidade comercial por `taxon + plano`, entitlement da conta e capacidades do plano são decisões distintas.
-- A E20.2 define informações factuais necessárias e não define quantidade de LPs, publicação, tracking, relatórios, leads ou CRM.
-- Cada domínio consumidor aplica server-side as capacidades relevantes e a UI consome o resultado resolvido, sem interpretar nomes de plano localmente.
-- Capacidades futuras entram apenas com consumidor real e decisão aprovada; não prometer recurso ainda não implementado/disponibilizado.
-- Limites específicos de publicação, tracking, dashboard ou leads devem permanecer nos respectivos planos-base enquanto não forem materializados no produto.
+### 3.1. Ativos no caminho canônico da primeira LP
 
-## 2. O que precisa ser preservado ou implementado no projeto
+- E18.4 — parametrização raiz e limites universais.
+- E20.2 — catálogo factual versionado e resolver taxonômico.
+- E20.5 — pesquisa integral `end_customer` selecionada e validada.
+- E20.6 — avaliação da suficiência E20.2 e preparação derivada do taxon.
+- E19.1 — identidade mínima da LP `draft`.
+- E19.2 — onboarding, valores concretos e vínculo da configuração.
+- E19.3 — pacote autorizado, revalidação factual e transporte de contexto.
+- E19.4 — geração, candidata, validação, materialização, renderer e prova humana conforme seu plano vigente.
+- E9 — entitlement e plano efetivo; capacidades e limites evoluem pelo recorte E9.7.
 
-### 2.1. E10.8 — Pesquisas estruturadas preservadas fora do caminho canônico
+### 3.2. Ativos preservados fora do caminho canônico
 
-- E10.8 está implementada e pode continuar atendendo consumidores independentes.
-- **Situação arquitetural:** fora do caminho canônico E19.3 → E19.4 do Cenário E.
-- A geração da primeira LP não depende de pesquisa estruturada, quatro blocos, 59 itens, `itemKey`, `priority` ou `sortOrder`.
-- Não remover E10.8 até a auditoria identificar todos os consumidores reais e confirmar que nenhum deles é necessário.
-- Não criar novo consumidor E19 apenas para justificar sua preservação.
+- E10.8 permanece implementada para consumidores independentes, mas a geração do Cenário E não depende da pesquisa estruturada, seus blocos ou seus metadados de item.
+- E18.5 permanece implementada, mas não governa a estrutura E19.3 → E19.4 e não deve ser expandida para sustentar o Cenário E.
+- E20.3 permanece implementada, mas não é gate, fonte estrutural ou requisito da primeira LP real.
+- E12.4.3 e refinamentos associados permanecem vinculados ao lifecycle E20.3 e fora do caminho canônico da primeira LP.
+- Nenhum desses ativos deve ser removido fisicamente ou voltar ao caminho canônico sem avaliação própria de consumidores e dependências.
 
-### 2.2. E18.4 — Base raiz versionada ativa
+## 4. Próxima sequência de trabalho
 
-- Preservar a implementação atual e sua API enquanto servir aos consumidores reais.
-- E19.3 projeta somente limites necessários; E19.4 respeita esses limites sem transformar a raiz em arquitetura narrativa fixa.
-- Reavaliar apenas diante de evidência produzida por LP real.
+### 4.1. Caminho crítico
 
-### 2.3. E18.5 — Catálogo executável preservado fora do caminho canônico
+- 1º — executar E19.3.3 conforme o plano-base vigente e concluir a prova read-only real `E19.2 histórica v2 → E20.2 revisada v4`, sem hardcode de versão, slug, plano ou nível taxonômico.
+- 2º — após aprovação da prova E19.3, retomar e consolidar E19.4 Cenário E e produzir a primeira LP real de ponta a ponta.
+- 3º — após E19.4 funcional, E19.5 Light permanece direção conceitual sucessora prevista para novos `drafts` independentes e iterações sem overwrite; seu contrato e identificação formal pertencem a recorte próprio.
+- 4º — somente depois da primeira LP real, retomar publicação, tracking, disponibilidade comercial e demais evoluções conforme prioridade e planos próprios.
+- A auditoria de obsolescência do roadmap permanece trabalho próprio e não bloqueia E19.3/E19.4.
 
-- E18.5 está implementada e permanece fisicamente preservada.
-- **Situação arquitetural:** não participa da geração do Cenário E e não deve ser expandida para isso.
-- Inventariar consumidores administrativos, contratos dependentes e relações com E20.3 antes de qualquer remoção.
-- Se a auditoria comprovar que todos os consumidores restantes são legados dispensáveis, criar recorte próprio de depreciação e retirada.
+## 5. Política de gaps e depreciação
 
-### 2.4. E20.2, E20.5 e E20.6 — catálogo factual e preparação do taxon
+### 5.1. Destino dos gaps
 
-- E20.2 permanece ativo como catálogo factual declarativo, versionado, resolvido por versão explícita + plano + cadeia taxonômica completa.
-- Preservar herança, especializações, proveniência, validação, autorização de ultranicho e falha fechada do resolver canônico.
-- E20.5 permanece responsável pela pesquisa integral `end_customer` selecionada, leitura repo-only, validação de identidade e versão.
-- E20.6 permanece responsável pela avaliação humana assistida da suficiência factual E20.2 e pelo predicado derivado de preparação do taxon.
-- `corretor-imoveis` é a primeira prova real de taxon preparado, não regra especial do produto.
-- Evoluções futuras devem permanecer genéricas nas dimensões temporal e taxonômica.
+- Gap de valor concreto retorna à E19.2.
+- Gap do catálogo factual ou resolver retorna à E20.2.
+- Gap da pesquisa selecionada retorna à E20.5 ou ao processo responsável por produzir nova versão da pesquisa.
+- Gap de preparação do taxon retorna à E20.5/E20.6 conforme a autoridade envolvida.
+- Gap de transporte, autorização ou contrato do pacote retorna à E19.3.
+- Gap de interpretação, composição ou qualidade da candidata retorna à E19.4.
+- Qualidade insuficiente da LP não autoriza automaticamente reintroduzir módulos, perfis, ranking de pesquisa, RAG, chunking, `itemKey`, `priority`, `sortOrder` ou camada semântica intermediária.
 
-### 2.5. E20.3 — Perfil de orientação preservado fora do caminho canônico
+### 5.2. Depreciação de ativos históricos
 
-- E20.3, suas tabelas, resolver, adapters e lifecycle administrativo existem e permanecem preservados até auditoria.
-- **Situação arquitetural:** não é fonte da estrutura da E19.4, não é gate da E19.3 e não é requisito da primeira LP real.
-- Não criar novos perfis para sustentar o Cenário E.
-- Não remover fisicamente enquanto houver página Admin, consumidor necessário, dado persistido ou dependência legítima ainda não tratada.
+- Classificar cada ativo como: ativo no caminho canônico; preservado fora do caminho; candidato à depreciação; removível após prova.
+- Primeiro retirar autoridade arquitetural; depois provar ausência de consumidor necessário; somente então retirar implementação.
+- Remoção física exige recorte próprio e tratamento explícito de consumidores, dados, migrations, páginas, adapters, imports, exports e testes.
+- Não criar novo consumidor apenas para justificar a preservação de ativo histórico.
+- Não reintroduzir ativo histórico no caminho canônico apenas porque sua implementação já existe.
 
-#### 2.5.1. E12.4.3 — Operação administrativa do perfil
+## 6. Evoluções condicionais após a primeira LP real
 
-- E12.4.3 permanece como lifecycle administrativo do ativo E20.3 enquanto esse domínio estiver preservado.
-- **Situação arquitetural:** fora do caminho canônico da primeira LP e candidato a reavaliação junto com E20.3.
-- Não ampliar proposta estrutural, coverage, recommendations ou gestão de gaps para atender E19.4.
-- Eventual retirada deve ocorrer junto do recorte que tratar o destino de E20.3 e de seus dados.
-
-### 2.6. E19.2 — Onboarding e configuração factual da conta/LP
-
-- E19.1 mantém a identidade mínima de uma LP `draft` legítima.
-- E19.2 está concluída e permanece ativa para coleta, validação, persistência e vínculo dos valores concretos.
-- A configuração persistida mantém versão histórica própria; plano e cadeia taxonômica são resolvidos das autoridades atuais no runtime.
-- A E19.3 pode revalidar esses valores contra versão E20.2 posterior explicitamente revisada sem migration automática da configuração.
-- Gap factual de valor retorna à E19.2; defeito de catálogo retorna à E20.2.
-- E19.2 não seleciona estrutura narrativa, não chama IA de copy e não materializa LP final.
-
-### 2.7. E20.4 e E12.4.5–12.4.6 — Disponibilidade comercial
-
-- Permanecem recortes separados de preparação técnica, geração e entitlement.
-- Retomar somente depois da primeira LP real quando houver evidência suficiente e prioridade comercial.
-- Não usar disponibilidade comercial como substituto de `prepared` nem vice-versa.
-
-### 2.8. Evolução controlada e política de depreciação
-
-- Aprendizados de LPs reais podem ajustar E18.4, E20.2, pesquisa integral, E19.3 ou E19.4 por novos planos e versões.
-- E10.8, E18.5, E20.3 e recortes derivados não voltam ao caminho canônico apenas porque já existem.
-- Auditoria do roadmap deve classificar ativos históricos por situação arquitetural e mapear consumidores reais.
-- Remoção física depende de recorte próprio, prova de ausência de consumidor necessário e tratamento explícito de dados, migrations, páginas, adapters, imports, exports e testes.
-- Não criar catálogo multicanal, editor visual, agente ou infraestrutura nova sem necessidade real demonstrada.
-
-### 2.9. E9 — Catálogo de capacidades e limites por plano
-
-- E9 continua responsável por entitlement, plano efetivo e capacidades/limites canônicos.
-- O catálogo não substitui disponibilidade comercial, taxonomia, E20.2, preparação do taxon nem gates operacionais.
-- Cada domínio implementa e valida suas próprias capacidades.
-- Novas capacidades entram de forma versionada e somente com consumidor real.
-
-## 3. Ordem dos próximos planos-base
-
-- Base ativa para a primeira LP real: E18.4, E20.2, E20.5, E20.6, E19.1, E19.2 e entitlement/plano efetivo da E9.
-- Ativos preservados fora do caminho canônico: E10.8, E18.5, E20.3 e lifecycle E12.4.3 associado, sujeitos a auditoria própria e sem bloquear a primeira LP.
-- 1º — concluir a reformulação E19.3 do Cenário E com `contractVersion: 3`, pesquisa integral, revalidação dinâmica E20.2 e prova read-only.
-- 2º — implementar e validar a prova E19.3 sobre o caso real `E19.2 histórica v2 → E20.2 revisada v4` sem hardcode de versão, slug, plano ou nível taxonômico.
-- 3º — concluir o plano E19.4 do Cenário E e produzir a primeira LP real: geração por IA com liberdade controlada → candidata estruturada → validação → materialização → renderer → avaliação humana.
-- 4º — após E19.4 funcional, tratar E19.5 Light para criar novos `drafts` independentes e permitir iterações E1/E2/E3 sem overwrite.
-- 5º — somente depois da primeira LP real, retomar publicação, tracking, disponibilidade comercial e demais evoluções priorizadas.
-- A auditoria de obsolescência do roadmap deve ocorrer como trabalho próprio e não reintroduzir dependências legadas no caminho crítico.
-
-## 4. Onde cada ajuste entra no roadmap
-
-### 4.1. E10
-
-- E10.8 permanece implementada, porém fora do caminho canônico da geração do Cenário E.
-- Seus consumidores reais devem ser auditados antes de qualquer decisão de retirada.
-- E10.6 e E10.7 continuam relacionados à experiência comercial e checkout quando a disponibilidade por `taxon + plano` for retomada.
-
-### 4.2. E12
-
-- E12.4.3 e seus refinamentos permanecem associados ao lifecycle E20.3 e estão fora do caminho canônico da primeira LP.
-- Esses recortes devem ser auditados em conjunto com E20.3 antes de expansão ou remoção.
-- E12.4.4 permanece retirada da implementação e não cria gate paralelo.
-- E12.4.5 e E12.4.6 permanecem relacionados à disponibilidade comercial futura.
-
-### 4.3. E18
-
-- E18.4 permanece ativa no caminho canônico como base raiz e fonte de limites aplicáveis.
-- E18.5 permanece implementada, mas fora do caminho E19.3 → E19.4 e candidata à auditoria de depreciação.
-- A E19.4 cria somente o contrato estrutural mínimo necessário à primeira LP real, sem reconstruir E18.5.
-
-### 4.4. E20
-
-- E20.2 permanece ativo como catálogo factual e já possui versões executáveis explícitas, incluindo v4.
-- E20.5 permanece ativo como seleção e leitura validada da pesquisa integral `end_customer`.
-- E20.6 permanece ativo como avaliação de suficiência factual e preparação derivada do taxon.
-- E20.3 permanece implementado, mas fora do caminho canônico e sujeito a auditoria junto com seu lifecycle E12.4.3.
-- E20.4 permanece separado como disponibilidade comercial futura.
-
-### 4.5. E19
-
-- E19.1 mantém a identidade mínima da LP `draft`.
-- E19.2 mantém onboarding e configuração factual persistida.
-- E19.3 é boundary determinístico de autorização, pesquisa integral, revalidação factual e transporte de contexto; não gera nem materializa LP.
-- E19.4 é responsável por geração, decisões narrativas/estruturais da IA dentro do contrato suportado, candidata, validação, materialização, renderer e prova humana.
-- E19.5 Light sucede E19.4 para novos drafts e iterações preservadas.
-- Conta piloto e cliente continuam no mesmo fluxo oficial.
-
-### 4.6. E9
-
-- E9 mantém entitlement, plano efetivo e capacidades/limites.
-- Disponibilidade comercial, preparação do taxon e capacidades do plano permanecem decisões separadas.
-- E9 não implementa LP Builder, pesquisa, geração, tracking, analytics ou CRM.
-
-## 5. Evoluções prioritárias após a primeira LP real
-
-- Gatilho comum: reavaliar somente após gerar e validar a primeira LP real pelo fluxo oficial, sem competir com o caminho crítico atual.
-
-### 5.1. `pending_setup` e taxon assistidos por IA
+### 6.1. Taxon assistido por IA
 
 - Reavaliar E10.4/E10.5.6 para experiência conversacional assistida por IA somente se houver valor demonstrado.
 - A IA não cria nem altera silenciosamente o taxon; o fluxo autoritativo continua responsável pela identidade taxonômica consumida pela E19.
 
-### 5.2. Assistência por IA na configuração da LP
+### 6.2. Assistência por IA na configuração factual
 
 - Manter E19.2 integralmente utilizável sem IA.
 - Após a primeira LP validada, avaliar assistência opcional para serviço/oferta e identidade visual.
