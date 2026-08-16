@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Documento: Gestor de Segurança (Plataformas)
-• Versão: v0.2.1
+• Versão: v0.2.2
 • Data: 16/08/2026
 
 0.2 Contrato do documento
@@ -86,3 +86,11 @@
 • Opção futura de segurança; não há pendência de implementação no MVP atual.
 • Potencial valor: DLP, rate limiting, limites de gasto, observabilidade e fallback de workloads de IA, em troca de nova dependência e superfície operacional.
 • Reavaliar quando houver aumento relevante de volume/custo de IA, processamento de PII ou conteúdo comercial sensível, necessidade de fallback entre provedores ou controles centralizados adicionais de segurança/observabilidade.
+
+5.2 Identidade estável para testes no Codex App
+• Direção aprovada conceitualmente para debate futuro: uma identidade Auth estável do LP Factory vinculada somente a uma conta inequivocamente de teste, preferencialmente como owner dessa conta, sem `platform_admin`/`super_admin` e sem acesso a contas reais.
+• Como Preview e Production usam atualmente o mesmo Supabase Auth, não criar ambiente ou infraestrutura adicional apenas para essa identidade enquanto não houver necessidade comprovada.
+• Usar caixa postal exclusiva de testes; aliases podem ser usados dentro dela para casos que realmente exijam novo usuário. Não adotar caixa postal pessoal como solução permanente.
+• Credenciais reais não devem aparecer em código, documentos, prompts, logs ou chat. GitHub Secrets permanecem adequados aos workflows; no uso interativo do Codex App, preferir sessão autenticada no navegador sem fornecer a senha ao modelo.
+• Reutilizar a identidade estável nos testes recorrentes e criar usuários descartáveis apenas quando o próprio fluxo exigir cadastro novo, convite ou papel distinto.
+• Reavaliar implementação quando houver uma janela curta que não desvie o caminho crítico da primeira landing page real; até lá, não criar nova automação, rota, tabela ou mecanismo de secrets para esse objetivo.
