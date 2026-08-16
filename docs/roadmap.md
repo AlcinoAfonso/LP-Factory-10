@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 15/08/2026
-• Versão: v1.5.152
+• Data: 16/08/2026
+• Versão: v1.5.153
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2243,7 +2243,7 @@ Repositório — Ajustados
 
 19. E19 — LP Builder
 - Objetivo: Consolidar o fluxo Core de landing pages por conta, da identidade mínima em `draft` às futuras etapas de geração, revisão, materialização e publicação, sempre por recortes aprovados.
-- Status: E19.1 concluída; E19.2 concluída; E19.3 concluída no Cenário D. A prova real do pacote E19.3 v2 foi aprovada. A primeira LP/prova de geração do Cenário D permanece pendente e pertence à nova E19.4. E19.4 temporariamente superada, com o runtime incompatível retirado e novo planejamento ainda não iniciado.
+- Status: E19.1 concluída; E19.2 concluída; o Cenário E é a direção vigente da E19.3, com plano-base v1 consolidado e execução ainda não iniciada; a implementação anterior do Cenário D permanece como histórico material do PR #729; E19.4 não é alterada neste recorte.
 
 19.1 Criação produtiva mínima de LP por conta
 
@@ -2364,11 +2364,11 @@ Repositório — Ajustados
   - O agregado é vinculado somente ao draft escolhido da mesma conta, com revisão otimista, predicado de ausência de vínculo e mutação limitada a uma linha; valores não são copiados para `account_landing_pages` e rebind permanece proibido.
   - A transição não inicia geração, revisão de copy, publicação, tracking, CRM, capability nova ou infraestrutura de assets.
 
-19.3 Pacote autorizado para geração no Cenário D
+19.3 Pacote autorizado para geração no Cenário E
 
 19.3.1 Objetivo e status
-- Objetivo: substituir a composição determinística anterior pelo menor boundary capaz de entregar uma única saída autorizada, versionada, tipada e profundamente imutável para a futura E19.4 replanejada.
-- Status: E19.3.3 implementada e validada no PR #729, aguardando merge humano.
+- Objetivo: manter a E19.3 como o menor boundary determinístico entre as fontes autorizadas do projeto e a E19.4, entregando um único pacote autorizado com pesquisa integral, fatos concretos revalidados, limites editoriais e contexto operacional.
+- Status: Plano-base v1 consolidado em 16/08/2026; execução da reformulação do Cenário E ainda não iniciada.
 
 19.3.2 Registros do recorte
 - Repositório:
@@ -2417,17 +2417,19 @@ Repositório — Ajustados
   - Plano executado: `docs/lousa-plano-base-e19-3.md`.
   - Plano temporariamente superado: `docs/lousa-plano-base-e19-4.md`.
 
-19.3.3 Contrato do pacote autorizado
-- Status: Implementado e validado.
+19.3.3 Contrato v3, pesquisa integral e revalidação
+- Status: Planejado no plano-base v1; execução ainda não iniciada.
 - Conteúdo:
-  - O sucesso usa `contractVersion: 2` e exatamente `identities`, `modelContext` e `serverContext`, sem alias, fallback ou DTO público paralelo para o contrato anterior `partA + partB`.
-  - O pacote preserva identidades e versões efetivas, pesquisa `end_customer` integral da E10.8, fatos aplicáveis e presentes da E19.2/E20.2 e limites editoriais mínimos da E18.4; os 23 fields vigentes são separados entre contexto semântico e operacional exclusivamente pelo `valueType`.
-  - `missing` permanece ausente, valores operacionais brutos não entram em `modelContext`, CRECI declarado não recebe marca de verificação e nenhuma evidência artificial é criada.
-  - E18.5 e E20.3 não participam do caminho canônico; a E19.3 não escolhe módulos, variantes, ordem, narrativa, layout ou composição e não chama OpenAI, gera copy, persiste, materializa ou renderiza conteúdo.
-  - O boundary autoriza conta, membership e entitlement pelo sinal interno vigente antes das demais leituras, retorna falha explícita sem pacote parcial e registra somente resultado, motivo seguro, `request_id` e latência.
-  - A prova real read-only do pacote E19.3 v2 sobre o draft `4d91020a-07e5-4bf9-a1aa-272bbc0366ff` aprovou os três blocos v2, os quatro blocos completos de pesquisa `end_customer` com 59 itens, 12 fatos semânticos, 2 fatos operacionais, ausência de composição prévia e imutabilidade profunda; a primeira LP/prova de geração do Cenário D permanece pendente.
-  - A jornada E19.2 preserva `complete_bound → operational` por estado read-only explícito, sem fallback comercial e sem ação de geração, materialização ou preview.
-  - O validador focal, as regressões canônicas e o gate completo foram aprovados; as rotas locais responderam com conteúdo e sem overlay após configuração pública do ambiente.
+  - A interface permanece exatamente `identities + modelContext + serverContext` e evolui para `contractVersion: 3`, sem alias ou fallback para v2.
+  - E20.5 e E20.6 concluídas e ativas são precondições da execução; a E19.3 receberá a Preparação do taxon e a pesquisa integral `end_customer` selecionada e validada pelos boundaries canônicos.
+  - A versão `reviewed_input_catalog_version` revisada será resolvida dinamicamente para o taxon, sem constante fixa, `latest`, maior versão do registry ou fallback.
+  - A resolução E20.2 usará o plano efetivo atual e a cadeia taxonômica autoritativa completa pelo resolver canônico, preservando `servedTaxon` e `appliedLayers` quando necessários à identidade auditável.
+  - Os valores históricos da E19.2 serão revalidados read-only contra o catálogo efetivo, mantendo distinta a versão original da configuração e a versão E20.2 efetivamente usada.
+  - Novo field obrigatório aplicável, valor ausente ou incompatível retornará como gap factual à E19.2; defeito de catálogo, cadeia ou resolver retornará à E20.2, sem correção silenciosa ou regravação da configuração histórica.
+  - A pesquisa integral `end_customer` chegará ao `modelContext` sem resumo, atomização, ranking, seleção semântica, filtragem editorial ou leitura filesystem duplicada; E10.8 permanecerá íntegra para consumidores independentes.
+  - Fatos continuarão separados por `valueType`, com valores operacionais brutos fora do `modelContext`, sem carregar path físico da pesquisa no contrato entregue à E19.4.
+  - A primeira prova prevista será `E19.2 v2 → E20.2 v4` para `corretor-imoveis`, como primeiro caso do mecanismo genérico temporal e taxonômico, sem branch ou exceção codificada; essa execução ainda não ocorreu.
+  - A E19.3 não implementará a E19.4, não chamará OpenAI, não escolherá composição, não materializará conteúdo e não renderizará a landing page.
 
 19.4 Geração e materialização da landing page em `draft`
 
