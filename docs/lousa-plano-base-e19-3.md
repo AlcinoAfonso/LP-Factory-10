@@ -224,6 +224,7 @@
   - o boundary `taxon-preparation` e seus adapters para seleção, pesquisa integral e revisão E20.2.
 - Ajuste técnico permitido na v2:
   - se a assinatura atual do adapter E20.6 exigir versão fornecida pelo caller, refiná-la minimamente dentro do boundary existente para que a E19.3 consuma a `reviewed_input_catalog_version` persistida como autoridade explícita, sem duplicar leitura de `business_taxons`, sem hardcode e sem `latest`.
+  - qualquer refinamento para a integração da E19.3 deve ser aditivo e preservar o contrato vigente da E20.6: `requiredInputCatalogVersion` e `reviewedInputCatalogVersion` mantêm papéis distintos, o sucesso exige igualdade e a divergência continua falhando com `INPUT_CATALOG_REVIEW_VERSION_MISMATCH`; não remover nem enfraquecer essa prova negativa.
 - Não criar:
   - leitura direta do filesystem na E19.3;
   - API GitHub em runtime;
