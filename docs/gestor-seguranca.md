@@ -2,11 +2,11 @@
 
 0.1 Cabeçalho
 • Documento: Gestor de Segurança (Plataformas)
-• Versão: v0.1.1
+• Versão: v0.1.2
 • Data: 16/08/2026
 
 0.2 Contrato do documento
-• O QUE É: fonte de governança do Gestor de Segurança para objetivo, escopo, limites, decisões vigentes, decisões implementadas, pendências e temas em decisão.
+• O QUE É: fonte de governança do Gestor de Segurança para objetivo, escopo, limites, decisões vigentes, decisões implementadas, pendências, temas em decisão e temas para debate futuro.
 • USAR PARA: registrar o que deve ser acompanhado pelo papel e preservar decisões de segurança ao longo do projeto.
 • NÃO USAR PARA: configurações operacionais detalhadas das plataformas (usar `docs/platform-config.md`), regras técnicas de runtime/código (usar `docs/base-tecnica.md`), contrato de banco (usar `docs/schema.md`) ou status de casos E* (usar `docs/roadmap.md`).
 • REGRA: este documento é cumulativo e não deve ser resetado; deve ser atualizado conforme novas evidências e decisões surgirem.
@@ -16,7 +16,7 @@
 
 1.1 Objetivo
 • Reduzir risco de falhas de configuração, exposição de credenciais e permissões excessivas nas plataformas usadas pelo projeto.
-• Manter uma visão simples das decisões de segurança já fechadas, das decisões já implementadas, das pendências e dos temas ainda em debate.
+• Manter uma visão simples das decisões de segurança já fechadas, das decisões já implementadas, das pendências, dos temas em decisão e dos temas relevantes para debate futuro.
 
 1.2 Funções
 • Monitorar configurações de segurança das plataformas.
@@ -26,11 +26,12 @@
 • Registrar riscos, recomendações, decisões e pendências.
 • Manter registro do que precisa ser endurecido antes do GO-LIVE.
 • Inspecionar pontualmente arquivos, commits ou configurações quando necessário para confirmar exposição de secret ou evidenciar alerta de plataforma, sem assumir revisão ampla de segurança de código.
+• Avaliar tecnologias, serviços e controles cuja finalidade ou impacto material seja segurança, incluindo custo-benefício, nova superfície de risco, dependências e reversibilidade, sem assumir a decisão de arquitetura geral do produto.
 
 1.3 Limites
 • Não realizar auditoria de segurança de código, SQL, RLS ou arquitetura.
 • Não escrever ou executar SQL como função deste papel.
-• Não alterar arquitetura do sistema.
+• Não alterar arquitetura do sistema nem assumir responsabilidade pela arquitetura geral do produto.
 • Não bloquear releases nem exercer veto técnico.
 • Não alterar configurações de plataforma por iniciativa própria; orientar, registrar e encaminhar execução quando aprovada.
 
@@ -59,7 +60,10 @@
 • Não duplicar inventário operacional já mantido em `docs/platform-config.md`; registrar aqui somente o significado de segurança e a decisão correspondente.
 • Decisão vigente é uma regra ou posição atualmente válida, independentemente de já ter sido executada.
 • Decisão implementada é uma decisão já aplicada e validada operacionalmente.
+• Tema em decisão é um assunto em debate ativo que precisa chegar a uma decisão.
+• Tema para debate futuro é relevante para segurança, mas não exige decisão nem implementação no momento; deve ter gatilho objetivo de reavaliação quando possível.
 • Quando um tema em decisão for fechado, movê-lo para Decisões vigentes, Decisões implementadas ou Pendências de segurança, conforme o resultado.
+• Quando um tema para debate futuro atingir seu gatilho de reavaliação, movê-lo para Temas em decisão.
 
 4. Decisões vigentes
 
@@ -106,9 +110,19 @@
 • As páginas públicas do produto hospedadas na Vercel são independentes da visibilidade do repositório e podem continuar públicas com o repositório privado.
 • Status: decisão humana pendente.
 
-8. Manutenção do documento
+8. Temas para debate futuro
 
-8.1 Regra contínua
+8.1 Cloudflare AI Gateway
+• Classificação atual: opção futura de segurança; não há decisão nem pendência de implementação.
+• Potencial valor: DLP, rate limiting, limites de gasto, observabilidade e fallback dos workloads de IA.
+• Avaliação atual: o custo-benefício não justifica adoção no MVP enquanto não houver problema material que compense a nova dependência e a complexidade adicional.
+• Gatilhos de reavaliação: aumento relevante de volume ou custo de IA; processamento de PII ou conteúdo comercial sensível; necessidade de fallback entre provedores; necessidade de controles centralizados de segurança ou observabilidade além dos atuais.
+• Quando algum gatilho ocorrer, reavaliar segurança, custo, superfície de falha, exposição de dados, dependência e reversibilidade antes de decidir adoção.
+
+9. Manutenção do documento
+
+9.1 Regra contínua
 • Este documento deve evoluir por atualização incremental, preservando decisões já tomadas.
 • Evitar narrativa operacional longa; manter somente o necessário para decisão, risco, pendência e evidência.
 • Quando uma pendência for resolvida, registrar o estado final em Decisões implementadas quando houver execução validada, ou em Decisões vigentes quando o resultado for uma regra ainda não executada.
+• Temas para debate futuro não devem ser tratados como pendência nem como compromisso de implementação.
