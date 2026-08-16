@@ -314,8 +314,6 @@
 - alteração de E18.4, E20.2, E20.5, E20.6 ou E19.2 sem gap real demonstrado pelo recorte;
 - migration ou regravação da configuração E19.2 apenas para igualar sua versão histórica à versão E20.2 revisada;
 - nova tabela, persistência da pesquisa em banco, API GitHub, rota, serviço, Provider, agente, automação, job, fila, cron, webhook, RAG ou infraestrutura nova;
-- `supa#5` permanece somente como oportunidade condicional de inspeção manual após falha real e confirmação de disponibilidade, sem Log Drain, integração, agente, automação ou exposição de pesquisa, fatos, PII, secrets, prompts ou payloads;
-- `vercel#1` permanece somente como oportunidade futura da E19.4, condicionada a workload real e limitação mensurável da integração direta, sem implementação na E19.3.3;
 - duplicação da herança E20.2 ou leitura direta de `business_taxons`/filesystem quando o boundary canônico já entregar a informação necessária;
 - tracking, analytics, CRM, domínio, publicação, A/B test, Ads ou integrações futuras;
 - regra específica da conta piloto, versão v4 ou slug `corretor-imoveis` na lógica genérica E19.3;
