@@ -12,6 +12,7 @@ const nextConfig = {
       './docs/design-system.md',
       './docs/gestor-codex.md',
       './docs/gestor-automations.md',
+      './docs/gestor-seguranca.md',
       './docs/automations.md',
       './docs/prompt-estrategista.md',
       './docs/prompt-executor.md',
