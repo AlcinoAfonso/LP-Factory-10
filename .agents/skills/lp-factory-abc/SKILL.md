@@ -52,8 +52,6 @@ Permitir somente seções e subseções do recorte, identificadores, títulos, o
 
 Não aplicar o delta, editar documentos, alterar outra residência documental, completar lacunas por suposição ou registrar estado operacional como planejado. A aplicação pertence ao executor autorizado.
 
-Exceção estreita: após escolha humana explícita da Opção 2 definida em `docs/prompt-estrategista.md`, o Estrategista pode aplicar literalmente, no próprio PR da v1, somente o delta emitido em modo Planejamento para `DOC_ALVO: docs/roadmap.md`, usando a v1 aprovada como `RELATÓRIO`. A skill continua responsável apenas por gerar e verificar o ABC; a exceção não autoriza aplicação em outro documento, outro modo, v2 ou implementação.
-
 ## Verificar
 
 Antes de devolver, confirmar fontes, referência, residência, menor delta, formato literal e ausência de secrets, PII, hipóteses ou histórico superado.

@@ -65,7 +65,7 @@ Regra:
 • não usar X.Y.1 e X.Y.2 como fases; entregas implementáveis usam X.Y.3 até X.Y.n, conforme docs/template-roadmap.md;
 • não criar fase administrativa, de governança, handoff, revisão ou fechamento; validação e fechamento documental pelo Prompt ABC integram a fase implementável correspondente;
 • validação entra como critério de aceite da fase, salvo risco técnico próprio;
-• exclusivamente se o humano escolher a Opção 1 no item 4, orientar o Executor a ajustar `docs/roadmap.md` no mesmo PR, conforme `docs/prompt-abc.md` e `docs/template-roadmap.md`, registrando somente seções, subseções, títulos, objetivos e status planejado, sem registros de implementação;
+• o ajuste de `docs/roadmap.md` pertence ao Executor/orquestrador durante a execução, conforme `docs/prompt-abc.md` e `docs/template-roadmap.md`, registrando somente seções, subseções, títulos, objetivos e status planejado, sem registros de implementação;
 • não antecipar na v1 detalhamento técnico de automação sem necessidade nem criar fase administrativa apenas para essa decisão.
 
 4. Escolha do processo após o plano-base v1
@@ -74,12 +74,7 @@ Após concluir o item 3, apresentar ao humano as duas opções:
 
 • Opção 1 — Processo atual: seguir para o item 5.
 
-• Opção 2 — Processo automatizado: após a escolha humana explícita, o Estrategista deve, nesta ordem:
-   • executar `$lp-factory-abc` em modo Planejamento para `DOC_ALVO: docs/roadmap.md`, usando a v1 aprovada como `RELATÓRIO` e a branch ou o commit atual do PR da v1 como `REF`;
-   • aplicar literalmente no mesmo PR somente o delta emitido pelo ABC; se o resultado for `SEM ALTERAÇÕES NECESSÁRIAS`, preservar o roadmap;
-   • revisar o PR completo e confirmar que a v1, o roadmap planejado, o diff e os gates aplicáveis estão coerentes e prontos para merge;
-   • realizar exclusivamente o merge remoto do PR da v1 por ferramenta GitHub conectada e autorizada, conforme `AGENTS.md`; não fazer merge local pela `main`;
-   • após confirmar o merge da v1 na `main`, entregar ao orquestrador somente:
+• Opção 2 — Processo automatizado: após a escolha humana explícita, apresentar ao humano o estado da v1 e solicitar autorização explícita para o merge; somente após essa autorização, realizar exclusivamente o merge remoto do PR da v1 por ferramenta GitHub conectada e autorizada, conforme `AGENTS.md`; não fazer merge local pela `main`. Após confirmar o merge da v1 na `main`, entregar ao orquestrador somente:
 
 Use $lp-factory-orquestrar-plano no PR #[NÚMERO].
 
