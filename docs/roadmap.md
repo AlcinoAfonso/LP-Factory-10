@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 16/08/2026
-• Versão: v1.5.154
+• Versão: v1.5.155
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2243,7 +2243,7 @@ Repositório — Ajustados
 
 19. E19 — LP Builder
 - Objetivo: Consolidar o fluxo Core de landing pages por conta, da identidade mínima em `draft` às futuras etapas de geração, revisão, materialização e publicação, sempre por recortes aprovados.
-- Status: E19.1 concluída; E19.2 concluída; o Cenário E é a direção vigente da E19.3, com plano-base v2 aprovado e execução ainda não iniciada; a implementação anterior do Cenário D permanece como histórico material do PR #729; E19.4 recebe somente a referência planejada ao pacote v3, sem replanejamento ou implementação.
+- Status: E19.1 concluída; E19.2 concluída; a implementação candidata da E19.3 no Cenário E está concluída e validada no PR #757, com inspeção final e merge humano pendentes; a implementação anterior do Cenário D permanece como histórico material do PR #729; E19.4 recebe somente a referência planejada ao pacote v3, sem replanejamento ou implementação.
 
 19.1 Criação produtiva mínima de LP por conta
 
@@ -2368,13 +2368,15 @@ Repositório — Ajustados
 
 19.3.1 Objetivo e status
 - Objetivo: manter a E19.3 como o menor boundary determinístico entre as fontes autorizadas do projeto e a E19.4, entregando um único pacote autorizado com pesquisa integral, fatos concretos revalidados, limites editoriais e contexto operacional.
-- Status: Plano-base v2 aprovado em 16/08/2026; execução da reformulação do Cenário E ainda não iniciada.
+- Status: Plano-base v2 aprovado e implementação candidata concluída e validada no PR #757; inspeção final e merge humano pendentes.
 
 19.3.2 Registros do recorte
 - Repositório:
   - Ajustados:
     - `app/a/[account]/page.tsx`
+    - `lib/conversion-content/adapters/selectedEndCustomerResearchAdapter.ts`
     - `lib/conversion-content/landing-page/index.ts`
+    - `lib/conversion-content/landing-page/taxon-preparation/validation-cases.ts`
     - `lib/lp-builder/adapters/generationContextAdapter.ts`
     - `lib/lp-builder/adapters/generationContextAdapterCore.ts`
     - `lib/lp-builder/generation-context-validation-cases.ts`
@@ -2418,18 +2420,18 @@ Repositório — Ajustados
   - Rascunho vivo da sucessora E19.4: `docs/lousa-plano-base-e19-4.md`.
 
 19.3.3 Contrato v3, pesquisa integral e revalidação
-- Status: Planejado no plano-base v2 aprovado; execução ainda não iniciada.
+- Status: Implementação candidata concluída e validada no PR #757; inspeção final e merge humano pendentes.
 - Conteúdo:
-  - A interface permanece exatamente `identities + modelContext + serverContext` e evolui para `contractVersion: 3`, sem alias ou fallback para v2.
-  - E20.5 e E20.6 concluídas e ativas são precondições da execução; a E19.3 receberá a Preparação do taxon e a pesquisa integral `end_customer` selecionada e validada pelos boundaries canônicos.
-  - A versão `reviewed_input_catalog_version` revisada será resolvida dinamicamente para o taxon, sem constante fixa, `latest`, maior versão do registry ou fallback.
-  - A resolução E20.2 usará o plano efetivo atual e a cadeia taxonômica autoritativa completa pelo resolver canônico, preservando `servedTaxon` e `appliedLayers` quando necessários à identidade auditável.
-  - Os valores históricos da E19.2 serão revalidados read-only contra o catálogo efetivo, mantendo distinta a versão original da configuração e a versão E20.2 efetivamente usada.
-  - Novo field obrigatório aplicável, valor ausente ou incompatível retornará como gap factual à E19.2; defeito de catálogo, cadeia ou resolver retornará à E20.2, sem correção silenciosa ou regravação da configuração histórica.
-  - A pesquisa integral `end_customer` chegará ao `modelContext` sem resumo, atomização, ranking, seleção semântica, filtragem editorial ou leitura filesystem duplicada; E10.8 permanecerá íntegra para consumidores independentes.
-  - Fatos continuarão separados por `valueType`, com valores operacionais brutos fora do `modelContext`, sem carregar path físico da pesquisa no contrato entregue à E19.4.
-  - A primeira prova prevista será `E19.2 v2 → E20.2 v4` para `corretor-imoveis`, como primeiro caso do mecanismo genérico temporal e taxonômico, sem branch ou exceção codificada; essa execução ainda não ocorreu.
-  - A E19.3 não implementará a E19.4, não chamará OpenAI, não escolherá composição, não materializará conteúdo e não renderizará a landing page.
+  - A interface permanece exatamente `identities + modelContext + serverContext` e usa exclusivamente `contractVersion: 3`, sem alias ou fallback para v2.
+  - A operação aditiva `loadTaxonPreparationForReviewedVersion` faz uma única leitura canônica, usa a versão E20.2 revisada persistida como requisito explícito e preserva integralmente `loadTaxonPreparationForVersion` e seu controle negativo de incompatibilidade.
+  - A resolução usa o plano efetivo atual e a cadeia taxonômica autoritativa completa pelo resolver canônico, sem constante fixa, `latest`, maior versão do registry, slug ou layer codificado.
+  - Os valores históricos da E19.2 são revalidados read-only contra o catálogo efetivo, mantendo distintas e auditáveis a versão original da configuração e a versão E20.2 efetivamente usada.
+  - Novo field obrigatório aplicável, valor ausente ou incompatível retorna como gap factual à E19.2; defeito de catálogo, cadeia ou resolver retorna à E20.2, sem correção silenciosa ou regravação da configuração histórica.
+  - A pesquisa integral `end_customer` chega ao `modelContext` sem resumo, atomização, ranking, seleção semântica, filtragem editorial ou leitura filesystem duplicada; E10.8 permanece íntegra para consumidores independentes.
+  - Fatos permanecem separados por `valueType`, com valores operacionais brutos fora do `modelContext` e sem path físico da pesquisa no contrato entregue à E19.4.
+  - A prova read-only no draft real confirmou `E19.2 v2 → E20.2 v4`, pesquisa integral `end_customer` v1, separação entre fatos semânticos e operacionais, ausência de path físico e imutabilidade profunda como primeiro caso do mecanismo genérico temporal e taxonômico.
+  - `npm ci`, `npm run check`, os validadores focais e `git diff --check` foram aprovados; o lint permaneceu sem erros e seus warnings preexistentes não ampliaram o recorte.
+  - A E19.3 não implementa a E19.4, não chama OpenAI, não escolhe composição, não materializa conteúdo e não renderiza a landing page.
 
 19.4 Geração e materialização da landing page em `draft`
 

@@ -5,9 +5,9 @@ import type {
 import type {
   AccountLandingPageOnboardingFieldState,
 } from "./contracts";
+import { resolveAccountLandingPageOnboardingConfiguration } from "./onboardingConfiguration";
 import {
   LANDING_PAGE_GENERATION_CONTEXT_CONTRACT_VERSION,
-  LANDING_PAGE_GENERATION_VALUES_CATALOG_VERSION,
   type CompileLandingPageGenerationContextInput,
   type CompileLandingPageGenerationContextResult,
   type LandingPageGenerationAuthorizedFact,
@@ -73,34 +73,53 @@ function compileValidatedLandingPageGenerationContext(
       "Landing-page configuration is incomplete.",
     );
   }
-  if (
-    input.configuration.catalogVersion !==
-    LANDING_PAGE_GENERATION_VALUES_CATALOG_VERSION
-  ) {
+  if (!input.preparation.ok) {
+    const catalogFailure = [
+      "REQUIRED_INPUT_CATALOG_VERSION_INVALID",
+      "REQUIRED_INPUT_CATALOG_VERSION_NOT_EXECUTABLE",
+      "INPUT_CATALOG_REVIEW_VERSION_MISMATCH",
+    ].includes(input.preparation.error.code);
     return failure(
-      "INPUT_CATALOG_INCOMPATIBLE",
-      "Input catalog version is not supported by this contract.",
+      catalogFailure
+        ? "INPUT_CATALOG_INCOMPATIBLE"
+        : "TAXON_PREPARATION_UNAVAILABLE",
+      catalogFailure
+        ? `Input catalog preparation failed: ${input.preparation.error.code}.`
+        : `Taxon preparation failed: ${input.preparation.error.code}.`,
     );
   }
-  if (!input.research.ok) {
-    return failure(
-      "RESEARCH_UNAVAILABLE",
-      `Research resolution failed: ${input.research.error.code}.`,
-    );
-  }
-
   const servedTaxon =
     input.configuration.taxonChain.ultraNiche ??
     input.configuration.taxonChain.niche ??
     input.configuration.taxonChain.segment;
-  const research = input.research.value;
+  const preparation = input.preparation.value;
   if (
-    research.servedTaxonId !== servedTaxon.id ||
-    research.endCustomer.audienceScope !== "end_customer"
+    preparation.taxonId !== servedTaxon.id ||
+    preparation.taxonSlug !== servedTaxon.slug ||
+    preparation.requiredInputCatalogVersion !==
+      preparation.reviewedInputCatalogVersion ||
+    preparation.research.taxonSlug !== servedTaxon.slug ||
+    preparation.research.audienceScope !== "end_customer" ||
+    preparation.research.researchVersion !== preparation.selectedResearchVersion
   ) {
     return failure(
-      "RESEARCH_UNAVAILABLE",
-      "Resolved end-customer research is incompatible with the landing page.",
+      "TAXON_PREPARATION_UNAVAILABLE",
+      "Taxon preparation is incompatible with the landing page.",
+    );
+  }
+
+  const revalidated = revalidateConfiguration(
+    input.configuration,
+    preparation.reviewedInputCatalogVersion,
+  );
+  if (!revalidated.ok) {
+    return failure(
+      revalidated.catalogFailure
+        ? "INPUT_CATALOG_INCOMPATIBLE"
+        : "CONFIGURATION_REVALIDATION_REQUIRED",
+      revalidated.catalogFailure
+        ? "The reviewed input catalog could not be resolved."
+        : "Landing-page configuration requires factual correction after revalidation.",
     );
   }
 
@@ -112,7 +131,7 @@ function compileValidatedLandingPageGenerationContext(
     );
   }
 
-  const projectedFacts = projectFacts(input.configuration.fields);
+  const projectedFacts = projectFacts(revalidated.configuration.fields);
   if (!projectedFacts.ok) return projectedFacts.result;
 
   return success({
@@ -125,13 +144,20 @@ function compileValidatedLandingPageGenerationContext(
       },
       planKey: input.configuration.planKey,
       servedTaxon,
-      catalogVersion: LANDING_PAGE_GENERATION_VALUES_CATALOG_VERSION,
+      taxonChain: input.configuration.taxonChain,
+      historicalConfigurationCatalogVersion: input.configuration.catalogVersion,
+      effectiveInputCatalogVersion: preparation.reviewedInputCatalogVersion,
       configurationRevision: input.configuration.revision,
       rootVersion: root.value.rootVersion,
-      endCustomerResearchVersion: research.versions.endCustomer,
+      endCustomerResearchVersion: preparation.selectedResearchVersion,
     },
     modelContext: {
-      research: research.endCustomer,
+      research: {
+        taxonSlug: preparation.research.taxonSlug,
+        audienceScope: preparation.research.audienceScope,
+        researchVersion: preparation.research.researchVersion,
+        content: preparation.research.content,
+      },
       facts: projectedFacts.modelFacts,
       editorialLimits: {
         semanticRoles: Object.values(root.value.semanticRoles).map((role) => ({
@@ -146,6 +172,53 @@ function compileValidatedLandingPageGenerationContext(
       facts: projectedFacts.serverFacts,
     },
   });
+}
+
+function revalidateConfiguration(
+  configuration: CompileLandingPageGenerationContextInput["configuration"],
+  effectiveInputCatalogVersion: number,
+):
+  | Readonly<{
+      ok: true;
+      configuration: CompileLandingPageGenerationContextInput["configuration"];
+    }>
+  | Readonly<{ ok: false; catalogFailure: boolean }> {
+  const authoritativeValues: Record<string, unknown> = {};
+  const seenFieldKeys = new Set<string>();
+  for (const state of configuration.fields) {
+    if (seenFieldKeys.has(state.field.fieldKey)) {
+      return { ok: false, catalogFailure: true };
+    }
+    seenFieldKeys.add(state.field.fieldKey);
+    if (state.source === "authoritative") {
+      if (state.value === undefined) return { ok: false, catalogFailure: false };
+      authoritativeValues[state.field.fieldKey] = state.value;
+    }
+  }
+
+  const resolved = resolveAccountLandingPageOnboardingConfiguration({
+    accountId: configuration.accountId,
+    landingPageId: configuration.landingPageId,
+    catalogVersion: effectiveInputCatalogVersion,
+    revision: configuration.revision,
+    planKey: configuration.planKey,
+    taxonChain: configuration.taxonChain,
+    storedValues: configuration.storedValues,
+    authoritativeValues,
+  });
+  if (!resolved.ok) {
+    return {
+      ok: false,
+      catalogFailure: resolved.error === "CATALOG_UNAVAILABLE",
+    };
+  }
+  if (
+    !resolved.configuration.complete ||
+    resolved.configuration.missingRequiredFieldKeys.length > 0
+  ) {
+    return { ok: false, catalogFailure: false };
+  }
+  return { ok: true, configuration: resolved.configuration };
 }
 
 function projectFacts(
@@ -218,7 +291,7 @@ function isMinimumCompilerInput(
   if (!isRecord(value)) return false;
   const landingPage = value.landingPage;
   const configuration = value.configuration;
-  const research = value.research;
+  const preparation = value.preparation;
   return (
     isRecord(landingPage) &&
     isRecord(configuration) &&
@@ -226,8 +299,8 @@ function isMinimumCompilerInput(
     Array.isArray(configuration.missingRequiredFieldKeys) &&
     isRecord(configuration.taxonChain) &&
     Number.isInteger(configuration.revision) &&
-    isRecord(research) &&
-    typeof research.ok === "boolean"
+    isRecord(preparation) &&
+    typeof preparation.ok === "boolean"
   );
 }
 

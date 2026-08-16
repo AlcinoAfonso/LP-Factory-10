@@ -152,6 +152,39 @@ const cases: readonly ValidationCase[] = [
     },
   },
   {
+    name: "reviewed-version operation derives the explicit requirement from the single canonical read",
+    run: async () => {
+      const adapterSource = readFileSync(
+        new URL("../../adapters/selectedEndCustomerResearchAdapter.ts", import.meta.url),
+        "utf8",
+      );
+      const start = adapterSource.indexOf(
+        "export async function loadTaxonPreparationForReviewedVersion",
+      );
+      const boundary = adapterSource.slice(start);
+      assert.ok(start >= 0);
+      assert.doesNotMatch(
+        boundary.slice(0, boundary.indexOf("): Promise<TaxonPreparationResult>")),
+        /requiredInputCatalogVersion/,
+      );
+      assert.equal(
+        boundary.match(/loadSelectedEndCustomerResearchFromClient\(/g)?.length,
+        1,
+      );
+      assert.match(boundary, /includeInputCatalogReview: true/);
+      assert.match(
+        boundary,
+        /const reviewedVersion = selectedResearch\.value\.reviewedInputCatalogVersion/,
+      );
+      assert.match(boundary, /classifyRequiredInputCatalogVersion\(reviewedVersion\)/);
+      assert.match(
+        boundary,
+        /deriveTaxonPreparationForVersion\(\{[\s\S]*requiredInputCatalogVersion: reviewedVersion/,
+      );
+      assert.doesNotMatch(boundary, /latest|Math\.max|= 4\b/i);
+    },
+  },
+  {
     name: "preparation requires an equal reviewed version and invalidates when requirement changes",
     run: async () => {
       assertPreparationFailure(
