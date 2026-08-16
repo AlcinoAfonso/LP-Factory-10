@@ -49,6 +49,12 @@ export const adminDocsCatalog: AdminDocCatalogItem[] = [
     description: 'Painel de avaliação de automações, agentes, services e tecnologias adjacentes.',
   },
   {
+    id: 'gestor-seguranca',
+    title: 'Gestor de Segurança',
+    path: 'docs/gestor-seguranca.md',
+    description: 'Governança de segurança de plataformas, pendências priorizadas e temas futuros.',
+  },
+  {
     id: 'automations',
     title: 'Automations',
     path: 'docs/automations.md',
