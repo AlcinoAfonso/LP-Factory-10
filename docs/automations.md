@@ -1,6 +1,6 @@
 0.1 Cabeçalho
-Data: 12/08/2026
-Versão: v1.15
+Data: 15/08/2026
+Versão: v1.16
 Status: Alinhado ao Platform Config
 
 0.2 Função do documento
@@ -401,6 +401,45 @@ Regra técnica: `docs/base-tecnica.md`
 Configuração de modelo: `docs/platform-config.md`
 Action administrativa: `app/admin/(protected)/perfis-de-orientacao/actions.ts`
 Adapter de proposta: `lib/conversion-content/adapters/landingPageGenerationProfileOpenAiAdapter.ts`
+
+3.10 E20.6 — avaliação assistida da suficiência factual da E20.2 por taxon
+
+Objetivo:
+Confrontar a pesquisa integral `end_customer` selecionada pela E20.5 com uma versão executável explícita da E20.2 e produzir recomendação fundamentada para decisão humana.
+
+Status:
+Implementada e validada operacionalmente no primeiro taxon real, sem workload OpenAI no runtime do produto.
+
+Recurso utilizado:
+- instrução copiável no Admin;
+- Codex App;
+- registro administrativo humano explícito.
+
+Natureza:
+- Automação com IA em fluxo controlado.
+
+Ambiente principal:
+- Codex App.
+
+Participação humana:
+- O humano escolhe a versão executável, decide entre suficiência e gap factual real e, somente quando suficiente, registra a versão avaliada no Admin.
+
+Como usar:
+- Copiar no Admin a instrução vinculada ao taxon e à pesquisa E20.5 selecionada.
+- Informar explicitamente a versão E20.2; não usar maior versão, `latest` ou fallback.
+- Confrontar `starter`, `lite`, `pro` e `ultra`; falha, diferença material ou fonte incompleta produz `inconclusivo`.
+- Tratar a recomendação como transitória e não autoritativa; somente a ação administrativa humana persiste suficiência.
+
+Resultado esperado:
+- `suficiente`, `gaps candidatos` ou `inconclusivo`, com rastreabilidade das versões e sem persistência do relatório da IA.
+
+Limites:
+- Não altera a E20.2, não grava suficiência automaticamente, não cria agente, Agents SDK, rota de integração, job, fila ou automação recorrente.
+
+Referências / dependências:
+Fluxo funcional: `docs/roadmap.md` — E20.6.3.
+Configuração do gate: `docs/platform-config.md` — seção 3.5.
+Contrato técnico: `docs/base-tecnica.md` — seção 3.15.7.
 
 4. Aprendizados operacionais
 
