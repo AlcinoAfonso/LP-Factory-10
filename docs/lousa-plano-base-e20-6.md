@@ -47,7 +47,7 @@
 - `N` significa que a versão executável `N` da E20.2 foi avaliada para aquele taxon e considerada suficiente por decisão humana.
 - Qualquer mudança efetiva de `business_taxons.selected_end_customer_research_version` para valor diferente do vigente invalida a avaliação E20.6: a mutação E20.5 deve gravar a nova seleção e definir `reviewed_input_catalog_version = NULL` na mesma operação atômica. A reseleção idempotente da mesma versão pode preservar o marcador.
 - A referência é à versão do registry executável, não à versão editorial de `docs/lousa-plano-base-e20-2.md`.
-- O registry vigente possui explicitamente as versões executáveis `1`, `2` e `3`.
+- O registry vigente possui explicitamente as versões executáveis `1`, `2`, `3` e `4`.
 - Não usar `Math.max`, maior chave disponível, versão mais recente, versão corrente implícita ou qualquer fallback equivalente.
 - O número avaliado deve ser fornecido explicitamente pelo processo/consumidor responsável e deve corresponder à versão executável que será usada.
 - Se a versão executável pretendida mudar de `N` para `M`, uma avaliação anterior de `N` não autoriza `M`; o gate falha até nova avaliação.
@@ -274,7 +274,7 @@ Execute a avaliação E20.6 do taxon `[taxon_slug]`, usando a cadeia taxonômica
   - `NULL` permanece válido e bloqueante;
   - nenhuma versão é inferida automaticamente;
   - nenhuma recomendação da IA grava suficiência automaticamente;
-  - versões executáveis `1`, `2` e `3` resolvem os quatro planos no fixture vigente; falha ou diferença factual material termina como `inconclusivo`, sem gravação;
+  - versões executáveis `1`, `2`, `3` e `4` resolvem os quatro planos no fixture vigente; falha ou diferença factual material termina como `inconclusivo`, sem gravação;
   - casos cobrem troca e reseleção idempotente da pesquisa, concorrência, erro e ausência de atualização parcial;
   - casos cobrem rejeição de mudança de slug, atividade ou cadeia própria/ancestral quando houver avaliação afetada, inclusive em descendentes, e liberação somente após retorno explícito a `NULL`;
   - gate-off não alcança a Data API; o snippet retorna somente `ok`; a prova da Data API confirma `service_role` e ausência de escrita dos marcadores por `anon` e `authenticated`;

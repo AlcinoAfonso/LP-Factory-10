@@ -141,7 +141,7 @@ const cases: readonly ValidationCase[] = [
         classifyRequiredInputCatalogVersion(999),
         "REQUIRED_INPUT_CATALOG_VERSION_NOT_EXECUTABLE",
       );
-      for (const version of [1, 2, 3]) {
+      for (const version of [1, 2, 3, 4]) {
         assert.equal(isLandingPageInputCatalogVersionExecutable(version), true);
         assert.equal(classifyRequiredInputCatalogVersion(version), null);
       }
@@ -222,9 +222,9 @@ const cases: readonly ValidationCase[] = [
     },
   },
   {
-    name: "versions 1 2 and 3 resolve equivalent factual projections for all four plans",
+    name: "versions 1 2 3 and 4 resolve equivalent factual projections for all four plans",
     run: async () => {
-      for (const version of [1, 2, 3]) {
+      for (const version of [1, 2, 3, 4]) {
         const result = resolveInputCatalogReview({
           version,
           taxonChain: {
