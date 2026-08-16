@@ -160,6 +160,7 @@ const OPTION_LABELS: Readonly<Record<string, string>> = {
   buy: "Compra",
   sell: "Venda",
   valuation: "Avaliação",
+  rent: "Locação",
   in_person: "Presencial",
   remote: "Remoto",
 };
