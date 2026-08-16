@@ -2414,7 +2414,7 @@ Repositório — Ajustados
 - Referências:
   - Contrato técnico: `docs/base-tecnica.md` — 3.14.4.
   - Configuração operacional: `docs/platform-config.md` — configuração efetiva dos workloads OpenAI de produto.
-  - Plano executado: `docs/lousa-plano-base-e19-3.md`.
+  - Plano-base v1 consolidado: `docs/lousa-plano-base-e19-3.md`.
   - Plano temporariamente superado: `docs/lousa-plano-base-e19-4.md`.
 
 19.3.3 Contrato v3, pesquisa integral e revalidação
