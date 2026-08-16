@@ -2,8 +2,8 @@
 
 0.1 Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.67
-• Data: 15/08/2026
+• Versão: v2.0.68
+• Data: 16/08/2026
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -238,10 +238,11 @@
 • O LP Builder deve consumir o boundary de entitlement existente, sem duplicar sua lógica.
 • Persistência inicial permanece limitada a draft; schema e campos exatos pertencem a `docs/schema.md` e ao código.
 • UI/client não acessa Supabase diretamente para criar LP; evolução funcional fora do runtime atual pertence ao roadmap.
-• O contexto de geração usa o contrato público v2 de `lib/lp-builder/`: sucesso contém somente identidades, contexto semântico para o modelo e contexto operacional server-side; falhas são explícitas e nunca retornam pacote parcial.
-• O compilador deve reutilizar as autoridades canônicas de pesquisa, configuração, catálogo de entradas e parametrização raiz, sem importar registries ou schemas internos de outros boundaries e sem criar mapa nominal paralelo de fields.
+• O contexto de geração usa o contrato público v3 de `lib/lp-builder/`: sucesso contém somente identidades, contexto semântico para o modelo e contexto operacional server-side; falhas são explícitas e nunca retornam pacote parcial.
+• O compilador deve reutilizar as autoridades canônicas de preparação factual do taxon, configuração, catálogo de entradas e parametrização raiz, sem importar registries ou schemas internos de outros boundaries e sem criar mapa nominal paralelo de fields.
+• A versão E20.2 revisada deve chegar explicitamente pelo boundary de preparação, ser executável e dirigir a revalidação read-only dos valores históricos pelo plano e pela cadeia taxonômica atuais; a versão original da configuração permanece distinta, e maior versão, `latest`, fallback ou regravação silenciosa são proibidos.
 • Todo fato aplicável e presente preserva metadata e proveniência canônicas; o `valueType` separa deterministicamente valores semanticamente visíveis de valores operacionais brutos, que não podem integrar o contexto textual do modelo.
-• Pesquisa destinada à LP preserva integralmente o conjunto `end_customer` resolvido pela autoridade de pesquisa, sem filtro por módulo, funil, CTA, item ou julgamento editorial do compilador.
+• Pesquisa destinada à LP preserva integralmente o Markdown `end_customer` selecionado e validado pelo boundary de preparação, sem resumo, atomização, ranking, filtro por módulo, funil, CTA, item ou julgamento editorial do compilador e sem expor seu path físico.
 • Entitlement é autorizado exclusivamente pelo boundary interno vigente; plano, assinatura, feature ou resposta externa de provedor comercial não substituem esse sinal.
 • O boundary server-only pode registrar somente resultado, motivo seguro, `request_id` e latência quando disponíveis; valores, pesquisa, fatos, evidências, guidance, payload bruto, PII, secrets, tokens e prompts não entram no log.
 

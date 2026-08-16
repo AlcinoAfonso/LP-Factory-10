@@ -109,6 +109,20 @@ export type AccountLandingPageOnboardingResult =
       fieldKey?: string;
     }>;
 
+export type AccountLandingPageOnboardingRevalidationAuthority = Readonly<{
+  historicalConfiguration: AccountLandingPageOnboardingConfiguration;
+  currentPlanKey: LandingPageInputCatalogPlan;
+  currentTaxonChain: LandingPageInputCatalogTaxonChain;
+  currentAuthoritativeValues: Readonly<Record<string, unknown>>;
+}>;
+
+export type AccountLandingPageOnboardingRevalidationResult =
+  | Readonly<{
+      ok: true;
+      authority: AccountLandingPageOnboardingRevalidationAuthority;
+    }>
+  | Extract<AccountLandingPageOnboardingResult, { ok: false }>;
+
 export type SaveAccountLandingPageOnboardingConfigurationInput = Readonly<{
   accountId: string;
   catalogVersion: number;

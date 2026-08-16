@@ -15,6 +15,7 @@ import type {
 import {
   bindAccountLandingPageOnboardingConfigurationFromClient,
   getAccountLandingPageOnboardingConfigurationFromClient,
+  getAccountLandingPageOnboardingRevalidationAuthorityFromClient,
   listAccountLandingPageDraftsFromClient,
   saveAccountLandingPageOnboardingConfigurationFromClient,
 } from "./adapters/onboardingConfigurationAdapterCore";
@@ -292,6 +293,38 @@ const cases: ReadonlyArray<
       assert.equal(result.configuration.revision, 0);
       assert.equal(result.configuration.complete, false);
       assert.deepEqual(result.configuration.storedValues, {});
+    },
+  },
+  {
+    name: "revalidation authority exposes only resolved history and current E19.2 values",
+    run: async () => {
+      const client = runtimeClient([
+        ...runtimeGateResponses(),
+        response(
+          "account_landing_page_onboarding_configurations",
+          completeConfigurationRow(),
+        ),
+      ]);
+      const result =
+        await getAccountLandingPageOnboardingRevalidationAuthorityFromClient(
+          { accountId: ACCOUNT_ID, actorUserId: ACTOR_ID },
+          client,
+          eligibleEntitlement,
+        );
+
+      assert.equal(result.ok, true);
+      assert.deepEqual(Object.keys(result.authority).sort(), [
+        "currentAuthoritativeValues",
+        "currentPlanKey",
+        "currentTaxonChain",
+        "historicalConfiguration",
+      ]);
+      assert.deepEqual(result.authority.currentAuthoritativeValues, {
+        business_display_name: "Conta de teste",
+      });
+      assert.equal(Object.hasOwn(result.authority, "account"), false);
+      assert.equal(Object.hasOwn(result.authority, "row"), false);
+      assert.equal(Object.hasOwn(result.authority, "context"), false);
     },
   },
   {

@@ -5,9 +5,9 @@ import type {
 import type {
   AccountLandingPageOnboardingFieldState,
 } from "./contracts";
+import { resolveAccountLandingPageOnboardingConfiguration } from "./onboardingConfiguration";
 import {
   LANDING_PAGE_GENERATION_CONTEXT_CONTRACT_VERSION,
-  LANDING_PAGE_GENERATION_VALUES_CATALOG_VERSION,
   type CompileLandingPageGenerationContextInput,
   type CompileLandingPageGenerationContextResult,
   type LandingPageGenerationAuthorizedFact,
@@ -49,58 +49,83 @@ export function compileLandingPageGenerationContext(
 function compileValidatedLandingPageGenerationContext(
   input: CompileLandingPageGenerationContextInput,
 ): CompileLandingPageGenerationContextResult {
+  const {
+    historicalConfiguration,
+    currentPlanKey,
+    currentTaxonChain,
+    currentAuthoritativeValues,
+  } = input.revalidationAuthority;
   if (
     input.landingPage.status !== "draft" ||
-    input.landingPage.account_id !== input.configuration.accountId
+    input.landingPage.account_id !== historicalConfiguration.accountId
   ) {
     return failure(
       "LANDING_PAGE_NOT_DRAFT",
       "Landing page is not an authorized account draft.",
     );
   }
-  if (input.configuration.landingPageId !== input.landingPage.id) {
+  if (historicalConfiguration.landingPageId !== input.landingPage.id) {
     return failure(
       "CONFIGURATION_NOT_BOUND",
       "Configuration is not bound to the requested landing page.",
     );
   }
   if (
-    !input.configuration.complete ||
-    input.configuration.missingRequiredFieldKeys.length > 0
+    !historicalConfiguration.complete ||
+    historicalConfiguration.missingRequiredFieldKeys.length > 0
   ) {
     return failure(
       "CONFIGURATION_INCOMPLETE",
       "Landing-page configuration is incomplete.",
     );
   }
-  if (
-    input.configuration.catalogVersion !==
-    LANDING_PAGE_GENERATION_VALUES_CATALOG_VERSION
-  ) {
+  if (!input.preparation.ok) {
+    const catalogFailure = [
+      "REQUIRED_INPUT_CATALOG_VERSION_INVALID",
+      "REQUIRED_INPUT_CATALOG_VERSION_NOT_EXECUTABLE",
+      "INPUT_CATALOG_REVIEW_VERSION_MISMATCH",
+    ].includes(input.preparation.error.code);
     return failure(
-      "INPUT_CATALOG_INCOMPATIBLE",
-      "Input catalog version is not supported by this contract.",
+      catalogFailure
+        ? "INPUT_CATALOG_INCOMPATIBLE"
+        : "TAXON_PREPARATION_UNAVAILABLE",
+      catalogFailure
+        ? `Input catalog preparation failed: ${input.preparation.error.code}.`
+        : `Taxon preparation failed: ${input.preparation.error.code}.`,
     );
   }
-  if (!input.research.ok) {
+  const servedTaxon =
+    currentTaxonChain.ultraNiche ??
+    currentTaxonChain.niche ??
+    currentTaxonChain.segment;
+  const preparation = input.preparation.value;
+  if (
+    preparation.taxonId !== servedTaxon.id ||
+    preparation.taxonSlug !== servedTaxon.slug ||
+    preparation.requiredInputCatalogVersion !==
+      preparation.reviewedInputCatalogVersion ||
+    preparation.research.taxonSlug !== servedTaxon.slug ||
+    preparation.research.audienceScope !== "end_customer" ||
+    preparation.research.researchVersion !== preparation.selectedResearchVersion
+  ) {
     return failure(
-      "RESEARCH_UNAVAILABLE",
-      `Research resolution failed: ${input.research.error.code}.`,
+      "TAXON_PREPARATION_UNAVAILABLE",
+      "Taxon preparation is incompatible with the landing page.",
     );
   }
 
-  const servedTaxon =
-    input.configuration.taxonChain.ultraNiche ??
-    input.configuration.taxonChain.niche ??
-    input.configuration.taxonChain.segment;
-  const research = input.research.value;
-  if (
-    research.servedTaxonId !== servedTaxon.id ||
-    research.endCustomer.audienceScope !== "end_customer"
-  ) {
+  const revalidated = revalidateConfiguration(
+    input.revalidationAuthority,
+    preparation.reviewedInputCatalogVersion,
+  );
+  if (!revalidated.ok) {
     return failure(
-      "RESEARCH_UNAVAILABLE",
-      "Resolved end-customer research is incompatible with the landing page.",
+      revalidated.catalogFailure
+        ? "INPUT_CATALOG_INCOMPATIBLE"
+        : "CONFIGURATION_REVALIDATION_REQUIRED",
+      revalidated.catalogFailure
+        ? "The reviewed input catalog could not be resolved."
+        : "Landing-page configuration requires factual correction after revalidation.",
     );
   }
 
@@ -112,7 +137,7 @@ function compileValidatedLandingPageGenerationContext(
     );
   }
 
-  const projectedFacts = projectFacts(input.configuration.fields);
+  const projectedFacts = projectFacts(revalidated.configuration.fields);
   if (!projectedFacts.ok) return projectedFacts.result;
 
   return success({
@@ -123,15 +148,22 @@ function compileValidatedLandingPageGenerationContext(
         id: input.landingPage.id,
         status: "draft",
       },
-      planKey: input.configuration.planKey,
+      planKey: currentPlanKey,
       servedTaxon,
-      catalogVersion: LANDING_PAGE_GENERATION_VALUES_CATALOG_VERSION,
-      configurationRevision: input.configuration.revision,
+      taxonChain: currentTaxonChain,
+      historicalConfigurationCatalogVersion: historicalConfiguration.catalogVersion,
+      effectiveInputCatalogVersion: preparation.reviewedInputCatalogVersion,
+      configurationRevision: historicalConfiguration.revision,
       rootVersion: root.value.rootVersion,
-      endCustomerResearchVersion: research.versions.endCustomer,
+      endCustomerResearchVersion: preparation.selectedResearchVersion,
     },
     modelContext: {
-      research: research.endCustomer,
+      research: {
+        taxonSlug: preparation.research.taxonSlug,
+        audienceScope: preparation.research.audienceScope,
+        researchVersion: preparation.research.researchVersion,
+        content: preparation.research.content,
+      },
       facts: projectedFacts.modelFacts,
       editorialLimits: {
         semanticRoles: Object.values(root.value.semanticRoles).map((role) => ({
@@ -146,6 +178,40 @@ function compileValidatedLandingPageGenerationContext(
       facts: projectedFacts.serverFacts,
     },
   });
+}
+
+function revalidateConfiguration(
+  authority: CompileLandingPageGenerationContextInput["revalidationAuthority"],
+  effectiveInputCatalogVersion: number,
+):
+  | Readonly<{
+      ok: true;
+      configuration: typeof authority.historicalConfiguration;
+    }>
+  | Readonly<{ ok: false; catalogFailure: boolean }> {
+  const resolved = resolveAccountLandingPageOnboardingConfiguration({
+    accountId: authority.historicalConfiguration.accountId,
+    landingPageId: authority.historicalConfiguration.landingPageId,
+    catalogVersion: effectiveInputCatalogVersion,
+    revision: authority.historicalConfiguration.revision,
+    planKey: authority.currentPlanKey,
+    taxonChain: authority.currentTaxonChain,
+    storedValues: authority.historicalConfiguration.storedValues,
+    authoritativeValues: authority.currentAuthoritativeValues,
+  });
+  if (!resolved.ok) {
+    return {
+      ok: false,
+      catalogFailure: resolved.error === "CATALOG_UNAVAILABLE",
+    };
+  }
+  if (
+    !resolved.configuration.complete ||
+    resolved.configuration.missingRequiredFieldKeys.length > 0
+  ) {
+    return { ok: false, catalogFailure: false };
+  }
+  return { ok: true, configuration: resolved.configuration };
 }
 
 function projectFacts(
@@ -217,17 +283,20 @@ function isMinimumCompilerInput(
 ): value is CompileLandingPageGenerationContextInput {
   if (!isRecord(value)) return false;
   const landingPage = value.landingPage;
-  const configuration = value.configuration;
-  const research = value.research;
+  const authority = value.revalidationAuthority;
+  const preparation = value.preparation;
   return (
     isRecord(landingPage) &&
-    isRecord(configuration) &&
-    Array.isArray(configuration.fields) &&
-    Array.isArray(configuration.missingRequiredFieldKeys) &&
-    isRecord(configuration.taxonChain) &&
-    Number.isInteger(configuration.revision) &&
-    isRecord(research) &&
-    typeof research.ok === "boolean"
+    isRecord(authority) &&
+    isRecord(authority.historicalConfiguration) &&
+    Array.isArray(authority.historicalConfiguration.fields) &&
+    Array.isArray(authority.historicalConfiguration.missingRequiredFieldKeys) &&
+    typeof authority.currentPlanKey === "string" &&
+    isRecord(authority.currentTaxonChain) &&
+    isRecord(authority.currentAuthoritativeValues) &&
+    Number.isInteger(authority.historicalConfiguration.revision) &&
+    isRecord(preparation) &&
+    typeof preparation.ok === "boolean"
   );
 }
 

@@ -1,7 +1,7 @@
-import type { LandingPageResearchResolutionResult } from "../../conversion-content/landing-page/research-resolution";
+import type { TaxonPreparationResult } from "../../conversion-content/landing-page/taxon-preparation";
 import type {
   AccountLandingPage,
-  AccountLandingPageOnboardingResult,
+  AccountLandingPageOnboardingRevalidationResult,
 } from "../contracts";
 import { compileLandingPageGenerationContext } from "../generationContext";
 import type {
@@ -10,7 +10,9 @@ import type {
 } from "../generationContextContracts";
 
 export type LandingPageGenerationContextBoundaryDependencies = Readonly<{
-  loadConfiguration: (input: { accountId: string }) => Promise<AccountLandingPageOnboardingResult>;
+  loadRevalidationAuthority: (input: {
+    accountId: string;
+  }) => Promise<AccountLandingPageOnboardingRevalidationResult>;
   loadLandingPage: (input: {
     accountId: string;
     landingPageId: string;
@@ -18,7 +20,7 @@ export type LandingPageGenerationContextBoundaryDependencies = Readonly<{
     | Readonly<{ ok: true; landingPage: AccountLandingPage }>
     | Readonly<{ ok: false; error: "not_found" | "read_failed" }>
   >;
-  loadResearch: (input: { taxonId: string; requestId?: string }) => Promise<LandingPageResearchResolutionResult>;
+  loadPreparation: (input: { taxonId: string }) => Promise<TaxonPreparationResult>;
   log?: (payload: Readonly<Record<string, unknown>>) => void;
   now?: () => number;
 }>;
@@ -58,8 +60,8 @@ export async function compileLandingPageGenerationContextForDraftWithDependencie
   }
 
   try {
-    const configuration = await dependencies.loadConfiguration({ accountId });
-    if (!configuration.ok) {
+    const revalidation = await dependencies.loadRevalidationAuthority({ accountId });
+    if (!revalidation.ok) {
       const unauthorized = [
         "unauthenticated",
         "invalid_account_id",
@@ -67,7 +69,7 @@ export async function compileLandingPageGenerationContextForDraftWithDependencie
         "account_not_active",
         "membership_inactive",
         "commercial_entitlement_required",
-      ].includes(configuration.error);
+      ].includes(revalidation.error);
       result = failure(
         unauthorized ? "ACCOUNT_CONTEXT_UNAUTHORIZED" : "CONTEXT_READ_FAILED",
         unauthorized
@@ -77,6 +79,8 @@ export async function compileLandingPageGenerationContextForDraftWithDependencie
       safeLog(dependencies.log, result, requestId, now() - startedAt);
       return result;
     }
+
+    const { currentTaxonChain } = revalidation.authority;
 
     const landingPage = await dependencies.loadLandingPage({ accountId, landingPageId });
     if (!landingPage.ok) {
@@ -91,17 +95,16 @@ export async function compileLandingPageGenerationContextForDraftWithDependencie
     }
 
     const servedTaxon =
-      configuration.configuration.taxonChain.ultraNiche ??
-      configuration.configuration.taxonChain.niche ??
-      configuration.configuration.taxonChain.segment;
-    const research = await dependencies.loadResearch({
+      currentTaxonChain.ultraNiche ??
+      currentTaxonChain.niche ??
+      currentTaxonChain.segment;
+    const preparation = await dependencies.loadPreparation({
       taxonId: servedTaxon.id,
-      ...(requestId ? { requestId } : {}),
     });
     result = compileLandingPageGenerationContext({
       landingPage: landingPage.landingPage,
-      configuration: configuration.configuration,
-      research,
+      revalidationAuthority: revalidation.authority,
+      preparation,
     });
   } catch {
     result = failure("CONTEXT_READ_FAILED", "Generation context dependencies failed.");

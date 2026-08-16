@@ -7,11 +7,9 @@ import {
   resolveLandingPageInputCatalog,
   type LandingPageInputValueType,
 } from "../conversion-content/landing-page/input-catalog";
-import type {
-  LandingPageResearchResolutionResult,
-  ResolvedLandingPageResearchAudience,
-} from "../conversion-content/landing-page/research-resolution";
+import type { TaxonPreparationResult } from "../conversion-content/landing-page/taxon-preparation";
 import { compileLandingPageGenerationContextForDraftWithDependencies } from "./adapters/generationContextAdapterCore";
+import { resolveAccountLandingPageOnboardingRevalidationAuthority } from "./adapters/onboardingConfigurationAdapterCore";
 import type {
   AccountLandingPage,
   AccountLandingPageOnboardingConfiguration,
@@ -29,22 +27,29 @@ const TAXON_ID = realEstateBrokerNicheTaxon.id;
 const landingPage: AccountLandingPage = {
   id: LANDING_PAGE_ID,
   account_id: ACCOUNT_ID,
-  name: "LP Cenário D",
-  slug: "lp-cenario-d",
+  name: "LP Cenário E",
+  slug: "lp-cenario-e",
   status: "draft",
 };
 
 const configuration = buildConfiguration();
-const research = buildResearch();
+const authoritativeValues = { business_display_name: "Conta legítima" };
+const revalidationAuthority = {
+  historicalConfiguration: configuration,
+  currentPlanKey: configuration.planKey,
+  currentTaxonChain: configuration.taxonChain,
+  currentAuthoritativeValues: authoritativeValues,
+};
+const preparation = buildPreparation();
 
 const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }>[] = [
   {
-    name: "contract v2 exposes only identities, modelContext and serverContext",
+    name: "contract v3 exposes integral research and distinct historical and effective versions",
     run: () => {
       const result = compileLandingPageGenerationContext({
         landingPage,
-        configuration,
-        research,
+        revalidationAuthority,
+        preparation,
       });
       assert.equal(result.ok, true);
       assert.equal(
@@ -62,22 +67,23 @@ const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }
         landingPage: { id: LANDING_PAGE_ID, status: "draft" },
         planKey: "starter",
         servedTaxon: realEstateBrokerNicheTaxon,
-        catalogVersion: 2,
+        taxonChain: {
+          segment: realEstateSegmentTaxon,
+          niche: realEstateBrokerNicheTaxon,
+        },
+        historicalConfigurationCatalogVersion: 2,
+        effectiveInputCatalogVersion: 4,
         configurationRevision: 7,
         rootVersion: 1,
         endCustomerResearchVersion: 1,
       });
-      assert.deepEqual(
-        result.value.modelContext.research.researches.map(
-          (parent) => parent.researchBlock,
-        ),
-        ["strategic_core", "lp_overview", "lp_sections", "seo"],
+      assert.equal(
+        result.value.modelContext.research.content,
+        preparation.value.research.content,
       );
       assert.equal(
-        result.value.modelContext.research.researches.every(
-          (parent) => parent.items.length === 2,
-        ),
-        true,
+        Object.hasOwn(result.value.modelContext.research, "relativePath"),
+        false,
       );
       assert.equal(
         JSON.stringify(result.value.modelContext).includes("business_buyer"),
@@ -122,30 +128,132 @@ const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }
     },
   },
   {
-    name: "all 23 current fields are classified only by canonical valueType",
+    name: "E19.2 boundary preserves later current authority through target revalidation",
     run: () => {
-      assert.equal(configuration.fields.length, 23);
-      const everyFieldConfiguration: AccountLandingPageOnboardingConfiguration = {
-        ...configuration,
-        fields: configuration.fields.map((state) => ({
-          ...state,
-          applicable: true,
-          source: "configuration" as const,
-          value: sampleValue(state.field.valueType, state.field.validation),
-        })),
-      };
+      const laterFieldKeys = new Set([
+        "primary_service_or_offer",
+        "primary_service_or_offer_description",
+        "brand_color_palette",
+      ]);
+      const historicalStoredValues = Object.fromEntries(
+        Object.entries(configuration.storedValues).filter(
+          ([fieldKey]) => !laterFieldKeys.has(fieldKey),
+        ),
+      ) as AccountLandingPageOnboardingStoredValues;
+      const boundary = resolveAccountLandingPageOnboardingRevalidationAuthority({
+        accountId: ACCOUNT_ID,
+        landingPageId: LANDING_PAGE_ID,
+        historicalCatalogVersion: 1,
+        revision: 7,
+        currentPlanKey: "starter",
+        currentTaxonChain: configuration.taxonChain,
+        historicalStoredValues,
+        currentAuthoritativeValues: {
+          business_display_name: "Conta atual pela autoridade E19.2",
+          primary_service_or_offer:
+            configuration.storedValues.primary_service_or_offer.value,
+          primary_service_or_offer_description:
+            configuration.storedValues.primary_service_or_offer_description.value,
+          brand_color_palette:
+            configuration.storedValues.brand_color_palette.value,
+        },
+      });
+
+      assert.equal(boundary.ok, true);
+      assert.equal(
+        boundary.authority.historicalConfiguration.fields.some(
+          (state) => state.field.fieldKey === "brand_color_palette",
+        ),
+        false,
+      );
+      assert.equal(boundary.authority.historicalConfiguration.complete, true);
+      assert.deepEqual(
+        boundary.authority.currentAuthoritativeValues.brand_color_palette,
+        configuration.storedValues.brand_color_palette.value,
+      );
+
       const result = compileLandingPageGenerationContext({
         landingPage,
-        configuration: everyFieldConfiguration,
-        research,
+        revalidationAuthority: boundary.authority,
+        preparation,
+      });
+
+      assert.equal(result.ok, true);
+      const businessDisplayName = result.value.modelContext.facts.find(
+        (fact) => fact.fieldKey === "business_display_name",
+      );
+      assert.deepEqual(businessDisplayName, {
+        fieldKey: "business_display_name",
+        purpose: businessDisplayName?.purpose,
+        valueType: "string",
+        value: "Conta atual pela autoridade E19.2",
+        source: "authoritative",
+        provenance: businessDisplayName?.provenance,
+      });
+      const brandColorPalette = result.value.serverContext.facts.find(
+        (fact) => fact.fieldKey === "brand_color_palette",
+      );
+      assert.equal(brandColorPalette?.source, "authoritative");
+      assert.deepEqual(
+        brandColorPalette?.value,
+        boundary.authority.currentAuthoritativeValues.brand_color_palette,
+      );
+    },
+  },
+  {
+    name: "every applicable current field is classified only by canonical valueType",
+    run: () => {
+      assert.equal(configuration.fields.length, 23);
+      const everyStoredValues = Object.fromEntries(
+        configuration.fields
+          .filter((state) => state.field.fieldKey !== "business_display_name")
+          .map((state) => [
+            state.field.fieldKey,
+            {
+              scope: state.field.valueScope,
+              value: sampleValue(state.field.valueType, state.field.validation),
+            },
+          ]),
+      ) as AccountLandingPageOnboardingStoredValues;
+      const everyFieldResolution = resolveAccountLandingPageOnboardingConfiguration({
+        accountId: ACCOUNT_ID,
+        landingPageId: LANDING_PAGE_ID,
+        catalogVersion: 2,
+        revision: 7,
+        planKey: "starter",
+        taxonChain: {
+          segment: realEstateSegmentTaxon,
+          niche: realEstateBrokerNicheTaxon,
+        },
+        storedValues: everyStoredValues,
+        authoritativeValues: { business_display_name: "Conta legítima" },
+      });
+      assert.equal(everyFieldResolution.ok, true);
+      if (!everyFieldResolution.ok) {
+        throw new Error("Expected all-field configuration to resolve");
+      }
+      const everyFieldConfiguration = everyFieldResolution.configuration;
+      const result = compileLandingPageGenerationContext({
+        landingPage,
+        revalidationAuthority: {
+          ...revalidationAuthority,
+          historicalConfiguration: everyFieldConfiguration,
+        },
+        preparation,
       });
       assert.equal(result.ok, true);
       const allFacts = [
         ...result.value.modelContext.facts,
         ...result.value.serverContext.facts,
       ];
-      assert.equal(allFacts.length, 23);
-      assert.equal(new Set(allFacts.map((fact) => fact.fieldKey)).size, 23);
+      const applicableFieldCount = everyFieldConfiguration.fields.filter(
+        (state) => state.applicable && state.source !== "missing",
+      ).length;
+      assert.equal(allFacts.length, applicableFieldCount);
+      assert.equal(
+        new Set(allFacts.map((fact) => fact.fieldKey)).size,
+        applicableFieldCount,
+      );
       const modelTypes = new Set([
         "string",
         "enum",
@@ -178,23 +286,41 @@ const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }
   {
     name: "missing facts remain absent and operational values never leak to modelContext",
     run: () => {
-      const missingCreclConfiguration: AccountLandingPageOnboardingConfiguration = {
-        ...configuration,
-        fields: configuration.fields.map((state) =>
-          state.field.fieldKey === "creci_registration"
-            ? { ...state, source: "missing" as const, value: undefined }
-            : state,
+      const missingOptionalStoredValues = Object.fromEntries(
+        Object.entries(configuration.storedValues).filter(
+          ([fieldKey]) => fieldKey !== "financing_support_available",
         ),
-      };
+      ) as AccountLandingPageOnboardingStoredValues;
+      const missingOptionalResolution = resolveAccountLandingPageOnboardingConfiguration({
+        accountId: ACCOUNT_ID,
+        landingPageId: LANDING_PAGE_ID,
+        catalogVersion: 2,
+        revision: 7,
+        planKey: "starter",
+        taxonChain: {
+          segment: realEstateSegmentTaxon,
+          niche: realEstateBrokerNicheTaxon,
+        },
+        storedValues: missingOptionalStoredValues,
+        authoritativeValues: { business_display_name: "Conta legítima" },
+      });
+      assert.equal(missingOptionalResolution.ok, true);
+      if (!missingOptionalResolution.ok) {
+        throw new Error("Expected configuration with optional missing fact");
+      }
+      const missingOptionalConfiguration = missingOptionalResolution.configuration;
       const result = compileLandingPageGenerationContext({
         landingPage,
-        configuration: missingCreclConfiguration,
-        research,
+        revalidationAuthority: {
+          ...revalidationAuthority,
+          historicalConfiguration: missingOptionalConfiguration,
+        },
+        preparation,
       });
       assert.equal(result.ok, true);
       assert.equal(
         result.value.modelContext.facts.some(
-          (fact) => fact.fieldKey === "creci_registration",
+          (fact) => fact.fieldKey === "financing_support_available",
         ),
         false,
       );
@@ -210,28 +336,68 @@ const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }
       const scenarios = [
         {
           expected: "LANDING_PAGE_NOT_DRAFT",
-          input: { landingPage: { ...landingPage, account_id: "other" }, configuration, research },
+          input: {
+            landingPage: { ...landingPage, account_id: "other" },
+            revalidationAuthority,
+            preparation,
+          },
         },
         {
           expected: "CONFIGURATION_NOT_BOUND",
-          input: { landingPage, configuration: { ...configuration, landingPageId: null }, research },
+          input: {
+            landingPage,
+            revalidationAuthority: {
+              ...revalidationAuthority,
+              historicalConfiguration: {
+                ...configuration,
+                landingPageId: null,
+              },
+            },
+            preparation,
+          },
         },
         {
           expected: "CONFIGURATION_INCOMPLETE",
-          input: { landingPage, configuration: { ...configuration, complete: false }, research },
-        },
-        {
-          expected: "INPUT_CATALOG_INCOMPATIBLE",
-          input: { landingPage, configuration: { ...configuration, catalogVersion: 3 }, research },
-        },
-        {
-          expected: "RESEARCH_UNAVAILABLE",
           input: {
             landingPage,
-            configuration,
-            research: {
+            revalidationAuthority: {
+              ...revalidationAuthority,
+              historicalConfiguration: {
+                ...configuration,
+                complete: false,
+              },
+            },
+            preparation,
+          },
+        },
+        {
+          expected: "CONFIGURATION_REVALIDATION_REQUIRED",
+          input: {
+            landingPage,
+            revalidationAuthority: {
+              ...revalidationAuthority,
+              historicalConfiguration: {
+                ...configuration,
+                storedValues: {
+                  ...configuration.storedValues,
+                  transaction_intent: {
+                    scope: "landing_page",
+                    value: "invalid-intent",
+                  },
+                },
+              },
+            },
+            preparation,
+          },
+        },
+        {
+          expected: "TAXON_PREPARATION_UNAVAILABLE",
+          input: {
+            landingPage,
+            revalidationAuthority,
+            preparation: {
               ok: false,
-              error: { code: "READ_FAILED", message: "safe fixture" },
+              error: { code: "FILESYSTEM_READ_FAILED", message: "safe fixture" },
             },
           },
         },
@@ -250,17 +416,20 @@ const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }
       const logs: Readonly<Record<string, unknown>>[] = [];
       const dependencyCalls: string[] = [];
       const dependencies = {
-        loadConfiguration: async () => {
-          dependencyCalls.push("configuration");
-          return { ok: true as const, configuration };
+        loadRevalidationAuthority: async () => {
+          dependencyCalls.push("revalidation-authority");
+          return {
+            ok: true as const,
+            authority: revalidationAuthority,
+          };
         },
         loadLandingPage: async () => {
           dependencyCalls.push("landing-page");
           return { ok: true as const, landingPage };
         },
-        loadResearch: async () => {
-          dependencyCalls.push("research");
-          return research;
+        loadPreparation: async () => {
+          dependencyCalls.push("preparation");
+          return preparation;
         },
         now: (() => {
           let value = 100;
@@ -271,21 +440,21 @@ const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }
         {
           accountId: ACCOUNT_ID,
           landingPageId: LANDING_PAGE_ID,
-          requestId: "req-e19-3-d",
+          requestId: "req-e19-3-e",
         },
         { ...dependencies, log: (payload) => logs.push(payload) },
       );
       assert.equal(result.ok, true);
       assert.deepEqual(dependencyCalls, [
-        "configuration",
+        "revalidation-authority",
         "landing-page",
-        "research",
+        "preparation",
       ]);
       assert.deepEqual(logs[0], {
         event: "landing_page_generation_context_compilation",
         result: "success",
         reason: "compiled",
-        request_id: "req-e19-3-d",
+        request_id: "req-e19-3-e",
         latency_ms: 1,
       });
 
@@ -294,7 +463,7 @@ const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }
         await compileLandingPageGenerationContextForDraftWithDependencies(
           { accountId: ACCOUNT_ID, landingPageId: LANDING_PAGE_ID },
           {
-            loadConfiguration: async () => ({
+            loadRevalidationAuthority: async () => ({
               ok: false,
               error: "commercial_entitlement_required",
             }),
@@ -302,9 +471,9 @@ const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }
               unauthorizedCalls.push("landing-page");
               return { ok: true, landingPage };
             },
-            loadResearch: async () => {
-              unauthorizedCalls.push("research");
-              return research;
+            loadPreparation: async () => {
+              unauthorizedCalls.push("preparation");
+              return preparation;
             },
             log: () => undefined,
           },
@@ -315,7 +484,7 @@ const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }
     },
   },
   {
-    name: "public boundary has no E18.5, E20.3, Stripe or E19.4 runtime dependency",
+    name: "public boundary has no E10.8, E18.5, E20.3, Stripe or E19.4 runtime dependency",
     run: () => {
       const compilerSource = readFileSync(
         new URL("./generationContext.ts", import.meta.url),
@@ -331,11 +500,11 @@ const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }
       );
       assert.doesNotMatch(
         compilerSource,
-        /module-catalog|generation-profile|copySourceMap|prioritizedSources|funnelCopyProfiles|generationGuidance|itemGuidance/,
+        /research-resolution|module-catalog|generation-profile|copySourceMap|prioritizedSources|funnelCopyProfiles|generationGuidance|itemGuidance/,
       );
       assert.doesNotMatch(
         boundaryCoreSource,
-        /Stripe|OpenAI|GenerationProfile|loadGenerationProfile/,
+        /research-resolution|loadResearch|Stripe|OpenAI|GenerationProfile|loadGenerationProfile/,
       );
       assert.doesNotMatch(
         publicIndexSource,
@@ -421,51 +590,23 @@ function buildConfiguration(): AccountLandingPageOnboardingConfiguration {
   return result.configuration;
 }
 
-function buildResearch(): LandingPageResearchResolutionResult {
-  const audience = (
-    audienceScope: "business_buyer" | "end_customer",
-  ): ResolvedLandingPageResearchAudience => ({
-    audienceScope,
-    sourceTaxonId: TAXON_ID,
-    sourceRelation: "own",
-    version: 1,
-    researches: [
-      "strategic_core",
-      "lp_overview",
-      "lp_sections",
-      "seo",
-    ].map((researchBlock, blockIndex) => ({
-      researchId: `${audienceScope}-${researchBlock}`,
-      researchBlock: researchBlock as
-        | "strategic_core"
-        | "lp_overview"
-        | "lp_sections"
-        | "seo",
-      audienceScope,
-      version: 1,
-      sourceTaxonId: TAXON_ID,
-      items: [1, 2].map((position) => ({
-        itemId: `${audienceScope}-${researchBlock}-${position}`,
-        researchId: `${audienceScope}-${researchBlock}`,
-        itemKey: `${researchBlock}_item_${position}`,
-        itemText: `Contexto autorizado ${blockIndex + 1}.${position}`,
-        priority: position,
-        sortOrder: position,
-        servedTaxonId: TAXON_ID,
-        sourceTaxonId: TAXON_ID,
-        sourceRelation: "own",
-        audienceScope,
-        researchVersion: 1,
-      })),
-    })),
-  });
+function buildPreparation(): Extract<TaxonPreparationResult, { ok: true }> {
   return {
     ok: true,
     value: {
-      servedTaxonId: TAXON_ID,
-      endCustomer: audience("end_customer"),
-      businessBuyer: audience("business_buyer"),
-      versions: { endCustomer: 1, businessBuyer: 1 },
+      prepared: true,
+      taxonId: TAXON_ID,
+      taxonSlug: realEstateBrokerNicheTaxon.slug,
+      selectedResearchVersion: 1,
+      reviewedInputCatalogVersion: 4,
+      requiredInputCatalogVersion: 4,
+      research: {
+        taxonSlug: realEstateBrokerNicheTaxon.slug,
+        audienceScope: "end_customer",
+        researchVersion: 1,
+        relativePath: "corretor-imoveis/end_customer/v1.md",
+        content: "# Pesquisa integral\n\nConteúdo integral autorizado.\n\n## Fontes\n\n- Fonte factual.",
+      },
     },
   };
 }
@@ -494,11 +635,26 @@ function sampleValue(
     case "boolean":
       return true;
     case "number_range":
-      return { minimum: 100, maximum: 200, currency: "BRL" };
+      return {
+        minimum:
+          validation.kind === "number_range"
+            ? validation.minimum ?? 0
+            : 0,
+        maximum:
+          validation.kind === "number_range"
+            ? validation.maximum ?? validation.minimum ?? 0
+            : 0,
+        currency: "BRL",
+      };
     case "keyword_map":
-      return { principal: ["valor"] };
+      return [
+        {
+          keyword_or_cluster: "termo principal",
+          message_anchor: "mensagem factual",
+        },
+      ];
     case "asset_reference":
-      return "brand/logo-primary";
+      return { asset_id: "asset-canonico" };
     case "color_palette":
       return {
         primary: "#000000",

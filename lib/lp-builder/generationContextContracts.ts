@@ -1,40 +1,47 @@
 import type {
   LandingPageInputCatalogTaxonIdentity,
+  LandingPageInputCatalogTaxonChain,
   LandingPageInputFieldProvenance,
   LandingPageInputValueType,
 } from "../conversion-content/landing-page/input-catalog";
 import type {
-  LandingPageResearchResolutionResult,
-  ResolvedLandingPageResearchAudience,
-} from "../conversion-content/landing-page/research-resolution";
+  TaxonPreparationResult,
+} from "../conversion-content/landing-page/taxon-preparation";
 import type {
   LandingPageRootSemanticRoleKey,
 } from "../conversion-content/landing-page";
 import type {
   AccountLandingPage,
-  AccountLandingPageOnboardingConfiguration,
+  AccountLandingPageOnboardingRevalidationAuthority,
   AccountLandingPageOnboardingValueSource,
 } from "./contracts";
 
-export const LANDING_PAGE_GENERATION_CONTEXT_CONTRACT_VERSION = 2 as const;
-export const LANDING_PAGE_GENERATION_VALUES_CATALOG_VERSION = 2 as const;
+export const LANDING_PAGE_GENERATION_CONTEXT_CONTRACT_VERSION = 3 as const;
 
 export type LandingPageGenerationContextFailureCode =
   | "INVALID_INPUT"
   | "LANDING_PAGE_NOT_DRAFT"
   | "CONFIGURATION_NOT_BOUND"
   | "CONFIGURATION_INCOMPLETE"
+  | "CONFIGURATION_REVALIDATION_REQUIRED"
   | "INPUT_CATALOG_INCOMPATIBLE"
   | "ROOT_UNAVAILABLE"
-  | "RESEARCH_UNAVAILABLE"
+  | "TAXON_PREPARATION_UNAVAILABLE"
   | "ACCOUNT_CONTEXT_UNAUTHORIZED"
   | "LANDING_PAGE_NOT_FOUND"
   | "CONTEXT_READ_FAILED";
 
 export type CompileLandingPageGenerationContextInput = Readonly<{
   landingPage: AccountLandingPage;
-  configuration: AccountLandingPageOnboardingConfiguration;
-  research: LandingPageResearchResolutionResult;
+  revalidationAuthority: AccountLandingPageOnboardingRevalidationAuthority;
+  preparation: TaxonPreparationResult;
+}>;
+
+export type LandingPageGenerationAuthorizedResearch = Readonly<{
+  taxonSlug: string;
+  audienceScope: "end_customer";
+  researchVersion: number;
+  content: string;
 }>;
 
 export type LandingPageGenerationAuthorizedFact = Readonly<{
@@ -59,13 +66,15 @@ export type LandingPageGenerationContextPackage = Readonly<{
     landingPage: Readonly<{ id: string; status: "draft" }>;
     planKey: string;
     servedTaxon: LandingPageInputCatalogTaxonIdentity;
-    catalogVersion: typeof LANDING_PAGE_GENERATION_VALUES_CATALOG_VERSION;
+    taxonChain: LandingPageInputCatalogTaxonChain;
+    historicalConfigurationCatalogVersion: number;
+    effectiveInputCatalogVersion: number;
     configurationRevision: number;
     rootVersion: number;
     endCustomerResearchVersion: number;
   }>;
   modelContext: Readonly<{
-    research: ResolvedLandingPageResearchAudience;
+    research: LandingPageGenerationAuthorizedResearch;
     facts: readonly LandingPageGenerationAuthorizedFact[];
     editorialLimits: Readonly<{
       semanticRoles: readonly LandingPageGenerationEditorialRole[];
