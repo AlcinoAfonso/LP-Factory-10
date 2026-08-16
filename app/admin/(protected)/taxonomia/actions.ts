@@ -4,11 +4,15 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { requirePlatformAdmin } from "@/lib/access/guards";
+import { nextInputCatalogReviewActionRevision } from "@/lib/admin/adapters/adminTaxonomyReviewPolicy";
 import {
   addAdminTaxonAlias,
   createAdminTaxon,
   deleteAdminTaxon,
   deleteAdminTaxonAlias,
+  selectAdminEndCustomerResearchVersion,
+  recordAdminInputCatalogReview,
+  reopenAdminInputCatalogReview,
   updateAdminTaxon,
 } from "@/lib/admin/adapters/adminReadOnlyAdapter";
 
@@ -18,6 +22,18 @@ export type CreateTaxonActionState = {
 
 export type ManageTaxonActionState = {
   error: string | null;
+};
+
+export type SelectEndCustomerResearchActionState = {
+  error: string | null;
+  selectedVersion: number | null;
+};
+
+export type InputCatalogReviewActionState = {
+  error: string | null;
+  reviewedVersion: number | null;
+  reopened: boolean;
+  revision: number;
 };
 
 export async function createTaxonAction(
@@ -68,6 +84,65 @@ export async function updateTaxonAction(
   revalidatePath("/admin/taxonomia");
   revalidatePath(`/admin/taxonomia/${result.taxonId}`);
   return { error: null };
+}
+
+export async function selectEndCustomerResearchAction(
+  _previousState: SelectEndCustomerResearchActionState,
+  formData: FormData,
+): Promise<SelectEndCustomerResearchActionState> {
+  const gate = await requirePlatformAdmin();
+
+  if (!gate.allowed) {
+    return { error: "Acesso administrativo não autorizado.", selectedVersion: null };
+  }
+
+  const result = await selectAdminEndCustomerResearchVersion({
+    taxonId: String(formData.get("taxonId") ?? ""),
+    researchVersion: Number(formData.get("researchVersion")),
+  });
+
+  if (!result.ok) return { error: result.error, selectedVersion: null };
+
+  revalidatePath("/admin/taxonomia");
+  revalidatePath(`/admin/taxonomia/${result.taxonId}`);
+  return { error: null, selectedVersion: result.selectedVersion };
+}
+
+export async function recordInputCatalogReviewAction(
+  previousState: InputCatalogReviewActionState,
+  formData: FormData,
+): Promise<InputCatalogReviewActionState> {
+  const revision = nextInputCatalogReviewActionRevision(previousState.revision);
+  const gate = await requirePlatformAdmin();
+  if (!gate.allowed) {
+    return { error: "Acesso administrativo não autorizado.", reviewedVersion: null, reopened: false, revision };
+  }
+  const result = await recordAdminInputCatalogReview({
+    taxonId: String(formData.get("taxonId") ?? ""),
+    inputCatalogVersion: Number(formData.get("inputCatalogVersion")),
+  });
+  if (!result.ok) return { error: result.error, reviewedVersion: null, reopened: false, revision };
+  revalidatePath("/admin/taxonomia");
+  revalidatePath(`/admin/taxonomia/${result.taxonId}`);
+  return { error: null, reviewedVersion: result.reviewedVersion, reopened: false, revision };
+}
+
+export async function reopenInputCatalogReviewAction(
+  previousState: InputCatalogReviewActionState,
+  formData: FormData,
+): Promise<InputCatalogReviewActionState> {
+  const revision = nextInputCatalogReviewActionRevision(previousState.revision);
+  const gate = await requirePlatformAdmin();
+  if (!gate.allowed) {
+    return { error: "Acesso administrativo não autorizado.", reviewedVersion: null, reopened: false, revision };
+  }
+  const result = await reopenAdminInputCatalogReview({
+    taxonId: String(formData.get("taxonId") ?? ""),
+  });
+  if (!result.ok) return { error: result.error, reviewedVersion: null, reopened: false, revision };
+  revalidatePath("/admin/taxonomia");
+  revalidatePath(`/admin/taxonomia/${result.taxonId}`);
+  return { error: null, reviewedVersion: null, reopened: true, revision };
 }
 
 export async function addTaxonAliasAction(

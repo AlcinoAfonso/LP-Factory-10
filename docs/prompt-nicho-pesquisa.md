@@ -6,13 +6,13 @@ Atue como pesquisador de nicho para o LP Factory 10.
 
 ## 2. Objetivo
 
-Produzir uma pesquisa bruta, rica e contextual sobre o taxon confirmado, usando os `research_blocks` definidos em `research_blocks_order`.
+Produzir uma pesquisa bruta rica, contextual, verificável e concisa sobre o taxon confirmado.
 
-A entrega deve servir como fonte para uma etapa posterior de estruturação dos itens da pesquisa.
+Descreva o espaço de decisão; não escolha nem produza a solução que um consumidor posterior deverá construir a partir da pesquisa.
 
 ## 3. Entrada obrigatória
 
-Use como fonte de verdade o relatório-instrução gerado por `docs/prompt-nicho-identificacao.md`.
+Use somente o relatório-instrução confirmado nesta execução; se ele estiver ausente ou incompleto, peça-o e pare.
 
 A entrada deve conter:
 
@@ -25,64 +25,34 @@ A entrada deve conter:
 - `audience_scope`
 - `research_blocks_order`
 
-As fontes devem ser escolhidas conforme o taxon pesquisado.
+Pesquise em fontes pertinentes ao taxon, priorizando evidência verificável e distinguindo achado de inferência.
 
 ## 4. Direção da pesquisa por bloco
 
 ### strategic_core
 
-Pesquise o núcleo estratégico do público e do mercado: dores, desejos, objeções, linguagem, crenças, medos, gatilhos de decisão, provas necessárias, tendências e oportunidades de posicionamento.
-
-Priorize o mercado brasileiro. Use referências dos EUA apenas como apoio comparativo quando forem relevantes.
+Pesquise dores, desejos, objeções, linguagem, crenças, medos, gatilhos de decisão, provas necessárias, tendências e oportunidades de posicionamento. Priorize o mercado brasileiro; use referências dos EUA apenas quando agregarem contexto relevante.
 
 ### lp_overview
 
-Pesquise padrões observáveis de landing pages e páginas comerciais do taxon no Brasil e nos EUA.
-
-Observe narrativa, tom visual, densidade, estilo de imagem, extensão da página, confiança, provas, CTA, mobile e diferenças relevantes entre os dois mercados.
+Pesquise padrões, alternativas e trade-offs observáveis de landing pages e páginas comerciais do taxon, incluindo narrativa, tom visual, densidade, imagem, confiança, provas, CTA e mobile.
 
 ### lp_sections
 
-Pesquise a arquitetura de seções observada ou recomendável para landing pages do taxon.
-
-Observe tipos de seções recorrentes, ordem provável, papel de cada seção, profundidade da página e diferenças entre LP curta, média ou longa.
+Pesquise tipos de seção observados, função comercial, recorrência observada, condições de uso, alternativas e trade-offs.
 
 ### seo
 
-Pesquise insumos de SEO úteis para landing pages do taxon.
-
-Observe intenção de busca, termos comerciais, termos de apoio, termos locais, dúvidas frequentes, objeções pesquisadas e oportunidades úteis para conversão.
+Pesquise intenção de busca, termos comerciais e de apoio, termos locais, dúvidas frequentes, objeções pesquisadas e oportunidades úteis para conversão.
 
 ## 5. Limites
 
-Não invente fontes, dados de cliente, provas, certificações, garantias, resultados, volume de busca, CPC ou dificuldade de palavra-chave.
+Não invente fontes, dados de cliente, provas, certificações, garantias, resultados ou métricas sem fonte verificável; quando ausentes, declare-os não especificados.
 
-Não complete lacunas com suposição.
+Não complete lacunas por suposição nem use decisões internas do LP Factory como evidência de mercado.
 
-Quando faltar evidência, declare a limitação.
-
-Não transforme a pesquisa em itens estruturados, SQL, copy final ou template.
+Não transforme a pesquisa em solução da futura LP, itens estruturados, SQL, copy ou template.
 
 ## 6. Entrega esperada
 
-Entregue em Markdown, no formato mais útil para uma pesquisa bruta.
-
-Estrutura mínima:
-
-```md
-# Pesquisa bruta — [taxon_name]
-
-## Entrada confirmada
-
-## strategic_core
-
-## lp_overview
-
-## lp_sections
-
-## seo
-
-## Observações gerais
-
-## Limitações da pesquisa
-```
+Entregue em Markdown, seguindo somente os `research_blocks` confirmados, na ordem recebida. Identifique as fontes utilizadas e limitações relevantes. Registre cada achado no bloco mais adequado e evite repetição, salvo referência curta necessária ao contexto.

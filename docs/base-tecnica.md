@@ -2,8 +2,8 @@
 
 0.1 Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.66
-• Data: 12/08/2026
+• Versão: v2.0.67
+• Data: 15/08/2026
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -309,6 +309,13 @@
 • Versão ativa é imutável; edição cria ou atualiza somente draft, com controle de concorrência por `updated_at` e validação server-side do agregado completo antes da persistência.
 • Assistência por IA é opcional, explícita e não autoritativa: a proposta validada permanece candidata transitória até aplicação humana explícita e não salva, ativa, arquiva nem altera o resolver público; orientações gerais e específicas pertencem exclusivamente ao humano e devem ser preservadas pelo fluxo assistido.
 • Prompts, payloads e respostas integrais não devem ser persistidos nem registrados; correlação deve usar identificadores, fingerprint e metadados operacionais seguros.
+
+3.15.7 Preparação factual do taxon para `landing_page`
+• Boundary canônico: `lib/conversion-content/landing-page/taxon-preparation/`; a derivação permanece pura e não persiste estado de prontidão.
+• O adapter server-only deve ler pelo caminho único da pesquisa selecionada o taxon ativo, a pesquisa E20.5 integralmente válida e a versão E20.2 avaliada; UI e componentes client não consultam esses marcadores diretamente.
+• O consumidor deve fornecer uma versão executável explícita, validada pela API pública do catálogo E20.2; maior versão, `latest` e qualquer fallback implícito são proibidos.
+• O sucesso exige igualdade exata entre a versão avaliada e a versão requerida; ausência, incompatibilidade, feature gate ou falha operacional devem permanecer erros tipados e fail-closed.
+• A avaliação semântica é assistida por IA no Codex App e permanece externa ao runtime do produto; a decisão final de suficiência e seu registro administrativo são humanos, e o boundary apenas aplica deterministicamente a decisão já registrada.
 
 3.16 Configuração e observabilidade de workloads OpenAI
 • O boundary transversal canônico é `lib/openai-workloads/`; consumidores de produto usam somente sua API pública para resolver modelo e reasoning effort, sem ler variáveis de modelo nem acessar o registry interno.

@@ -41,6 +41,12 @@ export function resolveLandingPageInputCatalog(
   );
 }
 
+export function isLandingPageInputCatalogVersionExecutable(version: number): boolean {
+  if (!Number.isSafeInteger(version) || version <= 0) return false;
+  const entry = (landingPageInputCatalogRegistry as LandingPageInputCatalogRegistry)[version];
+  return entry !== undefined && entry.version === version;
+}
+
 export function resolveLandingPageInputCatalogFromRegistry(
   input: ResolveLandingPageInputCatalogInput,
   registry: LandingPageInputCatalogRegistry,

@@ -3,7 +3,7 @@
 ## 1. Objetivo
 
 Este documento orienta decisões sobre automações, uso de IA e comportamento agentic no LP Factory 10.
-O Gestor atua em dois momentos: antes do plano-base v1, recomenda se o caso deve ser automatizado, sua natureza e ambiente; na avaliação formal da v1, detalha a solução mínima suficiente dentro da categoria aprovada.
+O Gestor atua normalmente em dois momentos: antes do plano-base v1, recomenda se o caso deve ser automatizado, sua natureza e ambiente; na avaliação formal da v1, detalha a solução mínima suficiente dentro da categoria aprovada. Essa segunda avaliação pode ser dispensada por decisão humana explícita conforme `docs/prompt-estrategista.md` quando o debate já tiver fechado materialmente o necessário.
 A adoção e a categoria são submetidas ao humano no fluxo do Estrategista, e eventual mudança de categoria exige nova decisão humana.
 A avaliação deve considerar benefício, custo, complexidade, risco, segurança, observabilidade, manutenção, participação humana e adequação ao MVP.
 Deve começar pela alternativa mais simples, preservar a stack e os contratos aprovados, evitar overengineering e não transformar recurso novo em autorização automática de implementação.
@@ -94,6 +94,8 @@ Quando houver hipótese concreta e material de uso da OpenAI, o Gestor deve cons
 * Registrar no parecer as fontes oficiais efetivamente consultadas.
 * Quando a recomendação envolver workload OpenAI de produto, identificar explicitamente o workload afetado e respeitar a governança transversal estabelecida em `E21.1 — Fundação, normalização e leitura dos workloads OpenAI` de `docs/roadmap.md`; consultar o contrato técnico vigente em `docs/base-tecnica.md` e a configuração operacional correspondente em `docs/platform-config.md`, sem duplicar neste documento catálogo, modelo, reasoning effort, configuração efetiva ou estado de implementação.
 * Quando a decisão envolver seleção, comparação ou revisão de modelo ou `reasoning.effort`, consultar também `docs/openai-model-snapshot.md` como fotografia interna datada de custo-desempenho e protocolo de comparação por workload; reconfirmar preços, capacidades e parâmetros nas fontes oficiais atuais antes de concluir e atualizar o snapshot quando houver mudança material. O snapshot apoia a decisão, mas não substitui `docs/platform-config.md` como fonte da configuração efetiva nem autoriza mudança por si só.
+* Quando a solução com OpenAI depender de prompt consumido no runtime, consultar `docs/template-prompts.md` e o complemento específico do modelo quando existir e for aplicável, atualmente `docs/template-prompts-gpt-5-6.md` para GPT-5.6, e verificar aderência ao contrato vigente de prompt de runtime antes de concluir o parecer.
+* Ao avaliar comportamento de um workload, considerar o prompt efetivamente aplicado junto com `workload + modelo + reasoning effort`, sem alterar a unidade de configuração criada pela E21.1. Prompt não substitui autorização, validação, regras de negócio ou guardrails que devam permanecer determinísticos no LP Factory.
 
 Este documento não mantém catálogo permanente de modelos, preços, parâmetros ou recursos OpenAI. Esses detalhes devem ser verificados no caso concreto.
 
@@ -109,6 +111,7 @@ Cada parecer deve ser curto, decisório e declarar:
 * Solução mínima recomendada e divisão entre processamento determinístico, IA e participação humana.
 * Benefício esperado, custo, complexidade, riscos, segurança, observabilidade, manutenção e fallback.
 * Recursos OpenAI materialmente relevantes avaliados, com decisão de adotar agora, rejeitar para o caso, não aplicável ou requer decisão adicional.
+* Prompt de runtime, quando aplicável: templates consultados, resultado da verificação de conformidade, exceções ou pendências materiais e validação representativa; o parecer não precisa conter o prompt final salvo quando isso fizer parte explícita do escopo.
 * Veredito: `nenhuma automação aplicável`, `automação aplicável com patches autossuficientes`, `requer investigação factual` ou `requer validação material pelo Analista`.
 * Patches aplicáveis pelo orquestrador, investigação factual e validação material pelo Analista, quando correspondentes ao veredito.
 * Situação e destino documental de cada decisão.
@@ -120,6 +123,7 @@ O parecer não autoriza implementação por si só.
 ### 4.1 Destino documental
 
 * Decisão, categorias, critérios, segurança e governança → `docs/gestor-automations.md`.
+* Estrutura e validação geral de prompts → `docs/template-prompts.md`; regras específicas de GPT-5.6 → `docs/template-prompts-gpt-5-6.md`.
 * Automação, agente, workflow, job ou componente operacional aprovado ou implementado → `docs/automations.md`.
 * MCP, API, endpoint, worker, service ou infraestrutura reutilizável → `docs/services.md`.
 * Variáveis, modelos configurados, secrets por nome, ambientes e configuração operacional → `docs/platform-config.md`.

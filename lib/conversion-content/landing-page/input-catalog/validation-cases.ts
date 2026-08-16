@@ -19,6 +19,7 @@ import {
   resolveLandingPageInputCatalog,
   resolveLandingPageInputCatalogFromRegistry,
 } from "./resolver";
+import { buildLandingPageInputCatalogTaxonChain } from "./taxon-chain";
 import {
   landingPageInputFieldDefinitionSchema,
   validateLandingPageInputValue,
@@ -46,6 +47,11 @@ const v3Input: ResolveLandingPageInputCatalogInput = {
   version: 3,
 };
 
+const v4Input: ResolveLandingPageInputCatalogInput = {
+  ...baseInput,
+  version: 4,
+};
+
 const starterV2FieldKeys = [
   "primary_service_or_offer",
   "primary_service_or_offer_description",
@@ -54,6 +60,25 @@ const starterV2FieldKeys = [
 ] as const;
 
 const cases: Case[] = [
+  {
+    name: "public taxon chain builder normalizes segment niche and ultra-niche",
+    run: () => {
+      const result = buildLandingPageInputCatalogTaxonChain(
+        mediumStandardRealEstateBrokerTaxon,
+        [realEstateSegmentTaxon, realEstateBrokerNicheTaxon, mediumStandardRealEstateBrokerTaxon],
+      );
+      assert.equal(result.ok, true);
+      if (!result.ok) throw new Error("Expected valid taxon chain");
+      assert.deepEqual(result.value, baseInput.taxonChain);
+      assert.equal(
+        buildLandingPageInputCatalogTaxonChain(
+          { ...realEstateBrokerNicheTaxon, parentId: "missing" },
+          [realEstateSegmentTaxon],
+        ).ok,
+        false,
+      );
+    },
+  },
   {
     name: "registry v1 resolves all 19 ordered fields without operational context",
     run: () => {
@@ -162,6 +187,62 @@ const cases: Case[] = [
         }).success,
         false,
       );
+    },
+  },
+  {
+    name: "v4 preserves v1 through v3 and adds only rent to transaction intent",
+    run: () => {
+      const priorInputs = [baseInput, v2Input, v3Input];
+      for (const input of priorInputs) {
+        const prior = resolveRequired(input);
+        const transactionIntent = prior.fields.find(
+          (field) => field.fieldKey === "transaction_intent",
+        );
+        assert.ok(transactionIntent);
+        assert.deepEqual(transactionIntent.validation, {
+          kind: "enum",
+          allowedValues: ["buy", "sell", "valuation", "mixed"],
+        });
+        assert.equal(validateLandingPageInputValue(transactionIntent, "rent").ok, false);
+      }
+
+      const v3 = resolveRequired(v3Input);
+      const v4 = resolveRequired(v4Input);
+      assert.equal(v4.version, 4);
+      assert.equal(v4.fields.length, 23);
+
+      for (const v4Field of v4.fields) {
+        const v3Field = v3.fields.find(
+          (candidate) => candidate.fieldKey === v4Field.fieldKey,
+        );
+        assert.ok(v3Field);
+        if (v4Field.fieldKey !== "transaction_intent") {
+          assert.deepEqual(v4Field, v3Field);
+          continue;
+        }
+
+        const { validation: v3Validation, evidence: v3Evidence, ...v3Rest } = v3Field;
+        const { validation: v4Validation, evidence: v4Evidence, ...v4Rest } = v4Field;
+        assert.deepEqual(v4Rest, v3Rest);
+        assert.deepEqual(v3Validation, {
+          kind: "enum",
+          allowedValues: ["buy", "sell", "valuation", "mixed"],
+        });
+        assert.deepEqual(v4Validation, {
+          kind: "enum",
+          allowedValues: ["buy", "sell", "valuation", "mixed", "rent"],
+        });
+        assert.notDeepEqual(v4Evidence, v3Evidence);
+        assert.equal(v4Evidence.summary.includes("locação exclusiva"), true);
+        assert.equal(validateLandingPageInputValue(v4Field, "rent").ok, true);
+      }
+
+      const planSnapshots = ["starter", "lite", "pro", "ultra"].map((plan) =>
+        resolveRequired({ ...v4Input, plan }).fields,
+      );
+      for (const snapshot of planSnapshots.slice(1)) {
+        assert.deepEqual(snapshot, planSnapshots[0]);
+      }
     },
   },
   {
@@ -646,6 +727,7 @@ const cases: Case[] = [
       assert.equal(Object.isFrozen(landingPageInputCatalogRegistry[1].universal.entries), true);
       assert.equal(Object.isFrozen(landingPageInputCatalogRegistry[2].universal.entries), true);
       assert.equal(Object.isFrozen(landingPageInputCatalogRegistry[3].taxonLayers), true);
+      assert.equal(Object.isFrozen(landingPageInputCatalogRegistry[4].taxonLayers), true);
       assert.throws(() => {
         (landingPageInputCatalogRegistry[1].universal.entries as LandingPageInputCatalogLayerEntry[]).push(fixtureField("forbidden"));
       }, TypeError);

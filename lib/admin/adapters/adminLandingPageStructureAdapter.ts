@@ -14,10 +14,9 @@ import {
 import {
   landingPageInputCatalogPlans,
   landingPageInputCatalogRegistry,
+  buildLandingPageInputCatalogTaxonChain,
   resolveLandingPageInputCatalog,
   type LandingPageInputCatalogPlan,
-  type LandingPageInputCatalogTaxonChain,
-  type LandingPageInputCatalogTaxonIdentity,
 } from "@/conversion-content/landing-page/input-catalog";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getAdminTaxonResearchPresentation } from "./adminTaxonomyAdapter";
@@ -188,7 +187,7 @@ async function readInputs(query: StructureQuery) {
     };
   }
 
-  const chain = buildTaxonChain(selectedTaxon, taxonRead.taxons);
+  const chain = buildLandingPageInputCatalogTaxonChain(selectedTaxon, taxonRead.taxons);
   return {
     taxons: taxonRead.taxons,
     taxonError: null,
@@ -268,55 +267,6 @@ async function readActiveTaxons(): Promise<{
     })),
     error: null,
   };
-}
-
-function buildTaxonChain(
-  selected: StructureTaxon,
-  taxons: readonly StructureTaxon[],
-):
-  | { ok: true; value: LandingPageInputCatalogTaxonChain }
-  | { ok: false; error: string } {
-  const byId = new Map(taxons.map((taxon) => [taxon.id, taxon]));
-  const toIdentity = (
-    taxon: StructureTaxon,
-  ): LandingPageInputCatalogTaxonIdentity => ({
-    id: taxon.id,
-    name: taxon.name,
-    slug: taxon.slug,
-    level: taxon.level,
-    isActive: taxon.isActive,
-    parentId: taxon.parentId,
-  });
-
-  if (selected.level === "segment") {
-    return { ok: true, value: { segment: toIdentity(selected) } };
-  }
-  const parent = selected.parentId ? byId.get(selected.parentId) : undefined;
-  if (!parent) {
-    return { ok: false, error: "O taxon pai ativo não foi encontrado." };
-  }
-  if (selected.level === "niche" && parent.level === "segment") {
-    return {
-      ok: true,
-      value: { segment: toIdentity(parent), niche: toIdentity(selected) },
-    };
-  }
-  const segment = parent.parentId ? byId.get(parent.parentId) : undefined;
-  if (
-    selected.level === "ultra_niche" &&
-    parent.level === "niche" &&
-    segment?.level === "segment"
-  ) {
-    return {
-      ok: true,
-      value: {
-        segment: toIdentity(segment),
-        niche: toIdentity(parent),
-        ultraNiche: toIdentity(selected),
-      },
-    };
-  }
-  return { ok: false, error: "A cadeia taxonômica ativa é inválida." };
 }
 
 function selectTaxon(
