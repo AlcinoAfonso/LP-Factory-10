@@ -20,7 +20,7 @@ export type LandingPageDraftImageResult =
       mimeType: "image/webp";
       width: 1536;
       height: 1024;
-      requestId: string | null;
+      providerRequestId: string | null;
       visualBriefVersion: typeof LANDING_PAGE_VISUAL_BRIEF_VERSION;
     }>
   | Readonly<{
@@ -35,6 +35,8 @@ export type LandingPageDraftImageResult =
 
 type Dependencies = Readonly<{
   apiKey?: string;
+  attemptId?: string;
+  requestId?: string;
   fetchImpl?: typeof fetch;
   emitEvent?: (event: OpenAiImageWorkloadEvent) => void;
   now?: () => number;
@@ -84,9 +86,9 @@ export async function generateLandingPageDraftImage(
       cache: "no-store",
     });
     const latencyMs = now() - startedAt;
-    const requestId = nonEmptyString(response.headers.get("x-request-id"));
+    const providerRequestId = nonEmptyString(response.headers.get("x-request-id"));
     if (!response.ok) {
-      emitFailure(workload, "http_error", dependencies, { requestId, latencyMs });
+      emitFailure(workload, "http_error", dependencies, { providerRequestId, latencyMs });
       return { ok: false, kind: "http_error" };
     }
 
@@ -94,7 +96,7 @@ export async function generateLandingPageDraftImage(
     try {
       payload = await response.json();
     } catch {
-      emitFailure(workload, "invalid_response", dependencies, { requestId, latencyMs });
+      emitFailure(workload, "invalid_response", dependencies, { providerRequestId, latencyMs });
       return { ok: false, kind: "invalid_response" };
     }
     if (!isRecord(payload) || payload.error || !Array.isArray(payload.data)) {
@@ -102,7 +104,7 @@ export async function generateLandingPageDraftImage(
         workload,
         isRecord(payload) && payload.error ? "provider_error" : "invalid_response",
         dependencies,
-        { requestId, latencyMs },
+        { providerRequestId, latencyMs },
       );
       return {
         ok: false,
@@ -111,19 +113,21 @@ export async function generateLandingPageDraftImage(
     }
     const image = payload.data[0];
     if (payload.data.length !== 1 || !isRecord(image) || typeof image.b64_json !== "string") {
-      emitFailure(workload, "invalid_response", dependencies, { requestId, latencyMs });
+      emitFailure(workload, "invalid_response", dependencies, { providerRequestId, latencyMs });
       return { ok: false, kind: "invalid_response" };
     }
     const bytes = Uint8Array.from(Buffer.from(image.b64_json, "base64"));
     if (!isWebP(bytes)) {
-      emitFailure(workload, "invalid_response", dependencies, { requestId, latencyMs });
+      emitFailure(workload, "invalid_response", dependencies, { providerRequestId, latencyMs });
       return { ok: false, kind: "invalid_response" };
     }
 
     (dependencies.emitEvent ?? emitOpenAiImageWorkloadEvent)(
       createOpenAiImageWorkloadSuccessEvent({
         workload,
-        requestId,
+        attemptId: dependencies.attemptId,
+        requestId: dependencies.requestId,
+        providerRequestId,
         latencyMs,
         imageCount: 1,
         width: 1536,
@@ -139,7 +143,7 @@ export async function generateLandingPageDraftImage(
       mimeType: "image/webp",
       width: 1536,
       height: 1024,
-      requestId,
+      providerRequestId,
       visualBriefVersion: LANDING_PAGE_VISUAL_BRIEF_VERSION,
     };
   } catch (error) {
@@ -160,10 +164,19 @@ function emitFailure(
   workload: Extract<ReturnType<typeof resolveOpenAiImageWorkload>, { ok: true }>["value"],
   category: OpenAiWorkloadFailureCategory,
   dependencies: Dependencies,
-  metadata: Readonly<{ requestId?: unknown; latencyMs?: unknown }> = {},
+  metadata: Readonly<{ providerRequestId?: unknown; latencyMs?: unknown }> = {},
 ) {
   (dependencies.emitEvent ?? emitOpenAiImageWorkloadEvent)(
-    createOpenAiImageWorkloadFailureEvent({ workload, ...metadata }, category),
+    createOpenAiImageWorkloadFailureEvent(
+      {
+        workload,
+        attemptId: dependencies.attemptId,
+        requestId: dependencies.requestId,
+        visualBriefVersion: LANDING_PAGE_VISUAL_BRIEF_VERSION,
+        ...metadata,
+      },
+      category,
+    ),
   );
 }
 

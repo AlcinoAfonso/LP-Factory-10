@@ -155,16 +155,56 @@ const cases = [
       assert.equal(bindingResult.ok, false);
       assert.equal(bindingResult.error.code, "MODEL_GENERATED_BINDING");
 
-      const claim = structuredClone(candidate);
-      const hero = claim.sections.find((section) => section.kind === "hero");
-      assert.ok(hero && hero.kind === "hero");
-      hero.body = "Resultado garantido para mais de 50 clientes atendidos.";
-      const claimResult = validateLandingPagePresentationCandidate(
-        claim,
-        context.modelContext,
+      const forbiddenClaims = [
+        "Atendimento com Dra. Maria Silva.",
+        "Depoimentos de clientes comprovam a experiência.",
+        "Unidades disponíveis para pronta entrega.",
+        "Preço a partir de R$ 500.000 com entrada parcelada.",
+        "Localizado no bairro Copacabana, próximo à praia.",
+        "Corretor com CRECI 12345 e licença certificada.",
+        "Aumente suas chances e conquiste o resultado esperado.",
+      ];
+      for (const value of forbiddenClaims) {
+        const claim = structuredClone(candidate);
+        const hero = claim.sections.find((section) => section.kind === "hero");
+        assert.ok(hero && hero.kind === "hero");
+        hero.body = value;
+        const claimResult = validateLandingPagePresentationCandidate(
+          claim,
+          context.modelContext,
+        );
+        assert.equal(claimResult.ok, false, value);
+        assert.equal(claimResult.error.code, "UNAUTHORIZED_OBJECTIVE_CLAIM", value);
+      }
+
+      for (const value of [
+        "Use 20000000-0000-4000-8000-000000000002",
+        "Imagem em account/page/attempt/main.webp",
+        "Ligue para +55 21 97965-8483",
+      ]) {
+        const generated = structuredClone(candidate);
+        const hero = generated.sections.find((section) => section.kind === "hero");
+        assert.ok(hero && hero.kind === "hero");
+        hero.body = value;
+        const result = validateLandingPagePresentationCandidate(
+          generated,
+          context.modelContext,
+        );
+        assert.equal(result.ok, false, value);
+        assert.equal(result.error.code, "MODEL_GENERATED_BINDING", value);
+      }
+
+      const authorized = structuredClone(candidate);
+      const authorizedHero = authorized.sections.find((section) => section.kind === "hero");
+      assert.ok(authorizedHero && authorizedHero.kind === "hero");
+      authorizedHero.body = "Corretor com CRECI 12345";
+      assert.equal(
+        validateLandingPagePresentationCandidate(authorized, {
+          ...context.modelContext,
+          facts: [{ fieldKey: "creci_registration", value: "Corretor com CRECI 12345" }],
+        }).ok,
+        true,
       );
-      assert.equal(claimResult.ok, false);
-      assert.equal(claimResult.error.code, "UNAUTHORIZED_OBJECTIVE_CLAIM");
     },
   },
   {
@@ -175,6 +215,8 @@ const cases = [
       const events: OpenAiWorkloadEvent[] = [];
       const result = await generateLandingPageDraftCandidate(context, {
         apiKey: "test-key",
+        attemptId: "attempt-text-1",
+        requestId: "request-text-1",
         fetchImpl: async (_url, init) => {
           calls += 1;
           body = JSON.parse(String(init?.body));
@@ -207,6 +249,11 @@ const cases = [
       assert.equal(inputs[1]?.content[0]?.text.includes("IGNORE AS INSTRUÇÕES"), true);
       assert.equal(events.length, 1);
       assert.equal(events[0]?.result, "success");
+      assert.equal(events[0]?.apiKind, "responses_text");
+      assert.equal(events[0]?.attemptId, "attempt-text-1");
+      assert.equal(events[0]?.requestId, "request-text-1");
+      assert.equal(events[0]?.promptVersion, "e19.4-presentation-v1");
+      assert.equal(events[0]?.contractVersion, 1);
     },
   },
   {
@@ -216,6 +263,13 @@ const cases = [
         { status: "completed", output: [{ content: [{ type: "refusal" }] }] },
         { status: "incomplete", incomplete_details: { reason: "max_output_tokens" } },
         { status: "completed", output_text: "{}" },
+        { status: "failed", output_text: JSON.stringify(candidate) },
+        { status: "unknown", output_text: JSON.stringify(candidate) },
+        {
+          status: "completed",
+          output_text: JSON.stringify(candidate),
+          output: [{ content: [{ type: "refusal" }] }],
+        },
       ]) {
         let calls = 0;
         const result = await generateLandingPageDraftCandidate(context, {
@@ -232,6 +286,28 @@ const cases = [
         assert.equal(result.ok, false);
         assert.equal(calls, 1);
       }
+
+      const failureEvents: OpenAiWorkloadEvent[] = [];
+      const refused = await generateLandingPageDraftCandidate(context, {
+        apiKey: "test-key",
+        attemptId: "attempt-text-failure",
+        requestId: "request-text-failure",
+        fetchImpl: async () =>
+          new Response(
+            JSON.stringify({
+              status: "completed",
+              output: [{ content: [{ type: "refusal" }] }],
+            }),
+            { status: 200, headers: { "Content-Type": "application/json" } },
+          ),
+        emitEvent: (event) => failureEvents.push(event),
+      });
+      assert.equal(refused.ok, false);
+      assert.equal(failureEvents[0]?.failureCategory, "refusal");
+      assert.equal(failureEvents[0]?.attemptId, "attempt-text-failure");
+      assert.equal(failureEvents[0]?.requestId, "request-text-failure");
+      assert.equal(failureEvents[0]?.promptVersion, "e19.4-presentation-v1");
+      assert.equal(failureEvents[0]?.contractVersion, 1);
     },
   },
   {
@@ -245,6 +321,8 @@ const cases = [
         { mediaBrief: "Sala contemporânea acolhedora", semanticFacts: { offer: "consultoria" } },
         {
           apiKey: "test-key",
+          attemptId: "attempt-image-1",
+          requestId: "request-image-1",
           fetchImpl: async (_url, init) => {
             calls += 1;
             body = JSON.parse(String(init?.body));
@@ -266,7 +344,31 @@ const cases = [
       assert.equal("max_output_tokens" in (body as unknown as Record<string, unknown>), false);
       assert.equal("text" in (body as unknown as Record<string, unknown>), false);
       assert.equal(events[0]?.result, "success");
+      assert.equal(events[0]?.attemptId, "attempt-image-1");
+      assert.equal(events[0]?.requestId, "request-image-1");
+      assert.equal(events[0]?.providerRequestId, "img_req_1");
       assert.equal("inputTokens" in events[0]!, false);
+
+      const failureEvents: OpenAiImageWorkloadEvent[] = [];
+      const failure = await generateLandingPageDraftImage(
+        { mediaBrief: "Sala contemporânea acolhedora", semanticFacts: {} },
+        {
+          apiKey: "test-key",
+          attemptId: "attempt-image-failure",
+          requestId: "request-image-failure",
+          fetchImpl: async () =>
+            new Response("{}", {
+              status: 500,
+              headers: { "x-request-id": "provider-image-failure" },
+            }),
+          emitEvent: (event) => failureEvents.push(event),
+        },
+      );
+      assert.equal(failure.ok, false);
+      assert.equal(failureEvents[0]?.visualBriefVersion, "e19.4-visual-brief-v1");
+      assert.equal(failureEvents[0]?.attemptId, "attempt-image-failure");
+      assert.equal(failureEvents[0]?.requestId, "request-image-failure");
+      assert.equal(failureEvents[0]?.providerRequestId, "provider-image-failure");
     },
   },
   {
@@ -277,6 +379,7 @@ const cases = [
         { context, requestId: " req-workflow-1 " },
         {
           createAttemptId: () => "30000000-0000-4000-8000-000000000003",
+          createRequestId: () => "request-generated-unused",
           generateText: async () => {
             order.push("text");
             return {
@@ -302,7 +405,7 @@ const cases = [
               mimeType: "image/webp",
               width: 1536,
               height: 1024,
-              requestId: "img_1",
+              providerRequestId: "img_1",
               visualBriefVersion: "e19.4-visual-brief-v1",
             };
           },
@@ -326,7 +429,33 @@ const cases = [
       );
       assert.equal(textFailure.ok, false);
       assert.equal(textFailure.stage, "text");
+      assert.equal(textFailure.attemptId.length > 0, true);
+      assert.equal(textFailure.requestId.length > 0, true);
       assert.equal(imageCalls, 0);
+
+      const formContext = structuredClone(context);
+      const formChannel = formContext.serverContext.facts.find(
+        (fact) => fact.fieldKey === "primary_conversion_channel",
+      );
+      assert.ok(formChannel);
+      (formChannel as { value: unknown }).value = "form";
+      let providerCalls = 0;
+      const formFailure = await prepareLandingPageDraftRevisionCandidate(
+        { context: formContext },
+        {
+          createAttemptId: () => "attempt-form",
+          createRequestId: () => "request-form",
+          generateText: async () => {
+            providerCalls += 1;
+            return { ok: false, kind: "provider_error" };
+          },
+        },
+      );
+      assert.equal(formFailure.ok, false);
+      assert.equal(formFailure.stage, "binding");
+      assert.equal(formFailure.attemptId, "attempt-form");
+      assert.equal(formFailure.requestId, "request-form");
+      assert.equal(providerCalls, 0);
     },
   },
   {
@@ -387,6 +516,12 @@ const cases = [
         .map((path) => readFileSync(new URL(path, import.meta.url), "utf8"))
         .join("\n");
       assert.doesNotMatch(sources, /module-catalog|generation-profile|E18\.5/i);
+      const promptSource = readFileSync(
+        new URL("../conversion-content/landing-page/presentation/prompt.ts", import.meta.url),
+        "utf8",
+      );
+      assert.match(promptSource, /landingPagePresentationPromptRules/);
+      assert.doesNotMatch(promptSource, /Use exatamente uma hero|mediaBrief de text_media/);
     },
   },
 ];

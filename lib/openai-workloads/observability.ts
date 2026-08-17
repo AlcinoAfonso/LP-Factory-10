@@ -11,7 +11,9 @@ import type {
 type ImageEventInput = Readonly<{
   workload: ResolvedOpenAiImageWorkload;
   environment?: OpenAiWorkloadEnvironment;
+  attemptId?: unknown;
   requestId?: unknown;
+  providerRequestId?: unknown;
   latencyMs?: unknown;
   imageCount?: unknown;
   width?: unknown;
@@ -30,6 +32,10 @@ type EventInput = OpenAiWorkloadEventContext &
   Readonly<{
     environment?: OpenAiWorkloadEnvironment;
     responseId?: unknown;
+    attemptId?: unknown;
+    requestId?: unknown;
+    promptVersion?: unknown;
+    contractVersion?: unknown;
     latencyMs?: unknown;
     usage?: unknown;
   }>;
@@ -115,11 +121,16 @@ function createEvent(
 ): OpenAiWorkloadEvent {
   const event = {
     workload: input.workload,
+    apiKind: "responses_text" as const,
     environment: input.environment ?? resolveOpenAiWorkloadEnvironment(),
     configurationSource: input.configurationSource,
     configurationRevision: input.configurationRevision,
     model: input.model,
     reasoningEffort: input.reasoningEffort,
+    attemptId: nonEmptyString(input.attemptId),
+    requestId: nonEmptyString(input.requestId),
+    promptVersion: nonEmptyString(input.promptVersion),
+    contractVersion: positiveIntegerMetric(input.contractVersion),
     responseId: nonEmptyString(input.responseId),
     result,
     failureCategory,
@@ -149,7 +160,9 @@ function createImageEvent(
     compression: workload.compression,
     moderation: workload.moderation,
     visualBriefVersion: nonEmptyString(input.visualBriefVersion),
+    attemptId: nonEmptyString(input.attemptId),
     requestId: nonEmptyString(input.requestId),
+    providerRequestId: nonEmptyString(input.providerRequestId),
     latencyMs: durationMetric(input.latencyMs),
     imageCount: integerMetric(input.imageCount),
     width: integerMetric(input.width),
@@ -186,6 +199,12 @@ function durationMetric(value: unknown): number | null {
 
 function integerMetric(value: unknown): number | null {
   return typeof value === "number" && Number.isInteger(value) && value >= 0
+    ? value
+    : null;
+}
+
+function positiveIntegerMetric(value: unknown): number | null {
+  return typeof value === "number" && Number.isInteger(value) && value > 0
     ? value
     : null;
 }

@@ -104,6 +104,11 @@ const cases = [
       assert.equal(events.length, 1);
       assert.deepEqual(events[0], {
         workload: "niche_resolution",
+        apiKind: "responses_text",
+        attemptId: null,
+        requestId: null,
+        promptVersion: null,
+        contractVersion: null,
         environment: "unknown",
         configurationSource: "repo_catalog",
         configurationRevision: "v2",
@@ -477,7 +482,12 @@ const cases = [
         .map((file) => readFileSync(new URL(file, import.meta.url), "utf8"))
         .join("\n");
       assert.equal(/\bfetch\s*\(|@supabase|OPENAI_API_KEY|authorization\s*:/i.test(source), false);
-      assert.equal(/prompt|structured.?output|output.?schema|pricing|price.?table/i.test(source), false);
+      assert.equal(
+        /\bprompt(?!Version)|structured.?output|output.?schema|pricing|price.?table/i.test(
+          source,
+        ),
+        false,
+      );
     },
   },
 ];

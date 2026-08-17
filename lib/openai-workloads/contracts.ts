@@ -209,7 +209,12 @@ export type OpenAiWorkloadEventContext = Readonly<{
 type OpenAiWorkloadEventBase = OpenAiWorkloadEventContext &
   OpenAiWorkloadUsage &
   Readonly<{
+    apiKind: "responses_text";
     environment: OpenAiWorkloadEnvironment;
+    attemptId: string | null;
+    requestId: string | null;
+    promptVersion: string | null;
+    contractVersion: number | null;
     responseId: string | null;
     latencyMs: number | null;
   }>;
@@ -243,7 +248,9 @@ export type OpenAiImageWorkloadEvent = Readonly<{
   compression: 80;
   moderation: "auto";
   visualBriefVersion: string | null;
+  attemptId: string | null;
   requestId: string | null;
+  providerRequestId: string | null;
   latencyMs: number | null;
   imageCount: number | null;
   width: number | null;

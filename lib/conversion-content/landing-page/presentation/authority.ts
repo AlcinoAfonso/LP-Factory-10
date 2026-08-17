@@ -4,6 +4,11 @@ import { resolveLandingPageRootParameters } from "../root-resolver";
 
 export const LANDING_PAGE_PRESENTATION_CONTRACT_VERSION = 1 as const;
 
+export const landingPagePresentationPromptRules = deepFreeze([
+  "Use exatamente uma hero e de uma a duas seções cta. Se houver header ele é o primeiro; se houver footer ele é o último.",
+  "Na versão 1, mediaBrief de text_media deve ser null; a única mídia solicitada é mediaBrief da hero.",
+] as const);
+
 const root = resolveLandingPageRootParameters({ rootVersion: 1 });
 if (!root.ok) {
   throw new Error("Landing page root v1 is required by presentation contract v1");
@@ -245,13 +250,22 @@ function isModelGeneratedBinding(value: string) {
     /https?:\/\/|www\.|[\w.+-]+@[\w.-]+\.[a-z]{2,}/i.test(value) ||
     /(?:\+?55\s*)?(?:\(?\d{2}\)?\s*)?9?\d{4}[-\s]?\d{4}/.test(value) ||
     /\b[0-9a-f]{8}-[0-9a-f-]{27,}\b/i.test(value) ||
-    /(?:^|\s)(?:bucket|asset|storage|path)\s*[:=]/i.test(value)
+    /(?:^|\s)(?:bucket|asset|storage|path)\s*[:=]/i.test(value) ||
+    /(?:^|\s)[\w.-]+(?:\/[\w.-]+)+(?:\s|$)/i.test(value) ||
+    /\b[\w-]+\.(?:webp|png|jpe?g|svg)\b/i.test(value)
   );
 }
 
 function isObjectiveClaim(value: string) {
-  return /\b(?:creci|registro|certificad[oa]|licen[çc]a|garanti[ad]|comprovad[oa]|clientes? atendid[oa]s?|im[oó]vel dispon[ií]vel|r\$\s*\d|\d+(?:[.,]\d+)?\s*%|endere[çc]o)\b/i.test(
-    value,
+  return (
+    /\b(?:creci|registro|certificad[oa]|licen[çc]a|credencial|garanti[ad]|comprovad[oa])\b/i.test(value) ||
+    /\b(?:clientes?|depoimentos?|avaliaç(?:ão|ões)|prova social|cases? de sucesso)\b/i.test(value) ||
+    /\b(?:dispon[ií]vel|pronta entrega|estoque|unidades? restantes?|vagas? limitadas?)\b/i.test(value) ||
+    /\b(?:r\$\s*\d|\d+(?:[.,]\d+)?\s*%|a partir de|preç[oa]|valor de|reais|desconto|entrada|parcel|juros)\b/i.test(value) ||
+    /\b(?:endere[çc]o|rua|avenida|bairro|cep|localizad[oa] em|pr[oó]ximo a)\b/i.test(value) ||
+    /\b(?:resultado|retorno|aument(?:a|e|ou)|reduz(?:a|e|iu)|economiz(?:a|e|ou)|conquist(?:a|e|ou)|vend(?:a|e|eu)|alcan[çc](?:a|e|ou))\b/i.test(value) ||
+    /\b(?:[Dd]r|[Dd]ra|[Ss]r|[Ss]ra)\.?\s+[A-ZÁÀÂÃÉÊÍÓÔÕÚÇ][\p{L}'-]+(?:\s+[A-ZÁÀÂÃÉÊÍÓÔÕÚÇ][\p{L}'-]+)+/u.test(value) ||
+    /\b(?:[Cc]om|[Pp]or|[Aa]tendimento de)\s+[A-ZÁÀÂÃÉÊÍÓÔÕÚÇ][\p{L}'-]+\s+[A-ZÁÀÂÃÉÊÍÓÔÕÚÇ][\p{L}'-]+/u.test(value)
   );
 }
 

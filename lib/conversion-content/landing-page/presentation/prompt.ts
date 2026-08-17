@@ -1,4 +1,5 @@
 import type { LandingPageGenerationContextPackage } from "../../../lp-builder/generationContextContracts";
+import { landingPagePresentationPromptRules } from "./authority";
 
 export const LANDING_PAGE_DRAFT_PROMPT_VERSION = "e19.4-presentation-v1" as const;
 export const LANDING_PAGE_VISUAL_BRIEF_VERSION = "e19.4-visual-brief-v1" as const;
@@ -9,8 +10,7 @@ const stableInstructions = [
   "Use somente fatos presentes em modelContext; não invente resultados, prova social, disponibilidade, preço, endereço, condição comercial, pessoa, cliente ou credencial.",
   "Escreva copy original, específica e útil para o público e a oferta autorizados.",
   "Não gere URL, telefone, e-mail, logo, consentimento, ID, path de asset, HTML, CSS, JavaScript ou React.",
-  "Use exatamente uma hero e de uma a duas seções cta. Se houver header ele é o primeiro; se houver footer ele é o último.",
-  "Na versão 1, mediaBrief de text_media deve ser null; a única mídia solicitada é mediaBrief da hero.",
+  ...landingPagePresentationPromptRules,
 ].join("\n");
 
 export function buildLandingPageDraftPrompt(

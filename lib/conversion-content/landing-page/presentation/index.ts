@@ -2,6 +2,7 @@ export {
   LANDING_PAGE_PRESENTATION_CONTRACT_VERSION,
   landingPagePresentationCandidateSchema,
   landingPagePresentationJsonSchema,
+  landingPagePresentationPromptRules,
   landingPagePresentationSectionSchema,
   validateLandingPagePresentationCandidate,
   type LandingPagePresentationCandidate,

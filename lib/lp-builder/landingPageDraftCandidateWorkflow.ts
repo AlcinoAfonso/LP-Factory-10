@@ -19,7 +19,7 @@ export type LandingPageDraftCandidateWorkflowResult =
   | Readonly<{
       ok: true;
       attemptId: string;
-      requestId: string | null;
+      requestId: string;
       candidate: LandingPagePresentationCandidate;
       binding: Extract<LandingPageConversionBindingResult, { ok: true }>["value"];
       text: Extract<LandingPageDraftTextResult, { ok: true }>;
@@ -27,6 +27,8 @@ export type LandingPageDraftCandidateWorkflowResult =
     }>
   | Readonly<{
       ok: false;
+      attemptId: string;
+      requestId: string;
       stage: "binding" | "text" | "image";
       reason: string;
     }>;
@@ -34,6 +36,7 @@ export type LandingPageDraftCandidateWorkflowResult =
 type Dependencies = Readonly<{
   apiKey?: string;
   createAttemptId?: () => string;
+  createRequestId?: () => string;
   generateText?: typeof generateLandingPageDraftCandidate;
   generateImage?: typeof generateLandingPageDraftImage;
 }>;
@@ -45,20 +48,28 @@ export async function prepareLandingPageDraftRevisionCandidate(
   }>,
   dependencies: Dependencies = {},
 ): Promise<LandingPageDraftCandidateWorkflowResult> {
+  const attemptId = createCorrelationId(dependencies.createAttemptId);
+  const requestId =
+    normalizeRequestId(input.requestId) ?? createCorrelationId(dependencies.createRequestId);
   const binding = resolveLandingPageConversionBinding(input.context.serverContext);
   if (!binding.ok) {
-    return { ok: false, stage: "binding", reason: binding.error };
+    return failure(attemptId, requestId, "binding", binding.error);
   }
 
   const text = await (dependencies.generateText ?? generateLandingPageDraftCandidate)(
     input.context,
-    { apiKey: dependencies.apiKey },
+    { apiKey: dependencies.apiKey, attemptId, requestId },
   );
-  if (!text.ok) return { ok: false, stage: "text", reason: text.kind };
+  if (!text.ok) return failure(attemptId, requestId, "text", text.kind);
 
   const hero = text.candidate.sections.find((section) => section.kind === "hero");
   if (!hero || hero.kind !== "hero") {
-    return { ok: false, stage: "text", reason: "hero_missing_after_validation" };
+    return failure(
+      attemptId,
+      requestId,
+      "text",
+      "hero_missing_after_validation",
+    );
   }
 
   const image = await (dependencies.generateImage ?? generateLandingPageDraftImage)(
@@ -66,14 +77,14 @@ export async function prepareLandingPageDraftRevisionCandidate(
       mediaBrief: hero.mediaBrief,
       semanticFacts: input.context.modelContext.facts,
     },
-    { apiKey: dependencies.apiKey },
+    { apiKey: dependencies.apiKey, attemptId, requestId },
   );
-  if (!image.ok) return { ok: false, stage: "image", reason: image.kind };
+  if (!image.ok) return failure(attemptId, requestId, "image", image.kind);
 
   return {
     ok: true,
-    attemptId: (dependencies.createAttemptId ?? randomUUID)(),
-    requestId: normalizeRequestId(input.requestId),
+    attemptId,
+    requestId,
     candidate: text.candidate,
     binding: binding.value,
     text,
@@ -84,4 +95,18 @@ export async function prepareLandingPageDraftRevisionCandidate(
 function normalizeRequestId(value: string | null | undefined) {
   const normalized = value?.trim() ?? "";
   return normalized.length > 0 ? normalized : null;
+}
+
+function createCorrelationId(factory: (() => string) | undefined) {
+  const value = (factory ?? randomUUID)().trim();
+  return value || randomUUID();
+}
+
+function failure(
+  attemptId: string,
+  requestId: string,
+  stage: "binding" | "text" | "image",
+  reason: string,
+): LandingPageDraftCandidateWorkflowResult {
+  return { ok: false, attemptId, requestId, stage, reason };
 }

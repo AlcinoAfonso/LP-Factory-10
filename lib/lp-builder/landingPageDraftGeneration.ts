@@ -43,6 +43,8 @@ export type LandingPageDraftTextResult =
 
 type Dependencies = Readonly<{
   apiKey?: string;
+  attemptId?: string;
+  requestId?: string;
   fetchImpl?: typeof fetch;
   emitEvent?: (event: OpenAiWorkloadEvent) => void;
   now?: () => number;
@@ -109,6 +111,10 @@ export async function generateLandingPageDraftCandidate(
       emitFailure(workload, "provider_error", dependencies, metadata);
       return { ok: false, kind: "incomplete" };
     }
+    if (payload.status !== "completed") {
+      emitFailure(workload, "provider_error", dependencies, metadata);
+      return { ok: false, kind: "provider_error" };
+    }
 
     const output = readOutputText(payload);
     if (output.kind !== "text") {
@@ -139,7 +145,7 @@ export async function generateLandingPageDraftCandidate(
 
     (dependencies.emitEvent ?? emitOpenAiWorkloadEvent)(
       createOpenAiWorkloadSuccessEvent({
-        ...eventContext(workload),
+        ...eventContext(workload, dependencies),
         ...metadata,
       }),
     );
@@ -198,6 +204,7 @@ export function buildLandingPageDraftResponsesRequest(
 
 function eventContext(
   workload: Extract<ReturnType<typeof resolveOpenAiProductWorkload>, { ok: true }>["value"],
+  dependencies: Dependencies,
 ) {
   return {
     workload: workload.id,
@@ -205,6 +212,10 @@ function eventContext(
     configurationRevision: workload.revision,
     model: workload.model,
     reasoningEffort: workload.reasoningEffort,
+    attemptId: dependencies.attemptId,
+    requestId: dependencies.requestId,
+    promptVersion: LANDING_PAGE_DRAFT_PROMPT_VERSION,
+    contractVersion: 1,
   } as const;
 }
 
@@ -216,7 +227,7 @@ function emitFailure(
 ) {
   (dependencies.emitEvent ?? emitOpenAiWorkloadEvent)(
     createOpenAiWorkloadFailureEvent(
-      { ...eventContext(workload), ...metadata },
+      { ...eventContext(workload, dependencies), ...metadata },
       category,
     ),
   );
@@ -225,6 +236,16 @@ function emitFailure(
 function readOutputText(payload: Record<string, unknown>):
   | Readonly<{ kind: "text"; value: string }>
   | Readonly<{ kind: "refusal" | "invalid_response" }> {
+  if (Array.isArray(payload.output)) {
+    for (const item of payload.output) {
+      if (!isRecord(item) || !Array.isArray(item.content)) continue;
+      for (const content of item.content) {
+        if (isRecord(content) && content.type === "refusal") {
+          return { kind: "refusal" };
+        }
+      }
+    }
+  }
   if (typeof payload.output_text === "string") {
     return { kind: "text", value: payload.output_text };
   }
@@ -232,9 +253,11 @@ function readOutputText(payload: Record<string, unknown>):
   for (const item of payload.output) {
     if (!isRecord(item) || !Array.isArray(item.content)) continue;
     for (const content of item.content) {
-      if (!isRecord(content)) continue;
-      if (content.type === "refusal") return { kind: "refusal" };
-      if (content.type === "output_text" && typeof content.text === "string") {
+      if (
+        isRecord(content) &&
+        content.type === "output_text" &&
+        typeof content.text === "string"
+      ) {
         return { kind: "text", value: content.text };
       }
     }
