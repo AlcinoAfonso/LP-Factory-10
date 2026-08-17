@@ -49,6 +49,31 @@ export type {
   LandingPageDraftCandidateWorkflowResult,
 } from "./landingPageDraftCandidateWorkflow";
 export {
+  LANDING_PAGE_REVISION_ASSET_BUCKET,
+  LANDING_PAGE_REVISION_ASSET_MAX_BYTES,
+  LANDING_PAGE_REVISION_CONTRACT_VERSION,
+  LANDING_PAGE_REVISION_SNAPSHOT_VERSION,
+  buildLandingPageRevisionDocuments,
+  createLandingPageRevisionAssetReference,
+  landingPageRevisionAssetReferenceSchema,
+  landingPageRevisionContentSchema,
+  validateLandingPageRevisionSnapshot,
+  type LandingPageRevisionAssetReference,
+  type LandingPageRevisionContent,
+  type LandingPageRevisionSnapshot,
+} from "./landingPageRevision";
+export {
+  materializeLandingPageDraftRevisionWithDependencies,
+  type AppendLandingPageRevisionResult,
+  type MaterializeLandingPageDraftRevisionResult,
+} from "./landingPageRevisionWorkflow";
+export { materializeLandingPageDraftRevision } from "./adapters/landingPageRevisionWorkflowAdapter";
+export {
+  appendLandingPageRevision,
+  readCurrentLandingPageRevision,
+  type CurrentLandingPageRevision,
+} from "./adapters/landingPageRevisionAdapter";
+export {
   resolveLandingPageConversionBinding,
   type LandingPageConversionBindingResult,
   type LandingPageConversionChannel,

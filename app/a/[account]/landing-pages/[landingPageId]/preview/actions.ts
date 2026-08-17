@@ -1,9 +1,12 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
+
 import { requireAccountMembersManager } from "@/lib/access/guards";
 import { getCommercialEntitlementSignal } from "@/commercial-entitlements";
 import { compileLandingPageGenerationContextForDraft } from "@/lp-builder/adapters/generationContextAdapter";
 import { loadLandingPageRevisionReadiness } from "@/lp-builder/adapters/landingPageRevisionReadinessAdapter";
+import { materializeLandingPageDraftRevision } from "@/lp-builder/adapters/landingPageRevisionWorkflowAdapter";
 import { resolveLandingPageConversionBinding } from "@/lp-builder/landingPageDraftWorkflow";
 
 export const maxDuration = 300;
@@ -23,7 +26,8 @@ export type GenerateLandingPageRevisionActionState =
         | "ENTITLEMENT_REQUIRED"
         | "GENERATION_UNAVAILABLE"
         | "GENERATION_CONTEXT_UNAVAILABLE"
-        | "UNSUPPORTED_PRIMARY_CONVERSION_CHANNEL";
+        | "UNSUPPORTED_PRIMARY_CONVERSION_CHANNEL"
+        | "GENERATION_FAILED";
       message: string;
     }>;
 
@@ -86,9 +90,55 @@ export async function generateLandingPageRevisionAction(
     );
   }
 
-  // E19.4.4 conecta esta mesma Action ao append transacional. Até lá, mesmo um
-  // readiness inesperadamente positivo permanece fail-closed e não chama providers.
-  return actionError("GENERATION_UNAVAILABLE", UNAVAILABLE_MESSAGE);
+  const materialized = await materializeLandingPageDraftRevision({
+    context: context.value,
+    createdBy: access.context.actorUserId,
+    requestId: access.context.requestId,
+    revalidate: async () => {
+      const currentAccess = await requireAccountMembersManager(accountSlug);
+      if (
+        !currentAccess.allowed ||
+        currentAccess.context.accountStatus !== "active" ||
+        currentAccess.context.accountId !== access.context.accountId ||
+        currentAccess.context.actorUserId !== access.context.actorUserId
+      ) {
+        return false;
+      }
+      const currentEntitlement = await getCommercialEntitlementSignal({
+        accountId: currentAccess.context.accountId,
+      });
+      if (!currentEntitlement?.isCommerciallyEligible) return false;
+      const currentContext = await compileLandingPageGenerationContextForDraft({
+        accountId: currentAccess.context.accountId,
+        landingPageId,
+        requestId: currentAccess.context.requestId ?? undefined,
+      });
+      return (
+        currentContext.ok &&
+        JSON.stringify(currentContext.value) === JSON.stringify(context.value)
+      );
+    },
+  });
+  if (!materialized.ok) {
+    console.error(JSON.stringify({
+      event: "landing_page_revision_generation_failed",
+      attempt_id: materialized.attemptId,
+      request_id: materialized.requestId,
+      stage: materialized.stage,
+      reason: materialized.reason,
+    }));
+    return actionError(
+      "GENERATION_FAILED",
+      "Não foi possível criar a revisão. Nenhuma revisão parcial foi mantida.",
+    );
+  }
+
+  revalidatePath(`/a/${accountSlug}/landing-pages/${landingPageId}/preview`);
+  return {
+    status: "success",
+    revisionId: materialized.revisionId,
+    revisionNumber: materialized.revisionNumber,
+  };
 }
 
 function actionError(

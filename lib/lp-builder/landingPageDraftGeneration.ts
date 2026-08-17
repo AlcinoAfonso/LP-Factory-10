@@ -27,6 +27,14 @@ export type LandingPageDraftTextResult =
       responseId: string | null;
       promptVersion: typeof LANDING_PAGE_DRAFT_PROMPT_VERSION;
       usage: OpenAiWorkloadUsage;
+      latencyMs: number;
+      configuration: Readonly<{
+        workload: "landing_page_draft_generation";
+        source: "repo_catalog";
+        revision: string;
+        model: string;
+        reasoningEffort: "max";
+      }>;
     }>
   | Readonly<{
       ok: false;
@@ -56,7 +64,12 @@ export async function generateLandingPageDraftCandidate(
 ): Promise<LandingPageDraftTextResult> {
   const resolved = resolveOpenAiProductWorkload("landing_page_draft_generation");
   const apiKey = dependencies.apiKey?.trim();
-  if (!resolved.ok || !apiKey || context.contractVersion !== 3) {
+  if (
+    !resolved.ok ||
+    !apiKey ||
+    context.contractVersion !== 3 ||
+    resolved.value.reasoningEffort !== "max"
+  ) {
     if (resolved.ok) emitFailure(resolved.value, "configuration_invalid", dependencies);
     return { ok: false, kind: "configuration_invalid" };
   }
@@ -155,6 +168,14 @@ export async function generateLandingPageDraftCandidate(
       responseId: nonEmptyString(payload.id),
       promptVersion: LANDING_PAGE_DRAFT_PROMPT_VERSION,
       usage: normalizeOpenAiResponseUsage(payload.usage),
+      latencyMs,
+      configuration: {
+        workload: "landing_page_draft_generation",
+        source: workload.source,
+        revision: workload.revision,
+        model: workload.model,
+        reasoningEffort: "max",
+      },
     };
   } catch (error) {
     const timedOut = error instanceof Error && error.name === "AbortError";

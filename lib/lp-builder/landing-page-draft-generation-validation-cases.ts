@@ -18,6 +18,12 @@ import {
 } from "./landingPageDraftGeneration";
 import { generateLandingPageDraftImage } from "./landingPageDraftImageGeneration";
 import { resolveLandingPageConversionBinding } from "./landingPageDraftWorkflow";
+import {
+  LANDING_PAGE_REVISION_ASSET_BUCKET,
+  buildLandingPageRevisionDocuments,
+  createLandingPageRevisionAssetReference,
+} from "./landingPageRevision";
+import { materializeLandingPageDraftRevisionWithDependencies } from "./landingPageRevisionWorkflow";
 
 const candidate: LandingPagePresentationCandidate = {
   contractVersion: 1,
@@ -423,6 +429,14 @@ const cases = [
                 reasoningTokens: 0,
                 totalTokens: 2,
               },
+              latencyMs: 10,
+              configuration: {
+                workload: "landing_page_draft_generation",
+                source: "repo_catalog",
+                revision: "v2",
+                model: "gpt-5.6-luna",
+                reasoningEffort: "max",
+              },
             };
           },
           generateImage: async () => {
@@ -435,6 +449,18 @@ const cases = [
               height: 1024,
               providerRequestId: "img_1",
               visualBriefVersion: "e19.4-visual-brief-v1",
+              latencyMs: 20,
+              configuration: {
+                workload: "landing_page_draft_image_generation",
+                source: "repo_catalog",
+                revision: "v2",
+                model: "gpt-image-2",
+                size: "1536x1024",
+                quality: "medium",
+                format: "webp",
+                compression: 80,
+                moderation: "auto",
+              },
             };
           },
         },
@@ -505,6 +531,118 @@ const cases = [
     },
   },
   {
+    name: "revision documents keep stable private media identity and reproducible metadata",
+    run: () => {
+      const workflow = successfulCandidateWorkflow(
+        "30000000-0000-4000-8000-000000000030",
+      );
+      const asset = createLandingPageRevisionAssetReference({
+        accountId: context.identities.accountId,
+        landingPageId: context.identities.landingPage.id,
+        attemptId: workflow.attemptId,
+        bytes: workflow.image.bytes.byteLength,
+        alt: "Encontre um caminho claro para seu próximo imóvel",
+        imageConfigVersion: workflow.image.configuration.revision,
+        visualBriefVersion: workflow.image.visualBriefVersion,
+      });
+      assert.ok(asset);
+      assert.equal(asset.bucket, LANDING_PAGE_REVISION_ASSET_BUCKET);
+      assert.equal(
+        asset.path,
+        `${context.identities.accountId}/${context.identities.landingPage.id}/${workflow.attemptId}/main.webp`,
+      );
+      const documents = buildLandingPageRevisionDocuments({
+        context,
+        candidate: workflow,
+        asset,
+        generatedAt: "2026-08-17T18:00:00.000Z",
+      });
+      assert.equal(documents.ok, true);
+      if (!documents.ok) return;
+      assert.deepEqual(documents.content.media.mainImage, asset);
+      assert.equal(documents.snapshot.media.mainImage.path, asset.path);
+      assert.equal(documents.snapshot.workloads.text.costStatus, "unavailable");
+      assert.equal(documents.snapshot.workloads.image.costStatus, "unavailable");
+      assert.doesNotMatch(JSON.stringify(documents), /signedUrl|apiKey|rawResponse/);
+    },
+  },
+  {
+    name: "revision workflow uploads, revalidates and appends in order",
+    run: async () => {
+      const order: string[] = [];
+      const result = await materializeLandingPageDraftRevisionWithDependencies(
+        {
+          context,
+          createdBy: "40000000-0000-4000-8000-000000000040",
+          requestId: "request-revision",
+        },
+        {
+          prepareCandidate: async () => {
+            order.push("candidate");
+            return successfulCandidateWorkflow(
+              "30000000-0000-4000-8000-000000000031",
+            );
+          },
+          uploadAsset: async () => {
+            order.push("upload");
+            return { ok: true };
+          },
+          cleanupAsset: async () => {
+            order.push("cleanup");
+          },
+          revalidate: async () => {
+            order.push("revalidate");
+            return true;
+          },
+          appendRevision: async (input) => {
+            order.push("append");
+            assert.equal(input.content.media.mainImage.bucket, LANDING_PAGE_REVISION_ASSET_BUCKET);
+            return {
+              ok: true,
+              revisionId: "50000000-0000-4000-8000-000000000050",
+              revisionNumber: 2,
+            };
+          },
+          now: () => new Date("2026-08-17T18:00:00.000Z"),
+        },
+      );
+      assert.equal(result.ok, true);
+      assert.deepEqual(order, ["candidate", "upload", "revalidate", "append"]);
+      if (result.ok) assert.equal(result.revisionNumber, 2);
+    },
+  },
+  {
+    name: "revision workflow cleans exact asset and never appends after failed revalidation",
+    run: async () => {
+      let appendCalls = 0;
+      const cleaned: string[] = [];
+      const result = await materializeLandingPageDraftRevisionWithDependencies(
+        {
+          context,
+          createdBy: "40000000-0000-4000-8000-000000000040",
+        },
+        {
+          prepareCandidate: async () =>
+            successfulCandidateWorkflow("30000000-0000-4000-8000-000000000032"),
+          uploadAsset: async () => ({ ok: true }),
+          cleanupAsset: async (asset) => {
+            cleaned.push(asset.path);
+          },
+          revalidate: async () => false,
+          appendRevision: async () => {
+            appendCalls += 1;
+            return { ok: false, error: "APPEND_FAILED" };
+          },
+        },
+      );
+      assert.equal(result.ok, false);
+      assert.equal(appendCalls, 0);
+      assert.deepEqual(cleaned, [
+        `${context.identities.accountId}/${context.identities.landingPage.id}/30000000-0000-4000-8000-000000000032/main.webp`,
+      ]);
+    },
+  },
+  {
     name: "route action checks readiness before context and providers",
     run: () => {
       const action = readFileSync(
@@ -520,6 +658,8 @@ const cases = [
       );
       assert.doesNotMatch(action, /generateLandingPageDraftCandidate|generateLandingPageDraftImage/);
       assert.match(action, /UNSUPPORTED_PRIMARY_CONVERSION_CHANNEL/);
+      assert.match(action, /materializeLandingPageDraftRevision/);
+      assert.match(action, /currentEntitlement/);
       const page = readFileSync(
         new URL(
           "../../app/a/[account]/landing-pages/[landingPageId]/preview/page.tsx",
@@ -567,4 +707,61 @@ async function runCases() {
     buildLandingPageDraftResponsesRequest(context).text.format.strict,
     true,
   );
+}
+
+function successfulCandidateWorkflow(attemptId: string) {
+  return {
+    ok: true,
+    attemptId,
+    requestId: "request-revision",
+    candidate,
+    binding: {
+      channel: "whatsapp",
+      destinationFieldKey: "whatsapp_destination",
+      destination: "+5521999999999",
+    },
+    text: {
+      ok: true,
+      candidate,
+      responseId: "resp_revision",
+      promptVersion: "e19.4-presentation-v1",
+      usage: {
+        inputTokens: 100,
+        cachedInputTokens: 0,
+        cacheWriteTokens: null,
+        outputTokens: 200,
+        reasoningTokens: 50,
+        totalTokens: 300,
+      },
+      latencyMs: 1000,
+      configuration: {
+        workload: "landing_page_draft_generation",
+        source: "repo_catalog",
+        revision: "v2",
+        model: "gpt-5.6-luna",
+        reasoningEffort: "max",
+      },
+    },
+    image: {
+      ok: true,
+      bytes: Uint8Array.from([1, 2, 3, 4]),
+      mimeType: "image/webp",
+      width: 1536,
+      height: 1024,
+      providerRequestId: "img_revision",
+      visualBriefVersion: "e19.4-visual-brief-v1",
+      latencyMs: 1200,
+      configuration: {
+        workload: "landing_page_draft_image_generation",
+        source: "repo_catalog",
+        revision: "v2",
+        model: "gpt-image-2",
+        size: "1536x1024",
+        quality: "medium",
+        format: "webp",
+        compression: 80,
+        moderation: "auto",
+      },
+    },
+  } as const;
 }

@@ -22,6 +22,18 @@ export type LandingPageDraftImageResult =
       height: 1024;
       providerRequestId: string | null;
       visualBriefVersion: typeof LANDING_PAGE_VISUAL_BRIEF_VERSION;
+      latencyMs: number;
+      configuration: Readonly<{
+        workload: "landing_page_draft_image_generation";
+        source: "repo_catalog";
+        revision: string;
+        model: string;
+        size: "1536x1024";
+        quality: "medium";
+        format: "webp";
+        compression: 80;
+        moderation: "auto";
+      }>;
     }>
   | Readonly<{
       ok: false;
@@ -145,6 +157,18 @@ export async function generateLandingPageDraftImage(
       height: 1024,
       providerRequestId,
       visualBriefVersion: LANDING_PAGE_VISUAL_BRIEF_VERSION,
+      latencyMs,
+      configuration: {
+        workload: "landing_page_draft_image_generation",
+        source: workload.source,
+        revision: workload.revision,
+        model: workload.model,
+        size: workload.size,
+        quality: workload.quality,
+        format: workload.format,
+        compression: workload.compression,
+        moderation: workload.moderation,
+      },
     };
   } catch (error) {
     const timedOut = error instanceof Error && error.name === "AbortError";
