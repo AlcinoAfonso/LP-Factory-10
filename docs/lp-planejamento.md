@@ -272,7 +272,7 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 - E19.3 é boundary determinístico de autorização, pesquisa integral, revalidação factual e transporte de contexto; não gera nem materializa LP.
 - E19.4 é responsável por tentativas de geração, decisões narrativas/estruturais da IA dentro do contrato suportado, candidata, validação, revisão válida, materialização, renderer e prova humana.
 - A direção vigente da E19.4 é uma LP estável com múltiplas revisões append-only; o contrato 1:1/write-once existente é histórico do estágio anterior e seu shape físico só muda em recorte próprio da E19.4.
-- E19.5 Light sucede E19.4 para workspace operacional, lifecycle e evolução da mesma LP em `draft` por novas tentativas/revisões preservadas. A formulação do PR #726 com novos drafts independentes E1/E2/E3 permanece apenas como histórico do plano em reconciliação.
+- E19.5 Light sucede E19.4 para workspace operacional e lifecycle da LP estável, permitindo ao usuário acionar, pelo boundary vigente da E19.4, novas tentativas que possam produzir revisões preservadas da mesma LP em `draft`. A formulação do PR #726 com novos drafts independentes E1/E2/E3 permanece apenas como histórico do plano em reconciliação.
 - A home do cliente deve preservar uma linha por LP comercial; histórico e comparação de revisões pertencem à LP concreta.
 - Conta piloto e cliente continuam no mesmo fluxo oficial.
 
