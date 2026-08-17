@@ -318,8 +318,17 @@
 • O sucesso exige igualdade exata entre a versão avaliada e a versão requerida; ausência, incompatibilidade, feature gate ou falha operacional devem permanecer erros tipados e fail-closed.
 • A avaliação semântica é assistida por IA no Codex App e permanece externa ao runtime do produto; a decisão final de suficiência e seu registro administrativo são humanos, e o boundary apenas aplica deterministicamente a decisão já registrada.
 
+3.15.8 Geração controlada da candidata de `landing_page`
+• A geração server-side consome somente o pacote público autorizado do LP Builder e deve separar contexto semântico enviado ao modelo de valores operacionais usados apenas pelo servidor.
+• A autoridade de apresentação, o prompt, o schema estrito e a validação factual pertencem ao boundary `lib/conversion-content/landing-page/presentation/`; uma candidata inválida nunca segue para persistência.
+• Texto e imagem são workloads independentes, com configuração, telemetria e falhas próprias; parâmetros exclusivos do workload textual não podem ser transportados para a API de mídia.
+• O fluxo permanece linear, controlado e não agentic, sem tools, retry ou fallback automático; falha ou recusa de qualquer provider encerra a tentativa sem materialização parcial.
+• Correlação deve preservar identificadores internos de tentativa e requisição distintos dos identificadores dos providers, sem registrar prompt, resposta integral, contexto de negócio, PII, secrets ou raciocínio privado.
+• Rotas e ações de geração devem falhar fechado antes dos providers enquanto o probe read-only de prontidão da materialização não comprovar o contrato exigido no ambiente alvo.
+
 3.16 Configuração e observabilidade de workloads OpenAI
 • O boundary transversal canônico é `lib/openai-workloads/`; consumidores de produto usam somente sua API pública para resolver modelo e reasoning effort, sem ler variáveis de modelo nem acessar o registry interno.
+• O contrato público discrimina workloads textuais e de imagem; cada tipo expõe somente a configuração aplicável à sua API, sem default cruzado nem coerção entre modalidades.
 • O boundary comum não executa chamadas OpenAI e não contém secrets, prompts, schemas funcionais, regras de fallback ou persistência; transporte e comportamento funcional permanecem nos domínios consumidores.
 • Cada tentativa de provider deve emitir somente metadados operacionais normalizados e seguros, preservando métricas ausentes como `null`; prompts, respostas integrais, payloads de negócio, PII, secrets e cálculo monetário não entram no evento comum.
 

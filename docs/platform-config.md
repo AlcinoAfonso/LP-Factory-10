@@ -169,17 +169,19 @@
 • Valor esperado: `true`
 
 • `OPENAI_API_KEY`
-• Finalidade: chave server-side compartilhada pelos três consumidores OpenAI de produto autorizados no Core.
+• Finalidade: chave server-side compartilhada pelos consumidores OpenAI de produto autorizados no Core.
 • Escopo: Production e Preview.
 • Estado atual: configurada em Production e Preview; os três consumidores foram validados em Production em 10/08/2026 sem exposição do valor.
 • Valor real: não versionar.
-• Regra operacional: os três consumidores podem compartilhar a mesma chave; não criar outra sem necessidade aprovada.
+• Regra operacional: os consumidores autorizados podem compartilhar a mesma chave; não criar outra sem necessidade aprovada.
 
 • Configuração efetiva dos workloads OpenAI de produto
 • Fonte canônica: `lib/openai-workloads/registry.ts`, com `configurationSource: repo_catalog` e revisão `v1`.
-• Workloads: `niche_resolution`, `landing_page_generation_profile_proposal` e `commercial_activation_draft_generation`.
-• Configuração comum atual: modelo `gpt-5.4-mini` e esforço de raciocínio `none`.
+• Workloads textuais validados operacionalmente: `niche_resolution`, `landing_page_generation_profile_proposal` e `commercial_activation_draft_generation`, com modelo `gpt-5.4-mini` e esforço de raciocínio `none`.
+• Workload textual implementado no repositório e ainda não validado no ambiente alvo: `landing_page_draft_generation`, com modelo `gpt-5.6-luna`, esforço `max`, Responses API, Structured Output estrito, `store:false` e timeout de 120 s.
+• Workload de imagem implementado no repositório e ainda não validado no ambiente alvo: `landing_page_draft_image_generation`, com modelo `gpt-image-2`, saída WebP 1536 × 1024, qualidade `medium`, compressão 80, moderação `auto` e timeout de 120 s.
 • Validação operacional: os três workloads foram executados uma única vez em Production em 10/08/2026; os Runtime Logs confirmaram sucesso e telemetria sanitizada, sem prompt, resposta integral, credencial ou dado pessoal.
+• Pendência operacional: executar canários sem persistência dos dois workloads de draft em Preview e confirmar `maxDuration = 300` efetivo antes da primeira geração real.
 • Variáveis legadas de modelo na Vercel
 • Nomes: `OPENAI_NICHE_RESOLVER_MODEL`, `OPENAI_LANDING_PAGE_GENERATION_PROFILE_MODEL` e `OPENAI_COMMERCIAL_ACTIVATION_MODEL`.
 • Escopo: Production e Preview.
@@ -297,14 +299,17 @@
 • Finalidade: autenticação com OpenAI API; no Core, a mesma chave server-side pode atender os três consumidores de produto.
 • Valor real: não versionar.
 
-• A seleção de modelo e esforço dos três workloads OpenAI de produto não usa variáveis Vercel no runtime atual; o contrato efetivo está no catálogo versionado do repositório.
+• A seleção de modelo, esforço ou configuração de mídia dos workloads OpenAI de produto não usa variáveis Vercel no runtime atual; o contrato efetivo está no catálogo versionado do repositório.
 • As três variáveis legadas de modelo estão ausentes da configuração vigente da Vercel conforme 3.5.
 
 6.3.1 Endpoint externo atual
 • Endpoint OpenAI Responses API: `https://api.openai.com/v1/responses`
+• Endpoint OpenAI Images API: `https://api.openai.com/v1/images/generations`
 • Consumidores atuais conhecidos:
 • `lib/conversion-content/adapters/commercialActivationOpenAiAdapter.ts`
 • `lib/conversion-content/adapters/landingPageGenerationProfileOpenAiAdapter.ts`
+• `lib/lp-builder/adapters/landingPageDraftGenerationAdapter.ts`
+• `lib/lp-builder/adapters/landingPageDraftImageGenerationAdapter.ts`
 • `lib/lp-builder/adapters/landingPageGenerationOpenAiAdapter.ts`
 • `lib/onboarding/niche-resolution/adapters/openAiResolver.ts`
 • `automations/supabase-inspect/run.mjs`

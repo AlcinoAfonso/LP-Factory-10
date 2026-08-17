@@ -2436,15 +2436,22 @@ Repositório — Ajustados
 
 19.4.1 Objetivo e status
 - Objetivo: gerar, validar, materializar e visualizar privadamente a primeira LP real em `draft` a partir do pacote v3 da E19.3, com revisões append-only, mídia privada estável e prova humana.
-- Status: plano-base v2 e matriz de consolidação aprovados pelo Analista em 17/08/2026; implementação ainda não iniciada. A precedência factual do schema hospedado divide a entrega na mesma frente e worktree: PR precursor A para E19.4.3 + E19.4.4 e shell/gatilho autenticado fail-closed; após merge, apply e prova hospedada, PR B para read model, renderer, Preview completo e primeira LP real.
+- Status: plano-base v2 e matriz de consolidação aprovados pelo Analista em 17/08/2026. A implementação candidata da E19.4.3 foi concluída e aprovada no gate local do Analista; canários sem persistência e confirmação da duração efetiva em Preview permanecem pendentes antes da primeira geração real. O PR precursor A segue com a E19.4.4 e o shell/gatilho autenticado fail-closed; após merge, apply e prova hospedada, o PR B entregará read model, renderer, Preview completo e primeira LP real.
 
 19.4.2 Registros do recorte
 - Referências:
   - Plano-base aprovado: `docs/lousa-plano-base-e19-4.md`.
   - Matriz auditada: `docs/matriz-consolidacao-e19-4.md`.
+- Repositório:
+  - `app/a/[account]/landing-pages/[landingPageId]/preview/`
+  - `lib/conversion-content/landing-page/presentation/`
+  - `lib/lp-builder/landingPageDraftGeneration.ts`
+  - `lib/lp-builder/landingPageDraftImageGeneration.ts`
+  - `lib/lp-builder/landingPageDraftGenerationWorkflow.ts`
+  - `lib/openai-workloads/`
 
 19.4.3 Geração controlada e validação integral da candidata
-- Status: plano aprovado; implementação pendente no PR precursor A.
+- Status: implementação candidata concluída, validada localmente e aprovada pelo Analista; canários sem persistência e confirmação da duração efetiva em Preview permanecem pendentes antes da primeira geração real.
 - Automações: sim — `2.1.3`, IA em fluxo controlado no runtime do LP Factory.
 - Conteúdo:
   - consumir exclusivamente o pacote E19.3 v3 `identities + modelContext + serverContext`, mantendo valores operacionais brutos fora do modelo;
