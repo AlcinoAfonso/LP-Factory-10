@@ -14,7 +14,9 @@
 - Plano-base v1 mergeado pelo PR #759, com blob congelado `bfa5adb2677fd4597cda463a1988b3a23b0e70bf`.
 - A seção `1.7. Matriz final da v1` do blob congelado é artefato histórico do debate e está integralmente excluída do contrato operacional. Nenhuma decisão, requisito ou inferência desta v2 deriva dessa seção.
 - As decisões consolidadas nas demais seções da v1 permanecem preservadas, salvo detalhamento técnico explicitamente fechado nesta v2.
-- A implementação será executada nas subseções exatas `E19.4.3`, `E19.4.4` e `E19.4.5`, uma por vez e no mesmo PR de orquestração.
+- A implementação será executada nas subseções exatas `E19.4.3`, `E19.4.4` e `E19.4.5`, uma por vez, na mesma frente e worktree, mas em dois PRs sequenciais por precedência factual do schema hospedado.
+- PR precursor A: plano aprovado + E19.4.3 + E19.4.4, com migration backward-compatible, runtime novo desativado/fail-closed e sem consumidor que dependa do schema antes do apply.
+- PR B: aberto na mesma worktree somente após merge humano do PR A, apply oficial e verificação hospedada; integra/ativa E19.4.5, executa canário integrado e produz a primeira LP real.
 
 ### 1.2. Decisões humanas que fecharam a v2
 
@@ -99,7 +101,8 @@
   - `footer`: zero ou uma; quando presente, última; layout `standard`; permite `tagline | null`, enquanto marca, contatos, consentimento e destinos são resolvidos server-side.
 - Cada variante possui shape próprio em união discriminada por `kind`; não usar objeto genérico com fields alheios à variante.
 - Todos os fields do JSON Schema são `required`; opcionalidade semântica é representada por `null`; objetos usam `additionalProperties:false`.
-- A candidata contém ao menos um `mediaBrief` principal no `hero`; `text_media` pode solicitar mídia adicional, mas a primeira entrega gera no máximo uma imagem e o validator exige que os demais slots sejam omitidos ou resolvidos por asset autorizado já existente.
+- A candidata contém ao menos um `mediaBrief` principal no `hero`; `text_media` pode solicitar mídia adicional, mas a primeira entrega gera no máximo uma imagem e o validator exige que os demais slots sejam omitidos.
+- `brand_logo_asset` é exclusivo da marca no Header/Footer e nunca satisfaz mídia de `hero` ou `text_media`. O fluxo atual não possui asset geral de imagem do cliente; a mídia principal exige o workload de imagem. Biblioteca, upload ou seleção futura permanecem fora deste recorte.
 - Heading, body, CTA e itens respeitam os papéis semânticos, faixas e `absoluteMax` da E18.4. O schema aplica limites máximos; o validator aplica cardinalidade, ordem, unicidade, hierarquia e coerência entre variante e layout.
 - A IA decide narrativa, copy, presença das formas opcionais e sequência das formas intermediárias dentro dessas invariantes. Não gera HTML, CSS, React, JavaScript, URL, telefone, e-mail, logo, consentimento, ID ou path de asset.
 
@@ -116,26 +119,31 @@
 ### 2.4. Workload de imagem
 
 - Workload canônico separado: `landing_page_draft_image_generation`, `product_runtime`.
+- O contrato E21.1 passa a ser uma união discriminada por API: `responses_text | image_generation`.
+- `responses_text` preserva `model`, `reasoningEffort`, tokens, reasoning tokens e Structured Output. `image_generation` contém somente `model`, `size`, `quality`, `format`, `compression` e moderação aplicáveis.
 - Baseline: Images API compatível com `gpt-image-2`, uma imagem (`n=1`), `quality=medium`, moderação padrão, tamanho landscape suportado mais próximo de `1536x1024`, saída WebP e compressão explícita de 80.
 - O registry registra somente parâmetros aplicáveis à API/modelo de imagem. Não transportar `reasoning.effort`, Structured Output, `max_output_tokens` textual ou outro parâmetro exclusivo do workload textual.
 - O brief visual deriva do `mediaBrief` validado e dos fatos semânticos autorizados; não recebe `serverContext` bruto, secrets, destinos ou alegações específicas não comprovadas.
 - A imagem é cenográfica/representativa e não pode fingir ser imóvel disponível específico, cliente, pessoa real, prova social, credencial, localização exata, resultado ou condição comercial.
 - Exatamente uma chamada de imagem por tentativa, timeout de 120 segundos, sem retry automático e sem fallback silencioso para outro modelo ou asset externo.
-- Falha da imagem encerra a tentativa sem revisão quando não existe asset próprio autorizado e adequado. A operação não cria segundo planejamento semântico nem outro agente.
-- Telemetria própria registra workload, modelo, configuração efetiva, prompt/brief version, latência, custo datado, status e erro seguro.
+- Falha da imagem encerra a tentativa sem revisão. A operação não cria segundo planejamento semântico nem outro agente.
+- Telemetria própria registra `request_id`, workload, modelo, configuração efetiva, prompt/brief version, status, latência, quantidade/dimensões, custo datado e erro seguro, sem inventar tokens, reasoning ou `max_output_tokens` para imagem. Inventário humano pode projetar `reasoningEffort=not_applicable`, mas esse campo não é enviado ao provider.
 
 ### 2.5. Workflow controlado
 
-- Gatilho humano explícito para LP legítima em `draft`.
+- Gatilho humano explícito para LP legítima em `draft`, residente em Server Action dedicada da rota `/a/[account]/landing-pages/[landingPageId]/preview`, com `maxDuration = 300` no segmento/Function efetivamente implantado.
+- A Action recebe somente `accountSlug + landingPageId`, deriva identidade/autorização no servidor e devolve resultado discriminado de sucesso (`revisionId`, `revisionNumber`) ou erro público tipado, sem payload do provider.
 - Antes de qualquer provider:
   - revalidar sessão, conta, membership, entitlement, LP e vínculo da configuração;
+  - resolver deterministicamente `primary_conversion_channel`: `whatsapp → whatsapp_destination`, `phone → phone_destination`, `email → email_destination` e `external_url → external_url_destination`;
+  - rejeitar `form` com `UNSUPPORTED_PRIMARY_CONVERSION_CHANNEL` antes do provider; formulário exige recorte futuro próprio para interação, consentimento operacional e handling de lead, sem importar E18.5;
   - confirmar disponibilidade física da migration 1:N, função de append e bucket privado por readiness probe fail-closed;
   - compilar pacote E19.3 v3 válido;
   - confirmar configuração E21.1 efetiva e canários aprovados dos modelos.
 - Processamento:
   - gerar e validar candidata textual;
   - resolver deterministicamente logo, CTA, destinos, contatos e consentimento do `serverContext`;
-  - usar asset autorizado adequado quando existir; caso contrário gerar a imagem principal;
+  - usar `brand_logo_asset` somente no binding de marca e gerar a imagem principal pelo workload dedicado;
   - normalizar mídia para o contrato permitido e fazer upload privado com `upsert:false`;
   - revalidar acesso, LP e entitlement imediatamente antes da persistência;
   - construir snapshot imutável e executar append atômico da revisão.
@@ -178,7 +186,7 @@
 - A revisão persiste referência estruturada com `bucket`, `path`, `origin`, `mimeType`, `width`, `height`, `bytes`, `alt`, `imageWorkload`, `imageConfigVersion` e `visualBriefVersion`; nunca persiste URL assinada como identidade.
 - Nenhuma policy de `storage.objects` concede leitura ou escrita direta a `anon` ou `authenticated`. Upload, leitura assinada e cleanup pertencem a adapter server-only com `service_role`.
 - O consumo gera URL assinada server-side, com TTL de 300 segundos, somente depois de revalidar conta, membership, entitlement, LP e revisão.
-- A imagem original já é persistida em WebP comprimido e dimensões controladas. Transformação assinada do Supabase pode ser usada apenas como otimização compatível com o plano hospedado, sem virar requisito de identidade ou correção funcional.
+- A entrega serve o WebP persistido por signed URL temporária, sem transformação assinada.
 - Se upload concluir e qualquer validação/persistência posterior falhar, executar cleanup best-effort pelo path exato. Falha de cleanup gera log estruturado seguro; como o bucket é privado, o path é não enumerável e não existe referência persistida, o objeto órfão não fica tenant-visible nem reutilizável pelo produto.
 
 ### 3.3. Snapshot reproduzível
@@ -191,20 +199,22 @@
   - versões/configurações efetivas dos workloads textual e de imagem;
   - referência e metadata canônica da mídia;
   - resultado dos validators e timestamps relevantes;
-  - tokens, reasoning tokens quando fornecidos, latências e custo estimado com data da tabela de preços.
+  - tokens e reasoning tokens somente para o workload textual, latências e custo estimado com fonte/data da tabela de preços;
+  - quando preço confiável não estiver reconciliado, `estimatedCost=null` e `costStatus=unavailable`, sem bloquear usage, status ou latência.
 - Não persistir raciocínio privado, response bruto desnecessário, chave de API, sessão, signed URL ou segredo operacional.
 - Renderer e preview leem apenas materialização + referência canônica; não recompilam E19.3 e não consultam fontes mutáveis para reconstruir a revisão.
 
 ### 3.4. Invariantes e verificador hospedado
 
-- Um snippet SQL read-only versionado deve provar no ambiente alvo:
+- Após o apply, o caso de uso server-side controlado executa dois appends explícitos na mesma LP de prova; o snippet não produz mutações.
+- Um snippet SQL estritamente read-only e versionado deve inspecionar no ambiente alvo:
   - colunas, PK, FKs, checks, uniques e índice de corrente;
   - preservação das linhas históricas como revisão 1;
   - ausência de duplicidade por LP/revisão e por `attempt_id` novo;
   - RLS, policies, grants e execução da função apenas pelas roles previstas;
   - bucket privado, limites e ausência de policies públicas/autenticadas;
   - leitura determinística da revisão corrente por maior `revision_number`;
-  - ausência de overwrite após dois appends controlados na mesma LP de prova.
+  - duas revisões criadas pelo caso de uso, conteúdo anterior preservado, numeração crescente e ausência de overwrite.
 - Runtime fica fail-closed enquanto migration, função ou bucket não estiverem aplicados. O PR não altera schema remoto antes do merge humano.
 
 ## 4. Renderer, preview e prova humana
@@ -221,11 +231,11 @@
 ### 4.2. Contrato visual e funcional
 
 - Renderer exaustivo por `kind`; variante desconhecida falha de forma segura e observável, sem HTML livre.
-- Mobile-first e sem overflow horizontal em 360 px; provar também 768 px e 1440 px.
+- Mobile-first, suporte funcional desde 320 px e sem overflow horizontal; provas canônicas em 360, 768 e 1280 px. Evidência adicional em 1440 px é permitida, mas não substitui 1280 px.
 - Imagens preservam proporção, reservam espaço para evitar layout shift e usam `alt` significativo validado.
 - Hierarquia possui um único H1, ordem de headings coerente, CTA principal reconhecível e estados de foco visíveis.
 - Navegação e CTA são operáveis por teclado; não há interação essencial dependente apenas de hover; controles possuem nome acessível; áreas de toque e contraste seguem baseline limitada de WCAG 2.2 aplicável ao recorte.
-- Footer, contatos, consentimento e destinos vêm dos bindings determinísticos; links inválidos ou ausentes falham antes da revisão.
+- Footer, contatos, consentimento e destinos vêm dos bindings determinísticos. `whatsapp`, `phone`, `email` e `external_url` exigem seus respectivos destinos válidos; `form` falha antes do provider com `UNSUPPORTED_PRIMARY_CONVERSION_CHANNEL`.
 - Não declarar conformidade WCAG integral. Registrar apenas os critérios efetivamente testados.
 - A mídia deve ser pertinente, nítida no tamanho de prova e suficientemente otimizada; a validação registra dimensões, bytes, formato e ausência de erro visível.
 
@@ -253,8 +263,9 @@
 - Implementar autoridade de apresentação v1, DTO discriminado, schema estrito, validators e fixtures.
 - Criar o prompt de runtime pelo fluxo canônico e registrar sua versão.
 - Evoluir E21.1 de forma aditiva para `reasoning.effort=max` e registrar os dois workloads com configurações próprias.
+- Discriminar E21.1 em `responses_text | image_generation`, inclusive resolução e eventos, sem parâmetros textuais no request de imagem.
 - Implementar provider adapters, timeouts, telemetria, tratamento de refusal/incomplete e fail-closed.
-- Implementar caso de uso explícito com revalidações de acesso e pacote E19.3 v3.
+- Implementar Server Action dedicada, matriz de bindings dos canais suportados, fail-closed para `form`, revalidações de acesso e pacote E19.3 v3.
 - Antes da geração real, comprovar:
   - canário `gpt-5.6-luna + max + store:false + schema estrito mínimo` no Preview, sem persistência;
   - canário `gpt-image-2` com configuração mínima, sem persistência;
@@ -270,21 +281,22 @@
 - Persistir revisão somente após candidata, bindings, mídia e snapshot integralmente válidos.
 - Substituir fixtures, testes e snippet negativos que ainda cristalizam 1:1, preservando a migration antiga apenas como histórico aplicado.
 - Aceite local: duas revisões válidas da mesma LP preservam payloads distintos; corrente é a maior revisão; tentativa repetida não duplica; falha não deixa revisão.
-- Aceite hospedado: migration aplicada pelo fluxo oficial após merge, verificador SQL read-only aprovado e prova de dois appends controlados sem overwrite.
+- Aceite hospedado do PR A: migration aplicada pelo fluxo oficial após merge; dois appends executados separadamente pelo caso server-side controlado; verificador SQL read-only comprova as duas revisões, numeração e ausência de overwrite.
 
 ### 5.3. E19.4.5 — Renderer, preview e prova humana
 
 - Automações: não.
 - Adaptar a rota confirmada, loader autorizado, read model e renderer puro exaustivo.
 - Implementar estados seguros e resolução server-side de signed URL.
-- Validar visualmente em 360, 768 e 1440 px, teclado, foco, headings, contraste aplicável, mídia, CTA e console.
+- Validar suporte desde 320 px e provar visualmente em 360, 768 e 1280 px; 1440 px é evidência adicional. Verificar teclado, foco, headings, contraste aplicável, mídia, CTA e console.
 - Gerar a primeira LP real somente após readiness de banco, Storage, modelos e Function.
 - Registrar no PR a rubrica humana, gates binários e metadados da revisão de prova.
 - Aceite: preview autenticado da revisão corrente reproduz snapshot sem fontes mutáveis, revisão anterior permanece preservada e os três gates binários são aprovados.
 
 ### 5.4. Ordem, gates e validações
 
-- Ordem obrigatória: E19.4.3 → gate do Analista → ABCs canônicos aplicáveis → E19.4.4 → gate do Analista → ABCs → E19.4.5 → avaliação final do Analista → ABCs finais.
+- Ordem obrigatória no PR A: E19.4.3 → gate do Analista → ABCs aplicáveis → E19.4.4 → gate/revisão final do Analista → ABCs e merge humano.
+- Depois do merge do PR A: apply oficial → dois appends controlados → verificador hospedado read-only → nova branch na mesma worktree → PR B com E19.4.5 → avaliação final do Analista → ABCs finais → merge humano.
 - Antes da implementação: Analista Passagens 1 e 2, matriz de consolidação substituída, ABC de `docs/roadmap.md` e checkpoint `LP-Factory-Stage: plan-v2-approved`.
 - Para cada subseção com código: `npm ci`, `npm run check`, testes focais e `git diff --check`; não executar `npm run build` no sandbox Codex.
 - Alteração visual: iniciar `npm run dev`, abrir a URL indicada e validar tela, comportamento e erros visíveis.
@@ -315,6 +327,7 @@
 - Tracking, analytics, CRM, Ads, A/B test e engine de experimentos.
 - Editor visual/manual, interface de histórico/comparação e biblioteca ampla de assets.
 - Upload/seleção de imagem pelo cliente, mídia externa/licenciada e DAM.
+- Transformação assinada de imagem; só pode voltar em recorte futuro se necessidade medida e compatibilidade do plano hospedado forem comprovadas.
 - Lifecycle `archived`, restauração, hard delete e retenção definitiva.
 - Cenário D, E18.5, E20.3, E10.8 ou camada intermediária semântica.
 - HTML/CSS/React/JS livre gerado pela IA.
@@ -336,6 +349,8 @@
 ### 7.3. Condições pós-merge
 
 - O merge é exclusivamente humano pelo GitHub Web.
-- Como o Preview usa o Supabase principal e a migration só é aplicada pelo fluxo oficial após merge, a prova hospedada 1:N, o canário integrado e a primeira LP real permanecem gates pós-merge.
-- O trabalho não deve simular apply remoto nem marcar esses gates como concluídos antes da evidência hospedada.
+- Como o Preview usa o Supabase principal e a migration só é aplicada pelo fluxo oficial após merge, o PR A termina com runtime novo desativado/fail-closed e sem consumidor dependente do schema.
+- Após merge humano do PR A, o apply oficial, os dois appends controlados e o verificador read-only são gates para abrir o PR B.
+- O PR B integra/ativa o preview, executa o canário integrado e produz a primeira LP real antes de sua avaliação final e merge humano.
+- O trabalho não simula apply remoto nem marca gates hospedados como concluídos antes da evidência real.
 - E19.5 permanece pausada até a primeira LP real ser produzida e avaliada.
