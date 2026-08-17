@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 17/08/2026
-• Versão: v1.5.158
+• Versão: v1.5.159
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2243,7 +2243,7 @@ Repositório — Ajustados
 
 19. E19 — LP Builder
 - Objetivo: Consolidar o fluxo Core de landing pages por conta, da identidade mínima em `draft` às futuras etapas de geração, revisão, materialização e publicação, sempre por recortes aprovados.
-- Status: E19.1, E19.2 e E19.3 concluídas; o contrato v3 do Cenário E foi mergeado pelo PR #757. O plano-base v2 da E19.4 foi aprovado para gerar, materializar e visualizar privadamente a primeira LP real em dois PRs sequenciais; a implementação ainda não foi iniciada. A implementação anterior do Cenário D permanece apenas como histórico material do PR #729.
+- Status: E19.1, E19.2 e E19.3 concluídas; o contrato v3 do Cenário E foi mergeado pelo PR #757. O plano-base v2 da E19.4 foi aprovado para gerar, materializar e visualizar privadamente a primeira LP real em dois PRs sequenciais; o PR precursor A, com E19.4.3 e E19.4.4, está implementado localmente e aprovado pelo Analista, com merge, apply e gates hospedados pendentes, enquanto a E19.4.5 permanece reservada ao PR B. A implementação anterior do Cenário D permanece apenas como histórico material do PR #729.
 
 19.1 Criação produtiva mínima de LP por conta
 
