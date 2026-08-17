@@ -406,6 +406,29 @@ const cases = [
     },
   },
   {
+    name: "shared deadline aborts active text and image provider calls",
+    run: async () => {
+      const text = await generateLandingPageDraftCandidate(context, {
+        apiKey: "test-key",
+        timeoutMs: 5,
+        fetchImpl: abortingFetch,
+        emitEvent: () => undefined,
+      });
+      assert.deepEqual(text, { ok: false, kind: "timeout" });
+
+      const image = await generateLandingPageDraftImage(
+        { mediaBrief: "Sala contemporânea acolhedora", semanticFacts: {} },
+        {
+          apiKey: "test-key",
+          timeoutMs: 5,
+          fetchImpl: abortingFetch,
+          emitEvent: () => undefined,
+        },
+      );
+      assert.deepEqual(image, { ok: false, kind: "timeout" });
+    },
+  },
+  {
     name: "controlled workflow binds first and calls text then image exactly once",
     run: async () => {
       const order: string[] = [];
@@ -486,6 +509,26 @@ const cases = [
       assert.equal(textFailure.attemptId.length > 0, true);
       assert.equal(textFailure.requestId.length > 0, true);
       assert.equal(imageCalls, 0);
+
+      const clock = [0, 0, 270_001];
+      const successful = successfulCandidateWorkflow(
+        "30000000-0000-4000-8000-000000000004",
+      );
+      let budgetImageCalls = 0;
+      const budgetFailure = await prepareLandingPageDraftRevisionCandidate(
+        { context, deadlineAtMs: 270_000 },
+        {
+          now: () => clock.shift() ?? 270_001,
+          generateText: async () => successful.text,
+          generateImage: async () => {
+            budgetImageCalls += 1;
+            return successful.image;
+          },
+        },
+      );
+      assert.equal(budgetFailure.ok, false);
+      assert.equal(budgetFailure.stage, "budget");
+      assert.equal(budgetImageCalls, 0);
 
       const formContext = structuredClone(context);
       const formChannel = formContext.serverContext.facts.find(
@@ -643,6 +686,38 @@ const cases = [
     },
   },
   {
+    name: "total deadline after revalidation cleans asset and prevents append",
+    run: async () => {
+      const clock = [0, 0, 0, 0, 270_001];
+      let appendCalls = 0;
+      const cleaned: string[] = [];
+      const result = await materializeLandingPageDraftRevisionWithDependencies(
+        {
+          context,
+          createdBy: "40000000-0000-4000-8000-000000000040",
+        },
+        {
+          prepareCandidate: async () =>
+            successfulCandidateWorkflow("30000000-0000-4000-8000-000000000033"),
+          uploadAsset: async () => ({ ok: true }),
+          cleanupAsset: async (asset) => {
+            cleaned.push(asset.path);
+          },
+          revalidate: async () => true,
+          appendRevision: async () => {
+            appendCalls += 1;
+            return { ok: false, error: "APPEND_FAILED" };
+          },
+          nowMs: () => clock.shift() ?? 270_001,
+        },
+      );
+      assert.equal(result.ok, false);
+      if (!result.ok) assert.equal(result.stage, "budget");
+      assert.equal(appendCalls, 0);
+      assert.equal(cleaned.length, 1);
+    },
+  },
+  {
     name: "route action checks readiness before context and providers",
     run: () => {
       const action = readFileSync(
@@ -765,3 +840,17 @@ function successfulCandidateWorkflow(attemptId: string) {
     },
   } as const;
 }
+
+const abortingFetch: typeof fetch = (_input, init) =>
+  new Promise<Response>((_resolve, reject) => {
+    const abort = () => {
+      const error = new Error("aborted");
+      error.name = "AbortError";
+      reject(error);
+    };
+    if (init?.signal?.aborted) {
+      abort();
+      return;
+    }
+    init?.signal?.addEventListener("abort", abort, { once: true });
+  });

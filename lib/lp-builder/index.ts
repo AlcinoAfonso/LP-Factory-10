@@ -48,6 +48,7 @@ export {
 export type {
   LandingPageDraftCandidateWorkflowResult,
 } from "./landingPageDraftCandidateWorkflow";
+export { LANDING_PAGE_DRAFT_TOTAL_TIMEOUT_MS } from "./landingPageDraftCandidateWorkflow";
 export {
   LANDING_PAGE_REVISION_ASSET_BUCKET,
   LANDING_PAGE_REVISION_ASSET_MAX_BYTES,

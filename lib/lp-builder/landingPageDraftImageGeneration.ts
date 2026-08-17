@@ -52,6 +52,8 @@ type Dependencies = Readonly<{
   fetchImpl?: typeof fetch;
   emitEvent?: (event: OpenAiImageWorkloadEvent) => void;
   now?: () => number;
+  timeoutMs?: number;
+  signal?: AbortSignal;
 }>;
 
 export async function generateLandingPageDraftImage(
@@ -72,10 +74,20 @@ export async function generateLandingPageDraftImage(
     input.semanticFacts,
   );
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), LANDING_PAGE_DRAFT_IMAGE_TIMEOUT_MS);
   const fetchImpl = dependencies.fetchImpl ?? fetch;
   const now = dependencies.now ?? Date.now;
   const startedAt = now();
+  const timeoutMs = boundedTimeout(
+    dependencies.timeoutMs,
+    LANDING_PAGE_DRAFT_IMAGE_TIMEOUT_MS,
+  );
+  if (timeoutMs <= 0 || dependencies.signal?.aborted) {
+    emitFailure(workload, "timeout", dependencies, { latencyMs: 0 });
+    return { ok: false, kind: "timeout" };
+  }
+  const abortFromParent = () => controller.abort();
+  dependencies.signal?.addEventListener("abort", abortFromParent, { once: true });
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
     const response = await fetchImpl("https://api.openai.com/v1/images/generations", {
@@ -181,6 +193,7 @@ export async function generateLandingPageDraftImage(
     return { ok: false, kind: timedOut ? "timeout" : "http_error" };
   } finally {
     clearTimeout(timeout);
+    dependencies.signal?.removeEventListener("abort", abortFromParent);
   }
 }
 
@@ -218,4 +231,10 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function nonEmptyString(value: unknown) {
   return typeof value === "string" && value.trim().length > 0 ? value.trim() : null;
+}
+
+function boundedTimeout(value: number | undefined, maximum: number) {
+  return typeof value === "number" && Number.isFinite(value)
+    ? Math.max(0, Math.min(maximum, Math.floor(value)))
+    : maximum;
 }

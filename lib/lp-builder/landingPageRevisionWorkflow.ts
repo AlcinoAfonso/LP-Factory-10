@@ -1,5 +1,8 @@
 import type { LandingPageGenerationContextPackage } from "./generationContextContracts";
-import type { LandingPageDraftCandidateWorkflowResult } from "./landingPageDraftCandidateWorkflow";
+import {
+  LANDING_PAGE_DRAFT_TOTAL_TIMEOUT_MS,
+  type LandingPageDraftCandidateWorkflowResult,
+} from "./landingPageDraftCandidateWorkflow";
 import {
   buildLandingPageRevisionDocuments,
   createLandingPageRevisionAssetReference,
@@ -29,7 +32,8 @@ export type MaterializeLandingPageDraftRevisionResult =
         | "documents"
         | "upload"
         | "revalidation"
-        | "append";
+        | "append"
+        | "budget";
       reason: string;
     }>;
 
@@ -37,6 +41,8 @@ type Dependencies = Readonly<{
   prepareCandidate: (input: Readonly<{
     context: LandingPageGenerationContextPackage;
     requestId?: string | null;
+    deadlineAtMs?: number;
+    signal?: AbortSignal;
   }>) => Promise<LandingPageDraftCandidateWorkflowResult>;
   uploadAsset: (input: Readonly<{
     asset: LandingPageRevisionAssetReference;
@@ -53,6 +59,7 @@ type Dependencies = Readonly<{
     createdBy: string;
   }>) => Promise<AppendLandingPageRevisionResult>;
   now?: () => Date;
+  nowMs?: () => number;
 }>;
 
 export async function materializeLandingPageDraftRevisionWithDependencies(
@@ -63,79 +70,107 @@ export async function materializeLandingPageDraftRevisionWithDependencies(
   }>,
   dependencies: Dependencies,
 ): Promise<MaterializeLandingPageDraftRevisionResult> {
-  const candidate = await dependencies.prepareCandidate({
-    context: input.context,
-    requestId: input.requestId,
-  });
-  if (!candidate.ok) {
+  const nowMs = dependencies.nowMs ?? Date.now;
+  const deadlineAtMs = nowMs() + LANDING_PAGE_DRAFT_TOTAL_TIMEOUT_MS;
+  const controller = new AbortController();
+  const deadlineTimer = setTimeout(
+    () => controller.abort(),
+    LANDING_PAGE_DRAFT_TOTAL_TIMEOUT_MS,
+  );
+
+  try {
+    const candidate = await dependencies.prepareCandidate({
+      context: input.context,
+      requestId: input.requestId,
+      deadlineAtMs,
+      signal: controller.signal,
+    });
+    if (!candidate.ok) {
+      return {
+        ok: false,
+        attemptId: candidate.attemptId,
+        requestId: candidate.requestId,
+        stage: "candidate",
+        reason: `${candidate.stage}:${candidate.reason}`,
+      };
+    }
+    if (budgetExpired(deadlineAtMs, nowMs, controller.signal)) {
+      return failure(candidate, "budget", "TOTAL_TIMEOUT_BEFORE_DOCUMENTS");
+    }
+
+    const hero = candidate.candidate.sections.find((section) => section.kind === "hero");
+    const asset = hero
+      ? createLandingPageRevisionAssetReference({
+          accountId: input.context.identities.accountId,
+          landingPageId: input.context.identities.landingPage.id,
+          attemptId: candidate.attemptId,
+          bytes: candidate.image.bytes.byteLength,
+          alt: hero.heading,
+          imageConfigVersion: candidate.image.configuration.revision,
+          visualBriefVersion: candidate.image.visualBriefVersion,
+        })
+      : null;
+    if (!asset) {
+      return failure(candidate, "documents", "INVALID_ASSET_REFERENCE");
+    }
+
+    const documents = buildLandingPageRevisionDocuments({
+      context: input.context,
+      candidate,
+      asset,
+      generatedAt: (dependencies.now ?? (() => new Date()))().toISOString(),
+    });
+    if (!documents.ok) {
+      return failure(candidate, "documents", documents.error);
+    }
+    if (budgetExpired(deadlineAtMs, nowMs, controller.signal)) {
+      return failure(candidate, "budget", "TOTAL_TIMEOUT_BEFORE_UPLOAD");
+    }
+
+    const upload = await dependencies.uploadAsset({
+      asset,
+      bytes: candidate.image.bytes,
+    });
+    if (!upload.ok) {
+      return failure(candidate, "upload", upload.error);
+    }
+    if (budgetExpired(deadlineAtMs, nowMs, controller.signal)) {
+      await dependencies.cleanupAsset(asset);
+      return failure(candidate, "budget", "TOTAL_TIMEOUT_AFTER_UPLOAD");
+    }
+
+    if (!(await dependencies.revalidate())) {
+      await dependencies.cleanupAsset(asset);
+      return failure(candidate, "revalidation", "AUTHORITY_CHANGED");
+    }
+    if (budgetExpired(deadlineAtMs, nowMs, controller.signal)) {
+      await dependencies.cleanupAsset(asset);
+      return failure(candidate, "budget", "TOTAL_TIMEOUT_BEFORE_APPEND");
+    }
+
+    const appended = await dependencies.appendRevision({
+      accountId: input.context.identities.accountId,
+      landingPageId: input.context.identities.landingPage.id,
+      attemptId: candidate.attemptId,
+      content: documents.content,
+      snapshot: documents.snapshot,
+      createdBy: input.createdBy,
+    });
+    if (!appended.ok) {
+      await dependencies.cleanupAsset(asset);
+      return failure(candidate, "append", appended.error);
+    }
+
     return {
-      ok: false,
+      ok: true,
       attemptId: candidate.attemptId,
       requestId: candidate.requestId,
-      stage: "candidate",
-      reason: `${candidate.stage}:${candidate.reason}`,
+      revisionId: appended.revisionId,
+      revisionNumber: appended.revisionNumber,
     };
+  } finally {
+    clearTimeout(deadlineTimer);
   }
-
-  const hero = candidate.candidate.sections.find((section) => section.kind === "hero");
-  const asset = hero
-    ? createLandingPageRevisionAssetReference({
-        accountId: input.context.identities.accountId,
-        landingPageId: input.context.identities.landingPage.id,
-        attemptId: candidate.attemptId,
-        bytes: candidate.image.bytes.byteLength,
-        alt: hero.heading,
-        imageConfigVersion: candidate.image.configuration.revision,
-        visualBriefVersion: candidate.image.visualBriefVersion,
-      })
-    : null;
-  if (!asset) {
-    return failure(candidate, "documents", "INVALID_ASSET_REFERENCE");
-  }
-
-  const documents = buildLandingPageRevisionDocuments({
-    context: input.context,
-    candidate,
-    asset,
-    generatedAt: (dependencies.now ?? (() => new Date()))().toISOString(),
-  });
-  if (!documents.ok) {
-    return failure(candidate, "documents", documents.error);
-  }
-
-  const upload = await dependencies.uploadAsset({
-    asset,
-    bytes: candidate.image.bytes,
-  });
-  if (!upload.ok) {
-    return failure(candidate, "upload", upload.error);
-  }
-
-  if (!(await dependencies.revalidate())) {
-    await dependencies.cleanupAsset(asset);
-    return failure(candidate, "revalidation", "AUTHORITY_CHANGED");
-  }
-
-  const appended = await dependencies.appendRevision({
-    accountId: input.context.identities.accountId,
-    landingPageId: input.context.identities.landingPage.id,
-    attemptId: candidate.attemptId,
-    content: documents.content,
-    snapshot: documents.snapshot,
-    createdBy: input.createdBy,
-  });
-  if (!appended.ok) {
-    await dependencies.cleanupAsset(asset);
-    return failure(candidate, "append", appended.error);
-  }
-
-  return {
-    ok: true,
-    attemptId: candidate.attemptId,
-    requestId: candidate.requestId,
-    revisionId: appended.revisionId,
-    revisionNumber: appended.revisionNumber,
-  };
 }
 
 function failure(
@@ -150,4 +185,12 @@ function failure(
     stage,
     reason,
   };
+}
+
+function budgetExpired(
+  deadlineAtMs: number,
+  nowMs: () => number,
+  signal: AbortSignal,
+) {
+  return signal.aborted || nowMs() >= deadlineAtMs;
 }
