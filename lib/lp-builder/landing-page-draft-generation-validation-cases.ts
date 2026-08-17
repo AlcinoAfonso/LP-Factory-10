@@ -163,6 +163,11 @@ const cases = [
         "Localizado no bairro Copacabana, próximo à praia.",
         "Corretor com CRECI 12345 e licença certificada.",
         "Aumente suas chances e conquiste o resultado esperado.",
+        "João Silva oferece atendimento personalizado.",
+        "A família Souza recomenda nosso trabalho.",
+        "Atendimento credenciado para sua jornada.",
+        "Visite Copacabana, Rio de Janeiro.",
+        "Dobrou as vendas em seis meses.",
       ];
       for (const value of forbiddenClaims) {
         const claim = structuredClone(candidate);
@@ -205,6 +210,29 @@ const cases = [
         }).ok,
         true,
       );
+
+      for (const authorizedValue of [
+        "João Silva oferece atendimento personalizado.",
+        "A família Souza recomenda nosso trabalho.",
+        "Atendimento credenciado para sua jornada.",
+        "Visite Copacabana, Rio de Janeiro.",
+        "Dobrou as vendas em seis meses.",
+      ]) {
+        const authorizedCandidate = structuredClone(candidate);
+        const hero = authorizedCandidate.sections.find(
+          (section) => section.kind === "hero",
+        );
+        assert.ok(hero && hero.kind === "hero");
+        hero.body = authorizedValue;
+        assert.equal(
+          validateLandingPagePresentationCandidate(authorizedCandidate, {
+            ...context.modelContext,
+            facts: [{ fieldKey: "authorized_fact", value: authorizedValue }],
+          }).ok,
+          true,
+          authorizedValue,
+        );
+      }
     },
   },
   {

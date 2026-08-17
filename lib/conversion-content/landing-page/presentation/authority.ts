@@ -258,14 +258,16 @@ function isModelGeneratedBinding(value: string) {
 
 function isObjectiveClaim(value: string) {
   return (
-    /\b(?:creci|registro|certificad[oa]|licen[çc]a|credencial|garanti[ad]|comprovad[oa])\b/i.test(value) ||
-    /\b(?:clientes?|depoimentos?|avaliaç(?:ão|ões)|prova social|cases? de sucesso)\b/i.test(value) ||
+    /\b(?:creci|registro|certificad[oa]|licen[çc]a|credencial|credenciad[oa]|garanti[ad]|comprovad[oa])\b/i.test(value) ||
+    /\b(?:clientes?|depoimentos?|avaliaç(?:ão|ões)|prova social|cases? de sucesso|fam[ií]lia\s+[A-ZÁÀÂÃÉÊÍÓÔÕÚÇ][\p{L}'-]+|recomend(?:a|am|ou))\b/iu.test(value) ||
     /\b(?:dispon[ií]vel|pronta entrega|estoque|unidades? restantes?|vagas? limitadas?)\b/i.test(value) ||
     /\b(?:r\$\s*\d|\d+(?:[.,]\d+)?\s*%|a partir de|preç[oa]|valor de|reais|desconto|entrada|parcel|juros)\b/i.test(value) ||
     /\b(?:endere[çc]o|rua|avenida|bairro|cep|localizad[oa] em|pr[oó]ximo a)\b/i.test(value) ||
-    /\b(?:resultado|retorno|aument(?:a|e|ou)|reduz(?:a|e|iu)|economiz(?:a|e|ou)|conquist(?:a|e|ou)|vend(?:a|e|eu)|alcan[çc](?:a|e|ou))\b/i.test(value) ||
+    /\b(?:resultado|retorno|aument(?:a|e|ou)|reduz(?:a|e|iu)|economiz(?:a|e|ou)|conquist(?:a|e|ou)|vend(?:a|e|eu|as)|alcan[çc](?:a|e|ou)|dobr(?:a|ou)|triplic(?:a|ou))\b/i.test(value) ||
     /\b(?:[Dd]r|[Dd]ra|[Ss]r|[Ss]ra)\.?\s+[A-ZÁÀÂÃÉÊÍÓÔÕÚÇ][\p{L}'-]+(?:\s+[A-ZÁÀÂÃÉÊÍÓÔÕÚÇ][\p{L}'-]+)+/u.test(value) ||
-    /\b(?:[Cc]om|[Pp]or|[Aa]tendimento de)\s+[A-ZÁÀÂÃÉÊÍÓÔÕÚÇ][\p{L}'-]+\s+[A-ZÁÀÂÃÉÊÍÓÔÕÚÇ][\p{L}'-]+/u.test(value)
+    /\b(?:[Cc]om|[Pp]or|[Aa]tendimento de)\s+[A-ZÁÀÂÃÉÊÍÓÔÕÚÇ][\p{L}'-]+\s+[A-ZÁÀÂÃÉÊÍÓÔÕÚÇ][\p{L}'-]+/u.test(value) ||
+    /^[A-ZÁÀÂÃÉÊÍÓÔÕÚÇ][\p{L}'-]+\s+[A-ZÁÀÂÃÉÊÍÓÔÕÚÇ][\p{L}'-]+\b/u.test(value) ||
+    /\b[A-ZÁÀÂÃÉÊÍÓÔÕÚÇ][\p{L}'-]+,\s+[A-ZÁÀÂÃÉÊÍÓÔÕÚÇ][\p{L}'-]+(?:\s+de\s+[A-ZÁÀÂÃÉÊÍÓÔÕÚÇ][\p{L}'-]+)?\b/u.test(value)
   );
 }
 
