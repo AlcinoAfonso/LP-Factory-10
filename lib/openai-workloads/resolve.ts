@@ -1,8 +1,11 @@
 import type {
+  OpenAiImageWorkloadDefinition,
   OpenAiProductWorkloadDefinition,
   OpenAiWorkloadDefinition,
   OpenAiWorkloadInventoryItem,
   ResolveOpenAiProductWorkloadResult,
+  ResolveOpenAiImageWorkloadResult,
+  ResolvedOpenAiImageWorkload,
   ResolvedOpenAiProductWorkload,
 } from "./contracts";
 import { openAiWorkloadRegistry } from "./registry";
@@ -32,10 +35,37 @@ export function resolveOpenAiProductWorkload(
     );
   }
 
+  if (!isTextWorkload(workload)) {
+    return failure(
+      "NOT_TEXT_PRODUCT_WORKLOAD",
+      `OpenAI workload is not a Responses text workload: ${workloadId}`,
+    );
+  }
+
   return deepFreeze({
     ok: true,
     value: toResolvedProductWorkload(workload),
   });
+}
+
+export function resolveOpenAiImageWorkload(
+  workloadId: string,
+): ResolveOpenAiImageWorkloadResult {
+  const workload = openAiWorkloadRegistry.find(
+    (candidate) => candidate.id === workloadId,
+  );
+  if (!workload) {
+    return failure("UNKNOWN_WORKLOAD", `Unknown OpenAI workload: ${workloadId}`);
+  }
+  if (
+    !isImageWorkload(workload)
+  ) {
+    return failure(
+      "NOT_IMAGE_GENERATION_WORKLOAD",
+      `OpenAI workload is not an image generation workload: ${workloadId}`,
+    );
+  }
+  return deepFreeze({ ok: true, value: toResolvedImageWorkload(workload) });
 }
 
 export function listOpenAiWorkloadInventory(): readonly OpenAiWorkloadInventoryItem[] {
@@ -46,7 +76,9 @@ function toInventoryItem(
   workload: OpenAiWorkloadDefinition,
 ): OpenAiWorkloadInventoryItem {
   if (workload.configurationKind === "effective") {
-    return toResolvedProductWorkload(workload);
+    return isImageWorkload(workload)
+      ? toResolvedImageWorkload(workload)
+      : toResolvedProductWorkload(workload as OpenAiProductWorkloadDefinition);
   }
 
   return deepFreeze({
@@ -72,6 +104,7 @@ function toResolvedProductWorkload(
     displayName: workload.displayName,
     classification: workload.classification,
     configurationKind: workload.configurationKind,
+    apiKind: workload.configuration.apiKind,
     consumer: workload.consumer,
     fallback: workload.fallback,
     model: workload.configuration.model,
@@ -82,10 +115,56 @@ function toResolvedProductWorkload(
   });
 }
 
+function toResolvedImageWorkload(
+  workload: OpenAiImageWorkloadDefinition,
+): ResolvedOpenAiImageWorkload {
+  return deepFreeze({
+    id: workload.id,
+    displayName: workload.displayName,
+    classification: workload.classification,
+    configurationKind: workload.configurationKind,
+    apiKind: workload.configuration.apiKind,
+    consumer: workload.consumer,
+    fallback: workload.fallback,
+    model: workload.configuration.model,
+    size: workload.configuration.size,
+    quality: workload.configuration.quality,
+    format: workload.configuration.format,
+    compression: workload.configuration.compression,
+    moderation: workload.configuration.moderation,
+    reasoningEffort: "not_applicable",
+    source: workload.configuration.source,
+    revision: workload.configuration.revision,
+    effectiveConfigurationVerified: true,
+  });
+}
+
+function isTextWorkload(
+  workload: OpenAiWorkloadDefinition,
+): workload is OpenAiProductWorkloadDefinition {
+  return (
+    workload.configurationKind === "effective" &&
+    workload.configuration.apiKind === "responses_text"
+  );
+}
+
+function isImageWorkload(
+  workload: OpenAiWorkloadDefinition,
+): workload is OpenAiImageWorkloadDefinition {
+  return (
+    workload.configurationKind === "effective" &&
+    workload.configuration.apiKind === "image_generation"
+  );
+}
+
 function failure(
-  code: "UNKNOWN_WORKLOAD" | "NOT_PRODUCT_RUNTIME_WORKLOAD",
+  code:
+    | "UNKNOWN_WORKLOAD"
+    | "NOT_PRODUCT_RUNTIME_WORKLOAD"
+    | "NOT_TEXT_PRODUCT_WORKLOAD"
+    | "NOT_IMAGE_GENERATION_WORKLOAD",
   message: string,
-): ResolveOpenAiProductWorkloadResult {
+): Extract<ResolveOpenAiProductWorkloadResult, { ok: false }> {
   return deepFreeze({ ok: false, error: { code, message } });
 }
 

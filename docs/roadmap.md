@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 16/08/2026
-• Versão: v1.5.156
+• Data: 17/08/2026
+• Versão: v1.5.159
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2243,7 +2243,7 @@ Repositório — Ajustados
 
 19. E19 — LP Builder
 - Objetivo: Consolidar o fluxo Core de landing pages por conta, da identidade mínima em `draft` às futuras etapas de geração, revisão, materialização e publicação, sempre por recortes aprovados.
-- Status: E19.1 concluída; E19.2 concluída; a implementação candidata da E19.3 no Cenário E está concluída e validada no PR #757, com inspeção final e merge humano pendentes; a implementação anterior do Cenário D permanece como histórico material do PR #729; E19.4 recebe somente a referência planejada ao pacote v3, sem replanejamento ou implementação.
+- Status: E19.1, E19.2 e E19.3 concluídas; o contrato v3 do Cenário E foi mergeado pelo PR #757. O plano-base v2 da E19.4 foi aprovado para gerar, materializar e visualizar privadamente a primeira LP real em dois PRs sequenciais; o PR precursor A, com E19.4.3 e E19.4.4, está implementado localmente e aprovado pelo Analista, com merge, apply e gates hospedados pendentes, enquanto a E19.4.5 permanece reservada ao PR B. A implementação anterior do Cenário D permanece apenas como histórico material do PR #729.
 
 19.1 Criação produtiva mínima de LP por conta
 
@@ -2368,7 +2368,7 @@ Repositório — Ajustados
 
 19.3.1 Objetivo e status
 - Objetivo: manter a E19.3 como o menor boundary determinístico entre as fontes autorizadas do projeto e a E19.4, entregando um único pacote autorizado com pesquisa integral, fatos concretos revalidados, limites editoriais e contexto operacional.
-- Status: Plano-base v2 aprovado e implementação candidata concluída e validada no PR #757; inspeção final e merge humano pendentes.
+- Status: Concluída; implementação validada e mergeada pelo PR #757 no contrato v3.
 
 19.3.2 Registros do recorte
 - Repositório:
@@ -2417,10 +2417,9 @@ Repositório — Ajustados
   - Contrato técnico: `docs/base-tecnica.md` — 3.14.4.
   - Configuração operacional: `docs/platform-config.md` — configuração efetiva dos workloads OpenAI de produto.
   - Plano-base v2 aprovado: `docs/lousa-plano-base-e19-3.md`.
-  - Rascunho vivo da sucessora E19.4: `docs/lousa-plano-base-e19-4.md`.
 
 19.3.3 Contrato v3, pesquisa integral e revalidação
-- Status: Implementação candidata concluída e validada no PR #757; inspeção final e merge humano pendentes.
+- Status: Concluída e mergeada pelo PR #757.
 - Conteúdo:
   - A interface permanece exatamente `identities + modelContext + serverContext` e usa exclusivamente `contractVersion: 3`, sem alias ou fallback para v2.
   - A operação aditiva `loadTaxonPreparationForReviewedVersion` faz uma única leitura canônica, usa a versão E20.2 revisada persistida como requisito explícito e preserva integralmente `loadTaxonPreparationForVersion` e seu controle negativo de incompatibilidade.
@@ -2436,17 +2435,65 @@ Repositório — Ajustados
 19.4 Geração e materialização da landing page em `draft`
 
 19.4.1 Objetivo e status
-- Objetivo: gerar, validar, materializar e visualizar privadamente a primeira LP real em `draft` a partir do pacote v3 da E19.3, conforme futuro plano-base próprio.
-- Status: `docs/lousa-plano-base-e19-4.md` é o rascunho vivo da E19.4 no Cenário E; a prova real do pacote E19.3 v3 foi aprovada, enquanto a primeira LP real permanece pendente e a E19.4 ainda não foi implementada.
+- Objetivo: gerar, validar, materializar e visualizar privadamente a primeira LP real em `draft` a partir do pacote v3 da E19.3, com revisões append-only, mídia privada estável e prova humana.
+- Status: plano-base v2 e matriz de consolidação aprovados pelo Analista em 17/08/2026. As implementações candidatas da E19.4.3 e E19.4.4 e o PR precursor A acumulado foram concluídos, validados localmente e aprovados pelo Analista. Migration, bucket e runtime permanecem fail-closed e pendentes de merge humano, apply oficial, dois appends e verificador hospedado; canários e duração efetiva em Preview continuam pendentes antes da primeira geração real. O PR B permanece reservado para read model, renderer, Preview completo e prova humana após esses gates.
+
+19.4.2 Registros do recorte
+- Referências:
+  - Plano-base aprovado: `docs/lousa-plano-base-e19-4.md`.
+  - Matriz auditada: `docs/matriz-consolidacao-e19-4.md`.
+- Repositório:
+  - `app/a/[account]/landing-pages/[landingPageId]/preview/`
+  - `lib/conversion-content/landing-page/presentation/`
+  - `lib/lp-builder/landingPageDraftGeneration.ts`
+  - `lib/lp-builder/landingPageDraftImageGeneration.ts`
+  - `lib/lp-builder/landingPageDraftCandidateWorkflow.ts`
+  - `lib/lp-builder/landingPageRevision.ts`
+  - `lib/lp-builder/landingPageRevisionWorkflow.ts`
+  - `lib/lp-builder/adapters/landingPageRevisionAdapter.ts`
+  - `lib/lp-builder/adapters/landingPageRevisionStorageAdapter.ts`
+  - `lib/openai-workloads/`
+  - `supabase/migrations/20260817180000_e19_4_4_landing_page_revisions.sql`
+  - `supabase/tests/e19_4_4_landing_page_materializations.test.sql`
+  - `supabase/snippets/e19_4_4_landing_page_materializations_verify.sql`
 
 19.4.3 Geração controlada e validação integral da candidata
-- Status: Temporariamente superada em 12/08/2026 porque dependia do contrato substituído `partA + partB`; o runtime correspondente foi retirado na E19.3.3 e o destino canônico será definido pelo novo plano-base da E19.4.
+- Status: implementação candidata concluída, validada localmente e aprovada pelo Analista; canários sem persistência e confirmação da duração efetiva em Preview permanecem pendentes antes da primeira geração real.
+- Automações: sim — `2.1.3`, IA em fluxo controlado no runtime do LP Factory.
+- Conteúdo:
+  - consumir exclusivamente o pacote E19.3 v3 `identities + modelContext + serverContext`, mantendo valores operacionais brutos fora do modelo;
+  - implementar autoridade de apresentação E19.4 v1 derivada dos limites universais da E18.4, sem reintroduzir E18.5/module catalog;
+  - produzir em uma única chamada textual `landing_page_draft_generation` a candidata completa por Responses API, `gpt-5.6-luna`, `reasoning.effort=max`, Structured Output estrito, `store:false` e sem retry/fallback automático;
+  - discriminar E21.1 em `responses_text | image_generation` e criar o workload separado `landing_page_draft_image_generation`, sem transportar parâmetros textuais inaplicáveis;
+  - gerar uma imagem principal pertinente por `gpt-image-2`, uma chamada, WebP comprimido e sem alegações específicas não autorizadas; `brand_logo_asset` permanece exclusivo de logo;
+  - resolver deterministicamente os canais `whatsapp`, `phone`, `email` e `external_url`; `form` falha antes do provider com `UNSUPPORTED_PRIMARY_CONVERSION_CHANNEL`;
+  - implantar a shell autenticada mínima de `/a/[account]/landing-pages/[landingPageId]/preview` e sua Server Action com readiness anterior ao schema/provider; antes do apply, retornar indisponibilidade segura;
+  - aplicar timeouts de 120 s por provider, orçamento total de 270 s, Function com `maxDuration >= 300`, telemetria segura por `request_id` e nenhuma revisão em falha;
+  - comprovar canários sem persistência para Luna/max/strict e `gpt-image-2`, além da duração efetiva no ambiente alvo; indisponibilidade volta ao Analista sem fallback.
 
-19.4.4 Materialização inicial e snapshot imutável
-- Status: Temporariamente superada em 12/08/2026 porque dependia do contrato substituído `partA + partB`; o runtime correspondente foi retirado na E19.3.3, preservando-se somente migration, teste SQL e snippet versionados, e o destino canônico será definido pelo novo plano-base da E19.4.
+19.4.4 Revisões append-only, mídia e snapshot imutável
+- Status: implementação candidata concluída, validada localmente e aprovada pelo Analista; migration, bucket, dois appends e verificador hospedado permanecem pendentes do merge humano e apply oficial.
+- Automações: não.
+- Conteúdo:
+  - evoluir por migration incremental `account_landing_page_materializations` de 1:1 para 1:N, preservando materializações históricas como revisão 1 e sem criar entidade concorrente;
+  - usar PK em `id`, `revision_number` positivo, unicidade por LP/revisão, `attempt_id` idempotente e revisão corrente definida pela maior numeração;
+  - realizar append somente por função transacional tenant-safe, sob lock da LP pai, sem update/delete de revisão anterior e sem escrita direta pelas roles de runtime;
+  - criar o bucket privado `landing-page-revision-assets`; persistir `bucket + path` e metadata canônica, nunca signed URL; servir o WebP por URL temporária server-side após autorização;
+  - usar path `{accountId}/{landingPageId}/{attemptId}/main.webp`, `upsert:false`, cleanup best-effort e nenhuma policy direta para `anon` ou `authenticated`;
+  - persistir `content_json` final e snapshot reproduzível com identidades, contexto autorizado, bindings, versões/configurações, validações, usage, latência e custo datado ou indisponível, sem secrets, raciocínio privado ou URL assinada;
+  - manter runtime fail-closed antes do apply oficial; após o merge do PR A, executar dois appends pelo gatilho autenticado já implantado e inspecionar 1:N, segurança, corrente e no-overwrite por snippet SQL estritamente read-only;
+  - somente após apply, dois appends e verificador aprovados abrir o PR B na mesma worktree.
 
 19.4.5 Visualização privada e prova humana da primeira LP real
-- Status: Temporariamente superada em 12/08/2026 porque dependia do contrato substituído `partA + partB`; rota, jornada e preview correspondentes foram retirados na E19.3.3 e o destino canônico será definido pelo novo plano-base da E19.4.
+- Status: plano aprovado; implementação reservada ao PR B após os gates hospedados da E19.4.4.
+- Automações: não.
+- Conteúdo:
+  - evoluir a shell já implantada na rota confirmada com loader autorizado, read model da revisão corrente, signed URL server-side e renderer puro/read-only sem Supabase, `DBRow`, autenticação ou provider;
+  - renderizar somente o DTO/snapshot persistido, sem reler E19.3 ou qualquer fonte mutável;
+  - suportar desde 320 px e provar 360, 768 e 1280 px, com 1440 opcional; validar overflow, teclado, foco, headings, labels, contraste aplicável, toque, mídia, CTA, estados de erro e console;
+  - produzir a primeira LP real `Primeiro imóvel no Rio` após readiness de banco, Storage, workloads e Function;
+  - registrar no PR `revisionId`, `revisionNumber`, `attemptId`, versões/configurações, rubrica humana de seis dimensões e gates binários de factualidade, segurança e funcionamento;
+  - manter publicação, E19.5, editor, histórico visual, DAM, formulário, tracking, analytics, CRM, agente e filas fora do recorte.
 
 20. E20 — Preparação e liberação de taxons para geração de landing pages
 
@@ -2707,13 +2754,13 @@ Repositório — Ajustados
 
 21. E21 — Gestão e governança dos workloads OpenAI
 - Objetivo: gerir e governar os workloads OpenAI por recortes aprovados, iniciando pela configuração explícita, observabilidade segura e leitura administrativa; a configuração dinâmica e o histórico permanecem para recortes posteriores, sem otimização automatizada.
-- Status: E21.1 com implementação candidata concluída e validada no PR draft #710; inspeção final e merge humano pendentes.
+- Status: a fundação E21.1 permanece preservada; o PR precursor A da E19.4 expande aditivamente o catálogo para seis itens na revisão `v2`, com os dois novos workloads de draft validados localmente e ainda pendentes de canários hospedados.
 
 21.1 Fundação, normalização e leitura dos workloads OpenAI
 
 21.1.1 Objetivo e status
 - Objetivo: estabelecer catálogo tipado e resolução explícita dos workloads OpenAI, integrar os consumidores de produto à configuração e à observabilidade comuns e expor inventário administrativo read-only.
-- Status: Implementação candidata concluída e validada; fechamento documental reconciliado com a `main`, preservando E12.6 e E21.1; PR #710 permanece draft até a inspeção final.
+- Status: Fundação implementada e validada; catálogo candidato expandido para cinco workloads de produto e uma referência operacional, sem mudar a natureza repo-only e read-only do boundary.
 
 21.1.2 Registros do recorte
 - Repositório:
@@ -2749,28 +2796,29 @@ Repositório — Ajustados
 21.1.3 Catálogo estrutural e resolução explícita
 - Status: Implementada e validada.
 - Conteúdo:
-  - O boundary transversal `lib/openai-workloads/` mantém registry interno, repo-only e profundamente imutável, com três configurações efetivas de produto em `gpt-5.4-mini + none` e uma referência operacional separada do Supabase Inspect em `gpt-4.1-mini + not_applicable`.
-  - O resolver público aceita somente workloads de produto conhecidos, falha fechado para identidade desconhecida ou referência operacional e projeta inventário seguro com classificação, origem, revisão e indicação explícita de configuração efetiva verificada.
-  - Ambiente, união discriminada de resultado e normalização de usage foram definidos como contratos puros comuns e integrados às chamadas reais na E21.1.4.
+  - O boundary transversal `lib/openai-workloads/` mantém registry interno, repo-only e profundamente imutável, com cinco configurações de produto e uma referência operacional separada do Supabase Inspect.
+  - Três workloads textuais preservam `gpt-5.4-mini + none`; a E19.4 acrescenta `landing_page_draft_generation` e o workload de mídia independente `landing_page_draft_image_generation`, sem transportar parâmetros textuais inaplicáveis.
+  - O resolver público discrimina `responses_text | image_generation`, aceita somente workloads de produto conhecidos, falha fechado para identidade desconhecida ou referência operacional e projeta inventário seguro com classificação, origem, revisão e configuração efetiva.
+  - Ambiente, uniões discriminadas de resultado/evento e normalização de usage foram definidos como contratos puros comuns e integrados às chamadas reais na E21.1.4.
   - Os casos executáveis fundacionais cobrem unicidade, resolução, separação effective/reference, imutabilidade, projeção sem secrets, ambiente, usage, evento e ausência de transporte, persistência ou payload funcional no boundary.
   - Nenhum banco, integração remota, cliente universal, preço, prompt, schema funcional ou fallback silencioso foi criado.
 
 21.1.4 Integração dos consumidores e observabilidade comum
-- Status: Implementada e validada técnica e funcionalmente, com smoke hospedado aprovado para os três consumidores de produto.
+- Status: integração técnica validada para os cinco workloads de produto; o smoke hospedado de 10/08/2026 continua válido apenas para os três consumidores então existentes, e os dois workloads E19.4 aguardam canários próprios.
 - Conteúdo:
-  - Os três consumidores resolvem a configuração pelo boundary comum e enviam modelo e reasoning effort explícitos à Responses API, preservando prompts, schemas, limites, persistência e fallbacks funcionais vigentes e a prova hospedada de 10/08/2026.
-  - Eventos comuns registram por tentativa somente ambiente, configuração, response ID, resultado, categoria segura, latência e usage normalizado completo; métricas ausentes permanecem `null` e nenhum prompt, resposta integral, payload de negócio, PII ou secret é registrado.
+  - Consumidores textuais resolvem modelo e reasoning effort explícitos; o workload de imagem resolve somente sua configuração de mídia. Prompts, schemas, limites, persistência e fallbacks funcionais permanecem nos domínios consumidores.
+  - Eventos textuais e de imagem registram por tentativa somente metadados operacionais seguros e aplicáveis; métricas ausentes permanecem `null` e nenhum prompt, resposta integral, payload de negócio, PII ou secret é registrado.
   - As três leituras runtime de variáveis de modelo, o hardcode client do perfil e o cálculo monetário local foram removidos; as variáveis externas permanecem apenas como legado temporário de reversão conforme a configuração operacional canônica.
   - O transporte OpenAI comercial foi isolado no adapter previsto e novos drafts registram workload, origem, revisão, modelo e effort resolvidos na proveniência existente, sem migration, backfill ou persistência de usage.
-  - Validators determinísticos exercitam os três requests reais, configuração inválida sem transporte, modelo e effort exatos, response ID, usage, `null` sem zero fabricado, evento discriminado e ausência de referências legadas.
-  - O smoke hospedado aprovou os fluxos de resolução de nicho, proposta de perfil de geração e ativação comercial; nova chamada OpenAI paga somente é necessária se mudança relevante invalidar essa evidência.
+  - Validators determinísticos exercitam os cinco workloads de produto, separação textual/mídia, configuração inválida sem transporte, parâmetros exatos, IDs de provider, usage aplicável, eventos discriminados e ausência de referências legadas.
+  - O smoke hospedado aprovou resolução de nicho, proposta de perfil de geração e ativação comercial; os canários sem persistência dos workloads E19.4 permanecem gates próprios antes da primeira geração real.
   - Permanece fora do PR #710 a correção separada da automação de smoke para remover senha de logs e artifacts, gerar credenciais não previsíveis e tratar colisões corretamente.
 
 21.1.5 Inventário read-only no Admin Dashboard
-- Status: Implementada; a prova técnica e visual hospedada anterior cobre o inventário vigente de quatro itens.
+- Status: inventário candidato com seis itens; a prova técnica e visual hospedada anterior cobre somente os quatro itens então implantados, e a expansão aguarda Preview do PR precursor A.
 - Conteúdo:
-  - A rota protegida `/admin/workloads-openai` integra o shell e a navegação administrativos vigentes e projeta diretamente da API pública do boundary os quatro workloads no código atual, sem adapter, API, componente client ou controle de mutação novos.
-  - Os três workloads de produto exibem ambiente observado, configuração efetiva, origem e revisão; o Supabase Inspect permanece diferenciado como referência operacional externa e informa explicitamente `Ambiente da execução: não verificado nesta página`.
+  - A rota protegida `/admin/workloads-openai` integra o shell e a navegação administrativos vigentes e projeta diretamente da API pública do boundary os seis itens no código candidato, sem adapter, API, componente client ou controle de mutação novos.
+  - Os cinco workloads de produto exibem ambiente observado, configuração efetiva, origem e revisão; o Supabase Inspect permanece diferenciado como referência operacional externa e informa explicitamente `Ambiente da execução: não verificado nesta página`.
   - A superfície é responsiva, sem consulta runtime à OpenAI, GitHub ou Vercel e sem configuração remota, métricas históricas ou capacidades inexistentes.
   - As evidências hospedadas aprovaram desktop, viewport mobile de 390 × 844 sem overflow, navegação lógica por TAB com foco visível, acesso positivo de `platform_admin` e bloqueio da identidade preexistente sem esse papel.
 

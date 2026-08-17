@@ -2,8 +2,8 @@
 
 0.1 Cabeçalho
 • Documento: LP Factory 10 — Platform Config
-• Versão: v0.1.22
-• Data: 15/08/2026
+• Versão: v0.1.23
+• Data: 17/08/2026
 
 0.2 Contrato do documento
 • O QUE É: snapshot operacional e fonte única das configurações de plataformas externas do LP Factory 10, refletindo o estado conhecido/cadastrado nas plataformas conforme indicado.
@@ -169,17 +169,19 @@
 • Valor esperado: `true`
 
 • `OPENAI_API_KEY`
-• Finalidade: chave server-side compartilhada pelos três consumidores OpenAI de produto autorizados no Core.
+• Finalidade: chave server-side compartilhada pelos consumidores OpenAI de produto autorizados no Core.
 • Escopo: Production e Preview.
 • Estado atual: configurada em Production e Preview; os três consumidores foram validados em Production em 10/08/2026 sem exposição do valor.
 • Valor real: não versionar.
-• Regra operacional: os três consumidores podem compartilhar a mesma chave; não criar outra sem necessidade aprovada.
+• Regra operacional: os consumidores autorizados podem compartilhar a mesma chave; não criar outra sem necessidade aprovada.
 
 • Configuração efetiva dos workloads OpenAI de produto
-• Fonte canônica: `lib/openai-workloads/registry.ts`, com `configurationSource: repo_catalog` e revisão `v1`.
-• Workloads: `niche_resolution`, `landing_page_generation_profile_proposal` e `commercial_activation_draft_generation`.
-• Configuração comum atual: modelo `gpt-5.4-mini` e esforço de raciocínio `none`.
+• Fonte canônica: `lib/openai-workloads/registry.ts`, com `configurationSource: repo_catalog` e revisão `v2`.
+• Workloads textuais validados operacionalmente: `niche_resolution`, `landing_page_generation_profile_proposal` e `commercial_activation_draft_generation`, com modelo `gpt-5.4-mini` e esforço de raciocínio `none`.
+• Workload textual implementado no repositório e ainda não validado no ambiente alvo: `landing_page_draft_generation`, com modelo `gpt-5.6-luna`, esforço `max`, Responses API, Structured Output estrito, `store:false` e timeout de 120 s.
+• Workload de imagem implementado no repositório e ainda não validado no ambiente alvo: `landing_page_draft_image_generation`, com modelo `gpt-image-2`, saída WebP 1536 × 1024, qualidade `medium`, compressão 80, moderação `auto` e timeout de 120 s.
 • Validação operacional: os três workloads foram executados uma única vez em Production em 10/08/2026; os Runtime Logs confirmaram sucesso e telemetria sanitizada, sem prompt, resposta integral, credencial ou dado pessoal.
+• Pendência operacional: executar canários sem persistência dos dois workloads de draft em Preview e confirmar `maxDuration = 300` efetivo antes da primeira geração real.
 • Variáveis legadas de modelo na Vercel
 • Nomes: `OPENAI_NICHE_RESOLVER_MODEL`, `OPENAI_LANDING_PAGE_GENERATION_PROFILE_MODEL` e `OPENAI_COMMERCIAL_ACTIVATION_MODEL`.
 • Escopo: Production e Preview.
@@ -261,6 +263,13 @@
 • Regra: não usar esse acesso para mutações.
 • Regra: revisar permissões antes de ampliar o escopo operacional.
 
+4.8 Storage privado das revisões de landing page
+• Bucket definido no repositório: `landing-page-revision-assets`.
+• Estado operacional: criação/configuração hospedada pendente do merge humano e do apply oficial da migration E19.4.4.
+• Configuração aprovada: privado, limite de 5 MB e MIME permitido somente `image/webp`.
+• Acesso do produto: exclusivamente server-side por service role; nenhuma policy direta para anon ou authenticated.
+• Identidade do asset: bucket e path estáveis; URL assinada temporária somente no consumo autorizado e nunca persistida.
+
 5. Resend
 
 5.1 Uso
@@ -294,17 +303,20 @@
 6.3 Variáveis relacionadas
 • `OPENAI_API_KEY`
 • Plataforma: Vercel e/ou GitHub Actions, conforme uso.
-• Finalidade: autenticação com OpenAI API; no Core, a mesma chave server-side pode atender os três consumidores de produto.
+• Finalidade: autenticação com OpenAI API; no Core, a mesma chave server-side pode atender os consumidores de produto autorizados.
 • Valor real: não versionar.
 
-• A seleção de modelo e esforço dos três workloads OpenAI de produto não usa variáveis Vercel no runtime atual; o contrato efetivo está no catálogo versionado do repositório.
+• A seleção de modelo, esforço ou configuração de mídia dos workloads OpenAI de produto não usa variáveis Vercel no runtime atual; o contrato efetivo está no catálogo versionado do repositório.
 • As três variáveis legadas de modelo estão ausentes da configuração vigente da Vercel conforme 3.5.
 
 6.3.1 Endpoint externo atual
 • Endpoint OpenAI Responses API: `https://api.openai.com/v1/responses`
+• Endpoint OpenAI Images API: `https://api.openai.com/v1/images/generations`
 • Consumidores atuais conhecidos:
 • `lib/conversion-content/adapters/commercialActivationOpenAiAdapter.ts`
 • `lib/conversion-content/adapters/landingPageGenerationProfileOpenAiAdapter.ts`
+• `lib/lp-builder/adapters/landingPageDraftGenerationAdapter.ts`
+• `lib/lp-builder/adapters/landingPageDraftImageGenerationAdapter.ts`
 • `lib/lp-builder/adapters/landingPageGenerationOpenAiAdapter.ts`
 • `lib/onboarding/niche-resolution/adapters/openAiResolver.ts`
 • `automations/supabase-inspect/run.mjs`

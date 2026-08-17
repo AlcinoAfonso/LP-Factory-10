@@ -1,10 +1,27 @@
 import type {
+  OpenAiImageWorkloadEvent,
+  ResolvedOpenAiImageWorkload,
   OpenAiWorkloadEnvironment,
   OpenAiWorkloadEvent,
   OpenAiWorkloadEventContext,
   OpenAiWorkloadFailureCategory,
   OpenAiWorkloadUsage,
 } from "./contracts";
+
+type ImageEventInput = Readonly<{
+  workload: ResolvedOpenAiImageWorkload;
+  environment?: OpenAiWorkloadEnvironment;
+  attemptId?: unknown;
+  requestId?: unknown;
+  providerRequestId?: unknown;
+  latencyMs?: unknown;
+  imageCount?: unknown;
+  width?: unknown;
+  height?: unknown;
+  estimatedCost?: unknown;
+  costStatus?: "dated" | "unavailable";
+  visualBriefVersion?: unknown;
+}>;
 
 type EnvironmentInput = Readonly<{
   vercelEnv?: string;
@@ -15,6 +32,10 @@ type EventInput = OpenAiWorkloadEventContext &
   Readonly<{
     environment?: OpenAiWorkloadEnvironment;
     responseId?: unknown;
+    attemptId?: unknown;
+    requestId?: unknown;
+    promptVersion?: unknown;
+    contractVersion?: unknown;
     latencyMs?: unknown;
     usage?: unknown;
   }>;
@@ -72,6 +93,27 @@ export function emitOpenAiWorkloadEvent(
   write("openai_workload", event);
 }
 
+export function createOpenAiImageWorkloadSuccessEvent(
+  input: ImageEventInput,
+): OpenAiImageWorkloadEvent {
+  return createImageEvent(input, "success", null);
+}
+
+export function createOpenAiImageWorkloadFailureEvent(
+  input: ImageEventInput,
+  failureCategory: OpenAiWorkloadFailureCategory,
+): OpenAiImageWorkloadEvent {
+  return createImageEvent(input, "failure", failureCategory);
+}
+
+export function emitOpenAiImageWorkloadEvent(
+  event: OpenAiImageWorkloadEvent,
+  write: (name: "openai_image_workload", value: OpenAiImageWorkloadEvent) => void =
+    (name, value) => console.info(name, value),
+) {
+  write("openai_image_workload", event);
+}
+
 function createEvent(
   input: EventInput,
   result: "success" | "failure",
@@ -79,11 +121,16 @@ function createEvent(
 ): OpenAiWorkloadEvent {
   const event = {
     workload: input.workload,
+    apiKind: "responses_text" as const,
     environment: input.environment ?? resolveOpenAiWorkloadEnvironment(),
     configurationSource: input.configurationSource,
     configurationRevision: input.configurationRevision,
     model: input.model,
     reasoningEffort: input.reasoningEffort,
+    attemptId: nonEmptyString(input.attemptId),
+    requestId: nonEmptyString(input.requestId),
+    promptVersion: nonEmptyString(input.promptVersion),
+    contractVersion: positiveIntegerMetric(input.contractVersion),
     responseId: nonEmptyString(input.responseId),
     result,
     failureCategory,
@@ -92,6 +139,44 @@ function createEvent(
   };
 
   return deepFreeze(event) as OpenAiWorkloadEvent;
+}
+
+function createImageEvent(
+  input: ImageEventInput,
+  result: "success" | "failure",
+  failureCategory: OpenAiWorkloadFailureCategory | null,
+): OpenAiImageWorkloadEvent {
+  const workload = input.workload;
+  return deepFreeze({
+    workload: workload.id,
+    apiKind: workload.apiKind,
+    environment: input.environment ?? resolveOpenAiWorkloadEnvironment(),
+    configurationSource: workload.source,
+    configurationRevision: workload.revision,
+    model: workload.model,
+    size: workload.size,
+    quality: workload.quality,
+    format: workload.format,
+    compression: workload.compression,
+    moderation: workload.moderation,
+    visualBriefVersion: nonEmptyString(input.visualBriefVersion),
+    attemptId: nonEmptyString(input.attemptId),
+    requestId: nonEmptyString(input.requestId),
+    providerRequestId: nonEmptyString(input.providerRequestId),
+    latencyMs: durationMetric(input.latencyMs),
+    imageCount: integerMetric(input.imageCount),
+    width: integerMetric(input.width),
+    height: integerMetric(input.height),
+    estimatedCost:
+      typeof input.estimatedCost === "number" &&
+      Number.isFinite(input.estimatedCost) &&
+      input.estimatedCost >= 0
+        ? input.estimatedCost
+        : null,
+    costStatus: input.costStatus ?? "unavailable",
+    result,
+    failureCategory,
+  });
 }
 
 function asRecord(value: unknown): Record<string, unknown> | null {
@@ -108,6 +193,18 @@ function tokenMetric(value: unknown): number | null {
 
 function durationMetric(value: unknown): number | null {
   return typeof value === "number" && Number.isFinite(value) && value >= 0
+    ? value
+    : null;
+}
+
+function integerMetric(value: unknown): number | null {
+  return typeof value === "number" && Number.isInteger(value) && value >= 0
+    ? value
+    : null;
+}
+
+function positiveIntegerMetric(value: unknown): number | null {
+  return typeof value === "number" && Number.isInteger(value) && value > 0
     ? value
     : null;
 }

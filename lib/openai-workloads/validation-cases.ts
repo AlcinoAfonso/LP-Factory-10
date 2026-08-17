@@ -6,11 +6,14 @@ import { fileURLToPath } from "node:url";
 import { resolveNicheWithOpenAi } from "../onboarding/niche-resolution/adapters/openAiResolver";
 import * as publicApi from "./index";
 import {
+  createOpenAiImageWorkloadFailureEvent,
+  createOpenAiImageWorkloadSuccessEvent,
   createOpenAiWorkloadFailureEvent,
   createOpenAiWorkloadSuccessEvent,
   emitOpenAiWorkloadEvent,
   listOpenAiWorkloadInventory,
   normalizeOpenAiResponseUsage,
+  resolveOpenAiImageWorkload,
   resolveOpenAiProductWorkload,
   resolveOpenAiWorkloadEnvironment,
   type OpenAiWorkloadEvent,
@@ -21,6 +24,9 @@ const productIds = [
   "landing_page_generation_profile_proposal",
   "commercial_activation_draft_generation",
 ] as const;
+
+const landingPageTextWorkloadId = "landing_page_draft_generation" as const;
+const landingPageImageWorkloadId = "landing_page_draft_image_generation" as const;
 
 const cases = [
   {
@@ -98,9 +104,14 @@ const cases = [
       assert.equal(events.length, 1);
       assert.deepEqual(events[0], {
         workload: "niche_resolution",
+        apiKind: "responses_text",
+        attemptId: null,
+        requestId: null,
+        promptVersion: null,
+        contractVersion: null,
         environment: "unknown",
         configurationSource: "repo_catalog",
-        configurationRevision: "v1",
+        configurationRevision: "v2",
         model: "gpt-5.4-mini",
         reasoningEffort: "none",
         responseId: "resp_niche_123",
@@ -152,19 +163,24 @@ const cases = [
     },
   },
   {
-    name: "inventory exposes four unique canonical workloads",
+    name: "inventory exposes six unique canonical workloads",
     run: () => {
       const inventory = listOpenAiWorkloadInventory();
-      assert.equal(inventory.length, 4);
-      assert.equal(new Set(inventory.map((item) => item.id)).size, 4);
+      assert.equal(inventory.length, 6);
+      assert.equal(new Set(inventory.map((item) => item.id)).size, 6);
       assert.deepEqual(
         inventory.map((item) => item.id),
-        [...productIds, "supabase_inspect"],
+        [
+          ...productIds,
+          landingPageTextWorkloadId,
+          landingPageImageWorkloadId,
+          "supabase_inspect",
+        ],
       );
     },
   },
   {
-    name: "product workloads resolve the explicit v1 baseline",
+    name: "existing text workloads preserve their model on catalog revision v2",
     run: () => {
       for (const workloadId of productIds) {
         const result = resolveOpenAiProductWorkload(workloadId);
@@ -172,10 +188,81 @@ const cases = [
         assert.equal(result.value.model, "gpt-5.4-mini");
         assert.equal(result.value.reasoningEffort, "none");
         assert.equal(result.value.source, "repo_catalog");
-        assert.equal(result.value.revision, "v1");
+        assert.equal(result.value.revision, "v2");
         assert.equal(result.value.configurationKind, "effective");
         assert.equal(result.value.effectiveConfigurationVerified, true);
       }
+    },
+  },
+  {
+    name: "landing page text and image workloads resolve independent configurations",
+    run: () => {
+      const text = resolveOpenAiProductWorkload(landingPageTextWorkloadId);
+      assert.equal(text.ok, true);
+      assert.equal(text.value.apiKind, "responses_text");
+      assert.equal(text.value.model, "gpt-5.6-luna");
+      assert.equal(text.value.reasoningEffort, "max");
+      assert.equal(text.value.revision, "v2");
+
+      const image = resolveOpenAiImageWorkload(landingPageImageWorkloadId);
+      assert.equal(image.ok, true);
+      assert.deepEqual(image.value, {
+        id: landingPageImageWorkloadId,
+        displayName: "Geração da imagem principal da landing page em draft",
+        classification: "product_runtime",
+        configurationKind: "effective",
+        apiKind: "image_generation",
+        consumer: "E19.4 — mídia principal da candidata validada",
+        fallback: "Falhar a tentativa sem criar revisão",
+        model: "gpt-image-2",
+        size: "1536x1024",
+        quality: "medium",
+        format: "webp",
+        compression: 80,
+        moderation: "auto",
+        reasoningEffort: "not_applicable",
+        source: "repo_catalog",
+        revision: "v2",
+        effectiveConfigurationVerified: true,
+      });
+
+      const textAsImage = resolveOpenAiImageWorkload(landingPageTextWorkloadId);
+      assert.equal(textAsImage.ok, false);
+      assert.equal(textAsImage.error.code, "NOT_IMAGE_GENERATION_WORKLOAD");
+      const imageAsText = resolveOpenAiProductWorkload(landingPageImageWorkloadId);
+      assert.equal(imageAsText.ok, false);
+      assert.equal(imageAsText.error.code, "NOT_TEXT_PRODUCT_WORKLOAD");
+    },
+  },
+  {
+    name: "image events expose media metrics without textual token fields",
+    run: () => {
+      const resolved = resolveOpenAiImageWorkload(landingPageImageWorkloadId);
+      assert.equal(resolved.ok, true);
+      const success = createOpenAiImageWorkloadSuccessEvent({
+        workload: resolved.value,
+        environment: "preview",
+        requestId: " req_image_123 ",
+        latencyMs: 42,
+        imageCount: 1,
+        width: 1536,
+        height: 1024,
+        visualBriefVersion: "e19.4-visual-brief-v1",
+      });
+      assert.equal(success.result, "success");
+      assert.equal(success.requestId, "req_image_123");
+      assert.equal(success.imageCount, 1);
+      assert.equal(success.visualBriefVersion, "e19.4-visual-brief-v1");
+      assert.equal("inputTokens" in success, false);
+      assert.equal("reasoningEffort" in success, false);
+
+      const failure = createOpenAiImageWorkloadFailureEvent(
+        { workload: resolved.value },
+        "timeout",
+      );
+      assert.equal(failure.result, "failure");
+      assert.equal(failure.failureCategory, "timeout");
+      assert.equal(Object.isFrozen(failure), true);
     },
   },
   {
@@ -193,7 +280,7 @@ const cases = [
       assert.equal(reference.model, "gpt-4.1-mini");
       assert.equal(reference.reasoningEffort, "not_applicable");
       assert.equal(reference.source, "github_actions_default_reference");
-      assert.equal(reference.revision, "v1");
+      assert.equal(reference.revision, "v2");
       assert.equal(reference.effectiveConfigurationVerified, false);
     },
   },
@@ -395,7 +482,12 @@ const cases = [
         .map((file) => readFileSync(new URL(file, import.meta.url), "utf8"))
         .join("\n");
       assert.equal(/\bfetch\s*\(|@supabase|OPENAI_API_KEY|authorization\s*:/i.test(source), false);
-      assert.equal(/prompt|structured.?output|output.?schema|pricing|price.?table/i.test(source), false);
+      assert.equal(
+        /\bprompt(?!Version)|structured.?output|output.?schema|pricing|price.?table/i.test(
+          source,
+        ),
+        false,
+      );
     },
   },
 ];

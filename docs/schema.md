@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data da última atualização: 17/08/2026
-• Documento: LP Factory 10 — Schema (DB Contract) v1.0.43
+• Documento: LP Factory 10 — Schema (DB Contract) v1.0.45
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -857,42 +857,64 @@
 • O agregado não participa do Trigger Hub.
 
 1.27 account_landing_page_materializations
-1.27.1 Função e estado
-• Agregado interno 1:1 e write-once da materialização inicial de uma landing page em `draft`.
-• Conteúdo renderizável e snapshot geracional são inseridos atomicamente; não há estado parcial válido.
-• A migration está aplicada no ambiente hospedado; a projeção runtime permanece fail-closed diante de ausência ou incompatibilidade do contrato.
+1.27.1 Estado hospedado atual — contrato 1:1
+• Agregado interno 1:1 e write-once da materialização inicial de uma landing page em `draft`, conforme a migration histórica `supabase/migrations/20260811133500_e19_4_4_landing_page_materializations.sql`.
+• Colunas hospedadas: `landing_page_id uuid primary key`, `account_id uuid not null`, `content_json jsonb not null`, `generation_context_snapshot_json jsonb not null`, `created_by uuid not null` e `created_at timestamptz not null default now()`.
+• `(landing_page_id, account_id)` referencia `(id, account_id)` de `public.account_landing_pages`; `account_id` referencia `public.accounts(id)`; `created_by` referencia `auth.users(id)`; os dois JSONs devem ser objetos.
+• Índices hospedados: `account_landing_page_materializations_account_id_idx` e `account_landing_page_materializations_created_by_idx`.
+• RLS habilitado e nenhuma policy. `public`, `anon`, `authenticated` e `ai_readonly`: sem grants. `service_role`: `SELECT` e `INSERT`; sem `UPDATE`, `DELETE` ou `TRUNCATE`.
+• O ambiente hospedado ainda não possui `id`, `revision_number`, `attempt_id`, os objetos RPC da evolução 1:N nem o bucket `landing-page-revision-assets`.
 
-1.27.2 Colunas
-• landing_page_id uuid primary key
+1.27.2 Evolução 1:N versionada no repositório — pendente de apply
+• O contrato candidato evolui o mesmo agregado para revisões append-only 1:N de uma landing page em `draft`; não cria entidade concorrente de revisões.
+• A revisão corrente será a linha válida de maior `revision_number` da LP; não haverá flag mutável de corrente.
+• A evolução está versionada no repositório e permanece pendente de merge humano e apply oficial; o runtime falha fechado até o probe confirmar o novo contrato.
+
+1.27.3 Colunas da evolução pendente
+• id uuid primary key default gen_random_uuid()
+• landing_page_id uuid not null
 • account_id uuid not null
+• revision_number bigint not null, positivo
+• attempt_id uuid nullable somente para materializações históricas anteriores à evolução 1:N
 • content_json jsonb not null
 • generation_context_snapshot_json jsonb not null
 • created_by uuid not null
 • created_at timestamptz not null default now()
 
-1.27.3 Relacionamentos e constraints
+1.27.4 Relacionamentos e constraints da evolução pendente
 • `(landing_page_id, account_id)` referencia `(id, account_id)` de public.account_landing_pages com ON UPDATE RESTRICT e ON DELETE CASCADE.
 • account_id referencia public.accounts(id) com ON UPDATE RESTRICT e ON DELETE CASCADE.
 • created_by referencia auth.users(id) com ON UPDATE RESTRICT e ON DELETE RESTRICT.
-• A PK em landing_page_id impede segunda materialização e overwrite.
+• `(landing_page_id, revision_number)` é único; `attempt_id` é único quando não nulo.
+• Linhas históricas recebem novo `id` e `revision_number = 1`, preservando conteúdo, snapshot, autoria e timestamp.
 • `content_json` e `generation_context_snapshot_json` devem ser objetos JSON.
 
-1.27.4 Índices
+1.27.5 Índices da evolução pendente
 • `account_landing_page_materializations_account_id_idx`: btree em account_id.
 • `account_landing_page_materializations_created_by_idx`: btree em created_by.
+• `account_landing_page_materializations_attempt_id_uidx`: unicidade parcial de attempt_id não nulo.
+• `account_landing_page_materializations_current_idx`: btree em account_id, landing_page_id e revision_number desc.
 
-1.27.5 Segurança e acesso
+1.27.6 Segurança e acesso da evolução pendente
 • RLS habilitado e nenhuma policy.
 • public, anon, authenticated e ai_readonly: sem grants.
-• service_role: SELECT e INSERT; sem UPDATE ou DELETE.
-• Não há view, RPC, trigger ou participação no Trigger Hub.
+• service_role: SELECT direto; sem INSERT, UPDATE, DELETE ou TRUNCATE direto.
+• `public.append_account_landing_page_materialization_v1(...)`: SECURITY DEFINER, owner postgres, search_path fixado, EXECUTE exclusivo de service_role e append tenant-safe sob lock da LP pai.
+• `public.e19_4_landing_page_revision_readiness()`: probe read-only com EXECUTE exclusivo de service_role.
+• Não há trigger nem participação no Trigger Hub.
 
-1.27.6 Contrato operacional
-• A leitura server-only usa a projeção exata `landing_page_id,account_id,content_json,generation_context_snapshot_json,created_by,created_at` e valida integralmente os contratos runtime v1 de conteúdo e snapshot.
-• A prontidão aceita a tabela vazia após o apply e, quando houver amostra, falha fechado diante de relação, coluna, grant, shape, versão ou coerência inválidos.
-• O conteúdo materializado é autossuficiente; o snapshot preserva as identidades estruturais e somente o contexto concretamente exposto à geração válida.
-• Em conflito de unicidade, o adapter relê o agregado vencedor pelo par tenant-scoped e o retorna sem UPDATE, DELETE ou nova chamada ao provider.
-• A migration é `supabase/migrations/20260811133500_e19_4_4_landing_page_materializations.sql`; a verificação read-only é `supabase/snippets/e19_4_4_landing_page_materializations_verify.sql`; os casos SQL estão em `supabase/tests/e19_4_4_landing_page_materializations.test.sql`.
+1.27.7 Contrato operacional da evolução pendente
+• O append valida conta, LP em draft, attempt, conteúdo e snapshot; tentativa repetida da mesma LP retorna a revisão já criada sem overwrite.
+• O conteúdo final combina apresentação validada, bindings determinísticos e referência canônica da mídia. O snapshot preserva contexto autorizado, configurações, usage, latência, validações e custo indisponível, sem secret, resposta bruta, raciocínio privado ou URL assinada.
+• A leitura corrente server-only ordena por revision_number desc no par tenant-scoped e valida integralmente conteúdo e snapshot.
+• Migration histórica preservada: `supabase/migrations/20260811133500_e19_4_4_landing_page_materializations.sql`.
+• Evolução 1:N pendente de apply: `supabase/migrations/20260817180000_e19_4_4_landing_page_revisions.sql`.
+• Verificação read-only: `supabase/snippets/e19_4_4_landing_page_materializations_verify.sql`; casos SQL: `supabase/tests/e19_4_4_landing_page_materializations.test.sql`.
+
+1.27.8 Storage da evolução pendente
+• O bucket privado `landing-page-revision-assets` está definido na migration 1:N com limite de 5 MB e MIME permitido somente `image/webp`; sua criação hospedada permanece pendente do apply oficial.
+• Nenhuma policy de storage.objects concede leitura ou escrita direta do bucket a anon ou authenticated.
+• A identidade persistida da mídia usa bucket e path estáveis com metadata; URL assinada é temporária, server-side e nunca integra a identidade do asset.
 
 2. Views
 

@@ -1,6 +1,6 @@
 0.1 Cabeçalho
-Data: 15/08/2026
-Versão: v1.16
+Data: 17/08/2026
+Versão: v1.17
 Status: Alinhado ao Platform Config
 
 0.2 Função do documento
@@ -440,6 +440,52 @@ Referências / dependências:
 Fluxo funcional: `docs/roadmap.md` — E20.6.3.
 Configuração do gate: `docs/platform-config.md` — seção 3.5.
 Contrato técnico: `docs/base-tecnica.md` — seção 3.15.7.
+
+3.11 E19.4.3 — geração controlada da candidata de landing page
+
+Objetivo:
+Gerar e validar a candidata textual completa e sua imagem principal a partir do pacote autorizado da E19.3, sem materialização parcial.
+
+Status:
+Implementação candidata validada localmente e aprovada pelo Analista; canários sem persistência e confirmação da duração efetiva em Preview permanecem pendentes antes da primeira geração real.
+
+Recurso utilizado:
+- Responses API com Structured Output estrito;
+- Images API;
+- Server Action autenticada e fail-closed por readiness.
+
+Natureza:
+- Automação com IA em fluxo controlado.
+
+Ambiente principal:
+- Runtime do LP Factory.
+
+Plataforma dependente:
+- OpenAI Platform.
+
+Participação humana:
+- Gatilho autenticado explícito e revisão posterior do resultado; sem intervenção durante a execução.
+
+Como funciona:
+- Consome somente o pacote autorizado E19.3 v3 e mantém valores operacionais fora do contexto textual.
+- Executa um workload textual e um workload de imagem separados, com uma chamada por provider e telemetria própria.
+- Valida contrato, estrutura, bindings e factualidade antes de permitir qualquer materialização.
+- Preserva tentativa e requisição internas para correlação, separadas dos identificadores dos providers.
+- Aplica deadline total de 270 segundos, propaga cancelamento e tempo restante aos providers e impede imagem, upload ou append posterior quando o orçamento expira.
+
+Limites:
+- Não usa tools, Agents SDK, agente, job, fila, execução recorrente, retry ou fallback automático.
+- Falha, recusa, timeout ou candidata inválida encerram a tentativa sem revisão persistida.
+- Não registra prompt, resposta integral, contexto de negócio, PII, secrets ou raciocínio privado.
+
+Aplicação funcional no roadmap:
+- `docs/roadmap.md` — E19.4.3.
+
+Referências / dependências:
+Regra técnica: `docs/base-tecnica.md` — seção 3.15.8.
+Configuração de workloads: `docs/platform-config.md`.
+Boundary de geração: `lib/lp-builder/landingPageDraftGeneration.ts`.
+Autoridade de apresentação: `lib/conversion-content/landing-page/presentation/`.
 
 4. Aprendizados operacionais
 

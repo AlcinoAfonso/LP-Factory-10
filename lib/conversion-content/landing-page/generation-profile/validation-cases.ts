@@ -1626,9 +1626,14 @@ const cases: readonly Readonly<{
       assert.equal(events.length, 1);
       assert.deepEqual(events[0], {
         workload: "landing_page_generation_profile_proposal",
+        apiKind: "responses_text",
+        attemptId: null,
+        requestId: null,
+        promptVersion: null,
+        contractVersion: null,
         environment: "unknown",
         configurationSource: "repo_catalog",
-        configurationRevision: "v1",
+        configurationRevision: "v2",
         model: GENERATION_PROFILE_MODEL,
         reasoningEffort: GENERATION_PROFILE_REASONING_EFFORT,
         responseId: "resp_profile_123",

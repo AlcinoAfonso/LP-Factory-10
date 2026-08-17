@@ -484,7 +484,7 @@ const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }
     },
   },
   {
-    name: "public boundary has no E10.8, E18.5, E20.3, Stripe or E19.4 runtime dependency",
+    name: "E19.3 compiler boundary stays independent from downstream E19.4 runtime",
     run: () => {
       const compilerSource = readFileSync(
         new URL("./generationContext.ts", import.meta.url),
@@ -492,10 +492,6 @@ const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }
       );
       const boundaryCoreSource = readFileSync(
         new URL("./adapters/generationContextAdapterCore.ts", import.meta.url),
-        "utf8",
-      );
-      const publicIndexSource = readFileSync(
-        new URL("./index.ts", import.meta.url),
         "utf8",
       );
       assert.doesNotMatch(
@@ -506,15 +502,9 @@ const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }
         boundaryCoreSource,
         /research-resolution|loadResearch|Stripe|OpenAI|GenerationProfile|loadGenerationProfile/,
       );
-      assert.doesNotMatch(
-        publicIndexSource,
-        /generateLandingPageDraftCandidate|materializeFirstLandingPageDraft|getLandingPageDraftExperienceState|landingPageGenerationContracts|landingPageMaterializationContracts/,
-      );
       for (const relativePath of [
         "../../app/a/[account]/landing-page-actions.ts",
         "../../app/a/[account]/_components/LandingPageDraftJourney.tsx",
-        "../../app/a/[account]/landing-pages/[landingPageId]/preview/page.tsx",
-        "./landingPageGeneration.ts",
         "./landingPageMaterialization.ts",
         "./landingPagePreview.ts",
       ]) {
