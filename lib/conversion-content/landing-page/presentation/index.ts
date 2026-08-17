@@ -6,6 +6,7 @@ export {
   landingPagePresentationSectionSchema,
   validateLandingPagePresentationCandidate,
   type LandingPagePresentationCandidate,
+  type LandingPagePresentationAuthorizedFact,
   type LandingPagePresentationSection,
   type LandingPagePresentationValidationErrorCode,
   type LandingPagePresentationValidationResult,

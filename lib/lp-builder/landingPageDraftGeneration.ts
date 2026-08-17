@@ -161,7 +161,7 @@ export async function generateLandingPageDraftCandidate(
     }
     const validated = validateLandingPagePresentationCandidate(
       candidate,
-      context.modelContext,
+      context.modelContext.facts,
     );
     if (!validated.ok) {
       emitFailure(workload, "invalid_response", dependencies, metadata);

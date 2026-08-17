@@ -117,6 +117,10 @@ export type LandingPagePresentationCandidate = z.infer<
   typeof landingPagePresentationCandidateSchema
 >;
 
+export type LandingPagePresentationAuthorizedFact = Readonly<{
+  value: unknown;
+}>;
+
 export type LandingPagePresentationValidationErrorCode =
   | "INVALID_SCHEMA"
   | "INVALID_SECTION_ORDER"
@@ -146,7 +150,7 @@ export const landingPagePresentationJsonSchema = deepFreeze(
 
 export function validateLandingPagePresentationCandidate(
   candidate: unknown,
-  authorizedModelContext: unknown,
+  authorizedFacts: readonly LandingPagePresentationAuthorizedFact[],
 ): LandingPagePresentationValidationResult {
   const parsed = landingPagePresentationCandidateSchema.safeParse(candidate);
   if (!parsed.success) {
@@ -207,14 +211,19 @@ export function validateLandingPagePresentationCandidate(
     );
   }
 
-  const authority = normalize(JSON.stringify(authorizedModelContext));
-  const unsupportedClaim = copy.find(
-    (value) => isObjectiveClaim(value) && !authority.includes(normalize(value)),
+  const factualAuthority = authorizedFacts.flatMap((fact) =>
+    collectFactualScalars(fact.value).map(normalize),
   );
+  const unsupportedClaim = copy
+    .flatMap(extractDeterministicFactClaims)
+    .find(
+      (claim) =>
+        !factualAuthority.some((factValue) => factValue.includes(normalize(claim))),
+    );
   if (unsupportedClaim) {
     return invalid(
       "UNAUTHORIZED_OBJECTIVE_CLAIM",
-      "Candidate contains an objective claim absent from modelContext",
+      "Candidate contains an objectively verifiable claim absent from modelContext.facts",
     );
   }
 
@@ -245,6 +254,21 @@ function collectStrings(value: unknown): string[] {
   return [];
 }
 
+function collectFactualScalars(value: unknown): string[] {
+  if (
+    typeof value === "string" ||
+    typeof value === "number" ||
+    typeof value === "boolean"
+  ) {
+    return [String(value)];
+  }
+  if (Array.isArray(value)) return value.flatMap(collectFactualScalars);
+  if (value && typeof value === "object") {
+    return Object.values(value).flatMap(collectFactualScalars);
+  }
+  return [];
+}
+
 function isModelGeneratedBinding(value: string) {
   return (
     /https?:\/\/|www\.|[\w.+-]+@[\w.-]+\.[a-z]{2,}/i.test(value) ||
@@ -256,19 +280,15 @@ function isModelGeneratedBinding(value: string) {
   );
 }
 
-function isObjectiveClaim(value: string) {
-  return (
-    /\b(?:creci|registro|certificad[oa]|licen[çc]a|credencial|credenciad[oa]|garanti[ad]|comprovad[oa])\b/i.test(value) ||
-    /\b(?:clientes?|depoimentos?|avaliaç(?:ão|ões)|prova social|cases? de sucesso|fam[ií]lia\s+[A-ZÁÀÂÃÉÊÍÓÔÕÚÇ][\p{L}'-]+|recomend(?:a|am|ou))\b/iu.test(value) ||
-    /\b(?:dispon[ií]vel|pronta entrega|estoque|unidades? restantes?|vagas? limitadas?)\b/i.test(value) ||
-    /\b(?:r\$\s*\d|\d+(?:[.,]\d+)?\s*%|a partir de|preç[oa]|valor de|reais|desconto|entrada|parcel|juros)\b/i.test(value) ||
-    /\b(?:endere[çc]o|rua|avenida|bairro|cep|localizad[oa] em|pr[oó]ximo a)\b/i.test(value) ||
-    /\b(?:resultado|retorno|aument(?:a|e|ou)|reduz(?:a|e|iu)|economiz(?:a|e|ou)|conquist(?:a|e|ou)|vend(?:a|e|eu|as)|alcan[çc](?:a|e|ou)|dobr(?:a|ou)|triplic(?:a|ou))\b/i.test(value) ||
-    /\b(?:[Dd]r|[Dd]ra|[Ss]r|[Ss]ra)\.?\s+[A-ZÁÀÂÃÉÊÍÓÔÕÚÇ][\p{L}'-]+(?:\s+[A-ZÁÀÂÃÉÊÍÓÔÕÚÇ][\p{L}'-]+)+/u.test(value) ||
-    /\b(?:[Cc]om|[Pp]or|[Aa]tendimento de)\s+[A-ZÁÀÂÃÉÊÍÓÔÕÚÇ][\p{L}'-]+\s+[A-ZÁÀÂÃÉÊÍÓÔÕÚÇ][\p{L}'-]+/u.test(value) ||
-    /^[A-ZÁÀÂÃÉÊÍÓÔÕÚÇ][\p{L}'-]+\s+[A-ZÁÀÂÃÉÊÍÓÔÕÚÇ][\p{L}'-]+\b/u.test(value) ||
-    /\b[A-ZÁÀÂÃÉÊÍÓÔÕÚÇ][\p{L}'-]+,\s+[A-ZÁÀÂÃÉÊÍÓÔÕÚÇ][\p{L}'-]+(?:\s+de\s+[A-ZÁÀÂÃÉÊÍÓÔÕÚÇ][\p{L}'-]+)?\b/u.test(value)
-  );
+function extractDeterministicFactClaims(value: string) {
+  const patterns = [
+    /\b(?:creci|crm|cro|crp|oab)\s*(?:n[º°o.]?\s*)?[a-z]{0,3}[-/]?\s*\d{3,}(?:[-/.]\d+)*\b/giu,
+    /\br\$\s*\d{1,3}(?:\.\d{3})*(?:,\d{2})?\b/giu,
+    /\b\d+(?:[.,]\d+)?\s*%(?!\w)/gu,
+    /\b\d+\s+(?:unidades?|vagas?|lotes?|imóveis?)\s+(?:disponíveis?|restantes?)\b/giu,
+    /\b(?:rua|avenida|av\.?|alameda|rodovia|estrada)\s+[\p{L}\d .'-]+,\s*\d+[a-z]?\b/giu,
+  ];
+  return patterns.flatMap((pattern) => value.match(pattern) ?? []);
 }
 
 function normalize(value: string) {

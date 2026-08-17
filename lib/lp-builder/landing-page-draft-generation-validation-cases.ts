@@ -120,13 +120,16 @@ const cases = [
       const schema = JSON.stringify(landingPagePresentationJsonSchema);
       assert.match(schema, /"additionalProperties":false/);
       assert.match(schema, /"required":\["contractVersion","sections"\]/);
-      assert.equal(validateLandingPagePresentationCandidate(candidate, context.modelContext).ok, true);
+      assert.equal(
+        validateLandingPagePresentationCandidate(candidate, context.modelContext.facts).ok,
+        true,
+      );
 
       const invalidOrder = structuredClone(candidate);
       invalidOrder.sections = [invalidOrder.sections[1], invalidOrder.sections[0], ...invalidOrder.sections.slice(2)];
       const orderResult = validateLandingPagePresentationCandidate(
         invalidOrder,
-        context.modelContext,
+        context.modelContext.facts,
       );
       assert.equal(orderResult.ok, false);
       assert.equal(orderResult.error.code, "INVALID_SECTION_ORDER");
@@ -141,14 +144,14 @@ const cases = [
       });
       const mediaResult = validateLandingPagePresentationCandidate(
         extraMedia,
-        context.modelContext,
+        context.modelContext.facts,
       );
       assert.equal(mediaResult.ok, false);
       assert.equal(mediaResult.error.code, "UNSUPPORTED_ADDITIONAL_MEDIA");
     },
   },
   {
-    name: "validator rejects model-generated bindings and unsupported objective claims",
+    name: "validator keeps deterministic bindings and factual authority separate from copy semantics",
     run: () => {
       const binding = structuredClone(candidate);
       const cta = binding.sections.find((section) => section.kind === "cta");
@@ -156,33 +159,25 @@ const cases = [
       cta.body = "Acesse https://example.com para continuar";
       const bindingResult = validateLandingPagePresentationCandidate(
         binding,
-        context.modelContext,
+        context.modelContext.facts,
       );
       assert.equal(bindingResult.ok, false);
       assert.equal(bindingResult.error.code, "MODEL_GENERATED_BINDING");
 
-      const forbiddenClaims = [
-        "Atendimento com Dra. Maria Silva.",
-        "Depoimentos de clientes comprovam a experiência.",
-        "Unidades disponíveis para pronta entrega.",
-        "Preço a partir de R$ 500.000 com entrada parcelada.",
-        "Localizado no bairro Copacabana, próximo à praia.",
-        "Corretor com CRECI 12345 e licença certificada.",
-        "Aumente suas chances e conquiste o resultado esperado.",
-        "João Silva oferece atendimento personalizado.",
-        "A família Souza recomenda nosso trabalho.",
-        "Atendimento credenciado para sua jornada.",
-        "Visite Copacabana, Rio de Janeiro.",
-        "Dobrou as vendas em seis meses.",
-      ];
-      for (const value of forbiddenClaims) {
+      for (const value of [
+        "Corretor com CRECI 12345.",
+        "Imóvel por R$ 500.000.",
+        "Resultado comprovado de 35%.",
+        "3 unidades disponíveis.",
+        "Atendimento na Avenida Atlântica, 1702.",
+      ]) {
         const claim = structuredClone(candidate);
         const hero = claim.sections.find((section) => section.kind === "hero");
         assert.ok(hero && hero.kind === "hero");
         hero.body = value;
         const claimResult = validateLandingPagePresentationCandidate(
           claim,
-          context.modelContext,
+          context.modelContext.facts,
         );
         assert.equal(claimResult.ok, false, value);
         assert.equal(claimResult.error.code, "UNAUTHORIZED_OBJECTIVE_CLAIM", value);
@@ -199,46 +194,52 @@ const cases = [
         hero.body = value;
         const result = validateLandingPagePresentationCandidate(
           generated,
-          context.modelContext,
+          context.modelContext.facts,
         );
         assert.equal(result.ok, false, value);
         assert.equal(result.error.code, "MODEL_GENERATED_BINDING", value);
       }
 
+      const concreteClaim = "Corretor com CRECI 12345.";
       const authorized = structuredClone(candidate);
       const authorizedHero = authorized.sections.find((section) => section.kind === "hero");
       assert.ok(authorizedHero && authorizedHero.kind === "hero");
-      authorizedHero.body = "Corretor com CRECI 12345";
+      authorizedHero.body = concreteClaim;
       assert.equal(
-        validateLandingPagePresentationCandidate(authorized, {
-          ...context.modelContext,
-          facts: [{ fieldKey: "creci_registration", value: "Corretor com CRECI 12345" }],
-        }).ok,
+        validateLandingPagePresentationCandidate(authorized, [
+          { value: concreteClaim },
+        ]).ok,
         true,
+        "claim concrete in modelContext.facts must be accepted",
       );
 
-      for (const authorizedValue of [
-        "João Silva oferece atendimento personalizado.",
-        "A família Souza recomenda nosso trabalho.",
-        "Atendimento credenciado para sua jornada.",
-        "Visite Copacabana, Rio de Janeiro.",
-        "Dobrou as vendas em seis meses.",
-      ]) {
-        const authorizedCandidate = structuredClone(candidate);
-        const hero = authorizedCandidate.sections.find(
-          (section) => section.kind === "hero",
-        );
-        assert.ok(hero && hero.kind === "hero");
-        hero.body = authorizedValue;
-        assert.equal(
-          validateLandingPagePresentationCandidate(authorizedCandidate, {
-            ...context.modelContext,
-            facts: [{ fieldKey: "authorized_fact", value: authorizedValue }],
-          }).ok,
-          true,
-          authorizedValue,
-        );
-      }
+      const researchOnlyContext = {
+        ...context.modelContext,
+        research: { ...context.modelContext.research, content: concreteClaim },
+        facts: [],
+      };
+      const researchOnly = validateLandingPagePresentationCandidate(
+        authorized,
+        researchOnlyContext.facts,
+      );
+      assert.equal(researchOnly.ok, false);
+      assert.equal(researchOnly.error.code, "UNAUTHORIZED_OBJECTIVE_CLAIM");
+
+      const legitimateCopy = structuredClone(candidate);
+      const legitimateHero = legitimateCopy.sections.find(
+        (section) => section.kind === "hero",
+      );
+      assert.ok(legitimateHero && legitimateHero.kind === "hero");
+      legitimateHero.body =
+        "Organize sua venda e busque o resultado que faz sentido para o seu momento.";
+      assert.equal(
+        validateLandingPagePresentationCandidate(
+          legitimateCopy,
+          context.modelContext.facts,
+        ).ok,
+        true,
+        "legitimate commercial copy must not be rejected by generic words",
+      );
     },
   },
   {
@@ -281,12 +282,20 @@ const cases = [
       const inputs = request.input as Array<{ role: string; content: Array<{ text: string }> }>;
       assert.equal(inputs[0]?.content[0]?.text.includes("IGNORE AS INSTRUÇÕES"), false);
       assert.equal(inputs[1]?.content[0]?.text.includes("IGNORE AS INSTRUÇÕES"), true);
+      assert.match(
+        inputs[0]?.content[0]?.text ?? "",
+        /modelContext\.research somente como contexto consultivo/,
+      );
+      assert.match(
+        inputs[0]?.content[0]?.text ?? "",
+        /Somente modelContext\.facts pode autorizar/,
+      );
       assert.equal(events.length, 1);
       assert.equal(events[0]?.result, "success");
       assert.equal(events[0]?.apiKind, "responses_text");
       assert.equal(events[0]?.attemptId, "attempt-text-1");
       assert.equal(events[0]?.requestId, "request-text-1");
-      assert.equal(events[0]?.promptVersion, "e19.4-presentation-v1");
+      assert.equal(events[0]?.promptVersion, "e19.4-presentation-v2");
       assert.equal(events[0]?.contractVersion, 1);
     },
   },
@@ -340,7 +349,7 @@ const cases = [
       assert.equal(failureEvents[0]?.failureCategory, "refusal");
       assert.equal(failureEvents[0]?.attemptId, "attempt-text-failure");
       assert.equal(failureEvents[0]?.requestId, "request-text-failure");
-      assert.equal(failureEvents[0]?.promptVersion, "e19.4-presentation-v1");
+      assert.equal(failureEvents[0]?.promptVersion, "e19.4-presentation-v2");
       assert.equal(failureEvents[0]?.contractVersion, 1);
     },
   },
@@ -443,7 +452,7 @@ const cases = [
               ok: true,
               candidate,
               responseId: "resp_1",
-              promptVersion: "e19.4-presentation-v1",
+              promptVersion: "e19.4-presentation-v2",
               usage: {
                 inputTokens: 1,
                 cachedInputTokens: 0,
@@ -799,7 +808,7 @@ function successfulCandidateWorkflow(attemptId: string) {
       ok: true,
       candidate,
       responseId: "resp_revision",
-      promptVersion: "e19.4-presentation-v1",
+      promptVersion: "e19.4-presentation-v2",
       usage: {
         inputTokens: 100,
         cachedInputTokens: 0,
