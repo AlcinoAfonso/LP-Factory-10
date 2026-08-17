@@ -24,6 +24,7 @@ const effortLabels = {
   medium: "Médio",
   high: "Alto",
   xhigh: "Extra-alto",
+  max: "Máximo",
   not_applicable: "Não aplicável",
 } as const;
 

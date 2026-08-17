@@ -3,7 +3,7 @@ import type {
   OpenAiWorkloadId,
 } from "./contracts";
 
-const revision = "v1";
+const revision = "v2";
 
 export const openAiWorkloadRegistry = deepFreeze([
   {
@@ -14,6 +14,7 @@ export const openAiWorkloadRegistry = deepFreeze([
     consumer: "Resolvedor IA opcional do onboarding",
     fallback: "Continuar o onboarding sem bloquear o fluxo",
     configuration: {
+      apiKind: "responses_text",
       model: "gpt-5.4-mini",
       reasoningEffort: "none",
       source: "repo_catalog",
@@ -28,6 +29,7 @@ export const openAiWorkloadRegistry = deepFreeze([
     consumer: "Proposta administrativa opcional do perfil de orientação",
     fallback: "Manter a edição manual funcional",
     configuration: {
+      apiKind: "responses_text",
       model: "gpt-5.4-mini",
       reasoningEffort: "none",
       source: "repo_catalog",
@@ -42,8 +44,43 @@ export const openAiWorkloadRegistry = deepFreeze([
     consumer: "Geração administrativa de draft comercial",
     fallback: "Não publicar nem substituir o conteúdo vigente",
     configuration: {
+      apiKind: "responses_text",
       model: "gpt-5.4-mini",
       reasoningEffort: "none",
+      source: "repo_catalog",
+      revision,
+    },
+  },
+  {
+    id: "landing_page_draft_generation",
+    displayName: "Geração textual de landing page em draft",
+    classification: "product_runtime",
+    configurationKind: "effective",
+    consumer: "E19.4 — candidata estruturada da landing page",
+    fallback: "Falhar a tentativa sem criar revisão",
+    configuration: {
+      apiKind: "responses_text",
+      model: "gpt-5.6-luna",
+      reasoningEffort: "max",
+      source: "repo_catalog",
+      revision,
+    },
+  },
+  {
+    id: "landing_page_draft_image_generation",
+    displayName: "Geração da imagem principal da landing page em draft",
+    classification: "product_runtime",
+    configurationKind: "effective",
+    consumer: "E19.4 — mídia principal da candidata validada",
+    fallback: "Falhar a tentativa sem criar revisão",
+    configuration: {
+      apiKind: "image_generation",
+      model: "gpt-image-2",
+      size: "1536x1024",
+      quality: "medium",
+      format: "webp",
+      compression: 80,
+      moderation: "auto",
       source: "repo_catalog",
       revision,
     },
@@ -82,6 +119,13 @@ function assertValidRegistry(registry: readonly OpenAiWorkloadDefinition[]) {
       workload.configurationKind !== "effective"
     ) {
       throw new Error(`Invalid effective configuration: ${workloadId}`);
+    }
+
+    if (
+      workload.classification === "product_runtime" &&
+      !("apiKind" in workload.configuration)
+    ) {
+      throw new Error(`Missing API kind: ${workloadId}`);
     }
 
     if (

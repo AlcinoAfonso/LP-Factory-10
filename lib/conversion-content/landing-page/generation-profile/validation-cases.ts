@@ -1628,7 +1628,7 @@ const cases: readonly Readonly<{
         workload: "landing_page_generation_profile_proposal",
         environment: "unknown",
         configurationSource: "repo_catalog",
-        configurationRevision: "v1",
+        configurationRevision: "v2",
         model: GENERATION_PROFILE_MODEL,
         reasoningEffort: GENERATION_PROFILE_REASONING_EFFORT,
         responseId: "resp_profile_123",
