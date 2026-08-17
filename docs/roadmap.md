@@ -2243,7 +2243,7 @@ Repositório — Ajustados
 
 19. E19 — LP Builder
 - Objetivo: Consolidar o fluxo Core de landing pages por conta, da identidade mínima em `draft` às futuras etapas de geração, revisão, materialização e publicação, sempre por recortes aprovados.
-- Status: E19.1 concluída; E19.2 concluída; a implementação candidata da E19.3 no Cenário E está concluída e validada no PR #757, com inspeção final e merge humano pendentes; a implementação anterior do Cenário D permanece como histórico material do PR #729; E19.4 recebe somente a referência planejada ao pacote v3, sem replanejamento ou implementação.
+- Status: E19.1, E19.2 e E19.3 concluídas; o contrato v3 do Cenário E foi mergeado pelo PR #757. O plano-base v2 da E19.4 foi aprovado para gerar, materializar e visualizar privadamente a primeira LP real em dois PRs sequenciais; a implementação ainda não foi iniciada. A implementação anterior do Cenário D permanece apenas como histórico material do PR #729.
 
 19.1 Criação produtiva mínima de LP por conta
 
@@ -2368,7 +2368,7 @@ Repositório — Ajustados
 
 19.3.1 Objetivo e status
 - Objetivo: manter a E19.3 como o menor boundary determinístico entre as fontes autorizadas do projeto e a E19.4, entregando um único pacote autorizado com pesquisa integral, fatos concretos revalidados, limites editoriais e contexto operacional.
-- Status: Plano-base v2 aprovado e implementação candidata concluída e validada no PR #757; inspeção final e merge humano pendentes.
+- Status: Concluída; implementação validada e mergeada pelo PR #757 no contrato v3.
 
 19.3.2 Registros do recorte
 - Repositório:
@@ -2417,10 +2417,10 @@ Repositório — Ajustados
   - Contrato técnico: `docs/base-tecnica.md` — 3.14.4.
   - Configuração operacional: `docs/platform-config.md` — configuração efetiva dos workloads OpenAI de produto.
   - Plano-base v2 aprovado: `docs/lousa-plano-base-e19-3.md`.
-  - Rascunho vivo da sucessora E19.4: `docs/lousa-plano-base-e19-4.md`.
+  - Plano-base v2 aprovado da sucessora E19.4: `docs/lousa-plano-base-e19-4.md`.
 
 19.3.3 Contrato v3, pesquisa integral e revalidação
-- Status: Implementação candidata concluída e validada no PR #757; inspeção final e merge humano pendentes.
+- Status: Concluída e mergeada pelo PR #757.
 - Conteúdo:
   - A interface permanece exatamente `identities + modelContext + serverContext` e usa exclusivamente `contractVersion: 3`, sem alias ou fallback para v2.
   - A operação aditiva `loadTaxonPreparationForReviewedVersion` faz uma única leitura canônica, usa a versão E20.2 revisada persistida como requisito explícito e preserva integralmente `loadTaxonPreparationForVersion` e seu controle negativo de incompatibilidade.
@@ -2436,17 +2436,48 @@ Repositório — Ajustados
 19.4 Geração e materialização da landing page em `draft`
 
 19.4.1 Objetivo e status
-- Objetivo: gerar, validar, materializar e visualizar privadamente a primeira LP real em `draft` a partir do pacote v3 da E19.3, conforme futuro plano-base próprio.
-- Status: `docs/lousa-plano-base-e19-4.md` é o rascunho vivo da E19.4 no Cenário E; a prova real do pacote E19.3 v3 foi aprovada, enquanto a primeira LP real permanece pendente e a E19.4 ainda não foi implementada.
+- Objetivo: gerar, validar, materializar e visualizar privadamente a primeira LP real em `draft` a partir do pacote v3 da E19.3, com revisões append-only, mídia privada estável e prova humana.
+- Status: plano-base v2 e matriz de consolidação aprovados pelo Analista em 17/08/2026; implementação ainda não iniciada. A precedência factual do schema hospedado divide a entrega na mesma frente e worktree: PR precursor A para E19.4.3 + E19.4.4 e shell/gatilho autenticado fail-closed; após merge, apply e prova hospedada, PR B para read model, renderer, Preview completo e primeira LP real.
+- Plano-base aprovado: `docs/lousa-plano-base-e19-4.md`.
+- Matriz auditada: `docs/matriz-consolidacao-e19-4.md`.
 
 19.4.3 Geração controlada e validação integral da candidata
-- Status: Temporariamente superada em 12/08/2026 porque dependia do contrato substituído `partA + partB`; o runtime correspondente foi retirado na E19.3.3 e o destino canônico será definido pelo novo plano-base da E19.4.
+- Status: plano aprovado; implementação pendente no PR precursor A.
+- Automações: sim — `2.1.3`, IA em fluxo controlado no runtime do LP Factory.
+- Conteúdo:
+  - consumir exclusivamente o pacote E19.3 v3 `identities + modelContext + serverContext`, mantendo valores operacionais brutos fora do modelo;
+  - implementar autoridade de apresentação E19.4 v1 derivada dos limites universais da E18.4, sem reintroduzir E18.5/module catalog;
+  - produzir em uma única chamada textual `landing_page_draft_generation` a candidata completa por Responses API, `gpt-5.6-luna`, `reasoning.effort=max`, Structured Output estrito, `store:false` e sem retry/fallback automático;
+  - discriminar E21.1 em `responses_text | image_generation` e criar o workload separado `landing_page_draft_image_generation`, sem transportar parâmetros textuais inaplicáveis;
+  - gerar uma imagem principal pertinente por `gpt-image-2`, uma chamada, WebP comprimido e sem alegações específicas não autorizadas; `brand_logo_asset` permanece exclusivo de logo;
+  - resolver deterministicamente os canais `whatsapp`, `phone`, `email` e `external_url`; `form` falha antes do provider com `UNSUPPORTED_PRIMARY_CONVERSION_CHANNEL`;
+  - implantar a shell autenticada mínima de `/a/[account]/landing-pages/[landingPageId]/preview` e sua Server Action com readiness anterior ao schema/provider; antes do apply, retornar indisponibilidade segura;
+  - aplicar timeouts de 120 s por provider, orçamento total de 270 s, Function com `maxDuration >= 300`, telemetria segura por `request_id` e nenhuma revisão em falha;
+  - comprovar canários sem persistência para Luna/max/strict e `gpt-image-2`, além da duração efetiva no ambiente alvo; indisponibilidade volta ao Analista sem fallback.
 
-19.4.4 Materialização inicial e snapshot imutável
-- Status: Temporariamente superada em 12/08/2026 porque dependia do contrato substituído `partA + partB`; o runtime correspondente foi retirado na E19.3.3, preservando-se somente migration, teste SQL e snippet versionados, e o destino canônico será definido pelo novo plano-base da E19.4.
+19.4.4 Revisões append-only, mídia e snapshot imutável
+- Status: plano aprovado; implementação pendente no PR precursor A, com apply e prova hospedada somente após merge humano.
+- Automações: não.
+- Conteúdo:
+  - evoluir por migration incremental `account_landing_page_materializations` de 1:1 para 1:N, preservando materializações históricas como revisão 1 e sem criar entidade concorrente;
+  - usar PK em `id`, `revision_number` positivo, unicidade por LP/revisão, `attempt_id` idempotente e revisão corrente definida pela maior numeração;
+  - realizar append somente por função transacional tenant-safe, sob lock da LP pai, sem update/delete de revisão anterior e sem escrita direta pelas roles de runtime;
+  - criar o bucket privado `landing-page-revision-assets`; persistir `bucket + path` e metadata canônica, nunca signed URL; servir o WebP por URL temporária server-side após autorização;
+  - usar path `{accountId}/{landingPageId}/{attemptId}/main.webp`, `upsert:false`, cleanup best-effort e nenhuma policy direta para `anon` ou `authenticated`;
+  - persistir `content_json` final e snapshot reproduzível com identidades, contexto autorizado, bindings, versões/configurações, validações, usage, latência e custo datado ou indisponível, sem secrets, raciocínio privado ou URL assinada;
+  - manter runtime fail-closed antes do apply oficial; após o merge do PR A, executar dois appends pelo gatilho autenticado já implantado e inspecionar 1:N, segurança, corrente e no-overwrite por snippet SQL estritamente read-only;
+  - somente após apply, dois appends e verificador aprovados abrir o PR B na mesma worktree.
 
 19.4.5 Visualização privada e prova humana da primeira LP real
-- Status: Temporariamente superada em 12/08/2026 porque dependia do contrato substituído `partA + partB`; rota, jornada e preview correspondentes foram retirados na E19.3.3 e o destino canônico será definido pelo novo plano-base da E19.4.
+- Status: plano aprovado; implementação reservada ao PR B após os gates hospedados da E19.4.4.
+- Automações: não.
+- Conteúdo:
+  - evoluir a shell já implantada na rota confirmada com loader autorizado, read model da revisão corrente, signed URL server-side e renderer puro/read-only sem Supabase, `DBRow`, autenticação ou provider;
+  - renderizar somente o DTO/snapshot persistido, sem reler E19.3 ou qualquer fonte mutável;
+  - suportar desde 320 px e provar 360, 768 e 1280 px, com 1440 opcional; validar overflow, teclado, foco, headings, labels, contraste aplicável, toque, mídia, CTA, estados de erro e console;
+  - produzir a primeira LP real `Primeiro imóvel no Rio` após readiness de banco, Storage, workloads e Function;
+  - registrar no PR `revisionId`, `revisionNumber`, `attemptId`, versões/configurações, rubrica humana de seis dimensões e gates binários de factualidade, segurança e funcionamento;
+  - manter publicação, E19.5, editor, histórico visual, DAM, formulário, tracking, analytics, CRM, agente e filas fora do recorte.
 
 20. E20 — Preparação e liberação de taxons para geração de landing pages
 
@@ -2775,6 +2806,8 @@ Repositório — Ajustados
   - As evidências hospedadas aprovaram desktop, viewport mobile de 390 × 844 sem overflow, navegação lógica por TAB com foco visível, acesso positivo de `platform_admin` e bloqueio da identidade preexistente sem esse papel.
 
 99. Changelog
+v1.5.141 — 17/08/2026 — Aprovados o plano-base v2 e a matriz de consolidação da E19.4 no Cenário E; reconciliados o merge da E19.3 pelo PR #757, os contratos executáveis de E19.4.3–E19.4.5 e o sequenciamento em PR precursor A, gates hospedados pós-apply e PR B para Preview/primeira LP real, sem reintroduzir E18.5 nem transportar a seção 1.7 excluída da v1.
+
 v1.5.140 — 11/08/2026 — Implementada no repositório a E19.4.4 com materialização inicial 1:1 write-once, conteúdo e snapshot runtime v1 coerentes, adapter server-only, migration transacional, readiness fail-closed e casos executáveis; apply e prova hospedada permanecem nos gates pós-merge/E19.4.5.
 
 v1.5.131 — 08/08/2026 — Fechada a E19.2 após o merge do PR #700: migration aplicada, verificador SQL read-only aprovado e validação funcional hospedada autenticada concluída; preservados os limites de não geração, não publicação, ausência de tracking/CRM/capability nova e ausência de infraestrutura de assets.
