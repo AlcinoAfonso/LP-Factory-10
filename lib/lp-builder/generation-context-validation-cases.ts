@@ -458,6 +458,37 @@ const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }
         latency_ms: 1,
       });
 
+      dependencyCalls.length = 0;
+      logs.length = 0;
+      const withoutRequestId =
+        await compileLandingPageGenerationContextForDraftWithDependencies(
+          { accountId: ACCOUNT_ID, landingPageId: LANDING_PAGE_ID },
+          { ...dependencies, log: (payload) => logs.push(payload) },
+        );
+      assert.equal(withoutRequestId.ok, true);
+      assert.deepEqual(dependencyCalls, [
+        "revalidation-authority",
+        "landing-page",
+        "preparation",
+      ]);
+      assert.equal(Object.hasOwn(logs[0], "request_id"), false);
+
+      dependencyCalls.length = 0;
+      const invalidRequestId =
+        await compileLandingPageGenerationContextForDraftWithDependencies(
+          {
+            accountId: ACCOUNT_ID,
+            landingPageId: LANDING_PAGE_ID,
+            requestId: "invalid request id",
+          },
+          { ...dependencies, log: () => undefined },
+        );
+      assert.equal(invalidRequestId.ok, false);
+      if (!invalidRequestId.ok) {
+        assert.equal(invalidRequestId.error.code, "INVALID_INPUT");
+      }
+      assert.deepEqual(dependencyCalls, []);
+
       const unauthorizedCalls: string[] = [];
       const unauthorized =
         await compileLandingPageGenerationContextForDraftWithDependencies(

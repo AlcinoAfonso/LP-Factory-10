@@ -67,7 +67,9 @@ export async function generateLandingPageRevisionAction(
   const context = await compileLandingPageGenerationContextForDraft({
     accountId: access.context.accountId,
     landingPageId,
-    requestId: access.context.requestId ?? undefined,
+    ...(access.context.requestId == null
+      ? {}
+      : { requestId: access.context.requestId }),
   });
   if (!context.ok) {
     return actionError(
@@ -109,7 +111,9 @@ export async function generateLandingPageRevisionAction(
       const currentContext = await compileLandingPageGenerationContextForDraft({
         accountId: currentAccess.context.accountId,
         landingPageId,
-        requestId: currentAccess.context.requestId ?? undefined,
+        ...(currentAccess.context.requestId == null
+          ? {}
+          : { requestId: currentAccess.context.requestId }),
       });
       return (
         currentContext.ok &&

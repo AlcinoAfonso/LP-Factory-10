@@ -744,6 +744,18 @@ const cases = [
       assert.match(action, /UNSUPPORTED_PRIMARY_CONVERSION_CHANNEL/);
       assert.match(action, /materializeLandingPageDraftRevision/);
       assert.match(action, /currentEntitlement/);
+      assert.match(
+        action,
+        /access\.context\.requestId == null[\s\S]*?requestId: access\.context\.requestId/,
+      );
+      assert.match(
+        action,
+        /currentAccess\.context\.requestId == null[\s\S]*?requestId: currentAccess\.context\.requestId/,
+      );
+      assert.doesNotMatch(
+        action,
+        /requestId:\s*(?:access|currentAccess)\.context\.requestId\s*\?\?\s*undefined/,
+      );
       const page = readFileSync(
         new URL(
           "../../app/a/[account]/landing-pages/[landingPageId]/preview/page.tsx",
