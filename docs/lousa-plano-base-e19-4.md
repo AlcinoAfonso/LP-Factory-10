@@ -15,8 +15,8 @@
 - A seção `1.7. Matriz final da v1` do blob congelado é artefato histórico do debate e está integralmente excluída do contrato operacional. Nenhuma decisão, requisito ou inferência desta v2 deriva dessa seção.
 - As decisões consolidadas nas demais seções da v1 permanecem preservadas, salvo detalhamento técnico explicitamente fechado nesta v2.
 - A implementação será executada nas subseções exatas `E19.4.3`, `E19.4.4` e `E19.4.5`, uma por vez, na mesma frente e worktree, mas em dois PRs sequenciais por precedência factual do schema hospedado.
-- PR precursor A: plano aprovado + E19.4.3 + E19.4.4, com migration backward-compatible, runtime novo desativado/fail-closed e sem consumidor que dependa do schema antes do apply.
-- PR B: aberto na mesma worktree somente após merge humano do PR A, apply oficial e verificação hospedada; integra/ativa E19.4.5, executa canário integrado e produz a primeira LP real.
+- PR precursor A: plano aprovado + E19.4.3 + E19.4.4, com migration backward-compatible e shell autenticada mínima da rota confirmada contendo gatilho humano protegido por readiness fail-closed; antes do apply, o gatilho não acessa o schema novo nem chama providers.
+- PR B: aberto na mesma worktree somente após merge humano do PR A, apply oficial e verificação hospedada; acrescenta read model, renderer e apresentação completa do Preview, executa canário integrado final e produz a primeira LP real.
 
 ### 1.2. Decisões humanas que fecharam a v2
 
@@ -133,6 +133,7 @@
 
 - Gatilho humano explícito para LP legítima em `draft`, residente em Server Action dedicada da rota `/a/[account]/landing-pages/[landingPageId]/preview`, com `maxDuration = 300` no segmento/Function efetivamente implantado.
 - A Action recebe somente `accountSlug + landingPageId`, deriva identidade/autorização no servidor e devolve resultado discriminado de sucesso (`revisionId`, `revisionNumber`) ou erro público tipado, sem payload do provider.
+- O PR A já implanta a shell autenticada mínima da rota e esse gatilho, sem renderer nem leitura da revisão. Readiness ausente retorna indisponibilidade segura antes de acessar o schema novo ou providers; após o apply, a mesma Action fica apta a executar os dois appends controlados.
 - Antes de qualquer provider:
   - revalidar sessão, conta, membership, entitlement, LP e vínculo da configuração;
   - resolver deterministicamente `primary_conversion_channel`: `whatsapp → whatsapp_destination`, `phone → phone_destination`, `email → email_destination` e `external_url → external_url_destination`;
@@ -265,7 +266,7 @@
 - Evoluir E21.1 de forma aditiva para `reasoning.effort=max` e registrar os dois workloads com configurações próprias.
 - Discriminar E21.1 em `responses_text | image_generation`, inclusive resolução e eventos, sem parâmetros textuais no request de imagem.
 - Implementar provider adapters, timeouts, telemetria, tratamento de refusal/incomplete e fail-closed.
-- Implementar Server Action dedicada, matriz de bindings dos canais suportados, fail-closed para `form`, revalidações de acesso e pacote E19.3 v3.
+- Implementar no PR A a shell autenticada mínima da rota, Server Action dedicada, readiness anterior ao schema/provider, matriz de bindings dos canais suportados, fail-closed para `form`, revalidações de acesso e pacote E19.3 v3.
 - Antes da geração real, comprovar:
   - canário `gpt-5.6-luna + max + store:false + schema estrito mínimo` no Preview, sem persistência;
   - canário `gpt-image-2` com configuração mínima, sem persistência;
@@ -278,6 +279,7 @@
 - Automações: não.
 - Criar migration incremental da tabela existente, função de append, bucket privado, grants/RLS e snippet hospedado.
 - Implementar adapters server-only de append, leitura corrente, upload, cleanup e referência canônica.
+- Expor o append exclusivamente pelo gatilho autenticado da shell mínima do PR A; antes do apply ele retorna indisponibilidade segura, e depois do apply permite a prova controlada sem antecipar renderer ou read model.
 - Persistir revisão somente após candidata, bindings, mídia e snapshot integralmente válidos.
 - Substituir fixtures, testes e snippet negativos que ainda cristalizam 1:1, preservando a migration antiga apenas como histórico aplicado.
 - Aceite local: duas revisões válidas da mesma LP preservam payloads distintos; corrente é a maior revisão; tentativa repetida não duplica; falha não deixa revisão.
@@ -286,7 +288,7 @@
 ### 5.3. E19.4.5 — Renderer, preview e prova humana
 
 - Automações: não.
-- Adaptar a rota confirmada, loader autorizado, read model e renderer puro exaustivo.
+- Evoluir no PR B a shell já implantada, acrescentando loader autorizado, read model e renderer puro exaustivo.
 - Implementar estados seguros e resolução server-side de signed URL.
 - Validar suporte desde 320 px e provar visualmente em 360, 768 e 1280 px; 1440 px é evidência adicional. Verificar teclado, foco, headings, contraste aplicável, mídia, CTA e console.
 - Gerar a primeira LP real somente após readiness de banco, Storage, modelos e Function.
@@ -296,7 +298,7 @@
 ### 5.4. Ordem, gates e validações
 
 - Ordem obrigatória no PR A: E19.4.3 → gate do Analista → ABCs aplicáveis → E19.4.4 → gate/revisão final do Analista → ABCs e merge humano.
-- Depois do merge do PR A: apply oficial → dois appends controlados → verificador hospedado read-only → nova branch na mesma worktree → PR B com E19.4.5 → avaliação final do Analista → ABCs finais → merge humano.
+- Depois do merge do PR A: apply oficial → dois appends pelo gatilho autenticado já implantado → verificador hospedado read-only → nova branch na mesma worktree → PR B com read model, renderer e apresentação completa da E19.4.5 → avaliação final do Analista → ABCs finais → merge humano.
 - Antes da implementação: Analista Passagens 1 e 2, matriz de consolidação substituída, ABC de `docs/roadmap.md` e checkpoint `LP-Factory-Stage: plan-v2-approved`.
 - Para cada subseção com código: `npm ci`, `npm run check`, testes focais e `git diff --check`; não executar `npm run build` no sandbox Codex.
 - Alteração visual: iniciar `npm run dev`, abrir a URL indicada e validar tela, comportamento e erros visíveis.
@@ -349,8 +351,8 @@
 ### 7.3. Condições pós-merge
 
 - O merge é exclusivamente humano pelo GitHub Web.
-- Como o Preview usa o Supabase principal e a migration só é aplicada pelo fluxo oficial após merge, o PR A termina com runtime novo desativado/fail-closed e sem consumidor dependente do schema.
-- Após merge humano do PR A, o apply oficial, os dois appends controlados e o verificador read-only são gates para abrir o PR B.
-- O PR B integra/ativa o preview, executa o canário integrado e produz a primeira LP real antes de sua avaliação final e merge humano.
+- Como o Preview usa o Supabase principal e a migration só é aplicada pelo fluxo oficial após merge, o PR A implanta a shell autenticada e a Action, mas mantém a mutação bloqueada por readiness até o apply; “fail-closed” não significa ausência do entrypoint necessário à prova.
+- Após merge humano do PR A, o apply oficial habilita o mesmo gatilho autenticado para os dois appends controlados; o verificador read-only inspeciona o resultado, e ambos são gates para abrir o PR B.
+- O PR B acrescenta read model, renderer e apresentação completa do preview, executa o canário integrado final e produz a primeira LP real antes de sua avaliação final e merge humano.
 - O trabalho não simula apply remoto nem marca gates hospedados como concluídos antes da evidência real.
 - E19.5 permanece pausada até a primeira LP real ser produzida e avaliada.
