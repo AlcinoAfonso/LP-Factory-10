@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data da última atualização: 15/08/2026
-• Documento: LP Factory 10 — Schema (DB Contract) v1.0.42
+• Data da última atualização: 17/08/2026
+• Documento: LP Factory 10 — Schema (DB Contract) v1.0.43
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -196,7 +196,7 @@
 1.7.2 Segurança
 • Trigger Hub: sim
 • RLS: obrigatório
-1.7.3 Policies (TBD: preencher nomes reais no Supabase)
+1.7.3 Policies (TBD)
 • Select: platform_admin/partner autorizado
 • Insert/Update/Delete: governado via hub/regras administrativas
 
@@ -747,7 +747,6 @@
 • Policies:
   • content_artifact_research_sources_select_admin_only (SELECT to authenticated): is_super_admin() OU is_platform_admin()
   • cars_insert_admin_business_buyer_only (INSERT to authenticated): is_super_admin() OU is_platform_admin(); somente `audience_scope = 'business_buyer'`
-
 1.23.4 Índices
 • `content_artifact_research_sources_research_id_idx`: btree em `research_id`.
 
@@ -860,7 +859,7 @@
 1.27.1 Função e estado
 • Agregado interno 1:1 e write-once da materialização inicial de uma landing page em `draft`.
 • Conteúdo renderizável e snapshot geracional são inseridos atomicamente; não há estado parcial válido.
-• A migration está implementada no repositório e aguarda o fluxo de apply pós-merge; a projeção runtime permanece fail-closed até a aplicação integral.
+• A migration está aplicada no ambiente hospedado; a projeção runtime permanece fail-closed diante de ausência ou incompatibilidade do contrato.
 
 1.27.2 Colunas
 • landing_page_id uuid primary key
@@ -1147,6 +1146,8 @@
 • Rollback: não remove automaticamente a extensão, pois pode ser reutilizada por outros recursos
 
 99. Changelog
+v1.0.43 (17/08/2026) — E19.4.4: corrigido o estado factual de `account_landing_page_materializations` para registrar que a migration já está aplicada no ambiente hospedado, preservando o contrato 1:1 write-once, conteúdo e snapshot atômicos e ausência de UPDATE/DELETE para `service_role`.
+
 v1.0.40 (11/08/2026) — E19.4.4: registrado o agregado repo-only `account_landing_page_materializations`, sua materialização 1:1 write-once, conteúdo e snapshot atômicos, projeção runtime estrita, RLS sem policies e acesso exclusivo SELECT/INSERT por `service_role`; apply hospedado permanece pós-merge.
 
 v1.0.38 (08/08/2026) — E19.2: registrado o agregado `account_landing_page_onboarding_configurations`, a unicidade composta de `account_landing_pages` usada pelo FK tenant-safe, os checks, RLS, grants mínimos, triggers de atualização/write-once e a ausência de persistência prematura na tabela de LP.
@@ -1182,7 +1183,7 @@ v1.0.25 (21/06/2026) — E10.7 Fase 1: nome estável para policy de fontes de pe
 
 v1.0.24 (21/06/2026) — E10.7 Fase 1: escrita administrativa e publicação transacional de artefatos
 • Registrados grants e policies admin-only para criação de drafts em `content_artifacts` e registro de fontes `business_buyer` em `content_artifact_research_sources`.
-• Registrado UPDATE direto de `authenticated` restrito às colunas `content_json` e `provenance_json` somente para artefatos `draft`.
+• Registrado UPDATE direto de `authenticated` restrito às colunas `content_json` e `provenance_json` somente em artefatos `draft`.
 • Registrada a RPC `publish_content_artifact_draft(uuid)` para arquivar o `published` anterior e publicar o novo `draft` na mesma transação.
 
 v1.0.23 (16/06/2026) — E18: registros-base de `commercial_activation`
