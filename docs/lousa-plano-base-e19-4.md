@@ -8,6 +8,7 @@
 - Recorte: `E19.4 — Geração, revisão válida, materialização e preview privado da landing page em draft`.
 - Path canônico: `docs/lousa-plano-base-e19-4.md`.
 - Processo: `docs/prompt-estrategista.md` v31.
+- Plano conceitual: `docs/lp-planejamento.md`.
 - Cenário ativo: somente Cenário E.
 - E19.3 do Cenário E: concluída no contrato v3 e mergeada pelo PR #757; E19.4 consome `identities + modelContext + serverContext` sem reabrir inteligência intermediária.
 - PR #760: correção factual de `docs/schema.md` já mergeada; o apply de `account_landing_page_materializations` não é pendência.
@@ -232,10 +233,17 @@
 ### 3.1. E19.4.3 — Geração controlada e candidata válida
 
 - Status: pronta para detalhamento v2, não para implementação imediata.
-- Automação: `2.1.3 — Automação com IA em fluxo controlado`.
-- Ambiente: Runtime do LP Factory.
+- Automação: sim.
+- Categoria: `2.1.3 — Automação com IA em fluxo controlado`.
+- Ambiente: `2.2.1 — Runtime do LP Factory`.
 - Objetivo:
   - transformar E19.3 em candidata completa por uma chamada textual, com Structured Output, mídia necessária e validação integral.
+- Limites:
+  - uma chamada textual por tentativa e sem retry textual automático;
+  - IA restrita ao `modelContext` e à autoridade estrutural autorizada;
+  - `serverContext` bruto, autorização, fatos, bindings, segurança, persistência e renderer permanecem determinísticos;
+  - sem comportamento agentic, PTC, persisted reasoning, Agents SDK ou multi-agent neste recorte.
+- Avaliação formal de Automação na v2: necessária.
 - V2 deve fechar:
   - fields, variantes, layouts e cardinalidades;
   - schema exato do Structured Output;
@@ -248,6 +256,7 @@
 ### 3.2. E19.4.4 — Revisões append-only, mídia e snapshot
 
 - Status: pronta para detalhamento v2.
+- Automação: não.
 - Objetivo:
   - evoluir a persistência atual para múltiplas revisões válidas da mesma LP, sem overwrite, com mídia estável e snapshot reproduzível.
 - V2 deve fechar:
@@ -266,6 +275,7 @@
 ### 3.3. E19.4.5 — Renderer, preview e prova humana
 
 - Status: pronta para detalhamento v2.
+- Automação: não.
 - Objetivo:
   - renderizar a revisão corrente em preview privado e avaliar a primeira LP real.
 - V2 deve fechar:
