@@ -9,8 +9,6 @@ import { loadLandingPageRevisionReadiness } from "@/lp-builder/adapters/landingP
 import { materializeLandingPageDraftRevision } from "@/lp-builder/adapters/landingPageRevisionWorkflowAdapter";
 import { resolveLandingPageConversionBinding } from "@/lp-builder/landingPageDraftWorkflow";
 
-export const maxDuration = 300;
-
 export type GenerateLandingPageRevisionActionState =
   | Readonly<{ status: "idle" }>
   | Readonly<{
