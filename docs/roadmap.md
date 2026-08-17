@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 16/08/2026
-• Versão: v1.5.156
+• Data: 17/08/2026
+• Versão: v1.5.157
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2438,8 +2438,11 @@ Repositório — Ajustados
 19.4.1 Objetivo e status
 - Objetivo: gerar, validar, materializar e visualizar privadamente a primeira LP real em `draft` a partir do pacote v3 da E19.3, com revisões append-only, mídia privada estável e prova humana.
 - Status: plano-base v2 e matriz de consolidação aprovados pelo Analista em 17/08/2026; implementação ainda não iniciada. A precedência factual do schema hospedado divide a entrega na mesma frente e worktree: PR precursor A para E19.4.3 + E19.4.4 e shell/gatilho autenticado fail-closed; após merge, apply e prova hospedada, PR B para read model, renderer, Preview completo e primeira LP real.
-- Plano-base aprovado: `docs/lousa-plano-base-e19-4.md`.
-- Matriz auditada: `docs/matriz-consolidacao-e19-4.md`.
+
+19.4.2 Registros do recorte
+- Referências:
+  - Plano-base aprovado: `docs/lousa-plano-base-e19-4.md`.
+  - Matriz auditada: `docs/matriz-consolidacao-e19-4.md`.
 
 19.4.3 Geração controlada e validação integral da candidata
 - Status: plano aprovado; implementação pendente no PR precursor A.
@@ -2806,8 +2809,6 @@ Repositório — Ajustados
   - As evidências hospedadas aprovaram desktop, viewport mobile de 390 × 844 sem overflow, navegação lógica por TAB com foco visível, acesso positivo de `platform_admin` e bloqueio da identidade preexistente sem esse papel.
 
 99. Changelog
-v1.5.141 — 17/08/2026 — Aprovados o plano-base v2 e a matriz de consolidação da E19.4 no Cenário E; reconciliados o merge da E19.3 pelo PR #757, os contratos executáveis de E19.4.3–E19.4.5 e o sequenciamento em PR precursor A, gates hospedados pós-apply e PR B para Preview/primeira LP real, sem reintroduzir E18.5 nem transportar a seção 1.7 excluída da v1.
-
 v1.5.140 — 11/08/2026 — Implementada no repositório a E19.4.4 com materialização inicial 1:1 write-once, conteúdo e snapshot runtime v1 coerentes, adapter server-only, migration transacional, readiness fail-closed e casos executáveis; apply e prova hospedada permanecem nos gates pós-merge/E19.4.5.
 
 v1.5.131 — 08/08/2026 — Fechada a E19.2 após o merge do PR #700: migration aplicada, verificador SQL read-only aprovado e validação funcional hospedada autenticada concluída; preservados os limites de não geração, não publicação, ausência de tracking/CRM/capability nova e ausência de infraestrutura de assets.
