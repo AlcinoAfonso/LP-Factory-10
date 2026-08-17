@@ -196,7 +196,7 @@
 1.7.2 Segurança
 • Trigger Hub: sim
 • RLS: obrigatório
-1.7.3 Policies (TBD)
+1.7.3 Policies (TBD: preencher nomes reais no Supabase)
 • Select: platform_admin/partner autorizado
 • Insert/Update/Delete: governado via hub/regras administrativas
 
@@ -747,6 +747,7 @@
 • Policies:
   • content_artifact_research_sources_select_admin_only (SELECT to authenticated): is_super_admin() OU is_platform_admin()
   • cars_insert_admin_business_buyer_only (INSERT to authenticated): is_super_admin() OU is_platform_admin(); somente `audience_scope = 'business_buyer'`
+
 1.23.4 Índices
 • `content_artifact_research_sources_research_id_idx`: btree em `research_id`.
 
@@ -1183,7 +1184,7 @@ v1.0.25 (21/06/2026) — E10.7 Fase 1: nome estável para policy de fontes de pe
 
 v1.0.24 (21/06/2026) — E10.7 Fase 1: escrita administrativa e publicação transacional de artefatos
 • Registrados grants e policies admin-only para criação de drafts em `content_artifacts` e registro de fontes `business_buyer` em `content_artifact_research_sources`.
-• Registrado UPDATE direto de `authenticated` restrito às colunas `content_json` e `provenance_json` somente em artefatos `draft`.
+• Registrado UPDATE direto de `authenticated` restrito às colunas `content_json` e `provenance_json` somente para artefatos `draft`.
 • Registrada a RPC `publish_content_artifact_draft(uuid)` para arquivar o `published` anterior e publicar o novo `draft` na mesma transação.
 
 v1.0.23 (16/06/2026) — E18: registros-base de `commercial_activation`
