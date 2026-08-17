@@ -10,7 +10,7 @@
 - Processo: `docs/prompt-estrategista.md` v31.
 - Plano conceitual: `docs/lp-planejamento.md`.
 - Base histórica de abertura do PR #731: `main` após o merge do PR #729, commit `40baacbc516a80c2600408a9be63bfa33793ca85`.
-- Atualização do debate: 16/08/2026, já sobre a `main` posterior ao merge do PR #757.
+- Atualização do debate: 17/08/2026, já sobre a `main` posterior ao merge do PR #757.
 - O plano-base v2 anterior permanece somente no histórico Git como desenho superado dependente do contrato E19.3 `partA + partB`.
 - Decisão humana de 14/08/2026: o Cenário E é a única direção ativa para a primeira geração real; o Cenário D deixa de ser alternativa em desenvolvimento ou comparação obrigatória.
 - A branch `strategy/e19-4-cenario-d` conserva apenas o nome histórico de abertura do PR #731.
@@ -23,7 +23,7 @@
 - Produzir e avaliar a primeira landing page real do Cenário E a partir do pacote autorizado da E19.3.
 - Dar à IA liberdade controlada para transformar contexto autorizado em jornada comercial coerente, sem delegar segurança, autorização, verdade factual, bindings operacionais, persistência ou renderer.
 - Gerar candidata estruturalmente válida, materializá-la no `draft` real existente e disponibilizar preview privado e read-only para avaliação humana.
-- Incluir na primeira prova LP completa e reconhecível como página comercial real, com Header, corpo, CTA(s), Footer, estrutura visual e conteúdo coerentes.
+- Incluir na primeira prova LP completa e reconhecível como página comercial real, com Header, corpo, CTA(s), Footer, estrutura visual, conteúdo coerente e pelo menos uma imagem principal pertinente à narrativa.
 - Encerrar a E19.4 quando o fluxo estiver funcional de ponta a ponta e a LP puder ser aberta no navegador e avaliada de forma real; otimização editorial intensiva poderá continuar depois da E19.5 Light por novos drafts independentes.
 
 ### 1.3. Decisões aceitas no debate até aqui
@@ -41,6 +41,12 @@
 - Header e Footer pertencem ao mesmo contrato estrutural da candidata; não haverá shell estrutural paralelo.
 - A E19.4 deve usar uma única fonte canônica de estrutura, da qual sejam derivadas as projeções necessárias para Structured Output, validação, materialização e renderer.
 - A simplicidade do MVP limita a amplitude do repertório, não a qualidade visual: o primeiro repertório deve ser curado e pequeno o suficiente para ser confiável, mas bom o suficiente para produzir LP competitiva e capaz de encantar mesmo no plano inicial.
+- A primeira LP real não deve abrir mão de imagem: a autoridade estrutural deve admitir pelo menos um visual principal e não deve impor artificialmente que toda LP use exatamente uma única imagem; cardinalidades adicionais só serão abertas quando qualidade e performance justificarem.
+- `brand_logo_asset` permanece semanticamente exclusivo para logo. A imagem gerada pela própria E19.4 é saída do workload, não entrada E20.2; portanto, este teste não exige novo field E20.2 apenas para acomodar mídia gerada.
+- Na primeira prova, se não existir asset autorizado e adequado do cliente disponível no fluxo vigente, a E19.4 está autorizada a gerar a imagem necessária por IA antes da materialização.
+- A mídia efetivamente usada precisa possuir referência canônica persistente antes do congelamento da materialização; o projeto ainda não possui Storage/bucket/Blob/URL canônicos para assets, portanto o mecanismo mínimo de persistência de mídia é gap técnico real a fechar neste recorte antes da execução.
+- Performance de carregamento é requisito da primeira solução de mídia; o desenho não pode tratar imagem pesada ou não otimizada como detalhe posterior, embora formato, compressão, dimensões, cache/CDN e orçamento exato de peso permaneçam para a v2.
+- O ponto de congelamento vigente é a materialização write-once, não publicação: tentativas anteriores podem ser descartadas; após materializar uma candidata válida, imagem, copy ou estrutura daquela versão não são sobrescritas e uma nova versão preservada deve usar novo draft, coerente com a direção E19.5 Light.
 - O prompt de runtime será tratado como código versionado da feature, separado do contexto dinâmico validado da E19.3.
 - Baseline humano inicial para a primeira prova: `gpt-5.6-luna` com `reasoning.effort=max`, via Responses API e Structured Outputs; essa combinação é ponto de partida deliberado para medir qualidade e custo, não combinação declarada vencedora.
 - Programmatic Tool Calling, persisted reasoning, prompt caching avançado, Agents SDK e multi-agent permanecem capacidades futuras condicionais e não entram automaticamente neste recorte.
@@ -70,9 +76,12 @@
 
 ### 1.5. Questões ainda abertas e não decididas
 
-- Se a primeira geração será fixada em uma única chamada por tentativa que planeja e escreve a LP ou se surgirá risco concreto que justifique mais de uma etapa/chamada controlada, sem transformar o fluxo em agente.
+- Se a primeira geração textual será fixada em uma única chamada por tentativa que planeja e escreve a LP ou se surgirá risco concreto que justifique mais de uma etapa/chamada controlada, sem transformar o fluxo em agente.
 - Qual é o menor repertório de primitivas, layouts, cardinalidades e interações que oferece liberdade de composição suficiente e qualidade visual competitiva para a primeira LP real.
-- Como a imagem entra na primeira autoridade estrutural, incluindo layouts admitidos e referência a asset autorizado, sem antecipar pipeline novo de geração/aquisição de mídia.
+- Quais layouts e cardinalidades exatas de imagem a primeira autoridade estrutural admite além do visual principal obrigatório.
+- Qual é o menor mecanismo real de persistência e entrega da mídia gerada antes da materialização, verificando primeiro se Supabase Storage atende o recorte sem criar complexidade ou infra paralela; a tecnologia ainda não está decidida.
+- Como registrar origem e referência da imagem gerada no estado materializado/snapshot sem armazenar raciocínio privado nem payload desnecessário.
+- Quais limites de peso, dimensões, formatos, otimização e cache/CDN serão exigidos para preservar carregamento rápido.
 - Se algum metadata mínimo e seguro derivado de `identities` ou `serverContext` precisa ser projetado ao modelo para decisão estrutural.
 - Como representar no Structured Output planejamento narrativo e conteúdo final sem criar segundo DTO de domínio ou registry paralelo ao renderer.
 - Quais referências de pesquisa/fatos a candidata deve devolver para permitir validação sem exigir provenance cognitiva ou cadeia de raciocínio.
@@ -85,7 +94,7 @@
 
 ### 1.6. Direção aprovada — E → E19.5 Light → iterações
 
-- Prosseguir somente com o Cenário E até existir E19.4 funcional ponta a ponta: taxon preparado + LP concreta configurada → E19.3 válida → geração por IA → candidata estruturada → validação → materialização → renderer → preview privado.
+- Prosseguir somente com o Cenário E até existir E19.4 funcional ponta a ponta: taxon preparado + LP concreta configurada → E19.3 válida → geração por IA → candidata estruturada → geração/resolução de mídia necessária → validação → materialização → renderer → preview privado.
 - Não implementar E19.4 D antes de E e não manter D como comparação obrigatória.
 - A E19.3 do Cenário E já foi concluída e provada; a E19.4 deve consumir seu contrato v3 sem reabrir inteligência intermediária.
 - Após a E19.4 funcional, E19.5 Light deverá permitir novos `drafts` independentes E1/E2/E3, sem overwrite e sem conhecer a representação interna da pesquisa.
@@ -100,10 +109,13 @@
 | Qualidade do plano inicial | Plano inicial pode ter repertório menor, mas não qualidade visual inferior; poucas opções devem ser excelentes. | Decisão humana de produto | Sim | Usar como critério do primeiro repertório e do gate visual humano. |
 | Capacidade disponível ≠ composição usada | A autoridade pode oferecer mais estruturas/layouts do que a IA utiliza em uma LP; a IA escolhe apenas o subconjunto necessário à narrativa. | Direção convergente | Sim | Não obrigar uso de todas as capacidades disponíveis. |
 | Contexto entregue ao modelo | A chamada geracional deve usar instruções estáveis + `modelContext` da E19.3 + autoridade estrutural. O `serverContext` bruto permanece fora da matéria-prima textual; metadata segura de `identities`/`serverContext` só deve ser projetada quando houver necessidade concreta. | Estrategista + Analista convergentes; coerente com o boundary E19.3 | Sim | Fechar o princípio na v1; projeções exatas ficam para a v2. |
-| Logo | O E20.2 v2 já possui `brand_logo_asset` opcional como `asset_reference`; ausência de logo não impede completude. O contrato atual não possui bucket/Storage/Blob/URL de assets. | Fato confirmado no runtime; fallback visual ainda aberto | Sim quando houver asset autorizado | Não criar upload/storage amplo neste recorte; definir na v1 o comportamento visual quando a logo não existir. |
-| Imagem na primeira LP | Uma LP real competitiva não deve ficar limitada por ausência artificial de imagem; imagem deve ser admitida pela primeira autoridade estrutural, com ao menos um slot visual principal capaz de integrar mídia à narrativa. | Direção forte do debate; contrato exato aberto | Sim | Fechar suporte estrutural mínimo a imagem antes da v1. |
-| Fonte/fallback da imagem | Se não existir asset autorizado do cliente, o Analista propõe permitir uma etapa controlada de geração de imagem antes da materialização. Isso é tecnicamente compatível com o baseline OpenAI, mas amplia o escopo atual. | Proposta do Analista; decisão humana obrigatória pendente | Ainda não autorizado | Se aprovado, definir apenas o fluxo mínimo; escolha entre ferramenta/modelo de imagem e detalhes técnicos ficam para a v2. Não tratar essa operação como segunda chamada de planejamento/redação. |
-| Uma chamada OpenAI principal | Menor desenho proposto: uma chamada textual por tentativa para estrutura + narrativa + copy, seguida de validação determinística. Uma eventual operação de imagem aprovada seria etapa separada de mídia, não decomposição da inteligência em “planejar + escrever”. | Estrategista + Analista convergentes; decisão humana final ainda pendente | Pretendido | Duas chamadas textuais só retornam se caso representativo demonstrar deficiência concreta. |
+| Logo | O E20.2 v2 já possui `brand_logo_asset` opcional como `asset_reference`; o field permanece exclusivo para logo e sua ausência não impede completude. | Fato confirmado + decisão humana de semântica | Sim quando houver logo autorizada | Não reutilizar esse field como contêiner genérico de imagens. |
+| Imagem na primeira LP | A primeira LP real deve conter pelo menos um visual principal pertinente; a autoridade estrutural não deve limitar artificialmente toda LP a exatamente uma imagem. | Decisão humana | Sim | Fechar layouts e cardinalidades exatos na v2, preservando qualidade e performance. |
+| E20.2 × imagem gerada | Imagem criada pela própria E19.4 é saída do workload e não valor fornecido/confirmado antes da geração; portanto não exige novo field E20.2 para o primeiro teste. | Correção do Estrategista confirmada contra contrato E20.2 | Sim | Novo field E20.2 só será avaliado quando existir fluxo real em que cliente forneça/selecione imagem como entrada. |
+| Fonte/fallback da imagem | Na ausência de asset autorizado e adequado do cliente no fluxo vigente, a E19.4 está autorizada a gerar por IA a imagem necessária para a primeira LP. | Decisão humana | Sim | Tratar como etapa controlada de mídia; não como segunda chamada textual de planejamento/redação. |
+| Persistência da mídia | A imagem usada precisa ser persistida/referenciada canonicamente antes da materialização; hoje não existe Storage/bucket/Blob/URL canônico de assets no projeto. | Gap técnico real confirmado | Sim, Gate técnico | Avaliar primeiro Supabase Storage como candidato coerente com a stack; não fixar plataforma, bucket, tabela ou nova infra antes do fechamento v1/v2. |
+| Performance de mídia | A solução de imagem não pode degradar carregamento da LP; peso, dimensões, formato, otimização e cache/CDN fazem parte do contrato técnico de qualidade. | Requisito humano de produto | Sim | Fechar princípio na v1 e limites/implementação na v2. |
+| Uma chamada OpenAI principal | Menor desenho proposto: uma chamada textual por tentativa para estrutura + narrativa + copy, seguida de validação determinística. A operação de imagem é etapa separada de mídia, não decomposição da inteligência em “planejar + escrever”. | Estrategista + Analista convergentes; decisão humana final da chamada textual ainda pendente | Pretendido | Duas chamadas textuais só retornam se caso representativo demonstrar deficiência concreta. |
 | Repertório estrutural de apresentação | Evitar reconstruir o antigo cardápio narrativo (`problem_solution`, `offer`, `benefits`, `social_proof`, `comparison`). A direção é trabalhar com formas visuais genéricas; proposta inicial: Header, Hero visual, texto+mídia, cards/grid, steps, FAQ, CTA e Footer, com sequência livre no corpo. | Estrategista + Analista convergentes; famílias ainda precisam de confirmação humana | Sim | Fechar famílias conceituais na v1; fields, layouts e cardinalidades exatos ficam para a v2. |
 | Structured Output da candidata | Usar um único DTO de candidata estruturada; não criar `narrativePlan` separado, justificativa de composição ou pedido de raciocínio privado. | Direção convergente | Sim | Fechar princípio na v1; schema exato na v2. |
 | Baseline de IA | `gpt-5.6-luna + reasoning.effort=max`, Responses API e Structured Outputs como ponto inicial deliberado. | Decisão humana | Sim | Medir qualidade, custo, tokens/reasoning tokens e latência; não tratar como combinação vencedora definitiva. |
@@ -112,10 +124,12 @@
 | Piso numérico de qualidade | O Analista sugeriu `6/10` como piso provisório para considerar a arquitetura aproveitável e `7+` como sinal para iniciar otimização de custo/modelo. | Hipótese do Analista; não aprovada | Não enquanto não houver decisão humana | Não usar como Gate nem critério de conclusão até aprovação explícita e definição de como agregar as dimensões. |
 | Benchmark e auditabilidade | Cada prova deve permitir relacionar qualidade à configuração usada: `promptVersion`, versão da autoridade/schema estrutural, modelo, effort, input/cached/output/reasoning tokens, latência, custo e notas humanas. | Direção convergente; compatível com `openai-model-snapshot` | Sim como critério | Fechar o que precisa ser observável na v1; mecanismo/shape exatos do registro e snapshot ficam para a v2. |
 | Materialização | `account_landing_page_materializations` já é 1:1, write-once, com `content_json` + `generation_context_snapshot_json`, sem UPDATE/DELETE; a candidata validada deve ser congelada para reprodução fiel. | Fato confirmado no Schema; desenho técnico novo não necessário | Sim | Reutilizar o agregado existente; shape novo de conteúdo/snapshot fica para a v2. |
-| Tentativa × materialização | Antes da materialização, tentativa inválida pode falhar e ser descartada. Depois de uma candidata válida materializada, o draft não deve ser sobrescrito; nova geração que precise ser preservada usa novo draft, coerente com a direção E19.5 Light. | Proposta do Analista coerente com write-once existente; confirmação humana pendente | Sim como princípio de segurança | Fechar a semântica na v1 sem implementar workspace/múltiplos drafts da E19.5 neste recorte. |
+| Tentativa × materialização | Antes da materialização, tentativas de candidata/mídia podem falhar, variar e ser descartadas. Depois de uma candidata válida materializada, imagem, copy e estrutura daquela versão não são sobrescritas; nova geração preservada usa novo draft. | Direção humana aceita; coerente com write-once existente | Sim | O congelamento vigente ocorre na materialização, não na publicação; editor pré-publicação mais flexível fica para recorte futuro. |
 | Preview privado | A rota histórica tenant-aware/read-only `/a/[account]/landing-pages/[landingPageId]/preview` é candidata natural a ser reutilizada sobre o novo contrato. | Direção convergente; confirmação técnica na v2 | Sim | Reutilizar salvo incompatibilidade concreta; não inventar rota nova sem gap real. |
 | Repertório por plano | Planos futuros podem autorizar repertórios diferentes; plano superior pode oferecer mais layouts, seções e interações sem obrigar a IA a usá-los todos. | Direção de produto nova | Não como matriz comercial completa | Preservar em 4.4 para recorte futuro; não fixar agora quantidades como 8/12 nem nomes comerciais sem fonte canônica. |
 | Cliente substituir/adicionar seções | Futuramente, o cliente pode receber um cardápio de capacidades permitidas pelo plano para substituir ou acrescentar seções à composição inicial. | Oportunidade de produto | Não | Preservar em 4.4; não atribuir automaticamente à E19.5 nem criar editor neste recorte. |
+| Biblioteca de assets do cliente | Futuramente, a conta poderá manter biblioteca tenant-aware de logos e imagens próprias, reutilizáveis entre LPs, com seleção/importação controlada. | Direção de produto preservada | Não | Exige recorte próprio; somente então avaliar novo field E20.2 para imagem fornecida/selecionada como entrada. |
+| Estratégia híbrida de imagens | Futuramente, mídia pode combinar asset próprio do cliente, imagem gerada por IA e importação/licenciamento externo conforme autenticidade, exclusividade, direitos e qualidade. | Direção de produto preservada | Não além da geração IA da primeira prova | Não abrir integração externa nem biblioteca ampla neste recorte. |
 | Admin Dashboard | `/admin/estrutura-lp` é a superfície natural para o humano enxergar a capacidade real por plano, sempre como projeção read-only da autoridade estrutural. | Direção de produto suportada por superfície existente | Não é gate da primeira LP | Preservar em 4.4; não criar segundo dashboard nem segunda fonte de verdade. |
 | Capacidades avançadas GPT-5.6 | Programmatic Tool Calling, persisted reasoning, prompt caching avançado, Agents SDK e multi-agent podem ser avaliados se surgirem necessidades concretas. | Oportunidade estratégica condicional | Não | Preservar em 4.4; adoção futura exige evidência e recorte próprio quando material. |
 
@@ -136,19 +150,23 @@
   - obter o pacote E19.3 sem reler diretamente as fontes internas do projeto;
   - construir a requisição a partir do prompt canônico versionado e do contexto autorizado;
   - permitir que a IA sintetize público efetivo, oferta, estágio de funil, intenção de conversão e jornada persuasiva, respeitando a precedência dos fatos concretos;
-  - produzir candidata completa dentro da fonte estrutural canônica mínima;
+  - produzir candidata completa dentro da fonte estrutural canônica mínima, incluindo necessidade e posição da mídia dentro dos layouts suportados;
+  - quando não houver asset autorizado e adequado disponível, produzir a mídia gerada autorizada para a primeira prova em etapa controlada;
+  - persistir/resolver a referência canônica da mídia efetivamente escolhida antes da materialização;
   - combinar deterministicamente destinos, bindings, assets e demais valores server-side;
   - validar integralmente a candidata antes de materialização.
 - Validação:
   - aplicar validações determinísticas somente ao que for objetivamente comprovável;
+  - validar referência, tipo e presença da mídia exigida pelo contrato;
   - separar validação estrutural/factual de avaliação humana editorial e visual.
 - Persistência:
   - reutilizar o agregado de materialização já existente se continuar adequado;
-  - não criar nova persistência sem gap real demonstrado.
+  - adicionar somente o mecanismo mínimo de persistência de mídia que for comprovadamente necessário após escolha técnica explícita;
+  - não criar nova tabela ou infraestrutura ampla de assets sem gap real demonstrado.
 - Consumo:
-  - renderer privado e read-only reproduz a LP a partir do estado materializado, sem reler fontes mutáveis.
+  - renderer privado e read-only reproduz a LP a partir do estado materializado e das referências congeladas de mídia, sem reler fontes mutáveis.
 - Fallback:
-  - falha de autorização, contexto, provider, schema ou validação não materializa candidata.
+  - falha de autorização, contexto, provider, geração/persistência de mídia, schema ou validação não materializa candidata.
 
 ### 2.2. Papel da IA
 
@@ -158,6 +176,8 @@
 - Escolher progressão persuasiva adequada ao caso, sem fórmula fixa obrigatória.
 - Planejar quantidade, sequência e função narrativa das seções dentro do conjunto estrutural permitido.
 - Escolher layouts somente entre alternativas suportadas.
+- Decidir a função narrativa e a necessidade de mídia dentro das capacidades visuais suportadas, sem inventar asset do cliente inexistente.
+- Produzir ou orientar a geração da imagem necessária quando o fluxo não possuir asset autorizado e adequado, respeitando os limites factuais e visuais do caso.
 - Produzir copy, headings, supporting copy, CTA textual, FAQs e demais conteúdos admitidos.
 - Omitir conteúdo sem função comercial clara e repetir CTA/argumento apenas quando houver função legítima.
 - Usar somente fatos, pesquisa e evidências autorizados; não inventar credenciais, resultados, depoimentos, garantias, escassez, preços, benefícios ou capacidades.
@@ -170,10 +190,11 @@
 - Definir contrato estrutural finito, curado e competitivo e derivar dele projeções para IA, validator, materialização e renderer.
 - Manter valores brutos de `serverContext` fora da matéria-prima textual e usá-los deterministicamente.
 - Resolver bindings, consentimento, credenciais e referências técnicas.
+- Persistir/resolver mídia somente pelo boundary autorizado e validar que a referência materializada corresponde ao asset efetivamente usado.
 - Validar schema, tipos, cardinalidades, limites, identidades, componentes e propriedades suportadas.
 - Bloquear factualidade objetivamente inválida ou referência a evidência inexistente quando comprovável.
 - Materializar consistentemente, congelar snapshot suficiente e renderizar deterministicamente.
-- Falhar fechado diante de versão, componente, layout ou payload não suportado.
+- Falhar fechado diante de versão, componente, layout, mídia ou payload não suportado.
 
 ### 2.4. Prompt e workflow de geração
 
@@ -182,10 +203,11 @@
 - O prompt de produção será versionado como código próximo da feature consumidora, sem engine genérica de prompts.
 - Instruções estáveis permanecem separadas do contexto dinâmico validado.
 - O prompt declarará resultado, contexto autorizado, critérios de sucesso, limites, formato de saída, parada e validação pertinente, sem cadeia de raciocínio privada.
-- A primeira prova usa Responses API, Structured Outputs e o baseline `gpt-5.6-luna + reasoning.effort=max`.
+- A primeira prova usa Responses API, Structured Outputs e o baseline `gpt-5.6-luna + reasoning.effort=max` para a chamada textual principal.
 - Validator e regras de negócio permanecem no código; Structured Output não substitui validação de domínio.
 - Casos representativos estáveis permitirão comparar prompt, modelo e `reasoning.effort` após existir baseline real.
-- A hipótese operacional inicial é uma chamada por tentativa; a decisão final permanece aberta até o fechamento humano desta matriz.
+- A hipótese operacional inicial é uma chamada textual por tentativa; a decisão final permanece aberta até o fechamento humano desta matriz.
+- A geração de imagem autorizada é etapa de mídia separada e não deve ser contabilizada como segunda etapa semântica de “planejar + escrever”.
 - Tokens, timeout e retry permanecem detalhes do workload a fechar na v2 sem bloquear artificialmente a v1 quando não houver risco de retrabalho.
 - Programmatic Tool Calling, persisted reasoning, prompt caching avançado, Agents SDK, multi-agent e tools externas não entram na primeira implementação sem necessidade demonstrada.
 
@@ -197,7 +219,8 @@
 - Structured Output, validação, estado materializado e renderer serão projeções derivadas dessa mesma autoridade estrutural.
 - A IA pode escolher somente estruturas/layouts pertencentes à fonte vigente.
 - Header e Footer devem ser representáveis no mesmo contrato.
-- A primeira autoridade estrutural deve admitir uso de imagem; o contrato exato de asset/layout será fechado sem criar automaticamente pipeline novo de geração de mídia.
+- A primeira autoridade estrutural deve exigir capacidade para pelo menos um visual principal e admitir imagem como elemento de composição; layouts e cardinalidades adicionais permanecem finitos e serão fechados na v2.
+- O contrato estrutural referencia mídia; não transforma E20.2 em storage e não embute binário de imagem como domínio da candidata.
 - O contrato não aceita HTML/CSS/JS livre nem componente desconhecido.
 - A diferenciação comercial completa de repertórios por plano e a edição posterior pelo cliente permanecem fora deste recorte, preservadas em 4.4.
 
@@ -217,6 +240,7 @@
 - Ausência de evidência permanece ausência.
 - Claims de resultado, garantia, escassez, credencial verificada, prova social ou comparação objetiva só entram com suporte real autorizado.
 - Pesquisa pode fornecer fatos externos legítimos e atuais, preservando fontes, limitações e natureza.
+- Imagem também não pode criar prova falsa ou sugerir fato concreto inexistente, como imóvel específico, equipe, certificado, resultado, credencial ou condição comercial não autorizados.
 - Estrutura, bindings, versões, cardinalidades, referências e evidências explicitamente estruturadas podem ser validadas deterministicamente.
 - Claims contraditórios com fatos autorizados devem ser bloqueados quando a contradição for objetivamente comprovável.
 - Claims em linguagem livre sem mecanismo determinístico confiável de prova devem ser proibidos pelo prompt e avaliados no gate humano; não criar segunda engine semântica somente para fiscalizar copy.
@@ -227,11 +251,12 @@
 
 - Os artefatos SQL da materialização antiga preservados pelo PR #729 devem ser avaliados antes de proposta de banco nova.
 - O estado materializado deve reproduzir a LP sem reler E19.3 ou suas fontes.
-- O snapshot preserva somente o necessário para auditar/reproduzir a geração: identidades, versões, configuração do workload e contexto exposto, sem raciocínio privado.
+- A mídia efetivamente usada deve estar persistida e possuir referência estável antes da materialização; o `content_json` materializado congela essa referência, não o binário bruto da imagem.
+- O snapshot preserva somente o necessário para auditar/reproduzir a geração: identidades, versões, configuração do workload, contexto exposto e origem/referência mínima da mídia usada, sem raciocínio privado.
 - O renderer consome projeção derivada da mesma fonte estrutural canônica usada pelo Structured Output e validator.
-- Aparência, Header, Footer, seções, layouts e conteúdo são reproduzidos deterministicamente a partir do estado congelado.
+- Aparência, Header, Footer, seções, layouts, conteúdo e referências de mídia são reproduzidos deterministicamente a partir do estado congelado.
 - O renderer executa a composição autorizada; não deve virar segunda fonte de regras comerciais por plano.
-- Versão/shape exatos da materialização permanecem abertos até a inspeção do contrato mínimo.
+- Versão/shape exatos da materialização e do snapshot permanecem abertos até a inspeção do contrato mínimo.
 
 ## 3. Fases e próxima ação
 
@@ -240,33 +265,37 @@
 - Status: rascunho; fase ainda não consolidada para execução.
 - Automação: sim em princípio pela participação central da IA; categoria final pendente da consulta obrigatória ao Gestor de Automação antes da v1.
 - Objetivo:
-  - transformar o pacote E19.3 em candidata completa da primeira LP real, com planejamento narrativo e copy por IA dentro do contrato estrutural mínimo e validação determinística antes da persistência.
+  - transformar o pacote E19.3 em candidata completa da primeira LP real, com planejamento narrativo, copy e necessidade de mídia por IA dentro do contrato estrutural mínimo e validação determinística antes da persistência.
 - Dependências anteriores à execução:
   - taxon preparado pelos recortes responsáveis;
   - E19.3 do Cenário E implementada e aprovada em prova read-only;
   - configuração E19.2 completa conforme E20.2.
 - Questões indispensáveis ainda abertas:
   - contrato estrutural mínimo, repertório visual e projeções;
-  - suporte mínimo a imagem dentro do contrato estrutural;
+  - layouts/cardinalidades exatas da imagem;
   - prompt canônico;
-  - decisão final de uma chamada por tentativa;
+  - decisão final de uma chamada textual por tentativa;
   - Structured Output/schema;
-  - factualidade/evidência;
+  - factualidade/evidência da copy e da mídia;
   - casos representativos;
   - critérios de aceite da candidata.
 - Baseline já decidido:
   - `gpt-5.6-luna + reasoning.effort=max`;
   - Responses API;
-  - Structured Outputs.
+  - Structured Outputs;
+  - geração de imagem autorizada quando faltar asset adequado no fluxo vigente.
 
 ### 3.2. E19.4.4 — Materialização inicial e snapshot imutável
 
 - Status: rascunho; fase ainda não consolidada para execução.
 - Automação: não, salvo nova decisão humana baseada em necessidade real.
 - Objetivo:
-  - persistir a primeira candidata integral válida em estado próprio e reproduzível, com snapshot coerente com o Cenário E.
+  - persistir a primeira candidata integral válida em estado próprio e reproduzível, com mídia estável e snapshot coerente com o Cenário E.
 - Questões indispensáveis ainda abertas:
   - adequação dos artefatos SQL preservados;
+  - mecanismo mínimo de persistência/entrega da mídia e sua referência canônica;
+  - avaliação de Supabase Storage como primeiro candidato, sem decisão antecipada;
+  - requisitos de performance da mídia;
   - versão e shape do conteúdo materializado;
   - versão e shape do snapshot;
   - concorrência, nova tentativa e write-once da primeira prova.
@@ -276,11 +305,11 @@
 - Status: rascunho; fase ainda não consolidada para execução.
 - Automação: não.
 - Objetivo:
-  - renderizar privadamente a primeira LP materializada e produzir evidência humana suficiente para avaliar estrutura, narrativa, copy, factualidade, clareza comercial, acessibilidade e qualidade visual.
+  - renderizar privadamente a primeira LP materializada e produzir evidência humana suficiente para avaliar estrutura, narrativa, copy, factualidade, clareza comercial, acessibilidade, mídia, carregamento e qualidade visual.
 - Questões indispensáveis ainda abertas:
   - confirmação da reutilização da superfície/path histórico de preview privado;
   - contrato do renderer;
-  - critérios visuais/responsivos finais;
+  - critérios visuais/responsivos e de performance finais;
   - checklist humano;
   - separação entre defeito bloqueante e melhoria editorial posterior.
 
@@ -288,7 +317,8 @@
 
 - A Preparação do taxon está delegada aos dois recortes próprios e não é detalhada neste plano.
 - A E19.3 do Cenário E já foi concluída e mergeada pelo PR #757; não é mais Gate anterior deste debate.
-- Fechar com humano e Analista somente as linhas ainda indispensáveis da matriz 1.7, principalmente repertório estrutural, imagem, número de chamadas, claims e critérios de aceite.
+- Não reabrir E20.2 apenas para acomodar imagem gerada pela E19.4; voltar à E20.2 somente se surgir valor factual prévio que deva ser fornecido/confirmado como entrada, inclusive futura seleção de asset próprio do cliente.
+- Fechar com humano e Analista somente as linhas ainda indispensáveis da matriz 1.7, principalmente repertório estrutural, persistência/performance de mídia, número de chamadas textuais, claims e critérios de aceite.
 - Consultar o Gestor de Automação antes da consolidação da v1 para classificar formalmente a fase E19.4.3 e submeter a categoria ao humano.
 - Quando a LP gerada não atingir qualidade desejada, diagnosticar nesta ordem: E19.4; pesquisa; E20.2 quando surgir dado factual necessário não previsto; E19.3 somente diante de gap real de autorização, identidade, separação ou transporte.
 - Não atualizar `docs/roadmap.md` enquanto este arquivo permanecer rascunho vivo.
@@ -313,9 +343,11 @@
 - camada intermediária de resumo, atomização ou seleção semântica;
 - HTML, CSS, React, JavaScript, scripts ou componentes arbitrários gerados pela IA;
 - catálogo estrutural amplo antecipado ou reconstrução da antiga E18.5;
-- geração/aquisição automática de imagens ou novo pipeline de mídia sem gap real demonstrado;
+- biblioteca tenant-aware ampla de assets do cliente, upload/seleção pelo cliente, galeria completa, banco de mídia, DAM, busca/importação externa ou integração com banco de imagens;
+- novo field E20.2 para imagem apenas porque a E19.4 gerou mídia; eventual field futuro depende de fluxo real de imagem fornecida/selecionada como entrada;
+- editor pré-publicação que permita mutar materialização write-once já congelada;
 - Programmatic Tool Calling, persisted reasoning, prompt caching avançado, Agents SDK, multi-agent, job, fila, cron, webhook, browsing ou tools externas sem necessidade real;
-- nova tabela, serviço, engine ou infraestrutura sem gap real demonstrado;
+- nova tabela, serviço, engine ou infraestrutura além do mecanismo mínimo de mídia comprovadamente necessário sem gap real demonstrado;
 - perfil persistido novo de público/persona/estratégia apenas para facilitar prompt.
 
 ### 4.2. Critérios de parada imediata
@@ -325,6 +357,7 @@
 - Parar se a solução exigir mapa nominal crescente de nichos, fields ou componentes dentro da E19.4.
 - Parar se o contrato estrutural crescer principalmente por extensibilidade hipotética.
 - Parar se a IA precisar inventar facts, evidências, credenciais, destinos ou capacidades.
+- Parar se a mídia não puder ser persistida/referenciada de forma estável antes da materialização ou se a solução escolhida exigir infraestrutura ampla sem necessidade da primeira prova.
 - Parar se a materialização só puder reproduzir a LP relendo fontes mutáveis.
 - Parar se surgir necessidade de agente, automação adicional, engine ou infraestrutura não sustentada por fonte real.
 - Toda mudança material de escopo ou categoria de automação volta ao humano antes da v1.
@@ -335,9 +368,11 @@
   - for gerada a partir do pacote autorizado E19.3;
   - apresentar jornada comercial coerente e avaliável do interesse à ação;
   - respeitar autoridade dos fatos concretos, pesquisa, limites e evidências autorizadas;
+  - utilizar pelo menos uma imagem principal pertinente, com referência estável e sem sugerir fato concreto não autorizado;
+  - preservar carregamento e responsividade aceitáveis para avaliação real;
   - for materializada integralmente em `draft`;
   - for reproduzida privadamente por renderer determinístico;
-  - puder ser avaliada humanamente como landing page real quanto a narrativa, copy, estrutura, responsividade, acessibilidade e qualidade visual.
+  - puder ser avaliada humanamente como landing page real quanto a narrativa, copy, estrutura, mídia, responsividade, acessibilidade e qualidade visual.
 - A conclusão funcional não exige estabilização editorial completa de prompt, modelo, effort, narrativa ou visual; iterações poderão continuar após a E19.5 Light por novos drafts preservados.
 - Este critério permanece provisório enquanto o rascunho não virar plano-base v1.
 
@@ -350,6 +385,11 @@
 - O Admin Dashboard existente em `/admin/estrutura-lp` é o destino natural para uma projeção read-only das capacidades reais por plano, inclusive módulos/estruturas, variantes, layouts, interações e eventualmente exemplos visuais; o Admin não deve manter cópia manual ou segunda fonte de verdade.
 - Não há decisão de criar dashboard novo: qualquer visualização administrativa futura deve preferir a superfície existente e derivar da mesma autoridade estrutural canônica.
 - O repertório futuro de planos Pro/Ultra pode incorporar capacidades mais ricas — galerias, vídeo, comparadores, componentes interativos, animações ou outras experiências — somente quando houver caso real e contrato suportado pelo renderer.
-- O suporte a imagem na primeira E19.4 não implica, por si, geração automática de imagens, busca externa de mídia ou novo pipeline de assets; essas capacidades permanecem separadas até necessidade demonstrada.
+- A conta poderá futuramente possuir uma biblioteca tenant-aware de assets reutilizáveis, separando logo, imagens principais, imagens secundárias e outros tipos conforme casos reais; não criar uma tabela por cliente.
+- Quando existir fluxo de upload/seleção de imagem pelo cliente antes da geração, avaliar novo field E20.2 específico para essa entrada; `brand_logo_asset` deve continuar dedicado à logo.
+- A estratégia futura de mídia pode ser híbrida: priorizar asset próprio adequado quando houver, gerar imagem por IA quando trouxer valor e permitir importação/licenciamento externo somente com direitos, autenticidade, qualidade e proveniência resolvidos.
+- A experimentação futura pode permitir trocar imagem/copy/estrutura enquanto a versão ainda não estiver congelada; no contrato atual o congelamento ocorre na materialização write-once, e qualquer lifecycle editável mais amplo exige recorte próprio.
+- Supabase Storage é o primeiro candidato a ser avaliado para persistência mínima de mídia por aderência à stack existente; isso não constitui decisão de plataforma, bucket, política, tabela ou implementação antes da v2.
+- Qualquer solução futura de assets deve preservar performance da LP por otimização de formato, dimensões, compressão e cache/CDN, sem confundir variedade visual com páginas pesadas.
 - A escolha de GPT-5.6 + Responses API preserva possibilidade futura de avaliar Programmatic Tool Calling, persisted reasoning, prompt caching avançado, Agents SDK e multi-agent; nenhuma dessas capacidades está autorizada para implementação neste recorte apenas por ser tecnicamente disponível.
 - Quando a v1 for consolidada, esta subseção deve preservar somente oportunidades relevantes ainda sem recorte próprio, evitando transformar possibilidades futuras em requisitos executáveis da E19.4.
