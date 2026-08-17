@@ -10,7 +10,7 @@
 - Processo: `docs/prompt-estrategista.md` v31.
 - Plano conceitual: `docs/lp-planejamento.md`.
 - Base histórica de abertura do PR #731: `main` após o merge do PR #729, commit `40baacbc516a80c2600408a9be63bfa33793ca85`.
-- Atualização do debate: 17/08/2026, já sobre a `main` posterior ao merge do PR #757.
+- Atualização do debate: 17/08/2026, já sobre a `main` posterior ao merge dos PRs #757 e #760.
 - O plano-base v2 anterior permanece somente no histórico Git como desenho superado dependente do contrato E19.3 `partA + partB`.
 - Decisão humana de 14/08/2026: o Cenário E é a única direção ativa para a primeira geração real; o Cenário D deixa de ser alternativa em desenvolvimento ou comparação obrigatória.
 - A E19.3 do Cenário E foi concluída no contrato v3 e mergeada pelo PR #757; a E19.4 consome `identities + modelContext + serverContext` como boundary já provado.
@@ -42,7 +42,7 @@
 - A E19.4 deve usar uma única fonte canônica de estrutura, da qual sejam derivadas as projeções necessárias para Structured Output, validação, materialização e renderer.
 - A simplicidade do MVP limita a amplitude do repertório, não a qualidade visual: o primeiro repertório deve ser curado e pequeno o suficiente para ser confiável, mas bom o suficiente para produzir LP competitiva e capaz de encantar mesmo no plano inicial.
 - A v1 fecha conceitualmente o repertório inicial como formas de apresentação, não módulos narrativos obrigatórios: Header, Hero visual, texto + mídia, cards/grid, steps, FAQ, CTA e Footer; fields, variantes, cardinalidades e layouts exatos ficam para a v2.
-- A primeira geração textual usa uma única chamada por tentativa para estrutura + narrativa + copy; a geração de imagem é operação de mídia separada e não cria uma segunda etapa textual de “planejar + escrever”.
+- A primeira geração textual usa uma única chamada por tentativa para estrutura + narrativa + copy, sem retry textual automático dentro da mesma tentativa; nova tentativa é explícita. A geração de imagem é operação de mídia separada e não cria uma segunda etapa textual de “planejar + escrever”.
 - A primeira LP real não abre mão de imagem: a autoridade estrutural deve admitir pelo menos um visual principal e não impor artificialmente que toda LP use exatamente uma única imagem; cardinalidades adicionais dependem de qualidade e performance.
 - `brand_logo_asset` permanece semanticamente exclusivo para logo. A imagem gerada pela própria E19.4 é saída do workload, não entrada E20.2; portanto, este teste não exige novo field E20.2 apenas para acomodar mídia gerada.
 - Na primeira prova, se não existir asset autorizado e adequado do cliente disponível no fluxo vigente, a E19.4 está autorizada a gerar a imagem necessária por IA antes da materialização.
@@ -54,13 +54,13 @@
 - Para a primeira prova do novo Cenário E, o draft piloto já materializado não será apagado, sobrescrito nem rebindado; será usada nova conta/piloto que percorra o fluxo existente E19.1 + E19.2 até chegar a uma LP legítima ainda não materializada, sem antecipar E19.5.
 - O prompt de runtime será tratado como código versionado da feature, separado do contexto dinâmico validado da E19.3.
 - Baseline humano inicial: `gpt-5.6-luna` com `reasoning.effort=max`, via Responses API e Structured Outputs; essa combinação é hipótese deliberada para medir qualidade/custo, não combinação vencedora definitiva.
-- A geração textual da E19.4 é novo workload de produto e deve passar pela governança E21.1 antes da execução. O registry atual ainda não possui esse workload e o contrato executável de `reasoningEffort` ainda não admite `max`; a extensão deve ser aditiva e detalhada na v2.
+- A geração textual da E19.4 é novo workload de produto e deve passar pela governança E21.1 antes da execução. O identificador canônico será reutilizado do histórico formal da E19.4.3 como `landing_page_draft_generation`; o registry atual ainda não possui esse workload e o contrato executável de `reasoningEffort` ainda não admite `max`, portanto a extensão deve ser aditiva e detalhada na v2.
 - A mídia gerada por IA também deve ser governada e mensurável; a v2 decide se será workload separado ou operação especializada do workflow conforme a API escolhida.
 - A rubrica humana da primeira prova fica aprovada na v1 com seis dimensões: adequação público/oferta; jornada persuasiva; qualidade/especificidade da copy; hierarquia/estrutura visual; qualidade/pertinência da imagem; clareza de CTA/conversão. Factualidade, segurança e funcionamento permanecem gates binários.
 - Não há piso numérico de aprovação por enquanto; `6/10` e `7+` permanecem hipóteses não aprovadas até existir geração real avaliada.
-- Programmatic Tool Calling, persisted reasoning, prompt caching avançado, Agents SDK e multi-agent permanecem capacidades futuras condicionais e não entram automaticamente neste recorte.
+- Programmatic Tool Calling, persisted reasoning, prompt caching avançado, Agents SDK e multi-agent ficam rejeitados para o recorte atual por ausência de necessidade demonstrada; qualquer reavaliação exige caso real posterior.
 - O prompt seguirá abordagem `outcome-first`, sem pedir cadeia de raciocínio privada.
-- A fase geracional terá participação de IA; a categoria final deve ser reconciliada com o Gestor de Automação antes da consolidação da v1.
+- O Gestor de Automação classificou formalmente a E19.4.3 como `2.1.3 — Automação com IA em fluxo controlado`, com ambiente principal `2.2.1 — Runtime do LP Factory`, OpenAI API como plataforma dependente e sem comportamento agentic.
 
 ### 1.4. Fontes obrigatórias do novo debate
 
@@ -81,6 +81,7 @@
 - `docs/openai-model-snapshot.md`.
 - `docs/gestor-automations.md` e `docs/automations.md`.
 - Contratos vigentes de `lib/openai-workloads/`.
+- PR #720 como fonte histórica do identificador canônico `landing_page_draft_generation` usado formalmente pela E19.4.3 anterior.
 - PR #726 e `docs/lousa-plano-base-e19-5.md` somente como fonte conceitual da sucessora E19.5 Light.
 - Artefatos SQL da materialização E19.4 preservados pelo PR #729, somente como fonte real já existente para o debate de persistência.
 - Leitura read-only do Supabase hospedado de 17/08/2026 apenas como evidência factual do estado atual do draft piloto, materialização e ausência de buckets Storage.
@@ -91,7 +92,7 @@
 - Qual é o menor mecanismo real de persistência e entrega da mídia gerada antes da materialização, verificando primeiro se Supabase Storage atende o recorte sem criar complexidade ou infra paralela.
 - Qual visibilidade o asset da primeira prova terá: público, privado ou referência interna resolvida pelo renderer.
 - Quais limites de peso, dimensões, formatos, otimização e cache/CDN serão exigidos para preservar carregamento rápido.
-- Identificador canônico e configuração efetiva do novo workload textual E19.4 na governança E21.1, incluindo extensão aditiva de `reasoningEffort` para `max`.
+- Configuração efetiva do workload `landing_page_draft_generation` na governança E21.1, incluindo extensão aditiva de `reasoningEffort` para `max` e observabilidade correspondente.
 - Se a mídia gerada será registrada como segundo workload ou como operação especializada do workflow textual.
 - Se algum metadata mínimo e seguro derivado de `identities` ou `serverContext` precisa ser projetado ao modelo para decisão estrutural.
 - Schema exato do Structured Output da candidata única.
@@ -122,7 +123,8 @@
 | Capacidade disponível ≠ composição usada | A autoridade pode oferecer mais estruturas/layouts do que a IA utiliza em uma LP. | Decisão aceita | Sim | Não obrigar uso de todas as capacidades. |
 | Contexto entregue ao modelo | Instruções estáveis + `modelContext` E19.3 + autoridade estrutural; `serverContext` bruto fora do prompt. | Decisão aceita | Sim | Projeções seguras exatas na v2. |
 | Repertório estrutural v1 | Formas disponíveis: Header, Hero visual, texto+mídia, cards/grid, steps, FAQ, CTA e Footer; não são módulos narrativos obrigatórios. | Decisão humana | Sim | Fields, variantes, cardinalidades e layouts na v2. |
-| Uma chamada textual | Uma chamada por tentativa produz estrutura + narrativa + copy; mídia é operação separada. | Decisão humana | Sim | Reabrir somente diante de deficiência concreta. |
+| Uma chamada textual | Uma chamada por tentativa produz estrutura + narrativa + copy, sem retry textual automático; mídia é operação separada. | Decisão humana | Sim | Nova tentativa é explícita; reabrir desenho só diante de deficiência concreta. |
+| Classificação da automação | E19.4.3 é `2.1.3 — Automação com IA em fluxo controlado`, no `2.2.1 — Runtime do LP Factory`, com OpenAI API dependente e sem comportamento agentic. | Parecer formal do Gestor aceito | Sim | Fechado na v1. |
 | Structured Output da candidata | Um único DTO; sem `narrativePlan` separado, justificativa de composição ou raciocínio privado. | Decisão aceita | Sim | Schema exato na v2. |
 | Logo | `brand_logo_asset` permanece exclusivo para logo. | Decisão humana + fato de runtime | Quando houver logo | Não virar contêiner genérico de imagens. |
 | Imagem na primeira LP | Pelo menos um visual principal pertinente; não limitar toda LP a exatamente uma imagem. | Decisão humana | Sim | Cardinalidades/layouts na v2. |
@@ -132,7 +134,7 @@
 | Auditabilidade da mídia | Snapshot deve identificar origem, referência do asset, configuração/workload quando gerada e versão do brief/prompt visual. | Decisão humana | Sim | Shape exato na v2; sem raciocínio privado. |
 | Persistência da mídia | Mídia precisa de referência canônica tenant-safe e estável antes da materialização. Hoje não há bucket Storage. | Gate técnico confirmado | Sim | Avaliar primeiro Supabase Storage; mecanismo e visibilidade na v2. |
 | Performance da mídia | Peso, dimensões, formato, otimização e cache/CDN são parte da qualidade técnica. | Requisito humano | Sim | Limites exatos na v2. |
-| Workload OpenAI E19.4 | A geração textual é novo workload de produto sujeito à E21.1; registry atual não o possui e `reasoningEffort` ainda não admite `max`. | Gate de governança confirmado | Sim | v2 define id canônico, extensão aditiva para `max`, configuração e observabilidade. |
+| Workload OpenAI E19.4 | A geração textual usa o identificador canônico histórico `landing_page_draft_generation`, sujeito à E21.1; registry atual não o possui e `reasoningEffort` ainda não admite `max`. | Gate de governança confirmado | Sim | v2 registra o workload, extensão aditiva para `max`, configuração e observabilidade. |
 | Governança da mídia IA | Mídia gerada também precisa ser mensurável e governada. | Decisão aceita | Sim | v2 decide workload separado ou operação especializada. |
 | Baseline de IA | `gpt-5.6-luna + reasoning.effort=max`, Responses API e Structured Outputs. | Decisão humana | Sim | Medir qualidade, custo, tokens e latência; não declarar vencedor definitivo. |
 | Claims e factualidade | Validar deterministicamente apenas o comprovável; linguagem livre sem prova confiável fica limitada pelo prompt e gate humano. | Decisão aceita | Sim | Sem segunda engine semântica. |
@@ -144,13 +146,12 @@
 | Novo piloto para a prova | Usar nova conta/piloto pelo fluxo existente E19.1 + E19.2 até LP ainda não materializada. | Decisão humana | Sim | Não antecipar E19.5. |
 | Tentativa × materialização | Antes da materialização, tentativas podem variar; depois, imagem/copy/estrutura daquela versão não são sobrescritas. | Decisão humana | Sim | Nova versão preservada usa novo draft. |
 | Preview privado | Rota histórica tenant-aware/read-only é candidata natural a reutilização. | Direção convergente | Sim | Confirmar na v2; não inventar rota sem gap. |
-| Drift `docs/schema.md` | Documento ainda diz que a migration de materialização aguarda apply, mas Supabase confirma tabela aplicada e com uma linha. | Drift factual confirmado | Não corrigir no PR #759 | Corrigir no ABC/documento competente posterior. |
 | Repertório por plano | Planos futuros podem autorizar repertórios diferentes sem obrigar uso integral. | Direção de produto | Não agora | Preservar em 4.4. |
 | Cliente substituir/adicionar seções | Futuro cardápio de personalização dentro do plano. | Oportunidade futura | Não | Recorte próprio; não atribuir automaticamente à E19.5. |
 | Biblioteca de assets | Biblioteca tenant-aware de logos/imagens próprias reutilizáveis. | Oportunidade futura | Não | Recorte próprio. |
 | Estratégia híbrida de imagens | Asset próprio + IA + importação/licenciamento externo conforme direitos e qualidade. | Oportunidade futura | Só IA nesta prova | Não abrir integração externa agora. |
 | Admin Dashboard | `/admin/estrutura-lp` como projeção read-only das capacidades reais por plano. | Direção futura | Não é Gate | Sem segundo dashboard/fonte de verdade. |
-| Capacidades avançadas GPT-5.6 | Programmatic Tool Calling, persisted reasoning, caching avançado, Agents SDK e multi-agent. | Oportunidade condicional | Não | Só com necessidade demonstrada. |
+| Capacidades avançadas GPT-5.6 | Programmatic Tool Calling, persisted reasoning, caching avançado, Agents SDK e multi-agent. | Rejeitados no recorte atual | Não | Reavaliar somente diante de necessidade real posterior. |
 
 ## 2. Contrato do caso
 
@@ -162,12 +163,12 @@
   - LP legítima em `draft`, ainda não materializada, e configuração E19.2 completa nos fields aplicáveis da E20.2;
   - taxon previamente preparado;
   - sucesso integral da E19.3;
-  - configuração OpenAI E19.4 autorizada pela governança E21.1.
+  - configuração OpenAI `landing_page_draft_generation` autorizada pela governança E21.1.
 - Processamento:
   - revalidar autorização antes do provider;
   - obter o pacote E19.3 sem reler diretamente suas fontes internas;
   - construir a requisição a partir do prompt canônico versionado, `modelContext` e autoridade estrutural;
-  - realizar uma única chamada textual para estrutura + narrativa + copy;
+  - realizar uma única chamada textual para estrutura + narrativa + copy, sem retry textual automático;
   - produzir candidata dentro da fonte estrutural canônica e indicar necessidade/posição da mídia;
   - quando faltar asset adequado, gerar mídia em etapa controlada;
   - persistir/resolver referência canônica da mídia escolhida;
@@ -184,7 +185,9 @@
 - Consumo:
   - renderer privado/read-only reproduz a LP a partir do estado materializado e das referências congeladas de mídia.
 - Fallback:
-  - falha de autorização, contexto, workload, provider, mídia, schema ou validação não materializa candidata.
+  - falha de autorização, contexto, workload, provider, mídia, schema ou validação não materializa candidata;
+  - não trocar modelo, effort ou schema silenciosamente;
+  - nova tentativa textual é sempre uma nova tentativa explícita.
 
 ### 2.2. Papel da IA
 
@@ -206,7 +209,7 @@
 - Definir fonte estrutural finita e derivar projeções para IA, validator, materialização e renderer.
 - Manter `serverContext` bruto fora da matéria-prima textual e usá-lo deterministicamente.
 - Resolver bindings, consentimento, credenciais e referências técnicas.
-- Governar o workload E19.4 pela fundação E21.1.
+- Governar o workload `landing_page_draft_generation` pela fundação E21.1.
 - Persistir/resolver mídia pelo boundary autorizado e validar a referência materializada.
 - Validar schema, tipos, cardinalidades, limites, identidades, componentes e propriedades suportadas.
 - Bloquear factualidade objetivamente inválida quando comprovável.
@@ -219,13 +222,13 @@
 - O prompt será derivado de `docs/template-prompts.md` e complementado por `docs/template-prompts-gpt-5-6.md`.
 - O prompt de produção será versionado como código próximo da feature consumidora, sem engine genérica.
 - Instruções estáveis permanecem separadas do contexto dinâmico validado.
-- A v1 fecha uma única chamada textual por tentativa.
+- A v1 fecha uma única chamada textual por tentativa e nenhum retry textual automático dentro da mesma tentativa.
 - A primeira prova usa Responses API, Structured Outputs e `gpt-5.6-luna + reasoning.effort=max`.
-- Antes da execução, a governança E21.1 deve possuir workload efetivo compatível com a configuração aprovada.
+- Antes da execução, a governança E21.1 deve possuir o workload efetivo `landing_page_draft_generation` compatível com a configuração aprovada.
 - Validator e regras de negócio permanecem no código.
 - A geração de imagem é etapa de mídia separada, não segunda etapa semântica de planejamento/redação.
-- Tokens, timeout, retry, identificador do workload e observabilidade exata ficam para a v2.
-- Programmatic Tool Calling, persisted reasoning, prompt caching avançado, Agents SDK, multi-agent e tools externas não entram sem necessidade demonstrada.
+- Tokens, timeout e observabilidade exata ficam para a v2; o identificador canônico do workload já está fechado.
+- Programmatic Tool Calling, persisted reasoning, prompt caching avançado, Agents SDK, multi-agent e tools externas não entram no recorte atual.
 
 ### 2.5. Fonte estrutural canônica e projeções derivadas
 
@@ -267,7 +270,7 @@
 
 ### 2.8. Materialização, snapshot e renderer
 
-- `account_landing_page_materializations` está aplicada no Supabase hospedado e já contém uma materialização; `docs/schema.md` possui drift documental ao ainda dizer que aguarda apply, correção fora do PR #759.
+- `account_landing_page_materializations` está aplicada no Supabase hospedado e já contém uma materialização; `docs/schema.md` foi reconciliado pelo PR #760 e não há pendência de apply da tabela.
 - O estado materializado deve reproduzir a LP sem reler E19.3 ou fontes mutáveis.
 - Mídia usada deve estar persistida e possuir referência estável antes da materialização; `content_json` congela a referência, não o binário bruto.
 - O snapshot preserva identidades, versões, configuração do workload, contexto exposto e auditabilidade mínima da mídia: origem, referência, workload/configuração quando gerada e versão do brief/prompt visual.
@@ -282,7 +285,10 @@
 ### 3.1. E19.4.3 — Geração controlada e validação integral da candidata
 
 - Status: rascunho; fase ainda não consolidada para execução.
-- Automação: sim em princípio; categoria final pendente do Gestor de Automação antes da v1.
+- Automação: `2.1.3 — Automação com IA em fluxo controlado`.
+- Ambiente principal: `2.2.1 — Runtime do LP Factory`.
+- Plataforma dependente: OpenAI API.
+- Comportamento agentic: não.
 - Objetivo:
   - transformar pacote E19.3 em candidata completa por uma única chamada textual, com mídia necessária e validação antes da persistência.
 - Dependências anteriores à execução:
@@ -290,15 +296,17 @@
   - LP legítima ainda não materializada;
   - taxon preparado;
   - E19.3 aprovada;
-  - novo workload E19.4 governado pela E21.1 e compatível com `gpt-5.6-luna + max`.
+  - workload `landing_page_draft_generation` governado pela E21.1 e compatível com `gpt-5.6-luna + max`.
 - Questões indispensáveis ainda abertas:
   - fields/variantes/layouts/cardinalidades exatos do repertório;
   - prompt canônico e schema exato;
-  - governança efetiva do workload E19.4;
+  - configuração/observabilidade efetiva do workload E21.1, incluindo suporte aditivo a `max`;
   - mecanismo de mídia e visibilidade do asset;
+  - decisão da v2 entre workload próprio de mídia ou operação especializada;
   - casos representativos e registro da rubrica.
 - Baseline decidido:
-  - uma chamada textual por tentativa;
+  - uma chamada textual por tentativa, sem retry textual automático;
+  - `landing_page_draft_generation`;
   - `gpt-5.6-luna + reasoning.effort=max`;
   - Responses API;
   - Structured Outputs;
@@ -347,9 +355,9 @@
 
 - Não reutilizar `Primeiro imóvel no Rio` para a nova prova; preparar novo piloto somente após a v1 estar consolidada, usando o fluxo existente e sem antecipar E19.5.
 - Não reabrir E20.2 apenas para mídia gerada; voltar à E20.2 somente se surgir input factual prévio real.
-- Fechar na v2 os contratos técnicos ainda abertos: autoridade estrutural exata, workload E21.1, persistência/visibilidade/performance de mídia, Structured Output, snapshot e preview.
-- Consultar o Gestor de Automação antes da consolidação da v1 para classificar formalmente E19.4.3 e a operação de mídia.
-- Quando a LP não atingir qualidade desejada, diagnosticar nesta ordem: E19.4; pesquisa; E20.2 quando faltar dado factual; E19.3 somente diante de gap real de autorização/transport.
+- A classificação formal do Gestor de Automação está fechada na v1; a v2 materializa os patches E21.1 e o tratamento governado da mídia.
+- Fechar na v2 os contratos técnicos ainda abertos: autoridade estrutural exata, configuração do workload E21.1, persistência/visibilidade/performance de mídia, Structured Output, snapshot e preview.
+- Quando a LP não atingir qualidade desejada, diagnosticar nesta ordem: E19.4; pesquisa; E20.2 quando faltar dado factual; E19.3 somente diante de gap real de autorização/transporte.
 - Não atualizar `docs/roadmap.md` enquanto este arquivo permanecer rascunho vivo.
 - Não iniciar implementação da E19.4 antes da consolidação da v1.
 
@@ -419,6 +427,5 @@
 - Lifecycle futuro pode permitir experimentar imagem/copy/estrutura antes de congelamento; contrato atual congela na materialização.
 - Supabase Storage é primeiro candidato para mídia por aderência à stack, sem decisão de plataforma antes da v2.
 - Solução futura deve preservar performance por formato, dimensões, compressão e cache/CDN.
-- Drift de `docs/schema.md` sobre apply da materialização deve ser corrigido no ABC/documento competente posterior, não no PR #759.
-- Capacidades GPT-5.6 avançadas permanecem condicionais.
+- Capacidades GPT-5.6 avançadas permanecem fora do recorte atual e só voltam a ser avaliadas diante de necessidade real.
 - Ao consolidar v1, esta subseção mantém apenas oportunidades relevantes sem recorte próprio.
