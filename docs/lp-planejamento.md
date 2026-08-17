@@ -2,9 +2,9 @@
 
 Fonte conceitual de decisão para preparar taxons, configurar contas, gerar LPs reais e liberar seu uso.
 
-Status arquitetural: reconciliado com o Cenário E em 16/08/2026. Este documento distingue o caminho canônico vigente de ativos históricos ainda preservados no projeto. Estar fora do caminho canônico não autoriza remoção física; qualquer retirada depende de auditoria de consumidores, dados e dependências no roadmap e no repositório.
+Status arquitetural: reconciliado com o Cenário E e com a semântica vigente de LP, tentativa, revisão e lifecycle em 17/08/2026. Este documento distingue o caminho canônico vigente de ativos históricos ainda preservados no projeto. Estar fora do caminho canônico não autoriza remoção física; qualquer retirada depende de auditoria de consumidores, dados e dependências no roadmap e no repositório.
 
-Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `docs/schema.md`, planos-base vigentes da jornada e implementação atual no repositório.
+Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `docs/schema.md`, `docs/lousa-plano-base-e19-4.md` no HEAD vigente do PR #759, `docs/lousa-plano-base-e19-5.md` / PR #726 apenas como histórico do plano em reconciliação e implementação atual de `account_landing_pages` e `account_landing_page_materializations` no repositório.
 
 ## 1. Jornada da base até as LPs publicadas
 
@@ -18,7 +18,13 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 - A primeira LP real deve ser produzida a partir de taxon preparado, configuração factual válida e contexto autorizado, sem atalhos administrativos específicos da conta piloto.
 - O grau de determinismo acompanha a natureza da decisão: segurança, autorização, fatos, estado, bindings e contratos permanecem determinísticos; decisões semânticas, narrativas, criativas e persuasivas preservam flexibilidade controlada da IA.
 - Não antecipar deterministicamente uma decisão que o workload existe justamente para a IA tomar.
-- **Independência da LP materializada:** depois de materializada, a LP possui estado próprio suficiente para sua reprodução; evolução posterior das fontes canônicas não altera silenciosamente uma LP existente.
+- **Identidade comercial estável:** `landing_page` é a identidade comercial da página; uma tentativa é uma execução de geração, e somente uma tentativa válida produz uma nova revisão gerada da mesma LP.
+- Enquanto estiver em `draft`, a mesma LP pode continuar evoluindo por novas tentativas e revisões; regenerar não cria uma nova `account_landing_pages`.
+- Cada revisão válida é preservada de forma append-only; revisões anteriores não são sobrescritas, e a revisão corrente pode alimentar o preview.
+- O histórico de revisões pertence à própria LP; a lista principal do workspace mantém uma linha por LP comercial, e nova identidade só nasce quando o usuário realmente deseja outra página comercial.
+- **Lifecycle de produto:** `draft` representa LP ativa em trabalho e pode receber novas tentativas/revisões; `archived` é direção aprovada para futura implementação no workspace, removendo a LP da lista operacional principal sem perder identidade, configuração ou revisões e permitindo restauração para `draft`.
+- Hard delete não é requisito atual; política definitiva de retenção e exclusão fica para recorte futuro. O schema vigente ainda materializa apenas `draft`, e a forma física de `archived` não é definida neste documento.
+- **Independência das revisões materializadas:** cada revisão preservada possui conteúdo e snapshot suficientes para reprodução; evolução posterior das fontes canônicas não altera silenciosamente revisões existentes.
 - Edições e regenerações futuras devem adotar versões mais novas das fontes somente por ação explícita e contrato próprio.
 
 ### 1.2. Preparar o taxon para geração
@@ -114,8 +120,14 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 - O sistema permanece responsável por autorização, facts disponíveis, evidências disponíveis, estruturas suportadas, limites absolutos, bindings, destinos, consentimento, credenciais, schema, validação objetiva, persistência e renderer.
 - A IA não gera HTML, CSS, React, JavaScript, scripts, componentes desconhecidos, credenciais ou fatos não autorizados.
 - A E19.4 deve usar a menor fonte estrutural canônica necessária à primeira LP real; novas primitivas ou layouts só entram quando caso concreto demonstrar necessidade.
-- A candidata válida é materializada em estado próprio suficiente para reprodução; o snapshot registra somente identidades, versões, configuração do workload e contexto efetivamente exposto necessários à auditoria/reprodução, sem raciocínio privado.
-- O shape exato de candidata, materialização, snapshot, concorrência e renderer pertence ao plano E19.4 e não deve ser antecipado neste documento.
+- Cada tentativa de geração é uma execução explícita. Tentativa inválida não cria revisão válida, não materializa conteúdo e não cria nova identidade de LP.
+- Uma candidata que passa a validação torna-se nova revisão válida da mesma `landing_page`; as revisões anteriores permanecem preservadas e podem ser comparadas técnica ou editorialmente.
+- A direção conceitual vigente da materialização é `1 LP → N revisões materializadas append-only`. O contrato atual `account_landing_page_materializations` 1:1/write-once permanece fato histórico do estágio anterior; o shape físico da evolução pertence à v2/implementação da E19.4 e não é antecipado aqui.
+- Cada revisão válida preserva conteúdo e snapshot suficientes para auditoria e reprodução, sem raciocínio privado; a revisão corrente pode alimentar o preview sem apagar o histórico.
+- A primeira LP real deve possuir ao menos uma imagem principal pertinente à narrativa. Quando não houver asset adequado do cliente disponível, a E19.4 pode gerar a mídia necessária por IA.
+- Imagem gerada pela E19.4 é saída do workload e não cria, apenas por existir, novo field E20.2. A mídia efetivamente usada precisa possuir referência estável antes da materialização, e performance de imagem é requisito.
+- Detalhes físicos de persistência, formato, compressão, dimensões, entrega ou API de mídia pertencem ao plano técnico da E19.4 e não a este planejamento conceitual.
+- O caminho canônico permanece: taxon preparado + configuração factual → E19.3 v3 → E19.4 → revisão válida → materialização → renderer → preview.
 
 ### 1.10. Validar e disponibilizar por plano
 
@@ -188,6 +200,7 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 - A E19.3 pode revalidar esses valores contra versão E20.2 posterior explicitamente revisada sem migration automática da configuração.
 - Gap factual de valor retorna à E19.2; defeito de catálogo retorna à E20.2.
 - E19.2 não seleciona estrutura narrativa, não chama IA de copy e não materializa LP final.
+- O vínculo da configuração a uma LP não transforma cada nova tentativa em nova identidade; a identidade comercial permanece a mesma enquanto o usuário estiver evoluindo a mesma página em `draft`.
 
 ### 2.7. E20.4 e E12.4.5–12.4.6 — Disponibilidade comercial
 
@@ -201,6 +214,8 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 - E10.8, E18.5, E20.3 e recortes derivados não voltam ao caminho canônico apenas porque já existem.
 - Auditoria do roadmap deve classificar ativos históricos por situação arquitetural e mapear consumidores reais.
 - Remoção física depende de recorte próprio, prova de ausência de consumidor necessário e tratamento explícito de dados, migrations, páginas, adapters, imports, exports e testes.
+- O contrato material atual 1:1/write-once de `account_landing_page_materializations` deve ser preservado como estado vigente até a evolução própria da E19.4; a direção conceitual de revisões append-only não autoriza migration ou novo shape neste documento.
+- O lifecycle `archived`, histórico navegável de revisões e política definitiva de exclusão pertencem a recortes futuros e não alteram o schema atual por efeito deste planejamento.
 - Não criar catálogo multicanal, editor visual, agente ou infraestrutura nova sem necessidade real demonstrada.
 
 ### 2.9. E9 — Catálogo de capacidades e limites por plano
@@ -214,10 +229,10 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 
 - Base ativa para a primeira LP real: E18.4, E20.2, E20.5, E20.6, E19.1, E19.2 e entitlement/plano efetivo da E9.
 - Ativos preservados fora do caminho canônico: E10.8, E18.5, E20.3 e lifecycle E12.4.3 associado, sujeitos a auditoria própria e sem bloquear a primeira LP.
-- 1º — concluir a reformulação E19.3 do Cenário E com `contractVersion: 3`, pesquisa integral, revalidação dinâmica E20.2 e prova read-only.
-- 2º — implementar e validar a prova E19.3 sobre o caso real `E19.2 histórica v2 → E20.2 revisada v4` sem hardcode de versão, slug, plano ou nível taxonômico.
-- 3º — concluir o plano E19.4 do Cenário E e produzir a primeira LP real: geração por IA com liberdade controlada → candidata estruturada → validação → materialização → renderer → avaliação humana.
-- 4º — após E19.4 funcional, tratar E19.5 Light para criar novos `drafts` independentes e permitir iterações E1/E2/E3 sem overwrite.
+- 1º — E19.3 do Cenário E está concluída no `contractVersion: 3` e mergeada pelo PR #757; não reabrir composição intermediária, atomização ou seleção semântica nesse boundary.
+- 2º — a prova read-only `E19.2 histórica v2 → E20.2 revisada v4` já foi aprovada como caso real do mecanismo genérico temporal e taxonômico.
+- 3º — concluir o plano E19.4 do Cenário E e produzir a primeira LP real: geração por IA com liberdade controlada → candidata estruturada → validação → revisão válida → materialização → renderer → avaliação humana.
+- 4º — após E19.4 funcional, reconciliar E19.5 Light para workspace e lifecycle da LP estável, permitindo novas tentativas e revisões preservadas da mesma LP em `draft`; comparação técnica/editorial ocorre entre revisões, sem E1/E2/E3 como LPs independentes e sem multiplicar identidades apenas para testar prompt, modelo ou renderer.
 - 5º — somente depois da primeira LP real, retomar publicação, tracking, disponibilidade comercial e demais evoluções priorizadas.
 - A auditoria de obsolescência do roadmap deve ocorrer como trabalho próprio e não reintroduzir dependências legadas no caminho crítico.
 
@@ -252,11 +267,13 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 
 ### 4.5. E19
 
-- E19.1 mantém a identidade mínima da LP `draft`.
+- E19.1 mantém a identidade mínima da LP `draft`; essa identidade representa a página comercial e não uma tentativa de geração.
 - E19.2 mantém onboarding e configuração factual persistida.
 - E19.3 é boundary determinístico de autorização, pesquisa integral, revalidação factual e transporte de contexto; não gera nem materializa LP.
-- E19.4 é responsável por geração, decisões narrativas/estruturais da IA dentro do contrato suportado, candidata, validação, materialização, renderer e prova humana.
-- E19.5 Light sucede E19.4 para novos drafts e iterações preservadas.
+- E19.4 é responsável por tentativas de geração, decisões narrativas/estruturais da IA dentro do contrato suportado, candidata, validação, revisão válida, materialização, renderer e prova humana.
+- A direção vigente da E19.4 é uma LP estável com múltiplas revisões append-only; o contrato 1:1/write-once existente é histórico do estágio anterior e seu shape físico só muda em recorte próprio da E19.4.
+- E19.5 Light sucede E19.4 para workspace operacional, lifecycle e evolução da mesma LP em `draft` por novas tentativas/revisões preservadas. A formulação do PR #726 com novos drafts independentes E1/E2/E3 permanece apenas como histórico do plano em reconciliação.
+- A home do cliente deve preservar uma linha por LP comercial; histórico e comparação de revisões pertencem à LP concreta.
 - Conta piloto e cliente continuam no mesmo fluxo oficial.
 
 ### 4.6. E9
@@ -268,6 +285,11 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 ## 5. Evoluções prioritárias após a primeira LP real
 
 - Gatilho comum: reavaliar somente após gerar e validar a primeira LP real pelo fluxo oficial, sem competir com o caminho crítico atual.
+- Preservar para recortes futuros uma biblioteca tenant-aware de logos e imagens reutilizáveis, com upload e seleção de assets próprios quando existir contrato real de produto para isso.
+- A estratégia de mídia pode evoluir de forma híbrida entre asset próprio do cliente, imagem gerada por IA e eventual mídia externa/licenciada com direitos e proveniência adequados.
+- Edição futura de LP em `draft`, histórico/visualização de revisões e restauração operacional devem evoluir sem transformar cada revisão em nova LP comercial.
+- Repertórios estruturais podem diferir por plano futuramente; `/admin/estrutura-lp` pode ser uma projeção read-only da autoridade estrutural real, nunca segunda fonte de verdade.
+- Programmatic Tool Calling, persisted reasoning, prompt caching avançado, Agents SDK e multi-agent permanecem possibilidades condicionais, avaliadas somente diante de necessidade real e benefício demonstrável; não são Gate da E19.4 atual.
 
 ### 5.1. `pending_setup` e taxon assistidos por IA
 
