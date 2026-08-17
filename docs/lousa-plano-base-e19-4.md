@@ -109,33 +109,6 @@
 - `6/10` e `7+` permanecem hipóteses não aprovadas até existir geração real avaliada.
 - Cada prova deve ser relacionável a `promptVersion`, versão estrutural, modelo, effort, tokens, reasoning tokens, latência, custo e notas humanas.
 
-### 1.7. Matriz final da v1
-
-| Tema | Decisão da v1 | Estado | Destino técnico |
-|---|---|---|---|
-| Identidade da LP | Uma LP mantém identidade estável entre regenerações. | Fechado | Contrato físico na v2. |
-| Tentativa | Execução de geração; inválida não persiste revisão. | Fechado | Casos executáveis na v2. |
-| Revisão válida | Revisões válidas da mesma LP são append-only 1:N. | Fechado | Shape, PK, índices e ordenação na v2. |
-| Revisão corrente | Preview consome uma revisão corrente sem apagar anteriores. | Fechado | Mecanismo exato na v2. |
-| Materialização atual | Contrato hospedado atual é 1:1/write-once e precisa evoluir para suportar revisões 1:N. | Gap técnico conhecido | Evolução física na v2. |
-| Autoridade estrutural | Única, finita e versionada. | Fechado | Fields, variantes, layouts e cardinalidades na v2. |
-| Repertório v1 | Header, Hero visual, texto+mídia, cards/grid, steps, FAQ, CTA e Footer. | Fechado | Contratos exatos na v2. |
-| Uma chamada textual | Estrutura + narrativa + copy em uma chamada por tentativa, sem retry automático. | Fechado | Timeout/retry técnico na v2. |
-| Structured Output | Um DTO único da candidata. | Fechado | Schema exato na v2. |
-| Contexto | `modelContext` + instruções estáveis + autoridade estrutural; `serverContext` bruto fora do prompt. | Fechado | Projeções seguras na v2. |
-| Workload OpenAI | `landing_page_draft_generation`, sujeito à E21.1. | Fechado | Registry, `max`, configuração e observabilidade na v2. |
-| Baseline | `gpt-5.6-luna + max`, Responses API, Structured Outputs. | Fechado como baseline experimental | Comparação só após prova real. |
-| Automação | 2.1.3, runtime LP Factory, OpenAI API, não agentic. | Fechado | Implementação na v2. |
-| Imagem principal | Pelo menos uma imagem pertinente na primeira LP. | Fechado | Layout/cardinalidade na v2. |
-| Fallback de imagem | Gerar por IA quando faltar asset adequado. | Fechado | API/workload de mídia na v2. |
-| Persistência da mídia | Referência canônica tenant-safe antes da revisão persistida. | Fechado como requisito | Mecanismo, visibilidade e Storage na v2. |
-| Factualidade da mídia | Não representar fato não autorizado como real. | Fechado | Regras/prompt/gates na v2. |
-| Performance da mídia | Parte da qualidade técnica. | Fechado | Formato, dimensões, compressão, cache/CDN na v2. |
-| Claims | Validar deterministicamente apenas o comprovável. | Fechado | Regras exatas na v2. |
-| Rubrica humana | Seis dimensões + três gates binários. | Fechado | Registro operacional na v2. |
-| E19.5 | Pausada; PR #726 precisa ser reconciliado antes de implementação. | Fechado | Retomar somente após primeira LP real. |
-| Biblioteca ampla de assets / editor / planos | Oportunidades futuras, não dependências da primeira LP. | Fora do recorte | Preservadas em 4.4. |
-
 ## 2. Contrato do caso
 
 ### 2.1. Fluxo lógico aprovado
