@@ -2,8 +2,8 @@
 
 0.1 Cabeçalho
 • Documento: LP Factory 10 — Platform Config
-• Versão: v0.1.22
-• Data: 15/08/2026
+• Versão: v0.1.23
+• Data: 17/08/2026
 
 0.2 Contrato do documento
 • O QUE É: snapshot operacional e fonte única das configurações de plataformas externas do LP Factory 10, refletindo o estado conhecido/cadastrado nas plataformas conforme indicado.
@@ -176,7 +176,7 @@
 • Regra operacional: os consumidores autorizados podem compartilhar a mesma chave; não criar outra sem necessidade aprovada.
 
 • Configuração efetiva dos workloads OpenAI de produto
-• Fonte canônica: `lib/openai-workloads/registry.ts`, com `configurationSource: repo_catalog` e revisão `v1`.
+• Fonte canônica: `lib/openai-workloads/registry.ts`, com `configurationSource: repo_catalog` e revisão `v2`.
 • Workloads textuais validados operacionalmente: `niche_resolution`, `landing_page_generation_profile_proposal` e `commercial_activation_draft_generation`, com modelo `gpt-5.4-mini` e esforço de raciocínio `none`.
 • Workload textual implementado no repositório e ainda não validado no ambiente alvo: `landing_page_draft_generation`, com modelo `gpt-5.6-luna`, esforço `max`, Responses API, Structured Output estrito, `store:false` e timeout de 120 s.
 • Workload de imagem implementado no repositório e ainda não validado no ambiente alvo: `landing_page_draft_image_generation`, com modelo `gpt-image-2`, saída WebP 1536 × 1024, qualidade `medium`, compressão 80, moderação `auto` e timeout de 120 s.
@@ -263,6 +263,13 @@
 • Regra: não usar esse acesso para mutações.
 • Regra: revisar permissões antes de ampliar o escopo operacional.
 
+4.8 Storage privado das revisões de landing page
+• Bucket definido no repositório: `landing-page-revision-assets`.
+• Estado operacional: criação/configuração hospedada pendente do merge humano e do apply oficial da migration E19.4.4.
+• Configuração aprovada: privado, limite de 5 MB e MIME permitido somente `image/webp`.
+• Acesso do produto: exclusivamente server-side por service role; nenhuma policy direta para anon ou authenticated.
+• Identidade do asset: bucket e path estáveis; URL assinada temporária somente no consumo autorizado e nunca persistida.
+
 5. Resend
 
 5.1 Uso
@@ -296,7 +303,7 @@
 6.3 Variáveis relacionadas
 • `OPENAI_API_KEY`
 • Plataforma: Vercel e/ou GitHub Actions, conforme uso.
-• Finalidade: autenticação com OpenAI API; no Core, a mesma chave server-side pode atender os três consumidores de produto.
+• Finalidade: autenticação com OpenAI API; no Core, a mesma chave server-side pode atender os consumidores de produto autorizados.
 • Valor real: não versionar.
 
 • A seleção de modelo, esforço ou configuração de mídia dos workloads OpenAI de produto não usa variáveis Vercel no runtime atual; o contrato efetivo está no catálogo versionado do repositório.

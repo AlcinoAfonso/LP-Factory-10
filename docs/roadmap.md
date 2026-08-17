@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 17/08/2026
-• Versão: v1.5.157
+• Versão: v1.5.158
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2436,7 +2436,7 @@ Repositório — Ajustados
 
 19.4.1 Objetivo e status
 - Objetivo: gerar, validar, materializar e visualizar privadamente a primeira LP real em `draft` a partir do pacote v3 da E19.3, com revisões append-only, mídia privada estável e prova humana.
-- Status: plano-base v2 e matriz de consolidação aprovados pelo Analista em 17/08/2026. A implementação candidata da E19.4.3 foi concluída e aprovada no gate local do Analista; canários sem persistência e confirmação da duração efetiva em Preview permanecem pendentes antes da primeira geração real. O PR precursor A segue com a E19.4.4 e o shell/gatilho autenticado fail-closed; após merge, apply e prova hospedada, o PR B entregará read model, renderer, Preview completo e primeira LP real.
+- Status: plano-base v2 e matriz de consolidação aprovados pelo Analista em 17/08/2026. As implementações candidatas da E19.4.3 e E19.4.4 e o PR precursor A acumulado foram concluídos, validados localmente e aprovados pelo Analista. Migration, bucket e runtime permanecem fail-closed e pendentes de merge humano, apply oficial, dois appends e verificador hospedado; canários e duração efetiva em Preview continuam pendentes antes da primeira geração real. O PR B permanece reservado para read model, renderer, Preview completo e prova humana após esses gates.
 
 19.4.2 Registros do recorte
 - Referências:
@@ -2447,8 +2447,15 @@ Repositório — Ajustados
   - `lib/conversion-content/landing-page/presentation/`
   - `lib/lp-builder/landingPageDraftGeneration.ts`
   - `lib/lp-builder/landingPageDraftImageGeneration.ts`
-  - `lib/lp-builder/landingPageDraftGenerationWorkflow.ts`
+  - `lib/lp-builder/landingPageDraftCandidateWorkflow.ts`
+  - `lib/lp-builder/landingPageRevision.ts`
+  - `lib/lp-builder/landingPageRevisionWorkflow.ts`
+  - `lib/lp-builder/adapters/landingPageRevisionAdapter.ts`
+  - `lib/lp-builder/adapters/landingPageRevisionStorageAdapter.ts`
   - `lib/openai-workloads/`
+  - `supabase/migrations/20260817180000_e19_4_4_landing_page_revisions.sql`
+  - `supabase/tests/e19_4_4_landing_page_materializations.test.sql`
+  - `supabase/snippets/e19_4_4_landing_page_materializations_verify.sql`
 
 19.4.3 Geração controlada e validação integral da candidata
 - Status: implementação candidata concluída, validada localmente e aprovada pelo Analista; canários sem persistência e confirmação da duração efetiva em Preview permanecem pendentes antes da primeira geração real.
@@ -2465,7 +2472,7 @@ Repositório — Ajustados
   - comprovar canários sem persistência para Luna/max/strict e `gpt-image-2`, além da duração efetiva no ambiente alvo; indisponibilidade volta ao Analista sem fallback.
 
 19.4.4 Revisões append-only, mídia e snapshot imutável
-- Status: plano aprovado; implementação pendente no PR precursor A, com apply e prova hospedada somente após merge humano.
+- Status: implementação candidata concluída, validada localmente e aprovada pelo Analista; migration, bucket, dois appends e verificador hospedado permanecem pendentes do merge humano e apply oficial.
 - Automações: não.
 - Conteúdo:
   - evoluir por migration incremental `account_landing_page_materializations` de 1:1 para 1:N, preservando materializações históricas como revisão 1 e sem criar entidade concorrente;
@@ -2747,13 +2754,13 @@ Repositório — Ajustados
 
 21. E21 — Gestão e governança dos workloads OpenAI
 - Objetivo: gerir e governar os workloads OpenAI por recortes aprovados, iniciando pela configuração explícita, observabilidade segura e leitura administrativa; a configuração dinâmica e o histórico permanecem para recortes posteriores, sem otimização automatizada.
-- Status: E21.1 com implementação candidata concluída e validada no PR draft #710; inspeção final e merge humano pendentes.
+- Status: a fundação E21.1 permanece preservada; o PR precursor A da E19.4 expande aditivamente o catálogo para seis itens na revisão `v2`, com os dois novos workloads de draft validados localmente e ainda pendentes de canários hospedados.
 
 21.1 Fundação, normalização e leitura dos workloads OpenAI
 
 21.1.1 Objetivo e status
 - Objetivo: estabelecer catálogo tipado e resolução explícita dos workloads OpenAI, integrar os consumidores de produto à configuração e à observabilidade comuns e expor inventário administrativo read-only.
-- Status: Implementação candidata concluída e validada; fechamento documental reconciliado com a `main`, preservando E12.6 e E21.1; PR #710 permanece draft até a inspeção final.
+- Status: Fundação implementada e validada; catálogo candidato expandido para cinco workloads de produto e uma referência operacional, sem mudar a natureza repo-only e read-only do boundary.
 
 21.1.2 Registros do recorte
 - Repositório:
@@ -2789,28 +2796,29 @@ Repositório — Ajustados
 21.1.3 Catálogo estrutural e resolução explícita
 - Status: Implementada e validada.
 - Conteúdo:
-  - O boundary transversal `lib/openai-workloads/` mantém registry interno, repo-only e profundamente imutável, com três configurações efetivas de produto em `gpt-5.4-mini + none` e uma referência operacional separada do Supabase Inspect em `gpt-4.1-mini + not_applicable`.
-  - O resolver público aceita somente workloads de produto conhecidos, falha fechado para identidade desconhecida ou referência operacional e projeta inventário seguro com classificação, origem, revisão e indicação explícita de configuração efetiva verificada.
-  - Ambiente, união discriminada de resultado e normalização de usage foram definidos como contratos puros comuns e integrados às chamadas reais na E21.1.4.
+  - O boundary transversal `lib/openai-workloads/` mantém registry interno, repo-only e profundamente imutável, com cinco configurações de produto e uma referência operacional separada do Supabase Inspect.
+  - Três workloads textuais preservam `gpt-5.4-mini + none`; a E19.4 acrescenta `landing_page_draft_generation` e o workload de mídia independente `landing_page_draft_image_generation`, sem transportar parâmetros textuais inaplicáveis.
+  - O resolver público discrimina `responses_text | image_generation`, aceita somente workloads de produto conhecidos, falha fechado para identidade desconhecida ou referência operacional e projeta inventário seguro com classificação, origem, revisão e configuração efetiva.
+  - Ambiente, uniões discriminadas de resultado/evento e normalização de usage foram definidos como contratos puros comuns e integrados às chamadas reais na E21.1.4.
   - Os casos executáveis fundacionais cobrem unicidade, resolução, separação effective/reference, imutabilidade, projeção sem secrets, ambiente, usage, evento e ausência de transporte, persistência ou payload funcional no boundary.
   - Nenhum banco, integração remota, cliente universal, preço, prompt, schema funcional ou fallback silencioso foi criado.
 
 21.1.4 Integração dos consumidores e observabilidade comum
-- Status: Implementada e validada técnica e funcionalmente, com smoke hospedado aprovado para os três consumidores de produto.
+- Status: integração técnica validada para os cinco workloads de produto; o smoke hospedado de 10/08/2026 continua válido apenas para os três consumidores então existentes, e os dois workloads E19.4 aguardam canários próprios.
 - Conteúdo:
-  - Os três consumidores resolvem a configuração pelo boundary comum e enviam modelo e reasoning effort explícitos à Responses API, preservando prompts, schemas, limites, persistência e fallbacks funcionais vigentes e a prova hospedada de 10/08/2026.
-  - Eventos comuns registram por tentativa somente ambiente, configuração, response ID, resultado, categoria segura, latência e usage normalizado completo; métricas ausentes permanecem `null` e nenhum prompt, resposta integral, payload de negócio, PII ou secret é registrado.
+  - Consumidores textuais resolvem modelo e reasoning effort explícitos; o workload de imagem resolve somente sua configuração de mídia. Prompts, schemas, limites, persistência e fallbacks funcionais permanecem nos domínios consumidores.
+  - Eventos textuais e de imagem registram por tentativa somente metadados operacionais seguros e aplicáveis; métricas ausentes permanecem `null` e nenhum prompt, resposta integral, payload de negócio, PII ou secret é registrado.
   - As três leituras runtime de variáveis de modelo, o hardcode client do perfil e o cálculo monetário local foram removidos; as variáveis externas permanecem apenas como legado temporário de reversão conforme a configuração operacional canônica.
   - O transporte OpenAI comercial foi isolado no adapter previsto e novos drafts registram workload, origem, revisão, modelo e effort resolvidos na proveniência existente, sem migration, backfill ou persistência de usage.
-  - Validators determinísticos exercitam os três requests reais, configuração inválida sem transporte, modelo e effort exatos, response ID, usage, `null` sem zero fabricado, evento discriminado e ausência de referências legadas.
-  - O smoke hospedado aprovou os fluxos de resolução de nicho, proposta de perfil de geração e ativação comercial; nova chamada OpenAI paga somente é necessária se mudança relevante invalidar essa evidência.
+  - Validators determinísticos exercitam os cinco workloads de produto, separação textual/mídia, configuração inválida sem transporte, parâmetros exatos, IDs de provider, usage aplicável, eventos discriminados e ausência de referências legadas.
+  - O smoke hospedado aprovou resolução de nicho, proposta de perfil de geração e ativação comercial; os canários sem persistência dos workloads E19.4 permanecem gates próprios antes da primeira geração real.
   - Permanece fora do PR #710 a correção separada da automação de smoke para remover senha de logs e artifacts, gerar credenciais não previsíveis e tratar colisões corretamente.
 
 21.1.5 Inventário read-only no Admin Dashboard
-- Status: Implementada; a prova técnica e visual hospedada anterior cobre o inventário vigente de quatro itens.
+- Status: inventário candidato com seis itens; a prova técnica e visual hospedada anterior cobre somente os quatro itens então implantados, e a expansão aguarda Preview do PR precursor A.
 - Conteúdo:
-  - A rota protegida `/admin/workloads-openai` integra o shell e a navegação administrativos vigentes e projeta diretamente da API pública do boundary os quatro workloads no código atual, sem adapter, API, componente client ou controle de mutação novos.
-  - Os três workloads de produto exibem ambiente observado, configuração efetiva, origem e revisão; o Supabase Inspect permanece diferenciado como referência operacional externa e informa explicitamente `Ambiente da execução: não verificado nesta página`.
+  - A rota protegida `/admin/workloads-openai` integra o shell e a navegação administrativos vigentes e projeta diretamente da API pública do boundary os seis itens no código candidato, sem adapter, API, componente client ou controle de mutação novos.
+  - Os cinco workloads de produto exibem ambiente observado, configuração efetiva, origem e revisão; o Supabase Inspect permanece diferenciado como referência operacional externa e informa explicitamente `Ambiente da execução: não verificado nesta página`.
   - A superfície é responsiva, sem consulta runtime à OpenAI, GitHub ou Vercel e sem configuração remota, métricas históricas ou capacidades inexistentes.
   - As evidências hospedadas aprovaram desktop, viewport mobile de 390 × 844 sem overflow, navegação lógica por TAB com foco visível, acesso positivo de `platform_admin` e bloqueio da identidade preexistente sem esse papel.
 

@@ -1,6 +1,6 @@
 0.1 Cabeçalho
-Data: 15/08/2026
-Versão: v1.16
+Data: 17/08/2026
+Versão: v1.17
 Status: Alinhado ao Platform Config
 
 0.2 Função do documento
@@ -471,6 +471,7 @@ Como funciona:
 - Executa um workload textual e um workload de imagem separados, com uma chamada por provider e telemetria própria.
 - Valida contrato, estrutura, bindings e factualidade antes de permitir qualquer materialização.
 - Preserva tentativa e requisição internas para correlação, separadas dos identificadores dos providers.
+- Aplica deadline total de 270 segundos, propaga cancelamento e tempo restante aos providers e impede imagem, upload ou append posterior quando o orçamento expira.
 
 Limites:
 - Não usa tools, Agents SDK, agente, job, fila, execução recorrente, retry ou fallback automático.

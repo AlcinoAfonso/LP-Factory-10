@@ -2,7 +2,7 @@
 
 ## 1. Objetivo e validade
 
-- Data do snapshot: 13/08/2026.
+- Data do snapshot: 17/08/2026.
 - Objetivo: manter uma referência datada para decisões de custo-desempenho de modelos e avaliação de capacidades de execução dos workloads OpenAI do LP Factory 10.
 - Este documento compara candidatos; não define sozinho o modelo em produção e não autoriza migração, implementação ou mudança de arquitetura.
 - A configuração efetivamente adotada continua registrada em `docs/platform-config.md`; a governança da decisão continua em `docs/gestor-automations.md`.
@@ -28,7 +28,7 @@
 - `commercial_activation_draft_generation` → configuração efetiva atual `gpt-5.4-mini + none`.
 - `landing_page_draft_generation` → configuração candidata versionada `gpt-5.6-luna + max`, pendente de canário no ambiente alvo.
 - `landing_page_draft_image_generation` → configuração candidata versionada `gpt-image-2`, pendente de canário no ambiente alvo; parâmetros de imagem não herdam configuração textual.
-- Fonte de configuração efetiva: `lib/openai-workloads/registry.ts`, com `configurationSource: repo_catalog` e revisão `v1`, conforme a governança da E21.1.
+- Fonte de configuração efetiva: `lib/openai-workloads/registry.ts`, com `configurationSource: repo_catalog` e revisão `v2`, conforme a governança da E21.1.
 - Fonte operacional: `docs/platform-config.md`.
 - Variáveis legadas de modelo não são fonte runtime atual; seu estado operacional permanece exclusivamente em `docs/platform-config.md`.
 
