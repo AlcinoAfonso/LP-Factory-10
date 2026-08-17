@@ -7,13 +7,14 @@
 - Status: rascunho vivo do futuro plano-base v1; ainda não consolidado nem executável.
 - Recorte: `E19.4 — Geração e materialização da landing page em draft`.
 - Path canônico: `docs/lousa-plano-base-e19-4.md`.
-- Processo: `docs/prompt-estrategista.md` v29.
+- Processo: `docs/prompt-estrategista.md` v31.
 - Plano conceitual: `docs/lp-planejamento.md`.
-- Base de abertura do PR #731: `main` após o merge do PR #729, commit `40baacbc516a80c2600408a9be63bfa33793ca85`.
+- Base histórica de abertura do PR #731: `main` após o merge do PR #729, commit `40baacbc516a80c2600408a9be63bfa33793ca85`.
+- Atualização do debate: 16/08/2026, já sobre a `main` posterior ao merge do PR #757.
 - O plano-base v2 anterior permanece somente no histórico Git como desenho superado dependente do contrato E19.3 `partA + partB`.
 - Decisão humana de 14/08/2026: o Cenário E é a única direção ativa para a primeira geração real; o Cenário D deixa de ser alternativa em desenvolvimento ou comparação obrigatória.
 - A branch `strategy/e19-4-cenario-d` conserva apenas o nome histórico de abertura do PR #731.
-- A arquitetura lógica útil da E19.3 permanece `identities + modelContext + serverContext`; sua reformulação pertence a `docs/lousa-plano-base-e19-3.md`.
+- A E19.3 do Cenário E foi concluída no contrato v3 e mergeada pelo PR #757; a E19.4 consome `identities + modelContext + serverContext` como boundary já provado.
 - A Preparação do taxon foi separada em dois recortes próprios anteriores à E19.3; a E19.4 apenas exige taxon previamente preparado e pacote E19.3 válido.
 - Nenhuma implementação da nova E19.4 foi iniciada neste debate.
 
@@ -37,10 +38,12 @@
 - A IA pode decidir quantidade de seções, sequência, função narrativa, copy, CTA textual, omissões, repetições legítimas e layout entre opções suportadas pelo contrato estrutural.
 - O sistema permanece responsável por autorização, fatos e evidências disponíveis, tipos estruturais, limites absolutos, bindings, destinos, consentimento, credenciais, segurança tenant-aware, schema, materialização, snapshot, versões e renderer.
 - A IA não gera HTML, CSS, React, JavaScript, scripts, componentes desconhecidos, credenciais, webhooks ou estruturas fora do contrato suportado.
-- Header e Footer pertencem ao contrato da primeira LP real.
+- Header e Footer pertencem ao mesmo contrato estrutural da candidata; não haverá shell estrutural paralelo.
 - A E19.4 deve usar uma única fonte canônica de estrutura, da qual sejam derivadas as projeções necessárias para Structured Output, validação, materialização e renderer.
+- A simplicidade do MVP limita a amplitude do repertório, não a qualidade visual: o primeiro repertório deve ser curado e pequeno o suficiente para ser confiável, mas bom o suficiente para produzir LP competitiva e capaz de encantar mesmo no plano inicial.
 - O prompt de runtime será tratado como código versionado da feature, separado do contexto dinâmico validado da E19.3.
-- Alterações de prompt, modelo ou `reasoning.effort` serão avaliadas com casos representativos e critérios estáveis; a combinação final permanece em aberto conforme `docs/openai-model-snapshot.md`.
+- Baseline humano inicial para a primeira prova: `gpt-5.6-luna` com `reasoning.effort=max`, via Responses API e Structured Outputs; essa combinação é ponto de partida deliberado para medir qualidade e custo, não combinação declarada vencedora.
+- Programmatic Tool Calling, persisted reasoning, prompt caching avançado, Agents SDK e multi-agent permanecem capacidades futuras condicionais e não entram automaticamente neste recorte.
 - O prompt seguirá abordagem `outcome-first`, sem pedir cadeia de raciocínio privada.
 - A fase geracional terá participação de IA; a categoria final deve ser reconciliada com o Gestor de Automação antes da consolidação da v1.
 
@@ -67,24 +70,45 @@
 
 ### 1.5. Questões ainda abertas e não decididas
 
-- Se a geração ocorre em uma única chamada que planeja e escreve a LP ou em mais de uma etapa/chamada controlada, sem transformar o fluxo em agente.
-- Qual é o menor conjunto de primitivas, layouts, cardinalidades e interações necessário para materializar e renderizar a primeira LP real sem HTML/CSS/JS livre.
+- Se a primeira geração será fixada em uma única chamada por tentativa que planeja e escreve a LP ou se surgirá risco concreto que justifique mais de uma etapa/chamada controlada, sem transformar o fluxo em agente.
+- Qual é o menor repertório de primitivas, layouts, cardinalidades e interações que oferece liberdade de composição suficiente e qualidade visual competitiva para a primeira LP real.
+- Como a imagem entra na primeira autoridade estrutural, incluindo layouts admitidos e referência a asset autorizado, sem antecipar pipeline novo de geração/aquisição de mídia.
 - Se algum metadata mínimo e seguro derivado de `identities` ou `serverContext` precisa ser projetado ao modelo para decisão estrutural.
 - Como representar no Structured Output planejamento narrativo e conteúdo final sem criar segundo DTO de domínio ou registry paralelo ao renderer.
 - Quais referências de pesquisa/fatos a candidata deve devolver para permitir validação sem exigir provenance cognitiva ou cadeia de raciocínio.
 - Quais claims podem ser validados objetivamente, quais dependem de evidência concreta e quais só podem ser avaliados humanamente.
-- Qual combinação `modelo + reasoning effort` cumpre os gates com menor complexidade, custo e latência.
+- Quais métricas e casos representativos permitirão comparar posteriormente qualidade, custo, latência e consumo do baseline `gpt-5.6-luna + max` com outras combinações.
 - Como adaptar o snapshot da materialização para registrar workload e contexto efetivamente exposto sem armazenar raciocínio privado.
-- Qual superfície real disponibilizará o preview privado da primeira LP.
+- Se a rota histórica privada de preview será reutilizada sem mudança material de contrato.
 - Quais critérios objetivos e humanos definirão que a primeira LP é funcional e suficientemente avaliável para encerrar a E19.4.
+- Qual parte da futura diferenciação de capacidades por plano precisa apenas ser preservada como direção de produto, sem virar escopo da primeira materialização.
 
 ### 1.6. Direção aprovada — E → E19.5 Light → iterações
 
 - Prosseguir somente com o Cenário E até existir E19.4 funcional ponta a ponta: taxon preparado + LP concreta configurada → E19.3 válida → geração por IA → candidata estruturada → validação → materialização → renderer → preview privado.
 - Não implementar E19.4 D antes de E e não manter D como comparação obrigatória.
-- Antes da E19.4, concluir a E19.3 do Cenário E e sua prova read-only; não criar camada de inteligência intermediária.
+- A E19.3 do Cenário E já foi concluída e provada; a E19.4 deve consumir seu contrato v3 sem reabrir inteligência intermediária.
 - Após a E19.4 funcional, E19.5 Light deverá permitir novos `drafts` independentes E1/E2/E3, sem overwrite e sem conhecer a representação interna da pesquisa.
 - O contrato detalhado da E19.5 Light pertence ao documento e ao debate próprios.
+
+### 1.7. Matriz do debate — decisões, hipóteses e preservação de substância
+
+| Tema | Registro do debate | Estado | Aplicação neste recorte | Destino / preservação |
+|---|---|---|---|---|
+| Autoridade estrutural única | Header, Footer, seções, layouts, campos e interações pertencem à mesma autoridade; Structured Output, validator, materialização e renderer derivam dela. | Decisão aceita | Sim | Fechar contrato mínimo na v1/v2 sem segunda fonte paralela. |
+| Renderer × capacidade autorizada | O renderer transforma o estado estruturado em página visual; o “cardápio” de estruturas permitidas pertence à capacidade estrutural/autorização de produto, não a regra comercial escondida dentro do renderer. | Direção convergente | Sim, como separação de responsabilidades | Não criar lógica comercial duplicada no renderer. |
+| Qualidade do plano inicial | Plano inicial pode ter repertório menor, mas não qualidade visual inferior; poucas opções devem ser excelentes. | Decisão humana de produto | Sim | Usar como critério do primeiro repertório e do gate visual humano. |
+| Capacidade disponível ≠ composição usada | A autoridade pode oferecer mais estruturas/layouts do que a IA utiliza em uma LP; a IA escolhe apenas o subconjunto necessário à narrativa. | Direção convergente | Sim | Não obrigar uso de todas as capacidades disponíveis. |
+| Imagem na primeira LP | Uma LP real competitiva não deve ficar limitada por ausência artificial de imagem; imagem deve ser admitida pela primeira autoridade estrutural. | Direção forte do debate; contrato exato aberto | Sim | Fechar suporte mínimo a imagem antes da v1; não confundir com geração automática de imagem. |
+| Uma chamada OpenAI | Menor desenho proposto: uma chamada por tentativa para estrutura + narrativa + copy, seguida de validação determinística. | Estrategista + Analista convergentes; decisão humana final ainda pendente | Pretendido | Duas chamadas só retornam se caso representativo demonstrar deficiência concreta. |
+| Baseline de IA | `gpt-5.6-luna + reasoning.effort=max`, Responses API e Structured Outputs como ponto inicial deliberado. | Decisão humana | Sim | Medir qualidade, custo, tokens/reasoning tokens e latência; não tratar como combinação vencedora definitiva. |
+| Claims e factualidade | Validar deterministicamente apenas o comprovável; proibir no prompt claims sem suporte e usar gate humano quando linguagem livre não puder ser provada por regra confiável. | Direção convergente | Sim | Não criar segunda engine semântica para fiscalizar toda frase. |
+| Materialização | Candidata validada deve ser congelada para reprodução fiel; artefato SQL existente deve ser reutilizado se continuar adequado. | Fonte real existente; fechamento técnico pendente | Sim | Verificar contrato mínimo antes de qualquer proposta nova de banco. |
+| Preview privado | A rota histórica tenant-aware/read-only é candidata natural a ser reutilizada sobre o novo contrato. | Direção convergente; confirmação técnica pendente | Sim | Não inventar rota nova sem gap real. |
+| Repertório por plano | Planos futuros podem autorizar repertórios diferentes; plano superior pode oferecer mais layouts, seções e interações sem obrigar a IA a usá-los todos. | Direção de produto nova | Não como matriz comercial completa | Preservar em 4.4 para recorte futuro; não fixar agora quantidades como 8/12 nem nomes comerciais sem fonte canônica. |
+| Cliente substituir/adicionar seções | Futuramente, o cliente pode receber um cardápio de capacidades permitidas pelo plano para substituir ou acrescentar seções à composição inicial. | Oportunidade de produto | Não | Preservar em 4.4; não atribuir automaticamente à E19.5 nem criar editor neste recorte. |
+| Admin Dashboard | `/admin/estrutura-lp` é a superfície natural para o humano enxergar a capacidade real por plano, sempre como projeção read-only da autoridade estrutural. | Direção de produto suportada por superfície existente | Não é gate da primeira LP | Preservar em 4.4; não criar segundo dashboard nem segunda fonte de verdade. |
+| Capacidades avançadas GPT-5.6 | Programmatic Tool Calling, persisted reasoning, prompt caching avançado, Agents SDK e multi-agent podem ser avaliados se surgirem necessidades concretas. | Oportunidade estratégica condicional | Não | Preservar em 4.4; adoção futura exige evidência e recorte próprio quando material. |
 
 ## 2. Contrato do caso
 
@@ -134,7 +158,7 @@
 
 - Autorizar ator, conta, membership e entitlement.
 - Resolver e entregar o pacote E19.3 sem consulta direta do modelo às fontes internas.
-- Definir o menor contrato estrutural finito e derivar dele projeções para IA, validator, materialização e renderer.
+- Definir contrato estrutural finito, curado e competitivo e derivar dele projeções para IA, validator, materialização e renderer.
 - Manter valores brutos de `serverContext` fora da matéria-prima textual e usá-los deterministicamente.
 - Resolver bindings, consentimento, credenciais e referências técnicas.
 - Validar schema, tipos, cardinalidades, limites, identidades, componentes e propriedades suportadas.
@@ -145,23 +169,28 @@
 ### 2.4. Prompt e workflow de geração
 
 - O runtime E19.4 é o workflow; o prompt é o contrato de inteligência da etapa geracional.
-- O prompt será derivado de `docs/template-prompts.md` e complementado por `docs/template-prompts-gpt-5-6.md` se GPT-5.6 for aprovado.
+- O prompt será derivado de `docs/template-prompts.md` e complementado por `docs/template-prompts-gpt-5-6.md`.
 - O prompt de produção será versionado como código próximo da feature consumidora, sem engine genérica de prompts.
 - Instruções estáveis permanecem separadas do contexto dinâmico validado.
 - O prompt declarará resultado, contexto autorizado, critérios de sucesso, limites, formato de saída, parada e validação pertinente, sem cadeia de raciocínio privada.
-- Structured Output será usado quando o consumidor exigir contrato determinístico; validator e regras de negócio permanecem no código.
-- Casos representativos estáveis permitirão comparar prompt, modelo e `reasoning.effort`.
-- Endpoint, número de chamadas, tokens, timeout, retry e tools permanecem questões do workload real.
+- A primeira prova usa Responses API, Structured Outputs e o baseline `gpt-5.6-luna + reasoning.effort=max`.
+- Validator e regras de negócio permanecem no código; Structured Output não substitui validação de domínio.
+- Casos representativos estáveis permitirão comparar prompt, modelo e `reasoning.effort` após existir baseline real.
+- A hipótese operacional inicial é uma chamada por tentativa; a decisão final permanece aberta até o fechamento humano desta matriz.
+- Tokens, timeout e retry permanecem detalhes do workload a fechar na v2 sem bloquear artificialmente a v1 quando não houver risco de retrabalho.
+- Programmatic Tool Calling, persisted reasoning, prompt caching avançado, Agents SDK, multi-agent e tools externas não entram na primeira implementação sem necessidade demonstrada.
 
 ### 2.5. Fonte estrutural canônica e projeções derivadas
 
 - A E19.4 possuirá uma única fonte canônica de estrutura, finita e versionada, para controlar a forma da candidata.
-- A primeira versão conterá somente primitivas, layouts, fields, cardinalidades e interações necessárias à primeira LP real.
-- Novas capacidades entram apenas quando caso concreto demonstrar necessidade.
+- A primeira versão deve ser pequena e curada, mas oferecer repertório suficiente para escolha real da IA e qualidade visual competitiva; simplicidade limita amplitude, não acabamento.
+- A capacidade disponível não precisa ser usada integralmente em cada LP; a IA escolhe apenas estruturas e layouts que cumpram função na narrativa concreta.
 - Structured Output, validação, estado materializado e renderer serão projeções derivadas dessa mesma autoridade estrutural.
 - A IA pode escolher somente estruturas/layouts pertencentes à fonte vigente.
 - Header e Footer devem ser representáveis no mesmo contrato.
+- A primeira autoridade estrutural deve admitir uso de imagem; o contrato exato de asset/layout será fechado sem criar automaticamente pipeline novo de geração de mídia.
 - O contrato não aceita HTML/CSS/JS livre nem componente desconhecido.
+- A diferenciação comercial completa de repertórios por plano e a edição posterior pelo cliente permanecem fora deste recorte, preservadas em 4.4.
 
 ### 2.6. Jornada persuasiva
 
@@ -179,6 +208,9 @@
 - Ausência de evidência permanece ausência.
 - Claims de resultado, garantia, escassez, credencial verificada, prova social ou comparação objetiva só entram com suporte real autorizado.
 - Pesquisa pode fornecer fatos externos legítimos e atuais, preservando fontes, limitações e natureza.
+- Estrutura, bindings, versões, cardinalidades, referências e evidências explicitamente estruturadas podem ser validadas deterministicamente.
+- Claims contraditórios com fatos autorizados devem ser bloqueados quando a contradição for objetivamente comprovável.
+- Claims em linguagem livre sem mecanismo determinístico confiável de prova devem ser proibidos pelo prompt e avaliados no gate humano; não criar segunda engine semântica somente para fiscalizar copy.
 - A forma de referenciar pesquisa/fatos na candidata permanece aberta, sem exigir cadeia de raciocínio.
 - Factualidade e qualidade narrativa não dependem da antiga representação atomizada.
 
@@ -189,6 +221,7 @@
 - O snapshot preserva somente o necessário para auditar/reproduzir a geração: identidades, versões, configuração do workload e contexto exposto, sem raciocínio privado.
 - O renderer consome projeção derivada da mesma fonte estrutural canônica usada pelo Structured Output e validator.
 - Aparência, Header, Footer, seções, layouts e conteúdo são reproduzidos deterministicamente a partir do estado congelado.
+- O renderer executa a composição autorizada; não deve virar segunda fonte de regras comerciais por plano.
 - Versão/shape exatos da materialização permanecem abertos até a inspeção do contrato mínimo.
 
 ## 3. Fases e próxima ação
@@ -204,14 +237,18 @@
   - E19.3 do Cenário E implementada e aprovada em prova read-only;
   - configuração E19.2 completa conforme E20.2.
 - Questões indispensáveis ainda abertas:
-  - contrato estrutural mínimo e projeções;
+  - contrato estrutural mínimo, repertório visual e projeções;
+  - suporte mínimo a imagem dentro do contrato estrutural;
   - prompt canônico;
-  - número de chamadas/etapas;
-  - `modelo + reasoning effort`;
+  - decisão final de uma chamada por tentativa;
   - Structured Output/schema;
   - factualidade/evidência;
   - casos representativos;
   - critérios de aceite da candidata.
+- Baseline já decidido:
+  - `gpt-5.6-luna + reasoning.effort=max`;
+  - Responses API;
+  - Structured Outputs.
 
 ### 3.2. E19.4.4 — Materialização inicial e snapshot imutável
 
@@ -232,7 +269,7 @@
 - Objetivo:
   - renderizar privadamente a primeira LP materializada e produzir evidência humana suficiente para avaliar estrutura, narrativa, copy, factualidade, clareza comercial, acessibilidade e qualidade visual.
 - Questões indispensáveis ainda abertas:
-  - superfície/path real do preview privado;
+  - confirmação da reutilização da superfície/path histórico de preview privado;
   - contrato do renderer;
   - critérios visuais/responsivos finais;
   - checklist humano;
@@ -241,11 +278,12 @@
 ### 3.4. Próxima ação do debate
 
 - A Preparação do taxon está delegada aos dois recortes próprios e não é detalhada neste plano.
-- O próximo passo material anterior à E19.4 é concluir e provar a E19.3 do Cenário E.
-- Depois da prova E19.3, retornar diretamente aos Gates internos da E19.4: prompt/workflow, contrato estrutural mínimo, factualidade/evidência, modelo/effort, materialização/snapshot, renderer e avaliação humana.
+- A E19.3 do Cenário E já foi concluída e mergeada pelo PR #757; não é mais Gate anterior deste debate.
+- Fechar com humano e Analista somente as linhas ainda indispensáveis da matriz 1.7, principalmente repertório estrutural, imagem, número de chamadas, claims e critérios de aceite.
+- Consultar o Gestor de Automação antes da consolidação da v1 para classificar formalmente a fase E19.4.3 e submeter a categoria ao humano.
 - Quando a LP gerada não atingir qualidade desejada, diagnosticar nesta ordem: E19.4; pesquisa; E20.2 quando surgir dado factual necessário não previsto; E19.3 somente diante de gap real de autorização, identidade, separação ou transporte.
 - Não atualizar `docs/roadmap.md` enquanto este arquivo permanecer rascunho vivo.
-- Não iniciar implementação da E19.4 antes da prova E19.3 e da consolidação da v1 deste plano.
+- Não iniciar implementação da E19.4 antes da consolidação da v1 deste plano.
 
 ## 4. Escopo negativo e critérios de parada
 
@@ -257,13 +295,17 @@
 - tracking, analytics, CRM, Ads, A/B test e engine de experimentos;
 - detalhamento/implementação da E19.5 Light dentro deste recorte;
 - editor visual, edição manual ampla, histórico e rollback;
+- personalização pós-geração pelo cliente para substituir, acrescentar ou remover seções;
+- matriz comercial completa de capacidades estruturais por plano;
+- nova superfície administrativa exclusiva para capacidades do renderer;
 - implementação E19.4 D ou comparação D × E como requisito;
 - consulta direta da IA às fontes internas do projeto fora do pacote E19.3;
 - reintrodução de E18.5, E20.3 ou E10.8 como gate da geração;
 - camada intermediária de resumo, atomização ou seleção semântica;
 - HTML, CSS, React, JavaScript, scripts ou componentes arbitrários gerados pela IA;
 - catálogo estrutural amplo antecipado ou reconstrução da antiga E18.5;
-- Agents SDK, multi-agent, job, fila, cron, webhook, browsing ou tools externas sem necessidade real;
+- geração/aquisição automática de imagens ou novo pipeline de mídia sem gap real demonstrado;
+- Programmatic Tool Calling, persisted reasoning, prompt caching avançado, Agents SDK, multi-agent, job, fila, cron, webhook, browsing ou tools externas sem necessidade real;
 - nova tabela, serviço, engine ou infraestrutura sem gap real demonstrado;
 - perfil persistido novo de público/persona/estratégia apenas para facilitar prompt.
 
@@ -289,3 +331,16 @@
   - puder ser avaliada humanamente como landing page real quanto a narrativa, copy, estrutura, responsividade, acessibilidade e qualidade visual.
 - A conclusão funcional não exige estabilização editorial completa de prompt, modelo, effort, narrativa ou visual; iterações poderão continuar após a E19.5 Light por novos drafts preservados.
 - Este critério permanece provisório enquanto o rascunho não virar plano-base v1.
+
+### 4.4. Substância preservada para recortes futuros
+
+- A capacidade estrutural pode evoluir como repertório autorizado por plano: planos superiores podem oferecer mais tipos de seção, variantes, layouts e interações sem tornar a qualidade visual do plano inicial inferior.
+- A quantidade de capacidades disponíveis em um plano não define a quantidade de seções usadas em cada LP; a IA pode escolher um subconjunto conforme a narrativa. Exemplos numéricos discutidos como “12 disponíveis / 8 usadas” são ilustrativos e não constituem contrato comercial.
+- Uma experiência futura pode permitir que o cliente substitua uma ou mais seções, acrescente ou remova seções e escolha variantes dentro do repertório autorizado pelo plano; isso exige recorte próprio e não deve ser atribuído automaticamente à E19.5 Light.
+- A diferenciação comercial por plano deve permanecer separada do renderer: uma autoridade de produto autoriza o repertório; a E19.4 escolhe a composição; o renderer executa a estrutura resultante.
+- O Admin Dashboard existente em `/admin/estrutura-lp` é o destino natural para uma projeção read-only das capacidades reais por plano, inclusive módulos/estruturas, variantes, layouts, interações e eventualmente exemplos visuais; o Admin não deve manter cópia manual ou segunda fonte de verdade.
+- Não há decisão de criar dashboard novo: qualquer visualização administrativa futura deve preferir a superfície existente e derivar da mesma autoridade estrutural canônica.
+- O repertório futuro de planos Pro/Ultra pode incorporar capacidades mais ricas — galerias, vídeo, comparadores, componentes interativos, animações ou outras experiências — somente quando houver caso real e contrato suportado pelo renderer.
+- O suporte a imagem na primeira E19.4 não implica, por si, geração automática de imagens, busca externa de mídia ou novo pipeline de assets; essas capacidades permanecem separadas até necessidade demonstrada.
+- A escolha de GPT-5.6 + Responses API preserva possibilidade futura de avaliar Programmatic Tool Calling, persisted reasoning, prompt caching avançado, Agents SDK e multi-agent; nenhuma dessas capacidades está autorizada para implementação neste recorte apenas por ser tecnicamente disponível.
+- Quando a v1 for consolidada, esta subseção deve preservar somente oportunidades relevantes ainda sem recorte próprio, evitando transformar possibilidades futuras em requisitos executáveis da E19.4.
