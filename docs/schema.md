@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data da última atualização: 15/08/2026
-• Documento: LP Factory 10 — Schema (DB Contract) v1.0.42
+• Data da última atualização: 17/08/2026
+• Documento: LP Factory 10 — Schema (DB Contract) v1.0.43
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -860,7 +860,7 @@
 1.27.1 Função e estado
 • Agregado interno 1:1 e write-once da materialização inicial de uma landing page em `draft`.
 • Conteúdo renderizável e snapshot geracional são inseridos atomicamente; não há estado parcial válido.
-• A migration está implementada no repositório e aguarda o fluxo de apply pós-merge; a projeção runtime permanece fail-closed até a aplicação integral.
+• A migration está aplicada no ambiente hospedado; a projeção runtime permanece fail-closed diante de ausência ou incompatibilidade do contrato.
 
 1.27.2 Colunas
 • landing_page_id uuid primary key
@@ -1147,6 +1147,8 @@
 • Rollback: não remove automaticamente a extensão, pois pode ser reutilizada por outros recursos
 
 99. Changelog
+v1.0.43 (17/08/2026) — E19.4.4: corrigido o estado factual de `account_landing_page_materializations` para registrar que a migration já está aplicada no ambiente hospedado, preservando o contrato 1:1 write-once, conteúdo e snapshot atômicos e ausência de UPDATE/DELETE para `service_role`.
+
 v1.0.40 (11/08/2026) — E19.4.4: registrado o agregado repo-only `account_landing_page_materializations`, sua materialização 1:1 write-once, conteúdo e snapshot atômicos, projeção runtime estrita, RLS sem policies e acesso exclusivo SELECT/INSERT por `service_role`; apply hospedado permanece pós-merge.
 
 v1.0.38 (08/08/2026) — E19.2: registrado o agregado `account_landing_page_onboarding_configurations`, a unicidade composta de `account_landing_pages` usada pelo FK tenant-safe, os checks, RLS, grants mínimos, triggers de atualização/write-once e a ausência de persistência prematura na tabela de LP.
