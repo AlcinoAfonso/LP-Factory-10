@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 18/08/2026
-• Versão: v1.5.160
+• Versão: v1.5.161
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2243,7 +2243,7 @@ Repositório — Ajustados
 
 19. E19 — LP Builder
 - Objetivo: Consolidar o fluxo Core de landing pages por conta, da identidade mínima em `draft` às futuras etapas de geração, revisão, materialização e publicação, sempre por recortes aprovados.
-- Status: E19.1, E19.2 e E19.3 concluídas. E19.4.3 e E19.4.4 concluídas, integradas à `main` e aprovadas nos gates hospedados, com dois appends válidos, persistência 1:N, Storage privado e verificador SQL aprovados. A E19.4.5 permanece não iniciada e é o próximo recorte autorizado após esta reconciliação documental. A E19.5 permanece pausada.
+- Status: E19.1, E19.2 e E19.3 concluídas. E19.4.3 e E19.4.4 concluídas, integradas à `main` e aprovadas nos gates hospedados, com dois appends válidos, persistência 1:N, Storage privado e verificador SQL aprovados. A E19.4.5 está concluída e aprovada como primeira prova real no PR B #776, pendente de avaliação externa e merge humano. A E19.5 permanece pausada.
 
 19.1 Criação produtiva mínima de LP por conta
 
@@ -2436,7 +2436,7 @@ Repositório — Ajustados
 
 19.4.1 Objetivo e status
 - Objetivo: gerar, validar, materializar e visualizar privadamente a primeira LP real em `draft` a partir do pacote v3 da E19.3, com revisões append-only, mídia privada estável e prova humana.
-- Status: E19.4.3 e E19.4.4 concluídas e aprovadas no ambiente hospedado em 18/08/2026. O PR B da E19.4.5 não foi iniciado e poderá ser retomado após a atualização desta autoridade documental.
+- Status: E19.4.3, E19.4.4 e E19.4.5 concluídas e aprovadas em 18/08/2026. A primeira prova real confirmou o pipeline e o Preview; os gaps persuasivos da revisão 3 permanecem registrados como baseline de calibração futura, sem iniciar E19.5.
 
 19.4.2 Registros do recorte
 - Banco:
@@ -2448,30 +2448,38 @@ Repositório — Ajustados
 - Repositório:
   - Criados:
     - `app/a/[account]/landing-pages/[landingPageId]/preview/`
+    - `app/a/[account]/landing-pages/[landingPageId]/preview/loading.tsx`
+    - `components/lp-builder/LandingPageRenderer.tsx`
     - `lib/conversion-content/landing-page/presentation/`
     - `lib/lp-builder/adapters/landingPageDraftCandidateWorkflowAdapter.ts`
     - `lib/lp-builder/adapters/landingPageDraftGenerationAdapter.ts`
     - `lib/lp-builder/adapters/landingPageDraftImageGenerationAdapter.ts`
+    - `lib/lp-builder/adapters/landingPageDraftAdapter.ts`
+    - `lib/lp-builder/adapters/landingPagePreviewAdapter.ts`
     - `lib/lp-builder/adapters/landingPageRevisionAdapter.ts`
     - `lib/lp-builder/adapters/landingPageRevisionReadinessAdapter.ts`
     - `lib/lp-builder/adapters/landingPageRevisionStorageAdapter.ts`
     - `lib/lp-builder/adapters/landingPageRevisionWorkflowAdapter.ts`
     - `lib/lp-builder/landing-page-draft-generation-validation-cases.ts`
+    - `lib/lp-builder/landing-page-preview-validation-cases.tsx`
     - `lib/lp-builder/landingPageDraftCandidateWorkflow.ts`
     - `lib/lp-builder/landingPageDraftGeneration.ts`
     - `lib/lp-builder/landingPageDraftImageGeneration.ts`
     - `lib/lp-builder/landingPageDraftWorkflow.ts`
+    - `lib/lp-builder/landingPagePreview.ts`
     - `lib/lp-builder/landingPageRevision.ts`
     - `lib/lp-builder/landingPageRevisionWorkflow.ts`
     - `supabase/migrations/20260817180000_e19_4_4_landing_page_revisions.sql`
     - `supabase/snippets/e19_4_4_landing_page_materializations_verify.sql`
     - `supabase/tests/e19_4_4_landing_page_materializations.test.sql`
   - Ajustados:
+    - `app/a/[account]/landing-pages/[landingPageId]/preview/page.tsx`
     - `app/admin/(protected)/workloads-openai/page.tsx`
     - `lib/conversion-content/landing-page/generation-profile/validation-cases.ts`
     - `lib/conversion-content/landing-page/index.ts`
     - `lib/conversion-content/landing-page/taxon-preparation/validation-cases.ts`
     - `lib/lp-builder/adapters/generationContextAdapterCore.ts`
+    - `lib/lp-builder/adapters/generationContextAdapter.ts`
     - `lib/lp-builder/generation-context-validation-cases.ts`
     - `lib/lp-builder/index.ts`
     - `lib/openai-workloads/`
@@ -2483,6 +2491,10 @@ Repositório — Ajustados
     - `supa#40`
     - `supa#47`
     - `prod#6`
+  - Aplicados na E19.4.5:
+    - `prod#14`
+    - `prod#16`
+    - `prod#17`
 - Referências:
   - Plano-base aprovado: `docs/lousa-plano-base-e19-4.md`.
   - Matriz auditada: `docs/matriz-consolidacao-e19-4.md`.
@@ -2521,19 +2533,20 @@ Repositório — Ajustados
   - RLS permanece habilitada, sem policies diretas; `service_role` possui leitura e execução do RPC, mas não escrita direta, e `anon` e `authenticated` não executam o append;
   - o bucket `landing-page-revision-assets` é privado, aceita WebP conforme o limite aprovado e não possui policy pública ou autenticada;
   - os dois novos snapshots referenciam dois paths canônicos distintos, não-URL, e os dois objetos correspondentes existem no Storage;
-  - a revisão corrente é a revisão 3;
-  - nenhum PR da E19.4.5 foi iniciado.
+  - a revisão corrente é a revisão 3.
 
 19.4.5 Visualização privada e prova humana da primeira LP real
-- Status: plano aprovado; implementação ainda não iniciada. A retomada em PR B é o próximo passo autorizado após a reconciliação documental que registra a conclusão dos gates hospedados da E19.4.4.
+- Status: concluída e aprovada como primeira prova real do pipeline e do Preview em 18/08/2026; entrega publicada no PR B #776 e pendente somente de avaliação externa e merge humano.
 - Automações: não.
 - Conteúdo:
-  - evoluir a shell já implantada na rota confirmada com loader autorizado, read model da revisão corrente, signed URL server-side e renderer puro/read-only sem Supabase, `DBRow`, autenticação ou provider;
-  - renderizar somente o DTO/snapshot persistido, sem reler E19.3 ou qualquer fonte mutável;
-  - suportar desde 320 px e provar 360, 768 e 1280 px, com 1440 opcional; validar overflow, teclado, foco, headings, labels, contraste aplicável, toque, mídia, CTA, estados de erro e console;
-  - produzir a primeira LP real `Primeiro imóvel no Rio` após readiness de banco, Storage, workloads e Function;
-  - registrar no PR `revisionId`, `revisionNumber`, `attemptId`, versões/configurações, rubrica humana de seis dimensões e gates binários de factualidade, segurança e funcionamento;
-  - manter publicação, E19.5, editor, histórico visual, DAM, formulário, tracking, analytics, CRM, agente e filas fora do recorte.
+  - a rota privada reutilizada carrega a revisão corrente sob nova validação de ator, conta, membership, entitlement, LP em `draft` e tenant da revisão, com estados fail-closed para indisponibilidade, acesso negado e conteúdo inválido;
+  - o read model usa allowlist explícita do conteúdo e snapshot persistidos, recebe URL assinada server-side com TTL de 300 segundos e não expõe `DBRow`, contexto de pesquisa, valores operacionais, bucket, path, autenticação ou provider;
+  - o renderer é puro, read-only e cobre as oito variantes do contrato v1 sem reler E19.3, chamar Supabase, provider ou qualquer fonte mutável;
+  - a prova hospedada da revisão corrente 3 (`revisionId ab332478-c504-425a-a6bc-993d31142449`, `attemptId dec1251f-297e-418a-93b5-e2722f773dcd`) confirmou imagem privada, CTA WhatsApp, ausência de overflow em 360, 768 e 1280 px, console limpo, estados de erro, foco/teclado, contraste e isolamento tenant-safe;
+  - no veredito humano, adequação público/oferta foi aprovada; imagem foi aprovada com ressalva de genericidade; CTA foi aprovado funcionalmente; jornada persuasiva, especificidade da copy e variação visual receberam ajuste necessário como aprendizado da prova, não como defeito técnico obrigatório do renderer;
+  - factualidade, segurança e funcionamento foram aprovados nos três gates binários;
+  - a E19.4.5 está aprovada como primeira prova real, mas a qualidade persuasiva da revisão 3 não é registrada genericamente como aprovada; repetição conceitual, linguagem genérica, baixa progressão de convicção e sensação de template permanecem baseline de calibração futura;
+  - não houve revisão 4 nem ajuste ad hoc do renderer; publicação, E19.5, calibração persuasiva, editor, histórico visual, DAM, formulário, tracking, analytics, CRM, agente e filas permanecem fora do recorte.
 
 20. E20 — Preparação e liberação de taxons para geração de landing pages
 
