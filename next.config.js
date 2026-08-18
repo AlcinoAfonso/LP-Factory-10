@@ -5,6 +5,9 @@ const nextConfig = {
     '/admin/taxonomia/[taxonId]': [
       './docs/pesquisas-brutas/**/end_customer/v*.md',
     ],
+    '/a/[account]/landing-pages/[landingPageId]/preview': [
+      './docs/pesquisas-brutas/**/end_customer/v*.md',
+    ],
     '/admin/documentacao': [
       './docs/roadmap.md',
       './docs/base-tecnica.md',

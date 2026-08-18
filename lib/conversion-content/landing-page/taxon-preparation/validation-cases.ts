@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { createRequire } from "node:module";
 
 import type {
   EndCustomerResearchErrorCode,
@@ -44,6 +45,7 @@ const VALID_INPUT: LoadEndCustomerResearchCandidateInput = {
   taxon: { slug: "corretor-imoveis", isActive: true },
   researchVersion: 1,
 };
+const requireFromValidation = createRequire(import.meta.url);
 
 type ValidationCase = Readonly<{
   name: string;
@@ -51,6 +53,27 @@ type ValidationCase = Readonly<{
 }>;
 
 const cases: readonly ValidationCase[] = [
+  {
+    name: "research files remain traced for both hosted consumer routes",
+    run: async () => {
+      const nextConfig = requireFromValidation("../../../../next.config.js") as {
+        outputFileTracingIncludes?: Record<string, readonly string[]>;
+      };
+      const researchGlob = "./docs/pesquisas-brutas/**/end_customer/v*.md";
+
+      assert.deepEqual(
+        nextConfig.outputFileTracingIncludes?.["/admin/taxonomia/[taxonId]"],
+        [researchGlob],
+      );
+      assert.deepEqual(
+        nextConfig.outputFileTracingIncludes?.[
+          "/a/[account]/landing-pages/[landingPageId]/preview"
+        ],
+        [researchGlob],
+      );
+      assert.equal(nextConfig.outputFileTracingIncludes?.["/*"], undefined);
+    },
+  },
   {
     name: "input catalog review gate is fail-closed and accepts only literal true",
     run: async () => {
