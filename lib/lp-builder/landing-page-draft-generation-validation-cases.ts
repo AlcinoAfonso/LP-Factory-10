@@ -7,6 +7,9 @@ import {
   type LandingPagePresentationCandidate,
 } from "../conversion-content/landing-page/presentation";
 import {
+  projectLandingPagePresentationJsonSchemaForOpenAi,
+} from "../conversion-content/landing-page/presentation/authority";
+import {
   OPEN_AI_PROVIDER_ERROR_METADATA_MAX_LENGTH,
   type OpenAiImageWorkloadEvent,
   type OpenAiWorkloadEvent,
@@ -125,6 +128,7 @@ const cases = [
       assert.match(schema, /"additionalProperties":false/);
       assert.match(schema, /"required":\["contractVersion","sections"\]/);
       assert.doesNotMatch(schema, /"oneOf"/);
+      assertStrictRequiredObjects(providerSchema);
 
       const sections = schemaProperty(providerSchema, "sections");
       assert.equal(sections.minItems, 4);
@@ -155,6 +159,49 @@ const cases = [
         "cta",
         "footer",
       ]);
+
+      const generatedLikeSchema = schemaRecord(structuredClone(providerSchema));
+      const generatedLikeItems = schemaRecord(
+        schemaProperty(generatedLikeSchema, "sections").items,
+      );
+      generatedLikeItems.oneOf = generatedLikeItems.anyOf;
+      delete generatedLikeItems.anyOf;
+      assert.deepEqual(
+        projectLandingPagePresentationJsonSchemaForOpenAi(generatedLikeSchema),
+        providerSchema,
+      );
+
+      const unexpectedOneOf = structuredClone(generatedLikeSchema);
+      unexpectedOneOf.unexpected = {
+        oneOf: [{ type: "string" }, { type: "null" }],
+      };
+      assert.throws(
+        () =>
+          projectLandingPagePresentationJsonSchemaForOpenAi(unexpectedOneOf),
+        /requires oneOf only at/,
+      );
+
+      const missingBranch = structuredClone(generatedLikeSchema);
+      const missingBranchVariants = schemaRecord(
+        schemaProperty(missingBranch, "sections").items,
+      ).oneOf;
+      assert.ok(Array.isArray(missingBranchVariants));
+      missingBranchVariants.pop();
+      assert.throws(
+        () => projectLandingPagePresentationJsonSchemaForOpenAi(missingBranch),
+        /requires exactly 8 section branches/,
+      );
+
+      const duplicateKind = structuredClone(generatedLikeSchema);
+      const duplicateKindVariants = schemaRecord(
+        schemaProperty(duplicateKind, "sections").items,
+      ).oneOf;
+      assert.ok(Array.isArray(duplicateKindVariants));
+      schemaProperty(duplicateKindVariants[1], "kind").const = "header";
+      assert.throws(
+        () => projectLandingPagePresentationJsonSchemaForOpenAi(duplicateKind),
+        /require the 8 unique contract v1 kinds/,
+      );
 
       for (const [kind, field] of [
         ["header", "ctaLabel"],
@@ -1233,4 +1280,20 @@ function schemaRecord(value: unknown): Record<string, unknown> {
 function schemaProperty(schema: unknown, property: string) {
   const properties = schemaRecord(schemaRecord(schema).properties);
   return schemaRecord(properties[property]);
+}
+
+function assertStrictRequiredObjects(value: unknown): void {
+  if (Array.isArray(value)) {
+    value.forEach(assertStrictRequiredObjects);
+    return;
+  }
+  if (!value || typeof value !== "object") return;
+
+  const schema = value as Record<string, unknown>;
+  if (Object.hasOwn(schema, "properties")) {
+    const properties = schemaRecord(schema.properties);
+    assert.equal(schema.additionalProperties, false);
+    assert.deepEqual(schema.required, Object.keys(properties));
+  }
+  Object.values(schema).forEach(assertStrictRequiredObjects);
 }
