@@ -216,6 +216,10 @@ type OpenAiWorkloadEventBase = OpenAiWorkloadEventContext &
     promptVersion: string | null;
     contractVersion: number | null;
     responseId: string | null;
+    httpStatus: number | null;
+    providerRequestId: string | null;
+    providerErrorCode: string | null;
+    providerErrorType: string | null;
     latencyMs: number | null;
   }>;
 

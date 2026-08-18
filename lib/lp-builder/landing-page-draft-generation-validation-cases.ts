@@ -6,9 +6,10 @@ import {
   validateLandingPagePresentationCandidate,
   type LandingPagePresentationCandidate,
 } from "../conversion-content/landing-page/presentation";
-import type {
-  OpenAiImageWorkloadEvent,
-  OpenAiWorkloadEvent,
+import {
+  OPEN_AI_PROVIDER_ERROR_METADATA_MAX_LENGTH,
+  type OpenAiImageWorkloadEvent,
+  type OpenAiWorkloadEvent,
 } from "../openai-workloads";
 import type { LandingPageGenerationContextPackage } from "./generationContextContracts";
 import { prepareLandingPageDraftRevisionCandidate } from "./landingPageDraftCandidateWorkflow";
@@ -297,6 +298,94 @@ const cases = [
       assert.equal(events[0]?.requestId, "request-text-1");
       assert.equal(events[0]?.promptVersion, "e19.4-presentation-v2");
       assert.equal(events[0]?.contractVersion, 1);
+      assert.equal(events[0]?.httpStatus, null);
+      assert.equal(events[0]?.providerRequestId, null);
+      assert.equal(events[0]?.providerErrorCode, null);
+      assert.equal(events[0]?.providerErrorType, null);
+    },
+  },
+  {
+    name: "text HTTP failures emit only sanitized provider diagnostics without retry",
+    run: async () => {
+      const runFailure = async (response: Response) => {
+        let calls = 0;
+        const events: OpenAiWorkloadEvent[] = [];
+        const result = await generateLandingPageDraftCandidate(context, {
+          apiKey: "test-key",
+          fetchImpl: async () => {
+            calls += 1;
+            return response;
+          },
+          emitEvent: (event) => events.push(event),
+        });
+        assert.deepEqual(result, { ok: false, kind: "http_error" });
+        assert.equal(calls, 1);
+        assert.equal(events.length, 1);
+        assert.equal(events[0]?.result, "failure");
+        assert.equal(events[0]?.failureCategory, "http_error");
+        return events[0];
+      };
+
+      const http400 = await runFailure(
+        new Response(
+          JSON.stringify({
+            error: {
+              code: " invalid_request_error ",
+              type: " invalid_request_error ",
+              message: "provider-message-must-not-be-logged",
+            },
+            bodyMarker: "full-body-must-not-be-logged",
+          }),
+          {
+            status: 400,
+            headers: {
+              "Content-Type": "application/json",
+              "x-request-id": " req_http_400 ",
+            },
+          },
+        ),
+      );
+      assert.equal(http400?.httpStatus, 400);
+      assert.equal(http400?.providerRequestId, "req_http_400");
+      assert.equal(http400?.providerErrorCode, "invalid_request_error");
+      assert.equal(http400?.providerErrorType, "invalid_request_error");
+      const serialized400 = JSON.stringify(http400);
+      assert.equal(serialized400.includes("provider-message-must-not-be-logged"), false);
+      assert.equal(serialized400.includes("full-body-must-not-be-logged"), false);
+
+      const http429 = await runFailure(
+        new Response(
+          JSON.stringify({ error: { code: "rate_limit_exceeded", type: "requests" } }),
+          { status: 429, headers: { "Content-Type": "application/json" } },
+        ),
+      );
+      assert.equal(http429?.failureCategory, "http_error");
+      assert.equal(http429?.httpStatus, 429);
+
+      const http503 = await runFailure(
+        new Response("not-json", {
+          status: 503,
+          headers: { "x-request-id": "req_http_503" },
+        }),
+      );
+      assert.equal(http503?.httpStatus, 503);
+      assert.equal(http503?.providerRequestId, "req_http_503");
+      assert.equal(http503?.providerErrorCode, null);
+      assert.equal(http503?.providerErrorType, null);
+
+      const invalidMetadata = await runFailure(
+        new Response(
+          JSON.stringify({
+            error: {
+              code: 400,
+              type: "x".repeat(OPEN_AI_PROVIDER_ERROR_METADATA_MAX_LENGTH + 1),
+            },
+          }),
+          { status: 400, headers: { "Content-Type": "application/json" } },
+        ),
+      );
+      assert.equal(invalidMetadata?.providerErrorCode, null);
+      assert.equal(invalidMetadata?.providerErrorType, null);
     },
   },
   {

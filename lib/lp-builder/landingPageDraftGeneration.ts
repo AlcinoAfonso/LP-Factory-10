@@ -107,7 +107,13 @@ export async function generateLandingPageDraftCandidate(
     });
     const latencyMs = now() - startedAt;
     if (!response.ok) {
-      emitFailure(workload, "http_error", dependencies, { latencyMs });
+      const providerError = await readProviderErrorMetadata(response);
+      emitFailure(workload, "http_error", dependencies, {
+        latencyMs,
+        httpStatus: response.status,
+        providerRequestId: response.headers.get("x-request-id"),
+        ...providerError,
+      });
       return { ok: false, kind: "http_error" };
     }
 
@@ -257,7 +263,15 @@ function emitFailure(
   workload: Extract<ReturnType<typeof resolveOpenAiProductWorkload>, { ok: true }>["value"],
   category: OpenAiWorkloadFailureCategory,
   dependencies: Dependencies,
-  metadata: Readonly<{ responseId?: unknown; usage?: unknown; latencyMs?: unknown }> = {},
+  metadata: Readonly<{
+    responseId?: unknown;
+    usage?: unknown;
+    latencyMs?: unknown;
+    httpStatus?: unknown;
+    providerRequestId?: unknown;
+    providerErrorCode?: unknown;
+    providerErrorType?: unknown;
+  }> = {},
 ) {
   (dependencies.emitEvent ?? emitOpenAiWorkloadEvent)(
     createOpenAiWorkloadFailureEvent(
@@ -265,6 +279,26 @@ function emitFailure(
       category,
     ),
   );
+}
+
+async function readProviderErrorMetadata(response: Response): Promise<
+  Readonly<{
+    providerErrorCode: unknown;
+    providerErrorType: unknown;
+  }>
+> {
+  try {
+    const payload: unknown = await response.json();
+    if (!isRecord(payload) || !isRecord(payload.error)) {
+      return { providerErrorCode: null, providerErrorType: null };
+    }
+    return {
+      providerErrorCode: payload.error.code,
+      providerErrorType: payload.error.type,
+    };
+  } catch {
+    return { providerErrorCode: null, providerErrorType: null };
+  }
 }
 
 function readOutputText(payload: Record<string, unknown>):

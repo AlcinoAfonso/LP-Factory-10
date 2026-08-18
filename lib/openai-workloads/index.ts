@@ -5,6 +5,7 @@ export {
   resolveOpenAiProductWorkload,
 } from "./resolve";
 export {
+  OPEN_AI_PROVIDER_ERROR_METADATA_MAX_LENGTH,
   createOpenAiImageWorkloadFailureEvent,
   createOpenAiImageWorkloadSuccessEvent,
   createOpenAiWorkloadFailureEvent,

@@ -8,6 +8,8 @@ import type {
   OpenAiWorkloadUsage,
 } from "./contracts";
 
+export const OPEN_AI_PROVIDER_ERROR_METADATA_MAX_LENGTH = 128;
+
 type ImageEventInput = Readonly<{
   workload: ResolvedOpenAiImageWorkload;
   environment?: OpenAiWorkloadEnvironment;
@@ -36,6 +38,10 @@ type EventInput = OpenAiWorkloadEventContext &
     requestId?: unknown;
     promptVersion?: unknown;
     contractVersion?: unknown;
+    httpStatus?: unknown;
+    providerRequestId?: unknown;
+    providerErrorCode?: unknown;
+    providerErrorType?: unknown;
     latencyMs?: unknown;
     usage?: unknown;
   }>;
@@ -132,6 +138,10 @@ function createEvent(
     promptVersion: nonEmptyString(input.promptVersion),
     contractVersion: positiveIntegerMetric(input.contractVersion),
     responseId: nonEmptyString(input.responseId),
+    httpStatus: httpStatusMetric(input.httpStatus),
+    providerRequestId: nonEmptyString(input.providerRequestId),
+    providerErrorCode: boundedProviderErrorMetadata(input.providerErrorCode),
+    providerErrorType: boundedProviderErrorMetadata(input.providerErrorType),
     result,
     failureCategory,
     latencyMs: durationMetric(input.latencyMs),
@@ -206,6 +216,24 @@ function integerMetric(value: unknown): number | null {
 function positiveIntegerMetric(value: unknown): number | null {
   return typeof value === "number" && Number.isInteger(value) && value > 0
     ? value
+    : null;
+}
+
+function httpStatusMetric(value: unknown): number | null {
+  return typeof value === "number" &&
+    Number.isInteger(value) &&
+    value >= 100 &&
+    value <= 599
+    ? value
+    : null;
+}
+
+function boundedProviderErrorMetadata(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const normalized = value.trim();
+  return normalized.length > 0 &&
+    normalized.length <= OPEN_AI_PROVIDER_ERROR_METADATA_MAX_LENGTH
+    ? normalized
     : null;
 }
 
