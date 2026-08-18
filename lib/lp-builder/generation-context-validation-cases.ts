@@ -457,6 +457,7 @@ const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }
         request_id: "req-e19-3-e",
         latency_ms: 1,
       });
+      assert.equal(Object.hasOwn(logs[0], "preparation_reason"), false);
 
       dependencyCalls.length = 0;
       logs.length = 0;
@@ -472,6 +473,51 @@ const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }
         "preparation",
       ]);
       assert.equal(Object.hasOwn(logs[0], "request_id"), false);
+      assert.equal(Object.hasOwn(logs[0], "preparation_reason"), false);
+
+      dependencyCalls.length = 0;
+      logs.length = 0;
+      const preparationFailureMessage = "must-not-enter-generation-context-log";
+      const preparationFailurePayload = "must-not-enter-log-payload";
+      const failedPreparation =
+        await compileLandingPageGenerationContextForDraftWithDependencies(
+          { accountId: ACCOUNT_ID, landingPageId: LANDING_PAGE_ID },
+          {
+            ...dependencies,
+            loadPreparation: async () => {
+              dependencyCalls.push("preparation");
+              return {
+                ok: false as const,
+                error: {
+                  code: "FILESYSTEM_READ_FAILED" as const,
+                  message: preparationFailureMessage,
+                  payload: preparationFailurePayload,
+                },
+              };
+            },
+            log: (payload) => logs.push(payload),
+          },
+        );
+      assert.equal(failedPreparation.ok, false);
+      if (!failedPreparation.ok) {
+        assert.equal(failedPreparation.error.code, "TAXON_PREPARATION_UNAVAILABLE");
+      }
+      assert.deepEqual(dependencyCalls, [
+        "revalidation-authority",
+        "landing-page",
+        "preparation",
+      ]);
+      assert.deepEqual(logs[0], {
+        event: "landing_page_generation_context_compilation",
+        result: "failure",
+        reason: "TAXON_PREPARATION_UNAVAILABLE",
+        preparation_reason: "FILESYSTEM_READ_FAILED",
+        latency_ms: 1,
+      });
+      assert.doesNotMatch(
+        JSON.stringify(logs[0]),
+        new RegExp(`${preparationFailureMessage}|${preparationFailurePayload}`),
+      );
 
       dependencyCalls.length = 0;
       const invalidRequestId =
@@ -490,6 +536,7 @@ const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }
       assert.deepEqual(dependencyCalls, []);
 
       const unauthorizedCalls: string[] = [];
+      const unauthorizedLogs: Readonly<Record<string, unknown>>[] = [];
       const unauthorized =
         await compileLandingPageGenerationContextForDraftWithDependencies(
           { accountId: ACCOUNT_ID, landingPageId: LANDING_PAGE_ID },
@@ -506,12 +553,16 @@ const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }
               unauthorizedCalls.push("preparation");
               return preparation;
             },
-            log: () => undefined,
+            log: (payload) => unauthorizedLogs.push(payload),
           },
         );
       assert.equal(unauthorized.ok, false);
       assert.equal(unauthorized.error.code, "ACCOUNT_CONTEXT_UNAUTHORIZED");
       assert.deepEqual(unauthorizedCalls, []);
+      assert.equal(
+        Object.hasOwn(unauthorizedLogs[0], "preparation_reason"),
+        false,
+      );
     },
   },
   {

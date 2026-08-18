@@ -48,6 +48,9 @@ export async function compileLandingPageGenerationContextForDraftWithDependencie
   const landingPageId =
     typeof input.landingPageId === "string" ? input.landingPageId.trim() : "";
   let result: CompileLandingPageGenerationContextResult;
+  let preparationReason:
+    | Extract<TaxonPreparationResult, { ok: false }>["error"]["code"]
+    | undefined;
 
   if (
     !UUID_RE.test(accountId) ||
@@ -101,6 +104,7 @@ export async function compileLandingPageGenerationContextForDraftWithDependencie
     const preparation = await dependencies.loadPreparation({
       taxonId: servedTaxon.id,
     });
+    if (!preparation.ok) preparationReason = preparation.error.code;
     result = compileLandingPageGenerationContext({
       landingPage: landingPage.landingPage,
       revalidationAuthority: revalidation.authority,
@@ -110,7 +114,13 @@ export async function compileLandingPageGenerationContextForDraftWithDependencie
     result = failure("CONTEXT_READ_FAILED", "Generation context dependencies failed.");
   }
 
-  safeLog(dependencies.log, result, requestId, now() - startedAt);
+  safeLog(
+    dependencies.log,
+    result,
+    requestId,
+    now() - startedAt,
+    preparationReason,
+  );
   return result;
 }
 
@@ -123,6 +133,10 @@ function safeLog(
   result: CompileLandingPageGenerationContextResult,
   requestId: string | undefined,
   latencyMs: number,
+  preparationReason?: Extract<
+    TaxonPreparationResult,
+    { ok: false }
+  >["error"]["code"],
 ): void {
   try {
     (logger ?? console.log)({
@@ -130,6 +144,9 @@ function safeLog(
       result: result.ok ? "success" : "failure",
       reason: result.ok ? "compiled" : result.error.code,
       ...(requestId ? { request_id: requestId } : {}),
+      ...(preparationReason
+        ? { preparation_reason: preparationReason }
+        : {}),
       ...(Number.isFinite(latencyMs) && latencyMs >= 0
         ? { latency_ms: latencyMs }
         : {}),
