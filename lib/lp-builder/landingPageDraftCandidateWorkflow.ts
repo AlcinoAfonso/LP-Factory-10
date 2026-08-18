@@ -67,7 +67,7 @@ export async function prepareLandingPageDraftRevisionCandidate(
   if (isExpired(deadlineAtMs, now, signal)) {
     return failure(attemptId, requestId, "budget", "total_timeout");
   }
-  const binding = resolveLandingPageConversionBinding(input.context.serverContext);
+  const binding = resolveLandingPageConversionBinding(input.context);
   if (!binding.ok) {
     return failure(attemptId, requestId, "binding", binding.error);
   }

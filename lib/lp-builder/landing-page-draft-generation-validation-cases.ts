@@ -88,11 +88,6 @@ const context = {
         source: "account_configuration",
         provenance: [],
       },
-    ],
-    editorialLimits: { semanticRoles: [], semanticHierarchy: ["h1", "h2", "h3"] },
-  },
-  serverContext: {
-    facts: [
       {
         fieldKey: "primary_conversion_channel",
         purpose: "conversion",
@@ -101,6 +96,11 @@ const context = {
         source: "account_configuration",
         provenance: [],
       },
+    ],
+    editorialLimits: { semanticRoles: [], semanticHierarchy: ["h1", "h2", "h3"] },
+  },
+  serverContext: {
+    facts: [
       {
         fieldKey: "whatsapp_destination",
         purpose: "conversion_destination",
@@ -540,7 +540,7 @@ const cases = [
       assert.equal(budgetImageCalls, 0);
 
       const formContext = structuredClone(context);
-      const formChannel = formContext.serverContext.facts.find(
+      const formChannel = formContext.modelContext.facts.find(
         (fact) => fact.fieldKey === "primary_conversion_channel",
       );
       assert.ok(formChannel);
@@ -565,14 +565,46 @@ const cases = [
     },
   },
   {
-    name: "conversion binding maps supported channels and form fails closed",
+    name: "conversion binding keeps model channel and server destination authority",
     run: () => {
-      const supported = resolveLandingPageConversionBinding(context.serverContext);
+      assert.equal(
+        context.modelContext.facts.some(
+          (fact) => fact.fieldKey === "primary_conversion_channel",
+        ),
+        true,
+      );
+      assert.equal(
+        context.serverContext.facts.some(
+          (fact) => fact.fieldKey === "primary_conversion_channel",
+        ),
+        false,
+      );
+      assert.equal(
+        context.modelContext.facts.some((fact) =>
+          fact.fieldKey.endsWith("_destination"),
+        ),
+        false,
+      );
+      const supported = resolveLandingPageConversionBinding(context);
       assert.equal(supported.ok, true);
       assert.equal(supported.value.destinationFieldKey, "whatsapp_destination");
+      assert.equal(supported.value.destination, "+5521979658483");
 
-      const formContext = structuredClone(context.serverContext) as LandingPageGenerationContextPackage["serverContext"];
-      const channel = formContext.facts.find(
+      const missingDestinationContext = {
+        modelContext: context.modelContext,
+        serverContext: { facts: [] },
+      };
+      const missingDestination = resolveLandingPageConversionBinding(
+        missingDestinationContext,
+      );
+      assert.equal(missingDestination.ok, false);
+      assert.equal(
+        missingDestination.error,
+        "MISSING_PRIMARY_CONVERSION_DESTINATION",
+      );
+
+      const formContext = structuredClone(context);
+      const channel = formContext.modelContext.facts.find(
         (fact) => fact.fieldKey === "primary_conversion_channel",
       );
       assert.ok(channel);
@@ -580,6 +612,44 @@ const cases = [
       const form = resolveLandingPageConversionBinding(formContext);
       assert.equal(form.ok, false);
       assert.equal(form.error, "UNSUPPORTED_PRIMARY_CONVERSION_CHANNEL");
+
+      const missingChannelContext = {
+        modelContext: {
+          ...context.modelContext,
+          facts: context.modelContext.facts.filter(
+            (fact) => fact.fieldKey !== "primary_conversion_channel",
+          ),
+        },
+        serverContext: context.serverContext,
+      };
+      const missingChannel = resolveLandingPageConversionBinding(
+        missingChannelContext,
+      );
+      assert.equal(missingChannel.ok, false);
+      assert.equal(missingChannel.error, "INVALID_PRIMARY_CONVERSION_CHANNEL");
+
+      const invalidChannelContext = structuredClone(context);
+      const invalidChannel = invalidChannelContext.modelContext.facts.find(
+        (fact) => fact.fieldKey === "primary_conversion_channel",
+      );
+      assert.ok(invalidChannel);
+      (invalidChannel as { value: unknown }).value = "fax";
+      const invalid = resolveLandingPageConversionBinding(invalidChannelContext);
+      assert.equal(invalid.ok, false);
+      assert.equal(invalid.error, "INVALID_PRIMARY_CONVERSION_CHANNEL");
+
+      const candidateWorkflow = readFileSync(
+        new URL("./landingPageDraftCandidateWorkflow.ts", import.meta.url),
+        "utf8",
+      );
+      assert.match(
+        candidateWorkflow,
+        /resolveLandingPageConversionBinding\(input\.context\)/,
+      );
+      assert.doesNotMatch(
+        candidateWorkflow,
+        /resolveLandingPageConversionBinding\(input\.context\.serverContext\)/,
+      );
     },
   },
   {
@@ -742,6 +812,14 @@ const cases = [
       );
       assert.doesNotMatch(action, /generateLandingPageDraftCandidate|generateLandingPageDraftImage/);
       assert.match(action, /UNSUPPORTED_PRIMARY_CONVERSION_CHANNEL/);
+      assert.match(
+        action,
+        /resolveLandingPageConversionBinding\(context\.value\)/,
+      );
+      assert.doesNotMatch(
+        action,
+        /resolveLandingPageConversionBinding\(context\.value\.serverContext\)/,
+      );
       assert.match(action, /materializeLandingPageDraftRevision/);
       assert.match(action, /currentEntitlement/);
       assert.match(
