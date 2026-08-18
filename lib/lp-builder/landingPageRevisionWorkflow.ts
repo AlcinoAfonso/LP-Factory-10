@@ -40,7 +40,7 @@ export type MaterializeLandingPageDraftRevisionResult =
 type Dependencies = Readonly<{
   prepareCandidate: (input: Readonly<{
     context: LandingPageGenerationContextPackage;
-    requestId?: string | null;
+    requestId: string;
     deadlineAtMs?: number;
     signal?: AbortSignal;
   }>) => Promise<LandingPageDraftCandidateWorkflowResult>;
@@ -66,7 +66,7 @@ export async function materializeLandingPageDraftRevisionWithDependencies(
   input: Readonly<{
     context: LandingPageGenerationContextPackage;
     createdBy: string;
-    requestId?: string | null;
+    requestId: string;
   }>,
   dependencies: Dependencies,
 ): Promise<MaterializeLandingPageDraftRevisionResult> {

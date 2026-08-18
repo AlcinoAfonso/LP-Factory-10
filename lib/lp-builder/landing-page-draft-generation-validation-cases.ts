@@ -531,12 +531,14 @@ const cases = [
     run: async () => {
       const order: string[] = [];
       const result = await prepareLandingPageDraftRevisionCandidate(
-        { context, requestId: " req-workflow-1 " },
+        { context, requestId: "req-workflow-1" },
         {
           createAttemptId: () => "30000000-0000-4000-8000-000000000003",
-          createRequestId: () => "request-generated-unused",
-          generateText: async () => {
+          generateText: async (_context, dependencies) => {
             order.push("text");
+            assert.ok(dependencies);
+            assert.equal(dependencies.attemptId, "30000000-0000-4000-8000-000000000003");
+            assert.equal(dependencies.requestId, "req-workflow-1");
             return {
               ok: true,
               candidate,
@@ -560,8 +562,11 @@ const cases = [
               },
             };
           },
-          generateImage: async () => {
+          generateImage: async (_input, dependencies) => {
             order.push("image");
+            assert.ok(dependencies);
+            assert.equal(dependencies.attemptId, "30000000-0000-4000-8000-000000000003");
+            assert.equal(dependencies.requestId, "req-workflow-1");
             return {
               ok: true,
               bytes: Uint8Array.from([1]),
@@ -590,10 +595,20 @@ const cases = [
       assert.deepEqual(order, ["text", "image"]);
       assert.equal(result.attemptId, "30000000-0000-4000-8000-000000000003");
       assert.equal(result.requestId, "req-workflow-1");
+      assert.notEqual(result.attemptId, result.requestId);
+
+      const candidateWorkflow = readFileSync(
+        new URL("./landingPageDraftCandidateWorkflow.ts", import.meta.url),
+        "utf8",
+      );
+      assert.match(candidateWorkflow, /createAttemptId\?: \(\) => string/);
+      assert.doesNotMatch(candidateWorkflow, /createRequestId/);
+      assert.match(candidateWorkflow, /requestId: string/);
+      assert.match(candidateWorkflow, /const requestId = input\.requestId/);
 
       let imageCalls = 0;
       const textFailure = await prepareLandingPageDraftRevisionCandidate(
-        { context },
+        { context, requestId: "request-text-failure" },
         {
           generateText: async () => ({ ok: false, kind: "refusal" }),
           generateImage: async () => {
@@ -605,7 +620,7 @@ const cases = [
       assert.equal(textFailure.ok, false);
       assert.equal(textFailure.stage, "text");
       assert.equal(textFailure.attemptId.length > 0, true);
-      assert.equal(textFailure.requestId.length > 0, true);
+      assert.equal(textFailure.requestId, "request-text-failure");
       assert.equal(imageCalls, 0);
 
       const clock = [0, 0, 270_001];
@@ -614,7 +629,7 @@ const cases = [
       );
       let budgetImageCalls = 0;
       const budgetFailure = await prepareLandingPageDraftRevisionCandidate(
-        { context, deadlineAtMs: 270_000 },
+        { context, requestId: "request-budget", deadlineAtMs: 270_000 },
         {
           now: () => clock.shift() ?? 270_001,
           generateText: async () => successful.text,
@@ -636,10 +651,9 @@ const cases = [
       (formChannel as { value: unknown }).value = "form";
       let providerCalls = 0;
       const formFailure = await prepareLandingPageDraftRevisionCandidate(
-        { context: formContext },
+        { context: formContext, requestId: "request-form" },
         {
           createAttemptId: () => "attempt-form",
-          createRequestId: () => "request-form",
           generateText: async () => {
             providerCalls += 1;
             return { ok: false, kind: "provider_error" };
@@ -774,6 +788,7 @@ const cases = [
       assert.equal(documents.snapshot.media.mainImage.path, asset.path);
       assert.equal(documents.snapshot.workloads.text.costStatus, "unavailable");
       assert.equal(documents.snapshot.workloads.image.costStatus, "unavailable");
+      assert.equal(documents.snapshot.requestId, "request-revision");
       assert.doesNotMatch(JSON.stringify(documents), /signedUrl|apiKey|rawResponse/);
     },
   },
@@ -788,10 +803,12 @@ const cases = [
           requestId: "request-revision",
         },
         {
-          prepareCandidate: async () => {
+          prepareCandidate: async (input) => {
             order.push("candidate");
+            assert.equal(input.requestId, "request-revision");
             return successfulCandidateWorkflow(
               "30000000-0000-4000-8000-000000000031",
+              input.requestId,
             );
           },
           uploadAsset: async () => {
@@ -819,7 +836,10 @@ const cases = [
       );
       assert.equal(result.ok, true);
       assert.deepEqual(order, ["candidate", "upload", "revalidate", "append"]);
-      if (result.ok) assert.equal(result.revisionNumber, 2);
+      if (result.ok) {
+        assert.equal(result.revisionNumber, 2);
+        assert.equal(result.requestId, "request-revision");
+      }
     },
   },
   {
@@ -831,10 +851,14 @@ const cases = [
         {
           context,
           createdBy: "40000000-0000-4000-8000-000000000040",
+          requestId: "request-revalidation-failure",
         },
         {
-          prepareCandidate: async () =>
-            successfulCandidateWorkflow("30000000-0000-4000-8000-000000000032"),
+          prepareCandidate: async (input) =>
+            successfulCandidateWorkflow(
+              "30000000-0000-4000-8000-000000000032",
+              input.requestId,
+            ),
           uploadAsset: async () => ({ ok: true }),
           cleanupAsset: async (asset) => {
             cleaned.push(asset.path);
@@ -847,9 +871,47 @@ const cases = [
         },
       );
       assert.equal(result.ok, false);
+      if (!result.ok) {
+        assert.equal(result.requestId, "request-revalidation-failure");
+        assert.equal(result.stage, "revalidation");
+      }
       assert.equal(appendCalls, 0);
       assert.deepEqual(cleaned, [
         `${context.identities.accountId}/${context.identities.landingPage.id}/30000000-0000-4000-8000-000000000032/main.webp`,
+      ]);
+    },
+  },
+  {
+    name: "revision workflow cleans exact asset after failed append",
+    run: async () => {
+      const cleaned: string[] = [];
+      const result = await materializeLandingPageDraftRevisionWithDependencies(
+        {
+          context,
+          createdBy: "40000000-0000-4000-8000-000000000040",
+          requestId: "request-append-failure",
+        },
+        {
+          prepareCandidate: async (input) =>
+            successfulCandidateWorkflow(
+              "30000000-0000-4000-8000-000000000034",
+              input.requestId,
+            ),
+          uploadAsset: async () => ({ ok: true }),
+          cleanupAsset: async (asset) => {
+            cleaned.push(asset.path);
+          },
+          revalidate: async () => true,
+          appendRevision: async () => ({ ok: false, error: "APPEND_FAILED" }),
+        },
+      );
+      assert.equal(result.ok, false);
+      if (!result.ok) {
+        assert.equal(result.requestId, "request-append-failure");
+        assert.equal(result.stage, "append");
+      }
+      assert.deepEqual(cleaned, [
+        `${context.identities.accountId}/${context.identities.landingPage.id}/30000000-0000-4000-8000-000000000034/main.webp`,
       ]);
     },
   },
@@ -863,10 +925,14 @@ const cases = [
         {
           context,
           createdBy: "40000000-0000-4000-8000-000000000040",
+          requestId: "request-budget-failure",
         },
         {
-          prepareCandidate: async () =>
-            successfulCandidateWorkflow("30000000-0000-4000-8000-000000000033"),
+          prepareCandidate: async (input) =>
+            successfulCandidateWorkflow(
+              "30000000-0000-4000-8000-000000000033",
+              input.requestId,
+            ),
           uploadAsset: async () => ({ ok: true }),
           cleanupAsset: async (asset) => {
             cleaned.push(asset.path);
@@ -886,7 +952,7 @@ const cases = [
     },
   },
   {
-    name: "route action checks readiness before context and providers",
+    name: "route action owns request correlation and revalidates only access authority",
     run: () => {
       const action = readFileSync(
         new URL(
@@ -899,6 +965,23 @@ const cases = [
         action.indexOf("const readiness = await loadLandingPageRevisionReadiness()") <
           action.indexOf("const context = await compileLandingPageGenerationContextForDraft"),
       );
+      assert.match(
+        action,
+        /const requestId = access\.context\.requestId \?\? randomUUID\(\);/,
+      );
+      assert.equal((action.match(/\brandomUUID\(\)/g) ?? []).length, 1);
+      assert.equal(
+        (action.match(/compileLandingPageGenerationContextForDraft\(/g) ?? []).length,
+        1,
+      );
+      assert.match(
+        action,
+        /compileLandingPageGenerationContextForDraft\(\{[\s\S]*?landingPageId,[\s\S]*?requestId,[\s\S]*?\}\)/,
+      );
+      assert.match(
+        action,
+        /materializeLandingPageDraftRevision\(\{[\s\S]*?createdBy:[\s\S]*?requestId,[\s\S]*?revalidate:/,
+      );
       assert.doesNotMatch(action, /generateLandingPageDraftCandidate|generateLandingPageDraftImage/);
       assert.match(action, /UNSUPPORTED_PRIMARY_CONVERSION_CHANNEL/);
       assert.match(
@@ -910,18 +993,48 @@ const cases = [
         /resolveLandingPageConversionBinding\(context\.value\.serverContext\)/,
       );
       assert.match(action, /materializeLandingPageDraftRevision/);
-      assert.match(action, /currentEntitlement/);
       assert.match(
         action,
-        /access\.context\.requestId == null[\s\S]*?requestId: access\.context\.requestId/,
+        /const currentAccess = await requireAccountMembersManager\(accountSlug\)/,
       );
       assert.match(
         action,
-        /currentAccess\.context\.requestId == null[\s\S]*?requestId: currentAccess\.context\.requestId/,
+        /currentAccess\.context\.accountStatus !== "active"/,
       );
+      assert.match(
+        action,
+        /currentAccess\.context\.accountId !== access\.context\.accountId/,
+      );
+      assert.match(
+        action,
+        /currentAccess\.context\.actorUserId !== access\.context\.actorUserId/,
+      );
+      assert.match(action, /const currentEntitlement/);
+      assert.match(
+        action,
+        /return currentEntitlement\?\.isCommerciallyEligible === true/,
+      );
+      assert.doesNotMatch(action, /currentAccess\.context\.requestId/);
+      assert.doesNotMatch(action, /currentContext/);
       assert.doesNotMatch(
         action,
-        /requestId:\s*(?:access|currentAccess)\.context\.requestId\s*\?\?\s*undefined/,
+        /JSON\.stringify\([^)]*(?:context|Context)\.value/,
+      );
+      assert.match(
+        action,
+        /request_id: materialized\.requestId/,
+      );
+
+      const migration = readFileSync(
+        new URL(
+          "../../supabase/migrations/20260817180000_e19_4_4_landing_page_revisions.sql",
+          import.meta.url,
+        ),
+        "utf8",
+      );
+      assert.match(
+        migration,
+        /where lp\.id = p_landing_page_id[\s\S]*?lp\.account_id = p_account_id[\s\S]*?lp\.status = 'draft'[\s\S]*?for update/,
       );
       const page = readFileSync(
         new URL(
@@ -972,11 +1085,14 @@ async function runCases() {
   );
 }
 
-function successfulCandidateWorkflow(attemptId: string) {
+function successfulCandidateWorkflow(
+  attemptId: string,
+  requestId = "request-revision",
+) {
   return {
     ok: true,
     attemptId,
-    requestId: "request-revision",
+    requestId,
     candidate,
     binding: {
       channel: "whatsapp",

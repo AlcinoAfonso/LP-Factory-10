@@ -1,5 +1,7 @@
 "use server";
 
+import { randomUUID } from "node:crypto";
+
 import { revalidatePath } from "next/cache";
 
 import { requireAccountMembersManager } from "@/lib/access/guards";
@@ -49,6 +51,7 @@ export async function generateLandingPageRevisionAction(
     return actionError("ACCESS_DENIED", "Você não pode gerar uma revisão desta página.");
   }
 
+  const requestId = access.context.requestId ?? randomUUID();
   const entitlement = await getCommercialEntitlementSignal({
     accountId: access.context.accountId,
   });
@@ -67,9 +70,7 @@ export async function generateLandingPageRevisionAction(
   const context = await compileLandingPageGenerationContextForDraft({
     accountId: access.context.accountId,
     landingPageId,
-    ...(access.context.requestId == null
-      ? {}
-      : { requestId: access.context.requestId }),
+    requestId,
   });
   if (!context.ok) {
     return actionError(
@@ -93,7 +94,7 @@ export async function generateLandingPageRevisionAction(
   const materialized = await materializeLandingPageDraftRevision({
     context: context.value,
     createdBy: access.context.actorUserId,
-    requestId: access.context.requestId,
+    requestId,
     revalidate: async () => {
       const currentAccess = await requireAccountMembersManager(accountSlug);
       if (
@@ -107,18 +108,7 @@ export async function generateLandingPageRevisionAction(
       const currentEntitlement = await getCommercialEntitlementSignal({
         accountId: currentAccess.context.accountId,
       });
-      if (!currentEntitlement?.isCommerciallyEligible) return false;
-      const currentContext = await compileLandingPageGenerationContextForDraft({
-        accountId: currentAccess.context.accountId,
-        landingPageId,
-        ...(currentAccess.context.requestId == null
-          ? {}
-          : { requestId: currentAccess.context.requestId }),
-      });
-      return (
-        currentContext.ok &&
-        JSON.stringify(currentContext.value) === JSON.stringify(context.value)
-      );
+      return currentEntitlement?.isCommerciallyEligible === true;
     },
   });
   if (!materialized.ok) {

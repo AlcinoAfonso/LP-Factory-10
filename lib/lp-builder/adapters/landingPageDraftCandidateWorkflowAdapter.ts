@@ -8,7 +8,7 @@ import {
 
 export function prepareLandingPageDraftRevisionCandidate(input: Readonly<{
   context: LandingPageGenerationContextPackage;
-  requestId?: string | null;
+  requestId: string;
   deadlineAtMs?: number;
   signal?: AbortSignal;
 }>): Promise<LandingPageDraftCandidateWorkflowResult> {
