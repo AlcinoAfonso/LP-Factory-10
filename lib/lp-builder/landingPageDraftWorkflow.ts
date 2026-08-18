@@ -34,13 +34,21 @@ const destinationByChannel = {
   external_url: "external_url_destination",
 } as const;
 
+type LandingPageConversionBindingContext = Pick<
+  LandingPageGenerationContextPackage,
+  "modelContext" | "serverContext"
+>;
+
 export function resolveLandingPageConversionBinding(
-  serverContext: LandingPageGenerationContextPackage["serverContext"],
+  context: LandingPageConversionBindingContext,
 ): LandingPageConversionBindingResult {
-  const values = new Map(
-    serverContext.facts.map((fact) => [fact.fieldKey, fact.value] as const),
+  const modelValues = new Map(
+    context.modelContext.facts.map((fact) => [fact.fieldKey, fact.value] as const),
   );
-  const channel = values.get("primary_conversion_channel");
+  const serverValues = new Map(
+    context.serverContext.facts.map((fact) => [fact.fieldKey, fact.value] as const),
+  );
+  const channel = modelValues.get("primary_conversion_channel");
   if (channel === "form") {
     return { ok: false, error: "UNSUPPORTED_PRIMARY_CONVERSION_CHANNEL" };
   }
@@ -49,7 +57,7 @@ export function resolveLandingPageConversionBinding(
   }
   const typedChannel = channel as LandingPageConversionChannel;
   const destinationFieldKey = destinationByChannel[typedChannel];
-  const destination = values.get(destinationFieldKey);
+  const destination = serverValues.get(destinationFieldKey);
   if (typeof destination !== "string" || !destination.trim()) {
     return { ok: false, error: "MISSING_PRIMARY_CONVERSION_DESTINATION" };
   }

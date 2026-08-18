@@ -78,7 +78,7 @@ export async function generateLandingPageRevisionAction(
     );
   }
 
-  const binding = resolveLandingPageConversionBinding(context.value.serverContext);
+  const binding = resolveLandingPageConversionBinding(context.value);
   if (!binding.ok) {
     return actionError(
       binding.error === "UNSUPPORTED_PRIMARY_CONVERSION_CHANNEL"
