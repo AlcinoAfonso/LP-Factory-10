@@ -32,6 +32,31 @@ Plano conceitual: `docs/lp-planejamento.md`.
 - O runtime `commercial_activation` ainda lê diretamente `taxon_market_research` e `taxon_market_research_items`; por isso a retirada da camada E10.8 não autoriza apagar a base de pesquisas.
 - `npm run check` ainda executa os validators de pesquisa estruturada, catálogo de módulos e generation profile em toda validação geral do projeto.
 
+### 1.4. Inventário inicial de consumidores
+
+- E20.3 / `generation-profile`:
+  - o resolver público `resolveLandingPageGenerationProfileForTaxon` aparece como consumidor efetivo somente na própria camada de adapters, na página Admin de detalhe de Perfis de orientação, no export público e nos validators do domínio;
+  - a operação administrativa permanece concentrada em `/admin/perfis-de-orientacao`, seus components/actions e `landingPageGenerationProfileAdminAdapter`;
+  - a assistência por IA permanece no próprio domínio e mantém o workload `landing_page_generation_profile_proposal` no boundary transversal `lib/openai-workloads/`;
+  - classificação inicial: candidato a retirada coesa de E20.3 + E12.4.3, condicionada ao tratamento explícito do perfil ativo persistido.
+- E18.5 / `module-catalog`:
+  - o resolver `resolveLandingPageModuleCatalog` é consumido pelo próprio domínio, pelos validators, pelo Admin `Estrutura da LP` e pelo domínio histórico de generation profile;
+  - não foi identificado consumo do catálogo pelo caminho E19.3 → E19.4 vigente;
+  - classificação inicial: candidato à retirada após E20.3, com poda da visão administrativa `Módulos e variantes` e dos exports correspondentes.
+- E10.8 / `research-resolution`:
+  - o adapter `resolveLandingPageResearchForTaxon` é consumido por superfícies administrativas, diagnósticos da Taxonomia e pelo domínio histórico de generation profile;
+  - a E19.3 vigente não depende desse adapter para pesquisa integral e mantém E10.8 apenas para consumidores independentes;
+  - as tabelas `taxon_market_research` e `taxon_market_research_items` continuam consumidas diretamente por `commercial_activation`, fora do boundary E10.8;
+  - classificação inicial: candidato à retirada do boundary/resolver/adapter e consumidores históricos, preservando a persistência de pesquisas enquanto E10.7/`commercial_activation` precisar dela.
+- E12.5/E12.6:
+  - `adminTaxonomyAdapter` mistura diagnósticos E10.8/E20.3 com responsabilidades ainda ativas da Taxonomia e da preparação E20.5/E20.6;
+  - `adminLandingPageStructureAdapter` mistura E18.4 e E20.2 ativos com as visões históricas de E18.5 e E10.8;
+  - classificação inicial: poda parcial, não aposentadoria integral dos recortes administrativos.
+- E21.1 / `openai-workloads`:
+  - o boundary permanece ativo e necessário aos workloads atuais;
+  - somente `landing_page_generation_profile_proposal` e suas regressões tornam-se candidatos à retirada quando E20.3 sair;
+  - classificação inicial: preservar boundary e reduzir catálogo/validações apenas na medida dos consumidores efetivamente aposentados.
+
 ## 2. Contrato do caso
 
 ### 2.1. Resultado esperado
