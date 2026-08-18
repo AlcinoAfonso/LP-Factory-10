@@ -15,7 +15,7 @@ import {
 export function materializeLandingPageDraftRevision(input: Readonly<{
   context: LandingPageGenerationContextPackage;
   createdBy: string;
-  requestId?: string | null;
+  requestId: string;
   revalidate: () => Promise<boolean>;
 }>): Promise<MaterializeLandingPageDraftRevisionResult> {
   return materializeLandingPageDraftRevisionWithDependencies(input, {

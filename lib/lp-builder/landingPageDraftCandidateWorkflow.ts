@@ -38,7 +38,6 @@ export type LandingPageDraftCandidateWorkflowResult =
 type Dependencies = Readonly<{
   apiKey?: string;
   createAttemptId?: () => string;
-  createRequestId?: () => string;
   generateText?: typeof generateLandingPageDraftCandidate;
   generateImage?: typeof generateLandingPageDraftImage;
   now?: () => number;
@@ -49,15 +48,14 @@ type Dependencies = Readonly<{
 export async function prepareLandingPageDraftRevisionCandidate(
   input: Readonly<{
     context: LandingPageGenerationContextPackage;
-    requestId?: string | null;
+    requestId: string;
     deadlineAtMs?: number;
     signal?: AbortSignal;
   }>,
   dependencies: Dependencies = {},
 ): Promise<LandingPageDraftCandidateWorkflowResult> {
   const attemptId = createCorrelationId(dependencies.createAttemptId);
-  const requestId =
-    normalizeRequestId(input.requestId) ?? createCorrelationId(dependencies.createRequestId);
+  const requestId = input.requestId;
   const now = dependencies.now ?? Date.now;
   const deadlineAtMs =
     input.deadlineAtMs ??
@@ -124,11 +122,6 @@ export async function prepareLandingPageDraftRevisionCandidate(
     text,
     image,
   };
-}
-
-function normalizeRequestId(value: string | null | undefined) {
-  const normalized = value?.trim() ?? "";
-  return normalized.length > 0 ? normalized : null;
 }
 
 function createCorrelationId(factory: (() => string) | undefined) {
