@@ -1,6 +1,6 @@
 # E22.1 — Depreciação e retirada controlada de ativos históricos
 
-Status: rascunho vivo; ainda não consolidado como plano-base v1.
+Status: plano-base v1 consolidado em 18/08/2026; implementação material condicionada ao fechamento funcional da E19.4 e anterior à E19.5.
 
 Plano conceitual: `docs/lp-planejamento.md`.
 
@@ -21,6 +21,8 @@ Plano conceitual: `docs/lp-planejamento.md`.
 - Não reintroduzir E10.8, E18.5 ou E20.3 no caminho canônico da geração apenas porque já estão implementadas.
 - Migrations históricas aplicadas permanecem preservadas no repositório; qualquer retirada física de objetos de banco exige evolução forward-only própria.
 - Dados estruturados de pesquisa não são sinônimo de E10.8 e não podem ser removidos enquanto possuírem consumidor real independente.
+- Decisão humana de 18/08/2026: o payload integral do único perfil E20.3 ativo será eliminado junto com a retirada do domínio, sem criar tabela de arquivo, snapshot paralelo, bucket ou outra persistência de preservação.
+- A rastreabilidade histórica desse perfil permanece pelas migrations e commits no Git, PRs/documentação e eventos já existentes em `audit_logs`.
 
 ### 1.3. Evidência factual inicial
 
@@ -38,24 +40,24 @@ Plano conceitual: `docs/lp-planejamento.md`.
   - o resolver público `resolveLandingPageGenerationProfileForTaxon` aparece como consumidor efetivo somente na própria camada de adapters, na página Admin de detalhe de Perfis de orientação, no export público e nos validators do domínio;
   - a operação administrativa permanece concentrada em `/admin/perfis-de-orientacao`, seus components/actions e `landingPageGenerationProfileAdminAdapter`;
   - a assistência por IA permanece no próprio domínio e mantém o workload `landing_page_generation_profile_proposal` no boundary transversal `lib/openai-workloads/`;
-  - classificação inicial: candidato a retirada coesa de E20.3 + E12.4.3, condicionada ao tratamento explícito do perfil ativo persistido.
+  - classificação: retirada coesa de E20.3 + E12.4.3 após o fechamento funcional da E19.4.
 - E18.5 / `module-catalog`:
   - o resolver `resolveLandingPageModuleCatalog` é consumido pelo próprio domínio, pelos validators, pelo Admin `Estrutura da LP` e pelo domínio histórico de generation profile;
   - não foi identificado consumo do catálogo pelo caminho E19.3 → E19.4 vigente;
-  - classificação inicial: candidato à retirada após E20.3, com poda da visão administrativa `Módulos e variantes` e dos exports correspondentes.
+  - classificação: retirada após E20.3, com poda da visão administrativa `Módulos e variantes` e dos exports correspondentes.
 - E10.8 / `research-resolution`:
   - o adapter `resolveLandingPageResearchForTaxon` é consumido por superfícies administrativas, diagnósticos da Taxonomia e pelo domínio histórico de generation profile;
   - a E19.3 vigente não depende desse adapter para pesquisa integral e mantém E10.8 apenas para consumidores independentes;
   - as tabelas `taxon_market_research` e `taxon_market_research_items` continuam consumidas diretamente por `commercial_activation`, fora do boundary E10.8;
-  - classificação inicial: candidato à retirada do boundary/resolver/adapter e consumidores históricos, preservando a persistência de pesquisas enquanto E10.7/`commercial_activation` precisar dela.
+  - classificação: retirada do boundary/resolver/adapter e consumidores históricos, preservando a persistência de pesquisas enquanto E10.7/`commercial_activation` precisar dela.
 - E12.5/E12.6:
   - `adminTaxonomyAdapter` mistura diagnósticos E10.8/E20.3 com responsabilidades ainda ativas da Taxonomia e da preparação E20.5/E20.6;
   - `adminLandingPageStructureAdapter` mistura E18.4 e E20.2 ativos com as visões históricas de E18.5 e E10.8;
-  - classificação inicial: poda parcial, não aposentadoria integral dos recortes administrativos.
+  - classificação: poda parcial, não aposentadoria integral dos recortes administrativos.
 - E21.1 / `openai-workloads`:
   - o boundary permanece ativo e necessário aos workloads atuais;
   - somente `landing_page_generation_profile_proposal` e suas regressões tornam-se candidatos à retirada quando E20.3 sair;
-  - classificação inicial: preservar boundary e reduzir catálogo/validações apenas na medida dos consumidores efetivamente aposentados.
+  - classificação: preservar boundary e reduzir catálogo/validações apenas na medida dos consumidores efetivamente aposentados.
 
 ### 1.5. Inventário material atual da E20.3/E12.4.3 no banco
 
@@ -134,50 +136,47 @@ Plano conceitual: `docs/lp-planejamento.md`.
   - o perfil ativo é configuração histórica baseada integralmente em identidades da E18.5 e não participa da E19.3/E19.4;
   - depois da retirada da E18.5, manter esse payload vivo no banco não preserva comportamento utilizável;
   - os eventos de decisão humana permanecem em `audit_logs`, mas o payload integral não está replicado em fonte histórica própria.
-- Recomendação técnica do rascunho:
-  - não criar tabela de arquivo, snapshot paralelo, bucket, export runtime ou infraestrutura nova apenas para conservar um payload sem consumidor;
-  - quando a retirada for autorizada, usar migration forward-only para remover RPCs e objetos do domínio e eliminar as duas tabelas com seus registros;
-  - preservar como rastreabilidade as migrations históricas no Git, os PRs/commits do domínio e os eventos já existentes em `audit_logs`.
-- Decisão humana ainda necessária antes da consolidação da v1:
-  - aprovar a perda deliberada do payload integral do único perfil ativo durante a retirada;
-  - se houver exigência de preservar integralmente esse payload, será necessário definir uma fonte competente de destino antes da implementação, pois o projeto não possui hoje um repositório canônico de arquivo para esse dado e este recorte não pode inventá-lo.
+- Decisão humana aprovada em 18/08/2026:
+  - eliminar o payload integral do único perfil ativo durante a retirada do domínio;
+  - não criar tabela de arquivo, snapshot paralelo, bucket, export runtime ou infraestrutura nova apenas para conservar esse payload sem consumidor;
+  - usar migration forward-only para remover RPCs e objetos do domínio e eliminar as duas tabelas com seus registros;
+  - preservar como rastreabilidade as migrations históricas no Git, os PRs/commits do domínio, a documentação histórica e os eventos já existentes em `audit_logs`.
 
 ## 3. Fases e próxima ação
 
 ### 3.1. E22.1.3 — Auditoria e classificação integral de consumidores
 
 - Automação: não.
-- Auditar repositório, roadmap, base técnica, schema e estado remoto mínimo necessário do Supabase.
-- Produzir inventário factual por ativo com `consumidor → dependência → classificação → ação proposta`.
-- Confirmar se existe consumidor de produto fora do Admin para E20.3, E18.5 e E10.8.
-- Identificar todos os recortes derivados que devem ser podados sem retirar o recorte inteiro, especialmente E12.5/E12.6.
-- Estado da auditoria em 18/08/2026:
+- Status: concluída no planejamento em 18/08/2026.
+- Resultado:
   - consumidores principais de E20.3, E18.5 e E10.8 classificados;
   - poda E12.5/E12.6 definida;
   - objetos atuais de banco E20.3/E12.4.3 identificados;
-  - tratamento recomendado do payload histórico definido, pendente apenas da decisão humana de retenção.
-- Critério de aceite: nenhuma remoção material prevista sem consumidor e impacto conhecidos.
+  - tratamento do único payload E20.3 aprovado pelo humano;
+  - nenhuma remoção material prevista sem consumidor e impacto conhecidos.
+- Antes da implementação material, repetir somente a verificação de drift necessária sobre a `main` após o fechamento da E19.4; não reiniciar a auditoria sem evidência de mudança relevante.
 
 ### 3.2. E22.1.4 — Retirada de E20.3 e E12.4.3 associado
 
 - Automação: não.
-- Candidatos já identificados: domínio `generation-profile`, adapters, páginas/actions de `/admin/perfis-de-orientacao`, navegação administrativa, workload `landing_page_generation_profile_proposal`, exports, validators, duas tabelas, quatro RPCs e documentação canônica afetada.
-- A retirada física do banco depende da decisão de retenção do payload registrada em 2.6 e deve ocorrer somente por migration forward-only.
+- Retirar o domínio `generation-profile`, adapters, páginas/actions de `/admin/perfis-de-orientacao`, navegação administrativa correspondente, workload `landing_page_generation_profile_proposal`, exports, validators, duas tabelas e quatro RPCs identificados.
+- Fazer a retirada física do banco somente por migration forward-only, preservando migrations históricas aplicadas.
+- Eliminar o único perfil e seus onze itens conforme decisão humana de 2.6, sem criar persistência substituta.
 - Critério de aceite: E19.4 e demais workloads ativos permanecem íntegros; nenhum consumidor necessário do perfil permanece quebrado ou órfão.
 
 ### 3.3. E22.1.5 — Retirada de E18.5 e poda dos consumidores administrativos
 
 - Automação: não.
-- Avaliar retirada do diretório `module-catalog`, API pública, exports e validator após a aposentadoria dos consumidores E20.3.
+- Retirar o diretório `module-catalog`, API pública, exports e validator após a aposentadoria dos consumidores E20.3.
 - Ajustar somente as partes de `/admin/estrutura-lp` e demais superfícies que dependem de módulos/variantes; preservar E18.4 e E20.2.
 - Critério de aceite: nenhuma seleção de módulo/variante volta ao caminho E19.3 → E19.4 e o Admin remanescente não referencia domínio removido.
 
 ### 3.4. E22.1.6 — Desacoplamento da camada E10.8
 
 - Automação: não.
-- Separar o boundary `research-resolution` e seus adapters/diagnósticos dos dados estruturados de pesquisa ainda usados por consumidores independentes.
+- Retirar o boundary `research-resolution` e seus adapters/diagnósticos depois de remover seus consumidores históricos.
 - Não apagar `taxon_market_research` ou `taxon_market_research_items` por efeito deste recorte enquanto E10.7/`commercial_activation` ou outro consumidor real depender deles.
-- Podar referências E10.8 em Taxonomia, Estrutura da LP, generation profile e exports conforme a auditoria comprovar.
+- Podar referências E10.8 em Taxonomia, Estrutura da LP, generation profile e exports conforme o inventário aprovado.
 - Critério de aceite: preparação E20.5/E20.6 e E19.3 continuam usando exclusivamente a pesquisa integral selecionada no caminho canônico, sem dependência da E10.8.
 
 ### 3.5. E22.1.7 — Consolidação da superfície transversal e regressão final
@@ -188,11 +187,11 @@ Plano conceitual: `docs/lp-planejamento.md`.
 - Executar regressão da E19.4 concluída e dos consumidores ativos preservados.
 - Critério de aceite: a base restante não carrega dependências de E20.3/E18.5/E10.8 sem consumidor real e a primeira LP real permanece reproduzível no Preview.
 
-### 3.6. Próxima ação do rascunho
+### 3.6. Próxima ação
 
-- Obter a decisão humana de retenção do payload do único perfil E20.3 conforme 2.6.
-- Após essa decisão, consolidar a auditoria E22.1.3 e verificar se resta questão indispensável antes de declarar o plano-base v1.
-- Antes de qualquer implementação material, confirmar novamente a `main` após o fechamento da E19.4 para detectar consumidor novo ou drift criado durante o PR B.
+- Submeter este plano-base v1 ao processo escolhido pelo humano conforme `docs/prompt-estrategista.md`.
+- A implementação material permanece bloqueada até o fechamento funcional da E19.4.
+- No início da implementação, confirmar a `main` e verificar apenas drift material criado durante o fechamento da E19.4.
 
 ## 4. Escopo negativo e critérios de parada
 
@@ -209,6 +208,5 @@ Plano conceitual: `docs/lp-planejamento.md`.
 ### 4.2. Critérios de parada
 
 - Parar se surgir consumidor necessário não reconciliável com a retirada proposta.
-- Parar antes de DDL se o tratamento dos dados persistidos de E20.3 não estiver decidido.
 - Parar se a retirada exigir reabrir decisão de produto já aprovada em E19.3/E19.4.
 - Parar se a regressão da primeira LP real deixar de provar geração, materialização e Preview independentes dos ativos aposentados.
