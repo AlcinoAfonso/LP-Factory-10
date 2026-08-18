@@ -272,8 +272,38 @@ const cases = [
     },
   },
   {
-    name: "account membership entitlement landing-page and tenant drift fail before signing",
+    name: "account membership entitlement landing-page snapshot and asset drift fail before signing",
     run: async () => {
+      const snapshotDrift = revisionFixture();
+      const snapshotWithWrongAccount = {
+        ...snapshotDrift,
+        snapshot: {
+          ...snapshotDrift.snapshot,
+          generationContext: {
+            ...snapshotDrift.snapshot.generationContext,
+            identities: {
+              ...snapshotDrift.snapshot.generationContext.identities,
+              accountId: "60000000-0000-4000-8000-000000000006",
+            },
+          },
+        },
+      };
+      const assetDrift = revisionFixture();
+      const crossTenantAsset = {
+        ...assetDrift.content.media.mainImage,
+        path: `60000000-0000-4000-8000-000000000006/${LANDING_PAGE_ID}/${ATTEMPT_ID}/main.webp`,
+      };
+      const revisionWithCrossTenantAsset = {
+        ...assetDrift,
+        content: {
+          ...assetDrift.content,
+          media: { mainImage: crossTenantAsset },
+        },
+        snapshot: {
+          ...assetDrift.snapshot,
+          media: { mainImage: { ...crossTenantAsset } },
+        },
+      };
       const scenarios: Array<{
         expected: string;
         override: Partial<LandingPagePreviewDependencies>;
@@ -288,6 +318,18 @@ const cases = [
               ok: true,
               value: { ...revisionFixture(), accountId: "60000000-0000-4000-8000-000000000006" },
             }),
+          },
+        },
+        {
+          expected: "unavailable",
+          override: {
+            readCurrentRevision: async () => ({ ok: true, value: snapshotWithWrongAccount }),
+          },
+        },
+        {
+          expected: "unavailable",
+          override: {
+            readCurrentRevision: async () => ({ ok: true, value: revisionWithCrossTenantAsset }),
           },
         },
       ];
@@ -343,6 +385,7 @@ const cases = [
         { channel: "whatsapp", destinationFieldKey: "whatsapp_destination", destination: "21999999999" },
         { channel: "phone", destinationFieldKey: "whatsapp_destination", destination: "+5521979658483" },
         { channel: "email", destinationFieldKey: "email_destination", destination: "not-an-email" },
+        { channel: "email", destinationFieldKey: "email_destination", destination: "a..b@example.com" },
         { channel: "external_url", destinationFieldKey: "external_url_destination", destination: "http://example.com" },
         { channel: "form", destinationFieldKey: "form_destination", destination: "value" },
       ]) assert.equal(resolveLandingPageRenderHref(invalid), null);

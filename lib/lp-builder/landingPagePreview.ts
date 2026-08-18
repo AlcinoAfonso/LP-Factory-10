@@ -2,6 +2,7 @@ import {
   validateLandingPagePresentationCandidate,
   type LandingPagePresentationSection,
 } from "../conversion-content/landing-page/presentation";
+import { z } from "zod";
 import type { AccountLandingPage } from "./contracts";
 import type { CurrentLandingPageRevision } from "./adapters/landingPageRevisionAdapter";
 import {
@@ -316,9 +317,14 @@ function prepareLandingPageRenderModel(input: Readonly<{
     !validateLandingPageRevisionSnapshot(revision.snapshot) ||
     !revision.attemptId ||
     revision.attemptId !== revision.snapshot.attemptId ||
+    revision.snapshot.generationContext.identities.accountId !== input.accountId ||
+    revision.snapshot.generationContext.identities.landingPage.id !== input.landingPageId ||
+    revision.snapshot.generationContext.identities.landingPage.status !== "draft" ||
     revision.content.contractVersion !== 1 ||
     revision.snapshot.presentationContractVersion !== 1 ||
-    !sameAsset(revision.content.media.mainImage, revision.snapshot.media.mainImage)
+    !sameAsset(revision.content.media.mainImage, revision.snapshot.media.mainImage) ||
+    revision.content.media.mainImage.path !==
+      `${input.accountId}/${input.landingPageId}/${revision.attemptId}/main.webp`
   ) {
     return { ok: false, error: "INVALID_REVISION" };
   }
@@ -513,7 +519,7 @@ function isE164(value: string) {
 }
 
 function isEmail(value: string) {
-  return value.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+  return z.string().trim().email().safeParse(value).success;
 }
 
 function isSafeSignedUrl(value: string) {
