@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 17/08/2026
-• Versão: v1.5.159
+• Data: 18/08/2026
+• Versão: v1.5.160
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2243,7 +2243,7 @@ Repositório — Ajustados
 
 19. E19 — LP Builder
 - Objetivo: Consolidar o fluxo Core de landing pages por conta, da identidade mínima em `draft` às futuras etapas de geração, revisão, materialização e publicação, sempre por recortes aprovados.
-- Status: E19.1, E19.2 e E19.3 concluídas; o contrato v3 do Cenário E foi mergeado pelo PR #757. O plano-base v2 da E19.4 foi aprovado para gerar, materializar e visualizar privadamente a primeira LP real em dois PRs sequenciais; o PR precursor A, com E19.4.3 e E19.4.4, está implementado localmente e aprovado pelo Analista, com merge, apply e gates hospedados pendentes, enquanto a E19.4.5 permanece reservada ao PR B. A implementação anterior do Cenário D permanece apenas como histórico material do PR #729.
+- Status: E19.1, E19.2 e E19.3 concluídas. E19.4.3 e E19.4.4 concluídas, integradas à `main` e aprovadas nos gates hospedados, com dois appends válidos, persistência 1:N, Storage privado e verificador SQL aprovados. A E19.4.5 permanece não iniciada e é o próximo recorte autorizado após esta reconciliação documental. A E19.5 permanece pausada.
 
 19.1 Criação produtiva mínima de LP por conta
 
@@ -2436,56 +2436,96 @@ Repositório — Ajustados
 
 19.4.1 Objetivo e status
 - Objetivo: gerar, validar, materializar e visualizar privadamente a primeira LP real em `draft` a partir do pacote v3 da E19.3, com revisões append-only, mídia privada estável e prova humana.
-- Status: plano-base v2 e matriz de consolidação aprovados pelo Analista em 17/08/2026. As implementações candidatas da E19.4.3 e E19.4.4 e o PR precursor A acumulado foram concluídos, validados localmente e aprovados pelo Analista. Migration, bucket e runtime permanecem fail-closed e pendentes de merge humano, apply oficial, dois appends e verificador hospedado; canários e duração efetiva em Preview continuam pendentes antes da primeira geração real. O PR B permanece reservado para read model, renderer, Preview completo e prova humana após esses gates.
+- Status: E19.4.3 e E19.4.4 concluídas e aprovadas no ambiente hospedado em 18/08/2026. O PR B da E19.4.5 não foi iniciado e poderá ser retomado após a atualização desta autoridade documental.
 
 19.4.2 Registros do recorte
+- Banco:
+  - Criados:
+    - `public.append_account_landing_page_materialization_v1(uuid, uuid, uuid, jsonb, jsonb, uuid)`
+    - `landing-page-revision-assets`
+  - Ajustados:
+    - `public.account_landing_page_materializations`
+- Repositório:
+  - Criados:
+    - `app/a/[account]/landing-pages/[landingPageId]/preview/`
+    - `lib/conversion-content/landing-page/presentation/`
+    - `lib/lp-builder/adapters/landingPageDraftCandidateWorkflowAdapter.ts`
+    - `lib/lp-builder/adapters/landingPageDraftGenerationAdapter.ts`
+    - `lib/lp-builder/adapters/landingPageDraftImageGenerationAdapter.ts`
+    - `lib/lp-builder/adapters/landingPageRevisionAdapter.ts`
+    - `lib/lp-builder/adapters/landingPageRevisionReadinessAdapter.ts`
+    - `lib/lp-builder/adapters/landingPageRevisionStorageAdapter.ts`
+    - `lib/lp-builder/adapters/landingPageRevisionWorkflowAdapter.ts`
+    - `lib/lp-builder/landing-page-draft-generation-validation-cases.ts`
+    - `lib/lp-builder/landingPageDraftCandidateWorkflow.ts`
+    - `lib/lp-builder/landingPageDraftGeneration.ts`
+    - `lib/lp-builder/landingPageDraftImageGeneration.ts`
+    - `lib/lp-builder/landingPageDraftWorkflow.ts`
+    - `lib/lp-builder/landingPageRevision.ts`
+    - `lib/lp-builder/landingPageRevisionWorkflow.ts`
+    - `supabase/migrations/20260817180000_e19_4_4_landing_page_revisions.sql`
+    - `supabase/snippets/e19_4_4_landing_page_materializations_verify.sql`
+    - `supabase/tests/e19_4_4_landing_page_materializations.test.sql`
+  - Ajustados:
+    - `app/admin/(protected)/workloads-openai/page.tsx`
+    - `lib/conversion-content/landing-page/generation-profile/validation-cases.ts`
+    - `lib/conversion-content/landing-page/index.ts`
+    - `lib/conversion-content/landing-page/taxon-preparation/validation-cases.ts`
+    - `lib/lp-builder/adapters/generationContextAdapterCore.ts`
+    - `lib/lp-builder/generation-context-validation-cases.ts`
+    - `lib/lp-builder/index.ts`
+    - `lib/openai-workloads/`
+    - `next.config.js`
+    - `package.json`
+- Updates:
+  - Aplicados na E19.4.3/E19.4.4:
+    - `supa#5`
+    - `supa#40`
+    - `supa#47`
+    - `prod#6`
 - Referências:
   - Plano-base aprovado: `docs/lousa-plano-base-e19-4.md`.
   - Matriz auditada: `docs/matriz-consolidacao-e19-4.md`.
-- Repositório:
-  - `app/a/[account]/landing-pages/[landingPageId]/preview/`
-  - `lib/conversion-content/landing-page/presentation/`
-  - `lib/lp-builder/landingPageDraftGeneration.ts`
-  - `lib/lp-builder/landingPageDraftImageGeneration.ts`
-  - `lib/lp-builder/landingPageDraftCandidateWorkflow.ts`
-  - `lib/lp-builder/landingPageRevision.ts`
-  - `lib/lp-builder/landingPageRevisionWorkflow.ts`
-  - `lib/lp-builder/adapters/landingPageRevisionAdapter.ts`
-  - `lib/lp-builder/adapters/landingPageRevisionStorageAdapter.ts`
-  - `lib/openai-workloads/`
-  - `supabase/migrations/20260817180000_e19_4_4_landing_page_revisions.sql`
-  - `supabase/tests/e19_4_4_landing_page_materializations.test.sql`
-  - `supabase/snippets/e19_4_4_landing_page_materializations_verify.sql`
+  - Contrato técnico: `docs/base-tecnica.md`.
+  - Contrato de banco: `docs/schema.md`.
+  - Configuração operacional: `docs/platform-config.md`.
+  - Modelos e workloads: `docs/openai-model-snapshot.md`.
+  - Automação controlada: `docs/automations.md`.
 
 19.4.3 Geração controlada e validação integral da candidata
-- Status: implementação candidata concluída, validada localmente e aprovada pelo Analista; canários sem persistência e confirmação da duração efetiva em Preview permanecem pendentes antes da primeira geração real.
+- Status: concluída e aprovada nos gates hospedados em 18/08/2026.
 - Automações: sim — `2.1.3`, IA em fluxo controlado no runtime do LP Factory.
 - Conteúdo:
-  - consumir exclusivamente o pacote E19.3 v3 `identities + modelContext + serverContext`, mantendo valores operacionais brutos fora do modelo;
-  - implementar autoridade de apresentação E19.4 v1 derivada dos limites universais da E18.4, sem reintroduzir E18.5/module catalog;
-  - produzir em uma única chamada textual `landing_page_draft_generation` a candidata completa por Responses API, `gpt-5.6-luna`, `reasoning.effort=max`, Structured Output estrito, `store:false` e sem retry/fallback automático;
-  - discriminar E21.1 em `responses_text | image_generation` e criar o workload separado `landing_page_draft_image_generation`, sem transportar parâmetros textuais inaplicáveis;
-  - gerar uma imagem principal pertinente por `gpt-image-2`, uma chamada, WebP comprimido e sem alegações específicas não autorizadas; `brand_logo_asset` permanece exclusivo de logo;
-  - resolver deterministicamente os canais `whatsapp`, `phone`, `email` e `external_url`; `form` falha antes do provider com `UNSUPPORTED_PRIMARY_CONVERSION_CHANNEL`;
-  - implantar a shell autenticada mínima de `/a/[account]/landing-pages/[landingPageId]/preview` e sua Server Action com readiness anterior ao schema/provider; antes do apply, retornar indisponibilidade segura;
-  - aplicar timeouts de 120 s por provider, orçamento total de 270 s, Function com `maxDuration >= 300`, telemetria segura por `request_id` e nenhuma revisão em falha;
-  - comprovar canários sem persistência para Luna/max/strict e `gpt-image-2`, além da duração efetiva no ambiente alvo; indisponibilidade volta ao Analista sem fallback.
+  - a autoridade de apresentação v1, o DTO discriminado, o Structured Output estrito, os validators determinísticos e o prompt `e19.4-presentation-v2` estão implementados a partir da autoridade canônica da E18.4;
+  - o workload textual `landing_page_draft_generation` usa uma única chamada a `gpt-5.6-luna`, `reasoning.effort=max`, `store:false` e nenhuma política de retry ou fallback;
+  - o workload separado `landing_page_draft_image_generation` usa `gpt-image-2` com configuração própria e sem transportar parâmetros exclusivos do workload textual;
+  - `modelContext.facts` é a única autoridade para fatos objetivos; `modelContext.research` permanece contexto consultivo para narrativa, dores e linguagem, sem autorizar preço, disponibilidade, localização, credencial, prova social, resultado, pessoa ou cliente;
+  - o canal primário é lido exclusivamente de `modelContext.facts` e o destino operacional correspondente de `serverContext.facts`, preservando bindings determinísticos e mantendo dados operacionais brutos fora do modelo;
+  - o workflow possui um único ownership de `requestId`, preserva `attemptId` e os pontos de injeção determinística e registra observabilidade segura para preparação e falhas HTTP do provider;
+  - a projeção destinada ao provider preserva a autoridade Zod e converte somente a união conhecida das oito variantes de seção para `anyOf`, falhando fechado diante de qualquer `oneOf` inesperado;
+  - por decisão humana, o gate originalmente previsto de canários isolados sem persistência foi substituído pelo primeiro append integrado do fluxo oficial; as duas execuções integradas posteriores comprovaram os workloads textual e de imagem e o caminho oficial sem retry ou fallback;
+  - o segmento produtivo permanece configurado com `maxDuration = 300`; deployment READY e duas execuções integradas completas sem timeout incompatível corroboraram operacionalmente esse gate.
 
 19.4.4 Revisões append-only, mídia e snapshot imutável
-- Status: implementação candidata concluída, validada localmente e aprovada pelo Analista; migration, bucket, dois appends e verificador hospedado permanecem pendentes do merge humano e apply oficial.
+- Status: concluída e aprovada nos gates hospedados em 18/08/2026.
 - Automações: não.
 - Conteúdo:
-  - evoluir por migration incremental `account_landing_page_materializations` de 1:1 para 1:N, preservando materializações históricas como revisão 1 e sem criar entidade concorrente;
-  - usar PK em `id`, `revision_number` positivo, unicidade por LP/revisão, `attempt_id` idempotente e revisão corrente definida pela maior numeração;
-  - realizar append somente por função transacional tenant-safe, sob lock da LP pai, sem update/delete de revisão anterior e sem escrita direta pelas roles de runtime;
-  - criar o bucket privado `landing-page-revision-assets`; persistir `bucket + path` e metadata canônica, nunca signed URL; servir o WebP por URL temporária server-side após autorização;
-  - usar path `{accountId}/{landingPageId}/{attemptId}/main.webp`, `upsert:false`, cleanup best-effort e nenhuma policy direta para `anon` ou `authenticated`;
-  - persistir `content_json` final e snapshot reproduzível com identidades, contexto autorizado, bindings, versões/configurações, validações, usage, latência e custo datado ou indisponível, sem secrets, raciocínio privado ou URL assinada;
-  - manter runtime fail-closed antes do apply oficial; após o merge do PR A, executar dois appends pelo gatilho autenticado já implantado e inspecionar 1:N, segurança, corrente e no-overwrite por snippet SQL estritamente read-only;
-  - somente após apply, dois appends e verificador aprovados abrir o PR B na mesma worktree.
+  - a migration `20260817180000_e19_4_4_landing_page_revisions.sql` foi aplicada oficialmente e o readiness hospedado confirmou `ready: true` e `schema_version: 1`;
+  - `account_landing_page_materializations` opera em 1:N append-only, com PK em `id`, numeração positiva, unicidade por LP/revisão, `attempt_id` idempotente e revisão corrente definida pela maior numeração;
+  - a materialização histórica foi preservada como revisão 1 e os dois appends controlados criaram as revisões 2 e 3, com três conteúdos e três snapshots distintos e sem overwrite;
+  - a revisão 2 foi persistida como `963f0a37-8dd3-4240-9f31-8072aef40d60`, com `requestId d227c031-5068-499d-aeb8-a0b5f723ccf2` e `attemptId 41ced98d-331a-4e46-914e-c28e3b026802`;
+  - a revisão 3 foi persistida como `ab332478-c504-425a-a6bc-993d31142449`, com `requestId 8c67dfd6-d7c8-4bb0-9955-09fc9f988cef` e `attemptId dec1251f-297e-418a-93b5-e2722f773dcd`;
+  - P-01 foi comprovado ponta a ponta pela correspondência de `requestId` e `attemptId` entre compilação, workloads e snapshots persistidos;
+  - P-02 foi comprovado em runtime porque as duas execuções passaram pelos providers, pela nova validação de acesso, conta, ator e entitlement e pelo append transacional;
+  - o verificador SQL read-only retornou `ok` para colunas, constraints e índices, invariantes de revisão, prova de múltiplas revisões, projeção da revisão corrente, segurança, bucket e policies de Storage;
+  - RLS permanece habilitada, sem policies diretas; `service_role` possui leitura e execução do RPC, mas não escrita direta, e `anon` e `authenticated` não executam o append;
+  - o bucket `landing-page-revision-assets` é privado, aceita WebP conforme o limite aprovado e não possui policy pública ou autenticada;
+  - os dois novos snapshots referenciam dois paths canônicos distintos, não-URL, e os dois objetos correspondentes existem no Storage;
+  - a revisão corrente é a revisão 3;
+  - nenhum PR da E19.4.5 foi iniciado.
 
 19.4.5 Visualização privada e prova humana da primeira LP real
-- Status: plano aprovado; implementação reservada ao PR B após os gates hospedados da E19.4.4.
+- Status: plano aprovado; implementação ainda não iniciada. A retomada em PR B é o próximo passo autorizado após a reconciliação documental que registra a conclusão dos gates hospedados da E19.4.4.
 - Automações: não.
 - Conteúdo:
   - evoluir a shell já implantada na rota confirmada com loader autorizado, read model da revisão corrente, signed URL server-side e renderer puro/read-only sem Supabase, `DBRow`, autenticação ou provider;
