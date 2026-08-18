@@ -118,9 +118,75 @@ const cases = [
   {
     name: "presentation authority drives strict schema and deterministic validation",
     run: () => {
-      const schema = JSON.stringify(landingPagePresentationJsonSchema);
+      const request = buildLandingPageDraftResponsesRequest(context);
+      const providerSchema = request.text.format.schema;
+      const schema = JSON.stringify(providerSchema);
+      assert.equal(providerSchema, landingPagePresentationJsonSchema);
       assert.match(schema, /"additionalProperties":false/);
       assert.match(schema, /"required":\["contractVersion","sections"\]/);
+      assert.doesNotMatch(schema, /"oneOf"/);
+
+      const sections = schemaProperty(providerSchema, "sections");
+      assert.equal(sections.minItems, 4);
+      assert.equal(sections.maxItems, 10);
+      const sectionItems = schemaRecord(sections.items);
+      const sectionVariants = sectionItems.anyOf;
+      assert.ok(Array.isArray(sectionVariants));
+      assert.equal(sectionVariants.length, 8);
+
+      const variantsByKind = new Map(
+        sectionVariants.map((variant) => {
+          const branch = schemaRecord(variant);
+          const kind = schemaProperty(branch, "kind").const;
+          assert.equal(typeof kind, "string");
+          assert.equal(branch.additionalProperties, false);
+          assert.ok(Array.isArray(branch.required));
+          assert.ok(branch.required.includes("kind"));
+          return [kind, branch] as const;
+        }),
+      );
+      assert.deepEqual([...variantsByKind.keys()], [
+        "header",
+        "hero",
+        "text_media",
+        "cards_grid",
+        "steps",
+        "faq",
+        "cta",
+        "footer",
+      ]);
+
+      for (const [kind, field] of [
+        ["header", "ctaLabel"],
+        ["hero", "eyebrow"],
+        ["text_media", "mediaBrief"],
+        ["cards_grid", "intro"],
+        ["steps", "intro"],
+        ["cta", "body"],
+        ["footer", "tagline"],
+      ] as const) {
+        const branch = variantsByKind.get(kind);
+        assert.ok(branch);
+        const nullable = schemaProperty(branch, field).anyOf;
+        assert.ok(Array.isArray(nullable));
+        assert.deepEqual(
+          nullable.map((option) => schemaRecord(option).type),
+          ["string", "null"],
+        );
+        assert.ok((branch.required as unknown[]).includes(field));
+      }
+
+      for (const [kind, field, minItems, maxItems] of [
+        ["cards_grid", "cards", 2, 6],
+        ["steps", "items", 2, 5],
+        ["faq", "items", 2, 6],
+      ] as const) {
+        const branch = variantsByKind.get(kind);
+        assert.ok(branch);
+        const collection = schemaProperty(branch, field);
+        assert.equal(collection.minItems, minItems);
+        assert.equal(collection.maxItems, maxItems);
+      }
       assert.equal(
         validateLandingPagePresentationCandidate(candidate, context.modelContext.facts).ok,
         true,
@@ -1158,3 +1224,13 @@ const abortingFetch: typeof fetch = (_input, init) =>
     }
     init?.signal?.addEventListener("abort", abort, { once: true });
   });
+
+function schemaRecord(value: unknown): Record<string, unknown> {
+  assert.ok(value && typeof value === "object" && !Array.isArray(value));
+  return value as Record<string, unknown>;
+}
+
+function schemaProperty(schema: unknown, property: string) {
+  const properties = schemaRecord(schemaRecord(schema).properties);
+  return schemaRecord(properties[property]);
+}

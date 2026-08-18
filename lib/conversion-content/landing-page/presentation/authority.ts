@@ -145,8 +145,25 @@ const generatedSchema = z.toJSONSchema(landingPagePresentationCandidateSchema, {
 const { $schema: _schemaDialect, ...structuredOutputSchema } = generatedSchema;
 
 export const landingPagePresentationJsonSchema = deepFreeze(
-  structuredOutputSchema,
+  projectOpenAiStructuredOutputSchema(structuredOutputSchema),
 ) as Readonly<Record<string, unknown>>;
+
+function projectOpenAiStructuredOutputSchema(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map(projectOpenAiStructuredOutputSchema);
+  }
+  if (!value || typeof value !== "object") return value;
+
+  const projected: Record<string, unknown> = {};
+  for (const [keyword, nested] of Object.entries(value)) {
+    const supportedKeyword = keyword === "oneOf" ? "anyOf" : keyword;
+    if (Object.hasOwn(projected, supportedKeyword)) {
+      throw new Error(`Conflicting JSON Schema keyword: ${supportedKeyword}`);
+    }
+    projected[supportedKeyword] = projectOpenAiStructuredOutputSchema(nested);
+  }
+  return projected;
+}
 
 export function validateLandingPagePresentationCandidate(
   candidate: unknown,
