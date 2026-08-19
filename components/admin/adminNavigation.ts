@@ -61,7 +61,6 @@ export const adminAreas: AdminArea[] = [
     scope: [
       'Parâmetros raiz e critérios visuais',
       'Entradas resolvidas por taxon e plano',
-      'Pesquisas estruturadas por taxon',
     ],
   },
   {
