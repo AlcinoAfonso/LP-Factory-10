@@ -235,7 +235,7 @@
 • `app/a/[account]/page.tsx` (`pending_setup` ajustado)
 • `app/a/[account]/loading.tsx` (loading reutilizável)
 • Docs: `docs/design-system.md` atualizado como documento consolidado do ciclo E6.4–E6.6 (componentes, API mínima, uso e superfícies cobertas).
-• Checks/QA (reportado): `npm ci` ok; `npm run check` ok; QA manual ok nas superfícies validadas (forgot password, update password sem token, `pending_setup`, loading da conta).
+• Checks/QA (reportado): `npm ci` ok; `npm run check`, `git diff --check` e QA manual ok nas superfícies validadas.
 
 6.7 Dashboard Layout Patterns
 • Status: Planejado
@@ -385,20 +385,16 @@
 9.2 Liberação manual administrativa mínima
 
 9.2.1 Objetivo e status
-- Objetivo: permitir concessão, atualização e cancelamento manual mínimo de entitlement por `platform_admin`.
-- Status: concluída em 04/07/2026.
+• Objetivo: permitir concessão, atualização e cancelamento manual mínimo de entitlement por `platform_admin`.
+• Status: concluída em 04/07/2026.
 
 9.2.2 Registros do recorte
-- Banco:
-  - Criados:
-  - Ajustados:
 - Repositório:
   - Criados:
     - `lib/admin/adapters/adminCommercialEntitlementsAdapter.ts`
     - `app/admin/(protected)/contas/[accountId]/actions.ts`
   - Ajustados:
     - `app/admin/(protected)/contas/[accountId]/page.tsx`
-  - Excluídos:
 - Updates:
   - Aplicados:
     - `supa#40`
@@ -460,7 +456,6 @@
 - Banco:
   - Criados:
     - `public.stripe_webhook_events`
-  - Ajustados:
 - Repositório:
   - Criados:
     - `supabase/migrations/20260701202632_e9_stripe_webhook_events.sql`
@@ -476,7 +471,6 @@
     - `app/a/[account]/page.tsx`
     - `app/a/[account]/_components/commercial-page/GenericCommercialPage.tsx`
     - `lib/billing-checkout/index.ts`
-  - Excluídos:
 - Updates:
   - Aplicados:
     - Stripe webhook
@@ -523,17 +517,6 @@
 • Objetivo: registrar Mercado Pago como provedor futuro possível.
 • Status: previsto / não implementado.
 
-9.5.2 Registros do recorte
-- Banco:
-  - Criados:
-  - Ajustados:
-- Repositório:
-  - Criados:
-  - Ajustados:
-  - Excluídos:
-- Updates:
-  - Aplicados:
-
 9.5.3 Critérios para abertura futura
 • Mercado Pago está previsto apenas como hipótese futura; nenhuma implementação está consolidada no E9 atual.
 • Abrir somente por recorte futuro aprovado, seguindo o contrato universal do 9.1.
@@ -546,17 +529,6 @@
 9.6.1 Objetivo e status
 • Objetivo: registrar Asaas como provedor futuro possível.
 • Status: previsto / não implementado.
-
-9.6.2 Registros do recorte
-- Banco:
-  - Criados:
-  - Ajustados:
-- Repositório:
-  - Criados:
-  - Ajustados:
-  - Excluídos:
-- Updates:
-  - Aplicados:
 
 9.6.3 Critérios para abertura futura
 • Asaas está previsto apenas como hipótese futura; nenhuma implementação está consolidada no E9 atual.
@@ -953,7 +925,7 @@ Repositório — Ajustados
 
 10.6.3 Relação com a E10.7
 • A E10.7 permanece separada e será responsável pelas páginas comerciais personalizadas por nicho.
-• A página genérica `generic-v1` da E10.6 permanece como fallback quando não houver página nichada publicada.
+• A página genérica da E10.6 permanece como fallback quando não houver página nichada publicada.
 • Persistência, edição, geração e publicação da E10.7 serão definidas no planejamento desse caso.
 
 10.6.4 Personalização por histórico da conta
@@ -1032,9 +1004,7 @@ Repositório — Ajustados
 • `app/admin/(protected)/templates/page.tsx`
 • `app/admin/(protected)/templates/actions.ts`
 • `components/admin/adminNavigation.ts`
-• `lib/admin/adapters/adminCommercialActivationTemplatesAdapter.ts`
 • `lib/conversion-content/commercial-activation/draft-generation.ts`
-• `lib/conversion-content/commercial-activation/composition.ts`
 
 10.7.5 Fase 4 — Consumo no Account Dashboard
 • Status: Concluída em 23/06/2026.
@@ -1150,22 +1120,17 @@ Repositório — Ajustados
 10.8.2 Registros do recorte
 
 * Repositório:
-
   * Criados:
-
     * `lib/conversion-content/landing-page/research-resolution/contracts.ts`
     * `lib/conversion-content/landing-page/research-resolution/resolver.ts`
     * `lib/conversion-content/landing-page/research-resolution/validation-cases.ts`
     * `lib/conversion-content/landing-page/research-resolution/index.ts`
     * `lib/conversion-content/adapters/landingPageResearchAdapter.ts`
   * Ajustados:
-
     * `lib/conversion-content/index.ts`
     * `package.json`
 * Updates:
-
   * Aplicados:
-
     * `supa#40`
     * `supa#5`
 
@@ -1173,7 +1138,6 @@ Repositório — Ajustados
 
 * Status: Implementado.
 * Conteúdo:
-
   * Entrada por `taxon_id` do taxon atendido, já resolvido pelo fluxo responsável.
   * Execução server-side e read-only, sem persistência nova.
   * Cada `audience_scope` deve resultar em um único conjunto completo e elegível, formado por `strategic_core`, `lp_overview`, `lp_sections` e `seo`, com pesquisas-pai ativas e uma versão comum aos quatro blocos.
@@ -1183,7 +1147,6 @@ Repositório — Ajustados
 
 * Status: Implementadas.
 * Conteúdo:
-
   * `end_customer` é resolvido exclusivamente no taxon atendido.
   * O conjunto próprio completo e elegível de `business_buyer` vence sempre.
   * O pai direto só pode ser usado quando o conjunto próprio estiver ausente ou incompleto.
@@ -1196,7 +1159,6 @@ Repositório — Ajustados
 
 * Status: Validada.
 * Conteúdo:
-
   * Matriz executável aprovada por `npm run validate:landing-page-research`.
   * Evidência read-only real confirmou a precedência do conjunto próprio sobre o pai elegível.
   * O adapter registra somente eventos estruturados e metadados seguros.
@@ -1359,7 +1321,6 @@ Repositório — Ajustados
   - a validação humana autenticada em Preview aprovou owner e non-owner em desktop e mobile, incluindo conteúdo, responsividade, foco, ausência de CTA financeiro indevido e ausência de erro ou quebra visual;
   - `npm ci`, `npm run check`, as validações específicas e `git diff --check` foram aprovados no fechamento final.
 
-
 12. E12 — Admin Dashboard
 - Objetivo: Consolidar o Admin Dashboard como seção administrativa protegida, separada do Account Dashboard, com navegação própria e leitura operacional read-only.
 - Status: Em desenvolvimento.
@@ -1417,9 +1378,6 @@ Repositório — Ajustados
 - Status: Concluído e validado nos recortes descritos abaixo.
 
 12.2.2 Registros do recorte
-- Banco:
-  - Criados: N/A.
-  - Ajustados: N/A.
 - Repositório:
   - Criados:
     - `app/admin/(protected)/documentacao/page.tsx`
@@ -1451,9 +1409,6 @@ Repositório — Ajustados
     - `components/admin/AdminUserMenu.tsx`
     - `components/admin/adminNavigation.ts`
     - `next.config.js`
-  - Excluídos: N/A.
-- Updates:
-  - Aplicados: N/A.
 
 12.2.3 Entrada pública do Admin Dashboard
 - Status: Concluído e validado em testes humanos (22/06/2026).
@@ -1486,17 +1441,6 @@ Repositório — Ajustados
 12.3.1 Objetivo e status
 - Objetivo: Isolar a operação administrativa mínima de páginas comerciais por taxon aprovada pela E10.7 dentro da superfície administrativa da E12.
 - Status: Reintroduzido em recorte mínimo pela E10.7 em 19/06/2026.
-
-12.3.2 Registros do recorte
-- Banco:
-  - Criados: N/A.
-  - Ajustados: N/A.
-- Repositório:
-  - Criados: N/A.
-  - Ajustados: N/A.
-  - Excluídos: N/A.
-- Updates:
-  - Aplicados: N/A.
 
 12.3.3 Geração administrativa de página comercial por taxon
 - Status: Reintroduzido em recorte mínimo pela E10.7 em 19/06/2026.
@@ -1806,7 +1750,6 @@ Repositório — Ajustados
 17.5 Referência documental
 • Automações operacionais de produto, componentes consumidores, MCPs e evoluções dessa camada passam a ser documentados em `docs/automacoes.md`.
 
-
 17.6 Supabase STAGING (espelho operacional para validação de casos de uso) — descontinuado
 
 • Objetivo: Criar ambiente Supabase separado para validação segura de alterações (schema, RLS, Auth e dados) antes de produção.
@@ -1823,17 +1766,6 @@ Repositório — Ajustados
 18.1.1 Objetivo e status
 - Objetivo: Consolidar o contrato conceitual permanente da E18 para famílias de templates por canal, templates versionados, módulos, seções, variantes, composições reutilizáveis e artefatos finais.
 - Status: Aprovado como base transversal; materialização inicial concentrada na base mínima de `commercial_activation` do recorte 18.2.
-
-18.1.2 Registros do recorte
-- Banco:
-  - Criados: N/A; registros materiais consolidados no recorte 18.2.
-  - Ajustados: N/A; registros materiais consolidados no recorte 18.2.
-- Repositório:
-  - Criados: N/A; registros materiais consolidados no recorte 18.2.
-  - Ajustados: N/A; registros materiais consolidados no recorte 18.2.
-  - Excluídos: N/A.
-- Updates:
-  - Aplicados: N/A.
 
 18.1.3 Decisão estrutural aprovada
 - Status: Aprovada.
@@ -1940,9 +1872,6 @@ Repositório — Ajustados
     - `lib/conversion-content/index.ts`
     - `package.json`
     - `package-lock.json`
-  - Excluídos: N/A.
-- Updates:
-  - Aplicados: N/A.
 
 18.2.3 Primeiro recorte implementado
 - Status: Implementado em 15/06/2026.
@@ -1976,17 +1905,6 @@ Repositório — Ajustados
 18.3.1 Objetivo e status
 - Objetivo: Explicitar a dependência entre a base transversal mínima da E18 e o consumo real pela E10.7, preservando os limites do recorte comercial e mantendo LP Builder separado na E19.
 - Status: E10.7 aprovada como primeiro consumidor real da base E18; composição, conteúdo por taxon, integração, fallback e tracking permanecem sob responsabilidade da E10.7; LP Builder permanece separado na E19.
-
-18.3.2 Registros do recorte
-- Banco:
-  - Criados: N/A.
-  - Ajustados: N/A.
-- Repositório:
-  - Criados: N/A.
-  - Ajustados: N/A.
-  - Excluídos: N/A.
-- Updates:
-  - Aplicados: N/A.
 
 18.3.3 Dependência e validação
 - Status: Dependência estrutural definida e validação atribuída ao consumidor real.
@@ -2029,16 +1947,12 @@ Repositório — Ajustados
 18.4 Parametrização raiz da família `landing_page`
 
 18.4.1 Objetivo e status
-
 * Objetivo: Consolidar a parametrização raiz versionada que define os parâmetros comuns da família `landing_page`.
 * Status: Concluída como implementação repo-only em 13/07/2026, com ciclo de vida inicial `hypothesis`.
 
 18.4.2 Registros do recorte
-
 * Repositório:
-
   * Criados:
-
     * `lib/conversion-content/landing-page/contracts.ts`
     * `lib/conversion-content/landing-page/index.ts`
     * `lib/conversion-content/landing-page/root-registry.ts`
@@ -2046,11 +1960,9 @@ Repositório — Ajustados
     * `lib/conversion-content/landing-page/root-schema.ts`
     * `lib/conversion-content/landing-page/root-validation-cases.ts`
   * Ajustados:
-
     * `lib/conversion-content/index.ts`
     * `package.json`
   * Excluídos:
-
     * `lib/conversion-content/landing-page/composition-validator.ts`
     * `lib/conversion-content/landing-page/fixture.ts`
     * `lib/conversion-content/landing-page/registry.ts`
@@ -2060,61 +1972,47 @@ Repositório — Ajustados
     * `lib/conversion-content/landing-page/validation-cases.ts`
 
 18.4.3 Fonte canônica e versionamento
-
 * Status: Implementados.
 * Conteúdo:
-
   * Registry raiz versionado como fonte canônica.
   * Resolução por versão registrada, sem fallback implícito.
   * Ciclo de vida inicial mantido como `hypothesis`.
 
 18.4.4 Parâmetros semânticos e editoriais
-
 * Status: Implementados na raiz.
 * Conteúdo:
-
   * Papéis comuns, faixas recomendadas e limites técnicos absolutos.
   * Valores exatos mantidos no registry canônico.
 
 18.4.5 Limites e evolução
-
 * Status: Definidos.
 * Conteúdo:
-
   * Faixas recomendadas orientam a geração.
   * Limites absolutos bloqueiam valores inválidos.
   * Ampliação de limite absoluto exige nova versão raiz.
 
 18.4.6 Critérios visuais e responsivos
-
 * Status: Implementados na raiz.
 * Conteúdo:
-
   * Critérios abstratos visuais, responsivos e de acessibilidade.
   * Contrato detalhado mantido no registry canônico.
 
 18.4.7 Presets e espaçamento
-
 * Status: Implementados e versionados.
 * Conteúdo:
-
   * Presets raiz e opções permitidas de espaçamento.
   * Chaves e valores exatos mantidos no registry canônico.
 
 18.4.8 Resolver e validação
-
 * Status: Implementados.
 * Conteúdo:
-
   * Schema estrito, resolução determinística e saída imutável.
   * Falha fechada para versão, preset ou contrato inválido.
   * Validação executável própria da parametrização raiz.
 
 18.4.9 Limites do recorte
-
 * Status: Preservados.
 * Conteúdo:
-
   * A implementação antiga de composição e renderização foi removida.
   * Módulos, variantes e suas especializações pertencem ao recorte 18.5.
   * Não houve alteração de banco nem consumo real por LP.
@@ -2131,7 +2029,6 @@ Repositório — Ajustados
 - Validação: 34 casos executáveis do catálogo, além das regressões de raiz, pesquisas, catálogo de entradas e ativação comercial.
 
 18.5.2 Registros do recorte
-- Banco: N/A.
 - Repositório:
   - Criados:
     - `lib/conversion-content/landing-page/module-catalog/contracts.ts`
@@ -2144,7 +2041,6 @@ Repositório — Ajustados
   - Ajustados:
     - `lib/conversion-content/index.ts`
     - `package.json`
-  - Excluídos: N/A.
 - Updates:
   - Aplicados: `prod#17` — WCAG 2.2 como baseline abstrata e limitada de acessibilidade, incorporada a `faq.accordion@v1` para operação por teclado, exposição do estado expandido ou recolhido, associação acessível e preservação de foco; e a `hero.form@v1` para associação programática de labels, instruções e mensagens de erro quando presentes, operação por teclado e foco no primeiro field inválido. O registro não declara conformidade integral com WCAG nem define UI, HTML ou ARIA concretos.
 
@@ -2558,16 +2454,12 @@ Repositório — Ajustados
 20.2 Catálogo de entradas por taxon
 
 20.2.1 Objetivo e status
-
 * Objetivo: definir e resolver um catálogo declarativo versionado de entradas de `landing_page` por taxon e plano, separado de valores operacionais, composição, conteúdo e entitlement.
 * Status: Concluído até a versão executável v4.
 
 20.2.2 Registros do recorte
-
 * Repositório:
-
   * Criados:
-
     * `lib/conversion-content/landing-page/input-catalog/contracts.ts`
     * `lib/conversion-content/landing-page/input-catalog/registry.ts`
     * `lib/conversion-content/landing-page/input-catalog/schema.ts`
@@ -2577,21 +2469,17 @@ Repositório — Ajustados
     * `supabase/snippets/e20_2_taxon_chain_verify.sql`
     * `app/admin/(protected)/estrutura-lp/validation-cases.ts`
   * Ajustados:
-
     * `lib/conversion-content/index.ts`
     * `package.json`
     * `app/admin/(protected)/estrutura-lp/page.tsx`
     * `app/a/[account]/_components/OnboardingConfigurationJourney.tsx`
     * `app/a/[account]/_components/onboarding-journey-validation-cases.ts`
 * Updates:
-
   * Aplicados: `prod#14`, `prod#16`.
 
 20.2.3 Catálogo e resolução
-
 * Status: Implementados.
 * Conteúdo:
-
   * O catálogo é declarativo, versionado no repositório e resolvido por taxon e plano, sempre com versão explícita e sem fallback automático.
   * A v1 permanece integralmente preservada com os 19 campos e a ordem anteriores.
   * A v2 contém 23 campos: os 19 da v1 e os quatro mínimos do Starter — serviço ou oferta principal, descrição factual curta, referência opaca opcional de logo ou asset principal e paleta visual confirmada.
@@ -2608,21 +2496,17 @@ Repositório — Ajustados
   * Depois do merge da v2, mudança funcional no catálogo resolvido exige nova versão; refatoração interna sem alteração do resultado e novo taxon que apenas herda campos não exigem nova versão.
 
 20.2.4 Dependências e limites
-
 * Status: Validados.
 * Conteúdo:
-
   * O resolver falha fechado para cadeia, camada, especialização, condição ou relação entre planos inválida.
   * A E20.3 é independente deste catálogo: orienta geração por identidade de módulo e variante da E18.5, sem consumir valores da E20.2 nem determinar prontidão.
   * A E20.2 define os campos e valida o formato dos valores; a E19.2 coleta, valida, persiste e compõe os valores, implementa a substituição explícita por LP e preserva o snapshot dos valores efetivamente usados.
   * O recorte não cria banco, migration, bucket, Storage, rota, API, Server Action, UI, onboarding, upload, adapter de banco, entitlement, capacidade comercial, tracking, Google Ads, Analytics, integração, valor operacional, snapshot operacional, geração, IA, automação, agente, job ou infraestrutura.
 
 20.2.7 Refinamento de `transaction_intent` para locação
-
 * Objetivo: criar a versão executável v4 do catálogo, preservando integralmente v1–v3 e acrescentando somente o valor canônico `rent`, com rótulo humano `Locação`, ao field existente `transaction_intent`.
 * Status: Concluída em 15/08/2026.
 * Conteúdo:
-
   * A v4 parte de cópia profunda da v3, preserva os 23 fields, sua ordem, camadas, metadata, bindings de capabilities e equivalência entre `starter`, `lite`, `pro` e `ultra`, mantém `buy`, `sell`, `valuation` e `mixed` e acrescenta `rent` ao final do conjunto permitido.
   * A consulta administrativa existente de estrutura exibe `Locação`; a jornada E19.2 recebeu somente o rótulo local correspondente e permanece na versão operacional v2, sem promoção de configurações ou do compilador E19.3 para v4.
   * As regressões focais, `npm ci`, `npm run check`, `git diff --check` e a inspeção autenticada do Preview em desktop e largura móvel foram aprovados; o servidor local iniciou na porta 3000, mas a renderização local ficou indisponível por ausência das chaves públicas do Supabase no worktree isolado.
@@ -2632,33 +2516,26 @@ Repositório — Ajustados
 20.3 Perfil de orientação para geração
 
 20.3.1 Objetivo e status
-
 * Objetivo: definir e resolver um perfil versionado por taxon que oriente a geração de `landing_page` com recomendações de módulos e variantes da E18.5, sem impor composição final ou prontidão.
 * Status: Concluída; PR #644 mergeado, migration aplicada e verificação read-only pós-apply aprovada.
 
 20.3.3 Contrato e persistência mínima do perfil
-
 * Status: Concluída; implementação do PR #644 integrada à `main`, migration aplicada e estado final do banco verificado.
 * Conteúdo:
-
   * O agregado versionado, as duas tabelas sem registros oficiais, a leitura server-side, o boundary único e as validações de contrato, estados, cadeia taxonômica, integridade e segurança estão implementados.
   * A migration foi aplicada após o merge humano e o estado final do banco foi verificado antes da ativação de consumidores, rotas ou outros caminhos runtime.
 
 20.3.4 Validação E18.5 e resolução própria ou herdada
-
 * Status: Implementada e validada no PR #644.
 * Conteúdo:
-
   * Estender minimamente a API pública TypeScript da E18.5 para validar identidade e versão de módulo e, quando informada, identidade e versão de variante e seu vínculo com o módulo, reutilizando o registry vigente.
   * Preservar o resolver, o registry, o schema e todos os exports públicos preexistentes, sem rota, banco, serviço, novo catálogo, contexto artificial, refatoração ampla ou resolver paralelo.
   * Implementar resolução determinística própria ou herdada, recomendações em ordem crescente e bloqueio de fallback distante quando o ancestral elegível mais próximo possuir perfil `active` inválido.
   * A futura E12.4 tratará mutações e atomicidade do lifecycle; a futura E19.4 poderá consumir o perfil resolvido. A conclusão da E20.3 apenas libera o debate da E12.4, sem autorizar sua implementação.
 
 20.3.5 Contrato, limites e opcionalidade da orientação geral
-
 * Status: Concluída; migration `20260730114633` aplicada, coluna verificada como anulável e reconciliação final de `docs/schema.md` realizada.
 * Conteúdo:
-
   * O perfil pertence a um taxon, possui versão e estado e reúne itens com módulo e versão, variante e versão opcionais, prioridade `P1`, `P2` ou `P3`, ordem recomendada positiva e orientação específica opcional; `generation_guidance` é anulável, exclusivamente humana e não vazia após trim quando presente.
   * Prioridade e ordem são orientação; não criam módulo obrigatório, composição final, seleção por plano, prontidão, autorização, revogação ou geração.
   * Perfil e itens formam um agregado único, somente leitura server-side, persistido em exatamente duas tabelas e entregue por um único boundary, sem perfil oficial neste recorte.
@@ -2669,22 +2546,15 @@ Repositório — Ajustados
 20.5 Seleção da pesquisa integral `end_customer` por taxon
 
 20.5.1 Objetivo e status
-
 * Objetivo: permitir que um taxon ativo possua exatamente uma versão integral `end_customer` explicitamente selecionada por decisão humana autorizada e que essa versão possa ser lida integralmente por um boundary server-side, com validação de identidade e falha fechada.
 * Status: Concluída e ativada em 15/08/2026; PR #746 mergeado, migration aplicada, prova SQL aprovada e smokes autenticados gate-on aprovados em Preview e Production. O taxon `corretor-imoveis` mantém a versão integral `end_customer` v1 selecionada por decisão humana.
 
 20.5.2 Registros do recorte
-
 * Banco:
-
   * Ajustados:
-
     * `public.business_taxons`
-
 * Repositório:
-
   * Criados:
-
     * `lib/conversion-content/landing-page/taxon-preparation/contracts.ts`
     * `lib/conversion-content/landing-page/taxon-preparation/research.ts`
     * `lib/conversion-content/landing-page/taxon-preparation/validation-cases.ts`
@@ -2695,7 +2565,6 @@ Repositório — Ajustados
     * `supabase/migrations/20260814174500_e20_5_selected_end_customer_research_version.sql`
     * `supabase/snippets/e20_5_selected_end_customer_research_version_verify.sql`
   * Ajustados:
-
     * `app/admin/(protected)/taxonomia/[taxonId]/page.tsx`
     * `app/admin/(protected)/taxonomia/actions.ts`
     * `lib/admin/adapters/adminReadOnlyAdapter.ts`
@@ -2704,26 +2573,21 @@ Repositório — Ajustados
     * `next.config.js`
     * `package.json`
 * Referências:
-
   * Plano-base E20.5: `docs/lousa-plano-base-e20-5.md` — seções 3.1, 3.2 e 3.3.
   * Configuração do gate: `docs/platform-config.md` — seção 3.5, secrets e variáveis server-side no Vercel.
   * Contrato de banco: `docs/schema.md` — seção 1.11.
 
 20.5.3 Leitura e validação repo-only da pesquisa integral
-
 * Status: Concluída, validada e integrada à `main` pelo PR #746.
 * Conteúdo:
-
   * O boundary repo-only deriva exclusivamente o path canônico de uma versão candidata `end_customer`, confina a leitura a `docs/pesquisas-brutas/` e nunca consulta a API do GitHub.
   * A leitura preserva o conteúdo integral e valida taxon ativo, slug canônico, versão inteira positiva e metadata única na seção `## 1. Identificação e uso`; path inválido, arquivo ausente, falha operacional, metadata incompatível ou conteúdo vazio falham sem payload parcial.
   * Casos determinísticos cobrem sucesso integral e falhas de versão, path, leitura, metadata e conteúdo; o script dedicado integra `npm run check`.
 
 20.5.4 Persistência e seleção humana mínima
-
 * Objetivo: adicionar a referência mínima de versão selecionada e permitir sua alteração somente por ação humana administrativa explícita, reutilizando a validação da E20.5.3.
 * Status: Concluída e ativada; migration aplicada, prova SQL aprovada e seleção humana validada em Preview e Production.
 * Conteúdo:
-
   * A migration adiciona somente `selected_end_customer_research_version integer null`, com check positivo quando preenchida, sem nova tabela, lifecycle ou histórico; ela preserva RLS/policies, revoga o `UPDATE` de tabela inteira de `service_role` e mantém somente os grants de coluna usados pelo editor vigente (`name`, `slug`, `is_active`) e pela seleção. O snippet read-only comprovou esse conjunto exato após o apply.
   * O gate server-only `E20_5_SELECTED_RESEARCH_ENABLED` aceita apenas o literal `true` e antecede toda leitura ou mutação da coluna. Com o gate desligado, a interface e a ação novas permanecem inacessíveis, sem fallback para schema ausente.
   * A tela existente de detalhe do taxon recebe formulário separado com rótulos e associações programáticas; a Server Action exige `requirePlatformAdmin`, valida a candidata repo-only e atualiza somente a seleção por `id + slug + is_active`, com `.maxAffected(1)`.
@@ -2731,11 +2595,9 @@ Repositório — Ajustados
   * O taxon `corretor-imoveis` possui `selected_end_customer_research_version = 1`, persistido após decisão humana explícita e confirmado no banco e na interface hospedada.
 
 20.5.5 Contrato de consumo da seleção válida
-
 * Objetivo: disponibilizar ao recorte seguinte uma leitura única que prove taxon ativo e pesquisa integral selecionada válida, sem antecipar o gate final de preparação.
 * Status: Concluída, integrada à `main` e validada com a funcionalidade ativa em Preview e Production.
 * Conteúdo:
-
   * O adapter server-only exige `E20_5_SELECTED_RESEARCH_ENABLED` antes de criar o client Supabase ou alcançar a consulta da nova coluna.
   * A leitura valida o identificador, exige taxon existente e ativo, distingue `NULL` legítimo de seleção inválida e carrega exatamente a versão persistida pelo boundary repo-only da E20.5.3.
   * O resultado tipado separa funcionalidade desabilitada, taxon ausente/inativo, ausência de seleção, versão ou identidade inválida, falha de banco e falhas de arquivo, filesystem, metadata ou conteúdo.
@@ -2745,12 +2607,10 @@ Repositório — Ajustados
 20.6 Avaliação de suficiência factual da E20.2 por taxon
 
 20.6.1 Objetivo e status
-
 * Objetivo: avaliar a suficiência factual da pesquisa integral `end_customer` selecionada pela E20.5 em conjunto com uma versão executável explícita do catálogo E20.2 e definir o predicado final de preparação do taxon, sem autorizar geração.
 * Status: Concluída em 15/08/2026; implementação, migration, gate operacional, registro humano e prova real do predicado derivado aprovados.
 
 20.6.2 Registros do recorte
-
 * Banco:
   * Ajustados:
     * `public.business_taxons`.
@@ -2787,7 +2647,6 @@ Repositório — Ajustados
   * Fluxo assistido: `docs/automations.md` — seção 3.10.
 
 20.6.3 Avaliação assistida e registro humano da suficiência
-
 * Status: Concluída em 15/08/2026; a reavaliação real de `corretor-imoveis` contra a versão executável E20.2 `4` resultou em `suficiente`, foi aceita por decisão humana e teve `reviewed_input_catalog_version = 4` registrado e confirmado após reload no Admin autenticado.
 * Conteúdo:
   * usar o fluxo humano `Admin → Codex → Admin`, com IA em fluxo controlado no ambiente interno do Codex e sem workload OpenAI no runtime do LP Factory;
@@ -2798,7 +2657,6 @@ Repositório — Ajustados
   * invalidar a avaliação quando a seleção E20.5 mudar efetivamente e exigir reabertura explícita antes de alterar identidade ou cadeia taxonômica própria ou ancestral que afete avaliação preenchida do taxon ou de descendente.
 
 20.6.4 Gate derivado de preparação do taxon
-
 * Status: Concluída em 15/08/2026; predicado derivado comprovado para a versão executável explicitamente requerida `4`.
 * Conteúdo:
   * derivar deterministicamente a preparação por `taxon ativo + E20.5 selecionada/válida + reviewed_input_catalog_version compatível com a versão executável explicitamente requerida`;
@@ -3016,141 +2874,4 @@ v1.5.57 (20/05/2026)
 • E10.5.6 reorganizado em subitens estáveis (10.5.6.1–10.5.6.7), mantendo estado final enxuto, separação de pendências reais e artefatos consolidados sem misturar escopo do E10.4.
 v1.5.56 (20/05/2026)
 • E10.5 atualizado para refletir somente o estado real do repositório: bloco 10.5 substituído integralmente, removendo promessas de UX pós-setup ainda não implementadas no runtime e consolidando os subcasos 10.5.1/10.5.2/10.5.3/10.5.3.1/10.5.4/10.5.6 com artefatos e pendências alinhados.
-v1.5.55 (20/05/2026) — E10.4 enxugado e consolidado no estado final: bloco substituído para remover histórico intermediário e duplicações internas, absorvendo 10.4.2/10.4.3 e mantendo 10.5+ intacto.
-
-v1.5.54 — 19/05/2026 — E12 atualizado para refletir o estado atual do Admin Dashboard: shell operacional protegido, navegação própria, páginas read-only reais para contas, resoluções de nicho e taxonomia, artefatos criados/ajustados e limites explícitos sem mutações, SQL, migrations ou RLS.
-
-v1.5.53 — 14/05/2026 — Roadmap atualizado com o estado final da implementação 20.8: IA estruturada server-side como complemento ao matching determinístico, persistência apenas em `account_niche_resolutions`, preservação de `account_taxonomy`, artefatos, validações, PR mergeado e pendências futuras.
-
-v1.5.52 — 11/05/2026 — Roadmap atualizado com o estado final da implementação 20.7: vínculo oficial em `account_taxonomy` apenas para alta confiança, preservação de `account_niche_resolutions` como registro operacional, regra de conflito de primário, artefatos, QA runtime e pendências futuras.
-
-v1.5.51 — 11/05/2026 — Roadmap atualizado com o estado final da implementação 20.6: persistência da resolução operacional em `account_niche_resolutions`, decisão sobre `account_taxonomy`, artefatos, QA e pendências futuras.
-
-v1.5.50 — 10/05/2026 — Roadmap atualizado com o estado final da integração de matching determinístico de taxonomia no pós-save do `pending_setup`, incluindo artefato ajustado, regra não bloqueante, observability segura e pendências explícitas.
-
-v1.5.49 (10/05/2026)
-• Adicionado 10.5.4 como concluído (exec): helper puro de confiança determinística para taxon match, com contrato tipado, `aiEscalationMode` e artefatos em `lib/onboarding/niche-resolution/`, mantendo escopo repo-only e pendência explícita de branch sem merge e sem integração ao `pending_setup`.
-
-v1.5.49 — 09/05/2026 — E10.5.6: registrado adapter server-side `matchBusinessTaxonsDeterministic` e contrato TypeScript para consumo futuro da RPC de matching determinístico de taxonomia.
-
-v1.5.48 — 09/05/2026 — E10.5.6: registrado matching determinístico inicial de taxonomia, com `pg_trgm`, normalização textual, FTS, trigram, RPC read-only, migration/rollback e validação funcional no Supabase.
-
-v1.5.47 (08/05/2026) — E10.4: registrado `niche` obrigatório no `pending_setup`, com artefatos ajustados, validação client/server e QA funcional aprovado.
-
-v1.5.46 (07/05/2026) — E10.4: registra refinamento técnico do PR #226, movendo a mutação `pending_setup → active` para `accountAdapter` e preservando a action como orquestradora do fluxo.
-
-v1.5.44 (27/04/2026) — Simplificada a seção 10.5.2 do roadmap, fundindo 10.5.2 e 10.5.2.1 no estado final único da base do BD do E10.5.
-
-v1.5.43 (26/04/2026) — 10.5.2.1: ajuste corretivo do Grupo C
-• Registrado o estado final do ajuste de `audience_scope`: público da pesquisa no registro-pai, itens herdando público por `research_id`, unicidade por `taxon_id + research_block + audience_scope + version` e artefatos de migration/rollback.
-
-v1.5.42 (23/04/2026)
-• Adicionado 10.5.2.1 com o ajuste estrutural de taxon_market_research e taxon_market_research_items no BD.
-
-v1.5.41 (18/04/2026)
-• E12 atualizado para refletir a execução do primeiro recorte real do Admin: superfície protegida de `/admin` entregue como base de acesso/UI do contexto administrativo.
-• 12.5 deixou de ser “próximo subcaso” genérico e passou a registrar o recorte executado de acesso e superfície inicial do Admin.
-• Registrados os ARTEFATOS_REPO do caso: `app/admin/layout.tsx`, `app/admin/page.tsx`, `components/admin/AdminHeader.tsx`, `components/admin/AdminUserMenu.tsx`, além dos ajustes em `app/auth/login/page.tsx` e `components/login-form.tsx`.
-• Registradas as pendências explícitas do caso sobre possível `/admin` público com área protegida separada e sobre destino próprio do logout administrativo.
-v1.5.40 (17/04/2026)
-• E12 enxugado para formato de reinício do Admin Dashboard com apenas 12.1–12.5 (status, objetivo, escopo atual, base existente e próximo subcaso), removendo subitens amplos que inflavam o caso.
-• E12 mantido aderente ao estado real do repo: base mínima em `lib/admin/index.ts`, `lib/admin/adapters/adminAdapter.ts` e `lib/access/guards.ts`, sem backlog amplo no corpo principal.
-v1.5.39 (17/04/2026)
-• E12 reescrito para refletir apenas o estado real implementado no repositório: infraestrutura mínima de privilégio admin (`lib/admin/index.ts`, `lib/admin/adapters/adminAdapter.ts` e `lib/access/guards.ts`), sem tratar dashboard amplo como já definido/implementado.
-• E12 limpo de escopo presente amplo (operação consultiva, painel de contas/prospects/status, relatórios/auditoria consultiva e jobs/tracking), mantendo essas frentes apenas como evolução futura.
-• 12.9 desassociado do E12 atual e realinhado ao estado concluído já registrado em E5.6 (Infra Auth — e-mail transacional).
-v1.5.38 (15/04/2026)
-• 10.5.3 atualizado para Concluído (exec): kit operacional do Grupo A versionado em `docs/` e `supabase/snippets/`, com investigação consolidada, regra de `parent_slug` e carga prática reportada para `implante-dentario`.
-• Adicionado 10.5.3.1 (Briefing): curadoria operacional de aliases enxutos vs microvariações textuais, para separar cadastro manual do Grupo A e matching leve futuro do E10.5.6.
-v1.5.37 (13/04/2026)
-• Documentação alinhada ao estado pós-remoção do legado de tokens: E7/E7.5/E12.5 atualizados para registrar descontinuação do fluxo por token e planejamento do novo Admin Dashboard sem superfície legada ativa.
-• E1/E3 e registros de E6 ajustados para remover referências ativas ao fluxo legado descontinuado e às superfícies administrativas removidas.
-v1.5.36 (09/04/2026)
-• 10.5 ajustado para “Em evolução”, com dependência explícita de 10.5.2.
-• 10.5.2 adicionado como concluído (exec): base estrutural admin/interna de taxonomia, templates e guides, com migration `0006__e10_5_2_taxonomy_content_base.sql`.
-• 10.5.3 adicionado como planejado para popular a base inicial de taxons, aliases, templates e vínculos.
-v1.5.35 (01/04/2026)
-• Adicionado **E19 — LP Builder** como nova seção do Core, no mesmo nível estrutural de Account Dashboard, Admin Dashboard e Partner Dashboard.
-v1.5.34 (31/03/2026)
-• Atualização documental dos artefatos e paths atuais dos casos afetados.
-v1.5.33 (31/03/2026)
-• Atualização documental: item 17.6 retificado para registrar que o projeto `LP-Factory-10-staging` foi deletado em 31/03/2026 após alerta crítico do Security Advisor e que não existe staging ativo no Supabase.
-• Execução da fase 1 estrutural do Core registrada: separação cliente/admin via guards SSR de seção, sem fase 2, sem Partner e sem nova camada no root.
-v1.5.32 (20/03/2026)
-• E17 ajustado: removidos do roadmap os blocos operacionais de GitHub/openai-smoke e do pipeline `supabase-inspect`, preservando o caso de uso enxuto de checks determinísticos do Codex (com referência para `docs/base-tecnica.md`) e adicionando referência documental para que automações operacionais de produto, componentes consumidores, MCPs e evoluções dessa camada passem a ser documentados em `docs/automacoes.md`.
-• Renumeração local do E17 aplicada após a limpeza: o caso de sandbox passou a `17.4`, a referência documental passou a `17.5` e o item de Supabase STAGING descontinuado passou a `17.6`.
-v1.5.31 (10/03/2026)
-• 6.6 concluído (exec): adicionados estados reutilizáveis (FeedbackMessage/EmptyState/LoadingState) e Textarea, com aplicação mínima em Auth, `pending_setup` e loading da conta; `docs/design-system.md` consolidado (E6.4–E6.6) atualizado.
-v1.5.30 (09/03/2026)
-• 6.5 concluído (exec): UI Component Library base (Button/Input/Card ajustados; Select e FormField criados) aplicada em Auth + `pending_setup`, com `docs/design-system.md` atualizado (repo-only; sem Supabase/SQL/migrations).
-v1.5.29 (09/03/2026)
-• 6.4 concluído (exec): identidade visual mínima aplicada (repo-only) + `docs/design-system.md`; wordmark temporário até versionar asset oficial de logo; pendências e novos casos (6.5–6.7) registrados.
-v1.5.28 (06/03/2026)
-• E17 atualizado (exec): `supabase-inspect` ganhou modo batch (`---`) com execução determinística e relatório completo por query no Job Summary; contrato atualizado no README do pipeline e pendência opcional de templates registrada.
-v1.5.27 (05/03/2026)
-• E18 adicionado (planejado): referência ao **Vercel AI Gateway** como padrão de integração de IA na fase IA-ready (ver `docs/vercel-up.md`, Item 1).
-v1.5.26 (04/03/2026)
-• E17 atualizado (exec): pipeline `supabase-inspect` v1 (read-only) implementado (workflow + pipeline em `pipelines/`), com secret `SUPABASE_DB_URL_READONLY` e referência ao contrato detalhado no README do pipeline e ao contrato de DB em docs/schema.md.
-v1.5.25 (04/03/2026)
-• E17 atualizado (exec): checks determinísticos do Codex no sandbox (AGENTS.md + lint via ESLint CLI + typecheck), com build validado fora do sandbox (CI/Vercel) e pendência futura “harden lint” registrada.
-v1.5.24 (02/03/2026)
-• E17 atualizado: setup mínimo concluído (OpenAI Projects DEV/PROD com sharing isolado no DEV e hardening de keys; GitHub secret `OPENAI_API_KEY` + workflow `.github/workflows/openai-smoke.yml` verde), com pendências registradas para limits por projeto, piloto `supabase_inspector` read-only, role Supabase read-only e decisão de endpoint Vercel.
-v1.5.23 (01/03/2026)
-• E5.6 concluído (exec): e-mail transacional do Supabase Auth estabilizado via Resend SMTP com sender `no-reply@lpfactory.com.br` (domínio raiz), com decisão registrada e condição de migração futura para subdomínio dedicado quando houver escala.
-v1.5.22 (24/02/2026)
-• E5.4 concluído (exec): fluxo signup → e-mail → /auth/confirm → redirect /a/home (happy path), com emailRedirectTo incluindo next=/a/home e rid (não-PII), /auth/sign-up-success (UX mínima) e logs estruturados no client (supa#5) com sinal mínimo no runtime Vercel (Vercel).
-v1.5.21 (21/02/2026)
-• E10.4.7 concluído (exec): refinamentos de UX no “Primeiros passos” (sem reset de campos em erro; nome com placeholder + CTA gated; Enter com foco no primeiro inválido; progressive disclosure no mobile; site_url aceita domínio sem esquema e normaliza para https://), com ARTEFATOS_REPO (criados/ajustados) registrados.
-• E6 atualizado (exec): tipografia Inter aplicada globalmente e tokens Tailwind LP Factory adicionados de forma aditiva (preservando shadcn), incluindo expansão do content para js/jsx/mdx.
-v1.5.19 (13/02/2026)
-• E10.4.6 concluído (exec): “Primeiros passos” persiste `account_profiles`, atualiza `accounts.name` e promove `pending_setup → active`; setup concluído passa a ser status-based (`accounts.status=active`) e `setup_completed_at/account_setup_completed_at` ficam deprecated sem uso no gating/fluxo.
-• E10.5 ajustado para “active persuasiva” (pós-setup sem plano/trial), removendo dependência do marcador no fluxo.
-• Access Context endurecido (v_access_context_v2) e ajustes de Supabase Auth fora do repo (Redirect URLs Preview + templates de signup/reset usando RedirectTo).
-v1.5.18 (07/02/2026)
-• E10.4.5 concluído (definição): decisão de persistência do onboarding/perfil em account_profiles (1:1), mantendo accounts.name no core, com contrato mínimo v1 (niche, preferred_channel, whatsapp, site_url).
-v1.5.17 (06/02/2026)
-• E10.4.4 concluído (definição): contrato v1 de campos/validações do formulário “Primeiros passos” (incl. regra condicional do WhatsApp e microcopy por intenção)
-v1.5.16 (06/02/2026)
-• E10.4.3 concluído: política do marcador de setup (once set, never unset) + permitido/proibido (snapshot).
-v1.5.15 (04/02/2026)
-• E9.8.3 marcado como Concluído (remoção do drift trial do runtime + alinhamento de docs; sem migrations; smoke test em preview e produção).
-v1.5.14 (03/02/2026)
-• Adicionado E9.8.5 para decidir a persistência do sinal comercial (commercial.expires_at) e o destino de accounts.trial_ends_at (manter como legado até decisão).
-v1.5.13 (02/02/2026)
-• E9.8.2 concluído (definição): commercial.inactive_reason com trial_expired e churn (opcional payment_failed), sem alterar accounts.status.
-• Criado E9.8.4 (pendente): decisão sobre persistência/consulta do motivo para CRM/relatórios
-v1.5.12 (01/02/2026)
-• Reestruturado o fluxo pending_setup por subestado via account_setup_completed_at, separando 10.4 (setup incompleto: IS NULL) e 10.5 (pós-setup sem plano/trial: IS NOT NULL).
-• Atualizado 10.4 para focar em UX/CTAs do subestado “setup incompleto” e registrar a transição para 10.5 ao setar setup_completed_at (sem mudar accounts.status).
-• Registrados 10.4.1 e 10.4.2 como Concluídos (infra do marcador + regra v0 executável de setup concluído), com dependências e pendência explícita de dados mínimos v1.
-• Mantidos como Briefing: 10.4.3 (política do marcador), 10.4.4 (dados mínimos v1: nicho/WhatsApp/outros) e criado 10.5.1 (matriz “preparação vs produtivo” + enforcement servidor).
-• Ajustadas dependências de 10.4 e 10.5 para incluir E9.3.1 apenas como referência de CTA/roteamento (sem implementar entitlements aqui).
-v1.5.11 (31/01/2026)
-• Atualizado 9.3.1 com definição do trial como entitlement (início pós-setup; expiração `active → inactive`) e contrato mínimo do sinal comercial consumido por SSR/gate/UX.
-• Adicionado 9.8.2 (Briefing) para motivos de `inactive` (trial_expired vs churn) para segmentação de marketing.
-• Adicionado 9.8.3 (Briefing) para execução: remoção do drift `trial` no runtime + alinhamento de docs ao estado final.
-v1.5.10 (31/01/2026)
-• Adicionado E10.4.2 (setup concluído v0 — regra executável) com evento “Salvar/Confirmar” e chamada idempotente do marcador.
-• Adicionado E10.4.3 (Briefing) para política do marcador setup_completed_at (MVP).
-• Adicionado E10.4.4 (Briefing) para matriz “preparação vs produtivo” + enforcement no servidor.
-• Adicionado E10.4.5 (Briefing) para dados mínimos v1 (nicho/WhatsApp/outros) com contrato de armazenamento/validações.
-v1.5.9 (30/01/2026)
-• Adicionado E10.4.1 (infra do marcador setup_completed_at) como pré-requisito para diferenciar subestados de pending_setup.
-• Ajustado 9.3.1 para manter foco em entitlements; remoção do hardcode/allowlist de trial no Access Context foi concluída em E10.4.1.
-• Adicionado placeholder do E10.4 (Briefing) com dependências (E10.4.1, E9.3.1).
-v1.5.8 (27/01/2026)
-• Adicionado E16 (Accounts) para consolidar lifecycle de accounts.status (definições, transições e UX/CTAs), com referências para docs/base-tecnica.md e docs/schema.md (anti-drift).
-• Ajustado E4.2 para remover redundâncias e focar no fluxo/UX do gateway e roteamentos, adicionando subitem de referências numerado.
-• Ajustado E8 para focar em Access Context como decisão única e remover sobreposição com E4/E15/E16, com referências numeradas.
-• Ajustado E15 (15.2–15.4) para reduzir redundâncias, apontar dependências para E16 e reforçar referências para docs/base-tecnica.md e docs/schema.md (anti-drift).
-v1.5.7 (27/01/2026) — F1.1: CTA Criar conta no /a/home direciona para signup
-• E4: registrado que o CTA Criar conta no /a/home (sem sessão) navega para /auth/sign-up (remoção de placeholder/modal).
-v1.5.6 (27/01/2026) — F2: Auto 1ª conta (pending_setup) e atualização do fluxo pós-confirmação
-• E4/E5: usuário autenticado sem membership passa a auto-criar 1ª conta pending_setup e cair em /a/[account] (modo vitrine).
-• E8/E15: registrada a regra “sem membership cria; com qualquer membership não cria” e alinhado o tratamento de usuário sem membership.
-• E5: registrada pendência de regressão em /auth/forgot-password (produção).
-v1.5.3 (21/01/2026) — Gate SSR: UX de bloqueio por status (membership/conta)
-• E4: Gate SSR roteia bloqueios de membership para rotas dedicadas e diferencia fallback de conta bloqueada por status (inactive/suspended) com páginas específicas.
-• E15: Detalhada a UX/CTAs e rotas por status de membership, incluindo tratamento de usuário autenticado sem membership (clear_last).
-
-v1.5.45 (29/04/2026) — E10.4: registra extração route-local do formulário `PendingSetupFirstSteps` e QA do fluxo `pending_setup → active`.
+v1.5.55 (20/05/2026) — E10.4: registrado `niche` obrigatório no `pending_setup`, com artefatos ajustados, validação client/server e QA funcional aprovado.
