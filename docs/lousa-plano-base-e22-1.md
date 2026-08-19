@@ -242,7 +242,7 @@ Plano conceitual: `docs/lp-planejamento.md`.
   - remover no mesmo merge `validate:landing-page-generation-profile` e sua chamada em `check` de `package.json`;
   - preservar temporariamente duas tabelas e quatro RPCs para compatibilidade durante a implantação;
   - implantar e comprovar ausência de consumidores necessários;
-  - validar que `Admin > Workloads OpenAI` não lista o workload aposentado e que workloads ativos continuam corretos;
+  - validar que `Admin > Workloads OpenAI` não lista o workload retirado e que workloads ativos continuam corretos;
   - manter `npm run check` executável.
 - Segundo merge da fase, somente após o primeiro estar implantado e comprovado:
   - executar o gate read-only pré-DDL definido em 2.6;
