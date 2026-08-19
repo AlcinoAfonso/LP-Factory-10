@@ -81,9 +81,7 @@ export default async function AdminTaxonDetailPage({ params }: AdminTaxonDetailP
             Estado, origem, bloqueio e proxima acao sem alterar os fluxos responsaveis.
           </p>
         </div>
-        <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          <DiagnosticCard label="Pesquisa BB" item={taxon.diagnostic.businessBuyer} />
-          <DiagnosticCard label="Pesquisa EC" item={taxon.diagnostic.endCustomer} />
+        <div className="mt-4 grid max-w-xl gap-4">
           <DiagnosticCard label="Página comercial" item={taxon.diagnostic.commercialPage} />
         </div>
       </section>

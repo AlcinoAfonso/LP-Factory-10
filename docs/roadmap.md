@@ -1138,68 +1138,32 @@ Repositório — Ajustados
 • A E10.7 não pode bloquear o acesso à página comercial.
 • O runtime público não pode consumir `draft`, `archived` nem chamar IA para renderizar a página comercial.
 
-10.8 Resolução de pesquisas estruturadas para `landing_page`
+10.8 Resolução de pesquisas estruturadas para `landing_page` — retirada
 
 10.8.1 Objetivo e status
 
-* Objetivo: Disponibilizar um conjunto único, completo, determinístico e rastreável de pesquisas estruturadas para futuros consumidores de `landing_page`.
-* Status: Concluída e validada em 14/07/2026.
+* Objetivo histórico: disponibilizar um conjunto único, completo, determinístico e rastreável de pesquisas estruturadas para consumidores de `landing_page`.
+* Status: Retirada em 19/08/2026 pela E22.1.6.
 
 10.8.2 Registros do recorte
 
-* Repositório:
-
-  * Criados:
-
-    * `lib/conversion-content/landing-page/research-resolution/contracts.ts`
-    * `lib/conversion-content/landing-page/research-resolution/resolver.ts`
-    * `lib/conversion-content/landing-page/research-resolution/validation-cases.ts`
-    * `lib/conversion-content/landing-page/research-resolution/index.ts`
-    * `lib/conversion-content/adapters/landingPageResearchAdapter.ts`
-  * Ajustados:
-
-    * `lib/conversion-content/index.ts`
-    * `package.json`
-* Updates:
-
-  * Aplicados:
-
-    * `supa#40`
-    * `supa#5`
+* Status: Registro histórico preservado; os artefatos retirados permanecem consolidados na E22.1.2.
+* Conteúdo: o boundary `research-resolution`, o adapter, os exports e o validator foram removidos.
 
 10.8.3 Contrato de resolução e elegibilidade
 
-* Status: Implementado.
-* Conteúdo:
-
-  * Entrada por `taxon_id` do taxon atendido, já resolvido pelo fluxo responsável.
-  * Execução server-side e read-only, sem persistência nova.
-  * Cada `audience_scope` deve resultar em um único conjunto completo e elegível, formado por `strategic_core`, `lp_overview`, `lp_sections` e `seo`, com pesquisas-pai ativas e uma versão comum aos quatro blocos.
-  * Saída tipada e rastreável para consumo futuro pela E20 e pela E19.
+* Status: Contrato histórico retirado.
+* Conteúdo: não existe substituto para E10.8.
 
 10.8.4 Precedência, proveniência e falha fechada
 
-* Status: Implementadas.
-* Conteúdo:
-
-  * `end_customer` é resolvido exclusivamente no taxon atendido.
-  * O conjunto próprio completo e elegível de `business_buyer` vence sempre.
-  * O pai direto só pode ser usado quando o conjunto próprio estiver ausente ou incompleto.
-  * Conjunto próprio inválido ou ambíguo falha fechado e não pode ser mascarado pelo pai.
-  * Cada `audience_scope` usa um conjunto atômico, sem mistura de blocos, taxons de origem ou versões dentro do próprio público; `end_customer` e `business_buyer` podem usar versões diferentes.
-  * A resolução não consulta além do pai direto.
-  * O resultado preserva taxons, relação de origem, pesquisas, itens e versões usados.
+* Status: Responsabilidade histórica encerrada.
+* Conteúdo: E20.5 e E20.6 selecionam e avaliam o caminho vigente da pesquisa integral `end_customer`, consumido pela E19.3.
 
 10.8.5 Validação e limites do recorte
 
-* Status: Validada.
-* Conteúdo:
-
-  * Matriz executável aprovada por `npm run validate:landing-page-research`.
-  * Evidência read-only real confirmou a precedência do conjunto próprio sobre o pai elegível.
-  * O adapter registra somente eventos estruturados e metadados seguros.
-  * Nenhuma estrutura ou dado de banco, rota, UI, cache ou persistência foi criado ou alterado.
-  * E10.7, E18.4, E19, E20, automações, agentes e jobs permaneceram fora do recorte.
+* Status: Preservações vigentes confirmadas pela E22.1.6.
+* Conteúdo: `taxon_market_research`, `taxon_market_research_items` e seus consumidores independentes permanecem preservados.
 
 11. E11 — Gestão de Usuários e Convites
 - Objetivo: permitir gestão segura de membros não-owner e convites por conta, usando Supabase Auth e o Account Dashboard.
@@ -1599,8 +1563,8 @@ Repositório — Ajustados
 12.5 Diagnóstico e navegação operacional do Admin Dashboard
 
 12.5.1 Objetivo e status
-- Objetivo: Tornar explícito o diagnóstico operacional por taxon e conectar Taxonomia, Páginas comerciais, Perfis de orientação e Resoluções de nicho sem criar prontidão persistida nem reabrir os contratos de mutação existentes.
-- Status: Implementação candidata no PR #689; validações técnicas e QA visual autenticado aprovados, com inspeção final pós-reconciliação com a `main` ainda pendente.
+- Objetivo: Tornar explícito o diagnóstico operacional por taxon e conectar Taxonomia, Páginas comerciais e Resoluções de nicho sem criar prontidão persistida nem reabrir os contratos de mutação existentes.
+- Status: Concluída; os consumidores administrativos históricos de E20.3 e E10.8 foram retirados pelas E22.1.4 e E22.1.6, com Página comercial, E20.5 e E20.6 preservadas.
 
 12.5.2 Registros do recorte
 - Repositório:
@@ -1626,27 +1590,25 @@ Repositório — Ajustados
   - Plano-base aprovado: `docs/lousa-plano-base-e12-5.md` — E12.5.3.
 
 12.5.3 Diagnóstico contextual e navegação
-- Status: Implementação candidata, sem alteração de banco, rota, action, RPC ou chamada de IA.
+- Status: Concluída no estado vigente, sem alteração de banco, rota, action, RPC ou chamada de IA.
 - Conteúdo:
-  - Taxonomia resume Status, Pesquisa BB, Pesquisa EC, Página comercial, Perfil ativo e Rascunho em tabela responsiva com cabeçalho fixo; o diagnóstico detalhado preserva a assistência por IA e os motivos completos sem aproximar estados como fatos.
-  - A resolução vigente da E10.8 permanece canônica para pesquisa: BB pode usar o pai direto elegível, enquanto EC permanece própria do taxon servido.
-  - Páginas comerciais mantém a elegibilidade comercial separada da resolução da E10.8, lista taxons elegíveis e não elegíveis e direciona pendências para o diagnóstico do taxon.
-  - Perfis distinguem ativo próprio, ativo herdado, rascunho próprio, ausência e indisponibilidade; a assistência por IA permanece opcional e sua ausência não bloqueia a gestão manual.
-  - Resoluções de nicho permanece centrada na conta e adiciona somente navegação contextual a partir do taxon confirmado, sem inferir vínculo pela sugestão da IA.
-  - Leituras diagnósticas usam projeções server-side em lote e falha isolada por domínio; não há chamadas sequenciais por taxon nem novo domínio de prontidão.
+  - Taxonomia resume Status e Página comercial em tabela responsiva; o detalhe preserva o diagnóstico comercial e as ações vigentes da seleção E20.5 e da avaliação E20.6.
+  - Os diagnósticos BB/EC da camada E10.8 e os estados de perfil E20.3 foram retirados sem alterar a elegibilidade ou a operação de Páginas comerciais.
+  - Resoluções de nicho permanece centrada na conta e mantém as ações próprias a partir do taxon confirmado, sem inferir vínculo pela sugestão da IA.
+  - Leituras diagnósticas preservadas usam projeções server-side em lote e falha isolada por domínio; não há novo domínio de prontidão.
 
 12.5.4 Validação e pendências
-- Status: Gate técnico local e QA visual autenticado aprovados; inspeção final pós-reconciliação com a `main` pendente.
+- Status: Gate técnico local e QA hospedado/autenticado aprovados para o estado candidato da E22.1.6.
 - Conteúdo:
-  - `npm ci`, `npm run check`, `git diff --check` e os validadores de pesquisa, perfil e página comercial foram aprovados localmente.
-  - O QA autenticado no Preview aprovou a experiência e o comportamento da Taxonomia, Páginas comerciais, Perfis de orientação, Resoluções de nicho e páginas de gerenciamento em desktop e mobile, incluindo teclado, foco e preservação das ações existentes.
-  - O PR aguarda a inspeção final do Estrategista; merge continua exclusivamente humano.
+  - `npm ci`, `npm run check`, `git diff --check` e os validadores focais preservados foram aprovados localmente.
+  - O QA autenticado no Preview aprovou Taxonomia em desktop e mobile sem diagnósticos BB/EC E10.8, preservando Página comercial e os estados E20.5/E20.6, sem links, cards, estados órfãos, overflow de página ou erros de console.
+  - Apenas o merge humano da E22.1.6 permanece pendente.
 
 12.6 Estrutura da LP no Admin Dashboard
 
 12.6.1 Objetivo e status
-- Objetivo: Expor no Admin uma consulta estrutural read-only da landing page, reunindo parâmetros, entradas e pesquisas em uma única rota.
-- Status: Concluído em 10/08/2026 após merge humano do PR #695; poda candidata da visão histórica de módulos e variantes implementada na E22.1.5 e aprovada no QA hospedado/autenticado em desktop (1280×900) e mobile (390×844), com Parâmetros, Entradas e Pesquisas preservados, E20.2 resolvendo 23 campos válidos e apenas o merge humano pendente.
+- Objetivo: Expor no Admin uma consulta estrutural read-only da landing page, reunindo parâmetros e entradas em uma única rota.
+- Status: Concluído; a E22.1.5 retirou Módulos e variantes, e a E22.1.6 retirou Pesquisas, preservando Parâmetros e Entradas com QA hospedado/autenticado aprovado em desktop (1280×900) e mobile (390×844).
 
 12.6.2 Registros do recorte
 - Repositório:
@@ -1668,13 +1630,13 @@ Repositório — Ajustados
   - Plano-base aprovado: `docs/lousa-plano-base-e12-6.md` — E12.6.3.
 
 12.6.3 Consulta estrutural read-only
-- Status: Concluída; estado candidato da E22.1.5 preserva a consulta sem alteração de banco, persistência, mutation, IA, automação ou infraestrutura.
+- Status: Concluída no estado candidato da E22.1.6, sem alteração de banco, persistência, mutation, IA, automação ou infraestrutura.
 - Conteúdo:
-  - O Admin possui um único item `Estrutura da LP` e uma única rota `/admin/estrutura-lp`; as visões Parâmetros, Entradas e Pesquisas permanecem na mesma rota por query string.
-  - Parâmetros consulta o contrato público vigente da E18.4; a visão histórica Módulos e variantes e seus filtros foram retirados na E22.1.5.
-  - Entradas resolve o catálogo da E20.2 por versão, plano e taxon ativo; Pesquisas preserva a resolução independente de BB e EC da E10.8 e explicita estados próprio, herdado, ausente, incompleto, revisão ou indisponível.
-  - A leitura administrativa usa um único adapter novo e consultas server-side em lote, sem exportar registry ou schema privado, sem N+1 e sem regra de domínio em React.
-  - `npm ci`, `npm run check`, `git diff --check` e os validadores canônicos preservados da E18.4, E20.2 e E10.8 foram aprovados localmente; o QA hospedado/autenticado em desktop (1280×900) e mobile (390×844) aprovou as três visões, preservou Parâmetros, Entradas e Pesquisas e confirmou 23 campos válidos resolvidos pela E20.2; apenas o merge humano permanece pendente.
+  - O Admin possui um único item `Estrutura da LP` e uma única rota `/admin/estrutura-lp`; somente as visões Parâmetros e Entradas permanecem na rota por query string.
+  - Parâmetros consulta o contrato público vigente da E18.4; Entradas resolve o catálogo da E20.2 por versão, plano e taxon ativo.
+  - As visões históricas Módulos e variantes e Pesquisas foram retiradas pelas E22.1.5 e E22.1.6; queries antigas caem com segurança em Parâmetros.
+  - A leitura administrativa usa um único adapter e consultas server-side em lote, sem exportar registry ou schema privado, sem N+1 e sem regra de domínio em React.
+  - `npm ci`, `npm run check`, `git diff --check` e os validadores canônicos preservados da E18.4 e E20.2 foram aprovados localmente; o QA hospedado/autenticado em desktop (1280×900) e mobile (390×844) aprovou as duas visões e confirmou 23 campos válidos resolvidos pela E20.2. Apenas o merge humano da E22.1.6 permanece pendente.
 
 13. E13 — Partner Dashboard
 
@@ -1816,7 +1778,7 @@ Repositório — Ajustados
 
 18. E18 — Base transversal de templates, módulos, composições e artefatos
 - Objetivo: Definir infraestrutura e contratos reutilizáveis para famílias de templates por canal, templates versionados, módulos de conteúdo, seções de página, variantes, composições e artefatos finais persistidos; sustentar primeiro a E10.7 sem produzir diretamente a página comercial de um taxon; e permitir consumidores futuros somente como visão de evolução, sem antecipar sua implementação.
-- Status: Base mínima de `commercial_activation` concluída; parametrização raiz versionada de `landing_page` concluída em 13/07/2026 e preservada; implementação anterior de composição `landing_page` removida; catálogo repo-only da E18.5 em retirada candidata pela E22.1.5.
+- Status: Base mínima de `commercial_activation` concluída; parametrização raiz versionada de `landing_page` concluída em 13/07/2026 e preservada; implementação anterior de composição `landing_page` removida; catálogo repo-only da E18.5 retirado pela E22.1.5.
 
 18.1 Contrato transversal de templates, módulos, composições e artefatos
 
@@ -1865,7 +1827,7 @@ Repositório — Ajustados
     - `final_cta.simple`
   - As variantes descrevem comportamento estrutural ou funcional e não podem representar nichos.
   - A ampliação do catálogo depende de necessidade comprovada por consumidores reais.
-  - Para `landing_page`, a parametrização raiz pertence ao recorte 18.4; o catálogo histórico separado de módulos e variantes da E18.5 foi retirado no candidato da E22.1.5, sem afetar a raiz.
+  - Para `landing_page`, a parametrização raiz pertence ao recorte 18.4; o catálogo histórico separado de módulos e variantes da E18.5 foi retirado pela E22.1.5, sem afetar a raiz.
 
 18.1.6 Contrato entre código e banco
 - Status: Definido como separação de responsabilidades.
@@ -2116,7 +2078,7 @@ Repositório — Ajustados
 * Conteúdo:
 
   * A implementação antiga de composição e renderização foi removida.
-  * O catálogo histórico de módulos, variantes e especializações do recorte 18.5 foi retirado no candidato da E22.1.5, sem alterar esta parametrização raiz.
+  * O catálogo histórico de módulos, variantes e especializações do recorte 18.5 foi retirado pela E22.1.5, sem alterar esta parametrização raiz.
   * Não houve alteração de banco nem consumo real por LP.
   * Os parâmetros permanecem como hipótese até validação por LP real.
 
@@ -2124,7 +2086,7 @@ Repositório — Ajustados
 
 18.5.1 Objetivo e status
 - Objetivo histórico: manter um catálogo repo-only versionado de módulos e variantes da família `landing_page`.
-- Status: Retirada candidata na E22.1.5 em 19/08/2026, após confirmação de ausência de consumidor no caminho canônico; QA hospedado/autenticado aprovado em desktop (1280×900) e mobile (390×844), com apenas o merge humano pendente.
+- Status: Retirada concluída pela E22.1.5 em 19/08/2026 após merge do PR #783 e QA pós-merge aprovado em produção, sem consumidor no caminho canônico.
 - Destino: sem substituto. A parametrização raiz da E18.4 e o catálogo de entradas da E20.2 permanecem preservados e independentes.
 
 18.5.2 Registros do recorte
@@ -2320,7 +2282,7 @@ Repositório — Ajustados
   - A resolução usa o plano efetivo atual e a cadeia taxonômica autoritativa completa pelo resolver canônico, sem constante fixa, `latest`, maior versão do registry, slug ou layer codificado.
   - Os valores históricos da E19.2 são revalidados read-only contra o catálogo efetivo, mantendo distintas e auditáveis a versão original da configuração e a versão E20.2 efetivamente usada.
   - Novo field obrigatório aplicável, valor ausente ou incompatível retorna como gap factual à E19.2; defeito de catálogo, cadeia ou resolver retorna à E20.2, sem correção silenciosa ou regravação da configuração histórica.
-  - A pesquisa integral `end_customer` chega ao `modelContext` sem resumo, atomização, ranking, seleção semântica, filtragem editorial ou leitura filesystem duplicada; E10.8 permanece íntegra para consumidores independentes.
+  - A pesquisa integral `end_customer` selecionada pela E20.5 chega ao `modelContext` sem resumo, atomização, ranking, seleção semântica, filtragem editorial ou leitura filesystem duplicada; `business_buyer` permanece ausente do contexto do modelo, sem depender do boundary histórico E10.8.
   - Fatos permanecem separados por `valueType`, com valores operacionais brutos fora do `modelContext` e sem path físico da pesquisa no contrato entregue à E19.4.
   - A prova read-only no draft real confirmou `E19.2 v2 → E20.2 v4`, pesquisa integral `end_customer` v1, separação entre fatos semânticos e operacionais, ausência de path físico e imutabilidade profunda como primeiro caso do mecanismo genérico temporal e taxonômico.
   - `npm ci`, `npm run check`, os validadores focais e `git diff --check` foram aprovados; o lint permaneceu sem erros e seus warnings preexistentes não ampliaram o recorte.
@@ -2505,7 +2467,7 @@ Repositório — Ajustados
 * Conteúdo:
 
   * O resolver falha fechado para cadeia, camada, especialização, condição ou relação entre planos inválida.
-  * A retirada concluída da E20.3 e a retirada candidata da E18.5 não alteram o catálogo, os valores nem a prontidão definidos pela E20.2.
+  * As retiradas concluídas da E20.3 e da E18.5 não alteram o catálogo, os valores nem a prontidão definidos pela E20.2.
   * A E20.2 define os campos e valida o formato dos valores; a E19.2 coleta, valida, persiste e compõe os valores, implementa a substituição explícita por LP e preserva o snapshot dos valores efetivamente usados.
   * O recorte não cria banco, migration, bucket, Storage, rota, API, Server Action, UI, onboarding, upload, adapter de banco, entitlement, capacidade comercial, tracking, Google Ads, Analytics, integração, valor operacional, snapshot operacional, geração, IA, automação, agente, job ou infraestrutura.
 
@@ -2784,13 +2746,13 @@ Repositório — Ajustados
 
 22. E22 — Retirada controlada de ativos históricos
 - Objetivo: reduzir a superfície histórica que não participa do caminho canônico vigente, preservando consumidores reais e preparando a sequência E19.4 concluída → E22.1 → E19.5.
-- Status: Em andamento no candidato da E22.1.5; a E22.1.4 está concluída após apply e prova read-only, a E19.4 permanece concluída e a E19.5 permanece pausada durante a E22.1.
+- Status: Em andamento no candidato da E22.1.6; as E22.1.4 e E22.1.5 estão concluídas, a E19.4 permanece concluída e a E19.5 permanece pausada durante a E22.1.
 
 22.1 Retirada controlada de ativos históricos
 
 22.1.1 Objetivo e status
 - Objetivo: retirar de forma controlada ativos históricos e seus consumidores somente após classificação de dependências, preservando os boundaries e dados ainda necessários ao caminho ativo.
-- Status: Plano-base v2 consolidado; E22.1.4 concluída e E22.1.5 implementada como candidata pronta para merge, com QA hospedado/autenticado aprovado em desktop (1280×900) e mobile (390×844) e apenas o merge humano pendente. A E19.4 permanece concluída e a E19.5 pausada.
+- Status: Plano-base v2 consolidado; E22.1.4 e E22.1.5 concluídas, e E22.1.6 implementada como candidata pronta para merge, com QA hospedado/autenticado aprovado em desktop (1280×900) e mobile (390×844) e apenas o merge humano pendente. A E19.4 permanece concluída e a E19.5 pausada.
 
 22.1.2 Registros do recorte
 - Repositório:
@@ -2814,8 +2776,10 @@ Repositório — Ajustados
     - `lib/conversion-content/adapters/landingPageGenerationProfileAdminAdapter.ts`
     - `lib/conversion-content/adapters/landingPageGenerationProfileOpenAiAdapter.ts`
     - `lib/conversion-content/adapters/landingPageGenerationProfileRowNormalization.ts`
+    - `lib/conversion-content/adapters/landingPageResearchAdapter.ts`
     - `lib/conversion-content/landing-page/generation-profile/`
     - `lib/conversion-content/landing-page/module-catalog/`
+    - `lib/conversion-content/landing-page/research-resolution/`
     - `supabase/snippets/e12_4_3_generation_profile_lifecycle_verify.sql`
     - `supabase/snippets/e20_3_generation_profile_verify.sql`
     - `supabase/tests/e12_4_3_generation_profile_lifecycle.test.sql`
@@ -2843,20 +2807,22 @@ Repositório — Ajustados
 
 22.1.5 Retirada de E18.5 e poda dos consumidores administrativos
 - Objetivo: retirar o catálogo histórico de módulos e variantes e podar somente as responsabilidades administrativas que dependem dele.
-- Status: Implementada como candidata pronta para merge humano; validações locais e QA hospedado/autenticado aprovados em desktop (1280×900) e mobile (390×844), com apenas o merge humano pendente.
+- Status: Concluída em 19/08/2026 após merge do PR #783 e QA pós-merge aprovado em produção.
 - Conteúdo:
   - o boundary `module-catalog`, sua API pública, exports e validator foram retirados, junto de `validate:landing-page-module-catalog` e sua chamada em `npm run check`;
-  - somente os consumidores administrativos de módulos e variantes foram podados; `/admin/estrutura-lp` preserva Parâmetros, Entradas e Pesquisas, sem Módulos e variantes;
+  - somente os consumidores administrativos de módulos e variantes foram podados; no estado pós-merge da E22.1.5, `/admin/estrutura-lp` preservou Parâmetros, Entradas e Pesquisas, sem Módulos e variantes;
   - E18.4 e E20.2 permanecem preservadas e validadas, sem mudança de banco, migration, persistência ou dados;
-  - as regressões locais confirmam ausência de dependência de E18.5 no caminho E19.3 → E19.4; o QA hospedado/autenticado preservou Parâmetros, Entradas e Pesquisas, e E20.2 resolveu 23 campos válidos em Entradas; apenas o merge humano permanece pendente.
+  - as regressões locais confirmaram ausência de dependência de E18.5 no caminho E19.3 → E19.4; os QAs hospedado/autenticado e pós-merge em produção preservaram Parâmetros, Entradas e Pesquisas, e E20.2 resolveu 23 campos válidos em Entradas.
 
 22.1.6 Desacoplamento da camada E10.8
 - Objetivo: desacoplar a camada histórica de resolução de pesquisas e seus consumidores históricos sem remover pesquisas estruturadas que possuam consumidor real independente.
-- Status: Planejada; não implementada.
+- Status: Implementada como candidata pronta para merge humano; validações locais e QA hospedado/autenticado aprovados em desktop (1280×900) e mobile (390×844), com apenas o merge humano pendente.
 - Conteúdo:
-  - retirar referências e consumidores históricos de E10.8 somente após classificação e regressão proporcionais;
-  - preservar E20.5, E20.6 e o consumo independente das pesquisas estruturadas enquanto permanecer necessário;
-  - não apagar dados de pesquisa apenas para simplificar a retirada da camada histórica.
+  - o boundary `research-resolution`, o adapter `landingPageResearchAdapter`, exports e validator foram retirados, junto de `validate:landing-page-research` e sua chamada em `npm run check`;
+  - os diagnósticos BB/EC E10.8 foram retirados da Taxonomia, e a visão Pesquisas foi retirada de `/admin/estrutura-lp`, que preserva somente Parâmetros e Entradas; queries antigas caem com segurança em Parâmetros;
+  - E20.5, E20.6, E19.3, E19.4, E10.6, E10.7, E18.4 e E20.2 permanecem preservadas e validadas; a E19.3 continua recebendo a pesquisa integral `end_customer` selecionada, sem `business_buyer` no `modelContext`;
+  - `taxon_market_research`, `taxon_market_research_items`, seus dados e migrations históricas permanecem intactos para consumidores independentes; não houve migration, DDL, substituto ou alteração de `docs/schema.md`;
+  - o QA hospedado/autenticado aprovou Taxonomia e Estrutura da LP em desktop e mobile, sem links, cards, estados órfãos, overflow de página ou erros de console; E20.2 resolveu 23 campos válidos para Corretor Imóveis em v4/Starter.
 
 22.1.7 Consolidação transversal e regressão final
 - Objetivo: consolidar a retirada controlada, verificar a ausência de dependências residuais e preservar a integridade do caminho E19.4.

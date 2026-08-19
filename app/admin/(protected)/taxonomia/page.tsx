@@ -114,21 +114,17 @@ export default async function AdminTaxonomyPage({ searchParams }: AdminTaxonomyP
       ) : (
         <div className="overflow-hidden rounded-lg border border-border bg-card shadow-card">
           <div className="max-h-[70vh] overflow-auto">
-            <table className="w-full min-w-[760px] table-fixed divide-y divide-border text-sm">
+            <table className="w-full min-w-[620px] table-fixed divide-y divide-border text-sm">
               <colgroup>
-                <col className="w-[31%]" />
-                <col className="w-[10%]" />
+                <col className="w-[48%]" />
                 <col className="w-[14%]" />
-                <col className="w-[13%]" />
-                <col className="w-[17%]" />
+                <col className="w-[23%]" />
                 <col className="w-[15%]" />
               </colgroup>
               <thead className="sticky top-0 z-10 bg-muted text-left text-xs font-medium uppercase text-muted-foreground">
                 <tr>
                   <th className="px-4 py-3">Taxon</th>
                   <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3">Pesquisa BB</th>
-                  <th className="px-4 py-3">Pesquisa EC</th>
                   <th className="px-4 py-3">Página comercial</th>
                   <th className="px-4 py-3 text-right">Acao</th>
                 </tr>
@@ -147,8 +143,6 @@ export default async function AdminTaxonomyPage({ searchParams }: AdminTaxonomyP
                         {taxon.isActive ? "Ativo" : "Inativo"}
                       </AdminStatusBadge>
                     </td>
-                    <DiagnosticCell item={taxon.diagnostic.businessBuyer} />
-                    <DiagnosticCell item={taxon.diagnostic.endCustomer} />
                     <DiagnosticCell item={taxon.diagnostic.commercialPage} />
                     <td className="px-4 py-3 text-right">
                       <Link className="font-medium text-brand-700 hover:underline" href={`/admin/taxonomia/${taxon.id}`}>

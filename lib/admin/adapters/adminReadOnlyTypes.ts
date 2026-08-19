@@ -64,8 +64,6 @@ export type AdminOperationalDiagnosticItem = {
 };
 
 export type AdminTaxonOperationalDiagnostic = {
-  businessBuyer: AdminOperationalDiagnosticItem;
-  endCustomer: AdminOperationalDiagnosticItem;
   commercialPage: AdminOperationalDiagnosticItem;
 };
 

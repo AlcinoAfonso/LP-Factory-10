@@ -277,13 +277,6 @@
 • Versão, preset ou parâmetro desconhecido deve falhar fechado, sem fallback implícito; a saída resolvida deve permanecer imutável.
 • Evolução deve preservar a precedência `raiz → módulo → variante`; APIs removidas não podem ser reutilizadas.
 
-3.15.3 Resolução de pesquisas estruturadas de `landing_page`
-• Boundary canônico: `lib/conversion-content/landing-page/research-resolution/`, consumido pelo adapter server-side de `conversion-content`.
-• Consumidores devem usar a API pública e não consultar tabelas diretamente nem reimplementar precedência ou herança.
-• A resolução recebe taxon já determinado; `end_customer` usa o taxon atendido e `business_buyer` admite pai direto somente quando o conjunto próprio estiver ausente ou incompleto.
-• Conjunto próprio inválido ou ambíguo deve falhar fechado, sem mistura parcial nem mascaramento pelo pai.
-• Resultado preserva proveniência; resolver permanece puro e adapter registra apenas metadados seguros.
-
 3.15.4 Catálogo de entradas de `landing_page`
 • Boundary canônico: `lib/conversion-content/landing-page/input-catalog/`; registry, contracts, schema e resolver são fontes executáveis.
 • O resolver é puro e repo-only, sem consultar Supabase, Stripe, assinatura, entitlement ou valores operacionais.
