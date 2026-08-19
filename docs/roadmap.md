@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 18/08/2026
-• Versão: v1.5.161
+• Versão: v1.5.162
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2243,7 +2243,7 @@ Repositório — Ajustados
 
 19. E19 — LP Builder
 - Objetivo: Consolidar o fluxo Core de landing pages por conta, da identidade mínima em `draft` às futuras etapas de geração, revisão, materialização e publicação, sempre por recortes aprovados.
-- Status: E19.1, E19.2 e E19.3 concluídas. E19.4.3 e E19.4.4 concluídas, integradas à `main` e aprovadas nos gates hospedados, com dois appends válidos, persistência 1:N, Storage privado e verificador SQL aprovados. A E19.4.5 está concluída e aprovada como primeira prova real no PR B #776, pendente de avaliação externa e merge humano. A E19.5 permanece pausada.
+- Status: E19.1, E19.2 e E19.3 concluídas. E19.4.3, E19.4.4 e E19.4.5 concluídas; a E19.4 está encerrada e integrada à `main` pelo PR #776. A revisão 3 permanece preservada como baseline dos gaps persuasivos observados. A E19.5 permanece pausada.
 
 19.1 Criação produtiva mínima de LP por conta
 
@@ -2536,7 +2536,7 @@ Repositório — Ajustados
   - a revisão corrente é a revisão 3.
 
 19.4.5 Visualização privada e prova humana da primeira LP real
-- Status: concluída e aprovada como primeira prova real do pipeline e do Preview em 18/08/2026; entrega publicada no PR B #776 e pendente somente de avaliação externa e merge humano.
+- Status: concluída, aprovada e integrada à `main` pelo PR B #776 em 18/08/2026. A revisão 3 permanece como baseline da primeira prova real e dos gaps persuasivos identificados; nenhuma calibração posterior ou E19.5 foi iniciada.
 - Automações: não.
 - Conteúdo:
   - a rota privada reutilizada carrega a revisão corrente sob nova validação de ator, conta, membership, entitlement, LP em `draft` e tenant da revisão, com estados fail-closed para indisponibilidade, acesso negado e conteúdo inválido;
