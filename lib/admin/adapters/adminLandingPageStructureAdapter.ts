@@ -13,13 +13,11 @@ import {
   type LandingPageInputCatalogTaxonIdentity,
 } from "@/conversion-content/landing-page/input-catalog";
 import { createServiceClient } from "@/lib/supabase/service";
-import { getAdminTaxonResearchPresentation } from "./adminTaxonomyAdapter";
 import type { AdminTaxonSummary } from "./adminReadOnlyTypes";
 
 export const adminLandingPageStructureViews = [
   "parametros",
   "entradas",
-  "pesquisas",
 ] as const;
 
 export type AdminLandingPageStructureView =
@@ -48,8 +46,6 @@ export async function readAdminLandingPageStructure(
   switch (view) {
     case "entradas":
       return { view, data: await readInputs(query) } as const;
-    case "pesquisas":
-      return { view, data: await readResearch(query) } as const;
     default:
       return { view, data: readRootParameters(query) } as const;
   }
@@ -129,30 +125,6 @@ async function readInputs(query: StructureQuery) {
     result: chain.ok
       ? resolveLandingPageInputCatalog({ version, plan, taxonChain: chain.value })
       : null,
-  };
-}
-
-async function readResearch(query: StructureQuery) {
-  const taxonRead = await readActiveTaxons();
-  const selectedTaxon = selectTaxon(taxonRead.taxons, query.taxon);
-
-  if (taxonRead.error || !selectedTaxon) {
-    return {
-      taxons: taxonRead.taxons,
-      taxonError: taxonRead.error,
-      selectedTaxon,
-      diagnostics: null,
-      result: null,
-    };
-  }
-
-  const presentation = await getAdminTaxonResearchPresentation(selectedTaxon);
-
-  return {
-    taxons: taxonRead.taxons,
-    taxonError: null,
-    selectedTaxon,
-    presentation,
   };
 }
 

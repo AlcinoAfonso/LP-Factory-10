@@ -2,7 +2,6 @@ import Link from "next/link";
 import { Fragment, type ReactNode } from "react";
 
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
-import { AdminStatusBadge } from "@/components/admin/AdminStatusBadge";
 import { EmptyState } from "@/components/ui/empty-state";
 import {
   adminLandingPageStructureViews,
@@ -10,8 +9,6 @@ import {
   readAdminLandingPageStructure,
   type AdminLandingPageStructureView,
 } from "@/lib/admin/adapters/adminLandingPageStructureAdapter";
-import type { AdminOperationalDiagnosticItem } from "@/lib/admin/adapters/adminReadOnlyTypes";
-import type { AdminTaxonResearchAudiencePresentation } from "@/lib/admin/adapters/adminTaxonomyAdapter";
 import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -24,14 +21,12 @@ type PageProps = {
 type StructureRead = Awaited<ReturnType<typeof readAdminLandingPageStructure>>;
 type RootData = Extract<StructureRead, { view: "parametros" }>["data"];
 type InputData = Extract<StructureRead, { view: "entradas" }>["data"];
-type ResearchData = Extract<StructureRead, { view: "pesquisas" }>["data"];
 type ResolvedInput = Extract<NonNullable<InputData["result"]>, { ok: true }>["value"];
 type InputField = ResolvedInput["fields"][number];
 
 const viewLabels: Record<AdminLandingPageStructureView, string> = {
   parametros: "Parâmetros",
   entradas: "Entradas",
-  pesquisas: "Pesquisas",
 };
 
 export default async function AdminLandingPageStructurePage({ searchParams }: PageProps) {
@@ -69,7 +64,6 @@ export default async function AdminLandingPageStructurePage({ searchParams }: Pa
 
       {structure.view === "parametros" ? <RootView data={structure.data} /> : null}
       {structure.view === "entradas" ? <InputView data={structure.data} /> : null}
-      {structure.view === "pesquisas" ? <ResearchView data={structure.data} /> : null}
     </div>
   );
 }
@@ -224,84 +218,6 @@ function InputView({ data }: { data: InputData }) {
         </>
       ) : null}
     </div>
-  );
-}
-
-function ResearchView({ data }: { data: ResearchData }) {
-  const presentation = "presentation" in data ? data.presentation : null;
-  return (
-    <div className="space-y-4">
-      <form action="/admin/estrutura-lp" className="rounded-lg border border-border bg-card p-3">
-        <input type="hidden" name="view" value="pesquisas" />
-        <div className="flex flex-wrap items-end gap-3">
-          <TaxonSelect className="w-full sm:min-w-80 sm:flex-1" taxons={data.taxons} selectedId={data.selectedTaxon?.id ?? ""} />
-          <SubmitButton />
-        </div>
-      </form>
-
-      {data.taxonError ? <FailureState title={data.taxonError} /> : null}
-      {presentation ? (
-        <>
-          <section className="grid gap-3 md:grid-cols-2" aria-label="Estado das pesquisas">
-            <ResearchStatusCard audience="Comprador empresarial (BB)" diagnostic={presentation.diagnostics.businessBuyer} />
-            <ResearchStatusCard audience="Cliente final (EC)" diagnostic={presentation.diagnostics.endCustomer} />
-          </section>
-          <div className="grid gap-4 xl:grid-cols-2">
-            {presentation.businessBuyer
-              ? <ResearchAudience title="Comprador empresarial (BB)" presentation={presentation.businessBuyer} taxons={data.taxons} />
-              : <ResearchUnavailable title="Comprador empresarial (BB)" diagnostic={presentation.diagnostics.businessBuyer} />}
-            {presentation.endCustomer
-              ? <ResearchAudience title="Cliente final (EC)" presentation={presentation.endCustomer} taxons={data.taxons} />
-              : <ResearchUnavailable title="Cliente final (EC)" diagnostic={presentation.diagnostics.endCustomer} />}
-          </div>
-        </>
-      ) : null}
-    </div>
-  );
-}
-
-function ResearchAudience({ title, presentation, taxons }: {
-  title: string;
-  presentation: AdminTaxonResearchAudiencePresentation;
-  taxons: readonly { id: string; name: string }[];
-}) {
-  const audience = presentation.audience;
-  return (
-    <DataSection title={title} description={`${taxonName(taxons, presentation.sourceTaxonId)} · ${researchSourceRelationLabel(presentation.sourceRelation)} · versão ${audience.version}`}>
-      <Table headings={["Bloco", "Presença", "Itens ativos"]} minWidth="460px">
-        {audience.researches.map((research) => (
-          <tr key={research.researchId}>
-            <Cell primary={researchBlockLabel(research.researchBlock)} secondary={research.researchBlock} />
-            <td className="px-4 py-3"><AdminStatusBadge tone="success">Presente</AdminStatusBadge></td>
-            <Cell primary={String(research.items.length)} />
-          </tr>
-        ))}
-      </Table>
-    </DataSection>
-  );
-}
-
-function ResearchUnavailable({ title, diagnostic }: { title: string; diagnostic: AdminOperationalDiagnosticItem }) {
-  return (
-    <DataSection title={title} description="Esta ausência é específica desta audiência e não oculta a outra resolução.">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <p className="max-w-xl text-sm text-muted-foreground">{diagnostic.reason}</p>
-        <AdminStatusBadge tone={diagnostic.tone}>{diagnostic.label}</AdminStatusBadge>
-      </div>
-    </DataSection>
-  );
-}
-
-function ResearchStatusCard({ audience, diagnostic }: { audience: string; diagnostic: AdminOperationalDiagnosticItem }) {
-  return (
-    <article className="rounded-lg border border-border bg-card px-3 py-2">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-sm font-medium text-foreground">{audience}</p>
-        <AdminStatusBadge tone={diagnostic.tone}>{diagnostic.label}</AdminStatusBadge>
-      </div>
-      <p className="mt-1 text-sm text-muted-foreground">{diagnostic.reason}</p>
-      <p className="mt-1 text-xs text-muted-foreground">Origem: {diagnostic.origin ?? "Não comprovada"}</p>
-    </article>
   );
 }
 
@@ -528,15 +444,6 @@ function evidenceReferenceLabel(value: string) {
   return labels[value] ?? value;
 }
 
-function researchSourceRelationLabel(value: string) { return value === "own" ? "Própria" : value === "direct_parent" ? "Pai direto" : humanize(value); }
-
-function researchBlockLabel(value: string) {
-  const labels: Record<string, string> = { pains: "Dores", desires: "Desejos", objections: "Objeções", proofs: "Provas", beliefs: "Crenças", fears: "Receios", positioning: "Posicionamento", search_intent: "Intenção de busca", commercial_keywords: "Palavras-chave comerciais", faq: "Perguntas frequentes" };
-  return labels[value] ?? humanize(value);
-}
-
 function humanize(value: string) { return value.replace(/[._-]/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase()); }
 
 function yesNo(value: boolean) { return value ? "Sim" : "Não"; }
-
-function taxonName(taxons: readonly { id: string; name: string }[], id: string) { return taxons.find((taxon) => taxon.id === id)?.name ?? "Taxon de origem"; }
