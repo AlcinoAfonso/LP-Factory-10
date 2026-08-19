@@ -2807,13 +2807,13 @@ Repositório — Ajustados
 
 21. E21 — Gestão e governança dos workloads OpenAI
 - Objetivo: gerir e governar os workloads OpenAI por recortes aprovados, iniciando pela configuração explícita, observabilidade segura e leitura administrativa; a configuração dinâmica e o histórico permanecem para recortes posteriores, sem otimização automatizada.
-- Status: a fundação E21.1 permanece preservada; a expansão aditiva da E19.4 está integrada à `main`, consolidando o catálogo vigente com cinco workloads de produto e uma referência operacional, e os dois workloads de draft foram comprovados por execuções integradas hospedadas, sem pendência de canários isolados.
+- Status: a fundação E21.1 permanece preservada; após a retirada candidata da E22.1.4, o catálogo vigente possui quatro workloads de produto e uma referência operacional, e os dois workloads de draft permanecem comprovados por execuções integradas hospedadas, sem pendência de canários isolados.
 
 21.1 Fundação, normalização e leitura dos workloads OpenAI
 
 21.1.1 Objetivo e status
 - Objetivo: estabelecer catálogo tipado e resolução explícita dos workloads OpenAI, integrar os consumidores de produto à configuração e à observabilidade comuns e expor inventário administrativo read-only.
-- Status: Fundação E21.1 implementada, validada e preservada; o catálogo vigente possui cinco workloads de produto e uma referência operacional, sem mudar a natureza repo-only e read-only do boundary.
+- Status: Fundação E21.1 implementada, validada e preservada; o catálogo vigente possui quatro workloads de produto e uma referência operacional, sem mudar a natureza repo-only e read-only do boundary.
 
 21.1.2 Registros do recorte
 - Repositório:
@@ -2849,21 +2849,21 @@ Repositório — Ajustados
 21.1.3 Catálogo estrutural e resolução explícita
 - Status: Implementada e validada.
 - Conteúdo:
-  - O boundary transversal `lib/openai-workloads/` mantém registry interno, repo-only e profundamente imutável, com cinco configurações de produto e uma referência operacional separada do Supabase Inspect.
-  - Três workloads textuais preservam `gpt-5.4-mini + none`; a E19.4 acrescenta `landing_page_draft_generation` e o workload de mídia independente `landing_page_draft_image_generation`, sem transportar parâmetros textuais inaplicáveis.
+  - O boundary transversal `lib/openai-workloads/` mantém registry interno, repo-only e profundamente imutável, com quatro configurações de produto e uma referência operacional separada do Supabase Inspect.
+  - Dois workloads textuais preservam `gpt-5.4-mini + none`; a E19.4 acrescenta `landing_page_draft_generation` e o workload de mídia independente `landing_page_draft_image_generation`, sem transportar parâmetros textuais inaplicáveis.
   - O resolver público discrimina `responses_text | image_generation`, aceita somente workloads de produto conhecidos, falha fechado para identidade desconhecida ou referência operacional e projeta inventário seguro com classificação, origem, revisão e configuração efetiva.
   - Ambiente, uniões discriminadas de resultado/evento e normalização de usage foram definidos como contratos puros comuns e integrados às chamadas reais na E21.1.4.
   - Os casos executáveis fundacionais cobrem unicidade, resolução, separação effective/reference, imutabilidade, projeção sem secrets, ambiente, usage, evento e ausência de transporte, persistência ou payload funcional no boundary.
   - Nenhum banco, integração remota, cliente universal, preço, prompt, schema funcional ou fallback silencioso foi criado.
 
 21.1.4 Integração dos consumidores e observabilidade comum
-- Status: integração técnica validada para os cinco workloads de produto; as execuções integradas hospedadas da E19.4 comprovaram os dois workloads de draft e substituíram, por decisão humana, o gate de canários isolados.
+- Status: integração técnica validada para os quatro workloads de produto vigentes; as execuções integradas hospedadas da E19.4 comprovaram os dois workloads de draft e substituíram, por decisão humana, o gate de canários isolados.
 - Conteúdo:
   - Consumidores textuais resolvem modelo e reasoning effort explícitos; o workload de imagem resolve somente sua configuração de mídia. Prompts, schemas, limites, persistência e fallbacks funcionais permanecem nos domínios consumidores.
   - Eventos textuais e de imagem registram por tentativa somente metadados operacionais seguros e aplicáveis; métricas ausentes permanecem `null` e nenhum prompt, resposta integral, payload de negócio, PII ou secret é registrado.
-  - As três leituras runtime de variáveis de modelo, o hardcode client do perfil e o cálculo monetário local foram removidos; as variáveis externas permanecem apenas como legado temporário de reversão conforme a configuração operacional canônica.
+  - Os consumidores ativos não leem variáveis legadas de modelo nem mantêm hardcode client ou cálculo monetário local; as variáveis externas permanecem apenas como legado temporário de reversão conforme a configuração operacional canônica.
   - O transporte OpenAI comercial foi isolado no adapter previsto e novos drafts registram workload, origem, revisão, modelo e effort resolvidos na proveniência existente, sem migration, backfill ou persistência de usage.
-  - Validators determinísticos exercitam os cinco workloads de produto, separação textual/mídia, configuração inválida sem transporte, parâmetros exatos, IDs de provider, usage aplicável, eventos discriminados e ausência de referências legadas.
+  - Validators determinísticos exercitam os quatro workloads de produto, separação textual/mídia, configuração inválida sem transporte, parâmetros exatos, IDs de provider, usage aplicável, eventos discriminados e ausência de referências legadas.
   - As execuções integradas hospedadas da E19.4 comprovaram `landing_page_draft_generation` e `landing_page_draft_image_generation` e substituíram, por decisão humana, o gate de canários isolados; não permanece pendência de canários isolados.
   - Permanece fora do PR #710 a correção separada da automação de smoke para remover senha de logs e artifacts, gerar credenciais não previsíveis e tratar colisões corretamente.
 

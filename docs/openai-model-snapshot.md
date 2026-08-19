@@ -24,7 +24,6 @@
 ### 2.1 Workloads registrados
 
 - `niche_resolution` → configuração efetiva atual `gpt-5.4-mini + none`.
-- `landing_page_generation_profile_proposal` → configuração efetiva atual `gpt-5.4-mini + none`.
 - `commercial_activation_draft_generation` → configuração efetiva atual `gpt-5.4-mini + none`.
 - `landing_page_draft_generation` → configuração efetiva versionada `gpt-5.6-luna + max`, comprovada no fluxo integrado hospedado.
 - `landing_page_draft_image_generation` → configuração efetiva versionada `gpt-image-2`, comprovada no fluxo integrado hospedado; parâmetros de imagem não herdam configuração textual.
@@ -34,7 +33,7 @@
 
 ### 2.2 Regra de baseline
 
-- `gpt-5.4-mini + none` permanece como baseline validada dos três workloads de produto já registrados, até decisão específica por workload.
+- `gpt-5.4-mini + none` permanece como baseline validada dos dois workloads de produto já registrados que usam essa configuração, até decisão específica por workload.
 - Novo workload exige decisão explícita de `modelo + reasoning effort`; a configuração dos workloads existentes é baseline comparativa, não default universal.
 - O effort efetivamente usado deve ser confirmado na requisição real antes de cada comparação; não inferir configuração apenas pelo modelo.
 - Na documentação atual da OpenAI, `gpt-5.4-mini` suporta `none`, `low`, `medium`, `high` e `xhigh`, com `none` como padrão quando o parâmetro é omitido.
@@ -108,7 +107,6 @@
 | Workload | Baseline atual | Candidatos de referência | Resultado vigente |
 |---|---|---|---|
 | resolvedor IA de nicho | `gpt-5.4-mini + none` | Luna / Terra / Sol + effort aplicável | não comparado neste snapshot |
-| perfil de orientação de landing page | `gpt-5.4-mini + none` | Luna / Terra / Sol + effort aplicável | não comparado neste snapshot |
 | ativação comercial | `gpt-5.4-mini + none` | Luna / Terra / Sol + effort aplicável | não comparado neste snapshot |
 | geração textual do draft de landing page | `gpt-5.6-luna + max` | configuração inicial aprovada para o workload | duas execuções integradas hospedadas aprovadas em 18/08/2026 |
 | geração da imagem principal do draft | `gpt-image-2` | workload de mídia independente | duas execuções integradas hospedadas aprovadas em 18/08/2026 |
