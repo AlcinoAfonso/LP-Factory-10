@@ -2868,12 +2868,12 @@ Repositório — Ajustados
   - Permanece fora do PR #710 a correção separada da automação de smoke para remover senha de logs e artifacts, gerar credenciais não previsíveis e tratar colisões corretamente.
 
 21.1.5 Inventário read-only no Admin Dashboard
-- Status: inventário read-only implementado e validado; a expansão dos seis itens está integrada à `main`, sem aguardar Preview.
+- Status: inventário implementado com seis itens; a prova técnica e visual hospedada anterior cobre somente os quatro itens então implantados, enquanto a expansão da E19.4 está integrada à `main`.
 - Conteúdo:
   - A rota protegida `/admin/workloads-openai` integra o shell e a navegação administrativos vigentes e projeta diretamente da API pública do boundary os seis itens integrados à `main`, sem adapter, API, componente client ou controle de mutação novos.
   - Os cinco workloads de produto exibem ambiente observado, configuração efetiva, origem e revisão; o Supabase Inspect permanece diferenciado como referência operacional externa e informa explicitamente `Ambiente da execução: não verificado nesta página`.
   - A superfície é responsiva, sem consulta runtime à OpenAI, GitHub ou Vercel e sem configuração remota, métricas históricas ou capacidades inexistentes.
-  - As evidências hospedadas aprovaram desktop, viewport mobile de 390 × 844 sem overflow, navegação lógica por TAB com foco visível, acesso positivo de `platform_admin` e bloqueio da identidade preexistente sem esse papel; as execuções integradas hospedadas comprovaram os dois workloads de draft.
+  - As evidências hospedadas aprovaram desktop, viewport mobile de 390 × 844 sem overflow, navegação lógica por TAB com foco visível, acesso positivo de `platform_admin` e bloqueio da identidade preexistente sem esse papel.
 
 21.2 Configuração operacional dinâmica dos workloads OpenAI
 
