@@ -291,14 +291,6 @@
 • Referências condicionais devem existir e permanecer válidas após o filtro de plano; avaliação dos valores concretos pertence ao consumidor.
 • A saída deve ser determinística, rastreável e profundamente imutável.
 
-3.15.5 Catálogo de módulos e variantes de `landing_page`
-• Boundary canônico: `lib/conversion-content/landing-page/module-catalog/`; registry e contracts são fontes das definições versionadas.
-• Consumidores devem usar o resolver público; registry e schema não integram a API externa do boundary.
-• Entrada desconhecida ou inválida deve falhar fechado; a resolução efetiva deve ser rastreável e profundamente imutável.
-• Especializações só podem restringir; consumidores não reaplicam deltas nem mantêm propriedades paralelas para condições deriváveis.
-• Interaction contracts são a fonte das capabilities interativas e devem ser evoluídos uma vez por novo kind, com reutilização pelas variantes.
-• O boundary permanece repo-only e não executa composição, persistência ou renderização.
-
 3.15.7 Preparação factual do taxon para `landing_page`
 • Boundary canônico: `lib/conversion-content/landing-page/taxon-preparation/`; a derivação permanece pura e não persiste estado de prontidão.
 • O adapter server-only deve ler pelo caminho único da pesquisa selecionada o taxon ativo, a pesquisa E20.5 integralmente válida e a versão E20.2 avaliada; UI e componentes client não consultam esses marcadores diretamente.

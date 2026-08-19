@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 19/08/2026
-• Versão: v1.5.165
+• Versão: v1.5.166
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -1645,13 +1645,12 @@ Repositório — Ajustados
 12.6 Estrutura da LP no Admin Dashboard
 
 12.6.1 Objetivo e status
-- Objetivo: Expor no Admin uma consulta estrutural read-only da landing page, reunindo parâmetros, módulos e variantes, entradas e pesquisas em uma única rota.
-- Status: Concluído em 10/08/2026 após merge humano do PR #695.
+- Objetivo: Expor no Admin uma consulta estrutural read-only da landing page, reunindo parâmetros, entradas e pesquisas em uma única rota.
+- Status: Concluído em 10/08/2026 após merge humano do PR #695; poda candidata da visão histórica de módulos e variantes implementada na E22.1.5 e aprovada no QA hospedado/autenticado em desktop (1280×900) e mobile (390×844), com Parâmetros, Entradas e Pesquisas preservados, E20.2 resolvendo 23 campos válidos e apenas o merge humano pendente.
 
 12.6.2 Registros do recorte
 - Repositório:
   - Criados:
-    - `app/admin/(protected)/estrutura-lp/ModuleStructureFilters.tsx`
     - `app/admin/(protected)/estrutura-lp/page.tsx`
     - `lib/admin/adapters/adminLandingPageStructureAdapter.ts`
   - Ajustados:
@@ -1660,19 +1659,22 @@ Repositório — Ajustados
     - `lib/admin/adapters/adminTaxonomyAdapter.ts`
     - `lib/conversion-content/landing-page/index.ts`
     - `lib/conversion-content/landing-page/root-resolver.ts`
+    - `app/admin/(protected)/estrutura-lp/validation-cases.ts`
+  - Excluídos:
+    - `app/admin/(protected)/estrutura-lp/ModuleStructureFilters.tsx`
 - Updates:
   - Aplicados: `prod#14`, `prod#16`, `prod#17`.
 - Referências:
   - Plano-base aprovado: `docs/lousa-plano-base-e12-6.md` — E12.6.3.
 
 12.6.3 Consulta estrutural read-only
-- Status: Concluída, sem alteração de banco, persistência, mutation, IA, automação ou infraestrutura.
+- Status: Concluída; estado candidato da E22.1.5 preserva a consulta sem alteração de banco, persistência, mutation, IA, automação ou infraestrutura.
 - Conteúdo:
-  - O Admin possui um único item `Estrutura da LP` e uma única rota `/admin/estrutura-lp`; as visões Parâmetros, Módulos e variantes, Entradas e Pesquisas permanecem na mesma rota por query string.
-  - Parâmetros consulta o contrato público vigente da E18.4; Módulos e variantes reutiliza identidades, seleção, validação e resolução canônicas da E18.5.
+  - O Admin possui um único item `Estrutura da LP` e uma única rota `/admin/estrutura-lp`; as visões Parâmetros, Entradas e Pesquisas permanecem na mesma rota por query string.
+  - Parâmetros consulta o contrato público vigente da E18.4; a visão histórica Módulos e variantes e seus filtros foram retirados na E22.1.5.
   - Entradas resolve o catálogo da E20.2 por versão, plano e taxon ativo; Pesquisas preserva a resolução independente de BB e EC da E10.8 e explicita estados próprio, herdado, ausente, incompleto, revisão ou indisponível.
   - A leitura administrativa usa um único adapter novo e consultas server-side em lote, sem exportar registry ou schema privado, sem N+1 e sem regra de domínio em React.
-  - `npm ci`, `npm run check`, `git diff --check` e os validadores canônicos da E18.4, E18.5, E20.2 e E10.8 foram aprovados; o QA autenticado aprovou as quatro visões em desktop e mobile, teclado, foco e console.
+  - `npm ci`, `npm run check`, `git diff --check` e os validadores canônicos preservados da E18.4, E20.2 e E10.8 foram aprovados localmente; o QA hospedado/autenticado em desktop (1280×900) e mobile (390×844) aprovou as três visões, preservou Parâmetros, Entradas e Pesquisas e confirmou 23 campos válidos resolvidos pela E20.2; apenas o merge humano permanece pendente.
 
 13. E13 — Partner Dashboard
 
@@ -1814,7 +1816,7 @@ Repositório — Ajustados
 
 18. E18 — Base transversal de templates, módulos, composições e artefatos
 - Objetivo: Definir infraestrutura e contratos reutilizáveis para famílias de templates por canal, templates versionados, módulos de conteúdo, seções de página, variantes, composições e artefatos finais persistidos; sustentar primeiro a E10.7 sem produzir diretamente a página comercial de um taxon; e permitir consumidores futuros somente como visão de evolução, sem antecipar sua implementação.
-- Status: Base mínima de `commercial_activation` concluída; parametrização raiz versionada de `landing_page` concluída em 13/07/2026; implementação anterior de composição `landing_page` removida; catálogo repo-only permanece vigente e a otimização da E18.5 está definida antes da E20.3.
+- Status: Base mínima de `commercial_activation` concluída; parametrização raiz versionada de `landing_page` concluída em 13/07/2026 e preservada; implementação anterior de composição `landing_page` removida; catálogo repo-only da E18.5 em retirada candidata pela E22.1.5.
 
 18.1 Contrato transversal de templates, módulos, composições e artefatos
 
@@ -1863,7 +1865,7 @@ Repositório — Ajustados
     - `final_cta.simple`
   - As variantes descrevem comportamento estrutural ou funcional e não podem representar nichos.
   - A ampliação do catálogo depende de necessidade comprovada por consumidores reais.
-  - Para `landing_page`, a parametrização raiz pertence ao recorte 18.4; módulos e variantes permanecem separados no recorte 18.5.
+  - Para `landing_page`, a parametrização raiz pertence ao recorte 18.4; o catálogo histórico separado de módulos e variantes da E18.5 foi retirado no candidato da E22.1.5, sem afetar a raiz.
 
 18.1.6 Contrato entre código e banco
 - Status: Definido como separação de responsabilidades.
@@ -2114,132 +2116,24 @@ Repositório — Ajustados
 * Conteúdo:
 
   * A implementação antiga de composição e renderização foi removida.
-  * Módulos, variantes e suas especializações pertencem ao recorte 18.5.
+  * O catálogo histórico de módulos, variantes e especializações do recorte 18.5 foi retirado no candidato da E22.1.5, sem alterar esta parametrização raiz.
   * Não houve alteração de banco nem consumo real por LP.
   * Os parâmetros permanecem como hipótese até validação por LP real.
 
 18.5 Parametrização de módulos e variantes `landing_page`
 
 18.5.1 Objetivo e status
-- Objetivo: otimizar o catálogo versionado de módulos e variantes da família `landing_page`, preservando o núcleo executável vigente e reduzindo pontos distribuídos de manutenção.
-- Status: Implementada e aprovada no recorte repo-only, com doze módulos e quatorze variantes.
-- Estado material: `benefits@v1`, `benefits.standard@v1`, `hero.form@v1`, `comparison@v1`, `comparison.standard@v1`, `lead_capture@v1` e `lead_capture.form@v1` incorporados ao registry canônico, sem alteração do resolver.
-- Proteções preservadas: registry versionado, resolver genérico, Zod estrito, falha fechada, contratos tipados, separação entre módulo, variante e fields, imutabilidade profunda, casos negativos, API pública mínima e ausência de fallback.
-- Limites preservados: sem payload de conteúdo, banco, migration, rota, UI, renderer, composição, persistência, automação, job ou consumo por E19/E20; a E18.4 permanece fora da otimização e E19, E20.2 e E20.3 não serão implementadas ou alteradas neste recorte.
-- Validação: 34 casos executáveis do catálogo, além das regressões de raiz, pesquisas, catálogo de entradas e ativação comercial.
+- Objetivo histórico: manter um catálogo repo-only versionado de módulos e variantes da família `landing_page`.
+- Status: Retirada candidata na E22.1.5 em 19/08/2026, após confirmação de ausência de consumidor no caminho canônico; QA hospedado/autenticado aprovado em desktop (1280×900) e mobile (390×844), com apenas o merge humano pendente.
+- Destino: sem substituto. A parametrização raiz da E18.4 e o catálogo de entradas da E20.2 permanecem preservados e independentes.
 
 18.5.2 Registros do recorte
-- Banco: N/A.
 - Repositório:
-  - Criados:
-    - `lib/conversion-content/landing-page/module-catalog/contracts.ts`
-    - `lib/conversion-content/landing-page/module-catalog/capabilities.ts`
-    - `lib/conversion-content/landing-page/module-catalog/index.ts`
-    - `lib/conversion-content/landing-page/module-catalog/registry.ts`
-    - `lib/conversion-content/landing-page/module-catalog/resolver.ts`
-    - `lib/conversion-content/landing-page/module-catalog/schema.ts`
-    - `lib/conversion-content/landing-page/module-catalog/validation-cases.ts`
   - Ajustados:
     - `lib/conversion-content/index.ts`
     - `package.json`
-  - Excluídos: N/A.
-- Updates:
-  - Aplicados: `prod#17` — WCAG 2.2 como baseline abstrata e limitada de acessibilidade, incorporada a `faq.accordion@v1` para operação por teclado, exposição do estado expandido ou recolhido, associação acessível e preservação de foco; e a `hero.form@v1` para associação programática de labels, instruções e mensagens de erro quando presentes, operação por teclado e foco no primeiro field inválido. O registro não declara conformidade integral com WCAG nem define UI, HTML ou ARIA concretos.
-
-18.5.3 Módulos e funções estruturais
-- Status: Implementada.
-- Conteúdo:
-  - Catálogo interno `landing_page@v1`, compatível com a parametrização raiz v1.
-  - Doze módulos versionados: `hero`, `trust_bar`, `problem_solution`, `offer`, `process`, `technical_assurance`, `social_proof`, `faq`, `final_cta`, `benefits`, `comparison` e `lead_capture`.
-  - Cada módulo registra função estrutural, fronteiras, invariantes, lifecycle inicial `hypothesis` e propósito `controlled_test`.
-  - Identidades e valores estruturais são fechados e imutáveis, sem colisão com `commercial_activation`.
-  - Módulos não registram taxon, campanha, plano, copy, ativo, ordem, canal ou destino concreto.
-- Resultado da otimização:
-  - `benefits@v1`, `comparison@v1` e `lead_capture@v1` incorporados como módulos transversais, sem acoplamento ao catálogo da E20.2 e sem alteração do resolver;
-  - contagens globais fixas removidas e identidades paralelas reduzidas por derivação segura.
-
-18.5.4 Campos, estruturas e cardinalidades
-- Status: Implementada.
-- Conteúdo:
-  - Gramática fechada de fields de texto, coleção, ação, imagem e referência técnica.
-  - Fields registram `fieldKind`, `fieldKey`, path, policy, cardinalidade, `semanticRole` e suporte quando aplicável.
-  - Fields e cardinalidades pertencem diretamente aos contratos das variantes; módulos não possuem catálogo paralelo de fields.
-  - Coleção aninhada e destino concreto permanecem fora da v1.
-  - Field, path, shape, cardinalidade, policy ou combinação não autorizada falham fechado.
-- Resultado da otimização:
-  - gramática genérica preservada sem regras baseadas em contagens globais;
-  - igualdade exata entre variant keys e field contract keys comprovada executavelmente.
-
-18.5.5 Variantes e critérios de criação
-- Status: Implementada.
-- Conteúdo:
-  - Onze variantes `standard@v1`, mais `faq.accordion@v1`, `hero.form@v1` e `lead_capture.form@v1`.
-  - Cada variante pertence a um único módulo e versão compatível e aponta para seu próprio contrato de fields.
-  - Variantes declaram `interactionContracts` como coleção de união discriminada estrita; os kinds atuais são `form` e `accordion`, únicos por variante.
-  - Capabilities `embedded_form` e `accordion_interaction` são derivadas das interações; `primary_action` e `image_asset` são derivadas dos fields.
-  - `faq.standard@v1` e `faq.accordion@v1` preservam contratos independentes; o interaction contract Accordion registra baseline abstrata WCAG 2.2 de teclado, estado expandido, associação acessível e foco.
-  - Hero Standard permanece sem interação de formulário; Hero Form declara o interaction contract abstrato com fields, consentimento, privacidade, acessibilidade e binding operacional, sem fallback de canal.
-  - Diferenças apenas de taxon, copy, plano, campanha, ativo, ordem ou quantidade não criam variante.
-- Resultado da otimização:
-  - `benefits.standard@v1`, `comparison.standard@v1`, `hero.form@v1` e `lead_capture.form@v1` foram incorporados atomicamente com seus field contracts, records, fields, sources e interaction contracts;
-  - sources permanecem junto dos fields, sem lookup nominal por path, construção paralela ou fallback;
-  - propriedades isoladas e o booleano paralelo de compatibilidade foram removidos; `hero.standard@v1` permanece sem formulário e o resolver foi preservado.
-
-18.5.6 Especializações sobre a parametrização raiz
-- Status: Implementada.
-- Conteúdo:
-  - Compatibilidade explícita de módulos e variantes com a versão raiz v1.
-  - Precedência efetiva `raiz → delta do módulo → delta da variante`.
-  - Deltas de módulo e variante podem apenas restringir faixas e limites da raiz; ampliação de limite absoluto exige nova versão raiz.
-  - O resolver preserva a raiz original e devolve também a raiz efetiva após as especializações.
-  - Contrato ausente, incompatível, inválido ou que amplie o contrato-pai falha fechado.
-  - Os boundaries públicos existentes de `landingPageRoot`, `landingPageResearch` e `landingPageInputCatalog` permanecem preservados.
-- Resultado da otimização:
-  - novas identidades preservam a compatibilidade com a raiz e aceitam somente especializações restritivas;
-  - validações estruturais permanecem genéricas, sem regra nominal no schema e sem reabrir a E18.4.
-
-18.5.7 Mapa de fontes de copy
-- Status: Implementada.
-- Conteúdo:
-  - Cada field textual possui `copySourceMap` fechado no próprio contrato da variante, sem mapa global duplicado.
-  - Cada mapa admite até duas fontes primárias e uma fonte auxiliar.
-  - Fontes de pesquisa usam `endCustomer.researches[].items[]`; conteúdo factual operacional usa `operational_evidence`.
-  - O conjunto aprovado contempla `commercial_keywords`, `faq_questions` e `narrative_arc` nos fields correspondentes.
-  - Quote e attribution de Social Proof permanecem vinculados à referência de evidência operacional do próprio item.
-  - Source mode, path, item key, quantidade, duplicação ou mapa não autorizado falham fechado.
-- Resultado da otimização:
-  - sources declaradas junto dos fields distinguem pesquisa estruturada, necessidade de suporte operacional e evidência operacional;
-  - referências operacionais permanecem abstratas, sem importar ou duplicar o registry da E20.2 e sem confundir formato válido com integridade referencial.
-
-18.5.8 Perfis de copy por intenção e funil
-- Status: Implementada.
-- Conteúdo:
-  - Perfis BOFU, MOFU e TOFU com vocabulários fechados próprios.
-  - Em cada perfil, todo treatment aparece exatamente uma vez como permitido, restrito ou proibido.
-  - `ctaMode` é literal e específico por perfil: `direct_next_step`, `non_coercive_direct` ou `low_pressure`.
-  - `emphasizeTreatments` permanece vazio nos perfis e em todos os deltas da v1; permissão não se converte implicitamente em ênfase.
-  - Deltas de módulo podem apenas restringir ou proibir treatments conhecidos, sem relaxar restrição ou proibição herdada.
-  - As variantes `faq.standard@v1` e `faq.accordion@v1` compartilham o mesmo delta do módulo `faq`.
-- Resultado da otimização:
-  - as novas identidades preservam vocabulários, classificação única, `ctaMode` e ausência de ênfase implícita nos perfis BOFU, MOFU e TOFU;
-  - não foi adicionada regra nominal quando a relação pôde permanecer estruturalmente genérica.
-
-18.5.9 Ciclo de vida, compatibilidade e validação
-- Status: Implementada e aprovada.
-- Conteúdo:
-  - Namespace público `landingPageModuleCatalog` expõe somente tipos autorizados e `resolveLandingPageModuleCatalog`; registry e schema permanecem internos.
-  - Entrada runtime estrita e fail-closed para shape, versão, módulo, variante, perfil ou preset desconhecido, sem exceção não tratada.
-  - Presets raiz `balanced` e `compact` podem ser selecionados explicitamente.
-  - O resolver consulta o registry canônico, aplica as especializações da raiz e o delta do perfil e devolve somente o contrato completo da variante resolvida.
-  - Lifecycle da raiz, do módulo e da variante usa o vocabulário canônico `hypothesis`, `validated` e `deprecated` e permanece registrado separadamente; a E18.5 não implementa enforcement de composição nem lifecycle efetivo.
-  - Resultados são profundamente imutáveis, sem referência mutável compartilhada e sem fallback aproximado.
-  - Validação executável própria concluída com 34 casos, além das regressões de raiz, pesquisas, catálogo de entradas e ativação comercial.
-  - Comando canônico: `npm run validate:landing-page-module-catalog`.
-- Resultado da otimização:
-  - doze módulos e quatorze variantes consolidados, com lifecycle separado, API pública mínima, internalidade de registry/schema, ausência de fallback e imutabilidade profunda;
-  - quatro testes de extensibilidade e proteções positivas e negativas repetidos;
-  - fixtures sintéticas reutilizam Form e Accordion sem registrar identidades permanentes nem alterar resolver, schema genérico, contratos de interação, listas globais, contagens ou regras nominais;
-  - resolver inalterado e E18.5 independente do registry da E20.2.
+  - Excluídos:
+    - `lib/conversion-content/landing-page/module-catalog/`
 
 19. E19 — LP Builder
 - Objetivo: Consolidar o fluxo Core de landing pages por conta, da identidade mínima em `draft` às futuras etapas de geração, revisão, materialização e publicação, sempre por recortes aprovados.
@@ -2611,7 +2505,7 @@ Repositório — Ajustados
 * Conteúdo:
 
   * O resolver falha fechado para cadeia, camada, especialização, condição ou relação entre planos inválida.
-  * A E20.3 é independente deste catálogo: orienta geração por identidade de módulo e variante da E18.5, sem consumir valores da E20.2 nem determinar prontidão.
+  * A retirada concluída da E20.3 e a retirada candidata da E18.5 não alteram o catálogo, os valores nem a prontidão definidos pela E20.2.
   * A E20.2 define os campos e valida o formato dos valores; a E19.2 coleta, valida, persiste e compõe os valores, implementa a substituição explícita por LP e preserva o snapshot dos valores efetivamente usados.
   * O recorte não cria banco, migration, bucket, Storage, rota, API, Server Action, UI, onboarding, upload, adapter de banco, entitlement, capacidade comercial, tracking, Google Ads, Analytics, integração, valor operacional, snapshot operacional, geração, IA, automação, agente, job ou infraestrutura.
 
@@ -2630,39 +2524,9 @@ Repositório — Ajustados
 20.3 Perfil de orientação para geração
 
 20.3.1 Objetivo e status
-
-* Objetivo: definir e resolver um perfil versionado por taxon que oriente a geração de `landing_page` com recomendações de módulos e variantes da E18.5, sem impor composição final ou prontidão.
-* Status: Concluída; PR #644 mergeado, migration aplicada e verificação read-only pós-apply aprovada.
-
-20.3.3 Contrato e persistência mínima do perfil
-
-* Status: Concluída; implementação do PR #644 integrada à `main`, migration aplicada e estado final do banco verificado.
-* Conteúdo:
-
-  * O agregado versionado, as duas tabelas sem registros oficiais, a leitura server-side, o boundary único e as validações de contrato, estados, cadeia taxonômica, integridade e segurança estão implementados.
-  * A migration foi aplicada após o merge humano e o estado final do banco foi verificado antes da ativação de consumidores, rotas ou outros caminhos runtime.
-
-20.3.4 Validação E18.5 e resolução própria ou herdada
-
-* Status: Implementada e validada no PR #644.
-* Conteúdo:
-
-  * Estender minimamente a API pública TypeScript da E18.5 para validar identidade e versão de módulo e, quando informada, identidade e versão de variante e seu vínculo com o módulo, reutilizando o registry vigente.
-  * Preservar o resolver, o registry, o schema e todos os exports públicos preexistentes, sem rota, banco, serviço, novo catálogo, contexto artificial, refatoração ampla ou resolver paralelo.
-  * Implementar resolução determinística própria ou herdada, recomendações em ordem crescente e bloqueio de fallback distante quando o ancestral elegível mais próximo possuir perfil `active` inválido.
-  * A futura E12.4 tratará mutações e atomicidade do lifecycle; a futura E19.4 poderá consumir o perfil resolvido. A conclusão da E20.3 apenas libera o debate da E12.4, sem autorizar sua implementação.
-
-20.3.5 Contrato, limites e opcionalidade da orientação geral
-
-* Status: Concluída; migration `20260730114633` aplicada, coluna verificada como anulável e reconciliação final de `docs/schema.md` realizada.
-* Conteúdo:
-
-  * O perfil pertence a um taxon, possui versão e estado e reúne itens com módulo e versão, variante e versão opcionais, prioridade `P1`, `P2` ou `P3`, ordem recomendada positiva e orientação específica opcional; `generation_guidance` é anulável, exclusivamente humana e não vazia após trim quando presente.
-  * Prioridade e ordem são orientação; não criam módulo obrigatório, composição final, seleção por plano, prontidão, autorização, revogação ou geração.
-  * Perfil e itens formam um agregado único, somente leitura server-side, persistido em exatamente duas tabelas e entregue por um único boundary, sem perfil oficial neste recorte.
-  * A resolução usa perfil `active` próprio ou do ancestral elegível mais próximo, preserva proveniência e falha fechado para cadeia, leitura, identidade ou perfil inválido; ausência legítima permanece distinta de erro.
-  * A E20.3 depende da taxonomia vigente e da identidade pública da E18.5, mas permanece independente do catálogo e dos valores da E20.2.
-  * Permanecem fora do recorte mutações e lifecycle operacional do perfil, terceira tabela de domínio, rota, API HTTP, Server Action, UI, composição, copy, geração, IA, automação, job, serviço e nova infraestrutura.
+- Objetivo histórico: orientar a geração de `landing_page` por perfil versionado de taxon, com recomendações baseadas no catálogo histórico da E18.5.
+- Status: Retirada concluída pela E22.1.4 em 19/08/2026; consumidores, superfícies administrativas, workload e validações foram removidos no PR #781, e as duas tabelas e quatro RPCs foram removidas pela migration `20260819153112` no PR #782.
+- Destino: sem substituto. A prova read-only pós-apply confirmou ausência dos objetos retirados, preservação de `tg_set_updated_at`, 24 registros em `taxon_market_research` e 379 registros em `taxon_market_research_items`; migrations históricas permanecem preservadas.
 
 20.5 Seleção da pesquisa integral `end_customer` por taxon
 
@@ -2807,7 +2671,7 @@ Repositório — Ajustados
 
 21. E21 — Gestão e governança dos workloads OpenAI
 - Objetivo: gerir e governar os workloads OpenAI por recortes aprovados, iniciando pela configuração explícita, observabilidade segura e leitura administrativa; a configuração dinâmica e o histórico permanecem para recortes posteriores, sem otimização automatizada.
-- Status: a fundação E21.1 permanece preservada; após a retirada candidata da E22.1.4, o catálogo vigente possui quatro workloads de produto e uma referência operacional, e os dois workloads de draft permanecem comprovados por execuções integradas hospedadas, sem pendência de canários isolados.
+- Status: a fundação E21.1 permanece preservada; após a retirada concluída da E22.1.4, o catálogo vigente possui quatro workloads de produto e uma referência operacional, e os dois workloads de draft permanecem comprovados por execuções integradas hospedadas, sem pendência de canários isolados.
 
 21.1 Fundação, normalização e leitura dos workloads OpenAI
 
@@ -2868,9 +2732,9 @@ Repositório — Ajustados
   - Permanece fora do PR #710 a correção separada da automação de smoke para remover senha de logs e artifacts, gerar credenciais não previsíveis e tratar colisões corretamente.
 
 21.1.5 Inventário read-only no Admin Dashboard
-- Status: inventário implementado com cinco itens no primeiro merge candidato da E22.1.4; a prova técnica local está aprovada e a prova visual hospedada do inventário reduzido permanece pendente de deploy.
+- Status: inventário vigente com cinco itens, aprovado no QA pós-merge da E22.1.4 em Preview e produção.
 - Conteúdo:
-  - A rota protegida `/admin/workloads-openai` integra o shell e a navegação administrativos vigentes e projeta diretamente da API pública do boundary os cinco itens candidatos, sem adapter, API, componente client ou controle de mutação novos.
+  - A rota protegida `/admin/workloads-openai` integra o shell e a navegação administrativos vigentes e projeta diretamente da API pública do boundary os cinco itens vigentes, sem adapter, API, componente client ou controle de mutação novos.
   - Os quatro workloads de produto exibem ambiente observado, configuração efetiva, origem e revisão; o Supabase Inspect permanece diferenciado como referência operacional externa e informa explicitamente `Ambiente da execução: não verificado nesta página`.
   - A superfície é responsiva, sem consulta runtime à OpenAI, GitHub ou Vercel e sem configuração remota, métricas históricas ou capacidades inexistentes.
   - As evidências hospedadas aprovaram desktop, viewport mobile de 390 × 844 sem overflow, navegação lógica por TAB com foco visível, acesso positivo de `platform_admin` e bloqueio da identidade preexistente sem esse papel.
@@ -2920,19 +2784,21 @@ Repositório — Ajustados
 
 22. E22 — Retirada controlada de ativos históricos
 - Objetivo: reduzir a superfície histórica que não participa do caminho canônico vigente, preservando consumidores reais e preparando a sequência E19.4 concluída → E22.1 → E19.5.
-- Status: Em andamento no segundo merge candidato da E22.1.4; o primeiro merge está implantado e aprovado no QA pós-merge, a E19.4 permanece concluída e a E19.5 permanece pausada até a prova pós-apply da retirada física.
+- Status: Em andamento no candidato da E22.1.5; a E22.1.4 está concluída após apply e prova read-only, a E19.4 permanece concluída e a E19.5 permanece pausada durante a E22.1.
 
 22.1 Retirada controlada de ativos históricos
 
 22.1.1 Objetivo e status
 - Objetivo: retirar de forma controlada ativos históricos e seus consumidores somente após classificação de dependências, preservando os boundaries e dados ainda necessários ao caminho ativo.
-- Status: Plano-base v2 consolidado; primeiro merge da E22.1.4 implantado e aprovado no QA pós-merge, com segundo merge candidato implementado no repositório e ainda pendente de merge, apply remoto e prova read-only pós-apply. A E19.4 permanece concluída e a E19.5 pausada.
+- Status: Plano-base v2 consolidado; E22.1.4 concluída e E22.1.5 implementada como candidata pronta para merge, com QA hospedado/autenticado aprovado em desktop (1280×900) e mobile (390×844) e apenas o merge humano pendente. A E19.4 permanece concluída e a E19.5 pausada.
 
 22.1.2 Registros do recorte
 - Repositório:
   - Criados:
     - `supabase/migrations/20260819153112_e22_1_4_remove_generation_profile.sql`
   - Ajustados:
+    - `app/admin/(protected)/estrutura-lp/page.tsx`
+    - `app/admin/(protected)/estrutura-lp/validation-cases.ts`
     - `app/admin/(protected)/resolucoes-de-nicho/[accountId]/page.tsx`
     - `app/admin/(protected)/taxonomia/`
     - `components/admin/adminNavigation.ts`
@@ -2941,6 +2807,7 @@ Repositório — Ajustados
     - `lib/openai-workloads/`
     - `package.json`
   - Excluídos:
+    - `app/admin/(protected)/estrutura-lp/ModuleStructureFilters.tsx`
     - `app/admin/(protected)/perfis-de-orientacao/`
     - `lib/conversion-content/adapters/landingPageGenerationProfileAdapter.ts`
     - `lib/conversion-content/adapters/landingPageGenerationProfileAdapterCore.ts`
@@ -2948,6 +2815,7 @@ Repositório — Ajustados
     - `lib/conversion-content/adapters/landingPageGenerationProfileOpenAiAdapter.ts`
     - `lib/conversion-content/adapters/landingPageGenerationProfileRowNormalization.ts`
     - `lib/conversion-content/landing-page/generation-profile/`
+    - `lib/conversion-content/landing-page/module-catalog/`
     - `supabase/snippets/e12_4_3_generation_profile_lifecycle_verify.sql`
     - `supabase/snippets/e20_3_generation_profile_verify.sql`
     - `supabase/tests/e12_4_3_generation_profile_lifecycle.test.sql`
@@ -2965,20 +2833,22 @@ Repositório — Ajustados
 
 22.1.4 Retirada de E20.3 e E12.4.3 associado
 - Objetivo: retirar o domínio histórico de perfil de geração e suas responsabilidades associadas sem criar persistência ou arquitetura substituta dentro da E22.1.
-- Status: Primeiro merge implantado e aprovado no QA pós-merge. O gate read-only pré-DDL passou sem drift e o segundo merge candidato está implementado no repositório; merge humano, apply remoto pelo workflow e prova read-only pós-apply permanecem pendentes. Nenhum DDL foi aplicado remotamente neste estágio.
+- Status: Concluída em 19/08/2026 após os PRs #781 e #782, apply da migration `20260819153112` pelo workflow e prova read-only pós-apply sem drift.
 - Conteúdo:
   - o primeiro merge retirou `generation-profile`, adapters, páginas/actions de `/admin/perfis-de-orientacao`, navegação e diagnósticos associados, o workload `landing_page_generation_profile_proposal`, exports e validator;
   - `validate:landing-page-generation-profile` e sua chamada em `npm run check` foram retirados no mesmo recorte, e o QA pós-merge confirmou ausência das superfícies aposentadas;
   - o gate read-only pré-DDL confirmou o conjunto aprovado de um perfil `active` do taxon `corretor-imoveis`, seus onze itens, duas tabelas, quatro RPCs e ausência de dependências externas inesperadas;
-  - a migration forward-only candidata remove exatamente as quatro RPCs, as duas tabelas e seus objetos próprios, sem `CASCADE`, preservando migrations históricas, `audit_logs`, `taxon_market_research` e `taxon_market_research_items`;
-  - a conclusão da E22.1.4 permanece condicionada ao merge humano, ao apply pelo workflow e à prova read-only pós-apply; não há archive, snapshot, backup paralelo ou persistência substituta.
+  - a migration forward-only removeu exatamente as quatro RPCs, as duas tabelas e seus objetos próprios, sem `CASCADE`, preservando migrations históricas, `audit_logs`, `taxon_market_research` e `taxon_market_research_items`;
+  - a prova read-only pós-apply confirmou ausência dos seis objetos, preservação de `tg_set_updated_at`, 24 pesquisas e 379 itens; não houve archive, snapshot, backup paralelo ou persistência substituta.
 
 22.1.5 Retirada de E18.5 e poda dos consumidores administrativos
 - Objetivo: retirar o catálogo histórico de módulos e variantes e podar somente as responsabilidades administrativas que dependem dele.
-- Status: Planejada; não implementada.
+- Status: Implementada como candidata pronta para merge humano; validações locais e QA hospedado/autenticado aprovados em desktop (1280×900) e mobile (390×844), com apenas o merge humano pendente.
 - Conteúdo:
-  - preservar E18.4 e E20.2 e remover apenas superfícies, validações e dependências históricas de E18.5;
-  - manter as superfícies administrativas vigentes sem itens, links ou diagnósticos órfãos.
+  - o boundary `module-catalog`, sua API pública, exports e validator foram retirados, junto de `validate:landing-page-module-catalog` e sua chamada em `npm run check`;
+  - somente os consumidores administrativos de módulos e variantes foram podados; `/admin/estrutura-lp` preserva Parâmetros, Entradas e Pesquisas, sem Módulos e variantes;
+  - E18.4 e E20.2 permanecem preservadas e validadas, sem mudança de banco, migration, persistência ou dados;
+  - as regressões locais confirmam ausência de dependência de E18.5 no caminho E19.3 → E19.4; o QA hospedado/autenticado preservou Parâmetros, Entradas e Pesquisas, e E20.2 resolveu 23 campos válidos em Entradas; apenas o merge humano permanece pendente.
 
 22.1.6 Desacoplamento da camada E10.8
 - Objetivo: desacoplar a camada histórica de resolução de pesquisas e seus consumidores históricos sem remover pesquisas estruturadas que possuam consumidor real independente.

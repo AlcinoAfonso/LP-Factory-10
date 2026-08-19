@@ -5,18 +5,12 @@ import {
   resolveLandingPageRootParameters,
 } from "@/conversion-content/landing-page";
 import {
-  listLandingPageModuleIdentities,
-  listLandingPageModuleSelectionCatalog,
-  resolveLandingPageModuleCatalog,
-  validateLandingPageModuleIdentity,
-  type LandingPageFunnelProfileKey,
-} from "@/conversion-content/landing-page/module-catalog";
-import {
   landingPageInputCatalogPlans,
   landingPageInputCatalogRegistry,
   buildLandingPageInputCatalogTaxonChain,
   resolveLandingPageInputCatalog,
   type LandingPageInputCatalogPlan,
+  type LandingPageInputCatalogTaxonIdentity,
 } from "@/conversion-content/landing-page/input-catalog";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getAdminTaxonResearchPresentation } from "./adminTaxonomyAdapter";
@@ -24,7 +18,6 @@ import type { AdminTaxonSummary } from "./adminReadOnlyTypes";
 
 export const adminLandingPageStructureViews = [
   "parametros",
-  "modulos",
   "entradas",
   "pesquisas",
 ] as const;
@@ -53,8 +46,6 @@ export async function readAdminLandingPageStructure(
   query: StructureQuery,
 ) {
   switch (view) {
-    case "modulos":
-      return { view, data: readModules(query) } as const;
     case "entradas":
       return { view, data: await readInputs(query) } as const;
     case "pesquisas":
@@ -86,72 +77,6 @@ function readRootParameters(query: StructureQuery) {
     versions,
     selectedVersion: rootVersion,
     result: resolveLandingPageRootParameters({ rootVersion, presetKey }),
-  };
-}
-
-function readModules(query: StructureQuery) {
-  const identities = listLandingPageModuleIdentities();
-  const selection = listLandingPageModuleSelectionCatalog();
-  const modules = identities.modules;
-  const requestedModule = modules.find(
-    (candidate) => candidate.moduleKey === query.module,
-  );
-  const moduleIdentity = requestedModule ?? modules[0];
-  const requestedVariant = moduleIdentity?.variants.find(
-    (candidate) => candidate.variantKey === query.variant,
-  );
-  const variantIdentity = requestedVariant ?? moduleIdentity?.variants[0];
-  const funnelProfileKey = isFunnelProfile(query.funnel)
-    ? query.funnel
-    : "bofu";
-  const root = readRootParameters(query);
-
-  if (!moduleIdentity || !variantIdentity || root.selectedVersion === null) {
-    return {
-      identities,
-      selection,
-      moduleIdentity: null,
-      variantIdentity: null,
-      funnelProfileKey,
-      result: null,
-    };
-  }
-
-  const identityValidation = validateLandingPageModuleIdentity({
-    moduleKey: moduleIdentity.moduleKey,
-    moduleVersion: moduleIdentity.moduleVersion,
-    variantKey: variantIdentity.variantKey,
-    variantVersion: variantIdentity.variantVersion,
-  });
-  if (!identityValidation.ok) {
-    return {
-      identities,
-      selection,
-      moduleIdentity,
-      variantIdentity,
-      funnelProfileKey,
-      result: identityValidation,
-    };
-  }
-
-  const variantName = variantIdentity.variantKey.slice(
-    moduleIdentity.moduleKey.length + 1,
-  );
-  return {
-    identities,
-    selection,
-    moduleIdentity,
-    variantIdentity,
-    funnelProfileKey,
-    result: resolveLandingPageModuleCatalog({
-      moduleCatalogVersion: identities.moduleCatalogVersion,
-      rootVersion: root.selectedVersion,
-      moduleKey: moduleIdentity.moduleKey,
-      moduleVersion: moduleIdentity.moduleVersion,
-      variantName,
-      variantVersion: variantIdentity.variantVersion,
-      funnelProfileKey,
-    }),
   };
 }
 
@@ -187,7 +112,11 @@ async function readInputs(query: StructureQuery) {
     };
   }
 
-  const chain = buildLandingPageInputCatalogTaxonChain(selectedTaxon, taxonRead.taxons);
+  const inputCatalogTaxons = taxonRead.taxons.map(toInputCatalogTaxonIdentity);
+  const chain = buildLandingPageInputCatalogTaxonChain(
+    toInputCatalogTaxonIdentity(selectedTaxon),
+    inputCatalogTaxons,
+  );
   return {
     taxons: taxonRead.taxons,
     taxonError: null,
@@ -276,14 +205,23 @@ function selectTaxon(
   return taxons.find((taxon) => taxon.id === taxonId) ?? taxons[0] ?? null;
 }
 
+function toInputCatalogTaxonIdentity(
+  taxon: StructureTaxon,
+): LandingPageInputCatalogTaxonIdentity {
+  return {
+    id: taxon.id,
+    parentId: taxon.parentId,
+    level: taxon.level,
+    name: taxon.name,
+    slug: taxon.slug,
+    isActive: taxon.isActive,
+  };
+}
+
 function parseInteger(value: string | undefined): number | null {
   if (!value || !/^\d+$/.test(value)) return null;
   const parsed = Number(value);
   return Number.isSafeInteger(parsed) ? parsed : null;
-}
-
-function isFunnelProfile(value: string | undefined): value is LandingPageFunnelProfileKey {
-  return value === "bofu" || value === "mofu" || value === "tofu";
 }
 
 function isStructureTaxonRow(value: unknown): value is {

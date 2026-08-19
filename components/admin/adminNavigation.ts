@@ -60,7 +60,7 @@ export const adminAreas: AdminArea[] = [
     status: 'Disponível',
     scope: [
       'Parâmetros raiz e critérios visuais',
-      'Módulos, variantes e entradas resolvidas',
+      'Entradas resolvidas por taxon e plano',
       'Pesquisas estruturadas por taxon',
     ],
   },

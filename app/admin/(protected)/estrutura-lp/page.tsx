@@ -14,8 +14,6 @@ import type { AdminOperationalDiagnosticItem } from "@/lib/admin/adapters/adminR
 import type { AdminTaxonResearchAudiencePresentation } from "@/lib/admin/adapters/adminTaxonomyAdapter";
 import { cn } from "@/lib/utils";
 
-import { ModuleStructureFilters } from "./ModuleStructureFilters";
-
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
@@ -25,17 +23,13 @@ type PageProps = {
 
 type StructureRead = Awaited<ReturnType<typeof readAdminLandingPageStructure>>;
 type RootData = Extract<StructureRead, { view: "parametros" }>["data"];
-type ModuleData = Extract<StructureRead, { view: "modulos" }>["data"];
 type InputData = Extract<StructureRead, { view: "entradas" }>["data"];
 type ResearchData = Extract<StructureRead, { view: "pesquisas" }>["data"];
-type ResolvedModule = Extract<NonNullable<ModuleData["result"]>, { ok: true }>["value"];
-type ModuleField = ResolvedModule["fieldContract"]["fields"][number];
 type ResolvedInput = Extract<NonNullable<InputData["result"]>, { ok: true }>["value"];
 type InputField = ResolvedInput["fields"][number];
 
 const viewLabels: Record<AdminLandingPageStructureView, string> = {
   parametros: "Parâmetros",
-  modulos: "Módulos e variantes",
   entradas: "Entradas",
   pesquisas: "Pesquisas",
 };
@@ -74,7 +68,6 @@ export default async function AdminLandingPageStructurePage({ searchParams }: Pa
       </nav>
 
       {structure.view === "parametros" ? <RootView data={structure.data} /> : null}
-      {structure.view === "modulos" ? <ModuleView data={structure.data} /> : null}
       {structure.view === "entradas" ? <InputView data={structure.data} /> : null}
       {structure.view === "pesquisas" ? <ResearchView data={structure.data} /> : null}
     </div>
@@ -167,96 +160,6 @@ function RootView({ data }: { data: RootData }) {
           ))}
         </div>
       </DataSection>
-    </div>
-  );
-}
-
-function ModuleView({ data }: { data: ModuleData }) {
-  const resolved = data.result?.ok ? data.result.value : null;
-  const modules = data.identities.modules.map((module) => ({
-    moduleKey: module.moduleKey,
-    label: moduleLabel(module.moduleKey),
-    variants: module.variants.map((variant) => ({
-      variantKey: variant.variantKey,
-      variantVersion: variant.variantVersion,
-      label: variantLabel(variant.variantKey),
-    })),
-  }));
-
-  return (
-    <div className="space-y-4">
-      <DataSection title="Catálogo de módulos" description={`Versão ${data.identities.moduleCatalogVersion}; ${data.identities.modules.length} módulos públicos.`}>
-        <Table
-          headings={["Módulo", "Status", "Função estrutural", "Variantes", "Capacidades", "Interações"]}
-          minWidth="860px"
-          columnWidths={["16%", "10%", "27%", "16%", "17%", "14%"]}
-        >
-          {data.identities.modules.map((module) => {
-            const presentation = data.selection.modules.find((item) => item.moduleAlias === module.moduleKey);
-            return (
-              <tr key={module.moduleKey} className="align-top">
-                <Cell primary={moduleLabel(module.moduleKey)} secondary={`${module.moduleKey} · v${module.moduleVersion}`} />
-                <Cell primary={lifecycleLabel(module.lifecycleStatus)} />
-                <Cell primary={moduleStructuralFunction(module.moduleKey, presentation?.purpose)} />
-                <Cell primary={module.variants.map((variant) => variantLabel(variant.variantKey)).join(", ")} />
-                <Cell primary={unique(presentation?.variants.flatMap((variant) => variant.capabilities) ?? []).map(capabilityLabel).join(", ") || "—"} />
-                <Cell primary={unique(presentation?.variants.flatMap((variant) => variant.interactions) ?? []).map(interactionLabel).join(", ") || "Nenhuma"} />
-              </tr>
-            );
-          })}
-        </Table>
-      </DataSection>
-
-      <ModuleStructureFilters
-        key={`${data.moduleIdentity?.moduleKey ?? ""}:${data.variantIdentity?.variantKey ?? ""}:${data.funnelProfileKey}`}
-        modules={modules}
-        initialModuleKey={data.moduleIdentity?.moduleKey ?? ""}
-        initialVariantKey={data.variantIdentity?.variantKey ?? ""}
-        initialFunnelProfileKey={data.funnelProfileKey}
-      />
-
-      {!resolved ? <FailureState title="Contrato do módulo indisponível" /> : (
-        <>
-          <DataSection title="Campos resolvidos" description="Contrato de conteúdo da variante selecionada.">
-            <Table
-              headings={["Campo", "Tipo / Cardinalidade", "Papel semântico", "Política", "Fonte"]}
-              minWidth="760px"
-              columnWidths={["17%", "17%", "21%", "20%", "25%"]}
-            >
-              {resolved.fieldContract.fields.map((field) => (
-                <tr key={field.path} className="align-top">
-                  <Cell primary={moduleFieldLabel(field.fieldKey)} secondary={field.fieldKey} />
-                  <Cell primary={`${moduleFieldKindLabel(field.fieldKind)} · ${field.cardinality.min}–${field.cardinality.max}`} />
-                  <Cell primary={"semanticRole" in field ? semanticRoleLabel(field.semanticRole) : "Não se aplica"} />
-                  <Cell primary={moduleFieldPolicyLabel(field.policy)} />
-                  <Cell primary={moduleFieldSourceLabel(field)} secondary={<ModuleFieldDetails field={field} />} />
-                </tr>
-              ))}
-            </Table>
-          </DataSection>
-          <div className="grid gap-4 xl:grid-cols-2">
-            <DataSection title="Interações" description="Contratos operacionais declarados pela variante.">
-              {resolved.variant.interactionContracts.length === 0 ? <p className="text-sm text-muted-foreground">Nenhuma interação declarada.</p> : (
-                <div className="space-y-2">{resolved.variant.interactionContracts.map((contract) => <InteractionDetails key={contract.kind} contract={contract} />)}</div>
-              )}
-            </DataSection>
-            <DataSection title="Critérios e fronteiras" description="Invariantes e limites do módulo canônico.">
-              <DefinitionList items={[
-                ["Estado do contrato", lifecycleLabel(resolved.module.lifecycleStatus)],
-                ["Capacidades", resolved.variant.capabilities.map(capabilityLabel).join(", ") || "Nenhuma"],
-                ["Interações permitidas", resolved.module.permittedInteractionKinds.map(interactionLabel).join(", ") || "Nenhuma"],
-                ["Restrições", `${resolved.module.boundaries.length} declaradas`],
-              ]} />
-              <details className="mt-3 rounded-md border border-border bg-background px-3 py-2 text-sm">
-                <summary className="cursor-pointer font-medium text-foreground">Detalhes técnicos do contrato</summary>
-                <ul className="mt-2 list-disc space-y-1 pl-5 text-xs leading-5 text-muted-foreground">
-                  {[...resolved.module.invariants, ...resolved.module.boundaries].map((item) => <li key={item}>{item}</li>)}
-                </ul>
-              </details>
-            </DataSection>
-          </div>
-        </>
-      )}
     </div>
   );
 }
@@ -399,60 +302,6 @@ function ResearchStatusCard({ audience, diagnostic }: { audience: string; diagno
       <p className="mt-1 text-sm text-muted-foreground">{diagnostic.reason}</p>
       <p className="mt-1 text-xs text-muted-foreground">Origem: {diagnostic.origin ?? "Não comprovada"}</p>
     </article>
-  );
-}
-
-function ModuleFieldDetails({ field }: { field: ModuleField }) {
-  const source = moduleFieldCopySource(field);
-  return (
-    <details className="mt-2 text-xs text-muted-foreground">
-      <summary className="cursor-pointer font-medium text-foreground">Detalhes técnicos</summary>
-      <CompactDetailList items={[
-        ["Caminho canônico", field.path],
-        ["Chave", field.fieldKey],
-        ["Modo de fonte", source ? sourceModeLabel(source.sourceMode) : "Não se aplica"],
-        ...(source && source.sourceMode !== "operational_evidence" ? [
-          ["Caminho de pesquisa", source.researchPath],
-          ["Itens principais", source.primaryItemKeys.reduce<string[]>((labels, item) => {
-            if (item) labels.push(researchItemLabel(item));
-            return labels;
-          }, []).join(", ")],
-          ["Item auxiliar", source.auxiliaryItemKey ? researchItemLabel(source.auxiliaryItemKey) : "Não se aplica"],
-        ] as const : []),
-        ...(source && source.sourceMode === "operational_evidence" ? [["Caminho de evidência", source.evidencePath]] as const : []),
-        ...(source && source.sourceMode === "research_with_operational_support" ? [
-          ["Suporte", "Evidência operacional obrigatória quando houver alegação"],
-          ["Referências de suporte", source.operationalSupport.referenceKeys.join(", ")],
-        ] as const : []),
-        ...("support" in field && field.support ? [["Suporte", moduleFieldSupportLabel(field.support)]] as const : []),
-      ]} />
-    </details>
-  );
-}
-
-function InteractionDetails({ contract }: { contract: ResolvedModule["variant"]["interactionContracts"][number] }) {
-  if (contract.kind === "form") {
-    return (
-      <details className="rounded-md border border-border bg-background px-3 py-2">
-        <summary className="cursor-pointer font-medium text-foreground">Formulário</summary>
-        <CompactDetailList items={[
-          ["Campos", contract.fields.map((field) => `${moduleFieldLabel(field.fieldKey)} (${formValueTypeLabel(field.valueType)}, ${inputObligationLabel(field.obligation)})`).join(" · ")],
-          ["Consentimento", `Obrigatório · ${moduleFieldLabel(contract.consent.fieldKey)}`],
-          ["Acessibilidade", "Rótulos, instruções e erros associados; operável por teclado"],
-          ["Vínculo operacional", `${inputFieldLabel(contract.operationalBinding.inputCatalogFieldKey)} = ${contract.operationalBinding.requiredValue}`],
-        ]} />
-      </details>
-    );
-  }
-
-  return (
-    <details className="rounded-md border border-border bg-background px-3 py-2">
-      <summary className="cursor-pointer font-medium text-foreground">Acordeão</summary>
-      <CompactDetailList items={[
-        ["Acessibilidade", "Operável por teclado, com estado expandido e região associada"],
-        ["Comportamento", "Inicia recolhido; mantém foco; um item expandido por vez"],
-      ]} />
-    </details>
   );
 }
 
@@ -605,76 +454,6 @@ function visualRoleDescription(value: string) {
   return descriptions[value] ?? "Papel visual declarado pelo contrato canônico.";
 }
 
-function moduleLabel(value: string) {
-  const labels: Record<string, string> = {
-    hero: "Herói", trust_bar: "Faixa de confiança", problem_solution: "Problema e solução", offer: "Oferta", benefits: "Benefícios", comparison: "Comparação", lead_capture: "Captura de lead", process: "Processo", technical_assurance: "Garantia técnica", social_proof: "Prova social", faq: "Perguntas frequentes", final_cta: "Ação final",
-  };
-  return labels[value] ?? humanize(value);
-}
-
-function variantLabel(value: string) {
-  const variant = value.includes(".") ? value.split(".").at(-1)?.replace(/@v\d+$/, "") ?? value : value;
-  return variant === "standard" ? "Padrão" : variant === "form" ? "Formulário" : variant === "accordion" ? "Acordeão" : humanize(variant);
-}
-
-function moduleStructuralFunction(moduleKey: string, fallback?: string) {
-  const functions: Record<string, string> = {
-    hero: "Apresenta a proposta principal e conduz à rota prioritária.", trust_bar: "Apresenta sinais breves e verificáveis de confiança.", problem_solution: "Relaciona problema ou risco a uma resposta prática.", offer: "Apresenta ofertas ou casos de uso disponíveis.", benefits: "Apresenta benefícios práticos sustentados por pesquisa e operação.", comparison: "Compara alternativas ou critérios de forma neutra.", lead_capture: "Conduz uma conversão de contato com foco.", process: "Apresenta etapas do processo de forma clara.", technical_assurance: "Apresenta garantias e critérios técnicos verificáveis.", social_proof: "Apresenta prova social verificável.", faq: "Esclarece objeções e dúvidas frequentes.", final_cta: "Reforça a próxima ação ao final da página.",
-  };
-  return functions[moduleKey] ?? (fallback ? humanize(fallback) : "Função estrutural declarada.");
-}
-
-function capabilityLabel(value: string) {
-  const labels: Record<string, string> = { primary_action: "Ação principal", image_asset: "Ativo de imagem", accordion_interaction: "Acordeão", embedded_form: "Formulário incorporado" };
-  return labels[value] ?? humanize(value);
-}
-
-function interactionLabel(value: string) { return value === "form" ? "Formulário" : value === "accordion" ? "Acordeão" : humanize(value); }
-
-function moduleFieldLabel(value: string) {
-  const labels: Record<string, string> = {
-    eyebrow: "Sobretítulo", title: "Título", subtitle: "Subtítulo", description: "Descrição", body: "Texto", label: "Rótulo", image: "Imagem", logo: "Logotipo", items: "Itens", item: "Item", question: "Pergunta", answer: "Resposta", primaryAction: "Ação principal", secondaryAction: "Ação secundária", action: "Ação", name: "Nome", role: "Função", proof: "Prova", heading: "Título", caption: "Legenda", privacyConsent: "Consentimento de privacidade",
-  };
-  return labels[value] ?? humanize(value);
-}
-
-function moduleFieldKindLabel(value: string) {
-  const labels: Record<string, string> = { text: "Texto", collection: "Coleção", action: "Ação", image: "Imagem", technical_reference: "Referência técnica" };
-  return labels[value] ?? humanize(value);
-}
-
-function moduleFieldPolicyLabel(value: string) {
-  const labels: Record<string, string> = { research_guided: "Orientado por pesquisa", hybrid: "Híbrido", operational_required: "Exige evidência operacional", technical_reference: "Referência técnica", not_copy: "Não é copy" };
-  return labels[value] ?? humanize(value);
-}
-
-function moduleFieldSupportLabel(value: string) { return value === "when_factual" ? "Quando houver dado factual" : value === "when_present" ? "Quando estiver presente" : humanize(value); }
-
-function moduleFieldCopySource(field: ModuleField) {
-  if ("copySourceMap" in field) return field.copySourceMap;
-  if ("label" in field) return field.label.copySourceMap;
-  return null;
-}
-
-function moduleFieldSourceLabel(field: ModuleField) {
-  const source = moduleFieldCopySource(field);
-  if (source) return sourceModeLabel(source.sourceMode);
-  if (field.fieldKind === "collection") return "Estrutura de coleção";
-  if (field.fieldKind === "technical_reference" || field.fieldKind === "image") return "Referência técnica";
-  return "Não se aplica";
-}
-
-function sourceModeLabel(value: string) {
-  return value === "research" ? "Pesquisa" : value === "research_with_operational_support" ? "Pesquisa + suporte operacional" : value === "operational_evidence" ? "Evidência operacional" : humanize(value);
-}
-
-function researchItemLabel(value: string) {
-  const labels: Record<string, string> = { positioning_opportunity: "Oportunidade de posicionamento", trigger: "Gatilho", desire: "Desejo", pain: "Dor", objection: "Objeção", proof_type: "Tipo de prova", belief: "Crença", fear: "Receio", narrative_arc: "Arco narrativo", awareness_level: "Nível de consciência", search_intent: "Intenção de busca", commercial_keywords: "Palavras-chave comerciais", faq_questions: "Perguntas frequentes" };
-  return labels[value] ?? humanize(value);
-}
-
-function formValueTypeLabel(value: string) { return value === "text" ? "Texto" : value === "email" ? "E-mail" : value === "phone" ? "Telefone" : humanize(value); }
-
 function planLabel(value: string) { return value === "starter" ? "Starter" : value === "lite" ? "Lite" : value === "pro" ? "Pro" : value === "ultra" ? "Ultra" : humanize(value); }
 
 function inputLayerLabel(value: string) {
@@ -759,7 +538,5 @@ function researchBlockLabel(value: string) {
 function humanize(value: string) { return value.replace(/[._-]/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase()); }
 
 function yesNo(value: boolean) { return value ? "Sim" : "Não"; }
-
-function unique(values: readonly string[]) { return [...new Set(values)]; }
 
 function taxonName(taxons: readonly { id: string; name: string }[], id: string) { return taxons.find((taxon) => taxon.id === id)?.name ?? "Taxon de origem"; }
