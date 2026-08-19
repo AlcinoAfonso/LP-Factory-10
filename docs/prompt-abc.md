@@ -1,4 +1,4 @@
-# docs/prompt-abc.md vs17
+# docs/prompt-abc.md vs18
 
 PROMPT ABC
 
@@ -62,6 +62,7 @@ Um assunto deve ter uma única residência. Não duplicar fonte canônica.
 * Se `X.Y.2` estiver ocupado por conteúdo legado de outra natureza, usar `SUBSTITUIR_SECAO` no mesmo fluxo quando a estrutura final e seus impactos estiverem integralmente determinados dentro do recorte autorizado; parar somente diante de ambiguidade material, referência externa não reconciliada ou ampliação de escopo.
 * Para o recorte afetado, a conformidade com o template prevalece sobre o menor delta textual; não normalizar recortes não afetados.
 * Não criar blocos vazios.
+* Quando a fonte competente aprovar uma previsão futura para o roadmap, preservá-la no nível estrutural correspondente do template, sem convertê-la em implementação nem absorvê-la no recorte atual; recorte futuro sem implementação material pode omitir `Registros do recorte`.
 * Não listar ações que não ocorreram.
 * Usar `N/A` somente quando o template exigir.
 * Em registros, usar somente nomes ou paths.
