@@ -27,7 +27,7 @@ Plano conceitual: `docs/lp-planejamento.md`.
 - Decisão humana de 18/08/2026: o payload integral do único perfil E20.3 ativo será eliminado junto com a retirada do domínio, sem tabela de arquivo, snapshot paralelo, bucket ou outra persistência de preservação.
 - A rastreabilidade histórica desse perfil permanece pelas migrations e commits no Git, PRs/documentação e eventos já existentes em `audit_logs`.
 - `docs/lp-planejamento.md` foi reconciliado na `main` pelo PR #778, merge commit `c0c09888058ee451e31e77bc3c4cd8d357d784e1`; essa atualização confirma E22.1 antes da E19.5 e não autoriza absorver lifecycle, edição, publicação, créditos ou nova arquitetura da E19.5 neste recorte.
-- Terminologia canônica deste caso: **retirada controlada**. Não usar `limpeza`, `cleanup` ou `depreciação` como termos paralelos para o trabalho atual.
+- Terminologia canônica deste caso: **retirada controlada**. Não usar outros termos como sinônimos do trabalho atual.
 
 ### 1.3. Evidência factual inicial
 
