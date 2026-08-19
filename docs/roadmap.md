@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 19/08/2026
-• Versão: v1.5.166
+• Versão: v1.5.167
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -1598,11 +1598,10 @@ Repositório — Ajustados
   - Leituras diagnósticas preservadas usam projeções server-side em lote e falha isolada por domínio; não há novo domínio de prontidão.
 
 12.5.4 Validação e pendências
-- Status: Gate técnico local e QA hospedado/autenticado aprovados para o estado candidato da E22.1.6.
+- Status: Concluída após o merge da E22.1.6 e o QA pós-merge aprovado em produção.
 - Conteúdo:
   - `npm ci`, `npm run check`, `git diff --check` e os validadores focais preservados foram aprovados localmente.
-  - O QA autenticado no Preview aprovou Taxonomia em desktop e mobile sem diagnósticos BB/EC E10.8, preservando Página comercial e os estados E20.5/E20.6, sem links, cards, estados órfãos, overflow de página ou erros de console.
-  - Apenas o merge humano da E22.1.6 permanece pendente.
+  - Os QAs autenticados no Preview e pós-merge em produção aprovaram Taxonomia em desktop e mobile sem diagnósticos BB/EC E10.8, preservando Página comercial e os estados E20.5/E20.6, sem links, cards, estados órfãos, overflow de página ou erros de console.
 
 12.6 Estrutura da LP no Admin Dashboard
 
@@ -1630,13 +1629,13 @@ Repositório — Ajustados
   - Plano-base aprovado: `docs/lousa-plano-base-e12-6.md` — E12.6.3.
 
 12.6.3 Consulta estrutural read-only
-- Status: Concluída no estado candidato da E22.1.6, sem alteração de banco, persistência, mutation, IA, automação ou infraestrutura.
+- Status: Concluída após o merge da E22.1.6 e o QA pós-merge aprovado em produção, sem alteração de banco, persistência, mutation, IA, automação ou infraestrutura.
 - Conteúdo:
   - O Admin possui um único item `Estrutura da LP` e uma única rota `/admin/estrutura-lp`; somente as visões Parâmetros e Entradas permanecem na rota por query string.
   - Parâmetros consulta o contrato público vigente da E18.4; Entradas resolve o catálogo da E20.2 por versão, plano e taxon ativo.
   - As visões históricas Módulos e variantes e Pesquisas foram retiradas pelas E22.1.5 e E22.1.6; queries antigas caem com segurança em Parâmetros.
   - A leitura administrativa usa um único adapter e consultas server-side em lote, sem exportar registry ou schema privado, sem N+1 e sem regra de domínio em React.
-  - `npm ci`, `npm run check`, `git diff --check` e os validadores canônicos preservados da E18.4 e E20.2 foram aprovados localmente; o QA hospedado/autenticado em desktop (1280×900) e mobile (390×844) aprovou as duas visões e confirmou 23 campos válidos resolvidos pela E20.2. Apenas o merge humano da E22.1.6 permanece pendente.
+  - `npm ci`, `npm run check`, `git diff --check` e os validadores canônicos preservados da E18.4 e E20.2 foram aprovados localmente; os QAs hospedado/autenticado e pós-merge em produção, em desktop (1280×900) e mobile (390×844), aprovaram as duas visões e confirmaram 23 campos válidos resolvidos pela E20.2.
 
 13. E13 — Partner Dashboard
 
@@ -2746,13 +2745,13 @@ Repositório — Ajustados
 
 22. E22 — Retirada controlada de ativos históricos
 - Objetivo: reduzir a superfície histórica que não participa do caminho canônico vigente, preservando consumidores reais e preparando a sequência E19.4 concluída → E22.1 → E19.5.
-- Status: Em andamento no candidato da E22.1.6; as E22.1.4 e E22.1.5 estão concluídas, a E19.4 permanece concluída e a E19.5 permanece pausada durante a E22.1.
+- Status: Em andamento no candidato da E22.1.7; as E22.1.4, E22.1.5 e E22.1.6 estão concluídas, a E19.4 permanece concluída e a E19.5 permanece pausada durante a E22.1.
 
 22.1 Retirada controlada de ativos históricos
 
 22.1.1 Objetivo e status
 - Objetivo: retirar de forma controlada ativos históricos e seus consumidores somente após classificação de dependências, preservando os boundaries e dados ainda necessários ao caminho ativo.
-- Status: Plano-base v2 consolidado; E22.1.4 e E22.1.5 concluídas, e E22.1.6 implementada como candidata pronta para merge, com QA hospedado/autenticado aprovado em desktop (1280×900) e mobile (390×844) e apenas o merge humano pendente. A E19.4 permanece concluída e a E19.5 pausada.
+- Status: Plano-base v2 consolidado; E22.1.4, E22.1.5 e E22.1.6 concluídas, e E22.1.7 implementada como candidata pronta para merge humano, com regressão final e QA hospedado/autenticado aprovados. A E19.4 permanece concluída e a E19.5 pausada.
 
 22.1.2 Registros do recorte
 - Repositório:
@@ -2816,7 +2815,7 @@ Repositório — Ajustados
 
 22.1.6 Desacoplamento da camada E10.8
 - Objetivo: desacoplar a camada histórica de resolução de pesquisas e seus consumidores históricos sem remover pesquisas estruturadas que possuam consumidor real independente.
-- Status: Implementada como candidata pronta para merge humano; validações locais e QA hospedado/autenticado aprovados em desktop (1280×900) e mobile (390×844), com apenas o merge humano pendente.
+- Status: Concluída em 19/08/2026 após merge do PR #784 e QA pós-merge aprovado em produção.
 - Conteúdo:
   - o boundary `research-resolution`, o adapter `landingPageResearchAdapter`, exports e validator foram retirados, junto de `validate:landing-page-research` e sua chamada em `npm run check`;
   - os diagnósticos BB/EC E10.8 foram retirados da Taxonomia, e a visão Pesquisas foi retirada de `/admin/estrutura-lp`, que preserva somente Parâmetros e Entradas; queries antigas caem com segurança em Parâmetros;
@@ -2826,11 +2825,14 @@ Repositório — Ajustados
 
 22.1.7 Consolidação transversal e regressão final
 - Objetivo: consolidar a retirada controlada, verificar a ausência de dependências residuais e preservar a integridade do caminho E19.4.
-- Status: Planejada; não implementada.
+- Status: Implementada como candidata pronta para merge humano; auditoria focal, regressão final e QA hospedado/autenticado aprovados.
 - Conteúdo:
-  - executar regressão proporcional dos boundaries e superfícies preservados, sem exigir nova geração real por padrão;
-  - manter a revisão 3 reproduzível e não reabrir a E19.4, não iniciar a E19.5 e não criar substituto dentro da E22.1;
-  - interromper o recorte diante de consumidor inesperado, drift destrutivo, regressão da revisão 3 ou dependência não reconciliável.
+  - a auditoria focal encontrou e removeu somente o rótulo administrativo órfão `Pesquisas estruturadas por taxon`; ocorrências em migrations e registros históricos, além de asserções negativas de regressão, permanecem preservadas;
+  - `npm ci`, `npm run check`, `git diff --check` e os validadores focais de E19.3, E19.4, Preview, workloads OpenAI, ativação comercial, E20.5/E20.6 e Estrutura da LP foram aprovados;
+  - o QA hospedado/autenticado aprovou Admin em desktop (1280×900) e mobile (390×844), com Estrutura da LP somente em Parâmetros e Entradas, Taxonomia sem superfícies retiradas e cinco itens inventariados em Workloads OpenAI — quatro workloads de produto ativos e a referência operacional Supabase Inspect —, sem superfície órfã, overflow de página ou erro de console;
+  - a revisão 3 permaneceu persistida e reproduzível em desktop e mobile, com três revisões materializadas e a revisão 3 vigente; nenhuma revisão 4 ou chamada real aos providers foi criada;
+  - E18.4, E20.2, E20.5/E20.6, E19.2/E19.3/E19.4, E10.6/E10.7, `commercial_activation`, `taxon_market_research`, `taxon_market_research_items` e os workloads ativos permanecem preservados;
+  - não houve migration, DDL, alteração de banco, infraestrutura ou mudança de `docs/schema.md`; a E19.5 não foi iniciada.
 
 99. Changelog
 v1.5.140 — 11/08/2026 — Implementada no repositório a E19.4.4 com materialização inicial 1:1 write-once, conteúdo e snapshot runtime v1 coerentes, adapter server-only, migration transacional, readiness fail-closed e casos executáveis; apply e prova hospedada permanecem nos gates pós-merge/E19.4.5.
