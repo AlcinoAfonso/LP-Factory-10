@@ -1157,7 +1157,12 @@ const cases = [
         "utf8",
       );
       assert.match(page, /maxDuration = 300/);
-      assert.match(page, /getAccessContext/);
+      assert.match(page, /loadLandingPagePreview/);
+      const previewAdapter = readFileSync(
+        new URL("./adapters/landingPagePreviewAdapter.ts", import.meta.url),
+        "utf8",
+      );
+      assert.match(previewAdapter, /getAccessContext/);
     },
   },
   {

@@ -1,6 +1,23 @@
 /** @type {import('next').NextConfig} */
 
+const supabaseStoragePattern = (() => {
+  try {
+    const url = new URL(process.env.NEXT_PUBLIC_SUPABASE_URL);
+    if (url.protocol !== 'https:') return null;
+    return {
+      protocol: 'https',
+      hostname: url.hostname,
+      pathname: '/storage/v1/object/sign/landing-page-revision-assets/**',
+    };
+  } catch {
+    return null;
+  }
+})();
+
 const nextConfig = {
+  images: {
+    remotePatterns: supabaseStoragePattern ? [supabaseStoragePattern] : [],
+  },
   outputFileTracingIncludes: {
     '/admin/taxonomia/[taxonId]': [
       './docs/pesquisas-brutas/**/end_customer/v*.md',

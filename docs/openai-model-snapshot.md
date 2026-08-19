@@ -2,7 +2,7 @@
 
 ## 1. Objetivo e validade
 
-- Data do snapshot: 17/08/2026.
+- Data do snapshot: 18/08/2026.
 - Objetivo: manter uma referência datada para decisões de custo-desempenho de modelos e avaliação de capacidades de execução dos workloads OpenAI do LP Factory 10.
 - Este documento compara candidatos; não define sozinho o modelo em produção e não autoriza migração, implementação ou mudança de arquitetura.
 - A configuração efetivamente adotada continua registrada em `docs/platform-config.md`; a governança da decisão continua em `docs/gestor-automations.md`.
@@ -26,8 +26,8 @@
 - `niche_resolution` → configuração efetiva atual `gpt-5.4-mini + none`.
 - `landing_page_generation_profile_proposal` → configuração efetiva atual `gpt-5.4-mini + none`.
 - `commercial_activation_draft_generation` → configuração efetiva atual `gpt-5.4-mini + none`.
-- `landing_page_draft_generation` → configuração candidata versionada `gpt-5.6-luna + max`, pendente de canário no ambiente alvo.
-- `landing_page_draft_image_generation` → configuração candidata versionada `gpt-image-2`, pendente de canário no ambiente alvo; parâmetros de imagem não herdam configuração textual.
+- `landing_page_draft_generation` → configuração efetiva versionada `gpt-5.6-luna + max`, comprovada no fluxo integrado hospedado.
+- `landing_page_draft_image_generation` → configuração efetiva versionada `gpt-image-2`, comprovada no fluxo integrado hospedado; parâmetros de imagem não herdam configuração textual.
 - Fonte de configuração efetiva: `lib/openai-workloads/registry.ts`, com `configurationSource: repo_catalog` e revisão `v2`, conforme a governança da E21.1.
 - Fonte operacional: `docs/platform-config.md`.
 - Variáveis legadas de modelo não são fonte runtime atual; seu estado operacional permanece exclusivamente em `docs/platform-config.md`.
@@ -110,8 +110,8 @@
 | resolvedor IA de nicho | `gpt-5.4-mini + none` | Luna / Terra / Sol + effort aplicável | não comparado neste snapshot |
 | perfil de orientação de landing page | `gpt-5.4-mini + none` | Luna / Terra / Sol + effort aplicável | não comparado neste snapshot |
 | ativação comercial | `gpt-5.4-mini + none` | Luna / Terra / Sol + effort aplicável | não comparado neste snapshot |
-| geração textual do draft de landing page | `gpt-5.6-luna + max` | configuração inicial aprovada para o workload | implementação local validada; canário hospedado pendente |
-| geração da imagem principal do draft | `gpt-image-2` | workload de mídia independente | implementação local validada; canário hospedado pendente |
+| geração textual do draft de landing page | `gpt-5.6-luna + max` | configuração inicial aprovada para o workload | duas execuções integradas hospedadas aprovadas em 18/08/2026 |
+| geração da imagem principal do draft | `gpt-image-2` | workload de mídia independente | duas execuções integradas hospedadas aprovadas em 18/08/2026 |
 
 ### 4.3 Registro de decisão
 
