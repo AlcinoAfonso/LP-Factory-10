@@ -299,18 +299,6 @@
 • Interaction contracts são a fonte das capabilities interativas e devem ser evoluídos uma vez por novo kind, com reutilização pelas variantes.
 • O boundary permanece repo-only e não executa composição, persistência ou renderização.
 
-3.15.6 Perfil de orientação para geração de `landing_page`
-• Boundary canônico: `lib/conversion-content/landing-page/generation-profile/`; contratos, schema e resolver permanecem puros e sem acesso ao banco.
-• Leitura e normalização pertencem ao adapter server-only de `conversion-content`; consumidores usam um único boundary e não consultam taxons, perfis ou itens separadamente nem recebem DBRow.
-• Cadeia, leitura ou agregado inválido devem falhar fechado com erro operacional distinguível; ausência legítima de perfil não pode mascarar falha.
-• A saída deve preservar proveniência, ordenação determinística e imutabilidade profunda.
-• Identidades de módulo e variante devem ser validadas pela API pública da E18.5, sem importação direta do registry ou schema do catálogo.
-• Mutações administrativas do agregado devem ocorrer somente por RPC autenticada, atômica e auditada; tabelas permanecem sem DML direto para o cliente, e a ativação troca a versão ativa na mesma transação.
-• O runtime deve manter ações de lifecycle indisponíveis, com motivo objetivo, até um probe read-only confirmar RPCs, ACLs, RLS e ausência de policies esperadas no ambiente alvo.
-• Versão ativa é imutável; edição cria ou atualiza somente draft, com controle de concorrência por `updated_at` e validação server-side do agregado completo antes da persistência.
-• Assistência por IA é opcional, explícita e não autoritativa: a proposta validada permanece candidata transitória até aplicação humana explícita e não salva, ativa, arquiva nem altera o resolver público; orientações gerais e específicas pertencem exclusivamente ao humano e devem ser preservadas pelo fluxo assistido.
-• Prompts, payloads e respostas integrais não devem ser persistidos nem registrados; correlação deve usar identificadores, fingerprint e metadados operacionais seguros.
-
 3.15.7 Preparação factual do taxon para `landing_page`
 • Boundary canônico: `lib/conversion-content/landing-page/taxon-preparation/`; a derivação permanece pura e não persiste estado de prontidão.
 • O adapter server-only deve ler pelo caminho único da pesquisa selecionada o taxon ativo, a pesquisa E20.5 integralmente válida e a versão E20.2 avaliada; UI e componentes client não consultam esses marcadores diretamente.

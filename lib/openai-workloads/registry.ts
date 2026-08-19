@@ -22,21 +22,6 @@ export const openAiWorkloadRegistry = deepFreeze([
     },
   },
   {
-    id: "landing_page_generation_profile_proposal",
-    displayName: "Proposta de perfil de geração",
-    classification: "product_runtime",
-    configurationKind: "effective",
-    consumer: "Proposta administrativa opcional do perfil de orientação",
-    fallback: "Manter a edição manual funcional",
-    configuration: {
-      apiKind: "responses_text",
-      model: "gpt-5.4-mini",
-      reasoningEffort: "none",
-      source: "repo_catalog",
-      revision,
-    },
-  },
-  {
     id: "commercial_activation_draft_generation",
     displayName: "Geração de draft de ativação comercial",
     classification: "product_runtime",

@@ -2868,10 +2868,10 @@ Repositório — Ajustados
   - Permanece fora do PR #710 a correção separada da automação de smoke para remover senha de logs e artifacts, gerar credenciais não previsíveis e tratar colisões corretamente.
 
 21.1.5 Inventário read-only no Admin Dashboard
-- Status: inventário implementado com seis itens; a prova técnica e visual hospedada anterior cobre somente os quatro itens então implantados, enquanto a expansão da E19.4 está integrada à `main`.
+- Status: inventário implementado com cinco itens no primeiro merge candidato da E22.1.4; a prova técnica local está aprovada e a prova visual hospedada do inventário reduzido permanece pendente de deploy.
 - Conteúdo:
-  - A rota protegida `/admin/workloads-openai` integra o shell e a navegação administrativos vigentes e projeta diretamente da API pública do boundary os seis itens integrados à `main`, sem adapter, API, componente client ou controle de mutação novos.
-  - Os cinco workloads de produto exibem ambiente observado, configuração efetiva, origem e revisão; o Supabase Inspect permanece diferenciado como referência operacional externa e informa explicitamente `Ambiente da execução: não verificado nesta página`.
+  - A rota protegida `/admin/workloads-openai` integra o shell e a navegação administrativos vigentes e projeta diretamente da API pública do boundary os cinco itens candidatos, sem adapter, API, componente client ou controle de mutação novos.
+  - Os quatro workloads de produto exibem ambiente observado, configuração efetiva, origem e revisão; o Supabase Inspect permanece diferenciado como referência operacional externa e informa explicitamente `Ambiente da execução: não verificado nesta página`.
   - A superfície é responsiva, sem consulta runtime à OpenAI, GitHub ou Vercel e sem configuração remota, métricas históricas ou capacidades inexistentes.
   - As evidências hospedadas aprovaram desktop, viewport mobile de 390 × 844 sem overflow, navegação lógica por TAB com foco visível, acesso positivo de `platform_admin` e bloqueio da identidade preexistente sem esse papel.
 
@@ -2920,13 +2920,32 @@ Repositório — Ajustados
 
 22. E22 — Retirada controlada de ativos históricos
 - Objetivo: reduzir a superfície histórica que não participa do caminho canônico vigente, preservando consumidores reais e preparando a sequência E19.4 concluída → E22.1 → E19.5.
-- Status: Planejada; a E19.4 está concluída, a E22.1 permanece não implementada e a E19.5 permanece pausada até a conclusão da retirada controlada.
+- Status: Em andamento no primeiro merge candidato da E22.1.4; a E19.4 permanece concluída e a E19.5 permanece pausada até a conclusão da retirada controlada.
 
 22.1 Retirada controlada de ativos históricos
 
 22.1.1 Objetivo e status
 - Objetivo: retirar de forma controlada ativos históricos e seus consumidores somente após classificação de dependências, preservando os boundaries e dados ainda necessários ao caminho ativo.
-- Status: Plano-base v2 consolidado; implementação não iniciada. A E19.4 permanece concluída, a E22.1 é o próximo recorte planejado e a E19.5 permanece pausada.
+- Status: Plano-base v2 consolidado; primeiro merge candidato da E22.1.4 implementado no repositório, com merge, deploy e prova hospedada ainda pendentes. A E19.4 permanece concluída e a E19.5 pausada.
+
+22.1.2 Registros do recorte
+- Repositório:
+  - Ajustados:
+    - `app/admin/(protected)/resolucoes-de-nicho/[accountId]/page.tsx`
+    - `app/admin/(protected)/taxonomia/`
+    - `components/admin/adminNavigation.ts`
+    - `lib/admin/adapters/`
+    - `lib/conversion-content/index.ts`
+    - `lib/openai-workloads/`
+    - `package.json`
+  - Excluídos:
+    - `app/admin/(protected)/perfis-de-orientacao/`
+    - `lib/conversion-content/adapters/landingPageGenerationProfileAdapter.ts`
+    - `lib/conversion-content/adapters/landingPageGenerationProfileAdapterCore.ts`
+    - `lib/conversion-content/adapters/landingPageGenerationProfileAdminAdapter.ts`
+    - `lib/conversion-content/adapters/landingPageGenerationProfileOpenAiAdapter.ts`
+    - `lib/conversion-content/adapters/landingPageGenerationProfileRowNormalization.ts`
+    - `lib/conversion-content/landing-page/generation-profile/`
 
 22.1.3 Auditoria e classificação integral de consumidores
 - Objetivo: mapear e classificar consumidores e ativos históricos como preservados, desacoplados ou removíveis, sem retirar qualquer item apenas por estar fora do caminho canônico.
@@ -2938,11 +2957,12 @@ Repositório — Ajustados
 
 22.1.4 Retirada de E20.3 e E12.4.3 associado
 - Objetivo: retirar o domínio histórico de perfil de geração e suas responsabilidades associadas sem criar persistência ou arquitetura substituta dentro da E22.1.
-- Status: Planejada; não implementada.
+- Status: Primeiro merge candidato implementado no repositório; consumidores, superfícies administrativas, workload, exports e validator foram retirados, com gates executáveis aprovados. Merge, deploy e prova hospedada de ausência de consumidores permanecem pendentes; a retirada física do banco não foi iniciada.
 - Conteúdo:
-  - remover consumidores runtime e administrativos somente após prova proporcional de ausência de dependência necessária;
-  - eliminar o payload integral aprovado para retirada e preservar sua rastreabilidade histórica nos registros canônicos já existentes;
-  - reservar qualquer retirada física de persistência para evolução forward-only posterior, condicionada ao gate de ausência de consumidores e à reconfirmação do conjunto autorizado.
+  - o primeiro merge retira `generation-profile`, adapters, páginas/actions de `/admin/perfis-de-orientacao`, navegação e diagnósticos associados, o workload `landing_page_generation_profile_proposal`, exports e validator;
+  - `validate:landing-page-generation-profile` e sua chamada em `npm run check` foram retirados no mesmo recorte;
+  - as duas tabelas e quatro RPCs de E20.3 permanecem preservadas temporariamente, sem migration, DDL ou remoção de dados;
+  - o segundo merge permanece proibido até o primeiro estar mergeado, implantado e comprovado sem consumidores necessários; somente então poderá executar o gate read-only pré-DDL e a evolução destrutiva forward-only autorizada.
 
 22.1.5 Retirada de E18.5 e poda dos consumidores administrativos
 - Objetivo: retirar o catálogo histórico de módulos e variantes e podar somente as responsabilidades administrativas que dependem dele.

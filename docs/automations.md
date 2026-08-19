@@ -355,53 +355,6 @@ Action administrativa: `app/admin/(protected)/templates/actions.ts`
 Adapter de geração: `lib/conversion-content/commercial-activation/draft-generation.ts`
 Snippet de validação: `supabase/snippets/e10_7_phase_2_draft_verify.sql`
 
-3.9 E12.4.3 — proposta administrativa opcional do perfil de orientação
-
-Objetivo:
-Propor orientação e recomendações de módulos para um taxon elegível, preservando a revisão humana e o fluxo manual completo.
-
-Status:
-Implementada e validada operacionalmente, com migration aplicada, configuração da OpenAI e testes humanos autenticados aprovados.
-
-Recurso utilizado:
-- Responses API
-- Structured Outputs
-- Server Action administrativa protegida
-
-Natureza:
-- Automação com IA em fluxo controlado.
-
-Ambiente principal:
-- Runtime do LP Factory.
-
-Plataforma dependente:
-- OpenAI Platform.
-
-Participação humana:
-- Gatilho administrativo e aceite, ajuste ou descarte da proposta após a execução.
-
-Como funciona:
-- Executa somente após ação explícita do administrador.
-- Resolve pesquisas estruturadas vigentes e o perfil ativo próprio quando disponível.
-- Exige saída estruturada, valida identidades pela API pública do catálogo e apresenta a proposta no mesmo editor.
-- Mantém request ID e fingerprint para correlacionar proposta, descarte e aceite ajustado ou integral sem registrar prompt, payload ou resposta completa.
-
-Limites:
-- Não salva, aprova, ativa, arquiva, gera, materializa, publica nem altera landing page.
-- Falha ou ausência da assistência não bloqueia a operação manual.
-- Não usa Agents SDK, ferramenta, agente, job, fila, execução recorrente nem `previous_response_id`.
-
-Aplicações funcionais no roadmap:
-- `docs/roadmap.md` — E12.4.3.
-- `docs/roadmap.md` — E12.4.3.1.
-- `docs/roadmap.md` — E12.4.3.2.
-
-Referências / dependências:
-Regra técnica: `docs/base-tecnica.md`
-Configuração de modelo: `docs/platform-config.md`
-Action administrativa: `app/admin/(protected)/perfis-de-orientacao/actions.ts`
-Adapter de proposta: `lib/conversion-content/adapters/landingPageGenerationProfileOpenAiAdapter.ts`
-
 3.10 E20.6 — avaliação assistida da suficiência factual da E20.2 por taxon
 
 Objetivo:

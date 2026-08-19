@@ -171,24 +171,24 @@
 • `OPENAI_API_KEY`
 • Finalidade: chave server-side compartilhada pelos consumidores OpenAI de produto autorizados no Core.
 • Escopo: Production e Preview.
-• Estado atual: configurada em Production e Preview; os três consumidores foram validados em Production em 10/08/2026 sem exposição do valor.
+• Estado atual: configurada em Production e Preview; os consumidores autorizados ativos compartilham a chave sem exposição do valor.
 • Valor real: não versionar.
 • Regra operacional: os consumidores autorizados podem compartilhar a mesma chave; não criar outra sem necessidade aprovada.
 
 • Configuração efetiva dos workloads OpenAI de produto
 • Fonte canônica: `lib/openai-workloads/registry.ts`, com `configurationSource: repo_catalog` e revisão `v2`.
-• Workloads textuais validados operacionalmente: `niche_resolution`, `landing_page_generation_profile_proposal` e `commercial_activation_draft_generation`, com modelo `gpt-5.4-mini` e esforço de raciocínio `none`.
+• Workloads textuais validados operacionalmente: `niche_resolution` e `commercial_activation_draft_generation`, com modelo `gpt-5.4-mini` e esforço de raciocínio `none`.
 • Workload textual validado no ambiente alvo: `landing_page_draft_generation`, com modelo `gpt-5.6-luna`, esforço `max`, Responses API, Structured Output estrito, `store:false` e timeout de 120 s.
 • Workload de imagem validado no ambiente alvo: `landing_page_draft_image_generation`, com modelo `gpt-image-2`, saída WebP 1536 × 1024, qualidade `medium`, compressão 80, moderação `auto` e timeout de 120 s.
-• Validação operacional: os três workloads foram executados uma única vez em Production em 10/08/2026; os Runtime Logs confirmaram sucesso e telemetria sanitizada, sem prompt, resposta integral, credencial ou dado pessoal.
+• Validação operacional: `niche_resolution` e `commercial_activation_draft_generation` foram executados uma única vez em Production em 10/08/2026; os Runtime Logs confirmaram sucesso e telemetria sanitizada, sem prompt, resposta integral, credencial ou dado pessoal.
 • Validação dos workloads de draft: por decisão humana, o gate de canários isolados sem persistência foi substituído pelo primeiro append integrado; duas execuções integradas hospedadas em 18/08/2026 comprovaram texto, imagem e o caminho oficial sem retry ou fallback.
 • Duração da Function: o segmento produtivo permanece configurado com `maxDuration = 300`; deployment READY e duas execuções integradas completas sem timeout incompatível corroboraram operacionalmente o gate.
 • Variáveis legadas de modelo na Vercel
 • Nomes: `OPENAI_NICHE_RESOLVER_MODEL`, `OPENAI_LANDING_PAGE_GENERATION_PROFILE_MODEL` e `OPENAI_COMMERCIAL_ACTIVATION_MODEL`.
 • Escopo: Production e Preview.
-• Uso runtime atual: nenhum nos três consumidores de produto; a configuração efetiva vem do catálogo versionado no repositório.
+• Uso runtime atual: nenhum nos consumidores de produto ativos; a configuração efetiva vem do catálogo versionado no repositório.
 • Estado operacional: ausentes da configuração vigente de Production e Preview, sem branch override, após retirada controlada em 10/08/2026.
-• Validação pós-retirada: `OPENAI_API_KEY` permaneceu configurada nos dois ambientes; os redeploys de Production e Preview ficaram verdes; `/admin/workloads-openai` confirmou nos dois ambientes `repo_catalog`, revisão `v1`, modelo `gpt-5.4-mini` e esforço `none` para os três workloads de produto.
+• Validação pós-retirada das variáveis legadas: `OPENAI_API_KEY` permaneceu configurada nos dois ambientes; os redeploys de Production e Preview ficaram verdes; `/admin/workloads-openai` confirmou `repo_catalog`, modelo `gpt-5.4-mini` e esforço `none` para os consumidores textuais então ativos.
 • Regra: não recriar as variáveis sem necessidade futura aprovada.
 
 • `LPF_MCP_SECRET`

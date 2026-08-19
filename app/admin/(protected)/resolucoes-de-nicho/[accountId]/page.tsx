@@ -4,8 +4,6 @@ import type { ReactNode } from "react";
 
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminStatusBadge } from "@/components/admin/AdminStatusBadge";
-import { readAdminGenerationProfileSummaries } from "@/conversion-content/adapters/landingPageGenerationProfileAdminAdapter";
-import { getAdminGenerationProfilePresentation } from "@/conversion-content/landing-page/generation-profile";
 import { formatAdminDate, formatPercent } from "@/lib/admin/adminFormat";
 import { getAdminNicheResolutionDetail } from "@/lib/admin/adapters/adminReadOnlyAdapter";
 
@@ -21,18 +19,6 @@ export default async function AdminNicheResolutionDetailPage({ params }: AdminNi
   const resolution = await getAdminNicheResolutionDetail(accountId);
 
   if (!resolution) notFound();
-
-  const profileSummaries = resolution.selectedTaxonId
-    ? await readAdminGenerationProfileSummaries()
-    : null;
-  const selectedProfile = profileSummaries?.ok
-    ? profileSummaries.items.find(
-        (item) => item.taxon.id === resolution.selectedTaxonId,
-      )
-    : null;
-  const profileHref = selectedProfile
-    ? getAdminGenerationProfilePresentation(selectedProfile).action.href
-    : "/admin/perfis-de-orientacao";
 
   return (
     <div className="space-y-6">
@@ -95,12 +81,6 @@ export default async function AdminNicheResolutionDetailPage({ params }: AdminNi
               href={`/admin/templates/commercial-activation/${encodeURIComponent(resolution.selectedTaxonSlug)}`}
             >
               Ir para página comercial
-            </Link>
-            <Link
-              className="text-brand-700 hover:underline"
-              href={profileHref}
-            >
-              Ir para perfil
             </Link>
           </div>
         </section>

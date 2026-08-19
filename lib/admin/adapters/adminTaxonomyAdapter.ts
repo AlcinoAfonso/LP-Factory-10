@@ -2,15 +2,6 @@ import "server-only";
 
 import { resolveLandingPageResearchForTaxons } from "@/conversion-content/adapters/landingPageResearchAdapter";
 import {
-  getGenerationProfileAssistanceAvailability,
-  readAdminGenerationProfileSummaries,
-} from "@/conversion-content/adapters/landingPageGenerationProfileAdminAdapter";
-import {
-  getAdminGenerationProfilePresentation,
-  isGenerationProfileAssistanceConfigured,
-  type AdminGenerationProfileListItem,
-} from "@/conversion-content/landing-page/generation-profile";
-import {
   LANDING_PAGE_RESEARCH_BLOCKS,
   resolveLandingPageResearch,
   type LandingPageResearchAudienceScope,
@@ -620,32 +611,15 @@ async function readAdminTaxonDiagnostics(
   taxons: readonly AdminTaxonSummary[],
 ): Promise<ReadonlyMap<string, AdminTaxonOperationalDiagnostic>> {
   const taxonIds = taxons.map((taxon) => taxon.id);
-  const [commercialRead, profilesRead] = await Promise.allSettled([
+  const [commercialRead, researchRead] = await Promise.allSettled([
     readAdminCommercialActivationOverview(),
-    readAdminGenerationProfileSummaries(),
+    resolveLandingPageResearchForTaxons({ taxonIds }),
   ]);
-  const aiConfigured = isGenerationProfileAssistanceConfigured({
-    apiKey: process.env.OPENAI_API_KEY,
-  });
   const commercialByTaxonId = new Map<string, AdminCommercialActivationListItem>(
     commercialRead.status === "fulfilled" && commercialRead.value.ok
       ? commercialRead.value.items.map((item) => [item.taxon.id, item])
       : [],
   );
-  const profileByTaxonId = new Map<string, AdminGenerationProfileListItem>(
-    profilesRead.status === "fulfilled" && profilesRead.value.ok
-      ? profilesRead.value.items.map((item) => [item.taxon.id, item])
-      : [],
-  );
-  const researchTaxonIds = [...new Set([
-    ...taxonIds,
-    ...[...profileByTaxonId.values()].map(
-      (item) => getAdminGenerationProfilePresentation(item).assistanceTaxonId,
-    ),
-  ])];
-  const [researchRead] = await Promise.allSettled([
-    resolveLandingPageResearchForTaxons({ taxonIds: researchTaxonIds }),
-  ]);
   const research = researchRead.status === "fulfilled"
     ? researchRead.value
     : new Map<string, LandingPageResearchResolutionResult>();
@@ -655,32 +629,6 @@ async function readAdminTaxonDiagnostics(
       const researchResult = research.get(taxon.id);
       const researchDiagnostic = describeResearch(researchResult);
       const commercialItem = commercialByTaxonId.get(taxon.id);
-      const profileItem = profileByTaxonId.get(taxon.id);
-      const profilePresentation = profileItem
-        ? getAdminGenerationProfilePresentation(profileItem)
-        : null;
-      const assistance = getGenerationProfileAssistanceAvailability({
-        aiConfigured,
-        research: research.get(profilePresentation?.assistanceTaxonId ?? taxon.id),
-      });
-      const profileDiagnostic = profileItem
-        ? describeGenerationProfile(profileItem)
-        : {
-            activeProfile: unavailableDiagnostic(
-              taxon.isActive
-                ? "A leitura do perfil ativo nao pode ser comprovada."
-                : "Taxon inativo nao possui operacao de perfil.",
-              "Revisar perfis",
-              "/admin/perfis-de-orientacao",
-            ),
-            draftProfile: unavailableDiagnostic(
-              taxon.isActive
-                ? "A leitura do rascunho proprio nao pode ser comprovada."
-                : "Taxon inativo nao possui rascunho proprio.",
-              "Revisar perfis",
-              "/admin/perfis-de-orientacao",
-            ),
-          };
 
       return [
         taxon.id,
@@ -694,21 +642,6 @@ async function readAdminTaxonDiagnostics(
                   : "Taxon inativo nao participa do fluxo comercial.",
                 "Revisar diagnóstico",
                 null,
-              ),
-          ...profileDiagnostic,
-          aiAssistance: assistance.available
-            ? {
-                label: "Disponível",
-                tone: "success",
-                origin: "E12.4.3",
-                reason: "Configuracao e preflight E10.8 comprovados.",
-                nextAction: "Usar no editor do perfil",
-                href: profilePresentation?.action.href ?? "/admin/perfis-de-orientacao",
-              }
-            : unavailableDiagnostic(
-                assistance.reason ?? "Assistência por IA indisponível.",
-                "Continuar manualmente",
-                profilePresentation?.action.href ?? "/admin/perfis-de-orientacao",
               ),
         },
       ] as const;
@@ -844,36 +777,6 @@ function describeCommercialPage(
   };
 }
 
-function describeGenerationProfile(
-  item: AdminGenerationProfileListItem,
-): Pick<AdminTaxonOperationalDiagnostic, "activeProfile" | "draftProfile"> {
-  const presentation = getAdminGenerationProfilePresentation(item);
-  return {
-    activeProfile: {
-      label: presentation.active.label,
-      tone: presentation.active.tone,
-      origin: item.ownerTaxonName,
-      reason: item.activeVersion !== null
-        ? `Versao ${item.activeVersion} comprovada.`
-        : item.resolvedState === "absent"
-          ? "Nenhum perfil ativo foi encontrado."
-          : "A leitura segura do perfil ativo nao pode ser comprovada.",
-      nextAction: presentation.action.label,
-      href: presentation.action.href,
-    },
-    draftProfile: {
-      label: presentation.draft.label,
-      tone: presentation.draft.tone,
-      origin: item.draftVersion !== null ? "Propria" : null,
-      reason: item.draftVersion !== null
-        ? `Versao ${item.draftVersion} comprovada.`
-        : "Nenhum rascunho proprio foi encontrado.",
-      nextAction: presentation.action.label,
-      href: presentation.action.href,
-    },
-  };
-}
-
 function unavailableDiagnostic(
   reason: string,
   nextAction: string,
@@ -894,9 +797,6 @@ function unavailableTaxonDiagnostic(): AdminTaxonOperationalDiagnostic {
     businessBuyer: unavailableDiagnostic("Pesquisa BB nao comprovada.", "Revisar pesquisa", null),
     endCustomer: unavailableDiagnostic("Pesquisa EC nao comprovada.", "Revisar pesquisa", null),
     commercialPage: unavailableDiagnostic("Página comercial não comprovada.", "Revisar diagnóstico", null),
-    activeProfile: unavailableDiagnostic("Perfil ativo nao comprovado.", "Revisar perfis", "/admin/perfis-de-orientacao"),
-    draftProfile: unavailableDiagnostic("Rascunho proprio nao comprovado.", "Revisar perfis", "/admin/perfis-de-orientacao"),
-    aiAssistance: unavailableDiagnostic("Assistencia por IA nao comprovada.", "Continuar manualmente", "/admin/perfis-de-orientacao"),
   };
 }
 
