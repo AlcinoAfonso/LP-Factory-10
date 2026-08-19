@@ -298,6 +298,7 @@ begin
   from pg_proc procedure
   join pg_namespace namespace on namespace.oid = procedure.pronamespace
   where namespace.nspname not in ('pg_catalog', 'information_schema')
+    and procedure.prokind <> 'a'
     and procedure.proname not in (
       'save_landing_page_generation_profile_draft',
       'activate_landing_page_generation_profile',
