@@ -2,9 +2,9 @@
 
 Fonte conceitual de decisão para preparar taxons, configurar contas, gerar LPs reais e liberar seu uso.
 
-Status arquitetural: reconciliado com o Cenário E e com a semântica vigente de LP, tentativa, revisão e lifecycle em 17/08/2026. Este documento distingue o caminho canônico vigente de ativos históricos ainda preservados no projeto. Estar fora do caminho canônico não autoriza remoção física; qualquer retirada depende de auditoria de consumidores, dados e dependências no roadmap e no repositório.
+Status arquitetural: reconciliado em 19/08/2026 após a conclusão integral da E19.4 e antes da retomada da E19.5. A semântica vigente distingue `landing_page` como identidade comercial estável, tentativa como execução e revisão como resultado válido append-only da mesma LP. A E22.1 deve ser executada antes da reconciliação profunda da E19.5 para retirar ou desacoplar ativos históricos fora do caminho canônico. Este documento distingue o caminho canônico vigente de ativos ainda preservados no projeto; estar fora do caminho canônico não autoriza remoção física fora do recorte próprio.
 
-Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `docs/schema.md`, `docs/lousa-plano-base-e19-4.md` no HEAD vigente do PR #759, `docs/lousa-plano-base-e19-5.md` / PR #726 apenas como histórico do plano em reconciliação e implementação atual de `account_landing_pages` e `account_landing_page_materializations` no repositório.
+Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `docs/schema.md`, E19.4 concluída pelo PR #776, E22.1 no PR #773, `docs/lousa-plano-base-e19-5.md` / PR #726 como base madura ainda não executável e implementação atual de `account_landing_pages` e `account_landing_page_materializations` no repositório.
 
 ## 1. Jornada da base até as LPs publicadas
 
@@ -22,8 +22,9 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 - Enquanto estiver em `draft`, a mesma LP pode continuar evoluindo por novas tentativas e revisões; regenerar não cria uma nova `account_landing_pages`.
 - Cada revisão válida é preservada de forma append-only; revisões anteriores não são sobrescritas, e a revisão corrente pode alimentar o preview.
 - O histórico de revisões pertence à própria LP; a lista principal do workspace mantém uma linha por LP comercial, e nova identidade só nasce quando o usuário realmente deseja outra página comercial.
-- **Lifecycle de produto:** `draft` representa LP ativa em trabalho e pode receber novas tentativas/revisões; `archived` é direção aprovada para futura implementação no workspace, removendo a LP da lista operacional principal sem perder identidade, configuração ou revisões e permitindo restauração para `draft`.
-- Hard delete não é requisito atual; política definitiva de retenção e exclusão fica para recorte futuro. O schema vigente ainda materializa apenas `draft`, e a forma física de `archived` não é definida neste documento.
+- `draft` é o único estado de lifecycle da LP já consolidado no runtime atual. A E19.5 deve decidir se estados como aprovada, pronta, publicada ou arquivada pertencem ao domínio, à UX ou a recortes separados; `archived` permanece hipótese útil para retirar LPs sem utilidade da lista, não contrato já fechado.
+- Publicação, edição manual, edição pós-publicação, restauração e relação entre revisão em trabalho e revisão publicada ainda não estão definidas por este documento.
+- Hard delete não é requisito atual; política definitiva de retenção e exclusão depende de contrato próprio.
 - **Independência das revisões materializadas:** cada revisão preservada possui conteúdo e snapshot suficientes para reprodução; evolução posterior das fontes canônicas não altera silenciosamente revisões existentes.
 - Edições e regenerações futuras devem adotar versões mais novas das fontes somente por ação explícita e contrato próprio.
 
@@ -54,10 +55,9 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 - A E18.5 existe, está implementada e mantém catálogo executável, versionado e tipado de módulos e variantes.
 - **Situação arquitetural atual:** E18.5 está fora do caminho canônico E19.3 → E19.4 do Cenário E e não governa a estrutura da primeira LP real.
 - A E19.4 não deve voltar a usar E18.5 para selecionar previamente módulos, variantes, prioridade ou ordem antes da decisão da IA.
-- A implementação permanece preservada porque ainda pode possuir consumidores administrativos e dependências históricas, inclusive ligadas à E20.3.
-- Enquanto a auditoria geral do roadmap e dos consumidores não estiver concluída, não remover código, contratos, migrations ou dados de E18.5 apenas por ela ter perdido autoridade arquitetural.
+- A E22.1 é o recorte próprio que deve retirar ou desacoplar E18.5 depois de tratar seus consumidores e dependências históricas.
+- Até a execução e o merge da E22.1, não remover código, contratos, migrations ou dados de E18.5 fora desse recorte.
 - Também não expandir E18.5 para atender o Cenário E. Nova utilização exige consumidor real e decisão explícita.
-- Se a auditoria comprovar ausência de consumidor necessário, a retirada deverá ocorrer em recorte próprio, com mapa de dependências e regressões proporcionais.
 
 ### 1.5. Manter o catálogo de entradas para configuração e geração da LP
 
@@ -80,17 +80,16 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 - A E20.3 existe, está implementada e mantém perfil versionado por taxon, lifecycle administrativo, resolução própria ou herdada e integrações com E18.5.
 - **Situação arquitetural atual:** E20.3 está fora do caminho canônico E19.3 → E19.4 do Cenário E e não é gate, fonte obrigatória de estrutura nem pré-condição da primeira LP real.
 - Perfil `active`, recomendações, variantes preferenciais, prioridade, ordem, `generation_guidance` e `item_guidance` não governam a geração atual.
-- A E19.4 não deve consultar E20.3 para decidir narrativa, seções, ordem ou layout.
-- O lifecycle administrativo E12.4.3 permanece preservado enquanto os consumidores e dados de E20.3 forem auditados.
-- Não criar novos perfis ou expandir o domínio E20.3 para sustentar o Cenário E.
-- Remoção futura de E20.3, E12.4.3 associado, tabelas, adapters ou páginas Admin exige recorte próprio e prova de ausência de consumidor necessário.
+- A E19.4 não consulta E20.3 para decidir narrativa, seções, ordem ou layout.
+- A E22.1 é o recorte próprio para retirar E20.3 e o lifecycle E12.4.3 associado como bloco coeso, respeitando dados e consumidores remanescentes.
+- Não criar novos perfis ou expandir o domínio E20.3 para sustentar o Cenário E ou a E19.5.
 
 ### 1.7. Tratar gaps e ativos históricos sem reintroduzir a arquitetura antiga
 
 - Gaps encontrados durante geração real devem voltar ao contrato responsável, sem criar camada paralela de correção.
 - Gap factual de valores concretos retorna à E19.2; gap do catálogo factual retorna à E20.2; gap de pesquisa retorna à E20.5 ou ao processo de produção da pesquisa; gap de transporte/autorização retorna à E19.3; gap de interpretação/composição retorna à E19.4.
 - A qualidade insuficiente da LP não autoriza automaticamente reintroduzir módulos, perfis, ranking de pesquisa, RAG, chunking, `itemKey`, `priority`, `sortOrder` ou seleção semântica intermediária.
-- E10.8, E18.5, E20.3 e recortes derivados continuam preservados até auditoria geral do roadmap e dos consumidores.
+- E22.1 deve retirar autoridade, código e resíduos históricos somente dentro de seu mapa de consumidores e dependências aprovado; a E19.5 não deve criar consumidores novos para preservar ativos em retirada.
 - A classificação recomendada para ativos históricos é: ativo no caminho canônico; preservado fora do caminho; candidato à depreciação; removível após prova de ausência de consumidor.
 - Primeiro retirar autoridade arquitetural; depois provar ausência de consumidor; somente então retirar implementação.
 
@@ -117,43 +116,45 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 - A E19.4 recebe somente o pacote autorizado E19.3 e interpreta o conjunto respeitando a hierarquia: fatos concretos E19.2/E20.2 definem a realidade; pesquisa integral fornece contexto consultivo; E18.4 fornece limites universais.
 - A pesquisa nunca pode ampliar ou contradizer a oferta concreta.
 - A IA da E19.4 pode sintetizar público efetivo, progressão narrativa, quantidade e sequência de seções, função narrativa, copy, CTA textual, omissões, repetições legítimas e layout entre estruturas suportadas pelo contrato vigente.
-- O sistema permanece responsável por autorização, facts disponíveis, evidências disponíveis, estruturas suportadas, limites absolutos, bindings, destinos, consentimento, credenciais, schema, validação objetiva, persistência e renderer.
+- O sistema permanece responsável por autorização, fatos disponíveis, evidências disponíveis, estruturas suportadas, limites absolutos, bindings, destinos, consentimento, credenciais, schema, validação objetiva, persistência e renderer.
 - A IA não gera HTML, CSS, React, JavaScript, scripts, componentes desconhecidos, credenciais ou fatos não autorizados.
-- A E19.4 deve usar a menor fonte estrutural canônica necessária à primeira LP real; novas primitivas ou layouts só entram quando caso concreto demonstrar necessidade.
+- A E19.4 usa a menor fonte estrutural canônica necessária à LP real; novas primitivas ou layouts só entram quando caso concreto demonstrar necessidade.
 - Cada tentativa de geração é uma execução explícita. Tentativa inválida não cria revisão válida, não materializa conteúdo e não cria nova identidade de LP.
 - Uma candidata que passa a validação torna-se nova revisão válida da mesma `landing_page`; as revisões anteriores permanecem preservadas e podem ser comparadas técnica ou editorialmente.
-- A direção conceitual vigente da materialização é `1 LP → N revisões materializadas append-only`. O contrato atual `account_landing_page_materializations` 1:1/write-once permanece fato histórico do estágio anterior; o shape físico da evolução pertence à v2/implementação da E19.4 e não é antecipado aqui.
-- Cada revisão válida preserva conteúdo e snapshot suficientes para auditoria e reprodução, sem raciocínio privado; a revisão corrente pode alimentar o preview sem apagar o histórico.
-- A primeira LP real deve possuir ao menos uma imagem principal pertinente à narrativa. Quando não houver asset adequado do cliente disponível, a E19.4 pode gerar a mídia necessária por IA.
-- Imagem gerada pela E19.4 é saída do workload e não cria, apenas por existir, novo field E20.2. A mídia efetivamente usada precisa possuir referência estável antes da materialização, e performance de imagem é requisito.
-- Detalhes físicos de persistência, formato, compressão, dimensões, entrega ou API de mídia pertencem ao plano técnico da E19.4 e não a este planejamento conceitual.
-- O caminho canônico permanece: taxon preparado + configuração factual → E19.3 v3 → E19.4 → revisão válida → materialização → renderer → preview.
+- A E19.4 concluiu a evolução física de `account_landing_page_materializations` para `1 LP → N revisões append-only`, com `revision_number`, tentativa idempotente e leitura corrente pela maior revisão válida, preservando a linha histórica como revisão 1.
+- Cada revisão válida preserva conteúdo e snapshot suficientes para auditoria e reprodução, sem raciocínio privado; a revisão corrente alimenta o preview sem apagar o histórico.
+- A primeira prova real do Cenário E foi concluída na revisão 3 e serve como baseline canônico de regressão e aprendizado para evoluções seguintes.
+- A primeira LP real possui imagem principal persistida em storage privado; geração de mídia, referência estável e preview assinado pertencem ao contrato concluído da E19.4.
+- O caminho canônico materializado é: taxon preparado + configuração factual → E19.3 v3 → E19.4 → tentativa → revisão válida append-only → renderer → preview.
 
 ### 1.10. Validar e disponibilizar por plano
 
-- Disponibilidade comercial por `taxon + plano` permanece separada de preparação técnica do taxon, entitlement da conta e prontidão factual da LP concreta.
+- Disponibilidade comercial por `taxon + plano` permanece separada de preparação técnica do taxon, entitlement da conta e estado da LP concreta.
 - O `platform_admin` deve decidir disponibilização, suspensão ou reativação por combinação explícita e justificativa, conforme os recortes próprios de E20.4/E12.4.5–12.4.6 quando forem retomados.
-- A LP real é evidência preferencial para a primeira liberação, mas o critério final pertence ao recorte de disponibilidade comercial.
-- Suspensão comercial não cancela automaticamente entitlements ou LPs existentes.
-- O caminho crítico atual é produzir e avaliar a primeira LP real antes de ampliar disponibilidade, publicação, tracking ou outros recursos.
+- A primeira LP real já existe como evidência do pipeline, mas isso não define automaticamente o lifecycle de publicação da LP nem a disponibilidade comercial do produto.
+- Suspensão comercial não cancela automaticamente entitlements, LPs ou revisões existentes.
+- O caminho imediato do produto passa por E22.1 e pela reconciliação da E19.5 antes de ampliar publicação, tracking ou outros recursos dependentes do workspace.
 
-### 1.11. Governar capacidades e limites por plano
+### 1.11. Governar capacidades, limites e consumo por plano
 
 - A E9 mantém entitlement, plano efetivo e o catálogo canônico de capacidades e limites.
 - Disponibilidade comercial por `taxon + plano`, entitlement da conta e capacidades do plano são decisões distintas.
 - A E20.2 define informações factuais necessárias e não define quantidade de LPs, publicação, tracking, relatórios, leads ou CRM.
 - Cada domínio consumidor aplica server-side as capacidades relevantes e a UI consome o resultado resolvido, sem interpretar nomes de plano localmente.
-- Capacidades futuras entram apenas com consumidor real e decisão aprovada; não prometer recurso ainda não implementado/disponibilizado.
-- Limites específicos de publicação, tracking, dashboard ou leads devem permanecer nos respectivos planos-base enquanto não forem materializados no produto.
+- A futura E19.5 deve identificar explicitamente quais ações do workspace consomem IA, como gerar nova revisão, melhorar a LP inteira ou melhorar uma seção quando essas ações forem aprovadas.
+- Ações que consomem provider têm custo econômico e não devem ser tratadas como ilimitadas por padrão.
+- E9.7 é a autoridade para capacidade e limite comercial; o domínio consumidor mede o uso e aplica o gate no ponto da ação.
+- Carteira, contabilização de créditos ou mecanismo equivalente, se necessário, deve possuir recorte próprio depois que as ações mensuráveis estiverem definidas; a E19.5 não cria sistema paralelo de créditos nem inventa números locais.
+- Capacidades futuras entram apenas com consumidor real e decisão aprovada; não prometer recurso ainda não implementado ou disponibilizado.
 
 ## 2. O que precisa ser preservado ou implementado no projeto
 
 ### 2.1. E10.8 — Pesquisas estruturadas preservadas fora do caminho canônico
 
-- E10.8 está implementada e pode continuar atendendo consumidores independentes.
+- E10.8 está implementada e continua atendendo consumidores independentes onde comprovado.
 - **Situação arquitetural:** fora do caminho canônico E19.3 → E19.4 do Cenário E.
-- A geração da primeira LP não depende de pesquisa estruturada, quatro blocos, 59 itens, `itemKey`, `priority` ou `sortOrder`.
-- Não remover E10.8 até a auditoria identificar todos os consumidores reais e confirmar que nenhum deles é necessário.
+- A geração da LP não depende de pesquisa estruturada, quatro blocos, 59 itens, `itemKey`, `priority` ou `sortOrder`.
+- A E22.1 deve retirar a camada E10.8 onde não houver consumidor necessário, preservando os dados estruturados ainda consumidos por outros domínios.
 - Não criar novo consumidor E19 apenas para justificar sua preservação.
 
 ### 2.2. E18.4 — Base raiz versionada ativa
@@ -162,12 +163,11 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 - E19.3 projeta somente limites necessários; E19.4 respeita esses limites sem transformar a raiz em arquitetura narrativa fixa.
 - Reavaliar apenas diante de evidência produzida por LP real.
 
-### 2.3. E18.5 — Catálogo executável preservado fora do caminho canônico
+### 2.3. E18.5 — Catálogo executável fora do caminho canônico
 
-- E18.5 está implementada e permanece fisicamente preservada.
-- **Situação arquitetural:** não participa da geração do Cenário E e não deve ser expandida para isso.
-- Inventariar consumidores administrativos, contratos dependentes e relações com E20.3 antes de qualquer remoção.
-- Se a auditoria comprovar que todos os consumidores restantes são legados dispensáveis, criar recorte próprio de depreciação e retirada.
+- E18.5 está implementada, porém não participa da geração do Cenário E e não deve ser expandida para isso.
+- A E22.1 deve tratar sua retirada depois da aposentadoria das dependências E20.3/E12.4.3, conforme o mapa de consumidores aprovado.
+- Até esse fechamento, preservar migrations históricas e evitar retirada fora do recorte próprio.
 
 ### 2.4. E20.2, E20.5 e E20.6 — catálogo factual e preparação do taxon
 
@@ -178,19 +178,18 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 - `corretor-imoveis` é a primeira prova real de taxon preparado, não regra especial do produto.
 - Evoluções futuras devem permanecer genéricas nas dimensões temporal e taxonômica.
 
-### 2.5. E20.3 — Perfil de orientação preservado fora do caminho canônico
+### 2.5. E20.3 — Perfil de orientação fora do caminho canônico
 
-- E20.3, suas tabelas, resolver, adapters e lifecycle administrativo existem e permanecem preservados até auditoria.
-- **Situação arquitetural:** não é fonte da estrutura da E19.4, não é gate da E19.3 e não é requisito da primeira LP real.
-- Não criar novos perfis para sustentar o Cenário E.
-- Não remover fisicamente enquanto houver página Admin, consumidor necessário, dado persistido ou dependência legítima ainda não tratada.
+- E20.3, suas tabelas, resolver, adapters e lifecycle administrativo existem no estado atual e não governam a E19.4.
+- **Situação arquitetural:** não é fonte da estrutura da E19.4, não é gate da E19.3 e não é requisito da LP real.
+- A E22.1 deve retirar E20.3 e seu lifecycle E12.4.3 associado como bloco coeso, sem criar persistência substituta.
+- Não criar novos perfis para sustentar o Cenário E ou a E19.5.
 
 #### 2.5.1. E12.4.3 — Operação administrativa do perfil
 
-- E12.4.3 permanece como lifecycle administrativo do ativo E20.3 enquanto esse domínio estiver preservado.
-- **Situação arquitetural:** fora do caminho canônico da primeira LP e candidato a reavaliação junto com E20.3.
-- Não ampliar proposta estrutural, coverage, recommendations ou gestão de gaps para atender E19.4.
-- Eventual retirada deve ocorrer junto do recorte que tratar o destino de E20.3 e de seus dados.
+- E12.4.3 permanece associado ao ativo E20.3 apenas até a execução da E22.1.
+- **Situação arquitetural:** fora do caminho canônico da LP e candidato à retirada junto com E20.3.
+- Não ampliar proposta estrutural, coverage, recommendations ou gestão de gaps para atender E19.4 ou E19.5.
 
 ### 2.6. E19.2 — Onboarding e configuração factual da conta/LP
 
@@ -204,65 +203,64 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 
 ### 2.7. E20.4 e E12.4.5–12.4.6 — Disponibilidade comercial
 
-- Permanecem recortes separados de preparação técnica, geração e entitlement.
-- Retomar somente depois da primeira LP real quando houver evidência suficiente e prioridade comercial.
-- Não usar disponibilidade comercial como substituto de `prepared` nem vice-versa.
+- Permanecem recortes separados de preparação técnica, geração, lifecycle da LP e entitlement.
+- Retomar quando houver prioridade comercial e contrato compatível com o workspace/lifecycle aprovado.
+- Não usar disponibilidade comercial como substituto de `prepared`, publicação ou estado da LP.
 
 ### 2.8. Evolução controlada e política de depreciação
 
 - Aprendizados de LPs reais podem ajustar E18.4, E20.2, pesquisa integral, E19.3 ou E19.4 por novos planos e versões.
-- E10.8, E18.5, E20.3 e recortes derivados não voltam ao caminho canônico apenas porque já existem.
-- Auditoria do roadmap deve classificar ativos históricos por situação arquitetural e mapear consumidores reais.
-- Remoção física depende de recorte próprio, prova de ausência de consumidor necessário e tratamento explícito de dados, migrations, páginas, adapters, imports, exports e testes.
-- O contrato material atual 1:1/write-once de `account_landing_page_materializations` deve ser preservado como estado vigente até a evolução própria da E19.4; a direção conceitual de revisões append-only não autoriza migration ou novo shape neste documento.
-- O lifecycle `archived`, histórico navegável de revisões e política definitiva de exclusão pertencem a recortes futuros e não alteram o schema atual por efeito deste planejamento.
+- E22.1 é o recorte próprio para retirar ou desacoplar E20.3, E12.4.3, E18.5 e a camada E10.8 sem consumidor necessário; a E19.5 deve começar sobre essa base limpa.
+- Remoção física depende do mapa de consumidores, dados, migrations, páginas, adapters, imports, exports e testes definido pela E22.1.
+- `account_landing_page_materializations` já opera como revisões append-only 1:N por LP; esse contrato não deve ser recriado pela E19.5.
+- Lifecycle além de `draft`, histórico navegável/restauração, edição manual, melhoria por IA e relação entre revisão publicada e revisão em trabalho pertencem ao debate próprio da E19.5.
 - Não criar catálogo multicanal, editor visual, agente ou infraestrutura nova sem necessidade real demonstrada.
 
 ### 2.9. E9 — Catálogo de capacidades e limites por plano
 
 - E9 continua responsável por entitlement, plano efetivo e capacidades/limites canônicos.
 - O catálogo não substitui disponibilidade comercial, taxonomia, E20.2, preparação do taxon nem gates operacionais.
-- Cada domínio implementa e valida suas próprias capacidades.
+- Cada domínio implementa e valida suas próprias capacidades e mede o uso que precisa limitar.
 - Novas capacidades entram de forma versionada e somente com consumidor real.
+- Controle econômico de ações de IA deve reutilizar E9.7 para capacidade/limite comercial e possuir mecanismo de contabilização próprio apenas quando o requisito concreto estiver definido.
 
 ## 3. Ordem dos próximos planos-base
 
-- Base ativa para a primeira LP real: E18.4, E20.2, E20.5, E20.6, E19.1, E19.2 e entitlement/plano efetivo da E9.
-- Ativos preservados fora do caminho canônico: E10.8, E18.5, E20.3 e lifecycle E12.4.3 associado, sujeitos a auditoria própria e sem bloquear a primeira LP.
-- 1º — E19.3 do Cenário E está concluída no `contractVersion: 3` e mergeada pelo PR #757; não reabrir composição intermediária, atomização ou seleção semântica nesse boundary.
-- 2º — a prova read-only `E19.2 histórica v2 → E20.2 revisada v4` já foi aprovada como caso real do mecanismo genérico temporal e taxonômico.
-- 3º — concluir o plano E19.4 do Cenário E e produzir a primeira LP real: geração por IA com liberdade controlada → candidata estruturada → validação → revisão válida → materialização → renderer → avaliação humana.
-- 4º — após E19.4 funcional, reconciliar E19.5 Light para workspace e lifecycle da LP estável, permitindo novas tentativas e revisões preservadas da mesma LP em `draft`; comparação técnica/editorial ocorre entre revisões, sem E1/E2/E3 como LPs independentes e sem multiplicar identidades apenas para testar prompt, modelo ou renderer.
-- 5º — somente depois da primeira LP real, retomar publicação, tracking, disponibilidade comercial e demais evoluções priorizadas.
-- A auditoria de obsolescência do roadmap deve ocorrer como trabalho próprio e não reintroduzir dependências legadas no caminho crítico.
+- Base canônica atual da LP: E18.4, E20.2, E20.5, E20.6, E19.1, E19.2, E19.3, E19.4 e entitlement/plano efetivo da E9.
+- E19.3 do Cenário E está concluída no `contractVersion: 3` e mergeada pelo PR #757; não reabrir composição intermediária, atomização ou seleção semântica nesse boundary.
+- A prova read-only `E19.2 histórica v2 → E20.2 revisada v4` está aprovada como caso real do mecanismo genérico temporal e taxonômico.
+- E19.4 está concluída e mergeada pelo PR #776: geração por IA → candidata estruturada → validação → revisões append-only 1:N → renderer → preview privado → avaliação humana; revisão 3 é baseline canônica da primeira prova real.
+- **Próximo passo:** executar e fechar E22.1 / PR #773 antes da retomada da E19.5, retirando ou desacoplando ativos históricos sem consumidor necessário.
+- Depois da E22.1, reconciliar profundamente a E19.5 / PR #726, sem alvo “Light”: preservar a UX madura do workspace e decidir lifecycle, relação LP × revisão, aprovação/conclusão/publicação, revisão publicada versus revisão em trabalho, edição manual, melhoria parcial/integral por IA, histórico/restauração, arquivamento e ações que consomem IA.
+- O PR #726 permanece base madura a reconciliar, não plano executável vigente; a formulação antiga de E1/E2/E3 como drafts independentes não deve ser implementada.
+- Publicação, tracking, disponibilidade comercial e demais evoluções dependentes devem avançar depois das decisões do workspace/lifecycle ou em recortes próprios, sem antecipar contrato.
 
 ## 4. Onde cada ajuste entra no roadmap
 
 ### 4.1. E10
 
-- E10.8 permanece implementada, porém fora do caminho canônico da geração do Cenário E.
-- Seus consumidores reais devem ser auditados antes de qualquer decisão de retirada.
+- E10.8 permanece fora do caminho canônico da geração do Cenário E.
+- A E22.1 deve retirar sua camada onde não houver consumidor necessário e preservar apenas dados/consumos ainda legítimos.
 - E10.6 e E10.7 continuam relacionados à experiência comercial e checkout quando a disponibilidade por `taxon + plano` for retomada.
 
 ### 4.2. E12
 
-- E12.4.3 e seus refinamentos permanecem associados ao lifecycle E20.3 e estão fora do caminho canônico da primeira LP.
-- Esses recortes devem ser auditados em conjunto com E20.3 antes de expansão ou remoção.
+- E12.4.3 e seus refinamentos permanecem associados ao lifecycle E20.3 somente até o tratamento pela E22.1.
 - E12.4.4 permanece retirada da implementação e não cria gate paralelo.
 - E12.4.5 e E12.4.6 permanecem relacionados à disponibilidade comercial futura.
 
 ### 4.3. E18
 
 - E18.4 permanece ativa no caminho canônico como base raiz e fonte de limites aplicáveis.
-- E18.5 permanece implementada, mas fora do caminho E19.3 → E19.4 e candidata à auditoria de depreciação.
-- A E19.4 cria somente o contrato estrutural mínimo necessário à primeira LP real, sem reconstruir E18.5.
+- E18.5 permanece fora do caminho E19.3 → E19.4 e deve ser retirada pela E22.1 depois do tratamento de seus consumidores/dependências.
+- Não reconstruir E18.5 para atender a E19.5.
 
 ### 4.4. E20
 
-- E20.2 permanece ativo como catálogo factual e já possui versões executáveis explícitas, incluindo v4.
+- E20.2 permanece ativo como catálogo factual e possui versões executáveis explícitas, incluindo v4.
 - E20.5 permanece ativo como seleção e leitura validada da pesquisa integral `end_customer`.
 - E20.6 permanece ativo como avaliação de suficiência factual e preparação derivada do taxon.
-- E20.3 permanece implementado, mas fora do caminho canônico e sujeito a auditoria junto com seu lifecycle E12.4.3.
+- E20.3 permanece fora do caminho canônico e deve ser retirado pela E22.1 junto com seu lifecycle E12.4.3.
 - E20.4 permanece separado como disponibilidade comercial futura.
 
 ### 4.5. E19
@@ -270,26 +268,35 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 - E19.1 mantém a identidade mínima da LP `draft`; essa identidade representa a página comercial e não uma tentativa de geração.
 - E19.2 mantém onboarding e configuração factual persistida.
 - E19.3 é boundary determinístico de autorização, pesquisa integral, revalidação factual e transporte de contexto; não gera nem materializa LP.
-- E19.4 é responsável por tentativas de geração, decisões narrativas/estruturais da IA dentro do contrato suportado, candidata, validação, revisão válida, materialização, renderer e prova humana.
-- A direção vigente da E19.4 é uma LP estável com múltiplas revisões append-only; o contrato 1:1/write-once existente é histórico do estágio anterior e seu shape físico só muda em recorte próprio da E19.4.
-- E19.5 Light sucede E19.4 para workspace operacional e lifecycle da LP estável, permitindo ao usuário acionar, pelo boundary vigente da E19.4, novas tentativas que possam produzir revisões preservadas da mesma LP em `draft`. A formulação do PR #726 com novos drafts independentes E1/E2/E3 permanece apenas como histórico do plano em reconciliação.
-- A home do cliente deve preservar uma linha por LP comercial; histórico e comparação de revisões pertencem à LP concreta.
+- E19.4 está concluída e é responsável por tentativas de geração, decisões narrativas/estruturais da IA dentro do contrato suportado, candidata, validação, revisão válida append-only, materialização, renderer e preview privado.
+- `account_landing_page_materializations` já representa múltiplas revisões imutáveis da mesma LP; revisão corrente é derivada pela maior `revision_number` válida, sem sobrescrever histórico.
+- E19.5 sucede E19.4 como workspace operacional e contrato de lifecycle da LP estável. O recorte não deve ser implementado como “Light” transitória nem reconstruído do zero: o PR #726 é a base madura a reconciliar.
+- A home do cliente deve preservar uma linha por LP comercial; histórico, comparação, melhoria e restauração de revisões pertencem à LP concreta e não multiplicam identidades.
+- A E19.5 deve decidir o que `draft` significa depois de existirem revisões, se há estados de aprovação/conclusão/publicação/arquivamento, como funciona edição manual, como melhorias por IA produzem novas revisões e como uma revisão publicada convive com novas revisões em trabalho.
+- A E19.5 também deve fechar o significado de “LP entregue” e sua relação com aprovação, conclusão e publicação, atendendo à pendência estratégica já registrada no `README.md`, sem antecipar aqui o checklist.
+- Publicação apontar para uma revisão imutável é hipótese conceitual útil, ainda não contrato fechado.
+- Nova identidade de LP nasce somente quando o usuário deseja outra página comercial.
 - Conta piloto e cliente continuam no mesmo fluxo oficial.
 
 ### 4.6. E9
 
 - E9 mantém entitlement, plano efetivo e capacidades/limites.
 - Disponibilidade comercial, preparação do taxon e capacidades do plano permanecem decisões separadas.
+- E9.7 deve ser a autoridade comercial para capacidades/limites das ações gerativas aprovadas; o domínio consumidor mede o uso e aplica o gate.
 - E9 não implementa LP Builder, pesquisa, geração, tracking, analytics ou CRM.
 
 ## 5. Evoluções prioritárias após a primeira LP real
 
-- Gatilho comum: reavaliar somente após gerar e validar a primeira LP real pelo fluxo oficial, sem competir com o caminho crítico atual.
+- O gatilho “primeira LP real” foi atendido pela E19.4; a prioridade imediata é limpar ativos históricos pela E22.1 e depois retomar a E19.5 sobre a base canônica atual.
 - Preservar para recortes futuros uma biblioteca tenant-aware de logos e imagens reutilizáveis, com upload e seleção de assets próprios quando existir contrato real de produto para isso.
 - A estratégia de mídia pode evoluir de forma híbrida entre asset próprio do cliente, imagem gerada por IA e eventual mídia externa/licenciada com direitos e proveniência adequados.
-- Edição futura de LP em `draft`, histórico/visualização de revisões e restauração operacional devem evoluir sem transformar cada revisão em nova LP comercial.
+- Edição manual futura deve preservar revisão histórica válida e definir quando uma alteração em trabalho se torna nova revisão integral.
+- Melhoria por IA pode futuramente atuar na LP inteira ou em parte dela. Quando uma melhoria parcial for consolidada/materializada como nova revisão, o resultado deve preservar uma revisão integral coerente da mesma LP, sem criar identidade comercial paralela; a E19.5 definirá o fluxo intermediário de edição.
+- Histórico e comparação de revisões devem ser acessíveis dentro da LP, sem poluir a lista principal do workspace.
+- Publicação deve ser debatida como relação entre identidade estável e revisão imutável; rollback/restauração de revisão anterior só deve ser implementado depois do contrato explícito.
+- A E19.5 deve mapear quais ações consomem IA; controle comercial reutiliza E9.7 e eventual carteira/contabilização de créditos pertence a recorte próprio, sem numeração inventada neste documento.
 - Repertórios estruturais podem diferir por plano futuramente; `/admin/estrutura-lp` pode ser uma projeção read-only da autoridade estrutural real, nunca segunda fonte de verdade.
-- Programmatic Tool Calling, persisted reasoning, prompt caching avançado, Agents SDK e multi-agent permanecem possibilidades condicionais, avaliadas somente diante de necessidade real e benefício demonstrável; não são Gate da E19.4 atual.
+- Programmatic Tool Calling, persisted reasoning, prompt caching avançado, Agents SDK e multi-agent permanecem possibilidades condicionais, avaliadas somente diante de necessidade real e benefício demonstrável; não são gate da E19.5.
 
 ### 5.1. `pending_setup` e taxon assistidos por IA
 
