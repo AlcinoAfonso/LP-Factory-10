@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 19/08/2026
-• Versão: v1.5.163
+• Versão: v1.5.164
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2917,6 +2917,55 @@ Repositório — Ajustados
   - estabilidade.
 - Não definir vencedor ou baseline universal antes de evidência representativa.
 - Não criar agora banco, tabela, rota, dashboard, job, engine, agente, automação ou infraestrutura.
+
+22. E22 — Retirada controlada de ativos históricos
+- Objetivo: reduzir a superfície histórica que não participa do caminho canônico vigente, preservando consumidores reais e preparando a sequência E19.4 concluída → E22.1 → E19.5.
+- Status: Planejada; a E19.4 está concluída, a E22.1 permanece não implementada e a E19.5 permanece pausada até a conclusão da retirada controlada.
+
+22.1 Retirada controlada de ativos históricos
+
+22.1.1 Objetivo e status
+- Objetivo: retirar de forma controlada ativos históricos e seus consumidores somente após classificação de dependências, preservando os boundaries e dados ainda necessários ao caminho ativo.
+- Status: Plano-base v2 consolidado; implementação não iniciada. A E19.4 permanece concluída, a E22.1 é o próximo recorte planejado e a E19.5 permanece pausada.
+
+22.1.3 Auditoria e classificação integral de consumidores
+- Objetivo: mapear e classificar consumidores e ativos históricos como preservados, desacoplados ou removíveis, sem retirar qualquer item apenas por estar fora do caminho canônico.
+- Status: Planejada; não implementada.
+- Conteúdo:
+  - classificar dependências de runtime, superfícies administrativas, validações e persistência antes de qualquer retirada;
+  - preservar E18.4, E20.2, E20.5, E20.6, E19.2, E19.3, E19.4, E10.6 e E10.7 enquanto houver consumidor real ou autoridade ativa;
+  - preservar a revisão 3 da E19.4 como baseline de regressão e manter a E19.5 pausada durante o recorte.
+
+22.1.4 Retirada de E20.3 e E12.4.3 associado
+- Objetivo: retirar o domínio histórico de perfil de geração e suas responsabilidades associadas sem criar persistência ou arquitetura substituta dentro da E22.1.
+- Status: Planejada; não implementada.
+- Conteúdo:
+  - remover consumidores runtime e administrativos somente após prova proporcional de ausência de dependência necessária;
+  - eliminar o payload integral aprovado para retirada e preservar sua rastreabilidade histórica nos registros canônicos já existentes;
+  - reservar qualquer retirada física de persistência para evolução forward-only posterior, condicionada ao gate de ausência de consumidores e à reconfirmação do conjunto autorizado.
+
+22.1.5 Retirada de E18.5 e poda dos consumidores administrativos
+- Objetivo: retirar o catálogo histórico de módulos e variantes e podar somente as responsabilidades administrativas que dependem dele.
+- Status: Planejada; não implementada.
+- Conteúdo:
+  - preservar E18.4 e E20.2 e remover apenas superfícies, validações e dependências históricas de E18.5;
+  - manter as superfícies administrativas vigentes sem itens, links ou diagnósticos órfãos.
+
+22.1.6 Desacoplamento da camada E10.8
+- Objetivo: desacoplar a camada histórica de resolução de pesquisas e seus consumidores históricos sem remover pesquisas estruturadas que possuam consumidor real independente.
+- Status: Planejada; não implementada.
+- Conteúdo:
+  - retirar referências e consumidores históricos de E10.8 somente após classificação e regressão proporcionais;
+  - preservar E20.5, E20.6 e o consumo independente das pesquisas estruturadas enquanto permanecer necessário;
+  - não apagar dados de pesquisa apenas para simplificar a retirada da camada histórica.
+
+22.1.7 Consolidação transversal e regressão final
+- Objetivo: consolidar a retirada controlada, verificar a ausência de dependências residuais e preservar a integridade do caminho E19.4.
+- Status: Planejada; não implementada.
+- Conteúdo:
+  - executar regressão proporcional dos boundaries e superfícies preservados, sem exigir nova geração real por padrão;
+  - manter a revisão 3 reproduzível e não reabrir a E19.4, não iniciar a E19.5 e não criar substituto dentro da E22.1;
+  - interromper o recorte diante de consumidor inesperado, drift destrutivo, regressão da revisão 3 ou dependência não reconciliável.
 
 99. Changelog
 v1.5.140 — 11/08/2026 — Implementada no repositório a E19.4.4 com materialização inicial 1:1 write-once, conteúdo e snapshot runtime v1 coerentes, adapter server-only, migration transacional, readiness fail-closed e casos executáveis; apply e prova hospedada permanecem nos gates pós-merge/E19.4.5.
