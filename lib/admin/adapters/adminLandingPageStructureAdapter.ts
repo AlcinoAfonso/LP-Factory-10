@@ -10,6 +10,7 @@ import {
   buildLandingPageInputCatalogTaxonChain,
   resolveLandingPageInputCatalog,
   type LandingPageInputCatalogPlan,
+  type LandingPageInputCatalogTaxonIdentity,
 } from "@/conversion-content/landing-page/input-catalog";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getAdminTaxonResearchPresentation } from "./adminTaxonomyAdapter";
@@ -111,7 +112,11 @@ async function readInputs(query: StructureQuery) {
     };
   }
 
-  const chain = buildLandingPageInputCatalogTaxonChain(selectedTaxon, taxonRead.taxons);
+  const inputCatalogTaxons = taxonRead.taxons.map(toInputCatalogTaxonIdentity);
+  const chain = buildLandingPageInputCatalogTaxonChain(
+    toInputCatalogTaxonIdentity(selectedTaxon),
+    inputCatalogTaxons,
+  );
   return {
     taxons: taxonRead.taxons,
     taxonError: null,
@@ -198,6 +203,19 @@ function selectTaxon(
   taxonId: string | undefined,
 ) {
   return taxons.find((taxon) => taxon.id === taxonId) ?? taxons[0] ?? null;
+}
+
+function toInputCatalogTaxonIdentity(
+  taxon: StructureTaxon,
+): LandingPageInputCatalogTaxonIdentity {
+  return {
+    id: taxon.id,
+    parentId: taxon.parentId,
+    level: taxon.level,
+    name: taxon.name,
+    slug: taxon.slug,
+    isActive: taxon.isActive,
+  };
 }
 
 function parseInteger(value: string | undefined): number | null {

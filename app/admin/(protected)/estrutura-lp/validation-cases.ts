@@ -17,6 +17,8 @@ assert.match(page, /return labels\[value\] \?\? humanize\(value\)/);
 assert.doesNotMatch(page, /rent:\s*"rent"/);
 assert.doesNotMatch(page, /Módulos e variantes|ModuleView|module-catalog/);
 assert.doesNotMatch(adapter, /"modulos"|module-catalog|readModules/);
+assert.match(adapter, /toInputCatalogTaxonIdentity/);
+assert.doesNotMatch(adapter, /buildLandingPageInputCatalogTaxonChain\(selectedTaxon, taxonRead\.taxons\)/);
 assert.doesNotMatch(navigation, /Módulos, variantes/);
 assert.match(page, /parametros:\s*"Parâmetros"/);
 assert.match(page, /entradas:\s*"Entradas"/);
