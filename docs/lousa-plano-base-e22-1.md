@@ -1,6 +1,6 @@
 # E22.1 — Depreciação e retirada controlada de ativos históricos
 
-Status: plano-base v1 consolidado em 18/08/2026; implementação material condicionada ao fechamento funcional da E19.4 e anterior à E19.5.
+Status: plano-base v1 consolidado em 18/08/2026; condição temporal satisfeita após o fechamento da E19.4 pelo PR #776; implementação material permanece anterior à E19.5 e sujeita ao fluxo de aprovação deste plano.
 
 Plano conceitual: `docs/lp-planejamento.md`.
 
@@ -15,9 +15,9 @@ Plano conceitual: `docs/lp-planejamento.md`.
 
 ### 1.2. Decisões já estabelecidas
 
-- A E19.4 permanece prioridade até sua conclusão; este recorte não interrompe nem altera o PR B/E19.4.5.
-- A implementação material deste recorte só deve começar após o fechamento funcional da E19.4 e antes de iniciar E19.5.
-- E19.4 concluída será a regressão canônica de produto durante a retirada: geração, materialização e Preview da primeira LP real devem permanecer funcionais.
+- A E19.4 foi encerrada pelo PR #776, mergeado na `main` pelo commit `735776bd3febf89deb6c77965de8679aed8f246d`; a condição temporal que bloqueava a implementação material deste recorte está satisfeita.
+- A E19.5 permanece não iniciada e não deve começar antes da conclusão deste recorte.
+- A revisão 3 da primeira LP real permanece como baseline canônica de regressão durante a retirada: geração, materialização e Preview devem continuar funcionais e reproduzíveis.
 - Não reintroduzir E10.8, E18.5 ou E20.3 no caminho canônico da geração apenas porque já estão implementadas.
 - Migrations históricas aplicadas permanecem preservadas no repositório; qualquer retirada física de objetos de banco exige evolução forward-only própria.
 - Dados estruturados de pesquisa não são sinônimo de E10.8 e não podem ser removidos enquanto possuírem consumidor real independente.
@@ -40,7 +40,7 @@ Plano conceitual: `docs/lp-planejamento.md`.
   - o resolver público `resolveLandingPageGenerationProfileForTaxon` aparece como consumidor efetivo somente na própria camada de adapters, na página Admin de detalhe de Perfis de orientação, no export público e nos validators do domínio;
   - a operação administrativa permanece concentrada em `/admin/perfis-de-orientacao`, seus components/actions e `landingPageGenerationProfileAdminAdapter`;
   - a assistência por IA permanece no próprio domínio e mantém o workload `landing_page_generation_profile_proposal` no boundary transversal `lib/openai-workloads/`;
-  - classificação: retirada coesa de E20.3 + E12.4.3 após o fechamento funcional da E19.4.
+  - classificação: retirada coesa de E20.3 + E12.4.3.
 - E18.5 / `module-catalog`:
   - o resolver `resolveLandingPageModuleCatalog` é consumido pelo próprio domínio, pelos validators, pelo Admin `Estrutura da LP` e pelo domínio histórico de generation profile;
   - não foi identificado consumo do catálogo pelo caminho E19.3 → E19.4 vigente;
@@ -71,6 +71,15 @@ Plano conceitual: `docs/lp-planejamento.md`.
 - Não foi identificada view atual que consuma as tabelas de generation profile.
 - O único perfil ativo contém exclusivamente identidades da E18.5 — módulos, variantes, prioridade e ordem — além de uma orientação geral; seus onze itens deixam de ter significado operacional quando E18.5 for retirada.
 - `audit_logs` preserva os eventos de salvamento e ativação, request IDs, decisões humanas, versões de pesquisa e decisão de gaps, mas não preserva integralmente a lista de onze itens nem o payload completo do perfil.
+
+### 1.6. Verificação de drift após o fechamento da E19.4
+
+- A `main` foi verificada após o merge do PR #776 no commit `735776bd3febf89deb6c77965de8679aed8f246d`.
+- A E19.4.5 adicionou loader autorizado, read model, signed URL server-side, renderer puro, estados seguros e regressões do Preview sem introduzir consumidor novo de E20.3, E18.5 ou E10.8.
+- `lib/lp-builder/landingPagePreview.ts` consome a autoridade `landing-page/presentation`, a revisão materializada e adapters próprios da E19.4; não importa `module-catalog`, `generation-profile` nem `research-resolution`.
+- A validação focal da geração exige explicitamente ausência de `module-catalog`, `generation-profile` e `E18.5` nos sources do fluxo E19.4.
+- O fechamento da E19.4 não altera a classificação da auditoria E22.1.3 nem cria motivo para reabri-la integralmente.
+- A revisão 3 comprovada no PR #776 passa a ser o baseline factual da regressão E22.1.7; gaps de copy, jornada e variação visual registrados na primeira prova são aprendizado de calibração e não pertencem a este recorte de retirada.
 
 ## 2. Contrato do caso
 
@@ -147,14 +156,15 @@ Plano conceitual: `docs/lp-planejamento.md`.
 ### 3.1. E22.1.3 — Auditoria e classificação integral de consumidores
 
 - Automação: não.
-- Status: concluída no planejamento em 18/08/2026.
+- Status: concluída no planejamento em 18/08/2026; verificação de drift pós-E19.4 concluída após o merge do PR #776 sem mudança de classificação.
 - Resultado:
   - consumidores principais de E20.3, E18.5 e E10.8 classificados;
   - poda E12.5/E12.6 definida;
   - objetos atuais de banco E20.3/E12.4.3 identificados;
   - tratamento do único payload E20.3 aprovado pelo humano;
+  - E19.4.5 verificada sem consumidor novo dos ativos históricos alvo;
   - nenhuma remoção material prevista sem consumidor e impacto conhecidos.
-- Antes da implementação material, repetir somente a verificação de drift necessária sobre a `main` após o fechamento da E19.4; não reiniciar a auditoria sem evidência de mudança relevante.
+- Não reiniciar a auditoria integral sem evidência de mudança material posterior na `main`.
 
 ### 3.2. E22.1.4 — Retirada de E20.3 e E12.4.3 associado
 
@@ -184,20 +194,20 @@ Plano conceitual: `docs/lp-planejamento.md`.
 - Automação: não.
 - Remover do `npm run check` somente validators de domínios efetivamente retirados.
 - Reconciliar `lib/openai-workloads/`, exports públicos, navegação Admin e documentos canônicos afetados sem ampliar escopo.
-- Executar regressão da E19.4 concluída e dos consumidores ativos preservados.
+- Executar regressão da E19.4 concluída usando a revisão 3 como baseline, além dos consumidores ativos preservados.
 - Critério de aceite: a base restante não carrega dependências de E20.3/E18.5/E10.8 sem consumidor real e a primeira LP real permanece reproduzível no Preview.
 
 ### 3.6. Próxima ação
 
 - Submeter este plano-base v1 ao processo escolhido pelo humano conforme `docs/prompt-estrategista.md`.
-- A implementação material permanece bloqueada até o fechamento funcional da E19.4.
-- No início da implementação, confirmar a `main` e verificar apenas drift material criado durante o fechamento da E19.4.
+- A condição temporal de fechamento da E19.4 está satisfeita; não há mais bloqueio de sequenciamento para preparar e, após os gates do plano, executar E22.1.4–E22.1.7.
+- Antes da primeira alteração material, reconciliar a branch com a `main` no commit `735776bd3febf89deb6c77965de8679aed8f246d` ou posterior e verificar apenas drift material posterior, se houver.
 
 ## 4. Escopo negativo e critérios de parada
 
 ### 4.1. Fora do escopo
 
-- Não alterar E19.4 enquanto seus gates e PR B estiverem em andamento, salvo correção própria da E19.4.
+- Não reabrir E19.4, não gerar revisão 4 e não usar este recorte para calibrar copy, jornada persuasiva, imagem ou variação visual da primeira LP.
 - Não iniciar E19.5 neste recorte.
 - Não redesenhar E18.4, E20.2, E20.5, E20.6 ou o contrato v3 da E19.3.
 - Não substituir ativos removidos por novo catálogo, engine, agente, job, banco paralelo, rota paralela ou infraestrutura nova.
@@ -209,4 +219,4 @@ Plano conceitual: `docs/lp-planejamento.md`.
 
 - Parar se surgir consumidor necessário não reconciliável com a retirada proposta.
 - Parar se a retirada exigir reabrir decisão de produto já aprovada em E19.3/E19.4.
-- Parar se a regressão da primeira LP real deixar de provar geração, materialização e Preview independentes dos ativos aposentados.
+- Parar se a regressão da revisão 3 deixar de provar geração, materialização e Preview independentes dos ativos aposentados.
