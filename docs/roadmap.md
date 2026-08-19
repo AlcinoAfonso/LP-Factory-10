@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 19/08/2026
-• Versão: v1.5.165
+• Versão: v1.5.166
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -1646,7 +1646,7 @@ Repositório — Ajustados
 
 12.6.1 Objetivo e status
 - Objetivo: Expor no Admin uma consulta estrutural read-only da landing page, reunindo parâmetros, entradas e pesquisas em uma única rota.
-- Status: Concluído em 10/08/2026 após merge humano do PR #695; poda candidata da visão histórica de módulos e variantes implementada na E22.1.5, ainda pendente de merge humano e QA hospedado.
+- Status: Concluído em 10/08/2026 após merge humano do PR #695; poda candidata da visão histórica de módulos e variantes implementada na E22.1.5 e aprovada no QA hospedado/autenticado em desktop (1280×900) e mobile (390×844), com Parâmetros, Entradas e Pesquisas preservados, E20.2 resolvendo 23 campos válidos e apenas o merge humano pendente.
 
 12.6.2 Registros do recorte
 - Repositório:
@@ -1674,7 +1674,7 @@ Repositório — Ajustados
   - Parâmetros consulta o contrato público vigente da E18.4; a visão histórica Módulos e variantes e seus filtros foram retirados na E22.1.5.
   - Entradas resolve o catálogo da E20.2 por versão, plano e taxon ativo; Pesquisas preserva a resolução independente de BB e EC da E10.8 e explicita estados próprio, herdado, ausente, incompleto, revisão ou indisponível.
   - A leitura administrativa usa um único adapter novo e consultas server-side em lote, sem exportar registry ou schema privado, sem N+1 e sem regra de domínio em React.
-  - `npm ci`, `npm run check`, `git diff --check` e os validadores canônicos preservados da E18.4, E20.2 e E10.8 foram aprovados localmente; o QA hospedado das três visões permanece como gate do PR da E22.1.5.
+  - `npm ci`, `npm run check`, `git diff --check` e os validadores canônicos preservados da E18.4, E20.2 e E10.8 foram aprovados localmente; o QA hospedado/autenticado em desktop (1280×900) e mobile (390×844) aprovou as três visões, preservou Parâmetros, Entradas e Pesquisas e confirmou 23 campos válidos resolvidos pela E20.2; apenas o merge humano permanece pendente.
 
 13. E13 — Partner Dashboard
 
@@ -2124,7 +2124,7 @@ Repositório — Ajustados
 
 18.5.1 Objetivo e status
 - Objetivo histórico: manter um catálogo repo-only versionado de módulos e variantes da família `landing_page`.
-- Status: Retirada candidata na E22.1.5 em 19/08/2026, após confirmação de ausência de consumidor no caminho canônico; merge humano e QA hospedado permanecem pendentes.
+- Status: Retirada candidata na E22.1.5 em 19/08/2026, após confirmação de ausência de consumidor no caminho canônico; QA hospedado/autenticado aprovado em desktop (1280×900) e mobile (390×844), com apenas o merge humano pendente.
 - Destino: sem substituto. A parametrização raiz da E18.4 e o catálogo de entradas da E20.2 permanecem preservados e independentes.
 
 18.5.2 Registros do recorte
@@ -2790,7 +2790,7 @@ Repositório — Ajustados
 
 22.1.1 Objetivo e status
 - Objetivo: retirar de forma controlada ativos históricos e seus consumidores somente após classificação de dependências, preservando os boundaries e dados ainda necessários ao caminho ativo.
-- Status: Plano-base v2 consolidado; E22.1.4 concluída e E22.1.5 implementada como candidata no repositório, com merge humano e QA hospedado ainda pendentes. A E19.4 permanece concluída e a E19.5 pausada.
+- Status: Plano-base v2 consolidado; E22.1.4 concluída e E22.1.5 implementada como candidata pronta para merge, com QA hospedado/autenticado aprovado em desktop (1280×900) e mobile (390×844) e apenas o merge humano pendente. A E19.4 permanece concluída e a E19.5 pausada.
 
 22.1.2 Registros do recorte
 - Repositório:
@@ -2843,12 +2843,12 @@ Repositório — Ajustados
 
 22.1.5 Retirada de E18.5 e poda dos consumidores administrativos
 - Objetivo: retirar o catálogo histórico de módulos e variantes e podar somente as responsabilidades administrativas que dependem dele.
-- Status: Implementada como candidata no repositório; validações locais aprovadas, com merge humano e QA hospedado ainda pendentes.
+- Status: Implementada como candidata pronta para merge humano; validações locais e QA hospedado/autenticado aprovados em desktop (1280×900) e mobile (390×844), com apenas o merge humano pendente.
 - Conteúdo:
   - o boundary `module-catalog`, sua API pública, exports e validator foram retirados, junto de `validate:landing-page-module-catalog` e sua chamada em `npm run check`;
   - somente os consumidores administrativos de módulos e variantes foram podados; `/admin/estrutura-lp` preserva Parâmetros, Entradas e Pesquisas, sem Módulos e variantes;
   - E18.4 e E20.2 permanecem preservadas e validadas, sem mudança de banco, migration, persistência ou dados;
-  - as regressões locais confirmam ausência de dependência de E18.5 no caminho E19.3 → E19.4; a prova hospedada em desktop e mobile permanece como gate do PR.
+  - as regressões locais confirmam ausência de dependência de E18.5 no caminho E19.3 → E19.4; o QA hospedado/autenticado preservou Parâmetros, Entradas e Pesquisas, e E20.2 resolveu 23 campos válidos em Entradas; apenas o merge humano permanece pendente.
 
 22.1.6 Desacoplamento da camada E10.8
 - Objetivo: desacoplar a camada histórica de resolução de pesquisas e seus consumidores históricos sem remover pesquisas estruturadas que possuam consumidor real independente.
