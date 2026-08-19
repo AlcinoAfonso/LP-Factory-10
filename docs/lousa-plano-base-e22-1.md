@@ -1,6 +1,6 @@
 # E22.1 — Depreciação e retirada controlada de ativos históricos
 
-Status: plano-base v1 consolidado em 18/08/2026; condição temporal satisfeita após o fechamento da E19.4 pelo PR #776; implementação material permanece anterior à E19.5 e sujeita ao fluxo de aprovação deste plano.
+Status: plano-base v1 consolidado em 19/08/2026; debate encerrado e checklist final do item 3 de `docs/prompt-estrategista.md` concluído; condição temporal satisfeita após o fechamento da E19.4 pelo PR #776; implementação material permanece anterior à E19.5 e sujeita ao processo escolhido pelo humano.
 
 Plano conceitual: `docs/lp-planejamento.md`.
 
@@ -16,13 +16,16 @@ Plano conceitual: `docs/lp-planejamento.md`.
 ### 1.2. Decisões já estabelecidas
 
 - A E19.4 foi encerrada pelo PR #776, mergeado na `main` pelo commit `735776bd3febf89deb6c77965de8679aed8f246d`; a condição temporal que bloqueava a implementação material deste recorte está satisfeita.
-- A E19.5 permanece não iniciada e não deve começar antes da conclusão deste recorte.
-- A revisão 3 da primeira LP real permanece como baseline canônica de regressão durante a retirada: geração, materialização e Preview devem continuar funcionais e reproduzíveis.
+- A E19.5 permanece não iniciada e não deve começar antes da conclusão deste recorte; seu futuro debate de workspace, lifecycle, edição e versionamento não pertence à E22.1.
+- A revisão 3 da primeira LP real permanece como baseline canônica de regressão durante a retirada: materialização e Preview devem continuar íntegros e reproduzíveis.
+- A regressão da limpeza não gera revisão 4 por padrão e não chama novamente `gpt-5.6-luna` ou `gpt-image-2` apenas para provar ausência de dependência; nova geração real só é exigível se uma alteração material no caminho ativo não puder ser comprovada por checks, validadores e Preview da revisão 3.
 - Não reintroduzir E10.8, E18.5 ou E20.3 no caminho canônico da geração apenas porque já estão implementadas.
 - Migrations históricas aplicadas permanecem preservadas no repositório; qualquer retirada física de objetos de banco exige evolução forward-only própria.
+- A retirada física de E20.3 no banco deve ocorrer somente depois que os consumidores runtime/Admin tiverem sido removidos, implantados e verificados como ausentes; a migration destrutiva não pode compartilhar o mesmo merge que ainda depende da troca de código em produção.
 - Dados estruturados de pesquisa não são sinônimo de E10.8 e não podem ser removidos enquanto possuírem consumidor real independente.
 - Decisão humana de 18/08/2026: o payload integral do único perfil E20.3 ativo será eliminado junto com a retirada do domínio, sem criar tabela de arquivo, snapshot paralelo, bucket ou outra persistência de preservação.
 - A rastreabilidade histórica desse perfil permanece pelas migrations e commits no Git, PRs/documentação e eventos já existentes em `audit_logs`.
+- A reconciliação futura de `docs/lp-planejamento.md` sobre a nova direção ampla da E19.5 é necessária, mas permanece fora do escopo deste PR; a E22.1 não absorve lifecycle, edição, publicação, créditos ou nova arquitetura estrutural.
 
 ### 1.3. Evidência factual inicial
 
@@ -47,7 +50,7 @@ Plano conceitual: `docs/lp-planejamento.md`.
   - classificação: retirada após E20.3, com poda da visão administrativa `Módulos e variantes` e dos exports correspondentes.
 - E10.8 / `research-resolution`:
   - o adapter `resolveLandingPageResearchForTaxon` é consumido por superfícies administrativas, diagnósticos da Taxonomia e pelo domínio histórico de generation profile;
-  - a E19.3 vigente não depende desse adapter para pesquisa integral e mantém E10.8 apenas para consumidores independentes;
+  - a E19.3 vigente não depende desse adapter para pesquisa integral;
   - as tabelas `taxon_market_research` e `taxon_market_research_items` continuam consumidas diretamente por `commercial_activation`, fora do boundary E10.8;
   - classificação: retirada do boundary/resolver/adapter e consumidores históricos, preservando a persistência de pesquisas enquanto E10.7/`commercial_activation` precisar dela.
 - E12.5/E12.6:
@@ -78,6 +81,7 @@ Plano conceitual: `docs/lp-planejamento.md`.
 - A E19.4.5 adicionou loader autorizado, read model, signed URL server-side, renderer puro, estados seguros e regressões do Preview sem introduzir consumidor novo de E20.3, E18.5 ou E10.8.
 - `lib/lp-builder/landingPagePreview.ts` consome a autoridade `landing-page/presentation`, a revisão materializada e adapters próprios da E19.4; não importa `module-catalog`, `generation-profile` nem `research-resolution`.
 - A validação focal da geração exige explicitamente ausência de `module-catalog`, `generation-profile` e `E18.5` nos sources do fluxo E19.4.
+- `lib/lp-builder/adapters/generationContextAdapter.ts` usa `loadTaxonPreparationForReviewedVersion` da preparação E20.5/E20.6 e não o resolver E10.8.
 - O fechamento da E19.4 não altera a classificação da auditoria E22.1.3 nem cria motivo para reabri-la integralmente.
 - A revisão 3 comprovada no PR #776 passa a ser o baseline factual da regressão E22.1.7; gaps de copy, jornada e variação visual registrados na primeira prova são aprendizado de calibração e não pertencem a este recorte de retirada.
 
@@ -93,6 +97,7 @@ Plano conceitual: `docs/lp-planejamento.md`.
   - remover após prova de ausência de consumidor necessário.
 - Retirar código, rotas administrativas, exports, workloads, validators, contratos e objetos de banco somente quando a prova de dependência permitir.
 - Manter documentação histórica necessária para rastreabilidade sem deixá-la atuar como contrato operacional vigente.
+- Entregar à futura E19.5 uma base em que `generation-profile`, `module-catalog` e o boundary histórico `research-resolution` não sejam mais interpretáveis como autoridades atuais sem consumidor.
 
 ### 2.2. Cluster inicial obrigatório
 
@@ -138,6 +143,11 @@ Plano conceitual: `docs/lp-planejamento.md`.
   - retirar `Módulos e variantes` quando E18.5 for aposentada;
   - retirar `Pesquisas` quando o boundary E10.8 for aposentado;
   - ajustar `adminLandingPageStructureAdapter`, navegação e validações apenas para refletir as duas visões remanescentes, sem nova rota ou novo domínio.
+- Critérios visuais mínimos após a poda:
+  - a navegação Admin não exibe item morto para `Perfis de orientação`;
+  - `/admin/estrutura-lp` apresenta somente as visões preservadas, sem abas, cards ou links órfãos para E18.5/E10.8;
+  - Taxonomia e Resoluções de nicho preservam seus dados e ações vigentes sem badges ou CTAs históricos removidos;
+  - evidência hospedada proporcional deve cobrir ao menos desktop e mobile das superfícies administrativas materialmente alteradas, sem exigir redesign.
 
 ### 2.6. Tratamento do único perfil E20.3 persistido
 
@@ -148,8 +158,42 @@ Plano conceitual: `docs/lp-planejamento.md`.
 - Decisão humana aprovada em 18/08/2026:
   - eliminar o payload integral do único perfil ativo durante a retirada do domínio;
   - não criar tabela de arquivo, snapshot paralelo, bucket, export runtime ou infraestrutura nova apenas para conservar esse payload sem consumidor;
-  - usar migration forward-only para remover RPCs e objetos do domínio e eliminar as duas tabelas com seus registros;
   - preservar como rastreabilidade as migrations históricas no Git, os PRs/commits do domínio, a documentação histórica e os eventos já existentes em `audit_logs`.
+- Sequenciamento obrigatório:
+  - primeiro retirar e implantar código, Admin, workload, exports e validators consumidores, mantendo temporariamente as tabelas/RPCs compatíveis;
+  - comprovar no ambiente implantado que não existe consumidor runtime/Admin necessário desses objetos;
+  - somente em merge posterior aplicar migration forward-only que remove as quatro RPCs, as duas tabelas e seus registros;
+  - se o processo escolhido não permitir esse ponto de implantação intermediário, parar antes do DDL destrutivo em vez de aceitar corrida entre deploy de aplicação e `supabase db push`.
+
+### 2.7. Fluxo operacional da retirada
+
+- Gatilho:
+  - E19.4 encerrada, plano E22.1 aprovado e execução autorizada pelo processo escolhido.
+- Entrada:
+  - inventário E22.1.3 aprovado;
+  - `main` vigente e drift material posterior, se houver;
+  - estado remoto mínimo necessário do Supabase para os objetos efetivamente removidos;
+  - revisão 3 da primeira LP como baseline de regressão.
+- Processamento:
+  - retirar consumidores históricos na ordem E20.3/E12.4.3 → E18.5 → boundary E10.8;
+  - podar somente as responsabilidades históricas de E12.5/E12.6;
+  - preservar boundaries e dados com consumidor real;
+  - executar retirada física do banco somente após implantação sem consumidores.
+- Validação:
+  - checks e validadores focais dos domínios preservados;
+  - validação dos workloads OpenAI remanescentes;
+  - Preview hospedado da revisão 3;
+  - QA proporcional das superfícies Admin alteradas;
+  - prova read-only dos objetos de banco quando aplicável.
+- Persistência:
+  - nenhuma persistência nova;
+  - somente migration forward-only para retirada física de E20.3 após o gate de implantação sem consumidores;
+  - tabelas de pesquisa estruturada permanecem enquanto houver consumidor independente.
+- Consumo:
+  - E18.4, E20.2, E20.5, E20.6, E19.2, E19.3, E19.4, E10.6/E10.7 e `lib/openai-workloads/` permanecem conforme seus consumidores atuais.
+- Fallback:
+  - consumidor necessário inesperado, regressão da revisão 3 ou dependência não reconciliável interrompe a retirada do alvo correspondente;
+  - não restaurar automaticamente arquitetura histórica nem criar substituto novo dentro da E22.1.
 
 ## 3. Fases e próxima ação
 
@@ -169,16 +213,18 @@ Plano conceitual: `docs/lp-planejamento.md`.
 ### 3.2. E22.1.4 — Retirada de E20.3 e E12.4.3 associado
 
 - Automação: não.
-- Retirar o domínio `generation-profile`, adapters, páginas/actions de `/admin/perfis-de-orientacao`, navegação administrativa correspondente, workload `landing_page_generation_profile_proposal`, exports, validators, duas tabelas e quatro RPCs identificados.
-- Fazer a retirada física do banco somente por migration forward-only, preservando migrations históricas aplicadas.
-- Eliminar o único perfil e seus onze itens conforme decisão humana de 2.6, sem criar persistência substituta.
-- Critério de aceite: E19.4 e demais workloads ativos permanecem íntegros; nenhum consumidor necessário do perfil permanece quebrado ou órfão.
+- Retirar primeiro o domínio `generation-profile`, adapters, páginas/actions de `/admin/perfis-de-orientacao`, navegação administrativa correspondente, workload `landing_page_generation_profile_proposal`, exports e validators, preservando temporariamente as duas tabelas e quatro RPCs para compatibilidade durante a implantação.
+- Validar o deploy sem consumidores necessários e confirmar que os workloads OpenAI remanescentes continuam resolvendo normalmente.
+- Somente em merge posterior, e após a comprovação do deploy sem consumidores, aplicar migration forward-only que remove as quatro RPCs, as duas tabelas, triggers/constraints/índices/grants/RLS próprios e o único perfil com seus onze itens, sem persistência substituta.
+- Evidência visual proporcional: navegação Admin sem `Perfis de orientação` e superfícies relacionadas sem link morto ou estado órfão.
+- Critério de aceite: E19.4 e demais workloads ativos permanecem íntegros; nenhum consumidor necessário do perfil permanece quebrado ou órfão; DDL destrutivo não antecede a implantação sem consumidores.
 
 ### 3.3. E22.1.5 — Retirada de E18.5 e poda dos consumidores administrativos
 
 - Automação: não.
 - Retirar o diretório `module-catalog`, API pública, exports e validator após a aposentadoria dos consumidores E20.3.
 - Ajustar somente as partes de `/admin/estrutura-lp` e demais superfícies que dependem de módulos/variantes; preservar E18.4 e E20.2.
+- Evidência visual proporcional: `Estrutura da LP` permanece utilizável nas visões `Parâmetros` e `Entradas`, sem superfície residual de `Módulos e variantes`.
 - Critério de aceite: nenhuma seleção de módulo/variante volta ao caminho E19.3 → E19.4 e o Admin remanescente não referencia domínio removido.
 
 ### 3.4. E22.1.6 — Desacoplamento da camada E10.8
@@ -187,36 +233,41 @@ Plano conceitual: `docs/lp-planejamento.md`.
 - Retirar o boundary `research-resolution` e seus adapters/diagnósticos depois de remover seus consumidores históricos.
 - Não apagar `taxon_market_research` ou `taxon_market_research_items` por efeito deste recorte enquanto E10.7/`commercial_activation` ou outro consumidor real depender deles.
 - Podar referências E10.8 em Taxonomia, Estrutura da LP, generation profile e exports conforme o inventário aprovado.
-- Critério de aceite: preparação E20.5/E20.6 e E19.3 continuam usando exclusivamente a pesquisa integral selecionada no caminho canônico, sem dependência da E10.8.
+- Evidência visual proporcional: Taxonomia e `Estrutura da LP` não exibem diagnósticos/superfícies E10.8 removidos, preservando E20.5/E20.6 e as demais informações vigentes.
+- Critério de aceite: preparação E20.5/E20.6 e E19.3 continuam usando exclusivamente a pesquisa integral selecionada no caminho canônico, sem dependência da E10.8; `commercial_activation` continua lendo a persistência estruturada que permanece preservada.
 
 ### 3.5. E22.1.7 — Consolidação da superfície transversal e regressão final
 
 - Automação: não.
 - Remover do `npm run check` somente validators de domínios efetivamente retirados.
 - Reconciliar `lib/openai-workloads/`, exports públicos, navegação Admin e documentos canônicos afetados sem ampliar escopo.
-- Executar regressão da E19.4 concluída usando a revisão 3 como baseline, além dos consumidores ativos preservados.
-- Critério de aceite: a base restante não carrega dependências de E20.3/E18.5/E10.8 sem consumidor real e a primeira LP real permanece reproduzível no Preview.
+- Executar regressão padrão sem nova geração real: `npm run check`, validadores focais da E19.3/E19.4 e do Preview, resolução dos workloads ativos, Preview hospedado da revisão 3 e QA proporcional das superfícies Admin alteradas.
+- Nova chamada real aos providers somente se uma mudança material no caminho ativo não puder ser comprovada pelas evidências anteriores; não gerar revisão 4 apenas para validar a limpeza.
+- Critério de aceite: a base restante não carrega dependências de E20.3/E18.5/E10.8 sem consumidor real, a revisão 3 permanece reproduzível no Preview, materialização/revisões continuam íntegras e as superfícies Admin preservadas permanecem funcionais em desktop/mobile.
 
 ### 3.6. Próxima ação
 
-- Submeter este plano-base v1 ao processo escolhido pelo humano conforme `docs/prompt-estrategista.md`.
-- A condição temporal de fechamento da E19.4 está satisfeita; não há mais bloqueio de sequenciamento para preparar e, após os gates do plano, executar E22.1.4–E22.1.7.
-- Antes da primeira alteração material, reconciliar a branch com a `main` no commit `735776bd3febf89deb6c77965de8679aed8f246d` ou posterior e verificar apenas drift material posterior, se houver.
+- Item 3 de `docs/prompt-estrategista.md` concluído: o plano mantém as quatro seções mínimas, plano conceitual, fases executáveis e `Automação: não` em todas as fases; não há matriz temporária de debate a remover.
+- Seguir para o item 4 de `docs/prompt-estrategista.md` e obter decisão humana entre Processo atual e Processo automatizado.
+- Antes da primeira alteração material, reconciliar a branch de execução com a `main` vigente e verificar apenas drift material posterior, se houver.
 
 ## 4. Escopo negativo e critérios de parada
 
 ### 4.1. Fora do escopo
 
 - Não reabrir E19.4, não gerar revisão 4 e não usar este recorte para calibrar copy, jornada persuasiva, imagem ou variação visual da primeira LP.
-- Não iniciar E19.5 neste recorte.
+- Não iniciar nem redesenhar E19.5 neste recorte; lifecycle da LP, publicação, edição manual, melhoria por IA, histórico/restauração, créditos/capacidades e UX do workspace pertencem ao debate próprio da E19.5.
 - Não redesenhar E18.4, E20.2, E20.5, E20.6 ou o contrato v3 da E19.3.
 - Não substituir ativos removidos por novo catálogo, engine, agente, job, banco paralelo, rota paralela ou infraestrutura nova.
 - Não apagar migrations históricas aplicadas.
 - Não apagar dados de pesquisa estruturada apenas para simplificar a camada E10.8.
 - Não remover E10.6/E10.7 sem auditoria própria que demonstre perda de consumidor real.
+- Não incorporar automaticamente neste PR a reconciliação conceitual de `docs/lp-planejamento.md` sobre a futura E19.5 ampla.
 
 ### 4.2. Critérios de parada
 
 - Parar se surgir consumidor necessário não reconciliável com a retirada proposta.
+- Parar antes do DDL destrutivo se o código consumidor ainda não tiver sido removido, implantado e verificado como ausente no ambiente alvo.
+- Parar se o processo escolhido não permitir o ponto de implantação intermediário exigido entre retirada de consumidores e retirada física do banco.
 - Parar se a retirada exigir reabrir decisão de produto já aprovada em E19.3/E19.4.
-- Parar se a regressão da revisão 3 deixar de provar geração, materialização e Preview independentes dos ativos aposentados.
+- Parar se a regressão da revisão 3 deixar de provar materialização e Preview independentes dos ativos aposentados.
