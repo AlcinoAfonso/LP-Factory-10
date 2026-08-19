@@ -67,9 +67,6 @@ export type AdminTaxonOperationalDiagnostic = {
   businessBuyer: AdminOperationalDiagnosticItem;
   endCustomer: AdminOperationalDiagnosticItem;
   commercialPage: AdminOperationalDiagnosticItem;
-  activeProfile: AdminOperationalDiagnosticItem;
-  draftProfile: AdminOperationalDiagnosticItem;
-  aiAssistance: AdminOperationalDiagnosticItem;
 };
 
 export type AdminTaxonLevel = "segment" | "niche" | "ultra_niche";

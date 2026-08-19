@@ -85,9 +85,6 @@ export default async function AdminTaxonDetailPage({ params }: AdminTaxonDetailP
           <DiagnosticCard label="Pesquisa BB" item={taxon.diagnostic.businessBuyer} />
           <DiagnosticCard label="Pesquisa EC" item={taxon.diagnostic.endCustomer} />
           <DiagnosticCard label="Página comercial" item={taxon.diagnostic.commercialPage} />
-          <DiagnosticCard label="Perfil ativo" item={taxon.diagnostic.activeProfile} />
-          <DiagnosticCard label="Rascunho próprio" item={taxon.diagnostic.draftProfile} />
-          <DiagnosticCard label="Assistência por IA" item={taxon.diagnostic.aiAssistance} />
         </div>
       </section>
 
