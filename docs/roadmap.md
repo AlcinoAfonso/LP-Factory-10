@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 18/08/2026
-• Versão: v1.5.162
+• Data: 19/08/2026
+• Versão: v1.5.163
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -385,8 +385,8 @@
 9.2 Liberação manual administrativa mínima
 
 9.2.1 Objetivo e status
-• Objetivo: permitir concessão, atualização e cancelamento manual mínimo de entitlement por `platform_admin`.
-• Status: concluída em 04/07/2026.
+- Objetivo: permitir concessão, atualização e cancelamento manual mínimo de entitlement por `platform_admin`.
+- Status: concluída em 04/07/2026.
 
 9.2.2 Registros do recorte
 - Banco:
@@ -953,7 +953,7 @@ Repositório — Ajustados
 
 10.6.3 Relação com a E10.7
 • A E10.7 permanece separada e será responsável pelas páginas comerciais personalizadas por nicho.
-• A página genérica da E10.6 permanece como fallback quando não houver página nichada publicada.
+• A página genérica `generic-v1` da E10.6 permanece como fallback quando não houver página nichada publicada.
 • Persistência, edição, geração e publicação da E10.7 serão definidas no planejamento desse caso.
 
 10.6.4 Personalização por histórico da conta
@@ -1032,7 +1032,9 @@ Repositório — Ajustados
 • `app/admin/(protected)/templates/page.tsx`
 • `app/admin/(protected)/templates/actions.ts`
 • `components/admin/adminNavigation.ts`
+• `lib/admin/adapters/adminCommercialActivationTemplatesAdapter.ts`
 • `lib/conversion-content/commercial-activation/draft-generation.ts`
+• `lib/conversion-content/commercial-activation/composition.ts`
 
 10.7.5 Fase 4 — Consumo no Account Dashboard
 • Status: Concluída em 23/06/2026.
@@ -2807,13 +2809,13 @@ Repositório — Ajustados
 
 21. E21 — Gestão e governança dos workloads OpenAI
 - Objetivo: gerir e governar os workloads OpenAI por recortes aprovados, iniciando pela configuração explícita, observabilidade segura e leitura administrativa; a configuração dinâmica e o histórico permanecem para recortes posteriores, sem otimização automatizada.
-- Status: a fundação E21.1 permanece preservada; o PR precursor A da E19.4 expande aditivamente o catálogo para seis itens na revisão `v2`, com os dois novos workloads de draft validados localmente e ainda pendentes de canários hospedados.
+- Status: a fundação E21.1 permanece implementada e preservada; o catálogo vigente reúne cinco workloads de produto e uma referência operacional na revisão `v2`, incluindo os dois workloads E19.4 já comprovados em duas execuções integradas hospedadas. A configuração operacional dinâmica e as evidências de custo-benefício permanecem previstas nos recortes E21.2 e E21.3, sem otimização automatizada.
 
 21.1 Fundação, normalização e leitura dos workloads OpenAI
 
 21.1.1 Objetivo e status
 - Objetivo: estabelecer catálogo tipado e resolução explícita dos workloads OpenAI, integrar os consumidores de produto à configuração e à observabilidade comuns e expor inventário administrativo read-only.
-- Status: Fundação implementada e validada; catálogo candidato expandido para cinco workloads de produto e uma referência operacional, sem mudar a natureza repo-only e read-only do boundary.
+- Status: Fundação implementada e validada; catálogo expandido para cinco workloads de produto e uma referência operacional, sem mudar a natureza repo-only e read-only do boundary.
 
 21.1.2 Registros do recorte
 - Repositório:
@@ -2857,23 +2859,51 @@ Repositório — Ajustados
   - Nenhum banco, integração remota, cliente universal, preço, prompt, schema funcional ou fallback silencioso foi criado.
 
 21.1.4 Integração dos consumidores e observabilidade comum
-- Status: integração técnica validada para os cinco workloads de produto; o smoke hospedado de 10/08/2026 continua válido apenas para os três consumidores então existentes, e os dois workloads E19.4 aguardam canários próprios.
+- Status: integração técnica validada para os cinco workloads de produto; o smoke hospedado de 10/08/2026 continua válido para os três consumidores então existentes, e os dois workloads E19.4 foram posteriormente comprovados por duas execuções integradas hospedadas em 18/08/2026, em substituição ao gate de canários isolados por decisão humana.
 - Conteúdo:
   - Consumidores textuais resolvem modelo e reasoning effort explícitos; o workload de imagem resolve somente sua configuração de mídia. Prompts, schemas, limites, persistência e fallbacks funcionais permanecem nos domínios consumidores.
   - Eventos textuais e de imagem registram por tentativa somente metadados operacionais seguros e aplicáveis; métricas ausentes permanecem `null` e nenhum prompt, resposta integral, payload de negócio, PII ou secret é registrado.
   - As três leituras runtime de variáveis de modelo, o hardcode client do perfil e o cálculo monetário local foram removidos; as variáveis externas permanecem apenas como legado temporário de reversão conforme a configuração operacional canônica.
   - O transporte OpenAI comercial foi isolado no adapter previsto e novos drafts registram workload, origem, revisão, modelo e effort resolvidos na proveniência existente, sem migration, backfill ou persistência de usage.
   - Validators determinísticos exercitam os cinco workloads de produto, separação textual/mídia, configuração inválida sem transporte, parâmetros exatos, IDs de provider, usage aplicável, eventos discriminados e ausência de referências legadas.
-  - O smoke hospedado aprovou resolução de nicho, proposta de perfil de geração e ativação comercial; os canários sem persistência dos workloads E19.4 permanecem gates próprios antes da primeira geração real.
+  - As duas execuções integradas da E19.4 comprovaram os workloads textual e de imagem no caminho oficial, sem retry ou fallback e sem necessidade do canário isolado originalmente previsto.
   - Permanece fora do PR #710 a correção separada da automação de smoke para remover senha de logs e artifacts, gerar credenciais não previsíveis e tratar colisões corretamente.
 
 21.1.5 Inventário read-only no Admin Dashboard
-- Status: inventário candidato com seis itens; a prova técnica e visual hospedada anterior cobre somente os quatro itens então implantados, e a expansão aguarda Preview do PR precursor A.
+- Status: inventário implementado com seis itens; a prova técnica e visual hospedada anterior cobre somente os quatro itens então implantados, enquanto a expansão da E19.4 está integrada à `main`.
 - Conteúdo:
   - A rota protegida `/admin/workloads-openai` integra o shell e a navegação administrativos vigentes e projeta diretamente da API pública do boundary os seis itens no código candidato, sem adapter, API, componente client ou controle de mutação novos.
   - Os cinco workloads de produto exibem ambiente observado, configuração efetiva, origem e revisão; o Supabase Inspect permanece diferenciado como referência operacional externa e informa explicitamente `Ambiente da execução: não verificado nesta página`.
   - A superfície é responsiva, sem consulta runtime à OpenAI, GitHub ou Vercel e sem configuração remota, métricas históricas ou capacidades inexistentes.
   - As evidências hospedadas aprovaram desktop, viewport mobile de 390 × 844 sem overflow, navegação lógica por TAB com foco visível, acesso positivo de `platform_admin` e bloqueio da identidade preexistente sem esse papel.
+
+21.2 Configuração operacional dinâmica dos workloads OpenAI
+
+21.2.1 Objetivo e status
+- Objetivo: permitir configuração ativa por ambiente e workload, com candidata, validação, ativação humana, rollback e mudança ordinária de configuração sem redeploy, preservando o boundary e os consumidores existentes.
+- Status: Prevista; não implementada. O plano-base próprio deve fechar fonte operacional, contrato e gates antes de qualquer execução.
+
+21.2.3 Previsão e limites
+- Status: Planejada.
+- Conteúdo:
+  - preservar configuração explícita por workload e ambiente, candidata validada, ativação humana e rollback para revisão previamente validada;
+  - não autorizar neste registro banco, rota, dashboard mutável, provider de configuração ou nova infraestrutura;
+  - definir o mecanismo efetivo somente no plano-base próprio do recorte.
+
+21.3 Evidências e avaliação de custo-benefício dos workloads OpenAI
+
+21.3.1 Objetivo e status
+- Objetivo: produzir comparações reproduzíveis por workload para sustentar decisão humana de configuração com evidência de qualidade, sucesso, necessidade de correção humana, usage, latência, custo e estabilidade.
+- Status: Prevista; não implementada. A E19.4 fornece o primeiro caso real de referência para `landing_page_draft_generation` e `landing_page_draft_image_generation`, sem reabrir a E19.4.
+
+21.3.3 Previsão e limites
+- Status: Planejada.
+- Conteúdo:
+  - a unidade de comparação textual permanece `workload + modelo + reasoning effort`; workloads de mídia preservam sua configuração própria e métricas aplicáveis;
+  - reutilizar a observabilidade segura da E21.1 e registrar comparações decisórias no `docs/openai-model-snapshot.md`, mantendo evidências detalhadas no recorte que vier a executá-las;
+  - medir, quando aplicável, qualidade, resultado válido, correção humana, `input_tokens`, `cached_tokens`, `output_tokens`, `reasoning_tokens`, latência, custo financeiro efetivo e estabilidade;
+  - não definir vencedor, baseline universal ou otimização automática antes de evidência representativa do workload;
+  - não autorizar neste registro banco, tabela, rota, dashboard, job, engine, agente, automação ou nova infraestrutura; a forma de implementação permanece para o plano-base próprio.
 
 99. Changelog
 v1.5.140 — 11/08/2026 — Implementada no repositório a E19.4.4 com materialização inicial 1:1 write-once, conteúdo e snapshot runtime v1 coerentes, adapter server-only, migration transacional, readiness fail-closed e casos executáveis; apply e prova hospedada permanecem nos gates pós-merge/E19.4.5.
