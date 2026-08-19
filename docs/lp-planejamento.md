@@ -273,6 +273,7 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 - E19.5 sucede E19.4 como workspace operacional e contrato de lifecycle da LP estável. O recorte não deve ser implementado como “Light” transitória nem reconstruído do zero: o PR #726 é a base madura a reconciliar.
 - A home do cliente deve preservar uma linha por LP comercial; histórico, comparação, melhoria e restauração de revisões pertencem à LP concreta e não multiplicam identidades.
 - A E19.5 deve decidir o que `draft` significa depois de existirem revisões, se há estados de aprovação/conclusão/publicação/arquivamento, como funciona edição manual, como melhorias por IA produzem novas revisões e como uma revisão publicada convive com novas revisões em trabalho.
+- A E19.5 também deve fechar o significado de “LP entregue” e sua relação com aprovação, conclusão e publicação, atendendo à pendência estratégica já registrada no `README.md`, sem antecipar aqui o checklist.
 - Publicação apontar para uma revisão imutável é hipótese conceitual útil, ainda não contrato fechado.
 - Nova identidade de LP nasce somente quando o usuário deseja outra página comercial.
 - Conta piloto e cliente continuam no mesmo fluxo oficial.
@@ -290,7 +291,7 @@ Fontes de referência: `README.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `
 - Preservar para recortes futuros uma biblioteca tenant-aware de logos e imagens reutilizáveis, com upload e seleção de assets próprios quando existir contrato real de produto para isso.
 - A estratégia de mídia pode evoluir de forma híbrida entre asset próprio do cliente, imagem gerada por IA e eventual mídia externa/licenciada com direitos e proveniência adequados.
 - Edição manual futura deve preservar revisão histórica válida e definir quando uma alteração em trabalho se torna nova revisão integral.
-- Melhoria por IA pode futuramente atuar na LP inteira ou em parte dela, mas uma alteração parcial precisa resultar em revisão integral coerente e preservada da mesma LP, sem criar nova identidade comercial.
+- Melhoria por IA pode futuramente atuar na LP inteira ou em parte dela. Quando uma melhoria parcial for consolidada/materializada como nova revisão, o resultado deve preservar uma revisão integral coerente da mesma LP, sem criar identidade comercial paralela; a E19.5 definirá o fluxo intermediário de edição.
 - Histórico e comparação de revisões devem ser acessíveis dentro da LP, sem poluir a lista principal do workspace.
 - Publicação deve ser debatida como relação entre identidade estável e revisão imutável; rollback/restauração de revisão anterior só deve ser implementado depois do contrato explícito.
 - A E19.5 deve mapear quais ações consomem IA; controle comercial reutiliza E9.7 e eventual carteira/contabilização de créditos pertence a recorte próprio, sem numeração inventada neste documento.
