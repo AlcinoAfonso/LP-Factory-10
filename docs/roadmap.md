@@ -1140,10 +1140,30 @@ Repositório — Ajustados
 
 10.8 Resolução de pesquisas estruturadas para `landing_page` — retirada
 
+10.8.1 Objetivo e status
+
 * Objetivo histórico: disponibilizar um conjunto único, completo, determinístico e rastreável de pesquisas estruturadas para consumidores de `landing_page`.
 * Status: Retirada em 19/08/2026 pela E22.1.6.
-* Motivo: o boundary de resolução BB/EC e seus consumidores administrativos deixaram de participar do caminho canônico vigente.
-* Destino: sem substituto; E20.5 seleciona a pesquisa integral `end_customer`, E20.6 avalia o catálogo e E19.3 consome a preparação factual resultante. `taxon_market_research`, `taxon_market_research_items` e seus consumidores independentes permanecem preservados.
+
+10.8.2 Registros do recorte
+
+* Status: Registro histórico preservado; os artefatos retirados permanecem consolidados na E22.1.2.
+* Conteúdo: o boundary `research-resolution`, o adapter, os exports e o validator foram removidos.
+
+10.8.3 Contrato de resolução e elegibilidade
+
+* Status: Contrato histórico retirado.
+* Conteúdo: não existe substituto para E10.8.
+
+10.8.4 Precedência, proveniência e falha fechada
+
+* Status: Responsabilidade histórica encerrada.
+* Conteúdo: E20.5 e E20.6 selecionam e avaliam o caminho vigente da pesquisa integral `end_customer`, consumido pela E19.3.
+
+10.8.5 Validação e limites do recorte
+
+* Status: Preservações vigentes confirmadas pela E22.1.6.
+* Conteúdo: `taxon_market_research`, `taxon_market_research_items` e seus consumidores independentes permanecem preservados.
 
 11. E11 — Gestão de Usuários e Convites
 - Objetivo: permitir gestão segura de membros não-owner e convites por conta, usando Supabase Auth e o Account Dashboard.
