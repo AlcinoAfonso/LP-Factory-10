@@ -582,13 +582,13 @@ const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }
       );
       assert.doesNotMatch(
         boundaryCoreSource,
-        /research-resolution|loadResearch|Stripe|OpenAI|GenerationProfile|loadGenerationProfile/,
+        /research-resolution|loadResearch|Stripe|OpenAI|GenerationProfile|loadGenerationProfile|landingPagePreview/,
       );
+      assert.doesNotMatch(compilerSource, /landingPagePreview/);
       for (const relativePath of [
         "../../app/a/[account]/landing-page-actions.ts",
         "../../app/a/[account]/_components/LandingPageDraftJourney.tsx",
         "./landingPageMaterialization.ts",
-        "./landingPagePreview.ts",
       ]) {
         assert.equal(existsSync(new URL(relativePath, import.meta.url)), false);
       }

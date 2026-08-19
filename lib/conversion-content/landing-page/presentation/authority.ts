@@ -139,14 +139,123 @@ export type LandingPagePresentationValidationResult =
       }>;
     }>;
 
+const EXPECTED_SECTION_KINDS = [
+  "header",
+  "hero",
+  "text_media",
+  "cards_grid",
+  "steps",
+  "faq",
+  "cta",
+  "footer",
+] as const;
+const SECTIONS_ONE_OF_PATH = "$.properties.sections.items.oneOf";
+
 const generatedSchema = z.toJSONSchema(landingPagePresentationCandidateSchema, {
   target: "draft-7",
 });
 const { $schema: _schemaDialect, ...structuredOutputSchema } = generatedSchema;
 
 export const landingPagePresentationJsonSchema = deepFreeze(
-  structuredOutputSchema,
+  projectLandingPagePresentationJsonSchemaForOpenAi(structuredOutputSchema),
 ) as Readonly<Record<string, unknown>>;
+
+export function projectLandingPagePresentationJsonSchemaForOpenAi(
+  value: unknown,
+): Record<string, unknown> {
+  const oneOfPaths = collectJsonSchemaKeywordPaths(value, "oneOf");
+  if (oneOfPaths.length !== 1 || oneOfPaths[0] !== SECTIONS_ONE_OF_PATH) {
+    throw new Error(
+      `OpenAI presentation schema requires oneOf only at ${SECTIONS_ONE_OF_PATH}; found ${oneOfPaths.join(", ") || "none"}`,
+    );
+  }
+
+  const root = jsonSchemaRecord(value, "$");
+  const properties = jsonSchemaRecord(root.properties, "$.properties");
+  const sections = jsonSchemaRecord(
+    properties.sections,
+    "$.properties.sections",
+  );
+  const items = jsonSchemaRecord(
+    sections.items,
+    "$.properties.sections.items",
+  );
+  if (Object.hasOwn(items, "anyOf")) {
+    throw new Error(`Conflicting anyOf at $.properties.sections.items`);
+  }
+  const variants = items.oneOf;
+  if (
+    !Array.isArray(variants) ||
+    variants.length !== EXPECTED_SECTION_KINDS.length
+  ) {
+    throw new Error(
+      `OpenAI presentation schema requires exactly ${EXPECTED_SECTION_KINDS.length} section branches`,
+    );
+  }
+
+  const kinds = variants.map((variant, index) => {
+    const branch = jsonSchemaRecord(
+      variant,
+      `${SECTIONS_ONE_OF_PATH}[${index}]`,
+    );
+    const branchProperties = jsonSchemaRecord(
+      branch.properties,
+      `${SECTIONS_ONE_OF_PATH}[${index}].properties`,
+    );
+    const kind = jsonSchemaRecord(
+      branchProperties.kind,
+      `${SECTIONS_ONE_OF_PATH}[${index}].properties.kind`,
+    );
+    if (kind.type !== "string" || typeof kind.const !== "string") {
+      throw new Error(`Section branch ${index} requires a literal string kind`);
+    }
+    return kind.const;
+  });
+  const uniqueKinds = new Set(kinds);
+  if (
+    uniqueKinds.size !== EXPECTED_SECTION_KINDS.length ||
+    EXPECTED_SECTION_KINDS.some((kind) => !uniqueKinds.has(kind))
+  ) {
+    throw new Error(`Section branches require the 8 unique contract v1 kinds`);
+  }
+
+  const { oneOf: _oneOf, ...itemsWithoutOneOf } = items;
+  return {
+    ...root,
+    properties: {
+      ...properties,
+      sections: {
+        ...sections,
+        items: { ...itemsWithoutOneOf, anyOf: variants },
+      },
+    },
+  };
+}
+
+function collectJsonSchemaKeywordPaths(
+  value: unknown,
+  keyword: string,
+  path = "$",
+): string[] {
+  if (Array.isArray(value)) {
+    return value.flatMap((nested, index) =>
+      collectJsonSchemaKeywordPaths(nested, keyword, `${path}[${index}]`),
+    );
+  }
+  if (!value || typeof value !== "object") return [];
+
+  return Object.entries(value).flatMap(([key, nested]) => [
+    ...(key === keyword ? [`${path}.${key}`] : []),
+    ...collectJsonSchemaKeywordPaths(nested, keyword, `${path}.${key}`),
+  ]);
+}
+
+function jsonSchemaRecord(value: unknown, path: string): Record<string, unknown> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new Error(`Invalid JSON Schema object at ${path}`);
+  }
+  return value as Record<string, unknown>;
+}
 
 export function validateLandingPagePresentationCandidate(
   candidate: unknown,

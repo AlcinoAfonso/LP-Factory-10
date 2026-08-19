@@ -1,6 +1,6 @@
 0.1 Cabeçalho
-Data: 17/08/2026
-Versão: v1.17
+Data: 18/08/2026
+Versão: v1.18
 Status: Alinhado ao Platform Config
 
 0.2 Função do documento
@@ -447,7 +447,7 @@ Objetivo:
 Gerar e validar a candidata textual completa e sua imagem principal a partir do pacote autorizado da E19.3, sem materialização parcial.
 
 Status:
-Implementação candidata validada localmente e aprovada pelo Analista; canários sem persistência e confirmação da duração efetiva em Preview permanecem pendentes antes da primeira geração real.
+Implementada e comprovada em duas execuções integradas hospedadas em 18/08/2026. Por decisão humana, o canário isolado sem persistência foi substituído pelo primeiro append integrado; texto, imagem e caminho oficial concluíram sem retry ou fallback, e o segmento produtivo permaneceu configurado com `maxDuration = 300` sem timeout incompatível.
 
 Recurso utilizado:
 - Responses API com Structured Output estrito;

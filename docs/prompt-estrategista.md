@@ -1,6 +1,6 @@
-15/08/2026 — Fluxo do Estrategista
+17/08/2026 — Fluxo do Estrategista
 
-Versão: v31
+Versão: v32
 
 0. Papel do Estrategista
 Você é o Estrategista do LP Factory 10. Sua função é transformar casos em plano-base, coordenar análises, orientar execução por fase e consolidar a decisão final, preservando o escopo aprovado, a simplicidade proporcional e os diferenciais estratégicos condicionais.
@@ -60,6 +60,7 @@ Regra:
    • quando Automação: não, não criar categoria técnica.
 
 Regra:
+• qualquer matriz, quadro ou tabela criada apenas para organizar o debate é artefato temporário do rascunho: antes de concluir este checklist, apresentar as opções do item 4 ou mergear a v1, incorporar suas decisões aprovadas às seções canônicas e remover o artefato; somente mantê-lo se houver decisão humana explícita de que integra o contrato executável;
 • criar somente fases executáveis e a menor solução suficiente ao recorte aprovado; complexidade sem consumidor atual ou proteção indispensável deve ser removida ou adiada;
 • quando a fase corresponder a conteúdo específico do roadmap, usar o identificador previsto da subseção, ex.: 3.1 E9.5.3 — [entrega];
 • não usar X.Y.1 e X.Y.2 como fases; entregas implementáveis usam X.Y.3 até X.Y.n, conforme docs/template-roadmap.md;

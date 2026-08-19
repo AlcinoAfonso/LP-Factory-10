@@ -2,8 +2,8 @@
 
 0.1 Cabeçalho
 • Documento: LP Factory 10 — Platform Config
-• Versão: v0.1.23
-• Data: 17/08/2026
+• Versão: v0.1.24
+• Data: 18/08/2026
 
 0.2 Contrato do documento
 • O QUE É: snapshot operacional e fonte única das configurações de plataformas externas do LP Factory 10, refletindo o estado conhecido/cadastrado nas plataformas conforme indicado.
@@ -178,10 +178,11 @@
 • Configuração efetiva dos workloads OpenAI de produto
 • Fonte canônica: `lib/openai-workloads/registry.ts`, com `configurationSource: repo_catalog` e revisão `v2`.
 • Workloads textuais validados operacionalmente: `niche_resolution`, `landing_page_generation_profile_proposal` e `commercial_activation_draft_generation`, com modelo `gpt-5.4-mini` e esforço de raciocínio `none`.
-• Workload textual implementado no repositório e ainda não validado no ambiente alvo: `landing_page_draft_generation`, com modelo `gpt-5.6-luna`, esforço `max`, Responses API, Structured Output estrito, `store:false` e timeout de 120 s.
-• Workload de imagem implementado no repositório e ainda não validado no ambiente alvo: `landing_page_draft_image_generation`, com modelo `gpt-image-2`, saída WebP 1536 × 1024, qualidade `medium`, compressão 80, moderação `auto` e timeout de 120 s.
+• Workload textual validado no ambiente alvo: `landing_page_draft_generation`, com modelo `gpt-5.6-luna`, esforço `max`, Responses API, Structured Output estrito, `store:false` e timeout de 120 s.
+• Workload de imagem validado no ambiente alvo: `landing_page_draft_image_generation`, com modelo `gpt-image-2`, saída WebP 1536 × 1024, qualidade `medium`, compressão 80, moderação `auto` e timeout de 120 s.
 • Validação operacional: os três workloads foram executados uma única vez em Production em 10/08/2026; os Runtime Logs confirmaram sucesso e telemetria sanitizada, sem prompt, resposta integral, credencial ou dado pessoal.
-• Pendência operacional: executar canários sem persistência dos dois workloads de draft em Preview e confirmar `maxDuration = 300` efetivo antes da primeira geração real.
+• Validação dos workloads de draft: por decisão humana, o gate de canários isolados sem persistência foi substituído pelo primeiro append integrado; duas execuções integradas hospedadas em 18/08/2026 comprovaram texto, imagem e o caminho oficial sem retry ou fallback.
+• Duração da Function: o segmento produtivo permanece configurado com `maxDuration = 300`; deployment READY e duas execuções integradas completas sem timeout incompatível corroboraram operacionalmente o gate.
 • Variáveis legadas de modelo na Vercel
 • Nomes: `OPENAI_NICHE_RESOLVER_MODEL`, `OPENAI_LANDING_PAGE_GENERATION_PROFILE_MODEL` e `OPENAI_COMMERCIAL_ACTIVATION_MODEL`.
 • Escopo: Production e Preview.
@@ -265,7 +266,7 @@
 
 4.8 Storage privado das revisões de landing page
 • Bucket definido no repositório: `landing-page-revision-assets`.
-• Estado operacional: criação/configuração hospedada pendente do merge humano e do apply oficial da migration E19.4.4.
+• Estado operacional: ativo e configurado no ambiente hospedado pela migration E19.4.4 aplicada; readiness e verificador SQL read-only aprovados em 18/08/2026.
 • Configuração aprovada: privado, limite de 5 MB e MIME permitido somente `image/webp`.
 • Acesso do produto: exclusivamente server-side por service role; nenhuma policy direta para anon ou authenticated.
 • Identidade do asset: bucket e path estáveis; URL assinada temporária somente no consumo autorizado e nunca persistida.
