@@ -2930,7 +2930,7 @@ Repositório — Ajustados
 
 22.1.3 Auditoria e classificação integral de consumidores
 - Objetivo: mapear e classificar consumidores e ativos históricos como preservados, desacoplados ou removíveis, sem retirar qualquer item apenas por estar fora do caminho canônico.
-- Status: Planejada; não implementada.
+- Status: Concluída no planejamento; sem implementação material.
 - Conteúdo:
   - classificar dependências de runtime, superfícies administrativas, validações e persistência antes de qualquer retirada;
   - preservar E18.4, E20.2, E20.5, E20.6, E19.2, E19.3, E19.4, E10.6 e E10.7 enquanto houver consumidor real ou autoridade ativa;
