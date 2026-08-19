@@ -167,7 +167,7 @@ Plano conceitual: `docs/lp-planejamento.md`.
   - navegação Admin sem item morto para `Perfis de orientação`;
   - `/admin/estrutura-lp` somente com visões preservadas, sem abas/cards/links órfãos;
   - Taxonomia e Resoluções de nicho preservam dados e ações vigentes sem badges/CTAs históricos;
-  - `Admin > Workloads OpenAI` sem workload aposentado e com inventário ativo íntegro;
+  - `Admin > Workloads OpenAI` sem workload retirado e com inventário ativo íntegro;
   - evidência hospedada proporcional em desktop e mobile das superfícies materialmente alteradas, sem redesign.
 
 ### 2.6. Tratamento do perfil E20.3 e gates destrutivos
@@ -290,7 +290,7 @@ Plano conceitual: `docs/lp-planejamento.md`.
 
 - Item 4 de `docs/prompt-estrategista.md` concluído: **Opção 1 — Processo atual** escolhida pelo humano.
 - Item 5 concluído: pareceres de Analista, Gestor Estrutural e Gestor de Updates recebidos e consolidados nesta v2; Gestor de Automação não participa porque todas as fases são `Automação: não`.
-- A branch do PR #773 já foi reconciliada com a `main` no commit `c0c09888058ee451e31e77bc3c4cd8d357d784e1` ou posterior, preservando como único delta material o plano E22.1.
+- A branch do PR #773 já foi reconciliada com a `main` no commit `c0c09888058ee451e31e77bc3c4cd8d357d784e1`, preservando como único delta material o plano E22.1.
 - Próximo passo do item 6: reconciliar `docs/roadmap.md` com o Executor no mesmo PR, usando esta v2 como fonte e `docs/prompt-abc.md` + `docs/template-roadmap.md`.
 - Depois da reconciliação do roadmap, solicitar ao humano o merge do PR; não iniciar implementação antes da confirmação do merge da v2.
 
