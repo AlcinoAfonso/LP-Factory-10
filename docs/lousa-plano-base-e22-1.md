@@ -290,7 +290,8 @@ Plano conceitual: `docs/lp-planejamento.md`.
 
 - Item 4 de `docs/prompt-estrategista.md` concluído: **Opção 1 — Processo atual** escolhida pelo humano.
 - Item 5 concluído: pareceres de Analista, Gestor Estrutural e Gestor de Updates recebidos e consolidados nesta v2; Gestor de Automação não participa porque todas as fases são `Automação: não`.
-- Próximo passo do item 6: reconciliar `docs/roadmap.md` com o Executor no mesmo PR, usando esta v2 como fonte e `docs/prompt-abc.md` + `docs/template-roadmap.md`, após reconciliar a branch com a `main` vigente.
+- A branch do PR #773 já foi reconciliada com a `main` no commit `c0c09888058ee451e31e77bc3c4cd8d357d784e1` ou posterior, preservando como único delta material o plano E22.1.
+- Próximo passo do item 6: reconciliar `docs/roadmap.md` com o Executor no mesmo PR, usando esta v2 como fonte e `docs/prompt-abc.md` + `docs/template-roadmap.md`.
 - Depois da reconciliação do roadmap, solicitar ao humano o merge do PR; não iniciar implementação antes da confirmação do merge da v2.
 
 ## 4. Escopo negativo e critérios de parada
