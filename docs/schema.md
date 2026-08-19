@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data da última atualização: 18/08/2026
-• Documento: LP Factory 10 — Schema (DB Contract) v1.0.46
+• Data da última atualização: 19/08/2026
+• Documento: LP Factory 10 — Schema (DB Contract) v1.0.47
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -751,72 +751,6 @@
 1.23.4 Índices
 • `content_artifact_research_sources_research_id_idx`: btree em `research_id`.
 
-1.24 landing_page_generation_profiles
-
-1.24.1 Função
-• Perfil versionado de orientação para geração pertencente a um taxon.
-• Estados permitidos: `draft`, `active` e `archived`; as transições controladas são executadas somente pelas RPCs da seção 3.7.
-• Uma versão `active` é imutável; alterações exigem uma versão `draft`.
-
-1.24.2 Colunas
-• id uuid primary key default gen_random_uuid()
-• owner_taxon_id uuid not null
-• version integer not null
-• status text not null
-• generation_guidance text null
-• created_at timestamptz not null default now()
-• updated_at timestamptz not null default now()
-
-1.24.3 Relacionamentos e constraints
-• `landing_page_generation_profiles_owner_taxon_id_fkey`: owner_taxon_id → business_taxons(id) ON UPDATE CASCADE ON DELETE RESTRICT.
-• `landing_page_generation_profiles_version_chk`: version > 0.
-• `landing_page_generation_profiles_status_chk`: status IN (`draft`, `active`, `archived`).
-• `landing_page_generation_profiles_guidance_chk`: orientação nula ou não vazia após trim quando presente.
-• `landing_page_generation_profiles_owner_version_uidx`: UNIQUE (owner_taxon_id, version).
-• `landing_page_generation_profiles_one_active_owner_idx`: UNIQUE parcial em owner_taxon_id para status `active`.
-
-1.24.4 Segurança e trigger
-• RLS habilitado e nenhuma policy.
-• public, anon e authenticated: sem grants.
-• service_role: SELECT; sem INSERT, UPDATE ou DELETE.
-• ai_readonly: exceção explícita aos default privileges, sem grants quando a role existir.
-• Trigger Hub de tabela: não; as mutações pelas RPCs da seção 3.7 registram auditoria em `audit_logs` por `audit_context_event`.
-• `landing_page_generation_profiles_set_updated_at`: executa `public.tg_set_updated_at()` antes de UPDATE.
-
-1.25 landing_page_generation_profile_items
-
-1.25.1 Função
-• Recomendações ordenadas que integram uma versão do perfil; não possuem versão, status ou lifecycle próprios.
-
-1.25.2 Colunas
-• id uuid primary key default gen_random_uuid()
-• profile_id uuid not null
-• module_key text not null
-• module_version integer not null
-• variant_key text null
-• variant_version integer null
-• priority text not null
-• recommended_order integer not null
-• item_guidance text null
-• created_at timestamptz not null default now()
-• updated_at timestamptz not null default now()
-
-1.25.3 Relacionamentos e constraints
-• `landing_page_generation_profile_items_profile_id_fkey`: profile_id → landing_page_generation_profiles(id) ON UPDATE CASCADE ON DELETE CASCADE.
-• Módulo não vazio, module_version positiva, priority IN (`P1`, `P2`, `P3`) e recommended_order positiva.
-• variant_key e variant_version devem estar ambas presentes ou ambas ausentes; chave não vazia e versão positiva quando presentes.
-• item_guidance, quando presente, não vazio após trim.
-• `landing_page_generation_profile_items_profile_order_uidx`: UNIQUE (profile_id, recommended_order).
-• `landing_page_generation_profile_items_profile_module_uidx`: UNIQUE (profile_id, module_key).
-
-1.25.4 Segurança e trigger
-• RLS habilitado e nenhuma policy.
-• public, anon e authenticated: sem grants.
-• service_role: SELECT; sem INSERT, UPDATE ou DELETE.
-• ai_readonly: exceção explícita aos default privileges, sem grants quando a role existir.
-• Trigger Hub e auditoria: não.
-• `landing_page_generation_profile_items_set_updated_at`: executa `public.tg_set_updated_at()` antes de UPDATE.
-
 1.26 account_landing_page_onboarding_configurations
 1.26.1 Função
 • Agregado versionado e retomável da configuração mínima de onboarding da primeira LP Starter por conta.
@@ -1099,29 +1033,6 @@
 • Estratégias cobertas: alias_exact, alias_normalized, taxon_name_exact, taxon_name_normalized, taxon_slug_normalized, fts, trgm
 • Consumidor previsto: camada server/adapter do app; sem consumo direto pelo client nesta etapa
 • Fora do escopo: writes, IA, fallback final, account_taxonomy, account_niche_resolutions e escolha de template
-
-3.7 Lifecycle administrativo do perfil de orientação
-• As quatro RPCs são `SECURITY DEFINER`, fixam `search_path = public, pg_temp` e concedem `EXECUTE` somente a `authenticated`; `public`, `anon`, `service_role` e `ai_readonly`, quando existir, não possuem `EXECUTE`.
-• Todas exigem `platform_admin`; as tabelas permanecem sem DML direto para papéis de runtime.
-
-3.7.1 save_landing_page_generation_profile_draft(uuid, uuid, timestamptz, text, jsonb, text, uuid, text) → table
-• Cria nova versão `draft` ou atualiza um `draft` existente com concorrência otimista por `updated_at`.
-• Valida o agregado completo, inclusive o par opcional `variant_key`/`variant_version`, e substitui atomicamente os itens do rascunho.
-• Registra `generation_profile_draft_saved`, origem `manual` ou `ai` e somente a correlação autorizada; não registra prompt, pesquisa bruta nem payload integral.
-
-3.7.2 activate_landing_page_generation_profile(uuid, timestamptz) → table
-• Ativa um `draft` com concorrência otimista e arquiva atomicamente a versão `active` anterior do mesmo taxon.
-• Registra `generation_profile_activated` reutilizando, quando disponível, o `request_id` e o `correlation_status` do último salvamento do `draft`; na ausência de correlação salva, registra `correlation_status = unavailable`.
-
-3.7.3 archive_landing_page_generation_profile(uuid, timestamptz) → table
-• Arquiva uma versão `draft` ou `active` com concorrência otimista.
-• Registra `generation_profile_archived`.
-
-3.7.4 get_landing_page_generation_profile_lifecycle_status() → table
-• Retorna readiness administrativo calculado a partir das RPCs, grants, RLS e ausência de policies exigidos pelo lifecycle.
-
-• Migration aplicada: `supabase/migrations/20260728153500_e12_4_3_generation_profile_lifecycle.sql`.
-• Provas pós-apply: `supabase/tests/e12_4_3_generation_profile_lifecycle.test.sql` e `supabase/snippets/e12_4_3_generation_profile_lifecycle_verify.sql`.
 
 4. Triggers 
 

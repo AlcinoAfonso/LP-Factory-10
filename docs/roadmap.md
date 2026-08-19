@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 19/08/2026
-• Versão: v1.5.164
+• Versão: v1.5.165
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2920,16 +2920,18 @@ Repositório — Ajustados
 
 22. E22 — Retirada controlada de ativos históricos
 - Objetivo: reduzir a superfície histórica que não participa do caminho canônico vigente, preservando consumidores reais e preparando a sequência E19.4 concluída → E22.1 → E19.5.
-- Status: Em andamento no primeiro merge candidato da E22.1.4; a E19.4 permanece concluída e a E19.5 permanece pausada até a conclusão da retirada controlada.
+- Status: Em andamento no segundo merge candidato da E22.1.4; o primeiro merge está implantado e aprovado no QA pós-merge, a E19.4 permanece concluída e a E19.5 permanece pausada até a prova pós-apply da retirada física.
 
 22.1 Retirada controlada de ativos históricos
 
 22.1.1 Objetivo e status
 - Objetivo: retirar de forma controlada ativos históricos e seus consumidores somente após classificação de dependências, preservando os boundaries e dados ainda necessários ao caminho ativo.
-- Status: Plano-base v2 consolidado; primeiro merge candidato da E22.1.4 implementado no repositório, com merge, deploy e prova hospedada ainda pendentes. A E19.4 permanece concluída e a E19.5 pausada.
+- Status: Plano-base v2 consolidado; primeiro merge da E22.1.4 implantado e aprovado no QA pós-merge, com segundo merge candidato implementado no repositório e ainda pendente de merge, apply remoto e prova read-only pós-apply. A E19.4 permanece concluída e a E19.5 pausada.
 
 22.1.2 Registros do recorte
 - Repositório:
+  - Criados:
+    - `supabase/migrations/20260819153112_e22_1_4_remove_generation_profile.sql`
   - Ajustados:
     - `app/admin/(protected)/resolucoes-de-nicho/[accountId]/page.tsx`
     - `app/admin/(protected)/taxonomia/`
@@ -2946,6 +2948,12 @@ Repositório — Ajustados
     - `lib/conversion-content/adapters/landingPageGenerationProfileOpenAiAdapter.ts`
     - `lib/conversion-content/adapters/landingPageGenerationProfileRowNormalization.ts`
     - `lib/conversion-content/landing-page/generation-profile/`
+    - `supabase/snippets/e12_4_3_generation_profile_lifecycle_verify.sql`
+    - `supabase/snippets/e20_3_generation_profile_verify.sql`
+    - `supabase/tests/e12_4_3_generation_profile_lifecycle.test.sql`
+    - `supabase/tests/e20_3_generation_profile.test.sql`
+- Referências:
+  - Contrato de banco: `docs/schema.md` — seções 1 e 3.
 
 22.1.3 Auditoria e classificação integral de consumidores
 - Objetivo: mapear e classificar consumidores e ativos históricos como preservados, desacoplados ou removíveis, sem retirar qualquer item apenas por estar fora do caminho canônico.
@@ -2957,12 +2965,13 @@ Repositório — Ajustados
 
 22.1.4 Retirada de E20.3 e E12.4.3 associado
 - Objetivo: retirar o domínio histórico de perfil de geração e suas responsabilidades associadas sem criar persistência ou arquitetura substituta dentro da E22.1.
-- Status: Primeiro merge candidato implementado no repositório; consumidores, superfícies administrativas, workload, exports e validator foram retirados, com gates executáveis aprovados. Merge, deploy e prova hospedada de ausência de consumidores permanecem pendentes; a retirada física do banco não foi iniciada.
+- Status: Primeiro merge implantado e aprovado no QA pós-merge. O gate read-only pré-DDL passou sem drift e o segundo merge candidato está implementado no repositório; merge humano, apply remoto pelo workflow e prova read-only pós-apply permanecem pendentes. Nenhum DDL foi aplicado remotamente neste estágio.
 - Conteúdo:
-  - o primeiro merge retira `generation-profile`, adapters, páginas/actions de `/admin/perfis-de-orientacao`, navegação e diagnósticos associados, o workload `landing_page_generation_profile_proposal`, exports e validator;
-  - `validate:landing-page-generation-profile` e sua chamada em `npm run check` foram retirados no mesmo recorte;
-  - as duas tabelas e quatro RPCs de E20.3 permanecem preservadas temporariamente, sem migration, DDL ou remoção de dados;
-  - o segundo merge permanece proibido até o primeiro estar mergeado, implantado e comprovado sem consumidores necessários; somente então poderá executar o gate read-only pré-DDL e a evolução destrutiva forward-only autorizada.
+  - o primeiro merge retirou `generation-profile`, adapters, páginas/actions de `/admin/perfis-de-orientacao`, navegação e diagnósticos associados, o workload `landing_page_generation_profile_proposal`, exports e validator;
+  - `validate:landing-page-generation-profile` e sua chamada em `npm run check` foram retirados no mesmo recorte, e o QA pós-merge confirmou ausência das superfícies aposentadas;
+  - o gate read-only pré-DDL confirmou o conjunto aprovado de um perfil `active` do taxon `corretor-imoveis`, seus onze itens, duas tabelas, quatro RPCs e ausência de dependências externas inesperadas;
+  - a migration forward-only candidata remove exatamente as quatro RPCs, as duas tabelas e seus objetos próprios, sem `CASCADE`, preservando migrations históricas, `audit_logs`, `taxon_market_research` e `taxon_market_research_items`;
+  - a conclusão da E22.1.4 permanece condicionada ao merge humano, ao apply pelo workflow e à prova read-only pós-apply; não há archive, snapshot, backup paralelo ou persistência substituta.
 
 22.1.5 Retirada de E18.5 e poda dos consumidores administrativos
 - Objetivo: retirar o catálogo histórico de módulos e variantes e podar somente as responsabilidades administrativas que dependem dele.
