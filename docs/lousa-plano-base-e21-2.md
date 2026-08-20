@@ -50,13 +50,28 @@
 
 ### 2.2. Resultado esperado do recorte
 
+- Dar ao humano autorizado uma superfície operacional no Admin Dashboard para consultar e alterar a configuração dos workloads OpenAI aplicáveis.
+- A lista administrativa deve partir do inventário já existente e permitir abrir o detalhe de cada workload, sem tratar o identificador E* como unidade de configuração.
+- Para workloads textuais, permitir alteração humana de `model + reasoning effort`; para workloads de mídia, preservar configuração própria e discutir separadamente quais parâmetros podem ser operacionais.
+- Fazer com que uma configuração ativada passe a ser usada nas execuções seguintes daquele workload no ambiente aplicável, sem commit, PR ou redeploy para uma mudança ordinária.
 - Definir um contrato operacional mínimo no qual cada workload aplicável possua uma configuração ativa inequívoca no ambiente aplicável.
 - Permitir preparar uma candidata sem alterar silenciosamente a configuração ativa.
 - Impedir ativação de candidata que não tenha cumprido os gates aprovados.
 - Exigir ação humana explícita para promoção da candidata.
-- Preservar revisão rastreável suficiente para permitir rollback controlado para configuração previamente validada.
+- Preservar revisão e histórico rastreáveis suficientes para consultar configurações anteriormente ativadas e permitir rollback controlado para revisão previamente validada.
 - Manter a resolução fail-closed e sem fallback silencioso para modelo, effort ou configuração de mídia diferentes.
 - Separar governança operacional de configuração da avaliação comparativa da E21.3.
+
+### 2.3. Definições aceitas no debate
+
+- A E21.2 não é apenas governança documental: ela deve materializar a capacidade operacional de o humano autorizado alterar a configuração de cada workload pelo Admin Dashboard.
+- A alteração deve ocorrer sem necessidade de o humano entrar na Vercel, editar código ou disparar redeploy para mudanças ordinárias previstas pelo contrato da E21.2.
+- O Admin Dashboard é a superfície humana pretendida independentemente da residência técnica escolhida para a configuração.
+- O detalhe do workload poderá concentrar configuração ativa, candidata quando existir, histórico de revisões e ações humanas aplicáveis; o desenho final de UX permanece a fechar antes da v1.
+- Supabase passa a ser a hipótese principal de residência operacional a avaliar, por aderir naturalmente ao ciclo `candidata → validação → ativação → histórico → rollback` e por já integrar a stack base do MVP.
+- Vercel Global Config permanece alternativa real de comparação porque também permite leitura e alteração de configuração em runtime sem redeploy e possui APIs para gestão programática; seu uso não exigiria que o humano operasse diretamente a Vercel se o Admin Dashboard intermediasse a mutação.
+- A preferência atual pelo Supabase ainda não equivale a autorização de banco ou arquitetura fechada: a decisão técnica final deve comparar as duas alternativas dentro dos requisitos do recorte antes da consolidação da v1.
+- O histórico operacional da E21.2 deve registrar mudanças e ativações da configuração; evidências comparativas de qualidade, custo, latência e estabilidade pertencem à E21.3 e podem futuramente ser referenciadas, sem serem produzidas pela E21.2.
 
 ## 3. Decisões ainda abertas para debate
 
@@ -78,7 +93,7 @@
 
 - Confirmar quais ambientes entram na configuração dinâmica operacional: Production, Preview e eventual tratamento de Development.
 - Confirmar que a unidade primária permanece o workload, sem criar default universal de modelo ou effort.
-- Para workloads textuais, decidir se a parte dinâmica fica limitada a `model + reasoning effort` ou inclui outro parâmetro já reconhecido como configuração transversal.
+- Para workloads textuais, a intenção funcional já aceita é permitir alteração de `model + reasoning effort`; permanece aberto se outro parâmetro transversal também precisa ser dinâmico.
 - Para workload de imagem, decidir quais parâmetros atuais de mídia pertencem à configuração operacional dinâmica e quais permanecem contrato determinístico do consumidor.
 - Identificar explicitamente quais propriedades estruturais continuam versionadas em código, como identidade do workload, modalidade/API, consumidor, fallback e contratos funcionais.
 
@@ -96,13 +111,22 @@
 - Definir o comportamento quando a fonte operacional estiver indisponível, inconsistente ou sem configuração válida para `ambiente + workload`.
 - Preservar a proibição de fallback silencioso para outra combinação de modelo, effort ou mídia.
 
-### 3.6. Mudança ordinária sem redeploy
+### 3.6. Mudança ordinária sem redeploy e residência operacional
 
 - Definir conceitualmente quais mudanças contam como ordinárias dentro da E21.2.
 - Separar alteração de parâmetros operacionais do workload de alteração estrutural que ainda deve exigir mudança de código e deployment.
-- O mecanismo técnico capaz de cumprir essa propriedade permanece aberto até o debate fechar requisitos suficientes para comparação factual das opções reais do projeto.
+- Comparar factual e minimamente Supabase e Vercel Global Config para a residência operacional, considerando leitura por ambiente/workload, escrita administrativa, autorização, histórico, candidata, ativação, rollback, atomicidade, custo, dependência adicional, comportamento de falha e simplicidade do MVP.
+- Supabase é a hipótese principal do debate; Vercel Global Config permanece alternativa, e nenhuma das duas está ainda autorizada como mecanismo definitivo.
 
-### 3.7. Possibilidade de automação
+### 3.7. UX administrativa
+
+- Fechar a estrutura mínima da lista existente de workloads e da futura ação `Abrir`.
+- Definir quais dados aparecem no detalhe antes e depois de existir candidata.
+- Definir quais ações são separadas: editar/preparar candidata, validar, ativar e rollback.
+- Definir quais informações históricas pertencem à E21.2 e quais referências futuras da E21.3 podem aparecer sem duplicação.
+- Preservar a superfície server-side e o controle de plataforma já vigentes, sem antecipar rota, action ou componente específico antes da solução técnica.
+
+### 3.8. Possibilidade de automação
 
 - Ainda não há classificação aprovada de automação para a E21.2.
 - Existe hipótese material de automação apenas em partes do fluxo de validação ou aplicação controlada da configuração, mas o roadmap não exige automação e a E21.1 classificou suas fases como não automatizadas.
@@ -114,7 +138,7 @@
 ### 4.1. Escopo negativo preservado
 
 - Não implementar nada durante este debate.
-- Não escolher banco, rota, dashboard mutável, provider de configuração ou nova infraestrutura por conveniência.
+- Não autorizar banco, rota, Server Action, provider de configuração ou nova infraestrutura apenas porque Supabase é a hipótese principal.
 - Não criar job, engine, agente ou automação antecipadamente.
 - Não transformar a E21.2 em laboratório de benchmarking nem absorver comparações decisórias da E21.3.
 - Não reabrir a E19.4; sua revisão 3 permanece baseline real para regressão futura.
@@ -123,7 +147,7 @@
 
 ### 4.2. Próxima etapa
 
-- Debater com o humano as definições conceituais das subseções 3.1 a 3.6.
+- Debater com o humano as definições conceituais ainda abertas nas subseções 3.1 a 3.7.
 - Incorporar somente decisões aceitas ao mesmo rascunho vivo, mantendo questões abertas claramente separadas.
 - Obter participação do Analista no debate antes da consolidação da v1.
 - Consultar o Gestor de Automação antes da v1 se a hipótese de automação permanecer material após o fechamento conceitual.
