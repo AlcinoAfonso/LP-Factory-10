@@ -24,6 +24,7 @@ declare
   v_revision_count bigint;
   v_activation_count bigint;
   v_cross_unit_revision_id uuid;
+  v_invalid_proof_metadata jsonb;
 begin
   if (select count(*) from public.openai_workload_operational_configurations) <> 8
      or (
@@ -162,11 +163,118 @@ begin
   );
 
   begin
+    insert into public.openai_workload_configuration_revisions (
+      environment,
+      workload,
+      modality,
+      revision_number,
+      model,
+      reasoning_effort,
+      quality,
+      validated_by,
+      proof_metadata
+    ) values (
+      v_environment,
+      v_workload,
+      'responses_text',
+      998,
+      'gpt-5.4-mini',
+      'none',
+      null,
+      v_actor_id,
+      '{"schema_version":1,"proof_kind":"operational","proof_result":"approved","source":"openai_api","request_id":null,"provider_request_id":null,"latency_ms":null,"contract_version":null}'::jsonb
+    );
+    raise exception using
+      errcode = 'P2301',
+      message = 'rollback accepted optional-null proof metadata fixture';
+  exception when sqlstate 'P2301' then
+    null;
+  end;
+
+  foreach v_invalid_proof_metadata in array array[
+    '{"schema_version":null,"proof_kind":"operational","proof_result":"approved","source":"openai_api"}'::jsonb,
+    '{"schema_version":1,"proof_kind":null,"proof_result":"approved","source":"openai_api"}'::jsonb,
+    '{"schema_version":1,"proof_kind":"unknown","proof_result":"approved","source":"openai_api"}'::jsonb,
+    '{"schema_version":1,"proof_kind":"operational","proof_result":null,"source":"openai_api"}'::jsonb,
+    '{"schema_version":1,"proof_kind":"operational","proof_result":"rejected","source":"openai_api"}'::jsonb,
+    '{"schema_version":1,"proof_kind":"operational","proof_result":"approved","source":null}'::jsonb,
+    '{"schema_version":"1","proof_kind":"operational","proof_result":"approved","source":"openai_api"}'::jsonb,
+    '{"schema_version":1,"proof_kind":"operational","proof_result":"approved","source":"openai_api","request_id":{}}'::jsonb,
+    '{"schema_version":1,"proof_kind":"operational","proof_result":"approved","source":"openai_api","provider_request_id":{}}'::jsonb,
+    '{"schema_version":1,"proof_kind":"operational","proof_result":"approved","source":"openai_api","request_id":""}'::jsonb,
+    '{"schema_version":1,"proof_kind":"operational","proof_result":"approved","source":"openai_api","request_id":"unsafe request"}'::jsonb,
+    jsonb_build_object(
+      'schema_version', 1,
+      'proof_kind', 'operational',
+      'proof_result', 'approved',
+      'source', 'openai_api',
+      'request_id', repeat('a', 129)
+    ),
+    jsonb_build_object(
+      'schema_version', 1,
+      'proof_kind', 'operational',
+      'proof_result', 'approved',
+      'source', 'openai_api',
+      'provider_request_id', repeat('b', 129)
+    ),
+    '{"schema_version":1,"proof_kind":"operational","proof_result":"approved","source":"openai_api","latency_ms":"1"}'::jsonb,
+    '{"schema_version":1,"proof_kind":"operational","proof_result":"approved","source":"openai_api","latency_ms":-1}'::jsonb,
+    '{"schema_version":1,"proof_kind":"operational","proof_result":"approved","source":"openai_api","latency_ms":1.5}'::jsonb,
+    '{"schema_version":1,"proof_kind":"operational","proof_result":"approved","source":"openai_api","latency_ms":900001}'::jsonb,
+    '{"schema_version":1,"proof_kind":"operational","proof_result":"approved","source":"openai_api","contract_version":"1"}'::jsonb,
+    '{"schema_version":1,"proof_kind":"operational","proof_result":"approved","source":"openai_api","contract_version":0}'::jsonb,
+    '{"schema_version":1,"proof_kind":"operational","proof_result":"approved","source":"openai_api","contract_version":1001}'::jsonb,
+    '{"schema_version":1,"proof_kind":"operational","proof_result":"approved","source":"browser"}'::jsonb
+  ]
+  loop
+    begin
+      insert into public.openai_workload_configuration_revisions (
+        environment,
+        workload,
+        modality,
+        revision_number,
+        model,
+        reasoning_effort,
+        quality,
+        validated_by,
+        proof_metadata
+      ) values (
+        v_environment,
+        v_workload,
+        'responses_text',
+        999,
+        'gpt-5.4-mini',
+        'none',
+        null,
+        v_actor_id,
+        v_invalid_proof_metadata
+      );
+      raise exception 'invalid proof metadata should have failed the table CHECK: %', v_invalid_proof_metadata;
+    exception when check_violation then
+      null;
+    end;
+
+    begin
+      perform 1
+      from public.promote_openai_workload_configuration_candidate_v1(
+        v_environment,
+        v_workload,
+        v_invalid_proof_metadata,
+        v_actor_id,
+        v_version
+      );
+      raise exception 'invalid proof metadata should have failed RPC revalidation: %', v_invalid_proof_metadata;
+    exception when invalid_parameter_value then
+      null;
+    end;
+  end loop;
+
+  begin
     perform 1
     from public.promote_openai_workload_configuration_candidate_v1(
       v_environment,
       v_workload,
-      '{"schema_version":1,"proof_kind":"operational","proof_result":"approved","secret":"forbidden"}'::jsonb,
+      '{"schema_version":1,"proof_kind":"operational","proof_result":"approved","source":"openai_api","secret":"forbidden"}'::jsonb,
       v_actor_id,
       v_version
     );
@@ -191,8 +299,10 @@ begin
       'proof_kind', 'operational',
       'proof_result', 'approved',
       'request_id', 'e21-2-3-sql-test',
+      'provider_request_id', null,
       'latency_ms', 1,
-      'contract_version', 1
+      'contract_version', 1,
+      'source', 'openai_api'
     ),
     v_actor_id,
     v_version
@@ -379,7 +489,7 @@ begin
       'none',
       null,
       v_actor_id,
-      '{"schema_version":1,"proof_kind":"operational","proof_result":"approved"}'::jsonb
+      '{"schema_version":1,"proof_kind":"operational","proof_result":"approved","source":"openai_api"}'::jsonb
     );
     raise exception 'cross-modality revision should have failed';
   exception when check_violation then

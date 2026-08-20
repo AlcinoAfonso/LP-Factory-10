@@ -900,8 +900,13 @@
 • `(environment, workload, revision_number)` é único e `(id, environment, workload)` é chave candidata unit-safe para os ponteiros e eventos.
 • validated_by referencia auth.users(id) com ON UPDATE RESTRICT e ON DELETE RESTRICT.
 • Ambiente, workload, modalidade e shape modelo/parâmetro usam as mesmas allowlists fechadas da unidade operacional.
-• proof_metadata aceita somente metadados seguros allowlisted (`schema_version`, kind/result da prova, IDs técnicos, latência, versão de contrato e source); prompt, resposta, secret, PII, payload de negócio e raciocínio privado não têm coluna ou chave aceita.
-• Revisão bootstrap usa `proof_kind = bootstrap`, source `repo_catalog`, resultado aprovado e validated_by nulo; revisão operacional exige prova aprovada e validated_by não nulo.
+• proof_metadata é objeto JSON fechado às chaves `schema_version`, `proof_kind`, `proof_result`, `request_id`, `provider_request_id`, `latency_ms`, `contract_version` e `source`; chaves adicionais são rejeitadas.
+• `schema_version` é obrigatório, número inteiro JSON e exatamente 1; `proof_kind` é string obrigatória `bootstrap | operational`; `proof_result` é string obrigatória e exatamente `approved`.
+• `request_id` e `provider_request_id` podem estar ausentes ou ser JSON null; quando presentes como valor, são strings de 1 a 128 caracteres no formato técnico `^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$`.
+• `latency_ms` pode estar ausente ou ser JSON null; quando presente como valor, é número inteiro JSON entre 0 e 900000 inclusive.
+• `contract_version` pode estar ausente ou ser JSON null; quando presente como valor, é número inteiro JSON entre 1 e 1000 inclusive.
+• `source` é string obrigatória e vinculada ao kind: `repo_catalog` para `bootstrap` e `openai_api` para `operational`.
+• Revisão bootstrap preserva source `repo_catalog`, resultado aprovado e validated_by nulo; revisão operacional exige source `openai_api`, prova aprovada e validated_by não nulo. Prompt, resposta, secret, PII, payload de negócio e raciocínio privado não têm chave aceita.
 • `openai_workload_configuration_revisions_validated_by_idx`: btree parcial em validated_by quando não nulo.
 
 1.29.3 Segurança e imutabilidade

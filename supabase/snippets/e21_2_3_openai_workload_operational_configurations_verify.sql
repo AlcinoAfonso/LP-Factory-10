@@ -122,6 +122,87 @@ activation_chain as (
     ) as expected_previous_revision_id
   from public.openai_workload_configuration_activations activation
 ),
+proof_metadata_compatibility as (
+  select
+    revision.id,
+    revision.environment,
+    revision.workload,
+    revision.revision_number,
+    coalesce(
+      (
+        jsonb_typeof(revision.proof_metadata) = 'object'
+        and revision.proof_metadata ?& array[
+          'schema_version',
+          'proof_kind',
+          'proof_result',
+          'source'
+        ]
+        and jsonb_typeof(revision.proof_metadata -> 'schema_version') = 'number'
+        and revision.proof_metadata ->> 'schema_version' = '1'
+        and jsonb_typeof(revision.proof_metadata -> 'proof_kind') = 'string'
+        and revision.proof_metadata ->> 'proof_kind' in ('bootstrap', 'operational')
+        and jsonb_typeof(revision.proof_metadata -> 'proof_result') = 'string'
+        and revision.proof_metadata ->> 'proof_result' = 'approved'
+        and jsonb_typeof(revision.proof_metadata -> 'source') = 'string'
+        and (
+          (
+            revision.proof_metadata ->> 'proof_kind' = 'bootstrap'
+            and revision.proof_metadata ->> 'source' = 'repo_catalog'
+          )
+          or (
+            revision.proof_metadata ->> 'proof_kind' = 'operational'
+            and revision.proof_metadata ->> 'source' = 'openai_api'
+          )
+        )
+        and case
+          when not (revision.proof_metadata ? 'request_id')
+            or revision.proof_metadata -> 'request_id' = 'null'::jsonb then true
+          when jsonb_typeof(revision.proof_metadata -> 'request_id') = 'string' then
+            char_length(revision.proof_metadata ->> 'request_id') between 1 and 128
+            and revision.proof_metadata ->> 'request_id'
+              ~ '^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$'
+          else false
+        end
+        and case
+          when not (revision.proof_metadata ? 'provider_request_id')
+            or revision.proof_metadata -> 'provider_request_id' = 'null'::jsonb then true
+          when jsonb_typeof(revision.proof_metadata -> 'provider_request_id') = 'string' then
+            char_length(revision.proof_metadata ->> 'provider_request_id') between 1 and 128
+            and revision.proof_metadata ->> 'provider_request_id'
+              ~ '^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$'
+          else false
+        end
+        and case
+          when not (revision.proof_metadata ? 'latency_ms')
+            or revision.proof_metadata -> 'latency_ms' = 'null'::jsonb then true
+          when jsonb_typeof(revision.proof_metadata -> 'latency_ms') = 'number'
+            and revision.proof_metadata ->> 'latency_ms' ~ '^(0|[1-9][0-9]*)$' then
+            (revision.proof_metadata ->> 'latency_ms')::numeric <= 900000
+          else false
+        end
+        and case
+          when not (revision.proof_metadata ? 'contract_version')
+            or revision.proof_metadata -> 'contract_version' = 'null'::jsonb then true
+          when jsonb_typeof(revision.proof_metadata -> 'contract_version') = 'number'
+            and revision.proof_metadata ->> 'contract_version' ~ '^[1-9][0-9]*$' then
+            (revision.proof_metadata ->> 'contract_version')::numeric <= 1000
+          else false
+        end
+        and revision.proof_metadata - array[
+          'schema_version',
+          'proof_kind',
+          'proof_result',
+          'request_id',
+          'provider_request_id',
+          'latency_ms',
+          'contract_version',
+          'source'
+        ] = '{}'::jsonb
+      ),
+      false
+    ) as compatible
+  from public.openai_workload_configuration_revisions revision
+),
 checks as (
   select
     'bootstrap_baselines'::text as check_name,
@@ -173,6 +254,30 @@ checks as (
     and activation.previous_revision_id is null
     and activation.target_revision_id = revision.id
     and activation.actor_user_id is null
+
+  union all
+
+  select
+    'proof_metadata_contract',
+    case when count(*) filter (where not metadata.compatible) = 0
+      then 'ok' else 'invalid' end,
+    jsonb_build_object(
+      'revision_rows', count(*),
+      'incompatible_rows', count(*) filter (where not metadata.compatible),
+      'incompatible_revisions', coalesce(
+        jsonb_agg(
+          jsonb_build_object(
+            'id', metadata.id,
+            'environment', metadata.environment,
+            'workload', metadata.workload,
+            'revision_number', metadata.revision_number
+          )
+          order by metadata.environment, metadata.workload, metadata.revision_number
+        ) filter (where not metadata.compatible),
+        '[]'::jsonb
+      )
+    )
+  from proof_metadata_compatibility metadata
 
   union all
 

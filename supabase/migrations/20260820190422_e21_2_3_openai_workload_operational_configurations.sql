@@ -74,20 +74,79 @@ create table public.openai_workload_configuration_revisions (
     ),
   constraint openai_workload_configuration_revisions_proof_metadata_chk
     check (
-      jsonb_typeof(proof_metadata) = 'object'
-      and proof_metadata @> '{"schema_version":1,"proof_result":"approved"}'::jsonb
-      and proof_metadata ? 'proof_kind'
-      and proof_metadata ->> 'proof_kind' in ('bootstrap', 'operational')
-      and proof_metadata - array[
-        'schema_version',
-        'proof_kind',
-        'proof_result',
-        'request_id',
-        'provider_request_id',
-        'latency_ms',
-        'contract_version',
-        'source'
-      ] = '{}'::jsonb
+      coalesce(
+        (
+          jsonb_typeof(proof_metadata) = 'object'
+          and proof_metadata ?& array[
+            'schema_version',
+            'proof_kind',
+            'proof_result',
+            'source'
+          ]
+          and jsonb_typeof(proof_metadata -> 'schema_version') = 'number'
+          and proof_metadata ->> 'schema_version' = '1'
+          and jsonb_typeof(proof_metadata -> 'proof_kind') = 'string'
+          and proof_metadata ->> 'proof_kind' in ('bootstrap', 'operational')
+          and jsonb_typeof(proof_metadata -> 'proof_result') = 'string'
+          and proof_metadata ->> 'proof_result' = 'approved'
+          and jsonb_typeof(proof_metadata -> 'source') = 'string'
+          and (
+            (
+              proof_metadata ->> 'proof_kind' = 'bootstrap'
+              and proof_metadata ->> 'source' = 'repo_catalog'
+            )
+            or (
+              proof_metadata ->> 'proof_kind' = 'operational'
+              and proof_metadata ->> 'source' = 'openai_api'
+            )
+          )
+          and case
+            when not (proof_metadata ? 'request_id')
+              or proof_metadata -> 'request_id' = 'null'::jsonb then true
+            when jsonb_typeof(proof_metadata -> 'request_id') = 'string' then
+              char_length(proof_metadata ->> 'request_id') between 1 and 128
+              and proof_metadata ->> 'request_id'
+                ~ '^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$'
+            else false
+          end
+          and case
+            when not (proof_metadata ? 'provider_request_id')
+              or proof_metadata -> 'provider_request_id' = 'null'::jsonb then true
+            when jsonb_typeof(proof_metadata -> 'provider_request_id') = 'string' then
+              char_length(proof_metadata ->> 'provider_request_id') between 1 and 128
+              and proof_metadata ->> 'provider_request_id'
+                ~ '^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$'
+            else false
+          end
+          and case
+            when not (proof_metadata ? 'latency_ms')
+              or proof_metadata -> 'latency_ms' = 'null'::jsonb then true
+            when jsonb_typeof(proof_metadata -> 'latency_ms') = 'number'
+              and proof_metadata ->> 'latency_ms' ~ '^(0|[1-9][0-9]*)$' then
+              (proof_metadata ->> 'latency_ms')::numeric <= 900000
+            else false
+          end
+          and case
+            when not (proof_metadata ? 'contract_version')
+              or proof_metadata -> 'contract_version' = 'null'::jsonb then true
+            when jsonb_typeof(proof_metadata -> 'contract_version') = 'number'
+              and proof_metadata ->> 'contract_version' ~ '^[1-9][0-9]*$' then
+              (proof_metadata ->> 'contract_version')::numeric <= 1000
+            else false
+          end
+          and proof_metadata - array[
+            'schema_version',
+            'proof_kind',
+            'proof_result',
+            'request_id',
+            'provider_request_id',
+            'latency_ms',
+            'contract_version',
+            'source'
+          ] = '{}'::jsonb
+        ),
+        false
+      )
     ),
   constraint openai_workload_configuration_revisions_validator_chk
     check (
@@ -687,18 +746,70 @@ begin
     raise exception using errcode = '55000', message = 'candidate_not_promotable';
   end if;
 
-  if jsonb_typeof(p_proof_metadata) <> 'object'
-     or not p_proof_metadata @> '{"schema_version":1,"proof_kind":"operational","proof_result":"approved"}'::jsonb
-     or p_proof_metadata - array[
-       'schema_version',
-       'proof_kind',
-       'proof_result',
-       'request_id',
-       'provider_request_id',
-       'latency_ms',
-       'contract_version',
-       'source'
-     ] <> '{}'::jsonb then
+  if not coalesce(
+    (
+      jsonb_typeof(p_proof_metadata) = 'object'
+      and p_proof_metadata ?& array[
+        'schema_version',
+        'proof_kind',
+        'proof_result',
+        'source'
+      ]
+      and jsonb_typeof(p_proof_metadata -> 'schema_version') = 'number'
+      and p_proof_metadata ->> 'schema_version' = '1'
+      and jsonb_typeof(p_proof_metadata -> 'proof_kind') = 'string'
+      and p_proof_metadata ->> 'proof_kind' = 'operational'
+      and jsonb_typeof(p_proof_metadata -> 'proof_result') = 'string'
+      and p_proof_metadata ->> 'proof_result' = 'approved'
+      and jsonb_typeof(p_proof_metadata -> 'source') = 'string'
+      and p_proof_metadata ->> 'source' = 'openai_api'
+      and case
+        when not (p_proof_metadata ? 'request_id')
+          or p_proof_metadata -> 'request_id' = 'null'::jsonb then true
+        when jsonb_typeof(p_proof_metadata -> 'request_id') = 'string' then
+          char_length(p_proof_metadata ->> 'request_id') between 1 and 128
+          and p_proof_metadata ->> 'request_id'
+            ~ '^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$'
+        else false
+      end
+      and case
+        when not (p_proof_metadata ? 'provider_request_id')
+          or p_proof_metadata -> 'provider_request_id' = 'null'::jsonb then true
+        when jsonb_typeof(p_proof_metadata -> 'provider_request_id') = 'string' then
+          char_length(p_proof_metadata ->> 'provider_request_id') between 1 and 128
+          and p_proof_metadata ->> 'provider_request_id'
+            ~ '^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$'
+        else false
+      end
+      and case
+        when not (p_proof_metadata ? 'latency_ms')
+          or p_proof_metadata -> 'latency_ms' = 'null'::jsonb then true
+        when jsonb_typeof(p_proof_metadata -> 'latency_ms') = 'number'
+          and p_proof_metadata ->> 'latency_ms' ~ '^(0|[1-9][0-9]*)$' then
+          (p_proof_metadata ->> 'latency_ms')::numeric <= 900000
+        else false
+      end
+      and case
+        when not (p_proof_metadata ? 'contract_version')
+          or p_proof_metadata -> 'contract_version' = 'null'::jsonb then true
+        when jsonb_typeof(p_proof_metadata -> 'contract_version') = 'number'
+          and p_proof_metadata ->> 'contract_version' ~ '^[1-9][0-9]*$' then
+          (p_proof_metadata ->> 'contract_version')::numeric <= 1000
+        else false
+      end
+      and p_proof_metadata - array[
+        'schema_version',
+        'proof_kind',
+        'proof_result',
+        'request_id',
+        'provider_request_id',
+        'latency_ms',
+        'contract_version',
+        'source'
+      ] = '{}'::jsonb
+    ),
+    false
+  ) then
     raise exception using errcode = '22023', message = 'proof_metadata_not_allowed';
   end if;
 

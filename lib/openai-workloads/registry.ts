@@ -5,6 +5,7 @@ import type {
   OpenAiReasoningEffort,
   OpenAiWorkloadDefinition,
   OpenAiWorkloadId,
+  ResolvedOpenAiImageWorkload,
   ResolvedOpenAiProductWorkload,
 } from "./contracts";
 
@@ -158,6 +159,39 @@ export function isValidResolvedOpenAiProductWorkload(
     actual.effectiveConfigurationVerified === true &&
     validOrigin &&
     isAllowedOpenAiTextConfiguration(workload, actual)
+  );
+}
+
+export function isValidResolvedOpenAiImageWorkload(
+  actual: ResolvedOpenAiImageWorkload,
+) {
+  const workload = (
+    openAiWorkloadRegistry as readonly OpenAiWorkloadDefinition[]
+  ).find((candidate) => candidate.id === actual.id);
+
+  if (!workload || !isImageDefinition(workload)) return false;
+
+  const validOrigin =
+    (actual.source === "repo_catalog" &&
+      actual.revision === workload.configuration.revision) ||
+    (actual.source === "supabase_operational" &&
+      /^[1-9]\d*$/.test(actual.revision));
+
+  return (
+    actual.displayName === workload.displayName &&
+    actual.classification === workload.classification &&
+    actual.configurationKind === workload.configurationKind &&
+    actual.apiKind === workload.configuration.apiKind &&
+    actual.consumer === workload.consumer &&
+    actual.fallback === workload.fallback &&
+    actual.size === workload.configuration.size &&
+    actual.format === workload.configuration.format &&
+    actual.compression === workload.configuration.compression &&
+    actual.moderation === workload.configuration.moderation &&
+    actual.reasoningEffort === "not_applicable" &&
+    actual.effectiveConfigurationVerified === true &&
+    validOrigin &&
+    isAllowedOpenAiImageConfiguration(workload, actual)
   );
 }
 
