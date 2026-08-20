@@ -192,7 +192,7 @@
 - A E19.2 permanece intacta como bootstrap da primeira jornada, sem rebind.
 - A primeira E19.5 requer persistência tenant-safe suficiente para preservar a configuração contextual de múltiplas LPs sem duplicar definições do E20.2; o shape físico pertence à v2.
 - `account/business` não devem ser copiados por LP apenas para facilitar a UI quando já houver fonte canônica compartilhada.
-- Fields de `offer` não criam por si só catálogo ou entidade de ofertas; a v2 escolhe a menor residência necessária para reutilização/confirmacão sem inventar gestão avançada.
+- Fields de `offer` não criam por si só catálogo ou entidade de ofertas; a v2 escolhe a menor residência necessária para reutilização/confirmação sem inventar gestão avançada.
 - `campaign/landing_page` e `landing_page_objective` precisam permanecer associados à LP concreta para gerações futuras.
 - Não criar status persistido de UX quando o estado puder ser derivado.
 
@@ -408,10 +408,10 @@
 ### 3.2. Próxima ação
 
 - O debate indispensável da v1 está encerrado.
-- Antes de enviar aos especialistas, confirmar o checklist final do item 3 de `docs/prompt-estrategista.md`.
-- Depois, apresentar ao humano as duas opções do item 4 de `docs/prompt-estrategista.md`: processo atual ou processo automatizado.
-- No processo atual, o roadmap será reconciliado pelo Executor conforme `docs/prompt-abc.md` e `docs/template-roadmap.md` usando esta v1 como fonte.
-- No processo automatizado, a skill de orquestração executará os gates e a evolução posterior somente após o merge autorizado desta v1.
+- O checklist final do item 3 de `docs/prompt-estrategista.md` está atendido: quatro seções canônicas, Plano conceitual `N/A`, fase executável, Automação: não, limites e critérios de parada explícitos.
+- Seguir para o item 4 de `docs/prompt-estrategista.md`: escolha humana entre processo atual e processo automatizado.
+- No processo atual, seguir aos especialistas do item 5; a reconciliação do roadmap ocorre posteriormente com o Executor conforme o fluxo vigente.
+- No processo automatizado, após autorização humana explícita, realizar exclusivamente o merge remoto desta v1 e então entregar ao orquestrador a instrução prevista no item 4.
 
 ## 4. Escopo negativo e critérios de parada
 
