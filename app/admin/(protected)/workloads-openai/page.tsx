@@ -1,5 +1,7 @@
+import { redirect } from "next/navigation";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminStatusBadge } from "@/components/admin/AdminStatusBadge";
+import { requirePlatformAdmin } from "@/lib/access/guards";
 import {
   listOpenAiWorkloadConfigurationOptions,
   listOpenAiWorkloadInventory,
@@ -27,6 +29,16 @@ const sourceLabels = {
 } as const;
 
 export default async function OpenAiWorkloadsPage() {
+  const gate = await requirePlatformAdmin();
+
+  if (!gate.allowed) {
+    if (gate.redirect === "/auth/login") {
+      redirect("/auth/login?next=%2Fadmin%2Fworkloads-openai");
+    }
+
+    redirect(gate.redirect);
+  }
+
   const inventory = listOpenAiWorkloadInventory();
   const configurationOptions = listOpenAiWorkloadConfigurationOptions();
   const readResult = await readConfigurationsSafely();

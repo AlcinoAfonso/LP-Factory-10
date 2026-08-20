@@ -8,6 +8,14 @@ const manager = readFileSync(
 );
 const ui = `${page}\n${manager}`;
 
+assert.match(page, /const gate = await requirePlatformAdmin\(\)/);
+assert.match(page, /redirect\("\/auth\/login\?next=%2Fadmin%2Fworkloads-openai"\)/);
+assert.equal(
+  page.indexOf("await requirePlatformAdmin()") <
+    page.indexOf("await readConfigurationsSafely()"),
+  true,
+  "the page must reauthorize platform_admin before the service-role read model",
+);
 assert.match(page, /readOpenAiAdministrativeConfigurations/);
 assert.match(page, /listOpenAiWorkloadConfigurationOptions/);
 assert.match(page, /listOpenAiWorkloadInventory/);
