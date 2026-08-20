@@ -205,7 +205,7 @@
 • Aplicação mínima real:
 • Auth: login, sign up, forgot password, update password.
 • Onboarding: `pending_setup`.
-• Docs: `docs/design-system.md` atualizado com componentes padronizados desta fase, API mínima, regras de uso e superfícies cobertas.
+• Docs: `docs/design-system.md` atualizado com componentes padronizados desta fase, API mínima, regras de uso, superfícies cobertas e itens fora do escopo.
 • ARTEFATOS_REPO:
 • Criados:
 • `components/ui/form-field.tsx`
@@ -751,8 +751,20 @@
 10.5.2 Base do BD do E10.5
 • Status: Concluído (26/04/2026)
 • Escopo final:
-• criação da base estrutural admin/interna de taxonomia, templates e guides, com migration `0006__e10_5_2_taxonomy_content_base.sql`.
-• 10.5.3 adicionado como planejado para popular a base inicial de taxons, aliases, templates e vínculos.
+• criação da base estrutural do E10.5 no BD
+• ajuste estrutural de `taxon_market_research`
+• ajuste estrutural de `taxon_market_research_items`
+• Estado final:
+• `taxon_market_research`: `id`, `taxon_id`, `research_block`, `audience_scope`, `version`, `status`, `created_at`, `updated_at`
+• unicidade por (`taxon_id`, `research_block`, `audience_scope`, `version`) e no máximo 1 versão `active` por (`taxon_id`, `research_block`, `audience_scope`)
+• `taxon_market_research_items`: `id`, `research_id`, `item_key`, `item_text`, `priority`, `sort_order`, `is_active`, `notes`, `created_at`, `updated_at`
+• `taxon_market_research_items`: herda `audience_scope` por `research_id`; sem UNIQUE extra nesta etapa; `sort_order` como `NOT NULL DEFAULT 999`
+• `taxon_message_guides`: base de guides por contexto vinculada à pesquisa-pai
+• ARTEFATOS_REPO:
+• Criados:
+• `supabase/migrations/0006__e10_5_2_taxonomy_content_base.sql`
+• `supabase/migrations/0007__e10_5_2_1_group_c_research_adjust.sql`
+• `supabase/migrations/0008__e10_5_2_1_research_audience_scope_parent.sql`
 
 10.5.3 Kit operacional de expansão do Grupo A
 • Status: Concluído (exec) (15/04/2026)
