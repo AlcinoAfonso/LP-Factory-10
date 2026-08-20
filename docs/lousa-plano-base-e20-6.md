@@ -2,7 +2,7 @@
 
 - Data: 15/08/2026.
 - Versão: v2 da E20.6.5 consolidada em 20/08/2026 sobre a v1 imutável do PR #764 e aprovada pelo Analista após Passagens 1 e 2, revisões delta e ABC do roadmap.
-- Status: E20.6.3 e E20.6.4 concluídas e operacionais; E20.6.5 planejada em dois checkpoints, sem integração OpenAI iniciada.
+- Status: E20.6.3 e E20.6.4 concluídas e operacionais; checkpoint pré-integração da E20.6.5 implementado e validado, sem integração OpenAI iniciada.
 - Recorte previsto para roadmap: `20.6 — Avaliação de suficiência factual da E20.2 por taxon`.
 - Path canônico: `docs/lousa-plano-base-e20-6.md`.
 - Processo: skill `lp-factory-orquestrar-plano` e contrato `docs/orquestracao-plano-base.md` vigentes em 20/08/2026.
@@ -476,7 +476,7 @@ Execute a avaliação E20.6 do taxon `[taxon_slug]`, usando a cadeia taxonômica
 
 ### 3.3. E20.6.5 — Avaliação factual com IA no runtime do Admin
 
-- Status: plano-base v2 aprovado; implementação do checkpoint pré-integração pendente.
+- Status: plano-base v2 aprovado; checkpoint pré-integração implementado e validado, integração final pendente.
 - Automação: sim.
 - Categoria: `2.1.3 — Automação com IA em fluxo controlado`.
 - Objetivo: internalizar no Admin a avaliação semântica da E20.6, incluindo descoberta sistemática e diálogo sobre hipóteses humanas, mantendo autoridade humana e gate determinístico.
@@ -517,7 +517,7 @@ Execute a avaliação E20.6 do taxon `[taxon_slug]`, usando a cadeia taxonômica
   - integrar chamada real, observabilidade e remoção do handoff somente depois dos dois gates; o PR técnico final E20.6.5 deve ser o último dos três a mergear.
 - Artefatos finais posteriores: remover o caminho ativo Admin → Codex; atualizar `docs/automations.md`, `docs/base-tecnica.md` e `docs/platform-config.md` somente quando o runtime real estiver comprovado; fechar `docs/roadmap.md` somente após merge técnico final.
 - Avaliação formal de Automação na v2: concluída; classificação aprovada. A Passagem 1 do Analista resolveu que a identidade permanece code-owned e que o checkpoint pré-integração é executável sem escolha técnica adicional.
-- Próxima ação: executar somente o checkpoint pré-integração OpenAI aprovado.
+- Próxima ação: aguardar o merge técnico da E21.2; depois atualizar a branch e auditar a API pública comum antes de qualquer integração real.
 
 ## 4. Escopo negativo e critérios de parada
 

@@ -11,6 +11,8 @@
 - E20.6.5 v2 aprovada após revisões delta: commit `c6ee306aa0f371797e18c10963d5c816bf0bdbf0`, blob `0ceb41d97f63507d776129262d477824e74dfb27`; correções obrigatórias remanescentes: N/A.
 - Snapshot do roadmap para a evolução E20.6.5: blob `e896c907fc0ff5a566d08aeb46b881ae011f01e1`.
 - Roadmap E20.6.5 reconciliado por ABC e aprovado pelo Analista: commit `3905517e730b489b0cdc1eeb9bcb0b6e4d8b0768`, blob `1ba1008216915c46dd6c5e63f02e6f6aa3d1b0f2`.
+- Checkpoint pré-integração E20.6.5: commit `0df225c`; domínio, schema, contexto, coordenador injetável, UI route-local não montada e fakes implementados sem provider real ou alteração em `lib/openai-workloads/`.
+- ABCs do checkpoint: `docs/roadmap.md` com delta; `docs/base-tecnica.md`, `docs/design-system.md`, `docs/automations.md`, `docs/platform-config.md` e `docs/schema.md` com `SEM ALTERAÇÕES NECESSÁRIAS`.
 - Regra: oportunidades condicionais não autorizam implementação neste recorte.
 
 | Especialista | ID | Achado fiel | Classificação original | Relação com o escopo | Tratamento | Destino do update | Localização na v2 | Evidência ou justificativa |

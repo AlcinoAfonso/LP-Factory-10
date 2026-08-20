@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 20/08/2026
-• Versão: v1.5.170
+• Versão: v1.5.171
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2583,7 +2583,7 @@ Repositório — Ajustados
 20.6.1 Objetivo e status
 
 * Objetivo: avaliar a suficiência factual da pesquisa integral `end_customer` selecionada pela E20.5 em conjunto com uma versão executável explícita do catálogo E20.2 e definir o predicado final de preparação do taxon, sem autorizar geração.
-* Status: E20.6.3 e E20.6.4 concluídas e operacionais desde 15/08/2026; E20.6.5 definida em plano-base v2, com avanço paralelo autorizado somente até o checkpoint pré-integração OpenAI.
+* Status: E20.6.3 e E20.6.4 concluídas e operacionais desde 15/08/2026; checkpoint pré-integração da E20.6.5 implementado e validado, com integração real ainda pendente dos gates E21.2 e E19.5.
 
 20.6.2 Registros do recorte
 
@@ -2592,10 +2592,13 @@ Repositório — Ajustados
     * `public.business_taxons`.
 * Repositório:
   * Criados:
+    * `app/admin/(protected)/taxonomia/[taxonId]/_components/AdminTaxonInputCatalogEvaluation.tsx`;
     * `app/admin/(protected)/taxonomia/[taxonId]/_components/AdminTaxonInputCatalogReview.tsx`;
     * `lib/admin/adapters/adminTaxonomyReviewPolicy.ts`;
     * `lib/conversion-content/landing-page/input-catalog/taxon-chain.ts`;
     * `lib/conversion-content/landing-page/taxon-preparation/input-catalog-review.ts`;
+    * `lib/conversion-content/landing-page/taxon-preparation/input-catalog-evaluation-schema.ts`;
+    * `lib/conversion-content/landing-page/taxon-preparation/input-catalog-evaluation.ts`;
     * `lib/conversion-content/landing-page/taxon-preparation/preparation.ts`;
     * `supabase/migrations/20260815172449_e20_6_reviewed_input_catalog_version.sql`;
     * `supabase/snippets/e20_6_reviewed_input_catalog_version_verify.sql`.
@@ -2615,6 +2618,11 @@ Repositório — Ajustados
     * `lib/conversion-content/landing-page/taxon-preparation/contracts.ts`;
     * `lib/conversion-content/landing-page/taxon-preparation/index.ts`;
     * `lib/conversion-content/landing-page/taxon-preparation/validation-cases.ts`.
+* Updates:
+  * Aplicados:
+    * `prod#14`;
+    * `prod#16`;
+    * `prod#17`.
 * Referências:
   * Plano-base E20.6: `docs/lousa-plano-base-e20-6.md` — seções 2 e 3.
   * Contrato de banco: `docs/schema.md` — seção 1.11.
@@ -2645,10 +2653,10 @@ Repositório — Ajustados
 
 20.6.5 Avaliação factual com IA no runtime do Admin
 
-* Status: Plano-base v2 aprovado em 20/08/2026; checkpoint pré-integração autorizado, integração final pendente dos merges técnicos E21.2 e E19.5.
+* Status: Checkpoint pré-integração implementado e validado em 20/08/2026; integração final pendente dos merges técnicos E21.2 e E19.5.
 * Conteúdo:
   * internalizar na Taxonomia administrativa existente a avaliação semântica não autoritativa nos modos sistemático e hipótese humana, preservando a decisão administrativa explícita, a revalidação determinística e o gate E20.6.4 sem IA;
-  * no checkpoint pré-integração, implementar somente domínio e contratos, identidade e reconstrução/revalidação do contexto, Structured Output estrito, UI route-local apresentacional e testes com portas e fakes injetados, sem alterar `lib/openai-workloads/`, criar configuração repo-only, chamar provider real ou declarar a E20.6.5 completa;
+  * o checkpoint pré-integração materializou domínio e contratos, identidade e reconstrução/revalidação do contexto, Structured Output estrito, UI route-local apresentacional não montada e testes com portas e fakes injetados, sem alterar `lib/openai-workloads/`, criar configuração repo-only, chamar provider real ou declarar a E20.6.5 completa;
   * após o merge técnico da E21.2, atualizar a branch, registrar a identidade code-owned no boundary comum e resolver os parâmetros operacionais exclusivamente pelo lifecycle dinâmico Supabase e sua API pública, sem consulta direta, configuração paralela ou transporte exclusivo da E20.6.5;
   * após o merge técnico da E19.5, atualizar novamente e usar exatamente a versão E20.2 executável explícita então consolidada em todo o fluxo, sem `latest`, maior versão ou fallback;
   * integrar o provider real, montar a UI autenticada e remover o handoff Admin → Codex somente depois dos dois gates, mantendo falha fechada e fazendo do PR técnico final E20.6.5 o último dos três a ser mergeado.
