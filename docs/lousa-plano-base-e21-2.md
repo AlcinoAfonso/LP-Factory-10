@@ -68,26 +68,30 @@
 - A alteração deve ocorrer sem necessidade de o humano entrar na Vercel, editar código ou disparar redeploy para mudanças ordinárias previstas pelo contrato da E21.2.
 - O Admin Dashboard é a superfície humana pretendida independentemente da residência técnica escolhida para a configuração.
 - O detalhe do workload poderá concentrar configuração ativa, candidata quando existir, histórico de revisões e ações humanas aplicáveis; o desenho final de UX permanece a fechar antes da v1.
-- Supabase passa a ser a hipótese principal de residência operacional a avaliar, por aderir naturalmente ao ciclo `candidata → validação → ativação → histórico → rollback` e por já integrar a stack base do MVP.
-- Vercel Global Config permanece alternativa real de comparação porque também permite leitura e alteração de configuração em runtime sem redeploy e possui APIs para gestão programática; seu uso não exigiria que o humano operasse diretamente a Vercel se o Admin Dashboard intermediasse a mutação.
+- A unidade operacional deve possuir exatamente uma configuração ativa por `ambiente + workload`.
+- No MVP, pode existir no máximo uma candidata em preparação por `ambiente + workload`.
+- Somente `platform_admin` pode criar candidata, ativar configuração e executar rollback; Estrategista, Analista, Gestores e futura E21.3 podem produzir recomendações ou evidências, mas não alterar automaticamente a configuração ativa.
+- Toda candidata precisa cumprir validações determinísticas obrigatórias e também uma prova operacional adequada ao workload antes de ficar apta à ativação.
+- A prova operacional não é benchmark universal e não absorve comparação de qualidade, custo, latência ou estabilidade entre alternativas; essas comparações pertencem à E21.3.
+- Supabase é a hipótese principal de residência operacional a avaliar, por aderir naturalmente ao ciclo `candidata → validação → ativação → histórico → rollback` e por já integrar a stack base do MVP.
+- Vercel Global Config permanece alternativa técnica real de comparação porque também permite leitura e alteração de configuração em runtime sem redeploy e possui APIs para gestão programática; seu uso não exigiria que o humano operasse diretamente a Vercel se o Admin Dashboard intermediasse a mutação.
 - A preferência atual pelo Supabase ainda não equivale a autorização de banco ou arquitetura fechada: a decisão técnica final deve comparar as duas alternativas dentro dos requisitos do recorte antes da consolidação da v1.
 - O histórico operacional da E21.2 deve registrar mudanças e ativações da configuração; evidências comparativas de qualidade, custo, latência e estabilidade pertencem à E21.3 e podem futuramente ser referenciadas, sem serem produzidas pela E21.2.
 
 ## 3. Decisões ainda abertas para debate
 
-### 3.1. Significado de configuração ativa e candidata
+### 3.1. Lifecycle da candidata e revisão
 
-- Fechar se `ativa` significa exatamente uma revisão autoritativa por `ambiente + workload` ou se existe outra semântica necessária.
-- Fechar se pode existir apenas uma candidata em preparação por `ambiente + workload` ou mais de uma candidata simultânea.
-- Fechar em que momento uma candidata recebe identidade/revisão estável e quando passa a ser considerada validada.
+- Fechar em que momento uma candidata recebe identidade/revisão estável.
+- Fechar quais estados mínimos são necessários entre preparação, validação e ativação, sem criar lifecycle maior que o necessário ao MVP.
+- Fechar como uma candidata reprovada ou abandonada permanece rastreável sem concorrer com a única candidata em preparação permitida.
 
-### 3.2. Atores e autoridade
+### 3.2. Atores e validação
 
-- Definir quem pode propor uma candidata.
-- Definir quem pode registrar ou executar sua validação.
-- Definir quem pode ativar e executar rollback.
-- Distinguir recomendação produzida por Estrategista, Analista, Gestor ou futura E21.3 da autoridade operacional para alterar a configuração ativa.
-- Preservar que owner/admin de conta não recebe automaticamente autoridade de plataforma sobre workloads OpenAI.
+- A autoridade de mutação está fechada em `platform_admin` para criação de candidata, ativação e rollback.
+- Permanece aberto como a validação determinística e a prova operacional são executadas e registradas, inclusive se alguma etapa pode ser automatizada após parecer do Gestor de Automação.
+- Preservar que recomendações de Estrategista, Analista, Gestores ou futura E21.3 não equivalem a autoridade operacional para alterar a configuração ativa.
+- Preservar que owner/admin de conta não recebe autoridade de plataforma sobre workloads OpenAI.
 
 ### 3.3. Granularidade da configuração
 
@@ -99,14 +103,15 @@
 
 ### 3.4. Validação obrigatória antes da ativação
 
-- Definir quais gates são puramente determinísticos e obrigatórios para qualquer candidata.
-- Definir se toda candidata também exige prova operacional do workload antes da ativação e qual evidência mínima é suficiente.
-- Evitar transformar o gate de validade em benchmark: comparação de qualidade, custo, latência e estabilidade entre alternativas pertence à E21.3.
-- Evitar impor um canário universal se o workload real exigir forma própria de prova; a E19.4 permanece baseline factual e não é reaberta.
+- A candidata deve cumprir validações determinísticas e prova operacional adequada ao workload antes de ficar apta à ativação.
+- Fechar quais gates determinísticos são universais e quais dependem da modalidade ou do workload.
+- Fechar qual evidência mínima caracteriza a prova operacional sem impor canário universal inadequado.
+- Preservar a fronteira: comparação de qualidade, custo, latência e estabilidade entre alternativas pertence à E21.3.
+- A E19.4 permanece baseline factual e não é reaberta.
 
 ### 3.5. Rollback e comportamento fail-closed
 
-- Definir para qual revisão validada o rollback pode apontar e se a seleção é explicitamente humana.
+- Definir para qual revisão validada o rollback pode apontar e confirmar a seleção explicitamente humana pelo `platform_admin`.
 - Definir se rollback cria nova revisão de ativação ou apenas restaura a autoridade de uma revisão já validada.
 - Definir o comportamento quando a fonte operacional estiver indisponível, inconsistente ou sem configuração válida para `ambiente + workload`.
 - Preservar a proibição de fallback silencioso para outra combinação de modelo, effort ou mídia.
@@ -116,7 +121,7 @@
 - Definir conceitualmente quais mudanças contam como ordinárias dentro da E21.2.
 - Separar alteração de parâmetros operacionais do workload de alteração estrutural que ainda deve exigir mudança de código e deployment.
 - Comparar factual e minimamente Supabase e Vercel Global Config para a residência operacional, considerando leitura por ambiente/workload, escrita administrativa, autorização, histórico, candidata, ativação, rollback, atomicidade, custo, dependência adicional, comportamento de falha e simplicidade do MVP.
-- Supabase é a hipótese principal do debate; Vercel Global Config permanece alternativa, e nenhuma das duas está ainda autorizada como mecanismo definitivo.
+- Supabase permanece hipótese principal; Vercel Global Config permanece alternativa técnica, e nenhuma das duas está ainda autorizada como mecanismo definitivo.
 
 ### 3.7. UX administrativa
 
