@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 20/08/2026
-• Versão: v1.5.169
+• Data: 19/08/2026
+• Versão: v1.5.168
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -205,7 +205,7 @@
 • Aplicação mínima real:
 • Auth: login, sign up, forgot password, update password.
 • Onboarding: `pending_setup`.
-• Docs: `docs/design-system.md` atualizado com componentes padronizados desta fase, API mínima, regras de uso e superfícies cobertas.
+• Docs: `docs/design-system.md` atualizado com componentes padronizados desta fase, API mínima, regras de uso, superfícies cobertas e itens fora do escopo.
 • ARTEFATOS_REPO:
 • Criados:
 • `components/ui/form-field.tsx`
@@ -972,8 +972,8 @@ Repositório — Ajustados
 • Implementar detecção por ambiente somente se o ganho justificar a complexidade.
 
 10.7 Páginas comerciais personalizadas por nicho
-• Status: Em execução faseada — Fase 7 concluída em 28/06/2026.
-• Próxima execução: Fase 8 — edição manual de copy e gestão simples de versões.
+• Status: Concluída até a Fase 7; Fase 8 permanece futura/pausada.
+• Próxima execução: Fase 8 — futura/pausada; não iniciada.
 • Objetivo: gerar, revisar, publicar e consumir páginas comerciais por taxon; a IA roda apenas em operação administrativa/server-side; `/a/[account]` consome somente artefato publicado e validado; ausência de conteúdo nichado não pode quebrar `/a/[account]`.
 • Dependência estrutural: a E18 define os contratos reutilizáveis mínimos; a E10.7 aplica, valida e ajusta esses contratos no caso comercial concreto.
 • A página genérica `generic-v1` da E10.6 permanece concluída e será o fallback obrigatório.
@@ -1484,43 +1484,81 @@ Repositório — Ajustados
   - Sem LP Builder.
   - Sem curadoria de composição de nicho, LP teste ou liberação de nicho registrada como implementação da E12.
 
-12.4 Gestão do perfil de orientação — retirada
+12.4 Gestão do perfil de orientação
+- Objetivo: Definir a operação administrativa do perfil de orientação que direciona gerações futuras de landing pages sem materializar nem alterar LPs.
+- Status: E12.4.3, E12.4.3.1 e E12.4.3.2 concluídas e integradas à `main`, incluindo a correção técnica do PR #681; gate funcional único no Preview e inspeção final do Estrategista aprovados.
 
 12.4.1 Objetivo e status
-- Objetivo histórico: operar administrativamente o perfil versionado de orientação à geração de `landing_page` associado à E20.3.
-- Status: Retirada pela E22.1.4 em 19/08/2026, juntamente com E20.3 e o lifecycle administrativo associado; não existe superfície, boundary, workload ou persistência substituta.
+- Objetivo: Entregar a operação manual completa de criação, edição, revisão, ativação e arquivamento de versões do perfil, com proposta opcional por IA no mesmo editor.
+- Status: Operação manual e assistência opcional implementadas e validadas; provas automatizadas de banco e validações humanas autenticadas em Preview concluídas.
 
-12.4.3 Proposta, revisão, aprovação e ativação do perfil — retirada
-- Status: Responsabilidade histórica encerrada pela E22.1.4.
+12.4.3 Proposta, revisão, aprovação e ativação do perfil
+- Status: Concluída; implementação integrada à `main`, com workflow idempotente, teste SQL transacional, verificação read-only pós-apply, configuração da OpenAI em Preview e teste humano autenticado aprovados.
 - Conteúdo:
-  - páginas, actions, adapters, contratos, workload `landing_page_generation_profile_proposal`, validator e persistência do domínio foram retirados de forma controlada;
-  - as decisões e provas da implementação anterior permanecem rastreáveis no Git e nos planos-base históricos, mas não constituem contrato operacional vigente;
-  - E18.4, E20.2, E20.5/E20.6 e o caminho E19.3 → E19.4 permanecem independentes e preservados.
+  - Perfil próprio permitido somente para segmento e nicho; ultranicho resolve o perfil ativo do ancestral elegível mais próximo.
+  - Estados persistidos limitados a `draft`, `active` e `archived`; uma versão ativa é imutável e qualquer mudança exige nova versão em rascunho.
+  - A operação manual permanece completa; a IA apenas propõe conteúdo após ação explícita do `platform_admin`, sem salvar, aprovar, ativar, arquivar ou gerar LP.
+  - `Salvar rascunho`, `Aprovar e ativar` e arquivamento permanecem ações humanas; a troca da versão ativa deve ser atômica e auditada.
+  - A E12.4.3 reutiliza o contrato e a persistência da E20.3 sem alterar o resolver público do perfil ativo próprio ou herdado.
+  - Dependência técnica atendida em 28/07/2026: PR #655 mergeado, branch sincronizada com a `main` e `next`/`eslint-config-next` confirmados em `16.2.11` no lockfile antes da implementação.
+  - A proposta por IA exige resolução completa da E10.8 e identidades públicas vigentes da E18.5; ausência ou indisponibilidade da assistência não bloqueia o fluxo manual.
+  - A E12.4.4 foi retirada da implementação e absorvida pela jornada simplificada; geração, materialização, preview, publicação e alteração de LP permanecem fora do recorte.
+- Registros de implementação:
+  - Admin Dashboard: listagem e editor em `app/admin/(protected)/perfis-de-orientacao/`, com salvar draft, ativar e arquivar protegidos por `platform_admin`.
+  - Boundary e adapters: contratos administrativos, validação estrita, correlação da proposta, acesso server-only e integração opcional com Responses API em `lib/conversion-content/`.
+  - Banco: migration `20260728153500_e12_4_3_generation_profile_lifecycle.sql` aplicada; teste SQL transacional, snippet read-only, RPCs, ACLs, RLS e policies verificados pós-apply.
+  - Validação: casos executáveis do perfil, typecheck, check, checks hospedados e fluxo autenticado em Preview aprovados; proposta inicial, refinamento e gate negativo da E10.8 validados sem salvamento ou ativação automáticos.
 
-12.4.3.1 Refinamento iterativo assistido por IA — histórico retirado
-- Status: Encerrado como parte da retirada da E22.1.4.
+12.4.3.1 Refinamento iterativo assistido por IA
+- Status: Concluída; implementação integrada à `main`, com checks hospedados automatizados e teste humano autenticado do refinamento em Preview aprovados.
 - Conteúdo:
-  - o refinamento assistido pertencia ao domínio de perfil removido e não permanece como ação disponível;
-  - eventual assistência futura exige consumidor real, recorte próprio e nova decisão explícita, sem reativar automaticamente o mecanismo anterior.
+  - Toda proposta inicial ou revisão depende de ação explícita do `platform_admin`.
+  - A implementação integrada à `main` ainda permite sugestões textuais; a candidata da E12.4.3.2 restringe a saída da IA a cobertura, módulos, variantes, prioridade, ordem, gaps e avisos transitórios, preservando as orientações exclusivamente humanas.
+  - O refinamento recebe o conteúdo atual do editor e o feedback humano mais recente, além das fontes já autorizadas pela E12.4.3.
+  - Cada acionamento autoriza somente uma chamada; não há refinamento nem retry automático.
+  - Nenhuma proposta salva, aprova ou ativa automaticamente; o `platform_admin` continua responsável por revisar, editar, salvar e ativar.
+  - Não existe conversa persistente, histórico de mensagens, agente ou memória própria.
 
-12.4.3.2 Criação e evolução estrutural baseada em `lp_sections` — histórico retirado
-- Status: Encerrado como parte da retirada da E22.1.4.
+12.4.3.2 Criação e evolução estrutural baseada em `lp_sections`, catálogo vigente e debate humano–IA
+- Status: Implementada e integrada à `main` pelo PR #672, com correção localizada de cardinalidade integrada pelo PR #681; gate funcional no HEAD `e6f694454b11388f30355ddbf231bb8350ecef1f` e inspeção final do Estrategista aprovados, sem banco ou migration e sem reabrir lifecycle.
 - Conteúdo:
-  - cobertura, recomendações, gaps e evolução de versão pertenciam ao perfil retirado e não participam do caminho canônico atual;
-  - a rastreabilidade da implementação anterior permanece nos PRs, migrations e planos-base históricos, sem preservar autoridade operacional.
+  - Sem perfil próprio, a ação será `Criar perfil com IA`; com perfil `active` próprio, será `Evoluir perfil com IA`; o fluxo manual permanece completo.
+  - A evolução inicializará o editor da nova versão com a estrutura ativa completa como baseline não persistido e revalidará cada recomendação contra as versões vigentes da E10.8 e da E18.5.
+  - `coverage[]` avaliará cada item de `lp_sections`; `recommendations[]` será a lista final única por módulo.
+  - `covered` e `partial` exigem identidades compatíveis e escolhidas não vazias; `missing` exige ambas as listas vazias no Zod, no JSON Schema estrito e no validador fail-closed.
+  - A ocorrência `coverage_identity_count_invalid` de 03/08/2026 preservou o `active v1` e não criou `draft v2`; como a resposta rejeitada não foi armazenada, cobertura, status e aliases concretos não são inferidos.
+  - `coverage[]`, relações seção–módulo, gaps e estados do diff serão resultados derivados e transitórios; somente recomendações aplicadas e salvas integrarão o perfil.
+  - Várias seções poderão convergir para um módulo e uma seção poderá exigir vários módulos.
+  - A prioridade será convertida por `3 → P1`, `2 → P2`, `1 → P3`; a ordem final será determinística, positiva e única.
+  - Cada rodada explícita ocorrerá sobre a nova versão em `draft`, usando editor original, candidata atual e feedback humano; a candidata e o diff aparecerão antes de aplicar, refinar novamente ou descartar.
+  - Aplicar alterará somente o editor; `Salvar rascunho`, aprovação, ativação e arquivamento continuarão separados e humanos.
+  - A pesquisa bruta será contexto complementar opcional, resolvido pela proveniência efetiva da E10.8 e incluído apenas quando existir e couber integralmente no limite da requisição; ausência ou omissão não criarão gate.
+  - A IA não preencherá nem modificará `generation_guidance` ou `item_guidance`, que serão exceções humanas opcionais.
+  - A decisão `wait_for_modules` ou `proceed_with_available` é registrada no evento de auditoria do rascunho; `wait_for_modules` bloqueia a ativação e `proceed_with_available` permite a ativação com a decisão auditada.
+  - Não existe dependência futura de recálculo dos gaps pela E12.4.4 nem novo gate de autorização por conta.
+  - A E20.3.5 tornou `generation_guidance` opcional pela migration `20260730114633`, já aplicada, sem reabrir E20.3.3 ou E20.3.4.
+  - Snapshot e independência da LP permanecem consolidados; liberdade de edição e comportamento de regeneração serão decididos apenas no futuro plano-base da E19.4.
+  - Registros da implementação candidata:
+    - Admin Dashboard e Server Actions em `app/admin/(protected)/perfis-de-orientacao/`.
+    - Contrato estrutural, validação determinística, candidata, diff, carregamento opcional de pesquisa bruta e integração server-only em `lib/conversion-content/`.
+    - Migration incremental e provas em `supabase/migrations/`, `supabase/tests/` e `supabase/snippets/`.
 
 12.4.3.3 Refinamentos futuros do editor e da modelagem do perfil
-- Status: Superado pela retirada da E22.1.4; não constitui backlog vigente.
-- Conteúdo:
-  - qualquer retomada de editor, perfil, módulo ou variante exige novo consumidor real e novo recorte aprovado;
-  - a retirada não autoriza reconstruir E18.5, E20.3 ou E10.8 por conveniência.
+- Status: Futuro e não bloqueante para o PR #672; não constitui requisito para o merge atual e não possui implementação iniciada.
+- Escopo futuro:
+  - Substituir a digitação livre de módulo e variante por seleção vinculada ao catálogo público vigente.
+  - Derivar automaticamente as versões de módulo e variante, ou apresentá-las como somente leitura, evitando entrada numérica livre.
+  - Desabilitar `Salvar rascunho` quando o editor não possuir alterações pendentes.
+  - Avaliar no documento próprio da E10.8 se `formato_medio` e `formato_longo` devem permanecer como itens de `lp_sections`.
+  - Os gaps de `formato_medio` e `formato_longo` não autorizam automaticamente a criação de módulo ou variante na E18.5.
 
 12.4.4 Prontidão, autorização e revogação por conta, taxon e plano
 - Status: Retirada da implementação e absorvida pela jornada simplificada; não concluída.
 - Conteúdo:
-  - não existe prontidão persistida, autorização ou revogação por `conta + taxon + plano` neste domínio;
-  - preparação factual vigente é derivada pela E20.5/E20.6, enquanto entitlement e capacidades comerciais pertencem à E9;
-  - qualquer evolução futura exige recorte próprio e não reabre o domínio de perfil retirado.
+  - A decisão sobre gaps permanece no lifecycle vigente da E12.4.3.2: `wait_for_modules` bloqueia a ativação e `proceed_with_available` permite a ativação com auditoria.
+  - Não haverá recálculo posterior obrigatório dos gaps, prontidão persistida, autorização ou revogação por `conta + taxon + plano` neste recorte.
+  - A jornada futura não depende da implementação da E12.4.4 e não cria novo gate de autorização por conta.
+  - A observação sobre `rodape_contato` não autoriza criação automática de módulo ou variante nem alteração da E18.5.
 
 12.5 Diagnóstico e navegação operacional do Admin Dashboard
 
@@ -2365,27 +2403,10 @@ Repositório — Ajustados
   - a E19.4.5 está aprovada como primeira prova real, mas a qualidade persuasiva da revisão 3 não é registrada genericamente como aprovada; repetição conceitual, linguagem genérica, baixa progressão de convicção e sensação de template permanecem baseline de calibração futura;
   - não houve revisão 4 nem ajuste ad hoc do renderer; publicação, E19.5, calibração persuasiva, editor, histórico visual, DAM, formulário, tracking, analytics, CRM, agente e filas permanecem fora do recorte.
 
-19.5 Workspace operacional e lifecycle da LP
-
-19.5.1 Objetivo e status
-- Objetivo: planejar o workspace da identidade estável da LP e seu lifecycle de revisões após a E19.4, fechando as decisões de produto necessárias antes de publicação, tracking e demais evoluções dependentes.
-- Status: Prevista e próxima a planejar; nenhuma implementação foi iniciada. O PR #726 permanece apenas como referência histórica de planejamento a reconciliar com a base vigente após E19.4 e E22.1, sem autoridade executável automática.
-
-19.5.3 Previsões e decisões a fechar
-- Conteúdo:
-  - preservar `landing_page` como identidade comercial estável e as revisões materializadas como histórico append-only da mesma LP;
-  - fechar o significado operacional de `draft` e o lifecycle além de `draft`, incluindo aprovação/conclusão, definição de “LP entregue”, publicação e eventual arquivamento;
-  - definir a relação entre revisão em trabalho e revisão publicada, sem presumir que publicação, conclusão ou aprovação sejam o mesmo estado;
-  - decidir edição manual, melhoria integral ou parcial por IA, histórico navegável, comparação, restauração e as regras futuras de arquivamento, retenção e eventual exclusão, sem antecipar mecanismo de persistência neste registro;
-  - mapear quais ações do workspace consomem provider de IA; a E9.7 permanece a autoridade de capacidades e limites comerciais, enquanto medição de uso e gate operacional pertencem ao consumidor, sem criar créditos, wallet ou números locais por inferência;
-  - manter distintos `taxon` preparado, disponibilidade comercial por `taxon + plano`, entitlement da conta e lifecycle da LP;
-  - tratar publicação, tracking e demais evoluções dependentes somente após as decisões do workspace/lifecycle ou em recortes próprios aprovados;
-  - reconciliar o planejamento detalhado com o contrato vigente antes de torná-lo executável; não reintroduzir E10.8, E18.5 ou E20.3 como pré-condição da E19.5.
-
 20. E20 — Preparação e liberação de taxons para geração de landing pages
 
-* Objetivo: consolidar o catálogo de entradas por taxon e plano e a preparação factual vigente por seleção e avaliação humanas; o antigo perfil versionado de orientação permanece apenas como domínio histórico retirado.
-* Status: E20.2 concluída até a v4; E20.3 retirada pela E22.1.4 em 19/08/2026; E20.5 concluída e ativada após merge do PR #746, apply canônico, prova SQL e smokes autenticados em Preview e Production; E20.6 concluída em 15/08/2026.
+* Objetivo: consolidar catálogo de entradas por taxon e plano, perfis versionados de orientação à geração, herança e, em recortes futuros, prontidão e liberação antes da geração de LPs por conta.
+* Status: E20.2 concluída até a v4; E20.3 concluída; E20.5 concluída e ativada após merge do PR #746, apply canônico, prova SQL e smokes autenticados em Preview e Production.
 
 20.2 Catálogo de entradas por taxon
 
@@ -2638,6 +2659,7 @@ Repositório — Ajustados
     - `lib/admin/adapters/adminTaxonomyAdapter.ts`
     - `lib/conversion-content/adapters/landingPageGenerationProfileOpenAiAdapter.ts`
     - `lib/conversion-content/commercial-activation/draft-generation.ts`
+    - `lib/conversion-content/commercial-activation/validation-cases.ts`
     - `lib/conversion-content/landing-page/generation-profile/index.ts`
     - `lib/conversion-content/landing-page/generation-profile/proposal-server.ts`
     - `lib/conversion-content/landing-page/generation-profile/proposal.ts`
@@ -2721,9 +2743,9 @@ Repositório — Ajustados
 - Não definir vencedor ou baseline universal antes de evidência representativa.
 - Não criar agora banco, tabela, rota, dashboard, job, engine, agente, automação ou infraestrutura.
 
-22. E22 — Retirada controlada de ativos e documentação histórica
-- Objetivo: reduzir a superfície histórica que não participa do caminho canônico vigente e retirar fontes documentais ativas redundantes ou obsoletas, preservando consumidores reais, decisões ainda vigentes e rastreabilidade.
-- Status: E22.1 concluída em 19/08/2026. A E22.2 está como implementação candidata neste PR, pendente de merge humano e validação; enquanto isso, a E22 macro não volta a ser declarada concluída. A E19.5 permanece sem implementação iniciada.
+22. E22 — Retirada controlada de ativos históricos
+- Objetivo: reduzir a superfície histórica que não participa do caminho canônico vigente, preservando consumidores reais e preparando a sequência E19.4 concluída → E22.1 → E19.5.
+- Status: Retirada controlada concluída em 19/08/2026; E22.1.4, E22.1.5, E22.1.6 e E22.1.7 estão concluídas, a E19.4 permanece concluída e a E19.5 passa a ser o próximo recorte a planejar, sem implementação iniciada.
 
 22.1 Retirada controlada de ativos históricos
 
@@ -2815,36 +2837,23 @@ Repositório — Ajustados
 22.2 Retirada controlada de documentação histórica redundante
 
 22.2.1 Objetivo e status
-- Objetivo: retirar fontes documentais ativas redundantes ou operacionalmente obsoletas, consolidar informação vigente nas residências documentais próprias e preservar rastreabilidade histórica sem criar novo documento transversal.
-- Status: Implementação candidata neste PR; pendente de merge humano e validação. A E19.5 permanece sem implementação iniciada.
+- Objetivo: retirar fontes documentais redundantes ou obsoletas que duplicam autoridades vigentes.
+- Status: Implementação candidata.
 
 22.2.2 Registros do recorte
-- Documentação:
-  - Ajustados:
-    - `docs/roadmap.md`
-  - Excluídos:
-    - `docs/lp-planejamento.md`
-    - `docs/prompt-catalogo-lp.md`
-- Repositório:
-  - Ajustados:
-    - `lib/admin/docsCatalog.ts`
+- Excluídos:
+  - `docs/lp-planejamento.md`;
+  - `docs/prompt-catalogo-lp.md`.
+- Ajustados:
+  - `lib/admin/docsCatalog.ts`;
+  - `docs/roadmap.md`.
 
-22.2.3 Critérios de retirada documental
-- Conteúdo:
-  - uma fonte ativa não deve duplicar o roadmap, plano-base aplicável ou contrato especializado;
-  - documento que descreva arquitetura retirada como vigente não permanece operacional;
-  - conteúdo futuro único ainda válido deve receber residência canônica antes da exclusão da fonte redundante;
-  - histórico e proveniência não devem ser reescritos como se outra fonte tivesse sido a autoridade original;
-  - planos-base, matrizes, migrations e registros históricos permanecem preservados quando sua função é rastreabilidade, mesmo quando mencionam mecanismos retirados.
-
-22.2.4 Resultado
-- Conteúdo:
-  - `docs/lp-planejamento.md` e `docs/prompt-catalogo-lp.md` foram retirados como fontes ativas, sem documento transversal substituto;
-  - as previsões futuras únicas ainda válidas de workspace/lifecycle foram consolidadas minimamente em E19.5, enquanto regras técnicas duráveis já cobertas permanecem em `docs/base-tecnica.md` e não foram duplicadas;
-  - a superfície Admin deixou de expor `Planejamento de LPs`; os demais documentos da whitelist permanecem preservados;
-  - as referências históricas aos documentos retirados em planos-base e matrizes foram deliberadamente preservadas como proveniência e não foram substituídas em massa;
-  - a auditoria focal reconciliou no próprio roadmap os estados ativos de E12.4 e E20.3 com a retirada concluída pela E22.1.4;
-  - não foi identificado outro documento operacional integralmente obsoleto, sem consumidor e com remoção já justificada o suficiente para ampliar a lista aprovada neste PR.
+22.2.3 Resultado e limites
+- `docs/roadmap.md` permanece autoridade para casos, estado, dependências, previsões e pendências.
+- Planos-base permanecem responsáveis pelo planejamento detalhado dos recortes.
+- Nenhuma fonte transversal substitui `docs/lp-planejamento.md`.
+- Referências históricas não precisam ser reescritas.
+- Nenhuma alteração de banco, schema, infraestrutura ou arquitetura.
 
 99. Changelog
 v1.5.140 — 11/08/2026 — Implementada no repositório a E19.4.4 com materialização inicial 1:1 write-once, conteúdo e snapshot runtime v1 coerentes, adapter server-only, migration transacional, readiness fail-closed e casos executáveis; apply e prova hospedada permanecem nos gates pós-merge/E19.4.5.
@@ -2957,8 +2966,7 @@ v1.5.57 (20/05/2026)
 • E10.5.6 reorganizado em subitens estáveis (10.5.6.1–10.5.6.7), mantendo estado final enxuto, separação de pendências reais e artefatos consolidados sem misturar escopo do E10.4.
 v1.5.56 (20/05/2026)
 • E10.5 atualizado para refletir somente o estado real do repositório: bloco 10.5 substituído integralmente, removendo promessas de UX pós-setup ainda não implementadas no runtime e consolidando os subcasos 10.5.1/10.5.2/10.5.3/10.5.3.1/10.5.4/10.5.6 com artefatos e pendências alinhados.
-v1.5.55 (20/05/2026)
-• E10.4 enxugado e consolidado no estado final: bloco substituído para remover histórico intermediário e duplicações internas, absorvendo 10.4.2/10.4.3 e mantendo 10.5+ intacto.
+v1.5.55 (20/05/2026) — E10.4 enxugado e consolidado no estado final: bloco substituído para remover histórico intermediário e duplicações internas, absorvendo 10.4.2/10.4.3 e mantendo 10.5+ intacto.
 
 v1.5.54 — 19/05/2026 — E12 atualizado para refletir o estado atual do Admin Dashboard: shell operacional protegido, navegação própria, páginas read-only reais para contas, resoluções de nicho e taxonomia, artefatos criados/ajustados e limites explícitos sem mutações, SQL, migrations ou RLS.
 
