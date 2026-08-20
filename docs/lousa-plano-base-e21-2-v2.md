@@ -57,6 +57,28 @@
 - Com o gate `true`, Production e Preview consultam exclusivamente a configuração ativa no Supabase, sem cache e sem fallback para `repo_catalog`; qualquer falha é fail-closed antes do transporte.
 - O gate não seleciona modelo, não substitui o lifecycle e não participa de alterações operacionais ordinárias. Após migration, bootstrap e verificações aprovadas, sua ativação ocorre no ambiente hospedado autorizado; mudanças seguintes de configuração não exigem redeploy.
 - A remoção futura do modo de compatibilidade só pode ocorrer após evidência de cutover estável e pertence a delta posterior autorizado; não impede a entrega funcional da E21.2.
+- `OPENAI_OPERATIONAL_CONFIG_ENABLED` é uma variável server-side não secreta, configurada independentemente em Preview e Production.
+- Somente o literal `true` habilita a fonte operacional. Ausência, vazio ou qualquer outro valor mantêm o modo compatível `repo_catalog`.
+- Development ignora a habilitação dinâmica e permanece no baseline local.
+- O estado inicial em Preview e Production é desabilitado.
+- A habilitação inicial exige redeploy do ambiente afetado; mudanças ordinárias de configuração após o cutover não exigem redeploy.
+- `docs/platform-config.md` registra finalidade, escopo, estado operacional e progressão Preview → Production antes de o código consumir a variável.
+
+### 1.5.1. Sequência executável do PR único e do cutover
+
+- A E21.2.3 e a E21.2.4 são implementadas sequencialmente na mesma branch e no mesmo PR, sempre com `OPENAI_OPERATIONAL_CONFIG_ENABLED` ausente ou diferente de `true` durante a implementação e as validações pré-merge.
+- O checkpoint pré-merge da E21.2.3 comprova migration, SQL tests, contratos, grants/RLS/RPCs, bootstrap, adapter, resolver, callsites, proveniência e comportamento gate-off. Ele não declara migration aplicada, Security Controls aprovados nem cutover concluído.
+- A E21.2.4 pode iniciar após esse checkpoint técnico pré-merge da E21.2.3, preservando sua dependência lógica do agregado e do resolver já implementados, mas sem exigir evidência hospedada que só pode existir após o merge.
+- O único merge ocorre com o runtime compatível ativo pelo `repo_catalog` e toda a superfície dinâmica protegida pelo gate server-side.
+- Após o merge humano, a sequência operacional obrigatória é:
+  1. o workflow canônico aplica a migration;
+  2. o snippet SQL e o Security Controls Dashboard comprovam bootstrap, constraints, RLS, grants, RPCs e exposição;
+  3. o gate é habilitado somente em Preview e o deployment correspondente é validado;
+  4. o smoke completo comprova candidata, prova, promoção, ativação, próxima execução, isolamento de Production e rollback;
+  5. somente após Preview aprovado o gate pode ser habilitado em Production, seguido do smoke mínimo de Production.
+- Falha em apply, snippet, Security Controls, Preview ou Production mantém ou restaura o gate como desabilitado no ambiente afetado; nunca autoriza `repo_catalog` como fallback enquanto o gate estiver `true`.
+- O ABC intermediário pode registrar código entregue e gates hospedados pendentes. A conclusão operacional da E21.2 e o ABC final somente podem registrar cutover concluído depois de todas as evidências pós-merge.
+- Essa sequência não cria PR precursor, segundo PR, branch de migration separada nem apply remoto pré-merge.
 
 ### 1.6. Granularidade e allowlist operacional
 
@@ -65,11 +87,14 @@
 - No workload de imagem, `size`, `format`, `compression` e `moderation` permanecem determinísticos e versionados em código.
 - Identidade do workload, classificação, modalidade/API, consumer, fallback, prompt, schema funcional, limites funcionais, persistência de resultado e contratos de domínio permanecem versionados em código.
 - `supabase_inspect` continua como referência operacional externa e não entra na mutação dinâmica dos workloads de produto.
-- A allowlist inicial, explícita por workload e mantida no registry em código, não admite identificadores livres:
-  - workloads textuais podem usar `gpt-5.4-mini` com `none | low | medium | high | xhigh` ou `gpt-5.6-luna` com `none | low | medium | high | xhigh | max`;
-  - o workload de imagem pode usar `gpt-image-2` com `low | medium | high`;
-  - `auto` não é persistido como qualidade operacional explícita;
-  - cada workload aceita apenas o subconjunto declarado no próprio registro, ainda que um modelo exista na allowlist técnica global.
+- A allowlist inicial é fechada e idêntica para os três workloads textuais `niche_resolution`, `commercial_activation_draft_generation` e `landing_page_draft_generation`:
+  - `gpt-5.4-mini` com `none | low | medium | high | xhigh`;
+  - `gpt-5.6-luna` com `none | low | medium | high | xhigh | max`.
+- O workload `landing_page_draft_image_generation` aceita exclusivamente:
+  - `gpt-image-2` com `quality = low | medium | high`.
+- `auto` não é persistido como qualidade operacional.
+- Não há identificador livre, modelo adicional, effort adicional, qualidade adicional nem combinação cruzada entre modalidades.
+- O registry mantém a declaração separada por workload mesmo quando os três workloads textuais compartilham inicialmente o mesmo conjunto, permitindo restrição futura somente por novo recorte aprovado.
 - A combinação é validada novamente antes da prova e antes da promoção da candidata.
 
 ### 1.7. Fronteira E21.2 × E21.3
@@ -92,6 +117,17 @@
 - Production/Preview com o gate ativo retornam configuração com origem `supabase_operational` e revisão decimal derivada de `revision_number`; Development e o modo pré-cutover retornam origem `repo_catalog`.
 - Proveniência histórica `repo_catalog` continua legível. Novas execuções gerenciadas após o cutover registram `supabase_operational` e a revisão resolvida.
 - Todos os callsites dos quatro workloads de produto devem aguardar o resolver antes do transporte OpenAI e manter seus fallbacks funcionais atuais.
+- Para a E21.2, “preservar a API pública e os consumers” significa preservar:
+  - o boundary público `lib/openai-workloads/` e seus nomes de resolver;
+  - as identidades dos workloads;
+  - os resultados discriminados e a separação texto/imagem;
+  - o ownership de prompt, schema, transporte, fallback e persistência funcional nos domínios consumidores.
+- O único delta técnico autorizado na chamada pública é:
+  - o resolver passar a retornar `Promise`;
+  - receber o ambiente operacional explícito;
+  - ampliar origem e revisão para representar `repo_catalog` ou `supabase_operational`.
+- Os quatro callsites podem ser alterados somente para aguardar o resolver, fornecer o ambiente pelo helper comum, consumir a configuração resolvida e preservar seus fallbacks e efeitos funcionais atuais.
+- Nenhuma refatoração funcional adicional do consumer, cliente OpenAI universal, transporte comum ou mudança de domínio é autorizada por esse delta.
 
 ### 2.2. Responsabilidades e caminhos
 
@@ -112,6 +148,13 @@
   3. `openai_workload_configuration_activations`: eventos append-only `bootstrap | activate | rollback`, com ambiente, workload, revisão alvo, ator e timestamp; ator nulo somente em `bootstrap`.
 - Constraints limitam ambiente a `production | preview`, workload aos quatro produtos conhecidos e shape à modalidade correta.
 - PKs explícitas, FKs indexadas e índices compostos/partials mínimos sustentam leitura da unidade, unicidade de revisão e consultas de histórico.
+- A integridade da unidade é impedida no banco, não apenas verificada por adapter ou snippet:
+  - `openai_workload_configuration_revisions` possui chave candidata única para `(id, environment, workload)`;
+  - os ponteiros ativo e validado pendente de `openai_workload_operational_configurations` usam FKs compostas `(revision_id, environment, workload)` para a revisão da mesma unidade;
+  - `openai_workload_configuration_activations` usa FK composta `(target_revision_id, environment, workload)` para a revisão alvo da mesma unidade;
+  - todas essas relações usam ações referenciais explícitas e restritivas, sem cascade que possa apagar ou reassociar histórico;
+  - nenhuma RPC pode trocar ambiente ou workload de candidata, revisão ou evento.
+- O snippet SQL comprova essas constraints e também procura drift; ele não substitui a proteção física.
 - Não existe `UPDATE` ou `DELETE` de revisão validada ou evento de ativação.
 - RPCs transacionais, versionadas e com token otimista implementam: salvar/editar candidata, descartar candidata, promover candidata após prova, ativar revisão validada e executar rollback.
 - Cada RPC bloqueia a unidade `environment + workload` na mesma ordem, revalida o estado e torna troca de ponteiro/evento atômica.
@@ -225,6 +268,7 @@
   - preservar Development determinístico/local e fail-closed após o cutover.
 - Escopo executável:
   - migration forward-only, grants/RLS/RPCs, `docs/schema.md` e snippet SQL versionado;
+  - atualizar `docs/platform-config.md` no mesmo recorte para registrar `OPENAI_OPERATIONAL_CONFIG_ENABLED`, sem versionar valor de ambiente nem criar `.env`;
   - contratos, registry/allowlist, validação, lifecycle, adapter e resolver assíncrono;
   - atualização dos quatro consumers e da proveniência;
   - gate server-side temporário pré-cutover, sem fallback após habilitação;
@@ -241,7 +285,7 @@
 
 ### 3.2. E21.2.4 — Gestão administrativa, validação, ativação e rollback
 
-- Status: planejada; depende do gate técnico da E21.2.3.
+- Status: planejada; depende do checkpoint técnico pré-merge da E21.2.3. O cutover hospedado permanece bloqueado até o apply e os gates operacionais pós-merge definidos em 1.5.1.
 - Automação: não.
 - Objetivo:
   - evoluir o Admin Dashboard para gerir candidata, validação, ativação, histórico e rollback;
