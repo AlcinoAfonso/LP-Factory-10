@@ -1,17 +1,25 @@
-20/08/2026 — Rascunho vivo — E21.2 — Configuração operacional dinâmica dos workloads OpenAI
+20/08/2026 — Plano-base v1 — E21.2 — Configuração operacional dinâmica dos workloads OpenAI
 
-## 1. Estado do debate
+## 1. Estado e decisões fixas
 
-### 1.1. Status
+### 1.1. Estado
 
-- Status: rascunho vivo do futuro plano-base v1; ainda não consolidado.
+- Status: plano-base v1 consolidado após encerramento do debate humano e avaliação preliminar do Analista.
 - Caso macro: `E21 — Gestão e governança dos workloads OpenAI`.
 - Recorte: `E21.2 — Configuração operacional dinâmica dos workloads OpenAI`.
-- O objetivo do debate é fechar o contrato conceitual antes de escolher mecanismo técnico.
+- Plano conceitual: N/A.
 - A E21.1 permanece implementada, validada e preservada como fundação e boundary transversal.
 - A E21.3 permanece como próxima evolução de evidências e avaliação de custo-benefício e não integra o recorte executável da E21.2.
+- Não permanece questão humana indispensável aberta para a v1; detalhes de schema, adapters, mutações e prova operacional por workload pertencem à consolidação técnica v2 dentro deste contrato.
 
-### 1.2. Fontes obrigatórias consultadas
+### 1.2. Objetivo
+
+- Permitir que `platform_admin` consulte e altere pelo Admin Dashboard a configuração operacional dos workloads OpenAI de produto.
+- Fazer com que uma configuração ativada passe a ser usada nas execuções seguintes do workload no ambiente correspondente sem commit, PR ou redeploy.
+- Preservar candidata, validação, ativação humana, histórico e rollback sem transformar a E21.2 em seleção autônoma de modelo ou laboratório de benchmarking.
+- Preservar os consumers e a API pública do boundary `lib/openai-workloads/`, substituindo somente a origem efetiva da configuração em Production e Preview.
+
+### 1.3. Fontes usadas
 
 - `README.md`.
 - `AGENTS.md`.
@@ -24,143 +32,235 @@
 - `docs/openai-model-snapshot.md`.
 - `docs/gestor-automations.md`.
 - `docs/automations.md`.
-- Como fontes factuais complementares do estado implementado: `lib/openai-workloads/contracts.ts`, `lib/openai-workloads/registry.ts`, `lib/openai-workloads/resolve.ts` e `app/admin/(protected)/workloads-openai/page.tsx`.
+- `docs/schema.md`, consultado após a decisão de usar Supabase como residência operacional.
+- Estado factual complementar: `lib/openai-workloads/contracts.ts`, `lib/openai-workloads/registry.ts`, `lib/openai-workloads/resolve.ts` e `app/admin/(protected)/workloads-openai/page.tsx`.
+- Documentação oficial Vercel Global Config, consultada apenas para a comparação de residência operacional.
 
-### 1.3. Decisões já fixas pelo roadmap e pela E21.1
+### 1.4. Decisões fixas do recorte
 
-- A configuração operacional futura deve ser explícita por ambiente e workload.
-- Deve existir configuração candidata antes da ativação.
-- A candidata deve ser validada antes de poder tornar-se ativa.
-- A ativação exige decisão humana.
-- O rollback deve voltar para revisão anteriormente validada.
-- Mudança ordinária de configuração deve ser possível sem redeploy.
-- Os consumidores de produto devem continuar resolvendo sua configuração pelo boundary canônico `lib/openai-workloads/`, sem passar a conhecer diretamente a residência técnica da configuração.
-- Workloads textuais e de imagem permanecem discriminados e recebem somente os parâmetros aplicáveis à própria modalidade.
-- O boundary comum não se torna cliente OpenAI universal e não absorve prompts, schemas funcionais, persistência de resultado ou fallback dos consumidores.
-- O mecanismo efetivo ainda não está autorizado: o roadmap não escolheu banco, rota, dashboard mutável, provider de configuração nem nova infraestrutura.
+- A unidade operacional é `ambiente + workload`; não existe default universal de modelo, effort ou configuração de mídia.
+- Production e Preview usam configuração dinâmica independente; Development permanece determinístico/local e fora da gestão dinâmica v1.
+- Não existe promoção automática de Preview para Production; qualquer ativação em cada ambiente é humana e explícita.
+- Existe exatamente uma configuração ativa por `ambiente + workload`.
+- No MVP existe no máximo uma substituição pendente por `ambiente + workload`, esteja ela em preparação como candidata ou já validada aguardando ativação.
+- Somente `platform_admin` pode criar/editar candidata, iniciar sua validação, ativar configuração e executar rollback.
+- Recomendações de Estrategista, Analista, Gestores ou futura E21.3 não alteram automaticamente a configuração ativa.
+- Toda candidata precisa cumprir validações determinísticas e uma prova operacional adequada ao workload antes de ficar apta à ativação.
+- A ativação final é sempre humana.
+- Rollback é uma nova ação humana de ativação que referencia uma revisão anteriormente validada; não duplica nem altera a revisão histórica restaurada.
+- A resolução em Production e Preview é fail-closed: fonte indisponível, configuração ausente, inválida ou inconsistente bloqueia o transporte OpenAI e não autoriza fallback silencioso para `repo_catalog`, modelo anterior, default do provedor ou outra revisão.
+- O fallback funcional permanece responsabilidade de cada consumer conforme E21.1 e seus contratos próprios.
+- O núcleo da E21.2 é determinístico. A prova operacional pode executar o workload OpenAI candidato, mas isso é validação e não decisão autônoma.
+- Automação: não. Não criar categoria de automação, agente, job ou workflow próprio para a E21.2.
 
-## 2. Problema e resultado esperado
+### 1.5. Residência operacional
 
-### 2.1. Problema objetivo
+- Supabase é a residência operacional aprovada para as configurações dinâmicas, revisões e histórico mínimo da E21.2.
+- A escolha prioriza a stack base já adotada e o ciclo `candidata → validada → ativação → histórico → rollback`, evitando introduzir uma segunda residência apenas para configuração.
+- Vercel Global Config foi considerada tecnicamente elegível para configuração mutável sem redeploy, mas foi rejeitada para este recorte porque o requisito inclui lifecycle, histórico, autoria e rollback estruturados que o projeto já pode concentrar no Supabase.
+- A decisão autoriza a persistência mínima necessária no Supabase; quantidade, nomes e desenho exato dos objetos pertencem à v2 e devem seguir `docs/schema.md`, `docs/base-tecnica.md` e o princípio de menor complexidade suficiente.
+- Vercel continua sendo runtime/deploy do Core; a E21.2 não cria dependência de Global Config.
 
-- Hoje a configuração efetiva dos workloads de produto está no `repo_catalog`, em `lib/openai-workloads/registry.ts`.
-- Alterar essa configuração exige mudança versionada no repositório e novo deployment, o que não atende ao requisito já aprovado de mudança ordinária sem redeploy.
-- Ao mesmo tempo, a E21.1 foi construída para evitar nova refatoração dos consumidores quando a origem da configuração mudar: os consumidores já dependem do resolver comum.
-- A E21.2 precisa, portanto, fechar como uma configuração operacional é proposta, validada, ativada, resolvida e revertida sem enfraquecer o boundary existente nem transformar governança em seleção autônoma de modelo.
+### 1.6. Granularidade por modalidade
 
-### 2.2. Resultado esperado do recorte
+- Workloads textuais expõem operacionalmente `model + reasoning effort`.
+- `landing_page_draft_image_generation` expõe operacionalmente `model + quality`.
+- No workload de imagem, `size`, `format`, `compression` e `moderation` permanecem determinísticos e versionados em código neste recorte, pois participam do contrato técnico de apresentação, Storage ou segurança.
+- Identidade do workload, classificação, modalidade/API, consumer, fallback, prompt, schema funcional, limites funcionais, persistência de resultado e contratos de domínio permanecem versionados em código.
+- `supabase_inspect` continua como referência operacional externa e não entra na mutação dinâmica dos workloads de produto.
 
-- Dar ao humano autorizado uma superfície operacional no Admin Dashboard para consultar e alterar a configuração dos workloads OpenAI aplicáveis.
-- A lista administrativa deve partir do inventário já existente e permitir abrir o detalhe de cada workload, sem tratar o identificador E* como unidade de configuração.
-- Para workloads textuais, permitir alteração humana de `model + reasoning effort`; para workloads de mídia, preservar configuração própria e expor somente os parâmetros operacionais aprovados.
-- Fazer com que uma configuração ativada passe a ser usada nas execuções seguintes daquele workload no ambiente aplicável, sem commit, PR ou redeploy para uma mudança ordinária.
-- Definir um contrato operacional mínimo no qual cada workload aplicável possua uma configuração ativa inequívoca no ambiente aplicável.
-- Permitir preparar uma candidata sem alterar silenciosamente a configuração ativa.
-- Impedir ativação de candidata que não tenha cumprido os gates aprovados.
-- Exigir ação humana explícita para promoção da candidata.
-- Preservar revisão e histórico rastreáveis suficientes para consultar configurações anteriormente ativadas e permitir rollback controlado para revisão previamente validada.
-- Manter a resolução fail-closed e sem fallback silencioso para modelo, effort ou configuração de mídia diferentes.
-- Separar governança operacional de configuração da avaliação comparativa da E21.3.
+### 1.7. Fronteira E21.2 × E21.3
 
-### 2.3. Definições aceitas no debate
+- A E21.2 responde como uma configuração é proposta, validada operacionalmente, ativada, resolvida e revertida.
+- A E21.3 responde qual configuração demonstrou melhor relação de qualidade, custo, latência e estabilidade e quais evidências sustentam a troca.
+- O histórico da E21.2 registra lifecycle e ativações; não produz benchmark, ranking ou vencedor entre modelos/configurações.
+- Evidências futuras da E21.3 podem ser referenciadas pela superfície administrativa sem serem duplicadas ou produzidas pela E21.2.
 
-- A E21.2 não é apenas governança documental: ela deve materializar a capacidade operacional de o humano autorizado alterar a configuração de cada workload pelo Admin Dashboard.
-- A alteração deve ocorrer sem necessidade de o humano entrar na Vercel, editar código ou disparar redeploy para mudanças ordinárias previstas pelo contrato da E21.2.
-- O Admin Dashboard é a superfície humana pretendida independentemente da residência técnica escolhida para a configuração.
-- O detalhe do workload poderá concentrar configuração ativa, candidata quando existir, histórico de revisões e ações humanas aplicáveis; o desenho final de UX permanece a fechar antes da v1.
-- A unidade operacional deve possuir exatamente uma configuração ativa por `ambiente + workload`.
-- No MVP, pode existir no máximo uma candidata em preparação por `ambiente + workload`.
-- Somente `platform_admin` pode criar candidata, ativar configuração e executar rollback; Estrategista, Analista, Gestores e futura E21.3 podem produzir recomendações ou evidências, mas não alterar automaticamente a configuração ativa.
-- Toda candidata precisa cumprir validações determinísticas obrigatórias e também uma prova operacional adequada ao workload antes de ficar apta à ativação.
-- A prova operacional não é benchmark universal e não absorve comparação de qualidade, custo, latência ou estabilidade entre alternativas; essas comparações pertencem à E21.3.
-- O núcleo da E21.2 é determinístico: criação de candidata, gates, ativação, histórico, resolução da configuração ativa e rollback não dependem de decisão de IA.
-- A prova operacional pode executar o próprio workload OpenAI para comprovar que a configuração candidata funciona, mas essa execução é validação do workload e não transforma a E21.2 em automação.
-- Automação: não. Por decisão humana, a E21.2 não adota automação, agente, job ou workflow próprio e não requer consulta ao Gestor de Automação antes da v1 enquanto essa decisão permanecer inalterada.
-- Para a UX administrativa, `landing_page_draft_generation` e `landing_page_draft_image_generation` permanecem workloads técnicos independentes, mas devem ser apresentados de forma agrupada sob a função de geração da Landing Page para tornar a operação humana compreensível.
-- No workload textual de geração da LP, a configuração operacional exposta ao humano é `model + reasoning effort`.
-- No workload de imagem da LP, a configuração operacional inicial exposta ao humano é `model + quality`; tamanho, formato, compressão e moderação permanecem determinísticos no código neste recorte, pois participam do contrato técnico de apresentação, Storage ou segurança.
-- Supabase é a hipótese principal de residência operacional a avaliar, por aderir naturalmente ao ciclo `candidata → validação → ativação → histórico → rollback` e por já integrar a stack base do MVP.
-- Vercel Global Config permanece alternativa técnica real de comparação porque também permite leitura e alteração de configuração em runtime sem redeploy e possui APIs para gestão programática; seu uso não exigiria que o humano operasse diretamente a Vercel se o Admin Dashboard intermediasse a mutação.
-- A preferência atual pelo Supabase ainda não equivale a autorização de banco ou arquitetura fechada: a decisão técnica final deve comparar as duas alternativas dentro dos requisitos do recorte antes da consolidação da v1.
-- O histórico operacional da E21.2 deve registrar mudanças e ativações da configuração; evidências comparativas de qualidade, custo, latência e estabilidade pertencem à E21.3 e podem futuramente ser referenciadas, sem serem produzidas pela E21.2.
+## 2. Contrato do caso
 
-## 3. Decisões ainda abertas para debate
+### 2.1. Fluxo lógico
 
-### 3.1. Lifecycle da candidata e revisão
+- Gatilho administrativo: `platform_admin` abre o inventário de workloads e escolhe alterar a configuração de um workload em Production ou Preview.
+- Entrada: ambiente, workload e parâmetros operacionais aplicáveis à modalidade.
+- Processamento: preparar candidata → validar deterministicamente → executar prova operacional aplicável → tornar a configuração validada e imutável → ativação humana explícita → resolver a nova configuração nas execuções seguintes.
+- Validação: somente configuração compatível com o workload e aprovada nos gates do recorte pode ser ativada.
+- Persistência: Supabase mantém a candidata corrente e as revisões validadas/ativações necessárias para histórico e rollback; o desenho físico mínimo é fechado na v2.
+- Consumo: consumers continuam chamando a API pública de `lib/openai-workloads/`; não conhecem tabela, query ou residência técnica.
+- Fallback: ausência ou falha da configuração operacional em Production/Preview interrompe a chamada antes do provider; cada consumer aplica apenas seu fallback funcional já autorizado.
 
-- Fechar em que momento uma candidata recebe identidade/revisão estável.
-- Fechar quais estados mínimos são necessários entre preparação, validação e ativação, sem criar lifecycle maior que o necessário ao MVP.
-- Fechar como uma candidata reprovada ou abandonada permanece rastreável sem concorrer com a única candidata em preparação permitida.
+### 2.2. Bootstrap e cutover
 
-### 3.2. Atores e validação
+- As configurações efetivas vigentes do `repo_catalog` são a baseline do bootstrap da E21.2.
+- Production e Preview devem iniciar com revisões ativas equivalentes às configurações efetivas vigentes, preservando workload, modalidade e parâmetros aplicáveis.
+- Essas revisões iniciais podem ser tratadas como previamente validadas porque correspondem às configurações já comprovadas pela E21.1 e, quando aplicável, pelas execuções hospedadas da E19.4.
+- O cutover não altera cada consumer individualmente; altera a resolução interna do boundary comum.
+- Após o cutover aprovado, Production e Preview não usam `repo_catalog` como fallback operacional.
+- Development continua usando configuração determinística/local e não participa do histórico operacional da E21.2.
 
-- A autoridade de mutação está fechada em `platform_admin` para criação de candidata, ativação e rollback.
-- Permanece aberto como as validações determinísticas e a prova operacional são executadas e registradas, preservando `Automação: não`.
-- A prova operacional pode executar o workload OpenAI correspondente, mas não decide aprovação, ativação ou rollback.
-- Preservar que recomendações de Estrategista, Analista, Gestores ou futura E21.3 não equivalem a autoridade operacional para alterar a configuração ativa.
-- Preservar que owner/admin de conta não recebe autoridade de plataforma sobre workloads OpenAI.
+### 2.3. Lifecycle mínimo
 
-### 3.3. Granularidade da configuração
+- `candidate`:
+  - configuração de trabalho mutável e ainda sem efeito no runtime;
+  - pode ser corrigida após falha de validação ou descartada pelo `platform_admin`;
+  - não entra como revisão histórica imutável enquanto não for validada.
+- `validated`:
+  - snapshot imutável produzido quando a candidata cumpre os gates determinísticos e a prova operacional;
+  - recebe revisão estável e fica elegível para ativação humana.
+- `active`:
+  - revisão validada selecionada pela última ativação válida para aquele `ambiente + workload`;
+  - é a única configuração usada nas chamadas seguintes.
+- `historical`:
+  - revisão validada que já foi ativa ou permanece preservada para rastreabilidade;
+  - pode voltar a ser ativa somente por rollback humano explícito.
+- Ativação e rollback devem preservar ator, instante e revisão alvo suficientes para reconstruir a sequência operacional.
+- O lifecycle não cria estados adicionais por conveniência; eventual representação física distinta entre status e eventos é decisão técnica da v2.
 
-- Confirmar quais ambientes entram na configuração dinâmica operacional: Production, Preview e eventual tratamento de Development.
-- Confirmar que a unidade primária permanece o workload, sem criar default universal de modelo ou effort.
-- Para workloads textuais, a configuração operacional inicial é `model + reasoning effort`; permanece aberto se outro parâmetro transversal também precisa ser dinâmico.
-- Para o workload de imagem da LP, a configuração operacional inicial é `model + quality`; tamanho, formato, compressão e moderação permanecem fixos no contrato versionado em código neste recorte.
-- Identificar explicitamente quais demais propriedades estruturais continuam versionadas em código, como identidade do workload, modalidade/API, consumidor, fallback e contratos funcionais.
+### 2.4. Validação da candidata
 
-### 3.4. Validação obrigatória antes da ativação
+- Gates determinísticos mínimos:
+  - ambiente suportado pela gestão dinâmica;
+  - workload conhecido e de produto;
+  - modalidade preservada;
+  - presença apenas dos parâmetros operacionais autorizados para a modalidade;
+  - combinação de modelo/parâmetros compatível com o contrato aprovado;
+  - ausência de tentativa de alterar prompt, schema funcional, fallback ou parâmetro estrutural fora do recorte.
+- Prova operacional:
+  - executa a configuração candidata sem torná-la ativa;
+  - comprova que o workload consegue atravessar seu contrato real até um resultado tecnicamente válido;
+  - não publica nem altera silenciosamente estado visível ao cliente;
+  - não mede vencedor, qualidade comparativa, custo-benefício ou estabilidade representativa.
+- O mecanismo exato da prova operacional é definido por workload na v2, reutilizando contratos e pontos de injeção existentes quando aplicáveis e sem criar automação própria.
+- Falha na prova mantém a configuração como candidata e inelegível para ativação.
 
-- A candidata deve cumprir validações determinísticas e prova operacional adequada ao workload antes de ficar apta à ativação.
-- Fechar quais gates determinísticos são universais e quais dependem da modalidade ou do workload.
-- Fechar qual evidência mínima caracteriza a prova operacional sem impor canário universal inadequado.
-- Preservar a fronteira: comparação de qualidade, custo, latência e estabilidade entre alternativas pertence à E21.3.
-- A E19.4 permanece baseline factual e não é reaberta.
+### 2.5. Resolução dinâmica e comportamento de falha
 
-### 3.5. Rollback e comportamento fail-closed
+- Em Production e Preview, o resolver comum consulta a configuração ativa correspondente a `ambiente + workload` por caminho server-side autorizado.
+- A alteração ativada deve ser observada pela execução subsequente do workload sem redeploy; estratégia de cache, se existir, não pode violar essa semântica.
+- Somente configuração válida e ativa atravessa o boundary até o consumer.
+- Falha de leitura, duplicidade de ativa, referência inválida, revisão inconsistente ou payload incompatível retorna falha de configuração antes do transporte OpenAI.
+- Não existe escolha automática de outra revisão nem degradação para um modelo considerado mais barato, seguro ou conhecido.
 
-- Definir para qual revisão validada o rollback pode apontar e confirmar a seleção explicitamente humana pelo `platform_admin`.
-- Definir se rollback cria nova revisão de ativação ou apenas restaura a autoridade de uma revisão já validada.
-- Definir o comportamento quando a fonte operacional estiver indisponível, inconsistente ou sem configuração válida para `ambiente + workload`.
-- Preservar a proibição de fallback silencioso para outra combinação de modelo, effort ou mídia.
+### 2.6. Segurança e autoridade
 
-### 3.6. Mudança ordinária sem redeploy e residência operacional
+- Toda leitura ou mutação administrativa da E21.2 permanece server-side e protegida pelo gate de plataforma vigente.
+- Owner/admin de conta não recebe autoridade por pertencer a um tenant.
+- UI/client não escreve diretamente no Supabase para criar candidata, validar, ativar ou executar rollback.
+- O desenho de banco deve ser fail-closed e impedir mais de uma ativa por `ambiente + workload` e mais de uma substituição pendente no lifecycle do MVP.
+- Secrets, API keys, prompts, respostas integrais, payloads de negócio, PII e raciocínio privado não integram a configuração nem seu histórico.
+- A rastreabilidade operacional deve registrar somente metadados necessários de configuração, ator, revisão, timestamps e resultado seguro de validação/ativação.
 
-- Definir conceitualmente quais mudanças contam como ordinárias dentro da E21.2.
-- Separar alteração de parâmetros operacionais do workload de alteração estrutural que ainda deve exigir mudança de código e deployment.
-- Comparar factual e minimamente Supabase e Vercel Global Config para a residência operacional, considerando leitura por ambiente/workload, escrita administrativa, autorização, histórico, candidata, ativação, rollback, atomicidade, custo, dependência adicional, comportamento de falha e simplicidade do MVP.
-- Supabase permanece hipótese principal; Vercel Global Config permanece alternativa técnica, e nenhuma das duas está ainda autorizada como mecanismo definitivo.
+### 2.7. UX administrativa mínima
 
-### 3.7. UX administrativa
+- Evoluir a página existente `/admin/workloads-openai`, preservando o shell e a proteção administrativa vigentes.
+- A lista mostra os workloads de produto e sua configuração ativa por ambiente; `supabase_inspect` permanece como referência externa read-only.
+- `landing_page_draft_generation` e `landing_page_draft_image_generation` continuam workloads técnicos independentes, mas aparecem agrupados visualmente sob a função `Geração da Landing Page`.
+- O detalhe de um workload deve mostrar, quando aplicável:
+  - ambiente selecionado;
+  - configuração ativa;
+  - candidata corrente;
+  - estado da validação;
+  - revisões validadas/históricas;
+  - ator e data das ativações/rollbacks relevantes;
+  - ações humanas `Criar/editar candidata`, `Validar`, `Ativar` e `Rollback` conforme estado.
+- Para texto, o formulário expõe `model + reasoning effort`.
+- Para imagem, o formulário expõe `model + quality`.
+- Os inputs devem impedir combinações incompatíveis ou não suportadas; o mecanismo exato de catálogo/allowlist é definido na v2 com base no contrato do workload e documentação oficial vigente da OpenAI.
+- A UX não apresenta benchmark, ranking ou recomendação automática como decisão da E21.2.
 
-- A apresentação da geração da Landing Page deve agrupar visualmente os workloads de texto e imagem, sem fundir seus contratos técnicos nem suas configurações.
-- Fechar a estrutura mínima da lista existente de workloads e da futura ação `Abrir`.
-- Definir quais dados aparecem no detalhe antes e depois de existir candidata.
-- Definir quais ações são separadas: editar/preparar candidata, validar, ativar e rollback.
-- Definir quais informações históricas pertencem à E21.2 e quais referências futuras da E21.3 podem aparecer sem duplicação.
-- Preservar a superfície server-side e o controle de plataforma já vigentes, sem antecipar rota, action ou componente específico antes da solução técnica.
+### 2.8. Critérios de aceite transversais
 
-### 3.8. Possibilidade de automação
+- Os quatro workloads de produto continuam resolvidos pela API pública de `lib/openai-workloads/`.
+- Production e Preview possuem configurações ativas independentes em Supabase; Development permanece determinístico/local.
+- Mudança ativada em um workload passa a valer na execução seguinte sem novo deployment.
+- Uma candidata inválida ou sem prova operacional aprovada não pode ser ativada.
+- A ativação exige ação explícita de `platform_admin`.
+- Rollback reativa revisão anteriormente validada sem recriar ou alterar essa revisão.
+- Falha da fonte operacional bloqueia o transporte e não aciona fallback silencioso de configuração.
+- Texto preserva `model + reasoning effort`; imagem preserva `model + quality` como parâmetros operacionais e mantém os demais parâmetros aprovados no código.
+- A página administrativa distingue claramente configuração ativa, candidata/validada e histórico, incluindo o agrupamento funcional da geração da LP.
+- Acesso negativo de usuário sem autoridade de plataforma permanece bloqueado.
+- Nenhum benchmark da E21.3, agente, job, workflow ou seleção autônoma é introduzido.
 
-- Decisão humana fechada neste debate: `Automação: não` para a E21.2.
-- A prova operacional de uma candidata é validação do workload e pode executar OpenAI quando aplicável, mas não constitui automação do processo nem autoriza decisão autônoma.
-- Não criar categoria de automação, job, agente ou workflow próprio para a E21.2.
-- O Gestor de Automação não precisa ser consultado antes da v1 enquanto essa decisão e o escopo permanecerem inalterados.
+## 3. Fases e próxima ação
 
-## 4. Escopo negativo e próxima etapa do debate
+### 3.1. E21.2.3 — Fonte operacional dinâmica e resolução por ambiente/workload
 
-### 4.1. Escopo negativo preservado
+- Status: planejada.
+- Automação: não.
+- Objetivo:
+  - materializar no Supabase a persistência mínima de configuração dinâmica e histórico necessário;
+  - bootstrapar Production e Preview a partir das configurações efetivas vigentes;
+  - adaptar `lib/openai-workloads/` para resolver a fonte ativa por `ambiente + workload` sem alterar os consumers;
+  - preservar Development determinístico/local e fail-closed em Production/Preview.
+- Entregas mínimas:
+  - schema/migration mínima conforme `docs/schema.md` e `docs/base-tecnica.md`;
+  - boundary/adapters server-side necessários, sem acesso direto da UI ao banco;
+  - contratos discriminados de texto e imagem preservados;
+  - configuração inicial ativa equivalente ao baseline vigente nos dois ambientes gerenciados;
+  - resolução dinâmica sem fallback para `repo_catalog` em Production/Preview.
+- Critérios de aceite:
+  - unicidade de ativa e de substituição pendente por `ambiente + workload` comprovada;
+  - bootstrap íntegro dos workloads de produto;
+  - consumers existentes continuam recebendo configuração pelo boundary comum;
+  - alteração controlada da configuração é observável sem redeploy;
+  - falhas de configuração bloqueiam transporte antes do provider;
+  - `supabase_inspect` permanece fora da mutação dinâmica;
+  - validações técnicas e de banco aplicáveis aprovadas.
 
-- Não implementar nada durante este debate.
-- Não autorizar banco, rota, Server Action, provider de configuração ou nova infraestrutura apenas porque Supabase é a hipótese principal.
-- Não criar job, engine, agente ou automação antecipadamente.
-- Não transformar a E21.2 em laboratório de benchmarking nem absorver comparações decisórias da E21.3.
-- Não reabrir a E19.4; sua revisão 3 permanece baseline real para regressão futura.
-- Não alterar a E21.1 salvo incompatibilidade factual comprovada.
-- Não alterar `docs/roadmap.md` durante o rascunho vivo.
+### 3.2. E21.2.4 — Gestão administrativa, validação, ativação e rollback
 
-### 4.2. Próxima etapa
+- Status: planejada.
+- Automação: não.
+- Dependência: E21.2.3 aprovada.
+- Objetivo:
+  - evoluir o Admin Dashboard para gerir candidata, validação, ativação, histórico e rollback dentro do contrato aprovado;
+  - permitir prova operacional controlada por workload sem incorporar benchmarking da E21.3.
+- Entregas mínimas:
+  - listagem/detalhe administrativo com Production e Preview;
+  - UX agrupada para os workloads de texto e imagem da geração da Landing Page;
+  - criação/edição de candidata com parâmetros permitidos por modalidade;
+  - gates determinísticos e prova operacional adequada ao workload;
+  - ativação humana e rollback para revisão validada;
+  - histórico mínimo de revisões/ativações com ator e timestamps necessários.
+- Critérios de aceite:
+  - candidata reprovada permanece inelegível e não altera runtime;
+  - candidata validada somente entra em uso após ativação humana;
+  - próxima execução usa a nova ativa sem redeploy;
+  - rollback restaura configuração validada anterior na execução seguinte;
+  - texto e imagem preservam seus contratos distintos;
+  - usuário sem `platform_admin` não acessa mutação;
+  - desktop, mobile, teclado/foco e estados de sucesso/erro são validados na superfície tocada;
+  - smoke hospedado comprova pelo menos uma troca e um rollback controlados sem ampliar o escopo para E21.3.
 
-- Debater com o humano as definições conceituais ainda abertas nas subseções 3.1 a 3.7.
-- Incorporar somente decisões aceitas ao mesmo rascunho vivo, mantendo questões abertas claramente separadas.
-- Obter participação do Analista no debate antes da consolidação da v1.
-- Não consultar o Gestor de Automação enquanto permanecer válida a decisão humana `Automação: não` e não surgir mudança material de escopo.
+### 3.3. Próxima ação
+
+- Plano-base v1 consolidado no PR #790.
+- Conforme `docs/prompt-estrategista.md`, o próximo passo é a escolha humana entre:
+  - Opção 1 — Processo atual;
+  - Opção 2 — Processo automatizado.
+
+## 4. Escopo negativo e critérios de parada
+
+### 4.1. Escopo negativo
+
+- Não implementar E21.3, benchmarking, ranking, recomendação automática ou escolha de configuração por qualidade/custo.
+- Não reabrir E19.4 nem alterar sua revisão 3 baseline.
+- Não alterar E21.1 além do necessário para substituir a origem da configuração dentro do boundary já criado.
+- Não incluir `supabase_inspect` na mutação dinâmica dos workloads de produto.
+- Não usar Vercel Global Config neste recorte.
+- Não criar default universal de modelo, effort ou parâmetros de mídia.
+- Não tornar `size`, `format`, `compression` ou `moderation` da imagem mutáveis na E21.2 v1.
+- Não mover prompt, schema funcional, fallback, persistência de resultado ou regra de negócio para o boundary comum.
+- Não criar cliente OpenAI universal, router, engine, agente, job, fila ou workflow próprio.
+- Não criar automação de seleção ou ativação.
+- Não expor secret, prompt, resposta integral, PII ou payload de negócio no histórico administrativo.
+- Não incluir monitoramento de saldo/créditos da conta OpenAI neste recorte.
+
+### 4.2. Critérios de parada
+
+- Parar e devolver ao Estrategista se a implementação exigir mudar a unidade `ambiente + workload`, introduzir outra residência além de Supabase ou tornar Development parte da gestão dinâmica.
+- Parar se houver necessidade de mais de uma candidata/substituição pendente simultânea por `ambiente + workload`.
+- Parar se a prova operacional exigir benchmark comparativo, decisão autônoma ou automação material não prevista.
+- Parar se algum workload exigir tornar dinâmico parâmetro estrutural atualmente mantido em código sem decisão humana específica.
+- Parar se a mudança exigir refatorar consumers para conhecerem diretamente Supabase ou criar cliente OpenAI universal.
+- Parar se a categoria `Automação: não` deixar de atender ao requisito real do recorte.
