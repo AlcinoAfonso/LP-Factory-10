@@ -498,6 +498,9 @@ Execute a avaliação E20.6 do taxon `[taxon_slug]`, usando a cadeia taxonômica
   - contrato tipado e JSON Schema permanecem equivalentes e o parser falha fechado;
   - modos sistemático e hipótese, feedback por nova execução, stale e confirmação separada são cobertos por testes com portas e fakes injetados;
   - componente route-local é validado como apresentação, incluindo estados, teclado e acessibilidade aplicáveis, sem montagem no runtime ativo;
+  - falhas de contrato, parsing, precondição, versão ou revalidação permanecem fail-closed;
+  - testes focais cobrem bloqueio antes do provider, versão explícita sem `latest`, equivalência dos quatro planos, reconstrução integral, prompt injection nas fontes, output válido e inválido, refusal/incomplete por fakes, stale, ausência de mutação e confirmação separada;
+  - cada caminho crítico possui caso positivo e negativo e não depende de credencial OpenAI;
   - nenhum teste depende de credencial OpenAI e o checkpoint não declara a E20.6.5 completa.
 - Critérios da integração final:
   - merges técnicos E21.2 e E19.5 incorporados e dependências hospedadas aplicáveis validadas;
