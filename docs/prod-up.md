@@ -389,14 +389,14 @@ Avaliar cada avanço somente quando houver:
 ## 16 — QA visual e validação de UX em Preview *(✅ Implementado em recortes)*
 
 2026-06-12  
-Atualizado em 2026-08-04
+Atualizado em 2026-08-20
 
 ### Estado e rastreabilidade
 
-- Estado: prática incorporada em recortes, sem depender obrigatoriamente de ferramenta paga.
+- Estado: baseline recorrente já incorporado em recortes; não existe implementação autônoma pendente nem dependência obrigatória de ferramenta paga.
 - Evidência: o roadmap registra `prod#16` como aplicado; a matriz E11.2 incorporou validação em Preview, desktop/mobile, papéis e estados de entitlement.
 - Recortes: E10.6/E10.7 e E11.2.
-- Escopo remanescente: repetir a validação proporcionalmente em novas superfícies, usando ferramentas disponíveis sem substituir revisão manual.
+- Aplicação futura: toda nova superfície de UI deve repetir proporcionalmente a validação aplicável; o critério é global, mas sua execução não é automática e não substitui revisão manual.
 - Relação técnica: `vercel#15` permanece como opção de ferramenta; `prod#16` preserva a prática de produto.
 - O ID permanece como referência dos critérios aplicados.
 
@@ -404,11 +404,11 @@ Atualizado em 2026-08-04
 
 ## 17 — WCAG 2.2 como baseline de acessibilidade *(🟩 Recomendação W3C)*
 2026-07-04  
-Atualizado em 2026-08-03
+Atualizado em 2026-08-20
 
 ### Status no Projeto
 
-- Status: Parcialmente incorporado — baseline aplicada em recortes, sem alegação de conformidade integral.
+- Status: parcialmente incorporado — baseline global aplicada manualmente nos recortes de UI relevantes, sem implementação única ou alegação de conformidade integral.
 - Evidência: a matriz E11 incorporou teclado, foco, labels, erros, feedback, contraste, toque e ausência de interação exclusiva por hover; o Design System já contém guardrails acessíveis, mas não há auditoria WCAG 2.2 global do produto.
 
 ### Descrição
@@ -427,7 +427,7 @@ Usar WCAG 2.2 como referência de produto para LPs, dashboards, autenticação e
 
 ### Ações Recomendadas
 
-1. Aplicar critérios relevantes por fluxo e registrar evidência nas validações do caso.
+1. Aplicar obrigatoriamente os critérios relevantes em cada fluxo de UI e registrar evidência nas validações do caso; o recorte não rediscute a adoção do baseline.
 2. Tratar ferramentas automáticas como apoio, não como prova suficiente de conformidade.
 3. Não declarar conformidade WCAG integral sem auditoria, escopo e evidências próprios.
 4. Remover este item do catálogo ativo somente quando o baseline estiver absorvido de forma canônica e abrangente.
@@ -487,30 +487,21 @@ Avaliar somente quando houver:
 
 ---
 
-## 19 — Stripe Entitlements como referência de feature access *(✅ Aplicado como benchmark e trava)*
+## 19 — Stripe Entitlements como referência de feature access *(⚪ Registro histórico — implementado e absorvido)*
 
 2026-07-04  
-Atualizado em 2026-08-04
+Atualizado em 2026-08-20
 
 ### Estado e rastreabilidade
 
-- Estado: aplicado como referência de produto e limite arquitetural; Stripe Entitlements não foi adotado como autoridade do runtime.
-- Evidência: E9 implementou `account_commercial_entitlements`, view efetiva, adapter Admin e webhook Stripe; roadmap e matriz E11.2 preservam `prod#19` como referência/trava.
+- Estado final: implementado e integralmente absorvido como benchmark e trava arquitetural; Stripe Entitlements não foi adotado como autoridade do runtime.
+- Evidência: E9 implementou `account_commercial_entitlements`, view efetiva, adapter Admin e webhook Stripe; `docs/base-tecnica.md` registra o boundary interno e proíbe plano, assinatura, feature ou resposta externa de provedor comercial de substituir esse sinal.
 - Recortes: E9, E9.7, E11.2 e superfícies comerciais relacionadas.
-- Decisão preservada: plano, assinatura ou feature externa não substituem o sinal e a persistência internos.
-
-### Valor para o Projeto
-
-- Mantém previsibilidade de upgrades, downgrades e liberação comercial sem acoplar autorização ao provedor.
-- Registra por que a referência externa foi estudada e parcialmente absorvida pelo modelo local.
-
-### Limites
-
-- Não usar API, SDK ou tabela da Stripe para decidir acesso automaticamente sem novo recorte aprovado.
-- O ID não autoriza migrar o modelo local.
+- Documento competente: `docs/base-tecnica.md`, especialmente as regras de capacidades comerciais, commercial entitlements, webhook Stripe e consumo pelo LP Builder.
+- Decisão preservada: plano, assinatura ou feature externa não substituem o sinal e a persistência internos; qualquer mudança exige novo recorte aprovado.
+- O ID permanece histórico e não pode ser reutilizado.
 
 ---
-
 ## 20 — Search Generative AI Performance no Search Console *(🧪 Rollout limitado)*
 
 2026-06-03
@@ -723,7 +714,7 @@ Catalogado em 2026-08-20
 - Status: não implementado; o Instagram é canal estratégico, mas não há mensageria, bot, webhook, Meta app ou automação de DM no repositório.
 - Evidência: `README.md`, busca semântica no repositório e `vercel#30`, que preserva a alternativa técnica do Vercel Chat SDK.
 - Natureza de uso: dependente de recorte de produto e canal.
-- Relação com a stack e o produto: complementar a `prod#22` para mensuração social e a `prod#23` para evolução multicanal; a descrição técnica do adapter permanece em `vercel#30`.
+- Relação com a stack e o produto: complementar a `prod#22` para mensuração social e comparável a `prod#23` como canal estratégico distinto, sem pressupor arquitetura multicanal; a descrição técnica do adapter permanece em `vercel#30`.
 - Horizonte sugerido: Pro, Ultra ou indefinido, sujeito à decisão do Estrategista.
 
 ### Descrição
@@ -731,6 +722,8 @@ Catalogado em 2026-08-20
 Mensageria por Instagram Direct pode apoiar atendimento, qualificação, venda e nutrição a partir de DMs e respostas a Stories. A novidade do adapter oficial do Vercel Chat SDK oferece uma alternativa TypeScript para o transporte, mas a capacidade de produto continua subordinada às regras e à Instagram Messaging API da Meta.
 
 O caso não deve ser tratado como chatbot genérico nem como extensão automática do WhatsApp. Cada canal possui permissões, janelas, formatos, contexto e expectativas próprios.
+
+No primeiro recorte aprovado de mensageria social, o projeto deve comparar WhatsApp e Instagram como canais distintos e escolher somente o canal exigido pelo caso real. O WhatsApp permanece prioritário conforme o `README.md`, salvo demanda concreta que justifique iniciar por Instagram. Essa avaliação não autoriza antecipar inbox universal, roteador, banco, agente ou arquitetura multicanal genérica.
 
 ### Valor para o Projeto
 
@@ -766,9 +759,9 @@ Avaliar somente quando houver:
 ### Ações Recomendadas
 
 1. Manter como capacidade estratégica futura do canal Instagram.
-2. Reavaliar no primeiro recorte aprovado de mensageria ou qualificação social.
-3. Começar, se aprovado, por leitura/assistência e handoff humano antes de respostas ou ações autônomas.
-4. Tratar `vercel#30` como alternativa técnica a comparar, não como escolha automática.
+2. Reavaliar no primeiro recorte aprovado de mensageria ou qualificação social, comparando explicitamente o caso com o canal prioritário WhatsApp e escolhendo somente um canal para o recorte.
+3. Começar, se Instagram for aprovado, por leitura/assistência e handoff humano antes de respostas ou ações autônomas.
+4. Tratar `vercel#30` como alternativa técnica a comparar, não como escolha automática nem fundamento para arquitetura multicanal.
 
 ### Fontes Oficiais
 
