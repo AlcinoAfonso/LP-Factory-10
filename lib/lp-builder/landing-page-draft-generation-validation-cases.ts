@@ -1140,14 +1140,26 @@ const cases = [
 
       const migration = readFileSync(
         new URL(
-          "../../supabase/migrations/20260817180000_e19_4_4_landing_page_revisions.sql",
+          "../../supabase/migrations/20260820184200_e19_5_expand_landing_page_status.sql",
           import.meta.url,
         ),
         "utf8",
       );
       assert.match(
         migration,
-        /where lp\.id = p_landing_page_id[\s\S]*?lp\.account_id = p_account_id[\s\S]*?lp\.status = 'draft'[\s\S]*?for update/,
+        /where lp\.id = p_landing_page_id[\s\S]*?lp\.account_id = p_account_id[\s\S]*?lp\.status in \('draft', 'active'\)[\s\S]*?for update/,
+      );
+      assert.match(
+        migration,
+        /check \(status in \('draft', 'active', 'archived'\)\)/,
+      );
+      assert.doesNotMatch(
+        migration,
+        /update\s+public\.account_landing_pages/i,
+      );
+      assert.doesNotMatch(
+        migration,
+        /alter\s+column\s+status\s+set\s+default/i,
       );
       const page = readFileSync(
         new URL(

@@ -3,6 +3,7 @@ import {
   type LandingPageInputCatalogTaxonChain,
 } from "../../conversion-content/landing-page/input-catalog";
 import type { CommercialEntitlementSignal } from "../../commercial-entitlements";
+import { isOperationalLandingPageStatus } from "../../types/status";
 import {
   ACCOUNT_LANDING_PAGE_ONBOARDING_CATALOG_VERSION,
   type AccountLandingPage,
@@ -295,7 +296,7 @@ export async function listAccountLandingPageDraftsFromClient(
     .from("account_landing_pages")
     .select("id,account_id,name,slug,status")
     .eq("account_id", runtime.context.account.id)
-    .eq("status", "draft")
+    .in("status", ["draft", "active"])
     .order("created_at", { ascending: true })
     .order("id", { ascending: true });
 
@@ -348,7 +349,7 @@ export async function bindAccountLandingPageOnboardingConfigurationFromClient(
     .select("id,account_id,name,slug,status")
     .eq("id", landingPageId)
     .eq("account_id", runtime.context.account.id)
-    .eq("status", "draft")
+    .in("status", ["draft", "active"])
     .limit(1)
     .maybeSingle();
   if (draftError) {
@@ -679,7 +680,7 @@ function normalizeLandingPageDraft(
     !value.name.trim() ||
     typeof value.slug !== "string" ||
     !value.slug.trim() ||
-    value.status !== "draft"
+    !isOperationalLandingPageStatus(value.status)
   ) {
     return null;
   }
@@ -688,7 +689,7 @@ function normalizeLandingPageDraft(
     account_id: expectedAccountId,
     name: value.name,
     slug: value.slug,
-    status: "draft",
+    status: value.status,
   };
 }
 

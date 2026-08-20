@@ -4,6 +4,7 @@ import type {
   LandingPageInputValueScope,
   ResolvedLandingPageInputField,
 } from "../conversion-content/landing-page/input-catalog";
+import type { OperationalLandingPageStatus } from "../types/status";
 
 export type CreateAccountLandingPageInput = {
   accountId: string;
@@ -16,7 +17,7 @@ export type AccountLandingPage = {
   account_id: string;
   name: string;
   slug: string;
-  status: "draft";
+  status: OperationalLandingPageStatus;
 };
 
 export type CreateAccountLandingPageError =

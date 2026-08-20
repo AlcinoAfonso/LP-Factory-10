@@ -15,6 +15,7 @@ import type {
   AccountLandingPageOnboardingRevalidationAuthority,
   AccountLandingPageOnboardingValueSource,
 } from "./contracts";
+import type { OperationalLandingPageStatus } from "../types/status";
 
 export const LANDING_PAGE_GENERATION_CONTEXT_CONTRACT_VERSION = 3 as const;
 
@@ -63,7 +64,10 @@ export type LandingPageGenerationContextPackage = Readonly<{
   contractVersion: typeof LANDING_PAGE_GENERATION_CONTEXT_CONTRACT_VERSION;
   identities: Readonly<{
     accountId: string;
-    landingPage: Readonly<{ id: string; status: "draft" }>;
+    landingPage: Readonly<{
+      id: string;
+      status: OperationalLandingPageStatus;
+    }>;
     planKey: string;
     servedTaxon: LandingPageInputCatalogTaxonIdentity;
     taxonChain: LandingPageInputCatalogTaxonChain;

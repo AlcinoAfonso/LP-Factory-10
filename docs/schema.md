@@ -223,7 +223,7 @@
 1.9 account_landing_pages
 1.9.1 Função
 • Persistência mínima de landing pages produtivas por conta na E19.
-• Criação inicial limitada a status `draft`.
+• Rollout expand da E19.5 tolera `draft | active | archived`, sem alterar linhas existentes; criação corrente e default permanecem `draft`.
 
 1.9.2 Colunas
 • id uuid primary key default gen_random_uuid()
@@ -240,7 +240,7 @@
 • created_by referencia auth.users(id) com ON UPDATE CASCADE e ON DELETE RESTRICT.
 
 1.9.4 Constraints
-• account_landing_pages_status_chk: status in ('draft').
+• account_landing_pages_status_chk: status in ('draft', 'active', 'archived').
 • account_landing_pages_slug_chk: slug no padrão seguro `^[a-z0-9]+(-[a-z0-9]+)*$`.
 • account_landing_pages_name_chk: nome não vazio após trim.
 • account_landing_pages_account_slug_uidx: UNIQUE (account_id, slug).
@@ -263,7 +263,8 @@
 
 1.9.8 Observações de escopo
 • Escrita deve ocorrer por fluxo server-side autorizado.
-• Criação inicial é apenas `draft`.
+• Criação corrente permanece apenas `draft`; `active` e `archived` estão reservados ao runtime funcional E19.5.
+• O precursor expand não executa backfill, não muda o default e não retira suporte a `draft`.
 • Publicação, render público, domínio customizado, analytics, A/B e IA runtime não fazem parte deste schema inicial.
 
 1.10 ai_readonly (role)
@@ -830,12 +831,13 @@
 • Não há trigger nem participação no Trigger Hub.
 
 1.27.6 Contrato operacional
-• O append valida conta, LP em draft, attempt, conteúdo e snapshot; tentativa repetida da mesma LP retorna a revisão já criada sem overwrite.
+• O append valida conta, LP operacional em `draft | active`, attempt, conteúdo e snapshot; `archived` é rejeitado e tentativa repetida da mesma LP retorna a revisão já criada sem overwrite.
 • O conteúdo final combina apresentação validada, bindings determinísticos e referência canônica da mídia. O snapshot preserva contexto autorizado, configurações, usage, latência, validações e custo indisponível, sem secret, resposta bruta, raciocínio privado ou URL assinada.
 • A leitura corrente server-only ordena por revision_number desc no par tenant-scoped e valida integralmente conteúdo e snapshot.
 • Migration histórica preservada: `supabase/migrations/20260811133500_e19_4_4_landing_page_materializations.sql`.
 • Evolução 1:N aplicada: `supabase/migrations/20260817180000_e19_4_4_landing_page_revisions.sql`.
 • Verificação read-only: `supabase/snippets/e19_4_4_landing_page_materializations_verify.sql`; casos SQL: `supabase/tests/e19_4_4_landing_page_materializations.test.sql`.
+• Expand backward-compatible repo-only: `supabase/migrations/20260820184200_e19_5_expand_landing_page_status.sql`; verificação `supabase/snippets/e19_5_expand_landing_page_status_verify.sql`; casos SQL `supabase/tests/e19_5_expand_landing_page_status.test.sql`.
 
 1.27.7 Storage privado
 • O bucket privado `landing-page-revision-assets` está ativo no ambiente hospedado com limite de 5 MB e MIME permitido somente `image/webp`.
@@ -1072,6 +1074,8 @@
 • Rollback: não remove automaticamente a extensão, pois pode ser reutilizada por outros recursos
 
 99. Changelog
+v1.0.44 (20/08/2026) — E19.5 precursor expand: ampliado o contrato repo-only de `account_landing_pages.status` para tolerar `draft | active | archived`, preservando default e criação corrente em `draft`, sem backfill; append e consumidores internos passam a tolerar `active`, enquanto `archived` continua bloqueado para mutações.
+
 v1.0.43 (17/08/2026) — E19.4.4: corrigido o estado factual de `account_landing_page_materializations` para registrar que a migration já está aplicada no ambiente hospedado, preservando o contrato 1:1 write-once, conteúdo e snapshot atômicos e ausência de UPDATE/DELETE para `service_role`.
 
 v1.0.40 (11/08/2026) — E19.4.4: registrado o agregado repo-only `account_landing_page_materializations`, sua materialização 1:1 write-once, conteúdo e snapshot atômicos, projeção runtime estrita, RLS sem policies e acesso exclusivo SELECT/INSERT por `service_role`; apply hospedado permanece pós-merge.
