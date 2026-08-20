@@ -16,6 +16,8 @@ Não editar nem commitar na `main`; usar branch dedicada por tarefa ou etapa. Ao
 
 Branches e PRs já abertos não precisam ser sincronizados, rebaseados ou atualizados com a `main` apenas porque ela avançou. Em frentes paralelas, essa divergência é normal. Sincronizar somente quando houver conflito apontado pelo GitHub, quando a tarefa depender materialmente de contrato, arquivo ou dependência alterado na `main`, ou por solicitação humana explícita. Não fazer sincronização preventiva por rotina.
 
+Ao usar worktree, a ausência de secret ou configuração local ignorada pelo Git não comprova indisponibilidade. Quando uma etapa realmente exigir esse recurso, consultar `docs/platform-config.md`; se o mesmo recurso existir no checkout ou projeto-base autorizado e o compartilhamento estiver permitido para o consumidor e ambiente atuais, reutilizá-lo na worktree somente por arquivo local ignorado pelo Git ou mecanismo equivalente já autorizado, sem imprimir, registrar ou versionar o valor. Não buscar nem criar nova credencial por rotina. Parar e pedir decisão apenas se não houver recurso reutilizável aprovado, houver conflito de ambiente ou boundary, ou a fonte exigir isolamento.
+
 Se o ambiente não estiver claro, perguntar antes de publicar.
 
 ### Modo simples
