@@ -52,7 +52,7 @@
 
 - Dar ao humano autorizado uma superfície operacional no Admin Dashboard para consultar e alterar a configuração dos workloads OpenAI aplicáveis.
 - A lista administrativa deve partir do inventário já existente e permitir abrir o detalhe de cada workload, sem tratar o identificador E* como unidade de configuração.
-- Para workloads textuais, permitir alteração humana de `model + reasoning effort`; para workloads de mídia, preservar configuração própria e discutir separadamente quais parâmetros podem ser operacionais.
+- Para workloads textuais, permitir alteração humana de `model + reasoning effort`; para workloads de mídia, preservar configuração própria e expor somente os parâmetros operacionais aprovados.
 - Fazer com que uma configuração ativada passe a ser usada nas execuções seguintes daquele workload no ambiente aplicável, sem commit, PR ou redeploy para uma mudança ordinária.
 - Definir um contrato operacional mínimo no qual cada workload aplicável possua uma configuração ativa inequívoca no ambiente aplicável.
 - Permitir preparar uma candidata sem alterar silenciosamente a configuração ativa.
@@ -73,6 +73,12 @@
 - Somente `platform_admin` pode criar candidata, ativar configuração e executar rollback; Estrategista, Analista, Gestores e futura E21.3 podem produzir recomendações ou evidências, mas não alterar automaticamente a configuração ativa.
 - Toda candidata precisa cumprir validações determinísticas obrigatórias e também uma prova operacional adequada ao workload antes de ficar apta à ativação.
 - A prova operacional não é benchmark universal e não absorve comparação de qualidade, custo, latência ou estabilidade entre alternativas; essas comparações pertencem à E21.3.
+- O núcleo da E21.2 é determinístico: criação de candidata, gates, ativação, histórico, resolução da configuração ativa e rollback não dependem de decisão de IA.
+- A prova operacional pode executar o próprio workload OpenAI para comprovar que a configuração candidata funciona, mas essa execução é validação do workload e não transforma a E21.2 em automação.
+- Automação: não. Por decisão humana, a E21.2 não adota automação, agente, job ou workflow próprio e não requer consulta ao Gestor de Automação antes da v1 enquanto essa decisão permanecer inalterada.
+- Para a UX administrativa, `landing_page_draft_generation` e `landing_page_draft_image_generation` permanecem workloads técnicos independentes, mas devem ser apresentados de forma agrupada sob a função de geração da Landing Page para tornar a operação humana compreensível.
+- No workload textual de geração da LP, a configuração operacional exposta ao humano é `model + reasoning effort`.
+- No workload de imagem da LP, a configuração operacional inicial exposta ao humano é `model + quality`; tamanho, formato, compressão e moderação permanecem determinísticos no código neste recorte, pois participam do contrato técnico de apresentação, Storage ou segurança.
 - Supabase é a hipótese principal de residência operacional a avaliar, por aderir naturalmente ao ciclo `candidata → validação → ativação → histórico → rollback` e por já integrar a stack base do MVP.
 - Vercel Global Config permanece alternativa técnica real de comparação porque também permite leitura e alteração de configuração em runtime sem redeploy e possui APIs para gestão programática; seu uso não exigiria que o humano operasse diretamente a Vercel se o Admin Dashboard intermediasse a mutação.
 - A preferência atual pelo Supabase ainda não equivale a autorização de banco ou arquitetura fechada: a decisão técnica final deve comparar as duas alternativas dentro dos requisitos do recorte antes da consolidação da v1.
@@ -89,7 +95,8 @@
 ### 3.2. Atores e validação
 
 - A autoridade de mutação está fechada em `platform_admin` para criação de candidata, ativação e rollback.
-- Permanece aberto como a validação determinística e a prova operacional são executadas e registradas, inclusive se alguma etapa pode ser automatizada após parecer do Gestor de Automação.
+- Permanece aberto como as validações determinísticas e a prova operacional são executadas e registradas, preservando `Automação: não`.
+- A prova operacional pode executar o workload OpenAI correspondente, mas não decide aprovação, ativação ou rollback.
 - Preservar que recomendações de Estrategista, Analista, Gestores ou futura E21.3 não equivalem a autoridade operacional para alterar a configuração ativa.
 - Preservar que owner/admin de conta não recebe autoridade de plataforma sobre workloads OpenAI.
 
@@ -97,9 +104,9 @@
 
 - Confirmar quais ambientes entram na configuração dinâmica operacional: Production, Preview e eventual tratamento de Development.
 - Confirmar que a unidade primária permanece o workload, sem criar default universal de modelo ou effort.
-- Para workloads textuais, a intenção funcional já aceita é permitir alteração de `model + reasoning effort`; permanece aberto se outro parâmetro transversal também precisa ser dinâmico.
-- Para workload de imagem, decidir quais parâmetros atuais de mídia pertencem à configuração operacional dinâmica e quais permanecem contrato determinístico do consumidor.
-- Identificar explicitamente quais propriedades estruturais continuam versionadas em código, como identidade do workload, modalidade/API, consumidor, fallback e contratos funcionais.
+- Para workloads textuais, a configuração operacional inicial é `model + reasoning effort`; permanece aberto se outro parâmetro transversal também precisa ser dinâmico.
+- Para o workload de imagem da LP, a configuração operacional inicial é `model + quality`; tamanho, formato, compressão e moderação permanecem fixos no contrato versionado em código neste recorte.
+- Identificar explicitamente quais demais propriedades estruturais continuam versionadas em código, como identidade do workload, modalidade/API, consumidor, fallback e contratos funcionais.
 
 ### 3.4. Validação obrigatória antes da ativação
 
@@ -125,6 +132,7 @@
 
 ### 3.7. UX administrativa
 
+- A apresentação da geração da Landing Page deve agrupar visualmente os workloads de texto e imagem, sem fundir seus contratos técnicos nem suas configurações.
 - Fechar a estrutura mínima da lista existente de workloads e da futura ação `Abrir`.
 - Definir quais dados aparecem no detalhe antes e depois de existir candidata.
 - Definir quais ações são separadas: editar/preparar candidata, validar, ativar e rollback.
@@ -133,10 +141,10 @@
 
 ### 3.8. Possibilidade de automação
 
-- Ainda não há classificação aprovada de automação para a E21.2.
-- Existe hipótese material de automação apenas em partes do fluxo de validação ou aplicação controlada da configuração, mas o roadmap não exige automação e a E21.1 classificou suas fases como não automatizadas.
-- Antes do plano-base v1, a possibilidade deve ser submetida ao Gestor de Automação conforme `docs/prompt-estrategista.md` e `docs/gestor-automations.md`.
-- Não criar categoria técnica, job, agente, workflow ou automação antes dessa decisão.
+- Decisão humana fechada neste debate: `Automação: não` para a E21.2.
+- A prova operacional de uma candidata é validação do workload e pode executar OpenAI quando aplicável, mas não constitui automação do processo nem autoriza decisão autônoma.
+- Não criar categoria de automação, job, agente ou workflow próprio para a E21.2.
+- O Gestor de Automação não precisa ser consultado antes da v1 enquanto essa decisão e o escopo permanecerem inalterados.
 
 ## 4. Escopo negativo e próxima etapa do debate
 
@@ -155,4 +163,4 @@
 - Debater com o humano as definições conceituais ainda abertas nas subseções 3.1 a 3.7.
 - Incorporar somente decisões aceitas ao mesmo rascunho vivo, mantendo questões abertas claramente separadas.
 - Obter participação do Analista no debate antes da consolidação da v1.
-- Consultar o Gestor de Automação antes da v1 se a hipótese de automação permanecer material após o fechamento conceitual.
+- Não consultar o Gestor de Automação enquanto permanecer válida a decisão humana `Automação: não` e não surgir mudança material de escopo.
