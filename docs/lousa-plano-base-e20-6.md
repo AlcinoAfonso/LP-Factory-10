@@ -1,12 +1,12 @@
 # Plano-base E20.6 — Avaliação de suficiência factual da E20.2 por taxon
 
 - Data: 15/08/2026.
-- Versão: v2 aprovada pelo Analista; evolução E20.6.5 consolidada como plano-base v1 em 17/08/2026 no mesmo documento canônico.
-- Status: E20.6.3 e E20.6.4 concluídas e operacionais; E20.6.5 consolidada em v1, com implementação ainda não iniciada.
+- Versão: v2 da E20.6.5 consolidada em 20/08/2026 sobre a v1 imutável do PR #764; aprovação do Analista pendente.
+- Status: E20.6.3 e E20.6.4 concluídas e operacionais; E20.6.5 planejada em dois checkpoints, sem integração OpenAI iniciada.
 - Recorte previsto para roadmap: `20.6 — Avaliação de suficiência factual da E20.2 por taxon`.
 - Path canônico: `docs/lousa-plano-base-e20-6.md`.
-- Processo: `docs/prompt-estrategista.md` v31.
-- Plano conceitual: `docs/lp-planejamento.md`, preservado como contexto; a E20.6.5 evolui somente o mecanismo semântico da avaliação e preserva a responsabilidade funcional do recorte.
+- Processo: skill `lp-factory-orquestrar-plano` e contrato `docs/orquestracao-plano-base.md` vigentes em 20/08/2026.
+- Plano conceitual histórico: `docs/lp-planejamento.md`, citado pela v1, mas ausente no snapshot `d260a82bf3e121e8be3f17a24229ecbd54f829ff`; fonte `N/A` na consolidação v2, sem reconstrução por inferência.
 - Dependência: E20.5 concluída para o taxon avaliado, com pesquisa integral `end_customer` selecionada e válida.
 - Fontes adicionais da E20.6.5: `docs/gestor-automations.md`, `docs/base-tecnica.md`, `docs/platform-config.md`, `docs/openai-model-snapshot.md`, `docs/template-prompts.md`, `lib/openai-workloads/registry.ts`, fluxo runtime vigente de proposta de perfil de geração e parecer do Gestor de Automação aprovado no debate de 17/08/2026.
 
@@ -56,6 +56,8 @@
 - O número avaliado deve ser fornecido explicitamente pelo processo/consumidor responsável e deve corresponder à versão executável que será usada.
 - Se a versão executável pretendida mudar de `N` para `M`, uma avaliação anterior de `N` não autoriza `M`; o gate falha até nova avaliação.
 - Se uma LP real reabrir a suficiência de uma versão antes considerada suficiente, o marcador pode voltar a `NULL` até o ajuste e a nova decisão.
+- Depois do merge técnico da E19.5 e antes da integração final, atualizar a branch da E20.6.5 e identificar no caminho executável da E19.5 a versão E20.2 explicitamente requerida. Reconstrução, resolução dos quatro planos, Structured Output, revalidação e registro administrativo devem usar exatamente essa versão `N`.
+- É proibido assumir a v4 atual, maior versão, `latest` ou fallback. Se a E19.5 mergeada não consolidar uma versão executável explícita, parar e sinalizar a dependência não resolvida; não completar a lacuna na E20.6.5.
 
 ### 1.5. Estado derivado `taxon preparado`
 
@@ -130,8 +132,10 @@
   - não usar tools autônomas, Agents SDK, agent loop, PTC, multi-agent, job, fila ou automação recorrente sem novo gap demonstrado;
   - não persistir conversa, prompt, pesquisa integral ou resposta bruta na v1;
   - não usar `latest`, maior versão ou fallback implícito da E20.2.
-- Avaliação formal de Automação na v2 da E20.6.5: necessária.
-- Modelo, `reasoning.effort`, ID canônico do novo workload e configuração executável pertencem à v2 sob governança E21.1 e não são antecipados nesta v1.
+- Avaliação formal de Automação da v2: concluída em 20/08/2026; classificação mantida em `2.1.3 — Automação com IA em fluxo controlado`, com validação material pelo Analista para a residência da identidade do workload e do transporte compartilhado.
+- O processamento determinístico é autoridade para autorização, identidade, leitura integral, versão E20.2 explícita, resolução e equivalência dos quatro planos, reconstrução do contexto, validação do Structured Output, detecção de stale e revalidação anterior à mutação. A OpenAI executa somente a avaliação semântica não autoritativa.
+- Não automatizar preservaria o fluxo externo E20.6.3, mas não atenderia ao objetivo aprovado de internalização; automação exclusivamente determinística não resolve suficientemente o julgamento semântico; comportamento agentic, tools e orquestração autônoma não apresentam benefício necessário e permanecem proibidos.
+- Modelo, `reasoning.effort`, ID canônico do novo workload e configuração executável não podem ser hardcoded nem antecipados pela E20.6.5; na integração final, devem vir exclusivamente da configuração ativa do lifecycle dinâmico Supabase e da API pública comum resultantes da E21.2.
 
 ### 1.11. Dois modos de avaliação da E20.6.5
 
@@ -166,6 +170,8 @@
 - Texto conversacional como `concordo` não produz mutação por si só.
 - A decisão administrativa é uma ação humana explícita e separada do diálogo.
 - Antes de qualquer registro, o backend revalida deterministicamente que taxon, cadeia taxonômica, pesquisa E20.5 e versão/catálogo E20.2 permanecem compatíveis com o contexto avaliado.
+- Cada chamada produz, antes do provider, uma identidade de contexto controlada pelo servidor que representa taxon, cadeia taxonômica integral, versão e conteúdo autorizado da pesquisa E20.5, versão E20.2 explícita e projeções factuais equivalentes dos quatro planos. O modelo não fornece nem corrige essa identidade.
+- Feedback humano provoca nova reconstrução e nova chamada, levando apenas o resultado estruturado anterior necessário. Antes da decisão administrativa final, o backend reconstrói integralmente as mesmas fontes e exige equivalência com o contexto efetivamente avaliado; qualquer mudança retorna estado stale/inválido e impede gravação.
 - `fingerprint` pode ser usado na v2 como detalhe de implementação, mas não é requisito arquitetural da v1; a garantia obrigatória é a revalidação determinística integral das fontes.
 - A v1 não cria persistência de conversa, prompt, relatório, hipótese ou candidato.
 - Cada intervenção humana produz nova chamada explícita com contexto canônico reconstruído, resultado estruturado anterior relevante quando necessário e feedback humano atual.
@@ -292,8 +298,17 @@ Execute a avaliação E20.6 do taxon `[taxon_slug]`, usando a cadeia taxonômica
 - Se houver evolução da E20.2, o Codex deve executar novamente a E20.6 contra a nova versão executável antes de orientar qualquer registro no Admin.
 - Somente após recomendação `suficiente` aceita pelo humano, o Codex deve encerrar a interação com orientação explícita equivalente a: `Volte ao Admin Dashboard e registre a versão E20.2 N como avaliada e suficiente para este taxon.`
 - O retorno ao Admin era deliberado na entrega original: o Codex não grava diretamente `reviewed_input_catalog_version`; a confirmação administrativa permanece ação humana explícita também na E20.6.5.
+- Na integração final, a avaliação runtime substitui o handoff semântico Admin → Codex na superfície ativa. Remover `buildInputCatalogReviewHandoff`, seu export público, o campo `handoff` do DTO administrativo, sua montagem em `adminTaxonomyAdapter`, a textarea, o clipboard, o CTA de cópia e os testes exclusivos desse caminho.
+- Preservar o histórico documental da E20.6.3, `resolveInputCatalogReview`, a coluna existente, as ações humanas de registrar/reabrir e o gate determinístico E20.6.4. Não manter fallback automático ou caminho operacional paralelo pelo Codex App.
 
 ### 2.7. Fluxo operacional da E20.6.5 no runtime do Admin
+
+- A execução possui dois checkpoints obrigatórios:
+  - **checkpoint pré-integração OpenAI:** consolidar v2 e avaliação formal de Automação; implementar contratos e domínio E20.6.5, identidade e reconstrução/revalidação determinísticas, Structured Output, modos `systematic` e `hypothesis`, UI route-local e testes com configuração e transporte injetados/fakes;
+  - **checkpoint de integração final:** somente após os merges técnicos E21.2 e E19.5, atualizar a branch, consumir a configuração ativa do lifecycle dinâmico Supabase pela API pública comum, usar a versão E20.2 explícita consolidada pela E19.5, integrar o provider real e substituir o handoff Codex.
+- No checkpoint pré-integração, `lib/openai-workloads/` permanece inalterado, nenhuma configuração repo-only temporária é criada, nenhum resolver ou transporte OpenAI exclusivo da E20.6.5 é criado, nenhuma chamada real ao provider é concluída e a implementação não pode ser declarada completa.
+- A integração real somente começa depois do merge técnico da E21.2 e do apply e validação, no ambiente-alvo, dos objetos de banco dos quais seu runtime dependa. A E20.6.5 deve consumir exclusivamente a API pública do lifecycle dinâmico Supabase e do boundary comum `lib/openai-workloads/`, sem consulta direta aos objetos E21.2 e sem configuração, resolver ou transporte paralelo.
+- Se a API pública comum pós-E21.2 não reconhecer a identidade E20.6.5 ou não oferecer o consumo necessário, parar antes de alterar o boundary e reportar a divergência. A escolha entre ampliar a E21.2 ou criar recorte transversal compartilhado pertence à validação material do Analista; transporte domain-specific da E20.6.5 permanece proibido.
 
 - Gatilho:
   - ação explícita de `platform_admin` na Taxonomia administrativa existente.
@@ -332,24 +347,24 @@ Execute a avaliação E20.6 do taxon `[taxon_slug]`, usando a cadeia taxonômica
   - nenhum fallback automático para Codex App;
   - tentativa posterior depende de nova ação humana explícita.
 
+#### 2.7.1. Residência e separação de responsabilidades
+
+- Contratos, modos, identidade de contexto, reconstrução determinística, validação do Structured Output, barreira de gap e comparação de fontes pertencem ao boundary existente `lib/conversion-content/landing-page/taxon-preparation/`; não criar novo boundary raiz.
+- Leituras e mutações de banco permanecem nos adapters server-only existentes, reutilizando o caminho único da E20.5 e a cadeia canônica E20.2; Server Components, Server Actions e componentes client não consultam Supabase diretamente.
+- A Server Action permanece fina, executa `requirePlatformAdmin` antes de configuração ou provider e chama o caso de uso do domínio. A UI específica permanece em `app/admin/(protected)/taxonomia/[taxonId]/_components/` e recebe somente DTOs normalizados e actions.
+- React, actions e `adminTaxonomyAdapter` não contêm prompt, schema funcional, parsing da resposta, transporte OpenAI ou regra semântica da avaliação. A integração final consome somente a API pública comum produzida pela E21.2.
+- O prompt versionado permanece próximo da feature route-local conforme `docs/template-prompts.md`; contrato tipado e JSON Schema devem possuir prova focal de equivalência para impedir drift.
+- No checkpoint pré-integração, a UI route-local é construída e testada como componente apresentacional com callbacks e estados injetados, sem fake em produção e sem substituir o handoff ativo. A montagem na action/runtime real e a remoção do legado ocorrem somente no checkpoint final.
+
 ### 2.8. Structured Output mínimo da E20.6.5
 
-- O contrato mínimo deve suportar:
-  - `status`: `sufficient | candidate_gaps | inconclusive`;
-  - `mode`: `systematic | hypothesis`;
-  - resumo curto;
-  - `candidates[]` quando aplicável;
-  - origem do candidato: sistemático, hipótese humana ou incidental;
-  - conclusão: coberto, refinamento, possível novo field ou inconclusivo;
-  - necessidade factual;
-  - fields relacionados existentes quando houver;
-  - justificativa e evidência curta;
-  - camada taxonômica sugerida quando aplicável;
-  - incertezas;
-  - pergunta de follow-up somente quando necessária.
-- O backend anexa e controla identidade das fontes e metadados autoritativos; o modelo não é autoridade para taxon, versão ou identidade do contexto.
-- O contrato não inclui cadeia de raciocínio privada.
-- O shape executável exato pertence à v2 da E20.6.5.
+- O contrato executável deve ser estrito, versionado e discriminado por `status` e `mode`.
+- Shape raiz obrigatório: `schemaVersion`, `status`, `mode`, `summary`, `candidates[]` e `followUpQuestion`.
+- `status`: `sufficient | candidate_gaps | inconclusive`; `mode`: `systematic | hypothesis`.
+- Cada candidato contém origem (`systematic | human_hypothesis | incidental`), conclusão (`covered | refine_existing_field | possible_new_field | inconclusive`), necessidade factual, fields relacionados, cobertura atual, insuficiência alegada, evidência curta, origem operacional esperada, consumidor real, prejuízo concreto, camada taxonômica sugerida e incertezas.
+- O backend controla e anexa taxon, cadeia, pesquisa, versão E20.2 e planos; o modelo não fornece nem corrige essas identidades.
+- Todos os campos são exigidos no schema, usando `null` ou coleção vazia quando não aplicáveis, `additionalProperties: false` em todos os objetos e limites explícitos de tamanho e cardinalidade. O contrato não inclui cadeia de raciocínio privada.
+- Refusal, `incomplete`, truncamento, schema inválido ou inconsistência semântica são tratados fora do resultado válido e falham fechado. A aderência estrutural ao JSON Schema não prova correção semântica.
 
 ### 2.9. Observabilidade e aprendizado operacional da E20.6.5
 
@@ -366,6 +381,8 @@ Execute a avaliação E20.6 do taxon `[taxon_slug]`, usando a cadeia taxonômica
   - decisão humana sanitizada `accepted/rejected/modified`, quando puder ser registrada sem conteúdo sensível.
 - Não registrar prompt, pesquisa integral, conversa ou resposta bruta.
 - Histórico analítico permanente de gaps, discordâncias ou decisões fica fora da v1 e somente pode ser reaberto diante de uso real que demonstre valor.
+- Quando autorizada no checkpoint final, a chamada real usa Responses API server-side com `store: false`, `tools: []`, `previous_response_id` ausente, limite explícito de output, timeout/cancelamento e `safety_identifier` estável derivado sem PII do ator administrativo.
+- Cada intervenção reconstrói integralmente o contexto. A observabilidade comum registra somente configuração, revisão, modelo, effort, response ID, latência, usage e resultado seguro; evento route-local pode acrescentar apenas modo e categoria de falha, sem conteúdo.
 
 ### 2.10. Frontend e evidência esperada da E20.6.5
 
@@ -378,12 +395,14 @@ Execute a avaliação E20.6 do taxon `[taxon_slug]`, usando a cadeia taxonômica
   - decisão administrativa explícita separada da conversa;
   - invalidação por mudança das fontes.
 - A UI não deve sugerir que a IA aprovou ou alterou a E20.2.
+- Aplicar `prod#14` como critério de reconhecimento: no QA autenticado, o `platform_admin` deve identificar, sem instrução externa, o modo ativo, o caráter não autoritativo do resultado da IA, a diferença entre revisar a recomendação e registrar suficiência, o bloqueio de registro diante de `inconclusive`, falha ou invalidação das fontes e a próxima ação válida; não criar telemetria, métrica de tempo ou programa de testes próprio.
 - Critérios visuais de aceite:
   - leitura clara em desktop e largura móvel;
   - sem overflow horizontal indevido;
   - foco visível e navegação por teclado nos controles interativos;
   - estados de carregamento, falha, resultado e invalidação compreensíveis;
   - nenhuma exposição de prompt, pesquisa integral, resposta bruta ou metadado sensível.
+  - aplicar `prod#17` como baseline proporcional: controles devem ter nome ou label acessível; erros e instruções devem estar associados ao controle correspondente; todo o fluxo deve ser concluível por teclado, com ordem e foco visíveis e foco preservado ou redirecionado de forma previsível após loading, erro e invalidação; validar contraste, alvos de toque e ausência de ação exclusiva por hover. Ferramenta automática é apenas apoio e o recorte não declara conformidade WCAG 2.2 integral.
 - Evidência esperada:
   - modo sistemático executável;
   - hipótese focal executável e refinável;
@@ -392,8 +411,16 @@ Execute a avaliação E20.6 do taxon `[taxon_slug]`, usando a cadeia taxonômica
   - confirmação administrativa separada;
   - falha fechada sem registro de suficiência;
   - QA autenticado da superfície em desktop e mobile.
+  - aplicar `prod#16`: executar QA autenticado em Preview, em desktop e viewport móvel, cobrindo `systematic`, `hypothesis`, loading, resultado válido, refusal ou falha técnica, `inconclusive`, invalidação stale e confirmação administrativa separada; registrar evidência do caso e erros visíveis ou de console, sem exigir ferramenta paga nem substituir revisão manual.
 
-### 2.11. Riscos principais da E20.6.5
+### 2.11. Oportunidades condicionais sem implementação
+
+- `vercel#1`: reavaliar AI Gateway somente após integração real se uso demonstrar necessidade de múltiplos providers ou controle centralizado de gastos não atendido; não alterar transporte, fallback ou `lib/openai-workloads/` neste recorte.
+- `vercel#15`: Vercel Toolbar pode apoiar o QA do primeiro Preview funcional se disponível e útil, mas não é dependência nem gate.
+- `supa#69`: trace propagation pode ser reavaliada somente após incidente real e tracer aprovado; não instalar OpenTelemetry, atualizar dependência ou alterar runtime agora.
+- `vercel#20`: rejeitado para este recorte porque criaria fonte concorrente de configuração e rollout.
+
+### 2.12. Riscos principais da E20.6.5
 
 - Resposta semanticamente convincente, mas não sustentada pelas fontes.
   - Mitigação: Structured Output, evidência explícita, validação determinística e decisão humana.
@@ -446,7 +473,7 @@ Execute a avaliação E20.6 do taxon `[taxon_slug]`, usando a cadeia taxonômica
 
 ### 3.3. E20.6.5 — Avaliação factual com IA no runtime do Admin
 
-- Status: plano-base v1 consolidado; implementação não iniciada.
+- Status: plano-base v2 consolidado; aprovação do Analista e implementação do checkpoint pré-integração pendentes.
 - Automação: sim.
 - Categoria: `2.1.3 — Automação com IA em fluxo controlado`.
 - Objetivo: internalizar no Admin a avaliação semântica da E20.6, incluindo descoberta sistemática e diálogo sobre hipóteses humanas, mantendo autoridade humana e gate determinístico.
@@ -455,11 +482,17 @@ Execute a avaliação E20.6 do taxon `[taxon_slug]`, usando a cadeia taxonômica
   - sem nova persistência conversacional;
   - sem comportamento agentic;
   - sem mudança dos contratos consumidores por consequência da internalização da IA;
-  - sem modelo/effort antecipados antes da governança E21.1 na v2.
+  - sem modelo/effort hardcoded, configuração repo-only, transporte exclusivo ou alteração antecipada de `lib/openai-workloads/`;
+  - sem chamada real OpenAI ou declaração de conclusão no checkpoint paralelo.
+- Artefatos autorizados no checkpoint pré-integração:
+  - contratos tipados, schema estrito, parser, identidade de contexto, coordenador determinístico e portas injetáveis no boundary existente `lib/conversion-content/landing-page/taxon-preparation/`;
+  - exports e validadores focais no mesmo boundary, sem dependência de React, Supabase ou OpenAI;
+  - componente apresentacional em `app/admin/(protected)/taxonomia/[taxonId]/_components/`, sem montagem em provider/fake de produção;
+  - testes com loaders, configuração e transporte fakes, sem credencial OpenAI.
 - Critérios de aceite:
-  - workload de produto integrado à governança E21.1;
+  - checkpoint pré-integração não altera `lib/openai-workloads/` e executa zero chamadas reais;
   - precondições e contexto reconstruídos deterministicamente;
-  - Responses API + Structured Output validados;
+  - contrato tipado e JSON Schema estrito permanecem equivalentes e o parser falha fechado;
   - modo sistemático e modo hipótese funcionais;
   - refinamento por feedback humano sem memória persistente obrigatória;
   - mudança material das fontes invalida a avaliação corrente;
@@ -468,8 +501,15 @@ Execute a avaliação E20.6 do taxon `[taxon_slug]`, usando a cadeia taxonômica
   - falhas permanecem fail-closed;
   - E20.6.4 continua determinística e sem nova chamada de IA;
   - frontend autenticado validado em desktop, mobile, teclado e estados de erro/invalidação.
-- Avaliação formal de Automação na v2: necessária.
-- Próxima ação: concluir o checklist da v1 e escolher o processo conforme o item 4 de `docs/prompt-estrategista.md`.
+  - testes do checkpoint cobrem bloqueio antes do provider, versão explícita sem `latest`, equivalência dos quatro planos, reconstrução integral, ambos os modos, feedback por nova chamada, prompt injection nas fontes, output válido/inválido, refusal/incomplete, stale, ausência de mutação e confirmação separada;
+  - cada caminho crítico possui caso positivo e negativo e não depende de credencial OpenAI.
+- Gates posteriores obrigatórios:
+  - após E21.2 técnica, atualizar a branch, comprovar apply/validação dos objetos requeridos e consumir somente a configuração ativa e a API pública comum; se for necessário alterar o boundary compartilhado, parar antes da edição e reportar;
+  - após E19.5 técnica, atualizar novamente e usar exatamente a versão E20.2 executável explícita consolidada; ausência, divergência ou versão não executável falham fechado;
+  - integrar chamada real, observabilidade e remoção do handoff somente depois dos dois gates; o PR técnico final E20.6.5 deve ser o último dos três a mergear.
+- Artefatos finais posteriores: remover o caminho ativo Admin → Codex; atualizar `docs/automations.md`, `docs/base-tecnica.md` e `docs/platform-config.md` somente quando o runtime real estiver comprovado; fechar `docs/roadmap.md` somente após merge técnico final.
+- Avaliação formal de Automação na v2: concluída; classificação aprovada e decisão material de workload/transporte encaminhada ao Analista.
+- Próxima ação: Passagem 1 do Analista sobre este snapshot v2.
 
 ## 4. Escopo negativo e critérios de parada
 
@@ -492,6 +532,7 @@ Execute a avaliação E20.6 do taxon `[taxon_slug]`, usando a cadeia taxonômica
 - Não criar tabela, coluna `prepared`, status, view ou lifecycle de prontidão.
 - Não usar maior versão disponível, `latest` ou fallback de registry.
 - Não definir disponibilidade comercial, entitlement, contratação, publicação ou capacidade por plano.
+- No checkpoint pré-integração, não alterar `lib/openai-workloads/`, não criar configuração temporária repo-only, não criar resolver/transporte OpenAI exclusivo, não chamar provider real e não substituir o handoff ativo por fake de produção.
 - Não criar dimensão `taxon + plano` para o marcador sem novo gap real e novo planejamento.
 - As proibições históricas da E20.6.3 contra workload OpenAI no runtime e productização da análise são superadas somente pela E20.6.5; não se tornam autorização para agente, nova infraestrutura ou mutação automática.
 
@@ -506,4 +547,8 @@ Execute a avaliação E20.6 do taxon `[taxon_slug]`, usando a cadeia taxonômica
 - Parar se a solução exigir comportamento agentic, tools autônomas ou nova infraestrutura para cumprir requisito não previsto nesta v1.
 - Parar se não for possível preservar a autoridade determinística de E20.5/E20.2/E20.6.4 e a decisão humana separada.
 - Parar se a implementação exigir alterar contratos consumidores E19 sem gap factual específico e recorte próprio.
+- Parar se, antes do merge técnico E21.2, qualquer requisito exigir alteração do boundary comum `lib/openai-workloads/`, identidade de workload nova ou transporte compartilhado ainda inexistente; continuar somente até o checkpoint pré-integração.
+- Depois da E21.2, parar antes de editar se sua API pública não suportar a identidade/configuração/consumo necessários; não criar workaround local.
+- Depois da E19.5, parar se o caminho executável não consolidar uma versão E20.2 explícita; não assumir v4, v5, `latest`, maior versão ou fallback.
+- A integração final somente pode avançar depois da decisão material do Analista sobre a residência da identidade do workload e do transporte reutilizável.
 - Encerrar a E20.6.5 quando o runtime do Admin conseguir executar avaliação sistemática e focal com IA, preservar decisão humana separada, falhar fechado e continuar alimentando o mesmo predicado determinístico de preparação da E20.6.4.
