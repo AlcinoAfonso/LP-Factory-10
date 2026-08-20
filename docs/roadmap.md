@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 19/08/2026
-• Versão: v1.5.169
+• Data: 20/08/2026
+• Versão: v1.5.170
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2583,7 +2583,7 @@ Repositório — Ajustados
 20.6.1 Objetivo e status
 
 * Objetivo: avaliar a suficiência factual da pesquisa integral `end_customer` selecionada pela E20.5 em conjunto com uma versão executável explícita do catálogo E20.2 e definir o predicado final de preparação do taxon, sem autorizar geração.
-* Status: Concluída em 15/08/2026; implementação, migration, gate operacional, registro humano e prova real do predicado derivado aprovados.
+* Status: E20.6.3 e E20.6.4 concluídas e operacionais desde 15/08/2026; E20.6.5 definida em plano-base v2, com avanço paralelo autorizado somente até o checkpoint pré-integração OpenAI.
 
 20.6.2 Registros do recorte
 
@@ -2642,6 +2642,16 @@ Repositório — Ajustados
   * a prova real de `corretor-imoveis`, com pesquisa integral `end_customer` v1, `reviewed_input_catalog_version = 4` e `requiredInputCatalogVersion = 4`, retornou `prepared: true`;
   * o controle negativo com `requiredInputCatalogVersion = 3` retornou `INPUT_CATALOG_REVIEW_VERSION_MISMATCH`, comprovando igualdade exata sem `latest` ou fallback;
   * preservar E19.2, E19.3 e E19.4 sem alteração neste recorte.
+
+20.6.5 Avaliação factual com IA no runtime do Admin
+
+* Status: Plano-base v2 aprovado em 20/08/2026; checkpoint pré-integração autorizado, integração final pendente dos merges técnicos E21.2 e E19.5.
+* Conteúdo:
+  * internalizar na Taxonomia administrativa existente a avaliação semântica não autoritativa nos modos sistemático e hipótese humana, preservando a decisão administrativa explícita, a revalidação determinística e o gate E20.6.4 sem IA;
+  * no checkpoint pré-integração, implementar somente domínio e contratos, identidade e reconstrução/revalidação do contexto, Structured Output estrito, UI route-local apresentacional e testes com portas e fakes injetados, sem alterar `lib/openai-workloads/`, criar configuração repo-only, chamar provider real ou declarar a E20.6.5 completa;
+  * após o merge técnico da E21.2, atualizar a branch, registrar a identidade code-owned no boundary comum e resolver os parâmetros operacionais exclusivamente pelo lifecycle dinâmico Supabase e sua API pública, sem consulta direta, configuração paralela ou transporte exclusivo da E20.6.5;
+  * após o merge técnico da E19.5, atualizar novamente e usar exatamente a versão E20.2 executável explícita então consolidada em todo o fluxo, sem `latest`, maior versão ou fallback;
+  * integrar o provider real, montar a UI autenticada e remover o handoff Admin → Codex somente depois dos dois gates, mantendo falha fechada e fazendo do PR técnico final E20.6.5 o último dos três a ser mergeado.
 
 21. E21 — Gestão e governança dos workloads OpenAI
 - Objetivo: gerir e governar os workloads OpenAI por recortes aprovados, iniciando pela configuração explícita, observabilidade segura e leitura administrativa; a configuração dinâmica e o histórico permanecem para recortes posteriores, sem otimização automatizada.
