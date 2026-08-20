@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.71
+• Versão: v2.0.72
 • Data: 20/08/2026
 
 0.2 Contrato do documento (consulta)
@@ -319,6 +319,9 @@
 • Configuração operacional, revisões validadas e ativações são mantidas no Supabase por unidade `ambiente + workload`, com lifecycle, allowlists, concorrência otimista, relações unit-safe, RLS/grants restritos e histórico append-only; objetos físicos e estado de apply pertencem a `docs/schema.md`.
 • Snapshots funcionais que preservam configuração de geração devem revalidar origem, revisão e allowlist pelo boundary público, aceitando configuração operacional autorizada sem relaxar os parâmetros estruturais mantidos em código.
 • Cada tentativa de provider deve emitir somente metadados operacionais normalizados e seguros, preservando métricas ausentes como `null`; prompts, respostas integrais, payloads de negócio, PII, secrets e cálculo monetário não entram no evento comum.
+• A gestão administrativa consome somente projeção pública imutável e read model seguro; a página reautoriza `platform_admin` antes da leitura privilegiada, cada mutação reexecuta o guard e o ator é derivado exclusivamente no servidor.
+• Candidata, prova, revisão validada pendente, ativação e rollback permanecem estados explícitos. A prova usa fixture segura nos transportes funcionais existentes, não persiste dados de negócio e somente promove a candidata após sucesso; a configuração ativa muda apenas por ação humana posterior.
+• `OPENAI_API_KEY` permanece server-only e restrita à prova operacional autorizada; não atravessa client, formulário, read model ou log. Falha, recusa ou metadado inseguro encerram a prova sem promover nem descartar a candidata.
 
 4. DB Contract
 • `docs/schema.md` é a fonte única de tabelas, views, functions, RPCs, triggers, policies, constraints, grants e do estado exato do banco.
