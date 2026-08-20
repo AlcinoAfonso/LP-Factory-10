@@ -1,7 +1,7 @@
 export type AdminDocCatalogItem = {
   id: string;
   title: string;
-  path: `docs/${string}.md`;
+  path: string;
   description: string;
 };
 
@@ -10,86 +10,77 @@ export const adminDocsCatalog: AdminDocCatalogItem[] = [
     id: 'roadmap',
     title: 'Roadmap',
     path: 'docs/roadmap.md',
-    description: 'Estado final dos casos E*, escopos, dependencias e pendencias.',
+    description: 'Estado, escopo, dependencias e proximos marcos dos casos E*.',
   },
   {
     id: 'base-tecnica',
-    title: 'Base tecnica',
+    title: 'Base Tecnica',
     path: 'docs/base-tecnica.md',
-    description: 'Contrato tecnico de runtime e implementacao segura.',
+    description: 'Regras tecnicas de runtime e implementacao segura.',
   },
   {
     id: 'schema',
     title: 'Schema',
     path: 'docs/schema.md',
-    description: 'Contrato de banco, objetos e permissoes de DB.',
+    description: 'Contrato do banco e inventario de objetos persistidos.',
   },
   {
     id: 'design-system',
-    title: 'Design system',
+    title: 'Design System',
     path: 'docs/design-system.md',
-    description: 'Contrato visual atual do produto.',
-  },
-  {
-    id: 'lp-planejamento',
-    title: 'Planejamento de LPs',
-    path: 'docs/lp-planejamento.md',
-    description: 'Criterios conceituais, parametrizacao e decisoes de formacao e liberacao das LPs.',
+    description: 'Tokens, componentes e regras visuais do produto.',
   },
   {
     id: 'gestor-codex',
     title: 'Gestor Codex',
     path: 'docs/gestor-codex.md',
-    description: 'Estado de adocao, decisoes praticas e recursos aprovados.',
+    description: 'Contrato de decisao e operacao do Gestor Codex.',
   },
   {
     id: 'gestor-automations',
     title: 'Gestor Automations',
     path: 'docs/gestor-automations.md',
-    description: 'Painel de avaliação de automações, agentes, services e tecnologias adjacentes.',
+    description: 'Contrato de decisao e operacao do Gestor de Automacoes.',
   },
   {
     id: 'gestor-seguranca',
-    title: 'Gestor de Segurança',
+    title: 'Gestor Seguranca',
     path: 'docs/gestor-seguranca.md',
-    description: 'Governança de segurança de plataformas, pendências priorizadas e temas futuros.',
+    description: 'Contrato de decisao e operacao do Gestor de Seguranca.',
   },
   {
     id: 'automations',
     title: 'Automations',
     path: 'docs/automations.md',
-    description: 'Catalogo de automacoes operacionais.',
+    description: 'Catalogo e comportamento operacional das automacoes.',
   },
   {
     id: 'prompt-estrategista',
-    title: 'Prompt estrategista',
+    title: 'Prompt Estrategista',
     path: 'docs/prompt-estrategista.md',
-    description: 'Fluxo estrategista para briefing e execucao.',
+    description: 'Instrucoes do papel Estrategista.',
   },
   {
     id: 'prompt-executor',
-    title: 'Prompt executor',
+    title: 'Prompt Executor',
     path: 'docs/prompt-executor.md',
-    description: 'Contrato operacional do executor Codex.',
+    description: 'Instrucoes do papel Executor.',
   },
   {
     id: 'template-briefing-codex',
-    title: 'Template briefing Codex',
+    title: 'Template Briefing Codex',
     path: 'docs/template-briefing-codex.md',
-    description: 'Template de briefing para execucoes no Codex.',
+    description: 'Template para briefing de execucao no Codex.',
   },
   {
     id: 'template-prompts',
-    title: 'Template prompts',
+    title: 'Template Prompts',
     path: 'docs/template-prompts.md',
-    description: 'Template base para prompts do projeto.',
+    description: 'Template padrao para prompts operacionais.',
   },
 ];
 
-export function getAdminDocById(id: string | undefined) {
-  if (!id) {
-    return adminDocsCatalog[0];
-  }
-
-  return adminDocsCatalog.find((doc) => doc.id === id) ?? null;
+export function getAdminDocById(docId: string | undefined) {
+  if (!docId) return adminDocsCatalog[0] ?? null;
+  return adminDocsCatalog.find((doc) => doc.id === docId) ?? null;
 }
