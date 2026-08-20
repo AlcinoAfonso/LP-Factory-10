@@ -1,119 +1,124 @@
-12/08/2026 — Plano-base v1 — E19.5 — Workspace operacional da conta e laboratório de drafts
+20/08/2026 — Rascunho vivo — E19.5 — Workspace operacional e lifecycle de LPs
 
 ## 1. Estado e decisões fixas
 
 ### 1.1. Identificação
 
-- Recorte: `E19.5 — Workspace operacional da conta e laboratório de drafts`.
+- Recorte: `E19.5 — Workspace operacional e lifecycle de LPs`.
 - Path: `docs/lousa-plano-base-e19-5.md`.
-- Estado: plano-base v1 consolidado por decisão humana em 12/08/2026.
-- Plano conceitual: `docs/lp-planejamento.md`.
+- Estado: **rascunho vivo em reconciliação; ainda não consolidado como plano-base v1**.
+- O plano-base v1 anterior deste mesmo arquivo foi superado materialmente pela evolução E19.4 para revisões append-only 1:N e pelas decisões humanas posteriores.
+- Plano conceitual: N/A.
 - Processo: `docs/prompt-estrategista.md`.
+- PR vivo: #726.
 - Predecessores materiais: E19.1, E19.2, E19.3 e E19.4 implementadas no fluxo oficial da conta.
 
 ### 1.2. Problema comprovado
 
-- A primeira LP real comprovou o pipeline técnico de geração, validação, materialização e preview, mas foi reprovada na avaliação humana de qualidade comercial, com nota aproximada de `2/10`.
-- O projeto precisa testar mudanças posteriores de modelo, prompt, perfil, composição e renderer sem destruir resultados anteriores.
-- A superfície atual `/a/[account]` não funciona como workspace permanente da conta: não organiza configurações por contexto, não lista todas as LPs nem oferece um fluxo seguro para criar e preservar múltiplos drafts comparáveis.
-- A persistência da E19.2 foi desenhada como agregado 1:1 por conta para o onboarding da primeira LP e possui `landing_page_id` write-once; ela não pode ser rebindada nem representar sozinha configurações próprias de várias LPs.
-- A materialização da E19.4 é 1:1 e write-once por LP; regeneração não pode sobrescrever silenciosamente o resultado anterior.
-- O objetivo editorial e comercial específico da LP ainda não possui um input explícito suficiente para orientar e identificar cada teste.
+- A E19.4 comprovou o pipeline de geração, validação, revisões append-only, renderer e preview privado da primeira LP real.
+- `landing_page` passou a representar uma identidade comercial estável com múltiplas revisões imutáveis; o modelo anterior do #726, baseado em drafts independentes para cada variação, não deve ser implementado.
+- `public.account_landing_pages.status` ainda aceita somente `draft`, significado que ficou insuficiente para representar o lifecycle da identidade depois da existência de revisões.
+- A superfície `/a/[account]` ainda precisa evoluir de continuação do onboarding para workspace operacional da conta.
+- O usuário precisa organizar várias LPs sem poluir a lista principal, visualizar o histórico de cada LP, gerar novas revisões sem destruir as anteriores e escolher explicitamente qual revisão está aprovada.
+- Publicação, editor de conteúdo e melhoria parcial por IA são evoluções distintas e não devem ser antecipadas para resolver o workspace básico.
 
 ### 1.3. Resultado esperado
 
 - Transformar `/a/[account]` em um workspace operacional simples para owner e admin elegíveis.
-- Preservar o onboarding inicial da E19.2 para a primeira LP.
-- Disponibilizar, depois da conclusão do onboarding, acesso organizado às configurações vigentes por contexto.
-- Exibir todas as LPs legítimas da conta com identidade, configuração, estado derivado e ações compatíveis.
-- Permitir criar, duplicar, gerar e produzir novas variações em drafts independentes, preservando os resultados anteriores.
-- Permitir comparação humana de gerações realizadas com diferentes configurações canônicas do projeto, sem criar laboratório paralelo ou engine automática de experimentos.
+- Preservar o onboarding inicial da E19.2 para a primeira jornada factual.
+- Exibir **uma linha por LP comercial**, sem transformar revisões em novas identidades de LP.
+- Permitir criar nova LP quando houver nova identidade comercial.
+- Permitir configurar a LP, gerar novas revisões integrais, abrir qualquer revisão em preview e aprovar explicitamente uma revisão existente.
+- Permitir arquivar e restaurar LPs sem exclusão definitiva.
+- Manter publicação separada do lifecycle da identidade e do versionamento; publicação não integra a primeira implementação da E19.5.
+- Manter editor manual de conteúdo e melhoria parcial por IA fora da primeira implementação.
 
 ### 1.4. Atores e gates
 
-- Somente membership `active` com papel `owner` ou `admin` pode alterar configurações, criar drafts, duplicar ou iniciar geração.
-- A conta deve estar `active` e possuir entitlement comercial válido.
-- O taxon primário ativo permanece autoritativo.
+- Somente membership `active` com papel `owner` ou `admin` pode alterar configuração, criar LP, iniciar geração, aprovar revisão, arquivar ou restaurar.
+- A conta deve estar `active` e possuir entitlement comercial válido para as ações que dele dependem.
+- O taxon primário ativo permanece autoritativo onde o fluxo vigente o exige.
 - Toda ação mutável revalida conta, membership e entitlement server-side e deriva `accountId` e ator do contexto autenticado.
-- A E19.5 não inventa capability comercial nem limite local de drafts; quando a E9.7 admitir e integrar limites reais, o workspace passa a consumi-los no ponto competente.
 - Conta piloto e clientes usam o mesmo workspace e os mesmos boundaries.
+- A E19.5 não inventa capability comercial, carteira, saldo ou limite local de gerações; capacidades e limites comerciais continuam sob a E9.7 quando houver consumidor real.
 
 ### 1.5. Preservação da E19.2
 
-- A E19.2 continua responsável pelo primeiro onboarding pós-entitlement e pela configuração mínima necessária à primeira LP Starter.
-- A E20.2 continua sendo a fonte dos fields, scopes, tipos, obrigação, aplicabilidade, validação e política de substituição.
-- O agregado `public.account_landing_page_onboarding_configurations` permanece como registro e bootstrap da primeira jornada por conta.
-- Seu vínculo write-once não é alterado, removido nem rebindado.
-- A área posterior `Configurações` é evolução de consumo da E19.2, mas a lista operacional de LPs e o laboratório de drafts pertencem à E19.5.
+- A E19.2 continua responsável pelo primeiro onboarding pós-entitlement e pela configuração factual já persistida no agregado `public.account_landing_page_onboarding_configurations`.
+- O vínculo write-once existente não deve ser rebindado nem reinterpretado como histórico de revisões.
+- A E19.5 deve reutilizar fatos válidos já coletados e não criar onboarding paralelo.
+- A forma definitiva de configuração específica por LP para as jornadas posteriores ainda será fechada no próximo bloco de debate, sem alterar retroativamente revisões já materializadas.
 
-### 1.6. Divisão fixa das configurações
+### 1.6. Configurações — base preservada, ainda em debate
 
-- Valores de `account`, `business` e `offer` funcionam como defaults reutilizáveis, respeitando fontes autoritativas e a política da E20.2.
-- Valores de `campaign` e `landing_page` pertencem à LP concreta.
-- Valor reutilizável só pode ser substituído por LP quando a E20.2 declarar `landingPageSubstitutionPolicy: explicit_allowed`.
-- Valor com substituição proibida não é copiado para a configuração específica apenas para facilitar a UI.
-- Alteração de defaults pode orientar futuras gerações ainda não materializadas, mas nunca altera o conteúdo já materializado e congelado de outra LP.
-- A UI agrupa os fields pelos scopes vigentes, mas usa linguagem compreensível para o cliente e não expõe a modelagem interna como formulário técnico gigante.
+- Permanece válida a separação conceitual entre informações reutilizáveis da conta/negócio/oferta e informações específicas de campanha/LP.
+- Alterar configuração futura nunca altera silenciosamente uma revisão histórica já materializada.
+- A configuração efetiva usada por uma geração deve continuar sendo validada pelas autoridades vigentes e preservada no snapshot da revisão produzida.
+- Ainda precisa ser fechado neste rascunho:
+  - quais configurações o workspace permitirá editar na primeira E19.5;
+  - como reutilização, defaults e valores específicos da LP se combinam sem cópia desnecessária;
+  - como a primeira configuração E19.2 serve de bootstrap para LPs posteriores;
+  - se `landing_page_objective` permanece como input explícito obrigatório da LP;
+  - qual é a menor persistência necessária para configuração por LP, sem antecipar shape físico antes da decisão.
 
-### 1.7. Configuração específica por LP
+### 1.7. Lifecycle da LP, revisões e aprovação — bloco encerrado
 
-- Cada nova LP passa a possuir uma configuração 1:1 própria, orientada pela E20.2.
-- A menor residência física aprovada é `public.account_landing_page_configurations`.
-- O agregado possui conceitualmente:
-  - `landing_page_id` como identidade única;
-  - `account_id` para isolamento tenant-safe;
-  - `catalog_version`;
-  - objeto `values` indexado por `fieldKey`;
-  - `revision` para concorrência otimista;
-  - ator e timestamps de criação e atualização.
-- O objeto `values` conserva somente `scope` e `value` validados; não duplica definição, obrigação, condição, validação ou catálogo.
-- A tabela permanece server-only, com RLS habilitado, sem policy de cliente e sem DELETE operacional neste recorte.
-- A lista e os estados derivados não criam persistência paralela.
+- `landing_page` é a identidade comercial estável da página.
+- O lifecycle da identidade da LP será `active | archived`; `published` não pertence a esse mesmo status.
+- `draft` deixa de ser estado de produto da identidade da LP. O termo fica reservado, futuramente, para trabalho mutável ainda não consolidado em nova revisão.
+- Revisões são integrais, imutáveis e append-only dentro da mesma LP.
+- Toda geração válida da E19.4 cria diretamente uma nova revisão imutável na primeira E19.5, pois ainda não existe editor mutável de conteúdo.
+- **Versão mais recente** é a revisão válida de maior `revision_number`.
+- **Versão aprovada** é uma revisão existente escolhida explicitamente por humano autorizado; a aprovação não cria cópia, nova revisão nem nova entidade de versão.
+- Uma LP pode não possuir versão aprovada.
+- No máximo uma revisão pode estar aprovada por vez para a mesma LP.
+- Aprovar uma nova revisão transfere a escolha; a revisão anteriormente aprovada permanece preservada no histórico.
+- Gerar nova revisão não remove nem substitui automaticamente a revisão aprovada.
+- **Versão publicada** será, futuramente, a revisão explicitamente colocada no ar; ela é independente da versão mais recente e da versão aprovada.
+- A publicação futura pode manter uma revisão anterior no ar enquanto revisões posteriores são geradas e avaliadas.
+- **LP entregue é uma LP que possui uma revisão válida, acessível em preview e explicitamente aprovada por humano autorizado.** Publicação não é requisito para caracterizar entrega.
+- A forma física de persistir a referência da revisão aprovada não é definida neste rascunho; deve ser escolhida na consolidação técnica sem criar segunda entidade de versionamento.
 
-### 1.8. Compatibilidade com a primeira LP
+### 1.8. Arquivamento e transição do `draft` atual
 
-- A primeira LP e sua materialização existentes permanecem válidas sem backfill destrutivo.
-- Enquanto a primeira LP não possuir configuração específica própria, seu resolver pode usar os valores `campaign` e `landing_page` do agregado da E19.2 somente quando o `landing_page_id` vinculado corresponder exatamente à LP solicitada.
-- Quando a primeira LP for editada, duplicada ou usada como origem de nova variação, a configuração específica necessária é criada para o novo draft ou para a operação competente, sem rebind do agregado original.
-- Para novas LPs, a configuração específica é obrigatória antes da geração.
-- A resolução efetiva falha fechado diante de mistura entre contas, LP divergente, catálogo incompatível ou configuração específica ausente quando exigida.
+- Arquivar retira a LP da lista operacional principal sem excluir identidade, configuração, revisões, versão aprovada ou histórico.
+- A UI deve oferecer visualização simples de LPs arquivadas e ação de restauração.
+- Restaurar devolve a mesma identidade à operação; não cria nova LP nem nova revisão.
+- Exclusão definitiva não integra a primeira E19.5.
+- A transição física de `draft` para `active | archived` deve ser coordenada porque o contrato vigente ainda possui consumidores explícitos de `draft`, incluindo constraint de banco, append de revisão, adapters, validações e preview.
+- A implementação deve atualizar os consumidores materialmente afetados sem reabrir a E19.4 nem renomear indiscriminadamente arquivos, workloads ou identificadores históricos que contenham `draft` mas continuem semanticamente válidos.
 
-### 1.9. Objetivo explícito da LP
+### 1.9. Configuração operacional e bindings
 
-- A E20.2 recebe uma nova versão preservando integralmente as versões anteriores.
-- A nova versão adiciona o field universal `landing_page_objective`.
-- O field possui:
-  - scope `landing_page`;
-  - origem esperada `landing_page_provided`;
-  - valor string não vazio;
-  - obrigação `required` para novas configurações por LP;
-  - ausência de substituição genérica por outro scope.
-- O objetivo é diferente de nome, slug, funil ou intenção transacional.
-- Exemplo de valor: `Ajudar pessoas que buscam o primeiro imóvel no Rio a compreender o processo e iniciar uma conversa pelo WhatsApp.`
-- O objetivo aparece na criação, configuração, lista e composição futura da LP.
-- A E19.3 passa a transportar esse objetivo como contexto factual e editorial autorizado da LP concreta.
-- A LP legada já materializada continua visualizável mesmo sem esse field; nova geração ou variação exige objetivo confirmado humanamente.
+- Tracking, analytics, Google Ads tag, Meta Pixel e configurações técnicas equivalentes não pertencem ao versionamento de conteúdo da LP.
+- Na primeira E19.5, o destino operacional do CTA permanece congelado dentro do binding da revisão, conforme o contrato vigente.
+- Alterar WhatsApp ou URL na configuração não modifica revisões históricas.
+- Para o novo destino integrar o conteúdo executável na primeira E19.5, é necessária uma nova revisão gerada com o novo binding.
+- A E19.5 não cria overlay mutável, binding dinâmico ou nova fonte operacional para sobrepor revisões existentes.
+- A futura separação do destino operacional do CTA permanece evolução possível, condicionada a contrato próprio.
 
-### 1.10. Automação
+### 1.10. Automação e consumo de IA
 
-- Automação: **não** na E19.5.
-- O recorte não implementa assistente de IA, chat de dúvidas, agente, nova chamada OpenAI, mudança de prompt, modelo, reasoning effort ou workload.
-- A geração já implementada na E19.4 permanece boundary externo acionado por ação humana explícita.
-- A E19.5 apenas prepara a LP concreta e encaminha a ação ao boundary vigente; não redesenha o mecanismo geracional.
-- O Gestor de Automação não participa da avaliação deste plano enquanto a única fase permanecer `Automação: não`.
+- Automação nova na E19.5: **não**.
+- A ação humana `Gerar nova revisão` reutiliza o boundary vigente da E19.4 e seus workloads; a E19.5 não cria agente, job, fila, nova automação, novo prompt, novo modelo ou novo workload.
+- Nova LP, salvar configuração, abrir preview, abrir histórico, aprovar versão, arquivar e restaurar não chamam IA.
+- A quantidade de chamadas técnicas internas da E19.4 não cria várias ações comerciais na UX; o usuário aciona uma única geração de nova revisão.
+- Controle comercial futuro de consumo deve reutilizar E9.7; carteira ou contabilização específica só entra quando houver requisito concreto e recorte próprio.
 
-### 1.11. Fontes usadas
+### 1.11. Fontes usadas e questões abertas
 
-- `README.md`.
-- `docs/roadmap.md`.
-- `docs/template-roadmap.md`.
-- `docs/prompt-estrategista.md`.
-- `docs/lp-planejamento.md`.
-- `docs/lousa-plano-base-e19-2.md`.
-- `docs/lousa-plano-base-e19-4.md`.
-- `docs/schema.md`.
-- `supabase/migrations/20260807162417_e19_2_3_account_landing_page_onboarding_configuration.sql`.
-- implementação vigente de `app/a/[account]/`, `lib/lp-builder/`, E20.2 e materialização E19.4.
+- Fontes atuais deste rascunho:
+  - `README.md`;
+  - `docs/roadmap.md`;
+  - `docs/template-roadmap.md`;
+  - `docs/prompt-estrategista.md`;
+  - `docs/schema.md`;
+  - implementação vigente de `app/a/[account]/` e `lib/lp-builder/`;
+  - migrations, RPCs e validações vigentes da E19.1/E19.2/E19.4;
+  - PR #726 como histórico do debate anterior a ser reconciliado.
+- `docs/lp-planejamento.md` não é fonte deste rascunho.
+- Bloco encerrado: lifecycle da identidade, semântica de revisões/aprovação, arquivamento, definição de LP entregue, limite inicial de publicação/editor e binding do CTA na primeira E19.5.
+- Próximo bloco aberto: **configuração da LP e geração de nova versão**.
 
 ## 2. Contrato do caso
 
@@ -121,160 +126,153 @@
 
 #### 2.1.1. Gatilho
 
-- Conta operacional com onboarding inicial concluído.
+- Conta operacional com onboarding inicial aplicável concluído.
 - Owner ou admin autenticado abre `/a/[account]`.
-- O usuário consulta configurações, cria uma LP, duplica uma configuração, inicia a primeira geração ou produz uma nova variação.
+- O usuário consulta suas LPs, cria nova LP, altera configuração permitida, gera nova revisão, abre preview, aprova versão, arquiva ou restaura.
 
 #### 2.1.2. Entrada
 
 - Contexto tenant-aware da conta e do ator.
-- Entitlement efetivo e `planKey`.
-- Taxon primário autoritativo.
-- Catálogo E20.2 resolvido por versão, taxon e plano.
-- Valores autoritativos existentes.
-- Defaults reutilizáveis da primeira jornada E19.2.
-- Configuração específica da LP, quando existente.
-- LPs legítimas da conta.
-- Materializações e snapshots existentes.
+- Entitlement efetivo e plano aplicável.
+- Taxon autoritativo quando exigido pelo fluxo vigente.
+- Fatos e configuração já persistidos e autorizados.
+- Configuração específica da LP, quando o contrato final a exigir.
+- Identidade da LP.
+- Revisões materializadas e respectivos snapshots.
+- Referência da versão aprovada, quando existir.
 
 #### 2.1.3. Processamento
 
 - Resolver server-side a visão operacional completa da conta.
-- Agrupar configurações em:
-  - Conta;
-  - Negócio;
-  - Oferta;
-  - Campanha;
-  - Landing page;
-  - Integrações somente quando houver integração real configurável.
-- Listar todas as LPs da conta sem seleção silenciosa.
-- Derivar configuração efetiva por precedência:
-  - fonte autoritativa existente;
-  - default reutilizável válido;
-  - valor específico da LP ou override explicitamente autorizado.
-- Nunca usar nome de field, `purpose` ou semelhança textual para decidir precedência ou substituição.
-- Encaminhar geração somente para LP `draft`, configurada, pertencente à conta e ainda sem materialização.
+- Listar uma linha por LP `active` na visão principal e separar as `archived`.
+- Derivar a versão mais recente pela maior revisão válida.
+- Derivar os estados de UX a partir de identidade, configuração, revisões e aprovação, sem transformar cada combinação em status persistido.
+- Gerar nova revisão somente por ação humana explícita, reutilizando o boundary E19.4.
+- Preservar qualquer versão aprovada anterior quando uma revisão nova for gerada.
+- Permitir abrir em preview a versão mais recente e qualquer revisão histórica antes de uma aprovação.
 
 #### 2.1.4. Validação
 
-- Validar nome, slug, objetivo e pertencimento da LP.
-- Validar todos os valores presentes contra a versão aplicável da E20.2.
-- Impedir valor específico de uma LP em outra LP.
-- Impedir overwrite da materialização write-once.
-- Impedir rebind do agregado E19.2.
-- Configuração incompleta bloqueia somente a ação que dela depende e preserva os demais valores válidos.
-- Conflito de revisão exige recarga ou nova tentativa explícita, sem last-write-wins silencioso.
+- Validar pertencimento tenant-safe da LP e da revisão antes de qualquer leitura ou mutação.
+- Validar autorização do ator para alterar configuração, gerar, aprovar, arquivar ou restaurar.
+- Aprovação exige revisão válida e acessível em preview da mesma LP e conta.
+- Impedir alteração ou overwrite de revisão histórica.
+- Impedir aprovação de revisão pertencente a outra LP ou conta.
+- Impedir geração ou aprovação em LP arquivada enquanto não houver restauração explícita.
+- A transição `draft → active | archived` deve preservar o pipeline E19.4 já validado.
 
 #### 2.1.5. Persistência
 
-- Identidade e status permanecem em `public.account_landing_pages`.
-- Defaults da primeira jornada permanecem em `public.account_landing_page_onboarding_configurations`.
-- Configuração própria de cada nova LP reside em `public.account_landing_page_configurations`.
-- Conteúdo e snapshot permanecem em `public.account_landing_page_materializations`.
-- Não criar status persistido de geração quando o estado puder ser derivado dessas fontes.
-- Nova configuração, duplicação ou geração não copia conteúdo materializado nem snapshot da LP de origem.
+- A identidade e seu lifecycle permanecem em `public.account_landing_pages`, com evolução coordenada do status vigente.
+- Revisões permanecem em `public.account_landing_page_materializations` no contrato append-only 1:N já implementado.
+- A referência da versão aprovada precisa persistir de forma tenant-safe, mas seu shape físico ainda não está decidido neste rascunho.
+- Configuração por LP permanece tema do próximo bloco; não criar tabela, rota ou segunda fonte de verdade antes dessa decisão.
+- Não criar status persistido de UX quando o estado puder ser derivado.
 
 #### 2.1.6. Consumo
 
-- O workspace consome identidade, configuração e materialização para apresentar o estado de cada LP.
-- A E19.3 e a E19.4 passam a consumir a configuração efetiva da LP concreta.
-- Os testes de qualidade usam esse mesmo fluxo oficial para produzir drafts comparáveis.
-- A comparação e a nota permanecem humanas e externas ao estado de domínio.
+- O workspace consome identidade, configuração, revisões e aprovação para apresentar o estado de cada LP.
+- Preview padrão abre a versão mais recente.
+- O histórico permite abrir qualquer revisão em preview.
+- A ação `Aprovar esta versão` atua sobre a revisão visualizada e não sobre uma cópia.
+- Geração futura continua consumindo o boundary E19.3 → E19.4 e produz nova revisão integral.
 
 #### 2.1.7. Fallback
 
 - Falha de leitura mantém estado indisponível explícito; não apresentar lista parcial como completa.
-- Falha ao criar configuração depois da identidade da LP deixa um draft legítimo, porém incompleto e não gerável, permitindo correção posterior.
-- Falha de duplicação ou geração não destrói a origem.
-- Conflito de slug exige correção humana.
-- Materialização existente bloqueia nova geração sobre a mesma LP.
-- Boundary de geração indisponível mantém o novo draft sem materialização.
-- Integração inexistente não produz categoria fictícia.
+- Falha de geração não altera revisões anteriores nem a versão aprovada.
+- Falha de aprovação mantém a escolha anterior intacta.
+- Falha ao arquivar/restaurar não altera silenciosamente o lifecycle.
+- Conflito de slug ou configuração exige correção explícita.
+- Boundary de geração indisponível não cria revisão inválida.
+- Integração inexistente não produz categoria fictícia no workspace.
 
 ### 2.2. Workspace principal
 
-- `/a/[account]` passa a parecer um workspace operacional, não a continuação do onboarding.
+- `/a/[account]` passa a parecer um workspace operacional, não a continuação permanente do onboarding.
 - A home contém:
-  - resumo da conta e do plano efetivo;
-  - atalhos para categorias de configuração existentes;
+  - resumo mínimo da conta quando útil;
+  - acesso às configurações realmente existentes;
   - lista operacional de LPs;
-  - ação para nova LP.
-- A lista apresenta, no mínimo:
+  - ação principal `Nova página`;
+  - acesso simples às LPs arquivadas.
+- A lista principal apresenta somente o necessário para decidir a próxima ação:
   - nome;
-  - status da LP;
-  - estado derivado da configuração e da materialização;
-  - slug;
-  - objetivo;
-  - funil;
-  - data de criação ou materialização;
-  - ações disponíveis.
-- Estado derivado distingue, sem nova coluna:
-  - configuração incompleta;
-  - pronta para gerar;
-  - materializada;
-  - conteúdo inválido ou versão não suportada.
-- Desktop pode usar tabela responsiva.
-- Mobile deve preservar compreensão por cards ou composição equivalente, sem depender de scroll horizontal.
+  - estado derivado;
+  - versão mais recente;
+  - indicação de versão aprovada, quando houver;
+  - última atualização relevante;
+  - ações principais.
+- Slug, objetivo, configuração extensa e metadados técnicos ficam no detalhe da LP quando não forem necessários na lista.
+- Estados de UX derivados podem incluir:
+  - `Configuração incompleta`;
+  - `Pronta para gerar`;
+  - `Em análise`;
+  - `Entregue`;
+  - `Nova versão em análise`;
+  - `Arquivada`.
+- `active` é condição operacional interna e não deve ser exibida como sinônimo de `Publicada`.
+- Desktop pode usar tabela responsiva; mobile usa cards ou composição equivalente sem scroll horizontal obrigatório.
 
-### 2.3. Área Configurações
+### 2.3. Área Configurações — próximo bloco de debate
 
-- A home não exibe um formulário gigante.
-- Cada categoria abre uma superfície focal com os fields realmente existentes naquele contexto.
-- `account`, `business` e `offer` são apresentados como configurações reutilizáveis.
-- `campaign` e `landing_page` exigem seleção explícita da LP concreta.
-- Integrações só aparecem quando houver contrato e configuração reais no projeto.
-- Valor autoritativo pode aparecer como somente leitura quando o domínio responsável não autorizar edição pela E19.5.
-- Salvar preserva os demais valores válidos e devolve erro junto do field afetado.
+- A home não deve exibir formulário técnico gigante.
+- A configuração deve usar os fields e fontes canônicas reais do projeto, sem lista paralela inventada.
+- Informações reutilizáveis e específicas da LP devem aparecer em linguagem compreensível e com origem clara.
+- Salvar configuração não altera revisão histórica existente.
+- Na primeira E19.5, mudança de configuração que precise refletir no conteúdo executável só aparece em nova revisão depois de nova geração.
+- O próximo bloco deve fechar quais campos e scopes entram, como são reutilizados, qual residência física mínima é necessária e como a primeira configuração E19.2 participa desse fluxo.
 
 ### 2.4. Semântica das ações
 
 #### 2.4.1. Nova LP
 
-- Solicita nome, slug, `landing_page_objective` e os valores específicos aplicáveis.
-- Reutiliza defaults vigentes de conta, negócio e oferta sem copiá-los como overrides proibidos.
-- Cria a identidade `draft` pelo boundary da E19.1.
-- Cria a configuração específica da LP.
+- Cria uma nova identidade comercial somente quando o usuário realmente deseja outra página.
+- O estado-alvo de produto da identidade é `active`; a adaptação do boundary atual que ainda cria `draft` pertence à implementação coordenada deste recorte.
+- Abre a configuração da nova LP.
 - Não inicia geração automaticamente.
-- Se a segunda escrita falhar, o draft permanece incompleto e não gerável; a UI não anuncia conclusão integral falsa.
+- Não copia revisão ou snapshot de outra LP.
 
-#### 2.4.2. Duplicar configuração
+#### 2.4.2. Gerar nova revisão
 
-- Cria nova identidade `draft` com nome e slug confirmados humanamente.
-- Copia somente os valores específicos de `campaign`, `landing_page` e overrides permitidos da origem.
-- Exige revisão do objetivo e dos valores copiados antes de gerar.
-- Não copia conteúdo, snapshot, estado materializado ou resposta do provider.
-- A LP de origem permanece intacta.
+- Exige ação humana explícita e configuração válida para o boundary vigente.
+- Reutiliza E19.3 → E19.4.
+- Uma geração válida cria nova revisão integral e imutável da mesma LP.
+- Falha não cria revisão válida nem altera a versão aprovada.
+- Gerar nova revisão não cria outra `account_landing_pages`.
 
-#### 2.4.3. Gerar
+#### 2.4.3. Visualizar revisão
 
-- Disponível somente para draft configurado e sem materialização.
-- Exige ação humana explícita.
-- Reutiliza o boundary vigente da E19.4.
-- Falha preserva o draft sem conteúdo e permite nova tentativa humana.
+- Preview padrão abre a versão mais recente.
+- O histórico permite selecionar qualquer revisão preservada e abrir seu preview individual.
+- Preview histórico não altera versão mais recente, aprovada ou futura publicação.
 
-#### 2.4.4. Gerar nova variação
+#### 2.4.4. Aprovar esta versão
 
-- Substitui o termo ambíguo `Regenerar` na primeira entrega.
-- Cria outro draft derivado da configuração autorizada da origem.
-- Exige nome, slug e objetivo confirmados.
-- Usa os defaults reutilizáveis vigentes e a configuração canônica atual do pipeline.
-- Depois da configuração válida, aciona uma nova geração humana pelo boundary da E19.4.
-- Falha de geração preserva o novo draft sem materialização.
-- Nunca sobrescreve a LP de origem.
+- Disponível a owner/admin autorizado a partir da revisão visualizada.
+- A aprovação escolhe a revisão existente como versão aprovada da LP.
+- No máximo uma revisão permanece aprovada por LP.
+- Aprovar outra revisão transfere a escolha sem apagar histórico.
+- A aprovação não chama IA nem cria nova revisão.
 
-### 2.5. Metadados mínimos de comparação
+#### 2.4.5. Arquivar e restaurar
 
-- O workspace não cria engine de experimentos, mas deve permitir identificar com qual configuração cada nova geração foi produzida.
-- Novas materializações preservam no snapshot metadados seguros de geração:
-  - workload;
-  - revisão do workload;
-  - modelo;
-  - reasoning effort;
-  - revisão explícita do prompt.
-- O snapshot continua preservando versões de perfil, pesquisa, raiz e catálogos já aplicáveis.
-- Não persistir prompt integral, resposta bruta, raciocínio, PII, secret ou `safety_identifier`.
-- A primeira LP legada pode exibir `não registrado` para metadados ainda ausentes; não realizar backfill inventado.
-- Experimentos futuros de renderer devem preservar compatibilidade por versão de conteúdo/renderer; a E19.5 não cria renderer novo nem altera visual da LP.
+- Arquivar retira a LP da lista principal e preserva seu agregado completo.
+- Restaurar reativa a mesma identidade com suas revisões e aprovação preservadas.
+- Não existe hard delete na primeira E19.5.
+
+### 2.5. Histórico e metadados mínimos
+
+- O histórico pertence à LP concreta, não à lista principal de páginas.
+- Cada revisão deve permitir identificar, no mínimo:
+  - número;
+  - data;
+  - indicação de versão mais recente;
+  - indicação de versão aprovada, quando aplicável;
+  - ação de preview.
+- A futura indicação de versão publicada pode ser acrescentada quando o contrato de publicação existir.
+- Metadados técnicos já preservados no snapshot continuam disponíveis para auditoria onde fizer sentido, sem obrigar sua exposição na UX principal.
+- Não criar comparação lado a lado, ranking, nota automática ou engine de experimentos.
 
 ### 2.6. Frontend, UX e evidências
 
@@ -282,109 +280,95 @@
 - Pending visível impede duplo clique acidental em ações mutáveis.
 - Sucesso e erro aparecem junto do contexto afetado.
 - Foco avança de forma previsível após criação, erro ou navegação.
-- Estados vazio, indisponível, incompleto, pronto, materializado e inválido são compreensíveis sem jargão interno.
-- Evidências futuras obrigatórias:
+- Evidências futuras da fase executável deverão cobrir, no mínimo:
   - desktop em 1280 px;
   - tablet em 768 px;
   - mobile em 360 px;
   - teclado e foco visível;
   - ausência de truncamento e overflow indevido;
-  - categorias de configuração compreensíveis;
-  - criação e preservação de pelo menos três drafts na mesma conta;
-  - duplicação sem copiar materialização;
-  - nova variação sem overwrite da origem;
-  - abertura do preview correto para cada LP;
-  - exibição coerente de objetivo, funil e metadados disponíveis.
+  - uma linha/card por LP comercial;
+  - histórico com preview da versão mais recente e de revisão histórica;
+  - aprovação explícita e preservação da aprovação ao gerar revisão posterior;
+  - arquivamento e restauração sem perda de revisões;
+  - isolamento tenant-safe.
 
 ### 2.7. Riscos e dependências
 
-- O agregado legado da E19.2 não pode ser reinterpretado como configuração genérica de todas as LPs.
-- A nova versão da E20.2 deve preservar as versões anteriores e não reclassificar silenciosamente valores persistidos.
-- A E19.3 deve resolver configuração por LP sem criar fallback aproximado ou mistura de fontes.
-- A E19.4 deve aceitar a configuração específica e registrar metadados seguros sem mudar seu mecanismo geracional.
-- LP materializada permanece independente de defaults e configurações futuras.
-- Limites de drafts continuam dependentes de futura admissão e integração da E9.7.
+- O literal `draft` ainda participa do schema, geração, append, adapters, preview e validações; a transição precisa ser coordenada.
+- A aprovação precisa de persistência tenant-safe e idempotente, mas o shape físico ainda deve ser definido após inspeção técnica completa.
+- Configuração por LP não pode criar segunda fonte de verdade nem reinterpretar silenciosamente fatos históricos da E19.2.
+- Alterações futuras de configuração não podem alterar revisões já materializadas.
+- O binding do CTA permanece parte da revisão na primeira E19.5.
+- Publicação futura deve poder distinguir versão mais recente, aprovada e publicada sem reconstruir o versionamento.
+- Limites comerciais de geração continuam dependentes da E9.7 e do consumidor real.
 
 ## 3. Fases e próxima ação
 
-### 3.1. E19.5.3 — Workspace operacional, configuração por LP e laboratório de drafts
+### 3.1. E19.5.3 — Workspace operacional e lifecycle da LP — rascunho
 
-- Automação: não.
-- Objetivo:
-  - implementar integralmente o workspace da conta, a configuração específica por LP e as ações determinísticas necessárias para produzir e preservar múltiplos drafts comparáveis.
-- Entrega mínima:
-  - nova versão E20.2 com `landing_page_objective`;
-  - agregado 1:1 de configuração específica por LP;
-  - resolução efetiva compatível com a primeira LP legada;
-  - home operacional com categorias de configuração e lista de LPs;
-  - superfícies focais de configuração reutilizável e específica;
-  - ações Nova LP, Duplicar configuração, Gerar e Gerar nova variação;
-  - integração com os boundaries E19.1, E19.3 e E19.4 existentes;
-  - metadados seguros de geração para comparação humana;
-  - validações de banco, boundary, UI e fluxo hospedado.
-- Limites:
-  - sem IA própria;
-  - sem mudança de modelo, prompt, effort ou workload;
-  - sem overwrite, rebind ou cópia de materialização;
-  - sem limite local de drafts;
-  - sem editor, publicação, tracking ou engine de experimentos.
-- Critérios de aceite:
-  - onboarding inicial da E19.2 continua funcional e não é substituído;
-  - owner/admin autorizado acessa o workspace depois da conclusão;
-  - configurações são agrupadas a partir da E20.2, sem lista paralela;
-  - nova LP nasce com configuração própria e objetivo obrigatório;
-  - primeira LP legada permanece visualizável e compatível;
-  - três ou mais drafts legítimos podem coexistir na mesma conta;
-  - duplicação não copia conteúdo nem snapshot;
-  - nova variação preserva integralmente a origem;
-  - LP materializada não pode ser gerada novamente pela mesma identidade;
-  - estados e ações são derivados e tenant-safe;
-  - snapshot novo registra metadados seguros de comparação;
-  - verificadores SQL read-only, casos executáveis e `npm run check` aprovam o contrato;
-  - Preview hospedado aprova desktop, tablet, mobile, teclado, foco e fluxos humanos previstos;
-  - Prompt ABC reconcilia somente os documentos canônicos materialmente afetados.
+- Estado: **ainda não executável; fase será consolidada somente após o encerramento dos blocos indispensáveis do debate**.
+- Automação nova: não.
+- Entrega já direcionada pelo bloco encerrado:
+  - workspace com uma linha por LP;
+  - lifecycle `active | archived`;
+  - histórico de revisões append-only da mesma LP;
+  - preview da versão mais recente e de qualquer revisão histórica;
+  - ação `Gerar nova revisão` pelo boundary vigente;
+  - ação `Aprovar esta versão`;
+  - arquivamento/restauração;
+  - estados de UX derivados;
+  - preservação da definição de LP entregue.
+- A fase ainda não fixa:
+  - contrato final de configuração por LP;
+  - fields/scopes editáveis na primeira entrega;
+  - persistência mínima de configuração específica;
+  - forma física da referência da versão aprovada;
+  - fases adicionais, se o debate demonstrar necessidade material.
 
 ### 3.2. Próxima ação
 
-- Ajustar `docs/roadmap.md` no mesmo PR #726 conforme `docs/prompt-abc.md` e `docs/template-roadmap.md`:
-  - registrar E19.5 como planejada;
-  - registrar E19.5.3 com título, objetivo e status planejado;
-  - não antecipar banco, arquivos, evidências ou implementação ainda inexistentes.
-- Depois da reconciliação do roadmap, apresentar ao humano as opções do item 4 de `docs/prompt-estrategista.md`:
-  - Processo atual;
-  - Processo automatizado após o merge da v1.
+- Debater e fechar **configuração da LP e geração de nova versão**, sem reabrir o bloco de lifecycle.
+- Perguntas indispensáveis do próximo bloco:
+  - quais configurações o cliente poderá editar na primeira E19.5;
+  - quais valores são reutilizáveis e quais pertencem à LP concreta;
+  - se `landing_page_objective` continua obrigatório;
+  - como a configuração E19.2 serve de bootstrap sem rebind;
+  - como alterações de configuração afetam somente gerações futuras;
+  - qual é a menor persistência necessária para várias LPs;
+  - quais validações e fallbacks preservam E19.3/E19.4 sem criar contrato paralelo.
+- Somente após fechar os blocos indispensáveis, consolidar este mesmo arquivo como plano-base v1 e então seguir ao checklist e à escolha de processo do `docs/prompt-estrategista.md`.
 
 ## 4. Escopo negativo e critérios de parada
 
-### 4.1. Fora da E19.5
+### 4.1. Fora da primeira E19.5
 
-- Assistente de IA ou chat de dúvidas.
-- Nova automação OpenAI.
-- Alteração de modelo, prompt, reasoning effort ou workload.
-- Editor visual ou edição do conteúdo materializado.
-- Publicação pública ou domínio customizado.
-- Tracking, analytics ou CRM.
+- Editor manual de conteúdo.
+- Edição de seção ou melhoria parcial por IA.
+- Chat de edição ou agente.
+- Publicar/despublicar LP.
+- Domínio público ou customizado.
+- Overlay mutável para CTA ou binding dinâmico.
+- Tracking, analytics ou pixels como parte das revisões de conteúdo.
+- Créditos, saldo ou carteira local.
+- Duplicar configuração como ação mínima obrigatória.
+- `Gerar nova variação` criando outra identidade da mesma LP.
 - Teste A/B automático.
-- Engine de experimentos, ranking ou escolha automática de LP.
-- Tabela de notas ou workflow de aprovação.
-- Histórico de versões dentro da mesma LP.
-- Rollback de conteúdo.
 - Comparação visual automatizada.
-- Agente, job, fila, cron ou webhook novo.
-- Limite comercial de drafts inventado localmente.
-- Catálogo de várias ofertas, produtos ou serviços.
-- Área de integração sem integração real no projeto.
+- Engine de experimentos, ranking ou escolha automática.
+- Workflow com vários aprovadores.
+- Agendamento de publicação.
+- Exclusão definitiva.
+- Agente, job, fila, cron, webhook ou nova infraestrutura sem consumidor indispensável.
 
 ### 4.2. Critérios de parada
 
 - Parar e devolver ao Estrategista se a implementação exigir:
-  - rebind ou alteração destrutiva do agregado E19.2;
-  - overwrite de materialização existente;
-  - duplicação de catálogo ou regra por nome de field;
-  - capability ou limite comercial não admitido;
-  - engine de versões ou experimentos para cumprir o fluxo básico;
-  - mudança funcional da geração com IA;
-  - publicação, tracking, editor ou outra ampliação de escopo;
-  - nova infraestrutura sem consumidor indispensável.
-- A E19.5 termina quando a conta consegue organizar configurações, listar suas LPs e produzir múltiplos drafts preservados para comparação humana pelo fluxo oficial.
-- Concluir a E19.5 não valida a qualidade da geração, não aprova nenhuma LP para publicação e não modifica automaticamente E18.4, E18.5, E20.3, modelo ou prompt.
+  - overwrite ou alteração de revisão histórica;
+  - nova identidade de LP apenas para representar regeneração da mesma página;
+  - rebind destrutivo do agregado E19.2;
+  - segunda entidade concorrente de revisão/versão;
+  - capability ou limite comercial inventado localmente;
+  - publicação, editor, hard delete ou binding dinâmico para cumprir o workspace básico;
+  - nova infraestrutura sem consumidor indispensável;
+  - mudança funcional da geração E19.4 não prevista pelo contrato aprovado.
+- A E19.5 somente poderá ser declarada v1 quando as questões indispensáveis de configuração e geração futura estiverem fechadas sem inventar contrato físico.
