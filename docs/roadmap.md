@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 19/08/2026
-• Versão: v1.5.168
+• Versão: v1.5.169
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -205,7 +205,7 @@
 • Aplicação mínima real:
 • Auth: login, sign up, forgot password, update password.
 • Onboarding: `pending_setup`.
-• Docs: `docs/design-system.md` atualizado com componentes padronizados desta fase, API mínima, regras de uso, superfícies cobertas e itens fora do escopo.
+• Docs: `docs/design-system.md` atualizado com componentes padronizados desta fase, API mínima, regras de uso e superfícies cobertas.
 • ARTEFATOS_REPO:
 • Criados:
 • `components/ui/form-field.tsx`
@@ -751,20 +751,8 @@
 10.5.2 Base do BD do E10.5
 • Status: Concluído (26/04/2026)
 • Escopo final:
-• criação da base estrutural do E10.5 no BD
-• ajuste estrutural de `taxon_market_research`
-• ajuste estrutural de `taxon_market_research_items`
-• Estado final:
-• `taxon_market_research`: `id`, `taxon_id`, `research_block`, `audience_scope`, `version`, `status`, `created_at`, `updated_at`
-• unicidade por (`taxon_id`, `research_block`, `audience_scope`, `version`) e no máximo 1 versão `active` por (`taxon_id`, `research_block`, `audience_scope`)
-• `taxon_market_research_items`: `id`, `research_id`, `item_key`, `item_text`, `priority`, `sort_order`, `is_active`, `notes`, `created_at`, `updated_at`
-• `taxon_market_research_items`: herda `audience_scope` por `research_id`; sem UNIQUE extra nesta etapa; `sort_order` como `NOT NULL DEFAULT 999`
-• `taxon_message_guides`: base de guides por contexto vinculada à pesquisa-pai
-• ARTEFATOS_REPO:
-• Criados:
-• `supabase/migrations/0006__e10_5_2_taxonomy_content_base.sql`
-• `supabase/migrations/0007__e10_5_2_1_group_c_research_adjust.sql`
-• `supabase/migrations/0008__e10_5_2_1_research_audience_scope_parent.sql`
+• criação da base estrutural admin/interna de taxonomia, templates e guides, com migration `0006__e10_5_2_taxonomy_content_base.sql`.
+• 10.5.3 adicionado como planejado para popular a base inicial de taxons, aliases, templates e vínculos.
 
 10.5.3 Kit operacional de expansão do Grupo A
 • Status: Concluído (exec) (15/04/2026)
@@ -2403,6 +2391,19 @@ Repositório — Ajustados
   - a E19.4.5 está aprovada como primeira prova real, mas a qualidade persuasiva da revisão 3 não é registrada genericamente como aprovada; repetição conceitual, linguagem genérica, baixa progressão de convicção e sensação de template permanecem baseline de calibração futura;
   - não houve revisão 4 nem ajuste ad hoc do renderer; publicação, E19.5, calibração persuasiva, editor, histórico visual, DAM, formulário, tracking, analytics, CRM, agente e filas permanecem fora do recorte.
 
+19.5 — Workspace operacional e lifecycle da LP
+
+19.5.1 Objetivo e status
+- Objetivo: preservar as decisões vigentes necessárias ao próximo planejamento do workspace operacional e do lifecycle da LP.
+- Status: Prevista; próximo recorte a planejar/reconciliar; sem implementação iniciada.
+
+19.5.2 Decisões vigentes e limites
+- `landing_page` é identidade comercial estável; tentativa ou revisão não cria nova LP.
+- PR #726 é base madura a reconciliar, não plano executável vigente.
+- Não implementar a antiga abordagem “Light” nem drafts independentes como novas LPs.
+- O planejamento da E19.5 deve decidir lifecycle, aprovação/conclusão/publicação/arquivamento, revisão publicada × revisão em trabalho, edição manual, melhoria parcial/integral por IA, histórico/restauração e quais ações consomem IA.
+- Nenhuma dessas decisões autoriza implementação neste PR.
+
 20. E20 — Preparação e liberação de taxons para geração de landing pages
 
 * Objetivo: consolidar catálogo de entradas por taxon e plano, perfis versionados de orientação à geração, herança e, em recortes futuros, prontidão e liberação antes da geração de LPs por conta.
@@ -2745,7 +2746,7 @@ Repositório — Ajustados
 
 22. E22 — Retirada controlada de ativos históricos
 - Objetivo: reduzir a superfície histórica que não participa do caminho canônico vigente, preservando consumidores reais e preparando a sequência E19.4 concluída → E22.1 → E19.5.
-- Status: Retirada controlada concluída em 19/08/2026; E22.1.4, E22.1.5, E22.1.6 e E22.1.7 estão concluídas, a E19.4 permanece concluída e a E19.5 passa a ser o próximo recorte a planejar, sem implementação iniciada.
+- Status: E22.1 concluída; E22.2 candidata aguardando merge humano.
 
 22.1 Retirada controlada de ativos históricos
 
