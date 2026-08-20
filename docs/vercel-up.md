@@ -608,6 +608,62 @@ Avaliar o upgrade em recorte técnico próprio quando a versão estiver compatí
 
 ---
 
+## 30 — Vercel Chat SDK: adapter para Instagram *(🟨 Disponível; adoção dependente de recorte)*
+
+2026-08-19  
+Catalogado em 2026-08-20
+
+### Status no Projeto
+
+- Status: não implementado; capacidade futura condicionada a um recorte aprovado de mensageria no Instagram.
+- Evidência: não há dependência `chat`, `@chat-adapter/instagram`, bot, webhook ou integração com Instagram Messaging API no repositório; o Instagram permanece canal estratégico no `README.md`.
+- Natureza de uso: dependente de recorte de produto e canal.
+- Relação com a stack: complementar ao Next.js/Vercel, mas sobreposto a uma integração direta com a Instagram Messaging API; não substitui autoridade, políticas e permissões da Meta.
+- Horizonte: Pro, Ultra ou indefinido, conforme demanda e desenho aprovados pelo Estrategista.
+
+### Descrição
+
+O Vercel Chat SDK passou a oferecer um adapter para a Instagram Messaging API. A capacidade permite receber e enviar DMs e mídia, representar cards como respostas rápidas e botões de link, exibir indicador de digitação, receber reações e tratar respostas a Stories.
+
+O adapter exige conta profissional Business ou Creator. Respostas em stream são bufferizadas e enviadas como uma única mensagem, e a janela oficial informada é de 24 horas após a última mensagem do usuário.
+
+### Valor para o Projeto
+
+- Pode reduzir código específico de transporte em um futuro atendimento ou qualificação por DM.
+- Pode unificar handlers e padrões de mensagens se o produto vier a operar mais de um canal suportado pelo Chat SDK.
+- Preserva uma alternativa TypeScript alinhada à stack atual para comparar com integração direta na Meta.
+
+### Gatilho futuro de avaliação
+
+Avaliar somente quando houver:
+
+1. caso de produto aprovado para atendimento, qualificação, venda ou nutrição por Instagram DM;
+2. conta profissional, Meta app, permissões, webhooks e responsabilidade operacional definidos;
+3. hipótese de superioridade do adapter sobre integração direta, com comparação de complexidade, cobertura, custo, manutenção e lock-in;
+4. desenho de janela de atendimento, opt-in, handoff humano, exclusão, observabilidade e limites de automação;
+5. volume ou repetição operacional que justifique uma camada de SDK.
+
+### Dependências, riscos e limite
+
+- Depende das políticas, permissões, revisão de app, disponibilidade e limites da Meta.
+- A janela de 24 horas restringe mensagens iniciadas pelo negócio e precisa ser respeitada no produto.
+- O SDK não elimina webhooks, autenticação, armazenamento mínimo, moderação, privacidade, LGPD nem tratamento de falhas.
+- Streaming é consolidado antes do envio e não equivale a streaming visível no Instagram.
+- Não instalar dependência, criar bot, webhook, rota, job, agente, automação, credencial ou infraestrutura nesta rodada.
+- O registro não autoriza implementação nem promessa comercial.
+
+### Ações Recomendadas
+
+1. Manter como alternativa futura para o canal Instagram.
+2. Reavaliar junto do primeiro recorte aprovado de mensageria social.
+3. Comparar por protótipo controlado com a integração direta da Meta antes de adotar.
+
+### Fonte Oficial
+
+- [Vercel Changelog — Chat SDK adds Instagram adapter](https://vercel.com/changelog/chat-sdk-adds-instagram-adapter)
+
+---
+
 ## Registro da rodada — Vercel + Next.js Update — 10/08/2026
 
 ### Updates ajustados ou incorporados
@@ -641,4 +697,47 @@ Avaliar o upgrade em recorte técnico próprio quando a versão estiver compatí
 - Nenhum ID publicado desapareceu, foi renumerado ou reutilizado; somente `vercel#29` foi acrescentado.
 - A busca por referências explícitas e implementação semântica precedeu os ajustes.
 - Nenhuma dependência, configuração, rota, cache, workflow, agente, skill, imagem ou infraestrutura foi criada.
+- O catálogo recomenda avaliação futura; não autoriza implementação, contratação ou mudança de stack.
+
+
+## Registro da rodada — Vercel + Next.js Update — 20/08/2026
+
+### Updates ajustados ou incorporados
+
+- `vercel#30` foi adicionado como alternativa dependente de recorte para futura mensageria no Instagram.
+- `vercel#29` foi revalidado diante da publicação “Building App-like Experiences with Next.js 16.3”; a fonte reforça a capacidade já catalogada e não altera seu estado, horizonte ou gatilho.
+
+### Updates avaliados e não adicionados
+
+- Vercel KMS: beta capaz de assinar JWTs sem chave privada no runtime, mas o projeto não possui requisito aprovado de emissão própria de tokens nem insuficiência demonstrada do Supabase Auth; reavaliar diante de boundary real de assinatura.
+- Vercel Connect para Microsoft: não há integração Microsoft aprovada no produto; o recurso adicionaria fornecedor, permissões e superfície operacional sem caso atual.
+- Configuração de coding agents em um comando pelo AI Gateway: absorvida por `vercel#1`; não altera a ausência de hipótese de superioridade sobre o uso direto atual.
+- Novos modelos e descontos temporários no AI Gateway: disponibilidade ou promoção isolada não substitui a escolha governada por workload nem justifica nova camada.
+- Algolia no Marketplace: sobrepõe a alternativa já preservada em `supa#12` e não existe busca aprovada com deficiência mensurável no Postgres.
+- Deploy de Vercel for Platforms a partir de repositórios dos usuários, adapter Cline no harness, Compliance Documents, Vercel for Slack e demais integrações do período: não possuem caso de produto ou operação aprovado que altere os gatilhos atuais.
+- Nenhum recurso foi excluído somente por estar fora do Starter ou do MVP.
+
+### Cobertura estratégica desta atualização
+
+- Instagram: o adapter do Chat SDK foi a novidade específica e relevante do período.
+- Landing pages e dashboard: Next.js 16.3 e a nova publicação sobre experiências app-like foram reavaliados sem mudança de decisão.
+- IA, agentes e automações controladas: AI Gateway, harness, Vercel Agent, Slack, Connect e KMS foram pesquisados.
+- WhatsApp e e-mail: não foi encontrada novidade Vercel, Next.js ou React no período com caso novo e específico para os fluxos atuais; fontes oficiais da WhatsApp Business Platform/Meta Business Messaging foram consultadas para a cobertura obrigatória.
+
+### IDs preservados por rastreabilidade
+
+- Todos os IDs publicados de `vercel#1` a `vercel#29`, inclusive registros históricos e intervalos não utilizados, permanecem sem renumeração, reutilização ou desaparecimento.
+- `vercel#30` é o único novo ID e está acima do maior ID histórico anterior.
+
+### Pontos não validados e lacunas documentais
+
+- `vercel#30`: custo, maturidade operacional, cobertura real das permissões da Meta e comparação com integração direta dependem de futuro recorte e conta profissional autorizada.
+- Permanecem dependentes de recorte a compatibilidade do Next.js 16.3, a medição de navegação, os gatilhos do AI Gateway e as capacidades beta já catalogadas.
+
+### Validação de IDs e limite
+
+- Nenhum ID publicado desapareceu, foi renumerado ou reutilizado.
+- Não houve arquivamento; a busca explícita e semântica confirmou a ausência de Chat SDK e de integração Instagram no estado inicial.
+- A catalogação adere ao `README.md` e não adotou novidade, modernidade ou distância do MVP como decisão isolada.
+- Nenhuma dependência, configuração, rota, webhook, job, bot, agente, automação, credencial ou infraestrutura foi criada.
 - O catálogo recomenda avaliação futura; não autoriza implementação, contratação ou mudança de stack.
