@@ -31,12 +31,6 @@ export const adminDocsCatalog: AdminDocCatalogItem[] = [
     description: 'Contrato visual atual do produto.',
   },
   {
-    id: 'lp-planejamento',
-    title: 'Planejamento de LPs',
-    path: 'docs/lp-planejamento.md',
-    description: 'Criterios conceituais, parametrizacao e decisoes de formacao e liberacao das LPs.',
-  },
-  {
     id: 'gestor-codex',
     title: 'Gestor Codex',
     path: 'docs/gestor-codex.md',

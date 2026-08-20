@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 19/08/2026
-• Versão: v1.5.168
+• Versão: v1.5.169
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -972,8 +972,8 @@ Repositório — Ajustados
 • Implementar detecção por ambiente somente se o ganho justificar a complexidade.
 
 10.7 Páginas comerciais personalizadas por nicho
-• Status: Em execução faseada — Fase 7 concluída em 28/06/2026.
-• Próxima execução: Fase 8 — edição manual de copy e gestão simples de versões.
+• Status: Concluída até a Fase 7; Fase 8 permanece futura/pausada.
+• Próxima execução: Fase 8 — futura/pausada; não iniciada.
 • Objetivo: gerar, revisar, publicar e consumir páginas comerciais por taxon; a IA roda apenas em operação administrativa/server-side; `/a/[account]` consome somente artefato publicado e validado; ausência de conteúdo nichado não pode quebrar `/a/[account]`.
 • Dependência estrutural: a E18 define os contratos reutilizáveis mínimos; a E10.7 aplica, valida e ajusta esses contratos no caso comercial concreto.
 • A página genérica `generic-v1` da E10.6 permanece concluída e será o fallback obrigatório.
@@ -2403,6 +2403,19 @@ Repositório — Ajustados
   - a E19.4.5 está aprovada como primeira prova real, mas a qualidade persuasiva da revisão 3 não é registrada genericamente como aprovada; repetição conceitual, linguagem genérica, baixa progressão de convicção e sensação de template permanecem baseline de calibração futura;
   - não houve revisão 4 nem ajuste ad hoc do renderer; publicação, E19.5, calibração persuasiva, editor, histórico visual, DAM, formulário, tracking, analytics, CRM, agente e filas permanecem fora do recorte.
 
+19.5 — Workspace operacional e lifecycle da LP
+
+19.5.1 Objetivo e status
+- Objetivo: preservar as decisões vigentes necessárias ao próximo planejamento do workspace operacional e do lifecycle da LP.
+- Status: Prevista; próximo recorte a planejar/reconciliar; sem implementação iniciada.
+
+19.5.2 Decisões vigentes e limites
+- `landing_page` é identidade comercial estável; tentativa ou revisão não cria nova LP.
+- PR #726 é base madura a reconciliar, não plano executável vigente.
+- Não implementar a antiga abordagem “Light” nem drafts independentes como novas LPs.
+- O planejamento da E19.5 deve decidir lifecycle, aprovação/conclusão/publicação/arquivamento, revisão publicada × revisão em trabalho, edição manual, melhoria parcial/integral por IA, histórico/restauração e quais ações consomem IA.
+- Nenhuma dessas decisões autoriza implementação neste PR.
+
 20. E20 — Preparação e liberação de taxons para geração de landing pages
 
 * Objetivo: consolidar catálogo de entradas por taxon e plano, perfis versionados de orientação à geração, herança e, em recortes futuros, prontidão e liberação antes da geração de LPs por conta.
@@ -2745,7 +2758,7 @@ Repositório — Ajustados
 
 22. E22 — Retirada controlada de ativos históricos
 - Objetivo: reduzir a superfície histórica que não participa do caminho canônico vigente, preservando consumidores reais e preparando a sequência E19.4 concluída → E22.1 → E19.5.
-- Status: Retirada controlada concluída em 19/08/2026; E22.1.4, E22.1.5, E22.1.6 e E22.1.7 estão concluídas, a E19.4 permanece concluída e a E19.5 passa a ser o próximo recorte a planejar, sem implementação iniciada.
+- Status: E22.1 concluída; E22.2 candidata aguardando merge humano.
 
 22.1 Retirada controlada de ativos históricos
 
@@ -2833,6 +2846,27 @@ Repositório — Ajustados
   - a revisão 3 permaneceu persistida e reproduzível em desktop e mobile, inclusive no QA pós-merge final em produção, com três revisões materializadas e a revisão 3 vigente; nenhuma revisão 4 ou chamada real aos providers foi criada;
   - E18.4, E20.2, E20.5/E20.6, E19.2/E19.3/E19.4, E10.6/E10.7, `commercial_activation`, `taxon_market_research`, `taxon_market_research_items` e os workloads ativos permanecem preservados;
   - não houve migration, DDL, alteração de banco, infraestrutura ou mudança de `docs/schema.md`; a E19.5 não foi iniciada e, com a conclusão da E22.1, passa a ser o próximo recorte a planejar.
+
+22.2 Retirada controlada de documentação histórica redundante
+
+22.2.1 Objetivo e status
+- Objetivo: retirar fontes documentais redundantes ou obsoletas que duplicam autoridades vigentes.
+- Status: Implementação candidata.
+
+22.2.2 Registros do recorte
+- Excluídos:
+  - `docs/lp-planejamento.md`;
+  - `docs/prompt-catalogo-lp.md`.
+- Ajustados:
+  - `lib/admin/docsCatalog.ts`;
+  - `docs/roadmap.md`.
+
+22.2.3 Resultado e limites
+- `docs/roadmap.md` permanece autoridade para casos, estado, dependências, previsões e pendências.
+- Planos-base permanecem responsáveis pelo planejamento detalhado dos recortes.
+- Nenhuma fonte transversal substitui `docs/lp-planejamento.md`.
+- Referências históricas não precisam ser reescritas.
+- Nenhuma alteração de banco, schema, infraestrutura ou arquitetura.
 
 99. Changelog
 v1.5.140 — 11/08/2026 — Implementada no repositório a E19.4.4 com materialização inicial 1:1 write-once, conteúdo e snapshot runtime v1 coerentes, adapter server-only, migration transacional, readiness fail-closed e casos executáveis; apply e prova hospedada permanecem nos gates pós-merge/E19.4.5.
