@@ -249,6 +249,7 @@
 - Texto e imagem preservam contratos distintos e parâmetros estruturais da imagem permanecem em código.
 - Testes focais cobrem validação, allowlist, resolver por ambiente/origem, adapter, concorrência/lifecycle, callsites e proveniência.
 - Testes SQL cobrem constraints, grants, RLS, bootstrap, imutabilidade, transações e invariantes do snippet.
+- Buscas focais no diff e nos arquivos tocados devem comprovar ausência de acesso direto de consumers ou UI ao Supabase, identificadores livres de modelo/effort/quality, fallback para `repo_catalog` com o gate ativo, secrets ou `.env`, cliente OpenAI universal e infraestrutura de AI Gateway, Vercel Flags, Global Config, Realtime, cache, tracing, drains ou automação fora do recorte; ocorrências históricas permitidas devem ser classificadas, não removidas por correspondência textual.
 - `npm ci`, `npm run check` e `git diff --check` devem ser aprovados na entrega de código; `npm run build` não integra a rotina do sandbox.
 - Hosted Preview QA cobre desktop e mobile, todos os estados do lifecycle, papéis positivo/negativo e estados de sucesso/erro.
 - A superfície tocada passa por verificação proporcional à WCAG 2.2: teclado, foco visível e ordem, nomes/labels, mensagens de erro e feedback, contraste, alvo de toque e interação sem dependência exclusiva de hover. Ferramentas automatizadas são auxiliares; não declarar conformidade integral.
@@ -278,6 +279,7 @@
   - unicidade, pendência, imutabilidade, concorrência, bootstrap e grants comprovados;
   - consumers usam somente o boundary comum e bloqueiam transporte em erro pós-cutover;
   - Security Controls Dashboard e snippet SQL sem alerta incompatível antes de habilitar o gate;
+  - buscas focais do recorte aprovadas conforme §2.10, com ocorrências históricas permitidas classificadas e sem remoção lateral;
   - `npm ci`, `npm run check` e `git diff --check` aprovados.
 - ABC da fase:
   - delta-only para os documentos canônicos realmente afetados, após aprovação técnica da subseção e antes de seguir à E21.2.4;
