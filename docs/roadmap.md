@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 20/08/2026
-• Versão: v1.5.171
+• Versão: v1.5.170
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
