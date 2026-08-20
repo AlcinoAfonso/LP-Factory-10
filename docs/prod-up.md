@@ -713,6 +713,70 @@ Avaliar somente quando houver:
 
 ---
 
+## 24 — Atendimento e qualificação por Instagram Direct *(🟨 Estratégico; adoção dependente de recorte)*
+
+2026-08-19  
+Catalogado em 2026-08-20
+
+### Status no Projeto
+
+- Status: não implementado; o Instagram é canal estratégico, mas não há mensageria, bot, webhook, Meta app ou automação de DM no repositório.
+- Evidência: `README.md`, busca semântica no repositório e `vercel#30`, que preserva a alternativa técnica do Vercel Chat SDK.
+- Natureza de uso: dependente de recorte de produto e canal.
+- Relação com a stack e o produto: complementar a `prod#22` para mensuração social e a `prod#23` para evolução multicanal; a descrição técnica do adapter permanece em `vercel#30`.
+- Horizonte sugerido: Pro, Ultra ou indefinido, sujeito à decisão do Estrategista.
+
+### Descrição
+
+Mensageria por Instagram Direct pode apoiar atendimento, qualificação, venda e nutrição a partir de DMs e respostas a Stories. A novidade do adapter oficial do Vercel Chat SDK oferece uma alternativa TypeScript para o transporte, mas a capacidade de produto continua subordinada às regras e à Instagram Messaging API da Meta.
+
+O caso não deve ser tratado como chatbot genérico nem como extensão automática do WhatsApp. Cada canal possui permissões, janelas, formatos, contexto e expectativas próprios.
+
+### Valor para o Projeto
+
+- Aproxima aquisição social, conversa comercial e futura continuidade multicanal.
+- Pode reduzir perda de leads que já iniciam contato pelo Instagram.
+- Preserva uma alternativa oficial antes de construir integração própria ou interface operacional.
+- Pode permitir experimentos controlados de qualificação quando houver operação e demanda reais.
+
+### Valor para o Usuário
+
+- Possibilidade futura de responder e qualificar contatos no canal em que eles já interagem com o negócio.
+- Continuidade mais rápida entre conteúdo, Story, DM e ação comercial, com handoff humano quando necessário.
+
+### Gatilho futuro de avaliação
+
+Avaliar somente quando houver:
+
+1. cliente ou operação aprovada com volume e objetivo comercial reais em Instagram DM;
+2. conta profissional, Meta app, permissões, webhooks e responsável operacional definidos;
+3. regras de janela de atendimento, opt-in, privacidade, retenção, exclusão e handoff humano mapeadas;
+4. comparação objetiva entre operação manual, integração direta pela Meta e alternativa `vercel#30`;
+5. métricas de sucesso como tempo de resposta, qualificação, conversão assistida e necessidade de intervenção humana.
+
+### Dependências, riscos e limites
+
+- Depende de elegibilidade, políticas, revisão de app, disponibilidade e limites da Meta.
+- Automação pode gerar resposta inadequada, spam, perda de contexto ou bloqueio da conta.
+- Exige separação entre resposta assistida, envio automático e ação que dependa de confirmação humana.
+- Dados e histórico de conversa exigem finalidade, minimização, segurança, retenção e LGPD.
+- Não criar app Meta, bot, webhook, rota, banco, job, agente, automação, credencial ou interface nesta rodada.
+- O registro não autoriza implementação, conexão de conta nem promessa comercial.
+
+### Ações Recomendadas
+
+1. Manter como capacidade estratégica futura do canal Instagram.
+2. Reavaliar no primeiro recorte aprovado de mensageria ou qualificação social.
+3. Começar, se aprovado, por leitura/assistência e handoff humano antes de respostas ou ações autônomas.
+4. Tratar `vercel#30` como alternativa técnica a comparar, não como escolha automática.
+
+### Fontes Oficiais
+
+- [Vercel Changelog — Chat SDK adds Instagram adapter](https://vercel.com/changelog/chat-sdk-adds-instagram-adapter)
+- [Meta for Developers — Instagram Messaging API](https://developers.facebook.com/docs/instagram-platform/instagram-api-with-instagram-login/messaging-api/)
+
+---
+
 ## Registro da rodada de 2026-08-10
 
 ### Veredito
@@ -742,5 +806,38 @@ Avaliar somente quando houver:
 - O maior ID histórico permanece `prod#23`; nenhum ID desapareceu, foi renumerado ou reutilizado.
 - Antes do ajuste, foram buscados `prod#9`, título, Text Guidelines, Text Customization, AI Max, Google Ads e artefatos de campanha em documentos e código; não foi encontrada implementação executável.
 - O ajuste segue o `README.md`, preserva revisão humana e não autoriza código, configuração, integração, campanha, nova infraestrutura ou decisão final de plano.
+
+---
+
+
+## Registro da rodada de 2026-08-20
+
+### Veredito
+
+- `prod#24` foi adicionado para preservar a oportunidade de atendimento e qualificação por Instagram Direct, sem duplicar a descrição técnica de `vercel#30` e sem autorizar implementação.
+- Mantidos os demais IDs e estados; nenhum item foi arquivado, absorvido, superado ou reclassificado nesta rodada.
+
+### Cobertura estratégica e fontes oficiais
+
+- IA, automações e agentes: OpenAI News e documentação oficial; Ultrafast para GPT-5.6 Sol é opção de processamento/modelo e deve ser avaliada no fluxo de workloads, não como nova capacidade de produto.
+- Landing pages, SEO, performance e aquisição: Google Search Central, web.dev e Google Ads; não houve novidade de Search Central/web.dev aplicável, e a mudança de lances para campanhas limitadas por orçamento não cria integração nem caso de produto no projeto.
+- Instagram e mídia Meta: Meta for Developers e a novidade oficial Vercel do adapter Instagram; o impacto direto foi catalogado em `prod#24`, com detalhe técnico em `vercel#30`.
+- WhatsApp: WhatsApp Business Platform, Meta Business Messaging e Meta Newsroom; nenhuma novidade do período alterou `prod#23` ou seus gatilhos.
+- E-mail: Resend Changelog; cancelamento de Broadcast, Agent Plugin e Compatibility Checker não se aplicam ao SMTP do Supabase Auth nem demonstram caso novo de produto.
+- Monetização: Stripe Docs/Changelog e Blog; nenhuma mudança validada alterou `prod#19` ou a autoridade interna de entitlements.
+- Acessibilidade: W3C/WAI e WCAG 2.2; nenhuma publicação do período alterou o baseline de `prod#17`.
+- Updates técnicos com impacto potencial em produto: os resultados desta execução em Supabase, Vercel e GitHub foram revisados; `supa#69` é observabilidade transversal sem capacidade de produto, `vercel#30` fundamenta `prod#24`, e o catálogo GitHub não exigiu alteração.
+
+### Itens mantidos e avaliados sem adição
+
+- Mantidos `prod#1`, `prod#3`, `prod#4`, `prod#6`, `prod#7`, `prod#8`, `prod#9`, `prod#12`, `prod#14`, `prod#15`, `prod#16`, `prod#17`, `prod#18`, `prod#19`, `prod#20`, `prod#21`, `prod#22` e `prod#23` nos estados e horizontes já registrados.
+- Não adicionados: OpenAI Ultrafast, ChatGPT for Teens, novidades Resend, mudanças operacionais do Google Ads, updates Stripe, Vercel KMS/Connect e novidades Copilot/GitHub. Faltou capacidade de produto nova, caso aprovado, superioridade sobre item existente ou aderência ao uso real; nenhum foi descartado apenas por estar fora do Starter ou do MVP.
+- Não validados: elegibilidade e permissões do Instagram, custos e limites do adapter, estado de contas/campanhas externas e comportamento autenticado, pois a rodada não conectou contas nem realizou smoke operacional.
+
+### Validação e rastreabilidade
+
+- O maior ID histórico anterior era `prod#23`; `prod#24` foi atribuído acima dele e nenhum ID desapareceu, foi renumerado ou reutilizado.
+- Antes da adição, foram buscados o ID, o título, Instagram, DM, Messaging API, Chat SDK, adapter, webhooks, bots e artefatos associados; não foi encontrada implementação executável.
+- A atualização segue o `README.md`, preserva revisão humana e não autoriza código, configuração, integração, conexão de conta, campanha, nova infraestrutura ou decisão final de plano.
 
 ---
