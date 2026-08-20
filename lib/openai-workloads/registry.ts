@@ -4,6 +4,7 @@ import type {
   OpenAiProductWorkloadDefinition,
   OpenAiReasoningEffort,
   OpenAiWorkloadDefinition,
+  OpenAiWorkloadConfigurationOptions,
   OpenAiWorkloadId,
   ResolvedOpenAiImageWorkload,
   ResolvedOpenAiProductWorkload,
@@ -106,6 +107,32 @@ export const openAiWorkloadRegistry = deepFreeze([
 ] satisfies readonly OpenAiWorkloadDefinition[]);
 
 assertValidRegistry(openAiWorkloadRegistry);
+
+const openAiWorkloadConfigurationOptions = deepFreeze(
+  openAiWorkloadRegistry.reduce<OpenAiWorkloadConfigurationOptions[]>((options, workload) => {
+    if (isTextDefinition(workload)) {
+      options.push({
+        workload: workload.id,
+        displayName: workload.displayName,
+        apiKind: "responses_text",
+        options: workload.allowedConfigurations.map((option) => ({ ...option })),
+      });
+    }
+    if (isImageDefinition(workload)) {
+      options.push({
+        workload: workload.id,
+        displayName: workload.displayName,
+        apiKind: "image_generation",
+        options: workload.allowedConfigurations.map((option) => ({ ...option })),
+      });
+    }
+    return options;
+  }, []),
+);
+
+export function listOpenAiWorkloadConfigurationOptions(): readonly OpenAiWorkloadConfigurationOptions[] {
+  return openAiWorkloadConfigurationOptions;
+}
 
 export function isAllowedOpenAiTextConfiguration(
   workload: OpenAiProductWorkloadDefinition,

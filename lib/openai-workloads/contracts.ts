@@ -221,6 +221,99 @@ export type OpenAiOperationalConfigurationReader = (input: Readonly<{
   workload: OpenAiProductWorkloadId | OpenAiImageWorkloadId;
 }>) => Promise<OpenAiOperationalConfigurationReadResult>;
 
+export type OpenAiTextWorkloadConfigurationOptions = Readonly<{
+  workload: OpenAiProductWorkloadId;
+  displayName: string;
+  apiKind: "responses_text";
+  options: readonly Readonly<{
+    model: string;
+    reasoningEffort: OpenAiReasoningEffort;
+  }>[];
+}>;
+
+export type OpenAiImageWorkloadConfigurationOptions = Readonly<{
+  workload: OpenAiImageWorkloadId;
+  displayName: string;
+  apiKind: "image_generation";
+  options: readonly Readonly<{
+    model: string;
+    quality: OpenAiImageQuality;
+  }>[];
+}>;
+
+export type OpenAiWorkloadConfigurationOptions =
+  | OpenAiTextWorkloadConfigurationOptions
+  | OpenAiImageWorkloadConfigurationOptions;
+
+export type OpenAiAdministrativeConfigurationValue =
+  | Readonly<{
+      apiKind: "responses_text";
+      model: string;
+      reasoningEffort: OpenAiReasoningEffort;
+    }>
+  | Readonly<{
+      apiKind: "image_generation";
+      model: string;
+      quality: OpenAiImageQuality;
+    }>;
+
+export type OpenAiAdministrativeCandidate =
+  OpenAiAdministrativeConfigurationValue &
+    Readonly<{
+      savedByUserId: string;
+      savedAt: string;
+    }>;
+
+export type OpenAiAdministrativeRevision =
+  OpenAiAdministrativeConfigurationValue &
+    Readonly<{
+      id: string;
+      number: number;
+      validatedByUserId: string | null;
+      validatedAt: string;
+    }>;
+
+export type OpenAiAdministrativeActivation = Readonly<{
+  id: string;
+  number: number;
+  eventType: "bootstrap" | "activate" | "rollback";
+  previousRevisionId: string | null;
+  previousRevisionNumber: number | null;
+  targetRevisionId: string;
+  targetRevisionNumber: number;
+  actorUserId: string | null;
+  createdAt: string;
+}>;
+
+export type OpenAiAdministrativeConfigurationUnit = Readonly<{
+  environment: OpenAiManagedWorkloadEnvironment;
+  workload: OpenAiProductWorkloadId | OpenAiImageWorkloadId;
+  displayName: string;
+  apiKind: "responses_text" | "image_generation";
+  configurationVersion: number;
+  activeRevision: OpenAiAdministrativeRevision;
+  candidate: OpenAiAdministrativeCandidate | null;
+  pendingRevision: OpenAiAdministrativeRevision | null;
+  historicalRevisions: readonly OpenAiAdministrativeRevision[];
+  activations: readonly OpenAiAdministrativeActivation[];
+}>;
+
+export type OpenAiAdministrativeConfigurationReadResult =
+  | Readonly<{
+      ok: true;
+      value: readonly OpenAiAdministrativeConfigurationUnit[];
+    }>
+  | Readonly<{
+      ok: false;
+      error: Readonly<{
+        code: "READ_FAILED" | "ADMINISTRATIVE_CONFIGURATION_INVALID";
+        message: string;
+      }>;
+    }>;
+
+export type OpenAiAdministrativeConfigurationReader =
+  () => Promise<OpenAiAdministrativeConfigurationReadResult>;
+
 export type ResolveOpenAiProductWorkloadResult =
   | Readonly<{ ok: true; value: ResolvedOpenAiProductWorkload }>
   | Readonly<{

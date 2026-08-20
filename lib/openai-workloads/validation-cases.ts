@@ -5,7 +5,10 @@ import { fileURLToPath } from "node:url";
 
 import { resolveNicheWithOpenAi } from "../onboarding/niche-resolution/adapters/openAiResolver";
 import { requestCommercialActivationOpenAi } from "../conversion-content/adapters/commercialActivationOpenAiAdapter";
-import { translateOperationalConfigurationRows } from "./adapters/operationalConfigurationAdapterCore";
+import {
+  translateOpenAiAdministrativeConfigurationRows,
+  translateOperationalConfigurationRows,
+} from "./adapters/operationalConfigurationAdapterCore";
 import * as publicApi from "./index";
 import {
   createOpenAiImageWorkloadFailureEvent,
@@ -13,6 +16,7 @@ import {
   createOpenAiWorkloadFailureEvent,
   createOpenAiWorkloadSuccessEvent,
   emitOpenAiWorkloadEvent,
+  listOpenAiWorkloadConfigurationOptions,
   listOpenAiWorkloadInventory,
   normalizeOpenAiResponseUsage,
   resolveOpenAiImageWorkload,
@@ -348,6 +352,50 @@ const cases = [
     name: "public API does not expose the internal registry",
     run: () => {
       assert.equal("openAiWorkloadRegistry" in publicApi, false);
+      assert.equal(typeof publicApi.listOpenAiWorkloadConfigurationOptions, "function");
+      assert.equal(typeof publicApi.readOpenAiAdministrativeConfigurations, "function");
+    },
+  },
+  {
+    name: "public workload options are closed projections and deeply immutable",
+    run: () => {
+      const projection = listOpenAiWorkloadConfigurationOptions();
+      assert.deepEqual(
+        projection.map((item) => item.workload),
+        [
+          "niche_resolution",
+          "commercial_activation_draft_generation",
+          "landing_page_draft_generation",
+          "landing_page_draft_image_generation",
+        ],
+      );
+      assert.equal(Object.isFrozen(projection), true);
+      for (const workload of projection) {
+        assert.equal(Object.isFrozen(workload), true);
+        assert.equal(Object.isFrozen(workload.options), true);
+        assert.equal(workload.options.every(Object.isFrozen), true);
+        assert.deepEqual(
+          Object.keys(workload).sort(),
+          ["apiKind", "displayName", "options", "workload"],
+        );
+        assert.equal(
+          workload.options.length,
+          workload.apiKind === "responses_text" ? 11 : 3,
+        );
+      }
+      const niche = projection.find((item) => item.workload === "niche_resolution");
+      assert.ok(niche && niche.apiKind === "responses_text");
+      assert.equal(
+        niche.options.some((option) =>
+          option.model === "gpt-5.4-mini" && option.reasoningEffort === "max"),
+        false,
+      );
+      assert.throws(() => {
+        (projection as unknown[]).push({});
+      }, TypeError);
+      assert.throws(() => {
+        (niche.options as unknown[]).push({});
+      }, TypeError);
     },
   },
   {
@@ -608,6 +656,120 @@ const cases = [
         mismatchedRevision.error.code,
         "ACTIVE_CONFIGURATION_INVALID",
       );
+    },
+  },
+  {
+    name: "administrative read model returns eight safe immutable environment-workload units",
+    run: () => {
+      const fixture = administrativeConfigurationFixture();
+      const result = translateOpenAiAdministrativeConfigurationRows(
+        { data: fixture.units, error: null },
+        { data: fixture.revisions, error: null },
+        { data: fixture.activations, error: null },
+      );
+      assert.equal(result.ok, true);
+      assert.equal(result.value.length, 8);
+      assert.equal(Object.isFrozen(result), true);
+      assert.equal(Object.isFrozen(result.value), true);
+      assert.equal(Object.isFrozen(result.value[0]), true);
+
+      const previewNiche = result.value.find((unit) =>
+        unit.environment === "preview" && unit.workload === "niche_resolution");
+      assert.ok(previewNiche);
+      assert.equal(previewNiche.activeRevision.number, 2);
+      assert.equal(previewNiche.pendingRevision?.number, 3);
+      assert.deepEqual(
+        previewNiche.historicalRevisions.map((revision) => revision.number),
+        [1],
+      );
+      assert.deepEqual(
+        previewNiche.activations.map((activation) => activation.number),
+        [2, 1],
+      );
+      assert.equal(previewNiche.activations[0]?.actorUserId, administrativeActorId);
+      assert.equal(previewNiche.activations[0]?.createdAt, "2026-08-20T13:00:00.000Z");
+      assert.equal(Object.isFrozen(previewNiche.activeRevision), true);
+      assert.equal(Object.isFrozen(previewNiche.historicalRevisions), true);
+      assert.equal(Object.isFrozen(previewNiche.activations), true);
+
+      const productionImage = result.value.find((unit) =>
+        unit.environment === "production" &&
+        unit.workload === "landing_page_draft_image_generation");
+      assert.ok(productionImage);
+      assert.equal(productionImage.candidate?.apiKind, "image_generation");
+      if (productionImage.candidate?.apiKind === "image_generation") {
+        assert.equal(productionImage.candidate.quality, "low");
+      }
+      const serialized = JSON.stringify(result);
+      assert.equal(serialized.includes("proof_metadata"), false);
+      assert.equal(/api[_-]?key|secret|bearer|authorization/i.test(serialized), false);
+    },
+  },
+  {
+    name: "administrative translation fails closed on read errors and invalid rows",
+    run: () => {
+      const readFailureFixture = administrativeConfigurationFixture();
+      const readFailure = translateOpenAiAdministrativeConfigurationRows(
+        { data: readFailureFixture.units, error: { message: "unavailable" } },
+        { data: readFailureFixture.revisions, error: null },
+        { data: readFailureFixture.activations, error: null },
+      );
+      assert.equal(readFailure.ok, false);
+      assert.equal(readFailure.error.code, "READ_FAILED");
+
+      const invalidFixtures = [
+        (() => {
+          const fixture = administrativeConfigurationFixture();
+          fixture.units.pop();
+          return fixture;
+        })(),
+        (() => {
+          const fixture = administrativeConfigurationFixture();
+          fixture.units[0].active_revision_id = administrativeUuid(999999);
+          return fixture;
+        })(),
+        (() => {
+          const fixture = administrativeConfigurationFixture();
+          fixture.revisions[0].modality = "image_generation";
+          return fixture;
+        })(),
+        (() => {
+          const fixture = administrativeConfigurationFixture();
+          const imageCandidate = fixture.units.find((unit) =>
+            unit.environment === "production" &&
+            unit.workload === "landing_page_draft_image_generation");
+          assert.ok(imageCandidate);
+          imageCandidate.candidate_reasoning_effort = "high";
+          return fixture;
+        })(),
+        (() => {
+          const fixture = administrativeConfigurationFixture();
+          fixture.revisions[0].revision_number = 0;
+          return fixture;
+        })(),
+        (() => {
+          const fixture = administrativeConfigurationFixture();
+          fixture.activations[0].target_revision_id = administrativeUuid(999998);
+          return fixture;
+        })(),
+        (() => {
+          const fixture = administrativeConfigurationFixture();
+          fixture.units[0].unexpected = "not selected";
+          return fixture;
+        })(),
+      ];
+
+      for (const fixture of invalidFixtures) {
+        const result = translateOpenAiAdministrativeConfigurationRows(
+          { data: fixture.units, error: null },
+          { data: fixture.revisions, error: null },
+          { data: fixture.activations, error: null },
+        );
+        assert.equal(result.ok, false);
+        assert.equal(result.error.code, "ADMINISTRATIVE_CONFIGURATION_INVALID");
+        assert.equal(Object.isFrozen(result), true);
+        assert.equal(Object.isFrozen(result.error), true);
+      }
     },
   },
   {
@@ -1022,6 +1184,141 @@ function nicheResolutionFixture() {
       reason: "medium_confidence_below_high_threshold" as const,
     },
   };
+}
+
+const administrativeActorId = "10000000-0000-4000-8000-000000000001";
+
+function administrativeConfigurationFixture(): Readonly<{
+  units: Record<string, unknown>[];
+  revisions: Record<string, unknown>[];
+  activations: Record<string, unknown>[];
+}> {
+  const environments = ["production", "preview"] as const;
+  const workloads = [
+    "niche_resolution",
+    "commercial_activation_draft_generation",
+    "landing_page_draft_generation",
+    "landing_page_draft_image_generation",
+  ] as const;
+  const units: Record<string, unknown>[] = [];
+  const revisions: Record<string, unknown>[] = [];
+  const activations: Record<string, unknown>[] = [];
+  let sequence = 1;
+
+  for (const environment of environments) {
+    for (const workload of workloads) {
+      const image = workload === "landing_page_draft_image_generation";
+      const landingPageText = workload === "landing_page_draft_generation";
+      const modality = image ? "image_generation" : "responses_text";
+      const baselineModel = image
+        ? "gpt-image-2"
+        : landingPageText
+          ? "gpt-5.6-luna"
+          : "gpt-5.4-mini";
+      const baselineReasoning = image ? null : landingPageText ? "max" : "none";
+      const baselineQuality = image ? "medium" : null;
+      const baselineRevisionId = administrativeUuid(sequence++);
+      const bootstrapActivationId = administrativeUuid(sequence++);
+
+      revisions.push({
+        id: baselineRevisionId,
+        environment,
+        workload,
+        modality,
+        revision_number: 1,
+        model: baselineModel,
+        reasoning_effort: baselineReasoning,
+        quality: baselineQuality,
+        validated_by: null,
+        validated_at: "2026-08-20T12:00:00.000Z",
+      });
+      activations.push({
+        id: bootstrapActivationId,
+        environment,
+        workload,
+        modality,
+        activation_number: 1,
+        event_type: "bootstrap",
+        previous_revision_id: null,
+        target_revision_id: baselineRevisionId,
+        actor_user_id: null,
+        created_at: "2026-08-20T12:00:00.000Z",
+      });
+
+      let activeRevisionId = baselineRevisionId;
+      let pendingRevisionId: string | null = null;
+      let configurationVersion = 1;
+      if (environment === "preview" && workload === "niche_resolution") {
+        const activeReplacementId = administrativeUuid(sequence++);
+        pendingRevisionId = administrativeUuid(sequence++);
+        activeRevisionId = activeReplacementId;
+        configurationVersion = 4;
+        revisions.push(
+          {
+            id: activeReplacementId,
+            environment,
+            workload,
+            modality,
+            revision_number: 2,
+            model: "gpt-5.6-luna",
+            reasoning_effort: "low",
+            quality: null,
+            validated_by: administrativeActorId,
+            validated_at: "2026-08-20T12:30:00.000Z",
+          },
+          {
+            id: pendingRevisionId,
+            environment,
+            workload,
+            modality,
+            revision_number: 3,
+            model: "gpt-5.4-mini",
+            reasoning_effort: "high",
+            quality: null,
+            validated_by: administrativeActorId,
+            validated_at: "2026-08-20T14:00:00.000Z",
+          },
+        );
+        activations.push({
+          id: administrativeUuid(sequence++),
+          environment,
+          workload,
+          modality,
+          activation_number: 2,
+          event_type: "activate",
+          previous_revision_id: baselineRevisionId,
+          target_revision_id: activeReplacementId,
+          actor_user_id: administrativeActorId,
+          created_at: "2026-08-20T13:00:00.000Z",
+        });
+      }
+
+      const hasImageCandidate =
+        environment === "production" &&
+        workload === "landing_page_draft_image_generation";
+      units.push({
+        environment,
+        workload,
+        modality,
+        active_revision_id: activeRevisionId,
+        pending_revision_id: pendingRevisionId,
+        candidate_model: hasImageCandidate ? "gpt-image-2" : null,
+        candidate_reasoning_effort: null,
+        candidate_quality: hasImageCandidate ? "low" : null,
+        candidate_saved_by: hasImageCandidate ? administrativeActorId : null,
+        candidate_saved_at: hasImageCandidate
+          ? "2026-08-20T15:00:00.000Z"
+          : null,
+        configuration_version: hasImageCandidate ? 2 : configurationVersion,
+      });
+    }
+  }
+
+  return { units, revisions, activations };
+}
+
+function administrativeUuid(sequence: number): string {
+  return `00000000-0000-4000-8000-${String(sequence).padStart(12, "0")}`;
 }
 
 function collectSourceFiles(directory: string): string[] {
