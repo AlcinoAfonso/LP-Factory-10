@@ -1343,11 +1343,12 @@ Generated columns do PostgreSQL permitem manter **colunas derivadas automaticame
 ## 56 — Push Protection para `supabase_secret_key` *(🟦 Estável)*  
 
 2026-04-20  
+Atualizado em 2026-08-20  
 
 ### Status no Projeto
 
-- Status: Não implementado
-- Evidência: não há registro no repositório de política operacional formalizada de push protection específica para `supabase_secret_key`
+- Status: estado operacional não validado; não presumir que o controle esteja desativado.
+- Evidência: não há registro no repositório de política operacional formalizada de push protection específica para `supabase_secret_key`; essa ausência comprova lacuna documental, não o estado efetivo do setting no GitHub.
 
 
 ### Descrição  
@@ -1366,19 +1367,19 @@ Recurso de segurança/governança para bloquear push acidental de chaves secreta
 
 ### Ações Recomendadas  
 
-1. Habilitar/validar push protection no repositório GitHub do projeto.  
+1. Validar, em revisão operacional read-only, o estado efetivo do push protection no repositório e na conta, sem testar com credencial real.  
 
-2. Revisar documentação interna de segredos para refletir o controle automático.  
+2. Se o controle já estiver ativo, registrar a evidência no documento operacional competente; se estiver desativado, submeter a mudança de setting a recorte próprio aprovado.  
 
-3. Incluir checagem em onboarding técnico para reduzir recorrência de incidentes.  
+3. Somente após a validação, refletir o controle no onboarding técnico e na documentação interna de segredos.  
 
 ### Registro (Tipo A — Plataforma)
 
-- Status: PENDENTE
+- Status: VERIFICAÇÃO PENDENTE
 - Verificado em: —
 - Ambiente: GitHub / Secret Scanning / Push Protection
-- Evidência: —
-- Observação: recurso de segurança e governança; reforça a política do projeto de uso controlado de `SUPABASE_SECRET_KEY` e prevenção de vazamento por push acidental.
+- Evidência: ausência de registro documental; estado do setting não inspecionado.
+- Observação: a pendência é validar o controle global existente ou identificar necessidade de configuração; este registro não autoriza mudança de setting.
 
 ---
 
@@ -1828,30 +1829,35 @@ Avaliar somente quando houver:
 ## 67 — Depreciação de version pinning em extensões *(🟦 Mudança operacional)*
 
 2026-07-22  
-Catalogado em 2026-08-04
+Catalogado em 2026-08-04  
+Atualizado em 2026-08-20
 
 ### Status no Projeto
 
-- Status: aplicável como verificação de migrations; nenhuma mudança técnica autorizada nesta rodada.
-- Evidência: a Supabase anunciou que, a partir de 05/08/2026, versões explícitas em `create extension` e `alter extension ... update` passam a ser ignoradas com aviso; futura rejeição será anunciada separadamente.
-- Relação com a stack: afeta somente migrations que tentem fixar ou atualizar extensão para versão específica.
-- Horizonte: atual, como regra preventiva de revisão.
+- Status: compatibilidade atual validada; nenhuma alteração técnica necessária.
+- Evidência: revisão read-only dos 48 arquivos SQL em `supabase/migrations/` e `supabase/legacy-migrations/` no HEAD `e818887ad3e35cb8e182bb2537b8e689af0caa4b`. Há somente duas instruções `create extension`, ambas para `pg_trgm` sem cláusula de versão, e nenhuma instrução `alter extension ... update` com versão explícita.
+- Relação com a stack: o estado versionado atual não depende de pinning de extensão; a regra permanece preventiva para migrations futuras.
+- Horizonte: atual, como regra global de revisão técnica quando houver criação ou atualização de extensões.
 
 ### Valor para o Projeto
 
-- Evita confiar em pinning que a plataforma não aplicará.
-- Reduz risco de migration parecer instalar versão específica quando a versão default foi usada.
+- Confirma que as migrations existentes não dependem de comportamento já ignorado pela plataforma.
+- Evita que novas migrations pareçam instalar uma versão específica quando a versão default for usada.
 
 ### Ações Recomendadas
 
-1. Em recorte técnico próprio, buscar cláusulas explícitas de versão nas migrations antes de alterar qualquer arquivo.
-2. Em novas migrations, não depender de version pinning para extensões hospedadas.
-3. Tratar a versão default efetiva como estado de plataforma a ser verificado, não presumido.
+1. Em novas migrations, não depender de version pinning para extensões hospedadas.
+2. Se um recorte futuro alterar extensões, verificar a versão default efetiva da plataforma em vez de presumir uma versão pelo SQL.
+3. Absorver a regra preventiva no documento técnico competente antes de retirar este item do catálogo ativo.
+
+### Critério de encerramento
+
+- Registrar canonicamente a regra para migrations futuras; depois disso, preservar este ID como histórico compacto de compatibilidade validada.
 
 ### Limites
 
-- Extensões já instaladas não são alteradas por este anúncio.
-- Não executar `alter extension`, migration ou mudança de ambiente nesta rodada.
+- Extensões já instaladas não são alteradas pelo anúncio.
+- Não executar `alter extension`, migration ou mudança de ambiente em consequência deste registro.
 - Self-hosted não é afetado segundo a fonte oficial.
 
 ### Fonte Oficial
@@ -1859,7 +1865,6 @@ Catalogado em 2026-08-04
 - [Supabase Changelog — Extension version pinning is deprecated](https://supabase.com/changelog/extension-version-pinning-ignored)
 
 ---
-
 ## 68 — Postgres Changes com filtros compostos e seleção de colunas *(🟦 Disponível; adoção condicional)*
 
 2026-08-05
@@ -1918,6 +1923,62 @@ Avaliar somente quando houver:
 
 ---
 
+## 69 — Propagação de W3C Trace Context no `supabase-js` *(🟦 Disponível; adoção transversal condicional)*
+
+2026-08-18  
+Catalogado em 2026-08-20
+
+### Status no Projeto
+
+- Status: não implementado; capacidade transversal condicionada a necessidade real de correlação entre traces da aplicação e logs Supabase.
+- Evidência: a E19.4 consolidou ownership único de `requestId` e observabilidade segura, mas não há `tracePropagation`, import de `@supabase/supabase-js/tracing` nem tracer OpenTelemetry no repositório; `package-lock.json` resolve `@supabase/supabase-js` em `2.89.0`.
+- Natureza de uso: observabilidade transversal de aplicação e plataforma.
+- Relação com a stack: complementar aos logs estruturados e ao `request_id` atuais; não os substitui e não cria valor sem span ativo e tracer compatível.
+- Horizonte: indefinido, conforme necessidade operacional e decisão técnica própria.
+
+### Descrição
+
+O `supabase-js` pode propagar W3C Trace Context (`traceparent`, `tracestate` e `baggage`) para domínios Supabase. Com `tracePropagation` habilitado e um span ativo, o mesmo `trace_id` passa pelos logs do API Gateway e de Edge Functions e pode ser correlacionado por tracers compatíveis.
+
+A integração é opt-in e exige carregar o entry point de tracing. A fonte oficial determina `supabase-js` `2.112.0` ou superior; versões `2.106.0` a `2.111.x` não propagavam os headers corretamente em aplicações empacotadas.
+
+### Valor para o Projeto
+
+- Pode reduzir o tempo de diagnóstico quando uma requisição atravessar aplicação, Supabase API Gateway e Edge Functions.
+- Complementa a correlação segura já adotada com `requestId`, sem exigir que payloads, prompts, PII ou secrets sejam registrados.
+- Pode aumentar o valor futuro de Log Drains ou de um tracer já aprovado, mantendo um identificador padrão entre camadas.
+
+### Gatilho futuro de avaliação
+
+Avaliar somente quando houver:
+
+1. incidente ou fluxo aprovado cuja investigação dependa de correlação entre aplicação e logs Supabase;
+2. tracer W3C/OpenTelemetry ou destino de observabilidade já aprovado, com ownership e retenção definidos;
+3. benefício mensurável sobre os logs estruturados e o `requestId` atuais;
+4. plano deliberado de atualização e validação do `supabase-js` para `2.112.0` ou superior.
+
+### Dependências, riscos e limite
+
+- Exige tracer registrado e span ativo; sem isso, a opção não produz trace útil.
+- A cobertura oficial atual alcança logs do API Gateway e de Edge Functions, não todos os serviços Supabase.
+- Sampling, cardinalidade, custo, retenção e conteúdo de `baggage` precisam de política segura.
+- Não instalar OpenTelemetry, não atualizar dependência, não habilitar `tracePropagation`, não criar Log Drain e não alterar runtime nesta rodada.
+- O registro não autoriza implementação nem nova infraestrutura de observabilidade.
+
+### Fonte Oficial
+
+- [Supabase Blog — Connect client traces to your logs](https://supabase.com/blog/connect-client-traces-to-your-logs)
+
+### Registro (Tipo C — Observabilidade transversal)
+
+- Status: PENDENTE
+- Verificado em: 2026-08-20
+- Ambiente futuro: aplicação TypeScript + `supabase-js` compatível + tracer aprovado
+- Evidência: fonte oficial, E19.4 no roadmap e busca semântica no repositório no SHA inicial da rodada.
+- Observação: prioridade e adoção dependem de avaliação técnica ou operacional própria.
+
+---
+
 ## Registro da rodada — Supabase Update August 2026 — 10/08/2026
 
 ### Updates ajustados ou incorporados
@@ -1965,4 +2026,45 @@ Avaliar somente quando houver:
 
 - Nenhuma extensão, biblioteca, tabela, policy, rota, job, agente, automação ou infraestrutura foi criada.
 - Nenhuma configuração do projeto Supabase foi alterada.
+- O catálogo recomenda avaliação futura; não autoriza implementação, contratação ou mudança de stack.
+
+
+## Registro da rodada — Supabase Update August 2026 — 20/08/2026
+
+### Updates ajustados ou incorporados
+
+- `supa#69` foi adicionado como capacidade transversal e condicional de correlação entre traces da aplicação e logs Supabase.
+- Nenhum item existente foi arquivado, absorvido, superado ou reclassificado nesta rodada.
+
+### Updates avaliados e não adicionados nesta atualização
+
+- Não houve outro recurso oficial Supabase novo ou materialmente alterado entre 11/08/2026 e 20/08/2026 com valor concreto e horizonte plausível adicional para o LP Factory 10.
+- A ausência de adição não foi determinada por distância do Starter ou do MVP, mas por falta de novidade material adicional nas fontes oficiais pesquisadas.
+
+### Cobertura estratégica desta atualização
+
+- Landing pages, Instagram, WhatsApp e e-mail foram pesquisados contra as fontes oficiais aplicáveis.
+- A propagação de traces pode apoiar o diagnóstico dos canais quando eles atravessarem APIs Supabase ou Edge Functions, mas não altera nem autoriza seus fluxos.
+- Não foi encontrada novidade oficial Supabase específica e relevante para esses canais no período; as fontes oficiais da WhatsApp Business Platform/Meta Business Messaging também não apresentaram update aplicável ao catálogo Supabase nesta rodada.
+
+### IDs preservados por rastreabilidade
+
+- Todos os IDs publicados de `supa#2` a `supa#68`, inclusive os registros históricos e os intervalos não utilizados, permanecem sem renumeração, reutilização ou desaparecimento.
+- `supa#69` é o único novo ID e está acima do maior ID histórico anterior.
+
+### Pontos não validados e lacunas documentais
+
+- `supa#69`: não existe tracer aprovado nem caso operacional que justifique adoção; maturidade efetiva no projeto depende de futuro recorte técnico e de `supabase-js` `2.112.0` ou superior.
+- Permanecem as lacunas da rodada anterior, inclusive disponibilidade do Unified Logs no projeto, retirada de `pg_graphql`, ownership do Grafana Cloud e confirmação técnica sobre migrations com version pinning.
+
+### Validação de IDs e rastreabilidade
+
+- Nenhum ID publicado desapareceu, foi renumerado ou reutilizado.
+- Não houve arquivamento; a busca por referências explícitas e implementação semântica confirmou a observabilidade segura da E19.4 e a ausência de `tracePropagation` no estado inicial.
+- A catalogação adere ao `README.md` e não adotou novidade, modernidade ou distância do MVP como decisão isolada.
+
+### Limite da rodada
+
+- Nenhuma dependência, extensão, tabela, policy, rota, job, agente, automação, tracer, Log Drain ou infraestrutura foi criada.
+- Nenhuma configuração do projeto Supabase nem runtime foi alterada.
 - O catálogo recomenda avaliação futura; não autoriza implementação, contratação ou mudança de stack.
