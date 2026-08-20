@@ -2716,16 +2716,33 @@ Repositório — Ajustados
 21.2 Configuração operacional dinâmica dos workloads OpenAI
 
 21.2.1 Objetivo e status
-- Objetivo: futura configuração ativa por ambiente e workload, com candidata, validação, ativação humana, rollback e mudança ordinária sem redeploy.
-- Status: Prevista; não implementada.
-- O mecanismo efetivo será fechado no plano-base próprio.
+- Objetivo: permitir configuração ativa por ambiente e workload, com candidata, validação, ativação humana, rollback e mudança ordinária sem redeploy.
+- Status: plano-base v2 aprovado pelo Analista em duas passagens; implementação ainda não iniciada.
+- O recorte preserva a E21.1 como boundary transversal, mantém Development determinístico/local e deixa a E21.3 fora da entrega.
 
-21.2.3 Previsão e limites
-- Preservar configuração explícita por workload/ambiente.
-- Exigir candidata validada.
-- Exigir ativação humana.
-- Permitir rollback para revisão validada.
-- Não autorizar neste registro banco, rota, dashboard mutável, provider ou nova infraestrutura.
+21.2.2 Registros de planejamento
+- Plano-base v1: `docs/lousa-plano-base-e21-2.md`, congelado pelo PR #790 e incorporado à `main` no merge `d260a82bf3e121e8be3f17a24229ecbd54f829ff`.
+- Plano-base v2 aprovado: `docs/lousa-plano-base-e21-2-v2.md`.
+- Matriz integral de tratamentos: `docs/matriz-consolidacao-e21-2.md`.
+- Execução autorizada em uma única branch e um único PR, inicialmente com o runtime dinâmico gate-off; apply e cutover permanecem pós-merge e sob controle humano.
+
+21.2.3 Fonte operacional dinâmica e resolução por ambiente/workload
+- Status: planejada; implementação não iniciada.
+- Automação: não.
+- Materializar no Supabase o agregado de configuração, revisões validadas e ativações/rollback por `ambiente + workload`, com bootstrap exato dos quatro workloads de produto em Production e Preview.
+- Preservar `lib/openai-workloads/` como boundary comum, evoluindo somente o delta assíncrono e os quatro callsites necessários; Development continua no baseline local.
+- Entregar migration, grants/RLS/RPCs, constraints unit-safe, adapter server-side, resolver fail-closed, proveniência, snippet SQL e documentação canônica aplicável.
+- Manter `OPENAI_OPERATIONAL_CONFIG_ENABLED` desabilitada no PR; após o merge humano, apply, Security Controls e snippet precedem o gate-on em Preview, e Production somente avança após Preview aprovado.
+- Não usar `repo_catalog` como fallback quando o gate estiver ativo; não introduzir cache, Realtime, AI Gateway, Vercel Flags, Global Config, tracing, drains, workflow ou segunda residência.
+
+21.2.4 Gestão administrativa, validação, ativação e rollback
+- Status: planejada; depende do checkpoint técnico pré-merge da E21.2.3, sem antecipar o cutover pós-merge.
+- Automação: não.
+- Evoluir `/admin/workloads-openai` para gerir ativa, candidata, prova, revisão validada pendente, ativação, histórico e rollback em Production e Preview.
+- Reautorizar cada mutação como `platform_admin`, derivar o ator no servidor e limitar texto a `model + reasoning effort` e imagem a `model + quality`, conforme allowlist fechada em código.
+- Provar candidatas pelos quatro transportes existentes com fixture segura, sem persistência funcional, benchmark, ranking ou decisão autônoma.
+- Validar lifecycle, concorrência, papéis positivo/negativo, reconhecimento dos estados, desktop/mobile, sucesso/erro e baseline proporcional da WCAG 2.2.
+- Reutilizar a `OPENAI_API_KEY` já aprovada somente no smoke hospedado autorizado, sem copiar, exibir ou versionar a credencial.
 
 21.3 Evidências e avaliação de custo-benefício dos workloads OpenAI
 
