@@ -410,7 +410,7 @@
 - O debate indispensável da v1 está encerrado.
 - O checklist final do item 3 de `docs/prompt-estrategista.md` está atendido: quatro seções canônicas, Plano conceitual `N/A`, fase executável, Automação: não, limites e critérios de parada explícitos.
 - Seguir para o item 4 de `docs/prompt-estrategista.md`: escolha humana entre processo atual e processo automatizado.
-- No processo atual, seguir aos especialistas do item 5; a reconciliação do roadmap ocorre posteriormente com o Executor conforme o fluxo vigente.
+- No processo atual, seguir aos especialistas do item 5; a reconciliação do roadmap ocorre posteriormente conforme o fluxo vigente.
 - No processo automatizado, após autorização humana explícita, realizar exclusivamente o merge remoto desta v1 e então entregar ao orquestrador a instrução prevista no item 4.
 
 ## 4. Escopo negativo e critérios de parada
