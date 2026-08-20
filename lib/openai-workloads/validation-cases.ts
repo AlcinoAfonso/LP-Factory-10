@@ -4,6 +4,8 @@ import { join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { resolveNicheWithOpenAi } from "../onboarding/niche-resolution/adapters/openAiResolver";
+import { requestCommercialActivationOpenAi } from "../conversion-content/adapters/commercialActivationOpenAiAdapter";
+import { translateOperationalConfigurationRows } from "./adapters/operationalConfigurationAdapterCore";
 import * as publicApi from "./index";
 import {
   createOpenAiImageWorkloadFailureEvent,
@@ -16,6 +18,7 @@ import {
   resolveOpenAiImageWorkload,
   resolveOpenAiProductWorkload,
   resolveOpenAiWorkloadEnvironment,
+  type OpenAiOperationalConfigurationReader,
   type OpenAiWorkloadEvent,
 } from "./index";
 
@@ -59,6 +62,7 @@ const cases = [
         candidates: [candidate],
         apiKey: "test-key",
       }, {
+        environment: "development",
         fetchImpl: async (_url, init) => {
           requestBody = JSON.parse(String(init?.body));
           return new Response(JSON.stringify({
@@ -108,7 +112,7 @@ const cases = [
         requestId: null,
         promptVersion: null,
         contractVersion: null,
-        environment: "unknown",
+        environment: "development",
         configurationSource: "repo_catalog",
         configurationRevision: "v2",
         model: "gpt-5.4-mini",
@@ -136,6 +140,7 @@ const cases = [
         candidates: [candidate],
         apiKey: "test-key",
       }, {
+        environment: "development",
         fetchImpl: async () => new Response("{", {
           status: 200,
           headers: { "Content-Type": "application/json" },
@@ -153,6 +158,7 @@ const cases = [
         candidates: [candidate],
         apiKey: "",
       }, {
+        environment: "development",
         fetchImpl: async () => {
           transportCalls += 1;
           return new Response();
@@ -184,9 +190,12 @@ const cases = [
   },
   {
     name: "existing text workloads preserve their model on catalog revision v2",
-    run: () => {
+    run: async () => {
       for (const workloadId of productIds) {
-        const result = resolveOpenAiProductWorkload(workloadId);
+        const result = await resolveOpenAiProductWorkload(
+          workloadId,
+          "development",
+        );
         assert.equal(result.ok, true);
         assert.equal(result.value.model, "gpt-5.4-mini");
         assert.equal(result.value.reasoningEffort, "none");
@@ -199,15 +208,21 @@ const cases = [
   },
   {
     name: "landing page text and image workloads resolve independent configurations",
-    run: () => {
-      const text = resolveOpenAiProductWorkload(landingPageTextWorkloadId);
+    run: async () => {
+      const text = await resolveOpenAiProductWorkload(
+        landingPageTextWorkloadId,
+        "development",
+      );
       assert.equal(text.ok, true);
       assert.equal(text.value.apiKind, "responses_text");
       assert.equal(text.value.model, "gpt-5.6-luna");
       assert.equal(text.value.reasoningEffort, "max");
       assert.equal(text.value.revision, "v2");
 
-      const image = resolveOpenAiImageWorkload(landingPageImageWorkloadId);
+      const image = await resolveOpenAiImageWorkload(
+        landingPageImageWorkloadId,
+        "development",
+      );
       assert.equal(image.ok, true);
       assert.deepEqual(image.value, {
         id: landingPageImageWorkloadId,
@@ -229,18 +244,27 @@ const cases = [
         effectiveConfigurationVerified: true,
       });
 
-      const textAsImage = resolveOpenAiImageWorkload(landingPageTextWorkloadId);
+      const textAsImage = await resolveOpenAiImageWorkload(
+        landingPageTextWorkloadId,
+        "development",
+      );
       assert.equal(textAsImage.ok, false);
       assert.equal(textAsImage.error.code, "NOT_IMAGE_GENERATION_WORKLOAD");
-      const imageAsText = resolveOpenAiProductWorkload(landingPageImageWorkloadId);
+      const imageAsText = await resolveOpenAiProductWorkload(
+        landingPageImageWorkloadId,
+        "development",
+      );
       assert.equal(imageAsText.ok, false);
       assert.equal(imageAsText.error.code, "NOT_TEXT_PRODUCT_WORKLOAD");
     },
   },
   {
     name: "image events expose media metrics without textual token fields",
-    run: () => {
-      const resolved = resolveOpenAiImageWorkload(landingPageImageWorkloadId);
+    run: async () => {
+      const resolved = await resolveOpenAiImageWorkload(
+        landingPageImageWorkloadId,
+        "development",
+      );
       assert.equal(resolved.ok, true);
       const success = createOpenAiImageWorkloadSuccessEvent({
         workload: resolved.value,
@@ -270,8 +294,11 @@ const cases = [
   },
   {
     name: "operational reference stays outside the product resolver",
-    run: () => {
-      const result = resolveOpenAiProductWorkload("supabase_inspect");
+    run: async () => {
+      const result = await resolveOpenAiProductWorkload(
+        "supabase_inspect",
+        "development",
+      );
       assert.equal(result.ok, false);
       assert.equal(result.error.code, "NOT_PRODUCT_RUNTIME_WORKLOAD");
 
@@ -289,15 +316,18 @@ const cases = [
   },
   {
     name: "unknown workloads fail closed",
-    run: () => {
-      const result = resolveOpenAiProductWorkload("unknown_workload");
+    run: async () => {
+      const result = await resolveOpenAiProductWorkload(
+        "unknown_workload",
+        "development",
+      );
       assert.equal(result.ok, false);
       assert.equal(result.error.code, "UNKNOWN_WORKLOAD");
     },
   },
   {
     name: "inventory and resolved configurations are deeply immutable",
-    run: () => {
+    run: async () => {
       const inventory = listOpenAiWorkloadInventory();
       assert.equal(Object.isFrozen(inventory), true);
       assert.equal(Object.isFrozen(inventory[0]), true);
@@ -305,7 +335,10 @@ const cases = [
         (inventory as unknown[]).push({});
       }, TypeError);
 
-      const result = resolveOpenAiProductWorkload("niche_resolution");
+      const result = await resolveOpenAiProductWorkload(
+        "niche_resolution",
+        "development",
+      );
       assert.equal(result.ok, true);
       assert.equal(Object.isFrozen(result), true);
       assert.equal(Object.isFrozen(result.value), true);
@@ -352,6 +385,475 @@ const cases = [
         resolveOpenAiWorkloadEnvironment({ vercelEnv: "custom" }),
         "unknown",
       );
+      assert.equal(resolveOpenAiWorkloadEnvironment({}), "unknown");
+    },
+  },
+  {
+    name: "development and managed gate-off use repo catalog without operational reads",
+    run: async () => {
+      let reads = 0;
+      const reader: OpenAiOperationalConfigurationReader = async () => {
+        reads += 1;
+        throw new Error("reader must not run");
+      };
+
+      for (const environment of ["development", "production", "preview"] as const) {
+        const result = await resolveOpenAiProductWorkload(
+          "niche_resolution",
+          environment,
+          {
+            operationalConfigurationEnabled:
+              environment === "development" ? "true" : "TRUE",
+            readOperationalConfiguration: reader,
+          },
+        );
+        assert.equal(result.ok, true);
+        assert.equal(result.value.source, "repo_catalog");
+        assert.equal(result.value.revision, "v2");
+      }
+      assert.equal(reads, 0);
+    },
+  },
+  {
+    name: "unknown environment fails closed before operational read",
+    run: async () => {
+      let reads = 0;
+      const result = await resolveOpenAiProductWorkload(
+        "niche_resolution",
+        "unknown",
+        {
+          operationalConfigurationEnabled: "true",
+          readOperationalConfiguration: async () => {
+            reads += 1;
+            throw new Error("reader must not run");
+          },
+        },
+      );
+      assert.equal(result.ok, false);
+      assert.equal(result.error.code, "UNKNOWN_ENVIRONMENT");
+      assert.equal(reads, 0);
+    },
+  },
+  {
+    name: "managed gate-on reads every execution and preserves operational origin and decimal revision",
+    run: async () => {
+      let reads = 0;
+      const reader: OpenAiOperationalConfigurationReader = async (input) => {
+        reads += 1;
+        return {
+          ok: true,
+          value: {
+            environment: input.environment,
+            workload: "niche_resolution",
+            apiKind: "responses_text",
+            model: "gpt-5.6-luna",
+            reasoningEffort: "high",
+            revision: String(reads),
+          },
+        };
+      };
+      const dependencies = {
+        operationalConfigurationEnabled: "true",
+        readOperationalConfiguration: reader,
+      } as const;
+
+      const first = await resolveOpenAiProductWorkload(
+        "niche_resolution",
+        "preview",
+        dependencies,
+      );
+      const second = await resolveOpenAiProductWorkload(
+        "niche_resolution",
+        "preview",
+        dependencies,
+      );
+      assert.equal(first.ok, true);
+      assert.equal(second.ok, true);
+      assert.equal(first.value.source, "supabase_operational");
+      assert.equal(first.value.revision, "1");
+      assert.equal(second.value.revision, "2");
+      assert.equal(second.value.model, "gpt-5.6-luna");
+      assert.equal(second.value.reasoningEffort, "high");
+      assert.equal(reads, 2);
+    },
+  },
+  {
+    name: "gate-on read failures and configurations outside the allowlist fail without repo fallback",
+    run: async () => {
+      const readFailure = await resolveOpenAiProductWorkload(
+        "niche_resolution",
+        "production",
+        {
+          operationalConfigurationEnabled: "true",
+          readOperationalConfiguration: async () => ({
+            ok: false,
+            error: { code: "READ_FAILED", message: "read failed" },
+          }),
+        },
+      );
+      assert.equal(readFailure.ok, false);
+      assert.equal(
+        readFailure.error.code,
+        "OPERATIONAL_CONFIGURATION_READ_FAILED",
+      );
+
+      const invalid = await resolveOpenAiProductWorkload(
+        "niche_resolution",
+        "production",
+        {
+          operationalConfigurationEnabled: "true",
+          readOperationalConfiguration: async (input) => ({
+            ok: true,
+            value: {
+              environment: input.environment,
+              workload: "niche_resolution",
+              apiKind: "responses_text",
+              model: "gpt-5.4-mini",
+              reasoningEffort: "max",
+              revision: "3",
+            },
+          }),
+        },
+      );
+      assert.equal(invalid.ok, false);
+      assert.equal(invalid.error.code, "OPERATIONAL_CONFIGURATION_INVALID");
+
+      const nonDecimalRevision = await resolveOpenAiProductWorkload(
+        "niche_resolution",
+        "production",
+        {
+          operationalConfigurationEnabled: "true",
+          readOperationalConfiguration: async (input) => ({
+            ok: true,
+            value: {
+              environment: input.environment,
+              workload: "niche_resolution",
+              apiKind: "responses_text",
+              model: "gpt-5.4-mini",
+              reasoningEffort: "none",
+              revision: "v3",
+            },
+          }),
+        },
+      );
+      assert.equal(nonDecimalRevision.ok, false);
+      assert.equal(
+        nonDecimalRevision.error.code,
+        "OPERATIONAL_CONFIGURATION_INVALID",
+      );
+    },
+  },
+  {
+    name: "adapter translation validates read, unit, active revision, modality and shape",
+    run: () => {
+      const input = {
+        environment: "preview" as const,
+        workload: "landing_page_draft_image_generation",
+      };
+      const unit = [{
+        environment: "preview",
+        workload: input.workload,
+        modality: "image_generation",
+        active_revision_id: "revision-7",
+      }];
+      const revision = [{
+        id: "revision-7",
+        environment: "preview",
+        workload: input.workload,
+        modality: "image_generation",
+        revision_number: 7,
+        model: "gpt-image-2",
+        reasoning_effort: null,
+        quality: "high",
+      }];
+
+      const valid = translateOperationalConfigurationRows(
+        input,
+        { data: unit, error: null },
+        { data: revision, error: null },
+      );
+      assert.equal(valid.ok, true);
+      assert.equal(valid.value.revision, "7");
+      assert.equal(valid.value.apiKind, "image_generation");
+      if (valid.value.apiKind === "image_generation") {
+        assert.equal(valid.value.quality, "high");
+      }
+
+      const readFailure = translateOperationalConfigurationRows(
+        input,
+        { data: null, error: { message: "database unavailable" } },
+        { data: null, error: null },
+      );
+      assert.equal(readFailure.ok, false);
+      assert.equal(readFailure.error.code, "READ_FAILED");
+
+      const duplicateUnit = translateOperationalConfigurationRows(
+        input,
+        { data: [...unit, ...unit], error: null },
+        { data: revision, error: null },
+      );
+      assert.equal(duplicateUnit.ok, false);
+      assert.equal(duplicateUnit.error.code, "ACTIVE_CONFIGURATION_INVALID");
+
+      const mismatchedRevision = translateOperationalConfigurationRows(
+        input,
+        { data: unit, error: null },
+        {
+          data: [{ ...revision[0], environment: "production" }],
+          error: null,
+        },
+      );
+      assert.equal(mismatchedRevision.ok, false);
+      assert.equal(
+        mismatchedRevision.error.code,
+        "ACTIVE_CONFIGURATION_INVALID",
+      );
+    },
+  },
+  {
+    name: "closed allowlists accept only the approved text and image combinations",
+    run: async () => {
+      const textConfigurations = [
+        { model: "gpt-5.4-mini", reasoningEffort: "none" },
+        { model: "gpt-5.4-mini", reasoningEffort: "low" },
+        { model: "gpt-5.4-mini", reasoningEffort: "medium" },
+        { model: "gpt-5.4-mini", reasoningEffort: "high" },
+        { model: "gpt-5.4-mini", reasoningEffort: "xhigh" },
+        { model: "gpt-5.6-luna", reasoningEffort: "none" },
+        { model: "gpt-5.6-luna", reasoningEffort: "low" },
+        { model: "gpt-5.6-luna", reasoningEffort: "medium" },
+        { model: "gpt-5.6-luna", reasoningEffort: "high" },
+        { model: "gpt-5.6-luna", reasoningEffort: "xhigh" },
+        { model: "gpt-5.6-luna", reasoningEffort: "max" },
+      ] as const;
+      for (const workload of [
+        "niche_resolution",
+        "commercial_activation_draft_generation",
+        "landing_page_draft_generation",
+      ] as const) {
+        for (const configuration of textConfigurations) {
+          const result = await resolveOpenAiProductWorkload(
+            workload,
+            "preview",
+            {
+              operationalConfigurationEnabled: "true",
+              readOperationalConfiguration: async (input) => ({
+                ok: true,
+                value: {
+                  environment: input.environment,
+                  workload,
+                  apiKind: "responses_text",
+                  ...configuration,
+                  revision: "9",
+                },
+              }),
+            },
+          );
+          assert.equal(result.ok, true);
+        }
+      }
+
+      for (const quality of ["low", "medium", "high"] as const) {
+        const result = await resolveOpenAiImageWorkload(
+          "landing_page_draft_image_generation",
+          "production",
+          {
+            operationalConfigurationEnabled: "true",
+            readOperationalConfiguration: async (input) => ({
+              ok: true,
+              value: {
+                environment: input.environment,
+                workload: "landing_page_draft_image_generation",
+                apiKind: "image_generation",
+                model: "gpt-image-2",
+                quality,
+                revision: "4",
+              },
+            }),
+          },
+        );
+        assert.equal(result.ok, true);
+      }
+    },
+  },
+  {
+    name: "invalid operational configuration blocks the consumer transport",
+    run: async () => {
+      const fixture = nicheResolutionFixture();
+      let transportCalls = 0;
+      const result = await resolveNicheWithOpenAi(
+        { ...fixture, apiKey: "test-key" },
+        {
+          environment: "preview",
+          workloadResolver: {
+            operationalConfigurationEnabled: "true",
+            readOperationalConfiguration: async () => ({
+              ok: false,
+              error: { code: "READ_FAILED", message: "read failed" },
+            }),
+          },
+          fetchImpl: async () => {
+            transportCalls += 1;
+            return new Response();
+          },
+        },
+      );
+      assert.equal(result.ok, false);
+      assert.equal(result.reason, "invalid_openai_configuration");
+      assert.equal(transportCalls, 0);
+    },
+  },
+  {
+    name: "consumer transport and event provenance use the resolved operational configuration",
+    run: async () => {
+      const fixture = nicheResolutionFixture();
+      const events: OpenAiWorkloadEvent[] = [];
+      let requestBody: Record<string, unknown> | null = null;
+      const result = await resolveNicheWithOpenAi(
+        { ...fixture, apiKey: "test-key" },
+        {
+          environment: "preview",
+          workloadResolver: {
+            operationalConfigurationEnabled: "true",
+            readOperationalConfiguration: async (input) => ({
+              ok: true,
+              value: {
+                environment: input.environment,
+                workload: "niche_resolution",
+                apiKind: "responses_text",
+                model: "gpt-5.6-luna",
+                reasoningEffort: "low",
+                revision: "11",
+              },
+            }),
+          },
+          fetchImpl: async (_url, init) => {
+            requestBody = JSON.parse(String(init?.body));
+            return new Response(JSON.stringify({
+              id: "resp_operational_11",
+              output_text: JSON.stringify({
+                uxMode: "confirm_single",
+                message: "Voce quis dizer este nicho?",
+                options: [{
+                  taxonId: fixture.candidates[0].taxonId,
+                  name: fixture.candidates[0].name,
+                  slug: fixture.candidates[0].slug,
+                  confidence: "medium",
+                  reason: "official_candidate",
+                  isOfficial: true,
+                }],
+                needsAdminReview: false,
+                needsUserConfirmation: true,
+                shouldCreateOfficialLink: false,
+                suggestedNewTaxonLabel: null,
+                reason: "ai_resolution_completed",
+              }),
+            }), { status: 200 });
+          },
+          emitEvent: (event) => events.push(event),
+        },
+      );
+      assert.equal(result.ok, true);
+      const capturedRequest = requestBody as unknown as Record<string, unknown>;
+      assert.equal(capturedRequest.model, "gpt-5.6-luna");
+      assert.deepEqual(capturedRequest.reasoning, { effort: "low" });
+      assert.equal(events.length, 1);
+      assert.equal(events[0]?.environment, "preview");
+      assert.equal(events[0]?.configurationSource, "supabase_operational");
+      assert.equal(events[0]?.configurationRevision, "11");
+    },
+  },
+  {
+    name: "commercial adapter uses the callsite resolution without a second operational read",
+    run: async () => {
+      let reads = 0;
+      const configuration = await resolveOpenAiProductWorkload(
+        "commercial_activation_draft_generation",
+        "production",
+        {
+          operationalConfigurationEnabled: "true",
+          readOperationalConfiguration: async (input) => {
+            reads += 1;
+            return {
+              ok: true,
+              value: {
+                environment: input.environment,
+                workload: "commercial_activation_draft_generation",
+                apiKind: "responses_text",
+                model: "gpt-5.6-luna",
+                reasoningEffort: "xhigh",
+                revision: "6",
+              },
+            };
+          },
+        },
+      );
+      assert.equal(configuration.ok, true);
+      const events: OpenAiWorkloadEvent[] = [];
+      let requestBody: Record<string, unknown> | null = null;
+      const result = await requestCommercialActivationOpenAi(
+        {
+          apiKey: "test-key",
+          configuration: configuration.value,
+          environment: "production",
+          request: { input: [] },
+          parseResponse: () => ({ ok: true, value: "parsed" }),
+        },
+        {
+          fetchImpl: async (_url, init) => {
+            requestBody = JSON.parse(String(init?.body));
+            return new Response(JSON.stringify({ id: "resp_commercial_6" }), {
+              status: 200,
+            });
+          },
+          emitEvent: (event) => events.push(event),
+        },
+      );
+      assert.equal(result.ok, true);
+      assert.equal(reads, 1);
+      const capturedRequest = requestBody as unknown as Record<string, unknown>;
+      assert.equal(capturedRequest.model, "gpt-5.6-luna");
+      assert.deepEqual(capturedRequest.reasoning, { effort: "xhigh" });
+      assert.equal(events[0]?.environment, "production");
+      assert.equal(events[0]?.configurationSource, "supabase_operational");
+      assert.equal(events[0]?.configurationRevision, "6");
+    },
+  },
+  {
+    name: "commercial adapter rejects forged resolved configurations before transport",
+    run: async () => {
+      const configuration = await resolveOpenAiProductWorkload(
+        "commercial_activation_draft_generation",
+        "development",
+      );
+      assert.equal(configuration.ok, true);
+      if (!configuration.ok) return;
+
+      let calls = 0;
+      const events: OpenAiWorkloadEvent[] = [];
+      const result = await requestCommercialActivationOpenAi(
+        {
+          apiKey: "test-key",
+          configuration: {
+            ...configuration.value,
+            model: "unapproved-model",
+          },
+          environment: "development",
+          request: { input: [] },
+          parseResponse: () => ({ ok: true, value: "must-not-run" }),
+        },
+        {
+          fetchImpl: async () => {
+            calls += 1;
+            return new Response();
+          },
+          emitEvent: (event) => events.push(event),
+        },
+      );
+
+      assert.equal(result.ok, false);
+      assert.equal(calls, 0);
+      assert.equal(events[0]?.failureCategory, "configuration_invalid");
     },
   },
   {
@@ -494,6 +996,33 @@ const cases = [
     },
   },
 ];
+
+function nicheResolutionFixture() {
+  const candidate = {
+    taxonId: "10000000-0000-4000-8000-000000000001",
+    name: "Corretores de imoveis",
+    slug: "corretores-de-imoveis",
+    level: "niche" as const,
+    parentId: null,
+    parentName: null,
+    matchedAliases: ["corretor"],
+    matchSource: "alias",
+    score: 0.72,
+  };
+  return {
+    rawInput: "corretor",
+    candidates: [candidate],
+    decision: {
+      confidence: "medium" as const,
+      selectedCandidate: candidate,
+      shouldUseDeterministicMatch: false,
+      shouldEscalateToAi: true,
+      aiEscalationMode: "rerank_candidates" as const,
+      needsAdminReview: false,
+      reason: "medium_confidence_below_high_threshold" as const,
+    },
+  };
+}
 
 function collectSourceFiles(directory: string): string[] {
   return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {

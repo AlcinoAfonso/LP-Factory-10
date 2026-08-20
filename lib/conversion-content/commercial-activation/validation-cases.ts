@@ -39,8 +39,9 @@ const cases: Case[] = [
   {
     name: "commercial OpenAI transport uses resolved model and effort with safe usage",
     run: async () => {
-      const configuration = resolveOpenAiProductWorkload(
+      const configuration = await resolveOpenAiProductWorkload(
         "commercial_activation_draft_generation",
+        "development",
       );
       assert.equal(configuration.ok, true);
       if (!configuration.ok) return;

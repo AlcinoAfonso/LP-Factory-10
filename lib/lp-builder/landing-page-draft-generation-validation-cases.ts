@@ -364,6 +364,7 @@ const cases = [
       const events: OpenAiWorkloadEvent[] = [];
       const result = await generateLandingPageDraftCandidate(context, {
         apiKey: "test-key",
+        environment: "development",
         attemptId: "attempt-text-1",
         requestId: "request-text-1",
         fetchImpl: async (_url, init) => {
@@ -425,6 +426,7 @@ const cases = [
         const events: OpenAiWorkloadEvent[] = [];
         const result = await generateLandingPageDraftCandidate(context, {
           apiKey: "test-key",
+          environment: "development",
           fetchImpl: async () => {
             calls += 1;
             return response;
@@ -519,6 +521,7 @@ const cases = [
         let calls = 0;
         const result = await generateLandingPageDraftCandidate(context, {
           apiKey: "test-key",
+          environment: "development",
           fetchImpl: async () => {
             calls += 1;
             return new Response(JSON.stringify(fixture), {
@@ -535,6 +538,7 @@ const cases = [
       const failureEvents: OpenAiWorkloadEvent[] = [];
       const refused = await generateLandingPageDraftCandidate(context, {
         apiKey: "test-key",
+        environment: "development",
         attemptId: "attempt-text-failure",
         requestId: "request-text-failure",
         fetchImpl: async () =>
@@ -566,6 +570,7 @@ const cases = [
         { mediaBrief: "Sala contemporânea acolhedora", semanticFacts: { offer: "consultoria" } },
         {
           apiKey: "test-key",
+          environment: "development",
           attemptId: "attempt-image-1",
           requestId: "request-image-1",
           fetchImpl: async (_url, init) => {
@@ -599,6 +604,7 @@ const cases = [
         { mediaBrief: "Sala contemporânea acolhedora", semanticFacts: {} },
         {
           apiKey: "test-key",
+          environment: "development",
           attemptId: "attempt-image-failure",
           requestId: "request-image-failure",
           fetchImpl: async () =>
@@ -621,6 +627,7 @@ const cases = [
     run: async () => {
       const text = await generateLandingPageDraftCandidate(context, {
         apiKey: "test-key",
+        environment: "development",
         timeoutMs: 5,
         fetchImpl: abortingFetch,
         emitEvent: () => undefined,
@@ -631,6 +638,7 @@ const cases = [
         { mediaBrief: "Sala contemporânea acolhedora", semanticFacts: {} },
         {
           apiKey: "test-key",
+          environment: "development",
           timeoutMs: 5,
           fetchImpl: abortingFetch,
           emitEvent: () => undefined,

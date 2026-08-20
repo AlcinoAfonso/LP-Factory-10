@@ -11,7 +11,10 @@ import {
   createOpenAiWorkloadSuccessEvent,
   emitOpenAiWorkloadEvent,
   resolveOpenAiProductWorkload,
+  resolveOpenAiWorkloadEnvironment,
+  type OpenAiWorkloadEnvironment,
   type OpenAiWorkloadEvent,
+  type OpenAiWorkloadResolverDependencies,
 } from "../../../openai-workloads";
 
 const OPENAI_RESPONSES_ENDPOINT = "https://api.openai.com/v1/responses";
@@ -71,6 +74,8 @@ type OpenAiResolverDependencies = Readonly<{
   fetchImpl?: typeof fetch;
   emitEvent?: (event: OpenAiWorkloadEvent) => void;
   now?: () => number;
+  environment?: OpenAiWorkloadEnvironment;
+  workloadResolver?: OpenAiWorkloadResolverDependencies;
 }>;
 
 const AI_NICHE_RESOLUTION_SCHEMA = {
@@ -159,7 +164,13 @@ export async function resolveNicheWithOpenAi(input: {
     };
   }
 
-  const configuration = resolveOpenAiProductWorkload("niche_resolution");
+  const environment =
+    dependencies.environment ?? resolveOpenAiWorkloadEnvironment();
+  const configuration = await resolveOpenAiProductWorkload(
+    "niche_resolution",
+    environment,
+    dependencies.workloadResolver,
+  );
   const apiKey = input.apiKey?.trim();
 
   if (!configuration.ok) {
@@ -179,6 +190,7 @@ export async function resolveNicheWithOpenAi(input: {
     configurationRevision: workload.revision,
     model: workload.model,
     reasoningEffort: workload.reasoningEffort,
+    environment,
   } as const;
   const emitEvent = dependencies.emitEvent ?? emitOpenAiWorkloadEvent;
 
