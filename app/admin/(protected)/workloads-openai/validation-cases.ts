@@ -130,6 +130,7 @@ const cases: readonly Case[] = [
         "resolveNicheWithOpenAi",
         "requestCommercialActivationOpenAi",
         "generateLandingPageDraftCandidate",
+        "evaluateInputCatalogWithOpenAi",
         "generateLandingPageDraftImage",
       ]) {
         assert.equal(proof.includes(transport), true);
@@ -146,6 +147,10 @@ async function resolvedWorkloads() {
       "development",
     ),
     resolveOpenAiProductWorkload("landing_page_draft_generation", "development"),
+    resolveOpenAiProductWorkload(
+      "taxon_input_catalog_sufficiency_evaluation",
+      "development",
+    ),
     resolveOpenAiImageWorkload(
       "landing_page_draft_image_generation",
       "development",
@@ -187,6 +192,7 @@ function proofDependencies(
     niche: product,
     commercial: product,
     landingPageText: product,
+    inputCatalogEvaluation: product,
     landingPageImage: image,
   };
 }

@@ -15,6 +15,9 @@ const revision = "v2";
 const nicheResolutionAllowlist = textAllowlist();
 const commercialActivationDraftGenerationAllowlist = textAllowlist();
 const landingPageDraftGenerationAllowlist = textAllowlist();
+const taxonInputCatalogSufficiencyEvaluationAllowlist = [
+  { model: "gpt-5.6-terra", reasoningEffort: "low" },
+] as const;
 const landingPageDraftImageGenerationAllowlist = [
   { model: "gpt-image-2", quality: "low" },
   { model: "gpt-image-2", quality: "medium" },
@@ -66,6 +69,22 @@ export const openAiWorkloadRegistry = deepFreeze([
       apiKind: "responses_text",
       model: "gpt-5.6-luna",
       reasoningEffort: "max",
+      source: "repo_catalog",
+      revision,
+    },
+  },
+  {
+    id: "taxon_input_catalog_sufficiency_evaluation",
+    displayName: "Avaliação de suficiência factual do catálogo por taxon",
+    classification: "product_runtime",
+    configurationKind: "effective",
+    consumer: "E20.6.5 — avaliação administrativa da suficiência factual E20.2",
+    fallback: "Falhar fechado sem registrar suficiência",
+    allowedConfigurations: taxonInputCatalogSufficiencyEvaluationAllowlist,
+    configuration: {
+      apiKind: "responses_text",
+      model: "gpt-5.6-terra",
+      reasoningEffort: "low",
       source: "repo_catalog",
       revision,
     },

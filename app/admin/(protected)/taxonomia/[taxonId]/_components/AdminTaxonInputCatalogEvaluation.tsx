@@ -1,10 +1,34 @@
 "use client";
 
+import { useState } from "react";
+import type {
+  ConfirmInputCatalogEvaluationActionResult,
+  InputCatalogEvaluationActionResult,
+  InputCatalogEvaluationReference,
+} from "../../actions";
 import type {
   InputCatalogEvaluationCandidate as InputCatalogEvaluationPresentationCandidate,
   InputCatalogEvaluationMode as InputCatalogEvaluationPresentationMode,
   InputCatalogEvaluationOutput as InputCatalogEvaluationPresentationOutput,
 } from "@/conversion-content/landing-page/taxon-preparation";
+
+export type AdminTaxonInputCatalogEvaluationRuntimeProps = Readonly<{
+  taxonId: string;
+  reviewedVersion: number | null;
+  evaluateAction: (input: Readonly<{
+    taxonId: string;
+    mode: InputCatalogEvaluationPresentationMode;
+    focalHypothesis: string | null;
+    feedback: Readonly<{
+      text: string;
+      previousOutput: InputCatalogEvaluationPresentationOutput;
+      reference: InputCatalogEvaluationReference;
+    }> | null;
+  }>) => Promise<InputCatalogEvaluationActionResult>;
+  confirmAction: (input: Readonly<{
+    reference: InputCatalogEvaluationReference;
+  }>) => Promise<ConfirmInputCatalogEvaluationActionResult>;
+}>;
 
 export type InputCatalogEvaluationPresentationState =
   | Readonly<{ kind: "idle" }>
@@ -28,7 +52,13 @@ export type AdminTaxonInputCatalogEvaluationProps = Readonly<{
   onEvaluate: (input: Readonly<{
     mode: InputCatalogEvaluationPresentationMode;
     hypothesis: string | null;
+    feedback: Readonly<{
+      text: string;
+      previousOutput: InputCatalogEvaluationPresentationOutput;
+    }> | null;
   }>) => void;
+  feedback: string;
+  onFeedbackChange: (value: string) => void;
   onConfirmAdministrativeSufficiency: () => void;
 }>;
 
@@ -77,6 +107,128 @@ const conclusionLabels: Record<InputCatalogEvaluationPresentationCandidate["conc
   inconclusive: "Candidato inconclusivo",
 };
 
+export function AdminTaxonInputCatalogEvaluationRuntime({
+  taxonId,
+  reviewedVersion,
+  evaluateAction,
+  confirmAction,
+}: AdminTaxonInputCatalogEvaluationRuntimeProps) {
+  const [mode, setMode] = useState<InputCatalogEvaluationPresentationMode>("systematic");
+  const [hypothesis, setHypothesis] = useState("");
+  const [feedback, setFeedback] = useState("");
+  const [state, setState] = useState<InputCatalogEvaluationPresentationState>({ kind: "idle" });
+  const [reference, setReference] = useState<InputCatalogEvaluationReference | null>(null);
+  const [stale, setStale] = useState(false);
+  const [decisionPending, setDecisionPending] = useState(false);
+  const [decisionFeedback, setDecisionFeedback] = useState<
+    Readonly<{ kind: "success" | "failure"; message: string }> | null
+  >(null);
+
+  async function evaluate(input: Readonly<{
+    mode: InputCatalogEvaluationPresentationMode;
+    hypothesis: string | null;
+    feedback: Readonly<{
+      text: string;
+      previousOutput: InputCatalogEvaluationPresentationOutput;
+    }> | null;
+  }>) {
+    const feedbackInput = input.feedback && reference
+      ? { ...input.feedback, reference }
+      : null;
+    setState({ kind: "loading" });
+    setReference(null);
+    setStale(false);
+    setDecisionFeedback(null);
+    let result: InputCatalogEvaluationActionResult;
+    try {
+      result = await evaluateAction({
+        taxonId,
+        mode: input.mode,
+        focalHypothesis: input.hypothesis,
+        feedback: feedbackInput,
+      });
+    } catch {
+      setState({
+        kind: "failure",
+        message: "A comunicação com o servidor falhou. Nenhuma suficiência foi registrada.",
+      });
+      return;
+    }
+    if (!result.ok) {
+      setState({ kind: "failure", message: result.message });
+      return;
+    }
+    setReference(result.reference);
+    setState({ kind: "result", output: result.output });
+    setFeedback("");
+  }
+
+  async function confirm() {
+    if (!reference) return;
+    setDecisionPending(true);
+    setDecisionFeedback(null);
+    let result: ConfirmInputCatalogEvaluationActionResult;
+    try {
+      result = await confirmAction({ reference });
+    } catch {
+      setDecisionPending(false);
+      setDecisionFeedback({
+        kind: "failure",
+        message: "A comunicação com o servidor falhou. A decisão não foi confirmada.",
+      });
+      return;
+    }
+    setDecisionPending(false);
+    if (!result.ok) {
+      if (result.stale) setStale(true);
+      setDecisionFeedback({ kind: "failure", message: result.message });
+      return;
+    }
+    setDecisionFeedback({
+      kind: "success",
+      message: `Versão E20.2 ${result.reviewedVersion} confirmada por decisão administrativa.`,
+    });
+  }
+
+  if (reviewedVersion === null) {
+    return (
+      <section className="rounded-lg border border-border bg-card p-5 shadow-card">
+        <h2 className="text-lg font-semibold text-card-foreground">
+          Avaliação factual do catálogo E20.2
+        </h2>
+        <p className="mt-2 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          Defina explicitamente uma versão executável E20.2 no registro administrativo antes de iniciar a avaliação.
+        </p>
+      </section>
+    );
+  }
+
+  return (
+    <AdminTaxonInputCatalogEvaluation
+      administrativeDecisionFeedback={decisionFeedback}
+      administrativeDecisionPending={decisionPending}
+      feedback={feedback}
+      hypothesis={hypothesis}
+      mode={mode}
+      onConfirmAdministrativeSufficiency={confirm}
+      onEvaluate={evaluate}
+      onFeedbackChange={setFeedback}
+      onHypothesisChange={(value) => {
+        setHypothesis(value);
+        setFeedback("");
+        if (state.kind === "result") setStale(true);
+      }}
+      onModeChange={(value) => {
+        setMode(value);
+        setFeedback("");
+        if (state.kind === "result") setStale(true);
+      }}
+      stale={stale}
+      state={state}
+    />
+  );
+}
+
 const taxonomyLayerLabels: Record<
   NonNullable<InputCatalogEvaluationPresentationCandidate["suggestedTaxonomyLayer"]>,
   string
@@ -95,9 +247,11 @@ export function AdminTaxonInputCatalogEvaluation({
   stale,
   administrativeDecisionPending = false,
   administrativeDecisionFeedback = null,
+  feedback,
   onModeChange,
   onHypothesisChange,
   onEvaluate,
+  onFeedbackChange,
   onConfirmAdministrativeSufficiency,
 }: AdminTaxonInputCatalogEvaluationProps) {
   const isLoading = state.kind === "loading";
@@ -106,10 +260,21 @@ export function AdminTaxonInputCatalogEvaluation({
   const modeMismatch = output !== null && output.mode !== mode;
   const resultInvalid = stale || modeMismatch;
   const normalizedHypothesis = hypothesis.trim();
+  const normalizedFeedback = feedback.trim();
   const displayedHypothesisError = mode === "hypothesis"
     ? hypothesisError ?? (normalizedHypothesis ? null : "Descreva uma hipótese factual focal para avaliar.")
     : null;
-  const evaluationBlocked = isLoading || (mode === "hypothesis" && displayedHypothesisError !== null);
+  const canRefine =
+    output !== null &&
+    !resultInvalid &&
+    output.followUpQuestion !== null;
+  const feedbackError = canRefine && !normalizedFeedback
+    ? "Responda à solicitação factual antes de reavaliar."
+    : null;
+  const evaluationBlocked =
+    isLoading ||
+    (mode === "hypothesis" && displayedHypothesisError !== null) ||
+    feedbackError !== null;
   const administrativeDecisionBlocked =
     resultInvalid ||
     state.kind !== "result" ||
@@ -129,7 +294,7 @@ export function AdminTaxonInputCatalogEvaluation({
     >
       <div className="min-w-0">
         <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-          Checkpoint pré-integração
+          Checkpoint de integração final
         </p>
         <h2
           className="mt-1 text-lg font-semibold text-card-foreground"
@@ -225,16 +390,65 @@ export function AdminTaxonInputCatalogEvaluation({
         </div>
       ) : null}
 
+      {canRefine ? (
+        <div className="mt-5 min-w-0">
+          <label
+            className="text-sm font-semibold text-foreground"
+            htmlFor="input-catalog-evaluation-feedback"
+          >
+            Resposta para refinamento
+          </label>
+          <p
+            className="mt-1 text-sm text-muted-foreground"
+            id="input-catalog-evaluation-feedback-instruction"
+          >
+            {output.followUpQuestion}
+          </p>
+          <textarea
+            aria-describedby={`input-catalog-evaluation-feedback-instruction${
+              feedbackError ? " input-catalog-evaluation-feedback-error" : ""
+            }`}
+            aria-invalid={feedbackError ? true : undefined}
+            className="mt-2 min-h-28 w-full resize-y rounded-md border border-border bg-background p-3 text-sm text-foreground outline-none focus-visible:ring-4 focus-visible:ring-brand-600/20 disabled:opacity-60"
+            disabled={isLoading}
+            id="input-catalog-evaluation-feedback"
+            maxLength={2000}
+            onChange={(event) => onFeedbackChange(event.currentTarget.value)}
+            placeholder="Responda somente com a informação factual solicitada."
+            required
+            value={feedback}
+          />
+          {feedbackError ? (
+            <p
+              className="mt-2 text-sm text-red-700"
+              id="input-catalog-evaluation-feedback-error"
+              role="alert"
+            >
+              {feedbackError}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+
       <button
         className="mt-5 inline-flex min-h-11 w-full items-center justify-center rounded-md bg-brand-600 px-4 text-sm font-medium text-white transition hover:bg-brand-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-600/30 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
         disabled={evaluationBlocked}
         onClick={() => onEvaluate({
           mode,
           hypothesis: mode === "hypothesis" ? normalizedHypothesis : null,
+          feedback: canRefine && output
+            ? { text: normalizedFeedback, previousOutput: output }
+            : null,
         })}
         type="button"
       >
-        {isLoading ? "Avaliando..." : stale || state.kind === "failure" ? "Executar nova avaliação" : "Executar avaliação"}
+        {isLoading
+          ? "Avaliando..."
+          : canRefine
+            ? "Reavaliar com feedback"
+            : stale || state.kind === "failure"
+              ? "Executar nova avaliação"
+              : "Executar avaliação"}
       </button>
 
       <div

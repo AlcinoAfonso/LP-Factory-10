@@ -17,7 +17,10 @@ import {
   updateTaxonAction,
   recordInputCatalogReviewAction,
   reopenInputCatalogReviewAction,
+  evaluateInputCatalogAction,
+  confirmInputCatalogEvaluationAction,
 } from "../actions";
+import { AdminTaxonInputCatalogEvaluationRuntime } from "./_components/AdminTaxonInputCatalogEvaluation";
 import { AdminTaxonInputCatalogReview } from "./_components/AdminTaxonInputCatalogReview";
 
 export const dynamic = "force-dynamic";
@@ -111,6 +114,15 @@ export default async function AdminTaxonDetailPage({ params }: AdminTaxonDetailP
           taxonId={taxon.id}
         />
       )}
+
+      {taxon.inputCatalogReview.status === "available" ? (
+        <AdminTaxonInputCatalogEvaluationRuntime
+          confirmAction={confirmInputCatalogEvaluationAction}
+          evaluateAction={evaluateInputCatalogAction}
+          reviewedVersion={taxon.inputCatalogReview.reviewedVersion}
+          taxonId={taxon.id}
+        />
+      ) : null}
 
       <section className="rounded-lg border border-border bg-card p-5 shadow-card">
         <h2 className="text-sm font-semibold text-card-foreground">Filhos diretos</h2>

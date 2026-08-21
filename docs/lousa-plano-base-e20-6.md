@@ -337,7 +337,7 @@ Execute a avaliação E20.6 do taxon `[taxon_slug]`, usando a cadeia taxonômica
   - revalidar integralmente as fontes antes da ação administrativa final.
 - Persistência:
   - preservar somente `reviewed_input_catalog_version` já existente para a decisão final de suficiência;
-  - não criar nova tabela, coluna, histórico ou memória conversacional nesta v1.
+  - não criar nova tabela, coluna, histórico, entidade ou memória conversacional de negócio para a E20.6.5; esse limite não dispensa o delta forward-only no agregado operacional E21.2 existente, restrito a constraints, allowlists e bootstrap do novo workload, sem nova entidade ou tabela.
 - Consumo:
   - humano revisa e decide no Admin;
   - gap confirmado retorna ao recorte E20.2;
@@ -550,7 +550,7 @@ Execute a avaliação E20.6 do taxon `[taxon_slug]`, usando a cadeia taxonômica
 - Parar se a versão executável não puder ser identificada explicitamente sem inventar regra de `latest`.
 - Na entrega histórica E20.6.3, parar se o Codex não conseguir acessar ou analisar integralmente as fontes autorizadas; na E20.6.5, falha de provider, resposta inválida ou contexto incompleto permanece fail-closed e não registra suficiência.
 - Parar se diferenças factuais futuras entre planos tornarem `reviewed_input_catalog_version` taxonômico insuficiente; devolver a modelagem ao Estrategista antes de ampliar schema.
-- Parar se a v2 da E20.6.5 demonstrar necessidade material de nova persistência, nova entidade, histórico permanente ou workflow automático de evolução da E20.2 sem nova decisão humana.
+- Parar se a v2 da E20.6.5 demonstrar necessidade material de nova persistência funcional, nova entidade de negócio, histórico permanente ou workflow automático de evolução da E20.2 sem nova decisão humana. A extensão forward-only do agregado operacional E21.2 existente para o novo workload não constitui essa expansão e permanece obrigatória.
 - Parar se o Gestor de Automação na v2 concluir que a categoria `2.1.3` não atende ao comportamento executável necessário.
 - Parar se a solução exigir comportamento agentic, tools autônomas ou nova infraestrutura para cumprir requisito não previsto nesta v1.
 - Parar se não for possível preservar a autoridade determinística de E20.5/E20.2/E20.6.4 e a decisão humana separada.
