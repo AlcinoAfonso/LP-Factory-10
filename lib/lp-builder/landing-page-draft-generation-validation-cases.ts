@@ -73,7 +73,8 @@ const context = {
     taxonChain: {},
     historicalConfigurationCatalogVersion: 2,
     effectiveInputCatalogVersion: 4,
-    configurationRevision: 7,
+    sharedRevision: 7,
+    landingPageRevision: 7,
     rootVersion: 1,
     endCustomerResearchVersion: 1,
   },
@@ -911,6 +912,44 @@ const cases = [
       assert.equal(documents.snapshot.workloads.text.costStatus, "unavailable");
       assert.equal(documents.snapshot.workloads.image.costStatus, "unavailable");
       assert.equal(documents.snapshot.requestId, "request-revision");
+      assert.equal(documents.snapshot.snapshotVersion, 2);
+      assert.equal(documents.snapshot.generationContext.contractVersion, 4);
+      assert.equal(documents.snapshot.generationContext.identities.sharedRevision, 7);
+      assert.equal(documents.snapshot.generationContext.identities.landingPageRevision, 7);
+
+      const sharedAdvancedContext: LandingPageGenerationContextPackage = {
+        ...context,
+        identities: {
+          ...context.identities,
+          sharedRevision: context.identities.sharedRevision + 1,
+        },
+      };
+      const sharedAdvancedDocuments = buildLandingPageRevisionDocuments({
+        context: sharedAdvancedContext,
+        candidate: workflow,
+        asset,
+        generatedAt: "2026-08-17T18:01:00.000Z",
+      });
+      assert.equal(sharedAdvancedDocuments.ok, true);
+      if (!sharedAdvancedDocuments.ok) return;
+      assert.equal(
+        sharedAdvancedDocuments.snapshot.generationContext.identities.sharedRevision,
+        documents.snapshot.generationContext.identities.sharedRevision + 1,
+      );
+      assert.equal(
+        sharedAdvancedDocuments.snapshot.generationContext.identities.landingPageRevision,
+        documents.snapshot.generationContext.identities.landingPageRevision,
+      );
+
+      const historicalSnapshot = structuredClone(documents.snapshot) as unknown as Record<string, unknown>;
+      historicalSnapshot.snapshotVersion = 1;
+      const historicalGenerationContext = historicalSnapshot.generationContext as Record<string, unknown>;
+      historicalGenerationContext.contractVersion = 3;
+      const historicalIdentities = historicalGenerationContext.identities as Record<string, unknown>;
+      delete historicalIdentities.sharedRevision;
+      delete historicalIdentities.landingPageRevision;
+      historicalIdentities.configurationRevision = 7;
+      assert.equal(validateLandingPageRevisionSnapshot(historicalSnapshot), true);
       assert.doesNotMatch(JSON.stringify(documents), /signedUrl|apiKey|rawResponse/);
     },
   },

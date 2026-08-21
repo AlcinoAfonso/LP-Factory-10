@@ -88,6 +88,10 @@ const cases = [
       assert.match(test,/contract default was anticipated/);
       assert.match(test,/current account authority must not be copied/);
       assert.match(test,/field outside the current taxon chain must fail/);
+      assert.match(test,/field and scope with a semantically invalid v5 value must fail/);
+      assert.match(test,/semantic invalid handoff must fail closed/);
+      assert.match(test,/semantic invalid handoff must not persist partial configuration/);
+      assert.match(test,/semantic invalid save must not persist either residence/);
       assert.match(test,/shared privacy policy must remain valid for form and whatsapp landing pages/);
       assert.match(test,/channel switch must preserve the prior valid destination/);
       assert.match(test,/materialized handoff retry must ignore later bootstrap drift/);

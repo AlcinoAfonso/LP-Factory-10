@@ -124,6 +124,20 @@ export type AccountLandingPageOnboardingRevalidationResult =
     }>
   | Extract<AccountLandingPageOnboardingResult, { ok: false }>;
 
+export type AccountLandingPageOperationalRevalidationAuthority =
+  AccountLandingPageOnboardingRevalidationAuthority &
+    Readonly<{
+      sharedRevision: number;
+      landingPageRevision: number;
+    }>;
+
+export type AccountLandingPageOperationalRevalidationResult =
+  | Readonly<{
+      ok: true;
+      authority: AccountLandingPageOperationalRevalidationAuthority;
+    }>
+  | Extract<AccountLandingPageOnboardingResult, { ok: false }>;
+
 export type SaveAccountLandingPageOnboardingConfigurationInput = Readonly<{
   accountId: string;
   catalogVersion: number;

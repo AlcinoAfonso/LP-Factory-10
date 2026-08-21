@@ -154,7 +154,8 @@ function compileValidatedLandingPageGenerationContext(
       taxonChain: currentTaxonChain,
       historicalConfigurationCatalogVersion: historicalConfiguration.catalogVersion,
       effectiveInputCatalogVersion: preparation.reviewedInputCatalogVersion,
-      configurationRevision: historicalConfiguration.revision,
+      sharedRevision: input.revalidationAuthority.sharedRevision,
+      landingPageRevision: input.revalidationAuthority.landingPageRevision,
       rootVersion: root.value.rootVersion,
       endCustomerResearchVersion: preparation.selectedResearchVersion,
     },
@@ -296,6 +297,12 @@ function isMinimumCompilerInput(
     isRecord(authority.currentTaxonChain) &&
     isRecord(authority.currentAuthoritativeValues) &&
     Number.isInteger(authority.historicalConfiguration.revision) &&
+    typeof authority.sharedRevision === "number" &&
+    Number.isSafeInteger(authority.sharedRevision) &&
+    authority.sharedRevision > 0 &&
+    typeof authority.landingPageRevision === "number" &&
+    Number.isSafeInteger(authority.landingPageRevision) &&
+    authority.landingPageRevision > 0 &&
     isRecord(preparation) &&
     typeof preparation.ok === "boolean"
   );

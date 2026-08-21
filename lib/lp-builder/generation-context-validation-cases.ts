@@ -36,6 +36,8 @@ const configuration = buildConfiguration();
 const authoritativeValues = { business_display_name: "Conta legítima" };
 const revalidationAuthority = {
   historicalConfiguration: configuration,
+  sharedRevision: 7,
+  landingPageRevision: 7,
   currentPlanKey: configuration.planKey,
   currentTaxonChain: configuration.taxonChain,
   currentAuthoritativeValues: authoritativeValues,
@@ -44,7 +46,7 @@ const preparation = buildPreparation();
 
 const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }>[] = [
   {
-    name: "contract v3 exposes integral research and distinct historical and effective versions",
+    name: "contract v4 exposes integral research and both operational configuration revisions",
     run: () => {
       const result = compileLandingPageGenerationContext({
         landingPage,
@@ -73,7 +75,8 @@ const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }
         },
         historicalConfigurationCatalogVersion: 2,
         effectiveInputCatalogVersion: 4,
-        configurationRevision: 7,
+        sharedRevision: 7,
+        landingPageRevision: 7,
         rootVersion: 1,
         endCustomerResearchVersion: 1,
       });
@@ -125,6 +128,35 @@ const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }
       assert.throws(() => {
         (result.value.modelContext.facts as unknown[]).push({});
       }, TypeError);
+    },
+  },
+  {
+    name: "shared-only configuration advances remain distinct from the landing-page revision",
+    run: () => {
+      const initial = compileLandingPageGenerationContext({
+        landingPage,
+        revalidationAuthority,
+        preparation,
+      });
+      const sharedAdvanced = compileLandingPageGenerationContext({
+        landingPage,
+        revalidationAuthority: {
+          ...revalidationAuthority,
+          sharedRevision: revalidationAuthority.sharedRevision + 1,
+        },
+        preparation,
+      });
+      assert.equal(initial.ok, true);
+      assert.equal(sharedAdvanced.ok, true);
+      if (!initial.ok || !sharedAdvanced.ok) return;
+      assert.equal(
+        sharedAdvanced.value.identities.sharedRevision,
+        initial.value.identities.sharedRevision + 1,
+      );
+      assert.equal(
+        sharedAdvanced.value.identities.landingPageRevision,
+        initial.value.identities.landingPageRevision,
+      );
     },
   },
   {
@@ -199,7 +231,11 @@ const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }
 
       const result = compileLandingPageGenerationContext({
         landingPage,
-        revalidationAuthority: boundary.authority,
+        revalidationAuthority: {
+          ...boundary.authority,
+          sharedRevision: 7,
+          landingPageRevision: 7,
+        },
         preparation,
       });
 
@@ -601,6 +637,10 @@ const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }
         new URL("./adapters/generationContextAdapterCore.ts", import.meta.url),
         "utf8",
       );
+      const workspaceAdapterSource = readFileSync(
+        new URL("./adapters/landingPageWorkspaceAdapter.ts", import.meta.url),
+        "utf8",
+      );
       assert.doesNotMatch(
         compilerSource,
         /research-resolution|module-catalog|generation-profile|copySourceMap|prioritizedSources|funnelCopyProfiles|generationGuidance|itemGuidance/,
@@ -610,6 +650,10 @@ const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }
         /research-resolution|loadResearch|Stripe|OpenAI|GenerationProfile|loadGenerationProfile|landingPagePreview/,
       );
       assert.doesNotMatch(compilerSource, /landingPagePreview/);
+      assert.match(
+        workspaceAdapterSource,
+        /sharedRevision: detail\.configuration\.sharedRevision,[\s\S]+landingPageRevision: detail\.configuration\.landingPageRevision/,
+      );
       for (const relativePath of [
         "../../app/a/[account]/landing-page-actions.ts",
         "../../app/a/[account]/_components/LandingPageDraftJourney.tsx",

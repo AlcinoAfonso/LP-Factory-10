@@ -1,7 +1,7 @@
 import type { TaxonPreparationResult } from "../../conversion-content/landing-page/taxon-preparation";
 import type {
   AccountLandingPage,
-  AccountLandingPageOnboardingRevalidationResult,
+  AccountLandingPageOperationalRevalidationResult,
 } from "../contracts";
 import { compileLandingPageGenerationContext } from "../generationContext";
 import type {
@@ -12,7 +12,7 @@ import type {
 export type LandingPageGenerationContextBoundaryDependencies = Readonly<{
   loadRevalidationAuthority: (input: {
     accountId: string;
-  }) => Promise<AccountLandingPageOnboardingRevalidationResult>;
+  }) => Promise<AccountLandingPageOperationalRevalidationResult>;
   loadLandingPage: (input: {
     accountId: string;
     landingPageId: string;

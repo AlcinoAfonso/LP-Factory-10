@@ -5,6 +5,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 
 import { LandingPageRenderer } from "../../components/lp-builder/LandingPageRenderer";
 import type { CurrentLandingPageRevision } from "./adapters/landingPageRevisionAdapter";
+import type { LandingPageRevisionSnapshotV1 } from "./landingPageRevision";
 import {
   LANDING_PAGE_PREVIEW_SIGNED_URL_TTL_SECONDS,
   loadLandingPagePreviewWithDependencies,
@@ -94,7 +95,9 @@ const sections = [
 
 function revisionFixture(
   landingPageStatus: "draft" | "active" = "draft",
-): CurrentLandingPageRevision {
+): Omit<CurrentLandingPageRevision, "snapshot"> & {
+  snapshot: LandingPageRevisionSnapshotV1;
+} {
   return {
     id: REVISION_ID,
     accountId: ACCOUNT_ID,
@@ -206,7 +209,9 @@ function revisionFixture(
     },
     createdBy: "50000000-0000-4000-8000-000000000005",
     createdAt: "2026-08-18T12:00:01.000Z",
-  } as unknown as CurrentLandingPageRevision;
+  } as unknown as Omit<CurrentLandingPageRevision, "snapshot"> & {
+    snapshot: LandingPageRevisionSnapshotV1;
+  };
 }
 
 function dependencies(

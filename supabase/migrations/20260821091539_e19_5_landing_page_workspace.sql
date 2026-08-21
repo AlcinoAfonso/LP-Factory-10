@@ -76,6 +76,169 @@ as $$
         or not (expected.expected_scope = any(p_allowed_scopes))
         or not (entry.value ? 'value')
         or entry.value - 'scope' - 'value' <> '{}'::jsonb
+        or not coalesce(
+          case entry.key
+            when 'business_display_name' then
+              jsonb_typeof(entry.value -> 'value') = 'string'
+              and length(btrim(entry.value ->> 'value')) > 0
+            when 'primary_service_or_offer' then
+              jsonb_typeof(entry.value -> 'value') = 'string'
+              and length(btrim(entry.value ->> 'value')) > 0
+            when 'primary_service_or_offer_description' then
+              jsonb_typeof(entry.value -> 'value') = 'string'
+              and length(btrim(entry.value ->> 'value')) > 0
+            when 'creci_registration' then
+              jsonb_typeof(entry.value -> 'value') = 'string'
+              and length(btrim(entry.value ->> 'value')) > 0
+            when 'landing_page_objective' then
+              jsonb_typeof(entry.value -> 'value') = 'string'
+              and length(btrim(entry.value ->> 'value')) > 0
+            when 'funnel_stage' then
+              jsonb_typeof(entry.value -> 'value') = 'string'
+              and entry.value ->> 'value' in ('bofu', 'mofu', 'tofu')
+            when 'traffic_source' then
+              jsonb_typeof(entry.value -> 'value') = 'string'
+              and entry.value ->> 'value' in (
+                'paid_search', 'paid_social', 'organic', 'whatsapp', 'qr_code', 'other'
+              )
+            when 'primary_conversion_channel' then
+              jsonb_typeof(entry.value -> 'value') = 'string'
+              and entry.value ->> 'value' in (
+                'whatsapp', 'form', 'phone', 'email', 'external_url'
+              )
+            when 'property_stage' then
+              jsonb_typeof(entry.value -> 'value') = 'string'
+              and entry.value ->> 'value' in (
+                'launch', 'under_construction', 'ready', 'used', 'mixed'
+              )
+            when 'transaction_intent' then
+              jsonb_typeof(entry.value -> 'value') = 'string'
+              and entry.value ->> 'value' in ('buy', 'sell', 'valuation', 'mixed', 'rent')
+            when 'whatsapp_destination' then
+              jsonb_typeof(entry.value -> 'value') = 'string'
+              and entry.value ->> 'value' ~ '^\+[1-9][0-9]{7,14}$'
+            when 'phone_destination' then
+              jsonb_typeof(entry.value -> 'value') = 'string'
+              and entry.value ->> 'value' ~ '^\+[1-9][0-9]{7,14}$'
+            when 'email_destination' then
+              jsonb_typeof(entry.value -> 'value') = 'string'
+              and btrim(entry.value ->> 'value') ~* '^[a-z0-9_+''-]([a-z0-9._+''-]*[a-z0-9_+''-])?@([a-z0-9]([a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,}$'
+              and btrim(entry.value ->> 'value') not like '%..%'
+            when 'external_url_destination' then
+              jsonb_typeof(entry.value -> 'value') = 'string'
+              and btrim(entry.value ->> 'value') ~* '^https://[^/?#[:space:]]+([/?#][^[:space:]]*)?$'
+            when 'privacy_policy_url' then
+              jsonb_typeof(entry.value -> 'value') = 'string'
+              and btrim(entry.value ->> 'value') ~* '^https://[^/?#[:space:]]+([/?#][^[:space:]]*)?$'
+            when 'financing_support_available' then
+              jsonb_typeof(entry.value -> 'value') = 'boolean'
+            when 'document_support_available' then
+              jsonb_typeof(entry.value -> 'value') = 'boolean'
+            when 'service_locations' then
+              case when jsonb_typeof(entry.value -> 'value') = 'array' then
+                jsonb_array_length(entry.value -> 'value') > 0
+                and not exists (
+                  select 1 from jsonb_array_elements(entry.value -> 'value') item
+                  where jsonb_typeof(item) <> 'string'
+                    or length(btrim(item #>> '{}')) = 0
+                )
+                and (
+                  select count(*) = count(distinct lower(btrim(item #>> '{}')))
+                  from jsonb_array_elements(entry.value -> 'value') item
+                )
+              else false end
+            when 'property_types' then
+              case when jsonb_typeof(entry.value -> 'value') = 'array' then
+                jsonb_array_length(entry.value -> 'value') > 0
+                and not exists (
+                  select 1 from jsonb_array_elements(entry.value -> 'value') item
+                  where jsonb_typeof(item) <> 'string'
+                    or length(btrim(item #>> '{}')) = 0
+                )
+                and (
+                  select count(*) = count(distinct lower(btrim(item #>> '{}')))
+                  from jsonb_array_elements(entry.value -> 'value') item
+                )
+              else false end
+            when 'attendance_modes' then
+              case when jsonb_typeof(entry.value -> 'value') = 'array' then
+                jsonb_array_length(entry.value -> 'value') > 0
+                and not exists (
+                  select 1 from jsonb_array_elements(entry.value -> 'value') item
+                  where jsonb_typeof(item) <> 'string'
+                    or lower(btrim(item #>> '{}')) not in ('in_person', 'remote')
+                )
+                and (
+                  select count(*) = count(distinct lower(btrim(item #>> '{}')))
+                  from jsonb_array_elements(entry.value -> 'value') item
+                )
+              else false end
+            when 'property_price_range' then
+              case when jsonb_typeof(entry.value -> 'value') = 'object' then
+                (entry.value -> 'value') ?& array['minimum', 'maximum', 'currency']
+                and (entry.value -> 'value') - 'minimum' - 'maximum' - 'currency' = '{}'::jsonb
+                and jsonb_typeof(entry.value #> '{value,minimum}') = 'number'
+                and jsonb_typeof(entry.value #> '{value,maximum}') = 'number'
+                and entry.value #>> '{value,currency}' = 'BRL'
+                and (entry.value #>> '{value,minimum}')::numeric >= 0
+                and abs((entry.value #>> '{value,minimum}')::numeric) <= 1.7976931348623157e308
+                and abs((entry.value #>> '{value,maximum}')::numeric) <= 1.7976931348623157e308
+                and (entry.value #>> '{value,minimum}')::numeric
+                  <= (entry.value #>> '{value,maximum}')::numeric
+              else false end
+            when 'paid_search_keyword_map' then
+              case when jsonb_typeof(entry.value -> 'value') = 'array' then
+                jsonb_array_length(entry.value -> 'value') > 0
+                and not exists (
+                  select 1
+                  from jsonb_array_elements(entry.value -> 'value') item
+                  where jsonb_typeof(item) <> 'object'
+                    or item - 'keyword_or_cluster' - 'message_anchor' - 'ad_context' <> '{}'::jsonb
+                    or jsonb_typeof(item -> 'keyword_or_cluster') <> 'string'
+                    or length(btrim(item ->> 'keyword_or_cluster')) = 0
+                    or jsonb_typeof(item -> 'message_anchor') <> 'string'
+                    or length(btrim(item ->> 'message_anchor')) = 0
+                    or (
+                      item ? 'ad_context'
+                      and (
+                        jsonb_typeof(item -> 'ad_context') <> 'string'
+                        or length(btrim(item ->> 'ad_context')) = 0
+                      )
+                    )
+                )
+                and (
+                  select count(*) = count(distinct lower(btrim(item ->> 'keyword_or_cluster')))
+                  from jsonb_array_elements(entry.value -> 'value') item
+                )
+              else false end
+            when 'brand_logo_asset' then
+              case when jsonb_typeof(entry.value -> 'value') = 'object' then
+                (entry.value -> 'value') - 'asset_id' = '{}'::jsonb
+                and jsonb_typeof(entry.value #> '{value,asset_id}') = 'string'
+                and length(btrim(entry.value #>> '{value,asset_id}')) > 0
+                and btrim(entry.value #>> '{value,asset_id}') !~* '^[a-z][a-z0-9+.-]*:'
+                and left(btrim(entry.value #>> '{value,asset_id}'), 2) <> '//'
+                and left(btrim(entry.value #>> '{value,asset_id}'), 2) <> E'\\\\'
+              else false end
+            when 'brand_color_palette' then
+              case when jsonb_typeof(entry.value -> 'value') = 'object' then
+                (entry.value -> 'value') ?& array['primary', 'secondary', 'accent', 'background', 'text']
+                and (entry.value -> 'value') - 'primary' - 'secondary' - 'accent' - 'background' - 'text' = '{}'::jsonb
+                and jsonb_typeof(entry.value #> '{value,primary}') = 'string'
+                and jsonb_typeof(entry.value #> '{value,secondary}') = 'string'
+                and jsonb_typeof(entry.value #> '{value,accent}') = 'string'
+                and jsonb_typeof(entry.value #> '{value,background}') = 'string'
+                and jsonb_typeof(entry.value #> '{value,text}') = 'string'
+                and entry.value #>> '{value,primary}' ~ '^#[0-9A-Fa-f]{6}$'
+                and entry.value #>> '{value,secondary}' ~ '^#[0-9A-Fa-f]{6}$'
+                and entry.value #>> '{value,accent}' ~ '^#[0-9A-Fa-f]{6}$'
+                and entry.value #>> '{value,background}' ~ '^#[0-9A-Fa-f]{6}$'
+                and entry.value #>> '{value,text}' ~ '^#[0-9A-Fa-f]{6}$'
+              else false end
+            else false
+          end,
+          false
+        )
     );
 $$;
 

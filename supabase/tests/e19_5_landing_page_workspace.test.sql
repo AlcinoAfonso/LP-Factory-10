@@ -10,11 +10,20 @@ values ('e1953000-0000-4000-8000-000000000011','E19.5 workspace','e19-5-workspac
 insert into public.account_users (account_id, user_id, role, status)
 values ('e1953000-0000-4000-8000-000000000011','e1953000-0000-4000-8000-000000000001','owner','active');
 
+insert into public.accounts (id, name, subdomain, slug, status)
+values ('e1953000-0000-4000-8000-000000000012','E19.5 semantic handoff','e19-5-semantic','e19-5-semantic','active');
+
+insert into public.account_users (account_id, user_id, role, status)
+values ('e1953000-0000-4000-8000-000000000012','e1953000-0000-4000-8000-000000000001','owner','active');
+
 insert into public.business_taxons (id, parent_id, level, name, slug, is_active)
 values ('e1953000-0000-4000-8000-000000000041',null,'segment','Serviços gerais','servicos-gerais',true);
 
 insert into public.account_taxonomy (account_id, taxon_id, is_primary, status, source_type)
 values ('e1953000-0000-4000-8000-000000000011','e1953000-0000-4000-8000-000000000041',true,'active','manual');
+
+insert into public.account_taxonomy (account_id, taxon_id, is_primary, status, source_type)
+values ('e1953000-0000-4000-8000-000000000012','e1953000-0000-4000-8000-000000000041',true,'active','manual');
 
 insert into public.account_landing_pages (id, account_id, name, slug, status, created_by)
 values (
@@ -35,6 +44,25 @@ insert into public.account_landing_page_onboarding_configurations (
   'e1953000-0000-4000-8000-000000000001'
 );
 
+insert into public.account_landing_pages (id, account_id, name, slug, status, created_by)
+values (
+  'e1953000-0000-4000-8000-000000000023',
+  'e1953000-0000-4000-8000-000000000012',
+  'Handoff semântico', 'handoff-semantico', 'draft',
+  'e1953000-0000-4000-8000-000000000001'
+);
+
+insert into public.account_landing_page_onboarding_configurations (
+  account_id, landing_page_id, catalog_version, values, created_by, updated_by
+) values (
+  'e1953000-0000-4000-8000-000000000012',
+  'e1953000-0000-4000-8000-000000000023',
+  5,
+  '{"primary_conversion_channel":{"scope":"landing_page","value":"bogus"}}'::jsonb,
+  'e1953000-0000-4000-8000-000000000001',
+  'e1953000-0000-4000-8000-000000000001'
+);
+
 do $$
 declare
   v_landing_page_id uuid;
@@ -43,6 +71,10 @@ declare
   v_revision_number bigint;
   v_approved uuid;
   v_default text;
+  v_shared_revision bigint;
+  v_landing_page_revision bigint;
+  v_shared_values jsonb;
+  v_landing_page_values jsonb;
 begin
   if public.e19_5_configuration_values_valid_for_account(
     'e1953000-0000-4000-8000-000000000011',
@@ -54,6 +86,28 @@ begin
     '{"property_types":{"scope":"offer","value":["house"]}}'::jsonb,
     array['offer','campaign','landing_page']
   ) then raise exception 'field outside the current taxon chain must fail'; end if;
+  if public.e19_5_configuration_values_valid_for_account(
+    'e1953000-0000-4000-8000-000000000011',
+    '{"primary_conversion_channel":{"scope":"landing_page","value":"bogus"}}'::jsonb,
+    array['offer','campaign','landing_page']
+  ) then raise exception 'field and scope with a semantically invalid v5 value must fail'; end if;
+
+  begin
+    perform * from public.handoff_account_landing_page_onboarding_v1(
+      'e1953000-0000-4000-8000-000000000012',
+      'e1953000-0000-4000-8000-000000000023', 1,
+      'e1953000-0000-4000-8000-000000000001'
+    );
+    raise exception using errcode='P0002',message='semantic invalid handoff must fail closed';
+  exception when sqlstate '23514' then null;
+  end;
+  if exists (
+    select 1 from public.account_landing_page_shared_configurations
+    where account_id='e1953000-0000-4000-8000-000000000012'
+  ) or exists (
+    select 1 from public.account_landing_page_configurations
+    where landing_page_id='e1953000-0000-4000-8000-000000000023'
+  ) then raise exception 'semantic invalid handoff must not persist partial configuration'; end if;
 
   perform * from public.handoff_account_landing_page_onboarding_v1(
     'e1953000-0000-4000-8000-000000000011',
@@ -112,6 +166,34 @@ begin
      or (select values #>> '{primary_conversion_channel,value}' from public.account_landing_page_configurations where landing_page_id=v_second_landing_page_id)
        is distinct from 'whatsapp' then
     raise exception 'shared privacy policy must remain valid for form and whatsapp landing pages';
+  end if;
+
+  select revision, values into v_shared_revision, v_shared_values
+  from public.account_landing_page_shared_configurations
+  where account_id='e1953000-0000-4000-8000-000000000011';
+  select revision, values into v_landing_page_revision, v_landing_page_values
+  from public.account_landing_page_configurations
+  where landing_page_id=v_second_landing_page_id;
+  begin
+    perform * from public.save_account_landing_page_configuration_v1(
+      'e1953000-0000-4000-8000-000000000011', v_second_landing_page_id,
+      '{"brand_logo_asset":{"scope":"business","value":{"asset_id":"replacement-logo"}},"privacy_policy_url":{"scope":"business","value":"https://example.com/privacidade"}}'::jsonb,
+      '{"landing_page_objective":{"scope":"landing_page","value":"Não persistir parcialmente"},"primary_conversion_channel":{"scope":"landing_page","value":"bogus"},"whatsapp_destination":{"scope":"landing_page","value":"+5521979658483"}}'::jsonb,
+      v_shared_revision, v_landing_page_revision,
+      'e1953000-0000-4000-8000-000000000001'
+    );
+    raise exception using errcode='P0002',message='semantic invalid save must fail closed';
+  exception when sqlstate '22023' then null;
+  end;
+  if (select revision from public.account_landing_page_shared_configurations where account_id='e1953000-0000-4000-8000-000000000011')
+       is distinct from v_shared_revision
+     or (select values from public.account_landing_page_shared_configurations where account_id='e1953000-0000-4000-8000-000000000011')
+       is distinct from v_shared_values
+     or (select revision from public.account_landing_page_configurations where landing_page_id=v_second_landing_page_id)
+       is distinct from v_landing_page_revision
+     or (select values from public.account_landing_page_configurations where landing_page_id=v_second_landing_page_id)
+       is distinct from v_landing_page_values then
+    raise exception 'semantic invalid save must not persist either residence';
   end if;
 
   perform * from public.save_account_landing_page_configuration_v1(

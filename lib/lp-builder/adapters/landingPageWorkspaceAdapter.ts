@@ -10,9 +10,9 @@ import { createClient } from "../../supabase/server";
 import { createServiceClient } from "../../supabase/service";
 import { isOperationalLandingPageStatus, type LandingPageStatus } from "../../types/status";
 import type {
-  AccountLandingPageOnboardingRevalidationResult,
   AccountLandingPageOnboardingStoredValues,
   AccountLandingPageOperationalConfiguration,
+  AccountLandingPageOperationalRevalidationResult,
   AccountLandingPageWorkspaceDetailResult,
   AccountLandingPageWorkspaceItem,
   AccountLandingPageWorkspaceResult,
@@ -143,7 +143,7 @@ export async function getAccountLandingPageWorkspaceDetail(input: {
 export async function getAccountLandingPageOperationalRevalidationAuthority(input: {
   accountId: string;
   landingPageId: string;
-}): Promise<AccountLandingPageOnboardingRevalidationResult> {
+}): Promise<AccountLandingPageOperationalRevalidationResult> {
   const detail = await getAccountLandingPageWorkspaceDetail(input);
   if (!detail.ok) {
     const mapping = detail.error === "unauthenticated" ? "unauthenticated"
@@ -159,6 +159,8 @@ export async function getAccountLandingPageOperationalRevalidationAuthority(inpu
     ok: true,
     authority: {
       historicalConfiguration: detail.configuration.resolved,
+      sharedRevision: detail.configuration.sharedRevision,
+      landingPageRevision: detail.configuration.landingPageRevision,
       currentPlanKey: authority.value.planKey,
       currentTaxonChain: authority.value.taxonChain,
       currentAuthoritativeValues: authority.value.authoritativeValues,
