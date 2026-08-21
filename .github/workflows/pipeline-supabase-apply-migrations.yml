@@ -107,9 +107,45 @@ jobs:
           fi
 
           if [ "$status" = "success" ]; then
-            supabase db push --linked || {
+            supabase migration list --linked || {
               status="failure"
-              failure_step="supabase db push"
+              failure_step="supabase migration list --linked"
+            }
+          fi
+
+          if [ "$status" = "success" ]; then
+            dry_run_output="$(supabase db push --linked --include-all --dry-run 2>&1)" || {
+              printf '%s\n' "$dry_run_output"
+              status="failure"
+              failure_step="supabase db push --linked --include-all --dry-run"
+            }
+          fi
+
+          if [ "$status" = "success" ]; then
+            printf '%s\n' "$dry_run_output"
+            mapfile -t planned_migrations < <(
+              printf '%s\n' "$dry_run_output" |
+                grep -oE '[0-9]{14}_[A-Za-z0-9_]+\.sql' |
+                sort -u
+            )
+
+            if [ "${#planned_migrations[@]}" -ne 1 ] || [ "${planned_migrations[0]:-}" != "20260820213900_e21_2_taxon_input_catalog_sufficiency_workload.sql" ]; then
+              status="failure"
+              failure_step="unexpected dry-run migration set"
+            fi
+          fi
+
+          if [ "$status" = "success" ]; then
+            supabase db push --linked --include-all || {
+              status="failure"
+              failure_step="supabase db push --linked --include-all"
+            }
+          fi
+
+          if [ "$status" = "success" ]; then
+            supabase migration list --linked || {
+              status="failure"
+              failure_step="post-apply supabase migration list --linked"
             }
           fi
 
