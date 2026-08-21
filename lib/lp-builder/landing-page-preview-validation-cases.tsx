@@ -323,6 +323,27 @@ const cases = [
       );
       assert.equal(archived.status, "ready");
       assert.equal(revisionRead, true);
+
+      const archivedEmpty = await loadLandingPagePreviewWithDependencies(
+        { accountSlug: "account", landingPageId: LANDING_PAGE_ID },
+        dependencies([], {
+          loadLandingPage: async () => ({
+            ok: true,
+            landingPage: {
+              id: LANDING_PAGE_ID,
+              account_id: ACCOUNT_ID,
+              name: "Primeiro imóvel no Rio",
+              slug: "primeiro-imovel-no-rio",
+              status: "archived" as never,
+            },
+          }),
+          readCurrentRevision: async () => ({ ok: true, value: null }),
+        }),
+      );
+      assert.equal(archivedEmpty.status, "empty");
+      if (archivedEmpty.status === "empty") {
+        assert.equal(archivedEmpty.landingPage.status, "archived");
+      }
     },
   },
   {
@@ -517,6 +538,7 @@ const cases = [
       assert.match(page, /status === "invalid_cta"/);
       assert.match(page, /status === "empty"/);
       assert.match(page, /status === "ready"/);
+      assert.match(page, /previewLandingPage && previewLandingPage\.status !== "archived"/);
     },
   },
 ];

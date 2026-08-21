@@ -21,6 +21,7 @@ export default async function LandingPagePreview({ params, searchParams }: PageP
   const accountSlug = account.trim().toLowerCase();
   const preview = await loadLandingPagePreview({ accountSlug, landingPageId, revisionId });
   if (preview.status === "denied" || preview.status === "not_found") notFound();
+  const previewLandingPage = "landingPage" in preview ? preview.landingPage : undefined;
 
   return (
     <main className="min-w-0 bg-surface-app px-3 py-6 sm:px-6 sm:py-8 lg:px-8">
@@ -29,14 +30,14 @@ export default async function LandingPagePreview({ params, searchParams }: PageP
           href={`/a/${accountSlug}/landing-pages/${landingPageId}`}
           className="inline-flex min-h-11 items-center rounded-lg px-2 text-sm font-semibold text-brand-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600"
         >
-          ← Voltar para {preview.status === "ready" ? preview.landingPage.name : "a landing page"}
+          ← Voltar para {previewLandingPage?.name ?? "a landing page"}
         </Link>
         <section aria-label="Controles do preview" className="rounded-2xl border border-surface-border bg-white p-5 shadow-card sm:p-6">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
             <div className="min-w-0">
               <p className="text-xs font-bold uppercase tracking-[0.16em] text-brand-700">
-                {preview.status === "ready"
-                  ? `${accountSlug} · ${preview.landingPage.name} · ${preview.landingPage.status === "archived" ? "arquivada" : "operacional"}`
+                {previewLandingPage
+                  ? `${accountSlug} · ${previewLandingPage.name} · ${previewLandingPage.status === "archived" ? "arquivada" : "operacional"}`
                   : `${accountSlug} · Landing page`}
               </p>
               <p className="mt-2 text-xl font-bold tracking-tight text-ink-900 sm:text-2xl">
@@ -46,7 +47,7 @@ export default async function LandingPagePreview({ params, searchParams }: PageP
                 {revisionId ? "Esta superfície reproduz a revisão histórica selecionada." : "Esta superfície reproduz somente a revisão persistida atual."} Gerar uma nova revisão continua sendo uma ação humana explícita.
               </p>
             </div>
-            {preview.status !== "ready" || preview.landingPage.status !== "archived" ? (
+            {previewLandingPage && previewLandingPage.status !== "archived" ? (
               <GenerationTrigger accountSlug={accountSlug} landingPageId={landingPageId} />
             ) : null}
           </div>

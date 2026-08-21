@@ -2413,6 +2413,9 @@ Repositório — Ajustados
 - Repositório:
   - Criados:
     - `app/a/[account]/_components/LandingPageWorkspace.tsx`
+    - `app/a/[account]/_components/WorkspaceSubmitButton.tsx`
+    - `app/a/[account]/landing-pages/[landingPageId]/actions.ts`
+    - `app/a/[account]/landing-pages/[landingPageId]/configuration-actions.ts`
     - `app/a/[account]/landing-pages/[landingPageId]/page.tsx`
     - `app/a/[account]/workspace-actions.ts`
     - `lib/lp-builder/adapters/landingPageWorkspaceAdapter.ts`

@@ -100,15 +100,22 @@ export type LandingPageRenderModel = Readonly<{
   }>;
 }>;
 
+export type LandingPagePreviewIdentity = Readonly<{
+  name: string;
+  status: LandingPageStatus;
+}>;
+
 export type LandingPagePreviewLoadResult =
   | Readonly<{
       status: "ready";
       model: LandingPageRenderModel;
-      landingPage: Readonly<{ name: string; status: LandingPageStatus }>;
+      landingPage: LandingPagePreviewIdentity;
     }>
-  | Readonly<{ status: "empty" }>
+  | Readonly<{ status: "empty"; landingPage: LandingPagePreviewIdentity }>
+  | Readonly<{ status: "denied" | "not_found" }>
   | Readonly<{
-      status: "denied" | "not_found" | "unavailable" | "invalid_cta";
+      status: "unavailable" | "invalid_cta";
+      landingPage?: LandingPagePreviewIdentity;
     }>;
 
 export type LandingPagePreviewDependencies = Readonly<{
@@ -214,6 +221,10 @@ async function loadLandingPagePreviewUnchecked(
       landingPageId,
     );
   }
+  const landingPageIdentity: LandingPagePreviewIdentity = {
+    name: landingPage.landingPage.name,
+    status: landingPage.landingPage.status,
+  };
 
   const revisionId = input.revisionId?.trim();
   if (revisionId && !isUuid(revisionId)) {
@@ -228,9 +239,11 @@ async function loadLandingPagePreviewUnchecked(
       "unavailable",
       "revision_read_failed",
       landingPageId,
+      undefined,
+      landingPageIdentity,
     );
   }
-  if (!current.value) return { status: "empty" };
+  if (!current.value) return { status: "empty", landingPage: landingPageIdentity };
 
   const prepared = prepareLandingPageRenderModel({
     accountId,
@@ -244,6 +257,7 @@ async function loadLandingPagePreviewUnchecked(
       prepared.error.toLowerCase(),
       landingPageId,
       current.value.id,
+      landingPageIdentity,
     );
   }
 
@@ -255,16 +269,14 @@ async function loadLandingPagePreviewUnchecked(
       "asset_signing_failed",
       landingPageId,
       current.value.id,
+      landingPageIdentity,
     );
   }
 
   const { asset: _asset, image, ...model } = prepared.value;
   return {
     status: "ready",
-    landingPage: {
-      name: landingPage.landingPage.name,
-      status: landingPage.landingPage.status,
-    },
+    landingPage: landingPageIdentity,
     model: deepFreeze({
       ...model,
       media: {
@@ -525,6 +537,7 @@ function observedFailure(
   reason: string,
   landingPageId: string,
   revisionId?: string,
+  landingPage?: LandingPagePreviewIdentity,
 ): LandingPagePreviewLoadResult {
   try {
     dependencies.log?.({
@@ -537,7 +550,7 @@ function observedFailure(
   } catch {
     // Diagnostic logging must not alter the fail-closed result.
   }
-  return { status } as LandingPagePreviewLoadResult;
+  return (landingPage ? { status, landingPage } : { status }) as LandingPagePreviewLoadResult;
 }
 
 function isE164(value: string) {

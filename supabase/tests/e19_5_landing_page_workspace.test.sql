@@ -16,6 +16,25 @@ values ('e1953000-0000-4000-8000-000000000041',null,'segment','Serviços gerais'
 insert into public.account_taxonomy (account_id, taxon_id, is_primary, status, source_type)
 values ('e1953000-0000-4000-8000-000000000011','e1953000-0000-4000-8000-000000000041',true,'active','manual');
 
+insert into public.account_landing_pages (id, account_id, name, slug, status, created_by)
+values (
+  'e1953000-0000-4000-8000-000000000022',
+  'e1953000-0000-4000-8000-000000000011',
+  'Bootstrap histórico', 'bootstrap-historico', 'draft',
+  'e1953000-0000-4000-8000-000000000001'
+);
+
+insert into public.account_landing_page_onboarding_configurations (
+  account_id, landing_page_id, catalog_version, values, created_by, updated_by
+) values (
+  'e1953000-0000-4000-8000-000000000011',
+  'e1953000-0000-4000-8000-000000000022',
+  2,
+  '{"landing_page_objective":{"scope":"landing_page","value":"Objetivo inicial"}}'::jsonb,
+  'e1953000-0000-4000-8000-000000000001',
+  'e1953000-0000-4000-8000-000000000001'
+);
+
 do $$
 declare
   v_landing_page_id uuid;
@@ -24,6 +43,13 @@ declare
   v_approved uuid;
   v_default text;
 begin
+  if public.e19_5_configuration_values_applicable(
+    '{"primary_conversion_channel":{"scope":"landing_page","value":"form"},"whatsapp_destination":{"scope":"landing_page","value":"+5521979658483"}}'::jsonb
+  ) then raise exception 'destination outside applicable conversion channel must fail'; end if;
+  if public.e19_5_configuration_values_applicable(
+    '{"traffic_source":{"scope":"campaign","value":"organic"},"paid_search_keyword_map":{"scope":"campaign","value":{"cluster":["imoveis"]}}}'::jsonb
+  ) then raise exception 'paid search map outside paid search traffic must fail'; end if;
+
   if public.e19_5_configuration_values_valid_for_account(
     'e1953000-0000-4000-8000-000000000011',
     '{"business_display_name":{"scope":"business","value":"cópia indevida"}}'::jsonb,
@@ -34,6 +60,26 @@ begin
     '{"property_types":{"scope":"offer","value":["house"]}}'::jsonb,
     array['offer','campaign','landing_page']
   ) then raise exception 'field outside the current taxon chain must fail'; end if;
+
+  perform * from public.handoff_account_landing_page_onboarding_v1(
+    'e1953000-0000-4000-8000-000000000011',
+    'e1953000-0000-4000-8000-000000000022', 1,
+    'e1953000-0000-4000-8000-000000000001'
+  );
+  update public.account_landing_page_onboarding_configurations
+  set values = values || '{"whatsapp_destination":{"scope":"landing_page","value":"+5521979658483"}}'::jsonb,
+      revision = revision + 1
+  where account_id = 'e1953000-0000-4000-8000-000000000011';
+  perform * from public.handoff_account_landing_page_onboarding_v1(
+    'e1953000-0000-4000-8000-000000000011',
+    'e1953000-0000-4000-8000-000000000022', 1,
+    'e1953000-0000-4000-8000-000000000001'
+  );
+  if not exists (
+    select 1 from public.account_landing_page_configurations
+    where landing_page_id = 'e1953000-0000-4000-8000-000000000022'
+      and revision = 1
+  ) then raise exception 'materialized handoff retry must ignore later bootstrap drift'; end if;
 
   select landing_page_id into v_landing_page_id
   from public.create_account_landing_page_v1(

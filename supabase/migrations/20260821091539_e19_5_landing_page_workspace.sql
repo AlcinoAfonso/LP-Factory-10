@@ -36,7 +36,7 @@ immutable
 security invoker
 set search_path = pg_catalog
 as $$
-  select
+  select coalesce((
     jsonb_typeof(p_values) = 'object'
     and not exists (
       select 1
@@ -80,6 +80,35 @@ as $$
 $$;
 
 revoke all on function public.e19_5_configuration_values_valid(jsonb, text[])
+  from public, anon, authenticated, service_role;
+
+create or replace function public.e19_5_configuration_values_applicable(
+  p_values jsonb
+)
+returns boolean
+language sql
+immutable
+security invoker
+set search_path = pg_catalog
+as $$
+  select
+    jsonb_typeof(p_values) = 'object'
+    and (not (p_values ? 'whatsapp_destination')
+      or p_values #>> '{primary_conversion_channel,value}' = 'whatsapp')
+    and (not (p_values ? 'phone_destination')
+      or p_values #>> '{primary_conversion_channel,value}' = 'phone')
+    and (not (p_values ? 'email_destination')
+      or p_values #>> '{primary_conversion_channel,value}' = 'email')
+    and (not (p_values ? 'external_url_destination')
+      or p_values #>> '{primary_conversion_channel,value}' = 'external_url')
+    and (not (p_values ? 'privacy_policy_url')
+      or p_values #>> '{primary_conversion_channel,value}' = 'form')
+    and (not (p_values ? 'paid_search_keyword_map')
+      or p_values #>> '{traffic_source,value}' = 'paid_search')
+  ), false);
+$$;
+
+revoke all on function public.e19_5_configuration_values_applicable(jsonb)
   from public, anon, authenticated, service_role;
 
 create or replace function public.e19_5_configuration_values_valid_for_account(
@@ -255,12 +284,14 @@ begin
   if exists (
     select 1
     from public.account_landing_page_onboarding_configurations onboarding
-    cross join lateral jsonb_each(onboarding.values) entry
     where onboarding.landing_page_id is not null
-      and not public.e19_5_configuration_values_valid_for_account(
-        onboarding.account_id,
-        jsonb_build_object(entry.key, entry.value),
-        array['account', 'business', 'offer', 'campaign', 'landing_page']
+      and (
+        not public.e19_5_configuration_values_valid_for_account(
+          onboarding.account_id,
+          onboarding.values,
+          array['account', 'business', 'offer', 'campaign', 'landing_page']
+        )
+        or not public.e19_5_configuration_values_applicable(onboarding.values)
       )
   ) then
     raise exception using errcode = '23514', message = 'e19_5_invalid_onboarding_configuration';
@@ -360,7 +391,14 @@ language plpgsql
 security definer
 set search_path = public, pg_catalog
 as $$
-declare v_onboarding public.account_landing_page_onboarding_configurations%rowtype;
+declare
+  v_onboarding public.account_landing_page_onboarding_configurations%rowtype;
+  v_shared_catalog_version integer;
+  v_shared_values jsonb;
+  v_shared_revision bigint;
+  v_landing_page_catalog_version integer;
+  v_landing_page_values jsonb;
+  v_landing_page_revision bigint;
 begin
   if not public.e19_5_actor_can_manage(p_account_id, p_actor_user_id) then
     raise exception using errcode = '42501', message = 'actor_not_authorized';
@@ -369,6 +407,36 @@ begin
     where id = p_landing_page_id and account_id = p_account_id
       and status in ('draft', 'active') for update;
   if not found then raise exception using errcode = 'P0001', message = 'landing_page_not_operational'; end if;
+
+  select
+    shared.catalog_version, shared.values, shared.revision,
+    configuration.catalog_version, configuration.values, configuration.revision
+  into
+    v_shared_catalog_version, v_shared_values, v_shared_revision,
+    v_landing_page_catalog_version, v_landing_page_values, v_landing_page_revision
+  from public.account_landing_page_shared_configurations shared
+  join public.account_landing_page_configurations configuration
+    on configuration.account_id = shared.account_id
+  where shared.account_id = p_account_id
+    and configuration.landing_page_id = p_landing_page_id;
+
+  if found then
+    if v_shared_catalog_version <> 5
+       or v_landing_page_catalog_version <> 5
+       or not public.e19_5_configuration_values_valid_for_account(
+         p_account_id, v_shared_values, array['account', 'business']
+       )
+       or not public.e19_5_configuration_values_valid_for_account(
+         p_account_id, v_landing_page_values, array['offer', 'campaign', 'landing_page']
+       )
+       or not public.e19_5_configuration_values_applicable(
+         v_shared_values || v_landing_page_values
+       ) then
+      raise exception using errcode = '23514', message = 'invalid_operational_configuration';
+    end if;
+    return query select v_shared_revision, v_landing_page_revision;
+    return;
+  end if;
 
   select * into v_onboarding
   from public.account_landing_page_onboarding_configurations
@@ -380,7 +448,7 @@ begin
   if not public.e19_5_configuration_values_valid_for_account(
     p_account_id, v_onboarding.values,
     array['account', 'business', 'offer', 'campaign', 'landing_page']
-  ) then
+  ) or not public.e19_5_configuration_values_applicable(v_onboarding.values) then
     raise exception using errcode = '23514', message = 'invalid_onboarding_configuration';
   end if;
 
@@ -438,7 +506,8 @@ begin
       and status in ('draft', 'active') for update;
   if not found then raise exception using errcode = 'P0001', message = 'landing_page_not_operational'; end if;
   if not public.e19_5_configuration_values_valid_for_account(p_account_id, p_shared_values, array['account', 'business'])
-     or not public.e19_5_configuration_values_valid_for_account(p_account_id, p_landing_page_values, array['offer', 'campaign', 'landing_page']) then
+     or not public.e19_5_configuration_values_valid_for_account(p_account_id, p_landing_page_values, array['offer', 'campaign', 'landing_page'])
+     or not public.e19_5_configuration_values_applicable(p_shared_values || p_landing_page_values) then
     raise exception using errcode = '22023', message = 'configuration_values_invalid';
   end if;
 

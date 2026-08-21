@@ -64,6 +64,8 @@ const cases = [
       assert.match(migration,/foreign key \(approved_materialization_id, id, account_id\)/i);
       assert.match(migration,/on delete no action[\s\S]+deferrable initially deferred/i);
       assert.match(migration,/e19_5_configuration_values_valid_for_account/);
+      assert.match(migration,/e19_5_configuration_values_applicable/);
+      assert.match(migration,/whatsapp_destination[\s\S]+primary_conversion_channel[\s\S]+paid_search_keyword_map[\s\S]+traffic_source/);
       assert.match(migration,/slug = 'imobiliario'/);
       assert.match(migration,/slug = 'corretor-imoveis'/);
       assert.match(migration,/p_values \? 'business_display_name'/);
@@ -85,7 +87,12 @@ const cases = [
       assert.match(test,/contract default was anticipated/);
       assert.match(test,/current account authority must not be copied/);
       assert.match(test,/field outside the current taxon chain must fail/);
+      assert.match(test,/destination outside applicable conversion channel must fail/);
+      assert.match(test,/paid search map outside paid search traffic must fail/);
+      assert.match(test,/materialized handoff retry must ignore later bootstrap drift/);
+      assert.match(migration,/if found then[\s\S]+return query select v_shared_revision, v_landing_page_revision;[\s\S]+select \* into v_onboarding/i);
       assert.match(snippet,/persisted_configuration_valid/);
+      assert.match(snippet,/e19_5_configuration_values_applicable/);
       assert.match(snippet,/status_contract_transitional/);
     },
   },
@@ -102,7 +109,7 @@ const cases = [
       assert.match(preview,/\["draft", "active", "archived"\]/);
       assert.match(accountPage,/handoffAccountLandingPageOnboarding/);
       assert.match(accountPage,/if \(!handoff\.ok\) return <LandingPageOperationalState/);
-      assert.match(previewPage,/preview\.landingPage\.status !== "archived"/);
+      assert.match(previewPage,/previewLandingPage\.status !== "archived"/);
       assert.match(previewPage,/Voltar para/);
       assert.match(pendingButton,/useFormStatus/);
       assert.match(pendingButton,/disabled=\{pending\}/);
