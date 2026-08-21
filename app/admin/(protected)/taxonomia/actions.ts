@@ -7,14 +7,18 @@ import { redirect } from "next/navigation";
 import { requirePlatformAdmin } from "@/lib/access/guards";
 import { reconstructCanonicalInputCatalogEvaluationContext } from "@/conversion-content/adapters/inputCatalogEvaluationContextAdapter";
 import { evaluateInputCatalogWithOpenAi } from "@/conversion-content/adapters/inputCatalogEvaluationOpenAiAdapter";
+import { resolveInputCatalogEvaluationRuntimeReadiness } from "@/conversion-content/adapters/inputCatalogEvaluationRuntimeGate";
+import { executeInputCatalogEvaluationAdministrativeActionCore } from "@/conversion-content/adapters/inputCatalogEvaluationAdministrativeActionCore";
 import {
   coordinateInputCatalogEvaluation,
+  createInputCatalogEvaluationDecisionToken,
+  fingerprintInputCatalogEvaluationOutput,
+  readInputCatalogEvaluationDecisionToken,
   revalidateInputCatalogEvaluationContext,
   type InputCatalogEvaluationContextIdentity,
   type InputCatalogEvaluationMode,
   type InputCatalogEvaluationOutput,
 } from "@/conversion-content/landing-page/taxon-preparation";
-import { loadTaxonPreparationForReviewedVersion } from "@/conversion-content/adapters/selectedEndCustomerResearchAdapter";
 import { nextInputCatalogReviewActionRevision } from "@/lib/admin/adapters/adminTaxonomyReviewPolicy";
 import {
   addAdminTaxonAlias,
@@ -26,10 +30,6 @@ import {
   reopenAdminInputCatalogReview,
   updateAdminTaxon,
 } from "@/lib/admin/adapters/adminReadOnlyAdapter";
-import {
-  resolveOpenAiProductWorkload,
-  resolveOpenAiWorkloadEnvironment,
-} from "@/openai-workloads";
 
 export type CreateTaxonActionState = {
   error: string | null;
@@ -52,9 +52,7 @@ export type InputCatalogReviewActionState = {
 };
 
 export type InputCatalogEvaluationReference = Readonly<{
-  taxonId: string;
-  inputCatalogVersion: number;
-  contextFingerprint: string;
+  decisionToken: string;
 }>;
 
 export type InputCatalogEvaluationActionResult =
@@ -69,8 +67,13 @@ export type ConfirmInputCatalogEvaluationActionResult =
   | Readonly<{ ok: true; reviewedVersion: number }>
   | Readonly<{ ok: false; stale: boolean; message: string }>;
 
+export type AcknowledgeInputCatalogGapActionResult =
+  | Readonly<{ ok: true }>
+  | Readonly<{ ok: false; stale: boolean; message: string }>;
+
 export async function evaluateInputCatalogAction(input: Readonly<{
   taxonId: string;
+  inputCatalogVersion: number;
   mode: InputCatalogEvaluationMode;
   focalHypothesis: string | null;
   feedback: Readonly<{
@@ -84,19 +87,24 @@ export async function evaluateInputCatalogAction(input: Readonly<{
     return { ok: false, code: "UNAUTHORIZED", message: "Acesso administrativo não autorizado." };
   }
 
-  const preparation = await loadTaxonPreparationForReviewedVersion({
-    taxonId: input.taxonId,
-  });
-  if (!preparation.ok) {
-    return { ok: false, code: preparation.error.code, message: preparation.error.message };
+  const runtime = await resolveInputCatalogEvaluationRuntimeReadiness();
+  if (!runtime.ok) {
+    return { ok: false, code: runtime.code, message: runtime.message };
   }
 
   let feedback: Parameters<typeof coordinateInputCatalogEvaluation>[0]["feedback"] = null;
   if (input.feedback) {
+    const previousEvidence = readInputCatalogEvaluationDecisionToken(
+      input.feedback.reference.decisionToken,
+      process.env.OPENAI_API_KEY,
+    );
     if (
-      input.feedback.reference.taxonId !== input.taxonId ||
-      input.feedback.reference.inputCatalogVersion !==
-        preparation.value.requiredInputCatalogVersion
+      !previousEvidence ||
+      previousEvidence.taxonId !== input.taxonId ||
+      previousEvidence.inputCatalogVersion !== input.inputCatalogVersion ||
+      previousEvidence.status !== input.feedback.previousOutput.status ||
+      fingerprintInputCatalogEvaluationOutput(input.feedback.previousOutput) !==
+        previousEvidence.outputFingerprint
     ) {
       return {
         ok: false,
@@ -105,13 +113,13 @@ export async function evaluateInputCatalogAction(input: Readonly<{
       };
     }
     const previousContext = await reconstructCanonicalInputCatalogEvaluationContext({
-      taxonId: input.feedback.reference.taxonId,
-      inputCatalogVersion: input.feedback.reference.inputCatalogVersion,
+      taxonId: previousEvidence.taxonId,
+      inputCatalogVersion: previousEvidence.inputCatalogVersion,
     });
     if (
       !previousContext.ok ||
       fingerprintEvaluationContext(previousContext.value.identity) !==
-        input.feedback.reference.contextFingerprint
+        previousEvidence.contextFingerprint
     ) {
       return {
         ok: false,
@@ -128,12 +136,11 @@ export async function evaluateInputCatalogAction(input: Readonly<{
     };
   }
 
-  const environment = resolveOpenAiWorkloadEnvironment();
   const requestId = randomUUID();
   const result = await coordinateInputCatalogEvaluation(
     {
       taxonId: input.taxonId,
-      inputCatalogVersion: preparation.value.requiredInputCatalogVersion,
+      inputCatalogVersion: input.inputCatalogVersion,
       mode: input.mode,
       focalHypothesis: input.focalHypothesis,
       feedback,
@@ -141,17 +148,10 @@ export async function evaluateInputCatalogAction(input: Readonly<{
     {
       reconstructContext: reconstructCanonicalInputCatalogEvaluationContext,
       evaluate: async (request) => {
-        const configuration = await resolveOpenAiProductWorkload(
-          "taxon_input_catalog_sufficiency_evaluation",
-          environment,
-        );
-        if (!configuration.ok) {
-          return { status: "failure", message: configuration.error.code };
-        }
         return evaluateInputCatalogWithOpenAi({
           apiKey: process.env.OPENAI_API_KEY,
-          configuration: configuration.value,
-          environment,
+          configuration: runtime.configuration,
+          environment: runtime.environment,
           request,
           requestId,
           safetyIdentifier: `platform_admin_${gate.actorUserId.replaceAll("-", "")}`,
@@ -163,71 +163,134 @@ export async function evaluateInputCatalogAction(input: Readonly<{
   if (!result.ok) {
     return { ok: false, code: result.error.code, message: result.error.message };
   }
+  const contextFingerprint = fingerprintEvaluationContext(result.value.contextIdentity);
+  const outputFingerprint = fingerprintInputCatalogEvaluationOutput(result.value.output);
+  const decisionToken = createInputCatalogEvaluationDecisionToken(
+    {
+      taxonId: result.value.contextIdentity.taxonId,
+      inputCatalogVersion: result.value.contextIdentity.inputCatalog.version,
+      contextFingerprint,
+      outputFingerprint,
+      status: result.value.output.status,
+    },
+    process.env.OPENAI_API_KEY,
+  );
+  if (!decisionToken) {
+    return {
+      ok: false,
+      code: "DECISION_EVIDENCE_UNAVAILABLE",
+      message: "A avaliação foi descartada porque sua evidência administrativa não pôde ser autenticada.",
+    };
+  }
   return {
     ok: true,
     output: result.value.output,
-    reference: {
-      taxonId: result.value.contextIdentity.taxonId,
-      inputCatalogVersion: result.value.contextIdentity.inputCatalog.version,
-      contextFingerprint: fingerprintEvaluationContext(result.value.contextIdentity),
-    },
+    reference: { decisionToken },
   };
 }
 
 export async function confirmInputCatalogEvaluationAction(input: Readonly<{
   reference: InputCatalogEvaluationReference;
+  output: InputCatalogEvaluationOutput;
 }>): Promise<ConfirmInputCatalogEvaluationActionResult> {
+  const result = await executeAdministrativeEvaluationDecision({
+    decision: "confirm_sufficient",
+    reference: input.reference,
+    output: input.output,
+  });
+  if (!result.ok) return result;
+  if (result.kind !== "sufficiency_confirmed") {
+    return { ok: false, stale: false, message: "A confirmação não produziu a decisão esperada." };
+  }
+  const evidence = readInputCatalogEvaluationDecisionToken(
+    input.reference.decisionToken,
+    process.env.OPENAI_API_KEY,
+  );
+  if (!evidence) return { ok: false, stale: false, message: "A evidência da avaliação é inválida." };
+  revalidatePath("/admin/taxonomia");
+  revalidatePath(`/admin/taxonomia/${evidence.taxonId}`);
+  return { ok: true, reviewedVersion: result.reviewedVersion };
+}
+
+export async function acknowledgeInputCatalogGapAction(input: Readonly<{
+  reference: InputCatalogEvaluationReference;
+  output: InputCatalogEvaluationOutput;
+}>): Promise<AcknowledgeInputCatalogGapActionResult> {
+  const result = await executeAdministrativeEvaluationDecision({
+    decision: "acknowledge_factual_gap",
+    reference: input.reference,
+    output: input.output,
+  });
+  if (!result.ok) return result;
+  return result.kind === "factual_gap_acknowledged"
+    ? { ok: true }
+    : { ok: false, stale: false, message: "O reconhecimento do gap não produziu a decisão esperada." };
+}
+
+async function executeAdministrativeEvaluationDecision(input: Readonly<{
+  decision: "confirm_sufficient" | "acknowledge_factual_gap";
+  reference: InputCatalogEvaluationReference;
+  output: InputCatalogEvaluationOutput;
+}>) {
   const gate = await requirePlatformAdmin();
   if (!gate.allowed) {
-    return { ok: false, stale: false, message: "Acesso administrativo não autorizado." };
+    return { ok: false as const, stale: false, message: "Acesso administrativo não autorizado." };
   }
-
-  const current = await reconstructCanonicalInputCatalogEvaluationContext({
-    taxonId: input.reference.taxonId,
-    inputCatalogVersion: input.reference.inputCatalogVersion,
-  });
-  if (!current.ok) {
-    return { ok: false, stale: true, message: current.error.message };
-  }
-  const revalidated = await revalidateInputCatalogEvaluationContext(
-    current.value.identity,
+  return executeInputCatalogEvaluationAdministrativeActionCore(
     {
-      taxonId: input.reference.taxonId,
-      inputCatalogVersion: input.reference.inputCatalogVersion,
+      decision: input.decision,
+      decisionToken: input.reference.decisionToken,
+      decisionTokenSecret: process.env.OPENAI_API_KEY,
+      output: input.output,
     },
-    reconstructCanonicalInputCatalogEvaluationContext,
+    {
+      requireRuntime: async () => {
+        const runtime = await resolveInputCatalogEvaluationRuntimeReadiness();
+        return runtime.ok
+          ? { ok: true as const }
+          : { ok: false as const, message: runtime.message };
+      },
+      revalidate: async (evidence) => {
+        const current = await reconstructCanonicalInputCatalogEvaluationContext({
+          taxonId: evidence.taxonId,
+          inputCatalogVersion: evidence.inputCatalogVersion,
+        });
+        if (!current.ok) return { ok: false as const, message: current.error.message };
+        const revalidated = await revalidateInputCatalogEvaluationContext(
+          current.value.identity,
+          {
+            taxonId: evidence.taxonId,
+            inputCatalogVersion: evidence.inputCatalogVersion,
+          },
+          reconstructCanonicalInputCatalogEvaluationContext,
+        );
+        if (
+          !revalidated.ok ||
+          fingerprintEvaluationContext(revalidated.value.contextIdentity) !==
+            evidence.contextFingerprint
+        ) {
+          return {
+            ok: false as const,
+            message: revalidated.ok
+              ? "As fontes mudaram desde a avaliação. Execute uma nova avaliação."
+              : revalidated.error.message,
+          };
+        }
+        return { ok: true as const };
+      },
+      recordReviewedVersion: async (evidence) => {
+        const recorded = await recordAdminInputCatalogReview({
+          taxonId: evidence.taxonId,
+          inputCatalogVersion: evidence.inputCatalogVersion,
+        });
+        if (!recorded.ok) return { ok: false as const, message: recorded.error };
+        if (recorded.reviewedVersion === null) {
+          return { ok: false as const, message: "A versão E20.2 não foi preservada pela confirmação." };
+        }
+        return { ok: true as const, reviewedVersion: recorded.reviewedVersion };
+      },
+    },
   );
-  if (
-    !revalidated.ok ||
-    fingerprintEvaluationContext(revalidated.value.contextIdentity) !==
-      input.reference.contextFingerprint
-  ) {
-    return {
-      ok: false,
-      stale: true,
-      message: revalidated.ok
-        ? "As fontes mudaram desde a avaliação. Execute uma nova avaliação."
-        : revalidated.error.message,
-    };
-  }
-
-  const recorded = await recordAdminInputCatalogReview({
-    taxonId: input.reference.taxonId,
-    inputCatalogVersion: input.reference.inputCatalogVersion,
-  });
-  if (!recorded.ok) {
-    return { ok: false, stale: true, message: recorded.error };
-  }
-  if (recorded.reviewedVersion === null) {
-    return {
-      ok: false,
-      stale: true,
-      message: "A versão E20.2 não foi preservada pela confirmação.",
-    };
-  }
-  revalidatePath("/admin/taxonomia");
-  revalidatePath(`/admin/taxonomia/${recorded.taxonId}`);
-  return { ok: true, reviewedVersion: recorded.reviewedVersion };
 }
 
 function fingerprintEvaluationContext(identity: InputCatalogEvaluationContextIdentity) {

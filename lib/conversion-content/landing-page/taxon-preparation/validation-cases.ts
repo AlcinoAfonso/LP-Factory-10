@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { evaluateInputCatalogWithOpenAi } from "../../adapters/inputCatalogEvaluationOpenAiAdapter";
+import { resolveInputCatalogEvaluationRuntimeReadinessCore } from "../../adapters/inputCatalogEvaluationRuntimeGateCore";
+import { executeInputCatalogEvaluationAdministrativeActionCore } from "../../adapters/inputCatalogEvaluationAdministrativeActionCore";
 import {
   resolveOpenAiProductWorkload,
   type OpenAiWorkloadEvent,
@@ -26,12 +28,16 @@ import {
   buildInputCatalogReviewHandoff,
   classifyRequiredInputCatalogVersion,
   coordinateInputCatalogEvaluation,
+  createInputCatalogEvaluationDecisionToken,
   deriveTaxonPreparationForVersion,
+  executeInputCatalogEvaluationAdministrativeDecision,
+  fingerprintInputCatalogEvaluationOutput,
   inputCatalogEvaluationOutputJsonSchema,
   isEndCustomerResearchSelectionEnabled,
   isInputCatalogReviewEnabled,
   loadEndCustomerResearchCandidate,
   parseInputCatalogEvaluationOutput,
+  readInputCatalogEvaluationDecisionToken,
   revalidateInputCatalogEvaluationContext,
   resolveInputCatalogReview,
   sameInputCatalogEvaluationContextIdentity,
@@ -1380,6 +1386,207 @@ const cases: readonly ValidationCase[] = [
     },
   },
   {
+    name: "E20.6.5 server action core blocks gate-off and forged status before any write",
+    run: async () => {
+      const secret = "decision-token-test-secret-32-bytes-minimum";
+      const inconclusive: InputCatalogEvaluationOutput = {
+        ...validHypothesisEvaluationOutput(),
+        status: "inconclusive",
+        candidates: [{ ...hypothesisGapCandidate(), conclusion: "inconclusive" }],
+      };
+      const token = createInputCatalogEvaluationDecisionToken(
+        {
+          taxonId: realEstateBrokerNicheTaxon.id,
+          inputCatalogVersion: 4,
+          contextFingerprint: "a".repeat(64),
+          outputFingerprint: fingerprintInputCatalogEvaluationOutput(inconclusive),
+          status: inconclusive.status,
+        },
+        secret,
+      );
+      assert.ok(token);
+      let revalidationCalls = 0;
+      let writeCalls = 0;
+      const ports = {
+        requireRuntime: async () => ({ ok: false as const, message: "gate-off" }),
+        revalidate: async () => {
+          revalidationCalls += 1;
+          return { ok: true as const };
+        },
+        recordReviewedVersion: async () => {
+          writeCalls += 1;
+          return { ok: true as const, reviewedVersion: 4 };
+        },
+      };
+      const gateOff = await executeInputCatalogEvaluationAdministrativeActionCore(
+        {
+          decision: "confirm_sufficient",
+          decisionToken: token,
+          decisionTokenSecret: secret,
+          output: inconclusive,
+        },
+        ports,
+      );
+      assert.equal(gateOff.ok, false);
+      assert.equal(revalidationCalls, 0);
+      assert.equal(writeCalls, 0);
+
+      const forgedStatus = await executeInputCatalogEvaluationAdministrativeActionCore(
+        {
+          decision: "confirm_sufficient",
+          decisionToken: token,
+          decisionTokenSecret: secret,
+          output: validSystematicEvaluationOutput(),
+        },
+        { ...ports, requireRuntime: async () => ({ ok: true as const }) },
+      );
+      assert.equal(forgedStatus.ok, false);
+      assert.equal(revalidationCalls, 0);
+      assert.equal(writeCalls, 0);
+    },
+  },
+  {
+    name: "E20.6.5 decision evidence authenticates server status output and context",
+    run: async () => {
+      const secret = "decision-token-test-secret-32-bytes-minimum";
+      const payload = {
+        taxonId: realEstateBrokerNicheTaxon.id,
+        inputCatalogVersion: 4,
+        contextFingerprint: "a".repeat(64),
+        outputFingerprint: "b".repeat(64),
+        status: "inconclusive" as const,
+      };
+      const token = createInputCatalogEvaluationDecisionToken(payload, secret);
+      assert.ok(token);
+      assert.deepEqual(readInputCatalogEvaluationDecisionToken(token, secret), {
+        v: 1,
+        ...payload,
+      });
+      assert.equal(
+        readInputCatalogEvaluationDecisionToken(`${token.slice(0, -1)}x`, secret),
+        null,
+      );
+      assert.equal(readInputCatalogEvaluationDecisionToken(token, `${secret}x`), null);
+      assert.equal(createInputCatalogEvaluationDecisionToken(payload, undefined), null);
+    },
+  },
+  {
+    name: "E20.6.5 rollout gate blocks repository configuration in hosted environments",
+    run: async () => {
+      const repositoryConfiguration = await resolveOpenAiProductWorkload(
+        "taxon_input_catalog_sufficiency_evaluation",
+        "development",
+      );
+      assert.equal(repositoryConfiguration.ok, true);
+      if (!repositoryConfiguration.ok) throw new Error("Expected repository configuration");
+
+      let resolverCalls = 0;
+      const gateOff = await resolveInputCatalogEvaluationRuntimeReadinessCore(
+        { environment: "preview", rolloutGateValue: "false" },
+        {
+          resolveConfiguration: async () => {
+            resolverCalls += 1;
+            return repositoryConfiguration;
+          },
+        },
+      );
+      assert.equal(gateOff.ok, false);
+      assert.equal(resolverCalls, 0);
+
+      const repositoryHosted = await resolveInputCatalogEvaluationRuntimeReadinessCore(
+        { environment: "preview", rolloutGateValue: "true" },
+        { resolveConfiguration: async () => repositoryConfiguration },
+      );
+      assert.equal(repositoryHosted.ok, false);
+      if (repositoryHosted.ok) throw new Error("Expected hosted repository configuration rejection");
+      assert.equal(repositoryHosted.code, "OPERATIONAL_CONFIGURATION_UNPROVEN");
+
+      const bootstrapHosted = await resolveInputCatalogEvaluationRuntimeReadinessCore(
+        { environment: "preview", rolloutGateValue: "true" },
+        {
+          resolveConfiguration: async () => ({
+            ok: true,
+            value: {
+              ...repositoryConfiguration.value,
+              source: "supabase_operational",
+              revision: "1",
+            },
+          }),
+        },
+      );
+      assert.equal(bootstrapHosted.ok, false);
+
+      const operationalHosted = await resolveInputCatalogEvaluationRuntimeReadinessCore(
+        { environment: "preview", rolloutGateValue: "true" },
+        {
+          resolveConfiguration: async () => ({
+            ok: true,
+            value: {
+              ...repositoryConfiguration.value,
+              source: "supabase_operational",
+              revision: "2",
+            },
+          }),
+        },
+      );
+      assert.equal(operationalHosted.ok, true);
+    },
+  },
+  {
+    name: "E20.6.5 server decision rejects inconclusive output before revalidation or write",
+    run: async () => {
+      let revalidationCalls = 0;
+      let writeCalls = 0;
+      const inconclusive: InputCatalogEvaluationOutput = {
+        ...validHypothesisEvaluationOutput(),
+        status: "inconclusive",
+        candidates: [{ ...hypothesisGapCandidate(), conclusion: "inconclusive" }],
+      };
+      const result = await executeInputCatalogEvaluationAdministrativeDecision(
+        { decision: "confirm_sufficient", output: inconclusive },
+        {
+          revalidate: async () => {
+            revalidationCalls += 1;
+            return { ok: true };
+          },
+          recordReviewedVersion: async () => {
+            writeCalls += 1;
+            return { ok: true, reviewedVersion: 4 };
+          },
+        },
+      );
+      assert.equal(result.ok, false);
+      assert.equal(revalidationCalls, 0);
+      assert.equal(writeCalls, 0);
+    },
+  },
+  {
+    name: "E20.6.5 factual gap acknowledgement revalidates without writing E20.2",
+    run: async () => {
+      let revalidationCalls = 0;
+      let writeCalls = 0;
+      const result = await executeInputCatalogEvaluationAdministrativeDecision(
+        { decision: "acknowledge_factual_gap", output: validHypothesisEvaluationOutput() },
+        {
+          revalidate: async () => {
+            revalidationCalls += 1;
+            return { ok: true };
+          },
+          recordReviewedVersion: async () => {
+            writeCalls += 1;
+            return { ok: true, reviewedVersion: 4 };
+          },
+        },
+      );
+      assert.equal(result.ok, true);
+      if (!result.ok) throw new Error("Expected factual gap acknowledgement");
+      assert.equal(result.kind, "factual_gap_acknowledged");
+      assert.equal(result.reviewedVersion, null);
+      assert.equal(revalidationCalls, 1);
+      assert.equal(writeCalls, 0);
+    },
+  },
+  {
     name: "E20.6.5 route-local UI is mounted through thin server actions without client provider access",
     run: async () => {
       const componentSource = readFileSync(
@@ -1400,6 +1607,8 @@ const cases: readonly ValidationCase[] = [
       assert.match(componentSource, /Checkpoint de integração final/);
       assert.match(componentSource, /Reavaliar com feedback/);
       assert.match(componentSource, /input-catalog-evaluation-feedback/);
+      assert.match(componentSource, /input-catalog-evaluation-version/);
+      assert.match(componentSource, /Reconhecer gap factual sem alterar a E20\.2/);
       assert.match(componentSource, /aria-live="polite"/);
       assert.match(componentSource, /focus-visible:ring/);
       assert.doesNotMatch(
@@ -1417,6 +1626,8 @@ const cases: readonly ValidationCase[] = [
       assert.match(pageSource, /AdminTaxonInputCatalogEvaluationRuntime/);
       assert.match(pageSource, /evaluateInputCatalogAction/);
       assert.match(pageSource, /confirmInputCatalogEvaluationAction/);
+      assert.match(pageSource, /inputCatalogEvaluationRuntime\?\.ok/);
+      assert.match(pageSource, /O handoff Codex acima permanece o caminho autorizado/);
 
       const actionSource = readFileSync(
         new URL(
@@ -1427,7 +1638,27 @@ const cases: readonly ValidationCase[] = [
       );
       assert.match(actionSource, /previousContextIdentity/);
       assert.match(actionSource, /contextFingerprint/);
+      assert.match(actionSource, /decisionToken/);
+      assert.match(actionSource, /executeInputCatalogEvaluationAdministrativeActionCore/);
       assert.match(actionSource, /feedback,/);
+      assert.doesNotMatch(actionSource, /loadTaxonPreparationForReviewedVersion/);
+      const administrativeActionCore = readFileSync(
+        new URL("../../adapters/inputCatalogEvaluationAdministrativeActionCore.ts", import.meta.url),
+        "utf8",
+      );
+      const administrativeGate = administrativeActionCore.indexOf("await ports.requireRuntime()");
+      const evidenceRead = administrativeActionCore.indexOf("const evidence = readInputCatalogEvaluationDecisionToken");
+      const administrativeUseCase = administrativeActionCore.lastIndexOf("return executeInputCatalogEvaluationAdministrativeDecision");
+      assert.ok(administrativeGate >= 0 && administrativeGate < evidenceRead);
+      assert.ok(evidenceRead < administrativeUseCase);
+
+      const contextAdapterSource = readFileSync(
+        new URL("../../adapters/inputCatalogEvaluationContextAdapter.ts", import.meta.url),
+        "utf8",
+      );
+      assert.match(contextAdapterSource, /loadSelectedEndCustomerResearchForTaxon/);
+      assert.doesNotMatch(contextAdapterSource, /loadTaxonPreparationForReviewedVersion/);
+      assert.doesNotMatch(contextAdapterSource, /loadTaxonPreparationForVersion/);
 
       const activeReviewSource = readFileSync(
         new URL(

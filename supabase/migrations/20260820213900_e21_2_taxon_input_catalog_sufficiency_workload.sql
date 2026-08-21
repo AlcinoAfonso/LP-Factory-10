@@ -2,6 +2,8 @@
 -- This migration extends the existing operational lifecycle only. It does not
 -- create a business entity, table, column, history, or functional persistence.
 
+begin;
+
 alter table public.openai_workload_configuration_revisions
   drop constraint openai_workload_configuration_revisions_workload_chk,
   drop constraint openai_workload_configuration_revisions_modality_chk,
@@ -41,6 +43,7 @@ alter table public.openai_workload_configuration_revisions
           'landing_page_draft_generation'
         )
         and modality = 'responses_text'
+        and reasoning_effort is not null
         and quality is null
         and (
           (
@@ -57,6 +60,7 @@ alter table public.openai_workload_configuration_revisions
         workload = 'taxon_input_catalog_sufficiency_evaluation'
         and modality = 'responses_text'
         and model = 'gpt-5.6-terra'
+        and reasoning_effort is not null
         and reasoning_effort = 'low'
         and quality is null
       )
@@ -65,6 +69,7 @@ alter table public.openai_workload_configuration_revisions
         and modality = 'image_generation'
         and model = 'gpt-image-2'
         and reasoning_effort is null
+        and quality is not null
         and quality in ('low', 'medium', 'high')
       )
     );
@@ -121,6 +126,7 @@ alter table public.openai_workload_operational_configurations
               'landing_page_draft_generation'
             )
             and modality = 'responses_text'
+            and candidate_reasoning_effort is not null
             and candidate_quality is null
             and (
               (
@@ -137,6 +143,7 @@ alter table public.openai_workload_operational_configurations
             workload = 'taxon_input_catalog_sufficiency_evaluation'
             and modality = 'responses_text'
             and candidate_model = 'gpt-5.6-terra'
+            and candidate_reasoning_effort is not null
             and candidate_reasoning_effort = 'low'
             and candidate_quality is null
           )
@@ -145,6 +152,7 @@ alter table public.openai_workload_operational_configurations
             and modality = 'image_generation'
             and candidate_model = 'gpt-image-2'
             and candidate_reasoning_effort is null
+            and candidate_quality is not null
             and candidate_quality in ('low', 'medium', 'high')
           )
         )
@@ -630,3 +638,5 @@ $$;
 comment on constraint openai_workload_configuration_revisions_shape_chk
   on public.openai_workload_configuration_revisions
   is 'Allowlist operacional por workload; E20.6.5 inicia exclusivamente em gpt-5.6-terra + low.';
+
+commit;

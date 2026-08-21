@@ -56,7 +56,7 @@
 - O número avaliado deve ser fornecido explicitamente pelo processo/consumidor responsável e deve corresponder à versão executável que será usada.
 - Se a versão executável pretendida mudar de `N` para `M`, uma avaliação anterior de `N` não autoriza `M`; o gate falha até nova avaliação.
 - Se uma LP real reabrir a suficiência de uma versão antes considerada suficiente, o marcador pode voltar a `NULL` até o ajuste e a nova decisão.
-- Nos contratos executáveis atuais, a fonte real de `requiredInputCatalogVersion` é o `reviewed_input_catalog_version` do taxon retornado pela única leitura canônica da pesquisa selecionada; `loadTaxonPreparationForReviewedVersion({ taxonId })` exige esse valor presente e executável e o entrega explicitamente à derivação como `requiredInputCatalogVersion`. O PR #794/E19.5 não fornece essa versão.
+- Os contratos executáveis separam dois fluxos: a E20.6.5 recebe da interface a versão executável `N` escolhida explicitamente para a análise, sem persistir a escolha, e reconstrói pesquisa E20.5 + quatro planos para `N`; somente após decisão humana grava `reviewed_input_catalog_version = N`. `loadTaxonPreparationForReviewedVersion({ taxonId })` continua derivando a versão já revisada para E20.6.4 e consumidores posteriores. O PR #794/E19.5 não fornece `N`.
 - Antes da integração final, atualizar a branch e reconfirmar essa autoridade no caminho executável vigente. Reconstrução, resolução dos quatro planos, Structured Output, revalidação e registro administrativo devem usar exatamente a versão `N` da leitura canônica; ausência, invalidade ou divergência falham fechado. É proibido assumir a v4 atual, maior versão, `latest` ou fallback. Se E19.5 ou outro delta mergeado alterar materialmente essa autoridade, reconciliar a dependência a partir dos contratos atuais antes de integrar, sem vinculá-la por número de PR.
 
 ### 1.5. Estado derivado `taxon preparado`
@@ -299,7 +299,7 @@ Execute a avaliação E20.6 do taxon `[taxon_slug]`, usando a cadeia taxonômica
 - Se houver evolução da E20.2, o Codex deve executar novamente a E20.6 contra a nova versão executável antes de orientar qualquer registro no Admin.
 - Somente após recomendação `suficiente` aceita pelo humano, o Codex deve encerrar a interação com orientação explícita equivalente a: `Volte ao Admin Dashboard e registre a versão E20.2 N como avaliada e suficiente para este taxon.`
 - O retorno ao Admin era deliberado na entrega original: o Codex não grava diretamente `reviewed_input_catalog_version`; a confirmação administrativa permanece ação humana explícita também na E20.6.5.
-- Na integração final, a avaliação runtime substitui o handoff semântico Admin → Codex na superfície ativa. Remover `buildInputCatalogReviewHandoff`, seu export público, o campo `handoff` do DTO administrativo, sua montagem em `adminTaxonomyAdapter`, a textarea, o clipboard, o CTA de cópia e os testes exclusivos desse caminho.
+- Enquanto o runtime E20.6.5 estiver gate-off, o handoff semântico Admin → Codex permanece o caminho autorizado. Sua retirada só pode ocorrer depois da prova real aprovada e não pode ser apresentada como consequência do mesmo merge que ainda introduz a migration; essa contração exige reconciliação explícita do contrato de PR pelo Estrategista antes do merge do #795.
 - Preservar o histórico documental da E20.6.3, `resolveInputCatalogReview`, a coluna existente, as ações humanas de registrar/reabrir e o gate determinístico E20.6.4. Não manter fallback automático ou caminho operacional paralelo pelo Codex App.
 
 ### 2.7. Fluxo operacional da E20.6.5 no runtime do Admin
@@ -309,6 +309,7 @@ Execute a avaliação E20.6 do taxon `[taxon_slug]`, usando a cadeia taxonômica
   - **checkpoint de integração final:** somente depois de o agregado E21.2 suportar `taxon_input_catalog_sufficiency_evaluation` com bootstrap inicial `gpt-5.6-terra` + `low`, atualizar a branch, consumir a configuração ativa do lifecycle dinâmico Supabase pela API pública comum, reconfirmar a fonte canônica vigente de `requiredInputCatalogVersion`, integrar o provider real e substituir o handoff Codex.
 - No checkpoint pré-integração, `lib/openai-workloads/` permanece inalterado, nenhuma configuração repo-only temporária é criada, nenhum resolver ou transporte OpenAI exclusivo da E20.6.5 é criado, nenhuma chamada real ao provider é concluída e a implementação não pode ser declarada completa.
 - A integração real somente começa depois de o suporte E21.2 ao novo workload estar incorporado à `main` e de o apply e a validação, no ambiente-alvo, dos objetos de banco dos quais seu runtime dependa estarem concluídos. A E20.6.5 deve consumir exclusivamente a API pública do lifecycle dinâmico Supabase e do boundary comum `lib/openai-workloads/`, sem consulta direta aos objetos E21.2 e sem configuração, resolver ou transporte paralelo.
+- A montagem candidata permanece bloqueada por `E20_6_5_INPUT_CATALOG_EVALUATION_PROVIDER_ENABLED`; em Preview e Production, gate-on só é elegível quando o resolver comum comprovar fonte `supabase_operational` em revisão `2` ou posterior, já promovida com prova operacional e ativada, nunca o bootstrap `1`. `OPENAI_OPERATIONAL_CONFIG_ENABLED=false` com retorno `repo_catalog` continua gate-off para a E20.6.5.
 - O checkpoint pré-integração não altera `lib/openai-workloads/`. O agregado E21.2 deve incorporar a identidade code-owned `taxon_input_catalog_sufficiency_evaluation`, sua unidade operacional textual, a configuração inicial aprovada `gpt-5.6-terra` + `low` e seu lifecycle comum antes de a E20.6.5 integrar o provider; o PR #795 não cria suporte provisório nem duplica esse boundary.
 - Parar antes de editar somente se a API pós-E21.2 exigir consulta direta ao Supabase, configuração paralela, resolver/transporte exclusivo da E20.6.5 ou redesenho transversal material além do registro e consumo normais de um novo workload.
 
@@ -317,13 +318,14 @@ Execute a avaliação E20.6 do taxon `[taxon_slug]`, usando a cadeia taxonômica
 - Entrada:
   - taxon e cadeia taxonômica autoritativa;
   - pesquisa integral E20.5 selecionada e válida;
-  - versão executável E20.2 escolhida explicitamente;
+  - versão executável E20.2 `N` escolhida explicitamente para a execução, sem persistência dessa escolha;
   - catálogo E20.2 resolvido e equivalente nos quatro planos quando aplicável;
   - modo `systematic` ou `hypothesis`;
   - hipótese ou feedback humano quando houver.
 - Processamento:
   - validar deterministicamente precondições e executabilidade antes do provider;
   - reconstruir o contexto autorizado a cada chamada;
+  - carregar a pesquisa E20.5 selecionada, validar `N` e resolver deterministicamente essa mesma versão em `starter`, `lite`, `pro` e `ultra` antes do provider;
   - chamar o novo workload OpenAI de produto via Responses API;
   - exigir Structured Output;
   - validar deterministicamente a resposta;
@@ -334,6 +336,7 @@ Execute a avaliação E20.6 do taxon `[taxon_slug]`, usando a cadeia taxonômica
   - impedir promoção automática de pesquisa para field;
   - rejeitar resposta stale ou incompatível com as fontes atuais;
   - não registrar suficiência com resposta inválida, `inconclusive`, refusal ou falha técnica;
+  - não gerar nem aceitar confirmação administrativa para resultado `inconclusive` e permitir reconhecer `candidate_gaps` como gap factual real sem gravar ou alterar automaticamente a E20.2;
   - revalidar integralmente as fontes antes da ação administrativa final.
 - Persistência:
   - preservar somente `reviewed_input_catalog_version` já existente para a decisão final de suficiência;
@@ -346,7 +349,7 @@ Execute a avaliação E20.6 do taxon `[taxon_slug]`, usando a cadeia taxonômica
   - fail-closed;
   - OpenAI indisponível, refusal, resposta inválida, `inconclusive`, mudança de fonte ou erro de validação não registram suficiência;
   - nenhuma troca silenciosa de modelo ou versão E20.2;
-  - nenhum fallback automático para Codex App;
+  - nenhum fallback automático para Codex App; enquanto o runtime estiver gate-off, o handoff Codex permanece explicitamente disponível como caminho humano vigente;
   - tentativa posterior depende de nova ação humana explícita.
 
 #### 2.7.1. Residência e separação de responsabilidades
@@ -505,17 +508,18 @@ Execute a avaliação E20.6 do taxon `[taxon_slug]`, usando a cadeia taxonômica
 - Critérios da integração final:
   - agregado E21.2 com `taxon_input_catalog_sufficiency_evaluation` incorporado e dependências hospedadas aplicáveis validadas;
   - identidade code-owned registrada no boundary comum, bootstrap inicial `gpt-5.6-terra` + `low` e configuração ativa resolvida pelo lifecycle Supabase; mudanças posteriores dependem de governança E21 e decisão humana;
-  - `requiredInputCatalogVersion` derivada explicitamente do `reviewed_input_catalog_version` da leitura canônica atual, presente, executável e sem `latest`, maior versão ou fallback;
+  - versão `N` recebida explicitamente da escolha efêmera do humano, presente, executável e resolvida nos quatro planos sem `latest`, maior versão ou fallback; `loadTaxonPreparationForReviewedVersion()` permanece reservado à E20.6.4 e consumidores posteriores;
   - provider real, Structured Output, refusal/incomplete, timeout e observabilidade sanitizada validados;
   - UI montada no runtime autenticado e validada em desktop, mobile, teclado, erro e invalidação;
   - decisão administrativa permanece separada, com revalidação imediatamente anterior à mutação;
-  - handoff Codex removido somente após a comprovação do runtime real;
+  - handoff Codex preservado enquanto o runtime estiver gate-off e removido somente por contração posterior à comprovação real aprovada;
   - E20.6.4 permanece determinística e sem nova chamada de IA.
 - Gates posteriores obrigatórios:
   - depois de o suporte E21.2 ao novo workload estar incorporado, atualizar a branch, comprovar apply/validação dos objetos requeridos e consumir somente a configuração ativa e a API pública comum;
-  - reconfirmar no código vigente que a leitura canônica fornece `reviewed_input_catalog_version` como `requiredInputCatalogVersion`; qualquer alteração material trazida por E19.5 ou outro delta deve ser reconciliada por contrato, sem presumir dependência do PR #794;
+  - reconfirmar no código vigente que a reconstrução da E20.6.5 recebe `N` da escolha humana efêmera, carrega a pesquisa E20.5 selecionada e resolve exatamente `N` nos quatro planos; qualquer alteração material trazida por E19.5 ou outro delta deve ser reconciliada por contrato, sem presumir dependência do PR #794;
   - integrar chamada real, observabilidade e remoção do handoff somente depois desses gates. A ordem de merge entre #795, #793 e #794 não é fixada até que as dependências reais sejam reconciliadas.
-- Artefatos finais posteriores: remover o caminho ativo Admin → Codex; atualizar `docs/automations.md`, `docs/base-tecnica.md` e `docs/platform-config.md` somente quando o runtime real estiver comprovado; fechar `docs/roadmap.md` somente após merge técnico final.
+- Contrato de PR pendente de decisão estratégica: o #795 é o recorte expand gate-off e não fecha a E20.6.5. Como migration, apply e prova real obedecem ao fluxo pós-merge, a retirada do handoff e o fechamento documental exigem uma contração posterior; esse expand/contract de dois PRs deve ser apresentado e aprovado pelo Estrategista antes do merge do #795.
+- Sequência proposta para decisão do Estrategista: (1) manter #795 draft, gates off e handoff ativo; (2) revisar e mergear humanamente o expand somente após aprovação estratégica; (3) apply automático da migration; (4) executar invariantes, Security Controls e prova da configuração ativa; (5) habilitar `OPENAI_OPERATIONAL_CONFIG_ENABLED=true` e depois o gate E20.6.5 apenas em Preview, com redeploy; (6) validar provider real e UI autenticada em Preview; (7) após decisão humana, habilitar e validar Production; (8) abrir o PR contract dedicado para remover o handoff e atualizar documentação final; (9) somente o merge humano do contract pode fechar a E20.6.5.
 - Avaliação formal de Automação na v2: concluída; classificação aprovada. A Passagem 1 do Analista resolveu que a identidade permanece code-owned e que o checkpoint pré-integração é executável sem escolha técnica adicional.
 - Próxima ação: reconciliar no agregado E21.2 o suporte a `taxon_input_catalog_sufficiency_evaluation` com configuração inicial `gpt-5.6-terra` + `low`; somente após sua incorporação atualizar a branch e auditar a API pública comum e a fonte canônica de `requiredInputCatalogVersion` antes de qualquer integração real.
 
@@ -558,4 +562,4 @@ Execute a avaliação E20.6 do taxon `[taxon_slug]`, usando a cadeia taxonômica
 - Parar no checkpoint pré-integração enquanto o agregado E21.2 não suportar `taxon_input_catalog_sufficiency_evaluation`, inclusive identidade code-owned, configuração inicial `gpt-5.6-terra` + `low` e lifecycle comum; não alterar `lib/openai-workloads/` nem criar workaround local no PR #795.
 - Depois da incorporação desse suporte E21.2, parar antes de editar somente se a API pública exigir consulta direta ao Supabase, configuração paralela, resolver/transporte exclusivo ou redesenho transversal material.
 - Parar se o caminho executável vigente não fornecer `requiredInputCatalogVersion` explicitamente a partir da leitura canônica ou se uma mudança material tornar essa autoridade ambígua; não assumir v4, v5, `latest`, maior versão, fallback nem dependência automática da E19.5.
-- Encerrar a E20.6.5 quando o runtime do Admin conseguir executar avaliação sistemática e focal com IA, preservar decisão humana separada, falhar fechado e continuar alimentando o mesmo predicado determinístico de preparação da E20.6.4.
+- Encerrar a E20.6.5 somente após o runtime do Admin executar avaliação sistemática e focal com IA em Preview e Production aprovados, preservar decisão humana separada, falhar fechado, continuar alimentando o mesmo predicado determinístico da E20.6.4 e concluir a contração documental/operacional aprovada pelo Estrategista.

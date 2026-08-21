@@ -8,6 +8,7 @@ import { AdminTaxonManageForm } from "@/components/admin/AdminTaxonManageForm";
 import { AdminTaxonResearchSelectionForm } from "@/components/admin/AdminTaxonResearchSelectionForm";
 import { EmptyState } from "@/components/ui/empty-state";
 import { getAdminTaxonDetail } from "@/lib/admin/adapters/adminReadOnlyAdapter";
+import { resolveInputCatalogEvaluationRuntimeReadiness } from "@/conversion-content/adapters/inputCatalogEvaluationRuntimeGate";
 import type { AdminOperationalDiagnosticItem } from "@/lib/admin/adapters/adminReadOnlyTypes";
 import {
   addTaxonAliasAction,
@@ -19,6 +20,7 @@ import {
   reopenInputCatalogReviewAction,
   evaluateInputCatalogAction,
   confirmInputCatalogEvaluationAction,
+  acknowledgeInputCatalogGapAction,
 } from "../actions";
 import { AdminTaxonInputCatalogEvaluationRuntime } from "./_components/AdminTaxonInputCatalogEvaluation";
 import { AdminTaxonInputCatalogReview } from "./_components/AdminTaxonInputCatalogReview";
@@ -35,6 +37,9 @@ export default async function AdminTaxonDetailPage({ params }: AdminTaxonDetailP
   const taxon = await getAdminTaxonDetail(taxonId);
 
   if (!taxon) notFound();
+  const inputCatalogEvaluationRuntime = taxon.inputCatalogReview.status === "available"
+    ? await resolveInputCatalogEvaluationRuntimeReadiness()
+    : null;
 
   return (
     <div className="space-y-6">
@@ -115,13 +120,24 @@ export default async function AdminTaxonDetailPage({ params }: AdminTaxonDetailP
         />
       )}
 
-      {taxon.inputCatalogReview.status === "available" ? (
+      {taxon.inputCatalogReview.status === "available" && inputCatalogEvaluationRuntime?.ok ? (
         <AdminTaxonInputCatalogEvaluationRuntime
+          acknowledgeGapAction={acknowledgeInputCatalogGapAction}
           confirmAction={confirmInputCatalogEvaluationAction}
+          currentReviewedVersion={taxon.inputCatalogReview.reviewedVersion}
           evaluateAction={evaluateInputCatalogAction}
-          reviewedVersion={taxon.inputCatalogReview.reviewedVersion}
           taxonId={taxon.id}
         />
+      ) : null}
+
+      {taxon.inputCatalogReview.status === "available" && inputCatalogEvaluationRuntime && !inputCatalogEvaluationRuntime.ok ? (
+        <section className="rounded-lg border border-border bg-card p-5 shadow-card">
+          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Runtime OpenAI gate-off</p>
+          <h2 className="mt-1 text-lg font-semibold text-card-foreground">Avaliação factual do catálogo E20.2</h2>
+          <p className="mt-2 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            {inputCatalogEvaluationRuntime.message} O handoff Codex acima permanece o caminho autorizado.
+          </p>
+        </section>
       ) : null}
 
       <section className="rounded-lg border border-border bg-card p-5 shadow-card">

@@ -2653,14 +2653,15 @@ Repositório — Ajustados
 
 20.6.5 Avaliação factual com IA no runtime do Admin
 
-* Status: Checkpoint pré-integração implementado e validado em 20/08/2026; integração final pendente do suporte E21.2 ao novo workload e da reconciliação dos contratos executáveis vigentes.
+* Status: PR #795 em draft com integração candidata gate-off; merge, apply, gates, prova real e fechamento permanecem pendentes, e o contrato expand/contract precisa de decisão do Estrategista antes do merge.
 * Conteúdo:
   * internalizar na Taxonomia administrativa existente a avaliação semântica não autoritativa nos modos sistemático e hipótese humana, preservando a decisão administrativa explícita, a revalidação determinística e o gate E20.6.4 sem IA;
   * o checkpoint pré-integração materializou domínio e contratos, identidade e reconstrução/revalidação do contexto, Structured Output estrito, UI route-local apresentacional não montada e testes com portas e fakes injetados, sem alterar `lib/openai-workloads/`, criar configuração repo-only, chamar provider real ou declarar a E20.6.5 completa;
   * `taxon_input_catalog_sufficiency_evaluation` é o novo workload textual que deve ser suportado pelo agregado E21.2, com configuração inicial aprovada `gpt-5.6-terra` + `reasoning.effort=low`; mudanças posteriores de modelo ou effort ficam sob governança E21 e decisão humana;
   * somente depois desse suporte estar incorporado, atualizar a branch e resolver os parâmetros operacionais exclusivamente pelo lifecycle dinâmico Supabase e sua API pública, sem consulta direta, configuração paralela ou transporte exclusivo da E20.6.5;
-  * nos contratos atuais, `loadTaxonPreparationForReviewedVersion` deriva `requiredInputCatalogVersion` do `reviewed_input_catalog_version` retornado pela leitura canônica do taxon; o PR #794/E19.5 não fornece essa versão, e qualquer mudança material futura deve ser reconciliada pelo contrato executável, sem `latest`, maior versão ou fallback;
-  * integrar o provider real, montar a UI autenticada e remover o handoff Admin → Codex somente depois dos gates reais reconciliados, mantendo falha fechada. A ordem de merge entre #795, #793 e #794 permanece indefinida até essa reconciliação.
+  * a avaliação exige uma versão executável E20.2 `N` escolhida explicitamente e mantida apenas no estado transitório da UI; a leitura canônica carrega a pesquisa E20.5 selecionada, valida e resolve `N` em `starter`, `lite`, `pro` e `ultra`, e somente a decisão humana de suficiência pode gravar `reviewed_input_catalog_version = N`; `loadTaxonPreparationForReviewedVersion()` permanece para E20.6.4 e consumidores posteriores;
+  * `E20_6_5_INPUT_CATALOG_EVALUATION_PROVIDER_ENABLED` bloqueia servidor e UI; em Preview/Production, mesmo gate-on recusa `repo_catalog` e a revisão bootstrap `1`, exigindo fonte ativa `supabase_operational` em revisão operacional `2` ou posterior, preservando o handoff Codex enquanto gate-off;
+  * o #795 não constitui fechamento: se o Estrategista aprovar o expand/contract necessário, seu merge introduz o expand gate-off; apply, provas e rollout Preview → Production vêm depois, e um PR contract posterior remove o handoff e atualiza os documentos finais.
 
 21. E21 — Gestão e governança dos workloads OpenAI
 - Objetivo: gerir e governar os workloads OpenAI por recortes aprovados, iniciando pela configuração explícita, observabilidade segura e leitura administrativa; a configuração dinâmica e o histórico permanecem para recortes posteriores, sem otimização automatizada.

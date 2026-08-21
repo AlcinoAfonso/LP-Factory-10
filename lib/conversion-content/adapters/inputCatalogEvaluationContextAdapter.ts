@@ -10,51 +10,29 @@ import {
   type InputCatalogEvaluationReconstructionInput,
 } from "../landing-page/taxon-preparation";
 import { createServiceClient } from "../../supabase/service";
-import { loadTaxonPreparationForReviewedVersion } from "./selectedEndCustomerResearchAdapter";
+import { loadSelectedEndCustomerResearchForTaxon } from "./selectedEndCustomerResearchAdapter";
 
 export async function reconstructCanonicalInputCatalogEvaluationContext(
   input: InputCatalogEvaluationReconstructionInput,
 ): Promise<BuildInputCatalogEvaluationContextResult> {
-  const preparation = await loadTaxonPreparationForReviewedVersion({
+  const selectedResearch = await loadSelectedEndCustomerResearchForTaxon({
     taxonId: input.taxonId,
   });
-  if (!preparation.ok) {
+  if (!selectedResearch.ok) {
     return failure(
-      preparation.error.code === "REQUIRED_INPUT_CATALOG_VERSION_INVALID"
-        ? "INPUT_CATALOG_VERSION_INVALID"
-        : preparation.error.code === "REQUIRED_INPUT_CATALOG_VERSION_NOT_EXECUTABLE"
-          ? "INPUT_CATALOG_VERSION_NOT_EXECUTABLE"
-          : "AUTHORIZED_RESEARCH_INVALID",
-      preparation.error.message,
+      "AUTHORIZED_RESEARCH_INVALID",
+      selectedResearch.error.message,
     );
   }
-  if (preparation.value.requiredInputCatalogVersion !== input.inputCatalogVersion) {
-    return failure(
-      "CONTEXT_IDENTITY_INVALID",
-      "A versão E20.2 avaliada mudou desde o início da execução.",
-    );
-  }
-
   const taxonChain = await readCanonicalTaxonChain(input.taxonId);
   if (!taxonChain.ok) {
     return failure("CONTEXT_IDENTITY_INVALID", taxonChain.error);
   }
 
   return buildInputCatalogEvaluationContext({
-    selectedResearch: {
-      ok: true,
-      value: {
-        taxonId: preparation.value.taxonId,
-        taxonSlug: preparation.value.taxonSlug,
-        selectedResearchVersion: preparation.value.selectedResearchVersion,
-        selectedResearchValid: true,
-        reviewedInputCatalogVersion:
-          preparation.value.reviewedInputCatalogVersion,
-        research: preparation.value.research,
-      },
-    },
+    selectedResearch,
     taxonChain: taxonChain.value,
-    inputCatalogVersion: preparation.value.requiredInputCatalogVersion,
+    inputCatalogVersion: input.inputCatalogVersion,
   });
 }
 

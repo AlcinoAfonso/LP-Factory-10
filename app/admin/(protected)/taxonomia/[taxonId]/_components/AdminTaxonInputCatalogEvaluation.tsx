@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type {
+  AcknowledgeInputCatalogGapActionResult,
   ConfirmInputCatalogEvaluationActionResult,
   InputCatalogEvaluationActionResult,
   InputCatalogEvaluationReference,
@@ -14,9 +15,10 @@ import type {
 
 export type AdminTaxonInputCatalogEvaluationRuntimeProps = Readonly<{
   taxonId: string;
-  reviewedVersion: number | null;
+  currentReviewedVersion: number | null;
   evaluateAction: (input: Readonly<{
     taxonId: string;
+    inputCatalogVersion: number;
     mode: InputCatalogEvaluationPresentationMode;
     focalHypothesis: string | null;
     feedback: Readonly<{
@@ -27,7 +29,12 @@ export type AdminTaxonInputCatalogEvaluationRuntimeProps = Readonly<{
   }>) => Promise<InputCatalogEvaluationActionResult>;
   confirmAction: (input: Readonly<{
     reference: InputCatalogEvaluationReference;
+    output: InputCatalogEvaluationPresentationOutput;
   }>) => Promise<ConfirmInputCatalogEvaluationActionResult>;
+  acknowledgeGapAction: (input: Readonly<{
+    reference: InputCatalogEvaluationReference;
+    output: InputCatalogEvaluationPresentationOutput;
+  }>) => Promise<AcknowledgeInputCatalogGapActionResult>;
 }>;
 
 export type InputCatalogEvaluationPresentationState =
@@ -37,7 +44,10 @@ export type InputCatalogEvaluationPresentationState =
   | Readonly<{ kind: "failure"; message: string }>;
 
 export type AdminTaxonInputCatalogEvaluationProps = Readonly<{
+  currentReviewedVersion: number | null;
   mode: InputCatalogEvaluationPresentationMode;
+  inputCatalogVersion: string;
+  inputCatalogVersionError?: string | null;
   hypothesis: string;
   hypothesisError?: string | null;
   state: InputCatalogEvaluationPresentationState;
@@ -48,8 +58,10 @@ export type AdminTaxonInputCatalogEvaluationProps = Readonly<{
     message: string;
   }> | null;
   onModeChange: (mode: InputCatalogEvaluationPresentationMode) => void;
+  onInputCatalogVersionChange: (value: string) => void;
   onHypothesisChange: (value: string) => void;
   onEvaluate: (input: Readonly<{
+    inputCatalogVersion: number;
     mode: InputCatalogEvaluationPresentationMode;
     hypothesis: string | null;
     feedback: Readonly<{
@@ -60,6 +72,7 @@ export type AdminTaxonInputCatalogEvaluationProps = Readonly<{
   feedback: string;
   onFeedbackChange: (value: string) => void;
   onConfirmAdministrativeSufficiency: () => void;
+  onRecognizeFactualGap: () => void;
 }>;
 
 const modeContent: Record<
@@ -109,11 +122,13 @@ const conclusionLabels: Record<InputCatalogEvaluationPresentationCandidate["conc
 
 export function AdminTaxonInputCatalogEvaluationRuntime({
   taxonId,
-  reviewedVersion,
+  currentReviewedVersion,
   evaluateAction,
   confirmAction,
+  acknowledgeGapAction,
 }: AdminTaxonInputCatalogEvaluationRuntimeProps) {
   const [mode, setMode] = useState<InputCatalogEvaluationPresentationMode>("systematic");
+  const [inputCatalogVersion, setInputCatalogVersion] = useState("");
   const [hypothesis, setHypothesis] = useState("");
   const [feedback, setFeedback] = useState("");
   const [state, setState] = useState<InputCatalogEvaluationPresentationState>({ kind: "idle" });
@@ -125,6 +140,7 @@ export function AdminTaxonInputCatalogEvaluationRuntime({
   >(null);
 
   async function evaluate(input: Readonly<{
+    inputCatalogVersion: number;
     mode: InputCatalogEvaluationPresentationMode;
     hypothesis: string | null;
     feedback: Readonly<{
@@ -143,6 +159,7 @@ export function AdminTaxonInputCatalogEvaluationRuntime({
     try {
       result = await evaluateAction({
         taxonId,
+        inputCatalogVersion: input.inputCatalogVersion,
         mode: input.mode,
         focalHypothesis: input.hypothesis,
         feedback: feedbackInput,
@@ -164,12 +181,12 @@ export function AdminTaxonInputCatalogEvaluationRuntime({
   }
 
   async function confirm() {
-    if (!reference) return;
+    if (!reference || state.kind !== "result") return;
     setDecisionPending(true);
     setDecisionFeedback(null);
     let result: ConfirmInputCatalogEvaluationActionResult;
     try {
-      result = await confirmAction({ reference });
+      result = await confirmAction({ reference, output: state.output });
     } catch {
       setDecisionPending(false);
       setDecisionFeedback({
@@ -190,27 +207,54 @@ export function AdminTaxonInputCatalogEvaluationRuntime({
     });
   }
 
-  if (reviewedVersion === null) {
-    return (
-      <section className="rounded-lg border border-border bg-card p-5 shadow-card">
-        <h2 className="text-lg font-semibold text-card-foreground">
-          Avaliação factual do catálogo E20.2
-        </h2>
-        <p className="mt-2 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-          Defina explicitamente uma versão executável E20.2 no registro administrativo antes de iniciar a avaliação.
-        </p>
-      </section>
-    );
+  async function acknowledgeGap() {
+    if (!reference || state.kind !== "result") return;
+    setDecisionPending(true);
+    setDecisionFeedback(null);
+    let result: AcknowledgeInputCatalogGapActionResult;
+    try {
+      result = await acknowledgeGapAction({ reference, output: state.output });
+    } catch {
+      setDecisionPending(false);
+      setDecisionFeedback({
+        kind: "failure",
+        message: "A comunicação com o servidor falhou. O gap não foi reconhecido.",
+      });
+      return;
+    }
+    setDecisionPending(false);
+    if (!result.ok) {
+      if (result.stale) setStale(true);
+      setDecisionFeedback({ kind: "failure", message: result.message });
+      return;
+    }
+    setDecisionFeedback({
+      kind: "success",
+      message: "Gap factual reconhecido para tratamento humano. A versão E20.2 não foi alterada.",
+    });
   }
+
+  const parsedInputCatalogVersion = Number(inputCatalogVersion);
+  const inputCatalogVersionError = Number.isSafeInteger(parsedInputCatalogVersion) && parsedInputCatalogVersion > 0
+    ? null
+    : "Escolha explicitamente uma versão executável E20.2 positiva.";
 
   return (
     <AdminTaxonInputCatalogEvaluation
       administrativeDecisionFeedback={decisionFeedback}
       administrativeDecisionPending={decisionPending}
+      currentReviewedVersion={currentReviewedVersion}
       feedback={feedback}
       hypothesis={hypothesis}
+      inputCatalogVersion={inputCatalogVersion}
+      inputCatalogVersionError={inputCatalogVersionError}
       mode={mode}
       onConfirmAdministrativeSufficiency={confirm}
+      onInputCatalogVersionChange={(value) => {
+        setInputCatalogVersion(value);
+        setFeedback("");
+        if (state.kind === "result") setStale(true);
+      }}
       onEvaluate={evaluate}
       onFeedbackChange={setFeedback}
       onHypothesisChange={(value) => {
@@ -223,6 +267,7 @@ export function AdminTaxonInputCatalogEvaluationRuntime({
         setFeedback("");
         if (state.kind === "result") setStale(true);
       }}
+      onRecognizeFactualGap={acknowledgeGap}
       stale={stale}
       state={state}
     />
@@ -240,7 +285,10 @@ const taxonomyLayerLabels: Record<
 };
 
 export function AdminTaxonInputCatalogEvaluation({
+  currentReviewedVersion,
   mode,
+  inputCatalogVersion,
+  inputCatalogVersionError = null,
   hypothesis,
   hypothesisError = null,
   state,
@@ -249,36 +297,43 @@ export function AdminTaxonInputCatalogEvaluation({
   administrativeDecisionFeedback = null,
   feedback,
   onModeChange,
+  onInputCatalogVersionChange,
   onHypothesisChange,
   onEvaluate,
   onFeedbackChange,
   onConfirmAdministrativeSufficiency,
+  onRecognizeFactualGap,
 }: AdminTaxonInputCatalogEvaluationProps) {
   const isLoading = state.kind === "loading";
   const output = state.kind === "result" ? state.output : null;
-  const isInconclusive = output?.status === "inconclusive";
   const modeMismatch = output !== null && output.mode !== mode;
   const resultInvalid = stale || modeMismatch;
   const normalizedHypothesis = hypothesis.trim();
   const normalizedFeedback = feedback.trim();
+  const parsedInputCatalogVersion = Number(inputCatalogVersion);
   const displayedHypothesisError = mode === "hypothesis"
     ? hypothesisError ?? (normalizedHypothesis ? null : "Descreva uma hipótese factual focal para avaliar.")
     : null;
   const canRefine =
     output !== null &&
-    !resultInvalid &&
-    output.followUpQuestion !== null;
+    !resultInvalid;
   const feedbackError = canRefine && !normalizedFeedback
     ? "Responda à solicitação factual antes de reavaliar."
     : null;
   const evaluationBlocked =
     isLoading ||
+    inputCatalogVersionError !== null ||
     (mode === "hypothesis" && displayedHypothesisError !== null) ||
     feedbackError !== null;
   const administrativeDecisionBlocked =
     resultInvalid ||
     state.kind !== "result" ||
-    isInconclusive ||
+    output?.status !== "sufficient" ||
+    administrativeDecisionPending;
+  const factualGapDecisionBlocked =
+    resultInvalid ||
+    state.kind !== "result" ||
+    output?.status !== "candidate_gaps" ||
     administrativeDecisionPending;
   const administrativeBlockReason = getAdministrativeBlockReason({
     administrativeDecisionPending,
@@ -305,6 +360,35 @@ export function AdminTaxonInputCatalogEvaluation({
         <p className="mt-1 text-sm text-muted-foreground">
           A avaliação é uma recomendação não autoritativa. Ela não altera fields, catálogo ou suficiência.
         </p>
+      </div>
+
+      <div className="mt-5 min-w-0">
+        <label className="text-sm font-semibold text-foreground" htmlFor="input-catalog-evaluation-version">
+          Versão executável E20.2 para esta análise
+        </label>
+        <p className="mt-1 text-sm text-muted-foreground" id="input-catalog-evaluation-version-instruction">
+          Escolha N explicitamente. A seleção não é persistida; hoje está registrada {currentReviewedVersion === null ? "nenhuma versão" : `a versão ${currentReviewedVersion}`}.
+        </p>
+        <input
+          aria-describedby={`input-catalog-evaluation-version-instruction${inputCatalogVersionError ? " input-catalog-evaluation-version-error" : ""}`}
+          aria-invalid={inputCatalogVersionError ? true : undefined}
+          className="mt-2 min-h-11 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground outline-none focus-visible:ring-4 focus-visible:ring-brand-600/20 disabled:opacity-60 sm:max-w-48"
+          disabled={isLoading}
+          id="input-catalog-evaluation-version"
+          inputMode="numeric"
+          min={1}
+          onChange={(event) => onInputCatalogVersionChange(event.currentTarget.value)}
+          placeholder="Ex.: 4"
+          required
+          step={1}
+          type="number"
+          value={inputCatalogVersion}
+        />
+        {inputCatalogVersionError ? (
+          <p className="mt-2 text-sm text-red-700" id="input-catalog-evaluation-version-error" role="alert">
+            {inputCatalogVersionError}
+          </p>
+        ) : null}
       </div>
 
       <fieldset className="mt-5 min-w-0">
@@ -402,7 +486,7 @@ export function AdminTaxonInputCatalogEvaluation({
             className="mt-1 text-sm text-muted-foreground"
             id="input-catalog-evaluation-feedback-instruction"
           >
-            {output.followUpQuestion}
+            {output.followUpQuestion ?? "Adicione feedback factual para reavaliar este resultado válido."}
           </p>
           <textarea
             aria-describedby={`input-catalog-evaluation-feedback-instruction${
@@ -414,7 +498,7 @@ export function AdminTaxonInputCatalogEvaluation({
             id="input-catalog-evaluation-feedback"
             maxLength={2000}
             onChange={(event) => onFeedbackChange(event.currentTarget.value)}
-            placeholder="Responda somente com a informação factual solicitada."
+            placeholder="Informe apenas feedback factual relevante para a reavaliação."
             required
             value={feedback}
           />
@@ -434,6 +518,7 @@ export function AdminTaxonInputCatalogEvaluation({
         className="mt-5 inline-flex min-h-11 w-full items-center justify-center rounded-md bg-brand-600 px-4 text-sm font-medium text-white transition hover:bg-brand-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-600/30 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
         disabled={evaluationBlocked}
         onClick={() => onEvaluate({
+          inputCatalogVersion: parsedInputCatalogVersion,
           mode,
           hypothesis: mode === "hypothesis" ? normalizedHypothesis : null,
           feedback: canRefine && output
@@ -525,6 +610,15 @@ export function AdminTaxonInputCatalogEvaluation({
           type="button"
         >
           {administrativeDecisionPending ? "Registrando decisão..." : "Confirmar suficiência administrativamente"}
+        </button>
+        <button
+          aria-describedby={administrativeBlockReason ? "input-catalog-administrative-decision-blocker" : undefined}
+          className="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-md border border-amber-300 bg-amber-50 px-4 text-sm font-medium text-amber-950 transition hover:bg-amber-100 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-amber-500/30 disabled:cursor-not-allowed disabled:opacity-60 sm:ml-3 sm:w-auto"
+          disabled={factualGapDecisionBlocked}
+          onClick={onRecognizeFactualGap}
+          type="button"
+        >
+          {administrativeDecisionPending ? "Registrando decisão..." : "Reconhecer gap factual sem alterar a E20.2"}
         </button>
         {administrativeDecisionFeedback ? (
           <p
@@ -700,7 +794,10 @@ function getAdministrativeBlockReason({
     return "Bloqueado: execute uma avaliação válida antes de decidir.";
   }
   if (state.output.status === "inconclusive") {
-    return "Bloqueado: um resultado inconclusivo não permite registrar suficiência.";
+    return "Bloqueado: resultado inconclusivo não permite confirmação nem reconhecimento de gap factual.";
+  }
+  if (state.output.status === "candidate_gaps") {
+    return "A confirmação de suficiência está bloqueada; reconheça o gap factual sem alterar automaticamente a E20.2.";
   }
   return null;
 }

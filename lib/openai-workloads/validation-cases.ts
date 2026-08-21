@@ -459,12 +459,18 @@ const cases = [
       );
       assert.doesNotMatch(migration, /\bcreate\s+table\b/i);
       assert.doesNotMatch(migration, /\badd\s+column\b/i);
+      assert.match(migration, /^begin;/m);
+      assert.match(migration, /commit;\s*$/);
       assert.match(migration, /taxon_input_catalog_sufficiency_evaluation/);
       assert.match(migration, /gpt-5\.6-terra/);
       assert.match(migration, /reasoning_effort\s*=\s*'low'/);
       assert.match(migration, /values\s*\('production'\),\s*\('preview'\)/i);
       assert.match(migration, /openai_workload_configuration_revisions_shape_chk/);
       assert.match(migration, /openai_workload_operational_configurations_candidate_completeness_chk/);
+      assert.match(migration, /modality = 'responses_text'[\s\S]*reasoning_effort is not null[\s\S]*quality is null/);
+      assert.match(migration, /modality = 'image_generation'[\s\S]*reasoning_effort is null[\s\S]*quality is not null/);
+      assert.match(migration, /modality = 'responses_text'[\s\S]*candidate_reasoning_effort is not null[\s\S]*candidate_quality is null/);
+      assert.match(migration, /modality = 'image_generation'[\s\S]*candidate_reasoning_effort is null[\s\S]*candidate_quality is not null/);
       assert.match(migration, /event_type[\s\S]*'bootstrap'/);
       assert.match(
         migration,
@@ -483,6 +489,16 @@ const cases = [
       );
       assert.match(aggregateTest, /operational_configurations\) <> 10/);
       assert.match(aggregateTest, /taxon_input_catalog_sufficiency_evaluation/);
+      const workloadTest = readFileSync(
+        new URL(
+          "../../supabase/tests/e21_2_taxon_input_catalog_sufficiency_workload.test.sql",
+          import.meta.url,
+        ),
+        "utf8",
+      );
+      assert.match(workloadTest, /NULL reasoning_effort should have failed/g);
+      assert.match(workloadTest, /NULL quality should have failed/g);
+      assert.match(workloadTest, /exception when check_violation/g);
     },
   },
   {

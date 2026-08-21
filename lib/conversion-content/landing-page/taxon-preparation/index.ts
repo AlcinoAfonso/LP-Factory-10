@@ -32,6 +32,10 @@ export type {
   ParseInputCatalogEvaluationOutputResult,
   RevalidateInputCatalogEvaluationContextResult,
 } from "./contracts";
+export type {
+  InputCatalogEvaluationAdministrativeDecision,
+  InputCatalogEvaluationAdministrativeDecisionResult,
+} from "./input-catalog-evaluation-decision";
 export {
   END_CUSTOMER_RESEARCH_AUDIENCE_SCOPE,
   INPUT_CATALOG_EVALUATION_SCHEMA_VERSION,
@@ -73,3 +77,10 @@ export {
   type BuildInputCatalogEvaluationContextOptions,
   type BuildInputCatalogEvaluationPromptInput,
 } from "./input-catalog-evaluation";
+export { executeInputCatalogEvaluationAdministrativeDecision } from "./input-catalog-evaluation-decision";
+export type { InputCatalogEvaluationDecisionTokenPayload } from "./input-catalog-evaluation-decision-token";
+export {
+  createInputCatalogEvaluationDecisionToken,
+  fingerprintInputCatalogEvaluationOutput,
+  readInputCatalogEvaluationDecisionToken,
+} from "./input-catalog-evaluation-decision-token";

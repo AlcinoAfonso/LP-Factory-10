@@ -185,6 +185,15 @@
 • Redeploy: a habilitação ou desabilitação do gate exige redeploy do ambiente afetado; alterações ordinárias da configuração ativa após o cutover não exigem redeploy.
 • Valor real por ambiente: não versionar neste documento.
 
+• `E20_6_5_INPUT_CATALOG_EVALUATION_PROVIDER_ENABLED`
+• Finalidade: gate server-side e de UI exclusivo do rollout do provider da avaliação factual E20.6.5.
+• Escopo: Preview e Production do projeto Core, com configuração independente por ambiente.
+• Habilitação: somente o literal `true` autoriza a tentativa; ausente, vazio ou qualquer outro valor mantém o runtime E20.6.5 gate-off e preserva o handoff Codex.
+• Condição adicional hospedada: mesmo com este gate ligado, Preview e Production recusam `repo_catalog` e a revisão bootstrap `1`; exigem resolução efetiva `supabase_operational` de revisão `2` ou posterior, já promovida com prova operacional aprovada e ativada pelo lifecycle E21.2. `OPENAI_OPERATIONAL_CONFIG_ENABLED=false` nunca constitui provider-off.
+• Estado inicial: desabilitado durante o PR #795, o merge humano, o apply e as provas operacionais do novo workload.
+• Progressão operacional: após apply, invariantes e Security Controls, comprovar a configuração ativa em Preview, habilitar este gate somente em Preview, redeployar e validar; Production permanece gate-off até aprovação humana das evidências de Preview.
+• Regra de credencial: reutilizar a `OPENAI_API_KEY` compartilhada já autorizada para o provider e para autenticar, com domínio criptográfico próprio, a evidência transitória de decisão emitida pelo servidor; não criar chave específica da E20.6.5.
+
 • Configuração efetiva dos workloads OpenAI de produto
 • Fonte canônica: `lib/openai-workloads/registry.ts` mantém identidade, baseline local e allowlist; em Preview e Production, o gate desligado usa `repo_catalog` revisão `v2`, e o gate ligado usa exclusivamente `supabase_operational` com revisão decimal ativa.
 • Workloads textuais validados operacionalmente: `niche_resolution` e `commercial_activation_draft_generation`, com modelo `gpt-5.4-mini` e esforço de raciocínio `none`.
@@ -470,6 +479,8 @@ Regra:
 • Configurações de plataformas, secrets por nome, workflows, ambientes e endpoints usados por automações devem ser registrados neste documento.
 
 99. Changelog
+v0.1.18 — 21/08/2026 — Registrado o gate exclusivo do provider E20.6.5, sua composição obrigatória com fonte `supabase_operational` hospedada e a preservação do handoff Codex durante o estado gate-off.
+
 v0.1.17 — 20/08/2026 — Registrado `OPENAI_OPERATIONAL_CONFIG_ENABLED`, seus defaults gate-off, habilitação pelo literal `true`, isolamento por ambiente, progressão Preview → Production e regras de redeploy/fail-closed da E21.2.3.
 
 v0.1.16 — 31/07/2026 — Registradas a correção de `OPENAI_LANDING_PAGE_GENERATION_PROFILE_MODEL` para `gpt-5.4-mini`, a ampliação para Production e Preview, o redeploy e a validação operacional da assistência somente em Production no domínio oficial.

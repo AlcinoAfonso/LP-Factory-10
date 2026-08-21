@@ -30,6 +30,90 @@ begin
     raise exception 'new workload bootstrap must contain production and preview units';
   end if;
 
+  begin
+    insert into public.openai_workload_configuration_revisions (
+      environment,
+      workload,
+      modality,
+      revision_number,
+      model,
+      reasoning_effort,
+      quality,
+      validated_by,
+      proof_metadata
+    ) values (
+      'preview',
+      v_workload,
+      'responses_text',
+      999,
+      'gpt-5.6-terra',
+      null,
+      null,
+      null,
+      '{"schema_version":1,"proof_kind":"bootstrap","proof_result":"approved","source":"repo_catalog"}'::jsonb
+    );
+    raise exception 'text revision with NULL reasoning_effort should have failed';
+  exception when check_violation then
+    null;
+  end;
+
+  begin
+    insert into public.openai_workload_configuration_revisions (
+      environment,
+      workload,
+      modality,
+      revision_number,
+      model,
+      reasoning_effort,
+      quality,
+      validated_by,
+      proof_metadata
+    ) values (
+      'preview',
+      'landing_page_draft_image_generation',
+      'image_generation',
+      999,
+      'gpt-image-2',
+      null,
+      null,
+      null,
+      '{"schema_version":1,"proof_kind":"bootstrap","proof_result":"approved","source":"repo_catalog"}'::jsonb
+    );
+    raise exception 'image revision with NULL quality should have failed';
+  exception when check_violation then
+    null;
+  end;
+
+  begin
+    update public.openai_workload_operational_configurations
+    set
+      candidate_model = 'gpt-5.6-terra',
+      candidate_reasoning_effort = null,
+      candidate_quality = null,
+      candidate_saved_by = v_actor_id,
+      candidate_saved_at = now()
+    where environment = v_environment
+      and workload = v_workload;
+    raise exception 'text candidate with NULL reasoning_effort should have failed';
+  exception when check_violation then
+    null;
+  end;
+
+  begin
+    update public.openai_workload_operational_configurations
+    set
+      candidate_model = 'gpt-image-2',
+      candidate_reasoning_effort = null,
+      candidate_quality = null,
+      candidate_saved_by = v_actor_id,
+      candidate_saved_at = now()
+    where environment = v_environment
+      and workload = 'landing_page_draft_image_generation';
+    raise exception 'image candidate with NULL quality should have failed';
+  exception when check_violation then
+    null;
+  end;
+
   select configuration.configuration_version
   into v_initial_version
   from public.openai_workload_operational_configurations configuration
