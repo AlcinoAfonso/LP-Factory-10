@@ -92,7 +92,7 @@ Parar somente diante de handoff incompleto, investigação necessária ou decis�
 5. Depois da última subseção e dos testes aplicáveis, declarar a entrega completa, informar os ABCs executados e seus resultados por documento e parar. Não acionar nenhum modo do Analista nem o Estrategista após essa declaração.
 6. O Estrategista atua somente por instrução humana e lê diretamente o PR. Correções devolvidas pelo humano são aplicadas e publicadas sem novo Analista; o mesmo Estrategista reavalia quando instruído.
 
-Manter a matriz disponível na entrega. Removê-la depois somente por instrução humana, sem novo gate do Analista.
+Manter a matriz disponível na entrega e durante o ciclo externo de avaliação. Não removê-la antes de o Estrategista, acionado pelo humano, declarar o recorte definitivamente concluído; a remoção posterior é tarefa documental de encerramento e não cria novo gate do Analista nem reabre a orquestração.
 
 ## Devolução
 
