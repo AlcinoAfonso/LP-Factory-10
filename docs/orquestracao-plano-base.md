@@ -13,7 +13,7 @@ Este documento registra somente o desenho durável. Critérios de julgamento per
 - **Gestor de Updates:** classifica updates catalogados quanto à aplicabilidade atual, uso de apoio, oportunidade condicional ou não aplicabilidade.
 - **Gestor de Automações:** atua quando houver fase marcada como `Automação: sim`, salvo dispensa humana registrada na v1 porque o detalhamento material já foi fechado no debate; volta se surgir mudança relevante de automação, categoria, ambiente ou risco.
 - **Analista:** é o gate de integridade de escopo e rastreabilidade do plano e das subseções implementadas; não refaz especialidades.
-- **Estrategista:** é acionado pelo humano depois da entrega completa e avalia diretamente o PR.
+- **Estrategista:** é acionado pelo humano depois da entrega completa, avalia diretamente o PR e decide quando o recorte está definitivamente concluído.
 - **Humano:** decide escolhas sem autoridade documental, testes humanos, avaliação pelo Estrategista e merge no GitHub Web.
 
 ## 3. Fluxo end-to-end
@@ -56,9 +56,11 @@ Oportunidade condicional registra valor, complexidade líquida, horizonte e gati
 
 Há um único papel de Analista e instâncias read-only conforme o gate. No plano, a mesma instância executa Passagem 1, Passagem 2 e revisões delta. Na implementação, uma instância avalia cada subseção e seu eventual delta.
 
-A matriz registra todos os achados e permanece temporariamente no PR até a entrega completa. Ela inclui origem, classificação, relação com o escopo, tratamento, destino do update quando aplicável, localização e evidência. Sua remoção posterior depende de instrução humana e não cria novo gate.
+A matriz registra todos os achados e permanece disponível enquanto o recorte puder exigir avaliação externa, merge, validação pós-merge ou PR corretivo. Ela inclui origem, classificação, relação com o escopo, tratamento, destino do update quando aplicável, localização e evidência.
 
-Depois que o Executor declarar a entrega completa, nenhum modo do Analista deste processo é acionado. O ciclo pré-merge passa a ocorrer entre humano, Estrategista e Executor.
+Depois que o Executor declarar a entrega completa, nenhum modo do Analista deste processo é acionado. O ciclo pré-merge e eventual continuação pós-merge passam a ocorrer entre humano, Estrategista e Executor, preservando a matriz até a decisão final do recorte.
+
+Quando o Estrategista declarar o recorte definitivamente concluído, a matriz deixa de ter consumidor operacional e deve ser removida do tree atual. Preferir a remoção no PR ainda aberto do recorte; se todo o trabalho já estiver mergeado, usar PR documental mínimo somente para essa exclusão. A limpeza preserva a rastreabilidade no histórico Git e do PR e não reabre gates do Analista ou dos especialistas.
 
 ## 7. Git, validação e parada
 
