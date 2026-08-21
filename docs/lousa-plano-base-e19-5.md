@@ -22,7 +22,7 @@
 
 - A E19.4 comprovou o pipeline de geração, validação, revisões append-only, renderer e preview privado da primeira LP real.
 - `landing_page` representa uma identidade comercial estável com múltiplas revisões imutáveis; o modelo anterior do #726, baseado em drafts independentes para cada variação, não deve ser implementado.
-- `public.account_landing_pages.status` ainda aceita somente `draft`, significado insuficiente para representar o lifecycle da identidade depois da existência de revisões.
+- Após o precursor, `public.account_landing_pages.status` tolera `draft | active | archived` e mantém default `draft`, mas o lifecycle funcional da identidade ainda não está exposto; esse contrato transitório continua insuficiente para o workspace.
 - A superfície `/a/[account]` precisa evoluir de continuação do onboarding para workspace operacional da conta.
 - O usuário precisa organizar várias LPs sem poluir a lista principal, configurar cada LP no contexto correto, gerar novas revisões sem destruir as anteriores, visualizar o histórico e escolher explicitamente qual revisão está aprovada.
 - Publicação, editor de conteúdo, melhoria parcial por IA e testes A/B são evoluções distintas e não devem ser antecipados para resolver o workspace básico.
@@ -80,7 +80,8 @@
 - O objetivo é intenção editorial e comercial: orienta foco, público, progressão e ação desejada, mas não é autoridade factual.
 - O objetivo não autoriza preço, credencial, resultado, prova social, superioridade ou promessa sem suporte nas fontes factuais vigentes.
 - Rótulo de UX recomendado: `Objetivo desta página`.
-- A implementação cria o catálogo E20.2 v5 por cópia profunda da v4, preserva v1–v4 e acrescenta somente `landing_page_objective` ao final, com scope `landing_page`, origem humana, string não vazia, obrigação `required`, política de substituição `not_applicable` e disponibilidade em Starter, Lite, Pro e Ultra.
+- A implementação cria o catálogo E20.2 v5 por cópia profunda da v4, preserva v1–v4 e acrescenta somente `landing_page_objective` ao final, com `createdInVersion: 5`, scope `landing_page`, origem humana, string não vazia, obrigação `required`, política de substituição `not_applicable` e disponibilidade em Starter, Lite, Pro e Ultra.
+- A evidence do field referencia a decisão humana desta E19.5 por uma referência fechada própria `decision:e19-5-human-v1`, adicionada ao enum versionado; não reutiliza `decision:lp-planning` nem `decision:e20-2-human`.
 - O field entra no contexto como orientação semântica consultiva e nunca autoriza fato, preço, credencial, prova, promessa ou resultado.
 - A geração permanece fail-closed até a E20.6 aceitar e registrar explicitamente `reviewed_input_catalog_version = 5` para o taxon servido.
 
@@ -216,6 +217,7 @@
 - Ambas as configurações possuem `catalog_version`, `values` como objeto JSON, `revision` positiva, autoria e timestamps; FKs, checks e trigger de `updated_at` são explícitos.
 - RLS fica habilitada sem policy; `public`, `anon`, `authenticated` e `ai_readonly` não recebem grants, e `service_role` recebe somente `SELECT, INSERT, UPDATE`; não existe DELETE operacional nem acesso client direto.
 - O backfill divide cada onboarding já vinculado por `entry.scope`, grava versão 5 nas residências novas e não altera nem apaga a linha E19.2.
+- Backfill e handoff validam cada field e seu scope contra a definição v5 e contra as autoridades vigentes; field coberto por autoridade atual não é copiado para as novas residências, e qualquer payload histórico com scope divergente ou valor autoritativo persistido aborta integralmente a migration ou a transação.
 - LP existente sem vínculo E19.2 permanece identidade operacional com configuração incompleta, não recebe valor de outra LP, cria configuração ausente de modo tenant-safe e idempotente e não usa E19.2 como fallback operacional concorrente.
 - Depois do vínculo, o runtime operacional lê somente as duas novas residências; E19.2 permanece bootstrap e histórico, sem segunda autoridade.
 - Um RPC transacional e tenant-safe realiza o handoff de novos onboardings, aceitando a identidade legada `draft` ou a nova `active` durante a transição e criando as duas configurações sem estado intermediário.
@@ -402,8 +404,7 @@
 - Componentes do workspace permanecem route-local em `app/a/[account]/_components/`; configuração e histórico ficam route-local em `app/a/[account]/landing-pages/[landingPageId]/`.
 - Server Actions ficam nas rotas consumidoras e permanecem finas. Banco, composição de configuração, estados derivados, lifecycle, histórico e aprovação ficam em `lib/lp-builder/`, por contratos públicos, funções puras e adapters coesos.
 - UI e provider recebem DTOs finais e não importam Supabase, DBRow, registry ou schema interno; mutações revalidam ator, conta, membership e entitlement server-side.
-- Remover `app/lp-builder/actions.ts` e o export órfão `createAccountLandingPageAction`. A criação do onboarding continua pela action route-local vigente; a criação operacional usa exclusivamente a nova action route-local do workspace, ambas sobre a mesma API pública atualizada para criar LP `active`.
-- O precursor não pode incluir workspace, rota/action operacional, lifecycle, arquivamento, restauração, aprovação, handoff, configuração operacional, backfill por scope, catálogo E20.2 v5, alteração de `reviewed_input_catalog_version`, criação de LP `active`, retirada de action órfã ou limpeza não indispensável à compatibilidade.
+- O precursor não pode incluir workspace, rota/action operacional, lifecycle, arquivamento, restauração, aprovação, handoff, configuração operacional, backfill por scope, catálogo E20.2 v5, alteração de `reviewed_input_catalog_version`, criação de LP `active` ou limpeza não indispensável à compatibilidade.
 - Depois do gate do precursor e da sincronização explícita da branch, a ordem interna da E19.5.3 é: catálogo v5 e contratos puros; estruturas aditivas, SQL tests, snippet e readiness transitório; adapters e casos de uso compatíveis com `draft | active | archived`; handoff do onboarding; workspace e detalhe; preview histórico, aprovação e lifecycle; validações integradas e ABCs finais. O backfill de status `draft → active` e a retirada de `draft` não integram esse PR.
 - O runtime fica indisponível explicitamente até o readiness E19.5 comprovar o schema. O apply remoto permanece exclusivamente pós-merge pelo workflow canônico; não há mutação remota pré-merge.
 
@@ -476,8 +477,8 @@
   - verificadores/testes proporcionais e `npm run check` aprovam o contrato;
   - evidência hospedada aprova desktop, tablet, mobile, teclado, foco e fluxos humanos previstos;
   - Prompt ABC reconcilia roadmap e documentos canônicos materialmente afetados durante a implementação.
-  - catálogo v5 acrescenta somente `landing_page_objective`, mantém v1–v4 deep-equal e falha fechado até `reviewed_input_catalog_version = 5`;
-  - o backfill de configuração E19.2 separa scopes corretamente, não rebinda E19.2 e aborta integralmente diante de JSON histórico inválido; ele não altera `account_landing_pages.status`;
+  - catálogo v5 acrescenta somente `landing_page_objective` com `createdInVersion: 5` e evidence `decision:e19-5-human-v1`, mantém v1–v4 deep-equal e falha fechado até `reviewed_input_catalog_version = 5`;
+  - o backfill de configuração E19.2 valida fields, scopes e autoridades contra a v5, separa somente valores não autoritativos, não rebinda E19.2 e aborta integralmente diante de JSON histórico inválido, scope divergente ou field coberto por autoridade vigente; ele não altera `account_landing_pages.status`;
   - consultas de lista ativa/arquivada, revisão mais recente, histórico e versão aprovada usam projeções explícitas, filtros tenant-safe e ordenação determinística; índice novo exige consulta real e evidência de plano, sem autoaplicação pelo Index Advisor;
   - toda alteração de schema usa migration forward-only, teste SQL transacional e snippet read-only que comprovam colunas, constraints, índices, RLS, policies, grants, funções e invariantes afetados;
   - readiness ausente ou incompatível mantém workspace e mutações fail-closed, sem lista parcial nem fallback operacional ao agregado E19.2;
@@ -485,7 +486,6 @@
   - preview padrão e `?revision=<materialization_id>` reutilizam o mesmo renderer e falham fechado para revisão de outra LP ou conta;
   - aprovação antiga permanece após novo append e a transferência de aprovação não remove histórico;
   - bucket, paths e policies privados permanecem inalterados por aprovação, lifecycle e histórico;
-  - busca no repositório confirma a remoção da action órfã e um único boundary público de criação;
   - QA hospedado e testes humanos confirmam reconhecimento de estado e próximo passo, account/LP context, owner/admin, papel sem autoridade, chamada direta, viewports, teclado, foco, labels, feedback e ausência de overflow/console error atribuível ao recorte.
 
 ### 3.3. Contract posterior — retirada coordenada de `draft`
