@@ -14,7 +14,11 @@ type ReviewAction = (
 type Props = {
   review: Exclude<AdminInputCatalogReview, { status: "disabled" }>;
   taxonId: string;
-  legacyAvailable: boolean;
+  legacyMode:
+    | "rollout_gate_off"
+    | "runtime_active"
+    | "operational_configuration_unproven"
+    | "unavailable";
   recordAction: ReviewAction;
   reopenAction: ReviewAction;
 };
@@ -29,7 +33,7 @@ const initialState: InputCatalogReviewActionState = {
 export function AdminTaxonInputCatalogReview({
   review,
   taxonId,
-  legacyAvailable,
+  legacyMode,
   recordAction,
   reopenAction,
 }: Props) {
@@ -71,6 +75,7 @@ export function AdminTaxonInputCatalogReview({
   }
 
   const availableReview = review;
+  const legacyAvailable = legacyMode === "rollout_gate_off";
   const reviewedVersion = presentation.reviewedVersion;
   const lastAction = presentation.lastAction;
   const busy = recordPending || reopenPending;
@@ -91,9 +96,11 @@ export function AdminTaxonInputCatalogReview({
         Avaliar suficiência da E20.2
       </h2>
       <p className="mt-1 text-sm text-muted-foreground">
-        {legacyAvailable
+        {legacyMode === "rollout_gate_off"
           ? "Copie a instrução, conclua a análise no Codex App e só depois registre a versão E20.2 aceita por decisão humana."
-          : "O runtime E20.6.5 está comprovado e ativo. A suficiência só pode ser registrada por decisão autenticada da avaliação factual."}
+          : legacyMode === "operational_configuration_unproven"
+            ? "A configuração operacional não foi comprovada. Runtime, handoff Codex e registro legado permanecem bloqueados neste estado."
+            : "O runtime E20.6.5 está comprovado e ativo. A suficiência só pode ser registrada por decisão autenticada da avaliação factual."}
       </p>
 
       <div className="mt-4 rounded-md border border-border bg-muted/30 px-4 py-3">

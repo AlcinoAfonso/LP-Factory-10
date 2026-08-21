@@ -337,7 +337,7 @@ Execute a avaliação E20.6 do taxon `[taxon_slug]`, usando a cadeia taxonômica
   - rejeitar resposta stale ou incompatível com as fontes atuais;
   - não registrar suficiência com resposta inválida, `inconclusive`, refusal ou falha técnica;
   - não gerar nem aceitar confirmação administrativa para resultado `inconclusive`;
-  - para `candidate_gaps`, preservar duas decisões humanas autenticadas e revalidadas: reconhecer um subconjunto selecionado de candidatos acionáveis como gaps reais, sem escrita, ou rejeitar todos e confirmar `N` como suficiente;
+  - separar semanticamente `confirm_sufficient`, aceito somente para `sufficient`, de `reject_candidates_and_confirm_sufficient`, aceito somente para `candidate_gaps`; neste segundo estado, preservar duas decisões humanas autenticadas e revalidadas: reconhecer um subconjunto selecionado de candidatos acionáveis como gaps reais, sem escrita, ou limpar qualquer seleção, rejeitar todos e confirmar `N` como suficiente, com `kind` próprio para cada decisão;
   - validar server-side os índices selecionados contra o output autenticado e produzir handoff transitório E20.2 somente com os candidatos aprovados, sem persistência ou alteração automática da E20.2;
   - revalidar integralmente as fontes antes da ação administrativa final.
 - Persistência:
@@ -352,7 +352,7 @@ Execute a avaliação E20.6 do taxon `[taxon_slug]`, usando a cadeia taxonômica
   - OpenAI indisponível, refusal, resposta inválida, `inconclusive`, mudança de fonte ou erro de validação não registram suficiência;
   - nenhuma troca silenciosa de modelo ou versão E20.2;
   - nenhum fallback automático para Codex App; enquanto o runtime estiver gate-off, o handoff Codex permanece explicitamente disponível como caminho humano vigente;
-  - runtime gate-off mantém handoff Codex e registro legado; runtime comprovado e gate-on oculta ambos e rejeita `recordInputCatalogReviewAction` server-side, exigindo decisão autenticada E20.6.5; a reabertura permanece em ambos os estados;
+  - somente prontidão com código explícito `ROLLOUT_GATE_OFF` mantém handoff Codex e registro legado; runtime comprovado e gate-on oculta ambos e rejeita `recordInputCatalogReviewAction` server-side, enquanto `OPERATIONAL_CONFIGURATION_UNPROVEN` bloqueia runtime e legado sem escrita ou fallback Codex; a reabertura permanece disponível;
   - tentativa posterior depende de nova ação humana explícita.
 
 #### 2.7.1. Residência e separação de responsabilidades
@@ -515,7 +515,7 @@ Execute a avaliação E20.6 do taxon `[taxon_slug]`, usando a cadeia taxonômica
   - provider real, Structured Output, refusal/incomplete, timeout e observabilidade sanitizada validados;
   - UI montada no runtime autenticado e validada em desktop, mobile, teclado, erro e invalidação;
   - decisão administrativa permanece separada, com revalidação imediatamente anterior à mutação;
-  - handoff Codex e formulário legado visíveis somente enquanto o runtime estiver gate-off; runtime comprovado e gate-on os oculta e bloqueia a action legada no servidor, preservando a reabertura;
+  - handoff Codex e formulário legado visíveis somente quando a prontidão retornar explicitamente `ROLLOUT_GATE_OFF`; runtime comprovado e gate-on os oculta e bloqueia a action legada no servidor, e `OPERATIONAL_CONFIGURATION_UNPROVEN` também bloqueia ambos sem escrita, fallback Codex ou rotulagem gate-off, preservando a reabertura;
   - E20.6.4 permanece determinística e sem nova chamada de IA.
 - Gates posteriores obrigatórios:
   - após o merge do delta E21.2 já implementado no #795, comprovar apply/validação dos objetos requeridos e consumir somente a configuração ativa e a API pública comum;

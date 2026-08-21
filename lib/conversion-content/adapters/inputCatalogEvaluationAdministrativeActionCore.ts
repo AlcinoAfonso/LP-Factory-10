@@ -66,7 +66,14 @@ export async function executeInputCatalogEvaluationAdministrativeActionCore(
 
 export async function executeLegacyInputCatalogReviewRecordCore<T>(
   ports: Readonly<{
-    resolveRuntime: () => Promise<Readonly<{ ok: boolean }>>;
+    resolveRuntime: () => Promise<
+      | Readonly<{ ok: true }>
+      | Readonly<{
+          ok: false;
+          code: "ROLLOUT_GATE_OFF" | "OPERATIONAL_CONFIGURATION_UNPROVEN";
+          message: string;
+        }>
+    >;
     record: () => Promise<T>;
   }>,
 ): Promise<Readonly<{ ok: true; value: T }> | Readonly<{ ok: false; message: string }>> {
@@ -76,6 +83,9 @@ export async function executeLegacyInputCatalogReviewRecordCore<T>(
       ok: false,
       message: "O runtime E20.6.5 está ativo; use uma decisão autenticada da avaliação factual.",
     });
+  }
+  if (runtime.code !== "ROLLOUT_GATE_OFF") {
+    return Object.freeze({ ok: false, message: runtime.message });
   }
   return Object.freeze({ ok: true, value: await ports.record() });
 }

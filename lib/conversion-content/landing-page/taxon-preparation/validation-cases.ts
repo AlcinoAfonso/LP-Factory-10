@@ -1595,29 +1595,90 @@ const cases: readonly ValidationCase[] = [
     },
   },
   {
-    name: "E20.6.5 human can reject all candidates and confirm N as sufficient",
+    name: "E20.6.5 human confirmations preserve distinct sufficient and candidate-rejection semantics",
     run: async () => {
       let revalidationCalls = 0;
       let writeCalls = 0;
-      const result = await executeInputCatalogEvaluationAdministrativeDecision(
-        { decision: "confirm_sufficient", output: validHypothesisEvaluationOutput() },
-        {
-          revalidate: async () => {
-            revalidationCalls += 1;
-            return { ok: true };
-          },
-          recordReviewedVersion: async () => {
-            writeCalls += 1;
-            return { ok: true, reviewedVersion: 4 };
-          },
+      const ports = {
+        revalidate: async () => {
+          revalidationCalls += 1;
+          return { ok: true as const };
         },
+        recordReviewedVersion: async () => {
+          writeCalls += 1;
+          return { ok: true as const, reviewedVersion: 4 };
+        },
+      };
+      const sufficient = await executeInputCatalogEvaluationAdministrativeDecision(
+        { decision: "confirm_sufficient", output: validSystematicEvaluationOutput() },
+        ports,
       );
-      assert.equal(result.ok, true);
-      if (!result.ok) throw new Error("Expected candidate rejection and sufficient confirmation");
-      assert.equal(result.kind, "sufficiency_confirmed");
-      assert.equal(result.reviewedVersion, 4);
-      assert.equal(revalidationCalls, 1);
-      assert.equal(writeCalls, 1);
+      assert.equal(sufficient.ok, true);
+      if (!sufficient.ok) throw new Error("Expected sufficient confirmation");
+      assert.equal(sufficient.kind, "sufficiency_confirmed");
+
+      const rejected = await executeInputCatalogEvaluationAdministrativeDecision(
+        {
+          decision: "reject_candidates_and_confirm_sufficient",
+          output: validHypothesisEvaluationOutput(),
+          selectedCandidateIndexes: [],
+        },
+        ports,
+      );
+      assert.equal(rejected.ok, true);
+      if (!rejected.ok) throw new Error("Expected candidate rejection and sufficient confirmation");
+      assert.equal(rejected.kind, "candidates_rejected_and_sufficiency_confirmed");
+      assert.equal(rejected.reviewedVersion, 4);
+      assert.equal(revalidationCalls, 2);
+      assert.equal(writeCalls, 2);
+    },
+  },
+  {
+    name: "E20.6.5 confirmation decisions reject mismatched status and non-empty candidate selection",
+    run: async () => {
+      let revalidationCalls = 0;
+      let writeCalls = 0;
+      const ports = {
+        revalidate: async () => {
+          revalidationCalls += 1;
+          return { ok: true as const };
+        },
+        recordReviewedVersion: async () => {
+          writeCalls += 1;
+          return { ok: true as const, reviewedVersion: 4 };
+        },
+      };
+      const invalidDecisions = [
+        {
+          decision: "confirm_sufficient" as const,
+          output: validHypothesisEvaluationOutput(),
+        },
+        {
+          decision: "reject_candidates_and_confirm_sufficient" as const,
+          output: validSystematicEvaluationOutput(),
+          selectedCandidateIndexes: [],
+        },
+        {
+          decision: "reject_candidates_and_confirm_sufficient" as const,
+          output: validHypothesisEvaluationOutput(),
+          selectedCandidateIndexes: [0],
+        },
+      ];
+      for (const input of invalidDecisions) {
+        const result = await executeInputCatalogEvaluationAdministrativeDecision(input, ports);
+        assert.equal(result.ok, false);
+      }
+      const malformedSelection = await executeInputCatalogEvaluationAdministrativeDecision(
+        {
+          decision: "reject_candidates_and_confirm_sufficient",
+          output: validHypothesisEvaluationOutput(),
+          selectedCandidateIndexes: "" as unknown as readonly number[],
+        },
+        ports,
+      );
+      assert.equal(malformedSelection.ok, false);
+      assert.equal(revalidationCalls, 0);
+      assert.equal(writeCalls, 0);
     },
   },
   {
@@ -1724,11 +1785,11 @@ const cases: readonly ValidationCase[] = [
     },
   },
   {
-    name: "E20.6.5 active runtime rejects legacy record while gate-off preserves it",
+    name: "E20.6.5 legacy record requires explicit rollout gate-off and otherwise writes nothing",
     run: async () => {
       let writeCalls = 0;
       const active = await executeLegacyInputCatalogReviewRecordCore({
-        resolveRuntime: async () => ({ ok: true }),
+        resolveRuntime: async () => ({ ok: true as const }),
         record: async () => {
           writeCalls += 1;
           return 4;
@@ -1737,8 +1798,28 @@ const cases: readonly ValidationCase[] = [
       assert.equal(active.ok, false);
       assert.equal(writeCalls, 0);
 
+      const unproven = await executeLegacyInputCatalogReviewRecordCore({
+        resolveRuntime: async () => ({
+          ok: false as const,
+          code: "OPERATIONAL_CONFIGURATION_UNPROVEN" as const,
+          message: "Configuração operacional não comprovada.",
+        }),
+        record: async () => {
+          writeCalls += 1;
+          return 4;
+        },
+      });
+      assert.equal(unproven.ok, false);
+      if (unproven.ok) throw new Error("Expected unproven operational configuration rejection");
+      assert.match(unproven.message, /não comprovada/);
+      assert.equal(writeCalls, 0);
+
       const gateOff = await executeLegacyInputCatalogReviewRecordCore({
-        resolveRuntime: async () => ({ ok: false }),
+        resolveRuntime: async () => ({
+          ok: false as const,
+          code: "ROLLOUT_GATE_OFF" as const,
+          message: "Gate de rollout desligado.",
+        }),
         record: async () => {
           writeCalls += 1;
           return 4;
@@ -1772,6 +1853,7 @@ const cases: readonly ValidationCase[] = [
       assert.match(componentSource, /input-catalog-evaluation-version/);
       assert.match(componentSource, /Reconhecer este candidato como gap factual real/);
       assert.match(componentSource, /Rejeitar todos os candidatos e confirmar N como suficiente/);
+      assert.match(componentSource, /Limpe a seleção para rejeitar todos/);
       assert.match(componentSource, /Handoff transitório para o recorte E20\.2/);
       assert.match(componentSource, /aria-live="polite"/);
       assert.match(componentSource, /focus-visible:ring/);
@@ -1790,10 +1872,13 @@ const cases: readonly ValidationCase[] = [
       assert.match(pageSource, /AdminTaxonInputCatalogEvaluationRuntime/);
       assert.match(pageSource, /evaluateInputCatalogAction/);
       assert.match(pageSource, /confirmInputCatalogEvaluationAction/);
+      assert.match(pageSource, /rejectInputCatalogCandidatesAndConfirmSufficientAction/);
       assert.match(pageSource, /inputCatalogEvaluationRuntime\?\.ok/);
-      assert.match(pageSource, /legacyAvailable={!inputCatalogEvaluationRuntime\?\.ok}/);
+      assert.match(pageSource, /inputCatalogEvaluationRuntime\.code === "ROLLOUT_GATE_OFF"/);
+      assert.match(pageSource, /legacyMode={inputCatalogLegacyMode}/);
       assert.match(pageSource, /\? \{ \.\.\.taxon\.inputCatalogReview, handoff: "" \}/);
       assert.match(pageSource, /O handoff Codex acima permanece o caminho autorizado/);
+      assert.match(pageSource, /Runtime e caminhos legados permanecem bloqueados/);
 
       const actionSource = readFileSync(
         new URL(
@@ -1807,6 +1892,7 @@ const cases: readonly ValidationCase[] = [
       assert.match(actionSource, /decisionToken/);
       assert.match(actionSource, /executeInputCatalogEvaluationAdministrativeActionCore/);
       assert.match(actionSource, /executeLegacyInputCatalogReviewRecordCore/);
+      assert.match(actionSource, /reject_candidates_and_confirm_sufficient/);
       assert.match(actionSource, /feedback,/);
       assert.doesNotMatch(actionSource, /loadTaxonPreparationForReviewedVersion/);
       const administrativeActionCore = readFileSync(

@@ -6,12 +6,18 @@ import { parseInputCatalogEvaluationOutput } from "./input-catalog-evaluation-sc
 
 export type InputCatalogEvaluationAdministrativeDecision =
   | "confirm_sufficient"
+  | "reject_candidates_and_confirm_sufficient"
   | "acknowledge_factual_gap";
 
 export type InputCatalogEvaluationAdministrativeDecisionResult =
   | Readonly<{
       ok: true;
       kind: "sufficiency_confirmed";
+      reviewedVersion: number;
+    }>
+  | Readonly<{
+      ok: true;
+      kind: "candidates_rejected_and_sufficiency_confirmed";
       reviewedVersion: number;
     }>
   | Readonly<{
@@ -51,12 +57,18 @@ export async function executeInputCatalogEvaluationAdministrativeDecision(
   }
 
   const confirmationAllowed =
-    input.decision === "confirm_sufficient" &&
-    (parsed.value.status === "sufficient" || parsed.value.status === "candidate_gaps");
+    input.decision === "confirm_sufficient" && parsed.value.status === "sufficient";
+  const candidateRejectionAllowed =
+    input.decision === "reject_candidates_and_confirm_sufficient" &&
+    parsed.value.status === "candidate_gaps" &&
+    (
+      input.selectedCandidateIndexes === undefined ||
+      (Array.isArray(input.selectedCandidateIndexes) && input.selectedCandidateIndexes.length === 0)
+    );
   const acknowledgementAllowed =
     input.decision === "acknowledge_factual_gap" &&
     parsed.value.status === "candidate_gaps";
-  if (!confirmationAllowed && !acknowledgementAllowed) {
+  if (!confirmationAllowed && !candidateRejectionAllowed && !acknowledgementAllowed) {
     return failure(
       "DECISION_NOT_ALLOWED",
       false,
@@ -97,7 +109,9 @@ export async function executeInputCatalogEvaluationAdministrativeDecision(
   }
   return Object.freeze({
     ok: true,
-    kind: "sufficiency_confirmed",
+    kind: input.decision === "reject_candidates_and_confirm_sufficient"
+      ? "candidates_rejected_and_sufficiency_confirmed"
+      : "sufficiency_confirmed",
     reviewedVersion: recorded.reviewedVersion,
   });
 }

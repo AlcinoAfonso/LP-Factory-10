@@ -67,7 +67,15 @@ export type InputCatalogEvaluationActionResult =
   | Readonly<{ ok: false; code: string; message: string }>;
 
 export type ConfirmInputCatalogEvaluationActionResult =
-  | Readonly<{ ok: true; reviewedVersion: number }>
+  | Readonly<{ ok: true; kind: "sufficiency_confirmed"; reviewedVersion: number }>
+  | Readonly<{ ok: false; stale: boolean; message: string }>;
+
+export type RejectInputCatalogCandidatesActionResult =
+  | Readonly<{
+      ok: true;
+      kind: "candidates_rejected_and_sufficiency_confirmed";
+      reviewedVersion: number;
+    }>
   | Readonly<{ ok: false; stale: boolean; message: string }>;
 
 export type AcknowledgeInputCatalogGapActionResult =
@@ -212,7 +220,32 @@ export async function confirmInputCatalogEvaluationAction(input: Readonly<{
   if (!evidence) return { ok: false, stale: false, message: "A evidência da avaliação é inválida." };
   revalidatePath("/admin/taxonomia");
   revalidatePath(`/admin/taxonomia/${evidence.taxonId}`);
-  return { ok: true, reviewedVersion: result.reviewedVersion };
+  return { ok: true, kind: result.kind, reviewedVersion: result.reviewedVersion };
+}
+
+export async function rejectInputCatalogCandidatesAndConfirmSufficientAction(input: Readonly<{
+  reference: InputCatalogEvaluationReference;
+  output: InputCatalogEvaluationOutput;
+  selectedCandidateIndexes: readonly number[];
+}>): Promise<RejectInputCatalogCandidatesActionResult> {
+  const result = await executeAdministrativeEvaluationDecision({
+    decision: "reject_candidates_and_confirm_sufficient",
+    reference: input.reference,
+    output: input.output,
+    selectedCandidateIndexes: input.selectedCandidateIndexes,
+  });
+  if (!result.ok) return result;
+  if (result.kind !== "candidates_rejected_and_sufficiency_confirmed") {
+    return { ok: false, stale: false, message: "A rejeição dos candidatos não produziu a decisão esperada." };
+  }
+  const evidence = readInputCatalogEvaluationDecisionToken(
+    input.reference.decisionToken,
+    process.env.OPENAI_API_KEY,
+  );
+  if (!evidence) return { ok: false, stale: false, message: "A evidência da avaliação é inválida." };
+  revalidatePath("/admin/taxonomia");
+  revalidatePath(`/admin/taxonomia/${evidence.taxonId}`);
+  return { ok: true, kind: result.kind, reviewedVersion: result.reviewedVersion };
 }
 
 export async function acknowledgeInputCatalogGapAction(input: Readonly<{
@@ -237,7 +270,10 @@ export async function acknowledgeInputCatalogGapAction(input: Readonly<{
 }
 
 async function executeAdministrativeEvaluationDecision(input: Readonly<{
-  decision: "confirm_sufficient" | "acknowledge_factual_gap";
+  decision:
+    | "confirm_sufficient"
+    | "reject_candidates_and_confirm_sufficient"
+    | "acknowledge_factual_gap";
   reference: InputCatalogEvaluationReference;
   output: InputCatalogEvaluationOutput;
   selectedCandidateIndexes?: readonly number[];

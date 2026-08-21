@@ -6,6 +6,7 @@ import type {
   ConfirmInputCatalogEvaluationActionResult,
   InputCatalogEvaluationActionResult,
   InputCatalogEvaluationReference,
+  RejectInputCatalogCandidatesActionResult,
 } from "../../actions";
 import type {
   InputCatalogEvaluationCandidate as InputCatalogEvaluationPresentationCandidate,
@@ -31,6 +32,11 @@ export type AdminTaxonInputCatalogEvaluationRuntimeProps = Readonly<{
     reference: InputCatalogEvaluationReference;
     output: InputCatalogEvaluationPresentationOutput;
   }>) => Promise<ConfirmInputCatalogEvaluationActionResult>;
+  rejectCandidatesAndConfirmAction: (input: Readonly<{
+    reference: InputCatalogEvaluationReference;
+    output: InputCatalogEvaluationPresentationOutput;
+    selectedCandidateIndexes: readonly number[];
+  }>) => Promise<RejectInputCatalogCandidatesActionResult>;
   acknowledgeGapAction: (input: Readonly<{
     reference: InputCatalogEvaluationReference;
     output: InputCatalogEvaluationPresentationOutput;
@@ -76,6 +82,7 @@ export type AdminTaxonInputCatalogEvaluationProps = Readonly<{
   feedback: string;
   onFeedbackChange: (value: string) => void;
   onConfirmAdministrativeSufficiency: () => void;
+  onRejectCandidatesAndConfirmSufficiency: () => void;
   onCandidateSelectionChange: (index: number, selected: boolean) => void;
   onRecognizeFactualGap: () => void;
   onCopyGapHandoff: () => void;
@@ -131,6 +138,7 @@ export function AdminTaxonInputCatalogEvaluationRuntime({
   currentReviewedVersion,
   evaluateAction,
   confirmAction,
+  rejectCandidatesAndConfirmAction,
   acknowledgeGapAction,
 }: AdminTaxonInputCatalogEvaluationRuntimeProps) {
   const [mode, setMode] = useState<InputCatalogEvaluationPresentationMode>("systematic");
@@ -252,6 +260,37 @@ export function AdminTaxonInputCatalogEvaluationRuntime({
     setGapHandoffCopyStatus(null);
   }
 
+  async function rejectCandidatesAndConfirm() {
+    if (!reference || state.kind !== "result") return;
+    setDecisionPending(true);
+    setDecisionFeedback(null);
+    let result: RejectInputCatalogCandidatesActionResult;
+    try {
+      result = await rejectCandidatesAndConfirmAction({
+        reference,
+        output: state.output,
+        selectedCandidateIndexes,
+      });
+    } catch {
+      setDecisionPending(false);
+      setDecisionFeedback({
+        kind: "failure",
+        message: "A comunicação com o servidor falhou. Os candidatos não foram rejeitados.",
+      });
+      return;
+    }
+    setDecisionPending(false);
+    if (!result.ok) {
+      if (result.stale) setStale(true);
+      setDecisionFeedback({ kind: "failure", message: result.message });
+      return;
+    }
+    setDecisionFeedback({
+      kind: "success",
+      message: `Todos os candidatos foram rejeitados e a versão E20.2 ${result.reviewedVersion} foi confirmada como suficiente.`,
+    });
+  }
+
   async function copyGapHandoff() {
     if (!gapHandoff) return;
     try {
@@ -312,6 +351,7 @@ export function AdminTaxonInputCatalogEvaluationRuntime({
         setGapHandoff(null);
         if (state.kind === "result") setStale(true);
       }}
+      onRejectCandidatesAndConfirmSufficiency={rejectCandidatesAndConfirm}
       onRecognizeFactualGap={acknowledgeGap}
       selectedCandidateIndexes={selectedCandidateIndexes}
       stale={stale}
@@ -351,6 +391,7 @@ export function AdminTaxonInputCatalogEvaluation({
   onEvaluate,
   onFeedbackChange,
   onConfirmAdministrativeSufficiency,
+  onRejectCandidatesAndConfirmSufficiency,
   onCandidateSelectionChange,
   onRecognizeFactualGap,
   onCopyGapHandoff,
@@ -376,10 +417,16 @@ export function AdminTaxonInputCatalogEvaluation({
     inputCatalogVersionError !== null ||
     (mode === "hypothesis" && displayedHypothesisError !== null) ||
     feedbackError !== null;
-  const administrativeDecisionBlocked =
+  const sufficiencyConfirmationBlocked =
     resultInvalid ||
     state.kind !== "result" ||
-    (output?.status !== "sufficient" && output?.status !== "candidate_gaps") ||
+    output?.status !== "sufficient" ||
+    administrativeDecisionPending;
+  const candidateRejectionBlocked =
+    resultInvalid ||
+    state.kind !== "result" ||
+    output?.status !== "candidate_gaps" ||
+    selectedCandidateIndexes.length > 0 ||
     administrativeDecisionPending;
   const factualGapDecisionBlocked =
     resultInvalid ||
@@ -390,6 +437,7 @@ export function AdminTaxonInputCatalogEvaluation({
   const administrativeBlockReason = getAdministrativeBlockReason({
     administrativeDecisionPending,
     modeMismatch,
+    selectedCandidateCount: selectedCandidateIndexes.length,
     stale,
     state,
   });
@@ -661,19 +709,33 @@ export function AdminTaxonInputCatalogEvaluation({
             {administrativeBlockReason}
           </p>
         ) : null}
-        <button
-          aria-describedby={administrativeBlockReason ? "input-catalog-administrative-decision-blocker" : undefined}
-          className="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-md bg-brand-600 px-4 text-sm font-medium text-white transition hover:bg-brand-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-600/30 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
-          disabled={administrativeDecisionBlocked}
-          onClick={onConfirmAdministrativeSufficiency}
-          type="button"
-        >
-          {administrativeDecisionPending
-            ? "Registrando decisão..."
-            : output?.status === "candidate_gaps"
-              ? "Rejeitar todos os candidatos e confirmar N como suficiente"
+        {output?.status === "candidate_gaps" ? (
+          <button
+            aria-describedby={administrativeBlockReason ? "input-catalog-administrative-decision-blocker" : undefined}
+            className="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-md bg-brand-600 px-4 text-sm font-medium text-white transition hover:bg-brand-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-600/30 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+            disabled={candidateRejectionBlocked}
+            onClick={onRejectCandidatesAndConfirmSufficiency}
+            type="button"
+          >
+            {administrativeDecisionPending
+              ? "Registrando decisão..."
+              : selectedCandidateIndexes.length > 0
+                ? "Limpe a seleção para rejeitar todos"
+                : "Rejeitar todos os candidatos e confirmar N como suficiente"}
+          </button>
+        ) : (
+          <button
+            aria-describedby={administrativeBlockReason ? "input-catalog-administrative-decision-blocker" : undefined}
+            className="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-md bg-brand-600 px-4 text-sm font-medium text-white transition hover:bg-brand-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-600/30 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+            disabled={sufficiencyConfirmationBlocked}
+            onClick={onConfirmAdministrativeSufficiency}
+            type="button"
+          >
+            {administrativeDecisionPending
+              ? "Registrando decisão..."
               : "Confirmar suficiência administrativamente"}
-        </button>
+          </button>
+        )}
         <button
           aria-describedby={administrativeBlockReason ? "input-catalog-administrative-decision-blocker" : undefined}
           className="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-md border border-amber-300 bg-amber-50 px-4 text-sm font-medium text-amber-950 transition hover:bg-amber-100 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-amber-500/30 disabled:cursor-not-allowed disabled:opacity-60 sm:ml-3 sm:w-auto"
@@ -891,11 +953,13 @@ function CompactDescription({ label, children }: Readonly<{ label: string; child
 function getAdministrativeBlockReason({
   administrativeDecisionPending,
   modeMismatch,
+  selectedCandidateCount,
   stale,
   state,
 }: Readonly<{
   administrativeDecisionPending: boolean;
   modeMismatch: boolean;
+  selectedCandidateCount: number;
   stale: boolean;
   state: InputCatalogEvaluationPresentationState;
 }>): string | null {
@@ -921,7 +985,9 @@ function getAdministrativeBlockReason({
     return "Bloqueado: resultado inconclusivo não permite confirmação nem reconhecimento de gap factual.";
   }
   if (state.output.status === "candidate_gaps") {
-    return "Revise os candidatos: selecione os gaps reais ou rejeite todos e confirme N como suficiente.";
+    return selectedCandidateCount > 0
+      ? "Há candidatos selecionados: reconheça os selecionados ou limpe a seleção antes de rejeitar todos."
+      : "Revise os candidatos: selecione os gaps reais ou rejeite todos e confirme N como suficiente.";
   }
   return null;
 }

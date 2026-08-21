@@ -20,6 +20,7 @@ import {
   reopenInputCatalogReviewAction,
   evaluateInputCatalogAction,
   confirmInputCatalogEvaluationAction,
+  rejectInputCatalogCandidatesAndConfirmSufficientAction,
   acknowledgeInputCatalogGapAction,
 } from "../actions";
 import { AdminTaxonInputCatalogEvaluationRuntime } from "./_components/AdminTaxonInputCatalogEvaluation";
@@ -40,6 +41,14 @@ export default async function AdminTaxonDetailPage({ params }: AdminTaxonDetailP
   const inputCatalogEvaluationRuntime = taxon.inputCatalogReview.status === "available"
     ? await resolveInputCatalogEvaluationRuntimeReadiness()
     : null;
+  const inputCatalogLegacyMode = inputCatalogEvaluationRuntime === null
+    ? "unavailable"
+    : inputCatalogEvaluationRuntime.ok
+      ? "runtime_active"
+      : inputCatalogEvaluationRuntime.code === "ROLLOUT_GATE_OFF"
+        ? "rollout_gate_off"
+        : "operational_configuration_unproven";
+  const legacyAvailable = inputCatalogLegacyMode === "rollout_gate_off";
 
   return (
     <div className="space-y-6">
@@ -113,11 +122,11 @@ export default async function AdminTaxonDetailPage({ params }: AdminTaxonDetailP
 
       {taxon.inputCatalogReview.status === "disabled" ? null : (
         <AdminTaxonInputCatalogReview
-          legacyAvailable={!inputCatalogEvaluationRuntime?.ok}
+          legacyMode={inputCatalogLegacyMode}
           recordAction={recordInputCatalogReviewAction}
           reopenAction={reopenInputCatalogReviewAction}
           review={
-            inputCatalogEvaluationRuntime?.ok && taxon.inputCatalogReview.status === "available"
+            !legacyAvailable && taxon.inputCatalogReview.status === "available"
               ? { ...taxon.inputCatalogReview, handoff: "" }
               : taxon.inputCatalogReview
           }
@@ -131,16 +140,24 @@ export default async function AdminTaxonDetailPage({ params }: AdminTaxonDetailP
           confirmAction={confirmInputCatalogEvaluationAction}
           currentReviewedVersion={taxon.inputCatalogReview.reviewedVersion}
           evaluateAction={evaluateInputCatalogAction}
+          rejectCandidatesAndConfirmAction={rejectInputCatalogCandidatesAndConfirmSufficientAction}
           taxonId={taxon.id}
         />
       ) : null}
 
       {taxon.inputCatalogReview.status === "available" && inputCatalogEvaluationRuntime && !inputCatalogEvaluationRuntime.ok ? (
         <section className="rounded-lg border border-border bg-card p-5 shadow-card">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Runtime OpenAI gate-off</p>
+          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            {inputCatalogEvaluationRuntime.code === "ROLLOUT_GATE_OFF"
+              ? "Runtime OpenAI gate-off"
+              : "Runtime OpenAI bloqueado"}
+          </p>
           <h2 className="mt-1 text-lg font-semibold text-card-foreground">Avaliação factual do catálogo E20.2</h2>
           <p className="mt-2 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-            {inputCatalogEvaluationRuntime.message} O handoff Codex acima permanece o caminho autorizado.
+            {inputCatalogEvaluationRuntime.message}
+            {inputCatalogEvaluationRuntime.code === "ROLLOUT_GATE_OFF"
+              ? " O handoff Codex acima permanece o caminho autorizado."
+              : " Runtime e caminhos legados permanecem bloqueados até a configuração ser comprovada."}
           </p>
         </section>
       ) : null}
