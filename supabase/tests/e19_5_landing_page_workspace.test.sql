@@ -10,6 +10,12 @@ values ('e1953000-0000-4000-8000-000000000011','E19.5 workspace','e19-5-workspac
 insert into public.account_users (account_id, user_id, role, status)
 values ('e1953000-0000-4000-8000-000000000011','e1953000-0000-4000-8000-000000000001','owner','active');
 
+insert into public.business_taxons (id, parent_id, level, name, slug, is_active)
+values ('e1953000-0000-4000-8000-000000000041',null,'segment','Serviços gerais','servicos-gerais',true);
+
+insert into public.account_taxonomy (account_id, taxon_id, is_primary, status, source_type)
+values ('e1953000-0000-4000-8000-000000000011','e1953000-0000-4000-8000-000000000041',true,'active','manual');
+
 do $$
 declare
   v_landing_page_id uuid;
@@ -18,6 +24,17 @@ declare
   v_approved uuid;
   v_default text;
 begin
+  if public.e19_5_configuration_values_valid_for_account(
+    'e1953000-0000-4000-8000-000000000011',
+    '{"business_display_name":{"scope":"business","value":"cópia indevida"}}'::jsonb,
+    array['account','business']
+  ) then raise exception 'current account authority must not be copied'; end if;
+  if public.e19_5_configuration_values_valid_for_account(
+    'e1953000-0000-4000-8000-000000000011',
+    '{"property_types":{"scope":"offer","value":["house"]}}'::jsonb,
+    array['offer','campaign','landing_page']
+  ) then raise exception 'field outside the current taxon chain must fail'; end if;
+
   select landing_page_id into v_landing_page_id
   from public.create_account_landing_page_v1(
     'e1953000-0000-4000-8000-000000000011','Página operacional','pagina-operacional',

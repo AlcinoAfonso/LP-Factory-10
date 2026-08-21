@@ -43,7 +43,7 @@ as $$
       from jsonb_each(p_values) entry
       cross join lateral (
         select case entry.key
-          when 'business_display_name' then 'authoritative'
+          when 'business_display_name' then 'business'
           when 'primary_service_or_offer' then 'offer'
           when 'primary_service_or_offer_description' then 'offer'
           when 'brand_logo_asset' then 'business'
@@ -71,7 +71,6 @@ as $$
         end as expected_scope
       ) expected
       where expected.expected_scope is null
-        or expected.expected_scope = 'authoritative'
         or jsonb_typeof(entry.value) <> 'object'
         or entry.value ->> 'scope' is distinct from expected.expected_scope
         or not (expected.expected_scope = any(p_allowed_scopes))
@@ -81,6 +80,67 @@ as $$
 $$;
 
 revoke all on function public.e19_5_configuration_values_valid(jsonb, text[])
+  from public, anon, authenticated, service_role;
+
+create or replace function public.e19_5_configuration_values_valid_for_account(
+  p_account_id uuid,
+  p_values jsonb,
+  p_allowed_scopes text[]
+)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public, pg_catalog
+as $$
+  with recursive taxon_chain as (
+    select taxon.id, taxon.slug, taxon.level, taxon.parent_id, taxon.is_active
+    from public.account_taxonomy link
+    join public.business_taxons taxon on taxon.id = link.taxon_id
+    where link.account_id = p_account_id
+      and link.is_primary = true
+      and link.status = 'active'
+    union
+    select parent.id, parent.slug, parent.level, parent.parent_id, parent.is_active
+    from public.business_taxons parent
+    join taxon_chain child on child.parent_id = parent.id
+  ), account_authority as (
+    select length(btrim(coalesce(account.name, ''))) > 0 as has_business_display_name
+    from public.accounts account
+    where account.id = p_account_id
+  )
+  select
+    public.e19_5_configuration_values_valid(p_values, p_allowed_scopes)
+    and exists (
+      select 1 from taxon_chain
+      where level = 'segment' and parent_id is null and is_active = true
+    )
+    and not exists (select 1 from taxon_chain where is_active = false)
+    and not (
+      coalesce((select has_business_display_name from account_authority), false)
+      and p_values ? 'business_display_name'
+    )
+    and not exists (
+      select 1
+      from jsonb_object_keys(p_values) as keys(field_key)
+      where keys.field_key in ('service_locations','property_types','property_price_range','property_stage')
+        and not exists (
+          select 1 from taxon_chain
+          where level = 'segment' and slug = 'imobiliario' and is_active = true
+        )
+    )
+    and not exists (
+      select 1
+      from jsonb_object_keys(p_values) as keys(field_key)
+      where keys.field_key in ('transaction_intent','financing_support_available','document_support_available','creci_registration','attendance_modes')
+        and not exists (
+          select 1 from taxon_chain
+          where level = 'niche' and slug = 'corretor-imoveis' and is_active = true
+        )
+    );
+$$;
+
+revoke all on function public.e19_5_configuration_values_valid_for_account(uuid, jsonb, text[])
   from public, anon, authenticated, service_role;
 
 alter table public.account_landing_page_materializations
@@ -95,7 +155,7 @@ alter table public.account_landing_pages
   foreign key (approved_materialization_id, id, account_id)
   references public.account_landing_page_materializations(id, landing_page_id, account_id)
   on update restrict
-  on delete restrict
+  on delete no action
   deferrable initially deferred;
 
 create index account_landing_pages_account_status_updated_idx
@@ -197,7 +257,8 @@ begin
     from public.account_landing_page_onboarding_configurations onboarding
     cross join lateral jsonb_each(onboarding.values) entry
     where onboarding.landing_page_id is not null
-      and not public.e19_5_configuration_values_valid(
+      and not public.e19_5_configuration_values_valid_for_account(
+        onboarding.account_id,
         jsonb_build_object(entry.key, entry.value),
         array['account', 'business', 'offer', 'campaign', 'landing_page']
       )
@@ -316,8 +377,9 @@ begin
      or v_onboarding.revision <> p_expected_onboarding_revision then
     raise exception using errcode = '40001', message = 'onboarding_revision_conflict';
   end if;
-  if not public.e19_5_configuration_values_valid(
-    v_onboarding.values, array['account', 'business', 'offer', 'campaign', 'landing_page']
+  if not public.e19_5_configuration_values_valid_for_account(
+    p_account_id, v_onboarding.values,
+    array['account', 'business', 'offer', 'campaign', 'landing_page']
   ) then
     raise exception using errcode = '23514', message = 'invalid_onboarding_configuration';
   end if;
@@ -375,8 +437,8 @@ begin
     where id = p_landing_page_id and account_id = p_account_id
       and status in ('draft', 'active') for update;
   if not found then raise exception using errcode = 'P0001', message = 'landing_page_not_operational'; end if;
-  if not public.e19_5_configuration_values_valid(p_shared_values, array['account', 'business'])
-     or not public.e19_5_configuration_values_valid(p_landing_page_values, array['offer', 'campaign', 'landing_page']) then
+  if not public.e19_5_configuration_values_valid_for_account(p_account_id, p_shared_values, array['account', 'business'])
+     or not public.e19_5_configuration_values_valid_for_account(p_account_id, p_landing_page_values, array['offer', 'campaign', 'landing_page']) then
     raise exception using errcode = '22023', message = 'configuration_values_invalid';
   end if;
 

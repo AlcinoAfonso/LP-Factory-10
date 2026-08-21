@@ -2409,6 +2409,27 @@ Repositório — Ajustados
 - Objetivo: transformar a superfície autenticada da conta em workspace operacional para organizar, configurar, versionar, revisar, aprovar, arquivar e restaurar identidades estáveis de LP, preservando o histórico append-only.
 - Status: Plano-base v2 aprovado e implementação E19.5.3 concluída no repositório no PR draft #797; validações finais, review, merge humano, apply canônico e QA hospedado permanecem gates obrigatórios.
 
+19.5.2 Registros do recorte
+- Repositório:
+  - Criados:
+    - `app/a/[account]/_components/LandingPageWorkspace.tsx`
+    - `app/a/[account]/landing-pages/[landingPageId]/page.tsx`
+    - `app/a/[account]/workspace-actions.ts`
+    - `lib/lp-builder/adapters/landingPageWorkspaceAdapter.ts`
+    - `lib/lp-builder/landingPageWorkspace.ts`
+    - `lib/lp-builder/landing-page-workspace-validation-cases.ts`
+    - `supabase/migrations/20260821091539_e19_5_landing_page_workspace.sql`
+    - `supabase/tests/e19_5_landing_page_workspace.test.sql`
+    - `supabase/snippets/e19_5_landing_page_workspace_verify.sql`
+  - Ajustados:
+    - `app/a/[account]/`
+    - `lib/conversion-content/landing-page/input-catalog/`
+    - `lib/lp-builder/`
+    - `package.json`
+- Referências:
+  - Contrato de banco candidato: `docs/schema.md` — `account_landing_pages`, `account_landing_page_materializations` e configurações E19.5.3.
+  - Boundary durável: `docs/base-tecnica.md` — workspace operacional de `landing_page`.
+
 19.5.3 Workspace operacional, configuração e lifecycle da LP
 - Status: Implementada no repositório; ainda não aplicada nem validada no ambiente hospedado.
 - Conteúdo:
@@ -2424,19 +2445,18 @@ Repositório — Ajustados
   - o runtime mantém o onboarding E19.2 como bootstrap, executa handoff por scope, lista uma identidade por LP, deriva estados de UX, salva configuração sem criar revisão, permite histórico/preview por revisão, aprovação idempotente, archive e restore;
   - o contexto produzido passa a v4 e o snapshot produzido a v2; snapshots v1/contexto v3 históricos continuam legíveis sem regravação;
   - regressões pós-merge do precursor foram aprovadas sem criar revisão 4: E19.2 com 33 checks locais e 8 SQL reais, E19.3 com 8 checks locais, e E19.4 com 25 checks locais e 8 SQL reais;
-  - arquivos centrais: `lib/lp-builder/`, `app/a/[account]/`, `lib/conversion-content/landing-page/input-catalog/`, `supabase/migrations/20260821091539_e19_5_landing_page_workspace.sql`, `supabase/tests/e19_5_landing_page_workspace.test.sql` e `supabase/snippets/e19_5_landing_page_workspace_verify.sql`.
 
 20. E20 — Preparação e liberação de taxons para geração de landing pages
 
 * Objetivo: consolidar catálogo de entradas por taxon e plano, perfis versionados de orientação à geração, herança e, em recortes futuros, prontidão e liberação antes da geração de LPs por conta.
-* Status: E20.2 concluída até a v4; E20.3 concluída; E20.5 concluída e ativada após merge do PR #746, apply canônico, prova SQL e smokes autenticados em Preview e Production.
+* Status: E20.2 possui v1–v4 concluídas e v5 implementada repo-only na E19.5.3, ainda pendente de aceitação humana E20.6; E20.3 concluída; E20.5 concluída e ativada após merge do PR #746, apply canônico, prova SQL e smokes autenticados em Preview e Production.
 
 20.2 Catálogo de entradas por taxon
 
 20.2.1 Objetivo e status
 
 * Objetivo: definir e resolver um catálogo declarativo versionado de entradas de `landing_page` por taxon e plano, separado de valores operacionais, composição, conteúdo e entitlement.
-* Status: Concluído até a versão executável v4.
+* Status: Concluído até a versão executável v4; v5 implementada no repositório e ainda não aceita pela E20.6.
 
 20.2.2 Registros do recorte
 
@@ -2502,8 +2522,17 @@ Repositório — Ajustados
   * A v4 parte de cópia profunda da v3, preserva os 23 fields, sua ordem, camadas, metadata, bindings de capabilities e equivalência entre `starter`, `lite`, `pro` e `ultra`, mantém `buy`, `sell`, `valuation` e `mixed` e acrescenta `rent` ao final do conjunto permitido.
   * A consulta administrativa existente de estrutura exibe `Locação`; a jornada E19.2 recebeu somente o rótulo local correspondente e permanece na versão operacional v2, sem promoção de configurações ou do compilador E19.3 para v4.
   * As regressões focais, `npm ci`, `npm run check`, `git diff --check` e a inspeção autenticada do Preview em desktop e largura móvel foram aprovados; o servidor local iniciou na porta 3000, mas a renderização local ficou indisponível por ausência das chaves públicas do Supabase no worktree isolado.
-  * A E20.6 deve ser executada novamente contra a versão explícita 4 antes de qualquer registro de suficiência.
+  * A suficiência da v4 foi tratada em seu recorte; a v5 posterior exige nova aceitação E20.6 explícita antes da primeira geração E19.5.
   * O recorte não criou field, banco, migration, rota, API, nova UI, persistência, infraestrutura, automação, agente, job ou workload OpenAI e não alterou a E20.6.
+
+20.2.8 Objetivo humano específico da LP
+
+* Objetivo: criar a versão repo-only v5 por cópia profunda da v4 e acrescentar somente `landing_page_objective` como input humano específico da LP.
+* Status: Implementada no repositório pela E19.5.3; aceitação humana E20.6 da v5 permanece pendente e a geração falha fechado até sua conclusão.
+* Conteúdo:
+  * o field pertence ao scope `landing_page`, é obrigatório para gerar, aceita string não vazia, usa `not_applicable` para substituição e está disponível em todos os planos;
+  * v1–v4 permanecem imutáveis e a v5 usa evidence `decision:e19-5-human-v1` sem transformar o objetivo em autoridade factual;
+  * ausência do valor permite configuração parcial e impede somente a geração.
 
 20.3 Perfil de orientação para geração
 

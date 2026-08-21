@@ -117,7 +117,6 @@
 • metadata_json jsonb not null default '{}'::jsonb
 • created_at timestamptz not null default now()
 • updated_at timestamptz not null default now()
-• approved_materialization_id uuid null
 1.5.3 Índices
 • account_commercial_entitlements_account_id_idx (account_id)
 • account_commercial_entitlements_status_idx (status)
@@ -235,11 +234,12 @@
 • created_by uuid not null
 • created_at timestamptz not null default now()
 • updated_at timestamptz not null default now()
+• approved_materialization_id uuid null
 
 1.9.3 Relacionamentos
 • account_id referencia public.accounts(id) com ON UPDATE CASCADE e ON DELETE CASCADE.
 • created_by referencia auth.users(id) com ON UPDATE CASCADE e ON DELETE RESTRICT.
-• `(approved_materialization_id, id, account_id)` referencia `(id, landing_page_id, account_id)` de `public.account_landing_page_materializations` com ON UPDATE RESTRICT, ON DELETE RESTRICT e validação deferred; somente uma revisão existente da mesma LP/conta pode ser aprovada.
+• `(approved_materialization_id, id, account_id)` referencia `(id, landing_page_id, account_id)` de `public.account_landing_page_materializations` com ON UPDATE RESTRICT, ON DELETE NO ACTION e validação deferred; somente uma revisão existente da mesma LP/conta pode ser aprovada, sem bloquear o cascade do agregado pai.
 
 1.9.4 Constraints
 • account_landing_pages_status_chk: status in ('draft', 'active', 'archived').

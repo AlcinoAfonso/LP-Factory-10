@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { AccountLandingPageWorkspaceResult } from "@/lp-builder";
 import { landingPageWorkspaceStateLabels } from "@/lp-builder";
 import { createLandingPageWorkspaceAction, setLandingPageArchivedAction } from "../workspace-actions";
+import { WorkspaceSubmitButton } from "./WorkspaceSubmitButton";
 
 export function LandingPageWorkspace(props: Readonly<{
   accountSubdomain: string;
@@ -32,7 +33,7 @@ export function LandingPageWorkspace(props: Readonly<{
             <input type="hidden" name="account" value={props.accountSubdomain} />
             <label className="text-sm font-semibold text-ink-900">Nome<input name="name" required maxLength={120} className="mt-2 min-h-11 w-full rounded-lg border border-surface-border px-3 font-normal" /></label>
             <label className="text-sm font-semibold text-ink-900">Endereço curto<input name="slug" required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" className="mt-2 min-h-11 w-full rounded-lg border border-surface-border px-3 font-normal" /></label>
-            <button className="min-h-11 self-end rounded-lg bg-brand-700 px-5 text-sm font-semibold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-2">Criar página</button>
+            <WorkspaceSubmitButton idleLabel="Criar página" pendingLabel="Criando..." className="min-h-11 self-end rounded-lg bg-brand-700 px-5 text-sm font-semibold text-white disabled:cursor-wait disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-2" />
           </form>
         </details>
       ) : null}
@@ -51,7 +52,7 @@ export function LandingPageWorkspace(props: Readonly<{
                 <Link href={`/a/${props.accountSubdomain}/landing-pages/${page.id}`} className="inline-flex min-h-11 items-center rounded-lg bg-brand-700 px-4 text-sm font-semibold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600">Abrir página</Link>
                 <form action={setLandingPageArchivedAction}>
                   <input type="hidden" name="account" value={props.accountSubdomain} /><input type="hidden" name="landing_page_id" value={page.id} /><input type="hidden" name="archived" value={page.status === "archived" ? "0" : "1"} />
-                  <button className="min-h-11 rounded-lg border border-surface-border bg-white px-4 text-sm font-semibold text-ink-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600">{page.status === "archived" ? "Restaurar" : "Arquivar"}</button>
+                  <WorkspaceSubmitButton idleLabel={page.status === "archived" ? "Restaurar" : "Arquivar"} pendingLabel={page.status === "archived" ? "Restaurando..." : "Arquivando..."} className="min-h-11 rounded-lg border border-surface-border bg-white px-4 text-sm font-semibold text-ink-900 disabled:cursor-wait disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600" />
                 </form>
               </div>
             </div>

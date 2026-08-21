@@ -101,7 +101,11 @@ export type LandingPageRenderModel = Readonly<{
 }>;
 
 export type LandingPagePreviewLoadResult =
-  | Readonly<{ status: "ready"; model: LandingPageRenderModel }>
+  | Readonly<{
+      status: "ready";
+      model: LandingPageRenderModel;
+      landingPage: Readonly<{ name: string; status: LandingPageStatus }>;
+    }>
   | Readonly<{ status: "empty" }>
   | Readonly<{
       status: "denied" | "not_found" | "unavailable" | "invalid_cta";
@@ -257,6 +261,10 @@ async function loadLandingPagePreviewUnchecked(
   const { asset: _asset, image, ...model } = prepared.value;
   return {
     status: "ready",
+    landingPage: {
+      name: landingPage.landingPage.name,
+      status: landingPage.landingPage.status,
+    },
     model: deepFreeze({
       ...model,
       media: {

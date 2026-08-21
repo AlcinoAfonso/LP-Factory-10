@@ -12,8 +12,8 @@ with checks(check_name, ok) as (
       has_function_privilege('service_role','public.create_account_landing_page_v1(uuid,text,text,uuid)','EXECUTE')
       and not has_function_privilege('authenticated','public.create_account_landing_page_v1(uuid,text,text,uuid)','EXECUTE')),
     ('persisted_configuration_valid',
-      not exists(select 1 from public.account_landing_page_shared_configurations where catalog_version<>5 or not public.e19_5_configuration_values_valid(values,array['account','business']))
-      and not exists(select 1 from public.account_landing_page_configurations where catalog_version<>5 or not public.e19_5_configuration_values_valid(values,array['offer','campaign','landing_page'])))
+      not exists(select 1 from public.account_landing_page_shared_configurations where catalog_version<>5 or not public.e19_5_configuration_values_valid_for_account(account_id,values,array['account','business']))
+      and not exists(select 1 from public.account_landing_page_configurations where catalog_version<>5 or not public.e19_5_configuration_values_valid_for_account(account_id,values,array['offer','campaign','landing_page'])))
 )
 select check_name, case when ok then 'ok' else 'fail' end as status
 from checks

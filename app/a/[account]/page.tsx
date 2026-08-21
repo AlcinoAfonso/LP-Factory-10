@@ -3,6 +3,7 @@ import { getCommercialActivationHierarchicalBundle } from "@/conversion-content"
 import { getCommercialEntitlementSignal } from "../../../lib/commercial-entitlements";
 import {
   getAccountLandingPageOnboardingConfiguration,
+  handoffAccountLandingPageOnboarding,
   listAccountLandingPageDrafts,
   listAccountLandingPageWorkspace,
   type AccountLandingPage,
@@ -168,6 +169,12 @@ export default async function Page({ params, searchParams }: PageProps) {
       if (!accountId || !onboardingConfiguration?.landingPageId) {
         return <OnboardingBlockedState />;
       }
+      const handoff = await handoffAccountLandingPageOnboarding({
+        accountId,
+        landingPageId: onboardingConfiguration.landingPageId,
+        expectedOnboardingRevision: onboardingConfiguration.revision,
+      });
+      if (!handoff.ok) return <LandingPageOperationalState />;
       const workspace = await listAccountLandingPageWorkspace({ accountId });
       if (!workspace.ok) return <LandingPageOperationalState />;
       return (
