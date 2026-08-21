@@ -2,7 +2,9 @@ import {
   createOpenAiWorkloadFailureEvent,
   createOpenAiWorkloadSuccessEvent,
   emitOpenAiWorkloadEvent,
-  resolveOpenAiProductWorkload,
+  isValidResolvedOpenAiProductWorkload,
+  resolveOpenAiWorkloadEnvironment,
+  type OpenAiWorkloadEnvironment,
   type OpenAiWorkloadEvent,
   type ResolvedOpenAiProductWorkload,
 } from "../../openai-workloads";
@@ -20,6 +22,7 @@ type CommercialActivationResponseParser<T> = (
 type CommercialActivationOpenAiInput<T> = Readonly<{
   apiKey?: string;
   configuration: ResolvedOpenAiProductWorkload;
+  environment?: OpenAiWorkloadEnvironment;
   request: Readonly<Record<string, unknown>>;
   parseResponse: CommercialActivationResponseParser<T>;
 }>;
@@ -45,24 +48,19 @@ export async function requestCommercialActivationOpenAi<T>(
   input: CommercialActivationOpenAiInput<T>,
   dependencies: CommercialActivationOpenAiDependencies = {},
 ): Promise<CommercialActivationOpenAiResult<T>> {
-  const canonical = resolveOpenAiProductWorkload(
-    "commercial_activation_draft_generation",
-  );
-  if (!canonical.ok) {
-    return { ok: false, reason: "invalid_openai_configuration" };
-  }
-
+  const environment = input.environment ?? resolveOpenAiWorkloadEnvironment();
   const eventContext = {
-    workload: canonical.value.id,
-    configurationSource: canonical.value.source,
-    configurationRevision: canonical.value.revision,
-    model: canonical.value.model,
-    reasoningEffort: canonical.value.reasoningEffort,
+    workload: input.configuration.id,
+    configurationSource: input.configuration.source,
+    configurationRevision: input.configuration.revision,
+    model: input.configuration.model,
+    reasoningEffort: input.configuration.reasoningEffort,
+    environment,
   } as const;
   const emitEvent = dependencies.emitEvent ?? emitOpenAiWorkloadEvent;
   const apiKey = input.apiKey?.trim();
 
-  if (!apiKey || !matchesCanonicalConfiguration(input.configuration, canonical.value)) {
+  if (!apiKey || !isCommercialActivationConfiguration(input.configuration)) {
     emitEvent(
       createOpenAiWorkloadFailureEvent(eventContext, "configuration_invalid"),
     );
@@ -155,18 +153,12 @@ export async function requestCommercialActivationOpenAi<T>(
   }
 }
 
-function matchesCanonicalConfiguration(
+function isCommercialActivationConfiguration(
   actual: ResolvedOpenAiProductWorkload,
-  expected: ResolvedOpenAiProductWorkload,
 ) {
   return (
-    actual.id === expected.id &&
-    actual.model === expected.model &&
-    actual.reasoningEffort === expected.reasoningEffort &&
-    actual.source === expected.source &&
-    actual.revision === expected.revision &&
-    actual.configurationKind === "effective" &&
-    actual.effectiveConfigurationVerified === true
+    actual.id === "commercial_activation_draft_generation" &&
+    isValidResolvedOpenAiProductWorkload(actual)
   );
 }
 

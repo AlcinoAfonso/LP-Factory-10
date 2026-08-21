@@ -145,8 +145,11 @@ export async function requireSuperAdmin(): Promise<{
  * Diferencia usuário não autenticado de não autorizado
  */
 export async function requirePlatformAdmin(): Promise<{
-  allowed: boolean;
-  redirect?: '/auth/login' | '/auth/confirm/info';
+  allowed: false;
+  redirect: '/auth/login' | '/auth/confirm/info';
+} | {
+  allowed: true;
+  actorUserId: string;
 }> {
   const check = await checkPlatformAdmin();
   
@@ -160,5 +163,5 @@ export async function requirePlatformAdmin(): Promise<{
     return { allowed: false, redirect: '/auth/confirm/info' };
   }
   
-  return { allowed: true };
+  return { allowed: true, actorUserId: check.userId };
 }
