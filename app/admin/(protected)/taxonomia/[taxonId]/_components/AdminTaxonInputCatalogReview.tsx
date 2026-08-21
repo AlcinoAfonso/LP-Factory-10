@@ -14,6 +14,7 @@ type ReviewAction = (
 type Props = {
   review: Exclude<AdminInputCatalogReview, { status: "disabled" }>;
   taxonId: string;
+  legacyAvailable: boolean;
   recordAction: ReviewAction;
   reopenAction: ReviewAction;
 };
@@ -28,6 +29,7 @@ const initialState: InputCatalogReviewActionState = {
 export function AdminTaxonInputCatalogReview({
   review,
   taxonId,
+  legacyAvailable,
   recordAction,
   reopenAction,
 }: Props) {
@@ -89,7 +91,9 @@ export function AdminTaxonInputCatalogReview({
         Avaliar suficiência da E20.2
       </h2>
       <p className="mt-1 text-sm text-muted-foreground">
-        Copie a instrução, conclua a análise no Codex App e só depois registre a versão E20.2 aceita por decisão humana.
+        {legacyAvailable
+          ? "Copie a instrução, conclua a análise no Codex App e só depois registre a versão E20.2 aceita por decisão humana."
+          : "O runtime E20.6.5 está comprovado e ativo. A suficiência só pode ser registrada por decisão autenticada da avaliação factual."}
       </p>
 
       <div className="mt-4 rounded-md border border-border bg-muted/30 px-4 py-3">
@@ -102,49 +106,55 @@ export function AdminTaxonInputCatalogReview({
         </p>
       </div>
 
-      <label className="mt-4 block text-xs font-medium text-muted-foreground" htmlFor="input-catalog-review-handoff">
-        Instrução para o Codex
-      </label>
-      <textarea
-        className="mt-1 min-h-40 w-full rounded-md border border-border bg-background p-3 text-xs text-foreground outline-none focus-visible:ring-4 focus-visible:ring-brand-600/20"
-        id="input-catalog-review-handoff"
-        readOnly
-        value={availableReview.handoff}
-      />
-      <button
-        className="mt-3 inline-flex min-h-11 items-center justify-center rounded-md border border-border bg-background px-4 text-sm font-medium text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-600/30"
-        onClick={copyHandoff}
-        type="button"
-      >
-        Copiar instrução para o Codex
-      </button>
-      {copyStatus ? <p className="mt-2 text-sm text-muted-foreground" role="status">{copyStatus}</p> : null}
-
-      <div className="mt-6 grid gap-4 lg:grid-cols-2">
-        <form action={recordFormAction} className="space-y-3 rounded-md border border-border p-4" onSubmit={() => setAttemptedAction("record")}>
-          <input name="taxonId" type="hidden" value={taxonId} />
-          <label className="text-xs font-medium text-muted-foreground" htmlFor="input-catalog-review-version">
-            Versão E20.2 aceita como suficiente
+      {legacyAvailable ? (
+        <>
+          <label className="mt-4 block text-xs font-medium text-muted-foreground" htmlFor="input-catalog-review-handoff">
+            Instrução para o Codex
           </label>
-          <input
-            className="h-11 w-full rounded-md border border-border bg-background px-3 text-sm outline-none focus-visible:ring-4 focus-visible:ring-brand-600/20 disabled:opacity-60"
-            disabled={busy}
-            id="input-catalog-review-version"
-            inputMode="numeric"
-            min={1}
-            name="inputCatalogVersion"
-            required
-            step={1}
-            type="number"
+          <textarea
+            className="mt-1 min-h-40 w-full rounded-md border border-border bg-background p-3 text-xs text-foreground outline-none focus-visible:ring-4 focus-visible:ring-brand-600/20"
+            id="input-catalog-review-handoff"
+            readOnly
+            value={availableReview.handoff}
           />
           <button
-            className="inline-flex min-h-11 items-center justify-center rounded-md bg-brand-600 px-4 text-sm font-medium text-white transition hover:bg-brand-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-600/30 disabled:opacity-60"
-            disabled={busy}
-            type="submit"
+            className="mt-3 inline-flex min-h-11 items-center justify-center rounded-md border border-border bg-background px-4 text-sm font-medium text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-600/30"
+            onClick={copyHandoff}
+            type="button"
           >
-            {recordPending ? "Registrando..." : "Registrar versão avaliada"}
+            Copiar instrução para o Codex
           </button>
-        </form>
+          {copyStatus ? <p className="mt-2 text-sm text-muted-foreground" role="status">{copyStatus}</p> : null}
+        </>
+      ) : null}
+
+      <div className="mt-6 grid gap-4 lg:grid-cols-2">
+        {legacyAvailable ? (
+          <form action={recordFormAction} className="space-y-3 rounded-md border border-border p-4" onSubmit={() => setAttemptedAction("record")}>
+            <input name="taxonId" type="hidden" value={taxonId} />
+            <label className="text-xs font-medium text-muted-foreground" htmlFor="input-catalog-review-version">
+              Versão E20.2 aceita como suficiente
+            </label>
+            <input
+              className="h-11 w-full rounded-md border border-border bg-background px-3 text-sm outline-none focus-visible:ring-4 focus-visible:ring-brand-600/20 disabled:opacity-60"
+              disabled={busy}
+              id="input-catalog-review-version"
+              inputMode="numeric"
+              min={1}
+              name="inputCatalogVersion"
+              required
+              step={1}
+              type="number"
+            />
+            <button
+              className="inline-flex min-h-11 items-center justify-center rounded-md bg-brand-600 px-4 text-sm font-medium text-white transition hover:bg-brand-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-600/30 disabled:opacity-60"
+              disabled={busy}
+              type="submit"
+            >
+              {recordPending ? "Registrando..." : "Registrar versão avaliada"}
+            </button>
+          </form>
+        ) : null}
 
         <form action={reopenFormAction} className="space-y-3 rounded-md border border-border p-4" onSubmit={() => setAttemptedAction("reopen")}>
           <input name="taxonId" type="hidden" value={taxonId} />
@@ -162,7 +172,7 @@ export function AdminTaxonInputCatalogReview({
       </div>
 
       {actionError ? <p className="mt-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">{actionError}</p> : null}
-      {!actionError && attemptedAction === "record" && lastAction === "record" && recordState.reviewedVersion !== null ? <p className="mt-4 text-sm text-emerald-800" role="status">Versão {recordState.reviewedVersion} registrada como avaliada.</p> : null}
+      {legacyAvailable && !actionError && attemptedAction === "record" && lastAction === "record" && recordState.reviewedVersion !== null ? <p className="mt-4 text-sm text-emerald-800" role="status">Versão {recordState.reviewedVersion} registrada como avaliada.</p> : null}
       {!actionError && attemptedAction === "reopen" && lastAction === "reopen" && reopenState.reopened ? <p className="mt-4 text-sm text-emerald-800" role="status">Avaliação reaberta; o estado voltou para não avaliado.</p> : null}
     </section>
   );

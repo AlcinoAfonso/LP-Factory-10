@@ -306,11 +306,11 @@ Execute a avaliação E20.6 do taxon `[taxon_slug]`, usando a cadeia taxonômica
 
 - A execução possui dois checkpoints obrigatórios:
   - **checkpoint pré-integração OpenAI:** consolidar v2 e avaliação formal de Automação; implementar contratos e domínio E20.6.5, identidade e reconstrução/revalidação determinísticas, Structured Output, modos `systematic` e `hypothesis`, UI route-local e testes com configuração e transporte injetados/fakes;
-  - **checkpoint de integração final:** somente depois de o agregado E21.2 suportar `taxon_input_catalog_sufficiency_evaluation` com bootstrap inicial `gpt-5.6-terra` + `low`, atualizar a branch, consumir a configuração ativa do lifecycle dinâmico Supabase pela API pública comum, reconfirmar a fonte canônica vigente de `requiredInputCatalogVersion`, integrar o provider real e substituir o handoff Codex.
+  - **checkpoint de integração final:** o delta E21.2 de `taxon_input_catalog_sufficiency_evaluation` com bootstrap inicial `gpt-5.6-terra` + `low` já está implementado no #795; após merge, apply e prova operacional, consumir a configuração ativa do lifecycle dinâmico Supabase pela API pública comum, integrar o provider real e ativar a exclusividade do runtime comprovado.
 - No checkpoint pré-integração, `lib/openai-workloads/` permanece inalterado, nenhuma configuração repo-only temporária é criada, nenhum resolver ou transporte OpenAI exclusivo da E20.6.5 é criado, nenhuma chamada real ao provider é concluída e a implementação não pode ser declarada completa.
-- A integração real somente começa depois de o suporte E21.2 ao novo workload estar incorporado à `main` e de o apply e a validação, no ambiente-alvo, dos objetos de banco dos quais seu runtime dependa estarem concluídos. A E20.6.5 deve consumir exclusivamente a API pública do lifecycle dinâmico Supabase e do boundary comum `lib/openai-workloads/`, sem consulta direta aos objetos E21.2 e sem configuração, resolver ou transporte paralelo.
+- O delta E21.2 necessário está implementado no #795, sem entidade ou persistência de negócio nova. A integração real permanece bloqueada até seu merge, apply canônico e validação no ambiente-alvo. A E20.6.5 consome exclusivamente a API pública do lifecycle dinâmico Supabase e do boundary comum `lib/openai-workloads/`, sem consulta direta aos objetos E21.2 e sem configuração, resolver ou transporte paralelo.
 - A montagem candidata permanece bloqueada por `E20_6_5_INPUT_CATALOG_EVALUATION_PROVIDER_ENABLED`; em Preview e Production, gate-on só é elegível quando o resolver comum comprovar fonte `supabase_operational` em revisão `2` ou posterior, já promovida com prova operacional e ativada, nunca o bootstrap `1`. `OPENAI_OPERATIONAL_CONFIG_ENABLED=false` com retorno `repo_catalog` continua gate-off para a E20.6.5.
-- O checkpoint pré-integração não altera `lib/openai-workloads/`. O agregado E21.2 deve incorporar a identidade code-owned `taxon_input_catalog_sufficiency_evaluation`, sua unidade operacional textual, a configuração inicial aprovada `gpt-5.6-terra` + `low` e seu lifecycle comum antes de a E20.6.5 integrar o provider; o PR #795 não cria suporte provisório nem duplica esse boundary.
+- O checkpoint pré-integração preservou `lib/openai-workloads/`; o expand atual do #795 já acrescenta ao agregado E21.2 a identidade code-owned `taxon_input_catalog_sufficiency_evaluation`, sua unidade operacional textual, a configuração inicial aprovada `gpt-5.6-terra` + `low` e o lifecycle comum, sem boundary paralelo.
 - Parar antes de editar somente se a API pós-E21.2 exigir consulta direta ao Supabase, configuração paralela, resolver/transporte exclusivo da E20.6.5 ou redesenho transversal material além do registro e consumo normais de um novo workload.
 
 - Gatilho:
@@ -336,20 +336,23 @@ Execute a avaliação E20.6 do taxon `[taxon_slug]`, usando a cadeia taxonômica
   - impedir promoção automática de pesquisa para field;
   - rejeitar resposta stale ou incompatível com as fontes atuais;
   - não registrar suficiência com resposta inválida, `inconclusive`, refusal ou falha técnica;
-  - não gerar nem aceitar confirmação administrativa para resultado `inconclusive` e permitir reconhecer `candidate_gaps` como gap factual real sem gravar ou alterar automaticamente a E20.2;
+  - não gerar nem aceitar confirmação administrativa para resultado `inconclusive`;
+  - para `candidate_gaps`, preservar duas decisões humanas autenticadas e revalidadas: reconhecer um subconjunto selecionado de candidatos acionáveis como gaps reais, sem escrita, ou rejeitar todos e confirmar `N` como suficiente;
+  - validar server-side os índices selecionados contra o output autenticado e produzir handoff transitório E20.2 somente com os candidatos aprovados, sem persistência ou alteração automática da E20.2;
   - revalidar integralmente as fontes antes da ação administrativa final.
 - Persistência:
   - preservar somente `reviewed_input_catalog_version` já existente para a decisão final de suficiência;
   - não criar nova tabela, coluna, histórico, entidade ou memória conversacional de negócio para a E20.6.5; esse limite não dispensa o delta forward-only no agregado operacional E21.2 existente, restrito a constraints, allowlists e bootstrap do novo workload, sem nova entidade ou tabela.
 - Consumo:
   - humano revisa e decide no Admin;
-  - gap confirmado retorna ao recorte E20.2;
+  - gap confirmado retorna ao recorte E20.2 por handoff transitório copiável contendo somente candidatos selecionados e revalidados;
   - suficiência aceita segue ao registro existente e ao gate E20.6.4.
 - Fallback:
   - fail-closed;
   - OpenAI indisponível, refusal, resposta inválida, `inconclusive`, mudança de fonte ou erro de validação não registram suficiência;
   - nenhuma troca silenciosa de modelo ou versão E20.2;
   - nenhum fallback automático para Codex App; enquanto o runtime estiver gate-off, o handoff Codex permanece explicitamente disponível como caminho humano vigente;
+  - runtime gate-off mantém handoff Codex e registro legado; runtime comprovado e gate-on oculta ambos e rejeita `recordInputCatalogReviewAction` server-side, exigindo decisão autenticada E20.6.5; a reabertura permanece em ambos os estados;
   - tentativa posterior depende de nova ação humana explícita.
 
 #### 2.7.1. Residência e separação de responsabilidades
@@ -512,16 +515,16 @@ Execute a avaliação E20.6 do taxon `[taxon_slug]`, usando a cadeia taxonômica
   - provider real, Structured Output, refusal/incomplete, timeout e observabilidade sanitizada validados;
   - UI montada no runtime autenticado e validada em desktop, mobile, teclado, erro e invalidação;
   - decisão administrativa permanece separada, com revalidação imediatamente anterior à mutação;
-  - handoff Codex preservado enquanto o runtime estiver gate-off e removido somente por contração posterior à comprovação real aprovada;
+  - handoff Codex e formulário legado visíveis somente enquanto o runtime estiver gate-off; runtime comprovado e gate-on os oculta e bloqueia a action legada no servidor, preservando a reabertura;
   - E20.6.4 permanece determinística e sem nova chamada de IA.
 - Gates posteriores obrigatórios:
-  - depois de o suporte E21.2 ao novo workload estar incorporado, atualizar a branch, comprovar apply/validação dos objetos requeridos e consumir somente a configuração ativa e a API pública comum;
+  - após o merge do delta E21.2 já implementado no #795, comprovar apply/validação dos objetos requeridos e consumir somente a configuração ativa e a API pública comum;
   - reconfirmar no código vigente que a reconstrução da E20.6.5 recebe `N` da escolha humana efêmera, carrega a pesquisa E20.5 selecionada e resolve exatamente `N` nos quatro planos; qualquer alteração material trazida por E19.5 ou outro delta deve ser reconciliada por contrato, sem presumir dependência do PR #794;
   - integrar chamada real, observabilidade e remoção do handoff somente depois desses gates. A ordem de merge entre #795, #793 e #794 não é fixada até que as dependências reais sejam reconciliadas.
-- Contrato de PR pendente de decisão estratégica: o #795 é o recorte expand gate-off e não fecha a E20.6.5. Como migration, apply e prova real obedecem ao fluxo pós-merge, a retirada do handoff e o fechamento documental exigem uma contração posterior; esse expand/contract de dois PRs deve ser apresentado e aprovado pelo Estrategista antes do merge do #795.
-- Sequência proposta para decisão do Estrategista: (1) manter #795 draft, gates off e handoff ativo; (2) revisar e mergear humanamente o expand somente após aprovação estratégica; (3) apply automático da migration; (4) executar invariantes, Security Controls e prova da configuração ativa; (5) habilitar `OPENAI_OPERATIONAL_CONFIG_ENABLED=true` e depois o gate E20.6.5 apenas em Preview, com redeploy; (6) validar provider real e UI autenticada em Preview; (7) após decisão humana, habilitar e validar Production; (8) abrir o PR contract dedicado para remover o handoff e atualizar documentação final; (9) somente o merge humano do contract pode fechar a E20.6.5.
+- Decisão estratégica aprovada: expand/contract em dois PRs. O #795 é o expand gate-off e não fecha a E20.6.5; o contract posterior remove definitivamente o legado e conclui os documentos após apply, prova real e rollout aprovados.
+- Sequência aprovada: (1) manter #795 draft e gates off até o merge humano do expand; (2) apply automático da migration; (3) executar invariantes, Security Controls e prova da configuração ativa; (4) habilitar `OPENAI_OPERATIONAL_CONFIG_ENABLED=true` e depois o gate E20.6.5 apenas em Preview, com redeploy; (5) validar provider real, decisões humanas e UI autenticada em Preview; (6) após decisão humana, habilitar e validar Production; (7) abrir o PR contract dedicado para remover definitivamente o legado e atualizar documentação final; (8) somente o merge humano do contract pode fechar a E20.6.5.
 - Avaliação formal de Automação na v2: concluída; classificação aprovada. A Passagem 1 do Analista resolveu que a identidade permanece code-owned e que o checkpoint pré-integração é executável sem escolha técnica adicional.
-- Próxima ação: reconciliar no agregado E21.2 o suporte a `taxon_input_catalog_sufficiency_evaluation` com configuração inicial `gpt-5.6-terra` + `low`; somente após sua incorporação atualizar a branch e auditar a API pública comum e a fonte canônica de `requiredInputCatalogVersion` antes de qualquer integração real.
+- Próxima ação: concluir os gates locais e a revisão delta do #795; sem habilitar runtime ou provider, encaminhar o expand já implementado para o merge humano e, somente depois, seguir apply e rollout pela sequência aprovada.
 
 ## 4. Escopo negativo e critérios de parada
 
@@ -559,7 +562,7 @@ Execute a avaliação E20.6 do taxon `[taxon_slug]`, usando a cadeia taxonômica
 - Parar se a solução exigir comportamento agentic, tools autônomas ou nova infraestrutura para cumprir requisito não previsto nesta v1.
 - Parar se não for possível preservar a autoridade determinística de E20.5/E20.2/E20.6.4 e a decisão humana separada.
 - Parar se a implementação exigir alterar contratos consumidores E19 sem gap factual específico e recorte próprio.
-- Parar no checkpoint pré-integração enquanto o agregado E21.2 não suportar `taxon_input_catalog_sufficiency_evaluation`, inclusive identidade code-owned, configuração inicial `gpt-5.6-terra` + `low` e lifecycle comum; não alterar `lib/openai-workloads/` nem criar workaround local no PR #795.
-- Depois da incorporação desse suporte E21.2, parar antes de editar somente se a API pública exigir consulta direta ao Supabase, configuração paralela, resolver/transporte exclusivo ou redesenho transversal material.
+- O checkpoint pré-integração foi superado pelo delta E21.2 já implementado no #795, inclusive identidade code-owned, configuração inicial `gpt-5.6-terra` + `low` e lifecycle comum; o runtime continua gate-off até merge, apply e prova operacional.
+- Após merge e apply, parar antes do rollout somente se a API pública exigir consulta direta ao Supabase, configuração paralela, resolver/transporte exclusivo ou redesenho transversal material.
 - Parar se o caminho executável vigente não fornecer `requiredInputCatalogVersion` explicitamente a partir da leitura canônica ou se uma mudança material tornar essa autoridade ambígua; não assumir v4, v5, `latest`, maior versão, fallback nem dependência automática da E19.5.
 - Encerrar a E20.6.5 somente após o runtime do Admin executar avaliação sistemática e focal com IA em Preview e Production aprovados, preservar decisão humana separada, falhar fechado, continuar alimentando o mesmo predicado determinístico da E20.6.4 e concluir a contração documental/operacional aprovada pelo Estrategista.

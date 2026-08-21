@@ -34,6 +34,7 @@ export type AdminTaxonInputCatalogEvaluationRuntimeProps = Readonly<{
   acknowledgeGapAction: (input: Readonly<{
     reference: InputCatalogEvaluationReference;
     output: InputCatalogEvaluationPresentationOutput;
+    selectedCandidateIndexes: readonly number[];
   }>) => Promise<AcknowledgeInputCatalogGapActionResult>;
 }>;
 
@@ -57,6 +58,9 @@ export type AdminTaxonInputCatalogEvaluationProps = Readonly<{
     kind: "success" | "failure";
     message: string;
   }> | null;
+  selectedCandidateIndexes: readonly number[];
+  gapHandoff: string | null;
+  gapHandoffCopyStatus: string | null;
   onModeChange: (mode: InputCatalogEvaluationPresentationMode) => void;
   onInputCatalogVersionChange: (value: string) => void;
   onHypothesisChange: (value: string) => void;
@@ -72,7 +76,9 @@ export type AdminTaxonInputCatalogEvaluationProps = Readonly<{
   feedback: string;
   onFeedbackChange: (value: string) => void;
   onConfirmAdministrativeSufficiency: () => void;
+  onCandidateSelectionChange: (index: number, selected: boolean) => void;
   onRecognizeFactualGap: () => void;
+  onCopyGapHandoff: () => void;
 }>;
 
 const modeContent: Record<
@@ -138,6 +144,9 @@ export function AdminTaxonInputCatalogEvaluationRuntime({
   const [decisionFeedback, setDecisionFeedback] = useState<
     Readonly<{ kind: "success" | "failure"; message: string }> | null
   >(null);
+  const [selectedCandidateIndexes, setSelectedCandidateIndexes] = useState<readonly number[]>([]);
+  const [gapHandoff, setGapHandoff] = useState<string | null>(null);
+  const [gapHandoffCopyStatus, setGapHandoffCopyStatus] = useState<string | null>(null);
 
   async function evaluate(input: Readonly<{
     inputCatalogVersion: number;
@@ -155,6 +164,9 @@ export function AdminTaxonInputCatalogEvaluationRuntime({
     setReference(null);
     setStale(false);
     setDecisionFeedback(null);
+    setSelectedCandidateIndexes([]);
+    setGapHandoff(null);
+    setGapHandoffCopyStatus(null);
     let result: InputCatalogEvaluationActionResult;
     try {
       result = await evaluateAction({
@@ -213,7 +225,11 @@ export function AdminTaxonInputCatalogEvaluationRuntime({
     setDecisionFeedback(null);
     let result: AcknowledgeInputCatalogGapActionResult;
     try {
-      result = await acknowledgeGapAction({ reference, output: state.output });
+      result = await acknowledgeGapAction({
+        reference,
+        output: state.output,
+        selectedCandidateIndexes,
+      });
     } catch {
       setDecisionPending(false);
       setDecisionFeedback({
@@ -230,8 +246,20 @@ export function AdminTaxonInputCatalogEvaluationRuntime({
     }
     setDecisionFeedback({
       kind: "success",
-      message: "Gap factual reconhecido para tratamento humano. A versão E20.2 não foi alterada.",
+      message: `${result.selectedCandidateCount} gap(s) factual(is) reconhecido(s). A versão E20.2 não foi alterada.`,
     });
+    setGapHandoff(result.handoff);
+    setGapHandoffCopyStatus(null);
+  }
+
+  async function copyGapHandoff() {
+    if (!gapHandoff) return;
+    try {
+      await navigator.clipboard.writeText(gapHandoff);
+      setGapHandoffCopyStatus("Handoff transitório copiado para o recorte E20.2.");
+    } catch {
+      setGapHandoffCopyStatus("Não foi possível copiar automaticamente. Selecione o texto e copie manualmente.");
+    }
   }
 
   const parsedInputCatalogVersion = Number(inputCatalogVersion);
@@ -248,11 +276,24 @@ export function AdminTaxonInputCatalogEvaluationRuntime({
       hypothesis={hypothesis}
       inputCatalogVersion={inputCatalogVersion}
       inputCatalogVersionError={inputCatalogVersionError}
+      gapHandoff={gapHandoff}
+      gapHandoffCopyStatus={gapHandoffCopyStatus}
       mode={mode}
       onConfirmAdministrativeSufficiency={confirm}
+      onCandidateSelectionChange={(index, selected) => {
+        setSelectedCandidateIndexes((current) => selected
+          ? Object.freeze([...current, index].sort((left, right) => left - right))
+          : Object.freeze(current.filter((candidateIndex) => candidateIndex !== index)));
+        setGapHandoff(null);
+        setGapHandoffCopyStatus(null);
+        setDecisionFeedback(null);
+      }}
+      onCopyGapHandoff={copyGapHandoff}
       onInputCatalogVersionChange={(value) => {
         setInputCatalogVersion(value);
         setFeedback("");
+        setSelectedCandidateIndexes([]);
+        setGapHandoff(null);
         if (state.kind === "result") setStale(true);
       }}
       onEvaluate={evaluate}
@@ -260,14 +301,19 @@ export function AdminTaxonInputCatalogEvaluationRuntime({
       onHypothesisChange={(value) => {
         setHypothesis(value);
         setFeedback("");
+        setSelectedCandidateIndexes([]);
+        setGapHandoff(null);
         if (state.kind === "result") setStale(true);
       }}
       onModeChange={(value) => {
         setMode(value);
         setFeedback("");
+        setSelectedCandidateIndexes([]);
+        setGapHandoff(null);
         if (state.kind === "result") setStale(true);
       }}
       onRecognizeFactualGap={acknowledgeGap}
+      selectedCandidateIndexes={selectedCandidateIndexes}
       stale={stale}
       state={state}
     />
@@ -295,6 +341,9 @@ export function AdminTaxonInputCatalogEvaluation({
   stale,
   administrativeDecisionPending = false,
   administrativeDecisionFeedback = null,
+  selectedCandidateIndexes,
+  gapHandoff,
+  gapHandoffCopyStatus,
   feedback,
   onModeChange,
   onInputCatalogVersionChange,
@@ -302,7 +351,9 @@ export function AdminTaxonInputCatalogEvaluation({
   onEvaluate,
   onFeedbackChange,
   onConfirmAdministrativeSufficiency,
+  onCandidateSelectionChange,
   onRecognizeFactualGap,
+  onCopyGapHandoff,
 }: AdminTaxonInputCatalogEvaluationProps) {
   const isLoading = state.kind === "loading";
   const output = state.kind === "result" ? state.output : null;
@@ -328,12 +379,13 @@ export function AdminTaxonInputCatalogEvaluation({
   const administrativeDecisionBlocked =
     resultInvalid ||
     state.kind !== "result" ||
-    output?.status !== "sufficient" ||
+    (output?.status !== "sufficient" && output?.status !== "candidate_gaps") ||
     administrativeDecisionPending;
   const factualGapDecisionBlocked =
     resultInvalid ||
     state.kind !== "result" ||
     output?.status !== "candidate_gaps" ||
+    selectedCandidateIndexes.length === 0 ||
     administrativeDecisionPending;
   const administrativeBlockReason = getAdministrativeBlockReason({
     administrativeDecisionPending,
@@ -583,7 +635,14 @@ export function AdminTaxonInputCatalogEvaluation({
           </div>
         ) : null}
 
-        {output ? <EvaluationResult invalidForDecision={resultInvalid} output={output} /> : null}
+        {output ? (
+          <EvaluationResult
+            invalidForDecision={resultInvalid}
+            onCandidateSelectionChange={onCandidateSelectionChange}
+            output={output}
+            selectedCandidateIndexes={selectedCandidateIndexes}
+          />
+        ) : null}
       </div>
 
       <div
@@ -595,7 +654,7 @@ export function AdminTaxonInputCatalogEvaluation({
         </p>
         <h3 className="mt-1 text-base font-semibold text-foreground">Decisão administrativa</h3>
         <p className="mt-1 text-sm text-muted-foreground" id="input-catalog-administrative-decision-description">
-          Confirmar suficiência é uma decisão explícita do administrador. A recomendação acima nunca executa esta ação.
+          A decisão final pertence ao administrador. A recomendação da IA nunca veta a confirmação nem executa qualquer ação.
         </p>
         {administrativeBlockReason ? (
           <p className="mt-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900" id="input-catalog-administrative-decision-blocker">
@@ -609,7 +668,11 @@ export function AdminTaxonInputCatalogEvaluation({
           onClick={onConfirmAdministrativeSufficiency}
           type="button"
         >
-          {administrativeDecisionPending ? "Registrando decisão..." : "Confirmar suficiência administrativamente"}
+          {administrativeDecisionPending
+            ? "Registrando decisão..."
+            : output?.status === "candidate_gaps"
+              ? "Rejeitar todos os candidatos e confirmar N como suficiente"
+              : "Confirmar suficiência administrativamente"}
         </button>
         <button
           aria-describedby={administrativeBlockReason ? "input-catalog-administrative-decision-blocker" : undefined}
@@ -618,7 +681,11 @@ export function AdminTaxonInputCatalogEvaluation({
           onClick={onRecognizeFactualGap}
           type="button"
         >
-          {administrativeDecisionPending ? "Registrando decisão..." : "Reconhecer gap factual sem alterar a E20.2"}
+          {administrativeDecisionPending
+            ? "Registrando decisão..."
+            : selectedCandidateIndexes.length
+              ? `Reconhecer ${selectedCandidateIndexes.length} gap(s) sem alterar a E20.2`
+              : "Selecione candidatos acionáveis para reconhecer"}
         </button>
         {administrativeDecisionFeedback ? (
           <p
@@ -630,6 +697,32 @@ export function AdminTaxonInputCatalogEvaluation({
             {administrativeDecisionFeedback.message}
           </p>
         ) : null}
+        {gapHandoff ? (
+          <div className="mt-4 rounded-md border border-brand-600/30 bg-brand-600/5 p-4">
+            <label className="text-sm font-semibold text-foreground" htmlFor="input-catalog-evaluation-gap-handoff">
+              Handoff transitório para o recorte E20.2
+            </label>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Contém somente os candidatos aprovados. Não é persistido e não altera automaticamente a E20.2.
+            </p>
+            <textarea
+              className="mt-2 min-h-56 w-full rounded-md border border-border bg-background p-3 text-xs text-foreground outline-none focus-visible:ring-4 focus-visible:ring-brand-600/20"
+              id="input-catalog-evaluation-gap-handoff"
+              readOnly
+              value={gapHandoff}
+            />
+            <button
+              className="mt-3 inline-flex min-h-11 items-center justify-center rounded-md border border-border bg-background px-4 text-sm font-medium text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-600/30"
+              onClick={onCopyGapHandoff}
+              type="button"
+            >
+              Copiar handoff para E20.2
+            </button>
+            {gapHandoffCopyStatus ? (
+              <p className="mt-2 text-sm text-muted-foreground" role="status">{gapHandoffCopyStatus}</p>
+            ) : null}
+          </div>
+        ) : null}
       </div>
     </section>
   );
@@ -637,10 +730,14 @@ export function AdminTaxonInputCatalogEvaluation({
 
 function EvaluationResult({
   invalidForDecision,
+  onCandidateSelectionChange,
   output,
+  selectedCandidateIndexes,
 }: Readonly<{
   invalidForDecision: boolean;
+  onCandidateSelectionChange: (index: number, selected: boolean) => void;
   output: InputCatalogEvaluationPresentationOutput;
+  selectedCandidateIndexes: readonly number[];
 }>) {
   const status = statusContent[output.status];
 
@@ -670,7 +767,17 @@ function EvaluationResult({
           <ol className="mt-3 grid min-w-0 gap-3">
             {output.candidates.map((candidate, index) => (
               <li className="min-w-0" key={`${candidate.origin}-${candidate.conclusion}-${index}`}>
-                <CandidateCard candidate={candidate} position={index + 1} />
+                <CandidateCard
+                  candidate={candidate}
+                  onSelectionChange={(selected) => onCandidateSelectionChange(index, selected)}
+                  position={index + 1}
+                  selectable={
+                    output.status === "candidate_gaps" &&
+                    (candidate.conclusion === "refine_existing_field" ||
+                      candidate.conclusion === "possible_new_field")
+                  }
+                  selected={selectedCandidateIndexes.includes(index)}
+                />
               </li>
             ))}
           </ol>
@@ -696,10 +803,16 @@ function EvaluationResult({
 
 function CandidateCard({
   candidate,
+  onSelectionChange,
   position,
+  selectable,
+  selected,
 }: Readonly<{
   candidate: InputCatalogEvaluationPresentationCandidate;
+  onSelectionChange: (selected: boolean) => void;
   position: number;
+  selectable: boolean;
+  selected: boolean;
 }>) {
   return (
     <article className="min-w-0 rounded-md border border-border bg-background p-4">
@@ -742,6 +855,17 @@ function CandidateCard({
           {candidate.uncertainties.length ? candidate.uncertainties.join("; ") : "Nenhuma declarada"}
         </CompactDescription>
       </dl>
+      {selectable ? (
+        <label className="mt-4 flex min-h-11 cursor-pointer items-center gap-3 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-950 focus-within:ring-4 focus-within:ring-amber-500/30">
+          <input
+            checked={selected}
+            className="h-4 w-4 shrink-0 accent-amber-700"
+            onChange={(event) => onSelectionChange(event.currentTarget.checked)}
+            type="checkbox"
+          />
+          Reconhecer este candidato como gap factual real
+        </label>
+      ) : null}
     </article>
   );
 }
@@ -797,7 +921,7 @@ function getAdministrativeBlockReason({
     return "Bloqueado: resultado inconclusivo não permite confirmação nem reconhecimento de gap factual.";
   }
   if (state.output.status === "candidate_gaps") {
-    return "A confirmação de suficiência está bloqueada; reconheça o gap factual sem alterar automaticamente a E20.2.";
+    return "Revise os candidatos: selecione os gaps reais ou rejeite todos e confirme N como suficiente.";
   }
   return null;
 }

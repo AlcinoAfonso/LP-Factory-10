@@ -113,9 +113,14 @@ export default async function AdminTaxonDetailPage({ params }: AdminTaxonDetailP
 
       {taxon.inputCatalogReview.status === "disabled" ? null : (
         <AdminTaxonInputCatalogReview
+          legacyAvailable={!inputCatalogEvaluationRuntime?.ok}
           recordAction={recordInputCatalogReviewAction}
           reopenAction={reopenInputCatalogReviewAction}
-          review={taxon.inputCatalogReview}
+          review={
+            inputCatalogEvaluationRuntime?.ok && taxon.inputCatalogReview.status === "available"
+              ? { ...taxon.inputCatalogReview, handoff: "" }
+              : taxon.inputCatalogReview
+          }
           taxonId={taxon.id}
         />
       )}

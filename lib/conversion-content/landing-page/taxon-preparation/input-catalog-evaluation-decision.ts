@@ -1,4 +1,7 @@
-import type { InputCatalogEvaluationOutput } from "./contracts";
+import type {
+  InputCatalogEvaluationCandidate,
+  InputCatalogEvaluationOutput,
+} from "./contracts";
 import { parseInputCatalogEvaluationOutput } from "./input-catalog-evaluation-schema";
 
 export type InputCatalogEvaluationAdministrativeDecision =
@@ -15,6 +18,11 @@ export type InputCatalogEvaluationAdministrativeDecisionResult =
       ok: true;
       kind: "factual_gap_acknowledged";
       reviewedVersion: null;
+      selectedCandidates: readonly Readonly<{
+        index: number;
+        candidate: InputCatalogEvaluationCandidate;
+      }>[];
+      handoff?: string;
     }>
   | Readonly<{
       ok: false;
@@ -27,6 +35,7 @@ export async function executeInputCatalogEvaluationAdministrativeDecision(
   input: Readonly<{
     decision: InputCatalogEvaluationAdministrativeDecision;
     output: InputCatalogEvaluationOutput | unknown;
+    selectedCandidateIndexes?: readonly number[];
   }>,
   ports: Readonly<{
     revalidate: () => Promise<Readonly<{ ok: true }> | Readonly<{ ok: false; message: string }>>;
@@ -41,16 +50,30 @@ export async function executeInputCatalogEvaluationAdministrativeDecision(
     return failure("OUTPUT_INVALID", false, "O resultado da avaliação não é válido para decisão administrativa.");
   }
 
-  if (
-    (input.decision === "confirm_sufficient" && parsed.value.status !== "sufficient") ||
-    (input.decision === "acknowledge_factual_gap" && parsed.value.status !== "candidate_gaps")
-  ) {
+  const confirmationAllowed =
+    input.decision === "confirm_sufficient" &&
+    (parsed.value.status === "sufficient" || parsed.value.status === "candidate_gaps");
+  const acknowledgementAllowed =
+    input.decision === "acknowledge_factual_gap" &&
+    parsed.value.status === "candidate_gaps";
+  if (!confirmationAllowed && !acknowledgementAllowed) {
     return failure(
       "DECISION_NOT_ALLOWED",
       false,
       parsed.value.status === "inconclusive"
         ? "Resultado inconclusivo não pode gerar nem confirmar decisão administrativa."
         : "A decisão solicitada não corresponde ao status validado da avaliação.",
+    );
+  }
+
+  const selectedCandidates = input.decision === "acknowledge_factual_gap"
+    ? selectActionableCandidates(parsed.value, input.selectedCandidateIndexes)
+    : null;
+  if (input.decision === "acknowledge_factual_gap" && selectedCandidates === null) {
+    return failure(
+      "DECISION_NOT_ALLOWED",
+      false,
+      "Selecione ao menos um candidato acionável autenticado, sem duplicidades ou índices inválidos.",
     );
   }
 
@@ -64,6 +87,7 @@ export async function executeInputCatalogEvaluationAdministrativeDecision(
       ok: true,
       kind: "factual_gap_acknowledged",
       reviewedVersion: null,
+      selectedCandidates: Object.freeze(selectedCandidates ?? []),
     });
   }
 
@@ -76,6 +100,30 @@ export async function executeInputCatalogEvaluationAdministrativeDecision(
     kind: "sufficiency_confirmed",
     reviewedVersion: recorded.reviewedVersion,
   });
+}
+
+function selectActionableCandidates(
+  output: InputCatalogEvaluationOutput,
+  indexes: readonly number[] | undefined,
+): readonly Readonly<{ index: number; candidate: InputCatalogEvaluationCandidate }>[] | null {
+  if (!Array.isArray(indexes) || indexes.length === 0) return null;
+  const uniqueIndexes = new Set<number>();
+  const selected: Readonly<{ index: number; candidate: InputCatalogEvaluationCandidate }>[] = [];
+  for (const index of indexes) {
+    if (!Number.isSafeInteger(index) || index < 0 || index >= output.candidates.length) return null;
+    if (uniqueIndexes.has(index)) return null;
+    const candidate = output.candidates[index];
+    if (
+      !candidate ||
+      (candidate.conclusion !== "refine_existing_field" &&
+        candidate.conclusion !== "possible_new_field")
+    ) {
+      return null;
+    }
+    uniqueIndexes.add(index);
+    selected.push(Object.freeze({ index, candidate }));
+  }
+  return Object.freeze(selected);
 }
 
 function failure(

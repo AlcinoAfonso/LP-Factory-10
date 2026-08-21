@@ -8,7 +8,10 @@ import { requirePlatformAdmin } from "@/lib/access/guards";
 import { reconstructCanonicalInputCatalogEvaluationContext } from "@/conversion-content/adapters/inputCatalogEvaluationContextAdapter";
 import { evaluateInputCatalogWithOpenAi } from "@/conversion-content/adapters/inputCatalogEvaluationOpenAiAdapter";
 import { resolveInputCatalogEvaluationRuntimeReadiness } from "@/conversion-content/adapters/inputCatalogEvaluationRuntimeGate";
-import { executeInputCatalogEvaluationAdministrativeActionCore } from "@/conversion-content/adapters/inputCatalogEvaluationAdministrativeActionCore";
+import {
+  executeInputCatalogEvaluationAdministrativeActionCore,
+  executeLegacyInputCatalogReviewRecordCore,
+} from "@/conversion-content/adapters/inputCatalogEvaluationAdministrativeActionCore";
 import {
   coordinateInputCatalogEvaluation,
   createInputCatalogEvaluationDecisionToken,
@@ -68,7 +71,7 @@ export type ConfirmInputCatalogEvaluationActionResult =
   | Readonly<{ ok: false; stale: boolean; message: string }>;
 
 export type AcknowledgeInputCatalogGapActionResult =
-  | Readonly<{ ok: true }>
+  | Readonly<{ ok: true; handoff: string; selectedCandidateCount: number }>
   | Readonly<{ ok: false; stale: boolean; message: string }>;
 
 export async function evaluateInputCatalogAction(input: Readonly<{
@@ -215,15 +218,21 @@ export async function confirmInputCatalogEvaluationAction(input: Readonly<{
 export async function acknowledgeInputCatalogGapAction(input: Readonly<{
   reference: InputCatalogEvaluationReference;
   output: InputCatalogEvaluationOutput;
+  selectedCandidateIndexes: readonly number[];
 }>): Promise<AcknowledgeInputCatalogGapActionResult> {
   const result = await executeAdministrativeEvaluationDecision({
     decision: "acknowledge_factual_gap",
     reference: input.reference,
     output: input.output,
+    selectedCandidateIndexes: input.selectedCandidateIndexes,
   });
   if (!result.ok) return result;
-  return result.kind === "factual_gap_acknowledged"
-    ? { ok: true }
+  return result.kind === "factual_gap_acknowledged" && result.handoff
+    ? {
+        ok: true,
+        handoff: result.handoff,
+        selectedCandidateCount: result.selectedCandidates.length,
+      }
     : { ok: false, stale: false, message: "O reconhecimento do gap não produziu a decisão esperada." };
 }
 
@@ -231,6 +240,7 @@ async function executeAdministrativeEvaluationDecision(input: Readonly<{
   decision: "confirm_sufficient" | "acknowledge_factual_gap";
   reference: InputCatalogEvaluationReference;
   output: InputCatalogEvaluationOutput;
+  selectedCandidateIndexes?: readonly number[];
 }>) {
   const gate = await requirePlatformAdmin();
   if (!gate.allowed) {
@@ -242,6 +252,7 @@ async function executeAdministrativeEvaluationDecision(input: Readonly<{
       decisionToken: input.reference.decisionToken,
       decisionTokenSecret: process.env.OPENAI_API_KEY,
       output: input.output,
+      selectedCandidateIndexes: input.selectedCandidateIndexes,
     },
     {
       requireRuntime: async () => {
@@ -378,10 +389,17 @@ export async function recordInputCatalogReviewAction(
   if (!gate.allowed) {
     return { error: "Acesso administrativo não autorizado.", reviewedVersion: null, reopened: false, revision };
   }
-  const result = await recordAdminInputCatalogReview({
-    taxonId: String(formData.get("taxonId") ?? ""),
-    inputCatalogVersion: Number(formData.get("inputCatalogVersion")),
+  const legacy = await executeLegacyInputCatalogReviewRecordCore({
+    resolveRuntime: resolveInputCatalogEvaluationRuntimeReadiness,
+    record: () => recordAdminInputCatalogReview({
+      taxonId: String(formData.get("taxonId") ?? ""),
+      inputCatalogVersion: Number(formData.get("inputCatalogVersion")),
+    }),
   });
+  if (!legacy.ok) {
+    return { error: legacy.message, reviewedVersion: null, reopened: false, revision };
+  }
+  const result = legacy.value;
   if (!result.ok) return { error: result.error, reviewedVersion: null, reopened: false, revision };
   revalidatePath("/admin/taxonomia");
   revalidatePath(`/admin/taxonomia/${result.taxonId}`);

@@ -2583,7 +2583,7 @@ Repositório — Ajustados
 20.6.1 Objetivo e status
 
 * Objetivo: avaliar a suficiência factual da pesquisa integral `end_customer` selecionada pela E20.5 em conjunto com uma versão executável explícita do catálogo E20.2 e definir o predicado final de preparação do taxon, sem autorizar geração.
-* Status: E20.6.3 e E20.6.4 concluídas e operacionais desde 15/08/2026; checkpoint pré-integração da E20.6.5 implementado e validado, com integração real ainda pendente do suporte E21.2 ao novo workload e da reconciliação da fonte canônica de `requiredInputCatalogVersion`.
+* Status: E20.6.3 e E20.6.4 concluídas e operacionais desde 15/08/2026; o #795 implementa o expand gate-off da E20.6.5, inclusive o delta E21.2, permanecendo pendentes merge, apply, prova operacional, rollout e contract final.
 
 20.6.2 Registros do recorte
 
@@ -2653,15 +2653,17 @@ Repositório — Ajustados
 
 20.6.5 Avaliação factual com IA no runtime do Admin
 
-* Status: PR #795 em draft com integração candidata gate-off; merge, apply, gates, prova real e fechamento permanecem pendentes, e o contrato expand/contract precisa de decisão do Estrategista antes do merge.
+* Status: PR #795 em draft com integração candidata gate-off; expand/contract em dois PRs aprovado estrategicamente, com merge, apply, gates, prova real e contract final ainda pendentes.
 * Conteúdo:
   * internalizar na Taxonomia administrativa existente a avaliação semântica não autoritativa nos modos sistemático e hipótese humana, preservando a decisão administrativa explícita, a revalidação determinística e o gate E20.6.4 sem IA;
   * o checkpoint pré-integração materializou domínio e contratos, identidade e reconstrução/revalidação do contexto, Structured Output estrito, UI route-local apresentacional não montada e testes com portas e fakes injetados, sem alterar `lib/openai-workloads/`, criar configuração repo-only, chamar provider real ou declarar a E20.6.5 completa;
-  * `taxon_input_catalog_sufficiency_evaluation` é o novo workload textual que deve ser suportado pelo agregado E21.2, com configuração inicial aprovada `gpt-5.6-terra` + `reasoning.effort=low`; mudanças posteriores de modelo ou effort ficam sob governança E21 e decisão humana;
-  * somente depois desse suporte estar incorporado, atualizar a branch e resolver os parâmetros operacionais exclusivamente pelo lifecycle dinâmico Supabase e sua API pública, sem consulta direta, configuração paralela ou transporte exclusivo da E20.6.5;
+  * o #795 já implementa `taxon_input_catalog_sufficiency_evaluation` no agregado E21.2, com configuração inicial aprovada `gpt-5.6-terra` + `reasoning.effort=low`; mudanças posteriores de modelo ou effort ficam sob governança E21 e decisão humana;
+  * após merge, apply e prova operacional, resolver os parâmetros exclusivamente pelo lifecycle dinâmico Supabase e sua API pública, sem consulta direta, configuração paralela ou transporte exclusivo da E20.6.5;
   * a avaliação exige uma versão executável E20.2 `N` escolhida explicitamente e mantida apenas no estado transitório da UI; a leitura canônica carrega a pesquisa E20.5 selecionada, valida e resolve `N` em `starter`, `lite`, `pro` e `ultra`, e somente a decisão humana de suficiência pode gravar `reviewed_input_catalog_version = N`; `loadTaxonPreparationForReviewedVersion()` permanece para E20.6.4 e consumidores posteriores;
   * `E20_6_5_INPUT_CATALOG_EVALUATION_PROVIDER_ENABLED` bloqueia servidor e UI; em Preview/Production, mesmo gate-on recusa `repo_catalog` e a revisão bootstrap `1`, exigindo fonte ativa `supabase_operational` em revisão operacional `2` ou posterior, preservando o handoff Codex enquanto gate-off;
-  * o #795 não constitui fechamento: se o Estrategista aprovar o expand/contract necessário, seu merge introduz o expand gate-off; apply, provas e rollout Preview → Production vêm depois, e um PR contract posterior remove o handoff e atualiza os documentos finais.
+  * para `candidate_gaps`, o humano seleciona e reconhece somente gaps reais, recebendo handoff E20.2 transitório sem escrita, ou rejeita todos os candidatos e confirma `N` como suficiente; a recomendação da IA não possui veto;
+  * gate-off mantém handoff Codex e registro legado; gate-on comprovado oculta ambos e rejeita a action legada server-side, preservando reabertura;
+  * o #795 não constitui fechamento: a decisão expand/contract está aprovada; seu merge introduz o expand gate-off, apply/provas/rollout Preview → Production vêm depois, e o PR contract remove definitivamente o legado e atualiza os documentos finais.
 
 21. E21 — Gestão e governança dos workloads OpenAI
 - Objetivo: gerir e governar os workloads OpenAI por recortes aprovados, iniciando pela configuração explícita, observabilidade segura e leitura administrativa; a configuração dinâmica e o histórico permanecem para recortes posteriores, sem otimização automatizada.

@@ -78,6 +78,7 @@ export {
   type BuildInputCatalogEvaluationPromptInput,
 } from "./input-catalog-evaluation";
 export { executeInputCatalogEvaluationAdministrativeDecision } from "./input-catalog-evaluation-decision";
+export { buildInputCatalogEvaluationGapHandoff } from "./input-catalog-evaluation-gap-handoff";
 export type { InputCatalogEvaluationDecisionTokenPayload } from "./input-catalog-evaluation-decision-token";
 export {
   createInputCatalogEvaluationDecisionToken,
