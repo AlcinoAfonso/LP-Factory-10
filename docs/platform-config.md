@@ -2,8 +2,8 @@
 
 0.1 Cabeçalho
 • Documento: LP Factory 10 — Platform Config
-• Versão: v0.1.24
-• Data: 18/08/2026
+• Versão: v0.1.25
+• Data: 21/08/2026
 
 0.2 Contrato do documento
 • O QUE É: snapshot operacional e fonte única das configurações de plataformas externas do LP Factory 10, refletindo o estado conhecido/cadastrado nas plataformas conforme indicado.
@@ -179,9 +179,9 @@
 • Finalidade: gate server-side temporário do cutover da configuração operacional dinâmica dos quatro workloads OpenAI de produto.
 • Escopo: Preview e Production do projeto Core, com configuração independente por ambiente; Development ignora o gate e permanece no baseline local.
 • Habilitação: somente o literal `true` ativa a leitura operacional no Supabase. Variável ausente, vazia ou com qualquer outro valor mantém `repo_catalog` em Preview e Production.
-• Estado inicial: desabilitada em Preview e Production durante implementação, merge, aplicação e verificação da migration.
+• Estado operacional final: configurada com `true` em Preview e Production após cutover sequencial aprovado; os dois ambientes foram redeployados com o gate ativo.
 • Regra de falha: com o gate habilitado, o runtime consulta exclusivamente o Supabase a cada execução, sem cache nem fallback para `repo_catalog`.
-• Progressão operacional: habilitar e validar primeiro em Preview; Production somente depois das evidências aprovadas de apply, invariantes, Security Controls e smoke de Preview.
+• Progressão operacional concluída: Preview foi habilitado e aprovado antes de Production; apply, invariantes, Security Controls, smoke completo de Preview e smoke mínimo de Production foram aprovados.
 • Redeploy: a habilitação ou desabilitação do gate exige redeploy do ambiente afetado; alterações ordinárias da configuração ativa após o cutover não exigem redeploy.
 • Valor real por ambiente: não versionar neste documento.
 
@@ -191,16 +191,18 @@
 • Habilitação: somente o literal `true` autoriza a tentativa; ausente, vazio ou qualquer outro valor produz `ROLLOUT_GATE_OFF`. Somente esse retorno explícito preserva handoff Codex e registro legado.
 • Condição adicional hospedada: mesmo com este gate ligado, Preview e Production recusam `repo_catalog` e a revisão bootstrap `1`; exigem resolução efetiva `supabase_operational` de revisão `2` ou posterior, já promovida com prova operacional aprovada e ativada pelo lifecycle E21.2. `OPENAI_OPERATIONAL_CONFIG_ENABLED=false` nunca constitui provider-off. Falha dessa comprovação retorna `OPERATIONAL_CONFIGURATION_UNPROVEN` e bloqueia runtime e legado, sem escrita, fallback Codex ou rotulagem gate-off.
 • Estado inicial: desabilitado durante o PR #795, o merge humano, o apply e as provas operacionais do novo workload.
-• Progressão operacional: após apply, invariantes e Security Controls, comprovar a configuração ativa em Preview, habilitar este gate somente em Preview, redeployar e validar; Production permanece gate-off até aprovação humana das evidências de Preview.
+• Pré-condição operacional: `OPENAI_OPERATIONAL_CONFIG_ENABLED=true` já está ativo em Preview e Production e deve permanecer ativo durante todo o rollout da E20.6.5; este recorte apenas verifica essa condição e não volta a habilitar o gate da E21.2.
+• Progressão operacional: após o apply da migration do novo workload, aprovar invariantes e Security Controls, verificar que o gate operacional permanece ativo em Preview e então provar, promover e ativar a revisão operacional `2` de `taxon_input_catalog_sufficiency_evaluation`; somente depois habilitar `E20_6_5_INPUT_CATALOG_EVALUATION_PROVIDER_ENABLED` em Preview, redeployar e validar. Production permanece com o gate E20.6.5 desligado até a decisão humana sobre as evidências de Preview; depois, repetir o lifecycle da revisão `2` e a habilitação controlada em Production.
 • Regra de credencial: reutilizar a `OPENAI_API_KEY` compartilhada já autorizada para o provider e para autenticar, com domínio criptográfico próprio, a evidência transitória de decisão emitida pelo servidor; não criar chave específica da E20.6.5.
 
 • Configuração efetiva dos workloads OpenAI de produto
-• Fonte canônica: `lib/openai-workloads/registry.ts` mantém identidade, baseline local e allowlist; em Preview e Production, o gate desligado usa `repo_catalog` revisão `v2`, e o gate ligado usa exclusivamente `supabase_operational` com revisão decimal ativa.
+• Fonte canônica: `lib/openai-workloads/registry.ts` mantém identidade, baseline local e allowlist; Development usa `repo_catalog` revisão `v2`, e Preview/Production usam exclusivamente `supabase_operational` com revisão decimal ativa.
 • Workloads textuais validados operacionalmente: `niche_resolution` e `commercial_activation_draft_generation`, com modelo `gpt-5.4-mini` e esforço de raciocínio `none`.
 • Workload textual validado no ambiente alvo: `landing_page_draft_generation`, com modelo `gpt-5.6-luna`, esforço `max`, Responses API, Structured Output estrito, `store:false` e timeout de 120 s.
 • Workload de imagem validado no ambiente alvo: `landing_page_draft_image_generation`, com modelo `gpt-image-2`, saída WebP 1536 × 1024, qualidade `medium`, compressão 80, moderação `auto` e timeout de 120 s.
 • Validação operacional: `niche_resolution` e `commercial_activation_draft_generation` foram executados uma única vez em Production em 10/08/2026; os Runtime Logs confirmaram sucesso e telemetria sanitizada, sem prompt, resposta integral, credencial ou dado pessoal.
 • Validação dos workloads de draft: por decisão humana, o gate de canários isolados sem persistência foi substituído pelo primeiro append integrado; duas execuções integradas hospedadas em 18/08/2026 comprovaram texto, imagem e o caminho oficial sem retry ou fallback.
+• Validação do cutover E21.2: Preview aprovou lifecycle e provas reais dos quatro transportes; Production aprovou leitura das quatro baselines e execução comercial real com origem `supabase_operational` e revisão 1, sem publicação, erro ou warning na janela autenticada.
 • Duração da Function: o segmento produtivo permanece configurado com `maxDuration = 300`; deployment READY e duas execuções integradas completas sem timeout incompatível corroboraram operacionalmente o gate.
 • Variáveis legadas de modelo na Vercel
 • Nomes: `OPENAI_NICHE_RESOLVER_MODEL`, `OPENAI_LANDING_PAGE_GENERATION_PROFILE_MODEL` e `OPENAI_COMMERCIAL_ACTIVATION_MODEL`.
@@ -326,7 +328,7 @@
 • Finalidade: autenticação com OpenAI API; no Core, a mesma chave server-side pode atender os consumidores de produto autorizados.
 • Valor real: não versionar.
 
-• A seleção de modelo, esforço ou configuração de mídia dos workloads OpenAI de produto não usa variáveis Vercel no runtime atual; o contrato efetivo está no catálogo versionado do repositório.
+• A seleção de modelo, esforço ou configuração de mídia dos workloads OpenAI de produto não usa variáveis Vercel; Development usa o baseline versionado no repositório e Preview/Production resolvem a revisão ativa no Supabase por meio do gate operacional registrado em 3.5.
 • As três variáveis legadas de modelo estão ausentes da configuração vigente da Vercel conforme 3.5.
 
 6.3.1 Endpoint externo atual
