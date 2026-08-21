@@ -504,7 +504,7 @@ checks as (
       pg_get_constraintdef(actual.oid) as definition
     from expected_constraints expected
     left join pg_constraint actual
-      on actual.conname = expected.constraint_name
+      on actual.conname = left(expected.constraint_name, 63)
       and actual.connamespace = 'public'::regnamespace
     where actual.oid is not null
     union all

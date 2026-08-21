@@ -30,6 +30,32 @@ export type CommercialActivationOpenAiResult<T> =
     }>
   | Readonly<{ ok: false; reason: string }>;
 
+export function extractCommercialActivationOpenAiOutputText(
+  payload: unknown,
+): string | null {
+  const response = asRecord(payload);
+  if (!response) return null;
+  if (typeof response.output_text === "string") return response.output_text;
+
+  const output = Array.isArray(response.output) ? response.output : [];
+  for (const item of output) {
+    const content = asRecord(item)?.content;
+    if (!Array.isArray(content)) continue;
+
+    for (const part of content) {
+      const outputPart = asRecord(part);
+      if (
+        outputPart?.type === "output_text" &&
+        typeof outputPart.text === "string"
+      ) {
+        return outputPart.text;
+      }
+    }
+  }
+
+  return null;
+}
+
 export async function requestCommercialActivationOpenAi<T>(
   input: CommercialActivationOpenAiInput<T>,
   dependencies: CommercialActivationOpenAiDependencies = {},
@@ -50,4 +76,10 @@ export async function requestCommercialActivationOpenAi<T>(
           ? "missing_openai_env"
           : result.reason,
       };
+}
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value !== null && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null;
 }

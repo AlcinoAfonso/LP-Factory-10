@@ -19,6 +19,7 @@ import {
   type OpenAiCandidateProofDependencies,
   type OpenAiCandidateProofMetadata,
 } from "./proofCore";
+import { parseCommercialProof } from "./commercialProof";
 
 export type { OpenAiCandidateProofMetadata } from "./proofCore";
 
@@ -264,20 +265,6 @@ function proofResolver(
     operationalConfigurationEnabled: "true",
     readOperationalConfiguration,
   } as const;
-}
-
-function parseCommercialProof(payload: unknown) {
-  if (!isRecord(payload) || typeof payload.output_text !== "string") {
-    return { ok: false as const, kind: "invalid_response" as const, reason: "proof_output_missing" };
-  }
-  try {
-    const parsed: unknown = JSON.parse(payload.output_text);
-    return isRecord(parsed) && parsed.proof === "approved"
-      ? { ok: true as const, value: true }
-      : { ok: false as const, kind: "invalid_response" as const, reason: "proof_output_invalid" };
-  } catch {
-    return { ok: false as const, kind: "invalid_response" as const, reason: "proof_output_invalid" };
-  }
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
