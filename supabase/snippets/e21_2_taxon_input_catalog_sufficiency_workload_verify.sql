@@ -56,7 +56,7 @@ where conrelid in (
     'openai_workload_configuration_activations_workload_chk',
     'openai_workload_configuration_activations_modality_chk'
   )
-order by table_name::text, constraint_name;
+order by conrelid::regclass::text, conname;
 
 select
   procedure.proname as rpc_name,

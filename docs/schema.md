@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data da última atualização: 21/08/2026
-• Documento: LP Factory 10 — Schema (DB Contract) v1.0.50
+• Documento: LP Factory 10 — Schema (DB Contract) v1.0.51
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -885,6 +885,7 @@
 • `environment` aceita somente `production | preview`; Development permanece fora desta residência dinâmica.
 • A PK composta `(environment, workload)` é o lock canônico das RPCs e impede mais de uma unidade para a mesma combinação.
 • A migration forward-only `supabase/migrations/20260820190422_e21_2_3_openai_workload_operational_configurations.sql` está aplicada no ambiente hospedado; o snippet read-only aprovou 10/10 verificações e o Security Controls não apresentou alerta incompatível com o agregado ou suas RPCs.
+• A migration incremental forward-only `supabase/migrations/20260820213900_e21_2_taxon_input_catalog_sufficiency_workload.sql` também está aplicada no ambiente hospedado e estende o mesmo agregado com `taxon_input_catalog_sufficiency_evaluation`, sem nova entidade ou tabela de negócio; os testes SQL, snippets read-only e invariantes pós-apply foram aprovados, e o Security Controls reportou para as três tabelas apenas o INFO esperado de RLS sem policy, compatível com a residência service-only sem grants públicos.
 
 1.30.2 Colunas
 • environment text not null
@@ -906,14 +907,14 @@
 • candidate_saved_by referencia auth.users(id) com ON UPDATE RESTRICT e ON DELETE RESTRICT.
 • Exatamente um entre candidata mutável e revisão validada pendente pode existir; candidata ausente exige que todos os seus campos sejam nulos.
 • pending_revision_id deve ser nulo ou diferente de active_revision_id; uma revisão já ativa não constitui substituição pendente.
-• Configuração textual aceita somente `gpt-5.4-mini + none|low|medium|high|xhigh` ou `gpt-5.6-luna + none|low|medium|high|xhigh|max`, sem quality.
+• Configuração textual aceita, conforme a allowlist do workload, `gpt-5.4-mini + none|low|medium|high|xhigh`, `gpt-5.6-luna + none|low|medium|high|xhigh|max` ou, exclusivamente para `taxon_input_catalog_sufficiency_evaluation`, `gpt-5.6-terra + low`, sempre sem quality.
 • Configuração de imagem aceita somente `gpt-image-2 + low|medium|high`, sem reasoning_effort.
 • configuration_version é positivo e funciona como token otimista obrigatório de toda transição.
 
 1.30.4 Índices, bootstrap e segurança
 • `openai_workload_operational_configurations_active_revision_idx`: btree em active_revision_id + unidade.
 • `openai_workload_operational_configurations_pending_revision_idx`: btree parcial em pending_revision_id + unidade quando não nulo.
-• O bootstrap idempotente cria as oito unidades Production/Preview × quatro workloads, sem candidata ou revisão pendente e com active_revision_id na revisão 1 correspondente.
+• O bootstrap idempotente cria as dez unidades Production/Preview × cinco workloads, sem candidata ou revisão pendente e com active_revision_id na revisão 1 correspondente.
 • RLS habilitado e nenhuma policy.
 • public, anon, authenticated e ai_readonly: sem grants.
 • service_role: SELECT e UPDATE somente dos nove campos necessários às transições; sem INSERT, DELETE ou TRUNCATE.

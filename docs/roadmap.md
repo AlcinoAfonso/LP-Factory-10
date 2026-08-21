@@ -2625,7 +2625,7 @@ Repositório — Ajustados
 20.6.1 Objetivo e status
 
 * Objetivo: avaliar a suficiência factual da pesquisa integral `end_customer` selecionada pela E20.5 em conjunto com uma versão executável explícita do catálogo E20.2 e definir o predicado final de preparação do taxon, sem autorizar geração.
-* Status: E20.6.3 e E20.6.4 concluídas e operacionais desde 15/08/2026; o #795 implementa o expand gate-off da E20.6.5, inclusive o delta E21.2, permanecendo pendentes merge, apply, prova operacional, rollout e contract final.
+* Status: E20.6.3 e E20.6.4 concluídas e operacionais desde 15/08/2026; o expand gate-off da E20.6.5 foi mergeado no #795 e sua migration incremental foi aplicada, permanecendo pendentes o merge do PR corretivo pós-apply, a prova operacional, o rollout e o contract final.
 
 20.6.2 Registros do recorte
 
@@ -2643,6 +2643,9 @@ Repositório — Ajustados
     * `lib/conversion-content/landing-page/taxon-preparation/input-catalog-evaluation.ts`;
     * `lib/conversion-content/landing-page/taxon-preparation/preparation.ts`;
     * `supabase/migrations/20260815172449_e20_6_reviewed_input_catalog_version.sql`;
+    * `supabase/migrations/20260820213900_e21_2_taxon_input_catalog_sufficiency_workload.sql`;
+    * `supabase/snippets/e21_2_taxon_input_catalog_sufficiency_workload_verify.sql`;
+    * `supabase/tests/e21_2_taxon_input_catalog_sufficiency_workload.test.sql`;
     * `supabase/snippets/e20_6_reviewed_input_catalog_version_verify.sql`.
   * Ajustados:
     * `app/admin/(protected)/estrutura-lp/page.tsx`;
@@ -2659,7 +2662,8 @@ Repositório — Ajustados
     * `lib/conversion-content/landing-page/input-catalog/validation-cases.ts`;
     * `lib/conversion-content/landing-page/taxon-preparation/contracts.ts`;
     * `lib/conversion-content/landing-page/taxon-preparation/index.ts`;
-    * `lib/conversion-content/landing-page/taxon-preparation/validation-cases.ts`.
+    * `lib/conversion-content/landing-page/taxon-preparation/validation-cases.ts`;
+    * `supabase/tests/e21_2_3_openai_workload_operational_configurations.test.sql`.
 * Updates:
   * Aplicados:
     * `prod#14`;
@@ -2695,18 +2699,18 @@ Repositório — Ajustados
 
 20.6.5 Avaliação factual com IA no runtime do Admin
 
-* Status: PR #795 em draft com integração candidata gate-off; expand/contract em dois PRs aprovado estrategicamente, com merge, apply, gates, prova real e contract final ainda pendentes.
+* Status: expand gate-off mergeado no #795 e migration `20260820213900` aplicada; o PR corretivo pós-apply repara os artefatos de prova sem alterar o schema e já revalidou testes SQL, snippets read-only, invariantes e Security Controls, enquanto seu merge, revisão operacional `2`, gates específicos, prova real, rollout e contract final permanecem pendentes.
 * Conteúdo:
   * internalizar na Taxonomia administrativa existente a avaliação semântica não autoritativa nos modos sistemático e hipótese humana, preservando a decisão administrativa explícita, a revalidação determinística e o gate E20.6.4 sem IA;
   * o checkpoint pré-integração materializou domínio e contratos, identidade e reconstrução/revalidação do contexto, Structured Output estrito, UI route-local apresentacional não montada e testes com portas e fakes injetados, sem alterar `lib/openai-workloads/`, criar configuração repo-only, chamar provider real ou declarar a E20.6.5 completa;
-  * o #795 já implementa `taxon_input_catalog_sufficiency_evaluation` no agregado E21.2, com configuração inicial aprovada `gpt-5.6-terra` + `reasoning.effort=low`; mudanças posteriores de modelo ou effort ficam sob governança E21 e decisão humana;
+  * o #795 implementou `taxon_input_catalog_sufficiency_evaluation` no agregado E21.2, com configuração inicial aprovada `gpt-5.6-terra` + `reasoning.effort=low`; mudanças posteriores de modelo ou effort ficam sob governança E21 e decisão humana;
   * `OPENAI_OPERATIONAL_CONFIG_ENABLED=true` já está ativo em Preview e Production e deve permanecer ativo; a E20.6.5 apenas verifica essa condição, sem etapa futura de habilitação do gate da E21.2;
-  * após o apply da migration do novo workload, verificar o gate operacional ativo em Preview e então provar, promover e ativar a revisão operacional `2` de `taxon_input_catalog_sufficiency_evaluation`; somente depois habilitar `E20_6_5_INPUT_CATALOG_EVALUATION_PROVIDER_ENABLED` em Preview e resolver os parâmetros exclusivamente pelo lifecycle dinâmico Supabase e sua API pública, sem consulta direta, configuração paralela ou transporte exclusivo da E20.6.5;
+  * a migration do novo workload foi aplicada e o bootstrap hospedado está na revisão `1`, sem candidata ou revisão pendente; após o merge do PR corretivo pós-apply, verificar que o gate operacional permanece ativo em Preview e então provar, promover e ativar a revisão operacional `2` de `taxon_input_catalog_sufficiency_evaluation`; somente depois habilitar `E20_6_5_INPUT_CATALOG_EVALUATION_PROVIDER_ENABLED` em Preview e resolver os parâmetros exclusivamente pelo lifecycle dinâmico Supabase e sua API pública, sem consulta direta, configuração paralela ou transporte exclusivo da E20.6.5;
   * a avaliação exige uma versão executável E20.2 `N` escolhida explicitamente e mantida apenas no estado transitório da UI; a leitura canônica carrega a pesquisa E20.5 selecionada, valida e resolve `N` em `starter`, `lite`, `pro` e `ultra`, e somente a decisão humana de suficiência pode gravar `reviewed_input_catalog_version = N`; `loadTaxonPreparationForReviewedVersion()` permanece para E20.6.4 e consumidores posteriores;
   * `E20_6_5_INPUT_CATALOG_EVALUATION_PROVIDER_ENABLED` bloqueia servidor e UI; em Preview/Production, mesmo gate-on recusa `repo_catalog` e a revisão bootstrap `1`, exigindo fonte ativa `supabase_operational` em revisão operacional `2` ou posterior; somente o retorno explícito `ROLLOUT_GATE_OFF` preserva o handoff Codex;
   * `confirm_sufficient` aceita somente resultado `sufficient`; para `candidate_gaps`, o humano seleciona e reconhece somente gaps reais, recebendo handoff E20.2 transitório sem escrita, ou limpa a seleção e usa `reject_candidates_and_confirm_sufficient` para rejeitar todos e confirmar `N`, com `kind` distinto por decisão e sem veto da IA;
   * somente `ROLLOUT_GATE_OFF` mantém handoff Codex e registro legado; gate-on comprovado e `OPERATIONAL_CONFIGURATION_UNPROVEN` ocultam e bloqueiam ambos server-side, sem gravação, fallback Codex ou rotulagem gate-off, preservando reabertura;
-  * o #795 não constitui fechamento: a decisão expand/contract está aprovada; seu merge introduz o expand gate-off, seguido por apply, revisão operacional `2` provada/promovida/ativada e rollout do gate E20.6.5 em Preview → decisão humana → repetição controlada em Production; o PR contract remove definitivamente o legado e atualiza os documentos finais.
+  * o #795 não constitui fechamento: a decisão expand/contract está aprovada, o expand gate-off foi mergeado e sua migration foi aplicada; o PR corretivo deve ser mergeado antes da revisão operacional `2` provada/promovida/ativada e do rollout do gate E20.6.5 em Preview → decisão humana → repetição controlada em Production; o PR contract remove definitivamente o legado e atualiza os documentos finais.
 
 21. E21 — Gestão e governança dos workloads OpenAI
 - Objetivo: gerir e governar os workloads OpenAI por recortes aprovados, com configuração explícita, observabilidade segura, leitura administrativa e configuração operacional dinâmica por ambiente, sem otimização automatizada.
@@ -2716,7 +2720,7 @@ Repositório — Ajustados
 
 21.1.1 Objetivo e status
 - Objetivo: estabelecer catálogo tipado e resolução explícita dos workloads OpenAI, integrar os consumidores de produto à configuração e à observabilidade comuns e expor inventário administrativo read-only.
-- Status: Fundação E21.1 implementada, validada e preservada; o catálogo vigente possui quatro workloads de produto e uma referência operacional, sem mudar a natureza repo-only e read-only do boundary.
+- Status: Fundação E21.1 implementada, validada e preservada; o catálogo vigente possui cinco workloads de produto e uma referência operacional, sem mudar a natureza repo-only e read-only do boundary.
 
 21.1.2 Registros do recorte
 - Repositório:
@@ -2752,29 +2756,29 @@ Repositório — Ajustados
 21.1.3 Catálogo estrutural e resolução explícita
 - Status: Implementada e validada.
 - Conteúdo:
-  - O boundary transversal `lib/openai-workloads/` mantém registry interno, repo-only e profundamente imutável, com quatro configurações de produto e uma referência operacional separada do Supabase Inspect.
-  - Dois workloads textuais preservam `gpt-5.4-mini + none`; a E19.4 acrescenta `landing_page_draft_generation` e o workload de mídia independente `landing_page_draft_image_generation`, sem transportar parâmetros textuais inaplicáveis.
+  - O boundary transversal `lib/openai-workloads/` mantém registry interno, repo-only e profundamente imutável, com cinco configurações de produto e uma referência operacional separada do Supabase Inspect.
+  - Dois workloads textuais preservam `gpt-5.4-mini + none`; a E19.4 acrescenta `landing_page_draft_generation` e o workload de mídia independente `landing_page_draft_image_generation`; a E20.6.5 acrescenta `taxon_input_catalog_sufficiency_evaluation` com baseline `gpt-5.6-terra + low`, sem transportar parâmetros inaplicáveis entre modalidades.
   - O resolver público discrimina `responses_text | image_generation`, aceita somente workloads de produto conhecidos, falha fechado para identidade desconhecida ou referência operacional e projeta inventário seguro com classificação, origem, revisão e configuração efetiva.
   - Ambiente, uniões discriminadas de resultado/evento e normalização de usage foram definidos como contratos puros comuns e integrados às chamadas reais na E21.1.4.
   - Os casos executáveis fundacionais cobrem unicidade, resolução, separação effective/reference, imutabilidade, projeção sem secrets, ambiente, usage, evento e ausência de transporte, persistência ou payload funcional no boundary.
   - Nenhum banco, integração remota, cliente universal, preço, prompt, schema funcional ou fallback silencioso foi criado.
 
 21.1.4 Integração dos consumidores e observabilidade comum
-- Status: integração técnica validada para os quatro workloads de produto vigentes; as execuções integradas hospedadas da E19.4 comprovaram os dois workloads de draft e substituíram, por decisão humana, o gate de canários isolados.
+- Status: integração técnica validada para os cinco workloads de produto vigentes; as execuções integradas hospedadas da E19.4 comprovaram os dois workloads de draft, enquanto a prova hospedada do workload da E20.6.5 permanece condicionada ao rollout próprio.
 - Conteúdo:
   - Consumidores textuais resolvem modelo e reasoning effort explícitos; o workload de imagem resolve somente sua configuração de mídia. Prompts, schemas, limites, persistência e fallbacks funcionais permanecem nos domínios consumidores.
   - Eventos textuais e de imagem registram por tentativa somente metadados operacionais seguros e aplicáveis; métricas ausentes permanecem `null` e nenhum prompt, resposta integral, payload de negócio, PII ou secret é registrado.
   - Os consumidores ativos não leem variáveis legadas de modelo nem mantêm hardcode client ou cálculo monetário local; as variáveis externas permanecem apenas como legado temporário de reversão conforme a configuração operacional canônica.
   - O transporte OpenAI comercial foi isolado no adapter previsto e novos drafts registram workload, origem, revisão, modelo e effort resolvidos na proveniência existente, sem migration, backfill ou persistência de usage.
-  - Validators determinísticos exercitam os quatro workloads de produto, separação textual/mídia, configuração inválida sem transporte, parâmetros exatos, IDs de provider, usage aplicável, eventos discriminados e ausência de referências legadas.
+  - Validators determinísticos exercitam os cinco workloads de produto, separação textual/mídia, configuração inválida sem transporte, parâmetros exatos, IDs de provider, usage aplicável, eventos discriminados e ausência de referências legadas.
   - As execuções integradas hospedadas da E19.4 comprovaram `landing_page_draft_generation` e `landing_page_draft_image_generation` e substituíram, por decisão humana, o gate de canários isolados; não permanece pendência de canários isolados.
   - Permanece fora do PR #710 a correção separada da automação de smoke para remover senha de logs e artifacts, gerar credenciais não previsíveis e tratar colisões corretamente.
 
 21.1.5 Inventário read-only no Admin Dashboard
-- Status: inventário vigente com cinco itens, aprovado no QA pós-merge da E22.1.4 em Preview e produção.
+- Status: inventário versionado vigente com seis itens; o QA pós-merge da E22.1.4 aprovou os cinco itens então existentes em Preview e Production, e a prova hospedada do item acrescentado pela E20.6.5 permanece no rollout próprio.
 - Conteúdo:
-  - A rota protegida `/admin/workloads-openai` integra o shell e a navegação administrativos vigentes e projeta diretamente da API pública do boundary os cinco itens vigentes, sem adapter, API, componente client ou controle de mutação novos.
-  - Os quatro workloads de produto exibem ambiente observado, configuração efetiva, origem e revisão; o Supabase Inspect permanece diferenciado como referência operacional externa e informa explicitamente `Ambiente da execução: não verificado nesta página`.
+  - A rota protegida `/admin/workloads-openai` integra o shell e a navegação administrativos vigentes e projeta diretamente da API pública do boundary os seis itens vigentes, sem adapter, API, componente client ou controle de mutação novos.
+  - Os cinco workloads de produto exibem ambiente observado, configuração efetiva, origem e revisão; o Supabase Inspect permanece diferenciado como referência operacional externa e informa explicitamente `Ambiente da execução: não verificado nesta página`.
   - A superfície é responsiva, sem consulta runtime à OpenAI, GitHub ou Vercel e sem configuração remota, métricas históricas ou capacidades inexistentes.
   - As evidências hospedadas aprovaram desktop, viewport mobile de 390 × 844 sem overflow, navegação lógica por TAB com foco visível, acesso positivo de `platform_admin` e bloqueio da identidade preexistente sem esse papel.
 
@@ -2839,8 +2843,8 @@ Repositório — Ajustados
 21.2.3 Fonte operacional dinâmica e resolução por ambiente/workload
 - Status: Concluída; fonte operacional aplicada e cutover aprovado em Preview e Production.
 - Automação: não.
-- A migration forward-only materializa o agregado de configuração, revisões validadas e ativações/rollback por `ambiente + workload`, com bootstrap exato das oito unidades de Production e Preview, lifecycle transacional, concorrência otimista, constraints unit-safe, RLS/grants mínimos e metadados de prova fechados e sanitizados.
-- `lib/openai-workloads/` permanece o boundary público comum: resolvers assíncronos recebem ambiente explícito, Development continua no baseline local, e os quatro callsites preservam transporte, fallback funcional e proveniência ao consumir `repo_catalog` ou `supabase_operational`.
+- As migrations forward-only materializam o agregado de configuração, revisões validadas e ativações/rollback por `ambiente + workload`, com bootstrap exato das dez unidades de Production e Preview, lifecycle transacional, concorrência otimista, constraints unit-safe, RLS/grants mínimos e metadados de prova fechados e sanitizados.
+- `lib/openai-workloads/` permanece o boundary público comum: resolvers assíncronos recebem ambiente explícito, Development continua no baseline local, e os cinco callsites preservam transporte, fallback funcional e proveniência ao consumir `repo_catalog` ou `supabase_operational`.
 - Adapter server-side, comportamento fail-closed, allowlists por workload, validação de snapshots funcionais, snippet SQL read-only, testes SQL e documentação canônica aplicável foram entregues; `npm ci`, `npm run check`, validadores focais e `git diff --check` foram aprovados.
 - A migration foi aplicada pelo workflow canônico; o snippet hospedado aprovou 10/10 verificações e o Security Controls não apresentou alerta incompatível com as tabelas ou RPCs do recorte.
 - `OPENAI_OPERATIONAL_CONFIG_ENABLED=true` foi habilitada e redeployada primeiro em Preview e, somente após sua aprovação integral, em Production; os dois ambientes usam exclusivamente `supabase_operational`, enquanto Development permanece no baseline local.
@@ -2854,7 +2858,7 @@ Repositório — Ajustados
 - A prova despacha fixture segura pelos quatro transportes existentes, não cria persistência funcional, benchmark, ranking ou decisão autônoma e só promove após sucesso; erro preserva a candidata e nunca altera a revisão ativa. A prova comercial reutiliza o parser comum do shape REST real de `/v1/responses`.
 - O Preview aprovou os quatro transportes, criação/edição/descarte de candidata, promoção, ativação, execução subsequente com nova revisão, isolamento de Production e rollback, além de papéis positivo/negativo, desktop 1440 × 900, mobile 390 × 844, estados de sucesso/erro, reconhecimento do lifecycle e checklist proporcional WCAG 2.2.
 - O smoke mínimo de Production confirmou as quatro baselines ativas e uma execução comercial real com origem `supabase_operational` e revisão 1, criando somente draft não publicado; a janela autenticada permaneceu sem erro ou warning no runtime.
-- O estado operacional final mantém os quatro workloads de Preview e Production na revisão 1, sem candidata ou revisão pendente; os eventos append-only do lifecycle de Preview permanecem preservados e Production mantém somente os eventos de bootstrap.
+- O estado operacional mantém os cinco workloads de Preview e Production sem candidata ou revisão pendente; o workload `taxon_input_catalog_sufficiency_evaluation` permanece na revisão bootstrap `1` em ambos os ambientes, e os eventos append-only dos lifecycles anteriores permanecem preservados.
 - `OPENAI_API_KEY` permaneceu server-side e foi reutilizada sem cópia, exposição ou versionamento. A E21.3 não foi iniciada.
 
 21.3 Evidências e avaliação de custo-benefício dos workloads OpenAI

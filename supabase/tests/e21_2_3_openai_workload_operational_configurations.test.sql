@@ -18,6 +18,10 @@ declare
   v_workload constant text := 'niche_resolution';
   v_initial_active_revision_id uuid;
   v_initial_version bigint;
+  v_initial_max_revision_number bigint;
+  v_initial_revision_count bigint;
+  v_initial_max_activation_number bigint;
+  v_initial_activation_count bigint;
   v_version bigint;
   v_candidate_revision_id uuid;
   v_candidate_revision_number bigint;
@@ -82,6 +86,26 @@ begin
   from public.openai_workload_operational_configurations configuration
   where configuration.environment = v_environment
     and configuration.workload = v_workload;
+
+  select
+    max(revision.revision_number),
+    count(*)
+  into
+    v_initial_max_revision_number,
+    v_initial_revision_count
+  from public.openai_workload_configuration_revisions revision
+  where revision.environment = v_environment
+    and revision.workload = v_workload;
+
+  select
+    max(activation.activation_number),
+    count(*)
+  into
+    v_initial_max_activation_number,
+    v_initial_activation_count
+  from public.openai_workload_configuration_activations activation
+  where activation.environment = v_environment
+    and activation.workload = v_workload;
 
   v_version := public.save_openai_workload_configuration_candidate_v1(
     v_environment,
@@ -310,7 +334,7 @@ begin
     v_version
   ) promoted;
 
-  if v_candidate_revision_number <> 2
+  if v_candidate_revision_number <> v_initial_max_revision_number + 1
      or not exists (
        select 1
        from public.openai_workload_operational_configurations configuration
@@ -319,7 +343,7 @@ begin
          and configuration.pending_revision_id = v_candidate_revision_id
          and configuration.candidate_model is null
      ) then
-    raise exception 'promotion must append revision 2 and install it as the sole pending substitution';
+    raise exception 'promotion must append the next revision and install it as the sole pending substitution';
   end if;
 
   begin
@@ -387,8 +411,9 @@ begin
   where environment = v_environment
     and workload = v_workload;
 
-  if v_revision_count <> 2 or v_activation_count <> 3 then
-    raise exception 'lifecycle must preserve two revisions and three ordered activation events';
+  if v_revision_count <> v_initial_revision_count + 1
+     or v_activation_count <> v_initial_activation_count + 2 then
+    raise exception 'lifecycle must append one revision and two ordered activation events';
   end if;
 
   if exists (
@@ -438,7 +463,7 @@ begin
     set event_type = 'activate'
     where environment = v_environment
       and workload = v_workload
-      and activation_number = 3;
+      and activation_number = v_initial_max_activation_number + 2;
     raise exception 'activation event update should have failed';
   exception when object_not_in_prerequisite_state then
     null;
@@ -448,7 +473,7 @@ begin
     delete from public.openai_workload_configuration_activations
     where environment = v_environment
       and workload = v_workload
-      and activation_number = 3;
+      and activation_number = v_initial_max_activation_number + 2;
     raise exception 'activation event delete should have failed';
   exception when object_not_in_prerequisite_state then
     null;
