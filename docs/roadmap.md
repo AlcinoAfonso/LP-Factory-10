@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 20/08/2026
-• Versão: v1.5.171
+• Data: 21/08/2026
+• Versão: v1.5.172
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2098,7 +2098,7 @@ Repositório — Ajustados
 
 19. E19 — LP Builder
 - Objetivo: Consolidar o fluxo Core de landing pages por conta, da identidade mínima em `draft` às futuras etapas de geração, revisão, materialização e publicação, sempre por recortes aprovados.
-- Status: E19.1, E19.2 e E19.3 concluídas. E19.4.3, E19.4.4 e E19.4.5 concluídas; a E19.4 está encerrada e integrada à `main` pelo PR #776. A revisão 3 permanece preservada como baseline dos gaps persuasivos observados. Com a E22.1 concluída, a E19.5 deixa de estar bloqueada por essa pré-condição e passa a ser o próximo recorte a planejar, sem implementação iniciada.
+- Status: E19.1, E19.2 e E19.3 concluídas. E19.4.3, E19.4.4 e E19.4.5 concluídas; a E19.4 está encerrada e integrada à `main` pelo PR #776. A revisão 3 permanece preservada como baseline dos gaps persuasivos observados. A E19.5 possui plano-base v2 aprovado e permanece sem implementação iniciada.
 
 19.1 Criação produtiva mínima de LP por conta
 
@@ -2406,15 +2406,20 @@ Repositório — Ajustados
 19.5 — Workspace operacional e lifecycle da LP
 
 19.5.1 Objetivo e status
-- Objetivo: preservar as decisões vigentes necessárias ao próximo planejamento do workspace operacional e do lifecycle da LP.
-- Status: Prevista; próximo recorte a planejar/reconciliar; sem implementação iniciada.
+- Objetivo: transformar a superfície autenticada da conta em workspace operacional para organizar, configurar, versionar, revisar, aprovar, arquivar e restaurar identidades estáveis de LP, preservando o histórico append-only.
+- Status: Planejada conforme plano-base v2 aprovado; implementação ainda não iniciada.
 
-19.5.2 Decisões vigentes e limites
-- `landing_page` é identidade comercial estável; tentativa ou revisão não cria nova LP.
-- PR #726 é base madura a reconciliar, não plano executável vigente.
-- Não implementar a antiga abordagem “Light” nem drafts independentes como novas LPs.
-- O planejamento da E19.5 deve decidir lifecycle, aprovação/conclusão/publicação/arquivamento, revisão publicada × revisão em trabalho, edição manual, melhoria parcial/integral por IA, histórico/restauração e quais ações consomem IA.
-- Nenhuma dessas decisões autoriza implementação neste PR.
+19.5.3 Workspace operacional, configuração e lifecycle da LP
+- Status: Planejada.
+- Conteúdo:
+  - a E19.2 permanece responsável pelo primeiro onboarding e pelo bootstrap histórico, sem rebind; a operação posterior separa valores compartilhados de conta e negócio dos valores contextuais de oferta, campanha e LP;
+  - cada LP continua sendo uma identidade comercial estável, representada uma única vez no workspace, com estados de UX derivados, lista operacional e visão separada de arquivadas;
+  - `landing_page_objective` será input humano explícito e não factual da LP, versionado no catálogo E20.2 e dependente da aceitação E20.6 antes da geração;
+  - `Gerar nova revisão` reutiliza E19.3 e E19.4 por ação humana, cria revisão integral e append-only da mesma LP, preserva revisões anteriores e não altera automaticamente a versão aprovada;
+  - o histórico permite preview da revisão mais recente e de revisões anteriores; a aprovação escolhe explicitamente uma revisão existente, sem cópia nem nova entidade de versão;
+  - o lifecycle de produto é `active | archived`; a implementação funcional permanece backward-compatible com `draft`, e o contract definitivo fica em recorte posterior, somente após implantação e validação do runtime funcional;
+  - backfill de status `draft → active`, default `active` e retirada de `draft` não integram a implementação funcional da E19.5;
+  - publicação, editor, hard delete, binding dinâmico, tracking, analytics, testes A/B, engine de experimentos e nova automação permanecem fora do recorte.
 
 20. E20 — Preparação e liberação de taxons para geração de landing pages
 
