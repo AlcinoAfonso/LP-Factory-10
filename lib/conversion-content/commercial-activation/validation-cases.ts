@@ -110,6 +110,7 @@ const cases: Case[] = [
         emitEvent: (event) => invalidEvents.push(event),
       });
       assert.equal(invalid.ok, false);
+      if (!invalid.ok) assert.equal(invalid.reason, "missing_openai_env");
       assert.equal(transportCalls, 0);
       assert.equal(invalidEvents[0]?.failureCategory, "configuration_invalid");
       assert.equal(invalidEvents[0]?.latencyMs, null);

@@ -1,4 +1,35 @@
+import type {
+  LandingPageInputCatalogPlan,
+  LandingPageInputCatalogTaxonIdentity,
+  ResolvedLandingPageInputCatalog,
+} from "../input-catalog";
+
 export const END_CUSTOMER_RESEARCH_AUDIENCE_SCOPE = "end_customer" as const;
+
+export const INPUT_CATALOG_EVALUATION_SCHEMA_VERSION = 1 as const;
+export const inputCatalogEvaluationModes = ["systematic", "hypothesis"] as const;
+export const inputCatalogEvaluationStatuses = [
+  "sufficient",
+  "candidate_gaps",
+  "inconclusive",
+] as const;
+export const inputCatalogEvaluationCandidateOrigins = [
+  "systematic",
+  "human_hypothesis",
+  "incidental",
+] as const;
+export const inputCatalogEvaluationCandidateConclusions = [
+  "covered",
+  "refine_existing_field",
+  "possible_new_field",
+  "inconclusive",
+] as const;
+export const inputCatalogEvaluationTaxonomicLayers = [
+  "universal",
+  "segment",
+  "niche",
+  "ultra_niche",
+] as const;
 
 export type EndCustomerResearchTaxonIdentity = Readonly<{
   slug: string;
@@ -108,6 +139,181 @@ export type TaxonPreparationResult =
       ok: false;
       error: Readonly<{
         code: TaxonPreparationErrorCode;
+        message: string;
+      }>;
+    }>;
+
+export type InputCatalogEvaluationMode =
+  (typeof inputCatalogEvaluationModes)[number];
+export type InputCatalogEvaluationStatus =
+  (typeof inputCatalogEvaluationStatuses)[number];
+export type InputCatalogEvaluationCandidateOrigin =
+  (typeof inputCatalogEvaluationCandidateOrigins)[number];
+export type InputCatalogEvaluationCandidateConclusion =
+  (typeof inputCatalogEvaluationCandidateConclusions)[number];
+export type InputCatalogEvaluationTaxonomicLayer =
+  (typeof inputCatalogEvaluationTaxonomicLayers)[number];
+
+export type InputCatalogEvaluationCandidate = Readonly<{
+  origin: InputCatalogEvaluationCandidateOrigin;
+  conclusion: InputCatalogEvaluationCandidateConclusion;
+  factualNeed: string;
+  relatedFields: readonly string[];
+  currentCoverage: string;
+  allegedInsufficiency: string | null;
+  evidence: string;
+  expectedOperationalSource: string | null;
+  realConsumer: string | null;
+  concreteHarm: string | null;
+  suggestedTaxonomyLayer: InputCatalogEvaluationTaxonomicLayer | null;
+  uncertainties: readonly string[];
+}>;
+
+export type InputCatalogEvaluationOutput = Readonly<{
+  schemaVersion: typeof INPUT_CATALOG_EVALUATION_SCHEMA_VERSION;
+  status: InputCatalogEvaluationStatus;
+  mode: InputCatalogEvaluationMode;
+  summary: string;
+  candidates: readonly InputCatalogEvaluationCandidate[];
+  followUpQuestion: string | null;
+}>;
+
+export type ParseInputCatalogEvaluationOutputResult =
+  | Readonly<{ ok: true; value: InputCatalogEvaluationOutput }>
+  | Readonly<{
+      ok: false;
+      error: Readonly<{
+        code: "INVALID_JSON" | "INVALID_SCHEMA" | "INVALID_SEMANTICS";
+        message: string;
+      }>;
+    }>;
+
+export type InputCatalogEvaluationTaxonChainSnapshot = Readonly<{
+  segment: LandingPageInputCatalogTaxonIdentity;
+  niche: LandingPageInputCatalogTaxonIdentity | null;
+  ultraNiche: LandingPageInputCatalogTaxonIdentity | null;
+}>;
+
+export type InputCatalogEvaluationContextIdentity = Readonly<{
+  taxonId: string;
+  taxonSlug: string;
+  taxonChain: InputCatalogEvaluationTaxonChainSnapshot;
+  research: Readonly<{
+    taxonSlug: string;
+    audienceScope: typeof END_CUSTOMER_RESEARCH_AUDIENCE_SCOPE;
+    researchVersion: number;
+    relativePath: string;
+    content: string;
+  }>;
+  inputCatalog: Readonly<{
+    version: number;
+    plans: readonly LandingPageInputCatalogPlan[];
+    catalogs: readonly ResolvedLandingPageInputCatalog[];
+  }>;
+}>;
+
+export type InputCatalogEvaluationContext = Readonly<{
+  identity: InputCatalogEvaluationContextIdentity;
+}>;
+
+export type InputCatalogEvaluationContextErrorCode =
+  | "AUTHORIZED_RESEARCH_INVALID"
+  | "CONTEXT_IDENTITY_INVALID"
+  | "INPUT_CATALOG_VERSION_INVALID"
+  | "INPUT_CATALOG_VERSION_NOT_EXECUTABLE"
+  | "INPUT_CATALOG_RESOLUTION_FAILED"
+  | "INPUT_CATALOG_PLAN_PROJECTIONS_DIVERGED"
+  | "CONTEXT_SNAPSHOT_FAILED";
+
+export type BuildInputCatalogEvaluationContextResult =
+  | Readonly<{ ok: true; value: InputCatalogEvaluationContext }>
+  | Readonly<{
+      ok: false;
+      error: Readonly<{
+        code: InputCatalogEvaluationContextErrorCode;
+        message: string;
+      }>;
+    }>;
+
+export type InputCatalogEvaluationFeedback = Readonly<{
+  text: string;
+  previousOutput: unknown;
+  previousContextIdentity: InputCatalogEvaluationContextIdentity;
+}>;
+
+export type InputCatalogEvaluationExecutionRequest = Readonly<{
+  taxonId: string;
+  inputCatalogVersion: number;
+  mode: InputCatalogEvaluationMode;
+  focalHypothesis?: string | null;
+  feedback?: InputCatalogEvaluationFeedback | null;
+}>;
+
+export type InputCatalogEvaluationReconstructionInput = Readonly<{
+  taxonId: string;
+  inputCatalogVersion: number;
+}>;
+
+export type InputCatalogEvaluationPrompt = Readonly<{
+  version: "e20.6.5-input-catalog-evaluation-v1";
+  instructions: string;
+  input: string;
+}>;
+
+export type InputCatalogEvaluationProviderRequest = Readonly<{
+  mode: InputCatalogEvaluationMode;
+  prompt: InputCatalogEvaluationPrompt;
+  outputSchema: Readonly<Record<string, unknown>>;
+}>;
+
+export type InputCatalogEvaluationProviderResult =
+  | Readonly<{ status: "completed"; output: unknown }>
+  | Readonly<{ status: "refusal"; message: string }>
+  | Readonly<{ status: "incomplete"; message: string }>
+  | Readonly<{ status: "failure"; message: string }>;
+
+export type InputCatalogEvaluationPorts = Readonly<{
+  reconstructContext: (
+    input: InputCatalogEvaluationReconstructionInput,
+  ) => Promise<BuildInputCatalogEvaluationContextResult>;
+  evaluate: (
+    input: InputCatalogEvaluationProviderRequest,
+  ) => Promise<InputCatalogEvaluationProviderResult>;
+}>;
+
+export type CoordinateInputCatalogEvaluationResult =
+  | Readonly<{
+      ok: true;
+      value: Readonly<{
+        contextIdentity: InputCatalogEvaluationContextIdentity;
+        output: InputCatalogEvaluationOutput;
+      }>;
+    }>
+  | Readonly<{
+      ok: false;
+      error: Readonly<{
+        code:
+          | "INVALID_REQUEST"
+          | "CONTEXT_RECONSTRUCTION_FAILED"
+          | "CONTEXT_STALE"
+          | "PROVIDER_REFUSAL"
+          | "PROVIDER_INCOMPLETE"
+          | "PROVIDER_FAILURE"
+          | "OUTPUT_INVALID"
+          | "OUTPUT_MODE_MISMATCH";
+        message: string;
+      }>;
+    }>;
+
+export type RevalidateInputCatalogEvaluationContextResult =
+  | Readonly<{
+      ok: true;
+      value: Readonly<{ contextIdentity: InputCatalogEvaluationContextIdentity }>;
+    }>
+  | Readonly<{
+      ok: false;
+      error: Readonly<{
+        code: "CONTEXT_RECONSTRUCTION_FAILED" | "CONTEXT_STALE";
         message: string;
       }>;
     }>;

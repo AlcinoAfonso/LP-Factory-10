@@ -2583,7 +2583,7 @@ Repositório — Ajustados
 20.6.1 Objetivo e status
 
 * Objetivo: avaliar a suficiência factual da pesquisa integral `end_customer` selecionada pela E20.5 em conjunto com uma versão executável explícita do catálogo E20.2 e definir o predicado final de preparação do taxon, sem autorizar geração.
-* Status: Concluída em 15/08/2026; implementação, migration, gate operacional, registro humano e prova real do predicado derivado aprovados.
+* Status: E20.6.3 e E20.6.4 concluídas e operacionais desde 15/08/2026; o #795 implementa o expand gate-off da E20.6.5, inclusive o delta E21.2, permanecendo pendentes merge, apply, prova operacional, rollout e contract final.
 
 20.6.2 Registros do recorte
 
@@ -2592,10 +2592,13 @@ Repositório — Ajustados
     * `public.business_taxons`.
 * Repositório:
   * Criados:
+    * `app/admin/(protected)/taxonomia/[taxonId]/_components/AdminTaxonInputCatalogEvaluation.tsx`;
     * `app/admin/(protected)/taxonomia/[taxonId]/_components/AdminTaxonInputCatalogReview.tsx`;
     * `lib/admin/adapters/adminTaxonomyReviewPolicy.ts`;
     * `lib/conversion-content/landing-page/input-catalog/taxon-chain.ts`;
     * `lib/conversion-content/landing-page/taxon-preparation/input-catalog-review.ts`;
+    * `lib/conversion-content/landing-page/taxon-preparation/input-catalog-evaluation-schema.ts`;
+    * `lib/conversion-content/landing-page/taxon-preparation/input-catalog-evaluation.ts`;
     * `lib/conversion-content/landing-page/taxon-preparation/preparation.ts`;
     * `supabase/migrations/20260815172449_e20_6_reviewed_input_catalog_version.sql`;
     * `supabase/snippets/e20_6_reviewed_input_catalog_version_verify.sql`.
@@ -2615,6 +2618,11 @@ Repositório — Ajustados
     * `lib/conversion-content/landing-page/taxon-preparation/contracts.ts`;
     * `lib/conversion-content/landing-page/taxon-preparation/index.ts`;
     * `lib/conversion-content/landing-page/taxon-preparation/validation-cases.ts`.
+* Updates:
+  * Aplicados:
+    * `prod#14`;
+    * `prod#16`;
+    * `prod#17`.
 * Referências:
   * Plano-base E20.6: `docs/lousa-plano-base-e20-6.md` — seções 2 e 3.
   * Contrato de banco: `docs/schema.md` — seção 1.11.
@@ -2642,6 +2650,21 @@ Repositório — Ajustados
   * a prova real de `corretor-imoveis`, com pesquisa integral `end_customer` v1, `reviewed_input_catalog_version = 4` e `requiredInputCatalogVersion = 4`, retornou `prepared: true`;
   * o controle negativo com `requiredInputCatalogVersion = 3` retornou `INPUT_CATALOG_REVIEW_VERSION_MISMATCH`, comprovando igualdade exata sem `latest` ou fallback;
   * preservar E19.2, E19.3 e E19.4 sem alteração neste recorte.
+
+20.6.5 Avaliação factual com IA no runtime do Admin
+
+* Status: PR #795 em draft com integração candidata gate-off; expand/contract em dois PRs aprovado estrategicamente, com merge, apply, gates, prova real e contract final ainda pendentes.
+* Conteúdo:
+  * internalizar na Taxonomia administrativa existente a avaliação semântica não autoritativa nos modos sistemático e hipótese humana, preservando a decisão administrativa explícita, a revalidação determinística e o gate E20.6.4 sem IA;
+  * o checkpoint pré-integração materializou domínio e contratos, identidade e reconstrução/revalidação do contexto, Structured Output estrito, UI route-local apresentacional não montada e testes com portas e fakes injetados, sem alterar `lib/openai-workloads/`, criar configuração repo-only, chamar provider real ou declarar a E20.6.5 completa;
+  * o #795 já implementa `taxon_input_catalog_sufficiency_evaluation` no agregado E21.2, com configuração inicial aprovada `gpt-5.6-terra` + `reasoning.effort=low`; mudanças posteriores de modelo ou effort ficam sob governança E21 e decisão humana;
+  * `OPENAI_OPERATIONAL_CONFIG_ENABLED=true` já está ativo em Preview e Production e deve permanecer ativo; a E20.6.5 apenas verifica essa condição, sem etapa futura de habilitação do gate da E21.2;
+  * após o apply da migration do novo workload, verificar o gate operacional ativo em Preview e então provar, promover e ativar a revisão operacional `2` de `taxon_input_catalog_sufficiency_evaluation`; somente depois habilitar `E20_6_5_INPUT_CATALOG_EVALUATION_PROVIDER_ENABLED` em Preview e resolver os parâmetros exclusivamente pelo lifecycle dinâmico Supabase e sua API pública, sem consulta direta, configuração paralela ou transporte exclusivo da E20.6.5;
+  * a avaliação exige uma versão executável E20.2 `N` escolhida explicitamente e mantida apenas no estado transitório da UI; a leitura canônica carrega a pesquisa E20.5 selecionada, valida e resolve `N` em `starter`, `lite`, `pro` e `ultra`, e somente a decisão humana de suficiência pode gravar `reviewed_input_catalog_version = N`; `loadTaxonPreparationForReviewedVersion()` permanece para E20.6.4 e consumidores posteriores;
+  * `E20_6_5_INPUT_CATALOG_EVALUATION_PROVIDER_ENABLED` bloqueia servidor e UI; em Preview/Production, mesmo gate-on recusa `repo_catalog` e a revisão bootstrap `1`, exigindo fonte ativa `supabase_operational` em revisão operacional `2` ou posterior; somente o retorno explícito `ROLLOUT_GATE_OFF` preserva o handoff Codex;
+  * `confirm_sufficient` aceita somente resultado `sufficient`; para `candidate_gaps`, o humano seleciona e reconhece somente gaps reais, recebendo handoff E20.2 transitório sem escrita, ou limpa a seleção e usa `reject_candidates_and_confirm_sufficient` para rejeitar todos e confirmar `N`, com `kind` distinto por decisão e sem veto da IA;
+  * somente `ROLLOUT_GATE_OFF` mantém handoff Codex e registro legado; gate-on comprovado e `OPERATIONAL_CONFIGURATION_UNPROVEN` ocultam e bloqueiam ambos server-side, sem gravação, fallback Codex ou rotulagem gate-off, preservando reabertura;
+  * o #795 não constitui fechamento: a decisão expand/contract está aprovada; seu merge introduz o expand gate-off, seguido por apply, revisão operacional `2` provada/promovida/ativada e rollout do gate E20.6.5 em Preview → decisão humana → repetição controlada em Production; o PR contract remove definitivamente o legado e atualiza os documentos finais.
 
 21. E21 — Gestão e governança dos workloads OpenAI
 - Objetivo: gerir e governar os workloads OpenAI por recortes aprovados, com configuração explícita, observabilidade segura, leitura administrativa e configuração operacional dinâmica por ambiente, sem otimização automatizada.

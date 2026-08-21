@@ -25,6 +25,7 @@ const productWorkloads = [
   "niche_resolution",
   "commercial_activation_draft_generation",
   "landing_page_draft_generation",
+  "taxon_input_catalog_sufficiency_evaluation",
 ] as const;
 
 export type OpenAiOperationalActionState = Readonly<{

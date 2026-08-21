@@ -6,6 +6,8 @@ with expected_baselines(environment, workload, modality, model, reasoning_effort
     ('preview', 'commercial_activation_draft_generation', 'responses_text', 'gpt-5.4-mini', 'none', null::text),
     ('production', 'landing_page_draft_generation', 'responses_text', 'gpt-5.6-luna', 'max', null::text),
     ('preview', 'landing_page_draft_generation', 'responses_text', 'gpt-5.6-luna', 'max', null::text),
+    ('production', 'taxon_input_catalog_sufficiency_evaluation', 'responses_text', 'gpt-5.6-terra', 'low', null::text),
+    ('preview', 'taxon_input_catalog_sufficiency_evaluation', 'responses_text', 'gpt-5.6-terra', 'low', null::text),
     ('production', 'landing_page_draft_image_generation', 'image_generation', 'gpt-image-2', null::text, 'medium'),
     ('preview', 'landing_page_draft_image_generation', 'image_generation', 'gpt-image-2', null::text, 'medium')
 ),
@@ -207,21 +209,21 @@ checks as (
   select
     'bootstrap_baselines'::text as check_name,
     case when
-      count(*) = 8
-      and count(revision.id) = 8
-      and count(configuration.environment) = 8
-      and count(activation.id) = 8
-      and (select count(*) from public.openai_workload_operational_configurations) = 8
+      count(*) = 10
+      and count(revision.id) = 10
+      and count(configuration.environment) = 10
+      and count(activation.id) = 10
+      and (select count(*) from public.openai_workload_operational_configurations) = 10
       and (
         select count(*)
         from public.openai_workload_configuration_revisions
         where revision_number = 1
-      ) = 8
+      ) = 10
       and (
         select count(*)
         from public.openai_workload_configuration_activations
         where event_type = 'bootstrap'
-      ) = 8
+      ) = 10
     then 'ok' else 'mismatch' end as status,
     jsonb_build_object(
       'expected', count(*),
@@ -284,9 +286,9 @@ checks as (
   select
     'active_and_pending_cardinality',
     case when
-      count(*) = 8
-      and count(configuration.active_revision_id) = 8
-      and count(distinct configuration.active_revision_id) = 8
+      count(*) = 10
+      and count(configuration.active_revision_id) = 10
+      and count(distinct configuration.active_revision_id) = 10
       and count(*) filter (
         where (configuration.candidate_model is not null)::integer
           + (configuration.pending_revision_id is not null)::integer > 1

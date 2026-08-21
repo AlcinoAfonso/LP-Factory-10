@@ -41,6 +41,7 @@ export type OpenAiCandidateProofDependencies = Readonly<{
   niche: ProductProof;
   commercial: ProductProof;
   landingPageText: ProductProof;
+  inputCatalogEvaluation: ProductProof;
   landingPageImage: ImageProof;
 }>;
 
@@ -80,6 +81,14 @@ export async function runOpenAiCandidateProofCore(
       break;
     case "landing_page_draft_generation":
       attempt = await dependencies.landingPageText(
+        workload,
+        environment,
+        normalizedKey,
+        normalizedRequestId,
+      );
+      break;
+    case "taxon_input_catalog_sufficiency_evaluation":
+      attempt = await dependencies.inputCatalogEvaluation(
         workload,
         environment,
         normalizedKey,

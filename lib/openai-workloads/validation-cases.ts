@@ -32,6 +32,8 @@ const productIds = [
 ] as const;
 
 const landingPageTextWorkloadId = "landing_page_draft_generation" as const;
+const taxonInputCatalogEvaluationWorkloadId =
+  "taxon_input_catalog_sufficiency_evaluation" as const;
 const landingPageImageWorkloadId = "landing_page_draft_image_generation" as const;
 
 const cases = [
@@ -176,16 +178,17 @@ const cases = [
     },
   },
   {
-    name: "inventory exposes five unique canonical workloads",
+    name: "inventory exposes six unique canonical workloads",
     run: () => {
       const inventory = listOpenAiWorkloadInventory();
-      assert.equal(inventory.length, 5);
-      assert.equal(new Set(inventory.map((item) => item.id)).size, 5);
+      assert.equal(inventory.length, 6);
+      assert.equal(new Set(inventory.map((item) => item.id)).size, 6);
       assert.deepEqual(
         inventory.map((item) => item.id),
         [
           ...productIds,
           landingPageTextWorkloadId,
+          taxonInputCatalogEvaluationWorkloadId,
           landingPageImageWorkloadId,
           "supabase_inspect",
         ],
@@ -260,6 +263,39 @@ const cases = [
       );
       assert.equal(imageAsText.ok, false);
       assert.equal(imageAsText.error.code, "NOT_TEXT_PRODUCT_WORKLOAD");
+    },
+  },
+  {
+    name: "taxon input catalog evaluation starts only with the approved terra low pair",
+    run: async () => {
+      const baseline = await resolveOpenAiProductWorkload(
+        taxonInputCatalogEvaluationWorkloadId,
+        "development",
+      );
+      assert.equal(baseline.ok, true);
+      assert.equal(baseline.value.model, "gpt-5.6-terra");
+      assert.equal(baseline.value.reasoningEffort, "low");
+
+      const rejected = await resolveOpenAiProductWorkload(
+        taxonInputCatalogEvaluationWorkloadId,
+        "preview",
+        {
+          operationalConfigurationEnabled: "true",
+          readOperationalConfiguration: async (input) => ({
+            ok: true,
+            value: {
+              environment: input.environment,
+              workload: taxonInputCatalogEvaluationWorkloadId,
+              apiKind: "responses_text",
+              model: "gpt-5.6-terra",
+              reasoningEffort: "medium",
+              revision: "2",
+            },
+          }),
+        },
+      );
+      assert.equal(rejected.ok, false);
+      assert.equal(rejected.error.code, "OPERATIONAL_CONFIGURATION_INVALID");
     },
   },
   {
@@ -366,6 +402,7 @@ const cases = [
           "niche_resolution",
           "commercial_activation_draft_generation",
           "landing_page_draft_generation",
+          "taxon_input_catalog_sufficiency_evaluation",
           "landing_page_draft_image_generation",
         ],
       );
@@ -380,7 +417,11 @@ const cases = [
         );
         assert.equal(
           workload.options.length,
-          workload.apiKind === "responses_text" ? 11 : 3,
+          workload.workload === "taxon_input_catalog_sufficiency_evaluation"
+            ? 1
+            : workload.apiKind === "responses_text"
+              ? 11
+              : 3,
         );
       }
       const niche = projection.find((item) => item.workload === "niche_resolution");
@@ -404,6 +445,60 @@ const cases = [
       const serialized = JSON.stringify(listOpenAiWorkloadInventory());
       assert.equal(/api[_-]?key|secret|bearer|authorization|https?:\/\//i.test(serialized), false);
       assert.equal(serialized.includes("effectiveConfigurationVerified"), true);
+    },
+  },
+  {
+    name: "E21.2 forward-only delta extends the aggregate without business persistence",
+    run: () => {
+      const migration = readFileSync(
+        new URL(
+          "../../supabase/migrations/20260820213900_e21_2_taxon_input_catalog_sufficiency_workload.sql",
+          import.meta.url,
+        ),
+        "utf8",
+      );
+      assert.doesNotMatch(migration, /\bcreate\s+table\b/i);
+      assert.doesNotMatch(migration, /\badd\s+column\b/i);
+      assert.match(migration, /^begin;/m);
+      assert.match(migration, /commit;\s*$/);
+      assert.match(migration, /taxon_input_catalog_sufficiency_evaluation/);
+      assert.match(migration, /gpt-5\.6-terra/);
+      assert.match(migration, /reasoning_effort\s*=\s*'low'/);
+      assert.match(migration, /values\s*\('production'\),\s*\('preview'\)/i);
+      assert.match(migration, /openai_workload_configuration_revisions_shape_chk/);
+      assert.match(migration, /openai_workload_operational_configurations_candidate_completeness_chk/);
+      assert.match(migration, /modality = 'responses_text'[\s\S]*reasoning_effort is not null[\s\S]*quality is null/);
+      assert.match(migration, /modality = 'image_generation'[\s\S]*reasoning_effort is null[\s\S]*quality is not null/);
+      assert.match(migration, /modality = 'responses_text'[\s\S]*candidate_reasoning_effort is not null[\s\S]*candidate_quality is null/);
+      assert.match(migration, /modality = 'image_generation'[\s\S]*candidate_reasoning_effort is null[\s\S]*candidate_quality is not null/);
+      assert.match(migration, /event_type[\s\S]*'bootstrap'/);
+      assert.match(
+        migration,
+        /create or replace function public\.save_openai_workload_configuration_candidate_v1[\s\S]*p_workload = 'taxon_input_catalog_sufficiency_evaluation'[\s\S]*p_model = 'gpt-5\.6-terra'[\s\S]*p_reasoning_effort = 'low'/,
+      );
+      assert.match(
+        migration,
+        /create or replace function public\.promote_openai_workload_configuration_candidate_v1[\s\S]*p_workload = 'taxon_input_catalog_sufficiency_evaluation'[\s\S]*candidate_model = 'gpt-5\.6-terra'[\s\S]*candidate_reasoning_effort = 'low'/,
+      );
+      const aggregateTest = readFileSync(
+        new URL(
+          "../../supabase/tests/e21_2_3_openai_workload_operational_configurations.test.sql",
+          import.meta.url,
+        ),
+        "utf8",
+      );
+      assert.match(aggregateTest, /operational_configurations\) <> 10/);
+      assert.match(aggregateTest, /taxon_input_catalog_sufficiency_evaluation/);
+      const workloadTest = readFileSync(
+        new URL(
+          "../../supabase/tests/e21_2_taxon_input_catalog_sufficiency_workload.test.sql",
+          import.meta.url,
+        ),
+        "utf8",
+      );
+      assert.match(workloadTest, /NULL reasoning_effort should have failed/g);
+      assert.match(workloadTest, /NULL quality should have failed/g);
+      assert.match(workloadTest, /exception when check_violation/g);
     },
   },
   {
@@ -659,7 +754,7 @@ const cases = [
     },
   },
   {
-    name: "administrative read model returns eight safe immutable environment-workload units",
+    name: "administrative read model accepts only complete eight or ten unit aggregate states",
     run: () => {
       const fixture = administrativeConfigurationFixture();
       const result = translateOpenAiAdministrativeConfigurationRows(
@@ -668,7 +763,7 @@ const cases = [
         { data: fixture.activations, error: null },
       );
       assert.equal(result.ok, true);
-      assert.equal(result.value.length, 8);
+      assert.equal(result.value.length, 10);
       assert.equal(Object.isFrozen(result), true);
       assert.equal(Object.isFrozen(result.value), true);
       assert.equal(Object.isFrozen(result.value[0]), true);
@@ -703,6 +798,25 @@ const cases = [
       const serialized = JSON.stringify(result);
       assert.equal(serialized.includes("proof_metadata"), false);
       assert.equal(/api[_-]?key|secret|bearer|authorization/i.test(serialized), false);
+
+      const legacyWorkloads = new Set([
+        "niche_resolution",
+        "commercial_activation_draft_generation",
+        "landing_page_draft_generation",
+        "landing_page_draft_image_generation",
+      ]);
+      const legacy = translateOpenAiAdministrativeConfigurationRows(
+        { data: fixture.units.filter((row) => legacyWorkloads.has(String(row.workload))), error: null },
+        { data: fixture.revisions.filter((row) => legacyWorkloads.has(String(row.workload))), error: null },
+        { data: fixture.activations.filter((row) => legacyWorkloads.has(String(row.workload))), error: null },
+      );
+      assert.equal(legacy.ok, true);
+      assert.equal(legacy.value.length, 8);
+      assert.equal(
+        legacy.value.some((unit) =>
+          unit.workload === "taxon_input_catalog_sufficiency_evaluation"),
+        false,
+      );
     },
   },
   {
@@ -1014,6 +1128,7 @@ const cases = [
       );
 
       assert.equal(result.ok, false);
+      if (!result.ok) assert.equal(result.reason, "missing_openai_env");
       assert.equal(calls, 0);
       assert.equal(events[0]?.failureCategory, "configuration_invalid");
     },
@@ -1198,6 +1313,7 @@ function administrativeConfigurationFixture(): Readonly<{
     "niche_resolution",
     "commercial_activation_draft_generation",
     "landing_page_draft_generation",
+    "taxon_input_catalog_sufficiency_evaluation",
     "landing_page_draft_image_generation",
   ] as const;
   const units: Record<string, unknown>[] = [];
@@ -1209,13 +1325,23 @@ function administrativeConfigurationFixture(): Readonly<{
     for (const workload of workloads) {
       const image = workload === "landing_page_draft_image_generation";
       const landingPageText = workload === "landing_page_draft_generation";
+      const inputCatalogEvaluation =
+        workload === "taxon_input_catalog_sufficiency_evaluation";
       const modality = image ? "image_generation" : "responses_text";
       const baselineModel = image
         ? "gpt-image-2"
+        : inputCatalogEvaluation
+          ? "gpt-5.6-terra"
         : landingPageText
           ? "gpt-5.6-luna"
           : "gpt-5.4-mini";
-      const baselineReasoning = image ? null : landingPageText ? "max" : "none";
+      const baselineReasoning = image
+        ? null
+        : inputCatalogEvaluation
+          ? "low"
+          : landingPageText
+            ? "max"
+            : "none";
       const baselineQuality = image ? "medium" : null;
       const baselineRevisionId = administrativeUuid(sequence++);
       const bootstrapActivationId = administrativeUuid(sequence++);
