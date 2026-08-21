@@ -502,7 +502,6 @@
 
 ### 3.4. Próxima ação
 
-- Concluir o fechamento documental da E19.5.3 no PR técnico vigente #797, sem alterar sua implementação aprovada.
 - Submeter o PR #797 à revisão e ao merge humano, sem merge automático.
 - Após o merge humano, acompanhar o apply canônico e executar, em sequência, confirmação do histórico, snippet/readiness, regressões E19.2–E19.5, deployment e QA autenticado hospedado; qualquer falha interrompe o rollout.
 - Somente depois da implantação e validação Production do runtime funcional da E19.5.3, abrir recorte próprio para o contract definitivo; backfill `draft → active`, default `active`, retirada de `draft` e qualquer contract permanecem proibidos neste PR.
