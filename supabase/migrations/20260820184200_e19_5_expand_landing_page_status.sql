@@ -43,6 +43,29 @@ begin
     raise exception using errcode = '22023', message = 'snapshot_json_must_be_object';
   end if;
 
+  select
+    materialization.id,
+    materialization.revision_number,
+    materialization.account_id,
+    materialization.landing_page_id
+  into
+    v_existing_id,
+    v_existing_revision,
+    v_existing_account_id,
+    v_existing_landing_page_id
+  from public.account_landing_page_materializations materialization
+  where materialization.attempt_id = p_attempt_id;
+
+  if v_existing_id is not null then
+    if v_existing_account_id <> p_account_id
+       or v_existing_landing_page_id <> p_landing_page_id then
+      raise exception using errcode = '23505', message = 'attempt_id_already_used';
+    end if;
+
+    return query select v_existing_id, v_existing_revision;
+    return;
+  end if;
+
   select lp.id
   into v_parent_id
   from public.account_landing_pages lp
@@ -134,6 +157,6 @@ comment on table public.account_landing_pages
 comment on function public.append_account_landing_page_materialization_v1(
   uuid, uuid, uuid, jsonb, jsonb, uuid
 )
-  is 'Append transacional e tenant-safe de revisao completa para landing page operacional draft ou active; archived permanece bloqueado.';
+  is 'Append transacional e tenant-safe de revisao completa para landing page operacional draft ou active; archived bloqueia novos appends, mas preserva retry idempotente de attempt ja materializado.';
 
 commit;

@@ -1,6 +1,11 @@
-with contract as (
+with contract_source as (
   select
-    pg_get_constraintdef(constraint_row.oid) as status_check,
+    (
+      select pg_get_constraintdef(constraint_row.oid)
+      from pg_constraint constraint_row
+      where constraint_row.conrelid = 'public.account_landing_pages'::regclass
+        and constraint_row.conname = 'account_landing_pages_status_chk'
+    ) as status_check,
     (
       select pg_get_expr(attribute.adbin, attribute.adrelid)
       from pg_attrdef attribute
@@ -10,12 +15,17 @@ with contract as (
       where attribute.adrelid = 'public.account_landing_pages'::regclass
         and column_row.attname = 'status'
     ) as status_default,
-    pg_get_functiondef(
-      'public.append_account_landing_page_materialization_v1(uuid,uuid,uuid,jsonb,jsonb,uuid)'::regprocedure
-    ) as append_definition
-  from pg_constraint constraint_row
-  where constraint_row.conrelid = 'public.account_landing_pages'::regclass
-    and constraint_row.conname = 'account_landing_pages_status_chk'
+    to_regprocedure(
+      'public.append_account_landing_page_materialization_v1(uuid,uuid,uuid,jsonb,jsonb,uuid)'
+    ) as append_oid
+),
+contract as (
+  select
+    status_check,
+    status_default,
+    append_oid,
+    pg_get_functiondef(append_oid) as append_definition
+  from contract_source
 ),
 checks as (
   select
@@ -55,34 +65,36 @@ checks as (
   select
     'append_compatibility',
     case when
-      append_definition ~* 'status[[:space:]]+in[[:space:]]*\(''draft'',[[:space:]]*''active''\)'
+      append_oid is not null
+      and append_definition ~* 'status[[:space:]]+in[[:space:]]*\(''draft'',[[:space:]]*''active''\)'
       and has_function_privilege(
         'service_role',
-        'public.append_account_landing_page_materialization_v1(uuid,uuid,uuid,jsonb,jsonb,uuid)',
+        append_oid,
         'EXECUTE'
       )
       and not has_function_privilege(
         'anon',
-        'public.append_account_landing_page_materialization_v1(uuid,uuid,uuid,jsonb,jsonb,uuid)',
+        append_oid,
         'EXECUTE'
       )
       and not has_function_privilege(
         'authenticated',
-        'public.append_account_landing_page_materialization_v1(uuid,uuid,uuid,jsonb,jsonb,uuid)',
+        append_oid,
         'EXECUTE'
       )
     then 'ok' else 'mismatch' end,
     jsonb_build_object(
+      'function_present', append_oid is not null,
       'accepts_draft_and_active',
         append_definition ~* 'status[[:space:]]+in[[:space:]]*\(''draft'',[[:space:]]*''active''\)',
       'service_role_execute', has_function_privilege(
         'service_role',
-        'public.append_account_landing_page_materialization_v1(uuid,uuid,uuid,jsonb,jsonb,uuid)',
+        append_oid,
         'EXECUTE'
       ),
       'authenticated_execute', has_function_privilege(
         'authenticated',
-        'public.append_account_landing_page_materialization_v1(uuid,uuid,uuid,jsonb,jsonb,uuid)',
+        append_oid,
         'EXECUTE'
       )
     )

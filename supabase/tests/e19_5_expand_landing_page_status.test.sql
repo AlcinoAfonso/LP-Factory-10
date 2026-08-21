@@ -94,6 +94,10 @@ declare
   v_constraint text;
   v_default text;
   v_function text;
+  v_existing_id uuid;
+  v_existing_revision bigint;
+  v_retry_id uuid;
+  v_retry_revision bigint;
 begin
   select pg_get_constraintdef(constraint_row.oid)
   into v_constraint
@@ -138,6 +142,37 @@ begin
     )
   ) <> 2 then
     raise exception 'append must support both draft and active';
+  end if;
+
+  select id, revision_number
+  into v_existing_id, v_existing_revision
+  from public.account_landing_page_materializations
+  where attempt_id = 'e1950000-0000-4000-8000-000000000032';
+
+  update public.account_landing_pages
+  set status = 'archived'
+  where id = 'e1950000-0000-4000-8000-000000000022'
+    and account_id = 'e1950000-0000-4000-8000-000000000011';
+
+  select materialization_id, revision_number
+  into v_retry_id, v_retry_revision
+  from public.append_account_landing_page_materialization_v1(
+    'e1950000-0000-4000-8000-000000000011',
+    'e1950000-0000-4000-8000-000000000022',
+    'e1950000-0000-4000-8000-000000000032',
+    '{"contractVersion":1,"status":"retry-after-archival"}'::jsonb,
+    '{"snapshotVersion":1,"status":"retry-after-archival"}'::jsonb,
+    'e1950000-0000-4000-8000-000000000001'
+  );
+
+  if v_retry_id is distinct from v_existing_id
+     or v_retry_revision is distinct from v_existing_revision
+     or (
+       select count(*)
+       from public.account_landing_page_materializations
+       where attempt_id = 'e1950000-0000-4000-8000-000000000032'
+     ) <> 1 then
+    raise exception 'archived retry must return the existing materialization without mutation';
   end if;
 
   begin

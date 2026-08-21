@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data da última atualização: 19/08/2026
-• Documento: LP Factory 10 — Schema (DB Contract) v1.0.47
+• Data da última atualização: 20/08/2026
+• Documento: LP Factory 10 — Schema (DB Contract) v1.0.48
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -831,7 +831,7 @@
 • Não há trigger nem participação no Trigger Hub.
 
 1.27.6 Contrato operacional
-• O append valida conta, LP operacional em `draft | active`, attempt, conteúdo e snapshot; `archived` é rejeitado e tentativa repetida da mesma LP retorna a revisão já criada sem overwrite.
+• O append valida conta, LP operacional em `draft | active`, attempt, conteúdo e snapshot; `archived` rejeita attempts inéditos, enquanto retry tenant-safe do mesmo `attempt_id` já materializado retorna a revisão existente mesmo após arquivamento, sem overwrite.
 • O conteúdo final combina apresentação validada, bindings determinísticos e referência canônica da mídia. O snapshot preserva contexto autorizado, configurações, usage, latência, validações e custo indisponível, sem secret, resposta bruta, raciocínio privado ou URL assinada.
 • A leitura corrente server-only ordena por revision_number desc no par tenant-scoped e valida integralmente conteúdo e snapshot.
 • Migration histórica preservada: `supabase/migrations/20260811133500_e19_4_4_landing_page_materializations.sql`.
@@ -1074,7 +1074,7 @@
 • Rollback: não remove automaticamente a extensão, pois pode ser reutilizada por outros recursos
 
 99. Changelog
-v1.0.44 (20/08/2026) — E19.5 precursor expand: ampliado o contrato repo-only de `account_landing_pages.status` para tolerar `draft | active | archived`, preservando default e criação corrente em `draft`, sem backfill; append e consumidores internos passam a tolerar `active`, enquanto `archived` continua bloqueado para mutações.
+v1.0.48 (20/08/2026) — E19.5 precursor expand: ampliado o contrato repo-only de `account_landing_pages.status` para tolerar `draft | active | archived`, preservando default e criação corrente em `draft`, sem backfill; append e consumidores internos passam a tolerar `active`, enquanto `archived` bloqueia attempts inéditos e preserva retry idempotente tenant-safe de `attempt_id` já materializado.
 
 v1.0.43 (17/08/2026) — E19.4.4: corrigido o estado factual de `account_landing_page_materializations` para registrar que a migration já está aplicada no ambiente hospedado, preservando o contrato 1:1 write-once, conteúdo e snapshot atômicos e ausência de UPDATE/DELETE para `service_role`.
 
