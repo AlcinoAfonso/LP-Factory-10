@@ -9,16 +9,25 @@ import {
   createOpenAiWorkloadFailureEvent,
   createOpenAiWorkloadSuccessEvent,
   emitOpenAiWorkloadEvent,
+  listOpenAiWorkloadInventory,
   normalizeOpenAiResponseUsage,
   resolveOpenAiProductWorkload,
+  resolveOpenAiWorkloadEnvironment,
+  type OpenAiConfigurationSource,
+  type OpenAiReasoningEffort,
+  type OpenAiWorkloadEnvironment,
   type OpenAiWorkloadEvent,
   type OpenAiWorkloadFailureCategory,
+  type OpenAiWorkloadResolverDependencies,
   type OpenAiWorkloadUsage,
+  type ResolvedOpenAiProductWorkload,
 } from "../openai-workloads";
 import type { LandingPageGenerationContextPackage } from "./generationContextContracts";
 
 export const LANDING_PAGE_DRAFT_TEXT_TIMEOUT_MS = 120_000;
 export const LANDING_PAGE_DRAFT_MAX_OUTPUT_TOKENS = 12_000;
+
+const landingPageDraftBaseline = resolveLandingPageDraftBaseline();
 
 export type LandingPageDraftTextResult =
   | Readonly<{
@@ -30,10 +39,10 @@ export type LandingPageDraftTextResult =
       latencyMs: number;
       configuration: Readonly<{
         workload: "landing_page_draft_generation";
-        source: "repo_catalog";
+        source: OpenAiConfigurationSource;
         revision: string;
         model: string;
-        reasoningEffort: "max";
+        reasoningEffort: OpenAiReasoningEffort;
       }>;
     }>
   | Readonly<{
@@ -58,26 +67,37 @@ type Dependencies = Readonly<{
   now?: () => number;
   timeoutMs?: number;
   signal?: AbortSignal;
+  environment?: OpenAiWorkloadEnvironment;
+  workloadResolver?: OpenAiWorkloadResolverDependencies;
 }>;
 
 export async function generateLandingPageDraftCandidate(
   context: LandingPageGenerationContextPackage,
   dependencies: Dependencies = {},
 ): Promise<LandingPageDraftTextResult> {
-  const resolved = resolveOpenAiProductWorkload("landing_page_draft_generation");
+  const environment =
+    dependencies.environment ?? resolveOpenAiWorkloadEnvironment();
+  const resolved = await resolveOpenAiProductWorkload(
+    "landing_page_draft_generation",
+    environment,
+    dependencies.workloadResolver,
+  );
   const apiKey = dependencies.apiKey?.trim();
   if (
     !resolved.ok ||
     !apiKey ||
-    context.contractVersion !== 3 ||
-    resolved.value.reasoningEffort !== "max"
+    context.contractVersion !== 3
   ) {
     if (resolved.ok) emitFailure(resolved.value, "configuration_invalid", dependencies);
     return { ok: false, kind: "configuration_invalid" };
   }
 
   const workload = resolved.value;
-  const request = buildLandingPageDraftResponsesRequest(context, workload.model);
+  const request = buildLandingPageDraftResponsesRequest(
+    context,
+    workload.model,
+    workload.reasoningEffort,
+  );
   const controller = new AbortController();
   const fetchImpl = dependencies.fetchImpl ?? fetch;
   const now = dependencies.now ?? Date.now;
@@ -192,7 +212,7 @@ export async function generateLandingPageDraftCandidate(
         source: workload.source,
         revision: workload.revision,
         model: workload.model,
-        reasoningEffort: "max",
+        reasoningEffort: workload.reasoningEffort,
       },
     };
   } catch (error) {
@@ -212,12 +232,14 @@ export async function generateLandingPageDraftCandidate(
 
 export function buildLandingPageDraftResponsesRequest(
   context: LandingPageGenerationContextPackage,
-  model = "gpt-5.6-luna",
+  model = landingPageDraftBaseline.model,
+  reasoningEffort: OpenAiReasoningEffort =
+    landingPageDraftBaseline.reasoningEffort,
 ) {
   const prompt = buildLandingPageDraftPrompt(context.modelContext);
   return {
     model,
-    reasoning: { effort: "max" },
+    reasoning: { effort: reasoningEffort },
     store: false,
     tools: [],
     max_output_tokens: LANDING_PAGE_DRAFT_MAX_OUTPUT_TOKENS,
@@ -242,8 +264,25 @@ export function buildLandingPageDraftResponsesRequest(
   } as const;
 }
 
+function resolveLandingPageDraftBaseline() {
+  const workload = listOpenAiWorkloadInventory().find(
+    (item) => item.id === "landing_page_draft_generation",
+  );
+  if (
+    !workload ||
+    !("apiKind" in workload) ||
+    workload.apiKind !== "responses_text"
+  ) {
+    throw new Error("landing_page_draft_generation_baseline_missing");
+  }
+  return {
+    model: workload.model,
+    reasoningEffort: workload.reasoningEffort,
+  } as const;
+}
+
 function eventContext(
-  workload: Extract<ReturnType<typeof resolveOpenAiProductWorkload>, { ok: true }>["value"],
+  workload: ResolvedOpenAiProductWorkload,
   dependencies: Dependencies,
 ) {
   return {
@@ -256,11 +295,13 @@ function eventContext(
     requestId: dependencies.requestId,
     promptVersion: LANDING_PAGE_DRAFT_PROMPT_VERSION,
     contractVersion: 1,
+    environment:
+      dependencies.environment ?? resolveOpenAiWorkloadEnvironment(),
   } as const;
 }
 
 function emitFailure(
-  workload: Extract<ReturnType<typeof resolveOpenAiProductWorkload>, { ok: true }>["value"],
+  workload: ResolvedOpenAiProductWorkload,
   category: OpenAiWorkloadFailureCategory,
   dependencies: Dependencies,
   metadata: Readonly<{

@@ -3,6 +3,13 @@ import { z } from "zod";
 import {
   landingPagePresentationCandidateSchema,
 } from "../conversion-content/landing-page/presentation";
+import {
+  isValidResolvedOpenAiImageWorkload,
+  isValidResolvedOpenAiProductWorkload,
+  listOpenAiWorkloadInventory,
+  openAiImageQualities,
+  openAiReasoningEfforts,
+} from "../openai-workloads";
 import type { LandingPageGenerationContextPackage } from "./generationContextContracts";
 import type { LandingPageDraftCandidateWorkflowResult } from "./landingPageDraftCandidateWorkflow";
 
@@ -13,6 +20,15 @@ export const LANDING_PAGE_REVISION_ASSET_BUCKET =
 export const LANDING_PAGE_REVISION_ASSET_MAX_BYTES = 5_242_880 as const;
 
 const uuidSchema = z.string().uuid();
+const configurationSourceSchema = z.enum([
+  "repo_catalog",
+  "supabase_operational",
+]);
+const imageQualitySchema = z.enum(openAiImageQualities);
+const reasoningEffortSchema = z.enum(openAiReasoningEfforts);
+
+const landingPageDraftTextWorkload = resolveLandingPageDraftTextWorkload();
+const landingPageDraftImageWorkload = resolveLandingPageDraftImageWorkload();
 
 export const landingPageRevisionAssetReferenceSchema = z.object({
   bucket: z.literal(LANDING_PAGE_REVISION_ASSET_BUCKET),
@@ -253,32 +269,96 @@ export function validateLandingPageRevisionSnapshot(
   const text = value.workloads.text;
   const image = value.workloads.image;
   return (
-    isRecord(text.configuration) &&
-    text.configuration.workload === "landing_page_draft_generation" &&
-    text.configuration.source === "repo_catalog" &&
-    typeof text.configuration.revision === "string" &&
-    typeof text.configuration.model === "string" &&
-    text.configuration.reasoningEffort === "max" &&
+    isValidLandingPageDraftTextConfiguration(text.configuration) &&
     (text.responseId === null || typeof text.responseId === "string") &&
     isRecord(text.usage) &&
     isNonNegativeNumber(text.latencyMs) &&
     text.estimatedCost === null &&
     text.costStatus === "unavailable" &&
-    isRecord(image.configuration) &&
-    image.configuration.workload === "landing_page_draft_image_generation" &&
-    image.configuration.source === "repo_catalog" &&
-    typeof image.configuration.revision === "string" &&
-    typeof image.configuration.model === "string" &&
-    image.configuration.size === "1536x1024" &&
-    image.configuration.quality === "medium" &&
-    image.configuration.format === "webp" &&
-    image.configuration.compression === 80 &&
-    image.configuration.moderation === "auto" &&
+    isValidLandingPageDraftImageConfiguration(image.configuration) &&
     (image.providerRequestId === null || typeof image.providerRequestId === "string") &&
     isNonNegativeNumber(image.latencyMs) &&
     image.estimatedCost === null &&
     image.costStatus === "unavailable"
   );
+}
+
+function isValidLandingPageDraftTextConfiguration(value: unknown) {
+  if (!isRecord(value)) return false;
+  const source = configurationSourceSchema.safeParse(value.source);
+  const reasoningEffort = reasoningEffortSchema.safeParse(value.reasoningEffort);
+  if (
+    value.workload !== "landing_page_draft_generation" ||
+    !source.success ||
+    typeof value.revision !== "string" ||
+    typeof value.model !== "string" ||
+    !reasoningEffort.success
+  ) {
+    return false;
+  }
+
+  return isValidResolvedOpenAiProductWorkload({
+    ...landingPageDraftTextWorkload,
+    source: source.data,
+    revision: value.revision,
+    model: value.model,
+    reasoningEffort: reasoningEffort.data,
+  });
+}
+
+function isValidLandingPageDraftImageConfiguration(value: unknown) {
+  if (!isRecord(value)) return false;
+  const source = configurationSourceSchema.safeParse(value.source);
+  const quality = imageQualitySchema.safeParse(value.quality);
+  if (
+    value.workload !== "landing_page_draft_image_generation" ||
+    !source.success ||
+    typeof value.revision !== "string" ||
+    typeof value.model !== "string" ||
+    !quality.success ||
+    value.size !== landingPageDraftImageWorkload.size ||
+    value.format !== landingPageDraftImageWorkload.format ||
+    value.compression !== landingPageDraftImageWorkload.compression ||
+    value.moderation !== landingPageDraftImageWorkload.moderation
+  ) {
+    return false;
+  }
+
+  return isValidResolvedOpenAiImageWorkload({
+    ...landingPageDraftImageWorkload,
+    source: source.data,
+    revision: value.revision,
+    model: value.model,
+    quality: quality.data,
+  });
+}
+
+function resolveLandingPageDraftTextWorkload() {
+  const workload = listOpenAiWorkloadInventory().find(
+    (candidate) => candidate.id === "landing_page_draft_generation",
+  );
+  if (
+    !workload ||
+    !("apiKind" in workload) ||
+    workload.apiKind !== "responses_text"
+  ) {
+    throw new Error("landing_page_revision_text_workload_contract_missing");
+  }
+  return workload;
+}
+
+function resolveLandingPageDraftImageWorkload() {
+  const workload = listOpenAiWorkloadInventory().find(
+    (candidate) => candidate.id === "landing_page_draft_image_generation",
+  );
+  if (
+    !workload ||
+    !("apiKind" in workload) ||
+    workload.apiKind !== "image_generation"
+  ) {
+    throw new Error("landing_page_revision_image_workload_contract_missing");
+  }
+  return workload;
 }
 
 function normalizeIsoDate(value: string) {

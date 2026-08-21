@@ -55,7 +55,7 @@ export function createServiceClient() {
 
 /**
  * NOTAS DE USO
- * - Importar APENAS em: src/lib/admin/adapters/*, rotas /api/* e SSR loaders.
+ * - Importar APENAS em adapters server-side, rotas /api/* e SSR loaders.
  * - NÃO importar em componentes/client.
  * - Views com GRANT para 'service_role' (ex.: v_admin_tokens_with_usage) DEVEM
  *   ser consultadas via este client.
