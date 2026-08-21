@@ -23,3 +23,17 @@ export type MemberRole =
   | 'admin'
   | 'editor'
   | 'viewer';
+
+// account_landing_pages_status_chk — estado expandido durante o rollout E19.5
+export type LandingPageStatus = 'draft' | 'active' | 'archived';
+
+export type OperationalLandingPageStatus = Exclude<
+  LandingPageStatus,
+  'archived'
+>;
+
+export function isOperationalLandingPageStatus(
+  value: unknown,
+): value is OperationalLandingPageStatus {
+  return value === 'draft' || value === 'active';
+}

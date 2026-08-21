@@ -4,6 +4,7 @@ import {
 } from "../conversion-content/landing-page/presentation";
 import { z } from "zod";
 import type { AccountLandingPage } from "./contracts";
+import { isOperationalLandingPageStatus } from "../types/status";
 import type { CurrentLandingPageRevision } from "./adapters/landingPageRevisionAdapter";
 import {
   landingPageRevisionContentSchema,
@@ -191,7 +192,7 @@ async function loadLandingPagePreviewUnchecked(
   if (
     landingPage.landingPage.account_id !== accountId ||
     landingPage.landingPage.id !== landingPageId ||
-    landingPage.landingPage.status !== "draft"
+    !isOperationalLandingPageStatus(landingPage.landingPage.status)
   ) {
     return observedFailure(
       dependencies,
@@ -319,7 +320,9 @@ function prepareLandingPageRenderModel(input: Readonly<{
     revision.attemptId !== revision.snapshot.attemptId ||
     revision.snapshot.generationContext.identities.accountId !== input.accountId ||
     revision.snapshot.generationContext.identities.landingPage.id !== input.landingPageId ||
-    revision.snapshot.generationContext.identities.landingPage.status !== "draft" ||
+    !isOperationalLandingPageStatus(
+      revision.snapshot.generationContext.identities.landingPage.status,
+    ) ||
     revision.content.contractVersion !== 1 ||
     revision.snapshot.presentationContractVersion !== 1 ||
     !sameAsset(revision.content.media.mainImage, revision.snapshot.media.mainImage) ||

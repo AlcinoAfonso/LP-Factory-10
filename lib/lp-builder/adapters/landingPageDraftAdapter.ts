@@ -1,6 +1,7 @@
 import "server-only";
 
 import { createServiceClient } from "../../supabase/service";
+import { isOperationalLandingPageStatus } from "../../types/status";
 import type { AccountLandingPage } from "../contracts";
 
 export async function readLandingPageDraft(input: Readonly<{
@@ -16,7 +17,7 @@ export async function readLandingPageDraft(input: Readonly<{
       .select("id,account_id,name,slug,status")
       .eq("id", input.landingPageId)
       .eq("account_id", input.accountId)
-      .eq("status", "draft")
+      .in("status", ["draft", "active"])
       .limit(1)
       .maybeSingle();
     if (error) return { ok: false, error: "read_failed" };
@@ -28,7 +29,7 @@ export async function readLandingPageDraft(input: Readonly<{
       !data.name.trim() ||
       typeof data.slug !== "string" ||
       !data.slug.trim() ||
-      data.status !== "draft"
+      !isOperationalLandingPageStatus(data.status)
     ) {
       return { ok: false, error: "read_failed" };
     }
@@ -39,7 +40,7 @@ export async function readLandingPageDraft(input: Readonly<{
         account_id: input.accountId,
         name: data.name,
         slug: data.slug,
-        status: "draft",
+        status: data.status,
       },
     };
   } catch {

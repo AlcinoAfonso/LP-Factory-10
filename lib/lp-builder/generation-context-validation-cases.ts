@@ -128,6 +128,31 @@ const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }
     },
   },
   {
+    name: "expand compatibility accepts active and keeps archived fail-closed",
+    run: () => {
+      const activeResult = compileLandingPageGenerationContext({
+        landingPage: { ...landingPage, status: "active" },
+        revalidationAuthority,
+        preparation,
+      });
+      assert.equal(activeResult.ok, true);
+      if (!activeResult.ok) throw new Error("Expected active compatibility");
+      assert.equal(
+        activeResult.value.identities.landingPage.status,
+        "active",
+      );
+
+      const archivedResult = compileLandingPageGenerationContext({
+        landingPage: { ...landingPage, status: "archived" },
+        revalidationAuthority,
+        preparation,
+      });
+      assert.equal(archivedResult.ok, false);
+      if (archivedResult.ok) throw new Error("Expected archived rejection");
+      assert.equal(archivedResult.error.code, "LANDING_PAGE_NOT_DRAFT");
+    },
+  },
+  {
     name: "E19.2 boundary preserves later current authority through target revalidation",
     run: () => {
       const laterFieldKeys = new Set([
