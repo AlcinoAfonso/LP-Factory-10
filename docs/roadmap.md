@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 21/08/2026
-• Versão: v1.5.173
+• Versão: v1.5.174
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2098,7 +2098,7 @@ Repositório — Ajustados
 
 19. E19 — LP Builder
 - Objetivo: Consolidar o fluxo Core de landing pages por conta, da identidade mínima em `draft` às futuras etapas de geração, revisão, materialização e publicação, sempre por recortes aprovados.
-- Status: E19.1, E19.2 e E19.3 concluídas. E19.4.3, E19.4.4 e E19.4.5 concluídas; a E19.4 está encerrada e integrada à `main` pelo PR #776. A revisão 3 permanece preservada como baseline dos gaps persuasivos observados. A E19.5.3 está implementada no repositório no PR draft #797, pendente dos gates finais, review e merge humano; apply e validação hospedada permanecem posteriores.
+- Status: E19.1, E19.2 e E19.3 concluídas. E19.4.3, E19.4.4 e E19.4.5 concluídas; a E19.4 está encerrada e integrada à `main` pelo PR #776. A revisão 3 permanece preservada como baseline dos gaps persuasivos observados. A E19.5.3 está implementada no PR técnico #797, com reconciliação técnica e preflight read-only aprovados; revisão e merge humano, apply canônico, readiness, snippet, regressões, deployment e QA hospedado permanecem gates posteriores. O contract definitivo permanece em recorte posterior e proibido neste PR.
 
 19.1 Criação produtiva mínima de LP por conta
 
@@ -2407,7 +2407,7 @@ Repositório — Ajustados
 
 19.5.1 Objetivo e status
 - Objetivo: transformar a superfície autenticada da conta em workspace operacional para organizar, configurar, versionar, revisar, aprovar, arquivar e restaurar identidades estáveis de LP, preservando o histórico append-only.
-- Status: Plano-base v2 aprovado e implementação E19.5.3 concluída no repositório no PR draft #797; validações finais, review, merge humano, apply canônico e QA hospedado permanecem gates obrigatórios.
+- Status: Plano-base v2 aprovado e E19.5.3 implementada no PR técnico #797, ready for review, com reconciliação técnica e preflight read-only aprovados; revisão e merge humano, apply canônico, readiness, snippet, regressões, deployment e QA hospedado permanecem gates obrigatórios. O contract definitivo continua posterior e proibido neste PR.
 
 19.5.2 Registros do recorte
 - Repositório:
@@ -2434,7 +2434,7 @@ Repositório — Ajustados
   - Boundary durável: `docs/base-tecnica.md` — workspace operacional de `landing_page`.
 
 19.5.3 Workspace operacional, configuração e lifecycle da LP
-- Status: Implementada no repositório; ainda não aplicada nem validada no ambiente hospedado.
+- Status: Implementada no repositório e com preflight Supabase read-only aprovado; ainda não mergeada, aplicada nem validada no ambiente hospedado. Revisão e merge humano, apply canônico, readiness, snippet, regressões E19.2–E19.5, deployment e QA autenticado hospedado permanecem pendentes; o contract definitivo continua posterior e proibido neste PR.
 - Conteúdo:
   - a E19.2 permanece responsável pelo primeiro onboarding e pelo bootstrap histórico, sem rebind; a operação posterior separa valores compartilhados de conta e negócio dos valores contextuais de oferta, campanha e LP;
   - cada LP continua sendo uma identidade comercial estável, representada uma única vez no workspace, com estados de UX derivados, lista operacional e visão separada de arquivadas;
@@ -2892,7 +2892,7 @@ Repositório — Ajustados
 
 22. E22 — Retirada controlada de ativos históricos
 - Objetivo: reduzir a superfície histórica que não participa do caminho canônico vigente, preservando consumidores reais e preparando a sequência E19.4 concluída → E22.1 → E19.5.
-- Status: E22.1 concluída; E22.2 candidata aguardando merge humano.
+- Status: E22.1 e E22.2 concluídas; a E22.2 foi integrada à `main` pelo PR #791, merge `f66d480ddfd38d337b8badb9231f7279d3283397`.
 
 22.1 Retirada controlada de ativos históricos
 
@@ -2985,7 +2985,7 @@ Repositório — Ajustados
 
 22.2.1 Objetivo e status
 - Objetivo: retirar fontes documentais redundantes ou obsoletas que duplicam autoridades vigentes.
-- Status: Implementação candidata.
+- Status: Concluída em 20/08/2026 pelo PR #791, merge `f66d480ddfd38d337b8badb9231f7279d3283397`; as referências históricas deliberadamente mantidas permanecem preservadas.
 
 22.2.2 Registros do recorte
 - Excluídos:

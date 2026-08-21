@@ -6,8 +6,8 @@
 
 - Recorte: `E19.5 — Workspace operacional e lifecycle de LPs`.
 - Path: `docs/lousa-plano-base-e19-5.md`.
-- Estado: **plano-base v2 consolidado para avaliação do Analista; implementação ainda não iniciada**.
-- Fonte imutável: plano-base v1 do PR #726, merge commit `5d36f2bb4528d4ccb1d34018ae1e3940d2219d28`, congelado no commit `d260a82bf3e121e8be3f17a24229ecbd54f829ff` e blob `ddf5595854023c54a15d38851f0f6d22a146f0a0`.
+- Estado: **plano-base v2 aprovado; E19.5.3 implementada no PR #797 e preflight read-only aprovado; review, merge humano, apply canônico, readiness, deployment e QA hospedado permanecem pendentes**.
+- Fonte histórica imutável: plano-base v1 do PR #726, merge commit `5d36f2bb4528d4ccb1d34018ae1e3940d2219d28`, congelado no commit `d260a82bf3e121e8be3f17a24229ecbd54f829ff` e blob `ddf5595854023c54a15d38851f0f6d22a146f0a0`; o PR #726 permanece somente como fonte histórica da v1.
 - Destino da orquestração: worktree `C:\Dev\GitHub\LP-Factory-10-e19` e branch `codex-app/e19-5-orquestracao` para v2, roadmap e implementação.
 - Exceção de rollout autorizada: antes da retomada da E19.5, um PR dedicado contra `main` entrega somente o expand backward-compatible indispensável; depois de merge, apply, deployment e validação hospedada do precursor, a branch da E19.5 incorpora essa dependência material e retoma o fluxo. O contract definitivo permanece em PR posterior, condicionado à implantação e validação hospedada do runtime funcional da E19.5.
 - Gate do precursor concluído em 21/08/2026: PR #794 mergeado em `b5391033faa2ddb1b6199b53c9ac42d63d6420e0`, migration `20260820214422_e19_5_expand_landing_page_status` aplicada pelo workflow canônico, snippet real com os três checks esperados em `ok`, deployment Vercel do merge commit aprovado e regressões pós-merge E19.2–E19.4 aprovadas contra essa `main`.
@@ -15,7 +15,7 @@
 - A v1 anterior deste mesmo arquivo, baseada em drafts independentes, foi superada materialmente pela evolução E19.4 para revisões append-only 1:N e pelas decisões humanas posteriores.
 - Plano conceitual: N/A.
 - Processo: `docs/prompt-estrategista.md`.
-- PR vivo: #726.
+- PR técnico vigente: #797, ready for review.
 - Predecessores materiais: E19.1, E19.2, E19.3 e E19.4 implementadas no fluxo oficial da conta.
 
 ### 1.2. Problema comprovado
@@ -146,7 +146,7 @@
 - `docs/schema.md`.
 - implementação vigente de `app/a/[account]/`, `lib/lp-builder/` e catálogo E20.2.
 - migrations, RPCs e validações vigentes da E19.1/E19.2/E19.4.
-- PR #726 como histórico do debate anterior reconciliado neste mesmo arquivo.
+- PR #726 somente como histórico do debate anterior reconciliado neste mesmo arquivo.
 - `docs/lp-planejamento.md` não é fonte deste plano.
 
 ## 2. Contrato do caso
@@ -502,11 +502,10 @@
 
 ### 3.4. Próxima ação
 
-- A branch E19.5 já foi sincronizada explicitamente com a `main` no merge commit do precursor e o gate pós-merge foi aprovado; retomar a Passagem 1 com a v2 reconciliada, sem matriz nem pareceres.
-- Após aprovação da Passagem 1, versionar `docs/matriz-consolidacao-e19-5.md` e executar Passagem 2 no mesmo Analista com os pareceres integrais.
-- Reconciliar `docs/roadmap.md` por ABC em modo planejamento e criar o checkpoint `LP-Factory-Stage: plan-v2-approved` somente depois da aprovação do delta.
-- Executar `E19.5.3` end-to-end na branch de orquestração e em seu PR draft, sem repetir especialistas e sem merge automático; o contract definitivo permanece posterior à implantação e validação do runtime novo.
-- Depois do merge, deployment e validação Production da E19.5.3, abrir recorte próprio de contract para backfill `draft → active`, default `active` e retirada de `draft`; não executar esse recorte por antecipação.
+- Concluir o fechamento documental da E19.5.3 no PR técnico vigente #797, sem alterar sua implementação aprovada.
+- Submeter o PR #797 à revisão e ao merge humano, sem merge automático.
+- Após o merge humano, acompanhar o apply canônico e executar, em sequência, confirmação do histórico, snippet/readiness, regressões E19.2–E19.5, deployment e QA autenticado hospedado; qualquer falha interrompe o rollout.
+- Somente depois da implantação e validação Production do runtime funcional da E19.5.3, abrir recorte próprio para o contract definitivo; backfill `draft → active`, default `active`, retirada de `draft` e qualquer contract permanecem proibidos neste PR.
 
 ## 4. Escopo negativo e critérios de parada
 

@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data da última atualização: 21/08/2026
-• Documento: LP Factory 10 — Schema (DB Contract) v1.0.51
+• Documento: LP Factory 10 — Schema (DB Contract) v1.0.52
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -842,7 +842,7 @@
 • Evolução 1:N aplicada: `supabase/migrations/20260817180000_e19_4_4_landing_page_revisions.sql`.
 • Verificação read-only: `supabase/snippets/e19_4_4_landing_page_materializations_verify.sql`; casos SQL: `supabase/tests/e19_4_4_landing_page_materializations.test.sql`.
 • Expand backward-compatible repo-only: `supabase/migrations/20260820214422_e19_5_expand_landing_page_status.sql`; verificação `supabase/snippets/e19_5_expand_landing_page_status_verify.sql`; casos SQL `supabase/tests/e19_5_expand_landing_page_status.test.sql`.
-• Workspace funcional repo-only: `supabase/migrations/20260821091539_e19_5_landing_page_workspace.sql`; verificação `supabase/snippets/e19_5_landing_page_workspace_verify.sql`; casos SQL transacionais `supabase/tests/e19_5_landing_page_workspace.test.sql`. Apply hospedado permanece reservado ao workflow canônico após merge.
+• Workspace funcional repo-only: `supabase/migrations/20260821091539_e19_5_landing_page_workspace.sql`; verificação `supabase/snippets/e19_5_landing_page_workspace_verify.sql`; casos SQL transacionais `supabase/tests/e19_5_landing_page_workspace.test.sql`. O preflight Supabase read-only aprovou histórico e ordem, ausência de materialização parcial e todos os predicados da migration; a migration permanece não aplicada e o apply hospedado continua reservado ao workflow canônico após merge.
 
 1.27.7 Storage privado
 • O bucket privado `landing-page-revision-assets` está ativo no ambiente hospedado com limite de 5 MB e MIME permitido somente `image/webp`.
