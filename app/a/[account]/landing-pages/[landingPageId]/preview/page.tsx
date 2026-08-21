@@ -3,8 +3,10 @@ import Link from "next/link";
 
 import { LandingPageRenderer } from "@/components/lp-builder/LandingPageRenderer";
 import { loadLandingPagePreview } from "@/lp-builder/adapters/landingPagePreviewAdapter";
+import { WorkspaceSubmitButton } from "../../../_components/WorkspaceSubmitButton";
 
 import { GenerationTrigger } from "./GenerationTrigger";
+import { approveLandingPageRevisionAction } from "../actions";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -12,12 +14,13 @@ export const maxDuration = 300;
 
 type PageProps = Readonly<{
   params: Promise<{ account: string; landingPageId: string }>;
-  searchParams?: Promise<{ revision?: string }>;
+  searchParams?: Promise<{ revision?: string; action_error?: string; approved?: string }>;
 }>;
 
 export default async function LandingPagePreview({ params, searchParams }: PageProps) {
   const { account, landingPageId } = await params;
-  const revisionId = (await searchParams)?.revision;
+  const query = await searchParams;
+  const revisionId = query?.revision;
   const accountSlug = account.trim().toLowerCase();
   const preview = await loadLandingPagePreview({ accountSlug, landingPageId, revisionId });
   if (preview.status === "denied" || preview.status === "not_found") notFound();
@@ -47,10 +50,34 @@ export default async function LandingPagePreview({ params, searchParams }: PageP
                 {revisionId ? "Esta superfície reproduz a revisão histórica selecionada." : "Esta superfície reproduz somente a revisão persistida atual."} Gerar uma nova revisão continua sendo uma ação humana explícita.
               </p>
             </div>
-            {previewLandingPage && previewLandingPage.status !== "archived" ? (
-              <GenerationTrigger accountSlug={accountSlug} landingPageId={landingPageId} />
-            ) : null}
+            <div className="flex flex-wrap items-center gap-3">
+              {previewLandingPage && previewLandingPage.status !== "archived" ? (
+                <GenerationTrigger accountSlug={accountSlug} landingPageId={landingPageId} />
+              ) : null}
+              {preview.status === "ready" && preview.landingPage.status !== "archived" ? (
+                <form action={approveLandingPageRevisionAction}>
+                  <input type="hidden" name="account" value={accountSlug} />
+                  <input type="hidden" name="landing_page_id" value={landingPageId} />
+                  <input type="hidden" name="materialization_id" value={preview.model.revision.id} />
+                  <WorkspaceSubmitButton
+                    idleLabel="Aprovar esta versão"
+                    pendingLabel="Aprovando..."
+                    className="min-h-11 rounded-lg bg-brand-700 px-4 text-sm font-semibold text-white disabled:cursor-wait disabled:opacity-60"
+                  />
+                </form>
+              ) : null}
+            </div>
           </div>
+          {query?.action_error ? (
+            <p role="alert" className="mt-5 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+              A versão visualizada não foi aprovada. Confirme que o preview continua válido e tente novamente.
+            </p>
+          ) : null}
+          {query?.approved === (preview.status === "ready" ? preview.model.revision.id : undefined) ? (
+            <p role="status" className="mt-5 rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
+              Esta versão foi aprovada. O histórico e as demais revisões foram preservados.
+            </p>
+          ) : null}
           {preview.status === "ready" ? (
             <RevisionEvidence model={preview.model} />
           ) : null}

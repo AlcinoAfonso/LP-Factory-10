@@ -82,35 +82,6 @@ $$;
 revoke all on function public.e19_5_configuration_values_valid(jsonb, text[])
   from public, anon, authenticated, service_role;
 
-create or replace function public.e19_5_configuration_values_applicable(
-  p_values jsonb
-)
-returns boolean
-language sql
-immutable
-security invoker
-set search_path = pg_catalog
-as $$
-  select coalesce((
-    jsonb_typeof(p_values) = 'object'
-    and (not (p_values ? 'whatsapp_destination')
-      or p_values #>> '{primary_conversion_channel,value}' = 'whatsapp')
-    and (not (p_values ? 'phone_destination')
-      or p_values #>> '{primary_conversion_channel,value}' = 'phone')
-    and (not (p_values ? 'email_destination')
-      or p_values #>> '{primary_conversion_channel,value}' = 'email')
-    and (not (p_values ? 'external_url_destination')
-      or p_values #>> '{primary_conversion_channel,value}' = 'external_url')
-    and (not (p_values ? 'privacy_policy_url')
-      or p_values #>> '{primary_conversion_channel,value}' = 'form')
-    and (not (p_values ? 'paid_search_keyword_map')
-      or p_values #>> '{traffic_source,value}' = 'paid_search')
-  ), false);
-$$;
-
-revoke all on function public.e19_5_configuration_values_applicable(jsonb)
-  from public, anon, authenticated, service_role;
-
 create or replace function public.e19_5_configuration_values_valid_for_account(
   p_account_id uuid,
   p_values jsonb,
@@ -291,7 +262,6 @@ begin
           onboarding.values,
           array['account', 'business', 'offer', 'campaign', 'landing_page']
         )
-        or not public.e19_5_configuration_values_applicable(onboarding.values)
       )
   ) then
     raise exception using errcode = '23514', message = 'e19_5_invalid_onboarding_configuration';
@@ -428,9 +398,6 @@ begin
        )
        or not public.e19_5_configuration_values_valid_for_account(
          p_account_id, v_landing_page_values, array['offer', 'campaign', 'landing_page']
-       )
-       or not public.e19_5_configuration_values_applicable(
-         v_shared_values || v_landing_page_values
        ) then
       raise exception using errcode = '23514', message = 'invalid_operational_configuration';
     end if;
@@ -448,7 +415,7 @@ begin
   if not public.e19_5_configuration_values_valid_for_account(
     p_account_id, v_onboarding.values,
     array['account', 'business', 'offer', 'campaign', 'landing_page']
-  ) or not public.e19_5_configuration_values_applicable(v_onboarding.values) then
+  ) then
     raise exception using errcode = '23514', message = 'invalid_onboarding_configuration';
   end if;
 
@@ -506,8 +473,7 @@ begin
       and status in ('draft', 'active') for update;
   if not found then raise exception using errcode = 'P0001', message = 'landing_page_not_operational'; end if;
   if not public.e19_5_configuration_values_valid_for_account(p_account_id, p_shared_values, array['account', 'business'])
-     or not public.e19_5_configuration_values_valid_for_account(p_account_id, p_landing_page_values, array['offer', 'campaign', 'landing_page'])
-     or not public.e19_5_configuration_values_applicable(p_shared_values || p_landing_page_values) then
+     or not public.e19_5_configuration_values_valid_for_account(p_account_id, p_landing_page_values, array['offer', 'campaign', 'landing_page']) then
     raise exception using errcode = '22023', message = 'configuration_values_invalid';
   end if;
 
@@ -603,14 +569,102 @@ language plpgsql
 security definer
 set search_path = public, pg_catalog
 as $$
-declare v_ready boolean;
+declare
+  v_ready boolean;
+  v_status_contract boolean;
+  v_append_compatibility boolean;
+  v_materialization_objects boolean;
+  v_workspace_objects boolean;
+  v_status_check text;
+  v_status_default text;
+  v_status_validated boolean;
+  v_append_oid oid;
+  v_append_definition text;
+  v_append_owner text;
+  v_append_security_definer boolean;
+  v_append_config text[];
 begin
+  select pg_get_constraintdef(constraint_row.oid), constraint_row.convalidated
+  into v_status_check, v_status_validated
+  from pg_constraint constraint_row
+  where constraint_row.conrelid = 'public.account_landing_pages'::regclass
+    and constraint_row.conname = 'account_landing_pages_status_chk'
+    and constraint_row.contype = 'c';
+
+  select pg_get_expr(attribute.adbin, attribute.adrelid)
+  into v_status_default
+  from pg_attrdef attribute
+  join pg_attribute column_row
+    on column_row.attrelid = attribute.adrelid
+   and column_row.attnum = attribute.adnum
+  where attribute.adrelid = 'public.account_landing_pages'::regclass
+    and column_row.attname = 'status';
+
+  v_status_contract := coalesce(
+    v_status_validated
+    and v_status_check ilike '%draft%'
+    and v_status_check ilike '%active%'
+    and v_status_check ilike '%archived%'
+    and (
+      select count(*)
+      from regexp_matches(v_status_check, '''[^'']+''', 'g')
+    ) = 3
+    and v_status_default = '''draft''::text'
+    and not exists (
+      select 1 from public.account_landing_pages
+      where status not in ('draft', 'active', 'archived')
+    ),
+    false
+  );
+
+  select to_regprocedure(
+    'public.append_account_landing_page_materialization_v1(uuid,uuid,uuid,jsonb,jsonb,uuid)'
+  )::oid into v_append_oid;
+
+  if v_append_oid is not null then
+    select
+      pg_get_functiondef(procedure_row.oid),
+      pg_get_userbyid(procedure_row.proowner),
+      procedure_row.prosecdef,
+      procedure_row.proconfig
+    into
+      v_append_definition,
+      v_append_owner,
+      v_append_security_definer,
+      v_append_config
+    from pg_proc procedure_row
+    where procedure_row.oid = v_append_oid;
+  end if;
+
+  v_append_compatibility := coalesce(
+    v_append_oid is not null
+    and v_append_owner = 'postgres'
+    and v_append_security_definer
+    and 'search_path=public, pg_catalog' = any(v_append_config)
+    and v_append_definition ~* 'status[[:space:]]+in[[:space:]]*\(''draft'',[[:space:]]*''active''\)'
+    and strpos(lower(v_append_definition), 'where materialization.attempt_id = p_attempt_id') > 0
+    and strpos(lower(v_append_definition), 'where materialization.attempt_id = p_attempt_id')
+      < strpos(lower(v_append_definition), 'and lp.status in')
+    and has_function_privilege('service_role', v_append_oid, 'EXECUTE')
+    and not has_function_privilege('anon', v_append_oid, 'EXECUTE')
+    and not has_function_privilege('authenticated', v_append_oid, 'EXECUTE'),
+    false
+  );
+
+  v_materialization_objects := coalesce(
+    (public.e19_4_landing_page_revision_readiness() ->> 'ready')::boolean,
+    false
+  ) and exists (
+    select 1 from pg_constraint
+    where conrelid = 'public.account_landing_page_materializations'::regclass
+      and conname = 'account_landing_page_materializations_id_landing_page_account_key'
+  );
+
   select
     to_regclass('public.account_landing_page_shared_configurations') is not null
     and to_regclass('public.account_landing_page_configurations') is not null
     and exists (select 1 from information_schema.columns where table_schema='public' and table_name='account_landing_pages' and column_name='approved_materialization_id')
     and exists (select 1 from pg_constraint where conrelid='public.account_landing_pages'::regclass and conname='account_landing_pages_approved_materialization_fkey')
-    and exists (select 1 from pg_constraint where conrelid='public.account_landing_page_materializations'::regclass and conname='account_landing_page_materializations_id_landing_page_account_key')
     and (select relrowsecurity from pg_class where oid='public.account_landing_page_shared_configurations'::regclass)
     and (select relrowsecurity from pg_class where oid='public.account_landing_page_configurations'::regclass)
     and not exists (select 1 from pg_policies where schemaname='public' and tablename in ('account_landing_page_shared_configurations','account_landing_page_configurations'))
@@ -624,9 +678,26 @@ begin
     and has_function_privilege('service_role','public.save_account_landing_page_configuration_v1(uuid,uuid,jsonb,jsonb,bigint,bigint,uuid)','EXECUTE')
     and has_function_privilege('service_role','public.approve_account_landing_page_materialization_v1(uuid,uuid,uuid,uuid)','EXECUTE')
     and has_function_privilege('service_role','public.set_account_landing_page_archived_v1(uuid,uuid,boolean,uuid)','EXECUTE')
-    and has_function_privilege('service_role','public.append_account_landing_page_materialization_v1(uuid,uuid,uuid,jsonb,jsonb,uuid)','EXECUTE')
-  into v_ready;
-  return jsonb_build_object('ready', coalesce(v_ready,false), 'schema_version', case when v_ready then 1 else null end);
+  into v_workspace_objects;
+
+  v_ready := coalesce(
+    v_status_contract
+    and v_append_compatibility
+    and v_materialization_objects
+    and v_workspace_objects,
+    false
+  );
+
+  return jsonb_build_object(
+    'ready', v_ready,
+    'schema_version', case when v_ready then 1 else null end,
+    'checks', jsonb_build_object(
+      'status_contract_transitional', coalesce(v_status_contract, false),
+      'append_compatibility', coalesce(v_append_compatibility, false),
+      'materialization_objects', coalesce(v_materialization_objects, false),
+      'workspace_objects', coalesce(v_workspace_objects, false)
+    )
+  );
 end;
 $$;
 

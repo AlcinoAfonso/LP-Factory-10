@@ -14,7 +14,9 @@ const snippetUrl = new URL("../../supabase/snippets/e19_5_landing_page_workspace
 const adapterUrl = new URL("./adapters/landingPageWorkspaceAdapter.ts", import.meta.url);
 const previewUrl = new URL("./landingPagePreview.ts", import.meta.url);
 const accountPageUrl = new URL("../../app/a/[account]/page.tsx", import.meta.url);
+const detailPageUrl = new URL("../../app/a/[account]/landing-pages/[landingPageId]/page.tsx", import.meta.url);
 const previewPageUrl = new URL("../../app/a/[account]/landing-pages/[landingPageId]/preview/page.tsx", import.meta.url);
+const approvalActionUrl = new URL("../../app/a/[account]/landing-pages/[landingPageId]/actions.ts", import.meta.url);
 const pendingButtonUrl = new URL("../../app/a/[account]/_components/WorkspaceSubmitButton.tsx", import.meta.url);
 
 const cases = [
@@ -64,8 +66,7 @@ const cases = [
       assert.match(migration,/foreign key \(approved_materialization_id, id, account_id\)/i);
       assert.match(migration,/on delete no action[\s\S]+deferrable initially deferred/i);
       assert.match(migration,/e19_5_configuration_values_valid_for_account/);
-      assert.match(migration,/e19_5_configuration_values_applicable/);
-      assert.match(migration,/whatsapp_destination[\s\S]+primary_conversion_channel[\s\S]+paid_search_keyword_map[\s\S]+traffic_source/);
+      assert.doesNotMatch(migration,/e19_5_configuration_values_applicable/);
       assert.match(migration,/slug = 'imobiliario'/);
       assert.match(migration,/slug = 'corretor-imoveis'/);
       assert.match(migration,/p_values \? 'business_display_name'/);
@@ -87,19 +88,24 @@ const cases = [
       assert.match(test,/contract default was anticipated/);
       assert.match(test,/current account authority must not be copied/);
       assert.match(test,/field outside the current taxon chain must fail/);
-      assert.match(test,/destination outside applicable conversion channel must fail/);
-      assert.match(test,/paid search map outside paid search traffic must fail/);
+      assert.match(test,/shared privacy policy must remain valid for form and whatsapp landing pages/);
+      assert.match(test,/channel switch must preserve the prior valid destination/);
       assert.match(test,/materialized handoff retry must ignore later bootstrap drift/);
       assert.match(migration,/if found then[\s\S]+return query select v_shared_revision, v_landing_page_revision;[\s\S]+select \* into v_onboarding/i);
+      assert.match(migration,/e19_4_landing_page_revision_readiness/);
+      assert.match(migration,/status_contract_transitional/);
+      assert.match(migration,/append_compatibility/);
+      assert.match(migration,/pg_get_functiondef/);
+      assert.match(test,/workspace readiness must prove precursor and workspace checks/);
       assert.match(snippet,/persisted_configuration_valid/);
-      assert.match(snippet,/e19_5_configuration_values_applicable/);
+      assert.doesNotMatch(snippet,/e19_5_configuration_values_applicable/);
       assert.match(snippet,/status_contract_transitional/);
     },
   },
   {
     name: "runtime uses explicit tenant-safe projections and historical preview selection",
     run: async () => {
-      const [adapter,preview,accountPage,previewPage,pendingButton]=await Promise.all([readFile(adapterUrl,"utf8"),readFile(previewUrl,"utf8"),readFile(accountPageUrl,"utf8"),readFile(previewPageUrl,"utf8"),readFile(pendingButtonUrl,"utf8")]);
+      const [adapter,preview,accountPage,detailPage,previewPage,approvalAction,pendingButton]=await Promise.all([readFile(adapterUrl,"utf8"),readFile(previewUrl,"utf8"),readFile(accountPageUrl,"utf8"),readFile(detailPageUrl,"utf8"),readFile(previewPageUrl,"utf8"),readFile(approvalActionUrl,"utf8"),readFile(pendingButtonUrl,"utf8")]);
       assert.match(adapter,/\.select\("id,account_id,name,slug,status,approved_materialization_id,updated_at"\)/);
       assert.match(adapter,/\.eq\("account_id", authority\.value\.accountId\)/);
       assert.match(adapter,/e19_5_landing_page_workspace_readiness/);
@@ -111,6 +117,12 @@ const cases = [
       assert.match(accountPage,/if \(!handoff\.ok\) return <LandingPageOperationalState/);
       assert.match(previewPage,/previewLandingPage\.status !== "archived"/);
       assert.match(previewPage,/Voltar para/);
+      assert.doesNotMatch(detailPage,/approveLandingPageRevisionAction/);
+      assert.match(previewPage,/approveLandingPageRevisionAction/);
+      assert.match(previewPage,/materialization_id" value=\{preview\.model\.revision\.id\}/);
+      assert.match(approvalAction,/loadLandingPagePreview[\s\S]+approveAccountLandingPageRevision/);
+      assert.match(approvalAction,/preview\.model\.revision\.id !== materializationId/);
+      assert.doesNotMatch(approvalAction,/trackLandingPage|analytics|preview_view|viewed_at|\.from\(/i);
       assert.match(pendingButton,/useFormStatus/);
       assert.match(pendingButton,/disabled=\{pending\}/);
     },

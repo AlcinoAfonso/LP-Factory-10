@@ -38,18 +38,12 @@ insert into public.account_landing_page_onboarding_configurations (
 do $$
 declare
   v_landing_page_id uuid;
+  v_second_landing_page_id uuid;
   v_revision_id uuid;
   v_revision_number bigint;
   v_approved uuid;
   v_default text;
 begin
-  if public.e19_5_configuration_values_applicable(
-    '{"primary_conversion_channel":{"scope":"landing_page","value":"form"},"whatsapp_destination":{"scope":"landing_page","value":"+5521979658483"}}'::jsonb
-  ) then raise exception 'destination outside applicable conversion channel must fail'; end if;
-  if public.e19_5_configuration_values_applicable(
-    '{"traffic_source":{"scope":"campaign","value":"organic"},"paid_search_keyword_map":{"scope":"campaign","value":{"cluster":["imoveis"]}}}'::jsonb
-  ) then raise exception 'paid search map outside paid search traffic must fail'; end if;
-
   if public.e19_5_configuration_values_valid_for_account(
     'e1953000-0000-4000-8000-000000000011',
     '{"business_display_name":{"scope":"business","value":"cópia indevida"}}'::jsonb,
@@ -67,7 +61,7 @@ begin
     'e1953000-0000-4000-8000-000000000001'
   );
   update public.account_landing_page_onboarding_configurations
-  set values = values || '{"whatsapp_destination":{"scope":"landing_page","value":"+5521979658483"}}'::jsonb,
+  set values = values || '{"invented_field":{"scope":"landing_page","value":"drift posterior"}}'::jsonb,
       revision = revision + 1
   where account_id = 'e1953000-0000-4000-8000-000000000011';
   perform * from public.handoff_account_landing_page_onboarding_v1(
@@ -93,10 +87,48 @@ begin
 
   perform * from public.save_account_landing_page_configuration_v1(
     'e1953000-0000-4000-8000-000000000011', v_landing_page_id,
-    '{"brand_logo_asset":{"scope":"business","value":{"asset_id":"logo"}}}'::jsonb,
-    '{"landing_page_objective":{"scope":"landing_page","value":"Captar contatos qualificados"}}'::jsonb,
+    '{"brand_logo_asset":{"scope":"business","value":{"asset_id":"logo"}},"privacy_policy_url":{"scope":"business","value":"https://example.com/privacidade"}}'::jsonb,
+    '{"landing_page_objective":{"scope":"landing_page","value":"Captar contatos por formulário"},"primary_conversion_channel":{"scope":"landing_page","value":"form"}}'::jsonb,
     1, 1, 'e1953000-0000-4000-8000-000000000001'
   );
+
+  select landing_page_id into v_second_landing_page_id
+  from public.create_account_landing_page_v1(
+    'e1953000-0000-4000-8000-000000000011','Página WhatsApp','pagina-whatsapp',
+    'e1953000-0000-4000-8000-000000000001'
+  );
+
+  perform * from public.save_account_landing_page_configuration_v1(
+    'e1953000-0000-4000-8000-000000000011', v_second_landing_page_id,
+    '{"brand_logo_asset":{"scope":"business","value":{"asset_id":"logo"}},"privacy_policy_url":{"scope":"business","value":"https://example.com/privacidade"}}'::jsonb,
+    '{"landing_page_objective":{"scope":"landing_page","value":"Captar contatos por WhatsApp"},"primary_conversion_channel":{"scope":"landing_page","value":"whatsapp"},"whatsapp_destination":{"scope":"landing_page","value":"+5521979658483"}}'::jsonb,
+    2, 1, 'e1953000-0000-4000-8000-000000000001'
+  );
+
+  if (select values #>> '{privacy_policy_url,value}' from public.account_landing_page_shared_configurations where account_id='e1953000-0000-4000-8000-000000000011')
+       is distinct from 'https://example.com/privacidade'
+     or (select values #>> '{primary_conversion_channel,value}' from public.account_landing_page_configurations where landing_page_id=v_landing_page_id)
+       is distinct from 'form'
+     or (select values #>> '{primary_conversion_channel,value}' from public.account_landing_page_configurations where landing_page_id=v_second_landing_page_id)
+       is distinct from 'whatsapp' then
+    raise exception 'shared privacy policy must remain valid for form and whatsapp landing pages';
+  end if;
+
+  perform * from public.save_account_landing_page_configuration_v1(
+    'e1953000-0000-4000-8000-000000000011', v_second_landing_page_id,
+    '{"brand_logo_asset":{"scope":"business","value":{"asset_id":"logo"}},"privacy_policy_url":{"scope":"business","value":"https://example.com/privacidade"}}'::jsonb,
+    '{"landing_page_objective":{"scope":"landing_page","value":"Captar contatos por telefone"},"primary_conversion_channel":{"scope":"landing_page","value":"phone"},"whatsapp_destination":{"scope":"landing_page","value":"+5521979658483"},"phone_destination":{"scope":"landing_page","value":"+5521979658484"}}'::jsonb,
+    3, 2, 'e1953000-0000-4000-8000-000000000001'
+  );
+
+  if (select values #>> '{primary_conversion_channel,value}' from public.account_landing_page_configurations where landing_page_id=v_second_landing_page_id)
+       is distinct from 'phone'
+     or (select values #>> '{whatsapp_destination,value}' from public.account_landing_page_configurations where landing_page_id=v_second_landing_page_id)
+       is distinct from '+5521979658483'
+     or (select values #>> '{phone_destination,value}' from public.account_landing_page_configurations where landing_page_id=v_second_landing_page_id)
+       is distinct from '+5521979658484' then
+    raise exception 'channel switch must preserve the prior valid destination';
+  end if;
 
   select materialization_id, revision_number into v_revision_id, v_revision_number
   from public.append_account_landing_page_materialization_v1(
@@ -166,9 +198,17 @@ end;
 $$;
 
 do $$
+declare v_readiness jsonb;
 begin
-  if not coalesce((public.e19_5_landing_page_workspace_readiness()->>'ready')::boolean,false) then
+  v_readiness := public.e19_5_landing_page_workspace_readiness();
+  if not coalesce((v_readiness->>'ready')::boolean,false) then
     raise exception 'workspace readiness must pass';
+  end if;
+  if not coalesce((v_readiness #>> '{checks,status_contract_transitional}')::boolean,false)
+     or not coalesce((v_readiness #>> '{checks,append_compatibility}')::boolean,false)
+     or not coalesce((v_readiness #>> '{checks,materialization_objects}')::boolean,false)
+     or not coalesce((v_readiness #>> '{checks,workspace_objects}')::boolean,false) then
+    raise exception 'workspace readiness must prove precursor and workspace checks';
   end if;
   if exists (
     select 1 from information_schema.role_routine_grants

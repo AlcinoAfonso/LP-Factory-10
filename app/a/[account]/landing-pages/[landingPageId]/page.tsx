@@ -5,19 +5,16 @@ import { getAccountLandingPageWorkspaceDetail, landingPageWorkspaceStateLabels }
 import { OnboardingConfigurationJourney } from "../../_components/OnboardingConfigurationJourney";
 import { WorkspaceSubmitButton } from "../../_components/WorkspaceSubmitButton";
 import { setLandingPageArchivedAction } from "../../workspace-actions";
-import { approveLandingPageRevisionAction } from "./actions";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 type PageProps = Readonly<{
   params: Promise<{ account:string; landingPageId:string }>;
-  searchParams?: Promise<{ action_error?:string; approved?:string }>;
 }>;
 
-export default async function LandingPageWorkspaceDetail({params,searchParams}:PageProps) {
+export default async function LandingPageWorkspaceDetail({params}:PageProps) {
   const {account,landingPageId}=await params;
-  const query=await searchParams;
   const accountSubdomain=account.trim().toLowerCase();
   const ctx=await getAccessContext({params:{account:accountSubdomain},route:`/a/${accountSubdomain}/landing-pages/${landingPageId}`});
   const accountId=(ctx?.account?.id ?? ctx?.account_id ?? null) as string|null;
@@ -37,14 +34,12 @@ export default async function LandingPageWorkspaceDetail({params,searchParams}:P
             <div><p className="text-sm font-semibold uppercase tracking-[0.16em] text-brand-700">{accountSubdomain} · Landing page</p><h1 className="mt-2 text-3xl font-bold tracking-tight text-ink-900">{detail.landingPage.name}</h1><p className="mt-2 text-sm text-graytech-600">/{detail.landingPage.slug} · {landingPageWorkspaceStateLabels[detail.landingPage.state]}</p></div>
             <form action={setLandingPageArchivedAction}><input type="hidden" name="account" value={accountSubdomain}/><input type="hidden" name="landing_page_id" value={landingPageId}/><input type="hidden" name="archived" value={archived?"0":"1"}/><WorkspaceSubmitButton idleLabel={archived?"Restaurar página":"Arquivar página"} pendingLabel={archived?"Restaurando...":"Arquivando..."} className="min-h-11 rounded-lg border border-surface-border bg-white px-4 text-sm font-semibold text-ink-900 disabled:cursor-wait disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600" /></form>
           </div>
-          {query?.action_error ? <p role="alert" className="mt-5 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">A ação não foi concluída. A versão aprovada anterior permanece inalterada.</p>:null}
-          {query?.approved ? <p role="status" className="mt-5 rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">Versão aprovada. O histórico foi preservado.</p>:null}
         </section>
 
         <section className="mt-6 rounded-2xl border border-surface-border bg-white p-5 shadow-card sm:p-7">
           <div className="flex items-center justify-between gap-4"><div><h2 className="text-xl font-bold text-ink-900">Histórico de versões</h2><p className="mt-1 text-sm text-graytech-600">A versão mais recente e a aprovada podem ser diferentes.</p></div>{!archived?<Link href={`/a/${accountSubdomain}/landing-pages/${landingPageId}/preview`} className="inline-flex min-h-11 items-center rounded-lg bg-brand-700 px-4 text-sm font-semibold text-white">Gerar ou ver versão atual</Link>:null}</div>
           <div className="mt-5 grid gap-3">
-            {detail.revisions.length===0?<p className="rounded-lg border border-dashed border-surface-border p-5 text-sm text-graytech-600">Nenhuma versão gerada.</p>:detail.revisions.map((revision)=><article key={revision.id} className="flex flex-col gap-3 rounded-xl border border-surface-border p-4 sm:flex-row sm:items-center sm:justify-between"><div><p className="font-semibold text-ink-900">Versão {revision.number}{revision.latest?" · mais recente":""}{revision.approved?" · aprovada":""}</p><p className="mt-1 text-xs text-graytech-600">{new Date(revision.createdAt).toLocaleString("pt-BR")}</p></div><div className="flex flex-wrap gap-2"><Link href={`/a/${accountSubdomain}/landing-pages/${landingPageId}/preview?revision=${revision.id}`} className="inline-flex min-h-11 items-center rounded-lg border border-surface-border px-4 text-sm font-semibold text-ink-900">Visualizar</Link>{!archived&&!revision.approved?<form action={approveLandingPageRevisionAction}><input type="hidden" name="account" value={accountSubdomain}/><input type="hidden" name="landing_page_id" value={landingPageId}/><input type="hidden" name="materialization_id" value={revision.id}/><WorkspaceSubmitButton idleLabel="Aprovar esta versão" pendingLabel="Aprovando..." className="min-h-11 rounded-lg bg-brand-700 px-4 text-sm font-semibold text-white disabled:cursor-wait disabled:opacity-60" /></form>:null}</div></article>)}
+            {detail.revisions.length===0?<p className="rounded-lg border border-dashed border-surface-border p-5 text-sm text-graytech-600">Nenhuma versão gerada.</p>:detail.revisions.map((revision)=><article key={revision.id} className="flex flex-col gap-3 rounded-xl border border-surface-border p-4 sm:flex-row sm:items-center sm:justify-between"><div><p className="font-semibold text-ink-900">Versão {revision.number}{revision.latest?" · mais recente":""}{revision.approved?" · aprovada":""}</p><p className="mt-1 text-xs text-graytech-600">{new Date(revision.createdAt).toLocaleString("pt-BR")}</p></div><Link href={`/a/${accountSubdomain}/landing-pages/${landingPageId}/preview?revision=${revision.id}`} className="inline-flex min-h-11 items-center rounded-lg border border-surface-border px-4 text-sm font-semibold text-ink-900">Visualizar</Link></article>)}
           </div>
         </section>
       </main>
