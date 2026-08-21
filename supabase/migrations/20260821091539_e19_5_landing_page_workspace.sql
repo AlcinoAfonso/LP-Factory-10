@@ -36,7 +36,7 @@ immutable
 security invoker
 set search_path = pg_catalog
 as $$
-  select coalesce((
+  select
     jsonb_typeof(p_values) = 'object'
     and not exists (
       select 1
@@ -91,7 +91,7 @@ immutable
 security invoker
 set search_path = pg_catalog
 as $$
-  select
+  select coalesce((
     jsonb_typeof(p_values) = 'object'
     and (not (p_values ? 'whatsapp_destination')
       or p_values #>> '{primary_conversion_channel,value}' = 'whatsapp')
