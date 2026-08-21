@@ -56,8 +56,8 @@
 - O número avaliado deve ser fornecido explicitamente pelo processo/consumidor responsável e deve corresponder à versão executável que será usada.
 - Se a versão executável pretendida mudar de `N` para `M`, uma avaliação anterior de `N` não autoriza `M`; o gate falha até nova avaliação.
 - Se uma LP real reabrir a suficiência de uma versão antes considerada suficiente, o marcador pode voltar a `NULL` até o ajuste e a nova decisão.
-- Depois do merge técnico da E19.5 e antes da integração final, atualizar a branch da E20.6.5 e identificar no caminho executável da E19.5 a versão E20.2 explicitamente requerida. Reconstrução, resolução dos quatro planos, Structured Output, revalidação e registro administrativo devem usar exatamente essa versão `N`.
-- É proibido assumir a v4 atual, maior versão, `latest` ou fallback. Se a E19.5 mergeada não consolidar uma versão executável explícita, parar e sinalizar a dependência não resolvida; não completar a lacuna na E20.6.5.
+- Nos contratos executáveis atuais, a fonte real de `requiredInputCatalogVersion` é o `reviewed_input_catalog_version` do taxon retornado pela única leitura canônica da pesquisa selecionada; `loadTaxonPreparationForReviewedVersion({ taxonId })` exige esse valor presente e executável e o entrega explicitamente à derivação como `requiredInputCatalogVersion`. O PR #794/E19.5 não fornece essa versão.
+- Antes da integração final, atualizar a branch e reconfirmar essa autoridade no caminho executável vigente. Reconstrução, resolução dos quatro planos, Structured Output, revalidação e registro administrativo devem usar exatamente a versão `N` da leitura canônica; ausência, invalidade ou divergência falham fechado. É proibido assumir a v4 atual, maior versão, `latest` ou fallback. Se E19.5 ou outro delta mergeado alterar materialmente essa autoridade, reconciliar a dependência a partir dos contratos atuais antes de integrar, sem vinculá-la por número de PR.
 
 ### 1.5. Estado derivado `taxon preparado`
 
@@ -135,8 +135,8 @@
 - Avaliação formal de Automação da v2: concluída em 20/08/2026; classificação mantida em `2.1.3 — Automação com IA em fluxo controlado`. A Passagem 1 do Analista confirmou a identidade code-owned no boundary comum e preservou o transporte exclusivo da E20.6.5 como proibido.
 - O processamento determinístico é autoridade para autorização, identidade, leitura integral, versão E20.2 explícita, resolução e equivalência dos quatro planos, reconstrução do contexto, validação do Structured Output, detecção de stale e revalidação anterior à mutação. A OpenAI executa somente a avaliação semântica não autoritativa.
 - Não automatizar preservaria o fluxo externo E20.6.3, mas não atenderia ao objetivo aprovado de internalização; automação exclusivamente determinística não resolve suficientemente o julgamento semântico; comportamento agentic, tools e orquestração autônoma não apresentam benefício necessário e permanecem proibidos.
-- `model`, `reasoning.effort`, revisão ativa e demais parâmetros operacionais autorizados não podem ser hardcoded nem antecipados pela E20.6.5; na integração final, devem ser resolvidos exclusivamente pela configuração ativa do lifecycle dinâmico Supabase por meio da API pública comum resultante da E21.2.
-- A identidade canônica, classificação, modalidade/API, consumer e fallback do workload E20.6.5 permanecem versionados em código no boundary comum `lib/openai-workloads/`, conforme o contrato da E21.2.
+- `taxon_input_catalog_sufficiency_evaluation` é o novo workload textual da E20.6.5 e deve ser suportado pelo agregado E21.2 antes da integração real, com configuração inicial aprovada `gpt-5.6-terra` + `reasoning.effort=low` nas unidades operacionais aplicáveis. Esse valor inicial pertence ao bootstrap/lifecycle E21.2 e não pode ser hardcoded no consumidor E20.6.5.
+- Mudanças posteriores de modelo, `reasoning.effort`, revisão ativa ou demais parâmetros operacionais ficam exclusivamente sob governança E21 e decisão humana, resolvidas pela configuração ativa do lifecycle dinâmico Supabase por meio da API pública comum. A identidade canônica, classificação, modalidade/API, consumer e fallback permanecem versionados em código no boundary comum `lib/openai-workloads/`.
 
 ### 1.11. Dois modos de avaliação da E20.6.5
 
@@ -306,10 +306,10 @@ Execute a avaliação E20.6 do taxon `[taxon_slug]`, usando a cadeia taxonômica
 
 - A execução possui dois checkpoints obrigatórios:
   - **checkpoint pré-integração OpenAI:** consolidar v2 e avaliação formal de Automação; implementar contratos e domínio E20.6.5, identidade e reconstrução/revalidação determinísticas, Structured Output, modos `systematic` e `hypothesis`, UI route-local e testes com configuração e transporte injetados/fakes;
-  - **checkpoint de integração final:** somente após os merges técnicos E21.2 e E19.5, atualizar a branch, consumir a configuração ativa do lifecycle dinâmico Supabase pela API pública comum, usar a versão E20.2 explícita consolidada pela E19.5, integrar o provider real e substituir o handoff Codex.
+  - **checkpoint de integração final:** somente depois de o agregado E21.2 suportar `taxon_input_catalog_sufficiency_evaluation` com bootstrap inicial `gpt-5.6-terra` + `low`, atualizar a branch, consumir a configuração ativa do lifecycle dinâmico Supabase pela API pública comum, reconfirmar a fonte canônica vigente de `requiredInputCatalogVersion`, integrar o provider real e substituir o handoff Codex.
 - No checkpoint pré-integração, `lib/openai-workloads/` permanece inalterado, nenhuma configuração repo-only temporária é criada, nenhum resolver ou transporte OpenAI exclusivo da E20.6.5 é criado, nenhuma chamada real ao provider é concluída e a implementação não pode ser declarada completa.
-- A integração real somente começa depois do merge técnico da E21.2 e do apply e validação, no ambiente-alvo, dos objetos de banco dos quais seu runtime dependa. A E20.6.5 deve consumir exclusivamente a API pública do lifecycle dinâmico Supabase e do boundary comum `lib/openai-workloads/`, sem consulta direta aos objetos E21.2 e sem configuração, resolver ou transporte paralelo.
-- O checkpoint pré-integração não altera `lib/openai-workloads/`. Após o merge técnico da E21.2, a integração final pode registrar a identidade E20.6.5 nos contratos e no catálogo comuns como o menor delta necessário ao novo workload, preservando a API pública, o lifecycle dinâmico e a ausência de transporte domain-specific.
+- A integração real somente começa depois de o suporte E21.2 ao novo workload estar incorporado à `main` e de o apply e a validação, no ambiente-alvo, dos objetos de banco dos quais seu runtime dependa estarem concluídos. A E20.6.5 deve consumir exclusivamente a API pública do lifecycle dinâmico Supabase e do boundary comum `lib/openai-workloads/`, sem consulta direta aos objetos E21.2 e sem configuração, resolver ou transporte paralelo.
+- O checkpoint pré-integração não altera `lib/openai-workloads/`. O agregado E21.2 deve incorporar a identidade code-owned `taxon_input_catalog_sufficiency_evaluation`, sua unidade operacional textual, a configuração inicial aprovada `gpt-5.6-terra` + `low` e seu lifecycle comum antes de a E20.6.5 integrar o provider; o PR #795 não cria suporte provisório nem duplica esse boundary.
 - Parar antes de editar somente se a API pós-E21.2 exigir consulta direta ao Supabase, configuração paralela, resolver/transporte exclusivo da E20.6.5 ou redesenho transversal material além do registro e consumo normais de um novo workload.
 
 - Gatilho:
@@ -503,21 +503,21 @@ Execute a avaliação E20.6 do taxon `[taxon_slug]`, usando a cadeia taxonômica
   - cada caminho crítico possui caso positivo e negativo e não depende de credencial OpenAI;
   - nenhum teste depende de credencial OpenAI e o checkpoint não declara a E20.6.5 completa.
 - Critérios da integração final:
-  - merges técnicos E21.2 e E19.5 incorporados e dependências hospedadas aplicáveis validadas;
-  - identidade code-owned registrada no boundary comum e configuração ativa resolvida pelo lifecycle Supabase;
-  - versão E20.2 executável identificada explicitamente, sem `latest`, maior versão ou fallback;
+  - agregado E21.2 com `taxon_input_catalog_sufficiency_evaluation` incorporado e dependências hospedadas aplicáveis validadas;
+  - identidade code-owned registrada no boundary comum, bootstrap inicial `gpt-5.6-terra` + `low` e configuração ativa resolvida pelo lifecycle Supabase; mudanças posteriores dependem de governança E21 e decisão humana;
+  - `requiredInputCatalogVersion` derivada explicitamente do `reviewed_input_catalog_version` da leitura canônica atual, presente, executável e sem `latest`, maior versão ou fallback;
   - provider real, Structured Output, refusal/incomplete, timeout e observabilidade sanitizada validados;
   - UI montada no runtime autenticado e validada em desktop, mobile, teclado, erro e invalidação;
   - decisão administrativa permanece separada, com revalidação imediatamente anterior à mutação;
   - handoff Codex removido somente após a comprovação do runtime real;
   - E20.6.4 permanece determinística e sem nova chamada de IA.
 - Gates posteriores obrigatórios:
-  - após E21.2 técnica, atualizar a branch, comprovar apply/validação dos objetos requeridos, registrar a identidade code-owned no catálogo comum e consumir somente a configuração ativa e a API pública comum;
-  - após E19.5 técnica, atualizar novamente e usar exatamente a versão E20.2 executável explícita consolidada; ausência, divergência ou versão não executável falham fechado;
-  - integrar chamada real, observabilidade e remoção do handoff somente depois dos dois gates; o PR técnico final E20.6.5 deve ser o último dos três a mergear.
+  - depois de o suporte E21.2 ao novo workload estar incorporado, atualizar a branch, comprovar apply/validação dos objetos requeridos e consumir somente a configuração ativa e a API pública comum;
+  - reconfirmar no código vigente que a leitura canônica fornece `reviewed_input_catalog_version` como `requiredInputCatalogVersion`; qualquer alteração material trazida por E19.5 ou outro delta deve ser reconciliada por contrato, sem presumir dependência do PR #794;
+  - integrar chamada real, observabilidade e remoção do handoff somente depois desses gates. A ordem de merge entre #795, #793 e #794 não é fixada até que as dependências reais sejam reconciliadas.
 - Artefatos finais posteriores: remover o caminho ativo Admin → Codex; atualizar `docs/automations.md`, `docs/base-tecnica.md` e `docs/platform-config.md` somente quando o runtime real estiver comprovado; fechar `docs/roadmap.md` somente após merge técnico final.
 - Avaliação formal de Automação na v2: concluída; classificação aprovada. A Passagem 1 do Analista resolveu que a identidade permanece code-owned e que o checkpoint pré-integração é executável sem escolha técnica adicional.
-- Próxima ação: aguardar o merge técnico da E21.2; depois atualizar a branch e auditar a API pública comum antes de qualquer integração real.
+- Próxima ação: reconciliar no agregado E21.2 o suporte a `taxon_input_catalog_sufficiency_evaluation` com configuração inicial `gpt-5.6-terra` + `low`; somente após sua incorporação atualizar a branch e auditar a API pública comum e a fonte canônica de `requiredInputCatalogVersion` antes de qualquer integração real.
 
 ## 4. Escopo negativo e critérios de parada
 
@@ -555,7 +555,7 @@ Execute a avaliação E20.6 do taxon `[taxon_slug]`, usando a cadeia taxonômica
 - Parar se a solução exigir comportamento agentic, tools autônomas ou nova infraestrutura para cumprir requisito não previsto nesta v1.
 - Parar se não for possível preservar a autoridade determinística de E20.5/E20.2/E20.6.4 e a decisão humana separada.
 - Parar se a implementação exigir alterar contratos consumidores E19 sem gap factual específico e recorte próprio.
-- Parar se, antes do merge técnico E21.2, qualquer requisito exigir alteração do boundary comum `lib/openai-workloads/`, identidade de workload nova ou transporte compartilhado ainda inexistente; continuar somente até o checkpoint pré-integração.
-- Depois da E21.2, o registro normal da identidade E20.6.5 no contrato e catálogo comuns é autorizado. Parar antes de editar somente se a API pública exigir consulta direta ao Supabase, configuração paralela, resolver/transporte exclusivo ou redesenho transversal material; não criar workaround local.
-- Depois da E19.5, parar se o caminho executável não consolidar uma versão E20.2 explícita; não assumir v4, v5, `latest`, maior versão ou fallback.
+- Parar no checkpoint pré-integração enquanto o agregado E21.2 não suportar `taxon_input_catalog_sufficiency_evaluation`, inclusive identidade code-owned, configuração inicial `gpt-5.6-terra` + `low` e lifecycle comum; não alterar `lib/openai-workloads/` nem criar workaround local no PR #795.
+- Depois da incorporação desse suporte E21.2, parar antes de editar somente se a API pública exigir consulta direta ao Supabase, configuração paralela, resolver/transporte exclusivo ou redesenho transversal material.
+- Parar se o caminho executável vigente não fornecer `requiredInputCatalogVersion` explicitamente a partir da leitura canônica ou se uma mudança material tornar essa autoridade ambígua; não assumir v4, v5, `latest`, maior versão, fallback nem dependência automática da E19.5.
 - Encerrar a E20.6.5 quando o runtime do Admin conseguir executar avaliação sistemática e focal com IA, preservar decisão humana separada, falhar fechado e continuar alimentando o mesmo predicado determinístico de preparação da E20.6.4.

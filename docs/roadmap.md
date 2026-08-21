@@ -2583,7 +2583,7 @@ Repositório — Ajustados
 20.6.1 Objetivo e status
 
 * Objetivo: avaliar a suficiência factual da pesquisa integral `end_customer` selecionada pela E20.5 em conjunto com uma versão executável explícita do catálogo E20.2 e definir o predicado final de preparação do taxon, sem autorizar geração.
-* Status: E20.6.3 e E20.6.4 concluídas e operacionais desde 15/08/2026; checkpoint pré-integração da E20.6.5 implementado e validado, com integração real ainda pendente dos gates E21.2 e E19.5.
+* Status: E20.6.3 e E20.6.4 concluídas e operacionais desde 15/08/2026; checkpoint pré-integração da E20.6.5 implementado e validado, com integração real ainda pendente do suporte E21.2 ao novo workload e da reconciliação da fonte canônica de `requiredInputCatalogVersion`.
 
 20.6.2 Registros do recorte
 
@@ -2653,13 +2653,14 @@ Repositório — Ajustados
 
 20.6.5 Avaliação factual com IA no runtime do Admin
 
-* Status: Checkpoint pré-integração implementado e validado em 20/08/2026; integração final pendente dos merges técnicos E21.2 e E19.5.
+* Status: Checkpoint pré-integração implementado e validado em 20/08/2026; integração final pendente do suporte E21.2 ao novo workload e da reconciliação dos contratos executáveis vigentes.
 * Conteúdo:
   * internalizar na Taxonomia administrativa existente a avaliação semântica não autoritativa nos modos sistemático e hipótese humana, preservando a decisão administrativa explícita, a revalidação determinística e o gate E20.6.4 sem IA;
   * o checkpoint pré-integração materializou domínio e contratos, identidade e reconstrução/revalidação do contexto, Structured Output estrito, UI route-local apresentacional não montada e testes com portas e fakes injetados, sem alterar `lib/openai-workloads/`, criar configuração repo-only, chamar provider real ou declarar a E20.6.5 completa;
-  * após o merge técnico da E21.2, atualizar a branch, registrar a identidade code-owned no boundary comum e resolver os parâmetros operacionais exclusivamente pelo lifecycle dinâmico Supabase e sua API pública, sem consulta direta, configuração paralela ou transporte exclusivo da E20.6.5;
-  * após o merge técnico da E19.5, atualizar novamente e usar exatamente a versão E20.2 executável explícita então consolidada em todo o fluxo, sem `latest`, maior versão ou fallback;
-  * integrar o provider real, montar a UI autenticada e remover o handoff Admin → Codex somente depois dos dois gates, mantendo falha fechada e fazendo do PR técnico final E20.6.5 o último dos três a ser mergeado.
+  * `taxon_input_catalog_sufficiency_evaluation` é o novo workload textual que deve ser suportado pelo agregado E21.2, com configuração inicial aprovada `gpt-5.6-terra` + `reasoning.effort=low`; mudanças posteriores de modelo ou effort ficam sob governança E21 e decisão humana;
+  * somente depois desse suporte estar incorporado, atualizar a branch e resolver os parâmetros operacionais exclusivamente pelo lifecycle dinâmico Supabase e sua API pública, sem consulta direta, configuração paralela ou transporte exclusivo da E20.6.5;
+  * nos contratos atuais, `loadTaxonPreparationForReviewedVersion` deriva `requiredInputCatalogVersion` do `reviewed_input_catalog_version` retornado pela leitura canônica do taxon; o PR #794/E19.5 não fornece essa versão, e qualquer mudança material futura deve ser reconciliada pelo contrato executável, sem `latest`, maior versão ou fallback;
+  * integrar o provider real, montar a UI autenticada e remover o handoff Admin → Codex somente depois dos gates reais reconciliados, mantendo falha fechada. A ordem de merge entre #795, #793 e #794 permanece indefinida até essa reconciliação.
 
 21. E21 — Gestão e governança dos workloads OpenAI
 - Objetivo: gerir e governar os workloads OpenAI por recortes aprovados, iniciando pela configuração explícita, observabilidade segura e leitura administrativa; a configuração dinâmica e o histórico permanecem para recortes posteriores, sem otimização automatizada.
