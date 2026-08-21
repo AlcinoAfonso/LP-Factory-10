@@ -512,7 +512,11 @@ const cases: ReadonlyArray<
     name: "draft listing distinguishes zero one and many in deterministic order",
     run: async () => {
       const draftOne = landingPageDraft("00000000-0000-4000-8000-000000000201", "Primeira");
-      const draftTwo = landingPageDraft("00000000-0000-4000-8000-000000000202", "Segunda");
+      const draftTwo = landingPageDraft(
+        "00000000-0000-4000-8000-000000000202",
+        "Segunda",
+        "active",
+      );
       for (const expected of [[], [draftOne], [draftOne, draftTwo]]) {
         const client = runtimeClient([
           ...runtimeGateResponses(),
@@ -531,7 +535,7 @@ const cases: ReadonlyArray<
         const read = client.calls.at(-1);
         assert.deepEqual(read?.filters, [
           ["account_id", ACCOUNT_ID],
-          ["status", "draft"],
+          ["status", ["draft", "active"]],
         ]);
         assert.deepEqual(read?.orders, [
           ["created_at", true],
@@ -633,7 +637,10 @@ const cases: ReadonlyArray<
           "account_landing_page_onboarding_configurations",
           completeConfigurationRow(),
         ),
-        response("account_landing_pages", landingPageDraft(landingPageId, "Primeira")),
+        response(
+          "account_landing_pages",
+          landingPageDraft(landingPageId, "Primeira", "active"),
+        ),
         response(
           "account_landing_page_onboarding_configurations",
           completeConfigurationRow({ landingPageId, revision: 2 }),
@@ -920,13 +927,17 @@ function completeConfigurationRow(input: Readonly<{
   };
 }
 
-function landingPageDraft(id: string, name: string) {
+function landingPageDraft(
+  id: string,
+  name: string,
+  status: "draft" | "active" = "draft",
+) {
   return {
     id,
     account_id: ACCOUNT_ID,
     name,
     slug: name.toLowerCase().replaceAll(" ", "-"),
-    status: "draft",
+    status,
   };
 }
 
@@ -1013,6 +1024,11 @@ class ScriptedQuery {
 
   eq(column: string, value: unknown) {
     this.filters.push([column, value]);
+    return this;
+  }
+
+  in(column: string, values: readonly unknown[]) {
+    this.filters.push([column, [...values]]);
     return this;
   }
 

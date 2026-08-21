@@ -5,6 +5,7 @@ import type {
 import type {
   AccountLandingPageOnboardingFieldState,
 } from "./contracts";
+import { isOperationalLandingPageStatus } from "../types/status";
 import { resolveAccountLandingPageOnboardingConfiguration } from "./onboardingConfiguration";
 import {
   LANDING_PAGE_GENERATION_CONTEXT_CONTRACT_VERSION,
@@ -56,7 +57,7 @@ function compileValidatedLandingPageGenerationContext(
     currentAuthoritativeValues,
   } = input.revalidationAuthority;
   if (
-    input.landingPage.status !== "draft" ||
+    !isOperationalLandingPageStatus(input.landingPage.status) ||
     input.landingPage.account_id !== historicalConfiguration.accountId
   ) {
     return failure(
@@ -146,7 +147,7 @@ function compileValidatedLandingPageGenerationContext(
       accountId: input.landingPage.account_id,
       landingPage: {
         id: input.landingPage.id,
-        status: "draft",
+        status: input.landingPage.status,
       },
       planKey: currentPlanKey,
       servedTaxon,
