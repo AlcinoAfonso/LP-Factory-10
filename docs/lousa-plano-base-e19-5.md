@@ -10,6 +10,8 @@
 - Fonte imutável: plano-base v1 do PR #726, merge commit `5d36f2bb4528d4ccb1d34018ae1e3940d2219d28`, congelado no commit `d260a82bf3e121e8be3f17a24229ecbd54f829ff` e blob `ddf5595854023c54a15d38851f0f6d22a146f0a0`.
 - Destino da orquestração: worktree `C:\Dev\GitHub\LP-Factory-10-e19` e branch `codex-app/e19-5-orquestracao` para v2, roadmap e implementação.
 - Exceção de rollout autorizada: antes da retomada da E19.5, um PR dedicado contra `main` entrega somente o expand backward-compatible indispensável; depois de merge, apply, deployment e validação hospedada do precursor, a branch da E19.5 incorpora essa dependência material e retoma o fluxo. O contract definitivo permanece em PR posterior, condicionado à implantação e validação hospedada do runtime funcional da E19.5.
+- Gate do precursor concluído em 21/08/2026: PR #794 mergeado em `b5391033faa2ddb1b6199b53c9ac42d63d6420e0`, migration `20260820214422_e19_5_expand_landing_page_status` aplicada pelo workflow canônico, snippet real com os três checks esperados em `ok`, deployment Vercel do merge commit aprovado e regressões pós-merge E19.2–E19.4 aprovadas contra essa `main`.
+- Essa evidência autoriza somente a retomada do planejamento e da implementação funcional backward-compatible da E19.5. O backfill `draft → active`, o default `active`, a retirada de `draft` e qualquer contract continuam proibidos até o runtime funcional novo estar implantado e validado.
 - A v1 anterior deste mesmo arquivo, baseada em drafts independentes, foi superada materialmente pela evolução E19.4 para revisões append-only 1:N e pelas decisões humanas posteriores.
 - Plano conceitual: N/A.
 - Processo: `docs/prompt-estrategista.md`.
@@ -407,9 +409,10 @@
 
 ## 3. Fases e próxima ação
 
-### 3.1. Gate técnico precursor autorizado — expand backward-compatible
+### 3.1. Gate técnico precursor concluído — expand backward-compatible
 
 - Não constitui nova subseção funcional do roadmap nem entrega capacidade E19.5.
+- Status: concluído pelo PR #794, merge commit `b5391033faa2ddb1b6199b53c9ac42d63d6420e0`, com apply canônico da migration `20260820214422`, snippet real 3/3 `ok`, deployment Vercel verde e regressões pós-merge E19.2–E19.4 aprovadas.
 - Entrega mínima:
   - check de status tolera `draft | active | archived`;
   - default e criação corrente permanecem `draft`;
@@ -499,9 +502,7 @@
 
 ### 3.4. Próxima ação
 
-- Submeter o delta desta decisão ao mesmo Analista, sem matriz nem pareceres.
-- Criar e publicar o PR precursor dedicado somente depois da aprovação do delta; parar até merge, apply, deployment Production e regressões comprovadas.
-- Depois dessa evidência, sincronizar explicitamente a branch E19.5 com `main`, revalidar migration/schema e retomar a Passagem 1.
+- A branch E19.5 já foi sincronizada explicitamente com a `main` no merge commit do precursor e o gate pós-merge foi aprovado; retomar a Passagem 1 com a v2 reconciliada, sem matriz nem pareceres.
 - Após aprovação da Passagem 1, versionar `docs/matriz-consolidacao-e19-5.md` e executar Passagem 2 no mesmo Analista com os pareceres integrais.
 - Reconciliar `docs/roadmap.md` por ABC em modo planejamento e criar o checkpoint `LP-Factory-Stage: plan-v2-approved` somente depois da aprovação do delta.
 - Executar `E19.5.3` end-to-end na branch de orquestração e em seu PR draft, sem repetir especialistas e sem merge automático; o contract definitivo permanece posterior à implantação e validação do runtime novo.
