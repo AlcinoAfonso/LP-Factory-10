@@ -17,7 +17,7 @@ import type {
 } from "./contracts";
 import type { OperationalLandingPageStatus } from "../types/status";
 
-export const LANDING_PAGE_GENERATION_CONTEXT_CONTRACT_VERSION = 3 as const;
+export const LANDING_PAGE_GENERATION_CONTEXT_CONTRACT_VERSION = 4 as const;
 
 export type LandingPageGenerationContextFailureCode =
   | "INVALID_INPUT"

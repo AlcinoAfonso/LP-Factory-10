@@ -239,6 +239,10 @@ function dependencies(
       calls.push("revision");
       return { ok: true, value: revisionFixture() };
     },
+    readRevision: async () => {
+      calls.push("revision");
+      return { ok: true, value: revisionFixture() };
+    },
     signAsset: async () => {
       calls.push("sign");
       return { ok: true, signedUrl: SIGNED_URL };
@@ -274,7 +278,7 @@ const cases = [
     },
   },
   {
-    name: "expand compatibility previews active and rejects archived",
+    name: "expand compatibility previews active and archived histories",
     run: async () => {
       const active = await loadLandingPagePreviewWithDependencies(
         { accountSlug: "account", landingPageId: LANDING_PAGE_ID },
@@ -317,8 +321,8 @@ const cases = [
           },
         }),
       );
-      assert.equal(archived.status, "not_found");
-      assert.equal(revisionRead, false);
+      assert.equal(archived.status, "ready");
+      assert.equal(revisionRead, true);
     },
   },
   {

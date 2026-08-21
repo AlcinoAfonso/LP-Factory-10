@@ -26,6 +26,7 @@ import {
 } from "../../../../lib/lp-builder";
 import { validateStarterColorPalette } from "../../../../lib/lp-builder/onboardingConfiguration";
 import { saveOnboardingConfigurationAction } from "../onboarding-configuration-actions";
+import { saveLandingPageConfigurationAction } from "../landing-pages/[landingPageId]/configuration-actions";
 import { initialOnboardingConfigurationActionState } from "./onboarding-configuration-action-contract";
 import {
   journeyConditionMatches,
@@ -134,6 +135,7 @@ const FIELD_LABELS: Readonly<Record<string, string>> = {
   external_url_destination: "Link externo de destino",
   privacy_policy_url: "Política de privacidade",
   paid_search_keyword_map: "Termos de busca e mensagem",
+  landing_page_objective: "Objetivo específico desta landing page",
   brand_color_palette: "Paleta da marca",
   brand_logo_asset: "Logo da marca",
 };
@@ -169,15 +171,20 @@ export function OnboardingConfigurationJourney(props: Readonly<{
   accountSubdomain: string;
   configuration: AccountLandingPageOnboardingConfiguration;
   reviewMode?: boolean;
+  workspaceMode?: boolean;
+  sharedRevision?: number;
 }>) {
   const router = useRouter();
   const [stepIndex, setStepIndex] = useState(0);
   const [revision, setRevision] = useState(props.configuration.revision);
+  const [sharedRevision, setSharedRevision] = useState(props.sharedRevision ?? 0);
   const [values, setValues] = useState<AccountLandingPageOnboardingStoredValues>(
     props.configuration.storedValues,
   );
   const [actionState, formAction, pending] = useActionState(
-    saveOnboardingConfigurationAction,
+    props.workspaceMode
+      ? saveLandingPageConfigurationAction
+      : saveOnboardingConfigurationAction,
     initialOnboardingConfigurationActionState,
   );
   const lastHandledRevision = useRef<number | null>(null);
@@ -237,8 +244,15 @@ export function OnboardingConfigurationJourney(props: Readonly<{
     }
     lastHandledRevision.current = actionState.revision;
     setRevision(actionState.revision);
+    if (actionState.sharedRevision !== undefined) {
+      setSharedRevision(actionState.sharedRevision);
+    }
     if (actionState.intent === "exit") {
-      router.push("/a/home");
+      router.push(
+        props.workspaceMode
+          ? `/a/${props.accountSubdomain}`
+          : "/a/home",
+      );
       return;
     }
     if (actionState.intent === "next") {
@@ -248,7 +262,7 @@ export function OnboardingConfigurationJourney(props: Readonly<{
       setStepIndex((current) => Math.max(0, current - 1));
     }
     router.refresh();
-  }, [actionState, router]);
+  }, [actionState, props.accountSubdomain, props.workspaceMode, router]);
 
   useEffect(() => {
     const firstFieldKey = Object.keys(actionState.fieldErrors ?? {})[0];
@@ -291,10 +305,10 @@ export function OnboardingConfigurationJourney(props: Readonly<{
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="text-sm font-semibold uppercase tracking-[0.16em] text-brand-700">
-                Primeiros passos
+                {props.workspaceMode ? "Configurações da página" : "Primeiros passos"}
               </p>
               <h1 className="mt-2 text-2xl font-bold tracking-tight text-ink-900 sm:text-3xl">
-                Vamos preparar sua primeira landing page
+                {props.workspaceMode ? "Revise os dados desta landing page" : "Vamos preparar sua primeira landing page"}
               </h1>
             </div>
             <span className="rounded-full bg-brand-50 px-3 py-1 text-sm font-medium text-brand-800">
@@ -334,6 +348,12 @@ export function OnboardingConfigurationJourney(props: Readonly<{
             <input type="hidden" name="account_subdomain" value={props.accountSubdomain} />
             <input type="hidden" name="catalog_version" value={props.configuration.catalogVersion} />
             <input type="hidden" name="expected_revision" value={revision} />
+            {props.workspaceMode ? (
+              <>
+                <input type="hidden" name="landing_page_id" value={props.configuration.landingPageId ?? ""} />
+                <input type="hidden" name="expected_shared_revision" value={sharedRevision} />
+              </>
+            ) : null}
             <input type="hidden" name="values_json" value={JSON.stringify(submittedValues)} />
             <input type="hidden" name="intent" value="save" />
 

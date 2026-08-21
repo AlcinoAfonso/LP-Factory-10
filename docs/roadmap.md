@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 21/08/2026
-• Versão: v1.5.172
+• Versão: v1.5.173
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2098,7 +2098,7 @@ Repositório — Ajustados
 
 19. E19 — LP Builder
 - Objetivo: Consolidar o fluxo Core de landing pages por conta, da identidade mínima em `draft` às futuras etapas de geração, revisão, materialização e publicação, sempre por recortes aprovados.
-- Status: E19.1, E19.2 e E19.3 concluídas. E19.4.3, E19.4.4 e E19.4.5 concluídas; a E19.4 está encerrada e integrada à `main` pelo PR #776. A revisão 3 permanece preservada como baseline dos gaps persuasivos observados. A E19.5 possui plano-base v2 aprovado e permanece sem implementação iniciada.
+- Status: E19.1, E19.2 e E19.3 concluídas. E19.4.3, E19.4.4 e E19.4.5 concluídas; a E19.4 está encerrada e integrada à `main` pelo PR #776. A revisão 3 permanece preservada como baseline dos gaps persuasivos observados. A E19.5.3 está implementada no repositório no PR draft #797, pendente dos gates finais, review e merge humano; apply e validação hospedada permanecem posteriores.
 
 19.1 Criação produtiva mínima de LP por conta
 
@@ -2407,19 +2407,24 @@ Repositório — Ajustados
 
 19.5.1 Objetivo e status
 - Objetivo: transformar a superfície autenticada da conta em workspace operacional para organizar, configurar, versionar, revisar, aprovar, arquivar e restaurar identidades estáveis de LP, preservando o histórico append-only.
-- Status: Planejada conforme plano-base v2 aprovado; implementação ainda não iniciada.
+- Status: Plano-base v2 aprovado e implementação E19.5.3 concluída no repositório no PR draft #797; validações finais, review, merge humano, apply canônico e QA hospedado permanecem gates obrigatórios.
 
 19.5.3 Workspace operacional, configuração e lifecycle da LP
-- Status: Planejada.
+- Status: Implementada no repositório; ainda não aplicada nem validada no ambiente hospedado.
 - Conteúdo:
   - a E19.2 permanece responsável pelo primeiro onboarding e pelo bootstrap histórico, sem rebind; a operação posterior separa valores compartilhados de conta e negócio dos valores contextuais de oferta, campanha e LP;
   - cada LP continua sendo uma identidade comercial estável, representada uma única vez no workspace, com estados de UX derivados, lista operacional e visão separada de arquivadas;
-  - `landing_page_objective` será input humano explícito e não factual da LP, versionado no catálogo E20.2 e dependente da aceitação E20.6 antes da geração;
+  - `landing_page_objective` é input humano explícito e não factual da LP na E20.2 v5, com `createdInVersion: 5`, evidence própria e dependência da aceitação E20.6 exata antes da geração;
   - `Gerar nova revisão` reutiliza E19.3 e E19.4 por ação humana, cria revisão integral e append-only da mesma LP, preserva revisões anteriores e não altera automaticamente a versão aprovada;
   - o histórico permite preview da revisão mais recente e de revisões anteriores; a aprovação escolhe explicitamente uma revisão existente, sem cópia nem nova entidade de versão;
   - o lifecycle de produto é `active | archived`; a implementação funcional permanece backward-compatible com `draft`, e o contract definitivo fica em recorte posterior, somente após implantação e validação do runtime funcional;
   - backfill de status `draft → active`, default `active` e retirada de `draft` não integram a implementação funcional da E19.5;
   - publicação, editor, hard delete, binding dinâmico, tracking, analytics, testes A/B, engine de experimentos e nova automação permanecem fora do recorte.
+  - o schema repo-only adiciona `approved_materialization_id`, as residências `account_landing_page_shared_configurations` e `account_landing_page_configurations`, RPCs tenant-safe, readiness fail-closed, teste SQL transacional e snippet read-only;
+  - o runtime mantém o onboarding E19.2 como bootstrap, executa handoff por scope, lista uma identidade por LP, deriva estados de UX, salva configuração sem criar revisão, permite histórico/preview por revisão, aprovação idempotente, archive e restore;
+  - o contexto produzido passa a v4 e o snapshot produzido a v2; snapshots v1/contexto v3 históricos continuam legíveis sem regravação;
+  - regressões pós-merge do precursor foram aprovadas sem criar revisão 4: E19.2 com 33 checks locais e 8 SQL reais, E19.3 com 8 checks locais, e E19.4 com 25 checks locais e 8 SQL reais;
+  - arquivos centrais: `lib/lp-builder/`, `app/a/[account]/`, `lib/conversion-content/landing-page/input-catalog/`, `supabase/migrations/20260821091539_e19_5_landing_page_workspace.sql`, `supabase/tests/e19_5_landing_page_workspace.test.sql` e `supabase/snippets/e19_5_landing_page_workspace_verify.sql`.
 
 20. E20 — Preparação e liberação de taxons para geração de landing pages
 
@@ -2891,6 +2896,8 @@ Repositório — Ajustados
 - Nenhuma alteração de banco, schema, infraestrutura ou arquitetura.
 
 99. Changelog
+v1.5.173 — 21/08/2026 — Registrada a retomada segura e a implementação repo-only da E19.5.3 após regressões pós-merge E19.2–E19.4 aprovadas sem revisão 4: catálogo v5, configuração por scope, workspace, histórico, preview por revisão, aprovação e lifecycle backward-compatible; apply, QA hospedado, contract e merge permanecem separados e o contract segue proibido.
+
 v1.5.171 — 20/08/2026 — Registrada a implementação repo-only tecnicamente aprovada da E21.2.4: gestão administrativa por ambiente/workload, lifecycle explícito, reautorização server-side, prova pelos quatro transportes existentes e falha fechada; apply, validações hospedadas, smoke real, ativação e cutover permanecem pós-merge, sem iniciar a E21.3.
 
 v1.5.170 — 20/08/2026 — Registrada a implementação repo-only tecnicamente aprovada da E21.2.3: fonte operacional por ambiente/workload, bootstrap, lifecycle transacional, resolver assíncrono fail-closed, quatro consumers, proveniência, validação de snapshots e provas SQL; apply, Security Controls, snippet real e cutover permanecem pós-merge, e a E21.2.4 fica autorizada a iniciar.

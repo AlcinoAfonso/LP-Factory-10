@@ -6,6 +6,7 @@ import {
   bindAccountLandingPageOnboardingConfiguration,
   createAccountLandingPage,
   getAccountLandingPageOnboardingConfiguration,
+  handoffAccountLandingPageOnboarding,
   listAccountLandingPageDrafts,
   saveAccountLandingPageOnboardingConfiguration,
   type AccountLandingPageOnboardingStoredValues,
@@ -250,6 +251,19 @@ export async function completeOnboardingConfigurationAction(
       };
     }
     return { status: "error", formError: COMPLETION_ERROR };
+  }
+
+  const handedOff = await handoffAccountLandingPageOnboarding({
+    accountId,
+    landingPageId,
+    expectedOnboardingRevision: bound.configuration.revision,
+  });
+  if (!handedOff.ok) {
+    return {
+      status: "error",
+      formError:
+        "A landing page foi vinculada, mas o workspace ainda não está disponível. Recarregue a página após a atualização do serviço.",
+    };
   }
 
   revalidatePath(route);

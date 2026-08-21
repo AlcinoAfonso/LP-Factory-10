@@ -64,7 +64,7 @@ const candidate: LandingPagePresentationCandidate = {
 };
 
 const context = {
-  contractVersion: 3,
+  contractVersion: 4,
   identities: {
     accountId: "10000000-0000-4000-8000-000000000001",
     landingPage: { id: "20000000-0000-4000-8000-000000000002", status: "draft" },

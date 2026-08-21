@@ -11,12 +11,14 @@ export const maxDuration = 300;
 
 type PageProps = Readonly<{
   params: Promise<{ account: string; landingPageId: string }>;
+  searchParams?: Promise<{ revision?: string }>;
 }>;
 
-export default async function LandingPagePreview({ params }: PageProps) {
+export default async function LandingPagePreview({ params, searchParams }: PageProps) {
   const { account, landingPageId } = await params;
+  const revisionId = (await searchParams)?.revision;
   const accountSlug = account.trim().toLowerCase();
-  const preview = await loadLandingPagePreview({ accountSlug, landingPageId });
+  const preview = await loadLandingPagePreview({ accountSlug, landingPageId, revisionId });
   if (preview.status === "denied" || preview.status === "not_found") notFound();
 
   return (
@@ -32,7 +34,7 @@ export default async function LandingPagePreview({ params }: PageProps) {
                 Preview privado
               </p>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-graytech-600">
-                Esta superfície reproduz somente a revisão persistida atual. Gerar uma nova revisão continua sendo uma ação humana explícita.
+                {revisionId ? "Esta superfície reproduz a revisão histórica selecionada." : "Esta superfície reproduz somente a revisão persistida atual."} Gerar uma nova revisão continua sendo uma ação humana explícita.
               </p>
             </div>
             <GenerationTrigger accountSlug={accountSlug} landingPageId={landingPageId} />

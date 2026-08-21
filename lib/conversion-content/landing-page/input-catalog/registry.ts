@@ -389,11 +389,35 @@ mutableTransactionIntentV4.evidence = evidence(
   "empirical:real-estate-research",
 );
 
+const catalogV5 = {
+  ...cloneJson(catalogV4),
+  version: 5,
+} as LandingPageInputCatalogRegistryEntry;
+(catalogV5.universal.entries as LandingPageInputFieldDefinition[]).push(
+  field({
+    fieldKey: "landing_page_objective",
+    purpose:
+      "Declarar o objetivo humano específico que orienta a landing page sem criar nova autoridade factual.",
+    valueType: "string",
+    valueScope: "landing_page",
+    expectedValueOrigin: "landing_page_provided",
+    obligation: "required",
+    validation: { kind: "type_only" },
+    landingPageSubstitutionPolicy: "not_applicable",
+    evidence: evidence(
+      "A decisão humana da E19.5 exige um objetivo explícito por landing page antes de gerar.",
+      "decision:e19-5-human-v1",
+    ),
+    createdInVersion: 5,
+  }),
+);
+
 export const landingPageInputCatalogRegistry = deepFreeze({
   1: catalogV1,
   2: catalogV2,
   3: catalogV3,
   4: catalogV4,
+  5: catalogV5,
 } satisfies LandingPageInputCatalogRegistry);
 
 function field(
