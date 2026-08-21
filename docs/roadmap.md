@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 20/08/2026
-• Versão: v1.5.171
+• Data: 21/08/2026
+• Versão: v1.5.172
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2644,8 +2644,8 @@ Repositório — Ajustados
   * preservar E19.2, E19.3 e E19.4 sem alteração neste recorte.
 
 21. E21 — Gestão e governança dos workloads OpenAI
-- Objetivo: gerir e governar os workloads OpenAI por recortes aprovados, iniciando pela configuração explícita, observabilidade segura e leitura administrativa; a configuração dinâmica e o histórico permanecem para recortes posteriores, sem otimização automatizada.
-- Status: a fundação E21.1 permanece preservada; após a retirada concluída da E22.1.4, o catálogo vigente possui quatro workloads de produto e uma referência operacional, e os dois workloads de draft permanecem comprovados por execuções integradas hospedadas, sem pendência de canários isolados.
+- Objetivo: gerir e governar os workloads OpenAI por recortes aprovados, com configuração explícita, observabilidade segura, leitura administrativa e configuração operacional dinâmica por ambiente, sem otimização automatizada.
+- Status: a fundação E21.1 permanece preservada e a E21.2 está concluída com cutover aprovado em Preview e Production; a E21.3 permanece prevista e não iniciada.
 
 21.1 Fundação, normalização e leitura dos workloads OpenAI
 
@@ -2717,32 +2717,80 @@ Repositório — Ajustados
 
 21.2.1 Objetivo e status
 - Objetivo: permitir configuração ativa por ambiente e workload, com candidata, validação, ativação humana, rollback e mudança ordinária sem redeploy.
-- Status: implementação repo-only concluída e aprovada tecnicamente no PR #793; apply, inspeções, cutover e validações hospedadas permanecem pós-merge e pendentes.
-- O recorte preserva a E21.1 como boundary transversal, mantém Development determinístico/local e deixa a E21.3 fora da entrega.
+- Status: Concluída em 21/08/2026; implementação incorporada pelos PRs #793 e #796, migration aplicada, gates hospedados aprovados e cutover operacional concluído em Preview e Production.
+- O recorte preserva a E21.1 como boundary transversal, mantém Development determinístico/local e deixa a E21.3 prevista, sem início de execução.
 
-21.2.2 Registros de planejamento
-- Plano-base v1: `docs/lousa-plano-base-e21-2.md`, congelado pelo PR #790 e incorporado à `main` no merge `d260a82bf3e121e8be3f17a24229ecbd54f829ff`.
-- Plano-base v2 aprovado: `docs/lousa-plano-base-e21-2-v2.md`.
-- Matriz integral de tratamentos: `docs/matriz-consolidacao-e21-2.md`.
-- Execução autorizada em uma única branch e um único PR, inicialmente com o runtime dinâmico gate-off; apply e cutover permanecem pós-merge e sob controle humano.
+21.2.2 Registros do recorte
+- Banco:
+  - Criados:
+    - `public.openai_workload_operational_configurations`
+    - `public.openai_workload_configuration_revisions`
+    - `public.openai_workload_configuration_activations`
+    - `public.save_openai_workload_configuration_candidate_v1`
+    - `public.discard_openai_workload_configuration_candidate_v1`
+    - `public.promote_openai_workload_configuration_candidate_v1`
+    - `public.activate_openai_workload_configuration_revision_v1`
+    - `public.rollback_openai_workload_configuration_revision_v1`
+    - `public.prevent_openai_workload_append_only_mutation_v1`
+- Repositório:
+  - Criados:
+    - `app/admin/(protected)/workloads-openai/_components/OpenAiConfigurationManager.tsx`
+    - `app/admin/(protected)/workloads-openai/_proof.ts`
+    - `app/admin/(protected)/workloads-openai/actions.ts`
+    - `app/admin/(protected)/workloads-openai/commercialProof.ts`
+    - `app/admin/(protected)/workloads-openai/proofCore.ts`
+    - `app/admin/(protected)/workloads-openai/validation-cases.ts`
+    - `app/admin/(protected)/workloads-openai/validation-cases.tsx`
+    - `lib/openai-workloads/adapters/operationalConfigurationAdapter.ts`
+    - `lib/openai-workloads/adapters/operationalConfigurationAdapterCore.ts`
+    - `supabase/migrations/20260820190422_e21_2_3_openai_workload_operational_configurations.sql`
+    - `supabase/snippets/e21_2_3_openai_workload_operational_configurations_verify.sql`
+    - `supabase/tests/e21_2_3_openai_workload_operational_configurations.test.sql`
+  - Ajustados:
+    - `app/admin/(protected)/workloads-openai/page.tsx`
+    - `lib/access/guards.ts`
+    - `lib/conversion-content/adapters/commercialActivationOpenAiAdapter.ts`
+    - `lib/conversion-content/commercial-activation/draft-generation.ts`
+    - `lib/conversion-content/commercial-activation/validation-cases.ts`
+    - `lib/lp-builder/landing-page-draft-generation-validation-cases.ts`
+    - `lib/lp-builder/landingPageDraftGeneration.ts`
+    - `lib/lp-builder/landingPageDraftImageGeneration.ts`
+    - `lib/lp-builder/landingPageRevision.ts`
+    - `lib/onboarding/niche-resolution/adapters/openAiResolver.ts`
+    - `lib/openai-workloads/contracts.ts`
+    - `lib/openai-workloads/index.ts`
+    - `lib/openai-workloads/registry.ts`
+    - `lib/openai-workloads/resolve.ts`
+    - `lib/openai-workloads/validation-cases.ts`
+    - `lib/supabase/service.ts`
+- Referências:
+  - Plano-base v1: `docs/lousa-plano-base-e21-2.md`.
+  - Plano-base v2 aprovado: `docs/lousa-plano-base-e21-2-v2.md`.
+  - Matriz integral de tratamentos: `docs/matriz-consolidacao-e21-2.md`.
+  - Contrato técnico: `docs/base-tecnica.md` — 3.16.
+  - Configuração operacional: `docs/platform-config.md` — 3.5 e 6.3.
+  - Contrato de banco: `docs/schema.md` — 1.28, 1.29, 1.30 e 3.7.
 
 21.2.3 Fonte operacional dinâmica e resolução por ambiente/workload
-- Status: implementação repo-only concluída e aprovada tecnicamente no PR #793; apply, inspeção e cutover hospedados permanecem pós-merge e pendentes.
+- Status: Concluída; fonte operacional aplicada e cutover aprovado em Preview e Production.
 - Automação: não.
 - A migration forward-only materializa o agregado de configuração, revisões validadas e ativações/rollback por `ambiente + workload`, com bootstrap exato das oito unidades de Production e Preview, lifecycle transacional, concorrência otimista, constraints unit-safe, RLS/grants mínimos e metadados de prova fechados e sanitizados.
 - `lib/openai-workloads/` permanece o boundary público comum: resolvers assíncronos recebem ambiente explícito, Development continua no baseline local, e os quatro callsites preservam transporte, fallback funcional e proveniência ao consumir `repo_catalog` ou `supabase_operational`.
 - Adapter server-side, comportamento fail-closed, allowlists por workload, validação de snapshots funcionais, snippet SQL read-only, testes SQL e documentação canônica aplicável foram entregues; `npm ci`, `npm run check`, validadores focais e `git diff --check` foram aprovados.
-- Manter `OPENAI_OPERATIONAL_CONFIG_ENABLED` desabilitada no PR; após o merge humano, apply, Security Controls e snippet precedem o gate-on em Preview, e Production somente avança após Preview aprovado.
+- A migration foi aplicada pelo workflow canônico; o snippet hospedado aprovou 10/10 verificações e o Security Controls não apresentou alerta incompatível com as tabelas ou RPCs do recorte.
+- `OPENAI_OPERATIONAL_CONFIG_ENABLED=true` foi habilitada e redeployada primeiro em Preview e, somente após sua aprovação integral, em Production; os dois ambientes usam exclusivamente `supabase_operational`, enquanto Development permanece no baseline local.
 - Não usar `repo_catalog` como fallback quando o gate estiver ativo; não introduzir cache, Realtime, AI Gateway, Vercel Flags, Global Config, tracing, drains, workflow ou segunda residência.
 
 21.2.4 Gestão administrativa, validação, ativação e rollback
-- Status: implementação repo-only concluída e aprovada tecnicamente no PR #793; gates hospedados e operacionais permanecem pós-merge e pendentes, sem antecipar o cutover.
+- Status: Concluída; gestão administrativa, provas reais, lifecycle, QA hospedada e smoke mínimo de Production aprovados.
 - Automação: não.
 - `/admin/workloads-openai` passou a gerir ativa, candidata, prova, revisão validada pendente, ativação, histórico e rollback separadamente em Production e Preview; texto aceita somente `model + reasoning effort`, imagem somente `model + quality`, e o Supabase Inspect permanece referência read-only separada.
 - A página reautoriza `platform_admin` antes do read model service-role; cada action reexecuta o guard, deriva o ator no servidor, valida unidade, versão e allowlists e preserva concorrência otimista e estados fail-closed.
-- A prova despacha fixture segura pelos quatro transportes existentes, não cria persistência funcional, benchmark, ranking ou decisão autônoma e só promove após sucesso; erro preserva a candidata e nunca altera a revisão ativa.
-- `npm ci`, `npm run check`, os validadores focais de domínio, UI, actions/prova e `git diff --check` foram aprovados; o Analista encerrou o P1 de reautorização sem novos achados.
-- Após o merge humano, apply, Security Controls e snippet precedem gate-on em Preview; então permanecem obrigatórios lifecycle hospedado, papéis positivo/negativo, desktop/mobile, foco/erro/WCAG proporcional, prova real com a `OPENAI_API_KEY` já aprovada, ativação, próxima execução, isolamento de Production e rollback. A credencial não deve ser copiada, exibida ou versionada.
+- A prova despacha fixture segura pelos quatro transportes existentes, não cria persistência funcional, benchmark, ranking ou decisão autônoma e só promove após sucesso; erro preserva a candidata e nunca altera a revisão ativa. A prova comercial reutiliza o parser comum do shape REST real de `/v1/responses`.
+- O Preview aprovou os quatro transportes, criação/edição/descarte de candidata, promoção, ativação, execução subsequente com nova revisão, isolamento de Production e rollback, além de papéis positivo/negativo, desktop 1440 × 900, mobile 390 × 844, estados de sucesso/erro, reconhecimento do lifecycle e checklist proporcional WCAG 2.2.
+- O smoke mínimo de Production confirmou as quatro baselines ativas e uma execução comercial real com origem `supabase_operational` e revisão 1, criando somente draft não publicado; a janela autenticada permaneceu sem erro ou warning no runtime.
+- O estado operacional final mantém os quatro workloads de Preview e Production na revisão 1, sem candidata ou revisão pendente; os eventos append-only do lifecycle de Preview permanecem preservados e Production mantém somente os eventos de bootstrap.
+- `OPENAI_API_KEY` permaneceu server-side e foi reutilizada sem cópia, exposição ou versionamento. A E21.3 não foi iniciada.
 
 21.3 Evidências e avaliação de custo-benefício dos workloads OpenAI
 
