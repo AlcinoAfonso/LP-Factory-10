@@ -11,7 +11,10 @@ import {
   type OpenAiWorkloadEnvironment,
   type ResolvedOpenAiProductWorkload,
 } from "../../openai-workloads";
-import { requestCommercialActivationOpenAi } from "../adapters/commercialActivationOpenAiAdapter";
+import {
+  extractCommercialActivationOpenAiOutputText,
+  requestCommercialActivationOpenAi,
+} from "../adapters/commercialActivationOpenAiAdapter";
 import {
   COMMERCIAL_ACTIVATION_AUDIENCE_SCOPE,
   COMMERCIAL_ACTIVATION_RESEARCH_BLOCKS,
@@ -603,7 +606,7 @@ function parseGeneratedOutput(payload: unknown):
   }
 
   const response = payload as ResponsesApiResponse;
-  const outputText = extractOutputText(response);
+  const outputText = extractCommercialActivationOpenAiOutputText(response);
   if (!outputText) {
     const refused = response.output?.some((item) =>
       item.content?.some((content) => content.type === "refusal"),
@@ -1138,20 +1141,6 @@ function assertKnownVariant(
   if (!(item.variantKey in commercialActivationSectionRegistry)) {
     throw new Error("composition_variant_unknown");
   }
-}
-
-function extractOutputText(data: ResponsesApiResponse): string | null {
-  if (typeof data.output_text === "string") return data.output_text;
-
-  for (const item of data.output ?? []) {
-    for (const content of item.content ?? []) {
-      if (content.type === "output_text" && typeof content.text === "string") {
-        return content.text;
-      }
-    }
-  }
-
-  return null;
 }
 
 function parseJsonObject(value: string): Record<string, unknown> | null {

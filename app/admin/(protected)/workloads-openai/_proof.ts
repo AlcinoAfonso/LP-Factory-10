@@ -1,6 +1,7 @@
 import "server-only";
 
 import { requestCommercialActivationOpenAi } from "@/conversion-content/adapters/commercialActivationOpenAiAdapter";
+import { evaluateInputCatalogWithOpenAi } from "@/conversion-content/adapters/inputCatalogEvaluationOpenAiAdapter";
 import { generateLandingPageDraftCandidate } from "@/lp-builder/landingPageDraftGeneration";
 import { generateLandingPageDraftImage } from "@/lp-builder/landingPageDraftImageGeneration";
 import type { LandingPageGenerationContextPackage } from "@/lp-builder/generationContextContracts";
@@ -18,6 +19,7 @@ import {
   type OpenAiCandidateProofDependencies,
   type OpenAiCandidateProofMetadata,
 } from "./proofCore";
+import { parseCommercialProof } from "./commercialProof";
 
 export type { OpenAiCandidateProofMetadata } from "./proofCore";
 
@@ -40,6 +42,8 @@ export async function runOpenAiCandidateProof(
       niche: dependencies.niche ?? proveNicheResolution,
       commercial: dependencies.commercial ?? proveCommercialActivation,
       landingPageText: dependencies.landingPageText ?? proveLandingPageText,
+      inputCatalogEvaluation:
+        dependencies.inputCatalogEvaluation ?? proveInputCatalogEvaluation,
       landingPageImage: dependencies.landingPageImage ?? proveLandingPageImage,
     },
   );
@@ -167,6 +171,40 @@ async function proveLandingPageText(
     : { ok: false, code: result.kind === "invalid_candidate" ? "contract" : "provider" };
 }
 
+async function proveInputCatalogEvaluation(
+  workload: ResolvedOpenAiProductWorkload,
+  environment: OpenAiManagedWorkloadEnvironment,
+  apiKey: string,
+  requestId: string,
+): Promise<ProofAttempt> {
+  const result = await evaluateInputCatalogWithOpenAi({
+    apiKey,
+    configuration: workload,
+    environment,
+    requestId,
+    safetyIdentifier: "platform_admin_operational_proof",
+    request: {
+      mode: "systematic",
+      prompt: {
+        version: "e20.6.5-input-catalog-evaluation-v1",
+        instructions: "Retorne somente o objeto JSON solicitado para a prova técnica segura.",
+        input: "Confirme o contrato do transporte com o valor approved.",
+      },
+      outputSchema: {
+        type: "object",
+        additionalProperties: false,
+        properties: { proof: { type: "string", const: "approved" } },
+        required: ["proof"],
+      },
+    },
+  });
+  return result.status === "completed" &&
+    isRecord(result.output) &&
+    result.output.proof === "approved"
+    ? { ok: true, providerRequestId: null, latencyMs: null }
+    : { ok: false, code: result.status === "completed" ? "contract" : "provider" };
+}
+
 async function proveLandingPageImage(
   workload: ResolvedOpenAiImageWorkload,
   environment: OpenAiManagedWorkloadEnvironment,
@@ -227,20 +265,6 @@ function proofResolver(
     operationalConfigurationEnabled: "true",
     readOperationalConfiguration,
   } as const;
-}
-
-function parseCommercialProof(payload: unknown) {
-  if (!isRecord(payload) || typeof payload.output_text !== "string") {
-    return { ok: false as const, kind: "invalid_response" as const, reason: "proof_output_missing" };
-  }
-  try {
-    const parsed: unknown = JSON.parse(payload.output_text);
-    return isRecord(parsed) && parsed.proof === "approved"
-      ? { ok: true as const, value: true }
-      : { ok: false as const, kind: "invalid_response" as const, reason: "proof_output_invalid" };
-  } catch {
-    return { ok: false as const, kind: "invalid_response" as const, reason: "proof_output_invalid" };
-  }
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

@@ -26,18 +26,18 @@ declare
   v_cross_unit_revision_id uuid;
   v_invalid_proof_metadata jsonb;
 begin
-  if (select count(*) from public.openai_workload_operational_configurations) <> 8
+  if (select count(*) from public.openai_workload_operational_configurations) <> 10
      or (
        select count(*)
        from public.openai_workload_configuration_revisions
        where revision_number = 1
-     ) <> 8
+     ) <> 10
      or (
        select count(*)
        from public.openai_workload_configuration_activations
        where event_type = 'bootstrap'
-     ) <> 8 then
-    raise exception 'bootstrap must contain exactly eight units, revisions and events';
+     ) <> 10 then
+    raise exception 'bootstrap must contain exactly ten units, revisions and events';
   end if;
 
   if exists (
@@ -49,6 +49,8 @@ begin
         ('preview', 'commercial_activation_draft_generation', 'gpt-5.4-mini', 'none', null::text),
         ('production', 'landing_page_draft_generation', 'gpt-5.6-luna', 'max', null::text),
         ('preview', 'landing_page_draft_generation', 'gpt-5.6-luna', 'max', null::text),
+        ('production', 'taxon_input_catalog_sufficiency_evaluation', 'gpt-5.6-terra', 'low', null::text),
+        ('preview', 'taxon_input_catalog_sufficiency_evaluation', 'gpt-5.6-terra', 'low', null::text),
         ('production', 'landing_page_draft_image_generation', 'gpt-image-2', null::text, 'medium'),
         ('preview', 'landing_page_draft_image_generation', 'gpt-image-2', null::text, 'medium')
     )
@@ -68,7 +70,7 @@ begin
     where revision.id is null
       or configuration.active_revision_id is null
   ) then
-    raise exception 'bootstrap baseline values must match the approved eight configurations';
+    raise exception 'bootstrap baseline values must match the approved ten configurations';
   end if;
 
   select

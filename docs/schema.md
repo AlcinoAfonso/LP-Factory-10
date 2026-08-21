@@ -881,10 +881,10 @@
 
 1.30 openai_workload_operational_configurations
 1.30.1 Função e unidade
-• Agregado operacional candidato da E21.2.3 com exatamente uma linha por `environment + workload`.
+• Agregado operacional aplicado da E21.2.3 com exatamente uma linha por `environment + workload`.
 • `environment` aceita somente `production | preview`; Development permanece fora desta residência dinâmica.
 • A PK composta `(environment, workload)` é o lock canônico das RPCs e impede mais de uma unidade para a mesma combinação.
-• A migration forward-only `supabase/migrations/20260820190422_e21_2_3_openai_workload_operational_configurations.sql` está versionada no repositório; apply e verificação hospedada permanecem pós-merge.
+• A migration forward-only `supabase/migrations/20260820190422_e21_2_3_openai_workload_operational_configurations.sql` está aplicada no ambiente hospedado; o snippet read-only aprovou 10/10 verificações e o Security Controls não apresentou alerta incompatível com o agregado ou suas RPCs.
 
 1.30.2 Colunas
 • environment text not null

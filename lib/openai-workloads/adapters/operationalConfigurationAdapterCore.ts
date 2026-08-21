@@ -116,14 +116,12 @@ function exactlyOneRecord(value: unknown): Record<string, unknown> | null {
 
 function isTextWorkload(
   value: string,
-): value is
-  | "niche_resolution"
-  | "commercial_activation_draft_generation"
-  | "landing_page_draft_generation" {
+): value is OpenAiProductWorkloadId {
   return (
     value === "niche_resolution" ||
     value === "commercial_activation_draft_generation" ||
-    value === "landing_page_draft_generation"
+    value === "landing_page_draft_generation" ||
+    value === "taxon_input_catalog_sufficiency_evaluation"
   );
 }
 
@@ -177,10 +175,17 @@ function deepFreeze<T>(value: T): T {
 }
 
 const managedEnvironments = ["production", "preview"] as const;
+const preTaxonEvaluationManagedWorkloads = [
+  "niche_resolution",
+  "commercial_activation_draft_generation",
+  "landing_page_draft_generation",
+  "landing_page_draft_image_generation",
+] as const;
 const managedWorkloads = [
   "niche_resolution",
   "commercial_activation_draft_generation",
   "landing_page_draft_generation",
+  "taxon_input_catalog_sufficiency_evaluation",
   "landing_page_draft_image_generation",
 ] as const;
 
@@ -252,7 +257,12 @@ export function translateOpenAiAdministrativeConfigurationRows(
   const units = exactRecords(unitRead.data, unitRowKeys);
   const revisions = exactRecords(revisionRead.data, revisionRowKeys);
   const activations = exactRecords(activationRead.data, activationRowKeys);
-  if (!units || !revisions || !activations || units.length !== 8) {
+  const workloads = units?.length === 8
+    ? preTaxonEvaluationManagedWorkloads
+    : units?.length === 10
+      ? managedWorkloads
+      : null;
+  if (!units || !revisions || !activations || !workloads) {
     return invalidAdministrativeConfiguration();
   }
 
@@ -320,7 +330,7 @@ export function translateOpenAiAdministrativeConfigurationRows(
 
   const result: OpenAiAdministrativeConfigurationUnit[] = [];
   for (const environment of managedEnvironments) {
-    for (const workload of managedWorkloads) {
+    for (const workload of workloads) {
       const key = unitKey(environment, workload);
       const unit = unitsByKey.get(key);
       const projection = projectionFor(projections, workload);

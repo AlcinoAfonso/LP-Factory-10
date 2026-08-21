@@ -11,10 +11,37 @@ import {
   runOpenAiCandidateProofCore,
   type OpenAiCandidateProofDependencies,
 } from "./proofCore";
+import { parseCommercialProof } from "./commercialProof";
 
 type Case = Readonly<{ name: string; run: () => void | Promise<void> }>;
 
 const cases: readonly Case[] = [
+  {
+    name: "commercial proof parses the raw Responses API output content shape",
+    run: () => {
+      const result = parseCommercialProof({
+        id: "resp_proof_1",
+        object: "response",
+        output: [
+          {
+            id: "msg_proof_1",
+            type: "message",
+            role: "assistant",
+            status: "completed",
+            content: [
+              {
+                type: "output_text",
+                text: JSON.stringify({ proof: "approved" }),
+                annotations: [],
+              },
+            ],
+          },
+        ],
+      });
+
+      assert.deepEqual(result, { ok: true, value: true });
+    },
+  },
   {
     name: "candidate proof dispatches each workload to its existing domain transport",
     run: async () => {
@@ -130,6 +157,7 @@ const cases: readonly Case[] = [
         "resolveNicheWithOpenAi",
         "requestCommercialActivationOpenAi",
         "generateLandingPageDraftCandidate",
+        "evaluateInputCatalogWithOpenAi",
         "generateLandingPageDraftImage",
       ]) {
         assert.equal(proof.includes(transport), true);
@@ -146,6 +174,10 @@ async function resolvedWorkloads() {
       "development",
     ),
     resolveOpenAiProductWorkload("landing_page_draft_generation", "development"),
+    resolveOpenAiProductWorkload(
+      "taxon_input_catalog_sufficiency_evaluation",
+      "development",
+    ),
     resolveOpenAiImageWorkload(
       "landing_page_draft_image_generation",
       "development",
@@ -187,6 +219,7 @@ function proofDependencies(
     niche: product,
     commercial: product,
     landingPageText: product,
+    inputCatalogEvaluation: product,
     landingPageImage: image,
   };
 }
