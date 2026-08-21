@@ -175,8 +175,18 @@
 • Valor real: não versionar.
 • Regra operacional: os consumidores autorizados podem compartilhar a mesma chave; não criar outra sem necessidade aprovada.
 
+• `OPENAI_OPERATIONAL_CONFIG_ENABLED`
+• Finalidade: gate server-side temporário do cutover da configuração operacional dinâmica dos quatro workloads OpenAI de produto.
+• Escopo: Preview e Production do projeto Core, com configuração independente por ambiente; Development ignora o gate e permanece no baseline local.
+• Habilitação: somente o literal `true` ativa a leitura operacional no Supabase. Variável ausente, vazia ou com qualquer outro valor mantém `repo_catalog` em Preview e Production.
+• Estado inicial: desabilitada em Preview e Production durante implementação, merge, aplicação e verificação da migration.
+• Regra de falha: com o gate habilitado, o runtime consulta exclusivamente o Supabase a cada execução, sem cache nem fallback para `repo_catalog`.
+• Progressão operacional: habilitar e validar primeiro em Preview; Production somente depois das evidências aprovadas de apply, invariantes, Security Controls e smoke de Preview.
+• Redeploy: a habilitação ou desabilitação do gate exige redeploy do ambiente afetado; alterações ordinárias da configuração ativa após o cutover não exigem redeploy.
+• Valor real por ambiente: não versionar neste documento.
+
 • Configuração efetiva dos workloads OpenAI de produto
-• Fonte canônica: `lib/openai-workloads/registry.ts`, com `configurationSource: repo_catalog` e revisão `v2`.
+• Fonte canônica: `lib/openai-workloads/registry.ts` mantém identidade, baseline local e allowlist; em Preview e Production, o gate desligado usa `repo_catalog` revisão `v2`, e o gate ligado usa exclusivamente `supabase_operational` com revisão decimal ativa.
 • Workloads textuais validados operacionalmente: `niche_resolution` e `commercial_activation_draft_generation`, com modelo `gpt-5.4-mini` e esforço de raciocínio `none`.
 • Workload textual validado no ambiente alvo: `landing_page_draft_generation`, com modelo `gpt-5.6-luna`, esforço `max`, Responses API, Structured Output estrito, `store:false` e timeout de 120 s.
 • Workload de imagem validado no ambiente alvo: `landing_page_draft_image_generation`, com modelo `gpt-image-2`, saída WebP 1536 × 1024, qualidade `medium`, compressão 80, moderação `auto` e timeout de 120 s.
@@ -460,6 +470,8 @@ Regra:
 • Configurações de plataformas, secrets por nome, workflows, ambientes e endpoints usados por automações devem ser registrados neste documento.
 
 99. Changelog
+v0.1.17 — 20/08/2026 — Registrado `OPENAI_OPERATIONAL_CONFIG_ENABLED`, seus defaults gate-off, habilitação pelo literal `true`, isolamento por ambiente, progressão Preview → Production e regras de redeploy/fail-closed da E21.2.3.
+
 v0.1.16 — 31/07/2026 — Registradas a correção de `OPENAI_LANDING_PAGE_GENERATION_PROFILE_MODEL` para `gpt-5.4-mini`, a ampliação para Production e Preview, o redeploy e a validação operacional da assistência somente em Production no domínio oficial.
 
 v0.1.15 — 30/07/2026 — Registrados o merge do PR #656, a habilitação do gate, o redeploy e o smoke final aprovado em Production.

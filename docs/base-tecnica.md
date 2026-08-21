@@ -2,8 +2,8 @@
 
 0.1 Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.70
-• Data: 18/08/2026
+• Versão: v2.0.72
+• Data: 20/08/2026
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -314,7 +314,14 @@
 • O boundary transversal canônico é `lib/openai-workloads/`; consumidores de produto usam somente sua API pública para resolver modelo e reasoning effort, sem ler variáveis de modelo nem acessar o registry interno.
 • O contrato público discrimina workloads textuais e de imagem; cada tipo expõe somente a configuração aplicável à sua API, sem default cruzado nem coerção entre modalidades.
 • O boundary comum não executa chamadas OpenAI e não contém secrets, prompts, schemas funcionais, regras de fallback ou persistência; transporte e comportamento funcional permanecem nos domínios consumidores.
+• O registry mantém identidade, baseline determinístico de Development e allowlists fechadas. Resolvers recebem o ambiente explicitamente e retornam proveniência verificável: `repo_catalog` com revisão versionada ou `supabase_operational` com revisão decimal positiva.
+• Em Production e Preview, o gate server-side temporário aceita somente o literal `true`: desligado, preserva o baseline do repositório; ligado, lê a revisão ativa no Supabase em cada execução, sem cache, seleção automática de outra revisão ou fallback para o repositório após erro.
+• Configuração operacional, revisões validadas e ativações são mantidas no Supabase por unidade `ambiente + workload`, com lifecycle, allowlists, concorrência otimista, relações unit-safe, RLS/grants restritos e histórico append-only; objetos físicos e estado de apply pertencem a `docs/schema.md`.
+• Snapshots funcionais que preservam configuração de geração devem revalidar origem, revisão e allowlist pelo boundary público, aceitando configuração operacional autorizada sem relaxar os parâmetros estruturais mantidos em código.
 • Cada tentativa de provider deve emitir somente metadados operacionais normalizados e seguros, preservando métricas ausentes como `null`; prompts, respostas integrais, payloads de negócio, PII, secrets e cálculo monetário não entram no evento comum.
+• A gestão administrativa consome somente projeção pública imutável e read model seguro; a página reautoriza `platform_admin` antes da leitura privilegiada, cada mutação reexecuta o guard e o ator é derivado exclusivamente no servidor.
+• Candidata, prova, revisão validada pendente, ativação e rollback permanecem estados explícitos. A prova usa fixture segura nos transportes funcionais existentes, não persiste dados de negócio e somente promove a candidata após sucesso; a configuração ativa muda apenas por ação humana posterior.
+• `OPENAI_API_KEY` permanece server-only e restrita à prova operacional autorizada; não atravessa client, formulário, read model ou log. Falha, recusa ou metadado inseguro encerram a prova sem promover nem descartar a candidata.
 
 4. DB Contract
 • `docs/schema.md` é a fonte única de tabelas, views, functions, RPCs, triggers, policies, constraints, grants e do estado exato do banco.

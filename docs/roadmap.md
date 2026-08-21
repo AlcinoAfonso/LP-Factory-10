@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 19/08/2026
-• Versão: v1.5.169
+• Data: 20/08/2026
+• Versão: v1.5.171
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2716,16 +2716,33 @@ Repositório — Ajustados
 21.2 Configuração operacional dinâmica dos workloads OpenAI
 
 21.2.1 Objetivo e status
-- Objetivo: futura configuração ativa por ambiente e workload, com candidata, validação, ativação humana, rollback e mudança ordinária sem redeploy.
-- Status: Prevista; não implementada.
-- O mecanismo efetivo será fechado no plano-base próprio.
+- Objetivo: permitir configuração ativa por ambiente e workload, com candidata, validação, ativação humana, rollback e mudança ordinária sem redeploy.
+- Status: implementação repo-only concluída e aprovada tecnicamente no PR #793; apply, inspeções, cutover e validações hospedadas permanecem pós-merge e pendentes.
+- O recorte preserva a E21.1 como boundary transversal, mantém Development determinístico/local e deixa a E21.3 fora da entrega.
 
-21.2.3 Previsão e limites
-- Preservar configuração explícita por workload/ambiente.
-- Exigir candidata validada.
-- Exigir ativação humana.
-- Permitir rollback para revisão validada.
-- Não autorizar neste registro banco, rota, dashboard mutável, provider ou nova infraestrutura.
+21.2.2 Registros de planejamento
+- Plano-base v1: `docs/lousa-plano-base-e21-2.md`, congelado pelo PR #790 e incorporado à `main` no merge `d260a82bf3e121e8be3f17a24229ecbd54f829ff`.
+- Plano-base v2 aprovado: `docs/lousa-plano-base-e21-2-v2.md`.
+- Matriz integral de tratamentos: `docs/matriz-consolidacao-e21-2.md`.
+- Execução autorizada em uma única branch e um único PR, inicialmente com o runtime dinâmico gate-off; apply e cutover permanecem pós-merge e sob controle humano.
+
+21.2.3 Fonte operacional dinâmica e resolução por ambiente/workload
+- Status: implementação repo-only concluída e aprovada tecnicamente no PR #793; apply, inspeção e cutover hospedados permanecem pós-merge e pendentes.
+- Automação: não.
+- A migration forward-only materializa o agregado de configuração, revisões validadas e ativações/rollback por `ambiente + workload`, com bootstrap exato das oito unidades de Production e Preview, lifecycle transacional, concorrência otimista, constraints unit-safe, RLS/grants mínimos e metadados de prova fechados e sanitizados.
+- `lib/openai-workloads/` permanece o boundary público comum: resolvers assíncronos recebem ambiente explícito, Development continua no baseline local, e os quatro callsites preservam transporte, fallback funcional e proveniência ao consumir `repo_catalog` ou `supabase_operational`.
+- Adapter server-side, comportamento fail-closed, allowlists por workload, validação de snapshots funcionais, snippet SQL read-only, testes SQL e documentação canônica aplicável foram entregues; `npm ci`, `npm run check`, validadores focais e `git diff --check` foram aprovados.
+- Manter `OPENAI_OPERATIONAL_CONFIG_ENABLED` desabilitada no PR; após o merge humano, apply, Security Controls e snippet precedem o gate-on em Preview, e Production somente avança após Preview aprovado.
+- Não usar `repo_catalog` como fallback quando o gate estiver ativo; não introduzir cache, Realtime, AI Gateway, Vercel Flags, Global Config, tracing, drains, workflow ou segunda residência.
+
+21.2.4 Gestão administrativa, validação, ativação e rollback
+- Status: implementação repo-only concluída e aprovada tecnicamente no PR #793; gates hospedados e operacionais permanecem pós-merge e pendentes, sem antecipar o cutover.
+- Automação: não.
+- `/admin/workloads-openai` passou a gerir ativa, candidata, prova, revisão validada pendente, ativação, histórico e rollback separadamente em Production e Preview; texto aceita somente `model + reasoning effort`, imagem somente `model + quality`, e o Supabase Inspect permanece referência read-only separada.
+- A página reautoriza `platform_admin` antes do read model service-role; cada action reexecuta o guard, deriva o ator no servidor, valida unidade, versão e allowlists e preserva concorrência otimista e estados fail-closed.
+- A prova despacha fixture segura pelos quatro transportes existentes, não cria persistência funcional, benchmark, ranking ou decisão autônoma e só promove após sucesso; erro preserva a candidata e nunca altera a revisão ativa.
+- `npm ci`, `npm run check`, os validadores focais de domínio, UI, actions/prova e `git diff --check` foram aprovados; o Analista encerrou o P1 de reautorização sem novos achados.
+- Após o merge humano, apply, Security Controls e snippet precedem gate-on em Preview; então permanecem obrigatórios lifecycle hospedado, papéis positivo/negativo, desktop/mobile, foco/erro/WCAG proporcional, prova real com a `OPENAI_API_KEY` já aprovada, ativação, próxima execução, isolamento de Production e rollback. A credencial não deve ser copiada, exibida ou versionada.
 
 21.3 Evidências e avaliação de custo-benefício dos workloads OpenAI
 
@@ -2869,6 +2886,10 @@ Repositório — Ajustados
 - Nenhuma alteração de banco, schema, infraestrutura ou arquitetura.
 
 99. Changelog
+v1.5.171 — 20/08/2026 — Registrada a implementação repo-only tecnicamente aprovada da E21.2.4: gestão administrativa por ambiente/workload, lifecycle explícito, reautorização server-side, prova pelos quatro transportes existentes e falha fechada; apply, validações hospedadas, smoke real, ativação e cutover permanecem pós-merge, sem iniciar a E21.3.
+
+v1.5.170 — 20/08/2026 — Registrada a implementação repo-only tecnicamente aprovada da E21.2.3: fonte operacional por ambiente/workload, bootstrap, lifecycle transacional, resolver assíncrono fail-closed, quatro consumers, proveniência, validação de snapshots e provas SQL; apply, Security Controls, snippet real e cutover permanecem pós-merge, e a E21.2.4 fica autorizada a iniciar.
+
 v1.5.140 — 11/08/2026 — Implementada no repositório a E19.4.4 com materialização inicial 1:1 write-once, conteúdo e snapshot runtime v1 coerentes, adapter server-only, migration transacional, readiness fail-closed e casos executáveis; apply e prova hospedada permanecem nos gates pós-merge/E19.4.5.
 
 v1.5.131 — 08/08/2026 — Fechada a E19.2 após o merge do PR #700: migration aplicada, verificador SQL read-only aprovado e validação funcional hospedada autenticada concluída; preservados os limites de não geração, não publicação, ausência de tracking/CRM/capability nova e ausência de infraestrutura de assets.

@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data da última atualização: 20/08/2026
-• Documento: LP Factory 10 — Schema (DB Contract) v1.0.48
+• Documento: LP Factory 10 — Schema (DB Contract) v1.0.49
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -837,12 +837,114 @@
 • Migration histórica preservada: `supabase/migrations/20260811133500_e19_4_4_landing_page_materializations.sql`.
 • Evolução 1:N aplicada: `supabase/migrations/20260817180000_e19_4_4_landing_page_revisions.sql`.
 • Verificação read-only: `supabase/snippets/e19_4_4_landing_page_materializations_verify.sql`; casos SQL: `supabase/tests/e19_4_4_landing_page_materializations.test.sql`.
-• Expand backward-compatible repo-only: `supabase/migrations/20260820184200_e19_5_expand_landing_page_status.sql`; verificação `supabase/snippets/e19_5_expand_landing_page_status_verify.sql`; casos SQL `supabase/tests/e19_5_expand_landing_page_status.test.sql`.
+• Expand backward-compatible repo-only: `supabase/migrations/20260820214422_e19_5_expand_landing_page_status.sql`; verificação `supabase/snippets/e19_5_expand_landing_page_status_verify.sql`; casos SQL `supabase/tests/e19_5_expand_landing_page_status.test.sql`.
 
 1.27.7 Storage privado
 • O bucket privado `landing-page-revision-assets` está ativo no ambiente hospedado com limite de 5 MB e MIME permitido somente `image/webp`.
 • Nenhuma policy de storage.objects concede leitura ou escrita direta do bucket a anon ou authenticated.
 • A identidade persistida da mídia usa bucket e path estáveis com metadata; URL assinada é temporária, server-side e nunca integra a identidade do asset.
+
+1.28 openai_workload_operational_configurations
+1.28.1 Função e unidade
+• Agregado operacional candidato da E21.2.3 com exatamente uma linha por `environment + workload`.
+• `environment` aceita somente `production | preview`; Development permanece fora desta residência dinâmica.
+• A PK composta `(environment, workload)` é o lock canônico das RPCs e impede mais de uma unidade para a mesma combinação.
+• A migration forward-only `supabase/migrations/20260820190422_e21_2_3_openai_workload_operational_configurations.sql` está versionada no repositório; apply e verificação hospedada permanecem pós-merge.
+
+1.28.2 Colunas
+• environment text not null
+• workload text not null
+• modality text not null (`responses_text | image_generation`, derivada pelo workload)
+• active_revision_id uuid not null
+• pending_revision_id uuid null
+• candidate_model text null
+• candidate_reasoning_effort text null
+• candidate_quality text null
+• candidate_saved_by uuid null
+• candidate_saved_at timestamptz null
+• configuration_version bigint not null default 1
+• created_at timestamptz not null default now()
+• updated_at timestamptz not null default now()
+
+1.28.3 Relacionamentos e invariantes
+• `(active_revision_id, environment, workload)` e `(pending_revision_id, environment, workload)` referenciam a chave candidata `(id, environment, workload)` de `openai_workload_configuration_revisions`, sempre com ON UPDATE RESTRICT e ON DELETE RESTRICT.
+• candidate_saved_by referencia auth.users(id) com ON UPDATE RESTRICT e ON DELETE RESTRICT.
+• Exatamente um entre candidata mutável e revisão validada pendente pode existir; candidata ausente exige que todos os seus campos sejam nulos.
+• pending_revision_id deve ser nulo ou diferente de active_revision_id; uma revisão já ativa não constitui substituição pendente.
+• Configuração textual aceita somente `gpt-5.4-mini + none|low|medium|high|xhigh` ou `gpt-5.6-luna + none|low|medium|high|xhigh|max`, sem quality.
+• Configuração de imagem aceita somente `gpt-image-2 + low|medium|high`, sem reasoning_effort.
+• configuration_version é positivo e funciona como token otimista obrigatório de toda transição.
+
+1.28.4 Índices, bootstrap e segurança
+• `openai_workload_operational_configurations_active_revision_idx`: btree em active_revision_id + unidade.
+• `openai_workload_operational_configurations_pending_revision_idx`: btree parcial em pending_revision_id + unidade quando não nulo.
+• O bootstrap idempotente cria as oito unidades Production/Preview × quatro workloads, sem candidata ou revisão pendente e com active_revision_id na revisão 1 correspondente.
+• RLS habilitado e nenhuma policy.
+• public, anon, authenticated e ai_readonly: sem grants.
+• service_role: SELECT e UPDATE somente dos nove campos necessários às transições; sem INSERT, DELETE ou TRUNCATE.
+
+1.29 openai_workload_configuration_revisions
+1.29.1 Função e colunas
+• Snapshots validados e append-only da configuração operacional por unidade.
+• id uuid primary key default gen_random_uuid()
+• environment text not null
+• workload text not null
+• modality text not null
+• revision_number bigint not null e positivo
+• model text not null
+• reasoning_effort text null
+• quality text null
+• validated_by uuid null somente no bootstrap
+• validated_at timestamptz not null default now()
+• proof_metadata jsonb not null
+
+1.29.2 Relacionamentos, constraints e índices
+• `(environment, workload, revision_number)` é único e `(id, environment, workload)` é chave candidata unit-safe para os ponteiros e eventos.
+• validated_by referencia auth.users(id) com ON UPDATE RESTRICT e ON DELETE RESTRICT.
+• Ambiente, workload, modalidade e shape modelo/parâmetro usam as mesmas allowlists fechadas da unidade operacional.
+• proof_metadata é objeto JSON fechado às chaves `schema_version`, `proof_kind`, `proof_result`, `request_id`, `provider_request_id`, `latency_ms`, `contract_version` e `source`; chaves adicionais são rejeitadas.
+• `schema_version` é obrigatório, número inteiro JSON e exatamente 1; `proof_kind` é string obrigatória `bootstrap | operational`; `proof_result` é string obrigatória e exatamente `approved`.
+• `request_id` e `provider_request_id` podem estar ausentes ou ser JSON null; quando presentes como valor, são strings de 1 a 128 caracteres no formato técnico `^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$`.
+• `latency_ms` pode estar ausente ou ser JSON null; quando presente como valor, é número inteiro JSON entre 0 e 900000 inclusive.
+• `contract_version` pode estar ausente ou ser JSON null; quando presente como valor, é número inteiro JSON entre 1 e 1000 inclusive.
+• `source` é string obrigatória e vinculada ao kind: `repo_catalog` para `bootstrap` e `openai_api` para `operational`.
+• Revisão bootstrap preserva source `repo_catalog`, resultado aprovado e validated_by nulo; revisão operacional exige source `openai_api`, prova aprovada e validated_by não nulo. Prompt, resposta, secret, PII, payload de negócio e raciocínio privado não têm chave aceita.
+• `openai_workload_configuration_revisions_validated_by_idx`: btree parcial em validated_by quando não nulo.
+
+1.29.3 Segurança e imutabilidade
+• RLS habilitado e nenhuma policy.
+• public, anon, authenticated e ai_readonly: sem grants.
+• service_role: SELECT e INSERT; sem UPDATE, DELETE ou TRUNCATE.
+• O trigger `openai_workload_configuration_revisions_append_only` rejeita UPDATE e DELETE inclusive quando houver privilégio superior ao grant operacional.
+
+1.30 openai_workload_configuration_activations
+1.30.1 Função e colunas
+• Histórico append-only de `bootstrap | activate | rollback`, ordenado por activation_number dentro da unidade.
+• id uuid primary key default gen_random_uuid()
+• environment text not null
+• workload text not null
+• modality text not null
+• activation_number bigint not null e positivo
+• event_type text not null
+• previous_revision_id uuid null somente no bootstrap
+• target_revision_id uuid not null
+• actor_user_id uuid null somente no bootstrap
+• created_at timestamptz not null default now()
+
+1.30.2 Relacionamentos, lifecycle e índices
+• `(environment, workload, activation_number)` é único.
+• previous_revision_id e target_revision_id usam FKs compostas unit-safe para `(id, environment, workload)` de revisões, com ON UPDATE RESTRICT e ON DELETE RESTRICT.
+• actor_user_id referencia auth.users(id) com ON UPDATE RESTRICT e ON DELETE RESTRICT.
+• O evento bootstrap é sempre activation_number 1, sem anterior e sem ator; activate/rollback exigem sequência posterior, anterior diferente do alvo e ator humano não nulo.
+• Índices compostos sustentam as FKs de target_revision_id e previous_revision_id; índice parcial cobre actor_user_id não nulo.
+
+1.30.3 Segurança e imutabilidade
+• RLS habilitado e nenhuma policy.
+• public, anon, authenticated e ai_readonly: sem grants.
+• service_role: SELECT e INSERT; sem UPDATE, DELETE ou TRUNCATE.
+• O trigger `openai_workload_configuration_activations_append_only` rejeita UPDATE e DELETE.
+• O snippet read-only `supabase/snippets/e21_2_3_openai_workload_operational_configurations_verify.sql` comprova bootstrap, cardinalidade, referências, lifecycle, colunas, constraints, índices, RLS, grants, RPCs, triggers e drift.
+• Os casos SQL focais residem em `supabase/tests/e21_2_3_openai_workload_operational_configurations.test.sql` e executam dentro de transação com rollback.
 
 2. Views
 
@@ -1036,7 +1138,24 @@
 • Consumidor previsto: camada server/adapter do app; sem consumo direto pelo client nesta etapa
 • Fora do escopo: writes, IA, fallback final, account_taxonomy, account_niche_resolutions e escolha de template
 
-4. Triggers 
+3.7 Configuração operacional dos workloads OpenAI
+3.7.1 RPCs versionadas
+• `save_openai_workload_configuration_candidate_v1(text, text, text, text, text, uuid, bigint) → bigint`: salva ou edita candidata allowlisted e retorna o novo configuration_version.
+• `discard_openai_workload_configuration_candidate_v1(text, text, uuid, bigint) → bigint`: descarta integralmente a candidata e retorna o novo token.
+• `promote_openai_workload_configuration_candidate_v1(text, text, jsonb, uuid, bigint) → table`: revalida candidata e metadados da prova, anexa revisão imutável e instala seu ponteiro pendente na mesma transação.
+• `activate_openai_workload_configuration_revision_v1(text, text, uuid, uuid, bigint) → bigint`: exige que o alvo seja a revisão pendente, troca a ativa, limpa a pendência e anexa evento activate atomicamente.
+• `rollback_openai_workload_configuration_revision_v1(text, text, uuid, uuid, bigint) → bigint`: exige alvo anteriormente ativo, troca a ativa, limpa a pendência aplicável e anexa evento rollback sem duplicar revisão.
+
+3.7.2 Concorrência e segurança
+• Todas as RPCs bloqueiam primeiro a linha canônica `(environment, workload)` com FOR UPDATE, comparam p_expected_version e falham integralmente para token stale ou transição incompatível.
+• Todas usam SECURITY INVOKER e search_path fixado em pg_catalog; cada referência de tabela é schema-qualified.
+• EXECUTE é exclusivo de service_role; PUBLIC, anon, authenticated e ai_readonly não executam as RPCs.
+• O ator é obrigatório nas mutações e deve ser derivado pelo boundary server-side autorizado; as RPCs não concedem autoridade de platform_admin por si mesmas.
+
+3.7.3 Helper de imutabilidade
+• `prevent_openai_workload_append_only_mutation_v1() → trigger`: SECURITY INVOKER, search_path fixado, sem EXECUTE externo; rejeita UPDATE/DELETE nas revisões e ativações.
+
+4. Triggers
 
 4.1 Trigger Hub (governança)
 4.1.1 tg_accounts_hub
@@ -1057,6 +1176,8 @@
 • partners: sem trigger hub
 • account_commercial_entitlements_set_updated_at: trigger de atualização de updated_at em account_commercial_entitlements
 • account_niche_resolutions_set_updated_at: trigger de atualização de updated_at em account_niche_resolutions
+• openai_workload_configuration_revisions_append_only: rejeita UPDATE e DELETE de revisões validadas.
+• openai_workload_configuration_activations_append_only: rejeita UPDATE e DELETE de eventos de ativação/rollback.
 
 5. Tipos canônicos
 • Fonte única: PATH: lib/types/status.ts
@@ -1074,7 +1195,9 @@
 • Rollback: não remove automaticamente a extensão, pois pode ser reutilizada por outros recursos
 
 99. Changelog
-v1.0.48 (20/08/2026) — E19.5 precursor expand: ampliado o contrato repo-only de `account_landing_pages.status` para tolerar `draft | active | archived`, preservando default e criação corrente em `draft`, sem backfill; append e consumidores internos passam a tolerar `active`, enquanto `archived` bloqueia attempts inéditos e preserva retry idempotente tenant-safe de `attempt_id` já materializado.
+v1.0.49 (20/08/2026) — E19.5 precursor expand: ampliado o contrato repo-only de `account_landing_pages.status` para tolerar `draft | active | archived`, preservando default e criação corrente em `draft`, sem backfill; append e consumidores internos passam a tolerar `active`, enquanto `archived` bloqueia attempts inéditos e preserva retry idempotente tenant-safe de `attempt_id` já materializado.
+
+v1.0.48 (20/08/2026) — E21.2.3: registrado o agregado candidato de configuração operacional dos workloads OpenAI com três tabelas públicas, oito baselines Production/Preview, FKs compostas unit-safe, candidata/pendência exclusivas, pendência distinta da revisão ativa, revisões e ativações append-only, token otimista, cinco RPCs SECURITY INVOKER, RLS sem policies, grants mínimos e verificação SQL read-only; apply hospedado permanece pós-merge.
 
 v1.0.43 (17/08/2026) — E19.4.4: corrigido o estado factual de `account_landing_page_materializations` para registrar que a migration já está aplicada no ambiente hospedado, preservando o contrato 1:1 write-once, conteúdo e snapshot atômicos e ausência de UPDATE/DELETE para `service_role`.
 
