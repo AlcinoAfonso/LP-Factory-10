@@ -92,7 +92,9 @@ const sections = [
   { kind: "footer", layout: "standard", tagline: "Escolhas imobiliárias com contexto." },
 ] as const;
 
-function revisionFixture(): CurrentLandingPageRevision {
+function revisionFixture(
+  landingPageStatus: "draft" | "active" = "draft",
+): CurrentLandingPageRevision {
   return {
     id: REVISION_ID,
     accountId: ACCOUNT_ID,
@@ -120,7 +122,7 @@ function revisionFixture(): CurrentLandingPageRevision {
         contractVersion: 3,
         identities: {
           accountId: ACCOUNT_ID,
-          landingPage: { id: LANDING_PAGE_ID, status: "draft" },
+          landingPage: { id: LANDING_PAGE_ID, status: landingPageStatus },
           planKey: "starter",
           servedTaxon: { id: "taxon-1", slug: "corretor-imoveis", name: "Corretor de imóveis" },
           taxonChain: {},
@@ -269,6 +271,54 @@ const cases = [
       assert.equal(result.model.revision.attemptId, ATTEMPT_ID);
       assert.equal(result.model.conversion.href, "https://wa.me/5521979658483");
       assert.notEqual(result.model.conversion.href, before.content.binding.destination);
+    },
+  },
+  {
+    name: "expand compatibility previews active and rejects archived",
+    run: async () => {
+      const active = await loadLandingPagePreviewWithDependencies(
+        { accountSlug: "account", landingPageId: LANDING_PAGE_ID },
+        dependencies([], {
+          loadLandingPage: async () => ({
+            ok: true,
+            landingPage: {
+              id: LANDING_PAGE_ID,
+              account_id: ACCOUNT_ID,
+              name: "Primeiro imóvel no Rio",
+              slug: "primeiro-imovel-no-rio",
+              status: "active",
+            },
+          }),
+          readCurrentRevision: async () => ({
+            ok: true,
+            value: revisionFixture("active"),
+          }),
+        }),
+      );
+      assert.equal(active.status, "ready");
+
+      let revisionRead = false;
+      const archived = await loadLandingPagePreviewWithDependencies(
+        { accountSlug: "account", landingPageId: LANDING_PAGE_ID },
+        dependencies([], {
+          loadLandingPage: async () => ({
+            ok: true,
+            landingPage: {
+              id: LANDING_PAGE_ID,
+              account_id: ACCOUNT_ID,
+              name: "Primeiro imóvel no Rio",
+              slug: "primeiro-imovel-no-rio",
+              status: "archived" as never,
+            },
+          }),
+          readCurrentRevision: async () => {
+            revisionRead = true;
+            return { ok: true, value: revisionFixture() };
+          },
+        }),
+      );
+      assert.equal(archived.status, "not_found");
+      assert.equal(revisionRead, false);
     },
   },
   {

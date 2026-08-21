@@ -26,6 +26,7 @@ import {
   LANDING_PAGE_REVISION_ASSET_BUCKET,
   buildLandingPageRevisionDocuments,
   createLandingPageRevisionAssetReference,
+  validateLandingPageRevisionSnapshot,
 } from "./landingPageRevision";
 import { materializeLandingPageDraftRevisionWithDependencies } from "./landingPageRevisionWorkflow";
 
@@ -364,6 +365,7 @@ const cases = [
       const events: OpenAiWorkloadEvent[] = [];
       const result = await generateLandingPageDraftCandidate(context, {
         apiKey: "test-key",
+        environment: "development",
         attemptId: "attempt-text-1",
         requestId: "request-text-1",
         fetchImpl: async (_url, init) => {
@@ -425,6 +427,7 @@ const cases = [
         const events: OpenAiWorkloadEvent[] = [];
         const result = await generateLandingPageDraftCandidate(context, {
           apiKey: "test-key",
+          environment: "development",
           fetchImpl: async () => {
             calls += 1;
             return response;
@@ -519,6 +522,7 @@ const cases = [
         let calls = 0;
         const result = await generateLandingPageDraftCandidate(context, {
           apiKey: "test-key",
+          environment: "development",
           fetchImpl: async () => {
             calls += 1;
             return new Response(JSON.stringify(fixture), {
@@ -535,6 +539,7 @@ const cases = [
       const failureEvents: OpenAiWorkloadEvent[] = [];
       const refused = await generateLandingPageDraftCandidate(context, {
         apiKey: "test-key",
+        environment: "development",
         attemptId: "attempt-text-failure",
         requestId: "request-text-failure",
         fetchImpl: async () =>
@@ -566,6 +571,7 @@ const cases = [
         { mediaBrief: "Sala contemporânea acolhedora", semanticFacts: { offer: "consultoria" } },
         {
           apiKey: "test-key",
+          environment: "development",
           attemptId: "attempt-image-1",
           requestId: "request-image-1",
           fetchImpl: async (_url, init) => {
@@ -599,6 +605,7 @@ const cases = [
         { mediaBrief: "Sala contemporânea acolhedora", semanticFacts: {} },
         {
           apiKey: "test-key",
+          environment: "development",
           attemptId: "attempt-image-failure",
           requestId: "request-image-failure",
           fetchImpl: async () =>
@@ -621,6 +628,7 @@ const cases = [
     run: async () => {
       const text = await generateLandingPageDraftCandidate(context, {
         apiKey: "test-key",
+        environment: "development",
         timeoutMs: 5,
         fetchImpl: abortingFetch,
         emitEvent: () => undefined,
@@ -631,6 +639,7 @@ const cases = [
         { mediaBrief: "Sala contemporânea acolhedora", semanticFacts: {} },
         {
           apiKey: "test-key",
+          environment: "development",
           timeoutMs: 5,
           fetchImpl: abortingFetch,
           emitEvent: () => undefined,
@@ -956,6 +965,71 @@ const cases = [
     },
   },
   {
+    name: "revision workflow preserves authorized operational text and image provenance",
+    run: async () => {
+      let appendCalls = 0;
+      const result = await materializeLandingPageDraftRevisionWithDependencies(
+        {
+          context,
+          createdBy: "40000000-0000-4000-8000-000000000040",
+          requestId: "request-operational-revision",
+        },
+        {
+          prepareCandidate: async (input) =>
+            successfulOperationalCandidateWorkflow(
+              "30000000-0000-4000-8000-000000000035",
+              input.requestId,
+            ),
+          uploadAsset: async () => ({ ok: true }),
+          cleanupAsset: async () => undefined,
+          revalidate: async () => true,
+          appendRevision: async (input) => {
+            appendCalls += 1;
+            assert.equal(input.snapshot.workloads.text.configuration.source, "supabase_operational");
+            assert.equal(input.snapshot.workloads.text.configuration.revision, "17");
+            assert.equal(input.snapshot.workloads.text.configuration.model, "gpt-5.4-mini");
+            assert.equal(input.snapshot.workloads.text.configuration.reasoningEffort, "high");
+            assert.equal(input.snapshot.workloads.image.configuration.source, "supabase_operational");
+            assert.equal(input.snapshot.workloads.image.configuration.revision, "23");
+            assert.equal(input.snapshot.workloads.image.configuration.quality, "high");
+
+            const forgedOrigin = mutableSnapshot(input.snapshot);
+            forgedOrigin.workloads.text.configuration.source = "forged_source";
+            assert.equal(validateLandingPageRevisionSnapshot(forgedOrigin), false);
+
+            const forgedRepoRevision = mutableSnapshot(input.snapshot);
+            forgedRepoRevision.workloads.image.configuration.source = "repo_catalog";
+            forgedRepoRevision.workloads.image.configuration.revision = "23";
+            assert.equal(validateLandingPageRevisionSnapshot(forgedRepoRevision), false);
+
+            const forgedOperationalRevision = mutableSnapshot(input.snapshot);
+            forgedOperationalRevision.workloads.text.configuration.revision = "v2";
+            assert.equal(validateLandingPageRevisionSnapshot(forgedOperationalRevision), false);
+
+            const forgedTextCombination = mutableSnapshot(input.snapshot);
+            forgedTextCombination.workloads.text.configuration.model = "gpt-5.4-mini";
+            forgedTextCombination.workloads.text.configuration.reasoningEffort = "max";
+            assert.equal(validateLandingPageRevisionSnapshot(forgedTextCombination), false);
+
+            const forgedImageCombination = mutableSnapshot(input.snapshot);
+            forgedImageCombination.workloads.image.configuration.model = "gpt-image-forged";
+            assert.equal(validateLandingPageRevisionSnapshot(forgedImageCombination), false);
+
+            return {
+              ok: true,
+              revisionId: "50000000-0000-4000-8000-000000000051",
+              revisionNumber: 3,
+            };
+          },
+          now: () => new Date("2026-08-20T19:30:00.000Z"),
+        },
+      );
+
+      assert.equal(result.ok, true);
+      assert.equal(appendCalls, 1);
+    },
+  },
+  {
     name: "revision workflow cleans exact asset and never appends after failed revalidation",
     run: async () => {
       let appendCalls = 0;
@@ -1140,14 +1214,26 @@ const cases = [
 
       const migration = readFileSync(
         new URL(
-          "../../supabase/migrations/20260817180000_e19_4_4_landing_page_revisions.sql",
+          "../../supabase/migrations/20260820214422_e19_5_expand_landing_page_status.sql",
           import.meta.url,
         ),
         "utf8",
       );
       assert.match(
         migration,
-        /where lp\.id = p_landing_page_id[\s\S]*?lp\.account_id = p_account_id[\s\S]*?lp\.status = 'draft'[\s\S]*?for update/,
+        /where lp\.id = p_landing_page_id[\s\S]*?lp\.account_id = p_account_id[\s\S]*?lp\.status in \('draft', 'active'\)[\s\S]*?for update/,
+      );
+      assert.match(
+        migration,
+        /check \(status in \('draft', 'active', 'archived'\)\)/,
+      );
+      assert.doesNotMatch(
+        migration,
+        /update\s+public\.account_landing_pages/i,
+      );
+      assert.doesNotMatch(
+        migration,
+        /alter\s+column\s+status\s+set\s+default/i,
       );
       const page = readFileSync(
         new URL(
@@ -1261,6 +1347,44 @@ function successfulCandidateWorkflow(
       },
     },
   } as const;
+}
+
+function successfulOperationalCandidateWorkflow(
+  attemptId: string,
+  requestId: string,
+) {
+  const baseline = successfulCandidateWorkflow(attemptId, requestId);
+  return {
+    ...baseline,
+    text: {
+      ...baseline.text,
+      configuration: {
+        ...baseline.text.configuration,
+        source: "supabase_operational",
+        revision: "17",
+        model: "gpt-5.4-mini",
+        reasoningEffort: "high",
+      },
+    },
+    image: {
+      ...baseline.image,
+      configuration: {
+        ...baseline.image.configuration,
+        source: "supabase_operational",
+        revision: "23",
+        quality: "high",
+      },
+    },
+  } as const;
+}
+
+function mutableSnapshot(value: unknown) {
+  return structuredClone(value) as {
+    workloads: {
+      text: { configuration: Record<string, unknown> };
+      image: { configuration: Record<string, unknown> };
+    };
+  };
 }
 
 const abortingFetch: typeof fetch = (_input, init) =>

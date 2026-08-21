@@ -7,8 +7,14 @@ import {
   createOpenAiImageWorkloadSuccessEvent,
   emitOpenAiImageWorkloadEvent,
   resolveOpenAiImageWorkload,
+  resolveOpenAiWorkloadEnvironment,
+  type OpenAiConfigurationSource,
+  type OpenAiImageQuality,
+  type OpenAiWorkloadEnvironment,
   type OpenAiImageWorkloadEvent,
   type OpenAiWorkloadFailureCategory,
+  type OpenAiWorkloadResolverDependencies,
+  type ResolvedOpenAiImageWorkload,
 } from "../openai-workloads";
 
 export const LANDING_PAGE_DRAFT_IMAGE_TIMEOUT_MS = 120_000;
@@ -25,11 +31,11 @@ export type LandingPageDraftImageResult =
       latencyMs: number;
       configuration: Readonly<{
         workload: "landing_page_draft_image_generation";
-        source: "repo_catalog";
+        source: OpenAiConfigurationSource;
         revision: string;
         model: string;
         size: "1536x1024";
-        quality: "medium";
+        quality: OpenAiImageQuality;
         format: "webp";
         compression: 80;
         moderation: "auto";
@@ -54,14 +60,20 @@ type Dependencies = Readonly<{
   now?: () => number;
   timeoutMs?: number;
   signal?: AbortSignal;
+  environment?: OpenAiWorkloadEnvironment;
+  workloadResolver?: OpenAiWorkloadResolverDependencies;
 }>;
 
 export async function generateLandingPageDraftImage(
   input: Readonly<{ mediaBrief: string; semanticFacts: unknown }>,
   dependencies: Dependencies = {},
 ): Promise<LandingPageDraftImageResult> {
-  const resolved = resolveOpenAiImageWorkload(
+  const environment =
+    dependencies.environment ?? resolveOpenAiWorkloadEnvironment();
+  const resolved = await resolveOpenAiImageWorkload(
     "landing_page_draft_image_generation",
+    environment,
+    dependencies.workloadResolver,
   );
   const apiKey = dependencies.apiKey?.trim();
   if (!resolved.ok || !apiKey || !input.mediaBrief.trim()) {
@@ -149,6 +161,7 @@ export async function generateLandingPageDraftImage(
     (dependencies.emitEvent ?? emitOpenAiImageWorkloadEvent)(
       createOpenAiImageWorkloadSuccessEvent({
         workload,
+        environment,
         attemptId: dependencies.attemptId,
         requestId: dependencies.requestId,
         providerRequestId,
@@ -198,7 +211,7 @@ export async function generateLandingPageDraftImage(
 }
 
 function emitFailure(
-  workload: Extract<ReturnType<typeof resolveOpenAiImageWorkload>, { ok: true }>["value"],
+  workload: ResolvedOpenAiImageWorkload,
   category: OpenAiWorkloadFailureCategory,
   dependencies: Dependencies,
   metadata: Readonly<{ providerRequestId?: unknown; latencyMs?: unknown }> = {},
@@ -207,6 +220,8 @@ function emitFailure(
     createOpenAiImageWorkloadFailureEvent(
       {
         workload,
+        environment:
+          dependencies.environment ?? resolveOpenAiWorkloadEnvironment(),
         attemptId: dependencies.attemptId,
         requestId: dependencies.requestId,
         visualBriefVersion: LANDING_PAGE_VISUAL_BRIEF_VERSION,

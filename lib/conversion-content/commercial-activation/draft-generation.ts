@@ -7,6 +7,8 @@ import {
   createOpenAiWorkloadFailureEvent,
   emitOpenAiWorkloadEvent,
   resolveOpenAiProductWorkload,
+  resolveOpenAiWorkloadEnvironment,
+  type OpenAiWorkloadEnvironment,
   type ResolvedOpenAiProductWorkload,
 } from "../../openai-workloads";
 import { requestCommercialActivationOpenAi } from "../adapters/commercialActivationOpenAiAdapter";
@@ -298,8 +300,10 @@ export async function generateCommercialActivationDraftForTaxon(input: {
 } = {}): Promise<GenerateCommercialActivationDraftResult> {
   const requestId = input.requestId ?? crypto.randomUUID();
   const taxonSlug = input.taxonSlug?.trim() ?? "";
-  const configuration = resolveOpenAiProductWorkload(
+  const environment = resolveOpenAiWorkloadEnvironment();
+  const configuration = await resolveOpenAiProductWorkload(
     "commercial_activation_draft_generation",
+    environment,
   );
   const apiKey = process.env.OPENAI_API_KEY?.trim() ?? "";
 
@@ -327,6 +331,7 @@ export async function generateCommercialActivationDraftForTaxon(input: {
         configurationRevision: configuration.value.revision,
         model: configuration.value.model,
         reasoningEffort: configuration.value.reasoningEffort,
+        environment,
       }, "configuration_invalid"));
     }
     logDraftEvent("commercial_activation_draft_generation_blocked", {
@@ -349,6 +354,7 @@ export async function generateCommercialActivationDraftForTaxon(input: {
     const generated = await generateWithOpenAi({
       context,
       configuration: configuration.value,
+      environment,
       apiKey,
     });
     const content = buildContentJson({ context, generated });
@@ -550,11 +556,13 @@ async function readPlans(): Promise<CommercialPlan[]> {
 async function generateWithOpenAi(input: {
   context: DraftContext;
   configuration: ResolvedOpenAiProductWorkload;
+  environment: OpenAiWorkloadEnvironment;
   apiKey: string;
 }): Promise<GeneratedOutput> {
   const result = await requestCommercialActivationOpenAi({
     apiKey: input.apiKey,
     configuration: input.configuration,
+    environment: input.environment,
     request: {
       input: [
         {
