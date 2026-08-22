@@ -982,3 +982,11 @@ O snippet não pode:
 - Parar se algum consumidor exigir mudança material de contrato, persistência ou experiência em vez do rótulo local previsto.
 - Parar antes de qualquer alteração no PR #750, registro de suficiência ou retomada da E20.6.
 - Devolver ao Estrategista qualquer conflito entre este plano e o repositório real; não adaptar o recorte por inferência.
+
+## 6. Atualização aditiva E20.2 — v5
+
+- A v5 preserva integralmente as versões executáveis v1–v4 e acrescenta somente dois fields universais, aplicáveis a `starter`, `lite`, `pro` e `ultra`.
+- `business_offerings_summary`: escopo `business`, origem `business_provided`, tipo `string`, obrigação `optional`, validação `type_only`, snapshot `include_if_used` e substituição por LP `forbidden`; é um resumo livre e não exaustivo, não um catálogo, whitelist ou restrição de `primary_service_or_offer`.
+- `primary_conversion_goal`: escopo `landing_page`, origem `landing_page_provided`, tipo `enum`, obrigação `required`, snapshot `include_if_used` e substituição `not_applicable`; aceita somente `contact`, `schedule`, `request_quote`, `purchase` e `register_interest`.
+- `primary_conversion_goal` declara a ação/conversão principal pretendida pela LP e permanece distinto de `funnel_stage`, `transaction_intent`, `primary_service_or_offer` e `primary_conversion_channel`; o canal autorizado pode variar independentemente do objetivo.
+- O recorte permanece repo-only: sem prefill/override entre os fields, UI, Supabase, migration, persistência, rota, API, agente, automação, workload ou integração externa.

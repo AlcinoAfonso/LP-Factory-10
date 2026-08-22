@@ -389,11 +389,49 @@ mutableTransactionIntentV4.evidence = evidence(
   "empirical:real-estate-research",
 );
 
+const v5UniversalFields: readonly LandingPageInputFieldDefinition[] = [
+  field({
+    fieldKey: "business_offerings_summary",
+    purpose: "Resumir de forma livre e não exaustiva o que o negócio oferece; não é catálogo, whitelist ou restrição de primary_service_or_offer e não limita ofertas diferentes, mais amplas ou mais específicas na landing page.",
+    valueType: "string",
+    valueScope: "business",
+    expectedValueOrigin: "business_provided",
+    obligation: "optional",
+    validation: { kind: "type_only" },
+    landingPageSubstitutionPolicy: "forbidden",
+    evidence: evidence("A decisão humana da E20.2 separa o resumo livre do negócio de uma oferta concreta da landing page e não cria whitelist.", "decision:e20-2-human"),
+    createdInVersion: 5,
+  }),
+  field({
+    fieldKey: "primary_conversion_goal",
+    purpose: "Declarar a ação ou conversão principal pretendida pela landing page, independentemente do canal autorizado usado para realizá-la, sem confundi-la com funnel_stage, transaction_intent, primary_service_or_offer ou primary_conversion_channel.",
+    valueType: "enum",
+    valueScope: "landing_page",
+    expectedValueOrigin: "landing_page_provided",
+    obligation: "required",
+    validation: { kind: "enum", allowedValues: ["contact", "schedule", "request_quote", "purchase", "register_interest"] },
+    landingPageSubstitutionPolicy: "not_applicable",
+    evidence: evidence("A decisão humana da E20.2 separa a ação ou conversão pretendida do estágio, da intenção comercial específica, da oferta e do canal de conversão.", "decision:e20-2-human"),
+    createdInVersion: 5,
+  }),
+];
+
+const catalogV5Base = cloneJson(catalogV4);
+const catalogV5: LandingPageInputCatalogRegistryEntry = {
+  ...catalogV5Base,
+  version: 5,
+  universal: {
+    ...catalogV5Base.universal,
+    entries: [...catalogV5Base.universal.entries, ...v5UniversalFields],
+  },
+};
+
 export const landingPageInputCatalogRegistry = deepFreeze({
   1: catalogV1,
   2: catalogV2,
   3: catalogV3,
   4: catalogV4,
+  5: catalogV5,
 } satisfies LandingPageInputCatalogRegistry);
 
 function field(
