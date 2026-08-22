@@ -122,6 +122,8 @@ const cases: readonly Readonly<{ name: string; run: () => void }>[] = [
       assert.match(component, /aria-required/);
       assert.match(component, /<fieldset/);
       assert.match(component, /field\.purpose/);
+      assert.doesNotMatch(component, /name="catalog_version"/);
+      assert.match(component, /humanizeFieldKey/);
       assert.doesNotMatch(component, /\.from\(/);
       assert.match(action, /saveAccountLandingPageOnboardingConfiguration/);
       assert.match(action, /getAccessContext/);
@@ -162,9 +164,27 @@ const cases: readonly Readonly<{ name: string; run: () => void }>[] = [
       assert.match(page, /reviewMode/);
       assert.match(journey, /Voltar à revisão/);
       assert.match(journey, /brand_logo_asset: "Logo da marca"/);
+      assert.match(journey, /business_offerings_summary: "O que seu negócio oferece"/);
+      assert.match(journey, /primary_conversion_goal: "Objetivo principal da página"/);
       assert.match(journey, /rent: "Locação"/);
+      for (const [technicalToken, friendlyLabel] of [
+        ["contact", "Entrar em contato"],
+        ["schedule", "Agendar"],
+        ["request_quote", "Solicitar orçamento"],
+        ["purchase", "Comprar"],
+        ["register_interest", "Demonstrar interesse"],
+      ]) {
+        assert.match(
+          journey,
+          new RegExp(`${technicalToken}: "${friendlyLabel}"`),
+        );
+      }
       assert.match(journey, /OPTION_LABELS\[value\] \?\? value/);
       assert.match(journey, /OPTION_LABELS\[item\] \?\? item/);
+      assert.match(
+        journey,
+        /function optionLabel\(option: string\)[\s\S]+OPTION_LABELS\[option\]/,
+      );
       assert.match(action, /getAccountLandingPageOnboardingConfiguration/);
       assert.match(action, /listAccountLandingPageDrafts/);
       assert.match(action, /drafts\.drafts\.length > 0/);

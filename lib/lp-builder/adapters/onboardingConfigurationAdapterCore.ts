@@ -2,10 +2,10 @@ import {
   resolveLandingPageInputCatalog,
   type LandingPageInputCatalogTaxonChain,
 } from "../../conversion-content/landing-page/input-catalog";
+import type { TaxonPreparationResult } from "../../conversion-content/landing-page/taxon-preparation";
 import type { CommercialEntitlementSignal } from "../../commercial-entitlements";
 import { isOperationalLandingPageStatus } from "../../types/status";
 import {
-  ACCOUNT_LANDING_PAGE_ONBOARDING_CATALOG_VERSION,
   type AccountLandingPage,
   type AccountLandingPageDraftsResult,
   type AccountLandingPageOnboardingResult,
@@ -29,6 +29,10 @@ export type AccountLandingPageOnboardingEntitlementLoader = (input: {
   accountId: string;
 }) => Promise<CommercialEntitlementSignal>;
 
+export type AccountLandingPageOnboardingCatalogVersionLoader = (input: {
+  taxonId: string;
+}) => Promise<TaxonPreparationResult>;
+
 type AccountRow = {
   id: string;
   name: string | null;
@@ -49,6 +53,7 @@ type RuntimeContext = {
   taxonChain: LandingPageInputCatalogTaxonChain;
   authoritativeValues: Readonly<Record<string, unknown>>;
   row: ConfigurationRow | null;
+  operationalCatalogVersion: number;
 };
 
 type RuntimeContextResult =
@@ -62,8 +67,14 @@ export async function getAccountLandingPageOnboardingConfigurationFromClient(
   input: { accountId: string; actorUserId: string },
   client: QueryClient,
   entitlementLoader: AccountLandingPageOnboardingEntitlementLoader,
+  catalogVersionLoader: AccountLandingPageOnboardingCatalogVersionLoader,
 ): Promise<AccountLandingPageOnboardingResult> {
-  const runtime = await loadRuntimeContext(input, client, entitlementLoader);
+  const runtime = await loadRuntimeContext(
+    input,
+    client,
+    entitlementLoader,
+    catalogVersionLoader,
+  );
   if (!runtime.ok) return runtime;
   return resolveRuntimeContext(runtime.context);
 }
@@ -72,20 +83,24 @@ export async function getAccountLandingPageOnboardingRevalidationAuthorityFromCl
   input: { accountId: string; actorUserId: string },
   client: QueryClient,
   entitlementLoader: AccountLandingPageOnboardingEntitlementLoader,
+  catalogVersionLoader: AccountLandingPageOnboardingCatalogVersionLoader,
 ): Promise<AccountLandingPageOnboardingRevalidationResult> {
-  const runtime = await loadRuntimeContext(input, client, entitlementLoader);
+  const runtime = await loadRuntimeContext(
+    input,
+    client,
+    entitlementLoader,
+    catalogVersionLoader,
+  );
   if (!runtime.ok) return runtime;
+  if (!runtime.context.row) return failure("configuration_not_found");
   return resolveAccountLandingPageOnboardingRevalidationAuthority({
     accountId: runtime.context.account.id,
-    landingPageId: runtime.context.row?.landing_page_id ?? null,
-    historicalCatalogVersion:
-      runtime.context.row?.catalog_version ??
-      ACCOUNT_LANDING_PAGE_ONBOARDING_CATALOG_VERSION,
-    revision: runtime.context.row?.revision ?? 0,
+    landingPageId: runtime.context.row.landing_page_id,
+    historicalCatalogVersion: runtime.context.row.catalog_version,
+    revision: runtime.context.row.revision,
     currentPlanKey: runtime.context.planKey,
     currentTaxonChain: runtime.context.taxonChain,
-    historicalStoredValues: (runtime.context.row?.values ??
-      {}) as AccountLandingPageOnboardingStoredValues,
+    historicalStoredValues: runtime.context.row.values as AccountLandingPageOnboardingStoredValues,
     currentAuthoritativeValues: runtime.context.authoritativeValues,
   });
 }
@@ -154,10 +169,9 @@ export async function saveAccountLandingPageOnboardingConfigurationFromClient(
   },
   client: QueryClient,
   entitlementLoader: AccountLandingPageOnboardingEntitlementLoader,
+  catalogVersionLoader: AccountLandingPageOnboardingCatalogVersionLoader,
 ): Promise<AccountLandingPageOnboardingResult> {
   if (
-    !Number.isInteger(input.catalogVersion) ||
-    input.catalogVersion <= 0 ||
     !Number.isInteger(input.expectedRevision) ||
     input.expectedRevision < 0 ||
     !isRecord(input.values)
@@ -165,20 +179,22 @@ export async function saveAccountLandingPageOnboardingConfigurationFromClient(
     return failure("invalid_values");
   }
 
-  const runtime = await loadRuntimeContext(input, client, entitlementLoader);
+  const runtime = await loadRuntimeContext(
+    input,
+    client,
+    entitlementLoader,
+    catalogVersionLoader,
+  );
   if (!runtime.ok) return runtime;
+
+  if (runtime.context.row && runtime.context.row.landing_page_id !== null) {
+    return failure("landing_page_already_bound");
+  }
 
   const currentRevision = runtime.context.row?.revision ?? 0;
   if (currentRevision !== input.expectedRevision) {
     return failure("revision_conflict");
   }
-  if (
-    runtime.context.row &&
-    runtime.context.row.catalog_version !== input.catalogVersion
-  ) {
-    return failure("revision_conflict");
-  }
-
   const persistableValues = Object.fromEntries(
     Object.entries(
       stripAuthoritativeOnboardingValues(
@@ -190,7 +206,7 @@ export async function saveAccountLandingPageOnboardingConfigurationFromClient(
   const candidate = resolveAccountLandingPageOnboardingConfiguration({
     accountId: runtime.context.account.id,
     landingPageId: runtime.context.row?.landing_page_id ?? null,
-    catalogVersion: input.catalogVersion,
+    catalogVersion: runtime.context.operationalCatalogVersion,
     revision: Math.max(1, input.expectedRevision + 1),
     planKey: runtime.context.planKey,
     taxonChain: runtime.context.taxonChain,
@@ -207,7 +223,7 @@ export async function saveAccountLandingPageOnboardingConfigurationFromClient(
   }
 
   const payload = {
-    catalog_version: input.catalogVersion,
+    catalog_version: runtime.context.operationalCatalogVersion,
     values: persistableValues,
     updated_by: input.actorUserId,
   };
@@ -282,8 +298,14 @@ export async function listAccountLandingPageDraftsFromClient(
   input: { accountId: string; actorUserId: string },
   client: QueryClient,
   entitlementLoader: AccountLandingPageOnboardingEntitlementLoader,
+  catalogVersionLoader: AccountLandingPageOnboardingCatalogVersionLoader,
 ): Promise<AccountLandingPageDraftsResult> {
-  const runtime = await loadRuntimeContext(input, client, entitlementLoader);
+  const runtime = await loadRuntimeContext(
+    input,
+    client,
+    entitlementLoader,
+    catalogVersionLoader,
+  );
   if (!runtime.ok) return runtime;
 
   const configuration = resolveRuntimeContext(runtime.context);
@@ -319,6 +341,7 @@ export async function bindAccountLandingPageOnboardingConfigurationFromClient(
   },
   client: QueryClient,
   entitlementLoader: AccountLandingPageOnboardingEntitlementLoader,
+  catalogVersionLoader: AccountLandingPageOnboardingCatalogVersionLoader,
 ): Promise<AccountLandingPageOnboardingResult> {
   if (
     !UUID_RE.test(String(input.landingPageId ?? "").trim()) ||
@@ -328,7 +351,12 @@ export async function bindAccountLandingPageOnboardingConfigurationFromClient(
     return failure("invalid_values");
   }
 
-  const runtime = await loadRuntimeContext(input, client, entitlementLoader);
+  const runtime = await loadRuntimeContext(
+    input,
+    client,
+    entitlementLoader,
+    catalogVersionLoader,
+  );
   if (!runtime.ok) return runtime;
   const configuration = resolveRuntimeContext(runtime.context);
   if (!configuration.ok) return configuration;
@@ -400,6 +428,7 @@ async function loadRuntimeContext(
   input: { accountId: string; actorUserId: string },
   client: QueryClient,
   entitlementLoader: AccountLandingPageOnboardingEntitlementLoader,
+  catalogVersionLoader: AccountLandingPageOnboardingCatalogVersionLoader,
 ): Promise<RuntimeContextResult> {
   const accountId = String(input.accountId ?? "").trim();
   const actorUserId = String(input.actorUserId ?? "").trim();
@@ -463,6 +492,30 @@ async function loadRuntimeContext(
       : null;
     if (configurationData && !row) return failure("invalid_configuration");
 
+    let operationalCatalogVersion: number;
+    if (row && row.landing_page_id !== null) {
+      operationalCatalogVersion = row.catalog_version;
+    } else {
+      const servedTaxonId = (
+        taxonChain.value.ultraNiche ??
+        taxonChain.value.niche ??
+        taxonChain.value.segment
+      ).id;
+      const preparation = await catalogVersionLoader({ taxonId: servedTaxonId });
+      if (!preparation.ok) {
+        return failure("catalog_unavailable");
+      }
+      if (
+        !Number.isSafeInteger(preparation.value.reviewedInputCatalogVersion) ||
+        preparation.value.reviewedInputCatalogVersion <= 0 ||
+        preparation.value.requiredInputCatalogVersion !==
+          preparation.value.reviewedInputCatalogVersion
+      ) {
+        return failure("catalog_unavailable");
+      }
+      operationalCatalogVersion = preparation.value.reviewedInputCatalogVersion;
+    }
+
     return {
       ok: true,
       context: {
@@ -471,6 +524,7 @@ async function loadRuntimeContext(
         taxonChain: taxonChain.value,
         authoritativeValues: buildAuthoritativeValues(account),
         row,
+        operationalCatalogVersion,
       },
     };
   } catch (error) {
@@ -488,9 +542,7 @@ function resolveRuntimeContext(
   const resolved = resolveAccountLandingPageOnboardingConfiguration({
     accountId: context.account.id,
     landingPageId: context.row?.landing_page_id ?? null,
-    catalogVersion:
-      context.row?.catalog_version ??
-      ACCOUNT_LANDING_PAGE_ONBOARDING_CATALOG_VERSION,
+    catalogVersion: context.operationalCatalogVersion,
     revision: context.row?.revision ?? 0,
     planKey: context.planKey,
     taxonChain: context.taxonChain,

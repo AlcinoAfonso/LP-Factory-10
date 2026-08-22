@@ -32,15 +32,12 @@ export async function saveOnboardingConfigurationAction(
   const route = accountSubdomain ? `/a/${accountSubdomain}` : "/a";
   const intentEntries = formData.getAll("intent");
   const intent = parseIntent(intentEntries.at(-1) ?? null);
-  const catalogVersion = Number(formData.get("catalog_version"));
   const expectedRevision = Number(formData.get("expected_revision"));
   const valuesJson = String(formData.get("values_json") ?? "");
 
   if (
     !accountSubdomain ||
     !intent ||
-    !Number.isInteger(catalogVersion) ||
-    catalogVersion <= 0 ||
     !Number.isInteger(expectedRevision) ||
     expectedRevision < 0 ||
     !valuesJson ||
@@ -72,7 +69,6 @@ export async function saveOnboardingConfigurationAction(
 
   const result = await saveAccountLandingPageOnboardingConfiguration({
     accountId,
-    catalogVersion,
     expectedRevision,
     values,
   });
