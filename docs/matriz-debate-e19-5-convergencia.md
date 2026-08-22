@@ -248,6 +248,18 @@
   - código humano sequencial, somente se a decisão humana optar pela redução técnica máxima.
 - Esta seção registra recomendação de produto e simplificação; não autoriza alteração de banco, migration, rota, boundary ou implementação enquanto a matriz estiver aberta.
 
+### 4.9. Invariantes preservados pela simplificação — regra transversal
+
+- Qualquer simplificação da primeira E19.5 deve reduzir mecanismos sem fundir conceitos de produto que sustentam a evolução futura.
+- Três separações são invariantes obrigatórios:
+  - **identidade da LP ≠ revisão**: a LP representa o trabalho comercial estável; cada revisão representa uma evolução de conteúdo dessa mesma identidade;
+  - **versão mais recente ≠ versão aprovada ≠ futura versão publicada**: gerar, aprovar e publicar são escolhas distintas e nenhuma delas deve ser inferida automaticamente da outra;
+  - **configuração operacional ≠ conteúdo da revisão**: configurações vivas podem evoluir sem reescrever revisões materializadas, e cada revisão preserva o snapshot/contexto efetivamente usado na geração.
+- Adiar `archive/restore`, código humano, publicação, editor, A/B ou mensuração não autoriza colapsar essas fronteiras para simplificar a primeira entrega.
+- Futuros recortes de UX devem poder acrescentar essas capacidades sobre os mesmos conceitos, sem reconstruir identidade, versionamento ou histórico.
+- Qualquer alternativa A/B/C/D que viole um desses invariantes é inválida, mesmo que reduza código ou número de estruturas.
+- Esta regra define fronteira de produto; não determina por si só tabela, coluna, FK, RPC, rota, migration ou outro shape físico.
+
 ## 5. Matriz principal
 
 | ID | Tema | Desejo humano | Contrato atual | Implementação #797 | Complexidade indispensável | Complexidade acidental | Fragilidade conhecida | Evidência de mercado/pesquisa | Opções | Recomendação do Analista | Recomendação do Estrategista | Decisão humana | Destino |
