@@ -152,6 +152,35 @@
 - E21.2 continua autoridade da configuração operacional dos workloads.
 - Nenhum recorte passa a depender de fonte concorrente criada pela E19.5.
 
+### 4.6. Identidade da LP e versionamento — decisão humana preliminar
+
+- Cada conta pode possuir várias identidades de LP.
+- Cada identidade de LP pode possuir várias revisões imutáveis e append-only.
+- A identidade comercial deve permanecer estável depois da primeira revisão válida.
+- Elementos propostos como núcleo imutável da identidade após a primeira revisão válida:
+  - conta proprietária;
+  - código sequencial visível ao cliente;
+  - objetivo comercial da LP;
+  - estágio do funil;
+  - oferta ou caso de uso principal, em seu significado;
+  - intenção comercial, quando aplicável ao taxon.
+- Esses elementos podem ser corrigidos enquanto ainda não existir primeira revisão válida.
+- Depois da primeira revisão válida, alterar qualquer elemento do núcleo de identidade deve criar uma nova LP, e não uma nova revisão da LP existente.
+- Não integram o núcleo imutável, por princípio:
+  - nome amigável exibido no workspace;
+  - copy, títulos, imagens e estrutura visual;
+  - origem de tráfego e campanha;
+  - canal principal de conversão;
+  - WhatsApp, telefone, e-mail ou URL de destino;
+  - detalhes atualizados da oferta que não alterem seu significado;
+  - versão mais recente, versão aprovada e futura versão publicada;
+  - lifecycle `active | archived`.
+- O código visível ao cliente deve ser sequencial por conta, monotônico, imutável e não reutilizável, por exemplo `LP-001`, `LP-002`, `LP-003`; o UUID técnico continua sendo a identidade interna.
+- Revisões não consomem novos códigos de LP.
+- A nomenclatura de UX recomendada é `LP-001 · V1`, `LP-001 · V2`, `LP-002 · V1`; evitar `1.1`, por misturar identidade da LP com revisão e sugerir versionamento decimal/semântico.
+- A proposta altera materialmente o plano vigente em um ponto: hoje `landing_page_objective` é tratada como configuração mutável que pode entrar em uma nova revisão; a matriz deve avaliar a mudança para atributo de identidade imutável após V1.
+- A matriz também deve confirmar se `funnel_stage`, oferta/caso de uso principal e `transaction_intent` devem receber a mesma trava após V1 e quais detalhes de oferta permanecem apenas configuração mutável.
+
 ## 5. Matriz principal
 
 | ID | Tema | Desejo humano | Contrato atual | Implementação #797 | Complexidade indispensável | Complexidade acidental | Fragilidade conhecida | Evidência de mercado/pesquisa | Opções | Recomendação do Analista | Recomendação do Estrategista | Decisão humana | Destino |
@@ -169,6 +198,9 @@
 | MD-11 | Integração E20.6.5 | Gerar somente com catálogo autorizado | Versão executável explícita e decisão humana | v5 preparada, gravação posterior | Pendente | Pendente | Ordem de rollout e fonte de versão | Pendente | manter / desacoplar | Pendente | Pendente | Pendente | Pendente |
 | MD-12 | Compatibilidade futura | Não bloquear publicação e A/B | Apenas compatibilidade, sem implementação | Revisões imutáveis preservadas | Pendente | Pendente | Risco de antecipação | Pendente | manter princípio / remover qualquer preparação extra | Pendente | Pendente | Pendente | Pendente |
 | MD-13 | Tamanho do PR | Entrega compreensível e segura | Não definido | PR amplo e multi-boundary | Pendente | Pendente | Descoberta sucessiva de invariantes | Pendente | continuar / extrair / substituir | Pendente | Pendente | Pendente | Pendente |
+| MD-14 | Identidade comercial da LP | Mesma LP deve preservar conta, objetivo, funil, oferta/caso de uso e intenção comercial; mudança de identidade cria nova LP | Plano vigente define LP estável, mas permite alterar `landing_page_objective` e incorporar a mudança em nova revisão | #797 trata objetivo/funil/intenção como configuração operacional editável | Preservar uma identidade estável e compreensível | Permitir que uma mesma LP mude de propósito ao longo do histórico | Histórico pode misturar páginas comercialmente diferentes sob a mesma identidade | Pendente | travar após V1 / manter mutável / núcleo híbrido | Recomendação preliminar: travar núcleo após V1 | Pendente | **Preliminar: núcleo imutável após primeira revisão válida** | reconciliar plano e implementação após encerramento da matriz |
+| MD-15 | Código visível da LP | Cada LP deve ter código sequencial por conta, imutável e não reutilizável (`LP-001`, `LP-002`...) | Hoje existe UUID técnico, `name` e `slug`; não existe código sequencial visível | #797 não implementa código humano estável | Identificação simples para cliente e suporte | Acoplar revisão ao código da LP ou expor UUID | Ambiguidade entre identidade e revisão | Pendente | código sequencial / UUID+nome / outro rótulo | Recomendação preliminar: código sequencial por conta | Pendente | **Preliminar: adotar código sequencial por conta** | decidir shape físico somente após fechamento do debate |
+| MD-16 | Numeração das revisões | Ajustar LP existente mantém o mesmo código e cria nova versão | Revisões já são append-only por `revision_number` | #797 preserva revisão numérica por LP | Separar identidade da LP de sua evolução | Notação `1.1` mistura os conceitos | UX confusa e futura ambiguidade | Pendente | `LP-001 · V2` / `1.1` / outro | Recomendação preliminar: `LP-001 · Vn` | Pendente | **Preliminar: não usar `1.1`; usar LP + versão separadas** | refletir em UX e documentação se confirmado |
 
 ## 6. Verificações técnicas por classe
 
@@ -210,6 +242,9 @@
   - mais recente;
   - aprovada.
 - Confirmar que nenhum estado é inferido por contador ou efeito colateral.
+- Separar explicitamente identidade da LP de revisão de conteúdo.
+- Confirmar o momento de congelamento do núcleo da identidade: antes da primeira revisão válida pode haver correção; depois dela, mudança de objetivo/funil/oferta/intenção cria nova LP.
+- Verificar que código sequencial visível ao cliente não substitui UUID técnico nem é reutilizado após arquivamento.
 
 ### 6.4. Autoridades e fontes de verdade
 
@@ -242,6 +277,8 @@
 ### 7.1. Perguntas de produto
 
 - Como produtos maduros distinguem identidade da página, versão, publicação, aprovação e arquivamento?
+- Como produtos maduros tratam atributos que definem o propósito de uma página: objetivo, estágio do funil, oferta/caso de uso e intenção comercial?
+- Como produtos SaaS expõem identificadores humanos estáveis para páginas/ativos e separam esses identificadores da numeração de versões?
 - Qual é a UX mínima compreensível para um workspace de páginas em um SaaS inicial?
 - Quais capacidades costumam ser adiadas para evitar transformar workspace em editor/publicação/experimentos?
 
