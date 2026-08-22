@@ -49,8 +49,16 @@ const segmentCatalog = resolveLandingPageInputCatalog({
 });
 assert.equal(segmentCatalog.ok, true);
 
+const segmentCatalogV5 = resolveLandingPageInputCatalog({
+  version: 5,
+  plan: "starter",
+  taxonChain: { segment: realEstateSegmentTaxon },
+});
+assert.equal(segmentCatalogV5.ok, true);
+
 const allValidValues = validValuesFor(resolvedCatalog.fields);
 const segmentValidValues = validValuesFor(segmentCatalog.value.fields);
+const segmentV5ValidValues = validValuesFor(segmentCatalogV5.value.fields);
 
 function catalogVersionLoaderFor(
   version: number,
@@ -395,10 +403,70 @@ const cases: ReadonlyArray<
     },
   },
   {
-    name: "pre-handoff resolves the reviewed catalog and persists its evolved version",
+    name: "pre-handoff resolves v5, exposes new fields and preserves the v2 history",
     run: async () => {
       const observedTaxonIds: string[] = [];
+      const historicalRow = completeConfigurationRow();
+      assert.equal(historicalRow.catalog_version, 2);
       const client = runtimeClient([
+        ...runtimeGateResponses(),
+        response(
+          "account_landing_page_onboarding_configurations",
+          historicalRow,
+        ),
+      ]);
+      const result = await getAccountLandingPageOnboardingConfigurationFromClientCore(
+        { accountId: ACCOUNT_ID, actorUserId: ACTOR_ID },
+        client,
+        eligibleEntitlement,
+        catalogVersionLoaderFor(5, (taxonId) => observedTaxonIds.push(taxonId)),
+      );
+      assert.equal(result.ok, true, JSON.stringify(result));
+      assert.equal(result.configuration.catalogVersion, 5);
+      assert.equal(result.configuration.complete, false);
+      assert.deepEqual(observedTaxonIds, [realEstateSegmentTaxon.id]);
+      assert.deepEqual(
+        result.configuration.fields
+          .filter((field) =>
+            [
+              "business_offerings_summary",
+              "primary_conversion_goal",
+            ].includes(field.field.fieldKey),
+          )
+          .map((field) => [field.field.fieldKey, field.required, field.source]),
+        [
+          ["business_offerings_summary", false, "missing"],
+          ["primary_conversion_goal", true, "missing"],
+        ],
+      );
+      assert.ok(
+        result.configuration.missingRequiredFieldKeys.includes(
+          "primary_conversion_goal",
+        ),
+      );
+      assert.deepEqual(
+        result.configuration.storedValues.funnel_stage,
+        segmentValidValues.funnel_stage,
+      );
+
+      const authorityClient = runtimeClient([
+        ...runtimeGateResponses(),
+        response(
+          "account_landing_page_onboarding_configurations",
+          historicalRow,
+        ),
+      ]);
+      const authority =
+        await getAccountLandingPageOnboardingRevalidationAuthorityFromClientCore(
+          { accountId: ACCOUNT_ID, actorUserId: ACTOR_ID },
+          authorityClient,
+          eligibleEntitlement,
+          catalogVersionLoaderFor(5),
+        );
+      assert.equal(authority.ok, true, JSON.stringify(authority));
+      assert.equal(authority.authority.historicalConfiguration.catalogVersion, 2);
+
+      const saveClient = runtimeClient([
         ...runtimeGateResponses(),
         response(
           "account_landing_page_onboarding_configurations",
@@ -408,35 +476,42 @@ const cases: ReadonlyArray<
           "account_landing_page_onboarding_configurations",
           {
             ...completeConfigurationRow(),
-            catalog_version: 4,
+            catalog_version: 5,
+            values: stripAuthoritativeOnboardingValues(segmentV5ValidValues, {
+              business_display_name: "Conta de teste",
+            }),
             revision: 2,
           },
           null,
           "update",
         ),
       ]);
-      const result = await saveAccountLandingPageOnboardingConfigurationFromClientCore(
+      const saved = await saveAccountLandingPageOnboardingConfigurationFromClientCore(
         {
           accountId: ACCOUNT_ID,
           actorUserId: ACTOR_ID,
           expectedRevision: 1,
-          values: segmentValidValues,
+          values: segmentV5ValidValues,
           // A client-supplied version is deliberately ignored at runtime.
           catalogVersion: 2,
         } as unknown as Parameters<
           typeof saveAccountLandingPageOnboardingConfigurationFromClientCore
         >[0],
-        client,
+        saveClient,
         eligibleEntitlement,
-        catalogVersionLoaderFor(4, (taxonId) => observedTaxonIds.push(taxonId)),
+        catalogVersionLoaderFor(5),
       );
-      assert.equal(result.ok, true, JSON.stringify(result));
-      assert.equal(result.configuration.catalogVersion, 4);
-      assert.deepEqual(observedTaxonIds, [realEstateSegmentTaxon.id]);
-      const update = client.calls.find((call) => call.operation === "update");
+      assert.equal(saved.ok, true, JSON.stringify(saved));
+      assert.equal(saved.configuration.catalogVersion, 5);
+      assert.equal(saved.configuration.complete, true);
+      assert.deepEqual(
+        saved.configuration.storedValues.funnel_stage,
+        segmentValidValues.funnel_stage,
+      );
+      const update = saveClient.calls.find((call) => call.operation === "update");
       assert.equal(
         (update?.payload as { catalog_version: number }).catalog_version,
-        4,
+        5,
       );
       assert.equal(
         Object.hasOwn(
@@ -446,10 +521,18 @@ const cases: ReadonlyArray<
         ),
         true,
       );
+      assert.equal(
+        Object.hasOwn(
+          (update?.payload as { values: AccountLandingPageOnboardingStoredValues })
+            .values,
+          "primary_conversion_goal",
+        ),
+        true,
+      );
       assert.deepEqual(
         (update?.payload as { values: AccountLandingPageOnboardingStoredValues })
           .values.funnel_stage,
-        segmentValidValues.funnel_stage,
+        segmentV5ValidValues.funnel_stage,
       );
     },
   },
@@ -485,14 +568,14 @@ const cases: ReadonlyArray<
           divergent,
           eligibleEntitlement,
           async ({ taxonId }) => {
-            const prepared = await catalogVersionLoaderFor(4)({ taxonId });
+            const prepared = await catalogVersionLoaderFor(5)({ taxonId });
             assert.equal(prepared.ok, true);
             if (!prepared.ok) throw new Error("fixture preparation failed");
             return {
               ok: true,
               value: {
                 ...prepared.value,
-                requiredInputCatalogVersion: 5,
+                requiredInputCatalogVersion: 4,
               },
             };
           },
@@ -525,7 +608,7 @@ const cases: ReadonlyArray<
         },
         client,
         eligibleEntitlement,
-        catalogVersionLoaderFor(4, () => {
+        catalogVersionLoaderFor(5, () => {
           loaderCalled = true;
         }),
       );

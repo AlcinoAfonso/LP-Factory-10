@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 22/08/2026
-• Versão: v1.5.174
+• Versão: v1.5.175
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2223,7 +2223,7 @@ Repositório — Ajustados
 
 19.2.7.1 Objetivo e status
 - Objetivo: Permitir que o onboarding pré-handoff opere contra a versão E20.2 explicitamente revisada para o taxon, preserve valores válidos durante a evolução e deixe E19.5 como única autoridade operacional após o vínculo da primeira jornada.
-- Status: Implementação do boundary concluída no PR #802; a integração bem-sucedida da E20.2 v5 permanece pendente até que o registry e a revisão explícita do taxon a tornem executável.
+- Status: Implementação do boundary concluída no PR #802; a E20.2 v5 já é executável após o merge do PR #803. Permanece pendente somente a autorização E20.6 do taxon em `reviewed_input_catalog_version = 5`.
 
 19.2.7.2 Registros do recorte
 - Repositório:
@@ -2246,7 +2246,7 @@ Repositório — Ajustados
 - Conteúdo:
   - A E19.2 consome `loadTaxonPreparationForReviewedVersion` para resolver `reviewed_input_catalog_version` do taxon servido; a versão enviada pelo client e qualquer `latest`, maior chave ou fallback deixam de ser autoridade.
   - Antes do handoff, a configuração é resolvida pelo catálogo autorizado, preserva valores ainda válidos e pode evoluir `catalog_version` do agregado após revalidação e persistência válidas; a completude continua derivada e novos obrigatórios permanecem pendentes até preenchimento humano.
-  - Ausência, divergência, versão não executável ou falha da preparação bloqueiam fechado. O catálogo E20.2 v5 não é promovido pela E19.2.
+  - Ausência, divergência, versão não executável ou falha da preparação bloqueiam fechado. A E19.2 não promove a v5; somente a consome quando o taxon a autoriza pela E20.6.
 
 19.2.7.4 Handoff e UI declarativa
 - Status: Implementado conforme o contrato do plano-base.
@@ -2256,10 +2256,11 @@ Repositório — Ajustados
   - Não houve nova persistência, migration, schema, estado de migração, registry paralelo, backfill, upload ou infraestrutura de assets.
 
 19.2.7.5 Validação e pendência vigente
-- Status: Validado nos casos focais locais; integração v5 pendente.
+- Status: Validado nos casos focais locais com a v5 executável; autorização E20.6 do taxon em v5 pendente.
 - Conteúdo:
   - Os casos executáveis cobrem evolução pré-handoff com versão autorizada executável, preservação de valor, payload de client adulterado sem efeito, autoridade ausente/divergente, isolamento tenant-safe e bloqueio de atualização após handoff; os validadores de catálogo, preparação E20.6, contexto de geração e jornada permanecem aprovados.
-  - O HEAD do PR #802 ainda não contém uma E20.2 v5 executável; a prova de sucesso v2 → v5 e a apresentação de novos fields/obrigatórios ficam condicionadas à promoção explícita dessa versão pelo recorte E20.2, sem fallback ou inferência pela E19.2.
+  - Após a reconciliação com a `main` que contém o PR #803, os casos comprovam literalmente o agregado histórico/current em v2, a autoridade operacional simulada em v5, a preservação de valores válidos, `business_offerings_summary` opcional, `primary_conversion_goal` obrigatório, incompletude sem esse valor e evolução confirmada de `catalog_version` para 5.
+  - A prova hospedada com o taxon real permanece condicionada somente ao registro E20.6 de `reviewed_input_catalog_version = 5`; não há fallback ou inferência pela E19.2.
 
 19.3 Pacote autorizado para geração no Cenário E
 
