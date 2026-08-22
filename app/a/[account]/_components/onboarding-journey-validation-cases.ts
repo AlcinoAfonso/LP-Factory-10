@@ -122,6 +122,8 @@ const cases: readonly Readonly<{ name: string; run: () => void }>[] = [
       assert.match(component, /aria-required/);
       assert.match(component, /<fieldset/);
       assert.match(component, /field\.purpose/);
+      assert.doesNotMatch(component, /name="catalog_version"/);
+      assert.match(component, /humanizeFieldKey/);
       assert.doesNotMatch(component, /\.from\(/);
       assert.match(action, /saveAccountLandingPageOnboardingConfiguration/);
       assert.match(action, /getAccessContext/);

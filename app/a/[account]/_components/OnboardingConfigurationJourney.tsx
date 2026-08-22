@@ -332,7 +332,6 @@ export function OnboardingConfigurationJourney(props: Readonly<{
 
           <form action={formAction} className="mt-8 space-y-6" noValidate>
             <input type="hidden" name="account_subdomain" value={props.accountSubdomain} />
-            <input type="hidden" name="catalog_version" value={props.configuration.catalogVersion} />
             <input type="hidden" name="expected_revision" value={revision} />
             <input type="hidden" name="values_json" value={JSON.stringify(submittedValues)} />
             <input type="hidden" name="intent" value="save" />
@@ -816,7 +815,16 @@ function isRequired(
 }
 
 export function fieldLabel(fieldKey: string) {
-  return FIELD_LABELS[fieldKey] ?? "Informação para a página";
+  return FIELD_LABELS[fieldKey] ?? humanizeFieldKey(fieldKey);
+}
+
+function humanizeFieldKey(fieldKey: string) {
+  const words = fieldKey
+    .replaceAll(/([a-z])([A-Z])/g, "$1 $2")
+    .replaceAll("_", " ")
+    .trim();
+  if (!words) return "Informação para a página";
+  return words.charAt(0).toUpperCase() + words.slice(1);
 }
 
 function optionLabel(option: string) {

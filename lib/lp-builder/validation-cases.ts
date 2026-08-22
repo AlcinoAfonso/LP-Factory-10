@@ -13,11 +13,12 @@ import type {
   AccountLandingPageOnboardingStoredValues,
 } from "./contracts";
 import {
-  bindAccountLandingPageOnboardingConfigurationFromClient,
-  getAccountLandingPageOnboardingConfigurationFromClient,
-  getAccountLandingPageOnboardingRevalidationAuthorityFromClient,
-  listAccountLandingPageDraftsFromClient,
-  saveAccountLandingPageOnboardingConfigurationFromClient,
+  bindAccountLandingPageOnboardingConfigurationFromClient as bindAccountLandingPageOnboardingConfigurationFromClientCore,
+  getAccountLandingPageOnboardingConfigurationFromClient as getAccountLandingPageOnboardingConfigurationFromClientCore,
+  getAccountLandingPageOnboardingRevalidationAuthorityFromClient as getAccountLandingPageOnboardingRevalidationAuthorityFromClientCore,
+  listAccountLandingPageDraftsFromClient as listAccountLandingPageDraftsFromClientCore,
+  saveAccountLandingPageOnboardingConfigurationFromClient as saveAccountLandingPageOnboardingConfigurationFromClientCore,
+  type AccountLandingPageOnboardingCatalogVersionLoader,
 } from "./adapters/onboardingConfigurationAdapterCore";
 import {
   isAccountLandingPageOnboardingActorAuthorized,
@@ -50,6 +51,104 @@ assert.equal(segmentCatalog.ok, true);
 
 const allValidValues = validValuesFor(resolvedCatalog.fields);
 const segmentValidValues = validValuesFor(segmentCatalog.value.fields);
+
+function catalogVersionLoaderFor(
+  version: number,
+  onCall?: (taxonId: string) => void,
+): AccountLandingPageOnboardingCatalogVersionLoader {
+  return async ({ taxonId }) => {
+    onCall?.(taxonId);
+    return {
+      ok: true,
+      value: {
+        prepared: true,
+        taxonId,
+        taxonSlug: realEstateSegmentTaxon.slug,
+        selectedResearchVersion: 1,
+        reviewedInputCatalogVersion: version,
+        requiredInputCatalogVersion: version,
+        research: {
+          taxonSlug: realEstateSegmentTaxon.slug,
+          audienceScope: "end_customer",
+          researchVersion: 1,
+          relativePath: "validation-fixture.md",
+          content: "validation fixture",
+        },
+      },
+    };
+  };
+}
+
+const testCatalogVersionLoader = catalogVersionLoaderFor(2);
+
+function getAccountLandingPageOnboardingConfigurationFromClient(
+  ...args: Parameters<
+    typeof getAccountLandingPageOnboardingConfigurationFromClientCore
+  > extends [infer Input, infer Client, infer Entitlement, ...unknown[]]
+    ? [Input, Client, Entitlement]
+    : never
+) {
+  return getAccountLandingPageOnboardingConfigurationFromClientCore(
+    args[0],
+    args[1],
+    args[2],
+    testCatalogVersionLoader,
+  );
+}
+
+function getAccountLandingPageOnboardingRevalidationAuthorityFromClient(
+  ...args: Parameters<
+    typeof getAccountLandingPageOnboardingRevalidationAuthorityFromClientCore
+  > extends [infer Input, infer Client, infer Entitlement, ...unknown[]]
+    ? [Input, Client, Entitlement]
+    : never
+) {
+  return getAccountLandingPageOnboardingRevalidationAuthorityFromClientCore(
+    args[0],
+    args[1],
+    args[2],
+    testCatalogVersionLoader,
+  );
+}
+
+function saveAccountLandingPageOnboardingConfigurationFromClient(
+  ...args: Parameters<typeof saveAccountLandingPageOnboardingConfigurationFromClientCore> extends [infer Input, infer Client, infer Entitlement, ...unknown[]]
+    ? [Input, Client, Entitlement]
+    : never
+) {
+  return saveAccountLandingPageOnboardingConfigurationFromClientCore(
+    args[0],
+    args[1],
+    args[2],
+    testCatalogVersionLoader,
+  );
+}
+
+function listAccountLandingPageDraftsFromClient(
+  ...args: Parameters<typeof listAccountLandingPageDraftsFromClientCore> extends [infer Input, infer Client, infer Entitlement, ...unknown[]]
+    ? [Input, Client, Entitlement]
+    : never
+) {
+  return listAccountLandingPageDraftsFromClientCore(
+    args[0],
+    args[1],
+    args[2],
+    testCatalogVersionLoader,
+  );
+}
+
+function bindAccountLandingPageOnboardingConfigurationFromClient(
+  ...args: Parameters<typeof bindAccountLandingPageOnboardingConfigurationFromClientCore> extends [infer Input, infer Client, infer Entitlement, ...unknown[]]
+    ? [Input, Client, Entitlement]
+    : never
+) {
+  return bindAccountLandingPageOnboardingConfigurationFromClientCore(
+    args[0],
+    args[1],
+    args[2],
+    testCatalogVersionLoader,
+  );
+}
 
 function validValuesFor(fields: readonly ResolvedLandingPageInputField[]) {
   return Object.fromEntries(
@@ -296,6 +395,149 @@ const cases: ReadonlyArray<
     },
   },
   {
+    name: "pre-handoff resolves the reviewed catalog and persists its evolved version",
+    run: async () => {
+      const observedTaxonIds: string[] = [];
+      const client = runtimeClient([
+        ...runtimeGateResponses(),
+        response(
+          "account_landing_page_onboarding_configurations",
+          completeConfigurationRow(),
+        ),
+        response(
+          "account_landing_page_onboarding_configurations",
+          {
+            ...completeConfigurationRow(),
+            catalog_version: 4,
+            revision: 2,
+          },
+          null,
+          "update",
+        ),
+      ]);
+      const result = await saveAccountLandingPageOnboardingConfigurationFromClientCore(
+        {
+          accountId: ACCOUNT_ID,
+          actorUserId: ACTOR_ID,
+          expectedRevision: 1,
+          values: segmentValidValues,
+          // A client-supplied version is deliberately ignored at runtime.
+          catalogVersion: 2,
+        } as unknown as Parameters<
+          typeof saveAccountLandingPageOnboardingConfigurationFromClientCore
+        >[0],
+        client,
+        eligibleEntitlement,
+        catalogVersionLoaderFor(4, (taxonId) => observedTaxonIds.push(taxonId)),
+      );
+      assert.equal(result.ok, true, JSON.stringify(result));
+      assert.equal(result.configuration.catalogVersion, 4);
+      assert.deepEqual(observedTaxonIds, [realEstateSegmentTaxon.id]);
+      const update = client.calls.find((call) => call.operation === "update");
+      assert.equal(
+        (update?.payload as { catalog_version: number }).catalog_version,
+        4,
+      );
+      assert.equal(
+        Object.hasOwn(
+          (update?.payload as { values: AccountLandingPageOnboardingStoredValues })
+            .values,
+          "funnel_stage",
+        ),
+        true,
+      );
+      assert.deepEqual(
+        (update?.payload as { values: AccountLandingPageOnboardingStoredValues })
+          .values.funnel_stage,
+        segmentValidValues.funnel_stage,
+      );
+    },
+  },
+  {
+    name: "missing or divergent reviewed authority fails closed before catalog resolution",
+    run: async () => {
+      const absent = runtimeClient([
+        ...runtimeGateResponses(),
+        response("account_landing_page_onboarding_configurations", null),
+      ]);
+      const absentResult =
+        await getAccountLandingPageOnboardingConfigurationFromClientCore(
+          { accountId: ACCOUNT_ID, actorUserId: ACTOR_ID },
+          absent,
+          eligibleEntitlement,
+          async () => ({
+            ok: false,
+            error: {
+              code: "INPUT_CATALOG_REVIEW_ABSENT" as const,
+              message: "review ausente",
+            },
+          }),
+        );
+      assert.deepEqual(absentResult, { ok: false, error: "catalog_unavailable" });
+
+      const divergent = runtimeClient([
+        ...runtimeGateResponses(),
+        response("account_landing_page_onboarding_configurations", null),
+      ]);
+      const divergentResult =
+        await getAccountLandingPageOnboardingConfigurationFromClientCore(
+          { accountId: ACCOUNT_ID, actorUserId: ACTOR_ID },
+          divergent,
+          eligibleEntitlement,
+          async ({ taxonId }) => {
+            const prepared = await catalogVersionLoaderFor(4)({ taxonId });
+            assert.equal(prepared.ok, true);
+            if (!prepared.ok) throw new Error("fixture preparation failed");
+            return {
+              ok: true,
+              value: {
+                ...prepared.value,
+                requiredInputCatalogVersion: 5,
+              },
+            };
+          },
+        );
+      assert.deepEqual(divergentResult, {
+        ok: false,
+        error: "catalog_unavailable",
+      });
+    },
+  },
+  {
+    name: "after handoff E19.2 keeps history and refuses operational updates",
+    run: async () => {
+      let loaderCalled = false;
+      const client = runtimeClient([
+        ...runtimeGateResponses(),
+        response(
+          "account_landing_page_onboarding_configurations",
+          completeConfigurationRow({
+            landingPageId: "00000000-0000-4000-8000-000000000201",
+          }),
+        ),
+      ]);
+      const result = await saveAccountLandingPageOnboardingConfigurationFromClientCore(
+        {
+          accountId: ACCOUNT_ID,
+          actorUserId: ACTOR_ID,
+          expectedRevision: 1,
+          values: segmentValidValues,
+        },
+        client,
+        eligibleEntitlement,
+        catalogVersionLoaderFor(4, () => {
+          loaderCalled = true;
+        }),
+      );
+      assert.deepEqual(result, {
+        ok: false,
+        error: "landing_page_already_bound",
+      });
+      assert.equal(loaderCalled, false);
+      assert.equal(client.calls.some((call) => call.operation === "update"), false);
+    },
+  },
+  {
     name: "revalidation authority exposes only resolved history and current E19.2 values",
     run: async () => {
       const client = runtimeClient([
@@ -421,7 +663,6 @@ const cases: ReadonlyArray<
         {
           accountId: ACCOUNT_ID,
           actorUserId: ACTOR_ID,
-          catalogVersion: 2,
           expectedRevision: 0,
           values: {
             ...segmentValidValues,
@@ -461,7 +702,6 @@ const cases: ReadonlyArray<
         {
           accountId: ACCOUNT_ID,
           actorUserId: ACTOR_ID,
-          catalogVersion: 2,
           expectedRevision: 0,
           values: null as unknown as AccountLandingPageOnboardingStoredValues,
         },
@@ -492,7 +732,6 @@ const cases: ReadonlyArray<
         {
           accountId: ACCOUNT_ID,
           actorUserId: ACTOR_ID,
-          catalogVersion: 2,
           expectedRevision: 1,
           values: {},
         },
