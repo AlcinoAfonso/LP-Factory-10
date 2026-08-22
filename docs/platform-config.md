@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Documento: LP Factory 10 — Platform Config
-• Versão: v0.1.26
+• Versão: v0.1.27
 • Data: 22/08/2026
 
 0.2 Contrato do documento
@@ -152,7 +152,7 @@
 • Habilitação: somente o literal `true` ativa o workspace; variável ausente, vazia ou com qualquer outro valor preserva a experiência vigente e impede leitura ou mutação dos novos objetos.
 • Estado atual: configuração futura e pendente; não há habilitação operacional registrada em Preview ou Production.
 • Progressão operacional aprovada: após merge e apply da migration, validar o banco e habilitar Preview com redeploy; Production permanece desligada até decisão humana sobre as evidências de Preview e exige redeploy e smoke próprios.
-• Gate de evidência: o aceite operacional final depende de smoke hospedado positivo com catálogo v5 para o taxon exato servido, resolvido pela autoridade real no momento da prova, depois da avaliação E20.6 e da decisão humana de suficiência. Não presumir taxon piloto nem promover `reviewed_input_catalog_version` por este rollout.
+• Gate de evidência: a avaliação E20.6 da v5 e a decisão humana de suficiência estão concluídas para o taxon servido `Corretor Imóveis` (`corretor-imoveis`), com `reviewed_input_catalog_version = 5` e sem gaps candidatos. O aceite operacional final da E19.5 ainda depende do rollout pós-merge, da prova hospedada positiva em Preview e da progressão controlada prevista acima; este rollout não promove o marcador nem altera a E20.6.
 
 • `INVITE_STATE_SECRET`
 • Finalidade: assinar o estado opaco transportado pelo convite nativo do Supabase Auth.

@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 22/08/2026
-• Versão: v1.5.177
+• Versão: v1.5.178
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2223,7 +2223,7 @@ Repositório — Ajustados
 
 19.2.7.1 Objetivo e status
 - Objetivo: Permitir que o onboarding pré-handoff opere contra a versão E20.2 explicitamente revisada para o taxon, preserve valores válidos durante a evolução e deixe E19.5 como única autoridade operacional após o vínculo da primeira jornada.
-- Status: Implementação do boundary concluída no PR #802; a E20.2 v5 já é executável após o merge do PR #803. Permanece pendente somente a autorização E20.6 do taxon em `reviewed_input_catalog_version = 5`.
+- Status: Implementação do boundary concluída no PR #802; a E20.2 v5 está executável e operacionalmente autorizada para o taxon servido `Corretor Imóveis` (`corretor-imoveis`) por `reviewed_input_catalog_version = 5`.
 
 19.2.7.2 Registros do recorte
 - Repositório:
@@ -2255,12 +2255,12 @@ Repositório — Ajustados
   - A jornada remove a autoridade do hidden `catalog_version`, continua derivando fields, tipos, obrigação, opções e condições do E20.2 resolvido e usa humanização localizada de `fieldKey` apenas quando não há label amigável existente; paleta e logo mantêm suas especializações.
   - Não houve nova persistência, migration, schema, estado de migração, registry paralelo, backfill, upload ou infraestrutura de assets.
 
-19.2.7.5 Validação e pendência vigente
-- Status: Validado nos casos focais locais com a v5 executável; autorização E20.6 do taxon em v5 pendente.
+19.2.7.5 Validação e autoridade vigente
+- Status: Validado nos casos focais locais com a v5 executável; avaliação E20.6 suficiente sem gaps candidatos e decisão administrativa humana confirmada para o taxon servido.
 - Conteúdo:
   - Os casos executáveis cobrem evolução pré-handoff com versão autorizada executável, preservação de valor, payload de client adulterado sem efeito, autoridade ausente/divergente, isolamento tenant-safe e bloqueio de atualização após handoff; os validadores de catálogo, preparação E20.6, contexto de geração e jornada permanecem aprovados.
   - Após a reconciliação com a `main` que contém o PR #803, os casos comprovam literalmente o agregado histórico/current em v2, a autoridade operacional simulada em v5, a preservação de valores válidos, `business_offerings_summary` opcional, `primary_conversion_goal` obrigatório, incompletude sem esse valor e evolução confirmada de `catalog_version` para 5.
-  - A prova hospedada com o taxon real permanece condicionada somente ao registro E20.6 de `reviewed_input_catalog_version = 5`; não há fallback ou inferência pela E19.2.
+  - A autoridade operacional real registra `reviewed_input_catalog_version = 5` para `Corretor Imóveis` (`corretor-imoveis`); a E19.2 consome esse estado sem fallback ou inferência e não o promove.
 
 19.3 Pacote autorizado para geração no Cenário E
 
@@ -2520,7 +2520,7 @@ Repositório — Ajustados
   - histórico e preview são carregados sob demanda por LP; o preview pode abrir a revisão mais recente ou uma revisão histórica e a aprovação idempotente move somente o ponteiro tenant-safe da revisão aprovada;
   - os testes determinísticos cobrem v5, `primary_conversion_goal`, ausência válida de `business_offerings_summary`, evolução histórica × operacional, mismatch E20.6, fail-closed, viewer read-only, paginação, histórico e aprovação; `npm ci`, `npm run check` e `git diff --check` foram aprovados, com 24 warnings de lint preexistentes e nenhum erro;
   - a migration permanece repo-only e não foi aplicada; `E19_5_WORKSPACE_ENABLED` permanece default-off, sem habilitação registrada em Preview ou Production;
-  - o aceite operacional final depende de merge humano, apply canônico, prova SQL e Security Controls, habilitação e redeploy controlados em Preview e smoke hospedado positivo com v5 após avaliação E20.6 e decisão humana de suficiência para o taxon exato servido naquele momento; não se presume `Corretor Imóveis` e este recorte não grava nem promove `reviewed_input_catalog_version = 5`;
+  - a avaliação E20.6 da v5 e a decisão humana de suficiência estão concluídas para o taxon real servido `Corretor Imóveis` (`corretor-imoveis`), com `reviewed_input_catalog_version = 5` e sem gaps candidatos; o aceite operacional final da E19.5 depende agora de merge humano, apply canônico, prova SQL e Security Controls, habilitação e redeploy controlados em Preview e smoke hospedado positivo, e este recorte não grava nem promove o marcador nem altera a E20.6;
   - Production permanece desligada até decisão humana sobre as evidências de Preview e exige redeploy e smoke próprios; archive/restore, publicação, editor manual, melhoria parcial por IA, hard delete, tracking, mensuração, testes A/B, catálogo avançado de ofertas e mecanismo global ou em massa permanecem fora do recorte.
 
 20. E20 — Preparação e liberação de taxons para geração de landing pages
