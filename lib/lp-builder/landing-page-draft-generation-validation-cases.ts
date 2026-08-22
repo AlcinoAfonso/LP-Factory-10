@@ -64,16 +64,18 @@ const candidate: LandingPagePresentationCandidate = {
 };
 
 const context = {
-  contractVersion: 3,
+  contractVersion: 4,
   identities: {
     accountId: "10000000-0000-4000-8000-000000000001",
     landingPage: { id: "20000000-0000-4000-8000-000000000002", status: "draft" },
     planKey: "starter",
     servedTaxon: { id: "taxon", slug: "corretor-imoveis", name: "Corretor" },
     taxonChain: {},
-    historicalConfigurationCatalogVersion: 2,
-    effectiveInputCatalogVersion: 4,
-    configurationRevision: 7,
+    sharedCatalogVersion: 5,
+    landingPageCatalogVersion: 5,
+    effectiveInputCatalogVersion: 5,
+    sharedRevision: 11,
+    landingPageRevision: 13,
     rootVersion: 1,
     endCustomerResearchVersion: 1,
   },
@@ -911,6 +913,25 @@ const cases = [
       assert.equal(documents.snapshot.workloads.text.costStatus, "unavailable");
       assert.equal(documents.snapshot.workloads.image.costStatus, "unavailable");
       assert.equal(documents.snapshot.requestId, "request-revision");
+      assert.equal(documents.snapshot.snapshotVersion, 2);
+      assert.equal(documents.snapshot.generationContext.contractVersion, 4);
+      assert.equal(
+        validateLandingPageRevisionSnapshot({
+          ...documents.snapshot,
+          snapshotVersion: 1,
+        }),
+        false,
+      );
+      assert.equal(
+        validateLandingPageRevisionSnapshot({
+          ...documents.snapshot,
+          generationContext: {
+            ...documents.snapshot.generationContext,
+            contractVersion: 3,
+          },
+        }),
+        false,
+      );
       assert.doesNotMatch(JSON.stringify(documents), /signedUrl|apiKey|rawResponse/);
     },
   },

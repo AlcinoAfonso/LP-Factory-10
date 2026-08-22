@@ -86,7 +86,7 @@ export async function generateLandingPageDraftCandidate(
   if (
     !resolved.ok ||
     !apiKey ||
-    context.contractVersion !== 3
+    context.contractVersion !== 4
   ) {
     if (resolved.ok) emitFailure(resolved.value, "configuration_invalid", dependencies);
     return { ok: false, kind: "configuration_invalid" };

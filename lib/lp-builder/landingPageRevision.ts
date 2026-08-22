@@ -14,7 +14,7 @@ import type { LandingPageGenerationContextPackage } from "./generationContextCon
 import type { LandingPageDraftCandidateWorkflowResult } from "./landingPageDraftCandidateWorkflow";
 
 export const LANDING_PAGE_REVISION_CONTRACT_VERSION = 1 as const;
-export const LANDING_PAGE_REVISION_SNAPSHOT_VERSION = 1 as const;
+export const LANDING_PAGE_REVISION_SNAPSHOT_VERSION = 2 as const;
 export const LANDING_PAGE_REVISION_ASSET_BUCKET =
   "landing-page-revision-assets" as const;
 export const LANDING_PAGE_REVISION_ASSET_MAX_BYTES = 5_242_880 as const;
@@ -71,19 +71,12 @@ export type LandingPageRevisionContent = z.infer<
   typeof landingPageRevisionContentSchema
 >;
 
-export type LandingPageRevisionSnapshot = Readonly<{
-  snapshotVersion: typeof LANDING_PAGE_REVISION_SNAPSHOT_VERSION;
+type LandingPageRevisionSnapshotCommon = Readonly<{
   attemptId: string;
   requestId: string;
   generatedAt: string;
   promptVersion: string;
   presentationContractVersion: number;
-  generationContext: Readonly<{
-    contractVersion: 3;
-    identities: LandingPageGenerationContextPackage["identities"];
-    modelContext: LandingPageGenerationContextPackage["modelContext"];
-    bindingFacts: readonly LandingPageGenerationContextPackage["serverContext"]["facts"][number][];
-  }>;
   workloads: Readonly<{
     text: Readonly<{
       configuration: Extract<
@@ -118,11 +111,48 @@ export type LandingPageRevisionSnapshot = Readonly<{
   }>;
 }>;
 
+export type LandingPageRevisionSnapshotV2 = LandingPageRevisionSnapshotCommon &
+  Readonly<{
+    snapshotVersion: 2;
+    generationContext: Readonly<{
+      contractVersion: 4;
+      identities: LandingPageGenerationContextPackage["identities"];
+      modelContext: LandingPageGenerationContextPackage["modelContext"];
+      bindingFacts: readonly LandingPageGenerationContextPackage["serverContext"]["facts"][number][];
+    }>;
+  }>;
+
+export type LandingPageRevisionSnapshotV1 = LandingPageRevisionSnapshotCommon &
+  Readonly<{
+    snapshotVersion: 1;
+    generationContext: Readonly<{
+      contractVersion: 3;
+      identities: Readonly<{
+        accountId: string;
+        landingPage: Readonly<{ id: string; status: "draft" | "active" }>;
+        planKey: string;
+        servedTaxon: LandingPageGenerationContextPackage["identities"]["servedTaxon"];
+        taxonChain: LandingPageGenerationContextPackage["identities"]["taxonChain"];
+        historicalConfigurationCatalogVersion: number;
+        effectiveInputCatalogVersion: number;
+        configurationRevision: number;
+        rootVersion: number;
+        endCustomerResearchVersion: number;
+      }>;
+      modelContext: LandingPageGenerationContextPackage["modelContext"];
+      bindingFacts: readonly LandingPageGenerationContextPackage["serverContext"]["facts"][number][];
+    }>;
+  }>;
+
+export type LandingPageRevisionSnapshot =
+  | LandingPageRevisionSnapshotV1
+  | LandingPageRevisionSnapshotV2;
+
 export type BuildLandingPageRevisionDocumentsResult =
   | Readonly<{
       ok: true;
       content: LandingPageRevisionContent;
-      snapshot: LandingPageRevisionSnapshot;
+      snapshot: LandingPageRevisionSnapshotV2;
     }>
   | Readonly<{
       ok: false;
@@ -232,7 +262,7 @@ export function buildLandingPageRevisionDocuments(input: Readonly<{
   return {
     ok: true,
     content: deepFreeze(contentResult.data),
-    snapshot: deepFreeze(snapshot as LandingPageRevisionSnapshot),
+    snapshot: deepFreeze(snapshot as LandingPageRevisionSnapshotV2),
   };
 }
 
@@ -241,7 +271,14 @@ export function validateLandingPageRevisionSnapshot(
 ): value is LandingPageRevisionSnapshot {
   if (!isRecord(value) || containsForbiddenSnapshotKey(value)) return false;
   if (
-    value.snapshotVersion !== LANDING_PAGE_REVISION_SNAPSHOT_VERSION ||
+    !(
+      (value.snapshotVersion === 1 &&
+        isRecord(value.generationContext) &&
+        value.generationContext.contractVersion === 3) ||
+      (value.snapshotVersion === LANDING_PAGE_REVISION_SNAPSHOT_VERSION &&
+        isRecord(value.generationContext) &&
+        value.generationContext.contractVersion === 4)
+    ) ||
     !uuidSchema.safeParse(value.attemptId).success ||
     typeof value.requestId !== "string" ||
     !value.requestId.trim() ||
@@ -250,7 +287,6 @@ export function validateLandingPageRevisionSnapshot(
     !value.promptVersion.trim() ||
     value.presentationContractVersion !== 1 ||
     !isRecord(value.generationContext) ||
-    value.generationContext.contractVersion !== 3 ||
     !isRecord(value.generationContext.identities) ||
     !isRecord(value.generationContext.modelContext) ||
     !Array.isArray(value.generationContext.bindingFacts) ||

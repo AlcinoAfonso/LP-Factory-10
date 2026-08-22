@@ -126,6 +126,14 @@ export type LandingPagePreviewDependencies = Readonly<{
     | Readonly<{ ok: true; value: CurrentLandingPageRevision | null }>
     | Readonly<{ ok: false; error: "READ_FAILED" }>
   >;
+  readRevision?: (input: Readonly<{
+    accountId: string;
+    landingPageId: string;
+    revisionId: string;
+  }>) => Promise<
+    | Readonly<{ ok: true; value: CurrentLandingPageRevision | null }>
+    | Readonly<{ ok: false; error: "READ_FAILED" }>
+  >;
   signAsset: (asset: LandingPageRevisionAssetReference) => Promise<
     | Readonly<{ ok: true; signedUrl: string }>
     | Readonly<{ ok: false }>
@@ -140,7 +148,7 @@ type PreparedLandingPageRenderModel = Omit<LandingPageRenderModel, "media"> &
   }>;
 
 export async function loadLandingPagePreviewWithDependencies(
-  input: Readonly<{ accountSlug: string; landingPageId: string }>,
+  input: Readonly<{ accountSlug: string; landingPageId: string; revisionId?: string }>,
   dependencies: LandingPagePreviewDependencies,
 ): Promise<LandingPagePreviewLoadResult> {
   try {
@@ -156,12 +164,18 @@ export async function loadLandingPagePreviewWithDependencies(
 }
 
 async function loadLandingPagePreviewUnchecked(
-  input: Readonly<{ accountSlug: string; landingPageId: string }>,
+  input: Readonly<{ accountSlug: string; landingPageId: string; revisionId?: string }>,
   dependencies: LandingPagePreviewDependencies,
 ): Promise<LandingPagePreviewLoadResult> {
   const accountSlug = input.accountSlug.trim().toLowerCase();
   const landingPageId = input.landingPageId.trim();
-  if (!accountSlug || accountSlug === "home" || !isUuid(landingPageId)) {
+  const revisionId = input.revisionId?.trim();
+  if (
+    !accountSlug ||
+    accountSlug === "home" ||
+    !isUuid(landingPageId) ||
+    (revisionId !== undefined && !isUuid(revisionId))
+  ) {
     return observedFailure(dependencies, "not_found", "invalid_input", landingPageId);
   }
 
@@ -202,7 +216,11 @@ async function loadLandingPagePreviewUnchecked(
     );
   }
 
-  const current = await dependencies.readCurrentRevision({ accountId, landingPageId });
+  const current = revisionId
+    ? dependencies.readRevision
+      ? await dependencies.readRevision({ accountId, landingPageId, revisionId })
+      : { ok: false as const, error: "READ_FAILED" as const }
+    : await dependencies.readCurrentRevision({ accountId, landingPageId });
   if (!current.ok) {
     return observedFailure(
       dependencies,
@@ -211,7 +229,7 @@ async function loadLandingPagePreviewUnchecked(
       landingPageId,
     );
   }
-  if (!current.value) return { status: "empty" };
+  if (!current.value) return revisionId ? { status: "not_found" } : { status: "empty" };
 
   const prepared = prepareLandingPageRenderModel({
     accountId,

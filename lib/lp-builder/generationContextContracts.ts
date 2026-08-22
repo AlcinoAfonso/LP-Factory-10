@@ -12,12 +12,12 @@ import type {
 } from "../conversion-content/landing-page";
 import type {
   AccountLandingPage,
-  AccountLandingPageOnboardingRevalidationAuthority,
+  AccountLandingPageOperationalRevalidationAuthority,
   AccountLandingPageOnboardingValueSource,
 } from "./contracts";
 import type { OperationalLandingPageStatus } from "../types/status";
 
-export const LANDING_PAGE_GENERATION_CONTEXT_CONTRACT_VERSION = 3 as const;
+export const LANDING_PAGE_GENERATION_CONTEXT_CONTRACT_VERSION = 4 as const;
 
 export type LandingPageGenerationContextFailureCode =
   | "INVALID_INPUT"
@@ -34,7 +34,7 @@ export type LandingPageGenerationContextFailureCode =
 
 export type CompileLandingPageGenerationContextInput = Readonly<{
   landingPage: AccountLandingPage;
-  revalidationAuthority: AccountLandingPageOnboardingRevalidationAuthority;
+  revalidationAuthority: AccountLandingPageOperationalRevalidationAuthority;
   preparation: TaxonPreparationResult;
 }>;
 
@@ -71,9 +71,11 @@ export type LandingPageGenerationContextPackage = Readonly<{
     planKey: string;
     servedTaxon: LandingPageInputCatalogTaxonIdentity;
     taxonChain: LandingPageInputCatalogTaxonChain;
-    historicalConfigurationCatalogVersion: number;
+    sharedCatalogVersion: number | null;
+    landingPageCatalogVersion: number;
     effectiveInputCatalogVersion: number;
-    configurationRevision: number;
+    sharedRevision: number | null;
+    landingPageRevision: number;
     rootVersion: number;
     endCustomerResearchVersion: number;
   }>;

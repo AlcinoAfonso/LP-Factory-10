@@ -141,6 +141,40 @@ function compileValidatedLandingPageGenerationContext(
   const projectedFacts = projectFacts(revalidated.configuration.fields);
   if (!projectedFacts.ok) return projectedFacts.result;
 
+  if (
+    input.revalidationAuthority.landingPageCatalogVersion !==
+      preparation.reviewedInputCatalogVersion ||
+    !Number.isSafeInteger(input.revalidationAuthority.landingPageRevision) ||
+    input.revalidationAuthority.landingPageRevision <= 0 ||
+    ((input.revalidationAuthority.sharedRevision === null) !==
+      (input.revalidationAuthority.sharedCatalogVersion === null)) ||
+    (input.revalidationAuthority.sharedRevision !== null &&
+      (!Number.isSafeInteger(input.revalidationAuthority.sharedRevision) ||
+        input.revalidationAuthority.sharedRevision <= 0 ||
+        input.revalidationAuthority.sharedCatalogVersion !==
+          preparation.reviewedInputCatalogVersion))
+  ) {
+    return failure(
+      "CONFIGURATION_REVALIDATION_REQUIRED",
+      "Operational configuration provenance is incomplete or incompatible.",
+    );
+  }
+  if (
+    input.revalidationAuthority.sharedRevision === null &&
+    revalidated.configuration.fields.some(
+      (field) =>
+        field.applicable &&
+        (field.field.valueScope === "account" ||
+          field.field.valueScope === "business") &&
+        field.source === "configuration",
+    )
+  ) {
+    return failure(
+      "CONFIGURATION_REVALIDATION_REQUIRED",
+      "Shared operational provenance is required for configured shared facts.",
+    );
+  }
+
   return success({
     contractVersion: LANDING_PAGE_GENERATION_CONTEXT_CONTRACT_VERSION,
     identities: {
@@ -152,9 +186,11 @@ function compileValidatedLandingPageGenerationContext(
       planKey: currentPlanKey,
       servedTaxon,
       taxonChain: currentTaxonChain,
-      historicalConfigurationCatalogVersion: historicalConfiguration.catalogVersion,
+      sharedCatalogVersion: input.revalidationAuthority.sharedCatalogVersion,
+      landingPageCatalogVersion: input.revalidationAuthority.landingPageCatalogVersion,
       effectiveInputCatalogVersion: preparation.reviewedInputCatalogVersion,
-      configurationRevision: historicalConfiguration.revision,
+      sharedRevision: input.revalidationAuthority.sharedRevision,
+      landingPageRevision: input.revalidationAuthority.landingPageRevision,
       rootVersion: root.value.rootVersion,
       endCustomerResearchVersion: preparation.selectedResearchVersion,
     },

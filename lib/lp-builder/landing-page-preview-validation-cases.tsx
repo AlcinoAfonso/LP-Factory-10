@@ -325,7 +325,7 @@ const cases = [
     name: "account membership entitlement landing-page snapshot and asset drift fail before signing",
     run: async () => {
       const snapshotDrift = revisionFixture();
-      const snapshotWithWrongAccount = {
+      const snapshotWithWrongAccount: CurrentLandingPageRevision = {
         ...snapshotDrift,
         snapshot: {
           ...snapshotDrift.snapshot,
@@ -336,14 +336,14 @@ const cases = [
               accountId: "60000000-0000-4000-8000-000000000006",
             },
           },
-        },
+        } as CurrentLandingPageRevision["snapshot"],
       };
       const assetDrift = revisionFixture();
       const crossTenantAsset = {
         ...assetDrift.content.media.mainImage,
         path: `60000000-0000-4000-8000-000000000006/${LANDING_PAGE_ID}/${ATTEMPT_ID}/main.webp`,
       };
-      const revisionWithCrossTenantAsset = {
+      const revisionWithCrossTenantAsset: CurrentLandingPageRevision = {
         ...assetDrift,
         content: {
           ...assetDrift.content,
@@ -352,7 +352,7 @@ const cases = [
         snapshot: {
           ...assetDrift.snapshot,
           media: { mainImage: { ...crossTenantAsset } },
-        },
+        } as CurrentLandingPageRevision["snapshot"],
       };
       const scenarios: Array<{
         expected: string;

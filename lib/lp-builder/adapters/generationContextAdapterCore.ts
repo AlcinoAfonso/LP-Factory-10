@@ -1,9 +1,10 @@
 import type { TaxonPreparationResult } from "../../conversion-content/landing-page/taxon-preparation";
 import type {
   AccountLandingPage,
-  AccountLandingPageOnboardingRevalidationResult,
+  AccountLandingPageOperationalRevalidationResult,
 } from "../contracts";
 import { compileLandingPageGenerationContext } from "../generationContext";
+import { LANDING_PAGE_WORKSPACE_REQUIRED_INPUT_CATALOG_VERSION } from "../landingPageWorkspace";
 import type {
   CompileLandingPageGenerationContextResult,
   LandingPageGenerationContextFailureCode,
@@ -12,7 +13,8 @@ import type {
 export type LandingPageGenerationContextBoundaryDependencies = Readonly<{
   loadRevalidationAuthority: (input: {
     accountId: string;
-  }) => Promise<AccountLandingPageOnboardingRevalidationResult>;
+    landingPageId: string;
+  }) => Promise<AccountLandingPageOperationalRevalidationResult>;
   loadLandingPage: (input: {
     accountId: string;
     landingPageId: string;
@@ -20,7 +22,10 @@ export type LandingPageGenerationContextBoundaryDependencies = Readonly<{
     | Readonly<{ ok: true; landingPage: AccountLandingPage }>
     | Readonly<{ ok: false; error: "not_found" | "read_failed" }>
   >;
-  loadPreparation: (input: { taxonId: string }) => Promise<TaxonPreparationResult>;
+  loadPreparation: (input: {
+    taxonId: string;
+    requiredInputCatalogVersion: number;
+  }) => Promise<TaxonPreparationResult>;
   log?: (payload: Readonly<Record<string, unknown>>) => void;
   now?: () => number;
 }>;
@@ -63,7 +68,10 @@ export async function compileLandingPageGenerationContextForDraftWithDependencie
   }
 
   try {
-    const revalidation = await dependencies.loadRevalidationAuthority({ accountId });
+    const revalidation = await dependencies.loadRevalidationAuthority({
+      accountId,
+      landingPageId,
+    });
     if (!revalidation.ok) {
       const unauthorized = [
         "unauthenticated",
@@ -103,6 +111,8 @@ export async function compileLandingPageGenerationContextForDraftWithDependencie
       currentTaxonChain.segment;
     const preparation = await dependencies.loadPreparation({
       taxonId: servedTaxon.id,
+      requiredInputCatalogVersion:
+        LANDING_PAGE_WORKSPACE_REQUIRED_INPUT_CATALOG_VERSION,
     });
     if (!preparation.ok) preparationReason = preparation.error.code;
     result = compileLandingPageGenerationContext({

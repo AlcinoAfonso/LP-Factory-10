@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 22/08/2026
-• Versão: v1.5.176
+• Versão: v1.5.177
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2098,7 +2098,7 @@ Repositório — Ajustados
 
 19. E19 — LP Builder
 - Objetivo: Consolidar o fluxo Core de landing pages por conta, da identidade mínima em `draft` às futuras etapas de geração, revisão, materialização e publicação, sempre por recortes aprovados.
-- Status: E19.1, E19.2 e E19.3 concluídas. E19.4.3, E19.4.4 e E19.4.5 concluídas; a E19.4 está encerrada e integrada à `main` pelo PR #776. A revisão 3 permanece preservada como baseline dos gaps persuasivos observados. A E19.5 possui plano-base v2 aprovado para o recorte reduzido E19.5.3; implementação ainda não iniciada.
+- Status: E19.1, E19.2 e E19.3 concluídas. E19.4.3, E19.4.4 e E19.4.5 concluídas; a E19.4 está encerrada e integrada à `main` pelo PR #776. A revisão 3 permanece preservada como baseline dos gaps persuasivos observados. A E19.5.3 possui implementação candidata repo-only validada no PR #804; aceite operacional final permanece pendente dos gates pós-merge e do smoke positivo v5.
 
 19.1 Criação produtiva mínima de LP por conta
 
@@ -2450,22 +2450,78 @@ Repositório — Ajustados
 
 19.5.1 Objetivo e status
 - Objetivo: entregar o ciclo operacional reduzido para múltiplas identidades de LP por conta, com configuração contextual lazy, revisões integrais append-only, histórico, preview e aprovação humana explícita.
-- Status: Plano-base v2 aprovado; E19.5.3 planejada e sem implementação iniciada.
+- Status: Plano-base v2 aprovado e implementação candidata repo-only materializada; aceite operacional final não concluído.
+
+19.5.2 Registros do recorte
+- Banco:
+  - Criados:
+    - `public.account_landing_page_shared_configurations`;
+    - `public.account_landing_page_configurations`;
+    - `public.e19_5_actor_can_manage(uuid, uuid)`;
+    - `public.e19_5_configuration_values_have_scopes(jsonb, text[])`;
+    - `public.save_account_landing_page_configuration_v1(uuid, uuid, jsonb, jsonb, bigint, bigint, integer, uuid)`;
+    - `public.approve_account_landing_page_materialization_v1(uuid, uuid, uuid, uuid)`.
+  - Ajustados:
+    - `public.account_landing_pages`;
+    - `public.account_landing_page_materializations`.
+- Repositório:
+  - Criados:
+    - `app/a/[account]/_components/LandingPageWorkspace.tsx`;
+    - `app/a/[account]/_components/WorkspaceSubmitButton.tsx`;
+    - `app/a/[account]/workspace-actions.ts`;
+    - `app/a/[account]/landing-pages/[landingPageId]/page.tsx`;
+    - `app/a/[account]/landing-pages/[landingPageId]/actions.ts`;
+    - `app/a/[account]/landing-pages/[landingPageId]/configuration-actions.ts`;
+    - `lib/lp-builder/landingPageWorkspace.ts`;
+    - `lib/lp-builder/adapters/landingPageWorkspaceAdapter.ts`;
+    - `lib/lp-builder/landing-page-workspace-validation-cases.ts`;
+    - `supabase/migrations/20260822170000_e19_5_3_landing_page_workspace.sql`;
+    - `supabase/snippets/e19_5_3_landing_page_workspace_verify.sql`;
+    - `supabase/tests/e19_5_3_landing_page_workspace.test.sql`.
+  - Ajustados:
+    - `app/a/[account]/page.tsx`;
+    - `app/a/[account]/_components/OnboardingConfigurationJourney.tsx`;
+    - `app/a/[account]/_components/onboarding-configuration-action-contract.ts`;
+    - `app/a/[account]/landing-pages/[landingPageId]/preview/page.tsx`;
+    - `app/a/[account]/landing-pages/[landingPageId]/preview/GenerationTrigger.tsx`;
+    - `app/a/[account]/landing-pages/[landingPageId]/preview/actions.ts`;
+    - `lib/lp-builder/contracts.ts`;
+    - `lib/lp-builder/index.ts`;
+    - `lib/lp-builder/generationContext.ts`;
+    - `lib/lp-builder/generationContextContracts.ts`;
+    - `lib/lp-builder/adapters/generationContextAdapter.ts`;
+    - `lib/lp-builder/adapters/generationContextAdapterCore.ts`;
+    - `lib/lp-builder/landingPageRevision.ts`;
+    - `lib/lp-builder/landingPagePreview.ts`;
+    - `lib/lp-builder/adapters/landingPagePreviewAdapter.ts`;
+    - `lib/lp-builder/adapters/landingPageRevisionAdapter.ts`;
+    - `lib/lp-builder/landingPageDraftGeneration.ts`;
+    - `lib/lp-builder/generation-context-validation-cases.ts`;
+    - `lib/lp-builder/landing-page-draft-generation-validation-cases.ts`;
+    - `lib/lp-builder/landing-page-preview-validation-cases.tsx`;
+    - `package.json`.
+- Referências:
+  - Plano-base aprovado: `docs/lousa-plano-base-e19-5.md` — seções 1, 2 e 3.
+  - Contrato de banco: `docs/schema.md` — seções 1.9, 1.27, 1.31, 1.32 e 3.8.
+  - Contrato técnico: `docs/base-tecnica.md` — seções 3.14.4 e 3.15.9.
+  - Configuração operacional: `docs/platform-config.md` — seção 3.5.
+  - Contrato visual: `docs/design-system.md` — Workspace operacional do Account Dashboard.
 
 19.5.3 Workspace operacional reduzido, configuração e aprovação da LP
-- Status: Planejada; não implementada.
+- Status: Implementação candidata repo-only validada localmente; merge, apply, provas hospedadas e aceite operacional final pendentes.
 - Conteúdo:
-  - uma LP representa identidade comercial estável; tentativa, geração ou revisão não cria nova LP;
-  - o workspace apresenta uma entrada por identidade e permite várias LPs na mesma conta, com contexto persistente Conta → LP → seção;
-  - a E19.2 permanece bootstrap e histórico da primeira jornada; seu handoff é lazy e idempotente, e a E19.5 se torna a única autoridade operacional depois do vínculo, sem fallback concorrente;
-  - a configuração operacional distingue valores compartilhados de conta/negócio e valores contextuais de oferta/campanha/LP, nasce somente quando necessária, aceita estado parcial e deriva completude sem placeholder ou flag persistida;
-  - a operação pós-handoff exige explicitamente a versão E20.2 v5 e igualdade com `reviewed_input_catalog_version = 5`, sem `latest`, maior versão ou pin histórico;
-  - `primary_conversion_goal` integra o núcleo comercial após seu baseline por revisão válida; mudança posterior de `funnel_stage`, `transaction_intent` aplicável ou `primary_conversion_goal` exige nova identidade, enquanto mudança de `primary_service_or_offer` exige confirmação humana sobre continuidade do trabalho comercial;
-  - cada geração válida cria nova revisão integral e imutável da mesma LP; versão mais recente, versão aprovada e futura versão publicada permanecem conceitos independentes;
-  - histórico e preview são carregados sob demanda por LP, e a aprovação escolhe idempotentemente uma revisão existente sem criar cópia ou nova revisão;
-  - o recorte preserva o renderer e o pipeline E19.3 → E19.4, evolui de forma versionada o contexto/snapshot para novas revisões e mantém revisões históricas válidas;
-  - o runtime consumidor permanece desligado até apply canônico e provas do ambiente; Preview deve ser habilitado e validado antes de qualquer habilitação controlada em Production;
-  - permanecem fora do recorte archive/restore, publicação, editor manual, melhoria parcial por IA, hard delete, tracking, mensuração, testes A/B, catálogo avançado de ofertas, automação nova e infraestrutura sem consumidor indispensável.
+  - o Account Dashboard ganha workspace master-detail paginado, uma entrada por identidade de LP, cinco estados de UX derivados, criação explícita para owner/admin e leitura integral sem mutações para viewer;
+  - a configuração reutiliza declarativamente o catálogo E20.2 v5 e separa fisicamente scopes compartilhados `account/business` dos contextuais `offer/campaign/landing_page`, sem lista paralela, placeholder, precriação, backfill, `is_initialized` ou completude persistida;
+  - `primary_conversion_goal` é obrigatório e participa do núcleo de identidade após a primeira revisão válida que o contenha; `business_offerings_summary` é opcional, reside no compartilhado e sua ausência isolada não bloqueia completude;
+  - o handoff da E19.2 é lazy e vinculado à LP exata; depois que a residência operacional existe, o agregado histórico permanece apenas como bootstrap/proveniência e não serve fallback concorrente;
+  - o save das duas residências é atômico, `SECURITY INVOKER`, versionado e protegido por revisões otimistas independentes; no-op não incrementa, e conflito preserva integralmente o estado anterior;
+  - geração e revalidação exigem literalmente a v5 e igualdade exata com `reviewed_input_catalog_version`, falhando fechado para ausência, divergência, versão não executável ou erro; não existe fallback para v4, `latest`, maior versão ou versão implícita;
+  - novas revisões usam snapshot v2/contexto v4 com proveniência das residências; readers aceitam somente os pares históricos v1/contexto v3 e atuais v2/contexto v4, sem cruzamento ou reinterpretação retroativa;
+  - histórico e preview são carregados sob demanda por LP; o preview pode abrir a revisão mais recente ou uma revisão histórica e a aprovação idempotente move somente o ponteiro tenant-safe da revisão aprovada;
+  - os testes determinísticos cobrem v5, `primary_conversion_goal`, ausência válida de `business_offerings_summary`, evolução histórica × operacional, mismatch E20.6, fail-closed, viewer read-only, paginação, histórico e aprovação; `npm ci`, `npm run check` e `git diff --check` foram aprovados, com 24 warnings de lint preexistentes e nenhum erro;
+  - a migration permanece repo-only e não foi aplicada; `E19_5_WORKSPACE_ENABLED` permanece default-off, sem habilitação registrada em Preview ou Production;
+  - o aceite operacional final depende de merge humano, apply canônico, prova SQL e Security Controls, habilitação e redeploy controlados em Preview e smoke hospedado positivo com v5 após avaliação E20.6 e decisão humana de suficiência para o taxon exato servido naquele momento; não se presume `Corretor Imóveis` e este recorte não grava nem promove `reviewed_input_catalog_version = 5`;
+  - Production permanece desligada até decisão humana sobre as evidências de Preview e exige redeploy e smoke próprios; archive/restore, publicação, editor manual, melhoria parcial por IA, hard delete, tracking, mensuração, testes A/B, catálogo avançado de ofertas e mecanismo global ou em massa permanecem fora do recorte.
 
 20. E20 — Preparação e liberação de taxons para geração de landing pages
 

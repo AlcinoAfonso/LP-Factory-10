@@ -122,6 +122,22 @@ export type AccountLandingPageOnboardingRevalidationResult =
     }>
   | Extract<AccountLandingPageOnboardingResult, { ok: false }>;
 
+export type AccountLandingPageOperationalRevalidationAuthority =
+  AccountLandingPageOnboardingRevalidationAuthority &
+    Readonly<{
+      sharedRevision: number | null;
+      sharedCatalogVersion: number | null;
+      landingPageRevision: number;
+      landingPageCatalogVersion: number;
+    }>;
+
+export type AccountLandingPageOperationalRevalidationResult =
+  | Readonly<{
+      ok: true;
+      authority: AccountLandingPageOperationalRevalidationAuthority;
+    }>
+  | Extract<AccountLandingPageOnboardingResult, { ok: false }>;
+
 export type SaveAccountLandingPageOnboardingConfigurationInput = Readonly<{
   accountId: string;
   expectedRevision: number;
@@ -143,3 +159,121 @@ export type BindAccountLandingPageOnboardingConfigurationInput = Readonly<{
   landingPageId: string;
   expectedRevision: number;
 }>;
+
+export type AccountLandingPageWorkspaceState =
+  | "configuration_incomplete"
+  | "ready_to_generate"
+  | "in_review"
+  | "delivered"
+  | "new_version_in_review";
+
+export type AccountLandingPageWorkspaceItem = Readonly<{
+  id: string;
+  accountId: string;
+  name: string;
+  slug: string;
+  status: OperationalLandingPageStatus;
+  state: AccountLandingPageWorkspaceState;
+  latestRevision: Readonly<{
+    id: string;
+    number: number;
+    createdAt: string;
+  }> | null;
+  approvedRevision: Readonly<{ id: string; number: number }> | null;
+  updatedAt: string;
+}>;
+
+export type AccountLandingPageWorkspacePage = Readonly<{
+  items: readonly AccountLandingPageWorkspaceItem[];
+  nextCursor: string | null;
+  complete: boolean;
+}>;
+
+export type AccountLandingPageWorkspaceResult =
+  | Readonly<{ ok: true; page: AccountLandingPageWorkspacePage; canMutate: boolean }>
+  | Readonly<{
+      ok: false;
+      error: "disabled" | "unauthenticated" | "unauthorized" | "unavailable";
+    }>;
+
+export type AccountLandingPageOperationalConfiguration = Readonly<{
+  accountId: string;
+  landingPageId: string;
+  sharedCatalogVersion: number | null;
+  landingPageCatalogVersion: number | null;
+  sharedRevision: number | null;
+  landingPageRevision: number | null;
+  sharedValues: AccountLandingPageOnboardingStoredValues;
+  landingPageValues: AccountLandingPageOnboardingStoredValues;
+  resolved: AccountLandingPageOnboardingConfiguration;
+}>;
+
+export type AccountLandingPageRevisionSummary = Readonly<{
+  id: string;
+  number: number;
+  createdAt: string;
+  latest: boolean;
+  approved: boolean;
+}>;
+
+export type AccountLandingPageWorkspaceDetailResult =
+  | Readonly<{
+      ok: true;
+      landingPage: AccountLandingPageWorkspaceItem;
+      configuration: AccountLandingPageOperationalConfiguration;
+      revisions: Readonly<{
+        items: readonly AccountLandingPageRevisionSummary[];
+        nextCursor: string | null;
+        complete: boolean;
+      }>;
+      canMutate: boolean;
+    }>
+  | Readonly<{
+      ok: false;
+      error:
+        | "disabled"
+        | "unauthenticated"
+        | "unauthorized"
+        | "not_found"
+        | "invalid_configuration"
+        | "unavailable";
+    }>;
+
+export type SaveAccountLandingPageOperationalConfigurationResult =
+  | Readonly<{
+      ok: true;
+      sharedRevision: number | null;
+      landingPageRevision: number;
+    }>
+  | Readonly<{
+      ok: false;
+      error:
+        | "disabled"
+        | "unauthenticated"
+        | "unauthorized"
+        | "not_operational"
+        | "revision_conflict"
+        | "identity_change_requires_new_landing_page"
+        | "offer_change_confirmation_required"
+        | "invalid_values"
+        | "unavailable";
+      fieldKey?: string;
+    }>;
+
+export type LandingPageWorkspaceMutationResult =
+  | Readonly<{
+      ok: true;
+      landingPageId?: string;
+      approvedMaterializationId?: string;
+    }>
+  | Readonly<{
+      ok: false;
+      error:
+        | "disabled"
+        | "unauthenticated"
+        | "unauthorized"
+        | "not_found"
+        | "not_operational"
+        | "revision_not_found"
+        | "unavailable";
+    }>;

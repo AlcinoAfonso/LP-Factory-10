@@ -4,12 +4,16 @@ import { getAccessContext } from "../../access/getAccessContext";
 import { getCommercialEntitlementSignal } from "../../commercial-entitlements";
 import { loadLandingPagePreviewWithDependencies } from "../landingPagePreview";
 import { readLandingPageDraft } from "./landingPageDraftAdapter";
-import { readCurrentLandingPageRevision } from "./landingPageRevisionAdapter";
+import {
+  readCurrentLandingPageRevision,
+  readLandingPageRevision,
+} from "./landingPageRevisionAdapter";
 import { signLandingPageRevisionAsset } from "./landingPageRevisionStorageAdapter";
 
 export function loadLandingPagePreview(input: Readonly<{
   accountSlug: string;
   landingPageId: string;
+  revisionId?: string;
 }>) {
   return loadLandingPagePreviewWithDependencies(input, {
     authorizeViewer: async ({ accountSlug }) => {
@@ -35,6 +39,7 @@ export function loadLandingPagePreview(input: Readonly<{
     },
     loadLandingPage: readLandingPageDraft,
     readCurrentRevision: readCurrentLandingPageRevision,
+    readRevision: readLandingPageRevision,
     signAsset: signLandingPageRevisionAsset,
     log: (event) => console.log(JSON.stringify(event)),
   });

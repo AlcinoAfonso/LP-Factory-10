@@ -39,12 +39,16 @@ const revalidationAuthority = {
   currentPlanKey: configuration.planKey,
   currentTaxonChain: configuration.taxonChain,
   currentAuthoritativeValues: authoritativeValues,
+  sharedRevision: 11,
+  sharedCatalogVersion: 5,
+  landingPageRevision: 13,
+  landingPageCatalogVersion: 5,
 };
 const preparation = buildPreparation();
 
 const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }>[] = [
   {
-    name: "contract v3 exposes integral research and distinct historical and effective versions",
+    name: "contract v4 exposes integral research and operational residence provenance",
     run: () => {
       const result = compileLandingPageGenerationContext({
         landingPage,
@@ -71,9 +75,11 @@ const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }
           segment: realEstateSegmentTaxon,
           niche: realEstateBrokerNicheTaxon,
         },
-        historicalConfigurationCatalogVersion: 2,
-        effectiveInputCatalogVersion: 4,
-        configurationRevision: 7,
+        sharedCatalogVersion: 5,
+        landingPageCatalogVersion: 5,
+        effectiveInputCatalogVersion: 5,
+        sharedRevision: 11,
+        landingPageRevision: 13,
         rootVersion: 1,
         endCustomerResearchVersion: 1,
       });
@@ -159,6 +165,8 @@ const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }
         "primary_service_or_offer",
         "primary_service_or_offer_description",
         "brand_color_palette",
+        "business_offerings_summary",
+        "primary_conversion_goal",
       ]);
       const historicalStoredValues = Object.fromEntries(
         Object.entries(configuration.storedValues).filter(
@@ -203,32 +211,14 @@ const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }
         preparation,
       });
 
-      assert.equal(result.ok, true);
-      const businessDisplayName = result.value.modelContext.facts.find(
-        (fact) => fact.fieldKey === "business_display_name",
-      );
-      assert.deepEqual(businessDisplayName, {
-        fieldKey: "business_display_name",
-        purpose: businessDisplayName?.purpose,
-        valueType: "string",
-        value: "Conta atual pela autoridade E19.2",
-        source: "authoritative",
-        provenance: businessDisplayName?.provenance,
-      });
-      const brandColorPalette = result.value.serverContext.facts.find(
-        (fact) => fact.fieldKey === "brand_color_palette",
-      );
-      assert.equal(brandColorPalette?.source, "authoritative");
-      assert.deepEqual(
-        brandColorPalette?.value,
-        boundary.authority.currentAuthoritativeValues.brand_color_palette,
-      );
+      assert.equal(result.ok, false);
+      assert.equal(result.error.code, "CONFIGURATION_REVALIDATION_REQUIRED");
     },
   },
   {
     name: "every applicable current field is classified only by canonical valueType",
     run: () => {
-      assert.equal(configuration.fields.length, 23);
+      assert.equal(configuration.fields.length, 25);
       const everyStoredValues = Object.fromEntries(
         configuration.fields
           .filter((state) => state.field.fieldKey !== "business_display_name")
@@ -243,7 +233,7 @@ const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }
       const everyFieldResolution = resolveAccountLandingPageOnboardingConfiguration({
         accountId: ACCOUNT_ID,
         landingPageId: LANDING_PAGE_ID,
-        catalogVersion: 2,
+        catalogVersion: 5,
         revision: 7,
         planKey: "starter",
         taxonChain: {
@@ -319,7 +309,7 @@ const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }
       const missingOptionalResolution = resolveAccountLandingPageOnboardingConfiguration({
         accountId: ACCOUNT_ID,
         landingPageId: LANDING_PAGE_ID,
-        catalogVersion: 2,
+        catalogVersion: 5,
         revision: 7,
         planKey: "starter",
         taxonChain: {
@@ -440,6 +430,7 @@ const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }
     run: async () => {
       const logs: Readonly<Record<string, unknown>>[] = [];
       const dependencyCalls: string[] = [];
+      const requiredCatalogVersions: number[] = [];
       const dependencies = {
         loadRevalidationAuthority: async () => {
           dependencyCalls.push("revalidation-authority");
@@ -452,8 +443,13 @@ const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }
           dependencyCalls.push("landing-page");
           return { ok: true as const, landingPage };
         },
-        loadPreparation: async () => {
+        loadPreparation: async ({
+          requiredInputCatalogVersion,
+        }: {
+          requiredInputCatalogVersion: number;
+        }) => {
           dependencyCalls.push("preparation");
+          requiredCatalogVersions.push(requiredInputCatalogVersion);
           return preparation;
         },
         now: (() => {
@@ -475,6 +471,7 @@ const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }
         "landing-page",
         "preparation",
       ]);
+      assert.deepEqual(requiredCatalogVersions, [5]);
       assert.deepEqual(logs[0], {
         event: "landing_page_generation_context_compilation",
         result: "success",
@@ -497,6 +494,7 @@ const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }
         "landing-page",
         "preparation",
       ]);
+      assert.deepEqual(requiredCatalogVersions, [5, 5]);
       assert.equal(Object.hasOwn(logs[0], "request_id"), false);
       assert.equal(Object.hasOwn(logs[0], "preparation_reason"), false);
 
@@ -542,6 +540,46 @@ const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }
       assert.doesNotMatch(
         JSON.stringify(logs[0]),
         new RegExp(`${preparationFailureMessage}|${preparationFailurePayload}`),
+      );
+
+      dependencyCalls.length = 0;
+      logs.length = 0;
+      const incompatibleCatalog =
+        await compileLandingPageGenerationContextForDraftWithDependencies(
+          { accountId: ACCOUNT_ID, landingPageId: LANDING_PAGE_ID },
+          {
+            ...dependencies,
+            loadPreparation: async ({
+              requiredInputCatalogVersion,
+            }: {
+              requiredInputCatalogVersion: number;
+            }) => {
+              dependencyCalls.push("preparation");
+              requiredCatalogVersions.push(requiredInputCatalogVersion);
+              return {
+                ok: false as const,
+                error: {
+                  code: "INPUT_CATALOG_REVIEW_VERSION_MISMATCH" as const,
+                  message: "Reviewed input catalog version does not match v5.",
+                },
+              };
+            },
+            log: (payload) => logs.push(payload),
+          },
+        );
+      assert.equal(incompatibleCatalog.ok, false);
+      if (!incompatibleCatalog.ok) {
+        assert.equal(incompatibleCatalog.error.code, "INPUT_CATALOG_INCOMPATIBLE");
+      }
+      assert.deepEqual(dependencyCalls, [
+        "revalidation-authority",
+        "landing-page",
+        "preparation",
+      ]);
+      assert.equal(requiredCatalogVersions.at(-1), 5);
+      assert.equal(
+        logs[0]?.preparation_reason,
+        "INPUT_CATALOG_REVIEW_VERSION_MISMATCH",
       );
 
       dependencyCalls.length = 0;
@@ -646,12 +684,13 @@ function buildConfiguration(): AccountLandingPageOnboardingConfiguration {
     whatsapp_destination: "+5511999999999",
     service_locations: ["São Paulo"],
     transaction_intent: "buy",
+    primary_conversion_goal: "contact",
     financing_support_available: true,
     document_support_available: true,
     creci_registration: "CRECI 12345",
   };
   const catalog = resolveLandingPageInputCatalog({
-    version: 2,
+    version: 5,
     plan: "starter",
     taxonChain: {
       segment: realEstateSegmentTaxon,
@@ -659,7 +698,7 @@ function buildConfiguration(): AccountLandingPageOnboardingConfiguration {
     },
   });
   assert.equal(catalog.ok, true);
-  assert.equal(catalog.value.fields.length, 23);
+  assert.equal(catalog.value.fields.length, 25);
   const storedValues = Object.fromEntries(
     Object.entries(values).map(([fieldKey, value]) => {
       const field = catalog.value.fields.find(
@@ -672,7 +711,7 @@ function buildConfiguration(): AccountLandingPageOnboardingConfiguration {
   const result = resolveAccountLandingPageOnboardingConfiguration({
     accountId: ACCOUNT_ID,
     landingPageId: LANDING_PAGE_ID,
-    catalogVersion: 2,
+    catalogVersion: 5,
     revision: 7,
     planKey: "starter",
     taxonChain: {
@@ -695,8 +734,8 @@ function buildPreparation(): Extract<TaxonPreparationResult, { ok: true }> {
       taxonId: TAXON_ID,
       taxonSlug: realEstateBrokerNicheTaxon.slug,
       selectedResearchVersion: 1,
-      reviewedInputCatalogVersion: 4,
-      requiredInputCatalogVersion: 4,
+      reviewedInputCatalogVersion: 5,
+      requiredInputCatalogVersion: 5,
       research: {
         taxonSlug: realEstateBrokerNicheTaxon.slug,
         audienceScope: "end_customer",

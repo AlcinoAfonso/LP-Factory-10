@@ -1,8 +1,11 @@
 import { notFound } from "next/navigation";
 
 import { LandingPageRenderer } from "@/components/lp-builder/LandingPageRenderer";
+import { getAccessContext } from "@/lib/access/getAccessContext";
 import { loadLandingPagePreview } from "@/lp-builder/adapters/landingPagePreviewAdapter";
 
+import { WorkspaceSubmitButton } from "../../../_components/WorkspaceSubmitButton";
+import { approveLandingPageRevisionAction } from "../actions";
 import { GenerationTrigger } from "./GenerationTrigger";
 
 export const dynamic = "force-dynamic";
@@ -11,13 +14,24 @@ export const maxDuration = 300;
 
 type PageProps = Readonly<{
   params: Promise<{ account: string; landingPageId: string }>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }>;
 
-export default async function LandingPagePreview({ params }: PageProps) {
+export default async function LandingPagePreview({ params, searchParams }: PageProps) {
   const { account, landingPageId } = await params;
+  const query = searchParams ? await searchParams : {};
   const accountSlug = account.trim().toLowerCase();
-  const preview = await loadLandingPagePreview({ accountSlug, landingPageId });
+  const revisionId = typeof query.revision === "string" ? query.revision : undefined;
+  const preview = await loadLandingPagePreview({ accountSlug, landingPageId, revisionId });
   if (preview.status === "denied" || preview.status === "not_found") notFound();
+  const access = await getAccessContext({
+    params: { account: accountSlug },
+    route: `/a/${accountSlug}/landing-pages/${landingPageId}/preview`,
+  });
+  const canMutate =
+    !access?.blocked &&
+    access?.account?.status === "active" &&
+    ["owner", "admin"].includes(String(access.role));
 
   return (
     <main className="min-w-0 bg-surface-app px-3 py-6 sm:px-6 sm:py-8 lg:px-8">
@@ -32,13 +46,39 @@ export default async function LandingPagePreview({ params }: PageProps) {
                 Preview privado
               </p>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-graytech-600">
-                Esta superfície reproduz somente a revisão persistida atual. Gerar uma nova revisão continua sendo uma ação humana explícita.
+                Esta superfície reproduz somente a revisão persistida selecionada. Gerar uma nova revisão continua sendo uma ação humana explícita.
               </p>
             </div>
-            <GenerationTrigger accountSlug={accountSlug} landingPageId={landingPageId} />
+            <div className="flex flex-col gap-2 sm:flex-row">
+              {canMutate ? (
+                <GenerationTrigger accountSlug={accountSlug} landingPageId={landingPageId} />
+              ) : null}
+              {preview.status === "ready" && canMutate ? (
+                <form action={approveLandingPageRevisionAction}>
+                  <input type="hidden" name="account" value={accountSlug} />
+                  <input type="hidden" name="landing_page_id" value={landingPageId} />
+                  <input type="hidden" name="materialization_id" value={preview.model.revision.id} />
+                  <WorkspaceSubmitButton
+                    idleLabel="Aprovar esta versão"
+                    pendingLabel="Aprovando..."
+                    className="min-h-11 rounded-lg border border-brand-700 bg-white px-4 text-sm font-semibold text-brand-800 disabled:cursor-wait disabled:opacity-60"
+                  />
+                </form>
+              ) : null}
+            </div>
           </div>
           {preview.status === "ready" ? (
             <RevisionEvidence model={preview.model} />
+          ) : null}
+          {typeof query.approved === "string" ? (
+            <p role="status" className="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm font-medium text-emerald-800">
+              Esta versão foi aprovada. Uma geração futura não substituirá essa escolha automaticamente.
+            </p>
+          ) : null}
+          {typeof query.action_error === "string" ? (
+            <p role="alert" className="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+              A aprovação não foi concluída. A versão anteriormente aprovada foi preservada.
+            </p>
           ) : null}
         </section>
 

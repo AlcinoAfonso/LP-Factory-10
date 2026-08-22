@@ -125,6 +125,8 @@ export async function generateLandingPageRevisionAction(
     );
   }
 
+  revalidatePath(`/a/${accountSlug}`);
+  revalidatePath(`/a/${accountSlug}/landing-pages/${landingPageId}`);
   revalidatePath(`/a/${accountSlug}/landing-pages/${landingPageId}/preview`);
   return {
     status: "success",

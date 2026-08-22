@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data da última atualização: 21/08/2026
-• Documento: LP Factory 10 — Schema (DB Contract) v1.0.51
+• Data da última atualização: 22/08/2026
+• Documento: LP Factory 10 — Schema (DB Contract) v1.0.52
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -231,12 +231,14 @@
 • name text not null
 • slug text not null
 • status text not null default 'draft'
+• approved_materialization_id uuid null
 • created_by uuid not null
 • created_at timestamptz not null default now()
 • updated_at timestamptz not null default now()
 
 1.9.3 Relacionamentos
 • account_id referencia public.accounts(id) com ON UPDATE CASCADE e ON DELETE CASCADE.
+• `(approved_materialization_id, id, account_id)` referencia `(id, landing_page_id, account_id)` de public.account_landing_page_materializations com ON UPDATE RESTRICT, ON DELETE NO ACTION e validação DEFERRABLE INITIALLY DEFERRED.
 • created_by referencia auth.users(id) com ON UPDATE CASCADE e ON DELETE RESTRICT.
 
 1.9.4 Constraints
@@ -245,11 +247,13 @@
 • account_landing_pages_name_chk: nome não vazio após trim.
 • account_landing_pages_account_slug_uidx: UNIQUE (account_id, slug).
 • account_landing_pages_id_account_id_key: UNIQUE (id, account_id), usado pelo vínculo tenant-safe da configuração de onboarding.
+• account_landing_pages_approved_materialization_fkey: a revisão aprovada deve pertencer à mesma LP e conta; o ponteiro nulo significa ausência de aprovação explícita.
 
 1.9.5 Índices
 • account_landing_pages_account_id_idx em account_id.
 • account_landing_pages_created_by_idx em created_by.
 • account_landing_pages_status_idx em status.
+• account_landing_pages_account_status_updated_idx em account_id, status, updated_at desc e id para paginação determinística do workspace.
 
 1.9.6 Trigger
 • account_landing_pages_set_updated_at: executa public.tg_set_updated_at() antes de update.
@@ -813,6 +817,7 @@
 • account_id referencia public.accounts(id) com ON UPDATE RESTRICT e ON DELETE CASCADE.
 • created_by referencia auth.users(id) com ON UPDATE RESTRICT e ON DELETE RESTRICT.
 • `(landing_page_id, revision_number)` é único; `attempt_id` é único quando não nulo.
+• `(id, landing_page_id, account_id)` é único e sustenta o ponteiro tenant-safe de aprovação explícita em `account_landing_pages`.
 • Linhas históricas recebem novo `id` e `revision_number = 1`, preservando conteúdo, snapshot, autoria e timestamp.
 • `content_json` e `generation_context_snapshot_json` devem ser objetos JSON.
 
@@ -946,6 +951,56 @@
 • O trigger `openai_workload_configuration_activations_append_only` rejeita UPDATE e DELETE.
 • O snippet read-only `supabase/snippets/e21_2_3_openai_workload_operational_configurations_verify.sql` comprova bootstrap, cardinalidade, referências, lifecycle, colunas, constraints, índices, RLS, grants, RPCs, triggers e drift.
 • Os casos SQL focais residem em `supabase/tests/e21_2_3_openai_workload_operational_configurations.test.sql` e executam dentro de transação com rollback.
+
+1.31 account_landing_page_shared_configurations
+1.31.1 Função e residência
+• Residência operacional lazy dos fields E20.2 com `scope = account | business`, compartilhada pelas LPs da conta.
+• A linha pode não existir enquanto nenhum valor compartilhado tiver sido salvo; ausência não equivale a incompletude persistida.
+• O shape de `values` permanece declarativo por `scope`; a tabela não replica uma lista de fields do catálogo.
+
+1.31.2 Colunas e constraints
+• account_id uuid primary key
+• catalog_version integer not null e positivo
+• values jsonb not null default '{}'::jsonb
+• revision bigint not null default 1 e positiva
+• created_by uuid not null; updated_by uuid not null
+• created_at timestamptz not null default now(); updated_at timestamptz not null default now()
+• account_id referencia public.accounts(id) com ON UPDATE CASCADE e ON DELETE CASCADE.
+• created_by e updated_by referenciam auth.users(id) com ON UPDATE CASCADE e ON DELETE RESTRICT.
+• O check de shape aceita somente objetos `{ scope, value }` com scope `account | business`; sem colunas de initialized, complete ou status.
+
+1.31.3 Segurança e ciclo de vida
+• RLS habilitado e nenhuma policy.
+• public, anon, authenticated e ai_readonly: sem grants.
+• service_role: SELECT, INSERT e UPDATE; sem DELETE ou TRUNCATE.
+• O trigger `account_landing_page_shared_configurations_set_updated_at` atualiza updated_at antes de update.
+• Não há backfill, placeholder ou criação eager.
+
+1.32 account_landing_page_configurations
+1.32.1 Função e residência
+• Residência operacional lazy por LP dos fields E20.2 com `scope = offer | campaign | landing_page`.
+• A linha nasce no primeiro save da LP; configuração parcial é válida e completude continua derivada em runtime pelo catálogo v5 exato.
+• O shape de `values` permanece declarativo por `scope`; a tabela não replica uma lista de fields do catálogo.
+
+1.32.2 Colunas, constraints e índice
+• landing_page_id uuid primary key; account_id uuid not null
+• catalog_version integer not null e positivo
+• values jsonb not null default '{}'::jsonb
+• revision bigint not null default 1 e positiva
+• created_by uuid not null; updated_by uuid not null
+• created_at timestamptz not null default now(); updated_at timestamptz not null default now()
+• `(landing_page_id, account_id)` referencia `(id, account_id)` de public.account_landing_pages com ON UPDATE CASCADE e ON DELETE CASCADE.
+• account_id referencia public.accounts(id) com ON UPDATE CASCADE e ON DELETE CASCADE; created_by e updated_by referenciam auth.users(id) com ON UPDATE CASCADE e ON DELETE RESTRICT.
+• O check de shape aceita somente objetos `{ scope, value }` com scope `offer | campaign | landing_page`; sem colunas de initialized, complete ou status.
+• `account_landing_page_configurations_account_idx`: btree em account_id e landing_page_id.
+
+1.32.3 Segurança e ciclo de vida
+• RLS habilitado e nenhuma policy.
+• public, anon, authenticated e ai_readonly: sem grants.
+• service_role: SELECT, INSERT e UPDATE; sem DELETE ou TRUNCATE.
+• O trigger `account_landing_page_configurations_set_updated_at` atualiza updated_at antes de update.
+• Não há backfill, placeholder, inicialização eager ou cópia da configuração histórica de onboarding para este agregado.
+• O contrato está materializado repo-only em `supabase/migrations/20260822170000_e19_5_3_landing_page_workspace.sql`; apply hospedado e verificação read-only permanecem pós-merge.
 
 2. Views
 
@@ -1155,6 +1210,24 @@
 
 3.7.3 Helper de imutabilidade
 • `prevent_openai_workload_append_only_mutation_v1() → trigger`: SECURITY INVOKER, search_path fixado, sem EXECUTE externo; rejeita UPDATE/DELETE nas revisões e ativações.
+
+3.8 Workspace operacional de landing pages
+3.8.1 Helpers internos
+• `e19_5_actor_can_manage(uuid, uuid) → boolean`: SECURITY DEFINER, stable e read-only; confirma conta ativa e membership owner/admin ativa.
+• `e19_5_configuration_values_have_scopes(jsonb, text[]) → boolean`: SECURITY INVOKER, immutable e valida somente o shape genérico `{ scope, value }` contra os scopes permitidos.
+• EXECUTE dos helpers é exclusivo de service_role; public, anon, authenticated e ai_readonly não executam.
+
+3.8.2 Save atômico versionado
+• `save_account_landing_page_configuration_v1(uuid, uuid, jsonb, jsonb, bigint, bigint, integer, uuid) → table(shared_revision bigint, landing_page_revision bigint)` grava as duas residências em uma transação.
+• O RPC usa SECURITY INVOKER, search_path fixado, lock tenant-safe da LP e tokens otimistas independentes; ausência esperada exige inexistência da linha e save sem mudança não incrementa revisão.
+• `catalog_version` deve ser exatamente 5; scope drift, versão diferente, LP não operacional, ator sem autoridade ou revisão stale falham fechados.
+• A residência compartilhada só é criada quando contém valor; a residência da LP nasce no primeiro save.
+• EXECUTE exclusivo de service_role; public, anon, authenticated e ai_readonly não executam.
+
+3.8.3 Aprovação explícita de revisão
+• `approve_account_landing_page_materialization_v1(uuid, uuid, uuid, uuid) → uuid`: SECURITY DEFINER, search_path fixado e idempotente para o mesmo alvo.
+• O RPC exige owner/admin ativo, LP e materialização da mesma conta, e atualiza apenas o ponteiro aprovado; revisão mais recente e revisão aprovada permanecem conceitos independentes.
+• EXECUTE exclusivo de service_role; public, anon, authenticated e ai_readonly não executam.
 
 4. Triggers
 
