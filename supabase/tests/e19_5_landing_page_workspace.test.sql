@@ -90,10 +90,10 @@ insert into public.account_landing_page_shared_configurations (
   ('e1953000-0000-4000-8000-000000000014',5,'{}'::jsonb,1,'e1953000-0000-4000-8000-000000000001','e1953000-0000-4000-8000-000000000001');
 
 insert into public.account_landing_page_configurations (
-  landing_page_id, account_id, catalog_version, values, revision, created_by, updated_by
+  landing_page_id, account_id, catalog_version, values, revision, is_initialized, created_by, updated_by
 ) values
-  ('e1953000-0000-4000-8000-000000000024','e1953000-0000-4000-8000-000000000013',5,'{}'::jsonb,1,'e1953000-0000-4000-8000-000000000001','e1953000-0000-4000-8000-000000000001'),
-  ('e1953000-0000-4000-8000-000000000025','e1953000-0000-4000-8000-000000000014',5,'{}'::jsonb,1,'e1953000-0000-4000-8000-000000000001','e1953000-0000-4000-8000-000000000001');
+  ('e1953000-0000-4000-8000-000000000024','e1953000-0000-4000-8000-000000000013',5,'{}'::jsonb,1,false,'e1953000-0000-4000-8000-000000000001','e1953000-0000-4000-8000-000000000001'),
+  ('e1953000-0000-4000-8000-000000000025','e1953000-0000-4000-8000-000000000014',5,'{}'::jsonb,1,false,'e1953000-0000-4000-8000-000000000001','e1953000-0000-4000-8000-000000000001');
 
 insert into public.account_landing_page_onboarding_configurations (
   account_id, landing_page_id, catalog_version, values, created_by, updated_by
@@ -120,6 +120,9 @@ declare
   v_handoff_landing_page_values jsonb;
   v_handoff_shared_updated_at timestamptz;
   v_handoff_landing_page_updated_at timestamptz;
+  v_handoff_is_initialized boolean;
+  v_initialization_default text;
+  v_initialization_not_null boolean;
 begin
   if public.e19_5_configuration_values_valid_for_account(
     'e1953000-0000-4000-8000-000000000011',
@@ -154,6 +157,23 @@ begin
     where landing_page_id='e1953000-0000-4000-8000-000000000023'
   ) then raise exception 'semantic invalid handoff must not persist partial configuration'; end if;
 
+  begin
+    perform * from public.save_account_landing_page_configuration_v1(
+      'e1953000-0000-4000-8000-000000000013',
+      'e1953000-0000-4000-8000-000000000024',
+      '{"privacy_policy_url":{"scope":"business","value":"https://example.com/operacional"}}'::jsonb,
+      '{"landing_page_objective":{"scope":"landing_page","value":"Não pode salvar antes do handoff"}}'::jsonb,
+      2, 1, 'e1953000-0000-4000-8000-000000000001'
+    );
+    raise exception using errcode='P0002',message='uninitialized placeholder save must fail';
+  exception when sqlstate 'P0001' then null;
+  end;
+  if (select is_initialized from public.account_landing_page_configurations where landing_page_id='e1953000-0000-4000-8000-000000000024')
+     or (select revision from public.account_landing_page_configurations where landing_page_id='e1953000-0000-4000-8000-000000000024') <> 1
+     or (select values from public.account_landing_page_configurations where landing_page_id='e1953000-0000-4000-8000-000000000024') <> '{}'::jsonb then
+    raise exception 'rejected placeholder save must remain uninitialized without partial persistence';
+  end if;
+
   perform * from public.handoff_account_landing_page_onboarding_v1(
     'e1953000-0000-4000-8000-000000000011',
     'e1953000-0000-4000-8000-000000000022', 1,
@@ -171,7 +191,8 @@ begin
   if not exists (
     select 1 from public.account_landing_page_configurations
     where landing_page_id = 'e1953000-0000-4000-8000-000000000022'
-      and revision = 2
+      and revision = 1
+      and is_initialized
   ) then raise exception 'materialized handoff retry must ignore later bootstrap drift'; end if;
 
   update public.account_landing_page_onboarding_configurations
@@ -185,6 +206,7 @@ begin
   if (select values #>> '{landing_page_objective,value}' from public.account_landing_page_configurations where landing_page_id='e1953000-0000-4000-8000-000000000024')
        is distinct from 'Objetivo vinculado depois'
      or (select revision from public.account_landing_page_configurations where landing_page_id='e1953000-0000-4000-8000-000000000024') <> 2
+     or not (select is_initialized from public.account_landing_page_configurations where landing_page_id='e1953000-0000-4000-8000-000000000024')
      or (select values #>> '{brand_color_palette,value,primary}' from public.account_landing_page_shared_configurations where account_id='e1953000-0000-4000-8000-000000000013')
        is distinct from '#111111'
      or (select values #>> '{privacy_policy_url,value}' from public.account_landing_page_shared_configurations where account_id='e1953000-0000-4000-8000-000000000013')
@@ -202,6 +224,7 @@ begin
   exception when sqlstate 'P0001' then null;
   end;
   if (select revision from public.account_landing_page_configurations where landing_page_id='e1953000-0000-4000-8000-000000000025') <> 1
+     or (select is_initialized from public.account_landing_page_configurations where landing_page_id='e1953000-0000-4000-8000-000000000025')
      or (select values from public.account_landing_page_configurations where landing_page_id='e1953000-0000-4000-8000-000000000025') <> '{}'::jsonb then
     raise exception 'initial archived handoff must not write placeholders';
   end if;
@@ -225,8 +248,9 @@ begin
   into v_handoff_shared_revision, v_handoff_shared_values, v_handoff_shared_updated_at
   from public.account_landing_page_shared_configurations
   where account_id='e1953000-0000-4000-8000-000000000011';
-  select revision, values, updated_at
-  into v_handoff_landing_page_revision, v_handoff_landing_page_values, v_handoff_landing_page_updated_at
+  select revision, values, updated_at, is_initialized
+  into v_handoff_landing_page_revision, v_handoff_landing_page_values,
+    v_handoff_landing_page_updated_at, v_handoff_is_initialized
   from public.account_landing_page_configurations
   where landing_page_id='e1953000-0000-4000-8000-000000000022';
   perform * from public.handoff_account_landing_page_onboarding_v1(
@@ -238,7 +262,8 @@ begin
      or (select updated_at from public.account_landing_page_shared_configurations where account_id='e1953000-0000-4000-8000-000000000011') is distinct from v_handoff_shared_updated_at
      or (select revision from public.account_landing_page_configurations where landing_page_id='e1953000-0000-4000-8000-000000000022') is distinct from v_handoff_landing_page_revision
      or (select values from public.account_landing_page_configurations where landing_page_id='e1953000-0000-4000-8000-000000000022') is distinct from v_handoff_landing_page_values
-     or (select updated_at from public.account_landing_page_configurations where landing_page_id='e1953000-0000-4000-8000-000000000022') is distinct from v_handoff_landing_page_updated_at then
+     or (select updated_at from public.account_landing_page_configurations where landing_page_id='e1953000-0000-4000-8000-000000000022') is distinct from v_handoff_landing_page_updated_at
+     or (select is_initialized from public.account_landing_page_configurations where landing_page_id='e1953000-0000-4000-8000-000000000022') is distinct from v_handoff_is_initialized then
     raise exception 'materialized archived handoff retry must be read-only';
   end if;
   if not exists (
@@ -248,7 +273,7 @@ begin
       on configuration.landing_page_id=landing_page.id and configuration.account_id=landing_page.account_id
     where landing_page.id='e1953000-0000-4000-8000-000000000022'
       and landing_page.account_id='e1953000-0000-4000-8000-000000000011'
-      and landing_page.status='archived' and configuration.revision > 1
+      and landing_page.status='archived' and configuration.is_initialized
   ) then raise exception 'archived workspace row must remain listable after idempotent handoff'; end if;
   perform public.set_account_landing_page_archived_v1(
     'e1953000-0000-4000-8000-000000000011','e1953000-0000-4000-8000-000000000022',false,
@@ -269,6 +294,9 @@ begin
   if (select status from public.account_landing_pages where id=v_landing_page_id) <> 'active' then
     raise exception 'new workspace identity must be active';
   end if;
+  if not (select is_initialized from public.account_landing_page_configurations where landing_page_id=v_landing_page_id) then
+    raise exception 'workspace-created landing page configuration must start initialized';
+  end if;
 
   perform * from public.save_account_landing_page_configuration_v1(
     'e1953000-0000-4000-8000-000000000011', v_landing_page_id,
@@ -279,6 +307,10 @@ begin
   if (select values #>> '{brand_logo_asset,value,asset_id}' from public.account_landing_page_shared_configurations where account_id='e1953000-0000-4000-8000-000000000011')
        is distinct from 'logo' then
     raise exception 'client payload must not replace a non-editable stored logo';
+  end if;
+  if not (select is_initialized from public.account_landing_page_configurations where landing_page_id=v_landing_page_id)
+     or (select revision from public.account_landing_page_configurations where landing_page_id=v_landing_page_id) <> 2 then
+    raise exception 'operational save must increment revision without changing initialization';
   end if;
 
   select landing_page_id into v_second_landing_page_id
@@ -410,6 +442,18 @@ begin
     on column_row.attrelid=attribute.adrelid and column_row.attnum=attribute.adnum
   where attribute.adrelid='public.account_landing_pages'::regclass and column_row.attname='status';
   if v_default is distinct from '''draft''::text' then raise exception 'contract default was anticipated'; end if;
+
+  select pg_get_expr(attribute.adbin, attribute.adrelid), column_row.attnotnull
+  into v_initialization_default, v_initialization_not_null
+  from pg_attribute column_row
+  join pg_attrdef attribute
+    on attribute.adrelid=column_row.attrelid and attribute.adnum=column_row.attnum
+  where column_row.attrelid='public.account_landing_page_configurations'::regclass
+    and column_row.attname='is_initialized';
+  if not coalesce(v_initialization_not_null,false)
+     or v_initialization_default not in ('false','false::boolean') then
+    raise exception 'configuration initialization marker must be not null and default false';
+  end if;
 
   set constraints account_landing_pages_approved_materialization_fkey deferred;
   delete from public.account_landing_pages where id=v_landing_page_id;

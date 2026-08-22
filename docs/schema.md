@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data da última atualização: 21/08/2026
-• Documento: LP Factory 10 — Schema (DB Contract) v1.0.52
+• Documento: LP Factory 10 — Schema (DB Contract) v1.0.53
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -862,7 +862,8 @@
 1.29 account_landing_page_configurations
 1.29.1 Função e unidade
 • Agregado operacional E19.5.3 1:1 por landing_page_id para valores dos scopes offer, campaign e landing_page.
-• Colunas: landing_page_id PK; account_id; catalog_version fixo em 5; values jsonb objeto; revision bigint positiva; created_by, updated_by, created_at e updated_at.
+• Colunas: landing_page_id PK; account_id; catalog_version fixo em 5; values jsonb objeto; revision bigint positiva; is_initialized boolean NOT NULL default false; created_by, updated_by, created_at e updated_at.
+• is_initialized separa o estado explícito de inicialização operacional do contador otimista revision: placeholders históricos não vinculados permanecem false; backfill vinculado, handoff concluído e LP nativa do workspace ficam true.
 • O JSON aceita somente fieldKeys conhecidos da v5, com scope canônico e envelope estrito `{scope,value}`; landing_page_objective pertence à LP concreta.
 1.29.2 Relacionamentos, índices e segurança
 • `(landing_page_id, account_id)` referencia account_landing_pages com cascade tenant-safe; account_id e autorias possuem FKs explícitas.
@@ -871,12 +872,12 @@
 • Trigger de updated_at usa public.tg_set_updated_at().
 
 1.29.3 RPCs e readiness E19.5.3
-• `create_account_landing_page_v1`: cria identidade `active` e configurações vazias somente para owner/admin ativo validado.
-• `handoff_account_landing_page_onboarding_v1`: divide atomicamente o bootstrap E19.2 vinculado por scope, sem rebind e sem fallback operacional posterior.
-• `save_account_landing_page_configuration_v1`: salva as duas residências sob revisões esperadas; conflito aborta a transação inteira.
+• `create_account_landing_page_v1`: cria identidade `active` e configuração específica vazia já inicializada somente para owner/admin ativo validado.
+• `handoff_account_landing_page_onboarding_v1`: usa is_initialized como prova exclusiva de conclusão, divide atomicamente o bootstrap E19.2 vinculado por scope e marca a residência na mesma transação; retry inicializado é read-only inclusive em archived, enquanto handoff inicial exige draft ou active.
+• `save_account_landing_page_configuration_v1`: exige configuração específica inicializada e salva as duas residências sob revisões esperadas sem alterar is_initialized; conflito aborta a transação inteira.
 • `approve_account_landing_page_materialization_v1`: escolhe idempotentemente uma revisão existente da mesma LP/conta sem criar revisão.
 • `set_account_landing_page_archived_v1`: arquiva ou restaura a mesma identidade; revisões, configuração e aprovação permanecem.
-• `e19_5_landing_page_workspace_readiness()`: probe fail-closed, schema_version 1, com EXECUTE exclusivo de service_role.
+• `e19_5_landing_page_workspace_readiness()`: probe fail-closed, schema_version 1, comprova também coluna, default e invariantes de inicialização, com EXECUTE exclusivo de service_role.
 • Todos os RPCs mutáveis revalidam conta, ator e membership owner/admin; archived bloqueia save, geração, append inédito e aprovação.
 
 1.30 openai_workload_operational_configurations

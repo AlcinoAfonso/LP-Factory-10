@@ -62,6 +62,7 @@ const cases = [
       const migration = await readFile(migrationUrl,"utf8");
       assert.match(migration,/account_landing_page_shared_configurations/);
       assert.match(migration,/account_landing_page_configurations/);
+      assert.match(migration,/is_initialized boolean not null default false/);
       assert.match(migration,/approved_materialization_id/);
       assert.match(migration,/foreign key \(approved_materialization_id, id, account_id\)/i);
       assert.match(migration,/on delete no action[\s\S]+deferrable initially deferred/i);
@@ -91,6 +92,11 @@ const cases = [
       assert.match(test,/field and scope with a semantically invalid v5 value must fail/);
       assert.match(test,/semantic invalid handoff must fail closed/);
       assert.match(test,/semantic invalid handoff must not persist partial configuration/);
+      assert.match(test,/uninitialized placeholder save must fail/);
+      assert.match(test,/rejected placeholder save must remain uninitialized without partial persistence/);
+      assert.match(test,/workspace-created landing page configuration must start initialized/);
+      assert.match(test,/operational save must increment revision without changing initialization/);
+      assert.match(test,/configuration initialization marker must be not null and default false/);
       assert.match(test,/semantic invalid save must not persist either residence/);
       assert.match(test,/shared privacy policy must remain valid for form and whatsapp landing pages/);
       assert.match(test,/channel switch must preserve the prior valid destination/);
@@ -104,8 +110,13 @@ const cases = [
       assert.match(test,/bound restore must preserve configuration history and approval/);
       assert.match(test,/client payload must not replace a non-editable stored logo/);
       assert.match(migration,/status in \('draft', 'active', 'archived'\)[\s\S]+for update/i);
-      assert.match(migration,/v_landing_page_found and v_landing_page_revision > 1[\s\S]+return query select v_shared_revision, v_landing_page_revision/i);
+      assert.match(migration,/v_landing_page_found and v_landing_page_is_initialized[\s\S]+return query select v_shared_revision, v_landing_page_revision/i);
+      assert.doesNotMatch(migration,/v_landing_page_revision > 1/);
       assert.match(migration,/if v_status = 'archived'[\s\S]+select \* into v_onboarding/i);
+      assert.match(migration,/select landing_page\.id, landing_page\.account_id, 5, '\{\}'::jsonb, 1, false/i);
+      assert.match(migration,/update public\.account_landing_page_configurations configuration[\s\S]+is_initialized = true[\s\S]+where onboarding\.landing_page_id is not null/i);
+      assert.match(migration,/values \(v_landing_page_id, p_account_id, 5, '\{\}'::jsonb, 1, true/i);
+      assert.match(migration,/message = 'landing_page_configuration_not_initialized'/);
       assert.match(migration,/v_onboarding_shared_values \|\| coalesce\(v_shared_values, '\{\}'::jsonb\)/i);
       assert.match(migration,/v_onboarding_landing_page_values \|\| coalesce\(v_landing_page_values, '\{\}'::jsonb\)/i);
       assert.match(migration,/v_shared_editable_fields constant text\[\][\s\S]+brand_color_palette[\s\S]+attendance_modes/i);
@@ -117,6 +128,8 @@ const cases = [
       assert.match(migration,/pg_get_functiondef/);
       assert.match(test,/workspace readiness must prove precursor and workspace checks/);
       assert.match(snippet,/persisted_configuration_valid/);
+      assert.match(snippet,/configuration_initialization/);
+      assert.match(snippet,/column_row\.attname='is_initialized'/);
       assert.doesNotMatch(snippet,/e19_5_configuration_values_applicable/);
       assert.match(snippet,/status_contract_transitional/);
     },
@@ -126,6 +139,8 @@ const cases = [
     run: async () => {
       const [adapter,preview,accountPage,detailPage,previewPage,approvalAction,pendingButton]=await Promise.all([readFile(adapterUrl,"utf8"),readFile(previewUrl,"utf8"),readFile(accountPageUrl,"utf8"),readFile(detailPageUrl,"utf8"),readFile(previewPageUrl,"utf8"),readFile(approvalActionUrl,"utf8"),readFile(pendingButtonUrl,"utf8")]);
       assert.match(adapter,/\.select\("id,account_id,name,slug,status,approved_materialization_id,updated_at"\)/);
+      assert.match(adapter,/landing_page_id,account_id,catalog_version,values,revision,is_initialized/);
+      assert.match(adapter,/page\.is_initialized !== true/);
       assert.match(adapter,/\.eq\("account_id", authority\.value\.accountId\)/);
       assert.match(adapter,/e19_5_landing_page_workspace_readiness/);
       assert.match(adapter,/catalogVersion: 5/);

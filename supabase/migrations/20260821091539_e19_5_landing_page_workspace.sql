@@ -356,6 +356,7 @@ create table public.account_landing_page_configurations (
   catalog_version integer not null,
   values jsonb not null default '{}'::jsonb,
   revision bigint not null default 1,
+  is_initialized boolean not null default false,
   created_by uuid not null,
   updated_by uuid not null,
   created_at timestamptz not null default now(),
@@ -442,9 +443,9 @@ from public.account_landing_pages landing_page
 order by landing_page.account_id, landing_page.created_at, landing_page.id;
 
 insert into public.account_landing_page_configurations (
-  landing_page_id, account_id, catalog_version, values, revision, created_by, updated_by
+  landing_page_id, account_id, catalog_version, values, revision, is_initialized, created_by, updated_by
 )
-select landing_page.id, landing_page.account_id, 5, '{}'::jsonb, 1,
+select landing_page.id, landing_page.account_id, 5, '{}'::jsonb, 1, false,
   landing_page.created_by, landing_page.created_by
 from public.account_landing_pages landing_page;
 
@@ -464,7 +465,9 @@ where shared.account_id = source.account_id;
 
 update public.account_landing_page_configurations configuration
 set values = source.values,
-    revision = configuration.revision + 1
+    revision = configuration.revision
+      + case when configuration.values is distinct from source.values then 1 else 0 end,
+    is_initialized = true
 from (
   select onboarding.account_id, onboarding.landing_page_id,
     coalesce(jsonb_object_agg(entry.key, entry.value)
@@ -508,8 +511,8 @@ begin
   on conflict (account_id) do nothing;
 
   insert into public.account_landing_page_configurations(
-    landing_page_id, account_id, catalog_version, values, revision, created_by, updated_by
-  ) values (v_landing_page_id, p_account_id, 5, '{}'::jsonb, 1, p_actor_user_id, p_actor_user_id);
+    landing_page_id, account_id, catalog_version, values, revision, is_initialized, created_by, updated_by
+  ) values (v_landing_page_id, p_account_id, 5, '{}'::jsonb, 1, true, p_actor_user_id, p_actor_user_id);
 
   return query select v_landing_page_id, 'active'::text;
 end;
@@ -537,6 +540,7 @@ declare
   v_landing_page_catalog_version integer;
   v_landing_page_values jsonb;
   v_landing_page_revision bigint;
+  v_landing_page_is_initialized boolean;
   v_onboarding_shared_values jsonb;
   v_onboarding_landing_page_values jsonb;
   v_next_shared_values jsonb;
@@ -559,14 +563,15 @@ begin
   for update;
   v_shared_found := found;
 
-  select catalog_version, values, revision
-  into v_landing_page_catalog_version, v_landing_page_values, v_landing_page_revision
+  select catalog_version, values, revision, is_initialized
+  into v_landing_page_catalog_version, v_landing_page_values, v_landing_page_revision,
+    v_landing_page_is_initialized
   from public.account_landing_page_configurations
   where landing_page_id = p_landing_page_id and account_id = p_account_id
   for update;
   v_landing_page_found := found;
 
-  if v_landing_page_found and v_landing_page_revision > 1 then
+  if v_landing_page_found and v_landing_page_is_initialized then
     if v_shared_catalog_version <> 5
        or v_landing_page_catalog_version <> 5
        or not v_shared_found
@@ -640,15 +645,18 @@ begin
   if v_landing_page_found then
     update public.account_landing_page_configurations
     set values = v_next_landing_page_values,
-        revision = revision + 1,
+        revision = revision
+          + case when values is distinct from v_next_landing_page_values then 1 else 0 end,
+        is_initialized = true,
         updated_by = p_actor_user_id
     where landing_page_id = p_landing_page_id and account_id = p_account_id
     returning revision into v_landing_page_revision;
   else
     insert into public.account_landing_page_configurations(
-      landing_page_id, account_id, catalog_version, values, revision, created_by, updated_by
+      landing_page_id, account_id, catalog_version, values, revision, is_initialized,
+      created_by, updated_by
     ) values (
-      p_landing_page_id, p_account_id, 5, v_next_landing_page_values, 2,
+      p_landing_page_id, p_account_id, 5, v_next_landing_page_values, 1, true,
       p_actor_user_id, p_actor_user_id
     )
     returning revision into v_landing_page_revision;
@@ -677,6 +685,7 @@ declare
   v_landing_page_revision bigint;
   v_current_shared_values jsonb;
   v_current_landing_page_values jsonb;
+  v_landing_page_is_initialized boolean;
   v_editable_shared_values jsonb;
   v_editable_landing_page_values jsonb;
   v_next_shared_values jsonb;
@@ -715,12 +724,16 @@ begin
     raise exception using errcode = '40001', message = 'shared_revision_conflict';
   end if;
 
-  select values, revision into v_current_landing_page_values, v_landing_page_revision
+  select values, revision, is_initialized
+  into v_current_landing_page_values, v_landing_page_revision, v_landing_page_is_initialized
   from public.account_landing_page_configurations
   where landing_page_id = p_landing_page_id and account_id = p_account_id
   for update;
   if not found or v_landing_page_revision <> p_expected_landing_page_revision then
     raise exception using errcode = '40001', message = 'landing_page_revision_conflict';
+  end if;
+  if not v_landing_page_is_initialized then
+    raise exception using errcode = 'P0001', message = 'landing_page_configuration_not_initialized';
   end if;
 
   select coalesce(jsonb_object_agg(entry.key, entry.value), '{}'::jsonb)
@@ -930,6 +943,23 @@ begin
   select
     to_regclass('public.account_landing_page_shared_configurations') is not null
     and to_regclass('public.account_landing_page_configurations') is not null
+    and exists (
+      select 1
+      from pg_attribute column_row
+      join pg_attrdef attribute
+        on attribute.adrelid = column_row.attrelid
+       and attribute.adnum = column_row.attnum
+      where column_row.attrelid = 'public.account_landing_page_configurations'::regclass
+        and column_row.attname = 'is_initialized'
+        and column_row.attnotnull
+        and pg_get_expr(attribute.adbin, attribute.adrelid) in ('false', 'false::boolean')
+    )
+    and not exists (
+      select 1
+      from public.account_landing_page_configurations configuration
+      where not configuration.is_initialized
+        and configuration.values <> '{}'::jsonb
+    )
     and exists (select 1 from information_schema.columns where table_schema='public' and table_name='account_landing_pages' and column_name='approved_materialization_id')
     and exists (select 1 from pg_constraint where conrelid='public.account_landing_pages'::regclass and conname='account_landing_pages_approved_materialization_fkey')
     and (select relrowsecurity from pg_class where oid='public.account_landing_page_shared_configurations'::regclass)

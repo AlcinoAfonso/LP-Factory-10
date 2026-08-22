@@ -54,7 +54,7 @@ export async function listAccountLandingPageWorkspace(input: {
         .select("account_id,catalog_version,values,revision")
         .eq("account_id", authority.value.accountId).limit(1).maybeSingle(),
       client.from("account_landing_page_configurations")
-        .select("landing_page_id,account_id,catalog_version,values,revision")
+        .select("landing_page_id,account_id,catalog_version,values,revision,is_initialized")
         .eq("account_id", authority.value.accountId),
       client.from("account_landing_page_materializations")
         .select("id,account_id,landing_page_id,revision_number,created_at")
@@ -106,7 +106,7 @@ export async function getAccountLandingPageWorkspaceDetail(input: {
         .select("account_id,catalog_version,values,revision")
         .eq("account_id", authority.value.accountId).limit(1).maybeSingle(),
       client.from("account_landing_page_configurations")
-        .select("landing_page_id,account_id,catalog_version,values,revision")
+        .select("landing_page_id,account_id,catalog_version,values,revision,is_initialized")
         .eq("landing_page_id", input.landingPageId).eq("account_id", authority.value.accountId).limit(1).maybeSingle(),
       client.from("account_landing_page_materializations")
         .select("id,account_id,landing_page_id,revision_number,created_at")
@@ -273,7 +273,7 @@ async function mutateWorkspace(accountId: string, operation: (authority: Authori
 }
 
 function resolveConfiguration(authority: Authority, landingPageId: string, shared: Record<string, unknown>, page: Record<string, unknown> | undefined): AccountLandingPageOperationalConfiguration | null {
-  if (!page || shared.account_id !== authority.accountId || page.account_id !== authority.accountId || page.landing_page_id !== landingPageId || shared.catalog_version !== 5 || page.catalog_version !== 5 || !isRecord(shared.values) || !isRecord(page.values) || !Number.isSafeInteger(shared.revision) || !Number.isSafeInteger(page.revision)) return null;
+  if (!page || page.is_initialized !== true || shared.account_id !== authority.accountId || page.account_id !== authority.accountId || page.landing_page_id !== landingPageId || shared.catalog_version !== 5 || page.catalog_version !== 5 || !isRecord(shared.values) || !isRecord(page.values) || !Number.isSafeInteger(shared.revision) || !Number.isSafeInteger(page.revision)) return null;
   const resolved = resolveAccountLandingPageOnboardingConfiguration({
     accountId: authority.accountId, landingPageId, catalogVersion: 5,
     revision: Number(page.revision), planKey: authority.planKey, taxonChain: authority.taxonChain,

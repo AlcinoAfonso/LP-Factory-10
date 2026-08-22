@@ -11,6 +11,21 @@ with checks(check_name, ok) as (
     ('workspace_rpc_grants',
       has_function_privilege('service_role','public.create_account_landing_page_v1(uuid,text,text,uuid)','EXECUTE')
       and not has_function_privilege('authenticated','public.create_account_landing_page_v1(uuid,text,text,uuid)','EXECUTE')),
+    ('configuration_initialization',
+      exists(
+        select 1
+        from pg_attribute column_row
+        join pg_attrdef attribute
+          on attribute.adrelid=column_row.attrelid and attribute.adnum=column_row.attnum
+        where column_row.attrelid='public.account_landing_page_configurations'::regclass
+          and column_row.attname='is_initialized'
+          and column_row.attnotnull
+          and pg_get_expr(attribute.adbin,attribute.adrelid) in ('false','false::boolean')
+      )
+      and not exists(
+        select 1 from public.account_landing_page_configurations
+        where not is_initialized and values<>'{}'::jsonb
+      )),
     ('persisted_configuration_valid',
       not exists(select 1 from public.account_landing_page_shared_configurations where catalog_version<>5 or not public.e19_5_configuration_values_valid_for_account(account_id,values,array['account','business']))
       and not exists(select 1 from public.account_landing_page_configurations where catalog_version<>5 or not public.e19_5_configuration_values_valid_for_account(account_id,values,array['offer','campaign','landing_page'])))
