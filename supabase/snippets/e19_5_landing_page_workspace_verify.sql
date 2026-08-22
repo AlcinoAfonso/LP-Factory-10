@@ -26,6 +26,23 @@ with checks(check_name, ok) as (
         select 1 from public.account_landing_page_configurations
         where not is_initialized and values<>'{}'::jsonb
       )),
+    ('palette_contrast_contract',
+      public.e19_5_configuration_values_valid(
+        '{"brand_color_palette":{"scope":"business","value":{"primary":"#949494","secondary":"#000000","accent":"#000000","background":"#ffffff","text":"#767676"}}}'::jsonb,
+        array['business']
+      )
+      and not public.e19_5_configuration_values_valid(
+        '{"brand_color_palette":{"scope":"business","value":{"primary":"#ffffff","secondary":"#ffffff","accent":"#ffffff","background":"#ffffff","text":"#ffffff"}}}'::jsonb,
+        array['business']
+      )
+      and not public.e19_5_configuration_values_valid(
+        '{"brand_color_palette":{"scope":"business","value":{"primary":"#000000","secondary":"#000000","accent":"#000000","background":"#ffffff","text":"#777777"}}}'::jsonb,
+        array['business']
+      )
+      and not public.e19_5_configuration_values_valid(
+        '{"brand_color_palette":{"scope":"business","value":{"primary":"#959595","secondary":"#000000","accent":"#000000","background":"#ffffff","text":"#000000"}}}'::jsonb,
+        array['business']
+      )),
     ('persisted_configuration_valid',
       not exists(select 1 from public.account_landing_page_shared_configurations where catalog_version<>5 or not public.e19_5_configuration_values_valid_for_account(account_id,values,array['account','business']))
       and not exists(select 1 from public.account_landing_page_configurations where catalog_version<>5 or not public.e19_5_configuration_values_valid_for_account(account_id,values,array['offer','campaign','landing_page'])))

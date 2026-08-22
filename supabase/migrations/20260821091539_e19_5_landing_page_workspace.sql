@@ -221,8 +221,8 @@ as $$
                 and left(btrim(entry.value #>> '{value,asset_id}'), 2) <> E'\\\\'
               else false end
             when 'brand_color_palette' then
-              case when jsonb_typeof(entry.value -> 'value') = 'object' then
-                (entry.value -> 'value') ?& array['primary', 'secondary', 'accent', 'background', 'text']
+              case when jsonb_typeof(entry.value -> 'value') = 'object'
+                and (entry.value -> 'value') ?& array['primary', 'secondary', 'accent', 'background', 'text']
                 and (entry.value -> 'value') - 'primary' - 'secondary' - 'accent' - 'background' - 'text' = '{}'::jsonb
                 and jsonb_typeof(entry.value #> '{value,primary}') = 'string'
                 and jsonb_typeof(entry.value #> '{value,secondary}') = 'string'
@@ -234,6 +234,50 @@ as $$
                 and entry.value #>> '{value,accent}' ~ '^#[0-9A-Fa-f]{6}$'
                 and entry.value #>> '{value,background}' ~ '^#[0-9A-Fa-f]{6}$'
                 and entry.value #>> '{value,text}' ~ '^#[0-9A-Fa-f]{6}$'
+              then (
+                with palette_colors(role, hex_value) as (
+                  values
+                    ('primary'::text, entry.value #>> '{value,primary}'),
+                    ('secondary'::text, entry.value #>> '{value,secondary}'),
+                    ('accent'::text, entry.value #>> '{value,accent}'),
+                    ('background'::text, entry.value #>> '{value,background}'),
+                    ('text'::text, entry.value #>> '{value,text}')
+                ), srgb_channels as (
+                  select role,
+                    get_byte(decode(substr(hex_value, 2), 'hex'), 0)::double precision / 255::double precision as red,
+                    get_byte(decode(substr(hex_value, 2), 'hex'), 1)::double precision / 255::double precision as green,
+                    get_byte(decode(substr(hex_value, 2), 'hex'), 2)::double precision / 255::double precision as blue
+                  from palette_colors
+                ), linear_channels as (
+                  select role,
+                    case when red <= 0.04045::double precision then red / 12.92::double precision
+                      else power((red + 0.055::double precision) / 1.055::double precision, 2.4::double precision) end as red,
+                    case when green <= 0.04045::double precision then green / 12.92::double precision
+                      else power((green + 0.055::double precision) / 1.055::double precision, 2.4::double precision) end as green,
+                    case when blue <= 0.04045::double precision then blue / 12.92::double precision
+                      else power((blue + 0.055::double precision) / 1.055::double precision, 2.4::double precision) end as blue
+                  from srgb_channels
+                ), luminances as (
+                  select role,
+                    0.2126::double precision * red
+                      + 0.7152::double precision * green
+                      + 0.0722::double precision * blue as luminance
+                  from linear_channels
+                ), contrast_ratios as (
+                  select foreground.role,
+                    (greatest(foreground.luminance, background_color.luminance) + 0.05::double precision)
+                      / (least(foreground.luminance, background_color.luminance) + 0.05::double precision) as contrast_ratio
+                  from luminances foreground
+                  cross join luminances background_color
+                  where background_color.role = 'background'
+                    and foreground.role in ('primary', 'secondary', 'accent', 'text')
+                )
+                select coalesce(bool_and(
+                  case when role = 'text' then contrast_ratio >= 4.5::double precision
+                    else contrast_ratio >= 3::double precision end
+                ), false)
+                from contrast_ratios
+              )
               else false end
             else false
           end,

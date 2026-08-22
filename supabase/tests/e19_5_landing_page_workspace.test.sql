@@ -28,17 +28,20 @@ values ('e1953000-0000-4000-8000-000000000012','e1953000-0000-4000-8000-00000000
 insert into public.accounts (id, name, subdomain, slug, status)
 values
   ('e1953000-0000-4000-8000-000000000013','E19.5 vínculo posterior','e19-5-late-binding','e19-5-late-binding','active'),
-  ('e1953000-0000-4000-8000-000000000014','E19.5 archive inicial','e19-5-initial-archive','e19-5-initial-archive','active');
+  ('e1953000-0000-4000-8000-000000000014','E19.5 archive inicial','e19-5-initial-archive','e19-5-initial-archive','active'),
+  ('e1953000-0000-4000-8000-000000000015','E19.5 contraste inválido','e19-5-invalid-palette','e19-5-invalid-palette','active');
 
 insert into public.account_users (account_id, user_id, role, status)
 values
   ('e1953000-0000-4000-8000-000000000013','e1953000-0000-4000-8000-000000000001','owner','active'),
-  ('e1953000-0000-4000-8000-000000000014','e1953000-0000-4000-8000-000000000001','owner','active');
+  ('e1953000-0000-4000-8000-000000000014','e1953000-0000-4000-8000-000000000001','owner','active'),
+  ('e1953000-0000-4000-8000-000000000015','e1953000-0000-4000-8000-000000000001','owner','active');
 
 insert into public.account_taxonomy (account_id, taxon_id, is_primary, status, source_type)
 values
   ('e1953000-0000-4000-8000-000000000013','e1953000-0000-4000-8000-000000000041',true,'active','manual'),
-  ('e1953000-0000-4000-8000-000000000014','e1953000-0000-4000-8000-000000000041',true,'active','manual');
+  ('e1953000-0000-4000-8000-000000000014','e1953000-0000-4000-8000-000000000041',true,'active','manual'),
+  ('e1953000-0000-4000-8000-000000000015','e1953000-0000-4000-8000-000000000041',true,'active','manual');
 
 insert into public.account_landing_pages (id, account_id, name, slug, status, created_by)
 values (
@@ -81,7 +84,8 @@ insert into public.account_landing_page_onboarding_configurations (
 insert into public.account_landing_pages (id, account_id, name, slug, status, created_by)
 values
   ('e1953000-0000-4000-8000-000000000024','e1953000-0000-4000-8000-000000000013','Vínculo posterior','vinculo-posterior','active','e1953000-0000-4000-8000-000000000001'),
-  ('e1953000-0000-4000-8000-000000000025','e1953000-0000-4000-8000-000000000014','Archive inicial','archive-inicial','archived','e1953000-0000-4000-8000-000000000001');
+  ('e1953000-0000-4000-8000-000000000025','e1953000-0000-4000-8000-000000000014','Archive inicial','archive-inicial','archived','e1953000-0000-4000-8000-000000000001'),
+  ('e1953000-0000-4000-8000-000000000026','e1953000-0000-4000-8000-000000000015','Paleta inválida','paleta-invalida','active','e1953000-0000-4000-8000-000000000001');
 
 insert into public.account_landing_page_shared_configurations (
   account_id, catalog_version, values, revision, created_by, updated_by
@@ -99,7 +103,8 @@ insert into public.account_landing_page_onboarding_configurations (
   account_id, landing_page_id, catalog_version, values, created_by, updated_by
 ) values
   ('e1953000-0000-4000-8000-000000000013',null,5,'{"brand_color_palette":{"scope":"business","value":{"primary":"#111111","secondary":"#222222","accent":"#333333","background":"#ffffff","text":"#000000"}},"privacy_policy_url":{"scope":"business","value":"https://example.com/bootstrap"},"landing_page_objective":{"scope":"landing_page","value":"Objetivo vinculado depois"}}'::jsonb,'e1953000-0000-4000-8000-000000000001','e1953000-0000-4000-8000-000000000001'),
-  ('e1953000-0000-4000-8000-000000000014','e1953000-0000-4000-8000-000000000025',5,'{"landing_page_objective":{"scope":"landing_page","value":"Não pode materializar arquivada"}}'::jsonb,'e1953000-0000-4000-8000-000000000001','e1953000-0000-4000-8000-000000000001');
+  ('e1953000-0000-4000-8000-000000000014','e1953000-0000-4000-8000-000000000025',5,'{"landing_page_objective":{"scope":"landing_page","value":"Não pode materializar arquivada"}}'::jsonb,'e1953000-0000-4000-8000-000000000001','e1953000-0000-4000-8000-000000000001'),
+  ('e1953000-0000-4000-8000-000000000015','e1953000-0000-4000-8000-000000000026',5,'{"brand_color_palette":{"scope":"business","value":{"primary":"#ffffff","secondary":"#ffffff","accent":"#ffffff","background":"#ffffff","text":"#ffffff"}}}'::jsonb,'e1953000-0000-4000-8000-000000000001','e1953000-0000-4000-8000-000000000001');
 
 do $$
 declare
@@ -139,6 +144,92 @@ begin
     '{"primary_conversion_channel":{"scope":"landing_page","value":"bogus"}}'::jsonb,
     array['offer','campaign','landing_page']
   ) then raise exception 'field and scope with a semantically invalid v5 value must fail'; end if;
+
+  -- Raw ratios selected with validateStarterColorPalette():
+  -- #777777/#ffffff = 4.478089453577214; #767676/#ffffff = 4.542224959605253.
+  -- #959595/#ffffff = 2.9953461357088114; #949494/#ffffff = 3.0334698257384747.
+  if public.e19_5_configuration_values_valid(
+    '{"brand_color_palette":{"scope":"business","value":{"primary":"#ffffff","secondary":"#ffffff","accent":"#ffffff","background":"#ffffff","text":"#ffffff"}}}'::jsonb,
+    array['business']
+  ) then raise exception 'all-white palette must fail contrast validation'; end if;
+  if public.e19_5_configuration_values_valid(
+    '{"brand_color_palette":{"scope":"business","value":{"primary":"#000000","secondary":"#000000","accent":"#000000","background":"#ffffff","text":"#777777"}}}'::jsonb,
+    array['business']
+  ) then raise exception 'palette immediately below 4.5 must fail only text contrast'; end if;
+  if public.e19_5_configuration_values_valid(
+    '{"brand_color_palette":{"scope":"business","value":{"primary":"#959595","secondary":"#000000","accent":"#000000","background":"#ffffff","text":"#000000"}}}'::jsonb,
+    array['business']
+  ) then raise exception 'palette immediately below 3 must fail role contrast'; end if;
+  if not public.e19_5_configuration_values_valid(
+    '{"brand_color_palette":{"scope":"business","value":{"primary":"#949494","secondary":"#000000","accent":"#000000","background":"#ffffff","text":"#767676"}}}'::jsonb,
+    array['business']
+  ) then raise exception 'palette immediately above 4.5 and 3 must pass all four contrasts'; end if;
+  if not public.e19_5_configuration_values_valid(
+    '{"funnel_stage":{"scope":"landing_page","value":"bofu"},"traffic_source":{"scope":"campaign","value":"paid_search"},"primary_conversion_channel":{"scope":"landing_page","value":"form"},"whatsapp_destination":{"scope":"landing_page","value":"+5521979658483"},"privacy_policy_url":{"scope":"business","value":"https://example.com/privacidade"},"service_locations":{"scope":"business","value":["Rio de Janeiro"]},"brand_logo_asset":{"scope":"business","value":{"asset_id":"logo"}}}'::jsonb,
+    array['business','campaign','landing_page']
+  ) then raise exception 'enums urls lists logo and valid hidden conditional values must remain accepted'; end if;
+
+  begin
+    if exists (
+      select 1
+      from public.account_landing_page_onboarding_configurations onboarding
+      where onboarding.account_id='e1953000-0000-4000-8000-000000000015'
+        and onboarding.landing_page_id is not null
+        and not public.e19_5_configuration_values_valid_for_account(
+          onboarding.account_id, onboarding.values,
+          array['account','business','offer','campaign','landing_page']
+        )
+    ) then
+      raise exception using errcode='23514',message='e19_5_invalid_onboarding_configuration';
+    end if;
+    insert into public.account_landing_page_shared_configurations(
+      account_id,catalog_version,values,revision,created_by,updated_by
+    ) values (
+      'e1953000-0000-4000-8000-000000000015',5,'{}'::jsonb,1,
+      'e1953000-0000-4000-8000-000000000001','e1953000-0000-4000-8000-000000000001'
+    );
+    insert into public.account_landing_page_configurations(
+      landing_page_id,account_id,catalog_version,values,revision,is_initialized,created_by,updated_by
+    ) values (
+      'e1953000-0000-4000-8000-000000000026','e1953000-0000-4000-8000-000000000015',5,'{}'::jsonb,1,false,
+      'e1953000-0000-4000-8000-000000000001','e1953000-0000-4000-8000-000000000001'
+    );
+    raise exception using errcode='P0002',message='invalid palette precheck must abort backfill';
+  exception when sqlstate '23514' then null;
+  end;
+  if exists (select 1 from public.account_landing_page_shared_configurations where account_id='e1953000-0000-4000-8000-000000000015')
+     or exists (select 1 from public.account_landing_page_configurations where landing_page_id='e1953000-0000-4000-8000-000000000026') then
+    raise exception 'invalid palette precheck must not persist partial backfill';
+  end if;
+
+  insert into public.account_landing_page_shared_configurations(
+    account_id,catalog_version,values,revision,created_by,updated_by
+  ) values (
+    'e1953000-0000-4000-8000-000000000015',5,'{}'::jsonb,1,
+    'e1953000-0000-4000-8000-000000000001','e1953000-0000-4000-8000-000000000001'
+  );
+  insert into public.account_landing_page_configurations(
+    landing_page_id,account_id,catalog_version,values,revision,is_initialized,created_by,updated_by
+  ) values (
+    'e1953000-0000-4000-8000-000000000026','e1953000-0000-4000-8000-000000000015',5,'{}'::jsonb,1,false,
+    'e1953000-0000-4000-8000-000000000001','e1953000-0000-4000-8000-000000000001'
+  );
+  begin
+    perform * from public.handoff_account_landing_page_onboarding_v1(
+      'e1953000-0000-4000-8000-000000000015',
+      'e1953000-0000-4000-8000-000000000026',1,
+      'e1953000-0000-4000-8000-000000000001'
+    );
+    raise exception using errcode='P0002',message='invalid palette handoff must fail closed';
+  exception when sqlstate '23514' then null;
+  end;
+  if (select revision from public.account_landing_page_shared_configurations where account_id='e1953000-0000-4000-8000-000000000015') <> 1
+     or (select values from public.account_landing_page_shared_configurations where account_id='e1953000-0000-4000-8000-000000000015') <> '{}'::jsonb
+     or (select revision from public.account_landing_page_configurations where landing_page_id='e1953000-0000-4000-8000-000000000026') <> 1
+     or (select values from public.account_landing_page_configurations where landing_page_id='e1953000-0000-4000-8000-000000000026') <> '{}'::jsonb
+     or (select is_initialized from public.account_landing_page_configurations where landing_page_id='e1953000-0000-4000-8000-000000000026') then
+    raise exception 'invalid palette handoff must not initialize or persist partially';
+  end if;
 
   begin
     perform * from public.handoff_account_landing_page_onboarding_v1(
@@ -363,6 +454,28 @@ begin
      or (select values from public.account_landing_page_configurations where landing_page_id=v_second_landing_page_id)
        is distinct from v_landing_page_values then
     raise exception 'semantic invalid save must not persist either residence';
+  end if;
+
+  begin
+    perform * from public.save_account_landing_page_configuration_v1(
+      'e1953000-0000-4000-8000-000000000011', v_second_landing_page_id,
+      '{"brand_color_palette":{"scope":"business","value":{"primary":"#ffffff","secondary":"#ffffff","accent":"#ffffff","background":"#ffffff","text":"#ffffff"}}}'::jsonb,
+      '{}'::jsonb,
+      v_shared_revision, v_landing_page_revision,
+      'e1953000-0000-4000-8000-000000000001'
+    );
+    raise exception using errcode='P0002',message='invalid palette save must fail closed';
+  exception when sqlstate '22023' then null;
+  end;
+  if (select revision from public.account_landing_page_shared_configurations where account_id='e1953000-0000-4000-8000-000000000011')
+       is distinct from v_shared_revision
+     or (select values from public.account_landing_page_shared_configurations where account_id='e1953000-0000-4000-8000-000000000011')
+       is distinct from v_shared_values
+     or (select revision from public.account_landing_page_configurations where landing_page_id=v_second_landing_page_id)
+       is distinct from v_landing_page_revision
+     or (select values from public.account_landing_page_configurations where landing_page_id=v_second_landing_page_id)
+       is distinct from v_landing_page_values then
+    raise exception 'invalid palette save must not update either residence';
   end if;
 
   perform * from public.save_account_landing_page_configuration_v1(

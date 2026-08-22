@@ -90,6 +90,14 @@ const cases = [
       assert.match(test,/current account authority must not be copied/);
       assert.match(test,/field outside the current taxon chain must fail/);
       assert.match(test,/field and scope with a semantically invalid v5 value must fail/);
+      assert.match(test,/all-white palette must fail contrast validation/);
+      assert.match(test,/palette immediately below 4\.5 must fail only text contrast/);
+      assert.match(test,/palette immediately below 3 must fail role contrast/);
+      assert.match(test,/palette immediately above 4\.5 and 3 must pass all four contrasts/);
+      assert.match(test,/invalid palette precheck must not persist partial backfill/);
+      assert.match(test,/invalid palette handoff must not initialize or persist partially/);
+      assert.match(test,/invalid palette save must not update either residence/);
+      assert.match(test,/enums urls lists logo and valid hidden conditional values must remain accepted/);
       assert.match(test,/semantic invalid handoff must fail closed/);
       assert.match(test,/semantic invalid handoff must not persist partial configuration/);
       assert.match(test,/uninitialized placeholder save must fail/);
@@ -117,6 +125,10 @@ const cases = [
       assert.match(migration,/update public\.account_landing_page_configurations configuration[\s\S]+is_initialized = true[\s\S]+where onboarding\.landing_page_id is not null/i);
       assert.match(migration,/values \(v_landing_page_id, p_account_id, 5, '\{\}'::jsonb, 1, true/i);
       assert.match(migration,/message = 'landing_page_configuration_not_initialized'/);
+      assert.match(migration,/0\.04045::double precision[\s\S]+12\.92::double precision[\s\S]+power\([\s\S]+2\.4::double precision/);
+      assert.match(migration,/0\.2126::double precision \* red[\s\S]+0\.7152::double precision \* green[\s\S]+0\.0722::double precision \* blue/);
+      assert.match(migration,/contrast_ratio >= 4\.5::double precision[\s\S]+contrast_ratio >= 3::double precision/);
+      assert.doesNotMatch(migration,/contrast_ratio[\s\S]{0,80}(round|trunc)\(/i);
       assert.match(migration,/v_onboarding_shared_values \|\| coalesce\(v_shared_values, '\{\}'::jsonb\)/i);
       assert.match(migration,/v_onboarding_landing_page_values \|\| coalesce\(v_landing_page_values, '\{\}'::jsonb\)/i);
       assert.match(migration,/v_shared_editable_fields constant text\[\][\s\S]+brand_color_palette[\s\S]+attendance_modes/i);
@@ -129,6 +141,7 @@ const cases = [
       assert.match(test,/workspace readiness must prove precursor and workspace checks/);
       assert.match(snippet,/persisted_configuration_valid/);
       assert.match(snippet,/configuration_initialization/);
+      assert.match(snippet,/palette_contrast_contract/);
       assert.match(snippet,/column_row\.attname='is_initialized'/);
       assert.doesNotMatch(snippet,/e19_5_configuration_values_applicable/);
       assert.match(snippet,/status_contract_transitional/);
