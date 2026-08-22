@@ -14,7 +14,7 @@
 - A v1 processual é o plano-base v3 do PR #801, head `4e5b1d5e045a04aef76ea8fce0c1bc003ffbc138`, blob `9ad733987ecd39dc9c049d74daf6d71a655c9dbb`, incorporado à `main` por `f857f95df11960279a32ba34e56b4a63c918dfff`; esta consolidação é sua v2 processual e não renumera as decisões humanas da v3.
 - O processo automatizado foi escolhido pelo humano para o PR #801; a orquestração usa uma única branch e um único PR contra `main`, sem merge intermediário, branch empilhada ou reaproveitamento silencioso do #797.
 - No HEAD incorporado, a E20.2 v5 já existe como contrato repo-only versionado; a E19.5 reutiliza sua API pública e não recria seus fields.
-- O PR #802 permanece frente adjacente ativa fora da `main`; não copiar, cherry-pickar nem assumir seu comportamento. Se capacidade equivalente entrar em `main` antes da execução, reler o delta e reutilizar o caminho canônico, removendo qualquer implementação E19.5 concorrente no mesmo recorte.
+- O PR #802 foi mergeado em `main` por `3e5c5657` e integrado de forma não destrutiva nesta branch por `a414ee72`; seu delta foi relido. A E19.2.7 reutiliza `loadTaxonPreparationForReviewedVersion` somente no pré-handoff. Depois do handoff, a E19.5 permanece a única autoridade operacional e reutiliza o mesmo domínio de preparação pela API de versão explícita, sem copiar, cherry-pickar ou duplicar resolver.
 - Plano conceitual: N/A.
 - Processo: `docs/prompt-estrategista.md`.
 - Predecessores materiais: E19.1, E19.2, E19.3 e E19.4 implementadas no fluxo oficial da conta.
@@ -68,7 +68,7 @@
 - Retry do handoff é idempotente e não duplica residência nem reinterpreta E19.2.
 - Após o handoff válido, a E19.2 permanece bootstrap/histórico e não vira fallback operacional concorrente.
 - O `catalog_version` histórico persistido pela E19.2 ou por uma residência operacional registra proveniência da configuração em determinado momento; **não fixa permanentemente a experiência operacional do cliente naquela versão**.
-- A implementação atual da E19.2 ainda possui `ACCOUNT_LANDING_PAGE_ONBOARDING_CATALOG_VERSION = 2`; isso é limitação técnica existente e não deve ser propagado como regra da E19.5.
+- A E19.2.7 incorporada removeu `ACCOUNT_LANDING_PAGE_ONBOARDING_CATALOG_VERSION = 2` e a autoridade do hidden client-side: no pré-handoff, resolve server-side a versão E20.2 explicitamente revisada pela E20.6, preserva o histórico e bloqueia atualizações depois do vínculo. A E19.5 reutiliza os contratos públicos de `taxon-preparation` e `loadTaxonPreparationForVersion` com sua versão requerida explícita, sem resolver versão por client ou criar autoridade paralela.
 - A E19.5 resolve a versão operacional explicitamente autorizada pelo E20.6, revalida valores existentes contra ela e apresenta novos fields aplicáveis a clientes existentes.
 - Field novo obrigatório pode tornar a configuração operacional incompleta até preenchimento; isso não invalida nem reescreve configurações, snapshots ou revisões históricas anteriores.
 - Não fazer backfill artificial de novos fields nem reescrever `catalog_version` histórico apenas porque nova versão foi autorizada; a próxima validação/save operacional pode atualizar a proveniência da residência para a versão então utilizada.
@@ -118,7 +118,7 @@
 - A v5 também já contém `business_offerings_summary` conforme 1.6 e preserva v1–v4 por igualdade profunda.
 - Criar v5 não a torna automaticamente operacional: a E20.6 deve avaliar explicitamente a versão executável 5 para o taxon servido e somente decisão humana de suficiência pode registrar `reviewed_input_catalog_version = 5`.
 - A **versão operacional autorizada** é a versão executável explicitamente requerida pelo consumidor e exatamente compatível com `reviewed_input_catalog_version`; é proibido usar `latest`, maior versão disponível ou fallback implícito.
-- O boundary E19.5 declara uma única autoridade executável `LANDING_PAGE_WORKSPACE_REQUIRED_INPUT_CATALOG_VERSION = 5` em `lib/lp-builder/landingPageWorkspace.ts`, exportada pela API pública de `lib/lp-builder`; seu adapter entrega explicitamente esse valor ao boundary público de preparação E20.2 e exige igualdade exata com `reviewed_input_catalog_version`.
+- O boundary E19.5 declara uma única autoridade executável `LANDING_PAGE_WORKSPACE_REQUIRED_INPUT_CATALOG_VERSION = 5` em `lib/lp-builder/landingPageWorkspace.ts`, exportada pela API pública de `lib/lp-builder`; seu adapter chama o boundary público E20.6/taxon-preparation por `loadTaxonPreparationForVersion({ taxonId, requiredInputCatalogVersion: LANDING_PAGE_WORKSPACE_REQUIRED_INPUT_CATALOG_VERSION })` e exige igualdade exata com `reviewed_input_catalog_version`.
 - É proibido derivar a versão requerida do marcador persistido, do `catalog_version` das residências, do maior número do registry ou de `latest`; alterar a versão requerida exige mudança explícita do consumidor e nova validação E20.6 correspondente.
 - Quando v5 for autorizada para o taxon, clientes existentes passam a ser revalidados operacionalmente contra v5 e recebem `primary_conversion_goal`/`business_offerings_summary` quando aplicáveis, sem reescrever snapshots ou contratos históricos.
 - Uma configuração historicamente v4 pode continuar registrada como v4 para proveniência e, ao mesmo tempo, ser operacionalmente incompleta sob v5 até o novo field obrigatório ser preenchido.
@@ -214,7 +214,7 @@
 - Histórico decisório do PR #801 — matriz de convergência, alternativa B, decisões humanas e pareceres técnicos; o artefato temporário foi removido do diff final, mas permanece rastreável nos commits do PR.
 - PR #797 — somente como evidência técnica seletiva, regressões úteis e protótipo das duas residências, snapshot v2 e aprovação tenant-safe; não é autoridade executável desta v3.
 - Implementação vigente de E19.2, E19.3 e E19.4 em `app/a/[account]/`, `lib/lp-builder/` e contratos adjacentes.
-- `lib/lp-builder/contracts.ts` e `lib/lp-builder/adapters/onboardingConfigurationAdapterCore.ts` — evidência da limitação atual `ACCOUNT_LANDING_PAGE_ONBOARDING_CATALOG_VERSION = 2` e da separação entre configuração histórica e revalidação.
+- `lib/lp-builder/contracts.ts` e `lib/lp-builder/adapters/onboardingConfigurationAdapterCore.ts` após o PR #802 — evidência da remoção do pin/client authority, da revalidação pré-handoff pela E20.6 e da separação entre configuração histórica e autoridade operacional pós-handoff.
 - Migration já aplicada `20260820214422_e19_5_expand_landing_page_status.sql` e `lib/types/status.ts` como estado técnico atual do rollout de status.
 - `docs/lp-planejamento.md` não é fonte deste plano.
 
@@ -486,7 +486,7 @@
 
 - O rollout técnico vigente tolera `draft | active | archived`; a primeira E19.5 reduzida não deve concluir lifecycle por inércia nem reverter o expand já aplicado.
 - O agregado E19.2 não pode ser rebindado nem reinterpretado como configuração genérica de todas as LPs.
-- `ACCOUNT_LANDING_PAGE_ONBOARDING_CATALOG_VERSION = 2` é limitação atual da E19.2; a E19.5 não pode adotar esse pin como autoridade operacional.
+- O PR #802 removeu o pin E19.2 e implementou `loadTaxonPreparationForReviewedVersion` para a autoridade pré-handoff. A E19.5 reutiliza os mesmos contratos públicos, mas chama `loadTaxonPreparationForVersion` com `LANDING_PAGE_WORKSPACE_REQUIRED_INPUT_CATALOG_VERSION = 5` no consumo pós-handoff; não aceita outra versão apenas por estar revisada nem cria um segundo resolver.
 - A inicialização lazy precisa provar idempotência e ausência de fallback operacional concorrente após handoff.
 - As duas residências físicas precisam preservar isolamento tenant-safe e scopes disjuntos sem reintroduzir o desenho eager.
 - Toda ação única que altere ambas as residências precisa preservar atomicidade entre elas; nenhum estado intermediário compartilhado/contextual pode ser confirmado como resultado parcial.
@@ -505,7 +505,7 @@
 - Publicação futura deve distinguir versão mais recente, aprovada e publicada sem reconstruir o versionamento.
 - Limites comerciais de geração continuam dependentes da E9.7 e do consumidor real.
 - Qualquer estrutura, teste ou trecho reaproveitado do #797 deve ser revalidado contra este plano; testes de placeholder, `is_initialized`, `landing_page_objective` ou archive/restore não são herdados apenas porque já existem.
-- O PR #802 sobrepõe arquivos da E19.2/E19.5, mas não integra esta base; sua capacidade não é presumida. Se for mergeado antes da implementação do arquivo afetado, integrar `origin/main` de modo não destrutivo, reler somente o delta e preservar uma única autoridade operacional.
+- O PR #802 já integra esta base via merge não destrutivo de `origin/main`; sua capacidade pré-handoff foi relida e deve ser reutilizada. A implementação E19.5 altera arquivos sobrepostos somente quando necessário ao consumo pós-handoff e remove no mesmo recorte qualquer caminho que se torne concorrente, sem reimplementar E19.2.7.
 - A entrega usa uma única branch e um único PR. Para impedir runtime consumidor antes do apply, o gate server-only `E19_5_WORKSPACE_ENABLED` nasce default-off e só aceita o literal `true`; desligado, preserva o caminho vigente e não lê nem muta os novos objetos.
 - O rollout é: merge humano com Preview e Production desligados → apply canônico de cada migration → snippet correspondente e Security Controls pós-apply, com evidência identificando ambiente e resultado → habilitar Preview → redeploy → prova hospedada e decisão humana → habilitar Production → redeploy e smoke. Registrar o gate, defaults e progressão em `docs/platform-config.md` por ABC; Production nunca é habilitada por consequência da aprovação em Preview.
 
@@ -589,7 +589,7 @@
   - somente mudança posterior ao baseline do respectivo field cria nova LP: primeiro snapshot que contenha `funnel_stage`/`transaction_intent` aplicável e primeira revisão v2/contexto v4 que congele `primary_conversion_goal` legado;
   - mudança de `primary_service_or_offer` após primeira revisão válida exige confirmação humana; `sim` mantém LP e requer nova revisão para refletir conteúdo, `não` cria nova identidade;
   - geração com E20.2 v5 falha fechado até `reviewed_input_catalog_version = 5` para o taxon servido;
-  - nenhuma segunda definição da v5 ou dos dois fields é criada; regressões v1–v5 permanecem aprovadas e nenhum commit/estrutura do #802 é incorporado por inferência;
+  - nenhuma segunda definição da v5 ou dos dois fields é criada; regressões v1–v5 permanecem aprovadas; o #802 entra somente pelo merge de `main`, e o domínio público de preparação é reutilizado sem cópia ou implementação concorrente;
   - parsing/normalização/semântica têm autoridade server-side única e persistência recebe forma canônica;
   - salvar configuração não cria revisão de conteúdo nem altera histórico;
   - se a mesma ação de save altera as duas residências, conflito ou erro em qualquer uma faz rollback integral e nenhuma mudança parcial persiste;
@@ -612,7 +612,7 @@
 ### 3.2. Próxima ação
 
 - A decisão humana B, os relatórios de evolução histórica × operacional e a nova autoridade universal de conversão permanecem preservados da v3.
-- O processo automatizado foi escolhido pelo humano no PR #801; esta v2 processual consolida os pareceres do mesmo blob sem incorporar #797 ou #802.
+- O processo automatizado foi escolhido pelo humano no PR #801; esta v2 processual consolida os pareceres do mesmo blob sem incorporar #797. O #802 entrou posteriormente pelo merge canônico de `main`, foi relido e alterou apenas o estado factual pré-handoff registrado neste delta.
 - A Passagem 1 independente foi concluída sobre `be2841f`; seus deltas foram aprovados em `7ceedcd` e `94def51`. A matriz foi versionada em `4d14f85`, e a Passagem 2 auditou plano, matriz e pareceres integrais nesse checkpoint. As três correções objetivas dessa auditoria retornam agora ao mesmo Analista em `revisao_delta`, antes do ABC do roadmap.
 - Implementação começa apenas após aprovação da v2, ABC do roadmap, revisão delta do mesmo Analista e checkpoint `LP-Factory-Stage: plan-v2-approved` no único PR draft.
 

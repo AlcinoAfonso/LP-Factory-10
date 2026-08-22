@@ -13,7 +13,7 @@
 - Blob v2 vigente: `a361f3fc0ed953b1627f7443aa3e68bd7e8526a9` no commit `94def51`.
 - Branch/worktree da orquestração: `codex-app/e19-5b-orquestracao` em `C:\Dev\GitHub\LP-Factory-10-e19.5b`.
 - Frente histórica preservada: PR `#797`, draft, `codex-app/e19-5-orquestracao@08af1e83`; não é autoridade desta execução.
-- Frente adjacente ativa: PR `#802`; não estava em `main` no congelamento e não foi copiado, cherry-picked ou incorporado por inferência.
+- Frente adjacente no congelamento: o PR `#802` não estava em `main` durante os pareceres e as Passagens 1/2. Depois foi mergeado por `3e5c5657` e integrado de forma não destrutiva nesta branch por `a414ee72`; somente seu delta canônico foi relido, sem cópia ou cherry-pick.
 
 ## 2. Decisões e limites do caso
 
@@ -30,7 +30,7 @@ Parecer integral preservado pelo orquestrador. Veredito: `requer patch estrutura
 
 | ID | Achado e classificação original | Relação com o escopo | Classe de consolidação | Tratamento | Destino/localização | Evidência |
 |---|---|---|---|---|---|---|
-| `GE-E19.5-001` | A E20.2 v5 já está incorporada; `landing_page_objective` não existe no código vigente. Patch estrutural aplicável. | Corrige premissa temporal da v1 e evita autoridade duplicada. | preservação | Incorporado. A E19.5 reutiliza v5 pela API pública, não a recria; #802 permanece adjacente e sem incorporação implícita. | Plano 1.1, 1.7, 2.7 e 3.1. | Registry v5 e regressões já presentes na base `f857f95`; roadmap ainda defasado. |
+| `GE-E19.5-001` | A E20.2 v5 já está incorporada; `landing_page_objective` não existe no código vigente. Patch estrutural aplicável. | Corrige premissa temporal da v1 e evita autoridade duplicada. | preservação | Incorporado. A E19.5 reutiliza v5 pela API pública e não a recria. Após a auditoria, #802 entrou somente pelo merge de `main`; `loadTaxonPreparationForReviewedVersion` permanece pré-handoff, e a E19.5 reutiliza o mesmo domínio pelo boundary de versão explícita com requisito 5. | Plano 1.1, 1.7, 2.7 e 3.1. | Registry v5 na base `f857f95`; E19.2.7 e roadmap incorporados por `3e5c5657`. |
 | `GE-E19.5-002` | Banco não especificava RLS, grants, Data API, RPCs nem chave única da FK de aprovação. Patch estrutural aplicável. | Fecha segurança e atomicidade indispensáveis às novas residências. | extensão adjacente necessária e proporcional | Incorporado com duas residências service-only, RLS sem policies, grants mínimos, RPC transacional `SECURITY INVOKER`, FK tenant-safe, snippet e testes. O escopo de ausência de `DELETE`/roles externas é somente dos novos objetos; agregados existentes são preservados. | Plano 2.1.5 e critérios da E19.5.3. | `docs/base-tecnica.md`; precedentes service-only em `docs/schema.md`; objetos ainda ausentes no ambiente inspecionado. |
 | `GE-E19.5-003` | Runtime poderia concorrer com apply; parecer propôs dois incrementos, PRs e merges ordenados. Patch estrutural aplicável. | Risco real, mas a solução proposta conflita com o invariante processual de uma branch e um PR. | extensão adjacente necessária e proporcional | Incorporado com tratamento corrigido pela fonte superior: migration, runtime e UI permanecem no único PR; `E19_5_WORKSPACE_ENABLED` nasce server-only e default-off. Rollout: merge → apply → provas → Preview/redeploy → prova humana → Production/redeploy/smoke. Não foram criados segundo PR ou merge intermediário. | Plano 2.7, 3.1 e `docs/platform-config.md` via ABC. | Workflow aplica migrations após push em `main`; skill exige um único PR; flag e rollout preservam a precedência sem PR precursor. |
 | `GE-E19.5-004` | Evolução do snapshot também exige versionar o contrato E19.3. Patch estrutural aplicável. | Evita invalidar revisões E19.4 históricas. | preservação | Incorporado como união discriminada snapshot v1/contexto v3 e snapshot v2/contexto v4, sem reescrita histórica nem combinações cruzadas. A v4 preserva revisões e versões históricas por residência. | Plano 2.1.3, 2.1.6, 2.4.3 e 3.1. | Contrato atual v3 e validator v1 na base congelada. |
@@ -94,6 +94,7 @@ Conclusão da Passagem 2 no commit `4d14f85`: `aprovado com correções obrigat�
 ## 7. Travas preservadas durante a revisão delta
 
 - Não incorporar commits ou estruturas dos PRs #797 ou #802 por inferência.
+- O #802 já incorporado por `main` é fonte canônica somente para seu boundary pré-handoff; não copiar sua estrutura nem criar resolver concorrente na E19.5.
 - Não criar segunda definição da E20.2 v5 nem dos fields já existentes.
 - Não implementar oportunidades condicionais ou updates rejeitados.
 - Não habilitar runtime consumidor antes do apply e das provas do ambiente correspondente.
