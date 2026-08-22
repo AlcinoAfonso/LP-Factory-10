@@ -4,7 +4,7 @@ import type {
   LandingPageInputValueScope,
   ResolvedLandingPageInputField,
 } from "../conversion-content/landing-page/input-catalog";
-import type { OperationalLandingPageStatus } from "../types/status";
+import type { LandingPageStatus, OperationalLandingPageStatus } from "../types/status";
 
 export type CreateAccountLandingPageInput = {
   accountId: string;
@@ -124,6 +124,20 @@ export type AccountLandingPageOnboardingRevalidationResult =
     }>
   | Extract<AccountLandingPageOnboardingResult, { ok: false }>;
 
+export type AccountLandingPageOperationalRevalidationAuthority =
+  AccountLandingPageOnboardingRevalidationAuthority &
+    Readonly<{
+      sharedRevision: number;
+      landingPageRevision: number;
+    }>;
+
+export type AccountLandingPageOperationalRevalidationResult =
+  | Readonly<{
+      ok: true;
+      authority: AccountLandingPageOperationalRevalidationAuthority;
+    }>
+  | Extract<AccountLandingPageOnboardingResult, { ok: false }>;
+
 export type SaveAccountLandingPageOnboardingConfigurationInput = Readonly<{
   accountId: string;
   catalogVersion: number;
@@ -146,3 +160,75 @@ export type BindAccountLandingPageOnboardingConfigurationInput = Readonly<{
   landingPageId: string;
   expectedRevision: number;
 }>;
+
+export const ACCOUNT_LANDING_PAGE_OPERATIONAL_CATALOG_VERSION = 5 as const;
+
+export type AccountLandingPageWorkspaceItem = Readonly<{
+  id: string;
+  accountId: string;
+  name: string;
+  slug: string;
+  status: LandingPageStatus;
+  latestRevision: Readonly<{ id: string; number: number; createdAt: string }> | null;
+  approvedRevision: Readonly<{ id: string; number: number }> | null;
+  updatedAt: string;
+  state:
+    | "configuration_incomplete"
+    | "ready_to_generate"
+    | "in_review"
+    | "delivered"
+    | "new_version_in_review"
+    | "archived";
+}>;
+
+export type AccountLandingPageWorkspaceResult =
+  | Readonly<{
+      ok: true;
+      active: readonly AccountLandingPageWorkspaceItem[];
+      archived: readonly AccountLandingPageWorkspaceItem[];
+    }>
+  | Readonly<{ ok: false; error: "unauthenticated" | "unauthorized" | "unavailable" }>;
+
+export type AccountLandingPageOperationalConfiguration = Readonly<{
+  accountId: string;
+  landingPageId: string;
+  catalogVersion: typeof ACCOUNT_LANDING_PAGE_OPERATIONAL_CATALOG_VERSION;
+  sharedRevision: number;
+  landingPageRevision: number;
+  sharedValues: AccountLandingPageOnboardingStoredValues;
+  landingPageValues: AccountLandingPageOnboardingStoredValues;
+  resolved: AccountLandingPageOnboardingConfiguration;
+}>;
+
+export type AccountLandingPageWorkspaceDetailResult =
+  | Readonly<{
+      ok: true;
+      landingPage: AccountLandingPageWorkspaceItem;
+      configuration: AccountLandingPageOperationalConfiguration;
+      revisions: readonly Readonly<{
+        id: string;
+        number: number;
+        createdAt: string;
+        latest: boolean;
+        approved: boolean;
+      }>[];
+    }>
+  | Readonly<{
+      ok: false;
+      error: "unauthenticated" | "unauthorized" | "not_found" | "unavailable" | "invalid_configuration";
+    }>;
+
+export type SaveAccountLandingPageOperationalConfigurationResult =
+  | Readonly<{ ok: true; sharedRevision: number; landingPageRevision: number }>
+  | Readonly<{
+      ok: false;
+      error: "unauthenticated" | "unauthorized" | "not_operational" | "revision_conflict" | "invalid_values" | "unavailable";
+      fieldKey?: string;
+    }>;
+
+export type LandingPageWorkspaceMutationResult =
+  | Readonly<{ ok: true; status?: LandingPageStatus; approvedMaterializationId?: string }>
+  | Readonly<{
+      ok: false;
+      error: "unauthenticated" | "unauthorized" | "not_found" | "not_operational" | "revision_not_found" | "unavailable";
+    }>;

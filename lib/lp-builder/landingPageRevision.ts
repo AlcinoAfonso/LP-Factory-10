@@ -10,11 +10,15 @@ import {
   openAiImageQualities,
   openAiReasoningEfforts,
 } from "../openai-workloads";
-import type { LandingPageGenerationContextPackage } from "./generationContextContracts";
+import type {
+  LandingPageGenerationContextIdentitiesV3,
+  LandingPageGenerationContextIdentitiesV4,
+  LandingPageGenerationContextPackage,
+} from "./generationContextContracts";
 import type { LandingPageDraftCandidateWorkflowResult } from "./landingPageDraftCandidateWorkflow";
 
 export const LANDING_PAGE_REVISION_CONTRACT_VERSION = 1 as const;
-export const LANDING_PAGE_REVISION_SNAPSHOT_VERSION = 1 as const;
+export const LANDING_PAGE_REVISION_SNAPSHOT_VERSION = 2 as const;
 export const LANDING_PAGE_REVISION_ASSET_BUCKET =
   "landing-page-revision-assets" as const;
 export const LANDING_PAGE_REVISION_ASSET_MAX_BYTES = 5_242_880 as const;
@@ -71,19 +75,17 @@ export type LandingPageRevisionContent = z.infer<
   typeof landingPageRevisionContentSchema
 >;
 
-export type LandingPageRevisionSnapshot = Readonly<{
-  snapshotVersion: typeof LANDING_PAGE_REVISION_SNAPSHOT_VERSION;
+type LandingPageRevisionGenerationContextCommon = Readonly<{
+  modelContext: LandingPageGenerationContextPackage["modelContext"];
+  bindingFacts: readonly LandingPageGenerationContextPackage["serverContext"]["facts"][number][];
+}>;
+
+type LandingPageRevisionSnapshotCommon = Readonly<{
   attemptId: string;
   requestId: string;
   generatedAt: string;
   promptVersion: string;
   presentationContractVersion: number;
-  generationContext: Readonly<{
-    contractVersion: 3;
-    identities: LandingPageGenerationContextPackage["identities"];
-    modelContext: LandingPageGenerationContextPackage["modelContext"];
-    bindingFacts: readonly LandingPageGenerationContextPackage["serverContext"]["facts"][number][];
-  }>;
   workloads: Readonly<{
     text: Readonly<{
       configuration: Extract<
@@ -118,11 +120,37 @@ export type LandingPageRevisionSnapshot = Readonly<{
   }>;
 }>;
 
+export type LandingPageRevisionSnapshotV1 =
+  LandingPageRevisionSnapshotCommon &
+    Readonly<{
+      snapshotVersion: 1;
+      generationContext: LandingPageRevisionGenerationContextCommon &
+        Readonly<{
+          contractVersion: 3;
+          identities: LandingPageGenerationContextIdentitiesV3;
+        }>;
+    }>;
+
+export type LandingPageRevisionSnapshotV2 =
+  LandingPageRevisionSnapshotCommon &
+    Readonly<{
+      snapshotVersion: typeof LANDING_PAGE_REVISION_SNAPSHOT_VERSION;
+      generationContext: LandingPageRevisionGenerationContextCommon &
+        Readonly<{
+          contractVersion: 4;
+          identities: LandingPageGenerationContextIdentitiesV4;
+        }>;
+    }>;
+
+export type LandingPageRevisionSnapshot =
+  | LandingPageRevisionSnapshotV1
+  | LandingPageRevisionSnapshotV2;
+
 export type BuildLandingPageRevisionDocumentsResult =
   | Readonly<{
       ok: true;
       content: LandingPageRevisionContent;
-      snapshot: LandingPageRevisionSnapshot;
+      snapshot: LandingPageRevisionSnapshotV2;
     }>
   | Readonly<{
       ok: false;
@@ -232,7 +260,7 @@ export function buildLandingPageRevisionDocuments(input: Readonly<{
   return {
     ok: true,
     content: deepFreeze(contentResult.data),
-    snapshot: deepFreeze(snapshot as LandingPageRevisionSnapshot),
+    snapshot: deepFreeze(snapshot as LandingPageRevisionSnapshotV2),
   };
 }
 
@@ -240,8 +268,29 @@ export function validateLandingPageRevisionSnapshot(
   value: unknown,
 ): value is LandingPageRevisionSnapshot {
   if (!isRecord(value) || containsForbiddenSnapshotKey(value)) return false;
+  const generationContext = value.generationContext;
+  const identities = isRecord(generationContext)
+    ? generationContext.identities
+    : null;
+  const revisionIdentityValid =
+    isRecord(generationContext) &&
+    isRecord(identities) &&
+    (value.snapshotVersion === 1
+      ? generationContext.contractVersion === 3 &&
+        isPositiveSafeInteger(identities.configurationRevision) &&
+        !Object.hasOwn(identities, "sharedRevision") &&
+        !Object.hasOwn(identities, "landingPageRevision")
+      : value.snapshotVersion === LANDING_PAGE_REVISION_SNAPSHOT_VERSION &&
+        generationContext.contractVersion === 4 &&
+        isPositiveSafeInteger(identities.sharedRevision) &&
+        isPositiveSafeInteger(identities.landingPageRevision) &&
+        !Object.hasOwn(identities, "configurationRevision"));
   if (
-    value.snapshotVersion !== LANDING_PAGE_REVISION_SNAPSHOT_VERSION ||
+    !(
+      (value.snapshotVersion === 1 && isRecord(value.generationContext) && value.generationContext.contractVersion === 3) ||
+      (value.snapshotVersion === LANDING_PAGE_REVISION_SNAPSHOT_VERSION && isRecord(value.generationContext) && value.generationContext.contractVersion === 4)
+    ) ||
+    !revisionIdentityValid ||
     !uuidSchema.safeParse(value.attemptId).success ||
     typeof value.requestId !== "string" ||
     !value.requestId.trim() ||
@@ -250,7 +299,6 @@ export function validateLandingPageRevisionSnapshot(
     !value.promptVersion.trim() ||
     value.presentationContractVersion !== 1 ||
     !isRecord(value.generationContext) ||
-    value.generationContext.contractVersion !== 3 ||
     !isRecord(value.generationContext.identities) ||
     !isRecord(value.generationContext.modelContext) ||
     !Array.isArray(value.generationContext.bindingFacts) ||
@@ -399,6 +447,10 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function isNonNegativeNumber(value: unknown) {
   return typeof value === "number" && Number.isFinite(value) && value >= 0;
+}
+
+function isPositiveSafeInteger(value: unknown) {
+  return Number.isSafeInteger(value) && Number(value) > 0;
 }
 
 function deepFreeze<T>(value: T): T {

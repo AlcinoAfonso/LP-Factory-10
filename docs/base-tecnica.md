@@ -2,8 +2,8 @@
 
 0.1 Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.72
-• Data: 20/08/2026
+• Versão: v2.0.73
+• Data: 21/08/2026
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -309,6 +309,16 @@
 • O consumo privado de uma revisão deve revalidar ator, conta, membership, entitlement, LP e tenant da materialização antes de assinar mídia ou entregar o read model; divergência de identidade, binding ou referência de asset falha fechada.
 • O read model expõe somente allowlist explícita do contrato de apresentação e metadados necessários da revisão, acrescida da URL assinada transitória; linhas de banco, snapshot integral, pesquisa, valores operacionais, bucket, path, autenticação e provider não atravessam o boundary do renderer.
 • O renderer de revisão é puro e read-only: recebe o read model validado, não consulta Supabase ou provider, não recompila contexto de geração e não usa fonte mutável para reinterpretar a revisão persistida.
+
+3.15.10 Workspace operacional e lifecycle de `landing_page`
+• O boundary canônico permanece `lib/lp-builder/`; rotas e Server Actions recebem DTOs finais e não importam cliente Supabase, linhas físicas ou registry interno.
+• A E19.2 permanece bootstrap histórico write-once. Após o vínculo, o handoff transacional divide valores por scope e o runtime operacional lê somente as residências compartilhada e específica da LP, sem fallback concorrente ao onboarding.
+• Uma LP é identidade estável. Revisões continuam append-only; versão mais recente é derivada, versão aprovada é um ponteiro explícito e aprovação nunca cria ou apaga revisão.
+• Estados de UX são derivados de completude, revisão mais recente, aprovação e lifecycle; não devem virar status persistidos paralelos.
+• Leituras e mutações revalidam conta, tenant, membership e entitlement; readiness ausente ou incompatível falha fechado e não autoriza lista parcial.
+• Evoluções de catálogo e snapshots são explicitamente versionadas, preservam leitura histórica e exigem o gate humano aplicável antes de produzir uma nova versão.
+• Durante rollout, estados legados e novos podem coexistir somente nos boundaries operacionais autorizados; estados arquivados permanecem read-only até restauração explícita.
+• A retirada de um estado legado pertence a contract posterior e não pode ser antecipada pelo runtime funcional.
 
 3.16 Configuração e observabilidade de workloads OpenAI
 • O boundary transversal canônico é `lib/openai-workloads/`; consumidores de produto usam somente sua API pública para resolver modelo e reasoning effort, sem ler variáveis de modelo nem acessar o registry interno.

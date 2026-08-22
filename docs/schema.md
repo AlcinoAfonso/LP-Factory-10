@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data da última atualização: 21/08/2026
-• Documento: LP Factory 10 — Schema (DB Contract) v1.0.51
+• Documento: LP Factory 10 — Schema (DB Contract) v1.0.53
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -234,10 +234,12 @@
 • created_by uuid not null
 • created_at timestamptz not null default now()
 • updated_at timestamptz not null default now()
+• approved_materialization_id uuid null
 
 1.9.3 Relacionamentos
 • account_id referencia public.accounts(id) com ON UPDATE CASCADE e ON DELETE CASCADE.
 • created_by referencia auth.users(id) com ON UPDATE CASCADE e ON DELETE RESTRICT.
+• `(approved_materialization_id, id, account_id)` referencia `(id, landing_page_id, account_id)` de `public.account_landing_page_materializations` com ON UPDATE RESTRICT, ON DELETE NO ACTION e validação deferred; somente uma revisão existente da mesma LP/conta pode ser aprovada, sem bloquear o cascade do agregado pai.
 
 1.9.4 Constraints
 • account_landing_pages_status_chk: status in ('draft', 'active', 'archived').
@@ -250,6 +252,7 @@
 • account_landing_pages_account_id_idx em account_id.
 • account_landing_pages_created_by_idx em created_by.
 • account_landing_pages_status_idx em status.
+• account_landing_pages_account_status_updated_idx em account_id, status, updated_at desc e id para as listas operacionais determinísticas.
 
 1.9.6 Trigger
 • account_landing_pages_set_updated_at: executa public.tg_set_updated_at() antes de update.
@@ -258,12 +261,12 @@
 • RLS habilitado.
 • Policy account_landing_pages_select_member_or_platform: permite SELECT para platform admin ou membro ativo da conta.
 • authenticated: SELECT.
-• service_role: SELECT, INSERT, UPDATE, DELETE.
+• service_role: SELECT, INSERT e UPDATE; DELETE direto é retirado pelo contrato repo-only da E19.5.3.
 • public e anon: sem grants.
 
 1.9.8 Observações de escopo
 • Escrita deve ocorrer por fluxo server-side autorizado.
-• Criação corrente permanece apenas `draft`; `active` e `archived` estão reservados ao runtime funcional E19.5.
+• O onboarding legado permanece capaz de criar `draft`; a criação exclusiva do workspace funcional nasce `active` pelo RPC E19.5.3. O default físico continua `draft`.
 • O precursor expand não executa backfill, não muda o default e não retira suporte a `draft`.
 • Publicação, render público, domínio customizado, analytics, A/B e IA runtime não fazem parte deste schema inicial.
 
@@ -813,6 +816,7 @@
 • account_id referencia public.accounts(id) com ON UPDATE RESTRICT e ON DELETE CASCADE.
 • created_by referencia auth.users(id) com ON UPDATE RESTRICT e ON DELETE RESTRICT.
 • `(landing_page_id, revision_number)` é único; `attempt_id` é único quando não nulo.
+• `(id, landing_page_id, account_id)` é único e ancora o ponteiro tenant-safe da revisão aprovada.
 • Linhas históricas recebem novo `id` e `revision_number = 1`, preservando conteúdo, snapshot, autoria e timestamp.
 • `content_json` e `generation_context_snapshot_json` devem ser objetos JSON.
 
@@ -838,21 +842,53 @@
 • Evolução 1:N aplicada: `supabase/migrations/20260817180000_e19_4_4_landing_page_revisions.sql`.
 • Verificação read-only: `supabase/snippets/e19_4_4_landing_page_materializations_verify.sql`; casos SQL: `supabase/tests/e19_4_4_landing_page_materializations.test.sql`.
 • Expand backward-compatible repo-only: `supabase/migrations/20260820214422_e19_5_expand_landing_page_status.sql`; verificação `supabase/snippets/e19_5_expand_landing_page_status_verify.sql`; casos SQL `supabase/tests/e19_5_expand_landing_page_status.test.sql`.
+• Workspace funcional repo-only: `supabase/migrations/20260821091539_e19_5_landing_page_workspace.sql`; verificação `supabase/snippets/e19_5_landing_page_workspace_verify.sql`; casos SQL transacionais `supabase/tests/e19_5_landing_page_workspace.test.sql`. O preflight Supabase read-only aprovou histórico e ordem, ausência de materialização parcial e todos os predicados da migration; a migration permanece não aplicada e o apply hospedado continua reservado ao workflow canônico após merge.
 
 1.27.7 Storage privado
 • O bucket privado `landing-page-revision-assets` está ativo no ambiente hospedado com limite de 5 MB e MIME permitido somente `image/webp`.
 • Nenhuma policy de storage.objects concede leitura ou escrita direta do bucket a anon ou authenticated.
 • A identidade persistida da mídia usa bucket e path estáveis com metadata; URL assinada é temporária, server-side e nunca integra a identidade do asset.
 
-1.28 openai_workload_operational_configurations
+1.28 account_landing_page_shared_configurations
 1.28.1 Função e unidade
+• Agregado operacional E19.5.3 1:1 por account_id para valores não autoritativos dos scopes account e business.
+• Colunas: account_id PK; catalog_version fixo em 5; values jsonb objeto; revision bigint positiva; created_by, updated_by, created_at e updated_at.
+• business_display_name é autoridade corrente de accounts e não pode ser persistido nesta residência.
+1.28.2 Relacionamentos, segurança e acesso
+• account_id referencia accounts com cascade; autorias referenciam auth.users com delete restrict.
+• RLS habilitado e sem policies; public, anon, authenticated e ai_readonly sem grants; service_role com SELECT, INSERT e UPDATE, sem DELETE/TRUNCATE.
+• Trigger de updated_at usa public.tg_set_updated_at().
+
+1.29 account_landing_page_configurations
+1.29.1 Função e unidade
+• Agregado operacional E19.5.3 1:1 por landing_page_id para valores dos scopes offer, campaign e landing_page.
+• Colunas: landing_page_id PK; account_id; catalog_version fixo em 5; values jsonb objeto; revision bigint positiva; is_initialized boolean NOT NULL default false; created_by, updated_by, created_at e updated_at.
+• is_initialized separa o estado explícito de inicialização operacional do contador otimista revision: placeholders históricos não vinculados permanecem false; backfill vinculado, handoff concluído e LP nativa do workspace ficam true.
+• O JSON aceita somente fieldKeys conhecidos da v5, com scope canônico e envelope estrito `{scope,value}`; landing_page_objective pertence à LP concreta.
+1.29.2 Relacionamentos, índices e segurança
+• `(landing_page_id, account_id)` referencia account_landing_pages com cascade tenant-safe; account_id e autorias possuem FKs explícitas.
+• account_landing_page_configurations_account_idx suporta leitura por conta/LP.
+• RLS habilitado e sem policies; public, anon, authenticated e ai_readonly sem grants; service_role com SELECT, INSERT e UPDATE, sem DELETE/TRUNCATE.
+• Trigger de updated_at usa public.tg_set_updated_at().
+
+1.29.3 RPCs e readiness E19.5.3
+• `create_account_landing_page_v1`: cria identidade `active` e configuração específica vazia já inicializada somente para owner/admin ativo validado.
+• `handoff_account_landing_page_onboarding_v1`: usa is_initialized como prova exclusiva de conclusão, divide atomicamente o bootstrap E19.2 vinculado por scope e marca a residência na mesma transação; retry inicializado é read-only inclusive em archived, enquanto handoff inicial exige draft ou active.
+• `save_account_landing_page_configuration_v1`: exige configuração específica inicializada e salva as duas residências sob revisões esperadas sem alterar is_initialized; conflito aborta a transação inteira.
+• `approve_account_landing_page_materialization_v1`: escolhe idempotentemente uma revisão existente da mesma LP/conta sem criar revisão.
+• `set_account_landing_page_archived_v1`: arquiva ou restaura a mesma identidade; revisões, configuração e aprovação permanecem.
+• `e19_5_landing_page_workspace_readiness()`: probe fail-closed, schema_version 1, comprova também coluna, default e invariantes de inicialização, com EXECUTE exclusivo de service_role.
+• Todos os RPCs mutáveis revalidam conta, ator e membership owner/admin; archived bloqueia save, geração, append inédito e aprovação.
+
+1.30 openai_workload_operational_configurations
+1.30.1 Função e unidade
 • Agregado operacional aplicado da E21.2.3 com exatamente uma linha por `environment + workload`.
 • `environment` aceita somente `production | preview`; Development permanece fora desta residência dinâmica.
 • A PK composta `(environment, workload)` é o lock canônico das RPCs e impede mais de uma unidade para a mesma combinação.
 • A migration forward-only `supabase/migrations/20260820190422_e21_2_3_openai_workload_operational_configurations.sql` está aplicada no ambiente hospedado; o snippet read-only aprovou 10/10 verificações e o Security Controls não apresentou alerta incompatível com o agregado ou suas RPCs.
 • A migration incremental forward-only `supabase/migrations/20260820213900_e21_2_taxon_input_catalog_sufficiency_workload.sql` também está aplicada no ambiente hospedado e estende o mesmo agregado com `taxon_input_catalog_sufficiency_evaluation`, sem nova entidade ou tabela de negócio; os testes SQL, snippets read-only e invariantes pós-apply foram aprovados, e o Security Controls reportou para as três tabelas apenas o INFO esperado de RLS sem policy, compatível com a residência service-only sem grants públicos.
 
-1.28.2 Colunas
+1.30.2 Colunas
 • environment text not null
 • workload text not null
 • modality text not null (`responses_text | image_generation`, derivada pelo workload)
@@ -867,7 +903,7 @@
 • created_at timestamptz not null default now()
 • updated_at timestamptz not null default now()
 
-1.28.3 Relacionamentos e invariantes
+1.30.3 Relacionamentos e invariantes
 • `(active_revision_id, environment, workload)` e `(pending_revision_id, environment, workload)` referenciam a chave candidata `(id, environment, workload)` de `openai_workload_configuration_revisions`, sempre com ON UPDATE RESTRICT e ON DELETE RESTRICT.
 • candidate_saved_by referencia auth.users(id) com ON UPDATE RESTRICT e ON DELETE RESTRICT.
 • Exatamente um entre candidata mutável e revisão validada pendente pode existir; candidata ausente exige que todos os seus campos sejam nulos.
@@ -876,7 +912,7 @@
 • Configuração de imagem aceita somente `gpt-image-2 + low|medium|high`, sem reasoning_effort.
 • configuration_version é positivo e funciona como token otimista obrigatório de toda transição.
 
-1.28.4 Índices, bootstrap e segurança
+1.30.4 Índices, bootstrap e segurança
 • `openai_workload_operational_configurations_active_revision_idx`: btree em active_revision_id + unidade.
 • `openai_workload_operational_configurations_pending_revision_idx`: btree parcial em pending_revision_id + unidade quando não nulo.
 • O bootstrap idempotente cria as dez unidades Production/Preview × cinco workloads, sem candidata ou revisão pendente e com active_revision_id na revisão 1 correspondente.
@@ -884,8 +920,8 @@
 • public, anon, authenticated e ai_readonly: sem grants.
 • service_role: SELECT e UPDATE somente dos nove campos necessários às transições; sem INSERT, DELETE ou TRUNCATE.
 
-1.29 openai_workload_configuration_revisions
-1.29.1 Função e colunas
+1.31 openai_workload_configuration_revisions
+1.31.1 Função e colunas
 • Snapshots validados e append-only da configuração operacional por unidade.
 • id uuid primary key default gen_random_uuid()
 • environment text not null
@@ -899,7 +935,7 @@
 • validated_at timestamptz not null default now()
 • proof_metadata jsonb not null
 
-1.29.2 Relacionamentos, constraints e índices
+1.31.2 Relacionamentos, constraints e índices
 • `(environment, workload, revision_number)` é único e `(id, environment, workload)` é chave candidata unit-safe para os ponteiros e eventos.
 • validated_by referencia auth.users(id) com ON UPDATE RESTRICT e ON DELETE RESTRICT.
 • Ambiente, workload, modalidade e shape modelo/parâmetro usam as mesmas allowlists fechadas da unidade operacional.
@@ -912,14 +948,14 @@
 • Revisão bootstrap preserva source `repo_catalog`, resultado aprovado e validated_by nulo; revisão operacional exige source `openai_api`, prova aprovada e validated_by não nulo. Prompt, resposta, secret, PII, payload de negócio e raciocínio privado não têm chave aceita.
 • `openai_workload_configuration_revisions_validated_by_idx`: btree parcial em validated_by quando não nulo.
 
-1.29.3 Segurança e imutabilidade
+1.31.3 Segurança e imutabilidade
 • RLS habilitado e nenhuma policy.
 • public, anon, authenticated e ai_readonly: sem grants.
 • service_role: SELECT e INSERT; sem UPDATE, DELETE ou TRUNCATE.
 • O trigger `openai_workload_configuration_revisions_append_only` rejeita UPDATE e DELETE inclusive quando houver privilégio superior ao grant operacional.
 
-1.30 openai_workload_configuration_activations
-1.30.1 Função e colunas
+1.32 openai_workload_configuration_activations
+1.32.1 Função e colunas
 • Histórico append-only de `bootstrap | activate | rollback`, ordenado por activation_number dentro da unidade.
 • id uuid primary key default gen_random_uuid()
 • environment text not null
@@ -932,14 +968,14 @@
 • actor_user_id uuid null somente no bootstrap
 • created_at timestamptz not null default now()
 
-1.30.2 Relacionamentos, lifecycle e índices
+1.32.2 Relacionamentos, lifecycle e índices
 • `(environment, workload, activation_number)` é único.
 • previous_revision_id e target_revision_id usam FKs compostas unit-safe para `(id, environment, workload)` de revisões, com ON UPDATE RESTRICT e ON DELETE RESTRICT.
 • actor_user_id referencia auth.users(id) com ON UPDATE RESTRICT e ON DELETE RESTRICT.
 • O evento bootstrap é sempre activation_number 1, sem anterior e sem ator; activate/rollback exigem sequência posterior, anterior diferente do alvo e ator humano não nulo.
 • Índices compostos sustentam as FKs de target_revision_id e previous_revision_id; índice parcial cobre actor_user_id não nulo.
 
-1.30.3 Segurança e imutabilidade
+1.32.3 Segurança e imutabilidade
 • RLS habilitado e nenhuma policy.
 • public, anon, authenticated e ai_readonly: sem grants.
 • service_role: SELECT e INSERT; sem UPDATE, DELETE ou TRUNCATE.
@@ -1196,6 +1232,8 @@
 • Rollback: não remove automaticamente a extensão, pois pode ser reutilizada por outros recursos
 
 99. Changelog
+v1.0.50 (21/08/2026) — E19.5.3 repo-only: registrados ponteiro tenant-safe de aprovação, duas residências disjuntas de configuração v5, RPCs de criação operacional, handoff, save otimista, aprovação e lifecycle, readiness fail-closed, teste SQL transacional e snippet read-only; preservados default `draft`, linhas `draft`, suporte a `draft` e ausência de contract, com apply hospedado somente após merge.
+
 v1.0.49 (20/08/2026) — E19.5 precursor expand: ampliado o contrato repo-only de `account_landing_pages.status` para tolerar `draft | active | archived`, preservando default e criação corrente em `draft`, sem backfill; append e consumidores internos passam a tolerar `active`, enquanto `archived` bloqueia attempts inéditos e preserva retry idempotente tenant-safe de `attempt_id` já materializado.
 
 v1.0.48 (20/08/2026) — E21.2.3: registrado o agregado candidato de configuração operacional dos workloads OpenAI com três tabelas públicas, oito baselines Production/Preview, FKs compostas unit-safe, candidata/pendência exclusivas, pendência distinta da revisão ativa, revisões e ativações append-only, token otimista, cinco RPCs SECURITY INVOKER, RLS sem policies, grants mínimos e verificação SQL read-only; apply hospedado permanece pós-merge.

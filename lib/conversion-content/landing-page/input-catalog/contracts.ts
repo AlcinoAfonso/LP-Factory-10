@@ -11,6 +11,7 @@ export const landingPageInputCatalogEvidenceReferences = [
   "technical:current-contracts",
   "empirical:real-estate-research",
   "context:real-estate-pilot",
+  "decision:e19-5-human-v1",
 ] as const;
 
 export const landingPageInputColorPaletteRoles = [

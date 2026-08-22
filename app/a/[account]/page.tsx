@@ -3,7 +3,9 @@ import { getCommercialActivationHierarchicalBundle } from "@/conversion-content"
 import { getCommercialEntitlementSignal } from "../../../lib/commercial-entitlements";
 import {
   getAccountLandingPageOnboardingConfiguration,
+  handoffAccountLandingPageOnboarding,
   listAccountLandingPageDrafts,
+  listAccountLandingPageWorkspace,
   type AccountLandingPage,
   type AccountLandingPageOnboardingConfiguration,
 } from "../../../lib/lp-builder";
@@ -13,6 +15,7 @@ import { PendingSetupFirstSteps } from "./_components/PendingSetupFirstSteps";
 import { NicheResolutionCard } from "./_components/NicheResolutionCard";
 import { OnboardingConfigurationJourney } from "./_components/OnboardingConfigurationJourney";
 import { OnboardingCompletionJourney } from "./_components/OnboardingCompletionJourney";
+import { LandingPageWorkspace } from "./_components/LandingPageWorkspace";
 import { GenericCommercialPage } from "./_components/commercial-page/GenericCommercialPage";
 import { PublishedCommercialActivationPage } from "./_components/commercial-page/PublishedCommercialActivationPage";
 import {
@@ -166,7 +169,22 @@ export default async function Page({ params, searchParams }: PageProps) {
       if (!accountId || !onboardingConfiguration?.landingPageId) {
         return <OnboardingBlockedState />;
       }
-      return <LandingPageOperationalState />;
+      const handoff = await handoffAccountLandingPageOnboarding({
+        accountId,
+        landingPageId: onboardingConfiguration.landingPageId,
+        expectedOnboardingRevision: onboardingConfiguration.revision,
+      });
+      if (!handoff.ok) return <LandingPageOperationalState />;
+      const workspace = await listAccountLandingPageWorkspace({ accountId });
+      if (!workspace.ok) return <LandingPageOperationalState />;
+      return (
+        <LandingPageWorkspace
+          accountSubdomain={accountSubdomain}
+          workspace={workspace}
+          showArchived={resolvedSearchParams.archived === "1"}
+          error={typeof resolvedSearchParams.workspace_error === "string" ? resolvedSearchParams.workspace_error : undefined}
+        />
+      );
     }
     if (accountJourney.mode === "blocked") {
       return <OnboardingBlockedState />;

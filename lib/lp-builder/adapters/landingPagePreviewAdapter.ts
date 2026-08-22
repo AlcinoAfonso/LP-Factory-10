@@ -3,13 +3,14 @@ import "server-only";
 import { getAccessContext } from "../../access/getAccessContext";
 import { getCommercialEntitlementSignal } from "../../commercial-entitlements";
 import { loadLandingPagePreviewWithDependencies } from "../landingPagePreview";
-import { readLandingPageDraft } from "./landingPageDraftAdapter";
-import { readCurrentLandingPageRevision } from "./landingPageRevisionAdapter";
+import { readLandingPageForPreview } from "./landingPageDraftAdapter";
+import { readCurrentLandingPageRevision, readLandingPageRevision } from "./landingPageRevisionAdapter";
 import { signLandingPageRevisionAsset } from "./landingPageRevisionStorageAdapter";
 
 export function loadLandingPagePreview(input: Readonly<{
   accountSlug: string;
   landingPageId: string;
+  revisionId?: string;
 }>) {
   return loadLandingPagePreviewWithDependencies(input, {
     authorizeViewer: async ({ accountSlug }) => {
@@ -33,8 +34,9 @@ export function loadLandingPagePreview(input: Readonly<{
       const entitlement = await getCommercialEntitlementSignal({ accountId });
       return entitlement.isCommerciallyEligible === true;
     },
-    loadLandingPage: readLandingPageDraft,
+    loadLandingPage: readLandingPageForPreview,
     readCurrentRevision: readCurrentLandingPageRevision,
+    readRevision: readLandingPageRevision,
     signAsset: signLandingPageRevisionAsset,
     log: (event) => console.log(JSON.stringify(event)),
   });

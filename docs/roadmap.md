@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 21/08/2026
-• Versão: v1.5.173
+• Versão: v1.5.174
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2098,7 +2098,7 @@ Repositório — Ajustados
 
 19. E19 — LP Builder
 - Objetivo: Consolidar o fluxo Core de landing pages por conta, da identidade mínima em `draft` às futuras etapas de geração, revisão, materialização e publicação, sempre por recortes aprovados.
-- Status: E19.1, E19.2 e E19.3 concluídas. E19.4.3, E19.4.4 e E19.4.5 concluídas; a E19.4 está encerrada e integrada à `main` pelo PR #776. A revisão 3 permanece preservada como baseline dos gaps persuasivos observados. Com a E22.1 concluída, a E19.5 deixa de estar bloqueada por essa pré-condição e passa a ser o próximo recorte a planejar, sem implementação iniciada.
+- Status: E19.1, E19.2 e E19.3 concluídas. E19.4.3, E19.4.4 e E19.4.5 concluídas; a E19.4 está encerrada e integrada à `main` pelo PR #776. A revisão 3 permanece preservada como baseline dos gaps persuasivos observados. A E19.5.3 está implementada no PR técnico #797, com reconciliação técnica e preflight read-only aprovados; revisão e merge humano, apply canônico, readiness, snippet, regressões, deployment e QA hospedado permanecem gates posteriores. O contract definitivo permanece em recorte posterior e proibido neste PR.
 
 19.1 Criação produtiva mínima de LP por conta
 
@@ -2406,27 +2406,60 @@ Repositório — Ajustados
 19.5 — Workspace operacional e lifecycle da LP
 
 19.5.1 Objetivo e status
-- Objetivo: preservar as decisões vigentes necessárias ao próximo planejamento do workspace operacional e do lifecycle da LP.
-- Status: Prevista; próximo recorte a planejar/reconciliar; sem implementação iniciada.
+- Objetivo: transformar a superfície autenticada da conta em workspace operacional para organizar, configurar, versionar, revisar, aprovar, arquivar e restaurar identidades estáveis de LP, preservando o histórico append-only.
+- Status: Plano-base v2 aprovado e E19.5.3 implementada no PR técnico #797, ready for review, com reconciliação técnica e preflight read-only aprovados; revisão e merge humano, apply canônico, readiness, snippet, regressões, deployment e QA hospedado permanecem gates obrigatórios. O contract definitivo continua posterior e proibido neste PR.
 
-19.5.2 Decisões vigentes e limites
-- `landing_page` é identidade comercial estável; tentativa ou revisão não cria nova LP.
-- PR #726 é base madura a reconciliar, não plano executável vigente.
-- Não implementar a antiga abordagem “Light” nem drafts independentes como novas LPs.
-- O planejamento da E19.5 deve decidir lifecycle, aprovação/conclusão/publicação/arquivamento, revisão publicada × revisão em trabalho, edição manual, melhoria parcial/integral por IA, histórico/restauração e quais ações consomem IA.
-- Nenhuma dessas decisões autoriza implementação neste PR.
+19.5.2 Registros do recorte
+- Repositório:
+  - Criados:
+    - `app/a/[account]/_components/LandingPageWorkspace.tsx`
+    - `app/a/[account]/_components/WorkspaceSubmitButton.tsx`
+    - `app/a/[account]/landing-pages/[landingPageId]/actions.ts`
+    - `app/a/[account]/landing-pages/[landingPageId]/configuration-actions.ts`
+    - `app/a/[account]/landing-pages/[landingPageId]/page.tsx`
+    - `app/a/[account]/workspace-actions.ts`
+    - `lib/lp-builder/adapters/landingPageWorkspaceAdapter.ts`
+    - `lib/lp-builder/landingPageWorkspace.ts`
+    - `lib/lp-builder/landing-page-workspace-validation-cases.ts`
+    - `supabase/migrations/20260821091539_e19_5_landing_page_workspace.sql`
+    - `supabase/tests/e19_5_landing_page_workspace.test.sql`
+    - `supabase/snippets/e19_5_landing_page_workspace_verify.sql`
+  - Ajustados:
+    - `app/a/[account]/`
+    - `lib/conversion-content/landing-page/input-catalog/`
+    - `lib/lp-builder/`
+    - `package.json`
+- Referências:
+  - Contrato de banco candidato: `docs/schema.md` — `account_landing_pages`, `account_landing_page_materializations` e configurações E19.5.3.
+  - Boundary durável: `docs/base-tecnica.md` — workspace operacional de `landing_page`.
+
+19.5.3 Workspace operacional, configuração e lifecycle da LP
+- Status: Implementada no repositório e com preflight Supabase read-only aprovado; ainda não mergeada, aplicada nem validada no ambiente hospedado. Revisão e merge humano, apply canônico, readiness, snippet, regressões E19.2–E19.5, deployment e QA autenticado hospedado permanecem pendentes; o contract definitivo continua posterior e proibido neste PR.
+- Conteúdo:
+  - a E19.2 permanece responsável pelo primeiro onboarding e pelo bootstrap histórico, sem rebind; a operação posterior separa valores compartilhados de conta e negócio dos valores contextuais de oferta, campanha e LP;
+  - cada LP continua sendo uma identidade comercial estável, representada uma única vez no workspace, com estados de UX derivados, lista operacional e visão separada de arquivadas;
+  - `landing_page_objective` é input humano explícito e não factual da LP na E20.2 v5, com `createdInVersion: 5`, evidence própria e dependência da aceitação E20.6 exata antes da geração;
+  - `Gerar nova revisão` reutiliza E19.3 e E19.4 por ação humana, cria revisão integral e append-only da mesma LP, preserva revisões anteriores e não altera automaticamente a versão aprovada;
+  - o histórico permite preview da revisão mais recente e de revisões anteriores; a aprovação escolhe explicitamente uma revisão existente, sem cópia nem nova entidade de versão;
+  - o lifecycle de produto é `active | archived`; a implementação funcional permanece backward-compatible com `draft`, e o contract definitivo fica em recorte posterior, somente após implantação e validação do runtime funcional;
+  - backfill de status `draft → active`, default `active` e retirada de `draft` não integram a implementação funcional da E19.5;
+  - publicação, editor, hard delete, binding dinâmico, tracking, analytics, testes A/B, engine de experimentos e nova automação permanecem fora do recorte.
+  - o schema repo-only adiciona `approved_materialization_id`, as residências `account_landing_page_shared_configurations` e `account_landing_page_configurations`, RPCs tenant-safe, readiness fail-closed, teste SQL transacional e snippet read-only;
+  - o runtime mantém o onboarding E19.2 como bootstrap, executa handoff por scope, lista uma identidade por LP, deriva estados de UX, salva configuração sem criar revisão, permite histórico/preview por revisão, aprovação idempotente, archive e restore;
+  - o contexto produzido passa a v4 e o snapshot produzido a v2; snapshots v1/contexto v3 históricos continuam legíveis sem regravação;
+  - regressões pós-merge do precursor foram aprovadas sem criar revisão 4: E19.2 com 33 checks locais e 8 SQL reais, E19.3 com 8 checks locais, e E19.4 com 25 checks locais e 8 SQL reais;
 
 20. E20 — Preparação e liberação de taxons para geração de landing pages
 
 * Objetivo: consolidar catálogo de entradas por taxon e plano, perfis versionados de orientação à geração, herança e, em recortes futuros, prontidão e liberação antes da geração de LPs por conta.
-* Status: E20.2 concluída até a v4; E20.3 concluída; E20.5 concluída e ativada após merge do PR #746, apply canônico, prova SQL e smokes autenticados em Preview e Production.
+* Status: E20.2 possui v1–v4 concluídas e v5 implementada repo-only na E19.5.3, ainda pendente de aceitação humana E20.6; E20.3 concluída; E20.5 concluída e ativada após merge do PR #746, apply canônico, prova SQL e smokes autenticados em Preview e Production.
 
 20.2 Catálogo de entradas por taxon
 
 20.2.1 Objetivo e status
 
 * Objetivo: definir e resolver um catálogo declarativo versionado de entradas de `landing_page` por taxon e plano, separado de valores operacionais, composição, conteúdo e entitlement.
-* Status: Concluído até a versão executável v4.
+* Status: Concluído até a versão executável v4; v5 implementada no repositório e ainda não aceita pela E20.6.
 
 20.2.2 Registros do recorte
 
@@ -2492,8 +2525,17 @@ Repositório — Ajustados
   * A v4 parte de cópia profunda da v3, preserva os 23 fields, sua ordem, camadas, metadata, bindings de capabilities e equivalência entre `starter`, `lite`, `pro` e `ultra`, mantém `buy`, `sell`, `valuation` e `mixed` e acrescenta `rent` ao final do conjunto permitido.
   * A consulta administrativa existente de estrutura exibe `Locação`; a jornada E19.2 recebeu somente o rótulo local correspondente e permanece na versão operacional v2, sem promoção de configurações ou do compilador E19.3 para v4.
   * As regressões focais, `npm ci`, `npm run check`, `git diff --check` e a inspeção autenticada do Preview em desktop e largura móvel foram aprovados; o servidor local iniciou na porta 3000, mas a renderização local ficou indisponível por ausência das chaves públicas do Supabase no worktree isolado.
-  * A E20.6 deve ser executada novamente contra a versão explícita 4 antes de qualquer registro de suficiência.
+  * A suficiência da v4 foi tratada em seu recorte; a v5 posterior exige nova aceitação E20.6 explícita antes da primeira geração E19.5.
   * O recorte não criou field, banco, migration, rota, API, nova UI, persistência, infraestrutura, automação, agente, job ou workload OpenAI e não alterou a E20.6.
+
+20.2.8 Objetivo humano específico da LP
+
+* Objetivo: criar a versão repo-only v5 por cópia profunda da v4 e acrescentar somente `landing_page_objective` como input humano específico da LP.
+* Status: Implementada no repositório pela E19.5.3; aceitação humana E20.6 da v5 permanece pendente e a geração falha fechado até sua conclusão.
+* Conteúdo:
+  * o field pertence ao scope `landing_page`, é obrigatório para gerar, aceita string não vazia, usa `not_applicable` para substituição e está disponível em todos os planos;
+  * v1–v4 permanecem imutáveis e a v5 usa evidence `decision:e19-5-human-v1` sem transformar o objetivo em autoridade factual;
+  * ausência do valor permite configuração parcial e impede somente a geração.
 
 20.3 Perfil de orientação para geração
 
@@ -2850,7 +2892,7 @@ Repositório — Ajustados
 
 22. E22 — Retirada controlada de ativos históricos
 - Objetivo: reduzir a superfície histórica que não participa do caminho canônico vigente, preservando consumidores reais e preparando a sequência E19.4 concluída → E22.1 → E19.5.
-- Status: E22.1 concluída; E22.2 candidata aguardando merge humano.
+- Status: E22.1 e E22.2 concluídas; a E22.2 foi integrada à `main` pelo PR #791, merge `f66d480ddfd38d337b8badb9231f7279d3283397`.
 
 22.1 Retirada controlada de ativos históricos
 
@@ -2943,7 +2985,7 @@ Repositório — Ajustados
 
 22.2.1 Objetivo e status
 - Objetivo: retirar fontes documentais redundantes ou obsoletas que duplicam autoridades vigentes.
-- Status: Implementação candidata.
+- Status: Concluída em 20/08/2026 pelo PR #791, merge `f66d480ddfd38d337b8badb9231f7279d3283397`; as referências históricas deliberadamente mantidas permanecem preservadas.
 
 22.2.2 Registros do recorte
 - Excluídos:
@@ -2961,6 +3003,8 @@ Repositório — Ajustados
 - Nenhuma alteração de banco, schema, infraestrutura ou arquitetura.
 
 99. Changelog
+v1.5.173 — 21/08/2026 — Registrada a retomada segura e a implementação repo-only da E19.5.3 após regressões pós-merge E19.2–E19.4 aprovadas sem revisão 4: catálogo v5, configuração por scope, workspace, histórico, preview por revisão, aprovação e lifecycle backward-compatible; apply, QA hospedado, contract e merge permanecem separados e o contract segue proibido.
+
 v1.5.171 — 20/08/2026 — Registrada a implementação repo-only tecnicamente aprovada da E21.2.4: gestão administrativa por ambiente/workload, lifecycle explícito, reautorização server-side, prova pelos quatro transportes existentes e falha fechada; apply, validações hospedadas, smoke real, ativação e cutover permanecem pós-merge, sem iniciar a E21.3.
 
 v1.5.170 — 20/08/2026 — Registrada a implementação repo-only tecnicamente aprovada da E21.2.3: fonte operacional por ambiente/workload, bootstrap, lifecycle transacional, resolver assíncrono fail-closed, quatro consumers, proveniência, validação de snapshots e provas SQL; apply, Security Controls, snippet real e cutover permanecem pós-merge, e a E21.2.4 fica autorizada a iniciar.

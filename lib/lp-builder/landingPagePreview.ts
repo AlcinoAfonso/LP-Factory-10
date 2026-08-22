@@ -4,6 +4,7 @@ import {
 } from "../conversion-content/landing-page/presentation";
 import { z } from "zod";
 import type { AccountLandingPage } from "./contracts";
+import type { LandingPageStatus } from "../types/status";
 import { isOperationalLandingPageStatus } from "../types/status";
 import type { CurrentLandingPageRevision } from "./adapters/landingPageRevisionAdapter";
 import {
@@ -99,11 +100,22 @@ export type LandingPageRenderModel = Readonly<{
   }>;
 }>;
 
+export type LandingPagePreviewIdentity = Readonly<{
+  name: string;
+  status: LandingPageStatus;
+}>;
+
 export type LandingPagePreviewLoadResult =
-  | Readonly<{ status: "ready"; model: LandingPageRenderModel }>
-  | Readonly<{ status: "empty" }>
   | Readonly<{
-      status: "denied" | "not_found" | "unavailable" | "invalid_cta";
+      status: "ready";
+      model: LandingPageRenderModel;
+      landingPage: LandingPagePreviewIdentity;
+    }>
+  | Readonly<{ status: "empty"; landingPage: LandingPagePreviewIdentity }>
+  | Readonly<{ status: "denied" | "not_found" }>
+  | Readonly<{
+      status: "unavailable" | "invalid_cta";
+      landingPage?: LandingPagePreviewIdentity;
     }>;
 
 export type LandingPagePreviewDependencies = Readonly<{
@@ -116,12 +128,20 @@ export type LandingPagePreviewDependencies = Readonly<{
     accountId: string;
     landingPageId: string;
   }>) => Promise<
-    | Readonly<{ ok: true; landingPage: AccountLandingPage }>
+    | Readonly<{ ok: true; landingPage: Omit<AccountLandingPage, "status"> & { status: LandingPageStatus } }>
     | Readonly<{ ok: false; error: "not_found" | "read_failed" }>
   >;
   readCurrentRevision: (input: Readonly<{
     accountId: string;
     landingPageId: string;
+  }>) => Promise<
+    | Readonly<{ ok: true; value: CurrentLandingPageRevision | null }>
+    | Readonly<{ ok: false; error: "READ_FAILED" }>
+  >;
+  readRevision: (input: Readonly<{
+    accountId: string;
+    landingPageId: string;
+    materializationId: string;
   }>) => Promise<
     | Readonly<{ ok: true; value: CurrentLandingPageRevision | null }>
     | Readonly<{ ok: false; error: "READ_FAILED" }>
@@ -140,7 +160,7 @@ type PreparedLandingPageRenderModel = Omit<LandingPageRenderModel, "media"> &
   }>;
 
 export async function loadLandingPagePreviewWithDependencies(
-  input: Readonly<{ accountSlug: string; landingPageId: string }>,
+  input: Readonly<{ accountSlug: string; landingPageId: string; revisionId?: string }>,
   dependencies: LandingPagePreviewDependencies,
 ): Promise<LandingPagePreviewLoadResult> {
   try {
@@ -156,7 +176,7 @@ export async function loadLandingPagePreviewWithDependencies(
 }
 
 async function loadLandingPagePreviewUnchecked(
-  input: Readonly<{ accountSlug: string; landingPageId: string }>,
+  input: Readonly<{ accountSlug: string; landingPageId: string; revisionId?: string }>,
   dependencies: LandingPagePreviewDependencies,
 ): Promise<LandingPagePreviewLoadResult> {
   const accountSlug = input.accountSlug.trim().toLowerCase();
@@ -192,7 +212,7 @@ async function loadLandingPagePreviewUnchecked(
   if (
     landingPage.landingPage.account_id !== accountId ||
     landingPage.landingPage.id !== landingPageId ||
-    !isOperationalLandingPageStatus(landingPage.landingPage.status)
+    !["draft", "active", "archived"].includes(landingPage.landingPage.status)
   ) {
     return observedFailure(
       dependencies,
@@ -201,17 +221,29 @@ async function loadLandingPagePreviewUnchecked(
       landingPageId,
     );
   }
+  const landingPageIdentity: LandingPagePreviewIdentity = {
+    name: landingPage.landingPage.name,
+    status: landingPage.landingPage.status,
+  };
 
-  const current = await dependencies.readCurrentRevision({ accountId, landingPageId });
+  const revisionId = input.revisionId?.trim();
+  if (revisionId && !isUuid(revisionId)) {
+    return observedFailure(dependencies, "not_found", "invalid_revision_id", landingPageId);
+  }
+  const current = revisionId
+    ? await dependencies.readRevision({ accountId, landingPageId, materializationId: revisionId })
+    : await dependencies.readCurrentRevision({ accountId, landingPageId });
   if (!current.ok) {
     return observedFailure(
       dependencies,
       "unavailable",
       "revision_read_failed",
       landingPageId,
+      undefined,
+      landingPageIdentity,
     );
   }
-  if (!current.value) return { status: "empty" };
+  if (!current.value) return { status: "empty", landingPage: landingPageIdentity };
 
   const prepared = prepareLandingPageRenderModel({
     accountId,
@@ -225,6 +257,7 @@ async function loadLandingPagePreviewUnchecked(
       prepared.error.toLowerCase(),
       landingPageId,
       current.value.id,
+      landingPageIdentity,
     );
   }
 
@@ -236,12 +269,14 @@ async function loadLandingPagePreviewUnchecked(
       "asset_signing_failed",
       landingPageId,
       current.value.id,
+      landingPageIdentity,
     );
   }
 
   const { asset: _asset, image, ...model } = prepared.value;
   return {
     status: "ready",
+    landingPage: landingPageIdentity,
     model: deepFreeze({
       ...model,
       media: {
@@ -502,6 +537,7 @@ function observedFailure(
   reason: string,
   landingPageId: string,
   revisionId?: string,
+  landingPage?: LandingPagePreviewIdentity,
 ): LandingPagePreviewLoadResult {
   try {
     dependencies.log?.({
@@ -514,7 +550,7 @@ function observedFailure(
   } catch {
     // Diagnostic logging must not alter the fail-closed result.
   }
-  return { status } as LandingPagePreviewLoadResult;
+  return (landingPage ? { status, landingPage } : { status }) as LandingPagePreviewLoadResult;
 }
 
 function isE164(value: string) {

@@ -5,6 +5,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 
 import { LandingPageRenderer } from "../../components/lp-builder/LandingPageRenderer";
 import type { CurrentLandingPageRevision } from "./adapters/landingPageRevisionAdapter";
+import type { LandingPageRevisionSnapshotV1 } from "./landingPageRevision";
 import {
   LANDING_PAGE_PREVIEW_SIGNED_URL_TTL_SECONDS,
   loadLandingPagePreviewWithDependencies,
@@ -94,7 +95,9 @@ const sections = [
 
 function revisionFixture(
   landingPageStatus: "draft" | "active" = "draft",
-): CurrentLandingPageRevision {
+): Omit<CurrentLandingPageRevision, "snapshot"> & {
+  snapshot: LandingPageRevisionSnapshotV1;
+} {
   return {
     id: REVISION_ID,
     accountId: ACCOUNT_ID,
@@ -206,7 +209,9 @@ function revisionFixture(
     },
     createdBy: "50000000-0000-4000-8000-000000000005",
     createdAt: "2026-08-18T12:00:01.000Z",
-  } as unknown as CurrentLandingPageRevision;
+  } as unknown as Omit<CurrentLandingPageRevision, "snapshot"> & {
+    snapshot: LandingPageRevisionSnapshotV1;
+  };
 }
 
 function dependencies(
@@ -236,6 +241,10 @@ function dependencies(
       };
     },
     readCurrentRevision: async () => {
+      calls.push("revision");
+      return { ok: true, value: revisionFixture() };
+    },
+    readRevision: async () => {
       calls.push("revision");
       return { ok: true, value: revisionFixture() };
     },
@@ -274,7 +283,7 @@ const cases = [
     },
   },
   {
-    name: "expand compatibility previews active and rejects archived",
+    name: "expand compatibility previews active and archived histories",
     run: async () => {
       const active = await loadLandingPagePreviewWithDependencies(
         { accountSlug: "account", landingPageId: LANDING_PAGE_ID },
@@ -317,8 +326,29 @@ const cases = [
           },
         }),
       );
-      assert.equal(archived.status, "not_found");
-      assert.equal(revisionRead, false);
+      assert.equal(archived.status, "ready");
+      assert.equal(revisionRead, true);
+
+      const archivedEmpty = await loadLandingPagePreviewWithDependencies(
+        { accountSlug: "account", landingPageId: LANDING_PAGE_ID },
+        dependencies([], {
+          loadLandingPage: async () => ({
+            ok: true,
+            landingPage: {
+              id: LANDING_PAGE_ID,
+              account_id: ACCOUNT_ID,
+              name: "Primeiro imóvel no Rio",
+              slug: "primeiro-imovel-no-rio",
+              status: "archived" as never,
+            },
+          }),
+          readCurrentRevision: async () => ({ ok: true, value: null }),
+        }),
+      );
+      assert.equal(archivedEmpty.status, "empty");
+      if (archivedEmpty.status === "empty") {
+        assert.equal(archivedEmpty.landingPage.status, "archived");
+      }
     },
   },
   {
@@ -513,6 +543,7 @@ const cases = [
       assert.match(page, /status === "invalid_cta"/);
       assert.match(page, /status === "empty"/);
       assert.match(page, /status === "ready"/);
+      assert.match(page, /previewLandingPage && previewLandingPage\.status !== "archived"/);
     },
   },
 ];

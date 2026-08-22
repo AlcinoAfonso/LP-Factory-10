@@ -5,7 +5,7 @@ import type {
   CompileLandingPageGenerationContextForDraftInput,
   CompileLandingPageGenerationContextResult,
 } from "../generationContextContracts";
-import { getAccountLandingPageOnboardingRevalidationAuthority } from "./onboardingConfigurationAdapter";
+import { getAccountLandingPageOperationalRevalidationAuthority } from "./landingPageWorkspaceAdapter";
 import { compileLandingPageGenerationContextForDraftWithDependencies } from "./generationContextAdapterCore";
 import { readLandingPageDraft } from "./landingPageDraftAdapter";
 
@@ -13,7 +13,11 @@ export function compileLandingPageGenerationContextForDraft(
   input: CompileLandingPageGenerationContextForDraftInput,
 ): Promise<CompileLandingPageGenerationContextResult> {
   return compileLandingPageGenerationContextForDraftWithDependencies(input, {
-    loadRevalidationAuthority: getAccountLandingPageOnboardingRevalidationAuthority,
+    loadRevalidationAuthority: ({ accountId }) =>
+      getAccountLandingPageOperationalRevalidationAuthority({
+        accountId,
+        landingPageId: input.landingPageId,
+      }),
     loadLandingPage: readLandingPageDraft,
     loadPreparation: loadTaxonPreparationForReviewedVersion,
     log: (payload) => console.log(JSON.stringify(payload)),
