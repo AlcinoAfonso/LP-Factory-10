@@ -161,6 +161,28 @@ const cases = [
       assert.match(pendingButton,/disabled=\{pending\}/);
     },
   },
+  {
+    name: "workspace materialization reads paginate the complete tenant-safe history deterministically",
+    run: async () => {
+      const adapter = await readFile(adapterUrl,"utf8");
+      assert.equal((adapter.match(/readAllLandingPageMaterializations/g) ?? []).length,3);
+      assert.match(adapter,/select\("id,account_id,landing_page_id,revision_number,created_at", \{ count: "exact" \}\)/);
+      assert.match(adapter,/while \(true\)[\s\S]+\.range\(from, to\)/);
+      assert.match(adapter,/const from = rows\.length/);
+      assert.match(adapter,/\.order\("landing_page_id", \{ ascending: true \}\)[\s\S]+\.order\("revision_number", \{ ascending: false \}\)[\s\S]+\.order\("id", \{ ascending: true \}\)/);
+      assert.match(adapter,/if \(expectedTotal === null\) expectedTotal = count;[\s\S]+else if \(count !== expectedTotal\) return null/);
+      assert.match(adapter,/data\.length !== expectedPageLength/);
+      assert.match(adapter,/rows\.length === expectedTotal/);
+      assert.match(adapter,/ids\.has\(row\.id\) \|\| revisionKeys\.has\(revisionKey\)/);
+      assert.match(adapter,/compareMaterializations\(previous, row\) >= 0/);
+      assert.match(adapter,/\.eq\("account_id", input\.accountId\)/);
+      assert.match(adapter,/input\.landingPageId && row\.landing_page_id !== input\.landingPageId/);
+      assert.match(adapter,/row\.account_id !== input\.accountId/);
+      assert.match(adapter,/const pageRevisions = revisions\.filter\([\s\S]+const latest = pageRevisions\[0\][\s\S]+pageRevisions\.find\(\(row\) => row\.id === page\.approved_materialization_id\)/);
+      assert.match(adapter,/const latest = revisions\[0\][\s\S]+revisions\.find\(\(row\) => row\.id === page\.approved_materialization_id\)[\s\S]+revisions: revisions\.map/);
+      assert.match(adapter,/revisions === null[\s\S]+return \{ ok: false, error: "unavailable" \}/);
+    },
+  },
 ];
 
 async function main() {

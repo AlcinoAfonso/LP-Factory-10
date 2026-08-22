@@ -31,8 +31,16 @@ type Authority = Readonly<{
   taxonChain: LandingPageInputCatalogTaxonChain;
   authoritativeValues: Readonly<Record<string, unknown>>;
 }>;
+type MaterializationRow = Readonly<{
+  id: string;
+  account_id: string;
+  landing_page_id: string;
+  revision_number: number;
+  created_at: string;
+}>;
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const MATERIALIZATION_PAGE_SIZE = 200;
 
 export async function listAccountLandingPageWorkspace(input: {
   accountId: string;
@@ -43,7 +51,7 @@ export async function listAccountLandingPageWorkspace(input: {
   if (!(await workspaceReady(client))) return { ok: false, error: "unavailable" };
 
   try {
-    const [{ data: pages, error: pagesError }, { data: shared, error: sharedError }, { data: configurations, error: configurationsError }, { data: revisions, error: revisionsError }] = await Promise.all([
+    const [{ data: pages, error: pagesError }, { data: shared, error: sharedError }, { data: configurations, error: configurationsError }, revisions] = await Promise.all([
       client.from("account_landing_pages")
         .select("id,account_id,name,slug,status,approved_materialization_id,updated_at")
         .eq("account_id", authority.value.accountId)
@@ -56,22 +64,18 @@ export async function listAccountLandingPageWorkspace(input: {
       client.from("account_landing_page_configurations")
         .select("landing_page_id,account_id,catalog_version,values,revision,is_initialized")
         .eq("account_id", authority.value.accountId),
-      client.from("account_landing_page_materializations")
-        .select("id,account_id,landing_page_id,revision_number,created_at")
-        .eq("account_id", authority.value.accountId)
-        .order("revision_number", { ascending: false }),
+      readAllLandingPageMaterializations(client, { accountId: authority.value.accountId }),
     ]);
-    if (pagesError || sharedError || configurationsError || revisionsError || !isRecord(shared)) {
+    if (pagesError || sharedError || configurationsError || revisions === null || !isRecord(shared)) {
       return { ok: false, error: "unavailable" };
     }
     const configurationMap = new Map((Array.isArray(configurations) ? configurations : []).filter(isRecord).map((row) => [row.landing_page_id, row]));
-    const revisionRows = (Array.isArray(revisions) ? revisions : []).filter(isRecord);
     const items: AccountLandingPageWorkspaceItem[] = [];
     for (const page of (Array.isArray(pages) ? pages : [])) {
       if (!isRecord(page) || typeof page.id !== "string") return { ok: false, error: "unavailable" };
       const configuration = resolveConfiguration(authority.value, page.id, shared, configurationMap.get(page.id));
       if (!configuration) return { ok: false, error: "unavailable" };
-      const pageRevisions = revisionRows.filter((row) => row.landing_page_id === page.id);
+      const pageRevisions = revisions.filter((row) => row.landing_page_id === page.id);
       const latest = pageRevisions[0];
       const approved = pageRevisions.find((row) => row.id === page.approved_materialization_id);
       const item = mapWorkspaceItem(page, configuration, latest, approved);
@@ -98,7 +102,7 @@ export async function getAccountLandingPageWorkspaceDetail(input: {
   if (!authority.ok) return authority.result;
   if (!(await workspaceReady(client))) return { ok: false, error: "unavailable" };
   try {
-    const [{ data: page, error: pageError }, { data: shared, error: sharedError }, { data: configuration, error: configurationError }, { data: revisions, error: revisionsError }] = await Promise.all([
+    const [{ data: page, error: pageError }, { data: shared, error: sharedError }, { data: configuration, error: configurationError }, revisions] = await Promise.all([
       client.from("account_landing_pages")
         .select("id,account_id,name,slug,status,approved_materialization_id,updated_at")
         .eq("id", input.landingPageId).eq("account_id", authority.value.accountId).limit(1).maybeSingle(),
@@ -108,26 +112,25 @@ export async function getAccountLandingPageWorkspaceDetail(input: {
       client.from("account_landing_page_configurations")
         .select("landing_page_id,account_id,catalog_version,values,revision,is_initialized")
         .eq("landing_page_id", input.landingPageId).eq("account_id", authority.value.accountId).limit(1).maybeSingle(),
-      client.from("account_landing_page_materializations")
-        .select("id,account_id,landing_page_id,revision_number,created_at")
-        .eq("account_id", authority.value.accountId).eq("landing_page_id", input.landingPageId)
-        .order("revision_number", { ascending: false }),
+      readAllLandingPageMaterializations(client, {
+        accountId: authority.value.accountId,
+        landingPageId: input.landingPageId,
+      }),
     ]);
-    if (pageError || sharedError || configurationError || revisionsError) return { ok: false, error: "unavailable" };
+    if (pageError || sharedError || configurationError || revisions === null) return { ok: false, error: "unavailable" };
     if (!isRecord(page)) return { ok: false, error: "not_found" };
     if (!isRecord(shared) || !isRecord(configuration)) return { ok: false, error: "unavailable" };
     const resolved = resolveConfiguration(authority.value, input.landingPageId, shared, configuration);
     if (!resolved) return { ok: false, error: "invalid_configuration" };
-    const rows = (Array.isArray(revisions) ? revisions : []).filter(isRecord);
-    const latest = rows[0];
-    const approved = rows.find((row) => row.id === page.approved_materialization_id);
+    const latest = revisions[0];
+    const approved = revisions.find((row) => row.id === page.approved_materialization_id);
     const item = mapWorkspaceItem(page, resolved, latest, approved);
     if (!item) return { ok: false, error: "unavailable" };
     return {
       ok: true,
       landingPage: item,
       configuration: resolved,
-      revisions: rows.map((row, index) => ({
+      revisions: revisions.map((row, index) => ({
         id: String(row.id),
         number: Number(row.revision_number),
         createdAt: String(row.created_at),
@@ -270,6 +273,75 @@ async function mutateWorkspace(accountId: string, operation: (authority: Authori
   if (!authority.ok) return authority.mutationResult;
   if (!(await workspaceReady(client))) return { ok: false, error: "unavailable" };
   try { return await operation(authority.value, client); } catch { return { ok: false, error: "unavailable" }; }
+}
+
+async function readAllLandingPageMaterializations(
+  client: ServiceClient,
+  input: Readonly<{ accountId: string; landingPageId?: string }>,
+): Promise<MaterializationRow[] | null> {
+  const rows: MaterializationRow[] = [];
+  const ids = new Set<string>();
+  const revisionKeys = new Set<string>();
+  let expectedTotal: number | null = null;
+  let previous: MaterializationRow | null = null;
+
+  while (true) {
+    const from = rows.length;
+    const to = from + MATERIALIZATION_PAGE_SIZE - 1;
+    let query = client.from("account_landing_page_materializations")
+      .select("id,account_id,landing_page_id,revision_number,created_at", { count: "exact" })
+      .eq("account_id", input.accountId);
+    if (input.landingPageId) query = query.eq("landing_page_id", input.landingPageId);
+    const { data, error, count } = await query
+      .order("landing_page_id", { ascending: true })
+      .order("revision_number", { ascending: false })
+      .order("id", { ascending: true })
+      .range(from, to);
+
+    if (error || typeof count !== "number" || !Number.isSafeInteger(count) || count < 0 || !Array.isArray(data)) return null;
+    if (expectedTotal === null) expectedTotal = count;
+    else if (count !== expectedTotal) return null;
+
+    const expectedPageLength = Math.min(MATERIALIZATION_PAGE_SIZE, expectedTotal - from);
+    if (expectedPageLength < 0 || data.length !== expectedPageLength) return null;
+
+    for (const value of data) {
+      const row = parseMaterializationRow(value);
+      if (!row || row.account_id !== input.accountId || (input.landingPageId && row.landing_page_id !== input.landingPageId)) return null;
+      const revisionKey = `${row.landing_page_id}:${row.revision_number}`;
+      if (ids.has(row.id) || revisionKeys.has(revisionKey) || (previous && compareMaterializations(previous, row) >= 0)) return null;
+      ids.add(row.id);
+      revisionKeys.add(revisionKey);
+      rows.push(row);
+      previous = row;
+    }
+
+    if (rows.length === expectedTotal) return rows;
+    if (data.length === 0) return null;
+  }
+}
+
+function parseMaterializationRow(value: unknown): MaterializationRow | null {
+  if (!isRecord(value)
+    || typeof value.id !== "string" || !UUID_RE.test(value.id)
+    || typeof value.account_id !== "string" || !UUID_RE.test(value.account_id)
+    || typeof value.landing_page_id !== "string" || !UUID_RE.test(value.landing_page_id)
+    || typeof value.revision_number !== "number" || !Number.isSafeInteger(value.revision_number) || value.revision_number < 1
+    || typeof value.created_at !== "string" || value.created_at.length === 0) return null;
+  return {
+    id: value.id,
+    account_id: value.account_id,
+    landing_page_id: value.landing_page_id,
+    revision_number: value.revision_number,
+    created_at: value.created_at,
+  };
+}
+
+function compareMaterializations(left: MaterializationRow, right: MaterializationRow): number {
+  if (left.landing_page_id !== right.landing_page_id) return left.landing_page_id < right.landing_page_id ? -1 : 1;
+  if (left.revision_number !== right.revision_number) return left.revision_number > right.revision_number ? -1 : 1;
+  if (left.id === right.id) return 0;
+  return left.id < right.id ? -1 : 1;
 }
 
 function resolveConfiguration(authority: Authority, landingPageId: string, shared: Record<string, unknown>, page: Record<string, unknown> | undefined): AccountLandingPageOperationalConfiguration | null {
