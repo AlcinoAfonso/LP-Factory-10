@@ -261,7 +261,7 @@
 - Carregar histórico somente no contexto da LP aberta, com ordenação determinística e paginação/completude adequadas.
 - Na geração, congelar no contexto/snapshot os valores/fatos efetivamente usados, a versão executável E20.2 utilizada e as identidades técnicas das duas residências, incluindo `sharedRevision` e `landingPageRevision`; esses números provam proveniência, não versionam o conteúdo.
 - Novas gerações usam `LandingPageGenerationContext` v4 no caminho operacional pós-handoff: v4 substitui `configurationRevision` por `sharedRevision` e `landingPageRevision`, preserva separadamente `sharedCatalogVersion`, `landingPageCatalogVersion` e `effectiveInputCatalogVersion`, sem alias ou fallback para E19.2.
-- `landingPageRevision` e `landingPageCatalogVersion` são obrigatórios na geração. `sharedRevision` e `sharedCatalogVersion` são ambos positivos ou ambos `null`; ausência é permitida somente quando o resolver comprova que nenhum valor de scope compartilhado foi consumido e nenhum field compartilhado obrigatório aplicável está ausente.
+- `landingPageRevision` e `landingPageCatalogVersion` são obrigatórios na geração. `sharedRevision` e `sharedCatalogVersion` são ambos positivos ou ambos `null`; ausência é permitida somente quando o resolver comprova que nenhum valor efetivamente usado foi obtido da residência operacional compartilhada e que todos os fields compartilhados obrigatórios aplicáveis estão validamente resolvidos por suas fontes autoritativas ou não são aplicáveis.
 - O writer emite snapshot v2 com contexto v4. Reader e validator formam união discriminada: snapshot v1/contexto v3 permanece integralmente válido e read-only; snapshot v2/contexto v4 atende somente novas revisões; combinações v1/v4 ou v2/v3 falham fechado e nenhum snapshot histórico é regravado.
 
 #### 2.1.4. Validação
@@ -594,7 +594,7 @@
   - salvar configuração não cria revisão de conteúdo nem altera histórico;
   - se a mesma ação de save altera as duas residências, conflito ou erro em qualquer uma faz rollback integral e nenhuma mudança parcial persiste;
   - nova geração cria revisão integral append-only da mesma LP;
-  - snapshot registra versão E20.2 operacional, valores/contexto e, para cada residência usada, seu `catalog_version` histórico e revisão técnica; ausência compartilhada usa o par `sharedRevision = null`/`sharedCatalogVersion = null` somente quando nenhum valor compartilhado é consumido e nenhum obrigatório compartilhado aplicável falta;
+  - snapshot registra versão E20.2 operacional, valores/contexto e, para cada residência usada, seu `catalog_version` histórico e revisão técnica; ausência compartilhada usa o par `sharedRevision = null`/`sharedCatalogVersion = null` somente quando nenhum valor efetivamente usado vem da residência operacional compartilhada e todos os fields compartilhados obrigatórios aplicáveis estão validamente resolvidos por suas fontes autoritativas ou não são aplicáveis;
   - snapshot v1/contexto v3 e snapshot v2/contexto v4 são aceitos; combinações cruzadas falham fechado e revisões E19.4 existentes continuam abrindo no renderer/read model únicos;
   - versão aprovada anterior permanece até nova aprovação humana;
   - histórico de uma LP pode ser carregado/paginado sem carregar todos os históricos da conta;
