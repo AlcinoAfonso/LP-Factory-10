@@ -37,6 +37,7 @@
 - `app/a/[account]/page.tsx` — superfície atual pós-setup da conta e decisão da experiência comercial.
 - `lib/conversion-content/landing-page/input-catalog/` — contrato E20.2 v2, escopos, obrigação, validação e `landingPageSubstitutionPolicy`.
 - `lib/conversion-content/adapters/selectedEndCustomerResearchAdapter.ts` e `lib/conversion-content/landing-page/taxon-preparation/` — leitura server-side da versão E20.2 revisada e preparação por versão exata.
+- `lib/lp-builder/generationContext.ts` — padrão existente de separar configuração histórica da versão E20.2 efetiva e revalidar sem reescrever o histórico.
 - `lib/commercial-entitlements/` — resolução do entitlement e do `planKey` efetivo.
 - `lib/commercial-capabilities/` — boundary canônico criado na E9.7.3, ainda sem capacidades Starter admitidas no registry runtime.
 - Taxonomia da conta — resolver autoritativo do taxon primário ativo já usado na superfície da conta.
