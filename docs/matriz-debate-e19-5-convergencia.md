@@ -152,20 +152,28 @@
 - E21.2 continua autoridade da configuração operacional dos workloads.
 - Nenhum recorte passa a depender de fonte concorrente criada pela E19.5.
 
-### 4.6. Identidade da LP e versionamento — decisão humana preliminar
+### 4.6. Identidade da LP e versionamento — decisão humana confirmada
 
+- Decisão humana confirmada em 22/08/2026: adotar **núcleo híbrido** para a identidade da LP.
+- Princípio de produto: **a LP identifica um trabalho comercial; a revisão identifica uma evolução desse mesmo trabalho**.
 - Cada conta pode possuir várias identidades de LP.
 - Cada identidade de LP pode possuir várias revisões imutáveis e append-only.
 - A identidade comercial deve permanecer estável depois da primeira revisão válida.
-- Elementos propostos como núcleo imutável da identidade após a primeira revisão válida:
+- Elementos do núcleo de identidade após a primeira revisão válida:
   - conta proprietária;
   - código sequencial visível ao cliente;
-  - objetivo comercial da LP;
-  - estágio do funil;
+  - `funnel_stage`;
   - oferta ou caso de uso principal, em seu significado;
-  - intenção comercial, quando aplicável ao taxon.
-- Esses elementos podem ser corrigidos enquanto ainda não existir primeira revisão válida.
-- Depois da primeira revisão válida, alterar qualquer elemento do núcleo de identidade deve criar uma nova LP, e não uma nova revisão da LP existente.
+  - `transaction_intent`, quando aplicável ao taxon;
+  - finalidade comercial da LP, em seu significado, sem transformar a redação literal de `landing_page_objective` em identificador.
+- Antes da primeira revisão válida, esses elementos ainda podem ser corrigidos.
+- Depois da primeira revisão válida:
+  - mudar `funnel_stage` cria nova LP;
+  - mudar `transaction_intent`, quando aplicável, cria nova LP;
+  - mudar o significado da oferta ou do caso de uso principal cria nova LP;
+  - mudar materialmente a finalidade comercial cria nova LP;
+  - mero refinamento textual de `landing_page_objective` não cria nova LP;
+  - atualizar detalhes factuais da mesma oferta, sem alterar seu significado, não cria nova LP.
 - Não integram o núcleo imutável, por princípio:
   - nome amigável exibido no workspace;
   - copy, títulos, imagens e estrutura visual;
@@ -178,8 +186,8 @@
 - O código visível ao cliente deve ser sequencial por conta, monotônico, imutável e não reutilizável, por exemplo `LP-001`, `LP-002`, `LP-003`; o UUID técnico continua sendo a identidade interna.
 - Revisões não consomem novos códigos de LP.
 - A nomenclatura de UX recomendada é `LP-001 · V1`, `LP-001 · V2`, `LP-002 · V1`; evitar `1.1`, por misturar identidade da LP com revisão e sugerir versionamento decimal/semântico.
-- A proposta altera materialmente o plano vigente em um ponto: hoje `landing_page_objective` é tratada como configuração mutável que pode entrar em uma nova revisão; a matriz deve avaliar a mudança para atributo de identidade imutável após V1.
-- A matriz também deve confirmar se `funnel_stage`, oferta/caso de uso principal e `transaction_intent` devem receber a mesma trava após V1 e quais detalhes de oferta permanecem apenas configuração mutável.
+- O contrato atual precisa ser reconciliado após o encerramento da matriz porque o plano vigente e o #797 tratam objetivo, funil e intenção como configuração editável.
+- A natureza de `landing_page_objective` — string livre ou campo estruturado — passa a ser decisão separada no MD-17; a decisão de identidade não autoriza usar a igualdade literal desse texto como trava.
 
 ## 5. Matriz principal
 
@@ -198,9 +206,10 @@
 | MD-11 | Integração E20.6.5 | Gerar somente com catálogo autorizado | Versão executável explícita e decisão humana | v5 preparada, gravação posterior | Pendente | Pendente | Ordem de rollout e fonte de versão | Pendente | manter / desacoplar | Pendente | Pendente | Pendente | Pendente |
 | MD-12 | Compatibilidade futura | Não bloquear publicação e A/B | Apenas compatibilidade, sem implementação | Revisões imutáveis preservadas | Pendente | Pendente | Risco de antecipação | Pendente | manter princípio / remover qualquer preparação extra | Pendente | Pendente | Pendente | Pendente |
 | MD-13 | Tamanho do PR | Entrega compreensível e segura | Não definido | PR amplo e multi-boundary | Pendente | Pendente | Descoberta sucessiva de invariantes | Pendente | continuar / extrair / substituir | Pendente | Pendente | Pendente | Pendente |
-| MD-14 | Identidade comercial da LP | Mesma LP deve preservar conta, objetivo, funil, oferta/caso de uso e intenção comercial; mudança de identidade cria nova LP | Plano vigente define LP estável, mas permite alterar `landing_page_objective` e incorporar a mudança em nova revisão | #797 trata objetivo/funil/intenção como configuração operacional editável | Preservar uma identidade estável e compreensível | Permitir que uma mesma LP mude de propósito ao longo do histórico | Histórico pode misturar páginas comercialmente diferentes sob a mesma identidade | Pendente | travar após V1 / manter mutável / núcleo híbrido | Recomendação preliminar: travar núcleo após V1 | Pendente | **Preliminar: núcleo imutável após primeira revisão válida** | reconciliar plano e implementação após encerramento da matriz |
+| MD-14 | Identidade comercial da LP | Mesma LP representa o mesmo trabalho comercial; nova finalidade, funil, intenção ou significado da oferta cria nova LP, enquanto refinamentos preservam a identidade | Plano vigente define LP estável, mas permite alterar `landing_page_objective` e incorporar a mudança em nova revisão | #797 trata objetivo/funil/intenção como configuração operacional editável | Preservar identidade estável sem confundir revisão com nova iniciativa comercial | Trava literal de texto livre ou, no extremo oposto, permitir mudança de propósito sob a mesma LP | Histórico e analytics podem misturar trabalhos comerciais distintos; trava excessiva pode multiplicar LPs por simples redação | Pendente | travar após V1 / manter mutável / núcleo híbrido | Pendente | **Núcleo híbrido: travar dimensões estruturais e significado comercial; não travar literalmente a redação de `landing_page_objective`** | **Confirmado em 22/08/2026** | reconciliar plano e implementação após encerramento da matriz |
 | MD-15 | Código visível da LP | Cada LP deve ter código sequencial por conta, imutável e não reutilizável (`LP-001`, `LP-002`...) | Hoje existe UUID técnico, `name` e `slug`; não existe código sequencial visível | #797 não implementa código humano estável | Identificação simples para cliente e suporte | Acoplar revisão ao código da LP ou expor UUID | Ambiguidade entre identidade e revisão | Pendente | código sequencial / UUID+nome / outro rótulo | Recomendação preliminar: código sequencial por conta | Pendente | **Preliminar: adotar código sequencial por conta** | decidir shape físico somente após fechamento do debate |
 | MD-16 | Numeração das revisões | Ajustar LP existente mantém o mesmo código e cria nova versão | Revisões já são append-only por `revision_number` | #797 preserva revisão numérica por LP | Separar identidade da LP de sua evolução | Notação `1.1` mistura os conceitos | UX confusa e futura ambiguidade | Pendente | `LP-001 · V2` / `1.1` / outro | Recomendação preliminar: `LP-001 · Vn` | Pendente | **Preliminar: não usar `1.1`; usar LP + versão separadas** | refletir em UX e documentação se confirmado |
+| MD-17 | Natureza de `landing_page_objective` | Dar à geração uma orientação específica da página sem duplicar funil, intenção comercial, oferta ou canal | Na `main`, E20.2 vai até v4 e não possui esse field; o plano E19.5 o descreve como objetivo humano textual | #797 propõe E20.2 v5 com `landing_page_objective` universal, `string`, scope `landing_page`, origem humana, obrigatório e validação `type_only` | Preservar orientação semântica útil para a geração | Criar uma segunda taxonomia estruturada que sobreponha `funnel_stage`, `transaction_intent`, oferta ou canal apenas para tornar o objetivo comparável | Texto livre não deve virar identificador literal; enum redundante pode criar contradições e manutenção sem valor comprovado | Pendente | manter string / estruturar somente com taxonomia ortogonal comprovada / retirar | Pendente | **Manter string na primeira E19.5 e fora da trava literal de identidade; estruturar apenas se surgir taxonomia recorrente, estável e ortogonal aos campos existentes** | Pendente | decidir antes de reconciliar E20.2 v5 e o contrato do #797 |
 
 ## 6. Verificações técnicas por classe
 
@@ -243,7 +252,7 @@
   - aprovada.
 - Confirmar que nenhum estado é inferido por contador ou efeito colateral.
 - Separar explicitamente identidade da LP de revisão de conteúdo.
-- Confirmar o momento de congelamento do núcleo da identidade: antes da primeira revisão válida pode haver correção; depois dela, mudança de objetivo/funil/oferta/intenção cria nova LP.
+- Confirmar o momento de congelamento do núcleo da identidade: antes da primeira revisão válida pode haver correção; depois dela, mudança de `funnel_stage`, `transaction_intent`, significado da oferta/caso de uso ou finalidade comercial cria nova LP, sem usar a redação literal de `landing_page_objective` como comparação de identidade.
 - Verificar que código sequencial visível ao cliente não substitui UUID técnico nem é reutilizado após arquivamento.
 
 ### 6.4. Autoridades e fontes de verdade
