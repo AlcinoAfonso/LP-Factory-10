@@ -52,11 +52,21 @@ const v4Input: ResolveLandingPageInputCatalogInput = {
   version: 4,
 };
 
+const v5Input: ResolveLandingPageInputCatalogInput = {
+  ...baseInput,
+  version: 5,
+};
+
 const starterV2FieldKeys = [
   "primary_service_or_offer",
   "primary_service_or_offer_description",
   "brand_logo_asset",
   "brand_color_palette",
+] as const;
+
+const v5UniversalFieldKeys = [
+  "business_offerings_summary",
+  "primary_conversion_goal",
 ] as const;
 
 const cases: Case[] = [
@@ -240,6 +250,108 @@ const cases: Case[] = [
       const planSnapshots = ["starter", "lite", "pro", "ultra"].map((plan) =>
         resolveRequired({ ...v4Input, plan }).fields,
       );
+      for (const snapshot of planSnapshots.slice(1)) {
+        assert.deepEqual(snapshot, planSnapshots[0]);
+      }
+    },
+  },
+  {
+    name: "v5 preserves v1 through v4 and adds only the two universal fields",
+    run: () => {
+      const historical = [baseInput, v2Input, v3Input, v4Input].map(resolveRequired);
+      assert.deepEqual(
+        historical.map((catalog) => ({ version: catalog.version, fieldCount: catalog.fields.length })),
+        [
+          { version: 1, fieldCount: 19 },
+          { version: 2, fieldCount: 23 },
+          { version: 3, fieldCount: 23 },
+          { version: 4, fieldCount: 23 },
+        ],
+      );
+
+      const v4 = historical[3];
+      const v5 = resolveRequired(v5Input);
+      const v5FieldKeySet = new Set<string>(v5UniversalFieldKeys);
+      assert.equal(v5.version, 5);
+      assert.equal(v5.fields.length, 25);
+      assert.deepEqual(
+        v5.fields.filter((field) => !v5FieldKeySet.has(field.fieldKey)),
+        v4.fields,
+      );
+      assert.deepEqual(
+        v5.fields
+          .filter((field) => v5FieldKeySet.has(field.fieldKey))
+          .map((field) => field.fieldKey),
+        v5UniversalFieldKeys,
+      );
+
+      const businessSummary = v5.fields.find(
+        (field) => field.fieldKey === "business_offerings_summary",
+      );
+      const conversionGoal = v5.fields.find(
+        (field) => field.fieldKey === "primary_conversion_goal",
+      );
+      assert.ok(businessSummary);
+      assert.ok(conversionGoal);
+
+      assert.equal(businessSummary.valueType, "string");
+      assert.equal(businessSummary.valueScope, "business");
+      assert.equal(businessSummary.expectedValueOrigin, "business_provided");
+      assert.equal(businessSummary.obligation, "optional");
+      assert.equal(businessSummary.requiredWhen, undefined);
+      assert.equal(businessSummary.applicableWhen, undefined);
+      assert.deepEqual(businessSummary.validation, { kind: "type_only" });
+      assert.equal(businessSummary.landingPageSubstitutionPolicy, "forbidden");
+      assert.equal(businessSummary.createdInVersion, 5);
+      assert.equal(businessSummary.snapshotPolicy, "include_if_used");
+      assert.equal(
+        businessSummary.purpose.includes("não é catálogo, whitelist ou restrição de primary_service_or_offer"),
+        true,
+      );
+
+      assert.equal(conversionGoal.valueType, "enum");
+      assert.equal(conversionGoal.valueScope, "landing_page");
+      assert.equal(conversionGoal.expectedValueOrigin, "landing_page_provided");
+      assert.equal(conversionGoal.obligation, "required");
+      assert.equal(conversionGoal.requiredWhen, undefined);
+      assert.equal(conversionGoal.applicableWhen, undefined);
+      assert.deepEqual(conversionGoal.validation, {
+        kind: "enum",
+        allowedValues: ["contact", "schedule", "request_quote", "purchase", "register_interest"],
+      });
+      assert.equal(conversionGoal.landingPageSubstitutionPolicy, "not_applicable");
+      assert.equal(conversionGoal.createdInVersion, 5);
+      assert.equal(conversionGoal.snapshotPolicy, "include_if_used");
+      assert.equal(
+        conversionGoal.purpose.includes("independentemente do canal autorizado"),
+        true,
+      );
+      assert.equal(
+        conversionGoal.purpose.includes("funnel_stage, transaction_intent, primary_service_or_offer ou primary_conversion_channel"),
+        true,
+      );
+
+      for (const field of [businessSummary, conversionGoal]) {
+        assert.deepEqual(field.allowedPlans, ["starter", "lite", "pro", "ultra"]);
+      }
+      assert.equal(validateLandingPageInputValue(businessSummary, "Atendimento imobiliário").ok, true);
+      for (const value of ["contact", "schedule", "request_quote", "purchase", "register_interest"]) {
+        assert.equal(validateLandingPageInputValue(conversionGoal, value).ok, true);
+      }
+      for (const value of ["bofu", "buy", "whatsapp", "other", "", "schedule "]) {
+        assert.equal(validateLandingPageInputValue(conversionGoal, value).ok, false);
+      }
+
+      const planSnapshots = ["starter", "lite", "pro", "ultra"].map((plan) => {
+        const catalog = resolveRequired({ ...v5Input, plan });
+        assert.deepEqual(
+          catalog.fields
+            .filter((field) => v5FieldKeySet.has(field.fieldKey))
+            .map((field) => field.fieldKey),
+          v5UniversalFieldKeys,
+        );
+        return catalog.fields;
+      });
       for (const snapshot of planSnapshots.slice(1)) {
         assert.deepEqual(snapshot, planSnapshots[0]);
       }
