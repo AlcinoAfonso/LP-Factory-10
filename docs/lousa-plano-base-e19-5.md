@@ -6,7 +6,7 @@
 
 - Recorte: `E19.5 — Workspace operacional e lifecycle de LPs`.
 - Path canônico: `docs/lousa-plano-base-e19-5.md`.
-- Estado: **plano-base v3 reduzido, consolidado por decisão humana em 22/08/2026**.
+- Estado: **plano-base v3 reduzido, com decisões humanas de produto consolidadas em 22/08/2026; aguarda revisão técnica do Analista Macro antes de qualquer execução**.
 - Decisão de convergência: **alternativa B — reduzir a primeira E19.5**.
 - Estratégia de execução aprovada para B: futura implementação nova a partir da `main`, com reaproveitamento seletivo do PR #797 somente quando contrato, trecho ou caso de regressão continuar aderente.
 - A v3 substitui materialmente a v1 vigente na `main` e o desenho técnico v2 proposto no PR #797.
@@ -74,10 +74,11 @@
 - Uma nova geração resolve a configuração efetiva vigente naquele momento pelas autoridades canônicas aplicáveis e congela o contexto efetivamente utilizado no snapshot da nova revisão.
 - Alterar configuração nunca modifica silenciosamente revisões históricas já materializadas.
 
-### 1.7. `landing_page_objective`
+### 1.7. `landing_page_objective` — decisão humana confirmada
 
+- Decisão humana confirmada em 22/08/2026: `landing_page_objective` permanece **string livre não vazia** na primeira E19.5, sem taxonomia estruturada própria e fora de qualquer trava por igualdade literal de identidade.
 - A E19.5 mantém `landing_page_objective` como input explícito da LP, incorporado de forma versionada ao catálogo E20.2 sem alterar versões anteriores.
-- O field pertence ao scope `landing_page`, recebe valor humano e permanece string não vazia.
+- O field pertence ao scope `landing_page` e recebe valor humano.
 - O objetivo não é obrigatório para criar a identidade da LP nem para salvar configuração parcial.
 - O objetivo é obrigatório para a LP ficar `Pronta para gerar` e participar de nova geração.
 - O texto pode ser refinado sem criar nova LP quando o significado comercial permanecer o mesmo.
@@ -85,6 +86,7 @@
 - Alterar o objetivo não modifica revisões existentes; o novo objetivo só chega ao conteúdo executável após nova geração.
 - O objetivo é orientação editorial/comercial sem autoridade factual e não autoriza preço, credencial, resultado, prova social, superioridade ou promessa sem suporte factual.
 - Rótulo de UX recomendado: `Objetivo desta página`.
+- Estruturar esse campo futuramente exige evidência de taxonomia recorrente, estável e ortogonal a `funnel_stage`, `transaction_intent`, oferta e canal; não é antecipado nesta fase.
 
 ### 1.8. Identidade da LP, revisões e aprovação — decisão humana confirmada
 
@@ -408,7 +410,7 @@
 - Objetivo:
   - implementar o ciclo operacional central para múltiplas LPs com identidade estável, configuração lazy/contextual, revisões append-only, histórico/preview sob demanda e aprovação humana.
 - Entrega mínima:
-  - evolução versionada do E20.2 com `landing_page_objective` string;
+  - evolução versionada do E20.2 com `landing_page_objective` string livre;
   - configuração operacional tenant-safe criada somente quando necessária;
   - reutilização de `account/business` sem cópia indevida;
   - reutilização contextual de fields `offer` sem pressupor oferta global única;
@@ -466,7 +468,8 @@
 
 ### 3.2. Próxima ação
 
-- A decisão humana B e este plano-base v3 encerram a convergência de produto da primeira E19.5 reduzida.
+- A decisão humana B e este plano-base v3 encerram a convergência de produto da primeira E19.5 reduzida; todas as decisões humanas indispensáveis de produto para esta v3 estão confirmadas, incluindo `landing_page_objective` como string livre.
+- O plano ainda não autoriza execução enquanto os boundaries físicos indispensáveis e dependências técnicas não forem revisados pelo Analista Macro.
 - Não enviar instrução ao Executor baseada no PR #797 ou na matriz temporária.
 - Submeter esta v3 à revisão do Analista Macro para consolidar somente os boundaries físicos indispensáveis, dependências adjacentes e critérios técnicos que ainda precisem ser especificados antes da execução.
 - Qualquer shape físico deve partir deste plano e da `main`, não da obrigação de preservar estruturas do #797.
