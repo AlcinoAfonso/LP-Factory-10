@@ -8,9 +8,7 @@
 - Path: `docs/lousa-plano-base-e19-2.md`.
 - Plano conceitual: N/A — debate humano e do Analista consolidado nas decisões abaixo e em `docs/lp-planejamento.md`.
 - Natureza: plano-base v2.
-- Processo: Estrategista Light.
-- Status: plano-base Light candidato; implementação ainda não autorizada; PR único em draft e sem merge.
-- O v2 existente permanece a fonte de decisões já aprovadas; este delta não reabre o ciclo v1 → v2 nem repete especialistas.
+- O plano-base v2 existente e os fechamentos pós-merge do PR #700 permanecem a base factual; o delta E19.2.7 abaixo é isolado e não reabre E19.2.3–E19.2.6.
 - Automação do recorte: não.
 - OpenAI na primeira entrega: não.
 - Frontend próprio: sim, na superfície autenticada da conta.
@@ -30,6 +28,7 @@
 - `docs/lousa-plano-base-e9-7.md` — contrato de capacidades comerciais, E9.7.3 concluída e E9.7.4/E9.7.5 ainda planejadas.
 - `docs/lousa-plano-base-e20-2.md` — contrato declarativo de entradas de `landing_page`.
 - `docs/lousa-plano-base-e20-6.md` — autoridade explícita da versão E20.2 revisada para consumidores posteriores.
+- `docs/lousa-plano-base-e19-5.md` no HEAD do PR #801 (`91b6d163270e8c77f40c233d40369b9a234dace8`) — handoff lazy, E19.2 como bootstrap/histórico e E19.5 como autoridade operacional posterior.
 
 ### 0.3. Implementação usada
 
@@ -75,8 +74,9 @@
 - Campo opcional ausente não bloqueia a conclusão.
 - Não criar `onboarding_status` em `accounts` nem outro estado persistido equivalente.
 - O contrato de snapshot da E20.2 deve ser preservado para a futura geração/materialização; a E19.2 não materializa snapshot de geração.
-- A configuração retomável usa um agregado versionado por conta. `catalog_version` é a versão histórica sob a qual o agregado foi originalmente registrado; a versão operacional vigente é resolvida server-side a cada leitura, save e revalidação pela autoridade explícita de E20.2, sem reescrever o histórico.
-- A versão operacional não é escolhida pelo client, não é `latest` nem a maior chave do registry e não vira coluna, status ou estado de migração por conta. Valores continuam indexados por `fieldKey` e conservam seu escopo E20.2 no JSON existente.
+- A configuração retomável usa um agregado versionado por conta. Enquanto E19.2 for a autoridade do onboarding/pré-handoff, `catalog_version` representa a versão vigente do agregado E19.2; após revalidação contra uma nova versão explicitamente autorizada e confirmação/persistência dos novos valores, ele pode evoluir, por exemplo, de `v2` para `v5`.
+- A versão operacional pré-handoff é resolvida server-side pela autoridade explícita, nunca pelo client, `latest` ou maior chave do registry. Não se cria versão por field, coluna, tabela ou estado de migração; snapshots/revisões já materializados preservam a versão efetivamente usada na geração.
+- Após handoff válido para E19.5, E19.2 permanece apenas bootstrap/histórico e não é fallback nem autoridade operacional concorrente; atualizações operacionais posteriores do catálogo pertencem à E19.5.
 - A leitura efetiva combina fontes autoritativas existentes com o agregado da jornada. Valor autoritativo não é copiado apenas para atender o onboarding nem substituído silenciosamente pelo agregado.
 - Field, escopo, versão ou valor desconhecido ou inválido falha fechado; o payload persistido não constitui catálogo paralelo.
 - O save parcial valida integralmente apenas os valores presentes; ausência de campo obrigatório ou condicional aplicável é aceita durante o progresso e bloqueia somente a conclusão.
@@ -188,14 +188,14 @@
 - Membership e papel do ator.
 - Entitlement efetivo e `planKey`.
 - Taxon primário autoritativo.
-- Versão operacional E20.2 explicitamente autorizada para a cadeia de taxon e plano aplicáveis, derivada da autoridade canônica do taxon; a versão histórica do agregado permanece separada.
+- Durante o pré-handoff, versão operacional E20.2 explicitamente autorizada para a cadeia de taxon e plano aplicáveis, derivada da autoridade canônica do taxon; após handoff válido, E19.5 assume a configuração operacional e a versão histórica permanece apenas como bootstrap/auditoria.
 - Valores já persistidos por escopo.
 - Configuração parcial anteriormente preservada, quando existir.
 - Logo opcional e paleta previamente confirmada, quando existirem.
 
 #### 2.4.3. Processamento
 
-- A E19.2 deve resolver os campos aplicáveis a partir da E20.2, sem lista paralela.
+- A E19.2 deve resolver os fields aplicáveis a partir da E20.2, sem lista paralela, somente enquanto autoridade do onboarding/pré-handoff; após handoff válido, a resolução operacional pertence à E19.5.
 - Reutilizar valores existentes e identificar somente os ausentes ou legitimamente editáveis.
 - Organizar os valores por contexto compreensível para o cliente, sem expor a modelagem interna dos scopes.
 - Separar valores reutilizáveis do negócio de valores específicos de oferta, campanha e LP.
@@ -289,7 +289,7 @@
 
 ### 3.1. E19.2.3 — Contrato de configuração, completude e persistência mínima
 
-- Status: planejada.
+- Status: concluída.
 - Automação: não.
 - Objetivo:
   - materializar no boundary E19 a resolução da configuração mínima, a completude derivada e a persistência retomável dos valores sem criar LP prematuramente.
@@ -316,7 +316,7 @@
 
 ### 3.2. E19.2.4 — Jornada guiada pós-entitlement e retomada
 
-- Status: planejada.
+- Status: concluída.
 - Automação: não.
 - Objetivo:
   - substituir a permanência na experiência comercial por uma jornada curta de onboarding quando a conta elegível estiver incompleta.
@@ -341,7 +341,7 @@
 
 ### 3.3. E19.2.5 — Identidade visual mínima da conta
 
-- Status: planejada.
+- Status: concluída.
 - Automação: não.
 - Objetivo:
   - permitir confirmar a identidade visual mínima necessária ao Starter sem IA e sem tornar logo obrigatório.
@@ -362,7 +362,7 @@
 
 ### 3.4. E19.2.6 — Revisão, conclusão e transição para LP `draft`
 
-- Status: planejada.
+- Status: concluída.
 - Automação: não.
 - Objetivo:
   - concluir a configuração derivada e transferir a conta para o espaço operacional sem criar LP antes da hora.
@@ -389,53 +389,71 @@
   - casos de bind cobrem vínculo único bem-sucedido, revisão stale, resultado zero classificado com segurança, tentativa de rebind e garantia de `.maxAffected(1)`;
   - nenhuma geração, revisão de copy, publicação ou tracking é iniciada.
 
-### 3.5. Execução após aprovação da v2
+### 3.5. Fechamento das fases concluídas
 
-- Reconciliar `docs/roadmap.md` pelo Prompt ABC somente depois da aprovação da v2, sem registrar implementação inexistente.
-- Executar `E19.2.3`, `E19.2.4`, `E19.2.5` e `E19.2.6` nessa ordem, com checkpoint e gate próprios por subseção.
-- Manter migration e runtime no mesmo PR, sem apply remoto pré-merge; antes do apply e da leitura tipada bem-sucedida, preservar a experiência comercial vigente e manter o onboarding novo desativado.
+- E19.2.3, E19.2.4, E19.2.5 e E19.2.6 permanecem concluídas e reconciliadas após o PR #700, sem reabrir seus contratos ou status.
+- O único delta planejado neste documento é a E19.2.7 abaixo; ela não autoriza runtime, migration, SQL ou merge e não altera o estado concluído registrado no roadmap.
 
-### 3.6. Ajuste Light — catálogo histórico e operacional
+### 3.6. E19.2.7 — Evolução do catálogo operacional e handoff para E19.5
 
-- Status: plano-base Light candidato; esta entrega planeja o delta e não autoriza implementação ou merge.
+- Processo: Estrategista Light.
+- Status: plano-base Light candidato; implementação ainda não autorizada; PR #802 permanece em draft e sem merge.
+- Identificador: `19.2.7` é o próximo identificador livre confirmado no `docs/roadmap.md`; E19.2.3–E19.2.6 permanecem fases concluídas.
 - Objetivo:
-  - permitir que contas novas e existentes operem contra a versão E20.2 atualmente autorizada para o consumidor, sem perder valores válidos, sem reescrever a versão histórica e sem criar estado de migração por conta.
-- Autoridade operacional obrigatória:
+  - permitir que a conta elegível opere contra a versão E20.2 autorizada enquanto E19.2 ainda for a autoridade do onboarding/pré-handoff, preservando valores válidos e preparando um handoff único para E19.5.
+
+- Fronteira E19.2 × E19.5:
+  - E19.2 resolve e revalida a configuração mínima somente durante o onboarding/pré-handoff, usando a autoridade E20.2 explicitamente autorizada para o taxon;
+  - o handoff válido ocorre quando a configuração operacional está completa, a conta escolhe/cria o `draft` conforme E19.2.6 e o agregado é vinculado sem rebind; a partir daí E19.2 é somente bootstrap/histórico;
+  - após o handoff, E19.2 não pode servir fallback, completar silenciosamente a configuração ou concorrer como autoridade operacional; revalidações e atualizações posteriores do catálogo pertencem à E19.5;
+  - nenhuma atualização de E19.5 deve reabrir o onboarding ou reescrever a história de snapshots/revisões já materializados.
+
+- Autoridade operacional pré-handoff:
   - reutilizar `business_taxons.reviewed_input_catalog_version`, lido pelo adapter server-only `loadTaxonPreparationForReviewedVersion({ taxonId })` e pelo boundary de preparação da E20.6;
-  - aceitar somente uma versão positiva, executável no registry E20.2 e explicitamente revisada para o taxon; `null`, versão não executável, cadeia/pesquisa incompatível ou falha operacional bloqueiam fechado;
-  - não usar `latest`, maior versão, slug, chave do registry, fallback para `2` ou valor enviado no formulário para autorizar o consumidor;
-  - tratar a E20.2 v5 em andamento como dependência factual: a E19.2 não cria nem promove v5; somente passa a consumi-la quando o registry/contrato E20.2 a tornar executável e a autoridade do taxon registrar a revisão correspondente.
-- Separação e persistência mínima:
-  - manter `account_landing_page_onboarding_configurations.catalog_version` como histórico imutável da versão sob a qual o agregado foi inicialmente registrado; em uma conta nova, o primeiro save registra a versão operacional autorizada naquele momento; em uma conta existente, promoção, downgrade ou reabertura nunca regrava esse histórico;
-  - derivar a versão operacional server-side em cada leitura, save, retomada, conclusão e revalidação, sem coluna adicional, `onboarding_status`, flag, snapshot, migração por cliente, tabela nova ou estado paralelo;
-  - manter o JSON `values` existente (`fieldKey → { scope, value }`), sem metadado de versão por campo ou nova persistência. A associação histórica é do agregado; a associação operacional é do contrato resolvido para a operação atual. Se a implementação demonstrar que a distinção exige proveniência persistida por valor, parar e devolver a decisão ao Estrategista, pois isso deixaria de ser Light.
-  - `supa#40`: este ajuste Light não cria nem altera migration ou snippet. O verificador read-only já versionado da E19.2 pode ser reexecutado somente para reconfirmar o contrato persistido quando a implementação tocar suas suposições de leitura; qualquer necessidade de tabela, coluna, constraint, RLS, policy, grant ou estado persistido novo aciona o critério de parada antes da implementação.
-  - Oportunidade futura condicional `supa#63`, fora deste PR: só considerar uma matriz de regressão RLS em banco descartável se uma migration posterior alterar várias policies tenant-sensitive ou se regressões repetidas excederem os testes SQL focais; não instalar ferramenta, executar em produção, criar workflow ou ampliar este Light.
+  - aceitar somente versão positiva, executável no registry E20.2 e explicitamente revisada para o taxon; `null`, versão não executável, cadeia/pesquisa incompatível ou falha operacional bloqueiam fechado;
+  - não usar `latest`, maior versão, slug, chave do registry, fallback para `2` ou valor enviado no formulário;
+  - tratar a E20.2 v5 em andamento como dependência factual: E19.2 não cria nem promove v5; somente consome v5 quando o registry/contrato E20.2 a tornar executável e a autoridade do taxon registrar a revisão correspondente.
+
+- Semântica mínima de `catalog_version` e persistência:
+  - enquanto E19.2 for autoridade pré-handoff, `account_landing_page_onboarding_configurations.catalog_version` representa a versão vigente do agregado E19.2;
+  - após revalidação contra nova versão autorizada e confirmação/persistência dos novos valores, o agregado pode evoluir de `v2` para `v5` (ou equivalente), sem criar versão por field, nova coluna, tabela ou estado de migração;
+  - valores continuam no JSON existente (`fieldKey → { scope, value }`), associado ao agregado corrente; não criar metadado de versão por valor;
+  - snapshots/revisões já materializados preservam a versão E20.2 efetivamente usada na geração, mesmo que o agregado pré-handoff evolua depois;
+  - após handoff, E19.5 assume a configuração operacional; E19.2 não altera mais `catalog_version` nem usa a versão histórica como fallback operacional;
+  - `supa#40`: este ajuste não cria nem altera migration ou snippet. O verificador read-only já versionado pode ser reexecutado somente para reconfirmar o contrato persistido quando a implementação tocar suas suposições de leitura; qualquer necessidade de tabela, coluna, constraint, RLS, policy, grant ou estado persistido novo aciona o critério de parada antes da implementação;
+  - oportunidade futura condicional `supa#63`, fora deste PR: só considerar matriz de regressão RLS em banco descartável se migration posterior alterar várias policies tenant-sensitive ou regressões repetidas excederem testes SQL focais; não instalar ferramenta, executar em produção, criar workflow ou ampliar este Light.
+
 - Revalidação e preservação:
-  - resolver os dois contratos com o resolver canônico E20.2: validar a forma e o escopo dos valores contra a versão histórica e, em seguida, projetar a configuração contra a versão operacional autorizada;
-  - preservar automaticamente todo valor ainda válido e não autoritativo; não apagar nem reescrever valor histórico válido só porque um field deixou de ser operacional;
-  - apresentar somente fields aplicáveis do contrato operacional e as pendências dele. Field novo aplicável aparece como ausente; field novo obrigatório ou valor que deixou de satisfazer o contrato operacional torna a configuração incompleta até correção humana;
-  - manter valores históricos não operacionais apenas como histórico preservado, sem exibi-los como fields ativos, sem contá-los para completude e sem permitir que um client os use para introduzir campos fora do catálogo;
-  - não fazer backfill artificial, preenchimento silencioso, conversão de versão, descarte silencioso ou criação de `draft`; conflito com valor autoritativo continua fail-closed.
-- UI e boundary:
-  - a UI deve iterar os fields resolvidos da configuração operacional e escolher o controle pelo contrato/tipo existente, removendo enumeração campo a campo onde o delta for pequeno;
-  - manter apenas especializações justificadas já existentes, como paleta e referência canônica opcional de logo; novos fields E20.2 não podem exigir nova lista na jornada;
-  - remover a autoridade do hidden `catalog_version`: o client envia revisão e valores, e o server deriva a versão operacional e preserva a histórica antes de validar/persistir;
-  - manter a leitura de DB exclusivamente nos adapters de `lib/lp-builder/` e reutilizar a preparação E20.6, sem criar resolver paralelo, registry local ou acesso direto da UI/Server Action.
+  - reutilizar o padrão já existente em `lib/lp-builder/generationContext.ts`, separando a configuração corrente do agregado da versão E20.2 efetiva usada no consumidor;
+  - resolver o contrato E20.2 autorizado, preservar automaticamente valores ainda válidos e reapresentar somente fields aplicáveis e pendências da versão operacional pré-handoff;
+  - field novo aplicável aparece como pendência; novo obrigatório aplicável torna a configuração incompleta até preenchimento humano;
+  - condições e aplicabilidade somente podem evoluir conforme as regras compatíveis do E20.2; remoção de field ou mudança de `value_type` não é evolução suportada neste plano e deve parar no gate da E20.2, sem teste especulativo de migração;
+  - não fazer backfill artificial, preenchimento silencioso, descarte de valores válidos ou criação prematura de `draft`;
+  - depois do handoff, não executar esta revalidação a partir da E19.2; E19.5 é o único consumidor operacional.
+
+- UI declarativa sem catálogo paralelo:
+  - derivar fields, tipos, obrigação, opções, condições e validação do E20.2 resolvido; cada novo field não pode exigir nova lista de domínio na E19.2;
+  - reutilizar `purpose` e o mecanismo existente de labels/textos amigáveis, com o menor ajuste localizado possível quando faltar um texto; não criar registry paralelo, allowlist de fields ou resolver local;
+  - manter as especializações existentes de paleta/logo apenas quando o `valueType`/contrato exigir; se labels amigáveis exigirem mudança material no contrato E20.2, parar e reportar;
+  - remover a autoridade do hidden `catalog_version`: o client envia revisão e valores, e o server deriva a versão operacional pré-handoff e atualiza a versão corrente do agregado somente após validar/persistir;
+  - após handoff, a UI operacional não consulta nem reinterpreta o agregado E19.2.
+
 - Entrega implementável no mesmo PR/branch:
-  - E19.2.3: ampliar contratos, adapter e resolver existentes para a dupla histórica/operacional, primeira gravação na versão autorizada, revalidação union-safe e erro tipado para autoridade indisponível;
-  - E19.2.4: retomar a configuração já salva, preservar valores válidos e renderizar somente fields/pendências operacionais novos;
-  - E19.2.5: manter paleta e logo opcional orientados pelo catálogo, sem upload, bucket, Storage ou asset novo;
-  - E19.2.6: revisar a completude operacional atual, exigir preenchimento de novo obrigatório antes de oferecer criação/seleção explícita de draft e manter o vínculo existente sem copiar valores;
-  - preferir os arquivos e testes já existentes em `lib/lp-builder/`, `app/a/[account]/` e seus casos de validação; não criar framework, resolver, migration ou fixture permanente paralelo.
+  - E19.2.7: ajustar o boundary/adapters existentes para resolver a autoridade pré-handoff, revalidar valores e permitir evolução corrente de `catalog_version`, mantendo a transição para E19.5 como único handoff;
+  - reutilizar a separação histórica/efetiva de `generationContext.ts` e a preparação canônica E20.6, sem criar resolver paralelo;
+  - preservar E19.2.3–E19.2.6 como concluídas; não reimplementar migration, vínculo, drafts, paleta ou jornada já entregues;
+  - manter o delta sem nova migration, schema, persistência física, estado por cliente, conteúdo, geração, publicação, tracking, CRM, capability nova ou assets.
+
 - Critérios de aceite e validação:
-  - conta com agregado histórico v2 e autoridade operacional v5 (quando v5 estiver executável) preserva valores v2 válidos, apresenta apenas os fields v5 aplicáveis e permanece incompleta se um obrigatório v5 faltar;
-  - valor presente e ainda válido atravessa a evolução sem novo prompt; valor histórico válido removido do contrato operacional não é apagado nem tratado como field ativo;
-  - conta nova grava a versão operacional autorizada como histórico inicial; conta existente mantém seu `catalog_version` original após qualquer evolução;
-  - ausência, mismatch, versão não executável ou falha da autoridade não cai em v2/latest e não vira sucesso, lista vazia ou configuração completa;
-  - payload com versão client adulterada não escolhe o catálogo e não reescreve o histórico; duas contas nunca compartilham configuração ou autoridade;
-  - casos cobrem mudança de obrigatório/condição/tipo/validação, field novo, field removido, valor autoritativo, save parcial, retomada, revisão stale e conclusão com zero/um/vários drafts;
-  - validar o fluxo hospedado em desktop, mobile, teclado, foco e erros visíveis quando a implementação alterar a jornada; executar os checks aplicáveis e `git diff --check`.
+  - pré-handoff com agregado `v2` e versão autorizada `v5` preserva valores v2 válidos, apresenta o field novo aplicável e permanece incompleto se o novo obrigatório faltar;
+  - após revalidação e save confirmados, `catalog_version` pode avançar `v2 → v5`; snapshots/revisões já materializados mantêm a versão efetivamente usada na geração;
+  - condições/aplicabilidade permitidas e novo obrigatório são cobertos sem reabrir o contrato evolutivo do E20.2;
+  - valores ainda válidos atravessam a evolução sem novo prompt; ausência ou incompatibilidade da autoridade falha fechado;
+  - pré-handoff permanece na E19.2; handoff válido torna E19.5 a única autoridade operacional e impede fallback/concorrência da E19.2;
+  - payload client adulterado não escolhe versão, não atualiza `catalog_version` sem validação server-side e não atravessa isolamento tenant-safe;
+  - casos focados cobrem field novo, novo obrigatório, condições/aplicabilidade permitidas, preservação de valores válidos, versão autorizada ausente/incompatível e pré-handoff × pós-handoff; não cobrem remoção de field nem mudança de `value_type` porque o contrato E20.2 atual não as autoriza;
+  - se a implementação alterar a jornada, validar Preview/hospedado em desktop, mobile, teclado, foco e erros visíveis; executar somente checks aplicáveis e `git diff --check`.
+
 
 ## 4. Escopo negativo e critérios de parada
 
@@ -458,6 +476,7 @@
 - Override de logo por LP.
 - Upload, bucket, Storage, Blob ou gestão de assets.
 - Implementação preventiva de recursos para Lite, Pro ou Ultra.
+- Atualizações operacionais do catálogo após handoff válido; esse consumidor pertence à E19.5.
 
 ### 4.2. Critérios de parada
 
@@ -470,5 +489,7 @@
 - Se não houver autoridade canônica suficiente para selecionar a versão operacional E20.2, se `reviewed_input_catalog_version` não puder ser consumido com o contrato exato já existente ou se a evolução E20.2 v5 não estiver executável/revisada, interromper sem inventar `latest`, maior versão ou marcador novo.
 - Se a preservação/revalidação exigir nova tabela, coluna, migration, metadado de versão por valor, estado de migração por cliente ou mudança de schema, interromper o Light e devolver a lacuna para decisão humana/processo completo.
 - Se a UI exigir uma lista de fields paralela, um resolver paralelo ou hardcode adicional para acompanhar a evolução, interromper e reduzir o delta antes de implementar.
+- Se E19.2 continuar como fallback/autoridade operacional após handoff válido para E19.5, interromper: não há duas autoridades concorrentes.
+- Se E20.2 tentar remover field ou alterar `value_type` fora das regras evolutivas atuais, interromper no recorte E20.2; não inventar compatibilidade na E19.2.
 - Se surgir necessidade de IA ou automação nesta entrega, interromper a ampliação e voltar ao fluxo do Estrategista antes de mudar `Automação: não`.
 - Se qualquer fase começar a incorporar geração, publicação, tracking, CRM ou capacidades comerciais não aprovadas, parar e devolver ao humano como ampliação de escopo.
