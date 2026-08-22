@@ -25,6 +25,21 @@ values ('e1953000-0000-4000-8000-000000000011','e1953000-0000-4000-8000-00000000
 insert into public.account_taxonomy (account_id, taxon_id, is_primary, status, source_type)
 values ('e1953000-0000-4000-8000-000000000012','e1953000-0000-4000-8000-000000000041',true,'active','manual');
 
+insert into public.accounts (id, name, subdomain, slug, status)
+values
+  ('e1953000-0000-4000-8000-000000000013','E19.5 vínculo posterior','e19-5-late-binding','e19-5-late-binding','active'),
+  ('e1953000-0000-4000-8000-000000000014','E19.5 archive inicial','e19-5-initial-archive','e19-5-initial-archive','active');
+
+insert into public.account_users (account_id, user_id, role, status)
+values
+  ('e1953000-0000-4000-8000-000000000013','e1953000-0000-4000-8000-000000000001','owner','active'),
+  ('e1953000-0000-4000-8000-000000000014','e1953000-0000-4000-8000-000000000001','owner','active');
+
+insert into public.account_taxonomy (account_id, taxon_id, is_primary, status, source_type)
+values
+  ('e1953000-0000-4000-8000-000000000013','e1953000-0000-4000-8000-000000000041',true,'active','manual'),
+  ('e1953000-0000-4000-8000-000000000014','e1953000-0000-4000-8000-000000000041',true,'active','manual');
+
 insert into public.account_landing_pages (id, account_id, name, slug, status, created_by)
 values (
   'e1953000-0000-4000-8000-000000000022',
@@ -39,7 +54,7 @@ insert into public.account_landing_page_onboarding_configurations (
   'e1953000-0000-4000-8000-000000000011',
   'e1953000-0000-4000-8000-000000000022',
   2,
-  '{"landing_page_objective":{"scope":"landing_page","value":"Objetivo inicial"}}'::jsonb,
+  '{"brand_logo_asset":{"scope":"business","value":{"asset_id":"logo"}},"privacy_policy_url":{"scope":"business","value":"https://example.com/privacidade"},"landing_page_objective":{"scope":"landing_page","value":"Objetivo inicial"}}'::jsonb,
   'e1953000-0000-4000-8000-000000000001',
   'e1953000-0000-4000-8000-000000000001'
 );
@@ -63,6 +78,29 @@ insert into public.account_landing_page_onboarding_configurations (
   'e1953000-0000-4000-8000-000000000001'
 );
 
+insert into public.account_landing_pages (id, account_id, name, slug, status, created_by)
+values
+  ('e1953000-0000-4000-8000-000000000024','e1953000-0000-4000-8000-000000000013','Vínculo posterior','vinculo-posterior','active','e1953000-0000-4000-8000-000000000001'),
+  ('e1953000-0000-4000-8000-000000000025','e1953000-0000-4000-8000-000000000014','Archive inicial','archive-inicial','archived','e1953000-0000-4000-8000-000000000001');
+
+insert into public.account_landing_page_shared_configurations (
+  account_id, catalog_version, values, revision, created_by, updated_by
+) values
+  ('e1953000-0000-4000-8000-000000000013',5,'{"privacy_policy_url":{"scope":"business","value":"https://example.com/operacional"}}'::jsonb,2,'e1953000-0000-4000-8000-000000000001','e1953000-0000-4000-8000-000000000001'),
+  ('e1953000-0000-4000-8000-000000000014',5,'{}'::jsonb,1,'e1953000-0000-4000-8000-000000000001','e1953000-0000-4000-8000-000000000001');
+
+insert into public.account_landing_page_configurations (
+  landing_page_id, account_id, catalog_version, values, revision, created_by, updated_by
+) values
+  ('e1953000-0000-4000-8000-000000000024','e1953000-0000-4000-8000-000000000013',5,'{}'::jsonb,1,'e1953000-0000-4000-8000-000000000001','e1953000-0000-4000-8000-000000000001'),
+  ('e1953000-0000-4000-8000-000000000025','e1953000-0000-4000-8000-000000000014',5,'{}'::jsonb,1,'e1953000-0000-4000-8000-000000000001','e1953000-0000-4000-8000-000000000001');
+
+insert into public.account_landing_page_onboarding_configurations (
+  account_id, landing_page_id, catalog_version, values, created_by, updated_by
+) values
+  ('e1953000-0000-4000-8000-000000000013',null,5,'{"brand_color_palette":{"scope":"business","value":{"primary":"#111111","secondary":"#222222","accent":"#333333","background":"#ffffff","text":"#000000"}},"privacy_policy_url":{"scope":"business","value":"https://example.com/bootstrap"},"landing_page_objective":{"scope":"landing_page","value":"Objetivo vinculado depois"}}'::jsonb,'e1953000-0000-4000-8000-000000000001','e1953000-0000-4000-8000-000000000001'),
+  ('e1953000-0000-4000-8000-000000000014','e1953000-0000-4000-8000-000000000025',5,'{"landing_page_objective":{"scope":"landing_page","value":"Não pode materializar arquivada"}}'::jsonb,'e1953000-0000-4000-8000-000000000001','e1953000-0000-4000-8000-000000000001');
+
 do $$
 declare
   v_landing_page_id uuid;
@@ -75,6 +113,13 @@ declare
   v_landing_page_revision bigint;
   v_shared_values jsonb;
   v_landing_page_values jsonb;
+  v_handoff_revision_id uuid;
+  v_handoff_shared_revision bigint;
+  v_handoff_landing_page_revision bigint;
+  v_handoff_shared_values jsonb;
+  v_handoff_landing_page_values jsonb;
+  v_handoff_shared_updated_at timestamptz;
+  v_handoff_landing_page_updated_at timestamptz;
 begin
   if public.e19_5_configuration_values_valid_for_account(
     'e1953000-0000-4000-8000-000000000011',
@@ -126,8 +171,94 @@ begin
   if not exists (
     select 1 from public.account_landing_page_configurations
     where landing_page_id = 'e1953000-0000-4000-8000-000000000022'
-      and revision = 1
+      and revision = 2
   ) then raise exception 'materialized handoff retry must ignore later bootstrap drift'; end if;
+
+  update public.account_landing_page_onboarding_configurations
+  set landing_page_id = 'e1953000-0000-4000-8000-000000000024', revision = revision + 1
+  where account_id = 'e1953000-0000-4000-8000-000000000013';
+  perform * from public.handoff_account_landing_page_onboarding_v1(
+    'e1953000-0000-4000-8000-000000000013',
+    'e1953000-0000-4000-8000-000000000024', 2,
+    'e1953000-0000-4000-8000-000000000001'
+  );
+  if (select values #>> '{landing_page_objective,value}' from public.account_landing_page_configurations where landing_page_id='e1953000-0000-4000-8000-000000000024')
+       is distinct from 'Objetivo vinculado depois'
+     or (select revision from public.account_landing_page_configurations where landing_page_id='e1953000-0000-4000-8000-000000000024') <> 2
+     or (select values #>> '{brand_color_palette,value,primary}' from public.account_landing_page_shared_configurations where account_id='e1953000-0000-4000-8000-000000000013')
+       is distinct from '#111111'
+     or (select values #>> '{privacy_policy_url,value}' from public.account_landing_page_shared_configurations where account_id='e1953000-0000-4000-8000-000000000013')
+       is distinct from 'https://example.com/operacional' then
+    raise exception 'late binding must absorb onboarding before exposing workspace without overwriting evolved operational values';
+  end if;
+
+  begin
+    perform * from public.handoff_account_landing_page_onboarding_v1(
+      'e1953000-0000-4000-8000-000000000014',
+      'e1953000-0000-4000-8000-000000000025', 1,
+      'e1953000-0000-4000-8000-000000000001'
+    );
+    raise exception using errcode='P0002',message='initial archived handoff must fail';
+  exception when sqlstate 'P0001' then null;
+  end;
+  if (select revision from public.account_landing_page_configurations where landing_page_id='e1953000-0000-4000-8000-000000000025') <> 1
+     or (select values from public.account_landing_page_configurations where landing_page_id='e1953000-0000-4000-8000-000000000025') <> '{}'::jsonb then
+    raise exception 'initial archived handoff must not write placeholders';
+  end if;
+
+  select materialization_id into v_handoff_revision_id
+  from public.append_account_landing_page_materialization_v1(
+    'e1953000-0000-4000-8000-000000000011','e1953000-0000-4000-8000-000000000022',
+    'e1953000-0000-4000-8000-000000000034','{"contractVersion":1}'::jsonb,
+    '{"snapshotVersion":2,"generationContext":{"contractVersion":4}}'::jsonb,
+    'e1953000-0000-4000-8000-000000000001'
+  );
+  perform public.approve_account_landing_page_materialization_v1(
+    'e1953000-0000-4000-8000-000000000011','e1953000-0000-4000-8000-000000000022',v_handoff_revision_id,
+    'e1953000-0000-4000-8000-000000000001'
+  );
+  perform public.set_account_landing_page_archived_v1(
+    'e1953000-0000-4000-8000-000000000011','e1953000-0000-4000-8000-000000000022',true,
+    'e1953000-0000-4000-8000-000000000001'
+  );
+  select revision, values, updated_at
+  into v_handoff_shared_revision, v_handoff_shared_values, v_handoff_shared_updated_at
+  from public.account_landing_page_shared_configurations
+  where account_id='e1953000-0000-4000-8000-000000000011';
+  select revision, values, updated_at
+  into v_handoff_landing_page_revision, v_handoff_landing_page_values, v_handoff_landing_page_updated_at
+  from public.account_landing_page_configurations
+  where landing_page_id='e1953000-0000-4000-8000-000000000022';
+  perform * from public.handoff_account_landing_page_onboarding_v1(
+    'e1953000-0000-4000-8000-000000000011','e1953000-0000-4000-8000-000000000022',1,
+    'e1953000-0000-4000-8000-000000000001'
+  );
+  if (select revision from public.account_landing_page_shared_configurations where account_id='e1953000-0000-4000-8000-000000000011') is distinct from v_handoff_shared_revision
+     or (select values from public.account_landing_page_shared_configurations where account_id='e1953000-0000-4000-8000-000000000011') is distinct from v_handoff_shared_values
+     or (select updated_at from public.account_landing_page_shared_configurations where account_id='e1953000-0000-4000-8000-000000000011') is distinct from v_handoff_shared_updated_at
+     or (select revision from public.account_landing_page_configurations where landing_page_id='e1953000-0000-4000-8000-000000000022') is distinct from v_handoff_landing_page_revision
+     or (select values from public.account_landing_page_configurations where landing_page_id='e1953000-0000-4000-8000-000000000022') is distinct from v_handoff_landing_page_values
+     or (select updated_at from public.account_landing_page_configurations where landing_page_id='e1953000-0000-4000-8000-000000000022') is distinct from v_handoff_landing_page_updated_at then
+    raise exception 'materialized archived handoff retry must be read-only';
+  end if;
+  if not exists (
+    select 1
+    from public.account_landing_pages landing_page
+    join public.account_landing_page_configurations configuration
+      on configuration.landing_page_id=landing_page.id and configuration.account_id=landing_page.account_id
+    where landing_page.id='e1953000-0000-4000-8000-000000000022'
+      and landing_page.account_id='e1953000-0000-4000-8000-000000000011'
+      and landing_page.status='archived' and configuration.revision > 1
+  ) then raise exception 'archived workspace row must remain listable after idempotent handoff'; end if;
+  perform public.set_account_landing_page_archived_v1(
+    'e1953000-0000-4000-8000-000000000011','e1953000-0000-4000-8000-000000000022',false,
+    'e1953000-0000-4000-8000-000000000001'
+  );
+  if (select approved_materialization_id from public.account_landing_pages where id='e1953000-0000-4000-8000-000000000022') is distinct from v_handoff_revision_id
+     or (select count(*) from public.account_landing_page_materializations where landing_page_id='e1953000-0000-4000-8000-000000000022') <> 1
+     or (select values from public.account_landing_page_configurations where landing_page_id='e1953000-0000-4000-8000-000000000022') is distinct from v_handoff_landing_page_values then
+    raise exception 'bound restore must preserve configuration history and approval';
+  end if;
 
   select landing_page_id into v_landing_page_id
   from public.create_account_landing_page_v1(
@@ -141,10 +272,14 @@ begin
 
   perform * from public.save_account_landing_page_configuration_v1(
     'e1953000-0000-4000-8000-000000000011', v_landing_page_id,
-    '{"brand_logo_asset":{"scope":"business","value":{"asset_id":"logo"}},"privacy_policy_url":{"scope":"business","value":"https://example.com/privacidade"}}'::jsonb,
+    '{"brand_logo_asset":{"scope":"business","value":{"asset_id":"replacement-logo"}},"privacy_policy_url":{"scope":"business","value":"https://example.com/privacidade"}}'::jsonb,
     '{"landing_page_objective":{"scope":"landing_page","value":"Captar contatos por formulário"},"primary_conversion_channel":{"scope":"landing_page","value":"form"}}'::jsonb,
     1, 1, 'e1953000-0000-4000-8000-000000000001'
   );
+  if (select values #>> '{brand_logo_asset,value,asset_id}' from public.account_landing_page_shared_configurations where account_id='e1953000-0000-4000-8000-000000000011')
+       is distinct from 'logo' then
+    raise exception 'client payload must not replace a non-editable stored logo';
+  end if;
 
   select landing_page_id into v_second_landing_page_id
   from public.create_account_landing_page_v1(
@@ -154,13 +289,15 @@ begin
 
   perform * from public.save_account_landing_page_configuration_v1(
     'e1953000-0000-4000-8000-000000000011', v_second_landing_page_id,
-    '{"brand_logo_asset":{"scope":"business","value":{"asset_id":"logo"}},"privacy_policy_url":{"scope":"business","value":"https://example.com/privacidade"}}'::jsonb,
+    '{}'::jsonb,
     '{"landing_page_objective":{"scope":"landing_page","value":"Captar contatos por WhatsApp"},"primary_conversion_channel":{"scope":"landing_page","value":"whatsapp"},"whatsapp_destination":{"scope":"landing_page","value":"+5521979658483"}}'::jsonb,
     2, 1, 'e1953000-0000-4000-8000-000000000001'
   );
 
   if (select values #>> '{privacy_policy_url,value}' from public.account_landing_page_shared_configurations where account_id='e1953000-0000-4000-8000-000000000011')
        is distinct from 'https://example.com/privacidade'
+     or (select values #>> '{brand_logo_asset,value,asset_id}' from public.account_landing_page_shared_configurations where account_id='e1953000-0000-4000-8000-000000000011')
+       is distinct from 'logo'
      or (select values #>> '{primary_conversion_channel,value}' from public.account_landing_page_configurations where landing_page_id=v_landing_page_id)
        is distinct from 'form'
      or (select values #>> '{primary_conversion_channel,value}' from public.account_landing_page_configurations where landing_page_id=v_second_landing_page_id)
@@ -198,7 +335,7 @@ begin
 
   perform * from public.save_account_landing_page_configuration_v1(
     'e1953000-0000-4000-8000-000000000011', v_second_landing_page_id,
-    '{"brand_logo_asset":{"scope":"business","value":{"asset_id":"logo"}},"privacy_policy_url":{"scope":"business","value":"https://example.com/privacidade"}}'::jsonb,
+    '{"privacy_policy_url":{"scope":"business","value":"https://example.com/privacidade"}}'::jsonb,
     '{"landing_page_objective":{"scope":"landing_page","value":"Captar contatos por telefone"},"primary_conversion_channel":{"scope":"landing_page","value":"phone"},"whatsapp_destination":{"scope":"landing_page","value":"+5521979658483"},"phone_destination":{"scope":"landing_page","value":"+5521979658484"}}'::jsonb,
     3, 2, 'e1953000-0000-4000-8000-000000000001'
   );
@@ -208,8 +345,11 @@ begin
      or (select values #>> '{whatsapp_destination,value}' from public.account_landing_page_configurations where landing_page_id=v_second_landing_page_id)
        is distinct from '+5521979658483'
      or (select values #>> '{phone_destination,value}' from public.account_landing_page_configurations where landing_page_id=v_second_landing_page_id)
-       is distinct from '+5521979658484' then
-    raise exception 'channel switch must preserve the prior valid destination';
+       is distinct from '+5521979658484'
+     or (select values ? 'privacy_policy_url' from public.account_landing_page_shared_configurations where account_id='e1953000-0000-4000-8000-000000000011')
+     or (select values #>> '{brand_logo_asset,value,asset_id}' from public.account_landing_page_shared_configurations where account_id='e1953000-0000-4000-8000-000000000011')
+       is distinct from 'logo' then
+    raise exception 'channel switch must preserve the prior valid destination while editable removal preserves non-editable values';
   end if;
 
   select materialization_id, revision_number into v_revision_id, v_revision_number

@@ -449,7 +449,8 @@ select landing_page.id, landing_page.account_id, 5, '{}'::jsonb, 1,
 from public.account_landing_pages landing_page;
 
 update public.account_landing_page_shared_configurations shared
-set values = source.values
+set values = source.values,
+    revision = shared.revision + 1
 from (
   select onboarding.account_id,
     coalesce(jsonb_object_agg(entry.key, entry.value)
@@ -462,7 +463,8 @@ from (
 where shared.account_id = source.account_id;
 
 update public.account_landing_page_configurations configuration
-set values = source.values
+set values = source.values,
+    revision = configuration.revision + 1
 from (
   select onboarding.account_id, onboarding.landing_page_id,
     coalesce(jsonb_object_agg(entry.key, entry.value)
@@ -526,36 +528,48 @@ set search_path = public, pg_catalog
 as $$
 declare
   v_onboarding public.account_landing_page_onboarding_configurations%rowtype;
+  v_status text;
+  v_shared_found boolean;
+  v_landing_page_found boolean;
   v_shared_catalog_version integer;
   v_shared_values jsonb;
   v_shared_revision bigint;
   v_landing_page_catalog_version integer;
   v_landing_page_values jsonb;
   v_landing_page_revision bigint;
+  v_onboarding_shared_values jsonb;
+  v_onboarding_landing_page_values jsonb;
+  v_next_shared_values jsonb;
+  v_next_landing_page_values jsonb;
 begin
   if not public.e19_5_actor_can_manage(p_account_id, p_actor_user_id) then
     raise exception using errcode = '42501', message = 'actor_not_authorized';
   end if;
-  perform 1 from public.account_landing_pages
-    where id = p_landing_page_id and account_id = p_account_id
-      and status in ('draft', 'active') for update;
+  select status into v_status
+  from public.account_landing_pages
+  where id = p_landing_page_id and account_id = p_account_id
+    and status in ('draft', 'active', 'archived')
+  for update;
   if not found then raise exception using errcode = 'P0001', message = 'landing_page_not_operational'; end if;
 
-  select
-    shared.catalog_version, shared.values, shared.revision,
-    configuration.catalog_version, configuration.values, configuration.revision
-  into
-    v_shared_catalog_version, v_shared_values, v_shared_revision,
-    v_landing_page_catalog_version, v_landing_page_values, v_landing_page_revision
-  from public.account_landing_page_shared_configurations shared
-  join public.account_landing_page_configurations configuration
-    on configuration.account_id = shared.account_id
-  where shared.account_id = p_account_id
-    and configuration.landing_page_id = p_landing_page_id;
+  select catalog_version, values, revision
+  into v_shared_catalog_version, v_shared_values, v_shared_revision
+  from public.account_landing_page_shared_configurations
+  where account_id = p_account_id
+  for update;
+  v_shared_found := found;
 
-  if found then
+  select catalog_version, values, revision
+  into v_landing_page_catalog_version, v_landing_page_values, v_landing_page_revision
+  from public.account_landing_page_configurations
+  where landing_page_id = p_landing_page_id and account_id = p_account_id
+  for update;
+  v_landing_page_found := found;
+
+  if v_landing_page_found and v_landing_page_revision > 1 then
     if v_shared_catalog_version <> 5
        or v_landing_page_catalog_version <> 5
+       or not v_shared_found
        or not public.e19_5_configuration_values_valid_for_account(
          p_account_id, v_shared_values, array['account', 'business']
        )
@@ -566,6 +580,10 @@ begin
     end if;
     return query select v_shared_revision, v_landing_page_revision;
     return;
+  end if;
+
+  if v_status = 'archived' then
+    raise exception using errcode = 'P0001', message = 'landing_page_not_operational';
   end if;
 
   select * into v_onboarding
@@ -582,33 +600,61 @@ begin
     raise exception using errcode = '23514', message = 'invalid_onboarding_configuration';
   end if;
 
-  insert into public.account_landing_page_shared_configurations(
-    account_id, catalog_version, values, revision, created_by, updated_by
-  ) values (
-    p_account_id, 5,
-    coalesce((select jsonb_object_agg(entry.key, entry.value)
-      from jsonb_each(v_onboarding.values) entry
-      where entry.value ->> 'scope' in ('account', 'business')), '{}'::jsonb),
-    1, p_actor_user_id, p_actor_user_id
-  ) on conflict (account_id) do nothing;
+  select coalesce(jsonb_object_agg(entry.key, entry.value), '{}'::jsonb)
+  into v_onboarding_shared_values
+  from jsonb_each(v_onboarding.values) entry
+  where entry.value ->> 'scope' in ('account', 'business');
 
-  insert into public.account_landing_page_configurations(
-    landing_page_id, account_id, catalog_version, values, revision, created_by, updated_by
-  ) values (
-    p_landing_page_id, p_account_id, 5,
-    coalesce((select jsonb_object_agg(entry.key, entry.value)
-      from jsonb_each(v_onboarding.values) entry
-      where entry.value ->> 'scope' in ('offer', 'campaign', 'landing_page')), '{}'::jsonb),
-    1, p_actor_user_id, p_actor_user_id
-  ) on conflict (landing_page_id) do nothing;
+  select coalesce(jsonb_object_agg(entry.key, entry.value), '{}'::jsonb)
+  into v_onboarding_landing_page_values
+  from jsonb_each(v_onboarding.values) entry
+  where entry.value ->> 'scope' in ('offer', 'campaign', 'landing_page');
 
-  return query
-    select shared.revision, configuration.revision
-    from public.account_landing_page_shared_configurations shared
-    join public.account_landing_page_configurations configuration
-      on configuration.account_id = shared.account_id
-    where shared.account_id = p_account_id
-      and configuration.landing_page_id = p_landing_page_id;
+  v_next_shared_values := v_onboarding_shared_values || coalesce(v_shared_values, '{}'::jsonb);
+  v_next_landing_page_values := v_onboarding_landing_page_values || coalesce(v_landing_page_values, '{}'::jsonb);
+
+  if not public.e19_5_configuration_values_valid_for_account(
+       p_account_id, v_next_shared_values, array['account', 'business']
+     ) or not public.e19_5_configuration_values_valid_for_account(
+       p_account_id, v_next_landing_page_values, array['offer', 'campaign', 'landing_page']
+     ) then
+    raise exception using errcode = '23514', message = 'invalid_operational_configuration';
+  end if;
+
+  if v_shared_found then
+    update public.account_landing_page_shared_configurations
+    set values = v_next_shared_values,
+        revision = revision + case when values is distinct from v_next_shared_values then 1 else 0 end,
+        updated_by = p_actor_user_id
+    where account_id = p_account_id
+    returning revision into v_shared_revision;
+  else
+    insert into public.account_landing_page_shared_configurations(
+      account_id, catalog_version, values, revision, created_by, updated_by
+    ) values (
+      p_account_id, 5, v_next_shared_values, 1, p_actor_user_id, p_actor_user_id
+    )
+    returning revision into v_shared_revision;
+  end if;
+
+  if v_landing_page_found then
+    update public.account_landing_page_configurations
+    set values = v_next_landing_page_values,
+        revision = revision + 1,
+        updated_by = p_actor_user_id
+    where landing_page_id = p_landing_page_id and account_id = p_account_id
+    returning revision into v_landing_page_revision;
+  else
+    insert into public.account_landing_page_configurations(
+      landing_page_id, account_id, catalog_version, values, revision, created_by, updated_by
+    ) values (
+      p_landing_page_id, p_account_id, 5, v_next_landing_page_values, 2,
+      p_actor_user_id, p_actor_user_id
+    )
+    returning revision into v_landing_page_revision;
+  end if;
+
+  return query select v_shared_revision, v_landing_page_revision;
 end;
 $$;
 
@@ -626,7 +672,28 @@ language plpgsql
 security definer
 set search_path = public, pg_catalog
 as $$
-declare v_shared_revision bigint; v_landing_page_revision bigint;
+declare
+  v_shared_revision bigint;
+  v_landing_page_revision bigint;
+  v_current_shared_values jsonb;
+  v_current_landing_page_values jsonb;
+  v_editable_shared_values jsonb;
+  v_editable_landing_page_values jsonb;
+  v_next_shared_values jsonb;
+  v_next_landing_page_values jsonb;
+  v_shared_editable_fields constant text[] := array[
+    'business_display_name', 'brand_color_palette', 'privacy_policy_url',
+    'service_locations', 'financing_support_available',
+    'document_support_available', 'creci_registration', 'attendance_modes'
+  ];
+  v_landing_page_editable_fields constant text[] := array[
+    'primary_service_or_offer', 'primary_service_or_offer_description',
+    'funnel_stage', 'traffic_source', 'primary_conversion_channel',
+    'whatsapp_destination', 'phone_destination', 'email_destination',
+    'external_url_destination', 'paid_search_keyword_map',
+    'landing_page_objective', 'property_types', 'property_price_range',
+    'property_stage', 'transaction_intent'
+  ];
 begin
   if not public.e19_5_actor_can_manage(p_account_id, p_actor_user_id) then
     raise exception using errcode = '42501', message = 'actor_not_authorized';
@@ -635,23 +702,60 @@ begin
     where id = p_landing_page_id and account_id = p_account_id
       and status in ('draft', 'active') for update;
   if not found then raise exception using errcode = 'P0001', message = 'landing_page_not_operational'; end if;
-  if not public.e19_5_configuration_values_valid_for_account(p_account_id, p_shared_values, array['account', 'business'])
-     or not public.e19_5_configuration_values_valid_for_account(p_account_id, p_landing_page_values, array['offer', 'campaign', 'landing_page']) then
+  if jsonb_typeof(p_shared_values) is distinct from 'object'
+     or jsonb_typeof(p_landing_page_values) is distinct from 'object' then
+    raise exception using errcode = '22023', message = 'configuration_values_invalid';
+  end if;
+
+  select values, revision into v_current_shared_values, v_shared_revision
+  from public.account_landing_page_shared_configurations
+  where account_id = p_account_id
+  for update;
+  if not found or v_shared_revision <> p_expected_shared_revision then
+    raise exception using errcode = '40001', message = 'shared_revision_conflict';
+  end if;
+
+  select values, revision into v_current_landing_page_values, v_landing_page_revision
+  from public.account_landing_page_configurations
+  where landing_page_id = p_landing_page_id and account_id = p_account_id
+  for update;
+  if not found or v_landing_page_revision <> p_expected_landing_page_revision then
+    raise exception using errcode = '40001', message = 'landing_page_revision_conflict';
+  end if;
+
+  select coalesce(jsonb_object_agg(entry.key, entry.value), '{}'::jsonb)
+  into v_editable_shared_values
+  from jsonb_each(p_shared_values) entry
+  where entry.key = any(v_shared_editable_fields);
+
+  select coalesce(jsonb_object_agg(entry.key, entry.value), '{}'::jsonb)
+  into v_editable_landing_page_values
+  from jsonb_each(p_landing_page_values) entry
+  where entry.key = any(v_landing_page_editable_fields);
+
+  v_next_shared_values :=
+    (v_current_shared_values - v_shared_editable_fields) || v_editable_shared_values;
+  v_next_landing_page_values :=
+    (v_current_landing_page_values - v_landing_page_editable_fields) || v_editable_landing_page_values;
+
+  if not public.e19_5_configuration_values_valid_for_account(
+       p_account_id, v_next_shared_values, array['account', 'business']
+     ) or not public.e19_5_configuration_values_valid_for_account(
+       p_account_id, v_next_landing_page_values, array['offer', 'campaign', 'landing_page']
+     ) then
     raise exception using errcode = '22023', message = 'configuration_values_invalid';
   end if;
 
   update public.account_landing_page_shared_configurations
-  set values = p_shared_values, revision = revision + 1, updated_by = p_actor_user_id
+  set values = v_next_shared_values, revision = revision + 1, updated_by = p_actor_user_id
   where account_id = p_account_id and revision = p_expected_shared_revision
   returning revision into v_shared_revision;
-  if v_shared_revision is null then raise exception using errcode = '40001', message = 'shared_revision_conflict'; end if;
 
   update public.account_landing_page_configurations
-  set values = p_landing_page_values, revision = revision + 1, updated_by = p_actor_user_id
+  set values = v_next_landing_page_values, revision = revision + 1, updated_by = p_actor_user_id
   where landing_page_id = p_landing_page_id and account_id = p_account_id
     and revision = p_expected_landing_page_revision
   returning revision into v_landing_page_revision;
-  if v_landing_page_revision is null then raise exception using errcode = '40001', message = 'landing_page_revision_conflict'; end if;
 
   return query select v_shared_revision, v_landing_page_revision;
 end;
