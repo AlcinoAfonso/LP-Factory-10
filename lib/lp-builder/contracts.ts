@@ -42,8 +42,6 @@ export type CreateAccountLandingPageResult =
       error: CreateAccountLandingPageError;
     };
 
-export const ACCOUNT_LANDING_PAGE_ONBOARDING_CATALOG_VERSION = 2;
-
 export type AccountLandingPageOnboardingStoredValue = Readonly<{
   scope: LandingPageInputValueScope;
   value: unknown;
@@ -126,7 +124,6 @@ export type AccountLandingPageOnboardingRevalidationResult =
 
 export type SaveAccountLandingPageOnboardingConfigurationInput = Readonly<{
   accountId: string;
-  catalogVersion: number;
   expectedRevision: number;
   values: AccountLandingPageOnboardingStoredValues;
 }>;

@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 21/08/2026
-• Versão: v1.5.173
+• Data: 22/08/2026
+• Versão: v1.5.175
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2218,6 +2218,49 @@ Repositório — Ajustados
   - Zero drafts permite criação explícita pelo fluxo E19.1; um ou vários drafts exigem seleção humana explícita, sem escolha silenciosa, duplicação automática ou limite de quantidade antecipado.
   - O agregado é vinculado somente ao draft escolhido da mesma conta, com revisão otimista, predicado de ausência de vínculo e mutação limitada a uma linha; valores não são copiados para `account_landing_pages` e rebind permanece proibido.
   - A transição não inicia geração, revisão de copy, publicação, tracking, CRM, capability nova ou infraestrutura de assets.
+
+19.2.7 Evolução do catálogo operacional e handoff para E19.5
+
+19.2.7.1 Objetivo e status
+- Objetivo: Permitir que o onboarding pré-handoff opere contra a versão E20.2 explicitamente revisada para o taxon, preserve valores válidos durante a evolução e deixe E19.5 como única autoridade operacional após o vínculo da primeira jornada.
+- Status: Implementação do boundary concluída no PR #802; a E20.2 v5 já é executável após o merge do PR #803. Permanece pendente somente a autorização E20.6 do taxon em `reviewed_input_catalog_version = 5`.
+
+19.2.7.2 Registros do recorte
+- Repositório:
+  - Ajustados:
+    - `lib/lp-builder/contracts.ts`
+    - `lib/lp-builder/index.ts`
+    - `lib/lp-builder/adapters/onboardingConfigurationAdapter.ts`
+    - `lib/lp-builder/adapters/onboardingConfigurationAdapterCore.ts`
+    - `lib/lp-builder/validation-cases.ts`
+    - `app/a/[account]/onboarding-configuration-actions.ts`
+    - `app/a/[account]/_components/OnboardingConfigurationJourney.tsx`
+    - `app/a/[account]/_components/onboarding-journey-validation-cases.ts`
+- Referências:
+  - Plano do recorte: `docs/lousa-plano-base-e19-2.md` — 3.6.
+  - Autoridade E20.6: `docs/lousa-plano-base-e20-6.md` — preparação por versão revisada.
+  - Handoff operacional: `docs/lousa-plano-base-e19-5.md` — fronteira E19.2/E19.5.
+
+19.2.7.3 Autoridade pré-handoff e revalidação
+- Status: Implementado no boundary server-side.
+- Conteúdo:
+  - A E19.2 consome `loadTaxonPreparationForReviewedVersion` para resolver `reviewed_input_catalog_version` do taxon servido; a versão enviada pelo client e qualquer `latest`, maior chave ou fallback deixam de ser autoridade.
+  - Antes do handoff, a configuração é resolvida pelo catálogo autorizado, preserva valores ainda válidos e pode evoluir `catalog_version` do agregado após revalidação e persistência válidas; a completude continua derivada e novos obrigatórios permanecem pendentes até preenchimento humano.
+  - Ausência, divergência, versão não executável ou falha da preparação bloqueiam fechado. A E19.2 não promove a v5; somente a consome quando o taxon a autoriza pela E20.6.
+
+19.2.7.4 Handoff e UI declarativa
+- Status: Implementado conforme o contrato do plano-base.
+- Conteúdo:
+  - Após o handoff válido da E19.2, o agregado permanece bootstrap/histórico, não sofre novas atualizações operacionais nem serve fallback; E19.5 assume a autoridade operacional, com materialização de suas residências somente de forma lazy.
+  - A jornada remove a autoridade do hidden `catalog_version`, continua derivando fields, tipos, obrigação, opções e condições do E20.2 resolvido e usa humanização localizada de `fieldKey` apenas quando não há label amigável existente; paleta e logo mantêm suas especializações.
+  - Não houve nova persistência, migration, schema, estado de migração, registry paralelo, backfill, upload ou infraestrutura de assets.
+
+19.2.7.5 Validação e pendência vigente
+- Status: Validado nos casos focais locais com a v5 executável; autorização E20.6 do taxon em v5 pendente.
+- Conteúdo:
+  - Os casos executáveis cobrem evolução pré-handoff com versão autorizada executável, preservação de valor, payload de client adulterado sem efeito, autoridade ausente/divergente, isolamento tenant-safe e bloqueio de atualização após handoff; os validadores de catálogo, preparação E20.6, contexto de geração e jornada permanecem aprovados.
+  - Após a reconciliação com a `main` que contém o PR #803, os casos comprovam literalmente o agregado histórico/current em v2, a autoridade operacional simulada em v5, a preservação de valores válidos, `business_offerings_summary` opcional, `primary_conversion_goal` obrigatório, incompletude sem esse valor e evolução confirmada de `catalog_version` para 5.
+  - A prova hospedada com o taxon real permanece condicionada somente ao registro E20.6 de `reviewed_input_catalog_version = 5`; não há fallback ou inferência pela E19.2.
 
 19.3 Pacote autorizado para geração no Cenário E
 

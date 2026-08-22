@@ -14,7 +14,6 @@ export type {
   CreateAccountLandingPageResult,
   SaveAccountLandingPageOnboardingConfigurationInput,
 } from "./contracts";
-export { ACCOUNT_LANDING_PAGE_ONBOARDING_CATALOG_VERSION } from "./contracts";
 export {
   isAccountLandingPageOnboardingActorAuthorized,
   isUnavailableOnboardingConfigurationError,
