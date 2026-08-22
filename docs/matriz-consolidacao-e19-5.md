@@ -70,7 +70,7 @@ Parecer integral preservado pelo orquestrador. Veredito: `updates aplicáveis co
 
 ## 6. Passagens do Analista e revisões delta
 
-O mesmo Analista recebeu apenas v1, v2, plano conceitual `N/A`, decisões e fontes do caso, sem pareceres ou matriz.
+Na Passagem 1, o mesmo Analista recebeu apenas v1, v2, plano conceitual `N/A`, decisões e fontes do caso, sem pareceres ou matriz.
 
 | ID | Correção obrigatória | Classe | Tratamento na v2 | Evidência do gate |
 |---|---|---|---|---|
@@ -89,7 +89,7 @@ Na Passagem 2 sobre o commit `4d14f85`, o mesmo Analista confirmou a cobertura i
 | `P2-02` | Tornar auditável o critério `prod#17`, registrando cada critério aplicável, exceções e inspeção manual. | extensão adjacente necessária e proporcional | Plano e linha `prod#17` da matriz atualizados. |
 | `P2-03` | Atualizar o estado processual da seção 3.2 do plano. | preservação | Passagem 1, deltas, matriz e origem destas correções registrados. |
 
-Conclusão vigente do Analista: `aprovado com correções obrigatórias`; este delta retorna ao mesmo Analista em `revisao_delta` e ainda não aprova o merge do plano-base v2.
+Conclusão da Passagem 2 no commit `4d14f85`: `aprovado com correções obrigatórias`; este delta retorna ao mesmo Analista em `revisao_delta` e ainda não aprova o merge do plano-base v2.
 
 ## 7. Travas preservadas durante a revisão delta
 
