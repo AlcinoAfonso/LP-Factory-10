@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 22/08/2026
-• Versão: v1.5.175
+• Versão: v1.5.176
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2098,7 +2098,7 @@ Repositório — Ajustados
 
 19. E19 — LP Builder
 - Objetivo: Consolidar o fluxo Core de landing pages por conta, da identidade mínima em `draft` às futuras etapas de geração, revisão, materialização e publicação, sempre por recortes aprovados.
-- Status: E19.1, E19.2 e E19.3 concluídas. E19.4.3, E19.4.4 e E19.4.5 concluídas; a E19.4 está encerrada e integrada à `main` pelo PR #776. A revisão 3 permanece preservada como baseline dos gaps persuasivos observados. Com a E22.1 concluída, a E19.5 deixa de estar bloqueada por essa pré-condição e passa a ser o próximo recorte a planejar, sem implementação iniciada.
+- Status: E19.1, E19.2 e E19.3 concluídas. E19.4.3, E19.4.4 e E19.4.5 concluídas; a E19.4 está encerrada e integrada à `main` pelo PR #776. A revisão 3 permanece preservada como baseline dos gaps persuasivos observados. A E19.5 possui plano-base v2 aprovado para o recorte reduzido E19.5.3; implementação ainda não iniciada.
 
 19.1 Criação produtiva mínima de LP por conta
 
@@ -2449,27 +2449,35 @@ Repositório — Ajustados
 19.5 — Workspace operacional e lifecycle da LP
 
 19.5.1 Objetivo e status
-- Objetivo: preservar as decisões vigentes necessárias ao próximo planejamento do workspace operacional e do lifecycle da LP.
-- Status: Prevista; próximo recorte a planejar/reconciliar; sem implementação iniciada.
+- Objetivo: entregar o ciclo operacional reduzido para múltiplas identidades de LP por conta, com configuração contextual lazy, revisões integrais append-only, histórico, preview e aprovação humana explícita.
+- Status: Plano-base v2 aprovado; E19.5.3 planejada e sem implementação iniciada.
 
-19.5.2 Decisões vigentes e limites
-- `landing_page` é identidade comercial estável; tentativa ou revisão não cria nova LP.
-- PR #726 é base madura a reconciliar, não plano executável vigente.
-- Não implementar a antiga abordagem “Light” nem drafts independentes como novas LPs.
-- O planejamento da E19.5 deve decidir lifecycle, aprovação/conclusão/publicação/arquivamento, revisão publicada × revisão em trabalho, edição manual, melhoria parcial/integral por IA, histórico/restauração e quais ações consomem IA.
-- Nenhuma dessas decisões autoriza implementação neste PR.
+19.5.3 Workspace operacional reduzido, configuração e aprovação da LP
+- Status: Planejada; não implementada.
+- Conteúdo:
+  - uma LP representa identidade comercial estável; tentativa, geração ou revisão não cria nova LP;
+  - o workspace apresenta uma entrada por identidade e permite várias LPs na mesma conta, com contexto persistente Conta → LP → seção;
+  - a E19.2 permanece bootstrap e histórico da primeira jornada; seu handoff é lazy e idempotente, e a E19.5 se torna a única autoridade operacional depois do vínculo, sem fallback concorrente;
+  - a configuração operacional distingue valores compartilhados de conta/negócio e valores contextuais de oferta/campanha/LP, nasce somente quando necessária, aceita estado parcial e deriva completude sem placeholder ou flag persistida;
+  - a operação pós-handoff exige explicitamente a versão E20.2 v5 e igualdade com `reviewed_input_catalog_version = 5`, sem `latest`, maior versão ou pin histórico;
+  - `primary_conversion_goal` integra o núcleo comercial após seu baseline por revisão válida; mudança posterior de `funnel_stage`, `transaction_intent` aplicável ou `primary_conversion_goal` exige nova identidade, enquanto mudança de `primary_service_or_offer` exige confirmação humana sobre continuidade do trabalho comercial;
+  - cada geração válida cria nova revisão integral e imutável da mesma LP; versão mais recente, versão aprovada e futura versão publicada permanecem conceitos independentes;
+  - histórico e preview são carregados sob demanda por LP, e a aprovação escolhe idempotentemente uma revisão existente sem criar cópia ou nova revisão;
+  - o recorte preserva o renderer e o pipeline E19.3 → E19.4, evolui de forma versionada o contexto/snapshot para novas revisões e mantém revisões históricas válidas;
+  - o runtime consumidor permanece desligado até apply canônico e provas do ambiente; Preview deve ser habilitado e validado antes de qualquer habilitação controlada em Production;
+  - permanecem fora do recorte archive/restore, publicação, editor manual, melhoria parcial por IA, hard delete, tracking, mensuração, testes A/B, catálogo avançado de ofertas, automação nova e infraestrutura sem consumidor indispensável.
 
 20. E20 — Preparação e liberação de taxons para geração de landing pages
 
 * Objetivo: consolidar catálogo de entradas por taxon e plano, perfis versionados de orientação à geração, herança e, em recortes futuros, prontidão e liberação antes da geração de LPs por conta.
-* Status: E20.2 concluída até a v4; E20.3 concluída; E20.5 concluída e ativada após merge do PR #746, apply canônico, prova SQL e smokes autenticados em Preview e Production.
+* Status: E20.2 definida no contrato repo-only até a v5; E20.3 retirada; E20.5 concluída e ativada após merge do PR #746, apply canônico, prova SQL e smokes autenticados em Preview e Production.
 
 20.2 Catálogo de entradas por taxon
 
 20.2.1 Objetivo e status
 
 * Objetivo: definir e resolver um catálogo declarativo versionado de entradas de `landing_page` por taxon e plano, separado de valores operacionais, composição, conteúdo e entitlement.
-* Status: Concluído até a versão executável v4.
+* Status: Contrato repo-only definido até a versão executável v5; consumo operacional depende de versão explicitamente requerida e de revisão compatível pela E20.6.
 
 20.2.2 Registros do recorte
 
@@ -2506,6 +2514,7 @@ Repositório — Ajustados
   * A v2 contém 23 campos: os 19 da v1 e os quatro mínimos do Starter — serviço ou oferta principal, descrição factual curta, referência opaca opcional de logo ou asset principal e paleta visual confirmada.
   * A v3 preserva integralmente os 23 campos, a ordem e a estrutura da v2 e acrescenta somente metadata declarativo que autoriza `financing_support_available` e `document_support_available` a sustentar `applicable_capabilities` quando o valor booleano for `true`; a v2 permanece imutável e continua validando os valores persistidos.
   * A v4 preserva integralmente os 23 campos, a ordem, as camadas, a metadata e os bindings da v3 e acrescenta somente `rent` ao final do enum de `transaction_intent`, com evidência atualizada para locação exclusiva; v1–v3 permanecem imutáveis.
+  * A v5 preserva integralmente v1–v4 e acrescenta `business_offerings_summary` como contexto universal opcional de negócio e `primary_conversion_goal` como objetivo principal de conversão obrigatório da LP, com valores `contact`, `schedule`, `request_quote`, `purchase` e `register_interest`; a versão só se torna operacional para um consumidor quando é requerida explicitamente e coincide com a revisão humana registrada pela E20.6.
   * Os quatro campos da v2 permanecem disponíveis em Starter, Lite, Pro e Ultra, sem diferenças adicionais entre planos neste recorte.
   * Strings obrigatórias rejeitam valor vazio; o asset aceita somente objeto estrito com `asset_id` opaco não vazio; a paleta exige exatamente `primary`, `secondary`, `accent`, `background` e `text` em hexadecimal `#RRGGBB`.
   * Os campos criados na v2 declaram `landingPageSubstitutionPolicy`: oferta, descrição e logo usam `forbidden`, enquanto a paleta usa `explicit_allowed`; ausência da política nos campos históricos da v1 não autoriza substituição.
