@@ -135,7 +135,7 @@
 - Tracking por plano não é fechado neste recorte.
 - Preservar apenas a fronteira conceitual entre configuração reutilizável da conta e associação/mensuração específica da LP, sem implementar tracking, Analytics ou Google Ads.
 - Os dois P2 pós-merge da E9.7.3 — proteção `server-only` e correlação tipada entre definição e valor — são gates técnicos antes de consumo real do boundary por E19, não responsabilidade da E19.2.
-- `prod#19` permanece como referência e trava: sinal de Stripe, nome de plano, assinatura ou feature externa não decide autorização da E19.2. Entitlement efetivo deve vir do boundary interno de `commercial-entitlements`; capacidade comercial, quando existir contrato admitido, deve vir separadamente da E9.7 e ser aplicada pelo consumidor server-side. O update não autoriza adotar Stripe Entitlements nem migrar o modelo interno.
+- No ajuste Light, `prod#19` permanece como referência e trava: sinal de Stripe, nome de plano, assinatura ou feature externa não decide autorização da E19.2. Entitlement efetivo deve vir do boundary interno de `commercial-entitlements`; capacidade comercial, quando existir contrato admitido, deve vir separadamente da E9.7 e ser aplicada pelo consumidor server-side. O update não autoriza adotar Stripe Entitlements nem migrar o modelo interno.
 
 ### 1.9. Automação e IA
 
@@ -267,9 +267,9 @@
 - Progresso da jornada deve ser compreensível sem exigir conhecimento técnico.
 - Valores previamente válidos devem permanecer após erro, navegação para trás, saída e retorno.
 - A experiência deve evidenciar claramente a transição de “configurando” para “pronto para trabalhar na LP”.
-- A Vercel Toolbar pode ser usada no Preview autorizado como apoio para comentários, auditoria de acessibilidade, interaction timing e layout shift quando estiver disponível. Seu uso é opcional, não cria dependência do produto e não substitui validação manual, evidência dos estados do caso nem os checks do repositório.
-- Cada PR que alterar a jornada E19.2 deve ser validado no Preview autorizado, em desktop e mobile, cobrindo ao menos: conta sem entitlement, owner/admin elegível incompleto, retomada de progresso parcial, erro localizado com preservação dos demais valores, bloqueio autoritativo fail-closed, conclusão sem criação prematura de draft e seleção explícita entre múltiplos drafts. A validação deve incluir teclado e inspeção de erros visíveis de runtime.
-- Usar WCAG 2.2 como baseline proporcional da jornada, verificando por inspeção manual e apoio automatizado: operação somente por teclado, ordem e visibilidade de foco, foco após transição ou erro, associação programática entre label, hint, controle e erro, anúncio de feedback dinâmico, contraste aplicável, alvos de toque e ausência de ação disponível apenas por hover. Ferramenta automática isolada não comprova conformidade, e o recorte não pode declarar conformidade WCAG 2.2 integral sem auditoria própria.
+- Referência opcional `vercel#15`: a Vercel Toolbar pode ser usada no Preview autorizado como apoio para comentários, auditoria de acessibilidade, interaction timing e layout shift quando estiver disponível. Seu uso é opcional, não cria dependência do produto e não substitui validação manual, evidência dos estados do caso nem os checks do repositório.
+- Aplicação recorrente `prod#16`: cada PR que alterar a jornada E19.2 deve ser validado no Preview autorizado, em desktop e mobile, cobrindo ao menos: conta sem entitlement, owner/admin elegível incompleto, retomada de progresso parcial, erro localizado com preservação dos demais valores, bloqueio autoritativo fail-closed, conclusão sem criação prematura de draft e seleção explícita entre múltiplos drafts. A validação deve incluir teclado e inspeção de erros visíveis de runtime.
+- Trava `prod#17`: usar WCAG 2.2 como baseline proporcional da jornada, verificando por inspeção manual e apoio automatizado: operação somente por teclado, ordem e visibilidade de foco, foco após transição ou erro, associação programática entre label, hint, controle e erro, anúncio de feedback dinâmico, contraste aplicável, alvos de toque e ausência de ação disponível apenas por hover. Ferramenta automática isolada não comprova conformidade, e o recorte não pode declarar conformidade WCAG 2.2 integral sem auditoria própria.
 - Evidências humanas futuras devem cobrir pelo menos:
   - conta sem entitlement permanece na experiência comercial;
   - conta elegível e incompleta entra no onboarding;
@@ -337,7 +337,7 @@
   - erro localizado não apaga os demais valores;
   - saída e retorno retomam a configuração parcial;
   - desktop, mobile e teclado são validados com evidência proporcional.
-  - em teste humano guiado, owner ou admin elegível deve reconhecer, sem explicação de vocabulário interno, o próximo passo, quais valores são obrigatórios ou opcionais, quais pendências são recuperáveis e quais bloqueios são autoritativos. Não transformar tempo de clique, descoberta ou conclusão em métrica obrigatória sem hipótese e plano de medição próprios.
+  - Aplicação `prod#14`: em teste humano guiado, owner ou admin elegível deve reconhecer, sem explicação de vocabulário interno, o próximo passo, quais valores são obrigatórios ou opcionais, quais pendências são recuperáveis e quais bloqueios são autoritativos. Não transformar tempo de clique, descoberta ou conclusão em métrica obrigatória sem hipótese e plano de medição próprios.
 
 ### 3.3. E19.2.5 — Identidade visual mínima da conta
 
@@ -409,6 +409,7 @@
   - manter `account_landing_page_onboarding_configurations.catalog_version` como histórico imutável da versão sob a qual o agregado foi inicialmente registrado; em uma conta nova, o primeiro save registra a versão operacional autorizada naquele momento; em uma conta existente, promoção, downgrade ou reabertura nunca regrava esse histórico;
   - derivar a versão operacional server-side em cada leitura, save, retomada, conclusão e revalidação, sem coluna adicional, `onboarding_status`, flag, snapshot, migração por cliente, tabela nova ou estado paralelo;
   - manter o JSON `values` existente (`fieldKey → { scope, value }`), sem metadado de versão por campo ou nova persistência. A associação histórica é do agregado; a associação operacional é do contrato resolvido para a operação atual. Se a implementação demonstrar que a distinção exige proveniência persistida por valor, parar e devolver a decisão ao Estrategista, pois isso deixaria de ser Light.
+  - `supa#40`: este ajuste Light não cria nem altera migration ou snippet. O verificador read-only já versionado da E19.2 pode ser reexecutado somente para reconfirmar o contrato persistido quando a implementação tocar suas suposições de leitura; qualquer necessidade de tabela, coluna, constraint, RLS, policy, grant ou estado persistido novo aciona o critério de parada antes da implementação.
 - Revalidação e preservação:
   - resolver os dois contratos com o resolver canônico E20.2: validar a forma e o escopo dos valores contra a versão histórica e, em seguida, projetar a configuração contra a versão operacional autorizada;
   - preservar automaticamente todo valor ainda válido e não autoritativo; não apagar nem reescrever valor histórico válido só porque um field deixou de ser operacional;
