@@ -8,6 +8,9 @@
 - Path: `docs/lousa-plano-base-e19-2.md`.
 - Plano conceitual: N/A — debate humano e do Analista consolidado nas decisões abaixo e em `docs/lp-planejamento.md`.
 - Natureza: plano-base v2.
+- Processo: Estrategista Light.
+- Status: plano-base Light candidato; implementação ainda não autorizada; PR único em draft e sem merge.
+- O v2 existente permanece a fonte de decisões já aprovadas; este delta não reabre o ciclo v1 → v2 nem repete especialistas.
 - Automação do recorte: não.
 - OpenAI na primeira entrega: não.
 - Frontend próprio: sim, na superfície autenticada da conta.
@@ -23,14 +26,17 @@
 - `docs/schema.md` — estado real de `accounts`, `account_profiles`, `account_landing_pages`, taxonomia e entitlement.
 - `docs/design-system.md` — componentes base, estados, acessibilidade e consistência visual do Account Dashboard.
 - `docs/prompt-abc.md` — fechamento documental e reconciliação do roadmap durante a execução.
+- `docs/prompt-estrategista-light.md` — fluxo proporcional, PR único em draft, consulta obrigatória de Updates e critérios de escalada.
 - `docs/lousa-plano-base-e9-7.md` — contrato de capacidades comerciais, E9.7.3 concluída e E9.7.4/E9.7.5 ainda planejadas.
 - `docs/lousa-plano-base-e20-2.md` — contrato declarativo de entradas de `landing_page`.
+- `docs/lousa-plano-base-e20-6.md` — autoridade explícita da versão E20.2 revisada para consumidores posteriores.
 
 ### 0.3. Implementação usada
 
 - `lib/lp-builder/` e `app/lp-builder/actions.ts` — boundary produtivo da E19.1 e criação de LP real em `draft`.
 - `app/a/[account]/page.tsx` — superfície atual pós-setup da conta e decisão da experiência comercial.
 - `lib/conversion-content/landing-page/input-catalog/` — contrato E20.2 v2, escopos, obrigação, validação e `landingPageSubstitutionPolicy`.
+- `lib/conversion-content/adapters/selectedEndCustomerResearchAdapter.ts` e `lib/conversion-content/landing-page/taxon-preparation/` — leitura server-side da versão E20.2 revisada e preparação por versão exata.
 - `lib/commercial-entitlements/` — resolução do entitlement e do `planKey` efetivo.
 - `lib/commercial-capabilities/` — boundary canônico criado na E9.7.3, ainda sem capacidades Starter admitidas no registry runtime.
 - Taxonomia da conta — resolver autoritativo do taxon primário ativo já usado na superfície da conta.
@@ -68,7 +74,8 @@
 - Campo opcional ausente não bloqueia a conclusão.
 - Não criar `onboarding_status` em `accounts` nem outro estado persistido equivalente.
 - O contrato de snapshot da E20.2 deve ser preservado para a futura geração/materialização; a E19.2 não materializa snapshot de geração.
-- A configuração retomável usa um agregado versionado por conta, com a versão explícita do catálogo e valores indexados por `fieldKey`; cada valor persistido conserva seu escopo E20.2.
+- A configuração retomável usa um agregado versionado por conta. `catalog_version` é a versão histórica sob a qual o agregado foi originalmente registrado; a versão operacional vigente é resolvida server-side a cada leitura, save e revalidação pela autoridade explícita de E20.2, sem reescrever o histórico.
+- A versão operacional não é escolhida pelo client, não é `latest` nem a maior chave do registry e não vira coluna, status ou estado de migração por conta. Valores continuam indexados por `fieldKey` e conservam seu escopo E20.2 no JSON existente.
 - A leitura efetiva combina fontes autoritativas existentes com o agregado da jornada. Valor autoritativo não é copiado apenas para atender o onboarding nem substituído silenciosamente pelo agregado.
 - Field, escopo, versão ou valor desconhecido ou inválido falha fechado; o payload persistido não constitui catálogo paralelo.
 - O save parcial valida integralmente apenas os valores presentes; ausência de campo obrigatório ou condicional aplicável é aceita durante o progresso e bloqueia somente a conclusão.
@@ -180,7 +187,7 @@
 - Membership e papel do ator.
 - Entitlement efetivo e `planKey`.
 - Taxon primário autoritativo.
-- Catálogo E20.2 v2 resolvido explicitamente para a cadeia de taxon e plano aplicáveis.
+- Versão operacional E20.2 explicitamente autorizada para a cadeia de taxon e plano aplicáveis, derivada da autoridade canônica do taxon; a versão histórica do agregado permanece separada.
 - Valores já persistidos por escopo.
 - Configuração parcial anteriormente preservada, quando existir.
 - Logo opcional e paleta previamente confirmada, quando existirem.
@@ -216,7 +223,7 @@
 - `created_by` e `updated_by` referenciam `auth.users(id)` com `ON UPDATE CASCADE` e `ON DELETE RESTRICT`. `updated_at` usa o trigger canônico `public.tg_set_updated_at()`; o agregado não participa do Trigger Hub.
 - `landing_page_id` permanece nulo durante o preenchimento. A migration adiciona unicidade em `public.account_landing_pages(id, account_id)` e FK composta `(landing_page_id, account_id)` para esse par, com `ON UPDATE CASCADE` e `ON DELETE RESTRICT`, impedindo associação cruzada entre contas.
 - A mesma migration deve criar proteção write-once no banco para `landing_page_id`. Um trigger `BEFORE UPDATE`, implementado por função table-specific `SECURITY INVOKER` com `search_path` fixado, deve rejeitar qualquer transição em que `OLD.landing_page_id` já seja não nulo e `NEW.landing_page_id` seja distinto, inclusive retorno a `NULL`. Somente a transição `NULL → draft` válido da mesma conta é permitida. A função não integra API pública e deve permanecer sem `EXECUTE` concedido a `public`, `anon` ou `authenticated`.
-- `values` deve ser objeto JSON estrito indexado por `fieldKey`; cada entrada contém somente `scope` e `value`. O boundary valida `fieldKey`, `scope`, obrigatoriedade, condição e valor contra o catálogo resolvido na `catalog_version` persistida antes de qualquer gravação.
+- `values` deve ser objeto JSON estrito indexado por `fieldKey`; cada entrada continua contendo somente `scope` e `value`. O boundary valida os valores históricos contra o catálogo da `catalog_version` persistida e projeta/revalida a configuração contra o catálogo operacional autorizado antes de qualquer gravação ou conclusão.
 - Valores provenientes de fonte autoritativa existente são combinados na leitura e não duplicados no agregado somente para atender o onboarding.
 - Não criar coluna de status, flag de completude, snapshot de geração nem linha em `account_landing_pages` para representar a jornada.
 - A tabela nasce em migration incremental versionada e forward-only, com `values` restrito por CHECK a objeto JSON, versão/revisão positivas, FKs explícitas, unicidade 1:1, `updated_at` automático e RLS habilitado.
@@ -387,6 +394,46 @@
 - Executar `E19.2.3`, `E19.2.4`, `E19.2.5` e `E19.2.6` nessa ordem, com checkpoint e gate próprios por subseção.
 - Manter migration e runtime no mesmo PR, sem apply remoto pré-merge; antes do apply e da leitura tipada bem-sucedida, preservar a experiência comercial vigente e manter o onboarding novo desativado.
 
+### 3.6. Ajuste Light — catálogo histórico e operacional
+
+- Status: plano-base Light candidato; esta entrega planeja o delta e não autoriza implementação ou merge.
+- Objetivo:
+  - permitir que contas novas e existentes operem contra a versão E20.2 atualmente autorizada para o consumidor, sem perder valores válidos, sem reescrever a versão histórica e sem criar estado de migração por conta.
+- Autoridade operacional obrigatória:
+  - reutilizar `business_taxons.reviewed_input_catalog_version`, lido pelo adapter server-only `loadTaxonPreparationForReviewedVersion({ taxonId })` e pelo boundary de preparação da E20.6;
+  - aceitar somente uma versão positiva, executável no registry E20.2 e explicitamente revisada para o taxon; `null`, versão não executável, cadeia/pesquisa incompatível ou falha operacional bloqueiam fechado;
+  - não usar `latest`, maior versão, slug, chave do registry, fallback para `2` ou valor enviado no formulário para autorizar o consumidor;
+  - tratar a E20.2 v5 em andamento como dependência factual: a E19.2 não cria nem promove v5; somente passa a consumi-la quando o registry/contrato E20.2 a tornar executável e a autoridade do taxon registrar a revisão correspondente.
+- Separação e persistência mínima:
+  - manter `account_landing_page_onboarding_configurations.catalog_version` como histórico imutável da versão sob a qual o agregado foi inicialmente registrado; em uma conta nova, o primeiro save registra a versão operacional autorizada naquele momento; em uma conta existente, promoção, downgrade ou reabertura nunca regrava esse histórico;
+  - derivar a versão operacional server-side em cada leitura, save, retomada, conclusão e revalidação, sem coluna adicional, `onboarding_status`, flag, snapshot, migração por cliente, tabela nova ou estado paralelo;
+  - manter o JSON `values` existente (`fieldKey → { scope, value }`), sem metadado de versão por campo ou nova persistência. A associação histórica é do agregado; a associação operacional é do contrato resolvido para a operação atual. Se a implementação demonstrar que a distinção exige proveniência persistida por valor, parar e devolver a decisão ao Estrategista, pois isso deixaria de ser Light.
+- Revalidação e preservação:
+  - resolver os dois contratos com o resolver canônico E20.2: validar a forma e o escopo dos valores contra a versão histórica e, em seguida, projetar a configuração contra a versão operacional autorizada;
+  - preservar automaticamente todo valor ainda válido e não autoritativo; não apagar nem reescrever valor histórico válido só porque um field deixou de ser operacional;
+  - apresentar somente fields aplicáveis do contrato operacional e as pendências dele. Field novo aplicável aparece como ausente; field novo obrigatório ou valor que deixou de satisfazer o contrato operacional torna a configuração incompleta até correção humana;
+  - manter valores históricos não operacionais apenas como histórico preservado, sem exibi-los como fields ativos, sem contá-los para completude e sem permitir que um client os use para introduzir campos fora do catálogo;
+  - não fazer backfill artificial, preenchimento silencioso, conversão de versão, descarte silencioso ou criação de `draft`; conflito com valor autoritativo continua fail-closed.
+- UI e boundary:
+  - a UI deve iterar os fields resolvidos da configuração operacional e escolher o controle pelo contrato/tipo existente, removendo enumeração campo a campo onde o delta for pequeno;
+  - manter apenas especializações justificadas já existentes, como paleta e referência canônica opcional de logo; novos fields E20.2 não podem exigir nova lista na jornada;
+  - remover a autoridade do hidden `catalog_version`: o client envia revisão e valores, e o server deriva a versão operacional e preserva a histórica antes de validar/persistir;
+  - manter a leitura de DB exclusivamente nos adapters de `lib/lp-builder/` e reutilizar a preparação E20.6, sem criar resolver paralelo, registry local ou acesso direto da UI/Server Action.
+- Entrega implementável no mesmo PR/branch:
+  - E19.2.3: ampliar contratos, adapter e resolver existentes para a dupla histórica/operacional, primeira gravação na versão autorizada, revalidação union-safe e erro tipado para autoridade indisponível;
+  - E19.2.4: retomar a configuração já salva, preservar valores válidos e renderizar somente fields/pendências operacionais novos;
+  - E19.2.5: manter paleta e logo opcional orientados pelo catálogo, sem upload, bucket, Storage ou asset novo;
+  - E19.2.6: revisar a completude operacional atual, exigir preenchimento de novo obrigatório antes de oferecer criação/seleção explícita de draft e manter o vínculo existente sem copiar valores;
+  - preferir os arquivos e testes já existentes em `lib/lp-builder/`, `app/a/[account]/` e seus casos de validação; não criar framework, resolver, migration ou fixture permanente paralelo.
+- Critérios de aceite e validação:
+  - conta com agregado histórico v2 e autoridade operacional v5 (quando v5 estiver executável) preserva valores v2 válidos, apresenta apenas os fields v5 aplicáveis e permanece incompleta se um obrigatório v5 faltar;
+  - valor presente e ainda válido atravessa a evolução sem novo prompt; valor histórico válido removido do contrato operacional não é apagado nem tratado como field ativo;
+  - conta nova grava a versão operacional autorizada como histórico inicial; conta existente mantém seu `catalog_version` original após qualquer evolução;
+  - ausência, mismatch, versão não executável ou falha da autoridade não cai em v2/latest e não vira sucesso, lista vazia ou configuração completa;
+  - payload com versão client adulterada não escolhe o catálogo e não reescreve o histórico; duas contas nunca compartilham configuração ou autoridade;
+  - casos cobrem mudança de obrigatório/condição/tipo/validação, field novo, field removido, valor autoritativo, save parcial, retomada, revisão stale e conclusão com zero/um/vários drafts;
+  - validar o fluxo hospedado em desktop, mobile, teclado, foco e erros visíveis quando a implementação alterar a jornada; executar os checks aplicáveis e `git diff --check`.
+
 ## 4. Escopo negativo e critérios de parada
 
 ### 4.1. Fora do escopo da E19.2
@@ -417,5 +464,8 @@
 - Se uma regra depender de capacidade ainda não admitida na E9.7.4, preservar a dependência e não inventar valor ou gate.
 - Se o consumo real de `lib/commercial-capabilities/` exigir os P2 pós-merge ainda não corrigidos, tratar o ajuste no recorte da E9 antes da integração.
 - Se taxon, entitlement, conta ou membership estiverem ausentes ou inválidos, falhar fechado; não criar fallback permissivo.
+- Se não houver autoridade canônica suficiente para selecionar a versão operacional E20.2, se `reviewed_input_catalog_version` não puder ser consumido com o contrato exato já existente ou se a evolução E20.2 v5 não estiver executável/revisada, interromper sem inventar `latest`, maior versão ou marcador novo.
+- Se a preservação/revalidação exigir nova tabela, coluna, migration, metadado de versão por valor, estado de migração por cliente ou mudança de schema, interromper o Light e devolver a lacuna para decisão humana/processo completo.
+- Se a UI exigir uma lista de fields paralela, um resolver paralelo ou hardcode adicional para acompanhar a evolução, interromper e reduzir o delta antes de implementar.
 - Se surgir necessidade de IA ou automação nesta entrega, interromper a ampliação e voltar ao fluxo do Estrategista antes de mudar `Automação: não`.
 - Se qualquer fase começar a incorporar geração, publicação, tracking, CRM ou capacidades comerciais não aprovadas, parar e devolver ao humano como ampliação de escopo.
