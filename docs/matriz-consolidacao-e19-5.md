@@ -43,9 +43,9 @@ Parecer integral preservado pelo orquestrador. Veredito: `updates aplicáveis co
 
 | ID | Classificação original | Relação com o escopo | Classe de consolidação | Tratamento | Destino do update | Localização e evidência |
 |---|---|---|---|---|---|---|
-| `supa#2` | complementar; atual | Segurança pós-apply dos novos objetos. | extensão adjacente necessária e proporcional | Incorporado como inspeção de Supabase Security Controls; alerta incompatível bloqueia habilitação. | usar como referência, validação ou trava | Critérios E19.5.3; evidência identifica ambiente e resultado. |
+| `supa#2` | complementar; atual | Segurança pós-apply dos novos objetos. | extensão adjacente necessária e proporcional | Incorporado como inspeção de Supabase Security Controls após cada migration; alerta incompatível bloqueia habilitação. | usar como referência, validação ou trava | Critérios E19.5.3; evidência identifica ambiente e resultado em cada apply. |
 | `supa#35` | complementar; condicional | Plano de consulta somente se paginação/histórico exibirem custo real. | expansão | Não implementar; preservar oportunidade e gatilho objetivo. | oportunidade estratégica condicional | Gatilho: plano/latência/QA demonstrar scan ou custo incompatível. |
-| `supa#40` | complementar; atual | Prova repetível do schema e da segurança hospedados. | extensão adjacente necessária e proporcional | Incorporado como snippet read-only versionado, fail-closed para drift. | aplicar agora | Entrega e critérios E19.5.3; `supabase/snippets`. |
+| `supa#40` | complementar; atual | Prova repetível do schema e da segurança hospedados. | extensão adjacente necessária e proporcional | Incorporado como um snippet read-only versionado e correspondente a cada migration, fail-closed para drift. | aplicar agora | Entrega e critérios E19.5.3; `supabase/snippets`, executado após cada apply com ambiente e resultado registrados. |
 | `supa#51` | complementar; futuro | Busca aproximada só tem valor demonstrado em coleção real grande. | expansão | Não implementar; preservar oportunidade e gatilho objetivo. | oportunidade estratégica condicional | Gatilho: pesquisa provar que paginação/leitura não localizam LPs adequadamente. |
 | `supa#52` | sobreposto; atual | Criaria normalização derivada concorrente com o boundary TypeScript. | expansão | Rejeitado no recorte. | não aplicável | Não há chave derivada de busca que justifique generated column. |
 | `supa#63` | complementar; condicional | Poderia ampliar regressão RLS, mas exige ferramenta beta e banco descartável. | expansão | Não implementar; preservar oportunidade e gatilho objetivo. | oportunidade estratégica condicional | Gatilho: rodada ampla de policies/tabelas ou custo material da matriz SQL manual. |
@@ -58,7 +58,7 @@ Parecer integral preservado pelo orquestrador. Veredito: `updates aplicáveis co
 | `prod#14` | complementar; atual | Prova compreensão de identidade, latest, approved e próxima ação. | extensão adjacente necessária e proporcional | Incorporado como teste humano de reconhecimento, sem telemetria nova. | usar como referência, validação ou trava | Plano 2.6; quatro tarefas humanas explícitas. |
 | `prod#15` | complementar; futuro | Microeventos exigem pergunta de negócio e operação real. | expansão | Não implementar; preservar oportunidade e gatilho objetivo. | oportunidade estratégica condicional | Gatilho: evento, ação, volume, finalidade, retenção e responsável definidos. |
 | `prod#16` | complementar; atual | Repete baseline proporcional de QA hospedado. | extensão adjacente necessária e proporcional | Incorporado para owner/admin, papel sem mutação, entitlement permitido/bloqueado e viewports. | usar como referência, validação ou trava | Plano 2.6; automação visual não substitui revisão manual. |
-| `prod#17` | complementar; atual | Completa o baseline acessível já exigido. | extensão adjacente necessária e proporcional | Incorporado com critérios WCAG 2.2 pertinentes, sem alegação integral. | aplicar agora | Plano 2.6 e critérios; inspeção automática e manual. |
+| `prod#17` | complementar; atual | Completa o baseline acessível já exigido. | extensão adjacente necessária e proporcional | Incorporado com critérios WCAG 2.2 pertinentes, sem alegação integral. | aplicar agora | Plano 2.6 e critérios; evidência registra cada critério aplicável, exceções justificadas e inspeção manual correspondente. |
 | `prod#23` | sobreposto; futuro | WhatsApp oficial exige comparação e recorte próprios. | expansão | Não implementar; preservar oportunidade e gatilho objetivo. | oportunidade estratégica condicional | Gatilho: operação, elegibilidade, custos, políticas e comparação documentados. |
 | `github:N/A` | nenhum item elegível | Sem relação funcional suficiente com E19.5. | preservação | Nenhum patch ou oportunidade registrado. | N/A | Catálogo GitHub avaliado pelo especialista. |
 
@@ -68,7 +68,7 @@ Parecer integral preservado pelo orquestrador. Veredito: `updates aplicáveis co
 |---|---|---|---|---|---|---|
 | `AUTO-N/A` | Nenhuma fase contém `Automação: sim`. | N/A | Não há automação, job, agente ou rotina nova a avaliar. | Avaliação formal não acionada, conforme regra condicional da skill. | Plano v1 e v2. | Ocorrência literal `Automação: não`. |
 
-## 6. Passagem 1 e revisões delta
+## 6. Passagens do Analista e revisões delta
 
 O mesmo Analista recebeu apenas v1, v2, plano conceitual `N/A`, decisões e fontes do caso, sem pareceres ou matriz.
 
@@ -81,9 +81,17 @@ O mesmo Analista recebeu apenas v1, v2, plano conceitual `N/A`, decisões e font
 | `P1-05` | Regras de segurança/no `DELETE`/roles externas devem se limitar aos novos objetos e preservar agregados existentes. | preservação | Aplicado no commit `7ceedcd`. | Aprovado na primeira revisão delta. |
 | `P1-06` | `app/lp-builder/actions.ts` deve ser preservado por padrão e removido só com evidência executável de concorrência real. | preservação | Aplicado no commit `7ceedcd`. | Aprovado na primeira revisão delta. |
 
-Conclusão vigente do Analista: `Aprovado o delta para avançar à matriz/Passagem 2`; essa conclusão não aprova ainda o merge do plano-base v2.
+Na Passagem 2 sobre o commit `4d14f85`, o mesmo Analista confirmou a cobertura integral da matriz e exigiu três correções mecânicas, sem nova rodada especializada ou decisão humana:
 
-## 7. Travas preservadas para a Passagem 2
+| ID | Correção obrigatória da Passagem 2 | Classe | Tratamento neste delta |
+|---|---|---|---|
+| `P2-01` | Exigir snippet correspondente e Security Controls após cada migration, com ambiente e resultado registrados. | extensão adjacente necessária e proporcional | Plano e linhas `supa#2`/`supa#40` da matriz atualizados. |
+| `P2-02` | Tornar auditável o critério `prod#17`, registrando cada critério aplicável, exceções e inspeção manual. | extensão adjacente necessária e proporcional | Plano e linha `prod#17` da matriz atualizados. |
+| `P2-03` | Atualizar o estado processual da seção 3.2 do plano. | preservação | Passagem 1, deltas, matriz e origem destas correções registrados. |
+
+Conclusão vigente do Analista: `aprovado com correções obrigatórias`; este delta retorna ao mesmo Analista em `revisao_delta` e ainda não aprova o merge do plano-base v2.
+
+## 7. Travas preservadas durante a revisão delta
 
 - Não incorporar commits ou estruturas dos PRs #797 ou #802 por inferência.
 - Não criar segunda definição da E20.2 v5 nem dos fields já existentes.
@@ -95,4 +103,4 @@ Conclusão vigente do Analista: `Aprovado o delta para avançar à matriz/Passag
 
 ## 8. Próximo gate
 
-Submeter esta matriz, o plano-base v2 vigente e os pareceres integrais ao mesmo Analista em `auditoria_consolidacao`. Avançar somente com `aprovado para merge do plano-base v2`.
+Submeter somente este delta objetivo ao mesmo Analista em `revisao_delta`, preservando a Passagem 2. Avançar ao ABC do roadmap somente com `aprovado para merge do plano-base v2`.

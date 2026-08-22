@@ -306,7 +306,7 @@
 - Não copiar `account/business` por LP apenas para facilitar UI quando a informação tiver residência canônica compartilhada.
 - Não criar status persistido de UX quando o estado puder ser derivado.
 - Qualquer nova migration deve ser mínima, forward-only e limitada às estruturas indispensáveis deste recorte reduzido.
-- A mesma entrega atualiza `docs/schema.md` por ABC e inclui snippet read-only e casos SQL para RLS, policies, GRANTs, Data API, FKs, atomicidade, concorrência, ausência de `DELETE` nas novas residências e ausência de objetos eager rejeitados; policies e grants dos agregados preexistentes permanecem inalterados salvo delta expressamente exigido pela FK de aprovação.
+- A mesma entrega atualiza `docs/schema.md` por ABC; cada migration E19.5.3 inclui seu snippet read-only correspondente e casos SQL para RLS, policies, GRANTs, Data API, FKs, atomicidade, concorrência, ausência de `DELETE` nas novas residências e ausência de objetos eager rejeitados; policies e grants dos agregados preexistentes permanecem inalterados salvo delta expressamente exigido pela FK de aprovação.
 - Não transportar automaticamente validators SQL, readiness, backfill, lifecycle ou RPCs do #797 que existiam para sustentar o desenho eager.
 
 #### 2.1.6. Consumo
@@ -459,7 +459,7 @@
 - Na validação hospedada em Preview, a Vercel Toolbar pode apoiar Accessibility Audit, Interaction Timing e Layout Shift; não é requisito de infraestrutura nem substitui inspeção manual, teste por teclado ou decisão humana sobre achados materiais.
 - Em teste humano de reconhecimento, sem instrução prévia nem memorização do fluxo, o usuário identifica a LP aberta, distingue versão mais recente de versão aprovada, reconhece a próxima ação disponível e retorna à lista da conta.
 - A evidência hospedada cobre owner e admin autorizados, ao menos um papel sem permissão de mutação e entitlement permitido e bloqueado, nas larguras definidas; validação visual automatizada não substitui revisão manual.
-- Aplicar os critérios WCAG 2.2 pertinentes ao fluxo com inspeção automática e manual de nomes acessíveis e labels, ordem e visibilidade de foco, foco após mutação ou erro, mensagens programaticamente associadas, contraste, alvos de toque e ausência de ação exclusiva por hover; não declarar conformidade WCAG integral sem auditoria própria.
+- Aplicar os critérios WCAG 2.2 pertinentes ao fluxo com inspeção automática e manual de nomes acessíveis e labels, ordem e visibilidade de foco, foco após mutação ou erro, mensagens programaticamente associadas, contraste, alvos de toque e ausência de ação exclusiva por hover; a evidência registra cada critério aplicável, exceções justificadas e a inspeção manual correspondente; não declarar conformidade WCAG integral sem auditoria própria.
 - Evidências da fase executável devem cobrir, no mínimo:
   - desktop em 1280 px;
   - tablet em 768 px;
@@ -507,7 +507,7 @@
 - Qualquer estrutura, teste ou trecho reaproveitado do #797 deve ser revalidado contra este plano; testes de placeholder, `is_initialized`, `landing_page_objective` ou archive/restore não são herdados apenas porque já existem.
 - O PR #802 sobrepõe arquivos da E19.2/E19.5, mas não integra esta base; sua capacidade não é presumida. Se for mergeado antes da implementação do arquivo afetado, integrar `origin/main` de modo não destrutivo, reler somente o delta e preservar uma única autoridade operacional.
 - A entrega usa uma única branch e um único PR. Para impedir runtime consumidor antes do apply, o gate server-only `E19_5_WORKSPACE_ENABLED` nasce default-off e só aceita o literal `true`; desligado, preserva o caminho vigente e não lê nem muta os novos objetos.
-- O rollout é: merge humano com Preview e Production desligados → apply canônico → snippet e Security Controls → habilitar Preview → redeploy → prova hospedada e decisão humana → habilitar Production → redeploy e smoke. Registrar o gate, defaults e progressão em `docs/platform-config.md` por ABC; Production nunca é habilitada por consequência da aprovação em Preview.
+- O rollout é: merge humano com Preview e Production desligados → apply canônico de cada migration → snippet correspondente e Security Controls pós-apply, com evidência identificando ambiente e resultado → habilitar Preview → redeploy → prova hospedada e decisão humana → habilitar Production → redeploy e smoke. Registrar o gate, defaults e progressão em `docs/platform-config.md` por ABC; Production nunca é habilitada por consequência da aprovação em Preview.
 
 ### 2.8. Paths físicos e substituição do runtime
 
@@ -549,7 +549,7 @@
   - estados de UX derivados;
   - preservação da definição de LP entregue;
   - migration mínima somente para as estruturas indispensáveis ao contrato reduzido.
-  - snippet read-only versionado em `supabase/snippets` para objetos, colunas, checks, FKs tenant-safe, índices, RLS, policies, grants, ausência de placeholder/`is_initialized` e assinaturas, ownership, `search_path` e `EXECUTE` das RPCs; deve falhar para drift e aprovar após o apply canônico.
+  - para cada migration E19.5.3, snippet read-only correspondente e versionado em `supabase/snippets` para objetos, colunas, checks, FKs tenant-safe, índices, RLS, policies, grants, ausência de placeholder/`is_initialized` e assinaturas, ownership, `search_path` e `EXECUTE` das RPCs; deve falhar para drift e aprovar após o apply canônico daquela migration.
   - runtime e UI versionados no mesmo PR atrás de `E19_5_WORKSPACE_ENABLED` default-off, sem acesso aos objetos novos enquanto o gate estiver desligado; após apply e provas de banco, habilitar e provar Preview antes de qualquer habilitação de Production.
   - `LandingPageGenerationContext` v4 e snapshot v2 para novas revisões, preservando integralmente v1/contexto v3.
 - Limites:
@@ -602,7 +602,7 @@
   - aprovação pelo ponteiro tenant-safe não cria revisão e mantém no máximo uma escolha aprovada por LP;
   - migration e testes comprovam separadamente, nas novas residências e novas RPCs, RLS sem policies, grants mínimos, `SECURITY INVOKER`, `search_path`, Data API server-only, ausência de `DELETE`, FK de aprovação, atomicidade e concorrência; policies e grants dos agregados preexistentes permanecem preservados salvo delta explícito da aprovação;
   - `E19_5_WORKSPACE_ENABLED` desligado preserva o runtime vigente e impede qualquer dependência de objeto ainda não aplicado;
-  - após o apply canônico, Supabase Security Controls é revisado para residências, RPCs, RLS, policies, grants e aprovação; alerta incompatível bloqueia a habilitação até migration incremental e nova prova;
+  - após o apply canônico de cada migration E19.5.3, executar seu snippet correspondente e revisar Supabase Security Controls para residências, RPCs, RLS, policies, grants e aprovação; a evidência identifica ambiente e resultado, e alerta incompatível bloqueia a habilitação até migration incremental, novo apply e novas provas;
   - não permanece o placeholder; nenhuma action de criação concorrente é alcançável; UI não importa Supabase, mutações revalidam guards, onboarding segue funcional e listas/históricos não confundem truncamento com completude;
   - invariantes identidade ≠ revisão, latest ≠ approved ≠ future published e configuração ≠ conteúdo permanecem preservados;
   - verificadores/testes proporcionais e `npm run check` aprovam o contrato;
@@ -613,7 +613,7 @@
 
 - A decisão humana B, os relatórios de evolução histórica × operacional e a nova autoridade universal de conversão permanecem preservados da v3.
 - O processo automatizado foi escolhido pelo humano no PR #801; esta v2 processual consolida os pareceres do mesmo blob sem incorporar #797 ou #802.
-- A Passagem 1 independente foi concluída sobre `be2841f`; este delta objetivo retorna ao mesmo Analista em `revisao_delta`, ainda sem pareceres ou matriz. Após sua aprovação, a matriz será versionada e seguirá a Passagem 2.
+- A Passagem 1 independente foi concluída sobre `be2841f`; seus deltas foram aprovados em `7ceedcd` e `94def51`. A matriz foi versionada em `4d14f85`, e a Passagem 2 auditou plano, matriz e pareceres integrais nesse checkpoint. As três correções objetivas dessa auditoria retornam agora ao mesmo Analista em `revisao_delta`, antes do ABC do roadmap.
 - Implementação começa apenas após aprovação da v2, ABC do roadmap, revisão delta do mesmo Analista e checkpoint `LP-Factory-Stage: plan-v2-approved` no único PR draft.
 
 ## 4. Escopo negativo e critérios de parada
