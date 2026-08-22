@@ -438,11 +438,11 @@
   - remover a autoridade do hidden `catalog_version`: o client envia revisão e valores, e o server deriva a versão operacional pré-handoff e atualiza a versão corrente do agregado somente após validar/persistir;
   - após handoff, a UI operacional não consulta nem reinterpreta o agregado E19.2.
 
-- Entrega implementável no mesmo PR/branch:
-  - E19.2.7: ajustar o boundary/adapters existentes para resolver a autoridade pré-handoff, revalidar valores e permitir evolução corrente de `catalog_version`, mantendo a transição para E19.5 como único handoff;
+- Próxima etapa de implementação, fora deste PR documental:
+  - após aprovação humana deste plano e autorização explícita do recorte de execução, ajustar os boundary/adapters existentes para resolver a autoridade pré-handoff, revalidar valores e permitir evolução corrente de `catalog_version`, mantendo a transição para E19.5 como único handoff;
   - reutilizar a separação histórica/efetiva de `generationContext.ts` e a preparação canônica E20.6, sem criar resolver paralelo;
   - preservar E19.2.3–E19.2.6 como concluídas; não reimplementar migration, vínculo, drafts, paleta ou jornada já entregues;
-  - manter o delta sem nova migration, schema, persistência física, estado por cliente, conteúdo, geração, publicação, tracking, CRM, capability nova ou assets.
+  - esta PR não implementa runtime e mantém o delta restrito ao plano, sem nova migration, schema, persistência física, estado por cliente, conteúdo, geração, publicação, tracking, CRM, capability nova ou assets.
 
 - Critérios de aceite e validação:
   - pré-handoff com agregado `v2` e versão autorizada `v5` preserva valores v2 válidos, apresenta o field novo aplicável e permanece incompleto se o novo obrigatório faltar;
