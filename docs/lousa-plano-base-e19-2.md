@@ -402,10 +402,12 @@
 - Objetivo:
   - permitir que a conta elegível opere contra a versão E20.2 autorizada enquanto E19.2 ainda for a autoridade do onboarding/pré-handoff, preservando valores válidos e preparando um handoff único para E19.5.
 
-- Fronteira E19.2 × E19.5:
+- Fronteira E19.2 × E19.5 e os dois handoffs:
   - E19.2 resolve e revalida a configuração mínima somente durante o onboarding/pré-handoff, usando a autoridade E20.2 explicitamente autorizada para o taxon;
-  - o handoff válido ocorre quando a configuração operacional está completa, a conta escolhe/cria o `draft` conforme E19.2.6 e o agregado é vinculado sem rebind; a partir daí E19.2 é somente bootstrap/histórico;
-  - após o handoff, E19.2 não pode servir fallback, completar silenciosamente a configuração ou concorrer como autoridade operacional; revalidações e atualizações posteriores do catálogo pertencem à E19.5;
+  - o **handoff de autoridade da E19.2** ocorre quando a primeira jornada está completa, a conta escolhe/cria o `draft` conforme E19.2.6 e o agregado é vinculado sem rebind; a partir desse momento E19.2 deixa de ser autoridade operacional e permanece somente bootstrap/histórico;
+  - esse handoff de autoridade não materializa imediatamente a configuração física da E19.5 nem cria suas residências operacionais;
+  - a **materialização operacional da E19.5** ocorre posteriormente e de forma lazy, somente quando o workspace realmente precisar criar as residências operacionais previstas pela E19.5; não há precreate ou backfill pela E19.2;
+  - após o handoff de autoridade, E19.2 não pode servir fallback, completar silenciosamente a configuração ou concorrer como autoridade operacional; revalidações e atualizações posteriores do catálogo pertencem à E19.5;
   - nenhuma atualização de E19.5 deve reabrir o onboarding ou reescrever a história de snapshots/revisões já materializados.
 
 - Autoridade operacional pré-handoff:
@@ -438,11 +440,13 @@
   - remover a autoridade do hidden `catalog_version`: o client envia revisão e valores, e o server deriva a versão operacional pré-handoff e atualiza a versão corrente do agregado somente após validar/persistir;
   - após handoff, a UI operacional não consulta nem reinterpreta o agregado E19.2.
 
-- Próxima etapa de implementação, fora deste PR documental:
-  - após aprovação humana deste plano e autorização explícita do recorte de execução, ajustar os boundary/adapters existentes para resolver a autoridade pré-handoff, revalidar valores e permitir evolução corrente de `catalog_version`, mantendo a transição para E19.5 como único handoff;
+- Continuidade da execução no mesmo PR e branch:
+  - até a aprovação humana, o PR #802 e a branch `codex-app/e19-2-light-catalog-evolution` permanecem os mesmos do plano; seguindo `docs/prompt-estrategista-light.md`, esta etapa ainda mantém o PR em draft e não inicia runtime;
+  - após a aprovação humana do plano-base Light, a implementação da E19.2.7 prossegue no mesmo PR #802 e na mesma branch, reutilizando os boundary/adapters existentes para resolver a autoridade pré-handoff, revalidar valores e permitir evolução corrente de `catalog_version`;
+  - não há merge intermediário do plano; o merge final do PR permanece exclusivamente humano;
   - reutilizar a separação histórica/efetiva de `generationContext.ts` e a preparação canônica E20.6, sem criar resolver paralelo;
   - preservar E19.2.3–E19.2.6 como concluídas; não reimplementar migration, vínculo, drafts, paleta ou jornada já entregues;
-  - esta PR não implementa runtime e mantém o delta restrito ao plano, sem nova migration, schema, persistência física, estado por cliente, conteúdo, geração, publicação, tracking, CRM, capability nova ou assets.
+  - a implementação autorizada continua sem nova migration, schema, persistência física, estado por cliente, conteúdo, geração, publicação, tracking, CRM, capability nova ou assets.
 
 - Critérios de aceite e validação:
   - pré-handoff com agregado `v2` e versão autorizada `v5` preserva valores v2 válidos, apresenta o field novo aplicável e permanece incompleto se o novo obrigatório faltar;
