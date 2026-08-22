@@ -78,6 +78,7 @@
 - Cada residência possui revisão técnica própria, monotônica e positiva, usada somente para concorrência otimista/proveniência; não é versão de conteúdo nem estado de produto.
 - A residência compartilhada pode já existir por uso operacional anterior da conta; a residência por LP nasce somente quando a LP entra no fluxo que a necessita.
 - Salvar configuração não cria revisão de conteúdo.
+- Quando uma única ação `Salvar configuração` alterar simultaneamente as residências compartilhada e específica da LP, as duas mutações formam uma única unidade atômica: ambas são confirmadas ou nenhuma é persistida; conflito de revisão ou falha em qualquer residência aborta toda a operação.
 - Configuração parcial pode ser preservada; somente a ação que depende de completude fica bloqueada.
 - Uma nova geração resolve a configuração efetiva vigente naquele momento pelas autoridades canônicas aplicáveis e congela o contexto efetivamente utilizado no snapshot da nova revisão.
 - Alterar configuração nunca modifica silenciosamente revisões históricas já materializadas.
@@ -248,6 +249,7 @@
   - uma 1:1 por conta para valores não autoritativos de `account/business`;
   - uma 1:1 por LP para `offer/campaign/landing_page`.
 - Cada residência guarda somente os valores do seu escopo, a versão do catálogo aplicável, revisão técnica monotônica para concorrência/proveniência, autoria e timestamps mínimos exigidos pelo contrato.
+- Quando a mesma ação de salvamento tocar as duas residências, a persistência deve ocorrer na mesma transação, com validação dos dois estados esperados antes da confirmação; conflito ou erro em qualquer lado causa rollback integral e impede estado parcial entre compartilhado e contextual.
 - Não criar linha vazia para cada conta/LP por migration apenas para antecipar uso futuro.
 - Não exigir `placeholder` ou `is_initialized` como mecanismo do novo desenho.
 - A referência de aprovação é `approved_materialization_id uuid null` em `account_landing_pages`, protegida por FK composta para materialização da mesma LP e conta; a implementação pode reaproveitar seletivamente o protótipo do #797, sem criar tabela concorrente.
@@ -272,6 +274,7 @@
 - Falha de leitura mantém estado indisponível explícito; não apresentar coleção truncada como completa.
 - Falha de inicialização lazy não cria configuração parcial invisível nem usa E19.2 como fallback concorrente.
 - Falha de salvamento preserva valores válidos anteriores e informa o contexto afetado.
+- Falha em salvamento que envolva as duas residências preserva integralmente os estados anteriores de ambas; não existe sucesso parcial da mesma ação.
 - Configuração parcial permanece editável, mas não gera enquanto faltar requisito obrigatório aplicável.
 - Falha de geração não altera revisões anteriores nem versão aprovada.
 - Falha de aprovação mantém escolha anterior intacta.
@@ -335,6 +338,7 @@
 - Valida/normaliza server-side pelos contratos canônicos antes da persistência.
 - Persiste somente valores pertencentes ao contexto autorizado da LP ou às fontes compartilhadas editáveis pelo workspace.
 - Pode preservar configuração parcial.
+- Se a ação alterar compartilhado e contextual ao mesmo tempo, as duas alterações são executadas atomicamente na mesma transação: ambas são persistidas ou nenhuma é; conflito de revisão ou erro em qualquer residência aborta toda a operação.
 - Incrementa somente a revisão técnica da residência efetivamente alterada; no-op idempotente não precisa produzir nova revisão técnica.
 - Revisões de conteúdo já materializadas permanecem integralmente inalteradas.
 
@@ -407,6 +411,7 @@
   - confirmação/ajuste de `offer` sem pressupor oferta global única;
   - `landing_page_objective` obrigatório para gerar;
   - gate E20.6 fail-closed para a versão E20.2 requerida;
+  - salvamento atômico quando a mesma ação altera as duas residências;
   - snapshot com proveniência das duas residências;
   - histórico por LP com preview da versão mais recente e histórica;
   - aprovação explícita e preservação da aprovação ao gerar revisão posterior;
@@ -419,6 +424,7 @@
 - O agregado E19.2 não pode ser rebindado nem reinterpretado como configuração genérica de todas as LPs.
 - A inicialização lazy precisa provar idempotência e ausência de fallback operacional concorrente após handoff.
 - As duas residências físicas precisam preservar isolamento tenant-safe e scopes disjuntos sem reintroduzir o desenho eager.
+- Toda ação única que altere ambas as residências precisa preservar atomicidade entre elas; nenhum estado intermediário compartilhado/contextual pode ser confirmado como resultado parcial.
 - O E20.2 deve evoluir de forma versionada para incluir `landing_page_objective`, preservando versões anteriores.
 - A E20.2 v5 somente pode entrar na geração do taxon depois de avaliação E20.6 da versão executável 5 e decisão humana de suficiência; `reviewed_input_catalog_version` divergente mantém o fluxo fail-closed.
 - TypeScript server-side e catálogo/validators canônicos permanecem autoridade semântica; o banco não reconstrói parser completo em SQL.
@@ -447,6 +453,7 @@
   - duas residências físicas tenant-safe, uma compartilhada por conta e outra contextual por LP, ambas criadas somente quando necessárias;
   - ausência de placeholder/`is_initialized`; completude derivada dos valores;
   - revisão técnica independente por residência para concorrência/proveniência;
+  - salvamento atômico das duas residências quando alteradas pela mesma ação;
   - reutilização de `account/business` sem cópia indevida;
   - reutilização contextual de fields `offer` sem pressupor oferta global única;
   - `campaign/landing_page` associados à LP concreta;
@@ -494,6 +501,7 @@
   - geração com E20.2 v5 falha fechado até `reviewed_input_catalog_version = 5` para o taxon servido;
   - parsing/normalização/semântica têm autoridade server-side única e persistência recebe forma canônica;
   - salvar configuração não cria revisão de conteúdo nem altera histórico;
+  - se a mesma ação de save altera as duas residências, conflito ou erro em qualquer uma faz rollback integral e nenhuma mudança parcial persiste;
   - nova geração cria revisão integral append-only da mesma LP;
   - snapshot registra valores/contexto e as revisões técnicas compartilhada e específica da LP usadas na geração;
   - versão aprovada anterior permanece até nova aprovação humana;
@@ -555,6 +563,7 @@
   - leitura account-wide de todo o histórico apenas para compor a lista principal;
   - limite arbitrário de LPs criado apenas para evitar estratégia de completude/paginação;
   - geração com versão E20.2 não exatamente autorizada pelo E20.6 para o taxon servido;
+  - salvamento da mesma ação em duas residências sem garantia de atomicidade entre elas;
   - cópia automática de tabela, RPC, readiness, migration ou commit do #797 sem rejustificação pelo plano reduzido;
   - catálogo/entidade de ofertas sem fonte real aprovada;
   - capability ou limite comercial inventado localmente;
