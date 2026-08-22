@@ -180,6 +180,7 @@
   - origem de tráfego e campanha;
   - canal principal de conversão;
   - WhatsApp, telefone, e-mail ou URL de destino;
+  - configuração de mensuração de conversões, incluindo plataformas, mecanismos de coleta, eventos e parâmetros de mensuração;
   - detalhes atualizados da oferta que não alterem seu significado;
   - versão mais recente, versão aprovada e futura versão publicada;
   - lifecycle `active | archived`.
@@ -188,6 +189,28 @@
 - A nomenclatura de UX recomendada é `LP-001 · V1`, `LP-001 · V2`, `LP-002 · V1`; evitar `1.1`, por misturar identidade da LP com revisão e sugerir versionamento decimal/semântico.
 - O contrato atual precisa ser reconciliado após o encerramento da matriz porque o plano vigente e o #797 tratam objetivo, funil e intenção como configuração editável.
 - A natureza de `landing_page_objective` — string livre ou campo estruturado — passa a ser decisão separada no MD-17; a decisão de identidade não autoriza usar a igualdade literal desse texto como trava.
+
+### 4.7. Mensuração de conversões — decisão humana confirmada
+
+- Decisão humana confirmada em 22/08/2026: adotar **mensuração de conversões** como termo universal do LP Factory para o conceito completo e **configuração de mensuração** como termo curto para a configuração aplicável.
+- O conceito cobre, sem se limitar a:
+  - coleta pelo navegador, como Tag do Google, Meta Pixel e TikTok Pixel;
+  - coleta servidor-a-servidor, como Conversions API da Meta e Events API do TikTok;
+  - definição dos eventos e das conversões relevantes;
+  - parâmetros, deduplicação, atribuição e outras regras de mensuração quando aplicáveis.
+- Vocabulário de produto:
+  - conceito geral: `mensuração de conversões`;
+  - área ou configuração: `configuração de mensuração`;
+  - ação observável do usuário: `evento`;
+  - evento definido como resultado comercial relevante: `conversão` ou `evento de conversão`;
+  - Google Ads: `Tag do Google + ações de conversão`;
+  - Meta Ads / Instagram Ads: `Meta Pixel / Conversions API + eventos`;
+  - TikTok Ads: `TikTok Pixel / Events API + eventos`.
+- `Evento` e `conversão` não são sinônimos: uma ação pode ser observada como evento sem ser escolhida como conversão.
+- A configuração de mensuração é operacional e não integra a identidade comercial imutável da LP.
+- Trocar Pixel, tag, API, plataforma, evento, conversão ou parâmetro de mensuração não cria nova LP; eventual mudança simultânea da finalidade comercial continua regida pelo MD-14.
+- A configuração aplicável a uma LP deve ser distinguida de configurações próprias da plataforma ou da conta publicitária; a matriz não presume que toda propriedade de Google, Meta ou TikTok deva residir dentro de cada LP.
+- Esta decisão estabelece vocabulário e fronteira de produto; não autoriza implementação, tracking engine, nova persistência, rota, job, automação ou infraestrutura dentro da E19.5.
 
 ## 5. Matriz principal
 
@@ -210,6 +233,7 @@
 | MD-15 | Código visível da LP | Cada LP deve ter código sequencial por conta, imutável e não reutilizável (`LP-001`, `LP-002`...) | Hoje existe UUID técnico, `name` e `slug`; não existe código sequencial visível | #797 não implementa código humano estável | Identificação simples para cliente e suporte | Acoplar revisão ao código da LP ou expor UUID | Ambiguidade entre identidade e revisão | Pendente | código sequencial / UUID+nome / outro rótulo | Recomendação preliminar: código sequencial por conta | Pendente | **Preliminar: adotar código sequencial por conta** | decidir shape físico somente após fechamento do debate |
 | MD-16 | Numeração das revisões | Ajustar LP existente mantém o mesmo código e cria nova versão | Revisões já são append-only por `revision_number` | #797 preserva revisão numérica por LP | Separar identidade da LP de sua evolução | Notação `1.1` mistura os conceitos | UX confusa e futura ambiguidade | Pendente | `LP-001 · V2` / `1.1` / outro | Recomendação preliminar: `LP-001 · Vn` | Pendente | **Preliminar: não usar `1.1`; usar LP + versão separadas** | refletir em UX e documentação se confirmado |
 | MD-17 | Natureza de `landing_page_objective` | Dar à geração uma orientação específica da página sem duplicar funil, intenção comercial, oferta ou canal | Na `main`, E20.2 vai até v4 e não possui esse field; o plano E19.5 o descreve como objetivo humano textual | #797 propõe E20.2 v5 com `landing_page_objective` universal, `string`, scope `landing_page`, origem humana, obrigatório e validação `type_only` | Preservar orientação semântica útil para a geração | Criar uma segunda taxonomia estruturada que sobreponha `funnel_stage`, `transaction_intent`, oferta ou canal apenas para tornar o objetivo comparável | Texto livre não deve virar identificador literal; enum redundante pode criar contradições e manutenção sem valor comprovado | Pendente | manter string / estruturar somente com taxonomia ortogonal comprovada / retirar | Pendente | **Manter string na primeira E19.5 e fora da trava literal de identidade; estruturar apenas se surgir taxonomia recorrente, estável e ortogonal aos campos existentes** | Pendente | decidir antes de reconciliar E20.2 v5 e o contrato do #797 |
+| MD-18 | Mensuração de conversões | Usar vocabulário neutro de plataforma e permitir que a mesma LP evolua sua mensuração sem perder identidade | O plano E19.5 já afirma que tracking, analytics, Google Ads tag, Meta Pixel e equivalentes não pertencem ao versionamento de conteúdo | #797 não implementa mensuração de conversões; tracking e analytics permanecem fora do recorte | Separar identidade comercial, conteúdo e configuração operacional de mensuração | Tratar `Pixel` como conceito geral, chamar todo evento de conversão ou presumir que toda configuração da plataforma pertença individualmente à LP | Acoplamento a fornecedor, confusão entre evento e conversão e criação indevida de nova LP por alteração operacional | Documentação oficial atual converge para medição/ações de conversão no Google e mecanismos de eventos browser/server em Meta e TikTok | vocabulário neutro / termos por fornecedor / adiar padronização | Pendente | **Adotar `mensuração de conversões` e `configuração de mensuração`; distinguir evento de conversão; manter mensuração fora da identidade; separar configuração aplicável à LP de configuração própria da plataforma** | **Confirmado em 22/08/2026** | preservar princípio e vocabulário; qualquer implementação futura exige escopo próprio e consumidor real |
 
 ## 6. Verificações técnicas por classe
 
@@ -269,6 +293,7 @@
   - versão E20.2 revisada;
   - workload OpenAI.
 - Confirmar que não existe leitor ou escritor concorrente.
+- Preservar a distinção conceitual entre futura configuração de mensuração aplicável à LP e configurações próprias das plataformas/contas publicitárias; nenhuma delas integra a identidade comercial da LP por efeito desta matriz.
 
 ### 6.5. Recortes adjacentes
 
@@ -317,6 +342,7 @@
 
 - Preservar apenas capacidades indispensáveis à validação do MVP.
 - Adiar capacidades que ampliam banco, estado, UX ou integração sem necessidade imediata.
+- A evolução posterior permanece compatível.
 
 ### 8.3. Alternativa C — desmembrar sem descartar
 
