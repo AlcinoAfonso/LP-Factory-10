@@ -161,7 +161,7 @@
 - `docs/base-tecnica.md` — regras técnicas de runtime, adapters, SSR, segurança e anti-regressão.
 - `docs/schema.md` — contrato vigente do banco.
 - `docs/lousa-plano-base-e19-5.md` v1 na `main` — autoridade canônica anterior preservada e evoluída neste mesmo arquivo.
-- Histórico decisório do PR #801 — matriz de convergência, alternativa B e invariantes aprovados.
+- Histórico decisório do PR #801 — matriz de convergência, alternativa B e invariantes aprovados; o artefato temporário é removido do diff final, mas permanece rastreável nos commits do PR.
 - PR #797 — somente como evidência técnica seletiva de implementação, review threads, regressões úteis e classes de complexidade; não é autoridade executável desta v3.
 - Implementação vigente de E19.2, E19.3 e E19.4 em `app/a/[account]/`, `lib/lp-builder/` e contratos adjacentes.
 - Migration já aplicada `20260820214422_e19_5_expand_landing_page_status.sql` e `lib/types/status.ts` como estado técnico atual do rollout de status.
@@ -472,7 +472,7 @@
 - Qualquer shape físico deve partir deste plano e da `main`, não da obrigação de preservar estruturas do #797.
 - Se a revisão técnica demonstrar que a entrega precisa ser formalmente dividida em recortes independentes, voltar ao humano apenas para decidir o eventual desmembramento C; caso contrário, B permanece decisão final.
 - Depois da aprovação documental/técnica desta v3, criar nova branch a partir da `main` para a implementação reduzida e fechar o #797 como substituído.
-- O PR #801 é o veículo de consolidação desta v3; a matriz temporária deve sair do diff final, permanecendo rastreável apenas pelo histórico do PR.
+- O PR #801 é o veículo de consolidação desta v3; a matriz temporária saiu do diff final e permanece rastreável apenas pelo histórico do PR.
 
 ## 4. Escopo negativo e critérios de parada
 
