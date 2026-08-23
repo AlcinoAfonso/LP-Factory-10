@@ -8,7 +8,7 @@ export type { OpenAiWorkloadResolverDependencies } from "./resolve";
 export {
   isValidResolvedOpenAiImageWorkload,
   isValidResolvedOpenAiProductWorkload,
-  listOpenAiWorkloadConfigurationOptions,
+  listOpenAiWorkloadPresentations,
 } from "./registry";
 export {
   OPEN_AI_PROVIDER_ERROR_METADATA_MAX_LENGTH,
@@ -25,6 +25,13 @@ export {
 export async function readOpenAiAdministrativeConfigurations() {
   const { readOpenAiAdministrativeConfigurations: read } = await import(
     "./adapters/operationalConfigurationAdapter"
+  );
+  return read();
+}
+
+export async function readOpenAiModelCatalog() {
+  const { readOpenAiModelCatalog: read } = await import(
+    "./adapters/modelCatalogAdapter"
   );
   return read();
 }

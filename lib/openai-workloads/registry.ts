@@ -1,28 +1,16 @@
-import type {
-  OpenAiImageQuality,
-  OpenAiImageWorkloadDefinition,
-  OpenAiProductWorkloadDefinition,
-  OpenAiReasoningEffort,
-  OpenAiWorkloadDefinition,
-  OpenAiWorkloadConfigurationOptions,
-  OpenAiWorkloadId,
-  ResolvedOpenAiImageWorkload,
-  ResolvedOpenAiProductWorkload,
+import {
+  openAiImageQualities,
+  openAiReasoningEfforts,
+  type OpenAiImageWorkloadDefinition,
+  type OpenAiProductWorkloadDefinition,
+  type OpenAiWorkloadDefinition,
+  type OpenAiWorkloadId,
+  type OpenAiWorkloadPresentation,
+  type ResolvedOpenAiImageWorkload,
+  type ResolvedOpenAiProductWorkload,
 } from "./contracts";
 
 const revision = "v2";
-
-const nicheResolutionAllowlist = textAllowlist();
-const commercialActivationDraftGenerationAllowlist = textAllowlist();
-const landingPageDraftGenerationAllowlist = textAllowlist();
-const taxonInputCatalogSufficiencyEvaluationAllowlist = [
-  { model: "gpt-5.6-terra", reasoningEffort: "low" },
-] as const;
-const landingPageDraftImageGenerationAllowlist = [
-  { model: "gpt-image-2", quality: "low" },
-  { model: "gpt-image-2", quality: "medium" },
-  { model: "gpt-image-2", quality: "high" },
-] as const;
 
 export const openAiWorkloadRegistry = deepFreeze([
   {
@@ -32,7 +20,6 @@ export const openAiWorkloadRegistry = deepFreeze([
     configurationKind: "effective",
     consumer: "Resolvedor IA opcional do onboarding",
     fallback: "Continuar o onboarding sem bloquear o fluxo",
-    allowedConfigurations: nicheResolutionAllowlist,
     configuration: {
       apiKind: "responses_text",
       model: "gpt-5.4-mini",
@@ -48,7 +35,6 @@ export const openAiWorkloadRegistry = deepFreeze([
     configurationKind: "effective",
     consumer: "Geração administrativa de draft comercial",
     fallback: "Não publicar nem substituir o conteúdo vigente",
-    allowedConfigurations: commercialActivationDraftGenerationAllowlist,
     configuration: {
       apiKind: "responses_text",
       model: "gpt-5.4-mini",
@@ -64,7 +50,6 @@ export const openAiWorkloadRegistry = deepFreeze([
     configurationKind: "effective",
     consumer: "E19.4 — candidata estruturada da landing page",
     fallback: "Falhar a tentativa sem criar revisão",
-    allowedConfigurations: landingPageDraftGenerationAllowlist,
     configuration: {
       apiKind: "responses_text",
       model: "gpt-5.6-luna",
@@ -80,7 +65,6 @@ export const openAiWorkloadRegistry = deepFreeze([
     configurationKind: "effective",
     consumer: "E20.6.5 — avaliação administrativa da suficiência factual E20.2",
     fallback: "Falhar fechado sem registrar suficiência",
-    allowedConfigurations: taxonInputCatalogSufficiencyEvaluationAllowlist,
     configuration: {
       apiKind: "responses_text",
       model: "gpt-5.6-terra",
@@ -96,7 +80,6 @@ export const openAiWorkloadRegistry = deepFreeze([
     configurationKind: "effective",
     consumer: "E19.4 — mídia principal da candidata validada",
     fallback: "Falhar a tentativa sem criar revisão",
-    allowedConfigurations: landingPageDraftImageGenerationAllowlist,
     configuration: {
       apiKind: "image_generation",
       model: "gpt-image-2",
@@ -127,55 +110,41 @@ export const openAiWorkloadRegistry = deepFreeze([
 
 assertValidRegistry(openAiWorkloadRegistry);
 
-const openAiWorkloadConfigurationOptions = deepFreeze(
-  openAiWorkloadRegistry.reduce<OpenAiWorkloadConfigurationOptions[]>((options, workload) => {
-    if (isTextDefinition(workload)) {
-      options.push({
-        workload: workload.id,
-        displayName: workload.displayName,
-        apiKind: "responses_text",
-        options: workload.allowedConfigurations.map((option) => ({ ...option })),
-      });
-    }
-    if (isImageDefinition(workload)) {
-      options.push({
-        workload: workload.id,
-        displayName: workload.displayName,
-        apiKind: "image_generation",
-        options: workload.allowedConfigurations.map((option) => ({ ...option })),
-      });
-    }
-    return options;
-  }, []),
-);
+const workloadPresentations = deepFreeze([
+  {
+    workload: "niche_resolution",
+    name: "Resolução de nicho",
+    roadmapReference: "E10.5.6.5",
+    visualGroup: null,
+  },
+  {
+    workload: "commercial_activation_draft_generation",
+    name: "Geração de draft de ativação comercial",
+    roadmapReference: "E10.7.3",
+    visualGroup: null,
+  },
+  {
+    workload: "landing_page_draft_generation",
+    name: "Geração da Landing Page",
+    roadmapReference: "E19.4",
+    visualGroup: "landing_page",
+  },
+  {
+    workload: "landing_page_draft_image_generation",
+    name: "Geração da Landing Page",
+    roadmapReference: "E19.4",
+    visualGroup: "landing_page",
+  },
+  {
+    workload: "taxon_input_catalog_sufficiency_evaluation",
+    name: "Avaliação de suficiência factual do catálogo por taxon",
+    roadmapReference: "E20.6.5",
+    visualGroup: null,
+  },
+] satisfies readonly OpenAiWorkloadPresentation[]);
 
-export function listOpenAiWorkloadConfigurationOptions(): readonly OpenAiWorkloadConfigurationOptions[] {
-  return openAiWorkloadConfigurationOptions;
-}
-
-export function isAllowedOpenAiTextConfiguration(
-  workload: OpenAiProductWorkloadDefinition,
-  configuration: Readonly<{
-    model: string;
-    reasoningEffort: OpenAiReasoningEffort;
-  }>,
-) {
-  return workload.allowedConfigurations.some(
-    (allowed) =>
-      allowed.model === configuration.model &&
-      allowed.reasoningEffort === configuration.reasoningEffort,
-  );
-}
-
-export function isAllowedOpenAiImageConfiguration(
-  workload: OpenAiImageWorkloadDefinition,
-  configuration: Readonly<{ model: string; quality: OpenAiImageQuality }>,
-) {
-  return workload.allowedConfigurations.some(
-    (allowed) =>
-      allowed.model === configuration.model &&
-      allowed.quality === configuration.quality,
-  );
+export function listOpenAiWorkloadPresentations(): readonly OpenAiWorkloadPresentation[] {
+  return workloadPresentations;
 }
 
 export function isValidResolvedOpenAiProductWorkload(
@@ -204,7 +173,8 @@ export function isValidResolvedOpenAiProductWorkload(
     actual.fallback === workload.fallback &&
     actual.effectiveConfigurationVerified === true &&
     validOrigin &&
-    isAllowedOpenAiTextConfiguration(workload, actual)
+    isTechnicalModel(actual.model) &&
+    openAiReasoningEfforts.includes(actual.reasoningEffort)
   );
 }
 
@@ -237,7 +207,8 @@ export function isValidResolvedOpenAiImageWorkload(
     actual.reasoningEffort === "not_applicable" &&
     actual.effectiveConfigurationVerified === true &&
     validOrigin &&
-    isAllowedOpenAiImageConfiguration(workload, actual)
+    isTechnicalModel(actual.model) &&
+    openAiImageQualities.includes(actual.quality)
   );
 }
 
@@ -266,18 +237,8 @@ function assertValidRegistry(registry: readonly OpenAiWorkloadDefinition[]) {
       throw new Error(`Missing API kind: ${workloadId}`);
     }
 
-    if (
-      isTextDefinition(workload) &&
-      !isAllowedOpenAiTextConfiguration(workload, workload.configuration)
-    ) {
-      throw new Error(`Baseline is outside the text allowlist: ${workloadId}`);
-    }
-
-    if (
-      isImageDefinition(workload) &&
-      !isAllowedOpenAiImageConfiguration(workload, workload.configuration)
-    ) {
-      throw new Error(`Baseline is outside the image allowlist: ${workloadId}`);
+    if (!isTechnicalModel(workload.configuration.model)) {
+      throw new Error(`Invalid baseline model: ${workloadId}`);
     }
 
     if (
@@ -307,20 +268,8 @@ function isImageDefinition(
   );
 }
 
-function textAllowlist() {
-  return [
-    { model: "gpt-5.4-mini", reasoningEffort: "none" },
-    { model: "gpt-5.4-mini", reasoningEffort: "low" },
-    { model: "gpt-5.4-mini", reasoningEffort: "medium" },
-    { model: "gpt-5.4-mini", reasoningEffort: "high" },
-    { model: "gpt-5.4-mini", reasoningEffort: "xhigh" },
-    { model: "gpt-5.6-luna", reasoningEffort: "none" },
-    { model: "gpt-5.6-luna", reasoningEffort: "low" },
-    { model: "gpt-5.6-luna", reasoningEffort: "medium" },
-    { model: "gpt-5.6-luna", reasoningEffort: "high" },
-    { model: "gpt-5.6-luna", reasoningEffort: "xhigh" },
-    { model: "gpt-5.6-luna", reasoningEffort: "max" },
-  ] as const;
+function isTechnicalModel(value: string) {
+  return value.length <= 128 && /^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(value);
 }
 
 function deepFreeze<T>(value: T): T {

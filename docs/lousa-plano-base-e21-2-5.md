@@ -1,10 +1,10 @@
-23/08/2026 — Plano-base v1 — E21.2.5 — Catálogo administrável e UX compacta dos workloads OpenAI
+23/08/2026 — Plano-base v2 — E21.2.5 — Catálogo administrável e UX compacta dos workloads OpenAI
 
 ## 1. Estado e decisões fixas
 
 ### 1.1. Estado
 
-- Status: plano-base v1 consolidado após encerramento do debate humano.
+- Status: plano-base v2 aprovado pelo Analista após as Passagens 1 e 2, revisões delta e reconciliação do roadmap.
 - Caso macro: `E21 — Gestão e governança dos workloads OpenAI`.
 - Recorte: `E21.2.5 — Catálogo administrável e UX compacta dos workloads OpenAI`.
 - Plano conceitual: N/A.
@@ -32,12 +32,14 @@
 - `docs/openai-model-snapshot.md`.
 - `lib/openai-workloads/registry.ts` e contratos públicos do boundary.
 - `app/admin/(protected)/workloads-openai/`.
-- Estado vigente da `main` após os merges da E19.5 até `c99dd7611e93ddfaaf1dc52fb729827156ede806`.
+- Estado vigente da `main` no merge `587a534a1bb92eee3869c98e0b81e3512e637e3e` do PR #806.
 
 ### 1.4. Decisões fixas do catálogo
 
 - O catálogo é global para o produto e não é duplicado por Preview/Production; a disponibilidade define somente o que pode ser escolhido em novas candidatas.
 - Preview e Production continuam independentes para candidata, prova, revisão, ativação e rollback.
+- Em Preview e Production, o catálogo Supabase substitui integralmente as allowlists estáticas de modelos por workload como autoridade de novas candidatas. O registry permanece autoridade somente para identidades e modalidades dos workloads, metadados de apresentação, parâmetros tipados já suportados, campos estruturais fixos de imagem e baselines determinísticos de Development.
+- Remover do caminho operacional `allowedConfigurations`, `listOpenAiWorkloadConfigurationOptions` e validações equivalentes baseadas em modelos hardcoded quando perderem função. Resolvers ativos, leitores administrativos, histórico e validadores de snapshots validam identidade do workload, modalidade, identificador técnico do modelo e shape tipado do parâmetro, sem consultar disponibilidade atual nem exigir que o modelo permaneça listado em código. Somente criação/edição, prova e promoção de nova candidata consultam elegibilidade vigente; a prova revalida de forma fail-closed imediatamente antes da chamada externa, sem manter lock transacional durante o transporte, e a promoção preserva sua revalidação transacional própria.
 - A autoridade de elegibilidade textual é a combinação `modelo + reasoning effort`; não existem duas allowlists independentes cuja combinação cartesiana possa gerar pares inválidos.
 - A UX apresenta o catálogo por modelo e, dentro de cada modelo, os efforts permitidos/disponíveis.
 - Para imagem, a mesma regra conceitual usa `modelo + quality`; `reasoning effort` não se aplica.
@@ -68,6 +70,7 @@
 - Ao abrir `Geração da Landing Page`, o detalhe apresenta separadamente `Texto` (`model + reasoning effort`) e `Imagem` (`model + quality`).
 - `supabase_inspect` permanece referência operacional read-only separada e não entra na lista de configurações mutáveis de produto.
 - Nome amigável, recorte e agrupamento funcional permanecem metadados controlados pelo código; não são editáveis pelo catálogo operacional.
+- A API pública do registry mantém uma única matriz code-owned de apresentação: `niche_resolution → Resolução de nicho · E10.5.6.5`; `commercial_activation_draft_generation → Geração de draft de ativação comercial · E10.7.3`; `landing_page_draft_generation + landing_page_draft_image_generation → Geração da Landing Page · E19.4`, com agrupamento somente visual; `taxon_input_catalog_sufficiency_evaluation → Avaliação de suficiência factual do catálogo por taxon · E20.6.5`. Não criar mapa nominal paralelo na página ou no catálogo persistido.
 
 ## 2. Contrato do caso
 
@@ -78,7 +81,10 @@
 - Processamento: validar identidade/modalidade/shape → persistir ou atualizar a elegibilidade → projetar somente combinações disponíveis para novas candidatas dos workloads da mesma modalidade.
 - Validação: impedir modelo sem parâmetro suportado, combinação incompatível com a modalidade, alteração por usuário sem `platform_admin` e qualquer operação que torne inválido o histórico já existente.
 - Persistência: o catálogo usa a mesma residência operacional Supabase já adotada pela E21.2, sem segunda residência e sem depender de Vercel para mudanças ordinárias.
-- Consumo: o Admin e as Server Actions de candidata consultam a projeção pública do catálogo; consumers de produto continuam resolvendo somente a revisão ativa do workload pelo boundary `lib/openai-workloads/`.
+- Contrato físico: materializar o catálogo global em `public.openai_model_catalog_models` e `public.openai_model_catalog_parameters`. A primeira tabela identifica unicamente `modalidade + modelo`, mantém `available_for_selection`, versão otimista, ator e timestamps de criação/atualização. A segunda identifica unicamente `modalidade + modelo + parameter_kind + parameter_value`, referencia o modelo com `ON UPDATE RESTRICT` e `ON DELETE RESTRICT`, mantém sua própria disponibilidade e auditoria e aceita somente `reasoning_effort` nos valores tipados para texto ou `quality` nos valores tipados para imagem.
+- Elegibilidade: uma combinação é elegível somente quando o modelo e seu parâmetro relacionado estiverem disponíveis; não derivar combinações por produto cartesiano. Modelos e parâmetros não são apagados. Novo modelo exige ao menos um parâmetro suportado, nasce indisponível e nenhuma combinação fica elegível antes de ação humana explícita. O bootstrap idempotente cria todas as combinações da seção 1.4 disponíveis para seleção e não altera candidatas, revisões, ativações ou ponteiros existentes.
+- Segurança: as duas tabelas ficam no schema `public` para consumo server-side pela Data API, com RLS habilitado, nenhuma policy e revogação explícita de `PUBLIC`, `anon`, `authenticated` e `ai_readonly`. `service_role` recebe somente `SELECT`, `INSERT` e `UPDATE` necessários; não recebe `DELETE` nem `TRUNCATE`. Mutações usam RPCs versionadas `SECURITY INVOKER`, `search_path = pg_catalog`, referências schema-qualified, ator server-side e `EXECUTE` exclusivo de `service_role`.
+- Consumo: o Admin e as Server Actions de candidata consultam DTO imutável exportado por `lib/openai-workloads/`; “projeção pública” significa API pública TypeScript do boundary, não view pública nem grant para client. Consumers de produto continuam resolvendo somente a revisão ativa do workload.
 - Fallback: falha de leitura/validação do catálogo bloqueia criação/edição de nova candidata, mas não substitui nem derruba silenciosamente a revisão ativa já resolvível pelo lifecycle vigente.
 
 ### 2.2. Fluxo de configuração por workload
@@ -86,8 +92,8 @@
 - Gatilho: o humano seleciona Preview ou Production e abre uma linha da lista de workloads.
 - Entrada textual: workload técnico subjacente, ambiente, modelo disponível e effort disponível para esse modelo.
 - Entrada de imagem: workload técnico subjacente, ambiente, modelo disponível e quality disponível para esse modelo.
-- Processamento: salvar candidata → revalidar contra catálogo vigente → executar prova operacional existente → promover revisão validada → ativação humana explícita.
-- Validação: combinação indisponível ou retirada do catálogo entre save e prova/promoção não pode ser promovida como nova revisão; concorrência e fail-closed existentes permanecem.
+- Processamento: salvar candidata → revalidar contra catálogo vigente → executar prova operacional existente → promover revisão validada → ativação humana explícita. Save e promoção revalidam a combinação no banco; cada operação bloqueia primeiro a unidade canônica `ambiente + workload` e depois, em ordem determinística, o modelo e parâmetro correspondentes no catálogo.
+- Validação: a promoção revalida a elegibilidade na mesma transação que anexa a revisão e instala o ponteiro pendente; indisponibilidade observada antes desse ponto aborta integralmente a promoção. A mutação de disponibilidade serializa sobre as mesmas linhas do catálogo. Candidata já salva pode permanecer registrada após indisponibilização, mas não pode ser provada/promovida enquanto inelegível. Revisão pendente já validada pode ser ativada e revisão anteriormente ativa pode ser restaurada sem consultar disponibilidade corrente.
 - Persistência: candidatas, revisões e ativações continuam no agregado operacional E21.2 já existente; o catálogo não substitui o histórico por workload.
 - Consumo: a execução seguinte usa a revisão ativa por `ambiente + workload`, exatamente como na E21.2 atual.
 - Fallback: nenhuma configuração nova é ativada automaticamente; falha preserva a configuração ativa anterior e o fallback funcional continua pertencendo ao consumer.
@@ -113,8 +119,16 @@
 - A linha amigável de geração da LP exibe `Imagem = Sim`; ao abrir, texto e imagem aparecem como configurações técnicas independentes.
 - Papéis negativos não conseguem ler controles privilegiados nem executar mutações; todas as mutações reexecutam `requirePlatformAdmin()` server-side.
 - QA hospedado cobre desktop e mobile, header sticky, ausência de overflow de página, navegação por teclado, foco visível, labels/names, estados de sucesso/erro e touch targets proporcionais ao checklist WCAG 2.2 já adotado pelo projeto.
+- Cada execução de QA hospedado registra deployment e ambiente, papel exercitado, viewport, fluxo ou estado validado e resultado observado; ferramenta automatizada pode apoiar a inspeção, mas não substitui a validação manual do fluxo.
+- Aplicar os critérios WCAG 2.2 pertinentes à superfície e registrar evidência manual de teclado, ordem e foco visível, labels/names, feedback de sucesso e erro, ausência de interação exclusiva por hover, contraste e alvos de toque; cada critério registrado como N/A exige justificativa explícita. Auditoria automática é apoio e não autoriza declarar conformidade WCAG 2.2 integral.
 - Testes focais cobrem catálogo, disponibilidade, preservação de revisão ativa/histórica, nova candidata, mudança de disponibilidade durante lifecycle, agrupamento de LP e regressão dos resolvers existentes.
-- Alterações de banco usam migration forward-only, testes SQL transacionais e snippet read-only; migrations já aplicadas não são editadas.
+- Todas as leituras administrativas de catálogo, revisões e ativações comprovam completude por paginação com ordenação determinística, sem depender do limite implícito da Data API. O tratamento de `416/PGRST103` preserva páginas já acumuladas; erro ou resposta parcial produz estado tipado fail-closed, nunca catálogo ou histórico aparentemente completo.
+- Teste focal acima do limite de uma página comprova a reconstrução integral e confirma que falha exclusiva do catálogo bloqueia catálogo, save, prova e promoção sem afetar resolução ativa, ativação ou rollback de revisões já validadas.
+- Alterações de banco usam migration forward-only, testes SQL transacionais e snippet read-only; migrations já aplicadas não são editadas. O teste SQL comprova também as duas ordens da corrida indisponibilização/promoção, sem revisão parcial, e preserva ativação/rollback de revisões previamente validadas.
+- O verificador read-only do catálogo é versionado em `supabase/snippets/` e comprova, no mínimo, objetos e colunas, constraints de modalidade e parâmetro, bootstrap inicial, disponibilidade, preservação das revisões ativas e históricas, RLS, policies, grants, functions/RPCs, triggers e ausência de drift; o snippet não pode executar mutações.
+- Após o apply da migration no ambiente alvo, executar o Security Controls Dashboard e bloquear o avanço enquanto houver alerta incompatível com as novas tabelas, constraints, RLS, policies, grants, functions/RPCs ou triggers do catálogo; registrar a evidência com identificação do ambiente e dos objetos novos avaliados. Este gate não autoriza criar métricas de acesso nem nova superfície no Admin.
+- A migration, o teste SQL e o snippet comprovam PKs/FKs/checks, ausência de delete, bootstrap, auditoria, RLS, zero policies, ACLs exatas, RPCs e acesso Data API por `service_role`; `anon`, `authenticated` e `ai_readonly` não leem nem executam mutações.
+- Modelo novo com parâmetro conhecido torna-se selecionável e ativável sem alteração de código; sua indisponibilização posterior não invalida revisão ativa, revisão pendente já validada, histórico ou rollback; não resta validação operacional paralela por lista estática de modelos.
 - `npm ci`, `npm run check` e `git diff --check` devem ser aprovados antes da entrega técnica.
 
 ## 3. Fases e próxima ação
@@ -127,8 +141,14 @@
 - Migrar o conjunto inicial de opções para Mini/Luna/Terra/Sol e GPT Image 2 conforme as regras deste plano, preservando os baselines ativos existentes.
 - Reorganizar `/admin/workloads-openai` para catálogo compacto superior + lista compacta inferior + detalhe expansível, preservando a rota e os controles server-side existentes.
 - Incluir metadados amigáveis de `Recorte` e agrupamento apenas apresentacional da geração textual+imagem da LP.
+- Manter um único boundary em `lib/openai-workloads/`. Criar `adapters/modelCatalogAdapter.ts` e `adapters/modelCatalogAdapterCore.ts` para o novo agregado, sem incorporar sua normalização ao adapter de lifecycle; as leituras de catálogo e as leituras históricas do adapter de lifecycle compartilham a disciplina de paginação completa, ordenada e fail-closed.
+- `page.tsx` permanece SSR, executa `requirePlatformAdmin()` e compõe read models; `catalogActions.ts` contém somente reautorização, parsing e orquestração das mutações do catálogo; `actions.ts` preserva lifecycle e prova, mas delega todos os acessos Supabase afetados aos adapters, sem `createServiceClient` na camada de rota. `_proof.ts`, `proofCore.ts` e adapters de transporte existentes permanecem responsáveis pela prova OpenAI e não são usados pelo catálogo.
+- Criar `_components/OpenAiModelCatalogManager.tsx` para a área superior e `_components/OpenAiWorkloadDetail.tsx` para o lifecycle expandido; substituir o conteúdo vigente de `OpenAiConfigurationManager.tsx` pelo seletor de ambiente e coordenação da lista compacta, movendo, e não duplicando, a UI de detalhe existente. Client/UI não importa Supabase, actions não normalizam DBRow, catálogo e lifecycle possuem adapters coesos e o provider não consulta catálogo.
+- A entrega é backward-compatible nas duas ordens transitórias. Antes do apply, ausência ou falha do catálogo desabilita sua gestão e bloqueia save/prova/promoção de nova candidata, sem atingir a resolução ativa. Depois do apply, executar snippet read-only, verificar Security Controls e somente então habilitar a operação administrativa do catálogo. O resolver de execução não consulta os novos objetos. Nenhum estado documental pode declarar a migration aplicada antes da evidência hospedada.
+- Incluir como artefatos obrigatórios: nova migration `supabase/migrations/<timestamp>_e21_2_5_openai_model_catalog.sql`; `supabase/tests/e21_2_5_openai_model_catalog.test.sql`; `supabase/snippets/e21_2_5_openai_model_catalog_verify.sql`; atualização de `docs/schema.md` com objetos, constraints, RLS, policies, grants, RPCs e estado de apply; atualização de `docs/base-tecnica.md` §3.16 para separar registry code-owned, catálogo operacional e revisão ativa; atualização de `docs/roadmap.md` com E21.2.5, artefatos e preservação da E21.3 como não iniciada. Migrations E21.2 já aplicadas permanecem imutáveis.
 - Validar banco, código, UX hospedada e regressões da E21.2 antes de qualquer retomada da E21.3.
-- Próxima ação após aprovação deste plano: avaliação única pelos especialistas prevista no processo do Estrategista; nenhuma implementação deve iniciar antes da consolidação/aprovação da v2.
+- Ampliação de testes RLS com tooling beta, tracing cross-stack, AI Gateway e apoio opcional da Vercel Toolbar permanecem oportunidades estratégicas condicionais e não autorizam `pgtap`, tracing, upgrade de dependência, mudança de transporte, Toolbar obrigatória ou nova infraestrutura neste recorte; Vercel Flags permanece não aplicável.
+- Próxima ação: criar o checkpoint `LP-Factory-Stage: plan-v2-approved` e executar a subseção `E21.2.5 — Catálogo administrável e UX compacta dos workloads OpenAI` na mesma branch e no mesmo PR draft.
 
 ## 4. Escopo negativo e critérios de parada
 
