@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 22/08/2026
-• Versão: v1.5.179
+• Data: 23/08/2026
+• Versão: v1.5.181
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2098,7 +2098,7 @@ Repositório — Ajustados
 
 19. E19 — LP Builder
 - Objetivo: Consolidar o fluxo Core de landing pages por conta, da identidade mínima em `draft` às futuras etapas de geração, revisão, materialização e publicação, sempre por recortes aprovados.
-- Status: E19.1, E19.2 e E19.3 concluídas. E19.4.3, E19.4.4 e E19.4.5 concluídas; a E19.4 está encerrada e integrada à `main` pelo PR #776. A revisão 3 permanece preservada como baseline dos gaps persuasivos observados. A E19.5.3 possui implementação candidata repo-only validada no PR #804; aceite operacional final permanece pendente dos gates pós-merge e do smoke positivo v5.
+- Status: E19.1, E19.2 e E19.3 concluídas. E19.4.3, E19.4.4 e E19.4.5 concluídas; a E19.4 está encerrada e integrada à `main` pelo PR #776. A revisão 3 permanece preservada como baseline dos gaps persuasivos observados. A E19.5.3 está concluída e operacional em Preview e Production após os gates pós-merge e os smokes autenticados com a E20.2 v5.
 
 19.1 Criação produtiva mínima de LP por conta
 
@@ -2450,7 +2450,7 @@ Repositório — Ajustados
 
 19.5.1 Objetivo e status
 - Objetivo: entregar o ciclo operacional reduzido para múltiplas identidades de LP por conta, com configuração contextual lazy, revisões integrais append-only, histórico, preview e aprovação humana explícita.
-- Status: Plano-base v2 aprovado e implementação candidata repo-only materializada; aceite operacional final não concluído.
+- Status: Concluída em 23/08/2026 após merge, apply canônico, verificações pós-apply e rollout controlado aprovado em Preview e Production.
 
 19.5.2 Registros do recorte
 - Banco:
@@ -2509,7 +2509,7 @@ Repositório — Ajustados
   - Contrato visual: `docs/design-system.md` — Workspace operacional do Account Dashboard.
 
 19.5.3 Workspace operacional reduzido, configuração e aprovação da LP
-- Status: Implementação candidata repo-only validada localmente; merge, apply, provas hospedadas e aceite operacional final pendentes.
+- Status: Concluída em 23/08/2026, com implementação integrada à `main`, banco validado e operação autenticada aprovada em Preview e Production.
 - Conteúdo:
   - o Account Dashboard ganha workspace master-detail paginado, uma entrada por identidade de LP, cinco estados de UX derivados, criação explícita para owner/admin e leitura integral sem mutações para viewer;
   - a configuração reutiliza declarativamente o catálogo E20.2 v5 e separa fisicamente scopes compartilhados `account/business` dos contextuais `offer/campaign/landing_page`, sem lista paralela, placeholder, precriação, backfill, `is_initialized` ou completude persistida;
@@ -2520,9 +2520,9 @@ Repositório — Ajustados
   - novas revisões usam snapshot v2/contexto v4 com proveniência das residências; readers aceitam somente os pares históricos v1/contexto v3 e atuais v2/contexto v4, sem cruzamento ou reinterpretação retroativa;
   - histórico e preview são carregados sob demanda por LP; o preview pode abrir a revisão mais recente ou uma revisão histórica e a aprovação idempotente move somente o ponteiro tenant-safe da revisão aprovada;
   - os testes determinísticos cobrem v5, `primary_conversion_goal`, ausência válida de `business_offerings_summary`, evolução histórica × operacional, mismatch E20.6, fail-closed, viewer read-only, paginação, histórico e aprovação; `npm ci`, `npm run check` e `git diff --check` foram aprovados, com 24 warnings de lint preexistentes e nenhum erro;
-  - a migration permanece repo-only e não foi aplicada; `E19_5_WORKSPACE_ENABLED` permanece default-off, sem habilitação registrada em Preview ou Production;
-  - a avaliação E20.6 da v5 e a decisão humana de suficiência estão concluídas para o taxon real servido `Corretor Imóveis` (`corretor-imoveis`), com `reviewed_input_catalog_version = 5` e sem gaps candidatos; o aceite operacional final da E19.5 depende agora de merge humano, apply canônico, prova SQL e Security Controls, habilitação e redeploy controlados em Preview e smoke hospedado positivo, e este recorte não grava nem promove o marcador nem altera a E20.6;
-  - Production permanece desligada até decisão humana sobre as evidências de Preview e exige redeploy e smoke próprios; archive/restore, publicação, editor manual, melhoria parcial por IA, hard delete, tracking, mensuração, testes A/B, catálogo avançado de ofertas e mecanismo global ou em massa permanecem fora do recorte.
+  - a migration foi aplicada pelo fluxo canônico; o verificador read-only e os Security Controls passaram após a correção forward-only das grants dos helpers, sem editar a migration aplicada;
+  - a avaliação E20.6 da v5 e a decisão humana de suficiência permanecem concluídas para o taxon real servido `Corretor Imóveis` (`corretor-imoveis`), com `reviewed_input_catalog_version = 5` e sem gaps candidatos; o smoke hospedado confirmou o consumo operacional da v5 sem promover o marcador nem alterar a E20.6;
+  - `E19_5_WORKSPACE_ENABLED` foi habilitado sequencialmente com redeploy e aprovação em Preview e Production; o smoke final confirmou workspace, configuração v5, histórico, preview e a revisão 4 já aprovada, sem gerar revisão adicional; archive/restore, publicação, editor manual, melhoria parcial por IA, hard delete, tracking, mensuração, testes A/B, catálogo avançado de ofertas e mecanismo global ou em massa permanecem fora do recorte.
 
 20. E20 — Preparação e liberação de taxons para geração de landing pages
 
@@ -2781,7 +2781,7 @@ Repositório — Ajustados
 
 21. E21 — Gestão e governança dos workloads OpenAI
 - Objetivo: gerir e governar os workloads OpenAI por recortes aprovados, com configuração explícita, observabilidade segura, leitura administrativa e configuração operacional dinâmica por ambiente, sem otimização automatizada.
-- Status: a fundação E21.1 permanece preservada e a E21.2 está concluída com cutover aprovado em Preview e Production; a E21.3 permanece prevista e não iniciada.
+- Status: a fundação E21.1 permanece preservada; a entrega original da E21.2 está concluída com cutover aprovado em Preview e Production; a E21.2.5 está implementada no PR #807 e aguarda merge humano e gates pós-merge; a E21.3 permanece prevista e não iniciada.
 
 21.1 Fundação, normalização e leitura dos workloads OpenAI
 
@@ -2853,7 +2853,7 @@ Repositório — Ajustados
 
 21.2.1 Objetivo e status
 - Objetivo: permitir configuração ativa por ambiente e workload, com candidata, validação, ativação humana, rollback e mudança ordinária sem redeploy.
-- Status: Concluída em 21/08/2026; implementação incorporada pelos PRs #793 e #796, migration aplicada, gates hospedados aprovados e cutover operacional concluído em Preview e Production.
+- Status: a entrega original foi concluída em 21/08/2026, com migration aplicada, gates hospedados aprovados e cutover operacional em Preview e Production; a E21.2.5 está implementada no PR #807, com merge, apply e validações hospedadas ainda pendentes.
 - O recorte preserva a E21.1 como boundary transversal, mantém Development determinístico/local e deixa a E21.3 prevista, sem início de execução.
 
 21.2.2 Registros do recorte
@@ -2868,6 +2868,17 @@ Repositório — Ajustados
     - `public.activate_openai_workload_configuration_revision_v1`
     - `public.rollback_openai_workload_configuration_revision_v1`
     - `public.prevent_openai_workload_append_only_mutation_v1`
+    - `public.openai_model_catalog_models`
+    - `public.openai_model_catalog_parameters`
+    - `public.prevent_openai_model_catalog_delete_v1`
+    - `public.assert_openai_model_catalog_model_has_parameter_v1`
+    - `public.add_openai_model_catalog_model_v1`
+    - `public.set_openai_model_catalog_model_availability_v1`
+    - `public.set_openai_model_catalog_parameter_availability_v1`
+    - `public.check_openai_model_catalog_configuration_available_v1`
+  - Ajustados:
+    - `public.save_openai_workload_configuration_candidate_v1`
+    - `public.promote_openai_workload_configuration_candidate_v1`
 - Repositório:
   - Criados:
     - `app/admin/(protected)/workloads-openai/_components/OpenAiConfigurationManager.tsx`
@@ -2882,6 +2893,14 @@ Repositório — Ajustados
     - `supabase/migrations/20260820190422_e21_2_3_openai_workload_operational_configurations.sql`
     - `supabase/snippets/e21_2_3_openai_workload_operational_configurations_verify.sql`
     - `supabase/tests/e21_2_3_openai_workload_operational_configurations.test.sql`
+    - `app/admin/(protected)/workloads-openai/_components/OpenAiModelCatalogManager.tsx`
+    - `app/admin/(protected)/workloads-openai/_components/OpenAiWorkloadDetail.tsx`
+    - `app/admin/(protected)/workloads-openai/catalogActions.ts`
+    - `lib/openai-workloads/adapters/modelCatalogAdapter.ts`
+    - `lib/openai-workloads/adapters/modelCatalogAdapterCore.ts`
+    - `supabase/migrations/20260823144334_e21_2_5_openai_model_catalog.sql`
+    - `supabase/snippets/e21_2_5_openai_model_catalog_verify.sql`
+    - `supabase/tests/e21_2_5_openai_model_catalog.test.sql`
   - Ajustados:
     - `app/admin/(protected)/workloads-openai/page.tsx`
     - `lib/access/guards.ts`
@@ -2903,6 +2922,8 @@ Repositório — Ajustados
   - Plano-base v1: `docs/lousa-plano-base-e21-2.md`.
   - Plano-base v2 aprovado: `docs/lousa-plano-base-e21-2-v2.md`.
   - Matriz integral de tratamentos: `docs/matriz-consolidacao-e21-2.md`.
+  - Plano-base v2 aprovado da E21.2.5: `docs/lousa-plano-base-e21-2-5.md`.
+  - Matriz de consolidação da E21.2.5: `docs/matriz-consolidacao-e21-2-5.md`.
   - Contrato técnico: `docs/base-tecnica.md` — 3.16.
   - Configuração operacional: `docs/platform-config.md` — 3.5 e 6.3.
   - Contrato de banco: `docs/schema.md` — 1.28, 1.29, 1.30 e 3.7.
@@ -2912,7 +2933,7 @@ Repositório — Ajustados
 - Automação: não.
 - As migrations forward-only materializam o agregado de configuração, revisões validadas e ativações/rollback por `ambiente + workload`, com bootstrap exato das dez unidades de Production e Preview, lifecycle transacional, concorrência otimista, constraints unit-safe, RLS/grants mínimos e metadados de prova fechados e sanitizados.
 - `lib/openai-workloads/` permanece o boundary público comum: resolvers assíncronos recebem ambiente explícito, Development continua no baseline local, e os cinco callsites preservam transporte, fallback funcional e proveniência ao consumir `repo_catalog` ou `supabase_operational`.
-- Adapter server-side, comportamento fail-closed, allowlists por workload, validação de snapshots funcionais, snippet SQL read-only, testes SQL e documentação canônica aplicável foram entregues; `npm ci`, `npm run check`, validadores focais e `git diff --check` foram aprovados.
+- Adapter server-side, comportamento fail-closed, shape tipado por workload, validação de snapshots funcionais, snippet SQL read-only, testes SQL e documentação canônica aplicável foram entregues; a elegibilidade corrente de novas candidatas foi posteriormente centralizada pela E21.2.5.
 - A migration foi aplicada pelo workflow canônico; o snippet hospedado aprovou 10/10 verificações e o Security Controls não apresentou alerta incompatível com as tabelas ou RPCs do recorte.
 - `OPENAI_OPERATIONAL_CONFIG_ENABLED=true` foi habilitada e redeployada primeiro em Preview e, somente após sua aprovação integral, em Production; os dois ambientes usam exclusivamente `supabase_operational`, enquanto Development permanece no baseline local.
 - Não usar `repo_catalog` como fallback quando o gate estiver ativo; não introduzir cache, Realtime, AI Gateway, Vercel Flags, Global Config, tracing, drains, workflow ou segunda residência.
@@ -2921,12 +2942,21 @@ Repositório — Ajustados
 - Status: Concluída; gestão administrativa, provas reais, lifecycle, QA hospedada e smoke mínimo de Production aprovados.
 - Automação: não.
 - `/admin/workloads-openai` passou a gerir ativa, candidata, prova, revisão validada pendente, ativação, histórico e rollback separadamente em Production e Preview; texto aceita somente `model + reasoning effort`, imagem somente `model + quality`, e o Supabase Inspect permanece referência read-only separada.
-- A página reautoriza `platform_admin` antes do read model service-role; cada action reexecuta o guard, deriva o ator no servidor, valida unidade, versão e allowlists e preserva concorrência otimista e estados fail-closed.
+- A página reautoriza `platform_admin` antes do read model service-role; cada action reexecuta o guard, deriva o ator no servidor, valida unidade, versão e shape tipado, e a E21.2.5 acrescenta a revalidação de elegibilidade corrente sem alterar concorrência otimista ou estados fail-closed.
 - A prova despacha fixture segura pelos quatro transportes existentes, não cria persistência funcional, benchmark, ranking ou decisão autônoma e só promove após sucesso; erro preserva a candidata e nunca altera a revisão ativa. A prova comercial reutiliza o parser comum do shape REST real de `/v1/responses`.
 - O Preview aprovou os quatro transportes, criação/edição/descarte de candidata, promoção, ativação, execução subsequente com nova revisão, isolamento de Production e rollback, além de papéis positivo/negativo, desktop 1440 × 900, mobile 390 × 844, estados de sucesso/erro, reconhecimento do lifecycle e checklist proporcional WCAG 2.2.
 - O smoke mínimo de Production confirmou as quatro baselines ativas e uma execução comercial real com origem `supabase_operational` e revisão 1, criando somente draft não publicado; a janela autenticada permaneceu sem erro ou warning no runtime.
 - O estado operacional mantém os cinco workloads de Preview e Production sem candidata ou revisão pendente; o workload `taxon_input_catalog_sufficiency_evaluation` permanece na revisão bootstrap `1` em ambos os ambientes, e os eventos append-only dos lifecycles anteriores permanecem preservados.
 - `OPENAI_API_KEY` permaneceu server-side e foi reutilizada sem cópia, exposição ou versionamento. A E21.3 não foi iniciada.
+
+21.2.5 Catálogo administrável e UX compacta dos workloads OpenAI
+- Status: Implementação repo-only concluída no PR #807; merge humano, apply da migration, snippet read-only, Security Controls e QA hospedado permanecem pendentes.
+- Automação: não.
+- O catálogo global separa elegibilidade corrente de novas candidatas do lifecycle por ambiente e workload; save e promoção revalidam a combinação de forma transacional, e a prova confirma a elegibilidade imediatamente antes do transporte sem manter lock durante a chamada externa.
+- Falha ou indisponibilidade exclusiva do catálogo bloqueia catálogo, save, prova e promoção, sem afetar resolução ativa, ativação de revisão validada ou rollback histórico; revisões e snapshots preservam qualquer identificador técnico com parâmetro tipado válido.
+- As leituras administrativas são completas, ordenadas e fail-closed; páginas acumuladas só são aceitas no término esperado, nunca após erro ou resposta parcial.
+- A superfície administrativa mantém catálogo global superior, seletor Preview/Production, lista compacta com cabeçalho sticky e um detalhe expandido; a geração de Landing Page agrupa texto e imagem apenas visualmente, preservando lifecycle independente.
+- Apply, prova SQL, Security Controls e QA autenticado de papéis, desktop/mobile, lifecycle e WCAG 2.2 permanecem gates pós-merge. A E21.3 não foi iniciada.
 
 21.3 Evidências e avaliação de custo-benefício dos workloads OpenAI
 

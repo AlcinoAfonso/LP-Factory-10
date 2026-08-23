@@ -91,10 +91,6 @@ export type OpenAiProductWorkloadDefinition = Readonly<{
   consumer: string;
   fallback: string;
   configuration: OpenAiEffectiveConfiguration;
-  allowedConfigurations: readonly Readonly<{
-    model: string;
-    reasoningEffort: OpenAiReasoningEffort;
-  }>[];
 }>;
 
 export type OpenAiImageWorkloadDefinition = Readonly<{
@@ -105,10 +101,6 @@ export type OpenAiImageWorkloadDefinition = Readonly<{
   consumer: string;
   fallback: string;
   configuration: OpenAiImageGenerationConfiguration;
-  allowedConfigurations: readonly Readonly<{
-    model: string;
-    quality: OpenAiImageQuality;
-  }>[];
 }>;
 
 export type OpenAiOperationalWorkloadDefinition = Readonly<{
@@ -245,6 +237,46 @@ export type OpenAiImageWorkloadConfigurationOptions = Readonly<{
 export type OpenAiWorkloadConfigurationOptions =
   | OpenAiTextWorkloadConfigurationOptions
   | OpenAiImageWorkloadConfigurationOptions;
+
+export type OpenAiWorkloadPresentation = Readonly<{
+  workload: OpenAiProductWorkloadId | OpenAiImageWorkloadId;
+  name: string;
+  roadmapReference: string;
+  visualGroup: "landing_page" | null;
+}>;
+
+export type OpenAiModelCatalogParameterKind = "reasoning_effort" | "quality";
+
+export type OpenAiModelCatalogParameter = Readonly<{
+  kind: OpenAiModelCatalogParameterKind;
+  value: OpenAiReasoningEffort | OpenAiImageQuality;
+  availableForSelection: boolean;
+  version: number;
+  updatedByUserId: string | null;
+  createdAt: string;
+  updatedAt: string;
+}>;
+
+export type OpenAiModelCatalogModel = Readonly<{
+  apiKind: "responses_text" | "image_generation";
+  model: string;
+  availableForSelection: boolean;
+  version: number;
+  updatedByUserId: string | null;
+  createdAt: string;
+  updatedAt: string;
+  parameters: readonly OpenAiModelCatalogParameter[];
+}>;
+
+export type OpenAiModelCatalogReadResult =
+  | Readonly<{ ok: true; value: readonly OpenAiModelCatalogModel[] }>
+  | Readonly<{
+      ok: false;
+      error: Readonly<{
+        code: "READ_FAILED" | "MODEL_CATALOG_INVALID";
+        message: string;
+      }>;
+    }>;
 
 export type OpenAiAdministrativeConfigurationValue =
   | Readonly<{

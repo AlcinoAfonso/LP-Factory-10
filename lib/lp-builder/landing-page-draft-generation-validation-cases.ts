@@ -1099,12 +1099,11 @@ const cases = [
             assert.equal(validateLandingPageRevisionSnapshot(forgedOperationalRevision), false);
 
             const forgedTextCombination = mutableSnapshot(input.snapshot);
-            forgedTextCombination.workloads.text.configuration.model = "gpt-5.4-mini";
-            forgedTextCombination.workloads.text.configuration.reasoningEffort = "max";
+            forgedTextCombination.workloads.text.configuration.model = "invalid model";
             assert.equal(validateLandingPageRevisionSnapshot(forgedTextCombination), false);
 
             const forgedImageCombination = mutableSnapshot(input.snapshot);
-            forgedImageCombination.workloads.image.configuration.model = "gpt-image-forged";
+            forgedImageCombination.workloads.image.configuration.model = "invalid image model";
             assert.equal(validateLandingPageRevisionSnapshot(forgedImageCombination), false);
 
             return {

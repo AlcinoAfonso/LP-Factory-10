@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data da última atualização: 22/08/2026
-• Documento: LP Factory 10 — Schema (DB Contract) v1.0.53
+• Data da última atualização: 23/08/2026
+• Documento: LP Factory 10 — Schema (DB Contract) v1.0.54
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -877,8 +877,8 @@
 • candidate_saved_by referencia auth.users(id) com ON UPDATE RESTRICT e ON DELETE RESTRICT.
 • Exatamente um entre candidata mutável e revisão validada pendente pode existir; candidata ausente exige que todos os seus campos sejam nulos.
 • pending_revision_id deve ser nulo ou diferente de active_revision_id; uma revisão já ativa não constitui substituição pendente.
-• Configuração textual aceita, conforme a allowlist do workload, `gpt-5.4-mini + none|low|medium|high|xhigh`, `gpt-5.6-luna + none|low|medium|high|xhigh|max` ou, exclusivamente para `taxon_input_catalog_sufficiency_evaluation`, `gpt-5.6-terra + low`, sempre sem quality.
-• Configuração de imagem aceita somente `gpt-image-2 + low|medium|high`, sem reasoning_effort.
+• Candidata textual exige identificador técnico de modelo e `reasoning_effort` em `none | low | medium | high | xhigh | max`, sempre sem quality; sua elegibilidade corrente é revalidada nas tabelas do catálogo E21.2.5.
+• Candidata de imagem exige identificador técnico de modelo e `quality` em `low | medium | high`, sem reasoning_effort; disponibilidade corrente não integra o snapshot da unidade.
 • configuration_version é positivo e funciona como token otimista obrigatório de toda transição.
 
 1.28.4 Índices, bootstrap e segurança
@@ -907,7 +907,7 @@
 1.29.2 Relacionamentos, constraints e índices
 • `(environment, workload, revision_number)` é único e `(id, environment, workload)` é chave candidata unit-safe para os ponteiros e eventos.
 • validated_by referencia auth.users(id) com ON UPDATE RESTRICT e ON DELETE RESTRICT.
-• Ambiente, workload, modalidade e shape modelo/parâmetro usam as mesmas allowlists fechadas da unidade operacional.
+• Ambiente e workload permanecem fechados; modalidade, identificador técnico do modelo e parâmetro tipado preservam o shape da revisão sem exigir disponibilidade corrente no catálogo.
 • proof_metadata é objeto JSON fechado às chaves `schema_version`, `proof_kind`, `proof_result`, `request_id`, `provider_request_id`, `latency_ms`, `contract_version` e `source`; chaves adicionais são rejeitadas.
 • `schema_version` é obrigatório, número inteiro JSON e exatamente 1; `proof_kind` é string obrigatória `bootstrap | operational`; `proof_result` é string obrigatória e exatamente `approved`.
 • `request_id` e `provider_request_id` podem estar ausentes ou ser JSON null; quando presentes como valor, são strings de 1 a 128 caracteres no formato técnico `^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$`.
@@ -1001,6 +1001,33 @@
 • O trigger `account_landing_page_configurations_set_updated_at` atualiza updated_at antes de update.
 • Não há backfill, placeholder, inicialização eager ou cópia da configuração histórica de onboarding para este agregado.
 • O contrato está materializado repo-only em `supabase/migrations/20260822170000_e19_5_3_landing_page_workspace.sql`; apply hospedado e verificação read-only permanecem pós-merge.
+
+1.33 openai_model_catalog_models
+1.33.1 Função e colunas
+• Catálogo global server-side das identidades de modelo elegíveis para novas candidatas, separado da revisão ativa por ambiente/workload.
+• PK composta: `(modality, model)`; modality aceita `responses_text | image_generation` e model usa o formato técnico `^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$`.
+• `available_for_selection boolean not null default false`; `catalog_version bigint not null default 1` e positivo.
+• `updated_by uuid null` referencia `auth.users(id)` com ON UPDATE/DELETE RESTRICT; `created_at` e `updated_at` são timestamptz não nulos e monotônicos.
+• Modelo novo nasce indisponível e deve possuir ao menos um parâmetro associado na mesma transação; o bootstrap idempotente cria Mini, Luna, Terra, Sol e GPT Image 2 disponíveis sem alterar lifecycle existente.
+
+1.33.2 Segurança e imutabilidade de identidade
+• RLS habilitado e nenhuma policy.
+• public, anon, authenticated e ai_readonly: sem grants.
+• service_role: SELECT, INSERT e UPDATE; sem DELETE ou TRUNCATE.
+• O trigger `openai_model_catalog_models_prevent_delete` rejeita DELETE; o constraint trigger diferido `openai_model_catalog_model_has_parameter` impede modelo sem parâmetro.
+
+1.34 openai_model_catalog_parameters
+1.34.1 Função, chave e shape
+• PK composta: `(modality, model, parameter_kind, parameter_value)`; FK `(modality, model)` referencia `openai_model_catalog_models` com ON UPDATE/DELETE RESTRICT.
+• Texto aceita somente `parameter_kind = reasoning_effort` com valor `none | low | medium | high | xhigh | max`; imagem aceita somente `parameter_kind = quality` com valor `low | medium | high`.
+• `available_for_selection boolean not null default false`; `catalog_version bigint not null default 1` e positivo; `updated_by`, `created_at` e `updated_at` seguem o contrato de auditoria do modelo.
+• Uma combinação é elegível somente quando modelo e parâmetro exatos estão disponíveis; nenhuma combinação é inferida por produto cartesiano.
+
+1.34.2 Segurança, artefatos e estado de apply
+• RLS habilitado, zero policies e ACLs idênticas às da tabela de modelos; o trigger `openai_model_catalog_parameters_prevent_delete` rejeita DELETE.
+• Migration forward-only: `supabase/migrations/20260823144334_e21_2_5_openai_model_catalog.sql`.
+• Teste transacional: `supabase/tests/e21_2_5_openai_model_catalog.test.sql`; verificador read-only: `supabase/snippets/e21_2_5_openai_model_catalog_verify.sql`.
+• Estado atual: contrato materializado no PR técnico, sem apply hospedado; apply, snippet real e Security Controls permanecem gates pós-merge.
 
 2. Views
 
@@ -1196,14 +1223,19 @@
 
 3.7 Configuração operacional dos workloads OpenAI
 3.7.1 RPCs versionadas
-• `save_openai_workload_configuration_candidate_v1(text, text, text, text, text, uuid, bigint) → bigint`: salva ou edita candidata allowlisted e retorna o novo configuration_version.
+• `add_openai_model_catalog_model_v1(text, text, text, text[], uuid) → table`: adiciona modelo indisponível e conjunto inicial não vazio de parâmetros conhecidos.
+• `set_openai_model_catalog_model_availability_v1(text, text, boolean, uuid, bigint) → bigint`: altera disponibilidade do modelo com versão otimista.
+• `set_openai_model_catalog_parameter_availability_v1(text, text, text, text, boolean, uuid, bigint) → bigint`: altera disponibilidade do parâmetro sob locks modelo → parâmetro.
+• `check_openai_model_catalog_configuration_available_v1(text, text, bigint) → table`: revalida em snapshot read-only a candidata vigente imediatamente antes da prova, sem manter lock durante o transporte.
+• `save_openai_workload_configuration_candidate_v1(text, text, text, text, text, uuid, bigint) → bigint`: salva ou edita candidata elegível no catálogo e retorna o novo configuration_version.
 • `discard_openai_workload_configuration_candidate_v1(text, text, uuid, bigint) → bigint`: descarta integralmente a candidata e retorna o novo token.
 • `promote_openai_workload_configuration_candidate_v1(text, text, jsonb, uuid, bigint) → table`: revalida candidata e metadados da prova, anexa revisão imutável e instala seu ponteiro pendente na mesma transação.
 • `activate_openai_workload_configuration_revision_v1(text, text, uuid, uuid, bigint) → bigint`: exige que o alvo seja a revisão pendente, troca a ativa, limpa a pendência e anexa evento activate atomicamente.
 • `rollback_openai_workload_configuration_revision_v1(text, text, uuid, uuid, bigint) → bigint`: exige alvo anteriormente ativo, troca a ativa, limpa a pendência aplicável e anexa evento rollback sem duplicar revisão.
 
 3.7.2 Concorrência e segurança
-• Todas as RPCs bloqueiam primeiro a linha canônica `(environment, workload)` com FOR UPDATE, comparam p_expected_version e falham integralmente para token stale ou transição incompatível.
+• Save e promoção bloqueiam primeiro a unidade `(environment, workload)` e depois modelo e parâmetro exatos; mutações do catálogo serializam sobre as mesmas linhas em ordem determinística. Ativação e rollback não consultam disponibilidade corrente.
+• RPCs com token otimista comparam a versão esperada e falham integralmente para token stale ou transição incompatível.
 • Todas usam SECURITY INVOKER e search_path fixado em pg_catalog; cada referência de tabela é schema-qualified.
 • EXECUTE é exclusivo de service_role; PUBLIC, anon, authenticated e ai_readonly não executam as RPCs.
 • O ator é obrigatório nas mutações e deve ser derivado pelo boundary server-side autorizado; as RPCs não concedem autoridade de platform_admin por si mesmas.

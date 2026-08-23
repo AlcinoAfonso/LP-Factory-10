@@ -16,7 +16,19 @@ import {
   type ResolvedOpenAiImageWorkload,
   type ResolvedOpenAiProductWorkload,
 } from "@/openai-workloads";
-import { createServiceClient } from "@/lib/supabase/service";
+import {
+  checkOpenAiModelCatalogConfigurationAvailable,
+  readOpenAiModelCatalog,
+} from "@/openai-workloads/adapters/modelCatalogAdapter";
+import { isOpenAiModelCatalogConfigurationAvailable } from "@/openai-workloads/adapters/modelCatalogAdapterCore";
+import {
+  activateOpenAiConfigurationRevision,
+  discardOpenAiConfigurationCandidate,
+  promoteOpenAiConfigurationCandidate,
+  readOpenAiCandidateConfiguration,
+  rollbackOpenAiConfigurationRevision,
+  saveOpenAiConfigurationCandidate,
+} from "@/openai-workloads/adapters/operationalConfigurationAdapter";
 import { runOpenAiCandidateProof } from "./_proof";
 
 const ADMIN_PATH = "/admin/workloads-openai";
@@ -50,20 +62,22 @@ export async function saveOpenAiConfigurationCandidateAction(
 
   const candidate = await parseCandidate(formData, authorized.unit);
   if (!candidate.ok) return candidate.state;
+  if (!(await candidateIsEligibleForSave(candidate))) {
+    return failure(
+      "catalog",
+      "A combinação não está disponível no catálogo operacional.",
+    );
+  }
 
-  const supabase = createServiceClient();
-  const { data, error } = await supabase.rpc(
-    "save_openai_workload_configuration_candidate_v1",
-    {
-      p_environment: authorized.unit.environment,
-      p_workload: authorized.unit.workload,
-      p_model: candidate.model,
-      p_reasoning_effort: candidate.reasoningEffort,
-      p_quality: candidate.quality,
-      p_actor_user_id: authorized.actorUserId,
-      p_expected_version: authorized.unit.expectedVersion,
-    },
-  );
+  const { data, error } = await saveOpenAiConfigurationCandidate({
+    environment: authorized.unit.environment,
+    workload: authorized.unit.workload,
+    model: candidate.model,
+    reasoningEffort: candidate.reasoningEffort,
+    quality: candidate.quality,
+    actorUserId: authorized.actorUserId,
+    expectedVersion: authorized.unit.expectedVersion,
+  });
 
   if (error) return databaseFailure(error);
   revalidatePath(ADMIN_PATH);
@@ -77,16 +91,12 @@ export async function discardOpenAiConfigurationCandidateAction(
   const authorized = await authorizedUnit(formData);
   if (!authorized.ok) return authorized.state;
 
-  const supabase = createServiceClient();
-  const { data, error } = await supabase.rpc(
-    "discard_openai_workload_configuration_candidate_v1",
-    {
-      p_environment: authorized.unit.environment,
-      p_workload: authorized.unit.workload,
-      p_actor_user_id: authorized.actorUserId,
-      p_expected_version: authorized.unit.expectedVersion,
-    },
-  );
+  const { data, error } = await discardOpenAiConfigurationCandidate({
+    environment: authorized.unit.environment,
+    workload: authorized.unit.workload,
+    actorUserId: authorized.actorUserId,
+    expectedVersion: authorized.unit.expectedVersion,
+  });
 
   if (error) return databaseFailure(error);
   revalidatePath(ADMIN_PATH);
@@ -100,35 +110,35 @@ export async function proveAndPromoteOpenAiConfigurationCandidateAction(
   const authorized = await authorizedUnit(formData);
   if (!authorized.ok) return authorized.state;
 
-  const supabase = createServiceClient();
-  const candidateRead = await supabase
-    .from("openai_workload_operational_configurations")
-    .select(
-      "environment,workload,configuration_version,candidate_model,candidate_reasoning_effort,candidate_quality",
-    )
-    .eq("environment", authorized.unit.environment)
-    .eq("workload", authorized.unit.workload)
-    .limit(2);
-  if (candidateRead.error) {
+  const candidateRead = await readOpenAiCandidateConfiguration({
+    environment: authorized.unit.environment,
+    workload: authorized.unit.workload,
+  });
+  if (!candidateRead.ok && candidateRead.code === "READ_FAILED") {
     return failure("read", "A candidata não pôde ser lida para a prova.");
   }
-  if (!Array.isArray(candidateRead.data) || candidateRead.data.length !== 1) {
+  if (!candidateRead.ok && candidateRead.code === "NOT_FOUND") {
     return failure("read", "A unidade operacional está ausente ou duplicada.");
   }
-
-  const row = candidateRead.data[0] as Record<string, unknown>;
-  if (row.configuration_version !== authorized.unit.expectedVersion) {
+  if (!candidateRead.ok) {
+    return failure("lifecycle", "Não existe candidata apta para prova.");
+  }
+  if (candidateRead.value.configurationVersion !== authorized.unit.expectedVersion) {
     return failure(
       "concurrency",
       "A configuração mudou em outra sessão. Recarregue antes de provar.",
     );
   }
-  const candidateForm = candidateFormData(row);
-  if (!candidateForm) {
-    return failure("lifecycle", "Não existe candidata apta para prova.");
-  }
+  const candidateForm = candidateFormData(candidateRead.value);
   const candidate = await parseCandidate(candidateForm, authorized.unit);
   if (!candidate.ok) return candidate.state;
+
+  if (!(await candidateIsStillEligible(candidate, authorized.unit))) {
+    return failure(
+      "catalog",
+      "A combinação deixou de estar disponível no catálogo; a prova não foi iniciada.",
+    );
+  }
 
   const requestId = crypto.randomUUID();
   const proof = await runOpenAiCandidateProof(
@@ -146,16 +156,13 @@ export async function proveAndPromoteOpenAiConfigurationCandidateAction(
     );
   }
 
-  const { data, error } = await supabase.rpc(
-    "promote_openai_workload_configuration_candidate_v1",
-    {
-      p_environment: authorized.unit.environment,
-      p_workload: authorized.unit.workload,
-      p_proof_metadata: proof.metadata,
-      p_actor_user_id: authorized.actorUserId,
-      p_expected_version: authorized.unit.expectedVersion,
-    },
-  );
+  const { data, error } = await promoteOpenAiConfigurationCandidate({
+    environment: authorized.unit.environment,
+    workload: authorized.unit.workload,
+    proofMetadata: { ...proof.metadata },
+    actorUserId: authorized.actorUserId,
+    expectedVersion: authorized.unit.expectedVersion,
+  });
   if (error) return databaseFailure(error);
   revalidatePath(ADMIN_PATH);
   const result = Array.isArray(data) && data.length === 1
@@ -176,17 +183,13 @@ export async function activateOpenAiConfigurationRevisionAction(
   const targetRevisionId = parseUuid(formData.get("targetRevisionId"));
   if (!targetRevisionId) return validationFailure("Revisão pendente inválida.");
 
-  const supabase = createServiceClient();
-  const { data, error } = await supabase.rpc(
-    "activate_openai_workload_configuration_revision_v1",
-    {
-      p_environment: authorized.unit.environment,
-      p_workload: authorized.unit.workload,
-      p_target_revision_id: targetRevisionId,
-      p_actor_user_id: authorized.actorUserId,
-      p_expected_version: authorized.unit.expectedVersion,
-    },
-  );
+  const { data, error } = await activateOpenAiConfigurationRevision({
+    environment: authorized.unit.environment,
+    workload: authorized.unit.workload,
+    targetRevisionId,
+    actorUserId: authorized.actorUserId,
+    expectedVersion: authorized.unit.expectedVersion,
+  });
 
   if (error) return databaseFailure(error);
   revalidatePath(ADMIN_PATH);
@@ -202,17 +205,13 @@ export async function rollbackOpenAiConfigurationRevisionAction(
   const targetRevisionId = parseUuid(formData.get("targetRevisionId"));
   if (!targetRevisionId) return validationFailure("Revisão de rollback inválida.");
 
-  const supabase = createServiceClient();
-  const { data, error } = await supabase.rpc(
-    "rollback_openai_workload_configuration_revision_v1",
-    {
-      p_environment: authorized.unit.environment,
-      p_workload: authorized.unit.workload,
-      p_target_revision_id: targetRevisionId,
-      p_actor_user_id: authorized.actorUserId,
-      p_expected_version: authorized.unit.expectedVersion,
-    },
-  );
+  const { data, error } = await rollbackOpenAiConfigurationRevision({
+    environment: authorized.unit.environment,
+    workload: authorized.unit.workload,
+    targetRevisionId,
+    actorUserId: authorized.actorUserId,
+    expectedVersion: authorized.unit.expectedVersion,
+  });
 
   if (error) return databaseFailure(error);
   revalidatePath(ADMIN_PATH);
@@ -251,6 +250,39 @@ async function authorizedUnit(formData: FormData): Promise<
   };
 }
 
+type ParsedCandidate = Readonly<{
+  model: string;
+  reasoningEffort: OpenAiReasoningEffort | null;
+  quality: OpenAiImageQuality | null;
+  configuration: ResolvedOpenAiProductWorkload | ResolvedOpenAiImageWorkload;
+}>;
+
+async function candidateIsEligibleForSave(candidate: ParsedCandidate) {
+  const catalog = await readOpenAiModelCatalog();
+  return catalog.ok && isOpenAiModelCatalogConfigurationAvailable(catalog.value, {
+    apiKind: candidate.configuration.apiKind,
+    model: candidate.model,
+    reasoningEffort: candidate.reasoningEffort,
+    quality: candidate.quality,
+  });
+}
+
+async function candidateIsStillEligible(
+  candidate: ParsedCandidate,
+  unit: UnitInput,
+) {
+  const current = await checkOpenAiModelCatalogConfigurationAvailable({
+    environment: unit.environment,
+    workload: unit.workload,
+    expectedVersion: unit.expectedVersion,
+  });
+  return current.ok &&
+    current.value.apiKind === candidate.configuration.apiKind &&
+    current.value.model === candidate.model &&
+    current.value.reasoningEffort === candidate.reasoningEffort &&
+    current.value.quality === candidate.quality;
+}
+
 async function parseCandidate(
   formData: FormData,
   unit: UnitInput,
@@ -266,7 +298,7 @@ async function parseCandidate(
     }>
   | Readonly<{ ok: false; state: OpenAiOperationalActionState }>
 > {
-  const model = parseTechnicalValue(formData.get("model"), 64);
+  const model = parseTechnicalValue(formData.get("model"), 128);
   if (!model) return { ok: false, state: validationFailure("Modelo inválido.") };
 
   if (unit.workload === "landing_page_draft_image_generation") {
@@ -351,17 +383,18 @@ async function parseCandidate(
   };
 }
 
-function candidateFormData(row: Record<string, unknown>) {
-  if (typeof row.candidate_model !== "string" || !row.candidate_model.trim()) {
-    return null;
-  }
+function candidateFormData(value: Readonly<{
+  model: string;
+  reasoningEffort: OpenAiReasoningEffort | null;
+  quality: OpenAiImageQuality | null;
+}>) {
   const formData = new FormData();
-  formData.set("model", row.candidate_model);
-  if (typeof row.candidate_reasoning_effort === "string") {
-    formData.set("reasoningEffort", row.candidate_reasoning_effort);
+  formData.set("model", value.model);
+  if (value.reasoningEffort) {
+    formData.set("reasoningEffort", value.reasoningEffort);
   }
-  if (typeof row.candidate_quality === "string") {
-    formData.set("quality", row.candidate_quality);
+  if (value.quality) {
+    formData.set("quality", value.quality);
   }
   return formData;
 }
