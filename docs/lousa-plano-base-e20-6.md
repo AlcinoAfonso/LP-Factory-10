@@ -666,3 +666,65 @@ Execute a avaliação E20.6 do taxon `[taxon_slug]`, usando a cadeia taxonômica
 - Depois que a E21.2.5 estiver implementada e operacionalmente validada, a E20.6.5 deve consumir a configuração ativa escolhida sob governança E21 e executar as provas focais necessárias à retomada do rollout, sem criar exceção hardcoded no consumidor.
 - Se o refinamento de UX desta seção for implementado antes do contract final, a validação deve concentrar-se no delta de apresentação e nas decisões humanas afetadas, preservando as provas determinísticas e operacionais já válidas que não tenham sofrido mudança material.
 - O contract final continua responsável por remover definitivamente o caminho legado somente depois de Preview e Production aprovados no runtime vigente e por reconciliar a documentação canônica com o estado operacional final.
+
+## 6. Escalabilidade da E20.6 diante da versão atual da E20.2 — 23/08/2026
+
+### 6.1. Fonte e relação com a E20.2.8
+
+- Fonte vinculante deste refinamento: `docs/lousa-plano-base-e20-2-8.md`.
+- A E20.2.8 cria o contrato de produto de uma versão atual global da E20.2 e de propagação hierárquica escalável; esta seção registra apenas a consequência sobre a suficiência e a experiência E20.6.
+- O runtime atual continua usando igualdade exata de versão e escolha explícita enquanto a E20.2.8 não estiver implementada e validada. Esta seção não autoriza mudança parcial do gate vigente.
+- Quando a E20.2.8 entrar em vigor, as regras desta seção superam somente os pontos históricos que exigem nova avaliação por simples incremento numérico de versão ou seleção manual da versão corrente; autoridade humana, pesquisa E20.5, fail-closed e avaliação semântica permanecem preservados.
+
+### 6.2. Nova semântica de preparação
+
+- `reviewed_input_catalog_version = R` passa a representar a última versão que recebeu decisão humana explícita de suficiência para o taxon.
+- A versão atual E20.2 `C` é a referência operacional normal para preparação e para novas avaliações.
+- O taxon poderá ser derivado como preparado quando:
+  - `R = C`; ou
+  - a transição do catálogo resolvido `R → C` for deterministicamente classificada como `sem mudança material` ou `evolução compatível` conforme a E20.2.8.
+- O sistema não deve regravar `reviewed_input_catalog_version = C` apenas para sincronizar um taxon cuja suficiência foi carregada por compatibilidade.
+- A ausência de escrita em massa preserva a informação correta sobre qual foi a última revisão humana real e impede que uma atualização global gere centenas de mutações administrativas artificiais.
+- Pesquisa E20.5 alterada, avaliação reaberta, marcador `NULL`, cadeia incompatível, falha de resolução ou compatibilidade inconclusiva continuam bloqueando a preparação.
+
+### 6.3. Quando a E20.6.5 deve executar novamente
+
+- Nova avaliação semântica individual é necessária somente quando a transição para a versão atual for classificada como `revisão necessária` ou quando a avaliação anterior estiver ausente/inválida por outro motivo previsto no contrato.
+- Taxon sem mudança material entre versões não deve chamar IA apenas porque o número mudou.
+- Taxon com evolução compatível não deve chamar IA apenas para confirmar uma ampliação factual determinística já provada como não destrutiva.
+- Taxon com alteração potencialmente destrutiva, restritiva, reinterpretativa ou impossível de classificar deterministicamente deve continuar fail-closed e entrar na E20.6.5.
+- A decisão final após nova avaliação permanece humana; somente suficiência explicitamente confirmada grava a versão atual no marcador.
+
+### 6.4. Experiência normal da E20.6.5 com versão atual
+
+- Quando a autoridade de versão atual existir, a interface E20.6.5 deve tratar essa versão como alvo normal/default da verificação.
+- O humano não deve precisar descobrir qual é o maior número nem escolher manualmente a versão corrente em cada taxon.
+- A versão continua visível e auditável na interface, mas sua seleção deixa de ser uma tarefa repetitiva no fluxo normal.
+- Avaliação de versão histórica pode continuar disponível quando existir finalidade explícita de diagnóstico ou reprodução; não deve competir com o fluxo padrão.
+- A seção 5.5 permanece histórica para o runtime atual; após a E20.2.8, sua exigência de escolha manual da versão corrente é substituída pela autoridade explícita de versão atual, sem introduzir `Math.max` ou `latest` inferido.
+
+### 6.5. Visão agregada das pendências
+
+- O Admin deve permitir identificar centralmente quais taxons:
+  - acompanham a nova versão sem mudança material;
+  - acompanham automaticamente por evolução compatível;
+  - precisam realmente de revisão E20.6.
+- O humano não deve ser obrigado a abrir dezenas ou centenas de taxons apenas para descobrir quais ficaram pendentes.
+- A página individual da Taxonomia continua sendo uma superfície válida para executar/revisar um taxon, mas deixa de ser a única forma de localizar trabalho pendente.
+- A rota e a composição da visão agregada não são definidas aqui. A implementação deve avaliar as superfícies existentes e escolher a menor evolução coerente, sem criar nova rota por antecipação.
+- Este refinamento não cria job, fila, agente, rotina recorrente ou processamento em background; apenas define que o resultado de impacto deve ser apresentável de forma agregada.
+
+### 6.6. Rollback
+
+- Se a versão atual E20.2 voltar de `C` para uma versão executável anterior `P`, a E20.6 deve derivar preparação usando `P` como alvo operacional.
+- A compatibilidade entre a última versão humanamente revisada do taxon e `P` deve ser reavaliada deterministicamente; não presumir que uma versão antiga já foi aprovada se o estado atual não consegue provar isso.
+- Taxons compatíveis continuam operacionais sem mutação em massa; taxons incompatíveis ou inconclusivos entram na visão agregada de revisão necessária.
+- Rollback não altera pesquisas E20.5, não reescreve marcadores e não apaga decisões históricas existentes.
+
+### 6.7. Limites de implementação
+
+- Não implementar este novo predicado de preparação antes de existir a autoridade E20.2 de versão atual e o comparador determinístico de compatibilidade aprovados no mesmo recorte técnico.
+- Não usar a IA para decidir se uma transição de versão é estruturalmente compatível.
+- Não criar nova persistência de aprovação apenas para propagar versões sem demonstrar necessidade; o desenho preferencial evita writes de sincronização quando a compatibilidade pode ser derivada.
+- Qualquer necessidade de nova tabela, coluna, view, RPC, rota ou infraestrutura deve voltar ao planejamento com fonte real do repositório, `docs/schema.md` e `docs/base-tecnica.md` antes de implementação.
+- O contract final da E20.6.5 não deve encerrar o recorte ignorando a E20.2.8 se essa evolução já estiver aprovada para o produto; deve reconciliar a versão atual, a UX amigável e a governança E21.2.5 como contratos distintos porém compatíveis.
