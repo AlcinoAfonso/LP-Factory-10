@@ -15,7 +15,7 @@ import {
   type OpenAiReasoningEffort,
   type OpenAiWorkloadConfigurationOptions,
 } from "../contracts";
-import { listOpenAiWorkloadConfigurationOptions } from "../registry";
+import { listOpenAiWorkloadPresentations } from "../registry";
 
 export type OperationalConfigurationQueryResult = Readonly<{
   data: unknown;
@@ -42,7 +42,7 @@ export function translateOperationalConfigurationRows(
 
   const activeRevisionId = nonEmptyString(unit.active_revision_id);
   const revisionId = nonEmptyString(revision.id);
-  const model = nonEmptyString(revision.model);
+  const model = technicalModel(revision.model);
   const revisionNumber = positiveInteger(revision.revision_number);
   const expectedModality =
     input.workload === "landing_page_draft_image_generation"
@@ -146,6 +146,14 @@ function positiveInteger(value: unknown): number | null {
 function nonEmptyString(value: unknown): string | null {
   return typeof value === "string" && value.trim().length > 0
     ? value.trim()
+    : null;
+}
+
+function technicalModel(value: unknown): string | null {
+  const normalized = nonEmptyString(value);
+  return normalized && normalized.length <= 128 &&
+    /^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(normalized)
+    ? normalized
     : null;
 }
 
@@ -266,7 +274,21 @@ export function translateOpenAiAdministrativeConfigurationRows(
     return invalidAdministrativeConfiguration();
   }
 
-  const projections = listOpenAiWorkloadConfigurationOptions();
+  const projections = listOpenAiWorkloadPresentations().map((presentation) =>
+    presentation.workload === "landing_page_draft_image_generation"
+      ? {
+          workload: presentation.workload,
+          displayName: presentation.name,
+          apiKind: "image_generation" as const,
+          options: [],
+        }
+      : {
+          workload: presentation.workload,
+          displayName: presentation.name,
+          apiKind: "responses_text" as const,
+          options: [],
+        },
+  );
   const unitsByKey = new Map<string, Record<string, unknown>>();
   for (const unit of units) {
     const environment = managedEnvironment(unit.environment);
@@ -543,15 +565,13 @@ function configurationValue(
   rawReasoningEffort: unknown,
   rawQuality: unknown,
 ): OpenAiAdministrativeConfigurationValue | null {
-  const model = nonEmptyString(rawModel);
+  const model = technicalModel(rawModel);
   if (!model) return null;
   if (projection.apiKind === "responses_text") {
     const reasoningEffort = reasoningEffortValue(rawReasoningEffort);
     if (
       reasoningEffort === null ||
-      rawQuality !== null ||
-      !projection.options.some((option) =>
-        option.model === model && option.reasoningEffort === reasoningEffort)
+      rawQuality !== null
     ) {
       return null;
     }
@@ -560,8 +580,7 @@ function configurationValue(
   const quality = imageQuality(rawQuality);
   if (
     quality === null ||
-    rawReasoningEffort !== null ||
-    !projection.options.some((option) => option.model === model && option.quality === quality)
+    rawReasoningEffort !== null
   ) {
     return null;
   }

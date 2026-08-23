@@ -12,8 +12,6 @@ import type {
   ResolvedOpenAiProductWorkload,
 } from "./contracts";
 import {
-  isAllowedOpenAiImageConfiguration,
-  isAllowedOpenAiTextConfiguration,
   openAiWorkloadRegistry,
 } from "./registry";
 
@@ -69,7 +67,7 @@ export async function resolveOpenAiProductWorkload(
     operational.value.workload !== workload.id ||
     operational.value.environment !== environment ||
     !isDecimalRevision(operational.value.revision) ||
-    !isAllowedOpenAiTextConfiguration(workload, operational.value)
+    !isTechnicalModel(operational.value.model)
   ) {
     return failure(
       "OPERATIONAL_CONFIGURATION_INVALID",
@@ -121,7 +119,7 @@ export async function resolveOpenAiImageWorkload(
     operational.value.workload !== workload.id ||
     operational.value.environment !== environment ||
     !isDecimalRevision(operational.value.revision) ||
-    !isAllowedOpenAiImageConfiguration(workload, operational.value)
+    !isTechnicalModel(operational.value.model)
   ) {
     return failure(
       "OPERATIONAL_CONFIGURATION_INVALID",
@@ -322,6 +320,10 @@ function isImageWorkload(
 
 function isDecimalRevision(value: string) {
   return /^[1-9]\d*$/.test(value);
+}
+
+function isTechnicalModel(value: string) {
+  return value.length <= 128 && /^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(value);
 }
 
 function success<T>(value: T): Readonly<{ ok: true; value: T }> {

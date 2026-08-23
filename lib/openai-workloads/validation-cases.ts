@@ -9,6 +9,11 @@ import {
   translateOpenAiAdministrativeConfigurationRows,
   translateOperationalConfigurationRows,
 } from "./adapters/operationalConfigurationAdapterCore";
+import {
+  projectOpenAiWorkloadConfigurationOptions,
+  readCompleteOrderedPages,
+  translateOpenAiModelCatalogRows,
+} from "./adapters/modelCatalogAdapterCore";
 import * as publicApi from "./index";
 import {
   createOpenAiImageWorkloadFailureEvent,
@@ -16,8 +21,8 @@ import {
   createOpenAiWorkloadFailureEvent,
   createOpenAiWorkloadSuccessEvent,
   emitOpenAiWorkloadEvent,
-  listOpenAiWorkloadConfigurationOptions,
   listOpenAiWorkloadInventory,
+  listOpenAiWorkloadPresentations,
   normalizeOpenAiResponseUsage,
   resolveOpenAiImageWorkload,
   resolveOpenAiProductWorkload,
@@ -266,7 +271,7 @@ const cases = [
     },
   },
   {
-    name: "taxon input catalog evaluation starts only with the approved terra low pair",
+    name: "taxon evaluation keeps its development baseline while operational history remains typed",
     run: async () => {
       const baseline = await resolveOpenAiProductWorkload(
         taxonInputCatalogEvaluationWorkloadId,
@@ -276,7 +281,7 @@ const cases = [
       assert.equal(baseline.value.model, "gpt-5.6-terra");
       assert.equal(baseline.value.reasoningEffort, "low");
 
-      const rejected = await resolveOpenAiProductWorkload(
+      const historical = await resolveOpenAiProductWorkload(
         taxonInputCatalogEvaluationWorkloadId,
         "preview",
         {
@@ -294,8 +299,8 @@ const cases = [
           }),
         },
       );
-      assert.equal(rejected.ok, false);
-      assert.equal(rejected.error.code, "OPERATIONAL_CONFIGURATION_INVALID");
+      assert.equal(historical.ok, true);
+      assert.equal(historical.value.reasoningEffort, "medium");
     },
   },
   {
@@ -388,54 +393,40 @@ const cases = [
     name: "public API does not expose the internal registry",
     run: () => {
       assert.equal("openAiWorkloadRegistry" in publicApi, false);
-      assert.equal(typeof publicApi.listOpenAiWorkloadConfigurationOptions, "function");
+      assert.equal(typeof publicApi.listOpenAiWorkloadPresentations, "function");
       assert.equal(typeof publicApi.readOpenAiAdministrativeConfigurations, "function");
+      assert.equal(typeof publicApi.readOpenAiModelCatalog, "function");
     },
   },
   {
-    name: "public workload options are closed projections and deeply immutable",
+    name: "public workload presentation is code-owned and deeply immutable",
     run: () => {
-      const projection = listOpenAiWorkloadConfigurationOptions();
+      const projection = listOpenAiWorkloadPresentations();
       assert.deepEqual(
         projection.map((item) => item.workload),
         [
           "niche_resolution",
           "commercial_activation_draft_generation",
           "landing_page_draft_generation",
-          "taxon_input_catalog_sufficiency_evaluation",
           "landing_page_draft_image_generation",
+          "taxon_input_catalog_sufficiency_evaluation",
         ],
       );
       assert.equal(Object.isFrozen(projection), true);
       for (const workload of projection) {
         assert.equal(Object.isFrozen(workload), true);
-        assert.equal(Object.isFrozen(workload.options), true);
-        assert.equal(workload.options.every(Object.isFrozen), true);
         assert.deepEqual(
           Object.keys(workload).sort(),
-          ["apiKind", "displayName", "options", "workload"],
-        );
-        assert.equal(
-          workload.options.length,
-          workload.workload === "taxon_input_catalog_sufficiency_evaluation"
-            ? 1
-            : workload.apiKind === "responses_text"
-              ? 11
-              : 3,
+          ["name", "roadmapReference", "visualGroup", "workload"],
         );
       }
       const niche = projection.find((item) => item.workload === "niche_resolution");
-      assert.ok(niche && niche.apiKind === "responses_text");
-      assert.equal(
-        niche.options.some((option) =>
-          option.model === "gpt-5.4-mini" && option.reasoningEffort === "max"),
-        false,
-      );
+      assert.equal(niche?.name, "Resolução de nicho");
+      const landingPage = projection.filter((item) => item.visualGroup === "landing_page");
+      assert.equal(landingPage.length, 2);
+      assert.equal(landingPage.every((item) => item.roadmapReference === "E19.4"), true);
       assert.throws(() => {
         (projection as unknown[]).push({});
-      }, TypeError);
-      assert.throws(() => {
-        (niche.options as unknown[]).push({});
       }, TypeError);
     },
   },
@@ -445,6 +436,99 @@ const cases = [
       const serialized = JSON.stringify(listOpenAiWorkloadInventory());
       assert.equal(/api[_-]?key|secret|bearer|authorization|https?:\/\//i.test(serialized), false);
       assert.equal(serialized.includes("effectiveConfigurationVerified"), true);
+    },
+  },
+  {
+    name: "model catalog translator projects only currently eligible options",
+    run: () => {
+      const stamp = "2026-08-23T12:00:00.000Z";
+      const catalog = translateOpenAiModelCatalogRows(
+        {
+          error: null,
+          data: [
+            {
+              modality: "responses_text",
+              model: "gpt-5.6-luna",
+              available_for_selection: true,
+              catalog_version: 1,
+              updated_by: null,
+              created_at: stamp,
+              updated_at: stamp,
+            },
+            {
+              modality: "image_generation",
+              model: "gpt-image-2",
+              available_for_selection: false,
+              catalog_version: 2,
+              updated_by: "10000000-0000-4000-8000-000000000001",
+              created_at: stamp,
+              updated_at: stamp,
+            },
+          ],
+        },
+        {
+          error: null,
+          data: [
+            {
+              modality: "responses_text",
+              model: "gpt-5.6-luna",
+              parameter_kind: "reasoning_effort",
+              parameter_value: "max",
+              available_for_selection: true,
+              catalog_version: 1,
+              updated_by: null,
+              created_at: stamp,
+              updated_at: stamp,
+            },
+            {
+              modality: "image_generation",
+              model: "gpt-image-2",
+              parameter_kind: "quality",
+              parameter_value: "high",
+              available_for_selection: true,
+              catalog_version: 1,
+              updated_by: null,
+              created_at: stamp,
+              updated_at: stamp,
+            },
+          ],
+        },
+      );
+      assert.equal(catalog.ok, true);
+      if (!catalog.ok) return;
+      const options = projectOpenAiWorkloadConfigurationOptions(
+        catalog.value,
+        listOpenAiWorkloadPresentations(),
+      );
+      const text = options.find((item) => item.workload === "niche_resolution");
+      const image = options.find(
+        (item) => item.workload === "landing_page_draft_image_generation",
+      );
+      assert.ok(text?.apiKind === "responses_text");
+      assert.deepEqual(text.options, [
+        { model: "gpt-5.6-luna", reasoningEffort: "max" },
+      ]);
+      assert.ok(image?.apiKind === "image_generation");
+      assert.deepEqual(image.options, []);
+    },
+  },
+  {
+    name: "ordered pagination preserves accumulated pages on terminal 416",
+    run: async () => {
+      const reads: number[] = [];
+      const result = await readCompleteOrderedPages(async (from) => {
+        reads.push(from);
+        if (from === 0) return { data: [1, 2], error: null, status: 200 };
+        if (from === 2) return { data: [3, 4], error: null, status: 200 };
+        return {
+          data: null,
+          error: { code: "PGRST103" },
+          status: 416,
+        };
+      }, 2);
+      assert.equal(result.error, null);
+      assert.deepEqual(result.data, [1, 2, 3, 4]);
+      assert.deepEqual(reads, [0, 2, 4]);
     },
   },
   {
@@ -621,7 +705,7 @@ const cases = [
     },
   },
   {
-    name: "gate-on read failures and configurations outside the allowlist fail without repo fallback",
+    name: "gate-on read failures fail closed while historical typed models remain resolvable",
     run: async () => {
       const readFailure = await resolveOpenAiProductWorkload(
         "niche_resolution",
@@ -651,15 +735,15 @@ const cases = [
               environment: input.environment,
               workload: "niche_resolution",
               apiKind: "responses_text",
-              model: "gpt-5.4-mini",
+              model: "gpt-future-text",
               reasoningEffort: "max",
               revision: "3",
             },
           }),
         },
       );
-      assert.equal(invalid.ok, false);
-      assert.equal(invalid.error.code, "OPERATIONAL_CONFIGURATION_INVALID");
+      assert.equal(invalid.ok, true);
+      assert.equal(invalid.value.model, "gpt-future-text");
 
       const nonDecimalRevision = await resolveOpenAiProductWorkload(
         "niche_resolution",
@@ -887,20 +971,11 @@ const cases = [
     },
   },
   {
-    name: "closed allowlists accept only the approved text and image combinations",
+    name: "active resolvers accept arbitrary nonempty model identifiers with typed parameters",
     run: async () => {
       const textConfigurations = [
-        { model: "gpt-5.4-mini", reasoningEffort: "none" },
-        { model: "gpt-5.4-mini", reasoningEffort: "low" },
-        { model: "gpt-5.4-mini", reasoningEffort: "medium" },
-        { model: "gpt-5.4-mini", reasoningEffort: "high" },
-        { model: "gpt-5.4-mini", reasoningEffort: "xhigh" },
-        { model: "gpt-5.6-luna", reasoningEffort: "none" },
-        { model: "gpt-5.6-luna", reasoningEffort: "low" },
-        { model: "gpt-5.6-luna", reasoningEffort: "medium" },
-        { model: "gpt-5.6-luna", reasoningEffort: "high" },
-        { model: "gpt-5.6-luna", reasoningEffort: "xhigh" },
-        { model: "gpt-5.6-luna", reasoningEffort: "max" },
+        { model: "gpt-historical-text", reasoningEffort: "none" },
+        { model: "gpt-future-text", reasoningEffort: "max" },
       ] as const;
       for (const workload of [
         "niche_resolution",
@@ -941,7 +1016,7 @@ const cases = [
                 environment: input.environment,
                 workload: "landing_page_draft_image_generation",
                 apiKind: "image_generation",
-                model: "gpt-image-2",
+                model: "gpt-historical-image",
                 quality,
                 revision: "4",
               },
@@ -1112,7 +1187,7 @@ const cases = [
           apiKey: "test-key",
           configuration: {
             ...configuration.value,
-            model: "unapproved-model",
+            model: "invalid model",
           },
           environment: "development",
           request: { input: [] },
