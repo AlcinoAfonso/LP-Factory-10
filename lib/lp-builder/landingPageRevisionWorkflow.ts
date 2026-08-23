@@ -57,6 +57,8 @@ type Dependencies = Readonly<{
     content: LandingPageRevisionContent;
     snapshot: LandingPageRevisionSnapshot;
     createdBy: string;
+    expectedSharedRevision?: number | null;
+    expectedLandingPageRevision?: number;
   }>) => Promise<AppendLandingPageRevisionResult>;
   now?: () => Date;
   nowMs?: () => number;
@@ -155,6 +157,12 @@ export async function materializeLandingPageDraftRevisionWithDependencies(
       content: documents.content,
       snapshot: documents.snapshot,
       createdBy: input.createdBy,
+      ...(input.context.contractVersion === 4
+        ? {
+            expectedSharedRevision: input.context.identities.sharedRevision,
+            expectedLandingPageRevision: input.context.identities.landingPageRevision,
+          }
+        : {}),
     });
     if (!appended.ok) {
       await dependencies.cleanupAsset(asset);

@@ -69,8 +69,24 @@ const context = {
     accountId: "10000000-0000-4000-8000-000000000001",
     landingPage: { id: "20000000-0000-4000-8000-000000000002", status: "draft" },
     planKey: "starter",
-    servedTaxon: { id: "taxon", slug: "corretor-imoveis", name: "Corretor" },
-    taxonChain: {},
+    servedTaxon: {
+      id: "21000000-0000-4000-8000-000000000002",
+      slug: "corretor-imoveis",
+      name: "Corretor Imóveis",
+      level: "segment",
+      isActive: true,
+      parentId: null,
+    },
+    taxonChain: {
+      segment: {
+        id: "21000000-0000-4000-8000-000000000002",
+        slug: "corretor-imoveis",
+        name: "Corretor Imóveis",
+        level: "segment",
+        isActive: true,
+        parentId: null,
+      },
+    },
     sharedCatalogVersion: 5,
     landingPageCatalogVersion: 5,
     effectiveInputCatalogVersion: 5,
@@ -92,19 +108,24 @@ const context = {
         purpose: "offer",
         valueType: "string",
         value: "Consultoria imobiliária",
-        source: "account_configuration",
-        provenance: [],
+        source: "configuration",
+        provenance: [{ property: "definition", layer: "universal" }],
       },
       {
         fieldKey: "primary_conversion_channel",
         purpose: "conversion",
         valueType: "enum",
         value: "whatsapp",
-        source: "account_configuration",
-        provenance: [],
+        source: "configuration",
+        provenance: [{ property: "definition", layer: "universal" }],
       },
     ],
-    editorialLimits: { semanticRoles: [], semanticHierarchy: ["h1", "h2", "h3"] },
+    editorialLimits: {
+      semanticRoles: [
+        { key: "h1", recommended: { min: 20, max: 72 }, absoluteMax: 96 },
+      ],
+      semanticHierarchy: ["h1", "h2", "h3"],
+    },
   },
   serverContext: {
     facts: [
@@ -113,8 +134,8 @@ const context = {
         purpose: "conversion_destination",
         valueType: "phone",
         value: "+5521979658483",
-        source: "account_configuration",
-        provenance: [],
+        source: "configuration",
+        provenance: [{ property: "definition", layer: "universal" }],
       },
     ],
   },
@@ -932,6 +953,52 @@ const cases = [
         }),
         false,
       );
+      const missingLandingRevision = structuredClone(documents.snapshot) as unknown as {
+        generationContext: { identities: Record<string, unknown> };
+      };
+      delete missingLandingRevision.generationContext.identities.landingPageRevision;
+      assert.equal(validateLandingPageRevisionSnapshot(missingLandingRevision), false);
+      const brokenSharedPair = structuredClone(documents.snapshot) as unknown as {
+        generationContext: { identities: Record<string, unknown> };
+      };
+      brokenSharedPair.generationContext.identities.sharedRevision = null;
+      assert.equal(validateLandingPageRevisionSnapshot(brokenSharedPair), false);
+      const malformedFacts = structuredClone(documents.snapshot) as unknown as {
+        generationContext: { modelContext: { facts: unknown[] } };
+      };
+      malformedFacts.generationContext.modelContext.facts = [
+        { fieldKey: "primary_conversion_goal" },
+      ];
+      assert.equal(validateLandingPageRevisionSnapshot(malformedFacts), false);
+      const legacyContext = {
+        contractVersion: 3,
+        identities: {
+          accountId: context.identities.accountId,
+          landingPage: context.identities.landingPage,
+          planKey: context.identities.planKey,
+          servedTaxon: context.identities.servedTaxon,
+          taxonChain: context.identities.taxonChain,
+          historicalConfigurationCatalogVersion: 2,
+          effectiveInputCatalogVersion: 2,
+          configurationRevision: 7,
+          rootVersion: 1,
+          endCustomerResearchVersion: 1,
+        },
+        modelContext: context.modelContext,
+        serverContext: context.serverContext,
+      } as unknown as LandingPageGenerationContextPackage;
+      const legacyDocuments = buildLandingPageRevisionDocuments({
+        context: legacyContext,
+        candidate: workflow,
+        asset,
+        generatedAt: "2026-08-17T18:00:00.000Z",
+      });
+      assert.equal(legacyDocuments.ok, true);
+      if (legacyDocuments.ok) {
+        assert.equal(legacyDocuments.snapshot.snapshotVersion, 1);
+        assert.equal(legacyDocuments.snapshot.generationContext.contractVersion, 3);
+        assert.equal(validateLandingPageRevisionSnapshot(legacyDocuments.snapshot), true);
+      }
       assert.doesNotMatch(JSON.stringify(documents), /signedUrl|apiKey|rawResponse/);
     },
   },
@@ -968,6 +1035,8 @@ const cases = [
           appendRevision: async (input) => {
             order.push("append");
             assert.equal(input.content.media.mainImage.bucket, LANDING_PAGE_REVISION_ASSET_BUCKET);
+            assert.equal(input.expectedSharedRevision, 11);
+            assert.equal(input.expectedLandingPageRevision, 13);
             return {
               ok: true,
               revisionId: "50000000-0000-4000-8000-000000000050",
@@ -1006,6 +1075,8 @@ const cases = [
           revalidate: async () => true,
           appendRevision: async (input) => {
             appendCalls += 1;
+            assert.equal(input.expectedSharedRevision, 11);
+            assert.equal(input.expectedLandingPageRevision, 13);
             assert.equal(input.snapshot.workloads.text.configuration.source, "supabase_operational");
             assert.equal(input.snapshot.workloads.text.configuration.revision, "17");
             assert.equal(input.snapshot.workloads.text.configuration.model, "gpt-5.4-mini");
@@ -1160,7 +1231,7 @@ const cases = [
     },
   },
   {
-    name: "route action owns request correlation and revalidates only access authority",
+    name: "route action owns request correlation and revalidates access plus operational provenance",
     run: () => {
       const action = readFileSync(
         new URL(
@@ -1220,8 +1291,12 @@ const cases = [
       assert.match(action, /const currentEntitlement/);
       assert.match(
         action,
-        /return currentEntitlement\?\.isCommerciallyEligible === true/,
+        /currentEntitlement\?\.isCommerciallyEligible !== true/,
       );
+      assert.match(action, /context\.value\.contractVersion !== 4/);
+      assert.match(action, /getAccountLandingPageOperationalRevalidationAuthority/);
+      assert.match(action, /currentAuthority\.authority\.sharedRevision/);
+      assert.match(action, /currentAuthority\.authority\.landingPageRevision/);
       assert.doesNotMatch(action, /currentAccess\.context\.requestId/);
       assert.doesNotMatch(action, /currentContext/);
       assert.doesNotMatch(

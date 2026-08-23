@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { LandingPageRenderer } from "@/components/lp-builder/LandingPageRenderer";
 import { getAccessContext } from "@/lib/access/getAccessContext";
 import { loadLandingPagePreview } from "@/lp-builder/adapters/landingPagePreviewAdapter";
+import { isLandingPageWorkspaceEnabled } from "@/lp-builder/landingPageWorkspace";
 
 import { WorkspaceSubmitButton } from "../../../_components/WorkspaceSubmitButton";
 import { approveLandingPageRevisionAction } from "../actions";
@@ -32,6 +33,7 @@ export default async function LandingPagePreview({ params, searchParams }: PageP
     !access?.blocked &&
     access?.account?.status === "active" &&
     ["owner", "admin"].includes(String(access.role));
+  const workspaceEnabled = isLandingPageWorkspaceEnabled();
 
   return (
     <main className="min-w-0 bg-surface-app px-3 py-6 sm:px-6 sm:py-8 lg:px-8">
@@ -53,7 +55,7 @@ export default async function LandingPagePreview({ params, searchParams }: PageP
               {canMutate ? (
                 <GenerationTrigger accountSlug={accountSlug} landingPageId={landingPageId} />
               ) : null}
-              {preview.status === "ready" && canMutate ? (
+              {workspaceEnabled && preview.status === "ready" && canMutate ? (
                 <form action={approveLandingPageRevisionAction}>
                   <input type="hidden" name="account" value={accountSlug} />
                   <input type="hidden" name="landing_page_id" value={landingPageId} />

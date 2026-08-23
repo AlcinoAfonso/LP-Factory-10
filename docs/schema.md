@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data da última atualização: 22/08/2026
-• Documento: LP Factory 10 — Schema (DB Contract) v1.0.52
+• Documento: LP Factory 10 — Schema (DB Contract) v1.0.53
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -1218,15 +1218,20 @@
 • EXECUTE dos helpers é exclusivo de service_role; public, anon, authenticated e ai_readonly não executam.
 
 3.8.2 Save atômico versionado
-• `save_account_landing_page_configuration_v1(uuid, uuid, jsonb, jsonb, bigint, bigint, integer, uuid) → table(shared_revision bigint, landing_page_revision bigint)` grava as duas residências em uma transação.
-• O RPC usa SECURITY INVOKER, search_path fixado, lock tenant-safe da LP e tokens otimistas independentes; ausência esperada exige inexistência da linha e save sem mudança não incrementa revisão.
+• `save_account_landing_page_configuration_v1(uuid, uuid, jsonb, jsonb, bigint, bigint, integer, uuid, uuid) → table(shared_revision bigint, landing_page_revision bigint)` grava as duas residências em uma transação; o último argumento é a materialização mais recente observada durante a validação dos baselines de identidade.
+• O RPC usa SECURITY INVOKER, search_path fixado, lock tenant-safe da LP, tokens otimistas independentes e comparação da última materialização; ausência esperada exige inexistência da linha, concorrência com append falha fechado e save sem mudança não incrementa revisão.
 • `catalog_version` deve ser exatamente 5; scope drift, versão diferente, LP não operacional, ator sem autoridade ou revisão stale falham fechados.
 • A residência compartilhada só é criada quando contém valor; a residência da LP nasce no primeiro save.
 • EXECUTE exclusivo de service_role; public, anon, authenticated e ai_readonly não executam.
 
 3.8.3 Aprovação explícita de revisão
-• `approve_account_landing_page_materialization_v1(uuid, uuid, uuid, uuid) → uuid`: SECURITY DEFINER, search_path fixado e idempotente para o mesmo alvo.
+• `approve_account_landing_page_materialization_v1(uuid, uuid, uuid, uuid) → uuid`: SECURITY INVOKER, search_path fixado e idempotente para o mesmo alvo.
 • O RPC exige owner/admin ativo, LP e materialização da mesma conta, e atualiza apenas o ponteiro aprovado; revisão mais recente e revisão aprovada permanecem conceitos independentes.
+• EXECUTE exclusivo de service_role; public, anon, authenticated e ai_readonly não executam.
+
+3.8.4 Append com proveniência operacional
+• `append_account_landing_page_materialization_v2(uuid, uuid, uuid, jsonb, jsonb, uuid, bigint, bigint) → table(materialization_id uuid, revision_number bigint)`: SECURITY INVOKER e search_path fixado; recebe as revisões compartilhada e específica usadas pelo contexto v4.
+• O RPC preserva retry idempotente do mesmo attempt, bloqueia a LP, compara as duas revisões operacionais e só então delega ao append canônico v1 na mesma transação; save concorrente ou proveniência stale falham fechados sem revisão parcial.
 • EXECUTE exclusivo de service_role; public, anon, authenticated e ai_readonly não executam.
 
 4. Triggers

@@ -16,10 +16,23 @@ export async function appendLandingPageRevision(input: Readonly<{
   content: LandingPageRevisionContent;
   snapshot: LandingPageRevisionSnapshot;
   createdBy: string;
+  expectedSharedRevision?: number | null;
+  expectedLandingPageRevision?: number;
 }>): Promise<AppendLandingPageRevisionResult> {
   try {
+    const operational = input.snapshot.snapshotVersion === 2;
+    if (
+      operational &&
+      (!isPositiveInteger(input.expectedLandingPageRevision) ||
+        (input.expectedSharedRevision !== null &&
+          !isPositiveInteger(input.expectedSharedRevision)))
+    ) {
+      return { ok: false, error: "APPEND_FAILED" };
+    }
     const { data, error } = await createServiceClient().rpc(
-      "append_account_landing_page_materialization_v1",
+      operational
+        ? "append_account_landing_page_materialization_v2"
+        : "append_account_landing_page_materialization_v1",
       {
         p_account_id: input.accountId,
         p_landing_page_id: input.landingPageId,
@@ -27,6 +40,12 @@ export async function appendLandingPageRevision(input: Readonly<{
         p_content_json: input.content,
         p_generation_context_snapshot_json: input.snapshot,
         p_created_by: input.createdBy,
+        ...(operational
+          ? {
+              p_expected_shared_revision: input.expectedSharedRevision,
+              p_expected_landing_page_revision: input.expectedLandingPageRevision,
+            }
+          : {}),
       },
     );
     if (error) return { ok: false, error: "APPEND_FAILED" };

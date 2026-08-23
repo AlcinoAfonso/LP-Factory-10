@@ -62,6 +62,7 @@ type RuntimeContextResult =
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const LANDING_PAGE_DRAFT_PAGE_SIZE = 500;
 
 export async function getAccountLandingPageOnboardingConfigurationFromClient(
   input: { accountId: string; actorUserId: string },
@@ -314,25 +315,32 @@ export async function listAccountLandingPageDraftsFromClient(
     return failure("configuration_incomplete");
   }
 
-  const { data, error } = await client
-    .from("account_landing_pages")
-    .select("id,account_id,name,slug,status")
-    .eq("account_id", runtime.context.account.id)
-    .in("status", ["draft", "active"])
-    .order("created_at", { ascending: true })
-    .order("id", { ascending: true });
+  const drafts: AccountLandingPage[] = [];
+  let offset = 0;
+  while (true) {
+    const { data, error } = await client
+      .from("account_landing_pages")
+      .select("id,account_id,name,slug,status")
+      .eq("account_id", runtime.context.account.id)
+      .in("status", ["draft", "active"])
+      .order("created_at", { ascending: true })
+      .order("id", { ascending: true })
+      .range(offset, offset + LANDING_PAGE_DRAFT_PAGE_SIZE - 1);
 
-  if (error) {
-    logDatabaseError("landing page drafts read failed", error, input.accountId);
-    return failure("read_failed");
+    if (error) {
+      logDatabaseError("landing page drafts read failed", error, input.accountId);
+      return failure("read_failed");
+    }
+    if (!Array.isArray(data)) return failure("read_failed");
+    const page = data.map((value) =>
+      normalizeLandingPageDraft(value, runtime.context.account.id),
+    );
+    if (page.some((draft) => draft === null)) return failure("read_failed");
+    drafts.push(...(page as AccountLandingPage[]));
+    if (data.length < LANDING_PAGE_DRAFT_PAGE_SIZE) break;
+    offset += data.length;
   }
-  if (!Array.isArray(data)) return failure("read_failed");
-
-  const drafts = data.map((value) =>
-    normalizeLandingPageDraft(value, runtime.context.account.id),
-  );
-  if (drafts.some((draft) => draft === null)) return failure("read_failed");
-  return { ok: true, drafts: drafts as AccountLandingPage[] };
+  return { ok: true, drafts };
 }
 
 export async function bindAccountLandingPageOnboardingConfigurationFromClient(

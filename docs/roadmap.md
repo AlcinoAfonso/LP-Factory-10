@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 22/08/2026
-• Versão: v1.5.178
+• Versão: v1.5.179
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2459,8 +2459,9 @@ Repositório — Ajustados
     - `public.account_landing_page_configurations`;
     - `public.e19_5_actor_can_manage(uuid, uuid)`;
     - `public.e19_5_configuration_values_have_scopes(jsonb, text[])`;
-    - `public.save_account_landing_page_configuration_v1(uuid, uuid, jsonb, jsonb, bigint, bigint, integer, uuid)`;
-    - `public.approve_account_landing_page_materialization_v1(uuid, uuid, uuid, uuid)`.
+    - `public.save_account_landing_page_configuration_v1(uuid, uuid, jsonb, jsonb, bigint, bigint, integer, uuid, uuid)`;
+    - `public.approve_account_landing_page_materialization_v1(uuid, uuid, uuid, uuid)`;
+    - `public.append_account_landing_page_materialization_v2(uuid, uuid, uuid, jsonb, jsonb, uuid, bigint, bigint)`.
   - Ajustados:
     - `public.account_landing_pages`;
     - `public.account_landing_page_materializations`.

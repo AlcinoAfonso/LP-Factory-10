@@ -8,7 +8,10 @@ import {
   type LandingPageInputValueType,
 } from "../conversion-content/landing-page/input-catalog";
 import type { TaxonPreparationResult } from "../conversion-content/landing-page/taxon-preparation";
-import { compileLandingPageGenerationContextForDraftWithDependencies } from "./adapters/generationContextAdapterCore";
+import {
+  compileLandingPageGenerationContextForDraftWithDependencies,
+  compileLegacyLandingPageGenerationContextForDraftWithDependencies,
+} from "./adapters/generationContextAdapterCore";
 import { resolveAccountLandingPageOnboardingRevalidationAuthority } from "./adapters/onboardingConfigurationAdapterCore";
 import type {
   AccountLandingPage,
@@ -626,6 +629,49 @@ const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }
         Object.hasOwn(unauthorizedLogs[0], "preparation_reason"),
         false,
       );
+    },
+  },
+  {
+    name: "gate-off boundary preserves the E19.4 context v3 path without E19.5 residences",
+    run: async () => {
+      const calls: string[] = [];
+      const legacyAuthority = {
+        historicalConfiguration: revalidationAuthority.historicalConfiguration,
+        currentPlanKey: revalidationAuthority.currentPlanKey,
+        currentTaxonChain: revalidationAuthority.currentTaxonChain,
+        currentAuthoritativeValues: revalidationAuthority.currentAuthoritativeValues,
+      };
+      const result =
+        await compileLegacyLandingPageGenerationContextForDraftWithDependencies(
+          { accountId: ACCOUNT_ID, landingPageId: LANDING_PAGE_ID },
+          {
+            loadRevalidationAuthority: async ({ accountId }) => {
+              calls.push(`authority:${accountId}`);
+              return { ok: true, authority: legacyAuthority };
+            },
+            loadLandingPage: async () => {
+              calls.push("landing-page");
+              return { ok: true, landingPage };
+            },
+            loadPreparation: async ({ taxonId }) => {
+              calls.push(`preparation:${taxonId}`);
+              return preparation;
+            },
+            log: () => undefined,
+          },
+        );
+      assert.equal(result.ok, true);
+      if (!result.ok) return;
+      assert.equal(result.value.contractVersion, 3);
+      assert.equal(
+        Object.hasOwn(result.value.identities, "landingPageRevision"),
+        false,
+      );
+      assert.deepEqual(calls, [
+        `authority:${ACCOUNT_ID}`,
+        "landing-page",
+        `preparation:${TAXON_ID}`,
+      ]);
     },
   },
   {

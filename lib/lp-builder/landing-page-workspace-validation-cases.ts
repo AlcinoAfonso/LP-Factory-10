@@ -76,19 +76,56 @@ const cases: readonly Readonly<{ name: string; run: () => void }>[] = [
         new URL("../../supabase/migrations/20260822170000_e19_5_3_landing_page_workspace.sql", import.meta.url),
         "utf8",
       );
+      const generationAdapter = readFileSync(
+        new URL("./adapters/generationContextAdapter.ts", import.meta.url),
+        "utf8",
+      );
+      const revisionAdapter = readFileSync(
+        new URL("./adapters/landingPageRevisionAdapter.ts", import.meta.url),
+        "utf8",
+      );
+      const snippet = readFileSync(
+        new URL("../../supabase/snippets/e19_5_3_landing_page_workspace_verify.sql", import.meta.url),
+        "utf8",
+      );
+      const sqlTest = readFileSync(
+        new URL("../../supabase/tests/e19_5_3_landing_page_workspace.test.sql", import.meta.url),
+        "utf8",
+      );
       assert.ok(adapter.indexOf("isLandingPageWorkspaceEnabled()") < adapter.indexOf("account_landing_page_shared_configurations"));
       assert.match(adapter, /loadTaxonPreparationForVersion\(\{/);
       assert.match(adapter, /requiredInputCatalogVersion:\s*LANDING_PAGE_WORKSPACE_REQUIRED_INPUT_CATALOG_VERSION/);
       assert.doesNotMatch(adapter, /loadTaxonPreparationForReviewedVersion|readAllLandingPageMaterializations|is_initialized|archive/i);
       assert.match(adapter, /count:\s*"exact"/);
       assert.match(adapter, /\.range\(/);
+      assert.match(adapter, /p_expected_latest_materialization_id:\s*identity\.latestMaterializationId/);
+      assert.match(adapter, /candidate\.configuration\.storedValues/);
+      assert.match(
+        adapter,
+        /if \(isRecord\(operational\)\) \{[\s\S]*?return undefined;[\s\S]*?\}\s*const \{ data: onboarding/,
+      );
+      assert.match(generationAdapter, /if \(!isLandingPageWorkspaceEnabled\(\)\)/);
+      assert.match(generationAdapter, /compileLegacyLandingPageGenerationContextForDraftWithDependencies/);
+      assert.match(generationAdapter, /loadTaxonPreparationForReviewedVersion/);
+      assert.match(generationAdapter, /loadTaxonPreparationForVersion/);
+      assert.match(revisionAdapter, /append_account_landing_page_materialization_v2/);
       assert.match(migration, /p_expected_shared_revision is null/);
       assert.match(migration, /p_expected_landing_page_revision is null/);
+      assert.match(migration, /materialization_baseline_conflict/);
+      assert.match(migration, /create or replace function public\.append_account_landing_page_materialization_v2/);
+      assert.match(migration, /create or replace function public\.approve_account_landing_page_materialization_v1[\s\S]*?security invoker/);
       assert.match(migration, /deferrable initially deferred/);
       assert.match(migration, /grant select, insert, update on table public\.account_landing_page_shared_configurations/);
       assert.match(migration, /grant select, insert, update on table public\.account_landing_page_configurations/);
       assert.doesNotMatch(migration, /is_initialized|set_account_landing_page_archived/i);
       assert.doesNotMatch(migration, /from public\.account_landing_pages landing_page/i);
+      assert.match(snippet, /raise exception 'E19\.5\.3/);
+      assert.match(snippet, /prosecdef/);
+      assert.match(snippet, /pg_get_userbyid/);
+      assert.match(sqlTest, /failed atomic save must roll back the shared update/);
+      assert.match(sqlTest, /stale materialization baseline must fail/);
+      assert.match(sqlTest, /append with stale configuration provenance must fail/);
+      assert.match(sqlTest, /approval must be idempotent/);
     },
   },
   {
@@ -114,6 +151,7 @@ const cases: readonly Readonly<{ name: string; run: () => void }>[] = [
       assert.match(detail, /Gerar primeira versão/);
       assert.match(preview, /canMutate\s*\?/);
       assert.match(preview, /<GenerationTrigger/);
+      assert.match(preview, /workspaceEnabled && preview\.status === "ready"/);
       assert.match(preview, /Aprovar esta versão/);
     },
   },

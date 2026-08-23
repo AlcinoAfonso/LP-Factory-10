@@ -7,6 +7,7 @@ import { revalidatePath } from "next/cache";
 import { requireAccountMembersManager } from "@/lib/access/guards";
 import { getCommercialEntitlementSignal } from "@/commercial-entitlements";
 import { compileLandingPageGenerationContextForDraft } from "@/lp-builder/adapters/generationContextAdapter";
+import { getAccountLandingPageOperationalRevalidationAuthority } from "@/lp-builder/adapters/landingPageWorkspaceAdapter";
 import { loadLandingPageRevisionReadiness } from "@/lp-builder/adapters/landingPageRevisionReadinessAdapter";
 import { materializeLandingPageDraftRevision } from "@/lp-builder/adapters/landingPageRevisionWorkflowAdapter";
 import { resolveLandingPageConversionBinding } from "@/lp-builder/landingPageDraftWorkflow";
@@ -108,7 +109,22 @@ export async function generateLandingPageRevisionAction(
       const currentEntitlement = await getCommercialEntitlementSignal({
         accountId: currentAccess.context.accountId,
       });
-      return currentEntitlement?.isCommerciallyEligible === true;
+      if (currentEntitlement?.isCommerciallyEligible !== true) return false;
+      if (context.value.contractVersion !== 4) return true;
+      const currentAuthority =
+        await getAccountLandingPageOperationalRevalidationAuthority({
+          accountId: currentAccess.context.accountId,
+          landingPageId,
+        });
+      return currentAuthority.ok &&
+        currentAuthority.authority.sharedRevision ===
+          context.value.identities.sharedRevision &&
+        currentAuthority.authority.sharedCatalogVersion ===
+          context.value.identities.sharedCatalogVersion &&
+        currentAuthority.authority.landingPageRevision ===
+          context.value.identities.landingPageRevision &&
+        currentAuthority.authority.landingPageCatalogVersion ===
+          context.value.identities.landingPageCatalogVersion;
     },
   });
   if (!materialized.ok) {

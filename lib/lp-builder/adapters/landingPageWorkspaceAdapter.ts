@@ -239,13 +239,16 @@ export async function saveAccountLandingPageOperationalConfiguration(input: Read
       ...(candidate.fieldKey ? { fieldKey: candidate.fieldKey } : {}),
     };
   }
+  const canonicalSplit = splitLandingPageWorkspaceValues(
+    candidate.configuration.storedValues,
+  );
 
   let identity: Awaited<ReturnType<typeof validateIdentityMutation>>;
   try {
     identity = await validateIdentityMutation(client, {
       accountId: authority.value.accountId,
       landingPageId: input.landingPageId,
-      values: input.values,
+      values: candidate.configuration.storedValues,
       sameCommercialWorkConfirmed: input.sameCommercialWorkConfirmed === true,
     });
   } catch {
@@ -259,12 +262,13 @@ export async function saveAccountLandingPageOperationalConfiguration(input: Read
       {
         p_account_id: authority.value.accountId,
         p_landing_page_id: input.landingPageId,
-        p_shared_values: split.sharedValues,
-        p_landing_page_values: split.landingPageValues,
+        p_shared_values: canonicalSplit.sharedValues,
+        p_landing_page_values: canonicalSplit.landingPageValues,
         p_expected_shared_revision: input.expectedSharedRevision,
         p_expected_landing_page_revision: input.expectedLandingPageRevision,
         p_catalog_version: LANDING_PAGE_WORKSPACE_REQUIRED_INPUT_CATALOG_VERSION,
         p_actor_user_id: authority.value.actorUserId,
+        p_expected_latest_materialization_id: identity.latestMaterializationId,
       },
     );
     if (error) {
@@ -588,7 +592,7 @@ async function validateIdentityMutation(
     sameCommercialWorkConfirmed: boolean;
   }>,
 ): Promise<
-  | Readonly<{ ok: true }>
+  | Readonly<{ ok: true; latestMaterializationId: string | null }>
   | Readonly<{
       ok: false;
       result: Extract<SaveAccountLandingPageOperationalConfigurationResult, { ok: false }>;
@@ -598,10 +602,11 @@ async function validateIdentityMutation(
   let firstOffer: unknown = undefined;
   let offset = 0;
   let hasRevision = false;
-  while (baselines.size < IDENTITY_FIELDS.length || firstOffer === undefined) {
+  let latestMaterializationId: string | null = null;
+  while (true) {
     const { data, error } = await client
       .from("account_landing_page_materializations")
-      .select("generation_context_snapshot_json")
+      .select("id,generation_context_snapshot_json")
       .eq("account_id", input.accountId)
       .eq("landing_page_id", input.landingPageId)
       .order("revision_number", { ascending: true })
@@ -612,7 +617,11 @@ async function validateIdentityMutation(
     if (data.length === 0) break;
     hasRevision = true;
     for (const row of data) {
-      const facts = readSnapshotFacts(isRecord(row) ? row.generation_context_snapshot_json : null);
+      if (!isRecord(row) || typeof row.id !== "string") {
+        return { ok: false, result: { ok: false, error: "unavailable" } };
+      }
+      latestMaterializationId = row.id;
+      const facts = readSnapshotFacts(row.generation_context_snapshot_json);
       for (const fact of facts) {
         if (IDENTITY_FIELDS.includes(fact.fieldKey as (typeof IDENTITY_FIELDS)[number])) {
           if (!baselines.has(fact.fieldKey)) baselines.set(fact.fieldKey, fact.value);
@@ -658,7 +667,7 @@ async function validateIdentityMutation(
       },
     };
   }
-  return { ok: true };
+  return { ok: true, latestMaterializationId };
 }
 
 async function readCurrentConfiguredOffer(
@@ -674,9 +683,12 @@ async function readCurrentConfiguredOffer(
     .limit(1)
     .maybeSingle();
   if (error) throw new Error("landing_page_configuration_read_failed");
-  if (isRecord(operational) && isRecord(operational.values)) {
-    const stored = operational.values.primary_service_or_offer;
-    if (isRecord(stored) && Object.hasOwn(stored, "value")) return stored.value;
+  if (isRecord(operational)) {
+    if (isRecord(operational.values)) {
+      const stored = operational.values.primary_service_or_offer;
+      if (isRecord(stored) && Object.hasOwn(stored, "value")) return stored.value;
+    }
+    return undefined;
   }
   const { data: onboarding, error: onboardingError } = await client
     .from("account_landing_page_onboarding_configurations")
