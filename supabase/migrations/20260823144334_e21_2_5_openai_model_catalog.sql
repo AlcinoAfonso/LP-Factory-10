@@ -78,6 +78,9 @@ create index openai_model_catalog_parameters_updated_by_idx
   on public.openai_model_catalog_parameters (updated_by)
   where updated_by is not null;
 
+alter table public.openai_model_catalog_models enable row level security;
+alter table public.openai_model_catalog_parameters enable row level security;
+
 create or replace function public.prevent_openai_model_catalog_delete_v1()
 returns trigger
 language plpgsql
@@ -922,9 +925,6 @@ alter function public.save_openai_workload_configuration_candidate_v1(text, text
   owner to postgres;
 alter function public.promote_openai_workload_configuration_candidate_v1(text, text, jsonb, uuid, bigint)
   owner to postgres;
-
-alter table public.openai_model_catalog_models enable row level security;
-alter table public.openai_model_catalog_parameters enable row level security;
 
 revoke all on table public.openai_model_catalog_models
   from public, anon, authenticated, service_role;
