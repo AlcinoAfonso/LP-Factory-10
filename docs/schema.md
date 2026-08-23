@@ -1306,8 +1306,6 @@
 • Rollback: não remove automaticamente a extensão, pois pode ser reutilizada por outros recursos
 
 99. Changelog
-v1.0.54 (23/08/2026) — E21.2.5: registrado o contrato repo-only das tabelas globais de modelos/parâmetros, bootstrap, ausência de delete, RLS/ACLs, RPCs versionadas, revalidação transacional e separação entre elegibilidade corrente e snapshots históricos; apply e gates hospedados permanecem pós-merge.
-
 v1.0.49 (20/08/2026) — E19.5 precursor expand: ampliado o contrato repo-only de `account_landing_pages.status` para tolerar `draft | active | archived`, preservando default e criação corrente em `draft`, sem backfill; append e consumidores internos passam a tolerar `active`, enquanto `archived` bloqueia attempts inéditos e preserva retry idempotente tenant-safe de `attempt_id` já materializado.
 
 v1.0.48 (20/08/2026) — E21.2.3: registrado o agregado candidato de configuração operacional dos workloads OpenAI com três tabelas públicas, oito baselines Production/Preview, FKs compostas unit-safe, candidata/pendência exclusivas, pendência distinta da revisão ativa, revisões e ativações append-only, token otimista, cinco RPCs SECURITY INVOKER, RLS sem policies, grants mínimos e verificação SQL read-only; apply hospedado permanece pós-merge.

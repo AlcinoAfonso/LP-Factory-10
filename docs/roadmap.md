@@ -2868,6 +2868,17 @@ Repositório — Ajustados
     - `public.activate_openai_workload_configuration_revision_v1`
     - `public.rollback_openai_workload_configuration_revision_v1`
     - `public.prevent_openai_workload_append_only_mutation_v1`
+    - `public.openai_model_catalog_models`
+    - `public.openai_model_catalog_parameters`
+    - `public.prevent_openai_model_catalog_delete_v1`
+    - `public.assert_openai_model_catalog_model_has_parameter_v1`
+    - `public.add_openai_model_catalog_model_v1`
+    - `public.set_openai_model_catalog_model_availability_v1`
+    - `public.set_openai_model_catalog_parameter_availability_v1`
+    - `public.check_openai_model_catalog_configuration_available_v1`
+  - Ajustados:
+    - `public.save_openai_workload_configuration_candidate_v1`
+    - `public.promote_openai_workload_configuration_candidate_v1`
 - Repositório:
   - Criados:
     - `app/admin/(protected)/workloads-openai/_components/OpenAiConfigurationManager.tsx`
@@ -2882,6 +2893,14 @@ Repositório — Ajustados
     - `supabase/migrations/20260820190422_e21_2_3_openai_workload_operational_configurations.sql`
     - `supabase/snippets/e21_2_3_openai_workload_operational_configurations_verify.sql`
     - `supabase/tests/e21_2_3_openai_workload_operational_configurations.test.sql`
+    - `app/admin/(protected)/workloads-openai/_components/OpenAiModelCatalogManager.tsx`
+    - `app/admin/(protected)/workloads-openai/_components/OpenAiWorkloadDetail.tsx`
+    - `app/admin/(protected)/workloads-openai/catalogActions.ts`
+    - `lib/openai-workloads/adapters/modelCatalogAdapter.ts`
+    - `lib/openai-workloads/adapters/modelCatalogAdapterCore.ts`
+    - `supabase/migrations/20260823144334_e21_2_5_openai_model_catalog.sql`
+    - `supabase/snippets/e21_2_5_openai_model_catalog_verify.sql`
+    - `supabase/tests/e21_2_5_openai_model_catalog.test.sql`
   - Ajustados:
     - `app/admin/(protected)/workloads-openai/page.tsx`
     - `lib/access/guards.ts`
@@ -2903,6 +2922,8 @@ Repositório — Ajustados
   - Plano-base v1: `docs/lousa-plano-base-e21-2.md`.
   - Plano-base v2 aprovado: `docs/lousa-plano-base-e21-2-v2.md`.
   - Matriz integral de tratamentos: `docs/matriz-consolidacao-e21-2.md`.
+  - Plano-base v2 aprovado da E21.2.5: `docs/lousa-plano-base-e21-2-5.md`.
+  - Matriz de consolidação da E21.2.5: `docs/matriz-consolidacao-e21-2-5.md`.
   - Contrato técnico: `docs/base-tecnica.md` — 3.16.
   - Configuração operacional: `docs/platform-config.md` — 3.5 e 6.3.
   - Contrato de banco: `docs/schema.md` — 1.28, 1.29, 1.30 e 3.7.
@@ -2931,24 +2952,11 @@ Repositório — Ajustados
 21.2.5 Catálogo administrável e UX compacta dos workloads OpenAI
 - Status: Implementação repo-only concluída no PR #807; merge humano, apply da migration, snippet read-only, Security Controls e QA hospedado permanecem pendentes.
 - Automação: não.
-- Banco:
-  - migration `supabase/migrations/20260823144334_e21_2_5_openai_model_catalog.sql` cria `openai_model_catalog_models` e `openai_model_catalog_parameters`, bootstrap inicial, ausência de delete, auditoria, RLS/ACLs e RPCs versionadas;
-  - save e promoção revalidam elegibilidade sob locks unidade → modelo → parâmetro; a checagem read-only imediatamente anterior à prova não mantém lock durante o transporte;
-  - `supabase/tests/e21_2_5_openai_model_catalog.test.sql` cobre shape, bootstrap, ACLs, lifecycle e corridas; `supabase/snippets/e21_2_5_openai_model_catalog_verify.sql` é estritamente read-only;
-  - apply hospedado não foi executado neste PR e permanece no fluxo canônico pós-merge.
-- Runtime e boundary:
-  - `lib/openai-workloads/` mantém identidades, modalidades, baselines Development, vocabulário tipado e uma única matriz code-owned de apresentação; allowlists estáticas de modelo foram removidas do caminho operacional;
-  - novas candidatas projetam somente pares exatos disponíveis no catálogo; falha do catálogo bloqueia save, prova e promoção sem afetar resolução ativa, ativação de revisão já validada ou rollback histórico;
-  - revisões ativas/históricas e snapshots aceitam qualquer identificador técnico de modelo com parâmetro tipado válido, sem consultar disponibilidade corrente;
-  - adapters separados normalizam catálogo e lifecycle, paginam integralmente leituras administrativas ordenadas e preservam páginas acumuladas no término `416/PGRST103`.
-- Admin e UX:
-  - `/admin/workloads-openai` possui catálogo global superior, seletor compacto Preview/Production, lista com cabeçalho sticky e apenas um detalhe aberto por vez;
-  - `Geração da Landing Page · E19.4` agrupa texto e imagem somente na apresentação; lifecycle, revisões, provas, ativações e rollback permanecem unidades independentes;
-  - todas as mutações reautorizam `platform_admin`, client/UI não importa Supabase e estados de sucesso, erro, concorrência e indisponibilidade são explícitos.
-- Validação repo-only:
-  - `npm ci`, teste focal do boundary, teste focal da UI, `npm run check` e `git diff --check` aprovados; o teste SQL não pôde ser executado localmente por ausência de Docker/Podman, sem uso de ambiente remoto como fallback;
-  - smoke visual local bloqueado antes da renderização por ausência de configuração Supabase reutilizável no checkout-base; desktop/mobile, papéis, lifecycle e checklist proporcional WCAG 2.2 permanecem gates hospedados pós-merge;
-  - E21.3 não foi iniciada.
+- O catálogo global separa elegibilidade corrente de novas candidatas do lifecycle por ambiente e workload; save e promoção revalidam a combinação de forma transacional, e a prova confirma a elegibilidade imediatamente antes do transporte sem manter lock durante a chamada externa.
+- Falha ou indisponibilidade exclusiva do catálogo bloqueia catálogo, save, prova e promoção, sem afetar resolução ativa, ativação de revisão validada ou rollback histórico; revisões e snapshots preservam qualquer identificador técnico com parâmetro tipado válido.
+- As leituras administrativas são completas, ordenadas e fail-closed; páginas acumuladas só são aceitas no término esperado, nunca após erro ou resposta parcial.
+- A superfície administrativa mantém catálogo global superior, seletor Preview/Production, lista compacta com cabeçalho sticky e um detalhe expandido; a geração de Landing Page agrupa texto e imagem apenas visualmente, preservando lifecycle independente.
+- Apply, prova SQL, Security Controls e QA autenticado de papéis, desktop/mobile, lifecycle e WCAG 2.2 permanecem gates pós-merge. A E21.3 não foi iniciada.
 
 21.3 Evidências e avaliação de custo-benefício dos workloads OpenAI
 
@@ -3092,8 +3100,6 @@ Repositório — Ajustados
 - Nenhuma alteração de banco, schema, infraestrutura ou arquitetura.
 
 99. Changelog
-v1.5.181 — 23/08/2026 — Registrada a implementação repo-only da E21.2.5 no PR #807: catálogo global administrável, elegibilidade transacional separada do lifecycle, remoção da allowlist estática operacional, paginação completa e UX compacta; merge, apply e gates hospedados permanecem pendentes, sem iniciar a E21.3.
-
 v1.5.171 — 20/08/2026 — Registrada a implementação repo-only tecnicamente aprovada da E21.2.4: gestão administrativa por ambiente/workload, lifecycle explícito, reautorização server-side, prova pelos quatro transportes existentes e falha fechada; apply, validações hospedadas, smoke real, ativação e cutover permanecem pós-merge, sem iniciar a E21.3.
 
 v1.5.170 — 20/08/2026 — Registrada a implementação repo-only tecnicamente aprovada da E21.2.3: fonte operacional por ambiente/workload, bootstrap, lifecycle transacional, resolver assíncrono fail-closed, quatro consumers, proveniência, validação de snapshots e provas SQL; apply, Security Controls, snippet real e cutover permanecem pós-merge, e a E21.2.4 fica autorizada a iniciar.

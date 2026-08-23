@@ -14,6 +14,7 @@ const detail = readFileSync(
   new URL("./_components/OpenAiWorkloadDetail.tsx", import.meta.url),
   "utf8",
 );
+const actions = readFileSync(new URL("./actions.ts", import.meta.url), "utf8");
 const ui = `${page}\n${manager}\n${catalog}\n${detail}`;
 
 assert.match(page, /const gate = await requirePlatformAdmin\(\)/);
@@ -100,6 +101,41 @@ assert.match(detail, /name="reasoningEffort"/);
 assert.match(detail, /name="quality"/);
 assert.match(detail, /catalogAvailable/);
 assert.match(detail, /candidateEligible/);
+assert.match(detail, /disabled={!catalogAvailable \|\| !candidateEligible}/);
+
+const saveAction = actionSection(
+  actions,
+  "saveOpenAiConfigurationCandidateAction",
+  "discardOpenAiConfigurationCandidateAction",
+);
+const proofAction = actionSection(
+  actions,
+  "proveAndPromoteOpenAiConfigurationCandidateAction",
+  "activateOpenAiConfigurationRevisionAction",
+);
+const activationAction = actionSection(
+  actions,
+  "activateOpenAiConfigurationRevisionAction",
+  "rollbackOpenAiConfigurationRevisionAction",
+);
+const rollbackAction = actionSection(
+  actions,
+  "rollbackOpenAiConfigurationRevisionAction",
+  "authorizedUnit",
+);
+assert.match(saveAction, /candidateIsEligibleForSave/);
+assert.match(proofAction, /candidateIsStillEligible/);
+assert.equal(
+  proofAction.indexOf("candidateIsStillEligible") <
+    proofAction.indexOf("promoteOpenAiConfigurationCandidate"),
+  true,
+);
+for (const catalogIndependentLifecycleAction of [activationAction, rollbackAction]) {
+  assert.doesNotMatch(
+    catalogIndependentLifecycleAction,
+    /readOpenAiModelCatalog|checkOpenAiModelCatalogConfigurationAvailable|candidateIsEligible/i,
+  );
+}
 
 for (const stateLabel of [
   "Dados inválidos",
@@ -127,3 +163,13 @@ assert.doesNotMatch(ui, /\bRow\b/);
 assert.doesNotMatch(ui, /benchmark|ranking|recomenda(?:ção|cao)/i);
 
 console.log("ok - E21.2.5 compact catalog, sticky workloads, lifecycle and UI boundaries");
+
+function actionSection(source: string, startName: string, endName: string) {
+  const start = source.indexOf(`export async function ${startName}`);
+  const end = source.indexOf(`async function ${endName}`, start + 1) >= 0
+    ? source.indexOf(`async function ${endName}`, start + 1)
+    : source.indexOf(`export async function ${endName}`, start + 1);
+  assert.notEqual(start, -1, `${startName} must exist`);
+  assert.notEqual(end, -1, `${endName} must delimit ${startName}`);
+  return source.slice(start, end);
+}

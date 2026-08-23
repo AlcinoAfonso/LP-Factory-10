@@ -532,6 +532,64 @@ const cases = [
     },
   },
   {
+    name: "ordered pagination fails closed after accumulated pages on read error",
+    run: async () => {
+      const readError = { code: "42501", message: "permission denied" };
+      const result = await readCompleteOrderedPages(async (from) => {
+        if (from === 0) return { data: [1, 2], error: null, status: 200 };
+        return { data: null, error: readError, status: 403 };
+      }, 2);
+      assert.deepEqual(result.data, [1, 2]);
+      assert.equal(result.error, readError);
+    },
+  },
+  {
+    name: "ordered pagination rejects a partial non-array page",
+    run: async () => {
+      const result = await readCompleteOrderedPages(async (from) => {
+        if (from === 0) return { data: [1, 2], error: null, status: 200 };
+        return { data: null, error: null, status: 200 };
+      }, 2);
+      assert.deepEqual(result.data, [1, 2]);
+      assert.equal(result.error instanceof Error, true);
+      assert.equal((result.error as Error).message, "partial_page");
+    },
+  },
+  {
+    name: "catalog read failure is isolated from typed active resolution",
+    run: async () => {
+      const catalog = translateOpenAiModelCatalogRows(
+        { data: null, error: { message: "catalog unavailable" } },
+        { data: null, error: null },
+      );
+      assert.equal(catalog.ok, false);
+      if (catalog.ok) return;
+      assert.equal(catalog.error.code, "READ_FAILED");
+
+      const active = await resolveOpenAiProductWorkload(
+        "niche_resolution",
+        "preview",
+        {
+          operationalConfigurationEnabled: "true",
+          readOperationalConfiguration: async (input) => ({
+            ok: true,
+            value: {
+              environment: input.environment,
+              workload: "niche_resolution",
+              apiKind: "responses_text",
+              model: "gpt-historical-text",
+              reasoningEffort: "max",
+              revision: "7",
+            },
+          }),
+        },
+      );
+      assert.equal(active.ok, true);
+      assert.equal(active.value.model, "gpt-historical-text");
+      assert.equal(active.value.revision, "7");
+    },
+  },
+  {
     name: "E21.2 forward-only delta extends the aggregate without business persistence",
     run: () => {
       const migration = readFileSync(
