@@ -36,7 +36,7 @@ Parecer integral preservado pelo orquestrador. Conclusão: `requer patch estrutu
 | `GE-E21.2.5-04` | Crescimento não estava distribuído entre UI, actions, adapters e banco. Patch estrutural. | Evita acoplamento e acesso Supabase na rota. | extensão adjacente necessária e proporcional | Incorporado com adapter próprio do catálogo, lifecycle separado, SSR guardado, actions finas e componentes distintos, movendo sem duplicar detalhe existente. | Plano §3.1. | `modelCatalogAdapter*`, `catalogActions.ts`, `OpenAiModelCatalogManager.tsx`, `OpenAiWorkloadDetail.tsx`; provider não consulta catálogo. |
 | `GE-E21.2.5-05` | Metadados de recorte não possuíam matriz completa. Patch estrutural. | Torna nomes e recortes determinísticos sem persistência paralela. | extensão adjacente necessária e proporcional | Incorporado como matriz única code-owned na API pública do registry. | Plano §1.5. | E10.5.6.5, E10.7.3, E19.4 e E20.6.5 mapeados; LP agrupada apenas visualmente. |
 | `GE-E21.2.5-06` | Rollout não estava descrito como sequência backward-compatible. Patch estrutural. | Evita dependência runtime de objeto ainda não aplicado. | extensão adjacente necessária e proporcional | Incorporado: antes do apply, catálogo e novas candidatas falham fechados sem atingir execução ativa; depois do apply, snippet e Security Controls antecedem gestão/QA. | Plano §3.1. | Resolver de execução não consulta os novos objetos; documentação não antecipa apply. |
-| `GE-E21.2.5-07` | Faltavam artefatos canônicos finais. Patch estrutural. | Evita drift entre implementação e fontes prescritivas. | extensão adjacente necessária e proporcional | Incorporado como migration, teste SQL, snippet e ABCs obrigatórios de Schema, Base Técnica e Roadmap. | Plano §3.1. | Migrations já aplicadas permanecem imutáveis; estado de apply só muda após evidência hospedada. |
+| `GE-E21.2.5-07` | Faltavam artefatos canônicos finais. Patch estrutural. | Evita drift entre implementação e fontes prescritivas. | extensão adjacente necessária e proporcional | Incorporado como migration, teste SQL, snippet e atualizações canônicas obrigatórias de Schema, Base Técnica e Roadmap. | Plano §3.1. | Migrations já aplicadas permanecem imutáveis; estado de apply só muda após evidência hospedada. |
 
 ## 4. Parecer de updates
 
@@ -60,13 +60,22 @@ Parecer integral preservado pelo orquestrador. Veredito: `updates aplicáveis co
 |---|---|---|---|---|---|---|
 | `AUTO-N/A` | Nenhuma fase contém `Automação: sim`. | N/A | Não há agente, job, workflow, cron ou rotina recorrente nova. | Gestor de Automações não acionado conforme regra condicional. | Plano v1 e v2. | Ocorrência literal `Automação: não`; avaliação formal: `N/A — nenhuma fase com Automação: sim`. |
 
-## 6. Passagem 1 e revisão delta
+## 6. Passagens do Analista e revisões delta
 
 Na Passagem 1, o Analista recebeu v1, v2, plano conceitual `N/A`, decisões e fontes do caso. A conclusão foi `aprovado com correções obrigatórias` por uma lacuna objetiva de completude nas leituras administrativas.
 
 | ID | Correção obrigatória | Classe | Tratamento na v2 | Evidência do gate |
 |---|---|---|---|---|
 | `P1-E21.2.5-01` | Exigir paginação completa e ordenada para catálogo, revisões e ativações; tratar `416/PGRST103`, falhar fechado para resposta parcial e testar acima de uma página sem afetar resolução ativa/ativação/rollback. | extensão adjacente necessária e proporcional | Aplicado no commit `5cc73c6291bcfaf16e09cdbd822b61387ad8f4ba`. | Revisão delta do mesmo Analista: `aprovado para merge do plano-base v2`; autorizada `auditoria_consolidacao`. |
+
+Na Passagem 2, o mesmo Analista confirmou a cobertura nominal integral e exigiu quatro correções objetivas, sem nova rodada especializada ou decisão humana:
+
+| ID | Correção obrigatória da Passagem 2 | Classe | Tratamento neste delta |
+|---|---|---|---|
+| `P2-E21.2.5-01` | Incluir prova entre as operações que consultam elegibilidade e revalidar fail-closed antes da chamada externa, sem lock durante o transporte. | preservação | Plano §§1.4 e 2.2 corrigido; promoção mantém revalidação transacional própria. |
+| `P2-E21.2.5-02` | Identificar ambiente e objetos novos na evidência do Security Controls. | extensão adjacente necessária e proporcional | Plano §2.4 corrigido. |
+| `P2-E21.2.5-03` | Justificar explicitamente cada critério WCAG registrado como N/A. | extensão adjacente necessária e proporcional | Plano §2.4 corrigido. |
+| `P2-E21.2.5-04` | Reservar “ABC” ao fluxo documental aplicável e usar “atualizações canônicas” na linha estrutural. | preservação | Linha `GE-E21.2.5-07` corrigida sem alterar o gate próprio do roadmap. |
 
 ## 7. Travas preservadas
 
@@ -80,4 +89,4 @@ Na Passagem 1, o Analista recebeu v1, v2, plano conceitual `N/A`, decisões e fo
 
 ## 8. Próximo gate
 
-Submeter a v2 vigente, os pareceres integrais e esta matriz ao mesmo Analista em `auditoria_consolidacao`. Avançar ao ABC do roadmap somente com conclusão `aprovado para merge do plano-base v2`.
+Submeter somente este delta objetivo ao mesmo Analista em `revisao_delta`, preservando as duas passagens. Avançar ao ABC do roadmap somente com conclusão `aprovado para merge do plano-base v2`.
