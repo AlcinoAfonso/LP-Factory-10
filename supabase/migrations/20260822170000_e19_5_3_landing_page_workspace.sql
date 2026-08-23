@@ -23,6 +23,8 @@ as $$
   );
 $$;
 
+alter function public.e19_5_actor_can_manage(uuid, uuid) owner to postgres;
+
 revoke all on function public.e19_5_actor_can_manage(uuid, uuid)
   from public, anon, authenticated, service_role;
 
@@ -48,6 +50,9 @@ as $$
         or not ((entry.value ->> 'scope') = any(p_allowed_scopes))
     );
 $$;
+
+alter function public.e19_5_configuration_values_have_scopes(jsonb, text[])
+  owner to postgres;
 
 revoke all on function public.e19_5_configuration_values_have_scopes(jsonb, text[])
   from public, anon, authenticated, service_role;
@@ -410,7 +415,8 @@ begin
   select revision, catalog_version
   into v_shared_revision, v_shared_catalog
   from public.account_landing_page_shared_configurations
-  where account_id = p_account_id;
+  where account_id = p_account_id
+  for update;
   if v_shared_revision is distinct from p_expected_shared_revision
      or (v_shared_revision is not null and v_shared_catalog is distinct from 5) then
     raise exception using errcode = '40001', message = 'shared_revision_conflict';
@@ -420,7 +426,8 @@ begin
   into v_landing_revision, v_landing_catalog
   from public.account_landing_page_configurations
   where account_id = p_account_id
-    and landing_page_id = p_landing_page_id;
+    and landing_page_id = p_landing_page_id
+  for update;
   if v_landing_revision is distinct from p_expected_landing_page_revision
      or v_landing_catalog is distinct from 5 then
     raise exception using errcode = '40001', message = 'landing_page_revision_conflict';

@@ -1,3 +1,5 @@
+begin;
+
 set local search_path = public, pg_catalog;
 
 insert into auth.users (id, aud, role, email, created_at, updated_at)
