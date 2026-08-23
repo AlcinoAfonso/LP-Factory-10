@@ -2098,7 +2098,7 @@ Repositório — Ajustados
 
 19. E19 — LP Builder
 - Objetivo: Consolidar o fluxo Core de landing pages por conta, da identidade mínima em `draft` às futuras etapas de geração, revisão, materialização e publicação, sempre por recortes aprovados.
-- Status: E19.1, E19.2 e E19.3 concluídas. E19.4.3, E19.4.4 e E19.4.5 concluídas; a E19.4 está encerrada e integrada à `main` pelo PR #776. A revisão 3 permanece preservada como baseline dos gaps persuasivos observados. A E19.5.3 possui implementação candidata repo-only validada no PR #804; aceite operacional final permanece pendente dos gates pós-merge e do smoke positivo v5.
+- Status: E19.1, E19.2 e E19.3 concluídas. E19.4.3, E19.4.4 e E19.4.5 concluídas; a E19.4 está encerrada e integrada à `main` pelo PR #776. A revisão 3 permanece preservada como baseline dos gaps persuasivos observados. A E19.5.3 está concluída e operacional em Preview e Production após os gates pós-merge e os smokes autenticados com a E20.2 v5.
 
 19.1 Criação produtiva mínima de LP por conta
 
@@ -2450,7 +2450,7 @@ Repositório — Ajustados
 
 19.5.1 Objetivo e status
 - Objetivo: entregar o ciclo operacional reduzido para múltiplas identidades de LP por conta, com configuração contextual lazy, revisões integrais append-only, histórico, preview e aprovação humana explícita.
-- Status: Plano-base v2 aprovado e implementação candidata repo-only materializada; aceite operacional final não concluído.
+- Status: Concluída em 23/08/2026 após merge, apply canônico, verificações pós-apply e rollout controlado aprovado em Preview e Production.
 
 19.5.2 Registros do recorte
 - Banco:
@@ -2509,7 +2509,7 @@ Repositório — Ajustados
   - Contrato visual: `docs/design-system.md` — Workspace operacional do Account Dashboard.
 
 19.5.3 Workspace operacional reduzido, configuração e aprovação da LP
-- Status: Implementação candidata repo-only validada localmente; merge, apply, provas hospedadas e aceite operacional final pendentes.
+- Status: Concluída em 23/08/2026, com implementação integrada à `main`, banco validado e operação autenticada aprovada em Preview e Production.
 - Conteúdo:
   - o Account Dashboard ganha workspace master-detail paginado, uma entrada por identidade de LP, cinco estados de UX derivados, criação explícita para owner/admin e leitura integral sem mutações para viewer;
   - a configuração reutiliza declarativamente o catálogo E20.2 v5 e separa fisicamente scopes compartilhados `account/business` dos contextuais `offer/campaign/landing_page`, sem lista paralela, placeholder, precriação, backfill, `is_initialized` ou completude persistida;
@@ -2520,9 +2520,9 @@ Repositório — Ajustados
   - novas revisões usam snapshot v2/contexto v4 com proveniência das residências; readers aceitam somente os pares históricos v1/contexto v3 e atuais v2/contexto v4, sem cruzamento ou reinterpretação retroativa;
   - histórico e preview são carregados sob demanda por LP; o preview pode abrir a revisão mais recente ou uma revisão histórica e a aprovação idempotente move somente o ponteiro tenant-safe da revisão aprovada;
   - os testes determinísticos cobrem v5, `primary_conversion_goal`, ausência válida de `business_offerings_summary`, evolução histórica × operacional, mismatch E20.6, fail-closed, viewer read-only, paginação, histórico e aprovação; `npm ci`, `npm run check` e `git diff --check` foram aprovados, com 24 warnings de lint preexistentes e nenhum erro;
-  - a migration permanece repo-only e não foi aplicada; `E19_5_WORKSPACE_ENABLED` permanece default-off, sem habilitação registrada em Preview ou Production;
-  - a avaliação E20.6 da v5 e a decisão humana de suficiência estão concluídas para o taxon real servido `Corretor Imóveis` (`corretor-imoveis`), com `reviewed_input_catalog_version = 5` e sem gaps candidatos; o aceite operacional final da E19.5 depende agora de merge humano, apply canônico, prova SQL e Security Controls, habilitação e redeploy controlados em Preview e smoke hospedado positivo, e este recorte não grava nem promove o marcador nem altera a E20.6;
-  - Production permanece desligada até decisão humana sobre as evidências de Preview e exige redeploy e smoke próprios; archive/restore, publicação, editor manual, melhoria parcial por IA, hard delete, tracking, mensuração, testes A/B, catálogo avançado de ofertas e mecanismo global ou em massa permanecem fora do recorte.
+  - a migration foi aplicada pelo fluxo canônico; o verificador read-only e os Security Controls passaram após a correção forward-only das grants dos helpers, sem editar a migration aplicada;
+  - a avaliação E20.6 da v5 e a decisão humana de suficiência permanecem concluídas para o taxon real servido `Corretor Imóveis` (`corretor-imoveis`), com `reviewed_input_catalog_version = 5` e sem gaps candidatos; o smoke hospedado confirmou o consumo operacional da v5 sem promover o marcador nem alterar a E20.6;
+  - `E19_5_WORKSPACE_ENABLED` foi habilitado sequencialmente com redeploy e aprovação em Preview e Production; o smoke final confirmou workspace, configuração v5, histórico, preview e a revisão 4 já aprovada, sem gerar revisão adicional; archive/restore, publicação, editor manual, melhoria parcial por IA, hard delete, tracking, mensuração, testes A/B, catálogo avançado de ofertas e mecanismo global ou em massa permanecem fora do recorte.
 
 20. E20 — Preparação e liberação de taxons para geração de landing pages
 
