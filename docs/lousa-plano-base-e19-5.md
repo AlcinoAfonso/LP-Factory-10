@@ -6,7 +6,7 @@
 
 - Recorte: `E19.5 — Workspace operacional e lifecycle de LPs`.
 - Path canônico: `docs/lousa-plano-base-e19-5.md`.
-- Estado: **candidato a plano-base v2 processual, consolidado sobre a v3 humana congelada do PR #801; aguarda as Passagens 1 e 2 do Analista e não autoriza implementação antes do checkpoint `LP-Factory-Stage: plan-v2-approved`**.
+- Estado: **plano-base v2 processual aprovado; implementação candidata E19.5.3 concluída; Analista aprovou para avançar no checkpoint `2db5c166`; merge humano e aceite operacional pós-merge permanecem pendentes**.
 - Decisão de convergência: **alternativa B — reduzir a primeira E19.5**.
 - Estratégia de execução aprovada para B: futura implementação nova a partir da `main`, com reaproveitamento seletivo do PR #797 somente quando contrato, trecho ou caso de regressão continuar aderente.
 - A v3 substitui materialmente a v1 vigente na `main` e o desenho técnico v2 proposto no PR #797.
@@ -613,8 +613,8 @@
 
 - A decisão humana B, os relatórios de evolução histórica × operacional e a nova autoridade universal de conversão permanecem preservados da v3.
 - O processo automatizado foi escolhido pelo humano no PR #801; esta v2 processual consolida os pareceres do mesmo blob sem incorporar #797. O #802 entrou posteriormente pelo merge canônico de `main`, foi relido e alterou apenas o estado factual pré-handoff registrado neste delta.
-- A Passagem 1 independente foi concluída sobre `be2841f`; seus deltas foram aprovados em `7ceedcd` e `94def51`. A matriz foi versionada em `4d14f85`, e a Passagem 2 auditou plano, matriz e pareceres integrais nesse checkpoint. As três correções objetivas dessa auditoria retornam agora ao mesmo Analista em `revisao_delta`, antes do ABC do roadmap.
-- Implementação começa apenas após aprovação da v2, ABC do roadmap, revisão delta do mesmo Analista e checkpoint `LP-Factory-Stage: plan-v2-approved` no único PR draft.
+- A implementação candidata E19.5.3 está concluída, e não há ajuste técnico obrigatório pendente.
+- A próxima ação é o gate final do Estrategista, seguido do merge humano. Após o merge, executar, nesta ordem: apply canônico da migration; snippet e Security Controls; habilitação e redeploy de Preview; smoke hospedado para `Corretor Imóveis`; decisão humana; e, somente depois, rollout separado de Production.
 
 ## 4. Escopo negativo e critérios de parada
 
