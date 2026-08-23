@@ -77,6 +77,8 @@ Na Passagem 2, o mesmo Analista confirmou a cobertura nominal integral e exigiu 
 | `P2-E21.2.5-03` | Justificar explicitamente cada critério WCAG registrado como N/A. | extensão adjacente necessária e proporcional | Plano §2.4 corrigido. |
 | `P2-E21.2.5-04` | Reservar “ABC” ao fluxo documental aplicável e usar “atualizações canônicas” na linha estrutural. | preservação | Linha `GE-E21.2.5-07` corrigida sem alterar o gate próprio do roadmap. |
 
+A revisão delta do commit `1117d27a076bffe2fda59ce104802ff9ceef0aed` concluiu `aprovado para merge do plano-base v2`. O ABC de planejamento reconciliou somente `docs/roadmap.md` para `v1.5.180`; após reemissão literal da OP4 com `criação/edição`, o mesmo Analista concluiu novamente `aprovado para merge do plano-base v2` para o blob `f19808f6c5fadcb083428f292e2ea432b67c9c99`.
+
 ## 7. Travas preservadas
 
 - Não implementar E21.3, benchmark, ranking, recomendação ou ativação automática.
@@ -89,4 +91,4 @@ Na Passagem 2, o mesmo Analista confirmou a cobertura nominal integral e exigiu 
 
 ## 8. Próximo gate
 
-Submeter somente este delta objetivo ao mesmo Analista em `revisao_delta`, preservando as duas passagens. Avançar ao ABC do roadmap somente com conclusão `aprovado para merge do plano-base v2`.
+Criar o checkpoint `LP-Factory-Stage: plan-v2-approved`, abrir ou atualizar o único PR draft contra `main` e executar a subseção `E21.2.5 — Catálogo administrável e UX compacta dos workloads OpenAI` na mesma branch e no mesmo PR.

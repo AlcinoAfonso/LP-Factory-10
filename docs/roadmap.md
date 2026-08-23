@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 22/08/2026
-• Versão: v1.5.179
+• Data: 23/08/2026
+• Versão: v1.5.180
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2781,7 +2781,7 @@ Repositório — Ajustados
 
 21. E21 — Gestão e governança dos workloads OpenAI
 - Objetivo: gerir e governar os workloads OpenAI por recortes aprovados, com configuração explícita, observabilidade segura, leitura administrativa e configuração operacional dinâmica por ambiente, sem otimização automatizada.
-- Status: a fundação E21.1 permanece preservada e a E21.2 está concluída com cutover aprovado em Preview e Production; a E21.3 permanece prevista e não iniciada.
+- Status: a fundação E21.1 permanece preservada; a entrega original da E21.2 está concluída com cutover aprovado em Preview e Production, o recorte corretivo E21.2.5 está definido e ainda não implementado, e a E21.3 permanece prevista e não iniciada.
 
 21.1 Fundação, normalização e leitura dos workloads OpenAI
 
@@ -2853,7 +2853,7 @@ Repositório — Ajustados
 
 21.2.1 Objetivo e status
 - Objetivo: permitir configuração ativa por ambiente e workload, com candidata, validação, ativação humana, rollback e mudança ordinária sem redeploy.
-- Status: Concluída em 21/08/2026; implementação incorporada pelos PRs #793 e #796, migration aplicada, gates hospedados aprovados e cutover operacional concluído em Preview e Production.
+- Status: a entrega original foi concluída em 21/08/2026, com migration aplicada, gates hospedados aprovados e cutover operacional em Preview e Production; o recorte corretivo E21.2.5 está definido e ainda não implementado.
 - O recorte preserva a E21.1 como boundary transversal, mantém Development determinístico/local e deixa a E21.3 prevista, sem início de execução.
 
 21.2.2 Registros do recorte
@@ -2927,6 +2927,17 @@ Repositório — Ajustados
 - O smoke mínimo de Production confirmou as quatro baselines ativas e uma execução comercial real com origem `supabase_operational` e revisão 1, criando somente draft não publicado; a janela autenticada permaneceu sem erro ou warning no runtime.
 - O estado operacional mantém os cinco workloads de Preview e Production sem candidata ou revisão pendente; o workload `taxon_input_catalog_sufficiency_evaluation` permanece na revisão bootstrap `1` em ambos os ambientes, e os eventos append-only dos lifecycles anteriores permanecem preservados.
 - `OPENAI_API_KEY` permaneceu server-side e foi reutilizada sem cópia, exposição ou versionamento. A E21.3 não foi iniciada.
+
+21.2.5 Catálogo administrável e UX compacta dos workloads OpenAI
+- Status: Definida; implementação não iniciada.
+- Automação: não.
+- Conteúdo:
+  - separar o catálogo global de combinações elegíveis da configuração ativa por `ambiente + workload`, permitindo adicionar ou indisponibilizar modelos com parâmetros já tipados sem commit ou redeploy;
+  - usar o catálogo Supabase como autoridade somente para criação/edição, prova e promoção de novas candidatas em Preview e Production, preservando Development determinístico, revisões ativas, pendentes já validadas, histórico, ativação e rollback;
+  - manter identidades, modalidades, apresentação, vocabulário tipado e baselines de Development no boundary `lib/openai-workloads/`, sem allowlist paralela de modelos no caminho operacional;
+  - manter o catálogo global por combinação `modelo + reasoning effort` ou `modelo + quality`, com novos modelos inicialmente indisponíveis, sem descoberta, sincronização ou ativação automática;
+  - reorganizar `/admin/workloads-openai` em catálogo compacto superior, lista compacta por ambiente e detalhe expansível, com nomes e recortes code-owned e agrupamento da Landing Page somente visual;
+  - preservar o resolver ativo independente dos novos objetos, aplicar rollout backward-compatible e exigir validações de banco, segurança, completude, lifecycle, papéis, desktop/mobile e acessibilidade proporcional antes de retomar a E21.3.
 
 21.3 Evidências e avaliação de custo-benefício dos workloads OpenAI
 

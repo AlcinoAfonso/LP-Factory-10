@@ -4,7 +4,7 @@
 
 ### 1.1. Estado
 
-- Status: plano-base v2 consolidado a partir da v1 incorporada pelo PR #806; aguardando gate do Analista.
+- Status: plano-base v2 aprovado pelo Analista após as Passagens 1 e 2, revisões delta e reconciliação do roadmap.
 - Caso macro: `E21 — Gestão e governança dos workloads OpenAI`.
 - Recorte: `E21.2.5 — Catálogo administrável e UX compacta dos workloads OpenAI`.
 - Plano conceitual: N/A.
@@ -148,7 +148,7 @@
 - Incluir como artefatos obrigatórios: nova migration `supabase/migrations/<timestamp>_e21_2_5_openai_model_catalog.sql`; `supabase/tests/e21_2_5_openai_model_catalog.test.sql`; `supabase/snippets/e21_2_5_openai_model_catalog_verify.sql`; atualização de `docs/schema.md` com objetos, constraints, RLS, policies, grants, RPCs e estado de apply; atualização de `docs/base-tecnica.md` §3.16 para separar registry code-owned, catálogo operacional e revisão ativa; atualização de `docs/roadmap.md` com E21.2.5, artefatos e preservação da E21.3 como não iniciada. Migrations E21.2 já aplicadas permanecem imutáveis.
 - Validar banco, código, UX hospedada e regressões da E21.2 antes de qualquer retomada da E21.3.
 - Ampliação de testes RLS com tooling beta, tracing cross-stack, AI Gateway e apoio opcional da Vercel Toolbar permanecem oportunidades estratégicas condicionais e não autorizam `pgtap`, tracing, upgrade de dependência, mudança de transporte, Toolbar obrigatória ou nova infraestrutura neste recorte; Vercel Flags permanece não aplicável.
-- Próxima ação: submeter esta v2 ao gate do Analista; nenhuma implementação inicia antes da aprovação formal e da reconciliação do roadmap.
+- Próxima ação: criar o checkpoint `LP-Factory-Stage: plan-v2-approved` e executar a subseção `E21.2.5 — Catálogo administrável e UX compacta dos workloads OpenAI` na mesma branch e no mesmo PR draft.
 
 ## 4. Escopo negativo e critérios de parada
 
