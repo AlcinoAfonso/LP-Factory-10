@@ -8,7 +8,7 @@ import {
   openAiReasoningEfforts,
   type OpenAiModelCatalogModel,
   type OpenAiModelCatalogParameter,
-} from "@/openai-workloads";
+} from "@/openai-workloads/contracts";
 import {
   addOpenAiModelCatalogModelAction,
   setOpenAiModelCatalogModelAvailabilityAction,

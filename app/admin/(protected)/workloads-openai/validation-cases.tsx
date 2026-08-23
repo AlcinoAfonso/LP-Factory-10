@@ -43,6 +43,8 @@ assert.match(catalog, /openModelKey/);
 assert.match(catalog, /addOpenAiModelCatalogModelAction/);
 assert.match(catalog, /setOpenAiModelCatalogModelAvailabilityAction/);
 assert.match(catalog, /setOpenAiModelCatalogParameterAvailabilityAction/);
+assert.match(catalog, /from "@\/openai-workloads\/contracts"/);
+assert.doesNotMatch(catalog, /from "@\/openai-workloads"/);
 for (const field of [
   "apiKind",
   "model",
