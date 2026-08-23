@@ -26,6 +26,7 @@ import {
 } from "../../../../lib/lp-builder";
 import { validateStarterColorPalette } from "../../../../lib/lp-builder/onboardingConfiguration";
 import { saveOnboardingConfigurationAction } from "../onboarding-configuration-actions";
+import { saveLandingPageConfigurationAction } from "../landing-pages/[landingPageId]/configuration-actions";
 import { initialOnboardingConfigurationActionState } from "./onboarding-configuration-action-contract";
 import {
   journeyConditionMatches,
@@ -176,15 +177,27 @@ export function OnboardingConfigurationJourney(props: Readonly<{
   accountSubdomain: string;
   configuration: AccountLandingPageOnboardingConfiguration;
   reviewMode?: boolean;
+  workspaceMode?: boolean;
+  sharedRevision?: number | null;
+  landingPageRevision?: number | null;
 }>) {
   const router = useRouter();
   const [stepIndex, setStepIndex] = useState(0);
-  const [revision, setRevision] = useState(props.configuration.revision);
+  const [revision, setRevision] = useState<number | null>(
+    props.workspaceMode
+      ? props.landingPageRevision ?? null
+      : props.configuration.revision,
+  );
+  const [sharedRevision, setSharedRevision] = useState<number | null>(
+    props.sharedRevision ?? null,
+  );
   const [values, setValues] = useState<AccountLandingPageOnboardingStoredValues>(
     props.configuration.storedValues,
   );
   const [actionState, formAction, pending] = useActionState(
-    saveOnboardingConfigurationAction,
+    props.workspaceMode
+      ? saveLandingPageConfigurationAction
+      : saveOnboardingConfigurationAction,
     initialOnboardingConfigurationActionState,
   );
   const lastHandledRevision = useRef<number | null>(null);
@@ -244,8 +257,13 @@ export function OnboardingConfigurationJourney(props: Readonly<{
     }
     lastHandledRevision.current = actionState.revision;
     setRevision(actionState.revision);
+    if (actionState.sharedRevision !== undefined) {
+      setSharedRevision(actionState.sharedRevision);
+    }
     if (actionState.intent === "exit") {
-      router.push("/a/home");
+      router.push(
+        props.workspaceMode ? `/a/${props.accountSubdomain}` : "/a/home",
+      );
       return;
     }
     if (actionState.intent === "next") {
@@ -255,7 +273,7 @@ export function OnboardingConfigurationJourney(props: Readonly<{
       setStepIndex((current) => Math.max(0, current - 1));
     }
     router.refresh();
-  }, [actionState, router]);
+  }, [actionState, props.accountSubdomain, props.workspaceMode, router]);
 
   useEffect(() => {
     const firstFieldKey = Object.keys(actionState.fieldErrors ?? {})[0];
@@ -298,10 +316,12 @@ export function OnboardingConfigurationJourney(props: Readonly<{
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="text-sm font-semibold uppercase tracking-[0.16em] text-brand-700">
-                Primeiros passos
+                {props.workspaceMode ? "Configurações da página" : "Primeiros passos"}
               </p>
               <h1 className="mt-2 text-2xl font-bold tracking-tight text-ink-900 sm:text-3xl">
-                Vamos preparar sua primeira landing page
+                {props.workspaceMode
+                  ? "Revise os dados desta landing page"
+                  : "Vamos preparar sua primeira landing page"}
               </h1>
             </div>
             <span className="rounded-full bg-brand-50 px-3 py-1 text-sm font-medium text-brand-800">
@@ -339,7 +359,13 @@ export function OnboardingConfigurationJourney(props: Readonly<{
 
           <form action={formAction} className="mt-8 space-y-6" noValidate>
             <input type="hidden" name="account_subdomain" value={props.accountSubdomain} />
-            <input type="hidden" name="expected_revision" value={revision} />
+            <input type="hidden" name="expected_revision" value={revision ?? ""} />
+            {props.workspaceMode ? (
+              <>
+                <input type="hidden" name="landing_page_id" value={props.configuration.landingPageId ?? ""} />
+                <input type="hidden" name="expected_shared_revision" value={sharedRevision ?? ""} />
+              </>
+            ) : null}
             <input type="hidden" name="values_json" value={JSON.stringify(submittedValues)} />
             <input type="hidden" name="intent" value="save" />
 
@@ -374,6 +400,19 @@ export function OnboardingConfigurationJourney(props: Readonly<{
               >
                 {actionState.formError}
               </div>
+            ) : null}
+            {props.workspaceMode ? (
+              <label className="flex items-start gap-3 rounded-lg border border-surface-border bg-graytech-50 p-4 text-sm text-ink-900">
+                <input
+                  type="checkbox"
+                  name="same_commercial_work_confirmed"
+                  value="1"
+                  className="mt-1 h-4 w-4"
+                />
+                <span>
+                  Se eu alterar a oferta principal, confirmo que continua sendo o mesmo trabalho comercial. Caso contrário, criarei uma nova landing page.
+                </span>
+              </label>
             ) : null}
             {actionState.status === "success" && actionState.intent === "save" ? (
               <p className="text-sm font-medium text-emerald-700" role="status">
@@ -444,7 +483,9 @@ export function OnboardingConfigurationJourney(props: Readonly<{
           <section className="rounded-2xl border border-brand-100 bg-brand-50 p-5">
             <h2 className="font-semibold text-brand-900">Seu progresso fica salvo</h2>
             <p className="mt-2 text-sm leading-6 text-brand-800">
-              Você pode sair e continuar depois. Uma página nova só será criada quando toda a revisão estiver concluída.
+              {props.workspaceMode
+                ? "Salvar configuração não gera conteúdo nem altera revisões históricas. Uma nova revisão exige uma ação explícita."
+                : "Você pode sair e continuar depois. Uma página nova só será criada quando toda a revisão estiver concluída."}
             </p>
           </section>
         </aside>

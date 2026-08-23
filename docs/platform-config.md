@@ -2,8 +2,8 @@
 
 0.1 Cabeçalho
 • Documento: LP Factory 10 — Platform Config
-• Versão: v0.1.25
-• Data: 21/08/2026
+• Versão: v0.1.27
+• Data: 22/08/2026
 
 0.2 Contrato do documento
 • O QUE É: snapshot operacional e fonte única das configurações de plataformas externas do LP Factory 10, refletindo o estado conhecido/cadastrado nas plataformas conforme indicado.
@@ -145,6 +145,14 @@
 • Estado atual: `true` em Preview e Production; ausência ou valor diferente do literal `true` desabilita leitura, mutação e renderização dependentes de `reviewed_input_catalog_version`.
 • Estado operacional: migration aplicada pelo workflow canônico, snippet SQL read-only aprovado, redeploy de Production concluído e Admin autenticado gate-on validado em 15/08/2026.
 • Regra operacional: `E20_5_SELECTED_RESEARCH_ENABLED = true` permanece pré-requisito independente; mudanças futuras devem ser validadas primeiro em Preview autenticado antes de Production.
+
+• `E19_5_WORKSPACE_ENABLED`
+• Finalidade: gate server-only do workspace operacional de landing pages e de todo acesso aos novos objetos de configuração e aprovação da E19.5.
+• Escopo: Preview e Production do projeto Core, com configuração independente por ambiente.
+• Habilitação: somente o literal `true` ativa o workspace; variável ausente, vazia ou com qualquer outro valor preserva a experiência vigente e impede leitura ou mutação dos novos objetos.
+• Estado atual: configuração futura e pendente; não há habilitação operacional registrada em Preview ou Production.
+• Progressão operacional aprovada: após merge e apply da migration, validar o banco e habilitar Preview com redeploy; Production permanece desligada até decisão humana sobre as evidências de Preview e exige redeploy e smoke próprios.
+• Gate de evidência: a avaliação E20.6 da v5 e a decisão humana de suficiência estão concluídas para o taxon servido `Corretor Imóveis` (`corretor-imoveis`), com `reviewed_input_catalog_version = 5` e sem gaps candidatos. O aceite operacional final da E19.5 ainda depende do rollout pós-merge, da prova hospedada positiva em Preview e da progressão controlada prevista acima; este rollout não promove o marcador nem altera a E20.6.
 
 • `INVITE_STATE_SECRET`
 • Finalidade: assinar o estado opaco transportado pelo convite nativo do Supabase Auth.

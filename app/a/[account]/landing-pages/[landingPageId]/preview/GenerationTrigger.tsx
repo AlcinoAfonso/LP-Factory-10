@@ -19,7 +19,7 @@ export function GenerationTrigger({
   );
 
   return (
-    <form action={action} className="mt-6 space-y-4">
+    <form action={action} className="space-y-4">
       <input type="hidden" name="account_slug" value={accountSlug} />
       <input type="hidden" name="landing_page_id" value={landingPageId} />
       <button

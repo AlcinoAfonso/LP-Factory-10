@@ -16,10 +16,23 @@ export async function appendLandingPageRevision(input: Readonly<{
   content: LandingPageRevisionContent;
   snapshot: LandingPageRevisionSnapshot;
   createdBy: string;
+  expectedSharedRevision?: number | null;
+  expectedLandingPageRevision?: number;
 }>): Promise<AppendLandingPageRevisionResult> {
   try {
+    const operational = input.snapshot.snapshotVersion === 2;
+    if (
+      operational &&
+      (!isPositiveInteger(input.expectedLandingPageRevision) ||
+        (input.expectedSharedRevision !== null &&
+          !isPositiveInteger(input.expectedSharedRevision)))
+    ) {
+      return { ok: false, error: "APPEND_FAILED" };
+    }
     const { data, error } = await createServiceClient().rpc(
-      "append_account_landing_page_materialization_v1",
+      operational
+        ? "append_account_landing_page_materialization_v2"
+        : "append_account_landing_page_materialization_v1",
       {
         p_account_id: input.accountId,
         p_landing_page_id: input.landingPageId,
@@ -27,6 +40,12 @@ export async function appendLandingPageRevision(input: Readonly<{
         p_content_json: input.content,
         p_generation_context_snapshot_json: input.snapshot,
         p_created_by: input.createdBy,
+        ...(operational
+          ? {
+              p_expected_shared_revision: input.expectedSharedRevision,
+              p_expected_landing_page_revision: input.expectedLandingPageRevision,
+            }
+          : {}),
       },
     );
     if (error) return { ok: false, error: "APPEND_FAILED" };
@@ -74,6 +93,34 @@ export async function readCurrentLandingPageRevision(input: Readonly<{
       .eq("account_id", input.accountId)
       .eq("landing_page_id", input.landingPageId)
       .order("revision_number", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (error) return { ok: false, error: "READ_FAILED" };
+    if (data === null) return { ok: true, value: null };
+    const mapped = mapRevision(data);
+    return mapped
+      ? { ok: true, value: mapped }
+      : { ok: false, error: "READ_FAILED" };
+  } catch {
+    return { ok: false, error: "READ_FAILED" };
+  }
+}
+
+export async function readLandingPageRevision(input: Readonly<{
+  accountId: string;
+  landingPageId: string;
+  revisionId: string;
+}>): Promise<
+  | Readonly<{ ok: true; value: CurrentLandingPageRevision | null }>
+  | Readonly<{ ok: false; error: "READ_FAILED" }>
+> {
+  try {
+    const { data, error } = await createServiceClient()
+      .from("account_landing_page_materializations")
+      .select("id,account_id,landing_page_id,revision_number,attempt_id,content_json,generation_context_snapshot_json,created_by,created_at")
+      .eq("id", input.revisionId)
+      .eq("account_id", input.accountId)
+      .eq("landing_page_id", input.landingPageId)
       .limit(1)
       .maybeSingle();
     if (error) return { ok: false, error: "READ_FAILED" };

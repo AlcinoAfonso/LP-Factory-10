@@ -1,4 +1,4 @@
-22/08/2026 — Plano-base v3 — E19.5 — Workspace operacional e lifecycle de LPs
+22/08/2026 — Plano-base v3 consolidado — v2 processual — E19.5 — Workspace operacional e lifecycle de LPs
 
 ## 1. Estado e decisões fixas
 
@@ -6,11 +6,15 @@
 
 - Recorte: `E19.5 — Workspace operacional e lifecycle de LPs`.
 - Path canônico: `docs/lousa-plano-base-e19-5.md`.
-- Estado: **plano-base v3 reduzido, com decisões humanas de produto e fechamentos técnicos consolidados em 22/08/2026; pronto para o item 4 de `docs/prompt-estrategista.md`; não autoriza merge nem execução automaticamente**.
+- Estado: **plano-base v2 processual aprovado; implementação candidata E19.5.3 concluída; Analista aprovou para avançar no checkpoint `2db5c166`; merge humano e aceite operacional pós-merge permanecem pendentes**.
 - Decisão de convergência: **alternativa B — reduzir a primeira E19.5**.
 - Estratégia de execução aprovada para B: futura implementação nova a partir da `main`, com reaproveitamento seletivo do PR #797 somente quando contrato, trecho ou caso de regressão continuar aderente.
 - A v3 substitui materialmente a v1 vigente na `main` e o desenho técnico v2 proposto no PR #797.
 - O PR #797 permanece congelado como evidência, protótipo técnico, catálogo de armadilhas e fonte seletiva até a incorporação desta v3; não fazer cherry-pick de commits completos nem copiar sua estrutura física por inércia.
+- A v1 processual é o plano-base v3 do PR #801, head `4e5b1d5e045a04aef76ea8fce0c1bc003ffbc138`, blob `9ad733987ecd39dc9c049d74daf6d71a655c9dbb`, incorporado à `main` por `f857f95df11960279a32ba34e56b4a63c918dfff`; esta consolidação é sua v2 processual e não renumera as decisões humanas da v3.
+- O processo automatizado foi escolhido pelo humano para o PR #801; a orquestração usa uma única branch e um único PR contra `main`, sem merge intermediário, branch empilhada ou reaproveitamento silencioso do #797.
+- No HEAD incorporado, a E20.2 v5 já existe como contrato repo-only versionado; a E19.5 reutiliza sua API pública e não recria seus fields.
+- O PR #802 foi mergeado em `main` por `3e5c5657` e integrado de forma não destrutiva nesta branch por `a414ee72`; seu delta foi relido. A E19.2.7 reutiliza `loadTaxonPreparationForReviewedVersion` somente no pré-handoff. Depois do handoff, a E19.5 permanece a única autoridade operacional e reutiliza o mesmo domínio de preparação pela API de versão explícita, sem copiar, cherry-pickar ou duplicar resolver.
 - Plano conceitual: N/A.
 - Processo: `docs/prompt-estrategista.md`.
 - Predecessores materiais: E19.1, E19.2, E19.3 e E19.4 implementadas no fluxo oficial da conta.
@@ -64,7 +68,7 @@
 - Retry do handoff é idempotente e não duplica residência nem reinterpreta E19.2.
 - Após o handoff válido, a E19.2 permanece bootstrap/histórico e não vira fallback operacional concorrente.
 - O `catalog_version` histórico persistido pela E19.2 ou por uma residência operacional registra proveniência da configuração em determinado momento; **não fixa permanentemente a experiência operacional do cliente naquela versão**.
-- A implementação atual da E19.2 ainda possui `ACCOUNT_LANDING_PAGE_ONBOARDING_CATALOG_VERSION = 2`; isso é limitação técnica existente e não deve ser propagado como regra da E19.5.
+- A E19.2.7 incorporada removeu `ACCOUNT_LANDING_PAGE_ONBOARDING_CATALOG_VERSION = 2` e a autoridade do hidden client-side: no pré-handoff, resolve server-side a versão E20.2 explicitamente revisada pela E20.6, preserva o histórico e bloqueia atualizações depois do vínculo. A E19.5 reutiliza os contratos públicos de `taxon-preparation` e `loadTaxonPreparationForVersion` com sua versão requerida explícita, sem resolver versão por client ou criar autoridade paralela.
 - A E19.5 resolve a versão operacional explicitamente autorizada pelo E20.6, revalida valores existentes contra ela e apresenta novos fields aplicáveis a clientes existentes.
 - Field novo obrigatório pode tornar a configuração operacional incompleta até preenchimento; isso não invalida nem reescreve configurações, snapshots ou revisões históricas anteriores.
 - Não fazer backfill artificial de novos fields nem reescrever `catalog_version` histórico apenas porque nova versão foi autorizada; a próxima validação/save operacional pode atualizar a proveniência da residência para a versão então utilizada.
@@ -95,8 +99,9 @@
 
 ### 1.7. E20.2 v5 — `primary_conversion_goal` e autoridade operacional
 
-- A decisão anterior de `landing_page_objective` como string livre está **superada** e não integra mais a primeira E19.5.
-- A evolução E20.2 v5 deve introduzir `primary_conversion_goal`:
+- No HEAD incorporado, a E20.2 v5 já existe como contrato repo-only versionado, com regressões executáveis v1–v5; a E19.5 deve reutilizá-la exclusivamente pela API pública do input catalog e não criar definição, registry ou validator paralelo.
+- A decisão anterior de `landing_page_objective` como string livre está **superada** e permanece somente como hipótese histórica rejeitada; como esse field não existe no código vigente, a E19.5 não executa remoção artificial em runtime.
+- O contrato vigente de `primary_conversion_goal` é:
   - camada `universal`;
   - scope `landing_page`;
   - origem humana da LP;
@@ -110,9 +115,11 @@
   - `primary_service_or_offer` — o que está sendo ofertado;
   - `primary_conversion_channel` — por qual meio a conversão ocorre.
 - `primary_conversion_goal` não é autoridade factual sobre preço, promessa, prova, credencial ou resultado; apenas estrutura o objetivo de conversão da LP.
-- A v5 também introduz `business_offerings_summary` conforme 1.6, preservando v1–v4.
+- A v5 também já contém `business_offerings_summary` conforme 1.6 e preserva v1–v4 por igualdade profunda.
 - Criar v5 não a torna automaticamente operacional: a E20.6 deve avaliar explicitamente a versão executável 5 para o taxon servido e somente decisão humana de suficiência pode registrar `reviewed_input_catalog_version = 5`.
 - A **versão operacional autorizada** é a versão executável explicitamente requerida pelo consumidor e exatamente compatível com `reviewed_input_catalog_version`; é proibido usar `latest`, maior versão disponível ou fallback implícito.
+- O boundary E19.5 declara uma única autoridade executável `LANDING_PAGE_WORKSPACE_REQUIRED_INPUT_CATALOG_VERSION = 5` em `lib/lp-builder/landingPageWorkspace.ts`, exportada pela API pública de `lib/lp-builder`; seu adapter chama o boundary público E20.6/taxon-preparation por `loadTaxonPreparationForVersion({ taxonId, requiredInputCatalogVersion: LANDING_PAGE_WORKSPACE_REQUIRED_INPUT_CATALOG_VERSION })` e exige igualdade exata com `reviewed_input_catalog_version`.
+- É proibido derivar a versão requerida do marcador persistido, do `catalog_version` das residências, do maior número do registry ou de `latest`; alterar a versão requerida exige mudança explícita do consumidor e nova validação E20.6 correspondente.
 - Quando v5 for autorizada para o taxon, clientes existentes passam a ser revalidados operacionalmente contra v5 e recebem `primary_conversion_goal`/`business_offerings_summary` quando aplicáveis, sem reescrever snapshots ou contratos históricos.
 - Uma configuração historicamente v4 pode continuar registrada como v4 para proveniência e, ao mesmo tempo, ser operacionalmente incompleta sob v5 até o novo field obrigatório ser preenchido.
 
@@ -127,11 +134,14 @@
   - `transaction_intent`, quando aplicável ao taxon;
   - `primary_conversion_goal`;
   - oferta/caso de uso principal em seu significado, representado por `primary_service_or_offer`.
-- Depois da primeira revisão válida:
-  - mudar `funnel_stage` cria nova LP;
-  - mudar `transaction_intent`, quando aplicável, cria nova LP;
-  - mudar `primary_conversion_goal` cria nova LP;
-  - alterar `primary_service_or_offer` exige confirmação humana explícita: `continua sendo o mesmo trabalho comercial?`;
+- Para cada field imutável do núcleo, a autoridade de identidade é o valor da primeira revisão válida cujo snapshot contenha esse field.
+- Em LP legada cujos snapshots ainda não contenham `primary_conversion_goal`, o primeiro preenchimento é permitido na mesma LP e permanece corrigível até a primeira nova revisão válida que o congele; essa revisão estabelece o baseline, e qualquer mudança posterior exige nova identidade.
+- `funnel_stage` e `transaction_intent` continuam comparados ao primeiro snapshot válido que já os contenha; o save consulta esse baseline e nunca o regrava.
+- Depois de estabelecido o baseline do respectivo field:
+  - mudar `funnel_stage` em relação ao primeiro snapshot válido que o contenha cria nova LP;
+  - mudar `transaction_intent`, quando aplicável, em relação ao primeiro snapshot válido que o contenha cria nova LP;
+  - mudar `primary_conversion_goal` em relação à primeira revisão v2/contexto v4 que o congele cria nova LP.
+- Depois da primeira revisão válida, alterar `primary_service_or_offer` exige confirmação humana explícita: `continua sendo o mesmo trabalho comercial?`;
   - se a resposta for **sim**, a alteração permanece na mesma LP e só chega ao conteúdo por nova revisão;
   - se a resposta for **não**, criar nova identidade de LP;
   - a primeira E19.5 não tenta decidir semanticamente a mudança de oferta por heurística ou IA.
@@ -204,7 +214,7 @@
 - Histórico decisório do PR #801 — matriz de convergência, alternativa B, decisões humanas e pareceres técnicos; o artefato temporário foi removido do diff final, mas permanece rastreável nos commits do PR.
 - PR #797 — somente como evidência técnica seletiva, regressões úteis e protótipo das duas residências, snapshot v2 e aprovação tenant-safe; não é autoridade executável desta v3.
 - Implementação vigente de E19.2, E19.3 e E19.4 em `app/a/[account]/`, `lib/lp-builder/` e contratos adjacentes.
-- `lib/lp-builder/contracts.ts` e `lib/lp-builder/adapters/onboardingConfigurationAdapterCore.ts` — evidência da limitação atual `ACCOUNT_LANDING_PAGE_ONBOARDING_CATALOG_VERSION = 2` e da separação entre configuração histórica e revalidação.
+- `lib/lp-builder/contracts.ts` e `lib/lp-builder/adapters/onboardingConfigurationAdapterCore.ts` após o PR #802 — evidência da remoção do pin/client authority, da revalidação pré-handoff pela E20.6 e da separação entre configuração histórica e autoridade operacional pós-handoff.
 - Migration já aplicada `20260820214422_e19_5_expand_landing_page_status.sql` e `lib/types/status.ts` como estado técnico atual do rollout de status.
 - `docs/lp-planejamento.md` não é fonte deste plano.
 
@@ -250,6 +260,9 @@
 - Preservar qualquer versão aprovada quando revisão nova for gerada.
 - Carregar histórico somente no contexto da LP aberta, com ordenação determinística e paginação/completude adequadas.
 - Na geração, congelar no contexto/snapshot os valores/fatos efetivamente usados, a versão executável E20.2 utilizada e as identidades técnicas das duas residências, incluindo `sharedRevision` e `landingPageRevision`; esses números provam proveniência, não versionam o conteúdo.
+- Novas gerações usam `LandingPageGenerationContext` v4 no caminho operacional pós-handoff: v4 substitui `configurationRevision` por `sharedRevision` e `landingPageRevision`, preserva separadamente `sharedCatalogVersion`, `landingPageCatalogVersion` e `effectiveInputCatalogVersion`, sem alias ou fallback para E19.2.
+- `landingPageRevision` e `landingPageCatalogVersion` são obrigatórios na geração. `sharedRevision` e `sharedCatalogVersion` são ambos positivos ou ambos `null`; ausência é permitida somente quando o resolver comprova que nenhum valor efetivamente usado foi obtido da residência operacional compartilhada e que todos os fields compartilhados obrigatórios aplicáveis estão validamente resolvidos por suas fontes autoritativas ou não são aplicáveis.
+- O writer emite snapshot v2 com contexto v4. Reader e validator formam união discriminada: snapshot v1/contexto v3 permanece integralmente válido e read-only; snapshot v2/contexto v4 atende somente novas revisões; combinações v1/v4 ou v2/v3 falham fechado e nenhum snapshot histórico é regravado.
 
 #### 2.1.4. Validação
 
@@ -260,9 +273,10 @@
 - Não aceitar divergência silenciosa em que runtime considera valor semanticamente válido e a persistência exige outra representação equivalente; URLs e demais tipos normalizáveis devem chegar ao banco na forma canônica escolhida pelo boundary server-side.
 - Aplicar apenas normalizações justificadas pelo contrato do tipo; não aplicar lower-case indiscriminado nem transformação semântica de conteúdo humano.
 - Exigir `primary_conversion_goal` válido antes de gerar quando a versão operacional autorizada o contiver.
+- Para LP legada sem `primary_conversion_goal` em qualquer snapshot, permitir a inicialização na mesma identidade até a primeira revisão v2/v4 que congele o valor; depois desse baseline, rejeitar mudança na mesma LP e direcionar a criação de nova identidade.
 - Impedir validação de pertencimento entre `primary_service_or_offer` e `business_offerings_summary`.
 - Impedir mistura de valores específicos entre LPs ou contas.
-- Mudança de `funnel_stage`, `transaction_intent` aplicável ou `primary_conversion_goal` depois da primeira revisão válida exige nova identidade de LP.
+- Mudança posterior ao baseline do respectivo field — primeiro snapshot que contenha `funnel_stage`/`transaction_intent` aplicável e primeira revisão v2/contexto v4 que congele `primary_conversion_goal` legado — exige nova identidade de LP.
 - Mudança de `primary_service_or_offer` depois da primeira revisão válida exige confirmação humana `mesmo trabalho comercial?`; não inferir semanticamente no MVP.
 - Aprovação exige revisão válida da mesma LP e conta.
 - Impedir alteração/overwrite de revisão histórica.
@@ -276,18 +290,23 @@
 - Revisões permanecem em `public.account_landing_page_materializations` no contrato append-only 1:N já implementado; não criar segunda entidade de versão.
 - A E19.2 permanece intacta como bootstrap/histórico e não é rebindada.
 - A configuração operacional usa duas residências físicas tenant-safe:
-  - uma 1:1 por conta para valores não autoritativos de `account/business`;
-  - uma 1:1 por LP para `offer/campaign/landing_page`.
+  - `public.account_landing_page_shared_configurations`, 1:1 por conta, com PK `account_id`, para valores não autoritativos de `account/business`;
+  - `public.account_landing_page_configurations`, 1:1 por LP, com PK `landing_page_id` e FK composta `(landing_page_id, account_id)` para a identidade da LP, para `offer/campaign/landing_page`.
 - Cada residência guarda somente valores do seu escopo, `catalog_version` de proveniência da última validação/save, revisão técnica monotônica para concorrência/proveniência, autoria e timestamps mínimos.
+- Cada residência exige `catalog_version > 0`, `revision > 0` e `values` JSON objeto; habilita RLS sem policies porque o acesso é exclusivamente server-side; revoga privilégios de `public`, `anon`, `authenticated` e `ai_readonly`; concede ao `service_role` somente `SELECT`, `INSERT` e `UPDATE`, sem `DELETE` ou `TRUNCATE`.
+- O handoff/save que toque as duas residências usa função transacional `SECURITY INVOKER`, `search_path` fixado e expected revision independente por residência: `null` exige ausência e inteiro positivo exige igualdade. A função não duplica parser semântico SQL; revoga `EXECUTE` de roles externas e concede somente a `service_role`.
+- A Data API é consumida apenas por adapters server-only. View eventualmente indispensável usa `security_invoker = true` e GRANT somente para `service_role`.
 - `catalog_version` persistido na residência não constitui pin permanente da versão operacional.
 - A versão operacional autorizada é resolvida separadamente a partir da governança E20.6; a leitura efetiva combina essa definição atual com os valores persistidos.
 - Quando a mesma ação de salvamento tocar as duas residências, a persistência deve ocorrer na mesma transação, com validação dos dois estados esperados antes da confirmação; conflito ou erro em qualquer lado causa rollback integral e impede estado parcial entre compartilhado e contextual.
 - Não criar linha vazia para cada conta/LP por migration apenas para antecipar uso futuro.
 - Não exigir `placeholder` ou `is_initialized` como mecanismo do novo desenho.
 - A referência de aprovação é `approved_materialization_id uuid null` em `account_landing_pages`, protegida por FK composta para materialização da mesma LP e conta; a implementação pode reaproveitar seletivamente o protótipo do #797, sem criar tabela concorrente.
+- Antes da FK de aprovação, `account_landing_page_materializations` recebe `UNIQUE (id, landing_page_id, account_id)`. A FK liga `(approved_materialization_id, id, account_id)` a essa chave com `ON UPDATE RESTRICT`, `ON DELETE NO ACTION` e verificação diferida; a mutação transacional idempotente valida o alvo antes de mover o ponteiro.
 - Não copiar `account/business` por LP apenas para facilitar UI quando a informação tiver residência canônica compartilhada.
 - Não criar status persistido de UX quando o estado puder ser derivado.
 - Qualquer nova migration deve ser mínima, forward-only e limitada às estruturas indispensáveis deste recorte reduzido.
+- A mesma entrega atualiza `docs/schema.md` por ABC; cada migration E19.5.3 inclui seu snippet read-only correspondente e casos SQL para RLS, policies, GRANTs, Data API, FKs, atomicidade, concorrência, ausência de `DELETE` nas novas residências e ausência de objetos eager rejeitados; policies e grants dos agregados preexistentes permanecem inalterados salvo delta expressamente exigido pela FK de aprovação.
 - Não transportar automaticamente validators SQL, readiness, backfill, lifecycle ou RPCs do #797 que existiam para sustentar o desenho eager.
 
 #### 2.1.6. Consumo
@@ -299,7 +318,7 @@
 - Ação `Aprovar esta versão` atua sobre revisão existente visualizada.
 - E19.3 consome configuração operacional após o handoff; E19.2 não permanece como fallback concorrente.
 - E19.4 continua responsável por attempt, geração, materialização append-only, renderer e preview.
-- O snapshot da revisão evolui de forma versionada para preservar versão E20.2 efetivamente usada, `sharedRevision` e `landingPageRevision`, sem regravar snapshots históricos já válidos.
+- O snapshot da revisão evolui para a união discriminada snapshot v1/contexto v3 e snapshot v2/contexto v4; somente v2/v4 preserva a versão E20.2 efetivamente usada, `sharedRevision` e `landingPageRevision`, sem regravar snapshots históricos já válidos.
 
 #### 2.1.7. Fallback
 
@@ -339,6 +358,7 @@
 - `draft`, `active` ou `archived` são estados técnicos do rollout vigente e não devem ser apresentados como sinônimos desses estados de produto.
 - Código humano `LP-001` não é obrigatório neste primeiro recorte; nome da LP e numeração de versão devem ser suficientes para a primeira UX reduzida.
 - Desktop pode usar tabela responsiva; mobile usa cards ou composição equivalente sem scroll horizontal obrigatório.
+- No detalhe, em Configurações e no Histórico, exibir de forma persistente o contexto Conta → LP → seção e retorno previsível à lista da conta; não criar switcher global multi-contas, favoritos, recentes nem autorização no client neste recorte.
 
 ### 2.3. Área Configurações
 
@@ -436,6 +456,10 @@
 - Foco avança de forma previsível após criação, erro ou navegação.
 - A lista principal prioriza decisão e resumo; detalhe/histórico carregam informação aprofundada somente quando consumidos.
 - A separação entre identidade da LP, versão mais recente e versão aprovada deve ser compreensível mesmo antes de existir código humano `LP-001`.
+- Na validação hospedada em Preview, a Vercel Toolbar pode apoiar Accessibility Audit, Interaction Timing e Layout Shift; não é requisito de infraestrutura nem substitui inspeção manual, teste por teclado ou decisão humana sobre achados materiais.
+- Em teste humano de reconhecimento, sem instrução prévia nem memorização do fluxo, o usuário identifica a LP aberta, distingue versão mais recente de versão aprovada, reconhece a próxima ação disponível e retorna à lista da conta.
+- A evidência hospedada cobre owner e admin autorizados, ao menos um papel sem permissão de mutação e entitlement permitido e bloqueado, nas larguras definidas; validação visual automatizada não substitui revisão manual.
+- Aplicar os critérios WCAG 2.2 pertinentes ao fluxo com inspeção automática e manual de nomes acessíveis e labels, ordem e visibilidade de foco, foco após mutação ou erro, mensagens programaticamente associadas, contraste, alvos de toque e ausência de ação exclusiva por hover; a evidência registra cada critério aplicável, exceções justificadas e a inspeção manual correspondente; não declarar conformidade WCAG integral sem auditoria própria.
 - Evidências da fase executável devem cobrir, no mínimo:
   - desktop em 1280 px;
   - tablet em 768 px;
@@ -462,11 +486,11 @@
 
 - O rollout técnico vigente tolera `draft | active | archived`; a primeira E19.5 reduzida não deve concluir lifecycle por inércia nem reverter o expand já aplicado.
 - O agregado E19.2 não pode ser rebindado nem reinterpretado como configuração genérica de todas as LPs.
-- `ACCOUNT_LANDING_PAGE_ONBOARDING_CATALOG_VERSION = 2` é limitação atual da E19.2; a E19.5 não pode adotar esse pin como autoridade operacional.
+- O PR #802 removeu o pin E19.2 e implementou `loadTaxonPreparationForReviewedVersion` para a autoridade pré-handoff. A E19.5 reutiliza os mesmos contratos públicos, mas chama `loadTaxonPreparationForVersion` com `LANDING_PAGE_WORKSPACE_REQUIRED_INPUT_CATALOG_VERSION = 5` no consumo pós-handoff; não aceita outra versão apenas por estar revisada nem cria um segundo resolver.
 - A inicialização lazy precisa provar idempotência e ausência de fallback operacional concorrente após handoff.
 - As duas residências físicas precisam preservar isolamento tenant-safe e scopes disjuntos sem reintroduzir o desenho eager.
 - Toda ação única que altere ambas as residências precisa preservar atomicidade entre elas; nenhum estado intermediário compartilhado/contextual pode ser confirmado como resultado parcial.
-- E20.2 v5 precisa introduzir `primary_conversion_goal` e `business_offerings_summary`, substituindo a hipótese anterior de `landing_page_objective`.
+- E20.2 v5 já contém `primary_conversion_goal` e `business_offerings_summary`; a E19.5 cria somente consumidores operacionais, persistência e gates, sem duplicar o catálogo e sem operação artificial para `landing_page_objective`.
 - A E20.2 v5 somente entra na operação do taxon depois de avaliação E20.6 da versão executável 5 e decisão humana de suficiência; `reviewed_input_catalog_version` divergente mantém o fluxo fail-closed.
 - Autorizar versão nova pode tornar configurações existentes incompletas por novos obrigatórios; isso é evolução normal do produto, não motivo para manter cliente preso à versão histórica.
 - TypeScript server-side e catálogo/validators canônicos permanecem autoridade semântica; o banco não reconstrói parser completo em SQL.
@@ -481,6 +505,18 @@
 - Publicação futura deve distinguir versão mais recente, aprovada e publicada sem reconstruir o versionamento.
 - Limites comerciais de geração continuam dependentes da E9.7 e do consumidor real.
 - Qualquer estrutura, teste ou trecho reaproveitado do #797 deve ser revalidado contra este plano; testes de placeholder, `is_initialized`, `landing_page_objective` ou archive/restore não são herdados apenas porque já existem.
+- O PR #802 já integra esta base via merge não destrutivo de `origin/main`; sua capacidade pré-handoff foi relida e deve ser reutilizada. A implementação E19.5 altera arquivos sobrepostos somente quando necessário ao consumo pós-handoff e remove no mesmo recorte qualquer caminho que se torne concorrente, sem reimplementar E19.2.7.
+- A entrega usa uma única branch e um único PR. Para impedir runtime consumidor antes do apply, o gate server-only `E19_5_WORKSPACE_ENABLED` nasce default-off e só aceita o literal `true`; desligado, preserva o caminho vigente e não lê nem muta os novos objetos.
+- O rollout é: merge humano com Preview e Production desligados → apply canônico de cada migration → snippet correspondente e Security Controls pós-apply, com evidência identificando ambiente e resultado → habilitar Preview → redeploy → prova hospedada e decisão humana → habilitar Production → redeploy e smoke. Registrar o gate, defaults e progressão em `docs/platform-config.md` por ABC; Production nunca é habilitada por consequência da aprovação em Preview.
+
+### 2.8. Paths físicos e substituição do runtime
+
+- `lib/lp-builder/` permanece o único boundary do domínio; criar `lib/lp-builder/landingPageWorkspace.ts`, `lib/lp-builder/adapters/landingPageWorkspaceAdapter.ts` e exports públicos em `lib/lp-builder/index.ts`, sem novo domínio de primeiro nível.
+- UI e estado de formulário permanecem route-local em `app/a/[account]/_components/LandingPageWorkspace.tsx` e `app/a/[account]/landing-pages/[landingPageId]/`; Server Actions finas ficam em `app/a/[account]/workspace-actions.ts` e no detalhe da LP, reutilizam guard owner/admin e entitlement, derivam conta/ator server-side e não importam Supabase.
+- Substituir o ramo e remover a função inline `LandingPageOperationalState` no mesmo diff. Preservar `app/lp-builder/actions.ts` por padrão; removê-lo somente se evidência executável na implementação demonstrar alcance ou autoridade concorrente real. Em qualquer caso, `createAccountLandingPage` permanece a operação pública única usada por onboarding e workspace, e nenhuma rota pode expor uma segunda action concorrente.
+- Não criar provider novo para ações sem IA; geração continua nos providers/adapters E19.3–E19.4 existentes.
+- Preservar `/preview` como latest e aceitar seleção opcional tenant-safe `?revision=<uuid>` para histórico, reutilizando loader, read model e renderer. Histórico é paginado por LP; a listagem do workspace pagina identidades e nunca carrega históricos completos para resumos.
+- Substituir `listAccountLandingPageDraftsFromClient` por leitura explicitamente completa para o consumidor vigente e preservar erro de leitura distinto de coleção vazia.
 
 ## 3. Fases e próxima ação
 
@@ -490,8 +526,8 @@
 - Objetivo:
   - implementar o ciclo operacional central para múltiplas LPs com identidade estável, configuração lazy/contextual, evolução declarativa do catálogo, revisões append-only, histórico/preview sob demanda e aprovação humana.
 - Entrega mínima:
-  - evolução versionada do E20.2 v5 com `primary_conversion_goal` enum obrigatório e `business_offerings_summary` opcional;
-  - remoção da hipótese não implementada `landing_page_objective` do contrato E19.5/v5;
+  - reutilização da E20.2 v5 já incorporada, com `primary_conversion_goal` enum obrigatório e `business_offerings_summary` opcional, sem segunda definição ou alteração semântica;
+  - preservação de `landing_page_objective` somente como hipótese histórica rejeitada, sem operação de remoção em código;
   - gate explícito E20.2 v5 → E20.6 → somente então operação/geração autorizada com v5;
   - distinção entre `catalog_version` histórico/proveniência e versão operacional autorizada;
   - clientes existentes revalidados contra nova versão autorizada, preservando valores válidos e histórico;
@@ -507,12 +543,15 @@
   - histórico carregado por LP sob demanda;
   - preview da versão mais recente e de revisão histórica;
   - ação `Gerar nova revisão` pelo boundary vigente E19.3 → E19.4;
-  - snapshot versionado preservando versão E20.2, `sharedRevision` e `landingPageRevision` efetivamente usados;
+  - snapshot versionado preservando `sharedRevision`, `sharedCatalogVersion`, `landingPageRevision`, `landingPageCatalogVersion` e versão E20.2 operacional efetivamente usados;
   - `approved_materialization_id` tenant-safe e idempotente na identidade da LP;
   - ação `Aprovar esta versão`;
   - estados de UX derivados;
   - preservação da definição de LP entregue;
   - migration mínima somente para as estruturas indispensáveis ao contrato reduzido.
+  - para cada migration E19.5.3, snippet read-only correspondente e versionado em `supabase/snippets` para objetos, colunas, checks, FKs tenant-safe, índices, RLS, policies, grants, ausência de placeholder/`is_initialized` e assinaturas, ownership, `search_path` e `EXECUTE` das RPCs; deve falhar para drift e aprovar após o apply canônico daquela migration.
+  - runtime e UI versionados no mesmo PR atrás de `E19_5_WORKSPACE_ENABLED` default-off, sem acesso aos objetos novos enquanto o gate estiver desligado; após apply e provas de banco, habilitar e provar Preview antes de qualquer habilitação de Production.
+  - `LandingPageGenerationContext` v4 e snapshot v2 para novas revisões, preservando integralmente v1/contexto v3.
 - Limites:
   - sem precriação/backfill operacional massivo;
   - sem pin permanente de catálogo por cliente;
@@ -541,23 +580,30 @@
   - versão histórica e versão operacional autorizada têm semânticas distintas;
   - cliente existente recebe novos fields de versão autorizada sem reescrita de snapshot/revisão histórica;
   - novo field obrigatório ausente torna a configuração incompleta até preenchimento;
+  - LP E19.4 sem `primary_conversion_goal` consegue completar v5 e gerar uma revisão na mesma identidade; depois do primeiro snapshot que congele o goal, mudança posterior é rejeitada e direcionada a nova LP;
   - owner/admin autorizado executa somente ações permitidas;
   - uma linha/card representa cada identidade comercial, sem multiplicar LP por revisão;
   - listagem de identidades não depende de coleção truncada tratada como completa;
   - `business_offerings_summary` não restringe `primary_service_or_offer`;
   - `primary_conversion_goal` é obrigatório na v5, usa somente os enums aprovados e permanece separado de `primary_conversion_channel`;
-  - mudança de `funnel_stage`, `transaction_intent` aplicável ou `primary_conversion_goal` após primeira revisão válida cria nova LP;
+  - somente mudança posterior ao baseline do respectivo field cria nova LP: primeiro snapshot que contenha `funnel_stage`/`transaction_intent` aplicável e primeira revisão v2/contexto v4 que congele `primary_conversion_goal` legado;
   - mudança de `primary_service_or_offer` após primeira revisão válida exige confirmação humana; `sim` mantém LP e requer nova revisão para refletir conteúdo, `não` cria nova identidade;
   - geração com E20.2 v5 falha fechado até `reviewed_input_catalog_version = 5` para o taxon servido;
+  - nenhuma segunda definição da v5 ou dos dois fields é criada; regressões v1–v5 permanecem aprovadas; o #802 entra somente pelo merge de `main`, e o domínio público de preparação é reutilizado sem cópia ou implementação concorrente;
   - parsing/normalização/semântica têm autoridade server-side única e persistência recebe forma canônica;
   - salvar configuração não cria revisão de conteúdo nem altera histórico;
   - se a mesma ação de save altera as duas residências, conflito ou erro em qualquer uma faz rollback integral e nenhuma mudança parcial persiste;
   - nova geração cria revisão integral append-only da mesma LP;
-  - snapshot registra versão E20.2, valores/contexto e revisões técnicas compartilhada e específica da LP usadas na geração;
+  - snapshot registra versão E20.2 operacional, valores/contexto e, para cada residência usada, seu `catalog_version` histórico e revisão técnica; ausência compartilhada usa o par `sharedRevision = null`/`sharedCatalogVersion = null` somente quando nenhum valor efetivamente usado vem da residência operacional compartilhada e todos os fields compartilhados obrigatórios aplicáveis estão validamente resolvidos por suas fontes autoritativas ou não são aplicáveis;
+  - snapshot v1/contexto v3 e snapshot v2/contexto v4 são aceitos; combinações cruzadas falham fechado e revisões E19.4 existentes continuam abrindo no renderer/read model únicos;
   - versão aprovada anterior permanece até nova aprovação humana;
   - histórico de uma LP pode ser carregado/paginado sem carregar todos os históricos da conta;
   - qualquer revisão válida da LP pode ser aberta em preview;
   - aprovação pelo ponteiro tenant-safe não cria revisão e mantém no máximo uma escolha aprovada por LP;
+  - migration e testes comprovam separadamente, nas novas residências e novas RPCs, RLS sem policies, grants mínimos, `SECURITY INVOKER`, `search_path`, Data API server-only, ausência de `DELETE`, FK de aprovação, atomicidade e concorrência; policies e grants dos agregados preexistentes permanecem preservados salvo delta explícito da aprovação;
+  - `E19_5_WORKSPACE_ENABLED` desligado preserva o runtime vigente e impede qualquer dependência de objeto ainda não aplicado;
+  - após o apply canônico de cada migration E19.5.3, executar seu snippet correspondente e revisar Supabase Security Controls para residências, RPCs, RLS, policies, grants e aprovação; a evidência identifica ambiente e resultado, e alerta incompatível bloqueia a habilitação até migration incremental, novo apply e novas provas;
+  - não permanece o placeholder; nenhuma action de criação concorrente é alcançável; UI não importa Supabase, mutações revalidam guards, onboarding segue funcional e listas/históricos não confundem truncamento com completude;
   - invariantes identidade ≠ revisão, latest ≠ approved ≠ future published e configuração ≠ conteúdo permanecem preservados;
   - verificadores/testes proporcionais e `npm run check` aprovam o contrato;
   - evidência hospedada aprova desktop, tablet, mobile, teclado, foco e fluxos humanos previstos;
@@ -565,12 +611,10 @@
 
 ### 3.2. Próxima ação
 
-- A decisão humana B, os relatórios de evolução histórica × operacional e a nova autoridade universal de conversão estão reconciliados nesta v3.
-- A decisão anterior sobre `landing_page_objective` está formalmente superada por `primary_conversion_goal`.
-- O plano-base v3 não autoriza merge ou execução automaticamente.
-- Conforme `docs/prompt-estrategista.md`, o próximo passo é o **item 4 — escolha humana entre Processo atual e Processo automatizado**.
-- Não enviar instrução ao Executor baseada no PR #797, na matriz temporária ou em versões anteriores do plano.
-- O caminho posterior até merge, especialistas, v2 e execução será definido exclusivamente pelo processo escolhido no item 4.
+- A decisão humana B, os relatórios de evolução histórica × operacional e a nova autoridade universal de conversão permanecem preservados da v3.
+- O processo automatizado foi escolhido pelo humano no PR #801; esta v2 processual consolida os pareceres do mesmo blob sem incorporar #797. O #802 entrou posteriormente pelo merge canônico de `main`, foi relido e alterou apenas o estado factual pré-handoff registrado neste delta.
+- A implementação candidata E19.5.3 está concluída, e não há ajuste técnico obrigatório pendente.
+- A próxima ação é o gate final do Estrategista, seguido do merge humano. Após o merge, executar, nesta ordem: apply canônico da migration; snippet e Security Controls; habilitação e redeploy de Preview; smoke hospedado para `Corretor Imóveis`; decisão humana; e, somente depois, rollout separado de Production.
 
 ## 4. Escopo negativo e critérios de parada
 

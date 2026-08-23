@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 22/08/2026
-• Versão: v1.5.175
+• Versão: v1.5.179
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2098,7 +2098,7 @@ Repositório — Ajustados
 
 19. E19 — LP Builder
 - Objetivo: Consolidar o fluxo Core de landing pages por conta, da identidade mínima em `draft` às futuras etapas de geração, revisão, materialização e publicação, sempre por recortes aprovados.
-- Status: E19.1, E19.2 e E19.3 concluídas. E19.4.3, E19.4.4 e E19.4.5 concluídas; a E19.4 está encerrada e integrada à `main` pelo PR #776. A revisão 3 permanece preservada como baseline dos gaps persuasivos observados. Com a E22.1 concluída, a E19.5 deixa de estar bloqueada por essa pré-condição e passa a ser o próximo recorte a planejar, sem implementação iniciada.
+- Status: E19.1, E19.2 e E19.3 concluídas. E19.4.3, E19.4.4 e E19.4.5 concluídas; a E19.4 está encerrada e integrada à `main` pelo PR #776. A revisão 3 permanece preservada como baseline dos gaps persuasivos observados. A E19.5.3 possui implementação candidata repo-only validada no PR #804; aceite operacional final permanece pendente dos gates pós-merge e do smoke positivo v5.
 
 19.1 Criação produtiva mínima de LP por conta
 
@@ -2223,7 +2223,7 @@ Repositório — Ajustados
 
 19.2.7.1 Objetivo e status
 - Objetivo: Permitir que o onboarding pré-handoff opere contra a versão E20.2 explicitamente revisada para o taxon, preserve valores válidos durante a evolução e deixe E19.5 como única autoridade operacional após o vínculo da primeira jornada.
-- Status: Implementação do boundary concluída no PR #802; a E20.2 v5 já é executável após o merge do PR #803. Permanece pendente somente a autorização E20.6 do taxon em `reviewed_input_catalog_version = 5`.
+- Status: Implementação do boundary concluída no PR #802; a E20.2 v5 está executável e operacionalmente autorizada para o taxon servido `Corretor Imóveis` (`corretor-imoveis`) por `reviewed_input_catalog_version = 5`.
 
 19.2.7.2 Registros do recorte
 - Repositório:
@@ -2255,12 +2255,12 @@ Repositório — Ajustados
   - A jornada remove a autoridade do hidden `catalog_version`, continua derivando fields, tipos, obrigação, opções e condições do E20.2 resolvido e usa humanização localizada de `fieldKey` apenas quando não há label amigável existente; paleta e logo mantêm suas especializações.
   - Não houve nova persistência, migration, schema, estado de migração, registry paralelo, backfill, upload ou infraestrutura de assets.
 
-19.2.7.5 Validação e pendência vigente
-- Status: Validado nos casos focais locais com a v5 executável; autorização E20.6 do taxon em v5 pendente.
+19.2.7.5 Validação e autoridade vigente
+- Status: Validado nos casos focais locais com a v5 executável; avaliação E20.6 suficiente sem gaps candidatos e decisão administrativa humana confirmada para o taxon servido.
 - Conteúdo:
   - Os casos executáveis cobrem evolução pré-handoff com versão autorizada executável, preservação de valor, payload de client adulterado sem efeito, autoridade ausente/divergente, isolamento tenant-safe e bloqueio de atualização após handoff; os validadores de catálogo, preparação E20.6, contexto de geração e jornada permanecem aprovados.
   - Após a reconciliação com a `main` que contém o PR #803, os casos comprovam literalmente o agregado histórico/current em v2, a autoridade operacional simulada em v5, a preservação de valores válidos, `business_offerings_summary` opcional, `primary_conversion_goal` obrigatório, incompletude sem esse valor e evolução confirmada de `catalog_version` para 5.
-  - A prova hospedada com o taxon real permanece condicionada somente ao registro E20.6 de `reviewed_input_catalog_version = 5`; não há fallback ou inferência pela E19.2.
+  - A autoridade operacional real registra `reviewed_input_catalog_version = 5` para `Corretor Imóveis` (`corretor-imoveis`); a E19.2 consome esse estado sem fallback ou inferência e não o promove.
 
 19.3 Pacote autorizado para geração no Cenário E
 
@@ -2449,27 +2449,92 @@ Repositório — Ajustados
 19.5 — Workspace operacional e lifecycle da LP
 
 19.5.1 Objetivo e status
-- Objetivo: preservar as decisões vigentes necessárias ao próximo planejamento do workspace operacional e do lifecycle da LP.
-- Status: Prevista; próximo recorte a planejar/reconciliar; sem implementação iniciada.
+- Objetivo: entregar o ciclo operacional reduzido para múltiplas identidades de LP por conta, com configuração contextual lazy, revisões integrais append-only, histórico, preview e aprovação humana explícita.
+- Status: Plano-base v2 aprovado e implementação candidata repo-only materializada; aceite operacional final não concluído.
 
-19.5.2 Decisões vigentes e limites
-- `landing_page` é identidade comercial estável; tentativa ou revisão não cria nova LP.
-- PR #726 é base madura a reconciliar, não plano executável vigente.
-- Não implementar a antiga abordagem “Light” nem drafts independentes como novas LPs.
-- O planejamento da E19.5 deve decidir lifecycle, aprovação/conclusão/publicação/arquivamento, revisão publicada × revisão em trabalho, edição manual, melhoria parcial/integral por IA, histórico/restauração e quais ações consomem IA.
-- Nenhuma dessas decisões autoriza implementação neste PR.
+19.5.2 Registros do recorte
+- Banco:
+  - Criados:
+    - `public.account_landing_page_shared_configurations`;
+    - `public.account_landing_page_configurations`;
+    - `public.e19_5_actor_can_manage(uuid, uuid)`;
+    - `public.e19_5_configuration_values_have_scopes(jsonb, text[])`;
+    - `public.save_account_landing_page_configuration_v1(uuid, uuid, jsonb, jsonb, bigint, bigint, integer, uuid, uuid)`;
+    - `public.approve_account_landing_page_materialization_v1(uuid, uuid, uuid, uuid)`;
+    - `public.append_account_landing_page_materialization_v2(uuid, uuid, uuid, jsonb, jsonb, uuid, bigint, bigint)`.
+  - Ajustados:
+    - `public.account_landing_pages`;
+    - `public.account_landing_page_materializations`.
+- Repositório:
+  - Criados:
+    - `app/a/[account]/_components/LandingPageWorkspace.tsx`;
+    - `app/a/[account]/_components/WorkspaceSubmitButton.tsx`;
+    - `app/a/[account]/workspace-actions.ts`;
+    - `app/a/[account]/landing-pages/[landingPageId]/page.tsx`;
+    - `app/a/[account]/landing-pages/[landingPageId]/actions.ts`;
+    - `app/a/[account]/landing-pages/[landingPageId]/configuration-actions.ts`;
+    - `lib/lp-builder/landingPageWorkspace.ts`;
+    - `lib/lp-builder/adapters/landingPageWorkspaceAdapter.ts`;
+    - `lib/lp-builder/landing-page-workspace-validation-cases.ts`;
+    - `supabase/migrations/20260822170000_e19_5_3_landing_page_workspace.sql`;
+    - `supabase/snippets/e19_5_3_landing_page_workspace_verify.sql`;
+    - `supabase/tests/e19_5_3_landing_page_workspace.test.sql`.
+  - Ajustados:
+    - `app/a/[account]/page.tsx`;
+    - `app/a/[account]/_components/OnboardingConfigurationJourney.tsx`;
+    - `app/a/[account]/_components/onboarding-configuration-action-contract.ts`;
+    - `app/a/[account]/landing-pages/[landingPageId]/preview/page.tsx`;
+    - `app/a/[account]/landing-pages/[landingPageId]/preview/GenerationTrigger.tsx`;
+    - `app/a/[account]/landing-pages/[landingPageId]/preview/actions.ts`;
+    - `lib/lp-builder/contracts.ts`;
+    - `lib/lp-builder/index.ts`;
+    - `lib/lp-builder/generationContext.ts`;
+    - `lib/lp-builder/generationContextContracts.ts`;
+    - `lib/lp-builder/adapters/generationContextAdapter.ts`;
+    - `lib/lp-builder/adapters/generationContextAdapterCore.ts`;
+    - `lib/lp-builder/landingPageRevision.ts`;
+    - `lib/lp-builder/landingPagePreview.ts`;
+    - `lib/lp-builder/adapters/landingPagePreviewAdapter.ts`;
+    - `lib/lp-builder/adapters/landingPageRevisionAdapter.ts`;
+    - `lib/lp-builder/landingPageDraftGeneration.ts`;
+    - `lib/lp-builder/generation-context-validation-cases.ts`;
+    - `lib/lp-builder/landing-page-draft-generation-validation-cases.ts`;
+    - `lib/lp-builder/landing-page-preview-validation-cases.tsx`;
+    - `package.json`.
+- Referências:
+  - Plano-base aprovado: `docs/lousa-plano-base-e19-5.md` — seções 1, 2 e 3.
+  - Contrato de banco: `docs/schema.md` — seções 1.9, 1.27, 1.31, 1.32 e 3.8.
+  - Contrato técnico: `docs/base-tecnica.md` — seções 3.14.4 e 3.15.9.
+  - Configuração operacional: `docs/platform-config.md` — seção 3.5.
+  - Contrato visual: `docs/design-system.md` — Workspace operacional do Account Dashboard.
+
+19.5.3 Workspace operacional reduzido, configuração e aprovação da LP
+- Status: Implementação candidata repo-only validada localmente; merge, apply, provas hospedadas e aceite operacional final pendentes.
+- Conteúdo:
+  - o Account Dashboard ganha workspace master-detail paginado, uma entrada por identidade de LP, cinco estados de UX derivados, criação explícita para owner/admin e leitura integral sem mutações para viewer;
+  - a configuração reutiliza declarativamente o catálogo E20.2 v5 e separa fisicamente scopes compartilhados `account/business` dos contextuais `offer/campaign/landing_page`, sem lista paralela, placeholder, precriação, backfill, `is_initialized` ou completude persistida;
+  - `primary_conversion_goal` é obrigatório e participa do núcleo de identidade após a primeira revisão válida que o contenha; `business_offerings_summary` é opcional, reside no compartilhado e sua ausência isolada não bloqueia completude;
+  - o handoff da E19.2 é lazy e vinculado à LP exata; depois que a residência operacional existe, o agregado histórico permanece apenas como bootstrap/proveniência e não serve fallback concorrente;
+  - o save das duas residências é atômico, `SECURITY INVOKER`, versionado e protegido por revisões otimistas independentes; no-op não incrementa, e conflito preserva integralmente o estado anterior;
+  - geração e revalidação exigem literalmente a v5 e igualdade exata com `reviewed_input_catalog_version`, falhando fechado para ausência, divergência, versão não executável ou erro; não existe fallback para v4, `latest`, maior versão ou versão implícita;
+  - novas revisões usam snapshot v2/contexto v4 com proveniência das residências; readers aceitam somente os pares históricos v1/contexto v3 e atuais v2/contexto v4, sem cruzamento ou reinterpretação retroativa;
+  - histórico e preview são carregados sob demanda por LP; o preview pode abrir a revisão mais recente ou uma revisão histórica e a aprovação idempotente move somente o ponteiro tenant-safe da revisão aprovada;
+  - os testes determinísticos cobrem v5, `primary_conversion_goal`, ausência válida de `business_offerings_summary`, evolução histórica × operacional, mismatch E20.6, fail-closed, viewer read-only, paginação, histórico e aprovação; `npm ci`, `npm run check` e `git diff --check` foram aprovados, com 24 warnings de lint preexistentes e nenhum erro;
+  - a migration permanece repo-only e não foi aplicada; `E19_5_WORKSPACE_ENABLED` permanece default-off, sem habilitação registrada em Preview ou Production;
+  - a avaliação E20.6 da v5 e a decisão humana de suficiência estão concluídas para o taxon real servido `Corretor Imóveis` (`corretor-imoveis`), com `reviewed_input_catalog_version = 5` e sem gaps candidatos; o aceite operacional final da E19.5 depende agora de merge humano, apply canônico, prova SQL e Security Controls, habilitação e redeploy controlados em Preview e smoke hospedado positivo, e este recorte não grava nem promove o marcador nem altera a E20.6;
+  - Production permanece desligada até decisão humana sobre as evidências de Preview e exige redeploy e smoke próprios; archive/restore, publicação, editor manual, melhoria parcial por IA, hard delete, tracking, mensuração, testes A/B, catálogo avançado de ofertas e mecanismo global ou em massa permanecem fora do recorte.
 
 20. E20 — Preparação e liberação de taxons para geração de landing pages
 
 * Objetivo: consolidar catálogo de entradas por taxon e plano, perfis versionados de orientação à geração, herança e, em recortes futuros, prontidão e liberação antes da geração de LPs por conta.
-* Status: E20.2 concluída até a v4; E20.3 concluída; E20.5 concluída e ativada após merge do PR #746, apply canônico, prova SQL e smokes autenticados em Preview e Production.
+* Status: E20.2 definida no contrato repo-only até a v5; E20.3 retirada; E20.5 concluída e ativada após merge do PR #746, apply canônico, prova SQL e smokes autenticados em Preview e Production.
 
 20.2 Catálogo de entradas por taxon
 
 20.2.1 Objetivo e status
 
 * Objetivo: definir e resolver um catálogo declarativo versionado de entradas de `landing_page` por taxon e plano, separado de valores operacionais, composição, conteúdo e entitlement.
-* Status: Concluído até a versão executável v4.
+* Status: Contrato repo-only definido até a versão executável v5; consumo operacional depende de versão explicitamente requerida e de revisão compatível pela E20.6.
 
 20.2.2 Registros do recorte
 
@@ -2506,6 +2571,7 @@ Repositório — Ajustados
   * A v2 contém 23 campos: os 19 da v1 e os quatro mínimos do Starter — serviço ou oferta principal, descrição factual curta, referência opaca opcional de logo ou asset principal e paleta visual confirmada.
   * A v3 preserva integralmente os 23 campos, a ordem e a estrutura da v2 e acrescenta somente metadata declarativo que autoriza `financing_support_available` e `document_support_available` a sustentar `applicable_capabilities` quando o valor booleano for `true`; a v2 permanece imutável e continua validando os valores persistidos.
   * A v4 preserva integralmente os 23 campos, a ordem, as camadas, a metadata e os bindings da v3 e acrescenta somente `rent` ao final do enum de `transaction_intent`, com evidência atualizada para locação exclusiva; v1–v3 permanecem imutáveis.
+  * A v5 preserva integralmente v1–v4 e acrescenta `business_offerings_summary` como contexto universal opcional de negócio e `primary_conversion_goal` como objetivo principal de conversão obrigatório da LP, com valores `contact`, `schedule`, `request_quote`, `purchase` e `register_interest`; a versão só se torna operacional para um consumidor quando é requerida explicitamente e coincide com a revisão humana registrada pela E20.6.
   * Os quatro campos da v2 permanecem disponíveis em Starter, Lite, Pro e Ultra, sem diferenças adicionais entre planos neste recorte.
   * Strings obrigatórias rejeitam valor vazio; o asset aceita somente objeto estrito com `asset_id` opaco não vazio; a paleta exige exatamente `primary`, `secondary`, `accent`, `background` e `text` em hexadecimal `#RRGGBB`.
   * Os campos criados na v2 declaram `landingPageSubstitutionPolicy`: oferta, descrição e logo usam `forbidden`, enquanto a paleta usa `explicit_allowed`; ausência da política nos campos históricos da v1 não autoriza substituição.

@@ -2,8 +2,13 @@ import type { TaxonPreparationResult } from "../../conversion-content/landing-pa
 import type {
   AccountLandingPage,
   AccountLandingPageOnboardingRevalidationResult,
+  AccountLandingPageOperationalRevalidationResult,
 } from "../contracts";
-import { compileLandingPageGenerationContext } from "../generationContext";
+import {
+  compileLandingPageGenerationContext,
+  compileLegacyLandingPageGenerationContext,
+} from "../generationContext";
+import { LANDING_PAGE_WORKSPACE_REQUIRED_INPUT_CATALOG_VERSION } from "../landingPageWorkspace";
 import type {
   CompileLandingPageGenerationContextResult,
   LandingPageGenerationContextFailureCode,
@@ -12,7 +17,8 @@ import type {
 export type LandingPageGenerationContextBoundaryDependencies = Readonly<{
   loadRevalidationAuthority: (input: {
     accountId: string;
-  }) => Promise<AccountLandingPageOnboardingRevalidationResult>;
+    landingPageId: string;
+  }) => Promise<AccountLandingPageOperationalRevalidationResult>;
   loadLandingPage: (input: {
     accountId: string;
     landingPageId: string;
@@ -20,6 +26,19 @@ export type LandingPageGenerationContextBoundaryDependencies = Readonly<{
     | Readonly<{ ok: true; landingPage: AccountLandingPage }>
     | Readonly<{ ok: false; error: "not_found" | "read_failed" }>
   >;
+  loadPreparation: (input: {
+    taxonId: string;
+    requiredInputCatalogVersion: number;
+  }) => Promise<TaxonPreparationResult>;
+  log?: (payload: Readonly<Record<string, unknown>>) => void;
+  now?: () => number;
+}>;
+
+export type LegacyLandingPageGenerationContextBoundaryDependencies = Readonly<{
+  loadRevalidationAuthority: (input: {
+    accountId: string;
+  }) => Promise<AccountLandingPageOnboardingRevalidationResult>;
+  loadLandingPage: LandingPageGenerationContextBoundaryDependencies["loadLandingPage"];
   loadPreparation: (input: { taxonId: string }) => Promise<TaxonPreparationResult>;
   log?: (payload: Readonly<Record<string, unknown>>) => void;
   now?: () => number;
@@ -32,6 +51,106 @@ const REQUEST_ID_RE = /^[A-Za-z0-9._:-]{1,128}$/;
 export async function compileLandingPageGenerationContextForDraftWithDependencies(
   input: unknown,
   dependencies: LandingPageGenerationContextBoundaryDependencies,
+): Promise<CompileLandingPageGenerationContextResult> {
+  const now = dependencies.now ?? Date.now;
+  const startedAt = now();
+  if (!isRecord(input)) {
+    const result = failure("INVALID_INPUT", "Server generation context input is invalid.");
+    safeLog(dependencies.log, result, undefined, now() - startedAt);
+    return result;
+  }
+  const requestId = normalizeRequestId(
+    typeof input.requestId === "string" ? input.requestId : undefined,
+  );
+  const accountId =
+    typeof input.accountId === "string" ? input.accountId.trim() : "";
+  const landingPageId =
+    typeof input.landingPageId === "string" ? input.landingPageId.trim() : "";
+  let result: CompileLandingPageGenerationContextResult;
+  let preparationReason:
+    | Extract<TaxonPreparationResult, { ok: false }>["error"]["code"]
+    | undefined;
+
+  if (
+    !UUID_RE.test(accountId) ||
+    !UUID_RE.test(landingPageId) ||
+    (Object.hasOwn(input, "requestId") && requestId === undefined)
+  ) {
+    result = failure("INVALID_INPUT", "Server generation context input is invalid.");
+    safeLog(dependencies.log, result, requestId, now() - startedAt);
+    return result;
+  }
+
+  try {
+    const revalidation = await dependencies.loadRevalidationAuthority({
+      accountId,
+      landingPageId,
+    });
+    if (!revalidation.ok) {
+      const unauthorized = [
+        "unauthenticated",
+        "invalid_account_id",
+        "account_not_found",
+        "account_not_active",
+        "membership_inactive",
+        "commercial_entitlement_required",
+      ].includes(revalidation.error);
+      result = failure(
+        unauthorized ? "ACCOUNT_CONTEXT_UNAUTHORIZED" : "CONTEXT_READ_FAILED",
+        unauthorized
+          ? "Account context is not authorized for generation."
+          : "Landing-page configuration could not be read.",
+      );
+      safeLog(dependencies.log, result, requestId, now() - startedAt);
+      return result;
+    }
+
+    const { currentTaxonChain } = revalidation.authority;
+
+    const landingPage = await dependencies.loadLandingPage({ accountId, landingPageId });
+    if (!landingPage.ok) {
+      result = failure(
+        landingPage.error === "not_found" ? "LANDING_PAGE_NOT_FOUND" : "CONTEXT_READ_FAILED",
+        landingPage.error === "not_found"
+          ? "Requested landing-page draft was not found."
+          : "Landing-page draft could not be read.",
+      );
+      safeLog(dependencies.log, result, requestId, now() - startedAt);
+      return result;
+    }
+
+    const servedTaxon =
+      currentTaxonChain.ultraNiche ??
+      currentTaxonChain.niche ??
+      currentTaxonChain.segment;
+    const preparation = await dependencies.loadPreparation({
+      taxonId: servedTaxon.id,
+      requiredInputCatalogVersion:
+        LANDING_PAGE_WORKSPACE_REQUIRED_INPUT_CATALOG_VERSION,
+    });
+    if (!preparation.ok) preparationReason = preparation.error.code;
+    result = compileLandingPageGenerationContext({
+      landingPage: landingPage.landingPage,
+      revalidationAuthority: revalidation.authority,
+      preparation,
+    });
+  } catch {
+    result = failure("CONTEXT_READ_FAILED", "Generation context dependencies failed.");
+  }
+
+  safeLog(
+    dependencies.log,
+    result,
+    requestId,
+    now() - startedAt,
+    preparationReason,
+  );
+  return result;
+}
+
+export async function compileLegacyLandingPageGenerationContextForDraftWithDependencies(
+  input: unknown,
+  dependencies: LegacyLandingPageGenerationContextBoundaryDependencies,
 ): Promise<CompileLandingPageGenerationContextResult> {
   const now = dependencies.now ?? Date.now;
   const startedAt = now();
@@ -82,9 +201,6 @@ export async function compileLandingPageGenerationContextForDraftWithDependencie
       safeLog(dependencies.log, result, requestId, now() - startedAt);
       return result;
     }
-
-    const { currentTaxonChain } = revalidation.authority;
-
     const landingPage = await dependencies.loadLandingPage({ accountId, landingPageId });
     if (!landingPage.ok) {
       result = failure(
@@ -96,16 +212,14 @@ export async function compileLandingPageGenerationContextForDraftWithDependencie
       safeLog(dependencies.log, result, requestId, now() - startedAt);
       return result;
     }
-
+    const currentTaxonChain = revalidation.authority.currentTaxonChain;
     const servedTaxon =
       currentTaxonChain.ultraNiche ??
       currentTaxonChain.niche ??
       currentTaxonChain.segment;
-    const preparation = await dependencies.loadPreparation({
-      taxonId: servedTaxon.id,
-    });
+    const preparation = await dependencies.loadPreparation({ taxonId: servedTaxon.id });
     if (!preparation.ok) preparationReason = preparation.error.code;
-    result = compileLandingPageGenerationContext({
+    result = compileLegacyLandingPageGenerationContext({
       landingPage: landingPage.landingPage,
       revalidationAuthority: revalidation.authority,
       preparation,
@@ -113,14 +227,7 @@ export async function compileLandingPageGenerationContextForDraftWithDependencie
   } catch {
     result = failure("CONTEXT_READ_FAILED", "Generation context dependencies failed.");
   }
-
-  safeLog(
-    dependencies.log,
-    result,
-    requestId,
-    now() - startedAt,
-    preparationReason,
-  );
+  safeLog(dependencies.log, result, requestId, now() - startedAt, preparationReason);
   return result;
 }
 

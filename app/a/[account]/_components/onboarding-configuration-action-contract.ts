@@ -8,6 +8,7 @@ export type OnboardingConfigurationActionState = Readonly<{
   status: "idle" | "success" | "error";
   intent?: OnboardingConfigurationActionIntent;
   revision?: number;
+  sharedRevision?: number | null;
   fieldErrors?: Readonly<Record<string, string>>;
   formError?: string;
 }>;

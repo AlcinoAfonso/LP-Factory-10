@@ -188,6 +188,42 @@ const cases: ReadonlyArray<
     },
   },
   {
+    name: "resolved configuration canonicalizes declarative values before persistence",
+    run: () => {
+      const result = resolveAccountLandingPageOnboardingConfiguration({
+        accountId: ACCOUNT_ID,
+        landingPageId: null,
+        catalogVersion: 5,
+        revision: 1,
+        planKey: "starter",
+        taxonChain,
+        authoritativeValues: {},
+        storedValues: {
+          business_offerings_summary: {
+            scope: "business",
+            value: "  Compra, venda e locação  ",
+          },
+          primary_conversion_goal: {
+            scope: "landing_page",
+            value: "  contact  ",
+          },
+        },
+      });
+      assert.equal(result.ok, true, JSON.stringify(result));
+      if (!result.ok) return;
+      assert.deepEqual(result.configuration.storedValues, {
+        business_offerings_summary: {
+          scope: "business",
+          value: "Compra, venda e locação",
+        },
+        primary_conversion_goal: {
+          scope: "landing_page",
+          value: "contact",
+        },
+      });
+    },
+  },
+  {
     name: "all applicable required values complete without optional logo",
     run: () => {
       const result = resolve(allValidValues);
@@ -867,6 +903,47 @@ const cases: ReadonlyArray<
     },
   },
   {
+    name: "draft listing pages until the complete ordered collection is read",
+    run: async () => {
+      const firstPage = Array.from({ length: 500 }, (_, index) =>
+        landingPageDraft(
+          `00000000-0000-4000-8000-${String(index + 300).padStart(12, "0")}`,
+          `Pagina ${index + 1}`,
+        ),
+      );
+      const finalDraft = landingPageDraft(
+        "00000000-0000-4000-8000-000000000999",
+        "Pagina final",
+      );
+      const client = runtimeClient([
+        ...runtimeGateResponses(),
+        response(
+          "account_landing_page_onboarding_configurations",
+          completeConfigurationRow(),
+        ),
+        response("account_landing_pages", firstPage),
+        response("account_landing_pages", [finalDraft]),
+      ]);
+
+      const result = await listAccountLandingPageDraftsFromClient(
+        { accountId: ACCOUNT_ID, actorUserId: ACTOR_ID },
+        client,
+        eligibleEntitlement,
+      );
+      assert.equal(result.ok, true);
+      if (!result.ok) return;
+      assert.equal(result.drafts.length, 501);
+      assert.deepEqual(result.drafts.at(-1), finalDraft);
+      const reads = client.calls.filter(
+        (call) => call.relation === "account_landing_pages",
+      );
+      assert.deepEqual(reads.map((call) => call.range), [
+        [0, 499],
+        [500, 999],
+      ]);
+    },
+  },
+  {
     name: "draft listing fails closed for account drift membership and read errors",
     run: async () => {
       const accountDrift = runtimeClient([
@@ -1278,6 +1355,7 @@ type RecordedCall = {
   nullFilters?: Array<[string, null]>;
   orders?: Array<[string, boolean]>;
   maxAffected?: number;
+  range?: readonly [number, number];
 };
 
 function response(
@@ -1322,6 +1400,7 @@ class ScriptedQuery {
   private readonly nullFilters: Array<[string, null]> = [];
   private readonly orders: Array<[string, boolean]> = [];
   private maximum?: number;
+  private selectedRange?: readonly [number, number];
 
   constructor(
     private readonly client: ScriptedClient,
@@ -1368,6 +1447,11 @@ class ScriptedQuery {
     return this;
   }
 
+  range(from: number, to: number) {
+    this.selectedRange = [from, to];
+    return this;
+  }
+
   maxAffected(value: number) {
     this.maximum = value;
     return this;
@@ -1393,6 +1477,7 @@ class ScriptedQuery {
       nullFilters: [...this.nullFilters],
       orders: [...this.orders],
       maxAffected: this.maximum,
+      range: this.selectedRange,
     });
   }
 }

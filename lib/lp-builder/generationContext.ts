@@ -9,6 +9,8 @@ import { isOperationalLandingPageStatus } from "../types/status";
 import { resolveAccountLandingPageOnboardingConfiguration } from "./onboardingConfiguration";
 import {
   LANDING_PAGE_GENERATION_CONTEXT_CONTRACT_VERSION,
+  LANDING_PAGE_GENERATION_CONTEXT_LEGACY_CONTRACT_VERSION,
+  type CompileLegacyLandingPageGenerationContextInput,
   type CompileLandingPageGenerationContextInput,
   type CompileLandingPageGenerationContextResult,
   type LandingPageGenerationAuthorizedFact,
@@ -45,6 +47,141 @@ export function compileLandingPageGenerationContext(
   } catch {
     return failure("INVALID_INPUT", "Generation context input is invalid.");
   }
+}
+
+export function compileLegacyLandingPageGenerationContext(
+  input: unknown,
+): CompileLandingPageGenerationContextResult {
+  if (!isMinimumLegacyCompilerInput(input)) {
+    return failure("INVALID_INPUT", "Generation context input is invalid.");
+  }
+  try {
+    return compileValidatedLegacyLandingPageGenerationContext(input);
+  } catch {
+    return failure("INVALID_INPUT", "Generation context input is invalid.");
+  }
+}
+
+function compileValidatedLegacyLandingPageGenerationContext(
+  input: CompileLegacyLandingPageGenerationContextInput,
+): CompileLandingPageGenerationContextResult {
+  const {
+    historicalConfiguration,
+    currentPlanKey,
+    currentTaxonChain,
+    currentAuthoritativeValues,
+  } = input.revalidationAuthority;
+  if (
+    !isOperationalLandingPageStatus(input.landingPage.status) ||
+    input.landingPage.account_id !== historicalConfiguration.accountId
+  ) {
+    return failure(
+      "LANDING_PAGE_NOT_DRAFT",
+      "Landing page is not an authorized account draft.",
+    );
+  }
+  if (historicalConfiguration.landingPageId !== input.landingPage.id) {
+    return failure(
+      "CONFIGURATION_NOT_BOUND",
+      "Configuration is not bound to the requested landing page.",
+    );
+  }
+  if (
+    !historicalConfiguration.complete ||
+    historicalConfiguration.missingRequiredFieldKeys.length > 0
+  ) {
+    return failure(
+      "CONFIGURATION_INCOMPLETE",
+      "Landing-page configuration is incomplete.",
+    );
+  }
+  if (!input.preparation.ok) {
+    const catalogFailure = [
+      "REQUIRED_INPUT_CATALOG_VERSION_INVALID",
+      "REQUIRED_INPUT_CATALOG_VERSION_NOT_EXECUTABLE",
+      "INPUT_CATALOG_REVIEW_VERSION_MISMATCH",
+    ].includes(input.preparation.error.code);
+    return failure(
+      catalogFailure
+        ? "INPUT_CATALOG_INCOMPATIBLE"
+        : "TAXON_PREPARATION_UNAVAILABLE",
+      catalogFailure
+        ? `Input catalog preparation failed: ${input.preparation.error.code}.`
+        : `Taxon preparation failed: ${input.preparation.error.code}.`,
+    );
+  }
+  const servedTaxon =
+    currentTaxonChain.ultraNiche ??
+    currentTaxonChain.niche ??
+    currentTaxonChain.segment;
+  const preparation = input.preparation.value;
+  if (
+    preparation.taxonId !== servedTaxon.id ||
+    preparation.taxonSlug !== servedTaxon.slug ||
+    preparation.requiredInputCatalogVersion !==
+      preparation.reviewedInputCatalogVersion ||
+    preparation.research.taxonSlug !== servedTaxon.slug ||
+    preparation.research.audienceScope !== "end_customer" ||
+    preparation.research.researchVersion !== preparation.selectedResearchVersion
+  ) {
+    return failure(
+      "TAXON_PREPARATION_UNAVAILABLE",
+      "Taxon preparation is incompatible with the landing page.",
+    );
+  }
+  const revalidated = revalidateConfiguration(
+    input.revalidationAuthority,
+    preparation.reviewedInputCatalogVersion,
+  );
+  if (!revalidated.ok) {
+    return failure(
+      revalidated.catalogFailure
+        ? "INPUT_CATALOG_INCOMPATIBLE"
+        : "CONFIGURATION_REVALIDATION_REQUIRED",
+      revalidated.catalogFailure
+        ? "The reviewed input catalog could not be resolved."
+        : "Landing-page configuration requires factual correction after revalidation.",
+    );
+  }
+  const root = resolveLandingPageRootParameters({ rootVersion: ROOT_VERSION });
+  if (!root.ok) {
+    return failure("ROOT_UNAVAILABLE", "Landing-page root contract is unavailable.");
+  }
+  const projectedFacts = projectFacts(revalidated.configuration.fields);
+  if (!projectedFacts.ok) return projectedFacts.result;
+  return success({
+    contractVersion: LANDING_PAGE_GENERATION_CONTEXT_LEGACY_CONTRACT_VERSION,
+    identities: {
+      accountId: input.landingPage.account_id,
+      landingPage: { id: input.landingPage.id, status: input.landingPage.status },
+      planKey: currentPlanKey,
+      servedTaxon,
+      taxonChain: currentTaxonChain,
+      historicalConfigurationCatalogVersion: historicalConfiguration.catalogVersion,
+      effectiveInputCatalogVersion: preparation.reviewedInputCatalogVersion,
+      configurationRevision: historicalConfiguration.revision,
+      rootVersion: root.value.rootVersion,
+      endCustomerResearchVersion: preparation.selectedResearchVersion,
+    },
+    modelContext: {
+      research: {
+        taxonSlug: preparation.research.taxonSlug,
+        audienceScope: preparation.research.audienceScope,
+        researchVersion: preparation.research.researchVersion,
+        content: preparation.research.content,
+      },
+      facts: projectedFacts.modelFacts,
+      editorialLimits: {
+        semanticRoles: Object.values(root.value.semanticRoles).map((role) => ({
+          key: role.key,
+          recommended: role.textRange.recommended,
+          absoluteMax: role.textRange.absoluteMax,
+        })),
+        semanticHierarchy: root.value.visualCriteria.semanticHierarchy,
+      },
+    },
+    serverContext: { facts: projectedFacts.serverFacts },
+  });
 }
 
 function compileValidatedLandingPageGenerationContext(
@@ -141,6 +278,40 @@ function compileValidatedLandingPageGenerationContext(
   const projectedFacts = projectFacts(revalidated.configuration.fields);
   if (!projectedFacts.ok) return projectedFacts.result;
 
+  if (
+    input.revalidationAuthority.landingPageCatalogVersion !==
+      preparation.reviewedInputCatalogVersion ||
+    !Number.isSafeInteger(input.revalidationAuthority.landingPageRevision) ||
+    input.revalidationAuthority.landingPageRevision <= 0 ||
+    ((input.revalidationAuthority.sharedRevision === null) !==
+      (input.revalidationAuthority.sharedCatalogVersion === null)) ||
+    (input.revalidationAuthority.sharedRevision !== null &&
+      (!Number.isSafeInteger(input.revalidationAuthority.sharedRevision) ||
+        input.revalidationAuthority.sharedRevision <= 0 ||
+        input.revalidationAuthority.sharedCatalogVersion !==
+          preparation.reviewedInputCatalogVersion))
+  ) {
+    return failure(
+      "CONFIGURATION_REVALIDATION_REQUIRED",
+      "Operational configuration provenance is incomplete or incompatible.",
+    );
+  }
+  if (
+    input.revalidationAuthority.sharedRevision === null &&
+    revalidated.configuration.fields.some(
+      (field) =>
+        field.applicable &&
+        (field.field.valueScope === "account" ||
+          field.field.valueScope === "business") &&
+        field.source === "configuration",
+    )
+  ) {
+    return failure(
+      "CONFIGURATION_REVALIDATION_REQUIRED",
+      "Shared operational provenance is required for configured shared facts.",
+    );
+  }
+
   return success({
     contractVersion: LANDING_PAGE_GENERATION_CONTEXT_CONTRACT_VERSION,
     identities: {
@@ -152,9 +323,11 @@ function compileValidatedLandingPageGenerationContext(
       planKey: currentPlanKey,
       servedTaxon,
       taxonChain: currentTaxonChain,
-      historicalConfigurationCatalogVersion: historicalConfiguration.catalogVersion,
+      sharedCatalogVersion: input.revalidationAuthority.sharedCatalogVersion,
+      landingPageCatalogVersion: input.revalidationAuthority.landingPageCatalogVersion,
       effectiveInputCatalogVersion: preparation.reviewedInputCatalogVersion,
-      configurationRevision: historicalConfiguration.revision,
+      sharedRevision: input.revalidationAuthority.sharedRevision,
+      landingPageRevision: input.revalidationAuthority.landingPageRevision,
       rootVersion: root.value.rootVersion,
       endCustomerResearchVersion: preparation.selectedResearchVersion,
     },
@@ -182,7 +355,9 @@ function compileValidatedLandingPageGenerationContext(
 }
 
 function revalidateConfiguration(
-  authority: CompileLandingPageGenerationContextInput["revalidationAuthority"],
+  authority:
+    | CompileLandingPageGenerationContextInput["revalidationAuthority"]
+    | CompileLegacyLandingPageGenerationContextInput["revalidationAuthority"],
   effectiveInputCatalogVersion: number,
 ):
   | Readonly<{
@@ -213,6 +388,12 @@ function revalidateConfiguration(
     return { ok: false, catalogFailure: false };
   }
   return { ok: true, configuration: resolved.configuration };
+}
+
+function isMinimumLegacyCompilerInput(
+  value: unknown,
+): value is CompileLegacyLandingPageGenerationContextInput {
+  return isMinimumCompilerInput(value);
 }
 
 function projectFacts(

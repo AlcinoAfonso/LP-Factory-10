@@ -13,11 +13,13 @@ import type {
 import type {
   AccountLandingPage,
   AccountLandingPageOnboardingRevalidationAuthority,
+  AccountLandingPageOperationalRevalidationAuthority,
   AccountLandingPageOnboardingValueSource,
 } from "./contracts";
 import type { OperationalLandingPageStatus } from "../types/status";
 
-export const LANDING_PAGE_GENERATION_CONTEXT_CONTRACT_VERSION = 3 as const;
+export const LANDING_PAGE_GENERATION_CONTEXT_CONTRACT_VERSION = 4 as const;
+export const LANDING_PAGE_GENERATION_CONTEXT_LEGACY_CONTRACT_VERSION = 3 as const;
 
 export type LandingPageGenerationContextFailureCode =
   | "INVALID_INPUT"
@@ -33,6 +35,12 @@ export type LandingPageGenerationContextFailureCode =
   | "CONTEXT_READ_FAILED";
 
 export type CompileLandingPageGenerationContextInput = Readonly<{
+  landingPage: AccountLandingPage;
+  revalidationAuthority: AccountLandingPageOperationalRevalidationAuthority;
+  preparation: TaxonPreparationResult;
+}>;
+
+export type CompileLegacyLandingPageGenerationContextInput = Readonly<{
   landingPage: AccountLandingPage;
   revalidationAuthority: AccountLandingPageOnboardingRevalidationAuthority;
   preparation: TaxonPreparationResult;
@@ -60,23 +68,7 @@ export type LandingPageGenerationEditorialRole = Readonly<{
   absoluteMax: number;
 }>;
 
-export type LandingPageGenerationContextPackage = Readonly<{
-  contractVersion: typeof LANDING_PAGE_GENERATION_CONTEXT_CONTRACT_VERSION;
-  identities: Readonly<{
-    accountId: string;
-    landingPage: Readonly<{
-      id: string;
-      status: OperationalLandingPageStatus;
-    }>;
-    planKey: string;
-    servedTaxon: LandingPageInputCatalogTaxonIdentity;
-    taxonChain: LandingPageInputCatalogTaxonChain;
-    historicalConfigurationCatalogVersion: number;
-    effectiveInputCatalogVersion: number;
-    configurationRevision: number;
-    rootVersion: number;
-    endCustomerResearchVersion: number;
-  }>;
+type LandingPageGenerationContextCommon = Readonly<{
   modelContext: Readonly<{
     research: LandingPageGenerationAuthorizedResearch;
     facts: readonly LandingPageGenerationAuthorizedFact[];
@@ -89,6 +81,52 @@ export type LandingPageGenerationContextPackage = Readonly<{
     facts: readonly LandingPageGenerationAuthorizedFact[];
   }>;
 }>;
+
+export type LandingPageGenerationContextPackageV4 =
+  LandingPageGenerationContextCommon & Readonly<{
+  contractVersion: typeof LANDING_PAGE_GENERATION_CONTEXT_CONTRACT_VERSION;
+  identities: Readonly<{
+    accountId: string;
+    landingPage: Readonly<{
+      id: string;
+      status: OperationalLandingPageStatus;
+    }>;
+    planKey: string;
+    servedTaxon: LandingPageInputCatalogTaxonIdentity;
+    taxonChain: LandingPageInputCatalogTaxonChain;
+    sharedCatalogVersion: number | null;
+    landingPageCatalogVersion: number;
+    effectiveInputCatalogVersion: number;
+    sharedRevision: number | null;
+    landingPageRevision: number;
+    rootVersion: number;
+    endCustomerResearchVersion: number;
+  }>;
+}>;
+
+export type LandingPageGenerationContextPackageV3 =
+  LandingPageGenerationContextCommon & Readonly<{
+    contractVersion: typeof LANDING_PAGE_GENERATION_CONTEXT_LEGACY_CONTRACT_VERSION;
+    identities: Readonly<{
+      accountId: string;
+      landingPage: Readonly<{
+        id: string;
+        status: OperationalLandingPageStatus;
+      }>;
+      planKey: string;
+      servedTaxon: LandingPageInputCatalogTaxonIdentity;
+      taxonChain: LandingPageInputCatalogTaxonChain;
+      historicalConfigurationCatalogVersion: number;
+      effectiveInputCatalogVersion: number;
+      configurationRevision: number;
+      rootVersion: number;
+      endCustomerResearchVersion: number;
+    }>;
+  }>;
+
+export type LandingPageGenerationContextPackage =
+  | LandingPageGenerationContextPackageV3
+  | LandingPageGenerationContextPackageV4;
 
 export type CompileLandingPageGenerationContextResult =
   | Readonly<{ ok: true; value: LandingPageGenerationContextPackage }>

@@ -3,7 +3,9 @@ import { getCommercialActivationHierarchicalBundle } from "@/conversion-content"
 import { getCommercialEntitlementSignal } from "../../../lib/commercial-entitlements";
 import {
   getAccountLandingPageOnboardingConfiguration,
+  isLandingPageWorkspaceEnabled,
   listAccountLandingPageDrafts,
+  listAccountLandingPageWorkspace,
   type AccountLandingPage,
   type AccountLandingPageOnboardingConfiguration,
 } from "../../../lib/lp-builder";
@@ -13,6 +15,7 @@ import { PendingSetupFirstSteps } from "./_components/PendingSetupFirstSteps";
 import { NicheResolutionCard } from "./_components/NicheResolutionCard";
 import { OnboardingConfigurationJourney } from "./_components/OnboardingConfigurationJourney";
 import { OnboardingCompletionJourney } from "./_components/OnboardingCompletionJourney";
+import { LandingPageWorkspace } from "./_components/LandingPageWorkspace";
 import { GenericCommercialPage } from "./_components/commercial-page/GenericCommercialPage";
 import { PublishedCommercialActivationPage } from "./_components/commercial-page/PublishedCommercialActivationPage";
 import {
@@ -86,6 +89,33 @@ export default async function Page({ params, searchParams }: PageProps) {
     const actorRole = ctx?.role ?? "viewer";
     const isCommerciallyEligible =
       commercialEntitlement?.isCommerciallyEligible === true;
+    const workspace =
+      accountId && isCommerciallyEligible && isLandingPageWorkspaceEnabled()
+        ? await listAccountLandingPageWorkspace({
+            accountId,
+            cursor:
+              typeof resolvedSearchParams.workspace_cursor === "string"
+                ? resolvedSearchParams.workspace_cursor
+                : undefined,
+          })
+        : null;
+    if (
+      workspace?.ok &&
+      actorRole !== "owner" &&
+      actorRole !== "admin"
+    ) {
+      return (
+        <LandingPageWorkspace
+          accountSubdomain={accountSubdomain}
+          workspace={workspace}
+          error={
+            typeof resolvedSearchParams.workspace_error === "string"
+              ? resolvedSearchParams.workspace_error
+              : undefined
+          }
+        />
+      );
+    }
     let onboardingState: AccountOnboardingState = "not_loaded";
     let onboardingConfiguration: AccountLandingPageOnboardingConfiguration | null =
       null;
@@ -166,7 +196,19 @@ export default async function Page({ params, searchParams }: PageProps) {
       if (!accountId || !onboardingConfiguration?.landingPageId) {
         return <OnboardingBlockedState />;
       }
-      return <LandingPageOperationalState />;
+      if (!isLandingPageWorkspaceEnabled()) return <WorkspaceRolloutPendingState />;
+      if (!workspace?.ok) return <WorkspaceUnavailableState />;
+      return (
+        <LandingPageWorkspace
+          accountSubdomain={accountSubdomain}
+          workspace={workspace}
+          error={
+            typeof resolvedSearchParams.workspace_error === "string"
+              ? resolvedSearchParams.workspace_error
+              : undefined
+          }
+        />
+      );
     }
     if (accountJourney.mode === "blocked") {
       return <OnboardingBlockedState />;
@@ -232,7 +274,25 @@ function OnboardingBlockedState() {
   );
 }
 
-function LandingPageOperationalState() {
+function WorkspaceUnavailableState() {
+  return (
+    <main className="mx-auto flex min-h-[60vh] max-w-5xl items-center px-4 py-10 sm:px-6">
+      <section className="w-full rounded-2xl border border-surface-border bg-white p-6 shadow-card sm:p-10">
+        <p className="text-sm font-semibold uppercase tracking-[0.16em] text-brand-700">
+          Workspace indisponível
+        </p>
+        <h1 className="mt-3 text-2xl font-bold tracking-tight text-ink-900 sm:text-3xl">
+          A configuração operacional não pôde ser carregada.
+        </h1>
+        <p className="mt-4 max-w-2xl text-sm leading-6 text-graytech-700 sm:text-base">
+          Nenhuma coleção parcial foi exibida e nenhuma configuração, revisão ou aprovação foi alterada. Tente novamente após confirmar o rollout do ambiente.
+        </p>
+      </section>
+    </main>
+  );
+}
+
+function WorkspaceRolloutPendingState() {
   return (
     <main className="mx-auto flex min-h-[60vh] max-w-5xl items-center px-4 py-10 sm:px-6">
       <section className="w-full rounded-2xl border border-surface-border bg-white p-6 shadow-card sm:p-10">

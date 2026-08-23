@@ -5,6 +5,7 @@ import {
   type LandingPageInputCatalogPlan,
   type LandingPageInputCatalogTaxonChain,
   type LandingPageInputCondition,
+  type ResolvedLandingPageInputField,
 } from "../conversion-content/landing-page/input-catalog";
 import type {
   AccountLandingPageOnboardingConfiguration,
@@ -50,6 +51,11 @@ export function resolveAccountLandingPageOnboardingConfiguration(
   const fieldsByKey = new Map(
     catalog.value.fields.map((field) => [field.fieldKey, field]),
   );
+  const canonicalStoredValues: Record<
+    string,
+    AccountLandingPageOnboardingStoredValues[string]
+  > = {};
+  const canonicalAuthoritativeValues: Record<string, unknown> = {};
 
   for (const [fieldKey, stored] of Object.entries(input.storedValues)) {
     const field = fieldsByKey.get(fieldKey);
@@ -59,28 +65,37 @@ export function resolveAccountLandingPageOnboardingConfiguration(
     if (Object.hasOwn(input.authoritativeValues, fieldKey)) {
       return { ok: false, error: "INVALID_CONFIGURATION", fieldKey };
     }
-    if (!validateLandingPageInputValue(field, stored.value).ok) {
+    const canonicalValue = canonicalizeLandingPageInputValue(field, stored.value);
+    if (!validateLandingPageInputValue(field, canonicalValue).ok) {
       return { ok: false, error: "INVALID_CONFIGURATION", fieldKey };
     }
     if (
       fieldKey === "brand_color_palette" &&
-      !validateStarterColorPalette(stored.value).ok
+      !validateStarterColorPalette(canonicalValue).ok
     ) {
       return { ok: false, error: "INVALID_CONFIGURATION", fieldKey };
     }
+    canonicalStoredValues[fieldKey] = {
+      scope: stored.scope,
+      value: canonicalValue,
+    };
   }
 
   for (const [fieldKey, value] of Object.entries(input.authoritativeValues)) {
     const field = fieldsByKey.get(fieldKey);
-    if (!field || !validateLandingPageInputValue(field, value).ok) {
+    const canonicalValue = field
+      ? canonicalizeLandingPageInputValue(field, value)
+      : value;
+    if (!field || !validateLandingPageInputValue(field, canonicalValue).ok) {
       return { ok: false, error: "INVALID_VALUES", fieldKey };
     }
     if (
       fieldKey === "brand_color_palette" &&
-      !validateStarterColorPalette(value).ok
+      !validateStarterColorPalette(canonicalValue).ok
     ) {
       return { ok: false, error: "INVALID_VALUES", fieldKey };
     }
+    canonicalAuthoritativeValues[fieldKey] = canonicalValue;
   }
 
   const effectiveValues: Record<string, unknown> = {};
@@ -90,13 +105,13 @@ export function resolveAccountLandingPageOnboardingConfiguration(
   >();
 
   for (const field of catalog.value.fields) {
-    if (Object.hasOwn(input.authoritativeValues, field.fieldKey)) {
-      effectiveValues[field.fieldKey] = input.authoritativeValues[field.fieldKey];
+    if (Object.hasOwn(canonicalAuthoritativeValues, field.fieldKey)) {
+      effectiveValues[field.fieldKey] = canonicalAuthoritativeValues[field.fieldKey];
       sourceByFieldKey.set(field.fieldKey, "authoritative");
       continue;
     }
-    if (Object.hasOwn(input.storedValues, field.fieldKey)) {
-      effectiveValues[field.fieldKey] = input.storedValues[field.fieldKey].value;
+    if (Object.hasOwn(canonicalStoredValues, field.fieldKey)) {
+      effectiveValues[field.fieldKey] = canonicalStoredValues[field.fieldKey].value;
       sourceByFieldKey.set(field.fieldKey, "configuration");
     }
   }
@@ -134,12 +149,64 @@ export function resolveAccountLandingPageOnboardingConfiguration(
       revision: input.revision,
       planKey: catalog.value.plan,
       taxonChain: input.taxonChain,
-      storedValues: cloneJson(input.storedValues),
+      storedValues: cloneJson(canonicalStoredValues),
       fields,
       missingRequiredFieldKeys,
       complete: missingRequiredFieldKeys.length === 0,
     }),
   };
+}
+
+function canonicalizeLandingPageInputValue(
+  field: ResolvedLandingPageInputField,
+  value: unknown,
+): unknown {
+  switch (field.valueType) {
+    case "string":
+    case "phone":
+    case "email":
+    case "url":
+    case "enum":
+      return typeof value === "string" ? value.trim() : value;
+    case "string_list":
+      return Array.isArray(value)
+        ? value.map((item) => (typeof item === "string" ? item.trim() : item))
+        : value;
+    case "keyword_map":
+      return Array.isArray(value)
+        ? value.map((item) => {
+            if (!isPlainRecord(item)) return item;
+            return {
+              ...item,
+              ...(typeof item.keyword_or_cluster === "string"
+                ? { keyword_or_cluster: item.keyword_or_cluster.trim() }
+                : {}),
+              ...(typeof item.message_anchor === "string"
+                ? { message_anchor: item.message_anchor.trim() }
+                : {}),
+              ...(typeof item.ad_context === "string"
+                ? { ad_context: item.ad_context.trim() }
+                : {}),
+            };
+          })
+        : value;
+    case "asset_reference":
+      return isPlainRecord(value) && typeof value.asset_id === "string"
+        ? { asset_id: value.asset_id.trim() }
+        : value;
+    case "color_palette":
+      return isPlainRecord(value)
+        ? Object.fromEntries(
+            Object.entries(value).map(([key, item]) => [
+              key,
+              typeof item === "string" ? item.toLowerCase() : item,
+            ]),
+          )
+        : value;
+    case "boolean":
+    case "number_range":
+      return value;
+  }
 }
 
 export function stripAuthoritativeOnboardingValues(

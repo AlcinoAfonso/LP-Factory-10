@@ -2,8 +2,8 @@
 
 0.1 Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.72
-• Data: 20/08/2026
+• Versão: v2.0.73
+• Data: 22/08/2026
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -238,9 +238,11 @@
 • O LP Builder deve consumir o boundary de entitlement existente, sem duplicar sua lógica.
 • Persistência inicial permanece limitada a draft; schema e campos exatos pertencem a `docs/schema.md` e ao código.
 • UI/client não acessa Supabase diretamente para criar LP; evolução funcional fora do runtime atual pertence ao roadmap.
-• O contexto de geração usa o contrato público v3 de `lib/lp-builder/`: sucesso contém somente identidades, contexto semântico para o modelo e contexto operacional server-side; falhas são explícitas e nunca retornam pacote parcial.
+• O contexto de geração usa o contrato público vigente de `lib/lp-builder/`: sucesso contém somente identidades, contexto semântico para o modelo e contexto operacional server-side; falhas são explícitas e nunca retornam pacote parcial.
 • O compilador deve reutilizar as autoridades canônicas de preparação factual do taxon, configuração, catálogo de entradas e parametrização raiz, sem importar registries ou schemas internos de outros boundaries e sem criar mapa nominal paralelo de fields.
 • A versão E20.2 revisada deve chegar explicitamente pelo boundary de preparação, ser executável e dirigir a revalidação read-only dos valores históricos pelo plano e pela cadeia taxonômica atuais; a versão original da configuração permanece distinta, e maior versão, `latest`, fallback ou regravação silenciosa são proibidos.
+• Configuração histórica vinculada à LP pode servir de bootstrap somente enquanto a residência operacional daquela LP não existir; depois do handoff, a residência operacional é a única autoridade editável e a fonte histórica não vira fallback concorrente.
+• Evoluções de snapshot devem usar união discriminada entre pares completos de versões compatíveis: writers novos emitem somente o contrato vigente e readers preservam contratos históricos aceitos sem completar, cruzar versões ou reinterpretar revisões persistidas.
 • Todo fato aplicável e presente preserva metadata e proveniência canônicas; o `valueType` separa deterministicamente valores semanticamente visíveis de valores operacionais brutos, que não podem integrar o contexto textual do modelo.
 • Pesquisa destinada à LP preserva integralmente o Markdown `end_customer` selecionado e validado pelo boundary de preparação, sem resumo, atomização, ranking, filtro por módulo, funil, CTA, item ou julgamento editorial do compilador e sem expor seu path físico.
 • Entitlement é autorizado exclusivamente pelo boundary interno vigente; plano, assinatura, feature ou resposta externa de provedor comercial não substituem esse sinal.

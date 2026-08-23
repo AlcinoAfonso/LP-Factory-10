@@ -124,8 +124,24 @@ function revisionFixture(
           accountId: ACCOUNT_ID,
           landingPage: { id: LANDING_PAGE_ID, status: landingPageStatus },
           planKey: "starter",
-          servedTaxon: { id: "taxon-1", slug: "corretor-imoveis", name: "Corretor de imóveis" },
-          taxonChain: {},
+          servedTaxon: {
+            id: "50000000-0000-4000-8000-000000000005",
+            slug: "corretor-imoveis",
+            name: "Corretor de imóveis",
+            level: "segment",
+            isActive: true,
+            parentId: null,
+          },
+          taxonChain: {
+            segment: {
+              id: "50000000-0000-4000-8000-000000000005",
+              slug: "corretor-imoveis",
+              name: "Corretor de imóveis",
+              level: "segment",
+              isActive: true,
+              parentId: null,
+            },
+          },
           historicalConfigurationCatalogVersion: 2,
           effectiveInputCatalogVersion: 4,
           configurationRevision: 8,
@@ -145,19 +161,24 @@ function revisionFixture(
               purpose: "business identity",
               valueType: "string",
               value: "Imóveis com Alcino",
-              source: "account_configuration",
-              provenance: [],
+              source: "configuration",
+              provenance: [{ property: "definition", layer: "universal" }],
             },
             {
               fieldKey: "artificial_internal_fact",
               purpose: "must stay private",
               valueType: "string",
               value: "ARTIFICIAL_FACT_MUST_NOT_LEAK",
-              source: "account_configuration",
-              provenance: [],
+              source: "configuration",
+              provenance: [{ property: "definition", layer: "universal" }],
             },
           ],
-          editorialLimits: { semanticRoles: [], semanticHierarchy: ["h1", "h2", "h3"] },
+          editorialLimits: {
+            semanticRoles: [
+              { key: "h1", recommended: { min: 20, max: 72 }, absoluteMax: 96 },
+            ],
+            semanticHierarchy: ["h1", "h2", "h3"],
+          },
         },
         bindingFacts: [],
       },
@@ -325,7 +346,7 @@ const cases = [
     name: "account membership entitlement landing-page snapshot and asset drift fail before signing",
     run: async () => {
       const snapshotDrift = revisionFixture();
-      const snapshotWithWrongAccount = {
+      const snapshotWithWrongAccount: CurrentLandingPageRevision = {
         ...snapshotDrift,
         snapshot: {
           ...snapshotDrift.snapshot,
@@ -336,14 +357,14 @@ const cases = [
               accountId: "60000000-0000-4000-8000-000000000006",
             },
           },
-        },
+        } as CurrentLandingPageRevision["snapshot"],
       };
       const assetDrift = revisionFixture();
       const crossTenantAsset = {
         ...assetDrift.content.media.mainImage,
         path: `60000000-0000-4000-8000-000000000006/${LANDING_PAGE_ID}/${ATTEMPT_ID}/main.webp`,
       };
-      const revisionWithCrossTenantAsset = {
+      const revisionWithCrossTenantAsset: CurrentLandingPageRevision = {
         ...assetDrift,
         content: {
           ...assetDrift.content,
@@ -352,7 +373,7 @@ const cases = [
         snapshot: {
           ...assetDrift.snapshot,
           media: { mainImage: { ...crossTenantAsset } },
-        },
+        } as CurrentLandingPageRevision["snapshot"],
       };
       const scenarios: Array<{
         expected: string;
