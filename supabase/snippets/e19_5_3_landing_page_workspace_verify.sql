@@ -68,6 +68,7 @@ begin
       and column_name = 'approved_materialization_id'
       and data_type = 'uuid'
       and is_nullable = 'YES'
+      and column_default is null
   ) then
     raise exception 'E19.5.3 approval pointer column drifted';
   end if;
@@ -233,17 +234,6 @@ begin
     raise exception 'E19.5.3 RLS or no-policy contract drifted';
   end if;
 
-  if not has_table_privilege('service_role', 'public.account_landing_page_shared_configurations', 'SELECT,INSERT,UPDATE')
-     or has_table_privilege('service_role', 'public.account_landing_page_shared_configurations', 'DELETE,TRUNCATE')
-     or not has_table_privilege('service_role', 'public.account_landing_page_configurations', 'SELECT,INSERT,UPDATE')
-     or has_table_privilege('service_role', 'public.account_landing_page_configurations', 'DELETE,TRUNCATE')
-     or has_table_privilege('anon', 'public.account_landing_page_shared_configurations', 'SELECT,INSERT,UPDATE,DELETE,TRUNCATE')
-     or has_table_privilege('authenticated', 'public.account_landing_page_shared_configurations', 'SELECT,INSERT,UPDATE,DELETE,TRUNCATE')
-     or has_table_privilege('anon', 'public.account_landing_page_configurations', 'SELECT,INSERT,UPDATE,DELETE,TRUNCATE')
-     or has_table_privilege('authenticated', 'public.account_landing_page_configurations', 'SELECT,INSERT,UPDATE,DELETE,TRUNCATE') then
-    raise exception 'E19.5.3 table grants drifted';
-  end if;
-
   if exists (
     select 1
     from pg_class table_object
@@ -254,17 +244,43 @@ begin
       'public.account_landing_page_shared_configurations'::regclass,
       'public.account_landing_page_configurations'::regclass
     )
-      and privilege.grantee = 0
+      and (
+        privilege.grantee = 0
+        or privilege.grantee in (
+          select role_object.oid
+          from pg_roles role_object
+          where role_object.rolname in ('anon', 'authenticated', 'ai_readonly')
+        )
+      )
   ) then
-    raise exception 'E19.5.3 PUBLIC table grants drifted';
+    raise exception 'E19.5.3 external table ACLs drifted';
   end if;
 
-  if to_regrole('ai_readonly') is not null
-     and (
-       has_table_privilege('ai_readonly', 'public.account_landing_page_shared_configurations', 'SELECT,INSERT,UPDATE,DELETE,TRUNCATE')
-       or has_table_privilege('ai_readonly', 'public.account_landing_page_configurations', 'SELECT,INSERT,UPDATE,DELETE,TRUNCATE')
-     ) then
-    raise exception 'E19.5.3 ai_readonly table grants drifted';
+  if exists (
+    select 1
+    from pg_class table_object
+    left join lateral (
+      select
+        array_agg(
+          distinct privilege.privilege_type
+          order by privilege.privilege_type
+        ) as privileges,
+        bool_or(privilege.is_grantable) as has_grant_option
+      from aclexplode(
+        coalesce(table_object.relacl, acldefault('r', table_object.relowner))
+      ) privilege
+      where privilege.grantee = to_regrole('service_role')
+    ) service_acl on true
+    where table_object.oid in (
+      'public.account_landing_page_shared_configurations'::regclass,
+      'public.account_landing_page_configurations'::regclass
+    )
+      and (
+        service_acl.privileges is distinct from array['INSERT', 'SELECT', 'UPDATE']::text[]
+        or coalesce(service_acl.has_grant_option, false)
+      )
+  ) then
+    raise exception 'E19.5.3 service_role table ACLs drifted';
   end if;
 
   foreach v_signature in array array[
