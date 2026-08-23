@@ -296,7 +296,6 @@ begin
          select procedure.prosecdef
             or procedure.provolatile <> 'v'
             or pg_get_userbyid(procedure.proowner) <> 'postgres'
-            or pg_get_functiondef(procedure.oid) not ilike '%security invoker%'
             or pg_get_functiondef(procedure.oid) not ilike '%set search_path to ''public'', ''pg_catalog''%'
          from pg_proc procedure
          where procedure.oid = v_function
@@ -350,7 +349,6 @@ begin
      or (select prorettype <> 'boolean'::regtype from pg_proc where oid = v_function)
      or (select prolang <> (select oid from pg_language where lanname = 'sql') from pg_proc where oid = v_function)
      or (select pg_get_userbyid(proowner) <> 'postgres' from pg_proc where oid = v_function)
-     or pg_get_functiondef(v_function) not ilike '%security invoker%'
      or pg_get_functiondef(v_function) not ilike '%set search_path to ''pg_catalog''%'
      or not has_function_privilege('service_role', v_function, 'EXECUTE')
      or has_function_privilege('anon', v_function, 'EXECUTE')

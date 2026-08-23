@@ -138,6 +138,17 @@ begin
      )
      or has_function_privilege(
        'authenticated', 'public.e19_5_configuration_values_have_scopes(jsonb,text[])', 'EXECUTE'
+     )
+     or (
+       to_regrole('ai_readonly') is not null
+       and (
+         has_function_privilege(
+           'ai_readonly', 'public.e19_5_actor_can_manage(uuid,uuid)', 'EXECUTE'
+         )
+         or has_function_privilege(
+           'ai_readonly', 'public.e19_5_configuration_values_have_scopes(jsonb,text[])', 'EXECUTE'
+         )
+       )
      ) then
     raise exception 'E19.5.3 helper grants are not service-only';
   end if;
@@ -151,7 +162,6 @@ begin
     if v_function is null
        or (select prosecdef from pg_proc where oid = v_function)
        or (select pg_get_userbyid(proowner) <> 'postgres' from pg_proc where oid = v_function)
-       or pg_get_functiondef(v_function) not ilike '%security invoker%'
        or pg_get_functiondef(v_function) not ilike '%set search_path to ''public'', ''pg_catalog''%'
        or not has_function_privilege('service_role', v_function, 'EXECUTE')
        or has_function_privilege('authenticated', v_function, 'EXECUTE') then
