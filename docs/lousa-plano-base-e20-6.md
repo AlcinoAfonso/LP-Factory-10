@@ -2,6 +2,7 @@
 
 - Data: 15/08/2026.
 - Versão: v2 da E20.6.5 consolidada em 20/08/2026 sobre a v1 imutável do PR #764 e aprovada pelo Analista após Passagens 1 e 2, revisões delta e ABC do roadmap.
+- Refinamento funcional/UX: decisão humana de 23/08/2026 registrada na seção 5, sem reabrir os contratos determinísticos das seções 1–4.
 - Status: E20.6.3 e E20.6.4 concluídas e operacionais; checkpoint pré-integração da E20.6.5 implementado e validado, sem integração OpenAI iniciada.
 - Recorte previsto para roadmap: `20.6 — Avaliação de suficiência factual da E20.2 por taxon`.
 - Path canônico: `docs/lousa-plano-base-e20-6.md`.
@@ -566,3 +567,102 @@ Execute a avaliação E20.6 do taxon `[taxon_slug]`, usando a cadeia taxonômica
 - Após merge e apply, parar antes do rollout somente se a API pública exigir consulta direta ao Supabase, configuração paralela, resolver/transporte exclusivo ou redesenho transversal material.
 - Parar se o caminho executável vigente não fornecer `requiredInputCatalogVersion` explicitamente a partir da leitura canônica ou se uma mudança material tornar essa autoridade ambígua; não assumir v4, v5, `latest`, maior versão, fallback nem dependência automática da E19.5.
 - Encerrar a E20.6.5 somente após o runtime do Admin executar avaliação sistemática e focal com IA em Preview e Production aprovados, preservar decisão humana separada, falhar fechado, continuar alimentando o mesmo predicado determinístico da E20.6.4 e concluir a contração documental/operacional aprovada pelo Estrategista.
+
+## 5. Refinamento funcional e de experiência da E20.6.5 — 23/08/2026
+
+### 5.1. Objetivo funcional em linguagem de produto
+
+- Este refinamento não cria nova responsabilidade funcional e não altera a semântica determinística das seções anteriores; ele explicita o objetivo da E20.6.5 em linguagem de produto e define como essa responsabilidade deve ser apresentada ao `platform_admin`.
+- A pergunta principal para o humano é: `temos os dados factuais necessários para gerar LPs confiáveis para este taxon?`.
+- A E20.6.5 existe para verificar essa suficiência com apoio semântico da IA, apontar possíveis faltas factuais reais e permitir que o humano tome a decisão administrativa final.
+- `E20.2`, `E20.5`, nomes de status, nomes de fields, camadas taxonômicas e identificadores de workload continuam sendo contratos técnicos necessários, mas não devem dominar a linguagem primária da interface.
+- O resultado útil para o humano permanece semanticamente limitado a três situações:
+  - os dados atuais parecem suficientes;
+  - existem possíveis informações factuais faltando que precisam de revisão humana;
+  - a análise não conseguiu chegar a uma conclusão segura.
+- A IA permanece não autoritativa em todos os casos: não aprova o taxon, não altera a E20.2 e não transforma recomendação em decisão administrativa.
+- Em caso de conflito apenas de terminologia de apresentação entre esta seção e a seção 2.10, prevalece esta seção 5; contratos técnicos, estados internos, validações e invariantes das seções 1–4 permanecem preservados.
+
+### 5.2. Separação entre E20.6.5 e E21.2.5
+
+- Fonte adicional deste refinamento: `docs/lousa-plano-base-e21-2-5.md`, mergeada na `main` como plano da evolução `E21.2.5 — Catálogo administrável e UX compacta dos workloads OpenAI`.
+- A E21.2.5 não altera o objetivo, a barreira de gap factual, o Structured Output, a autoridade humana ou o predicado determinístico da E20.6.5.
+- A E21.2.5 passa a responder pela elegibilidade operacional de `modelo + reasoning effort`, pelo catálogo global disponível para novas candidatas e pelo lifecycle de configuração por `ambiente + workload`.
+- A E20.6.5 responde somente pelo caso funcional de avaliação factual e consome a configuração ativa do workload `taxon_input_catalog_sufficiency_evaluation` por meio do boundary comum E21.
+- Quando a E21.2.5 estiver implementada, adicionar ou indisponibilizar combinações de modelo e effort já suportadas pelo boundary não deve exigir alteração do domínio, do prompt funcional ou da UI da E20.6.5.
+- A superfície da E20.6.5 não deve pedir ao usuário que escolha modelo, effort, revisão operacional ou fonte de configuração; essas decisões pertencem à área de Workloads OpenAI e à governança E21.
+- O bootstrap histórico `gpt-5.6-terra + low` permanece registrado nas seções anteriores como estado de implementação da E21.2 original, mas não constitui requisito funcional da E20.6.5 nem deve ser promovido a regra permanente deste recorte.
+- Uma decisão humana futura por outra combinação elegível, inclusive alteração de effort, deve ser aplicada pelo lifecycle E21 vigente e não codificada neste plano como hardcode do consumidor.
+- Novo nome de parâmetro ainda desconhecido pelo contrato tipado do boundary permanece matéria de recorte técnico E21 próprio, conforme a E21.2.5; a E20.6.5 não amplia esse vocabulário.
+
+### 5.3. Linguagem primária da interface
+
+- O título principal da superfície deve ser orientado ao objetivo humano, preferencialmente `Verificar se este nicho tem os dados necessários`, em vez de usar `Avaliação factual do catálogo E20.2` como título primário.
+- A explicação curta deve ser equivalente a: `A IA compara a pesquisa aprovada deste nicho com os dados que a LP pode precisar. Nenhuma alteração é feita automaticamente.`
+- Os identificadores internos de modo permanecem `systematic` e `hypothesis`, mas a apresentação deve usar linguagem amigável:
+  - `systematic` → `Verificação completa`, com descrição equivalente a `Procure qualquer informação factual importante que possa estar faltando.`;
+  - `hypothesis` → `Verificar uma dúvida específica`, com descrição equivalente a `Tenho uma dúvida sobre um dado que talvez precise ser coletado.`
+- Termos como `field`, `candidate_gaps`, `refine_existing_field`, `possible_new_field`, `taxonomic layer`, versão de schema e identidade do workload podem aparecer em `Detalhes técnicos`, mas não como linguagem obrigatória para compreender ou concluir a decisão.
+- A interface deve continuar adequada a `platform_admin`: simplificar linguagem não significa ocultar rastreabilidade técnica, e sim colocá-la em segundo nível de leitura.
+
+### 5.4. Apresentação do resultado e da decisão humana
+
+- Os estados internos permanecem `sufficient | candidate_gaps | inconclusive`, mas a apresentação primária deve usar:
+  - `sufficient` → `Os dados atuais parecem suficientes`;
+  - `candidate_gaps` → `Encontramos possíveis informações faltando`;
+  - `inconclusive` → `A análise não conseguiu chegar a uma conclusão segura`.
+- Para `sufficient`, a explicação deve deixar claro que a IA não encontrou uma necessidade factual adicional que tenha passado pela barreira de admissão, sem declarar aprovação automática.
+- Para `candidate_gaps`, cada candidato deve priorizar perguntas compreensíveis pelo humano:
+  - `O que pode estar faltando`;
+  - `Por que isso pode ser necessário`;
+  - `Onde essa informação seria usada`;
+  - `Já existe algo parecido hoje?`.
+- Evidência, origem operacional, consumidor, prejuízo, fields relacionados, conclusão técnica e camada sugerida continuam disponíveis, mas detalhes de contrato podem ficar em nível secundário.
+- As ações humanas devem usar verbos que expressem a decisão real, por exemplo:
+  - `Confirmar que esta versão é suficiente`;
+  - `Sim, esta informação realmente está faltando`;
+  - `Não, os dados atuais já são suficientes`;
+  - `Reavaliar`.
+- Resultado `inconclusive`, refusal, erro técnico, output inválido ou estado stale deve informar em linguagem direta que nenhuma decisão foi aplicada e manter as ações administrativas incompatíveis bloqueadas.
+- A interface não deve apresentar o JSON/Structured Output bruto como superfície principal de decisão.
+
+### 5.5. Escolha explícita da versão E20.2
+
+- A exigência arquitetural de escolha explícita da versão executável `N` permanece inalterada; este refinamento não autoriza `latest`, maior versão ou seleção implícita.
+- A linguagem primária deve ser equivalente a `Versão dos dados que você quer revisar`, mantendo `E20.2` e o identificador técnico como informação secundária quando útil.
+- A UI deve apresentar somente versões executáveis obtidas do contrato autorizado como opções explícitas e selecionáveis; não exigir que o humano memorize ou digite livremente um número positivo quando o sistema já conhece as opções válidas.
+- A existência de uma versão numericamente maior não autoriza marcá-la como `atual`, `recomendada` ou pré-selecioná-la sem uma autoridade real do produto.
+- A escolha continua efêmera para a avaliação; somente a decisão humana final de suficiência pode gravar `reviewed_input_catalog_version = N`.
+
+### 5.6. Fluxo visual da experiência
+
+- A superfície deve organizar o trabalho em quatro etapas reconhecíveis, sem criar nova rota ou lifecycle:
+  - `O que será revisado`: taxon, pesquisa selecionada e versão executável escolhida;
+  - `Como você quer verificar`: verificação completa ou dúvida específica;
+  - `Resultado da IA`: suficiente, possíveis informações faltando ou inconclusivo;
+  - `Sua decisão`: confirmar suficiência, reconhecer informação faltante ou reavaliar.
+- A ordem visual deve separar claramente recomendação da IA e decisão humana, preservando a revalidação server-side antes de qualquer mutação.
+- Feedback humano e reavaliação permanecem novas chamadas explícitas com contexto reconstruído, sem transformar a tela em chat persistente.
+- O histórico Admin → Codex permanece apenas como mecanismo legado condicionado ao gate enquanto a contração ainda não tiver sido concluída; ele não deve competir visualmente com o fluxo principal quando o runtime estiver comprovado e habilitado.
+
+### 5.7. Critérios de aceite do refinamento de experiência
+
+- Um `platform_admin` deve compreender sem instrução externa:
+  - qual pergunta a funcionalidade está tentando responder;
+  - quais dados serão confrontados;
+  - a diferença entre verificação completa e dúvida específica;
+  - que o resultado é recomendação de IA e não aprovação;
+  - qual ação humana confirma suficiência ou reconhece uma falta factual real;
+  - que falha, inconclusão ou invalidação não alteram o estado administrativo.
+- A escolha de modelo, effort e revisão operacional não aparece como responsabilidade da E20.6.5.
+- A escolha da versão E20.2 permanece explícita, porém por opções válidas e linguagem compreensível, sem regra implícita de versão mais recente.
+- Termos técnicos necessários à auditoria permanecem acessíveis em nível secundário sem serem pré-requisito para executar o fluxo corretamente.
+- Continuam obrigatórios os critérios existentes de desktop, mobile, teclado, foco, labels, feedback de erro, ausência de overflow e fail-closed; uma futura implementação deste refinamento deve executar QA proporcional somente sobre o delta de experiência realmente alterado.
+- Este refinamento não autoriza nova tabela, coluna, rota, memória, agente, job, engine ou infraestrutura; reutiliza o boundary, a rota, a persistência mínima e o lifecycle existentes.
+
+### 5.8. Consequência para o fechamento da E20.6.5
+
+- A implementação da E21.2.5 é uma dependência de governança para flexibilizar de forma correta a configuração do workload; ela não redefine a responsabilidade funcional da E20.6.5.
+- Depois que a E21.2.5 estiver implementada e operacionalmente validada, a E20.6.5 deve consumir a configuração ativa escolhida sob governança E21 e executar as provas focais necessárias à retomada do rollout, sem criar exceção hardcoded no consumidor.
+- Se o refinamento de UX desta seção for implementado antes do contract final, a validação deve concentrar-se no delta de apresentação e nas decisões humanas afetadas, preservando as provas determinísticas e operacionais já válidas que não tenham sofrido mudança material.
+- O contract final continua responsável por remover definitivamente o caminho legado somente depois de Preview e Production aprovados no runtime vigente e por reconciliar a documentação canônica com o estado operacional final.
