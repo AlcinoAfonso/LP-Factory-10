@@ -3,6 +3,7 @@
 - Data: 15/08/2026.
 - Versão: v2 da E20.6.5 consolidada em 20/08/2026 sobre a v1 imutável do PR #764 e aprovada pelo Analista após Passagens 1 e 2, revisões delta e ABC do roadmap.
 - Refinamento funcional/UX: decisão humana de 23/08/2026 registrada na seção 5, sem reabrir os contratos determinísticos das seções 1–4.
+- Reconciliação pós-Analista do PR #809: registrada na seção 7 em 23/08/2026; essa seção supera apenas as formulações conflitantes sobre `R → C`, rollback e estado da E21.2.5, preservando o histórico anterior.
 - Status: E20.6.3 e E20.6.4 concluídas e operacionais; checkpoint pré-integração da E20.6.5 implementado e validado, sem integração OpenAI iniciada.
 - Recorte previsto para roadmap: `20.6 — Avaliação de suficiência factual da E20.2 por taxon`.
 - Path canônico: `docs/lousa-plano-base-e20-6.md`.
@@ -728,3 +729,51 @@ Execute a avaliação E20.6 do taxon `[taxon_slug]`, usando a cadeia taxonômica
 - Não criar nova persistência de aprovação apenas para propagar versões sem demonstrar necessidade; o desenho preferencial evita writes de sincronização quando a compatibilidade pode ser derivada.
 - Qualquer necessidade de nova tabela, coluna, view, RPC, rota ou infraestrutura deve voltar ao planejamento com fonte real do repositório, `docs/schema.md` e `docs/base-tecnica.md` antes de implementação.
 - O contract final da E20.6.5 não deve encerrar o recorte ignorando a E20.2.8 se essa evolução já estiver aprovada para o produto; deve reconciliar a versão atual, a UX amigável e a governança E21.2.5 como contratos distintos porém compatíveis.
+
+## 7. Reconciliação pós-Analista do PR #809 — 23/08/2026
+
+### 7.1. Autoridade canônica entre revisão humana e versão operacional
+
+- Esta seção supera, para a futura E20.2.8, a formulação simplificada da seção 6.2 que usa `C` apenas como sinônimo de versão global atual.
+- `R` é a última versão humanamente revisada e continua representada por `reviewed_input_catalog_version`.
+- `V` é a versão global atual da E20.2.
+- `C` é a versão operacional efetivamente autorizada pelo boundary canônico de preparação para aquele taxon.
+- No fluxo normal, o boundary produz `C = V` quando `R = V` ou quando a transição resolvida `R → V` for deterministicamente `sem mudança material` ou `evolução compatível`.
+- Quando `R → V` exigir revisão, a versão global atual não é promovida silenciosamente a `C`; o taxon permanece bloqueado para essa versão até nova decisão humana de suficiência.
+- O resultado conceitual da preparação deve preservar separadamente `R` para auditoria da última decisão humana e `C` para consumo operacional corrente; a nomenclatura física da API será reconciliada no recorte técnico, sem autorizar nova persistência por este documento.
+- Não regravar `R = C` apenas para sincronizar número quando a autorização de `C` vier de carry-forward determinístico.
+
+### 7.2. Consumidores materiais obrigatórios de `C`
+
+- A implementação futura da E20.2.8 deve tratar explicitamente os consumidores reais já presentes na `main`:
+  - E19.2 pré-handoff consome `C` como versão operacional para resolução, validação e persistência de configuração nova ou ainda não vinculada;
+  - E19.5 workspace consome `C` para resolver e salvar a configuração operacional corrente;
+  - geração via E19.5 consome exatamente a mesma `C` usada pelo workspace e pela revalidação operacional.
+- Nenhum desses consumidores pode resolver `versão atual` localmente, consultar `Math.max`, inferir `latest`, manter um novo pin substituto ou usar `R` como se fosse necessariamente a versão operacional autorizada.
+- O pin vigente `LANDING_PAGE_WORKSPACE_REQUIRED_INPUT_CATALOG_VERSION = 5` e contratos equivalentes somente podem ser removidos/reconciliados dentro da implementação completa da E20.2.8, quando a autoridade única de `C` estiver disponível.
+- Configurações E19.2/E19.5 já persistidas continuam registrando o `catalog_version` realmente usado em sua escrita; revisões, materializações e snapshots preservam a versão efetivamente usada e não são reinterpretados pela mudança de `V` ou `C`.
+- Revalidação histórica pode ler a versão persistida para compreender o estado anterior, mas qualquer nova operação corrente usa a `C` autorizada e permanece fail-closed diante de incompatibilidade.
+
+### 7.3. Rollback operacional deferido
+
+- Esta seção supera integralmente a seção 6.6 para a primeira entrega da E20.2.8.
+- Tornar uma versão executável anterior novamente a versão atual não integra o MVP da E20.2.8.
+- O motivo é material: a E19.5 pode possuir valores persistidos para fields introduzidos em versões posteriores, e o contrato vigente rejeita como `INVALID_CONFIGURATION` um valor cujo `fieldKey` não exista no catálogo usado para resolver a residência.
+- Suportar rollback corretamente exigiria definir preservação, inativação/projeção e recuperação de valores posteriores sem perda de dados e sem relaxar a validação fail-closed; isso amplia desnecessariamente o recorte atual.
+- Se uma versão publicada apresentar defeito nesta primeira entrega, o fluxo operacional previsto é corrigi-la e publicar nova versão forward-only.
+- Rollback poderá ser reaberto somente em evolução própria após existir contrato explícito com as residências E19.5 e os snapshots históricos.
+
+### 7.4. Estado factual da E21.2.5
+
+- Esta seção supera o tempo futuro usado nas seções 5.2 e 5.8 sobre a implementação da E21.2.5.
+- A implementação repo-side da E21.2.5 já foi mergeada na `main` pelos PRs #807 e #810.
+- O catálogo global administrável e a separação entre elegibilidade de modelo/parâmetro e lifecycle por workload já pertencem ao código vigente; isso não altera a responsabilidade funcional da E20.6.5.
+- Os gates operacionais pós-merge da E21.2.5 — apply canônico, Security Controls e QA hospedado conforme seu próprio plano/estado — permanecem independentes do PR #809 e não são declarados concluídos aqui.
+- A E20.6.5 continua sem expor modelo, effort ou revisão operacional como escolha da sua superfície funcional; consome a configuração ativa sob governança E21 quando operacionalmente comprovada.
+
+### 7.5. Consequência para o contract final da E20.6.5
+
+- O contract final não pode fechar a E20.6.5 com uma versão operacional hardcoded que contradiga a E20.2.8 já aprovada para o produto.
+- A implementação da E20.2.8 deve ocorrer como unidade completa antes de trocar o predicado atual de igualdade exata: autoridade global `V`, derivação `R → C`, comparador determinístico de compatibilidade e consumo coerente de `C` pela E19.2/E19.5.
+- Até essa implementação completa, o runtime vigente permanece inalterado e fail-closed com igualdade exata.
+- O PR #809 permanece exclusivamente documental: nenhuma tabela, coluna, migration, rota, RPC, job, agente, engine, nova infraestrutura ou alteração de runtime é autorizada por esta reconciliação.
