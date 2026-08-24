@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data da última atualização: 23/08/2026
-• Documento: LP Factory 10 — Schema (DB Contract) v1.0.54
+• Data da última atualização: 24/08/2026
+• Documento: LP Factory 10 — Schema (DB Contract) v1.0.55
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -1027,7 +1027,7 @@
 • RLS habilitado, zero policies e ACLs idênticas às da tabela de modelos; o trigger `openai_model_catalog_parameters_prevent_delete` rejeita DELETE.
 • Migration forward-only: `supabase/migrations/20260823144334_e21_2_5_openai_model_catalog.sql`.
 • Teste transacional: `supabase/tests/e21_2_5_openai_model_catalog.test.sql`; verificador read-only: `supabase/snippets/e21_2_5_openai_model_catalog_verify.sql`.
-• Estado atual: contrato materializado no PR técnico, sem apply hospedado; apply, snippet real e Security Controls permanecem gates pós-merge.
+• Estado atual: migration aplicada no ambiente hospedado pelo fluxo canônico; o verificador read-only aprovou 8/8 verificações e o Security Controls não apresentou alerta incompatível com as tabelas, constraints, RLS, policies, ACLs, RPCs ou triggers do catálogo. O INFO de RLS sem policy é esperado e compatível com acesso exclusivo por service_role.
 
 2. Views
 
