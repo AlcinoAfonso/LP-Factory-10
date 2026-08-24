@@ -1,16 +1,17 @@
-23/08/2026 — Plano-base v1 — E20.2.8 — Versão atual e propagação escalável do catálogo E20.2
+24/08/2026 — Plano-base v2 — E20.2.8 — Versão atual e propagação escalável do catálogo E20.2
 
 ## 1. Estado e decisões fixas
 
 ### 1.1. Estado
 
-- Status: plano-base v1 consolidado a partir da decisão humana de 23/08/2026 e ajustado após revisão do Analista; implementação não autorizada por este documento.
+- Status: plano-base v2 consolidado sobre o blob imutável `14718243ce834b5e37406e9d560d1db2d1f3db9e` da v1 incorporada à `main` pelo PR #809; implementação condicionada ao gate do Analista deste workflow.
 - Caso macro: `E20 — preparação e liberação de taxons`.
 - Recorte: `E20.2.8 — Versão atual e propagação escalável do catálogo E20.2`.
 - Este recorte é uma evolução operacional da E20.2 já versionada; não reescreve nem invalida o histórico de `docs/lousa-plano-base-e20-2.md`.
 - A E20.6 permanece responsável pela suficiência factual por taxon; este recorte altera a relação entre versão global do catálogo e necessidade de reavaliação, conforme a seção 2.3.
-- A implementação física da autoridade de versão atual, de sua persistência e da superfície administrativa permanece pendente de recorte técnico sobre o repositório real.
+- A forma física do draft administrativo e a composição da superfície permanecem condicionadas à análise técnica sobre o repositório real; a autoridade das versões publicadas e da versão atual é repo-only conforme a decisão humana registrada abaixo.
 - Rollback operacional para versão anterior não integra a primeira entrega da E20.2.8; eventual suporte futuro depende de contrato específico para compatibilidade com configurações persistidas em versões posteriores.
+- Decisão humana de 24/08/2026: o registry repo-only permanece autoridade das versões publicadas. Eventual persistência em banco pode servir somente como residência do draft administrativo não operacional, se continuar sendo a menor solução após análise técnica; v1–v5 não serão migradas para tornar o banco autoridade do catálogo publicado.
 
 ### 1.2. Fontes usadas
 
@@ -31,6 +32,7 @@
 - `lib/lp-builder/onboardingConfiguration.ts`, para a validação fail-closed de valores persistidos contra o catálogo resolvido.
 - Decisões humanas desta conversa em 23/08/2026 sobre escala, versão default e experiência administrativa.
 - Revisão do Analista de 23/08/2026 sobre autoridade `R → C`, consumidores E19.2/E19.5 e deferimento do rollback.
+- Plano conceitual: `N/A`; não existe referência competente nem vínculo inequívoco adicional para este recorte além das fontes canônicas e decisões já registradas.
 
 ### 1.3. Problema e resultado esperado
 
@@ -54,6 +56,7 @@
 - Uma nova versão somente pode tornar-se atual depois de existir como versão executável, passar pelas validações aplicáveis e ser publicada/ativada pelo fluxo humano aprovado.
 - A publicação normal de uma nova versão executável deve torná-la a versão atual por padrão. Exemplo: se v7 é atual e v8 é publicada com sucesso, v8 passa a ser a versão atual sem atualização manual de cada taxon.
 - `Versão atual` não significa `Math.max(registry)`, maior chave encontrada, `latest` inferido ou fallback silencioso.
+- A versão atual publicada deve ser uma declaração explícita, versionada e revisável no mesmo boundary repo-only do catálogo; sua alteração integra a materialização da nova versão no repositório e somente produz efeito operacional depois de validação e deploy bem-sucedidos.
 - O resolver puro continua recebendo um número concreto e explícito; a responsabilidade de fornecer esse número pertence à autoridade canônica de versão efetiva ou a um consumidor histórico explicitamente pinado.
 - Versões anteriores permanecem imutáveis e resolvíveis para reprodução histórica; esta primeira entrega não autoriza torná-las novamente a versão operacional atual.
 - Snapshots e revisões históricas continuam registrando a versão efetivamente usada e nunca são reinterpretados como se tivessem usado a versão atual posterior.
@@ -90,6 +93,7 @@
 - Diante de ambiguidade, falhar para `revisão necessária`.
 - A IA não decide a compatibilidade estrutural entre versões; essa classificação pertence ao processamento determinístico.
 - Este plano não autoriza uma engine genérica de diff. A implementação deve usar a menor comparação determinística capaz de provar as categorias acima sobre os contratos resolvidos reais.
+- No MVP, `sem mudança material` exige igualdade da sequência ordenada de fields e de todas as propriedades funcionais resolvidas, desconsiderando somente número da versão e metadata de evidência sem efeito runtime. `Evolução compatível` admite exclusivamente: adição de field válido; ampliação estrita de `allowedValues` preservando todas as demais propriedades; e mudança apenas de evidência editorial. Múltiplas diferenças são compatíveis somente quando todas pertencem a essa allowlist. Reordenação, retirada, mudança de `purpose`, origem, camada, scope, tipo, obligation, plans, conditions, substitution policy, capability binding ou qualquer validação fora da ampliação permitida resulta em `revisão necessária`.
 
 ### 1.7. Autoridade `R → C` e ciclo de vida mínimo
 
@@ -172,6 +176,7 @@
 - Configurações E19.2/E19.5 já persistidas continuam registrando o `catalog_version` realmente usado em sua escrita; materializações e snapshots continuam preservando a versão efetivamente usada naquela geração.
 - Revalidação histórica pode resolver o `catalog_version` persistido para compreender o estado anterior, mas qualquer nova operação corrente usa a autoridade `C` aplicável e falha fechado diante de incompatibilidade.
 - A implementação da E20.2.8 deve remover ou reconciliar os pins operacionais atualmente conhecidos — incluindo `LANDING_PAGE_WORKSPACE_REQUIRED_INPUT_CATALOG_VERSION = 5` — somente dentro do recorte completo, sem substituí-los por outro hardcode ou por lookup local de versão atual.
+- O cutover da E20.2.8 deve substituir, na mesma unidade ativável, todos os caminhos operacionais que derivam versão de `R`, de maior versão ou do pin v5. O inventário mínimo inclui `LANDING_PAGE_WORKSPACE_REQUIRED_INPUT_CATALOG_VERSION`, `save_account_landing_page_configuration_v1`, `loadTaxonPreparationForReviewedVersion`, workspace, geração, contexto de geração e o default `versions.at(-1)` da Estrutura da LP. Símbolo, export, branch legado ou validação que perder consumidor funcional deve ser removido no mesmo recorte; permanência exige consumidor histórico real e contrato de pin explícito.
 
 ### 2.5. Experiência administrativa futura
 
@@ -186,9 +191,11 @@
   - quantidade de taxons que precisam de revisão E20.6.
 - O humano não deve precisar visitar 100 ou 150 páginas de taxon para sincronizar uma nova versão.
 - Taxons com revisão necessária devem aparecer em uma visão agregada de pendências, com acesso ao fluxo individual E20.6.5 quando necessário.
-- A rota e a composição física dessa superfície não são definidas neste plano. A implementação deve primeiro avaliar as superfícies existentes de Estrutura da LP e Taxonomia e escolher a menor evolução coerente com o Design System.
+- A visão central da E20.2 deve evoluir `/admin/estrutura-lp?view=entradas`; a página `/admin/taxonomia/[taxonId]` permanece responsável pela execução individual E20.6.5. Não criar nova rota de primeiro nível. Componentes com estado ou actions próprias permanecem route-local; cada mutação reexecuta `requirePlatformAdmin()`, deriva o ator no servidor e acessa o banco somente por adapter server-only do boundary Admin.
 - Não criar job, fila, agente, automação recorrente ou nova infraestrutura apenas para produzir essa experiência sem fonte técnica posterior.
 - Ação administrativa de restaurar versão anterior como atual não integra esta primeira entrega.
+- A superfície administrativa deve ser validada proporcionalmente em Preview, em desktop e mobile, cobrindo o papel administrativo autorizado, os controles negativos de acesso aplicáveis, a navegação entre a visão agregada e a E20.6.5, os estados de carregamento, vazio, pendência, sucesso e erro e a integridade da coleção paginada; resposta parcial não pode ser apresentada como lista completa (`prod#16`).
+- A superfície administrativa deve aplicar o baseline WCAG 2.2 pertinente ao fluxo, incluindo operação por teclado, foco visível e reposicionado após transições ou falhas, nomes e labels acessíveis, anúncio de mensagens dinâmicas, contraste, alvos de toque e ausência de interação exclusivamente por hover; a validação deve combinar inspeção automática e manual, sem declarar conformidade integral sem auditoria própria (`prod#17`).
 
 ### 2.6. Compatibilidade com consumidores e histórico
 
@@ -214,16 +221,22 @@
 
 ### 3.1. E20.2.8 — Versão atual e propagação escalável
 
-- Automação: não definida/necessária neste plano; a decisão é de contrato operacional e UX.
+- Automação: não; a implementação é um lifecycle administrativo determinístico, sem agente, IA decisória, job, fila ou rotina recorrente.
 - Próxima ação técnica futura:
   - reconciliar o plano com a `main` vigente no início da implementação;
-  - identificar a menor autoridade real para `versão atual` sem criar segunda residência;
+  - preservar o registry repo-only como autoridade das versões publicadas e da versão atual implantada;
+  - avaliar se o draft administrativo exige persistência em banco; se exigir, limitar essa residência ao conteúdo não operacional e não duplicar nela a autoridade das versões publicadas;
+  - implementar a publicação como materialização/versionamento no repositório, validação e deploy; somente depois de o artefato executável estar implantado a nova versão pode tornar-se atual e observável como `C`;
   - definir a API pública que entrega `R` e `C` separadamente e fornece o número concreto `C` aos consumidores;
   - definir o comparador mínimo de compatibilidade sobre catálogos resolvidos;
   - adaptar o predicado E20.6.4 somente como unidade completa, preservando fail-closed;
   - reconciliar E19.2 pré-handoff, E19.5 workspace e geração E19.5 para consumir a mesma `C`, removendo os pins operacionais somente dentro desse recorte completo;
   - projetar a experiência administrativa agregada sobre superfícies existentes antes de propor nova rota;
   - validar propagação universal, por segmento, nicho e ultranicho, carry-forward sem writes artificiais e snapshots/configurações históricas preservados.
+- Qualquer objeto de banco novo ou alterado exige migration forward-only versionada e atualização simultânea de `docs/schema.md`. O runtime não pode depender do objeto antes do apply validado. Tabela em schema exposto nasce com RLS e decisão explícita de policies, GRANTs e Data API: acesso direto por `anon` ou `authenticated` exige policies autorizativas e grants correspondentes; acesso exclusivamente server-side exige revogação de `PUBLIC`, `anon`, `authenticated` e `ai_readonly`, grants mínimos ao papel operacional e registro explícito de que não há policy consumidora. Views expostas usam `security_invoker = true`; função privilegiada exige justificativa, `search_path` fixado e EXECUTE revogado de `PUBLIC`.
+- A prova de publicação e a visão agregada devem demonstrar completude sobre todos os taxons e configurações operacionais relevantes. Paginação, chunking ou agregação não pode tratar primeira página como conjunto integral. Falha, truncamento, timeout ou cardinalidade divergente bloqueia publicação; não autoriza carry-forward parcial.
+- A leitura SQL hospedada read-only de 24/08/2026 confirmou 11 taxons ativos, 1 LP operacional, 1 configuração operacional específica, 1 configuração compartilhada para conta operacional e 1 conta com LP operacional; um taxon possui `R = 5`, dez possuem `R = NULL` e as duas residências operacionais estão na v5. Esses números são evidência do estado atual, não limites de implementação; os testes devem incluir cardinalidade superior a uma página.
+- Antes do gate da implementação que alterar o banco, reconciliar por ABC o drift factual de `docs/schema.md` sobre o apply já concluído da migration E19.5 `20260822170000_e19_5_3_landing_page_workspace.sql`.
 - Este PR documental não autoriza implementação, migration, schema, rota, job, agente, automação, engine ou nova infraestrutura.
 
 ## 4. Escopo negativo e critérios de parada
@@ -242,7 +255,16 @@
 - Não permitir que E19.2, E19.5 ou geração resolvam `versão atual` localmente ou usem `R` como substituto implícito de `C`.
 - Não alterar consumidores além do necessário no futuro recorte técnico sem confirmar seu contrato real na `main` vigente.
 
-### 4.2. Critérios de parada
+### 4.2. Oportunidades estratégicas condicionais sem implementação
+
+- `supa#29`: preservar apenas como hipótese de auditoria futura se, após definição do lifecycle físico, Git, migrations e registros publicados imutáveis não responderem ator, conteúdo, momento ou transição de publicação. Não criar função, trigger, tabela, cabeçalho YAML ou changelog automatizado neste recorte.
+- `supa#53`: preservar apenas como alternativa de transporte durável se medição em volume real demonstrar que o processamento determinístico excede o orçamento interativo ou exige retry. Não instalar `pgmq`, criar fila, worker, job ou estado paralelo neste recorte.
+- `supa#63`: preservar apenas como possibilidade de ampliar testes de RLS se a implementação futura criar múltiplas tabelas/policies e uma prova isolada demonstrar benefício líquido. Não instalar Python, `pgtap`, ferramenta, extensão ou workflow e nunca executar isso em Production neste recorte.
+- `supa#68`: preservar apenas se surgir requisito aprovado de atualização em tempo real e medição demonstrar insuficiência de consulta sob demanda ou polling. Não atualizar dependência nem criar publicação, channel, subscription, migration ou rota Realtime neste recorte.
+- `supa#54` é não aplicável à classificação estrutural `R → C`; similaridade vetorial não substitui a comparação determinística, conservadora e fail-closed.
+- `vercel#20` é não aplicável como autoridade ou rollout segmentado da versão global; targeting não pode selecionar `C` por usuário ou taxon.
+
+### 4.3. Critérios de parada
 
 - Parar se a autoridade de versão atual exigir nova residência sem justificativa e sem reconciliação com a arquitetura existente.
 - Parar se não for possível distinguir de forma determinística e conservadora `sem mudança material`, `evolução compatível` e `revisão necessária`.
@@ -324,6 +346,8 @@
 - Não existe segundo passo humano de `tornar atual`, seletor de versão titular nem escolha manual da versão operacional pelos consumidores E19.2/E19.5.
 - A publicação é uma decisão global do catálogo, não uma decisão pertencente ao taxon que originou um field ou uma alteração.
 - A publicação deve falhar fechado quando o draft final estiver inválido, quando evidência material necessária estiver stale, quando houver pendência E20.6 obrigatória para consumo operacional vigente ou quando a mudança puder tornar configuração operacional corrente inválida/ilegível.
+- A publicação deve constituir um único boundary indivisível de cutover, vinculando o conteúdo exato do draft, sua revisão ou identidade imutável, as validações, a análise de impacto e as autorizações pré-publicação aplicáveis. Edição concorrente, evidência stale, decisão vinculada a conteúdo diferente, publicação duplicada ou falha parcial impedem que a nova versão se torne atual. Nenhum consumidor pode observar a nova `C` antes da conclusão integral desse boundary.
+- Como o registry repo-only é a autoridade publicada, o boundary administrativo não promove diretamente o conteúdo do draft: ele produz o handoff/materialização versionável no repositório e aguarda validação e deploy do artefato executável correspondente. Somente a confirmação de que exatamente esse conteúdo está implantado pode concluir o cutover da versão atual.
 - A publicação não é bloqueada apenas porque um novo `required` torna configuração anterior incompleta, nem por pendência E20.6 de taxon ainda não operacional.
 - Depois da publicação, a primeira alteração posterior inicia o próximo draft sequencial; a versão publicada permanece imutável.
 - A superfície física da ação `Publicar` não é definida neste PR. A implementação deve primeiro avaliar as superfícies administrativas existentes e escolher a menor evolução coerente com o Design System e boundaries atuais.
