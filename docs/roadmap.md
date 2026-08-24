@@ -2815,7 +2815,7 @@ Repositório — Ajustados
 
 21. E21 — Gestão e governança dos workloads OpenAI
 - Objetivo: gerir e governar os workloads OpenAI por recortes aprovados, com configuração explícita, observabilidade segura, leitura administrativa e configuração operacional dinâmica por ambiente, sem otimização automatizada.
-- Status: a fundação E21.1 permanece preservada; a entrega original da E21.2 está concluída com cutover aprovado em Preview e Production; a E21.2.5 está implementada no PR #807 e aguarda merge humano e gates pós-merge; a E21.3 permanece prevista e não iniciada.
+- Status: a fundação E21.1 permanece preservada; a E21.2, incluindo o catálogo operacional da E21.2.5, está concluída com apply e gates hospedados aprovados; a E21.3 permanece prevista e não iniciada.
 
 21.1 Fundação, normalização e leitura dos workloads OpenAI
 
@@ -2887,7 +2887,7 @@ Repositório — Ajustados
 
 21.2.1 Objetivo e status
 - Objetivo: permitir configuração ativa por ambiente e workload, com candidata, validação, ativação humana, rollback e mudança ordinária sem redeploy.
-- Status: a entrega original foi concluída em 21/08/2026, com migration aplicada, gates hospedados aprovados e cutover operacional em Preview e Production; a E21.2.5 está implementada no PR #807, com merge, apply e validações hospedadas ainda pendentes.
+- Status: concluída em 24/08/2026, com fonte operacional e catálogo global aplicados, cutover preservado em Preview e Production e gates hospedados integralmente aprovados.
 - O recorte preserva a E21.1 como boundary transversal, mantém Development determinístico/local e deixa a E21.3 prevista, sem início de execução.
 
 21.2.2 Registros do recorte
@@ -2984,13 +2984,15 @@ Repositório — Ajustados
 - `OPENAI_API_KEY` permaneceu server-side e foi reutilizada sem cópia, exposição ou versionamento. A E21.3 não foi iniciada.
 
 21.2.5 Catálogo administrável e UX compacta dos workloads OpenAI
-- Status: Implementação repo-only concluída no PR #807; merge humano, apply da migration, snippet read-only, Security Controls e QA hospedado permanecem pendentes.
+- Status: Concluída em 24/08/2026; catálogo aplicado e QA hospedado/autenticado integralmente aprovado em Production.
 - Automação: não.
 - O catálogo global separa elegibilidade corrente de novas candidatas do lifecycle por ambiente e workload; save e promoção revalidam a combinação de forma transacional, e a prova confirma a elegibilidade imediatamente antes do transporte sem manter lock durante a chamada externa.
 - Falha ou indisponibilidade exclusiva do catálogo bloqueia catálogo, save, prova e promoção, sem afetar resolução ativa, ativação de revisão validada ou rollback histórico; revisões e snapshots preservam qualquer identificador técnico com parâmetro tipado válido.
 - As leituras administrativas são completas, ordenadas e fail-closed; páginas acumuladas só são aceitas no término esperado, nunca após erro ou resposta parcial.
 - A superfície administrativa mantém catálogo global superior, seletor Preview/Production, lista compacta com cabeçalho sticky e um detalhe expandido; a geração de Landing Page agrupa texto e imagem apenas visualmente, preservando lifecycle independente.
-- Apply, prova SQL, Security Controls e QA autenticado de papéis, desktop/mobile, lifecycle e WCAG 2.2 permanecem gates pós-merge. A E21.3 não foi iniciada.
+- A migration foi aplicada pelo fluxo canônico; o snippet read-only aprovou 8/8 verificações e o Security Controls não apresentou alerta incompatível com tabelas, constraints, RLS, policies, grants, RPCs ou triggers do catálogo. O INFO de RLS sem policy permaneceu compatível com a residência exclusiva de `service_role`.
+- O QA autenticado de Production aprovou `platform_admin` em desktop 1280 × 720 e mobile responsivo 482 × 698, sem overflow horizontal, com cabeçalho sticky, controles da superfície de 44 px ou mais, nomes/labels, lifecycle reconhecível e contraste de 5,54:1 no estado normal e 13,81:1 no hover dos botões primários.
+- O papel negativo foi redirecionado para o estado de acesso indisponível, sem formulário, catálogo, lifecycle ou controle administrativo exposto. O QA não alterou catálogo, candidata, revisão ou lifecycle; a E21.3 não foi iniciada.
 
 21.3 Evidências e avaliação de custo-benefício dos workloads OpenAI
 
