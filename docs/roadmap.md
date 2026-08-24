@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 23/08/2026
-• Versão: v1.5.181
+• Data: 24/08/2026
+• Versão: v1.5.182
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2603,6 +2603,40 @@ Repositório — Ajustados
   * As regressões focais, `npm ci`, `npm run check`, `git diff --check` e a inspeção autenticada do Preview em desktop e largura móvel foram aprovados; o servidor local iniciou na porta 3000, mas a renderização local ficou indisponível por ausência das chaves públicas do Supabase no worktree isolado.
   * A E20.6 deve ser executada novamente contra a versão explícita 4 antes de qualquer registro de suficiência.
   * O recorte não criou field, banco, migration, rota, API, nova UI, persistência, infraestrutura, automação, agente, job ou workload OpenAI e não alterou a E20.6.
+
+20.2.8 Versão atual e propagação escalável do catálogo E20.2
+
+20.2.8.1 Objetivo e status
+
+* Objetivo: definir uma versão atual global, explícita e repo-only para o catálogo E20.2, propagá-la de forma determinística aos consumidores correntes e evitar reavaliação humana por taxon quando a evolução for comprovadamente compatível.
+* Status: plano-base v2 aprovado; implementação pendente.
+
+20.2.8.3 Autoridade e lifecycle de publicação
+
+* Status: Definidos.
+* Conteúdo:
+  * O registry versionado no repositório permanece a autoridade exclusiva das versões publicadas e da versão atual; v1–v5 não serão migradas para o banco.
+  * Pode existir somente um próximo draft mutável e não operacional. Persistência administrativa em banco só é admissível se a análise técnica a demonstrar como menor solução e nunca constitui autoridade do catálogo publicado.
+  * Publicar exige congelar draft e evidências, materializar no repositório a nova versão executável e a declaração explícita de versão atual, validar em CI/Preview, obter revisão e merge humanos, concluir o deploy de Production e comprovar a identidade exata no runtime.
+  * A ativação bem-sucedida do artefato em Production torna a nova versão atual; qualquer falha anterior preserva a versão vigente. Eventual reconciliação administrativa posterior não pode substituir nem reverter a autoridade repo-only e, se atrasada, bloqueia novo draft/publicação administrativa até que o estado seja reconciliado com o artefato ativo exato.
+
+20.2.8.4 Versão revisada, versão efetiva e compatibilidade
+
+* Status: Definidas.
+* Conteúdo:
+  * `R` é a última versão com decisão humana explícita de suficiência; `C` é a versão operacional efetivamente autorizada pelo boundary canônico de preparação.
+  * `C` acompanha a versão atual quando `R = C` ou quando a transição resolvida for deterministicamente `sem mudança material` ou `evolução compatível`, sem escrita artificial em `reviewed_input_catalog_version`.
+  * Remoção, restrição, reinterpretação, ambiguidade ou mudança fora da allowlist conservadora exigem revisão E20.6.5; falhas permanecem fechadas e a IA não classifica compatibilidade estrutural.
+  * E19.2 pré-handoff, workspace E19.5 e geração E19.5 devem consumir o mesmo número concreto `C`; nenhum consumidor pode inferir `latest`, maior versão ou substituir `C` por `R`.
+
+20.2.8.5 Draft, gates e experiência administrativa
+
+* Status: Definidos para implementação futura.
+* Conteúdo:
+  * O draft pode ser resolvido e validado administrativamente, mas nunca é operacional; qualquer edição material torna stale as evidências dependentes.
+  * O gate pré-publicação separa suficiência taxonômica E20.6 de validade estrutural das configurações E19, cobre o conjunto integral paginado e bloqueia diante de truncamento, cardinalidade divergente ou configuração operacional inválida/ilegível.
+  * A visão agregada deve evoluir `/admin/estrutura-lp?view=entradas`; `/admin/taxonomia/[taxonId]` permanece responsável pela avaliação individual E20.6.5. Não criar nova rota de primeiro nível; qualquer proposta de nova rota depende de insuficiência comprovada das superfícies existentes.
+  * A primeira entrega preserva histórico imutável, retirada forward-only de fields publicados e snapshots/configurações na versão efetivamente usada; não inclui rollback, múltiplos drafts, targeting por taxon, job, fila, agente, automação recorrente ou engine genérica de diff.
 
 20.3 Perfil de orientação para geração
 
