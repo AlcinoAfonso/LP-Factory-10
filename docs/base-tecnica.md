@@ -2,8 +2,8 @@
 
 0.1 Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.74
-• Data: 23/08/2026
+• Versão: v2.0.75
+• Data: 24/08/2026
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -282,16 +282,22 @@
 3.15.4 Catálogo de entradas de `landing_page`
 • Boundary canônico: `lib/conversion-content/landing-page/input-catalog/`; registry, contracts, schema e resolver são fontes executáveis.
 • O resolver é puro e repo-only, sem consultar Supabase, Stripe, assinatura, entitlement ou valores operacionais.
+• As versões publicadas e a declaração explícita da versão atual permanecem repo-only; consumidores operacionais não podem inferir `latest`, maior chave ou outra versão por fallback.
+• Persistência administrativa pode guardar somente o próximo draft sequencial, mutável e não operacional. Publicação exige materialização imutável no registry, validação, revisão, merge e deploy antes de a declaração repo-only da versão atual produzir efeito.
 • Resolução segue `universal → segmento → nicho → ultranicho`; especializações só podem restringir e devem preservar identidade, tipo, origem, condições e evidência.
+• Evolução forward-only pode retirar um field publicado somente a partir de nova versão; valores históricos dessa chave permanecem reconhecíveis e inertes, enquanto chaves nunca publicadas continuam inválidas.
+• O draft deve preservar cada field já publicado e sua `createdInVersion`; remoção direta e proveniência retroativa são inválidas. Field novo nasce na versão alvo e retirada de field publicado usa exclusivamente `retiredInVersion` igual à nova versão.
 • Referências condicionais devem existir e permanecer válidas após o filtro de plano; avaliação dos valores concretos pertence ao consumidor.
 • A saída deve ser determinística, rastreável e profundamente imutável.
 
 3.15.7 Preparação factual do taxon para `landing_page`
 • Boundary canônico: `lib/conversion-content/landing-page/taxon-preparation/`; a derivação permanece pura e não persiste estado de prontidão.
-• O adapter server-only deve ler pelo caminho único da pesquisa selecionada o taxon ativo, a pesquisa E20.5 integralmente válida e a versão E20.2 avaliada; UI e componentes client não consultam esses marcadores diretamente.
-• O consumidor deve fornecer uma versão executável explícita, validada pela API pública do catálogo E20.2; maior versão, `latest` e qualquer fallback implícito são proibidos.
-• O sucesso exige igualdade exata entre a versão avaliada e a versão requerida; ausência, incompatibilidade, feature gate ou falha operacional devem permanecer erros tipados e fail-closed.
-• A avaliação semântica é assistida por IA no Codex App e permanece externa ao runtime do produto; a decisão final de suficiência e seu registro administrativo são humanos, e o boundary apenas aplica deterministicamente a decisão já registrada.
+• O adapter server-only deve ler pelo caminho único da pesquisa selecionada o taxon ativo, a pesquisa E20.5 integralmente válida e a última versão E20.2 efetivamente revisada; UI e componentes client não consultam esses marcadores diretamente.
+• Avaliações administrativas históricas continuam recebendo uma versão executável explícita. Consumidores operacionais correntes recebem a versão atual explícita da API pública do catálogo; maior versão, `latest` e qualquer fallback implícito são proibidos.
+• A versão efetiva corrente é a versão atual quando coincide com a revisada ou quando a comparação resolvida em todos os planos classifica a transição como sem mudança material ou evolução compatível. Mudança fora da allowlist conservadora exige nova revisão; ausência, incompatibilidade, feature gate ou falha operacional permanecem erros tipados e fail-closed.
+• Carry-forward compatível não reescreve a versão revisada e não reinterpreta snapshots ou configurações históricas; cada residência preserva o número concretamente usado.
+• O gate pré-publicação lê integralmente, com cardinalidade comprovada, tanto a residência E19.2 pré-handoff quanto as residências E19.5. A evidência congela separadamente o fingerprint do conteúdo e o fingerprint da coleção operacional; drift em qualquer uma torna validação/handoff stale.
+• A avaliação semântica usa o workload OpenAI comum autorizado e permanece não autoritativa; a decisão final de suficiência e seu registro administrativo são humanos, e o boundary apenas aplica deterministicamente a decisão autenticada e revalidada.
 
 3.15.8 Geração controlada da candidata de `landing_page`
 • A geração server-side consome somente o pacote público autorizado do LP Builder e deve separar contexto semântico enviado ao modelo de valores operacionais usados apenas pelo servidor.

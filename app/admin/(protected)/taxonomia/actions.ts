@@ -24,6 +24,10 @@ import {
 } from "@/conversion-content/landing-page/taxon-preparation";
 import { nextInputCatalogReviewActionRevision } from "@/lib/admin/adapters/adminTaxonomyReviewPolicy";
 import {
+  loadAdminInputCatalogDraftEvaluationContext,
+  recordAdminInputCatalogDraftSufficiencyDecision,
+} from "@/lib/admin/adapters/adminInputCatalogLifecycleAdapter";
+import {
   addAdminTaxonAlias,
   createAdminTaxon,
   deleteAdminTaxon,
@@ -56,6 +60,9 @@ export type InputCatalogReviewActionState = {
 
 export type InputCatalogEvaluationReference = Readonly<{
   decisionToken: string;
+  source?: "published" | "draft";
+  draftRevision?: number;
+  draftContentFingerprint?: string;
 }>;
 
 export type InputCatalogEvaluationActionResult =
@@ -92,6 +99,7 @@ export async function evaluateInputCatalogAction(input: Readonly<{
     previousOutput: InputCatalogEvaluationOutput;
     reference: InputCatalogEvaluationReference;
   }> | null;
+  draftRevision?: number;
 }>): Promise<InputCatalogEvaluationActionResult> {
   const gate = await requirePlatformAdmin();
   if (!gate.allowed) {
@@ -103,6 +111,31 @@ export async function evaluateInputCatalogAction(input: Readonly<{
     return { ok: false, code: runtime.code, message: runtime.message };
   }
 
+  const source = input.draftRevision === undefined ? "published" : "draft";
+  let draftContentFingerprint: string | undefined;
+  const reconstructContext: typeof reconstructCanonicalInputCatalogEvaluationContext =
+    source === "published"
+      ? reconstructCanonicalInputCatalogEvaluationContext
+      : async (reconstructionInput) => {
+          const draft = await loadAdminInputCatalogDraftEvaluationContext({
+            expectedRevision: input.draftRevision as number,
+            taxonId: reconstructionInput.taxonId,
+          });
+          if (!draft.ok || draft.value.targetVersion !== reconstructionInput.inputCatalogVersion) {
+            return {
+              ok: false as const,
+              error: {
+                code: "CONTEXT_IDENTITY_INVALID" as const,
+                message: draft.ok
+                  ? "A versão solicitada não corresponde ao draft atual."
+                  : draft.message,
+              },
+            };
+          }
+          draftContentFingerprint = draft.value.contentFingerprint;
+          return { ok: true as const, value: draft.value.context };
+        };
+
   let feedback: Parameters<typeof coordinateInputCatalogEvaluation>[0]["feedback"] = null;
   if (input.feedback) {
     const previousEvidence = readInputCatalogEvaluationDecisionToken(
@@ -113,6 +146,8 @@ export async function evaluateInputCatalogAction(input: Readonly<{
       !previousEvidence ||
       previousEvidence.taxonId !== input.taxonId ||
       previousEvidence.inputCatalogVersion !== input.inputCatalogVersion ||
+      (input.feedback.reference.source ?? "published") !== source ||
+      (source === "draft" && input.feedback.reference.draftRevision !== input.draftRevision) ||
       previousEvidence.status !== input.feedback.previousOutput.status ||
       fingerprintInputCatalogEvaluationOutput(input.feedback.previousOutput) !==
         previousEvidence.outputFingerprint
@@ -123,7 +158,7 @@ export async function evaluateInputCatalogAction(input: Readonly<{
         message: "O contexto da avaliação anterior não corresponde à execução atual.",
       };
     }
-    const previousContext = await reconstructCanonicalInputCatalogEvaluationContext({
+    const previousContext = await reconstructContext({
       taxonId: previousEvidence.taxonId,
       inputCatalogVersion: previousEvidence.inputCatalogVersion,
     });
@@ -157,7 +192,7 @@ export async function evaluateInputCatalogAction(input: Readonly<{
       feedback,
     },
     {
-      reconstructContext: reconstructCanonicalInputCatalogEvaluationContext,
+      reconstructContext,
       evaluate: async (request) => {
         return evaluateInputCatalogWithOpenAi({
           apiKey: process.env.OPENAI_API_KEY,
@@ -196,7 +231,16 @@ export async function evaluateInputCatalogAction(input: Readonly<{
   return {
     ok: true,
     output: result.value.output,
-    reference: { decisionToken },
+    reference: {
+      decisionToken,
+      source,
+      ...(source === "draft"
+        ? {
+            draftRevision: input.draftRevision,
+            draftContentFingerprint,
+          }
+        : {}),
+    },
   };
 }
 
@@ -281,6 +325,74 @@ async function executeAdministrativeEvaluationDecision(input: Readonly<{
   const gate = await requirePlatformAdmin();
   if (!gate.allowed) {
     return { ok: false as const, stale: false, message: "Acesso administrativo não autorizado." };
+  }
+  if ((input.reference.source ?? "published") === "draft") {
+    const expectedRevision = input.reference.draftRevision;
+    const expectedContentFingerprint = input.reference.draftContentFingerprint;
+    if (
+      !Number.isSafeInteger(expectedRevision) ||
+      Number(expectedRevision) <= 0 ||
+      typeof expectedContentFingerprint !== "string"
+    ) {
+      return { ok: false as const, stale: true, message: "A referência do draft é inválida." };
+    }
+    const result = await executeInputCatalogEvaluationAdministrativeActionCore(
+      {
+        decision: input.decision,
+        decisionToken: input.reference.decisionToken,
+        decisionTokenSecret: process.env.OPENAI_API_KEY,
+        output: input.output,
+        selectedCandidateIndexes: input.selectedCandidateIndexes,
+      },
+      {
+        requireRuntime: async () => {
+          const runtime = await resolveInputCatalogEvaluationRuntimeReadiness();
+          return runtime.ok
+            ? { ok: true as const }
+            : { ok: false as const, message: runtime.message };
+        },
+        revalidate: async (evidence) => {
+          const draft = await loadAdminInputCatalogDraftEvaluationContext({
+            expectedRevision: Number(expectedRevision),
+            taxonId: evidence.taxonId,
+          });
+          if (
+            !draft.ok ||
+            draft.value.targetVersion !== evidence.inputCatalogVersion ||
+            draft.value.contentFingerprint !== expectedContentFingerprint ||
+            fingerprintEvaluationContext(draft.value.context.identity) !==
+              evidence.contextFingerprint
+          ) {
+            return {
+              ok: false as const,
+              message: draft.ok
+                ? "O draft ou suas fontes mudaram desde a avaliação."
+                : draft.message,
+            };
+          }
+          return { ok: true as const };
+        },
+        recordReviewedVersion: async (evidence) => {
+          if (input.decision === "acknowledge_factual_gap") {
+            return { ok: false as const, message: "Reconhecimento de gap não registra suficiência." };
+          }
+          const recorded = await recordAdminInputCatalogDraftSufficiencyDecision({
+            actorUserId: gate.actorUserId,
+            expectedRevision: Number(expectedRevision),
+            taxonId: evidence.taxonId,
+            expectedContentFingerprint,
+            expectedContextFingerprint: evidence.contextFingerprint,
+            decision: input.decision,
+          });
+          if (!recorded.ok) return recorded;
+          return { ok: true as const, reviewedVersion: evidence.inputCatalogVersion };
+        },
+      },
+    );
+    if (result.ok && result.kind !== "factual_gap_acknowledged") {
+      revalidatePath("/admin/estrutura-lp");
+    }
+    return result;
   }
   return executeInputCatalogEvaluationAdministrativeActionCore(
     {

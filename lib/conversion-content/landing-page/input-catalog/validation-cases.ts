@@ -24,6 +24,16 @@ import {
   landingPageInputFieldDefinitionSchema,
   validateLandingPageInputValue,
 } from "./schema";
+import {
+  CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION,
+  classifyLandingPageInputCatalogTransition,
+  classifyLandingPageInputCatalogTransitionForTaxon,
+  listLandingPageInputCatalogVersions,
+} from "./lifecycle";
+import {
+  createNextLandingPageInputCatalogDraft,
+  validateLandingPageInputCatalogDraft,
+} from "./draft";
 
 type Case = Readonly<{ name: string; run: () => void }>;
 
@@ -867,6 +877,140 @@ const cases: Case[] = [
       assertRegistryError(baseInput, invalidKeywordMap, "INVALID_PAID_SEARCH_KEYWORD_MAP");
     },
   },
+  {
+    name: "explicit current version is executable without deriving latest",
+    run: () => {
+      assert.equal(CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION, 5);
+      assert.deepEqual(listLandingPageInputCatalogVersions(), [1, 2, 3, 4, 5]);
+      assert.equal(resolveLandingPageInputCatalog({ ...baseInput, version: CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION }).ok, true);
+    },
+  },
+  {
+    name: "transition comparator ignores evidence and distinguishes compatible evolution from review",
+    run: () => {
+      const v4 = resolveRequired(v4Input);
+      const v5 = resolveRequired(v5Input);
+      const actual = classifyLandingPageInputCatalogTransition(v4, v5);
+      assert.equal(actual.classification, "compatible_evolution");
+      assert.deepEqual(actual.addedFieldKeys, v5UniversalFieldKeys);
+      assert.equal(Object.isFrozen(actual), true);
+
+      const evidenceRegistry = registryWithCandidate((candidate) => {
+        const field = mutableFieldInEntry(candidate, "business_display_name");
+        field.evidence = { summary: "Updated documentary evidence only.", references: ["decision:e20-2-human"] };
+      });
+      assert.equal(classifyCandidateTransition(evidenceRegistry).classification, "no_material_change");
+
+      const expansionRegistry = registryWithCandidate((candidate) => {
+        const field = mutableFieldInEntry(candidate, "traffic_source");
+        assert.equal(field.validation.kind, "enum");
+        if (field.validation.kind === "enum") {
+          field.validation = { ...field.validation, allowedValues: [...field.validation.allowedValues, "referral"] };
+        }
+      });
+      const expansion = classifyCandidateTransition(expansionRegistry);
+      assert.equal(expansion.classification, "compatible_evolution");
+      assert.deepEqual(expansion.expandedAllowedValueFieldKeys, ["traffic_source"]);
+
+      const changedRegistry = registryWithCandidate((candidate) => {
+        mutableFieldInEntry(candidate, "business_display_name").purpose = "A materially different purpose.";
+      });
+      assert.equal(classifyCandidateTransition(changedRegistry).classification, "review_required");
+    },
+  },
+  {
+    name: "forward retirement removes the field only from the candidate executable view",
+    run: () => {
+      const registry = registryWithCandidate((candidate) => {
+        mutableFieldInEntry(candidate, "business_display_name").retiredInVersion = 6;
+      });
+      const previous = resolveLandingPageInputCatalogFromRegistry(v5Input, registry);
+      const next = resolveLandingPageInputCatalogFromRegistry({ ...v5Input, version: 6 }, registry);
+      assert.equal(previous.ok, true);
+      assert.equal(next.ok, true);
+      if (!previous.ok || !next.ok) throw new Error("Expected executable retirement fixture");
+      assert.equal(previous.value.fields.some((field) => field.fieldKey === "business_display_name"), true);
+      assert.equal(next.value.fields.some((field) => field.fieldKey === "business_display_name"), false);
+      assert.deepEqual(next.value.retiredFieldKeys, ["business_display_name"]);
+      assert.equal(classifyLandingPageInputCatalogTransition(previous.value, next.value).classification, "review_required");
+    },
+  },
+  {
+    name: "draft remains non operational and blocks operational taxons without an executable review",
+    run: () => {
+      const draft = createNextLandingPageInputCatalogDraft();
+      assert.equal(draft.version, 6);
+      const unchanged = validateLandingPageInputCatalogDraft({
+        draft,
+        taxons: [
+          { identity: realEstateSegmentTaxon, reviewedVersion: 5, operational: false },
+          { identity: realEstateBrokerNicheTaxon, reviewedVersion: 5, operational: true },
+          { identity: mediumStandardRealEstateBrokerTaxon, reviewedVersion: null, operational: true },
+        ],
+      });
+      assert.equal(unchanged.ok, true);
+      if (!unchanged.ok) throw new Error("Expected valid draft fixture");
+      assert.equal(unchanged.value.totals.noMaterialChange, 2);
+      assert.equal(unchanged.value.totals.blockingOperationalReviews, 1);
+      assert.equal(unchanged.value.entry.version, CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION + 1);
+      assert.equal(Object.isFrozen(unchanged.value), true);
+
+      const invalidVersion = validateLandingPageInputCatalogDraft({
+        draft: { ...draft, version: 7 },
+        taxons: [],
+      });
+      assert.equal(invalidVersion.ok, false);
+      if (invalidVersion.ok) throw new Error("Expected invalid draft version");
+      assert.equal(invalidVersion.error.code, "INVALID_VERSION");
+    },
+  },
+  {
+    name: "draft preserves published fields and their immutable creation provenance",
+    run: () => {
+      const removed = JSON.parse(
+        JSON.stringify(createNextLandingPageInputCatalogDraft()),
+      ) as LandingPageInputCatalogRegistry[5];
+      const removedEntries = mutableEntries(removed.universal);
+      removedEntries.splice(
+        removedEntries.findIndex((entry) => entry.fieldKey === "business_display_name"),
+        1,
+      );
+      const removedResult = validateLandingPageInputCatalogDraft({
+        draft: removed,
+        taxons: [],
+      });
+      assert.equal(removedResult.ok, false);
+      if (removedResult.ok) throw new Error("Expected direct published-field removal to fail");
+      assert.equal(removedResult.error.code, "INVALID_DRAFT");
+
+      const forged = JSON.parse(
+        JSON.stringify(createNextLandingPageInputCatalogDraft()),
+      ) as LandingPageInputCatalogRegistry[5];
+      mutableFieldInEntry(forged, "business_display_name").createdInVersion = 6;
+      const forgedResult = validateLandingPageInputCatalogDraft({
+        draft: forged,
+        taxons: [],
+      });
+      assert.equal(forgedResult.ok, false);
+      if (forgedResult.ok) throw new Error("Expected forged published provenance to fail");
+      assert.equal(forgedResult.error.code, "INVALID_DRAFT");
+
+      const createdInPast = JSON.parse(
+        JSON.stringify(createNextLandingPageInputCatalogDraft()),
+      ) as LandingPageInputCatalogRegistry[5];
+      mutableEntries(createdInPast.universal).push({
+        ...fixtureField("new_draft_field"),
+        createdInVersion: 1,
+      });
+      const createdInPastResult = validateLandingPageInputCatalogDraft({
+        draft: createdInPast,
+        taxons: [],
+      });
+      assert.equal(createdInPastResult.ok, false);
+      if (createdInPastResult.ok) throw new Error("Expected false new-field provenance to fail");
+      assert.equal(createdInPastResult.error.code, "INVALID_DRAFT");
+    },
+  },
 ];
 
 for (const validationCase of cases) {
@@ -899,6 +1043,37 @@ function assertRegistryError(input: ResolveLandingPageInputCatalogInput, registr
 
 function cloneRegistry(): LandingPageInputCatalogRegistry {
   return JSON.parse(JSON.stringify(landingPageInputCatalogRegistry)) as LandingPageInputCatalogRegistry;
+}
+
+function registryWithCandidate(
+  mutate: (candidate: LandingPageInputCatalogRegistry[5]) => void,
+): LandingPageInputCatalogRegistry {
+  const registry = cloneRegistry() as Record<number, LandingPageInputCatalogRegistry[5]>;
+  const candidate = JSON.parse(JSON.stringify(registry[5])) as LandingPageInputCatalogRegistry[5];
+  (candidate as { version: number }).version = 6;
+  mutate(candidate);
+  registry[6] = candidate;
+  return registry;
+}
+
+function mutableFieldInEntry(
+  entry: LandingPageInputCatalogRegistry[5],
+  fieldKey: string,
+): MutableField {
+  const field = entry.universal.entries.find(
+    (candidate) => candidate.kind === "field" && candidate.fieldKey === fieldKey,
+  );
+  assert.ok(field && field.kind === "field");
+  return field as MutableField;
+}
+
+function classifyCandidateTransition(registry: LandingPageInputCatalogRegistry) {
+  return classifyLandingPageInputCatalogTransitionForTaxon({
+    previousVersion: 5,
+    nextVersion: 6,
+    taxonChain: baseInput.taxonChain,
+    registry,
+  });
 }
 
 function mutableTaxonLayers(registry: LandingPageInputCatalogRegistry): Record<string, LandingPageInputCatalogLayer> {

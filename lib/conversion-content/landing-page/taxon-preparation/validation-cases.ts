@@ -49,8 +49,11 @@ import {
   mediumStandardRealEstateBrokerTaxon,
   realEstateBrokerNicheTaxon,
   realEstateSegmentTaxon,
+  createNextLandingPageInputCatalogDraft,
+  validateLandingPageInputCatalogDraft,
   isLandingPageInputCatalogVersionExecutable,
   resolveLandingPageInputCatalog,
+  resolveLandingPageInputCatalogFromRegistry,
 } from "../input-catalog";
 import {
   collectAffectedReviewedTaxonIds,
@@ -159,21 +162,21 @@ const cases: readonly ValidationCase[] = [
         new URL("../../adapters/selectedEndCustomerResearchAdapter.ts", import.meta.url),
         "utf8",
       );
-      const start = adapterSource.indexOf("export async function loadTaxonPreparationForVersion");
+      const start = adapterSource.indexOf("export async function loadTaxonPreparationForCurrentVersion");
       const boundary = adapterSource.slice(start);
       const reviewGate = boundary.indexOf("if (!isInputCatalogReviewEnabled())");
       const researchGate = boundary.indexOf("if (!isEndCustomerResearchSelectionEnabled())");
-      const versionValidation = boundary.indexOf("classifyRequiredInputCatalogVersion");
       const serviceClient = boundary.indexOf("createServiceClient()");
       const selectedLoad = boundary.indexOf("loadSelectedEndCustomerResearchFromClient");
       const reviewedColumnOption = boundary.indexOf("includeInputCatalogReview: true");
+      const chainRead = boundary.indexOf("readCompleteInputCatalogTaxonChain");
       assert.ok(start >= 0);
       assert.ok(reviewGate >= 0);
       assert.ok(researchGate > reviewGate);
-      assert.ok(versionValidation > researchGate);
-      assert.ok(serviceClient > versionValidation);
+      assert.ok(serviceClient > researchGate);
       assert.ok(selectedLoad > serviceClient);
       assert.ok(reviewedColumnOption > serviceClient);
+      assert.ok(chainRead > selectedLoad);
     },
   },
   {
@@ -189,7 +192,7 @@ const cases: readonly ValidationCase[] = [
         classifyRequiredInputCatalogVersion(999),
         "REQUIRED_INPUT_CATALOG_VERSION_NOT_EXECUTABLE",
       );
-      for (const version of [1, 2, 3, 4]) {
+      for (const version of [1, 2, 3, 4, 5]) {
         assert.equal(isLandingPageInputCatalogVersionExecutable(version), true);
         assert.equal(classifyRequiredInputCatalogVersion(version), null);
       }
@@ -200,21 +203,18 @@ const cases: readonly ValidationCase[] = [
     },
   },
   {
-    name: "reviewed-version operation derives the explicit requirement from the single canonical read",
+    name: "current-version operation is the single operational adapter boundary",
     run: async () => {
       const adapterSource = readFileSync(
         new URL("../../adapters/selectedEndCustomerResearchAdapter.ts", import.meta.url),
         "utf8",
       );
       const start = adapterSource.indexOf(
-        "export async function loadTaxonPreparationForReviewedVersion",
+        "export async function loadTaxonPreparationForCurrentVersion",
       );
       const boundary = adapterSource.slice(start);
       assert.ok(start >= 0);
-      assert.doesNotMatch(
-        boundary.slice(0, boundary.indexOf("): Promise<TaxonPreparationResult>")),
-        /requiredInputCatalogVersion/,
-      );
+      assert.doesNotMatch(adapterSource, /export async function loadTaxonPreparationFor(?:Reviewed)?Version/);
       assert.equal(
         boundary.match(/loadSelectedEndCustomerResearchFromClient\(/g)?.length,
         1,
@@ -222,12 +222,7 @@ const cases: readonly ValidationCase[] = [
       assert.match(boundary, /includeInputCatalogReview: true/);
       assert.match(
         boundary,
-        /const reviewedVersion = selectedResearch\.value\.reviewedInputCatalogVersion/,
-      );
-      assert.match(boundary, /classifyRequiredInputCatalogVersion\(reviewedVersion\)/);
-      assert.match(
-        boundary,
-        /deriveTaxonPreparationForVersion\(\{[\s\S]*requiredInputCatalogVersion: reviewedVersion/,
+        /currentInputCatalogVersion: CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION/,
       );
       assert.doesNotMatch(boundary, /latest|Math\.max|= 4\b/i);
     },
@@ -953,6 +948,32 @@ const cases: readonly ValidationCase[] = [
         buildInputCatalogEvaluationContext(evaluationContextInput(999)),
         "INPUT_CATALOG_VERSION_NOT_EXECUTABLE",
       );
+      const draft = validateLandingPageInputCatalogDraft({
+        draft: createNextLandingPageInputCatalogDraft(),
+        taxons: [
+          { identity: realEstateSegmentTaxon, reviewedVersion: 5, operational: false },
+          { identity: realEstateBrokerNicheTaxon, reviewedVersion: 5, operational: true },
+          { identity: mediumStandardRealEstateBrokerTaxon, reviewedVersion: 5, operational: true },
+        ],
+      });
+      assert.equal(draft.ok, true);
+      if (!draft.ok) throw new Error("Expected executable draft fixture");
+      const draftContext = buildInputCatalogEvaluationContext(
+        evaluationContextInput(6),
+        {
+          allowNonPublishedVersion: true,
+          resolveReview: (reviewInput) => resolveInputCatalogReview(
+            reviewInput,
+            (catalogInput) => resolveLandingPageInputCatalogFromRegistry(
+              catalogInput,
+              draft.value.registry,
+            ),
+          ),
+        },
+      );
+      assert.equal(draftContext.ok, true);
+      if (!draftContext.ok) throw new Error("Expected draft evaluation context success");
+      assert.equal(draftContext.value.identity.inputCatalog.version, 6);
       assertContextBuildFailure(
         buildInputCatalogEvaluationContext({
           ...evaluationContextInput(4),
@@ -1848,6 +1869,7 @@ const cases: readonly ValidationCase[] = [
       assert.match(componentSource, /Resultado desatualizado/);
       assert.match(componentSource, /Ação humana separada/);
       assert.match(componentSource, /Checkpoint de integração final/);
+      assert.match(componentSource, /Gate pré-publicação/);
       assert.match(componentSource, /Reavaliar com feedback/);
       assert.match(componentSource, /input-catalog-evaluation-feedback/);
       assert.match(componentSource, /input-catalog-evaluation-version/);
@@ -1879,6 +1901,7 @@ const cases: readonly ValidationCase[] = [
       assert.match(pageSource, /\? \{ \.\.\.taxon\.inputCatalogReview, handoff: "" \}/);
       assert.match(pageSource, /O handoff Codex acima permanece o caminho autorizado/);
       assert.match(pageSource, /Runtime e caminhos legados permanecem bloqueados/);
+      assert.match(pageSource, /catalogDraftRevision/);
 
       const actionSource = readFileSync(
         new URL(
@@ -1893,6 +1916,7 @@ const cases: readonly ValidationCase[] = [
       assert.match(actionSource, /executeInputCatalogEvaluationAdministrativeActionCore/);
       assert.match(actionSource, /executeLegacyInputCatalogReviewRecordCore/);
       assert.match(actionSource, /reject_candidates_and_confirm_sufficient/);
+      assert.match(actionSource, /recordAdminInputCatalogDraftSufficiencyDecision/);
       assert.match(actionSource, /feedback,/);
       assert.doesNotMatch(actionSource, /loadTaxonPreparationForReviewedVersion/);
       const administrativeActionCore = readFileSync(
@@ -1910,6 +1934,8 @@ const cases: readonly ValidationCase[] = [
         "utf8",
       );
       assert.match(contextAdapterSource, /loadSelectedEndCustomerResearchForTaxon/);
+      assert.match(contextAdapterSource, /reconstructDraftInputCatalogEvaluationContext/);
+      assert.match(contextAdapterSource, /\.order\("id", \{ ascending: true \}\)[\s\S]*?\.range\(offset, offset \+ 499\)/);
       assert.doesNotMatch(contextAdapterSource, /loadTaxonPreparationForReviewedVersion/);
       assert.doesNotMatch(contextAdapterSource, /loadTaxonPreparationForVersion/);
 

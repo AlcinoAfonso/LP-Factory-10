@@ -1,9 +1,38 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
+import { collectCompletePaginatedRows } from "../../../../lib/admin/adapters/adminInputCatalogLifecyclePagination";
+import {
+  countInvalidInputCatalogOperationalConfigurations,
+  fingerprintInputCatalogOperationalContext,
+} from "../../../../lib/admin/adapters/adminInputCatalogLifecycleValidation";
+import {
+  createNextLandingPageInputCatalogDraft,
+  realEstateBrokerNicheTaxon,
+  realEstateSegmentTaxon,
+  validateLandingPageInputCatalogDraft,
+} from "../../../../lib/conversion-content/landing-page/input-catalog";
+
 const page = readFileSync(new URL("./page.tsx", import.meta.url), "utf8");
 const adapter = readFileSync(
   new URL("../../../../lib/admin/adapters/adminLandingPageStructureAdapter.ts", import.meta.url),
+  "utf8",
+);
+const lifecycleAdapter = readFileSync(
+  new URL("../../../../lib/admin/adapters/adminInputCatalogLifecycleAdapter.ts", import.meta.url),
+  "utf8",
+);
+const lifecycleValidation = readFileSync(
+  new URL("../../../../lib/admin/adapters/adminInputCatalogLifecycleValidation.ts", import.meta.url),
+  "utf8",
+);
+const lifecycleComponent = readFileSync(
+  new URL("./_components/AdminInputCatalogLifecycle.tsx", import.meta.url),
+  "utf8",
+);
+const lifecycleActions = readFileSync(new URL("./actions.ts", import.meta.url), "utf8");
+const lifecycleMigration = readFileSync(
+  new URL("../../../../supabase/migrations/20260824180000_e20_2_8_input_catalog_lifecycle.sql", import.meta.url),
   "utf8",
 );
 const navigation = readFileSync(
@@ -47,5 +76,128 @@ assert.doesNotMatch(packageJson, /validate:landing-page-research|research-resolu
 assert.match(packageJson, /validate:commercial-activation/);
 assert.match(packageJson, /validate:taxon-preparation/);
 assert.match(packageJson, /validate:lp-builder-generation-context/);
+assert.match(page, /view === "entradas"[\s\S]*AdminInputCatalogLifecycle/);
+assert.match(lifecycleAdapter, /CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION/);
+assert.match(lifecycleAdapter, /account_landing_page_shared_configurations/);
+assert.match(lifecycleAdapter, /account_landing_page_configurations/);
+assert.match(lifecycleAdapter, /account_landing_page_onboarding_configurations/);
+assert.match(lifecycleAdapter, /invalidOperationalConfigurations/);
+assert.match(lifecycleValidation, /resolveAccountLandingPageOnboardingConfiguration/);
+assert.match(lifecycleAdapter, /publication_fingerprint/);
+assert.match(lifecycleAdapter, /validation_context_fingerprint/);
+assert.match(lifecycleAdapter, /publication_context_fingerprint/);
+assert.match(lifecycleAdapter, /taxon_review_evidence/);
+assert.match(lifecycleAdapter, /reconstructDraftInputCatalogEvaluationContext/);
+assert.match(lifecycleAdapter, /recordAdminInputCatalogDraftSufficiencyDecision/);
+assert.match(lifecycleAdapter, /reconcileAdminInputCatalogPublishedDraft/);
+assert.match(lifecycleAdapter, /runtimeEnvironment !== "production"/);
+assert.doesNotMatch(lifecycleAdapter, /Math\.max|versions\.at\(-1\)|latest/i);
+assert.match(lifecycleComponent, /Preparar handoff repo-only/);
+assert.match(lifecycleComponent, /Configurações inválidas/);
+assert.match(lifecycleComponent, /catalogDraftRevision/);
+assert.match(lifecycleComponent, /Decisão vinculada ao draft atual/);
+assert.match(lifecycleComponent, /Reconciliar draft já implantado/);
+assert.match(lifecycleActions, /requirePlatformAdmin/);
+assert.match(lifecycleMigration, /create table public\.landing_page_input_catalog_drafts/);
+assert.match(lifecycleMigration, /revoke all on table public\.landing_page_input_catalog_drafts[\s\S]*from public, anon, authenticated/);
+assert.match(lifecycleMigration, /grant select, insert, update, delete[\s\S]*to service_role/);
+assert.match(lifecycleMigration, /taxon_review_evidence jsonb not null default '\{\}'::jsonb/);
+assert.doesNotMatch(lifecycleMigration, /insert into public\.landing_page_input_catalog_drafts/);
 
-console.log("ok - admin retires E10.8 surfaces and preserves active consumers");
+async function validateBehavioralContracts(): Promise<void> {
+const largeCollection = Array.from({ length: 1_207 }, (_, index) => index);
+const completePagination = await collectCompletePaginatedRows({
+  pageSize: 500,
+  readPage: async (offset, limit) => ({
+    rows: largeCollection.slice(offset, offset + Math.min(limit, 173)),
+    total: largeCollection.length,
+  }),
+});
+assert.equal(completePagination.ok, true);
+if (!completePagination.ok) throw new Error("Expected complete pagination");
+assert.deepEqual(completePagination.rows, largeCollection);
+
+let divergentReads = 0;
+const divergentPagination = await collectCompletePaginatedRows({
+  pageSize: 500,
+  readPage: async (offset) => ({
+    rows: largeCollection.slice(offset, offset + 400),
+    total: divergentReads++ === 0 ? largeCollection.length : largeCollection.length + 1,
+  }),
+});
+assert.equal(divergentPagination.ok, false);
+
+const truncatedPagination = await collectCompletePaginatedRows({
+  pageSize: 500,
+  readPage: async (offset) => ({
+    rows: offset === 0 ? largeCollection.slice(0, 200) : [],
+    total: largeCollection.length,
+  }),
+});
+assert.equal(truncatedPagination.ok, false);
+
+const candidate = validateLandingPageInputCatalogDraft({
+  draft: createNextLandingPageInputCatalogDraft(),
+  taxons: [
+    { identity: realEstateSegmentTaxon, reviewedVersion: 5, operational: false },
+    { identity: realEstateBrokerNicheTaxon, reviewedVersion: 5, operational: true },
+  ],
+});
+assert.equal(candidate.ok, true);
+if (!candidate.ok) throw new Error("Expected executable draft candidate");
+const preHandoffBase = {
+  accountId: "00000000-0000-4000-8000-000000000101",
+  landingPageId: null,
+  planKey: "starter" as const,
+  taxonChain: { segment: realEstateSegmentTaxon, niche: realEstateBrokerNicheTaxon },
+  authoritativeValues: { business_display_name: "Conta operacional" },
+};
+assert.equal(
+  countInvalidInputCatalogOperationalConfigurations(candidate.value, [
+    { ...preHandoffBase, storedValues: {} },
+  ]),
+  0,
+);
+assert.equal(
+  countInvalidInputCatalogOperationalConfigurations(candidate.value, [
+    {
+      ...preHandoffBase,
+      storedValues: {
+        never_published: { scope: "business", value: "inválido" },
+      },
+    },
+  ]),
+  1,
+);
+const operationalContext = {
+  taxons: [
+    { identity: realEstateSegmentTaxon, reviewedVersion: 5, operational: false },
+    { identity: realEstateBrokerNicheTaxon, reviewedVersion: 5, operational: true },
+  ],
+  operationalTaxonIds: new Set([realEstateBrokerNicheTaxon.id]),
+  operationalConfigurations: [{ ...preHandoffBase, storedValues: {} }],
+};
+const originalContextFingerprint = fingerprintInputCatalogOperationalContext(
+  operationalContext,
+);
+const staleContextFingerprint = fingerprintInputCatalogOperationalContext({
+  ...operationalContext,
+  operationalConfigurations: [
+    {
+      ...preHandoffBase,
+      storedValues: {
+        traffic_source: { scope: "landing_page", value: "organic" },
+      },
+    },
+  ],
+});
+assert.match(originalContextFingerprint, /^[0-9a-f]{64}$/);
+assert.notEqual(staleContextFingerprint, originalContextFingerprint);
+
+console.log("ok - admin preserves consumers and proves complete service-only lifecycle pagination");
+}
+
+void validateBehavioralContracts().catch((error: unknown) => {
+  console.error(error);
+  process.exitCode = 1;
+});

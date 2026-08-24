@@ -433,7 +433,7 @@ const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }
     run: async () => {
       const logs: Readonly<Record<string, unknown>>[] = [];
       const dependencyCalls: string[] = [];
-      const requiredCatalogVersions: number[] = [];
+      const preparedTaxonIds: string[] = [];
       const dependencies = {
         loadRevalidationAuthority: async () => {
           dependencyCalls.push("revalidation-authority");
@@ -446,13 +446,9 @@ const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }
           dependencyCalls.push("landing-page");
           return { ok: true as const, landingPage };
         },
-        loadPreparation: async ({
-          requiredInputCatalogVersion,
-        }: {
-          requiredInputCatalogVersion: number;
-        }) => {
+        loadPreparation: async ({ taxonId }: { taxonId: string }) => {
           dependencyCalls.push("preparation");
-          requiredCatalogVersions.push(requiredInputCatalogVersion);
+          preparedTaxonIds.push(taxonId);
           return preparation;
         },
         now: (() => {
@@ -474,7 +470,7 @@ const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }
         "landing-page",
         "preparation",
       ]);
-      assert.deepEqual(requiredCatalogVersions, [5]);
+      assert.deepEqual(preparedTaxonIds, [TAXON_ID]);
       assert.deepEqual(logs[0], {
         event: "landing_page_generation_context_compilation",
         result: "success",
@@ -497,7 +493,7 @@ const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }
         "landing-page",
         "preparation",
       ]);
-      assert.deepEqual(requiredCatalogVersions, [5, 5]);
+      assert.deepEqual(preparedTaxonIds, [TAXON_ID, TAXON_ID]);
       assert.equal(Object.hasOwn(logs[0], "request_id"), false);
       assert.equal(Object.hasOwn(logs[0], "preparation_reason"), false);
 
@@ -552,13 +548,9 @@ const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }
           { accountId: ACCOUNT_ID, landingPageId: LANDING_PAGE_ID },
           {
             ...dependencies,
-            loadPreparation: async ({
-              requiredInputCatalogVersion,
-            }: {
-              requiredInputCatalogVersion: number;
-            }) => {
+            loadPreparation: async ({ taxonId }: { taxonId: string }) => {
               dependencyCalls.push("preparation");
-              requiredCatalogVersions.push(requiredInputCatalogVersion);
+              preparedTaxonIds.push(taxonId);
               return {
                 ok: false as const,
                 error: {
@@ -579,7 +571,7 @@ const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }
         "landing-page",
         "preparation",
       ]);
-      assert.equal(requiredCatalogVersions.at(-1), 5);
+      assert.equal(preparedTaxonIds.at(-1), TAXON_ID);
       assert.equal(
         logs[0]?.preparation_reason,
         "INPUT_CATALOG_REVIEW_VERSION_MISMATCH",
@@ -782,6 +774,8 @@ function buildPreparation(): Extract<TaxonPreparationResult, { ok: true }> {
       selectedResearchVersion: 1,
       reviewedInputCatalogVersion: 5,
       requiredInputCatalogVersion: 5,
+      effectiveInputCatalogVersion: 5,
+      transitionClassification: "no_material_change",
       research: {
         taxonSlug: realEstateBrokerNicheTaxon.slug,
         audienceScope: "end_customer",
