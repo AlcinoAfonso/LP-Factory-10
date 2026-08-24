@@ -85,15 +85,15 @@
 - `evolução compatível` significa que o contrato mudou, mas a nova versão apenas amplia cobertura factual e não remove, restringe ou reinterpreta cobertura anteriormente aprovada.
 - São candidatos naturais a evolução compatível, quando isolados e deterministicamente comprovados:
   - adição de novo field sem alteração destrutiva dos fields existentes;
-  - ampliação de conjunto permitido que aumente a capacidade representacional de um field;
-  - alteração apenas de evidência ou texto editorial sem mudança do contrato factual efetivo.
+  - ampliação de conjunto permitido que aumente a capacidade representacional de um field.
+- Alteração exclusivamente de evidência ou texto editorial sem efeito runtime pertence somente a `sem mudança material`; não pode ser classificada também como `evolução compatível`.
 - A adição de field `required` pode continuar compatível para a pergunta de suficiência taxonômica porque aumenta cobertura disponível; eventual incompletude dos valores concretos passa a ser tratada pelos recortes de configuração da conta/LP, e não pela E20.6.
 - Uma suficiência anteriormente reaberta ou invalidada não pode ser carregada automaticamente, mesmo que a nova versão seja aditiva.
 - Deve ser `revisão necessária` quando houver remoção de field, estreitamento de valores/validação, mudança material de finalidade, tipo, scope, origem esperada, condição, obrigação, aplicabilidade por plano ou qualquer transformação cuja compatibilidade não possa ser demonstrada com segurança.
 - Diante de ambiguidade, falhar para `revisão necessária`.
 - A IA não decide a compatibilidade estrutural entre versões; essa classificação pertence ao processamento determinístico.
 - Este plano não autoriza uma engine genérica de diff. A implementação deve usar a menor comparação determinística capaz de provar as categorias acima sobre os contratos resolvidos reais.
-- No MVP, `sem mudança material` exige igualdade da sequência ordenada de fields e de todas as propriedades funcionais resolvidas, desconsiderando somente número da versão e metadata de evidência sem efeito runtime. `Evolução compatível` admite exclusivamente: adição de field válido; ampliação estrita de `allowedValues` preservando todas as demais propriedades; e mudança apenas de evidência editorial. Múltiplas diferenças são compatíveis somente quando todas pertencem a essa allowlist. Reordenação, retirada, mudança de `purpose`, origem, camada, scope, tipo, obligation, plans, conditions, substitution policy, capability binding ou qualquer validação fora da ampliação permitida resulta em `revisão necessária`.
+- No MVP, `sem mudança material` exige igualdade da sequência ordenada de fields e de todas as propriedades funcionais resolvidas, desconsiderando somente número da versão e metadata de evidência sem efeito runtime. `Evolução compatível` admite exclusivamente adição de field válido ou ampliação estrita de `allowedValues`, sempre preservando todas as demais propriedades. Múltiplas diferenças são compatíveis somente quando todas pertencem a essa allowlist. Reordenação, retirada, mudança de `purpose`, origem, camada, scope, tipo, obligation, plans, conditions, substitution policy, capability binding ou qualquer validação fora da ampliação permitida resulta em `revisão necessária`.
 
 ### 1.7. Autoridade `R → C` e ciclo de vida mínimo
 
@@ -128,7 +128,7 @@
   - nunca ativar versão ainda não validada/publicada;
   - nunca transformar carry-forward compatível em write fictício de revisão humana.
 - Persistência:
-  - a residência física da autoridade de versão atual não é definida por este plano; deve ser escolhida em implementação própria após análise de `docs/schema.md`, `docs/base-tecnica.md` e boundaries existentes.
+  - versões publicadas e versão atual residem exclusivamente no registry/boundary repo-only; somente o draft administrativo não operacional pode receber residência adicional, e apenas se a análise técnica demonstrar que essa é a menor solução sem criar segunda autoridade.
 - Consumo:
   - consumidores correntes recebem `C` como número explícito da autoridade canônica;
   - consumidores históricos usam o número explicitamente registrado em seus snapshots/revisões.
@@ -255,12 +255,8 @@
 - Não permitir que E19.2, E19.5 ou geração resolvam `versão atual` localmente ou usem `R` como substituto implícito de `C`.
 - Não alterar consumidores além do necessário no futuro recorte técnico sem confirmar seu contrato real na `main` vigente.
 
-### 4.2. Oportunidades estratégicas condicionais sem implementação
+### 4.2. Travas de não adoção
 
-- `supa#29`: preservar apenas como hipótese de auditoria futura se, após definição do lifecycle físico, Git, migrations e registros publicados imutáveis não responderem ator, conteúdo, momento ou transição de publicação. Não criar função, trigger, tabela, cabeçalho YAML ou changelog automatizado neste recorte.
-- `supa#53`: preservar apenas como alternativa de transporte durável se medição em volume real demonstrar que o processamento determinístico excede o orçamento interativo ou exige retry. Não instalar `pgmq`, criar fila, worker, job ou estado paralelo neste recorte.
-- `supa#63`: preservar apenas como possibilidade de ampliar testes de RLS se a implementação futura criar múltiplas tabelas/policies e uma prova isolada demonstrar benefício líquido. Não instalar Python, `pgtap`, ferramenta, extensão ou workflow e nunca executar isso em Production neste recorte.
-- `supa#68`: preservar apenas se surgir requisito aprovado de atualização em tempo real e medição demonstrar insuficiência de consulta sob demanda ou polling. Não atualizar dependência nem criar publicação, channel, subscription, migration ou rota Realtime neste recorte.
 - `supa#54` é não aplicável à classificação estrutural `R → C`; similaridade vetorial não substitui a comparação determinística, conservadora e fail-closed.
 - `vercel#20` é não aplicável como autoridade ou rollout segmentado da versão global; targeting não pode selecionar `C` por usuário ou taxon.
 
@@ -346,11 +342,13 @@
 - Não existe segundo passo humano de `tornar atual`, seletor de versão titular nem escolha manual da versão operacional pelos consumidores E19.2/E19.5.
 - A publicação é uma decisão global do catálogo, não uma decisão pertencente ao taxon que originou um field ou uma alteração.
 - A publicação deve falhar fechado quando o draft final estiver inválido, quando evidência material necessária estiver stale, quando houver pendência E20.6 obrigatória para consumo operacional vigente ou quando a mudança puder tornar configuração operacional corrente inválida/ilegível.
-- A publicação deve constituir um único boundary indivisível de cutover, vinculando o conteúdo exato do draft, sua revisão ou identidade imutável, as validações, a análise de impacto e as autorizações pré-publicação aplicáveis. Edição concorrente, evidência stale, decisão vinculada a conteúdo diferente, publicação duplicada ou falha parcial impedem que a nova versão se torne atual. Nenhum consumidor pode observar a nova `C` antes da conclusão integral desse boundary.
-- Como o registry repo-only é a autoridade publicada, o boundary administrativo não promove diretamente o conteúdo do draft: ele produz o handoff/materialização versionável no repositório e aguarda validação e deploy do artefato executável correspondente. Somente a confirmação de que exatamente esse conteúdo está implantado pode concluir o cutover da versão atual.
+- A publicação não afirma atomicidade transacional entre Admin, GitHub e deploy. Ela segue uma sequência observável e fail-closed: congelar a identidade exata do draft e suas evidências; materializar no repositório uma nova versão executável e a declaração explícita de versão atual; validar o diff e o artefato em CI/Preview; obter revisão e merge humanos; concluir o deploy de Production; e comprovar no runtime de Production que versão, conteúdo e identidade correspondem ao draft congelado.
+- A transição que torna a nova versão observável como `C` é a ativação bem-sucedida em Production do artefato repo-only que contém simultaneamente a versão executável e a declaração explícita de versão atual. Até essa ativação, o deployment anterior continua sendo a autoridade e toda falha de materialização, validação, revisão, merge ou deploy preserva a versão anterior como atual.
+- A residência administrativa, quando existir, registra a reconciliação do draft somente depois da comprovação do runtime. Falha ou atraso nessa reconciliação não pode substituir nem reverter a autoridade repo-only já implantada, mas bloqueia novo draft/publicação administrativa até que o estado seja reconciliado com o artefato ativo exato.
+- Edição concorrente, evidência stale, decisão E20.6.5 vinculada a conteúdo diferente ou tentativa duplicada impedem iniciar ou continuar a sequência para aquele draft. Todos os gates E20.6/E19 aplicáveis devem estar concluídos antes da revisão/merge que pode levar o artefato a Production.
 - A publicação não é bloqueada apenas porque um novo `required` torna configuração anterior incompleta, nem por pendência E20.6 de taxon ainda não operacional.
 - Depois da publicação, a primeira alteração posterior inicia o próximo draft sequencial; a versão publicada permanece imutável.
-- A superfície física da ação `Publicar` não é definida neste PR. A implementação deve primeiro avaliar as superfícies administrativas existentes e escolher a menor evolução coerente com o Design System e boundaries atuais.
+- A composição visual da ação `Publicar` não é definida neste plano. A implementação deve evoluir a superfície administrativa já escolhida com a menor UI coerente com o Design System e com a sequência operacional acima.
 
 ### 5.8. Simplificações vinculantes do MVP
 
