@@ -776,4 +776,8 @@ Execute a avaliação E20.6 do taxon `[taxon_slug]`, usando a cadeia taxonômica
 - O contract final não pode fechar a E20.6.5 com uma versão operacional hardcoded que contradiga a E20.2.8 já aprovada para o produto.
 - A implementação da E20.2.8 deve ocorrer como unidade completa antes de trocar o predicado atual de igualdade exata: autoridade global `V`, derivação `R → C`, comparador determinístico de compatibilidade e consumo coerente de `C` pela E19.2/E19.5.
 - Até essa implementação completa, o runtime vigente permanece inalterado e fail-closed com igualdade exata.
+- Sob a E20.2.8, quando a transição para o draft final exigir `revisão necessária`, a E20.6.5 pode avaliar administrativamente esse draft no pré-publicação.
+- Essa avaliação não torna o draft operacional e não grava antecipadamente `reviewed_input_catalog_version`.
+- A decisão humana pré-publicação fica vinculada ao conteúdo exato avaliado; qualquer edição material posterior torna essa avaliação stale.
+- O efeito administrativo dessa decisão somente nasce se aquele mesmo conteúdo for efetivamente publicado.
 - O PR #809 permanece exclusivamente documental: nenhuma tabela, coluna, migration, rota, RPC, job, agente, engine, nova infraestrutura ou alteração de runtime é autorizada por esta reconciliação.
