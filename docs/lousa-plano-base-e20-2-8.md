@@ -252,3 +252,95 @@
 - Parar se uma mudança por plano tornar o marcador taxonômico E20.6 insuficiente ou ambíguo.
 - Parar se a experiência agregada exigir nova rota, persistência ou infraestrutura antes de analisar as superfícies administrativas já existentes.
 - Parar diante de conflito material com a E20.6 vigente; a transição do predicado de igualdade exata deve ocorrer somente por implementação completa e validada, nunca por ajuste parcial.
+
+## 5. Consolidação do lifecycle do catálogo — 24/08/2026
+
+### 5.1. Autoridade desta consolidação
+
+- Esta seção consolida as decisões humanas e revisões do Analista posteriores à redação inicial deste plano e supera somente formulações anteriores incompatíveis sobre draft, momento da análise de impacto, publicação e retirada de fields.
+- Permanecem integralmente preservados: versão global atual explícita, autoridade `R → C`, carry-forward determinístico, fail-closed, herança taxonômica, histórico imutável de versões publicadas, rollback fora do MVP e ausência de implementação física neste PR.
+- O lifecycle do MVP é deliberadamente mínimo: `versão publicada atual → único próximo draft mutável → publicar → nova versão publicada atual`.
+
+### 5.2. Próxima versão única em draft
+
+- Enquanto existir uma versão publicada atual `V`, pode existir no máximo uma próxima versão em draft, correspondente à evolução sequencial imediatamente posterior de `V`.
+- O draft é mutável e não operacional. E19.2, E19.5 workspace, geração E19.5 e demais consumidores correntes nunca usam o draft como `C`.
+- Alterações aprovadas provenientes de diferentes avaliações ou taxons acumulam-se no mesmo draft enquanto ele não tiver sido publicado. Uma segunda alteração antes da publicação não cria outra versão candidata.
+- Salvar o draft persiste apenas seu estado corrente; não cria uma nova versão histórica e não exige histórico de cada salvamento no MVP.
+- Não permitir múltiplos drafts concorrentes, branches funcionais do catálogo ou seleção entre várias candidatas.
+- A forma física de residência, edição e autorização do draft não é definida por este plano e deve ser escolhida somente no recorte técnico sobre as superfícies e boundaries reais.
+
+### 5.3. Lifecycle dos fields
+
+- Field criado exclusivamente no draft ainda não pertence ao contrato publicado e pode ser editado, renomeado, ter metadata, obrigação ou validação corrigidas e ser excluído integralmente antes da publicação.
+- Field excluído antes de sua primeira publicação nunca existiu para E19.2/E19.5 e não precisa permanecer no histórico do catálogo.
+- Depois de publicado, o contrato histórico do field é imutável nas versões em que existiu. Ele não pode ser apagado retroativamente.
+- Quando um field publicado deixar de ser necessário, a evolução é forward-only: a próxima versão pode declará-lo `retirado a partir daquela versão`.
+- Usar `retirado` como semântica do MVP; não criar lifecycle `ativo/inativo`, reativação ou alternância de status.
+- `optional` e `required` usam o mesmo mecanismo de retirada. Na versão corrente em que foi retirado, o field deixa de ser exibido/coletado, deixa de participar de novas gerações e seu valor anterior deixa de participar do contrato operacional ativo.
+- Quando o field retirado era `required`, ele também deixa de participar da completude a partir da versão que efetivou a retirada.
+- Valores anteriormente persistidos não precisam ser apagados por migration ou backfill. O runtime futuro deve conseguir distinguir `field_key` historicamente publicado e depois retirado, que permanece reconhecível porém inerte, de key que nunca pertenceu a qualquer contrato publicado, que continua inválida/fail-closed.
+- A representação física dessa distinção — nome de propriedade, shape, projeção ou mecanismo equivalente — não é definida neste plano e deve ser escolhida após análise dos contratos reais.
+- Retirada não cria nova capacidade de override hierárquico: nicho ou ultranicho não pode simplesmente retirar/desligar um field herdado que permaneça ativo em camada superior. A retirada ocorre na evolução versionada do contrato ao qual o field pertence.
+- Para a primeira E20.2.8, toda retirada de field publicado é classificada como `revisão necessária` para os taxons aos quais ele se aplica. Não implementar otimização por alegada cobertura semântica equivalente de outro field neste MVP.
+
+### 5.4. Draft validável e evidência stale
+
+- `Não operacional` não significa `não resolvível`: o draft final deve poder ser resolvido e validado administrativamente antes da publicação, usando as mesmas regras funcionais do catálogo que ele teria se publicado.
+- A validação pré-publicação deve conseguir resolver o draft nas cadeias taxonômicas e planos aplicáveis, validar fields, condições e contratos e calcular o impacto da mudança.
+- A análise de impacto de publicação considera o conteúdo integral corrente do draft, nunca um estado intermediário anterior.
+- Qualquer edição material posterior do draft torna stale toda evidência que dependia daquele conteúdo, incluindo classificação estrutural de impacto, compatibilidade por taxon, avaliação E20.6.5 pré-publicação e prova de validade estrutural das configurações operacionais correntes.
+- Antes de publicar, toda evidência material stale deve ser recalculada sobre o conteúdo exato que será publicado.
+- Snapshots, materializações e revisões históricas não são reinterpretados contra o draft; permanecem ligados ao contrato/versionamento com que foram produzidos.
+
+### 5.5. Duas dimensões do gate pré-publicação
+
+- A publicação do draft final deve avaliar separadamente `suficiência taxonômica E20.6` e `validade estrutural das configurações operacionais E19`.
+- Na dimensão E20.6:
+  - `sem mudança material` e `evolução compatível` seguem o carry-forward já definido;
+  - `revisão necessária` encaminha somente os taxons afetados à E20.6.5;
+  - quando a pendência de `revisão necessária` afetar taxon/consumo já operacional segundo os contratos vigentes do produto, ela deve ser resolvida no pré-publicação antes de o draft tornar-se a nova versão atual;
+  - taxon ainda não operacional não precisa bloquear a publicação e pode permanecer pendente até que sua preparação seja necessária.
+- Na dimensão E19:
+  - o gate pré-publicação protege validade e legibilidade estrutural das configurações operacionais correntes que passarão a consumir `C`, não a completude de toda a base;
+  - uma nova versão pode tornar uma configuração antiga `válida, porém incompleta` exclusivamente pela introdução de novos dados obrigatórios ainda sem valor; isso não bloqueia publicação e preserva o lifecycle já previsto pela E19.5;
+  - nesse caso, somente ações que dependem de completude permanecem bloqueadas até o preenchimento dos novos dados;
+  - deve bloquear publicação uma mudança que torne configuração corrente inválida ou ilegível, por exemplo estreitamento de enum incompatível com valor existente, mudança incompatível de tipo/scope/validação ou retirada que ainda não reconheça corretamente o valor histórico como legítimo e inerte.
+- O gate de continuidade não exige migração humana prévia de todas as contas nem backfill para preencher novo `required`.
+- A identificação física de quais taxons/configurações são operacionais e a forma de executar essa prova pertencem ao recorte técnico futuro; este plano fixa apenas o contrato de produto.
+
+### 5.6. E20.6.5 sobre o draft
+
+- A E20.6.5 pode analisar administrativamente o draft final antes da publicação quando a classificação determinística indicar `revisão necessária`.
+- Essa avaliação pré-publicação não torna o draft operacional e não autoriza E19.2/E19.5 a consumi-lo.
+- A decisão humana pré-publicação fica vinculada ao conteúdo exato do draft avaliado; qualquer edição material posterior a torna stale e exige nova avaliação quando ainda necessária.
+- A avaliação pré-publicação não deve gravar prematuramente `reviewed_input_catalog_version` como se o draft já fosse uma versão operacional publicada.
+- A decisão pré-publicação é uma autorização condicionada: somente a publicação daquele mesmo conteúdo pode produzir seu efeito administrativo sobre a nova versão. O mecanismo físico para materializar esse efeito de forma segura no evento de publicação não é definido neste PR documental.
+- Taxons não operacionais podem permanecer sem essa decisão e continuarão fail-closed quando sua preparação for requerida posteriormente.
+
+### 5.7. Publicação
+
+- `Publicar` é o único evento que encerra a mutabilidade do draft, transforma aquele conteúdo em versão publicada e imutável, torna essa versão a atual global e a disponibiliza ao consumo operacional conforme `R → C` e os gates aplicáveis.
+- Não existe segundo passo humano de `tornar atual`, seletor de versão titular nem escolha manual da versão operacional pelos consumidores E19.2/E19.5.
+- A publicação é uma decisão global do catálogo, não uma decisão pertencente ao taxon que originou um field ou uma alteração.
+- A publicação deve falhar fechado quando o draft final estiver inválido, quando evidência material necessária estiver stale, quando houver pendência E20.6 obrigatória para consumo operacional vigente ou quando a mudança puder tornar configuração operacional corrente inválida/ilegível.
+- A publicação não é bloqueada apenas porque um novo `required` torna configuração anterior incompleta, nem por pendência E20.6 de taxon ainda não operacional.
+- Depois da publicação, a primeira alteração posterior inicia o próximo draft sequencial; a versão publicada permanece imutável.
+- A superfície física da ação `Publicar` não é definida neste PR. A implementação deve primeiro avaliar as superfícies administrativas existentes e escolher a menor evolução coerente com o Design System e boundaries atuais.
+
+### 5.8. Simplificações vinculantes do MVP
+
+- A primeira E20.2.8 não necessita de:
+  - rollback para versão anterior;
+  - seletor de versão titular;
+  - versão publicada ativa/inativa ou `deprecated`;
+  - múltiplos drafts;
+  - branches de catálogo;
+  - histórico de salvamentos do draft;
+  - reativação de field retirado;
+  - deleção física de fields históricos;
+  - backfill para apagar valores antigos;
+  - escolha manual da versão operacional por E19.2/E19.5;
+  - engine de equivalência semântica para evitar revisão após retirada de field.
+- O lifecycle desejado fica: `versão publicada atual → único draft mutável → validação pré-publicação → publicar → nova versão publicada atual`.
+- O lifecycle do field fica: `criado no draft → livremente mutável/excluível → publicado → histórico imutável → eventualmente retirado forward-only`.
