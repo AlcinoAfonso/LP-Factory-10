@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 25/08/2026
-• Versão: v1.5.184
+• Versão: v1.5.185
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2609,7 +2609,7 @@ Repositório — Ajustados
 20.2.8.1 Objetivo e status
 
 * Objetivo: definir uma versão atual global, explícita e repo-only para o catálogo E20.2, propagá-la de forma determinística aos consumidores correntes e evitar reavaliação humana por taxon quando a evolução for comprovadamente compatível.
-* Status: Implementação concluída e validada localmente em 24/08/2026 no PR #814; merge humano, apply da migration e validação hospedada permanecem pendentes.
+* Status: Concluída em 25/08/2026; o PR #814 foi mergeado na `main` no commit `63213cc338ca8b92320e57f976b261a26b99c2d1`, a migration `20260824180000_e20_2_8_input_catalog_lifecycle.sql` foi aplicada e validada no Supabase, e o QA autenticado somente leitura foi aprovado em Production nos viewports desktop e mobile.
 
 20.2.8.2 Registros do recorte
 

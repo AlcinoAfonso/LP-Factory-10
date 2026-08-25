@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data da última atualização: 24/08/2026
-• Documento: LP Factory 10 — Schema (DB Contract) v1.0.56
+• Data da última atualização: 25/08/2026
+• Documento: LP Factory 10 — Schema (DB Contract) v1.0.57
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -1047,7 +1047,7 @@
 • service_role possui SELECT, INSERT, UPDATE e DELETE; não há acesso direto do client.
 • DELETE é usado somente pela reconciliação humana no runtime de Production pós-deploy, depois de o boundary comprovar que versão atual, conteúdo e fingerprint do registry implantado correspondem exatamente ao draft congelado.
 • Migration forward-only: `supabase/migrations/20260824180000_e20_2_8_input_catalog_lifecycle.sql`; teste transacional: `supabase/tests/e20_2_8_input_catalog_lifecycle.test.sql`; verificador read-only: `supabase/snippets/e20_2_8_input_catalog_lifecycle_verify.sql`.
-• A migration não cria linha e não migra v1–v5. Apply hospedado permanece pendente do merge humano.
+• A migration não cria linha e não migra v1–v5. O apply hospedado foi concluído em 25/08/2026; o verificador read-only aprovou 4/4 checks, o teste SQL transacional foi aprovado sem resíduos e o Security Controls apresentou somente o INFO esperado de RLS sem policy, compatível com acesso exclusivo por service_role.
 
 2. Views
 
