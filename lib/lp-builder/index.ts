@@ -95,7 +95,6 @@ export {
   saveAccountLandingPageOnboardingConfiguration,
 } from "./adapters/onboardingConfigurationAdapter";
 export {
-  LANDING_PAGE_WORKSPACE_REQUIRED_INPUT_CATALOG_VERSION,
   deriveLandingPageWorkspaceState,
   isLandingPageWorkspaceEnabled,
   landingPageWorkspaceStateLabels,

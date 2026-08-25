@@ -179,6 +179,7 @@ export const landingPageInputFieldDefinitionSchema = z
     capabilityBindings: z.array(capabilityBindingSchema).min(1).optional(),
     evidence: evidenceSchema,
     createdInVersion: z.number().int().min(1),
+    retiredInVersion: z.number().int().min(2).optional(),
   })
   .strict()
   .superRefine((field, context) => {
@@ -226,6 +227,16 @@ export const landingPageInputFieldDefinitionSchema = z
         code: "custom",
         path: ["landingPageSubstitutionPolicy"],
         message: "fields created in v2 or later require an explicit landing-page substitution policy",
+      });
+    }
+    if (
+      field.retiredInVersion !== undefined &&
+      field.retiredInVersion <= field.createdInVersion
+    ) {
+      context.addIssue({
+        code: "custom",
+        path: ["retiredInVersion"],
+        message: "retirement must be forward-only",
       });
     }
     if (

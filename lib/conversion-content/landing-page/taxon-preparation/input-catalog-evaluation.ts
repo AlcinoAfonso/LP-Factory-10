@@ -53,15 +53,25 @@ export type BuildInputCatalogEvaluationContextInput = Readonly<{
 
 export type BuildInputCatalogEvaluationContextOptions = Readonly<{
   resolveReview?: typeof resolveInputCatalogReview;
+  allowNonPublishedVersion?: boolean;
 }>;
 
 export function buildInputCatalogEvaluationContext(
   input: BuildInputCatalogEvaluationContextInput,
   options: BuildInputCatalogEvaluationContextOptions = {},
 ): BuildInputCatalogEvaluationContextResult {
-  const versionFailure = classifyRequiredInputCatalogVersion(
-    input.inputCatalogVersion,
-  );
+  if (
+    options.allowNonPublishedVersion &&
+    (!Number.isSafeInteger(input.inputCatalogVersion) || input.inputCatalogVersion <= 0)
+  ) {
+    return contextFailure(
+      "INPUT_CATALOG_VERSION_INVALID",
+      "A versão E20.2 deve ser um inteiro positivo explícito.",
+    );
+  }
+  const versionFailure = options.allowNonPublishedVersion
+    ? null
+    : classifyRequiredInputCatalogVersion(input.inputCatalogVersion);
   if (versionFailure) {
     return contextFailure(
       versionFailure.error.code === "REQUIRED_INPUT_CATALOG_VERSION_INVALID"

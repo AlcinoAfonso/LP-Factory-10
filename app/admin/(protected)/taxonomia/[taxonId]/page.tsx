@@ -25,16 +25,26 @@ import {
 } from "../actions";
 import { AdminTaxonInputCatalogEvaluationRuntime } from "./_components/AdminTaxonInputCatalogEvaluation";
 import { AdminTaxonInputCatalogReview } from "./_components/AdminTaxonInputCatalogReview";
+import { CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION } from "@/conversion-content/landing-page/input-catalog";
+import { loadAdminInputCatalogDraftEvaluationContext } from "@/lib/admin/adapters/adminInputCatalogLifecycleAdapter";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 type AdminTaxonDetailPageProps = {
   params: Promise<{ taxonId: string }>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
 
-export default async function AdminTaxonDetailPage({ params }: AdminTaxonDetailPageProps) {
+export default async function AdminTaxonDetailPage({ params, searchParams }: AdminTaxonDetailPageProps) {
   const { taxonId } = await params;
+  const rawDraftRevision = (await searchParams)?.catalogDraftRevision;
+  const parsedDraftRevision = Number(
+    Array.isArray(rawDraftRevision) ? rawDraftRevision[0] : rawDraftRevision,
+  );
+  const draftRevision = Number.isSafeInteger(parsedDraftRevision) && parsedDraftRevision > 0
+    ? parsedDraftRevision
+    : null;
   const taxon = await getAdminTaxonDetail(taxonId);
 
   if (!taxon) notFound();
@@ -49,12 +59,23 @@ export default async function AdminTaxonDetailPage({ params }: AdminTaxonDetailP
         ? "rollout_gate_off"
         : "operational_configuration_unproven";
   const legacyAvailable = inputCatalogLegacyMode === "rollout_gate_off";
+  const draftEvaluation = draftRevision === null
+    ? null
+    : await loadAdminInputCatalogDraftEvaluationContext({
+        expectedRevision: draftRevision,
+        taxonId,
+      });
 
   return (
     <div className="space-y-6">
       <Link className="text-sm font-medium text-brand-700 hover:underline" href="/admin/taxonomia">
         Voltar para taxonomia
       </Link>
+      {draftEvaluation ? (
+        <Link className="ml-4 text-sm font-medium text-brand-700 hover:underline" href="/admin/estrutura-lp?view=entradas">
+          Voltar para o draft
+        </Link>
+      ) : null}
 
       <AdminPageHeader
         title={taxon.name}
@@ -134,15 +155,25 @@ export default async function AdminTaxonDetailPage({ params }: AdminTaxonDetailP
         />
       )}
 
-      {taxon.inputCatalogReview.status === "available" && inputCatalogEvaluationRuntime?.ok ? (
+      {taxon.inputCatalogReview.status === "available" && inputCatalogEvaluationRuntime?.ok && (!draftEvaluation || draftEvaluation.ok) ? (
         <AdminTaxonInputCatalogEvaluationRuntime
           acknowledgeGapAction={acknowledgeInputCatalogGapAction}
           confirmAction={confirmInputCatalogEvaluationAction}
+          currentInputCatalogVersion={draftEvaluation?.ok
+            ? draftEvaluation.value.targetVersion
+            : CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION}
           currentReviewedVersion={taxon.inputCatalogReview.reviewedVersion}
           evaluateAction={evaluateInputCatalogAction}
           rejectCandidatesAndConfirmAction={rejectInputCatalogCandidatesAndConfirmSufficientAction}
           taxonId={taxon.id}
+          {...(draftEvaluation?.ok ? { draftRevision: Number(draftRevision) } : {})}
         />
+      ) : null}
+
+      {draftEvaluation && !draftEvaluation.ok ? (
+        <section className="rounded-lg border border-red-200 bg-red-50 p-5 text-sm text-red-800" role="alert">
+          O gate pré-publicação não pôde ser aberto: {draftEvaluation.message}
+        </section>
       ) : null}
 
       {taxon.inputCatalogReview.status === "available" && inputCatalogEvaluationRuntime && !inputCatalogEvaluationRuntime.ok ? (

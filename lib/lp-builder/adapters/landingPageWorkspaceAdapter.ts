@@ -1,7 +1,7 @@
 import "server-only";
 
 import { getCommercialEntitlementSignal } from "../../commercial-entitlements";
-import { loadTaxonPreparationForVersion } from "../../conversion-content/adapters/selectedEndCustomerResearchAdapter";
+import { loadTaxonPreparationForCurrentVersion } from "../../conversion-content/adapters/selectedEndCustomerResearchAdapter";
 import type {
   LandingPageInputCatalogPlan,
   LandingPageInputCatalogTaxonChain,
@@ -20,7 +20,6 @@ import type {
   SaveAccountLandingPageOperationalConfigurationResult,
 } from "../contracts";
 import {
-  LANDING_PAGE_WORKSPACE_REQUIRED_INPUT_CATALOG_VERSION,
   deriveLandingPageWorkspaceState,
   isLandingPageWorkspaceEnabled,
   splitLandingPageWorkspaceValues,
@@ -35,6 +34,7 @@ type Authority = Readonly<{
   canMutate: boolean;
   planKey: LandingPageInputCatalogPlan;
   taxonChain: LandingPageInputCatalogTaxonChain;
+  effectiveInputCatalogVersion: number;
   authoritativeValues: Readonly<Record<string, unknown>>;
 }>;
 
@@ -225,7 +225,7 @@ export async function saveAccountLandingPageOperationalConfiguration(input: Read
   const candidate = resolveAccountLandingPageOnboardingConfiguration({
     accountId: authority.value.accountId,
     landingPageId: input.landingPageId,
-    catalogVersion: LANDING_PAGE_WORKSPACE_REQUIRED_INPUT_CATALOG_VERSION,
+    catalogVersion: authority.value.effectiveInputCatalogVersion,
     revision: input.expectedLandingPageRevision ?? 0,
     planKey: authority.value.planKey,
     taxonChain: authority.value.taxonChain,
@@ -266,7 +266,7 @@ export async function saveAccountLandingPageOperationalConfiguration(input: Read
         p_landing_page_values: canonicalSplit.landingPageValues,
         p_expected_shared_revision: input.expectedSharedRevision,
         p_expected_landing_page_revision: input.expectedLandingPageRevision,
-        p_catalog_version: LANDING_PAGE_WORKSPACE_REQUIRED_INPUT_CATALOG_VERSION,
+        p_catalog_version: authority.value.effectiveInputCatalogVersion,
         p_actor_user_id: authority.value.actorUserId,
         p_expected_latest_materialization_id: identity.latestMaterializationId,
       },
@@ -497,7 +497,7 @@ function resolveOperationalConfiguration(
   const resolved = resolveAccountLandingPageOnboardingConfiguration({
     accountId: authority.accountId,
     landingPageId,
-    catalogVersion: LANDING_PAGE_WORKSPACE_REQUIRED_INPUT_CATALOG_VERSION,
+    catalogVersion: authority.effectiveInputCatalogVersion,
     revision: page?.revision ?? 0,
     planKey: authority.planKey,
     taxonChain: authority.taxonChain,
@@ -760,14 +760,13 @@ async function loadAuthority(
     const taxonChain = await readTaxonChain(client, accountId);
     if (!taxonChain) return authorityFailure("unavailable");
     const servedTaxon = taxonChain.ultraNiche ?? taxonChain.niche ?? taxonChain.segment;
-    const preparation = await loadTaxonPreparationForVersion({
+    const preparation = await loadTaxonPreparationForCurrentVersion({
       taxonId: servedTaxon.id,
-      requiredInputCatalogVersion: LANDING_PAGE_WORKSPACE_REQUIRED_INPUT_CATALOG_VERSION,
     });
     if (
       !preparation.ok ||
-      preparation.value.requiredInputCatalogVersion !== LANDING_PAGE_WORKSPACE_REQUIRED_INPUT_CATALOG_VERSION ||
-      preparation.value.reviewedInputCatalogVersion !== LANDING_PAGE_WORKSPACE_REQUIRED_INPUT_CATALOG_VERSION
+      !Number.isSafeInteger(preparation.value.effectiveInputCatalogVersion) ||
+      preparation.value.effectiveInputCatalogVersion <= 0
     ) return authorityFailure("unavailable");
     return {
       ok: true,
@@ -777,6 +776,8 @@ async function loadAuthority(
         canMutate: ["owner", "admin"].includes(String(membership.role)),
         planKey: entitlement.planKey as LandingPageInputCatalogPlan,
         taxonChain,
+        effectiveInputCatalogVersion:
+          preparation.value.effectiveInputCatalogVersion,
         authoritativeValues:
           typeof account.name === "string" && account.name.trim()
             ? { business_display_name: account.name.trim() }

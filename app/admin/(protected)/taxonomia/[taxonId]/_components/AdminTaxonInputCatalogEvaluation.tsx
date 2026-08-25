@@ -16,7 +16,9 @@ import type {
 
 export type AdminTaxonInputCatalogEvaluationRuntimeProps = Readonly<{
   taxonId: string;
+  currentInputCatalogVersion: number;
   currentReviewedVersion: number | null;
+  draftRevision?: number;
   evaluateAction: (input: Readonly<{
     taxonId: string;
     inputCatalogVersion: number;
@@ -27,6 +29,7 @@ export type AdminTaxonInputCatalogEvaluationRuntimeProps = Readonly<{
       previousOutput: InputCatalogEvaluationPresentationOutput;
       reference: InputCatalogEvaluationReference;
     }> | null;
+    draftRevision?: number;
   }>) => Promise<InputCatalogEvaluationActionResult>;
   confirmAction: (input: Readonly<{
     reference: InputCatalogEvaluationReference;
@@ -52,6 +55,7 @@ export type InputCatalogEvaluationPresentationState =
 
 export type AdminTaxonInputCatalogEvaluationProps = Readonly<{
   currentReviewedVersion: number | null;
+  draftMode?: boolean;
   mode: InputCatalogEvaluationPresentationMode;
   inputCatalogVersion: string;
   inputCatalogVersionError?: string | null;
@@ -135,14 +139,19 @@ const conclusionLabels: Record<InputCatalogEvaluationPresentationCandidate["conc
 
 export function AdminTaxonInputCatalogEvaluationRuntime({
   taxonId,
+  currentInputCatalogVersion,
   currentReviewedVersion,
   evaluateAction,
   confirmAction,
   rejectCandidatesAndConfirmAction,
   acknowledgeGapAction,
+  draftRevision,
 }: AdminTaxonInputCatalogEvaluationRuntimeProps) {
+  const draftMode = draftRevision !== undefined;
   const [mode, setMode] = useState<InputCatalogEvaluationPresentationMode>("systematic");
-  const [inputCatalogVersion, setInputCatalogVersion] = useState("");
+  const [inputCatalogVersion, setInputCatalogVersion] = useState(
+    String(currentInputCatalogVersion),
+  );
   const [hypothesis, setHypothesis] = useState("");
   const [feedback, setFeedback] = useState("");
   const [state, setState] = useState<InputCatalogEvaluationPresentationState>({ kind: "idle" });
@@ -183,6 +192,7 @@ export function AdminTaxonInputCatalogEvaluationRuntime({
         mode: input.mode,
         focalHypothesis: input.hypothesis,
         feedback: feedbackInput,
+        ...(draftMode ? { draftRevision } : {}),
       });
     } catch {
       setState({
@@ -223,7 +233,9 @@ export function AdminTaxonInputCatalogEvaluationRuntime({
     }
     setDecisionFeedback({
       kind: "success",
-      message: `Versão E20.2 ${result.reviewedVersion} confirmada por decisão administrativa.`,
+      message: draftMode
+        ? `Suficiência pré-publicação do draft v${result.reviewedVersion} registrada sem alterar a versão revisada do taxon.`
+        : `Versão E20.2 ${result.reviewedVersion} confirmada por decisão administrativa.`,
     });
   }
 
@@ -287,7 +299,9 @@ export function AdminTaxonInputCatalogEvaluationRuntime({
     }
     setDecisionFeedback({
       kind: "success",
-      message: `Todos os candidatos foram rejeitados e a versão E20.2 ${result.reviewedVersion} foi confirmada como suficiente.`,
+      message: draftMode
+        ? `Todos os candidatos foram rejeitados e a suficiência pré-publicação do draft v${result.reviewedVersion} foi registrada.`
+        : `Todos os candidatos foram rejeitados e a versão E20.2 ${result.reviewedVersion} foi confirmada como suficiente.`,
     });
   }
 
@@ -311,6 +325,7 @@ export function AdminTaxonInputCatalogEvaluationRuntime({
       administrativeDecisionFeedback={decisionFeedback}
       administrativeDecisionPending={decisionPending}
       currentReviewedVersion={currentReviewedVersion}
+      draftMode={draftMode}
       feedback={feedback}
       hypothesis={hypothesis}
       inputCatalogVersion={inputCatalogVersion}
@@ -329,6 +344,7 @@ export function AdminTaxonInputCatalogEvaluationRuntime({
       }}
       onCopyGapHandoff={copyGapHandoff}
       onInputCatalogVersionChange={(value) => {
+        if (draftMode) return;
         setInputCatalogVersion(value);
         setFeedback("");
         setSelectedCandidateIndexes([]);
@@ -372,6 +388,7 @@ const taxonomyLayerLabels: Record<
 
 export function AdminTaxonInputCatalogEvaluation({
   currentReviewedVersion,
+  draftMode = false,
   mode,
   inputCatalogVersion,
   inputCatalogVersionError = null,
@@ -449,7 +466,7 @@ export function AdminTaxonInputCatalogEvaluation({
     >
       <div className="min-w-0">
         <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-          Checkpoint de integração final
+          {draftMode ? "Gate pré-publicação" : "Checkpoint de integração final"}
         </p>
         <h2
           className="mt-1 text-lg font-semibold text-card-foreground"
@@ -458,7 +475,9 @@ export function AdminTaxonInputCatalogEvaluation({
           Avaliação factual do catálogo E20.2
         </h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          A avaliação é uma recomendação não autoritativa. Ela não altera fields, catálogo ou suficiência.
+          {draftMode
+            ? "A avaliação é vinculada ao conteúdo exato do draft e não altera a versão revisada nem torna o catálogo operacional."
+            : "A avaliação é uma recomendação não autoritativa. Ela não altera fields, catálogo ou suficiência."}
         </p>
       </div>
 
@@ -467,13 +486,15 @@ export function AdminTaxonInputCatalogEvaluation({
           Versão executável E20.2 para esta análise
         </label>
         <p className="mt-1 text-sm text-muted-foreground" id="input-catalog-evaluation-version-instruction">
-          Escolha N explicitamente. A seleção não é persistida; hoje está registrada {currentReviewedVersion === null ? "nenhuma versão" : `a versão ${currentReviewedVersion}`}.
+          {draftMode
+            ? "A próxima versão sequencial é fixada pelo draft administrativo atual."
+            : <>Escolha N explicitamente. A seleção não é persistida; hoje está registrada {currentReviewedVersion === null ? "nenhuma versão" : `a versão ${currentReviewedVersion}`}.</>}
         </p>
         <input
           aria-describedby={`input-catalog-evaluation-version-instruction${inputCatalogVersionError ? " input-catalog-evaluation-version-error" : ""}`}
           aria-invalid={inputCatalogVersionError ? true : undefined}
           className="mt-2 min-h-11 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground outline-none focus-visible:ring-4 focus-visible:ring-brand-600/20 disabled:opacity-60 sm:max-w-48"
-          disabled={isLoading}
+          disabled={isLoading || draftMode}
           id="input-catalog-evaluation-version"
           inputMode="numeric"
           min={1}

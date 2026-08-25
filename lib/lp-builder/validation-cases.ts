@@ -75,6 +75,8 @@ function catalogVersionLoaderFor(
         selectedResearchVersion: 1,
         reviewedInputCatalogVersion: version,
         requiredInputCatalogVersion: version,
+        effectiveInputCatalogVersion: version,
+        transitionClassification: "no_material_change",
         research: {
           taxonSlug: realEstateSegmentTaxon.slug,
           audienceScope: "end_customer",
@@ -603,18 +605,13 @@ const cases: ReadonlyArray<
           { accountId: ACCOUNT_ID, actorUserId: ACTOR_ID },
           divergent,
           eligibleEntitlement,
-          async ({ taxonId }) => {
-            const prepared = await catalogVersionLoaderFor(5)({ taxonId });
-            assert.equal(prepared.ok, true);
-            if (!prepared.ok) throw new Error("fixture preparation failed");
-            return {
-              ok: true,
-              value: {
-                ...prepared.value,
-                requiredInputCatalogVersion: 4,
-              },
-            };
-          },
+          async () => ({
+            ok: false,
+            error: {
+              code: "INPUT_CATALOG_TRANSITION_REVIEW_REQUIRED" as const,
+              message: "A versão atual exige nova revisão taxonômica.",
+            },
+          }),
         );
       assert.deepEqual(divergentResult, {
         ok: false,

@@ -1,6 +1,7 @@
 import { resolveLandingPageRootParameters } from "../conversion-content/landing-page";
-import type {
-  LandingPageInputValueType,
+import {
+  isLandingPageInputCatalogVersionExecutable,
+  type LandingPageInputValueType,
 } from "../conversion-content/landing-page/input-catalog";
 import type {
   AccountLandingPageOnboardingFieldState,
@@ -100,6 +101,7 @@ function compileValidatedLegacyLandingPageGenerationContext(
       "REQUIRED_INPUT_CATALOG_VERSION_INVALID",
       "REQUIRED_INPUT_CATALOG_VERSION_NOT_EXECUTABLE",
       "INPUT_CATALOG_REVIEW_VERSION_MISMATCH",
+      "INPUT_CATALOG_TRANSITION_REVIEW_REQUIRED",
     ].includes(input.preparation.error.code);
     return failure(
       catalogFailure
@@ -118,8 +120,8 @@ function compileValidatedLegacyLandingPageGenerationContext(
   if (
     preparation.taxonId !== servedTaxon.id ||
     preparation.taxonSlug !== servedTaxon.slug ||
-    preparation.requiredInputCatalogVersion !==
-      preparation.reviewedInputCatalogVersion ||
+    !Number.isSafeInteger(preparation.effectiveInputCatalogVersion) ||
+    preparation.effectiveInputCatalogVersion <= 0 ||
     preparation.research.taxonSlug !== servedTaxon.slug ||
     preparation.research.audienceScope !== "end_customer" ||
     preparation.research.researchVersion !== preparation.selectedResearchVersion
@@ -131,7 +133,7 @@ function compileValidatedLegacyLandingPageGenerationContext(
   }
   const revalidated = revalidateConfiguration(
     input.revalidationAuthority,
-    preparation.reviewedInputCatalogVersion,
+    preparation.effectiveInputCatalogVersion,
   );
   if (!revalidated.ok) {
     return failure(
@@ -158,7 +160,7 @@ function compileValidatedLegacyLandingPageGenerationContext(
       servedTaxon,
       taxonChain: currentTaxonChain,
       historicalConfigurationCatalogVersion: historicalConfiguration.catalogVersion,
-      effectiveInputCatalogVersion: preparation.reviewedInputCatalogVersion,
+      effectiveInputCatalogVersion: preparation.effectiveInputCatalogVersion,
       configurationRevision: historicalConfiguration.revision,
       rootVersion: root.value.rootVersion,
       endCustomerResearchVersion: preparation.selectedResearchVersion,
@@ -222,6 +224,7 @@ function compileValidatedLandingPageGenerationContext(
       "REQUIRED_INPUT_CATALOG_VERSION_INVALID",
       "REQUIRED_INPUT_CATALOG_VERSION_NOT_EXECUTABLE",
       "INPUT_CATALOG_REVIEW_VERSION_MISMATCH",
+      "INPUT_CATALOG_TRANSITION_REVIEW_REQUIRED",
     ].includes(input.preparation.error.code);
     return failure(
       catalogFailure
@@ -240,8 +243,8 @@ function compileValidatedLandingPageGenerationContext(
   if (
     preparation.taxonId !== servedTaxon.id ||
     preparation.taxonSlug !== servedTaxon.slug ||
-    preparation.requiredInputCatalogVersion !==
-      preparation.reviewedInputCatalogVersion ||
+    !Number.isSafeInteger(preparation.effectiveInputCatalogVersion) ||
+    preparation.effectiveInputCatalogVersion <= 0 ||
     preparation.research.taxonSlug !== servedTaxon.slug ||
     preparation.research.audienceScope !== "end_customer" ||
     preparation.research.researchVersion !== preparation.selectedResearchVersion
@@ -254,7 +257,7 @@ function compileValidatedLandingPageGenerationContext(
 
   const revalidated = revalidateConfiguration(
     input.revalidationAuthority,
-    preparation.reviewedInputCatalogVersion,
+    preparation.effectiveInputCatalogVersion,
   );
   if (!revalidated.ok) {
     return failure(
@@ -279,8 +282,10 @@ function compileValidatedLandingPageGenerationContext(
   if (!projectedFacts.ok) return projectedFacts.result;
 
   if (
-    input.revalidationAuthority.landingPageCatalogVersion !==
-      preparation.reviewedInputCatalogVersion ||
+    !isCompatibleHistoricalCatalogVersion(
+      input.revalidationAuthority.landingPageCatalogVersion,
+      preparation.effectiveInputCatalogVersion,
+    ) ||
     !Number.isSafeInteger(input.revalidationAuthority.landingPageRevision) ||
     input.revalidationAuthority.landingPageRevision <= 0 ||
     ((input.revalidationAuthority.sharedRevision === null) !==
@@ -288,8 +293,10 @@ function compileValidatedLandingPageGenerationContext(
     (input.revalidationAuthority.sharedRevision !== null &&
       (!Number.isSafeInteger(input.revalidationAuthority.sharedRevision) ||
         input.revalidationAuthority.sharedRevision <= 0 ||
-        input.revalidationAuthority.sharedCatalogVersion !==
-          preparation.reviewedInputCatalogVersion))
+        !isCompatibleHistoricalCatalogVersion(
+          input.revalidationAuthority.sharedCatalogVersion,
+          preparation.effectiveInputCatalogVersion,
+        )))
   ) {
     return failure(
       "CONFIGURATION_REVALIDATION_REQUIRED",
@@ -325,7 +332,7 @@ function compileValidatedLandingPageGenerationContext(
       taxonChain: currentTaxonChain,
       sharedCatalogVersion: input.revalidationAuthority.sharedCatalogVersion,
       landingPageCatalogVersion: input.revalidationAuthority.landingPageCatalogVersion,
-      effectiveInputCatalogVersion: preparation.reviewedInputCatalogVersion,
+      effectiveInputCatalogVersion: preparation.effectiveInputCatalogVersion,
       sharedRevision: input.revalidationAuthority.sharedRevision,
       landingPageRevision: input.revalidationAuthority.landingPageRevision,
       rootVersion: root.value.rootVersion,
@@ -352,6 +359,17 @@ function compileValidatedLandingPageGenerationContext(
       facts: projectedFacts.serverFacts,
     },
   });
+}
+
+function isCompatibleHistoricalCatalogVersion(
+  historicalVersion: number | null,
+  effectiveVersion: number,
+): historicalVersion is number {
+  return (
+    historicalVersion !== null &&
+    isLandingPageInputCatalogVersionExecutable(historicalVersion) &&
+    historicalVersion <= effectiveVersion
+  );
 }
 
 function revalidateConfiguration(

@@ -2,10 +2,13 @@ import "server-only";
 
 import {
   buildLandingPageInputCatalogTaxonChain,
+  resolveLandingPageInputCatalogFromRegistry,
+  type LandingPageInputCatalogRegistry,
   type LandingPageInputCatalogTaxonIdentity,
 } from "../landing-page/input-catalog";
 import {
   buildInputCatalogEvaluationContext,
+  resolveInputCatalogReview,
   type BuildInputCatalogEvaluationContextResult,
   type InputCatalogEvaluationReconstructionInput,
 } from "../landing-page/taxon-preparation";
@@ -36,20 +39,57 @@ export async function reconstructCanonicalInputCatalogEvaluationContext(
   });
 }
 
+export async function reconstructDraftInputCatalogEvaluationContext(
+  input: InputCatalogEvaluationReconstructionInput,
+  registry: LandingPageInputCatalogRegistry,
+): Promise<BuildInputCatalogEvaluationContextResult> {
+  const selectedResearch = await loadSelectedEndCustomerResearchForTaxon({
+    taxonId: input.taxonId,
+  });
+  if (!selectedResearch.ok) {
+    return failure("AUTHORIZED_RESEARCH_INVALID", selectedResearch.error.message);
+  }
+  const taxonChain = await readCanonicalTaxonChain(input.taxonId);
+  if (!taxonChain.ok) return failure("CONTEXT_IDENTITY_INVALID", taxonChain.error);
+  return buildInputCatalogEvaluationContext(
+    {
+      selectedResearch,
+      taxonChain: taxonChain.value,
+      inputCatalogVersion: input.inputCatalogVersion,
+    },
+    {
+      allowNonPublishedVersion: true,
+      resolveReview: (reviewInput) => resolveInputCatalogReview(
+        reviewInput,
+        (catalogInput) => resolveLandingPageInputCatalogFromRegistry(catalogInput, registry),
+      ),
+    },
+  );
+}
+
 async function readCanonicalTaxonChain(taxonId: string) {
   const supabase = createServiceClient();
-  const { data, error } = await supabase
-    .from("business_taxons")
-    .select("id,parent_id,level,name,slug,is_active")
-    .in("level", ["segment", "niche", "ultra_niche"]);
-  if (error || !Array.isArray(data)) {
-    return { ok: false as const, error: "Não foi possível ler a cadeia taxonômica." };
+  const rows: unknown[] = [];
+  let offset = 0;
+  while (true) {
+    const { data, error } = await supabase
+      .from("business_taxons")
+      .select("id,parent_id,level,name,slug,is_active")
+      .in("level", ["segment", "niche", "ultra_niche"])
+      .order("id", { ascending: true })
+      .range(offset, offset + 499);
+    if (error || !Array.isArray(data)) {
+      return { ok: false as const, error: "Não foi possível ler a cadeia taxonômica integralmente." };
+    }
+    rows.push(...data);
+    if (data.length < 500) break;
+    offset += data.length;
   }
 
-  const identities = data
+  const identities = rows
     .map(normalizeTaxonIdentity)
     .filter((taxon): taxon is LandingPageInputCatalogTaxonIdentity => taxon !== null);
-  if (identities.length !== data.length) {
+  if (identities.length !== rows.length) {
     return { ok: false as const, error: "A cadeia taxonômica contém identidade inválida." };
   }
   const selected = identities.find((taxon) => taxon.id === taxonId);

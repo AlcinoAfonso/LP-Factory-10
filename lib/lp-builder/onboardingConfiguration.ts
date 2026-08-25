@@ -1,8 +1,10 @@
 import {
   landingPageInputColorPaletteRoles,
   resolveLandingPageInputCatalog,
+  resolveLandingPageInputCatalogFromRegistry,
   validateLandingPageInputValue,
   type LandingPageInputCatalogPlan,
+  type LandingPageInputCatalogRegistry,
   type LandingPageInputCatalogTaxonChain,
   type LandingPageInputCondition,
   type ResolvedLandingPageInputField,
@@ -12,7 +14,7 @@ import type {
   AccountLandingPageOnboardingStoredValues,
 } from "./contracts";
 
-type ResolveOnboardingConfigurationInput = Readonly<{
+export type ResolveOnboardingConfigurationInput = Readonly<{
   accountId: string;
   landingPageId: string | null;
   catalogVersion: number;
@@ -21,6 +23,7 @@ type ResolveOnboardingConfigurationInput = Readonly<{
   taxonChain: LandingPageInputCatalogTaxonChain;
   storedValues: AccountLandingPageOnboardingStoredValues;
   authoritativeValues: Readonly<Record<string, unknown>>;
+  registry?: LandingPageInputCatalogRegistry;
 }>;
 
 export type ResolveOnboardingConfigurationResult =
@@ -40,17 +43,21 @@ export type ResolveOnboardingConfigurationResult =
 export function resolveAccountLandingPageOnboardingConfiguration(
   input: ResolveOnboardingConfigurationInput,
 ): ResolveOnboardingConfigurationResult {
-  const catalog = resolveLandingPageInputCatalog({
+  const catalogInput = {
     version: input.catalogVersion,
     plan: input.planKey,
     taxonChain: input.taxonChain,
-  });
+  };
+  const catalog = input.registry
+    ? resolveLandingPageInputCatalogFromRegistry(catalogInput, input.registry)
+    : resolveLandingPageInputCatalog(catalogInput);
 
   if (!catalog.ok) return { ok: false, error: "CATALOG_UNAVAILABLE" };
 
   const fieldsByKey = new Map(
     catalog.value.fields.map((field) => [field.fieldKey, field]),
   );
+  const retiredFieldKeys = new Set(catalog.value.retiredFieldKeys);
   const canonicalStoredValues: Record<
     string,
     AccountLandingPageOnboardingStoredValues[string]
@@ -59,6 +66,12 @@ export function resolveAccountLandingPageOnboardingConfiguration(
 
   for (const [fieldKey, stored] of Object.entries(input.storedValues)) {
     const field = fieldsByKey.get(fieldKey);
+    if (retiredFieldKeys.has(fieldKey)) {
+      if (!isStoredValue(stored)) {
+        return { ok: false, error: "INVALID_CONFIGURATION", fieldKey };
+      }
+      continue;
+    }
     if (!field || !isStoredValue(stored) || stored.scope !== field.valueScope) {
       return { ok: false, error: "INVALID_CONFIGURATION", fieldKey };
     }

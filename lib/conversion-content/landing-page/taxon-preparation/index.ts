@@ -7,6 +7,7 @@ export type {
   LoadEndCustomerResearchCandidateResult,
   SelectedEndCustomerResearchErrorCode,
   DeriveTaxonPreparationForVersionInput,
+  DeriveEffectiveTaxonPreparationInput,
   TaxonPreparationErrorCode,
   TaxonPreparationResult,
   BuildInputCatalogEvaluationContextResult,
@@ -58,6 +59,7 @@ export function isInputCatalogReviewEnabled(): boolean {
 export { buildInputCatalogReviewHandoff, resolveInputCatalogReview } from "./input-catalog-review";
 export {
   classifyRequiredInputCatalogVersion,
+  deriveEffectiveTaxonPreparation,
   deriveTaxonPreparationForVersion,
 } from "./preparation";
 export {

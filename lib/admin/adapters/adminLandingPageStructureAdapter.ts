@@ -6,8 +6,9 @@ import {
 } from "@/conversion-content/landing-page";
 import {
   landingPageInputCatalogPlans,
-  landingPageInputCatalogRegistry,
   buildLandingPageInputCatalogTaxonChain,
+  CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION,
+  listLandingPageInputCatalogVersions,
   resolveLandingPageInputCatalog,
   type LandingPageInputCatalogPlan,
   type LandingPageInputCatalogTaxonIdentity,
@@ -78,15 +79,12 @@ function readRootParameters(query: StructureQuery) {
 
 async function readInputs(query: StructureQuery) {
   const taxonRead = await readActiveTaxons();
-  const versions = Object.keys(landingPageInputCatalogRegistry)
-    .map(Number)
-    .filter(Number.isInteger)
-    .sort((left, right) => left - right);
+  const versions = listLandingPageInputCatalogVersions();
   const requestedVersion = parseInteger(query.catalogVersion);
   const version =
     requestedVersion !== null && versions.includes(requestedVersion)
       ? requestedVersion
-      : versions.at(-1) ?? null;
+      : CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION;
   const plan = landingPageInputCatalogPlans.includes(
     query.plan as LandingPageInputCatalogPlan,
   )
@@ -133,23 +131,30 @@ async function readActiveTaxons(): Promise<{
   error: string | null;
 }> {
   const supabase = createServiceClient();
-  const { data, error } = await supabase
-    .from("business_taxons")
-    .select("id,parent_id,level,name,slug,is_active")
-    .eq("is_active", true)
-    .in("level", ["segment", "niche", "ultra_niche"])
-    .order("level", { ascending: true })
-    .order("name", { ascending: true });
-
-  if (error) {
-    console.error("readAdminLandingPageStructure taxons failed:", {
-      code: error.code,
-      message: error.message,
-    });
-    return { taxons: [], error: "Não foi possível ler os taxons ativos." };
+  const rows: unknown[] = [];
+  let offset = 0;
+  const pageSize = 500;
+  while (true) {
+    const { data, error } = await supabase
+      .from("business_taxons")
+      .select("id,parent_id,level,name,slug,is_active")
+      .eq("is_active", true)
+      .in("level", ["segment", "niche", "ultra_niche"])
+      .order("level", { ascending: true })
+      .order("name", { ascending: true })
+      .order("id", { ascending: true })
+      .range(offset, offset + pageSize - 1);
+    if (error || !Array.isArray(data)) {
+      console.error("readAdminLandingPageStructure taxons failed:", {
+        code: error?.code,
+        message: error?.message,
+      });
+      return { taxons: [], error: "Não foi possível ler os taxons ativos integralmente." };
+    }
+    rows.push(...data);
+    if (data.length < pageSize) break;
+    offset += data.length;
   }
-
-  const rows = Array.isArray(data) ? data : [];
   const validRows = rows.filter(isStructureTaxonRow);
   if (validRows.length !== rows.length) {
     return { taxons: [], error: "A lista de taxons não pôde ser normalizada com segurança." };

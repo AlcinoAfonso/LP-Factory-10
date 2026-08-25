@@ -514,14 +514,12 @@ async function loadRuntimeContext(
         return failure("catalog_unavailable");
       }
       if (
-        !Number.isSafeInteger(preparation.value.reviewedInputCatalogVersion) ||
-        preparation.value.reviewedInputCatalogVersion <= 0 ||
-        preparation.value.requiredInputCatalogVersion !==
-          preparation.value.reviewedInputCatalogVersion
+        !Number.isSafeInteger(preparation.value.effectiveInputCatalogVersion) ||
+        preparation.value.effectiveInputCatalogVersion <= 0
       ) {
         return failure("catalog_unavailable");
       }
-      operationalCatalogVersion = preparation.value.reviewedInputCatalogVersion;
+      operationalCatalogVersion = preparation.value.effectiveInputCatalogVersion;
     }
 
     return {

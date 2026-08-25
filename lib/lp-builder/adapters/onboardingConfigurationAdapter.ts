@@ -1,7 +1,7 @@
 import "server-only";
 
 import { getCommercialEntitlementSignal } from "../../commercial-entitlements";
-import { loadTaxonPreparationForReviewedVersion } from "../../conversion-content/adapters/selectedEndCustomerResearchAdapter";
+import { loadTaxonPreparationForCurrentVersion } from "../../conversion-content/adapters/selectedEndCustomerResearchAdapter";
 import { createClient } from "../../supabase/server";
 import { createServiceClient } from "../../supabase/service";
 import type {
@@ -29,7 +29,7 @@ export async function getAccountLandingPageOnboardingConfiguration(input: {
     { accountId: input.accountId, actorUserId },
     createServiceClient(),
     getCommercialEntitlementSignal,
-    loadTaxonPreparationForReviewedVersion,
+    loadTaxonPreparationForCurrentVersion,
   );
 }
 
@@ -43,7 +43,7 @@ export async function getAccountLandingPageOnboardingRevalidationAuthority(input
     { accountId: input.accountId, actorUserId },
     createServiceClient(),
     getCommercialEntitlementSignal,
-    loadTaxonPreparationForReviewedVersion,
+    loadTaxonPreparationForCurrentVersion,
   );
 }
 
@@ -57,7 +57,7 @@ export async function saveAccountLandingPageOnboardingConfiguration(
     { ...input, actorUserId },
     createServiceClient(),
     getCommercialEntitlementSignal,
-    loadTaxonPreparationForReviewedVersion,
+    loadTaxonPreparationForCurrentVersion,
   );
 }
 
@@ -71,7 +71,7 @@ export async function listAccountLandingPageDrafts(input: {
     { accountId: input.accountId, actorUserId },
     createServiceClient(),
     getCommercialEntitlementSignal,
-    loadTaxonPreparationForReviewedVersion,
+    loadTaxonPreparationForCurrentVersion,
   );
 }
 
@@ -85,7 +85,7 @@ export async function bindAccountLandingPageOnboardingConfiguration(
     { ...input, actorUserId },
     createServiceClient(),
     getCommercialEntitlementSignal,
-    loadTaxonPreparationForReviewedVersion,
+    loadTaxonPreparationForCurrentVersion,
   );
 }
 
