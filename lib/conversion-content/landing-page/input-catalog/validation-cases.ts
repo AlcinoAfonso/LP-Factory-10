@@ -28,6 +28,8 @@ import {
   CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION,
   classifyLandingPageInputCatalogTransition,
   classifyLandingPageInputCatalogTransitionForTaxon,
+  collectCommercialIdentityReviewBlockers,
+  landingPageCommercialIdentityFieldKeys,
   listLandingPageInputCatalogVersions,
 } from "./lifecycle";
 import {
@@ -916,6 +918,74 @@ const cases: Case[] = [
         mutableFieldInEntry(candidate, "business_display_name").purpose = "A materially different purpose.";
       });
       assert.equal(classifyCandidateTransition(changedRegistry).classification, "review_required");
+    },
+  },
+  {
+    name: "E19.5 commercial identity authority blocks retirement and material change but preserves compatible evolution",
+    run: () => {
+      assert.deepEqual(landingPageCommercialIdentityFieldKeys, [
+        "funnel_stage",
+        "transaction_intent",
+        "primary_conversion_goal",
+        "primary_service_or_offer",
+      ]);
+      const retirementRegistry = registryWithCandidate((candidate) => {
+        mutableFieldInEntry(candidate, "funnel_stage").retiredInVersion = 6;
+      });
+      const retirement = classifyCandidateTransition(retirementRegistry);
+      assert.equal(retirement.classification, "review_required");
+      assert.equal(
+        collectCommercialIdentityReviewBlockers([
+          { taxon: realEstateBrokerNicheTaxon, ...retirement },
+        ])[0]?.fieldKeys.includes("funnel_stage"),
+        true,
+      );
+
+      const materialChangeRegistry = registryWithCandidate((candidate) => {
+        mutableFieldInEntry(candidate, "primary_conversion_goal").purpose =
+          "A different commercial identity contract.";
+      });
+      const materialChange = classifyCandidateTransition(materialChangeRegistry);
+      assert.equal(materialChange.classification, "review_required");
+      assert.deepEqual(
+        collectCommercialIdentityReviewBlockers([
+          { taxon: realEstateBrokerNicheTaxon, ...materialChange },
+        ])[0]?.fieldKeys,
+        ["primary_conversion_goal"],
+      );
+
+      const compatibleRegistry = registryWithCandidate((candidate) => {
+        const field = mutableFieldInEntry(candidate, "funnel_stage");
+        assert.equal(field.validation.kind, "enum");
+        if (field.validation.kind === "enum") {
+          field.validation = {
+            ...field.validation,
+            allowedValues: [...field.validation.allowedValues, "retention"],
+          };
+        }
+      });
+      const compatible = classifyCandidateTransition(compatibleRegistry);
+      assert.equal(compatible.classification, "compatible_evolution");
+      assert.deepEqual(compatible.expandedAllowedValueFieldKeys, ["funnel_stage"]);
+      assert.equal(
+        collectCommercialIdentityReviewBlockers([
+          { taxon: realEstateBrokerNicheTaxon, ...compatible },
+        ]).length,
+        0,
+      );
+
+      const additive = classifyLandingPageInputCatalogTransition(
+        resolveRequired(v4Input),
+        resolveRequired(v5Input),
+      );
+      assert.equal(additive.classification, "compatible_evolution");
+      assert.deepEqual(additive.addedFieldKeys, v5UniversalFieldKeys);
+      assert.equal(
+        collectCommercialIdentityReviewBlockers([
+          { taxon: realEstateBrokerNicheTaxon, ...additive },
+        ]).length,
+        0,
+      );
     },
   },
   {

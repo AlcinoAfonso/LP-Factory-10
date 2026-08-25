@@ -9,6 +9,7 @@
 - Recorte: `E20.2.8 — Versão atual e propagação escalável do catálogo E20.2`.
 - Este recorte é uma evolução operacional da E20.2 já versionada; não reescreve nem invalida o histórico de `docs/lousa-plano-base-e20-2.md`.
 - A E20.6 permanece responsável pela suficiência factual por taxon; este recorte altera a relação entre versão global do catálogo e necessidade de reavaliação, conforme a seção 2.3.
+- A E20.2 é autoridade de definição e validação funcional dos fields; a E19.5 é autoridade das dimensões que determinam continuidade da identidade comercial; a E20.6 decide somente suficiência factual e não substitui nenhuma dessas autoridades.
 - A forma física do draft administrativo e a composição da superfície permanecem condicionadas à análise técnica sobre o repositório real; a autoridade das versões publicadas e da versão atual é repo-only conforme a decisão humana registrada abaixo.
 - Rollback operacional para versão anterior não integra a primeira entrega da E20.2.8; eventual suporte futuro depende de contrato específico para compatibilidade com configurações persistidas em versões posteriores.
 - Decisão humana de 24/08/2026: o registry repo-only permanece autoridade das versões publicadas. Eventual persistência em banco pode servir somente como residência do draft administrativo não operacional, se continuar sendo a menor solução após análise técnica; v1–v5 não serão migradas para tornar o banco autoridade do catálogo publicado.
@@ -321,9 +322,14 @@
   - taxon ainda não operacional não precisa bloquear a publicação e pode permanecer pendente até que sua preparação seja necessária.
 - Na dimensão E19:
   - o gate pré-publicação protege validade e legibilidade estrutural das configurações operacionais correntes que passarão a consumir `C`, não a completude de toda a base;
+  - consumidores operacionais são somente contas ativas com entitlement comercial elegível, plano válido e os demais requisitos operacionais vigentes; LPs e configurações históricas de contas inativas ou comercialmente inelegíveis permanecem preservadas, mas não bloqueiam a publicação global;
   - uma nova versão pode tornar uma configuração antiga `válida, porém incompleta` exclusivamente pela introdução de novos dados obrigatórios ainda sem valor; isso não bloqueia publicação e preserva o lifecycle já previsto pela E19.5;
   - nesse caso, somente ações que dependem de completude permanecem bloqueadas até o preenchimento dos novos dados;
   - deve bloquear publicação uma mudança que torne configuração corrente inválida ou ilegível, por exemplo estreitamento de enum incompatível com valor existente, mudança incompatível de tipo/scope/validação ou retirada que ainda não reconheça corretamente o valor histórico como legítimo e inerte.
+- A continuidade da identidade comercial possui autoridade E19.5 própria. No MVP, os contratos protegidos são `funnel_stage`, `transaction_intent` quando aplicável, `primary_conversion_goal` e `primary_service_or_offer`.
+- Para esses fields, retirada ou qualquer alteração classificada pelo comparador determinístico vigente como `revisão necessária` bloqueia a publicação por falta de autoridade E19.5 específica, independentemente de decisão de suficiência E20.6.
+- Transição já classificada como `evolução compatível`, inclusive expansão estrita de `allowedValues` com as demais propriedades funcionais preservadas, continua permitida. Adição de novo field não o torna dimensão de identidade.
+- Essa proteção não cria coluna, migration adicional, metadata genérica `identity`, engine ou nova autoridade.
 - O gate de continuidade não exige migração humana prévia de todas as contas nem backfill para preencher novo `required`.
 - A identificação física de quais taxons/configurações são operacionais e a forma de executar essa prova pertencem ao recorte técnico futuro; este plano fixa apenas o contrato de produto.
 
@@ -333,7 +339,8 @@
 - Essa avaliação pré-publicação não torna o draft operacional e não autoriza E19.2/E19.5 a consumi-lo.
 - A decisão humana pré-publicação fica vinculada ao conteúdo exato do draft avaliado; qualquer edição material posterior a torna stale e exige nova avaliação quando ainda necessária.
 - A avaliação pré-publicação não deve gravar prematuramente `reviewed_input_catalog_version` como se o draft já fosse uma versão operacional publicada.
-- A decisão pré-publicação é uma autorização condicionada: somente a publicação daquele mesmo conteúdo pode produzir seu efeito administrativo sobre a nova versão. O mecanismo físico para materializar esse efeito de forma segura no evento de publicação não é definido neste PR documental.
+- A decisão pré-publicação é uma autorização condicionada: somente depois de Production comprovar que versão, registry e conteúdo implantados correspondem exatamente ao draft congelado, a reconciliação revalida identidade, conteúdo e contexto da evidência e materializa de forma fail-closed as decisões humanas ainda válidas em `reviewed_input_catalog_version`, sem executar IA novamente.
+- A residência temporária só pode ser eliminada depois de todas as decisões obrigatórias produzirem seu efeito e uma leitura final confirmar os marcadores esperados. O fluxo de regressão vinculante é `R=N → draft N+1 com revisão necessária → decisão humana suficiente → publicação/reconciliação → R=N+1 → C=N+1`.
 - Taxons não operacionais podem permanecer sem essa decisão e continuarão fail-closed quando sua preparação for requerida posteriormente.
 
 ### 5.7. Publicação
@@ -344,7 +351,7 @@
 - A publicação deve falhar fechado quando o draft final estiver inválido, quando evidência material necessária estiver stale, quando houver pendência E20.6 obrigatória para consumo operacional vigente ou quando a mudança puder tornar configuração operacional corrente inválida/ilegível.
 - A publicação não afirma atomicidade transacional entre Admin, GitHub e deploy. Ela segue uma sequência observável e fail-closed: congelar a identidade exata do draft e suas evidências; materializar no repositório uma nova versão executável e a declaração explícita de versão atual; validar o diff e o artefato em CI/Preview; obter revisão e merge humanos; concluir o deploy de Production; e comprovar no runtime de Production que versão, conteúdo e identidade correspondem ao draft congelado.
 - A transição que torna a nova versão observável como `C` é a ativação bem-sucedida em Production do artefato repo-only que contém simultaneamente a versão executável e a declaração explícita de versão atual. Até essa ativação, o deployment anterior continua sendo a autoridade e toda falha de materialização, validação, revisão, merge ou deploy preserva a versão anterior como atual.
-- A residência administrativa, quando existir, registra a reconciliação do draft somente depois da comprovação do runtime. Falha ou atraso nessa reconciliação não pode substituir nem reverter a autoridade repo-only já implantada, mas bloqueia novo draft/publicação administrativa até que o estado seja reconciliado com o artefato ativo exato.
+- A residência administrativa, quando existir, registra a reconciliação do draft somente depois da comprovação do runtime e só é eliminada após aplicar e confirmar os efeitos das decisões pré-publicação ainda válidas. Falha ou atraso nessa reconciliação não pode substituir nem reverter a autoridade repo-only já implantada, mas bloqueia novo draft/publicação administrativa até que o estado seja reconciliado com o artefato ativo exato.
 - Edição concorrente, evidência stale, decisão E20.6.5 vinculada a conteúdo diferente ou tentativa duplicada impedem iniciar ou continuar a sequência para aquele draft. Todos os gates E20.6/E19 aplicáveis devem estar concluídos antes da revisão/merge que pode levar o artefato a Production.
 - A publicação não é bloqueada apenas porque um novo `required` torna configuração anterior incompleta, nem por pendência E20.6 de taxon ainda não operacional.
 - Depois da publicação, a primeira alteração posterior inicia o próximo draft sequencial; a versão publicada permanece imutável.

@@ -2,8 +2,8 @@
 
 0.1 Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.75
-• Data: 24/08/2026
+• Versão: v2.0.76
+• Data: 25/08/2026
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -297,6 +297,9 @@
 • A versão efetiva corrente é a versão atual quando coincide com a revisada ou quando a comparação resolvida em todos os planos classifica a transição como sem mudança material ou evolução compatível. Mudança fora da allowlist conservadora exige nova revisão; ausência, incompatibilidade, feature gate ou falha operacional permanecem erros tipados e fail-closed.
 • Carry-forward compatível não reescreve a versão revisada e não reinterpreta snapshots ou configurações históricas; cada residência preserva o número concretamente usado.
 • O gate pré-publicação lê integralmente, com cardinalidade comprovada, tanto a residência E19.2 pré-handoff quanto as residências E19.5. A evidência congela separadamente o fingerprint do conteúdo e o fingerprint da coleção operacional; drift em qualquer uma torna validação/handoff stale.
+• O conjunto operacional desse gate inclui somente contas ativas com entitlement comercial elegível, plano válido e os demais requisitos vigentes; residências históricas de contas inativas ou inelegíveis permanecem preservadas e fora do bloqueio global.
+• A E20.2 define e valida fields, a E19.5 governa mudanças `review_required` nas dimensões de continuidade da identidade comercial e a E20.6 decide somente suficiência factual. Decisão E20.6 não substitui autoridade E19.5, enquanto evolução já comprovada como compatível permanece permitida.
+• Após o deploy publicar o conteúdo repo-only exato, a reconciliação revalida as evidências humanas pré-publicação, materializa seus marcadores canônicos sem nova execução de IA, confirma a leitura final e somente então elimina o draft temporário.
 • A avaliação semântica usa o workload OpenAI comum autorizado e permanece não autoritativa; a decisão final de suficiência e seu registro administrativo são humanos, e o boundary apenas aplica deterministicamente a decisão autenticada e revalidada.
 
 3.15.8 Geração controlada da candidata de `landing_page`

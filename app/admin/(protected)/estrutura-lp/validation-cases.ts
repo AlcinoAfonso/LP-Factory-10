@@ -5,6 +5,8 @@ import { collectCompletePaginatedRows } from "../../../../lib/admin/adapters/adm
 import {
   countInvalidInputCatalogOperationalConfigurations,
   fingerprintInputCatalogOperationalContext,
+  planPublishedInputCatalogReviewReconciliation,
+  resolveInputCatalogOperationalAccountAuthorities,
 } from "../../../../lib/admin/adapters/adminInputCatalogLifecycleValidation";
 import {
   createNextLandingPageInputCatalogDraft,
@@ -12,6 +14,7 @@ import {
   realEstateSegmentTaxon,
   validateLandingPageInputCatalogDraft,
 } from "../../../../lib/conversion-content/landing-page/input-catalog";
+import { deriveEffectiveTaxonPreparation } from "../../../../lib/conversion-content/landing-page/taxon-preparation";
 
 const page = readFileSync(new URL("./page.tsx", import.meta.url), "utf8");
 const adapter = readFileSync(
@@ -91,6 +94,13 @@ assert.match(lifecycleAdapter, /reconstructDraftInputCatalogEvaluationContext/);
 assert.match(lifecycleAdapter, /recordAdminInputCatalogDraftSufficiencyDecision/);
 assert.match(lifecycleAdapter, /reconcileAdminInputCatalogPublishedDraft/);
 assert.match(lifecycleAdapter, /runtimeEnvironment !== "production"/);
+assert.match(lifecycleAdapter, /reconstructCanonicalInputCatalogEvaluationContext/);
+assert.match(lifecycleAdapter, /advancePublishedReviewMarker/);
+assert.match(lifecycleAdapter, /selected_end_customer_research_version/);
+assert.match(lifecycleAdapter, /storedDraftFingerprint !== deployedFingerprint/);
+assert.match(lifecycleAdapter, /finalProof[\s\S]*landing_page_input_catalog_drafts"\)[\s\S]*\.delete\(\)/);
+assert.match(lifecycleAdapter, /collectCommercialIdentityReviewBlockers/);
+assert.doesNotMatch(lifecycleAdapter, /coordinateInputCatalogEvaluation|executeInputCatalogEvaluationProvider/);
 assert.doesNotMatch(lifecycleAdapter, /Math\.max|versions\.at\(-1\)|latest/i);
 assert.match(lifecycleComponent, /Preparar handoff repo-only/);
 assert.match(lifecycleComponent, /Configurações inválidas/);
@@ -171,8 +181,8 @@ assert.equal(
 );
 const operationalContext = {
   taxons: [
-    { identity: realEstateSegmentTaxon, reviewedVersion: 5, operational: false },
-    { identity: realEstateBrokerNicheTaxon, reviewedVersion: 5, operational: true },
+    { identity: realEstateSegmentTaxon, reviewedVersion: 5, selectedResearchVersion: 1, operational: false },
+    { identity: realEstateBrokerNicheTaxon, reviewedVersion: 5, selectedResearchVersion: 1, operational: true },
   ],
   operationalTaxonIds: new Set([realEstateBrokerNicheTaxon.id]),
   operationalConfigurations: [{ ...preHandoffBase, storedValues: {} }],
@@ -193,6 +203,94 @@ const staleContextFingerprint = fingerprintInputCatalogOperationalContext({
 });
 assert.match(originalContextFingerprint, /^[0-9a-f]{64}$/);
 assert.notEqual(staleContextFingerprint, originalContextFingerprint);
+
+const operationalAuthorities = resolveInputCatalogOperationalAccountAuthorities({
+  candidateAccountIds: new Set(["active-eligible", "inactive-retained", "active-ineligible"]),
+  accounts: [
+    { id: "active-eligible", name: "Conta operacional", status: "active" },
+    { id: "inactive-retained", name: "Conta histórica", status: "inactive" },
+    { id: "active-ineligible", name: "Conta sem entitlement", status: "active" },
+  ],
+  entitlements: [
+    { account_id: "active-eligible", plan_key: "pro", is_commercially_eligible: true },
+    { account_id: "inactive-retained", plan_key: "historical-plan", is_commercially_eligible: true },
+    { account_id: "active-ineligible", plan_key: null, is_commercially_eligible: false },
+  ],
+});
+assert.equal(operationalAuthorities.ok, true);
+if (!operationalAuthorities.ok) throw new Error("Expected valid operational authority fixture");
+assert.deepEqual(operationalAuthorities.value, [
+  { accountId: "active-eligible", accountName: "Conta operacional", planKey: "pro" },
+]);
+assert.match(lifecycleAdapter, /if \(!operationalAccountIds\.has\(configuration\.accountId\)\) continue/);
+assert.match(lifecycleAdapter, /normalizeValuesMap\([\s\S]*operationalAccountIds/);
+assert.match(lifecycleAdapter, /normalizeValuesMap\([\s\S]*operationalPageIds/);
+
+const beforePublicationReconciliation = planPublishedInputCatalogReviewReconciliation({
+  currentVersion: 5,
+  impacts: [{
+    taxonId: realEstateBrokerNicheTaxon.id,
+    reviewedVersion: 4,
+    operational: true,
+    classification: "review_required",
+  }],
+  validEvidenceTaxonIds: new Set([realEstateBrokerNicheTaxon.id]),
+});
+assert.deepEqual(beforePublicationReconciliation.blockingTaxonIds, []);
+assert.deepEqual(beforePublicationReconciliation.taxonIdsToAdvance, [realEstateBrokerNicheTaxon.id]);
+const afterPublicationReconciliation = planPublishedInputCatalogReviewReconciliation({
+  currentVersion: 5,
+  impacts: [{
+    taxonId: realEstateBrokerNicheTaxon.id,
+    reviewedVersion: 5,
+    operational: true,
+    classification: "no_material_change",
+  }],
+  validEvidenceTaxonIds: new Set([realEstateBrokerNicheTaxon.id]),
+});
+assert.deepEqual(afterPublicationReconciliation.blockingTaxonIds, []);
+assert.deepEqual(afterPublicationReconciliation.taxonIdsToAdvance, []);
+const effectiveAfterReconciliation = deriveEffectiveTaxonPreparation({
+  selectedResearch: {
+    ok: true,
+    value: {
+      taxonId: realEstateBrokerNicheTaxon.id,
+      taxonSlug: realEstateBrokerNicheTaxon.slug,
+      selectedResearchVersion: 1,
+      selectedResearchValid: true,
+      reviewedInputCatalogVersion: 5,
+      research: {
+        taxonSlug: realEstateBrokerNicheTaxon.slug,
+        audienceScope: "end_customer",
+        researchVersion: 1,
+        relativePath: "fixture.md",
+        content: "Safe factual fixture.",
+      },
+    },
+  },
+  currentInputCatalogVersion: 5,
+  taxonChain: {
+    segment: realEstateSegmentTaxon,
+    niche: realEstateBrokerNicheTaxon,
+  },
+});
+assert.equal(effectiveAfterReconciliation.ok, true);
+if (!effectiveAfterReconciliation.ok) throw new Error("Expected reconciled effective version");
+assert.equal(effectiveAfterReconciliation.value.reviewedInputCatalogVersion, 5);
+assert.equal(effectiveAfterReconciliation.value.effectiveInputCatalogVersion, 5);
+
+const missingMandatoryDecision = planPublishedInputCatalogReviewReconciliation({
+  currentVersion: 5,
+  impacts: [{
+    taxonId: realEstateBrokerNicheTaxon.id,
+    reviewedVersion: 4,
+    operational: true,
+    classification: "review_required",
+  }],
+  validEvidenceTaxonIds: new Set(),
+});
+assert.deepEqual(missingMandatoryDecision.blockingTaxonIds, [realEstateBrokerNicheTaxon.id]);
+assert.deepEqual(missingMandatoryDecision.taxonIdsToAdvance, []);
 
 console.log("ok - admin preserves consumers and proves complete service-only lifecycle pagination");
 }

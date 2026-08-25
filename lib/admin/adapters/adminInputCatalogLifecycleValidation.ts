@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 
 import type {
   LandingPageInputCatalogPlan,
+  LandingPageInputCatalogTransitionClassification,
   LandingPageInputCatalogTaxonChain,
   LandingPageInputCatalogTaxonIdentity,
   ValidateLandingPageInputCatalogDraftResult,
@@ -17,6 +18,102 @@ export type InputCatalogOperationalConfiguration = Readonly<{
   storedValues: AccountLandingPageOnboardingStoredValues;
   authoritativeValues: Readonly<Record<string, unknown>>;
 }>;
+
+export type InputCatalogOperationalAccountAuthority = Readonly<{
+  accountId: string;
+  accountName: string;
+  planKey: LandingPageInputCatalogPlan;
+}>;
+
+export function resolveInputCatalogOperationalAccountAuthorities(input: Readonly<{
+  candidateAccountIds: ReadonlySet<string>;
+  accounts: readonly unknown[];
+  entitlements: readonly unknown[];
+}>):
+  | Readonly<{ ok: true; value: readonly InputCatalogOperationalAccountAuthority[] }>
+  | Readonly<{ ok: false }> {
+  const accounts = new Map<string, Readonly<{ name: string; status: string }>>();
+  for (const row of input.accounts) {
+    if (
+      !isRecord(row) ||
+      typeof row.id !== "string" ||
+      typeof row.name !== "string" ||
+      typeof row.status !== "string" ||
+      accounts.has(row.id)
+    ) {
+      return { ok: false };
+    }
+    accounts.set(row.id, { name: row.name, status: row.status });
+  }
+
+  const entitlements = new Map<string, Readonly<{
+    planKey: string | null;
+    commerciallyEligible: boolean;
+  }>>();
+  for (const row of input.entitlements) {
+    if (
+      !isRecord(row) ||
+      typeof row.account_id !== "string" ||
+      typeof row.is_commercially_eligible !== "boolean" ||
+      (row.plan_key !== null && typeof row.plan_key !== "string") ||
+      entitlements.has(row.account_id)
+    ) {
+      return { ok: false };
+    }
+    entitlements.set(row.account_id, {
+      planKey: row.plan_key,
+      commerciallyEligible: row.is_commercially_eligible,
+    });
+  }
+
+  const operational: InputCatalogOperationalAccountAuthority[] = [];
+  for (const accountId of [...input.candidateAccountIds].sort()) {
+    const account = accounts.get(accountId);
+    if (!account) return { ok: false };
+    if (account.status !== "active") continue;
+    const entitlement = entitlements.get(accountId);
+    if (!entitlement?.commerciallyEligible) continue;
+    if (!isOperationalPlan(entitlement.planKey)) return { ok: false };
+    operational.push({
+      accountId,
+      accountName: account.name,
+      planKey: entitlement.planKey,
+    });
+  }
+  return { ok: true, value: Object.freeze(operational) };
+}
+
+export function planPublishedInputCatalogReviewReconciliation(input: Readonly<{
+  currentVersion: number;
+  impacts: readonly Readonly<{
+    taxonId: string;
+    reviewedVersion: number | null;
+    operational: boolean;
+    classification: LandingPageInputCatalogTransitionClassification;
+  }>[];
+  validEvidenceTaxonIds: ReadonlySet<string>;
+}>): Readonly<{
+  blockingTaxonIds: readonly string[];
+  taxonIdsToAdvance: readonly string[];
+}> {
+  const blockingTaxonIds: string[] = [];
+  const taxonIdsToAdvance: string[] = [];
+  for (const impact of input.impacts) {
+    if (impact.reviewedVersion === input.currentVersion) continue;
+    if (input.validEvidenceTaxonIds.has(impact.taxonId)) {
+      taxonIdsToAdvance.push(impact.taxonId);
+    } else if (
+      impact.operational &&
+      impact.classification === "review_required"
+    ) {
+      blockingTaxonIds.push(impact.taxonId);
+    }
+  }
+  return Object.freeze({
+    blockingTaxonIds: Object.freeze(blockingTaxonIds.sort()),
+    taxonIdsToAdvance: Object.freeze(taxonIdsToAdvance.sort()),
+  });
+}
 
 export function countInvalidInputCatalogOperationalConfigurations(
   candidate: Extract<ValidateLandingPageInputCatalogDraftResult, { ok: true }>["value"],
@@ -42,6 +139,7 @@ export function fingerprintInputCatalogOperationalContext(input: Readonly<{
   taxons: readonly Readonly<{
     identity: LandingPageInputCatalogTaxonIdentity;
     reviewedVersion: number | null;
+    selectedResearchVersion: number | null;
     operational: boolean;
   }>[];
   operationalTaxonIds: ReadonlySet<string>;
@@ -52,6 +150,7 @@ export function fingerprintInputCatalogOperationalContext(input: Readonly<{
       .map((taxon) => ({
         identity: taxon.identity,
         reviewedVersion: taxon.reviewedVersion,
+        selectedResearchVersion: taxon.selectedResearchVersion,
         operational: taxon.operational,
       }))
       .sort((left, right) => left.identity.id.localeCompare(right.identity.id)),
@@ -83,6 +182,15 @@ function stableJson(value: unknown): string {
       .join(",")}}`;
   }
   return JSON.stringify(value);
+}
+
+function isOperationalPlan(value: unknown): value is LandingPageInputCatalogPlan {
+  return (
+    value === "starter" ||
+    value === "lite" ||
+    value === "pro" ||
+    value === "ultra"
+  );
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

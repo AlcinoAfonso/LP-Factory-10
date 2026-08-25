@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 24/08/2026
-• Versão: v1.5.183
+• Data: 25/08/2026
+• Versão: v1.5.184
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2675,7 +2675,7 @@ Repositório — Ajustados
   * A análise técnica confirmou um singleton service-only como menor residência robusta do draft e das evidências humanas vinculadas ao seu fingerprint, sem integração externa adicional e sem migrar v1–v5.
   * Publicar exige congelar draft e evidências, materializar no repositório a nova versão executável e a declaração explícita de versão atual, validar em CI/Preview, obter revisão e merge humanos, concluir o deploy de Production e comprovar a identidade exata no runtime.
   * A ativação bem-sucedida do artefato em Production torna a nova versão atual; qualquer falha anterior preserva a versão vigente. Eventual reconciliação administrativa posterior não pode substituir nem reverter a autoridade repo-only e, se atrasada, bloqueia novo draft/publicação administrativa até que o estado seja reconciliado com o artefato ativo exato.
-  * A reconciliação pós-deploy ocorre somente no runtime de Production e remove apenas a residência temporária quando a versão atual e o fingerprint do registry implantado coincidem exatamente com o handoff congelado; divergência falha fechada.
+  * A reconciliação pós-deploy ocorre somente no runtime de Production quando versão, conteúdo e fingerprint do registry implantado coincidem exatamente com o handoff congelado; antes de remover a residência temporária, revalida identidade, conteúdo e contexto das decisões E20.6.5, materializa os marcadores `reviewed_input_catalog_version` ainda válidos sem nova IA e confirma a leitura final. Divergência, decisão obrigatória ausente/stale ou efeito não confirmado falha fechado e preserva o draft.
 
 20.2.8.4 Versão revisada, versão efetiva e compatibilidade
 
@@ -2691,7 +2691,8 @@ Repositório — Ajustados
 * Status: Implementados; publicação de nova versão permanece sujeita a handoff repo-only, validações e decisão humana.
 * Conteúdo:
   * O draft pode ser resolvido e validado administrativamente, mas nunca é operacional; qualquer edição material torna stale as evidências dependentes.
-  * O gate pré-publicação separa suficiência taxonômica E20.6 de validade estrutural das configurações E19.2 pré-handoff e E19.5, cobre o conjunto integral paginado com cardinalidade exata e bloqueia diante de truncamento, cardinalidade divergente ou configuração operacional inválida/ilegível.
+  * O gate pré-publicação separa suficiência taxonômica E20.6 de validade estrutural das configurações E19.2 pré-handoff e E19.5, cobre com paginação e cardinalidade exata somente contas ativas com entitlement comercial elegível, plano válido e demais requisitos operacionais, e bloqueia diante de truncamento, cardinalidade divergente ou configuração operacional inválida/ilegível. LPs e configurações históricas de contas inativas ou inelegíveis permanecem preservadas sem bloquear a publicação global.
+  * E20.2 define e valida fields; E19.5 governa continuidade da identidade comercial; E20.6 decide somente suficiência factual. No MVP, `funnel_stage`, `transaction_intent` quando aplicável, `primary_conversion_goal` e `primary_service_or_offer` bloqueiam a publicação quando retirados ou alterados de modo `review_required` sem autoridade E19.5 específica, independentemente da E20.6; `compatible_evolution`, inclusive expansão estrita de `allowedValues`, permanece permitida, e field novo não adquire autoridade de identidade.
   * Validação e handoff congelam fingerprints distintos do conteúdo do draft e da coleção operacional completa; qualquer drift posterior de taxonomia, configurações, LPs ou elegibilidade deixa a evidência stale e exige nova preparação antes da revisão/merge.
   * A visão agregada deve evoluir `/admin/estrutura-lp?view=entradas`; `/admin/taxonomia/[taxonId]` permanece responsável pela avaliação individual E20.6.5. Não criar nova rota de primeiro nível; qualquer proposta de nova rota depende de insuficiência comprovada das superfícies existentes.
   * A primeira entrega preserva histórico imutável, retirada forward-only de fields publicados e snapshots/configurações na versão efetivamente usada; não inclui rollback, múltiplos drafts, targeting por taxon, job, fila, agente, automação recorrente ou engine genérica de diff.

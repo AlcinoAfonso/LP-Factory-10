@@ -10,12 +10,17 @@ import {
   validateLandingPageInputCatalogDraft,
   serializeLandingPageInputCatalogEntry,
   buildLandingPageInputCatalogTaxonChain,
-  type LandingPageInputCatalogPlan,
+  classifyLandingPageInputCatalogTransitionForTaxon,
+  collectCommercialIdentityReviewBlockers,
   type LandingPageInputCatalogDraftImpact,
+  type LandingPageInputCatalogRegistryEntry,
   type LandingPageInputCatalogTaxonIdentity,
 } from "@/conversion-content/landing-page/input-catalog";
 import type { AccountLandingPageOnboardingStoredValues } from "@/lp-builder/contracts";
-import { reconstructDraftInputCatalogEvaluationContext } from "@/conversion-content/adapters/inputCatalogEvaluationContextAdapter";
+import {
+  reconstructCanonicalInputCatalogEvaluationContext,
+  reconstructDraftInputCatalogEvaluationContext,
+} from "@/conversion-content/adapters/inputCatalogEvaluationContextAdapter";
 import type {
   BuildInputCatalogEvaluationContextResult,
   InputCatalogEvaluationContextIdentity,
@@ -25,6 +30,8 @@ import { collectCompletePaginatedRows } from "./adminInputCatalogLifecyclePagina
 import {
   countInvalidInputCatalogOperationalConfigurations,
   fingerprintInputCatalogOperationalContext,
+  planPublishedInputCatalogReviewReconciliation,
+  resolveInputCatalogOperationalAccountAuthorities,
   type InputCatalogOperationalConfiguration,
 } from "./adminInputCatalogLifecycleValidation";
 
@@ -260,6 +267,14 @@ export async function prepareAdminInputCatalogPublication(input: Readonly<{
   ) {
     return blocked("Valide novamente o conteúdo exato antes de preparar a publicação.");
   }
+  const commercialIdentityBlockers = collectCommercialIdentityReviewBlockers(
+    candidate.value.impacts,
+  );
+  if (commercialIdentityBlockers.length > 0) {
+    return blocked(
+      "A publicação altera uma dimensão de identidade comercial protegida e exige autoridade E19.5 específica.",
+    );
+  }
   const operationalReviewStatus = await validateOperationalReviewEvidence(
     candidate.value,
     current.value,
@@ -313,21 +328,33 @@ export async function reconcileAdminInputCatalogPublishedDraft(input: Readonly<{
   if (input.runtimeEnvironment !== "production") {
     return blocked("A reconciliação do draft só pode ocorrer no runtime de Production.");
   }
-  const client = createServiceClient();
-  const current = await readDraftRow(client);
-  if (!current.ok || !current.value) {
-    return unavailable(current.ok ? "O draft não existe." : current.message);
+  if (!Number.isSafeInteger(input.expectedRevision) || input.expectedRevision <= 0) {
+    return invalid("A revisão administrativa do draft é inválida.");
   }
+  const client = createServiceClient();
+  const [current, initialContext] = await Promise.all([
+    readDraftRow(client),
+    readCompleteLifecycleContext(client),
+  ]);
+  if (!current.ok) return unavailable(current.message);
+  if (!current.value) return unavailable("O draft não existe.");
+  if (!initialContext.ok) return unavailable(initialContext.message);
   const currentEntry = landingPageInputCatalogRegistry[
     CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION
   ];
   const deployedFingerprint = fingerprint(
     serializeLandingPageInputCatalogEntry(currentEntry),
   );
+  const storedDraftFingerprint = fingerprint(
+    serializeLandingPageInputCatalogEntry(
+      current.value.catalogJson as LandingPageInputCatalogRegistryEntry,
+    ),
+  );
   if (
     current.value.revision !== input.expectedRevision ||
     current.value.targetVersion !== CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION ||
     current.value.baseVersion !== CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION - 1 ||
+    storedDraftFingerprint !== deployedFingerprint ||
     current.value.contentFingerprint !== deployedFingerprint ||
     current.value.publicationFingerprint !== deployedFingerprint ||
     current.value.publicationContextFingerprint === null
@@ -336,6 +363,77 @@ export async function reconcileAdminInputCatalogPublishedDraft(input: Readonly<{
       "O registry implantado ainda não comprova exatamente o draft congelado.",
     );
   }
+
+  const initialProof = await validatePublishedReviewEvidence(
+    initialContext.value,
+    current.value,
+  );
+  if (!initialProof.ok) return blocked(initialProof.message);
+  const initialPlan = planPublishedInputCatalogReviewReconciliation({
+    currentVersion: CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION,
+    impacts: initialProof.impacts,
+    validEvidenceTaxonIds: new Set(initialProof.validEvidenceTaxonIds),
+  });
+  if (initialPlan.blockingTaxonIds.length > 0) {
+    return blocked(
+      "Existem decisões E20.6.5 obrigatórias ausentes ou stale no draft publicado.",
+    );
+  }
+
+  for (const taxonId of initialPlan.taxonIdsToAdvance) {
+    const taxon = initialContext.value.taxons.find(
+      (candidate) => candidate.identity.id === taxonId,
+    );
+    const evidenceContext = initialProof.contextsByTaxonId.get(taxonId);
+    if (!taxon || !evidenceContext) {
+      return blocked("A evidência E20.6.5 não possui identidade canônica revalidada.");
+    }
+    const advanced = await advancePublishedReviewMarker({
+      client,
+      taxon,
+      evidenceContext,
+      targetVersion: CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION,
+    });
+    if (!advanced) {
+      return conflict(
+        "Uma decisão E20.6.5 mudou durante a materialização pós-publicação; o draft foi preservado.",
+      );
+    }
+  }
+
+  const finalContext = await readCompleteLifecycleContext(client);
+  if (!finalContext.ok) return unavailable(finalContext.message);
+  const finalProof = await validatePublishedReviewEvidence(
+    finalContext.value,
+    current.value,
+  );
+  if (!finalProof.ok) return blocked(finalProof.message);
+  const finalPlan = planPublishedInputCatalogReviewReconciliation({
+    currentVersion: CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION,
+    impacts: finalProof.impacts,
+    validEvidenceTaxonIds: new Set(finalProof.validEvidenceTaxonIds),
+  });
+  const finalReviewedByTaxonId = new Map(
+    finalContext.value.taxons.map((taxon) => [
+      taxon.identity.id,
+      taxon.reviewedVersion,
+    ]),
+  );
+  if (
+    finalPlan.blockingTaxonIds.length > 0 ||
+    finalPlan.taxonIdsToAdvance.length > 0 ||
+    initialProof.validEvidenceTaxonIds.some(
+      (taxonId) =>
+        !finalProof.validEvidenceTaxonIds.includes(taxonId) ||
+        finalReviewedByTaxonId.get(taxonId) !==
+          CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION,
+    )
+  ) {
+    return conflict(
+      "A leitura final não confirmou todos os efeitos das decisões E20.6.5; o draft foi preservado.",
+    );
+  }
+
   const { data, error } = await client
     .from("landing_page_input_catalog_drafts")
     .delete()
@@ -348,12 +446,10 @@ export async function reconcileAdminInputCatalogPublishedDraft(input: Readonly<{
   if (error || !isRecord(data)) {
     return conflict("O draft mudou durante a reconciliação pós-deploy.");
   }
-  const context = await readCompleteLifecycleContext(client);
-  if (!context.ok) return unavailable(context.message);
   return {
     ok: true,
-    state: await buildState(context, null),
-    handoff: `Versão ${CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION} reconciliada com o registry implantado; a residência temporária foi encerrada.`,
+    state: await buildState(finalContext, null),
+    handoff: `Versão ${CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION} reconciliada com o registry implantado; decisões E20.6.5 válidas foram materializadas, a leitura final foi confirmada e a residência temporária foi encerrada.`,
   };
 }
 
@@ -473,6 +569,7 @@ type LifecycleContext = Readonly<{
   taxons: readonly Readonly<{
     identity: LandingPageInputCatalogTaxonIdentity;
     reviewedVersion: number | null;
+    selectedResearchVersion: number | null;
     operational: boolean;
   }>[];
   operationalTaxonIds: ReadonlySet<string>;
@@ -520,7 +617,7 @@ async function readCompleteLifecycleContext(
     sharedConfigurationRows,
     landingPageConfigurationRows,
   ] = await Promise.all([
-    readAll(client, "business_taxons", "id,parent_id,level,name,slug,is_active,reviewed_input_catalog_version", (query) =>
+    readAll(client, "business_taxons", "id,parent_id,level,name,slug,is_active,selected_end_customer_research_version,reviewed_input_catalog_version", (query) =>
       query.in("level", ["segment", "niche", "ultra_niche"]).order("id", { ascending: true }),
     ),
     readAll(client, "account_landing_pages", "id,account_id,status", (query) =>
@@ -532,7 +629,7 @@ async function readCompleteLifecycleContext(
     readAll(client, "account_taxonomy", "account_id,taxon_id,is_primary,status", (query) =>
       query.eq("is_primary", true).eq("status", "active").order("account_id", { ascending: true }),
     ),
-    readAll(client, "accounts", "id,name", (query) => query.order("id", { ascending: true })),
+    readAll(client, "accounts", "id,name,status", (query) => query.order("id", { ascending: true })),
     readAll(client, "v_account_commercial_entitlement_effective", "account_id,plan_key,is_commercially_eligible", (query) =>
       query.order("account_id", { ascending: true }),
     ),
@@ -562,11 +659,11 @@ async function readCompleteLifecycleContext(
   const taxonValues = normalizedTaxons as readonly NonNullable<ReturnType<typeof normalizeTaxon>>[];
   const identities = taxonValues.map((taxon) => taxon.identity);
 
-  const activeAccounts = new Set<string>();
-  const operationalPages: Array<Readonly<{ id: string; accountId: string }>> = [];
+  const candidateAccountIds = new Set<string>();
+  const candidatePages: Array<Readonly<{ id: string; accountId: string }>> = [];
   const preHandoffConfigurations: Array<Readonly<{
     accountId: string;
-    values: AccountLandingPageOnboardingStoredValues;
+    values: unknown;
   }>> = [];
   for (const row of pageRows.rows) {
     if (
@@ -576,24 +673,45 @@ async function readCompleteLifecycleContext(
     ) {
       return { ok: false, message: "A coleção de LPs operacionais é inválida." };
     }
-    activeAccounts.add(row.account_id);
-    operationalPages.push({ id: row.id, accountId: row.account_id });
+    candidateAccountIds.add(row.account_id);
+    candidatePages.push({ id: row.id, accountId: row.account_id });
   }
   for (const row of onboardingConfigurationRows.rows) {
     if (
       !isRecord(row) ||
       typeof row.account_id !== "string" ||
-      row.landing_page_id !== null ||
-      !isRecord(row.values)
+      row.landing_page_id !== null
     ) {
       return { ok: false, message: "A residência E19.2 pré-handoff é inválida." };
     }
-    activeAccounts.add(row.account_id);
+    candidateAccountIds.add(row.account_id);
     preHandoffConfigurations.push({
       accountId: row.account_id,
-      values: row.values as AccountLandingPageOnboardingStoredValues,
+      values: row.values,
     });
   }
+  const authority = resolveInputCatalogOperationalAccountAuthorities({
+    candidateAccountIds,
+    accounts: accountRows.rows,
+    entitlements: entitlementRows.rows,
+  });
+  if (!authority.ok) {
+    return { ok: false, message: "A autoridade operacional de conta, entitlement ou plano é inválida." };
+  }
+  const operationalAccountIds = new Set(
+    authority.value.map((account) => account.accountId),
+  );
+  const accountNames = new Map(
+    authority.value.map((account) => [account.accountId, account.accountName]),
+  );
+  const plans = new Map(
+    authority.value.map((account) => [account.accountId, account.planKey]),
+  );
+  const operationalPages = candidatePages.filter((page) =>
+    operationalAccountIds.has(page.accountId),
+  );
+  const operationalPageIds = new Set(operationalPages.map((page) => page.id));
+
   const primaryTaxonByAccount = new Map<string, string>();
   const operationalTaxonIds = new Set<string>();
   for (const row of taxonomyRows.rows) {
@@ -604,7 +722,7 @@ async function readCompleteLifecycleContext(
     ) {
       return { ok: false, message: "A coleção de taxonomia operacional é inválida." };
     }
-    if (!activeAccounts.has(row.account_id)) continue;
+    if (!operationalAccountIds.has(row.account_id)) continue;
     if (primaryTaxonByAccount.has(row.account_id)) {
       return { ok: false, message: "Uma conta operacional possui mais de um taxon primário ativo." };
     }
@@ -612,14 +730,17 @@ async function readCompleteLifecycleContext(
     operationalTaxonIds.add(row.taxon_id);
   }
 
-  const accountNames = normalizeStringMap(accountRows.rows, "id", "name");
-  const sharedValues = normalizeValuesMap(sharedConfigurationRows.rows, "account_id");
+  const sharedValues = normalizeValuesMap(
+    sharedConfigurationRows.rows,
+    "account_id",
+    operationalAccountIds,
+  );
   const landingPageValues = normalizeValuesMap(
     landingPageConfigurationRows.rows,
     "landing_page_id",
+    operationalPageIds,
   );
-  const plans = normalizeOperationalPlans(entitlementRows.rows, activeAccounts);
-  if (!accountNames || !sharedValues || !landingPageValues || !plans) {
+  if (!sharedValues || !landingPageValues) {
     return { ok: false, message: "As configurações operacionais contêm estado inválido." };
   }
 
@@ -651,6 +772,10 @@ async function readCompleteLifecycleContext(
     });
   }
   for (const configuration of preHandoffConfigurations) {
+    if (!operationalAccountIds.has(configuration.accountId)) continue;
+    if (!isRecord(configuration.values)) {
+      return { ok: false, message: "Uma configuração E19.2 operacional contém valores inválidos." };
+    }
     const taxonId = primaryTaxonByAccount.get(configuration.accountId);
     const planKey = plans.get(configuration.accountId);
     const accountName = accountNames.get(configuration.accountId);
@@ -667,7 +792,7 @@ async function readCompleteLifecycleContext(
       landingPageId: null,
       planKey,
       taxonChain: taxonChain.value,
-      storedValues: configuration.values,
+      storedValues: configuration.values as AccountLandingPageOnboardingStoredValues,
       authoritativeValues: accountName.trim()
         ? { business_display_name: accountName.trim() }
         : {},
@@ -677,6 +802,7 @@ async function readCompleteLifecycleContext(
   const taxons = taxonValues.map((normalized) => ({
     identity: normalized.identity,
     reviewedVersion: normalized.reviewedVersion,
+    selectedResearchVersion: normalized.selectedResearchVersion,
     operational: operationalTaxonIds.has(normalized.identity.id),
   }));
   return {
@@ -755,8 +881,14 @@ async function buildState(
         landingPageInputCatalogRegistry[CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION],
       ),
     );
+    const storedDraftFingerprint = fingerprint(
+      serializeLandingPageInputCatalogEntry(
+        row.catalogJson as LandingPageInputCatalogRegistryEntry,
+      ),
+    );
     if (
       row.baseVersion !== CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION - 1 ||
+      storedDraftFingerprint !== deployedFingerprint ||
       row.contentFingerprint !== deployedFingerprint ||
       row.publicationFingerprint !== deployedFingerprint ||
       row.publicationContextFingerprint === null
@@ -885,36 +1017,173 @@ async function validateOperationalReviewEvidence(
   });
 }
 
-function normalizeStringMap(
-  rows: readonly unknown[],
-  keyColumn: string,
-  valueColumn: string,
-): Map<string, string> | null {
-  const result = new Map<string, string>();
-  for (const row of rows) {
+type PublishedReviewImpact = Readonly<{
+  taxonId: string;
+  reviewedVersion: number | null;
+  operational: boolean;
+  classification: LandingPageInputCatalogDraftImpact["classification"];
+}>;
+
+type PublishedReviewEvidenceValidationResult =
+  | Readonly<{
+      ok: true;
+      impacts: readonly PublishedReviewImpact[];
+      validEvidenceTaxonIds: readonly string[];
+      contextsByTaxonId: ReadonlyMap<string, InputCatalogEvaluationContextIdentity>;
+    }>
+  | Readonly<{ ok: false; message: string }>;
+
+async function validatePublishedReviewEvidence(
+  context: LifecycleContext,
+  row: DraftRow,
+): Promise<PublishedReviewEvidenceValidationResult> {
+  const impacts = buildPublishedReviewImpacts(context);
+  if (!impacts.ok) return impacts;
+
+  const validEvidenceTaxonIds: string[] = [];
+  const contextsByTaxonId = new Map<string, InputCatalogEvaluationContextIdentity>();
+  for (const [taxonId, evidence] of Object.entries(row.taxonReviewEvidence)) {
+    const taxon = context.taxons.find(
+      (candidate) => candidate.identity.id === taxonId && candidate.identity.isActive,
+    );
+    if (!taxon || evidence.contentFingerprint !== row.contentFingerprint) continue;
+    const current = await reconstructCanonicalInputCatalogEvaluationContext({
+      taxonId,
+      inputCatalogVersion: CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION,
+    });
     if (
-      !isRecord(row) ||
-      typeof row[keyColumn] !== "string" ||
-      typeof row[valueColumn] !== "string" ||
-      result.has(row[keyColumn])
-    ) return null;
-    result.set(row[keyColumn], row[valueColumn]);
+      !current.ok ||
+      fingerprintContext(current.value.identity) !== evidence.contextFingerprint ||
+      current.value.identity.research.researchVersion !== taxon.selectedResearchVersion
+    ) {
+      continue;
+    }
+    validEvidenceTaxonIds.push(taxonId);
+    contextsByTaxonId.set(taxonId, current.value.identity);
   }
-  return result;
+  return Object.freeze({
+    ok: true,
+    impacts: impacts.value,
+    validEvidenceTaxonIds: Object.freeze(validEvidenceTaxonIds.sort()),
+    contextsByTaxonId,
+  });
+}
+
+function buildPublishedReviewImpacts(
+  context: LifecycleContext,
+):
+  | Readonly<{ ok: true; value: readonly PublishedReviewImpact[] }>
+  | Readonly<{ ok: false; message: string }> {
+  const identities = context.taxons.map((taxon) => taxon.identity);
+  const impacts: PublishedReviewImpact[] = [];
+  for (const taxon of context.taxons) {
+    if (!taxon.identity.isActive) continue;
+    if (taxon.reviewedVersion === CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION) {
+      impacts.push({
+        taxonId: taxon.identity.id,
+        reviewedVersion: taxon.reviewedVersion,
+        operational: taxon.operational,
+        classification: "no_material_change",
+      });
+      continue;
+    }
+    if (taxon.reviewedVersion === null) {
+      impacts.push({
+        taxonId: taxon.identity.id,
+        reviewedVersion: null,
+        operational: taxon.operational,
+        classification: "review_required",
+      });
+      continue;
+    }
+    if (
+      taxon.reviewedVersion > CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION ||
+      !listLandingPageInputCatalogVersions().includes(taxon.reviewedVersion)
+    ) {
+      return {
+        ok: false,
+        message: "Uma versão revisada não corresponde ao histórico executável implantado.",
+      };
+    }
+    const chain = buildLandingPageInputCatalogTaxonChain(taxon.identity, identities);
+    if (!chain.ok) {
+      return {
+        ok: false,
+        message: "Uma cadeia taxonômica mudou durante a reconciliação pós-publicação.",
+      };
+    }
+    const transition = classifyLandingPageInputCatalogTransitionForTaxon({
+      previousVersion: taxon.reviewedVersion,
+      nextVersion: CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION,
+      taxonChain: chain.value,
+    });
+    impacts.push({
+      taxonId: taxon.identity.id,
+      reviewedVersion: taxon.reviewedVersion,
+      operational: taxon.operational,
+      classification: transition.classification,
+    });
+  }
+  return { ok: true, value: Object.freeze(impacts) };
+}
+
+async function advancePublishedReviewMarker(input: Readonly<{
+  client: ServiceClient;
+  taxon: LifecycleContext["taxons"][number];
+  evidenceContext: InputCatalogEvaluationContextIdentity;
+  targetVersion: number;
+}>): Promise<boolean> {
+  if (
+    input.evidenceContext.taxonId !== input.taxon.identity.id ||
+    input.evidenceContext.taxonSlug !== input.taxon.identity.slug ||
+    input.evidenceContext.research.researchVersion !==
+      input.taxon.selectedResearchVersion
+  ) {
+    return false;
+  }
+  let updateQuery: any = input.client
+    .from("business_taxons")
+    .update({ reviewed_input_catalog_version: input.targetVersion })
+    .eq("id", input.taxon.identity.id)
+    .eq("name", input.taxon.identity.name)
+    .eq("slug", input.taxon.identity.slug)
+    .eq("level", input.taxon.identity.level)
+    .eq("is_active", true)
+    .eq(
+      "selected_end_customer_research_version",
+      input.evidenceContext.research.researchVersion,
+    );
+  updateQuery = input.taxon.identity.parentId === null
+    ? updateQuery.is("parent_id", null)
+    : updateQuery.eq("parent_id", input.taxon.identity.parentId);
+  updateQuery = input.taxon.reviewedVersion === null
+    ? updateQuery.is("reviewed_input_catalog_version", null)
+    : updateQuery.eq("reviewed_input_catalog_version", input.taxon.reviewedVersion);
+  const { data, error } = await updateQuery
+    .select("id,reviewed_input_catalog_version")
+    .maxAffected(1)
+    .maybeSingle();
+  return (
+    !error &&
+    isRecord(data) &&
+    data.id === input.taxon.identity.id &&
+    data.reviewed_input_catalog_version === input.targetVersion
+  );
 }
 
 function normalizeValuesMap(
   rows: readonly unknown[],
   keyColumn: string,
+  operationalKeys: ReadonlySet<string>,
 ): Map<string, AccountLandingPageOnboardingStoredValues> | null {
   const result = new Map<string, AccountLandingPageOnboardingStoredValues>();
   for (const row of rows) {
     if (
       !isRecord(row) ||
-      typeof row[keyColumn] !== "string" ||
-      !isRecord(row.values) ||
-      result.has(row[keyColumn])
+      typeof row[keyColumn] !== "string"
     ) return null;
+    if (!operationalKeys.has(row[keyColumn])) continue;
+    if (!isRecord(row.values) || result.has(row[keyColumn])) return null;
     result.set(
       row[keyColumn],
       row.values as AccountLandingPageOnboardingStoredValues,
@@ -923,34 +1192,10 @@ function normalizeValuesMap(
   return result;
 }
 
-function normalizeOperationalPlans(
-  rows: readonly unknown[],
-  activeAccounts: ReadonlySet<string>,
-): Map<string, LandingPageInputCatalogPlan> | null {
-  const result = new Map<string, LandingPageInputCatalogPlan>();
-  for (const row of rows) {
-    if (
-      !isRecord(row) ||
-      typeof row.account_id !== "string" ||
-      typeof row.is_commercially_eligible !== "boolean" ||
-      (row.plan_key !== null && typeof row.plan_key !== "string")
-    ) return null;
-    if (!activeAccounts.has(row.account_id) || !row.is_commercially_eligible) continue;
-    if (
-      row.plan_key !== "starter" &&
-      row.plan_key !== "lite" &&
-      row.plan_key !== "pro" &&
-      row.plan_key !== "ultra"
-    ) return null;
-    if (result.has(row.account_id)) return null;
-    result.set(row.account_id, row.plan_key);
-  }
-  return result;
-}
-
 function normalizeTaxon(value: unknown): Readonly<{
   identity: LandingPageInputCatalogTaxonIdentity;
   reviewedVersion: number | null;
+  selectedResearchVersion: number | null;
 }> | null {
   if (!isRecord(value)) return null;
   if (
@@ -960,6 +1205,9 @@ function normalizeTaxon(value: unknown): Readonly<{
     typeof value.name !== "string" ||
     typeof value.slug !== "string" ||
     typeof value.is_active !== "boolean" ||
+    (value.selected_end_customer_research_version !== null &&
+      (!Number.isSafeInteger(value.selected_end_customer_research_version) ||
+        Number(value.selected_end_customer_research_version) <= 0)) ||
     (value.reviewed_input_catalog_version !== null &&
       (!Number.isSafeInteger(value.reviewed_input_catalog_version) ||
         Number(value.reviewed_input_catalog_version) <= 0))
@@ -974,6 +1222,8 @@ function normalizeTaxon(value: unknown): Readonly<{
       isActive: value.is_active,
     },
     reviewedVersion: value.reviewed_input_catalog_version as number | null,
+    selectedResearchVersion:
+      value.selected_end_customer_research_version as number | null,
   };
 }
 
