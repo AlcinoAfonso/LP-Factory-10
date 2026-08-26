@@ -20,12 +20,17 @@ import type { LandingPageGenerationContextPackage } from "./generationContextCon
 import { prepareLandingPageDraftRevisionCandidate } from "./landingPageDraftCandidateWorkflow";
 import {
   LANDING_PAGE_DRAFT_COMPARISON_CASE_ID,
+  buildLandingPageDraftComparisonSummary,
+  isLandingPageDraftComparisonRecommendationEligible,
   landingPageDraftComparisonAlias,
   landingPageDraftComparisonFixture,
   modelCatalogComparisonRevision,
   normalizeLandingPageDraftComparisonSelections,
   projectLandingPageDraftForComparison,
   shuffleLandingPageDraftComparisonConfigurations,
+  type LandingPageDraftComparisonEvaluation,
+  type LandingPageDraftComparisonResult,
+  type LandingPageDraftComparisonRound,
 } from "./landingPageDraftComparison";
 import {
   buildLandingPageDraftResponsesRequest,
@@ -196,6 +201,46 @@ const cases = [
       );
       assert.equal(landingPageDraftComparisonAlias(0), "Resultado A");
       assert.equal(landingPageDraftComparisonAlias(25), "Resultado Z");
+    },
+  },
+  {
+    name: "comparison recommendation requires the approved categorical quality gate",
+    run: () => {
+      const result = comparisonResultForEvaluation();
+      const insufficient = comparisonEvaluation("insufficient");
+      const adequate = comparisonEvaluation("adequate");
+      assert.equal(
+        isLandingPageDraftComparisonRecommendationEligible(result, insufficient),
+        false,
+      );
+      assert.equal(
+        isLandingPageDraftComparisonRecommendationEligible(result, adequate),
+        true,
+      );
+      const round = comparisonRoundForEvaluation(result);
+      const decision = {
+        kind: "recommendation",
+        recommendedAlias: result.alias,
+        rationale: "Qualidade suficiente com menor uso observado.",
+        limitations: "Uma fixture.",
+      } as const;
+      assert.equal(
+        buildLandingPageDraftComparisonSummary({
+          round,
+          evaluations: { [result.alias]: insufficient },
+          repetitions: [],
+          decision,
+        }),
+        null,
+      );
+      const summary = buildLandingPageDraftComparisonSummary({
+        round,
+        evaluations: { [result.alias]: adequate },
+        repetitions: [],
+        decision,
+      });
+      assert.match(summary ?? "", /qualidade adequada; correção relevante/);
+      assert.doesNotMatch(summary ?? "", /\/5|substantial|substancial/i);
     },
   },
   {
@@ -1513,6 +1558,62 @@ const cases = [
     },
   },
 ];
+
+function comparisonEvaluation(
+  quality: LandingPageDraftComparisonEvaluation["quality"],
+): LandingPageDraftComparisonEvaluation {
+  return {
+    validity: "valid",
+    quality,
+    correction: "relevant",
+    comment: "Avaliação focal.",
+  };
+}
+
+function comparisonResultForEvaluation(): LandingPageDraftComparisonResult {
+  return {
+    alias: "Resultado A",
+    configuration: {
+      key: "gpt-5.6-luna\u001flow",
+      baseline: false,
+      source: "model_catalog_comparison",
+      revision: "catalog:m2:p3",
+      model: "gpt-5.6-luna",
+      reasoningEffort: "low",
+      catalogModelVersion: 2,
+      catalogParameterVersion: 3,
+    },
+    attempt: {
+      ok: true,
+      projection: [],
+      usage: {
+        inputTokens: 10,
+        cachedInputTokens: 0,
+        cacheWriteTokens: null,
+        outputTokens: 20,
+        reasoningTokens: 5,
+        totalTokens: 30,
+      },
+      latencyMs: 100,
+    },
+  };
+}
+
+function comparisonRoundForEvaluation(
+  result: LandingPageDraftComparisonResult,
+): LandingPageDraftComparisonRound {
+  return {
+    roundId: "00000000-0000-4000-8000-000000000021",
+    roundToken: "round-token",
+    environment: "preview",
+    workload: "landing_page_draft_generation",
+    fixtureId: LANDING_PAGE_DRAFT_COMPARISON_CASE_ID,
+    fixtureVersion: 4,
+    contextContractVersion: 4,
+    presentationContractVersion: 1,
+    results: [result],
+  };
+}
 
 void runCases();
 

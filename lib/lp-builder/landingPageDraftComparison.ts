@@ -77,8 +77,8 @@ export type LandingPageDraftComparisonRound = Readonly<{
 
 export type LandingPageDraftComparisonEvaluation = Readonly<{
   validity: "valid" | "invalid";
-  quality: 1 | 2 | 3 | 4 | 5;
-  correction: "none" | "light" | "substantial";
+  quality: "insufficient" | "adequate" | "superior";
+  correction: "none" | "light" | "relevant";
   comment: string;
 }>;
 
@@ -282,12 +282,37 @@ export function landingPageDraftComparisonAlias(index: number) {
   return `Resultado ${String.fromCharCode(65 + index)}`;
 }
 
+export function isLandingPageDraftComparisonRecommendationEligible(
+  result: LandingPageDraftComparisonResult,
+  evaluation: LandingPageDraftComparisonEvaluation | undefined,
+) {
+  return (
+    result.attempt.ok &&
+    evaluation?.validity === "valid" &&
+    (evaluation.quality === "adequate" || evaluation.quality === "superior")
+  );
+}
+
 export function buildLandingPageDraftComparisonSummary(input: Readonly<{
   round: LandingPageDraftComparisonRound;
   evaluations: Readonly<Record<string, LandingPageDraftComparisonEvaluation>>;
   repetitions: readonly LandingPageDraftComparisonResult[];
   decision: LandingPageDraftComparisonDecision;
 }>) {
+  if (input.decision.kind === "recommendation") {
+    const recommendedResult = input.round.results.find(
+      (result) => result.alias === input.decision.recommendedAlias,
+    );
+    if (
+      !recommendedResult ||
+      !isLandingPageDraftComparisonRecommendationEligible(
+        recommendedResult,
+        input.evaluations[recommendedResult.alias],
+      )
+    ) {
+      return null;
+    }
+  }
   const lines = [
     "E21.3.3 — comparação textual de Landing Page",
     `Ambiente: ${input.round.environment}`,
@@ -305,7 +330,7 @@ export function buildLandingPageDraftComparisonSummary(input: Readonly<{
       `${result.alias}: ${result.configuration.model} + ${result.configuration.reasoningEffort}`,
       `Fonte/revisão: ${result.configuration.source} / ${result.configuration.revision}${result.configuration.baseline ? " (baseline)" : ""}`,
       result.attempt.ok
-        ? `Gates: geração válida; avaliação ${evaluation?.validity ?? "ausente"}; qualidade ${evaluation?.quality ?? "ausente"}/5; correção ${evaluation?.correction ?? "ausente"}`
+        ? `Gates: geração válida; avaliação ${evaluation ? validityLabel(evaluation.validity) : "ausente"}; qualidade ${evaluation ? qualityLabel(evaluation.quality) : "ausente"}; correção ${evaluation ? correctionLabel(evaluation.correction) : "ausente"}`
         : `Gates: falha ${result.attempt.kind}`,
       result.attempt.ok
         ? `Usage: input ${metric(result.attempt.usage.inputTokens)}, cached ${metric(result.attempt.usage.cachedInputTokens)}, output ${metric(result.attempt.usage.outputTokens)}, reasoning ${metric(result.attempt.usage.reasoningTokens)}, total ${metric(result.attempt.usage.totalTokens)}; latência ${result.attempt.latencyMs} ms`
@@ -343,6 +368,22 @@ function sectionProjection(kind: string, label: string, values: readonly (string
 
 function metric(value: number | null) {
   return value === null ? "indisponível" : String(value);
+}
+
+function validityLabel(value: LandingPageDraftComparisonEvaluation["validity"]) {
+  return value === "valid" ? "válida" : "inválida";
+}
+
+function qualityLabel(value: LandingPageDraftComparisonEvaluation["quality"]) {
+  return {
+    insufficient: "insuficiente",
+    adequate: "adequada",
+    superior: "superior",
+  }[value];
+}
+
+function correctionLabel(value: LandingPageDraftComparisonEvaluation["correction"]) {
+  return { none: "nenhuma", light: "leve", relevant: "relevante" }[value];
 }
 
 function isReasoningEffort(value: unknown): value is OpenAiReasoningEffort {
