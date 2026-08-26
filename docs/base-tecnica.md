@@ -2,8 +2,8 @@
 
 0.1 Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.76
-• Data: 25/08/2026
+• Versão: v2.0.77
+• Data: 26/08/2026
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -334,6 +334,9 @@
 • A gestão administrativa consome somente projeção pública imutável e read model seguro; a página reautoriza `platform_admin` antes da leitura privilegiada, cada mutação reexecuta o guard e o ator é derivado exclusivamente no servidor.
 • Leituras administrativas de catálogo, revisões e ativações paginam integralmente com ordem determinística; `416/PGRST103` terminal preserva páginas já acumuladas e qualquer erro ou resposta parcial produz estado tipado fail-closed.
 • `/admin/workloads-openai` separa catálogo global, seletor Preview/Production e lifecycle expansível; nomes, recortes e agrupamento visual da Landing Page vêm de uma única matriz pública code-owned, sem fundir as unidades técnicas de texto e imagem.
+• `/admin/workloads-openai` é a superfície de Configuração OpenAI e a única autoridade administrativa para candidata, prova técnica, revisão validada, ativação, rollback e histórico; **Validar candidata** não representa comparação experimental nem adoção.
+• `/admin/testes-openai` é uma superfície protegida e separada para comparações experimentais por workload. Ela reautoriza `platform_admin`, relê baseline e catálogo no servidor, mantém resultados transitórios e não pode criar candidata, promover revisão, ativar configuração, persistir histórico comparativo ou alterar Production; qualquer adoção retorna ao lifecycle humano da Configuração OpenAI.
+• Comparações reutilizam o transporte, prompt, schema, parser, validação e observabilidade do domínio funcional por adapter server-only de configuração explícita; não criam request paralelo ao provider nem permitem que a proveniência experimental seja produzida pelo resolver runtime.
 • Candidata, prova, revisão validada pendente, ativação e rollback permanecem estados explícitos. A prova usa fixture segura nos transportes funcionais existentes, não persiste dados de negócio e somente promove a candidata após sucesso; a configuração ativa muda apenas por ação humana posterior.
 • `OPENAI_API_KEY` permanece server-only e restrita à prova operacional autorizada; não atravessa client, formulário, read model ou log. Falha, recusa ou metadado inseguro encerram a prova sem promover nem descartar a candidata.
 

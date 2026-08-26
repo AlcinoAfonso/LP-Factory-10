@@ -2,7 +2,7 @@
 
 ## 1. Objetivo e validade
 
-- Data do snapshot: 18/08/2026.
+- Data do snapshot: 26/08/2026.
 - Objetivo: manter uma referência datada para decisões de custo-desempenho de modelos e avaliação de capacidades de execução dos workloads OpenAI do LP Factory 10.
 - Este documento compara candidatos; não define sozinho o modelo em produção e não autoriza migração, implementação ou mudança de arquitetura.
 - A configuração efetivamente adotada continua registrada em `docs/platform-config.md`; a governança da decisão continua em `docs/gestor-automations.md`.
@@ -27,7 +27,8 @@
 - `commercial_activation_draft_generation` → configuração efetiva atual `gpt-5.4-mini + none`.
 - `landing_page_draft_generation` → configuração efetiva versionada `gpt-5.6-luna + max`, comprovada no fluxo integrado hospedado.
 - `landing_page_draft_image_generation` → configuração efetiva versionada `gpt-image-2`, comprovada no fluxo integrado hospedado; parâmetros de imagem não herdam configuração textual.
-- Fonte de configuração efetiva: `lib/openai-workloads/registry.ts`, com `configurationSource: repo_catalog` e revisão `v2`, conforme a governança da E21.1.
+- Em Development, a fonte determinística permanece `lib/openai-workloads/registry.ts`, com `configurationSource: repo_catalog` e revisão `v2`.
+- Em Preview e Production com o gate operacional habilitado, a fonte efetiva é a revisão ativa do ambiente no Supabase, com `configurationSource: supabase_operational`; a comparação E21.3.3 confirmou em Preview a baseline textual `gpt-5.6-luna + max`, revisão ativa `1`.
 - Fonte operacional: `docs/platform-config.md`.
 - Variáveis legadas de modelo não são fonte runtime atual; seu estado operacional permanece exclusivamente em `docs/platform-config.md`.
 
@@ -108,7 +109,7 @@
 |---|---|---|---|
 | resolvedor IA de nicho | `gpt-5.4-mini + none` | Luna / Terra / Sol + effort aplicável | não comparado neste snapshot |
 | ativação comercial | `gpt-5.4-mini + none` | Luna / Terra / Sol + effort aplicável | não comparado neste snapshot |
-| geração textual do draft de landing page | `gpt-5.6-luna + max` | configuração inicial aprovada para o workload | duas execuções integradas hospedadas aprovadas em 18/08/2026 |
+| geração textual do draft de landing page | `gpt-5.6-luna + max` | Luna / Terra / Sol + effort elegível | comparação E21.3.3 concluída com evidência insuficiente para troca |
 | geração da imagem principal do draft | `gpt-image-2` | workload de mídia independente | duas execuções integradas hospedadas aprovadas em 18/08/2026 |
 
 ### 4.3 Registro de decisão
@@ -117,18 +118,28 @@
 - Resultados detalhados ou evidências extensas devem permanecer no PR ou artefato do recorte; este documento mantém apenas o snapshot decisório.
 - Se preços ou capacidades mudarem, atualizar a seção 3 sem apagar decisões históricas já sustentadas por testes; marcar a data da nova fotografia.
 
-## 5. Laboratório futuro de avaliação de custo-benefício
+### 4.4 Resultado E21.3.3 — geração textual da Landing Page
+
+- Data e ambiente: 26/08/2026, Preview, workload `landing_page_draft_generation`, fixture sintética v4 de `Corretor Imóveis` e BSG vigente congelada.
+- Baseline: `gpt-5.6-luna + max`, `configurationSource: supabase_operational`, revisão ativa `1`.
+- Rodada inicial válida: baseline com 41,292 s e 5.069 tokens totais; `gpt-5.6-terra + low` com 10,703 s e 1.717 tokens totais; `gpt-5.6-luna + low` com 9,669 s e 1.859 tokens totais.
+- Repetição focalizada válida: baseline com 30,704 s e 4.146 tokens totais; `gpt-5.6-luna + low` com 10,361 s e 1.811 tokens totais.
+- Decisão humana: `evidência insuficiente`; nenhuma configuração foi recomendada ou adotada e a baseline permaneceu inalterada.
+- Limitações: um único caso representativo, uma rodada inicial e uma repetição focalizada; custo financeiro permaneceu não confirmado devido à divergência de tarifas oficiais; resultados e avaliações detalhados foram transitórios.
+- A superfície separada `/admin/testes-openai` passou em Preview pelos gates autenticados positivo e negativo, desktop/mobile, estados materiais, reconhecimento do lifecycle e acessibilidade proporcional, sem criar candidata, promover revisão, ativar configuração ou alterar Production.
+
+## 5. Testes OpenAI e evolução futura
 
 ### 5.1 Finalidade
 
-- Preservar como capacidade futura um laboratório de avaliação que substitua escolhas intuitivas de configuração por decisões baseadas em evidência para cada workload real.
+- A superfície protegida `/admin/testes-openai` materializa a comparação experimental por workload, separada da configuração e do lifecycle em `/admin/workloads-openai`.
 - A unidade mínima de comparação continua sendo `workload + modelo + reasoning effort`, conforme a seção 3.2; não comparar apenas nomes de modelos.
-- O laboratório também deve permitir à governança do projeto distinguir se um problema observado de entrega está principalmente em modelo/effort, contexto, contrato de saída, uso de tools, continuidade, eficiência de contexto ou necessidade real de orquestração agentic.
+- Evoluções futuras podem permitir à governança distinguir se um problema observado de entrega está principalmente em modelo/effort, contexto, contrato de saída, uso de tools, continuidade, eficiência de contexto ou necessidade real de orquestração agentic.
 - Princípio de decisão: medir antes de promover uma combinação de modelo + effort ou uma capacidade de execução como configuração preferencial.
 
 ### 5.2 Métricas e método
 
-- O laboratório deverá aplicar o protocolo da seção 4.1 e as regras de custo das seções 3.2 e 3.3 sobre a mesma tarefa representativa, mantendo constantes as demais variáveis sempre que possível.
+- Os testes aplicam o protocolo da seção 4.1 e as regras de custo das seções 3.2 e 3.3 sobre a mesma tarefa representativa, mantendo constantes as demais variáveis sempre que possível.
 - Para cada combinação testada, avaliar: qualidade da entrega, taxa de sucesso, necessidade de correção humana, `input_tokens`, `cached input tokens` quando aplicável, `output_tokens`, `reasoning_tokens`, custo financeiro efetivo, latência e estabilidade/repetibilidade.
 
 | Configuração conceitual | Qualidade | Custo | Latência |
@@ -148,16 +159,16 @@
 
 ### 5.4 Escopo e limites
 
-- Esta seção registra somente uma capacidade futura de avaliação; não representa laboratório já implementado.
-- Não define banco, tabela, rota, dashboard, job, engine, agente, automação, migration, código de benchmarking ou nova infraestrutura.
-- A forma de implementação do laboratório permanece em aberto para decisão futura baseada no recorte que vier a planejá-lo.
+- A implementação atual é a menor superfície comparativa da E21.3.3 e mantém resultados, avaliações e métricas somente no estado transitório da sessão.
+- Não define banco, tabela, dashboard, job, engine, agente, automação, migration ou nova infraestrutura.
+- Evoluções além do método textual implementado permanecem condicionadas ao roadmap e a novo recorte aprovado.
 - O escopo atual deste documento permanece nos workloads do produto/API. Codex App, tasks e custom agents podem ser extensão futura do conceito, mas seu consumo e sua cobrança não devem ser tratados como equivalentes aos custos da API sem verificação específica.
 
 ### 5.5 Governança e fonte dinâmica
 
-- O laboratório deve apoiar decisões futuras por workload; não transforma um modelo em padrão universal, `high`, `xhigh` ou `max` em effort padrão nem o modelo mais caro em escolha automática para tarefas críticas.
+- Testes OpenAI apoiam decisões por workload; não transformam um modelo em padrão universal, `high`, `xhigh` ou `max` em effort padrão nem o modelo mais caro em escolha automática para tarefas críticas.
 - Não manter nesta seção catálogo permanente de preços, modelos disponíveis, efforts, parâmetros ou capacidades específicas da API; esses elementos permanecem voláteis conforme a seção 1.
-- Quando o laboratório vier a ser planejado ou implementado, consultar a documentação oficial vigente da OpenAI, preferencialmente via `$openai-docs` no Codex.
+- Antes de cada novo recorte comparativo, consultar a documentação oficial vigente da OpenAI, preferencialmente via `$openai-docs` no Codex.
 - O registro interno deve preservar principalmente objetivo, critérios, método, métricas e princípios de decisão.
 
 ### 5.6 Recursos candidatos à experimentação

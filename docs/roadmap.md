@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 26/08/2026
-• Versão: v1.5.190
+• Versão: v1.5.191
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -3057,27 +3057,37 @@ Repositório — Ajustados
 
 21.3.1 Objetivo e status
 - Objetivo: produzir comparações reproduzíveis por workload considerando qualidade, sucesso, necessidade de correção humana, usage, latência, custo e estabilidade.
-- Status: Definida em plano-base v2 aprovado; implementação não iniciada.
+- Status: E21.3.3 concluída em 26/08/2026; E21.3.4 permanece prevista, condicionada e não iniciada.
 
 21.3.2 Registros do recorte
+- Repositório:
+  - Criados:
+    - `app/admin/(protected)/testes-openai/`
+    - `lib/lp-builder/adapters/landingPageDraftComparisonAdapter.ts`
+    - `lib/lp-builder/landingPageDraftComparison.ts`
+  - Ajustados:
+    - `app/admin/(protected)/workloads-openai/page.tsx`
+    - `app/admin/(protected)/workloads-openai/validation-cases.tsx`
+    - `components/admin/adminNavigation.ts`
+    - `lib/lp-builder/landing-page-draft-generation-validation-cases.ts`
+    - `lib/lp-builder/landingPageDraftGeneration.ts`
+    - `lib/openai-workloads/`
 - Referências:
   - Plano-base aprovado: `docs/lousa-plano-base-e21-3.md`.
   - Resumos decisórios reproduzíveis: `docs/openai-model-snapshot.md` — seção 4.
+  - Regras técnicas de configuração e testes: `docs/base-tecnica.md` — seção 3.16.
 
 21.3.3 Comparação representativa do workload textual de Landing Page
-- Status: Planejada; implementação não iniciada.
+- Status: Concluída em 26/08/2026 após implementação, validações determinísticas, Preview autenticado integral e decisão humana registrada.
 - Automação: não.
 - Conteúdo:
-  - comparar `landing_page_draft_generation` com a revisão ativa do ambiente como baseline e um conjunto total de 2 a 6 configurações de `modelo + reasoning effort`, usando somente novas candidatas elegíveis no catálogo;
-  - preservar a E19.4 como fonte funcional do workload sem reabri-la e a E21.2.5 como autoridade de catálogo e lifecycle;
-  - congelar a BSG e reutilizar a mesma fixture v4 autorizada de `Corretor Imóveis`, sem dados reais, mudança de prompt, contexto, tools, contrato funcional ou arquitetura de IA;
-  - apresentar resultados cegos por alias e registrar validade, qualidade, correção humana e comentário opcional antes de revelar modelo, effort, usage e latência;
-  - manter custo como não confirmado no runtime; eventual conclusão financeira depende de tarifas oficiais aplicáveis confirmadas;
-  - permitir repetições somente para a baseline e até dois finalistas, sem declarar estabilidade antes delas;
-  - apresentar trade-offs e exigir decisão humana ou `evidência insuficiente`, sem vencedor, ativação, promoção ou persistência automáticos;
-  - separar fisicamente **Configuração OpenAI** em `/admin/workloads-openai` de **Testes OpenAI** em `/admin/testes-openai`; a primeira preserva catálogo, lifecycle e **Validar candidata** como prova técnica, enquanto a segunda contém somente a comparação E21.3 e não cria candidata, ativa configuração ou altera Production;
-  - reutilizar shell administrativo, guards, catálogo, read models, transporte e observabilidade vigentes, sem banco, dashboard, submenu, serviço, API, job, agente, automação ou infraestrutura adicional;
-  - validar em Preview papéis positivo/negativo, desktop/mobile, estados materiais, reconhecimento do próximo passo, acessibilidade proporcional e ausência de efeito no lifecycle.
+  - `/admin/testes-openai` compara de 2 a 6 configurações de `landing_page_draft_generation`, inclui uma única vez a revisão ativa do ambiente como baseline e aceita somente candidatas elegíveis no catálogo;
+  - a comparação preserva a BSG, reutiliza a fixture v4 sintética de `Corretor Imóveis` e o transporte funcional vigente, apresenta resultados cegos antes de modelo, effort, usage e latência e permite repetição apenas da baseline e de até dois finalistas;
+  - **Configuração OpenAI** permanece separada em `/admin/workloads-openai`, com **Validar candidata** limitado à prova técnica e com a E21.2.5 como única autoridade de candidata, revisão, ativação, rollback e histórico;
+  - a rodada representativa comparou `gpt-5.6-luna + max`, `gpt-5.6-terra + low` e `gpt-5.6-luna + low`, repetiu baseline e `gpt-5.6-luna + low` e terminou com decisão humana de `evidência insuficiente`, sem vencedor ou alteração da baseline;
+  - custo permaneceu não confirmado, resultados e avaliações permaneceram transitórios e nenhuma operação criou candidata, promoveu revisão, ativou configuração, persistiu benchmark ou alterou Production;
+  - o Preview passou nos gates desktop/mobile, papel positivo/negativo, estados materiais, reconhecimento do próximo passo e do lifecycle, acessibilidade proporcional e ausência de erro visível de runtime;
+  - E19.4, banco, prompt, contexto, tools, contrato funcional, arquitetura de IA e Production permaneceram inalterados.
 
 21.3.4 Comparação do workload de imagem da Landing Page
 - Status: Prevista e condicionada; implementação não iniciada.
