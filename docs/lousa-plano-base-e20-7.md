@@ -54,6 +54,23 @@
 - `primary_service_or_offer` permanece no domínio da configuração/oferta da LP e não deve ser convertido em taxon por conveniência.
 - Essa separação evita explosão taxonômica por produto, serviço, campanha ou página.
 
+### 2.5. Especialização da geração e portfólio de ofertas da LP
+
+- A identidade taxonômica da conta permanece estável, mas uma Landing Page pode precisar de contexto mais especializado quando a oferta corresponde a um descendente preparado do taxon da conta.
+- Direção funcional aprovada para aprofundamento: separar `taxon primário da conta` de `taxon de geração da LP`; o segundo pode ser o próprio taxon primário ou um descendente ativo e preparado, sem reclassificar a conta.
+- A pesquisa integral não forma uma segunda árvore: ela continua vinculada ao taxon correspondente. Ao usar um descendente como contexto de geração, pesquisa E20.5 e resolução E20.2 devem permanecer alinhadas à mesma cadeia taxonômica até esse descendente.
+- Exemplo: conta em `Odontologia` pode gerar uma LP genérica com a pesquisa de `Odontologia` ou uma LP de `Implante dentário` usando o descendente preparado `Implante dentário`, sua pesquisa integral e a resolução E20.2 `universal → segmento → Odontologia → Implante dentário`.
+- A UX não deve exigir que o cliente compreenda `taxon`, `ultranicho`, E20.2, E20.5 ou E20.6. A pergunta de produto deve ser equivalente a `O que esta página vai divulgar?`.
+- A Landing Page pode ter foco em um serviço principal ou apresentar vários serviços do negócio. Esses casos não devem ser confundidos:
+  - página especializada: uma oferta principal orienta o foco comercial e pode selecionar um descendente preparado como contexto de geração;
+  - página ampla: pode apresentar vários serviços do negócio e normalmente permanece no taxon da conta como contexto de geração;
+  - página especializada pode mencionar serviços secundários sem transformar todos em ofertas principais nem em novos taxons.
+- Direção de UX aprovada para aprofundamento: o negócio mantém um conjunto de serviços/ofertas reutilizáveis; ao configurar a LP, o humano pode escolher `um serviço principal` ou `vários serviços`, selecionar itens já conhecidos e acrescentar item livre quando necessário.
+- A seleção de vários serviços deve ser opcional por LP. Ela serve, por exemplo, para uma página institucional de `Odontologia` que queira apresentar `Implante dentário`, `Clareamento`, `Extração de siso` e `Tratamento de canal` na mesma página.
+- O contrato atual `business_offerings_summary` é texto livre, opcional e não exaustivo; sozinho, não oferece a estrutura necessária para uma UX de selecionar quatro entre vários serviços. A eventual representação estruturada de portfólio compartilhado e seleção específica por LP deve ser avaliada pela E20.2/E19.5 no menor desenho necessário, sem assumir agora field, tabela, coluna ou persistência.
+- `primary_service_or_offer` continua singular enquanto o contrato vigente da E19.5 não for deliberadamente alterado; página multi-serviço não implica automaticamente múltiplas ofertas principais.
+- Itens livres repetidamente informados por diferentes contas podem se tornar sinal de demanda para pesquisa e eventual novo ultranicho, mas nunca criam taxon ou pesquisa automaticamente. A forma de detectar, agregar e propor esses sinais pertence a recorte futuro e não autoriza job, agente ou automação neste rascunho.
+
 ## 3. Rota conceitual da primeira parte — preparação do taxon
 
 ### 3.1. Sequência
@@ -89,6 +106,9 @@
 ### 5.1. Debate pendente
 
 - Definir o menor enforcement necessário para impedir que `segment` seja tratado como taxon servível por E20.5/E20.6/E19, sem duplicar validações já existentes.
+- Definir o contrato funcional exato do `taxon de geração da LP`, inclusive default, confirmação humana, troca posterior e efeito sobre a identidade comercial da LP.
+- Definir se e como o portfólio compartilhado do negócio precisa evoluir de `business_offerings_summary` livre para representação estruturada, preservando a menor complexidade e sem criar catálogo avançado de ofertas por antecipação.
+- Definir a UX final para `um serviço principal` versus `vários serviços`, inclusive como serviços livres entram sem virar taxon automaticamente.
 - Verificar se a disponibilidade comercial E20.4 precisa ser implementada para o MVP imediato ou apenas formalizada antes da abertura para novos clientes.
 - Definir a segunda parte da rota: critérios de uma conta concreta para criar e gerar suas LPs quando o taxon já estiver preparado e comercialmente elegível.
 - Somente após o fechamento dessas decisões consolidar plano-base v1, atualizar `docs/roadmap.md` e autorizar implementação.
