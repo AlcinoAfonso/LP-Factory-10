@@ -60,6 +60,7 @@
   - comentário curto opcional.
 - A UX prioriza qualidade antes de eficiência; métricas de usage, latência e custo aparecem depois da avaliação qualitativa.
 - A primeira passada usa uma execução por configuração/caso; repetições adicionais ficam restritas à baseline e a um ou dois finalistas quando forem necessárias para avaliar estabilidade, evitando multiplicar custo de todas as combinações.
+- A primeira passada recebe um `roundId` opaco e um `roundToken` autenticado gerados no servidor. O token usa HMAC com separação de domínio e a `OPENAI_API_KEY` server-side já autorizada, contém somente ambiente, fixture/contratos, baseline e conjunto inicial de configurações e não oferece confidencialidade. Uma segunda passada, quando solicitada pelo humano, revalida o token e reutiliza esse identificador, a mesma fixture e a mesma BSG, aceitando somente a baseline e até dois finalistas da rodada inicial; estabilidade permanece explicitamente `não avaliada` para qualquer configuração sem ao menos uma repetição focalizada.
 - O piloto pode começar com o caso real já validado de `Corretor Imóveis`; uma recomendação que pretenda generalizar a troca da configuração textual deve buscar evidência em pelo menos dois contextos válidos distintos quando tais contextos existirem no produto. Ausência de segundo contexto não invalida o piloto, mas limita a força da generalização.
 - A residência física preferida da experiência é a superfície existente `/admin/workloads-openai`, sem rota nova nem dashboard separado; o detalhamento técnico dessa composição fica para a v2, sem inventar nova infraestrutura.
 - Quando tarifa oficial aplicável estiver divergente ou não confirmada, a comparação pode prosseguir com qualidade, usage e latência, mas o custo deve aparecer como não confirmado para decisão e não pode sustentar conclusão financeira definitiva.
@@ -76,6 +77,7 @@
 - Processamento: executar o mesmo caso em cada configuração selecionada, mantendo constantes as demais variáveis da BSG, e coletar a observabilidade segura já disponível.
 - Validação: rejeitar comparação se casos, entradas, contrato ou critérios mudarem entre configurações; separar falha técnica de resultado funcional inválido.
 - Persistência: não criar banco, tabela ou segunda residência neste recorte; resultados, avaliações e métricas existem somente no estado transitório da sessão e são perdidos ao recarregar a página. O resumo decisório final pertence a `docs/openai-model-snapshot.md`, e a evidência extensa pode permanecer no PR/artefato da execução.
+- Proveniência: a baseline preserva sua fonte e revisão ativas. Configurações apenas elegíveis no catálogo usam a fonte explícita `model_catalog_comparison` e uma revisão experimental derivada das versões do modelo e do parâmetro no catálogo; nunca recebem `supabase_operational`, revisão ativa fictícia ou elegibilidade de lifecycle.
 - Consumo: humano compara qualidade primeiro, depois eficiência, e decide se alguma configuração merece seguir para o lifecycle operacional E21.2.5.
 - Fallback: ausência de evidência suficiente preserva a configuração ativa atual; não há promoção automática nem troca silenciosa de baseline.
 
@@ -101,6 +103,7 @@
 - Não somar todas as métricas em pontuação universal opaca.
 - Primeiro eliminar configurações que não cumpram validade, segurança ou qualidade mínima.
 - Entre as configurações aprovadas, favorecer a menor configuração que mantenha qualidade suficiente com melhor relação de custo, latência e estabilidade.
+- O sistema não escolhe automaticamente entre resultados aprovados e não aplica desempate oculto: ele apresenta trade-offs observados, permite ao humano confirmar uma recomendação específica ou concluir `evidência insuficiente` quando nenhuma configuração for inequivocamente preferível.
 - Ganho pequeno de qualidade não justifica automaticamente aumento desproporcional de custo ou latência.
 - A recomendação é específica do workload, da BSG congelada e do conjunto de casos avaliados.
 - Se nenhuma configuração atingir qualidade suficiente, registrar o limite observado sem ampliar a E21.3; eventual evolução de prompt, contexto, pesquisa, tools ou arquitetura de IA pertence a recorte posterior de BSG.
@@ -108,30 +111,32 @@
 ### 2.4. UX conceitual
 
 - Etapa 1 — escolher workload:
-  - exibir configuração ativa como baseline de referência;
+  - exibir `landing_page_draft_generation` como contexto fixo e sua configuração ativa como baseline de referência;
   - não alterar lifecycle.
 - Etapa 2 — escolher configurações:
   - selecionar de 2 a 6 combinações pertinentes;
   - novas candidatas devem ser elegíveis no catálogo E21.2.5;
   - a baseline ativa permanece comparável se tiver sido posteriormente indisponibilizada no catálogo, somente como revisão ativa de referência; essa exceção de comparação não cria elegibilidade para nova candidata nem altera disponibilidade ou lifecycle.
 - Etapa 3 — escolher caso(s) representativo(s):
-  - no piloto E21.3.3, usar exclusivamente a fixture autorizada e versionada de `Corretor Imóveis` no contrato v4;
+  - exibir como contexto fixo a fixture autorizada e versionada de `Corretor Imóveis` no contrato v4;
   - manter o mesmo conjunto e a mesma BSG para todas as configurações.
 - Etapa 4 — executar e avaliar cegamente:
   - apresentar entregas como `Resultado A/B/C...`, sem revelar configuração ou eficiência;
+  - projetar de cada candidata somente o contrato textual necessário à avaliação — seções ordenadas, papéis semânticos, títulos, corpo, listas e rótulo textual do CTA — sem inventar imagem, destino de conversão, identidade técnica ou revisão materializada;
   - registrar validade, qualidade, correção humana e comentário opcional.
   - executar as configurações concorrentemente dentro do limite de 2 a 6, com isolamento de falha por resultado e sem exceder a duração hospedada da action;
 - Etapa 5 — revelar identidade e eficiência:
   - revelar modelo + effort de cada resultado;
   - apresentar usage, reasoning, latência, custo quando válido e estabilidade.
 - Etapa 6 — concluir:
-  - apresentar configuração recomendada, motivos, limitações e trade-offs;
+  - apresentar trade-offs e permitir que o humano confirme uma configuração recomendada ou registre `evidência insuficiente`, com motivos e limitações;
+  - gerar resumo transitório copiável antes de qualquer reload, sem persistência operacional;
   - oferecer somente continuação humana para o lifecycle E21.2.5, sem ativação automática.
 
 ### 2.5. Critérios de experiência
 
 - A experiência deve ser compreensível por função de negócio, sem exigir IDs técnicos como informação principal.
-- A validação de UX deve comprovar que o `platform_admin` reconhece o próximo passo correto em cada etapa — escolher workload, escolher configurações e casos, avaliar, revelar e concluir — a partir de nomes, estados e ações visíveis, sem depender de memorização de IDs técnicos; não instituir tempo de clique ou telemetria obrigatória.
+- A validação de UX deve comprovar que o `platform_admin` reconhece o próximo passo correto em cada etapa — confirmar workload e fixture fixos, escolher configurações, avaliar, revelar e concluir — a partir de nomes, estados e ações visíveis, sem depender de memorização de IDs técnicos; não instituir tempo de clique ou telemetria obrigatória.
 - Desktop deve favorecer comparação lado a lado; mobile pode empilhar resultados sem perder associação entre resultado, avaliação e métricas.
 - Estados de execução, erro, resultado inválido, revelação e conclusão precisam ser explícitos.
 - A identidade da configuração não pode ser revelada antes de a avaliação qualitativa da rodada ser registrada.
@@ -148,17 +153,25 @@
   - a experiência permanece na rota existente `/admin/workloads-openai`; `page.tsx` conserva SSR, `requirePlatformAdmin()` e composição dos read models;
   - a UI reside em `_components/OpenAiLandingPageTextComparison.tsx`, sem Supabase, secret ou chamada direta ao provider;
   - `comparisonActions.ts` reexecuta `requirePlatformAdmin()`, valida ambiente, fixture e conjunto único de 2 a 6 configurações, relê baseline ativa e catálogo no servidor e orquestra a execução;
+  - `comparisonActions.ts` declara `maxDuration = 300`; cada chamada ao provider preserva timeout individual máximo de 120 segundos e as configurações da rodada executam concorrentemente com isolamento de falha por resultado;
+  - `comparisonActions.ts` emite e verifica o `roundToken` com HMAC e separação de domínio, reutilizando `OPENAI_API_KEY` somente no servidor, sem nova credencial, cookie, banco ou sigilo alegado para o token;
   - o transporte, prompt, Structured Output, parser e validação permanecem sob `lib/lp-builder/landingPageDraftGeneration.ts`; o adapter server-only `lib/lp-builder/adapters/landingPageDraftComparisonAdapter.ts` fornece a configuração explícita e a credencial, reutilizando esse caminho sem parser ou chamada OpenAI paralelos;
+  - o contrato comum acrescenta `model_catalog_comparison` somente como proveniência experimental verdadeira. O resolver runtime nunca produz essa fonte; o adapter da comparação a associa às versões correntes do modelo e parâmetro do catálogo, enquanto a baseline conserva `supabase_operational` e sua revisão ativa;
   - a fixture v4 e os contratos puros da comparação residem em `lib/lp-builder/landingPageDraftComparison.ts`; não importar nem reutilizar `proofLandingPageContext`, que declara contrato v3 e é incompatível com o gerador textual v4;
   - a comparação usa a projeção pública do catálogo e os adapters server-side E21 existentes; não chama save, prova, promoção, ativação, rollback nem qualquer RPC de mutação;
   - a ordem cega é embaralhada no servidor por rodada e usa aliases `Resultado A/B/C...`; identidade e métricas permanecem não renderizadas até o registro completo da régua humana no client;
-  - o resumo de conclusão é derivado deterministicamente das avaliações registradas e das métricas disponíveis, sem pontuação opaca, promoção ou persistência.
+  - a conclusão elimina deterministicamente apenas resultados inválidos, inseguros ou abaixo da qualidade mínima, apresenta trade-offs dos restantes e exige confirmação humana da recomendação ou de `evidência insuficiente`, sem pontuação opaca, desempate automático, promoção ou persistência;
+  - repetições focalizadas aceitam somente a baseline e até dois finalistas associados ao `roundId` inicial; agregam resultados por configuração sem declarar estabilidade antes de repetição;
+  - a projeção cega é textual e completa para avaliação editorial, mas não reutiliza `LandingPageRenderer`, que exige mídia, destino e metadados de revisão inexistentes no experimento;
+  - antes de recarregar, a UI oferece resumo copiável com ambiente, workload, fixture e versões dos contratos, baseline e revisão, combinações, avaliações, gates de validade, usage, latência, custo não confirmado, repetições, limitações e decisão humana.
 - Artefatos previstos:
   - ajustar `app/admin/(protected)/workloads-openai/page.tsx` para compor o read model da comparação;
   - criar `app/admin/(protected)/workloads-openai/_components/OpenAiLandingPageTextComparison.tsx`;
   - criar `app/admin/(protected)/workloads-openai/comparisonActions.ts`;
   - criar `lib/lp-builder/landingPageDraftComparison.ts`;
   - criar `lib/lp-builder/adapters/landingPageDraftComparisonAdapter.ts`;
+  - ajustar `lib/lp-builder/landingPageDraftGeneration.ts` apenas para aceitar a configuração explícita validada pelo adapter experimental, preservando o resolver runtime como default e sem duplicar request, parser ou validator;
+  - ajustar `lib/openai-workloads/contracts.ts`, `lib/openai-workloads/registry.ts` e os validators estritamente para reconhecer e validar `model_catalog_comparison` como proveniência experimental, sem permitir que o resolver runtime a produza;
   - ampliar `lib/lp-builder/landing-page-draft-generation-validation-cases.ts` e `app/admin/(protected)/workloads-openai/validation-cases.tsx` com casos focais da comparação;
   - atualizar por ABC, quando confirmado pelo estado final, `docs/roadmap.md`, `docs/base-tecnica.md` e `docs/openai-model-snapshot.md`; este último deve distinguir Development de Preview/Production e registrar ambiente, revisão ativa, data, combinações efetivamente avaliadas, limitações e decisão.
 - Contrato repo-only de schema:
@@ -180,6 +193,7 @@
   - cada execução de QA em Preview deve registrar deployment e ambiente, papel exercitado, viewport, fluxo ou estado validado e resultado observado; ferramenta automatizada pode apoiar, mas não substitui a revisão manual;
   - aplicar os critérios WCAG 2.2 pertinentes à superfície e registrar evidência manual de operação por teclado, ordem e foco visível, nomes e rótulos acessíveis, feedback de sucesso e erro, ausência de interação exclusiva por hover, contraste e alvos de toque; justificar cada critério marcado como N/A, usar auditoria automática apenas como apoio e não declarar conformidade WCAG 2.2 integral sem auditoria própria;
   - validar deterministicamente que a baseline ativa é incluída uma única vez, candidatas indisponíveis são recusadas, todas as configurações recebem a mesma fixture v4, a identidade permanece não renderizada antes do registro completo e falha de um resultado não altera os demais nem o lifecycle;
+  - validar proveniência `model_catalog_comparison` sem revisão ativa fictícia, `maxDuration = 300`, timeout individual, projeção textual sem renderer operacional, segunda passada limitada, estabilidade ausente sem repetição, confirmação humana e completude do resumo copiável;
   - executar `npm ci`, validações focais, `npm run check` e `git diff --check` antes do gate do Analista;
   - se a qualidade máxima permanecer insuficiente, registrar o limite da BSG vigente sem abrir otimização de BSG neste recorte.
 
