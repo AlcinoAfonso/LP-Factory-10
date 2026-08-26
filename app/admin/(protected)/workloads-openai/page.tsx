@@ -10,16 +10,13 @@ import {
   readOpenAiModelCatalog,
   type OpenAiAdministrativeConfigurationReadResult,
   type OpenAiModelCatalogReadResult,
-  type OpenAiTextWorkloadConfigurationOptions,
 } from "@/openai-workloads";
 import { projectOpenAiWorkloadConfigurationOptions } from "@/openai-workloads/adapters/modelCatalogAdapterCore";
 import { OpenAiConfigurationManager } from "./_components/OpenAiConfigurationManager";
-import { OpenAiLandingPageTextComparison } from "./_components/OpenAiLandingPageTextComparison";
 import { OpenAiModelCatalogManager } from "./_components/OpenAiModelCatalogManager";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
-export const maxDuration = 300;
 
 const effortLabels = {
   none: "Nenhum",
@@ -60,45 +57,18 @@ export default async function OpenAiWorkloadsPage() {
   const configurationOptions = catalogModels
     ? projectOpenAiWorkloadConfigurationOptions(catalogModels, presentations)
     : [];
-  const comparisonOptions = configurationOptions.find(
-    (option): option is OpenAiTextWorkloadConfigurationOptions =>
-      option.workload === "landing_page_draft_generation" &&
-      option.apiKind === "responses_text",
-  );
-  const comparisonBaselines = configurationRead.ok
-    ? configurationRead.value
-        .flatMap((unit) =>
-          unit.workload === "landing_page_draft_generation" &&
-          unit.activeRevision.apiKind === "responses_text"
-            ? [{
-                environment: unit.environment,
-                model: unit.activeRevision.model,
-                reasoningEffort: unit.activeRevision.reasoningEffort,
-                source: "supabase_operational" as const,
-                revision: String(unit.activeRevision.number),
-              }]
-            : [],
-        )
-    : [];
-
   return (
     <div className="space-y-8">
       <AdminPageHeader
         eyebrow="Governança OpenAI"
-        title="Workloads OpenAI"
-        description="Gerencie o catálogo global de novas escolhas e, separadamente, o lifecycle ativo de cada workload em Preview e Production. Nenhuma candidata altera o runtime antes da ativação humana."
+        title="Configuração OpenAI"
+        description="Gerencie catálogo, disponibilidade e lifecycle de cada workload em Preview e Production. Validar candidata comprova somente a configuração técnica; testes comparativos permanecem em uma superfície separada."
         meta={`${managedWorkloads.length} workloads técnicos`}
       />
 
       <OpenAiModelCatalogManager
         models={catalogModels}
         readErrorCode={catalogRead.ok ? null : catalogRead.error.code}
-      />
-
-      <OpenAiLandingPageTextComparison
-        baselines={comparisonBaselines}
-        options={comparisonOptions?.options ?? []}
-        catalogAvailable={catalogModels !== null}
       />
 
       {configurationRead.ok ? (

@@ -64,14 +64,26 @@ export const adminAreas: AdminArea[] = [
     ],
   },
   {
-    title: 'Workloads OpenAI',
+    title: 'Configuração OpenAI',
     href: '/admin/workloads-openai',
-    description: 'Inventário read-only das configurações OpenAI conhecidas.',
+    description: 'Catálogo e lifecycle operacional dos workloads OpenAI.',
     status: 'Disponível',
     scope: [
-      'Configuração efetiva dos workloads de produto',
+      'Catálogo e disponibilidade para novas candidatas',
+      'Configuração ativa, candidata e validação técnica',
+      'Ativação humana, rollback e histórico',
       'Referência operacional do Supabase Inspect',
-      'Sem mutações nem chamadas externas',
+    ],
+  },
+  {
+    title: 'Testes OpenAI',
+    href: '/admin/testes-openai',
+    description: 'Comparações experimentais dos workloads OpenAI.',
+    status: 'Disponível',
+    scope: [
+      'Caso e configurações comparáveis',
+      'Avaliação cega e revelação de eficiência',
+      'Sem candidata, ativação ou alteração de Production',
     ],
   },
   {

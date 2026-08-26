@@ -254,8 +254,9 @@ export function OpenAiLandingPageTextComparison({
       </div>
 
       <div className="mt-5 rounded-md border border-blue-200 bg-blue-50 p-4 text-sm leading-6 text-blue-950">
-        Esta experiência não salva candidata, não promove revisão e não ativa configuração.
-        Qualquer continuação operacional permanece humana no lifecycle E21.2.5.
+        Esta experiência não cria nem valida tecnicamente candidata, não promove revisão,
+        não ativa configuração e não altera Production. Qualquer adoção retorna à
+        Configuração OpenAI e permanece humana no lifecycle E21.2.5.
       </div>
 
       <fieldset className="mt-6" disabled={pending || Boolean(round)}>
@@ -286,7 +287,7 @@ export function OpenAiLandingPageTextComparison({
         )}
 
         <div className="mt-6">
-          <h3 className="text-sm font-semibold text-foreground">2. Candidatas do catálogo</h3>
+          <h3 className="text-sm font-semibold text-foreground">2. Configurações do catálogo</h3>
           <p className="mt-1 text-sm text-muted-foreground">
             Escolha de 1 a 5 candidatas; com a baseline, a rodada terá de 2 a 6 configurações.
           </p>

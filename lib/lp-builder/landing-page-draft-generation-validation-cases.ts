@@ -259,7 +259,7 @@ const cases = [
     run: () => {
       const action = readFileSync(
         new URL(
-          "../../app/admin/(protected)/workloads-openai/comparisonActions.ts",
+          "../../app/admin/(protected)/testes-openai/comparisonActions.ts",
           import.meta.url,
         ),
         "utf8",
