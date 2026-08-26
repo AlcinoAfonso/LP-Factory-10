@@ -1,0 +1,89 @@
+# Matriz de consolidação — E21.3
+
+## 1. Referências imutáveis
+
+- Caso: `E21.3 — Evidências e avaliação de custo-benefício dos workloads OpenAI`.
+- PR de origem: `#813`, mergeado em `main`.
+- Branch/head do PR de origem: `codex-app/e21-3-evidencias-custo-beneficio@8c18690b84962cc999d20e4f795009483c71392a`.
+- Merge commit e base congelada: `4ecbe3a7138d227e24c2d17c68477a916c8fd864`.
+- Plano-base v1: `docs/lousa-plano-base-e21-3.md`, blob `08b5ed6bb6bca78d12ec131b06f38c854eb1963f`.
+- Snapshot de `docs/roadmap.md`: blob `a5cef958d3760cfbe2708b42b37e6d86dc4b16c1`.
+- Plano conceitual: `N/A`.
+- Plano-base v2 inicial: commit `f37c8655d4904882bc644d22204c9ed52d0157c9`, blob `420ee98edf33f6b609678466599f11c3205696e9`.
+- Delta da Passagem 1: commit `54bdcae459c7577309b2cda33d54e680c84d377f`, blob `af885bd6dd41f635b5b6d8a93afd415511a8bcb7`.
+- Plano-base v2 vigente: commit `53a81d4c484348d53c00619e6f226288f5d83f77`, blob `b43655863af6e38ac948c896ee6dcf6c6b35363a`.
+- Branch/worktree: `codex-app/e21-3-orquestracao` em `C:\Dev\GitHub\LP-Factory-10-e21`.
+
+## 2. Decisões humanas e limites
+
+- `DH-E21.3-01 = B`: usar fixture versionada, autorizada e representativa de `Corretor Imóveis`, no contrato v4 e sem dados reais.
+- `DH-E21.3-02 = A`: cegamento de apresentação, sem alegação de confidencialidade contra inspeção técnica.
+- `DH-E21.3-03 = A`: não implementar cálculo tarifário no runtime; custo permanece não confirmado e eventual cálculo é documental.
+- A baseline da rodada é a revisão ativa do ambiente; candidatas elegíveis usam proveniência experimental verdadeira e não revisão ativa fictícia.
+- A comparação não persiste resultados, não altera catálogo ou lifecycle, não cria banco, rota, dashboard, infraestrutura ou automação e não otimiza a BSG.
+- As classes usadas são `preservação`, `extensão adjacente necessária e proporcional` e `expansão`.
+- Oportunidade estratégica condicional não autoriza implementação neste recorte.
+
+## 3. Parecer estrutural
+
+Parecer integral preservado pelo orquestrador. Conclusão original: `bloqueado por decisão humana`; as três decisões foram resolvidas por `B/A/A` antes da consolidação da v2.
+
+| ID | Achado e classificação original | Relação com o escopo | Classe de consolidação | Tratamento | Destino/localização | Evidência |
+|---|---|---|---|---|---|---|
+| `GE-E21.3-01` | Objetivo, unidade de comparação, separação texto/imagem e residência aderentes. | Confirma a fronteira da v1. | preservação | Incorporado sem delta material. | Plano §§1–4. | BSG congelada, lifecycle humano e escopo negativo preservados. |
+| `GE-E21.3-02` | Ownership físico entre UI, action, adapters, catálogo e transporte estava aberto. | Necessário para evitar duplicação e acesso indevido. | extensão adjacente necessária e proporcional | Incorporado com rota existente, SSR/guard, componente client, action fina e adapter server-only que reutiliza o gerador E19.4. | Plano §3.1. | `page.tsx`, `OpenAiLandingPageTextComparison.tsx`, `comparisonActions.ts` e `landingPageDraftComparisonAdapter.ts`; sem parser ou transporte paralelo. |
+| `GE-E21.3-03` | Autoridade do caso admitia draft real ou fixture. | Mudava leitura de banco e tratamento de dados. | preservação | Decisão humana `B`: fixture v4 autorizada, sem leitura real. | Plano §§1.6, 2.4 e 3.1. | Mesmo pacote imutável para todas as configurações. |
+| `GE-E21.3-04` | Força do cegamento não estava definida. | Alterava boundary de confidencialidade e persistência. | preservação | Decisão humana `A`: cegamento somente apresentacional, explicitamente sem confidencialidade técnica. | Plano §§1.6, 2.4 e 3.1. | Identidade e métricas não renderizadas antes do registro completo. |
+| `GE-E21.3-05` | Residência tarifária runtime versus documental estava aberta. | Evita precisão financeira fabricada. | preservação | Decisão humana `A`: sem tabela ou cálculo monetário runtime. | Plano §§1.6, 2.2, 3.1 e 4.1. | Custo `não confirmado`; decisão financeira somente após fonte oficial confirmada. |
+| `GE-E21.3-06` | `proofLandingPageContext` v3 é incompatível com o gerador v4. | Impede reuso inválido e reabertura lateral da E21.2. | preservação | Incorporado: fixture própria v4 tipada; correção da prova v3 permanece fora do recorte. | Plano §§3.1 e 4.1. | Nenhum import ou cast da fixture de prova. |
+| `GE-E21.3-07` | Banco corretamente fora do recorte. | Preserva schema e lifecycle já aplicados. | preservação | Incorporado como contrato repo-only e proibição de RPC mutável. | Plano §§2.1, 3.1 e 4.1. | Diff sem migration, teste/snippet SQL, RLS, policy ou GRANT. |
+| `GE-E21.3-08` | Snapshot atribuía runtime hospedado ao `repo_catalog/v2`. | Baseline precisa refletir a revisão ativa real. | extensão adjacente necessária e proporcional | Incorporado: Preview/Production usam `supabase_operational`; Development preserva `repo_catalog/v2`; snapshot final deve corrigir a distinção. | Plano §§1.5 e 3.1. | Ambiente, fonte e revisão entram no resumo copiável e no ABC final aplicável. |
+
+## 4. Parecer de updates
+
+Parecer integral preservado pelo orquestrador. Veredito: `updates aplicáveis com patches autossuficientes`.
+
+| ID | Classificação original | Relação com o escopo | Classe de consolidação | Tratamento | Destino do update | Localização e evidência |
+|---|---|---|---|---|---|---|
+| `prod#14` | complementar; atual | Reconhecimento do próximo passo na experiência em etapas. | extensão adjacente necessária e proporcional | Incorporado e ajustado ao contexto fixo da E21.3.3, sem telemetria ou tempo de clique. | usar como referência, validação ou trava | Plano §2.5; confirmar contexto fixo, escolher configurações, avaliar, revelar e concluir. |
+| `prod#16` | complementar; atual | Nova composição administrativa exige QA manual rastreável. | extensão adjacente necessária e proporcional | Incorporado como gate manual de Preview por papel, viewport, estado e resultado. | usar como referência, validação ou trava | Plano §3.1; automação pode apoiar, não substituir inspeção manual. |
+| `prod#17` | complementar; atual | Interações, estados assíncronos e revelação exigem baseline acessível. | extensão adjacente necessária e proporcional | Incorporado como checklist WCAG 2.2 proporcional com N/A justificado e sem alegação integral. | usar como referência, validação ou trava | Plano §3.1; teclado, foco, labels, feedback, hover, contraste e alvos de toque. |
+| `vercel#1` | sobreposto; condicional | AI Gateway poderia centralizar métricas, mas substituiria transporte e observabilidade vigentes. | expansão | Não incorporado; oportunidade preservada sem Gateway, fallback ou budgets. | preservar como oportunidade estratégica condicional | Gatilho: lacuna mensurável da E21.1 ou multiprovider/fallback aprovado e comparação própria futura. |
+| `supa#69` | complementar; condicional | Trace Context poderia apoiar correlação em incidente futuro. | expansão | Não incorporado; oportunidade preservada sem upgrade, tracer ou drain. | preservar como oportunidade estratégica condicional | Gatilho: `requestId` insuficiente e tracer W3C/OpenTelemetry já aprovado. |
+| `prod#3` | complementar; condicional | RUM poderia separar latência percebida da inferência. | expansão | Não incorporado; oportunidade preservada sem Speed Insights ou novo gate. | preservar como oportunidade estratégica condicional | Gatilho: uso recorrente, hipótese mensurável, ownership e tratamento de dados confirmados. |
+
+## 5. Automação
+
+| ID | Achado | Classificação original | Relação com o escopo | Tratamento | Localização | Evidência |
+|---|---|---|---|---|---|---|
+| `AUTO-N/A` | Nenhuma fase contém `Automação: sim`. | N/A | Não há agente, job, workflow, cron ou rotina recorrente nova. | Gestor de Automações não acionado conforme regra condicional. | Plano v1 e v2. | Ocorrência literal `Automação: não`; avaliação formal: `N/A — nenhuma fase com Automação: sim`. |
+
+## 6. Passagem 1 e revisões delta
+
+Na Passagem 1, o Analista recebeu somente v1, v2, plano conceitual `N/A`, decisões humanas, roadmap, casos adjacentes e fontes técnicas. Nenhum parecer ou matriz foi exposto. A conclusão foi `aprovado com correções obrigatórias`.
+
+| ID | Correção obrigatória | Classe | Tratamento na v2 | Evidência do gate |
+|---|---|---|---|---|
+| `P1-E21.3-01` | Definir proveniência verdadeira para candidatas experimentais. | extensão adjacente necessária e proporcional | `model_catalog_comparison` com versões de catálogo; baseline preserva fonte/revisão ativa. | Revisão delta confirmou incorporação. |
+| `P1-E21.3-02` | Materializar duração hospedada verificável. | extensão adjacente necessária e proporcional | `maxDuration = 300` no `page.tsx`, timeout individual de 120 segundos e concorrência limitada. | Segunda revisão delta aprovou a residência no entrypoint. |
+| `P1-E21.3-03` | Evitar recomendação ou desempate automático arbitrário. | preservação | Eliminação apenas por gates mínimos; trade-offs e decisão humana ou `evidência insuficiente`. | Revisão delta confirmou incorporação. |
+| `P1-E21.3-04` | Tornar a repetição focalizada executável e associada à rodada inicial. | extensão adjacente necessária e proporcional | `roundId` autenticado no `roundToken`, baseline mais até dois finalistas e revalidação corrente do catálogo. | Segunda revisão delta aprovou autenticação e revalidação. |
+| `P1-E21.3-05` | Oferecer resumo transitório copiável completo. | extensão adjacente necessária e proporcional | Resumo inclui ambiente, contratos, baseline/revisão, combinações, avaliações, gates, usage, latência, custo não confirmado, repetições, limitações e decisão. | Revisão delta confirmou incorporação. |
+| `P1-E21.3-06` | Fixar workload/fixture e projetar conteúdo textual sem renderer operacional. | preservação | Contexto read-only, projeção de seções/copy/CTA sem mídia, destino ou revisão materializada. | Revisão delta confirmou incorporação. |
+
+A primeira revisão delta do commit `54bdcae459c7577309b2cda33d54e680c84d377f` exigiu três ajustes objetivos: mover `maxDuration` ao entrypoint, autenticar `roundId` e revalidar finalistas no catálogo. O commit `53a81d4c484348d53c00619e6f226288f5d83f77` incorporou os três e o mesmo Analista concluiu `aprovado para merge do plano-base v2`, liberando a auditoria da consolidação.
+
+## 7. Travas preservadas
+
+- Não otimizar ou comparar versões da BSG, alterar prompt/contexto/tools ou reabrir E19.4.
+- Não persistir benchmark, avaliação, usage ou histórico; não criar banco, rota, dashboard, infraestrutura ou automação.
+- Não alterar catálogo, candidata, prova, revisão, ativação ou rollback.
+- Não usar `supabase_operational` ou revisão ativa fictícia para candidata experimental.
+- Não implementar cálculo tarifário runtime nem conclusão financeira com tarifa divergente.
+- Não usar AI Gateway, tracing, RUM, fallback, budgets ou nova credencial.
+- Não alegar cegamento confidencial nem conformidade WCAG 2.2 integral.
+- Não iniciar E21.3.4 antes do QA humano do método textual e de candidatos de imagem comparáveis.
+
+## 8. Próximo gate
+
+Executar a Passagem 2 do mesmo Analista com os pareceres integrais e esta matriz. Avançar ao ABC do roadmap somente após `aprovado para merge do plano-base v2`.
