@@ -162,7 +162,10 @@ export function isValidResolvedOpenAiProductWorkload(
     (actual.source === "repo_catalog" &&
       actual.revision === workload.configuration.revision) ||
     (actual.source === "supabase_operational" &&
-      /^[1-9]\d*$/.test(actual.revision));
+      /^[1-9]\d*$/.test(actual.revision)) ||
+    (actual.id === "landing_page_draft_generation" &&
+      actual.source === "model_catalog_comparison" &&
+      /^catalog:m[1-9]\d*:p[1-9]\d*$/.test(actual.revision));
 
   return (
     actual.displayName === workload.displayName &&

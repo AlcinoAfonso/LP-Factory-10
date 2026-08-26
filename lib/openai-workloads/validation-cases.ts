@@ -21,6 +21,7 @@ import {
   createOpenAiWorkloadFailureEvent,
   createOpenAiWorkloadSuccessEvent,
   emitOpenAiWorkloadEvent,
+  isValidResolvedOpenAiProductWorkload,
   listOpenAiWorkloadInventory,
   listOpenAiWorkloadPresentations,
   normalizeOpenAiResponseUsage,
@@ -42,6 +43,38 @@ const taxonInputCatalogEvaluationWorkloadId =
 const landingPageImageWorkloadId = "landing_page_draft_image_generation" as const;
 
 const cases = [
+  {
+    name: "experimental catalog provenance validates only outside the runtime resolver",
+    run: async () => {
+      const baseline = await resolveOpenAiProductWorkload(
+        landingPageTextWorkloadId,
+        "development",
+      );
+      assert.equal(baseline.ok, true);
+      if (!baseline.ok) throw new Error("landing page baseline missing");
+      const experimental = {
+        ...baseline.value,
+        model: "gpt-5.6-terra",
+        reasoningEffort: "medium" as const,
+        source: "model_catalog_comparison" as const,
+        revision: "catalog:m2:p3",
+      };
+      assert.equal(isValidResolvedOpenAiProductWorkload(experimental), true);
+      assert.equal(
+        isValidResolvedOpenAiProductWorkload({
+          ...experimental,
+          revision: "1",
+        }),
+        false,
+      );
+      assert.equal(baseline.value.source, "repo_catalog");
+      const resolverSource = readFileSync(
+        new URL("./resolve.ts", import.meta.url),
+        "utf8",
+      );
+      assert.doesNotMatch(resolverSource, /model_catalog_comparison/);
+    },
+  },
   {
     name: "niche request uses resolved model and effort with deterministic transport",
     run: async () => {

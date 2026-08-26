@@ -14,8 +14,17 @@ const detail = readFileSync(
   new URL("./_components/OpenAiWorkloadDetail.tsx", import.meta.url),
   "utf8",
 );
+const comparison = readFileSync(
+  new URL("./_components/OpenAiLandingPageTextComparison.tsx", import.meta.url),
+  "utf8",
+);
 const actions = readFileSync(new URL("./actions.ts", import.meta.url), "utf8");
-const ui = `${page}\n${manager}\n${catalog}\n${detail}`;
+const comparisonActions = readFileSync(
+  new URL("./comparisonActions.ts", import.meta.url),
+  "utf8",
+);
+const lifecycleUi = `${page}\n${manager}\n${catalog}\n${detail}`;
+const ui = `${lifecycleUi}\n${comparison}`;
 
 assert.match(page, /const gate = await requirePlatformAdmin\(\)/);
 assert.match(page, /redirect\("\/auth\/login\?next=%2Fadmin%2Fworkloads-openai"\)/);
@@ -31,6 +40,8 @@ assert.match(page, /projectOpenAiWorkloadConfigurationOptions/);
 assert.doesNotMatch(page, /listOpenAiWorkloadConfigurationOptions/);
 assert.match(page, /<OpenAiModelCatalogManager/);
 assert.match(page, /<OpenAiConfigurationManager/);
+assert.match(page, /<OpenAiLandingPageTextComparison/);
+assert.match(page, /maxDuration = 300/);
 assert.match(page, /Leitura administrativa indisponível/);
 assert.match(page, /Supabase Inspect/);
 assert.match(page, /Somente leitura/);
@@ -160,7 +171,38 @@ assert.doesNotMatch(ui, /from\s+["'][^"']*supabase/i);
 assert.doesNotMatch(ui, /\.rpc\s*\(/);
 assert.doesNotMatch(ui, /Database\s*\[/);
 assert.doesNotMatch(ui, /\bRow\b/);
-assert.doesNotMatch(ui, /benchmark|ranking|recomenda(?:ção|cao)/i);
+assert.doesNotMatch(lifecycleUi, /benchmark|ranking|recomenda(?:ção|cao)/i);
+
+for (const comparisonLabel of [
+  "Comparação textual da Landing Page",
+  "Avaliação cega",
+  "Revelar configurações e eficiência",
+  "Repetição focalizada",
+  "Decisão humana",
+  "Resumo transitório",
+  "Custo não confirmado",
+]) {
+  assert.match(comparison, new RegExp(comparisonLabel));
+}
+assert.match(comparison, /startLandingPageDraftComparisonAction/);
+assert.match(comparison, /repeatLandingPageDraftComparisonAction/);
+assert.match(comparison, /desktop|lg:grid-cols-2/i);
+assert.match(comparison, /sm:grid-cols/);
+assert.match(comparisonActions, /requirePlatformAdmin\(\)/);
+assert.match(comparisonActions, /createHmac/);
+assert.match(comparisonActions, /timingSafeEqual/);
+assert.match(comparisonActions, /resolveCatalogCandidate/);
+assert.doesNotMatch(comparison, /LandingPageRenderer/);
+assert.doesNotMatch(comparison, /from\s+["'][^"']*supabase/i);
+assert.doesNotMatch(comparison, /process\.env|OPENAI_API_KEY/);
+for (const mutation of [
+  "saveOpenAiConfigurationCandidate",
+  "promoteOpenAiConfigurationCandidate",
+  "activateOpenAiConfigurationRevision",
+  "rollbackOpenAiConfigurationRevision",
+]) {
+  assert.doesNotMatch(comparisonActions, new RegExp(mutation));
+}
 
 console.log("ok - E21.2.5 compact catalog, sticky workloads, lifecycle and UI boundaries");
 

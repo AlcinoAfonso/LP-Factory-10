@@ -46,7 +46,8 @@ export type OpenAiReasoningEffort = (typeof openAiReasoningEfforts)[number];
 export type OpenAiImageQuality = (typeof openAiImageQualities)[number];
 export type OpenAiConfigurationSource =
   | "repo_catalog"
-  | "supabase_operational";
+  | "supabase_operational"
+  | "model_catalog_comparison";
 export type OpenAiManagedWorkloadEnvironment = "production" | "preview";
 export type OpenAiWorkloadFailureCategory =
   (typeof openAiWorkloadFailureCategories)[number];

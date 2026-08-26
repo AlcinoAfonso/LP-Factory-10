@@ -9,6 +9,7 @@ import {
   createOpenAiWorkloadFailureEvent,
   createOpenAiWorkloadSuccessEvent,
   emitOpenAiWorkloadEvent,
+  isValidResolvedOpenAiProductWorkload,
   listOpenAiWorkloadInventory,
   normalizeOpenAiResponseUsage,
   resolveOpenAiProductWorkload,
@@ -69,6 +70,7 @@ type Dependencies = Readonly<{
   signal?: AbortSignal;
   environment?: OpenAiWorkloadEnvironment;
   workloadResolver?: OpenAiWorkloadResolverDependencies;
+  resolvedWorkload?: ResolvedOpenAiProductWorkload;
 }>;
 
 export async function generateLandingPageDraftCandidate(
@@ -77,22 +79,28 @@ export async function generateLandingPageDraftCandidate(
 ): Promise<LandingPageDraftTextResult> {
   const environment =
     dependencies.environment ?? resolveOpenAiWorkloadEnvironment();
-  const resolved = await resolveOpenAiProductWorkload(
-    "landing_page_draft_generation",
-    environment,
-    dependencies.workloadResolver,
-  );
+  let workload = dependencies.resolvedWorkload;
+  if (!workload) {
+    const resolved = await resolveOpenAiProductWorkload(
+      "landing_page_draft_generation",
+      environment,
+      dependencies.workloadResolver,
+    );
+    if (!resolved.ok) return { ok: false, kind: "configuration_invalid" };
+    workload = resolved.value;
+  }
   const apiKey = dependencies.apiKey?.trim();
   if (
-    !resolved.ok ||
+    workload.id !== "landing_page_draft_generation" ||
+    !isValidResolvedOpenAiProductWorkload(workload) ||
     !apiKey ||
     context.contractVersion !== 4
   ) {
-    if (resolved.ok) emitFailure(resolved.value, "configuration_invalid", dependencies);
+    if (isValidResolvedOpenAiProductWorkload(workload)) {
+      emitFailure(workload, "configuration_invalid", dependencies);
+    }
     return { ok: false, kind: "configuration_invalid" };
   }
-
-  const workload = resolved.value;
   const request = buildLandingPageDraftResponsesRequest(
     context,
     workload.model,

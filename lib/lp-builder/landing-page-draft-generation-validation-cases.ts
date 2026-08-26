@@ -11,11 +11,22 @@ import {
 } from "../conversion-content/landing-page/presentation/authority";
 import {
   OPEN_AI_PROVIDER_ERROR_METADATA_MAX_LENGTH,
+  isValidResolvedOpenAiProductWorkload,
+  resolveOpenAiProductWorkload,
   type OpenAiImageWorkloadEvent,
   type OpenAiWorkloadEvent,
 } from "../openai-workloads";
 import type { LandingPageGenerationContextPackage } from "./generationContextContracts";
 import { prepareLandingPageDraftRevisionCandidate } from "./landingPageDraftCandidateWorkflow";
+import {
+  LANDING_PAGE_DRAFT_COMPARISON_CASE_ID,
+  landingPageDraftComparisonAlias,
+  landingPageDraftComparisonFixture,
+  modelCatalogComparisonRevision,
+  normalizeLandingPageDraftComparisonSelections,
+  projectLandingPageDraftForComparison,
+  shuffleLandingPageDraftComparisonConfigurations,
+} from "./landingPageDraftComparison";
 import {
   buildLandingPageDraftResponsesRequest,
   generateLandingPageDraftCandidate,
@@ -142,6 +153,140 @@ const context = {
 } as unknown as LandingPageGenerationContextPackage;
 
 const cases = [
+  {
+    name: "comparison fixture v4 is typed, synthetic and projects text without operational media",
+    run: () => {
+      assert.equal(landingPageDraftComparisonFixture.contractVersion, 4);
+      assert.equal(
+        landingPageDraftComparisonFixture.identities.servedTaxon.name,
+        "Corretor Imóveis",
+      );
+      assert.equal(LANDING_PAGE_DRAFT_COMPARISON_CASE_ID.includes("v4"), true);
+      const projection = projectLandingPageDraftForComparison(candidate);
+      assert.equal(projection.length, candidate.sections.length);
+      assert.doesNotMatch(JSON.stringify(projection), /mediaBrief|destination/i);
+      const comparisonSource = readFileSync(
+        new URL("./landingPageDraftComparison.ts", import.meta.url),
+        "utf8",
+      );
+      assert.doesNotMatch(comparisonSource, /as unknown as/);
+      assert.doesNotMatch(comparisonSource, /proofLandingPageContext/);
+    },
+  },
+  {
+    name: "comparison selection and blind order are deterministic under injected entropy",
+    run: () => {
+      const selections = normalizeLandingPageDraftComparisonSelections([
+        { model: "gpt-5.6-luna", reasoningEffort: "low" },
+        { model: "gpt-5.6-terra", reasoningEffort: "medium" },
+      ]);
+      assert.equal(selections?.length, 2);
+      assert.equal(
+        normalizeLandingPageDraftComparisonSelections([
+          { model: "gpt-5.6-luna", reasoningEffort: "low" },
+          { model: "gpt-5.6-luna", reasoningEffort: "low" },
+        ]),
+        null,
+      );
+      assert.equal(modelCatalogComparisonRevision(2, 3), "catalog:m2:p3");
+      assert.equal(modelCatalogComparisonRevision(0, 3), null);
+      assert.deepEqual(
+        shuffleLandingPageDraftComparisonConfigurations(["a", "b", "c"], () => 0),
+        ["b", "c", "a"],
+      );
+      assert.equal(landingPageDraftComparisonAlias(0), "Resultado A");
+      assert.equal(landingPageDraftComparisonAlias(25), "Resultado Z");
+    },
+  },
+  {
+    name: "text generator accepts one validated experimental configuration through the existing REST transport",
+    run: async () => {
+      const baseline = await resolveOpenAiProductWorkload(
+        "landing_page_draft_generation",
+        "development",
+      );
+      assert.equal(baseline.ok, true);
+      if (!baseline.ok) throw new Error("landing page baseline missing");
+      const experimental = {
+        ...baseline.value,
+        model: "gpt-5.6-terra",
+        reasoningEffort: "medium" as const,
+        source: "model_catalog_comparison" as const,
+        revision: "catalog:m2:p3",
+      };
+      assert.equal(isValidResolvedOpenAiProductWorkload(experimental), true);
+      let body: Record<string, unknown> | null = null;
+      const result = await generateLandingPageDraftCandidate(
+        landingPageDraftComparisonFixture,
+        {
+          apiKey: "test-key",
+          environment: "preview",
+          resolvedWorkload: experimental,
+          fetchImpl: async (_url, init) => {
+            body = JSON.parse(String(init?.body));
+            return new Response(
+              JSON.stringify({
+                id: "resp_comparison_1",
+                status: "completed",
+                output: [
+                  {
+                    type: "message",
+                    content: [
+                      { type: "output_text", text: JSON.stringify(candidate) },
+                    ],
+                  },
+                ],
+                usage: { input_tokens: 10, output_tokens: 20 },
+              }),
+              { status: 200, headers: { "Content-Type": "application/json" } },
+            );
+          },
+          emitEvent: () => undefined,
+        },
+      );
+      assert.equal(result.ok, true);
+      const request = body as unknown as Record<string, unknown>;
+      assert.equal(request.model, "gpt-5.6-terra");
+      assert.deepEqual(request.reasoning, { effort: "medium" });
+      if (result.ok) {
+        assert.equal(result.configuration.source, "model_catalog_comparison");
+        assert.equal(result.configuration.revision, "catalog:m2:p3");
+      }
+    },
+  },
+  {
+    name: "comparison action reauthorizes, signs transient rounds and contains no lifecycle mutation",
+    run: () => {
+      const action = readFileSync(
+        new URL(
+          "../../app/admin/(protected)/workloads-openai/comparisonActions.ts",
+          import.meta.url,
+        ),
+        "utf8",
+      );
+      const adapter = readFileSync(
+        new URL("./adapters/landingPageDraftComparisonAdapter.ts", import.meta.url),
+        "utf8",
+      );
+      assert.match(action, /requirePlatformAdmin\(\)/);
+      assert.match(action, /createHmac\("sha256", key\)/);
+      assert.match(action, /lpf:e21\.3\.3:round:v1/);
+      assert.match(action, /timingSafeEqual/);
+      assert.match(action, /LANDING_PAGE_DRAFT_COMPARISON_MAX_FINALISTS/);
+      assert.match(action, /resolveCatalogCandidate/);
+      assert.match(adapter, /generateLandingPageDraftCandidate/);
+      assert.doesNotMatch(adapter, /fetch\s*\(/);
+      for (const mutation of [
+        "saveOpenAiConfigurationCandidate",
+        "promoteOpenAiConfigurationCandidate",
+        "activateOpenAiConfigurationRevision",
+        "rollbackOpenAiConfigurationRevision",
+      ]) {
+        assert.doesNotMatch(action, new RegExp(mutation));
+        assert.doesNotMatch(adapter, new RegExp(mutation));
+      }
+    },
+  },
   {
     name: "presentation authority drives strict schema and deterministic validation",
     run: () => {

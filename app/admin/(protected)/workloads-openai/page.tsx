@@ -10,13 +10,16 @@ import {
   readOpenAiModelCatalog,
   type OpenAiAdministrativeConfigurationReadResult,
   type OpenAiModelCatalogReadResult,
+  type OpenAiTextWorkloadConfigurationOptions,
 } from "@/openai-workloads";
 import { projectOpenAiWorkloadConfigurationOptions } from "@/openai-workloads/adapters/modelCatalogAdapterCore";
 import { OpenAiConfigurationManager } from "./_components/OpenAiConfigurationManager";
+import { OpenAiLandingPageTextComparison } from "./_components/OpenAiLandingPageTextComparison";
 import { OpenAiModelCatalogManager } from "./_components/OpenAiModelCatalogManager";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
+export const maxDuration = 300;
 
 const effortLabels = {
   none: "Nenhum",
@@ -57,6 +60,26 @@ export default async function OpenAiWorkloadsPage() {
   const configurationOptions = catalogModels
     ? projectOpenAiWorkloadConfigurationOptions(catalogModels, presentations)
     : [];
+  const comparisonOptions = configurationOptions.find(
+    (option): option is OpenAiTextWorkloadConfigurationOptions =>
+      option.workload === "landing_page_draft_generation" &&
+      option.apiKind === "responses_text",
+  );
+  const comparisonBaselines = configurationRead.ok
+    ? configurationRead.value
+        .flatMap((unit) =>
+          unit.workload === "landing_page_draft_generation" &&
+          unit.activeRevision.apiKind === "responses_text"
+            ? [{
+                environment: unit.environment,
+                model: unit.activeRevision.model,
+                reasoningEffort: unit.activeRevision.reasoningEffort,
+                source: "supabase_operational" as const,
+                revision: String(unit.activeRevision.number),
+              }]
+            : [],
+        )
+    : [];
 
   return (
     <div className="space-y-8">
@@ -70,6 +93,12 @@ export default async function OpenAiWorkloadsPage() {
       <OpenAiModelCatalogManager
         models={catalogModels}
         readErrorCode={catalogRead.ok ? null : catalogRead.error.code}
+      />
+
+      <OpenAiLandingPageTextComparison
+        baselines={comparisonBaselines}
+        options={comparisonOptions?.options ?? []}
+        catalogAvailable={catalogModels !== null}
       />
 
       {configurationRead.ok ? (
