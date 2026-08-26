@@ -1,4 +1,4 @@
-26/08/2026 — Plano-base v1 — E19.5.4 — UX operacional do workspace de LPs
+26/08/2026 — Plano-base v2 — E19.5.4 — UX operacional do workspace de LPs
 
 ## 1. Estado e decisões fixas
 
@@ -7,8 +7,8 @@
 - Caso macro: `E19 — LP Builder`.
 - Recorte: `E19.5.4 — UX operacional do workspace de LPs`.
 - Path canônico: `docs/lousa-plano-base-e19-5-4.md`.
-- Estado: **plano-base v1 consolidado após aprovação humana do wireframe; implementação ainda não autorizada**.
-- Processo: `docs/prompt-estrategista.md` v32.
+- Estado: **plano-base v2 candidato consolidado após especialistas e decisões humanas; implementação ainda não iniciada**.
+- Processo: `docs/prompt-estrategista.md` vigente na `main` reconciliada; no baseline `26476a0e6caec9001aa86acfc51ba572f5d55836`, versão v34.
 - Fonte principal de visão: `README.md`.
 - Antecessor material: E19.5.3 concluída e operacional em Preview e Production.
 - Plano conceitual: `N/A`.
@@ -50,6 +50,8 @@
 - `draft | active | archived` permanecem estados técnicos/lifecycle e não viram estados comerciais visíveis nesta E19.5.4.
 - `Publicada`, `Arquivada` e marcador `Principal` dependem de capacidades futuras próprias e não são simulados nesta entrega.
 - A experiência principal não expõe IDs técnicos, attempt IDs, request IDs, prompt IDs, modelo, metadata interna ou slug quando estes não forem necessários à decisão do cliente.
+- `Nova landing page` abre a rota dedicada `/a/[account]/landing-pages/new`, preservando os campos vigentes `name` e `slug`; o slug aparece somente nesse subfluxo de criação e não na coleção em repouso.
+- `Atualizada` usa `account_landing_pages.updated_at`, preservando sua semântica e a ordenação paginada vigentes; configuração compartilhada, configuração específica ou revisão não criam uma autoridade paralela para essa coluna.
 
 ### 1.4. Geração vigente e navegação
 
@@ -77,7 +79,7 @@
 
 - Owner e admin ativos continuam como perfis mutáveis conforme contrato vigente; viewer continua read-only sem controles que sugiram autoridade inexistente.
 - Tenant isolation, entitlement, configuração E20.2, histórico append-only e demais boundaries da E19.5.3 devem ser preservados.
-- O PR #814 / E20.2.8 altera lifecycle e consumo da versão corrente do catálogo E20.2; antes da implementação, a E19.5.4 deve reconciliar a `main` vigente e não reintroduzir pin, fallback ou autoridade paralela.
+- A E20.2.8 já integra o baseline avaliado, com versão corrente explícita do catálogo, migration aplicada e consumidores reconciliados. A E19.5.4 deve preservar essa autoridade, sem reintroduzir pin em v5, `latest`, maior versão, fallback ou autoridade paralela. Antes da implementação, reconciliar somente alterações posteriores ao baseline `26476a0e6caec9001aa86acfc51ba572f5d55836` que afetem materialmente esses consumidores.
 - A discussão paralela sobre representar os quatro atributos de identidade como primeira classe da LP não autoriza mudança física neste recorte.
 
 ## 2. Contrato do caso
@@ -100,7 +102,7 @@
   - `Situação`: um dos cinco estados derivados vigentes;
   - `Última`: número da versão mais recente ou `—`;
   - `Aceita`: número da versão aceita ou `—`;
-  - `Atualizada`: data operacional relevante disponível;
+  - `Atualizada`: `account_landing_pages.updated_at`, preservando semântica e ordenação paginada vigentes;
   - ação única `Abrir`.
 - Não aparecem na home:
   - slug;
@@ -124,6 +126,7 @@
   - atualização;
   - `Abrir`.
 - `Nova landing page` permanece ação global visível.
+- A ação navega para `/a/[account]/landing-pages/new`; a rota preserva os campos vigentes `name` e `slug` sem expor o slug nos cards da coleção.
 
 ### 2.4. Detalhe da LP
 
@@ -166,6 +169,7 @@
 ### 2.6. Estados auxiliares e fallback
 
 - Carregamento da coleção usa o contrato vigente de `LoadingState`, com mensagem equivalente a `Carregando suas landing pages…`; não criar framework novo de skeleton apenas para este recorte.
+- O fallback `Carregando suas landing pages…` deve ser local ao ramo assíncrono da coleção do workspace e reutilizar `components/ui/loading-state.tsx`. Não substituir por essa mensagem o loading global compartilhado por outras jornadas de `app/a/[account]`, não criar nova rota e não introduzir skeleton adicional.
 - Antes da leitura terminar, nunca apresentar estado vazio.
 - Coleção vazia apresenta mensagem explícita e ação `Nova landing page` quando autorizada.
 - Falha de leitura apresenta indisponibilidade explícita, não coleção vazia nem coleção parcial como integral.
@@ -176,7 +180,8 @@
 
 - O wireframe desktop B2, mobile equivalente, linguagem, navegação, geração vigente e aceite foram aprovados pelo humano antes da v1.
 - Mudança material desses pontos durante v2 ou implementação exige nova aprovação humana antes de código correspondente.
-- Preview/QA da implementação deve comprovar em desktop e mobile:
+- O primeiro roteiro de QA deve testar reconhecimento sem instrução adicional: a pessoa identifica a LP desejada, a ação `Abrir`, a versão aceita, o retorno à mesma LP e a próxima ação compatível com seu papel sem depender de metadata técnica; tempo de clique ou descoberta não vira métrica obrigatória por padrão.
+- O QA humano da implementação deve ocorrer no deployment Preview funcional e registrar evidência proporcional em desktop e mobile, sem depender de ferramenta paga; deve comprovar:
   - leitura imediata da hierarquia `Conta → LP → Versões`;
   - identidade comercial compreensível;
   - estados e ações com linguagem orientada ao cliente;
@@ -185,6 +190,7 @@
   - carregamento, vazio, erro, geração, sucesso e aceite compreensíveis;
   - modo read-only coerente para viewer;
   - ausência de scroll horizontal obrigatório no mobile.
+- A validação proporcional de acessibilidade deve cobrir operação por teclado; foco visível e previsível após navegação, geração, erro e aceite; nomes, relações e estados expostos semanticamente; anúncio das mensagens dinâmicas pelos componentes vigentes; contraste e alvos de toque aplicáveis; e ausência de ação comunicada apenas por cor, hover ou gesto horizontal. Ferramentas automáticas são apoio e não comprovam conformidade WCAG 2.2 integral.
 - O framework permanente de UX deve residir em `docs/design-system.md`; `docs/prompt-estrategista.md` deve receber apenas regra curta de enforcement do gate, sem duplicar o framework integral.
 
 ## 3. Fases e próxima ação
@@ -192,6 +198,7 @@
 ### 3.1. E19.5.4 — UX operacional do workspace de LPs
 
 - Automação: não.
+- Updates aplicados: `prod#14`, `prod#16` e `prod#17`.
 - Objetivo:
   - implementar o wireframe B2 aprovado no workspace vigente, preservando regras de negócio, boundaries e algoritmo de geração da E19.5.3.
 - Entrega executável:
@@ -202,15 +209,25 @@
   - preview com `Aceitar esta versão`;
   - feedback e navegação da geração vigente;
   - estados auxiliares completos;
+  - rota dedicada `/a/[account]/landing-pages/new` para a criação vigente com `name` e `slug`, sem auto-geração do slug e sem expô-lo na coleção;
+  - implementar por substituição in place das superfícies existentes: coleção em `app/a/[account]/_components/LandingPageWorkspace.tsx` e sua composição em `app/a/[account]/page.tsx`; detalhe em `app/a/[account]/landing-pages/[landingPageId]/page.tsx`; preview e aceite em `app/a/[account]/landing-pages/[landingPageId]/preview/page.tsx`. Não criar workspace paralelo, nova rota principal além da rota de criação decidida, novo boundary, provider, guard ou pipeline de geração. Componentes novos, quando uma extração coesa for necessária, permanecem route-local. Remover no mesmo recorte o markup, textos, metadados técnicos e controles antigos que perderem função, sem manter as experiências antiga e nova sobrepostas;
+  - reutilizar e ampliar somente os contratos, DTOs e adapters existentes do boundary `lib/lp-builder`. A coleção e o detalhe recebem uma projeção de identidade comercial pronta para apresentação, derivada da configuração resolvida vigente para `funnel_stage`, `transaction_intent` quando aplicável, `primary_conversion_goal` e `primary_service_or_offer`. O preview recebe o nome da LP e o indicador tenant-safe de que a revisão selecionada coincide com o ponteiro aprovado. UI e componentes client não leem `DBRow`, `storedValues`, snapshots, Supabase ou registries internos E20.2 e não reimplementam normalização ou autoridade;
+  - transferir o controle `Gerar nova versão` e a propriedade route-local de sua Server Action do preview para o boundary da rota de detalhe da LP. Preservar sem alteração semântica guards, entitlement, contexto, versão-base, providers, revalidação, idempotência e materialização existentes. Em sucesso, consumir o `revisionId` já retornado para navegar à rota existente de preview da revisão criada; em erro, permanecer no detalhe; durante pending, bloquear somente nova submissão do mesmo controle. Remover do preview os arquivos ou controles de geração que perderem função;
   - atualização proporcional do framework de UX em `docs/design-system.md` e do enforcement em `docs/prompt-estrategista.md` pelo fluxo ABC;
-  - reconciliação com a `main` vigente e com o resultado do PR #814 antes de tocar consumidores E20.2.
+  - reconciliação com alterações posteriores ao baseline `26476a0e6caec9001aa86acfc51ba572f5d55836` antes de tocar consumidores E20.2.
+- Oportunidades estratégicas condicionais, sem autorização de implementação neste recorte:
+  - `prod#3`: avaliar Speed Insights somente após rollout, tráfego útil, hipótese mensurável e responsável de leitura; não instalar analytics nem criar gate de score nesta E19.5.4;
+  - `prod#12`: avaliar troca global de contexto somente com Partner Dashboard ou recorte equivalente aprovado e evidência de operação recorrente multi-contas; não criar switcher, favoritos ou recentes agora;
+  - `vercel#15`: avaliar Toolbar somente se o Preview envolver múltiplos revisores ou feedback comprovadamente fragmentado; não habilitar nem torná-la dependência do QA atual;
+  - `vercel#29`: avaliar upgrade e Instant Navigations somente em recorte técnico próprio, com compatibilidade e atraso reproduzível; preservar Next.js `16.2.11` neste recorte;
+  - `supa#68`: avaliar Realtime filtrado somente se uma geração assíncrona futura aprovada não for atendida pelo fluxo vigente ou polling simples; não criar publicação, canal, subscription, migration, rota ou upgrade de dependência agora.
 - Critérios de aceite:
   - contrato das seções 1 e 2 atendido sem ampliação funcional;
   - testes determinísticos/regressões aplicáveis preservados;
   - QA humano em Preview desktop e mobile aprovado antes de rollout Production;
   - nenhuma nova infraestrutura, residência ou mudança de algoritmo introduzida por conveniência de UX.
 - Próxima ação:
-  - executar o processo escolhido pelo humano após merge da v1 conforme `docs/prompt-estrategista.md`.
+  - submeter esta v2 às Passagens 1 e 2 do Analista e, após aprovação e reconciliação do roadmap, executar a implementação no mesmo PR draft.
 
 ## 4. Escopo negativo e critérios de parada
 
@@ -236,6 +253,6 @@
 
 - Parar se a implementação exigir publicação, principal, archive/restore, editor, diálogo de IA ou outra capability fora do escopo.
 - Parar se o redesenho exigir alterar prompt, contexto, versão-base ou algoritmo da geração vigente.
-- Parar e reconciliar se a `main` ou o resultado do PR #814 alterar materialmente autoridade, identidade ou consumo E20.2 relevante ao workspace.
+- Parar e reconciliar se a `main` posterior ao baseline `26476a0e6caec9001aa86acfc51ba572f5d55836` alterar materialmente autoridade, identidade ou consumo E20.2 relevante ao workspace.
 - Parar se a solução exigir nova residência, coluna, RPC, rota ou infraestrutura sem fonte real e decisão explícita posterior.
 - Parar se especialistas ou análise técnica demonstrarem que o wireframe aprovado não pode ser implementado sem mudança material de regra de negócio; devolver a decisão ao humano.
