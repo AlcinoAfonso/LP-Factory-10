@@ -147,7 +147,6 @@ const cases: readonly Readonly<{ name: string; run: () => void }>[] = [
         new URL("./OnboardingConfigurationJourney.tsx", import.meta.url),
         "utf8",
       );
-
       assert.match(page, /listAccountLandingPageDrafts/);
       assert.match(page, /complete_unbound/);
       assert.match(page, /complete_bound/);

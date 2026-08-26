@@ -289,6 +289,8 @@ const cases = [
       assert.equal(JSON.stringify(before), beforeJson, "persisted revision must remain unaltered");
       if (result.status !== "ready") return;
       assert.equal(result.model.revision.number, 3);
+      assert.equal(result.model.landingPageName, "Primeiro imóvel no Rio");
+      assert.equal(result.model.isAccepted, false);
       assert.equal(result.model.revision.attemptId, ATTEMPT_ID);
       assert.equal(result.model.conversion.href, "https://wa.me/5521979658483");
       assert.notEqual(result.model.conversion.href, before.content.binding.destination);
@@ -340,6 +342,29 @@ const cases = [
       );
       assert.equal(archived.status, "not_found");
       assert.equal(revisionRead, false);
+    },
+  },
+  {
+    name: "preview marks only the selected accepted materialization",
+    run: async () => {
+      const accepted = await loadLandingPagePreviewWithDependencies(
+        { accountSlug: "account", landingPageId: LANDING_PAGE_ID },
+        dependencies([], {
+          loadLandingPage: async () => ({
+            ok: true,
+            landingPage: {
+              id: LANDING_PAGE_ID,
+              account_id: ACCOUNT_ID,
+              name: "Primeiro imóvel no Rio",
+              slug: "primeiro-imovel-no-rio",
+              status: "draft",
+              approved_materialization_id: REVISION_ID,
+            },
+          }),
+        }),
+      );
+      assert.equal(accepted.status, "ready");
+      if (accepted.status === "ready") assert.equal(accepted.model.isAccepted, true);
     },
   },
   {
@@ -520,7 +545,7 @@ const cases = [
       const previewCore = readFileSync(new URL("./landingPagePreview.ts", import.meta.url), "utf8");
       const renderer = readFileSync(new URL("../../components/lp-builder/LandingPageRenderer.tsx", import.meta.url), "utf8");
       const page = readFileSync(new URL("../../app/a/[account]/landing-pages/[landingPageId]/preview/page.tsx", import.meta.url), "utf8");
-      const action = readFileSync(new URL("../../app/a/[account]/landing-pages/[landingPageId]/preview/actions.ts", import.meta.url), "utf8");
+      const action = readFileSync(new URL("../../app/a/[account]/landing-pages/[landingPageId]/generation-actions.ts", import.meta.url), "utf8");
 
       assert.match(revisionAdapter, /order\("revision_number", \{ ascending: false \}\)/);
       assert.match(revisionAdapter, /\.limit\(1\)/);

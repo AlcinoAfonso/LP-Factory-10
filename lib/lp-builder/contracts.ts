@@ -18,6 +18,7 @@ export type AccountLandingPage = {
   name: string;
   slug: string;
   status: OperationalLandingPageStatus;
+  approved_materialization_id?: string | null;
 };
 
 export type CreateAccountLandingPageError =
@@ -174,6 +175,12 @@ export type AccountLandingPageWorkspaceItem = Readonly<{
   slug: string;
   status: OperationalLandingPageStatus;
   state: AccountLandingPageWorkspaceState;
+  identity: Readonly<{
+    funnelStage: string;
+    transactionIntent: string;
+    primaryConversionGoal: string;
+    primaryServiceOrOffer: string;
+  }>;
   latestRevision: Readonly<{
     id: string;
     number: number;

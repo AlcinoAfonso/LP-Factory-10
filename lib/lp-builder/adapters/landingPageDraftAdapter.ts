@@ -14,7 +14,7 @@ export async function readLandingPageDraft(input: Readonly<{
   try {
     const { data, error } = await createServiceClient()
       .from("account_landing_pages")
-      .select("id,account_id,name,slug,status")
+      .select("id,account_id,name,slug,status,approved_materialization_id")
       .eq("id", input.landingPageId)
       .eq("account_id", input.accountId)
       .in("status", ["draft", "active"])
@@ -29,7 +29,9 @@ export async function readLandingPageDraft(input: Readonly<{
       !data.name.trim() ||
       typeof data.slug !== "string" ||
       !data.slug.trim() ||
-      !isOperationalLandingPageStatus(data.status)
+      !isOperationalLandingPageStatus(data.status) ||
+      (data.approved_materialization_id !== null &&
+        typeof data.approved_materialization_id !== "string")
     ) {
       return { ok: false, error: "read_failed" };
     }
@@ -41,6 +43,7 @@ export async function readLandingPageDraft(input: Readonly<{
         name: data.name,
         slug: data.slug,
         status: data.status,
+        approved_materialization_id: data.approved_materialization_id,
       },
     };
   } catch {

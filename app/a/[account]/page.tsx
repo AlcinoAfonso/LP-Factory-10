@@ -89,31 +89,15 @@ export default async function Page({ params, searchParams }: PageProps) {
     const actorRole = ctx?.role ?? "viewer";
     const isCommerciallyEligible =
       commercialEntitlement?.isCommerciallyEligible === true;
-    const workspace =
-      accountId && isCommerciallyEligible && isLandingPageWorkspaceEnabled()
-        ? await listAccountLandingPageWorkspace({
-            accountId,
-            cursor:
-              typeof resolvedSearchParams.workspace_cursor === "string"
-                ? resolvedSearchParams.workspace_cursor
-                : undefined,
-          })
-        : null;
     if (
-      workspace?.ok &&
+      accountId &&
+      isCommerciallyEligible &&
+      isLandingPageWorkspaceEnabled() &&
       actorRole !== "owner" &&
       actorRole !== "admin"
     ) {
       return (
-        <LandingPageWorkspace
-          accountSubdomain={accountSubdomain}
-          workspace={workspace}
-          error={
-            typeof resolvedSearchParams.workspace_error === "string"
-              ? resolvedSearchParams.workspace_error
-              : undefined
-          }
-        />
+        <WorkspaceSuspenseBoundary accountId={accountId} accountSubdomain={accountSubdomain} searchParams={resolvedSearchParams} />
       );
     }
     let onboardingState: AccountOnboardingState = "not_loaded";
@@ -197,18 +181,7 @@ export default async function Page({ params, searchParams }: PageProps) {
         return <OnboardingBlockedState />;
       }
       if (!isLandingPageWorkspaceEnabled()) return <WorkspaceRolloutPendingState />;
-      if (!workspace?.ok) return <WorkspaceUnavailableState />;
-      return (
-        <LandingPageWorkspace
-          accountSubdomain={accountSubdomain}
-          workspace={workspace}
-          error={
-            typeof resolvedSearchParams.workspace_error === "string"
-              ? resolvedSearchParams.workspace_error
-              : undefined
-          }
-        />
-      );
+      return <WorkspaceSuspenseBoundary accountId={accountId} accountSubdomain={accountSubdomain} searchParams={resolvedSearchParams} />;
     }
     if (accountJourney.mode === "blocked") {
       return <OnboardingBlockedState />;
@@ -254,6 +227,31 @@ export default async function Page({ params, searchParams }: PageProps) {
   }
 
   return <DashboardPublic />;
+}
+
+function WorkspaceSuspenseBoundary(props: Readonly<{
+  accountId: string;
+  accountSubdomain: string;
+  searchParams: Record<string, string | string[] | undefined>;
+}>) {
+  return (
+    <Suspense fallback={<main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-10"><LoadingState label="Carregando suas landing pages..." /></main>}>
+      <LandingPageWorkspaceLoader {...props} />
+    </Suspense>
+  );
+}
+
+async function LandingPageWorkspaceLoader(props: Readonly<{
+  accountId: string;
+  accountSubdomain: string;
+  searchParams: Record<string, string | string[] | undefined>;
+}>) {
+  const workspace = await listAccountLandingPageWorkspace({
+    accountId: props.accountId,
+    cursor: typeof props.searchParams.workspace_cursor === "string" ? props.searchParams.workspace_cursor : undefined,
+  });
+  if (!workspace.ok) return <WorkspaceUnavailableState />;
+  return <LandingPageWorkspace accountSubdomain={props.accountSubdomain} workspace={workspace} error={typeof props.searchParams.workspace_error === "string" ? props.searchParams.workspace_error : undefined} />;
 }
 
 function OnboardingBlockedState() {
@@ -349,3 +347,6 @@ function DashboardPublic() {
     </main>
   );
 }
+import { Suspense } from "react";
+
+import { LoadingState } from "@/components/ui/loading-state";

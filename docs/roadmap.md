@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 26/08/2026
-• Versão: v1.5.188
+• Versão: v1.5.189
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2450,7 +2450,7 @@ Repositório — Ajustados
 
 19.5.1 Objetivo e status
 - Objetivo: entregar o ciclo operacional reduzido para múltiplas identidades de LP por conta, com configuração contextual lazy, revisões integrais append-only, histórico, preview e aprovação humana explícita.
-- Status: A E19.5.3 foi concluída em 23/08/2026 após merge, apply canônico, verificações pós-apply e rollout controlado aprovado em Preview e Production. A E19.5.4 está definida e aguarda implementação.
+- Status: A E19.5.3 foi concluída em 23/08/2026 após merge, apply canônico, verificações pós-apply e rollout controlado aprovado em Preview e Production. A E19.5.4 está implementada no repositório e validada localmente; o QA humano do deployment Preview em desktop e mobile permanece pendente antes de qualquer rollout de Production.
 
 19.5.2 Registros do recorte
 - Banco:
@@ -2476,6 +2476,9 @@ Repositório — Ajustados
     - `lib/lp-builder/landingPageWorkspace.ts`;
     - `lib/lp-builder/adapters/landingPageWorkspaceAdapter.ts`;
     - `lib/lp-builder/landing-page-workspace-validation-cases.ts`;
+    - `app/a/[account]/landing-pages/new/page.tsx`;
+    - `app/a/[account]/landing-pages/[landingPageId]/GenerationTrigger.tsx`;
+    - `app/a/[account]/landing-pages/[landingPageId]/generation-actions.ts`;
     - `supabase/migrations/20260822170000_e19_5_3_landing_page_workspace.sql`;
     - `supabase/snippets/e19_5_3_landing_page_workspace_verify.sql`;
     - `supabase/tests/e19_5_3_landing_page_workspace.test.sql`.
@@ -2484,8 +2487,6 @@ Repositório — Ajustados
     - `app/a/[account]/_components/OnboardingConfigurationJourney.tsx`;
     - `app/a/[account]/_components/onboarding-configuration-action-contract.ts`;
     - `app/a/[account]/landing-pages/[landingPageId]/preview/page.tsx`;
-    - `app/a/[account]/landing-pages/[landingPageId]/preview/GenerationTrigger.tsx`;
-    - `app/a/[account]/landing-pages/[landingPageId]/preview/actions.ts`;
     - `lib/lp-builder/contracts.ts`;
     - `lib/lp-builder/index.ts`;
     - `lib/lp-builder/generationContext.ts`;
@@ -2500,13 +2501,24 @@ Repositório — Ajustados
     - `lib/lp-builder/generation-context-validation-cases.ts`;
     - `lib/lp-builder/landing-page-draft-generation-validation-cases.ts`;
     - `lib/lp-builder/landing-page-preview-validation-cases.tsx`;
+    - `lib/lp-builder/adapters/landingPageDraftAdapter.ts`;
     - `package.json`.
+  - Excluídos:
+    - `app/a/[account]/landing-pages/[landingPageId]/preview/GenerationTrigger.tsx`;
+    - `app/a/[account]/landing-pages/[landingPageId]/preview/actions.ts`.
+- Updates:
+  - Aplicados:
+    - `prod#14`;
+    - `prod#16`;
+    - `prod#17`.
 - Referências:
   - Plano-base aprovado: `docs/lousa-plano-base-e19-5.md` — seções 1, 2 e 3.
   - Contrato de banco: `docs/schema.md` — seções 1.9, 1.27, 1.31, 1.32 e 3.8.
   - Contrato técnico: `docs/base-tecnica.md` — seções 3.14.4 e 3.15.9.
   - Configuração operacional: `docs/platform-config.md` — seção 3.5.
   - Contrato visual: `docs/design-system.md` — Workspace operacional do Account Dashboard.
+  - Plano-base de UX aprovado: `docs/lousa-plano-base-e19-5-4.md` — seções 1, 2 e 3.
+  - Processo do Estrategista: `docs/prompt-estrategista.md` — item 2.
 
 19.5.3 Workspace operacional reduzido, configuração e aprovação da LP
 - Status: Concluída em 23/08/2026, com implementação integrada à `main`, banco validado e operação autenticada aprovada em Preview e Production.
@@ -2525,15 +2537,16 @@ Repositório — Ajustados
   - `E19_5_WORKSPACE_ENABLED` foi habilitado sequencialmente com redeploy e aprovação em Preview e Production; o smoke final confirmou workspace, configuração v5, histórico, preview e a revisão 4 já aprovada, sem gerar revisão adicional; archive/restore, publicação, editor manual, melhoria parcial por IA, hard delete, tracking, mensuração, testes A/B, catálogo avançado de ofertas e mecanismo global ou em massa permanecem fora do recorte.
 
 19.5.4 UX operacional do workspace de LPs
-- Status: Definida no plano-base v2; implementação ainda não iniciada.
+- Status: Implementada no repositório e validada localmente; QA humano no deployment Preview em desktop e mobile permanece pendente antes do rollout de Production.
 - Conteúdo:
-  - substituir in place a experiência vigente pelo wireframe B2 master-detail, com home compacta em desktop, cards equivalentes em mobile e uma única jornada `Workspace → LP → Preview`;
-  - manter `Nova landing page` como ação global para a rota dedicada `/a/[account]/landing-pages/new`, preservando `name`, `slug`, autoridade server-side fail-closed e viewer read-only;
-  - apresentar nome, situação, os quatro atributos da identidade comercial, última versão, versão aceita e `account_landing_pages.updated_at`, com representação honesta de ausência e não aplicabilidade;
-  - concentrar no detalhe identidade, configuração, histórico e `Gerar nova versão`; a geração preserva algoritmo, guards, deadline e `maxDuration = 300` e abre o preview da revisão exata em sucesso;
-  - concentrar no preview a visualização e `Aceitar esta versão`, deixando explícito que o aceite não publica e preservando histórico append-only e ponteiro tenant-safe;
-  - preservar a versão corrente explícita do catálogo E20.2, tenant isolation, entitlement, boundaries e banco vigentes, sem pin, fallback, migration, nova infraestrutura, analytics, Realtime ou upgrade de framework;
-  - exigir QA humano no Preview funcional em desktop e mobile, cobrindo reconhecimento sem instrução adicional, estados auxiliares, viewer read-only, navegação contextual e acessibilidade proporcional antes de rollout Production.
+  - a experiência vigente foi substituída in place pelo wireframe B2 master-detail, com home compacta em desktop, cards equivalentes em mobile e uma única jornada `Workspace → LP → Preview`, sem slug, IDs ou metadados técnicos na experiência primária;
+  - `Nova landing page` é a ação global para a rota dedicada `/a/[account]/landing-pages/new`, preservando `name`, `slug`, autoridade server-side fail-closed, erro local seguro e viewer read-only;
+  - coleção e detalhe consomem projeção pronta dos quatro atributos da identidade comercial a partir dos fields resolvidos vigentes, sem leitura de registry na UI nem lista paralela; ausência usa `Não informado` e não aplicabilidade usa `Não se aplica`;
+  - nome, situação, última versão, versão aceita e `account_landing_pages.updated_at` são apresentados com linguagem orientada ao cliente, e o loading da coleção permanece local ao ramo assíncrono sem substituir o fallback global da conta;
+  - o detalhe concentra identidade, configuração, histórico decrescente e `Gerar nova versão`; a Server Action foi movida para o boundary route-local do detalhe sem alterar algoritmo, guards, entitlement, contexto, providers, revalidação, materialização ou deadline, preservando `maxDuration = 300` e abrindo o preview do `revisionId` exato em sucesso;
+  - o preview concentra visualização e `Aceitar esta versão`, recebe nome e indicador tenant-safe do ponteiro aprovado, omite ação redundante na versão aceita e esclarece que o aceite não publica;
+  - a versão corrente explícita do catálogo E20.2, tenant isolation, entitlement, boundaries e banco foram preservados sem pin, fallback, migration, nova infraestrutura, analytics, Realtime ou upgrade de framework;
+  - validações determinísticas cobrem identidade declarativa, fallbacks, criação, read-only, transferência da geração, timeout, navegação exata e aceite; `npm ci`, `npm run check` e `git diff --check` integram o gate técnico, e o QA humano no Preview funcional em desktop e mobile permanece obrigatório antes do rollout de Production.
 
 20. E20 — Preparação e liberação de taxons para geração de landing pages
 

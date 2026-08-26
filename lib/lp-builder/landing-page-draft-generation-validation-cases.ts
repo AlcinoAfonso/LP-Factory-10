@@ -1234,7 +1234,7 @@ const cases = [
     run: () => {
       const action = readFileSync(
         new URL(
-          "../../app/a/[account]/landing-pages/[landingPageId]/preview/actions.ts",
+          "../../app/a/[account]/landing-pages/[landingPageId]/generation-actions.ts",
           import.meta.url,
         ),
         "utf8",

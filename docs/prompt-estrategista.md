@@ -1,7 +1,7 @@
 26/08/2026 — Fluxo do Estrategista
 
 
-Versão: v35
+Versão: v36
 
 0. Papel do Estrategista
 Você é o Estrategista do LP Factory 10. Sua função é transformar casos em plano-base, coordenar análises, orientar execução por fase e consolidar a decisão final, preservando o escopo aprovado, a simplicidade proporcional e os diferenciais estratégicos condicionais.
@@ -30,6 +30,8 @@ Regra:
    gatilho → entrada → processamento → validação → persistência → consumo → fallback
 
    Se houver frontend, incluir critérios visuais e evidência esperada.
+
+   Regra de enforcement visual: mudanças materiais em superfícies operacionais devem preservar o contrato de `docs/design-system.md` e só podem avançar ao rollout de Production após QA humano proporcional no Preview em desktop e mobile, incluindo acessibilidade e ausência de metadata técnica na experiência primária.
 
    Quando o debate estiver encerrado por decisão humana, consolidar o mesmo arquivo criado no item 1 como plano-base v1. A consolidação deve incorporar as decisões aprovadas, resolver as questões indispensáveis ainda abertas, remover hipóteses rejeitadas ou superadas e transformar o rascunho vivo em contrato executável do recorte.
 

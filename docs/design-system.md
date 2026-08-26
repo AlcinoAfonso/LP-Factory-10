@@ -1,5 +1,8 @@
 # Design System — LP Factory
 
+• Versão: v1.0.0
+• Data: 26/08/2026
+
 ## Visão geral
 Este documento define o contrato visual vigente do produto, com foco em componentes base reutilizáveis, acessibilidade e consistência visual sem mudança de regra de negócio.
 
@@ -146,6 +149,11 @@ Este documento define o contrato visual vigente do produto, com foco em componen
 - O detalhe mantém contexto persistente Conta → landing page → seção e retorno previsível à coleção.
 - Ações mutáveis aparecem apenas para perfis autorizados; a mesma superfície permanece legível em modo somente leitura, sem controles desabilitados que sugiram permissão futura.
 - Estados indisponível, vazio, pendente e erro devem ser completos e explícitos; não apresentar coleção parcial como se fosse o conjunto integral.
+- A coleção usa uma ação primária única por item e prioriza nome, identidade comercial, situação, versões e atualização; slug, IDs e metadados técnicos não pertencem à experiência primária.
+- O preview mantém contexto da landing page e da versão selecionada, oferece retorno explícito ao detalhe e distingue visualmente versão aceita de versão disponível para aceite.
+- A linguagem de aceite deve esclarecer que a escolha não publica a landing page; geração e aceite exibem feedback compreensível, preservam foco e anunciam estados dinâmicos com semântica adequada.
+- O carregamento de uma coleção assíncrona deve permanecer local à sua superfície quando as demais áreas já puderem ser exibidas, reutilizando `LoadingState` sem apresentar vazio antes da conclusão da leitura.
+- Mudanças materiais em superfícies operacionais exigem QA humano no Preview em desktop e mobile antes do rollout de Production, cobrindo hierarquia, teclado, foco, nomes e estados semânticos, contraste, alvos de toque e ausência de rolagem horizontal obrigatória.
 
 ## Superfície administrativa do Admin
 

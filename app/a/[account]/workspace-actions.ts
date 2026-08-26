@@ -11,10 +11,11 @@ export async function createLandingPageWorkspaceAction(formData: FormData) {
   const name = String(formData.get("name") ?? "").trim();
   const slug = String(formData.get("slug") ?? "").trim();
   const accountId = await authorizedAccountId(account);
-  if (!accountId || !name || !slug) redirect(`/a/${account || "home"}?workspace_error=create`);
+  const createRoute = `/a/${account || "home"}/landing-pages/new`;
+  if (!accountId || !name || !slug) redirect(`${createRoute}?workspace_error=create`);
   const result = await createWorkspaceLandingPage({ accountId, name, slug });
   if (!result.ok || !result.landingPageId) {
-    redirect(`/a/${account}?workspace_error=create`);
+    redirect(`${createRoute}?workspace_error=create`);
   }
   revalidatePath(`/a/${account}`);
   redirect(`/a/${account}/landing-pages/${result.landingPageId}`);
@@ -22,7 +23,7 @@ export async function createLandingPageWorkspaceAction(formData: FormData) {
 
 async function authorizedAccountId(account: string) {
   if (!account || account === "home") return null;
-  const ctx = await getAccessContext({ params: { account }, route: `/a/${account}` });
+  const ctx = await getAccessContext({ params: { account }, route: `/a/${account}/landing-pages/new` });
   if (
     !ctx ||
     ctx.blocked ||

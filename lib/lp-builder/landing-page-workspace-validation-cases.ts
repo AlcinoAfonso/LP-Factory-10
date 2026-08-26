@@ -7,6 +7,7 @@ import {
   deriveLandingPageWorkspaceState,
   isLandingPageWorkspaceEnabled,
   landingPageWorkspaceStateLabels,
+  projectLandingPageWorkspaceIdentity,
   splitLandingPageWorkspaceValues,
 } from "./landingPageWorkspace";
 
@@ -27,6 +28,36 @@ const cases: readonly Readonly<{ name: string; run: () => void }>[] = [
         if (previous === undefined) delete process.env.E19_5_WORKSPACE_ENABLED;
         else process.env.E19_5_WORKSPACE_ENABLED = previous;
       }
+    },
+  },
+  {
+    name: "workspace identity derives current resolved fields without a parallel catalog",
+    run: () => {
+      const identity = projectLandingPageWorkspaceIdentity([
+        identityField("funnel_stage", "bofu", true, "enum"),
+        identityField("transaction_intent", undefined, false, "enum"),
+        identityField("primary_conversion_goal", "contact", true, "enum"),
+        identityField("primary_service_or_offer", "Imóvel residencial", true, "string"),
+      ]);
+      assert.deepEqual(identity, {
+        funnelStage: "BOFU",
+        transactionIntent: "Não se aplica",
+        primaryConversionGoal: "Contact",
+        primaryServiceOrOffer: "Imóvel residencial",
+      });
+      assert.equal(projectLandingPageWorkspaceIdentity([]).primaryConversionGoal, "Não informado");
+      assert.equal(
+        projectLandingPageWorkspaceIdentity([
+          identityField("primary_service_or_offer", "serviço_personalizado", true, "string"),
+        ]).primaryServiceOrOffer,
+        "serviço_personalizado",
+      );
+      assert.equal(
+        projectLandingPageWorkspaceIdentity([
+          identityField("primary_conversion_goal", "unknown", true, "enum", ["contact"]),
+        ]).primaryConversionGoal,
+        "Não informado",
+      );
     },
   },
   {
@@ -150,16 +181,33 @@ const cases: readonly Readonly<{ name: string; run: () => void }>[] = [
         new URL("../../app/a/[account]/landing-pages/[landingPageId]/preview/page.tsx", import.meta.url),
         "utf8",
       );
+      const creation = readFileSync(
+        new URL("../../app/a/[account]/landing-pages/new/page.tsx", import.meta.url),
+        "utf8",
+      );
+      const generation = readFileSync(
+        new URL("../../app/a/[account]/landing-pages/[landingPageId]/GenerationTrigger.tsx", import.meta.url),
+        "utf8",
+      );
       assert.match(workspace, /Somente leitura/);
       assert.match(workspace, /workspace_cursor/);
       assert.doesNotMatch(workspace, /Arquivar|Restaurar|Excluir/);
       assert.match(detail, /history_cursor/);
       assert.match(detail, /preview\?revision=/);
-      assert.match(detail, /Gerar primeira versão/);
-      assert.match(preview, /canMutate\s*\?/);
-      assert.match(preview, /<GenerationTrigger/);
+      assert.match(workspace, /Minhas landing pages/);
+      assert.match(workspace, /landing-pages\/new/);
+      assert.match(workspace, /Etapa do funil/);
+      assert.match(creation, /createLandingPageWorkspaceAction/);
+      assert.match(creation, /\["owner", "admin"\]/);
+      assert.match(detail, /<GenerationTrigger/);
+      assert.match(detail, /maxDuration = 300/);
+      assert.match(generation, /preview\?revision=\$\{successfulRevisionId\}/);
+      assert.match(preview, /canMutate && !preview\.model\.isAccepted/);
+      assert.doesNotMatch(preview, /<GenerationTrigger/);
       assert.match(preview, /workspaceEnabled && preview\.status === "ready"/);
-      assert.match(preview, /Aprovar esta versão/);
+      assert.match(preview, /Aceitar esta versão/);
+      assert.match(preview, /Esta é a versão aceita desta landing page/);
+      assert.doesNotMatch(preview, /Metadados da revisão|Attempt ID|Request ID/);
     },
   },
 ];
@@ -191,4 +239,27 @@ function configuration(complete: boolean): AccountLandingPageOnboardingConfigura
     missingRequiredFieldKeys: complete ? [] : ["primary_conversion_goal"],
     complete,
   };
+}
+
+function identityField(
+  fieldKey: string,
+  value: unknown,
+  applicable: boolean,
+  valueType: "enum" | "string",
+  allowedValues: readonly string[] = [String(value)],
+): AccountLandingPageOnboardingConfiguration["fields"][number] {
+  return {
+    field:
+      valueType === "enum"
+        ? {
+            fieldKey,
+            valueType,
+            validation: { kind: "enum", allowedValues },
+          }
+        : { fieldKey, valueType },
+    source: value === undefined ? "missing" : "configuration",
+    value,
+    applicable,
+    required: false,
+  } as unknown as AccountLandingPageOnboardingConfiguration["fields"][number];
 }

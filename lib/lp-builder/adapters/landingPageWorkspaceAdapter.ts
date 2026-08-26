@@ -22,6 +22,7 @@ import type {
 import {
   deriveLandingPageWorkspaceState,
   isLandingPageWorkspaceEnabled,
+  projectLandingPageWorkspaceIdentity,
   splitLandingPageWorkspaceValues,
 } from "../landingPageWorkspace";
 import { resolveAccountLandingPageOnboardingConfiguration } from "../onboardingConfiguration";
@@ -573,6 +574,7 @@ function mapWorkspaceItem(
       latestRevisionId: latest?.id ?? null,
       approvedRevisionId: approved?.id ?? null,
     }),
+    identity: projectLandingPageWorkspaceIdentity(configuration.resolved.fields),
     latestRevision: latest
       ? { id: latest.id, number: latest.revisionNumber, createdAt: latest.createdAt }
       : null,

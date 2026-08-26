@@ -1,10 +1,14 @@
 import Link from "next/link";
 
-import type { AccountLandingPageWorkspaceResult } from "@/lp-builder";
+import type { AccountLandingPageWorkspaceItem, AccountLandingPageWorkspaceResult } from "@/lp-builder";
 import { landingPageWorkspaceStateLabels } from "@/lp-builder";
 
-import { createLandingPageWorkspaceAction } from "../workspace-actions";
-import { WorkspaceSubmitButton } from "./WorkspaceSubmitButton";
+const IDENTITY_LABELS = Object.freeze({
+  funnelStage: "Etapa do funil",
+  transactionIntent: "Intenção",
+  primaryConversionGoal: "Conversão principal",
+  primaryServiceOrOffer: "Serviço ou oferta",
+} as const);
 
 export function LandingPageWorkspace(props: Readonly<{
   accountSubdomain: string;
@@ -19,18 +23,18 @@ export function LandingPageWorkspace(props: Readonly<{
           <p className="text-sm font-semibold uppercase tracking-[0.16em] text-brand-700">
             {props.accountSubdomain} · Workspace da conta
           </p>
-          <h1 className="mt-2 text-3xl font-bold tracking-tight text-ink-900">
-            Landing pages
-          </h1>
+          <h1 className="mt-2 text-3xl font-bold tracking-tight text-ink-900">Minhas landing pages</h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-graytech-600">
-            Cada página representa um trabalho comercial. Versão mais recente e versão aprovada permanecem escolhas independentes.
+            Consulte a identidade, a situação e as versões de cada trabalho comercial.
           </p>
         </div>
-        {!props.workspace.canMutate ? (
-          <span className="rounded-full bg-graytech-100 px-3 py-2 text-sm font-semibold text-graytech-700">
-            Somente leitura
-          </span>
-        ) : null}
+        {props.workspace.canMutate ? (
+          <Link href={`/a/${props.accountSubdomain}/landing-pages/new`} className="inline-flex min-h-11 items-center justify-center rounded-lg bg-brand-700 px-5 text-sm font-semibold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600">
+            Nova landing page
+          </Link>
+        ) : (
+          <span className="rounded-full bg-graytech-100 px-3 py-2 text-sm font-semibold text-graytech-700">Somente leitura</span>
+        )}
       </header>
 
       {props.error ? (
@@ -39,76 +43,74 @@ export function LandingPageWorkspace(props: Readonly<{
         </p>
       ) : null}
 
-      {props.workspace.canMutate ? (
-        <details className="mt-8 rounded-2xl border border-surface-border bg-white p-5 shadow-card sm:p-6">
-          <summary className="min-h-11 cursor-pointer py-2 text-base font-semibold text-brand-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600">
-            Nova página
-          </summary>
-          <p className="mt-3 text-sm text-graytech-600">
-            Use uma nova identidade quando iniciar outro trabalho comercial. A configuração nasce somente no primeiro salvamento.
-          </p>
-          <form action={createLandingPageWorkspaceAction} className="mt-5 grid gap-4 sm:grid-cols-[1fr_1fr_auto]">
-            <input type="hidden" name="account" value={props.accountSubdomain} />
-            <label className="text-sm font-semibold text-ink-900">
-              Nome
-              <input name="name" required maxLength={120} className="mt-2 min-h-11 w-full rounded-lg border border-surface-border px-3 font-normal" />
-            </label>
-            <label className="text-sm font-semibold text-ink-900">
-              Endereço curto
-              <input name="slug" required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" className="mt-2 min-h-11 w-full rounded-lg border border-surface-border px-3 font-normal" />
-            </label>
-            <WorkspaceSubmitButton
-              idleLabel="Criar página"
-              pendingLabel="Criando..."
-              className="min-h-11 self-end rounded-lg bg-brand-700 px-5 text-sm font-semibold text-white disabled:cursor-wait disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-2"
-            />
-          </form>
-        </details>
-      ) : null}
-
-      <section aria-label="Landing pages da conta" className="mt-8 grid gap-4">
+      <section aria-label="Landing pages da conta" className="mt-8">
         {pages.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-surface-border bg-white p-8 text-center text-sm text-graytech-600">
-            {props.workspace.canMutate
-              ? "Crie a primeira página quando quiser iniciar um trabalho comercial."
-              : "Nenhuma landing page está disponível para consulta."}
+            {props.workspace.canMutate ? "Crie a primeira landing page quando quiser iniciar um trabalho comercial." : "Nenhuma landing page está disponível para consulta."}
           </div>
-        ) : pages.map((page) => (
-          <article key={page.id} className="rounded-2xl border border-surface-border bg-white p-5 shadow-card sm:p-6">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="truncate text-lg font-bold text-ink-900">{page.name}</h2>
-                  <span className="rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-800">
-                    {landingPageWorkspaceStateLabels[page.state]}
-                  </span>
-                </div>
-                <p className="mt-2 text-sm text-graytech-600">
-                  {page.latestRevision ? `Mais recente: versão ${page.latestRevision.number}` : "Ainda sem versão gerada"}
-                  {page.approvedRevision ? ` · Aprovada: versão ${page.approvedRevision.number}` : " · Nenhuma versão aprovada"}
-                </p>
-              </div>
-              <Link
-                href={`/a/${props.accountSubdomain}/landing-pages/${page.id}`}
-                className="inline-flex min-h-11 items-center justify-center rounded-lg bg-brand-700 px-4 text-sm font-semibold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600"
-              >
-                Abrir página
-              </Link>
+        ) : (
+          <>
+            <div className="hidden overflow-hidden rounded-2xl border border-surface-border bg-white shadow-card lg:block">
+              <table className="w-full table-fixed text-left text-sm">
+                <thead className="bg-graytech-50 text-xs font-semibold uppercase tracking-wide text-graytech-700">
+                  <tr>
+                    <th className="w-[15%] px-4 py-3">Landing page</th><th className="w-[28%] px-4 py-3">Identidade</th><th className="w-[14%] px-4 py-3">Situação</th><th className="w-[11%] px-4 py-3">Última</th><th className="w-[11%] px-4 py-3">Aceita</th><th className="w-[12%] px-4 py-3">Atualizada</th><th className="w-[9%] px-4 py-3"><span className="sr-only">Ação</span></th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-surface-border">
+                  {pages.map((page) => <WorkspaceRow key={page.id} account={props.accountSubdomain} page={page} />)}
+                </tbody>
+              </table>
             </div>
-          </article>
-        ))}
+            <div className="grid gap-4 lg:hidden">
+              {pages.map((page) => <WorkspaceCard key={page.id} account={props.accountSubdomain} page={page} />)}
+            </div>
+          </>
+        )}
       </section>
 
       {props.workspace.page.nextCursor ? (
         <div className="mt-6 flex justify-center">
-          <Link
-            href={`/a/${props.accountSubdomain}?workspace_cursor=${props.workspace.page.nextCursor}`}
-            className="inline-flex min-h-11 items-center rounded-lg border border-surface-border bg-white px-4 text-sm font-semibold text-ink-900"
-          >
-            Próxima página
-          </Link>
+          <Link href={`/a/${props.accountSubdomain}?workspace_cursor=${props.workspace.page.nextCursor}`} className="inline-flex min-h-11 items-center rounded-lg border border-surface-border bg-white px-4 text-sm font-semibold text-ink-900">Próxima página</Link>
         </div>
       ) : null}
     </main>
   );
 }
+
+function WorkspaceRow({ account, page }: Readonly<{ account: string; page: AccountLandingPageWorkspaceItem }>) {
+  return (
+    <tr className="align-top text-graytech-700">
+      <td className="px-4 py-4 font-semibold text-ink-900">{page.name}</td><td className="px-4 py-4"><Identity identity={page.identity} compact /></td><td className="px-4 py-4"><StateBadge state={page.state} /></td><td className="px-4 py-4">{revisionLabel(page.latestRevision?.number)}</td><td className="px-4 py-4">{revisionLabel(page.approvedRevision?.number)}</td><td className="px-4 py-4">{formatUpdatedAt(page.updatedAt)}</td><td className="px-4 py-4"><WorkspaceLink account={account} pageId={page.id} /></td>
+    </tr>
+  );
+}
+
+function WorkspaceCard({ account, page }: Readonly<{ account: string; page: AccountLandingPageWorkspaceItem }>) {
+  return (
+    <article className="rounded-2xl border border-surface-border bg-white p-5 shadow-card">
+      <div className="flex flex-wrap items-start justify-between gap-3"><h2 className="text-lg font-bold text-ink-900">{page.name}</h2><StateBadge state={page.state} /></div>
+      <Identity identity={page.identity} />
+      <dl className="mt-4 grid grid-cols-2 gap-3 border-t border-surface-border pt-4 text-sm">
+        <SummaryItem label="Última" value={revisionLabel(page.latestRevision?.number)} /><SummaryItem label="Aceita" value={revisionLabel(page.approvedRevision?.number)} /><SummaryItem label="Atualizada" value={formatUpdatedAt(page.updatedAt)} />
+      </dl>
+      <div className="mt-5"><WorkspaceLink account={account} pageId={page.id} /></div>
+    </article>
+  );
+}
+
+function Identity({ identity, compact = false }: Readonly<{ identity: AccountLandingPageWorkspaceItem["identity"]; compact?: boolean }>) {
+  return (
+    <dl className={compact ? "space-y-1 text-xs" : "mt-4 grid gap-2 text-sm"}>
+      {Object.entries(IDENTITY_LABELS).map(([key, label]) => (
+        <div key={key} className={compact ? "leading-5" : "grid grid-cols-[8.5rem_1fr] gap-2"}><dt className="font-semibold text-graytech-600">{label}:</dt><dd className="min-w-0 text-ink-900">{identity[key as keyof typeof identity]}</dd></div>
+      ))}
+    </dl>
+  );
+}
+
+function SummaryItem({ label, value }: Readonly<{ label: string; value: string }>) { return <div><dt className="font-semibold text-graytech-600">{label}</dt><dd className="mt-1 text-ink-900">{value}</dd></div>; }
+function StateBadge({ state }: Readonly<{ state: AccountLandingPageWorkspaceItem["state"] }>) { return <span className="inline-flex rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-800">{landingPageWorkspaceStateLabels[state]}</span>; }
+function WorkspaceLink({ account, pageId }: Readonly<{ account: string; pageId: string }>) { return <Link href={`/a/${account}/landing-pages/${pageId}`} className="inline-flex min-h-11 items-center justify-center rounded-lg border border-brand-700 px-4 text-sm font-semibold text-brand-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600">Abrir</Link>; }
+function revisionLabel(number: number | undefined) { return number ? `Versão ${number}` : "—"; }
+function formatUpdatedAt(value: string) { return new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" }).format(new Date(value)); }

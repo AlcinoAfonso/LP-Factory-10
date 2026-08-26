@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { LandingPageRenderer } from "@/components/lp-builder/LandingPageRenderer";
@@ -7,7 +8,6 @@ import { isLandingPageWorkspaceEnabled } from "@/lp-builder/landingPageWorkspace
 
 import { WorkspaceSubmitButton } from "../../../_components/WorkspaceSubmitButton";
 import { approveLandingPageRevisionAction } from "../actions";
-import { GenerationTrigger } from "./GenerationTrigger";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -41,45 +41,37 @@ export default async function LandingPagePreview({ params, searchParams }: PageP
         <section aria-label="Controles do preview" className="rounded-2xl border border-surface-border bg-white p-5 shadow-card sm:p-6">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
             <div className="min-w-0">
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-brand-700">
-                Landing page em draft
-              </p>
+              {preview.status === "ready" ? (
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-brand-700">{preview.model.landingPageName} → Versão {preview.model.revision.number}</p>
+              ) : null}
               <p className="mt-2 text-xl font-bold tracking-tight text-ink-900 sm:text-2xl">
                 Preview privado
               </p>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-graytech-600">
-                Esta superfície reproduz somente a revisão persistida selecionada. Gerar uma nova revisão continua sendo uma ação humana explícita.
+                Esta superfície reproduz somente a versão persistida selecionada.
               </p>
             </div>
             <div className="flex flex-col gap-2 sm:flex-row">
-              {canMutate ? (
-                <GenerationTrigger accountSlug={accountSlug} landingPageId={landingPageId} />
-              ) : null}
-              {workspaceEnabled && preview.status === "ready" && canMutate ? (
+              <Link href={`/a/${accountSlug}/landing-pages/${landingPageId}`} className="inline-flex min-h-11 items-center justify-center rounded-lg border border-surface-border bg-white px-4 text-sm font-semibold text-ink-900">Voltar para {preview.status === "ready" ? preview.model.landingPageName : "a landing page"}</Link>
+              {workspaceEnabled && preview.status === "ready" && canMutate && !preview.model.isAccepted ? (
                 <form action={approveLandingPageRevisionAction}>
                   <input type="hidden" name="account" value={accountSlug} />
                   <input type="hidden" name="landing_page_id" value={landingPageId} />
                   <input type="hidden" name="materialization_id" value={preview.model.revision.id} />
                   <WorkspaceSubmitButton
-                    idleLabel="Aprovar esta versão"
-                    pendingLabel="Aprovando..."
+                    idleLabel="Aceitar esta versão"
+                    pendingLabel="Aceitando..."
                     className="min-h-11 rounded-lg border border-brand-700 bg-white px-4 text-sm font-semibold text-brand-800 disabled:cursor-wait disabled:opacity-60"
                   />
                 </form>
               ) : null}
             </div>
           </div>
-          {preview.status === "ready" ? (
-            <RevisionEvidence model={preview.model} />
-          ) : null}
-          {typeof query.approved === "string" ? (
-            <p role="status" className="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm font-medium text-emerald-800">
-              Esta versão foi aprovada. Uma geração futura não substituirá essa escolha automaticamente.
-            </p>
-          ) : null}
+          {preview.status === "ready" && preview.model.isAccepted ? <p className="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm font-medium text-emerald-800">Esta é a versão aceita desta landing page.</p> : null}
+          {workspaceEnabled && preview.status === "ready" && canMutate && !preview.model.isAccepted ? <p className="mt-4 text-sm text-graytech-600">Confirma que esta é a versão aceita desta landing page. Isso não publica a página.</p> : null}
           {typeof query.action_error === "string" ? (
             <p role="alert" className="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
-              A aprovação não foi concluída. A versão anteriormente aprovada foi preservada.
+              O aceite não foi concluído. A versão anteriormente aceita foi preservada.
             </p>
           ) : null}
         </section>
@@ -89,7 +81,7 @@ export default async function LandingPagePreview({ params, searchParams }: PageP
         ) : preview.status === "empty" ? (
           <PreviewState
             title="Ainda não há uma revisão para visualizar"
-            description="Use o gatilho acima quando quiser gerar a primeira revisão desta landing page."
+            description="Volte ao detalhe da landing page para gerar a primeira versão."
           />
         ) : preview.status === "invalid_cta" ? (
           <PreviewState
@@ -104,38 +96,6 @@ export default async function LandingPagePreview({ params, searchParams }: PageP
         )}
       </div>
     </main>
-  );
-}
-
-function RevisionEvidence({
-  model,
-}: Readonly<{
-  model: Extract<Awaited<ReturnType<typeof loadLandingPagePreview>>, { status: "ready" }>["model"];
-}>) {
-  return (
-    <details className="mt-5 border-t border-surface-border pt-4 text-sm text-graytech-600">
-      <summary className="min-h-11 cursor-pointer rounded-md py-3 font-semibold text-ink-800 outline-none focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-2">
-        Metadados da revisão {model.revision.number}
-      </summary>
-      <dl className="grid gap-x-6 gap-y-3 pb-2 pt-3 sm:grid-cols-2 lg:grid-cols-3">
-        <EvidenceItem label="Revision ID" value={model.revision.id} />
-        <EvidenceItem label="Attempt ID" value={model.revision.attemptId} />
-        <EvidenceItem label="Request ID" value={model.revision.requestId} />
-        <EvidenceItem label="Prompt" value={model.revision.promptVersion} />
-        <EvidenceItem label="Contrato" value={`v${model.revision.presentationContractVersion}`} />
-        <EvidenceItem label="Texto" value={`${model.revision.textWorkload.model} · ${model.revision.textWorkload.reasoningEffort}`} />
-        <EvidenceItem label="Imagem" value={`${model.revision.imageWorkload.model} · ${model.revision.imageWorkload.size}`} />
-      </dl>
-    </details>
-  );
-}
-
-function EvidenceItem({ label, value }: Readonly<{ label: string; value: string }>) {
-  return (
-    <div className="min-w-0">
-      <dt className="font-semibold text-ink-800">{label}</dt>
-      <dd className="mt-1 break-all font-mono text-xs leading-5">{value}</dd>
-    </div>
   );
 }
 

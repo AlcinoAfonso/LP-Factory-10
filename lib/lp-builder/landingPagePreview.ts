@@ -58,6 +58,8 @@ export type LandingPageRenderSection =
 
 export type LandingPageRenderModel = Readonly<{
   contractVersion: 1;
+  landingPageName: string;
+  isAccepted: boolean;
   brandName?: string;
   sections: readonly LandingPageRenderSection[];
   conversion: Readonly<{
@@ -262,6 +264,9 @@ async function loadLandingPagePreviewUnchecked(
     status: "ready",
     model: deepFreeze({
       ...model,
+      landingPageName: landingPage.landingPage.name,
+      isAccepted:
+        landingPage.landingPage.approved_materialization_id === model.revision.id,
       media: {
         mainImage: {
           url: signed.signedUrl,
@@ -322,7 +327,7 @@ function prepareLandingPageRenderModel(input: Readonly<{
   landingPageId: string;
   revision: CurrentLandingPageRevision;
 }>):
-  | Readonly<{ ok: true; value: PreparedLandingPageRenderModel }>
+  | Readonly<{ ok: true; value: Omit<PreparedLandingPageRenderModel, "landingPageName" | "isAccepted"> }>
   | Readonly<{ ok: false; error: "REVISION_MISMATCH" | "INVALID_REVISION" | "INVALID_CTA" }> {
   const { revision } = input;
   if (
