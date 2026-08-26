@@ -8,7 +8,6 @@ import {
   compileLandingPageGenerationContext,
   compileLegacyLandingPageGenerationContext,
 } from "../generationContext";
-import { LANDING_PAGE_WORKSPACE_REQUIRED_INPUT_CATALOG_VERSION } from "../landingPageWorkspace";
 import type {
   CompileLandingPageGenerationContextResult,
   LandingPageGenerationContextFailureCode,
@@ -26,10 +25,7 @@ export type LandingPageGenerationContextBoundaryDependencies = Readonly<{
     | Readonly<{ ok: true; landingPage: AccountLandingPage }>
     | Readonly<{ ok: false; error: "not_found" | "read_failed" }>
   >;
-  loadPreparation: (input: {
-    taxonId: string;
-    requiredInputCatalogVersion: number;
-  }) => Promise<TaxonPreparationResult>;
+  loadPreparation: (input: { taxonId: string }) => Promise<TaxonPreparationResult>;
   log?: (payload: Readonly<Record<string, unknown>>) => void;
   now?: () => number;
 }>;
@@ -125,8 +121,6 @@ export async function compileLandingPageGenerationContextForDraftWithDependencie
       currentTaxonChain.segment;
     const preparation = await dependencies.loadPreparation({
       taxonId: servedTaxon.id,
-      requiredInputCatalogVersion:
-        LANDING_PAGE_WORKSPACE_REQUIRED_INPUT_CATALOG_VERSION,
     });
     if (!preparation.ok) preparationReason = preparation.error.code;
     result = compileLandingPageGenerationContext({

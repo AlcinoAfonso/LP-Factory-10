@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 24/08/2026
-• Versão: v1.5.182
+• Data: 25/08/2026
+• Versão: v1.5.184
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2603,6 +2603,99 @@ Repositório — Ajustados
   * As regressões focais, `npm ci`, `npm run check`, `git diff --check` e a inspeção autenticada do Preview em desktop e largura móvel foram aprovados; o servidor local iniciou na porta 3000, mas a renderização local ficou indisponível por ausência das chaves públicas do Supabase no worktree isolado.
   * A E20.6 deve ser executada novamente contra a versão explícita 4 antes de qualquer registro de suficiência.
   * O recorte não criou field, banco, migration, rota, API, nova UI, persistência, infraestrutura, automação, agente, job ou workload OpenAI e não alterou a E20.6.
+
+20.2.8 Versão atual e propagação escalável do catálogo E20.2
+
+20.2.8.1 Objetivo e status
+
+* Objetivo: definir uma versão atual global, explícita e repo-only para o catálogo E20.2, propagá-la de forma determinística aos consumidores correntes e evitar reavaliação humana por taxon quando a evolução for comprovadamente compatível.
+* Status: Implementação concluída e validada localmente em 24/08/2026 no PR #814; merge humano, apply da migration e validação hospedada permanecem pendentes.
+
+20.2.8.2 Registros do recorte
+
+* Banco:
+  * Criados:
+    * `public.landing_page_input_catalog_drafts`
+  * Ajustados:
+    * `public.save_account_landing_page_configuration_v1`
+* Repositório:
+  * Criados:
+    * `lib/conversion-content/landing-page/input-catalog/lifecycle.ts`
+    * `lib/conversion-content/landing-page/input-catalog/draft.ts`
+    * `lib/admin/adapters/adminInputCatalogLifecycleAdapter.ts`
+    * `lib/admin/adapters/adminInputCatalogLifecyclePagination.ts`
+    * `lib/admin/adapters/adminInputCatalogLifecycleValidation.ts`
+    * `app/admin/(protected)/estrutura-lp/actions.ts`
+    * `app/admin/(protected)/estrutura-lp/_components/AdminInputCatalogLifecycle.tsx`
+    * `supabase/migrations/20260824180000_e20_2_8_input_catalog_lifecycle.sql`
+    * `supabase/tests/e20_2_8_input_catalog_lifecycle.test.sql`
+    * `supabase/snippets/e20_2_8_input_catalog_lifecycle_verify.sql`
+  * Ajustados:
+    * `lib/conversion-content/landing-page/input-catalog/contracts.ts`
+    * `lib/conversion-content/landing-page/input-catalog/schema.ts`
+    * `lib/conversion-content/landing-page/input-catalog/resolver.ts`
+    * `lib/conversion-content/landing-page/input-catalog/index.ts`
+    * `lib/conversion-content/landing-page/input-catalog/validation-cases.ts`
+    * `lib/conversion-content/landing-page/taxon-preparation/contracts.ts`
+    * `lib/conversion-content/landing-page/taxon-preparation/preparation.ts`
+    * `lib/conversion-content/landing-page/taxon-preparation/input-catalog-evaluation.ts`
+    * `lib/conversion-content/landing-page/taxon-preparation/index.ts`
+    * `lib/conversion-content/landing-page/taxon-preparation/validation-cases.ts`
+    * `lib/conversion-content/adapters/selectedEndCustomerResearchAdapter.ts`
+    * `lib/conversion-content/adapters/inputCatalogEvaluationContextAdapter.ts`
+    * `lib/lp-builder/onboardingConfiguration.ts`
+    * `lib/lp-builder/adapters/onboardingConfigurationAdapter.ts`
+    * `lib/lp-builder/adapters/onboardingConfigurationAdapterCore.ts`
+    * `lib/lp-builder/adapters/landingPageWorkspaceAdapter.ts`
+    * `lib/lp-builder/adapters/generationContextAdapter.ts`
+    * `lib/lp-builder/adapters/generationContextAdapterCore.ts`
+    * `lib/lp-builder/generationContext.ts`
+    * `lib/lp-builder/landingPageWorkspace.ts`
+    * `lib/lp-builder/index.ts`
+    * `lib/lp-builder/validation-cases.ts`
+    * `lib/lp-builder/generation-context-validation-cases.ts`
+    * `lib/lp-builder/landing-page-workspace-validation-cases.ts`
+    * `lib/admin/adapters/adminLandingPageStructureAdapter.ts`
+    * `app/admin/(protected)/estrutura-lp/page.tsx`
+    * `app/admin/(protected)/estrutura-lp/validation-cases.ts`
+    * `app/admin/(protected)/taxonomia/[taxonId]/page.tsx`
+    * `app/admin/(protected)/taxonomia/[taxonId]/_components/AdminTaxonInputCatalogEvaluation.tsx`
+    * `app/admin/(protected)/taxonomia/actions.ts`
+* Referências:
+  * Catálogo e preparação factual: `docs/base-tecnica.md` — seções 3.15.4 e 3.15.7.
+  * Draft administrativo e RPC de configuração: `docs/schema.md` — seções 1.35 e 3.8.2.
+
+20.2.8.3 Autoridade e lifecycle de publicação
+
+* Status: Implementados.
+* Conteúdo:
+  * O registry versionado no repositório permanece a autoridade exclusiva das versões publicadas e da versão atual; v1–v5 não serão migradas para o banco.
+  * Pode existir somente um próximo draft mutável e não operacional. Persistência administrativa em banco só é admissível se a análise técnica a demonstrar como menor solução e nunca constitui autoridade do catálogo publicado.
+  * O draft preserva os fields publicados e sua `createdInVersion`; remoção direta ou proveniência retroativa falha fechada, e retirada usa somente `retiredInVersion` igual à versão alvo.
+  * A análise técnica confirmou um singleton service-only como menor residência robusta do draft e das evidências humanas vinculadas ao seu fingerprint, sem integração externa adicional e sem migrar v1–v5.
+  * Publicar exige congelar draft e evidências, materializar no repositório a nova versão executável e a declaração explícita de versão atual, validar em CI/Preview, obter revisão e merge humanos, concluir o deploy de Production e comprovar a identidade exata no runtime.
+  * A ativação bem-sucedida do artefato em Production torna a nova versão atual; qualquer falha anterior preserva a versão vigente. Eventual reconciliação administrativa posterior não pode substituir nem reverter a autoridade repo-only e, se atrasada, bloqueia novo draft/publicação administrativa até que o estado seja reconciliado com o artefato ativo exato.
+  * A reconciliação pós-deploy ocorre somente no runtime de Production quando versão, conteúdo e fingerprint do registry implantado coincidem exatamente com o handoff congelado; antes de remover a residência temporária, revalida identidade, conteúdo e contexto das decisões E20.6.5, materializa os marcadores `reviewed_input_catalog_version` ainda válidos sem nova IA e confirma a leitura final. Divergência, decisão obrigatória ausente/stale ou efeito não confirmado falha fechado e preserva o draft.
+
+20.2.8.4 Versão revisada, versão efetiva e compatibilidade
+
+* Status: Implementadas.
+* Conteúdo:
+  * `R` é a última versão com decisão humana explícita de suficiência; `C` é a versão operacional efetivamente autorizada pelo boundary canônico de preparação.
+  * `C` acompanha a versão atual quando `R = C` ou quando a transição resolvida for deterministicamente `sem mudança material` ou `evolução compatível`, sem escrita artificial em `reviewed_input_catalog_version`.
+  * Remoção, restrição, reinterpretação, ambiguidade ou mudança fora da allowlist conservadora exigem revisão E20.6.5; falhas permanecem fechadas e a IA não classifica compatibilidade estrutural.
+  * E19.2 pré-handoff, workspace E19.5 e geração E19.5 devem consumir o mesmo número concreto `C`; nenhum consumidor pode inferir `latest`, maior versão ou substituir `C` por `R`.
+
+20.2.8.5 Draft, gates e experiência administrativa
+
+* Status: Implementados; publicação de nova versão permanece sujeita a handoff repo-only, validações e decisão humana.
+* Conteúdo:
+  * O draft pode ser resolvido e validado administrativamente, mas nunca é operacional; qualquer edição material torna stale as evidências dependentes.
+  * O gate pré-publicação separa suficiência taxonômica E20.6 de validade estrutural das configurações E19.2 pré-handoff e E19.5, cobre com paginação e cardinalidade exata somente contas ativas com entitlement comercial elegível, plano válido e demais requisitos operacionais, e bloqueia diante de truncamento, cardinalidade divergente ou configuração operacional inválida/ilegível. LPs e configurações históricas de contas inativas ou inelegíveis permanecem preservadas sem bloquear a publicação global.
+  * E20.2 define e valida fields; E19.5 governa continuidade da identidade comercial; E20.6 decide somente suficiência factual. No MVP, `funnel_stage`, `transaction_intent` quando aplicável, `primary_conversion_goal` e `primary_service_or_offer` bloqueiam a publicação quando retirados ou alterados de modo `review_required` sem autoridade E19.5 específica, independentemente da E20.6; `compatible_evolution`, inclusive expansão estrita de `allowedValues`, permanece permitida, e field novo não adquire autoridade de identidade.
+  * Validação e handoff congelam fingerprints distintos do conteúdo do draft e da coleção operacional completa; qualquer drift posterior de taxonomia, configurações, LPs ou elegibilidade deixa a evidência stale e exige nova preparação antes da revisão/merge.
+  * A visão agregada deve evoluir `/admin/estrutura-lp?view=entradas`; `/admin/taxonomia/[taxonId]` permanece responsável pela avaliação individual E20.6.5. Não criar nova rota de primeiro nível; qualquer proposta de nova rota depende de insuficiência comprovada das superfícies existentes.
+  * A primeira entrega preserva histórico imutável, retirada forward-only de fields publicados e snapshots/configurações na versão efetivamente usada; não inclui rollback, múltiplos drafts, targeting por taxon, job, fila, agente, automação recorrente ou engine genérica de diff.
 
 20.3 Perfil de orientação para geração
 

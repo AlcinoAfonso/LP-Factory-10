@@ -10,6 +10,8 @@ import {
   type AdminLandingPageStructureView,
 } from "@/lib/admin/adapters/adminLandingPageStructureAdapter";
 import { cn } from "@/lib/utils";
+import { readAdminInputCatalogLifecycle } from "@/lib/admin/adapters/adminInputCatalogLifecycleAdapter";
+import { AdminInputCatalogLifecycle } from "./_components/AdminInputCatalogLifecycle";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -35,7 +37,10 @@ export default async function AdminLandingPageStructurePage({ searchParams }: Pa
     Object.entries(rawParams).map(([key, value]) => [key, Array.isArray(value) ? value[0] : value]),
   );
   const view = normalizeAdminLandingPageStructureView(query.view);
-  const structure = await readAdminLandingPageStructure(view, query);
+  const [structure, inputCatalogLifecycle] = await Promise.all([
+    readAdminLandingPageStructure(view, query),
+    view === "entradas" ? readAdminInputCatalogLifecycle() : Promise.resolve(null),
+  ]);
 
   return (
     <div className="space-y-4">
@@ -63,7 +68,12 @@ export default async function AdminLandingPageStructurePage({ searchParams }: Pa
       </nav>
 
       {structure.view === "parametros" ? <RootView data={structure.data} /> : null}
-      {structure.view === "entradas" ? <InputView data={structure.data} /> : null}
+      {structure.view === "entradas" && inputCatalogLifecycle ? (
+        <>
+          <AdminInputCatalogLifecycle state={inputCatalogLifecycle} />
+          <InputView data={structure.data} />
+        </>
+      ) : null}
     </div>
   );
 }

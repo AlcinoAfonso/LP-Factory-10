@@ -1,14 +1,12 @@
 import "server-only";
 
 import {
-  loadTaxonPreparationForReviewedVersion,
-  loadTaxonPreparationForVersion,
+  loadTaxonPreparationForCurrentVersion,
 } from "../../conversion-content/adapters/selectedEndCustomerResearchAdapter";
 import type {
   CompileLandingPageGenerationContextForDraftInput,
   CompileLandingPageGenerationContextResult,
 } from "../generationContextContracts";
-import { LANDING_PAGE_WORKSPACE_REQUIRED_INPUT_CATALOG_VERSION } from "../landingPageWorkspace";
 import { isLandingPageWorkspaceEnabled } from "../landingPageWorkspace";
 import { getAccountLandingPageOperationalRevalidationAuthority } from "./landingPageWorkspaceAdapter";
 import { getAccountLandingPageOnboardingRevalidationAuthority } from "./onboardingConfigurationAdapter";
@@ -25,19 +23,14 @@ export function compileLandingPageGenerationContextForDraft(
     return compileLegacyLandingPageGenerationContextForDraftWithDependencies(input, {
       loadRevalidationAuthority: getAccountLandingPageOnboardingRevalidationAuthority,
       loadLandingPage: readLandingPageDraft,
-      loadPreparation: loadTaxonPreparationForReviewedVersion,
+      loadPreparation: loadTaxonPreparationForCurrentVersion,
       log: (payload) => console.log(JSON.stringify(payload)),
     });
   }
   return compileLandingPageGenerationContextForDraftWithDependencies(input, {
     loadRevalidationAuthority: getAccountLandingPageOperationalRevalidationAuthority,
     loadLandingPage: readLandingPageDraft,
-    loadPreparation: ({ taxonId }) =>
-      loadTaxonPreparationForVersion({
-        taxonId,
-        requiredInputCatalogVersion:
-          LANDING_PAGE_WORKSPACE_REQUIRED_INPUT_CATALOG_VERSION,
-      }),
+    loadPreparation: loadTaxonPreparationForCurrentVersion,
     log: (payload) => console.log(JSON.stringify(payload)),
   });
 }

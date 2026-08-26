@@ -2,8 +2,8 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
 import type { AccountLandingPageOnboardingConfiguration } from "./contracts";
+import { CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION } from "../conversion-content/landing-page/input-catalog";
 import {
-  LANDING_PAGE_WORKSPACE_REQUIRED_INPUT_CATALOG_VERSION,
   deriveLandingPageWorkspaceState,
   isLandingPageWorkspaceEnabled,
   landingPageWorkspaceStateLabels,
@@ -12,7 +12,7 @@ import {
 
 const cases: readonly Readonly<{ name: string; run: () => void }>[] = [
   {
-    name: "workspace rollout accepts only literal true and pins explicit input catalog v5",
+    name: "workspace rollout accepts only literal true and consumes the explicit repo current version",
     run: () => {
       const previous = process.env.E19_5_WORKSPACE_ENABLED;
       try {
@@ -22,7 +22,7 @@ const cases: readonly Readonly<{ name: string; run: () => void }>[] = [
         assert.equal(isLandingPageWorkspaceEnabled(), false);
         process.env.E19_5_WORKSPACE_ENABLED = "true";
         assert.equal(isLandingPageWorkspaceEnabled(), true);
-        assert.equal(LANDING_PAGE_WORKSPACE_REQUIRED_INPUT_CATALOG_VERSION, 5);
+        assert.equal(CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION, 5);
       } finally {
         if (previous === undefined) delete process.env.E19_5_WORKSPACE_ENABLED;
         else process.env.E19_5_WORKSPACE_ENABLED = previous;
@@ -76,6 +76,10 @@ const cases: readonly Readonly<{ name: string; run: () => void }>[] = [
         new URL("../../supabase/migrations/20260822170000_e19_5_3_landing_page_workspace.sql", import.meta.url),
         "utf8",
       );
+      const lifecycleMigration = readFileSync(
+        new URL("../../supabase/migrations/20260824180000_e20_2_8_input_catalog_lifecycle.sql", import.meta.url),
+        "utf8",
+      );
       const generationAdapter = readFileSync(
         new URL("./adapters/generationContextAdapter.ts", import.meta.url),
         "utf8",
@@ -93,8 +97,9 @@ const cases: readonly Readonly<{ name: string; run: () => void }>[] = [
         "utf8",
       );
       assert.ok(adapter.indexOf("isLandingPageWorkspaceEnabled()") < adapter.indexOf("account_landing_page_shared_configurations"));
-      assert.match(adapter, /loadTaxonPreparationForVersion\(\{/);
-      assert.match(adapter, /requiredInputCatalogVersion:\s*LANDING_PAGE_WORKSPACE_REQUIRED_INPUT_CATALOG_VERSION/);
+      assert.match(adapter, /loadTaxonPreparationForCurrentVersion\(\{/);
+      assert.match(adapter, /effectiveInputCatalogVersion/);
+      assert.doesNotMatch(adapter, /LANDING_PAGE_WORKSPACE_REQUIRED_INPUT_CATALOG_VERSION/);
       assert.doesNotMatch(adapter, /loadTaxonPreparationForReviewedVersion|readAllLandingPageMaterializations|is_initialized|archive/i);
       assert.match(adapter, /count:\s*"exact"/);
       assert.match(adapter, /\.range\(/);
@@ -106,8 +111,10 @@ const cases: readonly Readonly<{ name: string; run: () => void }>[] = [
       );
       assert.match(generationAdapter, /if \(!isLandingPageWorkspaceEnabled\(\)\)/);
       assert.match(generationAdapter, /compileLegacyLandingPageGenerationContextForDraftWithDependencies/);
-      assert.match(generationAdapter, /loadTaxonPreparationForReviewedVersion/);
-      assert.match(generationAdapter, /loadTaxonPreparationForVersion/);
+      assert.match(generationAdapter, /loadTaxonPreparationForCurrentVersion/);
+      assert.doesNotMatch(generationAdapter, /loadTaxonPreparationForReviewedVersion|loadTaxonPreparationForVersion/);
+      assert.match(lifecycleMigration, /p_catalog_version is null or p_catalog_version <= 0/);
+      assert.doesNotMatch(lifecycleMigration, /p_catalog_version is distinct from 5/);
       assert.match(revisionAdapter, /append_account_landing_page_materialization_v2/);
       assert.match(migration, /p_expected_shared_revision is null/);
       assert.match(migration, /p_expected_landing_page_revision is null/);

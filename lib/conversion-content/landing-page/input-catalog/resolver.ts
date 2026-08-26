@@ -113,11 +113,17 @@ export function resolveLandingPageInputCatalogFromRegistry(
     }
   }
 
-  const conditionError = validateConditions(fields);
-  if (conditionError) return conditionError;
+  const retirementError = validateRetirements(fields, input.version);
+  if (retirementError) return retirementError;
+
+  const activeFields = fields.filter(
+    (field) =>
+      field.retiredInVersion === undefined ||
+      field.retiredInVersion > input.version,
+  );
 
   const plan = input.plan as LandingPageInputCatalogPlan;
-  const effectiveFields = fields.filter((field) => field.allowedPlans.includes(plan));
+  const effectiveFields = activeFields.filter((field) => field.allowedPlans.includes(plan));
   const effectiveConditionError = validateConditions(effectiveFields);
   if (effectiveConditionError) return effectiveConditionError;
 
@@ -130,9 +136,36 @@ export function resolveLandingPageInputCatalogFromRegistry(
       plan,
       appliedLayers: selectedLayers.map((layer) => ({ level: layer.level, taxon: layer.taxon })),
       fields: effectiveFields,
+      retiredFieldKeys: fields
+        .filter(
+          (field) =>
+            field.retiredInVersion !== undefined &&
+            field.retiredInVersion <= input.version &&
+            field.allowedPlans.includes(plan),
+        )
+        .map((field) => field.fieldKey),
       valid: true as const,
     })),
   };
+}
+
+function validateRetirements(
+  fields: readonly ResolvedLandingPageInputField[],
+  catalogVersion: number,
+): ResolveLandingPageInputCatalogResult | null {
+  for (const field of fields) {
+    if (
+      field.retiredInVersion !== undefined &&
+      (field.retiredInVersion <= field.createdInVersion ||
+        field.retiredInVersion > catalogVersion)
+    ) {
+      return invalid(
+        "INVALID_LAYER",
+        `Invalid forward-only retirement: ${field.fieldKey}`,
+      );
+    }
+  }
+  return null;
 }
 
 function applySpecialization(

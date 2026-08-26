@@ -4,8 +4,6 @@ import type {
   AccountLandingPageWorkspaceState,
 } from "./contracts";
 
-export const LANDING_PAGE_WORKSPACE_REQUIRED_INPUT_CATALOG_VERSION = 5 as const;
-
 export function isLandingPageWorkspaceEnabled(): boolean {
   return process.env.E19_5_WORKSPACE_ENABLED === "true";
 }

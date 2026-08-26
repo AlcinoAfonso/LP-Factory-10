@@ -162,6 +162,7 @@ type LandingPageInputFieldDefinitionBase = Readonly<{
   capabilityBindings?: readonly LandingPageInputCapabilityBinding[];
   evidence: LandingPageInputEvidence;
   createdInVersion: number;
+  retiredInVersion?: number;
 }>;
 
 export type LandingPageInputFieldDefinition =
@@ -235,7 +236,24 @@ export type ResolvedLandingPageInputCatalog = Readonly<{
     taxon?: LandingPageInputCatalogTaxonIdentity;
   }>[];
   fields: readonly ResolvedLandingPageInputField[];
+  retiredFieldKeys: readonly string[];
   valid: true;
+}>;
+
+export const landingPageInputCatalogTransitionClassifications = [
+  "no_material_change",
+  "compatible_evolution",
+  "review_required",
+] as const;
+
+export type LandingPageInputCatalogTransitionClassification =
+  (typeof landingPageInputCatalogTransitionClassifications)[number];
+
+export type LandingPageInputCatalogTransitionResult = Readonly<{
+  classification: LandingPageInputCatalogTransitionClassification;
+  addedFieldKeys: readonly string[];
+  expandedAllowedValueFieldKeys: readonly string[];
+  reviewRequiredFieldKeys: readonly string[];
 }>;
 
 export type LandingPageInputCatalogErrorCode =

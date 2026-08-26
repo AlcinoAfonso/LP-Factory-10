@@ -1,5 +1,6 @@
 import type {
   LandingPageInputCatalogPlan,
+  LandingPageInputCatalogTaxonChain,
   LandingPageInputCatalogTaxonIdentity,
   ResolvedLandingPageInputCatalog,
 } from "../input-catalog";
@@ -115,11 +116,18 @@ export type TaxonPreparationErrorCode =
   | "REQUIRED_INPUT_CATALOG_VERSION_INVALID"
   | "REQUIRED_INPUT_CATALOG_VERSION_NOT_EXECUTABLE"
   | "INPUT_CATALOG_REVIEW_ABSENT"
-  | "INPUT_CATALOG_REVIEW_VERSION_MISMATCH";
+  | "INPUT_CATALOG_REVIEW_VERSION_MISMATCH"
+  | "INPUT_CATALOG_TRANSITION_REVIEW_REQUIRED";
 
 export type DeriveTaxonPreparationForVersionInput = Readonly<{
   selectedResearch: LoadSelectedEndCustomerResearchResult;
   requiredInputCatalogVersion: number;
+}>;
+
+export type DeriveEffectiveTaxonPreparationInput = Readonly<{
+  selectedResearch: LoadSelectedEndCustomerResearchResult;
+  currentInputCatalogVersion: number;
+  taxonChain: LandingPageInputCatalogTaxonChain;
 }>;
 
 export type TaxonPreparationResult =
@@ -132,6 +140,10 @@ export type TaxonPreparationResult =
         selectedResearchVersion: number;
         reviewedInputCatalogVersion: number;
         requiredInputCatalogVersion: number;
+        effectiveInputCatalogVersion: number;
+        transitionClassification:
+          | "no_material_change"
+          | "compatible_evolution";
         research: EndCustomerResearchContent;
       }>;
     }>

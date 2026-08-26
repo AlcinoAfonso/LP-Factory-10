@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data da última atualização: 24/08/2026
-• Documento: LP Factory 10 — Schema (DB Contract) v1.0.55
+• Documento: LP Factory 10 — Schema (DB Contract) v1.0.56
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -979,7 +979,7 @@
 1.32 account_landing_page_configurations
 1.32.1 Função e residência
 • Residência operacional lazy por LP dos fields E20.2 com `scope = offer | campaign | landing_page`.
-• A linha nasce no primeiro save da LP; configuração parcial é válida e completude continua derivada em runtime pelo catálogo v5 exato.
+• A linha nasce no primeiro save da LP; configuração parcial é válida e completude continua derivada em runtime pela versão atual explícita do catálogo repo-only.
 • O shape de `values` permanece declarativo por `scope`; a tabela não replica uma lista de fields do catálogo.
 
 1.32.2 Colunas, constraints e índice
@@ -1000,7 +1000,7 @@
 • service_role: SELECT, INSERT e UPDATE; sem DELETE ou TRUNCATE.
 • O trigger `account_landing_page_configurations_set_updated_at` atualiza updated_at antes de update.
 • Não há backfill, placeholder, inicialização eager ou cópia da configuração histórica de onboarding para este agregado.
-• O contrato está materializado repo-only em `supabase/migrations/20260822170000_e19_5_3_landing_page_workspace.sql`; apply hospedado e verificação read-only permanecem pós-merge.
+• O contrato foi aplicado no ambiente hospedado por `supabase/migrations/20260822170000_e19_5_3_landing_page_workspace.sql` e validado pelos testes e verificadores focais da E19.5.3.
 
 1.33 openai_model_catalog_models
 1.33.1 Função e colunas
@@ -1028,6 +1028,26 @@
 • Migration forward-only: `supabase/migrations/20260823144334_e21_2_5_openai_model_catalog.sql`.
 • Teste transacional: `supabase/tests/e21_2_5_openai_model_catalog.test.sql`; verificador read-only: `supabase/snippets/e21_2_5_openai_model_catalog_verify.sql`.
 • Estado atual: migration aplicada no ambiente hospedado pelo fluxo canônico; o verificador read-only aprovou 8/8 verificações e o Security Controls não apresentou alerta incompatível com as tabelas, constraints, RLS, policies, ACLs, RPCs ou triggers do catálogo. O INFO de RLS sem policy é esperado e compatível com acesso exclusivo por service_role.
+
+1.35 landing_page_input_catalog_drafts
+1.35.1 Função e autoridade
+• Residência singleton do único próximo draft administrativo do catálogo E20.2; o conteúdo é mutável e não operacional.
+• A tabela não armazena nem replica as versões publicadas e não define a versão atual. Registry, versionamento publicado e declaração de versão atual permanecem autoridade exclusiva do repositório implantado.
+• base_version e target_version são inteiros positivos e sequenciais; catalog_json é objeto JSON; revision é bigint positiva e suporta concorrência otimista.
+
+1.35.2 Evidências e constraints
+• content_fingerprint é SHA-256 hexadecimal obrigatório; validation_fingerprint/validation_context_fingerprint/validated_at e publication_fingerprint/publication_context_fingerprint/publication_prepared_at formam conjuntos consistentes.
+• Evidência de publicação só pode referenciar o mesmo conteúdo e a mesma coleção operacional integral validados. Drift de taxonomia, configuração E19.2 pré-handoff, configuração E19.5, LP ou elegibilidade torna o handoff stale. O registro significa handoff repo-only preparado, não publicação, ativação ou autoridade operacional.
+• taxon_review_evidence é objeto JSON server-only de decisões humanas pré-publicação vinculadas ao fingerprint exato do conteúdo e do contexto E20.6.5; editar o draft limpa essas evidências, e registrá-las não atualiza reviewed_input_catalog_version.
+• singleton é a primary key booleana e aceita somente true; no máximo uma linha pode existir.
+• created_by e updated_by referenciam auth.users(id) com ON UPDATE CASCADE e ON DELETE RESTRICT; created_at e updated_at são timestamptz não nulos, e trigger canônico mantém updated_at.
+
+1.35.3 Segurança e artefatos
+• RLS habilitado e nenhuma policy; public, anon, authenticated e ai_readonly não possuem grants.
+• service_role possui SELECT, INSERT, UPDATE e DELETE; não há acesso direto do client.
+• DELETE é usado somente pela reconciliação humana no runtime de Production pós-deploy, depois de o boundary comprovar que versão atual, conteúdo e fingerprint do registry implantado correspondem exatamente ao draft congelado.
+• Migration forward-only: `supabase/migrations/20260824180000_e20_2_8_input_catalog_lifecycle.sql`; teste transacional: `supabase/tests/e20_2_8_input_catalog_lifecycle.test.sql`; verificador read-only: `supabase/snippets/e20_2_8_input_catalog_lifecycle_verify.sql`.
+• A migration não cria linha e não migra v1–v5. Apply hospedado permanece pendente do merge humano.
 
 2. Views
 
@@ -1252,7 +1272,7 @@
 3.8.2 Save atômico versionado
 • `save_account_landing_page_configuration_v1(uuid, uuid, jsonb, jsonb, bigint, bigint, integer, uuid, uuid) → table(shared_revision bigint, landing_page_revision bigint)` grava as duas residências em uma transação; o último argumento é a materialização mais recente observada durante a validação dos baselines de identidade.
 • O RPC usa SECURITY INVOKER, search_path fixado, lock tenant-safe da LP, tokens otimistas independentes e comparação da última materialização; ausência esperada exige inexistência da linha, concorrência com append falha fechado e save sem mudança não incrementa revisão.
-• `catalog_version` deve ser exatamente 5; scope drift, versão diferente, LP não operacional, ator sem autoridade ou revisão stale falham fechados.
+• `catalog_version` deve ser inteiro positivo e corresponde à versão efetiva corrente validada pelo boundary repo-only antes da chamada; o banco não deriva current ou latest. Scope drift, versão inválida, LP não operacional, ator sem autoridade ou revisão stale falham fechados.
 • A residência compartilhada só é criada quando contém valor; a residência da LP nasce no primeiro save.
 • EXECUTE exclusivo de service_role; public, anon, authenticated e ai_readonly não executam.
 
