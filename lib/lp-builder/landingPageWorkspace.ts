@@ -4,6 +4,7 @@ import type {
   AccountLandingPageOnboardingStoredValues,
   AccountLandingPageWorkspaceState,
 } from "./contracts";
+import { landingPageInputPresentationLabel } from "./landingPageInputPresentation";
 
 export function isLandingPageWorkspaceEnabled(): boolean {
   return process.env.E19_5_WORKSPACE_ENABLED === "true";
@@ -108,9 +109,10 @@ function formatResolvedEnumValue(
   ) {
     return "Não informado";
   }
-  if (field.field.fieldKey === WORKSPACE_IDENTITY_FIELD_KEYS.funnelStage) {
-    return value.toLocaleUpperCase("pt-BR");
-  }
+  // E20.2 `allowedValues` above remains the sole authority. This helper only
+  // presents the already-authorized value with the same labels used by setup.
+  const presentationLabel = landingPageInputPresentationLabel(value);
+  if (presentationLabel) return presentationLabel;
   const words = value.replace(/[._-]+/g, " ").trim();
   return words ? words.charAt(0).toUpperCase() + words.slice(1) : "Não informado";
 }

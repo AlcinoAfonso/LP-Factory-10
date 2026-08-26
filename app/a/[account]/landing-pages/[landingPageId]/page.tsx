@@ -41,8 +41,8 @@ export default async function LandingPageWorkspaceDetail({ params, searchParams 
   }
 
   return (
-    <>
-      <main className="mx-auto max-w-6xl px-4 pb-2 pt-6 sm:px-6 sm:pt-10">
+    <main>
+      <div className="mx-auto max-w-6xl px-4 pb-2 pt-6 sm:px-6 sm:pt-10">
         <nav aria-label="Contexto da página" className="text-sm font-semibold text-brand-800">
           <Link href={`/a/${accountSubdomain}`} className="min-h-11 py-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600">
             Minhas landing pages
@@ -119,7 +119,7 @@ export default async function LandingPageWorkspaceDetail({ params, searchParams 
             </Link>
           ) : null}
         </section>
-      </main>
+      </div>
 
       {detail.canMutate ? (
         <OnboardingConfigurationJourney
@@ -130,19 +130,22 @@ export default async function LandingPageWorkspaceDetail({ params, searchParams 
           landingPageRevision={detail.configuration.landingPageRevision}
         />
       ) : (
-        <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
+        <section
+          aria-labelledby="landing-page-readonly-configuration-title"
+          className="mx-auto max-w-6xl px-4 py-6 sm:px-6"
+        >
           <section className="rounded-2xl border border-surface-border bg-white p-6 shadow-card">
             <p className="text-sm font-semibold uppercase tracking-[0.16em] text-brand-700">Conta → LP → Configurações</p>
-            <h2 className="mt-2 text-xl font-bold text-ink-900">Configuração em modo somente leitura</h2>
+            <h2 id="landing-page-readonly-configuration-title" className="mt-2 text-xl font-bold text-ink-900">Configuração em modo somente leitura</h2>
             <p className="mt-3 text-sm text-graytech-600">
               {detail.configuration.resolved.complete
                 ? "Todos os dados obrigatórios estão válidos para a versão operacional autorizada."
                 : `Ainda faltam ${detail.configuration.resolved.missingRequiredFieldKeys.length} campos obrigatórios.`}
             </p>
           </section>
-        </main>
+        </section>
       )}
-    </>
+    </main>
   );
 }
 

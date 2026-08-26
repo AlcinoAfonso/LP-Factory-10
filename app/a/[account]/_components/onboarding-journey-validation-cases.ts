@@ -147,6 +147,10 @@ const cases: readonly Readonly<{ name: string; run: () => void }>[] = [
         new URL("./OnboardingConfigurationJourney.tsx", import.meta.url),
         "utf8",
       );
+      const presentation = readFileSync(
+        new URL("../../../../lib/lp-builder/landingPageInputPresentation.ts", import.meta.url),
+        "utf8",
+      );
       assert.match(page, /listAccountLandingPageDrafts/);
       assert.match(page, /complete_unbound/);
       assert.match(page, /complete_bound/);
@@ -165,7 +169,7 @@ const cases: readonly Readonly<{ name: string; run: () => void }>[] = [
       assert.match(journey, /brand_logo_asset: "Logo da marca"/);
       assert.match(journey, /business_offerings_summary: "O que seu negócio oferece"/);
       assert.match(journey, /primary_conversion_goal: "Objetivo principal da página"/);
-      assert.match(journey, /rent: "Locação"/);
+      assert.match(presentation, /rent: "Locação"/);
       for (const [technicalToken, friendlyLabel] of [
         ["contact", "Entrar em contato"],
         ["schedule", "Agendar"],
@@ -174,15 +178,15 @@ const cases: readonly Readonly<{ name: string; run: () => void }>[] = [
         ["register_interest", "Demonstrar interesse"],
       ]) {
         assert.match(
-          journey,
+          presentation,
           new RegExp(`${technicalToken}: "${friendlyLabel}"`),
         );
       }
-      assert.match(journey, /OPTION_LABELS\[value\] \?\? value/);
-      assert.match(journey, /OPTION_LABELS\[item\] \?\? item/);
+      assert.match(journey, /landingPageInputPresentationLabel\(value\) \?\? value/);
+      assert.match(journey, /landingPageInputPresentationLabel\(item\) \?\? item/);
       assert.match(
         journey,
-        /function optionLabel\(option: string\)[\s\S]+OPTION_LABELS\[option\]/,
+        /function optionLabel\(option: string\)[\s\S]+landingPageInputPresentationLabel\(option\)/,
       );
       assert.match(action, /getAccountLandingPageOnboardingConfiguration/);
       assert.match(action, /listAccountLandingPageDrafts/);

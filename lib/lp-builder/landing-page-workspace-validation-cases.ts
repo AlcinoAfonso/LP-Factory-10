@@ -35,17 +35,23 @@ const cases: readonly Readonly<{ name: string; run: () => void }>[] = [
     run: () => {
       const identity = projectLandingPageWorkspaceIdentity([
         identityField("funnel_stage", "bofu", true, "enum"),
-        identityField("transaction_intent", undefined, false, "enum"),
+        identityField("transaction_intent", "buy", true, "enum"),
         identityField("primary_conversion_goal", "contact", true, "enum"),
         identityField("primary_service_or_offer", "Imóvel residencial", true, "string"),
       ]);
       assert.deepEqual(identity, {
-        funnelStage: "BOFU",
-        transactionIntent: "Não se aplica",
-        primaryConversionGoal: "Contact",
+        funnelStage: "Pronto para conversar ou comprar",
+        transactionIntent: "Compra",
+        primaryConversionGoal: "Entrar em contato",
         primaryServiceOrOffer: "Imóvel residencial",
       });
       assert.equal(projectLandingPageWorkspaceIdentity([]).primaryConversionGoal, "Não informado");
+      assert.equal(
+        projectLandingPageWorkspaceIdentity([
+          identityField("transaction_intent", undefined, false, "enum"),
+        ]).transactionIntent,
+        "Não se aplica",
+      );
       assert.equal(
         projectLandingPageWorkspaceIdentity([
           identityField("primary_service_or_offer", "serviço_personalizado", true, "string"),
@@ -173,6 +179,13 @@ const cases: readonly Readonly<{ name: string; run: () => void }>[] = [
         new URL("../../app/a/[account]/_components/LandingPageWorkspace.tsx", import.meta.url),
         "utf8",
       );
+      const configurationJourney = readFileSync(
+        new URL(
+          "../../app/a/[account]/_components/OnboardingConfigurationJourney.tsx",
+          import.meta.url,
+        ),
+        "utf8",
+      );
       const detail = readFileSync(
         new URL("../../app/a/[account]/landing-pages/[landingPageId]/page.tsx", import.meta.url),
         "utf8",
@@ -201,6 +214,23 @@ const cases: readonly Readonly<{ name: string; run: () => void }>[] = [
       assert.match(creation, /\["owner", "admin"\]/);
       assert.match(detail, /<GenerationTrigger/);
       assert.match(detail, /maxDuration = 300/);
+      assert.match(detail, /<main>/);
+      assert.doesNotMatch(
+        detail,
+        /<main className="mx-auto max-w-6xl px-4 pb-2 pt-6 sm:px-6 sm:pt-10">/,
+      );
+      assert.doesNotMatch(
+        detail,
+        /<main className="mx-auto max-w-6xl px-4 py-6 sm:px-6">/,
+      );
+      assert.match(
+        configurationJourney,
+        /const JourneyRoot = props\.workspaceMode \? "section" : "main"/,
+      );
+      assert.match(
+        configurationJourney,
+        /props\.workspaceMode \? \([\s\S]*<h2[\s\S]*Revise os dados desta landing page/,
+      );
       assert.match(generation, /preview\?revision=\$\{successfulRevisionId\}/);
       assert.match(preview, /canMutate && !preview\.model\.isAccepted/);
       assert.doesNotMatch(preview, /<GenerationTrigger/);

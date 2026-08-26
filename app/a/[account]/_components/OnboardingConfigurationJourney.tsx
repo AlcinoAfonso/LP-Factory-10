@@ -25,6 +25,7 @@ import {
   type AccountLandingPageOnboardingStoredValues,
 } from "../../../../lib/lp-builder";
 import { validateStarterColorPalette } from "../../../../lib/lp-builder/onboardingConfiguration";
+import { landingPageInputPresentationLabel } from "../../../../lib/lp-builder/landingPageInputPresentation";
 import { saveOnboardingConfigurationAction } from "../onboarding-configuration-actions";
 import { saveLandingPageConfigurationAction } from "../landing-pages/[landingPageId]/configuration-actions";
 import { initialOnboardingConfigurationActionState } from "./onboarding-configuration-action-contract";
@@ -139,38 +140,6 @@ const FIELD_LABELS: Readonly<Record<string, string>> = {
   paid_search_keyword_map: "Termos de busca e mensagem",
   brand_color_palette: "Paleta da marca",
   brand_logo_asset: "Logo da marca",
-};
-
-const OPTION_LABELS: Readonly<Record<string, string>> = {
-  bofu: "Pronto para conversar ou comprar",
-  mofu: "Comparando alternativas",
-  tofu: "Conhecendo o tema",
-  paid_search: "Busca paga",
-  paid_social: "Redes sociais pagas",
-  organic: "Busca ou conteúdo orgânico",
-  whatsapp: "WhatsApp",
-  qr_code: "QR code",
-  other: "Outra origem",
-  form: "Formulário",
-  phone: "Telefone",
-  email: "E-mail",
-  external_url: "Link externo",
-  contact: "Entrar em contato",
-  schedule: "Agendar",
-  request_quote: "Solicitar orçamento",
-  purchase: "Comprar",
-  register_interest: "Demonstrar interesse",
-  launch: "Lançamento",
-  under_construction: "Em construção",
-  ready: "Pronto",
-  used: "Usado",
-  mixed: "Mais de um estágio",
-  buy: "Compra",
-  sell: "Venda",
-  valuation: "Avaliação",
-  rent: "Locação",
-  in_person: "Presencial",
-  remote: "Remoto",
 };
 
 export function OnboardingConfigurationJourney(props: Readonly<{
@@ -309,8 +278,13 @@ export function OnboardingConfigurationJourney(props: Readonly<{
     });
   };
 
+  const JourneyRoot = props.workspaceMode ? "section" : "main";
+
   return (
-    <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-10">
+    <JourneyRoot
+      className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-10"
+      aria-labelledby={props.workspaceMode ? "landing-page-configuration-title" : undefined}
+    >
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_18rem]">
         <section className="rounded-2xl border border-surface-border bg-white p-5 shadow-card sm:p-8">
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -318,11 +292,18 @@ export function OnboardingConfigurationJourney(props: Readonly<{
               <p className="text-sm font-semibold uppercase tracking-[0.16em] text-brand-700">
                 {props.workspaceMode ? "Configurações da página" : "Primeiros passos"}
               </p>
-              <h1 className="mt-2 text-2xl font-bold tracking-tight text-ink-900 sm:text-3xl">
-                {props.workspaceMode
-                  ? "Revise os dados desta landing page"
-                  : "Vamos preparar sua primeira landing page"}
-              </h1>
+              {props.workspaceMode ? (
+                <h2
+                  id="landing-page-configuration-title"
+                  className="mt-2 text-2xl font-bold tracking-tight text-ink-900 sm:text-3xl"
+                >
+                  Revise os dados desta landing page
+                </h2>
+              ) : (
+                <h1 className="mt-2 text-2xl font-bold tracking-tight text-ink-900 sm:text-3xl">
+                  Vamos preparar sua primeira landing page
+                </h1>
+              )}
             </div>
             <span className="rounded-full bg-brand-50 px-3 py-1 text-sm font-medium text-brand-800">
               Etapa {stepIndex + 1} de {STEPS.length}
@@ -490,7 +471,7 @@ export function OnboardingConfigurationJourney(props: Readonly<{
           </section>
         </aside>
       </div>
-    </main>
+    </JourneyRoot>
   );
 }
 
@@ -876,16 +857,18 @@ function humanizeFieldKey(fieldKey: string) {
 }
 
 function optionLabel(option: string) {
-  return OPTION_LABELS[option] ?? option.replaceAll("_", " ");
+  return landingPageInputPresentationLabel(option) ?? option.replaceAll("_", " ");
 }
 
 export function formatDisplayValue(value: unknown) {
-  if (typeof value === "string") return OPTION_LABELS[value] ?? value;
+  if (typeof value === "string") return landingPageInputPresentationLabel(value) ?? value;
   if (typeof value === "boolean") return value ? "Sim" : "Não";
   if (Array.isArray(value)) {
     return value
       .map((item) => {
-        if (typeof item === "string") return OPTION_LABELS[item] ?? item;
+        if (typeof item === "string") {
+          return landingPageInputPresentationLabel(item) ?? item;
+        }
         if (!isRecord(item)) return null;
         const keyword =
           typeof item.keyword_or_cluster === "string"
