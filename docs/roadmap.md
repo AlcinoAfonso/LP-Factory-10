@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 26/08/2026
-• Versão: v1.5.187
+• Versão: v1.5.188
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2098,7 +2098,7 @@ Repositório — Ajustados
 
 19. E19 — LP Builder
 - Objetivo: Consolidar o fluxo Core de landing pages por conta, da identidade mínima em `draft` às futuras etapas de geração, revisão, materialização e publicação, sempre por recortes aprovados.
-- Status: E19.1, E19.2 e E19.3 concluídas. E19.4.3, E19.4.4 e E19.4.5 concluídas; a E19.4 está encerrada e integrada à `main` pelo PR #776. A revisão 3 permanece preservada como baseline dos gaps persuasivos observados. A E19.5.3 está concluída e operacional em Preview e Production após os gates pós-merge e os smokes autenticados com a E20.2 v5.
+- Status: E19.1, E19.2 e E19.3 concluídas. E19.4.3, E19.4.4 e E19.4.5 concluídas; a E19.4 está encerrada e integrada à `main` pelo PR #776. A revisão 3 permanece preservada como baseline dos gaps persuasivos observados. A E19.5.3 está concluída e operacional em Preview e Production após os gates pós-merge e os smokes autenticados com a E20.2 v5. A E19.5.4 está definida no plano-base v2 e ainda não foi implementada.
 
 19.1 Criação produtiva mínima de LP por conta
 
@@ -2450,7 +2450,7 @@ Repositório — Ajustados
 
 19.5.1 Objetivo e status
 - Objetivo: entregar o ciclo operacional reduzido para múltiplas identidades de LP por conta, com configuração contextual lazy, revisões integrais append-only, histórico, preview e aprovação humana explícita.
-- Status: Concluída em 23/08/2026 após merge, apply canônico, verificações pós-apply e rollout controlado aprovado em Preview e Production.
+- Status: A E19.5.3 foi concluída em 23/08/2026 após merge, apply canônico, verificações pós-apply e rollout controlado aprovado em Preview e Production. A E19.5.4 está definida e aguarda implementação.
 
 19.5.2 Registros do recorte
 - Banco:
@@ -2523,6 +2523,17 @@ Repositório — Ajustados
   - a migration foi aplicada pelo fluxo canônico; o verificador read-only e os Security Controls passaram após a correção forward-only das grants dos helpers, sem editar a migration aplicada;
   - a avaliação E20.6 da v5 e a decisão humana de suficiência permanecem concluídas para o taxon real servido `Corretor Imóveis` (`corretor-imoveis`), com `reviewed_input_catalog_version = 5` e sem gaps candidatos; o smoke hospedado confirmou o consumo operacional da v5 sem promover o marcador nem alterar a E20.6;
   - `E19_5_WORKSPACE_ENABLED` foi habilitado sequencialmente com redeploy e aprovação em Preview e Production; o smoke final confirmou workspace, configuração v5, histórico, preview e a revisão 4 já aprovada, sem gerar revisão adicional; archive/restore, publicação, editor manual, melhoria parcial por IA, hard delete, tracking, mensuração, testes A/B, catálogo avançado de ofertas e mecanismo global ou em massa permanecem fora do recorte.
+
+19.5.4 UX operacional do workspace de LPs
+- Status: Definida no plano-base v2; implementação ainda não iniciada.
+- Conteúdo:
+  - substituir in place a experiência vigente pelo wireframe B2 master-detail, com home compacta em desktop, cards equivalentes em mobile e uma única jornada `Workspace → LP → Preview`;
+  - manter `Nova landing page` como ação global para a rota dedicada `/a/[account]/landing-pages/new`, preservando `name`, `slug`, autoridade server-side fail-closed e viewer read-only;
+  - apresentar nome, situação, os quatro atributos da identidade comercial, última versão, versão aceita e `account_landing_pages.updated_at`, com representação honesta de ausência e não aplicabilidade;
+  - concentrar no detalhe identidade, configuração, histórico e `Gerar nova versão`; a geração preserva algoritmo, guards, deadline e `maxDuration = 300` e abre o preview da revisão exata em sucesso;
+  - concentrar no preview a visualização e `Aceitar esta versão`, deixando explícito que o aceite não publica e preservando histórico append-only e ponteiro tenant-safe;
+  - preservar a versão corrente explícita do catálogo E20.2, tenant isolation, entitlement, boundaries e banco vigentes, sem pin, fallback, migration, nova infraestrutura, analytics, Realtime ou upgrade de framework;
+  - exigir QA humano no Preview funcional em desktop e mobile, cobrindo reconhecimento sem instrução adicional, estados auxiliares, viewer read-only, navegação contextual e acessibilidade proporcional antes de rollout Production.
 
 20. E20 — Preparação e liberação de taxons para geração de landing pages
 
