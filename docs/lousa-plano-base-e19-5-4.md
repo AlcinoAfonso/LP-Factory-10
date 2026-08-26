@@ -217,11 +217,11 @@
   - atualização proporcional do framework de UX em `docs/design-system.md` e do enforcement em `docs/prompt-estrategista.md` pelo fluxo ABC;
   - reconciliação com alterações posteriores ao baseline `26476a0e6caec9001aa86acfc51ba572f5d55836` antes de tocar consumidores E20.2.
 - Oportunidades estratégicas condicionais, sem autorização de implementação neste recorte:
-  - `prod#3`: avaliar Speed Insights somente após rollout, tráfego útil, hipótese mensurável e responsável de leitura; não instalar analytics nem criar gate de score nesta E19.5.4;
-  - `prod#12`: avaliar troca global de contexto somente com Partner Dashboard ou recorte equivalente aprovado e evidência de operação recorrente multi-contas; não criar switcher, favoritos ou recentes agora;
+  - `prod#3`: avaliar Speed Insights somente após rollout, tráfego útil, hipótese mensurável, responsável e frequência ou rotina de leitura definidos; não instalar analytics nem criar gate de score nesta E19.5.4;
+  - `prod#12`: avaliar troca global de contexto somente com Partner Dashboard ou recorte equivalente aprovado, uso recorrente multi-contas e evidência de erro operacional ou perda de tempo; não criar switcher, favoritos ou recentes agora;
   - `vercel#15`: avaliar Toolbar somente se o Preview envolver múltiplos revisores ou feedback comprovadamente fragmentado; não habilitar nem torná-la dependência do QA atual;
   - `vercel#29`: avaliar upgrade e Instant Navigations somente em recorte técnico próprio, com compatibilidade e atraso reproduzível; preservar Next.js `16.2.11` neste recorte;
-  - `supa#68`: avaliar Realtime filtrado somente se uma geração assíncrona futura aprovada não for atendida pelo fluxo vigente ou polling simples; não criar publicação, canal, subscription, migration, rota ou upgrade de dependência agora.
+  - `supa#68`: avaliar Realtime filtrado somente se uma geração assíncrona futura aprovada não for atendida pelo fluxo vigente ou polling simples e houver benefício mensurável; não criar publicação, canal, subscription, migration, rota ou upgrade de dependência agora.
 - Critérios de aceite:
   - contrato das seções 1 e 2 atendido sem ampliação funcional;
   - testes determinísticos/regressões aplicáveis preservados;

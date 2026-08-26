@@ -4,6 +4,7 @@
 
 - V1: `26476a0e6caec9001aa86acfc51ba572f5d55836:docs/lousa-plano-base-e19-5-4.md`, blob `34e55f949698a778b928153feffcd9dd5a87aad4`.
 - V2 inicial: `21dac97b2ae8b81f5ecb920f729b1e18ece8e765:docs/lousa-plano-base-e19-5-4.md`, blob `9e09fe1b9f850389ffe67d34d70840320609b299`.
+- V2 auditada na Passagem 2: `18d4f597832912d66bc236a5110b67c0a5957441:docs/lousa-plano-base-e19-5-4.md`, blob `8b065666373f8cde55ae5e220882f59ad191a899`.
 - Roadmap-base: `26476a0e6caec9001aa86acfc51ba572f5d55836:docs/roadmap.md`, blob `6e2b1ee46fdb7902dfa4330b737d3c342f4c0944`.
 - Plano conceitual: `N/A`.
 - Gestor de Automações: `N/A — nenhuma fase com Automação: sim`.
@@ -13,7 +14,7 @@
 
 | Especialista | ID | Achado fiel | Classificação original e relação com o escopo | Tratamento | Destino do update | Localização na v2 | Evidência ou justificativa |
 |---|---|---|---|---|---|---|---|
-| Gestor Estrutural | `GE-E19.5.4-001` | Identidade de PR, merge, branch, worktree, path e blob confirmada sem drift. | preservação | incorporado | N/A | 1.1 | V1 na `main` mantém o blob congelado e a branch parte do merge commit `26476a0e...`. |
+| Gestor Estrutural | `GE-E19.5.4-001` | Identidade de PR, merge, branch, worktree, path e blob confirmada sem drift. | preservação | não incorporado — justificado | N/A | N/A | Confirmação factual de identidade; não solicitou nem produziu alteração textual na v2. |
 | Gestor Estrutural | `GE-E19.5.4-002` | Processo registrado como v32 enquanto a fonte vigente está em v34. | preservação | incorporado | N/A | 1.1 | A v2 registra a fonte vigente e o baseline v34. |
 | Gestor Estrutural | `GE-E19.5.4-003` | E20.2.8 estava descrita como reconciliação futura apesar de já integrar o baseline. | preservação | incorporado | N/A | 1.5; 3.1; 4.2 | A v2 trata versão corrente explícita como incorporada e reconcilia apenas avanço posterior. |
 | Gestor Estrutural | `GE-E19.5.4-004` | Destino de `Nova landing page` não estava decidido. | extensão adjacente necessária e proporcional | incorporado | N/A | 1.3; 2.3; 3.1 | Decisão humana `DH-E19.5.4-001`: rota `/a/[account]/landing-pages/new`, com `name` e `slug`. |
@@ -26,8 +27,8 @@
 | Gestor de Updates | `prod#14` | Reconhecimento imediato da LP, situação, versão aceita e próxima ação deve virar roteiro verificável. | extensão adjacente necessária e proporcional | incorporado | usar como referência, validação ou trava | 2.7; 3.1 | QA sem instrução adicional, sem transformar tempo de clique em métrica obrigatória. |
 | Gestor de Updates | `prod#16` | QA da nova superfície deve ocorrer em Preview funcional, desktop e mobile. | extensão adjacente necessária e proporcional | incorporado | usar como referência, validação ou trava | 2.7; 3.1 | Evidência proporcional de deployment e viewports, sem ferramenta paga obrigatória. |
 | Gestor de Updates | `prod#17` | Acessibilidade precisava delimitar teclado, foco, semântica, anúncios, contraste e toque. | extensão adjacente necessária e proporcional | incorporado | usar como referência, validação ou trava | 2.7; 3.1 | Critérios proporcionais, sem alegar conformidade WCAG 2.2 integral. |
-| Gestor de Updates | `prod#3` | Speed Insights pode separar regressão percebida após tráfego real. | preservação | incorporado | preservar como oportunidade estratégica condicional | 3.1 | Exige rollout, tráfego, hipótese e responsável; não implementar analytics neste recorte. |
-| Gestor de Updates | `prod#12` | Troca global de contexto pode ter valor em operação recorrente multi-contas. | preservação | incorporado | preservar como oportunidade estratégica condicional | 3.1 | Exige recorte aprovado e evidência; não criar switcher, favoritos ou recentes. |
+| Gestor de Updates | `prod#3` | Speed Insights pode separar regressão percebida após tráfego real. | preservação | incorporado | preservar como oportunidade estratégica condicional | 3.1 | Exige rollout, tráfego, hipótese, responsável e frequência ou rotina de leitura; não implementar analytics neste recorte. |
+| Gestor de Updates | `prod#12` | Troca global de contexto pode ter valor em operação recorrente multi-contas. | preservação | incorporado | preservar como oportunidade estratégica condicional | 3.1 | Exige recorte aprovado, uso recorrente e evidência de erro operacional ou perda de tempo; não criar switcher, favoritos ou recentes. |
 | Gestor de Updates | `vercel#15` | Toolbar pode reduzir feedback fragmentado no Preview. | preservação | incorporado | preservar como oportunidade estratégica condicional | 3.1 | Exige múltiplos revisores ou fragmentação comprovada; não habilitar agora. |
 | Gestor de Updates | `vercel#29` | Upgrade/Instant Navigations pode reduzir atraso entre coleção, detalhe e preview. | preservação | incorporado | preservar como oportunidade estratégica condicional | 3.1 | Exige recorte técnico e atraso reproduzível; preservar Next.js `16.2.11`. |
 | Gestor de Updates | `supa#68` | Realtime filtrado pode apoiar geração assíncrona futura. | preservação | incorporado | preservar como oportunidade estratégica condicional | 3.1 | Exige geração assíncrona aprovada e benefício mensurável; nenhuma subscription ou migration agora. |
