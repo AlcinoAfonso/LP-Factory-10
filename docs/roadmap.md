@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 26/08/2026
-• Versão: v1.5.187
+• Versão: v1.5.188
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2874,7 +2874,7 @@ Repositório — Ajustados
 
 21. E21 — Gestão e governança dos workloads OpenAI
 - Objetivo: gerir e governar os workloads OpenAI por recortes aprovados, com configuração explícita, observabilidade segura, leitura administrativa e configuração operacional dinâmica por ambiente, sem otimização automatizada.
-- Status: a fundação E21.1 permanece preservada; a E21.2, incluindo o catálogo operacional da E21.2.5, está concluída com apply e gates hospedados aprovados; a E21.3 permanece prevista e não iniciada.
+- Status: a fundação E21.1 permanece preservada; a E21.2, incluindo o catálogo operacional da E21.2.5, está concluída com apply e gates hospedados aprovados; a E21.3 está definida em plano-base v2 aprovado, com implementação ainda não iniciada.
 
 21.1 Fundação, normalização e leitura dos workloads OpenAI
 
@@ -3057,30 +3057,31 @@ Repositório — Ajustados
 
 21.3.1 Objetivo e status
 - Objetivo: produzir comparações reproduzíveis por workload considerando qualidade, sucesso, necessidade de correção humana, usage, latência, custo e estabilidade.
-- Status: Prevista; não implementada.
-- Registrar a E19.4 como primeiro caso real de referência, especificamente:
-  - `landing_page_draft_generation`;
-  - `landing_page_draft_image_generation`.
-- Isso não reabre a E19.4.
+- Status: Definida em plano-base v2 aprovado; implementação não iniciada.
+- A E19.4 fornece os workloads reais de referência sem ser reaberta; a E21.2.5 permanece autoridade de catálogo e lifecycle.
+- A unidade textual é `workload + modelo + reasoning effort`; mídia preserva configuração e métricas próprias.
+- `docs/openai-model-snapshot.md` permanece a residência dos resumos decisórios reproduzíveis.
 
-21.3.3 Previsão e limites
-- Unidade textual de comparação: `workload + modelo + reasoning effort`.
-- Workloads de mídia preservam configuração e métricas próprias.
-- Reutilizar observabilidade segura da E21.1.
-- `docs/openai-model-snapshot.md` permanece a residência das comparações decisórias.
-- Considerar, quando aplicável:
-  - qualidade;
-  - resultado válido;
-  - correção humana;
-  - input tokens;
-  - cached tokens;
-  - output tokens;
-  - reasoning tokens;
-  - latência;
-  - custo financeiro;
-  - estabilidade.
-- Não definir vencedor ou baseline universal antes de evidência representativa.
-- Não criar agora banco, tabela, rota, dashboard, job, engine, agente, automação ou infraestrutura.
+21.3.3 Comparação representativa do workload textual de Landing Page
+- Status: Planejada; implementação não iniciada.
+- Automação: não.
+- Conteúdo:
+  - comparar `landing_page_draft_generation` com a revisão ativa do ambiente como baseline e um conjunto total de 2 a 6 configurações, usando somente novas candidatas elegíveis no catálogo;
+  - congelar a BSG e reutilizar a mesma fixture v4 autorizada de `Corretor Imóveis`, sem dados reais, mudança de prompt, contexto, tools, contrato funcional ou arquitetura de IA;
+  - apresentar resultados cegos por alias e registrar validade, qualidade, correção humana e comentário opcional antes de revelar modelo, effort, usage e latência;
+  - manter custo como não confirmado no runtime; eventual conclusão financeira depende de tarifas oficiais aplicáveis confirmadas;
+  - permitir repetições somente para a baseline e até dois finalistas, sem declarar estabilidade antes delas;
+  - apresentar trade-offs e exigir decisão humana ou `evidência insuficiente`, sem vencedor, ativação, promoção ou persistência automáticos;
+  - permanecer na superfície administrativa existente, reutilizar transporte e observabilidade vigentes e não criar banco, rota, dashboard, job, agente, automação ou infraestrutura;
+  - validar em Preview papéis positivo/negativo, desktop/mobile, estados materiais, reconhecimento do próximo passo, acessibilidade proporcional e ausência de efeito no lifecycle.
+
+21.3.4 Comparação do workload de imagem da Landing Page
+- Status: Prevista e condicionada; implementação não iniciada.
+- Automação: não.
+- Conteúdo:
+  - aplicar o método textual aprovado ao `landing_page_draft_image_generation`, sem herdar reasoning effort ou decisão do workload textual;
+  - comparar somente configurações de imagem compatíveis com o catálogo e usar avaliação humana e métricas próprias de mídia;
+  - iniciar somente após QA humano integral do método textual e confirmação de pelo menos duas configurações de imagem realmente comparáveis.
 
 22. E22 — Retirada controlada de ativos históricos
 - Objetivo: reduzir a superfície histórica que não participa do caminho canônico vigente, preservando consumidores reais e preparando a sequência E19.4 concluída → E22.1 → E19.5.
