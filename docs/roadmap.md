@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 26/08/2026
-• Versão: v1.5.189
+• Versão: v1.5.190
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -3075,7 +3075,8 @@ Repositório — Ajustados
   - manter custo como não confirmado no runtime; eventual conclusão financeira depende de tarifas oficiais aplicáveis confirmadas;
   - permitir repetições somente para a baseline e até dois finalistas, sem declarar estabilidade antes delas;
   - apresentar trade-offs e exigir decisão humana ou `evidência insuficiente`, sem vencedor, ativação, promoção ou persistência automáticos;
-  - permanecer na superfície administrativa existente, reutilizar transporte e observabilidade vigentes e não criar banco, rota, dashboard, job, agente, automação ou infraestrutura;
+  - separar fisicamente **Configuração OpenAI** em `/admin/workloads-openai` de **Testes OpenAI** em `/admin/testes-openai`; a primeira preserva catálogo, lifecycle e **Validar candidata** como prova técnica, enquanto a segunda contém somente a comparação E21.3 e não cria candidata, ativa configuração ou altera Production;
+  - reutilizar shell administrativo, guards, catálogo, read models, transporte e observabilidade vigentes, sem banco, dashboard, submenu, serviço, API, job, agente, automação ou infraestrutura adicional;
   - validar em Preview papéis positivo/negativo, desktop/mobile, estados materiais, reconhecimento do próximo passo, acessibilidade proporcional e ausência de efeito no lifecycle.
 
 21.3.4 Comparação do workload de imagem da Landing Page
