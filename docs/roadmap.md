@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 26/08/2026
-• Versão: v1.5.191
+• Versão: v1.5.192
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -3084,7 +3084,8 @@ Repositório — Ajustados
   - `/admin/testes-openai` compara de 2 a 6 configurações de `landing_page_draft_generation`, inclui uma única vez a revisão ativa do ambiente como baseline e aceita somente candidatas elegíveis no catálogo;
   - a comparação preserva a BSG, reutiliza a fixture v4 sintética de `Corretor Imóveis` e o transporte funcional vigente, apresenta resultados cegos antes de modelo, effort, usage e latência e permite repetição apenas da baseline e de até dois finalistas;
   - **Configuração OpenAI** permanece separada em `/admin/workloads-openai`, com **Validar candidata** limitado à prova técnica e com a E21.2.5 como única autoridade de candidata, revisão, ativação, rollback e histórico;
-  - a rodada representativa comparou `gpt-5.6-luna + max`, `gpt-5.6-terra + low` e `gpt-5.6-luna + low`, repetiu baseline e `gpt-5.6-luna + low` e terminou com decisão humana de `evidência insuficiente`, sem vencedor ou alteração da baseline;
+  - a rodada representativa comparou e repetiu `gpt-5.6-luna + max`, `gpt-5.6-terra + low` e `gpt-5.6-luna + low`; a régua cega classificou Terra/low como superior sem correção, Luna/low como adequada com correção leve e a baseline como insuficiente com correção relevante;
+  - a decisão humana recomendou `gpt-5.6-terra + low` somente como candidata a eventual lifecycle da Configuração OpenAI, sem criar candidata, validar tecnicamente, promover revisão, ativar configuração ou alterar a baseline;
   - custo permaneceu não confirmado, resultados e avaliações permaneceram transitórios e nenhuma operação criou candidata, promoveu revisão, ativou configuração, persistiu benchmark ou alterou Production;
   - o Preview passou nos gates desktop/mobile, papel positivo/negativo, estados materiais, reconhecimento do próximo passo e do lifecycle, acessibilidade proporcional e ausência de erro visível de runtime;
   - E19.4, banco, prompt, contexto, tools, contrato funcional, arquitetura de IA e Production permaneceram inalterados.

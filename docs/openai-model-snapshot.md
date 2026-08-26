@@ -109,7 +109,7 @@
 |---|---|---|---|
 | resolvedor IA de nicho | `gpt-5.4-mini + none` | Luna / Terra / Sol + effort aplicável | não comparado neste snapshot |
 | ativação comercial | `gpt-5.4-mini + none` | Luna / Terra / Sol + effort aplicável | não comparado neste snapshot |
-| geração textual do draft de landing page | `gpt-5.6-luna + max` | Luna / Terra / Sol + effort elegível | comparação E21.3.3 concluída com evidência insuficiente para troca |
+| geração textual do draft de landing page | `gpt-5.6-luna + max` | Luna / Terra / Sol + effort elegível | E21.3.3 recomendou `gpt-5.6-terra + low` como candidata, sem adoção |
 | geração da imagem principal do draft | `gpt-image-2` | workload de mídia independente | duas execuções integradas hospedadas aprovadas em 18/08/2026 |
 
 ### 4.3 Registro de decisão
@@ -122,10 +122,10 @@
 
 - Data e ambiente: 26/08/2026, Preview, workload `landing_page_draft_generation`, fixture sintética v4 de `Corretor Imóveis` e BSG vigente congelada.
 - Baseline: `gpt-5.6-luna + max`, `configurationSource: supabase_operational`, revisão ativa `1`.
-- Rodada inicial válida: baseline com 41,292 s e 5.069 tokens totais; `gpt-5.6-terra + low` com 10,703 s e 1.717 tokens totais; `gpt-5.6-luna + low` com 9,669 s e 1.859 tokens totais.
-- Repetição focalizada válida: baseline com 30,704 s e 4.146 tokens totais; `gpt-5.6-luna + low` com 10,361 s e 1.811 tokens totais.
-- Decisão humana: `evidência insuficiente`; nenhuma configuração foi recomendada ou adotada e a baseline permaneceu inalterada.
-- Limitações: um único caso representativo, uma rodada inicial e uma repetição focalizada; custo financeiro permaneceu não confirmado devido à divergência de tarifas oficiais; resultados e avaliações detalhados foram transitórios.
+- Rodada inicial válida: `gpt-5.6-terra + low` foi classificado como qualidade superior, sem correção humana, com 9,540 s e 1.763 tokens totais; `gpt-5.6-luna + low` foi adequado, com correção leve, 6,943 s e 1.822 tokens; a baseline foi insuficiente, com correção relevante, 34,901 s e 5.332 tokens.
+- Repetição focalizada válida: baseline com 14,576 s e 2.719 tokens totais; `gpt-5.6-terra + low` com 14,295 s e 1.827 tokens; `gpt-5.6-luna + low` com 6,376 s e 1.786 tokens.
+- Decisão humana: recomendar `gpt-5.6-terra + low` como candidata para eventual lifecycle da Configuração OpenAI; foi o único resultado superior sem correção e manteve uso de tokens muito abaixo da baseline. Nenhuma candidata foi criada ou ativada, e a baseline permaneceu inalterada.
+- Limitações: uma fixture sintética, uma avaliação cega por configuração e uma repetição focalizada sem nova avaliação qualitativa; custo financeiro permaneceu não confirmado devido à divergência de tarifas oficiais; a latência da configuração recomendada variou entre as duas execuções; resultados e avaliações detalhados foram transitórios.
 - A superfície separada `/admin/testes-openai` passou em Preview pelos gates autenticados positivo e negativo, desktop/mobile, estados materiais, reconhecimento do lifecycle e acessibilidade proporcional, sem criar candidata, promover revisão, ativar configuração ou alterar Production.
 
 ## 5. Testes OpenAI e evolução futura
