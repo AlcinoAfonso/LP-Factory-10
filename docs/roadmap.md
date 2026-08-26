@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 26/08/2026
-• Versão: v1.5.188
+• Versão: v1.5.189
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -3058,15 +3058,18 @@ Repositório — Ajustados
 21.3.1 Objetivo e status
 - Objetivo: produzir comparações reproduzíveis por workload considerando qualidade, sucesso, necessidade de correção humana, usage, latência, custo e estabilidade.
 - Status: Definida em plano-base v2 aprovado; implementação não iniciada.
-- A E19.4 fornece os workloads reais de referência sem ser reaberta; a E21.2.5 permanece autoridade de catálogo e lifecycle.
-- A unidade textual é `workload + modelo + reasoning effort`; mídia preserva configuração e métricas próprias.
-- `docs/openai-model-snapshot.md` permanece a residência dos resumos decisórios reproduzíveis.
+
+21.3.2 Registros do recorte
+- Referências:
+  - Plano-base aprovado: `docs/lousa-plano-base-e21-3.md`.
+  - Resumos decisórios reproduzíveis: `docs/openai-model-snapshot.md` — seção 4.
 
 21.3.3 Comparação representativa do workload textual de Landing Page
 - Status: Planejada; implementação não iniciada.
 - Automação: não.
 - Conteúdo:
-  - comparar `landing_page_draft_generation` com a revisão ativa do ambiente como baseline e um conjunto total de 2 a 6 configurações, usando somente novas candidatas elegíveis no catálogo;
+  - comparar `landing_page_draft_generation` com a revisão ativa do ambiente como baseline e um conjunto total de 2 a 6 configurações de `modelo + reasoning effort`, usando somente novas candidatas elegíveis no catálogo;
+  - preservar a E19.4 como fonte funcional do workload sem reabri-la e a E21.2.5 como autoridade de catálogo e lifecycle;
   - congelar a BSG e reutilizar a mesma fixture v4 autorizada de `Corretor Imóveis`, sem dados reais, mudança de prompt, contexto, tools, contrato funcional ou arquitetura de IA;
   - apresentar resultados cegos por alias e registrar validade, qualidade, correção humana e comentário opcional antes de revelar modelo, effort, usage e latência;
   - manter custo como não confirmado no runtime; eventual conclusão financeira depende de tarifas oficiais aplicáveis confirmadas;
