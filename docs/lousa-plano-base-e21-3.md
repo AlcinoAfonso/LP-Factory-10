@@ -1,10 +1,10 @@
-25/08/2026 — Plano-base v1 — E21.3 — Evidências e avaliação de custo-benefício dos workloads OpenAI
+26/08/2026 — Plano-base v2 — E21.3 — Evidências e avaliação de custo-benefício dos workloads OpenAI
 
 ## 1. Estado e decisões fixas
 
 ### 1.1. Estado
 
-- Status: plano-base v1 consolidado após encerramento do debate humano.
+- Status: plano-base v2 consolidado a partir do blob v1 `08b5ed6bb6bca78d12ec131b06f38c854eb1963f` e das decisões humanas `B/A/A` de 26/08/2026.
 - Caso macro: `E21 — Gestão e governança dos workloads OpenAI`.
 - Recorte: `E21.3 — Evidências e avaliação de custo-benefício dos workloads OpenAI`.
 - Plano conceitual: N/A.
@@ -39,6 +39,7 @@
 ### 1.5. Primeiro caso e sequência
 
 - Primeiro caso real: `landing_page_draft_generation` da E19.4.
+- A baseline de cada rodada é a revisão ativa lida no início da comparação para o ambiente selecionado. Em Preview e Production sua fonte é `supabase_operational`; `repo_catalog/v2` permanece somente baseline determinístico de Development.
 - Pergunta inicial: a configuração textual atual pode ser reduzida em modelo e/ou effort sem perda material de qualidade dentro da BSG vigente?
 - A geração de imagem `landing_page_draft_image_generation` fica preservada como fase posterior, separada, após o método textual demonstrar utilidade.
 - A E19.4 não é reaberta; ela fornece o workload real de referência.
@@ -46,6 +47,9 @@
 
 ### 1.6. Decisões de método e experiência
 
+- O piloto usa uma fixture versionada, autorizada e representativa de `Corretor Imóveis`, tipada no contrato público v4 da E19.4 e sem leitura de draft, conta ou dado real. O mesmo pacote imutável é reutilizado por todas as configurações da rodada.
+- O cegamento é um requisito de apresentação, não um boundary de confidencialidade contra inspeção técnica: identidade e eficiência podem permanecer no estado transitório recebido pelo client, mas não são renderizadas antes de todas as avaliações qualitativas da rodada serem registradas. A interface deve informar esse limite sem antecipar a identidade visualmente.
+- O piloto não implementa tabela tarifária nem cálculo monetário no runtime. Custo aparece como `não confirmado`; eventual cálculo e conclusão financeira são documentais e somente podem ocorrer após confirmação das tarifas oficiais aplicáveis.
 - O humano escolhe o workload e um conjunto pequeno de configurações relevantes, preferencialmente entre 2 e 6 combinações elegíveis no catálogo E21.2.5; novas combinações devem estar disponíveis para novas candidatas no momento do teste. A configuração ativa entra obrigatoriamente como baseline de referência mesmo se tiver sido posteriormente indisponibilizada no catálogo, exclusivamente porque já é uma revisão ativa e executável do lifecycle E21.2.5; essa exceção serve apenas à comparação e não a torna elegível para nova candidata, prova, promoção ou reativação fora das regras já existentes.
 - Todas as configurações recebem o mesmo caso representativo, com as mesmas entradas, contrato funcional e gates de validade.
 - A primeira avaliação qualitativa é cega quanto a modelo, effort, custo, tokens e latência: os resultados aparecem como `Resultado A`, `Resultado B`, `Resultado C` etc.; a identidade técnica é revelada somente após o registro da avaliação humana daquela rodada.
@@ -71,7 +75,7 @@
 - Entrada: workload, baseline ativa, configurações candidatas elegíveis, caso(s) representativo(s), BSG vigente congelada, contrato funcional vigente e critérios humanos de avaliação.
 - Processamento: executar o mesmo caso em cada configuração selecionada, mantendo constantes as demais variáveis da BSG, e coletar a observabilidade segura já disponível.
 - Validação: rejeitar comparação se casos, entradas, contrato ou critérios mudarem entre configurações; separar falha técnica de resultado funcional inválido.
-- Persistência: não criar banco, tabela ou segunda residência neste recorte; o resumo decisório final pertence a `docs/openai-model-snapshot.md`, e a evidência extensa pode permanecer no PR/artefato da execução.
+- Persistência: não criar banco, tabela ou segunda residência neste recorte; resultados, avaliações e métricas existem somente no estado transitório da sessão e são perdidos ao recarregar a página. O resumo decisório final pertence a `docs/openai-model-snapshot.md`, e a evidência extensa pode permanecer no PR/artefato da execução.
 - Consumo: humano compara qualidade primeiro, depois eficiência, e decide se alguma configuração merece seguir para o lifecycle operacional E21.2.5.
 - Fallback: ausência de evidência suficiente preserva a configuração ativa atual; não há promoção automática nem troca silenciosa de baseline.
 
@@ -111,11 +115,12 @@
   - novas candidatas devem ser elegíveis no catálogo E21.2.5;
   - a baseline ativa permanece comparável se tiver sido posteriormente indisponibilizada no catálogo, somente como revisão ativa de referência; essa exceção de comparação não cria elegibilidade para nova candidata nem altera disponibilidade ou lifecycle.
 - Etapa 3 — escolher caso(s) representativo(s):
-  - reutilizar entradas reais ou fixtures autorizadas do próprio workload;
+  - no piloto E21.3.3, usar exclusivamente a fixture autorizada e versionada de `Corretor Imóveis` no contrato v4;
   - manter o mesmo conjunto e a mesma BSG para todas as configurações.
 - Etapa 4 — executar e avaliar cegamente:
   - apresentar entregas como `Resultado A/B/C...`, sem revelar configuração ou eficiência;
   - registrar validade, qualidade, correção humana e comentário opcional.
+  - executar as configurações concorrentemente dentro do limite de 2 a 6, com isolamento de falha por resultado e sem exceder a duração hospedada da action;
 - Etapa 5 — revelar identidade e eficiência:
   - revelar modelo + effort de cada resultado;
   - apresentar usage, reasoning, latência, custo quando válido e estabilidade.
@@ -126,6 +131,7 @@
 ### 2.5. Critérios de experiência
 
 - A experiência deve ser compreensível por função de negócio, sem exigir IDs técnicos como informação principal.
+- A validação de UX deve comprovar que o `platform_admin` reconhece o próximo passo correto em cada etapa — escolher workload, escolher configurações e casos, avaliar, revelar e concluir — a partir de nomes, estados e ações visíveis, sem depender de memorização de IDs técnicos; não instituir tempo de clique ou telemetria obrigatória.
 - Desktop deve favorecer comparação lado a lado; mobile pode empilhar resultados sem perder associação entre resultado, avaliação e métricas.
 - Estados de execução, erro, resultado inválido, revelação e conclusão precisam ser explícitos.
 - A identidade da configuração não pode ser revelada antes de a avaliação qualitativa da rodada ser registrada.
@@ -138,6 +144,26 @@
 
 - Objetivo: materializar o menor fluxo útil para comparar configurações de inferência do `landing_page_draft_generation` dentro da BSG vigente congelada, com o mesmo caso representativo, avaliação humana cega e métricas operacionais suficientes para decisão reproduzível.
 - Automação: não.
+- Composição física e ownership:
+  - a experiência permanece na rota existente `/admin/workloads-openai`; `page.tsx` conserva SSR, `requirePlatformAdmin()` e composição dos read models;
+  - a UI reside em `_components/OpenAiLandingPageTextComparison.tsx`, sem Supabase, secret ou chamada direta ao provider;
+  - `comparisonActions.ts` reexecuta `requirePlatformAdmin()`, valida ambiente, fixture e conjunto único de 2 a 6 configurações, relê baseline ativa e catálogo no servidor e orquestra a execução;
+  - o transporte, prompt, Structured Output, parser e validação permanecem sob `lib/lp-builder/landingPageDraftGeneration.ts`; o adapter server-only `lib/lp-builder/adapters/landingPageDraftComparisonAdapter.ts` fornece a configuração explícita e a credencial, reutilizando esse caminho sem parser ou chamada OpenAI paralelos;
+  - a fixture v4 e os contratos puros da comparação residem em `lib/lp-builder/landingPageDraftComparison.ts`; não importar nem reutilizar `proofLandingPageContext`, que declara contrato v3 e é incompatível com o gerador textual v4;
+  - a comparação usa a projeção pública do catálogo e os adapters server-side E21 existentes; não chama save, prova, promoção, ativação, rollback nem qualquer RPC de mutação;
+  - a ordem cega é embaralhada no servidor por rodada e usa aliases `Resultado A/B/C...`; identidade e métricas permanecem não renderizadas até o registro completo da régua humana no client;
+  - o resumo de conclusão é derivado deterministicamente das avaliações registradas e das métricas disponíveis, sem pontuação opaca, promoção ou persistência.
+- Artefatos previstos:
+  - ajustar `app/admin/(protected)/workloads-openai/page.tsx` para compor o read model da comparação;
+  - criar `app/admin/(protected)/workloads-openai/_components/OpenAiLandingPageTextComparison.tsx`;
+  - criar `app/admin/(protected)/workloads-openai/comparisonActions.ts`;
+  - criar `lib/lp-builder/landingPageDraftComparison.ts`;
+  - criar `lib/lp-builder/adapters/landingPageDraftComparisonAdapter.ts`;
+  - ampliar `lib/lp-builder/landing-page-draft-generation-validation-cases.ts` e `app/admin/(protected)/workloads-openai/validation-cases.tsx` com casos focais da comparação;
+  - atualizar por ABC, quando confirmado pelo estado final, `docs/roadmap.md`, `docs/base-tecnica.md` e `docs/openai-model-snapshot.md`; este último deve distinguir Development de Preview/Production e registrar ambiente, revisão ativa, data, combinações efetivamente avaliadas, limitações e decisão.
+- Contrato repo-only de schema:
+  - não criar nem alterar migration, tabela, view, function, RPC, trigger, RLS, policy, GRANT, teste SQL ou snippet SQL;
+  - a execução experimental não persiste resultado, avaliação, usage, custo ou histórico e os testes devem confirmar ausência de chamadas às mutações de lifecycle e catálogo.
 - Critérios de aceite:
   - preservar configuração ativa como baseline até decisão humana posterior;
   - usar somente novas configurações candidatas elegíveis no catálogo E21.2.5;
@@ -150,7 +176,11 @@
   - permitir repetições focalizadas apenas quando necessárias para estabilidade;
   - tratar custo não confirmado sem fabricar conclusão financeira;
   - registrar decisão reproduzível no snapshot sem nova residência operacional;
-  - validar desktop/mobile, papel positivo/negativo, acessibilidade proporcional e ausência de efeito no lifecycle durante a comparação;
+  - validar manualmente em Preview, de forma proporcional, desktop e mobile, papel positivo e negativo, estados de execução, erro, resultado inválido, revelação e conclusão, preservação da associação entre resultado, avaliação e métricas, ausência de efeito no lifecycle durante a comparação e ausência de erros visíveis de runtime;
+  - cada execução de QA em Preview deve registrar deployment e ambiente, papel exercitado, viewport, fluxo ou estado validado e resultado observado; ferramenta automatizada pode apoiar, mas não substitui a revisão manual;
+  - aplicar os critérios WCAG 2.2 pertinentes à superfície e registrar evidência manual de operação por teclado, ordem e foco visível, nomes e rótulos acessíveis, feedback de sucesso e erro, ausência de interação exclusiva por hover, contraste e alvos de toque; justificar cada critério marcado como N/A, usar auditoria automática apenas como apoio e não declarar conformidade WCAG 2.2 integral sem auditoria própria;
+  - validar deterministicamente que a baseline ativa é incluída uma única vez, candidatas indisponíveis são recusadas, todas as configurações recebem a mesma fixture v4, a identidade permanece não renderizada antes do registro completo e falha de um resultado não altera os demais nem o lifecycle;
+  - executar `npm ci`, validações focais, `npm run check` e `git diff --check` antes do gate do Analista;
   - se a qualidade máxima permanecer insuficiente, registrar o limite da BSG vigente sem abrir otimização de BSG neste recorte.
 
 ### 3.2. E21.3.4 — Comparação do workload de imagem da Landing Page
@@ -163,12 +193,13 @@
   - preservar avaliação humana de qualidade visual e métricas próprias da chamada de imagem;
   - não generalizar a decisão textual para o workload de mídia;
   - não iniciar antes da aprovação do método textual e da existência de candidatos de imagem realmente comparáveis.
+- Gate de início: E21.3.4 permanece condicionada e não recebe implementação antecipada no checkpoint E21.3.3. Após o QA humano integral da fase textual, o humano deve confirmar a utilidade do método e a existência de pelo menos duas configurações de imagem comparáveis no catálogo; ausência de qualquer condição preserva a fase como prevista, sem bloquear o fechamento técnico da E21.3.3.
 
 ### 3.3. Próxima ação
 
-- Submeter este plano-base v1 ao processo escolhido pelo humano conforme `docs/prompt-estrategista.md`.
-- Antes da implementação da E21.3.3, reconfirmar nas fontes oficiais atuais da OpenAI os modelos, parâmetros e tarifas relevantes ao conjunto de candidatos efetivamente escolhido.
-- A v2 deve detalhar somente o necessário para execução segura, inclusive a composição física na superfície administrativa existente, sem ampliar escopo.
+- Submeter esta v2 às Passagens 1 e 2 do Analista, reconciliar o roadmap por ABC e criar o checkpoint `LP-Factory-Stage: plan-v2-approved` no único PR draft da orquestração.
+- Antes da execução hospedada da E21.3.3, reconfirmar nas fontes oficiais atuais da OpenAI os modelos e parâmetros das combinações efetivamente selecionadas; tarifas permanecem fora do runtime e qualquer divergência mantém o custo como não confirmado.
+- Executar primeiro e somente `E21.3.3 — Comparação representativa do workload textual de Landing Page`; E21.3.4 respeita seu gate humano e de catálogo.
 
 ## 4. Escopo negativo e critérios de parada
 
@@ -179,9 +210,11 @@
 - Não versionar, otimizar ou comparar versões da BSG na E21.3.
 - Não alterar prompt, pesquisa/contexto, tools, estratégia de continuidade, persisted reasoning, arquitetura single-agent/multi-agent ou orquestração como parte do experimento E21.3.3.
 - Não criar banco, tabela, migration, segunda residência de evidência ou histórico permanente de benchmark.
+- Não criar tabela tarifária, cálculo monetário ou sincronização de preços no runtime.
 - Não criar rota nova, dashboard separado, job, engine, agente, workflow, automação ou nova infraestrutura.
 - Não reabrir E19.4 nem alterar seus contratos funcionais para facilitar o benchmark.
 - Não alterar catálogo ou lifecycle E21.2.5 como efeito colateral da comparação.
+- Não corrigir silenciosamente a fixture v3 da prova operacional E21.2 dentro da E21.3; eventual regressão desse fluxo pertence a correção separada.
 - Não usar preço desatualizado ou divergente como base de decisão financeira conclusiva.
 - Não transformar E21.3 em avaliação geral de modelos fora dos workloads reais do produto.
 
