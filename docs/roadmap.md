@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 26/08/2026
-• Versão: v1.5.186
+• Versão: v1.5.187
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2609,7 +2609,7 @@ Repositório — Ajustados
 20.2.8.1 Objetivo e status
 
 * Objetivo: definir uma versão atual global, explícita e repo-only para o catálogo E20.2, propagá-la de forma determinística aos consumidores correntes e evitar reavaliação humana por taxon quando a evolução for comprovadamente compatível.
-* Status: Implementação mergeada na `main` pelo PR #814 no commit `63213cc338ca8b92320e57f976b261a26b99c2d1`; migration `20260824180000_e20_2_8_input_catalog_lifecycle.sql` aplicada e validada no Supabase; QA positivo autenticado e somente leitura aprovado em Production nos viewports desktop e mobile. O fechamento permanece pendente do gate negativo contratado com sessão autorizada sem `platform_admin`; em 26/08/2026 não havia sessão negativa autorizada disponível, e nenhuma identidade, credencial ou papel foi criado ou alterado para produzir a prova.
+* Status: Concluída em 26/08/2026; implementação mergeada na `main` pelo PR #814 no commit `63213cc338ca8b92320e57f976b261a26b99c2d1`, migration `20260824180000_e20_2_8_input_catalog_lifecycle.sql` aplicada e validada no Supabase, QA positivo autenticado e somente leitura aprovado em Production nos viewports desktop e mobile, e gate negativo aprovado com sessão autorizada sem `platform_admin`: o acesso a `/admin/estrutura-lp?view=entradas` foi redirecionado para `/auth/confirm/info` com “Acesso não disponível”, sem exposição da superfície, dados ou controles administrativos e sem mutações.
 
 20.2.8.2 Registros do recorte
 
