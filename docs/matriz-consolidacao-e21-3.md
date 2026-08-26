@@ -13,7 +13,7 @@
 - Delta da Passagem 1: commit `54bdcae459c7577309b2cda33d54e680c84d377f`, blob `af885bd6dd41f635b5b6d8a93afd415511a8bcb7`.
 - Plano-base v2 aprovado antes da decisão superveniente: commit `53a81d4c`, blob `b43655863af6e38ac948c896ee6dcf6c6b35363a`.
 - Plano-base v2 vigente após a decisão superveniente: commit `5c0deb82fb23a43a5e12ea5d8e8d4c6396584777`, blob `4774e50afd3ac3d3149195a059858a11edc746ff`.
-- Roadmap reconciliado: commits `821a01be` e `3acd3db2a5ad1b01489c3654043f4631fb788576`, blob vigente `73d06d46c487987b22beabccd6804e3370944497`.
+- Roadmap reconciliado: commits `821a01be643f2d38d715270eb5f2a0655bb44d63`, `3acd3db2a5ad1b01489c3654043f4631fb788576` e `a26d02ab05adcba6b154937b192cde50d53feee0`, blob vigente `69b000f2c03fac296a1b18f2bb3b49dbd0b05038`.
 - Branch/worktree: `codex-app/e21-3-orquestracao` em `C:\Dev\GitHub\LP-Factory-10-e21`.
 
 ## 2. Decisões humanas e limites
