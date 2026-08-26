@@ -4,7 +4,7 @@
 
 ### 1.1. Estado
 
-- Status: plano-base v2 consolidado a partir do blob v1 `08b5ed6bb6bca78d12ec131b06f38c854eb1963f` e das decisões humanas `B/A/A` de 26/08/2026.
+- Status: plano-base v2 consolidado a partir do blob v1 `08b5ed6bb6bca78d12ec131b06f38c854eb1963f`, das decisões humanas `B/A/A` e da decisão superveniente de separação entre Configuração OpenAI e Testes OpenAI, todas aprovadas em 26/08/2026.
 - Caso macro: `E21 — Gestão e governança dos workloads OpenAI`.
 - Recorte: `E21.3 — Evidências e avaliação de custo-benefício dos workloads OpenAI`.
 - Plano conceitual: N/A.
@@ -62,11 +62,19 @@
 - A primeira passada usa uma execução por configuração/caso; repetições adicionais ficam restritas à baseline e a um ou dois finalistas quando forem necessárias para avaliar estabilidade, evitando multiplicar custo de todas as combinações.
 - A primeira passada recebe um `roundId` opaco e um `roundToken` autenticado gerados no servidor. O token usa HMAC com separação de domínio e a `OPENAI_API_KEY` server-side já autorizada, contém somente `roundId`, ambiente, fixture/contratos, baseline e conjunto inicial de configurações e não oferece confidencialidade. Uma segunda passada, quando solicitada pelo humano, revalida o token e a correspondência do `roundId`, reutiliza a mesma fixture e a mesma BSG e aceita somente a baseline e até dois finalistas da rodada inicial; imediatamente antes do dispatch, relê o catálogo e recusa qualquer finalista que tenha deixado de estar elegível, preservando apenas a exceção da baseline original. Estabilidade permanece explicitamente `não avaliada` para qualquer configuração sem ao menos uma repetição focalizada.
 - O piloto pode começar com o caso real já validado de `Corretor Imóveis`; uma recomendação que pretenda generalizar a troca da configuração textual deve buscar evidência em pelo menos dois contextos válidos distintos quando tais contextos existirem no produto. Ausência de segundo contexto não invalida o piloto, mas limita a força da generalização.
-- A residência física preferida da experiência é a superfície existente `/admin/workloads-openai`, sem rota nova nem dashboard separado; o detalhamento técnico dessa composição fica para a v2, sem inventar nova infraestrutura.
+- A decisão humana de 26/08/2026 substitui a concentração prevista na v1: a comparação experimental reside em **Testes OpenAI**, fisicamente separada de **Configuração OpenAI**, sem compartilhar a mesma página e sem inventar infraestrutura adicional.
 - Quando tarifa oficial aplicável estiver divergente ou não confirmada, a comparação pode prosseguir com qualidade, usage e latência, mas o custo deve aparecer como não confirmado para decisão e não pode sustentar conclusão financeira definitiva.
 - A conclusão recomenda uma configuração e explica o trade-off observado, sem ativá-la automaticamente.
 - Qualquer mudança operacional continua passando pelo lifecycle E21.2.5: candidata → prova → revisão validada → ativação humana.
 - `docs/openai-model-snapshot.md` permanece a residência do resumo decisório reproduzível; evidência extensa pode permanecer no PR ou artefato do recorte.
+
+### 1.7. Separação das superfícies administrativas
+
+- **Configuração OpenAI** permanece em `/admin/workloads-openai` e concentra catálogo, disponibilidade, configuração ativa, candidata, prova/validação técnica, revisão validada, ativação humana, rollback e histórico.
+- Nessa superfície, **Validar candidata** continua significando somente comprovação técnica da candidata dentro do lifecycle E21.2.5; não executa nem representa a comparação experimental da E21.3.
+- **Testes OpenAI** reside na rota protegida mínima `/admin/testes-openai` e contém somente a experiência comparativa da E21.3: workload, caso/fixture, seleção de 2 a 6 configurações, execução comparativa, avaliação cega A/B/C, revelação posterior de modelo/effort/tokens/latência e decisão ou recomendação humana.
+- A nova rota reutiliza o shell administrativo, `requirePlatformAdmin()`, catálogo, read models, actions, adapters, transporte e observabilidade existentes. A separação é física e semântica, não uma nova infraestrutura, serviço, banco, API, dashboard ou lifecycle.
+- Testes OpenAI não cria candidata, não valida tecnicamente candidata, não promove revisão, não ativa configuração, não executa rollback e não altera Production. Qualquer adoção posterior retorna à Configuração OpenAI e percorre exclusivamente `candidata → prova → revisão validada → ativação humana`.
 
 ## 2. Contrato do caso
 
@@ -80,6 +88,7 @@
 - Proveniência: a baseline preserva sua fonte e revisão ativas. Configurações apenas elegíveis no catálogo usam a fonte explícita `model_catalog_comparison` e uma revisão experimental derivada das versões do modelo e do parâmetro no catálogo; nunca recebem `supabase_operational`, revisão ativa fictícia ou elegibilidade de lifecycle.
 - Consumo: humano compara qualidade primeiro, depois eficiência, e decide se alguma configuração merece seguir para o lifecycle operacional E21.2.5.
 - Fallback: ausência de evidência suficiente preserva a configuração ativa atual; não há promoção automática nem troca silenciosa de baseline.
+- Boundary de UI: todo o fluxo acima ocorre em Testes OpenAI; eventual continuidade operacional ocorre separadamente em Configuração OpenAI e nunca por ação direta da comparação.
 
 ### 2.2. Métricas mínimas
 
@@ -110,6 +119,8 @@
 
 ### 2.4. UX conceitual
 
+- A experiência abaixo pertence exclusivamente à superfície Testes OpenAI; Configuração OpenAI não incorpora controles, resultados ou recomendação experimental.
+
 - Etapa 1 — escolher workload:
   - exibir `landing_page_draft_generation` como contexto fixo e sua configuração ativa como baseline de referência;
   - não alterar lifecycle.
@@ -136,6 +147,7 @@
 ### 2.5. Critérios de experiência
 
 - A experiência deve ser compreensível por função de negócio, sem exigir IDs técnicos como informação principal.
+- A navegação e os títulos devem distinguir explicitamente **Configuração OpenAI** de **Testes OpenAI**, e a segunda superfície deve declarar que não cria candidata, não ativa configuração e não altera Production.
 - A validação de UX deve comprovar que o `platform_admin` reconhece o próximo passo correto em cada etapa — confirmar workload e fixture fixos, escolher configurações, avaliar, revelar e concluir — a partir de nomes, estados e ações visíveis, sem depender de memorização de IDs técnicos; não instituir tempo de clique ou telemetria obrigatória.
 - Desktop deve favorecer comparação lado a lado; mobile pode empilhar resultados sem perder associação entre resultado, avaliação e métricas.
 - Estados de execução, erro, resultado inválido, revelação e conclusão precisam ser explícitos.
@@ -150,7 +162,9 @@
 - Objetivo: materializar o menor fluxo útil para comparar configurações de inferência do `landing_page_draft_generation` dentro da BSG vigente congelada, com o mesmo caso representativo, avaliação humana cega e métricas operacionais suficientes para decisão reproduzível.
 - Automação: não.
 - Composição física e ownership:
-  - a experiência permanece na rota existente `/admin/workloads-openai`; `page.tsx` conserva SSR, `requirePlatformAdmin()` e composição dos read models e declara `export const maxDuration = 300` como configuração efetiva do segmento hospedado;
+  - `/admin/workloads-openai` permanece a superfície **Configuração OpenAI** e deixa de compor qualquer UI, read model ou action da comparação E21.3;
+  - a experiência reside na rota protegida mínima `/admin/testes-openai`; seu `page.tsx` reutiliza SSR, `requirePlatformAdmin()` e os read models existentes e declara `export const maxDuration = 300` como configuração efetiva do segmento hospedado;
+  - a navegação administrativa expõe entradas distintas **Configuração OpenAI** e **Testes OpenAI**, sem criar submenu, dashboard, serviço ou camada de dados adicional;
   - a UI reside em `_components/OpenAiLandingPageTextComparison.tsx`, sem Supabase, secret ou chamada direta ao provider;
   - `comparisonActions.ts` reexecuta `requirePlatformAdmin()`, valida ambiente, fixture e conjunto único de 2 a 6 configurações, relê baseline ativa e catálogo no servidor e orquestra a execução;
   - cada chamada ao provider preserva timeout individual máximo de 120 segundos e as configurações da rodada executam concorrentemente com isolamento de falha por resultado dentro do limite hospedado do segmento;
@@ -165,20 +179,24 @@
   - a projeção cega é textual e completa para avaliação editorial, mas não reutiliza `LandingPageRenderer`, que exige mídia, destino e metadados de revisão inexistentes no experimento;
   - antes de recarregar, a UI oferece resumo copiável com ambiente, workload, fixture e versões dos contratos, baseline e revisão, combinações, avaliações, gates de validade, usage, latência, custo não confirmado, repetições, limitações e decisão humana.
 - Artefatos previstos:
-  - ajustar `app/admin/(protected)/workloads-openai/page.tsx` para compor o read model da comparação;
-  - criar `app/admin/(protected)/workloads-openai/_components/OpenAiLandingPageTextComparison.tsx`;
-  - criar `app/admin/(protected)/workloads-openai/comparisonActions.ts`;
+  - ajustar `app/admin/(protected)/workloads-openai/page.tsx` somente para remover a composição experimental e preservar a superfície de configuração vigente;
+  - criar `app/admin/(protected)/testes-openai/page.tsx` para compor exclusivamente o read model da comparação;
+  - criar `app/admin/(protected)/testes-openai/_components/OpenAiLandingPageTextComparison.tsx`;
+  - criar `app/admin/(protected)/testes-openai/comparisonActions.ts`;
+  - ajustar `components/admin/adminNavigation.ts` para separar as duas entradas administrativas com nomes, descrições e escopos inequívocos;
   - criar `lib/lp-builder/landingPageDraftComparison.ts`;
   - criar `lib/lp-builder/adapters/landingPageDraftComparisonAdapter.ts`;
   - ajustar `lib/lp-builder/landingPageDraftGeneration.ts` apenas para aceitar a configuração explícita validada pelo adapter experimental, preservando o resolver runtime como default e sem duplicar request, parser ou validator;
   - ajustar `lib/openai-workloads/contracts.ts`, `lib/openai-workloads/registry.ts` e os validators estritamente para reconhecer e validar `model_catalog_comparison` como proveniência experimental, sem permitir que o resolver runtime a produza;
-  - ampliar `lib/lp-builder/landing-page-draft-generation-validation-cases.ts` e `app/admin/(protected)/workloads-openai/validation-cases.tsx` com casos focais da comparação;
+  - ampliar `lib/lp-builder/landing-page-draft-generation-validation-cases.ts` e criar casos focais da nova rota em `app/admin/(protected)/testes-openai/validation-cases.tsx`, preservando os validators da Configuração OpenAI sem acoplamento à comparação;
   - atualizar por ABC, quando confirmado pelo estado final, `docs/roadmap.md`, `docs/base-tecnica.md` e `docs/openai-model-snapshot.md`; este último deve distinguir Development de Preview/Production e registrar ambiente, revisão ativa, data, combinações efetivamente avaliadas, limitações e decisão.
 - Contrato repo-only de schema:
   - não criar nem alterar migration, tabela, view, function, RPC, trigger, RLS, policy, GRANT, teste SQL ou snippet SQL;
   - a execução experimental não persiste resultado, avaliação, usage, custo ou histórico e os testes devem confirmar ausência de chamadas às mutações de lifecycle e catálogo.
 - Critérios de aceite:
   - preservar configuração ativa como baseline até decisão humana posterior;
+  - manter Configuração OpenAI como única superfície de catálogo e lifecycle e Testes OpenAI como superfície experimental sem mutação;
+  - manter **Validar candidata** exclusivamente como prova técnica na Configuração OpenAI, sem reutilizar esse rótulo ou efeito na comparação;
   - usar somente novas configurações candidatas elegíveis no catálogo E21.2.5;
   - permitir que a baseline ativa participe da comparação mesmo se tiver sido posteriormente indisponibilizada no catálogo, sem tratá-la como nova candidata elegível nem alterar seu lifecycle;
   - manter entradas, contrato funcional e BSG constantes por comparação;
@@ -225,7 +243,7 @@
 - Não alterar prompt, pesquisa/contexto, tools, estratégia de continuidade, persisted reasoning, arquitetura single-agent/multi-agent ou orquestração como parte do experimento E21.3.3.
 - Não criar banco, tabela, migration, segunda residência de evidência ou histórico permanente de benchmark.
 - Não criar tabela tarifária, cálculo monetário ou sincronização de preços no runtime.
-- Não criar rota nova, dashboard separado, job, engine, agente, workflow, automação ou nova infraestrutura.
+- Não criar rota além da separação mínima autorizada `/admin/testes-openai`, nem dashboard, submenu, serviço, banco, API, job, engine, agente, workflow, automação ou nova infraestrutura.
 - Não reabrir E19.4 nem alterar seus contratos funcionais para facilitar o benchmark.
 - Não alterar catálogo ou lifecycle E21.2.5 como efeito colateral da comparação.
 - Não corrigir silenciosamente a fixture v3 da prova operacional E21.2 dentro da E21.3; eventual regressão desse fluxo pertence a correção separada.
@@ -238,4 +256,4 @@
 - Parar se uma nova configuração candidata não estiver elegível no catálogo vigente.
 - Parar a conclusão financeira se a tarifa aplicável não puder ser confirmada; a comparação qualitativa e de usage pode prosseguir sem declarar vencedor de custo.
 - Parar se a comparação exigir mudança de contrato funcional ou de qualquer dimensão congelada da BSG; devolver o conflito ao humano antes de ampliar escopo.
-- Parar se surgir necessidade de persistência, rota, automação ou infraestrutura não autorizada neste plano; submeter nova decisão humana antes de implementar.
+- Parar se surgir necessidade de persistência, rota adicional, automação ou infraestrutura não autorizada neste plano; submeter nova decisão humana antes de implementar.

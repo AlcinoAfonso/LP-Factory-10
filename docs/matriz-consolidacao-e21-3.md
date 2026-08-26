@@ -20,8 +20,9 @@
 - `DH-E21.3-01 = B`: usar fixture versionada, autorizada e representativa de `Corretor Imóveis`, no contrato v4 e sem dados reais.
 - `DH-E21.3-02 = A`: cegamento de apresentação, sem alegação de confidencialidade contra inspeção técnica.
 - `DH-E21.3-03 = A`: não implementar cálculo tarifário no runtime; custo permanece não confirmado e eventual cálculo é documental.
+- `DH-E21.3-04`: separar fisicamente **Configuração OpenAI** em `/admin/workloads-openai` de **Testes OpenAI** em `/admin/testes-openai`; a primeira preserva catálogo e lifecycle, a segunda contém somente a comparação E21.3 e não cria candidata, ativa configuração ou altera Production.
 - A baseline da rodada é a revisão ativa do ambiente; candidatas elegíveis usam proveniência experimental verdadeira e não revisão ativa fictícia.
-- A comparação não persiste resultados, não altera catálogo ou lifecycle, não cria banco, rota, dashboard, infraestrutura ou automação e não otimiza a BSG.
+- A comparação não persiste resultados, não altera catálogo ou lifecycle, cria somente a rota mínima autorizada `/admin/testes-openai`, não cria banco, dashboard, serviço, infraestrutura ou automação e não otimiza a BSG.
 - As classes usadas são `preservação`, `extensão adjacente necessária e proporcional` e `expansão`.
 - Oportunidade estratégica condicional não autoriza implementação neste recorte.
 
@@ -32,7 +33,7 @@ Parecer integral preservado pelo orquestrador. Conclusão original: `bloqueado p
 | ID | Achado e classificação original | Relação com o escopo | Classe de consolidação | Tratamento | Destino/localização | Evidência |
 |---|---|---|---|---|---|---|
 | `GE-E21.3-01` | Objetivo, unidade de comparação, separação texto/imagem e residência aderentes. | Confirma a fronteira da v1. | preservação | Incorporado sem delta material. | Plano §§1–4. | BSG congelada, lifecycle humano e escopo negativo preservados. |
-| `GE-E21.3-02` | Ownership físico entre UI, action, adapters, catálogo e transporte estava aberto. | Necessário para evitar duplicação e acesso indevido. | extensão adjacente necessária e proporcional | Incorporado com rota existente, SSR/guard, componente client, action fina e adapter server-only que reutiliza o gerador E19.4. | Plano §3.1. | `page.tsx`, `OpenAiLandingPageTextComparison.tsx`, `comparisonActions.ts` e `landingPageDraftComparisonAdapter.ts`; sem parser ou transporte paralelo. |
+| `GE-E21.3-02` | Ownership físico entre UI, action, adapters, catálogo e transporte estava aberto. | Necessário para evitar duplicação e acesso indevido. | extensão adjacente necessária e proporcional | A decisão humana superveniente substitui a composição na rota existente: Configuração OpenAI permanece em `/admin/workloads-openai`; Testes OpenAI usa somente `/admin/testes-openai`, com SSR/guard, componente client, action fina e adapter server-only que reutiliza o gerador E19.4. | Plano §§1.7 e 3.1. | Separação mínima de rota e navegação; sem parser, transporte, serviço ou infraestrutura paralelos. |
 | `GE-E21.3-03` | Autoridade do caso admitia draft real ou fixture. | Mudava leitura de banco e tratamento de dados. | preservação | Decisão humana `B`: fixture v4 autorizada, sem leitura real. | Plano §§1.6, 2.4 e 3.1. | Mesmo pacote imutável para todas as configurações. |
 | `GE-E21.3-04` | Força do cegamento não estava definida. | Alterava boundary de confidencialidade e persistência. | preservação | Decisão humana `A`: cegamento somente apresentacional, explicitamente sem confidencialidade técnica. | Plano §§1.6, 2.4 e 3.1. | Identidade e métricas não renderizadas antes do registro completo. |
 | `GE-E21.3-05` | Residência tarifária runtime versus documental estava aberta. | Evita precisão financeira fabricada. | preservação | Decisão humana `A`: sem tabela ou cálculo monetário runtime. | Plano §§1.6, 2.2, 3.1 e 4.1. | Custo `não confirmado`; decisão financeira somente após fonte oficial confirmada. |
@@ -66,7 +67,7 @@ Na Passagem 1, o Analista recebeu somente v1, v2, plano conceitual `N/A`, decis�
 | ID | Correção obrigatória | Classe | Tratamento na v2 | Evidência do gate |
 |---|---|---|---|---|
 | `P1-E21.3-01` | Definir proveniência verdadeira para candidatas experimentais. | extensão adjacente necessária e proporcional | `model_catalog_comparison` com versões de catálogo; baseline preserva fonte/revisão ativa. | Revisão delta confirmou incorporação. |
-| `P1-E21.3-02` | Materializar duração hospedada verificável. | extensão adjacente necessária e proporcional | `maxDuration = 300` no `page.tsx`, timeout individual de 120 segundos e concorrência limitada. | Segunda revisão delta aprovou a residência no entrypoint. |
+| `P1-E21.3-02` | Materializar duração hospedada verificável. | extensão adjacente necessária e proporcional | `maxDuration = 300` no `page.tsx` exclusivo de `/admin/testes-openai`, timeout individual de 120 segundos e concorrência limitada. | A residência muda com a decisão humana; o requisito técnico permanece no entrypoint que executa a comparação. |
 | `P1-E21.3-03` | Evitar recomendação ou desempate automático arbitrário. | preservação | Eliminação apenas por gates mínimos; trade-offs e decisão humana ou `evidência insuficiente`. | Revisão delta confirmou incorporação. |
 | `P1-E21.3-04` | Tornar a repetição focalizada executável e associada à rodada inicial. | extensão adjacente necessária e proporcional | `roundId` autenticado no `roundToken`, baseline mais até dois finalistas e revalidação corrente do catálogo. | Segunda revisão delta aprovou autenticação e revalidação. |
 | `P1-E21.3-05` | Oferecer resumo transitório copiável completo. | extensão adjacente necessária e proporcional | Resumo inclui ambiente, contratos, baseline/revisão, combinações, avaliações, gates, usage, latência, custo não confirmado, repetições, limitações e decisão. | Revisão delta confirmou incorporação. |
@@ -76,10 +77,12 @@ A primeira revisão delta do commit `54bdcae459c7577309b2cda33d54e680c84d377f` e
 
 Na Passagem 2, o mesmo Analista recebeu os pareceres integrais e a matriz, confirmou cobertura completa e concluiu `aprovado para merge do plano-base v2`. O ABC inicial do roadmap recebeu correção obrigatória apenas de residência estrutural; o commit `3acd3db2a5ad1b01489c3654043f4631fb788576` aplicou o delta autossuficiente, e a revisão delta final aprovou o blob `73d06d46c487987b22beabccd6804e3370944497`, sem correção remanescente e sem antecipação da E21.3.4.
 
+Em 26/08/2026, decisão humana superveniente substituiu somente a residência física da experiência: Configuração OpenAI e Testes OpenAI passam a superfícies distintas, preservando todos os demais contratos aprovados. O delta deve retornar ao mesmo Analista em `revisao_delta`, sem repetir Gestores nem reabrir as decisões `B/A/A`; implementação e QA da rota anterior não constituem gate final da nova superfície.
+
 ## 7. Travas preservadas
 
 - Não otimizar ou comparar versões da BSG, alterar prompt/contexto/tools ou reabrir E19.4.
-- Não persistir benchmark, avaliação, usage ou histórico; não criar banco, rota, dashboard, infraestrutura ou automação.
+- Não persistir benchmark, avaliação, usage ou histórico; criar somente `/admin/testes-openai`, sem banco, dashboard, serviço, infraestrutura ou automação.
 - Não alterar catálogo, candidata, prova, revisão, ativação ou rollback.
 - Não usar `supabase_operational` ou revisão ativa fictícia para candidata experimental.
 - Não implementar cálculo tarifário runtime nem conclusão financeira com tarifa divergente.
@@ -89,4 +92,4 @@ Na Passagem 2, o mesmo Analista recebeu os pareceres integrais e a matriz, confi
 
 ## 8. Próximo gate
 
-Checkpoint `LP-Factory-Stage: plan-v2-approved` autorizado pelo Analista. Publicar o PR único de orquestração e executar a E21.3.3 no mesmo branch/worktree; a E21.3.4 permanece fora da implementação até o gate condicional previsto.
+Submeter a decisão humana superveniente e este delta da v2/matriz ao mesmo Analista em `revisao_delta`. Somente após aprovação, atualizar o checkpoint no PR único e adequar a E21.3.3 no mesmo branch/worktree; a E21.3.4 permanece fora da implementação até o gate condicional previsto.
