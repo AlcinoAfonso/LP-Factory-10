@@ -46,7 +46,7 @@
 
 ### 1.6. Decisões de método e experiência
 
-- O humano escolhe o workload e um conjunto pequeno de configurações relevantes, preferencialmente entre 2 e 6 combinações elegíveis no catálogo E21.2.5; a configuração ativa entra obrigatoriamente como baseline de referência, mesmo se não estiver disponível para novas candidatas.
+- O humano escolhe o workload e um conjunto pequeno de configurações relevantes, preferencialmente entre 2 e 6 combinações elegíveis no catálogo E21.2.5; novas combinações devem estar disponíveis para novas candidatas no momento do teste. A configuração ativa entra obrigatoriamente como baseline de referência mesmo se tiver sido posteriormente indisponibilizada no catálogo, exclusivamente porque já é uma revisão ativa e executável do lifecycle E21.2.5; essa exceção serve apenas à comparação e não a torna elegível para nova candidata, prova, promoção ou reativação fora das regras já existentes.
 - Todas as configurações recebem o mesmo caso representativo, com as mesmas entradas, contrato funcional e gates de validade.
 - A primeira avaliação qualitativa é cega quanto a modelo, effort, custo, tokens e latência: os resultados aparecem como `Resultado A`, `Resultado B`, `Resultado C` etc.; a identidade técnica é revelada somente após o registro da avaliação humana daquela rodada.
 - A régua humana mínima é curta e explícita:
@@ -109,7 +109,7 @@
 - Etapa 2 — escolher configurações:
   - selecionar de 2 a 6 combinações pertinentes;
   - novas candidatas devem ser elegíveis no catálogo E21.2.5;
-  - a baseline ativa permanece comparável independentemente da disponibilidade atual para novas candidatas.
+  - a baseline ativa permanece comparável se tiver sido posteriormente indisponibilizada no catálogo, somente como revisão ativa de referência; essa exceção de comparação não cria elegibilidade para nova candidata nem altera disponibilidade ou lifecycle.
 - Etapa 3 — escolher caso(s) representativo(s):
   - reutilizar entradas reais ou fixtures autorizadas do próprio workload;
   - manter o mesmo conjunto e a mesma BSG para todas as configurações.
@@ -140,7 +140,8 @@
 - Automação: não.
 - Critérios de aceite:
   - preservar configuração ativa como baseline até decisão humana posterior;
-  - usar somente configurações candidatas elegíveis no catálogo E21.2.5;
+  - usar somente novas configurações candidatas elegíveis no catálogo E21.2.5;
+  - permitir que a baseline ativa participe da comparação mesmo se tiver sido posteriormente indisponibilizada no catálogo, sem tratá-la como nova candidata elegível nem alterar seu lifecycle;
   - manter entradas, contrato funcional e BSG constantes por comparação;
   - suportar seleção pequena de configurações sem benchmark combinatório;
   - apresentar avaliação qualitativa cega antes da revelação de modelo/effort e eficiência;
