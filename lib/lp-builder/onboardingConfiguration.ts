@@ -9,6 +9,7 @@ import {
   type LandingPageInputCatalogRegistry,
   type LandingPageInputCatalogTaxonChain,
   type LandingPageInputCondition,
+  type ResolvedLandingPageInputCatalog,
   type ResolvedLandingPageInputField,
 } from "../conversion-content/landing-page/input-catalog";
 import type {
@@ -56,9 +57,20 @@ export function resolveAccountLandingPageOnboardingConfiguration(
 
   if (!catalog.ok) return { ok: false, error: "CATALOG_UNAVAILABLE" };
 
+  const offeringScopeCandidate = classifyOfferingScopeCandidate(
+    input.registry,
+    catalog.value,
+  );
+  if (offeringScopeCandidate === "invalid") {
+    return {
+      ok: false,
+      error: "INVALID_CONFIGURATION",
+      fieldKey: "landing_page_offering_scope",
+    };
+  }
   const adaptedStoredValues = adaptLegacyOfferingScope(
     input.storedValues,
-    catalog.value.retiredFieldKeys,
+    offeringScopeCandidate === "compatible",
   );
   if (!adaptedStoredValues.ok) {
     return {
@@ -242,11 +254,11 @@ function canonicalizeLandingPageInputValue(
 
 function adaptLegacyOfferingScope(
   storedValues: AccountLandingPageOnboardingStoredValues,
-  retiredFieldKeys: readonly string[],
+  compatibleCandidate: boolean,
 ):
   | Readonly<{ ok: true; value: AccountLandingPageOnboardingStoredValues }>
   | Readonly<{ ok: false; fieldKey: string }> {
-  if (!retiredFieldKeys.includes("primary_service_or_offer")) {
+  if (!compatibleCandidate) {
     return { ok: true, value: storedValues };
   }
 
@@ -289,6 +301,42 @@ function adaptLegacyOfferingScope(
   }
 
   return { ok: true, value: adapted };
+}
+
+function classifyOfferingScopeCandidate(
+  registry: LandingPageInputCatalogRegistry | undefined,
+  catalog: ResolvedLandingPageInputCatalog,
+): "none" | "compatible" | "invalid" {
+  if (!registry) return "none";
+
+  const retired = new Set(catalog.retiredFieldKeys);
+  const scope = catalog.fields.find(
+    (field) => field.fieldKey === "landing_page_offering_scope",
+  );
+  const description = catalog.fields.find(
+    (field) => field.fieldKey === "landing_page_offering_scope_description",
+  );
+  const hasCandidateSignal =
+    retired.has("primary_service_or_offer") ||
+    retired.has("primary_service_or_offer_description") ||
+    scope !== undefined ||
+    description !== undefined;
+  if (!hasCandidateSignal) return "none";
+
+  const compatible =
+    retired.has("primary_service_or_offer") &&
+    retired.has("primary_service_or_offer_description") &&
+    scope?.valueType === "offering_scope" &&
+    scope.validation.kind === "offering_scope" &&
+    scope.valueScope === "landing_page" &&
+    scope.expectedValueOrigin === "landing_page_provided" &&
+    scope.obligation === "required" &&
+    description?.valueType === "string" &&
+    description.validation.kind === "type_only" &&
+    description.valueScope === "landing_page" &&
+    description.expectedValueOrigin === "landing_page_provided" &&
+    description.obligation === "required";
+  return compatible ? "compatible" : "invalid";
 }
 
 export function stripAuthoritativeOnboardingValues(
