@@ -21,7 +21,7 @@ Status: rascunho vivo em debate; ainda não consolidado como plano-base v1.
   - gasto atribuível a cada cliente/conta;
   - gasto atribuível a cada Landing Page gerada;
   - decomposição útil por workload e, quando fizer sentido, por modelo/configuração;
-  - saldo ou créditos disponíveis na OpenAI, somente se existir fonte oficial e tecnicamente utilizável para essa informação;
+  - saldo ou créditos disponíveis na OpenAI, quando existir fonte oficial e tecnicamente utilizável para essa informação;
   - parcela não atribuída necessária para reconciliar o gasto oficial com a classificação interna.
 - A finalidade é permitir gestão de margem, precificação e decisão de otimização antes de aprofundar comparações experimentais da E21.3.
 
@@ -61,6 +61,17 @@ Status: rascunho vivo em debate; ainda não consolidado como plano-base v1.
 - A moeda financeira do MVP será exclusivamente **USD (US$)**, preservando o valor oficial da OpenAI sem conversão cambial.
 - Conversão para BRL, cotação, spread, IOF ou qualquer outra composição em reais ficam fora do MVP e poderão ser avaliados posteriormente em recorte próprio ou evolução compatível.
 
+### 1.6. Usage, custo e créditos aceitos para o MVP
+
+- O MVP deve preservar duas réguas complementares:
+  - **usage técnico**, usando tokens e demais unidades oficiais aplicáveis a cada modalidade;
+  - **custo financeiro em USD**, confrontado com o custo oficial reportado pela OpenAI no período.
+- A soma dos custos internamente atribuídos deve ser reconciliada com o gasto oficial da OpenAI; diferenças permanecem visíveis como **Não atribuído/reconciliação**, sem ajuste artificial.
+- O ideal é também reconciliar o saldo/crédito acompanhado internamente pela LP Factory com o saldo/crédito oficial disponível na OpenAI, expondo eventual diferença quando ambas as fontes forem confiáveis.
+- A conciliação automática de saldo/créditos é **condicionada** à existência de fonte oficial programática adequada na OpenAI.
+- Se essa fonte oficial não puder ser confirmada, a ausência de conciliação automática de saldo/créditos **não bloqueia o MVP da E21.4**; gasto, usage e atribuição devem avançar normalmente.
+- Não inferir silenciosamente saldo oficial apenas por `créditos adquiridos - custo calculado`, porque ajustes, recargas, créditos promocionais ou defasagem de processamento podem produzir diferença.
+
 ## 2. Fatos preliminares e contrato em debate
 
 ### 2.1. Fontes do projeto já consultadas
@@ -99,7 +110,7 @@ Status: rascunho vivo em debate; ainda não consolidado como plano-base v1.
 - **Responsabilidade econômica:** classificação interna entre LP Factory, cliente/conta ou não atribuído, baseada na origem causal do consumo.
 - **Custo atribuído internamente:** parcela do gasto associada com evidência suficiente à categoria econômica e, quando aplicável, a cliente/conta, LP e workload.
 - **Não atribuído/reconciliação:** diferença entre gasto oficial e soma dos custos internamente atribuídos, quando houver; não constitui uma terceira categoria econômica permanente.
-- **Saldo/créditos:** informação de billing separada de gasto e usage; somente entra na solução se houver fonte oficial adequada ou se a UX puder declarar explicitamente sua indisponibilidade programática.
+- **Saldo/créditos:** informação de billing separada de gasto e usage; idealmente reconciliada com o acompanhamento interno, mas não bloqueante se não houver fonte oficial programática adequada.
 - **Cobrança ao cliente:** decisão comercial distinta da atribuição econômica e fora do recorte atual.
 
 ## 3. Questões abertas para decisão humana e investigação
@@ -112,8 +123,8 @@ Status: rascunho vivo em debate; ainda não consolidado como plano-base v1.
   - clientes;
   - não atribuído/reconciliação;
   - dentro de clientes: conta → Landing Page ou outros consumos da conta → workload.
-- Saldo/créditos permanece em debate até definir se é requisito obrigatório da primeira entrega ou item condicionado à existência de fonte oficial programática adequada.
-- Definir como a visão deve apresentar em conjunto usage técnico e custo oficial em USD, sem confundir grandezas diferentes nem criar falsa precisão.
+- Definir a apresentação conjunta de usage técnico e custo oficial em USD sem confundir grandezas diferentes nem criar falsa precisão.
+- Saldo/créditos deixa de ser gate do MVP: deve ser conciliado quando houver fonte oficial programática confiável e, se não houver, a limitação deve ser explícita.
 
 ### 3.2. Atribuição por cliente e Landing Page
 
@@ -125,7 +136,7 @@ Status: rascunho vivo em debate; ainda não consolidado como plano-base v1.
 
 - Confirmar empiricamente o comportamento do Costs API e das APIs de Usage para a organização real antes de definir contrato de leitura.
 - Confirmar se o projeto OpenAI e/ou API key atuais permitem separação útil entre Core, testes, Preview, Production e outros consumidores.
-- Investigar saldo/créditos sem assumir endpoint não documentado.
+- Investigar saldo/créditos sem assumir endpoint não documentado; ausência de endpoint oficial adequado não bloqueia a primeira entrega.
 - Decidir se a E21.4 exige uma Admin API Key dedicada e, se sim, somente depois definir plataforma, escopo e regra de segurança dessa credencial.
 
 ### 3.4. UX e operação
@@ -145,9 +156,10 @@ Status: rascunho vivo em debate; ainda não consolidado como plano-base v1.
 - Não armazenar secret bruto em documento, banco, client ou log.
 - Não ratear custos próprios da LP Factory entre clientes apenas para eliminar a categoria `LP Factory` ou o saldo `Não atribuído`.
 - Não introduzir conversão para BRL, cotação cambial, spread ou IOF no MVP.
+- Não bloquear o MVP pela ausência de leitura automática de saldo/créditos, desde que essa limitação seja explicitada.
 
 ### 4.2. Próxima ação do debate
 
-- Fechar com o humano o tratamento de usage técnico, custo oficial e saldo/créditos.
-- Em seguida, investigar a atribuição técnica por cliente/LP e a fonte real de billing da organização antes de consolidar o plano-base v1.
+- Investigar a atribuição técnica por categoria econômica, cliente/conta, Landing Page e workload e a fonte real de billing da organização antes de consolidar o plano-base v1.
+- Confirmar a hierarquia final da UX e a forma de apresentar usage e custo em USD com reconciliação explícita.
 - Antes da v1, classificar `Automação: sim | não` para as fases propostas; no MVP atual, a atualização sob demanda não implica automação recorrente.
