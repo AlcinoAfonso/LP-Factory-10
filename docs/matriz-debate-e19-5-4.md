@@ -39,9 +39,19 @@
 | `ID-05` | Critério para IA E20.6 | Ao avaliar necessidade semelhante a `transaction_intent`, não presumir universalidade; recomendar a camada mais alta em que a semântica permaneça válida sem generalização artificial. | proposta de regra a validar | — | — | — | — | pendente |
 | `ID-06` | `primary_conversion_goal` | Ainda não decidido se pertence ao núcleo de identidade ou se deve ser configuração mutável da LP. | aberto | — | — | — | — | pendente |
 | `ID-07` | `primary_service_or_offer` | Ainda não decidido se pertence ao núcleo de identidade ou se deve ser tratado como oferta/contexto mutável, eventualmente relacionado ao grupo opcional. | aberto | — | — | — | — | pendente |
+| `ID-08` | Resultados desejados dos campos de identidade | Os fields que formam a identidade da LP devem contribuir materialmente para os seis resultados definidos na seção 3.1. | decisão humana aceita | — | — | — | — | pendente |
 | `PL-01` | Starter e simplicidade | Hipótese de produto: Starter pode ter baixa quantidade de LPs e publicação restrita; isso reforça UX simples, mas limites exatos de publicação/LPs não são fixados nesta matriz sem contrato comercial vigente. | hipótese contextual; não contratual | — | — | — | — | pendente |
 | `UX-01` | Resultado do PR #820 | O desenho implementado não deve ser corrigido por remendos antes de fechar o novo modelo mental; QA humano foi reprovado. | decisão humana | — | — | — | — | pendente |
 | `UX-02` | Próximo wireframe | O próximo wireframe deve começar pela visão `Todas as LPs`, uma linha por LP concreta, e somente depois demonstrar a opção `Por grupos`. | direção proposta | — | — | — | — | pendente |
+
+### 3.1. Seis resultados desejados dos campos de identidade
+
+- Objetivo comercial inequívoco: a LP deve saber qual resultado comercial pretende alcançar.
+- Persuasão adequada ao momento do público: argumento, profundidade e abordagem devem ser compatíveis com o funil e, quando aplicável, com a intenção comercial.
+- Narrativa coerente e progressiva: a copy deve ter início, desenvolvimento e conclusão, evitando uma coleção desconectada de blocos.
+- Unidade de mensagem: oferta, argumentos, objeções, benefícios e CTA devem apontar para o mesmo trabalho comercial.
+- Conversão coerente com a narrativa: a ação principal deve decorrer naturalmente da persuasão construída pela página, e não funcionar como CTA arbitrário.
+- Especificidade: os campos de identidade devem ajudar a produzir uma LP específica para aquele trabalho comercial, evitando copy genérica que poderia servir para qualquer cliente, oferta ou objetivo.
 
 ## 4. Perguntas que ainda precisam de decisão humana
 
