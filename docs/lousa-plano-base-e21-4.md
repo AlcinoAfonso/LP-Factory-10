@@ -52,12 +52,14 @@ Status: rascunho vivo em debate; ainda não consolidado como plano-base v1.
   - uso de IA para documentação, melhoria ou suporte compartilhado por vários clientes permanece custo da LP Factory.
 - A classificação técnica existente `product_runtime` versus `operational` não substitui essa dimensão econômica e não deve determinar automaticamente `Cliente/conta` versus `LP Factory`.
 
-### 1.5. Período e atualização aceitos para o MVP
+### 1.5. Período, atualização e moeda aceitos para o MVP
 
 - A visão financeira deve abrir por padrão no **mês atual**.
 - Deve permitir **período personalizado** como segunda opção do MVP.
 - A atualização inicial será **sob demanda**, acionada pelo humano quando precisar consultar os dados.
 - Não há atualização recorrente, sincronização periódica ou automação de coleta aprovada neste estágio.
+- A moeda financeira do MVP será exclusivamente **USD (US$)**, preservando o valor oficial da OpenAI sem conversão cambial.
+- Conversão para BRL, cotação, spread, IOF ou qualquer outra composição em reais ficam fora do MVP e poderão ser avaliados posteriormente em recorte próprio ou evolução compatível.
 
 ## 2. Fatos preliminares e contrato em debate
 
@@ -111,7 +113,7 @@ Status: rascunho vivo em debate; ainda não consolidado como plano-base v1.
   - não atribuído/reconciliação;
   - dentro de clientes: conta → Landing Page ou outros consumos da conta → workload.
 - Saldo/créditos permanece em debate até definir se é requisito obrigatório da primeira entrega ou item condicionado à existência de fonte oficial programática adequada.
-- Definir como a visão deve apresentar em conjunto usage técnico, custo oficial e conversão para reais, sem confundir grandezas diferentes nem criar falsa precisão.
+- Definir como a visão deve apresentar em conjunto usage técnico e custo oficial em USD, sem confundir grandezas diferentes nem criar falsa precisão.
 
 ### 3.2. Atribuição por cliente e Landing Page
 
@@ -125,7 +127,6 @@ Status: rascunho vivo em debate; ainda não consolidado como plano-base v1.
 - Confirmar se o projeto OpenAI e/ou API key atuais permitem separação útil entre Core, testes, Preview, Production e outros consumidores.
 - Investigar saldo/créditos sem assumir endpoint não documentado.
 - Decidir se a E21.4 exige uma Admin API Key dedicada e, se sim, somente depois definir plataforma, escopo e regra de segurança dessa credencial.
-- Definir a regra de conversão/apresentação em reais sem alterar o caráter canônico do valor oficial reportado pela OpenAI.
 
 ### 3.4. UX e operação
 
@@ -143,9 +144,10 @@ Status: rascunho vivo em debate; ainda não consolidado como plano-base v1.
 - Não usar preço tabelado local como substituto silencioso do gasto oficial quando houver fonte oficial de custo.
 - Não armazenar secret bruto em documento, banco, client ou log.
 - Não ratear custos próprios da LP Factory entre clientes apenas para eliminar a categoria `LP Factory` ou o saldo `Não atribuído`.
+- Não introduzir conversão para BRL, cotação cambial, spread ou IOF no MVP.
 
 ### 4.2. Próxima ação do debate
 
-- Fechar com o humano o tratamento de usage/tokens, custo oficial, reais e saldo/créditos.
+- Fechar com o humano o tratamento de usage técnico, custo oficial e saldo/créditos.
 - Em seguida, investigar a atribuição técnica por cliente/LP e a fonte real de billing da organização antes de consolidar o plano-base v1.
 - Antes da v1, classificar `Automação: sim | não` para as fases propostas; no MVP atual, a atualização sob demanda não implica automação recorrente.
