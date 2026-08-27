@@ -1,197 +1,234 @@
-27/08/2026 — Rascunho vivo — E21.4 — Visibilidade financeira e atribuição de custos OpenAI
+27/08/2026 — Plano-base v1 — E21.4 — Visibilidade financeira e atribuição de custos OpenAI
 
-Status: rascunho vivo em debate; ainda não consolidado como plano-base v1.
+Status: plano-base v1 consolidado após debate humano e avaliação pré-v1 do Analista.
 
-## 1. Estado e decisões já aceitas
+## 1. Estado e decisões fixas
 
-### 1.1. Recorte
+### 1.1. Recorte e objetivo
 
 - Caso macro: `E21 — Gestão e governança dos workloads OpenAI`.
 - Recorte: `E21.4 — Visibilidade financeira e atribuição de custos OpenAI`.
 - Prioridade: imediata, antes da retomada da E21.3.4.
-- Base de abertura: `main@a5d86c6f4d693574817e4dd65b0ec32ef87601c8`, após o merge do PR #823.
-- Plano conceitual: N/A neste estágio.
+- Objetivo: permitir ao `platform_admin` conhecer o gasto oficial OpenAI do período, entender quanto desse gasto pertence economicamente à LP Factory ou aos clientes e, quando houver evidência causal suficiente, aprofundar a atribuição até conta, Landing Page e workload.
+- Finalidade de negócio: apoiar gestão de custo, margem, precificação futura e decisões de otimização sem depender de estimativas tratadas como gasto oficial.
+- Plano conceitual: N/A.
 
-### 1.2. Problema de negócio
+### 1.2. Autoridades financeiras e técnicas
 
-- A LP Factory ainda não oferece uma visão financeira operacional suficiente para responder, com confiança, quanto a OpenAI está custando ao negócio.
-- A prioridade humana atual é conhecer:
-  - gasto total OpenAI em um período;
-  - parcela economicamente atribuível aos clientes e parcela própria da LP Factory;
-  - gasto atribuível a cada cliente/conta;
-  - gasto atribuível a cada Landing Page gerada;
-  - decomposição útil por workload e, quando fizer sentido, por modelo/configuração;
-  - saldo ou créditos disponíveis na OpenAI, quando existir fonte oficial e tecnicamente utilizável para essa informação;
-  - parcela não atribuída necessária para reconciliar o gasto oficial com a classificação interna.
-- A finalidade é permitir gestão de margem, precificação e decisão de otimização antes de aprofundar comparações experimentais da E21.3.
+- **Costs API da OpenAI** é a autoridade do **gasto financeiro oficial total em USD** para a organização e o período consultados.
+- O total oficial deve representar 100% do valor retornado pela fonte oficial para o período, independentemente da cobertura interna de atribuição.
+- **Usage APIs da OpenAI** são autoridade de usage oficial por modalidade e podem fornecer dimensões técnicas como projeto, API key, modelo e outras suportadas por cada endpoint.
+- Usage oficial e custo oficial são grandezas relacionadas, mas não intercambiáveis; Usage não substitui Costs para autoridade financeira.
+- Cliente, Landing Page e workload são dimensões de **atribuição interna reconciliada da LP Factory**, não custos oficiais individualizados pela OpenAI.
+- A apresentação não deve chamar custo por cliente, LP ou workload de “custo oficial OpenAI”.
+- O `Costs API` vigente suporta filtros por `project_ids` e `api_key_ids` e agrupamento por `project_id`, `line_item` e `api_key_id`.
+- A leitura oficial de Costs/Usage exige Admin API Key da organização; `OPENAI_API_KEY` de runtime não substitui essa credencial.
 
-### 1.3. Limites já aceitos
+### 1.3. Dependência de credencial administrativa
 
-- Não renumerar nem substituir a E21.3; a E21.4 é um recorte novo e prioritário.
-- A implementação experimental do PR #819 permanece apenas como referência histórica e não integra a `main`.
-- Não definir ainda banco, tabela, API, rota, job, automação, serviço, nova credencial ou desenho de persistência.
-- Não prometer atribuição retroativa por cliente/LP sem demonstrar que os dados históricos existentes permitem isso com confiabilidade.
-- Não confundir custo oficial cobrado pela OpenAI com custo interno atribuído a cliente/LP; eventual diferença deve permanecer visível e explicável.
-- Não confundir custo economicamente atribuído a um cliente com valor cobrado separadamente desse cliente; política comercial, franquia, limite, markup ou repasse permanecem fora do recorte atual.
+- `OPENAI_ADMIN_KEY` é pré-requisito obrigatório para concluir a entrega principal da E21.4, pois sem autoridade oficial de Costs/Usage não existe reconciliação financeira confiável.
+- Apenas Organization Owners podem criar Admin API Keys da API Platform.
+- O valor da chave nunca deve ser versionado, logado, enviado ao client ou persistido em banco.
+- A v2 deve definir o menor escopo e a plataforma autorizada para armazenar a credencial, preservando uso exclusivamente server-side.
+- Com a credencial ausente ou inválida, a leitura oficial deve falhar fechada e a E21.4 não pode ser declarada concluída.
 
-### 1.4. Regra de atribuição econômica aceita
+### 1.4. Regra de responsabilidade econômica
 
-- A primeira classificação interna do gasto deve responder **quem originou economicamente o custo**, antes de tentar chegar a cliente, LP ou workload.
-- Categorias canônicas de classificação:
-  - **LP Factory:** aquisição/pré-venda, usuário ainda não contratado, desenvolvimento, Preview, QA, testes, comparações experimentais, operação interna, preparação compartilhada e demais consumos que beneficiem a plataforma de forma geral ou não sejam causados por um cliente contratado identificável;
-  - **Cliente/conta:** consumo causado por ação, necessidade ou atendimento identificável de um cliente contratado, ainda que o valor esteja incluído no plano e não seja cobrado separadamente;
-  - **Não atribuído:** estado de reconciliação usado somente quando o gasto oficial existe, mas a origem econômica ainda não pode ser provada com segurança.
-- Dentro de **Cliente/conta**, a atribuição deve avançar, quando houver evidência suficiente, para:
-  - Landing Page específica;
-  - workload específico;
-  - outros consumos da conta que não pertençam a uma Landing Page.
-- Regra causal para suporte por IA:
-  - suporte ou ajuda de IA antes da contratação é custo da LP Factory;
-  - suporte ou ajuda de IA acionado por cliente contratado é custo atribuível à conta desse cliente;
-  - uso de IA pela equipe para resolver caso específico de cliente pode ser atribuído à conta quando a relação causal for demonstrável;
-  - uso de IA para documentação, melhoria ou suporte compartilhado por vários clientes permanece custo da LP Factory.
-- A classificação técnica existente `product_runtime` versus `operational` não substitui essa dimensão econômica e não deve determinar automaticamente `Cliente/conta` versus `LP Factory`.
-- O próprio workload também não basta para definir a responsabilidade econômica: `landing_page_draft_generation` e `landing_page_draft_image_generation` são custo de cliente quando executados causalmente para uma LP real de conta contratada, mas são custo da LP Factory quando executados como Preview, QA, prova administrativa ou teste.
+- A classificação econômica responde **quem originou causalmente o consumo**, não apenas qual workload foi executado.
+- Categorias canônicas:
+  - **LP Factory:** aquisição/pré-venda, usuário ainda não contratado, desenvolvimento, Preview, QA, testes, provas administrativas, comparações experimentais, operação interna, preparação compartilhada e demais consumos não causados por um cliente contratado identificável;
+  - **Cliente/conta:** consumo causado por ação, necessidade ou atendimento identificável de cliente contratado;
+  - **Não atribuído/reconciliação:** parcela do gasto oficial cuja origem causal interna não pode ser comprovada com segurança.
+- `Não atribuído` é estado de reconciliação, não categoria econômica permanente.
+- A classificação técnica existente `product_runtime` versus `operational` não determina automaticamente responsabilidade econômica.
+- O mesmo workload pode ter responsabilidade econômica diferente conforme o contexto: geração de LP real para conta contratada é custo de cliente; a mesma geração em Preview, QA, prova ou teste é custo da LP Factory.
+- Atribuição econômica ao cliente não significa cobrança separada; franquia, limite, markup, repasse e política comercial ficam fora da E21.4.
 
-### 1.5. Período, atualização e moeda aceitos para o MVP
+### 1.5. Autoridade para considerar uma conta como cliente
 
-- A visão financeira deve abrir por padrão no **mês atual**.
+- No MVP, uma conta passa a ter consumo economicamente atribuível como **Cliente/conta** quando existe **entitlement comercial efetivo**, conforme autoridade canônica da E9.
+- O entitlement efetivo exige origem comercial válida `plano_pago_confirmado`, status comercial ativo e vigência válida.
+- `accounts.status`, membership, `accounts.plan_id` ou `public.plans` isoladamente não transformam consumo em custo de cliente.
+- Conta e membership continuam sendo autoridades independentes de acesso operacional; não substituem o entitlement comercial.
+- A responsabilidade econômica deve refletir o estado efetivo no momento da execução do consumo, sem reclassificar retrospectivamente o histórico apenas porque o entitlement mudou depois.
+- Trial ou liberação manual somente passam a produzir responsabilidade econômica de cliente quando essas origens forem efetivamente aprovadas e incorporadas ao contrato comercial canônico em recorte próprio.
+
+### 1.6. Regra mínima de evidência para atribuição
+
+- Atribuir apenas até a profundidade sustentada por autoridade causal real do contexto de execução.
+- Se a categoria econômica é conhecida e nenhuma conta é autorizadamente conhecida, parar em **LP Factory** ou **Não atribuído**, conforme o caso.
+- Se a conta cliente é conhecida por autoridade real, atribuir à **conta**, mesmo que nenhuma LP específica exista.
+- Se `landingPageId` é conhecido por contexto autorizado, aprofundar para a **Landing Page**.
+- Se o workload executado é conhecido pelo runtime, aprofundar para o **workload**.
+- Conta conhecida sem LP deve aparecer como **outros consumos da conta**, não como `Não atribuído`.
+- Não inferir cliente, LP ou workload por horário, proximidade entre chamadas, modelo, volume de tokens ou heurística equivalente.
+- Gasto oficial sem correlação causal interna suficiente deve permanecer em **Não atribuído/reconciliação**.
+
+### 1.7. Histórico e data de corte
+
+- O MVP não promete reconstrução retroativa completa por cliente, LP ou workload.
+- A cobertura confiável de atribuição cliente/LP/workload começa na **data de ativação da instrumentação E21.4 em Production**.
+- Períodos anteriores podem continuar exibindo o gasto oficial da OpenAI, desde que a interface não apresente cobertura parcial existente como atribuição integral.
+- Evidências históricas atuais de materializações de LP podem ser usadas para investigação e validação, mas não autorizam, no MVP, uma visão histórica completa por cliente/LP.
+- A v2 deve definir como registrar explicitamente a data de corte e impedir mistura visual entre período coberto e não coberto.
+
+### 1.8. Período, atualização, moeda e atualidade
+
+- A visão abre por padrão no **mês atual**.
 - Deve permitir **período personalizado** como segunda opção do MVP.
-- A atualização inicial será **sob demanda**, acionada pelo humano quando precisar consultar os dados.
-- Não há atualização recorrente, sincronização periódica ou automação de coleta aprovada neste estágio.
-- A moeda financeira do MVP será exclusivamente **USD (US$)**, preservando o valor oficial da OpenAI sem conversão cambial.
-- Conversão para BRL, cotação, spread, IOF ou qualquer outra composição em reais ficam fora do MVP e poderão ser avaliados posteriormente em recorte próprio ou evolução compatível.
+- Atualização inicial: **sob demanda**, acionada pelo humano.
+- Automação recorrente, sincronização periódica e coleta agendada ficam fora do MVP.
+- Moeda financeira do MVP: exclusivamente **USD (US$)**.
+- BRL, câmbio, spread e IOF ficam fora do recorte.
+- O mês atual deve ser apresentado como **Provisório**, acompanhado de `Atualizado em [data/hora]`.
+- Períodos anteriores podem ser apresentados como **Período encerrado**, sempre com a última atualização oficial disponível, sem afirmar fechamento contábil imutável.
+- O `Costs API` vigente trabalha com buckets de custo de `1d`; atualização sob demanda não implica valor financeiro instantaneamente fechado.
 
-### 1.6. Usage, custo e créditos aceitos para o MVP
+### 1.9. Usage, custo, reconciliação e créditos
 
-- O MVP deve preservar duas réguas complementares:
-  - **usage técnico**, usando tokens e demais unidades oficiais aplicáveis a cada modalidade;
-  - **custo financeiro em USD**, confrontado com o custo oficial reportado pela OpenAI no período.
-- A soma dos custos internamente atribuídos deve ser reconciliada com o gasto oficial da OpenAI; diferenças permanecem visíveis como **Não atribuído/reconciliação**, sem ajuste artificial.
-- O ideal é também reconciliar o saldo/crédito acompanhado internamente pela LP Factory com o saldo/crédito oficial disponível na OpenAI, expondo eventual diferença quando ambas as fontes forem confiáveis.
-- A conciliação automática de saldo/créditos é **condicionada** à existência de fonte oficial programática adequada na OpenAI.
-- Se essa fonte oficial não puder ser confirmada, a ausência de conciliação automática de saldo/créditos **não bloqueia o MVP da E21.4**; gasto, usage e atribuição devem avançar normalmente.
-- Não inferir silenciosamente saldo oficial apenas por `créditos adquiridos - custo calculado`, porque ajustes, recargas, créditos promocionais ou defasagem de processamento podem produzir diferença.
+- O MVP preserva duas réguas complementares:
+  - **usage técnico**, usando tokens e demais unidades oficiais adequadas a cada modalidade;
+  - **custo financeiro em USD**, reconciliado contra Costs.
+- A relação canônica da visão é:
+  - **Gasto oficial total = LP Factory + Clientes + Não atribuído/reconciliação**.
+- A soma interna nunca deve ser ajustada artificialmente para “bater” com Costs.
+- Diferenças precisam permanecer visíveis e explicáveis.
+- O ideal é conciliar também crédito/saldo acompanhado internamente com saldo/crédito oficial da OpenAI quando ambas as fontes forem confiáveis.
+- A conciliação automática de saldo/créditos é condicionada à existência de fonte oficial programática adequada.
+- Se nenhuma fonte oficial programática de saldo/créditos for confirmada, essa conciliação fica **fora dos critérios obrigatórios de aceite** e não bloqueia a E21.4.
+- Não inferir saldo oficial por `créditos adquiridos - custo calculado`.
 
-### 1.7. Acesso, residência e hierarquia da UX aceitos
+### 1.10. Acesso e residência
 
-- A superfície financeira será administrativa e acessível exclusivamente a `platform_admin`.
-- A residência conceitual será uma superfície própria denominada **Custos OpenAI**, separada de **Configuração OpenAI** e **Testes OpenAI**.
-- Nenhuma rota concreta está definida neste rascunho; path e estrutura técnica ficam para a v2 após validação estrutural.
-- A hierarquia de leitura do MVP será:
-  - **Gasto OpenAI total**;
-  - **LP Factory**;
-  - **Clientes**;
-  - **Não atribuído/reconciliação**.
-- Dentro de **Clientes**, a leitura avança por:
-  - conta/cliente;
+- A superfície é exclusivamente administrativa e acessível somente a `platform_admin`.
+- A residência conceitual aprovada é uma superfície própria **Custos OpenAI**, separada de **Configuração OpenAI** e **Testes OpenAI**.
+- A rota física não é definida na v1; a v2 deve escolher o path aderente à estrutura administrativa real do projeto.
+- Hierarquia principal da UX:
+  - Gasto OpenAI total;
+  - LP Factory;
+  - Clientes;
+  - Não atribuído/reconciliação.
+- Dentro de **Clientes**:
+  - conta;
   - Landing Pages ou outros consumos da conta;
-  - workload, quando houver evidência suficiente.
-- Cada nível financeiro apresenta valores em USD; o detalhamento apresenta também a unidade técnica adequada ao workload, como tokens para texto e imagens/requisições para geração de imagem.
-- A conciliação deve distinguir, quando as fontes permitirem:
-  - usage interno versus usage oficial OpenAI;
-  - custos internamente atribuídos versus custo oficial OpenAI;
-  - crédito interno versus saldo/crédito oficial OpenAI, sem bloquear o MVP se esta última fonte não existir programaticamente.
+  - workload.
+- Cada nível financeiro mostra USD; o detalhamento pode mostrar também a unidade técnica pertinente, como tokens ou imagens/requisições.
 
-## 2. Fatos preliminares e contrato em debate
+## 2. Contrato do caso
 
-### 2.1. Fontes do projeto já consultadas
+### 2.1. Fluxo canônico
 
-- `README.md` — visão do MVP, simplicidade proporcional e evolução por benefício mensurável.
-- `docs/roadmap.md` — prioridade e objetivo inicial da E21.4.
-- `docs/prompt-estrategista.md` — fluxo de rascunho vivo até plano-base v1.
+- **Gatilho:** `platform_admin` abre Custos OpenAI e solicita atualização do mês atual ou de período personalizado.
+- **Entrada:** período, autoridade `platform_admin`, leitura oficial Costs/Usage e evidências internas de atribuição disponíveis para o mesmo período.
+- **Processamento:** obter gasto oficial completo; obter usage oficial aplicável; agregar evidências internas por responsabilidade econômica; aprofundar somente até a autoridade comprovada; calcular diferença de reconciliação.
+- **Validação:** rejeitar leitura oficial incompleta, erro de paginação, credencial administrativa ausente/inválida, intervalo inválido ou classificação interna sem autoridade causal suficiente.
+- **Persistência:** a v1 exige evidência prospectiva suficiente para atribuir inclusive consumos que falhem antes de materialização final; o menor mecanismo persistente será definido na v2 a partir das estruturas reais do projeto.
+- **Consumo:** superfície Custos OpenAI apresenta total oficial e decomposição interna reconciliada, sem esconder cobertura parcial ou diferença.
+- **Fallback:** se a fonte oficial falhar, não substituir silenciosamente por preço tabelado ou estimativa; mostrar indisponibilidade da leitura oficial. Se apenas uma atribuição interna não puder ser provada, preservar o valor oficial e mover apenas essa parcela para `Não atribuído/reconciliação`.
+
+### 2.2. Evidência atual do projeto
+
+- A geração de LP já possui `accountId` e `landingPage.id` no contexto autorizado v4; portanto a origem conta/LP existe no ponto de execução e não precisa ser inferida.
+- Materializações concluídas preservam `attemptId`, `requestId`, contexto de geração, configuração dos workloads e usage textual; custos permanecem indisponíveis no snapshot atual.
+- Tentativas que consomem OpenAI e falham antes da materialização podem gerar custo sem deixar a mesma evidência persistente por cliente/LP.
+- O histórico atual é, portanto, parcial para finalidade financeira.
+- Mapa econômico inicial dos workloads atuais:
+  - `niche_resolution`: LP Factory no fluxo vigente de onboarding/pré-contrato;
+  - `commercial_activation_draft_generation`: LP Factory;
+  - `taxon_input_catalog_sufficiency_evaluation`: LP Factory;
+  - `supabase_inspect`: LP Factory;
+  - `landing_page_draft_generation` e `landing_page_draft_image_generation`: Cliente/conta quando executados para LP real de conta com entitlement efetivo; LP Factory em desenvolvimento, Preview, QA, prova ou teste.
+
+### 2.3. Fontes usadas
+
+- `README.md` — visão do MVP e simplicidade proporcional.
+- `docs/roadmap.md` — prioridade e objetivo da E21.4.
 - `docs/template-roadmap.md` — hierarquia do recorte.
-- `docs/platform-config.md` — configuração operacional vigente da OpenAI e secrets por nome.
-- `lib/openai-workloads/contracts.ts`, `lib/openai-workloads/observability.ts` e `lib/openai-workloads/registry.ts` — usage, observabilidade e classificação técnica atuais dos workloads.
-- `lib/lp-builder/generationContextContracts.ts`, `lib/lp-builder/landingPageDraftGeneration.ts`, `lib/lp-builder/landingPageDraftImageGeneration.ts`, `lib/lp-builder/landingPageRevision.ts` e `lib/lp-builder/adapters/landingPageRevisionAdapter.ts` — autoridade e evidências atuais da geração de Landing Page.
-- `lib/onboarding/niche-resolution/adapters/openAiResolver.ts`, `lib/conversion-content/commercial-activation/draft-generation.ts` e `lib/conversion-content/adapters/inputCatalogEvaluationOpenAiAdapter.ts` — contexto causal dos demais workloads de produto atuais.
+- `docs/prompt-estrategista.md` — fluxo de plano-base.
+- `docs/platform-config.md` — configuração OpenAI vigente e secrets por nome.
+- `docs/lousa-plano-base-e9.md` — autoridade de elegibilidade/entitlement comercial.
+- `lib/openai-workloads/contracts.ts`, `lib/openai-workloads/observability.ts` e `lib/openai-workloads/registry.ts` — contratos e observabilidade atuais.
+- `lib/lp-builder/generationContextContracts.ts`, `lib/lp-builder/landingPageDraftGeneration.ts`, `lib/lp-builder/landingPageDraftImageGeneration.ts`, `lib/lp-builder/landingPageRevision.ts` e adapters correlatos — contexto e evidência atual de geração de LP.
+- Documentação oficial OpenAI vigente de Costs, Usage, Admin API Keys e billing pré-pago.
 
-### 2.2. Fatos oficiais OpenAI confirmados até aqui
+## 3. Fases e próxima ação
 
-- A OpenAI expõe `GET /organization/costs` para custos da organização por período. A API aceita agrupamento por `project_id`, `line_item` e `api_key_id` e usa Admin API Key (`OPENAI_ADMIN_KEY`).
-- A OpenAI expõe APIs de usage por modalidade. Completions pode ser agrupado por `project_id`, `user_id`, `api_key_id`, `model`, `batch` e `service_tier`; images expõe número de imagens e requisições e pode ser agrupado por `project_id`, `user_id`, `api_key_id`, `model`, `size` e `source`.
-- A documentação oficial de billing pré-pago confirma que o saldo de créditos existe e é exibido no Billing da plataforma, mas até este ponto do debate não foi confirmada uma API pública oficial equivalente ao Costs API para consultar programaticamente o saldo disponível.
-- Fontes oficiais consultadas:
-  - `https://developers.openai.com/api/reference/python/resources/admin/subresources/organization/subresources/usage/methods/costs`;
-  - `https://developers.openai.com/api/reference/python/resources/admin/subresources/organization/subresources/usage/methods/completions`;
-  - `https://developers.openai.com/api/reference/python/resources/admin/subresources/organization/subresources/usage/methods/images`;
-  - `https://developers.openai.com/api/reference/python/resources/admin/subresources/organization/subresources/admin_api_keys`;
-  - `https://help.openai.com/en/articles/8264644-setting-up-and-managing-prepaid-api-billing`.
+### 3.1. E21.4.3 — Autoridade oficial de Costs e Usage
 
-### 2.3. Fatos atuais do LP Factory
+- Objetivo: disponibilizar leitura oficial sob demanda do gasto completo e do usage relevante para o período solicitado.
+- Automação: não.
+- Entrada: período, sessão `platform_admin` e `OPENAI_ADMIN_KEY` server-side.
+- Processamento: consultar Costs como autoridade financeira e Usage APIs como autoridade técnica, com paginação completa e agrupamentos somente quando úteis à reconciliação.
+- Validação:
+  - credencial administrativa válida;
+  - período válido;
+  - leitura completa e fail-closed;
+  - total em USD;
+  - nenhum secret ou payload sensível exposto ao client/log.
+- Persistência: nenhuma persistência periódica obrigatória nesta fase; leitura permanece sob demanda, salvo decisão técnica mínima da v2 indispensável à operação.
+- Fallback: indisponibilidade explícita, sem substituir Costs por estimativa local.
+- Critério de aceite: `platform_admin` consegue obter o gasto oficial completo do período e usage oficial suportado; ausência de `OPENAI_ADMIN_KEY` bloqueia a conclusão da fase.
 
-- `docs/platform-config.md` registra `OPENAI_API_KEY` compartilhada pelos consumidores OpenAI autorizados do Core em Preview e Production.
-- Não existe `OPENAI_ADMIN_KEY` registrada atualmente em `docs/platform-config.md`.
-- A conexão OpenAI Platform disponível no chat cria chaves de projeto, mas não oferece criação de Admin API Key; portanto, eventual `OPENAI_ADMIN_KEY` exigida pela E21.4 dependerá de decisão e setup próprios posteriores.
-- A observabilidade textual atual registra workload, modelo, reasoning effort, ambiente, revisão, request/attempt IDs, tokens, latência e metadados seguros de provider.
-- O contrato transversal atual de evento OpenAI não inclui `accountId` nem `landingPageId` como dimensões de atribuição financeira.
-- O registry atual demonstra que nem todo workload possui a mesma natureza econômica: há geração de Landing Page, onboarding/resolução de nicho, avaliação administrativa por taxon e workload operacional separado do Core.
-- A geração de Landing Page já recebe contexto autorizado v4 com `accountId` e `landingPage.id`; portanto, nesses workloads a origem cliente/LP existe no ponto de execução e não precisa ser inferida por heurística.
-- Quando uma geração de LP é materializada com sucesso, o snapshot vigente preserva `accountId`, `landingPage.id`, `attemptId`, `requestId`, configuração dos workloads, usage textual e identificador da requisição de imagem. Os custos permanecem `unavailable` no snapshot atual.
-- A materialização só cobre a geração que chegou ao estado persistido. Tentativas que consumiram OpenAI e falharam antes da materialização podem gerar custo sem deixar a mesma evidência histórica por cliente/LP.
-- Consequentemente, o histórico atual pode permitir **atribuição parcial** de algumas gerações de LP bem-sucedidas, especialmente usage textual, mas não demonstra cobertura financeira completa de imagens, falhas e demais workloads.
-- Mapa econômico preliminar dos workloads atuais:
-  - `niche_resolution`: LP Factory no fluxo atual de onboarding/pré-contrato;
-  - `commercial_activation_draft_generation`: LP Factory, por gerar conteúdo comercial administrativo por taxon;
-  - `taxon_input_catalog_sufficiency_evaluation`: LP Factory, por avaliar preparação compartilhada por taxon;
-  - `supabase_inspect`: LP Factory, por ser workload operacional separado do Core;
-  - `landing_page_draft_generation` e `landing_page_draft_image_generation`: Cliente/conta quando executados para LP real contratada; LP Factory quando usados para desenvolvimento, Preview, QA, prova ou teste.
-- Portanto, os dados oficiais da OpenAI, isoladamente, conseguem sustentar totalização/reconciliação por organização/projeto/chave/linha de custo, mas não demonstram por si só qual cliente, LP ou categoria econômica originou cada parcela do custo.
+### 3.2. E21.4.4 — Evidência prospectiva e atribuição causal
 
-### 2.4. Conceitos que precisam permanecer distintos
+- Objetivo: garantir que novos consumos OpenAI possam ser atribuídos com autoridade até LP Factory ou cliente e, quando aplicável, conta, LP e workload, inclusive quando a tentativa falhar antes da materialização final.
+- Automação: não.
+- Entrada: contexto autorizado existente no ponto de execução, workload, ambiente, IDs de correlação, usage disponível e autoridade comercial efetiva da conta quando aplicável.
+- Processamento: classificar responsabilidade econômica no momento da execução e preservar apenas a profundidade de atribuição comprovada.
+- Validação:
+  - nenhuma heurística de cliente/LP;
+  - entitlement efetivo conforme E9 para classificação de cliente;
+  - Preview/QA/testes classificados como LP Factory;
+  - falhas pagas não desaparecem da evidência apenas por ausência de materialização final;
+  - data de corte de cobertura prospectiva explícita.
+- Persistência: a v2 deve escolher a menor forma persistente compatível com a arquitetura real e suficiente para consulta financeira e reconciliação; não criar duplicação de dados sem necessidade.
+- Fallback: profundidade não comprovada para no nível anterior; ausência de correlação causal suficiente envia a parcela a `Não atribuído/reconciliação`.
+- Critério de aceite: a partir da data de corte, consumos abrangidos pelo MVP possuem evidência causal auditável e não dependem de reconstrução heurística posterior.
 
-- **Gasto oficial OpenAI:** valor financeiro reportado pela fonte oficial de custos da organização.
-- **Usage OpenAI:** tokens, imagens e demais unidades de consumo reportadas pela OpenAI ou pelo runtime.
-- **Responsabilidade econômica:** classificação interna entre LP Factory, cliente/conta ou não atribuído, baseada na origem causal do consumo.
-- **Custo atribuído internamente:** parcela do gasto associada com evidência suficiente à categoria econômica e, quando aplicável, a cliente/conta, LP e workload.
-- **Não atribuído/reconciliação:** diferença entre gasto oficial e soma dos custos internamente atribuídos, quando houver; não constitui uma terceira categoria econômica permanente.
-- **Saldo/créditos:** informação de billing separada de gasto e usage; idealmente reconciliada com o acompanhamento interno, mas não bloqueante se não houver fonte oficial programática adequada.
-- **Cobrança ao cliente:** decisão comercial distinta da atribuição econômica e fora do recorte atual.
+### 3.3. E21.4.5 — Custos OpenAI e reconciliação administrativa
 
-## 3. Questões abertas para validação do Analista e investigação técnica
+- Objetivo: entregar ao `platform_admin` a visão financeira hierárquica e reconciliada do MVP.
+- Automação: não.
+- Entrada: Costs/Usage oficiais e evidência interna prospectiva do mesmo período.
+- Processamento: apresentar total oficial, LP Factory, Clientes e Não atribuído; permitir aprofundamento de Clientes em conta → LP/outros consumos → workload.
+- Validação:
+  - total oficial nunca reduzido à cobertura interna conhecida;
+  - relação `Total oficial = LP Factory + Clientes + Não atribuído` preservada;
+  - período atual marcado `Provisório` e atualizado em data/hora;
+  - períodos anteriores sem falsa promessa de fechamento contábil definitivo;
+  - histórico pré-data de corte não apresentado como cobertura integral;
+  - acesso negativo sem exposição administrativa;
+  - estados loading, vazio, erro oficial, parcial/não atribuído e sucesso reconhecíveis;
+  - desktop e mobile sem overflow horizontal e com controles/semântica aderentes ao design system.
+- Persistência: sem cache periódico ou job no MVP; usar somente a persistência mínima definida para a evidência de atribuição.
+- Fallback: falha de Costs torna a visão oficial indisponível; falha apenas de atribuição interna preserva o total oficial e evidencia `Não atribuído`.
+- Saldo/créditos: exibir conciliação apenas se fonte oficial programática confiável for confirmada; sua ausência não reprova a fase.
+- Critério de aceite: o humano consegue responder quanto a OpenAI reporta como gasto no período, quanto foi atribuído à LP Factory, quanto aos clientes e qual diferença permanece não atribuída, aprofundando clientes até a evidência disponível.
 
-### 3.1. Entrega mínima prioritária
+### 3.4. Próxima ação
 
-- A hierarquia da visão financeira, o acesso `platform_admin`, a superfície própria **Custos OpenAI**, os períodos do MVP, a atualização sob demanda e a moeda USD estão aprovados pelo humano.
-- Validar se a apresentação conjunta de usage técnico e custo oficial em USD, com reconciliação explícita, cobre o objetivo sem criar falsa precisão.
-- Saldo/créditos não é gate do MVP: deve ser conciliado quando houver fonte oficial programática confiável e, se não houver, a limitação deve ser explícita.
+- Submeter este plano-base v1 às avaliações previstas pelo Prompt Estrategista antes da v2/implementação.
+- O detalhamento de schema, persistência, rota, adapter oficial, configuração da Admin API Key e casos de teste pertence à v2.
 
-### 3.2. Atribuição por cliente e Landing Page
+## 4. Escopo negativo e critérios de parada
 
-- A atribuição de LP real já possui autoridade causal de `accountId` e `landingPageId` no contexto vigente; a v2 deve definir apenas a menor forma persistente de carregar essa evidência para a visão financeira.
-- Tratar qualquer reconstrução histórica apenas com o grau de cobertura factual realmente demonstrado; histórico parcial não pode ser apresentado como custo completo do cliente ou da LP.
-- Definir na v2 a menor evidência persistente suficiente para capturar também tentativas pagas que falhem antes da materialização, sem antecipar neste rascunho banco, tabela ou mecanismo específico.
-- Determinar como registrar consumos futuros de cliente que não pertençam a uma LP específica e preservar custos próprios da LP Factory sem rateio artificial entre clientes.
+### 4.1. Fora do MVP E21.4
 
-### 3.3. Fonte oficial e reconciliação
+- Conversão para BRL, cotação, spread ou IOF.
+- Cálculo de margem, preço de plano, cobrança, markup ou repasse ao cliente.
+- Reconstrução histórica integral anterior à data de corte.
+- Rateio artificial de custo LP Factory entre clientes.
+- Atualização recorrente, cron, job ou sincronização automática.
+- Retomada da E21.3.4.
+- Persistência de payloads OpenAI completos, prompts, respostas integrais ou secrets para finalidade financeira.
+- Criação de infraestrutura maior que a mínima necessária para evidência causal e leitura administrativa.
+- Conciliação automática de saldo/créditos quando não houver fonte oficial programática adequada.
 
-- Confirmar empiricamente o comportamento do Costs API e das APIs de Usage para a organização real antes de definir contrato de leitura.
-- Confirmar se o projeto OpenAI e/ou API key atuais permitem separação útil entre Core, testes, Preview, Production e outros consumidores.
-- Investigar saldo/créditos sem assumir endpoint não documentado; ausência de endpoint oficial adequado não bloqueia a primeira entrega.
-- A E21.4 provavelmente exigirá Admin API Key para a leitura oficial de Costs/Usage; a decisão final sobre essa credencial, seu escopo e setup permanece para o fechamento da v1/v2 após validação dos especialistas.
+### 4.2. Critérios de parada
 
-### 3.4. UX e operação
-
-- A residência em superfície administrativa própria **Custos OpenAI** e o acesso exclusivo a `platform_admin` estão aprovados; a v2 deve definir a menor estrutura técnica compatível sem inventar rota neste estágio.
-- A atualização sob demanda está aceita para o MVP; qualquer hipótese futura de atualização recorrente exigirá nova avaliação de automação.
-- Validar a forma de comunicar valores oficiais, atribuídos, estimados, não atribuídos ou indisponíveis sem induzir falsa precisão.
-
-## 4. Escopo negativo e próxima ação
-
-### 4.1. Escopo negativo neste estágio
-
-- Não implementar agora cálculo de margem, preço de plano, cobrança ao cliente ou repasse de custo.
-- Não retomar E21.3.4 enquanto a E21.4 prioritária não estiver executada conforme decisão posterior.
-- Não criar infraestrutura apenas para obter um número que a OpenAI já forneça oficialmente.
-- Não usar preço tabelado local como substituto silencioso do gasto oficial quando houver fonte oficial de custo.
-- Não armazenar secret bruto em documento, banco, client ou log.
-- Não ratear custos próprios da LP Factory entre clientes apenas para eliminar a categoria `LP Factory` ou o saldo `Não atribuído`.
-- Não introduzir conversão para BRL, cotação cambial, spread ou IOF no MVP.
-- Não bloquear o MVP pela ausência de leitura automática de saldo/créditos, desde que essa limitação seja explicitada.
-- Não apresentar reconstrução histórica parcial como se fosse cobertura integral do custo.
-
-### 4.2. Próxima ação do debate
-
-- Submeter o rascunho vivo ao Analista para identificar lacunas, contradições, riscos e questões indispensáveis antes da consolidação da v1.
-- Após o retorno do Analista, fechar apenas os pontos indispensáveis que restarem e consolidar o mesmo arquivo como plano-base v1.
-- Antes de declarar a v1, definir as fases executáveis e marcar `Automação: sim | não` em cada fase; no MVP atual, a atualização sob demanda não implica automação recorrente.
+- Parar se a autoridade oficial de Costs/Usage não puder ser acessada com uma Admin API Key de escopo seguro.
+- Parar se uma proposta exigir inferir cliente/LP por heurística em vez de contexto autorizado.
+- Parar se a solução exigir alterar o contrato comercial da E9 para viabilizar classificação econômica.
+- Parar e retornar ao humano se a menor persistência necessária implicar nova infraestrutura material além das estruturas normais do Core ou ampliar o escopo para cobrança/margem.
+- Não declarar a E21.4 concluída sem leitura oficial de Costs e sem atribuição prospectiva confiável a partir da data de corte.
+- A ausência de API oficial de saldo/créditos, isoladamente, não é critério de parada nem bloqueio do MVP.
