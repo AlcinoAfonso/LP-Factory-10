@@ -84,7 +84,7 @@
 - A nova versão introduz `landing_page_offering_scope_description` como `string` obrigatória e específica da LP para descrever factual e brevemente o escopo selecionado como um todo.
 - `landing_page_offering_scope_description` não integra o núcleo de identidade; atualizar detalhes factuais da mesma oferta, conjunto ou portfólio permanece possível na mesma LP e só afeta conteúdo futuro por nova versão.
 - `primary_service_or_offer` e `primary_service_or_offer_description` ficam retirados somente na nova versão executável; v1–v5 permanecem imutáveis e resolvíveis.
-- Referências funcionais da nova versão, inclusive o propósito de `business_offerings_summary`, labels, mensagens, guard e confirmação, passam a nomear somente `landing_page_offering_scope`. Referências antigas permanecem somente em v1–v5, readers de snapshot e testes históricos. O contrato existente `sameCommercialWorkConfirmed` é reutilizado, com renomeação apenas de sua apresentação e associação de erro; não há segundo fluxo de confirmação.
+- Referências funcionais da nova versão, inclusive o propósito de `business_offerings_summary`, labels, mensagens, guard e confirmação, passam a nomear somente `landing_page_offering_scope`. Referências antigas permanecem somente em v1–v5, readers de snapshot, adapters de compatibilidade operacional, bootstraps legados enquanto a residence ainda não tiver sido canonicalizada e testes correspondentes; nunca funcionam como autoridade corrente da nova versão. O contrato existente `sameCommercialWorkConfirmed` é reutilizado, com renomeação apenas de sua apresentação e associação de erro; não há segundo fluxo de confirmação.
 
 ### 1.7. Compatibilidade histórica e transição operacional
 
@@ -93,10 +93,10 @@
 - Configuração operacional v5 que ainda possua `primary_service_or_offer` e não possua `landing_page_offering_scope` recebe adaptação determinística limitada ao boundary operacional:
   - `primary_service_or_offer = X` → `landing_page_offering_scope = { mode: "single", offerings: [X] }`;
   - `primary_service_or_offer_description = Y` → `landing_page_offering_scope_description = Y`.
-- Essa adaptação existe somente para residences operacionais/bootstraps legados e não altera snapshots históricos.
+- Essa adaptação cobre tanto `account_landing_page_onboarding_configurations` no fluxo E19.2 pré-handoff quanto as residences E19.5 e seus bootstraps legados; não altera snapshots históricos nem cria fallback concorrente depois do handoff.
 - A compatibilidade histórica da identidade não altera nem regrava snapshots. Para o guard E19.5, a primeira revisão válida que já contenha `landing_page_offering_scope` fornece o baseline desse field. Quando o baseline aplicável for anterior à nova versão e contiver somente `primary_service_or_offer = X` válido, o adapter projeta exclusivamente em memória `{ mode: "single", offerings: [X] }`. Baseline legado malformado falha fechado e não autoriza inferência. A confirmação de mudança compara o próximo valor com a configuração operacional canônica corrente e, na ausência dela, com essa projeção do baseline. A igualdade material considera `mode` e o conjunto de ofertas após trim, comparação case-insensitive e desconsideração de ordem; nenhuma projeção é persistida no snapshot.
 - A resolução canonicalizada da nova versão omite os fields retirados; no primeiro save válido sob a nova versão, a residence é persistida somente com os novos fields e o mecanismo legado deixa de ser necessário para aquela configuração.
-- Este caso não altera schema e não cria migration. Reutilizar `account_landing_page_shared_configurations`, `account_landing_page_configurations` e `save_account_landing_page_configuration_v1`, já aplicados pela E20.2.8 e aptos a receber a versão efetiva positiva. Não editar migrations aplicadas nem alterar RLS, policies, grants ou exposição pela Data API. O adapter envia ao RPC apenas os valores canonicalizados novos e a versão efetiva `C`. Se evidência operacional contradisser o contrato versionado atual, parar o caso e registrar a divergência; não acrescentar migration ao recorte por inferência.
+- Este caso não altera schema e não cria migration. Reutilizar a residência e o save/revalidação existentes de `account_landing_page_onboarding_configurations` para E19.2 pré-handoff, além de `account_landing_page_shared_configurations`, `account_landing_page_configurations` e `save_account_landing_page_configuration_v1` para E19.5; todos já estão aplicados e aptos a receber a versão efetiva positiva. Não editar migrations aplicadas nem alterar RLS, policies, grants ou exposição pela Data API. Cada adapter persiste somente os valores canonicalizados novos e a mesma versão efetiva `C` pelo fluxo vigente. Se evidência operacional contradisser o contrato versionado atual, parar o caso e registrar a divergência; não acrescentar migration ao recorte por inferência.
 
 ## 2. Contrato do caso
 
@@ -106,6 +106,7 @@
   - decisão humana aprovada para substituir a semântica singular de oferta e corrigir o núcleo de identidade antes da nova UX E19.5.4.
 - Entrada:
   - registry E20.2 v5 e lifecycle E20.2.8 vigentes;
+  - configurações E19.2 ainda pré-handoff em `account_landing_page_onboarding_configurations`;
   - configurações compartilhadas e específicas das LPs já existentes;
   - snapshots históricos imutáveis;
   - cadeia taxonômica, plano e versão efetiva `C` fornecidos pelos boundaries vigentes.
@@ -114,7 +115,7 @@
   - `validateLandingPageInputValue`, `onboardingConfiguration`, o guard de identidade e a validação dos facts de snapshot reutilizam essa autoridade; UI, Server Action, adapter e snapshot não reimplementam cardinalidade, unicidade, modos ou equivalência;
   - a UI apenas constrói o valor e coleta a confirmação; o Server Action reautoriza o ator; o adapter lê residences/baselines e aplica a decisão; o banco continua validando somente shape e scopes genéricos;
   - materializar a nova versão do registry retirando somente na nova versão os dois fields singulares e adicionando `landing_page_offering_scope` + `landing_page_offering_scope_description`;
-  - canonicalizar valores estruturados e adaptar deterministicamente residences legadas;
+  - canonicalizar valores estruturados e adaptar deterministicamente tanto a residence E19.2 pré-handoff quanto as residences E19.5 legadas;
   - atualizar a autoridade E19.5 de continuidade da identidade;
   - atualizar a allowlist/proteção E20.2.8 para refletir a nova autoridade;
   - atualizar somente a configuração mínima necessária para editar os novos fields;
@@ -123,12 +124,13 @@
   - validar schema/registry/resolver da nova versão;
   - validar cardinalidade, unicidade, canonicalização e igualdade material do `offering_scope` pela autoridade única do input catalog;
   - validar configurações legadas, incompletas e novas;
+  - validar leitura da configuração E19.2 v5 pré-handoff, projeção determinística para `single`, save/reload sob a nova versão somente com as chaves novas, handoff lazy posterior para E19.5 sem fallback concorrente e falha fechada para valor legado malformado;
   - validar continuidade da identidade e mudanças permitidas;
   - validar transição E20.2.8 e revisão E20.6 quando exigida;
   - validar que `generationContext.ts` classifica `offering_scope` como fact semântico do modelo e que `landingPageRevision.ts` reconhece o novo value type sem alterar ou reinterpretar contratos históricos.
 - Persistência:
-  - reutilizar exclusivamente `account_landing_page_shared_configurations`, `account_landing_page_configurations` e `save_account_landing_page_configuration_v1`, sem DDL, migration, alteração de ACL ou nova residência;
-  - o primeiro save sob a nova versão persiste a representação canônica nova e a versão efetiva `C` pelo RPC vigente.
+  - reutilizar `account_landing_page_onboarding_configurations` e o save/revalidação E19.2 pré-handoff, além de `account_landing_page_shared_configurations`, `account_landing_page_configurations` e `save_account_landing_page_configuration_v1` na E19.5, sem DDL, migration, alteração de ACL, nova residência ou nova autoridade;
+  - o primeiro save sob a nova versão persiste a representação canônica nova e a mesma versão efetiva `C` pelo fluxo vigente da residência correspondente.
 - Consumo:
   - E19.5 usa o novo escopo como dimensão da identidade;
   - geração recebe o valor factual novo no mesmo fluxo de facts/contexto vigente;
@@ -158,7 +160,7 @@
 
 - A transição da v5 para a nova versão é material e não deve ser classificada artificialmente como carry-forward compatível apenas para evitar revisão.
 - `landingPageCommercialIdentityFieldKeys` deve passar a refletir somente `funnel_stage`, `transaction_intent` e `landing_page_offering_scope`; `primary_conversion_goal` e `primary_service_or_offer` deixam de ser autoridades vigentes de continuidade.
-- O gate E20.2.8 deve provar que consumidores E19.5 e configurações correntes suportam a nova versão antes da publicação.
+- O gate E20.2.8 deve provar que o fluxo E19.2 pré-handoff, os consumidores E19.5 e suas coleções operacionais completas suportam a nova versão antes da publicação.
 - Taxons preparados materialmente afetados devem seguir a E20.6 vigente para decisão humana de suficiência da nova versão; não copiar `reviewed_input_catalog_version` por conveniência.
 - O mesmo número efetivo `C` deve chegar a configuração, workspace e geração conforme a autoridade canônica já implantada pela E20.2.8.
 
@@ -190,6 +192,7 @@
   - retirada forward-only de `primary_service_or_offer` e `primary_service_or_offer_description` na nova versão;
   - metadados dos novos fields fixados como `landing_page`/`landing_page_provided`/`not_applicable`, disponíveis nos quatro planos, sem autoridade operacional corrente baseada nos fields singulares ou em `primary_conversion_goal`;
   - canonicalização e adaptação determinística de configurações v5 legadas;
+  - preservação do fluxo E19.2 pré-handoff, de seu save/reload e do handoff lazy para E19.5 sob a mesma versão efetiva `C`;
   - atualização da continuidade de identidade E19.5 e da proteção E20.2.8;
   - controle mínimo de configuração para os novos fields;
   - validações determinísticas e regressões do input catalog, onboarding/configuração, workspace, geração e snapshots;
@@ -199,6 +202,7 @@
   - v1–v5 permanecem imutáveis e resolvíveis;
   - nova versão não vira atual antes dos gates E20.2.8/E20.6 aplicáveis;
   - configurações v5 válidas continuam consumíveis por adaptação determinística e são canonicalizadas no primeiro save sob a nova versão;
+  - a regressão pré-handoff comprova leitura de `account_landing_page_onboarding_configurations` v5, projeção `single`, save/reload apenas com as chaves novas, handoff lazy para E19.5 sem fallback concorrente, falha fechada para legado malformado e igualdade do mesmo `C` entre E19.2, workspace e geração;
   - `primary_conversion_goal` pode mudar na mesma LP sem erro de identidade;
   - `landing_page_offering_scope` suporta os três modos e aplica confirmação humana somente a mudança material;
   - duas LPs concretas podem compartilhar a mesma identidade sem bloqueio;
