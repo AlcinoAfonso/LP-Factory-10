@@ -388,7 +388,7 @@ function inputLayerLabel(value: string) {
 }
 
 function inputValueTypeLabel(value: string) {
-  const labels: Record<string, string> = { string: "Texto", phone: "Telefone", email: "E-mail", url: "URL", enum: "Opção", string_list: "Lista de textos", boolean: "Sim ou não", number_range: "Faixa numérica", keyword_map: "Mapa de palavras-chave", asset_reference: "Referência de ativo", color_palette: "Paleta de cores", offering_scope: "Escopo de ofertas" };
+  const labels: Record<string, string> = { string: "Texto", phone: "Telefone", email: "E-mail", url: "URL", enum: "Opção", string_list: "Lista de textos", boolean: "Sim ou não", number_range: "Faixa numérica", keyword_map: "Mapa de palavras-chave", asset_reference: "Referência de ativo", color_palette: "Paleta de cores" };
   return labels[value] ?? humanize(value);
 }
 
@@ -408,7 +408,7 @@ function inputSubstitutionLabel(value: string) { return value === "not_applicabl
 
 function inputFieldLabel(value: string) {
   const labels: Record<string, string> = {
-    primary_conversion_channel: "Canal principal de conversão", business_display_name: "Nome de exibição do negócio", funnel_stage: "Estágio do funil", traffic_source: "Origem do tráfego", whatsapp_destination: "Destino no WhatsApp", phone_destination: "Telefone de destino", email_destination: "E-mail de destino", external_url_destination: "URL externa de destino", privacy_policy_url: "URL da política de privacidade", paid_search_keyword_map: "Mapa de palavras-chave de mídia paga", service_locations: "Locais atendidos", property_types: "Tipos de imóvel", property_price_range: "Faixa de preço dos imóveis", property_stage: "Estágio do imóvel", transaction_intent: "Intenção de transação", financing_support_available: "Suporte a financiamento", document_support_available: "Suporte documental", creci_registration: "Registro CRECI", attendance_modes: "Modalidades de atendimento", primary_service_or_offer: "Serviço ou oferta principal", primary_service_or_offer_description: "Descrição do serviço ou oferta", landing_page_offering_scope: "Escopo comercial da landing page", landing_page_offering_scope_description: "Descrição do escopo comercial", brand_logo_asset: "Ativo do logotipo", brand_color_palette: "Paleta de cores da marca",
+    primary_conversion_channel: "Canal principal de conversão", business_display_name: "Nome de exibição do negócio", funnel_stage: "Estágio do funil", traffic_source: "Origem do tráfego", whatsapp_destination: "Destino no WhatsApp", phone_destination: "Telefone de destino", email_destination: "E-mail de destino", external_url_destination: "URL externa de destino", privacy_policy_url: "URL da política de privacidade", paid_search_keyword_map: "Mapa de palavras-chave de mídia paga", service_locations: "Locais atendidos", property_types: "Tipos de imóvel", property_price_range: "Faixa de preço dos imóveis", property_stage: "Estágio do imóvel", transaction_intent: "Intenção de transação", financing_support_available: "Suporte a financiamento", document_support_available: "Suporte documental", creci_registration: "Registro CRECI", attendance_modes: "Modalidades de atendimento", primary_service_or_offer: "Serviço ou oferta principal", primary_service_or_offer_description: "Descrição do serviço ou oferta", brand_logo_asset: "Ativo do logotipo", brand_color_palette: "Paleta de cores da marca",
   };
   return labels[value] ?? humanize(value);
 }

@@ -6,10 +6,6 @@ import type {
   LandingPageInputCatalogPlan,
   LandingPageInputCatalogTaxonChain,
 } from "../../conversion-content/landing-page/input-catalog";
-import {
-  parseLandingPageOfferingScope,
-  projectLegacyLandingPageOfferingScope,
-} from "../../conversion-content/landing-page/input-catalog";
 import { createClient } from "../../supabase/server";
 import { createServiceClient } from "../../supabase/service";
 import { isOperationalLandingPageStatus } from "../../types/status";
@@ -25,9 +21,7 @@ import type {
 } from "../contracts";
 import {
   deriveLandingPageWorkspaceState,
-  evaluateLandingPageCommercialIdentityMutation,
   isLandingPageWorkspaceEnabled,
-  landingPageWorkspaceIdentityFieldKeys,
   splitLandingPageWorkspaceValues,
 } from "../landingPageWorkspace";
 import { resolveAccountLandingPageOnboardingConfiguration } from "../onboardingConfiguration";
@@ -49,6 +43,11 @@ const UUID_RE =
 const WORKSPACE_PAGE_SIZE = 25;
 const HISTORY_PAGE_SIZE = 25;
 const BASELINE_PAGE_SIZE = 100;
+const IDENTITY_FIELDS = [
+  "funnel_stage",
+  "transaction_intent",
+  "primary_conversion_goal",
+] as const;
 
 export async function listAccountLandingPageWorkspace(input: Readonly<{
   accountId: string;
@@ -600,8 +599,7 @@ async function validateIdentityMutation(
     }>
 > {
   const baselines = new Map<string, unknown>();
-  let firstOfferingScope: unknown = undefined;
-  let firstLegacyOfferingScope: unknown = undefined;
+  let firstOffer: unknown = undefined;
   let offset = 0;
   let hasRevision = false;
   let latestMaterializationId: string | null = null;
@@ -625,76 +623,54 @@ async function validateIdentityMutation(
       latestMaterializationId = row.id;
       const facts = readSnapshotFacts(row.generation_context_snapshot_json);
       for (const fact of facts) {
-        if (
-          landingPageWorkspaceIdentityFieldKeys.includes(
-            fact.fieldKey as (typeof landingPageWorkspaceIdentityFieldKeys)[number],
-          )
-        ) {
+        if (IDENTITY_FIELDS.includes(fact.fieldKey as (typeof IDENTITY_FIELDS)[number])) {
           if (!baselines.has(fact.fieldKey)) baselines.set(fact.fieldKey, fact.value);
         }
-        if (
-          fact.fieldKey === "landing_page_offering_scope" &&
-          firstOfferingScope === undefined
-        ) {
-          const parsed = parseLandingPageOfferingScope(fact.value);
-          if (!parsed.ok) {
-            return { ok: false, result: { ok: false, error: "unavailable" } };
-          }
-          firstOfferingScope = parsed.value;
-        }
-        if (
-          fact.fieldKey === "primary_service_or_offer" &&
-          firstLegacyOfferingScope === undefined
-        ) {
-          const projected = projectLegacyLandingPageOfferingScope(fact.value);
-          if (!projected.ok) {
-            return { ok: false, result: { ok: false, error: "unavailable" } };
-          }
-          firstLegacyOfferingScope = projected.value;
+        if (fact.fieldKey === "primary_service_or_offer" && firstOffer === undefined) {
+          firstOffer = fact.value;
         }
       }
     }
     if (data.length < BASELINE_PAGE_SIZE) break;
     offset += data.length;
   }
-  const currentOfferingScope = hasRevision
-    ? await readCurrentConfiguredOfferingScope(
-        client,
-        input.accountId,
-        input.landingPageId,
-      )
+  for (const fieldKey of IDENTITY_FIELDS) {
+    const baseline = baselines.get(fieldKey);
+    const next = input.values[fieldKey]?.value;
+    if (baseline !== undefined && next !== undefined && !deepEqual(baseline, next)) {
+      return {
+        ok: false,
+        result: {
+          ok: false,
+          error: "identity_change_requires_new_landing_page",
+          fieldKey,
+        },
+      };
+    }
+  }
+  const nextOffer = input.values.primary_service_or_offer?.value;
+  const currentOffer = hasRevision
+    ? await readCurrentConfiguredOffer(client, input.accountId, input.landingPageId)
     : undefined;
-  const baselineOfferingScope = firstOfferingScope ?? firstLegacyOfferingScope;
   if (
     hasRevision &&
-    input.values.landing_page_offering_scope?.value !== undefined &&
-    currentOfferingScope === undefined &&
-    baselineOfferingScope === undefined
+    nextOffer !== undefined &&
+    !deepEqual(currentOffer ?? firstOffer, nextOffer) &&
+    !input.sameCommercialWorkConfirmed
   ) {
-    return { ok: false, result: { ok: false, error: "unavailable" } };
-  }
-  const evaluation = evaluateLandingPageCommercialIdentityMutation({
-    hasRevision,
-    identityBaselines: baselines,
-    baselineOfferingScope,
-    currentOfferingScope,
-    nextValues: input.values,
-    sameCommercialWorkConfirmed: input.sameCommercialWorkConfirmed,
-  });
-  if (!evaluation.ok) {
     return {
       ok: false,
       result: {
         ok: false,
-        error: evaluation.error,
-        fieldKey: evaluation.fieldKey,
+        error: "offer_change_confirmation_required",
+        fieldKey: "primary_service_or_offer",
       },
     };
   }
   return { ok: true, latestMaterializationId };
 }
 
-async function readCurrentConfiguredOfferingScope(
+async function readCurrentConfiguredOffer(
   client: ServiceClient,
   accountId: string,
   landingPageId: string,
@@ -709,7 +685,8 @@ async function readCurrentConfiguredOfferingScope(
   if (error) throw new Error("landing_page_configuration_read_failed");
   if (isRecord(operational)) {
     if (isRecord(operational.values)) {
-      return readOfferingScopeFromStoredValues(operational.values);
+      const stored = operational.values.primary_service_or_offer;
+      if (isRecord(stored) && Object.hasOwn(stored, "value")) return stored.value;
     }
     return undefined;
   }
@@ -722,25 +699,8 @@ async function readCurrentConfiguredOfferingScope(
     .maybeSingle();
   if (onboardingError) throw new Error("onboarding_bootstrap_read_failed");
   if (isRecord(onboarding) && isRecord(onboarding.values)) {
-    return readOfferingScopeFromStoredValues(onboarding.values);
-  }
-  return undefined;
-}
-
-function readOfferingScopeFromStoredValues(
-  values: Record<string, unknown>,
-): unknown {
-  const stored = values.landing_page_offering_scope;
-  if (isRecord(stored) && Object.hasOwn(stored, "value")) {
-    const parsed = parseLandingPageOfferingScope(stored.value);
-    if (!parsed.ok) throw new Error("invalid_landing_page_offering_scope");
-    return parsed.value;
-  }
-  const legacy = values.primary_service_or_offer;
-  if (isRecord(legacy) && Object.hasOwn(legacy, "value")) {
-    const projected = projectLegacyLandingPageOfferingScope(legacy.value);
-    if (!projected.ok) throw new Error("invalid_primary_service_or_offer");
-    return projected.value;
+    const stored = onboarding.values.primary_service_or_offer;
+    if (isRecord(stored) && Object.hasOwn(stored, "value")) return stored.value;
   }
   return undefined;
 }
@@ -970,6 +930,10 @@ function parseCursor(value: string | undefined): number | null {
   if (!/^\d+$/.test(value)) return null;
   const parsed = Number(value);
   return Number.isSafeInteger(parsed) && parsed >= 0 ? parsed : null;
+}
+
+function deepEqual(left: unknown, right: unknown): boolean {
+  return JSON.stringify(left) === JSON.stringify(right);
 }
 
 function isPositiveInteger(value: unknown): value is number {

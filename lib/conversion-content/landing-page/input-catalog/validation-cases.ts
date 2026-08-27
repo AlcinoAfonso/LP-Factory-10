@@ -36,10 +36,6 @@ import {
   createNextLandingPageInputCatalogDraft,
   validateLandingPageInputCatalogDraft,
 } from "./draft";
-import {
-  areLandingPageOfferingScopesMateriallyEqual,
-  parseLandingPageOfferingScope,
-} from "./offering-scope";
 
 type Case = Readonly<{ name: string; run: () => void }>;
 
@@ -71,11 +67,6 @@ const v4Input: ResolveLandingPageInputCatalogInput = {
 const v5Input: ResolveLandingPageInputCatalogInput = {
   ...baseInput,
   version: 5,
-};
-
-const v6Input: ResolveLandingPageInputCatalogInput = {
-  ...baseInput,
-  version: 6,
 };
 
 const starterV2FieldKeys = [
@@ -414,75 +405,6 @@ const cases: Case[] = [
           landingPageSubstitutionPolicy: "not_applicable",
         }).success,
         true,
-      );
-    },
-  },
-  {
-    name: "v6 replaces singular offer fields with one canonical offering scope authority",
-    run: () => {
-      const v5 = resolveRequired(v5Input);
-      const v6 = resolveRequired(v6Input);
-      assert.equal(v6.version, 6);
-      assert.deepEqual(v6.retiredFieldKeys, [
-        "primary_service_or_offer",
-        "primary_service_or_offer_description",
-      ]);
-      assert.equal(v6.fields.length, v5.fields.length);
-      assert.equal(
-        v6.fields.some((field) => field.fieldKey === "primary_service_or_offer"),
-        false,
-      );
-      const scope = v6.fields.find(
-        (field) => field.fieldKey === "landing_page_offering_scope",
-      );
-      const description = v6.fields.find(
-        (field) => field.fieldKey === "landing_page_offering_scope_description",
-      );
-      assert.ok(scope);
-      assert.ok(description);
-      assert.equal(scope.valueType, "offering_scope");
-      assert.equal(scope.valueScope, "landing_page");
-      assert.equal(scope.expectedValueOrigin, "landing_page_provided");
-      assert.equal(scope.obligation, "required");
-      assert.equal(scope.landingPageSubstitutionPolicy, "not_applicable");
-      assert.equal(scope.createdInVersion, 6);
-      assert.deepEqual(scope.allowedPlans, ["starter", "lite", "pro", "ultra"]);
-      assert.equal(description.valueType, "string");
-      assert.equal(description.valueScope, "landing_page");
-      assert.equal(description.createdInVersion, 6);
-
-      for (const value of [
-        { mode: "single", offerings: [" Implante dentário "] },
-        { mode: "selected", offerings: ["Implante dentário", "Clareamento"] },
-        { mode: "portfolio", offerings: ["Implante dentário"] },
-      ]) {
-        assert.equal(validateLandingPageInputValue(scope, value).ok, true);
-        assert.equal(parseLandingPageOfferingScope(value).ok, true);
-      }
-      for (const value of [
-        { mode: "single", offerings: [] },
-        { mode: "single", offerings: ["A", "B"] },
-        { mode: "selected", offerings: ["A"] },
-        { mode: "portfolio", offerings: [] },
-        { mode: "selected", offerings: ["A", " a "] },
-        { mode: "other", offerings: ["A"] },
-        { mode: "single", offerings: ["A"], extra: true },
-      ]) {
-        assert.equal(validateLandingPageInputValue(scope, value).ok, false);
-      }
-      assert.equal(
-        areLandingPageOfferingScopesMateriallyEqual(
-          { mode: "selected", offerings: [" A ", "B"] },
-          { mode: "selected", offerings: ["b", "a"] },
-        ),
-        true,
-      );
-      assert.equal(
-        areLandingPageOfferingScopesMateriallyEqual(
-          { mode: "selected", offerings: ["A", "B"] },
-          { mode: "portfolio", offerings: ["A", "B"] },
-        ),
-        false,
       );
     },
   },
@@ -960,8 +882,8 @@ const cases: Case[] = [
   {
     name: "explicit current version is executable without deriving latest",
     run: () => {
-      assert.equal(CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION, 6);
-      assert.deepEqual(listLandingPageInputCatalogVersions(), [1, 2, 3, 4, 5, 6]);
+      assert.equal(CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION, 5);
+      assert.deepEqual(listLandingPageInputCatalogVersions(), [1, 2, 3, 4, 5]);
       assert.equal(resolveLandingPageInputCatalog({ ...baseInput, version: CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION }).ok, true);
     },
   },
@@ -1004,10 +926,11 @@ const cases: Case[] = [
       assert.deepEqual(landingPageCommercialIdentityFieldKeys, [
         "funnel_stage",
         "transaction_intent",
-        "landing_page_offering_scope",
+        "primary_conversion_goal",
+        "primary_service_or_offer",
       ]);
       const retirementRegistry = registryWithCandidate((candidate) => {
-        mutableFieldInEntry(candidate, "funnel_stage").retiredInVersion = 7;
+        mutableFieldInEntry(candidate, "funnel_stage").retiredInVersion = 6;
       });
       const retirement = classifyCandidateTransition(retirementRegistry);
       assert.equal(retirement.classification, "review_required");
@@ -1019,7 +942,7 @@ const cases: Case[] = [
       );
 
       const materialChangeRegistry = registryWithCandidate((candidate) => {
-        mutableFieldInEntry(candidate, "landing_page_offering_scope").purpose =
+        mutableFieldInEntry(candidate, "primary_conversion_goal").purpose =
           "A different commercial identity contract.";
       });
       const materialChange = classifyCandidateTransition(materialChangeRegistry);
@@ -1028,20 +951,7 @@ const cases: Case[] = [
         collectCommercialIdentityReviewBlockers([
           { taxon: realEstateBrokerNicheTaxon, ...materialChange },
         ])[0]?.fieldKeys,
-        ["landing_page_offering_scope"],
-      );
-
-      const strategyRegistry = registryWithCandidate((candidate) => {
-        mutableFieldInEntry(candidate, "primary_conversion_goal").purpose =
-          "A different conversion strategy contract.";
-      });
-      const strategyChange = classifyCandidateTransition(strategyRegistry);
-      assert.equal(strategyChange.classification, "review_required");
-      assert.deepEqual(
-        collectCommercialIdentityReviewBlockers([
-          { taxon: realEstateBrokerNicheTaxon, ...strategyChange },
-        ]),
-        [],
+        ["primary_conversion_goal"],
       );
 
       const compatibleRegistry = registryWithCandidate((candidate) => {
@@ -1082,20 +992,16 @@ const cases: Case[] = [
     name: "forward retirement removes the field only from the candidate executable view",
     run: () => {
       const registry = registryWithCandidate((candidate) => {
-        mutableFieldInEntry(candidate, "business_display_name").retiredInVersion = 7;
+        mutableFieldInEntry(candidate, "business_display_name").retiredInVersion = 6;
       });
       const previous = resolveLandingPageInputCatalogFromRegistry(v5Input, registry);
-      const next = resolveLandingPageInputCatalogFromRegistry({ ...v6Input, version: 7 }, registry);
+      const next = resolveLandingPageInputCatalogFromRegistry({ ...v5Input, version: 6 }, registry);
       assert.equal(previous.ok, true);
       assert.equal(next.ok, true);
       if (!previous.ok || !next.ok) throw new Error("Expected executable retirement fixture");
       assert.equal(previous.value.fields.some((field) => field.fieldKey === "business_display_name"), true);
       assert.equal(next.value.fields.some((field) => field.fieldKey === "business_display_name"), false);
-      assert.deepEqual(next.value.retiredFieldKeys, [
-        "business_display_name",
-        "primary_service_or_offer",
-        "primary_service_or_offer_description",
-      ]);
+      assert.deepEqual(next.value.retiredFieldKeys, ["business_display_name"]);
       assert.equal(classifyLandingPageInputCatalogTransition(previous.value, next.value).classification, "review_required");
     },
   },
@@ -1103,12 +1009,12 @@ const cases: Case[] = [
     name: "draft remains non operational and blocks operational taxons without an executable review",
     run: () => {
       const draft = createNextLandingPageInputCatalogDraft();
-      assert.equal(draft.version, 7);
+      assert.equal(draft.version, 6);
       const unchanged = validateLandingPageInputCatalogDraft({
         draft,
         taxons: [
-          { identity: realEstateSegmentTaxon, reviewedVersion: 6, operational: false },
-          { identity: realEstateBrokerNicheTaxon, reviewedVersion: 6, operational: true },
+          { identity: realEstateSegmentTaxon, reviewedVersion: 5, operational: false },
+          { identity: realEstateBrokerNicheTaxon, reviewedVersion: 5, operational: true },
           { identity: mediumStandardRealEstateBrokerTaxon, reviewedVersion: null, operational: true },
         ],
       });
@@ -1120,7 +1026,7 @@ const cases: Case[] = [
       assert.equal(Object.isFrozen(unchanged.value), true);
 
       const invalidVersion = validateLandingPageInputCatalogDraft({
-        draft: { ...draft, version: 8 },
+        draft: { ...draft, version: 7 },
         taxons: [],
       });
       assert.equal(invalidVersion.ok, false);
@@ -1133,7 +1039,7 @@ const cases: Case[] = [
     run: () => {
       const removed = JSON.parse(
         JSON.stringify(createNextLandingPageInputCatalogDraft()),
-      ) as LandingPageInputCatalogRegistry[6];
+      ) as LandingPageInputCatalogRegistry[5];
       const removedEntries = mutableEntries(removed.universal);
       removedEntries.splice(
         removedEntries.findIndex((entry) => entry.fieldKey === "business_display_name"),
@@ -1149,8 +1055,8 @@ const cases: Case[] = [
 
       const forged = JSON.parse(
         JSON.stringify(createNextLandingPageInputCatalogDraft()),
-      ) as LandingPageInputCatalogRegistry[6];
-      mutableFieldInEntry(forged, "business_display_name").createdInVersion = 7;
+      ) as LandingPageInputCatalogRegistry[5];
+      mutableFieldInEntry(forged, "business_display_name").createdInVersion = 6;
       const forgedResult = validateLandingPageInputCatalogDraft({
         draft: forged,
         taxons: [],
@@ -1161,7 +1067,7 @@ const cases: Case[] = [
 
       const createdInPast = JSON.parse(
         JSON.stringify(createNextLandingPageInputCatalogDraft()),
-      ) as LandingPageInputCatalogRegistry[6];
+      ) as LandingPageInputCatalogRegistry[5];
       mutableEntries(createdInPast.universal).push({
         ...fixtureField("new_draft_field"),
         createdInVersion: 1,
@@ -1210,18 +1116,18 @@ function cloneRegistry(): LandingPageInputCatalogRegistry {
 }
 
 function registryWithCandidate(
-  mutate: (candidate: LandingPageInputCatalogRegistry[6]) => void,
+  mutate: (candidate: LandingPageInputCatalogRegistry[5]) => void,
 ): LandingPageInputCatalogRegistry {
-  const registry = cloneRegistry() as Record<number, LandingPageInputCatalogRegistry[6]>;
-  const candidate = JSON.parse(JSON.stringify(registry[6])) as LandingPageInputCatalogRegistry[6];
-  (candidate as { version: number }).version = 7;
+  const registry = cloneRegistry() as Record<number, LandingPageInputCatalogRegistry[5]>;
+  const candidate = JSON.parse(JSON.stringify(registry[5])) as LandingPageInputCatalogRegistry[5];
+  (candidate as { version: number }).version = 6;
   mutate(candidate);
-  registry[7] = candidate;
+  registry[6] = candidate;
   return registry;
 }
 
 function mutableFieldInEntry(
-  entry: LandingPageInputCatalogRegistry[6],
+  entry: LandingPageInputCatalogRegistry[5],
   fieldKey: string,
 ): MutableField {
   const field = entry.universal.entries.find(
@@ -1233,8 +1139,8 @@ function mutableFieldInEntry(
 
 function classifyCandidateTransition(registry: LandingPageInputCatalogRegistry) {
   return classifyLandingPageInputCatalogTransitionForTaxon({
-    previousVersion: 6,
-    nextVersion: 7,
+    previousVersion: 5,
+    nextVersion: 6,
     taxonChain: baseInput.taxonChain,
     registry,
   });

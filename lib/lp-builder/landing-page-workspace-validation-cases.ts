@@ -3,12 +3,9 @@ import { readFileSync } from "node:fs";
 
 import type { AccountLandingPageOnboardingConfiguration } from "./contracts";
 import { CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION } from "../conversion-content/landing-page/input-catalog";
-import { areLandingPageOfferingScopesMateriallyEqual } from "../conversion-content/landing-page/input-catalog";
 import {
   deriveLandingPageWorkspaceState,
-  evaluateLandingPageCommercialIdentityMutation,
   isLandingPageWorkspaceEnabled,
-  landingPageWorkspaceIdentityFieldKeys,
   landingPageWorkspaceStateLabels,
   splitLandingPageWorkspaceValues,
 } from "./landingPageWorkspace";
@@ -25,7 +22,7 @@ const cases: readonly Readonly<{ name: string; run: () => void }>[] = [
         assert.equal(isLandingPageWorkspaceEnabled(), false);
         process.env.E19_5_WORKSPACE_ENABLED = "true";
         assert.equal(isLandingPageWorkspaceEnabled(), true);
-        assert.equal(CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION, 6);
+        assert.equal(CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION, 5);
       } finally {
         if (previous === undefined) delete process.env.E19_5_WORKSPACE_ENABLED;
         else process.env.E19_5_WORKSPACE_ENABLED = previous;
@@ -56,45 +53,16 @@ const cases: readonly Readonly<{ name: string; run: () => void }>[] = [
     run: () => {
       const split = splitLandingPageWorkspaceValues({
         business_offerings_summary: { scope: "business", value: "Resumo aberto" },
-        landing_page_offering_scope: {
-          scope: "landing_page",
-          value: { mode: "single", offerings: ["Oferta concreta"] },
-        },
+        primary_service_or_offer: { scope: "offer", value: "Oferta concreta" },
         traffic_source: { scope: "campaign", value: "paid_search" },
         primary_conversion_goal: { scope: "landing_page", value: "contact" },
       });
       assert.deepEqual(Object.keys(split.sharedValues), ["business_offerings_summary"]);
       assert.deepEqual(Object.keys(split.landingPageValues), [
-        "landing_page_offering_scope",
+        "primary_service_or_offer",
         "traffic_source",
         "primary_conversion_goal",
       ]);
-    },
-  },
-  {
-    name: "offering scope material equality ignores order casing and trim but preserves mode and membership",
-    run: () => {
-      assert.equal(
-        areLandingPageOfferingScopesMateriallyEqual(
-          { mode: "selected", offerings: ["Oferta A", "Oferta B"] },
-          { mode: "selected", offerings: [" oferta b ", "OFERTA A"] },
-        ),
-        true,
-      );
-      assert.equal(
-        areLandingPageOfferingScopesMateriallyEqual(
-          { mode: "selected", offerings: ["Oferta A", "Oferta B"] },
-          { mode: "portfolio", offerings: ["Oferta A", "Oferta B"] },
-        ),
-        false,
-      );
-      assert.equal(
-        areLandingPageOfferingScopesMateriallyEqual(
-          { mode: "selected", offerings: ["Oferta A", "Oferta B"] },
-          { mode: "selected", offerings: ["Oferta A", "Oferta C"] },
-        ),
-        false,
-      );
     },
   },
   {
@@ -102,10 +70,6 @@ const cases: readonly Readonly<{ name: string; run: () => void }>[] = [
     run: () => {
       const adapter = readFileSync(
         new URL("./adapters/landingPageWorkspaceAdapter.ts", import.meta.url),
-        "utf8",
-      );
-      const workspaceDomain = readFileSync(
-        new URL("./landingPageWorkspace.ts", import.meta.url),
         "utf8",
       );
       const migration = readFileSync(
@@ -141,11 +105,6 @@ const cases: readonly Readonly<{ name: string; run: () => void }>[] = [
       assert.match(adapter, /\.range\(/);
       assert.match(adapter, /p_expected_latest_materialization_id:\s*identity\.latestMaterializationId/);
       assert.match(adapter, /candidate\.configuration\.storedValues/);
-      assert.match(adapter, /landingPageWorkspaceIdentityFieldKeys/);
-      assert.doesNotMatch(adapter, /primary_conversion_goal/);
-      assert.match(adapter, /evaluateLandingPageCommercialIdentityMutation/);
-      assert.match(adapter, /projectLegacyLandingPageOfferingScope/);
-      assert.match(workspaceDomain, /fieldKey: "landing_page_offering_scope"/);
       assert.match(
         adapter,
         /if \(isRecord\(operational\)\) \{[\s\S]*?return undefined;[\s\S]*?\}\s*const \{ data: onboarding/,
@@ -174,100 +133,6 @@ const cases: readonly Readonly<{ name: string; run: () => void }>[] = [
       assert.match(sqlTest, /stale materialization baseline must fail/);
       assert.match(sqlTest, /append with stale configuration provenance must fail/);
       assert.match(sqlTest, /approval must be idempotent/);
-    },
-  },
-  {
-    name: "identity guard allows conversion strategy and equivalent scope while confirming only material scope changes",
-    run: () => {
-      assert.deepEqual(landingPageWorkspaceIdentityFieldKeys, [
-        "funnel_stage",
-        "transaction_intent",
-      ]);
-      const identityBaselines = new Map<string, unknown>([
-        ["funnel_stage", "bofu"],
-        ["transaction_intent", "buy"],
-      ]);
-      const baselineOfferingScope = {
-        mode: "selected",
-        offerings: ["Oferta A", "Oferta B"],
-      };
-      const baseValues = {
-        funnel_stage: { scope: "landing_page" as const, value: "bofu" },
-        transaction_intent: { scope: "landing_page" as const, value: "buy" },
-        primary_conversion_goal: {
-          scope: "landing_page" as const,
-          value: "purchase",
-        },
-        landing_page_offering_scope: {
-          scope: "landing_page" as const,
-          value: {
-            mode: "selected",
-            offerings: [" oferta b ", "OFERTA A"],
-          },
-        },
-      };
-      assert.deepEqual(
-        evaluateLandingPageCommercialIdentityMutation({
-          hasRevision: true,
-          identityBaselines,
-          baselineOfferingScope,
-          currentOfferingScope: undefined,
-          nextValues: baseValues,
-          sameCommercialWorkConfirmed: false,
-        }),
-        { ok: true },
-      );
-      const changedScope = {
-        ...baseValues,
-        landing_page_offering_scope: {
-          scope: "landing_page" as const,
-          value: { mode: "portfolio", offerings: ["Oferta A", "Oferta B"] },
-        },
-      };
-      assert.deepEqual(
-        evaluateLandingPageCommercialIdentityMutation({
-          hasRevision: true,
-          identityBaselines,
-          baselineOfferingScope,
-          currentOfferingScope: undefined,
-          nextValues: changedScope,
-          sameCommercialWorkConfirmed: false,
-        }),
-        {
-          ok: false,
-          error: "offer_change_confirmation_required",
-          fieldKey: "landing_page_offering_scope",
-        },
-      );
-      assert.deepEqual(
-        evaluateLandingPageCommercialIdentityMutation({
-          hasRevision: true,
-          identityBaselines,
-          baselineOfferingScope,
-          currentOfferingScope: undefined,
-          nextValues: changedScope,
-          sameCommercialWorkConfirmed: true,
-        }),
-        { ok: true },
-      );
-      assert.deepEqual(
-        evaluateLandingPageCommercialIdentityMutation({
-          hasRevision: true,
-          identityBaselines,
-          baselineOfferingScope,
-          currentOfferingScope: undefined,
-          nextValues: {
-            ...baseValues,
-            funnel_stage: { scope: "landing_page", value: "mofu" },
-          },
-          sameCommercialWorkConfirmed: true,
-        }),
-        {
-          ok: false,
-          error: "identity_change_requires_new_landing_page",
-          fieldKey: "funnel_stage",
-        },
-      );
     },
   },
   {
@@ -308,7 +173,7 @@ function configuration(complete: boolean): AccountLandingPageOnboardingConfigura
   return {
     accountId: "10000000-0000-4000-8000-000000000001",
     landingPageId: "20000000-0000-4000-8000-000000000002",
-    catalogVersion: 6,
+    catalogVersion: 5,
     revision: 1,
     planKey: "starter",
     taxonChain: {

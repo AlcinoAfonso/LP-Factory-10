@@ -1,7 +1,5 @@
 import {
   landingPageInputColorPaletteRoles,
-  parseLandingPageOfferingScope,
-  projectLegacyLandingPageOfferingScope,
   resolveLandingPageInputCatalog,
   resolveLandingPageInputCatalogFromRegistry,
   validateLandingPageInputValue,
@@ -56,18 +54,6 @@ export function resolveAccountLandingPageOnboardingConfiguration(
 
   if (!catalog.ok) return { ok: false, error: "CATALOG_UNAVAILABLE" };
 
-  const adaptedStoredValues = adaptLegacyOfferingScope(
-    input.storedValues,
-    catalog.value.retiredFieldKeys,
-  );
-  if (!adaptedStoredValues.ok) {
-    return {
-      ok: false,
-      error: "INVALID_CONFIGURATION",
-      fieldKey: adaptedStoredValues.fieldKey,
-    };
-  }
-
   const fieldsByKey = new Map(
     catalog.value.fields.map((field) => [field.fieldKey, field]),
   );
@@ -78,7 +64,7 @@ export function resolveAccountLandingPageOnboardingConfiguration(
   > = {};
   const canonicalAuthoritativeValues: Record<string, unknown> = {};
 
-  for (const [fieldKey, stored] of Object.entries(adaptedStoredValues.value)) {
+  for (const [fieldKey, stored] of Object.entries(input.storedValues)) {
     const field = fieldsByKey.get(fieldKey);
     if (retiredFieldKeys.has(fieldKey)) {
       if (!isStoredValue(stored)) {
@@ -230,65 +216,10 @@ function canonicalizeLandingPageInputValue(
             ]),
           )
         : value;
-    case "offering_scope": {
-      const parsed = parseLandingPageOfferingScope(value);
-      return parsed.ok ? parsed.value : value;
-    }
     case "boolean":
     case "number_range":
       return value;
   }
-}
-
-function adaptLegacyOfferingScope(
-  storedValues: AccountLandingPageOnboardingStoredValues,
-  retiredFieldKeys: readonly string[],
-):
-  | Readonly<{ ok: true; value: AccountLandingPageOnboardingStoredValues }>
-  | Readonly<{ ok: false; fieldKey: string }> {
-  if (!retiredFieldKeys.includes("primary_service_or_offer")) {
-    return { ok: true, value: storedValues };
-  }
-
-  const adapted: Record<string, AccountLandingPageOnboardingStoredValues[string]> = {
-    ...storedValues,
-  };
-  const legacyScope = storedValues.primary_service_or_offer;
-  if (legacyScope !== undefined) {
-    if (!isStoredValue(legacyScope) || legacyScope.scope !== "offer") {
-      return { ok: false, fieldKey: "primary_service_or_offer" };
-    }
-    const projected = projectLegacyLandingPageOfferingScope(legacyScope.value);
-    if (!projected.ok) {
-      return { ok: false, fieldKey: "primary_service_or_offer" };
-    }
-    if (adapted.landing_page_offering_scope === undefined) {
-      adapted.landing_page_offering_scope = {
-        scope: "landing_page",
-        value: projected.value,
-      };
-    }
-  }
-
-  const legacyDescription = storedValues.primary_service_or_offer_description;
-  if (legacyDescription !== undefined) {
-    if (
-      !isStoredValue(legacyDescription) ||
-      legacyDescription.scope !== "offer" ||
-      typeof legacyDescription.value !== "string" ||
-      legacyDescription.value.trim().length === 0
-    ) {
-      return { ok: false, fieldKey: "primary_service_or_offer_description" };
-    }
-    if (adapted.landing_page_offering_scope_description === undefined) {
-      adapted.landing_page_offering_scope_description = {
-        scope: "landing_page",
-        value: legacyDescription.value.trim(),
-      };
-    }
-  }
-
-  return { ok: true, value: adapted };
 }
 
 export function stripAuthoritativeOnboardingValues(

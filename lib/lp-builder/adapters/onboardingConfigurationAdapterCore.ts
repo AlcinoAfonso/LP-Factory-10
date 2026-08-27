@@ -225,11 +225,7 @@ export async function saveAccountLandingPageOnboardingConfigurationFromClient(
 
   const payload = {
     catalog_version: runtime.context.operationalCatalogVersion,
-    values: Object.fromEntries(
-      Object.entries(candidate.configuration.storedValues).filter(
-        ([fieldKey]) => fieldKey !== "brand_logo_asset",
-      ),
-    ),
+    values: persistableValues,
     updated_by: input.actorUserId,
   };
 

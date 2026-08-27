@@ -43,8 +43,7 @@ export type LandingPageInputValueType =
   | "number_range"
   | "keyword_map"
   | "asset_reference"
-  | "color_palette"
-  | "offering_scope";
+  | "color_palette";
 export type LandingPageInputValueScope =
   | "account"
   | "business"
@@ -97,8 +96,7 @@ export type LandingPageInputValidation =
   | Readonly<{ kind: "https_url" }>
   | Readonly<{ kind: "keyword_map" }>
   | Readonly<{ kind: "asset_reference" }>
-  | Readonly<{ kind: "color_palette" }>
-  | Readonly<{ kind: "offering_scope" }>;
+  | Readonly<{ kind: "color_palette" }>;
 
 export type LandingPageInputTypeValidationContract =
   | Readonly<{
@@ -140,10 +138,6 @@ export type LandingPageInputTypeValidationContract =
   | Readonly<{
       valueType: "color_palette";
       validation: Extract<LandingPageInputValidation, { kind: "color_palette" }>;
-    }>
-  | Readonly<{
-      valueType: "offering_scope";
-      validation: Extract<LandingPageInputValidation, { kind: "offering_scope" }>;
     }>;
 
 export type LandingPageInputEvidence = Readonly<{

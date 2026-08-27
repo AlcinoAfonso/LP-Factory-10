@@ -56,17 +56,9 @@ const segmentCatalogV5 = resolveLandingPageInputCatalog({
 });
 assert.equal(segmentCatalogV5.ok, true);
 
-const segmentCatalogV6 = resolveLandingPageInputCatalog({
-  version: 6,
-  plan: "starter",
-  taxonChain: { segment: realEstateSegmentTaxon },
-});
-assert.equal(segmentCatalogV6.ok, true);
-
 const allValidValues = validValuesFor(resolvedCatalog.fields);
 const segmentValidValues = validValuesFor(segmentCatalog.value.fields);
 const segmentV5ValidValues = validValuesFor(segmentCatalogV5.value.fields);
-const segmentV6ValidValues = validValuesFor(segmentCatalogV6.value.fields);
 
 function catalogVersionLoaderFor(
   version: number,
@@ -625,158 +617,6 @@ const cases: ReadonlyArray<
         ok: false,
         error: "catalog_unavailable",
       });
-    },
-  },
-  {
-    name: "v5 pre-handoff offering values project save reload and bind as canonical v6 only",
-    run: async () => {
-      const legacyRow = {
-        ...completeConfigurationRow(),
-        catalog_version: 5,
-        values: stripAuthoritativeOnboardingValues(segmentV5ValidValues, {
-          business_display_name: "Conta de teste",
-        }),
-      };
-      const readClient = runtimeClient([
-        ...runtimeGateResponses(),
-        response("account_landing_page_onboarding_configurations", legacyRow),
-      ]);
-      const projected =
-        await getAccountLandingPageOnboardingConfigurationFromClientCore(
-          { accountId: ACCOUNT_ID, actorUserId: ACTOR_ID },
-          readClient,
-          eligibleEntitlement,
-          catalogVersionLoaderFor(6),
-        );
-      assert.equal(projected.ok, true, JSON.stringify(projected));
-      assert.equal(projected.configuration.catalogVersion, 6);
-      assert.deepEqual(
-        projected.configuration.storedValues.landing_page_offering_scope,
-        {
-          scope: "landing_page",
-          value: {
-            mode: "single",
-            offerings: [
-              segmentV5ValidValues.primary_service_or_offer.value,
-            ],
-          },
-        },
-      );
-      assert.equal(
-        Object.hasOwn(
-          projected.configuration.storedValues,
-          "primary_service_or_offer",
-        ),
-        false,
-      );
-
-      const malformed = resolveAccountLandingPageOnboardingConfiguration({
-        accountId: ACCOUNT_ID,
-        landingPageId: null,
-        catalogVersion: 6,
-        revision: 1,
-        planKey: "starter",
-        taxonChain: { segment: realEstateSegmentTaxon },
-        storedValues: {
-          ...legacyRow.values,
-          primary_service_or_offer: { scope: "offer", value: "   " },
-        },
-        authoritativeValues: { business_display_name: "Conta de teste" },
-      });
-      assert.deepEqual(malformed, {
-        ok: false,
-        error: "INVALID_CONFIGURATION",
-        fieldKey: "primary_service_or_offer",
-      });
-
-      const canonicalValues = stripAuthoritativeOnboardingValues(
-        segmentV6ValidValues,
-        { business_display_name: "Conta de teste" },
-      );
-      const canonicalRow = {
-        ...legacyRow,
-        catalog_version: 6,
-        values: canonicalValues,
-        revision: 2,
-      };
-      const saveClient = runtimeClient([
-        ...runtimeGateResponses(),
-        response("account_landing_page_onboarding_configurations", legacyRow),
-        response(
-          "account_landing_page_onboarding_configurations",
-          canonicalRow,
-          null,
-          "update",
-        ),
-      ]);
-      const saved =
-        await saveAccountLandingPageOnboardingConfigurationFromClientCore(
-          {
-            accountId: ACCOUNT_ID,
-            actorUserId: ACTOR_ID,
-            expectedRevision: 1,
-            values: segmentV6ValidValues,
-          },
-          saveClient,
-          eligibleEntitlement,
-          catalogVersionLoaderFor(6),
-        );
-      assert.equal(saved.ok, true, JSON.stringify(saved));
-      const persisted = saveClient.calls.find(
-        (call) => call.operation === "update",
-      )?.payload as { catalog_version: number; values: AccountLandingPageOnboardingStoredValues };
-      assert.equal(persisted.catalog_version, 6);
-      assert.equal(Object.hasOwn(persisted.values, "primary_service_or_offer"), false);
-      assert.equal(
-        Object.hasOwn(persisted.values, "landing_page_offering_scope"),
-        true,
-      );
-
-      const reloadClient = runtimeClient([
-        ...runtimeGateResponses(),
-        response("account_landing_page_onboarding_configurations", canonicalRow),
-      ]);
-      const reloaded =
-        await getAccountLandingPageOnboardingConfigurationFromClientCore(
-          { accountId: ACCOUNT_ID, actorUserId: ACTOR_ID },
-          reloadClient,
-          eligibleEntitlement,
-          catalogVersionLoaderFor(6),
-        );
-      assert.equal(reloaded.ok, true, JSON.stringify(reloaded));
-      assert.equal(reloaded.configuration.catalogVersion, 6);
-      assert.deepEqual(reloaded.configuration.storedValues, canonicalValues);
-
-      const landingPageId = "00000000-0000-4000-8000-000000000206";
-      const bindClient = runtimeClient([
-        ...runtimeGateResponses(),
-        response("account_landing_page_onboarding_configurations", canonicalRow),
-        response(
-          "account_landing_pages",
-          landingPageDraft(landingPageId, "Escopo v6", "active"),
-        ),
-        response(
-          "account_landing_page_onboarding_configurations",
-          { ...canonicalRow, landing_page_id: landingPageId, revision: 3 },
-          null,
-          "update",
-        ),
-      ]);
-      const bound =
-        await bindAccountLandingPageOnboardingConfigurationFromClientCore(
-          {
-            accountId: ACCOUNT_ID,
-            actorUserId: ACTOR_ID,
-            landingPageId,
-            expectedRevision: 2,
-          },
-          bindClient,
-          eligibleEntitlement,
-          catalogVersionLoaderFor(6),
-        );
-      assert.equal(bound.ok, true, JSON.stringify(bound));
-      assert.equal(bound.configuration.catalogVersion, 6);
-      assert.deepEqual(bound.configuration.storedValues, canonicalValues);
     },
   },
   {
@@ -1430,8 +1270,6 @@ function validValue(field: ResolvedLandingPageInputField): unknown {
         background: "#ffffff",
         text: "#111111",
       };
-    case "offering_scope":
-      return { mode: "single", offerings: ["Oferta canônica"] };
   }
 }
 

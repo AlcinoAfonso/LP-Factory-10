@@ -27,7 +27,6 @@ const MODEL_VALUE_TYPES: ReadonlySet<LandingPageInputValueType> = new Set([
   "boolean",
   "number_range",
   "keyword_map",
-  "offering_scope",
 ]);
 
 const SERVER_VALUE_TYPES: ReadonlySet<LandingPageInputValueType> = new Set([

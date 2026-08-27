@@ -115,8 +115,8 @@ const PALETTE_PRESETS: readonly Readonly<{
 
 const FIELD_LABELS: Readonly<Record<string, string>> = {
   business_display_name: "Nome público do negócio",
-  landing_page_offering_scope: "O que esta landing page vai divulgar?",
-  landing_page_offering_scope_description: "Descrição do escopo de ofertas",
+  primary_service_or_offer: "Serviço ou oferta principal",
+  primary_service_or_offer_description: "Descrição do serviço ou da oferta",
   service_locations: "Regiões atendidas",
   property_types: "Tipos de imóvel",
   property_price_range: "Faixa de preço",
@@ -410,7 +410,7 @@ export function OnboardingConfigurationJourney(props: Readonly<{
                   className="mt-1 h-4 w-4"
                 />
                 <span>
-                  Se eu alterar o escopo de ofertas, confirmo que continua sendo a mesma identidade comercial. Caso contrário, criarei uma nova landing page.
+                  Se eu alterar a oferta principal, confirmo que continua sendo o mesmo trabalho comercial. Caso contrário, criarei uma nova landing page.
                 </span>
               </label>
             ) : null}
@@ -667,8 +667,6 @@ function OnboardingField(props: Readonly<{
     field.valueType === "string_list" &&
     field.validation.kind === "string_list" &&
     Boolean(field.validation.allowedValues);
-  const isGroupedControl =
-    isCheckboxGroup || field.valueType === "offering_scope";
 
   if (props.fieldState.source === "authoritative") {
     return (
@@ -683,16 +681,10 @@ function OnboardingField(props: Readonly<{
   }
 
   return (
-    <FormField
-      className={
-        field.valueType === "string" || field.valueType === "offering_scope"
-          ? "sm:col-span-2"
-          : undefined
-      }
-    >
+    <FormField className={field.valueType === "string" ? "sm:col-span-2" : undefined}>
       <FormFieldLabel
         id={labelId}
-        {...(isGroupedControl ? {} : { htmlFor: id })}
+        {...(isCheckboxGroup ? {} : { htmlFor: id })}
         required={props.required}
       >
         {fieldLabel(field.fieldKey)}
@@ -829,10 +821,6 @@ function FieldControl(props: Readonly<{
     );
   }
 
-  if (field.valueType === "offering_scope") {
-    return <OfferingScopeControl {...props} common={common} />;
-  }
-
   if (field.valueType === "number_range") {
     return <NumberRangeControl {...props} common={common} />;
   }
@@ -912,13 +900,6 @@ export function formatDisplayValue(value: unknown) {
   }
   if (isRecord(value)) {
     if (
-      typeof value.mode === "string" &&
-      Array.isArray(value.offerings) &&
-      value.offerings.every((item) => typeof item === "string")
-    ) {
-      return `${offeringScopeModeLabel(value.mode)}: ${value.offerings.join(", ")}`;
-    }
-    if (
       typeof value.minimum === "number" ||
       typeof value.maximum === "number"
     ) {
@@ -995,87 +976,6 @@ type SpecializedControlProps = Readonly<{
     "aria-required": boolean;
   }>;
 }>;
-
-function OfferingScopeControl(props: SpecializedControlProps) {
-  const mode =
-    isRecord(props.value) &&
-    ["single", "selected", "portfolio"].includes(String(props.value.mode))
-      ? String(props.value.mode)
-      : "";
-  const offerings =
-    isRecord(props.value) && Array.isArray(props.value.offerings)
-      ? props.value.offerings.filter(
-          (item): item is string => typeof item === "string",
-        )
-      : [];
-
-  const update = (nextMode: string, nextOfferings: readonly string[]) => {
-    props.onChange({ mode: nextMode, offerings: nextOfferings });
-  };
-
-  return (
-    <fieldset
-      id={props.id}
-      aria-labelledby={`${props.id}-label`}
-      aria-describedby={props.describedBy}
-      aria-invalid={props.invalid}
-      className="space-y-4 rounded-lg border border-surface-border p-4"
-    >
-      <legend className="sr-only">{fieldLabel(props.fieldState.field.fieldKey)}</legend>
-      <div className="grid gap-2 sm:grid-cols-3" role="radiogroup">
-        {["single", "selected", "portfolio"].map((option) => (
-          <label
-            key={option}
-            className={`flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border px-3 py-2 text-sm font-medium focus-within:ring-2 focus-within:ring-brand-500 ${
-              mode === option
-                ? "border-brand-500 bg-brand-50 text-brand-950"
-                : "border-surface-border bg-white text-ink-800"
-            }`}
-          >
-            <input
-              type="radio"
-              name={`${props.id}-mode`}
-              value={option}
-              checked={mode === option}
-              aria-describedby={props.describedBy}
-              onChange={() => update(option, offerings)}
-            />
-            {offeringScopeModeLabel(option)}
-          </label>
-        ))}
-      </div>
-      <div className="space-y-2">
-        <label className="block text-sm font-medium text-ink-800" htmlFor={`${props.id}-offerings`}>
-          Ofertas incluídas
-        </label>
-        <Textarea
-          id={`${props.id}-offerings`}
-          aria-describedby={props.describedBy}
-          aria-invalid={props.invalid}
-          aria-required={props.required}
-          className="min-h-28"
-          value={offerings.join("\n")}
-          placeholder="Uma oferta por linha"
-          onChange={(event) => {
-            const nextOfferings = event.target.value
-              .split("\n")
-              .map((item) => item.trim())
-              .filter(Boolean);
-            update(mode, nextOfferings);
-          }}
-        />
-      </div>
-    </fieldset>
-  );
-}
-
-function offeringScopeModeLabel(mode: string) {
-  return {
-    single: "Uma oferta",
-    selected: "Algumas ofertas",
-    portfolio: "Todo o portfólio",
-  }[mode] ?? mode;
-}
 
 function KeywordMapControl(props: SpecializedControlProps) {
   const [draft, setDraft] = useState(() => formatKeywordMapDraft(props.value));

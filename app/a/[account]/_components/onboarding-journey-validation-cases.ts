@@ -198,29 +198,6 @@ const cases: readonly Readonly<{ name: string; run: () => void }>[] = [
     },
   },
   {
-    name: "offering scope exposes three labeled keyboard-native modes and associated factual list",
-    run: () => {
-      const component = readFileSync(
-        new URL("./OnboardingConfigurationJourney.tsx", import.meta.url),
-        "utf8",
-      );
-      const action = readFileSync(
-        new URL("../landing-pages/[landingPageId]/configuration-actions.ts", import.meta.url),
-        "utf8",
-      );
-      assert.match(component, /landing_page_offering_scope: "O que esta landing page vai divulgar\?"/);
-      assert.match(component, /\["single", "selected", "portfolio"\]/);
-      assert.match(component, /type="radio"/);
-      assert.match(component, /Uma oferta/);
-      assert.match(component, /Algumas ofertas/);
-      assert.match(component, /Todo o portfólio/);
-      assert.match(component, /Ofertas incluídas/);
-      assert.match(component, /focus-within:ring-2/);
-      assert.match(action, /landing_page_offering_scope/);
-      assert.match(action, /sameCommercialWorkConfirmed/);
-    },
-  },
-  {
     name: "invalid hidden conditional value is omitted while a valid one is preserved",
     run: () => {
       const catalog = resolveLandingPageInputCatalog({
