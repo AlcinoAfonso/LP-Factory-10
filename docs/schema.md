@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data da última atualização: 25/08/2026
-• Documento: LP Factory 10 — Schema (DB Contract) v1.0.57
+• Data da última atualização: 27/08/2026
+• Documento: LP Factory 10 — Schema (DB Contract) v1.0.58
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -1286,6 +1286,21 @@
 • O RPC preserva retry idempotente do mesmo attempt, bloqueia a LP, compara as duas revisões operacionais e só então delega ao append canônico v1 na mesma transação; save concorrente ou proveniência stale falham fechados sem revisão parcial.
 • EXECUTE exclusivo de service_role; public, anon, authenticated e ai_readonly não executam.
 
+3.9 Conflitos de domínio seguros na Data API
+3.9.1 Helper transversal
+• `raise_postgrest_safe_conflict_v1(text) → void`: SECURITY INVOKER, stable, owner postgres e search_path fixado em pg_catalog.
+• EXECUTE direto exclusivo de service_role; public, anon, authenticated e ai_readonly sem EXECUTE.
+• Em requisição PostgREST identificada por `request.method`, levanta SQLSTATE real `PGRST`, HTTP 409 e corpo JSON com `code = 40001`, mensagem preservada e details/hint nulos.
+• Em chamada SQL direta, preserva SQLSTATE 40001 para manter testes transacionais e a semântica de rollback.
+
+3.9.2 Regra e cobertura
+• Conflito conhecido de versão ou revisão é terminal para a tentativa atual e exige releitura ou recarregamento; repetir a mesma entrada stale não é autorizado.
+• RPC ou function de domínio exposta à Data API não deve levantar diretamente SQLSTATE 40001; deve usar o helper transversal.
+• A migration `supabase/migrations/20260827203000_postgrest_safe_application_conflicts.sql` cobre as onze funções ativas que usavam 40001 como erro de domínio, sem alterar assinaturas, retornos, locks, search_path, ownership, segurança ou ACLs.
+• Teste transacional: `supabase/tests/postgrest_safe_application_conflicts.test.sql`.
+• Verificador read-only: `supabase/snippets/postgrest_safe_application_conflicts_verify.sql`.
+• Estado no PR corretivo: repo-only; apply remoto reservado ao workflow canônico após merge humano.
+
 4. Triggers
 
 4.1 Trigger Hub (governança)
@@ -1326,6 +1341,11 @@
 • Rollback: não remove automaticamente a extensão, pois pode ser reutilizada por outros recursos
 
 99. Changelog
+v1.0.58 (27/08/2026) — Conflitos de domínio seguros para PostgREST
+• Versionado `raise_postgrest_safe_conflict_v1(text)` para transportar conflitos conhecidos como `PGRST`/HTTP 409 pela Data API, preservando `code = 40001` no corpo.
+• Corrigidas as onze RPCs/functions ativas que usavam 40001 como erro de domínio; chamadas SQL diretas preservam 40001 para testes transacionais.
+• Registrados migration, teste transacional e verificador read-only do corretivo; apply remoto permanece pós-merge pelo workflow canônico.
+
 v1.0.49 (20/08/2026) — E19.5 precursor expand: ampliado o contrato repo-only de `account_landing_pages.status` para tolerar `draft | active | archived`, preservando default e criação corrente em `draft`, sem backfill; append e consumidores internos passam a tolerar `active`, enquanto `archived` bloqueia attempts inéditos e preserva retry idempotente tenant-safe de `attempt_id` já materializado.
 
 v1.0.48 (20/08/2026) — E21.2.3: registrado o agregado candidato de configuração operacional dos workloads OpenAI com três tabelas públicas, oito baselines Production/Preview, FKs compostas unit-safe, candidata/pendência exclusivas, pendência distinta da revisão ativa, revisões e ativações append-only, token otimista, cinco RPCs SECURITY INVOKER, RLS sem policies, grants mínimos e verificação SQL read-only; apply hospedado permanece pós-merge.
