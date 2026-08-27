@@ -100,7 +100,7 @@
 ### 2.6. Modelo de conhecimento e contexto comercial da geração
 
 - A geração deve preservar três classes conceituais distintas de informação.
-- **Pesquisa profunda autorizada** fornece conhecimento de mercado e comportamento do público, com profundidade obtida fora do caminho interativo de geração e reutilização entre LPs compatíveis.
+- **Pesquisa profunda autorizada** fornece conhecimento de mercado e comportamento do público, com profundidade obtida fora do caminho interativo da geração e reutilização entre LPs compatíveis.
 - **Pesquisa dinâmica complementar** fornece conhecimento específico ou atual que a pesquisa profunda aplicável não cobre suficientemente; sua necessidade, mecanismo, limites, fontes e momento exato no pipeline ainda dependem de planejamento e prova.
 - **Fatos concretos do cliente/LP** permanecem sob E20.2/E19.5 e fontes autoritativas vigentes; pesquisa profunda ou dinâmica não pode criar preço, disponibilidade, localização, credencial, prova social, condição comercial ou outro fato objetivo da conta/oferta sem fonte factual autorizada.
 - Pesquisa profunda e pesquisa dinâmica orientam conhecimento consultivo/persuasivo; fatos concretos continuam sendo autoridade para claims verificáveis.
@@ -265,7 +265,7 @@
 - **Gate 4 — gerar LP comparável:** usar a nova pesquisa piloto no pipeline controlado, sem misturar simultaneamente outras grandes mudanças de geração que impeçam atribuir o efeito observado.
 - **Gate 5 — comparar qualidade, custo e latência:** usar como régua de produto os seis resultados desejados registrados na seção 3.1 da matriz de debate E19.5.4 do PR #822 e complementar a prova com factualidade, correção humana necessária, tokens, custo, latência e estabilidade; evitar criar uma segunda régua paralela de qualidade na E20.7.
 - **Gate 6 — decidir o desenho técnico do fallback dinâmico:** somente após comprovar o valor da nova pesquisa profunda, definir onde a pesquisa dinâmica ocorre, quando é acionada, quais limites/ferramentas/fontes usa e como sua proveniência entra no snapshot.
-- **Gate 7 — fechar deltas E20.5/E20.6/E19.3/E19.4/E19.5:** distinguir o que realmente precisa de mudança de contrato, persistência, UX, snapshot e workload; consumir o contrato de `landing_page_offering_scope` da E19.5.4 quando estiver consolidado, sem criar representação concorrente na E20.7.
+- **Gate 7 — fechar deltas E20.5/E20.6/E19.3/E19.4/E19.5 e reavaliar a solução física da biblioteca de pesquisas:** distinguir o que realmente precisa de mudança de contrato, persistência, UX, snapshot e workload; consumir o contrato de `landing_page_offering_scope` da E19.5.4 quando estiver consolidado, sem criar representação concorrente na E20.7; reavaliar se o modelo repo-only da E20.5 continua adequado ao volume e ao ritmo esperados da biblioteca de pesquisas, considerando crescimento do repositório, acoplamento a bundle/deploy, operação de versionamento/aprovação, auditabilidade, custo e simplicidade. O repo-only permanece baseline durante os pilotos/MVP; eventual mudança para Supabase, Storage ou outra residência física deve ser decidida por evidência neste gate e não assumida antecipadamente.
 - **Gate 8 — consolidar plano-base v1 da E20.7:** somente após os gates anteriores registrar escopo executável, atualizar `docs/roadmap.md` e autorizar implementação.
 
 ### 3.4. Hipóteses de impacto a validar, sem autorização técnica
