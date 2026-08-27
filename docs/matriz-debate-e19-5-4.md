@@ -37,9 +37,10 @@
 | `ID-03` | Aplicabilidade de `transaction_intent` | Não é universal. Só deve existir em taxons nos quais haja intenções comerciais distintas que mudem o papel do negócio na transação; não forçar equivalentes artificiais em outros nichos. | decisão humana aceita como regra conceitual | — | — | — | — | pendente |
 | `ID-04` | Camada taxonômica de `transaction_intent` | A IA da E20.6 deve avaliar necessidade/cobertura e sugerir `universal`, `segment`, `niche` ou `ultra_niche`; humano mantém autoridade final e E20.2 materializa o contrato aprovado. | decisão humana aceita | — | — | — | — | pendente |
 | `ID-05` | Critério para IA E20.6 | Ao avaliar necessidade semelhante a `transaction_intent`, não presumir universalidade; recomendar a camada mais alta em que a semântica permaneça válida sem generalização artificial. | proposta de regra a validar | — | — | — | — | pendente |
-| `ID-06` | `primary_conversion_goal` | Ainda não decidido se pertence ao núcleo de identidade ou se deve ser configuração mutável da LP. | aberto | — | — | — | — | pendente |
+| `ID-06` | `primary_conversion_goal` | Não integra o núcleo de identidade. Permanece campo universal e obrigatório da estratégia de conversão da LP, podendo mudar entre versões quando o trabalho comercial continuar o mesmo. | decisão humana aceita | — | — | — | — | pendente |
 | `ID-07` | `primary_service_or_offer` | Ainda não decidido se pertence ao núcleo de identidade ou se deve ser tratado como oferta/contexto mutável, eventualmente relacionado ao grupo opcional. | aberto | — | — | — | — | pendente |
 | `ID-08` | Resultados desejados dos campos de identidade | Os fields que formam a identidade da LP devem contribuir materialmente para os seis resultados definidos na seção 3.1. | decisão humana aceita | — | — | — | — | pendente |
+| `ID-09` | `primary_conversion_goal` e experimentação | Por não integrar a identidade, `primary_conversion_goal` pode funcionar como variável estratégica experimentável: uma mesma LP pode evoluir entre objetivos em versões sucessivas; LPs concretas distintas também podem testar goals diferentes em um grupo opcional A/B, sem redefinir o conceito de identidade. | decisão humana aceita | — | — | — | — | pendente |
 | `PL-01` | Starter e simplicidade | Hipótese de produto: Starter pode ter baixa quantidade de LPs e publicação restrita; isso reforça UX simples, mas limites exatos de publicação/LPs não são fixados nesta matriz sem contrato comercial vigente. | hipótese contextual; não contratual | — | — | — | — | pendente |
 | `UX-01` | Resultado do PR #820 | O desenho implementado não deve ser corrigido por remendos antes de fechar o novo modelo mental; QA humano foi reprovado. | decisão humana | — | — | — | — | pendente |
 | `UX-02` | Próximo wireframe | O próximo wireframe deve começar pela visão `Todas as LPs`, uma linha por LP concreta, e somente depois demonstrar a opção `Por grupos`. | direção proposta | — | — | — | — | pendente |
@@ -64,9 +65,8 @@
 
 ### 4.2. Identidade da LP
 
-- `primary_conversion_goal` muda identidade ou apenas estratégia de conversão da mesma LP?
 - `primary_service_or_offer` muda identidade sempre, às vezes, ou deve ser tratado como contexto/oferta mutável?
-- Depois de responder aos dois itens acima, qual é o núcleo mínimo de identidade visível ao cliente?
+- Depois de responder ao item acima, qual é o núcleo mínimo de identidade visível ao cliente?
 
 ### 4.3. E20.6 e E20.2
 
