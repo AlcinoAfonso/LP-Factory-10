@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 26/08/2026
-• Versão: v1.5.187
+• Data: 27/08/2026
+• Versão: v1.5.188
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2874,7 +2874,7 @@ Repositório — Ajustados
 
 21. E21 — Gestão e governança dos workloads OpenAI
 - Objetivo: gerir e governar os workloads OpenAI por recortes aprovados, com configuração explícita, observabilidade segura, leitura administrativa e configuração operacional dinâmica por ambiente, sem otimização automatizada.
-- Status: a fundação E21.1 permanece preservada; a E21.2, incluindo o catálogo operacional da E21.2.5, está concluída com apply e gates hospedados aprovados; a E21.3 permanece prevista e não iniciada.
+- Status: a fundação E21.1 permanece preservada; a E21.2, incluindo o catálogo operacional da E21.2.5, está concluída com apply e gates hospedados aprovados; a E21.3 está pausada por repriorização humana antes de incorporação à `main`, e a E21.4 passa a ser a prioridade imediata.
 
 21.1 Fundação, normalização e leitura dos workloads OpenAI
 
@@ -3057,13 +3057,16 @@ Repositório — Ajustados
 
 21.3.1 Objetivo e status
 - Objetivo: produzir comparações reproduzíveis por workload considerando qualidade, sucesso, necessidade de correção humana, usage, latência, custo e estabilidade.
-- Status: Prevista; não implementada.
+- Status: Pausada por repriorização humana antes de incorporação à `main`.
 - Registrar a E19.4 como primeiro caso real de referência, especificamente:
   - `landing_page_draft_generation`;
   - `landing_page_draft_image_generation`.
 - Isso não reabre a E19.4.
 
-21.3.3 Previsão e limites
+21.3.3 Evidência experimental, pausa e limites de retomada
+- A implementação experimental da E21.3.3 e seu QA técnico em Preview permanecem preservados no PR fechado #819, sem aceite humano final de produto/UX e sem incorporação à `main`.
+- O PR #819 permanece referência histórica e técnica de retomada, incluindo plano v2, matriz, comparação Terra/Luna, decisões e aprendizados; sua implementação não constitui baseline automaticamente adotável.
+- A retomada da E21.3 deve comparar e revalidar a implementação do PR #819 contra a `main` então vigente antes de decidir qualquer reaproveitamento.
 - Unidade textual de comparação: `workload + modelo + reasoning effort`.
 - Workloads de mídia preservam configuração e métricas próprias.
 - Reutilizar observabilidade segura da E21.1.
@@ -3081,6 +3084,19 @@ Repositório — Ajustados
   - estabilidade.
 - Não definir vencedor ou baseline universal antes de evidência representativa.
 - Não criar agora banco, tabela, rota, dashboard, job, engine, agente, automação ou infraestrutura.
+
+21.3.4 Continuação prevista
+- Status: Prevista e não iniciada; sua retomada permanece posterior à execução da E21.4 e depende de nova decisão humana.
+
+21.4 Visibilidade financeira e atribuição de custos OpenAI
+
+21.4.1 Objetivo e status
+- Objetivo: permitir conhecer o gasto OpenAI total por período e atribuir custos, quando tecnicamente possível e confiável, por cliente, Landing Page e workload, além de investigar a disponibilidade oficial de saldo ou créditos.
+- Status: Nova prioridade imediata; debate e plano-base próprios pendentes, sem implementação iniciada.
+
+21.4.3 Previsão e limites
+- A E21.4 deve ser executada antes da retomada da E21.3.4.
+- Banco, tabela, API, rota, job e desenho técnico não estão definidos e somente poderão ser estabelecidos no debate e no plano-base próprios.
 
 22. E22 — Retirada controlada de ativos históricos
 - Objetivo: reduzir a superfície histórica que não participa do caminho canônico vigente, preservando consumidores reais e preparando a sequência E19.4 concluída → E22.1 → E19.5.
