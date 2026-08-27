@@ -73,6 +73,26 @@ Status: rascunho vivo em debate; ainda não consolidado como plano-base v1.
 - Se essa fonte oficial não puder ser confirmada, a ausência de conciliação automática de saldo/créditos **não bloqueia o MVP da E21.4**; gasto, usage e atribuição devem avançar normalmente.
 - Não inferir silenciosamente saldo oficial apenas por `créditos adquiridos - custo calculado`, porque ajustes, recargas, créditos promocionais ou defasagem de processamento podem produzir diferença.
 
+### 1.7. Acesso, residência e hierarquia da UX aceitos
+
+- A superfície financeira será administrativa e acessível exclusivamente a `platform_admin`.
+- A residência conceitual será uma superfície própria denominada **Custos OpenAI**, separada de **Configuração OpenAI** e **Testes OpenAI**.
+- Nenhuma rota concreta está definida neste rascunho; path e estrutura técnica ficam para a v2 após validação estrutural.
+- A hierarquia de leitura do MVP será:
+  - **Gasto OpenAI total**;
+  - **LP Factory**;
+  - **Clientes**;
+  - **Não atribuído/reconciliação**.
+- Dentro de **Clientes**, a leitura avança por:
+  - conta/cliente;
+  - Landing Pages ou outros consumos da conta;
+  - workload, quando houver evidência suficiente.
+- Cada nível financeiro apresenta valores em USD; o detalhamento apresenta também a unidade técnica adequada ao workload, como tokens para texto e imagens/requisições para geração de imagem.
+- A conciliação deve distinguir, quando as fontes permitirem:
+  - usage interno versus usage oficial OpenAI;
+  - custos internamente atribuídos versus custo oficial OpenAI;
+  - crédito interno versus saldo/crédito oficial OpenAI, sem bloquear o MVP se esta última fonte não existir programaticamente.
+
 ## 2. Fatos preliminares e contrato em debate
 
 ### 2.1. Fontes do projeto já consultadas
@@ -92,11 +112,11 @@ Status: rascunho vivo em debate; ainda não consolidado como plano-base v1.
 - A OpenAI expõe APIs de usage por modalidade. Completions pode ser agrupado por `project_id`, `user_id`, `api_key_id`, `model`, `batch` e `service_tier`; images expõe número de imagens e requisições e pode ser agrupado por `project_id`, `user_id`, `api_key_id`, `model`, `size` e `source`.
 - A documentação oficial de billing pré-pago confirma que o saldo de créditos existe e é exibido no Billing da plataforma, mas até este ponto do debate não foi confirmada uma API pública oficial equivalente ao Costs API para consultar programaticamente o saldo disponível.
 - Fontes oficiais consultadas:
-  - `https://developers.openai.com/api/reference/python/resources/admin/subresources/organization/subresources/usage/methods/costs`
-  - `https://developers.openai.com/api/reference/python/resources/admin/subresources/organization/subresources/usage/methods/completions`
-  - `https://developers.openai.com/api/reference/python/resources/admin/subresources/organization/subresources/usage/methods/images`
-  - `https://developers.openai.com/api/reference/python/resources/admin/subresources/organization/subresources/admin_api_keys`
-  - `https://help.openai.com/en/articles/8264644-setting-up-and-managing-prepaid-api-billing`
+  - `https://developers.openai.com/api/reference/python/resources/admin/subresources/organization/subresources/usage/methods/costs`;
+  - `https://developers.openai.com/api/reference/python/resources/admin/subresources/organization/subresources/usage/methods/completions`;
+  - `https://developers.openai.com/api/reference/python/resources/admin/subresources/organization/subresources/usage/methods/images`;
+  - `https://developers.openai.com/api/reference/python/resources/admin/subresources/organization/subresources/admin_api_keys`;
+  - `https://help.openai.com/en/articles/8264644-setting-up-and-managing-prepaid-api-billing`.
 
 ### 2.3. Fatos atuais do LP Factory
 
@@ -128,18 +148,13 @@ Status: rascunho vivo em debate; ainda não consolidado como plano-base v1.
 - **Saldo/créditos:** informação de billing separada de gasto e usage; idealmente reconciliada com o acompanhamento interno, mas não bloqueante se não houver fonte oficial programática adequada.
 - **Cobrança ao cliente:** decisão comercial distinta da atribuição econômica e fora do recorte atual.
 
-## 3. Questões abertas para decisão humana e investigação
+## 3. Questões abertas para validação do Analista e investigação técnica
 
 ### 3.1. Entrega mínima prioritária
 
-- Confirmar a primeira hierarquia da visão financeira:
-  - gasto total OpenAI;
-  - LP Factory;
-  - clientes;
-  - não atribuído/reconciliação;
-  - dentro de clientes: conta → Landing Page ou outros consumos da conta → workload.
-- Definir a apresentação conjunta de usage técnico e custo oficial em USD sem confundir grandezas diferentes nem criar falsa precisão.
-- Saldo/créditos deixa de ser gate do MVP: deve ser conciliado quando houver fonte oficial programática confiável e, se não houver, a limitação deve ser explícita.
+- A hierarquia da visão financeira, o acesso `platform_admin`, a superfície própria **Custos OpenAI**, os períodos do MVP, a atualização sob demanda e a moeda USD estão aprovados pelo humano.
+- Validar se a apresentação conjunta de usage técnico e custo oficial em USD, com reconciliação explícita, cobre o objetivo sem criar falsa precisão.
+- Saldo/créditos não é gate do MVP: deve ser conciliado quando houver fonte oficial programática confiável e, se não houver, a limitação deve ser explícita.
 
 ### 3.2. Atribuição por cliente e Landing Page
 
@@ -157,9 +172,9 @@ Status: rascunho vivo em debate; ainda não consolidado como plano-base v1.
 
 ### 3.4. UX e operação
 
-- Definir se a visibilidade financeira pertence a uma nova superfície administrativa ou a uma área administrativa já existente; nenhuma rota está autorizada neste rascunho.
+- A residência em superfície administrativa própria **Custos OpenAI** e o acesso exclusivo a `platform_admin` estão aprovados; a v2 deve definir a menor estrutura técnica compatível sem inventar rota neste estágio.
 - A atualização sob demanda está aceita para o MVP; qualquer hipótese futura de atualização recorrente exigirá nova avaliação de automação.
-- Definir como comunicar valores oficiais, atribuídos, estimados, não atribuídos ou indisponíveis sem induzir falsa precisão.
+- Validar a forma de comunicar valores oficiais, atribuídos, estimados, não atribuídos ou indisponíveis sem induzir falsa precisão.
 
 ## 4. Escopo negativo e próxima ação
 
@@ -177,7 +192,6 @@ Status: rascunho vivo em debate; ainda não consolidado como plano-base v1.
 
 ### 4.2. Próxima ação do debate
 
-- Confirmar com o humano a hierarquia final da UX, o acesso administrativo e a residência da visão financeira.
-- Confirmar a forma de apresentar usage e custo em USD com reconciliação explícita.
-- Confirmar empiricamente as fontes oficiais da organização real antes de consolidar o plano-base v1.
-- Antes da v1, classificar `Automação: sim | não` para as fases propostas; no MVP atual, a atualização sob demanda não implica automação recorrente.
+- Submeter o rascunho vivo ao Analista para identificar lacunas, contradições, riscos e questões indispensáveis antes da consolidação da v1.
+- Após o retorno do Analista, fechar apenas os pontos indispensáveis que restarem e consolidar o mesmo arquivo como plano-base v1.
+- Antes de declarar a v1, definir as fases executáveis e marcar `Automação: sim | não` em cada fase; no MVP atual, a atualização sob demanda não implica automação recorrente.
