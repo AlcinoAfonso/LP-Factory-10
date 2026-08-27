@@ -1,0 +1,51 @@
+name: PR 828 — Validação completa do repositório
+
+on:
+  push:
+    branches:
+      - fix/postgrest-domain-conflict-sqlstate
+    paths:
+      - .github/workflows/pr828-root-check.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pr828-root-check
+  cancel-in-progress: false
+
+jobs:
+  check:
+    if: ${{ !contains(github.event.head_commit.message, '[pr828-root-check]') }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run project check
+        run: npm run check
+
+      - name: Remove transient workflow
+        run: rm .github/workflows/pr828-root-check.yml
+
+      - name: Commit cleanup
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .github/workflows/pr828-root-check.yml
+          git diff --cached --check
+          git commit -m "chore(pr828): concluir validação completa [pr828-root-check]"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
