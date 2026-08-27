@@ -156,4 +156,106 @@ begin
 end;
 $test$;
 
+do $integration$
+declare
+  v_version bigint;
+  v_candidate_model text;
+  v_candidate_reasoning_effort text;
+  v_candidate_quality text;
+  v_message text;
+  v_detail text;
+  v_sqlstate text;
+  v_message_json jsonb;
+  v_detail_json jsonb;
+begin
+  select
+    configuration.configuration_version,
+    configuration.candidate_model,
+    configuration.candidate_reasoning_effort,
+    configuration.candidate_quality
+  into
+    v_version,
+    v_candidate_model,
+    v_candidate_reasoning_effort,
+    v_candidate_quality
+  from public.openai_workload_operational_configurations configuration
+  where configuration.environment = 'preview'
+    and configuration.workload = 'niche_resolution';
+
+  if v_version is null then
+    raise exception 'representative OpenAI workload configuration is missing';
+  end if;
+
+  perform set_config('request.method', 'POST', true);
+
+  begin
+    perform public.save_openai_workload_configuration_candidate_v1(
+      'preview',
+      'niche_resolution',
+      'gpt-5.4-mini',
+      'none',
+      null,
+      gen_random_uuid(),
+      v_version - 1
+    );
+    raise exception 'representative PostgREST stale conflict did not fail';
+  exception
+    when sqlstate 'PGRST' then
+      get stacked diagnostics
+        v_message = message_text,
+        v_detail = pg_exception_detail,
+        v_sqlstate = returned_sqlstate;
+  end;
+
+  v_message_json := v_message::jsonb;
+  v_detail_json := v_detail::jsonb;
+
+  if v_sqlstate <> 'PGRST'
+     or v_message_json ->> 'code' <> '40001'
+     or v_message_json ->> 'message' <>
+       'openai_workload_configuration_stale_version'
+     or (v_detail_json ->> 'status')::integer <> 409 then
+    raise exception 'representative PostgREST target payload drifted';
+  end if;
+
+  perform set_config('request.method', '', true);
+
+  begin
+    perform public.save_openai_workload_configuration_candidate_v1(
+      'preview',
+      'niche_resolution',
+      'gpt-5.4-mini',
+      'none',
+      null,
+      gen_random_uuid(),
+      v_version - 1
+    );
+    raise exception 'representative direct SQL stale conflict did not fail';
+  exception
+    when sqlstate '40001' then
+      get stacked diagnostics v_message = message_text;
+  end;
+
+  if v_message <> 'openai_workload_configuration_stale_version' then
+    raise exception 'representative direct SQL target message drifted';
+  end if;
+
+  if exists (
+    select 1
+    from public.openai_workload_operational_configurations configuration
+    where configuration.environment = 'preview'
+      and configuration.workload = 'niche_resolution'
+      and (
+        configuration.configuration_version <> v_version
+        or configuration.candidate_model is distinct from v_candidate_model
+        or configuration.candidate_reasoning_effort is distinct from
+          v_candidate_reasoning_effort
+        or configuration.candidate_quality is distinct from v_candidate_quality
+      )
+  ) then
+    raise exception 'representative stale conflict mutated configuration';
+  end if;
+end;
+$integration$;
+
 rollback;
