@@ -51,6 +51,7 @@ Status: rascunho vivo em debate; ainda não consolidado como plano-base v1.
   - uso de IA pela equipe para resolver caso específico de cliente pode ser atribuído à conta quando a relação causal for demonstrável;
   - uso de IA para documentação, melhoria ou suporte compartilhado por vários clientes permanece custo da LP Factory.
 - A classificação técnica existente `product_runtime` versus `operational` não substitui essa dimensão econômica e não deve determinar automaticamente `Cliente/conta` versus `LP Factory`.
+- O próprio workload também não basta para definir a responsabilidade econômica: `landing_page_draft_generation` e `landing_page_draft_image_generation` são custo de cliente quando executados causalmente para uma LP real de conta contratada, mas são custo da LP Factory quando executados como Preview, QA, prova administrativa ou teste.
 
 ### 1.5. Período, atualização e moeda aceitos para o MVP
 
@@ -83,6 +84,7 @@ Status: rascunho vivo em debate; ainda não consolidado como plano-base v1.
 - `docs/platform-config.md` — configuração operacional vigente da OpenAI e secrets por nome.
 - `lib/openai-workloads/contracts.ts`, `lib/openai-workloads/observability.ts` e `lib/openai-workloads/registry.ts` — usage, observabilidade e classificação técnica atuais dos workloads.
 - `lib/lp-builder/generationContextContracts.ts`, `lib/lp-builder/landingPageDraftGeneration.ts`, `lib/lp-builder/landingPageDraftImageGeneration.ts`, `lib/lp-builder/landingPageRevision.ts` e `lib/lp-builder/adapters/landingPageRevisionAdapter.ts` — autoridade e evidências atuais da geração de Landing Page.
+- `lib/onboarding/niche-resolution/adapters/openAiResolver.ts`, `lib/conversion-content/commercial-activation/draft-generation.ts` e `lib/conversion-content/adapters/inputCatalogEvaluationOpenAiAdapter.ts` — contexto causal dos demais workloads de produto atuais.
 
 ### 2.2. Fatos oficiais OpenAI confirmados até aqui
 
@@ -100,6 +102,7 @@ Status: rascunho vivo em debate; ainda não consolidado como plano-base v1.
 
 - `docs/platform-config.md` registra `OPENAI_API_KEY` compartilhada pelos consumidores OpenAI autorizados do Core em Preview e Production.
 - Não existe `OPENAI_ADMIN_KEY` registrada atualmente em `docs/platform-config.md`.
+- A conexão OpenAI Platform disponível no chat cria chaves de projeto, mas não oferece criação de Admin API Key; portanto, eventual `OPENAI_ADMIN_KEY` exigida pela E21.4 dependerá de decisão e setup próprios posteriores.
 - A observabilidade textual atual registra workload, modelo, reasoning effort, ambiente, revisão, request/attempt IDs, tokens, latência e metadados seguros de provider.
 - O contrato transversal atual de evento OpenAI não inclui `accountId` nem `landingPageId` como dimensões de atribuição financeira.
 - O registry atual demonstra que nem todo workload possui a mesma natureza econômica: há geração de Landing Page, onboarding/resolução de nicho, avaliação administrativa por taxon e workload operacional separado do Core.
@@ -107,6 +110,12 @@ Status: rascunho vivo em debate; ainda não consolidado como plano-base v1.
 - Quando uma geração de LP é materializada com sucesso, o snapshot vigente preserva `accountId`, `landingPage.id`, `attemptId`, `requestId`, configuração dos workloads, usage textual e identificador da requisição de imagem. Os custos permanecem `unavailable` no snapshot atual.
 - A materialização só cobre a geração que chegou ao estado persistido. Tentativas que consumiram OpenAI e falharam antes da materialização podem gerar custo sem deixar a mesma evidência histórica por cliente/LP.
 - Consequentemente, o histórico atual pode permitir **atribuição parcial** de algumas gerações de LP bem-sucedidas, especialmente usage textual, mas não demonstra cobertura financeira completa de imagens, falhas e demais workloads.
+- Mapa econômico preliminar dos workloads atuais:
+  - `niche_resolution`: LP Factory no fluxo atual de onboarding/pré-contrato;
+  - `commercial_activation_draft_generation`: LP Factory, por gerar conteúdo comercial administrativo por taxon;
+  - `taxon_input_catalog_sufficiency_evaluation`: LP Factory, por avaliar preparação compartilhada por taxon;
+  - `supabase_inspect`: LP Factory, por ser workload operacional separado do Core;
+  - `landing_page_draft_generation` e `landing_page_draft_image_generation`: Cliente/conta quando executados para LP real contratada; LP Factory quando usados para desenvolvimento, Preview, QA, prova ou teste.
 - Portanto, os dados oficiais da OpenAI, isoladamente, conseguem sustentar totalização/reconciliação por organização/projeto/chave/linha de custo, mas não demonstram por si só qual cliente, LP ou categoria econômica originou cada parcela do custo.
 
 ### 2.4. Conceitos que precisam permanecer distintos
@@ -134,17 +143,17 @@ Status: rascunho vivo em debate; ainda não consolidado como plano-base v1.
 
 ### 3.2. Atribuição por cliente e Landing Page
 
-- Completar o mapa das chamadas OpenAI atuais para classificar a autoridade econômica de cada workload e identificar onde `accountId`, `landingPageId` ou outra autoridade causal já existem no ponto de execução.
+- A atribuição de LP real já possui autoridade causal de `accountId` e `landingPageId` no contexto vigente; a v2 deve definir apenas a menor forma persistente de carregar essa evidência para a visão financeira.
 - Tratar qualquer reconstrução histórica apenas com o grau de cobertura factual realmente demonstrado; histórico parcial não pode ser apresentado como custo completo do cliente ou da LP.
 - Definir na v2 a menor evidência persistente suficiente para capturar também tentativas pagas que falhem antes da materialização, sem antecipar neste rascunho banco, tabela ou mecanismo específico.
-- Determinar como registrar consumos de cliente que não pertençam a uma LP específica e como preservar custos próprios da LP Factory sem rateio artificial entre clientes.
+- Determinar como registrar consumos futuros de cliente que não pertençam a uma LP específica e preservar custos próprios da LP Factory sem rateio artificial entre clientes.
 
 ### 3.3. Fonte oficial e reconciliação
 
 - Confirmar empiricamente o comportamento do Costs API e das APIs de Usage para a organização real antes de definir contrato de leitura.
 - Confirmar se o projeto OpenAI e/ou API key atuais permitem separação útil entre Core, testes, Preview, Production e outros consumidores.
 - Investigar saldo/créditos sem assumir endpoint não documentado; ausência de endpoint oficial adequado não bloqueia a primeira entrega.
-- Decidir se a E21.4 exige uma Admin API Key dedicada e, se sim, somente depois definir plataforma, escopo e regra de segurança dessa credencial.
+- A E21.4 provavelmente exigirá Admin API Key para a leitura oficial de Costs/Usage; a decisão final sobre essa credencial, seu escopo e setup permanece para o fechamento da v1/v2 após validação dos especialistas.
 
 ### 3.4. UX e operação
 
@@ -168,7 +177,7 @@ Status: rascunho vivo em debate; ainda não consolidado como plano-base v1.
 
 ### 4.2. Próxima ação do debate
 
-- Completar o mapa dos workloads e a autoridade causal de atribuição.
-- Confirmar a hierarquia final da UX e a forma de apresentar usage e custo em USD com reconciliação explícita.
+- Confirmar com o humano a hierarquia final da UX, o acesso administrativo e a residência da visão financeira.
+- Confirmar a forma de apresentar usage e custo em USD com reconciliação explícita.
 - Confirmar empiricamente as fontes oficiais da organização real antes de consolidar o plano-base v1.
 - Antes da v1, classificar `Automação: sim | não` para as fases propostas; no MVP atual, a atualização sob demanda não implica automação recorrente.
