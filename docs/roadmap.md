@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 27/08/2026
-• Versão: v1.5.188
+• Versão: v1.5.189
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2696,6 +2696,22 @@ Repositório — Ajustados
   * Validação e handoff congelam fingerprints distintos do conteúdo do draft e da coleção operacional completa; qualquer drift posterior de taxonomia, configurações, LPs ou elegibilidade deixa a evidência stale e exige nova preparação antes da revisão/merge.
   * A visão agregada deve evoluir `/admin/estrutura-lp?view=entradas`; `/admin/taxonomia/[taxonId]` permanece responsável pela avaliação individual E20.6.5. Não criar nova rota de primeiro nível; qualquer proposta de nova rota depende de insuficiência comprovada das superfícies existentes.
   * A primeira entrega preserva histórico imutável, retirada forward-only de fields publicados e snapshots/configurações na versão efetivamente usada; não inclui rollback, múltiplos drafts, targeting por taxon, job, fila, agente, automação recorrente ou engine genérica de diff.
+
+20.2.9 Escopo comercial da LP e reconciliação da identidade
+
+20.2.9.1 Objetivo e status
+
+* Objetivo: substituir a representação singular de oferta por um escopo comercial capaz de expressar uma oferta, um conjunto selecionado ou o portfólio amplo, reconciliando a continuidade da identidade E19.5 sem alterar snapshots históricos.
+* Status: Definida no plano-base v2; implementação pendente na orquestração E20.2.9.
+
+20.2.9.3 Contrato e limites definidos
+
+* Status: Definidos.
+* Conteúdo:
+  * A próxima versão executável preserva v1–v5, introduz `landing_page_offering_scope` e `landing_page_offering_scope_description` e retira os fields singulares somente de forma forward-only.
+  * E20.2 mantém a autoridade de tipo, validação, canonicalização e igualdade material; E19.5 passa a considerar `funnel_stage`, `transaction_intent` quando aplicável e `landing_page_offering_scope` como núcleo de identidade, enquanto `primary_conversion_goal` permanece estratégia obrigatória fora desse núcleo.
+  * A adaptação lazy cobre E19.2 pré-handoff e E19.5 sob o mesmo `C`, sem regravar snapshots, criar residência, schema, migration, ACL ou autoridade paralela.
+  * A nova versão só pode tornar-se atual após os gates E20.2.8 e E20.6 aplicáveis; a configuração mínima dos novos fields não reabre home, detalhe, preview, grupos, A/B, prompt, algoritmo de geração ou renderer.
 
 20.3 Perfil de orientação para geração
 
