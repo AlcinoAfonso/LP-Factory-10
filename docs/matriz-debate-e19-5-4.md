@@ -40,12 +40,13 @@
 | `ID-04` | Camada taxonômica de `transaction_intent` | A IA da E20.6 deve avaliar necessidade/cobertura e sugerir `universal`, `segment`, `niche` ou `ultra_niche`; humano mantém autoridade final e E20.2 materializa o contrato aprovado. | decisão humana aceita | — | — | — | — | pendente |
 | `ID-05` | Critério para IA E20.6 | Ao avaliar necessidade semelhante a `transaction_intent`, não presumir universalidade; recomendar a camada mais alta em que a semântica permaneça válida sem generalização artificial. | proposta de regra a validar | — | — | — | — | pendente |
 | `ID-06` | `primary_conversion_goal` | Não integra o núcleo de identidade. Permanece campo universal e obrigatório da estratégia de conversão da LP, podendo mudar entre versões quando o trabalho comercial continuar o mesmo. | decisão humana aceita | — | — | — | — | pendente |
-| `ID-07` | Oferta/serviço na identidade | O significado comercial de `primary_service_or_offer`, ou do contrato que vier a sucedê-lo, integra a identidade e responde `o que esta landing page vai divulgar?`. Uma mudança apenas de redação ou detalhe pode originar outra LP concreta sem criar outra identidade, desde que preserve o mesmo escopo comercial; mudança material do que será divulgado caracteriza outra identidade. | decisão humana aceita | — | — | — | — | pendente |
+| `ID-07` | Oferta/serviço na identidade | O significado comercial hoje representado por `primary_service_or_offer` integra a identidade e responde `o que esta landing page vai divulgar?`. Uma mudança apenas de redação ou detalhe pode originar outra LP concreta sem criar outra identidade, desde que preserve o mesmo escopo comercial; mudança material do que será divulgado caracteriza outra identidade. | decisão humana aceita | — | — | — | — | pendente |
 | `ID-08` | Resultados desejados dos campos de identidade | Os fields que formam a identidade da LP devem contribuir materialmente para os seis resultados definidos na seção 3.1. | decisão humana aceita | — | — | — | — | pendente |
 | `ID-09` | `primary_conversion_goal` e experimentação | Por não integrar a identidade, `primary_conversion_goal` pode funcionar como variável estratégica experimentável: uma mesma LP pode evoluir entre objetivos em versões sucessivas; LPs concretas distintas também podem testar goals diferentes em um grupo opcional A/B, sem redefinir o conceito de identidade. | decisão humana aceita | — | — | — | — | pendente |
 | `ID-10` | Escopo da oferta da LP | A identidade deve admitir três casos sem presumir que toda LP tenha uma única oferta principal: `uma oferta/serviço`, `um conjunto selecionado de ofertas/serviços` ou `o portfólio amplo do negócio`. Esses escopos podem representar identidades materialmente diferentes mesmo com o mesmo funil e a mesma `transaction_intent`; mais de uma LP concreta pode compartilhar qualquer uma dessas identidades. | decisão humana aceita | — | — | — | — | pendente |
 | `ID-11` | `business_offerings_summary` | O campo vigente continua sendo contexto compartilhado do negócio, livre, opcional e não exaustivo; não integra sozinho a identidade e não funciona como whitelist. Pode informar o universo de ofertas, mas sua forma textual atual não resolve uma seleção estruturada de parte do portfólio. | decisão humana aceita sobre semântica; representação futura aberta | — | — | — | — | pendente |
-| `ID-12` | Núcleo mínimo de identidade | Direção vigente: `funnel_stage` + `transaction_intent` quando aplicável + escopo semântico do que a LP vai divulgar. `primary_conversion_goal` permanece fora do núcleo, como estratégia obrigatória de conversão. Essa identidade pode ser compartilhada por múltiplas LPs concretas. | decisão humana aceita no debate; sujeita à consolidação final | — | — | — | — | pendente |
+| `ID-12` | Núcleo mínimo de identidade | Direção vigente: `funnel_stage` + `transaction_intent` quando aplicável + `landing_page_offering_scope`. `primary_conversion_goal` permanece fora do núcleo, como estratégia obrigatória de conversão. Essa identidade pode ser compartilhada por múltiplas LPs concretas. | decisão humana aceita no debate; sujeita à consolidação final | — | — | — | — | pendente |
+| `ID-13` | Nome do field de escopo da oferta | `landing_page_offering_scope` é o nome técnico aprovado para substituir `primary_service_or_offer` como dimensão de identidade. O field representa o escopo do que a LP vai divulgar, e não presume singularidade. Na UX, a pergunta correspondente é `O que esta landing page vai divulgar?`. | decisão humana aceita | — | — | — | — | pendente |
 | `PL-01` | Starter e simplicidade | Hipótese de produto: Starter pode ter baixa quantidade de LPs e publicação restrita; isso reforça UX simples, mas limites exatos de publicação/LPs não são fixados nesta matriz sem contrato comercial vigente. | hipótese contextual; não contratual | — | — | — | — | pendente |
 | `UX-01` | Resultado do PR #820 | O desenho implementado não deve ser corrigido por remendos antes de fechar o novo modelo mental; QA humano foi reprovado. | decisão humana | — | — | — | — | pendente |
 | `UX-02` | Próximo wireframe | O próximo wireframe deve começar pela visão `Todas as LPs`, uma linha por LP concreta, e somente depois demonstrar a opção `Por grupos`. | direção proposta | — | — | — | — | pendente |
@@ -71,8 +72,7 @@
 
 ### 4.2. Identidade da LP
 
-- Qual deve ser o rótulo final, em linguagem de cliente, para a dimensão hoje representada por `primary_service_or_offer`?
-- Qual é a menor representação necessária para distinguir `uma oferta`, `algumas ofertas` e `todo o portfólio`, sem antecipar estrutura física antes da reconciliação com E20.7/E20.2?
+- Qual é a menor representação necessária para `landing_page_offering_scope` distinguir `uma oferta`, `algumas ofertas` e `todo o portfólio`, sem antecipar estrutura física antes da reconciliação com E20.7/E20.2?
 - O núcleo mínimo indicado em `ID-12` é suficiente para os seis resultados desejados em diferentes nichos?
 
 ### 4.3. E20.6 e E20.2
@@ -80,7 +80,7 @@
 - Qual formulação exata deve entrar nas instruções do workload E20.6 para sugerir camada taxonômica sem generalização artificial?
 - A regra deve ser genérica para qualquer novo field ou existir também uma orientação específica para dimensões de intenção comercial?
 - Como registrar a decisão aprovada na E20.2 sem duplicar autoridade entre E20.2, E20.6 e E19.5?
-- Como evoluir, se necessário, o contrato singular vigente de `primary_service_or_offer` para representar escopo de oferta sem assumir antecipadamente field, lista, tabela, coluna ou outra persistência?
+- Como substituir o contrato singular vigente de `primary_service_or_offer` por `landing_page_offering_scope` sem assumir antecipadamente lista, tabela, coluna ou outra persistência antes de fechar a representação funcional necessária?
 
 ## 5. Critério de encerramento desta matriz
 
