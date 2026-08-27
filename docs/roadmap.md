@@ -2874,7 +2874,7 @@ Repositório — Ajustados
 
 21. E21 — Gestão e governança dos workloads OpenAI
 - Objetivo: gerir e governar os workloads OpenAI por recortes aprovados, com configuração explícita, observabilidade segura, leitura administrativa e configuração operacional dinâmica por ambiente, sem otimização automatizada.
-- Status: a fundação E21.1 permanece preservada; a E21.2, incluindo o catálogo operacional da E21.2.5, está concluída com apply e gates hospedados aprovados; a E21.3 está pausada por repriorização humana antes de incorporação à `main`, e a E21.4 passa a ser a prioridade imediata.
+- Status: a fundação E21.1 permanece preservada; a E21.2, incluindo o catálogo operacional da E21.2.5, está concluída com apply e gates hospedados aprovados; o plano-base v1 da E21.3 já está na `main`, enquanto a implementação experimental da E21.3.3 permaneceu no PR #819, fechado sem merge por repriorização humana; a E21.4 passa a ser a prioridade imediata.
 
 21.1 Fundação, normalização e leitura dos workloads OpenAI
 
@@ -3057,7 +3057,7 @@ Repositório — Ajustados
 
 21.3.1 Objetivo e status
 - Objetivo: produzir comparações reproduzíveis por workload considerando qualidade, sucesso, necessidade de correção humana, usage, latência, custo e estabilidade.
-- Status: Pausada por repriorização humana antes de incorporação à `main`.
+- Status: Pausada por repriorização humana; o plano-base v1 da E21.3 já está na `main`, enquanto a implementação experimental da E21.3.3 permaneceu no PR #819, fechado sem merge.
 - Registrar a E19.4 como primeiro caso real de referência, especificamente:
   - `landing_page_draft_generation`;
   - `landing_page_draft_image_generation`.
