@@ -29,11 +29,13 @@ import { saveOnboardingConfigurationAction } from "../onboarding-configuration-a
 import { saveLandingPageConfigurationAction } from "../landing-pages/[landingPageId]/configuration-actions";
 import { initialOnboardingConfigurationActionState } from "./onboarding-configuration-action-contract";
 import {
+  formatOfferingScopeDraft,
   journeyConditionMatches,
   journeyScopeBelongsToStep,
   type JourneyFormStep,
   parseKeywordMapDraft,
   parseNumberRangeDraft,
+  prepareOfferingScopeDraft,
   prepareJourneyStoredValues,
 } from "./onboarding-journey-policy";
 
@@ -1008,6 +1010,9 @@ function OfferingScopeControl(props: SpecializedControlProps) {
           (item): item is string => typeof item === "string",
         )
       : [];
+  const [offeringsDraft, setOfferingsDraft] = useState(() =>
+    formatOfferingScopeDraft(offerings),
+  );
 
   const update = (nextMode: string, nextOfferings: readonly string[]) => {
     props.onChange({ mode: nextMode, offerings: nextOfferings });
@@ -1054,14 +1059,12 @@ function OfferingScopeControl(props: SpecializedControlProps) {
           aria-invalid={props.invalid}
           aria-required={props.required}
           className="min-h-28"
-          value={offerings.join("\n")}
+          value={offeringsDraft}
           placeholder="Uma oferta por linha"
           onChange={(event) => {
-            const nextOfferings = event.target.value
-              .split("\n")
-              .map((item) => item.trim())
-              .filter(Boolean);
-            update(mode, nextOfferings);
+            const next = prepareOfferingScopeDraft(event.target.value);
+            setOfferingsDraft(next.draft);
+            update(mode, next.offerings);
           }}
         />
       </div>
