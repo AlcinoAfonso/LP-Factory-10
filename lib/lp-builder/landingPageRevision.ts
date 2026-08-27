@@ -3,6 +3,7 @@ import { z } from "zod";
 import {
   landingPagePresentationCandidateSchema,
 } from "../conversion-content/landing-page/presentation";
+import { isLandingPageOfferingScope } from "../conversion-content/landing-page/input-catalog";
 import {
   isValidResolvedOpenAiImageWorkload,
   isValidResolvedOpenAiProductWorkload,
@@ -88,6 +89,7 @@ const inputFactSchema = z.object({
   valueType: z.enum([
     "string", "phone", "email", "url", "enum", "string_list", "boolean",
     "number_range", "keyword_map", "asset_reference", "color_palette",
+    "offering_scope",
   ]),
   value: z.unknown(),
   source: z.enum(["authoritative", "configuration"]),
@@ -542,6 +544,8 @@ function isSnapshotFactValueValid(valueType: string, value: unknown): boolean {
         ["primary", "secondary", "accent", "background", "text"].every(
           (role) => typeof value[role] === "string" && /^#[0-9a-f]{6}$/i.test(value[role] as string),
         );
+    case "offering_scope":
+      return isLandingPageOfferingScope(value);
     default:
       return false;
   }

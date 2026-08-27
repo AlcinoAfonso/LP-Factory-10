@@ -10,7 +10,7 @@ import type {
 import { landingPageInputCatalogRegistry } from "./registry";
 import { resolveLandingPageInputCatalogFromRegistry } from "./resolver";
 
-export const CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION = 5 as const;
+export const CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION = 6 as const;
 
 const currentCatalogEntry = landingPageInputCatalogRegistry[
   CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION
@@ -32,8 +32,7 @@ export const landingPageInputCatalogOperationalPlans = [
 export const landingPageCommercialIdentityFieldKeys = Object.freeze([
   "funnel_stage",
   "transaction_intent",
-  "primary_conversion_goal",
-  "primary_service_or_offer",
+  "landing_page_offering_scope",
 ] as const);
 
 export function collectCommercialIdentityReviewBlockers(

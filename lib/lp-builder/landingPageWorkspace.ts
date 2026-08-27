@@ -3,6 +3,12 @@ import type {
   AccountLandingPageOnboardingStoredValues,
   AccountLandingPageWorkspaceState,
 } from "./contracts";
+import { areLandingPageOfferingScopesMateriallyEqual } from "../conversion-content/landing-page/input-catalog";
+
+export const landingPageWorkspaceIdentityFieldKeys = Object.freeze([
+  "funnel_stage",
+  "transaction_intent",
+] as const);
 
 export function isLandingPageWorkspaceEnabled(): boolean {
   return process.env.E19_5_WORKSPACE_ENABLED === "true";
@@ -50,4 +56,56 @@ export function splitLandingPageWorkspaceValues(
     sharedValues: Object.freeze(sharedValues),
     landingPageValues: Object.freeze(landingPageValues),
   });
+}
+
+export function evaluateLandingPageCommercialIdentityMutation(input: Readonly<{
+  hasRevision: boolean;
+  identityBaselines: ReadonlyMap<string, unknown>;
+  baselineOfferingScope: unknown;
+  currentOfferingScope: unknown;
+  nextValues: AccountLandingPageOnboardingStoredValues;
+  sameCommercialWorkConfirmed: boolean;
+}>):
+  | Readonly<{ ok: true }>
+  | Readonly<{
+      ok: false;
+      error:
+        | "identity_change_requires_new_landing_page"
+        | "offer_change_confirmation_required";
+      fieldKey: string;
+    }> {
+  for (const fieldKey of landingPageWorkspaceIdentityFieldKeys) {
+    const baseline = input.identityBaselines.get(fieldKey);
+    const next = input.nextValues[fieldKey]?.value;
+    if (baseline !== undefined && next !== undefined && !sameJson(baseline, next)) {
+      return {
+        ok: false,
+        error: "identity_change_requires_new_landing_page",
+        fieldKey,
+      };
+    }
+  }
+
+  const nextOfferingScope =
+    input.nextValues.landing_page_offering_scope?.value;
+  if (
+    input.hasRevision &&
+    nextOfferingScope !== undefined &&
+    !areLandingPageOfferingScopesMateriallyEqual(
+      input.currentOfferingScope ?? input.baselineOfferingScope,
+      nextOfferingScope,
+    ) &&
+    !input.sameCommercialWorkConfirmed
+  ) {
+    return {
+      ok: false,
+      error: "offer_change_confirmation_required",
+      fieldKey: "landing_page_offering_scope",
+    };
+  }
+  return { ok: true };
+}
+
+function sameJson(left: unknown, right: unknown): boolean {
+  return JSON.stringify(left) === JSON.stringify(right);
 }

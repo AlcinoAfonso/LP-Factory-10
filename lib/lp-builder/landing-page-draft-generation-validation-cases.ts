@@ -970,6 +970,21 @@ const cases = [
         { fieldKey: "primary_conversion_goal" },
       ];
       assert.equal(validateLandingPageRevisionSnapshot(malformedFacts), false);
+      const validOfferingScope = structuredClone(documents.snapshot) as unknown as {
+        generationContext: { modelContext: { facts: Array<Record<string, unknown>> } };
+      };
+      validOfferingScope.generationContext.modelContext.facts.push({
+        ...validOfferingScope.generationContext.modelContext.facts[0],
+        fieldKey: "landing_page_offering_scope",
+        valueType: "offering_scope",
+        value: { mode: "selected", offerings: ["Oferta A", "Oferta B"] },
+      });
+      assert.equal(validateLandingPageRevisionSnapshot(validOfferingScope), true);
+      validOfferingScope.generationContext.modelContext.facts.at(-1)!.value = {
+        mode: "selected",
+        offerings: ["Oferta A", " oferta a "],
+      };
+      assert.equal(validateLandingPageRevisionSnapshot(validOfferingScope), false);
       const legacyContext = {
         contractVersion: 3,
         identities: {
