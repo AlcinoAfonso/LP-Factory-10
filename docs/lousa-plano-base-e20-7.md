@@ -11,7 +11,9 @@
 - Decisão humana de 27/08/2026: adotar como direção funcional a **Opção A — pesquisa profunda preferencial por nicho e especialização relevante, com fallback dinâmico quando não existir pesquisa profunda especializada**.
 - A decisão da Opção A não autoriza implementação imediata: primeiro deve ser comprovado o valor de uma pesquisa profunda redesenhada para a qualidade da LP.
 - As definições adjacentes do debate E19.5.4 no PR #822 são consumidas somente onde afetam a seleção e a consulta de conhecimento; a E20.7 não redefine identidade da LP, agrupamento, workspace ou representação física de ofertas.
-- Gate 1 concluído em 27/08/2026: o contrato funcional da nova pesquisa profunda está definido na seção 2.7; o próximo gate é criar o novo prompt de Deep Research sem alterar runtime.
+- Gate 1 concluído em 27/08/2026: o contrato funcional da nova pesquisa profunda está definido na seção 2.7.
+- Gate 2 concluído em 27/08/2026: `docs/prompt-nicho-pesquisa-mercado-experimental.md` foi evoluído como prompt experimental de Deep Research aderente ao contrato do Gate 1, preservando `docs/prompt-nicho-pesquisa.md` vigente para comparação controlada.
+- Próximo gate: produzir uma nova pesquisa piloto versionada sem alterar runtime.
 
 ### 1.2. Fontes usadas
 
@@ -25,7 +27,12 @@
 - `docs/lousa-plano-base-e19-5.md` — workspace, configuração contextual por LP, contrato vigente de oferta e separação entre scopes compartilhados e contextuais.
 - PR #822 / `docs/matriz-debate-e19-5-4.md` — fonte adjacente em rascunho para o modelo mental da LP, especialmente `landing_page_offering_scope`, papel de `funnel_stage`, `transaction_intent`, `primary_conversion_goal`, `business_offerings_summary` e os seis resultados desejados de qualidade; não é autoridade executável enquanto permanecer em debate.
 - `docs/pesquisas-brutas/corretor-imoveis/end_customer/v1.md` — primeiro caso real para auditar conteúdo útil, conteúdo prescritivo indevido, temporalidade, evidência e consultabilidade da pesquisa atual.
+- `docs/prompt-nicho-pesquisa.md` — prompt vigente de pesquisa por blocos, preservado como baseline e não substituído pelo Gate 2.
+- `docs/prompt-nicho-pesquisa-mercado-experimental.md` — prompt experimental evoluído no Gate 2 para executar a nova Deep Research independente.
 - `docs/prompt-nicho-arquivamento-pesquisa.md` — contrato vigente de arquivamento/versionamento; preserva o conteúdo recebido e não define o conteúdo metodológico da Deep Research.
+- `docs/template-prompts.md` — contrato outcome-first vigente para prompts do projeto.
+- `docs/template-prompts-gpt-5-6.md` — complemento vigente de prompts GPT-5.6, usado somente como referência metodológica e sem selecionar modelo para a Deep Research do ChatGPT.
+- `.agents/skills/lp-factory-criar-prompt/SKILL.md` — processo vigente para criar prompts, instruções e handoffs não-Codex.
 - `docs/schema.md` — estrutura vigente de `business_taxons`, `account_taxonomy`, `account_landing_page_shared_configurations` e `account_landing_page_configurations`.
 - `lib/conversion-content/landing-page/input-catalog/taxon-chain.ts` — validação executável da cadeia taxonômica.
 - `lib/lp-builder/generationContext.ts`, `lib/lp-builder/generationContextContracts.ts` e `lib/lp-builder/landingPageRevision.ts` — coerência vigente entre taxon servido, pesquisa autorizada, fatos e snapshot.
@@ -190,7 +197,34 @@
 - Fontes e limitações precisam ser auditáveis; precisão falsa ou ausência silenciosa de evidência reprova o resultado.
 - O contrato não cria persistência, runtime, tool, agente, job, automação ou nova autoridade de produto.
 
-### 2.8. Escopo de oferta e LP multi-serviço
+### 2.8. Prompt experimental de Deep Research — Gate 2
+
+#### 2.8.1. Status e artefato
+
+- Status: **Gate 2 concluído em 27/08/2026**.
+- Artefato: `docs/prompt-nicho-pesquisa-mercado-experimental.md`.
+- O artefato experimental existente foi evoluído em vez de criar um terceiro prompt concorrente; `docs/prompt-nicho-pesquisa.md` permanece intacto como baseline vigente.
+- O prompt do Gate 2 é destinado ao Deep Research do ChatGPT e não fixa modelo, API, reasoning effort ou configuração de runtime do LP Factory.
+
+#### 2.8.2. Contratos incorporados
+
+- Resultado outcome-first: conhecimento profundo de mercado, público e comportamento de decisão, não solução de LP.
+- Entrada mínima: taxon/nicho/especialização; `audience_scope = end_customer`; Brasil como mercado prioritário; desambiguação única apenas quando indispensável.
+- Pesquisa multi-fonte com barra explícita de profundidade, resolução de contradições, sinais de segunda ordem e parada quando novas buscas tiverem baixo valor marginal.
+- Hierarquia de fontes adequada ao tipo de achado, incluindo uso controlado de concorrentes, reviews, comunidades e linguagem pública.
+- Distinção `evidência | inferência | hipótese` e `estrutural | semiestável | volátil` para achados materiais.
+- Cobertura integral dos blocos definidos no Gate 1, inclusive dimensões factuais variáveis e sinais temporais candidatos a atualização dinâmica.
+- Exclusão explícita de wireframe, seções, módulos, layout, copy pronta, CTA pronto, on-page SEO prescritivo, fatos de cliente e decisões E20.2.
+- Entrega Markdown em estrutura consistente de 18 blocos, com fontes verificáveis e sem schema/infraestrutura nova.
+- Regras de parada, evidência, validação, critérios de sucesso e concisão compatíveis com `docs/template-prompts.md`.
+
+#### 2.8.3. Casos representativos para o Gate 3
+
+- Caso principal recomendado: `corretor-imoveis`, `audience_scope = end_customer`, porque o projeto já possui pesquisa profunda histórica, LP real gerada e baseline humano de qualidade persuasiva; isso permite comparar a nova pesquisa sem introduzir um nicho novo como variável adicional.
+- Controle conceitual posterior: uma especialização/ultranicho real, para verificar se o prompt produz relatório autossuficiente no escopo e não depende de composição com pesquisa ancestral.
+- O Gate 2 não executa a Deep Research nem promove a nova pesquisa; isso pertence ao Gate 3.
+
+### 2.9. Escopo de oferta e LP multi-serviço
 
 - A UX não deve exigir que o cliente compreenda `taxon`, `ultranicho`, E20.2, E20.5 ou E20.6; a pergunta de produto adotada no debate E19.5.4 é `O que esta landing page vai divulgar?`.
 - A E20.7 adota os três escopos conceituais definidos no debate E19.5.4 exclusivamente para orientar a seleção/consulta do conhecimento: uma oferta/serviço, um conjunto selecionado ou o portfólio amplo.
@@ -226,8 +260,8 @@
 ### 3.3. Ordem obrigatória antes da implementação da Opção A
 
 - **Gate 1 — contrato ideal da pesquisa profunda: CONCLUÍDO em 27/08/2026.** O contrato da seção 2.7 define objetivo, blocos de conhecimento, evidência/temporalidade, reuso/especialização, exclusões, consultabilidade e critérios de aceite sem alterar runtime.
-- **Gate 2 — criar o novo prompt de Deep Research: PRÓXIMO.** Produzir prompt próprio a partir do contrato fechado no Gate 1; o prompt não deve reconstruir wireframe, seções ou composição da LP como obrigação da pesquisa.
-- **Gate 3 — produzir nova pesquisa piloto:** gerar uma nova versão de pesquisa profunda para um caso real já atendido pelo projeto, preservando a pesquisa anterior para comparação.
+- **Gate 2 — criar o novo prompt de Deep Research: CONCLUÍDO em 27/08/2026.** O prompt experimental `docs/prompt-nicho-pesquisa-mercado-experimental.md` foi evoluído conforme a seção 2.8, preservando o baseline vigente.
+- **Gate 3 — produzir nova pesquisa piloto: PRÓXIMO.** Usar como caso principal `corretor-imoveis`, gerar nova pesquisa profunda com o prompt experimental e preservar a pesquisa anterior para comparação.
 - **Gate 4 — gerar LP comparável:** usar a nova pesquisa piloto no pipeline controlado, sem misturar simultaneamente outras grandes mudanças de geração que impeçam atribuir o efeito observado.
 - **Gate 5 — comparar qualidade, custo e latência:** usar como régua de produto os seis resultados desejados registrados na seção 3.1 da matriz de debate E19.5.4 do PR #822 e complementar a prova com factualidade, correção humana necessária, tokens, custo, latência e estabilidade; evitar criar uma segunda régua paralela de qualidade na E20.7.
 - **Gate 6 — decidir o desenho técnico do fallback dinâmico:** somente após comprovar o valor da nova pesquisa profunda, definir onde a pesquisa dinâmica ocorre, quando é acionada, quais limites/ferramentas/fontes usa e como sua proveniência entra no snapshot.
@@ -261,8 +295,8 @@
 
 ### 5.1. Debate pendente
 
-- Gate 2: criar o novo prompt de Deep Research a partir do contrato fechado na seção 2.7, preservando as fontes, evidência, temporalidade, exclusões e densidade informacional definidas no Gate 1.
-- Definir a pesquisa piloto e o método de comparação do Gate 5 sem alterar simultaneamente outras variáveis relevantes da geração.
+- Gate 3: executar a nova Deep Research para `corretor-imoveis` com `docs/prompt-nicho-pesquisa-mercado-experimental.md`, arquivar como nova versão sem sobrescrever a pesquisa vigente e preservar metadados/fontes necessários à comparação.
+- Definir o método de comparação do Gate 5 sem alterar simultaneamente outras variáveis relevantes da geração.
 - Definir como o sistema associa um `landing_page_offering_scope` de uma oferta única a uma pesquisa profunda descendente existente, preservando confirmação/autoridade adequada e sem transformar texto livre, `business_offerings_summary` ou nome da LP em vínculo taxonômico automático.
 - Definir como a consulta da pesquisa profunda recebe `funnel_stage` e `transaction_intent` aplicável sem criar pesquisa separada por combinação nem antecipar decisões narrativas do workload de geração.
 - Definir o fallback dinâmico: gatilho, escopo, profundidade, fontes, limites, timeout, custo, observabilidade, snapshot e comportamento diante de falha.
