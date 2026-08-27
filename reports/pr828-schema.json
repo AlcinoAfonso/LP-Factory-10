@@ -1,0 +1,40 @@
+{
+  "meta": {
+    "datetime": "27/08/2026 18:30",
+    "origin": "PR 828 — revisão técnica independente",
+    "scope": "documentacao",
+    "execution_mode": "github_actions",
+    "target_doc": "docs/schema.md",
+    "warnings": []
+  },
+  "ops": [
+    {
+      "op": "replace_section",
+      "doc_path": "docs/schema.md",
+      "target": "0.1",
+      "mode": "shallow",
+      "content": "0.1 Cabeçalho\n• Data da última atualização: 27/08/2026\n• Documento: LP Factory 10 — Schema (DB Contract) v1.0.58\n\n"
+    },
+    {
+      "op": "insert_after_section",
+      "doc_path": "docs/schema.md",
+      "anchor": "3.8.4",
+      "content": "3.9 Conflitos de domínio seguros na Data API\n3.9.1 Helper transversal\n• `raise_postgrest_safe_conflict_v1(text) → void`: SECURITY INVOKER, stable, owner postgres e search_path fixado em pg_catalog.\n• EXECUTE direto exclusivo de service_role; public, anon, authenticated e ai_readonly sem EXECUTE.\n• Em requisição PostgREST identificada por `request.method`, levanta SQLSTATE real `PGRST`, HTTP 409 e corpo JSON com `code = 40001`, mensagem preservada e details/hint nulos.\n• Em chamada SQL direta, preserva SQLSTATE 40001 para manter testes transacionais e a semântica de rollback.\n\n3.9.2 Regra e cobertura\n• Conflito conhecido de versão ou revisão é terminal para a tentativa atual e exige releitura ou recarregamento; repetir a mesma entrada stale não é autorizado.\n• RPC ou function de domínio exposta à Data API não deve levantar diretamente SQLSTATE 40001; deve usar o helper transversal.\n• A migration `supabase/migrations/20260827203000_postgrest_safe_application_conflicts.sql` cobre as onze funções ativas que usavam 40001 como erro de domínio, sem alterar assinaturas, retornos, locks, search_path, ownership, segurança ou ACLs.\n• Teste transacional: `supabase/tests/postgrest_safe_application_conflicts.test.sql`.\n• Verificador read-only: `supabase/snippets/postgrest_safe_application_conflicts_verify.sql`.\n• Estado no PR corretivo: repo-only; apply remoto reservado ao workflow canônico após merge humano.\n\n"
+    },
+    {
+      "op": "insert_after_heading",
+      "doc_path": "docs/schema.md",
+      "heading": "99. Changelog",
+      "content": "v1.0.58 (27/08/2026) — Conflitos de domínio seguros para PostgREST\n• Versionado `raise_postgrest_safe_conflict_v1(text)` para transportar conflitos conhecidos como `PGRST`/HTTP 409 pela Data API, preservando `code = 40001` no corpo.\n• Corrigidas as onze RPCs/functions ativas que usavam 40001 como erro de domínio; chamadas SQL diretas preservam 40001 para testes transacionais.\n• Registrados migration, teste transacional e verificador read-only do corretivo; apply remoto permanece pós-merge pelo workflow canônico.\n\n"
+    }
+  ],
+  "rules": {
+    "fail_if_anchor_missing": true,
+    "fail_if_target_missing": true,
+    "fail_if_section_already_exists_on_insert": true,
+    "fail_if_ambiguous_match": true,
+    "no_renumber": true,
+    "no_reformat": true,
+    "no_out_of_scope_changes": true
+  }
+}
