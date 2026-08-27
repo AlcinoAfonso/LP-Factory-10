@@ -33,11 +33,10 @@ jobs:
           node-version: "20"
 
       - name: Apply canonical documentation report
-        working-directory: automations/docs-apply-report
         run: |
-          npm ci
-          npm run check
-          npm run start -- "${GITHUB_WORKSPACE}/reports/pr828-schema.json"
+          npm ci --prefix automations/docs-apply-report
+          npm run check --prefix automations/docs-apply-report
+          node automations/docs-apply-report/run.mjs "${GITHUB_WORKSPACE}/reports/pr828-schema.json"
 
       - name: Remove transient execution files
         run: |
