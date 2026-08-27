@@ -12,6 +12,7 @@ Pesquise o seguinte nicho ou especialização:
 
 - Priorize o mercado brasileiro e o cliente final.
 - Se o termo estiver materialmente ambíguo, faça apenas uma pergunta curta para esclarecer antes de pesquisar.
+- Não estreite por conta própria o escopo informado; cubra os principais submercados e situações materialmente relevantes e explicite qualquer exclusão necessária.
 
 ## 3. Objetivo
 
