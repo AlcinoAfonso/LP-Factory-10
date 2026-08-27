@@ -898,7 +898,7 @@ const cases: Case[] = [
 
       for (const value of [
         { mode: "single", offerings: [" Oferta fora de qualquer catálogo "] },
-        { mode: "multiple", offerings: ["Oferta A", "Oferta A", "Outra oferta livre"] },
+        { mode: "multiple", offerings: ["Oferta A", "Outra oferta livre"] },
         { mode: "portfolio", offerings: ["Portfólio informado livremente"] },
       ]) {
         assert.equal(validateLandingPageInputValue(field, value).ok, true);
@@ -910,6 +910,7 @@ const cases: Case[] = [
         { mode: "multiple", offerings: ["A"] },
         { mode: "portfolio", offerings: [] },
         { mode: "selected", offerings: ["A", "B"] },
+        { mode: "multiple", offerings: ["Oferta A", " oferta a "] },
         { mode: "multiple", offerings: ["A", " "] },
         { mode: "single", offerings: ["A"], extra: true },
       ]) {
@@ -931,6 +932,13 @@ const cases: Case[] = [
           { mode: "multiple", offerings: ["oferta b", "oferta a"] },
         ),
         true,
+      );
+      assert.equal(
+        areLandingPageOfferingScopesMateriallyEqual(
+          { mode: "multiple", offerings: ["Oferta A", " oferta a "] },
+          { mode: "multiple", offerings: ["Oferta A", "Oferta B"] },
+        ),
+        false,
       );
       assert.equal(CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION, 5);
       assert.deepEqual(listLandingPageInputCatalogVersions(), [1, 2, 3, 4, 5]);

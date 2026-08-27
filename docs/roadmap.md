@@ -2710,7 +2710,7 @@ Repositório — Ajustados
 * Conteúdo:
   * Mantém `CURRENT=5`, registry publicado v1–v5 e toda operação do cliente em v5.
   * Adiciona ao contrato E20.2 o value type administrativo `offering_scope`, com modos técnicos `single | multiple | portfolio` e rótulos futuros `Uma oferta | Algumas ofertas | Todo o portfólio`.
-  * `offerings` permanece entrada livre: não é validado semanticamente, restringido ou derivado de `business_offerings_summary`, que continua opcional, não exaustivo e sem função de catálogo ou whitelist.
+  * `offerings` permanece entrada livre: não é validado semanticamente, restringido ou derivado de `business_offerings_summary`, que continua opcional, não exaustivo e sem função de catálogo ou whitelist; após `trim`, a lista rejeita duplicidades case-insensitive e exige uma oferta distinta em `single`, pelo menos duas em `multiple` e pelo menos uma em `portfolio`.
   * O resolver usado pelo gate E20.2.8 projeta em memória os dois fields v5 para os dois fields futuros somente quando valida um registry candidato que os retire, canonicaliza e falha fechado para legado malformado, sem persistência.
   * O Admin recebe somente o reconhecimento mínimo do novo value type para visualizar/avaliar draft; não há registry v6 publicado, nova identidade E19.5, UI operacional do cliente, geração/snapshots v6, migration, DDL, ACL ou nova residência.
 

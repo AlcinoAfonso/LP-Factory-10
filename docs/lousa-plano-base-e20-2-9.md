@@ -70,11 +70,12 @@
   - portfólio amplo: `{ mode: "portfolio", offerings: ["Implante dentário", "Clareamento", "Ortodontia"] }`.
 - Regras determinísticas:
   - `mode` admite somente `single | multiple | portfolio`;
-  - `offerings` é entrada humana livre, representada como lista não vazia de strings não vazias; seu conteúdo não é validado, restringido ou derivado de `business_offerings_summary`, taxon, pesquisa ou qualquer catálogo/whitelist;
+  - `offerings` é entrada humana livre, representada como lista não vazia de strings não vazias; seu conteúdo factual não é validado, restringido ou derivado de `business_offerings_summary`, taxon, pesquisa ou qualquer catálogo/whitelist;
+  - após `trim`, itens iguais em comparação case-insensitive são duplicidade inválida;
   - `business_offerings_summary` permanece contexto opcional, não exaustivo e sem autoridade sobre os itens informados em `offerings`;
-  - `single` exige exatamente um item;
-  - `multiple` exige pelo menos dois itens;
-  - `portfolio` exige pelo menos um item e representa a declaração humana de que a lista corresponde ao portfólio abrangido pela LP naquele momento;
+  - `single` exige exatamente uma oferta distinta;
+  - `multiple` exige pelo menos duas ofertas distintas;
+  - `portfolio` exige pelo menos uma oferta distinta e representa a declaração humana de que a lista corresponde ao portfólio abrangido pela LP naquele momento;
   - não fixar máximo arbitrário de itens sem evidência de produto.
 - O valor factual da lista pode evoluir sem criar automaticamente nova identidade. Mudança material do escopo continua sendo decisão semântica humana conforme a seção 2.2.
 
@@ -118,7 +119,7 @@
   - Etapa 1: adicionar somente o reconhecimento administrativo mínimo do value type para visualizar/avaliar o draft, sem UI operacional, save v6, geração ou snapshot;
   - Etapa 2: materializar o draft v6, executar gates E20.2.8/E20.6, reconciliar a identidade E19.5 e somente depois publicar registry v6 e `CURRENT=6`.
 - Validação:
-  - Etapa 1: validar schema/parser, os três modos, conteúdo livre sem relação com `business_offerings_summary`, canonicalização, rejeição de `selected` e falha fechada para shape inválido;
+  - Etapa 1: validar schema/parser, os três modos, conteúdo livre sem relação com `business_offerings_summary`, canonicalização, unicidade case-insensitive após `trim`, rejeição de `selected` e falha fechada para shape inválido;
   - Etapa 1: provar que `CURRENT=5`, versões publicadas v1–v5 e resolução operacional do cliente v5 permanecem inalterados;
   - Etapa 1: provar no gate operacional E20.2.8 que uma candidata sintética v6 aceita configuração v5 válida pela projeção read-only e rejeita legado malformado, sem write;
   - Etapa 2: validar registry/resolver v6, save/reload canônico, handoff E19.5, identidade, geração, snapshots e publicação.
@@ -184,7 +185,7 @@
   - permitir que o lifecycle E20.2.8 visualize e valide com segurança uma futura candidata v6 sobre configurações v5, sem antecipar publicação ou operação v6.
 - Entrega executável:
   - novo value type `offering_scope` no contrato E20.2;
-  - parser/canonicalizador com `single | multiple | portfolio` e `offerings` livre, sem catálogo ou derivação;
+  - parser/canonicalizador com `single | multiple | portfolio`, `offerings` livre sem catálogo ou derivação e unicidade case-insensitive após `trim`;
   - projeção read-only dos dois fields v5 para os dois fields futuros quando o resolver recebe registry candidato compatível;
   - falha fechada para legado malformado e regressão no gate operacional E20.2.8;
   - reconhecimento administrativo mínimo do value type;
@@ -193,7 +194,7 @@
   - `CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION === 5`, lista publicada `[1,2,3,4,5]` e resolução operacional v5 preservadas;
   - nenhum arquivo de registry, lifecycle, geração, snapshot, UI operacional, migration ou SQL é alterado;
   - candidata sintética v6 passa com configuração v5 válida por projeção somente em memória e falha fechada para legado malformado;
-  - `selected` é rejeitado; `multiple` é aceito; conteúdo livre, inclusive repetido, não é confrontado com `business_offerings_summary`;
+  - `selected` é rejeitado; `multiple` é aceito; o conteúdo livre não é confrontado com `business_offerings_summary`, mas duplicidades após `trim` e comparação case-insensitive são rejeitadas;
   - o diff não contém write, DDL, migration, ACL, nova residence, identidade E19.5 ou publicação v6;
   - `npm ci`, `npm run check` e validações focais aplicáveis passam antes do gate de merge da implementação.
 - Próxima ação:

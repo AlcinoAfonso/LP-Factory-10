@@ -33,11 +33,16 @@ export function parseLandingPageOfferingScope(
   }
 
   const offerings: string[] = [];
+  const normalizedOfferings = new Set<string>();
   for (const item of input.offerings) {
     if (typeof item !== "string" || item.trim().length === 0) {
       return { ok: false };
     }
-    offerings.push(item.trim());
+    const canonical = item.trim();
+    const normalized = normalizeComparable(canonical);
+    if (normalizedOfferings.has(normalized)) return { ok: false };
+    normalizedOfferings.add(normalized);
+    offerings.push(canonical);
   }
 
   if (
@@ -80,20 +85,19 @@ export function areLandingPageOfferingScopesMateriallyEqual(
   const parsedRight = parseLandingPageOfferingScope(right);
   if (!parsedLeft.ok || !parsedRight.ok) return false;
   if (parsedLeft.value.mode !== parsedRight.value.mode) return false;
-  return sameNormalizedMultiset(
+  return sameNormalizedSet(
     parsedLeft.value.offerings,
     parsedRight.value.offerings,
   );
 }
 
-function sameNormalizedMultiset(
+function sameNormalizedSet(
   left: readonly string[],
   right: readonly string[],
 ) {
   if (left.length !== right.length) return false;
-  const normalizedLeft = left.map(normalizeComparable).sort();
-  const normalizedRight = right.map(normalizeComparable).sort();
-  return normalizedLeft.every((item, index) => item === normalizedRight[index]);
+  const normalizedRight = new Set(right.map(normalizeComparable));
+  return left.every((item) => normalizedRight.has(normalizeComparable(item)));
 }
 
 function normalizeComparable(value: string) {
