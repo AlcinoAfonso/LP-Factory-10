@@ -82,15 +82,17 @@ Status: rascunho vivo em debate; ainda não consolidado como plano-base v1.
 - `docs/template-roadmap.md` — hierarquia do recorte.
 - `docs/platform-config.md` — configuração operacional vigente da OpenAI e secrets por nome.
 - `lib/openai-workloads/contracts.ts`, `lib/openai-workloads/observability.ts` e `lib/openai-workloads/registry.ts` — usage, observabilidade e classificação técnica atuais dos workloads.
+- `lib/lp-builder/generationContextContracts.ts`, `lib/lp-builder/landingPageDraftGeneration.ts`, `lib/lp-builder/landingPageDraftImageGeneration.ts`, `lib/lp-builder/landingPageRevision.ts` e `lib/lp-builder/adapters/landingPageRevisionAdapter.ts` — autoridade e evidências atuais da geração de Landing Page.
 
 ### 2.2. Fatos oficiais OpenAI confirmados até aqui
 
 - A OpenAI expõe `GET /organization/costs` para custos da organização por período. A API aceita agrupamento por `project_id`, `line_item` e `api_key_id` e usa Admin API Key (`OPENAI_ADMIN_KEY`).
-- A OpenAI expõe APIs de usage por modalidade, incluindo completions e images. Em completions, o usage pode ser agrupado por `project_id`, `user_id`, `api_key_id`, `model`, `batch` e `service_tier`.
+- A OpenAI expõe APIs de usage por modalidade. Completions pode ser agrupado por `project_id`, `user_id`, `api_key_id`, `model`, `batch` e `service_tier`; images expõe número de imagens e requisições e pode ser agrupado por `project_id`, `user_id`, `api_key_id`, `model`, `size` e `source`.
 - A documentação oficial de billing pré-pago confirma que o saldo de créditos existe e é exibido no Billing da plataforma, mas até este ponto do debate não foi confirmada uma API pública oficial equivalente ao Costs API para consultar programaticamente o saldo disponível.
 - Fontes oficiais consultadas:
   - `https://developers.openai.com/api/reference/python/resources/admin/subresources/organization/subresources/usage/methods/costs`
   - `https://developers.openai.com/api/reference/python/resources/admin/subresources/organization/subresources/usage/methods/completions`
+  - `https://developers.openai.com/api/reference/python/resources/admin/subresources/organization/subresources/usage/methods/images`
   - `https://developers.openai.com/api/reference/python/resources/admin/subresources/organization/subresources/admin_api_keys`
   - `https://help.openai.com/en/articles/8264644-setting-up-and-managing-prepaid-api-billing`
 
@@ -101,6 +103,10 @@ Status: rascunho vivo em debate; ainda não consolidado como plano-base v1.
 - A observabilidade textual atual registra workload, modelo, reasoning effort, ambiente, revisão, request/attempt IDs, tokens, latência e metadados seguros de provider.
 - O contrato transversal atual de evento OpenAI não inclui `accountId` nem `landingPageId` como dimensões de atribuição financeira.
 - O registry atual demonstra que nem todo workload possui a mesma natureza econômica: há geração de Landing Page, onboarding/resolução de nicho, avaliação administrativa por taxon e workload operacional separado do Core.
+- A geração de Landing Page já recebe contexto autorizado v4 com `accountId` e `landingPage.id`; portanto, nesses workloads a origem cliente/LP existe no ponto de execução e não precisa ser inferida por heurística.
+- Quando uma geração de LP é materializada com sucesso, o snapshot vigente preserva `accountId`, `landingPage.id`, `attemptId`, `requestId`, configuração dos workloads, usage textual e identificador da requisição de imagem. Os custos permanecem `unavailable` no snapshot atual.
+- A materialização só cobre a geração que chegou ao estado persistido. Tentativas que consumiram OpenAI e falharam antes da materialização podem gerar custo sem deixar a mesma evidência histórica por cliente/LP.
+- Consequentemente, o histórico atual pode permitir **atribuição parcial** de algumas gerações de LP bem-sucedidas, especialmente usage textual, mas não demonstra cobertura financeira completa de imagens, falhas e demais workloads.
 - Portanto, os dados oficiais da OpenAI, isoladamente, conseguem sustentar totalização/reconciliação por organização/projeto/chave/linha de custo, mas não demonstram por si só qual cliente, LP ou categoria econômica originou cada parcela do custo.
 
 ### 2.4. Conceitos que precisam permanecer distintos
@@ -128,8 +134,9 @@ Status: rascunho vivo em debate; ainda não consolidado como plano-base v1.
 
 ### 3.2. Atribuição por cliente e Landing Page
 
-- Investigar quais chamadas OpenAI atuais possuem, no ponto de execução, autoridade suficiente para associar com segurança categoria econômica, `accountId`, `landingPageId` e workload.
-- Determinar se alguma atribuição histórica confiável é possível com dados já existentes ou se a atribuição por cliente/LP será necessariamente prospectiva a partir da E21.4.
+- Completar o mapa das chamadas OpenAI atuais para classificar a autoridade econômica de cada workload e identificar onde `accountId`, `landingPageId` ou outra autoridade causal já existem no ponto de execução.
+- Tratar qualquer reconstrução histórica apenas com o grau de cobertura factual realmente demonstrado; histórico parcial não pode ser apresentado como custo completo do cliente ou da LP.
+- Definir na v2 a menor evidência persistente suficiente para capturar também tentativas pagas que falhem antes da materialização, sem antecipar neste rascunho banco, tabela ou mecanismo específico.
 - Determinar como registrar consumos de cliente que não pertençam a uma LP específica e como preservar custos próprios da LP Factory sem rateio artificial entre clientes.
 
 ### 3.3. Fonte oficial e reconciliação
@@ -157,9 +164,11 @@ Status: rascunho vivo em debate; ainda não consolidado como plano-base v1.
 - Não ratear custos próprios da LP Factory entre clientes apenas para eliminar a categoria `LP Factory` ou o saldo `Não atribuído`.
 - Não introduzir conversão para BRL, cotação cambial, spread ou IOF no MVP.
 - Não bloquear o MVP pela ausência de leitura automática de saldo/créditos, desde que essa limitação seja explicitada.
+- Não apresentar reconstrução histórica parcial como se fosse cobertura integral do custo.
 
 ### 4.2. Próxima ação do debate
 
-- Investigar a atribuição técnica por categoria econômica, cliente/conta, Landing Page e workload e a fonte real de billing da organização antes de consolidar o plano-base v1.
+- Completar o mapa dos workloads e a autoridade causal de atribuição.
 - Confirmar a hierarquia final da UX e a forma de apresentar usage e custo em USD com reconciliação explícita.
+- Confirmar empiricamente as fontes oficiais da organização real antes de consolidar o plano-base v1.
 - Antes da v1, classificar `Automação: sim | não` para as fases propostas; no MVP atual, a atualização sob demanda não implica automação recorrente.
