@@ -36,6 +36,10 @@ import {
   createNextLandingPageInputCatalogDraft,
   validateLandingPageInputCatalogDraft,
 } from "./draft";
+import {
+  areLandingPageOfferingScopesMateriallyEqual,
+  parseLandingPageOfferingScope,
+} from "./offering-scope";
 
 type Case = Readonly<{ name: string; run: () => void }>;
 
@@ -877,6 +881,59 @@ const cases: Case[] = [
         field.validation = { kind: "type_only" };
       });
       assertRegistryError(baseInput, invalidKeywordMap, "INVALID_PAID_SEARCH_KEYWORD_MAP");
+    },
+  },
+  {
+    name: "offering scope bootstrap recognizes free input without publishing v6",
+    run: () => {
+      const field = {
+        ...fixtureField("landing_page_offering_scope"),
+        valueType: "offering_scope",
+        valueScope: "landing_page",
+        expectedValueOrigin: "landing_page_provided",
+        validation: { kind: "offering_scope" },
+        landingPageSubstitutionPolicy: "not_applicable",
+        createdInVersion: 6,
+      } as const satisfies LandingPageInputFieldDefinition;
+
+      for (const value of [
+        { mode: "single", offerings: [" Oferta fora de qualquer catálogo "] },
+        { mode: "multiple", offerings: ["Oferta A", "Oferta A", "Outra oferta livre"] },
+        { mode: "portfolio", offerings: ["Portfólio informado livremente"] },
+      ]) {
+        assert.equal(validateLandingPageInputValue(field, value).ok, true);
+        assert.equal(parseLandingPageOfferingScope(value).ok, true);
+      }
+      for (const value of [
+        { mode: "single", offerings: [] },
+        { mode: "single", offerings: ["A", "B"] },
+        { mode: "multiple", offerings: ["A"] },
+        { mode: "portfolio", offerings: [] },
+        { mode: "selected", offerings: ["A", "B"] },
+        { mode: "multiple", offerings: ["A", " "] },
+        { mode: "single", offerings: ["A"], extra: true },
+      ]) {
+        assert.equal(validateLandingPageInputValue(field, value).ok, false);
+      }
+      assert.deepEqual(
+        parseLandingPageOfferingScope({
+          mode: "multiple",
+          offerings: [" Oferta B ", "oferta a"],
+        }),
+        {
+          ok: true,
+          value: { mode: "multiple", offerings: ["Oferta B", "oferta a"] },
+        },
+      );
+      assert.equal(
+        areLandingPageOfferingScopesMateriallyEqual(
+          { mode: "multiple", offerings: [" Oferta A ", "Oferta B"] },
+          { mode: "multiple", offerings: ["oferta b", "oferta a"] },
+        ),
+        true,
+      );
+      assert.equal(CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION, 5);
+      assert.deepEqual(listLandingPageInputCatalogVersions(), [1, 2, 3, 4, 5]);
     },
   },
   {

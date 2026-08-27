@@ -13,6 +13,9 @@ import {
   realEstateBrokerNicheTaxon,
   realEstateSegmentTaxon,
   validateLandingPageInputCatalogDraft,
+  type LandingPageInputCatalogLayerEntry,
+  type LandingPageInputCatalogRegistryEntry,
+  type LandingPageInputFieldDefinition,
 } from "../../../../lib/conversion-content/landing-page/input-catalog";
 import { deriveEffectiveTaxonPreparation } from "../../../../lib/conversion-content/landing-page/taxon-preparation";
 
@@ -57,6 +60,8 @@ const packageJson = readFileSync(new URL("../../../../package.json", import.meta
 assert.match(page, /allowedValues\.map\(inputOptionLabel\)/);
 assert.match(page, /rent:\s*"Locação"/);
 assert.match(page, /return labels\[value\] \?\? humanize\(value\)/);
+assert.match(page, /offering_scope:\s*"Escopo de ofertas"/);
+assert.match(page, /landing_page_offering_scope:\s*"Escopo comercial da landing page"/);
 assert.doesNotMatch(page, /rent:\s*"rent"/);
 assert.doesNotMatch(page, /Módulos e variantes|ModuleView|module-catalog/);
 assert.doesNotMatch(adapter, /"modulos"|module-catalog|readModules/);
@@ -179,6 +184,50 @@ assert.equal(
   ]),
   1,
 );
+const offeringScopeCandidate = validateLandingPageInputCatalogDraft({
+  draft: offeringScopeDraft(),
+  taxons: [
+    { identity: realEstateSegmentTaxon, reviewedVersion: 5, operational: false },
+    { identity: realEstateBrokerNicheTaxon, reviewedVersion: 5, operational: true },
+  ],
+});
+assert.equal(offeringScopeCandidate.ok, true);
+if (!offeringScopeCandidate.ok) {
+  throw new Error("Expected offering-scope draft candidate");
+}
+const legacyOfferingConfiguration = {
+  ...preHandoffBase,
+  storedValues: {
+    primary_service_or_offer: {
+      scope: "offer" as const,
+      value: "Oferta livre da configuração v5",
+    },
+    primary_service_or_offer_description: {
+      scope: "offer" as const,
+      value: "Descrição factual legada",
+    },
+  },
+};
+assert.equal(
+  countInvalidInputCatalogOperationalConfigurations(
+    offeringScopeCandidate.value,
+    [legacyOfferingConfiguration],
+  ),
+  0,
+);
+assert.equal(
+  countInvalidInputCatalogOperationalConfigurations(
+    offeringScopeCandidate.value,
+    [{
+      ...legacyOfferingConfiguration,
+      storedValues: {
+        ...legacyOfferingConfiguration.storedValues,
+        primary_service_or_offer: { scope: "offer", value: "   " },
+      },
+    }],
+  ),
+  1,
+);
 const operationalContext = {
   taxons: [
     { identity: realEstateSegmentTaxon, reviewedVersion: 5, selectedResearchVersion: 1, operational: false },
@@ -299,3 +348,66 @@ void validateBehavioralContracts().catch((error: unknown) => {
   console.error(error);
   process.exitCode = 1;
 });
+
+function offeringScopeDraft(): LandingPageInputCatalogRegistryEntry {
+  const draft = JSON.parse(
+    JSON.stringify(createNextLandingPageInputCatalogDraft()),
+  ) as LandingPageInputCatalogRegistryEntry;
+  const entries = draft.universal.entries as LandingPageInputCatalogLayerEntry[];
+  for (const fieldKey of [
+    "primary_service_or_offer",
+    "primary_service_or_offer_description",
+  ]) {
+    const field = entries.find(
+      (entry) => entry.kind === "field" && entry.fieldKey === fieldKey,
+    );
+    assert.ok(field?.kind === "field");
+    (field as LandingPageInputFieldDefinition & { retiredInVersion?: number })
+      .retiredInVersion = 6;
+  }
+  entries.push(
+    offeringScopeField(),
+    {
+      kind: "field",
+      fieldKey: "landing_page_offering_scope_description",
+      purpose: "Descrever factualmente o escopo comercial da landing page.",
+      originLayer: "universal",
+      valueType: "string",
+      valueScope: "landing_page",
+      expectedValueOrigin: "landing_page_provided",
+      obligation: "required",
+      validation: { kind: "type_only" },
+      allowedPlans: ["starter", "lite", "pro", "ultra"],
+      snapshotPolicy: "include_if_used",
+      landingPageSubstitutionPolicy: "not_applicable",
+      evidence: {
+        summary: "Fixture da decisão humana E20.2.9.",
+        references: ["decision:e20-2-human"],
+      },
+      createdInVersion: 6,
+    },
+  );
+  return draft;
+}
+
+function offeringScopeField(): LandingPageInputFieldDefinition {
+  return {
+    kind: "field",
+    fieldKey: "landing_page_offering_scope",
+    purpose: "Representar o escopo comercial informado livremente para a landing page.",
+    originLayer: "universal",
+    valueType: "offering_scope",
+    valueScope: "landing_page",
+    expectedValueOrigin: "landing_page_provided",
+    obligation: "required",
+    validation: { kind: "offering_scope" },
+    allowedPlans: ["starter", "lite", "pro", "ultra"],
+    snapshotPolicy: "include_if_used",
+    landingPageSubstitutionPolicy: "not_applicable",
+    evidence: {
+      summary: "Fixture da decisão humana E20.2.9.",
+      references: ["decision:e20-2-human"],
+    },
+    createdInVersion: 6,
+  };
+}

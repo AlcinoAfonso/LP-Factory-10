@@ -7,6 +7,7 @@ import {
   type LandingPageInputFieldDefinition,
   type LandingPageInputValueValidationResult,
 } from "./contracts";
+import { isLandingPageOfferingScope } from "./offering-scope";
 
 const nonEmptyText = z.string().trim().min(1);
 const fieldKeySchema = z.string().regex(/^[a-z][a-z0-9_]*$/);
@@ -115,6 +116,7 @@ const validationSchema = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("keyword_map") }).strict(),
   z.object({ kind: z.literal("asset_reference") }).strict(),
   z.object({ kind: z.literal("color_palette") }).strict(),
+  z.object({ kind: z.literal("offering_scope") }).strict(),
 ]);
 
 const evidenceSchema = z
@@ -152,6 +154,7 @@ export const landingPageInputFieldDefinitionSchema = z
       "keyword_map",
       "asset_reference",
       "color_palette",
+      "offering_scope",
     ]),
     valueScope: z.enum([
       "account",
@@ -335,6 +338,8 @@ function validateValue(field: LandingPageInputFieldDefinition, value: unknown): 
       return field.validation.kind === "asset_reference" && validateAssetReference(value);
     case "color_palette":
       return field.validation.kind === "color_palette" && validateColorPalette(value);
+    case "offering_scope":
+      return field.validation.kind === "offering_scope" && isLandingPageOfferingScope(value);
   }
 }
 
@@ -406,6 +411,7 @@ function validateValueTypeAndValidation(field: z.infer<typeof landingPageInputFi
     keyword_map: "keyword_map",
     asset_reference: "asset_reference",
     color_palette: "color_palette",
+    offering_scope: "offering_scope",
   };
   const expected = expectedKind[field.valueType];
   if (expected && field.validation.kind !== expected) {
