@@ -1,3 +1,6 @@
+-- Valida o helper transversal e uma RPC real de ponta a ponta.
+-- Todos os casos rodam em transação com rollback obrigatório.
+
 begin;
 
 set local search_path = public, pg_catalog;
