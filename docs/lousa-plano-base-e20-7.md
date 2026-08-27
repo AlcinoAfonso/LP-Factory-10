@@ -11,6 +11,7 @@
 - Decisão humana de 27/08/2026: adotar como direção funcional a **Opção A — pesquisa profunda preferencial por nicho e especialização relevante, com fallback dinâmico quando não existir pesquisa profunda especializada**.
 - A decisão da Opção A não autoriza implementação imediata: primeiro deve ser comprovado o valor de uma pesquisa profunda redesenhada para a qualidade da LP.
 - As definições adjacentes do debate E19.5.4 no PR #822 são consumidas somente onde afetam a seleção e a consulta de conhecimento; a E20.7 não redefine identidade da LP, agrupamento, workspace ou representação física de ofertas.
+- Gate 1 concluído em 27/08/2026: o contrato funcional da nova pesquisa profunda está definido na seção 2.7; o próximo gate é criar o novo prompt de Deep Research sem alterar runtime.
 
 ### 1.2. Fontes usadas
 
@@ -23,11 +24,14 @@
 - `docs/lousa-plano-base-e19-4.md` — geração, materialização, snapshot e baseline de qualidade persuasiva da primeira LP real.
 - `docs/lousa-plano-base-e19-5.md` — workspace, configuração contextual por LP, contrato vigente de oferta e separação entre scopes compartilhados e contextuais.
 - PR #822 / `docs/matriz-debate-e19-5-4.md` — fonte adjacente em rascunho para o modelo mental da LP, especialmente `landing_page_offering_scope`, papel de `funnel_stage`, `transaction_intent`, `primary_conversion_goal`, `business_offerings_summary` e os seis resultados desejados de qualidade; não é autoridade executável enquanto permanecer em debate.
+- `docs/pesquisas-brutas/corretor-imoveis/end_customer/v1.md` — primeiro caso real para auditar conteúdo útil, conteúdo prescritivo indevido, temporalidade, evidência e consultabilidade da pesquisa atual.
+- `docs/prompt-nicho-arquivamento-pesquisa.md` — contrato vigente de arquivamento/versionamento; preserva o conteúdo recebido e não define o conteúdo metodológico da Deep Research.
 - `docs/schema.md` — estrutura vigente de `business_taxons`, `account_taxonomy`, `account_landing_page_shared_configurations` e `account_landing_page_configurations`.
 - `lib/conversion-content/landing-page/input-catalog/taxon-chain.ts` — validação executável da cadeia taxonômica.
 - `lib/lp-builder/generationContext.ts`, `lib/lp-builder/generationContextContracts.ts` e `lib/lp-builder/landingPageRevision.ts` — coerência vigente entre taxon servido, pesquisa autorizada, fatos e snapshot.
 - `lib/lp-builder/landingPageDraftGeneration.ts` e `lib/conversion-content/landing-page/presentation/prompt.ts` — geração vigente em uma chamada textual sem tools e uso de `modelContext.research` como contexto consultivo.
 - `lib/admin/adapters/adminTaxonomyAdapter.ts` e `components/admin/AdminTaxonCreateForm.tsx` — criação administrativa vigente e exigência de taxon pai.
+- Orientação oficial vigente do OpenAI Deep Research — referência metodológica externa para pesquisa multi-etapa, seleção de fontes, prompt com objetivo/escopo/restrições/formato e relatório verificável com citações; não substitui os contratos próprios do LP Factory.
 
 ## 2. Decisões humanas já consolidadas neste debate
 
@@ -99,17 +103,92 @@
 - O novo contrato de pesquisa e o prompt de geração devem permitir que a mesma pesquisa profunda relevante seja consultada sob diferentes estágios de funil e intenções comerciais sem transformar a pesquisa em wireframe ou roteiro fixo.
 - O diferencial de produto buscado não é a existência formal de um arquivo de pesquisa, mas a capacidade de produzir comunicação comercial de maior qualidade usando conhecimento relevante, confiável, profundo e suficientemente atual com custo e latência aceitáveis.
 
-### 2.7. Evolução necessária da pesquisa profunda
+### 2.7. Contrato funcional da nova pesquisa profunda — Gate 1
 
-- Antes de mudar estruturalmente E19.3/E19.4/E19.5, o projeto deve avaliar e melhorar a matéria-prima de pesquisa profunda atualmente fornecida à geração.
-- A pesquisa profunda não deve predeterminar decisões que pertencem ao workload criativo de geração.
-- Devem ser removidos ou evitados como autoridade prescritiva da pesquisa: wireframe, sequência fixa de seções, quantidade de seções, headline pronta, CTA obrigatório, layout, composição visual e arquitetura fechada da LP.
-- O novo contrato de pesquisa deve priorizar conhecimento necessário para persuasão e compreensão do mercado, incluindo, quando aplicável: públicos e subpúblicos, jobs-to-be-done, objetivos, dores, medos, desejos, objeções, critérios de decisão, alternativas percebidas, jornada de compra, sinais de confiança, linguagem e vocabulário, expectativas, comportamento, particularidades regulatórias relevantes, diferenças regionais relevantes, tendências, evidências, fontes, limitações e incertezas.
-- O conteúdo profundo deve ser suficientemente rico para sustentar diferentes `funnel_stage` e `transaction_intent` aplicáveis sem exigir uma Deep Research distinta para cada combinação; a diferenciação de uso pertence à consulta/generation context, salvo necessidade de conhecimento materialmente diferente comprovada.
-- O contrato deverá distinguir conteúdo estrutural/relativamente estável de informação temporal/volátil, permitindo que a geração ou um passo controlado futuro identifique com clareza o que pode precisar de atualização dinâmica.
-- A pesquisa deve preservar fontes, evidências, inferências, condições, exceções e limitações sem transformar recomendações analíticas em fatos do cliente.
-- O formato final, granularidade, tamanho, estrutura e forma de consulta pela IA ainda devem ser definidos antes do novo prompt de Deep Research.
-- Pesquisas antigas permanecem preservadas/versionadas; uma pesquisa redesenhada nasce como nova versão, sem overwrite silencioso da pesquisa selecionada vigente.
+#### 2.7.1. Objetivo e fronteira
+
+- Status: **Gate 1 concluído em 27/08/2026**.
+- A pesquisa profunda `end_customer` é um ativo reutilizável de inteligência de mercado e persuasão, produzido fora do caminho interativo da geração para fornecer conhecimento profundo, verificável e suficientemente específico ao taxon servido.
+- A pergunta central da pesquisa é `como o público deste taxon pensa, percebe o problema, decide, compara alternativas, forma confiança, cria objeções e usa linguagem ao buscar uma solução?`.
+- A pesquisa não é blueprint de Landing Page, não é template, não é copy final e não substitui fatos concretos da conta/LP.
+- A saída permanece Markdown humano-auditável e versionável no padrão repo-only vigente; este gate não cria JSON Schema, banco, tabela, API, rota, novo loader ou infraestrutura.
+- O contrato deve funcionar tanto para `niche` quanto para `ultra_niche` e produzir conhecimento consultável sob diferentes `funnel_stage` e `transaction_intent` aplicáveis sem exigir uma nova Deep Research para cada combinação.
+
+#### 2.7.2. Blocos obrigatórios de conhecimento
+
+- **Identificação e escopo da pesquisa:** taxon, cadeia taxonômica conhecida, `audience_scope = end_customer`, geografia/mercado quando material, data da pesquisa, período temporal privilegiado, inclusões, exclusões e limitações de escopo.
+- **Contexto da categoria/mercado:** natureza da solução, mecanismos relevantes do mercado, subcategorias importantes, contexto econômico/operacional e mudanças estruturais que afetam a decisão do cliente, sem transformar o bloco em recomendação de LP.
+- **Mapa de públicos e situações de compra:** subpúblicos ou contextos comportamentais materialmente diferentes, definidos por necessidade, situação, job, risco ou intenção; evitar persona demográfica sintética quando não houver evidência para idade, renda, estado civil ou outro atributo.
+- **Jobs-to-be-done e resultados desejados:** o que o cliente tenta resolver, alcançar, evitar ou preservar antes, durante e depois da decisão.
+- **Dores, medos, riscos, desejos e tensões:** razões que aumentam urgência, relevância, ansiedade ou aspiração, distinguindo intensidade e contexto quando houver diferenças reais entre subpúblicos.
+- **Objeções e barreiras:** motivos para adiar, recusar, desconfiar, comparar ou abandonar a decisão e quais tipos de evidência, informação ou condição costumam reduzir cada barreira; não escrever a resposta de copy pronta.
+- **Critérios de decisão e trade-offs:** fatores usados para comparar opções, prioridades, concessões, critérios eliminatórios, sinais positivos/negativos e situações em que um critério ganha ou perde importância.
+- **Alternativas e concorrência percebida:** concorrentes de categoria, substitutos, fazer sozinho, adiar, soluções adjacentes e padrões de posicionamento observados; separar claim observado de concorrente de evidência independente sobre o mercado.
+- **Jornada de decisão e necessidades de informação:** como necessidades, dúvidas, confiança e nível de prova mudam ao longo da jornada e dos estágios de consciência/funil; descrever a decisão do cliente, não a sequência de seções da LP.
+- **Confiança, prova e redução de risco:** credenciais, demonstrações, evidências, transparência, garantias, processos, referências ou sinais que o mercado tende a considerar relevantes, sem presumir que um cliente concreto possua qualquer um deles.
+- **Linguagem, vocabulário e perguntas do público:** termos, formulações, dúvidas recorrentes, linguagem técnica versus popular, expressões de busca/intenção e palavras que sinalizam contexto ou estágio; priorizar linguagem observada e não inventar volume de busca ausente.
+- **Padrões de mensagem da categoria:** claims recorrentes, promessas genéricas/saturadas, diferenciais mais defensáveis quando sustentados por evidência e espaços de diferenciação; não produzir headline, slogan ou proposta de valor final para a LP.
+- **Dimensões factuais variáveis entre negócios/ofertas:** fatos concretos que podem mudar de cliente para cliente e que o público valoriza ou precisa conhecer; a pesquisa apenas identifica a dimensão e sua relevância, nunca preenche o valor do cliente, cria `field_key`, define obrigação ou altera E20.2. Esse bloco serve como evidência para a avaliação posterior da E20.6.
+- **Contexto regulatório, geográfico e de segurança:** regras, credenciais, restrições, riscos legais ou diferenças regionais que materialmente alterem decisão, confiança ou comunicação; distinguir obrigação legal de prática de mercado ou recomendação analítica.
+- **Sinais temporais e candidatos a atualização dinâmica:** tendências, condições econômicas, preços referenciais, regras em mudança, concorrência atual, comportamento recente ou outro conhecimento cuja validade dependa do tempo; indicar o que pode exigir rechecagem futura sem determinar automaticamente um tool call em runtime.
+- **Lacunas, controvérsias e limitações:** informação não encontrada, evidência fraca, contradições entre fontes, diferenças regionais, inferências relevantes e questões que não podem ser tratadas como fato.
+- **Fontes consultadas:** registro verificável das fontes realmente usadas, preservando citações no corpo para as afirmações materiais.
+
+#### 2.7.3. Classificação de evidência e temporalidade
+
+- Toda afirmação factual material deve possuir fonte verificável; números, percentuais, regras, preços, volumes, datas e benchmarks não podem aparecer como exatos sem fonte correspondente.
+- A pesquisa deve distinguir claramente **evidência observada**, **síntese/inferência analítica** e **hipótese/lacuna**; inferência não pode ser redigida como fato comprovado.
+- Cada bloco ou achado material deve permitir identificar sua temporalidade como **estrutural**, **semiestável** ou **volátil**, evitando tratar conhecimento temporal como verdade permanente.
+- Aplicabilidade relevante deve ser explicitada quando não for geral: taxon inteiro, subpúblico, `transaction_intent`, etapa da jornada, geografia, canal ou outra condição real.
+- Fontes primárias, oficiais e regulatórias têm prioridade para leis, regras, credenciais, programas, estatísticas oficiais e fatos verificáveis.
+- Fontes acadêmicas, institucionais e estudos setoriais confiáveis devem sustentar comportamento, mercado e padrões quando houver material adequado.
+- Sites de concorrentes servem para comprovar o que o concorrente afirma ou oferece, não para provar independentemente que a afirmação é verdadeira ou representa todo o mercado.
+- Reviews, fóruns, comunidades, redes sociais e linguagem de busca podem ser usados como sinal qualitativo de voz do cliente, dúvidas e sentimento, com a devida classificação de evidência; não substituem fonte factual de alta autoridade.
+- Claims materiais e não óbvios devem, quando viável, ser triangulados por mais de uma fonte independente; divergências relevantes não devem ser apagadas por uma falsa síntese.
+- Informação volátil deve privilegiar fontes recentes e registrar a data/período observado; fonte histórica permanece admissível para comportamento estrutural quando sua relevância for explicada.
+
+#### 2.7.4. Reutilização e especialização
+
+- Uma pesquisa de `niche` deve cobrir o conhecimento estrutural necessário para diferentes trabalhos comerciais legítimos daquele nicho sem tentar antecipar uma Deep Research separada para cada oferta, funil ou goal.
+- Uma pesquisa especializada de `ultra_niche` deve ser **autossuficiente dentro do próprio escopo**: conter o contexto ancestral necessário para interpretar a especialização e aprofundar o que muda materialmente em público, problema, decisão, risco, objeção, confiança, linguagem e factualidade relevante.
+- A pesquisa especializada não precisa repetir conteúdo ancestral sem valor adicional e não exige que a pesquisa do ancestral seja enviada junto à geração quando a especializada for suficiente.
+- A existência de pesquisa de ultranicho não reclassifica a conta no ultranicho e não transforma oferta em autoridade taxonômica.
+- Quando uma especialização não possuir pesquisa profunda própria, a Opção A preserva o nicho-base e delega ao Gate 6 o desenho do complemento dinâmico; o Gate 1 não antecipa como essa busca será implementada.
+- Repetição recorrente do mesmo complemento dinâmico pode futuramente justificar criar uma pesquisa profunda especializada, mas isso depende de evidência de reutilização/valor e decisão própria, não de regra automática.
+
+#### 2.7.5. Conteúdo explicitamente fora da pesquisa profunda
+
+- Wireframe, ordem, quantidade ou presença obrigatória de seções da LP.
+- Módulos, variantes, layouts, composição visual, direção de design, disposição de elementos ou tamanho final da página.
+- Headline, subheadline, slogan, body copy, FAQ pronta, CTA label pronto ou outra copy final reutilizável como resposta do workload de geração.
+- Definição obrigatória do `primary_conversion_goal`, canal de conversão, destino operacional ou CTA concreto da LP.
+- Prescrição de URL slug, title/meta final, schema markup, calendário de blog, arquitetura SEO ou implementação on-page; intenção de busca e linguagem do público permanecem permitidas como conhecimento de mercado.
+- Valores concretos da conta, preço real, disponibilidade, localização específica, credencial real, prova social real, pessoa, cliente, condição comercial ou resultado não fornecido por fonte factual da conta/LP.
+- Criação, remoção, `field_key`, scope, obrigação, allowed values ou camada de fields E20.2; a pesquisa pode apenas apontar dimensões factuais relevantes para posterior avaliação E20.6.
+- Decisão de entitlement, plano comercial, disponibilidade E20.4, arquitetura técnica, banco, job, agente, automação ou workload.
+- Persona sintética apresentada como fato quando os atributos demográficos não estiverem comprovados; preferir segmentos comportamentais e situações de compra sustentados por evidência.
+
+#### 2.7.6. Consultabilidade e formato
+
+- O documento deve manter estrutura consistente entre taxons para que humano e IA encontrem os mesmos tipos de conhecimento sem engine adicional.
+- A abertura deve trazer uma síntese curta do mercado, do público e das tensões de decisão, sem virar recomendação de arquitetura da LP.
+- Comparações, segmentos, objeções, critérios ou alternativas podem usar tabelas quando isso aumentar densidade informacional; narrativa longa não é requisito de qualidade.
+- Evitar repetir o mesmo insight em resumo executivo, núcleo estratégico, wireframe, SEO e conclusão; cada informação deve possuir residência principal no bloco correspondente.
+- Citações devem ficar próximas das afirmações materiais e um registro final de fontes deve facilitar auditoria.
+- A separação `estrutural / semiestável / volátil` deve permitir que uma futura camada de consulta priorize o conhecimento estável e detecte candidatos a complemento dinâmico sem reexecutar Deep Research completa.
+- O tamanho não terá meta fixa no Gate 1: priorizar cobertura e densidade útil, não volume de texto. O Gate 3 poderá revelar necessidade de limite ou compactação antes de alterar o runtime.
+- O formato continua compatível conceitualmente com o path `docs/pesquisas-brutas/<taxon_slug>/end_customer/vN.md`; qualquer metadata nova obrigatória ou alteração do loader E20.5 fica reservada ao Gate 7 se demonstrada necessária.
+
+#### 2.7.7. Critérios de aceite do Gate 1
+
+- O contrato é aprovado quando consegue orientar uma pesquisa que seja específica ao taxon e não poderia ser reutilizada quase sem alteração em um nicho não relacionado.
+- A pesquisa resultante deve separar conhecimento persuasivo de fatos concretos do cliente e separar fato, inferência e hipótese.
+- A pesquisa deve permitir distinguir conhecimento estrutural de conteúdo cuja validade temporal exige atualização.
+- A pesquisa deve fornecer informação suficiente para diferentes estágios de funil/intenção sem impor a narrativa, o wireframe ou a copy da LP.
+- A pesquisa deve identificar dimensões factuais relevantes sem usurpar E20.2/E20.6.
+- Pesquisa especializada deve ser autossuficiente no escopo e reutilizável sem obrigar composição com o ancestral.
+- Fontes e limitações precisam ser auditáveis; precisão falsa ou ausência silenciosa de evidência reprova o resultado.
+- O contrato não cria persistência, runtime, tool, agente, job, automação ou nova autoridade de produto.
 
 ### 2.8. Escopo de oferta e LP multi-serviço
 
@@ -146,8 +225,8 @@
 
 ### 3.3. Ordem obrigatória antes da implementação da Opção A
 
-- **Gate 1 — definir o contrato ideal da pesquisa profunda:** estabelecer conteúdo, limites, estrutura, distinção estável/volátil, fontes, evidências, exclusões prescritivas e capacidade de consulta por `funnel_stage`/`transaction_intent` sem transformar pesquisa em arquitetura de LP.
-- **Gate 2 — criar o novo prompt de Deep Research:** produzir prompt próprio somente depois do contrato do Gate 1; o prompt não deve reconstruir wireframe, seções ou composição da LP como obrigação da pesquisa.
+- **Gate 1 — contrato ideal da pesquisa profunda: CONCLUÍDO em 27/08/2026.** O contrato da seção 2.7 define objetivo, blocos de conhecimento, evidência/temporalidade, reuso/especialização, exclusões, consultabilidade e critérios de aceite sem alterar runtime.
+- **Gate 2 — criar o novo prompt de Deep Research: PRÓXIMO.** Produzir prompt próprio a partir do contrato fechado no Gate 1; o prompt não deve reconstruir wireframe, seções ou composição da LP como obrigação da pesquisa.
 - **Gate 3 — produzir nova pesquisa piloto:** gerar uma nova versão de pesquisa profunda para um caso real já atendido pelo projeto, preservando a pesquisa anterior para comparação.
 - **Gate 4 — gerar LP comparável:** usar a nova pesquisa piloto no pipeline controlado, sem misturar simultaneamente outras grandes mudanças de geração que impeçam atribuir o efeito observado.
 - **Gate 5 — comparar qualidade, custo e latência:** usar como régua de produto os seis resultados desejados registrados na seção 3.1 da matriz de debate E19.5.4 do PR #822 e complementar a prova com factualidade, correção humana necessária, tokens, custo, latência e estabilidade; evitar criar uma segunda régua paralela de qualidade na E20.7.
@@ -182,7 +261,7 @@
 
 ### 5.1. Debate pendente
 
-- Definir o contrato exato da nova pesquisa profunda antes de redigir o novo prompt.
+- Gate 2: criar o novo prompt de Deep Research a partir do contrato fechado na seção 2.7, preservando as fontes, evidência, temporalidade, exclusões e densidade informacional definidas no Gate 1.
 - Definir a pesquisa piloto e o método de comparação do Gate 5 sem alterar simultaneamente outras variáveis relevantes da geração.
 - Definir como o sistema associa um `landing_page_offering_scope` de uma oferta única a uma pesquisa profunda descendente existente, preservando confirmação/autoridade adequada e sem transformar texto livre, `business_offerings_summary` ou nome da LP em vínculo taxonômico automático.
 - Definir como a consulta da pesquisa profunda recebe `funnel_stage` e `transaction_intent` aplicável sem criar pesquisa separada por combinação nem antecipar decisões narrativas do workload de geração.
