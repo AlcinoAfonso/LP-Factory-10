@@ -99,20 +99,6 @@ export function parseKeywordMapDraft(input: string) {
   return rows.length ? rows : undefined;
 }
 
-export function prepareOfferingScopeDraft(input: string) {
-  return {
-    draft: input,
-    offerings: input
-      .split("\n")
-      .map((item) => item.trim())
-      .filter(Boolean),
-  } as const;
-}
-
-export function formatOfferingScopeDraft(input: readonly string[]) {
-  return input.join("\n");
-}
-
 export function parseNumberRangeDraft(
   minimum: string,
   maximum: string,

@@ -2,7 +2,6 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
 import {
-  parseLandingPageOfferingScope,
   resolveLandingPageInputCatalog,
   realEstateSegmentTaxon,
 } from "../../../../lib/conversion-content/landing-page/input-catalog";
@@ -11,7 +10,6 @@ import {
   journeyScopeBelongsToStep,
   parseKeywordMapDraft,
   parseNumberRangeDraft,
-  prepareOfferingScopeDraft,
   prepareJourneyStoredValues,
 } from "./onboarding-journey-policy";
 
@@ -218,63 +216,8 @@ const cases: readonly Readonly<{ name: string; run: () => void }>[] = [
       assert.match(component, /Todo o portfólio/);
       assert.match(component, /Ofertas incluídas/);
       assert.match(component, /focus-within:ring-2/);
-      assert.match(component, /setOfferingsDraft\(next\.draft\)/);
       assert.match(action, /landing_page_offering_scope/);
       assert.match(action, /sameCommercialWorkConfirmed/);
-    },
-  },
-  {
-    name: "offering scope multiline draft accepts enter and reloads canonical selected values",
-    run: () => {
-      const firstLine = prepareOfferingScopeDraft("Oferta A");
-      assert.deepEqual(firstLine, {
-        draft: "Oferta A",
-        offerings: ["Oferta A"],
-      });
-
-      const withEnter = prepareOfferingScopeDraft(`${firstLine.draft}\n`);
-      assert.equal(withEnter.draft, "Oferta A\n");
-      assert.deepEqual(withEnter.offerings, ["Oferta A"]);
-
-      const withSecondLine = prepareOfferingScopeDraft(
-        `${withEnter.draft}Oferta B`,
-      );
-      assert.deepEqual(withSecondLine, {
-        draft: "Oferta A\nOferta B",
-        offerings: ["Oferta A", "Oferta B"],
-      });
-
-      const parsed = parseLandingPageOfferingScope({
-        mode: "selected",
-        offerings: withSecondLine.offerings,
-      });
-      assert.equal(parsed.ok, true);
-      if (!parsed.ok) return;
-
-      const catalog = resolveLandingPageInputCatalog({
-        version: 6,
-        plan: "starter",
-        taxonChain: { segment: realEstateSegmentTaxon },
-      });
-      assert.equal(catalog.ok, true);
-      if (!catalog.ok) return;
-
-      const submitted = prepareJourneyStoredValues({
-        fields: catalog.value.fields,
-        storedValues: {
-          landing_page_offering_scope: {
-            scope: "landing_page",
-            value: parsed.value,
-          },
-        },
-        effectiveValues: {
-          landing_page_offering_scope: parsed.value,
-        },
-      });
-      const reloaded = parseLandingPageOfferingScope(
-        JSON.parse(JSON.stringify(submitted)).landing_page_offering_scope.value,
-      );
-      assert.deepEqual(reloaded, parsed);
     },
   },
   {
