@@ -24,7 +24,7 @@ assert.deepEqual(current, {
   startDate: "2026-08-01",
   endDate: "2026-08-28",
   period: {
-    startTime: Date.parse("2026-08-01T03:00:00.000Z") / 1_000,
+    startTime: Date.parse("2026-08-01T00:00:00.000Z") / 1_000,
     endTime: Date.parse("2026-08-28T15:00:00.000Z") / 1_000,
   },
   provisional: true,
@@ -111,6 +111,7 @@ for (const expected of [
   "Landing Pages calculadas",
   "Outros gastos / reconciliação",
   "Provisório",
+  "Período encerrado",
   "Atualizado na OpenAI",
   "Atualizado na cobertura interna",
   "Geração de texto",
@@ -119,9 +120,11 @@ for (const expected of [
   assert.equal(componentSource.includes(expected), true, `missing UI evidence: ${expected}`);
 }
 assert.match(componentSource, /aria-live="polite"/);
+assert.match(componentSource, /state\.status === "success"/);
 assert.match(componentSource, /min-h-11/);
 assert.match(componentSource, /bg-brand-700/);
 assert.match(navigationSource, /href: '\/admin\/custos-openai'/);
+assert.equal(actionSource.includes("export const OPENAI_COSTS_INITIAL_STATE"), false);
 
 console.log("ok - E21.4.5 dashboard period, reconciliation, pagination, authorization and UI states");
 }

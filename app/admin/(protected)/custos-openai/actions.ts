@@ -16,13 +16,6 @@ export type OpenAiCostsActionState = Readonly<{
   dashboard: OpenAiCostsDashboard | null;
 }>;
 
-export const OPENAI_COSTS_INITIAL_STATE: OpenAiCostsActionState = {
-  status: "idle",
-  code: null,
-  message: "Selecione o período e atualize para consultar os custos.",
-  dashboard: null,
-};
-
 export async function refreshOpenAiCostsAction(
   _previous: OpenAiCostsActionState,
   formData: FormData,

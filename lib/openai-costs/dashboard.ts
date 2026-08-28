@@ -10,7 +10,6 @@ import {
   subtractDecimal,
 } from "./decimal";
 
-const SAO_PAULO_OFFSET_HOURS = 3;
 const MAX_CUSTOM_PERIOD_DAYS = 180;
 
 export type OpenAiCostsPeriodSelection = Readonly<{
@@ -41,7 +40,7 @@ export function parseOpenAiCostsPeriodSelection(
 ): OpenAiCostsPeriodSelection | null {
   if (Number.isNaN(now.getTime())) return null;
   const nowSeconds = Math.floor(now.getTime() / 1_000);
-  const today = saoPauloDate(now);
+  const today = utcDate(now);
   const mode = input.mode === "current_month"
     ? "current_month"
     : input.mode === "custom"
@@ -55,8 +54,8 @@ export function parseOpenAiCostsPeriodSelection(
   const endDate = mode === "current_month" ? today : validDateText(input.endDate);
   if (!startDate || !endDate || endDate < startDate) return null;
 
-  const startTime = saoPauloDateStartSeconds(startDate);
-  const endExclusive = saoPauloDateStartSeconds(nextDate(endDate));
+  const startTime = utcDateStartSeconds(startDate);
+  const endExclusive = utcDateStartSeconds(nextDate(endDate));
   const endTime = Math.min(endExclusive, nowSeconds);
   if (
     !Number.isSafeInteger(startTime) ||
@@ -72,7 +71,7 @@ export function parseOpenAiCostsPeriodSelection(
     startDate,
     endDate,
     period: { startTime, endTime },
-    provisional: mode === "current_month",
+    provisional: endExclusive > nowSeconds,
   };
 }
 
@@ -110,17 +109,12 @@ export function buildOpenAiCostsDashboard(input: Readonly<{
 }
 
 export function defaultOpenAiCostsDates(now = new Date()) {
-  const today = saoPauloDate(now);
+  const today = utcDate(now);
   return { startDate: `${today.slice(0, 7)}-01`, endDate: today };
 }
 
-function saoPauloDate(value: Date) {
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone: "America/Sao_Paulo",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(value);
+function utcDate(value: Date) {
+  return value.toISOString().slice(0, 10);
 }
 
 function validDateText(value: unknown) {
@@ -134,9 +128,9 @@ function validDateText(value: unknown) {
     : null;
 }
 
-function saoPauloDateStartSeconds(value: string) {
+function utcDateStartSeconds(value: string) {
   const [year, month, day] = value.split("-").map(Number);
-  return Math.floor(Date.UTC(year, month - 1, day, SAO_PAULO_OFFSET_HOURS) / 1_000);
+  return Math.floor(Date.UTC(year, month - 1, day) / 1_000);
 }
 
 function nextDate(value: string) {

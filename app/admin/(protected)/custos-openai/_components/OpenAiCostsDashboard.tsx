@@ -6,17 +6,24 @@ import { AdminStatusBadge } from "@/components/admin/AdminStatusBadge";
 import type { OpenAiLpCostWorkloadSummary } from "@/openai-costs/contracts";
 import type { OpenAiCostsDashboard as OpenAiCostsDashboardValue } from "@/openai-costs/dashboard";
 import {
-  OPENAI_COSTS_INITIAL_STATE,
   refreshOpenAiCostsAction,
+  type OpenAiCostsActionState,
 } from "../actions";
 
 type Props = Readonly<{ startDate: string; endDate: string }>;
+
+const INITIAL_STATE: OpenAiCostsActionState = {
+  status: "idle",
+  code: null,
+  message: "Selecione o período e atualize para consultar os custos.",
+  dashboard: null,
+};
 
 export function OpenAiCostsDashboard({ startDate, endDate }: Props) {
   const [periodMode, setPeriodMode] = useState<"current_month" | "custom">("current_month");
   const [state, formAction, pending] = useActionState(
     refreshOpenAiCostsAction,
-    OPENAI_COSTS_INITIAL_STATE,
+    INITIAL_STATE,
   );
   const dashboard = state.dashboard;
 
@@ -88,6 +95,17 @@ export function OpenAiCostsDashboard({ startDate, endDate }: Props) {
           <StatusPanel tone="neutral" title="Nenhuma consulta executada">
             {state.message}
           </StatusPanel>
+        ) : state.status === "success" ? (
+          <StatusPanel
+            tone={dashboard?.internal ? "success" : "danger"}
+            title={dashboard?.internal && dashboard.internal.attemptCount === 0 && dashboard.officialTotalUsd === "0"
+              ? "Período sem custos"
+              : dashboard?.internal
+                ? "Consulta atualizada"
+                : "Cobertura interna indisponível"}
+          >
+            {state.message}
+          </StatusPanel>
         ) : null}
       </div>
 
@@ -100,14 +118,16 @@ export function OpenAiCostsDashboard({ startDate, endDate }: Props) {
               </h2>
               {dashboard.selection.provisional ? (
                 <AdminStatusBadge tone="warning">Provisório</AdminStatusBadge>
-              ) : null}
+              ) : (
+                <AdminStatusBadge tone="success">Período encerrado</AdminStatusBadge>
+              )}
               {dashboard.reconciliationAnomalous ? (
                 <AdminStatusBadge tone="danger">Reconciliação anômala</AdminStatusBadge>
               ) : null}
             </div>
             <p className="text-sm text-muted-foreground">
               {formatDate(dashboard.selection.startDate)} a {formatDate(dashboard.selection.endDate)}.
-              O período usa o fuso de São Paulo.
+              As fronteiras do período usam UTC.
             </p>
             <div className="grid gap-4 md:grid-cols-3">
               <MetricCard label="Gasto oficial OpenAI" value={formatUsd(dashboard.officialTotalUsd)} detail="Fonte oficial · Costs API" />
@@ -205,8 +225,12 @@ function MetricCard({ label, value, detail }: Readonly<{ label: string; value: s
   return <article className="rounded-lg border border-border bg-card p-4 shadow-card sm:p-5"><p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p><p className="mt-2 break-words text-2xl font-semibold text-foreground">{value}</p><p className="mt-2 text-xs text-muted-foreground">{detail}</p></article>;
 }
 
-function StatusPanel({ tone, title, children, role }: Readonly<{ tone: "neutral" | "danger"; title: string; children: ReactNode; role?: "alert" }>) {
-  const classes = tone === "danger" ? "border-red-200 bg-red-50 text-red-950" : "border-border bg-card text-foreground";
+function StatusPanel({ tone, title, children, role }: Readonly<{ tone: "neutral" | "success" | "danger"; title: string; children: ReactNode; role?: "alert" }>) {
+  const classes = tone === "danger"
+    ? "border-red-200 bg-red-50 text-red-950"
+    : tone === "success"
+      ? "border-green-200 bg-green-50 text-green-950"
+      : "border-border bg-card text-foreground";
   return <section className={`rounded-lg border p-4 shadow-card sm:p-5 ${classes}`} role={role}><h2 className="text-sm font-semibold">{title}</h2><p className="mt-2 text-sm leading-6">{children}</p></section>;
 }
 
