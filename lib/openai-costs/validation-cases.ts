@@ -16,7 +16,7 @@ const cases = [
     },
   },
   {
-    name: "missing admin key and invalid periods fail before transport",
+    name: "missing admin key and invalid, future or excessive periods fail before transport",
     run: async () => {
       let calls = 0;
       const fetchImpl = async () => {
@@ -40,6 +40,36 @@ const cases = [
       );
       assert.equal(invalidPeriod.ok, false);
       assert.equal(invalidPeriod.error.code, "INVALID_PERIOD");
+
+      const futurePeriod = await readOfficialOpenAiCostsWithKey(
+        {
+          period: { startTime: period.startTime, endTime: period.endTime },
+          adminKey: "admin-test-key",
+        },
+        {
+          fetchImpl,
+          now: () => new Date((period.startTime - 1) * 1_000),
+        },
+      );
+      assert.equal(futurePeriod.ok, false);
+      assert.equal(futurePeriod.error.code, "INVALID_PERIOD");
+
+      const excessivePeriod = await readOfficialOpenAiCostsWithKey(
+        {
+          period: {
+            startTime: period.startTime,
+            endTime: period.startTime + 181 * 86_400,
+          },
+          adminKey: "admin-test-key",
+        },
+        {
+          fetchImpl,
+          maxPages: 1,
+          now: () => new Date((period.startTime + 182 * 86_400) * 1_000),
+        },
+      );
+      assert.equal(excessivePeriod.ok, false);
+      assert.equal(excessivePeriod.error.code, "INVALID_PERIOD");
       assert.equal(calls, 0);
     },
   },
@@ -205,6 +235,22 @@ const cases = [
       );
       assert.equal(timeout.ok, false);
       assert.equal(timeout.error.code, "TIMEOUT");
+
+      const bodyTimeout = await readOfficialOpenAiCostsWithKey(
+        { period, adminKey: "admin-test-key" },
+        {
+          timeoutMs: 1,
+          fetchImpl: async (_input, init) => new Response(new ReadableStream({
+            start(controller) {
+              init?.signal?.addEventListener("abort", () => {
+                controller.error(new DOMException("aborted", "AbortError"));
+              });
+            },
+          })),
+        },
+      );
+      assert.equal(bodyTimeout.ok, false);
+      assert.equal(bodyTimeout.error.code, "TIMEOUT");
     },
   },
 ] as const;

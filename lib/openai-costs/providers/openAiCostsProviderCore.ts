@@ -28,7 +28,14 @@ export async function readOfficialOpenAiCostsWithKey(
   }>,
   dependencies: OpenAiCostsProviderDependencies = {},
 ): Promise<OpenAiOfficialCostsReadResult> {
-  if (!isValidPeriod(input.period)) {
+  const timeoutMs = positiveInteger(dependencies.timeoutMs) ?? DEFAULT_TIMEOUT_MS;
+  const maxPages = positiveInteger(dependencies.maxPages) ?? DEFAULT_MAX_PAGES;
+  const now = dependencies.now ?? (() => new Date());
+  const validationNow = now();
+  if (Number.isNaN(validationNow.getTime())) {
+    return failure("INVALID_RESPONSE", "OpenAI Costs clock is invalid");
+  }
+  if (!isValidPeriod(input.period, validationNow, maxPages)) {
     return failure("INVALID_PERIOD", "OpenAI Costs period is invalid");
   }
 
@@ -38,9 +45,6 @@ export async function readOfficialOpenAiCostsWithKey(
   }
 
   const fetchImpl = dependencies.fetchImpl ?? fetch;
-  const timeoutMs = positiveInteger(dependencies.timeoutMs) ?? DEFAULT_TIMEOUT_MS;
-  const maxPages = positiveInteger(dependencies.maxPages) ?? DEFAULT_MAX_PAGES;
-  const now = dependencies.now ?? (() => new Date());
   const seenCursors = new Set<string>();
   let nextPage: string | null = null;
   let pageCount = 0;
@@ -60,6 +64,7 @@ export async function readOfficialOpenAiCostsWithKey(
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), timeoutMs);
     let response: Response;
+    let payload: unknown;
     try {
       response = await fetchImpl(url, {
         method: "GET",
@@ -67,27 +72,28 @@ export async function readOfficialOpenAiCostsWithKey(
         cache: "no-store",
         signal: controller.signal,
       });
+
+      if (!response.ok) {
+        return failure(
+          "HTTP_ERROR",
+          "OpenAI Costs returned a non-success status",
+          response.status,
+        );
+      }
+
+      try {
+        payload = await response.json();
+      } catch {
+        return controller.signal.aborted
+          ? failure("TIMEOUT", "OpenAI Costs request timed out")
+          : failure("INVALID_RESPONSE", "OpenAI Costs returned invalid JSON");
+      }
     } catch {
       return controller.signal.aborted
         ? failure("TIMEOUT", "OpenAI Costs request timed out")
         : failure("REQUEST_FAILED", "OpenAI Costs request failed");
     } finally {
       clearTimeout(timeout);
-    }
-
-    if (!response.ok) {
-      return failure(
-        "HTTP_ERROR",
-        "OpenAI Costs returned a non-success status",
-        response.status,
-      );
-    }
-
-    let payload: unknown;
-    try {
-      payload = await response.json();
-    } catch {
-      return failure("INVALID_RESPONSE", "OpenAI Costs returned invalid JSON");
     }
 
     const parsed = parseCostsPage(payload, input.period, lastBucketEnd);
@@ -272,12 +278,19 @@ function formatDecimal(value: DecimalValue): string {
   return fraction ? `${integer}.${fraction}` : integer;
 }
 
-function isValidPeriod(period: OpenAiCostsPeriod): boolean {
+function isValidPeriod(
+  period: OpenAiCostsPeriod,
+  now: Date,
+  maxPages: number,
+): boolean {
+  const maximumSeconds = COSTS_BUCKET_LIMIT * maxPages * 86_400;
   return (
     isInteger(period.startTime) &&
     isInteger(period.endTime) &&
     period.startTime >= 0 &&
-    period.endTime > period.startTime
+    period.endTime > period.startTime &&
+    period.endTime <= Math.floor(now.getTime() / 1_000) &&
+    period.endTime - period.startTime <= maximumSeconds
   );
 }
 
