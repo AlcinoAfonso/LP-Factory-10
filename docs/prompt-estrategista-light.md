@@ -1,6 +1,6 @@
 # Fluxo do Estrategista Light
 
-Versão: v1 — 07/08/2026
+Versão: v2 — 28/08/2026
 
 ## 0. Papel e objetivo
 
@@ -319,6 +319,7 @@ Antes de liberar merge, o Estrategista deve inspecionar no GitHub o HEAD final e
 - documentação final coerente;
 - ausência de ampliação silenciosa de escopo;
 - reconciliação com avanços recentes da `main` quando necessário.
+- review threads e feedbacks automáticos ainda não resolvidos lidos; achado material corrigido ou explicitamente rejeitado com justificativa; checks verdes não substituem este gate.
 
 Se a `main` avançar e gerar conflito:
 
