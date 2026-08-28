@@ -1063,6 +1063,54 @@ const cases: Case[] = [
         ]).length,
         0,
       );
+
+      const v6Registry = registryWithCandidate((candidate) => {
+        mutableFieldInEntry(candidate, "primary_service_or_offer").retiredInVersion = 6;
+        mutableFieldInEntry(candidate, "primary_service_or_offer_description").retiredInVersion = 6;
+        mutableFieldInEntry(candidate, "business_offerings_summary").purpose =
+          "Resumir de forma livre e não exaustiva o que o negócio oferece; não é catálogo, whitelist ou restrição de landing_page_offering_scope e não limita ofertas diferentes, mais amplas ou mais específicas na landing page.";
+        mutableFieldInEntry(candidate, "primary_conversion_goal").purpose =
+          "Declarar a ação ou conversão principal pretendida pela landing page, independentemente do canal autorizado usado para realizá-la, sem confundi-la com funnel_stage, transaction_intent, landing_page_offering_scope ou primary_conversion_channel.";
+        mutableEntries(candidate.universal).push(
+          {
+            ...fixtureField("landing_page_offering_scope"),
+            valueType: "offering_scope",
+            valueScope: "landing_page",
+            expectedValueOrigin: "landing_page_provided",
+            obligation: "required",
+            validation: { kind: "offering_scope" },
+            landingPageSubstitutionPolicy: "not_applicable",
+            createdInVersion: 6,
+          },
+          {
+            ...fixtureField("landing_page_offering_scope_description"),
+            valueScope: "landing_page",
+            expectedValueOrigin: "landing_page_provided",
+            obligation: "required",
+            landingPageSubstitutionPolicy: "not_applicable",
+            createdInVersion: 6,
+          },
+        );
+        (candidate.universal as unknown as { entries: LandingPageInputCatalogLayerEntry[] }).entries =
+          candidate.universal.entries.map(reverseEntryPropertyOrder);
+        for (const layer of Object.values(candidate.taxonLayers)) {
+          (layer as unknown as { entries: LandingPageInputCatalogLayerEntry[] }).entries =
+            layer.entries.map(reverseEntryPropertyOrder);
+        }
+      });
+      const v6Transition = classifyCandidateTransition(v6Registry);
+      assert.deepEqual(v6Transition.reviewRequiredFieldKeys, [
+        "primary_service_or_offer",
+        "primary_service_or_offer_description",
+        "business_offerings_summary",
+        "primary_conversion_goal",
+      ]);
+      assert.equal(
+        collectCommercialIdentityReviewBlockers([
+          { taxon: realEstateBrokerNicheTaxon, ...v6Transition },
+        ]).length,
+        0,
+      );
     },
   },
   {
@@ -1284,6 +1332,12 @@ function fixtureField(
     obligation: "optional", validation: { kind: "type_only" }, allowedPlans: ["starter", "lite", "pro", "ultra"],
     snapshotPolicy: "include_if_used", evidence: { summary: "Fixture backed by the approved human decision.", references: ["decision:e20-2-human"] }, createdInVersion: 1,
   };
+}
+
+function reverseEntryPropertyOrder(
+  entry: LandingPageInputCatalogLayerEntry,
+): LandingPageInputCatalogLayerEntry {
+  return Object.fromEntries(Object.entries(entry).reverse()) as LandingPageInputCatalogLayerEntry;
 }
 
 function ultraLayer(): LandingPageInputCatalogLayer {
