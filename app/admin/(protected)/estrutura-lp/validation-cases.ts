@@ -115,6 +115,21 @@ assert.match(lifecycleComponent, /catalogDraftRevision/);
 assert.match(lifecycleComponent, /Decisão vinculada ao draft atual/);
 assert.match(lifecycleComponent, /Reconciliar draft já implantado/);
 assert.match(lifecycleActions, /requirePlatformAdmin/);
+const lifecycleRuntimeExports = lifecycleActions.match(
+  /^export\s+(?!type\b|interface\b)[^\r\n]+/gm,
+) ?? [];
+assert.ok(lifecycleRuntimeExports.length > 0);
+assert.ok(
+  lifecycleRuntimeExports.every((runtimeExport) =>
+    /^export async function\b/.test(runtimeExport),
+  ),
+  `O módulo use server deve exportar em runtime somente Server Actions assíncronas: ${lifecycleRuntimeExports.join(", ")}`,
+);
+assert.doesNotMatch(lifecycleActions, /export const initialInputCatalogLifecycleActionState/);
+assert.match(
+  lifecycleComponent,
+  /const initialInputCatalogLifecycleActionState:\s*InputCatalogLifecycleActionState\s*=\s*\{/,
+);
 assert.match(lifecycleMigration, /create table public\.landing_page_input_catalog_drafts/);
 assert.match(lifecycleMigration, /revoke all on table public\.landing_page_input_catalog_drafts[\s\S]*from public, anon, authenticated/);
 assert.match(lifecycleMigration, /grant select, insert, update, delete[\s\S]*to service_role/);
