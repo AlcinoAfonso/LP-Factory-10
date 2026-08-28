@@ -197,6 +197,7 @@
 • Consultas com múltiplas relações devem usar aliases explícitos para evitar colisão de chaves.
 • Busca textual exige índice justificado pela consulta ativa e pela necessidade de desempenho.
 • Em paginação por range, HTTP 416 / PGRST103 representa fim da lista, não erro de sistema; preservar itens carregados e interromper novas requisições.
+• Erros de domínio expostos pela Data API não devem usar códigos de falha transacional que possam acionar retry automático; conflitos funcionais devem preservar o contrato de domínio sem serem transportados como falha retryable do banco.
 
 3.13 Compatibilidade do framework
 • APIs assíncronas de SSR e Server Components, como `cookies()`, `headers()`, `params` e `searchParams`, devem ser aguardadas quando exigido pelo framework.

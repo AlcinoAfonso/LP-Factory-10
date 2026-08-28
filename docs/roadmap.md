@@ -2981,7 +2981,7 @@ Repositório — Ajustados
 
 21.2.1 Objetivo e status
 - Objetivo: permitir configuração ativa por ambiente e workload, com candidata, validação, ativação humana, rollback e mudança ordinária sem redeploy.
-- Status: concluída em 24/08/2026, com fonte operacional e catálogo global aplicados, cutover preservado em Preview e Production e gates hospedados integralmente aprovados.
+- Status: concluída em 28/08/2026; fonte operacional, catálogo e correção do transporte de conflitos pela Data API aplicados, com cutover e gates hospedados aprovados.
 - O recorte preserva a E21.1 como boundary transversal, mantém Development determinístico/local e deixa a E21.3 prevista, sem início de execução.
 
 21.2.2 Registros do recorte
@@ -3004,9 +3004,16 @@ Repositório — Ajustados
     - `public.set_openai_model_catalog_model_availability_v1`
     - `public.set_openai_model_catalog_parameter_availability_v1`
     - `public.check_openai_model_catalog_configuration_available_v1`
+    - `public.raise_postgrest_safe_conflict_v1(text)`
   - Ajustados:
     - `public.save_openai_workload_configuration_candidate_v1`
+    - `public.discard_openai_workload_configuration_candidate_v1`
     - `public.promote_openai_workload_configuration_candidate_v1`
+    - `public.activate_openai_workload_configuration_revision_v1`
+    - `public.rollback_openai_workload_configuration_revision_v1`
+    - `public.check_openai_model_catalog_configuration_available_v1`
+    - `public.set_openai_model_catalog_model_availability_v1`
+    - `public.set_openai_model_catalog_parameter_availability_v1`
 - Repositório:
   - Criados:
     - `app/admin/(protected)/workloads-openai/_components/OpenAiConfigurationManager.tsx`
@@ -3029,6 +3036,9 @@ Repositório — Ajustados
     - `supabase/migrations/20260823144334_e21_2_5_openai_model_catalog.sql`
     - `supabase/snippets/e21_2_5_openai_model_catalog_verify.sql`
     - `supabase/tests/e21_2_5_openai_model_catalog.test.sql`
+    - `supabase/migrations/20260827203000_postgrest_safe_application_conflicts.sql`
+    - `supabase/snippets/postgrest_safe_application_conflicts_verify.sql`
+    - `supabase/tests/postgrest_safe_application_conflicts.test.sql`
   - Ajustados:
     - `app/admin/(protected)/workloads-openai/page.tsx`
     - `lib/access/guards.ts`
@@ -3052,9 +3062,9 @@ Repositório — Ajustados
   - Matriz integral de tratamentos: `docs/matriz-consolidacao-e21-2.md`.
   - Plano-base v2 aprovado da E21.2.5: `docs/lousa-plano-base-e21-2-5.md`.
   - Matriz de consolidação da E21.2.5: `docs/matriz-consolidacao-e21-2-5.md`.
-  - Contrato técnico: `docs/base-tecnica.md` — 3.16.
+  - Contrato técnico: `docs/base-tecnica.md` — 3.12 e 3.16.
   - Configuração operacional: `docs/platform-config.md` — 3.5 e 6.3.
-  - Contrato de banco: `docs/schema.md` — 1.28, 1.29, 1.30 e 3.7.
+  - Contrato de banco: `docs/schema.md` — 1.28, 1.29, 1.30, 3.7 e 3.9.
 
 21.2.3 Fonte operacional dinâmica e resolução por ambiente/workload
 - Status: Concluída; fonte operacional aplicada e cutover aprovado em Preview e Production.
@@ -3065,6 +3075,7 @@ Repositório — Ajustados
 - A migration foi aplicada pelo workflow canônico; o snippet hospedado aprovou 10/10 verificações e o Security Controls não apresentou alerta incompatível com as tabelas ou RPCs do recorte.
 - `OPENAI_OPERATIONAL_CONFIG_ENABLED=true` foi habilitada e redeployada primeiro em Preview e, somente após sua aprovação integral, em Production; os dois ambientes usam exclusivamente `supabase_operational`, enquanto Development permanece no baseline local.
 - Não usar `repo_catalog` como fallback quando o gate estiver ativo; não introduzir cache, Realtime, AI Gateway, Vercel Flags, Global Config, tracing, drains, workflow ou segunda residência.
+- Conflitos funcionais de versão ou revisão expostos pela Data API preservam a rejeição da tentativa sem serem transportados como falha transacional retryable; o corretivo foi aplicado e o gate hospedado confirmou ausência de retry autônomo.
 
 21.2.4 Gestão administrativa, validação, ativação e rollback
 - Status: Concluída; gestão administrativa, provas reais, lifecycle, QA hospedada e smoke mínimo de Production aprovados.
