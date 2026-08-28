@@ -10,25 +10,32 @@
 - Objetivo deste rascunho: registrar progressivamente as decisões humanas sobre liberação taxonômica, fontes de conhecimento para geração e ordem de validação necessária antes de qualquer mudança estrutural no pipeline de Landing Pages.
 - Decisão humana de 27/08/2026: adotar como direção funcional a **Opção A — pesquisa profunda preferencial por nicho e especialização relevante, com fallback dinâmico quando não existir pesquisa profunda especializada**.
 - A decisão da Opção A não autoriza implementação imediata: primeiro deve ser comprovado o valor de uma pesquisa profunda redesenhada para a qualidade da LP.
-- As definições adjacentes do debate E19.5.4 no PR #822 são consumidas somente onde afetam a seleção e a consulta de conhecimento; a E20.7 não redefine identidade da LP, agrupamento, workspace ou representação física de ofertas.
+- As definições adjacentes de `landing_page_offering_scope` originadas no debate E19.5.4/PR #822 foram consolidadas no plano-base E20.2.9 pelo PR #825; a implementação correspondente permanece em execução no PR #826. A E20.7 consome somente as consequências para seleção e consulta de conhecimento e não redefine identidade da LP, agrupamento, workspace ou persistência do escopo comercial.
 - Gate 1 concluído em 27/08/2026: o contrato funcional da nova pesquisa profunda está definido na seção 2.7.
 - Gate 2 concluído em 27/08/2026: `docs/prompt-nicho-pesquisa-mercado-experimental.md` foi evoluído como prompt experimental de Deep Research aderente ao contrato do Gate 1, preservando `docs/prompt-nicho-pesquisa.md` vigente para comparação controlada.
-- Próximo gate: produzir uma nova pesquisa piloto versionada sem alterar runtime.
+- Gate 3 concluído em 27/08/2026: a nova Deep Research de `corretor-imoveis/end_customer` foi aprovada e arquivada como `v2` pelo PR #827, preservando a `v1`.
+- Gate 4 concluído em 27/08/2026: a revisão 6 da mesma LP foi gerada com a pesquisa `v2`, mantendo E20.2 v5, contexto factual, prompt, contrato de apresentação e configuração do workload textual comparáveis à revisão 5.
+- Gate 5 concluído em 28/08/2026 com resultado **positivo parcial**: a pesquisa `v2` melhorou materialmente a qualidade persuasiva da LP sem introduzir regressão factual observada, mas uma única comparação não comprova estabilidade e a copy ainda permanece abaixo do padrão desejado; prompt de geração e renderer ficam registrados somente como achados fora deste recorte.
+- Próximo gate: **Gate 6 — decidir o desenho técnico mínimo do fallback dinâmico**, sem abrir redesign de prompt textual ou renderer dentro da E20.7.
 
 ### 1.2. Fontes usadas
 
 - `README.md` — visão do produto, simplicidade do MVP, comunicação comercial por nicho e princípio de menor complexidade capaz de cumprir os gates.
 - `docs/roadmap.md` — estado e fronteiras de E20, E19, E21 e E9.
 - `docs/lousa-plano-base-e20-2.md` — catálogo declarativo e herança `universal → segmento → nicho → ultranicho`.
+- `docs/lousa-plano-base-e20-2-9.md` / PR #825 — contrato consolidado de `landing_page_offering_scope`; implementação correspondente em andamento no PR #826.
 - `docs/lousa-plano-base-e20-5.md` — seleção da pesquisa integral `end_customer` por taxon.
 - `docs/lousa-plano-base-e20-6.md` — suficiência factual e predicado derivado de taxon preparado.
 - `docs/lousa-plano-base-e19-3.md` — pacote autorizado, pesquisa consultiva e fatos concretos revalidados.
 - `docs/lousa-plano-base-e19-4.md` — geração, materialização, snapshot e baseline de qualidade persuasiva da primeira LP real.
 - `docs/lousa-plano-base-e19-5.md` — workspace, configuração contextual por LP, contrato vigente de oferta e separação entre scopes compartilhados e contextuais.
-- PR #822 / `docs/matriz-debate-e19-5-4.md` — fonte adjacente em rascunho para o modelo mental da LP, especialmente `landing_page_offering_scope`, papel de `funnel_stage`, `transaction_intent`, `primary_conversion_goal`, `business_offerings_summary` e os seis resultados desejados de qualidade; não é autoridade executável enquanto permanecer em debate.
-- `docs/pesquisas-brutas/corretor-imoveis/end_customer/v1.md` — primeiro caso real para auditar conteúdo útil, conteúdo prescritivo indevido, temporalidade, evidência e consultabilidade da pesquisa atual.
+- PR #822 / `docs/matriz-debate-e19-5-4.md` — origem das decisões humanas posteriormente consolidadas pela E20.2.9 e referência para os seis resultados desejados de qualidade usados no Gate 5.
+- `docs/pesquisas-brutas/corretor-imoveis/end_customer/v1.md` — baseline histórico da pesquisa usada na revisão 5.
+- `docs/pesquisas-brutas/corretor-imoveis/end_customer/v2.md` — nova Deep Research aprovada no Gate 3 e usada na revisão 6.
+- PR #827 — arquivamento da pesquisa `corretor-imoveis/end_customer/v2` sem sobrescrever a `v1`.
+- Evidência hospedada read-only das revisões 5 e 6 em `account_landing_page_materializations` — pesquisa, versão E20.2, prompt, usage, latência e conteúdo persistidos para a comparação controlada dos Gates 4 e 5.
 - `docs/prompt-nicho-pesquisa.md` — prompt vigente de pesquisa por blocos, preservado como baseline e não substituído pelo Gate 2.
-- `docs/prompt-nicho-pesquisa-mercado-experimental.md` — prompt experimental evoluído no Gate 2 para executar a nova Deep Research independente.
+- `docs/prompt-nicho-pesquisa-mercado-experimental.md` — prompt experimental evoluído no Gate 2 e utilizado para a nova Deep Research.
 - `docs/prompt-nicho-arquivamento-pesquisa.md` — contrato vigente de arquivamento/versionamento; preserva o conteúdo recebido e não define o conteúdo metodológico da Deep Research.
 - `docs/template-prompts.md` — contrato outcome-first vigente para prompts do projeto.
 - `docs/template-prompts-gpt-5-6.md` — complemento vigente de prompts GPT-5.6, usado somente como referência metodológica e sem selecionar modelo para a Deep Research do ChatGPT.
@@ -67,18 +74,18 @@
 - Nichos e ultranichos herdam os fields válidos dos ancestrais e acrescentam ou especializam somente o necessário, conforme o contrato E20.2 vigente.
 - A escolha de uma pesquisa profunda especializada para uma LP **não altera automaticamente a cadeia factual E20.2 usada pela conta ou LP**.
 - Se uma pesquisa especializada revelar necessidade factual nova e real, esse achado retorna ao fluxo normal E20.6 → E20.2 para avaliação e evolução na camada semanticamente correta; não se cria field apenas para acompanhar a escolha da pesquisa.
-- A orientação adjacente do PR #822 converge com essa fronteira: a IA da E20.6 pode recomendar necessidade e camada taxonômica, mas humano mantém decisão final e E20.2 permanece a autoridade que materializa o contrato factual aprovado.
+- A E20.6 pode recomendar necessidade e camada taxonômica, mas humano mantém decisão final e E20.2 permanece a autoridade que materializa o contrato factual aprovado.
 
 ### 2.4. Taxon versus escopo comercial da LP
 
 - Taxon responde essencialmente `que tipo de negócio é este?`.
 - O escopo comercial da LP responde `o que esta landing page vai divulgar?`.
-- O debate E19.5.4 do PR #822 registra `landing_page_offering_scope` como nome técnico da dimensão de identidade destinada a representar esse escopo, substituindo a semântica singular de `primary_service_or_offer` quando o novo contrato for consolidado.
-- `landing_page_offering_scope` deve admitir conceitualmente três casos: `uma oferta/serviço`, `um conjunto selecionado de ofertas/serviços` ou `o portfólio amplo do negócio`.
-- A E20.7 consome essa semântica para decidir qual conhecimento pesquisar; não é proprietária da definição final, persistência, UI ou forma física de `landing_page_offering_scope`.
+- A E20.2.9 consolidada no PR #825 adota `landing_page_offering_scope` como dimensão destinada a representar esse escopo, substituindo a semântica singular de `primary_service_or_offer` na nova versão executável que ainda está em implementação no PR #826.
+- `landing_page_offering_scope` admite conceitualmente três casos: `uma oferta/serviço`, `um conjunto selecionado de ofertas/serviços` ou `o portfólio amplo do negócio`.
+- A E20.7 consome essa semântica para decidir qual conhecimento pesquisar; não é proprietária da persistência, UI ou forma física de `landing_page_offering_scope`.
 - `business_offerings_summary` permanece contexto compartilhado, livre, opcional e não exaustivo; não é whitelist nem autoridade suficiente para escolher automaticamente pesquisa especializada.
 - A correspondência entre o escopo comercial informado e uma pesquisa profunda especializada pode ser sugerida semanticamente no futuro, mas texto livre, resumo do negócio ou nome da LP não se tornam autoridade taxonômica automaticamente.
-- Essa separação evita explosão taxonômica por produto, serviço, campanha ou página e evita que E20.7 crie um segundo mecanismo de ofertas concorrente com E19.5.4.
+- Essa separação evita explosão taxonômica por produto, serviço, campanha ou página e evita que E20.7 crie um segundo mecanismo de ofertas concorrente com E20.2.9/E19.5.
 
 ### 2.5. Opção A — pesquisa profunda preferencial com fallback dinâmico
 
@@ -106,8 +113,8 @@
 - Pesquisa profunda e pesquisa dinâmica orientam conhecimento consultivo/persuasivo; fatos concretos continuam sendo autoridade para claims verificáveis.
 - `funnel_stage` e `transaction_intent`, quando aplicável ao taxon, devem influenciar **como o conhecimento profundo/dinâmico é consultado e aplicado à persuasão**, porque alteram o momento e a intenção comercial da LP; eles não criam automaticamente uma nova pesquisa profunda para cada combinação nem escolhem sozinhos outro taxon de pesquisa.
 - `transaction_intent` não deve ser universalizado artificialmente; quando não for aplicável ao taxon, sua ausência não cria substituto semântico inventado para orientar pesquisa.
-- `primary_conversion_goal` permanece estratégia de conversão e, conforme o debate E19.5.4, não integra o núcleo da identidade; mudar o goal não deve, por si só, trocar a pesquisa profunda selecionada, embora continue orientando a construção da conversão durante a geração.
-- O novo contrato de pesquisa e o prompt de geração devem permitir que a mesma pesquisa profunda relevante seja consultada sob diferentes estágios de funil e intenções comerciais sem transformar a pesquisa em wireframe ou roteiro fixo.
+- `primary_conversion_goal` permanece estratégia de conversão e, conforme a E20.2.9, não integra o núcleo da identidade; mudar o goal não deve, por si só, trocar a pesquisa profunda selecionada, embora continue orientando a construção da conversão durante a geração.
+- O contrato de pesquisa deve permitir que a mesma pesquisa profunda relevante seja consultada sob diferentes estágios de funil e intenções comerciais sem transformar a pesquisa em wireframe ou roteiro fixo.
 - O diferencial de produto buscado não é a existência formal de um arquivo de pesquisa, mas a capacidade de produzir comunicação comercial de maior qualidade usando conhecimento relevante, confiável, profundo e suficientemente atual com custo e latência aceitáveis.
 
 ### 2.7. Contrato funcional da nova pesquisa profunda — Gate 1
@@ -183,7 +190,7 @@
 - Evitar repetir o mesmo insight em resumo executivo, núcleo estratégico, wireframe, SEO e conclusão; cada informação deve possuir residência principal no bloco correspondente.
 - Citações devem ficar próximas das afirmações materiais e um registro final de fontes deve facilitar auditoria.
 - A separação `estrutural / semiestável / volátil` deve permitir que uma futura camada de consulta priorize o conhecimento estável e detecte candidatos a complemento dinâmico sem reexecutar Deep Research completa.
-- O tamanho não terá meta fixa no Gate 1: priorizar cobertura e densidade útil, não volume de texto. O Gate 3 poderá revelar necessidade de limite ou compactação antes de alterar o runtime.
+- O tamanho não terá meta fixa no Gate 1: priorizar cobertura e densidade útil, não volume de texto. O Gate 3 demonstrou que uma pesquisa mais ampla pode elevar significativamente os tokens de entrada; eventual compactação deve ser decidida por evidência sem remover conhecimento material.
 - O formato continua compatível conceitualmente com o path `docs/pesquisas-brutas/<taxon_slug>/end_customer/vN.md`; qualquer metadata nova obrigatória ou alteração do loader E20.5 fica reservada ao Gate 7 se demonstrada necessária.
 
 #### 2.7.7. Critérios de aceite do Gate 1
@@ -209,31 +216,33 @@
 #### 2.8.2. Contratos incorporados
 
 - Resultado outcome-first: conhecimento profundo de mercado, público e comportamento de decisão, não solução de LP.
-- Entrada mínima: taxon/nicho/especialização; `audience_scope = end_customer`; Brasil como mercado prioritário; desambiguação única apenas quando indispensável.
-- Pesquisa multi-fonte com barra explícita de profundidade, resolução de contradições, sinais de segunda ordem e parada quando novas buscas tiverem baixo valor marginal.
+- Entrada mínima: nicho ou especialização; cliente final; Brasil como mercado prioritário; desambiguação única apenas quando indispensável.
+- Não estreitar por conta própria um nicho amplo: cobrir os principais submercados e situações materialmente relevantes e explicitar qualquer exclusão necessária.
+- Cobertura dos temas materiais do Gate 1 sem impor uma estrutura extensa ou número rígido de blocos; o relatório deve ser denso, auditável e sem repetição desnecessária.
 - Hierarquia de fontes adequada ao tipo de achado, incluindo uso controlado de concorrentes, reviews, comunidades e linguagem pública.
-- Distinção `evidência | inferência | hipótese` e `estrutural | semiestável | volátil` para achados materiais.
-- Cobertura integral dos blocos definidos no Gate 1, inclusive dimensões factuais variáveis e sinais temporais candidatos a atualização dinâmica.
+- Distinção `evidência | inferência | hipótese` e `estrutural | semiestável | volátil` quando relevante.
 - Exclusão explícita de wireframe, seções, módulos, layout, copy pronta, CTA pronto, on-page SEO prescritivo, fatos de cliente e decisões E20.2.
-- Entrega Markdown em estrutura consistente de 18 blocos, com fontes verificáveis e sem schema/infraestrutura nova.
-- Regras de parada, evidência, validação, critérios de sucesso e concisão compatíveis com `docs/template-prompts.md`.
+- Pesquisa de especialização autossuficiente no próprio escopo, contendo apenas o contexto ancestral necessário.
+- Entrega Markdown com citações próximas às afirmações materiais, fontes, limitações e informações voláteis a rechecagem futura.
+- Conformidade com a diretriz concisa/outcome-first de `docs/template-prompts.md`.
 
 #### 2.8.3. Casos representativos para o Gate 3
 
-- Caso principal recomendado: `corretor-imoveis`, `audience_scope = end_customer`, porque o projeto já possui pesquisa profunda histórica, LP real gerada e baseline humano de qualidade persuasiva; isso permite comparar a nova pesquisa sem introduzir um nicho novo como variável adicional.
-- Controle conceitual posterior: uma especialização/ultranicho real, para verificar se o prompt produz relatório autossuficiente no escopo e não depende de composição com pesquisa ancestral.
-- O Gate 2 não executa a Deep Research nem promove a nova pesquisa; isso pertence ao Gate 3.
+- Caso principal executado: `corretor-imoveis`, `audience_scope = end_customer`, escolhido porque o projeto já possuía pesquisa profunda histórica, LP real gerada e baseline humano de qualidade persuasiva; isso permitiu comparar a nova pesquisa sem introduzir um nicho novo como variável adicional.
+- A primeira execução revelou contaminação pelo contexto do projeto e estreitamento indevido para compra/venda residencial; o prompt foi ajustado de forma mínima para impedir estreitamento unilateral do nicho.
+- A segunda execução cobriu os principais submercados, eliminou prescrições de LP e foi aprovada como pesquisa `v2`; Gate 3 concluído com arquivamento pelo PR #827.
+- Controle posterior ainda útil, mas não bloqueante para o Gate 6: uma especialização/ultranicho real, para verificar se o prompt produz relatório autossuficiente no escopo e não depende de composição com pesquisa ancestral.
 
 ### 2.9. Escopo de oferta e LP multi-serviço
 
-- A UX não deve exigir que o cliente compreenda `taxon`, `ultranicho`, E20.2, E20.5 ou E20.6; a pergunta de produto adotada no debate E19.5.4 é `O que esta landing page vai divulgar?`.
-- A E20.7 adota os três escopos conceituais definidos no debate E19.5.4 exclusivamente para orientar a seleção/consulta do conhecimento: uma oferta/serviço, um conjunto selecionado ou o portfólio amplo.
+- A UX não deve exigir que o cliente compreenda `taxon`, `ultranicho`, E20.2, E20.5 ou E20.6; a pergunta de produto consolidada pela E20.2.9 é `O que esta landing page vai divulgar?`.
+- A E20.7 adota os três escopos conceituais da E20.2.9 exclusivamente para orientar a seleção/consulta do conhecimento: uma oferta/serviço, um conjunto selecionado ou o portfólio amplo.
 - Página de uma oferta pode usar pesquisa profunda especializada quando existir.
 - Página de conjunto selecionado usa por padrão a pesquisa profunda do nicho-base e complemento dinâmico somente quando necessário; não dispara uma pesquisa profunda por item.
 - Página de portfólio amplo usa por padrão a pesquisa profunda do nicho-base; a simples amplitude do portfólio não justifica múltiplas pesquisas dinâmicas.
 - Página especializada pode mencionar serviços secundários sem transformar todos em pesquisas obrigatórias ou novos taxons.
 - `business_offerings_summary` continua sendo contexto compartilhado e não resolve a seleção estruturada de parte do portfólio.
-- A menor representação funcional e física de `landing_page_offering_scope` pertence à E19.5.4/E19.5 e permanece aberta enquanto o PR #822 não for consolidado; a E20.7 não antecipa lista, tabela, coluna, enum de persistência ou UI própria.
+- A representação funcional de `landing_page_offering_scope` pertence à E20.2.9/E19.5; a E20.7 aguarda a implementação do PR #826 antes de fechar seus deltas executáveis e não cria lista, tabela, coluna, enum de persistência ou UI própria.
 - Itens livres repetidamente informados podem se tornar sinal de demanda para nova pesquisa profunda especializada e eventual evolução taxonômica, mas nunca criam taxon, pesquisa ou automação automaticamente.
 
 ## 3. Rota conceitual da primeira parte — preparação do taxon e validação da estratégia de pesquisa
@@ -261,25 +270,39 @@
 
 - **Gate 1 — contrato ideal da pesquisa profunda: CONCLUÍDO em 27/08/2026.** O contrato da seção 2.7 define objetivo, blocos de conhecimento, evidência/temporalidade, reuso/especialização, exclusões, consultabilidade e critérios de aceite sem alterar runtime.
 - **Gate 2 — criar o novo prompt de Deep Research: CONCLUÍDO em 27/08/2026.** O prompt experimental `docs/prompt-nicho-pesquisa-mercado-experimental.md` foi evoluído conforme a seção 2.8, preservando o baseline vigente.
-- **Gate 3 — produzir nova pesquisa piloto: PRÓXIMO.** Usar como caso principal `corretor-imoveis`, gerar nova pesquisa profunda com o prompt experimental e preservar a pesquisa anterior para comparação.
-- **Gate 4 — gerar LP comparável:** usar a nova pesquisa piloto no pipeline controlado, sem misturar simultaneamente outras grandes mudanças de geração que impeçam atribuir o efeito observado.
-- **Gate 5 — comparar qualidade, custo e latência:** usar como régua de produto os seis resultados desejados registrados na seção 3.1 da matriz de debate E19.5.4 do PR #822 e complementar a prova com factualidade, correção humana necessária, tokens, custo, latência e estabilidade; evitar criar uma segunda régua paralela de qualidade na E20.7.
-- **Gate 6 — decidir o desenho técnico do fallback dinâmico:** somente após comprovar o valor da nova pesquisa profunda, definir onde a pesquisa dinâmica ocorre, quando é acionada, quais limites/ferramentas/fontes usa e como sua proveniência entra no snapshot.
-- **Gate 7 — fechar deltas E20.5/E20.6/E19.3/E19.4/E19.5 e reavaliar a solução física da biblioteca de pesquisas:** distinguir o que realmente precisa de mudança de contrato, persistência, UX, snapshot e workload; consumir o contrato de `landing_page_offering_scope` da E19.5.4 quando estiver consolidado, sem criar representação concorrente na E20.7; reavaliar se o modelo repo-only da E20.5 continua adequado ao volume e ao ritmo esperados da biblioteca de pesquisas, considerando crescimento do repositório, acoplamento a bundle/deploy, operação de versionamento/aprovação, auditabilidade, custo e simplicidade. O repo-only permanece baseline durante os pilotos/MVP; eventual mudança para Supabase, Storage ou outra residência física deve ser decidida por evidência neste gate e não assumida antecipadamente.
+- **Gate 3 — produzir nova pesquisa piloto: CONCLUÍDO em 27/08/2026.** A segunda execução de `corretor-imoveis` com o prompt corrigido foi aprovada e arquivada como `end_customer/v2` no PR #827, preservando a `v1`.
+- **Gate 4 — gerar LP comparável: CONCLUÍDO em 27/08/2026.** A revisão 6 foi gerada usando a pesquisa `v2` e comparada à revisão 5, mantendo E20.2 v5, mesmo contexto factual e demais contratos/configurações de geração relevantes constantes para isolar principalmente a mudança de pesquisa.
+- **Gate 5 — comparar qualidade, custo e latência: CONCLUÍDO em 28/08/2026 com resultado POSITIVO PARCIAL.** A pesquisa `v2` elevou materialmente a qualidade da LP nos seis resultados desejados usados como referência, preservou factualidade observada e não aumentou a latência textual; entretanto, custo permanece indisponível no snapshot, estabilidade não é comprovável com uma geração por variante e a copy ainda não alcança o padrão persuasivo desejado. O resultado confirma valor da Deep Research redesenhada e justifica manter a Opção A; não autoriza redesign do prompt de geração ou renderer dentro da E20.7.
+- **Gate 6 — decidir o desenho técnico do fallback dinâmico: PRÓXIMO.** Definir somente o mínimo necessário para cobrir uma especialização sem pesquisa profunda própria: onde a pesquisa dinâmica ocorre, quando é acionada, quais limites/ferramentas/fontes usa, comportamento diante de falha e como sua proveniência entra no snapshot.
+- **Gate 7 — fechar deltas E20.5/E20.6/E19.3/E19.4/E19.5 e reavaliar a solução física da biblioteca de pesquisas:** distinguir o que realmente precisa de mudança de contrato, persistência, UX, snapshot e workload; consumir a implementação consolidada de `landing_page_offering_scope` da E20.2.9 sem criar representação concorrente na E20.7; reavaliar se o modelo repo-only da E20.5 continua adequado ao volume e ao ritmo esperados da biblioteca de pesquisas, considerando crescimento do repositório, acoplamento a bundle/deploy, operação de versionamento/aprovação, auditabilidade, custo e simplicidade. O repo-only permanece baseline durante os pilotos/MVP; eventual mudança para Supabase, Storage ou outra residência física deve ser decidida por evidência neste gate e não assumida antecipadamente.
 - **Gate 8 — consolidar plano-base v1 da E20.7:** somente após os gates anteriores registrar escopo executável, atualizar `docs/roadmap.md` e autorizar implementação.
+
+#### 3.3.1. Evidência experimental dos Gates 3–5
+
+- **Caso controlado:** mesma conta `Corretor Beta`, mesma LP de primeiro imóvel, mesma E20.2 v5 e mesmo prompt textual `e19.4-presentation-v2`; revisão 5 usou pesquisa `v1` e revisão 6 usou pesquisa `v2`.
+- **Factualidade:** após selecionar a pesquisa `v2`, a E20.6 foi reaberta automaticamente; a avaliação sistemática contra E20.2 v5 classificou os quatro candidatos factuais como cobertos pelo catálogo atual e a suficiência foi confirmada administrativamente. A revisão 6 foi persistida com validadores de apresentação/binding/imagem aprovados e não foi identificado claim objetivo não autorizado na comparação humana.
+- **Qualidade:** a revisão 6 passou de formulações predominantemente operacionais para uma narrativa mais ligada à situação real do primeiro comprador — orçamento, região, critérios de comparação, financiamento, documentação e redução de dúvida. A comparação humana considerou melhora nos seis resultados de referência: objetivo comercial, adequação ao momento do público, progressão narrativa, unidade de mensagem, conversão coerente e especificidade.
+- **Limite de qualidade:** o ganho é material, mas não transforma a copy em referência de mercado. Permanecem repetição de `clareza/organizar/próximo passo`, sobreposição entre blocos e aproveitamento parcial de tensões mais fortes presentes na pesquisa, como medo de erro irreversível, desconfiança, risco e diferenciação frente à autossuficiência digital.
+- **Tokens:** entrada textual passou de `9.150` para `18.306` tokens (`+100,1%`); saída caiu de `5.419` para `5.213` (`-3,8%`); total passou de `14.569` para `23.519` (`+61,4%`); reasoning tokens passaram de `4.450` para `4.296` (`-3,5%`). O aumento de contexto é material e deverá ser considerado em custo/compactação futura, sem concluir por si só que a pesquisa é excessiva.
+- **Latência:** latência textual registrada caiu de `51.381 ms` para `42.758 ms` (`-16,8%`); latência de imagem subiu de `35.147 ms` para `39.875 ms` (`+13,5%`). A soma simples das duas latências de provider caiu de `86.528 ms` para `82.633 ms` (`-4,5%`), mas não representa necessariamente o tempo total end-to-end do workflow.
+- **Custo:** os snapshots das duas revisões registram `estimatedCost = null` e `costStatus = unavailable` para texto e imagem. O Gate 5 não inventa custo a partir de preço externo; custo permanece evidência ausente a reconciliar com E21 antes de decisão econômica final.
+- **Correção humana:** nenhuma edição manual da copy foi aplicada entre a geração da revisão 6 e a comparação; a avaliação humana identificou melhoria e limitações, não uma correção necessária para tornar o artefato factual ou renderizável.
+- **Estabilidade:** uma única geração por variante é insuficiente para medir consistência estatística ou variabilidade criativa. O Gate 5 comprova ganho no caso piloto, não superioridade universal da `v2` em todos os taxons ou todas as execuções.
+- **Decisão resultante:** manter a **Opção A** e avançar para o Gate 6. O problema residual de copy e o renderer atual são achados legítimos do experimento, porém ficam fora do escopo executável da E20.7 e devem ser encaminhados ao recorte competente sem ampliar este rascunho.
 
 ### 3.4. Hipóteses de impacto a validar, sem autorização técnica
 
-- E20.2 pode permanecer sem mudança para provar a nova pesquisa; qualquer novo field depende de gap factual real identificado pelo fluxo competente.
+- E20.2 pode permanecer sem mudança para a política de pesquisa; qualquer novo field depende de gap factual real identificado pelo fluxo competente.
 - E20.5 já fornece seleção versionada de pesquisa profunda por taxon, mas poderá precisar evoluir se a política de reutilização entre conta ancestral e pesquisa descendente exigir nova semântica operacional.
 - E20.6 não deve ser ampliada por inferência; sua relação com elegibilidade da pesquisa especializada será definida apenas após separar preparação factual de seleção de conhecimento.
 - E19.3 hoje presume coerência entre taxon servido e pesquisa; uma futura Opção A operacional pode exigir nova versão do pacote que distinga autoridade factual, fonte de pesquisa e contexto comercial relevante.
 - E19.4 hoje materializa e valida snapshot com a mesma coerência; a futura proveniência deverá registrar pesquisa profunda utilizada e, quando houver, pesquisa dinâmica complementar, sem alterar revisões históricas.
 - O workload de geração propriamente dito já consome `modelContext.research` como contexto consultivo e facts separadamente; mudança de mecanismo de pesquisa não implica automaticamente novo renderer, nova apresentação ou nova infraestrutura.
-- E19.5/E19.5.4 são a autoridade do modelo mental e do escopo comercial da LP; a E20.7 deve consumir `landing_page_offering_scope` quando consolidado e não criar mecanismo concorrente de oferta.
+- E19.5/E20.2.9 são as autoridades do modelo mental operacional e do escopo comercial da LP; a E20.7 deve consumir `landing_page_offering_scope` após a implementação consolidada e não criar mecanismo concorrente de oferta.
 - A escolha de pesquisa especializada não é um field E20.2 e não deve ser inserida artificialmente em `account_landing_page_configurations.values`; sua menor residência operacional permanece para planejamento técnico posterior.
 - `funnel_stage` e `transaction_intent` podem alterar a maneira de aplicar a pesquisa na narrativa; `primary_conversion_goal` não deve ser usado como chave de seleção da Deep Research.
-- A E21.3 é candidata natural para consolidar evidências reproduzíveis de qualidade, correção humana, usage, latência, custo e estabilidade dos workloads, sem antecipar sua implementação neste rascunho.
+- A E21.3 é candidata natural para consolidar evidências reproduzíveis de qualidade, correção humana, usage, latência, custo e estabilidade dos workloads; o Gate 7 deve reconciliar essa fronteira sem antecipar implementação neste rascunho.
+- O experimento dos Gates 4–5 revelou limitações do prompt textual e do renderer, mas a E20.7 não os redesenha. Esses achados devem ser encaminhados ao recorte responsável por qualidade/apresentação depois de fechar a política de conhecimento.
 
 ## 4. Comercial — separação de autoridade
 
@@ -288,22 +311,23 @@
 - Preparação factual do taxon, disponibilidade comercial, entitlement da conta, identidade/escopo comercial da LP e seleção de conhecimento permanecem conceitos distintos.
 - O contrato vigente reserva E20.4 para disponibilidade comercial por `taxon + plano`; este rascunho não redefine essa autoridade.
 - Entitlement da conta permanece responsabilidade comercial da E9 e é aplicado posteriormente no fluxo concreto da conta.
-- A E19.5.4 permanece responsável pelo modelo mental da LP; a E20.7 utiliza somente o contexto necessário para resolver conhecimento e não redefine LP concreta, versão, grupo ou identidade.
+- E20.2.9/E19.5 permanecem responsáveis pelo escopo comercial e continuidade operacional da LP; a E20.7 utiliza somente o contexto necessário para resolver conhecimento e não redefine LP concreta, versão, grupo ou identidade.
 - A segunda parte do debate deverá distinguir claramente: `taxon preparado`, `pesquisa profunda disponível`, `taxon comercialmente disponível` e `conta autorizada a gerar`.
 
 ## 5. Pontos ainda abertos
 
 ### 5.1. Debate pendente
 
-- Gate 3: executar a nova Deep Research para `corretor-imoveis` com `docs/prompt-nicho-pesquisa-mercado-experimental.md`, arquivar como nova versão sem sobrescrever a pesquisa vigente e preservar metadados/fontes necessários à comparação.
-- Definir o método de comparação do Gate 5 sem alterar simultaneamente outras variáveis relevantes da geração.
+- Gate 6: definir o fallback dinâmico — gatilho, escopo, profundidade, fontes, limites, timeout, custo, observabilidade, snapshot e comportamento diante de falha — sem transformar a pesquisa dinâmica em autoridade factual ou taxonômica.
+- Definir se a pesquisa dinâmica deve ocorrer como etapa controlada anterior à geração ou dentro de workload com tool; esta é a decisão central do Gate 6.
 - Definir como o sistema associa um `landing_page_offering_scope` de uma oferta única a uma pesquisa profunda descendente existente, preservando confirmação/autoridade adequada e sem transformar texto livre, `business_offerings_summary` ou nome da LP em vínculo taxonômico automático.
 - Definir como a consulta da pesquisa profunda recebe `funnel_stage` e `transaction_intent` aplicável sem criar pesquisa separada por combinação nem antecipar decisões narrativas do workload de geração.
-- Definir o fallback dinâmico: gatilho, escopo, profundidade, fontes, limites, timeout, custo, observabilidade, snapshot e comportamento diante de falha.
-- Definir se a pesquisa dinâmica deve ocorrer como etapa controlada anterior à geração ou dentro de workload com tool, somente após os gates de qualidade.
 - Definir a menor residência operacional para a referência à pesquisa especializada, se persistência for realmente necessária; não usar `account_landing_page_configurations.values` como atalho para um dado que não é field E20.2.
 - Definir as alterações mínimas de contrato/proveniência em E19.3 e E19.4 quando a Opção A entrar em runtime.
-- Reconciliar a E20.7 com a representação final de `landing_page_offering_scope` quando a E19.5.4 consolidar seu contrato, sem duplicar no documento próprio as regras de identidade, grupo ou workspace.
+- Reconciliar a E20.7 com a implementação final de `landing_page_offering_scope` após o fechamento do PR #826, sem duplicar no documento próprio regras de identidade, persistência ou workspace.
+- Reconciliar no Gate 7 a ausência atual de custo estimado e a prova de estabilidade com a autoridade competente de E21, sem criar medição paralela dentro da E20.7.
+- Reavaliar no Gate 7 se o modelo repo-only da E20.5 continua adequado à escala esperada da biblioteca de pesquisas.
 - Verificar se a disponibilidade comercial E20.4 precisa ser implementada para o MVP imediato ou apenas formalizada antes da abertura para novos clientes.
 - Definir a segunda parte da rota: critérios de uma conta concreta para criar e gerar suas LPs quando o taxon já estiver preparado e comercialmente elegível.
+- Registrar fora da E20.7 os achados de qualidade relativos ao prompt textual e ao renderer, sem executá-los neste recorte.
 - Somente após o fechamento dos gates e decisões aplicáveis consolidar plano-base v1, atualizar `docs/roadmap.md` e autorizar implementação.
