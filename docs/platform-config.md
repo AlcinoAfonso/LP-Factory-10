@@ -183,6 +183,13 @@
 • Valor real: não versionar.
 • Regra operacional: os consumidores autorizados podem compartilhar a mesma chave; não criar outra sem necessidade aprovada.
 
+• `OPENAI_ADMIN_KEY`
+• Finalidade: chave administrativa server-side usada exclusivamente pelo Core para leitura read-only do gasto oficial total na Costs API da organização.
+• Escopo aprovado: Production; Preview somente mediante autorização operacional humana específica para a prova hospedada.
+• Estado operacional: provisionamento, configuração na Vercel e prova real ainda não validados neste recorte; ausência local não determina o estado da plataforma.
+• Separação: não substitui, não reutiliza e não pode ser exposta como `OPENAI_API_KEY`; não atravessa client, log, banco ou payload sanitizado.
+• Valor real: não versionar.
+
 • `OPENAI_OPERATIONAL_CONFIG_ENABLED`
 • Finalidade: gate server-side temporário do cutover da configuração operacional dinâmica dos quatro workloads OpenAI de produto.
 • Escopo: Preview e Production do projeto Core, com configuração independente por ambiente; Development ignora o gate e permanece no baseline local.
@@ -342,6 +349,8 @@
 6.3.1 Endpoint externo atual
 • Endpoint OpenAI Responses API: `https://api.openai.com/v1/responses`
 • Endpoint OpenAI Images API: `https://api.openai.com/v1/images/generations`
+• Endpoint OpenAI Costs API: `https://api.openai.com/v1/organization/costs`
+• Consumidor versionado da Costs API: `lib/openai-costs/providers/openAiCostsProvider.ts`, exclusivamente server-side e autenticado por `OPENAI_ADMIN_KEY`.
 • Consumidores atuais conhecidos:
 • `lib/conversion-content/adapters/commercialActivationOpenAiAdapter.ts`
 • `lib/conversion-content/adapters/landingPageGenerationProfileOpenAiAdapter.ts`

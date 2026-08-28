@@ -2909,7 +2909,7 @@ Repositório — Ajustados
 
 21. E21 — Gestão e governança dos workloads OpenAI
 - Objetivo: gerir e governar os workloads OpenAI por recortes aprovados, com configuração explícita, observabilidade segura, leitura administrativa e configuração operacional dinâmica por ambiente, sem otimização automatizada.
-- Status: a fundação E21.1 permanece preservada; a E21.2, incluindo o catálogo operacional da E21.2.5, está concluída com apply e gates hospedados aprovados; o plano-base v1 da E21.3 já está na `main`, enquanto a implementação experimental da E21.3.3 permaneceu no PR #819, fechado sem merge por repriorização humana; a E21.4 possui plano-base v2 mínimo aprovado e permanece como prioridade imediata, antes da retomada da E21.3.4.
+- Status: a fundação E21.1 permanece preservada; a E21.2, incluindo o catálogo operacional da E21.2.5, está concluída com apply e gates hospedados aprovados; o plano-base v1 da E21.3 já está na `main`, enquanto a implementação experimental da E21.3.3 permaneceu no PR #819, fechado sem merge por repriorização humana; a E21.4 possui plano-base v2 mínimo aprovado e iniciou a E21.4.3, antes da retomada da E21.3.4.
 
 21.1 Fundação, normalização e leitura dos workloads OpenAI
 
@@ -3127,10 +3127,26 @@ Repositório — Ajustados
 
 21.4.1 Objetivo e status
 - Objetivo: permitir ao `platform_admin` conhecer o gasto oficial total OpenAI do período e o custo prospectivo calculado das Landing Pages geradas, agregado por conta e detalhado por Landing Page nos workloads de texto e imagem, com a diferença apresentada como Outros gastos / reconciliação.
-- Status: plano-base v2 mínimo aprovado em 28/08/2026; implementação não iniciada; execução anterior à retomada da E21.3.4.
+- Status: plano-base v2 mínimo aprovado em 28/08/2026; E21.4.3 em execução com implementação técnica local validada e prova oficial hospedada pendente; execução anterior à retomada da E21.3.4.
+
+21.4.2 Registros do recorte
+- Repositório:
+  - Criados:
+    - `lib/openai-costs/contracts.ts`
+    - `lib/openai-costs/index.ts`
+    - `lib/openai-costs/providers/openAiCostsProvider.ts`
+    - `lib/openai-costs/providers/openAiCostsProviderCore.ts`
+    - `lib/openai-costs/validation-cases.ts`
+  - Ajustados:
+    - `package.json`
+- Referências:
+  - Plano-base v2 aprovado: `docs/lousa-plano-base-e21-4.md`.
+  - Matriz de consolidação: `docs/matriz-consolidacao-e21-4.md`.
+  - Boundary técnico: `docs/base-tecnica.md` — 3.16.
+  - Configuração administrativa OpenAI: `docs/platform-config.md` — 3.5 e 6.3.1.
 
 21.4.3 Autoridade oficial de Costs
-- Status: Planejada e não implementada.
+- Status: Implementação técnica local concluída; prova oficial hospedada com credencial administrativa autorizada e gate do Analista pendentes.
 - Automação: não.
 - Conteúdo:
   - consultar sob demanda somente a Costs API com Admin API Key server-side para obter o gasto oficial total em USD no mês atual ou em período UTC personalizado;
