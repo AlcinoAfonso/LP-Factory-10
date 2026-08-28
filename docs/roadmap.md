@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 27/08/2026
-• Versão: v1.5.188
+• Versão: v1.5.189
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2696,6 +2696,41 @@ Repositório — Ajustados
   * Validação e handoff congelam fingerprints distintos do conteúdo do draft e da coleção operacional completa; qualquer drift posterior de taxonomia, configurações, LPs ou elegibilidade deixa a evidência stale e exige nova preparação antes da revisão/merge.
   * A visão agregada deve evoluir `/admin/estrutura-lp?view=entradas`; `/admin/taxonomia/[taxonId]` permanece responsável pela avaliação individual E20.6.5. Não criar nova rota de primeiro nível; qualquer proposta de nova rota depende de insuficiência comprovada das superfícies existentes.
   * A primeira entrega preserva histórico imutável, retirada forward-only de fields publicados e snapshots/configurações na versão efetivamente usada; não inclui rollback, múltiplos drafts, targeting por taxon, job, fila, agente, automação recorrente ou engine genérica de diff.
+
+20.2.9 Escopo comercial da LP e reconciliação da identidade
+
+20.2.9.1 Objetivo e status
+
+* Objetivo: substituir a representação singular de oferta por um escopo comercial capaz de expressar uma oferta, algumas ofertas ou o portfólio amplo, reconciliando a continuidade da identidade E19.5 sem alterar snapshots históricos.
+* Status: Em andamento em duas etapas. A Etapa 1 está implementada no PR draft #826 e aguarda validação final/merge humano; a Etapa 2 só começa depois que o bootstrap chegar à `main`.
+
+20.2.9.2 Bootstrap mantendo v5
+
+* Status: Implementado no PR draft #826; merge e gate final pendentes.
+* Conteúdo:
+  * Mantém `CURRENT=5`, registry publicado v1–v5 e toda operação do cliente em v5.
+  * Adiciona ao contrato E20.2 o value type administrativo `offering_scope`, com modos técnicos `single | multiple | portfolio` e rótulos futuros `Uma oferta | Algumas ofertas | Todo o portfólio`.
+  * `offerings` permanece entrada livre: não é validado semanticamente, restringido ou derivado de `business_offerings_summary`, que continua opcional, não exaustivo e sem função de catálogo ou whitelist; após `trim`, a lista rejeita duplicidades case-insensitive e exige uma oferta distinta em `single`, pelo menos duas em `multiple` e pelo menos uma em `portfolio`.
+  * O resolver usado pelo gate E20.2.8 projeta em memória os dois fields v5 para os dois fields futuros somente quando valida um registry candidato que os retire, canonicaliza e falha fechado para legado malformado, sem persistência.
+  * O Admin recebe somente o reconhecimento mínimo do novo value type para visualizar/avaliar draft; não há registry v6 publicado, nova identidade E19.5, UI operacional do cliente, geração/snapshots v6, migration, DDL, ACL ou nova residência.
+
+20.2.9.3 Contrato e limites definidos
+
+* Status: Definidos.
+* Conteúdo:
+  * A próxima versão executável preserva v1–v5, introduz `landing_page_offering_scope` e `landing_page_offering_scope_description` e retira os fields singulares somente de forma forward-only.
+  * E20.2 mantém a autoridade de tipo, validação, canonicalização e igualdade material; E19.5 passa a considerar `funnel_stage`, `transaction_intent` quando aplicável e `landing_page_offering_scope` como núcleo de identidade, enquanto `primary_conversion_goal` permanece estratégia obrigatória fora desse núcleo.
+  * A adaptação lazy cobre E19.2 pré-handoff e E19.5 sob o mesmo `C`, sem regravar snapshots, criar residência, schema, migration, ACL ou autoridade paralela.
+  * A nova versão só pode tornar-se atual após os gates E20.2.8 e E20.6 aplicáveis; a configuração mínima dos novos fields não reabre home, detalhe, preview, grupos, A/B, prompt, algoritmo de geração ou renderer.
+
+20.2.9.4 Draft, revisão e publicação da v6
+
+* Status: Planejada; bloqueada até o merge da Etapa 1 na `main`.
+* Sequência:
+  * partir da `main` ainda em v5 e criar exatamente o draft v6 pelo lifecycle E20.2.8;
+  * validar as configurações operacionais completas, executar E20.6 pré-publicação e preservar as decisões humanas vigentes;
+  * reconciliar identidade E19.5, UI operacional, save/reload, geração e snapshots;
+  * somente então materializar v6 no registry repo-only, alterar `CURRENT=6`, validar o deploy e reconciliar/remover o draft conforme o lifecycle canônico.
 
 20.3 Perfil de orientação para geração
 

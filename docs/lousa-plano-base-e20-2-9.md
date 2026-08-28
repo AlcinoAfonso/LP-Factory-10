@@ -1,10 +1,10 @@
-27/08/2026 — Plano-base v1 — E20.2.9 — Escopo comercial da LP e reconciliação da identidade
+27/08/2026 — Plano-base v2 — E20.2.9 — Escopo comercial da LP e reconciliação da identidade
 
 ## 1. Estado e decisões fixas
 
 ### 1.1. Estado
 
-- Status: plano-base v1 consolidado a partir das decisões humanas do debate E19.5.4 no PR #822; implementação ainda não iniciada.
+- Status: plano-base v2 replanejado por decisão humana em duas etapas. A Etapa 1 é o bootstrap compatível mantendo v5; a Etapa 2, posterior ao merge da Etapa 1 na `main`, cria, avalia e publica a v6.
 - Caso macro: `E20 — Preparação e liberação de taxons para geração de landing pages`.
 - Recorte: `E20.2.9 — Escopo comercial da LP e reconciliação da identidade`.
 - Path canônico: `docs/lousa-plano-base-e20-2-9.md`.
@@ -62,18 +62,20 @@
 - Nome técnico aprovado: `landing_page_offering_scope`.
 - Rótulo de produto: `O que esta landing page vai divulgar?`.
 - O field é universal, obrigatório, específico da LP e fornecido no contexto da própria LP.
+- Na nova versão, `landing_page_offering_scope` e `landing_page_offering_scope_description` são fields universais, obrigatórios, disponíveis nos quatro planos, com `valueScope = "landing_page"`, `expectedValueOrigin = "landing_page_provided"`, `landingPageSubstitutionPolicy = "not_applicable"` e `createdInVersion` igual à nova versão. Os dois fields singulares permanecem fisicamente nas definições herdadas, com `retiredInVersion` igual à nova versão, mas são omitidos da resolução corrente.
 - O contrato usa um value type composto próprio da E20.2, `offering_scope`, seguindo o precedente já existente de value types estruturados como `keyword_map`, `number_range`, `asset_reference` e `color_palette`; não cria engine, tabela ou infraestrutura nova.
 - Forma canônica do valor:
   - uma oferta: `{ mode: "single", offerings: ["Implante dentário"] }`;
-  - algumas ofertas: `{ mode: "selected", offerings: ["Implante dentário", "Clareamento"] }`;
+  - algumas ofertas: `{ mode: "multiple", offerings: ["Implante dentário", "Clareamento"] }`;
   - portfólio amplo: `{ mode: "portfolio", offerings: ["Implante dentário", "Clareamento", "Ortodontia"] }`.
 - Regras determinísticas:
-  - `mode` admite somente `single | selected | portfolio`;
-  - `offerings` é sempre lista não vazia de strings não vazias;
-  - itens repetidos de forma case-insensitive são inválidos;
-  - `single` exige exatamente um item;
-  - `selected` exige pelo menos dois itens;
-  - `portfolio` exige pelo menos um item e representa a declaração humana de que a lista corresponde ao portfólio abrangido pela LP naquele momento;
+  - `mode` admite somente `single | multiple | portfolio`;
+  - `offerings` é entrada humana livre, representada como lista não vazia de strings não vazias; seu conteúdo factual não é validado, restringido ou derivado de `business_offerings_summary`, taxon, pesquisa ou qualquer catálogo/whitelist;
+  - após `trim`, itens iguais em comparação case-insensitive são duplicidade inválida;
+  - `business_offerings_summary` permanece contexto opcional, não exaustivo e sem autoridade sobre os itens informados em `offerings`;
+  - `single` exige exatamente uma oferta distinta;
+  - `multiple` exige pelo menos duas ofertas distintas;
+  - `portfolio` exige pelo menos uma oferta distinta e representa a declaração humana de que a lista corresponde ao portfólio abrangido pela LP naquele momento;
   - não fixar máximo arbitrário de itens sem evidência de produto.
 - O valor factual da lista pode evoluir sem criar automaticamente nova identidade. Mudança material do escopo continua sendo decisão semântica humana conforme a seção 2.2.
 
@@ -83,17 +85,21 @@
 - A nova versão introduz `landing_page_offering_scope_description` como `string` obrigatória e específica da LP para descrever factual e brevemente o escopo selecionado como um todo.
 - `landing_page_offering_scope_description` não integra o núcleo de identidade; atualizar detalhes factuais da mesma oferta, conjunto ou portfólio permanece possível na mesma LP e só afeta conteúdo futuro por nova versão.
 - `primary_service_or_offer` e `primary_service_or_offer_description` ficam retirados somente na nova versão executável; v1–v5 permanecem imutáveis e resolvíveis.
+- Referências funcionais da nova versão, inclusive o propósito de `business_offerings_summary`, labels, mensagens, guard e confirmação, passam a nomear somente `landing_page_offering_scope`. Referências antigas permanecem somente em v1–v5, readers de snapshot, adapters de compatibilidade operacional, bootstraps legados enquanto a residence ainda não tiver sido canonicalizada e testes correspondentes; nunca funcionam como autoridade corrente da nova versão. O contrato existente `sameCommercialWorkConfirmed` é reutilizado, com renomeação apenas de sua apresentação e associação de erro; não há segundo fluxo de confirmação.
 
 ### 1.7. Compatibilidade histórica e transição operacional
 
 - Não reescrever materializações, generation context snapshots, revisões ou versões E20.2 v1–v5.
-- A nova versão é forward-only e somente se torna atual pelo lifecycle E20.2.8.
-- Configuração operacional v5 que ainda possua `primary_service_or_offer` e não possua `landing_page_offering_scope` recebe adaptação determinística limitada ao boundary operacional:
+- A Etapa 1 mantém `CURRENT=5`, o registry publicado exclusivamente em v1–v5 e toda operação do cliente em v5. Ela não cria nem publica a entrada v6.
+- Para que o gate pré-publicação E20.2.8 consiga validar uma futura candidata v6 contra configurações operacionais v5, a Etapa 1 adiciona compatibilidade read-only no resolver já usado por `countInvalidInputCatalogOperationalConfigurations`.
+- Somente quando o registry explicitamente fornecido ao resolver representa uma candidata que retira os fields legados, uma configuração v5 que ainda possua `primary_service_or_offer` recebe projeção determinística em memória:
   - `primary_service_or_offer = X` → `landing_page_offering_scope = { mode: "single", offerings: [X] }`;
   - `primary_service_or_offer_description = Y` → `landing_page_offering_scope_description = Y`.
-- Essa adaptação existe somente para residences operacionais/bootstraps legados e não altera snapshots históricos.
-- A resolução canonicalizada da nova versão omite os fields retirados; no primeiro save válido sob a nova versão, a residence é persistida somente com os novos fields e o mecanismo legado deixa de ser necessário para aquela configuração.
-- Não criar migration de dados apenas para trocar chaves JSON se o adapter versionado e o primeiro save puderem concluir a transição de forma segura e observável. Se a análise de implementação demonstrar que o gate E20.2.8 não consegue validar todas as configurações correntes com essa adaptação sem estado intermediário inválido, parar antes de criar migration e devolver o requisito técnico com evidência objetiva.
+- A projeção canonicaliza trim e shape, não consulta `business_offerings_summary`, não persiste, não altera a versão da configuração e falha fechada quando qualquer field legado necessário estiver malformado.
+- O reconhecimento administrativo mínimo da Etapa 1 limita-se ao novo value type e aos rótulos necessários para visualizar e avaliar um draft; não cria UI operacional do cliente.
+- A Etapa 2 cria e valida o draft v6 após o suporte da Etapa 1 estar na `main`, executa E20.6 pré-publicação e só então materializa a versão no registry, torna `CURRENT=6` e reconcilia as configurações conforme o lifecycle vigente.
+- A compatibilidade histórica da identidade E19.5, o primeiro save canônico v6 e os consumidores de geração/snapshot pertencem à Etapa 2; nenhuma dessas autoridades é antecipada no bootstrap.
+- Nenhuma etapa altera schema ou cria migration, DDL, ACL, nova residência ou autoridade de catálogo no banco. Se evidência operacional contradisser o contrato versionado atual, parar o caso e registrar a divergência.
 
 ## 2. Contrato do caso
 
@@ -103,31 +109,26 @@
   - decisão humana aprovada para substituir a semântica singular de oferta e corrigir o núcleo de identidade antes da nova UX E19.5.4.
 - Entrada:
   - registry E20.2 v5 e lifecycle E20.2.8 vigentes;
+  - configurações E19.2 ainda pré-handoff em `account_landing_page_onboarding_configurations`;
   - configurações compartilhadas e específicas das LPs já existentes;
   - snapshots históricos imutáveis;
   - cadeia taxonômica, plano e versão efetiva `C` fornecidos pelos boundaries vigentes.
 - Processamento:
-  - adicionar o value type `offering_scope` e sua validação ao contrato E20.2;
-  - materializar a nova versão do registry retirando somente na nova versão os dois fields singulares e adicionando `landing_page_offering_scope` + `landing_page_offering_scope_description`;
-  - canonicalizar valores estruturados e adaptar deterministicamente residences legadas;
-  - atualizar a autoridade E19.5 de continuidade da identidade;
-  - atualizar a allowlist/proteção E20.2.8 para refletir a nova autoridade;
-  - atualizar somente a configuração mínima necessária para editar os novos fields;
-  - validar a transição completa antes de tornar a nova versão atual.
+  - Etapa 1: materializar a semântica estrutural de `offering_scope` uma única vez no boundary público `lib/conversion-content/landing-page/input-catalog/`, com modos `single | multiple | portfolio`, trim/canonicalização e conteúdo livre de `offerings`;
+  - Etapa 1: fazer `validateLandingPageInputValue` e `onboardingConfiguration` reutilizarem essa autoridade, habilitando a projeção read-only exclusivamente quando um registry candidato retira os fields legados;
+  - Etapa 1: adicionar somente o reconhecimento administrativo mínimo do value type para visualizar/avaliar o draft, sem UI operacional, save v6, geração ou snapshot;
+  - Etapa 2: materializar o draft v6, executar gates E20.2.8/E20.6, reconciliar a identidade E19.5 e somente depois publicar registry v6 e `CURRENT=6`.
 - Validação:
-  - validar schema/registry/resolver da nova versão;
-  - validar cardinalidade e unicidade do `offering_scope`;
-  - validar configurações legadas, incompletas e novas;
-  - validar continuidade da identidade e mudanças permitidas;
-  - validar transição E20.2.8 e revisão E20.6 quando exigida;
-  - validar geração e snapshots sem reinterpretação histórica.
+  - Etapa 1: validar schema/parser, os três modos, conteúdo livre sem relação com `business_offerings_summary`, canonicalização, unicidade case-insensitive após `trim`, rejeição de `selected` e falha fechada para shape inválido;
+  - Etapa 1: provar que `CURRENT=5`, versões publicadas v1–v5 e resolução operacional do cliente v5 permanecem inalterados;
+  - Etapa 1: provar no gate operacional E20.2.8 que uma candidata sintética v6 aceita configuração v5 válida pela projeção read-only e rejeita legado malformado, sem write;
+  - Etapa 2: validar registry/resolver v6, save/reload canônico, handoff E19.5, identidade, geração, snapshots e publicação.
 - Persistência:
-  - continuar usando `account_landing_page_configurations.values` e as residences vigentes; nenhuma nova coluna/tabela por padrão;
-  - o primeiro save sob a nova versão persiste a representação canônica nova pelo RPC vigente.
+  - Etapa 1: nenhuma escrita, migração ou mudança de residence; a projeção existe apenas no valor resolvido em memória durante a validação da candidata;
+  - Etapa 2: reutilizar as residences e saves vigentes para a representação canônica nova, sem DDL, migration, ACL ou nova residência.
 - Consumo:
-  - E19.5 usa o novo escopo como dimensão da identidade;
-  - geração recebe o valor factual novo no mesmo fluxo de facts/contexto vigente;
-  - E20.7 poderá consumi-lo futuramente para seleção de conhecimento, sem alterar este contrato.
+  - Etapa 1: somente input catalog, resolver operacional usado pelo gate E20.2.8 e visualização administrativa de draft reconhecem o value type; clientes continuam em v5;
+  - Etapa 2: E19.5, UI operacional, geração, snapshots e consumidores posteriores passam a usar v6 após publicação.
 - Fallback:
   - valor legado malformado, novo valor inválido, ausência de descrição obrigatória ou incompatibilidade de versão falha fechado;
   - não inferir oferta a partir de nome da LP, `business_offerings_summary`, taxon ou pesquisa;
@@ -146,58 +147,73 @@
   - confirmação positiva preserva a mesma LP e a mudança só entra no conteúdo por nova versão;
   - ausência de confirmação bloqueia o save e orienta a criação de outra LP quando o trabalho comercial for diferente;
   - o sistema não cria nova LP automaticamente.
+- A compatibilidade histórica do baseline usa somente a projeção read-only `primary_service_or_offer = X` → `{ mode: "single", offerings: [X] }` quando ainda não existir revisão com o novo field. A comparação usa a configuração operacional canônica corrente e, na ausência dela, essa projeção; baseline legado malformado falha fechado e nenhum snapshot é regravado.
 - Não criar constraint, chave, tabela ou fingerprint persistido para impedir duas LPs com identidade igual.
 
 ### 2.3. Relação com E20.2.8 e E20.6
 
+- O bootstrap da Etapa 1 precisa ser mergeado na `main` mantendo v5 antes da criação do draft v6, porque o lifecycle E20.2.8 sempre cria `CURRENT + 1` e valida configurações operacionais pelo resolver contra o registry candidato.
+- Após esse merge, a Etapa 2 parte da `main` ainda em v5, cria exatamente o draft v6, executa a avaliação E20.6 pré-publicação e somente publica/reconcilia depois dos gates humanos e determinísticos vigentes.
 - A transição da v5 para a nova versão é material e não deve ser classificada artificialmente como carry-forward compatível apenas para evitar revisão.
 - `landingPageCommercialIdentityFieldKeys` deve passar a refletir somente `funnel_stage`, `transaction_intent` e `landing_page_offering_scope`; `primary_conversion_goal` e `primary_service_or_offer` deixam de ser autoridades vigentes de continuidade.
-- O gate E20.2.8 deve provar que consumidores E19.5 e configurações correntes suportam a nova versão antes da publicação.
+- O gate E20.2.8 deve provar que o fluxo E19.2 pré-handoff, os consumidores E19.5 e suas coleções operacionais completas suportam a nova versão antes da publicação.
 - Taxons preparados materialmente afetados devem seguir a E20.6 vigente para decisão humana de suficiência da nova versão; não copiar `reviewed_input_catalog_version` por conveniência.
 - O mesmo número efetivo `C` deve chegar a configuração, workspace e geração conforme a autoridade canônica já implantada pela E20.2.8.
 
 ### 2.4. Configuração mínima antes da nova UX
 
-- Este recorte altera somente a superfície de configuração necessária para preencher e revisar os novos fields.
+- A Etapa 1 altera somente o reconhecimento administrativo necessário para visualizar e avaliar o novo value type no draft; não cria controles operacionais do cliente.
+- Os controles abaixo pertencem à Etapa 2, depois da publicação segura da v6.
 - `landing_page_offering_scope` deve permitir escolher claramente:
   - uma oferta;
   - algumas ofertas;
   - todo o portfólio.
 - Nos três casos, a pessoa informa a lista factual correspondente e a descrição curta do escopo.
+- A escolha do modo deve priorizar reconhecimento: `Uma oferta`, `Algumas ofertas` e `Todo o portfólio` permanecem identificáveis por rótulo humano e estado selecionado, sem exigir que a pessoa memorize os valores técnicos `single | multiple | portfolio` nem deduza o modo apenas pela quantidade de itens.
+- A lista é entrada livre; a interface não deve sugerir que `business_offerings_summary` seja catálogo completo, whitelist ou fonte da lista.
+- Os controles de modo, lista de ofertas e descrição possuem nome acessível, labels, instruções e erros programaticamente associados; são operáveis por teclado, preservam foco visível e estado selecionado perceptível, não dependem exclusivamente de hover e mantêm alvos de ação adequados à superfície responsiva.
 - A experiência pode reutilizar os componentes e o formulário existentes; não redesenhar home, detalhe, histórico ou preview do workspace nesta fase.
 - A UX completa da E19.5.4 só começa depois que a nova versão E20.2 estiver operacional e os gates estruturais estiverem aprovados.
+- Fica preservada, sem implementação neste recorte, a oportunidade condicional `prod#12`: breadcrumbs ou switcher contextual enxuto só serão reconsiderados após a reconciliação estrutural e a retomada aprovada da E19.5.4, se usuários reais operando múltiplas contas ou LPs apresentarem erro de contexto reproduzível ou perda mensurável de tempo. O custo esperado é médio e este caso não cria breadcrumb, switcher global, favoritos, recentes, grupo, entidade de identidade nem mudança na navegação do workspace.
 
 ## 3. Fases e próxima ação
 
-### 3.1. E20.2.9 — Escopo comercial da LP e reconciliação da identidade
+### 3.1. E20.2.9.1 — Bootstrap de `offering_scope` mantendo v5
 
 - Automação: não.
 - Objetivo:
-  - entregar a nova representação de escopo comercial da LP, corrigir a autoridade de identidade E19.5 e publicar a nova versão E20.2 somente após transição operacional segura.
+  - permitir que o lifecycle E20.2.8 visualize e valide com segurança uma futura candidata v6 sobre configurações v5, sem antecipar publicação ou operação v6.
 - Entrega executável:
   - novo value type `offering_scope` no contrato E20.2;
-  - nova versão executável do registry, preservando v1–v5;
-  - `landing_page_offering_scope` e `landing_page_offering_scope_description`;
-  - retirada forward-only de `primary_service_or_offer` e `primary_service_or_offer_description` na nova versão;
-  - canonicalização e adaptação determinística de configurações v5 legadas;
-  - atualização da continuidade de identidade E19.5 e da proteção E20.2.8;
-  - controle mínimo de configuração para os novos fields;
-  - validações determinísticas e regressões do input catalog, onboarding/configuração, workspace, geração e snapshots;
-  - gates existentes E20.6 e E20.2.8 antes da ativação da nova versão;
-  - atualização documental/roadmap somente pelo fluxo ABC quando o estado final estiver comprovado.
+  - parser/canonicalizador com `single | multiple | portfolio`, `offerings` livre sem catálogo ou derivação e unicidade case-insensitive após `trim`;
+  - projeção read-only dos dois fields v5 para os dois fields futuros quando o resolver recebe registry candidato compatível;
+  - falha fechada para legado malformado e regressão no gate operacional E20.2.8;
+  - reconhecimento administrativo mínimo do value type;
+  - plano, matriz, roadmap e PR reconciliados com a estratégia de duas etapas.
 - Critérios de aceite:
-  - v1–v5 permanecem imutáveis e resolvíveis;
-  - nova versão não vira atual antes dos gates E20.2.8/E20.6 aplicáveis;
-  - configurações v5 válidas continuam consumíveis por adaptação determinística e são canonicalizadas no primeiro save sob a nova versão;
-  - `primary_conversion_goal` pode mudar na mesma LP sem erro de identidade;
-  - `landing_page_offering_scope` suporta os três modos e aplica confirmação humana somente a mudança material;
-  - duas LPs concretas podem compartilhar a mesma identidade sem bloqueio;
-  - geração recebe os novos facts sem alteração de algoritmo, prompt ou renderer;
-  - snapshots históricos permanecem inalterados;
-  - nenhuma nova infraestrutura ou residência é criada por conveniência;
+  - `CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION === 5`, lista publicada `[1,2,3,4,5]` e resolução operacional v5 preservadas;
+  - nenhum arquivo de registry, lifecycle, geração, snapshot, UI operacional, migration ou SQL é alterado;
+  - candidata sintética v6 passa com configuração v5 válida por projeção somente em memória e falha fechada para legado malformado;
+  - `selected` é rejeitado; `multiple` é aceito; o conteúdo livre não é confrontado com `business_offerings_summary`, mas duplicidades após `trim` e comparação case-insensitive são rejeitadas;
+  - o diff não contém write, DDL, migration, ACL, nova residence, identidade E19.5 ou publicação v6;
   - `npm ci`, `npm run check` e validações focais aplicáveis passam antes do gate de merge da implementação.
 - Próxima ação:
-  - submeter este plano-base v1 ao processo definido em `docs/prompt-estrategista.md`; após sua incorporação à `main`, executar a orquestração/implementação aprovada antes de retomar a UX E19.5.4.
+  - submeter o delta da Etapa 1 ao Analista e ao humano; o merge permanece humano.
+
+### 3.2. E20.2.9.2 — Draft, revisão e publicação da v6
+
+- Automação: não.
+- Pré-condição:
+  - Etapa 1 mergeada na `main`, ainda com `CURRENT=5` e registry publicado v1–v5.
+- Entrega futura:
+  - criar e congelar o draft v6 pelo lifecycle E20.2.8;
+  - validar as configurações operacionais completas usando a compatibilidade read-only já implantada;
+  - executar E20.6 pré-publicação e decisões humanas aplicáveis;
+  - reconciliar autoridade de identidade E19.5, UI operacional, save/reload, geração e snapshots v6;
+  - materializar v6 no registry, alterar `CURRENT=6`, validar o deploy e reconciliar o draft publicado antes de removê-lo.
+- Limites:
+  - sem migration, DDL, ACL, nova residence ou banco como autoridade do catálogo publicado;
+  - nenhum efeito operacional v6 antes dos gates e da publicação repo-only.
 
 ## 4. Escopo negativo e critérios de parada
 
@@ -220,7 +236,8 @@
 
 - Parar se o value type composto não puder ser integrado ao contrato E20.2 sem criar segunda autoridade de validação.
 - Parar se a transição operacional exigir reescrever snapshots históricos.
-- Parar se a adaptação lazy das configurações legadas não permitir validar todas as configurações operacionais exigidas pelo gate E20.2.8; nesse caso, devolver evidência técnica antes de propor migration de dados.
+- Parar se a adaptação lazy das configurações legadas não permitir validar todas as configurações operacionais exigidas pelo gate E20.2.8 ou se evidência operacional contradisser o contrato versionado atual; registrar a divergência sem propor ou acrescentar migration, DDL ou alteração de ACL por inferência.
 - Parar se a nova versão exigir que E20.6 ou E20.2.8 sejam contornadas para ativação.
+- Parar a Etapa 1 se `CURRENT`, `registry.ts`, UI operacional, geração, snapshots, identidade E19.5 ou qualquer persistência precisar mudar antes de o bootstrap chegar à `main`.
 - Parar se a implementação exigir catálogo estruturado de portfólio, nova residência ou infraestrutura não autorizada neste plano.
 - Parar se a solução exigir decidir o modelo de grupos ou redesenhar a UX principal antes de concluir este recorte.

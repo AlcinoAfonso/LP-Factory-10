@@ -13,8 +13,13 @@ import {
   realEstateBrokerNicheTaxon,
   realEstateSegmentTaxon,
   validateLandingPageInputCatalogDraft,
+  type LandingPageInputCatalogLayerEntry,
+  type LandingPageInputCatalogRegistry,
+  type LandingPageInputCatalogRegistryEntry,
+  type LandingPageInputFieldDefinition,
 } from "../../../../lib/conversion-content/landing-page/input-catalog";
 import { deriveEffectiveTaxonPreparation } from "../../../../lib/conversion-content/landing-page/taxon-preparation";
+import { resolveAccountLandingPageOnboardingConfiguration } from "../../../../lib/lp-builder/onboardingConfiguration";
 
 const page = readFileSync(new URL("./page.tsx", import.meta.url), "utf8");
 const adapter = readFileSync(
@@ -57,6 +62,8 @@ const packageJson = readFileSync(new URL("../../../../package.json", import.meta
 assert.match(page, /allowedValues\.map\(inputOptionLabel\)/);
 assert.match(page, /rent:\s*"Locação"/);
 assert.match(page, /return labels\[value\] \?\? humanize\(value\)/);
+assert.match(page, /offering_scope:\s*"Escopo de ofertas"/);
+assert.match(page, /landing_page_offering_scope:\s*"Escopo comercial da landing page"/);
 assert.doesNotMatch(page, /rent:\s*"rent"/);
 assert.doesNotMatch(page, /Módulos e variantes|ModuleView|module-catalog/);
 assert.doesNotMatch(adapter, /"modulos"|module-catalog|readModules/);
@@ -179,6 +186,131 @@ assert.equal(
   ]),
   1,
 );
+const offeringScopeCandidate = validateLandingPageInputCatalogDraft({
+  draft: offeringScopeDraft(),
+  taxons: [
+    { identity: realEstateSegmentTaxon, reviewedVersion: 5, operational: false },
+    { identity: realEstateBrokerNicheTaxon, reviewedVersion: 5, operational: true },
+  ],
+});
+assert.equal(offeringScopeCandidate.ok, true);
+if (!offeringScopeCandidate.ok) {
+  throw new Error("Expected offering-scope draft candidate");
+}
+const legacyOfferingConfiguration = {
+  ...preHandoffBase,
+  storedValues: {
+    primary_service_or_offer: {
+      scope: "offer" as const,
+      value: " Oferta livre da configuração v5 ",
+    },
+    primary_service_or_offer_description: {
+      scope: "offer" as const,
+      value: " Descrição factual legada ",
+    },
+  },
+};
+assert.equal(
+  countInvalidInputCatalogOperationalConfigurations(
+    offeringScopeCandidate.value,
+    [legacyOfferingConfiguration],
+  ),
+  0,
+);
+const projectionInput = {
+  accountId: legacyOfferingConfiguration.accountId,
+  landingPageId: legacyOfferingConfiguration.landingPageId,
+  catalogVersion: 6,
+  revision: 1,
+  planKey: legacyOfferingConfiguration.planKey,
+  taxonChain: legacyOfferingConfiguration.taxonChain,
+  storedValues: legacyOfferingConfiguration.storedValues,
+  authoritativeValues: legacyOfferingConfiguration.authoritativeValues,
+  registry: offeringScopeCandidate.value.registry,
+};
+const inputBeforeProjection = JSON.parse(JSON.stringify(projectionInput));
+const projected = resolveAccountLandingPageOnboardingConfiguration(
+  projectionInput,
+);
+assert.equal(projected.ok, true);
+if (!projected.ok) throw new Error("Expected read-only offering projection");
+assert.deepEqual(projected.configuration.storedValues, {
+  landing_page_offering_scope: {
+    scope: "landing_page",
+    value: {
+      mode: "single",
+      offerings: ["Oferta livre da configuração v5"],
+    },
+  },
+  landing_page_offering_scope_description: {
+    scope: "landing_page",
+    value: "Descrição factual legada",
+  },
+});
+assert.deepEqual(projectionInput, inputBeforeProjection);
+
+const currentV5 = resolveAccountLandingPageOnboardingConfiguration({
+  ...projectionInput,
+  catalogVersion: 5,
+  registry: undefined,
+});
+assert.equal(currentV5.ok, true);
+if (!currentV5.ok) throw new Error("Expected unchanged published v5 resolution");
+assert.equal(
+  Object.hasOwn(
+    currentV5.configuration.storedValues,
+    "primary_service_or_offer",
+  ),
+  true,
+);
+assert.equal(
+  Object.hasOwn(
+    currentV5.configuration.storedValues,
+    "landing_page_offering_scope",
+  ),
+  false,
+);
+
+const partialCandidate = resolveAccountLandingPageOnboardingConfiguration({
+  ...projectionInput,
+  registry: withoutOfferingScopeDescription(
+    offeringScopeCandidate.value.registry,
+  ),
+});
+assert.deepEqual(partialCandidate, {
+  ok: false,
+  error: "INVALID_CONFIGURATION",
+  fieldKey: "landing_page_offering_scope",
+});
+assert.equal(
+  countInvalidInputCatalogOperationalConfigurations(
+    offeringScopeCandidate.value,
+    [{
+      ...legacyOfferingConfiguration,
+      storedValues: {
+        ...legacyOfferingConfiguration.storedValues,
+        primary_service_or_offer: { scope: "offer", value: "   " },
+      },
+    }],
+  ),
+  1,
+);
+assert.equal(
+  countInvalidInputCatalogOperationalConfigurations(
+    offeringScopeCandidate.value,
+    [{
+      ...legacyOfferingConfiguration,
+      storedValues: {
+        ...legacyOfferingConfiguration.storedValues,
+        primary_service_or_offer_description: {
+          scope: "offer",
+          value: "   ",
+        },
+      },
+    }],
+  ),
+  1,
+);
 const operationalContext = {
   taxons: [
     { identity: realEstateSegmentTaxon, reviewedVersion: 5, selectedResearchVersion: 1, operational: false },
@@ -299,3 +431,84 @@ void validateBehavioralContracts().catch((error: unknown) => {
   console.error(error);
   process.exitCode = 1;
 });
+
+function offeringScopeDraft(): LandingPageInputCatalogRegistryEntry {
+  const draft = JSON.parse(
+    JSON.stringify(createNextLandingPageInputCatalogDraft()),
+  ) as LandingPageInputCatalogRegistryEntry;
+  const entries = draft.universal.entries as LandingPageInputCatalogLayerEntry[];
+  for (const fieldKey of [
+    "primary_service_or_offer",
+    "primary_service_or_offer_description",
+  ]) {
+    const field = entries.find(
+      (entry) => entry.kind === "field" && entry.fieldKey === fieldKey,
+    );
+    assert.ok(field?.kind === "field");
+    (field as LandingPageInputFieldDefinition & { retiredInVersion?: number })
+      .retiredInVersion = 6;
+  }
+  entries.push(
+    offeringScopeField(),
+    {
+      kind: "field",
+      fieldKey: "landing_page_offering_scope_description",
+      purpose: "Descrever factualmente o escopo comercial da landing page.",
+      originLayer: "universal",
+      valueType: "string",
+      valueScope: "landing_page",
+      expectedValueOrigin: "landing_page_provided",
+      obligation: "required",
+      validation: { kind: "type_only" },
+      allowedPlans: ["starter", "lite", "pro", "ultra"],
+      snapshotPolicy: "include_if_used",
+      landingPageSubstitutionPolicy: "not_applicable",
+      evidence: {
+        summary: "Fixture da decisão humana E20.2.9.",
+        references: ["decision:e20-2-human"],
+      },
+      createdInVersion: 6,
+    },
+  );
+  return draft;
+}
+
+function offeringScopeField(): LandingPageInputFieldDefinition {
+  return {
+    kind: "field",
+    fieldKey: "landing_page_offering_scope",
+    purpose: "Representar o escopo comercial informado livremente para a landing page.",
+    originLayer: "universal",
+    valueType: "offering_scope",
+    valueScope: "landing_page",
+    expectedValueOrigin: "landing_page_provided",
+    obligation: "required",
+    validation: { kind: "offering_scope" },
+    allowedPlans: ["starter", "lite", "pro", "ultra"],
+    snapshotPolicy: "include_if_used",
+    landingPageSubstitutionPolicy: "not_applicable",
+    evidence: {
+      summary: "Fixture da decisão humana E20.2.9.",
+      references: ["decision:e20-2-human"],
+    },
+    createdInVersion: 6,
+  };
+}
+
+function withoutOfferingScopeDescription(
+  registry: LandingPageInputCatalogRegistry,
+): LandingPageInputCatalogRegistry {
+  const partial = JSON.parse(
+    JSON.stringify(registry),
+  ) as LandingPageInputCatalogRegistry;
+  const entries = partial[6].universal.entries as LandingPageInputCatalogLayerEntry[];
+  entries.splice(
+    entries.findIndex(
+      (entry) =>
+        entry.kind === "field" &&
+        entry.fieldKey === "landing_page_offering_scope_description",
+    ),
+    1,
+  );
+  return partial;
+}
