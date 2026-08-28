@@ -991,8 +991,7 @@ const cases: Case[] = [
       assert.deepEqual(landingPageCommercialIdentityFieldKeys, [
         "funnel_stage",
         "transaction_intent",
-        "primary_conversion_goal",
-        "primary_service_or_offer",
+        "landing_page_offering_scope",
       ]);
       const retirementRegistry = registryWithCandidate((candidate) => {
         mutableFieldInEntry(candidate, "funnel_stage").retiredInVersion = 6;
@@ -1007,7 +1006,7 @@ const cases: Case[] = [
       );
 
       const materialChangeRegistry = registryWithCandidate((candidate) => {
-        mutableFieldInEntry(candidate, "primary_conversion_goal").purpose =
+        mutableFieldInEntry(candidate, "funnel_stage").purpose =
           "A different commercial identity contract.";
       });
       const materialChange = classifyCandidateTransition(materialChangeRegistry);
@@ -1016,7 +1015,20 @@ const cases: Case[] = [
         collectCommercialIdentityReviewBlockers([
           { taxon: realEstateBrokerNicheTaxon, ...materialChange },
         ])[0]?.fieldKeys,
-        ["primary_conversion_goal"],
+        ["funnel_stage"],
+      );
+
+      const nonIdentityChangeRegistry = registryWithCandidate((candidate) => {
+        mutableFieldInEntry(candidate, "primary_conversion_goal").purpose =
+          "A materially different conversion goal contract.";
+      });
+      const nonIdentityChange = classifyCandidateTransition(nonIdentityChangeRegistry);
+      assert.equal(nonIdentityChange.classification, "review_required");
+      assert.equal(
+        collectCommercialIdentityReviewBlockers([
+          { taxon: realEstateBrokerNicheTaxon, ...nonIdentityChange },
+        ]).length,
+        0,
       );
 
       const compatibleRegistry = registryWithCandidate((candidate) => {

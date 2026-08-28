@@ -6,6 +6,11 @@ import type {
   LandingPageInputCatalogPlan,
   LandingPageInputCatalogTaxonChain,
 } from "../../conversion-content/landing-page/input-catalog";
+import {
+  areLandingPageOfferingScopesMateriallyEqual,
+  parseLandingPageOfferingScope,
+  projectLegacyLandingPageOfferingScope,
+} from "../../conversion-content/landing-page/input-catalog";
 import { createClient } from "../../supabase/server";
 import { createServiceClient } from "../../supabase/service";
 import { isOperationalLandingPageStatus } from "../../types/status";
@@ -46,7 +51,6 @@ const BASELINE_PAGE_SIZE = 100;
 const IDENTITY_FIELDS = [
   "funnel_stage",
   "transaction_intent",
-  "primary_conversion_goal",
 ] as const;
 
 export async function listAccountLandingPageWorkspace(input: Readonly<{
@@ -599,7 +603,7 @@ async function validateIdentityMutation(
     }>
 > {
   const baselines = new Map<string, unknown>();
-  let firstOffer: unknown = undefined;
+  let firstOfferingScope: unknown = undefined;
   let offset = 0;
   let hasRevision = false;
   let latestMaterializationId: string | null = null;
@@ -626,8 +630,19 @@ async function validateIdentityMutation(
         if (IDENTITY_FIELDS.includes(fact.fieldKey as (typeof IDENTITY_FIELDS)[number])) {
           if (!baselines.has(fact.fieldKey)) baselines.set(fact.fieldKey, fact.value);
         }
-        if (fact.fieldKey === "primary_service_or_offer" && firstOffer === undefined) {
-          firstOffer = fact.value;
+        if (fact.fieldKey === "landing_page_offering_scope" && firstOfferingScope === undefined) {
+          const parsed = parseLandingPageOfferingScope(fact.value);
+          if (!parsed.ok) {
+            return { ok: false, result: { ok: false, error: "unavailable" } };
+          }
+          firstOfferingScope = parsed.value;
+        }
+        if (fact.fieldKey === "primary_service_or_offer" && firstOfferingScope === undefined) {
+          const projected = projectLegacyLandingPageOfferingScope(fact.value);
+          if (!projected.ok) {
+            return { ok: false, result: { ok: false, error: "unavailable" } };
+          }
+          firstOfferingScope = projected.value;
         }
       }
     }
@@ -648,14 +663,17 @@ async function validateIdentityMutation(
       };
     }
   }
-  const nextOffer = input.values.primary_service_or_offer?.value;
-  const currentOffer = hasRevision
-    ? await readCurrentConfiguredOffer(client, input.accountId, input.landingPageId)
+  const nextOfferingScope = input.values.landing_page_offering_scope?.value;
+  const currentOfferingScope = hasRevision
+    ? await readCurrentConfiguredOfferingScope(client, input.accountId, input.landingPageId)
     : undefined;
   if (
     hasRevision &&
-    nextOffer !== undefined &&
-    !deepEqual(currentOffer ?? firstOffer, nextOffer) &&
+    nextOfferingScope !== undefined &&
+    !areLandingPageOfferingScopesMateriallyEqual(
+      currentOfferingScope ?? firstOfferingScope,
+      nextOfferingScope,
+    ) &&
     !input.sameCommercialWorkConfirmed
   ) {
     return {
@@ -663,14 +681,14 @@ async function validateIdentityMutation(
       result: {
         ok: false,
         error: "offer_change_confirmation_required",
-        fieldKey: "primary_service_or_offer",
+        fieldKey: "landing_page_offering_scope",
       },
     };
   }
   return { ok: true, latestMaterializationId };
 }
 
-async function readCurrentConfiguredOffer(
+async function readCurrentConfiguredOfferingScope(
   client: ServiceClient,
   accountId: string,
   landingPageId: string,
@@ -685,8 +703,7 @@ async function readCurrentConfiguredOffer(
   if (error) throw new Error("landing_page_configuration_read_failed");
   if (isRecord(operational)) {
     if (isRecord(operational.values)) {
-      const stored = operational.values.primary_service_or_offer;
-      if (isRecord(stored) && Object.hasOwn(stored, "value")) return stored.value;
+      return readOfferingScopeValue(operational.values);
     }
     return undefined;
   }
@@ -699,10 +716,29 @@ async function readCurrentConfiguredOffer(
     .maybeSingle();
   if (onboardingError) throw new Error("onboarding_bootstrap_read_failed");
   if (isRecord(onboarding) && isRecord(onboarding.values)) {
-    const stored = onboarding.values.primary_service_or_offer;
-    if (isRecord(stored) && Object.hasOwn(stored, "value")) return stored.value;
+    return readOfferingScopeValue(onboarding.values);
   }
   return undefined;
+}
+
+function readOfferingScopeValue(values: Record<string, unknown>): unknown {
+  const current = values.landing_page_offering_scope;
+  if (current !== undefined) {
+    if (!isRecord(current) || !Object.hasOwn(current, "value")) {
+      throw new Error("landing_page_offering_scope_invalid");
+    }
+    const parsed = parseLandingPageOfferingScope(current.value);
+    if (!parsed.ok) throw new Error("landing_page_offering_scope_invalid");
+    return parsed.value;
+  }
+  const legacy = values.primary_service_or_offer;
+  if (legacy === undefined) return undefined;
+  if (!isRecord(legacy) || !Object.hasOwn(legacy, "value")) {
+    throw new Error("primary_service_or_offer_invalid");
+  }
+  const projected = projectLegacyLandingPageOfferingScope(legacy.value);
+  if (!projected.ok) throw new Error("primary_service_or_offer_invalid");
+  return projected.value;
 }
 
 function readSnapshotFacts(value: unknown): readonly Readonly<{ fieldKey: string; value: unknown }>[] {

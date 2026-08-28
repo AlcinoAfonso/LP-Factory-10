@@ -122,6 +122,14 @@ const cases: readonly Readonly<{ name: string; run: () => void }>[] = [
       assert.match(component, /aria-required/);
       assert.match(component, /<fieldset/);
       assert.match(component, /field\.purpose/);
+      assert.match(component, /landing_page_offering_scope: "Escopo comercial da página"/);
+      assert.match(component, /single: "Uma oferta"/);
+      assert.match(component, /multiple: "Algumas ofertas"/);
+      assert.match(component, /portfolio: "Todo o portfólio"/);
+      assert.match(component, /type="radio"/);
+      assert.match(component, /Entrada livre: não usamos catálogo, whitelist nem derivação do resumo do negócio/);
+      assert.match(component, /\.split\("\\n"\)/);
+      assert.match(component, /same_commercial_work_confirmed/);
       assert.doesNotMatch(component, /name="catalog_version"/);
       assert.match(component, /humanizeFieldKey/);
       assert.doesNotMatch(component, /\.from\(/);

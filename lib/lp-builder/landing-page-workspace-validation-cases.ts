@@ -105,6 +105,11 @@ const cases: readonly Readonly<{ name: string; run: () => void }>[] = [
       assert.match(adapter, /\.range\(/);
       assert.match(adapter, /p_expected_latest_materialization_id:\s*identity\.latestMaterializationId/);
       assert.match(adapter, /candidate\.configuration\.storedValues/);
+      assert.match(adapter, /areLandingPageOfferingScopesMateriallyEqual/);
+      assert.match(adapter, /projectLegacyLandingPageOfferingScope/);
+      assert.match(adapter, /parseLandingPageOfferingScope/);
+      assert.match(adapter, /fieldKey:\s*"landing_page_offering_scope"/);
+      assert.doesNotMatch(adapter, /const IDENTITY_FIELDS = \[[\s\S]*?primary_conversion_goal[\s\S]*?\] as const/);
       assert.match(
         adapter,
         /if \(isRecord\(operational\)\) \{[\s\S]*?return undefined;[\s\S]*?\}\s*const \{ data: onboarding/,
