@@ -1,6 +1,6 @@
 28/08/2026 — Plano-base v2 — E21.4 — Visibilidade financeira mínima de custos OpenAI
 
-Status: plano-base v2 consolidado após redução humana explícita do MVP em 28/08/2026; pendente do gate do Analista antes da implementação.
+Status: plano-base v2 corrigido pela decisão humana posterior de 28/08/2026; a implementação existente ainda não foi confrontada com este delta e nenhuma fase deve ser considerada definitivamente aprovada quanto a ele antes da revisão do Estrategista.
 
 ## 1. Estado e decisões fixas
 
@@ -13,6 +13,7 @@ Status: plano-base v2 consolidado após redução humana explícita do MVP em 28
 - Workloads incluídos: `landing_page_draft_generation` e `landing_page_draft_image_generation`.
 - Relação canônica: **Gasto oficial total = custos prospectivos calculados das LPs + Outros gastos / reconciliação**.
 - Princípio obrigatório: priorizar redução e simplicidade; implementar a menor solução que permita saber quanto a OpenAI gastou no total e quanto custou prospectivamente cada conta/LP gerada.
+- Regra central: a geração da Landing Page contratada pelo cliente tem prioridade sobre a instrumentação financeira. A E21.4 mede e apresenta custos; não é autoridade para permitir ou impedir a geração.
 - Plano conceitual: N/A.
 - Fonte v1 congelada: PR #824, merge commit `428e01d81e819b5da9e508e1c4f356f0517c9c85`, blob `1f3192c24615fcf87f0aa0173fe117437241f7a8` de `docs/lousa-plano-base-e21-4.md`.
 
@@ -24,7 +25,7 @@ Status: plano-base v2 consolidado após redução humana explícita do MVP em 28
 - A entrada ordinária é derivada sem sobreposição (`input_tokens - cached_input_tokens - cache_write_tokens`); valores negativos ou dimensões sobrepostas invalidam o cálculo. Tokens de raciocínio já incluídos em `output_tokens` não são cobrados novamente.
 - O custo de imagem soma o custo dos tokens de texto de entrada do prompt, conforme usage real e preço textual compatível, ao custo de saída da imagem pela combinação versionada `modelo + tamanho + qualidade + quantidade`. Se a resposta não fornecer unidade necessária, ou trouxer modalidade de entrada sem preço compatível, a tentativa fica sem custo calculado e fora da soma das LPs; não se publica custo parcial de imagem.
 - A tabela de preço é um contrato versionado no código, limitado às combinações efetivamente usadas pelos dois workloads, com taxas em decimal exato ou unidade inteira mínima de USD e sem arredondamento intermediário. A evidência terminal persiste versão, modelo, service tier, faixa de contexto, unidades, taxas aplicadas e custo calculado em USD.
-- Com a instrumentação ativa, a configuração solicitada e todas as dimensões de preço que ela pode produzir precisam estar cobertas antes da chamada; combinação incompatível ou desconhecida falha fechada.
+- Configuração, modelo, qualidade, service tier, faixa de contexto ou combinação ainda sem preço suportado não impedem a chamada. A tentativa permanece sem custo calculado, fora da soma interna e reconciliada em Outros gastos.
 - Valores por conta, LP e workload são sempre rotulados como **custo prospectivo calculado**, nunca como custo oficial individualizado pela OpenAI.
 - **Outros gastos / reconciliação** é a diferença aritmética, sem clamp e sem redistribuição: `gasto oficial total - soma dos custos prospectivos calculados das LPs`.
 - Diferença negativa ou cobertura incompleta permanece visível como anomalia de reconciliação; não ajustar valores internos artificialmente para fazer o total fechar.
@@ -39,6 +40,10 @@ Status: plano-base v2 consolidado após redução humana explícita do MVP em 28
 - O provider server-side usa timeout, limite de páginas, detecção de cursor repetido, validação estrutural e paginação até `has_more = false`.
 - Ausência, invalidez, timeout, resposta incompleta, moeda diferente de USD ou paginação inconsistente tornam a leitura oficial indisponível; não há fallback para preço local, cache anterior ou chave de runtime.
 - Antes da conclusão hospedada, uma resposta real sanitizada de Costs comprova organização correta, moeda, shape e paginação sem registrar chave, IDs sensíveis ou payload bruto.
+- `OPENAI_ADMIN_KEY` serve exclusivamente à leitura administrativa oficial de Costs. Ela não representa leitura instantânea de saldo restante e não se confunde com a `OPENAI_API_KEY` usada pelas gerações.
+- O MVP não promete leitura instantânea do saldo ou dos créditos restantes da OpenAI.
+- Falta real de crédito ou saldo na OpenAI, indisponibilidade, rate limit e outros erros do provider podem impedir tecnicamente a geração; esses casos seguem o tratamento normal do provider e não são falhas da instrumentação financeira.
+- Erro de crédito esgotado precisa ser reconhecível na superfície administrativa e na observabilidade server-side, sem expor ao cliente detalhes financeiros internos da organização.
 
 ### 1.4. Evidência prospectiva mínima das LPs
 
@@ -46,11 +51,15 @@ Status: plano-base v2 consolidado após redução humana explícita do MVP em 28
 - O MVP não realiza classificação econômica completa `LP Factory × Cliente × Não atribuído` e não consulta entitlement comercial para classificar outros consumos.
 - Somente chamadas em **Production** dos dois workloads incluídos compõem o custo prospectivo das LPs. Development, Preview, QA, provas, onboarding, taxon, workloads administrativos e automações permanecem em **Outros gastos / reconciliação** por diferença contra o total oficial.
 - Cada tentativa abrangida recebe `attempt_id` estável. A chave lógica `(attempt_id, workload, event_kind)` admite exatamente um evento inicial e no máximo um terminal por `(attempt_id, workload)`; retries reutilizam a identidade e não duplicam chamadas, terminais ou soma financeira.
-- O início registra, antes da chamada, conta, LP, workload, ambiente, configuração efetiva, instante e versão do preço.
+- O início tenta registrar, antes da chamada, conta, LP, workload, ambiente, configuração efetiva, instante e versão do preço, sem se tornar pré-condição da geração.
 - O resultado terminal registra somente metadados seguros: correlação, sucesso/falha, usage normalizado aplicável, service tier e faixa de contexto efetivos, unidades de texto e imagem, quantidade de imagens, custo calculado, taxas/versão de preço e timestamps.
 - Prompt, resposta integral, payload de negócio, secret, e-mail, nome de pessoa e PII não são persistidos para finalidade financeira.
 - Se o resultado terminal não puder ser gravado depois da chamada, a tentativa inicial permanece reconhecível como `resultado desconhecido`; seu valor não entra na soma calculada e permanece em Outros gastos / reconciliação.
-- Com a instrumentação ativa, falha ao registrar a evidência inicial impede a chamada OpenAI. Com o gate desligado, o comportamento atual é preservado sem alegar cobertura financeira.
+- Com a instrumentação ativa, falha ao registrar a evidência inicial não impede a chamada OpenAI, e falha no tracking terminal não invalida uma geração bem-sucedida.
+- Usage ausente ou insuficiente para cálculo não interrompe nem altera o resultado funcional da geração; a tentativa fica sem custo calculado e fora da soma interna.
+- Falha ou timeout de tracking não deve consumir materialmente o orçamento de timeout reservado ao provider. A instrumentação opera em orçamento próprio, curto e degradável.
+- Falha inicial, terminal ausente, usage insuficiente ou preço não suportado reduzem a cobertura interna; a superfície administrativa informa cobertura parcial ou degradada, e a diferença permanece em Outros gastos / reconciliação.
+- Com o gate desligado, o comportamento atual é preservado sem alegar cobertura financeira.
 
 ### 1.5. Persistência, rollout e data de corte
 
@@ -85,6 +94,13 @@ Status: plano-base v2 consolidado após redução humana explícita do MVP em 28
 - Hierarquia mínima: Gasto oficial total; Custos prospectivos calculados das LPs; Outros gastos / reconciliação; contas → Landing Pages → texto e imagem.
 - Alvos documentais e de navegação obrigatórios: registrar `OPENAI_ADMIN_KEY`, `OPENAI_LP_COST_TRACKING_ENABLED`, endpoint e residência em `docs/platform-config.md`; registrar objetos, RLS, grants, corte e estado de apply em `docs/schema.md`; manter o estado canônico em `docs/roadmap.md` pelos ABCs; incluir a nova superfície no mecanismo existente de navegação administrativa, atualmente `components/admin/adminNavigation.ts`.
 
+### 1.8. Autoridade de bloqueio e crédito comercial
+
+- A E21.4 não decide entitlement, capacidade, saldo de tokens ou crédito comercial de geração do cliente.
+- Ficam fora do PR #831: saldo de tokens do cliente; crédito comercial de geração; reserva, consumo ou devolução de crédito; bloqueio de cliente por saldo comercial; e reutilização automática de `max_lps` como crédito de geração.
+- Essa capacidade pertence a futuro recorte da E9.7 e não deve ser implementada pela E21.4.
+- Regra conceitual: falha ao medir custo não bloqueia a LP; falta real de crédito na OpenAI pode impedir tecnicamente a geração; falta futura de crédito comercial do cliente poderá impedir comercialmente a geração somente por autoridade da E9.7.
+
 ## 2. Contrato do caso
 
 ### 2.1. Fluxo canônico
@@ -92,10 +108,10 @@ Status: plano-base v2 consolidado após redução humana explícita do MVP em 28
 - **Gatilho:** `platform_admin` abre Custos OpenAI e solicita atualização do mês atual ou de período personalizado.
 - **Entrada:** período UTC validado, sessão `platform_admin`, leitura oficial de Costs e eventos prospectivos das duas gerações de LP no mesmo intervalo.
 - **Processamento:** obter o total oficial completo; somar custos calculados terminais cobertos; agregar por conta, LP e workload; calcular Outros gastos / reconciliação por diferença aritmética.
-- **Validação:** rejeitar credencial ausente/inválida, período inválido, moeda não USD, leitura incompleta, paginação inconsistente, evento sem contexto autorizado, combinação sem preço ou exposição de dados internos.
-- **Persistência:** registrar início antes da chamada e término append-only depois; registrar uma única data de corte de Production.
+- **Validação:** rejeitar credencial administrativa ausente/inválida, período inválido, moeda não USD, leitura oficial incompleta, paginação inconsistente, evento sem contexto autorizado ou exposição de dados internos. Preço não suportado e usage insuficiente degradam somente a cobertura interna.
+- **Persistência:** tentar registrar início antes da chamada e término append-only depois, sem condicionar o resultado funcional da geração; registrar uma única data de corte de Production.
 - **Consumo:** apresentar total oficial, total calculado das LPs, Outros gastos / reconciliação e detalhamento por conta/LP/workload, sempre distinguindo oficial de calculado.
-- **Fallback:** falha de Costs torna a visão indisponível. Evento incompleto ou sem custo calculável não é inventado nem redistribuído.
+- **Fallback:** falha de Costs torna a visão indisponível. Evento incompleto ou sem custo calculável não é inventado nem redistribuído, fica fora da soma interna e permanece em Outros gastos / reconciliação com cobertura parcial ou degradada explícita.
 
 ### 2.2. Evidência atual do projeto
 
@@ -113,7 +129,7 @@ Status: plano-base v2 consolidado após redução humana explícita do MVP em 28
 - Documentação oficial vigente da OpenAI para Costs, Admin API Keys, Pricing e geração de imagens.
 - Parecer estrutural do blob v1 — `GE-E21.4-01` a `GE-E21.4-08`.
 - Parecer de Updates do blob v1 — `prod#19`, `prod#16`, `prod#17`, `vercel#1` e `supa#64`.
-- Decisão humana de 28/08/2026 — redução imediata do MVP ao total oficial e aos custos prospectivos das LPs.
+- Decisões humanas de 28/08/2026 — redução imediata do MVP ao total oficial e aos custos prospectivos das LPs; prioridade da geração sobre a instrumentação financeira; separação entre falha de medição, falha real do provider e futuro crédito comercial da E9.7.
 
 ## 3. Fases e próxima ação
 
@@ -133,11 +149,11 @@ Status: plano-base v2 consolidado após redução humana explícita do MVP em 28
 - Objetivo: calcular e preservar prospectivamente o custo das tentativas de texto e imagem vinculadas a conta e LP reais em Production.
 - Automação: não.
 - Entrada: `accountId`, `landingPageId`, workload, ambiente, configuração efetiva, IDs de correlação, usage/quantidade e preço versionado.
-- Processamento: registrar evento inicial; executar um dos transports existentes; calcular o custo sem duplicar tokens; registrar terminal append-only; agregar somente terminais válidos na cobertura ativa.
-- Validação: migration, teste SQL, dry-run quando disponível, snippet read-only e Security Controls; nenhum diff em `automations/` ou workloads adiados; gate-off preserva o runtime; gate-on sem início impede chamada; texto/imagem, sucesso/falha, terminal ausente, preço desconhecido, idempotência e contexto inválido; modelo, service tier, faixa de contexto, entrada ordinária/cache/cache write/saída e prompt textual de imagem sem sobreposição; preço incompatível falha antes do provider; imagem sem unidades suficientes não publica custo parcial; data de corte única; ACL mínima.
+- Processamento: tentar registrar evento inicial sem bloquear o provider; executar um dos transports existentes; quando houver usage e preço suportados, calcular o custo sem duplicar tokens; tentar registrar terminal append-only; agregar somente terminais válidos na cobertura ativa.
+- Validação: migration, teste SQL, dry-run quando disponível, snippet read-only e Security Controls; nenhum diff em `automations/` ou workloads adiados; gate-off preserva o runtime; gate-on mantém a geração funcional diante de falha exclusivamente financeira; texto/imagem, sucesso/falha real do provider, falha inicial, terminal ausente, preço desconhecido, usage insuficiente, timeout de tracking, idempotência e contexto inválido; modelo, service tier, faixa de contexto, entrada ordinária/cache/cache write/saída e prompt textual de imagem sem sobreposição quando calculáveis; imagem sem unidades suficientes não publica custo parcial nem interrompe a geração; data de corte única; ACL mínima; nenhum erro exclusivo da E21.4 retorna `configuration_invalid`.
 - Persistência: eventos append-only e data de corte; nenhum prompt, resposta integral ou payload de negócio.
 - Fallback: resultado não calculável permanece fora da soma das LPs e dentro de Outros gastos / reconciliação por diferença.
-- Critério de aceite: após o corte, cada tentativa abrangida possui início auditável e, quando o provider devolve unidades necessárias, custo terminal por conta, LP e workload.
+- Critério de aceite: após o corte, tentativas com evidência completa e preço suportado possuem custo terminal por conta, LP e workload; falha inicial, tracking terminal indisponível, usage insuficiente ou preço não suportado produzem cobertura parcial sem alterar o resultado funcional da geração.
 
 ### 3.3. E21.4.5 — Custos OpenAI e reconciliação administrativa
 
@@ -150,6 +166,7 @@ Status: plano-base v2 consolidado após redução humana explícita do MVP em 28
   - rótulos distinguem oficial de calculado;
   - período atual `Provisório`, cobertura/corte visíveis e instantes distintos para `Atualizado na OpenAI` e `Atualizado na cobertura interna`, com aviso de latência/reconciliação;
   - período anterior ou cruzando o corte não promete cobertura integral;
+  - falha de tracking e tentativas sem preço ou usage calculável são refletidas como cobertura parcial ou degradada, fora da soma interna e reconciliadas em Outros gastos;
   - estados inicial, loading, vazio, erro oficial, cobertura parcial/anômala e sucesso;
   - Preview autenticado com `platform_admin` e papel negativo, desktop e mobile, período padrão/personalizado, atualização sob demanda e hierarquia completa;
   - teclado, foco, nomes/rótulos programáticos, anúncio de estados, contraste e alvos de toque aplicáveis, sem alegar WCAG 2.2 integral;
@@ -160,11 +177,11 @@ Status: plano-base v2 consolidado após redução humana explícita do MVP em 28
 
 ### 3.4. Sequência de execução
 
-1. Implementar E21.4.3, E21.4.4 e E21.4.5 no mesmo PR, incluindo migration, mocks/testes, navegação e documentação, sempre com o gate desligado e sem mutação remota pré-merge.
-2. Validar localmente código, SQL, segurança, preços, idempotência, estados e escopo negativo; obter prova oficial hospedada em Preview somente se houver autorização humana específica para a credencial administrativa.
-3. Após merge, executar apply canônico, snippet read-only e Security Controls.
-4. Com banco aprovado, habilitar a instrumentação em Production, redeployar, executar smoke dos dois workloads e registrar a data de corte única.
-5. Executar o QA hospedado autenticado da visão administrativa e consolidar o ABC final somente após todos os gates aprovados.
+1. A implementação existente no PR #831 antecede esta decisão humana posterior e ainda não foi confrontada com o contrato corrigido.
+2. Nenhuma fase deve ser considerada definitivamente aprovada quanto a este delta antes da revisão do Estrategista; evidências anteriores permanecem apenas como histórico do estado então avaliado.
+3. A próxima ação é devolver esta v2 corrigida ao Estrategista.
+4. Nesta etapa documental, não iniciar QA, alteração de código, novo gate ou nova consulta a especialistas.
+5. Somente após nova instrução e aprovação da v2, reconciliar implementação e matriz de consolidação com este delta e redefinir os gates restantes.
 6. Não iniciar E21.3.4 nem evolução adiada.
 
 ## 4. Escopo negativo e critérios de parada
@@ -176,10 +193,11 @@ Status: plano-base v2 consolidado após redução humana explícita do MVP em 28
 - Suporte por IA e `commercial_activation_draft_generation`.
 - Taxon e `taxon_input_catalog_sufficiency_evaluation`.
 - `supabase_inspect` e qualquer mudança em `automations/`.
-- Generalização para outros workloads, reconstrução histórica e conciliação de saldo/créditos.
+- Generalização para outros workloads, reconstrução histórica e conciliação de saldo/créditos da OpenAI.
+- Saldo de tokens do cliente, crédito comercial de geração, reserva/consumo/devolução de crédito, bloqueio por saldo comercial e reutilização automática de `max_lps` como crédito; esse recorte pertence futuramente à E9.7.
 - BRL, câmbio, IOF, margem, preço, cobrança, markup ou repasse.
 - AI Gateway, segregação adicional de projetos/API keys, CDC, warehouse, pipeline analítico, cron, job, polling, cache recorrente ou infraestrutura não indispensável.
-- Alteração de E9, entitlement, Stripe ou classificação comercial.
+- Alteração de E9, entitlement, capacidade, crédito comercial, Stripe ou classificação comercial.
 - Retomada da E21.3.4.
 
 ### 4.2. Updates e oportunidades
@@ -193,15 +211,28 @@ Status: plano-base v2 consolidado após redução humana explícita do MVP em 28
 ### 4.3. Critérios de parada
 
 - Parar se `OPENAI_ADMIN_KEY` autorizada não permitir leitura completa de Costs em USD.
-- Parar se texto ou imagem não fornecerem unidades suficientes para cálculo de combinação ativa sem preço oficial versionável.
 - Parar se a atribuição exigir inferir conta/LP em vez do contexto autorizado.
 - Parar se o registro append-only exigir infraestrutura além do Supabase Core e rollout normal por migration/gate.
 - Parar diante de exposição de secret, payload bruto, prompt, resposta integral ou PII.
+- Falta real de crédito/saldo da OpenAI, indisponibilidade, rate limit ou outro erro do provider pode interromper tecnicamente a geração e deve ser tratado como erro do provider, não como falha da E21.4.
+- Preço não suportado, usage insuficiente e falha/timeout de tracking não são critérios de parada da geração; degradam somente a cobertura financeira.
 - Não declarar a E21.4 concluída sem leitura oficial real, apply e gates de banco, corte de Production, smoke dos dois workloads e QA hospedado.
 
 ## 5. Classificação dos acréscimos da v2
 
 - **Preservação:** total oficial via Costs, USD, mês atual + período personalizado, atualização sob demanda, `platform_admin`, data de corte e superfície separada.
-- **Extensão adjacente necessária e proporcional:** `lib/openai-costs/`, provider read-only de Costs, preço limitado, eventos append-only, gate, `/admin/custos-openai`, testes SQL e QA/acessibilidade proporcionais.
+- **Extensão adjacente necessária e proporcional:** `lib/openai-costs/`, provider read-only de Costs, preço limitado, eventos append-only degradáveis, gate, `/admin/custos-openai`, testes SQL e QA/acessibilidade proporcionais.
 - **Redução humana:** somente texto e imagem de LP em Production; demais workloads e classificações econômicas adiados.
-- **Expansão não incorporada:** AI Gateway, segregação de projetos/API keys, CDC/warehouse, automação recorrente, histórico, créditos, cobrança e generalização.
+- **Expansão não incorporada:** AI Gateway, segregação de projetos/API keys, CDC/warehouse, automação recorrente, histórico, crédito comercial do cliente, cobrança e generalização.
+
+## 6. Critérios de aceite da decisão humana posterior
+
+- Falha exclusivamente financeira não altera o resultado funcional da geração.
+- Preço não suportado produz tentativa sem custo calculado, sem `configuration_invalid` e sem impedir o provider.
+- Usage insuficiente produz tentativa sem custo calculado e não interrompe a geração.
+- Falha inicial ou terminal de tracking produz cobertura parcial ou degradada e não invalida geração bem-sucedida.
+- Falha ou timeout de tracking não consome materialmente o orçamento de timeout do provider.
+- Tentativa sem evidência completa ou sem preço calculável fica fora da soma interna e permanece em Outros gastos / reconciliação.
+- Erro real do provider continua tratado normalmente; crédito esgotado é reconhecível administrativamente sem exposição financeira interna ao cliente.
+- Nenhum erro exclusivo da E21.4 retorna `configuration_invalid`.
+- A E21.4 não decide entitlement, capacidade ou crédito comercial do cliente e não reutiliza `max_lps` para essa finalidade.
