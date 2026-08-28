@@ -2,8 +2,8 @@
 
 0.1 Cabeçalho
 • Documento: LP Factory 10 — Platform Config
-• Versão: v0.1.28
-• Data: 23/08/2026
+• Versão: v0.1.29
+• Data: 28/08/2026
 
 0.2 Contrato do documento
 • O QUE É: snapshot operacional e fonte única das configurações de plataformas externas do LP Factory 10, refletindo o estado conhecido/cadastrado nas plataformas conforme indicado.
@@ -190,6 +190,15 @@
 • Separação: não substitui, não reutiliza e não pode ser exposta como `OPENAI_API_KEY`; não atravessa client, log, banco ou payload sanitizado.
 • Valor real: não versionar.
 
+• `OPENAI_LP_COST_TRACKING_ENABLED`
+• Finalidade: gate server-side da persistência financeira prospectiva das tentativas de texto e imagem de Landing Pages.
+• Escopo: somente Production; Preview e Development permanecem sem instrumentação financeira.
+• Habilitação: somente o literal `true` ativa o tracker; variável ausente, vazia ou com qualquer outro valor preserva integralmente o runtime anterior.
+• Estado inicial e atual no PR: desligado; não configurar antes do merge, apply canônico, snippet read-only e Security Controls aprovados.
+• Progressão pós-merge: habilitar somente após os gates de banco, redeployar Production, executar smoke dos dois workloads e registrar uma única data de corte pela RPC versionada.
+• Regra de falha: com o gate ligado, falha ao registrar o início impede a chamada OpenAI; falha terminal não altera o resultado do provider e deixa a tentativa iniciada sem terminal para reconciliação explícita.
+• Valor real: não versionar.
+
 • `OPENAI_OPERATIONAL_CONFIG_ENABLED`
 • Finalidade: gate server-side temporário do cutover da configuração operacional dinâmica dos quatro workloads OpenAI de produto.
 • Escopo: Preview e Production do projeto Core, com configuração independente por ambiente; Development ignora o gate e permanece no baseline local.
@@ -351,6 +360,7 @@
 • Endpoint OpenAI Images API: `https://api.openai.com/v1/images/generations`
 • Endpoint OpenAI Costs API: `https://api.openai.com/v1/organization/costs`
 • Consumidor versionado da Costs API: `lib/openai-costs/providers/openAiCostsProvider.ts`, exclusivamente server-side e autenticado por `OPENAI_ADMIN_KEY`.
+• Persistência prospectiva dos dois workloads de LP: `lib/openai-costs/adapters/lpCostTrackingAdapter.ts`, exclusivamente server-side, condicionada a Production e a `OPENAI_LP_COST_TRACKING_ENABLED=true`.
 • Consumidores atuais conhecidos:
 • `lib/conversion-content/adapters/commercialActivationOpenAiAdapter.ts`
 • `lib/conversion-content/adapters/landingPageGenerationProfileOpenAiAdapter.ts`
@@ -498,6 +508,8 @@ Regra:
 • Configurações de plataformas, secrets por nome, workflows, ambientes e endpoints usados por automações devem ser registrados neste documento.
 
 99. Changelog
+v0.1.29 — 28/08/2026 — Registrados `OPENAI_ADMIN_KEY`, Costs API, `OPENAI_LP_COST_TRACKING_ENABLED` nascendo desligado e o rollout pós-merge da persistência prospectiva dos dois workloads de Landing Page.
+
 v0.1.18 — 21/08/2026 — Registrado o gate exclusivo do provider E20.6.5, sua composição obrigatória com fonte `supabase_operational` hospedada e a preservação do handoff Codex durante o estado gate-off.
 
 v0.1.17 — 20/08/2026 — Registrado `OPENAI_OPERATIONAL_CONFIG_ENABLED`, seus defaults gate-off, habilitação pelo literal `true`, isolamento por ambiente, progressão Preview → Production e regras de redeploy/fail-closed da E21.2.3.

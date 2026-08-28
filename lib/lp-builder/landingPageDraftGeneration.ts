@@ -23,6 +23,12 @@ import {
   type ResolvedOpenAiProductWorkload,
 } from "../openai-workloads";
 import type { LandingPageGenerationContextPackage } from "./generationContextContracts";
+import type {
+  OpenAiLpCostTracker,
+  OpenAiLpCostTrackingContext,
+  OpenAiLpCostTrackingSession,
+} from "../openai-costs";
+import { isOpenAiLpPricingSupported } from "../openai-costs";
 
 export const LANDING_PAGE_DRAFT_TEXT_TIMEOUT_MS = 120_000;
 export const LANDING_PAGE_DRAFT_MAX_OUTPUT_TOKENS = 12_000;
@@ -69,6 +75,8 @@ type Dependencies = Readonly<{
   signal?: AbortSignal;
   environment?: OpenAiWorkloadEnvironment;
   workloadResolver?: OpenAiWorkloadResolverDependencies;
+  costTracking?: OpenAiLpCostTrackingContext &
+    Readonly<{ tracker: OpenAiLpCostTracker }>;
 }>;
 
 export async function generateLandingPageDraftCandidate(
@@ -110,9 +118,42 @@ export async function generateLandingPageDraftCandidate(
     emitFailure(workload, "timeout", dependencies, { latencyMs: 0 });
     return { ok: false, kind: "timeout" };
   }
+  let costSession: OpenAiLpCostTrackingSession | undefined;
+  const costStart = dependencies.costTracking
+    ? {
+        accountId: dependencies.costTracking.accountId,
+        landingPageId: dependencies.costTracking.landingPageId,
+        attemptId: dependencies.attemptId ?? "",
+        workload: "landing_page_draft_generation" as const,
+        source: workload.source,
+        revision: workload.revision,
+        model: workload.model,
+        reasoningEffort: workload.reasoningEffort,
+      }
+    : undefined;
+  if (costStart && !isOpenAiLpPricingSupported(costStart)) {
+    emitFailure(workload, "configuration_invalid", dependencies);
+    return { ok: false, kind: "configuration_invalid" };
+  }
+  try {
+    costSession = costStart
+      ? await dependencies.costTracking?.tracker.start(costStart)
+      : undefined;
+  } catch {
+    emitFailure(workload, "configuration_invalid", dependencies);
+    return { ok: false, kind: "configuration_invalid" };
+  }
+  const providerTimeoutMs = Math.max(0, timeoutMs - (now() - startedAt));
+  if (providerTimeoutMs <= 0 || dependencies.signal?.aborted) {
+    emitFailure(workload, "timeout", dependencies, {
+      latencyMs: now() - startedAt,
+    });
+    await completeCost(costSession, "failure");
+    return { ok: false, kind: "timeout" };
+  }
   const abortFromParent = () => controller.abort();
   dependencies.signal?.addEventListener("abort", abortFromParent, { once: true });
-  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  const timeout = setTimeout(() => controller.abort(), providerTimeoutMs);
 
   try {
     const response = await fetchImpl("https://api.openai.com/v1/responses", {
@@ -134,6 +175,7 @@ export async function generateLandingPageDraftCandidate(
         providerRequestId: response.headers.get("x-request-id"),
         ...providerError,
       });
+      await completeCost(costSession, "failure");
       return { ok: false, kind: "http_error" };
     }
 
@@ -142,10 +184,12 @@ export async function generateLandingPageDraftCandidate(
       payload = await response.json();
     } catch {
       emitFailure(workload, "invalid_response", dependencies, { latencyMs });
+      await completeCost(costSession, "failure");
       return { ok: false, kind: "invalid_response" };
     }
     if (!isRecord(payload)) {
       emitFailure(workload, "invalid_response", dependencies, { latencyMs });
+      await completeCost(costSession, "failure");
       return { ok: false, kind: "invalid_response" };
     }
 
@@ -156,14 +200,17 @@ export async function generateLandingPageDraftCandidate(
     } as const;
     if (payload.error) {
       emitFailure(workload, "provider_error", dependencies, metadata);
+      await completeCost(costSession, "failure", payload);
       return { ok: false, kind: "provider_error" };
     }
     if (payload.status === "incomplete") {
       emitFailure(workload, "provider_error", dependencies, metadata);
+      await completeCost(costSession, "failure", payload);
       return { ok: false, kind: "incomplete" };
     }
     if (payload.status !== "completed") {
       emitFailure(workload, "provider_error", dependencies, metadata);
+      await completeCost(costSession, "failure", payload);
       return { ok: false, kind: "provider_error" };
     }
 
@@ -175,6 +222,7 @@ export async function generateLandingPageDraftCandidate(
         dependencies,
         metadata,
       );
+      await completeCost(costSession, "failure", payload);
       return { ok: false, kind: output.kind };
     }
 
@@ -183,6 +231,7 @@ export async function generateLandingPageDraftCandidate(
       candidate = JSON.parse(output.value);
     } catch {
       emitFailure(workload, "invalid_response", dependencies, metadata);
+      await completeCost(costSession, "failure", payload);
       return { ok: false, kind: "invalid_response" };
     }
     const validated = validateLandingPagePresentationCandidate(
@@ -191,6 +240,7 @@ export async function generateLandingPageDraftCandidate(
     );
     if (!validated.ok) {
       emitFailure(workload, "invalid_response", dependencies, metadata);
+      await completeCost(costSession, "failure", payload);
       return { ok: false, kind: "invalid_candidate" };
     }
 
@@ -200,6 +250,7 @@ export async function generateLandingPageDraftCandidate(
         ...metadata,
       }),
     );
+    await completeCost(costSession, "success", payload);
     return {
       ok: true,
       candidate: validated.value,
@@ -223,6 +274,7 @@ export async function generateLandingPageDraftCandidate(
       dependencies,
       { latencyMs: now() - startedAt },
     );
+    await completeCost(costSession, "failure");
     return { ok: false, kind: timedOut ? "timeout" : "http_error" };
   } finally {
     clearTimeout(timeout);
@@ -239,6 +291,7 @@ export function buildLandingPageDraftResponsesRequest(
   const prompt = buildLandingPageDraftPrompt(context.modelContext);
   return {
     model,
+    service_tier: "default",
     reasoning: { effort: reasoningEffort },
     store: false,
     tools: [],
@@ -262,6 +315,23 @@ export function buildLandingPageDraftResponsesRequest(
       },
     },
   } as const;
+}
+
+async function completeCost(
+  session: OpenAiLpCostTrackingSession | undefined,
+  result: "success" | "failure",
+  payload?: Record<string, unknown>,
+) {
+  if (!session) return;
+  try {
+    await session.complete({
+      result,
+      usage: payload?.usage,
+      serviceTier: payload?.service_tier,
+    });
+  } catch {
+    // Terminal persistence is best-effort after a durable start.
+  }
 }
 
 function resolveLandingPageDraftBaseline() {

@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { LandingPageGenerationContextPackage } from "../generationContextContracts";
+import { createOpenAiLpCostTracker } from "../../openai-costs/adapters/lpCostTrackingAdapter";
 import {
   prepareLandingPageDraftRevisionCandidate as prepareLandingPageDraftRevisionCandidateCore,
   type LandingPageDraftCandidateWorkflowResult,
@@ -14,5 +15,6 @@ export function prepareLandingPageDraftRevisionCandidate(input: Readonly<{
 }>): Promise<LandingPageDraftCandidateWorkflowResult> {
   return prepareLandingPageDraftRevisionCandidateCore(input, {
     apiKey: process.env.OPENAI_API_KEY,
+    costTracker: createOpenAiLpCostTracker(),
   });
 }

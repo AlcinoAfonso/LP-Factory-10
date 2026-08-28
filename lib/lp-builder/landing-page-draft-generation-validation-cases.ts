@@ -414,6 +414,7 @@ const cases = [
       assert.equal(calls, 1);
       const request = body as unknown as Record<string, unknown>;
       assert.equal(request.model, "gpt-5.6-luna");
+      assert.equal(request.service_tier, "default");
       assert.deepEqual(request.reasoning, { effort: "max" });
       assert.equal(request.store, false);
       assert.deepEqual(request.tools, []);
@@ -440,6 +441,130 @@ const cases = [
       assert.equal(events[0]?.providerRequestId, null);
       assert.equal(events[0]?.providerErrorCode, null);
       assert.equal(events[0]?.providerErrorType, null);
+    },
+  },
+  {
+    name: "cost tracking starts before text transport and terminal failures preserve the provider result",
+    run: async () => {
+      const order: string[] = [];
+      let terminalInput: unknown;
+      const result = await generateLandingPageDraftCandidate(context, {
+        apiKey: "test-key",
+        environment: "production",
+        attemptId: "e2144000-0000-4000-8000-000000000030",
+        requestId: "request-cost-text",
+        costTracking: {
+          accountId: context.identities.accountId,
+          landingPageId: context.identities.landingPage.id,
+          tracker: {
+            async start(startInput) {
+              order.push("start");
+              assert.equal(startInput.workload, "landing_page_draft_generation");
+              assert.equal(startInput.accountId, context.identities.accountId);
+              return {
+                async complete(input) {
+                  order.push("terminal");
+                  terminalInput = input;
+                  throw new Error("terminal-write-failed");
+                },
+              };
+            },
+          },
+        },
+        fetchImpl: async () => {
+          order.push("fetch");
+          return new Response(
+            JSON.stringify({
+              id: "resp_cost_text",
+              status: "completed",
+              service_tier: "default",
+              output: [
+                {
+                  type: "message",
+                  content: [
+                    { type: "output_text", text: JSON.stringify(candidate) },
+                  ],
+                },
+              ],
+              usage: { input_tokens: 100, output_tokens: 20 },
+            }),
+            { status: 200, headers: { "Content-Type": "application/json" } },
+          );
+        },
+        emitEvent: () => undefined,
+      });
+      assert.equal(result.ok, true);
+      assert.deepEqual(order, ["start", "fetch", "terminal"]);
+      assert.deepEqual(terminalInput, {
+        result: "success",
+        usage: { input_tokens: 100, output_tokens: 20 },
+        serviceTier: "default",
+      });
+
+      let providerCalls = 0;
+      const blocked = await generateLandingPageDraftCandidate(context, {
+        apiKey: "test-key",
+        environment: "production",
+        attemptId: "e2144000-0000-4000-8000-000000000031",
+        costTracking: {
+          accountId: context.identities.accountId,
+          landingPageId: context.identities.landingPage.id,
+          tracker: {
+            async start() {
+              throw new Error("start-write-failed");
+            },
+          },
+        },
+        fetchImpl: async () => {
+          providerCalls += 1;
+          return new Response("{}");
+        },
+        emitEvent: () => undefined,
+      });
+      assert.deepEqual(blocked, { ok: false, kind: "configuration_invalid" });
+      assert.equal(providerCalls, 0);
+
+      let unsupportedStarts = 0;
+      const unsupported = await generateLandingPageDraftCandidate(context, {
+        apiKey: "test-key",
+        environment: "preview",
+        attemptId: "e2144000-0000-4000-8000-000000000033",
+        workloadResolver: {
+          operationalConfigurationEnabled: "true",
+          readOperationalConfiguration: async (input) => ({
+            ok: true,
+            value: {
+              environment: input.environment,
+              workload: "landing_page_draft_generation",
+              apiKind: "responses_text",
+              model: "gpt-unsupported-price",
+              reasoningEffort: "max",
+              revision: "9",
+            },
+          }),
+        },
+        costTracking: {
+          accountId: context.identities.accountId,
+          landingPageId: context.identities.landingPage.id,
+          tracker: {
+            async start() {
+              unsupportedStarts += 1;
+              throw new Error("must-not-start");
+            },
+          },
+        },
+        fetchImpl: async () => {
+          providerCalls += 1;
+          return new Response("{}");
+        },
+        emitEvent: () => undefined,
+      });
+      assert.deepEqual(unsupported, {
+        ok: false,
+        kind: "configuration_invalid",
+      });
+      assert.equal(unsupportedStarts, 0);
+      assert.equal(providerCalls, 0);
     },
   },
   {
@@ -622,6 +747,56 @@ const cases = [
       assert.equal(events[0]?.requestId, "request-image-1");
       assert.equal(events[0]?.providerRequestId, "img_req_1");
       assert.equal("inputTokens" in events[0]!, false);
+
+      const imageTerminalInputs: unknown[] = [];
+      const trackedImage = await generateLandingPageDraftImage(
+        { mediaBrief: "Sala contemporânea acolhedora", semanticFacts: {} },
+        {
+          apiKey: "test-key",
+          environment: "production",
+          attemptId: "e2144000-0000-4000-8000-000000000032",
+          costTracking: {
+            accountId: context.identities.accountId,
+            landingPageId: context.identities.landingPage.id,
+            tracker: {
+              async start(startInput) {
+                assert.equal(
+                  startInput.workload,
+                  "landing_page_draft_image_generation",
+                );
+                return {
+                  async complete(input) {
+                    imageTerminalInputs.push(input);
+                  },
+                };
+              },
+            },
+          },
+          fetchImpl: async () =>
+            new Response(
+              JSON.stringify({
+                data: [{ b64_json: webp }],
+                usage: {
+                  input_tokens_details: { text_tokens: 15 },
+                  output_tokens_details: { image_tokens: 8_192 },
+                },
+              }),
+              { status: 200, headers: { "Content-Type": "application/json" } },
+            ),
+          emitEvent: () => undefined,
+        },
+      );
+      assert.equal(trackedImage.ok, true);
+      assert.deepEqual(imageTerminalInputs, [
+        {
+          result: "success",
+          usage: {
+            input_tokens_details: { text_tokens: 15 },
+            output_tokens_details: { image_tokens: 8_192 },
+          },
+          imageCount: 1,
+        },
+      ]);
 
       const failureEvents: OpenAiImageWorkloadEvent[] = [];
       const failure = await generateLandingPageDraftImage(

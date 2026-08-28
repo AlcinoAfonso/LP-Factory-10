@@ -2,8 +2,8 @@
 
 0.1 Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.76
-• Data: 25/08/2026
+• Versão: v2.0.77
+• Data: 28/08/2026
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -332,6 +332,10 @@
 • Revisões ativas, históricas e snapshots funcionais revalidam identidade do workload, origem, revisão, modalidade, identificador técnico do modelo e shape tipado do parâmetro, sem exigir disponibilidade atual nem presença do modelo em lista estática.
 • Cada tentativa de provider deve emitir somente metadados operacionais normalizados e seguros, preservando métricas ausentes como `null`; prompts, respostas integrais, payloads de negócio, PII, secrets e cálculo monetário não entram no evento comum.
 • Leitura administrativa de Costs, contratos financeiros e cálculo monetário pertencem ao boundary separado `lib/openai-costs/`; `lib/openai-workloads/` pode fornecer apenas identidade, configuração e usage públicos necessários, sem receber provider administrativo, persistência financeira ou regra de preço.
+• A atribuição financeira prospectiva limita-se aos transports `landing_page_draft_generation` e `landing_page_draft_image_generation` dentro do fluxo autorizado de revisão de LP. Conta e LP chegam pelo contexto v4 explícito; provas administrativas e outros workloads não inferem nem persistem atribuição.
+• O tracker financeiro inicia antes do provider e usa o mesmo `attempt_id` para correlação append-only; com o gate Production ligado, falha no início bloqueia o provider, enquanto falha terminal preserva o resultado e permanece visível como cobertura incompleta.
+• Preços são versionados no código e calculados em unidades decimais exatas, somente para combinação oficialmente suportada. Modelo, tier, faixa ou usage incompatíveis não são estimados; imagem sem unidades suficientes não publica custo parcial.
+• Prompt, resposta integral, payload de negócio, PII, secret e raciocínio privado nunca entram nos eventos financeiros; persistem apenas identidade autorizada, configuração efetiva, unidades normalizadas, preço aplicado e custo USD.
 • A gestão administrativa consome somente projeção pública imutável e read model seguro; a página reautoriza `platform_admin` antes da leitura privilegiada, cada mutação reexecuta o guard e o ator é derivado exclusivamente no servidor.
 • Leituras administrativas de catálogo, revisões e ativações paginam integralmente com ordem determinística; `416/PGRST103` terminal preserva páginas já acumuladas e qualquer erro ou resposta parcial produz estado tipado fail-closed.
 • `/admin/workloads-openai` separa catálogo global, seletor Preview/Production e lifecycle expansível; nomes, recortes e agrupamento visual da Landing Page vêm de uma única matriz pública code-owned, sem fundir as unidades técnicas de texto e imagem.

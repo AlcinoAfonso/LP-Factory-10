@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 
 import * as publicApi from "./index";
+import { priceOpenAiLpUsage } from "./pricing";
+import { isOpenAiLpCostTrackingEnabled } from "./tracking-gate";
 import { readOfficialOpenAiCostsWithKey } from "./providers/openAiCostsProviderCore";
 
 const period = Object.freeze({
@@ -13,6 +15,154 @@ const cases = [
     name: "public API exposes the official Costs reader",
     run: () => {
       assert.equal(typeof publicApi.readOfficialOpenAiCosts, "function");
+    },
+  },
+  {
+    name: "prospective tracking is born off and accepts only literal true in Production",
+    run: () => {
+      for (const environment of [
+        "preview",
+        "development",
+        "unknown",
+      ] as const) {
+        assert.equal(
+          isOpenAiLpCostTrackingEnabled({ environment, flag: "true" }),
+          false,
+        );
+      }
+      for (const flag of [undefined, "", "false", "TRUE", "1"]) {
+        assert.equal(
+          isOpenAiLpCostTrackingEnabled({ environment: "production", flag }),
+          false,
+        );
+      }
+      assert.equal(
+        isOpenAiLpCostTrackingEnabled({
+          environment: "production",
+          flag: "true",
+        }),
+        true,
+      );
+    },
+  },
+  {
+    name: "prospective text pricing preserves exact USD units and context bands",
+    run: () => {
+      const start = {
+        attemptId: "e2144000-0000-4000-8000-000000000010",
+        accountId: "e2144000-0000-4000-8000-000000000011",
+        landingPageId: "e2144000-0000-4000-8000-000000000012",
+        workload: "landing_page_draft_generation",
+        source: "supabase_operational",
+        revision: "3",
+        model: "gpt-5.6-luna",
+        reasoningEffort: "max",
+      } as const;
+      const short = priceOpenAiLpUsage(start, {
+        serviceTier: "default",
+        usage: {
+          input_tokens: 100,
+          input_tokens_details: {
+            cached_tokens: 20,
+            cache_write_tokens: 10,
+          },
+          output_tokens: 30,
+        },
+      });
+      assert.deepEqual(short, {
+        usage: {
+          inputTokens: 100,
+          ordinaryInputTokens: 70,
+          cachedInputTokens: 20,
+          cacheWriteTokens: 10,
+          outputTokens: 30,
+        },
+        pricing: {
+          serviceTier: "default",
+          contextBand: "short",
+          inputUsdPerMillion: "0.20",
+          cachedInputUsdPerMillion: "0.02",
+          cacheWriteUsdPerMillion: "0.25",
+          outputUsdPerMillion: "1.20",
+        },
+        costUsd: "0.000052900000",
+      });
+      assert.equal(
+        priceOpenAiLpUsage(start, {
+          serviceTier: "default",
+          usage: { input_tokens: 272_001, output_tokens: 0 },
+        })?.pricing.contextBand,
+        "long",
+      );
+      assert.equal(
+        priceOpenAiLpUsage(start, {
+          serviceTier: "auto",
+          usage: { input_tokens: 1, output_tokens: 1 },
+        }),
+        null,
+      );
+      assert.equal(
+        priceOpenAiLpUsage(start, {
+          serviceTier: "default",
+          usage: {
+            input_tokens: 1,
+            input_tokens_details: { cached_tokens: 2 },
+            output_tokens: 1,
+          },
+        }),
+        null,
+      );
+    },
+  },
+  {
+    name: "prospective image pricing uses only the active published combination",
+    run: () => {
+      const start = {
+        attemptId: "e2144000-0000-4000-8000-000000000020",
+        accountId: "e2144000-0000-4000-8000-000000000021",
+        landingPageId: "e2144000-0000-4000-8000-000000000022",
+        workload: "landing_page_draft_image_generation",
+        source: "repo_catalog",
+        revision: "v2",
+        model: "gpt-image-2",
+        size: "1536x1024",
+        quality: "medium",
+      } as const;
+      assert.deepEqual(
+        priceOpenAiLpUsage(start, {
+          imageCount: 1,
+          usage: {
+            input_tokens_details: { text_tokens: 100 },
+            output_tokens_details: { image_tokens: 8_192 },
+          },
+        }),
+        {
+          usage: {
+            textInputTokens: 100,
+            imageOutputTokens: 8_192,
+            imageCount: 1,
+          },
+          pricing: {
+            serviceTier: "default",
+            textInputUsdPerMillion: "5.00",
+            imageOutputUsdPerImage: "0.041",
+            size: "1536x1024",
+            quality: "medium",
+          },
+          costUsd: "0.041500000000",
+        },
+      );
+      assert.equal(
+        priceOpenAiLpUsage(start, { imageCount: 1, usage: {} }),
+        null,
+      );
+      assert.equal(
+        priceOpenAiLpUsage({ ...start, quality: "high" }, {
+          imageCount: 1,
+          usage: { input_tokens_details: { text_tokens: 1 } },
+        }),
+        null,
+      );
     },
   },
   {

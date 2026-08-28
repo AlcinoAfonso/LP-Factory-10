@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 28/08/2026
-• Versão: v1.5.190
+• Versão: v1.5.191
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2909,7 +2909,7 @@ Repositório — Ajustados
 
 21. E21 — Gestão e governança dos workloads OpenAI
 - Objetivo: gerir e governar os workloads OpenAI por recortes aprovados, com configuração explícita, observabilidade segura, leitura administrativa e configuração operacional dinâmica por ambiente, sem otimização automatizada.
-- Status: a fundação E21.1 permanece preservada; a E21.2, incluindo o catálogo operacional da E21.2.5, está concluída com apply e gates hospedados aprovados; o plano-base v1 da E21.3 já está na `main`, enquanto a implementação experimental da E21.3.3 permaneceu no PR #819, fechado sem merge por repriorização humana; a E21.4 possui plano-base v2 mínimo aprovado e iniciou a E21.4.3, antes da retomada da E21.3.4.
+- Status: a fundação E21.1 permanece preservada; a E21.2, incluindo o catálogo operacional da E21.2.5, está concluída com apply e gates hospedados aprovados; o plano-base v1 da E21.3 já está na `main`, enquanto a implementação experimental da E21.3.3 permaneceu no PR #819, fechado sem merge por repriorização humana; a E21.4 possui plano-base v2 mínimo aprovado, com E21.4.3 e E21.4.4 implementadas localmente e gates hospedados/pós-merge ainda pendentes, antes da retomada da E21.3.4.
 
 21.1 Fundação, normalização e leitura dos workloads OpenAI
 
@@ -3127,18 +3127,30 @@ Repositório — Ajustados
 
 21.4.1 Objetivo e status
 - Objetivo: permitir ao `platform_admin` conhecer o gasto oficial total OpenAI do período e o custo prospectivo calculado das Landing Pages geradas, agregado por conta e detalhado por Landing Page nos workloads de texto e imagem, com a diferença apresentada como Outros gastos / reconciliação.
-- Status: plano-base v2 mínimo aprovado em 28/08/2026; E21.4.3 em execução com implementação técnica local validada e prova oficial hospedada pendente; execução anterior à retomada da E21.3.4.
+- Status: plano-base v2 mínimo aprovado em 28/08/2026; E21.4.3 e E21.4.4 possuem implementação técnica local validada, enquanto prova oficial hospedada, apply e gates hospedados permanecem pendentes; execução anterior à retomada da E21.3.4.
 
 21.4.2 Registros do recorte
 - Repositório:
   - Criados:
     - `lib/openai-costs/contracts.ts`
     - `lib/openai-costs/index.ts`
+    - `lib/openai-costs/pricing.ts`
+    - `lib/openai-costs/tracking-contracts.ts`
+    - `lib/openai-costs/tracking-gate.ts`
+    - `lib/openai-costs/adapters/lpCostTrackingAdapter.ts`
     - `lib/openai-costs/providers/openAiCostsProvider.ts`
     - `lib/openai-costs/providers/openAiCostsProviderCore.ts`
     - `lib/openai-costs/validation-cases.ts`
+    - `supabase/migrations/20260828131456_e21_4_4_openai_lp_cost_tracking.sql`
+    - `supabase/tests/e21_4_4_openai_lp_cost_tracking.test.sql`
+    - `supabase/snippets/e21_4_4_openai_lp_cost_tracking_verify.sql`
   - Ajustados:
     - `package.json`
+    - `lib/lp-builder/landingPageDraftCandidateWorkflow.ts`
+    - `lib/lp-builder/landingPageDraftGeneration.ts`
+    - `lib/lp-builder/landingPageDraftImageGeneration.ts`
+    - `lib/lp-builder/adapters/landingPageDraftCandidateWorkflowAdapter.ts`
+    - `lib/lp-builder/landing-page-draft-generation-validation-cases.ts`
 - Referências:
   - Plano-base v2 aprovado: `docs/lousa-plano-base-e21-4.md`.
   - Matriz de consolidação: `docs/matriz-consolidacao-e21-4.md`.
@@ -3153,7 +3165,7 @@ Repositório — Ajustados
   - preservar o total oficial como autoridade organizacional completa, sem atribuição por heurística, Usage administrativo, saldo/créditos, cache, polling, cron ou fallback para preço local.
 
 21.4.4 Evidência prospectiva dos custos de Landing Pages
-- Status: Planejada e não implementada.
+- Status: Implementação técnica local concluída; migration, teste transacional e snippet read-only versionados com gate desligado. Dry-run SQL local indisponível por ausência de Docker/Podman; apply, Security Controls, smoke e data de corte permanecem pós-merge.
 - Automação: não.
 - Conteúdo:
   - registrar prospectivamente evidências append-only das tentativas de `landing_page_draft_generation` e `landing_page_draft_image_generation` vinculadas ao contexto autorizado de conta e Landing Page; a cobertura confiável para agregação começa somente na data de corte explícita em Production;
@@ -3280,6 +3292,8 @@ Repositório — Ajustados
 - Nenhuma alteração de banco, schema, infraestrutura ou arquitetura.
 
 99. Changelog
+v1.5.191 — 28/08/2026 — Registrada a implementação técnica local das E21.4.3 e E21.4.4 no PR #831, com leitura oficial, persistência prospectiva limitada a texto/imagem de LP, preço versionado, migration/teste/snippet repo-only e gates hospedados/pós-merge ainda pendentes; E21.4.5 permanece não iniciada.
+
 v1.5.171 — 20/08/2026 — Registrada a implementação repo-only tecnicamente aprovada da E21.2.4: gestão administrativa por ambiente/workload, lifecycle explícito, reautorização server-side, prova pelos quatro transportes existentes e falha fechada; apply, validações hospedadas, smoke real, ativação e cutover permanecem pós-merge, sem iniciar a E21.3.
 
 v1.5.170 — 20/08/2026 — Registrada a implementação repo-only tecnicamente aprovada da E21.2.3: fonte operacional por ambiente/workload, bootstrap, lifecycle transacional, resolver assíncrono fail-closed, quatro consumers, proveniência, validação de snapshots e provas SQL; apply, Security Controls, snippet real e cutover permanecem pós-merge, e a E21.2.4 fica autorizada a iniciar.

@@ -16,6 +16,12 @@ import {
   type OpenAiWorkloadResolverDependencies,
   type ResolvedOpenAiImageWorkload,
 } from "../openai-workloads";
+import type {
+  OpenAiLpCostTracker,
+  OpenAiLpCostTrackingContext,
+  OpenAiLpCostTrackingSession,
+} from "../openai-costs";
+import { isOpenAiLpPricingSupported } from "../openai-costs";
 
 export const LANDING_PAGE_DRAFT_IMAGE_TIMEOUT_MS = 120_000;
 
@@ -62,6 +68,8 @@ type Dependencies = Readonly<{
   signal?: AbortSignal;
   environment?: OpenAiWorkloadEnvironment;
   workloadResolver?: OpenAiWorkloadResolverDependencies;
+  costTracking?: OpenAiLpCostTrackingContext &
+    Readonly<{ tracker: OpenAiLpCostTracker }>;
 }>;
 
 export async function generateLandingPageDraftImage(
@@ -97,9 +105,43 @@ export async function generateLandingPageDraftImage(
     emitFailure(workload, "timeout", dependencies, { latencyMs: 0 });
     return { ok: false, kind: "timeout" };
   }
+  let costSession: OpenAiLpCostTrackingSession | undefined;
+  const costStart = dependencies.costTracking
+    ? {
+        accountId: dependencies.costTracking.accountId,
+        landingPageId: dependencies.costTracking.landingPageId,
+        attemptId: dependencies.attemptId ?? "",
+        workload: "landing_page_draft_image_generation" as const,
+        source: workload.source,
+        revision: workload.revision,
+        model: workload.model,
+        size: workload.size,
+        quality: workload.quality,
+      }
+    : undefined;
+  if (costStart && !isOpenAiLpPricingSupported(costStart)) {
+    emitFailure(workload, "configuration_invalid", dependencies);
+    return { ok: false, kind: "configuration_invalid" };
+  }
+  try {
+    costSession = costStart
+      ? await dependencies.costTracking?.tracker.start(costStart)
+      : undefined;
+  } catch {
+    emitFailure(workload, "configuration_invalid", dependencies);
+    return { ok: false, kind: "configuration_invalid" };
+  }
+  const providerTimeoutMs = Math.max(0, timeoutMs - (now() - startedAt));
+  if (providerTimeoutMs <= 0 || dependencies.signal?.aborted) {
+    emitFailure(workload, "timeout", dependencies, {
+      latencyMs: now() - startedAt,
+    });
+    await completeCost(costSession, "failure");
+    return { ok: false, kind: "timeout" };
+  }
   const abortFromParent = () => controller.abort();
   dependencies.signal?.addEventListener("abort", abortFromParent, { once: true });
-  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  const timeout = setTimeout(() => controller.abort(), providerTimeoutMs);
 
   try {
     const response = await fetchImpl("https://api.openai.com/v1/images/generations", {
@@ -125,6 +167,7 @@ export async function generateLandingPageDraftImage(
     const providerRequestId = nonEmptyString(response.headers.get("x-request-id"));
     if (!response.ok) {
       emitFailure(workload, "http_error", dependencies, { providerRequestId, latencyMs });
+      await completeCost(costSession, "failure");
       return { ok: false, kind: "http_error" };
     }
 
@@ -133,6 +176,7 @@ export async function generateLandingPageDraftImage(
       payload = await response.json();
     } catch {
       emitFailure(workload, "invalid_response", dependencies, { providerRequestId, latencyMs });
+      await completeCost(costSession, "failure");
       return { ok: false, kind: "invalid_response" };
     }
     if (!isRecord(payload) || payload.error || !Array.isArray(payload.data)) {
@@ -142,6 +186,11 @@ export async function generateLandingPageDraftImage(
         dependencies,
         { providerRequestId, latencyMs },
       );
+      await completeCost(
+        costSession,
+        "failure",
+        isRecord(payload) ? payload.usage : undefined,
+      );
       return {
         ok: false,
         kind: isRecord(payload) && payload.error ? "provider_error" : "invalid_response",
@@ -150,11 +199,13 @@ export async function generateLandingPageDraftImage(
     const image = payload.data[0];
     if (payload.data.length !== 1 || !isRecord(image) || typeof image.b64_json !== "string") {
       emitFailure(workload, "invalid_response", dependencies, { providerRequestId, latencyMs });
+      await completeCost(costSession, "failure", payload.usage);
       return { ok: false, kind: "invalid_response" };
     }
     const bytes = Uint8Array.from(Buffer.from(image.b64_json, "base64"));
     if (!isWebP(bytes)) {
       emitFailure(workload, "invalid_response", dependencies, { providerRequestId, latencyMs });
+      await completeCost(costSession, "failure", payload.usage);
       return { ok: false, kind: "invalid_response" };
     }
 
@@ -174,6 +225,7 @@ export async function generateLandingPageDraftImage(
         visualBriefVersion: LANDING_PAGE_VISUAL_BRIEF_VERSION,
       }),
     );
+    await completeCost(costSession, "success", payload.usage, 1);
     return {
       ok: true,
       bytes,
@@ -203,10 +255,25 @@ export async function generateLandingPageDraftImage(
       dependencies,
       { latencyMs: now() - startedAt },
     );
+    await completeCost(costSession, "failure");
     return { ok: false, kind: timedOut ? "timeout" : "http_error" };
   } finally {
     clearTimeout(timeout);
     dependencies.signal?.removeEventListener("abort", abortFromParent);
+  }
+}
+
+async function completeCost(
+  session: OpenAiLpCostTrackingSession | undefined,
+  result: "success" | "failure",
+  usage?: unknown,
+  imageCount?: number,
+) {
+  if (!session) return;
+  try {
+    await session.complete({ result, usage, imageCount });
+  } catch {
+    // Terminal persistence is best-effort after a durable start.
   }
 }
 
