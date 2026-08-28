@@ -49,14 +49,17 @@ with checks(check_name, status, details) as (
       and has_function_privilege('service_role', 'public.append_openai_lp_cost_start_v1(uuid,uuid,uuid,text,text,text,text,text,text,text,text)', 'EXECUTE')
       and has_function_privilege('service_role', 'public.append_openai_lp_cost_terminal_v1(uuid,text,text,jsonb,jsonb,numeric)', 'EXECUTE')
       and has_function_privilege('service_role', 'public.register_openai_lp_cost_coverage_v1(timestamptz)', 'EXECUTE')
+      and has_function_privilege('service_role', 'public.read_openai_lp_cost_events_v1(timestamptz,timestamptz)', 'EXECUTE')
       and not has_function_privilege('service_role', 'public.prevent_openai_lp_cost_mutation_v1()', 'EXECUTE')
       and not has_function_privilege('anon', 'public.append_openai_lp_cost_start_v1(uuid,uuid,uuid,text,text,text,text,text,text,text,text)', 'EXECUTE')
       and not has_function_privilege('anon', 'public.append_openai_lp_cost_terminal_v1(uuid,text,text,jsonb,jsonb,numeric)', 'EXECUTE')
       and not has_function_privilege('anon', 'public.register_openai_lp_cost_coverage_v1(timestamptz)', 'EXECUTE')
+      and not has_function_privilege('anon', 'public.read_openai_lp_cost_events_v1(timestamptz,timestamptz)', 'EXECUTE')
       and not has_function_privilege('anon', 'public.prevent_openai_lp_cost_mutation_v1()', 'EXECUTE')
       and not has_function_privilege('authenticated', 'public.append_openai_lp_cost_start_v1(uuid,uuid,uuid,text,text,text,text,text,text,text,text)', 'EXECUTE')
       and not has_function_privilege('authenticated', 'public.append_openai_lp_cost_terminal_v1(uuid,text,text,jsonb,jsonb,numeric)', 'EXECUTE')
       and not has_function_privilege('authenticated', 'public.register_openai_lp_cost_coverage_v1(timestamptz)', 'EXECUTE')
+      and not has_function_privilege('authenticated', 'public.read_openai_lp_cost_events_v1(timestamptz,timestamptz)', 'EXECUTE')
       and not has_function_privilege('authenticated', 'public.prevent_openai_lp_cost_mutation_v1()', 'EXECUTE')
       and case when to_regrole('ai_readonly') is null then true else
         not has_table_privilege('ai_readonly', 'public.openai_lp_cost_events', 'SELECT')
@@ -64,6 +67,7 @@ with checks(check_name, status, details) as (
         and not has_function_privilege('ai_readonly', 'public.append_openai_lp_cost_start_v1(uuid,uuid,uuid,text,text,text,text,text,text,text,text)', 'EXECUTE')
         and not has_function_privilege('ai_readonly', 'public.append_openai_lp_cost_terminal_v1(uuid,text,text,jsonb,jsonb,numeric)', 'EXECUTE')
         and not has_function_privilege('ai_readonly', 'public.register_openai_lp_cost_coverage_v1(timestamptz)', 'EXECUTE')
+        and not has_function_privilege('ai_readonly', 'public.read_openai_lp_cost_events_v1(timestamptz,timestamptz)', 'EXECUTE')
         and not has_function_privilege('ai_readonly', 'public.prevent_openai_lp_cost_mutation_v1()', 'EXECUTE')
       end
       and not exists (
@@ -88,6 +92,7 @@ with checks(check_name, status, details) as (
           'public.append_openai_lp_cost_start_v1(uuid,uuid,uuid,text,text,text,text,text,text,text,text)'::regprocedure,
           'public.append_openai_lp_cost_terminal_v1(uuid,text,text,jsonb,jsonb,numeric)'::regprocedure,
           'public.register_openai_lp_cost_coverage_v1(timestamptz)'::regprocedure,
+          'public.read_openai_lp_cost_events_v1(timestamptz,timestamptz)'::regprocedure,
           'public.prevent_openai_lp_cost_mutation_v1()'::regprocedure
         )
           and privilege.grantee = 0

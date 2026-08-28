@@ -3,6 +3,13 @@ import type {
   OpenAiOfficialCostsErrorCode,
   OpenAiOfficialCostsReadResult,
 } from "../contracts";
+import {
+  addDecimal,
+  decimalFromNonNegativeNumber,
+  decimalZero,
+  formatDecimal,
+  type DecimalValue,
+} from "../decimal";
 
 const OPENAI_COSTS_URL = "https://api.openai.com/v1/organization/costs";
 const COSTS_BUCKET_LIMIT = 180;
@@ -217,7 +224,7 @@ function parseCostsPage(
           message: "OpenAI Costs returned a non-USD amount",
         });
       }
-      const amount = decimalFromNumber(rawResult.amount.value);
+      const amount = decimalFromNonNegativeNumber(rawResult.amount.value);
       if (!amount) return invalidPage("OpenAI Costs amount is invalid");
       amounts.push(amount);
     }
@@ -232,50 +239,6 @@ function parseCostsPage(
     hasMore: payload.has_more,
     nextPage,
   });
-}
-
-type DecimalValue = Readonly<{ coefficient: bigint; scale: number }>;
-
-function decimalZero(): DecimalValue {
-  return { coefficient: 0n, scale: 0 };
-}
-
-function decimalFromNumber(value: unknown): DecimalValue | null {
-  if (typeof value !== "number" || !Number.isFinite(value) || value < 0) return null;
-  const match = /^(\d+)(?:\.(\d+))?(?:e([+-]?\d+))?$/i.exec(String(value));
-  if (!match) return null;
-  const fraction = match[2] ?? "";
-  const exponent = Number(match[3] ?? "0");
-  if (!Number.isSafeInteger(exponent)) return null;
-  let coefficient = BigInt(`${match[1]}${fraction}`);
-  let scale = fraction.length - exponent;
-  if (scale < 0) {
-    coefficient *= 10n ** BigInt(-scale);
-    scale = 0;
-  }
-  while (scale > 0 && coefficient % 10n === 0n) {
-    coefficient /= 10n;
-    scale -= 1;
-  }
-  return { coefficient, scale };
-}
-
-function addDecimal(left: DecimalValue, right: DecimalValue): DecimalValue {
-  const scale = Math.max(left.scale, right.scale);
-  return {
-    coefficient:
-      left.coefficient * 10n ** BigInt(scale - left.scale) +
-      right.coefficient * 10n ** BigInt(scale - right.scale),
-    scale,
-  };
-}
-
-function formatDecimal(value: DecimalValue): string {
-  if (value.scale === 0) return value.coefficient.toString();
-  const digits = value.coefficient.toString().padStart(value.scale + 1, "0");
-  const integer = digits.slice(0, -value.scale);
-  const fraction = digits.slice(-value.scale).replace(/0+$/, "");
-  return fraction ? `${integer}.${fraction}` : integer;
 }
 
 function isValidPeriod(

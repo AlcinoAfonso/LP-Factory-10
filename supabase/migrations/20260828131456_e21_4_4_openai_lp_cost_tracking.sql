@@ -343,6 +343,65 @@ begin
 end;
 $$;
 
+create or replace function public.read_openai_lp_cost_events_v1(
+  p_start_at timestamptz,
+  p_end_at timestamptz
+)
+returns table (
+  attempt_id uuid,
+  account_id uuid,
+  account_name text,
+  landing_page_id uuid,
+  landing_page_name text,
+  workload text,
+  started_at timestamptz,
+  terminal_at timestamptz,
+  result text,
+  cost_usd text
+)
+language plpgsql
+stable
+security invoker
+set search_path = pg_catalog
+as $$
+begin
+  if p_start_at is null
+     or p_end_at is null
+     or p_end_at <= p_start_at
+     or p_end_at > clock_timestamp()
+     or p_end_at - p_start_at > interval '180 days' then
+    raise exception using errcode = '22023', message = 'openai_lp_cost_period_invalid';
+  end if;
+
+  return query
+  select
+    started.attempt_id,
+    started.account_id,
+    account.name,
+    started.landing_page_id,
+    landing_page.name,
+    started.workload,
+    started.created_at,
+    terminal.created_at,
+    terminal.result,
+    terminal.cost_usd::text
+  from public.openai_lp_cost_events started
+  join public.accounts account
+    on account.id = started.account_id
+  join public.account_landing_pages landing_page
+    on landing_page.id = started.landing_page_id
+   and landing_page.account_id = started.account_id
+  left join public.openai_lp_cost_events terminal
+    on terminal.attempt_id = started.attempt_id
+   and terminal.workload = started.workload
+   and terminal.event_kind = 'terminal'
+  where started.event_kind = 'started'
+    and started.created_at >= p_start_at
+    and started.created_at < p_end_at
+  order by started.created_at, started.attempt_id, started.workload;
+end;
+$$;
+
 revoke all on table public.openai_lp_cost_events, public.openai_lp_cost_coverage
   from public, anon, authenticated, service_role;
 
@@ -365,6 +424,8 @@ revoke all on function public.append_openai_lp_cost_terminal_v1(uuid, text, text
   from public, anon, authenticated, service_role;
 revoke all on function public.register_openai_lp_cost_coverage_v1(timestamptz)
   from public, anon, authenticated, service_role;
+revoke all on function public.read_openai_lp_cost_events_v1(timestamptz, timestamptz)
+  from public, anon, authenticated, service_role;
 
 do $$
 begin
@@ -373,6 +434,7 @@ begin
     execute 'revoke all on function public.append_openai_lp_cost_start_v1(uuid, uuid, uuid, text, text, text, text, text, text, text, text) from ai_readonly';
     execute 'revoke all on function public.append_openai_lp_cost_terminal_v1(uuid, text, text, jsonb, jsonb, numeric) from ai_readonly';
     execute 'revoke all on function public.register_openai_lp_cost_coverage_v1(timestamptz) from ai_readonly';
+    execute 'revoke all on function public.read_openai_lp_cost_events_v1(timestamptz, timestamptz) from ai_readonly';
   end if;
 end;
 $$;
@@ -382,6 +444,8 @@ grant execute on function public.append_openai_lp_cost_start_v1(uuid, uuid, uuid
 grant execute on function public.append_openai_lp_cost_terminal_v1(uuid, text, text, jsonb, jsonb, numeric)
   to service_role;
 grant execute on function public.register_openai_lp_cost_coverage_v1(timestamptz)
+  to service_role;
+grant execute on function public.read_openai_lp_cost_events_v1(timestamptz, timestamptz)
   to service_role;
 
 comment on table public.openai_lp_cost_events

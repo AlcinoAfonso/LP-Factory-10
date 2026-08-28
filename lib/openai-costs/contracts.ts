@@ -37,3 +37,54 @@ export type OpenAiOfficialCostsReadResult =
 export type OpenAiOfficialCostsReader = (
   period: OpenAiCostsPeriod,
 ) => Promise<OpenAiOfficialCostsReadResult>;
+
+export type OpenAiLpCostWorkloadSummary = Readonly<{
+  workload:
+    | "landing_page_draft_generation"
+    | "landing_page_draft_image_generation";
+  totalUsd: string;
+  attemptCount: number;
+  unpricedAttemptCount: number;
+  pendingAttemptCount: number;
+}>;
+
+export type OpenAiLpCostLandingPageSummary = Readonly<{
+  landingPageId: string;
+  landingPageName: string;
+  totalUsd: string;
+  attemptCount: number;
+  unpricedAttemptCount: number;
+  pendingAttemptCount: number;
+  workloads: readonly OpenAiLpCostWorkloadSummary[];
+}>;
+
+export type OpenAiLpCostAccountSummary = Readonly<{
+  accountId: string;
+  accountName: string;
+  totalUsd: string;
+  attemptCount: number;
+  unpricedAttemptCount: number;
+  pendingAttemptCount: number;
+  landingPages: readonly OpenAiLpCostLandingPageSummary[];
+}>;
+
+export type OpenAiLpCostReadModel = Readonly<{
+  totalUsd: string;
+  coverageActivatedAt: string | null;
+  coverageStatus: "covered" | "partial" | "not_activated";
+  internalUpdatedAt: string | null;
+  attemptCount: number;
+  unpricedAttemptCount: number;
+  pendingAttemptCount: number;
+  accounts: readonly OpenAiLpCostAccountSummary[];
+}>;
+
+export type OpenAiLpCostReadResult =
+  | Readonly<{ ok: true; value: OpenAiLpCostReadModel }>
+  | Readonly<{
+      ok: false;
+      error: Readonly<{
+        code: "READ_FAILED" | "INVALID_RESPONSE" | "PAGINATION_INCOMPLETE";
+        message: string;
+      }>;
+    }>;

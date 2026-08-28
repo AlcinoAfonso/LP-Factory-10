@@ -1336,9 +1336,10 @@
 • `append_openai_lp_cost_start_v1(uuid, uuid, uuid, text, text, text, text, text, text, text, text) → uuid`: anexa ou retorna idempotentemente o início tenant-safe da tentativa; conflito de identidade na mesma chave falha fechado.
 • `append_openai_lp_cost_terminal_v1(uuid, text, text, jsonb, jsonb, numeric) → uuid`: exige início prévio, herda identidade/configuração e anexa ou retorna idempotentemente o terminal; retry divergente falha fechado.
 • `register_openai_lp_cost_coverage_v1(timestamptz) → timestamptz`: cria uma única data de corte Production; retry idêntico é idempotente e qualquer tentativa de alteração falha fechado.
+• `read_openai_lp_cost_events_v1(timestamptz, timestamptz) → setof record`: lê de forma ordenada os inícios do período, correlaciona no máximo um terminal e projeta somente identidade de conta/LP, workload, instantes, resultado e custo textual exato para paginação server-side.
 
 3.10.2 Segurança e execução
-• As três RPCs usam SECURITY INVOKER e search_path fixado em pg_catalog, com referências schema-qualified.
+• As quatro RPCs usam SECURITY INVOKER e search_path fixado em pg_catalog, com referências schema-qualified.
 • EXECUTE é exclusivo de service_role; public, anon, authenticated e ai_readonly não executam as RPCs.
 • `prevent_openai_lp_cost_mutation_v1() → trigger` não possui EXECUTE externo e rejeita UPDATE/DELETE nas duas residências.
 
@@ -1384,9 +1385,13 @@
 • Rollback: não remove automaticamente a extensão, pois pode ser reutilizada por outros recursos
 
 99. Changelog
+v1.0.60 (28/08/2026) — E21.4.5 read model administrativo de custos
+• Adicionada à mesma migration ainda não aplicada a RPC read-only paginável `read_openai_lp_cost_events_v1`, com período validado, correlação determinística e projeção sanitizada para a visão conta → LP → texto/imagem.
+• EXECUTE permanece exclusivo de `service_role`; teste transacional e snippet read-only cobrem o novo contrato e suas ACLs.
+
 v1.0.59 (28/08/2026) — E21.4.4 evidência prospectiva de custos OpenAI das Landing Pages
 • Registradas as tabelas repo-only `openai_lp_cost_events` e `openai_lp_cost_coverage`, com correlação tenant-safe, append-only, data de corte única, RLS sem policies e ACL service_role SELECT/INSERT.
-• Registradas as três RPCs SECURITY INVOKER, triggers de imutabilidade, migration, teste transacional e verificador read-only; apply hospedado permanece pós-merge.
+• Registradas inicialmente as três RPCs de escrita/corte SECURITY INVOKER, triggers de imutabilidade, migration, teste transacional e verificador read-only; apply hospedado permanece pós-merge.
 
 v1.0.58 (27/08/2026) — Conflitos de domínio seguros para PostgREST
 • Versionado `raise_postgrest_safe_conflict_v1(text)` para transportar conflitos conhecidos como `PGRST`/HTTP 409 pela Data API, preservando `code = 40001` no corpo.

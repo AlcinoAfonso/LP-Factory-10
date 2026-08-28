@@ -3127,7 +3127,7 @@ Repositório — Ajustados
 
 21.4.1 Objetivo e status
 - Objetivo: permitir ao `platform_admin` conhecer o gasto oficial total OpenAI do período e o custo prospectivo calculado das Landing Pages geradas, agregado por conta e detalhado por Landing Page nos workloads de texto e imagem, com a diferença apresentada como Outros gastos / reconciliação.
-- Status: plano-base v2 mínimo aprovado em 28/08/2026; E21.4.3 e E21.4.4 possuem implementação repo-only no PR #831, enquanto prova oficial hospedada, apply e gates hospedados permanecem pendentes; execução anterior à retomada da E21.3.4.
+- Status: plano-base v2 mínimo aprovado em 28/08/2026; E21.4.3, E21.4.4 e E21.4.5 possuem implementação repo-only no PR #831, enquanto prova oficial hospedada, apply e gates hospedados permanecem pendentes; execução anterior à retomada da E21.3.4.
 
 21.4.2 Registros do recorte
 - Repositório:
@@ -3138,12 +3138,20 @@ Repositório — Ajustados
     - `lib/openai-costs/tracking-contracts.ts`
     - `lib/openai-costs/tracking-gate.ts`
     - `lib/openai-costs/adapters/lpCostTrackingAdapter.ts`
+    - `lib/openai-costs/adapters/lpCostReadModelAdapter.ts`
+    - `lib/openai-costs/adapters/lpCostReadModelAdapterCore.ts`
+    - `lib/openai-costs/dashboard.ts`
+    - `lib/openai-costs/decimal.ts`
     - `lib/openai-costs/providers/openAiCostsProvider.ts`
     - `lib/openai-costs/providers/openAiCostsProviderCore.ts`
     - `lib/openai-costs/validation-cases.ts`
     - `supabase/migrations/20260828131456_e21_4_4_openai_lp_cost_tracking.sql`
     - `supabase/tests/e21_4_4_openai_lp_cost_tracking.test.sql`
     - `supabase/snippets/e21_4_4_openai_lp_cost_tracking_verify.sql`
+    - `app/admin/(protected)/custos-openai/actions.ts`
+    - `app/admin/(protected)/custos-openai/page.tsx`
+    - `app/admin/(protected)/custos-openai/_components/OpenAiCostsDashboard.tsx`
+    - `app/admin/(protected)/custos-openai/validation-cases.tsx`
   - Ajustados:
     - `package.json`
     - `lib/lp-builder/landingPageDraftCandidateWorkflow.ts`
@@ -3151,6 +3159,7 @@ Repositório — Ajustados
     - `lib/lp-builder/landingPageDraftImageGeneration.ts`
     - `lib/lp-builder/adapters/landingPageDraftCandidateWorkflowAdapter.ts`
     - `lib/lp-builder/landing-page-draft-generation-validation-cases.ts`
+    - `components/admin/adminNavigation.ts`
 - Referências:
   - Plano-base v2 aprovado: `docs/lousa-plano-base-e21-4.md`.
   - Matriz de consolidação: `docs/matriz-consolidacao-e21-4.md`.
@@ -3172,10 +3181,11 @@ Repositório — Ajustados
   - calcular custos internos com preços versionados e unidades efetivas, sem custo parcial ou inferido, mantendo tentativas não calculáveis fora da soma das LPs e dentro de Outros gastos / reconciliação por diferença.
 
 21.4.5 Custos OpenAI e reconciliação administrativa
-- Status: Planejada e não implementada.
+- Status: Implementação repo-only no PR #831; validações locais aprovadas, com prova oficial hospedada, apply, instrumentação Production e QA hospedado ainda pendentes.
 - Automação: não.
 - Conteúdo:
   - criar superfície separada para `platform_admin` com total oficial, custos prospectivos calculados das LPs, Outros gastos / reconciliação e aprofundamento conta → Landing Page → texto/imagem;
+  - consultar sob demanda o provider oficial e o read model interno em paralelo, com paginação completa e reconciliação decimal exata, sem clamp;
   - validar períodos, atualização sob demanda, cobertura/corte, estados, acesso negativo, desktop/mobile e acessibilidade proporcional antes da conclusão;
   - adiar classificação financeira ampla, workloads adicionais, reconstrução histórica, créditos, câmbio, cobrança, AI Gateway, CDC e qualquer infraestrutura não indispensável ao núcleo aprovado.
 

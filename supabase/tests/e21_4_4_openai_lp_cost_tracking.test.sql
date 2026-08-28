@@ -125,6 +125,22 @@ begin
     raise exception 'attempt must contain exactly start and terminal';
   end if;
 
+  if not exists (
+    select 1
+    from public.read_openai_lp_cost_events_v1(
+      clock_timestamp() - interval '1 day',
+      clock_timestamp()
+    ) read_model
+    where read_model.attempt_id = v_attempt
+      and read_model.account_name = 'E21.4.4 Test'
+      and read_model.landing_page_name = 'LP custos'
+      and read_model.workload = 'landing_page_draft_generation'
+      and read_model.result = 'success'
+      and read_model.cost_usd = '0.000044000000'
+  ) then
+    raise exception 'read model must correlate the priced attempt';
+  end if;
+
   if public.register_openai_lp_cost_coverage_v1(v_cutoff) is distinct from v_cutoff
      or public.register_openai_lp_cost_coverage_v1(v_cutoff) is distinct from v_cutoff then
     raise exception 'coverage cutoff must be idempotent';
@@ -200,6 +216,12 @@ begin
     raise exception 'table privileges are not least-privilege';
   end if;
 
+  if not has_function_privilege('service_role', 'public.read_openai_lp_cost_events_v1(timestamptz,timestamptz)', 'EXECUTE')
+     or has_function_privilege('anon', 'public.read_openai_lp_cost_events_v1(timestamptz,timestamptz)', 'EXECUTE')
+     or has_function_privilege('authenticated', 'public.read_openai_lp_cost_events_v1(timestamptz,timestamptz)', 'EXECUTE') then
+    raise exception 'read model privileges are not least-privilege';
+  end if;
+
   if to_regrole('ai_readonly') is not null and (
     has_table_privilege('ai_readonly', 'public.openai_lp_cost_events', 'SELECT')
     or has_table_privilege('ai_readonly', 'public.openai_lp_cost_coverage', 'SELECT')
@@ -207,6 +229,7 @@ begin
     or has_function_privilege('ai_readonly', 'public.append_openai_lp_cost_terminal_v1(uuid,text,text,jsonb,jsonb,numeric)', 'EXECUTE')
     or has_function_privilege('ai_readonly', 'public.register_openai_lp_cost_coverage_v1(timestamptz)', 'EXECUTE')
     or has_function_privilege('ai_readonly', 'public.prevent_openai_lp_cost_mutation_v1()', 'EXECUTE')
+    or has_function_privilege('ai_readonly', 'public.read_openai_lp_cost_events_v1(timestamptz,timestamptz)', 'EXECUTE')
   ) then
     raise exception 'ai_readonly must not access financial objects';
   end if;
@@ -232,6 +255,7 @@ begin
       'public.append_openai_lp_cost_start_v1(uuid,uuid,uuid,text,text,text,text,text,text,text,text)'::regprocedure,
       'public.append_openai_lp_cost_terminal_v1(uuid,text,text,jsonb,jsonb,numeric)'::regprocedure,
       'public.register_openai_lp_cost_coverage_v1(timestamptz)'::regprocedure,
+      'public.read_openai_lp_cost_events_v1(timestamptz,timestamptz)'::regprocedure,
       'public.prevent_openai_lp_cost_mutation_v1()'::regprocedure
     )
       and privilege.grantee = 0
