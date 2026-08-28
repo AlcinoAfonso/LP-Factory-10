@@ -13,7 +13,7 @@
 - O taxon primário da conta permanece a identidade taxonômica estável do negócio; a fonte de conhecimento usada por uma revisão é decisão derivada, não segunda taxonomia da LP.
 - O escopo comercial da LP é fornecido por `landing_page_offering_scope`, cuja autoridade pertence à E20.2.9/E19.5; a E20.7 apenas o consome para resolver conhecimento.
 - O PR #830/E20.2.9.2 permanece pré-publicação no momento desta v1: `CURRENT=5`; portanto a implementação operacional da E20.7 depende da publicação e integração da E20.2 v6.
-- A E21.4 permanece autoridade para evidência prospectiva, usage, atribuição econômica e custo OpenAI; a pesquisa dinâmica não cria medição financeira paralela.
+- A E21.4 permanece autoridade do gasto oficial OpenAI e do custo prospectivo dos workloads de texto/imagem de LP cobertos por seu MVP reduzido; o novo workload de pesquisa dinâmica segue a governança/observabilidade técnica E21.2 e, financeiramente, permanece dentro do gasto oficial em `Outros gastos / reconciliação`, sem criar medição paralela na E20.7.
 
 ### 1.2. Evidência que sustenta a decisão
 
@@ -41,7 +41,7 @@
 - `docs/lousa-plano-base-e19-4.md`, `lib/lp-builder/landingPageDraftCandidateWorkflow.ts`, `lib/lp-builder/landingPageRevisionWorkflow.ts` e `lib/lp-builder/landingPageRevision.ts` — geração, budgets, falha fechada, snapshot e materialização.
 - `docs/lousa-plano-base-e19-5.md` — configuração compartilhada/específica da LP e autoridade operacional pós-handoff.
 - `lib/openai-workloads/registry.ts` — governança dos workloads OpenAI de produto.
-- `docs/lousa-plano-base-e21-4.md` / PR #824 — autoridade de usage, custo e atribuição prospectiva.
+- `docs/lousa-plano-base-e21-4.md`, PR #824 e PR #831 — autoridade financeira e redução atual do MVP da E21.4 aos workloads de texto/imagem de LP, mantendo demais consumos em `Outros gastos / reconciliação`.
 - `lib/conversion-content/landing-page/taxon-preparation/research.ts` e `next.config.js` — loader repo-only e tracing atual da biblioteca.
 - `docs/pesquisas-brutas/corretor-imoveis/end_customer/v1.md` e `v2.md` — baseline e piloto comparável.
 
@@ -82,8 +82,8 @@
 - E20.2 v6 precisa estar publicada, atual e consumível pelo workspace/generation context; o plano não assume conclusão antecipada do PR #830.
 - O taxon servido precisa possuir E20.5 válida e E20.6 compatível com a versão E20.2 efetiva requerida.
 - Taxon descendente candidato a fonte especializada precisa estar ativo, possuir E20.5/E20.6 válidas para a mesma versão efetiva e passar pela equivalência factual da seção 1.5.
-- O lifecycle E21.2 precisa admitir o novo workload de pesquisa dinâmica antes de sua ativação.
-- O rollout do complemento dinâmico em ambiente hospedado precisa consumir a evidência prospectiva definida pela E21.4.4; se essa instrumentação ainda não estiver disponível, não criar persistência concorrente dentro da E20.7.
+- O lifecycle E21.2 precisa admitir o novo workload de pesquisa dinâmica antes de sua ativação e fornecer sua governança/observabilidade técnica normal.
+- A E21.4 reduzida não bloqueia a ativação do novo workload: o custo financeiro da pesquisa dinâmica não é atribuído por LP nesse MVP e permanece contabilizado no gasto oficial em `Outros gastos / reconciliação`.
 
 ## 2. Contrato do caso
 
@@ -98,15 +98,16 @@
 
 - O resolver opera server-side em cada nova geração e não persiste uma seleção de pesquisa na LP.
 - `mode = single`:
-  - procurar apenas um match canônico exato e único entre a oferta informada e um taxon descendente ativo;
-  - reutilizar a canonicalização textual do `offering_scope` para igualdade exata após `trim` e comparação case-insensitive, sem sinônimos, stemming, embeddings ou roteamento semântico;
+  - procurar apenas um match canônico exato e único entre a oferta informada e o **nome canônico** de um taxon descendente ativo (`business_taxons.name`);
+  - comparar oferta e nome do taxon após `trim` e de forma case-insensitive, sem sinônimos, stemming, embeddings ou roteamento semântico; o `slug` identifica o taxon somente depois de encontrado o match e não participa da aproximação textual;
   - se houver match único, exigir preparação e equivalência factual da seção 1.5;
   - se passar, usar a Deep Research descendente como fonte `specialized_deep`;
   - se não existir match único/elegível, usar a Deep Research do taxon servido como base e acionar o complemento dinâmico, produzindo `base_plus_dynamic` quando houver delta material.
 - `mode = multiple`:
   - usar a Deep Research do taxon servido como base;
-  - não selecionar uma Deep Research por item;
-  - permitir no máximo um complemento dinâmico sobre o conjunto quando houver necessidade material de conhecimento adicional.
+  - executar **um único complemento dinâmico sobre o conjunto inteiro de ofertas**, sem classificador ou etapa prévia para decidir se há necessidade material;
+  - a própria pesquisa dinâmica retorna `material_delta` quando houver diferença sustentada ou `no_material_delta` quando a Deep Research-base já for suficiente;
+  - nunca selecionar uma Deep Research ou disparar pesquisa separada por item.
 - `mode = portfolio`:
   - usar a Deep Research do taxon servido;
   - não pesquisar individualmente cada item do portfólio.
@@ -150,7 +151,7 @@
   - alvo, data e fontes;
   - workload/revisão, response ID, usage, latência e quantidade de Web Search runs.
 - Revisões históricas nunca são reinterpretadas quando nova Deep Research é arquivada/selecionada depois.
-- Tentativa que falha antes da materialização não possui snapshot de revisão; sua evidência de consumo e atribuição pertence à E21.4.
+- Tentativa que falha antes da materialização não possui snapshot de revisão; sua correlação, usage e latência seguem a observabilidade técnica do workload quando disponíveis, enquanto o impacto financeiro permanece no gasto oficial da E21.4 em `Outros gastos / reconciliação`, sem atribuição por LP.
 
 ### 2.6. Consumo e fallback
 
@@ -177,16 +178,18 @@
 - Dependência de início: E20.2 v6 publicada e operacionalmente autorizada; não implementar sobre `CURRENT=5` como contrato definitivo.
 - Processamento:
   - reutilizar E20.5/E20.6 e o resolver E20.2 existentes;
-  - localizar candidato descendente somente por match exato único do `single`;
+  - localizar candidato descendente somente por igualdade exata, após `trim` e case-insensitive, entre a oferta `single` e `business_taxons.name`; usar o `slug` somente como identidade do match encontrado;
   - aplicar preparação + equivalência conservadora;
   - produzir decisão tipada `specialized_deep | base_only | dynamic_required` sem persistência própria;
+  - em `multiple`, marcar `dynamic_required` uma única vez para o conjunto inteiro, sem classificador prévio e sem pesquisa por item;
   - versionar o generation context sem reescrever contratos históricos.
 - Critérios de aceite:
   - base-only preserva comportamento factual vigente;
   - descendente equivalente pode fornecer pesquisa sem alterar facts/servedTaxon;
   - descendente com diferença material é bloqueado;
   - ausência/ambiguidade de match não escolhe taxon por heurística;
-  - multiple/portfolio não disparam pesquisa por item;
+  - `single` não compara contra slug, alias ou similaridade semântica;
+  - `multiple` dispara no máximo um complemento para o conjunto e `portfolio` não dispara pesquisa por item;
   - nenhuma nova tabela, coluna ou residência é criada.
 
 ### 3.2. E20.7.4 — Complemento dinâmico controlado e integração E21
@@ -197,19 +200,18 @@
 - Limites: Responses API + Web Search hospedado, até duas execuções de busca, `store:false`, sub-timeout máximo de 45 s, fontes obrigatórias, sem retry/fallback silencioso, agente, Agents SDK, job, fila, crawler, RAG ou cache global.
 - Avaliação formal de Automação na v2: necessária.
 - Dependências:
-  - lifecycle E21.2 capaz de governar o novo workload `product_runtime`;
-  - evidência prospectiva E21.4.4 disponível antes de ativar o workload em ambiente hospedado.
+  - lifecycle E21.2 capaz de governar o novo workload `product_runtime` e sua observabilidade técnica normal.
 - Processamento:
   - criar prompt de runtime focado apenas no delta consultivo;
   - produzir resultado tipado `material_delta | no_material_delta | insufficient_evidence`;
-  - emitir correlação, usage, latência e quantidade de Web Search runs inclusive em falha antes da materialização;
-  - preservar custo/atribuição sob autoridade E21.4.
+  - emitir correlação, usage, latência e quantidade de Web Search runs conforme a observabilidade técnica vigente, inclusive quando disponíveis em falha antes da materialização;
+  - não criar cálculo financeiro próprio: o novo workload permanece em `Outros gastos / reconciliação` no MVP reduzido da E21.4.
 - Critérios de aceite:
   - pesquisa necessária usa Web Search de fato e preserva fontes;
   - `material_delta` produz suplemento consultivo utilizável;
   - `no_material_delta` permite base-only com proveniência explícita;
   - erro/timeout/refusal/evidência insuficiente falha sem revisão;
-  - nenhuma persistência financeira paralela é criada.
+  - nenhuma persistência financeira paralela é criada e a E21.4 não é ampliada por consequência da E20.7.
 
 ### 3.3. E20.7.5 — Integração da geração, snapshot e prova end-to-end
 
@@ -230,7 +232,7 @@
   - falha do complemento necessário não cria revisão nem asset órfão;
   - inequivalência E20.2 bloqueia especialização antes do provider;
   - revisões históricas continuam reproduzíveis;
-  - observabilidade E21 cobre sucesso e falha do novo workload;
+  - observabilidade técnica cobre sucesso e falha do novo workload na profundidade suportada pelo boundary vigente;
   - smokes hospedados comprovam que a geração continua fail-closed e que nenhuma nova superfície de usuário foi criada por consequência.
 
 ### 3.4. Próxima ação após a v1
@@ -254,14 +256,13 @@
 - Não tornar suplemento dinâmico uma nova Deep Research E20.5 automaticamente.
 - Não reescrever pesquisa, configuração, materialização ou snapshot histórico.
 - Não redesenhar o prompt persuasivo, renderer, contrato visual, editor, publicação, analytics ou testes A/B nesta E20.7.
-- Não criar cálculo ou persistência de custo concorrente com E21.4.
+- Não criar cálculo ou persistência de custo concorrente com E21.4 nem ampliar o escopo financeiro reduzido da E21.4 para incluir o novo workload.
 
 ### 4.2. Critérios de parada
 
 - Parar a implementação se E20.2 v6 não estiver publicada/operacional ou se sua forma final divergir materialmente do `landing_page_offering_scope` assumido nesta v1.
 - Parar a especialização se taxon servido e fonte não puderem ser preparados para a mesma versão E20.2 efetiva ou se a equivalência factual conservadora falhar.
-- Parar e replanejar se o match exato único de `single` se mostrar insuficiente para um caso real relevante; não introduzir roteamento semântico por conveniência.
-- Parar o rollout hospedado do complemento dinâmico se E21.4.4 não puder preservar evidência causal de consumo inclusive em falha pré-materialização.
+- Parar e replanejar se o match exato único por `business_taxons.name` no `single` se mostrar insuficiente para um caso real relevante; não introduzir roteamento semântico por conveniência.
 - Parar o complemento quando Web Search não for efetivamente executado, não produzir fontes utilizáveis ou exceder os limites aprovados; não degradar silenciosamente.
 - Parar e reavaliar a residência repo-only somente quando existir evidência medida de impacto operacional material em bundle/build/deploy ou versionamento; não migrar por antecipação.
 - Parar diante de necessidade de nova tabela, rota, service, job, agente, engine ou infraestrutura não prevista; devolver o conflito ao Estrategista/humano antes de ampliar o escopo.
