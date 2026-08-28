@@ -20,14 +20,14 @@ Status: plano-base v2 consolidado após redução humana explícita do MVP em 28
 
 - A **Costs API da OpenAI** é a única autoridade do **gasto financeiro oficial total em USD** para a organização e o período consultados.
 - O total oficial representa 100% do valor retornado pela fonte oficial; a cobertura interna das LPs nunca limita esse total.
-- O custo textual de uma LP é calculado prospectivamente a partir do usage retornado pela chamada e de uma tabela de preço versionada para o modelo efetivo no instante da tentativa.
-- O custo de imagem de uma LP é calculado prospectivamente pela combinação versionada `modelo + tamanho + qualidade` efetiva e pela quantidade gerada.
-- A tabela de preço é um contrato versionado no código, limitado às combinações efetivamente usadas pelos dois workloads. Cada evidência terminal persiste versão da tabela e valor calculado em USD; combinação sem preço conhecido falha fechada antes da chamada quando a instrumentação estiver ativa.
-- Tokens de raciocínio já incluídos em `output_tokens` não são cobrados novamente. Tokens de entrada em cache são separados dos demais tokens de entrada quando o provider os informar.
+- O custo textual de uma LP é calculado prospectivamente a partir do usage da chamada e de preços versionados para `modelo + service tier efetivo + faixa de contexto`, cobrindo separadamente entrada ordinária, entrada em cache, escrita de cache quando aplicável e saída.
+- A entrada ordinária é derivada sem sobreposição (`input_tokens - cached_input_tokens - cache_write_tokens`); valores negativos ou dimensões sobrepostas invalidam o cálculo. Tokens de raciocínio já incluídos em `output_tokens` não são cobrados novamente.
+- O custo de imagem soma o custo dos tokens de texto de entrada do prompt, conforme usage real e preço textual compatível, ao custo de saída da imagem pela combinação versionada `modelo + tamanho + qualidade + quantidade`. Se a resposta não fornecer unidade necessária, ou trouxer modalidade de entrada sem preço compatível, a tentativa fica sem custo calculado e fora da soma das LPs; não se publica custo parcial de imagem.
+- A tabela de preço é um contrato versionado no código, limitado às combinações efetivamente usadas pelos dois workloads, com taxas em decimal exato ou unidade inteira mínima de USD e sem arredondamento intermediário. A evidência terminal persiste versão, modelo, service tier, faixa de contexto, unidades, taxas aplicadas e custo calculado em USD.
+- Com a instrumentação ativa, a configuração solicitada e todas as dimensões de preço que ela pode produzir precisam estar cobertas antes da chamada; combinação incompatível ou desconhecida falha fechada.
 - Valores por conta, LP e workload são sempre rotulados como **custo prospectivo calculado**, nunca como custo oficial individualizado pela OpenAI.
 - **Outros gastos / reconciliação** é a diferença aritmética, sem clamp e sem redistribuição: `gasto oficial total - soma dos custos prospectivos calculados das LPs`.
 - Diferença negativa ou cobertura incompleta permanece visível como anomalia de reconciliação; não ajustar valores internos artificialmente para fazer o total fechar.
-- Usage oficial agregado pode apoiar diagnóstico, mas não substitui Costs como autoridade financeira e não autoriza atribuição por heurística.
 - A afirmação da v1 de filtro/agrupamento de Costs por `api_key_id` não integra a v2: a implementação usa somente dimensões confirmadas na documentação e na resposta real vigente.
 
 ### 1.3. Credencial administrativa e leitura oficial
@@ -35,18 +35,19 @@ Status: plano-base v2 consolidado após redução humana explícita do MVP em 28
 - `OPENAI_ADMIN_KEY` é obrigatória para a leitura oficial de Costs; `OPENAI_API_KEY` de runtime não a substitui.
 - A chave reside somente como secret server-side do projeto Core na Vercel, obrigatoriamente em Production e em Preview apenas mediante autorização operacional humana específica para a prova hospedada.
 - A chave nunca é versionada, logada, enviada ao client, persistida no banco ou reutilizada fora dos endpoints read-only previstos.
-- Endpoints do MVP: `GET /v1/organization/costs`, `GET /v1/organization/usage/completions` e `GET /v1/organization/usage/images`; Usage é apenas apoio técnico dos dois workloads incluídos.
+- Endpoint administrativo do MVP: somente `GET /v1/organization/costs`.
 - O provider server-side usa timeout, limite de páginas, detecção de cursor repetido, validação estrutural e paginação até `has_more = false`.
 - Ausência, invalidez, timeout, resposta incompleta, moeda diferente de USD ou paginação inconsistente tornam a leitura oficial indisponível; não há fallback para preço local, cache anterior ou chave de runtime.
-- Antes da conclusão hospedada, uma resposta real sanitizada de cada endpoint usado comprova organização correta, moeda, shape e paginação sem registrar chave, IDs sensíveis ou payload bruto.
+- Antes da conclusão hospedada, uma resposta real sanitizada de Costs comprova organização correta, moeda, shape e paginação sem registrar chave, IDs sensíveis ou payload bruto.
 
 ### 1.4. Evidência prospectiva mínima das LPs
 
 - A atribuição usa exclusivamente `accountId` e `landingPageId` já presentes no contexto autorizado da geração de LP; nenhum cliente ou LP é inferido por horário, modelo, volume, proximidade de chamadas ou heurística.
 - O MVP não realiza classificação econômica completa `LP Factory × Cliente × Não atribuído` e não consulta entitlement comercial para classificar outros consumos.
 - Somente chamadas em **Production** dos dois workloads incluídos compõem o custo prospectivo das LPs. Development, Preview, QA, provas, onboarding, taxon, workloads administrativos e automações permanecem em **Outros gastos / reconciliação** por diferença contra o total oficial.
-- Cada tentativa abrangida recebe identificador estável e registra, antes da chamada, conta, LP, workload, ambiente, configuração efetiva, instante e versão do preço.
-- O resultado terminal registra somente metadados seguros: correlação, sucesso/falha, usage normalizado aplicável, quantidade de imagens, custo calculado, versão de preço e timestamps.
+- Cada tentativa abrangida recebe `attempt_id` estável. A chave lógica `(attempt_id, workload, event_kind)` admite exatamente um evento inicial e no máximo um terminal por `(attempt_id, workload)`; retries reutilizam a identidade e não duplicam chamadas, terminais ou soma financeira.
+- O início registra, antes da chamada, conta, LP, workload, ambiente, configuração efetiva, instante e versão do preço.
+- O resultado terminal registra somente metadados seguros: correlação, sucesso/falha, usage normalizado aplicável, service tier e faixa de contexto efetivos, unidades de texto e imagem, quantidade de imagens, custo calculado, taxas/versão de preço e timestamps.
 - Prompt, resposta integral, payload de negócio, secret, e-mail, nome de pessoa e PII não são persistidos para finalidade financeira.
 - Se o resultado terminal não puder ser gravado depois da chamada, a tentativa inicial permanece reconhecível como `resultado desconhecido`; seu valor não entra na soma calculada e permanece em Outros gastos / reconciliação.
 - Com a instrumentação ativa, falha ao registrar a evidência inicial impede a chamada OpenAI. Com o gate desligado, o comportamento atual é preservado sem alegar cobertura financeira.
@@ -58,7 +59,8 @@ Status: plano-base v2 consolidado após redução humana explícita do MVP em 28
 - A migration habilita RLS, mantém zero policies de client, revoga `public`, `anon`, `authenticated` e `ai_readonly`, concede ao `service_role` somente `SELECT` e `INSERT`, nega `UPDATE`, `DELETE` e `TRUNCATE`, limita RPCs ao `service_role` e usa `security_invoker = true` em qualquer view exposta.
 - A migration acompanha teste SQL e snippet read-only versionados para constraints, RLS, ausência de policies, ACLs, GRANTs, append-only, correlação e unicidade da data de corte.
 - O gate `OPENAI_LP_COST_TRACKING_ENABLED` nasce desligado e somente o literal `true` habilita a instrumentação server-side.
-- Sequência obrigatória: merge da migration → apply canônico → snippet read-only → Security Controls → ativação controlada do gate em Production → redeploy → smoke → registro único da data de corte.
+- E21.4.3, E21.4.4 e E21.4.5 são implementadas no mesmo PR com migration, código, testes e documentação, mantendo o gate desligado e sem mutação remota pré-merge.
+- Sequência pós-merge obrigatória: apply canônico da migration → snippet read-only → Security Controls → ativação controlada do gate em Production → redeploy → smoke → registro único da data de corte → QA hospedado.
 - O runtime não depende da nova residência antes do apply aprovado.
 - A cobertura confiável começa na data de corte imutável de Production. Períodos anteriores ou que cruzem o corte exibem gasto oficial, mas declaram cobertura interna parcial.
 
@@ -74,13 +76,14 @@ Status: plano-base v2 consolidado após redução humana explícita do MVP em 28
 
 ### 1.7. Acesso, arquitetura e residência
 
-- Criar o domínio transversal Core `lib/openai-costs/`: `contracts.ts` para API pública e DTOs; `providers/` para Costs/Usage; `adapters/` para Supabase; `pricing.ts` para combinações dos dois workloads; `index.ts` para exports públicos.
+- Criar o domínio transversal Core `lib/openai-costs/`: `contracts.ts` para API pública e DTOs; `providers/` somente para Costs; `adapters/` para Supabase; `pricing.ts` para combinações dos dois workloads; `index.ts` para exports públicos.
 - Criar a superfície própria `/admin/custos-openai`, com Server Actions e componentes dependentes em `app/admin/(protected)/custos-openai/`.
-- Preservar `/admin/workloads-openai` e `lib/openai-workloads/`; esses boundaries não recebem chamadas de Costs/Usage, persistência financeira ou cálculo monetário.
+- Preservar `/admin/workloads-openai` e `lib/openai-workloads/`; esses boundaries não recebem chamadas administrativas de Costs, persistência financeira ou cálculo monetário.
 - Reutilizar de `lib/openai-workloads/` somente identidades, configuração efetiva e normalização pública de usage já existente.
 - A rota e cada Server Action reexecutam `requirePlatformAdmin()` antes de leitura privilegiada.
 - A UI não acessa Supabase ou OpenAI diretamente e recebe somente DTO sanitizado, sem project IDs, API key IDs ou payload bruto.
 - Hierarquia mínima: Gasto oficial total; Custos prospectivos calculados das LPs; Outros gastos / reconciliação; contas → Landing Pages → texto e imagem.
+- Alvos documentais e de navegação obrigatórios: registrar `OPENAI_ADMIN_KEY`, `OPENAI_LP_COST_TRACKING_ENABLED`, endpoint e residência em `docs/platform-config.md`; registrar objetos, RLS, grants, corte e estado de apply em `docs/schema.md`; manter o estado canônico em `docs/roadmap.md` pelos ABCs; incluir a nova superfície no mecanismo existente de navegação administrativa, atualmente `components/admin/adminNavigation.ts`.
 
 ## 2. Contrato do caso
 
@@ -107,19 +110,19 @@ Status: plano-base v2 consolidado após redução humana explícita do MVP em 28
 
 - `README.md`, `docs/roadmap.md`, `docs/template-roadmap.md`, `docs/base-tecnica.md`, `docs/platform-config.md` e `docs/schema.md`.
 - `lib/openai-workloads/` e os contratos/transports atuais em `lib/lp-builder/`.
-- Documentação oficial vigente da OpenAI para Costs, Usage e Admin API Keys.
+- Documentação oficial vigente da OpenAI para Costs, Admin API Keys, Pricing e geração de imagens.
 - Parecer estrutural do blob v1 — `GE-E21.4-01` a `GE-E21.4-08`.
 - Parecer de Updates do blob v1 — `prod#19`, `prod#16`, `prod#17`, `vercel#1` e `supa#64`.
 - Decisão humana de 28/08/2026 — redução imediata do MVP ao total oficial e aos custos prospectivos das LPs.
 
 ## 3. Fases e próxima ação
 
-### 3.1. E21.4.3 — Autoridade oficial de Costs e Usage
+### 3.1. E21.4.3 — Autoridade oficial de Costs
 
-- Objetivo: disponibilizar leitura oficial sob demanda do gasto total OpenAI do período, com Usage apenas como apoio técnico dos dois workloads incluídos.
+- Objetivo: disponibilizar leitura oficial sob demanda do gasto total OpenAI do período.
 - Automação: não.
 - Entrada: período UTC validado, sessão `platform_admin` e `OPENAI_ADMIN_KEY` server-side.
-- Processamento: consultar Costs sem filtro que reduza o total; paginar e somar USD; consultar Usage Completions/Images somente quando necessário; retornar DTO sanitizado.
+- Processamento: consultar Costs sem filtro que reduza o total; paginar e somar USD; retornar DTO sanitizado.
 - Validação: parser estrito de período/respostas; timeout e paginação defensiva; nenhum secret/ID sensível/payload bruto; casos focais de sucesso, vazio, HTTP/provider, timeout, moeda inválida e paginação inconsistente; prova hospedada autorizada com resposta real sanitizada.
 - Persistência: nenhuma; leitura sob demanda.
 - Fallback: indisponibilidade explícita, sem preço local, cache ou `OPENAI_API_KEY`.
@@ -131,7 +134,7 @@ Status: plano-base v2 consolidado após redução humana explícita do MVP em 28
 - Automação: não.
 - Entrada: `accountId`, `landingPageId`, workload, ambiente, configuração efetiva, IDs de correlação, usage/quantidade e preço versionado.
 - Processamento: registrar evento inicial; executar um dos transports existentes; calcular o custo sem duplicar tokens; registrar terminal append-only; agregar somente terminais válidos na cobertura ativa.
-- Validação: migration, teste SQL, dry-run quando disponível, snippet read-only e Security Controls; nenhum diff em `automations/` ou workloads adiados; gate-off preserva o runtime; gate-on sem início impede chamada; texto/imagem, sucesso/falha, terminal ausente, preço desconhecido, idempotência e contexto inválido; data de corte única; ACL mínima.
+- Validação: migration, teste SQL, dry-run quando disponível, snippet read-only e Security Controls; nenhum diff em `automations/` ou workloads adiados; gate-off preserva o runtime; gate-on sem início impede chamada; texto/imagem, sucesso/falha, terminal ausente, preço desconhecido, idempotência e contexto inválido; modelo, service tier, faixa de contexto, entrada ordinária/cache/cache write/saída e prompt textual de imagem sem sobreposição; preço incompatível falha antes do provider; imagem sem unidades suficientes não publica custo parcial; data de corte única; ACL mínima.
 - Persistência: eventos append-only e data de corte; nenhum prompt, resposta integral ou payload de negócio.
 - Fallback: resultado não calculável permanece fora da soma das LPs e dentro de Outros gastos / reconciliação por diferença.
 - Critério de aceite: após o corte, cada tentativa abrangida possui início auditável e, quando o provider devolve unidades necessárias, custo terminal por conta, LP e workload.
@@ -145,7 +148,7 @@ Status: plano-base v2 consolidado após redução humana explícita do MVP em 28
 - Validação:
   - relação `Total oficial = LPs + Outros gastos / reconciliação` sem clamp ou redistribuição;
   - rótulos distinguem oficial de calculado;
-  - período atual `Provisório`, atualização e cobertura/corte visíveis;
+  - período atual `Provisório`, cobertura/corte visíveis e instantes distintos para `Atualizado na OpenAI` e `Atualizado na cobertura interna`, com aviso de latência/reconciliação;
   - período anterior ou cruzando o corte não promete cobertura integral;
   - estados inicial, loading, vazio, erro oficial, cobertura parcial/anômala e sucesso;
   - Preview autenticado com `platform_admin` e papel negativo, desktop e mobile, período padrão/personalizado, atualização sob demanda e hierarquia completa;
@@ -157,11 +160,12 @@ Status: plano-base v2 consolidado após redução humana explícita do MVP em 28
 
 ### 3.4. Sequência de execução
 
-1. Implementar E21.4.3 com mocks e obter prova oficial hospedada quando a credencial autorizada estiver disponível.
-2. Implementar migration e código gate-off da E21.4.4 sem mutação remota pré-merge.
-3. Após merge/apply, executar snippet e Security Controls, habilitar instrumentação em Production, redeployar, fazer smoke e registrar o corte.
-4. Implementar E21.4.5 no mesmo PR quando os contratos anteriores estiverem definidos e executar QA hospedado proporcional.
-5. Não iniciar E21.3.4 nem evolução adiada.
+1. Implementar E21.4.3, E21.4.4 e E21.4.5 no mesmo PR, incluindo migration, mocks/testes, navegação e documentação, sempre com o gate desligado e sem mutação remota pré-merge.
+2. Validar localmente código, SQL, segurança, preços, idempotência, estados e escopo negativo; obter prova oficial hospedada em Preview somente se houver autorização humana específica para a credencial administrativa.
+3. Após merge, executar apply canônico, snippet read-only e Security Controls.
+4. Com banco aprovado, habilitar a instrumentação em Production, redeployar, executar smoke dos dois workloads e registrar a data de corte única.
+5. Executar o QA hospedado autenticado da visão administrativa e consolidar o ABC final somente após todos os gates aprovados.
+6. Não iniciar E21.3.4 nem evolução adiada.
 
 ## 4. Escopo negativo e critérios de parada
 
@@ -198,6 +202,6 @@ Status: plano-base v2 consolidado após redução humana explícita do MVP em 28
 ## 5. Classificação dos acréscimos da v2
 
 - **Preservação:** total oficial via Costs, USD, mês atual + período personalizado, atualização sob demanda, `platform_admin`, data de corte e superfície separada.
-- **Extensão adjacente necessária e proporcional:** `lib/openai-costs/`, provider read-only, preço limitado, eventos append-only, gate, `/admin/custos-openai`, testes SQL e QA/acessibilidade proporcionais.
+- **Extensão adjacente necessária e proporcional:** `lib/openai-costs/`, provider read-only de Costs, preço limitado, eventos append-only, gate, `/admin/custos-openai`, testes SQL e QA/acessibilidade proporcionais.
 - **Redução humana:** somente texto e imagem de LP em Production; demais workloads e classificações econômicas adiados.
 - **Expansão não incorporada:** AI Gateway, segregação de projetos/API keys, CDC/warehouse, automação recorrente, histórico, créditos, cobrança e generalização.
