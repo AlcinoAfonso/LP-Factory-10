@@ -41,15 +41,57 @@ with checks(check_name, status, details) as (
       and has_table_privilege('service_role', 'public.openai_lp_cost_coverage', 'INSERT')
       and not has_table_privilege('service_role', 'public.openai_lp_cost_coverage', 'UPDATE')
       and not has_table_privilege('service_role', 'public.openai_lp_cost_coverage', 'DELETE')
+      and not has_table_privilege('service_role', 'public.openai_lp_cost_coverage', 'TRUNCATE')
       and not has_table_privilege('anon', 'public.openai_lp_cost_events', 'SELECT')
+      and not has_table_privilege('anon', 'public.openai_lp_cost_coverage', 'SELECT')
       and not has_table_privilege('authenticated', 'public.openai_lp_cost_events', 'SELECT')
       and not has_table_privilege('authenticated', 'public.openai_lp_cost_coverage', 'SELECT')
       and has_function_privilege('service_role', 'public.append_openai_lp_cost_start_v1(uuid,uuid,uuid,text,text,text,text,text,text,text,text)', 'EXECUTE')
       and has_function_privilege('service_role', 'public.append_openai_lp_cost_terminal_v1(uuid,text,text,jsonb,jsonb,numeric)', 'EXECUTE')
       and has_function_privilege('service_role', 'public.register_openai_lp_cost_coverage_v1(timestamptz)', 'EXECUTE')
+      and not has_function_privilege('service_role', 'public.prevent_openai_lp_cost_mutation_v1()', 'EXECUTE')
+      and not has_function_privilege('anon', 'public.append_openai_lp_cost_start_v1(uuid,uuid,uuid,text,text,text,text,text,text,text,text)', 'EXECUTE')
+      and not has_function_privilege('anon', 'public.append_openai_lp_cost_terminal_v1(uuid,text,text,jsonb,jsonb,numeric)', 'EXECUTE')
+      and not has_function_privilege('anon', 'public.register_openai_lp_cost_coverage_v1(timestamptz)', 'EXECUTE')
+      and not has_function_privilege('anon', 'public.prevent_openai_lp_cost_mutation_v1()', 'EXECUTE')
       and not has_function_privilege('authenticated', 'public.append_openai_lp_cost_start_v1(uuid,uuid,uuid,text,text,text,text,text,text,text,text)', 'EXECUTE')
       and not has_function_privilege('authenticated', 'public.append_openai_lp_cost_terminal_v1(uuid,text,text,jsonb,jsonb,numeric)', 'EXECUTE')
       and not has_function_privilege('authenticated', 'public.register_openai_lp_cost_coverage_v1(timestamptz)', 'EXECUTE')
+      and not has_function_privilege('authenticated', 'public.prevent_openai_lp_cost_mutation_v1()', 'EXECUTE')
+      and case when to_regrole('ai_readonly') is null then true else
+        not has_table_privilege('ai_readonly', 'public.openai_lp_cost_events', 'SELECT')
+        and not has_table_privilege('ai_readonly', 'public.openai_lp_cost_coverage', 'SELECT')
+        and not has_function_privilege('ai_readonly', 'public.append_openai_lp_cost_start_v1(uuid,uuid,uuid,text,text,text,text,text,text,text,text)', 'EXECUTE')
+        and not has_function_privilege('ai_readonly', 'public.append_openai_lp_cost_terminal_v1(uuid,text,text,jsonb,jsonb,numeric)', 'EXECUTE')
+        and not has_function_privilege('ai_readonly', 'public.register_openai_lp_cost_coverage_v1(timestamptz)', 'EXECUTE')
+        and not has_function_privilege('ai_readonly', 'public.prevent_openai_lp_cost_mutation_v1()', 'EXECUTE')
+      end
+      and not exists (
+        select 1
+        from pg_class target
+        cross join lateral aclexplode(
+          coalesce(target.relacl, acldefault('r', target.relowner))
+        ) privilege
+        where target.oid in (
+          'public.openai_lp_cost_events'::regclass,
+          'public.openai_lp_cost_coverage'::regclass
+        )
+          and privilege.grantee = 0
+      )
+      and not exists (
+        select 1
+        from pg_proc target
+        cross join lateral aclexplode(
+          coalesce(target.proacl, acldefault('f', target.proowner))
+        ) privilege
+        where target.oid in (
+          'public.append_openai_lp_cost_start_v1(uuid,uuid,uuid,text,text,text,text,text,text,text,text)'::regprocedure,
+          'public.append_openai_lp_cost_terminal_v1(uuid,text,text,jsonb,jsonb,numeric)'::regprocedure,
+          'public.register_openai_lp_cost_coverage_v1(timestamptz)'::regprocedure,
+          'public.prevent_openai_lp_cost_mutation_v1()'::regprocedure
+        )
+          and privilege.grantee = 0
+      )
     then 'ok' else 'privilege_drift' end,
     jsonb_build_object('service_role_select_insert_only', true)
   union all
@@ -74,6 +116,17 @@ with checks(check_name, status, details) as (
           and not trigger_row.tgisinternal
       )
       and (select count(*) from public.openai_lp_cost_coverage) <= 1
+      and not exists (
+        select 1
+        from public.openai_lp_cost_events terminal
+        where terminal.event_kind = 'terminal'
+          and not exists (
+            select 1 from public.openai_lp_cost_events started
+            where started.attempt_id = terminal.attempt_id
+              and started.workload = terminal.workload
+              and started.event_kind = 'started'
+          )
+      )
     then 'ok' else 'append_only_or_cutoff_drift' end,
     jsonb_build_object(
       'coverage_rows', (select count(*) from public.openai_lp_cost_coverage),

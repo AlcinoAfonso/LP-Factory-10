@@ -132,28 +132,49 @@ const cases = [
         priceOpenAiLpUsage(start, {
           imageCount: 1,
           usage: {
-            input_tokens_details: { text_tokens: 100 },
+            input_tokens_details: { text_tokens: 100, image_tokens: 0 },
             output_tokens_details: { image_tokens: 8_192 },
           },
         }),
         {
           usage: {
             textInputTokens: 100,
+            imageInputTokens: 0,
             imageOutputTokens: 8_192,
             imageCount: 1,
           },
           pricing: {
             serviceTier: "default",
             textInputUsdPerMillion: "5.00",
-            imageOutputUsdPerImage: "0.041",
+            imageOutputUsdPerMillion: "30.00",
             size: "1536x1024",
             quality: "medium",
           },
-          costUsd: "0.041500000000",
+          costUsd: "0.246260000000",
         },
       );
       assert.equal(
         priceOpenAiLpUsage(start, { imageCount: 1, usage: {} }),
+        null,
+      );
+      assert.equal(
+        priceOpenAiLpUsage(start, {
+          imageCount: 1,
+          usage: {
+            input_tokens_details: { text_tokens: 1, image_tokens: 1 },
+            output_tokens_details: { image_tokens: 1 },
+          },
+        }),
+        null,
+      );
+      assert.equal(
+        priceOpenAiLpUsage(start, {
+          imageCount: 1,
+          usage: {
+            input_tokens_details: { text_tokens: 1 },
+            output_tokens_details: {},
+          },
+        }),
         null,
       );
       assert.equal(

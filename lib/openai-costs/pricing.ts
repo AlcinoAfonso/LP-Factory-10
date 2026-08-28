@@ -127,20 +127,25 @@ function priceImageUsage(
   const inputDetails = asRecord(root?.input_tokens_details);
   const textInputTokens = tokenCount(inputDetails?.text_tokens);
   if (textInputTokens === null) return null;
+  const imageInputTokens = optionalTokenCount(inputDetails?.image_tokens);
+  if (imageInputTokens === null || imageInputTokens > 0) return null;
   const outputDetails = asRecord(root?.output_tokens_details);
-  const imageOutputTokens = optionalTokenCount(outputDetails?.image_tokens);
+  const imageOutputTokens = tokenCount(outputDetails?.image_tokens);
   if (imageOutputTokens === null) return null;
-  const picoUsd = BigInt(textInputTokens) * 5_000_000n + 41_000_000_000n;
+  const picoUsd =
+    BigInt(textInputTokens) * 5_000_000n +
+    BigInt(imageOutputTokens) * 30_000_000n;
   return {
     usage: {
       textInputTokens,
+      imageInputTokens,
       imageOutputTokens,
       imageCount,
     },
     pricing: {
       serviceTier: "default",
       textInputUsdPerMillion: "5.00",
-      imageOutputUsdPerImage: "0.041",
+      imageOutputUsdPerMillion: "30.00",
       size,
       quality,
     },
