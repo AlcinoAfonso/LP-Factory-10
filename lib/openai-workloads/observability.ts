@@ -16,6 +16,9 @@ type ImageEventInput = Readonly<{
   attemptId?: unknown;
   requestId?: unknown;
   providerRequestId?: unknown;
+  httpStatus?: unknown;
+  providerErrorCode?: unknown;
+  providerErrorType?: unknown;
   latencyMs?: unknown;
   imageCount?: unknown;
   width?: unknown;
@@ -173,6 +176,9 @@ function createImageEvent(
     attemptId: nonEmptyString(input.attemptId),
     requestId: nonEmptyString(input.requestId),
     providerRequestId: nonEmptyString(input.providerRequestId),
+    httpStatus: httpStatusMetric(input.httpStatus),
+    providerErrorCode: boundedProviderErrorMetadata(input.providerErrorCode),
+    providerErrorType: boundedProviderErrorMetadata(input.providerErrorType),
     latencyMs: durationMetric(input.latencyMs),
     imageCount: integerMetric(input.imageCount),
     width: integerMetric(input.width),

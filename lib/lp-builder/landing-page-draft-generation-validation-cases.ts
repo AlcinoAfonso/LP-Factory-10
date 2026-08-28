@@ -447,6 +447,7 @@ const cases = [
     name: "cost tracking starts before text transport and terminal failures preserve the provider result",
     run: async () => {
       const order: string[] = [];
+      const diagnostics: unknown[] = [];
       let terminalInput: unknown;
       const result = await generateLandingPageDraftCandidate(context, {
         apiKey: "test-key",
@@ -471,6 +472,7 @@ const cases = [
             },
           },
         },
+        emitCostTrackingDiagnostic: (event) => diagnostics.push(event),
         fetchImpl: async () => {
           order.push("fetch");
           return new Response(
@@ -500,9 +502,16 @@ const cases = [
         usage: { input_tokens: 100, output_tokens: 20 },
         serviceTier: "default",
       });
+      assert.deepEqual(diagnostics, [{
+        attemptId: "e2144000-0000-4000-8000-000000000030",
+        workload: "landing_page_draft_generation",
+        stage: "terminal",
+        reason: "failed",
+      }]);
 
       let providerCalls = 0;
-      const blocked = await generateLandingPageDraftCandidate(context, {
+      const startDiagnostics: unknown[] = [];
+      const afterStartFailure = await generateLandingPageDraftCandidate(context, {
         apiKey: "test-key",
         environment: "production",
         attemptId: "e2144000-0000-4000-8000-000000000031",
@@ -517,14 +526,54 @@ const cases = [
         },
         fetchImpl: async () => {
           providerCalls += 1;
-          return new Response("{}");
+          return textSuccessResponse();
         },
+        emitCostTrackingDiagnostic: (event) => startDiagnostics.push(event),
         emitEvent: () => undefined,
       });
-      assert.deepEqual(blocked, { ok: false, kind: "configuration_invalid" });
-      assert.equal(providerCalls, 0);
+      assert.equal(afterStartFailure.ok, true);
+      assert.equal(providerCalls, 1);
+      assert.deepEqual(startDiagnostics, [{
+        attemptId: "e2144000-0000-4000-8000-000000000031",
+        workload: "landing_page_draft_generation",
+        stage: "start",
+        reason: "failed",
+      }]);
+
+      const timeoutDiagnostics: unknown[] = [];
+      const afterStartTimeout = await generateLandingPageDraftCandidate(context, {
+        apiKey: "test-key",
+        environment: "production",
+        attemptId: "e2144000-0000-4000-8000-000000000032",
+        timeoutMs: 5,
+        costTrackingTimeoutMs: 5,
+        costTracking: {
+          accountId: context.identities.accountId,
+          landingPageId: context.identities.landingPage.id,
+          tracker: {
+            async start() {
+              return await new Promise(() => undefined);
+            },
+          },
+        },
+        fetchImpl: async () => {
+          providerCalls += 1;
+          return textSuccessResponse();
+        },
+        emitCostTrackingDiagnostic: (event) => timeoutDiagnostics.push(event),
+        emitEvent: () => undefined,
+      });
+      assert.equal(afterStartTimeout.ok, true);
+      assert.equal(providerCalls, 2);
+      assert.deepEqual(timeoutDiagnostics, [{
+        attemptId: "e2144000-0000-4000-8000-000000000032",
+        workload: "landing_page_draft_generation",
+        stage: "start",
+        reason: "timeout",
+      }]);
 
       let unsupportedStarts = 0;
+      const unsupportedTerminals: unknown[] = [];
       const unsupported = await generateLandingPageDraftCandidate(context, {
         apiKey: "test-key",
         environment: "preview",
@@ -549,22 +598,28 @@ const cases = [
           tracker: {
             async start() {
               unsupportedStarts += 1;
-              throw new Error("must-not-start");
+              return {
+                async complete(input) {
+                  unsupportedTerminals.push(input);
+                },
+              };
             },
           },
         },
         fetchImpl: async () => {
           providerCalls += 1;
-          return new Response("{}");
+          return textSuccessResponse();
         },
         emitEvent: () => undefined,
       });
-      assert.deepEqual(unsupported, {
-        ok: false,
-        kind: "configuration_invalid",
-      });
-      assert.equal(unsupportedStarts, 0);
-      assert.equal(providerCalls, 0);
+      assert.equal(unsupported.ok, true);
+      assert.equal(unsupportedStarts, 1);
+      assert.equal(providerCalls, 3);
+      assert.deepEqual(unsupportedTerminals, [{
+        result: "success",
+        usage: { input_tokens: 100, output_tokens: 20 },
+        serviceTier: "default",
+      }]);
     },
   },
   {
@@ -650,6 +705,47 @@ const cases = [
       );
       assert.equal(invalidMetadata?.providerErrorCode, null);
       assert.equal(invalidMetadata?.providerErrorType, null);
+
+      let terminalProviderFailure: unknown;
+      const creditFailure = await generateLandingPageDraftCandidate(context, {
+        apiKey: "test-key",
+        environment: "production",
+        attemptId: "e2144000-0000-4000-8000-000000000036",
+        costTracking: {
+          accountId: context.identities.accountId,
+          landingPageId: context.identities.landingPage.id,
+          tracker: {
+            async start() {
+              return {
+                async complete(input) {
+                  terminalProviderFailure = input;
+                },
+              };
+            },
+          },
+        },
+        fetchImpl: async () => new Response(JSON.stringify({
+          error: {
+            code: "credit_balance_exhausted",
+            type: "insufficient_quota",
+            message: "must-not-persist",
+          },
+        }), {
+          status: 429,
+          headers: { "Content-Type": "application/json" },
+        }),
+        emitEvent: () => undefined,
+      });
+      assert.deepEqual(creditFailure, { ok: false, kind: "http_error" });
+      assert.deepEqual(terminalProviderFailure, {
+        result: "failure",
+        usage: undefined,
+        serviceTier: undefined,
+        httpStatus: 429,
+        providerErrorCode: "credit_balance_exhausted",
+        providerErrorType: "insufficient_quota",
+      });
+      assert.equal(JSON.stringify(terminalProviderFailure).includes("must-not-persist"), false);
     },
   },
   {
@@ -798,27 +894,97 @@ const cases = [
         },
       ]);
 
+      const unpricedImageTerminals: unknown[] = [];
+      const unpricedImage = await generateLandingPageDraftImage(
+        { mediaBrief: "Sala contemporânea acolhedora", semanticFacts: {} },
+        {
+          apiKey: "test-key",
+          environment: "production",
+          attemptId: "e2144000-0000-4000-8000-000000000034",
+          costTracking: {
+            accountId: context.identities.accountId,
+            landingPageId: context.identities.landingPage.id,
+            tracker: {
+              async start() {
+                return {
+                  async complete(input) {
+                    unpricedImageTerminals.push(input);
+                  },
+                };
+              },
+            },
+          },
+          fetchImpl: async () =>
+            new Response(JSON.stringify({ data: [{ b64_json: webp }] }), {
+              status: 200,
+              headers: { "Content-Type": "application/json" },
+            }),
+          emitEvent: () => undefined,
+        },
+      );
+      assert.equal(unpricedImage.ok, true);
+      assert.deepEqual(unpricedImageTerminals, [{
+        result: "success",
+        usage: undefined,
+        imageCount: 1,
+      }]);
+
       const failureEvents: OpenAiImageWorkloadEvent[] = [];
+      const providerFailureTerminals: unknown[] = [];
       const failure = await generateLandingPageDraftImage(
         { mediaBrief: "Sala contemporânea acolhedora", semanticFacts: {} },
         {
           apiKey: "test-key",
-          environment: "development",
-          attemptId: "attempt-image-failure",
+          environment: "production",
+          attemptId: "e2144000-0000-4000-8000-000000000035",
           requestId: "request-image-failure",
+          costTracking: {
+            accountId: context.identities.accountId,
+            landingPageId: context.identities.landingPage.id,
+            tracker: {
+              async start() {
+                return {
+                  async complete(input) {
+                    providerFailureTerminals.push(input);
+                  },
+                };
+              },
+            },
+          },
           fetchImpl: async () =>
-            new Response("{}", {
-              status: 500,
-              headers: { "x-request-id": "provider-image-failure" },
+            new Response(JSON.stringify({
+              error: {
+                code: "credit_balance_exhausted",
+                type: "insufficient_quota",
+                message: "must-not-persist-or-render",
+              },
+            }), {
+              status: 429,
+              headers: {
+                "Content-Type": "application/json",
+                "x-request-id": "provider-image-failure",
+              },
             }),
           emitEvent: (event) => failureEvents.push(event),
         },
       );
       assert.equal(failure.ok, false);
       assert.equal(failureEvents[0]?.visualBriefVersion, "e19.4-visual-brief-v1");
-      assert.equal(failureEvents[0]?.attemptId, "attempt-image-failure");
+      assert.equal(failureEvents[0]?.attemptId, "e2144000-0000-4000-8000-000000000035");
       assert.equal(failureEvents[0]?.requestId, "request-image-failure");
       assert.equal(failureEvents[0]?.providerRequestId, "provider-image-failure");
+      assert.equal(failureEvents[0]?.httpStatus, 429);
+      assert.equal(failureEvents[0]?.providerErrorCode, "credit_balance_exhausted");
+      assert.equal(failureEvents[0]?.providerErrorType, "insufficient_quota");
+      assert.equal(JSON.stringify(failureEvents).includes("must-not-persist-or-render"), false);
+      assert.deepEqual(providerFailureTerminals, [{
+        result: "failure",
+        usage: undefined,
+        imageCount: undefined,
+        httpStatus: 429,
+        providerErrorCode: "credit_balance_exhausted",
+        providerErrorType: "insufficient_quota",
+      }]);
     },
   },
   {
@@ -1655,6 +1821,22 @@ function mutableSnapshot(value: unknown) {
       image: { configuration: Record<string, unknown> };
     };
   };
+}
+
+function textSuccessResponse() {
+  return new Response(
+    JSON.stringify({
+      id: "resp_cost_best_effort",
+      status: "completed",
+      service_tier: "default",
+      output: [{
+        type: "message",
+        content: [{ type: "output_text", text: JSON.stringify(candidate) }],
+      }],
+      usage: { input_tokens: 100, output_tokens: 20 },
+    }),
+    { status: 200, headers: { "Content-Type": "application/json" } },
+  );
 }
 
 const abortingFetch: typeof fetch = (_input, init) =>

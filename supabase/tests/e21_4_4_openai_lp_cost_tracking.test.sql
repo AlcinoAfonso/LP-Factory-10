@@ -40,6 +40,7 @@ declare
   v_retry_id uuid;
   v_terminal_id uuid;
   v_terminal_retry_id uuid;
+  v_failure_attempt uuid := 'e2144000-0000-4000-8000-000000000005';
   v_cutoff timestamptz := clock_timestamp() - interval '1 minute';
 begin
   v_start_id := public.append_openai_lp_cost_start_v1(
@@ -78,7 +79,10 @@ begin
     'success',
     '{"inputTokens":100,"ordinaryInputTokens":100,"cachedInputTokens":0,"cacheWriteTokens":0,"outputTokens":20}'::jsonb,
     '{"serviceTier":"default","contextBand":"short","inputUsdPerMillion":"0.20","cachedInputUsdPerMillion":"0.02","cacheWriteUsdPerMillion":"0.25","outputUsdPerMillion":"1.20"}'::jsonb,
-    0.000044
+    0.000044,
+    null,
+    null,
+    null
   );
   if v_terminal_id is null then
     raise exception 'terminal was not appended';
@@ -89,7 +93,10 @@ begin
     'success',
     '{"inputTokens":100,"ordinaryInputTokens":100,"cachedInputTokens":0,"cacheWriteTokens":0,"outputTokens":20}'::jsonb,
     '{"serviceTier":"default","contextBand":"short","inputUsdPerMillion":"0.20","cachedInputUsdPerMillion":"0.02","cacheWriteUsdPerMillion":"0.25","outputUsdPerMillion":"1.20"}'::jsonb,
-    0.000044
+    0.000044,
+    null,
+    null,
+    null
   );
   if v_terminal_retry_id is distinct from v_terminal_id then
     raise exception 'terminal retry must be idempotent';
@@ -100,6 +107,9 @@ begin
       v_attempt,
       'landing_page_draft_generation',
       'failure',
+      null,
+      null,
+      null,
       null,
       null,
       null
@@ -115,7 +125,10 @@ begin
       'failure',
       null,
       null,
-      null
+      null,
+      429,
+      'credit_balance_exhausted',
+      'insufficient_quota'
     );
     raise exception 'terminal without start should have failed';
   exception when no_data_found then null;
@@ -124,6 +137,31 @@ begin
   if (select count(*) from public.openai_lp_cost_events where attempt_id = v_attempt) <> 2 then
     raise exception 'attempt must contain exactly start and terminal';
   end if;
+
+  perform public.append_openai_lp_cost_start_v1(
+    v_failure_attempt,
+    'e2144000-0000-4000-8000-000000000002',
+    'e2144000-0000-4000-8000-000000000003',
+    'landing_page_draft_image_generation',
+    'gpt-image-2',
+    'supabase_operational',
+    '2',
+    null,
+    'medium',
+    '1536x1024',
+    '2026-08-28.openai-published-v1'
+  );
+  perform public.append_openai_lp_cost_terminal_v1(
+    v_failure_attempt,
+    'landing_page_draft_image_generation',
+    'failure',
+    null,
+    null,
+    null,
+    429,
+    'credit_balance_exhausted',
+    'insufficient_quota'
+  );
 
   if not exists (
     select 1
@@ -139,6 +177,22 @@ begin
       and read_model.cost_usd = '0.000044000000'
   ) then
     raise exception 'read model must correlate the priced attempt';
+  end if;
+
+  if not exists (
+    select 1
+    from public.read_openai_lp_cost_events_v1(
+      clock_timestamp() - interval '1 day',
+      clock_timestamp()
+    ) read_model
+    where read_model.attempt_id = v_failure_attempt
+      and read_model.result = 'failure'
+      and read_model.cost_usd is null
+      and read_model.http_status = 429
+      and read_model.provider_error_code = 'credit_balance_exhausted'
+      and read_model.provider_error_type = 'insufficient_quota'
+  ) then
+    raise exception 'read model must expose only sanitized provider failure metadata';
   end if;
 
   if public.register_openai_lp_cost_coverage_v1(v_cutoff) is distinct from v_cutoff
@@ -205,11 +259,11 @@ begin
      or has_table_privilege('authenticated', 'public.openai_lp_cost_events', 'SELECT')
      or has_table_privilege('authenticated', 'public.openai_lp_cost_coverage', 'SELECT')
      or has_function_privilege('anon', 'public.append_openai_lp_cost_start_v1(uuid,uuid,uuid,text,text,text,text,text,text,text,text)', 'EXECUTE')
-     or has_function_privilege('anon', 'public.append_openai_lp_cost_terminal_v1(uuid,text,text,jsonb,jsonb,numeric)', 'EXECUTE')
+     or has_function_privilege('anon', 'public.append_openai_lp_cost_terminal_v1(uuid,text,text,jsonb,jsonb,numeric,integer,text,text)', 'EXECUTE')
      or has_function_privilege('anon', 'public.register_openai_lp_cost_coverage_v1(timestamptz)', 'EXECUTE')
      or has_function_privilege('anon', 'public.prevent_openai_lp_cost_mutation_v1()', 'EXECUTE')
      or has_function_privilege('authenticated', 'public.append_openai_lp_cost_start_v1(uuid,uuid,uuid,text,text,text,text,text,text,text,text)', 'EXECUTE')
-     or has_function_privilege('authenticated', 'public.append_openai_lp_cost_terminal_v1(uuid,text,text,jsonb,jsonb,numeric)', 'EXECUTE')
+     or has_function_privilege('authenticated', 'public.append_openai_lp_cost_terminal_v1(uuid,text,text,jsonb,jsonb,numeric,integer,text,text)', 'EXECUTE')
      or has_function_privilege('authenticated', 'public.register_openai_lp_cost_coverage_v1(timestamptz)', 'EXECUTE')
      or has_function_privilege('authenticated', 'public.prevent_openai_lp_cost_mutation_v1()', 'EXECUTE')
      or has_function_privilege('service_role', 'public.prevent_openai_lp_cost_mutation_v1()', 'EXECUTE') then
@@ -226,7 +280,7 @@ begin
     has_table_privilege('ai_readonly', 'public.openai_lp_cost_events', 'SELECT')
     or has_table_privilege('ai_readonly', 'public.openai_lp_cost_coverage', 'SELECT')
     or has_function_privilege('ai_readonly', 'public.append_openai_lp_cost_start_v1(uuid,uuid,uuid,text,text,text,text,text,text,text,text)', 'EXECUTE')
-    or has_function_privilege('ai_readonly', 'public.append_openai_lp_cost_terminal_v1(uuid,text,text,jsonb,jsonb,numeric)', 'EXECUTE')
+    or has_function_privilege('ai_readonly', 'public.append_openai_lp_cost_terminal_v1(uuid,text,text,jsonb,jsonb,numeric,integer,text,text)', 'EXECUTE')
     or has_function_privilege('ai_readonly', 'public.register_openai_lp_cost_coverage_v1(timestamptz)', 'EXECUTE')
     or has_function_privilege('ai_readonly', 'public.prevent_openai_lp_cost_mutation_v1()', 'EXECUTE')
     or has_function_privilege('ai_readonly', 'public.read_openai_lp_cost_events_v1(timestamptz,timestamptz)', 'EXECUTE')
@@ -253,7 +307,7 @@ begin
     ) privilege
     where target.oid in (
       'public.append_openai_lp_cost_start_v1(uuid,uuid,uuid,text,text,text,text,text,text,text,text)'::regprocedure,
-      'public.append_openai_lp_cost_terminal_v1(uuid,text,text,jsonb,jsonb,numeric)'::regprocedure,
+      'public.append_openai_lp_cost_terminal_v1(uuid,text,text,jsonb,jsonb,numeric,integer,text,text)'::regprocedure,
       'public.register_openai_lp_cost_coverage_v1(timestamptz)'::regprocedure,
       'public.read_openai_lp_cost_events_v1(timestamptz,timestamptz)'::regprocedure,
       'public.prevent_openai_lp_cost_mutation_v1()'::regprocedure

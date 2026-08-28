@@ -12,6 +12,11 @@ import {
   formatDecimal,
   type DecimalValue,
 } from "../decimal";
+import {
+  boundedOpenAiProviderErrorMetadata,
+  boundedOpenAiProviderHttpStatus,
+  isOpenAiCreditFailure,
+} from "../provider-error-metadata";
 
 export const OPENAI_LP_COST_PAGE_SIZE = 500;
 const OPENAI_LP_COST_MAX_PAGES = 200;
@@ -71,6 +76,7 @@ export function translateOpenAiLpCostRows(input: Readonly<{
   let attemptCount = 0;
   let unpricedAttemptCount = 0;
   let pendingAttemptCount = 0;
+  let providerCreditFailureCount = 0;
   let internalUpdatedAt: string | null = null;
 
   for (const raw of input.eventRows) {
@@ -82,6 +88,7 @@ export function translateOpenAiLpCostRows(input: Readonly<{
     attemptCount += 1;
     if (!row.terminalAt) pendingAttemptCount += 1;
     else if (!row.cost) unpricedAttemptCount += 1;
+    if (row.providerCreditFailure) providerCreditFailureCount += 1;
     if (row.cost) total = addDecimal(total, row.cost);
     internalUpdatedAt = latestTimestamp(
       internalUpdatedAt,
@@ -95,9 +102,11 @@ export function translateOpenAiLpCostRows(input: Readonly<{
   const startMs = input.period.startTime * 1_000;
   const coverageStatus = !coverageActivatedAt
     ? "not_activated"
-    : startMs >= Date.parse(coverageActivatedAt)
-      ? "covered"
-      : "partial";
+    : pendingAttemptCount > 0 || unpricedAttemptCount > 0
+      ? "degraded"
+      : startMs < Date.parse(coverageActivatedAt)
+        ? "partial"
+        : "complete";
 
   return {
     ok: true,
@@ -109,6 +118,7 @@ export function translateOpenAiLpCostRows(input: Readonly<{
       attemptCount,
       unpricedAttemptCount,
       pendingAttemptCount,
+      providerCreditFailureCount,
       accounts: [...accounts.values()]
         .sort(byNameThenId)
         .map(finalizeAccount),
@@ -127,6 +137,7 @@ type ParsedRow = Readonly<{
   terminalAt: string | null;
   result: "success" | "failure" | null;
   cost: DecimalValue | null;
+  providerCreditFailure: boolean;
 }>;
 
 type MutableSummary = {
@@ -175,6 +186,15 @@ function parseRow(raw: unknown, period: OpenAiCostsPeriod): ParsedRow | null {
   const cost = row?.cost_usd === null
     ? null
     : decimalFromNonNegativeString(row?.cost_usd);
+  const httpStatus = row?.http_status === null
+    ? null
+    : boundedOpenAiProviderHttpStatus(row?.http_status);
+  const providerErrorCode = row?.provider_error_code === null
+    ? null
+    : boundedOpenAiProviderErrorMetadata(row?.provider_error_code);
+  const providerErrorType = row?.provider_error_type === null
+    ? null
+    : boundedOpenAiProviderErrorMetadata(row?.provider_error_type);
   if (
     !attemptId ||
     !accountId ||
@@ -186,8 +206,21 @@ function parseRow(raw: unknown, period: OpenAiCostsPeriod): ParsedRow | null {
     terminalAt === undefined ||
     result === undefined ||
     (row?.cost_usd !== null && !cost) ||
+    (row?.http_status !== null && httpStatus === null) ||
+    (row?.provider_error_code !== null && providerErrorCode === null) ||
+    (row?.provider_error_type !== null && providerErrorType === null) ||
     (terminalAt === null) !== (result === null) ||
-    (terminalAt === null && cost !== null)
+    (terminalAt === null && (
+      cost !== null ||
+      httpStatus !== null ||
+      providerErrorCode !== null ||
+      providerErrorType !== null
+    )) ||
+    (result === "success" && (
+      httpStatus !== null ||
+      providerErrorCode !== null ||
+      providerErrorType !== null
+    ))
   ) {
     return null;
   }
@@ -206,6 +239,10 @@ function parseRow(raw: unknown, period: OpenAiCostsPeriod): ParsedRow | null {
     terminalAt,
     result,
     cost,
+    providerCreditFailure: result === "failure" && isOpenAiCreditFailure({
+      providerErrorCode,
+      providerErrorType,
+    }),
   };
 }
 

@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data da última atualização: 28/08/2026
-• Documento: LP Factory 10 — Schema (DB Contract) v1.0.59
+• Documento: LP Factory 10 — Schema (DB Contract) v1.0.60
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -1054,11 +1054,12 @@
 • Residência financeira prospectiva append-only, limitada a `landing_page_draft_generation` e `landing_page_draft_image_generation` em Production.
 • Cada tentativa usa `attempt_id`, `account_id`, `landing_page_id`, workload e `event_kind = started | terminal`; `(attempt_id, workload, event_kind)` é único e torna retries idempotentes.
 • A FK composta `(landing_page_id, account_id)` referencia `account_landing_pages(id, account_id)` com ON UPDATE/DELETE RESTRICT e impede atribuição cruzada entre tenants.
-• Eventos started preservam configuração e versão de preço sem result, usage ou custo; eventos terminal preservam `success | failure` e podem ter custo nulo quando as unidades do provider não forem suficientes.
+• Eventos started preservam configuração e versão de preço sem result, usage, custo ou diagnóstico do provider; eventos terminal preservam `success | failure` e podem ter custo nulo quando as unidades do provider não forem suficientes ou o preço não for suportado.
 
 1.36.2 Configuração, usage e custo
 • Texto exige reasoning_effort tipado e não aceita quality/size; imagem exige quality e size `1536x1024` e não aceita reasoning_effort.
 • `usage_json` e `pricing_json` aceitam somente objetos quando presentes; `cost_usd numeric(30,12)` é USD não negativo e só pode existir junto dos dois objetos.
+• Terminais podem preservar `http_status integer` entre 100 e 599, `provider_error_code text` e `provider_error_type text` sanitizados com até 128 caracteres; esses metadados só podem existir em resultado `failure`.
 • Prompt, resposta integral, payload de negócio, PII e secrets não integram a tabela.
 • O índice parcial `openai_lp_cost_events_period_idx` cobre created_at, conta, LP e workload somente nos terminais.
 
@@ -1334,9 +1335,9 @@
 3.10 Evidência prospectiva de custos OpenAI das Landing Pages
 3.10.1 RPCs versionadas
 • `append_openai_lp_cost_start_v1(uuid, uuid, uuid, text, text, text, text, text, text, text, text) → uuid`: anexa ou retorna idempotentemente o início tenant-safe da tentativa; conflito de identidade na mesma chave falha fechado.
-• `append_openai_lp_cost_terminal_v1(uuid, text, text, jsonb, jsonb, numeric) → uuid`: exige início prévio, herda identidade/configuração e anexa ou retorna idempotentemente o terminal; retry divergente falha fechado.
+• `append_openai_lp_cost_terminal_v1(uuid, text, text, jsonb, jsonb, numeric, integer, text, text) → uuid`: exige início prévio, herda identidade/configuração e anexa ou retorna idempotentemente o terminal; os três últimos argumentos são status HTTP, código e tipo sanitizados do erro real do provider; retry divergente falha fechado.
 • `register_openai_lp_cost_coverage_v1(timestamptz) → timestamptz`: cria uma única data de corte Production; retry idêntico é idempotente e qualquer tentativa de alteração falha fechado.
-• `read_openai_lp_cost_events_v1(timestamptz, timestamptz) → setof record`: lê de forma ordenada os inícios do período, correlaciona no máximo um terminal e projeta somente identidade de conta/LP, workload, instantes, resultado e custo textual exato para paginação server-side.
+• `read_openai_lp_cost_events_v1(timestamptz, timestamptz) → setof record`: lê de forma ordenada os inícios do período, correlaciona no máximo um terminal e projeta somente identidade de conta/LP, workload, instantes, resultado, custo textual exato e status/código/tipo sanitizados do provider para paginação server-side.
 
 3.10.2 Segurança e execução
 • As quatro RPCs usam SECURITY INVOKER e search_path fixado em pg_catalog, com referências schema-qualified.

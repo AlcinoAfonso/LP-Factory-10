@@ -39,6 +39,16 @@ export type OpenAiLpCostTerminalInput = Readonly<{
   usage?: unknown;
   serviceTier?: unknown;
   imageCount?: number;
+  httpStatus?: unknown;
+  providerErrorCode?: unknown;
+  providerErrorType?: unknown;
+}>;
+
+export type OpenAiLpCostTrackingDiagnostic = Readonly<{
+  attemptId: string | null;
+  workload: OpenAiLpCostWorkload;
+  stage: "start" | "terminal";
+  reason: "failed" | "timeout";
 }>;
 
 export type OpenAiLpCostTrackingSession = Readonly<{

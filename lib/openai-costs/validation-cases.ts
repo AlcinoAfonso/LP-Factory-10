@@ -2,6 +2,12 @@ import assert from "node:assert/strict";
 
 import * as publicApi from "./index";
 import { priceOpenAiLpUsage } from "./pricing";
+import {
+  boundedOpenAiProviderErrorMetadata,
+  isOpenAiCreditFailure,
+  parseOpenAiProviderErrorMetadata,
+} from "./provider-error-metadata";
+import { runOpenAiLpCostTrackingOperation } from "./tracking-budget";
 import { isOpenAiLpCostTrackingEnabled } from "./tracking-gate";
 import { readOfficialOpenAiCostsWithKey } from "./providers/openAiCostsProviderCore";
 
@@ -43,6 +49,44 @@ const cases = [
         }),
         true,
       );
+    },
+  },
+  {
+    name: "tracking budget and provider diagnostics degrade safely",
+    run: async () => {
+      assert.deepEqual(
+        await runOpenAiLpCostTrackingOperation(
+          async () => await new Promise(() => undefined),
+          5,
+        ),
+        { ok: false, reason: "timeout" },
+      );
+      assert.deepEqual(
+        await runOpenAiLpCostTrackingOperation(async () => {
+          throw new Error("sensitive-rpc-message");
+        }, 5),
+        { ok: false, reason: "failed" },
+      );
+      assert.deepEqual(parseOpenAiProviderErrorMetadata({
+        error: {
+          code: " credit_balance_exhausted ",
+          type: "insufficient_quota",
+          message: "must-not-be-preserved",
+        },
+      }), {
+        providerErrorCode: "credit_balance_exhausted",
+        providerErrorType: "insufficient_quota",
+      });
+      assert.equal(isOpenAiCreditFailure({
+        providerErrorCode: "credit_balance_exhausted",
+        providerErrorType: null,
+      }), true);
+      assert.equal(isOpenAiCreditFailure({
+        providerErrorCode: "rate_limit_exceeded",
+        providerErrorType: "requests",
+      }), false);
+      assert.equal(boundedOpenAiProviderErrorMetadata("x".repeat(129)), null);
+      assert.equal(boundedOpenAiProviderErrorMetadata("invalid message"), null);
     },
   },
   {

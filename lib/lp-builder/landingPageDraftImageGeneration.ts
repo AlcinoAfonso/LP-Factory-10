@@ -18,10 +18,16 @@ import {
 } from "../openai-workloads";
 import type {
   OpenAiLpCostTracker,
+  OpenAiLpCostTrackingDiagnostic,
   OpenAiLpCostTrackingContext,
   OpenAiLpCostTrackingSession,
 } from "../openai-costs";
-import { isOpenAiLpPricingSupported } from "../openai-costs";
+import {
+  emitOpenAiLpCostTrackingDiagnostic,
+  parseOpenAiProviderErrorMetadata,
+  readOpenAiProviderErrorMetadata,
+  runOpenAiLpCostTrackingOperation,
+} from "../openai-costs";
 
 export const LANDING_PAGE_DRAFT_IMAGE_TIMEOUT_MS = 120_000;
 
@@ -68,6 +74,8 @@ type Dependencies = Readonly<{
   signal?: AbortSignal;
   environment?: OpenAiWorkloadEnvironment;
   workloadResolver?: OpenAiWorkloadResolverDependencies;
+  costTrackingTimeoutMs?: number;
+  emitCostTrackingDiagnostic?: (event: OpenAiLpCostTrackingDiagnostic) => void;
   costTracking?: OpenAiLpCostTrackingContext &
     Readonly<{ tracker: OpenAiLpCostTracker }>;
 }>;
@@ -96,7 +104,6 @@ export async function generateLandingPageDraftImage(
   const controller = new AbortController();
   const fetchImpl = dependencies.fetchImpl ?? fetch;
   const now = dependencies.now ?? Date.now;
-  const startedAt = now();
   const timeoutMs = boundedTimeout(
     dependencies.timeoutMs,
     LANDING_PAGE_DRAFT_IMAGE_TIMEOUT_MS,
@@ -119,29 +126,23 @@ export async function generateLandingPageDraftImage(
         quality: workload.quality,
       }
     : undefined;
-  if (costStart && !isOpenAiLpPricingSupported(costStart)) {
-    emitFailure(workload, "configuration_invalid", dependencies);
-    return { ok: false, kind: "configuration_invalid" };
+  if (costStart && dependencies.costTracking) {
+    const tracking = await runOpenAiLpCostTrackingOperation(
+      () => dependencies.costTracking!.tracker.start(costStart),
+      dependencies.costTrackingTimeoutMs,
+    );
+    if (tracking.ok) costSession = tracking.value;
+    else emitCostDiagnostic("start", tracking.reason, dependencies);
   }
-  try {
-    costSession = costStart
-      ? await dependencies.costTracking?.tracker.start(costStart)
-      : undefined;
-  } catch {
-    emitFailure(workload, "configuration_invalid", dependencies);
-    return { ok: false, kind: "configuration_invalid" };
-  }
-  const providerTimeoutMs = Math.max(0, timeoutMs - (now() - startedAt));
-  if (providerTimeoutMs <= 0 || dependencies.signal?.aborted) {
-    emitFailure(workload, "timeout", dependencies, {
-      latencyMs: now() - startedAt,
-    });
-    await completeCost(costSession, "failure");
+  const providerStartedAt = now();
+  if (dependencies.signal?.aborted) {
+    emitFailure(workload, "timeout", dependencies, { latencyMs: 0 });
+    await completeCost(costSession, "failure", undefined, undefined, dependencies);
     return { ok: false, kind: "timeout" };
   }
   const abortFromParent = () => controller.abort();
   dependencies.signal?.addEventListener("abort", abortFromParent, { once: true });
-  const timeout = setTimeout(() => controller.abort(), providerTimeoutMs);
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
     const response = await fetchImpl("https://api.openai.com/v1/images/generations", {
@@ -163,11 +164,20 @@ export async function generateLandingPageDraftImage(
       signal: controller.signal,
       cache: "no-store",
     });
-    const latencyMs = now() - startedAt;
+    const latencyMs = now() - providerStartedAt;
     const providerRequestId = nonEmptyString(response.headers.get("x-request-id"));
     if (!response.ok) {
-      emitFailure(workload, "http_error", dependencies, { providerRequestId, latencyMs });
-      await completeCost(costSession, "failure");
+      const providerError = await readOpenAiProviderErrorMetadata(response);
+      emitFailure(workload, "http_error", dependencies, {
+        providerRequestId,
+        latencyMs,
+        httpStatus: response.status,
+        ...providerError,
+      });
+      await completeCost(costSession, "failure", undefined, undefined, dependencies, {
+        httpStatus: response.status,
+        ...providerError,
+      });
       return { ok: false, kind: "http_error" };
     }
 
@@ -176,20 +186,29 @@ export async function generateLandingPageDraftImage(
       payload = await response.json();
     } catch {
       emitFailure(workload, "invalid_response", dependencies, { providerRequestId, latencyMs });
-      await completeCost(costSession, "failure");
+      await completeCost(costSession, "failure", undefined, undefined, dependencies);
       return { ok: false, kind: "invalid_response" };
     }
     if (!isRecord(payload) || payload.error || !Array.isArray(payload.data)) {
+      const providerError = parseOpenAiProviderErrorMetadata(payload);
       emitFailure(
         workload,
         isRecord(payload) && payload.error ? "provider_error" : "invalid_response",
         dependencies,
-        { providerRequestId, latencyMs },
+        {
+          providerRequestId,
+          latencyMs,
+          httpStatus: response.status,
+          ...providerError,
+        },
       );
       await completeCost(
         costSession,
         "failure",
         isRecord(payload) ? payload.usage : undefined,
+        undefined,
+        dependencies,
+        { httpStatus: response.status, ...providerError },
       );
       return {
         ok: false,
@@ -199,13 +218,13 @@ export async function generateLandingPageDraftImage(
     const image = payload.data[0];
     if (payload.data.length !== 1 || !isRecord(image) || typeof image.b64_json !== "string") {
       emitFailure(workload, "invalid_response", dependencies, { providerRequestId, latencyMs });
-      await completeCost(costSession, "failure", payload.usage);
+      await completeCost(costSession, "failure", payload.usage, undefined, dependencies);
       return { ok: false, kind: "invalid_response" };
     }
     const bytes = Uint8Array.from(Buffer.from(image.b64_json, "base64"));
     if (!isWebP(bytes)) {
       emitFailure(workload, "invalid_response", dependencies, { providerRequestId, latencyMs });
-      await completeCost(costSession, "failure", payload.usage);
+      await completeCost(costSession, "failure", payload.usage, undefined, dependencies);
       return { ok: false, kind: "invalid_response" };
     }
 
@@ -225,7 +244,7 @@ export async function generateLandingPageDraftImage(
         visualBriefVersion: LANDING_PAGE_VISUAL_BRIEF_VERSION,
       }),
     );
-    await completeCost(costSession, "success", payload.usage, 1);
+    await completeCost(costSession, "success", payload.usage, 1, dependencies);
     return {
       ok: true,
       bytes,
@@ -253,9 +272,9 @@ export async function generateLandingPageDraftImage(
       workload,
       timedOut ? "timeout" : "transport_error",
       dependencies,
-      { latencyMs: now() - startedAt },
+      { latencyMs: now() - providerStartedAt },
     );
-    await completeCost(costSession, "failure");
+    await completeCost(costSession, "failure", undefined, undefined, dependencies);
     return { ok: false, kind: timedOut ? "timeout" : "http_error" };
   } finally {
     clearTimeout(timeout);
@@ -268,20 +287,48 @@ async function completeCost(
   result: "success" | "failure",
   usage?: unknown,
   imageCount?: number,
+  dependencies: Dependencies = {},
+  providerError: Readonly<{
+    httpStatus?: unknown;
+    providerErrorCode?: unknown;
+    providerErrorType?: unknown;
+  }> = {},
 ) {
   if (!session) return;
-  try {
-    await session.complete({ result, usage, imageCount });
-  } catch {
-    // Terminal persistence is best-effort after a durable start.
-  }
+  const tracking = await runOpenAiLpCostTrackingOperation(
+    () => session.complete({ result, usage, imageCount, ...providerError }),
+    dependencies.costTrackingTimeoutMs,
+  );
+  if (!tracking.ok) emitCostDiagnostic("terminal", tracking.reason, dependencies);
+}
+
+function emitCostDiagnostic(
+  stage: "start" | "terminal",
+  reason: "failed" | "timeout",
+  dependencies: Dependencies,
+) {
+  emitOpenAiLpCostTrackingDiagnostic(
+    {
+      attemptId: dependencies.attemptId,
+      workload: "landing_page_draft_image_generation",
+      stage,
+      reason,
+    },
+    dependencies.emitCostTrackingDiagnostic,
+  );
 }
 
 function emitFailure(
   workload: ResolvedOpenAiImageWorkload,
   category: OpenAiWorkloadFailureCategory,
   dependencies: Dependencies,
-  metadata: Readonly<{ providerRequestId?: unknown; latencyMs?: unknown }> = {},
+  metadata: Readonly<{
+    providerRequestId?: unknown;
+    latencyMs?: unknown;
+    httpStatus?: unknown;
+    providerErrorCode?: unknown;
+    providerErrorType?: unknown;
+  }> = {},
 ) {
   (dependencies.emitEvent ?? emitOpenAiImageWorkloadEvent)(
     createOpenAiImageWorkloadFailureEvent(

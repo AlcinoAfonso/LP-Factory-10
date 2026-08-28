@@ -3,6 +3,10 @@ import "server-only";
 import { resolveOpenAiWorkloadEnvironment } from "../../openai-workloads";
 import { createServiceClient } from "../../supabase/service";
 import { OPENAI_LP_COST_PRICE_VERSION, priceOpenAiLpUsage } from "../pricing";
+import {
+  boundedOpenAiProviderErrorMetadata,
+  boundedOpenAiProviderHttpStatus,
+} from "../provider-error-metadata";
 import type {
   OpenAiLpCostStartInput,
   OpenAiLpCostTracker,
@@ -24,25 +28,25 @@ export function createOpenAiLpCostTracker(): OpenAiLpCostTracker | undefined {
       return {
         async complete(terminal) {
           const priced = priceOpenAiLpUsage(input, terminal);
-          try {
-            const { error } = await createServiceClient().rpc(
-              "append_openai_lp_cost_terminal_v1",
-              {
-                p_attempt_id: input.attemptId,
-                p_workload: input.workload,
-                p_result: terminal.result,
-                p_usage_json: priced?.usage ?? null,
-                p_pricing_json: priced?.pricing ?? null,
-                p_cost_usd: priced?.costUsd ?? null,
-              },
-            );
-            if (error) throw error;
-          } catch {
-            console.error("openai_lp_cost_tracking_terminal_failed", {
-              attemptId: input.attemptId,
-              workload: input.workload,
-            });
-          }
+          const { error } = await createServiceClient().rpc(
+            "append_openai_lp_cost_terminal_v1",
+            {
+              p_attempt_id: input.attemptId,
+              p_workload: input.workload,
+              p_result: terminal.result,
+              p_usage_json: priced?.usage ?? null,
+              p_pricing_json: priced?.pricing ?? null,
+              p_cost_usd: priced?.costUsd ?? null,
+              p_http_status: boundedOpenAiProviderHttpStatus(terminal.httpStatus),
+              p_provider_error_code: boundedOpenAiProviderErrorMetadata(
+                terminal.providerErrorCode,
+              ),
+              p_provider_error_type: boundedOpenAiProviderErrorMetadata(
+                terminal.providerErrorType,
+              ),
+            },
+          );
+          if (error) throw new Error("openai_lp_cost_tracking_terminal_failed");
         },
       };
     },

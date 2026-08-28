@@ -71,11 +71,12 @@ export type OpenAiLpCostAccountSummary = Readonly<{
 export type OpenAiLpCostReadModel = Readonly<{
   totalUsd: string;
   coverageActivatedAt: string | null;
-  coverageStatus: "covered" | "partial" | "not_activated";
+  coverageStatus: "complete" | "partial" | "degraded" | "not_activated";
   internalUpdatedAt: string | null;
   attemptCount: number;
   unpricedAttemptCount: number;
   pendingAttemptCount: number;
+  providerCreditFailureCount: number;
   accounts: readonly OpenAiLpCostAccountSummary[];
 }>;
 

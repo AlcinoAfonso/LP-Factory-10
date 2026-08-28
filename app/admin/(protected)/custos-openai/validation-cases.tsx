@@ -49,6 +49,14 @@ const eventRows = [
     result: null,
     cost_usd: null,
   }),
+  row({
+    attempt_id: "e2145000-0000-4000-8000-000000000003",
+    result: "failure",
+    cost_usd: null,
+    http_status: 429,
+    provider_error_code: "credit_balance_exhausted",
+    provider_error_type: "insufficient_quota",
+  }),
 ];
 const internal = translateOpenAiLpCostRows({
   period: current.period,
@@ -58,9 +66,23 @@ const internal = translateOpenAiLpCostRows({
 assert.equal(internal.ok, true);
 if (!internal.ok) throw new Error("internal read model should be valid");
 assert.equal(internal.value.totalUsd, "0.25");
-assert.equal(internal.value.coverageStatus, "partial");
+assert.equal(internal.value.coverageStatus, "degraded");
 assert.equal(internal.value.accounts[0]?.landingPages[0]?.workloads.length, 2);
 assert.equal(internal.value.pendingAttemptCount, 1);
+assert.equal(internal.value.providerCreditFailureCount, 1);
+
+const completeCoverage = translateOpenAiLpCostRows({
+  period: current.period,
+  eventRows: [eventRows[0]],
+  coverageRows: [{ activated_at: "2026-08-01T00:00:00.000Z" }],
+});
+assert.equal(completeCoverage.ok && completeCoverage.value.coverageStatus, "complete");
+const partialCoverage = translateOpenAiLpCostRows({
+  period: current.period,
+  eventRows: [eventRows[0]],
+  coverageRows: [{ activated_at: "2026-08-10T03:00:00.000Z" }],
+});
+assert.equal(partialCoverage.ok && partialCoverage.value.coverageStatus, "partial");
 
 const dashboard = buildOpenAiCostsDashboard({
   selection: current,
@@ -81,6 +103,28 @@ const dashboard = buildOpenAiCostsDashboard({
 assert.ok(dashboard);
 assert.equal(dashboard.reconciliationUsd, "-0.05");
 assert.equal(dashboard.reconciliationAnomalous, true);
+const unavailable = buildOpenAiCostsDashboard({
+  selection: current,
+  official: {
+    ok: true,
+    value: {
+      currency: "usd",
+      totalUsd: "0.2",
+      startTime: current.period.startTime,
+      endTime: current.period.endTime,
+      bucketCount: 1,
+      pageCount: 1,
+      fetchedAt: "2026-08-28T15:00:01.000Z",
+    },
+  },
+  internal: {
+    ok: false,
+    error: { code: "READ_FAILED", message: "sanitized" },
+  },
+});
+assert.ok(unavailable);
+assert.equal(unavailable.internal, null);
+assert.equal(unavailable.internalErrorCode, "READ_FAILED");
 
 let pageCalls = 0;
 const paged = await readCompleteOpenAiLpCostPages(async (from, to) => {
@@ -116,6 +160,12 @@ for (const expected of [
   "Atualizado na cobertura interna",
   "Geração de texto",
   "Geração de imagem",
+  "Cobertura completa",
+  "Cobertura parcial",
+  "Cobertura degradada",
+  "Interno indisponível",
+  "Falhas ocorridas antes da persistência inicial",
+  "Crédito ou limite OpenAI requer atenção",
 ]) {
   assert.equal(componentSource.includes(expected), true, `missing UI evidence: ${expected}`);
 }
@@ -141,6 +191,9 @@ function row(overrides: Record<string, unknown>) {
     terminal_at: "2026-08-20T12:00:01.000Z",
     result: "success",
     cost_usd: "0.25",
+    http_status: null,
+    provider_error_code: null,
+    provider_error_type: null,
     ...overrides,
   };
 }

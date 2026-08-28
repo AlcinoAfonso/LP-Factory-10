@@ -19,6 +19,9 @@ create table public.openai_lp_cost_events (
   usage_json jsonb null,
   pricing_json jsonb null,
   cost_usd numeric(30, 12) null,
+  http_status integer null,
+  provider_error_code text null,
+  provider_error_type text null,
   created_at timestamptz not null default now(),
   constraint openai_lp_cost_events_landing_page_fkey
     foreign key (landing_page_id, account_id)
@@ -70,6 +73,9 @@ create table public.openai_lp_cost_events (
         and usage_json is null
         and pricing_json is null
         and cost_usd is null
+        and http_status is null
+        and provider_error_code is null
+        and provider_error_type is null
       )
       or (
         event_kind = 'terminal'
@@ -80,6 +86,31 @@ create table public.openai_lp_cost_events (
         and (
           cost_usd is null
           or (usage_json is not null and pricing_json is not null)
+        )
+        and (http_status is null or http_status between 100 and 599)
+        and (
+          provider_error_code is null
+          or (
+            char_length(provider_error_code) between 1 and 128
+            and provider_error_code = btrim(provider_error_code)
+            and provider_error_code ~ '^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$'
+          )
+        )
+        and (
+          provider_error_type is null
+          or (
+            char_length(provider_error_type) between 1 and 128
+            and provider_error_type = btrim(provider_error_type)
+            and provider_error_type ~ '^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$'
+          )
+        )
+        and (
+          result = 'failure'
+          or (
+            http_status is null
+            and provider_error_code is null
+            and provider_error_type is null
+          )
         )
       )
     ),
@@ -224,7 +255,10 @@ create or replace function public.append_openai_lp_cost_terminal_v1(
   p_result text,
   p_usage_json jsonb,
   p_pricing_json jsonb,
-  p_cost_usd numeric
+  p_cost_usd numeric,
+  p_http_status integer,
+  p_provider_error_code text,
+  p_provider_error_type text
 )
 returns uuid
 language plpgsql
@@ -267,7 +301,10 @@ begin
     price_version,
     usage_json,
     pricing_json,
-    cost_usd
+    cost_usd,
+    http_status,
+    provider_error_code,
+    provider_error_type
   )
   values (
     v_start.attempt_id,
@@ -286,7 +323,10 @@ begin
     v_start.price_version,
     p_usage_json,
     p_pricing_json,
-    p_cost_usd
+    p_cost_usd,
+    p_http_status,
+    p_provider_error_code,
+    p_provider_error_type
   )
   on conflict (attempt_id, workload, event_kind) do nothing
   returning id into v_id;
@@ -304,7 +344,10 @@ begin
   if v_existing.result is distinct from p_result
      or v_existing.usage_json is distinct from p_usage_json
      or v_existing.pricing_json is distinct from p_pricing_json
-     or v_existing.cost_usd is distinct from p_cost_usd then
+     or v_existing.cost_usd is distinct from p_cost_usd
+     or v_existing.http_status is distinct from p_http_status
+     or v_existing.provider_error_code is distinct from p_provider_error_code
+     or v_existing.provider_error_type is distinct from p_provider_error_type then
     raise exception using errcode = '23505', message = 'openai_lp_cost_terminal_conflict';
   end if;
 
@@ -357,7 +400,10 @@ returns table (
   started_at timestamptz,
   terminal_at timestamptz,
   result text,
-  cost_usd text
+  cost_usd text,
+  http_status integer,
+  provider_error_code text,
+  provider_error_type text
 )
 language plpgsql
 stable
@@ -384,7 +430,10 @@ begin
     started.created_at,
     terminal.created_at,
     terminal.result,
-    terminal.cost_usd::text
+    terminal.cost_usd::text,
+    terminal.http_status,
+    terminal.provider_error_code,
+    terminal.provider_error_type
   from public.openai_lp_cost_events started
   join public.accounts account
     on account.id = started.account_id
@@ -420,7 +469,7 @@ revoke all on function public.prevent_openai_lp_cost_mutation_v1()
   from public, anon, authenticated, service_role;
 revoke all on function public.append_openai_lp_cost_start_v1(uuid, uuid, uuid, text, text, text, text, text, text, text, text)
   from public, anon, authenticated, service_role;
-revoke all on function public.append_openai_lp_cost_terminal_v1(uuid, text, text, jsonb, jsonb, numeric)
+revoke all on function public.append_openai_lp_cost_terminal_v1(uuid, text, text, jsonb, jsonb, numeric, integer, text, text)
   from public, anon, authenticated, service_role;
 revoke all on function public.register_openai_lp_cost_coverage_v1(timestamptz)
   from public, anon, authenticated, service_role;
@@ -432,7 +481,7 @@ begin
   if to_regrole('ai_readonly') is not null then
     execute 'revoke all on function public.prevent_openai_lp_cost_mutation_v1() from ai_readonly';
     execute 'revoke all on function public.append_openai_lp_cost_start_v1(uuid, uuid, uuid, text, text, text, text, text, text, text, text) from ai_readonly';
-    execute 'revoke all on function public.append_openai_lp_cost_terminal_v1(uuid, text, text, jsonb, jsonb, numeric) from ai_readonly';
+    execute 'revoke all on function public.append_openai_lp_cost_terminal_v1(uuid, text, text, jsonb, jsonb, numeric, integer, text, text) from ai_readonly';
     execute 'revoke all on function public.register_openai_lp_cost_coverage_v1(timestamptz) from ai_readonly';
     execute 'revoke all on function public.read_openai_lp_cost_events_v1(timestamptz, timestamptz) from ai_readonly';
   end if;
@@ -441,7 +490,7 @@ $$;
 
 grant execute on function public.append_openai_lp_cost_start_v1(uuid, uuid, uuid, text, text, text, text, text, text, text, text)
   to service_role;
-grant execute on function public.append_openai_lp_cost_terminal_v1(uuid, text, text, jsonb, jsonb, numeric)
+grant execute on function public.append_openai_lp_cost_terminal_v1(uuid, text, text, jsonb, jsonb, numeric, integer, text, text)
   to service_role;
 grant execute on function public.register_openai_lp_cost_coverage_v1(timestamptz)
   to service_role;

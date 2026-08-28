@@ -165,7 +165,16 @@ export function OpenAiCostsDashboard({ startDate, endDate }: Props) {
             <p className="mt-4 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-950">
               A OpenAI e a cobertura interna podem atualizar em instantes diferentes. Períodos anteriores ou que cruzam a data de corte não representam cobertura integral das Landing Pages.
             </p>
+            <p className="mt-3 text-sm leading-6 text-muted-foreground">
+              Falhas ocorridas antes da persistência inicial podem não aparecer na contagem individual. O valor correspondente permanece em Outros gastos / reconciliação.
+            </p>
           </section>
+
+          {dashboard.internal && dashboard.internal.providerCreditFailureCount > 0 ? (
+            <StatusPanel tone="danger" title="Crédito ou limite OpenAI requer atenção" role="alert">
+              O período contém {dashboard.internal.providerCreditFailureCount} ocorrência de provider associada a crédito ou limite insuficiente. Consulte a administração da OpenAI; nenhum detalhe financeiro interno é exibido ao cliente.
+            </StatusPanel>
+          ) : null}
 
           {dashboard.internal ? (
             <AccountBreakdown accounts={dashboard.internal.accounts} />
@@ -234,8 +243,14 @@ function StatusPanel({ tone, title, children, role }: Readonly<{ tone: "neutral"
   return <section className={`rounded-lg border p-4 shadow-card sm:p-5 ${classes}`} role={role}><h2 className="text-sm font-semibold">{title}</h2><p className="mt-2 text-sm leading-6">{children}</p></section>;
 }
 
-function CoverageBadge({ status }: Readonly<{ status: "covered" | "partial" | "not_activated" }>) {
-  return status === "covered" ? <AdminStatusBadge tone="success">Cobertura ativa</AdminStatusBadge> : status === "partial" ? <AdminStatusBadge tone="warning">Cobertura parcial</AdminStatusBadge> : <AdminStatusBadge tone="danger">Cobertura não ativada</AdminStatusBadge>;
+function CoverageBadge({ status }: Readonly<{ status: "complete" | "partial" | "degraded" | "not_activated" }>) {
+  return status === "complete"
+    ? <AdminStatusBadge tone="success">Cobertura completa</AdminStatusBadge>
+    : status === "partial"
+      ? <AdminStatusBadge tone="warning">Cobertura parcial</AdminStatusBadge>
+      : status === "degraded"
+        ? <AdminStatusBadge tone="warning">Cobertura degradada</AdminStatusBadge>
+        : <AdminStatusBadge tone="danger">Cobertura não ativada</AdminStatusBadge>;
 }
 
 function Timestamp({ label, value }: Readonly<{ label: string; value: string | null }>) {
