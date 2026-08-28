@@ -89,9 +89,10 @@ export function classifyLandingPageInputCatalogTransition(
   const expanded: string[] = [];
   const reviewRequired = new Set<string>(removed);
 
+  const survivingPreviousKeys = previousKeys.filter((fieldKey) => nextByKey.has(fieldKey));
   const previousOrderWithinNext = nextKeys.filter((fieldKey) => previousByKey.has(fieldKey));
-  if (!sameJson(previousOrderWithinNext, previousKeys)) {
-    previousKeys.forEach((fieldKey) => reviewRequired.add(fieldKey));
+  if (!sameJson(previousOrderWithinNext, survivingPreviousKeys)) {
+    survivingPreviousKeys.forEach((fieldKey) => reviewRequired.add(fieldKey));
   }
 
   for (const fieldKey of previousKeys) {

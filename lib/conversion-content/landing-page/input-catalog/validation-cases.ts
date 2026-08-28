@@ -1079,7 +1079,15 @@ const cases: Case[] = [
       assert.equal(previous.value.fields.some((field) => field.fieldKey === "business_display_name"), true);
       assert.equal(next.value.fields.some((field) => field.fieldKey === "business_display_name"), false);
       assert.deepEqual(next.value.retiredFieldKeys, ["business_display_name"]);
-      assert.equal(classifyLandingPageInputCatalogTransition(previous.value, next.value).classification, "review_required");
+      const transition = classifyLandingPageInputCatalogTransition(previous.value, next.value);
+      assert.equal(transition.classification, "review_required");
+      assert.deepEqual(transition.reviewRequiredFieldKeys, ["business_display_name"]);
+      assert.equal(
+        collectCommercialIdentityReviewBlockers([
+          { taxon: realEstateBrokerNicheTaxon, ...transition },
+        ]).length,
+        0,
+      );
     },
   },
   {
