@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data da última atualização: 27/08/2026
-• Documento: LP Factory 10 — Schema (DB Contract) v1.0.58
+• Data da última atualização: 28/08/2026
+• Documento: LP Factory 10 — Schema (DB Contract) v1.0.59
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -1299,7 +1299,9 @@
 • A migration `supabase/migrations/20260827203000_postgrest_safe_application_conflicts.sql` cobre as onze funções ativas que usavam 40001 como erro de domínio, sem alterar assinaturas, retornos, locks, search_path, ownership, segurança ou ACLs.
 • Teste transacional: `supabase/tests/postgrest_safe_application_conflicts.test.sql`.
 • Verificador read-only: `supabase/snippets/postgrest_safe_application_conflicts_verify.sql`.
-• Estado no PR corretivo: repo-only; apply remoto reservado ao workflow canônico após merge humano.
+• Estado hospedado após o merge do PR 828: a migration `supabase/migrations/20260827203000_postgrest_safe_application_conflicts.sql` está aplicada e o verificador read-only foi aprovado.
+• Gate principal hospedado pela superfície administrativa existente em `preview / niche_resolution`: a primeira chamada alcançou exatamente um `POST` stale à RPC `save_openai_workload_configuration_candidate_v1`, e a Data API/PostgREST respondeu HTTP 409 com `code = 40001` e mensagem `openai_workload_configuration_stale_version`; houve um único incremento de `xact_rollback`, sem repetição autônoma posterior, e a chamada não alterou candidata, revisão ativa ou revisão pendente.
+• Uma segunda chamada explícita, humana/automatizada, ocorreu posteriormente e respondeu `POST 200`; ela não foi retry do PostgREST. A candidata criada por engano foi removida pela operação canônica `Descartar candidata`, encerrando a unidade com `configuration_version = 9`, candidata nula, revisão ativa `f7c3e287-76f7-4ce5-a002-8c953309cd04`, revisão pendente nula e sem nova revisão ou ativação.
 
 4. Triggers
 
@@ -1341,6 +1343,11 @@
 • Rollback: não remove automaticamente a extensão, pois pode ser reutilizada por outros recursos
 
 99. Changelog
+v1.0.59 (28/08/2026) — Fechamento hospedado pós-merge do PR 828
+• Registrados o apply da migration de conflitos seguros e a aprovação do verificador read-only no ambiente hospedado.
+• Comprovado o gate principal por um único `POST 409` stale, `code = 40001`, mensagem preservada e ausência de retry autônomo ou mutação nessa chamada.
+• Diferenciada a submissão explícita posterior `POST 200` de qualquer retry do PostgREST e registrado o descarte canônico da candidata criada por engano, com versão final 9 e sem mudança de revisão ativa, pendência, revisões ou ativações.
+
 v1.0.58 (27/08/2026) — Conflitos de domínio seguros para PostgREST
 • Versionado `raise_postgrest_safe_conflict_v1(text)` para transportar conflitos conhecidos como `PGRST`/HTTP 409 pela Data API, preservando `code = 40001` no corpo.
 • Corrigidas as onze RPCs/functions ativas que usavam 40001 como erro de domínio; chamadas SQL diretas preservam 40001 para testes transacionais.
