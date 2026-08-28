@@ -88,7 +88,7 @@ const inputFactSchema = z.object({
   purpose: z.string().trim().min(1),
   valueType: z.enum([
     "string", "phone", "email", "url", "enum", "string_list", "boolean",
-    "number_range", "keyword_map", "asset_reference", "color_palette",
+    "number_range", "keyword_map", "asset_reference", "color_palette", "offering_scope",
   ]),
   value: z.unknown(),
   source: z.enum(["authoritative", "configuration"]),

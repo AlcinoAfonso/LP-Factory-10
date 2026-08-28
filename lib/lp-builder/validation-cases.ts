@@ -56,9 +56,17 @@ const segmentCatalogV5 = resolveLandingPageInputCatalog({
 });
 assert.equal(segmentCatalogV5.ok, true);
 
+const segmentCatalogV6 = resolveLandingPageInputCatalog({
+  version: 6,
+  plan: "starter",
+  taxonChain: { segment: realEstateSegmentTaxon },
+});
+assert.equal(segmentCatalogV6.ok, true);
+
 const allValidValues = validValuesFor(resolvedCatalog.fields);
 const segmentValidValues = validValuesFor(segmentCatalog.value.fields);
 const segmentV5ValidValues = validValuesFor(segmentCatalogV5.value.fields);
+const segmentV6ValidValues = validValuesFor(segmentCatalogV6.value.fields);
 
 function catalogVersionLoaderFor(
   version: number,
@@ -571,6 +579,141 @@ const cases: ReadonlyArray<
         (update?.payload as { values: AccountLandingPageOnboardingStoredValues })
           .values.funnel_stage,
         segmentV5ValidValues.funnel_stage,
+      );
+    },
+  },
+  {
+    name: "published v6 projects a valid legacy offering residence without writes",
+    run: () => {
+      const storedValues = {
+        primary_service_or_offer: {
+          scope: "offer" as const,
+          value: "  Consultoria imobiliária  ",
+        },
+        primary_service_or_offer_description: {
+          scope: "offer" as const,
+          value: "  Apoio factual na compra de imóveis  ",
+        },
+      };
+      const original = structuredClone(storedValues);
+      const projected = resolveAccountLandingPageOnboardingConfiguration({
+        accountId: ACCOUNT_ID,
+        landingPageId: null,
+        catalogVersion: 6,
+        revision: 1,
+        planKey: "starter",
+        taxonChain: { segment: realEstateSegmentTaxon },
+        storedValues,
+        authoritativeValues: {},
+      });
+      assert.equal(projected.ok, true, JSON.stringify(projected));
+      if (!projected.ok) return;
+      assert.deepEqual(projected.configuration.storedValues, {
+        landing_page_offering_scope: {
+          scope: "landing_page",
+          value: {
+            mode: "single",
+            offerings: ["Consultoria imobiliária"],
+          },
+        },
+        landing_page_offering_scope_description: {
+          scope: "landing_page",
+          value: "Apoio factual na compra de imóveis",
+        },
+      });
+      assert.deepEqual(storedValues, original);
+
+      const malformed = resolveAccountLandingPageOnboardingConfiguration({
+        accountId: ACCOUNT_ID,
+        landingPageId: null,
+        catalogVersion: 6,
+        revision: 1,
+        planKey: "starter",
+        taxonChain: { segment: realEstateSegmentTaxon },
+        storedValues: {
+          ...storedValues,
+          primary_service_or_offer: { scope: "offer", value: "   " },
+        },
+        authoritativeValues: {},
+      });
+      assert.deepEqual(malformed, {
+        ok: false,
+        error: "INVALID_CONFIGURATION",
+        fieldKey: "primary_service_or_offer",
+      });
+    },
+  },
+  {
+    name: "published v6 saves and reloads only the canonical offering scope",
+    run: async () => {
+      const canonicalRow = {
+        ...completeConfigurationRow(),
+        catalog_version: 6,
+        values: stripAuthoritativeOnboardingValues(segmentV6ValidValues, {
+          business_display_name: "Conta de teste",
+        }),
+        revision: 2,
+      };
+      const saveClient = runtimeClient([
+        ...runtimeGateResponses(),
+        response("account_landing_page_onboarding_configurations", {
+          ...completeConfigurationRow(),
+          catalog_version: 5,
+          values: stripAuthoritativeOnboardingValues(segmentV5ValidValues, {
+            business_display_name: "Conta de teste",
+          }),
+        }),
+        response(
+          "account_landing_page_onboarding_configurations",
+          canonicalRow,
+          null,
+          "update",
+        ),
+      ]);
+      const saved = await saveAccountLandingPageOnboardingConfigurationFromClientCore(
+        {
+          accountId: ACCOUNT_ID,
+          actorUserId: ACTOR_ID,
+          expectedRevision: 1,
+          values: segmentV6ValidValues,
+        },
+        saveClient,
+        eligibleEntitlement,
+        catalogVersionLoaderFor(6),
+      );
+      assert.equal(saved.ok, true, JSON.stringify(saved));
+      if (!saved.ok) return;
+      assert.equal(saved.configuration.catalogVersion, 6);
+      assert.equal(saved.configuration.complete, true);
+      const update = saveClient.calls.find((call) => call.operation === "update");
+      const persisted = (update?.payload as {
+        catalog_version: number;
+        values: AccountLandingPageOnboardingStoredValues;
+      });
+      assert.equal(persisted.catalog_version, 6);
+      assert.equal(Object.hasOwn(persisted.values, "landing_page_offering_scope"), true);
+      assert.equal(Object.hasOwn(persisted.values, "primary_service_or_offer"), false);
+      assert.equal(
+        Object.hasOwn(persisted.values, "primary_service_or_offer_description"),
+        false,
+      );
+
+      const reloadClient = runtimeClient([
+        ...runtimeGateResponses(),
+        response("account_landing_page_onboarding_configurations", canonicalRow),
+      ]);
+      const reloaded = await getAccountLandingPageOnboardingConfigurationFromClientCore(
+        { accountId: ACCOUNT_ID, actorUserId: ACTOR_ID },
+        reloadClient,
+        eligibleEntitlement,
+        catalogVersionLoaderFor(6),
+      );
+      assert.equal(reloaded.ok, true, JSON.stringify(reloaded));
+      if (!reloaded.ok) return;
+      assert.equal(reloaded.configuration.catalogVersion, 6);
+      assert.deepEqual(
+        reloaded.configuration.storedValues.landing_page_offering_scope,
+        segmentV6ValidValues.landing_page_offering_scope,
       );
     },
   },
@@ -1260,6 +1403,8 @@ function validValue(field: ResolvedLandingPageInputField): unknown {
           message_anchor: "mensagem factual",
         },
       ];
+    case "offering_scope":
+      return { mode: "single", offerings: ["Oferta livre"] };
     case "asset_reference":
       return { asset_id: "asset-canonico" };
     case "color_palette":

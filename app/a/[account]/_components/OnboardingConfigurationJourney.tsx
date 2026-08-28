@@ -121,7 +121,7 @@ const FIELD_LABELS: Readonly<Record<string, string>> = {
   business_display_name: "Nome público do negócio",
   primary_service_or_offer: "Serviço ou oferta principal",
   primary_service_or_offer_description: "Descrição do serviço ou da oferta",
-  landing_page_offering_scope: "Escopo comercial da página",
+  landing_page_offering_scope: "O que esta landing page vai divulgar?",
   landing_page_offering_scope_description: "Descrição do escopo comercial",
   service_locations: "Regiões atendidas",
   property_types: "Tipos de imóvel",

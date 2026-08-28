@@ -7,7 +7,6 @@ import type {
   LandingPageInputCatalogTaxonChain,
 } from "../../conversion-content/landing-page/input-catalog";
 import {
-  areLandingPageOfferingScopesMateriallyEqual,
   parseLandingPageOfferingScope,
   projectLegacyLandingPageOfferingScope,
 } from "../../conversion-content/landing-page/input-catalog";
@@ -26,6 +25,7 @@ import type {
 } from "../contracts";
 import {
   deriveLandingPageWorkspaceState,
+  evaluateLandingPageCommercialIdentityMutation,
   isLandingPageWorkspaceEnabled,
   splitLandingPageWorkspaceValues,
 } from "../landingPageWorkspace";
@@ -48,11 +48,6 @@ const UUID_RE =
 const WORKSPACE_PAGE_SIZE = 25;
 const HISTORY_PAGE_SIZE = 25;
 const BASELINE_PAGE_SIZE = 100;
-const IDENTITY_FIELDS = [
-  "funnel_stage",
-  "transaction_intent",
-] as const;
-
 export async function listAccountLandingPageWorkspace(input: Readonly<{
   accountId: string;
   cursor?: string;
@@ -602,8 +597,7 @@ async function validateIdentityMutation(
       result: Extract<SaveAccountLandingPageOperationalConfigurationResult, { ok: false }>;
     }>
 > {
-  const baselines = new Map<string, unknown>();
-  let firstOfferingScope: unknown = undefined;
+  const generationContextSnapshots: unknown[] = [];
   let offset = 0;
   let hasRevision = false;
   let latestMaterializationId: string | null = null;
@@ -625,66 +619,21 @@ async function validateIdentityMutation(
         return { ok: false, result: { ok: false, error: "unavailable" } };
       }
       latestMaterializationId = row.id;
-      const facts = readSnapshotFacts(row.generation_context_snapshot_json);
-      for (const fact of facts) {
-        if (IDENTITY_FIELDS.includes(fact.fieldKey as (typeof IDENTITY_FIELDS)[number])) {
-          if (!baselines.has(fact.fieldKey)) baselines.set(fact.fieldKey, fact.value);
-        }
-        if (fact.fieldKey === "landing_page_offering_scope" && firstOfferingScope === undefined) {
-          const parsed = parseLandingPageOfferingScope(fact.value);
-          if (!parsed.ok) {
-            return { ok: false, result: { ok: false, error: "unavailable" } };
-          }
-          firstOfferingScope = parsed.value;
-        }
-        if (fact.fieldKey === "primary_service_or_offer" && firstOfferingScope === undefined) {
-          const projected = projectLegacyLandingPageOfferingScope(fact.value);
-          if (!projected.ok) {
-            return { ok: false, result: { ok: false, error: "unavailable" } };
-          }
-          firstOfferingScope = projected.value;
-        }
-      }
+      generationContextSnapshots.push(row.generation_context_snapshot_json);
     }
     if (data.length < BASELINE_PAGE_SIZE) break;
     offset += data.length;
   }
-  for (const fieldKey of IDENTITY_FIELDS) {
-    const baseline = baselines.get(fieldKey);
-    const next = input.values[fieldKey]?.value;
-    if (baseline !== undefined && next !== undefined && !deepEqual(baseline, next)) {
-      return {
-        ok: false,
-        result: {
-          ok: false,
-          error: "identity_change_requires_new_landing_page",
-          fieldKey,
-        },
-      };
-    }
-  }
-  const nextOfferingScope = input.values.landing_page_offering_scope?.value;
   const currentOfferingScope = hasRevision
     ? await readCurrentConfiguredOfferingScope(client, input.accountId, input.landingPageId)
     : undefined;
-  if (
-    hasRevision &&
-    nextOfferingScope !== undefined &&
-    !areLandingPageOfferingScopesMateriallyEqual(
-      currentOfferingScope ?? firstOfferingScope,
-      nextOfferingScope,
-    ) &&
-    !input.sameCommercialWorkConfirmed
-  ) {
-    return {
-      ok: false,
-      result: {
-        ok: false,
-        error: "offer_change_confirmation_required",
-        fieldKey: "landing_page_offering_scope",
-      },
-    };
-  }
+  const evaluation = evaluateLandingPageCommercialIdentityMutation({
+    generationContextSnapshots,
+    currentConfiguredOfferingScope: currentOfferingScope,
+    values: input.values,
+    sameCommercialWorkConfirmed: input.sameCommercialWorkConfirmed,
+  });
+  if (!evaluation.ok) return { ok: false, result: evaluation };
   return { ok: true, latestMaterializationId };
 }
 
@@ -739,17 +688,6 @@ function readOfferingScopeValue(values: Record<string, unknown>): unknown {
   const projected = projectLegacyLandingPageOfferingScope(legacy.value);
   if (!projected.ok) throw new Error("primary_service_or_offer_invalid");
   return projected.value;
-}
-
-function readSnapshotFacts(value: unknown): readonly Readonly<{ fieldKey: string; value: unknown }>[] {
-  if (!isRecord(value) || !isRecord(value.generationContext)) return [];
-  const context = value.generationContext;
-  if (!isRecord(context.modelContext) || !Array.isArray(context.modelContext.facts)) return [];
-  const serverFacts = Array.isArray(context.bindingFacts) ? context.bindingFacts : [];
-  return [...context.modelContext.facts, ...serverFacts].filter(
-    (fact): fact is { fieldKey: string; value: unknown } =>
-      isRecord(fact) && typeof fact.fieldKey === "string" && Object.hasOwn(fact, "value"),
-  );
 }
 
 async function loadAuthority(
@@ -966,10 +904,6 @@ function parseCursor(value: string | undefined): number | null {
   if (!/^\d+$/.test(value)) return null;
   const parsed = Number(value);
   return Number.isSafeInteger(parsed) && parsed >= 0 ? parsed : null;
-}
-
-function deepEqual(left: unknown, right: unknown): boolean {
-  return JSON.stringify(left) === JSON.stringify(right);
 }
 
 function isPositiveInteger(value: unknown): value is number {

@@ -43,9 +43,9 @@ const revalidationAuthority = {
   currentTaxonChain: configuration.taxonChain,
   currentAuthoritativeValues: authoritativeValues,
   sharedRevision: 11,
-  sharedCatalogVersion: 5,
+  sharedCatalogVersion: 6,
   landingPageRevision: 13,
-  landingPageCatalogVersion: 5,
+  landingPageCatalogVersion: 6,
 };
 const preparation = buildPreparation();
 
@@ -78,9 +78,9 @@ const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }
           segment: realEstateSegmentTaxon,
           niche: realEstateBrokerNicheTaxon,
         },
-        sharedCatalogVersion: 5,
-        landingPageCatalogVersion: 5,
-        effectiveInputCatalogVersion: 5,
+        sharedCatalogVersion: 6,
+        landingPageCatalogVersion: 6,
+        effectiveInputCatalogVersion: 6,
         sharedRevision: 11,
         landingPageRevision: 13,
         rootVersion: 1,
@@ -165,8 +165,8 @@ const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }
     name: "E19.2 boundary preserves later current authority through target revalidation",
     run: () => {
       const laterFieldKeys = new Set([
-        "primary_service_or_offer",
-        "primary_service_or_offer_description",
+        "landing_page_offering_scope",
+        "landing_page_offering_scope_description",
         "brand_color_palette",
         "business_offerings_summary",
         "primary_conversion_goal",
@@ -186,10 +186,10 @@ const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }
         historicalStoredValues,
         currentAuthoritativeValues: {
           business_display_name: "Conta atual pela autoridade E19.2",
-          primary_service_or_offer:
-            configuration.storedValues.primary_service_or_offer.value,
-          primary_service_or_offer_description:
-            configuration.storedValues.primary_service_or_offer_description.value,
+          landing_page_offering_scope:
+            configuration.storedValues.landing_page_offering_scope.value,
+          landing_page_offering_scope_description:
+            configuration.storedValues.landing_page_offering_scope_description.value,
           brand_color_palette:
             configuration.storedValues.brand_color_palette.value,
         },
@@ -236,7 +236,7 @@ const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }
       const everyFieldResolution = resolveAccountLandingPageOnboardingConfiguration({
         accountId: ACCOUNT_ID,
         landingPageId: LANDING_PAGE_ID,
-        catalogVersion: 5,
+        catalogVersion: 6,
         revision: 7,
         planKey: "starter",
         taxonChain: {
@@ -279,6 +279,7 @@ const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }
         "boolean",
         "number_range",
         "keyword_map",
+        "offering_scope",
       ]);
       assert.equal(
         result.value.modelContext.facts.every((fact) =>
@@ -312,7 +313,7 @@ const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }
       const missingOptionalResolution = resolveAccountLandingPageOnboardingConfiguration({
         accountId: ACCOUNT_ID,
         landingPageId: LANDING_PAGE_ID,
-        catalogVersion: 5,
+        catalogVersion: 6,
         revision: 7,
         planKey: "starter",
         taxonChain: {
@@ -708,8 +709,11 @@ async function runCases(): Promise<void> {
 
 function buildConfiguration(): AccountLandingPageOnboardingConfiguration {
   const values: Readonly<Record<string, unknown>> = {
-    primary_service_or_offer: "Consultoria imobiliária",
-    primary_service_or_offer_description: "Apoio factual na compra de imóveis",
+    landing_page_offering_scope: {
+      mode: "single",
+      offerings: ["Consultoria imobiliária"],
+    },
+    landing_page_offering_scope_description: "Apoio factual na compra de imóveis",
     brand_color_palette: {
       primary: "#000000",
       secondary: "#111111",
@@ -728,7 +732,7 @@ function buildConfiguration(): AccountLandingPageOnboardingConfiguration {
     creci_registration: "CRECI 12345",
   };
   const catalog = resolveLandingPageInputCatalog({
-    version: 5,
+    version: 6,
     plan: "starter",
     taxonChain: {
       segment: realEstateSegmentTaxon,
@@ -749,7 +753,7 @@ function buildConfiguration(): AccountLandingPageOnboardingConfiguration {
   const result = resolveAccountLandingPageOnboardingConfiguration({
     accountId: ACCOUNT_ID,
     landingPageId: LANDING_PAGE_ID,
-    catalogVersion: 5,
+    catalogVersion: 6,
     revision: 7,
     planKey: "starter",
     taxonChain: {
@@ -772,9 +776,9 @@ function buildPreparation(): Extract<TaxonPreparationResult, { ok: true }> {
       taxonId: TAXON_ID,
       taxonSlug: realEstateBrokerNicheTaxon.slug,
       selectedResearchVersion: 1,
-      reviewedInputCatalogVersion: 5,
-      requiredInputCatalogVersion: 5,
-      effectiveInputCatalogVersion: 5,
+      reviewedInputCatalogVersion: 6,
+      requiredInputCatalogVersion: 6,
+      effectiveInputCatalogVersion: 6,
       transitionClassification: "no_material_change",
       research: {
         taxonSlug: realEstateBrokerNicheTaxon.slug,
@@ -829,6 +833,8 @@ function sampleValue(
           message_anchor: "mensagem factual",
         },
       ];
+    case "offering_scope":
+      return { mode: "single", offerings: ["Oferta livre"] };
     case "asset_reference":
       return { asset_id: "asset-canonico" };
     case "color_palette":

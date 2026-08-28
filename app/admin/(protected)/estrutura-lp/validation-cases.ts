@@ -16,7 +16,6 @@ import {
   type LandingPageInputCatalogLayerEntry,
   type LandingPageInputCatalogRegistry,
   type LandingPageInputCatalogRegistryEntry,
-  type LandingPageInputFieldDefinition,
 } from "../../../../lib/conversion-content/landing-page/input-catalog";
 import { deriveEffectiveTaxonPreparation } from "../../../../lib/conversion-content/landing-page/taxon-preparation";
 import { resolveAccountLandingPageOnboardingConfiguration } from "../../../../lib/lp-builder/onboardingConfiguration";
@@ -448,66 +447,7 @@ void validateBehavioralContracts().catch((error: unknown) => {
 });
 
 function offeringScopeDraft(): LandingPageInputCatalogRegistryEntry {
-  const draft = JSON.parse(
-    JSON.stringify(createNextLandingPageInputCatalogDraft()),
-  ) as LandingPageInputCatalogRegistryEntry;
-  const entries = draft.universal.entries as LandingPageInputCatalogLayerEntry[];
-  for (const fieldKey of [
-    "primary_service_or_offer",
-    "primary_service_or_offer_description",
-  ]) {
-    const field = entries.find(
-      (entry) => entry.kind === "field" && entry.fieldKey === fieldKey,
-    );
-    assert.ok(field?.kind === "field");
-    (field as LandingPageInputFieldDefinition & { retiredInVersion?: number })
-      .retiredInVersion = 6;
-  }
-  entries.push(
-    offeringScopeField(),
-    {
-      kind: "field",
-      fieldKey: "landing_page_offering_scope_description",
-      purpose: "Descrever factualmente o escopo comercial da landing page.",
-      originLayer: "universal",
-      valueType: "string",
-      valueScope: "landing_page",
-      expectedValueOrigin: "landing_page_provided",
-      obligation: "required",
-      validation: { kind: "type_only" },
-      allowedPlans: ["starter", "lite", "pro", "ultra"],
-      snapshotPolicy: "include_if_used",
-      landingPageSubstitutionPolicy: "not_applicable",
-      evidence: {
-        summary: "Fixture da decisão humana E20.2.9.",
-        references: ["decision:e20-2-human"],
-      },
-      createdInVersion: 6,
-    },
-  );
-  return draft;
-}
-
-function offeringScopeField(): LandingPageInputFieldDefinition {
-  return {
-    kind: "field",
-    fieldKey: "landing_page_offering_scope",
-    purpose: "Representar o escopo comercial informado livremente para a landing page.",
-    originLayer: "universal",
-    valueType: "offering_scope",
-    valueScope: "landing_page",
-    expectedValueOrigin: "landing_page_provided",
-    obligation: "required",
-    validation: { kind: "offering_scope" },
-    allowedPlans: ["starter", "lite", "pro", "ultra"],
-    snapshotPolicy: "include_if_used",
-    landingPageSubstitutionPolicy: "not_applicable",
-    evidence: {
-      summary: "Fixture da decisão humana E20.2.9.",
-      references: ["decision:e20-2-human"],
-    },
-    createdInVersion: 6,
-  };
+  return createNextLandingPageInputCatalogDraft();
 }
 
 function withoutOfferingScopeDescription(

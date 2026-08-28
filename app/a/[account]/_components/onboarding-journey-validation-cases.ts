@@ -122,7 +122,7 @@ const cases: readonly Readonly<{ name: string; run: () => void }>[] = [
       assert.match(component, /aria-required/);
       assert.match(component, /<fieldset/);
       assert.match(component, /field\.purpose/);
-      assert.match(component, /landing_page_offering_scope: "Escopo comercial da página"/);
+      assert.match(component, /landing_page_offering_scope: "O que esta landing page vai divulgar\?"/);
       assert.match(component, /single: "Uma oferta"/);
       assert.match(component, /multiple: "Algumas ofertas"/);
       assert.match(component, /portfolio: "Todo o portfólio"/);

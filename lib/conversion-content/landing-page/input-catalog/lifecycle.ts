@@ -10,7 +10,7 @@ import type {
 import { landingPageInputCatalogRegistry } from "./registry";
 import { resolveLandingPageInputCatalogFromRegistry } from "./resolver";
 
-export const CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION = 5 as const;
+export const CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION = 6 as const;
 
 const currentCatalogEntry = landingPageInputCatalogRegistry[
   CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION
