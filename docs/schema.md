@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data da última atualização: 27/08/2026
-• Documento: LP Factory 10 — Schema (DB Contract) v1.0.58
+• Data da última atualização: 28/08/2026
+• Documento: LP Factory 10 — Schema (DB Contract) v1.0.59
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -1299,7 +1299,7 @@
 • A migration `supabase/migrations/20260827203000_postgrest_safe_application_conflicts.sql` cobre as onze funções ativas que usavam 40001 como erro de domínio, sem alterar assinaturas, retornos, locks, search_path, ownership, segurança ou ACLs.
 • Teste transacional: `supabase/tests/postgrest_safe_application_conflicts.test.sql`.
 • Verificador read-only: `supabase/snippets/postgrest_safe_application_conflicts_verify.sql`.
-• Estado no PR corretivo: repo-only; apply remoto reservado ao workflow canônico após merge humano.
+• Estado hospedado: a migration `supabase/migrations/20260827203000_postgrest_safe_application_conflicts.sql` está aplicada; o comportamento corrigido foi validado no ambiente hospedado, sem retry autônomo em conflito de domínio.
 
 4. Triggers
 
