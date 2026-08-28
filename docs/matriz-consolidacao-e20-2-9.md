@@ -41,4 +41,4 @@
 - Estado anterior: o plano havia sido aprovado antes da descoberta do bloqueio de bootstrap.
 - Revisão de implementação da Etapa 1: agente `01a044f1-f6aa-7b03-aee9-45fb56f6245b`, veredito inicial `aprovado com correções obrigatórias` no HEAD `1b23f7e7243209f0ca37cf0a4be40361b231b036`.
 - Revisão delta da implementação: mesmo agente, delta `1b23f7e7243209f0ca37cf0a4be40361b231b036..acb6439266bd7c4dc13ecbc57bba5ef1c5bd09cb`, veredito `aprovado para avançar`; as correções restringiram a projeção ao registry candidato completo/compatível e ampliaram as regressões do boundary.
-- Estado atual: Etapa 1 aprovada estruturalmente no HEAD `acb6439266bd7c4dc13ecbc57bba5ef1c5bd09cb`; o delta focal posterior de unicidade permanece sujeito à revisão do mesmo Analista antes do merge humano.
+- Revisão delta focal de unicidade: o mesmo agente aprovou para avançar o delta `acb6439266bd7c4dc13ecbc57bba5ef1c5bd09cb..7a7546030fba042f9c8749b8195cb6e6a41fa310` no HEAD `7a7546030fba042f9c8749b8195cb6e6a41fa310`, sem correções ou teste humano adicional.
