@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 27/08/2026
-• Versão: v1.5.189
+• Data: 28/08/2026
+• Versão: v1.5.190
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2909,7 +2909,7 @@ Repositório — Ajustados
 
 21. E21 — Gestão e governança dos workloads OpenAI
 - Objetivo: gerir e governar os workloads OpenAI por recortes aprovados, com configuração explícita, observabilidade segura, leitura administrativa e configuração operacional dinâmica por ambiente, sem otimização automatizada.
-- Status: a fundação E21.1 permanece preservada; a E21.2, incluindo o catálogo operacional da E21.2.5, está concluída com apply e gates hospedados aprovados; o plano-base v1 da E21.3 já está na `main`, enquanto a implementação experimental da E21.3.3 permaneceu no PR #819, fechado sem merge por repriorização humana; a E21.4 passa a ser a prioridade imediata.
+- Status: a fundação E21.1 permanece preservada; a E21.2, incluindo o catálogo operacional da E21.2.5, está concluída com apply e gates hospedados aprovados; o plano-base v1 da E21.3 já está na `main`, enquanto a implementação experimental da E21.3.3 permaneceu no PR #819, fechado sem merge por repriorização humana; a E21.4 possui plano-base v2 mínimo aprovado e permanece como prioridade imediata, antes da retomada da E21.3.4.
 
 21.1 Fundação, normalização e leitura dos workloads OpenAI
 
@@ -3126,12 +3126,30 @@ Repositório — Ajustados
 21.4 Visibilidade financeira e atribuição de custos OpenAI
 
 21.4.1 Objetivo e status
-- Objetivo: permitir conhecer o gasto OpenAI total por período e atribuir custos, quando tecnicamente possível e confiável, por cliente, Landing Page e workload, além de investigar a disponibilidade oficial de saldo ou créditos.
-- Status: Nova prioridade imediata; debate e plano-base próprios pendentes, sem implementação iniciada.
+- Objetivo: permitir ao `platform_admin` conhecer o gasto oficial total OpenAI do período e o custo prospectivo calculado das Landing Pages geradas, agregado por conta e detalhado por Landing Page nos workloads de texto e imagem, com a diferença apresentada como Outros gastos / reconciliação.
+- Status: plano-base v2 mínimo aprovado em 28/08/2026; implementação não iniciada; execução anterior à retomada da E21.3.4.
 
-21.4.3 Previsão e limites
-- A E21.4 deve ser executada antes da retomada da E21.3.4.
-- Banco, tabela, API, rota, job e desenho técnico não estão definidos e somente poderão ser estabelecidos no debate e no plano-base próprios.
+21.4.3 Autoridade oficial de Costs
+- Status: Planejada e não implementada.
+- Automação: não.
+- Conteúdo:
+  - consultar sob demanda somente a Costs API com Admin API Key server-side para obter o gasto oficial total em USD no mês atual ou em período UTC personalizado;
+  - preservar o total oficial como autoridade organizacional completa, sem atribuição por heurística, Usage administrativo, saldo/créditos, cache, polling, cron ou fallback para preço local.
+
+21.4.4 Evidência prospectiva dos custos de Landing Pages
+- Status: Planejada e não implementada.
+- Automação: não.
+- Conteúdo:
+  - registrar prospectivamente evidências append-only das tentativas de `landing_page_draft_generation` e `landing_page_draft_image_generation` vinculadas ao contexto autorizado de conta e Landing Page; a cobertura confiável para agregação começa somente na data de corte explícita em Production;
+  - calcular custos internos com preços versionados e unidades efetivas, sem custo parcial ou inferido, mantendo tentativas não calculáveis fora da soma das LPs e dentro de Outros gastos / reconciliação por diferença.
+
+21.4.5 Custos OpenAI e reconciliação administrativa
+- Status: Planejada e não implementada.
+- Automação: não.
+- Conteúdo:
+  - criar superfície separada para `platform_admin` com total oficial, custos prospectivos calculados das LPs, Outros gastos / reconciliação e aprofundamento conta → Landing Page → texto/imagem;
+  - validar períodos, atualização sob demanda, cobertura/corte, estados, acesso negativo, desktop/mobile e acessibilidade proporcional antes da conclusão;
+  - adiar classificação financeira ampla, workloads adicionais, reconstrução histórica, créditos, câmbio, cobrança, AI Gateway, CDC e qualquer infraestrutura não indispensável ao núcleo aprovado.
 
 22. E22 — Retirada controlada de ativos históricos
 - Objetivo: reduzir a superfície histórica que não participa do caminho canônico vigente, preservando consumidores reais e preparando a sequência E19.4 concluída → E22.1 → E19.5.
