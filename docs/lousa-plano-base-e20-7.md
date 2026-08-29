@@ -99,10 +99,11 @@
 - Objetivo: obter somente o delta de conhecimento material ausente na Deep Research-base para o escopo comercial daquela LP.
 - Limites: até duas execuções de Web Search, `store:false`, sub-timeout máximo de 45 s, fontes preservadas, sem retry automático, fallback de modelo/tool, agente, Agents SDK, job, fila, crawler, RAG ou cache global.
 - Participação humana: nenhuma intervenção durante a resolução; o gatilho e a aprovação da revisão continuam sob os fluxos E19 competentes.
-- Avaliação formal de Automação na v2: **parecer produzido e incorporado; auditoria do Analista pendente**.
+- Avaliação formal de Automação na v2: **parecer produzido, incorporado e auditado; revisão delta do Analista pendente**.
 - A E20.7.4 é uma automação com IA em fluxo controlado, executada server-side no Runtime do LP Factory. Todo matching, elegibilidade, equivalência factual, gating, validação, contagem de tools e fallback permanecem determinísticos. A única função da IA é pesquisar e estruturar o delta consultivo.
 - O fluxo usa uma única requisição foreground à Responses API com somente `web_search`; agente, Agents SDK, multiagente, Programmatic Tool Calling, persisted reasoning, modo Pro, job, fila, crawler, RAG, cache global, retry e fallback automático são proibidos.
 - A configuração inicial não é herdada de outro workload. A v2 autoriza uma comparação focal representativa de `gpt-5.4-mini + low`, `gpt-5.6-luna + low|medium` e `gpt-5.6-terra + low|medium`, cada qual com `search_context_size = low|medium`, para selecionar antes da ativação a menor configuração que cumpra qualidade, grounding, latência de até 45 s e custo proporcional. A comparação e a decisão resultante devem ser reconciliadas em `docs/openai-model-snapshot.md` pela ABC competente. Sol, modo Pro, modelos Deep Research e comportamento agentic ficam fora sem nova evidência e novo recorte.
+- Depois da comparação, `search_context_size` torna-se propriedade tipada, imutável e code-owned da definição específica desse workload no registry E21.1. O lifecycle E21.2 continua governando dinamicamente somente `modelo + reasoning_effort`; não criar coluna, variável ou configuração paralela para search context. O resolver compõe explicitamente a configuração operacional E21.2 com a propriedade E21.1.
 
 ### 1.8. Validação semântica futura
 
@@ -121,7 +122,7 @@
 - Registrar o workload `landing_page_dynamic_market_research`, classificação `product_runtime`, consumidor `E20.7.4`, fallback `falhar a resolução técnica sem invalidar a oferta` e apresentação administrativa própria no boundary público E21.1.
 - Development usa baseline explícita do registry. Preview e Production exigem revisão operacional provada, promovida e humanamente ativada no lifecycle E21.2, sem fallback para `repo_catalog`, variável de modelo ou configuração paralela. Reutilizar `OPENAI_API_KEY`; não criar secret específico.
 - A E21.4 reduzida não é pré-requisito para ativar esse workload.
-- Financeiramente, a pesquisa dinâmica permanece dentro do gasto oficial em `Outros gastos / reconciliação`; a E20.7 não cria cálculo ou persistência financeira própria nem amplia o MVP da E21.4.
+- A atribuição financeira permanece causal e exclusiva da E21.4: execução de LP real correlacionada a conta contratada pode ser `Cliente/conta`; Preview, QA ou prova de produto é `LP Factory`; correlação insuficiente é `Não atribuído/reconciliação`. A E20.7 preserva somente correlação técnica segura e não calcula nem persiste custo ou categoria financeira.
 
 ### 1.10. Dependências de execução
 
@@ -174,7 +175,7 @@
 ### 2.3. Complemento dinâmico
 
 - Quando requerido, ocorre em workload próprio e separado da geração de copy.
-- Quando `dynamic_required`, executar exatamente uma requisição foreground à Responses API com `store:false`, sem `conversation`, `previous_response_id` ou background; declarar somente `tools:[{type:"web_search", external_web_access:true, search_context_size:<valor aprovado para o workload>}]`, `tool_choice:"required"`, `max_tool_calls:2`, `include:["web_search_call.action.sources"]`, `max_output_tokens` explícito, `safety_identifier` estável e sem PII e Structured Output com JSON Schema estrito. Modelo, reasoning effort e search context size vêm exclusivamente da configuração aprovada do workload E21.1/E21.2.
+- Quando `dynamic_required`, executar exatamente uma requisição foreground à Responses API com `store:false`, sem `conversation`, `previous_response_id` ou background; declarar somente `tools:[{type:"web_search", external_web_access:true, search_context_size:<valor code-owned aprovado para o workload>}]`, `tool_choice:"required"`, `max_tool_calls:2`, `include:["web_search_call.action.sources"]`, `max_output_tokens` explícito, `safety_identifier` estável e sem PII e Structured Output com JSON Schema estrito. Modelo e reasoning effort vêm da configuração operacional E21.2; search context size vem da definição imutável E21.1.
 - O adapter funcional reutiliza `requestOpenAiResponses` como único transporte Responses API, com configuração resolvida pela API pública de `lib/openai-workloads/`, timeout máximo de 45 s e sinal de cancelamento. Não criar segundo fetch para `/v1/responses`, cliente OpenAI paralelo, retry ou fallback.
 - Entrada mínima: Deep Research-base autorizada, escopo/descrição das ofertas, taxon servido e os contextos factuais estritamente necessários.
 - Pesquisa somente o delta que pode alterar a interpretação do público: situações/jobs, dores/riscos, objeções, critérios/trade-offs, alternativas, confiança/prova, linguagem/perguntas e aspectos atuais/voláteis relevantes.
@@ -259,6 +260,9 @@
   - nenhuma IA é chamada para validação semântica nesta fase;
   - nenhuma mudança em `generationContext`, workflow, snapshot, materialização ou renderer;
   - nenhum registry de aliases, tabela, coluna ou residência adicional é criado.
+  - paginação acima de 500 registros preserva completude, ordenação determinística e término canônico `416/PGRST103`; erro parcial, identidade inválida, taxon ausente/inativo, cadeia quebrada e descendência transitiva falham de forma tipada;
+  - os consumidores E20.5 e E20.6 preservam seus contratos públicos e casos de taxon ausente/inativo, seleção válida/inválida e preparação por versão depois da substituição das leituras privadas;
+  - variações de caixa, acentuação e espaços exercitam exclusivamente o normalizador canônico de nome/aliases, sem normalização local E20.7.
 
 ### 3.2. E20.7.4 — Complemento dinâmico controlado
 
@@ -267,28 +271,34 @@
 - Objetivo: implementar o workload de pesquisa dinâmica e completar a saída tipada da E20.7 sem assumir a responsabilidade da geração ou recusar semanticamente a oferta.
 - Limites: Responses API + Web Search hospedado, até duas execuções de busca, `store:false`, sub-timeout máximo de 45 s, fontes obrigatórias, sem retry/fallback silencioso, agente, Agents SDK, job, fila, crawler, RAG ou cache global.
 - Solução: uma única requisição foreground, Structured Output estrito, somente `web_search`, `tool_choice:"required"`, `max_tool_calls:2`, fontes incluídas pelo provider e parser determinístico fail-closed.
-- Avaliação formal de Automação na v2: parecer incorporado, sujeito ao gate do Analista.
+- Avaliação formal de Automação na v2: parecer incorporado e auditado, sujeito à revisão delta do Analista.
 - Dependências:
   - lifecycle E21.2 capaz de governar o novo workload `product_runtime`;
   - E20.7.3 concluída e saída `dynamic_required` disponível.
 - Processamento:
-  - criar prompt de runtime focado apenas no delta consultivo;
+  - criar prompt de runtime focado apenas no delta consultivo, conforme `docs/template-prompts.md` e `docs/template-prompts-gpt-5-6.md`, separando `instructions` do input tipado, sem reusable prompt object, com versão próxima ao consumidor e casos típicos, limítrofes e adversariais;
   - integrar `landing_page_dynamic_market_research` ao registry, resolver, apresentação e lifecycle operacional E21.1/E21.2, com migration forward-only e transição de cardinalidade compatível;
   - comparar focalmente as configurações candidatas autorizadas e congelar modelo, effort e search context size aprovados antes da ativação;
   - reutilizar `requestOpenAiResponses` e o evento comum E21.1, sem transporte ou telemetria paralelos;
   - produzir `material_delta | no_material_delta | insufficient_evidence`;
   - anexar fontes e metadados seguros à saída tipada;
-  - preservar observabilidade técnica sob E21.2 e custo sob E21.4.
+  - preservar observabilidade técnica sob E21.2 e atribuição financeira sob E21.4;
+  - executar ABCs independentes para `docs/automations.md`, `docs/platform-config.md`, `docs/base-tecnica.md`, `docs/schema.md` e `docs/openai-model-snapshot.md`, aplicando somente os deltas literais emitidos.
 - Critérios de aceite:
   - pesquisa requerida usa Web Search de fato e preserva fontes;
-  - request serializado comprova uma única tool, uma ou duas chamadas, ausência de estado conversacional, `store:false`, limite de saída, safety identifier sem PII e configuração vinda do lifecycle;
+  - request serializado comprova uma única tool, uma ou duas chamadas, ausência de estado conversacional, `store:false`, limite de saída, safety identifier sem PII, `modelo + reasoning_effort` vindos do lifecycle E21.2 e `search_context_size` vindo do registry E21.1;
+  - campos e limites exatos do Web Search são reconfirmados na documentação oficial vigente e na prova focal antes da ativação, sem converter indisponibilidade externa em decisão humana;
+  - o orçamento valida integralmente pesquisa-base, input allowlisted, contexto de busca e saída esperada contra o limite do modelo; excesso falha antes do transporte, sem truncamento silencioso;
   - fixtures de zero a três chamadas, fonte ausente, URL inventada, status inconsistente e prompt injection aprovam somente respostas integralmente fundamentadas dentro do contrato;
   - `material_delta` produz suplemento consultivo utilizável;
   - `no_material_delta` retorna base-only com proveniência explícita;
   - erro/timeout/refusal/evidência insuficiente falha a resolução técnica sem invalidar semanticamente a oferta;
+  - cancelamento, timeout, refusal, erro HTTP/provider, resposta inválida e fonte ausente possuem casos focais no transporte reutilizado;
   - o workload não decide pertencimento do serviço ao nicho e não produz recusa por incompatibilidade;
   - nenhum prompt de copy, geração, imagem, revisão, snapshot ou materialização é alterado;
-  - nenhuma persistência financeira ou de negócio paralela é criada.
+  - estado E21.2 anterior com dez unidades e estado novo com doze são aceitos, cardinalidade parcial falha e bootstrap Preview/Production é idempotente e íntegro;
+  - migration não cria tabela/coluna, preserva constraints e assinaturas das RPCs, RLS sem policies públicas, grants restritos e runtime fail-closed antes do apply;
+  - nenhuma persistência financeira ou de negócio paralela é criada;
   - sucesso e falhas emitem telemetria sanitizada e distinguível, sem prompt, resposta, fonte, conteúdo de negócio ou PII; custo continua sob E21.4.
 
 ### 3.3. Próxima ação e handoffs obrigatórios
