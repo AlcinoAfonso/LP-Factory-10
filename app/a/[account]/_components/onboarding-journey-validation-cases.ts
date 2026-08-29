@@ -8,6 +8,7 @@ import {
 } from "../../../../lib/conversion-content/landing-page/input-catalog";
 import {
   decideAccountJourney,
+  isUnhandledOnboardingActionSuccess,
   journeyScopeBelongsToStep,
   onboardingFieldErrorFocusTargetId,
   parseKeywordMapDraft,
@@ -15,6 +16,7 @@ import {
   prepareJourneyStoredValues,
   recoverCorrectableOnboardingSubmission,
 } from "./onboarding-journey-policy";
+import type { OnboardingConfigurationActionState } from "./onboarding-configuration-action-contract";
 
 const cases: readonly Readonly<{ name: string; run: () => void }>[] = [
   {
@@ -315,6 +317,104 @@ const cases: readonly Readonly<{ name: string; run: () => void }>[] = [
         /aria-describedby=\{[\s\S]+onboarding-same_commercial_work_confirmed-error/,
       );
       assert.match(component, /id="onboarding-same_commercial_work_confirmed-error"/);
+    },
+  },
+  {
+    name: "each success result is handled once even when a workspace no-op preserves revisions",
+    run: () => {
+      const firstWorkspaceSuccess = {
+        status: "success" as const,
+        intent: "next" as const,
+        revision: 3,
+        sharedRevision: 2,
+      };
+      let lastHandled: OnboardingConfigurationActionState | null = null;
+      assert.equal(
+        isUnhandledOnboardingActionSuccess(
+          firstWorkspaceSuccess,
+          lastHandled,
+        ),
+        true,
+      );
+      lastHandled = firstWorkspaceSuccess;
+      assert.equal(
+        isUnhandledOnboardingActionSuccess(
+          firstWorkspaceSuccess,
+          lastHandled,
+        ),
+        false,
+      );
+
+      const recovered = recoverCorrectableOnboardingSubmission({
+        status: "error",
+        fieldErrors: {
+          landing_page_offering_scope: "Revise este valor antes de continuar.",
+        },
+        submittedValues: {
+          landing_page_offering_scope: {
+            scope: "landing_page",
+            value: {
+              mode: "single",
+              offerings: ["Oferta duplicada", " oferta DUPLICADA "],
+            },
+          },
+        },
+        submittedRevision: 3,
+        submittedSharedRevision: 2,
+      });
+      assert.equal(recovered?.revision, 3);
+      assert.equal(recovered?.sharedRevision, 2);
+
+      const correctedScope = parseLandingPageOfferingScope({
+        mode: "single",
+        offerings: ["  Assessoria para compra do primeiro imóvel  "],
+      });
+      assert.deepEqual(correctedScope, {
+        ok: true,
+        value: {
+          mode: "single",
+          offerings: ["Assessoria para compra do primeiro imóvel"],
+        },
+      });
+
+      const correctedNoOpSuccess = {
+        status: "success" as const,
+        intent: "next" as const,
+        revision: 3,
+        sharedRevision: 2,
+      };
+      assert.equal(
+        isUnhandledOnboardingActionSuccess(
+          correctedNoOpSuccess,
+          lastHandled,
+        ),
+        true,
+      );
+      lastHandled = correctedNoOpSuccess;
+      assert.equal(
+        isUnhandledOnboardingActionSuccess(
+          correctedNoOpSuccess,
+          lastHandled,
+        ),
+        false,
+      );
+      const e192Success = {
+        status: "success" as const,
+        intent: "next" as const,
+        revision: 4,
+      };
+      assert.equal(
+        isUnhandledOnboardingActionSuccess(e192Success, lastHandled),
+        true,
+      );
+
+      const component = readFileSync(
+        new URL("./OnboardingConfigurationJourney.tsx", import.meta.url),
+        "utf8",
+      );
+      assert.match(component, /lastHandledSuccess/);
+      assert.match(component, /isUnhandledOnboardingActionSuccess\(/);
+      assert.doesNotMatch(component, /lastHandledRevision/);
     },
   },
   {

@@ -227,6 +227,32 @@ begin
     raise exception 'E19.5.3 first lazy save must create revision one';
   end if;
 
+  select shared_revision, landing_page_revision
+  into v_shared_revision, v_landing_revision
+  from public.save_account_landing_page_configuration_v1(
+    'e1953000-0000-4000-8000-000000000011',
+    'e1953000-0000-4000-8000-000000000021',
+    '{"business_offerings_summary":{"scope":"business","value":"Resumo aberto"}}'::jsonb,
+    '{"primary_conversion_goal":{"scope":"landing_page","value":"contact"}}'::jsonb,
+    1,
+    1,
+    5,
+    'e1953000-0000-4000-8000-000000000001',
+    null
+  );
+  if v_shared_revision <> 1 or v_landing_revision <> 1 or (
+    select revision
+    from public.account_landing_page_shared_configurations
+    where account_id = 'e1953000-0000-4000-8000-000000000011'
+  ) <> 1 or (
+    select revision
+    from public.account_landing_page_configurations
+    where account_id = 'e1953000-0000-4000-8000-000000000011'
+      and landing_page_id = 'e1953000-0000-4000-8000-000000000021'
+  ) <> 1 then
+    raise exception 'E19.5.3 same values must remain a no-op without revision increment';
+  end if;
+
   begin
     perform *
     from public.save_account_landing_page_configuration_v1(

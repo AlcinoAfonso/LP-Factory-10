@@ -31,8 +31,12 @@ import {
 import { validateStarterColorPalette } from "../../../../lib/lp-builder/onboardingConfiguration";
 import { saveOnboardingConfigurationAction } from "../onboarding-configuration-actions";
 import { saveLandingPageConfigurationAction } from "../landing-pages/[landingPageId]/configuration-actions";
-import { initialOnboardingConfigurationActionState } from "./onboarding-configuration-action-contract";
 import {
+  initialOnboardingConfigurationActionState,
+  type OnboardingConfigurationActionState,
+} from "./onboarding-configuration-action-contract";
+import {
+  isUnhandledOnboardingActionSuccess,
   journeyConditionMatches,
   journeyScopeBelongsToStep,
   onboardingFieldErrorFocusTargetId,
@@ -211,7 +215,9 @@ export function OnboardingConfigurationJourney(props: Readonly<{
       : saveOnboardingConfigurationAction,
     initialOnboardingConfigurationActionState,
   );
-  const lastHandledRevision = useRef<number | null>(null);
+  const lastHandledSuccess = useRef<OnboardingConfigurationActionState | null>(
+    null,
+  );
   const previousStepIndex = useRef(stepIndex);
   const stepHeadingRef = useRef<HTMLHeadingElement | null>(null);
   const formErrorRef = useRef<HTMLDivElement | null>(null);
@@ -260,13 +266,14 @@ export function OnboardingConfigurationJourney(props: Readonly<{
 
   useEffect(() => {
     if (
-      actionState.status !== "success" ||
-      actionState.revision === undefined ||
-      lastHandledRevision.current === actionState.revision
+      !isUnhandledOnboardingActionSuccess(
+        actionState,
+        lastHandledSuccess.current,
+      )
     ) {
       return;
     }
-    lastHandledRevision.current = actionState.revision;
+    lastHandledSuccess.current = actionState;
     setRevision(actionState.revision);
     if (actionState.sharedRevision !== undefined) {
       setSharedRevision(actionState.sharedRevision);
