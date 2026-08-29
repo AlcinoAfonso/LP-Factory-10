@@ -297,7 +297,7 @@
   - o workload não decide pertencimento do serviço ao nicho e não produz recusa por incompatibilidade;
   - nenhum prompt de copy, geração, imagem, revisão, snapshot ou materialização é alterado;
   - estado E21.2 anterior com dez unidades e estado novo com doze são aceitos, cardinalidade parcial falha e bootstrap Preview/Production é idempotente e íntegro;
-  - migration não cria tabela/coluna, preserva constraints e assinaturas das RPCs, RLS sem policies públicas, grants restritos e runtime fail-closed antes do apply;
+  - migration não cria tabela/coluna, amplia as allowlists e constraints das três tabelas para o novo workload, amplia as validações internas das RPCs `save` e `promote` e preserva suas assinaturas, RLS sem policies públicas, grants restritos e runtime fail-closed antes do apply;
   - nenhuma persistência financeira ou de negócio paralela é criada;
   - sucesso e falhas emitem telemetria sanitizada e distinguível, sem prompt, resposta, fonte, conteúdo de negócio ou PII; custo continua sob E21.4.
 
