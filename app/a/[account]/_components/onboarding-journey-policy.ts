@@ -30,6 +30,18 @@ export type AccountOnboardingState =
 
 export type JourneyFormStep = "business" | "landing_page" | "brand_identity";
 
+export function isUnhandledOnboardingActionSuccess(
+  state: OnboardingConfigurationActionState,
+  lastHandledState: OnboardingConfigurationActionState | null,
+): state is OnboardingConfigurationActionState &
+  Readonly<{ status: "success"; revision: number }> {
+  return (
+    state.status === "success" &&
+    state.revision !== undefined &&
+    state !== lastHandledState
+  );
+}
+
 export function recoverCorrectableOnboardingSubmission(
   state: OnboardingConfigurationActionState,
 ): Readonly<{
