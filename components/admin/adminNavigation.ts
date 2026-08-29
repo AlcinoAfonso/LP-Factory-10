@@ -75,6 +75,17 @@ export const adminAreas: AdminArea[] = [
     ],
   },
   {
+    title: 'Custos OpenAI',
+    href: '/admin/custos-openai',
+    description: 'Gasto oficial e custos prospectivos das Landing Pages.',
+    status: 'Disponível',
+    scope: [
+      'Total oficial em USD por período',
+      'Custos de texto e imagem por cliente e Landing Page',
+      'Outros gastos por reconciliação',
+    ],
+  },
+  {
     title: 'Auditoria',
     href: '/admin/auditoria',
     description: 'Área prevista para leitura de eventos administrativos.',

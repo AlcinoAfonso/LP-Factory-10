@@ -448,6 +448,9 @@ export type OpenAiImageWorkloadEvent = Readonly<{
   attemptId: string | null;
   requestId: string | null;
   providerRequestId: string | null;
+  httpStatus: number | null;
+  providerErrorCode: string | null;
+  providerErrorType: string | null;
   latencyMs: number | null;
   imageCount: number | null;
   width: number | null;

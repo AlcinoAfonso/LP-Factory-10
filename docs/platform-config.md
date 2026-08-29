@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Documento: LP Factory 10 — Platform Config
-• Versão: v0.1.30
+• Versão: v0.1.31
 • Data: 29/08/2026
 
 0.2 Contrato do documento
@@ -184,6 +184,23 @@
 • Valor real: não versionar.
 • Regra operacional: os consumidores autorizados podem compartilhar a mesma chave; não criar outra sem necessidade aprovada.
 
+• `OPENAI_ADMIN_KEY`
+• Finalidade: chave administrativa server-side usada exclusivamente pelo Core para leitura read-only do gasto oficial total na Costs API da organização.
+• Permissão: `Read only` na OpenAI Platform.
+• Escopo: Preview e Production do projeto Core na Vercel, como secret server-side.
+• Estado operacional: Organization Admin Key criada; Preview redeployado e validado com leitura oficial real da Costs API de `US$ 0,4064` para agosto de 2026. Production possui a variável configurada, mas não foi redeployada nem validada em runtime.
+• Separação: `OPENAI_API_KEY` permanece configurada separadamente e não foi substituída, reutilizada ou alterada; `OPENAI_ADMIN_KEY` não atravessa client, log, banco ou payload sanitizado.
+• Valor real: não versionado nem registrado.
+
+• `OPENAI_LP_COST_TRACKING_ENABLED`
+• Finalidade: gate server-side da persistência financeira prospectiva das tentativas de texto e imagem de Landing Pages.
+• Escopo: somente Production; Preview e Development permanecem sem instrumentação financeira.
+• Habilitação: somente o literal `true` ativa o tracker; variável ausente, vazia ou com qualquer outro valor preserva integralmente o runtime anterior.
+• Estado inicial e atual no PR: desligado; não configurar antes do merge, apply canônico, snippet read-only e Security Controls aprovados.
+• Progressão pós-merge: habilitar somente após os gates de banco, redeployar Production, executar smoke dos dois workloads e registrar uma única data de corte pela RPC versionada.
+• Regra de falha: com o gate ligado, falha ou timeout no registro inicial ou terminal degrada a cobertura financeira, mas não bloqueia a chamada OpenAI nem invalida uma geração de Landing Page bem-sucedida; a tentativa sem evidência completa fica fora da soma interna e permanece em Outros gastos / reconciliação.
+• Valor real: não versionar.
+
 • `OPENAI_OPERATIONAL_CONFIG_ENABLED`
 • Finalidade: gate server-side temporário do cutover da configuração operacional dinâmica dos workloads OpenAI de produto.
 • Escopo: Preview e Production do projeto Core, com configuração independente por ambiente; Development ignora o gate e permanece no baseline local.
@@ -347,6 +364,13 @@
 6.3.1 Endpoint externo atual
 • Endpoint OpenAI Responses API: `https://api.openai.com/v1/responses`
 • Endpoint OpenAI Images API: `https://api.openai.com/v1/images/generations`
+• Endpoint OpenAI Costs API: `https://api.openai.com/v1/organization/costs`
+• Atalho oficial OpenAI Usage: `https://platform.openai.com/usage`
+• Atalho oficial OpenAI faturamento e créditos: `https://platform.openai.com/settings/organization/billing/overview`
+• Regra dos atalhos: `/admin/custos-openai` abre os destinos externamente, sem iframe, integração adicional, rota intermediária ou transmissão de credencial, período, conta, Landing Page ou outro dado da LP Factory; o acesso depende das permissões do usuário na organização OpenAI.
+• Consumidor versionado da Costs API: `lib/openai-costs/providers/openAiCostsProvider.ts`, exclusivamente server-side e autenticado por `OPENAI_ADMIN_KEY`.
+• Persistência prospectiva dos dois workloads de LP: `lib/openai-costs/adapters/lpCostTrackingAdapter.ts`, exclusivamente server-side, condicionada a Production e a `OPENAI_LP_COST_TRACKING_ENABLED=true`.
+• Leitura agregada interna: `lib/openai-costs/adapters/lpCostReadModelAdapter.ts`, exclusivamente server-side via RPC read-only paginada; superfície administrativa em `/admin/custos-openai`.
 • Consumidores atuais conhecidos:
 • `lib/conversion-content/adapters/commercialActivationOpenAiAdapter.ts`
 • `lib/conversion-content/adapters/landingPageGenerationProfileOpenAiAdapter.ts`
@@ -495,6 +519,8 @@ Regra:
 
 99. Changelog
 v0.1.30 — 29/08/2026 — Registrados o workload repo-side `landing_page_dynamic_market_research`, o reuso obrigatório da `OPENAI_API_KEY` compartilhada, os limites de Web Search e os gates separados de apply, reconciliação v6, prova e ativação hospedada.
+
+v0.1.29 — 28/08/2026 — Registrados `OPENAI_ADMIN_KEY`, Costs API, `OPENAI_LP_COST_TRACKING_ENABLED` nascendo desligado e o rollout pós-merge da persistência prospectiva dos dois workloads de Landing Page.
 
 v0.1.18 — 21/08/2026 — Registrado o gate exclusivo do provider E20.6.5, sua composição obrigatória com fonte `supabase_operational` hospedada e a preservação do handoff Codex durante o estado gate-off.
 

@@ -2940,7 +2940,7 @@ Repositório — Ajustados
 
 21. E21 — Gestão e governança dos workloads OpenAI
 - Objetivo: gerir e governar os workloads OpenAI por recortes aprovados, com configuração explícita, observabilidade segura, leitura administrativa e configuração operacional dinâmica por ambiente, sem otimização automatizada.
-- Status: a fundação E21.1 permanece preservada; a E21.2, incluindo o catálogo operacional da E21.2.5, está concluída com apply e gates hospedados aprovados; o plano-base v1 da E21.3 já está na `main`, enquanto a implementação experimental da E21.3.3 permaneceu no PR #819, fechado sem merge por repriorização humana; a E21.4 passa a ser a prioridade imediata.
+- Status: a fundação E21.1 permanece preservada; a E21.2, incluindo o catálogo operacional da E21.2.5, está concluída com apply e gates hospedados aprovados; o plano-base v1 da E21.3 já está na `main`, enquanto a implementação experimental da E21.3.3 permaneceu no PR #819, fechado sem merge por repriorização humana; a E21.4 possui plano-base v2 mínimo corrigido, implementação repo-only reconciliada no PR #831 e prova oficial/QA hospedado pré-merge aprovados no Preview, com gates pós-merge ainda pendentes antes da retomada da E21.3.4.
 
 21.1 Fundação, normalização e leitura dos workloads OpenAI
 
@@ -3169,12 +3169,76 @@ Repositório — Ajustados
 21.4 Visibilidade financeira e atribuição de custos OpenAI
 
 21.4.1 Objetivo e status
-- Objetivo: permitir conhecer o gasto OpenAI total por período e atribuir custos, quando tecnicamente possível e confiável, por cliente, Landing Page e workload, além de investigar a disponibilidade oficial de saldo ou créditos.
-- Status: Nova prioridade imediata; debate e plano-base próprios pendentes, sem implementação iniciada.
+- Objetivo: permitir ao `platform_admin` conhecer o gasto oficial total OpenAI do período e o custo prospectivo calculado das Landing Pages geradas, agregado por conta e detalhado por Landing Page nos workloads de texto e imagem, com a diferença apresentada como Outros gastos / reconciliação.
+- Status: plano-base v2 mínimo corrigido e implementação repo-only reconciliada no PR #831; prova oficial da Costs API e QA hospedado pré-merge aprovados no Preview em 29/08/2026. Apply, Security Controls, ativação de Production, smoke, data de corte e QA pós-merge permanecem pendentes antes da retomada da E21.3.4.
 
-21.4.3 Previsão e limites
-- A E21.4 deve ser executada antes da retomada da E21.3.4.
-- Banco, tabela, API, rota, job e desenho técnico não estão definidos e somente poderão ser estabelecidos no debate e no plano-base próprios.
+21.4.2 Registros do recorte
+- Repositório:
+  - Criados:
+    - `lib/openai-costs/contracts.ts`
+    - `lib/openai-costs/index.ts`
+    - `lib/openai-costs/pricing.ts`
+    - `lib/openai-costs/provider-error-metadata.ts`
+    - `lib/openai-costs/tracking-contracts.ts`
+    - `lib/openai-costs/tracking-budget.ts`
+    - `lib/openai-costs/tracking-gate.ts`
+    - `lib/openai-costs/adapters/lpCostTrackingAdapter.ts`
+    - `lib/openai-costs/adapters/lpCostReadModelAdapter.ts`
+    - `lib/openai-costs/adapters/lpCostReadModelAdapterCore.ts`
+    - `lib/openai-costs/dashboard.ts`
+    - `lib/openai-costs/decimal.ts`
+    - `lib/openai-costs/providers/openAiCostsProvider.ts`
+    - `lib/openai-costs/providers/openAiCostsProviderCore.ts`
+    - `lib/openai-costs/validation-cases.ts`
+    - `supabase/migrations/20260828131456_e21_4_4_openai_lp_cost_tracking.sql`
+    - `supabase/tests/e21_4_4_openai_lp_cost_tracking.test.sql`
+    - `supabase/snippets/e21_4_4_openai_lp_cost_tracking_verify.sql`
+    - `app/admin/(protected)/custos-openai/actions.ts`
+    - `app/admin/(protected)/custos-openai/page.tsx`
+    - `app/admin/(protected)/custos-openai/_components/OpenAiCostsDashboard.tsx`
+    - `app/admin/(protected)/custos-openai/validation-cases.tsx`
+  - Ajustados:
+    - `package.json`
+    - `lib/lp-builder/landingPageDraftCandidateWorkflow.ts`
+    - `lib/lp-builder/landingPageDraftGeneration.ts`
+    - `lib/lp-builder/landingPageDraftImageGeneration.ts`
+    - `lib/lp-builder/adapters/landingPageDraftCandidateWorkflowAdapter.ts`
+    - `lib/lp-builder/landing-page-draft-generation-validation-cases.ts`
+    - `lib/openai-workloads/contracts.ts`
+    - `lib/openai-workloads/observability.ts`
+    - `lib/openai-workloads/validation-cases.ts`
+    - `components/admin/adminNavigation.ts`
+- Referências:
+  - Plano-base v2 aprovado: `docs/lousa-plano-base-e21-4.md`.
+  - Matriz de consolidação: `docs/matriz-consolidacao-e21-4.md`.
+  - Boundary técnico: `docs/base-tecnica.md` — 3.16.
+  - Configuração administrativa OpenAI: `docs/platform-config.md` — 3.5 e 6.3.1.
+
+21.4.3 Autoridade oficial de Costs
+- Status: Implementação técnica reconciliada e prova oficial hospedada aprovada no Preview, com leitura real de `US$ 0,4064` para agosto de 2026; Production possui a variável administrativa configurada, mas não foi redeployada nem validada em runtime.
+- Automação: não.
+- Conteúdo:
+  - consultar sob demanda somente a Costs API com Admin API Key server-side para obter o gasto oficial total em USD no mês atual ou em período UTC personalizado;
+  - preservar o total oficial como autoridade organizacional completa, sem atribuição por heurística, Usage administrativo, saldo/créditos, cache, polling, cron ou fallback para preço local.
+
+21.4.4 Evidência prospectiva dos custos de Landing Pages
+- Status: Implementação repo-only reconciliada no PR #831, ainda dependente do parecer do Analista; migration, teste transacional e snippet read-only versionados com gate desligado. Dry-run SQL local indisponível por ausência de Docker/Podman; apply, Security Controls, smoke e data de corte permanecem pós-merge.
+- Automação: não.
+- Conteúdo:
+  - registrar prospectivamente evidências append-only das tentativas de `landing_page_draft_generation` e `landing_page_draft_image_generation` vinculadas ao contexto autorizado de conta e Landing Page; a cobertura confiável para agregação começa somente na data de corte explícita em Production;
+  - executar início e terminal do tracking em orçamento curto próprio e best effort, sem bloquear ou invalidar a geração por falha exclusivamente financeira;
+  - calcular custos internos com preços versionados e unidades efetivas, sem custo parcial ou inferido, mantendo tentativas não calculáveis fora da soma das LPs e dentro de Outros gastos / reconciliação por diferença;
+  - preservar somente status, código e tipo sanitizados de falha real do provider para diagnóstico administrativo agregado, sem mensagem, payload bruto ou detalhe financeiro interno no cliente.
+
+21.4.5 Custos OpenAI e reconciliação administrativa
+- Status: Implementação repo-only reconciliada no PR #831; validações locais, prova oficial e QA hospedado pré-merge aprovados no Preview. Apply, instrumentação Production e QA pós-merge permanecem como gates aplicáveis.
+- Automação: não.
+- Conteúdo:
+  - criar superfície separada para `platform_admin` com total oficial, custos prospectivos calculados das LPs, Outros gastos / reconciliação e aprofundamento conta → Landing Page → texto/imagem;
+  - consultar sob demanda o provider oficial e o read model interno em paralelo, com paginação completa e reconciliação decimal exata, sem clamp;
+  - distinguir cobertura completa, parcial, degradada e indisponível, deixando explícito que falhas anteriores ao início persistido não são individualizáveis e permanecem no residual;
+  - o QA pré-merge aprovou período atual/personalizado, atualização sob demanda, estado de cobertura interna indisponível, desktop/mobile, contraste, atalhos externos e bloqueio do papel negativo; a indisponibilidade interna no Preview é esperada enquanto a migration permanecer não aplicada;
+  - adiar classificação financeira ampla, workloads adicionais, reconstrução histórica, créditos, câmbio, cobrança, AI Gateway, CDC e qualquer infraestrutura não indispensável ao núcleo aprovado.
 
 22. E22 — Retirada controlada de ativos históricos
 - Objetivo: reduzir a superfície histórica que não participa do caminho canônico vigente, preservando consumidores reais e preparando a sequência E19.4 concluída → E22.1 → E19.5.
@@ -3290,6 +3354,8 @@ Repositório — Ajustados
 
 99. Changelog
 v1.5.193 — 29/08/2026 — Registradas a implementação e validação determinística repo-side da E20.7.4, o confronto sem sobreposição material com o PR #831, o workload `landing_page_dynamic_market_research`, a ampliação candidata E21.2 de dez para doze unidades e os gates pendentes de merge, apply, reconciliação v6, prova e ativação hospedada.
+
+v1.5.191 — 28/08/2026 — Registrada a implementação técnica local das E21.4.3 e E21.4.4 no PR #831, com leitura oficial, persistência prospectiva limitada a texto/imagem de LP, preço versionado, migration/teste/snippet repo-only e gates hospedados/pós-merge ainda pendentes; E21.4.5 permanece não iniciada.
 
 v1.5.171 — 20/08/2026 — Registrada a implementação repo-only tecnicamente aprovada da E21.2.4: gestão administrativa por ambiente/workload, lifecycle explícito, reautorização server-side, prova pelos quatro transportes existentes e falha fechada; apply, validações hospedadas, smoke real, ativação e cutover permanecem pós-merge, sem iniciar a E21.3.
 
