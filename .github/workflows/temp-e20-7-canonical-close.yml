@@ -1,0 +1,103 @@
+name: Temp E20.7 canonical closure
+
+on:
+  push:
+    branches:
+      - codex-app/e20-7-close-canonical
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: ${{ github.actor != 'github-actions[bot]' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: codex-app/e20-7-close-canonical
+          fetch-depth: 0
+
+      - name: Apply exact canonical replacements
+        shell: python
+        run: |
+          from pathlib import Path
+
+          path = Path('docs/roadmap.md')
+          text = path.read_text(encoding='utf-8')
+
+          def replace_once(old: str, new: str) -> None:
+              global text
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f'expected exactly one match, got {count}: {old[:120]!r}')
+              text = text.replace(old, new, 1)
+
+          replace_once('• Versão: v1.5.194', '• Versão: v1.5.195')
+
+          replace_once(
+              '* Status: E20.7.3 e E20.7.4 implementadas repo-side e validadas deterministicamente; apply, prova hospedada e ativação da E20.7.4 permanecem pendentes dos gates operacionais.',
+              '* Status: Concluída em 29/08/2026; E20.7.3 e E20.7.4 implementadas, validadas deterministicamente e integradas à `main` pelo PR #835. A migration E20.7.4 foi aplicada automaticamente e a reconciliação v6 do taxon piloto está confirmada. Prova, promoção e ativação hospedadas de `landing_page_dynamic_market_research` ficam condicionadas ao futuro recorte de integração E19.3 que consumir a saída E20.7 e não constituem pendência deste recorte.'
+          )
+
+          replace_once(
+              '* Status: Implementada repo-side e validada; Automação: não.',
+              '* Status: Concluída no boundary E20.7 e validada deterministicamente; Automação: não.'
+          )
+
+          replace_once(
+              '  * permitir planejamento, implementação repo-side e testes determinísticos com `CURRENT=6` já na `main`, mantendo a reconciliação para `reviewed_input_catalog_version=6` como gate somente antes de prova hospedada ou ativação.',
+              '  * operar com `CURRENT=6` já na `main`; a reconciliação v6 necessária ao taxon piloto `corretor-imoveis` está confirmada com `reviewed_input_catalog_version=6`, sem validação hospedada adicional necessária para encerrar a E20.7.3.'
+          )
+
+          replace_once(
+              '* Status: Implementada repo-side e validada deterministicamente; Automação: sim; categoria `2.1.3 — Automação com IA em fluxo controlado`.',
+              '* Status: Concluída no boundary E20.7 e integrada à `main` pelo PR #835; Automação: sim; categoria `2.1.3 — Automação com IA em fluxo controlado`.'
+          )
+
+          replace_once(
+              '  * ampliar o agregado E21.2 por migration forward-only sem nova tabela ou coluna, preservando runtime anterior, segurança e falha fechada até configuração ativa válida;',
+              '  * ampliar o agregado E21.2 por migration forward-only sem nova tabela ou coluna; a migration `20260829171107_e20_7_4_dynamic_market_research_workload` foi aplicada automaticamente após o merge do PR #835, preservando runtime anterior, segurança e falha fechada até configuração ativa válida;'
+          )
+
+          replace_once(
+              '  * manter Development em baseline repo-only determinístico e exigir, antes de qualquer transporte hospedado, reconciliação para `reviewed_input_catalog_version=6` e fonte `supabase_operational` ativa em revisão `2` ou posterior; migration, apply, prova, promoção e ativação permanecem posteriores ao merge humano;',
+              '  * manter Development em baseline repo-only determinístico; Preview e Production possuem o workload em bootstrap revisão `1`, sem transporte autorizado. Provar, promover e ativar revisão `supabase_operational` `2` ou posterior somente no futuro recorte E19.3 que consumir a saída E20.7; esse rollout não reabre nem mantém pendente a E20.7;'
+          )
+
+          replace_once(
+              '- Status: integração técnica repo-side validada para os seis workloads de produto vigentes; as execuções integradas hospedadas da E19.4 comprovaram os dois workloads de draft, enquanto as provas hospedadas da E20.6.5 e da E20.7.4 permanecem condicionadas aos rollouts próprios.',
+              '- Status: integração técnica repo-side validada para os seis workloads de produto vigentes; as execuções integradas hospedadas da E19.4 comprovaram os dois workloads de draft, enquanto a prova hospedada da E20.6.5 permanece condicionada ao rollout próprio e a da E20.7.4 fica condicionada ao futuro recorte E19.3 que consumir sua saída.'
+          )
+
+          replace_once(
+              '- Status: inventário repo-side vigente com sete itens; o QA pós-merge da E22.1.4 aprovou os cinco itens então existentes em Preview e Production, e as provas hospedadas dos itens acrescentados pela E20.6.5 e E20.7.4 permanecem nos rollouts próprios.',
+              '- Status: inventário repo-side vigente com sete itens; o QA pós-merge da E22.1.4 aprovou os cinco itens então existentes em Preview e Production; a prova hospedada da E20.6.5 permanece no rollout próprio, e a da E20.7.4 fica condicionada ao futuro recorte E19.3 consumidor.'
+          )
+
+          replace_once(
+              '- A migration candidata da E20.7.4 preserva o agregado e acrescenta duas unidades de `landing_page_dynamic_market_research`, totalizando doze somente após merge e apply; os read models aceitam integralmente dez ou doze unidades e rejeitam estado parcial.',
+              '- A migration E20.7.4 aplicada preservou o agregado e acrescentou duas unidades de `landing_page_dynamic_market_research`, totalizando doze unidades hospedadas; os read models aceitam integralmente dez ou doze unidades e rejeitam estado parcial.'
+          )
+
+          replace_once(
+              '- O estado operacional hospedado mantém os cinco workloads de Preview e Production sem candidata ou revisão pendente; `taxon_input_catalog_sufficiency_evaluation` permanece na revisão bootstrap `1`, e `landing_page_dynamic_market_research` só passará a existir hospedado após apply, também em bootstrap `1` não autorizado para transporte. Os eventos append-only dos lifecycles anteriores permanecem preservados.',
+              '- O estado operacional hospedado mantém os seis workloads de produto de Preview e Production sem candidata ou revisão pendente; `taxon_input_catalog_sufficiency_evaluation` permanece na revisão bootstrap `1`, e `landing_page_dynamic_market_research` já existe em ambos os ambientes no bootstrap revisão `1`, não autorizado para transporte. A prova, promoção e ativação de revisão `2` ou posterior desse workload dinâmico ficam para o futuro recorte E19.3 consumidor. Os eventos append-only dos lifecycles anteriores permanecem preservados.'
+          )
+
+          marker = '99. Changelog\nv1.5.193 — 29/08/2026 — Registradas a implementação e validação determinística repo-side da E20.7.4, o confronto sem sobreposição material com o PR #831, o workload `landing_page_dynamic_market_research`, a ampliação candidata E21.2 de dez para doze unidades e os gates pendentes de merge, apply, reconciliação v6, prova e ativação hospedada.'
+          replacement = '99. Changelog\nv1.5.195 — 29/08/2026 — Encerrada a E20.7 após o merge do PR #835: migration E20.7.4 aplicada automaticamente, reconciliação v6 confirmada e rollout hospedado do workload dinâmico transferido para o futuro recorte de integração E19.3, quando existir consumidor real; removida essa validação operacional da lista de pendências da E20.7.\n\nv1.5.193 — 29/08/2026 — Registradas a implementação e validação determinística repo-side da E20.7.4, o confronto sem sobreposição material com o PR #831, o workload `landing_page_dynamic_market_research`, a ampliação candidata E21.2 de dez para doze unidades e os gates pendentes de merge, apply, reconciliação v6, prova e ativação hospedada.'
+          replace_once(marker, replacement)
+
+          path.write_text(text, encoding='utf-8')
+
+      - name: Remove temporary workflow and commit canonical docs
+        shell: bash
+        run: |
+          set -euo pipefail
+          git rm .github/workflows/temp-e20-7-canonical-close.yml
+          git add docs/roadmap.md docs/platform-config.md
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'docs(e20.7): concluir estado canônico pós-merge'
+          git push origin HEAD:codex-app/e20-7-close-canonical
