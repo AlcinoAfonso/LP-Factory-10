@@ -169,7 +169,7 @@ const cases: readonly ValidationCase[] = [
       const serviceClient = boundary.indexOf("createServiceClient()");
       const selectedLoad = boundary.indexOf("loadSelectedEndCustomerResearchFromClient");
       const reviewedColumnOption = boundary.indexOf("includeInputCatalogReview: true");
-      const chainRead = boundary.indexOf("readCompleteInputCatalogTaxonChain");
+      const chainRead = boundary.indexOf("readCompleteTaxonChainForTaxon");
       assert.ok(start >= 0);
       assert.ok(reviewGate >= 0);
       assert.ok(researchGate > reviewGate);
@@ -1935,7 +1935,16 @@ const cases: readonly ValidationCase[] = [
       );
       assert.match(contextAdapterSource, /loadSelectedEndCustomerResearchForTaxon/);
       assert.match(contextAdapterSource, /reconstructDraftInputCatalogEvaluationContext/);
-      assert.match(contextAdapterSource, /\.order\("id", \{ ascending: true \}\)[\s\S]*?\.range\(offset, offset \+ 499\)/);
+      assert.match(contextAdapterSource, /readCompleteTaxonChainForTaxon/);
+      assert.doesNotMatch(contextAdapterSource, /\.range\(/);
+      const taxonChainAdapterSource = readFileSync(
+        new URL("../../adapters/taxonChainAdapter.ts", import.meta.url),
+        "utf8",
+      );
+      assert.match(
+        taxonChainAdapterSource,
+        /\.order\("id", \{ ascending: true \}\)[\s\S]*?\.range\(offset, offset \+ limit - 1\)/,
+      );
       assert.doesNotMatch(contextAdapterSource, /loadTaxonPreparationForReviewedVersion/);
       assert.doesNotMatch(contextAdapterSource, /loadTaxonPreparationForVersion/);
 

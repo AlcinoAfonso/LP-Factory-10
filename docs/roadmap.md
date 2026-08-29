@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 29/08/2026
-• Versão: v1.5.191
+• Versão: v1.5.192
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2913,11 +2913,11 @@ Repositório — Ajustados
 20.7.1 Objetivo e status
 
 * Objetivo: resolver a fonte de conhecimento de mercado mais específica e segura para o escopo comercial de uma LP, preservando a autoridade factual E20.2, a identidade taxonômica da conta e os boundaries E19.3/E19.4.
-* Status: Definida em plano-base v2; implementação pendente nas subseções E20.7.3 e E20.7.4.
+* Status: E20.7.3 implementada repo-side e validada; E20.7.4 permanece pendente e condicionada ao checkpoint aprovado da E20.7.3.
 
 20.7.3 Resolver determinístico de conhecimento
 
-* Status: Planejada; Automação: não.
+* Status: Implementada repo-side e validada; Automação: não.
 * Conteúdo:
   * resolver `single | multiple | portfolio` por APIs públicas canônicas, com matching por nome/aliases, descendência ativa, preparação E20.5/E20.6 e equivalência factual conservadora; autorizar `specialized_deep` somente quando `matchSource` contiver `alias_exact`, `alias_normalized`, `taxon_name_exact` ou `taxon_name_normalized`, mantendo resultado apoiado apenas em `fts`, `trgm` ou `taxon_slug_normalized` como `dynamic_required` sem recusar nem invalidar a oferta;
   * distinguir falha operacional de ausência ou ambiguidade legítima e produzir `specialized_deep | base_only | dynamic_required` sem recusa semântica da oferta;

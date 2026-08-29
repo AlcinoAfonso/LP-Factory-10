@@ -2,8 +2,8 @@
 
 0.1 Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.77
-• Data: 28/08/2026
+• Versão: v2.0.78
+• Data: 29/08/2026
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -321,6 +321,16 @@
 • O consumo privado de uma revisão deve revalidar ator, conta, membership, entitlement, LP e tenant da materialização antes de assinar mídia ou entregar o read model; divergência de identidade, binding ou referência de asset falha fechada.
 • O read model expõe somente allowlist explícita do contrato de apresentação e metadados necessários da revisão, acrescida da URL assinada transitória; linhas de banco, snapshot integral, pesquisa, valores operacionais, bucket, path, autenticação e provider não atravessam o boundary do renderer.
 • O renderer de revisão é puro e read-only: recebe o read model validado, não consulta Supabase ou provider, não recompila contexto de geração e não usa fonte mutável para reinterpretar a revisão persistida.
+
+3.15.10 Resolução determinística de conhecimento de `landing_page`
+• Boundary canônico: `lib/conversion-content/landing-page/knowledge-resolution/`; contratos, equivalência factual e resolver puro são fontes executáveis, exportadas pela API pública de `lib/conversion-content/`.
+• A entrada `landing_page_offering_scope` preserva os modos `single | multiple | portfolio`; shape inválido falha fechado, enquanto ausência, ambiguidade ou sinal fraco de matching não recusa nem invalida a oferta.
+• A API pública de `lib/onboarding/niche-resolution/` separa candidatos de falha operacional e concentra a classificação de `matchSource`. `specialized_deep` só pode ser autorizado quando a fonte contiver `alias_exact`, `alias_normalized`, `taxon_name_exact` ou `taxon_name_normalized`; resultado apoiado apenas em `fts`, `trgm` ou `taxon_slug_normalized` exige complemento dinâmico.
+• Candidatos preservam `matchSource` e `matchedAliases`, são limitados a descendentes ativos do taxon servido e só selecionam pesquisa especializada quando houver unicidade, confiança canônica, preparação E20.5/E20.6 e equivalência factual conservadora.
+• A equivalência resolve os quatro planos E20.2 para taxon servido e candidato; ignora somente identidade e proveniência taxonômicas que naturalmente diferem e trata mudança de field, finalidade, tipo, scope, obrigação, condição ou validação como material.
+• A leitura integral de `business_taxons` pertence à operação server-only compartilhada em `lib/conversion-content/adapters/taxonChainAdapter.ts`, com páginas de 500, ordem por `id`, término canônico `416/PGRST103`, validação de todas as identidades e falhas tipadas. Preparação E20.5/E20.6, avaliação E20.6.5 e E20.7 reutilizam essa operação, sem paginações privadas paralelas.
+• `multiple` requer um único complemento sobre o conjunto; `portfolio` permanece `base_only`. A saída imutável da fase determinística distingue `specialized_deep | base_only | dynamic_required`, sem IA, persistência própria, integração E19 ou mudança em geração, snapshot, materialização e renderer.
+• `CURRENT=6` autoriza implementação repo-side e testes determinísticos; a reconciliação operacional para `reviewed_input_catalog_version=6` permanece gate somente antes de prova hospedada ou ativação.
 
 3.16 Configuração e observabilidade de workloads OpenAI
 • O boundary transversal canônico é `lib/openai-workloads/`; consumidores de produto usam somente sua API pública para resolver modelo e reasoning effort, sem ler variáveis de modelo nem acessar o registry interno.
