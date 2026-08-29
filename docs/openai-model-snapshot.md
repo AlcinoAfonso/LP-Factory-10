@@ -46,22 +46,22 @@
 | Modelo | Papel de referência | Input / 1M | Cached input / 1M | Output / 1M | Contexto | Saída máx. | Reasoning effort |
 |---|---|---:|---:|---:|---:|---:|---|
 | `gpt-5.4-mini` | baseline atual | US$ 0,75 | US$ 0,075 | US$ 4,50 | 400k | 128k | `none`, `low`, `medium`, `high`, `xhigh` |
-| `gpt-5.6-luna` | custo/alto volume | divergente* | divergente* | divergente* | 1,05M | 128k | `none`, `low`, `medium`, `high`, `xhigh`, `max` |
-| `gpt-5.6-terra` | equilíbrio inteligência/custo | divergente* | divergente* | divergente* | 1,05M | 128k | `none`, `low`, `medium`, `high`, `xhigh`, `max` |
-| `gpt-5.6-sol` | maior capacidade / trabalho complexo | US$ 5,00 | US$ 0,50 | US$ 30,00 | 1,05M | 128k | `none`, `low`, `medium`, `high`, `xhigh`, `max` |
+| `gpt-5.6-luna` | custo/alto volume | US$ 0,20 | US$ 0,02 | US$ 1,20 | 1,05M | 128k | `none`, `low`, `medium`, `high`, `xhigh`, `max` |
+| `gpt-5.6-terra` | equilíbrio inteligência/custo | US$ 2,00 | US$ 0,20 | US$ 12,00 | 1,05M | 128k | `none`, `low`, `medium`, `high`, `xhigh`, `max` |
+| `gpt-5.6-sol` | maior capacidade / trabalho complexo | US$ 4,00 | US$ 0,40 | US$ 20,00 | 1,05M | 128k | `none`, `low`, `medium`, `high`, `xhigh`, `max` |
 
 - Luna, Terra e Sol suportam Responses API, function calling, Structured Outputs e reasoning tokens.
 - A orientação oficial atual posiciona Luna para workloads sensíveis a custo e volume, Terra para equilíbrio entre inteligência e custo e Sol para maior capacidade em trabalho profissional complexo.
 - Em GPT-5.6, o effort padrão é `medium` quando omitido. Portanto, comparações devem sempre registrar o effort explicitamente.
 
-#### 3.1.1 Divergência temporária de preços do Luna e do Terra
+#### 3.1.1 Reconfirmação oficial de preços em 29/08/2026
 
-- Em consulta realizada em 11/08/2026, fontes oficiais atuais da OpenAI apresentam valores conflitantes para Luna e Terra.
-- O anúncio oficial de 30/07/2026 informa, a partir daquela data: Luna a US$ 0,20 por 1M tokens de entrada e US$ 1,20 por 1M tokens de saída; Terra a US$ 2,00 por 1M tokens de entrada e US$ 12,00 por 1M tokens de saída.
-- As páginas oficiais atuais dos modelos exibem: Luna a US$ 1,00 de entrada, US$ 0,10 de cached input e US$ 6,00 de saída; Terra a US$ 2,50 de entrada, US$ 0,25 de cached input e US$ 15,00 de saída.
-- Enquanto essa divergência permanecer, este snapshot não declara nenhum dos dois conjuntos como preço operacional definitivo e não deve usar Luna ou Terra em cálculo financeiro decisório baseado apenas nesses valores publicados.
-- Antes de comparar custo financeiro real de Luna ou Terra, reconfirmar o preço efetivamente aplicável em fonte oficial vigente e, quando possível, confrontar com a cobrança/uso efetivo do ambiente autorizado.
-- A divergência de preço não invalida benchmarks qualitativos de capacidade ou custo-desempenho, mas impede inferir razões precisas de economia entre Luna, Terra e outros modelos até a reconfirmação.
+- As páginas oficiais atuais de `gpt-5.6-luna`, `gpt-5.6-terra`, `gpt-5.6-sol` e o catálogo `Models` convergem nos preços registrados na tabela acima.
+- Luna: US$ 0,20 de input, US$ 0,02 de cached input e US$ 1,20 de output por 1M tokens.
+- Terra: US$ 2,00 de input, US$ 0,20 de cached input e US$ 12,00 de output por 1M tokens.
+- Sol: US$ 4,00 de input, US$ 0,40 de cached input e US$ 20,00 de output por 1M tokens.
+- A divergência registrada no snapshot de 11/08/2026 deixa de ser condição ativa deste documento.
+- Custos de tools, modos especiais, cache write e eventuais multiplicadores de contexto permanecem separados das tarifas textuais básicas e devem ser reconfirmados quando materialmente aplicáveis ao workload.
 
 ### 3.2 Como o effort afeta custo
 
@@ -79,7 +79,7 @@
 - Saída total: `output_tokens × tarifa_output`.
 - `output_tokens` inclui os reasoning tokens contabilizados pela API.
 - Custo total estimado: soma das três parcelas, acrescida de custos de tools ou modos especiais quando aplicáveis.
-- Enquanto a divergência da seção 3.1.1 estiver ativa, não aplicar esta fórmula a Luna ou Terra como base de decisão financeira sem reconfirmar previamente as tarifas efetivamente aplicáveis.
+- A tarifa deve ser reconfirmada na fonte oficial vigente antes de uma decisão financeira material, mesmo quando o snapshot já contenha valor atual.
 
 ### 3.4 Evidência externa de preço-desempenho
 
@@ -97,8 +97,8 @@
 
 - Usar o mesmo conjunto de tarefas representativas e os mesmos gates de validade para comparar candidatos.
 - Preservar o modelo atual como baseline até existir evidência suficiente para substituí-lo.
-- Novo workload não herda automaticamente modelo ou effort de outro workload; a primeira configuração deve ser uma hipótese explícita e comparável contra baseline e candidatos pertinentes.
-- Para GPT-5.6, testar `reasoning.effort` explicitamente; usar esforço maior somente quando houver ganho de qualidade mensurável.
+- Novo workload não herda automaticamente modelo ou effort de outro workload; a primeira configuração deve ser uma hipótese explícita e comparável contra baseline e candidatos pertinentes, salvo decisão humana específica registrada para aquele workload.
+- Para GPT-5.6, testar `reasoning.effort` explicitamente quando o recorte exigir comparação; usar esforço maior somente quando houver ganho de qualidade mensurável ou decisão humana específica sustentada pelo contexto do workload.
 - Registrar por execução: workload, modelo, effort, modo quando aplicável, resultado válido, critério de qualidade, `input_tokens`, `cached_tokens`, `output_tokens`, `reasoning_tokens`, latência e custo estimado.
 - Escolher a combinação mais simples e econômica que cumpra o resultado, a qualidade, a segurança e a latência exigidos pelo workload.
 - Não generalizar o vencedor de um workload para outro.
@@ -111,10 +111,12 @@
 | ativação comercial | `gpt-5.4-mini + none` | Luna / Terra / Sol + effort aplicável | não comparado neste snapshot |
 | geração textual do draft de landing page | `gpt-5.6-luna + max` | configuração inicial aprovada para o workload | duas execuções integradas hospedadas aprovadas em 18/08/2026 |
 | geração da imagem principal do draft | `gpt-image-2` | workload de mídia independente | duas execuções integradas hospedadas aprovadas em 18/08/2026 |
-| complemento dinâmico de conhecimento de mercado da LP | hipótese repo-side `gpt-5.6-luna + low`, Web Search `medium` | `gpt-5.4-mini + low`; Luna `low/medium`; Terra `low/medium` | parser, limites e casos determinísticos aprovados; comparação real, revisão operacional e ativação ainda pendentes |
+| complemento dinâmico de conhecimento de mercado da LP | configuração inicial aprovada `gpt-5.6-luna + high`, Web Search `medium` | comparação prévia Luna/Terra/Sol dispensada por decisão humana específica de 29/08/2026 | decisão registrada; parser, limites e casos determinísticos aprovados; revisão operacional e ativação ainda pendentes |
 
-- Para o complemento dinâmico, a política Web Search é constante code-owned e não integra a variável de comparação de modelo/effort: somente a tool hospedada, uma ou duas chamadas, `search_context_size = medium`, fontes incluídas, Structured Output estrito e orçamento integral limitado ao teto efetivo de 128k tokens do uso com Web Search.
-- A hipótese Luna `low` é baseline de Development e bootstrap, não decisão de produção. A escolha hospedada exige tarefas representativas, evidência de qualidade/custo/latência, reconciliação `reviewed_input_catalog_version=6` e lifecycle E21.2 com revisão operacional `2` ou posterior.
+- Para o complemento dinâmico, a política Web Search é constante code-owned e não integra a variável de modelo/effort: somente a tool hospedada, uma ou duas chamadas, `search_context_size = medium`, fontes incluídas, Structured Output estrito e orçamento integral limitado ao teto efetivo de 128k tokens do uso com Web Search.
+- A configuração inicial aprovada para `landing_page_dynamic_market_research` é `gpt-5.6-luna + high`. A decisão é específica desse workload e não altera `landing_page_draft_generation`, que permanece em `gpt-5.6-luna + max` conforme sua própria evidência.
+- `max` não foi escolhido para o complemento dinâmico. Só deve ser reaberto se evidência operacional mostrar insuficiência material de `high` nos gates de qualidade/grounding e justificar o custo e a latência adicionais.
+- A ativação hospedada continua dependente dos gates E20.7/E21.2 aplicáveis, inclusive reconciliação operacional da E20.2 v6 e revisão operacional válida do novo workload.
 
 ### 4.3 Registro de decisão
 
@@ -129,7 +131,7 @@
 - Preservar como capacidade futura um laboratório de avaliação que substitua escolhas intuitivas de configuração por decisões baseadas em evidência para cada workload real.
 - A unidade mínima de comparação continua sendo `workload + modelo + reasoning effort`, conforme a seção 3.2; não comparar apenas nomes de modelos.
 - O laboratório também deve permitir à governança do projeto distinguir se um problema observado de entrega está principalmente em modelo/effort, contexto, contrato de saída, uso de tools, continuidade, eficiência de contexto ou necessidade real de orquestração agentic.
-- Princípio de decisão: medir antes de promover uma combinação de modelo + effort ou uma capacidade de execução como configuração preferencial.
+- Princípio de decisão: medir antes de promover uma combinação de modelo + effort ou uma capacidade de execução como configuração preferencial, salvo decisão humana específica registrada que assuma conscientemente a configuração inicial de um workload.
 
 ### 5.2 Métricas e método
 
@@ -139,11 +141,10 @@
 | Configuração conceitual | Qualidade | Custo | Latência |
 |---|---|---|---|
 | Luna + medium | medir | medir | medir |
-| Luna + xhigh | medir | medir | medir |
+| Luna + high | medir | medir | medir |
+| Luna + max | medir somente se houver hipótese material | medir | medir |
 | Terra + medium | medir | medir | medir |
-| Terra + high | medir | medir | medir |
 | Sol + medium | medir | medir | medir |
-| Sol + high | medir | medir | medir |
 
 ### 5.3 Perguntas de decisão
 
