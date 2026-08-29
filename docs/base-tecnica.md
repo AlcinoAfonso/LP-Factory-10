@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.78
+• Versão: v2.0.79
 • Data: 29/08/2026
 
 0.2 Contrato do documento (consulta)
@@ -332,6 +332,15 @@
 • `multiple` requer um único complemento sobre o conjunto; `portfolio` permanece `base_only`. A saída imutável da fase determinística distingue `specialized_deep | base_only | dynamic_required`, sem IA, persistência própria, integração E19 ou mudança em geração, snapshot, materialização e renderer.
 • `CURRENT=6` autoriza implementação repo-side e testes determinísticos; a reconciliação operacional para `reviewed_input_catalog_version=6` permanece gate somente antes de prova hospedada ou ativação.
 
+3.15.11 Complemento dinâmico controlado de conhecimento de `landing_page`
+• O boundary canônico permanece `lib/conversion-content/landing-page/knowledge-resolution/`; prompt, schema, parser, orçamento conservador e composição do resultado são fontes executáveis próprias, exportadas pela API pública de `lib/conversion-content/`.
+• Somente uma saída determinística `dynamic_required` pode solicitar o complemento. O transporte server-side executa uma única Responses API foreground com apenas Web Search hospedado, `tool_choice = required`, uma ou duas chamadas concluídas, Structured Output estrito, `store = false`, sem conversation, background, retry ou fallback.
+• Política de Web Search é code-owned e imutável por workload: tamanho de contexto, máximo de chamadas e teto efetivo de 128k tokens não vêm do Supabase. O orçamento integral reserva busca, reasoning e saída antes do transporte e falha sem truncar; modelo e reasoning effort continuam resolvidos pelos boundaries E21.1/E21.2.
+• Entrada funcional é conteúdo não confiável e nunca pode alterar instruções, schema ou limites. Toda finding material exige URL HTTPS presente nas fontes devolvidas pelo provider; chamada incompleta, fonte ausente, URL inventada ou evidência insuficiente falha tecnicamente.
+• O resultado distingue materialidade comprovada de ausência de materialidade e carrega fontes, instante de busca, proveniência da configuração, versões de prompt/contrato, IDs técnicos, usage, latência e contagens de busca. Não contém copy, layout, wireframe, CTA, promessa comercial nem mutação da E20.2.
+• Falha técnica ou ausência de evidência não recusa nem invalida a oferta. A conclusão funcional pode acrescentar complemento à base ou preservar somente a base; integração com geração, persistência e validação semântica de oferta permanece fora deste recorte.
+• Development pode usar o baseline repo-only para testes determinísticos. Preview e Production falham fechado antes do provider enquanto não houver fonte `supabase_operational` ativa em revisão `2` ou posterior e reconciliação do taxon para `reviewed_input_catalog_version=6`.
+
 3.16 Configuração e observabilidade de workloads OpenAI
 • O boundary transversal canônico é `lib/openai-workloads/`; consumidores de produto usam somente sua API pública para resolver modelo e reasoning effort, sem ler variáveis de modelo nem acessar o registry interno.
 • O contrato público discrimina workloads textuais e de imagem; cada tipo expõe somente a configuração aplicável à sua API, sem default cruzado nem coerção entre modalidades.
@@ -342,6 +351,7 @@
 • Somente criação/edição, prova e promoção de nova candidata consultam elegibilidade vigente. Save e promoção revalidam sob locks ordenados; a prova revalida fail-closed imediatamente antes do transporte e não mantém lock durante a chamada externa. Ativação de pendente já validada e rollback histórico não consultam o catálogo.
 • Revisões ativas, históricas e snapshots funcionais revalidam identidade do workload, origem, revisão, modalidade, identificador técnico do modelo e shape tipado do parâmetro, sem exigir disponibilidade atual nem presença do modelo em lista estática.
 • Cada tentativa de provider deve emitir somente metadados operacionais normalizados e seguros, preservando métricas ausentes como `null`; prompts, respostas integrais, payloads de negócio, PII, secrets e cálculo monetário não entram no evento comum.
+• Workloads textuais podem acrescentar telemetria segura e nullable de chamadas Web Search e quantidade de fontes; URLs e conteúdo das fontes permanecem fora do evento comum.
 • A gestão administrativa consome somente projeção pública imutável e read model seguro; a página reautoriza `platform_admin` antes da leitura privilegiada, cada mutação reexecuta o guard e o ator é derivado exclusivamente no servidor.
 • Leituras administrativas de catálogo, revisões e ativações paginam integralmente com ordem determinística; `416/PGRST103` terminal preserva páginas já acumuladas e qualquer erro ou resposta parcial produz estado tipado fail-closed.
 • `/admin/workloads-openai` separa catálogo global, seletor Preview/Production e lifecycle expansível; nomes, recortes e agrupamento visual da Landing Page vêm de uma única matriz pública code-owned, sem fundir as unidades técnicas de texto e imagem.

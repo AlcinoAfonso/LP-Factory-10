@@ -1,6 +1,6 @@
 0.1 Cabeçalho
-Data: 18/08/2026
-Versão: v1.18
+Data: 29/08/2026
+Versão: v1.19
 Status: Alinhado ao Platform Config
 
 0.2 Função do documento
@@ -439,6 +439,48 @@ Regra técnica: `docs/base-tecnica.md` — seção 3.15.8.
 Configuração de workloads: `docs/platform-config.md`.
 Boundary de geração: `lib/lp-builder/landingPageDraftGeneration.ts`.
 Autoridade de apresentação: `lib/conversion-content/landing-page/presentation/`.
+
+3.12 E20.7.4 — complemento dinâmico controlado de conhecimento de mercado
+
+Objetivo:
+Complementar somente a resolução `dynamic_required` da E20.7.3 com evidência pública recente e rastreável, sem recusar a oferta nem substituir a autoridade factual E20.2.
+
+Status:
+Implementada e validada deterministicamente no repositório; apply, prova hospedada, promoção e ativação permanecem pendentes dos gates operacionais.
+
+Recurso utilizado:
+- Responses API com Structured Output estrito;
+- ferramenta hospedada Web Search como única tool permitida;
+- configuração de workload pelo lifecycle E21.2.
+
+Natureza:
+- Automação com IA em fluxo controlado.
+
+Ambiente principal:
+- Runtime server-side do LP Factory, após ativação humana por ambiente.
+
+Participação humana:
+- O gatilho funcional futuro pertence ao consumidor autorizado; configuração, prova, promoção e ativação do workload exigem as ações humanas já governadas pela E21.2.
+
+Como funciona:
+- Executa uma única requisição foreground e exige uma ou duas chamadas Web Search concluídas, com fontes HTTPS retornadas pelo provider.
+- Usa prompt e schema versionados no boundary de resolução de conhecimento; trata entrada funcional como não confiável e rejeita URL material que não tenha sido retornada pelo provider.
+- Limita contexto de busca, chamadas, orçamento de entrada, saída e deadline por política code-owned; modelo e reasoning effort vêm da configuração efetiva do workload.
+- Retorna complemento material ou ausência de materialidade com fontes, proveniência, usage e telemetria sanitizada; evidência insuficiente ou falha técnica não invalida a oferta.
+
+Limites:
+- Não usa agente, Agents SDK, retry, fallback, background, conversation, job, fila, RAG, cache global ou persistência de pesquisa.
+- Não altera a E20.2, não gera copy, layout, wireframe ou CTA e não integra a geração E19.
+- A reconciliação para `reviewed_input_catalog_version=6` e uma revisão operacional comprovada `2` ou posterior bloqueiam prova hospedada e ativação, mas não implementação repo-side nem testes determinísticos.
+
+Aplicação funcional no roadmap:
+- `docs/roadmap.md` — E20.7.4.
+
+Referências / dependências:
+Regra técnica: `docs/base-tecnica.md` — seção 3.15.11.
+Configuração de workloads: `docs/platform-config.md` — seção 3.5.
+Contrato de banco: `docs/schema.md` — seções 1.28 a 1.30.
+Boundary funcional: `lib/conversion-content/landing-page/knowledge-resolution/`.
 
 4. Aprendizados operacionais
 

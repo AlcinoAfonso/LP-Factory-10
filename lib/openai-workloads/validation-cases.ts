@@ -39,6 +39,8 @@ const productIds = [
 const landingPageTextWorkloadId = "landing_page_draft_generation" as const;
 const taxonInputCatalogEvaluationWorkloadId =
   "taxon_input_catalog_sufficiency_evaluation" as const;
+const dynamicMarketResearchWorkloadId =
+  "landing_page_dynamic_market_research" as const;
 const landingPageImageWorkloadId = "landing_page_draft_image_generation" as const;
 
 const cases = [
@@ -136,6 +138,8 @@ const cases = [
         result: "success",
         failureCategory: null,
         latencyMs: 7,
+        webSearchCallCount: null,
+        webSearchSourceCount: null,
         inputTokens: 50,
         cachedInputTokens: 20,
         cacheWriteTokens: null,
@@ -183,17 +187,18 @@ const cases = [
     },
   },
   {
-    name: "inventory exposes six unique canonical workloads",
+    name: "inventory exposes seven unique canonical workloads",
     run: () => {
       const inventory = listOpenAiWorkloadInventory();
-      assert.equal(inventory.length, 6);
-      assert.equal(new Set(inventory.map((item) => item.id)).size, 6);
+      assert.equal(inventory.length, 7);
+      assert.equal(new Set(inventory.map((item) => item.id)).size, 7);
       assert.deepEqual(
         inventory.map((item) => item.id),
         [
           ...productIds,
           landingPageTextWorkloadId,
           taxonInputCatalogEvaluationWorkloadId,
+          dynamicMarketResearchWorkloadId,
           landingPageImageWorkloadId,
           "supabase_inspect",
         ],
@@ -410,6 +415,7 @@ const cases = [
           "landing_page_draft_generation",
           "landing_page_draft_image_generation",
           "taxon_input_catalog_sufficiency_evaluation",
+          "landing_page_dynamic_market_research",
         ],
       );
       assert.equal(Object.isFrozen(projection), true);
@@ -423,8 +429,15 @@ const cases = [
       const niche = projection.find((item) => item.workload === "niche_resolution");
       assert.equal(niche?.name, "Resolução de nicho");
       const landingPage = projection.filter((item) => item.visualGroup === "landing_page");
-      assert.equal(landingPage.length, 2);
-      assert.equal(landingPage.every((item) => item.roadmapReference === "E19.4"), true);
+      assert.equal(landingPage.length, 3);
+      assert.equal(
+        landingPage.filter((item) => item.roadmapReference === "E19.4").length,
+        2,
+      );
+      assert.equal(
+        landingPage.some((item) => item.roadmapReference === "E20.7.4"),
+        true,
+      );
       assert.throws(() => {
         (projection as unknown[]).push({});
       }, TypeError);
@@ -896,7 +909,7 @@ const cases = [
     },
   },
   {
-    name: "administrative read model accepts only complete eight or ten unit aggregate states",
+    name: "administrative read model accepts only complete ten or twelve unit aggregate states",
     run: () => {
       const fixture = administrativeConfigurationFixture();
       const result = translateOpenAiAdministrativeConfigurationRows(
@@ -905,7 +918,7 @@ const cases = [
         { data: fixture.activations, error: null },
       );
       assert.equal(result.ok, true);
-      assert.equal(result.value.length, 10);
+      assert.equal(result.value.length, 12);
       assert.equal(Object.isFrozen(result), true);
       assert.equal(Object.isFrozen(result.value), true);
       assert.equal(Object.isFrozen(result.value[0]), true);
@@ -941,22 +954,23 @@ const cases = [
       assert.equal(serialized.includes("proof_metadata"), false);
       assert.equal(/api[_-]?key|secret|bearer|authorization/i.test(serialized), false);
 
-      const legacyWorkloads = new Set([
+      const previousWorkloads = new Set([
         "niche_resolution",
         "commercial_activation_draft_generation",
         "landing_page_draft_generation",
+        "taxon_input_catalog_sufficiency_evaluation",
         "landing_page_draft_image_generation",
       ]);
-      const legacy = translateOpenAiAdministrativeConfigurationRows(
-        { data: fixture.units.filter((row) => legacyWorkloads.has(String(row.workload))), error: null },
-        { data: fixture.revisions.filter((row) => legacyWorkloads.has(String(row.workload))), error: null },
-        { data: fixture.activations.filter((row) => legacyWorkloads.has(String(row.workload))), error: null },
+      const previous = translateOpenAiAdministrativeConfigurationRows(
+        { data: fixture.units.filter((row) => previousWorkloads.has(String(row.workload))), error: null },
+        { data: fixture.revisions.filter((row) => previousWorkloads.has(String(row.workload))), error: null },
+        { data: fixture.activations.filter((row) => previousWorkloads.has(String(row.workload))), error: null },
       );
-      assert.equal(legacy.ok, true);
-      assert.equal(legacy.value.length, 8);
+      assert.equal(previous.ok, true);
+      assert.equal(previous.value.length, 10);
       assert.equal(
-        legacy.value.some((unit) =>
-          unit.workload === "taxon_input_catalog_sufficiency_evaluation"),
+        previous.value.some((unit) =>
+          unit.workload === "landing_page_dynamic_market_research"),
         false,
       );
     },
@@ -1447,6 +1461,7 @@ function administrativeConfigurationFixture(): Readonly<{
     "commercial_activation_draft_generation",
     "landing_page_draft_generation",
     "taxon_input_catalog_sufficiency_evaluation",
+    "landing_page_dynamic_market_research",
     "landing_page_draft_image_generation",
   ] as const;
   const units: Record<string, unknown>[] = [];
@@ -1460,12 +1475,14 @@ function administrativeConfigurationFixture(): Readonly<{
       const landingPageText = workload === "landing_page_draft_generation";
       const inputCatalogEvaluation =
         workload === "taxon_input_catalog_sufficiency_evaluation";
+      const dynamicMarketResearch =
+        workload === "landing_page_dynamic_market_research";
       const modality = image ? "image_generation" : "responses_text";
       const baselineModel = image
         ? "gpt-image-2"
         : inputCatalogEvaluation
           ? "gpt-5.6-terra"
-        : landingPageText
+        : landingPageText || dynamicMarketResearch
           ? "gpt-5.6-luna"
           : "gpt-5.4-mini";
       const baselineReasoning = image
@@ -1474,6 +1491,8 @@ function administrativeConfigurationFixture(): Readonly<{
           ? "low"
           : landingPageText
             ? "max"
+            : dynamicMarketResearch
+              ? "low"
             : "none";
       const baselineQuality = image ? "medium" : null;
       const baselineRevisionId = administrativeUuid(sequence++);

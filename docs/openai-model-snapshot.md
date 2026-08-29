@@ -2,7 +2,7 @@
 
 ## 1. Objetivo e validade
 
-- Data do snapshot: 18/08/2026.
+- Data do snapshot: 29/08/2026.
 - Objetivo: manter uma referência datada para decisões de custo-desempenho de modelos e avaliação de capacidades de execução dos workloads OpenAI do LP Factory 10.
 - Este documento compara candidatos; não define sozinho o modelo em produção e não autoriza migração, implementação ou mudança de arquitetura.
 - A configuração efetivamente adotada continua registrada em `docs/platform-config.md`; a governança da decisão continua em `docs/gestor-automations.md`.
@@ -15,6 +15,7 @@
   - `https://developers.openai.com/api/docs/models/gpt-5.6-terra`
   - `https://developers.openai.com/api/docs/models/gpt-5.6-sol`
   - `https://developers.openai.com/api/docs/guides/reasoning`
+  - `https://developers.openai.com/api/docs/guides/tools-web-search`
   - `https://openai.github.io/openai-agents-js/`
   - `https://openai.com/pt-BR/index/gpt-5-6/`
   - `https://openai.com/pt-BR/index/advancing-the-price-performance-frontier-with-gpt-5-6/`
@@ -110,6 +111,10 @@
 | ativação comercial | `gpt-5.4-mini + none` | Luna / Terra / Sol + effort aplicável | não comparado neste snapshot |
 | geração textual do draft de landing page | `gpt-5.6-luna + max` | configuração inicial aprovada para o workload | duas execuções integradas hospedadas aprovadas em 18/08/2026 |
 | geração da imagem principal do draft | `gpt-image-2` | workload de mídia independente | duas execuções integradas hospedadas aprovadas em 18/08/2026 |
+| complemento dinâmico de conhecimento de mercado da LP | hipótese repo-side `gpt-5.6-luna + low`, Web Search `medium` | `gpt-5.4-mini + low`; Luna `low/medium`; Terra `low/medium` | parser, limites e casos determinísticos aprovados; comparação real, revisão operacional e ativação ainda pendentes |
+
+- Para o complemento dinâmico, a política Web Search é constante code-owned e não integra a variável de comparação de modelo/effort: somente a tool hospedada, uma ou duas chamadas, `search_context_size = medium`, fontes incluídas, Structured Output estrito e orçamento integral limitado ao teto efetivo de 128k tokens do uso com Web Search.
+- A hipótese Luna `low` é baseline de Development e bootstrap, não decisão de produção. A escolha hospedada exige tarefas representativas, evidência de qualidade/custo/latência, reconciliação `reviewed_input_catalog_version=6` e lifecycle E21.2 com revisão operacional `2` ou posterior.
 
 ### 4.3 Registro de decisão
 

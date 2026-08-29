@@ -9,3 +9,6 @@ export {
   getCommercialActivationHierarchicalBundle,
 } from "./adapters/commercialActivationAdapter";
 export { resolveLandingPageKnowledgeForCurrentCatalog } from "./adapters/knowledgeResolutionAdapter";
+export {
+  researchDynamicLandingPageMarketWithOpenAi,
+} from "./adapters/dynamicMarketResearchOpenAiAdapter";

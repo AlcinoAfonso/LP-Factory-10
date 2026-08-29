@@ -1,6 +1,7 @@
 import {
   openAiImageQualities,
   openAiReasoningEfforts,
+  openAiWebSearchContextSizes,
   type OpenAiImageWorkloadDefinition,
   type OpenAiProductWorkloadDefinition,
   type OpenAiWorkloadDefinition,
@@ -20,6 +21,7 @@ export const openAiWorkloadRegistry = deepFreeze([
     configurationKind: "effective",
     consumer: "Resolvedor IA opcional do onboarding",
     fallback: "Continuar o onboarding sem bloquear o fluxo",
+    webSearch: null,
     configuration: {
       apiKind: "responses_text",
       model: "gpt-5.4-mini",
@@ -35,6 +37,7 @@ export const openAiWorkloadRegistry = deepFreeze([
     configurationKind: "effective",
     consumer: "Geração administrativa de draft comercial",
     fallback: "Não publicar nem substituir o conteúdo vigente",
+    webSearch: null,
     configuration: {
       apiKind: "responses_text",
       model: "gpt-5.4-mini",
@@ -50,6 +53,7 @@ export const openAiWorkloadRegistry = deepFreeze([
     configurationKind: "effective",
     consumer: "E19.4 — candidata estruturada da landing page",
     fallback: "Falhar a tentativa sem criar revisão",
+    webSearch: null,
     configuration: {
       apiKind: "responses_text",
       model: "gpt-5.6-luna",
@@ -65,12 +69,34 @@ export const openAiWorkloadRegistry = deepFreeze([
     configurationKind: "effective",
     consumer: "E20.6.5 — avaliação administrativa da suficiência factual E20.2",
     fallback: "Falhar fechado sem registrar suficiência",
+    webSearch: null,
     configuration: {
       apiKind: "responses_text",
       model: "gpt-5.6-terra",
       reasoningEffort: "low",
       source: "repo_catalog",
       revision,
+    },
+  },
+  {
+    id: "landing_page_dynamic_market_research",
+    displayName: "Pesquisa dinâmica de mercado para landing page",
+    classification: "product_runtime",
+    configurationKind: "effective",
+    consumer: "E20.7.4 — complemento consultivo de conhecimento de mercado",
+    fallback: "Falhar a resolução técnica sem invalidar a oferta",
+    webSearch: {
+      externalWebAccess: true,
+      searchContextSize: "medium",
+      maxToolCalls: 2,
+      contextWindowTokenBudget: 128000,
+    },
+    configuration: {
+      apiKind: "responses_text",
+      model: "gpt-5.6-luna",
+      reasoningEffort: "low",
+      source: "repo_catalog",
+      revision: "v1",
     },
   },
   {
@@ -141,6 +167,12 @@ const workloadPresentations = deepFreeze([
     roadmapReference: "E20.6.5",
     visualGroup: null,
   },
+  {
+    workload: "landing_page_dynamic_market_research",
+    name: "Pesquisa dinâmica de mercado para landing page",
+    roadmapReference: "E20.7.4",
+    visualGroup: "landing_page",
+  },
 ] satisfies readonly OpenAiWorkloadPresentation[]);
 
 export function listOpenAiWorkloadPresentations(): readonly OpenAiWorkloadPresentation[] {
@@ -171,10 +203,26 @@ export function isValidResolvedOpenAiProductWorkload(
     actual.apiKind === workload.configuration.apiKind &&
     actual.consumer === workload.consumer &&
     actual.fallback === workload.fallback &&
+    sameWebSearchPolicy(actual.webSearch, workload.webSearch) &&
     actual.effectiveConfigurationVerified === true &&
     validOrigin &&
     isTechnicalModel(actual.model) &&
     openAiReasoningEfforts.includes(actual.reasoningEffort)
+  );
+}
+
+function sameWebSearchPolicy(
+  actual: ResolvedOpenAiProductWorkload["webSearch"],
+  expected: OpenAiProductWorkloadDefinition["webSearch"],
+) {
+  if (actual == null || expected == null) return actual == null && expected == null;
+  return (
+    actual.externalWebAccess === true &&
+    expected.externalWebAccess === true &&
+    actual.maxToolCalls === expected.maxToolCalls &&
+    actual.contextWindowTokenBudget === expected.contextWindowTokenBudget &&
+    openAiWebSearchContextSizes.includes(actual.searchContextSize) &&
+    actual.searchContextSize === expected.searchContextSize
   );
 }
 

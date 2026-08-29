@@ -3,6 +3,7 @@ export const openAiProductWorkloadIds = [
   "commercial_activation_draft_generation",
   "landing_page_draft_generation",
   "taxon_input_catalog_sufficiency_evaluation",
+  "landing_page_dynamic_market_research",
 ] as const;
 
 export const openAiImageWorkloadIds = [
@@ -21,6 +22,7 @@ export const openAiReasoningEfforts = [
 ] as const;
 
 export const openAiImageQualities = ["low", "medium", "high"] as const;
+export const openAiWebSearchContextSizes = ["low", "medium"] as const;
 
 export const openAiWorkloadFailureCategories = [
   "configuration_invalid",
@@ -44,6 +46,8 @@ export type OpenAiWorkloadId =
   | OpenAiOperationalWorkloadId;
 export type OpenAiReasoningEffort = (typeof openAiReasoningEfforts)[number];
 export type OpenAiImageQuality = (typeof openAiImageQualities)[number];
+export type OpenAiWebSearchContextSize =
+  (typeof openAiWebSearchContextSizes)[number];
 export type OpenAiConfigurationSource =
   | "repo_catalog"
   | "supabase_operational";
@@ -62,6 +66,13 @@ export type OpenAiEffectiveConfiguration = Readonly<{
   reasoningEffort: OpenAiReasoningEffort;
   source: "repo_catalog";
   revision: string;
+}>;
+
+export type OpenAiWebSearchPolicy = Readonly<{
+  externalWebAccess: true;
+  searchContextSize: OpenAiWebSearchContextSize;
+  maxToolCalls: 2;
+  contextWindowTokenBudget: 128000;
 }>;
 
 export type OpenAiImageGenerationConfiguration = Readonly<{
@@ -91,6 +102,7 @@ export type OpenAiProductWorkloadDefinition = Readonly<{
   consumer: string;
   fallback: string;
   configuration: OpenAiEffectiveConfiguration;
+  webSearch?: OpenAiWebSearchPolicy | null;
 }>;
 
 export type OpenAiImageWorkloadDefinition = Readonly<{
@@ -131,6 +143,7 @@ export type ResolvedOpenAiProductWorkload = Readonly<{
   source: OpenAiConfigurationSource;
   revision: string;
   effectiveConfigurationVerified: true;
+  webSearch?: OpenAiWebSearchPolicy | null;
 }>;
 
 export type ResolvedOpenAiImageWorkload = Readonly<{
@@ -399,6 +412,8 @@ type OpenAiWorkloadEventBase = OpenAiWorkloadEventContext &
     providerErrorCode: string | null;
     providerErrorType: string | null;
     latencyMs: number | null;
+    webSearchCallCount: number | null;
+    webSearchSourceCount: number | null;
   }>;
 
 export type OpenAiWorkloadSuccessEvent = OpenAiWorkloadEventBase &
