@@ -2919,15 +2919,16 @@ Repositório — Ajustados
 
 * Status: Planejada; Automação: não.
 * Conteúdo:
-  * resolver `single | multiple | portfolio` por APIs públicas canônicas, com matching por nome/aliases, descendência ativa, preparação E20.5/E20.6 e equivalência factual conservadora;
+  * resolver `single | multiple | portfolio` por APIs públicas canônicas, com matching por nome/aliases, descendência ativa, preparação E20.5/E20.6 e equivalência factual conservadora; autorizar `specialized_deep` somente quando `matchSource` contiver `alias_exact`, `alias_normalized`, `taxon_name_exact` ou `taxon_name_normalized`, mantendo resultado apoiado apenas em `fts`, `trgm` ou `taxon_slug_normalized` como `dynamic_required` sem recusar nem invalidar a oferta;
   * distinguir falha operacional de ausência ou ambiguidade legítima e produzir `specialized_deep | base_only | dynamic_required` sem recusa semântica da oferta;
   * reutilizar a cadeia taxonômica paginada compartilhada e terminar em saída tipada imutável, sem persistência própria, IA, integração E19 ou mudança em geração, snapshot, materialização ou renderer;
-  * exigir E20.2 v6 reconciliada e operacionalmente consumível antes de prova hospedada ou ativação.
+  * permitir planejamento, implementação repo-side e testes determinísticos com `CURRENT=6` já na `main`, mantendo a reconciliação para `reviewed_input_catalog_version=6` como gate somente antes de prova hospedada ou ativação.
 
 20.7.4 Complemento dinâmico controlado
 
 * Status: Planejada; Automação: sim; categoria `2.1.3 — Automação com IA em fluxo controlado`.
 * Conteúdo:
+  * iniciar somente após a implementação da E20.7.3 e sua aprovação pelo Analista; antes da E20.7.4, confrontar os contratos compartilhados com o estado corrente do PR #831 e parar apenas diante de sobreposição material ainda aberta;
   * executar server-side uma única requisição foreground à Responses API com somente Web Search hospedado e Structured Output estrito, aceitando uma ou duas chamadas fundamentadas e falhando tecnicamente sem invalidar a oferta;
   * governar o workload `landing_page_dynamic_market_research` pelos boundaries E21.1/E21.2, com configuração própria comprovada antes da ativação humana por ambiente e sem agente, retry, fallback, job, fila, RAG, cache global ou nova residência de negócio;
   * ampliar o agregado E21.2 por migration forward-only sem nova tabela ou coluna, preservando runtime anterior, segurança e falha fechada até configuração ativa válida;
