@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Documento: LP Factory 10 — Platform Config
-• Versão: v0.1.31
+• Versão: v0.1.32
 • Data: 29/08/2026
 
 0.2 Contrato do documento
@@ -188,7 +188,7 @@
 • Finalidade: chave administrativa server-side usada exclusivamente pelo Core para leitura read-only do gasto oficial total na Costs API da organização.
 • Permissão: `Read only` na OpenAI Platform.
 • Escopo: Preview e Production do projeto Core na Vercel, como secret server-side.
-• Estado operacional: Organization Admin Key criada; Preview redeployado e validado com leitura oficial real da Costs API de `US$ 0,4064` para agosto de 2026. Production possui a variável configurada, mas não foi redeployada nem validada em runtime.
+• Estado operacional: Organization Admin Key criada; Preview e Production redeployados e validados em runtime com leitura oficial real da Costs API de `US$ 0,4064` para agosto de 2026.
 • Separação: `OPENAI_API_KEY` permanece configurada separadamente e não foi substituída, reutilizada ou alterada; `OPENAI_ADMIN_KEY` não atravessa client, log, banco ou payload sanitizado.
 • Valor real: não versionado nem registrado.
 
@@ -196,8 +196,8 @@
 • Finalidade: gate server-side da persistência financeira prospectiva das tentativas de texto e imagem de Landing Pages.
 • Escopo: somente Production; Preview e Development permanecem sem instrumentação financeira.
 • Habilitação: somente o literal `true` ativa o tracker; variável ausente, vazia ou com qualquer outro valor preserva integralmente o runtime anterior.
-• Estado inicial e atual no PR: desligado; não configurar antes do merge, apply canônico, snippet read-only e Security Controls aprovados.
-• Progressão pós-merge: habilitar somente após os gates de banco, redeployar Production, executar smoke dos dois workloads e registrar uma única data de corte pela RPC versionada.
+• Estado operacional final: configurado com `true` somente em Production após apply canônico, snippet read-only e Security Controls aprovados; Preview e Development permanecem sem instrumentação financeira.
+• Progressão pós-merge concluída: Production foi redeployada, o smoke real dos workloads de texto e imagem foi aprovado e a data de corte única foi registrada pela RPC versionada.
 • Regra de falha: com o gate ligado, falha ou timeout no registro inicial ou terminal degrada a cobertura financeira, mas não bloqueia a chamada OpenAI nem invalida uma geração de Landing Page bem-sucedida; a tentativa sem evidência completa fica fora da soma interna e permanece em Outros gastos / reconciliação.
 • Valor real: não versionar.
 

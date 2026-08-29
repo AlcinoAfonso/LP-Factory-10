@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data da última atualização: 29/08/2026
-• Documento: LP Factory 10 — Schema (DB Contract) v1.0.61
+• Documento: LP Factory 10 — Schema (DB Contract) v1.0.62
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -1069,13 +1069,14 @@
 • RLS habilitado e zero policies; public, anon, authenticated e ai_readonly sem grants.
 • service_role possui somente SELECT e INSERT, sem UPDATE, DELETE ou TRUNCATE.
 • O trigger `openai_lp_cost_events_prevent_mutation` rejeita UPDATE e DELETE mesmo sob privilégio superior.
-• Migration repo-only: `supabase/migrations/20260828131456_e21_4_4_openai_lp_cost_tracking.sql`; apply hospedado permanece reservado ao pós-merge canônico.
+• Migration aplicada pelo fluxo canônico: `supabase/migrations/20260828131456_e21_4_4_openai_lp_cost_tracking.sql`; snippet read-only e Security Controls aprovados.
 • Teste transacional: `supabase/tests/e21_4_4_openai_lp_cost_tracking.test.sql`; verificador read-only: `supabase/snippets/e21_4_4_openai_lp_cost_tracking_verify.sql`.
 
 1.37 openai_lp_cost_coverage
 1.37.1 Função e invariantes
 • Singleton imutável da data de corte em Production; a PK booleana aceita somente true e permite no máximo uma linha.
 • `activated_at` não pode estar no futuro nem depois de created_at. A ausência da linha significa que a cobertura prospectiva ainda não foi ativada.
+• Estado operacional atual: existe exatamente uma linha singleton em Production, com `environment = 'production'` e `activated_at = '2026-08-29 21:55:36.827207+00'`; o corte é imutável.
 
 1.37.2 Segurança e imutabilidade
 • RLS habilitado e zero policies; ACLs idênticas às de `openai_lp_cost_events`.

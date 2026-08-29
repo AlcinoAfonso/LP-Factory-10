@@ -1,6 +1,6 @@
 29/08/2026 — Plano-base v2 — E21.4 — Visibilidade financeira mínima de custos OpenAI
 
-Status: plano-base v2 corrigido pelas decisões humanas posteriores de 28 e 29/08/2026; a implementação foi reconciliada com o contrato fail-open e aprovada pelo Analista. A prova oficial da Costs API e o QA hospedado pré-merge foram aprovados no Preview do HEAD `8397b342856ac5f9d8f71aaee0f17111118f1cf3`, com leitura real de `US$ 0,4064` para agosto de 2026, período personalizado, atualização sob demanda, desktop/mobile, contraste, atalhos externos e bloqueio do papel negativo. A cobertura interna indisponível no Preview é esperada porque a migration da E21.4 ainda não foi aplicada. Production possui `OPENAI_ADMIN_KEY` configurada, mas não foi redeployada nem validada em runtime; banco, migration e `OPENAI_LP_COST_TRACKING_ENABLED` permanecem inalterados, e os gates pós-merge continuam pendentes.
+Status: plano-base v2 concluído em 29/08/2026. A implementação reconciliada com o contrato fail-open foi aprovada pelo Analista e incorporada à `main`; apply canônico, snippet read-only e Security Controls foram aprovados; `OPENAI_LP_COST_TRACKING_ENABLED=true` foi habilitado somente em Production, seguida de redeploy e smoke real aprovado dos workloads de texto e imagem; a data de corte canônica foi registrada uma única vez em `2026-08-29 21:55:36.827207+00`; e o QA hospedado final de `/admin/custos-openai` aprovou Costs oficial, atribuição conta → Landing Page → texto/imagem, reconciliação, cobertura coerente, período atual/personalizado e bloqueio do papel negativo. A E20.2.9 permanece um gate separado e não integra este fechamento.
 
 ## 1. Estado e decisões fixas
 
@@ -190,12 +190,12 @@ Status: plano-base v2 corrigido pelas decisões humanas posteriores de 28 e 29/0
 ### 3.4. Sequência de execução
 
 1. A implementação do PR #831 já foi reconciliada com o contrato fail-open, validada localmente e aprovada pelo Analista.
-2. `OPENAI_ADMIN_KEY` foi configurada como secret em Preview e Production; somente o Preview foi redeployado e validado no deployment `dpl_Cf8rFSdiDhmzauDWBuxBp6pzreVP`, estado `READY`, HEAD `8397b342856ac5f9d8f71aaee0f17111118f1cf3`.
-3. A prova oficial da Costs API aprovou a leitura real de `US$ 0,4064` para agosto de 2026; o QA hospedado pré-merge aprovou período personalizado, atualização sob demanda, desktop/mobile, contraste, atalhos externos e bloqueio do papel negativo.
-4. A cobertura interna indisponível no Preview é o estado esperado enquanto a migration da E21.4 permanecer não aplicada.
-5. Production não foi redeployada nem validada em runtime; banco, migration e `OPENAI_LP_COST_TRACKING_ENABLED` permanecem inalterados.
-6. Após o merge humano, executar exclusivamente apply canônico, snippet read-only, Security Controls, ativação controlada do gate em Production, redeploy, smoke dos dois workloads, registro único da data de corte e QA pós-merge previstos, sem repetir gates pré-merge aprovados.
-7. Não iniciar E21.3.4 nem evolução adiada.
+2. `OPENAI_ADMIN_KEY` permanece como secret separado em Preview e Production; Preview e Production foram validados em runtime com leitura oficial real de `US$ 0,4064` para agosto de 2026, sem expor ou versionar o valor da chave.
+3. A migration foi aplicada pelo fluxo canônico; o snippet read-only versionado e Security Controls aprovaram constraints, RLS, ausência de policies, ACLs, append-only, correlação, leitura e unicidade do corte.
+4. `OPENAI_LP_COST_TRACKING_ENABLED=true` foi habilitado somente em Production e o ambiente foi redeployado; Preview e Development permanecem sem a instrumentação financeira.
+5. O smoke real de texto e imagem aprovou geração prioritária/fail-open, append da revisão e tracking financeiro dos dois workloads, sem regressão funcional.
+6. A data de corte imutável foi registrada uma única vez em `2026-08-29 21:55:36.827207+00`; a leitura posterior confirmou exatamente uma linha, `environment = 'production'` e o mesmo `activated_at`.
+7. O QA hospedado final de `/admin/custos-openai` aprovou período atual e personalizado, atualização sob demanda, total oficial, custos calculados por conta/LP/texto/imagem, Outros gastos/reconciliação, cobertura coerente com o corte, atalhos externos e papel negativo. Não iniciar E21.3.4 nem evolução adiada sem nova decisão humana.
 
 ## 4. Escopo negativo e critérios de parada
 
