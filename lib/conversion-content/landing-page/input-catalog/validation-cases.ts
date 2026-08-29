@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 
 import type {
   LandingPageInputCatalogLayer,
@@ -34,6 +35,7 @@ import {
 } from "./lifecycle";
 import {
   createNextLandingPageInputCatalogDraft,
+  serializeLandingPageInputCatalogEntry,
   validateLandingPageInputCatalogDraft,
 } from "./draft";
 import {
@@ -71,6 +73,11 @@ const v4Input: ResolveLandingPageInputCatalogInput = {
 const v5Input: ResolveLandingPageInputCatalogInput = {
   ...baseInput,
   version: 5,
+};
+
+const v6Input: ResolveLandingPageInputCatalogInput = {
+  ...baseInput,
+  version: 6,
 };
 
 const starterV2FieldKeys = [
@@ -370,6 +377,98 @@ const cases: Case[] = [
       });
       for (const snapshot of planSnapshots.slice(1)) {
         assert.deepEqual(snapshot, planSnapshots[0]);
+      }
+    },
+  },
+  {
+    name: "v6 materializes the frozen draft with forward retirement and offering scope",
+    run: () => {
+      const v5 = resolveRequired(v5Input);
+      const v6 = resolveRequired(v6Input);
+      assert.equal(v6.version, 6);
+      assert.equal(v6.fields.length, 25);
+      assert.deepEqual(v6.retiredFieldKeys, [
+        "primary_service_or_offer",
+        "primary_service_or_offer_description",
+      ]);
+      assert.equal(v6.fields.some((field) => field.fieldKey === "primary_service_or_offer"), false);
+      assert.equal(v6.fields.some((field) => field.fieldKey === "primary_service_or_offer_description"), false);
+
+      const offeringScope = v6.fields.find(
+        (field) => field.fieldKey === "landing_page_offering_scope",
+      );
+      const offeringDescription = v6.fields.find(
+        (field) => field.fieldKey === "landing_page_offering_scope_description",
+      );
+      const businessSummary = v6.fields.find(
+        (field) => field.fieldKey === "business_offerings_summary",
+      );
+      const conversionGoal = v6.fields.find(
+        (field) => field.fieldKey === "primary_conversion_goal",
+      );
+      assert.ok(offeringScope);
+      assert.ok(offeringDescription);
+      assert.ok(businessSummary);
+      assert.ok(conversionGoal);
+      assert.deepEqual(
+        {
+          valueType: offeringScope.valueType,
+          valueScope: offeringScope.valueScope,
+          expectedValueOrigin: offeringScope.expectedValueOrigin,
+          obligation: offeringScope.obligation,
+          validation: offeringScope.validation,
+          substitution: offeringScope.landingPageSubstitutionPolicy,
+          createdInVersion: offeringScope.createdInVersion,
+          allowedPlans: offeringScope.allowedPlans,
+        },
+        {
+          valueType: "offering_scope",
+          valueScope: "landing_page",
+          expectedValueOrigin: "landing_page_provided",
+          obligation: "required",
+          validation: { kind: "offering_scope" },
+          substitution: "not_applicable",
+          createdInVersion: 6,
+          allowedPlans: ["starter", "lite", "pro", "ultra"],
+        },
+      );
+      assert.equal(offeringDescription.valueType, "string");
+      assert.equal(offeringDescription.valueScope, "landing_page");
+      assert.equal(offeringDescription.obligation, "required");
+      assert.equal(businessSummary.purpose.includes("restrição de landing_page_offering_scope"), true);
+      assert.equal(conversionGoal.purpose.includes("transaction_intent, landing_page_offering_scope"), true);
+
+      const transition = classifyLandingPageInputCatalogTransition(v5, v6);
+      assert.deepEqual(transition.addedFieldKeys, [
+        "landing_page_offering_scope",
+        "landing_page_offering_scope_description",
+      ]);
+      assert.deepEqual(transition.reviewRequiredFieldKeys, [
+        "primary_service_or_offer",
+        "primary_service_or_offer_description",
+        "business_offerings_summary",
+        "primary_conversion_goal",
+      ]);
+      assert.equal(
+        collectCommercialIdentityReviewBlockers([
+          { taxon: realEstateBrokerNicheTaxon, ...transition },
+        ]).length,
+        0,
+      );
+      assert.equal(
+        createHash("sha256")
+          .update(serializeLandingPageInputCatalogEntry(landingPageInputCatalogRegistry[6]))
+          .digest("hex"),
+        "a54f780871b846f16f790bae0126aed1969e4621ff4d6b600783749f229af3aa",
+      );
+
+      for (const plan of ["starter", "lite", "pro", "ultra"] as const) {
+        const resolved = resolveRequired({ ...v6Input, plan });
+        assert.equal(resolved.fields.some((field) => field.fieldKey === "landing_page_offering_scope"), true);
+        assert.deepEqual(resolved.retiredFieldKeys, [
+          "primary_service_or_offer",
+          "primary_service_or_offer_description",
+        ]);
       }
     },
   },
@@ -884,7 +983,7 @@ const cases: Case[] = [
     },
   },
   {
-    name: "offering scope bootstrap recognizes free input without publishing v6",
+    name: "offering scope accepts canonical free input in the published v6 contract",
     run: () => {
       const field = {
         ...fixtureField("landing_page_offering_scope"),
@@ -940,15 +1039,15 @@ const cases: Case[] = [
         ),
         false,
       );
-      assert.equal(CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION, 5);
-      assert.deepEqual(listLandingPageInputCatalogVersions(), [1, 2, 3, 4, 5]);
+      assert.equal(CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION, 6);
+      assert.deepEqual(listLandingPageInputCatalogVersions(), [1, 2, 3, 4, 5, 6]);
     },
   },
   {
     name: "explicit current version is executable without deriving latest",
     run: () => {
-      assert.equal(CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION, 5);
-      assert.deepEqual(listLandingPageInputCatalogVersions(), [1, 2, 3, 4, 5]);
+      assert.equal(CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION, 6);
+      assert.deepEqual(listLandingPageInputCatalogVersions(), [1, 2, 3, 4, 5, 6]);
       assert.equal(resolveLandingPageInputCatalog({ ...baseInput, version: CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION }).ok, true);
     },
   },
@@ -991,8 +1090,7 @@ const cases: Case[] = [
       assert.deepEqual(landingPageCommercialIdentityFieldKeys, [
         "funnel_stage",
         "transaction_intent",
-        "primary_conversion_goal",
-        "primary_service_or_offer",
+        "landing_page_offering_scope",
       ]);
       const retirementRegistry = registryWithCandidate((candidate) => {
         mutableFieldInEntry(candidate, "funnel_stage").retiredInVersion = 6;
@@ -1007,7 +1105,7 @@ const cases: Case[] = [
       );
 
       const materialChangeRegistry = registryWithCandidate((candidate) => {
-        mutableFieldInEntry(candidate, "primary_conversion_goal").purpose =
+        mutableFieldInEntry(candidate, "funnel_stage").purpose =
           "A different commercial identity contract.";
       });
       const materialChange = classifyCandidateTransition(materialChangeRegistry);
@@ -1016,7 +1114,20 @@ const cases: Case[] = [
         collectCommercialIdentityReviewBlockers([
           { taxon: realEstateBrokerNicheTaxon, ...materialChange },
         ])[0]?.fieldKeys,
-        ["primary_conversion_goal"],
+        ["funnel_stage"],
+      );
+
+      const nonIdentityChangeRegistry = registryWithCandidate((candidate) => {
+        mutableFieldInEntry(candidate, "primary_conversion_goal").purpose =
+          "A materially different conversion goal contract.";
+      });
+      const nonIdentityChange = classifyCandidateTransition(nonIdentityChangeRegistry);
+      assert.equal(nonIdentityChange.classification, "review_required");
+      assert.equal(
+        collectCommercialIdentityReviewBlockers([
+          { taxon: realEstateBrokerNicheTaxon, ...nonIdentityChange },
+        ]).length,
+        0,
       );
 
       const compatibleRegistry = registryWithCandidate((candidate) => {
@@ -1051,6 +1162,54 @@ const cases: Case[] = [
         ]).length,
         0,
       );
+
+      const v6Registry = registryWithCandidate((candidate) => {
+        mutableFieldInEntry(candidate, "primary_service_or_offer").retiredInVersion = 6;
+        mutableFieldInEntry(candidate, "primary_service_or_offer_description").retiredInVersion = 6;
+        mutableFieldInEntry(candidate, "business_offerings_summary").purpose =
+          "Resumir de forma livre e não exaustiva o que o negócio oferece; não é catálogo, whitelist ou restrição de landing_page_offering_scope e não limita ofertas diferentes, mais amplas ou mais específicas na landing page.";
+        mutableFieldInEntry(candidate, "primary_conversion_goal").purpose =
+          "Declarar a ação ou conversão principal pretendida pela landing page, independentemente do canal autorizado usado para realizá-la, sem confundi-la com funnel_stage, transaction_intent, landing_page_offering_scope ou primary_conversion_channel.";
+        mutableEntries(candidate.universal).push(
+          {
+            ...fixtureField("landing_page_offering_scope"),
+            valueType: "offering_scope",
+            valueScope: "landing_page",
+            expectedValueOrigin: "landing_page_provided",
+            obligation: "required",
+            validation: { kind: "offering_scope" },
+            landingPageSubstitutionPolicy: "not_applicable",
+            createdInVersion: 6,
+          },
+          {
+            ...fixtureField("landing_page_offering_scope_description"),
+            valueScope: "landing_page",
+            expectedValueOrigin: "landing_page_provided",
+            obligation: "required",
+            landingPageSubstitutionPolicy: "not_applicable",
+            createdInVersion: 6,
+          },
+        );
+        (candidate.universal as unknown as { entries: LandingPageInputCatalogLayerEntry[] }).entries =
+          candidate.universal.entries.map(reverseEntryPropertyOrder);
+        for (const layer of Object.values(candidate.taxonLayers)) {
+          (layer as unknown as { entries: LandingPageInputCatalogLayerEntry[] }).entries =
+            layer.entries.map(reverseEntryPropertyOrder);
+        }
+      });
+      const v6Transition = classifyCandidateTransition(v6Registry);
+      assert.deepEqual(v6Transition.reviewRequiredFieldKeys, [
+        "primary_service_or_offer",
+        "primary_service_or_offer_description",
+        "business_offerings_summary",
+        "primary_conversion_goal",
+      ]);
+      assert.equal(
+        collectCommercialIdentityReviewBlockers([
+          { taxon: realEstateBrokerNicheTaxon, ...v6Transition },
+        ]).length,
+        0,
+      );
     },
   },
   {
@@ -1067,19 +1226,27 @@ const cases: Case[] = [
       assert.equal(previous.value.fields.some((field) => field.fieldKey === "business_display_name"), true);
       assert.equal(next.value.fields.some((field) => field.fieldKey === "business_display_name"), false);
       assert.deepEqual(next.value.retiredFieldKeys, ["business_display_name"]);
-      assert.equal(classifyLandingPageInputCatalogTransition(previous.value, next.value).classification, "review_required");
+      const transition = classifyLandingPageInputCatalogTransition(previous.value, next.value);
+      assert.equal(transition.classification, "review_required");
+      assert.deepEqual(transition.reviewRequiredFieldKeys, ["business_display_name"]);
+      assert.equal(
+        collectCommercialIdentityReviewBlockers([
+          { taxon: realEstateBrokerNicheTaxon, ...transition },
+        ]).length,
+        0,
+      );
     },
   },
   {
     name: "draft remains non operational and blocks operational taxons without an executable review",
     run: () => {
       const draft = createNextLandingPageInputCatalogDraft();
-      assert.equal(draft.version, 6);
+      assert.equal(draft.version, 7);
       const unchanged = validateLandingPageInputCatalogDraft({
         draft,
         taxons: [
-          { identity: realEstateSegmentTaxon, reviewedVersion: 5, operational: false },
-          { identity: realEstateBrokerNicheTaxon, reviewedVersion: 5, operational: true },
+          { identity: realEstateSegmentTaxon, reviewedVersion: 6, operational: false },
+          { identity: realEstateBrokerNicheTaxon, reviewedVersion: 6, operational: true },
           { identity: mediumStandardRealEstateBrokerTaxon, reviewedVersion: null, operational: true },
         ],
       });
@@ -1091,7 +1258,7 @@ const cases: Case[] = [
       assert.equal(Object.isFrozen(unchanged.value), true);
 
       const invalidVersion = validateLandingPageInputCatalogDraft({
-        draft: { ...draft, version: 7 },
+        draft: { ...draft, version: 8 },
         taxons: [],
       });
       assert.equal(invalidVersion.ok, false);
@@ -1264,6 +1431,12 @@ function fixtureField(
     obligation: "optional", validation: { kind: "type_only" }, allowedPlans: ["starter", "lite", "pro", "ultra"],
     snapshotPolicy: "include_if_used", evidence: { summary: "Fixture backed by the approved human decision.", references: ["decision:e20-2-human"] }, createdInVersion: 1,
   };
+}
+
+function reverseEntryPropertyOrder(
+  entry: LandingPageInputCatalogLayerEntry,
+): LandingPageInputCatalogLayerEntry {
+  return Object.fromEntries(Object.entries(entry).reverse()) as LandingPageInputCatalogLayerEntry;
 }
 
 function ultraLayer(): LandingPageInputCatalogLayer {

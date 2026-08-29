@@ -18,13 +18,6 @@ export type InputCatalogLifecycleActionState = Readonly<{
   revision: number;
 }>;
 
-export const initialInputCatalogLifecycleActionState: InputCatalogLifecycleActionState = {
-  error: null,
-  message: null,
-  handoff: null,
-  revision: 0,
-};
-
 export async function initializeInputCatalogDraftAction(
   previous: InputCatalogLifecycleActionState,
 ): Promise<InputCatalogLifecycleActionState> {

@@ -57,10 +57,7 @@ export function resolveAccountLandingPageOnboardingConfiguration(
 
   if (!catalog.ok) return { ok: false, error: "CATALOG_UNAVAILABLE" };
 
-  const offeringScopeCandidate = classifyOfferingScopeCandidate(
-    input.registry,
-    catalog.value,
-  );
+  const offeringScopeCandidate = classifyOfferingScopeCandidate(catalog.value);
   if (offeringScopeCandidate === "invalid") {
     return {
       ok: false,
@@ -304,11 +301,8 @@ function adaptLegacyOfferingScope(
 }
 
 function classifyOfferingScopeCandidate(
-  registry: LandingPageInputCatalogRegistry | undefined,
   catalog: ResolvedLandingPageInputCatalog,
 ): "none" | "compatible" | "invalid" {
-  if (!registry) return "none";
-
   const retired = new Set(catalog.retiredFieldKeys);
   const scope = catalog.fields.find(
     (field) => field.fieldKey === "landing_page_offering_scope",

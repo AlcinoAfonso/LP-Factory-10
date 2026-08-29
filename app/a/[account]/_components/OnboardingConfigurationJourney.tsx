@@ -24,6 +24,10 @@ import {
   type AccountLandingPageOnboardingFieldState,
   type AccountLandingPageOnboardingStoredValues,
 } from "../../../../lib/lp-builder";
+import {
+  landingPageOfferingScopeModes,
+  parseLandingPageOfferingScope,
+} from "../../../../lib/conversion-content/landing-page/input-catalog";
 import { validateStarterColorPalette } from "../../../../lib/lp-builder/onboardingConfiguration";
 import { saveOnboardingConfigurationAction } from "../onboarding-configuration-actions";
 import { saveLandingPageConfigurationAction } from "../landing-pages/[landingPageId]/configuration-actions";
@@ -117,6 +121,8 @@ const FIELD_LABELS: Readonly<Record<string, string>> = {
   business_display_name: "Nome público do negócio",
   primary_service_or_offer: "Serviço ou oferta principal",
   primary_service_or_offer_description: "Descrição do serviço ou da oferta",
+  landing_page_offering_scope: "O que esta landing page vai divulgar?",
+  landing_page_offering_scope_description: "Descrição do escopo comercial",
   service_locations: "Regiões atendidas",
   property_types: "Tipos de imóvel",
   property_price_range: "Faixa de preço",
@@ -171,6 +177,9 @@ const OPTION_LABELS: Readonly<Record<string, string>> = {
   rent: "Locação",
   in_person: "Presencial",
   remote: "Remoto",
+  single: "Uma oferta",
+  multiple: "Algumas ofertas",
+  portfolio: "Todo o portfólio",
 };
 
 export function OnboardingConfigurationJourney(props: Readonly<{
@@ -410,7 +419,7 @@ export function OnboardingConfigurationJourney(props: Readonly<{
                   className="mt-1 h-4 w-4"
                 />
                 <span>
-                  Se eu alterar a oferta principal, confirmo que continua sendo o mesmo trabalho comercial. Caso contrário, criarei uma nova landing page.
+                  Se eu alterar o modo ou as ofertas deste escopo, confirmo que continua sendo o mesmo trabalho comercial. Caso contrário, criarei uma nova landing page.
                 </span>
               </label>
             ) : null}
@@ -663,10 +672,11 @@ function OnboardingField(props: Readonly<{
   const errorId = `${id}-error`;
   const labelId = `${id}-label`;
   const describedBy = props.error ? `${hintId} ${errorId}` : hintId;
-  const isCheckboxGroup =
-    field.valueType === "string_list" &&
-    field.validation.kind === "string_list" &&
-    Boolean(field.validation.allowedValues);
+  const isGroupedControl =
+    field.valueType === "offering_scope" ||
+    (field.valueType === "string_list" &&
+      field.validation.kind === "string_list" &&
+      Boolean(field.validation.allowedValues));
 
   if (props.fieldState.source === "authoritative") {
     return (
@@ -681,10 +691,16 @@ function OnboardingField(props: Readonly<{
   }
 
   return (
-    <FormField className={field.valueType === "string" ? "sm:col-span-2" : undefined}>
+    <FormField
+      className={
+        field.valueType === "string" || field.valueType === "offering_scope"
+          ? "sm:col-span-2"
+          : undefined
+      }
+    >
       <FormFieldLabel
         id={labelId}
-        {...(isCheckboxGroup ? {} : { htmlFor: id })}
+        {...(isGroupedControl ? {} : { htmlFor: id })}
         required={props.required}
       >
         {fieldLabel(field.fieldKey)}
@@ -829,6 +845,10 @@ function FieldControl(props: Readonly<{
     return <KeywordMapControl {...props} common={common} />;
   }
 
+  if (field.valueType === "offering_scope") {
+    return <OfferingScopeControl {...props} />;
+  }
+
   const inputType =
     field.valueType === "email"
       ? "email"
@@ -846,6 +866,88 @@ function FieldControl(props: Readonly<{
       placeholder={field.valueType === "phone" ? "+5511999999999" : undefined}
       onChange={(event) => props.onChange(event.target.value || undefined)}
     />
+  );
+}
+
+function OfferingScopeControl(props: Readonly<{
+  id: string;
+  labelId: string;
+  describedBy: string;
+  value: unknown;
+  invalid: boolean;
+  required: boolean;
+  onChange: (value: unknown | undefined) => void;
+}>) {
+  const raw = isRecord(props.value) ? props.value : {};
+  const mode = landingPageOfferingScopeModes.includes(
+    raw.mode as (typeof landingPageOfferingScopeModes)[number],
+  )
+    ? raw.mode as (typeof landingPageOfferingScopeModes)[number]
+    : undefined;
+  const offeringItems = Array.isArray(raw.offerings)
+    ? raw.offerings.filter((item): item is string => typeof item === "string")
+    : [];
+  const offerings = offeringItems.join("\n");
+  const update = (nextMode: string | undefined, nextOfferings: readonly string[]) => {
+    if (!nextMode && nextOfferings.length === 0) {
+      props.onChange(undefined);
+      return;
+    }
+    props.onChange({ mode: nextMode, offerings: nextOfferings });
+  };
+
+  return (
+    <fieldset
+      id={props.id}
+      aria-labelledby={props.labelId}
+      aria-describedby={props.describedBy}
+      aria-invalid={props.invalid}
+      className="space-y-4 rounded-lg border border-surface-border p-4 sm:col-span-2"
+    >
+      <legend className="sr-only">Escopo comercial da página</legend>
+      <div className="grid gap-2 sm:grid-cols-3">
+        {landingPageOfferingScopeModes.map((option) => (
+          <label
+            key={option}
+            className="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border border-surface-border px-3 text-sm font-medium text-ink-900 focus-within:ring-2 focus-within:ring-brand-600"
+          >
+            <input
+              type="radio"
+              name={`${props.id}-mode`}
+              value={option}
+              checked={mode === option}
+              required={props.required}
+              onChange={() => update(option, offeringItems)}
+            />
+            {optionLabel(option)}
+          </label>
+        ))}
+      </div>
+      <div>
+        <label htmlFor={`${props.id}-offerings`} className="text-sm font-medium text-ink-900">
+          Ofertas incluídas
+        </label>
+        <Textarea
+          id={`${props.id}-offerings`}
+          className="mt-2 min-h-28"
+          value={offerings}
+          aria-describedby={props.describedBy}
+          aria-invalid={props.invalid}
+          aria-required={props.required}
+          placeholder="Uma oferta por linha"
+          onChange={(event) => {
+            const items = event.target.value
+              .split("\n")
+              .map((item) => item.trim())
+              .filter(Boolean);
+            update(mode, items);
+          }}
+        />
+        <p className="mt-2 text-xs leading-5 text-graytech-600">
+          Entrada livre: não usamos catálogo, whitelist nem derivação do resumo do negócio.
+        </p>
+      </div>
+    </fieldset>
   );
 }
 
@@ -899,6 +1001,10 @@ export function formatDisplayValue(value: unknown) {
       .join(", ");
   }
   if (isRecord(value)) {
+    const offeringScope = parseLandingPageOfferingScope(value);
+    if (offeringScope.ok) {
+      return `${optionLabel(offeringScope.value.mode)}: ${offeringScope.value.offerings.join(", ")}`;
+    }
     if (
       typeof value.minimum === "number" ||
       typeof value.maximum === "number"

@@ -3,14 +3,21 @@
 import { useActionState } from "react";
 
 import type { AdminInputCatalogLifecycleState } from "@/lib/admin/adapters/adminInputCatalogLifecycleAdapter";
+import type { InputCatalogLifecycleActionState } from "../actions";
 import {
-  initialInputCatalogLifecycleActionState,
   initializeInputCatalogDraftAction,
   prepareInputCatalogPublicationAction,
   reconcileInputCatalogPublishedDraftAction,
   saveInputCatalogDraftAction,
   validateInputCatalogDraftAction,
 } from "../actions";
+
+const initialInputCatalogLifecycleActionState: InputCatalogLifecycleActionState = {
+  error: null,
+  message: null,
+  handoff: null,
+  revision: 0,
+};
 
 export function AdminInputCatalogLifecycle({
   state,

@@ -16,7 +16,6 @@ import {
   type LandingPageInputCatalogLayerEntry,
   type LandingPageInputCatalogRegistry,
   type LandingPageInputCatalogRegistryEntry,
-  type LandingPageInputFieldDefinition,
 } from "../../../../lib/conversion-content/landing-page/input-catalog";
 import { deriveEffectiveTaxonPreparation } from "../../../../lib/conversion-content/landing-page/taxon-preparation";
 import { resolveAccountLandingPageOnboardingConfiguration } from "../../../../lib/lp-builder/onboardingConfiguration";
@@ -115,6 +114,21 @@ assert.match(lifecycleComponent, /catalogDraftRevision/);
 assert.match(lifecycleComponent, /Decisão vinculada ao draft atual/);
 assert.match(lifecycleComponent, /Reconciliar draft já implantado/);
 assert.match(lifecycleActions, /requirePlatformAdmin/);
+const lifecycleRuntimeExports = lifecycleActions.match(
+  /^export\s+(?!type\b|interface\b)[^\r\n]+/gm,
+) ?? [];
+assert.ok(lifecycleRuntimeExports.length > 0);
+assert.ok(
+  lifecycleRuntimeExports.every((runtimeExport) =>
+    /^export async function\b/.test(runtimeExport),
+  ),
+  `O módulo use server deve exportar em runtime somente Server Actions assíncronas: ${lifecycleRuntimeExports.join(", ")}`,
+);
+assert.doesNotMatch(lifecycleActions, /export const initialInputCatalogLifecycleActionState/);
+assert.match(
+  lifecycleComponent,
+  /const initialInputCatalogLifecycleActionState:\s*InputCatalogLifecycleActionState\s*=\s*\{/,
+);
 assert.match(lifecycleMigration, /create table public\.landing_page_input_catalog_drafts/);
 assert.match(lifecycleMigration, /revoke all on table public\.landing_page_input_catalog_drafts[\s\S]*from public, anon, authenticated/);
 assert.match(lifecycleMigration, /grant select, insert, update, delete[\s\S]*to service_role/);
@@ -433,66 +447,7 @@ void validateBehavioralContracts().catch((error: unknown) => {
 });
 
 function offeringScopeDraft(): LandingPageInputCatalogRegistryEntry {
-  const draft = JSON.parse(
-    JSON.stringify(createNextLandingPageInputCatalogDraft()),
-  ) as LandingPageInputCatalogRegistryEntry;
-  const entries = draft.universal.entries as LandingPageInputCatalogLayerEntry[];
-  for (const fieldKey of [
-    "primary_service_or_offer",
-    "primary_service_or_offer_description",
-  ]) {
-    const field = entries.find(
-      (entry) => entry.kind === "field" && entry.fieldKey === fieldKey,
-    );
-    assert.ok(field?.kind === "field");
-    (field as LandingPageInputFieldDefinition & { retiredInVersion?: number })
-      .retiredInVersion = 6;
-  }
-  entries.push(
-    offeringScopeField(),
-    {
-      kind: "field",
-      fieldKey: "landing_page_offering_scope_description",
-      purpose: "Descrever factualmente o escopo comercial da landing page.",
-      originLayer: "universal",
-      valueType: "string",
-      valueScope: "landing_page",
-      expectedValueOrigin: "landing_page_provided",
-      obligation: "required",
-      validation: { kind: "type_only" },
-      allowedPlans: ["starter", "lite", "pro", "ultra"],
-      snapshotPolicy: "include_if_used",
-      landingPageSubstitutionPolicy: "not_applicable",
-      evidence: {
-        summary: "Fixture da decisão humana E20.2.9.",
-        references: ["decision:e20-2-human"],
-      },
-      createdInVersion: 6,
-    },
-  );
-  return draft;
-}
-
-function offeringScopeField(): LandingPageInputFieldDefinition {
-  return {
-    kind: "field",
-    fieldKey: "landing_page_offering_scope",
-    purpose: "Representar o escopo comercial informado livremente para a landing page.",
-    originLayer: "universal",
-    valueType: "offering_scope",
-    valueScope: "landing_page",
-    expectedValueOrigin: "landing_page_provided",
-    obligation: "required",
-    validation: { kind: "offering_scope" },
-    allowedPlans: ["starter", "lite", "pro", "ultra"],
-    snapshotPolicy: "include_if_used",
-    landingPageSubstitutionPolicy: "not_applicable",
-    evidence: {
-      summary: "Fixture da decisão humana E20.2.9.",
-      references: ["decision:e20-2-human"],
-    },
-    createdInVersion: 6,
-  };
+  return createNextLandingPageInputCatalogDraft();
 }
 
 function withoutOfferingScopeDescription(

@@ -87,9 +87,9 @@ const context = {
         parentId: null,
       },
     },
-    sharedCatalogVersion: 5,
-    landingPageCatalogVersion: 5,
-    effectiveInputCatalogVersion: 5,
+    sharedCatalogVersion: 6,
+    landingPageCatalogVersion: 6,
+    effectiveInputCatalogVersion: 6,
     sharedRevision: 11,
     landingPageRevision: 13,
     rootVersion: 1,
@@ -104,10 +104,10 @@ const context = {
     },
     facts: [
       {
-        fieldKey: "primary_service_or_offer",
-        purpose: "offer",
-        valueType: "string",
-        value: "Consultoria imobiliária",
+        fieldKey: "landing_page_offering_scope",
+        purpose: "offering scope",
+        valueType: "offering_scope",
+        value: { mode: "single", offerings: ["Consultoria imobiliária"] },
         source: "configuration",
         provenance: [{ property: "definition", layer: "universal" }],
       },
@@ -970,6 +970,15 @@ const cases = [
         { fieldKey: "primary_conversion_goal" },
       ];
       assert.equal(validateLandingPageRevisionSnapshot(malformedFacts), false);
+      const malformedOfferingScope = structuredClone(documents.snapshot) as unknown as {
+        generationContext: { modelContext: { facts: Array<Record<string, unknown>> } };
+      };
+      const offeringScopeFact = malformedOfferingScope.generationContext.modelContext.facts.find(
+        (fact) => fact.fieldKey === "landing_page_offering_scope",
+      );
+      assert.ok(offeringScopeFact);
+      offeringScopeFact.value = { mode: "multiple", offerings: ["Oferta única"] };
+      assert.equal(validateLandingPageRevisionSnapshot(malformedOfferingScope), false);
       const legacyContext = {
         contractVersion: 3,
         identities: {

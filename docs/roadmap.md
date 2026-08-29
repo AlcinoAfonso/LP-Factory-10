@@ -2702,11 +2702,11 @@ Repositório — Ajustados
 20.2.9.1 Objetivo e status
 
 * Objetivo: substituir a representação singular de oferta por um escopo comercial capaz de expressar uma oferta, algumas ofertas ou o portfólio amplo, reconciliando a continuidade da identidade E19.5 sem alterar snapshots históricos.
-* Status: Em andamento em duas etapas. A Etapa 1 está implementada no PR draft #826 e aguarda validação final/merge humano; a Etapa 2 só começa depois que o bootstrap chegar à `main`.
+* Status: Em andamento em duas etapas. A Etapa 1 foi concluída e incorporada à `main` pelo PR #826; a Etapa 2 está em implementação no PR draft #830, com publicação e reconciliação pós-deploy ainda pendentes.
 
 20.2.9.2 Bootstrap mantendo v5
 
-* Status: Implementado no PR draft #826; merge e gate final pendentes.
+* Status: Concluído e incorporado à `main` pelo PR #826, preservando `CURRENT=5` e o registry publicado v1–v5 nesse checkpoint.
 * Conteúdo:
   * Mantém `CURRENT=5`, registry publicado v1–v5 e toda operação do cliente em v5.
   * Adiciona ao contrato E20.2 o value type administrativo `offering_scope`, com modos técnicos `single | multiple | portfolio` e rótulos futuros `Uma oferta | Algumas ofertas | Todo o portfólio`.
@@ -2725,12 +2725,13 @@ Repositório — Ajustados
 
 20.2.9.4 Draft, revisão e publicação da v6
 
-* Status: Planejada; bloqueada até o merge da Etapa 1 na `main`.
+* Status: Implementação candidata materializada no PR draft #830, com draft v6 validado, decisão humana E20.6.5 `confirm_sufficient` registrada, handoff repo-only congelado e `CURRENT=6`; revisão e merge humanos, deploy de Production, reconciliação canônica do draft e QA operacional pós-reconciliação permanecem pendentes.
 * Sequência:
-  * partir da `main` ainda em v5 e criar exatamente o draft v6 pelo lifecycle E20.2.8;
-  * validar as configurações operacionais completas, executar E20.6 pré-publicação e preservar as decisões humanas vigentes;
-  * reconciliar identidade E19.5, UI operacional, save/reload, geração e snapshots;
-  * somente então materializar v6 no registry repo-only, alterar `CURRENT=6`, validar o deploy e reconciliar/remover o draft conforme o lifecycle canônico.
+  * o lifecycle E20.2.8 criou exatamente o draft v6 a partir da `main` ainda em v5;
+  * as configurações operacionais completas foram validadas, a E20.6.5 pré-publicação resultou `sufficient` sem gaps ou refinamentos e a decisão humana vigente foi vinculada aos fingerprints revalidados;
+  * o PR #830 reconcilia identidade E19.5, UI operacional, save/reload, geração e snapshots e materializa a v6 no registry repo-only com `CURRENT=6`;
+  * o Preview do artefato v6 foi aprovado como gate de build/artefato; como Preview e Production compartilham o Supabase, a transição material exige `R=6` e a reconciliação canônica é exclusiva de Production, o QA operacional completo foi transferido, sem dispensa, para imediatamente após essa reconciliação, sem bypass ou escrita antecipada no marcador;
+  * após revisão e merge humanos, o deploy de Production deve comprovar o artefato exato e reconciliar os marcadores válidos antes de remover o draft, conforme o lifecycle canônico.
 
 20.3 Perfil de orientação para geração
 
