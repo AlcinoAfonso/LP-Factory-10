@@ -35,10 +35,12 @@ import { initialOnboardingConfigurationActionState } from "./onboarding-configur
 import {
   journeyConditionMatches,
   journeyScopeBelongsToStep,
+  onboardingFieldErrorFocusTargetId,
   type JourneyFormStep,
   parseKeywordMapDraft,
   parseNumberRangeDraft,
   prepareJourneyStoredValues,
+  recoverCorrectableOnboardingSubmission,
 } from "./onboarding-journey-policy";
 
 const STEPS: readonly Readonly<{
@@ -285,9 +287,24 @@ export function OnboardingConfigurationJourney(props: Readonly<{
   }, [actionState, props.accountSubdomain, props.workspaceMode, router]);
 
   useEffect(() => {
+    const recovered = recoverCorrectableOnboardingSubmission(actionState);
+    if (!recovered) return;
+    setValues(recovered.values);
+    setRevision(recovered.revision);
+    if (props.workspaceMode && recovered.sharedRevision !== undefined) {
+      setSharedRevision(recovered.sharedRevision);
+    }
+  }, [actionState, props.workspaceMode]);
+
+  useEffect(() => {
     const firstFieldKey = Object.keys(actionState.fieldErrors ?? {})[0];
     if (!firstFieldKey) return;
-    document.getElementById(`onboarding-${firstFieldKey}`)?.focus();
+    const frame = requestAnimationFrame(() => {
+      document
+        .getElementById(onboardingFieldErrorFocusTargetId(firstFieldKey))
+        ?.focus();
+    });
+    return () => cancelAnimationFrame(frame);
   }, [actionState.fieldErrors]);
 
   useEffect(() => {

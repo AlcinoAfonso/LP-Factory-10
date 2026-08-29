@@ -228,6 +228,10 @@ const cases: readonly Readonly<{ name: string; run: () => void }>[] = [
       assert.match(adapter, /\.range\(/);
       assert.match(adapter, /p_expected_latest_materialization_id:\s*identity\.latestMaterializationId/);
       assert.match(adapter, /candidate\.configuration\.storedValues/);
+      assert.ok(
+        adapter.indexOf("if (!candidate.ok)") <
+          adapter.indexOf('client.rpc(\n      "save_account_landing_page_configuration_v1"'),
+      );
       assert.match(adapter, /evaluateLandingPageCommercialIdentityMutation/);
       assert.match(domain, /areLandingPageOfferingScopesMateriallyEqual/);
       assert.match(adapter, /projectLegacyLandingPageOfferingScope/);

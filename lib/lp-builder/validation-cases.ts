@@ -654,6 +654,47 @@ const cases: ReadonlyArray<
         }),
         revision: 2,
       };
+      const invalidValues = {
+        ...segmentV6ValidValues,
+        landing_page_offering_scope: {
+          scope: "landing_page" as const,
+          value: {
+            mode: "single",
+            offerings: ["Oferta livre", "  oferta LIVRE  "],
+          },
+        },
+      };
+      const invalidClient = runtimeClient([
+        ...runtimeGateResponses(),
+        response("account_landing_page_onboarding_configurations", {
+          ...completeConfigurationRow(),
+          catalog_version: 5,
+          values: stripAuthoritativeOnboardingValues(segmentV5ValidValues, {
+            business_display_name: "Conta de teste",
+          }),
+        }),
+      ]);
+      const rejected = await saveAccountLandingPageOnboardingConfigurationFromClientCore(
+        {
+          accountId: ACCOUNT_ID,
+          actorUserId: ACTOR_ID,
+          expectedRevision: 1,
+          values: invalidValues,
+        },
+        invalidClient,
+        eligibleEntitlement,
+        catalogVersionLoaderFor(6),
+      );
+      assert.deepEqual(rejected, {
+        ok: false,
+        error: "invalid_values",
+        fieldKey: "landing_page_offering_scope",
+      });
+      assert.equal(
+        invalidClient.calls.some((call) => call.operation === "update"),
+        false,
+      );
+
       const saveClient = runtimeClient([
         ...runtimeGateResponses(),
         response("account_landing_page_onboarding_configurations", {
