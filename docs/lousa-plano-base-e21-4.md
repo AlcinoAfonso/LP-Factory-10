@@ -1,6 +1,6 @@
-28/08/2026 — Plano-base v2 — E21.4 — Visibilidade financeira mínima de custos OpenAI
+29/08/2026 — Plano-base v2 — E21.4 — Visibilidade financeira mínima de custos OpenAI
 
-Status: plano-base v2 corrigido pelas decisões humanas posteriores de 28 e 29/08/2026; a implementação foi reconciliada com o contrato fail-open e aprovada pelo Analista para retomar somente o QA hospedado e a prova oficial. O Preview do HEAD aprovado está implantado; autenticação `platform_admin`, estado inicial e erro seguro foram verificados. A prova oficial e o QA integral permanecem bloqueados exclusivamente pela ausência de `OPENAI_ADMIN_KEY` no Preview. Production, banco, migration e flags permanecem inalterados.
+Status: plano-base v2 corrigido pelas decisões humanas posteriores de 28 e 29/08/2026; a implementação foi reconciliada com o contrato fail-open e aprovada pelo Analista. A prova oficial da Costs API e o QA hospedado pré-merge foram aprovados no Preview do HEAD `8397b342856ac5f9d8f71aaee0f17111118f1cf3`, com leitura real de `US$ 0,4064` para agosto de 2026, período personalizado, atualização sob demanda, desktop/mobile, contraste, atalhos externos e bloqueio do papel negativo. A cobertura interna indisponível no Preview é esperada porque a migration da E21.4 ainda não foi aplicada. Production possui `OPENAI_ADMIN_KEY` configurada, mas não foi redeployada nem validada em runtime; banco, migration e `OPENAI_LP_COST_TRACKING_ENABLED` permanecem inalterados, e os gates pós-merge continuam pendentes.
 
 ## 1. Estado e decisões fixas
 
@@ -189,12 +189,13 @@ Status: plano-base v2 corrigido pelas decisões humanas posteriores de 28 e 29/0
 
 ### 3.4. Sequência de execução
 
-1. A implementação do PR #831 já foi reconciliada com o contrato fail-open, validada localmente e aprovada pelo Analista para retomar somente o QA hospedado e a prova oficial.
-2. O Preview do HEAD aprovado está implantado; autenticação `platform_admin`, estado inicial e estado de erro seguro foram verificados.
-3. A prova oficial e o QA integral permanecem bloqueados exclusivamente pela ausência de `OPENAI_ADMIN_KEY` no Preview.
-4. Este ajuste documental registra a fronteira entre a atribuição de negócio da LP Factory e a visão global canônica da OpenAI; não autoriza alteração de código, migration, banco, flags, Vercel ou configuração remota.
-5. Após a configuração operacional da chave administrativa em Preview e novo deploy autorizado, retomar a prova oficial e somente os gates hospedados ainda pendentes, sem repetir especialistas ou gates já aprovados.
-6. Production, banco, migration e flags permanecem inalterados. Não iniciar E21.3.4 nem evolução adiada.
+1. A implementação do PR #831 já foi reconciliada com o contrato fail-open, validada localmente e aprovada pelo Analista.
+2. `OPENAI_ADMIN_KEY` foi configurada como secret em Preview e Production; somente o Preview foi redeployado e validado no deployment `dpl_Cf8rFSdiDhmzauDWBuxBp6pzreVP`, estado `READY`, HEAD `8397b342856ac5f9d8f71aaee0f17111118f1cf3`.
+3. A prova oficial da Costs API aprovou a leitura real de `US$ 0,4064` para agosto de 2026; o QA hospedado pré-merge aprovou período personalizado, atualização sob demanda, desktop/mobile, contraste, atalhos externos e bloqueio do papel negativo.
+4. A cobertura interna indisponível no Preview é o estado esperado enquanto a migration da E21.4 permanecer não aplicada.
+5. Production não foi redeployada nem validada em runtime; banco, migration e `OPENAI_LP_COST_TRACKING_ENABLED` permanecem inalterados.
+6. Após o merge humano, executar exclusivamente apply canônico, snippet read-only, Security Controls, ativação controlada do gate em Production, redeploy, smoke dos dois workloads, registro único da data de corte e QA pós-merge previstos, sem repetir gates pré-merge aprovados.
+7. Não iniciar E21.3.4 nem evolução adiada.
 
 ## 4. Escopo negativo e critérios de parada
 

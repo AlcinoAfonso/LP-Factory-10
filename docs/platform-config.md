@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Documento: LP Factory 10 — Platform Config
-• Versão: v0.1.30
+• Versão: v0.1.31
 • Data: 29/08/2026
 
 0.2 Contrato do documento
@@ -186,10 +186,11 @@
 
 • `OPENAI_ADMIN_KEY`
 • Finalidade: chave administrativa server-side usada exclusivamente pelo Core para leitura read-only do gasto oficial total na Costs API da organização.
-• Escopo aprovado: Production; Preview somente mediante autorização operacional humana específica para a prova hospedada.
-• Estado operacional: provisionamento, configuração na Vercel e prova real ainda não validados neste recorte; ausência local não determina o estado da plataforma.
-• Separação: não substitui, não reutiliza e não pode ser exposta como `OPENAI_API_KEY`; não atravessa client, log, banco ou payload sanitizado.
-• Valor real: não versionar.
+• Permissão: `Read only` na OpenAI Platform.
+• Escopo: Preview e Production do projeto Core na Vercel, como secret server-side.
+• Estado operacional: Organization Admin Key criada; Preview redeployado e validado com leitura oficial real da Costs API de `US$ 0,4064` para agosto de 2026. Production possui a variável configurada, mas não foi redeployada nem validada em runtime.
+• Separação: `OPENAI_API_KEY` permanece configurada separadamente e não foi substituída, reutilizada ou alterada; `OPENAI_ADMIN_KEY` não atravessa client, log, banco ou payload sanitizado.
+• Valor real: não versionado nem registrado.
 
 • `OPENAI_LP_COST_TRACKING_ENABLED`
 • Finalidade: gate server-side da persistência financeira prospectiva das tentativas de texto e imagem de Landing Pages.

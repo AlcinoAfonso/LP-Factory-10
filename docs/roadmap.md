@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 28/08/2026
-• Versão: v1.5.192
+• Data: 29/08/2026
+• Versão: v1.5.193
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2910,7 +2910,7 @@ Repositório — Ajustados
 
 21. E21 — Gestão e governança dos workloads OpenAI
 - Objetivo: gerir e governar os workloads OpenAI por recortes aprovados, com configuração explícita, observabilidade segura, leitura administrativa e configuração operacional dinâmica por ambiente, sem otimização automatizada.
-- Status: a fundação E21.1 permanece preservada; a E21.2, incluindo o catálogo operacional da E21.2.5, está concluída com apply e gates hospedados aprovados; o plano-base v1 da E21.3 já está na `main`, enquanto a implementação experimental da E21.3.3 permaneceu no PR #819, fechado sem merge por repriorização humana; a E21.4 possui plano-base v2 mínimo corrigido e implementação repo-only reconciliada no PR #831, ainda dependente da avaliação do Analista e dos gates hospedados/pós-merge antes da retomada da E21.3.4.
+- Status: a fundação E21.1 permanece preservada; a E21.2, incluindo o catálogo operacional da E21.2.5, está concluída com apply e gates hospedados aprovados; o plano-base v1 da E21.3 já está na `main`, enquanto a implementação experimental da E21.3.3 permaneceu no PR #819, fechado sem merge por repriorização humana; a E21.4 possui plano-base v2 mínimo corrigido, implementação repo-only reconciliada no PR #831 e prova oficial/QA hospedado pré-merge aprovados no Preview, com gates pós-merge ainda pendentes antes da retomada da E21.3.4.
 
 21.1 Fundação, normalização e leitura dos workloads OpenAI
 
@@ -3139,7 +3139,7 @@ Repositório — Ajustados
 
 21.4.1 Objetivo e status
 - Objetivo: permitir ao `platform_admin` conhecer o gasto oficial total OpenAI do período e o custo prospectivo calculado das Landing Pages geradas, agregado por conta e detalhado por Landing Page nos workloads de texto e imagem, com a diferença apresentada como Outros gastos / reconciliação.
-- Status: plano-base v2 mínimo corrigido e aprovado pelo Estrategista em 28/08/2026; E21.4.3, E21.4.4 e E21.4.5 possuem implementação repo-only reconciliada no PR #831, sem aprovação definitiva quanto ao delta até o parecer do Analista; prova oficial hospedada, apply e gates hospedados permanecem pendentes, antes da retomada da E21.3.4.
+- Status: plano-base v2 mínimo corrigido e implementação repo-only reconciliada no PR #831; prova oficial da Costs API e QA hospedado pré-merge aprovados no Preview em 29/08/2026. Apply, Security Controls, ativação de Production, smoke, data de corte e QA pós-merge permanecem pendentes antes da retomada da E21.3.4.
 
 21.4.2 Registros do recorte
 - Repositório:
@@ -3184,7 +3184,7 @@ Repositório — Ajustados
   - Configuração administrativa OpenAI: `docs/platform-config.md` — 3.5 e 6.3.1.
 
 21.4.3 Autoridade oficial de Costs
-- Status: Implementação técnica local reconciliada com a v2 corrigida; prova oficial hospedada com credencial administrativa autorizada e gate do Analista pendentes.
+- Status: Implementação técnica reconciliada e prova oficial hospedada aprovada no Preview, com leitura real de `US$ 0,4064` para agosto de 2026; Production possui a variável administrativa configurada, mas não foi redeployada nem validada em runtime.
 - Automação: não.
 - Conteúdo:
   - consultar sob demanda somente a Costs API com Admin API Key server-side para obter o gasto oficial total em USD no mês atual ou em período UTC personalizado;
@@ -3200,13 +3200,13 @@ Repositório — Ajustados
   - preservar somente status, código e tipo sanitizados de falha real do provider para diagnóstico administrativo agregado, sem mensagem, payload bruto ou detalhe financeiro interno no cliente.
 
 21.4.5 Custos OpenAI e reconciliação administrativa
-- Status: Implementação repo-only reconciliada no PR #831, ainda dependente do parecer do Analista; validações locais, prova oficial hospedada, apply, instrumentação Production e QA hospedado permanecem como gates aplicáveis.
+- Status: Implementação repo-only reconciliada no PR #831; validações locais, prova oficial e QA hospedado pré-merge aprovados no Preview. Apply, instrumentação Production e QA pós-merge permanecem como gates aplicáveis.
 - Automação: não.
 - Conteúdo:
   - criar superfície separada para `platform_admin` com total oficial, custos prospectivos calculados das LPs, Outros gastos / reconciliação e aprofundamento conta → Landing Page → texto/imagem;
   - consultar sob demanda o provider oficial e o read model interno em paralelo, com paginação completa e reconciliação decimal exata, sem clamp;
   - distinguir cobertura completa, parcial, degradada e indisponível, deixando explícito que falhas anteriores ao início persistido não são individualizáveis e permanecem no residual;
-  - validar períodos, atualização sob demanda, cobertura/corte, estados, acesso negativo, desktop/mobile e acessibilidade proporcional antes da conclusão;
+  - o QA pré-merge aprovou período atual/personalizado, atualização sob demanda, estado de cobertura interna indisponível, desktop/mobile, contraste, atalhos externos e bloqueio do papel negativo; a indisponibilidade interna no Preview é esperada enquanto a migration permanecer não aplicada;
   - adiar classificação financeira ampla, workloads adicionais, reconstrução histórica, créditos, câmbio, cobrança, AI Gateway, CDC e qualquer infraestrutura não indispensável ao núcleo aprovado.
 
 22. E22 — Retirada controlada de ativos históricos
