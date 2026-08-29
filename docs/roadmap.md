@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 28/08/2026
-• Versão: v1.5.190
+• Data: 29/08/2026
+• Versão: v1.5.191
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2907,6 +2907,31 @@ Repositório — Ajustados
   * `confirm_sufficient` aceita somente resultado `sufficient`; para `candidate_gaps`, o humano seleciona e reconhece somente gaps reais, recebendo handoff E20.2 transitório sem escrita, ou limpa a seleção e usa `reject_candidates_and_confirm_sufficient` para rejeitar todos e confirmar `N`, com `kind` distinto por decisão e sem veto da IA;
   * somente `ROLLOUT_GATE_OFF` mantém handoff Codex e registro legado; gate-on comprovado e `OPERATIONAL_CONFIGURATION_UNPROVEN` ocultam e bloqueiam ambos server-side, sem gravação, fallback Codex ou rotulagem gate-off, preservando reabertura;
   * o #795 não constitui fechamento: a decisão expand/contract está aprovada, o expand gate-off foi mergeado e sua migration foi aplicada; o PR corretivo deve ser mergeado antes da revisão operacional `2` provada/promovida/ativada e do rollout do gate E20.6.5 em Preview → decisão humana → repetição controlada em Production; o PR contract remove definitivamente o legado e atualiza os documentos finais.
+
+20.7 Liberação taxonômica para geração de Landing Pages
+
+20.7.1 Objetivo e status
+
+* Objetivo: resolver a fonte de conhecimento de mercado mais específica e segura para o escopo comercial de uma LP, preservando a autoridade factual E20.2, a identidade taxonômica da conta e os boundaries E19.3/E19.4.
+* Status: Definida em plano-base v2; implementação pendente nas subseções E20.7.3 e E20.7.4.
+
+20.7.3 Resolver determinístico de conhecimento
+
+* Status: Planejada; Automação: não.
+* Conteúdo:
+  * resolver `single | multiple | portfolio` por APIs públicas canônicas, com matching por nome/aliases, descendência ativa, preparação E20.5/E20.6 e equivalência factual conservadora;
+  * distinguir falha operacional de ausência ou ambiguidade legítima e produzir `specialized_deep | base_only | dynamic_required` sem recusa semântica da oferta;
+  * reutilizar a cadeia taxonômica paginada compartilhada e terminar em saída tipada imutável, sem persistência própria, IA, integração E19 ou mudança em geração, snapshot, materialização ou renderer;
+  * exigir E20.2 v6 reconciliada e operacionalmente consumível antes de prova hospedada ou ativação.
+
+20.7.4 Complemento dinâmico controlado
+
+* Status: Planejada; Automação: sim; categoria `2.1.3 — Automação com IA em fluxo controlado`.
+* Conteúdo:
+  * executar server-side uma única requisição foreground à Responses API com somente Web Search hospedado e Structured Output estrito, aceitando uma ou duas chamadas fundamentadas e falhando tecnicamente sem invalidar a oferta;
+  * governar o workload `landing_page_dynamic_market_research` pelos boundaries E21.1/E21.2, com configuração própria comprovada antes da ativação humana por ambiente e sem agente, retry, fallback, job, fila, RAG, cache global ou nova residência de negócio;
+  * ampliar o agregado E21.2 por migration forward-only sem nova tabela ou coluna, preservando runtime anterior, segurança e falha fechada até configuração ativa válida;
+  * preservar a atribuição financeira causal sob E21.4 e manter consumo pela geração, validação semântica de oferta e qualquer mudança E19 em recortes próprios posteriores.
 
 21. E21 — Gestão e governança dos workloads OpenAI
 - Objetivo: gerir e governar os workloads OpenAI por recortes aprovados, com configuração explícita, observabilidade segura, leitura administrativa e configuração operacional dinâmica por ambiente, sem otimização automatizada.
