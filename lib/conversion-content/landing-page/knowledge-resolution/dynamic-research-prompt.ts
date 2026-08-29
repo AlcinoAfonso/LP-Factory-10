@@ -65,6 +65,8 @@ export function buildLandingPageDynamicResearchPrompt(
   const contextWindowTokens = webSearch?.contextWindowTokenBudget;
   if (
     configuration.id !== "landing_page_dynamic_market_research" ||
+    configuration.model !== "gpt-5.6-luna" ||
+    configuration.reasoningEffort !== "high" ||
     !webSearch ||
     webSearch.externalWebAccess !== true ||
     webSearch.maxToolCalls !== 2 ||
@@ -72,7 +74,7 @@ export function buildLandingPageDynamicResearchPrompt(
   ) {
     return failure(
       "CONFIGURATION_NOT_ALLOWED",
-      "A configuração do workload dinâmico não pertence à matriz aprovada.",
+      "A configuração do workload dinâmico não corresponde à decisão humana vigente.",
     );
   }
 
@@ -93,7 +95,7 @@ export function buildLandingPageDynamicResearchPrompt(
   });
   const conservativeInputTokenUpperBound = utf8Length(`${INSTRUCTIONS}\n${input}`);
   const searchReserve = webSearch.searchContextSize === "medium" ? 64_000 : 32_000;
-  const reasoningReserve = configuration.reasoningEffort === "medium" ? 64_000 : 32_000;
+  const reasoningReserve = 32_000;
   const reservedTokens =
     searchReserve + reasoningReserve + LANDING_PAGE_DYNAMIC_RESEARCH_MAX_OUTPUT_TOKENS;
   if (conservativeInputTokenUpperBound + reservedTokens > contextWindowTokens) {

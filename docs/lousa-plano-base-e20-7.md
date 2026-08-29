@@ -15,7 +15,7 @@
 - O escopo comercial da LP é fornecido por `landing_page_offering_scope`, cuja autoridade pertence à E20.2.9/E19.5; a E20.7 apenas o consome para resolver conhecimento.
 - O PR #830/E20.2.9.2 foi incorporado à `main` pelo merge commit `b89ecaaaa0116b9d9c82bb0af65fcd3744ac2787`; o registry repo-only contém v1–v6 e `CURRENT=6`. A implementação da E20.7 preserva como gate fail-closed a confirmação de que a v6 foi reconciliada e está operacionalmente consumível pelos boundaries vigentes antes de qualquer prova hospedada ou ativação.
 - Ausência, ambiguidade ou falha de correspondência entre oferta e taxon **não invalida a oferta do cliente** e não autoriza recusa semântica neste recorte.
-- P1 humano pós-merge do PR #821: `specialized_deep` exige evidência determinística exata ou normalizada por nome/alias; sinais aproximados ou por slug nunca autorizam a pesquisa especializada e retornam ao complemento dinâmico sem invalidar a oferta.
+- P1 humano pós-merge do PR #821: `specialized_deep` só pode ser autorizado quando `matchSource` contiver `alias_exact`, `alias_normalized`, `taxon_name_exact` ou `taxon_name_normalized`; resultado apoiado apenas em `fts`, `trgm` ou `taxon_slug_normalized` produz `dynamic_required` sem recusar nem invalidar a oferta.
 
 ### 1.2. Fronteira arquitetural obrigatória
 
@@ -103,8 +103,8 @@
 - Avaliação formal de Automação na v2: **parecer produzido, incorporado, auditado e aprovado pelo Analista**.
 - A E20.7.4 é uma automação com IA em fluxo controlado, executada server-side no Runtime do LP Factory. Todo matching, elegibilidade, equivalência factual, gating, validação, contagem de tools e fallback permanecem determinísticos. A única função da IA é pesquisar e estruturar o delta consultivo.
 - O fluxo usa uma única requisição foreground à Responses API com somente `web_search`; agente, Agents SDK, multiagente, Programmatic Tool Calling, persisted reasoning, modo Pro, job, fila, crawler, RAG, cache global, retry e fallback automático são proibidos.
-- A configuração inicial não é herdada de outro workload. A v2 autoriza uma comparação focal representativa de `gpt-5.4-mini + low`, `gpt-5.6-luna + low|medium` e `gpt-5.6-terra + low|medium`, cada qual com `search_context_size = low|medium`, para selecionar antes da ativação a menor configuração que cumpra qualidade, grounding, latência de até 45 s e custo proporcional. A comparação e a decisão resultante devem ser reconciliadas em `docs/openai-model-snapshot.md` pela ABC competente. Sol, modo Pro, modelos Deep Research e comportamento agentic ficam fora sem nova evidência e novo recorte.
-- Depois da comparação, `search_context_size` torna-se propriedade tipada, imutável e code-owned da definição específica desse workload no registry E21.1. O lifecycle E21.2 continua governando dinamicamente somente `modelo + reasoning_effort`; não criar coluna, variável ou configuração paralela para search context. O resolver compõe explicitamente a configuração operacional E21.2 com a propriedade E21.1.
+- A configuração inicial não é herdada de outro workload. A decisão humana superveniente registrada pelo PR #837 fixa `gpt-5.6-luna + high` com `search_context_size = medium`; a comparação Mini/Luna/Terra foi dispensada e não constitui allowlist operacional. `low` e `max` permanecem fora desse workload. Sol, modo Pro, modelos Deep Research e comportamento agentic ficam fora sem nova evidência e novo recorte.
+- `search_context_size = medium` é propriedade tipada, imutável e code-owned da definição específica desse workload no registry E21.1. O lifecycle E21.2 continua governando dinamicamente somente `modelo + reasoning_effort`, restritos neste recorte à decisão humana vigente; não criar coluna, variável ou configuração paralela para search context. O resolver compõe explicitamente a configuração operacional E21.2 com a propriedade E21.1.
 
 ### 1.8. Validação semântica futura
 
@@ -283,7 +283,7 @@
 - Processamento:
   - criar prompt de runtime focado apenas no delta consultivo, conforme `docs/template-prompts.md` e `docs/template-prompts-gpt-5-6.md`, separando `instructions` do input tipado, sem reusable prompt object, com versão próxima ao consumidor e casos típicos, limítrofes e adversariais;
   - integrar `landing_page_dynamic_market_research` ao registry, resolver, apresentação e lifecycle operacional E21.1/E21.2, com migration forward-only e transição de cardinalidade compatível;
-  - comparar focalmente as configurações candidatas autorizadas e congelar modelo, effort e search context size aprovados antes da ativação;
+  - preservar a decisão humana vigente `gpt-5.6-luna + high` com `search_context_size = medium` como configuração inicial autorizada, sem reabrir a matriz comparativa dispensada;
   - reutilizar `requestOpenAiResponses` e o evento comum E21.1, sem transporte ou telemetria paralelos;
   - produzir `material_delta | no_material_delta | insufficient_evidence`;
   - anexar fontes e metadados seguros à saída tipada;

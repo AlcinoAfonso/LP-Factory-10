@@ -178,9 +178,8 @@ begin
 
   if p_workload = 'landing_page_dynamic_market_research'
      and not (
-       (p_model = 'gpt-5.4-mini' and p_reasoning_effort = 'low')
-       or (p_model = 'gpt-5.6-luna' and p_reasoning_effort in ('low', 'medium'))
-       or (p_model = 'gpt-5.6-terra' and p_reasoning_effort in ('low', 'medium'))
+       p_model = 'gpt-5.6-luna'
+       and p_reasoning_effort = 'high'
      ) then
     raise exception using errcode = '22023', message = 'candidate_configuration_not_allowed';
   end if;
@@ -358,12 +357,8 @@ begin
 
   if p_workload = 'landing_page_dynamic_market_research'
      and not (
-       (v_configuration.candidate_model = 'gpt-5.4-mini'
-         and v_configuration.candidate_reasoning_effort = 'low')
-       or (v_configuration.candidate_model = 'gpt-5.6-luna'
-         and v_configuration.candidate_reasoning_effort in ('low', 'medium'))
-       or (v_configuration.candidate_model = 'gpt-5.6-terra'
-         and v_configuration.candidate_reasoning_effort in ('low', 'medium'))
+       v_configuration.candidate_model = 'gpt-5.6-luna'
+       and v_configuration.candidate_reasoning_effort = 'high'
      ) then
     raise exception using errcode = '22023', message = 'candidate_configuration_not_allowed';
   end if;
@@ -438,8 +433,8 @@ $$;
 
 with baselines(environment, workload, modality, model, reasoning_effort, quality) as (
   values
-    ('production', 'landing_page_dynamic_market_research', 'responses_text', 'gpt-5.6-luna', 'low', null::text),
-    ('preview', 'landing_page_dynamic_market_research', 'responses_text', 'gpt-5.6-luna', 'low', null::text)
+    ('production', 'landing_page_dynamic_market_research', 'responses_text', 'gpt-5.6-luna', 'high', null::text),
+    ('preview', 'landing_page_dynamic_market_research', 'responses_text', 'gpt-5.6-luna', 'high', null::text)
 )
 insert into public.openai_workload_configuration_revisions (
   environment,
@@ -518,7 +513,7 @@ begin
     and revision.revision_number = 1
     and revision.modality = 'responses_text'
     and revision.model = 'gpt-5.6-luna'
-    and revision.reasoning_effort = 'low'
+    and revision.reasoning_effort = 'high'
     and revision.quality is null
     and revision.validated_by is null
   left join public.openai_workload_operational_configurations configuration

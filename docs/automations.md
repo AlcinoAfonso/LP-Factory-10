@@ -466,6 +466,7 @@ Como funciona:
 - Executa uma única requisição foreground e exige uma ou duas chamadas Web Search concluídas, com fontes HTTPS retornadas pelo provider.
 - Usa prompt e schema versionados no boundary de resolução de conhecimento; trata entrada funcional como não confiável e rejeita URL material que não tenha sido retornada pelo provider.
 - Limita contexto de busca, chamadas, orçamento de entrada, saída e deadline por política code-owned; modelo e reasoning effort vêm da configuração efetiva do workload.
+- A configuração inicial e única combinação elegível para `save`/`promote` desse workload é `gpt-5.6-luna + high`; a hipótese `low`, `max` e a matriz comparativa anterior não são autorizadas.
 - Retorna complemento material ou ausência de materialidade com fontes, proveniência, usage e telemetria sanitizada; evidência insuficiente ou falha técnica não invalida a oferta.
 
 Limites:

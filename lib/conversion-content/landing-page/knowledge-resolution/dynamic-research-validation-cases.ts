@@ -43,6 +43,8 @@ const cases: readonly ValidationCase[] = [
       assert.equal(request.tool_choice, "required");
       assert.equal(request.max_tool_calls, 2);
       assert.equal(request.max_output_tokens, 4000);
+      assert.equal(request.model, "gpt-5.6-luna");
+      assert.deepEqual(request.reasoning, { effort: "high" });
       assert.deepEqual(request.include, ["web_search_call.action.sources"]);
       assert.equal("conversation" in request, false);
       assert.equal("previous_response_id" in request, false);
@@ -213,6 +215,18 @@ const cases: readonly ValidationCase[] = [
       assert.match(migration, /count\(\*\).*openai_workload_operational_configurations\) <> 12/s);
       assert.match(migration, /create or replace function public\.save_openai_workload_configuration_candidate_v1/s);
       assert.match(migration, /create or replace function public\.promote_openai_workload_configuration_candidate_v1/s);
+      assert.match(
+        migration,
+        /p_model = 'gpt-5\.6-luna'\s+and p_reasoning_effort = 'high'/s,
+      );
+      assert.match(
+        migration,
+        /candidate_model = 'gpt-5\.6-luna'\s+and v_configuration\.candidate_reasoning_effort = 'high'/s,
+      );
+      assert.doesNotMatch(
+        migration,
+        /p_workload = 'landing_page_dynamic_market_research'[\s\S]*?gpt-5\.4-mini[\s\S]*?gpt-5\.6-terra[\s\S]*?candidate_configuration_not_allowed/,
+      );
       assert.equal(
         (migration.match(/perform public\.raise_postgrest_safe_conflict_v1\(/g) ?? []).length,
         2,
@@ -276,7 +290,7 @@ function configuration(
     consumer: "E20.7.4 — complemento consultivo de conhecimento de mercado",
     fallback: "Falhar a resolução técnica sem invalidar a oferta",
     model: "gpt-5.6-luna",
-    reasoningEffort: "low",
+    reasoningEffort: "high",
     source,
     revision,
     effectiveConfigurationVerified: true,

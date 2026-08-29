@@ -276,6 +276,20 @@ const cases = [
     },
   },
   {
+    name: "dynamic market research resolves only the approved initial Luna high configuration",
+    run: async () => {
+      const result = await resolveOpenAiProductWorkload(
+        dynamicMarketResearchWorkloadId,
+        "development",
+      );
+      assert.equal(result.ok, true);
+      assert.equal(result.value.model, "gpt-5.6-luna");
+      assert.equal(result.value.reasoningEffort, "high");
+      assert.equal(result.value.source, "repo_catalog");
+      assert.equal(result.value.revision, "v1");
+    },
+  },
+  {
     name: "taxon evaluation keeps its development baseline while operational history remains typed",
     run: async () => {
       const baseline = await resolveOpenAiProductWorkload(
@@ -1492,7 +1506,7 @@ function administrativeConfigurationFixture(): Readonly<{
           : landingPageText
             ? "max"
             : dynamicMarketResearch
-              ? "low"
+              ? "high"
             : "none";
       const baselineQuality = image ? "medium" : null;
       const baselineRevisionId = administrativeUuid(sequence++);

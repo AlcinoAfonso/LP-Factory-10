@@ -58,7 +58,7 @@ const taxonomy = taxonomySuccess(servedTaxon, [servedTaxon, specializedTaxon, si
 
 const cases: readonly ValidationCase[] = [
   {
-    name: "P1 authorizes any strong source and keeps weak-only results dynamic",
+    name: "P1 authorizes only the explicit exact or normalized name and alias sources",
     run: async () => {
       for (const source of [
         "alias_exact",

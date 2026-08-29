@@ -30,15 +30,24 @@ begin
 
   begin
     perform public.save_openai_workload_configuration_candidate_v1(
-      'preview', v_workload, 'gpt-5.6-terra', 'high', null, v_actor_id, v_version
+      'preview', v_workload, 'gpt-5.6-luna', 'low', null, v_actor_id, v_version
     );
-    raise exception 'configuration outside the focal E20.7.4 matrix should fail';
+    raise exception 'superseded low effort should fail for the E20.7.4 workload';
+  exception when invalid_parameter_value then
+    null;
+  end;
+
+  begin
+    perform public.save_openai_workload_configuration_candidate_v1(
+      'preview', v_workload, 'gpt-5.6-luna', 'max', null, v_actor_id, v_version
+    );
+    raise exception 'max effort should remain outside the E20.7.4 workload';
   exception when invalid_parameter_value then
     null;
   end;
 
   v_saved_version := public.save_openai_workload_configuration_candidate_v1(
-    'preview', v_workload, 'gpt-5.6-terra', 'medium', null, v_actor_id, v_version
+    'preview', v_workload, 'gpt-5.6-luna', 'high', null, v_actor_id, v_version
   );
   if v_saved_version <> v_version + 1 then
     raise exception 'candidate save must advance the aggregate version';
@@ -63,8 +72,8 @@ begin
       on configuration.pending_revision_id = revision.id
     where revision.environment = 'preview'
       and revision.workload = v_workload
-      and revision.model = 'gpt-5.6-terra'
-      and revision.reasoning_effort = 'medium'
+      and revision.model = 'gpt-5.6-luna'
+      and revision.reasoning_effort = 'high'
   ) then
     raise exception 'approved candidate must become the pending revision';
   end if;

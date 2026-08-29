@@ -94,7 +94,7 @@ export const openAiWorkloadRegistry = deepFreeze([
     configuration: {
       apiKind: "responses_text",
       model: "gpt-5.6-luna",
-      reasoningEffort: "low",
+      reasoningEffort: "high",
       source: "repo_catalog",
       revision: "v1",
     },
