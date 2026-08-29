@@ -19,6 +19,9 @@ const INITIAL_STATE: OpenAiCostsActionState = {
   dashboard: null,
 };
 
+const OPENAI_USAGE_URL = "https://platform.openai.com/usage";
+const OPENAI_BILLING_URL = "https://platform.openai.com/settings/organization/billing/overview";
+
 export function OpenAiCostsDashboard({ startDate, endDate }: Props) {
   const [periodMode, setPeriodMode] = useState<"current_month" | "custom">("current_month");
   const [state, formAction, pending] = useActionState(
@@ -81,6 +84,33 @@ export function OpenAiCostsDashboard({ startDate, endDate }: Props) {
           </button>
         </fieldset>
       </form>
+
+      <section className="rounded-lg border border-border bg-card p-4 shadow-card sm:p-6" aria-labelledby="openai-external-links-title">
+        <h2 id="openai-external-links-title" className="text-base font-semibold text-foreground">
+          Visão global na OpenAI
+        </h2>
+        <p className="mt-2 text-sm leading-6 text-muted-foreground">
+          Usage, faturamento e créditos permanecem na plataforma OpenAI. Os acessos abaixo saem da LP Factory e abrem em nova aba conforme as permissões da sua organização.
+        </p>
+        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+          <a
+            href={OPENAI_USAGE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex min-h-11 items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-semibold text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-600/30"
+          >
+            Abrir Usage na OpenAI
+          </a>
+          <a
+            href={OPENAI_BILLING_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex min-h-11 items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-semibold text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-600/30"
+          >
+            Abrir faturamento e créditos na OpenAI
+          </a>
+        </div>
+      </section>
 
       <div aria-live="polite" aria-atomic="true">
         {pending ? (

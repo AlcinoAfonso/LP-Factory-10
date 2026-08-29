@@ -2,8 +2,8 @@
 
 0.1 Cabeçalho
 • Documento: LP Factory 10 — Platform Config
-• Versão: v0.1.29
-• Data: 28/08/2026
+• Versão: v0.1.30
+• Data: 29/08/2026
 
 0.2 Contrato do documento
 • O QUE É: snapshot operacional e fonte única das configurações de plataformas externas do LP Factory 10, refletindo o estado conhecido/cadastrado nas plataformas conforme indicado.
@@ -196,7 +196,7 @@
 • Habilitação: somente o literal `true` ativa o tracker; variável ausente, vazia ou com qualquer outro valor preserva integralmente o runtime anterior.
 • Estado inicial e atual no PR: desligado; não configurar antes do merge, apply canônico, snippet read-only e Security Controls aprovados.
 • Progressão pós-merge: habilitar somente após os gates de banco, redeployar Production, executar smoke dos dois workloads e registrar uma única data de corte pela RPC versionada.
-• Regra de falha: com o gate ligado, falha ao registrar o início impede a chamada OpenAI; falha terminal não altera o resultado do provider e deixa a tentativa iniciada sem terminal para reconciliação explícita.
+• Regra de falha: com o gate ligado, falha ou timeout no registro inicial ou terminal degrada a cobertura financeira, mas não bloqueia a chamada OpenAI nem invalida uma geração de Landing Page bem-sucedida; a tentativa sem evidência completa fica fora da soma interna e permanece em Outros gastos / reconciliação.
 • Valor real: não versionar.
 
 • `OPENAI_OPERATIONAL_CONFIG_ENABLED`
@@ -359,6 +359,9 @@
 • Endpoint OpenAI Responses API: `https://api.openai.com/v1/responses`
 • Endpoint OpenAI Images API: `https://api.openai.com/v1/images/generations`
 • Endpoint OpenAI Costs API: `https://api.openai.com/v1/organization/costs`
+• Atalho oficial OpenAI Usage: `https://platform.openai.com/usage`
+• Atalho oficial OpenAI faturamento e créditos: `https://platform.openai.com/settings/organization/billing/overview`
+• Regra dos atalhos: `/admin/custos-openai` abre os destinos externamente, sem iframe, integração adicional, rota intermediária ou transmissão de credencial, período, conta, Landing Page ou outro dado da LP Factory; o acesso depende das permissões do usuário na organização OpenAI.
 • Consumidor versionado da Costs API: `lib/openai-costs/providers/openAiCostsProvider.ts`, exclusivamente server-side e autenticado por `OPENAI_ADMIN_KEY`.
 • Persistência prospectiva dos dois workloads de LP: `lib/openai-costs/adapters/lpCostTrackingAdapter.ts`, exclusivamente server-side, condicionada a Production e a `OPENAI_LP_COST_TRACKING_ENABLED=true`.
 • Leitura agregada interna: `lib/openai-costs/adapters/lpCostReadModelAdapter.ts`, exclusivamente server-side via RPC read-only paginada; superfície administrativa em `/admin/custos-openai`.

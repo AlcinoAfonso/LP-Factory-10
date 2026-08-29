@@ -3,9 +3,10 @@
 ## Referências congeladas
 
 - V1: PR #824, `docs/lousa-plano-base-e21-4.md`, blob `1f3192c24615fcf87f0aa0173fe117437241f7a8`, incorporada à `main` no merge commit `428e01d81e819b5da9e508e1c4f356f0517c9c85`.
-- V2 corrigida: `docs/lousa-plano-base-e21-4.md`, blob `77ee5b5f5f2c3b814a7c2d8384211224aef71e45`, commit `f059ba008c3d1949231bb157481c84f086007e96`.
+- V2 vigente aprovada: `docs/lousa-plano-base-e21-4.md`, blob `f02c2b599b6dad6402295ba0473d02729143f77d`, commit `710d2e806bacf5a180818dc958d4a57c86580ce1`.
 - Decisão humana de 28/08/2026: abandonar a decisão anterior `1/B` e reduzir o MVP ao total oficial de Costs, custo prospectivo de LPs apenas para texto e imagem, agregação por conta, reconciliação por diferença, USD, mês atual/período personalizado, atualização sob demanda e acesso `platform_admin`.
 - Decisão humana posterior de 28/08/2026: a geração contratada tem prioridade sobre a instrumentação; falha exclusivamente financeira degrada cobertura sem bloquear ou invalidar o resultado funcional; falha real do provider permanece distinta; crédito comercial do cliente pertence a futuro recorte da E9.7.
+- Decisão humana de 29/08/2026: OpenAI Usage/Billing permanece como residência da visão global da organização; LP Factory permanece como residência da atribuição de negócio e oferece somente atalhos externos simples para Usage e faturamento/créditos, sem integração ou transmissão de dados internos.
 - Confronto da implementação do PR #831 com a v2 corrigida aprovado pelo Estrategista em 28/08/2026, autorizando somente a reconciliação mínima descrita nesta matriz, sem aplicar migration, habilitar ambiente ou iniciar QA hospedado antes da avaliação do Analista.
 - Pareceres read-only emitidos uma única vez sobre o mesmo blob v1: Gestor Estrutural em 28/08/2026 08:40 e Gestor de Updates em 28/08/2026 08:35.
 - Automações: N/A — E21.4.3, E21.4.4 e E21.4.5 estão marcadas como `Automação: não`.
@@ -46,6 +47,7 @@
 | E21.4 não decide crédito comercial, entitlement ou capacidade do cliente. | Nenhuma mudança em E9.7, `max_lps`, reserva, consumo, devolução ou bloqueio comercial. | Preservado. |
 | Persistência continua mínima, append-only e protegida. | A migration existente foi ajustada, sem criar nova migration; RLS, zero policies, ACL, trigger de imutabilidade, teste SQL e snippet read-only foram preservados. | Reconciliado; apply permanece pendente. |
 | Gate de Production e prova hospedada seguem a sequência aprovada. | Flag permanece desligada e nenhum banco, configuração remota ou Vercel foi alterado nesta reconciliação. | Preservado; gates hospedados pendentes do Analista. |
+| A LP Factory não replica a visão global da OpenAI e oferece somente dois atalhos externos seguros. | `/admin/custos-openai` aponta diretamente para os destinos oficiais de Usage e billing, em nova aba, com aviso de saída, `noopener noreferrer` e sem iframe, API, rota intermediária ou dados da LP Factory. | Reconciliado. |
 
 ## Updates
 

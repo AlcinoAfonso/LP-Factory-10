@@ -166,9 +166,17 @@ for (const expected of [
   "Interno indisponível",
   "Falhas ocorridas antes da persistência inicial",
   "Crédito ou limite OpenAI requer atenção",
+  "Visão global na OpenAI",
+  "Os acessos abaixo saem da LP Factory e abrem em nova aba",
+  "Abrir Usage na OpenAI",
+  "Abrir faturamento e créditos na OpenAI",
 ]) {
   assert.equal(componentSource.includes(expected), true, `missing UI evidence: ${expected}`);
 }
+assert.match(componentSource, /const OPENAI_USAGE_URL = "https:\/\/platform\.openai\.com\/usage"/);
+assert.match(componentSource, /const OPENAI_BILLING_URL = "https:\/\/platform\.openai\.com\/settings\/organization\/billing\/overview"/);
+assert.equal((componentSource.match(/target="_blank"/g) ?? []).length, 2);
+assert.equal((componentSource.match(/rel="noopener noreferrer"/g) ?? []).length, 2);
 assert.match(componentSource, /aria-live="polite"/);
 assert.match(componentSource, /state\.status === "success"/);
 assert.match(componentSource, /min-h-11/);
