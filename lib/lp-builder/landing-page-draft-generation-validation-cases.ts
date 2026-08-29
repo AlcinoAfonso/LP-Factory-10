@@ -541,6 +541,20 @@ const cases = [
       }]);
 
       const timeoutDiagnostics: unknown[] = [];
+      const lateStartOrder: string[] = [];
+      let lateTerminalInput: unknown;
+      let resolveLateTerminal: (() => void) | undefined;
+      const lateTerminalCompleted = new Promise<void>((resolve) => {
+        resolveLateTerminal = resolve;
+      });
+      const lateSession = {
+        async complete(input: unknown) {
+          lateStartOrder.push("terminal");
+          lateTerminalInput = input;
+          resolveLateTerminal?.();
+        },
+      };
+      let releaseLateStart: (() => void) | undefined;
       const afterStartTimeout = await generateLandingPageDraftCandidate(context, {
         apiKey: "test-key",
         environment: "production",
@@ -552,12 +566,16 @@ const cases = [
           landingPageId: context.identities.landingPage.id,
           tracker: {
             async start() {
-              return await new Promise(() => undefined);
+              lateStartOrder.push("start");
+              return await new Promise<typeof lateSession>((resolve) => {
+                releaseLateStart = () => resolve(lateSession);
+              });
             },
           },
         },
         fetchImpl: async () => {
           providerCalls += 1;
+          lateStartOrder.push("fetch");
           return textSuccessResponse();
         },
         emitCostTrackingDiagnostic: (event) => timeoutDiagnostics.push(event),
@@ -565,12 +583,29 @@ const cases = [
       });
       assert.equal(afterStartTimeout.ok, true);
       assert.equal(providerCalls, 2);
-      assert.deepEqual(timeoutDiagnostics, [{
-        attemptId: "e2144000-0000-4000-8000-000000000032",
-        workload: "landing_page_draft_generation",
-        stage: "start",
-        reason: "timeout",
-      }]);
+      assert.deepEqual(lateStartOrder, ["start", "fetch"]);
+      releaseLateStart?.();
+      await lateTerminalCompleted;
+      assert.deepEqual(lateStartOrder, ["start", "fetch", "terminal"]);
+      assert.deepEqual(lateTerminalInput, {
+        result: "success",
+        usage: { input_tokens: 100, output_tokens: 20 },
+        serviceTier: "default",
+      });
+      assert.deepEqual(timeoutDiagnostics, [
+        {
+          attemptId: "e2144000-0000-4000-8000-000000000032",
+          workload: "landing_page_draft_generation",
+          stage: "start",
+          reason: "timeout",
+        },
+        {
+          attemptId: "e2144000-0000-4000-8000-000000000032",
+          workload: "landing_page_draft_generation",
+          stage: "terminal",
+          reason: "timeout",
+        },
+      ]);
 
       let unsupportedStarts = 0;
       const unsupportedTerminals: unknown[] = [];
@@ -891,6 +926,85 @@ const cases = [
             output_tokens_details: { image_tokens: 8_192 },
           },
           imageCount: 1,
+        },
+      ]);
+
+      const lateImageOrder: string[] = [];
+      const lateImageTerminals: unknown[] = [];
+      const lateImageDiagnostics: unknown[] = [];
+      let resolveLateImageTerminal: (() => void) | undefined;
+      const lateImageTerminalCompleted = new Promise<void>((resolve) => {
+        resolveLateImageTerminal = resolve;
+      });
+      const lateImageSession = {
+        async complete(input: unknown) {
+          lateImageOrder.push("terminal");
+          lateImageTerminals.push(input);
+          resolveLateImageTerminal?.();
+        },
+      };
+      let releaseLateImageStart: (() => void) | undefined;
+      const lateTrackedImage = await generateLandingPageDraftImage(
+        { mediaBrief: "Sala contemporânea acolhedora", semanticFacts: {} },
+        {
+          apiKey: "test-key",
+          environment: "production",
+          attemptId: "e2144000-0000-4000-8000-000000000033",
+          costTrackingTimeoutMs: 5,
+          costTracking: {
+            accountId: context.identities.accountId,
+            landingPageId: context.identities.landingPage.id,
+            tracker: {
+              async start() {
+                lateImageOrder.push("start");
+                return await new Promise<typeof lateImageSession>((resolve) => {
+                  releaseLateImageStart = () => resolve(lateImageSession);
+                });
+              },
+            },
+          },
+          fetchImpl: async () => {
+            lateImageOrder.push("fetch");
+            return new Response(
+              JSON.stringify({
+                data: [{ b64_json: webp }],
+                usage: {
+                  input_tokens_details: { text_tokens: 15 },
+                  output_tokens_details: { image_tokens: 8_192 },
+                },
+              }),
+              { status: 200, headers: { "Content-Type": "application/json" } },
+            );
+          },
+          emitCostTrackingDiagnostic: (event) => lateImageDiagnostics.push(event),
+          emitEvent: () => undefined,
+        },
+      );
+      assert.equal(lateTrackedImage.ok, true);
+      assert.deepEqual(lateImageOrder, ["start", "fetch"]);
+      releaseLateImageStart?.();
+      await lateImageTerminalCompleted;
+      assert.deepEqual(lateImageOrder, ["start", "fetch", "terminal"]);
+      assert.deepEqual(lateImageTerminals, [{
+        result: "success",
+        usage: {
+          input_tokens_details: { text_tokens: 15 },
+          output_tokens_details: { image_tokens: 8_192 },
+        },
+        imageCount: 1,
+      }]);
+      assert.deepEqual(lateImageDiagnostics, [
+        {
+          attemptId: "e2144000-0000-4000-8000-000000000033",
+          workload: "landing_page_draft_image_generation",
+          stage: "start",
+          reason: "timeout",
+        },
+        {
+          attemptId: "e2144000-0000-4000-8000-000000000033",
+          workload: "landing_page_draft_image_generation",
+          stage: "terminal",
+          reason: "timeout",
         },
       ]);
 

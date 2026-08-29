@@ -33,6 +33,7 @@ import {
   emitOpenAiLpCostTrackingDiagnostic,
   parseOpenAiProviderErrorMetadata,
   readOpenAiProviderErrorMetadata,
+  retainOpenAiLpCostTrackingValue,
   runOpenAiLpCostTrackingOperation,
 } from "../openai-costs";
 
@@ -125,7 +126,7 @@ export async function generateLandingPageDraftCandidate(
     emitFailure(workload, "timeout", dependencies, { latencyMs: 0 });
     return { ok: false, kind: "timeout" };
   }
-  let costSession: OpenAiLpCostTrackingSession | undefined;
+  let costSession: Promise<OpenAiLpCostTrackingSession | undefined> | undefined;
   const costStart = dependencies.costTracking
     ? {
         accountId: dependencies.costTracking.accountId,
@@ -143,8 +144,8 @@ export async function generateLandingPageDraftCandidate(
       () => dependencies.costTracking!.tracker.start(costStart),
       dependencies.costTrackingTimeoutMs,
     );
-    if (tracking.ok) costSession = tracking.value;
-    else emitCostDiagnostic("start", tracking.reason, dependencies);
+    costSession = retainOpenAiLpCostTrackingValue(tracking);
+    if (!tracking.ok) emitCostDiagnostic("start", tracking.reason, dependencies);
   }
   const providerStartedAt = now();
   if (dependencies.signal?.aborted) {
@@ -330,7 +331,7 @@ export function buildLandingPageDraftResponsesRequest(
 }
 
 async function completeCost(
-  session: OpenAiLpCostTrackingSession | undefined,
+  session: Promise<OpenAiLpCostTrackingSession | undefined> | undefined,
   result: "success" | "failure",
   payload?: Record<string, unknown>,
   dependencies: Dependencies = {},
@@ -342,12 +343,15 @@ async function completeCost(
 ) {
   if (!session) return;
   const tracking = await runOpenAiLpCostTrackingOperation(
-    () => session.complete({
-      result,
-      usage: payload?.usage,
-      serviceTier: payload?.service_tier,
-      ...providerError,
-    }),
+    async () => {
+      const resolvedSession = await session;
+      await resolvedSession?.complete({
+        result,
+        usage: payload?.usage,
+        serviceTier: payload?.service_tier,
+        ...providerError,
+      });
+    },
     dependencies.costTrackingTimeoutMs,
   );
   if (!tracking.ok) emitCostDiagnostic("terminal", tracking.reason, dependencies);

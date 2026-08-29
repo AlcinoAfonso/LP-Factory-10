@@ -55,12 +55,25 @@ const cases = [
     name: "tracking budget and provider diagnostics degrade safely",
     run: async () => {
       assert.deepEqual(
-        await runOpenAiLpCostTrackingOperation(
-          async () => await new Promise(() => undefined),
-          5,
-        ),
-        { ok: false, reason: "timeout" },
+        await runOpenAiLpCostTrackingOperation(async () => "within-budget", 5),
+        { ok: true, value: "within-budget" },
       );
+      let releaseLate: ((value: string) => void) | undefined;
+      const timedOut = await runOpenAiLpCostTrackingOperation(
+        async () =>
+          await new Promise<string>((resolve) => {
+            releaseLate = resolve;
+          }),
+        5,
+      );
+      if (timedOut.ok || timedOut.reason !== "timeout") {
+        assert.fail("late tracking operation must expose its eventual completion");
+      }
+      releaseLate?.("after-budget");
+      assert.deepEqual(await timedOut.completion, {
+        ok: true,
+        value: "after-budget",
+      });
       assert.deepEqual(
         await runOpenAiLpCostTrackingOperation(async () => {
           throw new Error("sensitive-rpc-message");

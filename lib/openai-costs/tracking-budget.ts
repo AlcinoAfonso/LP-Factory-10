@@ -5,23 +5,33 @@ import type {
 
 export const OPENAI_LP_COST_TRACKING_BUDGET_MS = 1_000;
 
+type OpenAiLpCostTrackingSettled<T> =
+  | Readonly<{ ok: true; value: T }>
+  | Readonly<{ ok: false; reason: "failed" }>;
+
+export type OpenAiLpCostTrackingOperationResult<T> =
+  | OpenAiLpCostTrackingSettled<T>
+  | Readonly<{
+      ok: false;
+      reason: "timeout";
+      completion: Promise<OpenAiLpCostTrackingSettled<T>>;
+    }>;
+
 export async function runOpenAiLpCostTrackingOperation<T>(
   operation: () => Promise<T>,
   budgetMs = OPENAI_LP_COST_TRACKING_BUDGET_MS,
-): Promise<
-  | Readonly<{ ok: true; value: T }>
-  | Readonly<{ ok: false; reason: "failed" | "timeout" }>
-> {
+): Promise<OpenAiLpCostTrackingOperationResult<T>> {
   let timeout: ReturnType<typeof setTimeout> | undefined;
   const boundedBudget = Number.isFinite(budgetMs)
     ? Math.max(1, Math.min(OPENAI_LP_COST_TRACKING_BUDGET_MS, Math.floor(budgetMs)))
     : OPENAI_LP_COST_TRACKING_BUDGET_MS;
+  const completion: Promise<OpenAiLpCostTrackingSettled<T>> = operation().then(
+    (value) => ({ ok: true, value }) as const,
+    () => ({ ok: false, reason: "failed" }) as const,
+  );
   try {
-    return await Promise.race([
-      operation().then(
-        (value) => ({ ok: true, value }) as const,
-        () => ({ ok: false, reason: "failed" }) as const,
-      ),
+    const result = await Promise.race([
+      completion,
       new Promise<Readonly<{ ok: false; reason: "timeout" }>>((resolve) => {
         timeout = setTimeout(
           () => resolve({ ok: false, reason: "timeout" }),
@@ -29,9 +39,22 @@ export async function runOpenAiLpCostTrackingOperation<T>(
         );
       }),
     ]);
+    return !result.ok && result.reason === "timeout"
+      ? { ...result, completion }
+      : result;
   } finally {
     if (timeout) clearTimeout(timeout);
   }
+}
+
+export function retainOpenAiLpCostTrackingValue<T>(
+  result: OpenAiLpCostTrackingOperationResult<T>,
+): Promise<T | undefined> | undefined {
+  if (result.ok) return Promise.resolve(result.value);
+  if (result.reason === "failed") return undefined;
+  return result.completion.then((settled) =>
+    settled.ok ? settled.value : undefined,
+  );
 }
 
 export function emitOpenAiLpCostTrackingDiagnostic(

@@ -16,7 +16,7 @@
     "validate:commercial-capabilities": "tsx lib/commercial-capabilities/validation-cases.ts",
     "validate:openai-workloads": "tsx lib/openai-workloads/validation-cases.ts",
     "validate:openai-costs": "tsx lib/openai-costs/validation-cases.ts",
-    "validate:openai-costs-dashboard": "tsx app/admin/(protected)/custos-openai/validation-cases.tsx",
+    "validate:openai-costs-dashboard": "tsx \"app/admin/(protected)/custos-openai/validation-cases.tsx\"",
     "validate:landing-page-root": "tsx lib/conversion-content/landing-page/root-validation-cases.ts",
     "validate:landing-page-input-catalog": "tsx lib/conversion-content/landing-page/input-catalog/validation-cases.ts",
     "validate:admin-landing-page-structure": "tsx app/admin/(protected)/estrutura-lp/validation-cases.ts",

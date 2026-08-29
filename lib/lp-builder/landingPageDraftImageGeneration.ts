@@ -26,6 +26,7 @@ import {
   emitOpenAiLpCostTrackingDiagnostic,
   parseOpenAiProviderErrorMetadata,
   readOpenAiProviderErrorMetadata,
+  retainOpenAiLpCostTrackingValue,
   runOpenAiLpCostTrackingOperation,
 } from "../openai-costs";
 
@@ -112,7 +113,7 @@ export async function generateLandingPageDraftImage(
     emitFailure(workload, "timeout", dependencies, { latencyMs: 0 });
     return { ok: false, kind: "timeout" };
   }
-  let costSession: OpenAiLpCostTrackingSession | undefined;
+  let costSession: Promise<OpenAiLpCostTrackingSession | undefined> | undefined;
   const costStart = dependencies.costTracking
     ? {
         accountId: dependencies.costTracking.accountId,
@@ -131,8 +132,8 @@ export async function generateLandingPageDraftImage(
       () => dependencies.costTracking!.tracker.start(costStart),
       dependencies.costTrackingTimeoutMs,
     );
-    if (tracking.ok) costSession = tracking.value;
-    else emitCostDiagnostic("start", tracking.reason, dependencies);
+    costSession = retainOpenAiLpCostTrackingValue(tracking);
+    if (!tracking.ok) emitCostDiagnostic("start", tracking.reason, dependencies);
   }
   const providerStartedAt = now();
   if (dependencies.signal?.aborted) {
@@ -283,7 +284,7 @@ export async function generateLandingPageDraftImage(
 }
 
 async function completeCost(
-  session: OpenAiLpCostTrackingSession | undefined,
+  session: Promise<OpenAiLpCostTrackingSession | undefined> | undefined,
   result: "success" | "failure",
   usage?: unknown,
   imageCount?: number,
@@ -296,7 +297,15 @@ async function completeCost(
 ) {
   if (!session) return;
   const tracking = await runOpenAiLpCostTrackingOperation(
-    () => session.complete({ result, usage, imageCount, ...providerError }),
+    async () => {
+      const resolvedSession = await session;
+      await resolvedSession?.complete({
+        result,
+        usage,
+        imageCount,
+        ...providerError,
+      });
+    },
     dependencies.costTrackingTimeoutMs,
   );
   if (!tracking.ok) emitCostDiagnostic("terminal", tracking.reason, dependencies);

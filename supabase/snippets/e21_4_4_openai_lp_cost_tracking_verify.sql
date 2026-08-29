@@ -37,6 +37,25 @@ with checks(check_name, status, details) as (
     )
   union all
   select
+    'started_reader_period_index',
+    case when exists (
+      select 1
+      from pg_index index_row
+      join pg_class index_class on index_class.oid = index_row.indexrelid
+      where index_row.indrelid = 'public.openai_lp_cost_events'::regclass
+        and index_class.relname = 'openai_lp_cost_events_started_period_idx'
+        and index_row.indisvalid
+        and index_row.indnkeyatts = 3
+        and pg_get_indexdef(index_row.indexrelid, 1, false) = 'created_at'
+        and pg_get_indexdef(index_row.indexrelid, 2, false) = 'attempt_id'
+        and pg_get_indexdef(index_row.indexrelid, 3, false) = 'workload'
+        and pg_get_expr(index_row.indpred, index_row.indrelid) = '(event_kind = ''started''::text)'
+    ) then 'ok' else 'missing_or_invalid' end,
+    jsonb_build_object(
+      'index', to_regclass('public.openai_lp_cost_events_started_period_idx')
+    )
+  union all
+  select
     'least_privilege',
     case when
       has_table_privilege('service_role', 'public.openai_lp_cost_events', 'SELECT')

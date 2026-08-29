@@ -124,6 +124,10 @@ create index openai_lp_cost_events_period_idx
   on public.openai_lp_cost_events (created_at, account_id, landing_page_id, workload)
   where event_kind = 'terminal';
 
+create index openai_lp_cost_events_started_period_idx
+  on public.openai_lp_cost_events (created_at, attempt_id, workload)
+  where event_kind = 'started';
+
 create table public.openai_lp_cost_coverage (
   singleton boolean primary key default true,
   environment text not null default 'production',
