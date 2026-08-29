@@ -5,6 +5,7 @@ import type { AccountLandingPageOnboardingConfiguration } from "./contracts";
 import { CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION } from "../conversion-content/landing-page/input-catalog";
 import {
   deriveLandingPageWorkspaceState,
+  evaluateLandingPageCommercialIdentityMutation,
   isLandingPageWorkspaceEnabled,
   landingPageWorkspaceStateLabels,
   splitLandingPageWorkspaceValues,
@@ -22,10 +23,125 @@ const cases: readonly Readonly<{ name: string; run: () => void }>[] = [
         assert.equal(isLandingPageWorkspaceEnabled(), false);
         process.env.E19_5_WORKSPACE_ENABLED = "true";
         assert.equal(isLandingPageWorkspaceEnabled(), true);
-        assert.equal(CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION, 5);
+        assert.equal(CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION, 6);
       } finally {
         if (previous === undefined) delete process.env.E19_5_WORKSPACE_ENABLED;
         else process.env.E19_5_WORKSPACE_ENABLED = previous;
+      }
+    },
+  },
+  {
+    name: "commercial identity guards execute against v6 and projected v5 baselines",
+    run: () => {
+      const legacySnapshot = generationContextSnapshot([
+        { fieldKey: "funnel_stage", value: "decision" },
+        { fieldKey: "transaction_intent", value: "buy" },
+        { fieldKey: "primary_conversion_goal", value: "contact" },
+        { fieldKey: "primary_service_or_offer", value: "  Oferta Alpha  " },
+      ]);
+      const originalSnapshot = structuredClone(legacySnapshot);
+      const baseValues = {
+        funnel_stage: { scope: "landing_page" as const, value: "decision" },
+        transaction_intent: { scope: "landing_page" as const, value: "buy" },
+        primary_conversion_goal: { scope: "landing_page" as const, value: "purchase" },
+        landing_page_offering_scope: {
+          scope: "landing_page" as const,
+          value: { mode: "single", offerings: ["oferta alpha"] },
+        },
+      };
+      assert.deepEqual(
+        evaluateLandingPageCommercialIdentityMutation({
+          generationContextSnapshots: [legacySnapshot],
+          currentConfiguredOfferingScope: undefined,
+          values: baseValues,
+          sameCommercialWorkConfirmed: false,
+        }),
+        { ok: true },
+      );
+      assert.deepEqual(legacySnapshot, originalSnapshot);
+
+      assert.deepEqual(
+        evaluateLandingPageCommercialIdentityMutation({
+          generationContextSnapshots: [legacySnapshot],
+          currentConfiguredOfferingScope: {
+            mode: "multiple",
+            offerings: [" Oferta Alpha ", "Oferta Beta"],
+          },
+          values: {
+            ...baseValues,
+            landing_page_offering_scope: {
+              scope: "landing_page",
+              value: {
+                mode: "multiple",
+                offerings: [" oferta beta ", "OFERTA ALPHA"],
+              },
+            },
+          },
+          sameCommercialWorkConfirmed: false,
+        }),
+        { ok: true },
+      );
+
+      for (const [fieldKey, value] of [
+        ["funnel_stage", "awareness"],
+        ["transaction_intent", "rent"],
+      ] as const) {
+        assert.deepEqual(
+          evaluateLandingPageCommercialIdentityMutation({
+            generationContextSnapshots: [legacySnapshot],
+            currentConfiguredOfferingScope: undefined,
+            values: {
+              ...baseValues,
+              [fieldKey]: { scope: "landing_page", value },
+            },
+            sameCommercialWorkConfirmed: true,
+          }),
+          {
+            ok: false,
+            error: "identity_change_requires_new_landing_page",
+            fieldKey,
+          },
+        );
+      }
+
+      for (const changedScope of [
+        { mode: "portfolio", offerings: ["Oferta Alpha"] },
+        { mode: "single", offerings: ["Oferta Beta"] },
+      ]) {
+        assert.deepEqual(
+          evaluateLandingPageCommercialIdentityMutation({
+            generationContextSnapshots: [legacySnapshot],
+            currentConfiguredOfferingScope: undefined,
+            values: {
+              ...baseValues,
+              landing_page_offering_scope: {
+                scope: "landing_page",
+                value: changedScope,
+              },
+            },
+            sameCommercialWorkConfirmed: false,
+          }),
+          {
+            ok: false,
+            error: "offer_change_confirmation_required",
+            fieldKey: "landing_page_offering_scope",
+          },
+        );
+        assert.deepEqual(
+          evaluateLandingPageCommercialIdentityMutation({
+            generationContextSnapshots: [legacySnapshot],
+            currentConfiguredOfferingScope: undefined,
+            values: {
+              ...baseValues,
+              landing_page_offering_scope: {
+                scope: "landing_page",
+                value: changedScope,
+              },
+            },
+            sameCommercialWorkConfirmed: true,
+          }),
+          { ok: true },
+        );
       }
     },
   },
@@ -53,13 +169,16 @@ const cases: readonly Readonly<{ name: string; run: () => void }>[] = [
     run: () => {
       const split = splitLandingPageWorkspaceValues({
         business_offerings_summary: { scope: "business", value: "Resumo aberto" },
-        primary_service_or_offer: { scope: "offer", value: "Oferta concreta" },
+        landing_page_offering_scope: {
+          scope: "landing_page",
+          value: { mode: "single", offerings: ["Oferta concreta"] },
+        },
         traffic_source: { scope: "campaign", value: "paid_search" },
         primary_conversion_goal: { scope: "landing_page", value: "contact" },
       });
       assert.deepEqual(Object.keys(split.sharedValues), ["business_offerings_summary"]);
       assert.deepEqual(Object.keys(split.landingPageValues), [
-        "primary_service_or_offer",
+        "landing_page_offering_scope",
         "traffic_source",
         "primary_conversion_goal",
       ]);
@@ -70,6 +189,10 @@ const cases: readonly Readonly<{ name: string; run: () => void }>[] = [
     run: () => {
       const adapter = readFileSync(
         new URL("./adapters/landingPageWorkspaceAdapter.ts", import.meta.url),
+        "utf8",
+      );
+      const domain = readFileSync(
+        new URL("./landingPageWorkspace.ts", import.meta.url),
         "utf8",
       );
       const migration = readFileSync(
@@ -105,6 +228,19 @@ const cases: readonly Readonly<{ name: string; run: () => void }>[] = [
       assert.match(adapter, /\.range\(/);
       assert.match(adapter, /p_expected_latest_materialization_id:\s*identity\.latestMaterializationId/);
       assert.match(adapter, /candidate\.configuration\.storedValues/);
+      assert.match(adapter, /evaluateLandingPageCommercialIdentityMutation/);
+      assert.match(domain, /areLandingPageOfferingScopesMateriallyEqual/);
+      assert.match(adapter, /projectLegacyLandingPageOfferingScope/);
+      assert.match(adapter, /parseLandingPageOfferingScope/);
+      assert.match(domain, /fieldKey:\s*"landing_page_offering_scope"/);
+      assert.match(
+        domain,
+        /COMMERCIAL_IDENTITY_FIELDS = \[\s*"funnel_stage",\s*"transaction_intent",\s*\] as const/,
+      );
+      assert.doesNotMatch(
+        domain,
+        /COMMERCIAL_IDENTITY_FIELDS = \[[\s\S]*?primary_conversion_goal[\s\S]*?\] as const/,
+      );
       assert.match(
         adapter,
         /if \(isRecord\(operational\)\) \{[\s\S]*?return undefined;[\s\S]*?\}\s*const \{ data: onboarding/,
@@ -173,7 +309,7 @@ function configuration(complete: boolean): AccountLandingPageOnboardingConfigura
   return {
     accountId: "10000000-0000-4000-8000-000000000001",
     landingPageId: "20000000-0000-4000-8000-000000000002",
-    catalogVersion: 5,
+    catalogVersion: 6,
     revision: 1,
     planKey: "starter",
     taxonChain: {
@@ -188,7 +324,18 @@ function configuration(complete: boolean): AccountLandingPageOnboardingConfigura
     },
     storedValues: {},
     fields: [],
-    missingRequiredFieldKeys: complete ? [] : ["primary_conversion_goal"],
+    missingRequiredFieldKeys: complete ? [] : ["landing_page_offering_scope"],
     complete,
+  };
+}
+
+function generationContextSnapshot(
+  facts: readonly Readonly<{ fieldKey: string; value: unknown }>[],
+) {
+  return {
+    generationContext: {
+      modelContext: { facts },
+      bindingFacts: [],
+    },
   };
 }

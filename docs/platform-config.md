@@ -88,6 +88,7 @@
 • Projeto Vercel: `lp-factory-10`
 • Finalidade: runtime principal do produto.
 • Deploy: Preview + Production.
+• Deploy automático via Git: o `vercel.json` da raiz desabilita somente branches abrangidas pelo padrão minimatch `docs/**`; branches não abrangidas preservam o default `true`, incluindo Preview de implementação e Production da `main`.
 • Domínio oficial atual do app em produção: `https://lp-factory-10.vercel.app`
 • Base URL das API routes do app: `https://lp-factory-10.vercel.app/api`
 

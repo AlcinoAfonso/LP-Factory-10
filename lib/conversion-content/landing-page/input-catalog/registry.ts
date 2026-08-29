@@ -426,12 +426,68 @@ const catalogV5: LandingPageInputCatalogRegistryEntry = {
   },
 };
 
+const catalogV6Base = cloneJson(catalogV5);
+for (const entry of catalogV6Base.universal.entries) {
+  if (entry.kind !== "field") continue;
+  if (
+    entry.fieldKey === "primary_service_or_offer" ||
+    entry.fieldKey === "primary_service_or_offer_description"
+  ) {
+    (entry as LandingPageInputFieldDefinition & { retiredInVersion: number }).retiredInVersion = 6;
+  }
+  if (entry.fieldKey === "business_offerings_summary") {
+    (entry as LandingPageInputFieldDefinition & { purpose: string }).purpose =
+      "Resumir de forma livre e não exaustiva o que o negócio oferece; não é catálogo, whitelist ou restrição de landing_page_offering_scope e não limita ofertas diferentes, mais amplas ou mais específicas na landing page.";
+  }
+  if (entry.fieldKey === "primary_conversion_goal") {
+    (entry as LandingPageInputFieldDefinition & { purpose: string }).purpose =
+      "Declarar a ação ou conversão principal pretendida pela landing page, independentemente do canal autorizado usado para realizá-la, sem confundi-la com funnel_stage, transaction_intent, landing_page_offering_scope ou primary_conversion_channel.";
+  }
+}
+
+const v6UniversalFields: readonly LandingPageInputFieldDefinition[] = [
+  field({
+    fieldKey: "landing_page_offering_scope",
+    purpose: "Representar o escopo comercial informado livremente para a landing page.",
+    valueType: "offering_scope",
+    valueScope: "landing_page",
+    expectedValueOrigin: "landing_page_provided",
+    obligation: "required",
+    validation: { kind: "offering_scope" },
+    landingPageSubstitutionPolicy: "not_applicable",
+    evidence: evidence("Decisão humana E20.2.9 consolidada no plano-base v2.", "decision:e20-2-human"),
+    createdInVersion: 6,
+  }),
+  field({
+    fieldKey: "landing_page_offering_scope_description",
+    purpose: "Descrever factualmente o escopo comercial da landing page.",
+    valueType: "string",
+    valueScope: "landing_page",
+    expectedValueOrigin: "landing_page_provided",
+    obligation: "required",
+    validation: { kind: "type_only" },
+    landingPageSubstitutionPolicy: "not_applicable",
+    evidence: evidence("Decisão humana E20.2.9 consolidada no plano-base v2.", "decision:e20-2-human"),
+    createdInVersion: 6,
+  }),
+];
+
+const catalogV6: LandingPageInputCatalogRegistryEntry = {
+  ...catalogV6Base,
+  version: 6,
+  universal: {
+    ...catalogV6Base.universal,
+    entries: [...catalogV6Base.universal.entries, ...v6UniversalFields],
+  },
+};
+
 export const landingPageInputCatalogRegistry = deepFreeze({
   1: catalogV1,
   2: catalogV2,
   3: catalogV3,
   4: catalogV4,
   5: catalogV5,
+  6: catalogV6,
 } satisfies LandingPageInputCatalogRegistry);
 
 function field(

@@ -10,7 +10,7 @@ import type {
 import { landingPageInputCatalogRegistry } from "./registry";
 import { resolveLandingPageInputCatalogFromRegistry } from "./resolver";
 
-export const CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION = 5 as const;
+export const CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION = 6 as const;
 
 const currentCatalogEntry = landingPageInputCatalogRegistry[
   CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION
@@ -32,8 +32,7 @@ export const landingPageInputCatalogOperationalPlans = [
 export const landingPageCommercialIdentityFieldKeys = Object.freeze([
   "funnel_stage",
   "transaction_intent",
-  "primary_conversion_goal",
-  "primary_service_or_offer",
+  "landing_page_offering_scope",
 ] as const);
 
 export function collectCommercialIdentityReviewBlockers(
@@ -90,9 +89,10 @@ export function classifyLandingPageInputCatalogTransition(
   const expanded: string[] = [];
   const reviewRequired = new Set<string>(removed);
 
+  const survivingPreviousKeys = previousKeys.filter((fieldKey) => nextByKey.has(fieldKey));
   const previousOrderWithinNext = nextKeys.filter((fieldKey) => previousByKey.has(fieldKey));
-  if (!sameJson(previousOrderWithinNext, previousKeys)) {
-    previousKeys.forEach((fieldKey) => reviewRequired.add(fieldKey));
+  if (!sameJson(previousOrderWithinNext, survivingPreviousKeys)) {
+    survivingPreviousKeys.forEach((fieldKey) => reviewRequired.add(fieldKey));
   }
 
   for (const fieldKey of previousKeys) {
@@ -244,5 +244,19 @@ function collectFieldKeys(
 }
 
 function sameJson(left: unknown, right: unknown): boolean {
-  return JSON.stringify(left) === JSON.stringify(right);
+  return stableStringify(left) === stableStringify(right);
+}
+
+function stableStringify(value: unknown): string {
+  if (Array.isArray(value)) {
+    return `[${value.map(stableStringify).join(",")}]`;
+  }
+  if (value && typeof value === "object") {
+    const record = value as Record<string, unknown>;
+    return `{${Object.keys(record)
+      .sort()
+      .map((key) => `${JSON.stringify(key)}:${stableStringify(record[key])}`)
+      .join(",")}}`;
+  }
+  return JSON.stringify(value);
 }

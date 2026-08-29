@@ -78,8 +78,8 @@ export async function saveLandingPageConfigurationAction(
       return {
         status: "error",
         fieldErrors: {
-          primary_service_or_offer:
-            "Confirme abaixo se a oferta ainda pertence ao mesmo trabalho comercial.",
+          landing_page_offering_scope:
+            "Confirme abaixo se o escopo de ofertas ainda pertence ao mesmo trabalho comercial.",
         },
       };
     }

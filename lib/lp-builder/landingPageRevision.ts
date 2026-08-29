@@ -3,6 +3,7 @@ import { z } from "zod";
 import {
   landingPagePresentationCandidateSchema,
 } from "../conversion-content/landing-page/presentation";
+import { isLandingPageOfferingScope } from "../conversion-content/landing-page/input-catalog";
 import {
   isValidResolvedOpenAiImageWorkload,
   isValidResolvedOpenAiProductWorkload,
@@ -87,7 +88,7 @@ const inputFactSchema = z.object({
   purpose: z.string().trim().min(1),
   valueType: z.enum([
     "string", "phone", "email", "url", "enum", "string_list", "boolean",
-    "number_range", "keyword_map", "asset_reference", "color_palette",
+    "number_range", "keyword_map", "asset_reference", "color_palette", "offering_scope",
   ]),
   value: z.unknown(),
   source: z.enum(["authoritative", "configuration"]),
@@ -534,6 +535,8 @@ function isSnapshotFactValueValid(valueType: string, value: unknown): boolean {
           (item.ad_context === undefined ||
             (typeof item.ad_context === "string" && item.ad_context.trim().length > 0)),
       );
+    case "offering_scope":
+      return isLandingPageOfferingScope(value);
     case "asset_reference":
       return isRecord(value) && Object.keys(value).length === 1 &&
         typeof value.asset_id === "string" && value.asset_id.trim().length > 0;
