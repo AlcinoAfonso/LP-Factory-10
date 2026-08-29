@@ -73,6 +73,7 @@ export {
   buildInputCatalogEvaluationContext,
   buildInputCatalogEvaluationPrompt,
   coordinateInputCatalogEvaluation,
+  fingerprintInputCatalogEvaluationContextIdentity,
   revalidateInputCatalogEvaluationContext,
   sameInputCatalogEvaluationContextIdentity,
   type BuildInputCatalogEvaluationContextInput,

@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+
 import {
   landingPageInputCatalogPlans,
   type LandingPageInputCatalogTaxonChain,
@@ -229,6 +231,14 @@ export function sameInputCatalogEvaluationContextIdentity(
   } catch {
     return false;
   }
+}
+
+export function fingerprintInputCatalogEvaluationContextIdentity(
+  identity: InputCatalogEvaluationContextIdentity,
+): string {
+  const hash = createHash("sha256");
+  hash.end(canonicalize(identity));
+  return hash.digest("hex");
 }
 
 export async function coordinateInputCatalogEvaluation(

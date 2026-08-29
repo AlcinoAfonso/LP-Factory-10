@@ -1,6 +1,6 @@
 "use server";
 
-import { createHash, randomUUID } from "node:crypto";
+import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
@@ -15,10 +15,10 @@ import {
 import {
   coordinateInputCatalogEvaluation,
   createInputCatalogEvaluationDecisionToken,
+  fingerprintInputCatalogEvaluationContextIdentity,
   fingerprintInputCatalogEvaluationOutput,
   readInputCatalogEvaluationDecisionToken,
   revalidateInputCatalogEvaluationContext,
-  type InputCatalogEvaluationContextIdentity,
   type InputCatalogEvaluationMode,
   type InputCatalogEvaluationOutput,
 } from "@/conversion-content/landing-page/taxon-preparation";
@@ -164,7 +164,7 @@ export async function evaluateInputCatalogAction(input: Readonly<{
     });
     if (
       !previousContext.ok ||
-      fingerprintEvaluationContext(previousContext.value.identity) !==
+      fingerprintInputCatalogEvaluationContextIdentity(previousContext.value.identity) !==
         previousEvidence.contextFingerprint
     ) {
       return {
@@ -209,7 +209,9 @@ export async function evaluateInputCatalogAction(input: Readonly<{
   if (!result.ok) {
     return { ok: false, code: result.error.code, message: result.error.message };
   }
-  const contextFingerprint = fingerprintEvaluationContext(result.value.contextIdentity);
+  const contextFingerprint = fingerprintInputCatalogEvaluationContextIdentity(
+    result.value.contextIdentity,
+  );
   const outputFingerprint = fingerprintInputCatalogEvaluationOutput(result.value.output);
   const decisionToken = createInputCatalogEvaluationDecisionToken(
     {
@@ -360,7 +362,7 @@ async function executeAdministrativeEvaluationDecision(input: Readonly<{
             !draft.ok ||
             draft.value.targetVersion !== evidence.inputCatalogVersion ||
             draft.value.contentFingerprint !== expectedContentFingerprint ||
-            fingerprintEvaluationContext(draft.value.context.identity) !==
+            fingerprintInputCatalogEvaluationContextIdentity(draft.value.context.identity) !==
               evidence.contextFingerprint
           ) {
             return {
@@ -425,7 +427,7 @@ async function executeAdministrativeEvaluationDecision(input: Readonly<{
         );
         if (
           !revalidated.ok ||
-          fingerprintEvaluationContext(revalidated.value.contextIdentity) !==
+          fingerprintInputCatalogEvaluationContextIdentity(revalidated.value.contextIdentity) !==
             evidence.contextFingerprint
         ) {
           return {
@@ -450,10 +452,6 @@ async function executeAdministrativeEvaluationDecision(input: Readonly<{
       },
     },
   );
-}
-
-function fingerprintEvaluationContext(identity: InputCatalogEvaluationContextIdentity) {
-  return createHash("sha256").update(JSON.stringify(identity)).digest("hex");
 }
 
 export async function createTaxonAction(

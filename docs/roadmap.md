@@ -2702,7 +2702,7 @@ Repositório — Ajustados
 20.2.9.1 Objetivo e status
 
 * Objetivo: substituir a representação singular de oferta por um escopo comercial capaz de expressar uma oferta, algumas ofertas ou o portfólio amplo, reconciliando a continuidade da identidade E19.5 sem alterar snapshots históricos.
-* Status: Em andamento em duas etapas. A Etapa 1 foi concluída e incorporada à `main` pelo PR #826; a Etapa 2 está em implementação no PR draft #830, com publicação e reconciliação pós-deploy ainda pendentes.
+* Status: Em andamento em duas etapas. A Etapa 1 foi concluída e incorporada à `main` pelo PR #826; a v6 da Etapa 2 foi publicada em Production pelo PR #830, mas a reconciliação pós-deploy permanece bloqueada e o QA operacional continua pendente.
 
 20.2.9.2 Bootstrap mantendo v5
 
@@ -2725,13 +2725,14 @@ Repositório — Ajustados
 
 20.2.9.4 Draft, revisão e publicação da v6
 
-* Status: Implementação candidata materializada no PR draft #830, com draft v6 validado, decisão humana E20.6.5 `confirm_sufficient` registrada, handoff repo-only congelado e `CURRENT=6`; revisão e merge humanos, deploy de Production, reconciliação canônica do draft e QA operacional pós-reconciliação permanecem pendentes.
+* Status: v6 publicada em Production pelo PR #830, com registry repo-only e `CURRENT=6`. A reconciliação canônica falhou fechada diante do fingerprint legado da evidência E20.6.5: `reviewed_input_catalog_version` permanece em `5`, o draft v6 revisão `5` foi preservado e o QA operacional pós-reconciliação permanece pendente.
 * Sequência:
   * o lifecycle E20.2.8 criou exatamente o draft v6 a partir da `main` ainda em v5;
   * as configurações operacionais completas foram validadas, a E20.6.5 pré-publicação resultou `sufficient` sem gaps ou refinamentos e a decisão humana vigente foi vinculada aos fingerprints revalidados;
-  * o PR #830 reconcilia identidade E19.5, UI operacional, save/reload, geração e snapshots e materializa a v6 no registry repo-only com `CURRENT=6`;
+  * o PR #830 reconciliou identidade E19.5, UI operacional, save/reload, geração e snapshots e publicou a v6 no registry repo-only com `CURRENT=6`;
   * o Preview do artefato v6 foi aprovado como gate de build/artefato; como Preview e Production compartilham o Supabase, a transição material exige `R=6` e a reconciliação canônica é exclusiva de Production, o QA operacional completo foi transferido, sem dispensa, para imediatamente após essa reconciliação, sem bypass ou escrita antecipada no marcador;
-  * após revisão e merge humanos, o deploy de Production deve comprovar o artefato exato e reconciliar os marcadores válidos antes de remover o draft, conforme o lifecycle canônico.
+  * o deploy de Production comprovou o artefato exato, mas a reconciliação bloqueou corretamente antes de qualquer escrita porque o fingerprint legado era sensível à ordem das propriedades entre o draft preservado e o registry implantado;
+  * o corretivo pós-merge deve reutilizar a canonicalização da E20.6 para novas evidências e aceitar a evidência v6 somente após reproduzir o fingerprint legado armazenado a partir do draft, comprovar igualdade material com o contexto implantado e revalidar conteúdo, taxon, cadeia, pesquisa e versão; somente então a reconciliação e o QA operacional podem ser retomados.
 
 20.3 Perfil de orientação para geração
 
