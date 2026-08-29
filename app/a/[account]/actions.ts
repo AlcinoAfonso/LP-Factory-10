@@ -27,14 +27,14 @@ import { matchBusinessTaxonsDeterministic } from '../../../lib/onboarding/niche-
 import {
   AI_NICHE_RESOLUTION_SCHEMA_VERSION,
   type AiNicheResolutionOutput,
-  type DeterministicMatchDecision,
   type TaxonMatchCandidate,
-} from '../../../lib/onboarding/niche-resolution/contracts';
+  evaluateDeterministicTaxonMatch,
+  shouldConfirmDeterministicAlias,
+} from '../../../lib/onboarding/niche-resolution';
 import {
   resolveNicheWithOpenAi,
   shouldResolveNicheWithAi,
 } from '../../../lib/onboarding/niche-resolution/adapters/openAiResolver';
-import { evaluateDeterministicTaxonMatch } from '../../../lib/onboarding/niche-resolution/deterministicConfidence';
 
 export type RenameAccountState = {
   ok: boolean;
@@ -140,26 +140,6 @@ export async function renameAccountAction(
 
 function normalizeText(input: unknown): string {
   return (input ?? '').toString().trim();
-}
-
-function shouldConfirmDeterministicAlias(decision: DeterministicMatchDecision): boolean {
-  const matchSources = decision.selectedCandidate?.matchSource
-    .split("+")
-    .map((source) => source.trim()) ?? [];
-
-  return (
-    decision.confidence === 'high' &&
-    decision.shouldUseDeterministicMatch === false &&
-    decision.shouldEscalateToAi === false &&
-    decision.selectedCandidate !== null &&
-    Boolean(decision.selectedCandidate.taxonId) &&
-    matchSources.some((source) => source === 'alias_exact' || source === 'alias_normalized') &&
-    !matchSources.some((source) =>
-      source === 'taxon_name_exact' ||
-      source === 'taxon_name_normalized' ||
-      source === 'taxon_slug_normalized'
-    )
-  );
 }
 
 function buildDeterministicAliasConfirmationOutput(
@@ -325,8 +305,13 @@ export async function saveSetupAndContinueAction(
 
     try {
       const taxonomyMatchStartedAt = Date.now();
-      const candidates = await matchBusinessTaxonsDeterministic(validated.values.niche, 10);
-      const decision = evaluateDeterministicTaxonMatch(candidates, validated.values.niche);
+      const matchResult = await matchBusinessTaxonsDeterministic(validated.values.niche, 10);
+      if (!matchResult.ok) throw new Error(`taxonomy_match_${matchResult.error.code}`);
+      const candidates = [...matchResult.candidates];
+      const decision = evaluateDeterministicTaxonMatch(
+        candidates,
+        validated.values.niche,
+      );
       const topCandidate = decision.selectedCandidate;
 
       const resolutionSaved = await upsertAccountNicheResolution({

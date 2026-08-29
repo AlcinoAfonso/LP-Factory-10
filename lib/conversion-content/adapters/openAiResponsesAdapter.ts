@@ -3,22 +3,30 @@ import {
   createOpenAiWorkloadSuccessEvent,
   emitOpenAiWorkloadEvent,
   isValidResolvedOpenAiProductWorkload,
+  normalizeOpenAiResponseUsage,
   resolveOpenAiWorkloadEnvironment,
   type OpenAiWorkloadEnvironment,
   type OpenAiWorkloadEvent,
   type OpenAiWorkloadFailureCategory,
+  type OpenAiWorkloadUsage,
   type ResolvedOpenAiProductWorkload,
 } from "../../openai-workloads";
 
 export type OpenAiResponsesParser<T> = (
   payload: unknown,
 ) =>
-  | Readonly<{ ok: true; value: T }>
+  | Readonly<{ ok: true; value: T; telemetry?: OpenAiResponsesTelemetry }>
   | Readonly<{
       ok: false;
       kind: "invalid_response" | "refusal" | "provider_error";
       reason: string;
+      telemetry?: OpenAiResponsesTelemetry;
     }>;
+
+export type OpenAiResponsesTelemetry = Readonly<{
+  webSearchCallCount?: number;
+  webSearchSourceCount?: number;
+}>;
 
 export type OpenAiResponsesInput<T> = Readonly<{
   apiKey?: string;
@@ -47,6 +55,7 @@ export type OpenAiResponsesResult<T> =
       responseId: string | null;
       providerRequestId: string | null;
       latencyMs: number;
+      usage: OpenAiWorkloadUsage;
     }>
   | Readonly<{
       ok: false;
@@ -179,6 +188,7 @@ export async function requestOpenAiResponses<T>(
       emitEvent(createOpenAiWorkloadFailureEvent({
         ...eventContext,
         ...responseMetadata,
+        ...parsed.telemetry,
       }, parsed.kind));
       return { ok: false, kind: parsed.kind, reason: parsed.reason };
     }
@@ -186,6 +196,7 @@ export async function requestOpenAiResponses<T>(
     emitEvent(createOpenAiWorkloadSuccessEvent({
       ...eventContext,
       ...responseMetadata,
+      ...("telemetry" in parsed ? parsed.telemetry : undefined),
     }));
     return {
       ok: true,
@@ -193,6 +204,7 @@ export async function requestOpenAiResponses<T>(
       responseId: nonEmptyString(responseRecord?.id),
       providerRequestId,
       latencyMs,
+      usage: normalizeOpenAiResponseUsage(responseRecord?.usage),
     };
   } catch (error) {
     const timedOut = error instanceof Error && error.name === "AbortError";

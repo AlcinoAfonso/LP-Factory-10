@@ -183,10 +183,11 @@ function deepFreeze<T>(value: T): T {
 }
 
 const managedEnvironments = ["production", "preview"] as const;
-const preTaxonEvaluationManagedWorkloads = [
+const preDynamicResearchManagedWorkloads = [
   "niche_resolution",
   "commercial_activation_draft_generation",
   "landing_page_draft_generation",
+  "taxon_input_catalog_sufficiency_evaluation",
   "landing_page_draft_image_generation",
 ] as const;
 const managedWorkloads = [
@@ -194,8 +195,9 @@ const managedWorkloads = [
   "commercial_activation_draft_generation",
   "landing_page_draft_generation",
   "taxon_input_catalog_sufficiency_evaluation",
+  "landing_page_dynamic_market_research",
   "landing_page_draft_image_generation",
-] as const;
+] as const satisfies readonly ManagedWorkload[];
 
 const unitRowKeys = [
   "environment",
@@ -265,9 +267,9 @@ export function translateOpenAiAdministrativeConfigurationRows(
   const units = exactRecords(unitRead.data, unitRowKeys);
   const revisions = exactRecords(revisionRead.data, revisionRowKeys);
   const activations = exactRecords(activationRead.data, activationRowKeys);
-  const workloads = units?.length === 8
-    ? preTaxonEvaluationManagedWorkloads
-    : units?.length === 10
+  const workloads = units?.length === 10
+    ? preDynamicResearchManagedWorkloads
+    : units?.length === 12
       ? managedWorkloads
       : null;
   if (!units || !revisions || !activations || !workloads) {

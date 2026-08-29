@@ -47,6 +47,8 @@ type EventInput = OpenAiWorkloadEventContext &
     providerErrorType?: unknown;
     latencyMs?: unknown;
     usage?: unknown;
+    webSearchCallCount?: unknown;
+    webSearchSourceCount?: unknown;
   }>;
 
 export function resolveOpenAiWorkloadEnvironment(
@@ -148,6 +150,8 @@ function createEvent(
     result,
     failureCategory,
     latencyMs: durationMetric(input.latencyMs),
+    webSearchCallCount: integerMetric(input.webSearchCallCount),
+    webSearchSourceCount: integerMetric(input.webSearchSourceCount),
     ...normalizeOpenAiResponseUsage(input.usage),
   };
 

@@ -1,10 +1,10 @@
-# 28/08/2026 — Plano-base v1 ajustado — E20.7 — Liberação taxonômica para geração de Landing Pages
+# 29/08/2026 — Plano-base v2 — E20.7 — Liberação taxonômica para geração de Landing Pages
 
 ## 1. Estado e decisões fixas
 
 ### 1.1. Estado
 
-- Status: **plano-base v1 ajustado** após revisão arquitetural transversal e revisão de risco de churn; ainda não constitui autorização de implementação nem de merge.
+- Status: **plano-base v2 aprovado pelo Analista** após os pareceres Estrutural, de Updates e de Automações e a reconciliação do roadmap; não constitui autorização de merge da implementação.
 - Caso macro: `E20 — Preparação e liberação de taxons para geração de landing pages`.
 - Recorte: `E20.7 — Liberação taxonômica para geração de Landing Pages`.
 - Objetivo: resolver a fonte de conhecimento de mercado mais específica e segura para o escopo comercial de uma LP, sem transformar oferta em nova autoridade taxonômica, sem enfraquecer a autoridade factual E20.2, sem tornar a E20 uma segunda orquestradora da geração e sem bloquear o cliente por ausência de correspondência taxonômica perfeita.
@@ -13,8 +13,9 @@
 - O taxon primário da conta permanece a identidade taxonômica estável do negócio.
 - A fonte de conhecimento resolvida pela E20.7 é um resultado derivado e consultivo; não é segunda taxonomia, identidade da LP, field E20.2 ou seleção persistida por LP.
 - O escopo comercial da LP é fornecido por `landing_page_offering_scope`, cuja autoridade pertence à E20.2.9/E19.5; a E20.7 apenas o consome para resolver conhecimento.
-- O PR #830/E20.2.9.2 permanece pré-publicação no momento desta v1: `CURRENT=5`; a implementação da E20.7 depende da publicação e integração operacional da E20.2 v6.
+- O PR #830/E20.2.9.2 foi incorporado à `main` pelo merge commit `b89ecaaaa0116b9d9c82bb0af65fcd3744ac2787`; o registry repo-only contém v1–v6 e `CURRENT=6`. A implementação da E20.7 preserva como gate fail-closed a confirmação de que a v6 foi reconciliada e está operacionalmente consumível pelos boundaries vigentes antes de qualquer prova hospedada ou ativação.
 - Ausência, ambiguidade ou falha de correspondência entre oferta e taxon **não invalida a oferta do cliente** e não autoriza recusa semântica neste recorte.
+- P1 humano pós-merge do PR #821: `specialized_deep` só pode ser autorizado quando `matchSource` contiver `alias_exact`, `alias_normalized`, `taxon_name_exact` ou `taxon_name_normalized`; resultado apoiado apenas em `fts`, `trgm` ou `taxon_slug_normalized` produz `dynamic_required` sem recusar nem invalidar a oferta.
 
 ### 1.2. Fronteira arquitetural obrigatória
 
@@ -26,6 +27,8 @@
 - A E20.7 termina em uma **saída tipada de conhecimento resolvido**, suficiente para consumo futuro pela E19.3.
 - Alterar `generationContext`, workflow E19.4, snapshot, materialização, renderer ou prompt persuasivo não pertence à implementação da E20.7.
 - A integração downstream com E19 deve ser planejada em recorte próprio depois de a saída E20.7 estar definida e aprovada; não executar essa integração silenciosamente dentro da E20.7.
+- A implementação da E20.7 reside em `lib/conversion-content/landing-page/knowledge-resolution/`. Esse boundary possui contratos imutáveis, resolver puro, equivalência factual, prompt/schema funcional e composição da saída tipada. Acesso a Supabase e transporte OpenAI permanecem em adapters server-only de `lib/conversion-content/adapters/`.
+- A API da E20.7 é exportada pelo `index.ts` do próprio boundary e pela API pública de `lib/conversion-content/index.ts`. Consumidores não importam registry, schema ou arquivo interno de E20.2, E20.5, E20.6 ou `lib/openai-workloads`; a E20.7 não cria arquivo em `app/`, `lib/lp-builder/`, renderer, workflow ou materialização.
 
 ### 1.3. Evidência que sustenta a decisão
 
@@ -75,6 +78,10 @@
 - Deep Research especializada ou complemento dinâmico nunca autoriza preço, disponibilidade, localização concreta, credencial, prova social, condição comercial ou outro fato objetivo do cliente.
 - A correspondência determinística da oferta reaproveita a autoridade já existente de **nome canônico + aliases**, com normalização vigente e filtro posterior para descendentes ativos do taxon servido.
 - Não criar segundo registry, segundo conjunto de aliases ou matcher paralelo dentro da E20.7.
+- A E20.7 consome exclusivamente a API pública de `lib/onboarding/niche-resolution/`. A consulta canônica distingue tipadamente sucesso com candidatos de falha operacional; erro de RPC, resposta inválida ou exceção falha tecnicamente a resolução e nunca é convertido em ausência legítima de match ou `dynamic_required`.
+- A elegibilidade reutiliza a política canônica do boundary, sempre depois do filtro de descendente ativo e unicidade, mas autoriza `specialized_deep` somente quando `matchSource` contiver `alias_exact`, `alias_normalized`, `taxon_name_exact` ou `taxon_name_normalized`. Resultado apoiado apenas em `fts`, `trgm` ou `taxon_slug_normalized`, ainda que pontuado como forte, não seleciona pesquisa especializada e produz `dynamic_required` sem recusar ou invalidar a oferta. A classificação de alias hoje local à action deve ser movida para o boundary e seu consumidor vigente deve usar a mesma operação, sem thresholds ou chamada RPC paralelos.
+- A aplicação de `supa#51` neste recorte limita-se a validar e preservar o matching existente: a E20.7 reutiliza o adapter/RPC canônicos e não cria nem altera `pg_trgm`, FTS, índices, scores ou thresholds de matching. Se o boundary existente não puder ser reutilizado, aplica-se o critério de parada da seção 4.2 antes de qualquer lógica paralela.
+- A aplicação de `supa#52` neste recorte limita-se a preservar a normalização derivada já canônica: a E20.7 não cria nem altera generated column, função de normalização, slug ou chave auxiliar derivada, nem normalizador TypeScript próprio para a oferta; toda correspondência usa a normalização encapsulada pelo matcher vigente.
 - Ausência ou ambiguidade de match por nome/alias significa apenas que nenhuma Deep Research descendente foi localizada de forma determinística; não significa oferta inválida.
 - Antes de reutilizar Deep Research de taxon descendente, taxon servido e taxon fonte precisam estar preparados para a mesma versão E20.2 efetiva.
 - Seus contratos factuais resolvidos devem ser funcionalmente equivalentes de forma conservadora nos planos suportados, ignorando somente identidade/proveniência taxonômica que naturalmente diferem.
@@ -93,7 +100,11 @@
 - Objetivo: obter somente o delta de conhecimento material ausente na Deep Research-base para o escopo comercial daquela LP.
 - Limites: até duas execuções de Web Search, `store:false`, sub-timeout máximo de 45 s, fontes preservadas, sem retry automático, fallback de modelo/tool, agente, Agents SDK, job, fila, crawler, RAG ou cache global.
 - Participação humana: nenhuma intervenção durante a resolução; o gatilho e a aprovação da revisão continuam sob os fluxos E19 competentes.
-- Avaliação formal de Automação na v2: **necessária**.
+- Avaliação formal de Automação na v2: **parecer produzido, incorporado, auditado e aprovado pelo Analista**.
+- A E20.7.4 é uma automação com IA em fluxo controlado, executada server-side no Runtime do LP Factory. Todo matching, elegibilidade, equivalência factual, gating, validação, contagem de tools e fallback permanecem determinísticos. A única função da IA é pesquisar e estruturar o delta consultivo.
+- O fluxo usa uma única requisição foreground à Responses API com somente `web_search`; agente, Agents SDK, multiagente, Programmatic Tool Calling, persisted reasoning, modo Pro, job, fila, crawler, RAG, cache global, retry e fallback automático são proibidos.
+- A configuração inicial não é herdada de outro workload. A decisão humana superveniente registrada pelo PR #837 fixa `gpt-5.6-luna + high` com `search_context_size = medium`; a comparação Mini/Luna/Terra foi dispensada e não constitui allowlist operacional. `low` e `max` permanecem fora desse workload. Sol, modo Pro, modelos Deep Research e comportamento agentic ficam fora sem nova evidência e novo recorte.
+- `search_context_size = medium` é propriedade tipada, imutável e code-owned da definição específica desse workload no registry E21.1. O lifecycle E21.2 continua governando dinamicamente somente `modelo + reasoning_effort`, restritos neste recorte à decisão humana vigente; não criar coluna, variável ou configuração paralela para search context. O resolver compõe explicitamente a configuração operacional E21.2 com a propriedade E21.1.
 
 ### 1.8. Validação semântica futura
 
@@ -109,15 +120,21 @@
 ### 1.9. Relação com E21
 
 - O novo workload de pesquisa dinâmica segue lifecycle, configuração e observabilidade técnica da E21.2.
+- Registrar o workload `landing_page_dynamic_market_research`, classificação `product_runtime`, consumidor `E20.7.4`, fallback `falhar a resolução técnica sem invalidar a oferta` e apresentação administrativa própria no boundary público E21.1.
+- Development usa baseline explícita do registry. Preview e Production exigem revisão operacional provada, promovida e humanamente ativada no lifecycle E21.2, sem fallback para `repo_catalog`, variável de modelo ou configuração paralela. Reutilizar `OPENAI_API_KEY`; não criar secret específico.
 - A E21.4 reduzida não é pré-requisito para ativar esse workload.
-- Financeiramente, a pesquisa dinâmica permanece dentro do gasto oficial em `Outros gastos / reconciliação`; a E20.7 não cria cálculo ou persistência financeira própria nem amplia o MVP da E21.4.
+- A atribuição financeira permanece causal e exclusiva da E21.4: execução de LP real correlacionada a conta contratada pode ser `Cliente/conta`; Preview, QA ou prova de produto é `LP Factory`; correlação insuficiente é `Não atribuído/reconciliação`. A E20.7 preserva somente correlação técnica segura e não calcula nem persiste custo ou categoria financeira.
 
 ### 1.10. Dependências de execução
 
-- E20.2 v6 precisa estar publicada, atual e consumível pelos boundaries vigentes; o plano não assume conclusão antecipada do PR #830.
+- E20.2 v6 está materializada no registry repo-only e marcada como `CURRENT=6`; sua reconciliação e consumibilidade operacional pelos boundaries vigentes precisam ser comprovadas antes de prova hospedada ou ativação da E20.7.
+- A pendência de reconciliação para `reviewed_input_catalog_version=6` não bloqueia planejamento, implementação repo-side nem testes determinísticos da E20.7.3; bloqueia somente prova ou ativação hospedada dependente dessa autoridade operacional.
 - O taxon servido precisa possuir E20.5 válida e E20.6 compatível com a versão E20.2 efetiva requerida.
 - Taxon descendente candidato a fonte especializada precisa estar ativo, possuir E20.5/E20.6 válidas para a mesma versão efetiva e passar pela equivalência factual da seção 1.6.
 - O lifecycle E21.2 precisa admitir o novo workload de pesquisa dinâmica antes de sua ativação.
+- A admissão do workload em Preview e Production exige migration forward-only, sem nova tabela ou coluna, que amplie as allowlists e constraints das três tabelas E21.2, ajuste as validações das RPCs `save_openai_workload_configuration_candidate_v1` e `promote_openai_workload_configuration_candidate_v1` e crie idempotentemente revisão bootstrap, configuração ativa e evento bootstrap para os dois ambientes, preservando assinaturas e grants.
+- A transição do read model administrativo aceita o conjunto aplicado anterior de dez unidades e o conjunto novo de doze unidades, nunca cardinalidade parcial. O runtime falha fechado enquanto não existir exatamente uma configuração e revisão ativa válidas para o novo workload.
+- A migration preserva RLS habilitado e ausência de policies nas três tabelas; `public`, `anon`, `authenticated` e `ai_readonly` permanecem sem grants; `service_role` mantém apenas os grants já necessários; RPCs permanecem `SECURITY INVOKER`, com `search_path` fixado e execução exclusiva por `service_role`. `docs/schema.md`, testes SQL, snippet read-only e casos focais de `lib/openai-workloads/` integram o mesmo recorte.
 
 ## 2. Contrato do caso
 
@@ -136,9 +153,11 @@
 ### 2.2. Resolução determinística da fonte
 
 - O resolver opera server-side e não persiste uma seleção de pesquisa na LP.
+- A cadeia taxonômica completa é lida por uma única operação server-only compartilhada em `lib/conversion-content/adapters/`, com paginação integral, ordenação determinística, validação tipada de todas as identidades e construção pela função canônica de cadeia. Essa operação substitui as leituras privadas equivalentes de `selectedEndCustomerResearchAdapter.ts` e `inputCatalogEvaluationContextAdapter.ts` e é reutilizada pela E20.7; não criar terceira paginação de `business_taxons`.
 - `mode = single`:
   - validar somente o shape factual de `offering_scope`; conteúdo livre não é rejeitado por falta de correspondência taxonômica;
   - reaproveitar o matcher determinístico existente, incluindo nome canônico e aliases, sem criar lógica paralela;
+  - autorizar pesquisa especializada somente para `matchSource` contendo `alias_exact`, `alias_normalized`, `taxon_name_exact` ou `taxon_name_normalized`; resultado apoiado apenas em `fts`, `trgm` ou `taxon_slug_normalized` segue como `dynamic_required`;
   - limitar os candidatos retornados aos descendentes ativos do taxon servido;
   - aceitar especialização somente quando houver um único candidato descendente determinístico e elegível;
   - preservar `matchSource` e `matchedAliases` como proveniência da resolução;
@@ -159,16 +178,22 @@
 ### 2.3. Complemento dinâmico
 
 - Quando requerido, ocorre em workload próprio e separado da geração de copy.
+- Quando `dynamic_required`, executar exatamente uma requisição foreground à Responses API com `store:false`, sem `conversation`, `previous_response_id` ou background; declarar somente `tools:[{type:"web_search", external_web_access:true, search_context_size:<valor code-owned aprovado para o workload>}]`, `tool_choice:"required"`, `max_tool_calls:2`, `include:["web_search_call.action.sources"]`, `max_output_tokens` explícito, `safety_identifier` estável e sem PII e Structured Output com JSON Schema estrito. Modelo e reasoning effort vêm da configuração operacional E21.2; search context size vem da definição imutável E21.1.
+- O adapter funcional reutiliza `requestOpenAiResponses` como único transporte Responses API, com configuração resolvida pela API pública de `lib/openai-workloads/`, timeout máximo de 45 s e sinal de cancelamento. Não criar segundo fetch para `/v1/responses`, cliente OpenAI paralelo, retry ou fallback.
 - Entrada mínima: Deep Research-base autorizada, escopo/descrição das ofertas, taxon servido e os contextos factuais estritamente necessários.
 - Pesquisa somente o delta que pode alterar a interpretação do público: situações/jobs, dores/riscos, objeções, critérios/trade-offs, alternativas, confiança/prova, linguagem/perguntas e aspectos atuais/voláteis relevantes.
 - Não produzir wireframe, seções, CTA, copy, layout, fato concreto do cliente ou contrato E20.2.
 - Não classificar neste recorte a oferta como compatível ou incompatível com o nicho para finalidade de recusa.
 - O Web Search deve efetivamente ser usado; resposta de memória não substitui a pesquisa quando o complemento foi requerido.
 - Limite inicial: até duas execuções do recurso Web Search; cada execução pode consultar múltiplas fontes.
+- O parser conta os itens reais `web_search_call` do payload e aceita somente uma ou duas chamadas concluídas. Fontes são derivadas de `web_search_call.action.sources`; URL ou contagem declarada pelo modelo não é autoridade, e toda referência do suplemento deve corresponder a fonte retornada pelo provider.
 - Resultado mínimo: `material_delta | no_material_delta | insufficient_evidence`.
 - `material_delta`: devolver base + suplemento como proveniências consultivas distintas.
 - `no_material_delta`: devolver somente a base e registrar que a busca foi executada sem diferença material sustentada.
 - `insufficient_evidence`, timeout, refusal, erro de provider, resposta inválida ou ausência de fontes utilizáveis: falhar a resolução técnica, sem marcar a oferta do cliente como inválida.
+- Zero chamada, mais de duas chamadas, chamada incompleta, fonte ausente ou inutilizável ou referência fora do conjunto retornado produz `insufficient_evidence` e falha técnica.
+- O schema versionado discrimina os três status. `material_delta` exige suplemento não vazio e evidências válidas; `no_material_delta` proíbe suplemento e registra que a busca ocorreu; `insufficient_evidence` nunca produz saída de sucesso. Autorização, taxonomia, equivalência factual, fatos concretos do cliente e recusa não são delegados ao prompt nem inferidos de schema válido.
+- Entrada de usuário, pesquisa-base e conteúdo web são dados não confiáveis e não podem substituir as instructions do workload. Enviar somente campos allowlisted, sem secret, contato privado, ID desnecessário, PHI ou contexto operacional bruto. `store:false` é obrigatório, mas não é documentado como ZDR.
 - O suplemento não vira automaticamente ativo E20.5; repetição recorrente pode apenas gerar evidência para futura decisão humana de criar Deep Research especializada.
 
 ### 2.4. Saída tipada da E20.7
@@ -186,6 +211,7 @@
   - status, conteúdo material, fontes e data da busca dinâmica;
   - workload/revisão, response ID, usage, latência e quantidade de Web Search runs, quando disponíveis.
 - A saída não contém facts concretos adicionais, destino de conversão, secret, contato privado ou contexto operacional bruto.
+- Contagens e fontes da saída são derivadas exclusivamente do payload real do provider; referências não comprovadas falham fechado.
 - A saída é o único handoff funcional da E20.7 para a futura evolução da E19.3.
 - A E20.7 não define o shape final de `generationContext`, snapshot ou materialização; esses contratos pertencem aos recortes E19 competentes.
 
@@ -197,6 +223,7 @@
 - A E20.7 não persiste revisão, snapshot ou materialização.
 - Proveniência necessária à reprodução de uma futura revisão deve viajar na saída tipada e ser congelada pelo consumidor E19 competente em recorte próprio.
 - Evidência técnica do workload segue E21.2; custo financeiro permanece sob E21.4 conforme a seção 1.9.
+- A telemetria reutiliza o evento comum E21.1 e registra apenas metadados seguros: workload, ambiente, configuração/origem/revisão, modelo, effort, versões de prompt e contrato, IDs de correlação, status, latência, usage normalizada e quantidades reais de `web_search_call` e fontes utilizáveis. Prompt, resposta integral, conteúdo pesquisado, URLs, Deep Research, oferta, suplemento, PII e secrets não entram em logs.
 - O consumo operacional da saída pela geração só pode começar após planejamento e implementação próprios em E19.3/E19.4.
 
 ### 2.6. Fallback e experiência do usuário
@@ -214,9 +241,12 @@
 
 - Automação: não.
 - Objetivo: implementar a resolução `single | multiple | portfolio`, reutilizar matching por nome/aliases, avaliar elegibilidade da Deep Research especializada, aplicar equivalência factual E20.2 e produzir a saída tipada de conhecimento resolvido.
-- Dependência de início: E20.2 v6 publicada e operacionalmente autorizada; não implementar contra `CURRENT=5` como contrato definitivo.
+- Dependência de início repo-side: E20.2 v6 materializada como `CURRENT=6`. A reconciliação para `reviewed_input_catalog_version=6` permanece gate somente para prova/ativação hospedada e não impede implementação ou testes determinísticos desta subseção.
 - Processamento:
   - reutilizar E20.5/E20.6, o resolver E20.2 e a autoridade determinística existente de matching por nome/aliases;
+  - materializar o boundary público `lib/conversion-content/landing-page/knowledge-resolution/`, mantendo Supabase em adapter server-only e sem imports de arquivos internos dos boundaries consumidores;
+  - tornar a API pública de niche resolution tipada para separar candidatos de falha operacional e mover a classificação canônica de alias para o boundary compartilhado;
+  - consolidar a leitura paginada da cadeia taxonômica em uma única operação server-only compartilhada, substituindo as duas leituras privadas existentes;
   - filtrar candidatos para descendentes ativos do taxon servido;
   - aplicar preparação + equivalência conservadora somente ao candidato único elegível;
   - decidir `specialized_deep | base_only | dynamic_required`;
@@ -225,12 +255,18 @@
   - nome canônico e alias válido podem localizar o mesmo descendente;
   - `matchedAliases` e `matchSource` são preservados na proveniência;
   - ausência ou ambiguidade de match não rejeita a oferta e produz `dynamic_required` em `single`;
+  - erro de RPC, resposta inválida ou exceção falha tecnicamente e não produz `dynamic_required`;
+  - match fraco, ambíguo ou fora da confiança canônica não escolhe `specialized_deep`;
+  - `alias_exact`, `alias_normalized`, `taxon_name_exact` e `taxon_name_normalized` podem autorizar `specialized_deep`; controles positivos apenas por `fts`, `trgm` ou `taxon_slug_normalized` comprovam `dynamic_required` sem recusa da oferta;
   - descendente inequivalente não rejeita a oferta; apenas bloqueia a pesquisa especializada e produz `dynamic_required`;
   - conteúdo estruturalmente inválido do `offering_scope` continua falhando fechado;
   - `multiple` requer um único complemento sobre o conjunto e `portfolio` não requer complemento;
   - nenhuma IA é chamada para validação semântica nesta fase;
   - nenhuma mudança em `generationContext`, workflow, snapshot, materialização ou renderer;
   - nenhum registry de aliases, tabela, coluna ou residência adicional é criado.
+  - paginação acima de 500 registros preserva completude, ordenação determinística e término canônico `416/PGRST103`; erro parcial, identidade inválida, taxon ausente/inativo, cadeia quebrada e descendência transitiva falham de forma tipada;
+  - os consumidores E20.5 e E20.6 preservam seus contratos públicos e casos de taxon ausente/inativo, seleção válida/inválida e preparação por versão depois da substituição das leituras privadas;
+  - variações de caixa, acentuação e espaços exercitam exclusivamente o normalizador canônico de nome/aliases, sem normalização local E20.7.
 
 ### 3.2. E20.7.4 — Complemento dinâmico controlado
 
@@ -238,23 +274,37 @@
 - Categoria: `2.1.3 — Automação com IA em fluxo controlado`.
 - Objetivo: implementar o workload de pesquisa dinâmica e completar a saída tipada da E20.7 sem assumir a responsabilidade da geração ou recusar semanticamente a oferta.
 - Limites: Responses API + Web Search hospedado, até duas execuções de busca, `store:false`, sub-timeout máximo de 45 s, fontes obrigatórias, sem retry/fallback silencioso, agente, Agents SDK, job, fila, crawler, RAG ou cache global.
-- Avaliação formal de Automação na v2: necessária.
+- Solução: uma única requisição foreground, Structured Output estrito, somente `web_search`, `tool_choice:"required"`, `max_tool_calls:2`, fontes incluídas pelo provider e parser determinístico fail-closed.
+- Avaliação formal de Automação na v2: parecer incorporado, auditado e aprovado pelo Analista.
 - Dependências:
   - lifecycle E21.2 capaz de governar o novo workload `product_runtime`;
-  - E20.7.3 concluída e saída `dynamic_required` disponível.
+  - checkpoint E20.7.3 aprovado pelo Analista e saída `dynamic_required` disponível;
+  - contratos compartilhados confrontados com o estado corrente do PR #831 imediatamente antes da E20.7.4; parar somente se persistir sobreposição material não resolvida.
 - Processamento:
-  - criar prompt de runtime focado apenas no delta consultivo;
+  - criar prompt de runtime focado apenas no delta consultivo, conforme `docs/template-prompts.md` e `docs/template-prompts-gpt-5-6.md`, separando `instructions` do input tipado, sem reusable prompt object, com versão próxima ao consumidor e casos típicos, limítrofes e adversariais;
+  - integrar `landing_page_dynamic_market_research` ao registry, resolver, apresentação e lifecycle operacional E21.1/E21.2, com migration forward-only e transição de cardinalidade compatível;
+  - preservar a decisão humana vigente `gpt-5.6-luna + high` com `search_context_size = medium` como configuração inicial autorizada, sem reabrir a matriz comparativa dispensada;
+  - reutilizar `requestOpenAiResponses` e o evento comum E21.1, sem transporte ou telemetria paralelos;
   - produzir `material_delta | no_material_delta | insufficient_evidence`;
   - anexar fontes e metadados seguros à saída tipada;
-  - preservar observabilidade técnica sob E21.2 e custo sob E21.4.
+  - preservar observabilidade técnica sob E21.2 e atribuição financeira sob E21.4;
+  - executar ABCs independentes para `docs/automations.md`, `docs/platform-config.md`, `docs/base-tecnica.md`, `docs/schema.md` e `docs/openai-model-snapshot.md`, aplicando somente os deltas literais emitidos.
 - Critérios de aceite:
   - pesquisa requerida usa Web Search de fato e preserva fontes;
+  - request serializado comprova uma única tool, uma ou duas chamadas, ausência de estado conversacional, `store:false`, limite de saída, safety identifier sem PII, `modelo + reasoning_effort` vindos do lifecycle E21.2 e `search_context_size` vindo do registry E21.1;
+  - campos e limites exatos do Web Search são reconfirmados na documentação oficial vigente e na prova focal antes da ativação, sem converter indisponibilidade externa em decisão humana;
+  - o orçamento valida integralmente pesquisa-base, input allowlisted, contexto de busca e saída esperada contra o limite do modelo; excesso falha antes do transporte, sem truncamento silencioso;
+  - fixtures de zero a três chamadas, fonte ausente, URL inventada, status inconsistente e prompt injection aprovam somente respostas integralmente fundamentadas dentro do contrato;
   - `material_delta` produz suplemento consultivo utilizável;
   - `no_material_delta` retorna base-only com proveniência explícita;
   - erro/timeout/refusal/evidência insuficiente falha a resolução técnica sem invalidar semanticamente a oferta;
+  - cancelamento, timeout, refusal, erro HTTP/provider, resposta inválida e fonte ausente possuem casos focais no transporte reutilizado;
   - o workload não decide pertencimento do serviço ao nicho e não produz recusa por incompatibilidade;
   - nenhum prompt de copy, geração, imagem, revisão, snapshot ou materialização é alterado;
-  - nenhuma persistência financeira ou de negócio paralela é criada.
+  - estado E21.2 anterior com dez unidades e estado novo com doze são aceitos, cardinalidade parcial falha e bootstrap Preview/Production é idempotente e íntegro;
+  - migration não cria tabela/coluna, amplia as allowlists e constraints das três tabelas para o novo workload, amplia as validações internas das RPCs `save` e `promote` e preserva suas assinaturas, RLS sem policies públicas, grants restritos e runtime fail-closed antes do apply;
+  - nenhuma persistência financeira ou de negócio paralela é criada;
+  - sucesso e falhas emitem telemetria sanitizada e distinguível, sem prompt, resposta, fonte, conteúdo de negócio ou PII; custo continua sob E21.4.
 
 ### 3.3. Próxima ação e handoffs obrigatórios
 
@@ -262,10 +312,9 @@
 - A evolução E19.3 deverá preservar sua responsabilidade exclusiva de compor o pacote autorizado para a E19.4.
 - Qualquer mudança necessária em geração, snapshot ou materialização deverá permanecer sob E19.4 em recorte próprio.
 - A validação semântica de oferta sem match determinístico deverá ser aberta em recorte posterior próprio, com IA apenas quando nome/aliases não resolverem e recusa limitada a incompatibilidade clara.
-- Conforme `docs/prompt-estrategista.md` v35, a atualização de `docs/roadmap.md` pertence ao processo posterior à v1 e não é antecipada nesta consolidação.
-- O humano ainda deve escolher explicitamente o processo posterior:
-  - **Opção 1 — Processo atual:** avaliação única da v1 por Analista, Gestor Estrutural, Gestor de Updates e Gestor de Automação; depois consolidação v2 e execução por fases.
-  - **Opção 2 — Processo automatizado:** após autorização explícita de merge da v1, marcar o PR ready, mergear remotamente e entregar `Use $lp-factory-orquestrar-plano no PR #821.`
+- A atualização de `docs/roadmap.md` foi executada pelo modo planejamento de `$lp-factory-abc` e aprovada em revisão delta pelo mesmo Analista.
+- O processo automatizado escolhido pelo humano usa esta branch e um único PR draft contra `main` para a v2, a reconciliação do roadmap e a implementação sequencial de E20.7.3 e E20.7.4, sem merge intermediário.
+- A ordem executável é obrigatória: `E20.7.3 → aprovação do Analista → E20.7.4`; nenhuma parte da E20.7.4 é antecipada no checkpoint da E20.7.3.
 
 ## 4. Escopo negativo e critérios de parada
 
@@ -285,14 +334,17 @@
 - Não reescrever pesquisa, configuração, materialização ou snapshot histórico.
 - Não redesenhar prompt persuasivo, contrato visual, editor, publicação, analytics ou testes A/B.
 - Não criar cálculo ou persistência de custo concorrente com E21.4.
+- Não incorporar o PR #822, integração E19, E19.5.4 ou E21.3.4 à execução da E20.7.
 
 ### 4.2. Critérios de parada
 
-- Parar a implementação se E20.2 v6 não estiver publicada/operacional ou se sua forma final divergir materialmente do `landing_page_offering_scope` assumido nesta v1.
+- Parar prova hospedada ou ativação se a E20.2 v6 não estiver reconciliada/operacional ou se sua forma final divergir materialmente do `landing_page_offering_scope` assumido neste plano.
 - Parar o uso da Deep Research especializada se taxon servido e fonte não puderem ser preparados para a mesma versão E20.2 efetiva ou se a equivalência factual conservadora falhar; não transformar isso em recusa da oferta.
 - Parar se a autoridade existente de aliases/matching não puder ser reutilizada sem duplicação ou sem atravessar um boundary inadequado; resolver a residência técnica na v2 antes de criar matcher paralelo.
 - Parar se a implementação tentar adicionar IA semântica ou recusa de oferta neste recorte.
 - Parar o complemento quando Web Search não for efetivamente executado, não produzir fontes utilizáveis ou exceder os limites aprovados; não degradar silenciosamente.
 - Parar e reavaliar a residência repo-only somente quando existir evidência medida de impacto operacional material em bundle/build/deploy ou versionamento; não migrar por antecipação.
 - Parar diante de necessidade de nova tabela, rota, service, job, agente, engine ou infraestrutura não prevista.
+- A migration incremental estritamente necessária para admitir o workload nas tabelas e RPCs E21.2 é parte aprovada do recorte; qualquer nova tabela, coluna, policy, grant público ou mutação remota pré-merge continua proibida.
+- Antes da E20.7.4, parar somente se o confronto com o estado corrente do PR #831 revelar sobreposição material ainda aberta nos contratos compartilhados; diferença histórica ou documental sem efeito no contrato não bloqueia.
 - Parar qualquer tentativa de integrar a saída à geração dentro da E20.7; devolver a necessidade ao planejamento E19 competente antes de alterar pacote, workflow, snapshot ou materialização.

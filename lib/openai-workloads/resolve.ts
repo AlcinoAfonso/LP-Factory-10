@@ -267,6 +267,7 @@ function toResolvedProductWorkload(
     source: configuration.source,
     revision: configuration.revision,
     effectiveConfigurationVerified: true,
+    webSearch: workload.webSearch,
   });
 }
 

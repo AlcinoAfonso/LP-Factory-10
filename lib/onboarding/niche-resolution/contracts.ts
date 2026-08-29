@@ -7,10 +7,25 @@ export type TaxonMatchCandidate = {
   level: TaxonLevel;
   parentId: string | null;
   parentName: string | null;
-  matchedAliases: string[];
+  matchedAliases: readonly string[];
   matchSource: string;
   score: number;
 };
+
+export type TaxonMatchErrorCode = "RPC_FAILED" | "RESPONSE_INVALID";
+
+export type MatchBusinessTaxonsResult =
+  | Readonly<{
+      ok: true;
+      candidates: readonly TaxonMatchCandidate[];
+    }>
+  | Readonly<{
+      ok: false;
+      error: Readonly<{
+        code: TaxonMatchErrorCode;
+        message: string;
+      }>;
+    }>;
 
 export type DeterministicMatchConfidence = "high" | "medium" | "low";
 

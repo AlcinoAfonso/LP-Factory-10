@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data da última atualização: 28/08/2026
-• Documento: LP Factory 10 — Schema (DB Contract) v1.0.60
+• Data da última atualização: 29/08/2026
+• Documento: LP Factory 10 — Schema (DB Contract) v1.0.61
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -856,6 +856,7 @@
 • A PK composta `(environment, workload)` é o lock canônico das RPCs e impede mais de uma unidade para a mesma combinação.
 • A migration forward-only `supabase/migrations/20260820190422_e21_2_3_openai_workload_operational_configurations.sql` está aplicada no ambiente hospedado; o snippet read-only aprovou 10/10 verificações e o Security Controls não apresentou alerta incompatível com o agregado ou suas RPCs.
 • A migration incremental forward-only `supabase/migrations/20260820213900_e21_2_taxon_input_catalog_sufficiency_workload.sql` também está aplicada no ambiente hospedado e estende o mesmo agregado com `taxon_input_catalog_sufficiency_evaluation`, sem nova entidade ou tabela de negócio; os testes SQL, snippets read-only e invariantes pós-apply foram aprovados, e o Security Controls reportou para as três tabelas apenas o INFO esperado de RLS sem policy, compatível com a residência service-only sem grants públicos.
+• A migration candidata forward-only `supabase/migrations/20260829171107_e20_7_4_dynamic_market_research_workload.sql` acrescenta `landing_page_dynamic_market_research` às três allowlists e às validações das RPCs existentes, sem tabela, coluna, policy ou grant público novo. Para esse workload, `save` e `promote` autorizam exclusivamente `gpt-5.6-luna + high`; `low`, `max` e a matriz comparativa anterior ficam fora. O apply hospedado permanece pendente do merge humano.
 
 1.28.2 Colunas
 • environment text not null
@@ -884,7 +885,8 @@
 1.28.4 Índices, bootstrap e segurança
 • `openai_workload_operational_configurations_active_revision_idx`: btree em active_revision_id + unidade.
 • `openai_workload_operational_configurations_pending_revision_idx`: btree parcial em pending_revision_id + unidade quando não nulo.
-• O bootstrap idempotente cria as dez unidades Production/Preview × cinco workloads, sem candidata ou revisão pendente e com active_revision_id na revisão 1 correspondente.
+• O estado hospedado confirmado mantém dez unidades Production/Preview × cinco workloads. Após o apply da migration E20.7.4, o bootstrap idempotente acrescenta as duas unidades de `landing_page_dynamic_market_research`, totalizando doze, sem candidata ou revisão pendente e com active_revision_id na revisão 1 correspondente.
+• A revisão bootstrap `1` do novo workload usa `gpt-5.6-luna + high` somente como origem repo_catalog; não comprova nem autoriza transporte hospedado, que exige revisão operacional `2` ou posterior.
 • RLS habilitado e nenhuma policy.
 • public, anon, authenticated e ai_readonly: sem grants.
 • service_role: SELECT e UPDATE somente dos nove campos necessários às transições; sem INSERT, DELETE ou TRUNCATE.
@@ -1386,6 +1388,8 @@
 • Rollback: não remove automaticamente a extensão, pois pode ser reutilizada por outros recursos
 
 99. Changelog
+v1.0.61 (29/08/2026) — E20.7.4: registrada a migration candidata que amplia o agregado E21.2 de dez para doze unidades com `landing_page_dynamic_market_research`, preserva as três tabelas, RLS e grants existentes e mantém apply e revisão operacional comprovada pendentes do merge humano.
+
 v1.0.60 (28/08/2026) — E21.4.5 read model administrativo de custos
 • Adicionada à mesma migration ainda não aplicada a RPC read-only paginável `read_openai_lp_cost_events_v1`, com período validado, correlação determinística e projeção sanitizada para a visão conta → LP → texto/imagem.
 • EXECUTE permanece exclusivo de `service_role`; teste transacional e snippet read-only cobrem o novo contrato e suas ACLs.

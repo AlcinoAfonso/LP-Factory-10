@@ -2,8 +2,8 @@
 
 0.1 Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.78
-• Data: 28/08/2026
+• Versão: v2.0.79
+• Data: 29/08/2026
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -322,6 +322,26 @@
 • O read model expõe somente allowlist explícita do contrato de apresentação e metadados necessários da revisão, acrescida da URL assinada transitória; linhas de banco, snapshot integral, pesquisa, valores operacionais, bucket, path, autenticação e provider não atravessam o boundary do renderer.
 • O renderer de revisão é puro e read-only: recebe o read model validado, não consulta Supabase ou provider, não recompila contexto de geração e não usa fonte mutável para reinterpretar a revisão persistida.
 
+3.15.10 Resolução determinística de conhecimento de `landing_page`
+• Boundary canônico: `lib/conversion-content/landing-page/knowledge-resolution/`; contratos, equivalência factual e resolver puro são fontes executáveis, exportadas pela API pública de `lib/conversion-content/`.
+• A entrada `landing_page_offering_scope` preserva os modos `single | multiple | portfolio`; shape inválido falha fechado, enquanto ausência, ambiguidade ou sinal fraco de matching não recusa nem invalida a oferta.
+• A API pública de `lib/onboarding/niche-resolution/` separa candidatos de falha operacional e concentra a classificação de `matchSource`. `specialized_deep` só pode ser autorizado quando a fonte contiver `alias_exact`, `alias_normalized`, `taxon_name_exact` ou `taxon_name_normalized`; resultado apoiado apenas em `fts`, `trgm` ou `taxon_slug_normalized` exige complemento dinâmico.
+• Candidatos preservam `matchSource` e `matchedAliases`, são limitados a descendentes ativos do taxon servido e só selecionam pesquisa especializada quando houver unicidade, confiança canônica, preparação E20.5/E20.6 e equivalência factual conservadora.
+• A equivalência resolve os quatro planos E20.2 para taxon servido e candidato; ignora somente identidade e proveniência taxonômicas que naturalmente diferem e trata mudança de field, finalidade, tipo, scope, obrigação, condição ou validação como material.
+• A leitura integral de `business_taxons` pertence à operação server-only compartilhada em `lib/conversion-content/adapters/taxonChainAdapter.ts`, com páginas de 500, ordem por `id`, término canônico `416/PGRST103`, validação de todas as identidades e falhas tipadas. Preparação E20.5/E20.6, avaliação E20.6.5 e E20.7 reutilizam essa operação, sem paginações privadas paralelas.
+• `multiple` requer um único complemento sobre o conjunto; `portfolio` permanece `base_only`. A saída imutável da fase determinística distingue `specialized_deep | base_only | dynamic_required`, sem IA, persistência própria, integração E19 ou mudança em geração, snapshot, materialização e renderer.
+• `CURRENT=6` autoriza implementação repo-side e testes determinísticos; a reconciliação operacional para `reviewed_input_catalog_version=6` permanece gate somente antes de prova hospedada ou ativação.
+
+3.15.11 Complemento dinâmico controlado de conhecimento de `landing_page`
+• O boundary canônico permanece `lib/conversion-content/landing-page/knowledge-resolution/`; prompt, schema, parser, orçamento conservador e composição do resultado são fontes executáveis próprias, exportadas pela API pública de `lib/conversion-content/`.
+• Somente uma saída determinística `dynamic_required` pode solicitar o complemento. O transporte server-side executa uma única Responses API foreground com apenas Web Search hospedado, `tool_choice = required`, uma ou duas chamadas concluídas, Structured Output estrito, `store = false`, sem conversation, background, retry ou fallback.
+• Política de Web Search é code-owned e imutável por workload: tamanho de contexto, máximo de chamadas e teto efetivo de 128k tokens não vêm do Supabase. O orçamento integral reserva busca, reasoning e saída antes do transporte e falha sem truncar; modelo e reasoning effort continuam resolvidos pelos boundaries E21.1/E21.2.
+• A decisão humana vigente fixa a configuração inicial de `landing_page_dynamic_market_research` em `gpt-5.6-luna + high`. Registry, bootstrap e transições `save`/`promote` aceitam somente esse par para o workload; `low`, `max` e a matriz comparativa anterior não são configurações operacionais autorizadas.
+• Entrada funcional é conteúdo não confiável e nunca pode alterar instruções, schema ou limites. Toda finding material exige URL HTTPS presente nas fontes devolvidas pelo provider; chamada incompleta, fonte ausente, URL inventada ou evidência insuficiente falha tecnicamente.
+• O resultado distingue materialidade comprovada de ausência de materialidade e carrega fontes, instante de busca, proveniência da configuração, versões de prompt/contrato, IDs técnicos, usage, latência e contagens de busca. Não contém copy, layout, wireframe, CTA, promessa comercial nem mutação da E20.2.
+• Falha técnica ou ausência de evidência não recusa nem invalida a oferta. A conclusão funcional pode acrescentar complemento à base ou preservar somente a base; integração com geração, persistência e validação semântica de oferta permanece fora deste recorte.
+• Development pode usar o baseline repo-only para testes determinísticos. Preview e Production falham fechado antes do provider enquanto não houver fonte `supabase_operational` ativa em revisão `2` ou posterior e reconciliação do taxon para `reviewed_input_catalog_version=6`.
+
 3.16 Configuração e observabilidade de workloads OpenAI
 • O boundary transversal canônico é `lib/openai-workloads/`; consumidores de produto usam somente sua API pública para resolver modelo e reasoning effort, sem ler variáveis de modelo nem acessar o registry interno.
 • O contrato público discrimina workloads textuais e de imagem; cada tipo expõe somente a configuração aplicável à sua API, sem default cruzado nem coerção entre modalidades.
@@ -332,6 +352,7 @@
 • Somente criação/edição, prova e promoção de nova candidata consultam elegibilidade vigente. Save e promoção revalidam sob locks ordenados; a prova revalida fail-closed imediatamente antes do transporte e não mantém lock durante a chamada externa. Ativação de pendente já validada e rollback histórico não consultam o catálogo.
 • Revisões ativas, históricas e snapshots funcionais revalidam identidade do workload, origem, revisão, modalidade, identificador técnico do modelo e shape tipado do parâmetro, sem exigir disponibilidade atual nem presença do modelo em lista estática.
 • Cada tentativa de provider deve emitir somente metadados operacionais normalizados e seguros, preservando métricas ausentes como `null`; prompts, respostas integrais, payloads de negócio, PII, secrets e cálculo monetário não entram no evento comum.
+• Workloads textuais podem acrescentar telemetria segura e nullable de chamadas Web Search e quantidade de fontes; URLs e conteúdo das fontes permanecem fora do evento comum.
 • Leitura administrativa de Costs, contratos financeiros e cálculo monetário pertencem ao boundary separado `lib/openai-costs/`; `lib/openai-workloads/` pode fornecer apenas identidade, configuração e usage públicos necessários, sem receber provider administrativo, persistência financeira ou regra de preço.
 • A atribuição financeira prospectiva limita-se aos transports `landing_page_draft_generation` e `landing_page_draft_image_generation` dentro do fluxo autorizado de revisão de LP. Conta e LP chegam pelo contexto v4 explícito; provas administrativas e outros workloads não inferem nem persistem atribuição.
 • O tracker financeiro tenta iniciar antes do provider e usa o mesmo `attempt_id` para correlação append-only; início e terminal operam best effort em orçamento curto próprio, sem consumir materialmente o timeout funcional nem alterar o resultado da geração por falha exclusivamente financeira.

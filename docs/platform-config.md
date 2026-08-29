@@ -202,7 +202,7 @@
 • Valor real: não versionar.
 
 • `OPENAI_OPERATIONAL_CONFIG_ENABLED`
-• Finalidade: gate server-side temporário do cutover da configuração operacional dinâmica dos quatro workloads OpenAI de produto.
+• Finalidade: gate server-side temporário do cutover da configuração operacional dinâmica dos workloads OpenAI de produto.
 • Escopo: Preview e Production do projeto Core, com configuração independente por ambiente; Development ignora o gate e permanece no baseline local.
 • Habilitação: somente o literal `true` ativa a leitura operacional no Supabase. Variável ausente, vazia ou com qualquer outro valor mantém `repo_catalog` em Preview e Production.
 • Estado operacional final: configurada com `true` em Preview e Production após cutover sequencial aprovado; os dois ambientes foram redeployados com o gate ativo.
@@ -226,6 +226,10 @@
 • Workloads textuais validados operacionalmente: `niche_resolution` e `commercial_activation_draft_generation`, com modelo `gpt-5.4-mini` e esforço de raciocínio `none`.
 • Workload textual validado no ambiente alvo: `landing_page_draft_generation`, com modelo `gpt-5.6-luna`, esforço `max`, Responses API, Structured Output estrito, `store:false` e timeout de 120 s.
 • Workload de imagem validado no ambiente alvo: `landing_page_draft_image_generation`, com modelo `gpt-image-2`, saída WebP 1536 × 1024, qualidade `medium`, compressão 80, moderação `auto` e timeout de 120 s.
+• Workload repo-side pendente de rollout: `landing_page_dynamic_market_research`, com configuração inicial autorizada em Development `gpt-5.6-luna + high`, uma requisição foreground à Responses API, somente Web Search hospedado, Structured Output estrito, `store:false`, uma ou duas chamadas de busca e deadline máximo de 45 s. O lifecycle desse workload aceita para `save` e `promote` somente essa combinação; `low`, `max` e a matriz comparativa anterior permanecem fora.
+• Estado hospedado da E20.7.4: o novo workload ainda não está aplicado, provado, promovido ou ativado em Preview/Production. A migration amplia o agregado de 10 para 12 unidades somente após merge humano e apply automático; o bootstrap revisão `1` não autoriza transporte hospedado.
+• Gates da E20.7.4: antes de prova hospedada ou ativação, reconciliar o taxon alvo para `reviewed_input_catalog_version=6` e comprovar/promover/ativar uma revisão `supabase_operational` `2` ou posterior por ambiente. Esses gates não bloqueiam planejamento, implementação repo-side nem testes determinísticos.
+• Credencial da E20.7.4: reutilizar a `OPENAI_API_KEY` compartilhada já configurada em Production e Preview; não criar, copiar ou registrar nova chave para esse workload.
 • Validação operacional: `niche_resolution` e `commercial_activation_draft_generation` foram executados uma única vez em Production em 10/08/2026; os Runtime Logs confirmaram sucesso e telemetria sanitizada, sem prompt, resposta integral, credencial ou dado pessoal.
 • Validação dos workloads de draft: por decisão humana, o gate de canários isolados sem persistência foi substituído pelo primeiro append integrado; duas execuções integradas hospedadas em 18/08/2026 comprovaram texto, imagem e o caminho oficial sem retry ou fallback.
 • Validação do cutover E21.2: Preview aprovou lifecycle e provas reais dos quatro transportes; Production aprovou leitura das quatro baselines e execução comercial real com origem `supabase_operational` e revisão 1, sem publicação, erro ou warning na janela autenticada.
@@ -514,6 +518,8 @@ Regra:
 • Configurações de plataformas, secrets por nome, workflows, ambientes e endpoints usados por automações devem ser registrados neste documento.
 
 99. Changelog
+v0.1.30 — 29/08/2026 — Registrados o workload repo-side `landing_page_dynamic_market_research`, o reuso obrigatório da `OPENAI_API_KEY` compartilhada, os limites de Web Search e os gates separados de apply, reconciliação v6, prova e ativação hospedada.
+
 v0.1.29 — 28/08/2026 — Registrados `OPENAI_ADMIN_KEY`, Costs API, `OPENAI_LP_COST_TRACKING_ENABLED` nascendo desligado e o rollout pós-merge da persistência prospectiva dos dois workloads de Landing Page.
 
 v0.1.18 — 21/08/2026 — Registrado o gate exclusivo do provider E20.6.5, sua composição obrigatória com fonte `supabase_operational` hospedada e a preservação do handoff Codex durante o estado gate-off.
