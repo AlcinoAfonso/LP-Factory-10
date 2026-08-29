@@ -9,6 +9,11 @@ import type {
 } from "@/conversion-content/landing-page/input-catalog";
 import type { AccountLandingPageOnboardingStoredValues } from "@/lp-builder/contracts";
 import { resolveAccountLandingPageOnboardingConfiguration } from "@/lp-builder/onboardingConfiguration";
+import {
+  fingerprintInputCatalogEvaluationContextIdentity,
+  sameInputCatalogEvaluationContextIdentity,
+  type InputCatalogEvaluationContextIdentity,
+} from "@/conversion-content/landing-page/taxon-preparation";
 
 export type InputCatalogOperationalConfiguration = Readonly<{
   accountId: string;
@@ -115,6 +120,43 @@ export function planPublishedInputCatalogReviewReconciliation(input: Readonly<{
   });
 }
 
+export function validatePublishedInputCatalogReviewEvidenceContext(input: Readonly<{
+  storedContextFingerprint: string;
+  preservedDraftIdentity: InputCatalogEvaluationContextIdentity;
+  deployedIdentity: InputCatalogEvaluationContextIdentity;
+  expectedTaxonId: string;
+  expectedResearchVersion: number;
+  expectedInputCatalogVersion: number;
+}>): boolean {
+  const storedFingerprintMatches =
+    fingerprintInputCatalogEvaluationContextIdentity(input.preservedDraftIdentity) ===
+      input.storedContextFingerprint ||
+    fingerprintLegacyStoredInputCatalogEvaluationContextIdentity(
+      input.preservedDraftIdentity,
+    ) === input.storedContextFingerprint;
+  if (!storedFingerprintMatches) return false;
+
+  if (
+    input.preservedDraftIdentity.taxonId !== input.expectedTaxonId ||
+    input.deployedIdentity.taxonId !== input.expectedTaxonId ||
+    input.preservedDraftIdentity.research.researchVersion !==
+      input.expectedResearchVersion ||
+    input.deployedIdentity.research.researchVersion !==
+      input.expectedResearchVersion ||
+    input.preservedDraftIdentity.inputCatalog.version !==
+      input.expectedInputCatalogVersion ||
+    input.deployedIdentity.inputCatalog.version !==
+      input.expectedInputCatalogVersion
+  ) {
+    return false;
+  }
+
+  return sameInputCatalogEvaluationContextIdentity(
+    input.preservedDraftIdentity,
+    input.deployedIdentity,
+  );
+}
+
 export function countInvalidInputCatalogOperationalConfigurations(
   candidate: Extract<ValidateLandingPageInputCatalogDraftResult, { ok: true }>["value"],
   configurations: readonly InputCatalogOperationalConfiguration[],
@@ -182,6 +224,12 @@ function stableJson(value: unknown): string {
       .join(",")}}`;
   }
   return JSON.stringify(value);
+}
+
+function fingerprintLegacyStoredInputCatalogEvaluationContextIdentity(
+  identity: InputCatalogEvaluationContextIdentity,
+): string {
+  return createHash("sha256").update(JSON.stringify(identity)).digest("hex");
 }
 
 function isOperationalPlan(value: unknown): value is LandingPageInputCatalogPlan {

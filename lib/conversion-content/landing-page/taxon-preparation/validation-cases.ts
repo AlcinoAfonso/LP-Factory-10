@@ -34,6 +34,7 @@ import {
   createInputCatalogEvaluationDecisionToken,
   deriveTaxonPreparationForVersion,
   executeInputCatalogEvaluationAdministrativeDecision,
+  fingerprintInputCatalogEvaluationContextIdentity,
   fingerprintInputCatalogEvaluationOutput,
   inputCatalogEvaluationOutputJsonSchema,
   isEndCustomerResearchSelectionEnabled,
@@ -1204,6 +1205,23 @@ const cases: readonly ValidationCase[] = [
       assertCoordinatorFailure(stale, "CONTEXT_STALE");
       assert.equal(evaluations, 1);
 
+      const reorderedIdentity = reorderEvaluationContextIdentity(context.identity);
+      assert.notEqual(
+        JSON.stringify(reorderedIdentity),
+        JSON.stringify(context.identity),
+      );
+      assert.equal(
+        sameInputCatalogEvaluationContextIdentity(
+          context.identity,
+          reorderedIdentity,
+        ),
+        true,
+      );
+      assert.equal(
+        fingerprintInputCatalogEvaluationContextIdentity(context.identity),
+        fingerprintInputCatalogEvaluationContextIdentity(reorderedIdentity),
+      );
+
       const identityMutations: readonly ((
         identity: InputCatalogEvaluationContextIdentity,
       ) => void)[] = [
@@ -1235,6 +1253,10 @@ const cases: readonly ValidationCase[] = [
         assert.equal(
           sameInputCatalogEvaluationContextIdentity(context.identity, changed),
           false,
+        );
+        assert.notEqual(
+          fingerprintInputCatalogEvaluationContextIdentity(context.identity),
+          fingerprintInputCatalogEvaluationContextIdentity(changed),
         );
       }
 
@@ -2133,6 +2155,32 @@ function omitKey(value: object, key: string): Record<string, unknown> {
   const clone = { ...value } as Record<string, unknown>;
   delete clone[key];
   return clone;
+}
+
+function reorderEvaluationContextIdentity(
+  identity: InputCatalogEvaluationContextIdentity,
+): InputCatalogEvaluationContextIdentity {
+  return {
+    inputCatalog: {
+      catalogs: identity.inputCatalog.catalogs,
+      plans: identity.inputCatalog.plans,
+      version: identity.inputCatalog.version,
+    },
+    research: {
+      content: identity.research.content,
+      relativePath: identity.research.relativePath,
+      researchVersion: identity.research.researchVersion,
+      audienceScope: identity.research.audienceScope,
+      taxonSlug: identity.research.taxonSlug,
+    },
+    taxonChain: {
+      ultraNiche: identity.taxonChain.ultraNiche,
+      niche: identity.taxonChain.niche,
+      segment: identity.taxonChain.segment,
+    },
+    taxonSlug: identity.taxonSlug,
+    taxonId: identity.taxonId,
+  };
 }
 
 async function loadWithContent(

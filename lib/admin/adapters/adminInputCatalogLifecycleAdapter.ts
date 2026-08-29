@@ -13,6 +13,7 @@ import {
   classifyLandingPageInputCatalogTransitionForTaxon,
   collectCommercialIdentityReviewBlockers,
   type LandingPageInputCatalogDraftImpact,
+  type LandingPageInputCatalogRegistry,
   type LandingPageInputCatalogRegistryEntry,
   type LandingPageInputCatalogTaxonIdentity,
 } from "@/conversion-content/landing-page/input-catalog";
@@ -21,9 +22,10 @@ import {
   reconstructCanonicalInputCatalogEvaluationContext,
   reconstructDraftInputCatalogEvaluationContext,
 } from "@/conversion-content/adapters/inputCatalogEvaluationContextAdapter";
-import type {
-  BuildInputCatalogEvaluationContextResult,
-  InputCatalogEvaluationContextIdentity,
+import {
+  fingerprintInputCatalogEvaluationContextIdentity,
+  type BuildInputCatalogEvaluationContextResult,
+  type InputCatalogEvaluationContextIdentity,
 } from "@/conversion-content/landing-page/taxon-preparation";
 import { createServiceClient } from "@/lib/supabase/service";
 import { collectCompletePaginatedRows } from "./adminInputCatalogLifecyclePagination";
@@ -32,6 +34,7 @@ import {
   fingerprintInputCatalogOperationalContext,
   planPublishedInputCatalogReviewReconciliation,
   resolveInputCatalogOperationalAccountAuthorities,
+  validatePublishedInputCatalogReviewEvidenceContext,
   type InputCatalogOperationalConfiguration,
 } from "./adminInputCatalogLifecycleValidation";
 
@@ -523,7 +526,9 @@ export async function recordAdminInputCatalogDraftSufficiencyDecision(input: Rea
     taxonId: input.taxonId,
   });
   if (!current.ok) return current;
-  const contextFingerprint = fingerprintContext(current.value.context.identity);
+  const contextFingerprint = fingerprintInputCatalogEvaluationContextIdentity(
+    current.value.context.identity,
+  );
   if (
     current.value.contentFingerprint !== input.expectedContentFingerprint ||
     contextFingerprint !== input.expectedContextFingerprint
@@ -1004,7 +1009,8 @@ async function validateOperationalReviewEvidence(
     );
     if (
       !current.ok ||
-      fingerprintContext(current.value.identity) !== evidence.contextFingerprint
+      fingerprintInputCatalogEvaluationContextIdentity(current.value.identity) !==
+        evidence.contextFingerprint
     ) {
       if (impact.operational) blocking += 1;
       continue;
@@ -1040,6 +1046,25 @@ async function validatePublishedReviewEvidence(
   const impacts = buildPublishedReviewImpacts(context);
   if (!impacts.ok) return impacts;
 
+  const preservedDraftEntry = row.catalogJson as LandingPageInputCatalogRegistryEntry;
+  const deployedEntry =
+    landingPageInputCatalogRegistry[CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION];
+  if (
+    fingerprint(serializeLandingPageInputCatalogEntry(preservedDraftEntry)) !==
+      row.contentFingerprint ||
+    fingerprint(serializeLandingPageInputCatalogEntry(deployedEntry)) !==
+      row.contentFingerprint
+  ) {
+    return {
+      ok: false,
+      message: "O conteúdo preservado do draft não corresponde ao registry implantado.",
+    };
+  }
+  const preservedDraftRegistry: LandingPageInputCatalogRegistry = {
+    ...landingPageInputCatalogRegistry,
+    [row.targetVersion]: preservedDraftEntry,
+  };
+
   const validEvidenceTaxonIds: string[] = [];
   const contextsByTaxonId = new Map<string, InputCatalogEvaluationContextIdentity>();
   for (const [taxonId, evidence] of Object.entries(row.taxonReviewEvidence)) {
@@ -1047,14 +1072,31 @@ async function validatePublishedReviewEvidence(
       (candidate) => candidate.identity.id === taxonId && candidate.identity.isActive,
     );
     if (!taxon || evidence.contentFingerprint !== row.contentFingerprint) continue;
-    const current = await reconstructCanonicalInputCatalogEvaluationContext({
-      taxonId,
-      inputCatalogVersion: CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION,
-    });
+    if (taxon.selectedResearchVersion === null) continue;
+    const [preservedDraft, current] = await Promise.all([
+      reconstructDraftInputCatalogEvaluationContext(
+        {
+          taxonId,
+          inputCatalogVersion: CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION,
+        },
+        preservedDraftRegistry,
+      ),
+      reconstructCanonicalInputCatalogEvaluationContext({
+        taxonId,
+        inputCatalogVersion: CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION,
+      }),
+    ]);
     if (
+      !preservedDraft.ok ||
       !current.ok ||
-      fingerprintContext(current.value.identity) !== evidence.contextFingerprint ||
-      current.value.identity.research.researchVersion !== taxon.selectedResearchVersion
+      !validatePublishedInputCatalogReviewEvidenceContext({
+        storedContextFingerprint: evidence.contextFingerprint,
+        preservedDraftIdentity: preservedDraft.value.identity,
+        deployedIdentity: current.value.identity,
+        expectedTaxonId: taxonId,
+        expectedResearchVersion: taxon.selectedResearchVersion,
+        expectedInputCatalogVersion: CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION,
+      })
     ) {
       continue;
     }
@@ -1344,10 +1386,6 @@ function buildPublicationHandoff(
 
 function fingerprint(canonicalJson: string): string {
   return createHash("sha256").update(canonicalJson).digest("hex");
-}
-
-function fingerprintContext(identity: InputCatalogEvaluationContextIdentity): string {
-  return fingerprint(JSON.stringify(identity));
 }
 
 function unavailableState(
