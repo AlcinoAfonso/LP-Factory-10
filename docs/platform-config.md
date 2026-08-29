@@ -2,8 +2,8 @@
 
 0.1 Cabeçalho
 • Documento: LP Factory 10 — Platform Config
-• Versão: v0.1.28
-• Data: 23/08/2026
+• Versão: v0.1.29
+• Data: 29/08/2026
 
 0.2 Contrato do documento
 • O QUE É: snapshot operacional e fonte única das configurações de plataformas externas do LP Factory 10, refletindo o estado conhecido/cadastrado nas plataformas conforme indicado.
@@ -88,6 +88,7 @@
 • Projeto Vercel: `lp-factory-10`
 • Finalidade: runtime principal do produto.
 • Deploy: Preview + Production.
+• Deploy automático via Git: o `vercel.json` da raiz desabilita somente branches abrangidas pelo padrão minimatch `docs/**`; branches não abrangidas preservam o default `true`, incluindo Preview de implementação e Production da `main`.
 • Domínio oficial atual do app em produção: `https://lp-factory-10.vercel.app`
 • Base URL das API routes do app: `https://lp-factory-10.vercel.app/api`
 
