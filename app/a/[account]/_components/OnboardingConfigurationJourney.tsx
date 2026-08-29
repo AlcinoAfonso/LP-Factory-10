@@ -395,51 +395,53 @@ export function OnboardingConfigurationJourney(props: Readonly<{
             <input type="hidden" name="values_json" value={JSON.stringify(submittedValues)} />
             <input type="hidden" name="intent" value="save" />
 
-            <div className="grid gap-6 sm:grid-cols-2">
-              {step.id === "brand_identity" && paletteFieldState ? (
-                <BrandIdentityStep
-                  logoFieldState={logoFieldState}
-                  paletteFieldState={paletteFieldState}
-                  value={effectiveValues.brand_color_palette}
-                  error={actionState.fieldErrors?.brand_color_palette}
-                  onChange={(value) => updateValue(paletteFieldState, value)}
-                />
-              ) : null}
-              {visibleFields.map((fieldState) => (
-                <OnboardingField
-                  key={fieldState.field.fieldKey}
-                  fieldState={fieldState}
-                  value={effectiveValues[fieldState.field.fieldKey]}
-                  required={isRequired(fieldState, effectiveValues)}
-                  error={actionState.fieldErrors?.[fieldState.field.fieldKey]}
-                  onChange={(value) => updateValue(fieldState, value)}
-                />
-              ))}
-            </div>
-
-            {actionState.formError ? (
-              <div
-                ref={formErrorRef}
-                tabIndex={-1}
-                className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
-                role="alert"
-              >
-                {actionState.formError}
+            <fieldset disabled={pending} className="min-w-0 space-y-6 border-0 p-0">
+              <div className="grid gap-6 sm:grid-cols-2">
+                {step.id === "brand_identity" && paletteFieldState ? (
+                  <BrandIdentityStep
+                    logoFieldState={logoFieldState}
+                    paletteFieldState={paletteFieldState}
+                    value={effectiveValues.brand_color_palette}
+                    error={actionState.fieldErrors?.brand_color_palette}
+                    onChange={(value) => updateValue(paletteFieldState, value)}
+                  />
+                ) : null}
+                {visibleFields.map((fieldState) => (
+                  <OnboardingField
+                    key={fieldState.field.fieldKey}
+                    fieldState={fieldState}
+                    value={effectiveValues[fieldState.field.fieldKey]}
+                    required={isRequired(fieldState, effectiveValues)}
+                    error={actionState.fieldErrors?.[fieldState.field.fieldKey]}
+                    onChange={(value) => updateValue(fieldState, value)}
+                  />
+                ))}
               </div>
-            ) : null}
-            {props.workspaceMode ? (
-              <label className="flex items-start gap-3 rounded-lg border border-surface-border bg-graytech-50 p-4 text-sm text-ink-900">
-                <input
-                  type="checkbox"
-                  name="same_commercial_work_confirmed"
-                  value="1"
-                  className="mt-1 h-4 w-4"
-                />
-                <span>
-                  Se eu alterar o modo ou as ofertas deste escopo, confirmo que continua sendo o mesmo trabalho comercial. Caso contrário, criarei uma nova landing page.
-                </span>
-              </label>
-            ) : null}
+
+              {actionState.formError ? (
+                <div
+                  ref={formErrorRef}
+                  tabIndex={-1}
+                  className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+                  role="alert"
+                >
+                  {actionState.formError}
+                </div>
+              ) : null}
+              {props.workspaceMode ? (
+                <label className="flex items-start gap-3 rounded-lg border border-surface-border bg-graytech-50 p-4 text-sm text-ink-900">
+                  <input
+                    type="checkbox"
+                    name="same_commercial_work_confirmed"
+                    value="1"
+                    className="mt-1 h-4 w-4"
+                  />
+                  <span>
+                    Se eu alterar o modo ou as ofertas deste escopo, confirmo que continua sendo o mesmo trabalho comercial. Caso contrário, criarei uma nova landing page.
+                  </span>
+                </label>
+              ) : null}
+            </fieldset>
             {actionState.status === "success" && actionState.intent === "save" ? (
               <p className="text-sm font-medium text-emerald-700" role="status">
                 Progresso salvo. Você pode continuar agora ou voltar depois.

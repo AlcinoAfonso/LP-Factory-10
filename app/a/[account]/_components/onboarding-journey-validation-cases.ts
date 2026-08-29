@@ -300,6 +300,25 @@ const cases: readonly Readonly<{ name: string; run: () => void }>[] = [
     },
   },
   {
+    name: "journey disables every editable control while the form action is pending",
+    run: () => {
+      const component = readFileSync(
+        new URL("./OnboardingConfigurationJourney.tsx", import.meta.url),
+        "utf8",
+      );
+      const pendingControlsStart = component.indexOf("<fieldset disabled={pending}");
+      const pendingControlsEnd = component.indexOf("</fieldset>", pendingControlsStart);
+      assert.ok(pendingControlsStart >= 0);
+      assert.ok(pendingControlsEnd > pendingControlsStart);
+      const pendingControls = component.slice(pendingControlsStart, pendingControlsEnd);
+      assert.match(pendingControls, /<BrandIdentityStep/);
+      assert.match(pendingControls, /<OnboardingField/);
+      assert.match(pendingControls, /name="same_commercial_work_confirmed"/);
+      assert.ok(component.indexOf('name="values_json"') < pendingControlsStart);
+      assert.ok(component.indexOf('disabled={pending}', pendingControlsEnd) > pendingControlsEnd);
+    },
+  },
+  {
     name: "invalid hidden conditional value is omitted while a valid one is preserved",
     run: () => {
       const catalog = resolveLandingPageInputCatalog({
