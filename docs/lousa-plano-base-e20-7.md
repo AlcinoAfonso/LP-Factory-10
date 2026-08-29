@@ -4,7 +4,7 @@
 
 ### 1.1. Estado
 
-- Status: **plano-base v2 consolidado** após os pareceres Estrutural, de Updates e de Automações; depende da aprovação formal do Analista e não constitui autorização de merge.
+- Status: **plano-base v2 aprovado pelo Analista** após os pareceres Estrutural, de Updates e de Automações e a reconciliação do roadmap; não constitui autorização de merge da implementação.
 - Caso macro: `E20 — Preparação e liberação de taxons para geração de landing pages`.
 - Recorte: `E20.7 — Liberação taxonômica para geração de Landing Pages`.
 - Objetivo: resolver a fonte de conhecimento de mercado mais específica e segura para o escopo comercial de uma LP, sem transformar oferta em nova autoridade taxonômica, sem enfraquecer a autoridade factual E20.2, sem tornar a E20 uma segunda orquestradora da geração e sem bloquear o cliente por ausência de correspondência taxonômica perfeita.
@@ -100,7 +100,7 @@
 - Objetivo: obter somente o delta de conhecimento material ausente na Deep Research-base para o escopo comercial daquela LP.
 - Limites: até duas execuções de Web Search, `store:false`, sub-timeout máximo de 45 s, fontes preservadas, sem retry automático, fallback de modelo/tool, agente, Agents SDK, job, fila, crawler, RAG ou cache global.
 - Participação humana: nenhuma intervenção durante a resolução; o gatilho e a aprovação da revisão continuam sob os fluxos E19 competentes.
-- Avaliação formal de Automação na v2: **parecer produzido, incorporado e auditado; revisão delta do Analista pendente**.
+- Avaliação formal de Automação na v2: **parecer produzido, incorporado, auditado e aprovado pelo Analista**.
 - A E20.7.4 é uma automação com IA em fluxo controlado, executada server-side no Runtime do LP Factory. Todo matching, elegibilidade, equivalência factual, gating, validação, contagem de tools e fallback permanecem determinísticos. A única função da IA é pesquisar e estruturar o delta consultivo.
 - O fluxo usa uma única requisição foreground à Responses API com somente `web_search`; agente, Agents SDK, multiagente, Programmatic Tool Calling, persisted reasoning, modo Pro, job, fila, crawler, RAG, cache global, retry e fallback automático são proibidos.
 - A configuração inicial não é herdada de outro workload. A v2 autoriza uma comparação focal representativa de `gpt-5.4-mini + low`, `gpt-5.6-luna + low|medium` e `gpt-5.6-terra + low|medium`, cada qual com `search_context_size = low|medium`, para selecionar antes da ativação a menor configuração que cumpra qualidade, grounding, latência de até 45 s e custo proporcional. A comparação e a decisão resultante devem ser reconciliadas em `docs/openai-model-snapshot.md` pela ABC competente. Sol, modo Pro, modelos Deep Research e comportamento agentic ficam fora sem nova evidência e novo recorte.
@@ -275,7 +275,7 @@
 - Objetivo: implementar o workload de pesquisa dinâmica e completar a saída tipada da E20.7 sem assumir a responsabilidade da geração ou recusar semanticamente a oferta.
 - Limites: Responses API + Web Search hospedado, até duas execuções de busca, `store:false`, sub-timeout máximo de 45 s, fontes obrigatórias, sem retry/fallback silencioso, agente, Agents SDK, job, fila, crawler, RAG ou cache global.
 - Solução: uma única requisição foreground, Structured Output estrito, somente `web_search`, `tool_choice:"required"`, `max_tool_calls:2`, fontes incluídas pelo provider e parser determinístico fail-closed.
-- Avaliação formal de Automação na v2: parecer incorporado e auditado, sujeito à revisão delta do Analista.
+- Avaliação formal de Automação na v2: parecer incorporado, auditado e aprovado pelo Analista.
 - Dependências:
   - lifecycle E21.2 capaz de governar o novo workload `product_runtime`;
   - checkpoint E20.7.3 aprovado pelo Analista e saída `dynamic_required` disponível;
@@ -312,7 +312,7 @@
 - A evolução E19.3 deverá preservar sua responsabilidade exclusiva de compor o pacote autorizado para a E19.4.
 - Qualquer mudança necessária em geração, snapshot ou materialização deverá permanecer sob E19.4 em recorte próprio.
 - A validação semântica de oferta sem match determinístico deverá ser aberta em recorte posterior próprio, com IA apenas quando nome/aliases não resolverem e recusa limitada a incompatibilidade clara.
-- A atualização de `docs/roadmap.md` ocorre somente depois da aprovação desta v2, pelo modo planejamento de `$lp-factory-abc`, seguida de revisão delta pelo mesmo Analista.
+- A atualização de `docs/roadmap.md` foi executada pelo modo planejamento de `$lp-factory-abc` e aprovada em revisão delta pelo mesmo Analista.
 - O processo automatizado escolhido pelo humano usa esta branch e um único PR draft contra `main` para a v2, a reconciliação do roadmap e a implementação sequencial de E20.7.3 e E20.7.4, sem merge intermediário.
 - A ordem executável é obrigatória: `E20.7.3 → aprovação do Analista → E20.7.4`; nenhuma parte da E20.7.4 é antecipada no checkpoint da E20.7.3.
 
