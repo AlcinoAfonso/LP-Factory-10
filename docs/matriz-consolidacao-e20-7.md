@@ -13,7 +13,7 @@
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | Gestor Estrutural | GE-E20.7-01 | Fixar residência, separação domínio/adapters e API pública da E20.7. | N/A — o parecer não classificou achados individualmente. | extensão adjacente necessária e proporcional | incorporado | N/A | 1.2; 3.1 | `knowledge-resolution/`, adapters server-only e exports públicos normatizados. |
 | Gestor Estrutural | GE-E20.7-02 | O matcher vigente converte falha operacional em `[]`. | N/A — o parecer não classificou achados individualmente. | extensão adjacente necessária e proporcional | incorporado | N/A | 1.6; 3.1 | Falha RPC/resposta/exceção não vira `dynamic_required`. |
-| Gestor Estrutural | GE-E20.7-03 | Elegibilidade precisa reutilizar confiança e alias canônicos. | N/A — o parecer não classificou achados individualmente. | preservação | incorporado | N/A | 1.6; 3.1 | Alta confiança e alias canônico, sem thresholds/RPC paralelos. |
+| Gestor Estrutural | GE-E20.7-03 | Elegibilidade precisa reutilizar confiança e alias canônicos. | N/A — o parecer não classificou achados individualmente. | preservação | incorporado | N/A | 1.6; 2.2; 3.1 | Somente nome/alias exato ou normalizado autoriza `specialized_deep`; FTS, trigram e slug normalizado produzem `dynamic_required`. |
 | Gestor Estrutural | GE-E20.7-04 | Descendência não pode criar terceira leitura privada de `business_taxons`. | N/A — o parecer não classificou achados individualmente. | extensão adjacente necessária e proporcional | incorporado | N/A | 2.2; 3.1 | Operação compartilhada e critérios de paginação >500, `416/PGRST103`, erro parcial, cadeia/identidade e regressão E20.5/E20.6. |
 | Gestor Estrutural | GE-E20.7-05 | Novo workload exige expansão versionada E21.2 com segurança preservada. | N/A — o parecer não classificou achados individualmente. | extensão adjacente necessária e proporcional | incorporado | N/A | 1.9; 1.10; 3.2; 4.2 | Critérios explícitos 10→12, cardinalidade parcial, bootstrap idempotente, ampliação de allowlists/constraints e validações internas de `save`/`promote`, preservando assinaturas, RLS e grants. |
 | Gestor Estrutural | GE-E20.7-06 | Adapter deve reutilizar o transporte Responses existente. | N/A — o parecer não classificou achados individualmente. | preservação | incorporado | N/A | 2.3; 3.2 | Único transporte e casos de cancelamento, timeout, refusal, erro e resposta inválida. |
@@ -49,7 +49,16 @@
 | AN-E20.7-07 | Incorporar contrato de prompt, orçamento sem truncamento e destinos documentais. | incorporado | v2 3.2; matriz AUT-O01/O02/O03 |
 | AN-E20.7-08 | Explicitar normalização canônica e cancelamento do transporte nos testes. | incorporado | v2 3.1/3.2; matriz supa#52/GE-06 |
 
+## Decisões humanas pós-merge do PR #821
+
+| ID | Decisão | Relação com o escopo | Tratamento | Localização |
+| --- | --- | --- | --- | --- |
+| HUM-E20.7-P1-01 | Autorizar `specialized_deep` somente para `alias_exact`, `alias_normalized`, `taxon_name_exact` ou `taxon_name_normalized`; FTS, trigram ou slug normalizado isolados produzem `dynamic_required` sem invalidar oferta. | preservação e estreitamento fail-closed da decisão funcional | incorporado | v2 1.1, 1.6, 2.2 e 3.1 |
+| HUM-E20.7-P1-02 | `CURRENT=6` permite planejamento, implementação repo-side e testes determinísticos da E20.7.3; reconciliação v6 bloqueia somente prova/ativação hospedada. | preservação da sequência operacional sem antecipar autoridade hospedada | incorporado | v2 1.10 e 3.1 |
+| HUM-E20.7-P1-03 | Preservar `E20.7.3 → aprovação → E20.7.4` e confrontar contratos com o estado do PR #831 antes da `.4`, parando só por sobreposição material aberta. | preservação de gate e extensão adjacente de revalidação | incorporado | v2 3.2, 3.3 e 4.2 |
+| HUM-E20.7-P1-04 | PR #822, integração E19, E19.5.4 e E21.3.4 permanecem fora. | preservação do escopo negativo | incorporado | v2 4.1 |
+
 ## Estado do gate
 
 - Passagens 1 e 2 preservadas integralmente no task: `aprovado com correções obrigatórias`.
-- Correções objetivas aplicadas na v2 e nesta matriz; revisão delta pelo mesmo Analista pendente.
+- Correções objetivas anteriores e P1 humano pós-merge aplicados na v2 e nesta matriz; revisão delta pelo mesmo Analista pendente.
