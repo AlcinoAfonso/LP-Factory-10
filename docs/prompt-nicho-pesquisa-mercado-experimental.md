@@ -1,41 +1,80 @@
-# Prompt experimental — Pesquisa independente de mercado por taxon
+# Deep Research — Pesquisa de mercado por nicho ou especialização
 
-## 1. Status e papel
+## 1. Papel
 
-Uso experimental para comparar, no Cenário E, uma pesquisa independente de mercado com a pesquisa orientada a landing pages. Não substitui `docs/prompt-nicho-pesquisa.md`.
+Atue como pesquisador sênior de mercado e comportamento do consumidor.
 
-Atue como pesquisador de mercado.
+## 2. Entrada
 
-## 2. Entrada e diálogo
+Pesquise o seguinte nicho ou especialização:
 
-Se o taxon ou nome do nicho não estiver informado nesta execução, pergunte somente:
+**[NICHO OU ESPECIALIZAÇÃO]**
 
-```md
-taxon ou nome do nicho:
-```
-
-e pare.
-
-Após a resposta, use o taxon informado como escopo confirmado e inicie a pesquisa para `audience_scope: end_customer`, priorizando o mercado brasileiro. Não peça outros dados antes de pesquisar.
+- Priorize o mercado brasileiro e o cliente final.
+- Se o termo estiver materialmente ambíguo, faça apenas uma pergunta curta para esclarecer antes de pesquisar.
+- Não estreite por conta própria o escopo informado; cubra os principais submercados e situações materialmente relevantes e explicite qualquer exclusão necessária.
 
 ## 3. Objetivo
 
-Produzir uma pesquisa independente, rica, verificável e concisa sobre o mercado e o público do taxon, sem orientar a estrutura ou a copy de uma landing page.
+Produza uma pesquisa profunda, independente e verificável sobre como o público desse mercado:
 
-## 4. Pesquisa
+- percebe o problema ou oportunidade;
+- entra em situação de compra;
+- define objetivos e jobs-to-be-done;
+- sente dores, desejos, medos e riscos;
+- cria objeções e barreiras;
+- compara alternativas e trade-offs;
+- decide e constrói confiança;
+- busca informação e fala sobre o problema.
 
-Pesquise público, necessidades, desejos, objeções, linguagem, comportamento de decisão, concorrência e posicionamento, tendências, evidências, regulamentação quando aplicável, intenção de busca e limitações.
+Inclua também, quando relevantes:
 
-Priorize fontes primárias, oficiais ou diretamente relacionadas ao achado; use fontes secundárias quando agregarem contexto relevante. Distinga evidência de inferência.
+- contexto e funcionamento do mercado;
+- públicos e situações de compra materialmente diferentes;
+- jornada de decisão;
+- concorrentes, substitutos e alternativa de não agir;
+- critérios de decisão;
+- sinais de confiança e redução de risco;
+- linguagem e perguntas recorrentes do consumidor;
+- mensagens, promessas comuns e claims saturados do mercado;
+- informações factuais que variam entre fornecedores e importam para a decisão;
+- aspectos regulatórios, geográficos ou de segurança;
+- tendências e informações cuja validade dependa do tempo;
+- lacunas, controvérsias e limitações da evidência.
+
+## 4. Evidência
+
+- Priorize fontes oficiais, acadêmicas, institucionais e setoriais confiáveis.
+- Use sites de empresas para compreender ofertas e posicionamentos e reviews, fóruns ou redes sociais para linguagem e percepção do consumidor, sem tratá-los como prova factual independente.
+- Diferencie, quando relevante, `evidência`, `inferência` e `hipótese`.
+- Para conhecimento material cuja validade varie no tempo, indique se é `estrutural`, `semiestável` ou `volátil`.
+- Não invente números, fatos, fontes ou características de empresas.
 
 ## 5. Limites
 
-Não consulte pesquisas arquivadas em `docs/pesquisas-brutas/` nem use decisões internas do LP Factory como evidência de mercado.
+Não produza solução comercial pronta.
 
-Não proponha solução de landing page ou comunicação final, incluindo estrutura, wireframe, layout, copy ou CTA.
+Não proponha:
 
-Não invente métricas, dados de cliente, provas, certificações, garantias ou resultados; quando faltarem evidências, declare a limitação.
+- wireframe;
+- estrutura ou ordem de seções;
+- layout;
+- headline;
+- copy;
+- CTA;
+- arquitetura de landing page;
+- implementação de SEO.
 
-## 6. Entrega esperada
+A pesquisa deve fornecer conhecimento para uma decisão posterior, não tomar essa decisão antecipadamente.
 
-Entregue em Markdown, organizado pelos temas mais úteis para compreender o mercado e o público. Identifique as fontes utilizadas, diferencie achados de inferências e registre limitações relevantes sem repetir conteúdo.
+Se estiver pesquisando uma especialização, produza um relatório autossuficiente naquele escopo, incluindo apenas o contexto mais amplo necessário para compreendê-la.
+
+## 6. Entrega
+
+Entregue um relatório em Markdown, denso mas sem repetição.
+
+- Comece com uma síntese curta.
+- Organize os achados pelos temas mais relevantes.
+- Mantenha as citações próximas das afirmações materiais.
+- Use tabelas somente quando melhorarem comparação ou clareza.
+- Finalize com `Fontes consultadas`, `Principais limitações da pesquisa` e `Informações voláteis que merecem rechecagem futura`.
