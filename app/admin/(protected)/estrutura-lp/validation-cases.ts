@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 
 import { collectCompletePaginatedRows } from "../../../../lib/admin/adapters/adminInputCatalogLifecyclePagination";
@@ -7,6 +8,7 @@ import {
   fingerprintInputCatalogOperationalContext,
   planPublishedInputCatalogReviewReconciliation,
   resolveInputCatalogOperationalAccountAuthorities,
+  validatePublishedInputCatalogReviewEvidenceContext,
 } from "../../../../lib/admin/adapters/adminInputCatalogLifecycleValidation";
 import {
   createNextLandingPageInputCatalogDraft,
@@ -17,7 +19,11 @@ import {
   type LandingPageInputCatalogRegistry,
   type LandingPageInputCatalogRegistryEntry,
 } from "../../../../lib/conversion-content/landing-page/input-catalog";
-import { deriveEffectiveTaxonPreparation } from "../../../../lib/conversion-content/landing-page/taxon-preparation";
+import {
+  deriveEffectiveTaxonPreparation,
+  fingerprintInputCatalogEvaluationContextIdentity,
+  type InputCatalogEvaluationContextIdentity,
+} from "../../../../lib/conversion-content/landing-page/taxon-preparation";
 import { resolveAccountLandingPageOnboardingConfiguration } from "../../../../lib/lp-builder/onboardingConfiguration";
 
 const page = readFileSync(new URL("./page.tsx", import.meta.url), "utf8");
@@ -105,6 +111,22 @@ assert.match(lifecycleAdapter, /advancePublishedReviewMarker/);
 assert.match(lifecycleAdapter, /selected_end_customer_research_version/);
 assert.match(lifecycleAdapter, /storedDraftFingerprint !== deployedFingerprint/);
 assert.match(lifecycleAdapter, /finalProof[\s\S]*landing_page_input_catalog_drafts"\)[\s\S]*\.delete\(\)/);
+const publishedEvidenceValidationIndex = lifecycleAdapter.indexOf(
+  "const initialProof = await validatePublishedReviewEvidence",
+);
+const publishedEvidenceBlockingIndex = lifecycleAdapter.indexOf(
+  "if (initialPlan.blockingTaxonIds.length > 0)",
+);
+const publishedReviewWriteIndex = lifecycleAdapter.indexOf(
+  "const advanced = await advancePublishedReviewMarker",
+);
+const publishedDraftDeleteIndex = lifecycleAdapter.indexOf(
+  '.from("landing_page_input_catalog_drafts")\n    .delete()',
+);
+assert.ok(publishedEvidenceValidationIndex >= 0);
+assert.ok(publishedEvidenceBlockingIndex > publishedEvidenceValidationIndex);
+assert.ok(publishedReviewWriteIndex > publishedEvidenceBlockingIndex);
+assert.ok(publishedDraftDeleteIndex > publishedReviewWriteIndex);
 assert.match(lifecycleAdapter, /collectCommercialIdentityReviewBlockers/);
 assert.doesNotMatch(lifecycleAdapter, /coordinateInputCatalogEvaluation|executeInputCatalogEvaluationProvider/);
 assert.doesNotMatch(lifecycleAdapter, /Math\.max|versions\.at\(-1\)|latest/i);
@@ -350,6 +372,83 @@ const staleContextFingerprint = fingerprintInputCatalogOperationalContext({
 assert.match(originalContextFingerprint, /^[0-9a-f]{64}$/);
 assert.notEqual(staleContextFingerprint, originalContextFingerprint);
 
+const preservedDraftIdentity = inputCatalogReviewEvidenceIdentity();
+const deployedIdentity = reorderedInputCatalogReviewEvidenceIdentity(
+  preservedDraftIdentity,
+);
+const legacyStoredFingerprint = createHash("sha256")
+  .update(JSON.stringify(preservedDraftIdentity))
+  .digest("hex");
+const publishedEvidenceInput = {
+  storedContextFingerprint: legacyStoredFingerprint,
+  preservedDraftIdentity,
+  deployedIdentity,
+  expectedTaxonId: realEstateBrokerNicheTaxon.id,
+  expectedResearchVersion: 2,
+  expectedInputCatalogVersion: 6,
+};
+assert.notEqual(JSON.stringify(preservedDraftIdentity), JSON.stringify(deployedIdentity));
+assert.equal(
+  fingerprintInputCatalogEvaluationContextIdentity(preservedDraftIdentity),
+  fingerprintInputCatalogEvaluationContextIdentity(deployedIdentity),
+);
+assert.equal(
+  validatePublishedInputCatalogReviewEvidenceContext(publishedEvidenceInput),
+  true,
+);
+const stalePublishedIdentityMutations: readonly ((
+  identity: InputCatalogEvaluationContextIdentity,
+) => void)[] = [
+  (identity) => {
+    (identity.research as { researchVersion: number }).researchVersion = 3;
+  },
+  (identity) => {
+    (identity.research as { content: string }).content = "Conteúdo alterado.";
+  },
+  (identity) => {
+    (identity.inputCatalog as { version: number }).version = 7;
+  },
+  (identity) => {
+    (identity as { taxonId: string }).taxonId = realEstateSegmentTaxon.id;
+  },
+  (identity) => {
+    (identity.taxonChain.segment as { slug: string }).slug = "segmento-alterado";
+  },
+  (identity) => {
+    const catalogs = identity.inputCatalog.catalogs as unknown as Array<{
+      fields: unknown[];
+    }>;
+    catalogs[0]?.fields.pop();
+  },
+];
+for (const mutate of stalePublishedIdentityMutations) {
+  const changed = structuredClone(deployedIdentity);
+  mutate(changed);
+  assert.equal(
+    validatePublishedInputCatalogReviewEvidenceContext({
+      ...publishedEvidenceInput,
+      deployedIdentity: changed,
+    }),
+    false,
+  );
+}
+assert.equal(
+  validatePublishedInputCatalogReviewEvidenceContext({
+    ...publishedEvidenceInput,
+    storedContextFingerprint: createHash("sha256")
+      .update(JSON.stringify(deployedIdentity))
+      .digest("hex"),
+  }),
+  false,
+);
+assert.equal(
+  validatePublishedInputCatalogReviewEvidenceContext({
+    ...publishedEvidenceInput,
+    storedContextFingerprint: "0".repeat(64),
+  }),
+  false,
+);
+
 const operationalAuthorities = resolveInputCatalogOperationalAccountAuthorities({
   candidateAccountIds: new Set(["active-eligible", "inactive-retained", "active-ineligible"]),
   accounts: [
@@ -448,6 +547,57 @@ void validateBehavioralContracts().catch((error: unknown) => {
 
 function offeringScopeDraft(): LandingPageInputCatalogRegistryEntry {
   return createNextLandingPageInputCatalogDraft();
+}
+
+function inputCatalogReviewEvidenceIdentity(): InputCatalogEvaluationContextIdentity {
+  return {
+    taxonId: realEstateBrokerNicheTaxon.id,
+    taxonSlug: realEstateBrokerNicheTaxon.slug,
+    taxonChain: {
+      segment: realEstateSegmentTaxon,
+      niche: realEstateBrokerNicheTaxon,
+      ultraNiche: null,
+    },
+    research: {
+      taxonSlug: realEstateBrokerNicheTaxon.slug,
+      audienceScope: "end_customer",
+      researchVersion: 2,
+      relativePath: "corretor-imoveis/end_customer/v2.md",
+      content: "Pesquisa factual preservada.",
+    },
+    inputCatalog: {
+      version: 6,
+      plans: ["starter"],
+      catalogs: [
+        {
+          version: 6,
+          plan: "starter",
+          taxonChain: {
+            segment: realEstateSegmentTaxon,
+            niche: realEstateBrokerNicheTaxon,
+          },
+          fields: [
+            {
+              fieldKey: "landing_page_offering_scope",
+              valueType: "offering_scope",
+            },
+          ],
+        },
+      ],
+    },
+  } as unknown as InputCatalogEvaluationContextIdentity;
+}
+
+function reorderedInputCatalogReviewEvidenceIdentity(
+  identity: InputCatalogEvaluationContextIdentity,
+): InputCatalogEvaluationContextIdentity {
+  return {
+    inputCatalog: identity.inputCatalog,
+    research: identity.research,
+    taxonChain: identity.taxonChain,
+    taxonSlug: identity.taxonSlug,
+    taxonId: identity.taxonId,
+  };
 }
 
 function withoutOfferingScopeDescription(
