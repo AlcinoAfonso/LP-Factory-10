@@ -2725,11 +2725,12 @@ Repositório — Ajustados
 
 20.2.9.4 Draft, revisão e publicação da v6
 
-* Status: Em implementação no PR draft #830; draft v6 validado, decisão humana E20.6.5 `confirm_sufficient` registrada e handoff repo-only congelado. A materialização v6 e `CURRENT=6` permanecem sujeitas às validações, revisão e merge humanos, deploy de Production e reconciliação canônica do draft.
+* Status: Implementação candidata materializada no PR draft #830, com draft v6 validado, decisão humana E20.6.5 `confirm_sufficient` registrada, handoff repo-only congelado e `CURRENT=6`; revisão e merge humanos, deploy de Production, reconciliação canônica do draft e QA operacional pós-reconciliação permanecem pendentes.
 * Sequência:
   * o lifecycle E20.2.8 criou exatamente o draft v6 a partir da `main` ainda em v5;
   * as configurações operacionais completas foram validadas, a E20.6.5 pré-publicação resultou `sufficient` sem gaps ou refinamentos e a decisão humana vigente foi vinculada aos fingerprints revalidados;
   * o PR #830 reconcilia identidade E19.5, UI operacional, save/reload, geração e snapshots e materializa a v6 no registry repo-only com `CURRENT=6`;
+  * o Preview do artefato v6 foi aprovado como gate de build/artefato; como Preview e Production compartilham o Supabase, a transição material exige `R=6` e a reconciliação canônica é exclusiva de Production, o QA operacional completo foi transferido, sem dispensa, para imediatamente após essa reconciliação, sem bypass ou escrita antecipada no marcador;
   * após revisão e merge humanos, o deploy de Production deve comprovar o artefato exato e reconciliar os marcadores válidos antes de remover o draft, conforme o lifecycle canônico.
 
 20.3 Perfil de orientação para geração
