@@ -1076,6 +1076,7 @@
 1.37.1 Função e invariantes
 • Singleton imutável da data de corte em Production; a PK booleana aceita somente true e permite no máximo uma linha.
 • `activated_at` não pode estar no futuro nem depois de created_at. A ausência da linha significa que a cobertura prospectiva ainda não foi ativada.
+• Estado operacional atual: existe exatamente uma linha singleton em Production, com `environment = 'production'` e `activated_at = '2026-08-29 21:55:36.827207+00'`; o corte é imutável.
 
 1.37.2 Segurança e imutabilidade
 • RLS habilitado e zero policies; ACLs idênticas às de `openai_lp_cost_events`.
