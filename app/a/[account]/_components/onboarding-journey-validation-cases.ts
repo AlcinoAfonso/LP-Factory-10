@@ -2,15 +2,18 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
 import {
+  parseLandingPageOfferingScope,
   resolveLandingPageInputCatalog,
   realEstateSegmentTaxon,
 } from "../../../../lib/conversion-content/landing-page/input-catalog";
 import {
   decideAccountJourney,
   journeyScopeBelongsToStep,
+  onboardingFieldErrorFocusTargetId,
   parseKeywordMapDraft,
   parseNumberRangeDraft,
   prepareJourneyStoredValues,
+  recoverCorrectableOnboardingSubmission,
 } from "./onboarding-journey-policy";
 
 const cases: readonly Readonly<{ name: string; run: () => void }>[] = [
@@ -203,6 +206,134 @@ const cases: readonly Readonly<{ name: string; run: () => void }>[] = [
         component + action,
         /\bOpenAI\b|generateContent|publishLandingPage|\bCRM\b/i,
       );
+    },
+  },
+  {
+    name: "offering errors preserve state and focus invalid values separately from missing confirmation",
+    run: () => {
+      const submittedValues = {
+        funnel_stage: { scope: "landing_page" as const, value: "bofu" },
+        primary_conversion_channel: {
+          scope: "landing_page" as const,
+          value: "whatsapp",
+        },
+        whatsapp_destination: {
+          scope: "landing_page" as const,
+          value: "+5511999999999",
+        },
+        primary_conversion_goal: {
+          scope: "landing_page" as const,
+          value: "contact",
+        },
+        transaction_intent: {
+          scope: "landing_page" as const,
+          value: "buy",
+        },
+        landing_page_offering_scope: {
+          scope: "landing_page" as const,
+          value: {
+            mode: "single",
+            offerings: ["Oferta livre", "  oferta livre  "],
+          },
+        },
+      };
+      const invalidScope = parseLandingPageOfferingScope(
+        submittedValues.landing_page_offering_scope.value,
+      );
+      assert.equal(invalidScope.ok, false);
+
+      const recovered = recoverCorrectableOnboardingSubmission({
+        status: "error",
+        fieldErrors: {
+          landing_page_offering_scope: "Revise este valor antes de continuar.",
+        },
+        submittedValues,
+        submittedRevision: 3,
+        submittedSharedRevision: 2,
+      });
+      assert.deepEqual(recovered, {
+        values: submittedValues,
+        revision: 3,
+        sharedRevision: 2,
+      });
+      assert.equal(
+        recoverCorrectableOnboardingSubmission({
+          status: "error",
+          formError: "A configuração mudou em outra sessão. Recarregue a página.",
+        }),
+        null,
+      );
+      assert.equal(
+        onboardingFieldErrorFocusTargetId("landing_page_offering_scope"),
+        "onboarding-landing_page_offering_scope-offerings",
+      );
+      assert.equal(
+        onboardingFieldErrorFocusTargetId("same_commercial_work_confirmed"),
+        "onboarding-same_commercial_work_confirmed",
+      );
+
+      const correctedScope = parseLandingPageOfferingScope({
+        mode: "single",
+        offerings: [" Oferta livre "],
+      });
+      assert.deepEqual(correctedScope, {
+        ok: true,
+        value: { mode: "single", offerings: ["Oferta livre"] },
+      });
+
+      const component = readFileSync(
+        new URL("./OnboardingConfigurationJourney.tsx", import.meta.url),
+        "utf8",
+      );
+      const sharedAction = readFileSync(
+        new URL("../onboarding-configuration-actions.ts", import.meta.url),
+        "utf8",
+      );
+      const workspaceAction = readFileSync(
+        new URL("../landing-pages/[landingPageId]/configuration-actions.ts", import.meta.url),
+        "utf8",
+      );
+      assert.match(component, /recoverCorrectableOnboardingSubmission\(actionState\)/);
+      assert.match(component, /requestAnimationFrame\(\(\) =>/);
+      assert.match(component, /onboardingFieldErrorFocusTargetId\(firstFieldKey\)/);
+      assert.match(sharedAction, /submittedValues: values,[\s\S]+submittedRevision: expectedRevision/);
+      assert.match(
+        workspaceAction,
+        /submittedValues: values,[\s\S]+submittedRevision: expectedLandingPageRevision,[\s\S]+submittedSharedRevision: expectedSharedRevision/,
+      );
+      assert.match(
+        workspaceAction,
+        /offer_change_confirmation_required[\s\S]+fieldErrors: \{[\s\S]+same_commercial_work_confirmed:/,
+      );
+      assert.match(
+        workspaceAction,
+        /invalid_values[\s\S]+fieldErrors: \{ \[result\.fieldKey\]: "Revise este valor antes de continuar\." \}/,
+      );
+      assert.match(component, /id="onboarding-same_commercial_work_confirmed"/);
+      assert.match(
+        component,
+        /aria-describedby=\{[\s\S]+onboarding-same_commercial_work_confirmed-error/,
+      );
+      assert.match(component, /id="onboarding-same_commercial_work_confirmed-error"/);
+    },
+  },
+  {
+    name: "journey disables every editable control while the form action is pending",
+    run: () => {
+      const component = readFileSync(
+        new URL("./OnboardingConfigurationJourney.tsx", import.meta.url),
+        "utf8",
+      );
+      const pendingControlsStart = component.indexOf("<fieldset disabled={pending}");
+      const pendingControlsEnd = component.indexOf("</fieldset>", pendingControlsStart);
+      assert.ok(pendingControlsStart >= 0);
+      assert.ok(pendingControlsEnd > pendingControlsStart);
+      const pendingControls = component.slice(pendingControlsStart, pendingControlsEnd);
+      assert.match(pendingControls, /<BrandIdentityStep/);
+      assert.match(pendingControls, /<OnboardingField/);
+      assert.match(pendingControls, /name="same_commercial_work_confirmed"/);
+      assert.ok(component.indexOf('name="values_json"') < pendingControlsStart);
+      assert.ok(component.indexOf('disabled={pending}', pendingControlsEnd) > pendingControlsEnd);
     },
   },
   {

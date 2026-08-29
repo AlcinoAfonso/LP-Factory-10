@@ -78,13 +78,22 @@ export async function saveLandingPageConfigurationAction(
       return {
         status: "error",
         fieldErrors: {
-          landing_page_offering_scope:
+          same_commercial_work_confirmed:
             "Confirme abaixo se o escopo de ofertas ainda pertence ao mesmo trabalho comercial.",
         },
+        submittedValues: values,
+        submittedRevision: expectedLandingPageRevision,
+        submittedSharedRevision: expectedSharedRevision,
       };
     }
     if (result.error === "invalid_values" && result.fieldKey) {
-      return { status: "error", fieldErrors: { [result.fieldKey]: "Revise este valor antes de continuar." } };
+      return {
+        status: "error",
+        fieldErrors: { [result.fieldKey]: "Revise este valor antes de continuar." },
+        submittedValues: values,
+        submittedRevision: expectedLandingPageRevision,
+        submittedSharedRevision: expectedSharedRevision,
+      };
     }
     return { status: "error", formError: "Não foi possível salvar agora. Nenhuma revisão de conteúdo foi alterada." };
   }

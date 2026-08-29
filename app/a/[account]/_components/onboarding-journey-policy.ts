@@ -5,6 +5,7 @@ import {
   type ResolvedLandingPageInputField,
 } from "../../../../lib/conversion-content/landing-page/input-catalog";
 import type { AccountLandingPageOnboardingStoredValues } from "../../../../lib/lp-builder";
+import type { OnboardingConfigurationActionState } from "./onboarding-configuration-action-contract";
 
 export type AccountJourneyMode =
   | "commercial"
@@ -28,6 +29,36 @@ export type AccountOnboardingState =
   | "blocked";
 
 export type JourneyFormStep = "business" | "landing_page" | "brand_identity";
+
+export function recoverCorrectableOnboardingSubmission(
+  state: OnboardingConfigurationActionState,
+): Readonly<{
+  values: AccountLandingPageOnboardingStoredValues;
+  revision: number | null;
+  sharedRevision?: number | null;
+}> | null {
+  if (
+    state.status !== "error" ||
+    !state.fieldErrors ||
+    !state.submittedValues ||
+    !Object.hasOwn(state, "submittedRevision")
+  ) {
+    return null;
+  }
+  return {
+    values: state.submittedValues,
+    revision: state.submittedRevision ?? null,
+    ...(Object.hasOwn(state, "submittedSharedRevision")
+      ? { sharedRevision: state.submittedSharedRevision ?? null }
+      : {}),
+  };
+}
+
+export function onboardingFieldErrorFocusTargetId(fieldKey: string) {
+  return fieldKey === "landing_page_offering_scope"
+    ? "onboarding-landing_page_offering_scope-offerings"
+    : `onboarding-${fieldKey}`;
+}
 
 export function decideAccountJourney(input: Readonly<{
   actorRole: MemberRole;

@@ -87,6 +87,8 @@ export async function saveOnboardingConfigurationAction(
         fieldErrors: {
           [result.fieldKey]: "Revise este valor antes de continuar.",
         },
+        submittedValues: values,
+        submittedRevision: expectedRevision,
       };
     }
     if (

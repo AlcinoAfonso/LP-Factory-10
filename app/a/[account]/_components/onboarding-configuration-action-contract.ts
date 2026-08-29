@@ -1,3 +1,5 @@
+import type { AccountLandingPageOnboardingStoredValues } from "../../../../lib/lp-builder";
+
 export type OnboardingConfigurationActionIntent =
   | "save"
   | "next"
@@ -11,6 +13,9 @@ export type OnboardingConfigurationActionState = Readonly<{
   sharedRevision?: number | null;
   fieldErrors?: Readonly<Record<string, string>>;
   formError?: string;
+  submittedValues?: AccountLandingPageOnboardingStoredValues;
+  submittedRevision?: number | null;
+  submittedSharedRevision?: number | null;
 }>;
 
 export const initialOnboardingConfigurationActionState: OnboardingConfigurationActionState =

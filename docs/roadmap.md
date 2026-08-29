@@ -2702,7 +2702,7 @@ Repositório — Ajustados
 20.2.9.1 Objetivo e status
 
 * Objetivo: substituir a representação singular de oferta por um escopo comercial capaz de expressar uma oferta, algumas ofertas ou o portfólio amplo, reconciliando a continuidade da identidade E19.5 sem alterar snapshots históricos.
-* Status: Em andamento em duas etapas. A Etapa 1 foi concluída e incorporada à `main` pelo PR #826; a v6 da Etapa 2 foi publicada em Production pelo PR #830, mas a reconciliação pós-deploy permanece bloqueada e o QA operacional continua pendente.
+* Status: Em andamento em duas etapas. A Etapa 1 foi concluída e incorporada à `main` pelo PR #826; a v6 da Etapa 2 foi publicada em Production pelo PR #830 e reconciliada após o PR #836, com `R=6` e draft ausente. O fechamento permanece bloqueado somente pelo corretivo e pela retomada do QA do formulário operacional.
 
 20.2.9.2 Bootstrap mantendo v5
 
@@ -2725,14 +2725,14 @@ Repositório — Ajustados
 
 20.2.9.4 Draft, revisão e publicação da v6
 
-* Status: v6 publicada em Production pelo PR #830, com registry repo-only e `CURRENT=6`. A reconciliação canônica falhou fechada diante do fingerprint legado da evidência E20.6.5: `reviewed_input_catalog_version` permanece em `5`, o draft v6 revisão `5` foi preservado e o QA operacional pós-reconciliação permanece pendente.
+* Status: v6 publicada em Production pelo PR #830, com registry repo-only e `CURRENT=6`; reconciliação canônica concluída após o PR #836, com `reviewed_input_catalog_version=6` e draft removido somente após a leitura final positiva. O QA operacional permanece pendente apenas pelo defeito focal de preservação do formulário após erro de campo corrigível.
 * Sequência:
   * o lifecycle E20.2.8 criou exatamente o draft v6 a partir da `main` ainda em v5;
   * as configurações operacionais completas foram validadas, a E20.6.5 pré-publicação resultou `sufficient` sem gaps ou refinamentos e a decisão humana vigente foi vinculada aos fingerprints revalidados;
   * o PR #830 reconciliou identidade E19.5, UI operacional, save/reload, geração e snapshots e publicou a v6 no registry repo-only com `CURRENT=6`;
   * o Preview do artefato v6 foi aprovado como gate de build/artefato; como Preview e Production compartilham o Supabase, a transição material exige `R=6` e a reconciliação canônica é exclusiva de Production, o QA operacional completo foi transferido, sem dispensa, para imediatamente após essa reconciliação, sem bypass ou escrita antecipada no marcador;
-  * o deploy de Production comprovou o artefato exato, mas a reconciliação bloqueou corretamente antes de qualquer escrita porque o fingerprint legado era sensível à ordem das propriedades entre o draft preservado e o registry implantado;
-  * o corretivo pós-merge deve reutilizar a canonicalização da E20.6 para novas evidências e aceitar a evidência v6 somente após reproduzir o fingerprint legado armazenado a partir do draft, comprovar igualdade material com o contexto implantado e revalidar conteúdo, taxon, cadeia, pesquisa e versão; somente então a reconciliação e o QA operacional podem ser retomados.
+  * o PR #836 reutilizou a canonicalização da E20.6, preservou a prova do fingerprint legado e permitiu a reconciliação somente após igualdade material e revalidação de conteúdo, taxon, cadeia, pesquisa e versão; a ação canônica avançou `R` para `6`, confirmou a leitura final e removeu o draft sem intervenção manual;
+  * o QA operacional pós-reconciliação encontrou perda visual de valores válidos e revisões hidden após `invalid_values` de `landing_page_offering_scope`, causada pelo reset nativo da Form Action; o corretivo focal preserva o snapshot somente para erros de campo corrigíveis, mantém conflitos e falhas de autoridade fechados e direciona o foco ao textarea editável de ofertas antes da retomada do QA completo.
 
 20.3 Perfil de orientação para geração
 
