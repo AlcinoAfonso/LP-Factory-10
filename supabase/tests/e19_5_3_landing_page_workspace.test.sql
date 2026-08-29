@@ -31,6 +31,7 @@ do $$
 declare
   v_signature text;
   v_function oid;
+  v_definition text;
 begin
   if to_regclass('public.account_landing_page_shared_configurations') is null
      or to_regclass('public.account_landing_page_configurations') is null then
@@ -168,6 +169,16 @@ begin
       raise exception 'E19.5.3 RPC contract drifted: %', v_signature;
     end if;
   end loop;
+
+  v_function := to_regprocedure(
+    'public.append_account_landing_page_materialization_v2(uuid,uuid,uuid,jsonb,jsonb,uuid,bigint,bigint)'
+  );
+  v_definition := pg_get_functiondef(v_function);
+  if v_definition not ilike '%public.raise_postgrest_safe_conflict_v1(''shared_revision_conflict'')%'
+     or v_definition not ilike '%public.raise_postgrest_safe_conflict_v1(''landing_page_revision_conflict'')%'
+     or v_definition ~ 'errcode[[:space:]]*=[[:space:]]*''40001''' then
+    raise exception 'E19.5.3 append conflicts must remain PostgREST-safe';
+  end if;
 
   if not exists (
     select 1 from pg_constraint
@@ -345,6 +356,53 @@ begin
   );
   if v_retry_id <> v_materialization_id or v_retry_revision <> v_revision_number then
     raise exception 'append retry must remain idempotent';
+  end if;
+
+  update public.account_landing_page_shared_configurations
+  set catalog_version = 6
+  where account_id = 'e1953000-0000-4000-8000-000000000011';
+  update public.account_landing_page_configurations
+  set catalog_version = 6
+  where account_id = 'e1953000-0000-4000-8000-000000000011'
+    and landing_page_id = 'e1953000-0000-4000-8000-000000000021';
+
+  select materialization_id, revision_number
+  into v_materialization_id, v_revision_number
+  from public.append_account_landing_page_materialization_v2(
+    'e1953000-0000-4000-8000-000000000011',
+    'e1953000-0000-4000-8000-000000000021',
+    'e1953000-0000-4000-8000-000000000033',
+    '{"contractVersion":1}'::jsonb,
+    '{"snapshotVersion":2,"generationContext":{"contractVersion":4}}'::jsonb,
+    'e1953000-0000-4000-8000-000000000001',
+    1,
+    2
+  );
+  if v_revision_number <> 3 then
+    raise exception 'append with catalog v6 must create the next revision';
+  end if;
+
+  begin
+    perform *
+    from public.append_account_landing_page_materialization_v2(
+      'e1953000-0000-4000-8000-000000000011',
+      'e1953000-0000-4000-8000-000000000021',
+      'e1953000-0000-4000-8000-000000000034',
+      '{"contractVersion":1}'::jsonb,
+      '{"snapshotVersion":2,"generationContext":{"contractVersion":4}}'::jsonb,
+      'e1953000-0000-4000-8000-000000000001',
+      1,
+      1
+    );
+    raise exception 'catalog v6 append with stale revision must fail';
+  exception when sqlstate '40001' then
+    null;
+  end;
+  if exists (
+    select 1 from public.account_landing_page_materializations
+    where attempt_id = 'e1953000-0000-4000-8000-000000000034'
+  ) then
+    raise exception 'stale catalog v6 append must not persist a partial revision';
   end if;
 
   if public.approve_account_landing_page_materialization_v1(
