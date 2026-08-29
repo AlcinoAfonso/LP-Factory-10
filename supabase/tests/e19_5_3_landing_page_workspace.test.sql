@@ -31,6 +31,7 @@ do $$
 declare
   v_signature text;
   v_function oid;
+  v_definition text;
 begin
   if to_regclass('public.account_landing_page_shared_configurations') is null
      or to_regclass('public.account_landing_page_configurations') is null then
@@ -168,6 +169,16 @@ begin
       raise exception 'E19.5.3 RPC contract drifted: %', v_signature;
     end if;
   end loop;
+
+  v_function := to_regprocedure(
+    'public.append_account_landing_page_materialization_v2(uuid,uuid,uuid,jsonb,jsonb,uuid,bigint,bigint)'
+  );
+  v_definition := pg_get_functiondef(v_function);
+  if v_definition not ilike '%public.raise_postgrest_safe_conflict_v1(''shared_revision_conflict'')%'
+     or v_definition not ilike '%public.raise_postgrest_safe_conflict_v1(''landing_page_revision_conflict'')%'
+     or v_definition ~ 'errcode[[:space:]]*=[[:space:]]*''40001''' then
+    raise exception 'E19.5.3 append conflicts must remain PostgREST-safe';
+  end if;
 
   if not exists (
     select 1 from pg_constraint

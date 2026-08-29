@@ -20,6 +20,9 @@ begin
      or v_definition not ilike '%v_shared_catalog is distinct from 6%'
      or v_definition not ilike '%v_landing_catalog is distinct from 5%'
      or v_definition not ilike '%v_landing_catalog is distinct from 6%'
+     or v_definition not ilike '%public.raise_postgrest_safe_conflict_v1(''shared_revision_conflict'')%'
+     or v_definition not ilike '%public.raise_postgrest_safe_conflict_v1(''landing_page_revision_conflict'')%'
+     or v_definition ~ 'errcode[[:space:]]*=[[:space:]]*''40001'''
      or not has_function_privilege('service_role', v_function, 'EXECUTE')
      or has_function_privilege('anon', v_function, 'EXECUTE')
      or has_function_privilege('authenticated', v_function, 'EXECUTE')

@@ -67,7 +67,7 @@ begin
        and v_shared_catalog is distinct from 5
        and v_shared_catalog is distinct from 6
      ) then
-    raise exception using errcode = '40001', message = 'shared_revision_conflict';
+    perform public.raise_postgrest_safe_conflict_v1('shared_revision_conflict');
   end if;
 
   select revision, catalog_version
@@ -81,7 +81,7 @@ begin
        v_landing_catalog is distinct from 5
        and v_landing_catalog is distinct from 6
      ) then
-    raise exception using errcode = '40001', message = 'landing_page_revision_conflict';
+    perform public.raise_postgrest_safe_conflict_v1('landing_page_revision_conflict');
   end if;
 
   return query
