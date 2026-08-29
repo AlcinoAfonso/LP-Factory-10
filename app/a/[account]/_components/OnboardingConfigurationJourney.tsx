@@ -429,17 +429,33 @@ export function OnboardingConfigurationJourney(props: Readonly<{
                 </div>
               ) : null}
               {props.workspaceMode ? (
-                <label className="flex items-start gap-3 rounded-lg border border-surface-border bg-graytech-50 p-4 text-sm text-ink-900">
-                  <input
-                    type="checkbox"
-                    name="same_commercial_work_confirmed"
-                    value="1"
-                    className="mt-1 h-4 w-4"
-                  />
-                  <span>
-                    Se eu alterar o modo ou as ofertas deste escopo, confirmo que continua sendo o mesmo trabalho comercial. Caso contrário, criarei uma nova landing page.
-                  </span>
-                </label>
+                <div className="rounded-lg border border-surface-border bg-graytech-50 p-4 text-sm text-ink-900">
+                  <label className="flex items-start gap-3">
+                    <input
+                      id="onboarding-same_commercial_work_confirmed"
+                      type="checkbox"
+                      name="same_commercial_work_confirmed"
+                      value="1"
+                      aria-describedby={
+                        actionState.fieldErrors?.same_commercial_work_confirmed
+                          ? "onboarding-same_commercial_work_confirmed-error"
+                          : undefined
+                      }
+                      className="mt-1 h-4 w-4"
+                    />
+                    <span>
+                      Se eu alterar o modo ou as ofertas deste escopo, confirmo que continua sendo o mesmo trabalho comercial. Caso contrário, criarei uma nova landing page.
+                    </span>
+                  </label>
+                  {actionState.fieldErrors?.same_commercial_work_confirmed ? (
+                    <p
+                      id="onboarding-same_commercial_work_confirmed-error"
+                      className="mt-2 text-sm text-red-700"
+                    >
+                      {actionState.fieldErrors.same_commercial_work_confirmed}
+                    </p>
+                  ) : null}
+                </div>
               ) : null}
             </fieldset>
             {actionState.status === "success" && actionState.intent === "save" ? (

@@ -209,7 +209,7 @@ const cases: readonly Readonly<{ name: string; run: () => void }>[] = [
     },
   },
   {
-    name: "correctable offering-scope errors preserve the submitted state and focus the editable textarea",
+    name: "offering errors preserve state and focus invalid values separately from missing confirmation",
     run: () => {
       const submittedValues = {
         funnel_stage: { scope: "landing_page" as const, value: "bofu" },
@@ -267,6 +267,10 @@ const cases: readonly Readonly<{ name: string; run: () => void }>[] = [
         onboardingFieldErrorFocusTargetId("landing_page_offering_scope"),
         "onboarding-landing_page_offering_scope-offerings",
       );
+      assert.equal(
+        onboardingFieldErrorFocusTargetId("same_commercial_work_confirmed"),
+        "onboarding-same_commercial_work_confirmed",
+      );
 
       const correctedScope = parseLandingPageOfferingScope({
         mode: "single",
@@ -297,6 +301,20 @@ const cases: readonly Readonly<{ name: string; run: () => void }>[] = [
         workspaceAction,
         /submittedValues: values,[\s\S]+submittedRevision: expectedLandingPageRevision,[\s\S]+submittedSharedRevision: expectedSharedRevision/,
       );
+      assert.match(
+        workspaceAction,
+        /offer_change_confirmation_required[\s\S]+fieldErrors: \{[\s\S]+same_commercial_work_confirmed:/,
+      );
+      assert.match(
+        workspaceAction,
+        /invalid_values[\s\S]+fieldErrors: \{ \[result\.fieldKey\]: "Revise este valor antes de continuar\." \}/,
+      );
+      assert.match(component, /id="onboarding-same_commercial_work_confirmed"/);
+      assert.match(
+        component,
+        /aria-describedby=\{[\s\S]+onboarding-same_commercial_work_confirmed-error/,
+      );
+      assert.match(component, /id="onboarding-same_commercial_work_confirmed-error"/);
     },
   },
   {

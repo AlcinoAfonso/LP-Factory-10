@@ -78,7 +78,7 @@ export async function saveLandingPageConfigurationAction(
       return {
         status: "error",
         fieldErrors: {
-          landing_page_offering_scope:
+          same_commercial_work_confirmed:
             "Confirme abaixo se o escopo de ofertas ainda pertence ao mesmo trabalho comercial.",
         },
         submittedValues: values,
