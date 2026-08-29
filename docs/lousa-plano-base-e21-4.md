@@ -1,6 +1,6 @@
 28/08/2026 — Plano-base v2 — E21.4 — Visibilidade financeira mínima de custos OpenAI
 
-Status: plano-base v2 corrigido pela decisão humana posterior de 28/08/2026; a implementação existente ainda não foi confrontada com este delta e nenhuma fase deve ser considerada definitivamente aprovada quanto a ele antes da revisão do Estrategista.
+Status: plano-base v2 corrigido pelas decisões humanas posteriores de 28 e 29/08/2026; a implementação foi reconciliada com o contrato fail-open e aprovada pelo Analista para retomar somente o QA hospedado e a prova oficial. O Preview do HEAD aprovado está implantado; autenticação `platform_admin`, estado inicial e erro seguro foram verificados. A prova oficial e o QA integral permanecem bloqueados exclusivamente pela ausência de `OPENAI_ADMIN_KEY` no Preview. Production, banco, migration e flags permanecem inalterados.
 
 ## 1. Estado e decisões fixas
 
@@ -44,6 +44,14 @@ Status: plano-base v2 corrigido pela decisão humana posterior de 28/08/2026; a 
 - O MVP não promete leitura instantânea do saldo ou dos créditos restantes da OpenAI.
 - Falta real de crédito ou saldo na OpenAI, indisponibilidade, rate limit e outros erros do provider podem impedir tecnicamente a geração; esses casos seguem o tratamento normal do provider e não são falhas da instrumentação financeira.
 - Erro de crédito esgotado precisa ser reconhecível na superfície administrativa e na observabilidade server-side, sem expor ao cliente detalhes financeiros internos da organização.
+
+### 1.3.1. Fronteira entre LP Factory e OpenAI
+
+- **OpenAI Usage/Billing é a residência canônica da visão global da organização**: gráficos gerais de gasto e usage; tokens e requisições globais; projetos, API keys, usuários e serviços; categorias de gasto e modalidades da API; budgets ou limites configurados na OpenAI; exportação de dados; créditos, faturamento e recargas; rate limits e demais controles próprios da plataforma OpenAI.
+- **LP Factory — Custos OpenAI é a residência da atribuição de negócio** e limita-se ao gasto oficial total necessário à reconciliação; custo prospectivo calculado das LPs; custo por conta; custo por Landing Page; texto versus imagem; Outros gastos / reconciliação; e qualidade e cobertura da atribuição interna.
+- A consulta do gasto oficial total pela Costs API dentro da LP Factory continua obrigatória para permitir a reconciliação na mesma superfície; ela não transforma a LP Factory em residência da visão global de Usage/Billing.
+- A OpenAI conhece o consumo técnico da organização, mas não conhece a relação interna `conta → Landing Page → workload`. Esse vínculo é o valor exclusivo da E21.4.
+- A E21.4 não amplia a Costs API para copiar funcionalidades do Usage Dashboard nem replica painéis ou controles já residentes na OpenAI.
 
 ### 1.4. Evidência prospectiva mínima das LPs
 
@@ -92,6 +100,9 @@ Status: plano-base v2 corrigido pela decisão humana posterior de 28/08/2026; a 
 - A rota e cada Server Action reexecutam `requirePlatformAdmin()` antes de leitura privilegiada.
 - A UI não acessa Supabase ou OpenAI diretamente e recebe somente DTO sanitizado, sem project IDs, API key IDs ou payload bruto.
 - Hierarquia mínima: Gasto oficial total; Custos prospectivos calculados das LPs; Outros gastos / reconciliação; contas → Landing Pages → texto e imagem.
+- A superfície oferece dois atalhos externos simples: **Abrir Usage na OpenAI** e **Abrir faturamento e créditos na OpenAI**.
+- Antes da implementação dos atalhos, confirmar seus destinos oficiais e vigentes. Ambos abrem externamente, preferencialmente em nova aba, e deixam claro que o usuário está saindo da LP Factory; o acesso final depende das permissões do humano na organização OpenAI.
+- Os atalhos não usam iframe, integração adicional, API, rota, banco, tabela ou serviço e não transmitem credencial, período, conta, LP ou qualquer outro dado da LP Factory.
 - Alvos documentais e de navegação obrigatórios: registrar `OPENAI_ADMIN_KEY`, `OPENAI_LP_COST_TRACKING_ENABLED`, endpoint e residência em `docs/platform-config.md`; registrar objetos, RLS, grants, corte e estado de apply em `docs/schema.md`; manter o estado canônico em `docs/roadmap.md` pelos ABCs; incluir a nova superfície no mecanismo existente de navegação administrativa, atualmente `components/admin/adminNavigation.ts`.
 
 ### 1.8. Autoridade de bloqueio e crédito comercial
@@ -170,6 +181,7 @@ Status: plano-base v2 corrigido pela decisão humana posterior de 28/08/2026; a 
   - estados inicial, loading, vazio, erro oficial, cobertura parcial/anômala e sucesso;
   - Preview autenticado com `platform_admin` e papel negativo, desktop e mobile, período padrão/personalizado, atualização sob demanda e hierarquia completa;
   - teclado, foco, nomes/rótulos programáticos, anúncio de estados, contraste e alvos de toque aplicáveis, sem alegar WCAG 2.2 integral;
+  - dois atalhos externos distinguíveis para os destinos oficiais e vigentes de Usage e de faturamento/créditos da OpenAI, preferencialmente em nova aba, sem iframe, integração ou transmissão de dados da LP Factory;
   - sem overflow horizontal e aderente ao design system.
 - Persistência: nenhuma além da E21.4.4.
 - Fallback: falha oficial indisponibiliza a visão; falha interna preserva total e explicita reconciliação/cobertura parcial.
@@ -177,12 +189,12 @@ Status: plano-base v2 corrigido pela decisão humana posterior de 28/08/2026; a 
 
 ### 3.4. Sequência de execução
 
-1. A implementação existente no PR #831 antecede esta decisão humana posterior e ainda não foi confrontada com o contrato corrigido.
-2. Nenhuma fase deve ser considerada definitivamente aprovada quanto a este delta antes da revisão do Estrategista; evidências anteriores permanecem apenas como histórico do estado então avaliado.
-3. A próxima ação é devolver esta v2 corrigida ao Estrategista.
-4. Nesta etapa documental, não iniciar QA, alteração de código, novo gate ou nova consulta a especialistas.
-5. Somente após nova instrução e aprovação da v2, reconciliar implementação e matriz de consolidação com este delta e redefinir os gates restantes.
-6. Não iniciar E21.3.4 nem evolução adiada.
+1. A implementação do PR #831 já foi reconciliada com o contrato fail-open, validada localmente e aprovada pelo Analista para retomar somente o QA hospedado e a prova oficial.
+2. O Preview do HEAD aprovado está implantado; autenticação `platform_admin`, estado inicial e estado de erro seguro foram verificados.
+3. A prova oficial e o QA integral permanecem bloqueados exclusivamente pela ausência de `OPENAI_ADMIN_KEY` no Preview.
+4. Este ajuste documental registra a fronteira entre a atribuição de negócio da LP Factory e a visão global canônica da OpenAI; não autoriza alteração de código, migration, banco, flags, Vercel ou configuração remota.
+5. Após a configuração operacional da chave administrativa em Preview e novo deploy autorizado, retomar a prova oficial e somente os gates hospedados ainda pendentes, sem repetir especialistas ou gates já aprovados.
+6. Production, banco, migration e flags permanecem inalterados. Não iniciar E21.3.4 nem evolução adiada.
 
 ## 4. Escopo negativo e critérios de parada
 
@@ -194,6 +206,8 @@ Status: plano-base v2 corrigido pela decisão humana posterior de 28/08/2026; a 
 - Taxon e `taxon_input_catalog_sufficiency_evaluation`.
 - `supabase_inspect` e qualquer mudança em `automations/`.
 - Generalização para outros workloads, reconstrução histórica e conciliação de saldo/créditos da OpenAI.
+- Reprodução na LP Factory de gráficos globais de tokens ou requisições; análise geral por projeto, API key, usuário ou serviço; todas as modalidades da OpenAI; exportações gerais; budgets; rate limits; compra ou recarga de créditos; saldo oficial restante; configuração de billing; ou qualquer painel global já disponível na OpenAI.
+- Ampliação da Costs API para copiar funcionalidades do Usage Dashboard.
 - Saldo de tokens do cliente, crédito comercial de geração, reserva/consumo/devolução de crédito, bloqueio por saldo comercial e reutilização automática de `max_lps` como crédito; esse recorte pertence futuramente à E9.7.
 - BRL, câmbio, IOF, margem, preço, cobrança, markup ou repasse.
 - AI Gateway, segregação adicional de projetos/API keys, CDC, warehouse, pipeline analítico, cron, job, polling, cache recorrente ou infraestrutura não indispensável.
@@ -236,3 +250,5 @@ Status: plano-base v2 corrigido pela decisão humana posterior de 28/08/2026; a 
 - Erro real do provider continua tratado normalmente; crédito esgotado é reconhecível administrativamente sem exposição financeira interna ao cliente.
 - Nenhum erro exclusivo da E21.4 retorna `configuration_invalid`.
 - A E21.4 não decide entitlement, capacidade ou crédito comercial do cliente e não reutiliza `max_lps` para essa finalidade.
+- OpenAI Usage/Billing permanece como residência canônica da visão global da organização; a LP Factory limita-se à atribuição de negócio e à reconciliação do total oficial com conta, LP e workload.
+- `/admin/custos-openai` oferece atalhos externos simples para Usage e para faturamento/créditos em destinos oficiais vigentes, sem iframe, integração adicional ou transmissão de dados da LP Factory.
