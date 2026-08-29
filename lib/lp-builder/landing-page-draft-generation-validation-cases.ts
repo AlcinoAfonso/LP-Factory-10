@@ -414,6 +414,7 @@ const cases = [
       assert.equal(calls, 1);
       const request = body as unknown as Record<string, unknown>;
       assert.equal(request.model, "gpt-5.6-luna");
+      assert.equal(request.service_tier, "default");
       assert.deepEqual(request.reasoning, { effort: "max" });
       assert.equal(request.store, false);
       assert.deepEqual(request.tools, []);
@@ -440,6 +441,220 @@ const cases = [
       assert.equal(events[0]?.providerRequestId, null);
       assert.equal(events[0]?.providerErrorCode, null);
       assert.equal(events[0]?.providerErrorType, null);
+    },
+  },
+  {
+    name: "cost tracking starts before text transport and terminal failures preserve the provider result",
+    run: async () => {
+      const order: string[] = [];
+      const diagnostics: unknown[] = [];
+      let terminalInput: unknown;
+      const result = await generateLandingPageDraftCandidate(context, {
+        apiKey: "test-key",
+        environment: "production",
+        attemptId: "e2144000-0000-4000-8000-000000000030",
+        requestId: "request-cost-text",
+        costTracking: {
+          accountId: context.identities.accountId,
+          landingPageId: context.identities.landingPage.id,
+          tracker: {
+            async start(startInput) {
+              order.push("start");
+              assert.equal(startInput.workload, "landing_page_draft_generation");
+              assert.equal(startInput.accountId, context.identities.accountId);
+              return {
+                async complete(input) {
+                  order.push("terminal");
+                  terminalInput = input;
+                  throw new Error("terminal-write-failed");
+                },
+              };
+            },
+          },
+        },
+        emitCostTrackingDiagnostic: (event) => diagnostics.push(event),
+        fetchImpl: async () => {
+          order.push("fetch");
+          return new Response(
+            JSON.stringify({
+              id: "resp_cost_text",
+              status: "completed",
+              service_tier: "default",
+              output: [
+                {
+                  type: "message",
+                  content: [
+                    { type: "output_text", text: JSON.stringify(candidate) },
+                  ],
+                },
+              ],
+              usage: { input_tokens: 100, output_tokens: 20 },
+            }),
+            { status: 200, headers: { "Content-Type": "application/json" } },
+          );
+        },
+        emitEvent: () => undefined,
+      });
+      assert.equal(result.ok, true);
+      assert.deepEqual(order, ["start", "fetch", "terminal"]);
+      assert.deepEqual(terminalInput, {
+        result: "success",
+        usage: { input_tokens: 100, output_tokens: 20 },
+        serviceTier: "default",
+      });
+      assert.deepEqual(diagnostics, [{
+        attemptId: "e2144000-0000-4000-8000-000000000030",
+        workload: "landing_page_draft_generation",
+        stage: "terminal",
+        reason: "failed",
+      }]);
+
+      let providerCalls = 0;
+      const startDiagnostics: unknown[] = [];
+      const afterStartFailure = await generateLandingPageDraftCandidate(context, {
+        apiKey: "test-key",
+        environment: "production",
+        attemptId: "e2144000-0000-4000-8000-000000000031",
+        costTracking: {
+          accountId: context.identities.accountId,
+          landingPageId: context.identities.landingPage.id,
+          tracker: {
+            async start() {
+              throw new Error("start-write-failed");
+            },
+          },
+        },
+        fetchImpl: async () => {
+          providerCalls += 1;
+          return textSuccessResponse();
+        },
+        emitCostTrackingDiagnostic: (event) => startDiagnostics.push(event),
+        emitEvent: () => undefined,
+      });
+      assert.equal(afterStartFailure.ok, true);
+      assert.equal(providerCalls, 1);
+      assert.deepEqual(startDiagnostics, [{
+        attemptId: "e2144000-0000-4000-8000-000000000031",
+        workload: "landing_page_draft_generation",
+        stage: "start",
+        reason: "failed",
+      }]);
+
+      const timeoutDiagnostics: unknown[] = [];
+      const lateStartOrder: string[] = [];
+      let lateTerminalInput: unknown;
+      let resolveLateTerminal: (() => void) | undefined;
+      const lateTerminalCompleted = new Promise<void>((resolve) => {
+        resolveLateTerminal = resolve;
+      });
+      const lateSession = {
+        async complete(input: unknown) {
+          lateStartOrder.push("terminal");
+          lateTerminalInput = input;
+          resolveLateTerminal?.();
+        },
+      };
+      let releaseLateStart: (() => void) | undefined;
+      const afterStartTimeout = await generateLandingPageDraftCandidate(context, {
+        apiKey: "test-key",
+        environment: "production",
+        attemptId: "e2144000-0000-4000-8000-000000000032",
+        timeoutMs: 5,
+        costTrackingTimeoutMs: 5,
+        costTracking: {
+          accountId: context.identities.accountId,
+          landingPageId: context.identities.landingPage.id,
+          tracker: {
+            async start() {
+              lateStartOrder.push("start");
+              return await new Promise<typeof lateSession>((resolve) => {
+                releaseLateStart = () => resolve(lateSession);
+              });
+            },
+          },
+        },
+        fetchImpl: async () => {
+          providerCalls += 1;
+          lateStartOrder.push("fetch");
+          return textSuccessResponse();
+        },
+        emitCostTrackingDiagnostic: (event) => timeoutDiagnostics.push(event),
+        emitEvent: () => undefined,
+      });
+      assert.equal(afterStartTimeout.ok, true);
+      assert.equal(providerCalls, 2);
+      assert.deepEqual(lateStartOrder, ["start", "fetch"]);
+      releaseLateStart?.();
+      await lateTerminalCompleted;
+      assert.deepEqual(lateStartOrder, ["start", "fetch", "terminal"]);
+      assert.deepEqual(lateTerminalInput, {
+        result: "success",
+        usage: { input_tokens: 100, output_tokens: 20 },
+        serviceTier: "default",
+      });
+      assert.deepEqual(timeoutDiagnostics, [
+        {
+          attemptId: "e2144000-0000-4000-8000-000000000032",
+          workload: "landing_page_draft_generation",
+          stage: "start",
+          reason: "timeout",
+        },
+        {
+          attemptId: "e2144000-0000-4000-8000-000000000032",
+          workload: "landing_page_draft_generation",
+          stage: "terminal",
+          reason: "timeout",
+        },
+      ]);
+
+      let unsupportedStarts = 0;
+      const unsupportedTerminals: unknown[] = [];
+      const unsupported = await generateLandingPageDraftCandidate(context, {
+        apiKey: "test-key",
+        environment: "preview",
+        attemptId: "e2144000-0000-4000-8000-000000000033",
+        workloadResolver: {
+          operationalConfigurationEnabled: "true",
+          readOperationalConfiguration: async (input) => ({
+            ok: true,
+            value: {
+              environment: input.environment,
+              workload: "landing_page_draft_generation",
+              apiKind: "responses_text",
+              model: "gpt-unsupported-price",
+              reasoningEffort: "max",
+              revision: "9",
+            },
+          }),
+        },
+        costTracking: {
+          accountId: context.identities.accountId,
+          landingPageId: context.identities.landingPage.id,
+          tracker: {
+            async start() {
+              unsupportedStarts += 1;
+              return {
+                async complete(input) {
+                  unsupportedTerminals.push(input);
+                },
+              };
+            },
+          },
+        },
+        fetchImpl: async () => {
+          providerCalls += 1;
+          return textSuccessResponse();
+        },
+        emitEvent: () => undefined,
+      });
+      assert.equal(unsupported.ok, true);
+      assert.equal(unsupportedStarts, 1);
+      assert.equal(providerCalls, 3);
+      assert.deepEqual(unsupportedTerminals, [{
+        result: "success",
+        usage: { input_tokens: 100, output_tokens: 20 },
+        serviceTier: "default",
+      }]);
     },
   },
   {
@@ -525,6 +740,47 @@ const cases = [
       );
       assert.equal(invalidMetadata?.providerErrorCode, null);
       assert.equal(invalidMetadata?.providerErrorType, null);
+
+      let terminalProviderFailure: unknown;
+      const creditFailure = await generateLandingPageDraftCandidate(context, {
+        apiKey: "test-key",
+        environment: "production",
+        attemptId: "e2144000-0000-4000-8000-000000000036",
+        costTracking: {
+          accountId: context.identities.accountId,
+          landingPageId: context.identities.landingPage.id,
+          tracker: {
+            async start() {
+              return {
+                async complete(input) {
+                  terminalProviderFailure = input;
+                },
+              };
+            },
+          },
+        },
+        fetchImpl: async () => new Response(JSON.stringify({
+          error: {
+            code: "credit_balance_exhausted",
+            type: "insufficient_quota",
+            message: "must-not-persist",
+          },
+        }), {
+          status: 429,
+          headers: { "Content-Type": "application/json" },
+        }),
+        emitEvent: () => undefined,
+      });
+      assert.deepEqual(creditFailure, { ok: false, kind: "http_error" });
+      assert.deepEqual(terminalProviderFailure, {
+        result: "failure",
+        usage: undefined,
+        serviceTier: undefined,
+        httpStatus: 429,
+        providerErrorCode: "credit_balance_exhausted",
+        providerErrorType: "insufficient_quota",
+      });
+      assert.equal(JSON.stringify(terminalProviderFailure).includes("must-not-persist"), false);
     },
   },
   {
@@ -623,27 +879,226 @@ const cases = [
       assert.equal(events[0]?.providerRequestId, "img_req_1");
       assert.equal("inputTokens" in events[0]!, false);
 
+      const imageTerminalInputs: unknown[] = [];
+      const trackedImage = await generateLandingPageDraftImage(
+        { mediaBrief: "Sala contemporânea acolhedora", semanticFacts: {} },
+        {
+          apiKey: "test-key",
+          environment: "production",
+          attemptId: "e2144000-0000-4000-8000-000000000032",
+          costTracking: {
+            accountId: context.identities.accountId,
+            landingPageId: context.identities.landingPage.id,
+            tracker: {
+              async start(startInput) {
+                assert.equal(
+                  startInput.workload,
+                  "landing_page_draft_image_generation",
+                );
+                return {
+                  async complete(input) {
+                    imageTerminalInputs.push(input);
+                  },
+                };
+              },
+            },
+          },
+          fetchImpl: async () =>
+            new Response(
+              JSON.stringify({
+                data: [{ b64_json: webp }],
+                usage: {
+                  input_tokens_details: { text_tokens: 15 },
+                  output_tokens_details: { image_tokens: 8_192 },
+                },
+              }),
+              { status: 200, headers: { "Content-Type": "application/json" } },
+            ),
+          emitEvent: () => undefined,
+        },
+      );
+      assert.equal(trackedImage.ok, true);
+      assert.deepEqual(imageTerminalInputs, [
+        {
+          result: "success",
+          usage: {
+            input_tokens_details: { text_tokens: 15 },
+            output_tokens_details: { image_tokens: 8_192 },
+          },
+          imageCount: 1,
+        },
+      ]);
+
+      const lateImageOrder: string[] = [];
+      const lateImageTerminals: unknown[] = [];
+      const lateImageDiagnostics: unknown[] = [];
+      let resolveLateImageTerminal: (() => void) | undefined;
+      const lateImageTerminalCompleted = new Promise<void>((resolve) => {
+        resolveLateImageTerminal = resolve;
+      });
+      const lateImageSession = {
+        async complete(input: unknown) {
+          lateImageOrder.push("terminal");
+          lateImageTerminals.push(input);
+          resolveLateImageTerminal?.();
+        },
+      };
+      let releaseLateImageStart: (() => void) | undefined;
+      const lateTrackedImage = await generateLandingPageDraftImage(
+        { mediaBrief: "Sala contemporânea acolhedora", semanticFacts: {} },
+        {
+          apiKey: "test-key",
+          environment: "production",
+          attemptId: "e2144000-0000-4000-8000-000000000033",
+          costTrackingTimeoutMs: 5,
+          costTracking: {
+            accountId: context.identities.accountId,
+            landingPageId: context.identities.landingPage.id,
+            tracker: {
+              async start() {
+                lateImageOrder.push("start");
+                return await new Promise<typeof lateImageSession>((resolve) => {
+                  releaseLateImageStart = () => resolve(lateImageSession);
+                });
+              },
+            },
+          },
+          fetchImpl: async () => {
+            lateImageOrder.push("fetch");
+            return new Response(
+              JSON.stringify({
+                data: [{ b64_json: webp }],
+                usage: {
+                  input_tokens_details: { text_tokens: 15 },
+                  output_tokens_details: { image_tokens: 8_192 },
+                },
+              }),
+              { status: 200, headers: { "Content-Type": "application/json" } },
+            );
+          },
+          emitCostTrackingDiagnostic: (event) => lateImageDiagnostics.push(event),
+          emitEvent: () => undefined,
+        },
+      );
+      assert.equal(lateTrackedImage.ok, true);
+      assert.deepEqual(lateImageOrder, ["start", "fetch"]);
+      releaseLateImageStart?.();
+      await lateImageTerminalCompleted;
+      assert.deepEqual(lateImageOrder, ["start", "fetch", "terminal"]);
+      assert.deepEqual(lateImageTerminals, [{
+        result: "success",
+        usage: {
+          input_tokens_details: { text_tokens: 15 },
+          output_tokens_details: { image_tokens: 8_192 },
+        },
+        imageCount: 1,
+      }]);
+      assert.deepEqual(lateImageDiagnostics, [
+        {
+          attemptId: "e2144000-0000-4000-8000-000000000033",
+          workload: "landing_page_draft_image_generation",
+          stage: "start",
+          reason: "timeout",
+        },
+        {
+          attemptId: "e2144000-0000-4000-8000-000000000033",
+          workload: "landing_page_draft_image_generation",
+          stage: "terminal",
+          reason: "timeout",
+        },
+      ]);
+
+      const unpricedImageTerminals: unknown[] = [];
+      const unpricedImage = await generateLandingPageDraftImage(
+        { mediaBrief: "Sala contemporânea acolhedora", semanticFacts: {} },
+        {
+          apiKey: "test-key",
+          environment: "production",
+          attemptId: "e2144000-0000-4000-8000-000000000034",
+          costTracking: {
+            accountId: context.identities.accountId,
+            landingPageId: context.identities.landingPage.id,
+            tracker: {
+              async start() {
+                return {
+                  async complete(input) {
+                    unpricedImageTerminals.push(input);
+                  },
+                };
+              },
+            },
+          },
+          fetchImpl: async () =>
+            new Response(JSON.stringify({ data: [{ b64_json: webp }] }), {
+              status: 200,
+              headers: { "Content-Type": "application/json" },
+            }),
+          emitEvent: () => undefined,
+        },
+      );
+      assert.equal(unpricedImage.ok, true);
+      assert.deepEqual(unpricedImageTerminals, [{
+        result: "success",
+        usage: undefined,
+        imageCount: 1,
+      }]);
+
       const failureEvents: OpenAiImageWorkloadEvent[] = [];
+      const providerFailureTerminals: unknown[] = [];
       const failure = await generateLandingPageDraftImage(
         { mediaBrief: "Sala contemporânea acolhedora", semanticFacts: {} },
         {
           apiKey: "test-key",
-          environment: "development",
-          attemptId: "attempt-image-failure",
+          environment: "production",
+          attemptId: "e2144000-0000-4000-8000-000000000035",
           requestId: "request-image-failure",
+          costTracking: {
+            accountId: context.identities.accountId,
+            landingPageId: context.identities.landingPage.id,
+            tracker: {
+              async start() {
+                return {
+                  async complete(input) {
+                    providerFailureTerminals.push(input);
+                  },
+                };
+              },
+            },
+          },
           fetchImpl: async () =>
-            new Response("{}", {
-              status: 500,
-              headers: { "x-request-id": "provider-image-failure" },
+            new Response(JSON.stringify({
+              error: {
+                code: "credit_balance_exhausted",
+                type: "insufficient_quota",
+                message: "must-not-persist-or-render",
+              },
+            }), {
+              status: 429,
+              headers: {
+                "Content-Type": "application/json",
+                "x-request-id": "provider-image-failure",
+              },
             }),
           emitEvent: (event) => failureEvents.push(event),
         },
       );
       assert.equal(failure.ok, false);
       assert.equal(failureEvents[0]?.visualBriefVersion, "e19.4-visual-brief-v1");
-      assert.equal(failureEvents[0]?.attemptId, "attempt-image-failure");
+      assert.equal(failureEvents[0]?.attemptId, "e2144000-0000-4000-8000-000000000035");
       assert.equal(failureEvents[0]?.requestId, "request-image-failure");
       assert.equal(failureEvents[0]?.providerRequestId, "provider-image-failure");
+      assert.equal(failureEvents[0]?.httpStatus, 429);
+      assert.equal(failureEvents[0]?.providerErrorCode, "credit_balance_exhausted");
+      assert.equal(failureEvents[0]?.providerErrorType, "insufficient_quota");
+      assert.equal(JSON.stringify(failureEvents).includes("must-not-persist-or-render"), false);
+      assert.deepEqual(providerFailureTerminals, [{
+        result: "failure",
+        usage: undefined,
+        imageCount: undefined,
+        httpStatus: 429,
+        providerErrorCode: "credit_balance_exhausted",
+        providerErrorType: "insufficient_quota",
+      }]);
     },
   },
   {
@@ -1489,6 +1944,22 @@ function mutableSnapshot(value: unknown) {
       image: { configuration: Record<string, unknown> };
     };
   };
+}
+
+function textSuccessResponse() {
+  return new Response(
+    JSON.stringify({
+      id: "resp_cost_best_effort",
+      status: "completed",
+      service_tier: "default",
+      output: [{
+        type: "message",
+        content: [{ type: "output_text", text: JSON.stringify(candidate) }],
+      }],
+      usage: { input_tokens: 100, output_tokens: 20 },
+    }),
+    { status: 200, headers: { "Content-Type": "application/json" } },
+  );
 }
 
 const abortingFetch: typeof fetch = (_input, init) =>

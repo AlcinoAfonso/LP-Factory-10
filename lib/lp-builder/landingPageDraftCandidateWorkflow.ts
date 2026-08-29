@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 
 import type { LandingPagePresentationCandidate } from "../conversion-content/landing-page/presentation";
 import type { LandingPageGenerationContextPackage } from "./generationContextContracts";
+import type { OpenAiLpCostTracker } from "../openai-costs";
 import {
   generateLandingPageDraftCandidate,
   type LandingPageDraftTextResult,
@@ -43,6 +44,7 @@ type Dependencies = Readonly<{
   now?: () => number;
   deadlineAtMs?: number;
   signal?: AbortSignal;
+  costTracker?: OpenAiLpCostTracker;
 }>;
 
 export async function prepareLandingPageDraftRevisionCandidate(
@@ -78,6 +80,13 @@ export async function prepareLandingPageDraftRevisionCandidate(
       requestId,
       timeoutMs: remainingMs(deadlineAtMs, now),
       signal,
+      costTracking: dependencies.costTracker
+        ? {
+            tracker: dependencies.costTracker,
+            accountId: input.context.identities.accountId,
+            landingPageId: input.context.identities.landingPage.id,
+          }
+        : undefined,
     },
   );
   if (!text.ok) return failure(attemptId, requestId, "text", text.kind);
@@ -106,6 +115,13 @@ export async function prepareLandingPageDraftRevisionCandidate(
       requestId,
       timeoutMs: remainingMs(deadlineAtMs, now),
       signal,
+      costTracking: dependencies.costTracker
+        ? {
+            tracker: dependencies.costTracker,
+            accountId: input.context.identities.accountId,
+            landingPageId: input.context.identities.landingPage.id,
+          }
+        : undefined,
     },
   );
   if (!image.ok) return failure(attemptId, requestId, "image", image.kind);

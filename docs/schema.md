@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data da última atualização: 28/08/2026
-• Documento: LP Factory 10 — Schema (DB Contract) v1.0.59
+• Documento: LP Factory 10 — Schema (DB Contract) v1.0.60
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -1049,6 +1049,37 @@
 • Migration forward-only: `supabase/migrations/20260824180000_e20_2_8_input_catalog_lifecycle.sql`; teste transacional: `supabase/tests/e20_2_8_input_catalog_lifecycle.test.sql`; verificador read-only: `supabase/snippets/e20_2_8_input_catalog_lifecycle_verify.sql`.
 • A migration não cria linha e não migra v1–v5. O apply hospedado foi concluído em 25/08/2026; o verificador read-only aprovou 4/4 checks, o teste SQL transacional foi aprovado sem resíduos e o Security Controls apresentou somente o INFO esperado de RLS sem policy, compatível com acesso exclusivo por service_role.
 
+1.36 openai_lp_cost_events
+1.36.1 Função e identidade
+• Residência financeira prospectiva append-only, limitada a `landing_page_draft_generation` e `landing_page_draft_image_generation` em Production.
+• Cada tentativa usa `attempt_id`, `account_id`, `landing_page_id`, workload e `event_kind = started | terminal`; `(attempt_id, workload, event_kind)` é único e torna retries idempotentes.
+• A FK composta `(landing_page_id, account_id)` referencia `account_landing_pages(id, account_id)` com ON UPDATE/DELETE RESTRICT e impede atribuição cruzada entre tenants.
+• Eventos started preservam configuração e versão de preço sem result, usage, custo ou diagnóstico do provider; eventos terminal preservam `success | failure` e podem ter custo nulo quando as unidades do provider não forem suficientes ou o preço não for suportado.
+
+1.36.2 Configuração, usage e custo
+• Texto exige reasoning_effort tipado e não aceita quality/size; imagem exige quality e size `1536x1024` e não aceita reasoning_effort.
+• `usage_json` e `pricing_json` aceitam somente objetos quando presentes; `cost_usd numeric(30,12)` é USD não negativo e só pode existir junto dos dois objetos.
+• Terminais podem preservar `http_status integer` entre 100 e 599, `provider_error_code text` e `provider_error_type text` sanitizados com até 128 caracteres; esses metadados só podem existir em resultado `failure`.
+• Prompt, resposta integral, payload de negócio, PII e secrets não integram a tabela.
+• O índice parcial `openai_lp_cost_events_period_idx` cobre created_at, conta, LP e workload somente nos terminais.
+
+1.36.3 Segurança, imutabilidade e estado de apply
+• RLS habilitado e zero policies; public, anon, authenticated e ai_readonly sem grants.
+• service_role possui somente SELECT e INSERT, sem UPDATE, DELETE ou TRUNCATE.
+• O trigger `openai_lp_cost_events_prevent_mutation` rejeita UPDATE e DELETE mesmo sob privilégio superior.
+• Migration repo-only: `supabase/migrations/20260828131456_e21_4_4_openai_lp_cost_tracking.sql`; apply hospedado permanece reservado ao pós-merge canônico.
+• Teste transacional: `supabase/tests/e21_4_4_openai_lp_cost_tracking.test.sql`; verificador read-only: `supabase/snippets/e21_4_4_openai_lp_cost_tracking_verify.sql`.
+
+1.37 openai_lp_cost_coverage
+1.37.1 Função e invariantes
+• Singleton imutável da data de corte em Production; a PK booleana aceita somente true e permite no máximo uma linha.
+• `activated_at` não pode estar no futuro nem depois de created_at. A ausência da linha significa que a cobertura prospectiva ainda não foi ativada.
+
+1.37.2 Segurança e imutabilidade
+• RLS habilitado e zero policies; ACLs idênticas às de `openai_lp_cost_events`.
+• O trigger `openai_lp_cost_coverage_prevent_mutation` rejeita UPDATE e DELETE.
+• O registro ocorre uma única vez, depois do smoke pós-apply em Production, pela RPC `register_openai_lp_cost_coverage_v1`.
+
 2. Views
 
 2.1 v_access_context_v2
@@ -1301,6 +1332,18 @@
 • Verificador read-only: `supabase/snippets/postgrest_safe_application_conflicts_verify.sql`.
 • Estado hospedado: a migration `supabase/migrations/20260827203000_postgrest_safe_application_conflicts.sql` está aplicada; o comportamento corrigido foi validado no ambiente hospedado, sem retry autônomo em conflito de domínio.
 
+3.10 Evidência prospectiva de custos OpenAI das Landing Pages
+3.10.1 RPCs versionadas
+• `append_openai_lp_cost_start_v1(uuid, uuid, uuid, text, text, text, text, text, text, text, text) → uuid`: anexa ou retorna idempotentemente o início tenant-safe da tentativa; conflito de identidade na mesma chave falha fechado.
+• `append_openai_lp_cost_terminal_v1(uuid, text, text, jsonb, jsonb, numeric, integer, text, text) → uuid`: exige início prévio, herda identidade/configuração e anexa ou retorna idempotentemente o terminal; os três últimos argumentos são status HTTP, código e tipo sanitizados do erro real do provider; retry divergente falha fechado.
+• `register_openai_lp_cost_coverage_v1(timestamptz) → timestamptz`: cria uma única data de corte Production; retry idêntico é idempotente e qualquer tentativa de alteração falha fechado.
+• `read_openai_lp_cost_events_v1(timestamptz, timestamptz) → setof record`: lê de forma ordenada os inícios do período, correlaciona no máximo um terminal e projeta somente identidade de conta/LP, workload, instantes, resultado, custo textual exato e status/código/tipo sanitizados do provider para paginação server-side.
+
+3.10.2 Segurança e execução
+• As quatro RPCs usam SECURITY INVOKER e search_path fixado em pg_catalog, com referências schema-qualified.
+• EXECUTE é exclusivo de service_role; public, anon, authenticated e ai_readonly não executam as RPCs.
+• `prevent_openai_lp_cost_mutation_v1() → trigger` não possui EXECUTE externo e rejeita UPDATE/DELETE nas duas residências.
+
 4. Triggers
 
 4.1 Trigger Hub (governança)
@@ -1324,6 +1367,8 @@
 • account_niche_resolutions_set_updated_at: trigger de atualização de updated_at em account_niche_resolutions
 • openai_workload_configuration_revisions_append_only: rejeita UPDATE e DELETE de revisões validadas.
 • openai_workload_configuration_activations_append_only: rejeita UPDATE e DELETE de eventos de ativação/rollback.
+• openai_lp_cost_events_prevent_mutation: rejeita UPDATE e DELETE dos eventos financeiros prospectivos.
+• openai_lp_cost_coverage_prevent_mutation: rejeita UPDATE e DELETE da data de corte.
 
 5. Tipos canônicos
 • Fonte única: PATH: lib/types/status.ts
@@ -1341,6 +1386,14 @@
 • Rollback: não remove automaticamente a extensão, pois pode ser reutilizada por outros recursos
 
 99. Changelog
+v1.0.60 (28/08/2026) — E21.4.5 read model administrativo de custos
+• Adicionada à mesma migration ainda não aplicada a RPC read-only paginável `read_openai_lp_cost_events_v1`, com período validado, correlação determinística e projeção sanitizada para a visão conta → LP → texto/imagem.
+• EXECUTE permanece exclusivo de `service_role`; teste transacional e snippet read-only cobrem o novo contrato e suas ACLs.
+
+v1.0.59 (28/08/2026) — E21.4.4 evidência prospectiva de custos OpenAI das Landing Pages
+• Registradas as tabelas repo-only `openai_lp_cost_events` e `openai_lp_cost_coverage`, com correlação tenant-safe, append-only, data de corte única, RLS sem policies e ACL service_role SELECT/INSERT.
+• Registradas inicialmente as três RPCs de escrita/corte SECURITY INVOKER, triggers de imutabilidade, migration, teste transacional e verificador read-only; apply hospedado permanece pós-merge.
+
 v1.0.58 (27/08/2026) — Conflitos de domínio seguros para PostgREST
 • Versionado `raise_postgrest_safe_conflict_v1(text)` para transportar conflitos conhecidos como `PGRST`/HTTP 409 pela Data API, preservando `code = 40001` no corpo.
 • Corrigidas as onze RPCs/functions ativas que usavam 40001 como erro de domínio; chamadas SQL diretas preservam 40001 para testes transacionais.

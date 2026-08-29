@@ -325,15 +325,26 @@ const cases = [
       assert.equal(success.requestId, "req_image_123");
       assert.equal(success.imageCount, 1);
       assert.equal(success.visualBriefVersion, "e19.4-visual-brief-v1");
+      assert.equal(success.httpStatus, null);
+      assert.equal(success.providerErrorCode, null);
+      assert.equal(success.providerErrorType, null);
       assert.equal("inputTokens" in success, false);
       assert.equal("reasoningEffort" in success, false);
 
       const failure = createOpenAiImageWorkloadFailureEvent(
-        { workload: resolved.value },
+        {
+          workload: resolved.value,
+          httpStatus: 429,
+          providerErrorCode: " credit_balance_exhausted ",
+          providerErrorType: "insufficient_quota",
+        },
         "timeout",
       );
       assert.equal(failure.result, "failure");
       assert.equal(failure.failureCategory, "timeout");
+      assert.equal(failure.httpStatus, 429);
+      assert.equal(failure.providerErrorCode, "credit_balance_exhausted");
+      assert.equal(failure.providerErrorType, "insufficient_quota");
       assert.equal(Object.isFrozen(failure), true);
     },
   },
