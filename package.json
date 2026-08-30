@@ -19,7 +19,7 @@
     "validate:openai-costs-dashboard": "tsx \"app/admin/(protected)/custos-openai/validation-cases.tsx\"",
     "validate:landing-page-root": "tsx lib/conversion-content/landing-page/root-validation-cases.ts",
     "validate:landing-page-input-catalog": "tsx lib/conversion-content/landing-page/input-catalog/validation-cases.ts",
-    "validate:admin-landing-page-structure": "tsx app/admin/(protected)/estrutura-lp/validation-cases.ts",
+    "validate:admin-landing-page-structure": "tsx \"app/admin/(protected)/estrutura-lp/validation-cases.ts\"",
     "validate:taxon-preparation": "tsx lib/conversion-content/landing-page/taxon-preparation/validation-cases.ts",
     "validate:landing-page-knowledge-resolution": "tsx lib/conversion-content/landing-page/knowledge-resolution/validation-cases.ts",
     "validate:landing-page-dynamic-research": "tsx lib/conversion-content/landing-page/knowledge-resolution/dynamic-research-validation-cases.ts",
