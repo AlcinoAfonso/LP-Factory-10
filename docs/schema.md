@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data da última atualização: 29/08/2026
-• Documento: LP Factory 10 — Schema (DB Contract) v1.0.61
+• Data da última atualização: 30/08/2026
+• Documento: LP Factory 10 — Schema (DB Contract) v1.0.63
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -856,7 +856,7 @@
 • A PK composta `(environment, workload)` é o lock canônico das RPCs e impede mais de uma unidade para a mesma combinação.
 • A migration forward-only `supabase/migrations/20260820190422_e21_2_3_openai_workload_operational_configurations.sql` está aplicada no ambiente hospedado; o snippet read-only aprovou 10/10 verificações e o Security Controls não apresentou alerta incompatível com o agregado ou suas RPCs.
 • A migration incremental forward-only `supabase/migrations/20260820213900_e21_2_taxon_input_catalog_sufficiency_workload.sql` também está aplicada no ambiente hospedado e estende o mesmo agregado com `taxon_input_catalog_sufficiency_evaluation`, sem nova entidade ou tabela de negócio; os testes SQL, snippets read-only e invariantes pós-apply foram aprovados, e o Security Controls reportou para as três tabelas apenas o INFO esperado de RLS sem policy, compatível com a residência service-only sem grants públicos.
-• A migration candidata forward-only `supabase/migrations/20260829171107_e20_7_4_dynamic_market_research_workload.sql` acrescenta `landing_page_dynamic_market_research` às três allowlists e às validações das RPCs existentes, sem tabela, coluna, policy ou grant público novo. Para esse workload, `save` e `promote` autorizam exclusivamente `gpt-5.6-luna + high`; `low`, `max` e a matriz comparativa anterior ficam fora. O apply hospedado permanece pendente do merge humano.
+• A migration forward-only `supabase/migrations/20260829171107_e20_7_4_dynamic_market_research_workload.sql` está aplicada automaticamente no ambiente hospedado após o merge do PR #835 e acrescenta `landing_page_dynamic_market_research` às três allowlists e às validações das RPCs existentes, sem tabela, coluna, policy ou grant público novo. Para esse workload, `save` e `promote` autorizam exclusivamente `gpt-5.6-luna + high`; `low`, `max` e a matriz comparativa anterior ficam fora.
 
 1.28.2 Colunas
 • environment text not null
@@ -885,7 +885,7 @@
 1.28.4 Índices, bootstrap e segurança
 • `openai_workload_operational_configurations_active_revision_idx`: btree em active_revision_id + unidade.
 • `openai_workload_operational_configurations_pending_revision_idx`: btree parcial em pending_revision_id + unidade quando não nulo.
-• O estado hospedado confirmado mantém dez unidades Production/Preview × cinco workloads. Após o apply da migration E20.7.4, o bootstrap idempotente acrescenta as duas unidades de `landing_page_dynamic_market_research`, totalizando doze, sem candidata ou revisão pendente e com active_revision_id na revisão 1 correspondente.
+• O estado hospedado confirmado mantém doze unidades Production/Preview × seis workloads. As duas unidades de `landing_page_dynamic_market_research` estão presentes pelo bootstrap idempotente da migration E20.7.4, sem candidata ou revisão pendente e com active_revision_id na revisão 1 correspondente.
 • A revisão bootstrap `1` do novo workload usa `gpt-5.6-luna + high` somente como origem repo_catalog; não comprova nem autoriza transporte hospedado, que exige revisão operacional `2` ou posterior.
 • RLS habilitado e nenhuma policy.
 • public, anon, authenticated e ai_readonly: sem grants.
@@ -1069,13 +1069,14 @@
 • RLS habilitado e zero policies; public, anon, authenticated e ai_readonly sem grants.
 • service_role possui somente SELECT e INSERT, sem UPDATE, DELETE ou TRUNCATE.
 • O trigger `openai_lp_cost_events_prevent_mutation` rejeita UPDATE e DELETE mesmo sob privilégio superior.
-• Migration repo-only: `supabase/migrations/20260828131456_e21_4_4_openai_lp_cost_tracking.sql`; apply hospedado permanece reservado ao pós-merge canônico.
+• Migration aplicada pelo fluxo canônico: `supabase/migrations/20260828131456_e21_4_4_openai_lp_cost_tracking.sql`; snippet read-only e Security Controls aprovados.
 • Teste transacional: `supabase/tests/e21_4_4_openai_lp_cost_tracking.test.sql`; verificador read-only: `supabase/snippets/e21_4_4_openai_lp_cost_tracking_verify.sql`.
 
 1.37 openai_lp_cost_coverage
 1.37.1 Função e invariantes
 • Singleton imutável da data de corte em Production; a PK booleana aceita somente true e permite no máximo uma linha.
 • `activated_at` não pode estar no futuro nem depois de created_at. A ausência da linha significa que a cobertura prospectiva ainda não foi ativada.
+• Estado operacional atual: existe exatamente uma linha singleton em Production, com `environment = 'production'` e `activated_at = '2026-08-29 21:55:36.827207+00'`; o corte é imutável.
 
 1.37.2 Segurança e imutabilidade
 • RLS habilitado e zero policies; ACLs idênticas às de `openai_lp_cost_events`.

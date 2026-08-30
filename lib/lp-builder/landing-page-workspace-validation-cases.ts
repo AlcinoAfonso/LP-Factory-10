@@ -270,6 +270,10 @@ const cases: readonly Readonly<{ name: string; run: () => void }>[] = [
       assert.match(snippet, /prosecdef/);
       assert.match(snippet, /pg_get_userbyid/);
       assert.match(sqlTest, /failed atomic save must roll back the shared update/);
+      assert.match(
+        sqlTest,
+        /same values must remain a no-op without revision increment/,
+      );
       assert.match(sqlTest, /stale materialization baseline must fail/);
       assert.match(sqlTest, /append with stale configuration provenance must fail/);
       assert.match(sqlTest, /approval must be idempotent/);

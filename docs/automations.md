@@ -1,6 +1,6 @@
 0.1 Cabeçalho
-Data: 29/08/2026
-Versão: v1.19
+Data: 30/08/2026
+Versão: v1.20
 Status: Alinhado ao Platform Config
 
 0.2 Função do documento
@@ -446,7 +446,7 @@ Objetivo:
 Complementar somente a resolução `dynamic_required` da E20.7.3 com evidência pública recente e rastreável, sem recusar a oferta nem substituir a autoridade factual E20.2.
 
 Status:
-Implementada e validada deterministicamente no repositório; apply, prova hospedada, promoção e ativação permanecem pendentes dos gates operacionais.
+Concluída no boundary da E20.7, implementada e validada deterministicamente no repositório, com apply automático da migration E20.7.4 concluído após o merge do PR #835. O transporte hospedado permanece não autorizado; prova hospedada, promoção e ativação do workload pertencem ao futuro recorte E19.3 consumidor e não constituem pendência da E20.7.
 
 Recurso utilizado:
 - Responses API com Structured Output estrito;
@@ -472,7 +472,7 @@ Como funciona:
 Limites:
 - Não usa agente, Agents SDK, retry, fallback, background, conversation, job, fila, RAG, cache global ou persistência de pesquisa.
 - Não altera a E20.2, não gera copy, layout, wireframe ou CTA e não integra a geração E19.
-- A reconciliação para `reviewed_input_catalog_version=6` e uma revisão operacional comprovada `2` ou posterior bloqueiam prova hospedada e ativação, mas não implementação repo-side nem testes determinísticos.
+- O piloto `corretor-imoveis` já está reconciliado em `reviewed_input_catalog_version=6`. O bootstrap revisão `1` não autoriza transporte hospedado; o futuro recorte E19.3 consumidor deverá comprovar, promover e ativar revisão `supabase_operational` `2` ou posterior pelo lifecycle E21.2, conforme `docs/platform-config.md`.
 
 Aplicação funcional no roadmap:
 - `docs/roadmap.md` — E20.7.4.

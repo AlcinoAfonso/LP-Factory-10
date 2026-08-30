@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Documento: LP Factory 10 — Platform Config
-• Versão: v0.1.31
+• Versão: v0.1.33
 • Data: 29/08/2026
 
 0.2 Contrato do documento
@@ -188,7 +188,7 @@
 • Finalidade: chave administrativa server-side usada exclusivamente pelo Core para leitura read-only do gasto oficial total na Costs API da organização.
 • Permissão: `Read only` na OpenAI Platform.
 • Escopo: Preview e Production do projeto Core na Vercel, como secret server-side.
-• Estado operacional: Organization Admin Key criada; Preview redeployado e validado com leitura oficial real da Costs API de `US$ 0,4064` para agosto de 2026. Production possui a variável configurada, mas não foi redeployada nem validada em runtime.
+• Estado operacional: Organization Admin Key criada; Preview e Production redeployados e validados em runtime com leitura oficial real da Costs API de `US$ 0,4064` para agosto de 2026.
 • Separação: `OPENAI_API_KEY` permanece configurada separadamente e não foi substituída, reutilizada ou alterada; `OPENAI_ADMIN_KEY` não atravessa client, log, banco ou payload sanitizado.
 • Valor real: não versionado nem registrado.
 
@@ -196,8 +196,8 @@
 • Finalidade: gate server-side da persistência financeira prospectiva das tentativas de texto e imagem de Landing Pages.
 • Escopo: somente Production; Preview e Development permanecem sem instrumentação financeira.
 • Habilitação: somente o literal `true` ativa o tracker; variável ausente, vazia ou com qualquer outro valor preserva integralmente o runtime anterior.
-• Estado inicial e atual no PR: desligado; não configurar antes do merge, apply canônico, snippet read-only e Security Controls aprovados.
-• Progressão pós-merge: habilitar somente após os gates de banco, redeployar Production, executar smoke dos dois workloads e registrar uma única data de corte pela RPC versionada.
+• Estado operacional final: configurado com `true` somente em Production após apply canônico, snippet read-only e Security Controls aprovados; Preview e Development permanecem sem instrumentação financeira.
+• Progressão pós-merge concluída: Production foi redeployada, o smoke real dos workloads de texto e imagem foi aprovado e a data de corte única foi registrada pela RPC versionada.
 • Regra de falha: com o gate ligado, falha ou timeout no registro inicial ou terminal degrada a cobertura financeira, mas não bloqueia a chamada OpenAI nem invalida uma geração de Landing Page bem-sucedida; a tentativa sem evidência completa fica fora da soma interna e permanece em Outros gastos / reconciliação.
 • Valor real: não versionar.
 
@@ -226,9 +226,9 @@
 • Workloads textuais validados operacionalmente: `niche_resolution` e `commercial_activation_draft_generation`, com modelo `gpt-5.4-mini` e esforço de raciocínio `none`.
 • Workload textual validado no ambiente alvo: `landing_page_draft_generation`, com modelo `gpt-5.6-luna`, esforço `max`, Responses API, Structured Output estrito, `store:false` e timeout de 120 s.
 • Workload de imagem validado no ambiente alvo: `landing_page_draft_image_generation`, com modelo `gpt-image-2`, saída WebP 1536 × 1024, qualidade `medium`, compressão 80, moderação `auto` e timeout de 120 s.
-• Workload repo-side pendente de rollout: `landing_page_dynamic_market_research`, com configuração inicial autorizada em Development `gpt-5.6-luna + high`, uma requisição foreground à Responses API, somente Web Search hospedado, Structured Output estrito, `store:false`, uma ou duas chamadas de busca e deadline máximo de 45 s. O lifecycle desse workload aceita para `save` e `promote` somente essa combinação; `low`, `max` e a matriz comparativa anterior permanecem fora.
-• Estado hospedado da E20.7.4: o novo workload ainda não está aplicado, provado, promovido ou ativado em Preview/Production. A migration amplia o agregado de 10 para 12 unidades somente após merge humano e apply automático; o bootstrap revisão `1` não autoriza transporte hospedado.
-• Gates da E20.7.4: antes de prova hospedada ou ativação, reconciliar o taxon alvo para `reviewed_input_catalog_version=6` e comprovar/promover/ativar uma revisão `supabase_operational` `2` ou posterior por ambiente. Esses gates não bloqueiam planejamento, implementação repo-side nem testes determinísticos.
+• Workload preparado para consumo futuro: `landing_page_dynamic_market_research`, com configuração inicial autorizada em Development `gpt-5.6-luna + high`, uma requisição foreground à Responses API, somente Web Search hospedado, Structured Output estrito, `store:false`, uma ou duas chamadas de busca e deadline máximo de 45 s. O lifecycle desse workload aceita para `save` e `promote` somente essa combinação; `low`, `max` e a matriz comparativa anterior permanecem fora.
+• Estado hospedado da E20.7.4: a migration `20260829171107_e20_7_4_dynamic_market_research_workload` foi aplicada automaticamente após o merge do PR #835; Preview e Production possuem o workload em bootstrap revisão `1`, `gpt-5.6-luna + high`, sem candidata ou revisão pendente e sem transporte hospedado autorizado.
+• Rollout futuro: prova, promoção e ativação de revisão `supabase_operational` `2` ou posterior ficam condicionadas ao futuro recorte de integração E19.3 que consumir a saída tipada da E20.7; não constituem pendência da E20.7 encerrada. O taxon piloto `corretor-imoveis` já está reconciliado em `reviewed_input_catalog_version=6`.
 • Credencial da E20.7.4: reutilizar a `OPENAI_API_KEY` compartilhada já configurada em Production e Preview; não criar, copiar ou registrar nova chave para esse workload.
 • Validação operacional: `niche_resolution` e `commercial_activation_draft_generation` foram executados uma única vez em Production em 10/08/2026; os Runtime Logs confirmaram sucesso e telemetria sanitizada, sem prompt, resposta integral, credencial ou dado pessoal.
 • Validação dos workloads de draft: por decisão humana, o gate de canários isolados sem persistência foi substituído pelo primeiro append integrado; duas execuções integradas hospedadas em 18/08/2026 comprovaram texto, imagem e o caminho oficial sem retry ou fallback.
@@ -518,6 +518,8 @@ Regra:
 • Configurações de plataformas, secrets por nome, workflows, ambientes e endpoints usados por automações devem ser registrados neste documento.
 
 99. Changelog
+v0.1.33 — 29/08/2026 — Atualizado o estado pós-merge da E20.7.4: migration aplicada, bootstrap `gpt-5.6-luna + high` presente em Preview/Production e prova/promoção/ativação diferidas ao futuro recorte E19.3 consumidor, sem pendência operacional aberta na E20.7.
+
 v0.1.30 — 29/08/2026 — Registrados o workload repo-side `landing_page_dynamic_market_research`, o reuso obrigatório da `OPENAI_API_KEY` compartilhada, os limites de Web Search e os gates separados de apply, reconciliação v6, prova e ativação hospedada.
 
 v0.1.29 — 28/08/2026 — Registrados `OPENAI_ADMIN_KEY`, Costs API, `OPENAI_LP_COST_TRACKING_ENABLED` nascendo desligado e o rollout pós-merge da persistência prospectiva dos dois workloads de Landing Page.
