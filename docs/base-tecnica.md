@@ -2,8 +2,8 @@
 
 0.1 Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.79
-• Data: 29/08/2026
+• Versão: v2.0.80
+• Data: 30/08/2026
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -305,7 +305,7 @@
 
 3.15.8 Geração controlada da candidata de `landing_page`
 • A geração server-side consome somente o pacote público autorizado do LP Builder e deve separar contexto semântico enviado ao modelo de valores operacionais usados apenas pelo servidor.
-• A autoridade de apresentação, o prompt, o schema estrito e a validação factual pertencem ao boundary `lib/conversion-content/landing-page/presentation/`; uma candidata inválida nunca segue para persistência.
+• A autoridade de apresentação, as regras de apresentação, o prompt visual, o schema estrito e a validação factual pertencem ao boundary `lib/conversion-content/landing-page/presentation/`; o compositor textual que consome o contexto de geração pertence a `lib/lp-builder/` e reutiliza as regras pela API pública de apresentação, sem dependência reversa de contratos. Uma candidata inválida nunca segue para persistência.
 • Texto e imagem são workloads independentes, com configuração, telemetria e falhas próprias; parâmetros exclusivos do workload textual não podem ser transportados para a API de mídia.
 • O fluxo permanece linear, controlado e não agentic, sem tools, retry ou fallback automático; falha ou recusa de qualquer provider encerra a tentativa sem materialização parcial.
 • O caso de uso deve aplicar deadline total próprio, propagar o tempo restante e cancelamento aos providers e impedir que mídia ou persistência posteriores comecem depois da expiração; o teto da Function não substitui esse orçamento.

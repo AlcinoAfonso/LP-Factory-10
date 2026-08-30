@@ -1,10 +1,12 @@
 import {
-  LANDING_PAGE_DRAFT_PROMPT_VERSION,
-  buildLandingPageDraftPrompt,
   landingPagePresentationJsonSchema,
   validateLandingPagePresentationCandidate,
   type LandingPagePresentationCandidate,
 } from "../conversion-content/landing-page/presentation";
+import {
+  LANDING_PAGE_DRAFT_PROMPT_VERSION,
+  buildLandingPageDraftPrompt,
+} from "./landingPageDraftPrompt";
 import {
   createOpenAiWorkloadFailureEvent,
   createOpenAiWorkloadSuccessEvent,
