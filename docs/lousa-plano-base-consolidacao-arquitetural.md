@@ -1,0 +1,91 @@
+# Consolidação arquitetural — AA-PR01: baseline e revalidação
+
+## 1. Estado e decisões fixas
+
+- Processo: Estrategista Light. Automação: não. Recorte atual: AA-PR01, exclusivamente documental; decisões e mapa aprovados, debate humano dispensado.
+- Objetivo: fixar a referência factual para AA-PR02–AA-PR13, sem corrigir arquitetura, performance ou comportamento.
+- Fonte decisória: [Auditoria Arquitetural e Consolidação — versão 2](https://docs.google.com/document/d/1UpY8MjOoTHVYX7dEnP4WioEh2wjMXsK2_xOgFX4McBE/edit), seções 5, 9, 10 e 13–16. O relatório completo permanece no Google Docs.
+- Fontes locais: `README.md`, `AGENTS.md`, `docs/prompt-estrategista-light.md`, `docs/prompt-executor.md`, `docs/prompt-abc.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `docs/schema.md`, `docs/platform-config.md` e os artefatos apontados abaixo.
+- Alternativa aprovada: consolidação in loco, incremental. Preservar UI → Providers → Adapters → DB, APIs públicas por owner, autorização, concorrência otimista, append-only, leitores históricos e tracking financeiro fail-open.
+- Uma task por recorte no projeto LP Factory; ajustes permanecem na mesma task. Uma branch e um PR por recorte, sem combinar mudança de ownership com migration de performance. Merge final exclusivamente humano.
+- Branch AA-PR01: `codex-app/aa-pr01-baseline-revalidacao`. Entrega em draft para avaliação no chat “29/08 auditoria arquitetural”. Os próximos PRs não estão autorizados por este documento a iniciar automaticamente.
+
+## 2. Baseline e revalidação de ARC-001–013
+
+### 2.1 Corte e método
+
+- Main remota, `main` local após `git pull --ff-only` e base da branch: `c16c533322e0bfe0e17ba584e85cb4c018ac4483`, confirmadas em 30/08/2026. Nenhum PR aberto na entrada. A base histórica da auditoria permanece `87e1054ee71bbfc6180540c6e98b4b95312e8d43`; não confundir os cortes.
+- Método: inspeção estática focal de funções/imports, scripts, documentos e migrations; consultas Supabase somente `SELECT`, com projeções técnicas ou contagens agregadas. Sem executar funções de negócio, testes SQL mutáveis, DDL, DML ou chamadas de IA.
+- Classificação: **confirmado** = mecanismo permanece; **alterado** = evidência ou delimitação mudou; **resolvido** = causa deixou de existir no recorte verificado; **obsoleto** = premissa deixou de se aplicar. Nenhum desses estados comprova capacidade de carga.
+- Leituras operacionais iniciadas em 30/08/2026 às 14:17 America/Sao_Paulo (17:17 UTC). São uma fotografia, não garantia de imutabilidade do ambiente após a consulta.
+
+### 2.2 Resultados individuais
+
+| Achado | Estado na baseline | Evidência reproduzível e limite | Destino aprovado |
+| --- | --- | --- | --- |
+| ARC-001 | Confirmado | `lib/conversion-content/landing-page/presentation/prompt.ts:1` importa **type** de `lp-builder/generationContextContracts`; E19 também consome E20. Dependência reversa de contrato, sem ciclo de runtime nesse import. | AA-PR03 |
+| ARC-002 | Confirmado | `lib/admin/adapters/adminInputCatalogLifecycleValidation.ts:11,160` importa e chama o resolver privado `resolveAccountLandingPageOnboardingConfiguration` para cada configuração. | AA-PR04 |
+| ARC-003 | Confirmado | `landingPageWorkspaceAdapter.ts:51,520`: página de 25 LPs; cada item lê latest e, se houver ponteiro, approved. Até 50 consultas adicionais de revisão; índice adequado não elimina round-trips. | AA-PR05 |
+| ARC-004 | Confirmado | Mesmo adapter, `validateIdentityMutation():585`: carrega todos os snapshots em páginas de 100 e acumula em memória; decisão usa baselines e latest. Fotografia atual: 7 materializações, não as 6 citadas no corpo histórico do relatório. | AA-PR06 |
+| ARC-005 | Confirmado | `lib/admin/adapters/adminInputCatalogLifecycleAdapter.ts:609,823`: oito relações lidas integralmente, páginas de 500, coleções retidas e fingerprint global. Paginação comprova completude, mas não limita memória total. | AA-PR10 |
+| ARC-006 | Confirmado | `lib/openai-costs/adapters/lpCostReadModelAdapterCore.ts:21`: 500 linhas × 200 páginas e `accumulated.push`. Ao completar as 200 páginas cheias (100.000 linhas), já retorna `pagination_incomplete`, inclusive no limite exato. Risco administrativo, sem benchmark ou incidente atual demonstrado. | AA-PR11 |
+| ARC-007 | Confirmado | Adapter workspace: 915 linhas, seis operações públicas; revalidação chama detail e depois `loadAuthority` novamente (`:298,322`). `readTaxonChain` consulta o vínculo e até três nós sequenciais. | AA-PR07 e AA-PR08 |
+| ARC-008 | Confirmado | `app/a/[account]/page.tsx`: 351 linhas; workspace carregado antes da decisão completa owner/admin. `decideAccountJourney` mitiga branching, sem retirar a orquestração transversal da rota. | AA-PR09 |
+| ARC-009 | Confirmado | `generationContextAdapter.ts`, `onboardingConfiguration.ts`, `landingPageWorkspace.ts` e fingerprint legado Admin mantêm compatibilidade em caminhos atuais. DB: zero E19.2 pré-handoff, uma bound e residências E19.5 presentes para a LP observada. Isso não autoriza retirar readers ou rollback. | AA-PR12 |
+| ARC-010 | Alterado | Drift E20.7 e corte E21.4 descritos na auditoria foram reconciliados pelos documentos atuais. Persistem afirmações superadas da E20.6.5/E21.2.3 no roadmap: revisão 1 versus revisão operacional 2 efetivamente ativa nos dois ambientes. Ver 2.4; não declarar resolução global. | Registro factual AA-PR01; qualquer patch canônico exige ABC separado |
+| ARC-011 | Alterado | `package.json` ainda omite os cinco validators listados em 2.4. Inventário atual: 23 arquivos `validation-cases`, sendo 14 com `readFileSync` e 1 adicional com `readFile`; o relatório contava 22. A lacuna de cobertura permanece. | AA-PR02; conversão de asserts somente nos recortes respectivos |
+| ARC-012 | Confirmado | Footprint histórico permanece evidência de amplificação, não defeito isolado. Registrar arquivos, owners e domínios tocados em cada recorte, separando código, QA e documentação; quantidade de linhas isolada não prova acoplamento. | Métrica transversal, sem PR próprio |
+| ARC-013 | Confirmado | Busca em `app/` e `lib/` encontra somente declarações, exports e testes para os dois entrypoints E20.7. `dynamicMarketResearchOpenAiAdapter.ts:57,319`: timeout máximo 45 s e hosted exige `supabase_operational` revisão 2+. E20.7 continua bootstrap 1; custo E21.4 cobre somente texto/imagem E19. | AA-PR13, risco futuro; nenhum cutover autorizado |
+
+- Paths abreviados do workspace: `lib/lp-builder/adapters/landingPageWorkspaceAdapter.ts` e `lib/lp-builder/adapters/generationContextAdapter.ts`; demais arquivos E19 citados residem em `lib/lp-builder/`. Linhas referem-se à baseline acima.
+- Severidades da versão 2 preservadas: alta em ARC-003/004/005; média nos demais. Nenhuma evidência inspecionada exige antecipar uma correção urgente ou alterar a sequência aprovada.
+
+### 2.3 Confronto Supabase, migrations e contratos
+
+- Projeto autorizado por `docs/platform-config.md`: `dpikmjgiteuafsbaubue` / LP-Factory-10, `ACTIVE_HEALTHY`, PostgreSQL `17.6.1.063`. Preview e Production compartilham o projeto; unidades E21 são segregadas por ambiente.
+- Histórico: 44 versões/nomes no repositório e 44 no Supabase, de `20260611172930` a `20260829211349`; inclui E19.5, conflitos PostgREST, custos E21.4 e E20.7. Correspondência do histórico não equivale a diff integral de schema.
+- Revisões: índice `(account_id, landing_page_id, revision_number DESC)` e unicidades de revisão, attempt e identidade composta presentes, coerentes com `docs/schema.md` 1.27 e migrations de revisões/workspace.
+- Residências: 1 LP, 7 materializações, 1 configuração E19.2 bound, 0 pré-handoff, 1 compartilhada E19.5 e 1 por LP; join tenant-scoped confirma ambas para a LP operacional. Nenhum valor de configuração, snapshot, nome ou identificador pessoal foi extraído.
+- Nove tabelas focais E19/E21: RLS habilitado, zero policies, sem SELECT para anon/authenticated e com SELECT service_role; contagens de triggers coerentes com as residências documentadas. Inspeção focal, não auditoria global de segurança.
+- RPCs `save_account_landing_page_configuration_v1` e `append_account_landing_page_materialization_v2`: definições inspecionadas, SECURITY INVOKER, search_path fixado, EXECUTE service_role e sem EXECUTE anon/authenticated. Save mantém lock da LP e comparação de latest; append v2 aceita catálogo 5/6 e preserva tokens de revisão. Nenhuma RPC foi executada.
+- E21: 12 unidades, sem candidata ou revisão pendente. Pesquisa dinâmica E20.7: revisão 1/bootstrap/repo_catalog, Luna + high em ambos os ambientes. Avaliação de suficiência E20.6.5: revisão 2/operational/openai_api, Terra + low em ambos. Os demais quatro workloads permanecem na revisão 1; o gate adicional de revisão 2 da E20.7 não deve ser generalizado a eles.
+- Custos: 8 eventos, 1 singleton; corte Production `2026-08-29 21:55:36.827207+00`, igual ao schema. Catálogo: zero drafts; taxon piloto ativo confirmado em reviewed version 6.
+- Resultado: não identificada divergência material migrations–Supabase no recorte inspecionado. Há drift documental operacional delimitado em 2.4. Flags/deployments, UX hospedada, benchmark, carga e explorabilidade não foram verificados nem inferidos a partir do banco.
+
+### 2.4 Deltas e validação documental
+
+- ARC-010: `docs/roadmap.md` 20.6.5 e 21.2.3 ainda descrevem revisão bootstrap 1 ou promoção da revisão 2 como futura para suficiência. `docs/platform-config.md` 3.5 descreve a progressão histórica de rollout. A revisão operacional 2 ativa está comprovada no banco; isso, isoladamente, não prova flags, redeploy, QA final ou conclusão da E20.6.5. Registrar o drift sem fechar gates não inspecionados. Canonização, se realizada neste PR, somente por ABC independente por documento e limitada à evidência comprovada; nenhuma limpeza geral de histórico.
+- Cinco scripts fora do check: `validate:account-members`, `validate:e11-checkout`, `validate:e11-commercial-experience`, `validate:admin-landing-page-structure`, `validate:lp-builder-onboarding-journey`. Não alterar `package.json` no AA-PR01.
+- Reprodução do inventário: enumerar `rg --files` filtrando `validation-cases`; contar arquivos com `readFileSync` e arquivos adicionais com `\breadFile\s*\(`. O novo arquivo de mailbox da automação integra o universo de arquivos, mas não adiciona leitor direto de source.
+- Gates de entrega: reconfirmar main e PRs abertos; comparar inventário de migrations; revisar `main..HEAD` e `main...HEAD`; `git diff --check`; diff acumulado exclusivamente documental, sem secrets ou alterações de banco/workflows/runtime.
+- `npm ci` e `npm run check`: não aplicáveis ao diff documental. Build, dev server, testes mutáveis e QA visual: não aplicáveis. A inspeção de scripts não constitui execução de validators.
+- Gestor de Updates: consulta obrigatória sobre o plano candidato no PR draft, pendente neste checkpoint. Incorporar somente patches atuais, autossuficientes e pertinentes ao AA-PR01; não implementar oportunidades futuras.
+
+## 3. Sequência AA-PR02–AA-PR13 e critérios de entrada
+
+- Entrada comum: predecessor avaliado e mergeado pelo humano, base reconfirmada, escopo próprio aprovado e ausência de gatilho de parada. Preservar comportamento público, segurança e leitura histórica. Medir antes de escolher solução de performance; o mapa não prescreve RPC, read model, token, agregação SQL ou framework.
+
+| PR | Recorte / processo do mapa | Critério específico de entrada e validação |
+| --- | --- | --- |
+| AA-PR02 | Cinco validators / Light, Sol Medium | AA-PR01 aceito; integrar apenas as cinco suites e executar check canônico. |
+| AA-PR03 | ARC-001 / Light, Sol Medium | AA-PR02; direção de imports e contratos confirmada; validar DAG e geração sem mudança funcional. |
+| AA-PR04 | ARC-002 / Light, Sol High | AA-PR03; contrato público focal de compatibilidade E19; matriz de configurações equivalente. |
+| AA-PR05 | ARC-003 / Light condicionado, Sol High | AA-PR04; medir queries para 25 LPs; escolher menor solução que estabilize round-trips; necessidade de banco força processo completo. |
+| AA-PR06 | ARC-004 / Estrategista, Sol High | AA-PR05; baseline/latest e concorrência demonstrados; leituras independentes do histórico; migration só se necessária. |
+| AA-PR07 | ARC-007, autoridade / Estrategista, Sol High | AA-PR06; distinguir contexto estável de revalidação concorrente; casos negativos de auth, papéis e gates. |
+| AA-PR08 | ARC-007, decomposição / Light condicionado, Sol High | AA-PR07; responsabilidades e massa de código justificam extrações focais, sem camada global. |
+| AA-PR09 | ARC-008 / Light condicionado, Sol Medium | AA-PR08; avaliar necessidade real de loader; validar papéis, estados e equivalência de UI. |
+| AA-PR10 | ARC-005 / Estrategista, Sol High | AA-PR09; benchmark, memória/cardinalidade e prova integral antes de escolher estratégia ou migration. |
+| AA-PR11 | ARC-006 / Estrategista, Sol High | AA-PR10; benchmark e query plan; memória limitada, cobertura e ausência de teto artificial no período suportado. |
+| AA-PR12 | ARC-009 / Estrategista, Sol High | AA-PR11; inventário read-only, replay v1/v3 e janela de rollback aprovada; retirar somente caminhos comprovadamente inativos. |
+| AA-PR13 | ARC-013 / Estrategista, Sol High | AA-PR12; matching estável, revisão operacional 2+ própria de E20.7 por ambiente, budget/timeout, custo ou exceção explícita e rollout aprovado. |
+
+- ARC-010 não cria PR próprio quando resolvido; o drift aqui delimitado não adiciona etapa ao mapa. ARC-012 não cria PR próprio: arquivos/owners/domínios são medidos transversalmente, sem meta numérica arbitrária.
+
+## 4. Escopo negativo e critérios de parada
+
+- Não alterar código produtivo, runtime, UI, comportamento, `package.json`, migrations, RPCs, tabelas, rotas, jobs, agentes, automações, infraestrutura, configurações externas ou dados. A consulta read-only ao Gestor de Updates não cria agente no produto.
+- Não corrigir N+1, scans, dependências, adapters ou legado; não iniciar AA-PR02–AA-PR13; não duplicar o relatório nem transformar propostas condicionais em arquitetura obrigatória.
+- Parar e devolver ao Estrategista se houver correção urgente prioritária, divergência material migrations–Supabase, necessidade de escrita no banco, perda do caráter exclusivamente documental ou evidência que altere a sequência aprovada.
+- Interromper o Light se o Gestor de Updates exigir banco, infraestrutura, mudança de segurança ou ampliação arquitetural. Fonte crítica ausente ou ambiguidade material também bloqueia conclusão.
+- Não declarar resolvido o drift inteiro por corrigir apenas parte, nem confundir bootstrap com prova de transporte. Não fazer merge; devolver draft, evidências, limitações e decisões pendentes ao chat de origem.
