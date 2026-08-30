@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 30/08/2026
-• Versão: v1.5.197
+• Versão: v1.5.198
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2626,6 +2626,7 @@ Repositório — Ajustados
     * `lib/admin/adapters/adminInputCatalogLifecycleAdapter.ts`
     * `lib/admin/adapters/adminInputCatalogLifecyclePagination.ts`
     * `lib/admin/adapters/adminInputCatalogLifecycleValidation.ts`
+    * `lib/lp-builder/operationalCompatibility.ts`
     * `app/admin/(protected)/estrutura-lp/actions.ts`
     * `app/admin/(protected)/estrutura-lp/_components/AdminInputCatalogLifecycle.tsx`
     * `supabase/migrations/20260824180000_e20_2_8_input_catalog_lifecycle.sql`

@@ -30,6 +30,10 @@ export {
   validateStarterColorPalette,
 } from "./onboardingConfiguration";
 export type { StarterColorPaletteValidationResult } from "./onboardingConfiguration";
+export {
+  isAccountLandingPageOperationalConfigurationCompatible,
+  type AccountLandingPageOperationalCompatibilityInput,
+} from "./operationalCompatibility";
 export * from "./generationContextContracts";
 export { compileLandingPageGenerationContext } from "./generationContext";
 export { compileLandingPageGenerationContextForDraft } from "./adapters/generationContextAdapter";
