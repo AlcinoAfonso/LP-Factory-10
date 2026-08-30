@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.81
+• Versão: v2.0.82
 • Data: 30/08/2026
 
 0.2 Contrato do documento (consulta)
@@ -313,7 +313,7 @@
 • Rotas e ações de geração devem falhar fechado antes dos providers enquanto o probe read-only de prontidão da materialização não comprovar o contrato exigido no ambiente alvo.
 
 3.15.9 Revisões materializadas de `landing_page`
-• Revisões pertencem ao agregado existente de materializações e são append-only; a corrente é derivada pela maior numeração, sem entidade paralela, flag mutável, update ou delete de revisão anterior.
+• Revisões pertencem ao agregado existente de materializações e são append-only; a corrente é derivada pela maior numeração, sem entidade paralela, flag mutável, update ou delete de revisão anterior. Listagens paginadas transportam somente os metadados necessários das revisões corrente e aprovada, com número limitado e estável de consultas por página e volume independente do histórico, preservando LPs sem revisão e o ponteiro explícito de aprovação.
 • Escrita ocorre exclusivamente por operação transacional server-side tenant-safe, sob lock da LP em draft e com attempt idempotente; acesso direto de runtime à tabela permanece read-only.
 • Mídia gerada é armazenada em Storage privado por referência canônica estável; URL assinada é criada somente no consumo autorizado e nunca é persistida como identidade.
 • Uma revisão só pode ser anexada depois de candidata, bindings, mídia, snapshot e revalidação de acesso integralmente válidos. Falha posterior a upload confirmado exige cleanup best-effort do path exato e não autoriza materialização parcial.
