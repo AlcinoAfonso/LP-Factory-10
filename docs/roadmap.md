@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 29/08/2026
-• Versão: v1.5.194
+• Versão: v1.5.195
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2914,27 +2914,27 @@ Repositório — Ajustados
 20.7.1 Objetivo e status
 
 * Objetivo: resolver a fonte de conhecimento de mercado mais específica e segura para o escopo comercial de uma LP, preservando a autoridade factual E20.2, a identidade taxonômica da conta e os boundaries E19.3/E19.4.
-* Status: E20.7.3 e E20.7.4 implementadas repo-side e validadas deterministicamente; apply, prova hospedada e ativação da E20.7.4 permanecem pendentes dos gates operacionais.
+* Status: Concluída em 29/08/2026; E20.7.3 e E20.7.4 implementadas, validadas deterministicamente e integradas à `main` pelo PR #835. A migration E20.7.4 foi aplicada automaticamente e a reconciliação v6 do taxon piloto está confirmada. Prova, promoção e ativação hospedadas de `landing_page_dynamic_market_research` ficam condicionadas ao futuro recorte de integração E19.3 que consumir a saída E20.7 e não constituem pendência deste recorte.
 
 20.7.3 Resolver determinístico de conhecimento
 
-* Status: Implementada repo-side e validada; Automação: não.
+* Status: Concluída no boundary E20.7 e validada deterministicamente; Automação: não.
 * Conteúdo:
   * resolver `single | multiple | portfolio` por APIs públicas canônicas, com matching por nome/aliases, descendência ativa, preparação E20.5/E20.6 e equivalência factual conservadora; autorizar `specialized_deep` somente quando `matchSource` contiver `alias_exact`, `alias_normalized`, `taxon_name_exact` ou `taxon_name_normalized`, mantendo resultado apoiado apenas em `fts`, `trgm` ou `taxon_slug_normalized` como `dynamic_required` sem recusar nem invalidar a oferta;
   * distinguir falha operacional de ausência ou ambiguidade legítima e produzir `specialized_deep | base_only | dynamic_required` sem recusa semântica da oferta;
   * reutilizar a cadeia taxonômica paginada compartilhada e terminar em saída tipada imutável, sem persistência própria, IA, integração E19 ou mudança em geração, snapshot, materialização ou renderer;
-  * permitir planejamento, implementação repo-side e testes determinísticos com `CURRENT=6` já na `main`, mantendo a reconciliação para `reviewed_input_catalog_version=6` como gate somente antes de prova hospedada ou ativação.
+  * operar com `CURRENT=6` já na `main`; a reconciliação v6 necessária ao taxon piloto `corretor-imoveis` está confirmada com `reviewed_input_catalog_version=6`, sem validação hospedada adicional necessária para encerrar a E20.7.3.
 
 20.7.4 Complemento dinâmico controlado
 
-* Status: Implementada repo-side e validada deterministicamente; Automação: sim; categoria `2.1.3 — Automação com IA em fluxo controlado`.
+* Status: Concluída no boundary E20.7 e integrada à `main` pelo PR #835; Automação: sim; categoria `2.1.3 — Automação com IA em fluxo controlado`.
 * Conteúdo:
   * iniciada somente após a implementação da E20.7.3 e sua aprovação pelo Analista; o confronto prévio com o PR #831 não encontrou sobreposição material aberta, preservando fora deste recorte as alterações paralelas daquele PR;
   * executar server-side uma única requisição foreground à Responses API com somente Web Search hospedado e Structured Output estrito, aceitando uma ou duas chamadas fundamentadas e falhando tecnicamente sem invalidar a oferta;
   * governar o workload `landing_page_dynamic_market_research` pelos boundaries E21.1/E21.2, com configuração própria comprovada antes da ativação humana por ambiente e sem agente, retry, fallback, job, fila, RAG, cache global ou nova residência de negócio;
   * usar `gpt-5.6-luna + high` como configuração inicial autorizada e única combinação elegível para `save`/`promote` desse workload; `low`, `max` e a matriz comparativa anterior permanecem fora por decisão humana registrada no #837;
-  * ampliar o agregado E21.2 por migration forward-only sem nova tabela ou coluna, preservando runtime anterior, segurança e falha fechada até configuração ativa válida;
-  * manter Development em baseline repo-only determinístico e exigir, antes de qualquer transporte hospedado, reconciliação para `reviewed_input_catalog_version=6` e fonte `supabase_operational` ativa em revisão `2` ou posterior; migration, apply, prova, promoção e ativação permanecem posteriores ao merge humano;
+  * ampliar o agregado E21.2 por migration forward-only sem nova tabela ou coluna; a migration `20260829171107_e20_7_4_dynamic_market_research_workload` foi aplicada automaticamente após o merge do PR #835, preservando runtime anterior, segurança e falha fechada até configuração ativa válida;
+  * manter Development em baseline repo-only determinístico; Preview e Production possuem o workload em bootstrap revisão `1`, sem transporte autorizado. Provar, promover e ativar revisão `supabase_operational` `2` ou posterior somente no futuro recorte E19.3 que consumir a saída E20.7; esse rollout não reabre nem mantém pendente a E20.7;
   * validar prompt e schema versionados, orçamento conservador sem truncamento, fontes HTTPS retornadas pelo provider, rejeição de URL inventada, telemetria segura e handoff tipado `base_plus_dynamic | base_only`, sem persistir pesquisa ou modificar a E20.2;
   * preservar a atribuição financeira causal sob E21.4 e manter consumo pela geração, validação semântica de oferta e qualquer mudança E19 em recortes próprios posteriores.
 
@@ -2990,7 +2990,7 @@ Repositório — Ajustados
   - Nenhum banco, integração remota, cliente universal, preço, prompt, schema funcional ou fallback silencioso foi criado.
 
 21.1.4 Integração dos consumidores e observabilidade comum
-- Status: integração técnica repo-side validada para os seis workloads de produto vigentes; as execuções integradas hospedadas da E19.4 comprovaram os dois workloads de draft, enquanto as provas hospedadas da E20.6.5 e da E20.7.4 permanecem condicionadas aos rollouts próprios.
+- Status: integração técnica repo-side validada para os seis workloads de produto vigentes; as execuções integradas hospedadas da E19.4 comprovaram os dois workloads de draft, enquanto a prova hospedada da E20.6.5 permanece condicionada ao rollout próprio e a da E20.7.4 fica condicionada ao futuro recorte E19.3 que consumir sua saída.
 - Conteúdo:
   - Consumidores textuais resolvem modelo e reasoning effort explícitos; o workload de imagem resolve somente sua configuração de mídia. Prompts, schemas, limites, persistência e fallbacks funcionais permanecem nos domínios consumidores.
   - Eventos textuais e de imagem registram por tentativa somente metadados operacionais seguros e aplicáveis; métricas ausentes permanecem `null` e nenhum prompt, resposta integral, payload de negócio, PII ou secret é registrado.
@@ -3001,7 +3001,7 @@ Repositório — Ajustados
   - Permanece fora do PR #710 a correção separada da automação de smoke para remover senha de logs e artifacts, gerar credenciais não previsíveis e tratar colisões corretamente.
 
 21.1.5 Inventário read-only no Admin Dashboard
-- Status: inventário repo-side vigente com sete itens; o QA pós-merge da E22.1.4 aprovou os cinco itens então existentes em Preview e Production, e as provas hospedadas dos itens acrescentados pela E20.6.5 e E20.7.4 permanecem nos rollouts próprios.
+- Status: inventário repo-side vigente com sete itens; o QA pós-merge da E22.1.4 aprovou os cinco itens então existentes em Preview e Production; a prova hospedada da E20.6.5 permanece no rollout próprio, e a da E20.7.4 fica condicionada ao futuro recorte E19.3 consumidor.
 - Conteúdo:
   - A rota protegida `/admin/workloads-openai` integra o shell e a navegação administrativos vigentes e projeta diretamente da API pública do boundary os sete itens repo-side, sem adapter, API, componente client ou controle de mutação novos.
   - Os seis workloads de produto exibem ambiente observado, configuração efetiva, origem e revisão; o Supabase Inspect permanece diferenciado como referência operacional externa e informa explicitamente `Ambiente da execução: não verificado nesta página`.
@@ -3101,7 +3101,7 @@ Repositório — Ajustados
 - Status: Concluída; fonte operacional aplicada e cutover aprovado em Preview e Production.
 - Automação: não.
 - As migrations forward-only materializam o agregado de configuração, revisões validadas e ativações/rollback por `ambiente + workload`, com bootstrap exato das dez unidades de Production e Preview, lifecycle transacional, concorrência otimista, constraints unit-safe, RLS/grants mínimos e metadados de prova fechados e sanitizados.
-- A migration candidata da E20.7.4 preserva o agregado e acrescenta duas unidades de `landing_page_dynamic_market_research`, totalizando doze somente após merge e apply; os read models aceitam integralmente dez ou doze unidades e rejeitam estado parcial.
+- A migration E20.7.4 aplicada preservou o agregado e acrescentou duas unidades de `landing_page_dynamic_market_research`, totalizando doze unidades hospedadas; os read models aceitam integralmente dez ou doze unidades e rejeitam estado parcial.
 - `lib/openai-workloads/` permanece o boundary público comum: resolvers assíncronos recebem ambiente explícito, Development continua no baseline local, e os cinco callsites preservam transporte, fallback funcional e proveniência ao consumir `repo_catalog` ou `supabase_operational`.
 - Adapter server-side, comportamento fail-closed, shape tipado por workload, validação de snapshots funcionais, snippet SQL read-only, testes SQL e documentação canônica aplicável foram entregues; a elegibilidade corrente de novas candidatas foi posteriormente centralizada pela E21.2.5.
 - A migration foi aplicada pelo workflow canônico; o snippet hospedado aprovou 10/10 verificações e o Security Controls não apresentou alerta incompatível com as tabelas ou RPCs do recorte.
@@ -3117,7 +3117,7 @@ Repositório — Ajustados
 - A prova despacha fixture segura pelos quatro transportes existentes, não cria persistência funcional, benchmark, ranking ou decisão autônoma e só promove após sucesso; erro preserva a candidata e nunca altera a revisão ativa. A prova comercial reutiliza o parser comum do shape REST real de `/v1/responses`.
 - O Preview aprovou os quatro transportes, criação/edição/descarte de candidata, promoção, ativação, execução subsequente com nova revisão, isolamento de Production e rollback, além de papéis positivo/negativo, desktop 1440 × 900, mobile 390 × 844, estados de sucesso/erro, reconhecimento do lifecycle e checklist proporcional WCAG 2.2.
 - O smoke mínimo de Production confirmou as quatro baselines ativas e uma execução comercial real com origem `supabase_operational` e revisão 1, criando somente draft não publicado; a janela autenticada permaneceu sem erro ou warning no runtime.
-- O estado operacional hospedado mantém os cinco workloads de Preview e Production sem candidata ou revisão pendente; `taxon_input_catalog_sufficiency_evaluation` permanece na revisão bootstrap `1`, e `landing_page_dynamic_market_research` só passará a existir hospedado após apply, também em bootstrap `1` não autorizado para transporte. Os eventos append-only dos lifecycles anteriores permanecem preservados.
+- O estado operacional hospedado mantém os seis workloads de produto de Preview e Production sem candidata ou revisão pendente; `taxon_input_catalog_sufficiency_evaluation` permanece na revisão bootstrap `1`, e `landing_page_dynamic_market_research` já existe em ambos os ambientes no bootstrap revisão `1`, não autorizado para transporte. A prova, promoção e ativação de revisão `2` ou posterior desse workload dinâmico ficam para o futuro recorte E19.3 consumidor. Os eventos append-only dos lifecycles anteriores permanecem preservados.
 - `OPENAI_API_KEY` permaneceu server-side e foi reutilizada sem cópia, exposição ou versionamento. A E21.3 não foi iniciada.
 
 21.2.5 Catálogo administrável e UX compacta dos workloads OpenAI
@@ -3362,6 +3362,8 @@ Repositório — Ajustados
 - Nenhuma alteração de banco, schema, infraestrutura ou arquitetura.
 
 99. Changelog
+v1.5.195 — 29/08/2026 — Encerrada a E20.7 após o merge do PR #835: migration E20.7.4 aplicada automaticamente, reconciliação v6 confirmada e rollout hospedado do workload dinâmico transferido para o futuro recorte de integração E19.3, quando existir consumidor real; removida essa validação operacional da lista de pendências da E20.7.
+
 v1.5.193 — 29/08/2026 — Registradas a implementação e validação determinística repo-side da E20.7.4, o confronto sem sobreposição material com o PR #831, o workload `landing_page_dynamic_market_research`, a ampliação candidata E21.2 de dez para doze unidades e os gates pendentes de merge, apply, reconciliação v6, prova e ativação hospedada.
 
 v1.5.191 — 28/08/2026 — Registrada a implementação técnica local das E21.4.3 e E21.4.4 no PR #831, com leitura oficial, persistência prospectiva limitada a texto/imagem de LP, preço versionado, migration/teste/snippet repo-only e gates hospedados/pós-merge ainda pendentes; E21.4.5 permanece não iniciada.
