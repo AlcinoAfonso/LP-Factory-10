@@ -3,26 +3,21 @@ import { createHash } from "node:crypto";
 import type {
   LandingPageInputCatalogPlan,
   LandingPageInputCatalogTransitionClassification,
-  LandingPageInputCatalogTaxonChain,
   LandingPageInputCatalogTaxonIdentity,
   ValidateLandingPageInputCatalogDraftResult,
 } from "@/conversion-content/landing-page/input-catalog";
-import type { AccountLandingPageOnboardingStoredValues } from "@/lp-builder/contracts";
-import { resolveAccountLandingPageOnboardingConfiguration } from "@/lp-builder/onboardingConfiguration";
+import {
+  isAccountLandingPageOperationalConfigurationCompatible,
+  type AccountLandingPageOperationalCompatibilityInput,
+} from "@/lp-builder/operationalCompatibility";
 import {
   fingerprintInputCatalogEvaluationContextIdentity,
   sameInputCatalogEvaluationContextIdentity,
   type InputCatalogEvaluationContextIdentity,
 } from "@/conversion-content/landing-page/taxon-preparation";
 
-export type InputCatalogOperationalConfiguration = Readonly<{
-  accountId: string;
-  landingPageId: string | null;
-  planKey: LandingPageInputCatalogPlan;
-  taxonChain: LandingPageInputCatalogTaxonChain;
-  storedValues: AccountLandingPageOnboardingStoredValues;
-  authoritativeValues: Readonly<Record<string, unknown>>;
-}>;
+export type InputCatalogOperationalConfiguration =
+  AccountLandingPageOperationalCompatibilityInput["configuration"];
 
 export type InputCatalogOperationalAccountAuthority = Readonly<{
   accountId: string;
@@ -161,20 +156,12 @@ export function countInvalidInputCatalogOperationalConfigurations(
   candidate: Extract<ValidateLandingPageInputCatalogDraftResult, { ok: true }>["value"],
   configurations: readonly InputCatalogOperationalConfiguration[],
 ): number {
-  return configurations.filter((configuration) => {
-    const result = resolveAccountLandingPageOnboardingConfiguration({
-      accountId: configuration.accountId,
-      landingPageId: configuration.landingPageId,
-      catalogVersion: candidate.entry.version,
-      revision: 1,
-      planKey: configuration.planKey,
-      taxonChain: configuration.taxonChain,
-      storedValues: configuration.storedValues,
-      authoritativeValues: configuration.authoritativeValues,
-      registry: candidate.registry,
-    });
-    return !result.ok;
-  }).length;
+  return configurations.filter((configuration) =>
+    !isAccountLandingPageOperationalConfigurationCompatible({
+      candidateCatalog: { version: candidate.entry.version, registry: candidate.registry },
+      configuration,
+    }),
+  ).length;
 }
 
 export function fingerprintInputCatalogOperationalContext(input: Readonly<{

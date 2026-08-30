@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
 import {
+  landingPageInputCatalogPlans,
+  landingPageInputCatalogRegistry,
   mediumStandardRealEstateBrokerTaxon,
   realEstateBrokerNicheTaxon,
   realEstateSegmentTaxon,
@@ -27,6 +29,10 @@ import {
   stripAuthoritativeOnboardingValues,
   validateStarterColorPalette,
 } from "./onboardingConfiguration";
+import {
+  isAccountLandingPageOperationalConfigurationCompatible,
+  type AccountLandingPageOperationalCompatibilityInput,
+} from "./operationalCompatibility";
 
 const taxonChain = {
   segment: realEstateSegmentTaxon,
@@ -182,6 +188,70 @@ function validValuesFor(fields: readonly ResolvedLandingPageInputField[]) {
 const cases: ReadonlyArray<
   Readonly<{ name: string; run: () => void | Promise<void> }>
 > = [
+  {
+    name: "public operational compatibility preserves complete and incomplete configurations for all plans and residences",
+    run: () => {
+      let decisions = 0;
+      for (const planKey of landingPageInputCatalogPlans) {
+        const catalog = resolveLandingPageInputCatalog({ version: 6, plan: planKey, taxonChain });
+        assert.ok(catalog.ok);
+        for (const landingPageId of [null, "00000000-0000-4000-8000-000000000102"]) {
+          for (const complete of [true, false]) {
+            const input: AccountLandingPageOperationalCompatibilityInput = structuredClone({
+              candidateCatalog: { version: 6, registry: landingPageInputCatalogRegistry },
+              configuration: {
+                accountId: ACCOUNT_ID, landingPageId, planKey, taxonChain,
+                storedValues: complete ? validValuesFor(catalog.value.fields) : {},
+                authoritativeValues: {},
+              },
+            });
+            const before = structuredClone(input);
+            const expected = resolveAccountLandingPageOnboardingConfiguration({
+              ...structuredClone(input.configuration), catalogVersion: 6, revision: 1,
+              registry: input.candidateCatalog.registry,
+            });
+            assert.ok(expected.ok);
+            assert.equal(expected.configuration.complete, complete);
+            assert.equal(isAccountLandingPageOperationalConfigurationCompatible(input), expected.ok);
+            assert.deepEqual(input, before);
+            assertCallerOwnedObjectsRemainMutable(input);
+            decisions += 1;
+          }
+        }
+      }
+      assert.equal(decisions, 16);
+    },
+  },
+  {
+    name: "public compatibility does not freeze stored or authoritative number ranges",
+    run: () => {
+      const priceField = segmentCatalogV6.value.fields.find((field) => field.valueType === "number_range");
+      assert.ok(priceField);
+      for (const source of ["stored", "authoritative"] as const) {
+        const range = { minimum: 100_000, maximum: 500_000, currency: "BRL" };
+        const input: AccountLandingPageOperationalCompatibilityInput = {
+          candidateCatalog: { version: 6, registry: landingPageInputCatalogRegistry },
+          configuration: {
+            accountId: ACCOUNT_ID, landingPageId: null, planKey: "starter",
+            taxonChain: structuredClone({ segment: realEstateSegmentTaxon }),
+            storedValues: source === "stored" ? { [priceField.fieldKey]: { scope: priceField.valueScope, value: range } } : {},
+            authoritativeValues: source === "authoritative" ? { [priceField.fieldKey]: range } : {},
+          },
+        };
+        const before = structuredClone(input);
+        const expected = resolveAccountLandingPageOnboardingConfiguration({
+          ...structuredClone(input.configuration), catalogVersion: 6, revision: 1,
+          registry: input.candidateCatalog.registry,
+        });
+        assert.ok(expected.ok, source);
+        assert.equal(isAccountLandingPageOperationalConfigurationCompatible(input), expected.ok, source);
+        assert.deepEqual(input, before);
+        assert.equal(Object.isFrozen(range), false, source);
+        range.minimum = 150_000;
+        assert.equal(range.minimum, 150_000);
+      }
+    },
+  },
   {
     name: "partial valid progress is accepted while completeness stays derived",
     run: () => {
@@ -1456,6 +1526,13 @@ function validValue(field: ResolvedLandingPageInputField): unknown {
         background: "#ffffff",
         text: "#111111",
       };
+  }
+}
+
+function assertCallerOwnedObjectsRemainMutable(value: unknown): void {
+  if (value !== null && typeof value === "object") {
+    assert.equal(Object.isFrozen(value), false);
+    for (const nested of Object.values(value)) assertCallerOwnedObjectsRemainMutable(nested);
   }
 }
 

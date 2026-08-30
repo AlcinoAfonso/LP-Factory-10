@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
+import { createRequire } from "node:module";
 
 import { collectCompletePaginatedRows } from "../../../../lib/admin/adapters/adminInputCatalogLifecyclePagination";
 import {
@@ -9,9 +10,11 @@ import {
   planPublishedInputCatalogReviewReconciliation,
   resolveInputCatalogOperationalAccountAuthorities,
   validatePublishedInputCatalogReviewEvidenceContext,
+  type InputCatalogOperationalConfiguration,
 } from "../../../../lib/admin/adapters/adminInputCatalogLifecycleValidation";
 import {
   createNextLandingPageInputCatalogDraft,
+  landingPageInputCatalogPlans,
   realEstateBrokerNicheTaxon,
   realEstateSegmentTaxon,
   validateLandingPageInputCatalogDraft,
@@ -25,6 +28,10 @@ import {
   type InputCatalogEvaluationContextIdentity,
 } from "../../../../lib/conversion-content/landing-page/taxon-preparation";
 import { resolveAccountLandingPageOnboardingConfiguration } from "../../../../lib/lp-builder/onboardingConfiguration";
+import {
+  isAccountLandingPageOperationalConfigurationCompatible,
+  type AccountLandingPageOperationalCompatibilityInput,
+} from "../../../../lib/lp-builder/operationalCompatibility";
 
 const page = readFileSync(new URL("./page.tsx", import.meta.url), "utf8");
 const adapter = readFileSync(
@@ -97,7 +104,23 @@ assert.match(lifecycleAdapter, /account_landing_page_shared_configurations/);
 assert.match(lifecycleAdapter, /account_landing_page_configurations/);
 assert.match(lifecycleAdapter, /account_landing_page_onboarding_configurations/);
 assert.match(lifecycleAdapter, /invalidOperationalConfigurations/);
-assert.match(lifecycleValidation, /resolveAccountLandingPageOnboardingConfiguration/);
+assert.deepEqual(
+  [...lifecycleValidation.matchAll(/from "(@\/lp-builder[^\"]*)"/g)].map((match) => match[1]),
+  ["@/lp-builder/operationalCompatibility"],
+);
+assert.match(lifecycleValidation, /isAccountLandingPageOperationalConfigurationCompatible/);
+assert.doesNotMatch(lifecycleValidation, /resolveAccountLandingPageOnboardingConfiguration|revision:|\.complete/);
+assert.match(
+  readFileSync(new URL("../../../../lib/lp-builder/index.ts", import.meta.url), "utf8"),
+  /export \{\s*isAccountLandingPageOperationalConfigurationCompatible,\s*type AccountLandingPageOperationalCompatibilityInput,\s*\} from "\.\/operationalCompatibility"/,
+);
+assert.deepEqual(
+  Object.keys(createRequire(import.meta.url).cache).filter((path) =>
+    /[\\/]@supabase[\\/]|[\\/]next[\\/](headers|dist[\\/]server)|[\\/]lp-builder[\\/]adapters[\\/]/.test(path),
+  ),
+  [],
+  "The focal API must load repo-only without server adapters, Supabase or Next headers",
+);
 assert.match(lifecycleAdapter, /publication_fingerprint/);
 assert.match(lifecycleAdapter, /validation_context_fingerprint/);
 assert.match(lifecycleAdapter, /publication_context_fingerprint/);
@@ -347,6 +370,134 @@ assert.equal(
   ),
   1,
 );
+type ValidatedCandidate = Parameters<typeof countInvalidInputCatalogOperationalConfigurations>[0];
+const versionSixCandidate: ValidatedCandidate = { ...candidate.value, entry: candidate.value.registry[6] };
+type CompatibilityCase = Readonly<{
+  name: string;
+  configuration: InputCatalogOperationalConfiguration;
+  compatible: boolean;
+  candidate?: ValidatedCandidate;
+}>;
+const compatibilityCases: CompatibilityCase[] = [];
+for (const planKey of landingPageInputCatalogPlans) {
+  for (const landingPageId of [null, "00000000-0000-4000-8000-000000000102"]) {
+    compatibilityCases.push({
+      name: `${planKey}/${landingPageId === null ? "pre-handoff" : "E19.5"}/incomplete`,
+      configuration: { ...preHandoffBase, planKey, landingPageId, storedValues: {} },
+      compatible: true,
+    });
+  }
+}
+compatibilityCases.push(
+  {
+    name: "unknown field",
+    configuration: { ...preHandoffBase, storedValues: { never_published: { scope: "business", value: "invalid" } } },
+    compatible: false,
+  },
+  {
+    name: "recognized retired field",
+    configuration: { ...preHandoffBase, storedValues: { primary_service_or_offer: { scope: "offer", value: "Oferta histórica" } } },
+    compatible: true,
+  },
+  {
+    name: "incompatible scope",
+    configuration: { ...preHandoffBase, storedValues: { traffic_source: { scope: "business", value: "organic" } } },
+    compatible: false,
+  },
+  {
+    name: "invalid value",
+    configuration: { ...preHandoffBase, storedValues: { traffic_source: { scope: "landing_page", value: "invalid" } } },
+    compatible: false,
+  },
+  {
+    name: "authority collision",
+    configuration: { ...preHandoffBase, storedValues: { business_display_name: { scope: "business", value: "Colisão" } } },
+    compatible: false,
+  },
+  {
+    name: "invalid authoritative value",
+    configuration: { ...preHandoffBase, storedValues: {}, authoritativeValues: { business_display_name: 42 } },
+    compatible: false,
+  },
+  { name: "legacy offering projected to v6", configuration: legacyOfferingConfiguration, candidate: versionSixCandidate, compatible: true },
+  {
+    name: "malformed offering candidate",
+    configuration: legacyOfferingConfiguration,
+    candidate: { ...versionSixCandidate, registry: withoutOfferingScopeDescription(versionSixCandidate.registry) },
+    compatible: false,
+  },
+  {
+    name: "missing candidate version",
+    configuration: { ...preHandoffBase, storedValues: {} },
+    candidate: { ...candidate.value, entry: { ...candidate.value.entry, version: 999 } },
+    compatible: false,
+  },
+  {
+    name: "empty candidate registry never falls back to published catalog",
+    configuration: { ...preHandoffBase, storedValues: {} },
+    candidate: { ...candidate.value, registry: {} },
+    compatible: false,
+  },
+  {
+    name: "catalog entry version mismatch",
+    configuration: { ...preHandoffBase, storedValues: {} },
+    candidate: { ...candidate.value, registry: { [candidate.value.entry.version]: { ...candidate.value.entry, version: 999 } } },
+    compatible: false,
+  },
+  {
+    name: "invalid runtime plan",
+    configuration: { ...preHandoffBase, storedValues: {}, planKey: "invalid" as InputCatalogOperationalConfiguration["planKey"] },
+    compatible: false,
+  },
+  {
+    name: "incompatible taxon chain",
+    configuration: { ...preHandoffBase, storedValues: {}, taxonChain: { segment: realEstateSegmentTaxon, niche: { ...realEstateBrokerNicheTaxon, parentId: "invalid-parent" } } },
+    compatible: false,
+  },
+);
+for (const testCase of compatibilityCases) {
+  const evaluatedCandidate: ValidatedCandidate = testCase.candidate ?? candidate.value;
+  const input: AccountLandingPageOperationalCompatibilityInput = structuredClone({
+    candidateCatalog: { version: evaluatedCandidate.entry.version, registry: evaluatedCandidate.registry },
+    configuration: testCase.configuration,
+  });
+  const before = structuredClone(input);
+  const expected = resolveAccountLandingPageOnboardingConfiguration({
+    ...structuredClone(input.configuration),
+    catalogVersion: input.candidateCatalog.version,
+    registry: input.candidateCatalog.registry,
+    revision: 1,
+  });
+  assert.equal(expected.ok, testCase.compatible, testCase.name);
+  if (testCase.name.endsWith("/incomplete")) {
+    assert.ok(expected.ok);
+    assert.equal(expected.configuration.complete, false, testCase.name);
+  }
+  assert.equal(isAccountLandingPageOperationalConfigurationCompatible(input), expected.ok, testCase.name);
+  assert.deepEqual(input, before, `${testCase.name}: immutable input`);
+  assert.equal(Object.isFrozen(input.configuration.taxonChain.segment), false);
+  assert.equal(
+    countInvalidInputCatalogOperationalConfigurations(evaluatedCandidate, [testCase.configuration]),
+    countInvalidWithPreviousResolver(evaluatedCandidate, [testCase.configuration]),
+    testCase.name,
+  );
+}
+for (const configurations of [[], compatibilityCases.map((testCase) => testCase.configuration)]) {
+  const before = fingerprintInputCatalogOperationalContext({ taxons: [], operationalTaxonIds: new Set(), operationalConfigurations: configurations });
+  assert.equal(
+    countInvalidInputCatalogOperationalConfigurations(candidate.value, configurations),
+    countInvalidWithPreviousResolver(candidate.value, configurations),
+  );
+  assert.equal(fingerprintInputCatalogOperationalContext({ taxons: [], operationalTaxonIds: new Set(), operationalConfigurations: configurations }), before);
+}
+const missingRegistryInput = {
+  candidateCatalog: { version: 6 },
+  configuration: { ...preHandoffBase, storedValues: {} },
+};
+// @ts-expect-error A candidate registry is mandatory, including for published versions.
+const missingRegistryContract: AccountLandingPageOperationalCompatibilityInput = missingRegistryInput;
+assert.equal(isAccountLandingPageOperationalConfigurationCompatible(missingRegistryContract), false);
+console.log(`ok - ARC-002: ${compatibilityCases.length} API/resolver/previous-counter cases; empty/mixed counts and fingerprints preserved`);
 const operationalContext = {
   taxons: [
     { identity: realEstateSegmentTaxon, reviewedVersion: 5, selectedResearchVersion: 1, operational: false },
@@ -547,6 +698,18 @@ void validateBehavioralContracts().catch((error: unknown) => {
 
 function offeringScopeDraft(): LandingPageInputCatalogRegistryEntry {
   return createNextLandingPageInputCatalogDraft();
+}
+
+function countInvalidWithPreviousResolver(
+  candidate: Parameters<typeof countInvalidInputCatalogOperationalConfigurations>[0],
+  configurations: readonly InputCatalogOperationalConfiguration[],
+): number {
+  return configurations.filter((configuration) => !resolveAccountLandingPageOnboardingConfiguration({
+    ...structuredClone(configuration),
+    catalogVersion: candidate.entry.version,
+    revision: 1,
+    registry: candidate.registry,
+  }).ok).length;
 }
 
 function inputCatalogReviewEvidenceIdentity(): InputCatalogEvaluationContextIdentity {
