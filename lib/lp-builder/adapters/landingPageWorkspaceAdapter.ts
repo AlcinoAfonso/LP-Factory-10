@@ -122,6 +122,21 @@ export async function getAccountLandingPageWorkspaceDetail(input: Readonly<{
   landingPageId: string;
   historyCursor?: string;
 }>): Promise<AccountLandingPageWorkspaceDetailResult> {
+  const context = await loadWorkspaceDetailContext(input);
+  return context.ok ? context.detail : context;
+}
+
+// Context is private to one invocation; every public call resolves fresh authority.
+async function loadWorkspaceDetailContext(
+  input: Parameters<typeof getAccountLandingPageWorkspaceDetail>[0],
+): Promise<
+  | Extract<AccountLandingPageWorkspaceDetailResult, { ok: false }>
+  | Readonly<{
+      ok: true;
+      detail: Extract<AccountLandingPageWorkspaceDetailResult, { ok: true }>;
+      authority: Authority;
+    }>
+> {
   if (!isLandingPageWorkspaceEnabled()) return { ok: false, error: "disabled" };
   if (!UUID_RE.test(input.landingPageId)) return { ok: false, error: "not_found" };
   const historyOffset = parseCursor(input.historyCursor);
@@ -183,7 +198,7 @@ export async function getAccountLandingPageWorkspaceDetail(input: Readonly<{
     const total = count as number;
     const nextOffset = historyOffset + normalizedRevisions.length;
     const landingPage = mapWorkspaceItem(page, configuration, latest, approved);
-    return {
+    const detail: Extract<AccountLandingPageWorkspaceDetailResult, { ok: true }> = {
       ok: true,
       landingPage,
       configuration,
@@ -200,6 +215,7 @@ export async function getAccountLandingPageWorkspaceDetail(input: Readonly<{
         complete: nextOffset >= total,
       },
     };
+    return { ok: true, detail, authority: authority.value };
   } catch {
     return { ok: false, error: "unavailable" };
   }
@@ -300,8 +316,9 @@ export async function getAccountLandingPageOperationalRevalidationAuthority(inpu
   accountId: string;
   landingPageId: string;
 }>): Promise<AccountLandingPageOperationalRevalidationResult> {
-  const detail = await getAccountLandingPageWorkspaceDetail(input);
-  if (!detail.ok) {
+  const context = await loadWorkspaceDetailContext(input);
+  if (!context.ok) {
+    const detail = context;
     const error =
       detail.error === "unauthenticated"
         ? "unauthenticated"
@@ -314,21 +331,20 @@ export async function getAccountLandingPageOperationalRevalidationAuthority(inpu
               : "read_failed";
     return { ok: false, error };
   }
+  const { detail, authority } = context;
   if (
     detail.configuration.landingPageRevision === null ||
     detail.configuration.landingPageCatalogVersion === null
   ) {
     return { ok: false, error: "configuration_not_found" };
   }
-  const authority = await loadAuthority(input.accountId, createServiceClient());
-  if (!authority.ok) return { ok: false, error: "read_failed" };
   return {
     ok: true,
     authority: {
       historicalConfiguration: detail.configuration.resolved,
-      currentPlanKey: authority.value.planKey,
-      currentTaxonChain: authority.value.taxonChain,
-      currentAuthoritativeValues: authority.value.authoritativeValues,
+      currentPlanKey: authority.planKey,
+      currentTaxonChain: authority.taxonChain,
+      currentAuthoritativeValues: authority.authoritativeValues,
       sharedRevision: detail.configuration.sharedRevision,
       sharedCatalogVersion: detail.configuration.sharedCatalogVersion,
       landingPageRevision: detail.configuration.landingPageRevision,
@@ -794,7 +810,7 @@ async function readTaxonChain(
 ): Promise<LandingPageInputCatalogTaxonChain | null> {
   const { data: link, error } = await client
     .from("account_taxonomy")
-    .select("taxon_id")
+    .select("taxon_id,taxon:business_taxons!account_taxonomy_taxon_id_fkey(id,name,slug,level,is_active,parent_id)")
     .eq("account_id", accountId)
     .eq("is_primary", true)
     .eq("status", "active")
@@ -811,12 +827,14 @@ async function readTaxonChain(
   }> = [];
   let currentId: string | null = link.taxon_id;
   for (let depth = 0; depth < 3 && currentId; depth += 1) {
-    const response: { data: unknown; error: unknown } = await client
-      .from("business_taxons")
-      .select("id,name,slug,level,is_active,parent_id")
-      .eq("id", currentId)
-      .limit(1)
-      .maybeSingle();
+    const response: { data: unknown; error: unknown } = depth === 0
+      ? { data: link.taxon, error: null }
+      : await client
+          .from("business_taxons")
+          .select("id,name,slug,level,is_active,parent_id")
+          .eq("id", currentId)
+          .limit(1)
+          .maybeSingle();
     const data = response.data;
     const nodeError = response.error;
     if (
