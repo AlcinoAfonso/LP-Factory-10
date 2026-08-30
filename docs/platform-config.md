@@ -2,8 +2,8 @@
 
 0.1 Cabeçalho
 • Documento: LP Factory 10 — Platform Config
-• Versão: v0.1.33
-• Data: 29/08/2026
+• Versão: v0.1.34
+• Data: 30/08/2026
 
 0.2 Contrato do documento
 • O QUE É: snapshot operacional e fonte única das configurações de plataformas externas do LP Factory 10, refletindo o estado conhecido/cadastrado nas plataformas conforme indicado.
@@ -79,6 +79,9 @@
 • `.github/workflows/automation-niche-runtime-tests.yml`
 • `automations/validador-final/mailbox-client.mjs`
 • Regra: usar conta dedicada de teste, nunca e-mail humano principal.
+• Regra: `MAILBOX_EMAIL` deve conter a caixa base `@gmail.com`, sem `+tag`; as automações derivam somente os novos aliases `+convite<sequence>` dessa configuração.
+• Regra: alterar a mailbox operacional não modifica usuários, aliases, contas ou evidências de execuções anteriores.
+• Regra: artifacts e Job Summary podem registrar o alias usado como evidência, mas não a senha de cadastro.
 • Regra: não registrar valores reais.
 • Regra: se a senha/app password vazar, revogar imediatamente e substituir.
 
@@ -518,6 +521,8 @@ Regra:
 • Configurações de plataformas, secrets por nome, workflows, ambientes e endpoints usados por automações devem ser registrados neste documento.
 
 99. Changelog
+v0.1.34 — 30/08/2026 — Mailbox operacional definida como caixa base Gmail sem `+tag`; novos aliases passam a ser derivados de `MAILBOX_EMAIL`, com preservação integral das execuções anteriores e proibição de senha de cadastro em artifacts e Job Summary.
+
 v0.1.33 — 29/08/2026 — Atualizado o estado pós-merge da E20.7.4: migration aplicada, bootstrap `gpt-5.6-luna + high` presente em Preview/Production e prova/promoção/ativação diferidas ao futuro recorte E19.3 consumidor, sem pendência operacional aberta na E20.7.
 
 v0.1.30 — 29/08/2026 — Registrados o workload repo-side `landing_page_dynamic_market_research`, o reuso obrigatório da `OPENAI_API_KEY` compartilhada, os limites de Web Search e os gates separados de apply, reconciliação v6, prova e ativação hospedada.

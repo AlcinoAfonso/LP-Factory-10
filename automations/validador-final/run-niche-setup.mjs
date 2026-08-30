@@ -7,6 +7,7 @@ import {
   openAuth,
   withBrowserSession,
 } from "./login-playwright.mjs";
+import { buildMailboxAlias, normalizeMailboxBaseEmail } from "./mailbox-alias.mjs";
 import { findLatestEmailLinkForAlias } from "./mailbox-client.mjs";
 
 const MAILBOX_POLL_TIMEOUT_MS = 120000;
@@ -145,10 +146,6 @@ function readCases(casePreset) {
   }
 
   return rawCases.map((rawCase, index) => normalizeCase(rawCase, index, casePreset));
-}
-
-function buildAlias(sequence) {
-  return `alcinoafonso380+convite${sequence}@gmail.com`;
 }
 
 function buildPassword(sequence) {
@@ -316,8 +313,8 @@ async function fillPendingSetup(page, { projectName, niche }) {
   }
 }
 
-async function runCase({ appUrl, appOrigin, testCase, sequence }) {
-  const email = buildAlias(sequence);
+async function runCase({ appUrl, appOrigin, mailboxEmail, testCase, sequence }) {
+  const email = buildMailboxAlias(mailboxEmail, `convite${sequence}`);
   const password = buildPassword(sequence);
   const projectName = buildProjectName(sequence, testCase);
 
@@ -343,7 +340,6 @@ async function runCase({ appUrl, appOrigin, testCase, sequence }) {
       label: testCase.label,
       sequence,
       email,
-      password,
       projectName,
       niche: testCase.niche,
       subdomain,
@@ -355,7 +351,7 @@ async function runCase({ appUrl, appOrigin, testCase, sequence }) {
 
 async function main() {
   const appUrl = requireEnv("APP_URL_OVERRIDE");
-  requireEnv("MAILBOX_EMAIL");
+  const mailboxEmail = normalizeMailboxBaseEmail(requireEnv("MAILBOX_EMAIL"));
   requireEnv("MAILBOX_PASSWORD");
 
   const appOrigin = new URL(appUrl).origin;
@@ -382,10 +378,10 @@ async function main() {
   for (const testCase of cases) {
     const sequence = startSequence + testCase.sequenceOffset;
     writeSummary(`\n## ${testCase.label}`);
-    writeSummary(`- email: \`${buildAlias(sequence)}\``);
+    writeSummary(`- email: \`${buildMailboxAlias(mailboxEmail, `convite${sequence}`)}\``);
     writeSummary(`- niche: \`${testCase.niche}\``);
 
-    const result = await runCase({ appUrl, appOrigin, testCase, sequence });
+    const result = await runCase({ appUrl, appOrigin, mailboxEmail, testCase, sequence });
     results.push(result);
 
     writeSummary(`- subdomain: \`${result.subdomain}\``);

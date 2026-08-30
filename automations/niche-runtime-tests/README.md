@@ -22,7 +22,7 @@ GitHub Actions -> `Automation Niche Runtime Tests`
 Inputs manuais:
 
 - `app_url`: URL do app ou preview a ser validado.
-- `start_sequence`: numero inicial do alias `alcinoafonso380+conviteXX@gmail.com`. Default: `100`.
+- `start_sequence`: numero inicial do alias `+conviteXX` derivado da caixa base `MAILBOX_EMAIL`. Default: `100`.
 - `niches`: lista livre de nichos separada por `;`. Se preenchida, cria uma conta por nicho e ignora `case_preset`.
 - `case_preset`: fallback versionado em `automations/niche-runtime-tests/cases`, sem a extensao `.json`. Default: `niche-resolution-20-6`.
 - `verification_mode`: nivel de verificacao apos preencher o setup.
@@ -37,11 +37,11 @@ Para testes exploratorios, preencha `niches` diretamente no workflow:
 Marketing Digital; Market Digital; Digital marketing
 ```
 
-Com `start_sequence = 103`, esse exemplo cria tres contas:
+Com `MAILBOX_EMAIL = mailbox-base@gmail.com` e `start_sequence = 103`, esse exemplo cria tres contas:
 
-- `alcinoafonso380+convite103@gmail.com` com nicho `Marketing Digital`;
-- `alcinoafonso380+convite104@gmail.com` com nicho `Market Digital`;
-- `alcinoafonso380+convite105@gmail.com` com nicho `Digital marketing`.
+- `mailbox-base+convite103@gmail.com` com nicho `Marketing Digital`;
+- `mailbox-base+convite104@gmail.com` com nicho `Market Digital`;
+- `mailbox-base+convite105@gmail.com` com nicho `Digital marketing`.
 
 Use `verification_mode = setup_only` para nichos livres. Nesse modo, o workflow valida criacao de conta e preenchimento do setup, mas nao tenta decidir se o banco gravou uma resolucao correta para uma etapa especifica.
 
@@ -108,7 +108,9 @@ Valores secretos nao devem ser versionados. O workflow espera os seguintes GitHu
 
 ## Evidencia
 
-O workflow escreve o resumo no Job Summary e publica o artifact `niche-runtime-results` com os subdominios criados e os dados necessarios para auditoria.
+`MAILBOX_EMAIL` deve ser uma caixa base `@gmail.com`, sem `+tag`. A automacao deriva novos aliases dessa caixa e nao altera usuarios, aliases ou contas de execucoes anteriores.
+
+O workflow escreve o resumo no Job Summary e publica o artifact `niche-runtime-results` com os subdominios criados e os dados necessarios para auditoria, sem incluir as senhas usadas durante o cadastro.
 
 ## Cleanup
 
