@@ -629,13 +629,15 @@ async function validateIdentityMutation(
   // identity group plus latest, from one SQL snapshot. Never scan history here.
   const generationContextSnapshots: unknown[] = [];
   const ids = new Set<string>();
+  const accountId = input.accountId.toLowerCase();
+  const landingPageId = input.landingPageId.toLowerCase();
   let previousRevision = 0;
   const latestMaterializationId: unknown = data.length ? data[data.length - 1]?.id : null;
   for (const row of data) {
     if (
       !isRecord(row) || typeof row.id !== "string" || !UUID_RE.test(row.id) ||
-      ids.has(row.id) || row.account_id !== input.accountId ||
-      row.landing_page_id !== input.landingPageId ||
+      ids.has(row.id) || row.account_id !== accountId ||
+      row.landing_page_id !== landingPageId ||
       !isPositiveInteger(row.revision_number) || row.revision_number <= previousRevision ||
       row.latest_materialization_id !== latestMaterializationId ||
       !isRecord(row.generation_context_snapshot_json)

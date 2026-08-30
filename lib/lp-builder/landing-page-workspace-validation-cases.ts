@@ -364,6 +364,10 @@ const compiled = ts.transpileModule(source, { compilerOptions: { target: ts.Scri
 // Test-only module boundary: execute the unmodified adapter, real domain resolvers,
 // and real supabase-js URL builder; replace only external I/O. No production seam.
 async function exercise<S extends Scenario>(s: S) {
+  const fixtureAccountId = s.identity?.uuidLetters ? "abcdefab-cdef-4abc-8def-abcdefabcdef" : accountA;
+  const fixturePageId = s.identity?.uuidLetters
+    ? (i: number) => "abcdefab-cdef-4abc-8def-" + String(i).padStart(12, "0")
+    : pageId;
   const calls: URL[] = [];
   const boundaryCalls: string[] = [];
   const writerCalls: Row[] = [];
@@ -373,10 +377,10 @@ async function exercise<S extends Scenario>(s: S) {
   let revisionBytes = 0;
   const pages: Row[] = Array.from({ length: s.size }, (_, n) => {
     const i = n + 1;
-    return { id: pageId(i), account_id: accountA, name: `LP ${i}`, slug: `lp-${i}`, status: i % 2 ? "draft" : "active", updated_at: s.differentDates && i === 2 ? "2026-08-31T10:00:00Z" : "2026-08-30T10:00:00Z", approved_materialization_id: s.approval === "all" || s.approval === "latest" || (s.approval === "mixed" && i % 2 === 0) ? revisionId(i, s.approval === "latest" ? s.history ?? 101 : 1) : null };
+    return { id: fixturePageId(i), account_id: fixtureAccountId, name: `LP ${i}`, slug: `lp-${i}`, status: i % 2 ? "draft" : "active", updated_at: s.differentDates && i === 2 ? "2026-08-31T10:00:00Z" : "2026-08-30T10:00:00Z", approved_materialization_id: s.approval === "all" || s.approval === "latest" || (s.approval === "mixed" && i % 2 === 0) ? revisionId(i, s.approval === "latest" ? s.history ?? 101 : 1) : null };
   }).reverse();
-  pages.push({ id: pageId(999), account_id: accountB, name: "Other tenant", slug: "other", status: "draft", updated_at: "2026-08-31T10:00:00Z", approved_materialization_id: null });
-  pages.push({ id: pageId(998), account_id: accountA, name: "Archived", slug: "archived", status: "archived", updated_at: "2026-08-31T10:00:00Z", approved_materialization_id: null });
+  pages.push({ id: fixturePageId(999), account_id: accountB, name: "Other tenant", slug: "other", status: "draft", updated_at: "2026-08-31T10:00:00Z", approved_materialization_id: null });
+  pages.push({ id: fixturePageId(998), account_id: fixtureAccountId, name: "Archived", slug: "archived", status: "archived", updated_at: "2026-08-31T10:00:00Z", approved_materialization_id: null });
   const revisions: Row[] = pages.flatMap((p) => Array.from({ length: s.identity?.snapshots.length ?? s.history ?? 101 }, (_, n) => ({
     id: revisionId(Number(p.id.slice(-12)), n + 1), landing_page_id: p.id, account_id: p.account_id, revision_number: n + 1,
     // Deliberately reverse chronological dates: revision number is the authority.
@@ -415,10 +419,10 @@ async function exercise<S extends Scenario>(s: S) {
       if (url.pathname.includes("/rpc/")) {
         assert.equal(init?.method, "POST");
         const payload = JSON.parse(String(init?.body));
-        assert.equal(payload.p_account_id, accountA);
-        assert.equal(payload.p_landing_page_id, pageId(1));
+        assert.equal(payload.p_account_id.toLowerCase(), fixtureAccountId);
+        assert.equal(payload.p_landing_page_id.toLowerCase(), fixturePageId(1));
         if (table === "read_account_landing_page_identity_baselines_v1") {
-          const history = revisions.filter(r => r.account_id === payload.p_account_id && r.landing_page_id === payload.p_landing_page_id);
+          const history = revisions.filter(r => r.account_id === payload.p_account_id.toLowerCase() && r.landing_page_id === payload.p_landing_page_id.toLowerCase());
           let selected: unknown = selectIdentityRows(history);
           const rows = selected as Row[];
           concurrent = s.identity?.interleave !== undefined;
@@ -432,7 +436,7 @@ async function exercise<S extends Scenario>(s: S) {
             case "reverse": rows.reverse(); break;
             case "id": rows[0].id = "invalid"; break;
             case "tenant": rows[0].account_id = accountB; break;
-            case "lp": rows[0].landing_page_id = pageId(999); break;
+            case "lp": rows[0].landing_page_id = fixturePageId(999); break;
             case "revision": rows[0].revision_number = 0; break;
             case "fraction": rows[0].revision_number = 1.5; break;
             case "unsafe": rows[0].revision_number = Number.MAX_SAFE_INTEGER + 1; break;
@@ -447,7 +451,7 @@ async function exercise<S extends Scenario>(s: S) {
         }
         assert.equal(table, "save_account_landing_page_configuration_v1");
         writerCalls.push(payload);
-        const currentLatest = s.identity?.interleave === "append" && concurrent ? revisionId(1, 9999) : revisions.filter(r => r.account_id === accountA && r.landing_page_id === pageId(1)).at(-1)?.id ?? null;
+        const currentLatest = s.identity?.interleave === "append" && concurrent ? revisionId(1, 9999) : revisions.filter(r => r.account_id === fixtureAccountId && r.landing_page_id === fixturePageId(1)).at(-1)?.id ?? null;
         const sharedRevision = concurrent && s.identity?.interleave === "shared" ? 3 : 2;
         const lpRevision = concurrent && s.identity?.interleave === "lp" ? 2 : 1;
         if (payload.p_expected_latest_materialization_id !== currentLatest || payload.p_expected_shared_revision !== sharedRevision || payload.p_expected_landing_page_revision !== lpRevision) {
@@ -459,19 +463,25 @@ async function exercise<S extends Scenario>(s: S) {
       assert.equal(init?.method, "GET");
       let rows: Row[];
       switch (table) {
-        case "accounts": rows = [{ id: accountA, name: "Conta", status: "active" }]; break;
-        case "account_users": rows = s.denied ? [] : [{ account_id: accountA, user_id: "actor", role: s.role ?? "owner", status: "active" }]; break;
-        case "account_taxonomy": rows = [{ account_id: accountA, taxon_id: taxon.id, is_primary: true, status: "active" }]; break;
+        case "accounts": rows = [{ id: fixtureAccountId, name: "Conta", status: "active" }]; break;
+        case "account_users": rows = s.denied ? [] : [{ account_id: fixtureAccountId, user_id: "actor", role: s.role ?? "owner", status: "active" }]; break;
+        case "account_taxonomy": rows = [{ account_id: fixtureAccountId, taxon_id: taxon.id, is_primary: true, status: "active" }]; break;
         case "business_taxons": rows = [{ ...taxon, is_active: true, parent_id: null }]; break;
         case "account_landing_pages": rows = pages; break;
         case "account_landing_page_materializations": rows = revisions; break;
-        case "account_landing_page_shared_configurations": rows = s.residence === "bootstrap" ? [] : [{ account_id: accountA, catalog_version: s.residence === "historical" ? 5 : 6, revision: 2, values: split.sharedValues }]; break;
-        case "account_landing_page_onboarding_configurations": rows = [{ account_id: accountA, landing_page_id: pageId(1), values: s.residence === "bootstrap" ? values : {} }]; break;
+        case "account_landing_page_shared_configurations": rows = s.residence === "bootstrap" ? [] : [{ account_id: fixtureAccountId, catalog_version: s.residence === "historical" ? 5 : 6, revision: 2, values: split.sharedValues }]; break;
+        case "account_landing_page_onboarding_configurations": rows = [{ account_id: fixtureAccountId, landing_page_id: fixturePageId(1), values: s.residence === "bootstrap" ? values : {} }]; break;
         case "account_landing_page_configurations": rows = s.residence === "bootstrap" ? [] : pages.map(p => ({ landing_page_id: p.id, account_id: p.account_id, catalog_version: s.residence === "historical" ? 5 : 6, revision: 1, values: s.identity ? currentValues : split.landingPageValues })); break;
         default: throw new Error(`Unexpected table ${table}`);
       }
       for (const [key, filter] of q) {
-        if (filter.startsWith("eq.")) rows = rows.filter(row => String(row[key]) === filter.slice(3));
+        if (filter.startsWith("eq.")) {
+          // PostgreSQL uuid equality ignores case; transport still returns lowercase.
+          const value = filter.slice(3);
+          rows = rows.filter(row => ["id", "account_id", "landing_page_id"].includes(key)
+            ? String(row[key]).toLowerCase() === value.toLowerCase()
+            : String(row[key]) === value);
+        }
         if (filter.startsWith("in.(")) rows = rows.filter(row => filter.slice(4, -1).split(",").includes(String(row[key])));
       }
       const order = q.get("order");
@@ -508,10 +518,10 @@ async function exercise<S extends Scenario>(s: S) {
         if (s.fault === "latest_many" && rows[0]) rows[0].latest.push(rows[0].latest[0]);
         if (s.fault === "latest_metadata" && rows[0]?.latest[0]) rows[0].latest[0].revision_number = 0;
         if (s.fault === "latest_tenant" && rows[0]?.latest[0]) rows[0].latest[0].account_id = accountB;
-        if (s.fault === "latest_lp" && rows[0]?.latest[0]) rows[0].latest[0].landing_page_id = pageId(999);
+        if (s.fault === "latest_lp" && rows[0]?.latest[0]) rows[0].latest[0].landing_page_id = fixturePageId(999);
         if (s.fault === "approved_missing" && rows[0]) rows[0].approved = null;
         if (s.fault === "approved_tenant" && rows[0]?.approved) rows[0].approved.account_id = accountB;
-        if (s.fault === "approved_lp" && rows[0]?.approved) rows[0].approved.landing_page_id = pageId(999);
+        if (s.fault === "approved_lp" && rows[0]?.approved) rows[0].approved.landing_page_id = fixturePageId(999);
         if (s.fault === "approved_pointer" && rows[0]?.approved) rows[0].approved.id = revisionId(999, 1);
       }
       if (table === "account_landing_page_materializations") {
@@ -544,11 +554,11 @@ async function exercise<S extends Scenario>(s: S) {
   try {
     const output = s.identity
       ? await exports.saveAccountLandingPageOperationalConfiguration({
-          accountId: s.identity.accountId ?? accountA, landingPageId: s.identity.landingPageId ?? pageId(1), values,
+          accountId: s.identity.accountId ?? fixtureAccountId, landingPageId: s.identity.landingPageId ?? fixturePageId(1), values,
           expectedSharedRevision: 2, expectedLandingPageRevision: 1, sameCommercialWorkConfirmed: s.identity.sameWork,
         })
-      : await exports.listAccountLandingPageWorkspace({ accountId: accountA, cursor: s.cursor });
-    const detail = s.detailCursor === undefined ? undefined : await exports.getAccountLandingPageWorkspaceDetail({ accountId: accountA, landingPageId: pageId(1), historyCursor: s.detailCursor });
+      : await exports.listAccountLandingPageWorkspace({ accountId: fixtureAccountId, cursor: s.cursor });
+    const detail = s.detailCursor === undefined ? undefined : await exports.getAccountLandingPageWorkspaceDetail({ accountId: fixtureAccountId, landingPageId: fixturePageId(1), historyCursor: s.detailCursor });
     return { output: output as S extends { identity: IdentityScenario } ? Awaited<ReturnType<typeof exports.saveAccountLandingPageOperationalConfiguration>> : Awaited<ReturnType<typeof exports.listAccountLandingPageWorkspace>>, detail, writerCalls, ownWrites, calls: calls.map(u => u.href), boundaryCalls, revisionRows, revisionBytes };
   } finally {
     if (previous === undefined) delete process.env.E19_5_WORKSPACE_ENABLED;
@@ -742,7 +752,7 @@ function selectIdentityRows(rows: Row[]): Row[] {
 type IdentityScenario = {
   snapshots: unknown[]; baseline?: boolean; sameWork?: boolean; next?: Row;
   currentScope?: unknown; missingCurrentScope?: boolean; interleave?: "append" | "shared" | "lp";
-  rpcFault?: string; accountId?: string; landingPageId?: string;
+  rpcFault?: string; accountId?: string; landingPageId?: string; uuidLetters?: boolean;
 };
 const validIdentitySnapshot = generationContextSnapshot([
   { fieldKey: "funnel_stage", value: "bofu" },
@@ -843,6 +853,31 @@ async function validateIdentityReads() {
       }
     }
   }
+  const uuidSpellings = (value: string) => [value, value.toUpperCase(), value.replace(/[a-f]/g, (letter, index) => index % 2 ? letter.toUpperCase() : letter)];
+  let uuidComparisons = 0;
+  for (const accountId of uuidSpellings("abcdefab-cdef-4abc-8def-abcdefabcdef")) {
+    for (const landingPageId of uuidSpellings("abcdefab-cdef-4abc-8def-000000000001")) {
+      for (const snapshots of [[], [validIdentitySnapshot]]) {
+        for (const next of [{}, { funnel_stage: "tofu" }]) {
+          const identity = { snapshots, next, accountId, landingPageId, uuidLetters: true };
+          const old = await exercise({ size: 1, complete: true, identity: { ...identity, baseline: true } });
+          const current = await exercise({ size: 1, complete: true, identity });
+          assert.deepEqual(current.output, old.output, "UUID spelling save parity");
+          assert.deepEqual(current.writerCalls, old.writerCalls, "UUID spelling preserves writer inputs/latest");
+          assert.equal(current.output.ok, snapshots.length === 0 || !Object.hasOwn(next, "funnel_stage"));
+          uuidComparisons++;
+        }
+      }
+      for (const rpcFault of ["tenant", "lp"]) {
+        const result = await exercise({ size: 1, complete: true, identity: {
+          snapshots: [validIdentitySnapshot], accountId, landingPageId, uuidLetters: true, rpcFault,
+        } });
+        assert.deepEqual(result.output, { ok: false, error: "unavailable" }, "UUID normalization must preserve tenant/LP rejection");
+        assert.equal(result.writerCalls.length, 0);
+      }
+    }
+  }
+  console.log("ok - AA06 UUID casing: " + uuidComparisons + " old/new comparisons; lowercase DB rows, account/LP separate and combined; 18 mismatches rejected");
   for (const interleave of ["append", "shared", "lp"] as const) {
     const result = await exercise({ size: 1, complete: true, identity: { snapshots: [validIdentitySnapshot], interleave } });
     assert.deepEqual(result.output, { ok: false, error: "revision_conflict" });
