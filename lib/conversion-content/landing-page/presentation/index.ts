@@ -12,8 +12,6 @@ export {
   type LandingPagePresentationValidationResult,
 } from "./authority";
 export {
-  LANDING_PAGE_DRAFT_PROMPT_VERSION,
   LANDING_PAGE_VISUAL_BRIEF_VERSION,
-  buildLandingPageDraftPrompt,
   buildLandingPageVisualPrompt,
 } from "./prompt";

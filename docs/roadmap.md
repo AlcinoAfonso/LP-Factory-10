@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 30/08/2026
-• Versão: v1.5.196
+• Versão: v1.5.197
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2363,6 +2363,7 @@ Repositório — Ajustados
     - `lib/lp-builder/landingPageDraftCandidateWorkflow.ts`
     - `lib/lp-builder/landingPageDraftGeneration.ts`
     - `lib/lp-builder/landingPageDraftImageGeneration.ts`
+    - `lib/lp-builder/landingPageDraftPrompt.ts`
     - `lib/lp-builder/landingPageDraftWorkflow.ts`
     - `lib/lp-builder/landingPagePreview.ts`
     - `lib/lp-builder/landingPageRevision.ts`
