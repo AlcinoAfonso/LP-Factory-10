@@ -1,6 +1,7 @@
 import type { MemberRole } from "@/lib/types/status";
 import {
   validateLandingPageInputValue,
+  type LandingPageOfferingScope,
   type LandingPageInputCondition,
   type ResolvedLandingPageInputField,
 } from "../../../../lib/conversion-content/landing-page/input-catalog";
@@ -29,6 +30,19 @@ export type AccountOnboardingState =
   | "blocked";
 
 export type JourneyFormStep = "business" | "landing_page" | "brand_identity";
+
+export function deriveOfferingScopeDraft(
+  text: string,
+  representsPortfolio: boolean,
+): LandingPageOfferingScope {
+  // Keep editable lines intact; the canonical parser rejects empty/duplicate items.
+  const offerings = text.split("\n");
+  const count = offerings.filter((item) => item.trim().length > 0).length;
+  return {
+    mode: representsPortfolio ? "portfolio" : count > 1 ? "multiple" : "single",
+    offerings,
+  };
+}
 
 export function isUnhandledOnboardingActionSuccess(
   state: OnboardingConfigurationActionState,

@@ -2,12 +2,14 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
 import {
+  areLandingPageOfferingScopesMateriallyEqual,
   parseLandingPageOfferingScope,
   resolveLandingPageInputCatalog,
   realEstateSegmentTaxon,
 } from "../../../../lib/conversion-content/landing-page/input-catalog";
 import {
   decideAccountJourney,
+  deriveOfferingScopeDraft,
   isUnhandledOnboardingActionSuccess,
   journeyScopeBelongsToStep,
   onboardingFieldErrorFocusTargetId,
@@ -17,6 +19,8 @@ import {
   recoverCorrectableOnboardingSubmission,
 } from "./onboarding-journey-policy";
 import type { OnboardingConfigurationActionState } from "./onboarding-configuration-action-contract";
+import { evaluateLandingPageCommercialIdentityMutation } from "../../../../lib/lp-builder/landingPageWorkspace";
+import { resolveAccountLandingPageOnboardingConfiguration } from "../../../../lib/lp-builder/onboardingConfiguration";
 
 const cases: readonly Readonly<{ name: string; run: () => void }>[] = [
   {
@@ -131,9 +135,21 @@ const cases: readonly Readonly<{ name: string; run: () => void }>[] = [
       assert.match(component, /single: "Uma oferta"/);
       assert.match(component, /multiple: "Algumas ofertas"/);
       assert.match(component, /portfolio: "Todo o portfólio"/);
-      assert.match(component, /type="radio"/);
+      const offeringControl = component.slice(
+        component.indexOf("function OfferingScopeControl"),
+        component.indexOf("function isRequired"),
+      );
+      assert.doesNotMatch(offeringControl, /type="radio"|landingPageOfferingScopeModes/);
+      assert.match(offeringControl, /type="checkbox"/);
+      assert.match(offeringControl, /checked=\{representsPortfolio\}/);
+      assert.match(offeringControl, /deriveOfferingScopeDraft\(event.target.value, representsPortfolio\)/);
+      assert.match(offeringControl, /deriveOfferingScopeDraft\(offerings, event.target.checked\)/);
+      assert.match(offeringControl, /Esta lista representa todo o portfólio que quero divulgar nesta landing page/);
+      assert.match(offeringControl, /Marque somente se a lista acima representar todo o portfólio abrangido por esta página/);
+      assert.match(offeringControl, /focus-within:ring-2/);
+      assert.match(offeringControl, /portfolio-hint/);
       assert.match(component, /Entrada livre: não usamos catálogo, whitelist nem derivação do resumo do negócio/);
-      assert.match(component, /\.split\("\\n"\)/);
+      assert.match(offeringControl, /placeholder="Uma oferta por linha"/);
       assert.match(component, /same_commercial_work_confirmed/);
       assert.doesNotMatch(component, /name="catalog_version"/);
       assert.match(component, /humanizeFieldKey/);
@@ -208,6 +224,111 @@ const cases: readonly Readonly<{ name: string; run: () => void }>[] = [
         component + action,
         /\bOpenAI\b|generateContent|publishLandingPage|\bCRM\b/i,
       );
+    },
+  },
+  {
+    name: "offering list derives modes while only portfolio requires a human declaration",
+    run: () => {
+      for (const [text, portfolio, mode] of [
+        [" Oferta livre ", false, "single"],
+        [" Oferta livre \nOutra oferta", false, "multiple"],
+        [" Oferta livre ", false, "single"],
+        ["Oferta livre\nOutra oferta", true, "portfolio"],
+        ["Oferta editada\nOutra oferta\nMais uma", true, "portfolio"],
+        ["Oferta editada", true, "portfolio"],
+        ["Oferta editada", false, "single"],
+        ["Oferta editada\nOutra oferta", false, "multiple"],
+      ] as const) {
+        const draft = deriveOfferingScopeDraft(text, portfolio);
+        assert.equal(draft.mode, mode);
+        assert.equal(draft.offerings.join("\n"), text);
+        const parsed = parseLandingPageOfferingScope(draft);
+        assert.equal(parsed.ok, true);
+        assert.deepEqual(parsed.value, {
+          mode,
+          offerings: text.split("\n").map((item) => item.trim()),
+        });
+      }
+    },
+  },
+  {
+    name: "offering editing preserves raw lines and never hides empty or duplicate items from the parser",
+    run: () => {
+      for (const text of ["", "   ", "Oferta\n", "Oferta\n \nOutra", " Oferta \noferta"]) {
+        for (const portfolio of [false, true]) {
+          const draft = deriveOfferingScopeDraft(text, portfolio);
+          assert.equal(draft.offerings.join("\n"), text);
+          assert.equal(parseLandingPageOfferingScope(draft).ok, false);
+        }
+      }
+      const corrected = deriveOfferingScopeDraft(" Oferta \nOutra", false);
+      assert.equal(parseLandingPageOfferingScope(corrected).ok, true);
+      assert.equal(areLandingPageOfferingScopesMateriallyEqual(
+        corrected,
+        { mode: "multiple", offerings: ["OUTRA", "oferta"] },
+      ), true);
+    },
+  },
+  {
+    name: "derived modes survive canonical v6 resolution and reload without bypassing commercial identity",
+    run: () => {
+      const baseline = { mode: "single", offerings: ["Oferta livre"] };
+      for (const [text, portfolio] of [
+        [" Oferta livre ", false],
+        [" Oferta livre \n Outra oferta ", false],
+        [" Oferta livre \n Outra oferta ", true],
+        [" Oferta livre ", true],
+      ] as const) {
+        const input = {
+          accountId: "account-test",
+          landingPageId: "landing-page-test",
+          catalogVersion: 6,
+          revision: 3,
+          planKey: "starter",
+          taxonChain: { segment: realEstateSegmentTaxon },
+          storedValues: {
+            landing_page_offering_scope: {
+              scope: "landing_page" as const,
+              value: deriveOfferingScopeDraft(text, portfolio),
+            },
+          },
+          authoritativeValues: {},
+        };
+        const resolved = resolveAccountLandingPageOnboardingConfiguration(input);
+        assert.equal(resolved.ok, true);
+        const storedValues = resolved.configuration.storedValues;
+        assert.deepEqual(storedValues.landing_page_offering_scope.value, {
+          mode: portfolio ? "portfolio" : text.includes("\n") ? "multiple" : "single",
+          offerings: text.split("\n").map((item) => item.trim()),
+        });
+        const reloaded = resolveAccountLandingPageOnboardingConfiguration({
+          ...input,
+          storedValues: JSON.parse(JSON.stringify(storedValues)),
+        });
+        assert.equal(reloaded.ok, true);
+        assert.deepEqual(reloaded.configuration.storedValues, storedValues);
+        const identityInput = {
+          generationContextSnapshots: [{
+            generationContext: {
+              modelContext: {
+                facts: [{ fieldKey: "landing_page_offering_scope", value: baseline }],
+              },
+            },
+          }],
+          currentConfiguredOfferingScope: baseline,
+          values: storedValues,
+          sameCommercialWorkConfirmed: false,
+        };
+        assert.deepEqual(evaluateLandingPageCommercialIdentityMutation(identityInput),
+          portfolio || text.includes("\n")
+            ? { ok: false, error: "offer_change_confirmation_required", fieldKey: "landing_page_offering_scope" }
+            : { ok: true },
+        );
+        assert.deepEqual(evaluateLandingPageCommercialIdentityMutation({
+          ...identityInput,
+          sameCommercialWorkConfirmed: true,
+        }), { ok: true });
+      }
     },
   },
   {
