@@ -8,7 +8,7 @@ on:
         required: true
         default: ""
       start_sequence:
-        description: "Numero inicial para alcinoafonso380+conviteXX@gmail.com"
+        description: "Numero inicial do alias +conviteXX derivado de MAILBOX_EMAIL"
         required: true
         default: "100"
       case_preset:

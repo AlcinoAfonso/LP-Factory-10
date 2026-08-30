@@ -11,6 +11,7 @@ import {
   submitNewPassword,
   withBrowserSession,
 } from "./login-playwright.mjs";
+import { buildMailboxAlias, normalizeMailboxBaseEmail } from "./mailbox-alias.mjs";
 import { findLatestEmailLinkForAlias } from "./mailbox-client.mjs";
 
 const MAX_ALIAS_RETRIES = 20;
@@ -121,10 +122,6 @@ function requireAppUrl() {
     die("APP_URL_OVERRIDE obrigatório (workflow input app_url)");
   }
   return value.trim();
-}
-
-function buildAlias(sequence) {
-  return `alcinoafonso380+convite${sequence}@gmail.com`;
 }
 
 function buildPassword(sequence) {
@@ -244,6 +241,7 @@ async function handleAuthConfirmInterstitial({ page, flowLabel }) {
 async function main() {
   const appUrl = requireAppUrl();
   const appOrigin = new URL(appUrl).origin;
+  const mailboxEmail = normalizeMailboxBaseEmail(process.env.MAILBOX_EMAIL);
   const state = loadState();
   const steps = [];
   const runStartedAt = nowIso();
@@ -260,7 +258,7 @@ async function main() {
     for (let retry = 0; retry <= MAX_ALIAS_RETRIES; retry += 1) {
       const candidateSequence = state.sequence + retry;
       lastTriedSequence = candidateSequence;
-      const candidateEmail = buildAlias(candidateSequence);
+      const candidateEmail = buildMailboxAlias(mailboxEmail, `convite${candidateSequence}`);
       const candidatePassword = buildPassword(candidateSequence);
 
       const signupResult = await createAccount({

@@ -1,6 +1,6 @@
 0.1 Cabeçalho
 Data: 30/08/2026
-Versão: v1.20
+Versão: v1.21
 Status: Alinhado ao Platform Config
 
 0.2 Função do documento
@@ -174,7 +174,8 @@ Contrato atual da Fase 2:
 - fluxo determinístico (sem briefing funcional JSON);
 - único input manual: `app_url`;
 - sem screenshot no contrato operacional;
-- estado local de 1 conta ativa persistido em `state/test-account.json`.
+- estado local de 1 conta ativa persistido em `state/test-account.json`;
+- novos aliases `+convite<sequence>` derivados da caixa base Gmail configurada em `MAILBOX_EMAIL`, sem alterar usuários ou contas de execuções anteriores.
 
 Resposta esperada:
 Logs e resultado final da execução determinística no job do workflow.
@@ -282,13 +283,13 @@ GitHub → Actions → workflow `automation-niche-runtime-tests`
 Como usar:
 Executar o workflow informando:
 - `app_url`: URL do app ou preview;
-- `start_sequence`: número inicial para `alcinoafonso380+conviteXX@gmail.com`;
+- `start_sequence`: número inicial do alias `+conviteXX` derivado da caixa base `MAILBOX_EMAIL`;
 - `niches`: lista livre separada por `;`, quando o objetivo for explorar nichos escolhidos manualmente;
 - `case_preset`: fallback versionado quando o objetivo for repetir uma suíte formal;
 - `verification_mode`: `setup_only` para validação funcional flexível ou modo versionado quando a etapa tiver expectativa rígida de banco.
 
 Resposta esperada:
-Contas criadas e confirmadas, `pending_setup` preenchido, subdomínios capturados, evidência no Job Summary e artifact `niche-runtime-results`.
+Contas criadas e confirmadas, `pending_setup` preenchido, subdomínios capturados, evidência no Job Summary e artifact `niche-runtime-results`, sem senha de cadastro no payload publicado.
 
 Regra operacional:
 A automação não deve ser engessada por verificação de banco genérica. O teste base é criar conta e preencher o pipeline. Verificações no Supabase só devem entrar como presets versionados, porque a expectativa de tabelas como `account_niche_resolutions` e `account_taxonomy` muda conforme a etapa funcional.

@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "start": "node run.mjs",
-    "check": "node --check run.mjs && node --check login-playwright.mjs && node --check mailbox-client.mjs"
+    "check": "node --check run.mjs && node --check run-niche-setup.mjs && node --check login-playwright.mjs && node --check mailbox-client.mjs && node --check mailbox-alias.mjs && node mailbox-alias-validation-cases.mjs"
   },
   "dependencies": {
     "@playwright/test": "^1.51.1"
