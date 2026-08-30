@@ -63,13 +63,17 @@ export async function listAccountLandingPageWorkspace(input: Readonly<{
     const { data, error, count } = await client
       .from("account_landing_pages")
       .select(
-        "id,account_id,name,slug,status,approved_materialization_id,updated_at",
+        `id,account_id,name,slug,status,approved_materialization_id,updated_at,
+        latest:account_landing_page_materializations!account_landing_page_materializations_landing_page_fkey(id,account_id,landing_page_id,revision_number,created_at),
+        approved:account_landing_page_materializations!account_landing_pages_approved_materialization_fkey(id,account_id,landing_page_id,revision_number,created_at)`,
         { count: "exact" },
       )
       .eq("account_id", authority.value.accountId)
       .in("status", ["draft", "active"])
       .order("updated_at", { ascending: false })
       .order("id", { ascending: true })
+      .order("revision_number", { referencedTable: "latest", ascending: false })
+      .limit(1, { referencedTable: "latest" })
       .range(offset, offset + WORKSPACE_PAGE_SIZE - 1);
     if (error || !Array.isArray(data) || !Number.isSafeInteger(count) || count === null) {
       return { ok: false, error: "unavailable" };
@@ -85,20 +89,18 @@ export async function listAccountLandingPageWorkspace(input: Readonly<{
     );
     if (!configurations) return { ok: false, error: "unavailable" };
 
-    const items = await Promise.all(
-      pages.map(async (page) => {
-        const configuration = resolveOperationalConfiguration(
-          authority.value,
-          page.id,
-          configurations,
-        );
-        if (!configuration) return null;
-        const revisions = await loadRevisionSummary(client, page);
-        return revisions
-          ? mapWorkspaceItem(page, configuration, revisions.latest, revisions.approved)
-          : null;
-      }),
-    );
+    const items = pages.map((page, index) => {
+      const configuration = resolveOperationalConfiguration(
+        authority.value,
+        page.id,
+        configurations,
+      );
+      if (!configuration) return null;
+      const revisions = normalizeRevisionSummary(data[index], page);
+      return revisions
+        ? mapWorkspaceItem(page, configuration, revisions.latest, revisions.approved)
+        : null;
+    });
     if (items.some((item) => item === null)) return { ok: false, error: "unavailable" };
     const total = count as number;
     const nextOffset = offset + pages.length;
@@ -517,12 +519,32 @@ function resolveOperationalConfiguration(
   };
 }
 
-async function loadRevisionSummary(client: ServiceClient, page: PageRow) {
-  const latest = await readLatest(client, page);
-  const approved = page.approvedMaterializationId
-    ? await readRevisionById(client, page, page.approvedMaterializationId)
-    : null;
-  return page.approvedMaterializationId && !approved ? null : { latest, approved };
+function normalizeRevisionSummary(value: unknown, page: PageRow) {
+  if (
+    !isRecord(value) ||
+    !Array.isArray(value.latest) ||
+    value.latest.length > 1 ||
+    (value.approved !== null && !isRecord(value.approved))
+  ) return null;
+  const latestRow: unknown = value.latest[0];
+  const approvedRow: unknown = value.approved;
+  for (const row of [...value.latest, ...(approvedRow === null ? [] : [approvedRow])]) {
+    if (
+      !isRecord(row) ||
+      row.account_id !== page.accountId ||
+      row.landing_page_id !== page.id
+    ) return null;
+  }
+  // Preserve readLatest's metadata normalization: malformed latest becomes null.
+  // Invalid embed containers/tenant identities are read failures, never absence.
+  const latest = latestRow === undefined ? null : normalizeRevision(latestRow);
+  const approved = approvedRow === null ? null : normalizeRevision(approvedRow);
+  if (
+    page.approvedMaterializationId
+      ? !approved || approved.id !== page.approvedMaterializationId
+      : approvedRow !== null
+  ) return null;
+  return { latest, approved };
 }
 
 async function readLatest(client: ServiceClient, page: PageRow): Promise<RevisionRow | null> {
