@@ -164,12 +164,13 @@
 
 - A Etapa 1 altera somente o reconhecimento administrativo necessário para visualizar e avaliar o novo value type no draft; não cria controles operacionais do cliente.
 - Os controles abaixo pertencem à Etapa 2, depois da publicação segura da v6.
-- `landing_page_offering_scope` deve permitir escolher claramente:
-  - uma oferta;
-  - algumas ofertas;
-  - todo o portfólio.
-- Nos três casos, a pessoa informa a lista factual correspondente e a descrição curta do escopo.
-- A escolha do modo deve priorizar reconhecimento: `Uma oferta`, `Algumas ofertas` e `Todo o portfólio` permanecem identificáveis por rótulo humano e estado selecionado, sem exigir que a pessoa memorize os valores técnicos `single | multiple | portfolio` nem deduza o modo apenas pela quantidade de itens.
+- Decisão humana superveniente de 30/08/2026: substitui a escolha manual por rádio `Uma oferta / Algumas ofertas / Todo o portfólio` prevista originalmente nesta seção; não altera o contrato da seção 1.5.
+- Na mesma seção `O que esta landing page vai divulgar?`, `Ofertas incluídas` é a autoridade factual da lista, com uma oferta por linha e descrição curta do escopo preservada.
+- A UI deriva `single` para uma oferta válida e `multiple` para duas ou mais, sem seleção manual desses modos. Adicionar/remover itens recalcula o modo.
+- Somente a abrangência de portfólio exige declaração humana: `Esta lista representa todo o portfólio que quero divulgar nesta landing page`, com apoio `Marque somente se a lista acima representar todo o portfólio abrangido por esta página.`. Marcada, produz `portfolio` com uma ou mais ofertas válidas e preserva edição livre; desmarcada, volta à derivação pela quantidade.
+- O shape `{ mode, offerings }`, cardinalidades, trim, rejeição de strings vazias/duplicidade case-insensitive, igualdade material, projeção legada e parser server-side permanecem intactos. A UI preserva o texto em edição e não deduplica nem aceita silenciosamente entradas inválidas.
+- Mudança material continua sob a identidade E19.5 e `sameCommercialWorkConfirmed`; concorrência otimista, snapshots, histórico, reidratação/foco de erros corrigíveis do #838 e processamento único de sucessos idempotentes do #841 não mudam. E20.7 continua consumindo os mesmos três modos sem alteração.
+- O gate deste ajuste exige regressões determinísticas e QA real em Preview, antes de merge: desktop/mobile/teclado, `single → multiple → single`, marcar/editar/desmarcar portfólio, duplicidade sem perda dos demais valores e save/reload canônico. Não cria v7, field, modo, residência, rota, boundary ou infraestrutura.
 - A lista é entrada livre; a interface não deve sugerir que `business_offerings_summary` seja catálogo completo, whitelist ou fonte da lista.
 - Os controles de modo, lista de ofertas e descrição possuem nome acessível, labels, instruções e erros programaticamente associados; são operáveis por teclado, preservam foco visível e estado selecionado perceptível, não dependem exclusivamente de hover e mantêm alvos de ação adequados à superfície responsiva.
 - A experiência pode reutilizar os componentes e o formulário existentes; não redesenhar home, detalhe, histórico ou preview do workspace nesta fase.

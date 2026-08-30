@@ -25,7 +25,6 @@ import {
   type AccountLandingPageOnboardingStoredValues,
 } from "../../../../lib/lp-builder";
 import {
-  landingPageOfferingScopeModes,
   parseLandingPageOfferingScope,
 } from "../../../../lib/conversion-content/landing-page/input-catalog";
 import { validateStarterColorPalette } from "../../../../lib/lp-builder/onboardingConfiguration";
@@ -36,6 +35,7 @@ import {
   type OnboardingConfigurationActionState,
 } from "./onboarding-configuration-action-contract";
 import {
+  deriveOfferingScopeDraft,
   isUnhandledOnboardingActionSuccess,
   journeyConditionMatches,
   journeyScopeBelongsToStep,
@@ -921,22 +921,11 @@ function OfferingScopeControl(props: Readonly<{
   onChange: (value: unknown | undefined) => void;
 }>) {
   const raw = isRecord(props.value) ? props.value : {};
-  const mode = landingPageOfferingScopeModes.includes(
-    raw.mode as (typeof landingPageOfferingScopeModes)[number],
-  )
-    ? raw.mode as (typeof landingPageOfferingScopeModes)[number]
-    : undefined;
+  const representsPortfolio = raw.mode === "portfolio";
   const offeringItems = Array.isArray(raw.offerings)
     ? raw.offerings.filter((item): item is string => typeof item === "string")
     : [];
   const offerings = offeringItems.join("\n");
-  const update = (nextMode: string | undefined, nextOfferings: readonly string[]) => {
-    if (!nextMode && nextOfferings.length === 0) {
-      props.onChange(undefined);
-      return;
-    }
-    props.onChange({ mode: nextMode, offerings: nextOfferings });
-  };
 
   return (
     <fieldset
@@ -947,24 +936,6 @@ function OfferingScopeControl(props: Readonly<{
       className="space-y-4 rounded-lg border border-surface-border p-4 sm:col-span-2"
     >
       <legend className="sr-only">Escopo comercial da página</legend>
-      <div className="grid gap-2 sm:grid-cols-3">
-        {landingPageOfferingScopeModes.map((option) => (
-          <label
-            key={option}
-            className="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border border-surface-border px-3 text-sm font-medium text-ink-900 focus-within:ring-2 focus-within:ring-brand-600"
-          >
-            <input
-              type="radio"
-              name={`${props.id}-mode`}
-              value={option}
-              checked={mode === option}
-              required={props.required}
-              onChange={() => update(option, offeringItems)}
-            />
-            {optionLabel(option)}
-          </label>
-        ))}
-      </div>
       <div>
         <label htmlFor={`${props.id}-offerings`} className="text-sm font-medium text-ink-900">
           Ofertas incluídas
@@ -977,16 +948,33 @@ function OfferingScopeControl(props: Readonly<{
           aria-invalid={props.invalid}
           aria-required={props.required}
           placeholder="Uma oferta por linha"
-          onChange={(event) => {
-            const items = event.target.value
-              .split("\n")
-              .map((item) => item.trim())
-              .filter(Boolean);
-            update(mode, items);
-          }}
+          onChange={(event) => props.onChange(
+            deriveOfferingScopeDraft(event.target.value, representsPortfolio),
+          )}
         />
         <p className="mt-2 text-xs leading-5 text-graytech-600">
           Entrada livre: não usamos catálogo, whitelist nem derivação do resumo do negócio.
+        </p>
+      </div>
+      <div>
+        <label
+          htmlFor={`${props.id}-portfolio`}
+          className="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border border-surface-border px-3 py-2 text-sm font-medium text-ink-900 focus-within:ring-2 focus-within:ring-brand-600"
+        >
+          <input
+            id={`${props.id}-portfolio`}
+            type="checkbox"
+            checked={representsPortfolio}
+            aria-describedby={`${props.id}-portfolio-hint`}
+            className="h-4 w-4 shrink-0"
+            onChange={(event) => props.onChange(
+              deriveOfferingScopeDraft(offerings, event.target.checked),
+            )}
+          />
+          Esta lista representa todo o portfólio que quero divulgar nesta landing page
+        </label>
+        <p id={`${props.id}-portfolio-hint`} className="mt-2 text-xs leading-5 text-graytech-600">
+          Marque somente se a lista acima representar todo o portfólio abrangido por esta página.
         </p>
       </div>
     </fieldset>
