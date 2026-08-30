@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 30/08/2026
-• Versão: v1.5.200
+• Versão: v1.5.201
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2521,6 +2521,7 @@ Repositório — Ajustados
 - Conteúdo:
   - o Account Dashboard ganha workspace master-detail paginado, uma entrada por identidade de LP, cinco estados de UX derivados, criação explícita para owner/admin e leitura integral sem mutações para viewer;
   - a página de até 25 LPs e seus resumos de revisão são lidos em uma única consulta tenant-scoped com relações LEFT pelas FKs compostas existentes: latest pela maior `revision_number`, limitada por LP, e approved pelo ponteiro explícito, mesmo antigo; o transporte contém no máximo dois metadados de revisão por LP, sem conteúdo ou snapshot, mantendo count exato, ordem, cursor, estados e configuração;
+  - detalhe e revalidação operacional reutilizam uma única carga de autoridade por invocação, em contexto privado do adapter, preservando DTOs públicos, guards, erros, configuração, histórico, aprovação e tokens; a taxonomia lê vínculo primário ativo e primeiro nó pela relação LEFT não recursiva existente, mantendo filtros e o percurso de até dois pais;
   - a configuração reutiliza declarativamente o catálogo E20.2 v5 e separa fisicamente scopes compartilhados `account/business` dos contextuais `offer/campaign/landing_page`, sem lista paralela, placeholder, precriação, backfill, `is_initialized` ou completude persistida;
   - `primary_conversion_goal` é obrigatório e participa do núcleo de identidade após a primeira revisão válida que o contenha; `business_offerings_summary` é opcional, reside no compartilhado e sua ausência isolada não bloqueia completude;
   - o handoff da E19.2 é lazy e vinculado à LP exata; depois que a residência operacional existe, o agregado histórico permanece apenas como bootstrap/proveniência e não serve fallback concorrente;
