@@ -70,7 +70,7 @@
 
 | PR | Recorte / processo do mapa | Critério específico de entrada e validação |
 | --- | --- | --- |
-| AA-PR02 | Cinco validators / Light, Sol Medium | AA-PR01 aceito; integrar apenas as cinco suites e executar check canônico. |
+| AA-PR02 | Cinco validators / Light, Sol Medium | AA-PR01 aceito; AA-PR02 não pode começar enquanto o drift residual de ARC-010 em `docs/platform-config.md` não tiver seu tratamento documental decidido/concluído pelo Prompt ABC aplicável. Após cumprir essa trava, integrar apenas as cinco suites e executar check canônico. |
 | AA-PR03 | ARC-001 / Light, Sol Medium | AA-PR02; direção de imports e contratos confirmada; validar DAG e geração sem mudança funcional. |
 | AA-PR04 | ARC-002 / Light, Sol High | AA-PR03; contrato público focal de compatibilidade E19; matriz de configurações equivalente. |
 | AA-PR05 | ARC-003 / Light condicionado, Sol High | AA-PR04; medir queries para 25 LPs; escolher menor solução que estabilize round-trips; necessidade de banco força processo completo. |
