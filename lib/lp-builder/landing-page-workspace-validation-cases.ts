@@ -357,17 +357,23 @@ const pageId = (i: number) => `20000000-0000-4000-8000-${String(i).padStart(12, 
 const revisionId = (i: number, r: number) => `30000000-0000-4000-8000-${String(i * 1000 + r).padStart(12, "0")}`;
 // Raw transport fixtures intentionally include malformed database shapes.
 type Row = Record<string, any>;
-type Scenario = { identity?: IdentityScenario; size: number; approval?: "none" | "mixed" | "all" | "latest"; history?: number; cursor?: string; role?: string; denied?: boolean; gate?: boolean; authenticated?: boolean; fault?: string; complete?: boolean; entitled?: boolean; prepared?: boolean; residence?: "bootstrap" | "historical"; detailCursor?: string; differentDates?: boolean };
+type Scenario = { authority?: AuthorityScenario; identity?: IdentityScenario; size: number; approval?: "none" | "mixed" | "all" | "latest"; history?: number; cursor?: string; role?: string; denied?: boolean; gate?: boolean; authenticated?: boolean; fault?: string; complete?: boolean; entitled?: boolean; prepared?: boolean; residence?: "bootstrap" | "historical"; detailCursor?: string; differentDates?: boolean };
 const source = readFileSync(adapterPath, "utf8");
 const compiled = ts.transpileModule(source, { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS, esModuleInterop: true } }).outputText;
 
 // Test-only module boundary: execute the unmodified adapter, real domain resolvers,
 // and real supabase-js URL builder; replace only external I/O. No production seam.
 async function exercise<S extends Scenario>(s: S) {
-  const fixtureAccountId = s.identity?.uuidLetters ? "abcdefab-cdef-4abc-8def-abcdefabcdef" : accountA;
-  const fixturePageId = s.identity?.uuidLetters
+  const fixtureAccountId = (s.identity?.uuidLetters || s.authority?.uuidLetters) ? "abcdefab-cdef-4abc-8def-abcdefabcdef" : accountA;
+  const fixturePageId = (s.identity?.uuidLetters || s.authority?.uuidLetters)
     ? (i: number) => "abcdefab-cdef-4abc-8def-" + String(i).padStart(12, "0")
     : pageId;
+  let authorityState: AuthorityState = {};
+  let authWithinCall = 0;
+  let serviceClients = 0;
+  const preparationTaxons: string[] = [];
+  const authorityResults: unknown[] = [];
+  const authorityMetrics: Array<{ requests: number; boundaries: string[]; clients: number; taxons: string[] }> = [];
   const calls: URL[] = [];
   const boundaryCalls: string[] = [];
   const writerCalls: Row[] = [];
@@ -415,6 +421,14 @@ async function exercise<S extends Scenario>(s: S) {
 
       const table = url.pathname.split("/").pop()!;
       const q = url.searchParams;
+      const queryFault = authorityState.fault;
+      if ((queryFault === "removed_initial_request" && table === "business_taxons" && q.get("id") === "eq." + (authorityState.taxons?.at(-1)?.id ?? taxon.id)) ||
+          (queryFault === "embed_relation" && table === "account_taxonomy" && q.get("select")?.includes("taxon:")) ||
+          queryFault === table ||
+          (table === "business_taxons" && queryFault === "taxon:" + q.get("id")?.slice(3)) ||
+          (table === "account_landing_page_materializations" && queryFault === (q.has("id") ? "approved" : "history"))) {
+        return new Response(JSON.stringify({ message: "fixture read error" }), { status: 500 });
+      }
       if (s.fault === table) return new Response(JSON.stringify({ message: "fixture read error" }), { status: 500 });
       if (url.pathname.includes("/rpc/")) {
         assert.equal(init?.method, "POST");
@@ -474,6 +488,14 @@ async function exercise<S extends Scenario>(s: S) {
         case "account_landing_page_configurations": rows = s.residence === "bootstrap" ? [] : pages.map(p => ({ landing_page_id: p.id, account_id: p.account_id, catalog_version: s.residence === "historical" ? 5 : 6, revision: 1, values: s.identity ? currentValues : split.landingPageValues })); break;
         default: throw new Error(`Unexpected table ${table}`);
       }
+      if (authorityState.tables && Object.hasOwn(authorityState.tables, table)) rows = structuredClone(authorityState.tables[table]);
+      if (table === "business_taxons" && authorityState.taxons) rows = structuredClone(authorityState.taxons);
+      if (table === "account_taxonomy" && authorityState.taxons) rows = [{ account_id: fixtureAccountId, taxon_id: authorityState.taxons.at(-1)?.id, status: "active", is_primary: true }];
+      if (table === "account_taxonomy" && Object.hasOwn(authorityState, "links")) rows = structuredClone(authorityState.links!);
+      if (table === "accounts" && authorityState.accountName !== undefined) rows = rows.map(r => ({ ...r, name: authorityState.accountName }));
+      if (table === "account_users" && authorityState.role) rows = rows.map(r => ({ ...r, role: authorityState.role }));
+      if (table === "account_landing_page_shared_configurations" && authorityState.sharedRevision) rows = rows.map(r => ({ ...r, revision: authorityState.sharedRevision }));
+      if (table === "account_landing_page_configurations" && authorityState.lpRevision) rows = rows.map(r => ({ ...r, revision: authorityState.lpRevision }));
       for (const [key, filter] of q) {
         if (filter.startsWith("eq.")) {
           // PostgreSQL uuid equality ignores case; transport still returns lowercase.
@@ -495,6 +517,19 @@ async function exercise<S extends Scenario>(s: S) {
       const count = rows.length;
       rows = rows.slice(Number(q.get("offset") ?? 0), Number(q.get("offset") ?? 0) + Number(q.get("limit") ?? rows.length));
       const select = q.get("select") ?? "";
+      if (table === "account_taxonomy" && select.includes("taxon:")) {
+        assert.equal(select, "taxon_id,taxon:business_taxons!account_taxonomy_taxon_id_fkey(id,name,slug,level,is_active,parent_id)");
+        assert.equal(q.get("account_id"), "eq." + (authorityState.accountId ?? s.identity?.accountId ?? fixtureAccountId).trim());
+        assert.equal(q.get("is_primary"), "eq.true");
+        assert.equal(q.get("status"), "eq.active");
+        assert.equal(q.get("limit"), "1");
+        assert.ok(!select.includes("!inner"));
+        const taxons = authorityState.taxons ?? [{ ...taxon, is_active: true, parent_id: null }];
+        if (authorityState.fault === "business_taxons" || rows.some(r => authorityState.fault === "taxon:" + r.taxon_id)) {
+          return new Response(JSON.stringify({ message: "fixture embedded node error" }), { status: 500 });
+        }
+        rows = rows.map(r => ({ ...r, taxon: authorityState.embedShape !== undefined ? authorityState.embedShape : taxons.find(t => t.id === r.taxon_id) ?? null }));
+      }
       if (table === "account_landing_pages" && select.includes("latest:")) {
         assert.ok(select.includes("latest:account_landing_page_materializations!account_landing_page_materializations_landing_page_fkey("));
         assert.ok(select.includes("approved:account_landing_page_materializations!account_landing_pages_approved_materialization_fkey("));
@@ -540,26 +575,41 @@ async function exercise<S extends Scenario>(s: S) {
   });
   const imports: Record<string, unknown> = {
     "server-only": {},
-    "../../supabase/service": { createServiceClient: () => client },
-    "../../supabase/server": { createClient: async () => ({ auth: { getUser: async () => { boundaryCalls.push("auth"); return { data: { user: s.authenticated === false ? null : { id: "actor" } }, error: null }; } } }) },
-    "../../commercial-entitlements": { getCommercialEntitlementSignal: async () => { boundaryCalls.push("entitlement"); return { isCommerciallyEligible: s.entitled !== false, planKey: "starter" }; } },
-    "../../conversion-content/adapters/selectedEndCustomerResearchAdapter": { loadTaxonPreparationForCurrentVersion: async () => { boundaryCalls.push("preparation"); return { ok: s.prepared !== false, value: { effectiveInputCatalogVersion: 6 } }; } },
+    "../../supabase/service": { createServiceClient: () => { serviceClients++; return client; } },
+    "../../supabase/server": { createClient: async () => ({ auth: { getUser: async () => { boundaryCalls.push("auth"); authWithinCall++;
+      if (authWithinCall === 2 && s.authority?.secondLoad) authorityState = { ...authorityState, ...s.authority.secondLoad };
+      if (authorityState.authThrow) throw new Error("auth fixture");
+      if (authorityState.authenticated === false) return { data: { user: null }, error: null };
+      return { data: { user: s.authenticated === false ? null : { id: authorityState.actorId ?? "actor" } }, error: authorityState.authError ? { message: "auth fixture" } : null }; } } }) },
+    "../../commercial-entitlements": { getCommercialEntitlementSignal: async () => { boundaryCalls.push("entitlement"); if (authorityState.entitlementThrow) throw new Error("entitlement fixture"); return { isCommerciallyEligible: authorityState.entitled ?? s.entitled !== false, planKey: authorityState.plan ?? "starter" }; } },
+    "../../conversion-content/adapters/selectedEndCustomerResearchAdapter": { loadTaxonPreparationForCurrentVersion: async (input: { taxonId: string }) => { boundaryCalls.push("preparation"); preparationTaxons.push(input.taxonId); if (authorityState.preparationThrow) throw new Error("preparation fixture"); return { ok: authorityState.prepared ?? s.prepared !== false, value: { effectiveInputCatalogVersion: authorityState.preparationVersion ?? 6 } }; } },
     "./landingPagesAdapter": { createAccountLandingPage: () => { throw new Error("No mutations in listing QA"); } },
     "../onboardingConfiguration": core,
   };
   const exports = {} as typeof import("./adapters/landingPageWorkspaceAdapter");
-  runInThisContext(`(function(require, exports) { ${s.identity?.baseline ? baselineCompiled : compiled}\n})`)((id: string) => Object.hasOwn(imports, id) ? imports[id] : requireAdapter(id), exports);
+  runInThisContext(`(function(require, exports) { ${s.authority?.baseline ? authorityBaselineCompiled : s.identity?.baseline ? baselineCompiled : compiled}\n})`)((id: string) => Object.hasOwn(imports, id) ? imports[id] : requireAdapter(id), exports);
   const previous = process.env.E19_5_WORKSPACE_ENABLED;
   process.env.E19_5_WORKSPACE_ENABLED = s.gate === false ? "false" : "true";
   try {
-    const output = s.identity
+    if (s.authority) {
+      for (const step of s.authority.steps) {
+        authorityState = step;
+        authWithinCall = 0;
+        process.env.E19_5_WORKSPACE_ENABLED = step.gate === false ? "false" : "true";
+        const before = { requests: calls.length, boundaries: boundaryCalls.length, clients: serviceClients, taxons: preparationTaxons.length };
+        const input = { accountId: step.accountId ?? fixtureAccountId, landingPageId: step.landingPageId ?? fixturePageId(1), historyCursor: step.historyCursor };
+        authorityResults.push(await (step.operation === "detail" ? exports.getAccountLandingPageWorkspaceDetail(input) : exports.getAccountLandingPageOperationalRevalidationAuthority(input)));
+        authorityMetrics.push({ requests: calls.length - before.requests, boundaries: boundaryCalls.slice(before.boundaries), clients: serviceClients - before.clients, taxons: preparationTaxons.slice(before.taxons) });
+      }
+    }
+    const output = s.authority ? undefined : s.identity
       ? await exports.saveAccountLandingPageOperationalConfiguration({
           accountId: s.identity.accountId ?? fixtureAccountId, landingPageId: s.identity.landingPageId ?? fixturePageId(1), values,
           expectedSharedRevision: 2, expectedLandingPageRevision: 1, sameCommercialWorkConfirmed: s.identity.sameWork,
         })
       : await exports.listAccountLandingPageWorkspace({ accountId: fixtureAccountId, cursor: s.cursor });
     const detail = s.detailCursor === undefined ? undefined : await exports.getAccountLandingPageWorkspaceDetail({ accountId: fixtureAccountId, landingPageId: fixturePageId(1), historyCursor: s.detailCursor });
-    return { output: output as S extends { identity: IdentityScenario } ? Awaited<ReturnType<typeof exports.saveAccountLandingPageOperationalConfiguration>> : Awaited<ReturnType<typeof exports.listAccountLandingPageWorkspace>>, detail, writerCalls, ownWrites, calls: calls.map(u => u.href), boundaryCalls, revisionRows, revisionBytes };
+    return { authorityResults, authorityMetrics, output: output as S extends { identity: IdentityScenario } ? Awaited<ReturnType<typeof exports.saveAccountLandingPageOperationalConfiguration>> : Awaited<ReturnType<typeof exports.listAccountLandingPageWorkspace>>, detail, writerCalls, ownWrites, calls: calls.map(u => u.href), boundaryCalls, revisionRows, revisionBytes };
   } finally {
     if (previous === undefined) delete process.env.E19_5_WORKSPACE_ENABLED;
     else process.env.E19_5_WORKSPACE_ENABLED = previous;
@@ -575,7 +625,7 @@ async function validateWorkspaceReads() {
         const result = await exercise({ size, approval, history, complete: true });
         assert.equal(result.output.ok, true);
         if (!result.output.ok) throw new Error("workspace unavailable");
-        assert.equal(result.calls.length, size === 0 ? 7 : 8);
+        assert.equal(result.calls.length, size === 0 ? 6 : 7); // AA07 removes the first-node round-trip.
         assert.deepEqual(result.boundaryCalls, ["auth", "entitlement", "preparation"]);
         assert.equal(result.calls.filter(u => new URL(u).pathname.endsWith("/account_landing_page_materializations")).length, 0);
         assert.ok(result.revisionRows <= size * 2);
@@ -953,11 +1003,361 @@ function validateIdentitySqlContract() {
   console.log("ok - AA06 exact SQL body, canonical oracle, literal index predicates and read-only contract");
 }
 
+// AA07: frozen executable functions captured from f8a06c1 BEFORE changing runtime.
+// The real remaining adapter, resolvers and supabase-js transport are shared, not modeled.
+const authorityBaselineFunctions = [
+String.raw`export async function getAccountLandingPageWorkspaceDetail(input: Readonly<{
+  accountId: string;
+  landingPageId: string;
+  historyCursor?: string;
+}>): Promise<AccountLandingPageWorkspaceDetailResult> {
+  if (!isLandingPageWorkspaceEnabled()) return { ok: false, error: "disabled" };
+  if (!UUID_RE.test(input.landingPageId)) return { ok: false, error: "not_found" };
+  const historyOffset = parseCursor(input.historyCursor);
+  if (historyOffset === null) return { ok: false, error: "unavailable" };
+  const client = createServiceClient();
+  const authority = await loadAuthority(input.accountId, client);
+  if (!authority.ok) return authority.detailResult;
+
+  try {
+    const { data, error } = await client
+      .from("account_landing_pages")
+      .select("id,account_id,name,slug,status,approved_materialization_id,updated_at")
+      .eq("id", input.landingPageId)
+      .eq("account_id", authority.value.accountId)
+      .in("status", ["draft", "active"])
+      .limit(1)
+      .maybeSingle();
+    if (error) return { ok: false, error: "unavailable" };
+    const page = normalizePage(data, authority.value.accountId);
+    if (!page) return { ok: false, error: "not_found" };
+
+    const configurations = await loadConfigurationRows(client, authority.value, [page.id]);
+    if (!configurations) return { ok: false, error: "unavailable" };
+    const configuration = resolveOperationalConfiguration(
+      authority.value,
+      page.id,
+      configurations,
+    );
+    if (!configuration) return { ok: false, error: "invalid_configuration" };
+
+    const { data: revisionData, error: revisionError, count } = await client
+      .from("account_landing_page_materializations")
+      .select("id,revision_number,created_at", { count: "exact" })
+      .eq("account_id", authority.value.accountId)
+      .eq("landing_page_id", page.id)
+      .order("revision_number", { ascending: false })
+      .order("id", { ascending: true })
+      .range(historyOffset, historyOffset + HISTORY_PAGE_SIZE - 1);
+    if (
+      revisionError ||
+      !Array.isArray(revisionData) ||
+      count === null ||
+      !Number.isSafeInteger(count)
+    ) {
+      return { ok: false, error: "unavailable" };
+    }
+    const revisions = revisionData.map(normalizeRevision);
+    if (revisions.some((revision) => revision === null)) {
+      return { ok: false, error: "unavailable" };
+    }
+    const normalizedRevisions = revisions as RevisionRow[];
+    const latest = historyOffset === 0 ? normalizedRevisions[0] ?? null : await readLatest(client, page);
+    const approved = page.approvedMaterializationId
+      ? await readRevisionById(client, page, page.approvedMaterializationId)
+      : null;
+    if (page.approvedMaterializationId && !approved) {
+      return { ok: false, error: "unavailable" };
+    }
+    const total = count as number;
+    const nextOffset = historyOffset + normalizedRevisions.length;
+    const landingPage = mapWorkspaceItem(page, configuration, latest, approved);
+    return {
+      ok: true,
+      landingPage,
+      configuration,
+      canMutate: authority.value.canMutate,
+      revisions: {
+        items: normalizedRevisions.map((revision) => ({
+          id: revision.id,
+          number: revision.revisionNumber,
+          createdAt: revision.createdAt,
+          latest: revision.id === latest?.id,
+          approved: revision.id === approved?.id,
+        })),
+        nextCursor: nextOffset < total ? String(nextOffset) : null,
+        complete: nextOffset >= total,
+      },
+    };
+  } catch {
+    return { ok: false, error: "unavailable" };
+  }
+}`,
+String.raw`export async function getAccountLandingPageOperationalRevalidationAuthority(input: Readonly<{
+  accountId: string;
+  landingPageId: string;
+}>): Promise<AccountLandingPageOperationalRevalidationResult> {
+  const detail = await getAccountLandingPageWorkspaceDetail(input);
+  if (!detail.ok) {
+    const error =
+      detail.error === "unauthenticated"
+        ? "unauthenticated"
+        : detail.error === "unauthorized"
+          ? "membership_inactive"
+          : detail.error === "not_found"
+            ? "landing_page_not_found"
+            : detail.error === "invalid_configuration"
+              ? "invalid_configuration"
+              : "read_failed";
+    return { ok: false, error };
+  }
+  if (
+    detail.configuration.landingPageRevision === null ||
+    detail.configuration.landingPageCatalogVersion === null
+  ) {
+    return { ok: false, error: "configuration_not_found" };
+  }
+  const authority = await loadAuthority(input.accountId, createServiceClient());
+  if (!authority.ok) return { ok: false, error: "read_failed" };
+  return {
+    ok: true,
+    authority: {
+      historicalConfiguration: detail.configuration.resolved,
+      currentPlanKey: authority.value.planKey,
+      currentTaxonChain: authority.value.taxonChain,
+      currentAuthoritativeValues: authority.value.authoritativeValues,
+      sharedRevision: detail.configuration.sharedRevision,
+      sharedCatalogVersion: detail.configuration.sharedCatalogVersion,
+      landingPageRevision: detail.configuration.landingPageRevision,
+      landingPageCatalogVersion: detail.configuration.landingPageCatalogVersion,
+    },
+  };
+}`,
+String.raw`async function readTaxonChain(
+  client: ServiceClient,
+  accountId: string,
+): Promise<LandingPageInputCatalogTaxonChain | null> {
+  const { data: link, error } = await client
+    .from("account_taxonomy")
+    .select("taxon_id")
+    .eq("account_id", accountId)
+    .eq("is_primary", true)
+    .eq("status", "active")
+    .limit(1)
+    .maybeSingle();
+  if (error || !isRecord(link) || typeof link.taxon_id !== "string") return null;
+  const nodes: Array<{
+    id: string;
+    name: string;
+    slug: string;
+    level: "segment" | "niche" | "ultra_niche";
+    isActive: true;
+    parentId: string | null;
+  }> = [];
+  let currentId: string | null = link.taxon_id;
+  for (let depth = 0; depth < 3 && currentId; depth += 1) {
+    const response: { data: unknown; error: unknown } = await client
+      .from("business_taxons")
+      .select("id,name,slug,level,is_active,parent_id")
+      .eq("id", currentId)
+      .limit(1)
+      .maybeSingle();
+    const data = response.data;
+    const nodeError = response.error;
+    if (
+      nodeError ||
+      !isRecord(data) ||
+      data.is_active !== true ||
+      typeof data.id !== "string" ||
+      typeof data.name !== "string" ||
+      typeof data.slug !== "string" ||
+      !["segment", "niche", "ultra_niche"].includes(String(data.level))
+    ) return null;
+    nodes.push({
+      id: data.id,
+      name: data.name,
+      slug: data.slug,
+      level: data.level as "segment" | "niche" | "ultra_niche",
+      isActive: true,
+      parentId: typeof data.parent_id === "string" ? data.parent_id : null,
+    });
+    if (data.level === "segment") break;
+    currentId = typeof data.parent_id === "string" ? data.parent_id : null;
+  }
+  const ordered = nodes.reverse();
+  const segment = ordered.find((node) => node.level === "segment");
+  const niche = ordered.find((node) => node.level === "niche");
+  const ultraNiche = ordered.find((node) => node.level === "ultra_niche");
+  return segment && (!ultraNiche || niche)
+    ? { segment, ...(niche ? { niche } : {}), ...(ultraNiche ? { ultraNiche } : {}) }
+    : null;
+}`
+];
+const authorityBaselineSource = authorityBaselineFunctions.reduce((current, frozen) => {
+  const name = frozen.match(/async function (\w+)/)![1];
+  return current.replace(new RegExp("(?:export )?async function " + name + "\\([\\s\\S]*?\\n}(?=\\n|$)"), () => frozen);
+}, source);
+const authorityBaselineCompiled = ts.transpileModule(authorityBaselineSource, { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS, esModuleInterop: true } }).outputText;
+
+type AuthorityState = {
+  operation?: "detail" | "revalidation"; gate?: boolean; accountId?: string; landingPageId?: string; historyCursor?: string;
+  authenticated?: boolean; actorId?: string; authError?: boolean; authThrow?: boolean; role?: string;
+  entitled?: boolean; plan?: string; entitlementThrow?: boolean; prepared?: boolean; preparationVersion?: number; preparationThrow?: boolean;
+  taxons?: Row[]; links?: Row[]; embedShape?: unknown; tables?: Record<string, Row[]>; fault?: string;
+  accountName?: string; sharedRevision?: number; lpRevision?: number;
+};
+type AuthorityScenario = { steps: AuthorityState[]; baseline?: boolean; secondLoad?: AuthorityState; uuidLetters?: boolean };
+
+async function validateAuthorityReads() {
+  const optimized = process.env.AA07_CAPTURE_BASELINE !== "1";
+  if (!optimized) assert.equal(source.replace(/\r\n/g, "\n"), authorityBaselineSource.replace(/\r\n/g, "\n"), "capture precedes production edit");
+  const catalog = requireAdapter("../../conversion-content/landing-page/input-catalog");
+  const chain: Row[] = [catalog.realEstateSegmentTaxon, catalog.realEstateBrokerNicheTaxon, catalog.mediumStandardRealEstateBrokerTaxon]
+    .map(t => ({ id: t.id, name: t.name, slug: t.slug, level: t.level, is_active: true, parent_id: t.parentId }));
+  let comparisons = 0;
+  const compare = async (scenario: Scenario) => {
+    const old = await exercise({ ...scenario, authority: { ...scenario.authority!, baseline: true } });
+    const current = await exercise(scenario);
+    assert.deepEqual(current.authorityResults, old.authorityResults, JSON.stringify(scenario.authority));
+    assert.equal(current.writerCalls.length, 0);
+    comparisons += current.authorityResults.length;
+    return { old, current };
+  };
+  for (const depth of [1, 2, 3]) for (const approval of ["none", "all"] as const)
+    for (const history of [0, 1, 26]) for (const complete of [false, true])
+      for (const residence of [undefined, "bootstrap", "historical"] as const) {
+        if (!history && approval === "all") continue;
+        const taxons = chain.slice(0, depth);
+        const { old, current } = await compare({ size: 1, approval, history, complete, residence,
+          authority: { steps: [{ operation: "detail", taxons }, { operation: "revalidation", taxons }] } });
+        const detail = current.authorityResults[0] as Row;
+        assert.equal(detail.ok, true);
+        assert.deepEqual(Object.keys(detail).sort(), ["ok", "landingPage", "configuration", "canMutate", "revisions"].sort());
+        assert.equal(detail.canMutate, true);
+        const approved = Number(approval === "all");
+        assert.equal(old.authorityMetrics[0].requests, 8 + depth + approved);
+        assert.equal(current.authorityMetrics[0].requests, (optimized ? 7 : 8) + depth + approved);
+        const oldLoads = residence === "bootstrap" ? 1 : 2;
+        assert.equal(old.authorityMetrics[1].boundaries.filter(b => b === "auth").length, oldLoads);
+        assert.equal(current.authorityMetrics[1].boundaries.filter(b => b === "auth").length, optimized ? 1 : oldLoads);
+        assert.equal(current.authorityMetrics[1].clients, optimized ? 1 : oldLoads);
+        assert.deepEqual(current.authorityMetrics[0].taxons, [taxons.at(-1)!.id]);
+        assert.equal(current.calls.filter(u => /\/(account_taxonomy|business_taxons)\?/.test(u)).length,
+          (optimized ? depth : depth + 1) * (optimized ? 2 : 1 + oldLoads));
+        if (history === 26 && complete && residence === undefined && approval === "none") {
+          console.log("AA07 SYNTHETIC " + JSON.stringify({ depth, old: old.authorityMetrics, current: current.authorityMetrics }));
+        }
+      }
+  const negativeStates: AuthorityState[] = [
+    { gate: false }, { landingPageId: "bad" }, { accountId: "bad" }, { accountId: " " },
+    { accountId: accountB }, { landingPageId: pageId(999) }, { landingPageId: pageId(998) },
+    { authenticated: false }, { authError: true }, { authThrow: true }, { actorId: "another-actor" },
+    { tables: { accounts: [] } }, { tables: { accounts: [{ id: accountA, status: "inactive" }] } },
+    { tables: { account_users: [] } }, { tables: { account_users: [{ account_id: accountA, user_id: "actor", status: "inactive", role: "owner" }] } },
+    { entitled: false }, { plan: "invalid" }, { entitlementThrow: true },
+    { links: [] }, { links: [{ account_id: accountB, taxon_id: chain[0].id, is_primary: true, status: "active" }] },
+    { links: [{ account_id: accountA, taxon_id: chain[0].id, is_primary: false, status: "active" }] },
+    { links: [{ account_id: accountA, taxon_id: chain[0].id, is_primary: true, status: "inactive" }] },
+    { links: [{ account_id: accountA, taxon_id: null, is_primary: true, status: "active" }] },
+    { links: [{ account_id: accountA, taxon_id: "missing", is_primary: true, status: "active" }] },
+    { prepared: false }, { preparationThrow: true }, ...[0, -1, 1.5, Number.MAX_SAFE_INTEGER + 1].map(preparationVersion => ({ preparationVersion })),
+    ...["accounts", "account_users", "account_taxonomy", "business_taxons", "account_landing_pages", "account_landing_page_shared_configurations", "account_landing_page_configurations", "account_landing_page_onboarding_configurations", "history", "approved"].map(fault => ({ fault })),
+    { tables: { account_landing_page_configurations: [{ account_id: accountA, landing_page_id: pageId(1), catalog_version: 6, revision: 1, values: { landing_page_offering_scope: { scope: "landing_page", value: "bad" } } }] } },
+    { tables: { account_landing_page_configurations: [{ account_id: accountA, landing_page_id: pageId(1), catalog_version: 0, revision: 1, values: {} }] } },
+  ];
+  const states: AuthorityState[] = [...negativeStates,
+    ...["owner", "admin", "viewer", "other"].map(role => ({ role })),
+    ...["starter", "lite", "pro", "ultra"].map(plan => ({ plan })),
+    ...[1, 5, 6].map(preparationVersion => ({ preparationVersion })),
+    { accountName: "  Renamed  " }, { accountName: " " }, { sharedRevision: 3, lpRevision: 2 },
+  ];
+  // Mutate each node/ancestor separately. A segment stops traversal even with a bad parent.
+  for (let node = 0; node < 3; node++) for (const patch of [
+    { is_active: false }, { name: null }, { slug: [] }, { level: "bad" }, { parent_id: null },
+    { parent_id: "missing" }, { parent_id: chain[node].id }, { parent_id: 42 },
+    { level: "segment" }, { level: "niche" }, { level: "ultra_niche" },
+  ]) states.push({ taxons: chain.map((t, i) => i === node ? { ...t, ...patch } : t) });
+  for (const removed of [0, 1, 2]) states.push({ taxons: chain.filter((_, i) => i !== removed), links: [{ account_id: accountA, taxon_id: chain[2].id, is_primary: true, status: "active" }] });
+  for (const t of chain) states.push({ taxons: chain, fault: "taxon:" + t.id });
+  // Fourth ancestor is deliberately not visited under the pre-existing depth cap.
+  states.push({ taxons: [{ ...chain[0], id: "fourth" }, { ...chain[0], level: "niche", parent_id: "fourth" }, chain[1], chain[2]] });
+  for (const state of states) {
+    const { current } = await compare({ size: 1, complete: true, approval: "all", history: 26,
+      authority: { steps: [{ ...state, operation: "detail" }, { ...state, operation: "revalidation" }] } });
+    const detail = current.authorityResults[0] as Row;
+    const revalidation = current.authorityResults[1] as Row;
+    if (!detail.ok) {
+      const errors: Record<string, string> = { unauthenticated: "unauthenticated", unauthorized: "membership_inactive", not_found: "landing_page_not_found", invalid_configuration: "invalid_configuration" };
+      assert.deepEqual(revalidation, { ok: false, error: errors[detail.error] ?? "read_failed" });
+    } else if (state.role) assert.equal(detail.canMutate, ["owner", "admin"].includes(state.role));
+    if (state.gate === false || state.landingPageId === "bad") assert.equal(current.boundaryCalls.length, 0);
+  }
+  for (const historyCursor of ["0", "25", "26", "-1", "bad", "9007199254740992"]) {
+    const { current } = await compare({ size: 1, complete: true, approval: "all", history: 26, authority: { steps: [{ operation: "detail", historyCursor }] } });
+    if (["-1", "bad", "9007199254740992"].includes(historyCursor)) assert.deepEqual(current.boundaryCalls, []);
+  }
+  for (const fault of ["count_missing", "latest_metadata", "approved_missing", "page_tenant", "page_shape"]) await compare({ size: 1, complete: true, approval: "all", history: 26, fault, authority: { steps: [{ operation: "detail" }, { operation: "revalidation" }] } });
+  for (const accountId of ["abcdefab-cdef-4abc-8def-abcdefabcdef", "ABCDEFAB-CDEF-4ABC-8DEF-ABCDEFABCDEF", " AbCdEfAb-CdEf-4AbC-8DeF-AbCdEfAbCdEf "]) {
+    for (const landingPageId of ["abcdefab-cdef-4abc-8def-000000000001", "ABCDEFAB-CDEF-4ABC-8DEF-000000000001", "bad"])
+      await compare({ size: 1, authority: { uuidLetters: true, steps: [{ operation: "detail", accountId, landingPageId }, { operation: "revalidation", accountId, landingPageId }] } });
+  }
+  const alternateAccount: AuthorityState = { accountId: accountB, landingPageId: pageId(999), links: [{ account_id: accountB, taxon_id: chain[0].id, is_primary: true, status: "active" }], tables: {
+    accounts: [{ id: accountB, name: "Second tenant", status: "active" }],
+    account_users: [{ account_id: accountB, user_id: "actor", role: "viewer", status: "active" }],
+    account_landing_page_shared_configurations: [{ account_id: accountB, catalog_version: 6, revision: 7, values: {} }],
+    account_landing_page_onboarding_configurations: [],
+    account_landing_page_configurations: [{ account_id: accountB, landing_page_id: pageId(999), catalog_version: 6, revision: 9, values: {} }],
+  } };
+  const tenants = await compare({ size: 1, authority: { steps: [{ operation: "detail" }, { ...alternateAccount, operation: "detail" }, { ...alternateAccount, operation: "revalidation" }, { operation: "revalidation" }] } });
+  assert.equal((tenants.current.authorityResults[1] as Row).ok, true);
+  assert.equal((tenants.current.authorityResults[1] as Row).configuration.accountId, accountB);
+  assert.equal((tenants.current.authorityResults[1] as Row).canMutate, false);
+  assert.equal((tenants.current.authorityResults[2] as Row).authority.landingPageRevision, 9);
+  // Same module/client; each public invocation and later post-provider callback must read fresh I/O.
+  for (const operation of ["detail", "revalidation"] as const) for (const state of states) {
+    const sequence = await exercise({ size: 1, complete: true, approval: "all", history: 26, authority: { steps: [{ operation }, { ...state, operation }, { operation }] } });
+    const isolated = await exercise({ size: 1, complete: true, approval: "all", history: 26, authority: { steps: [{ ...state, operation }] } });
+    assert.deepEqual(sequence.authorityResults[1], isolated.authorityResults[0]);
+    assert.deepEqual(sequence.authorityResults[2], sequence.authorityResults[0]);
+    assert.deepEqual(sequence.authorityMetrics[1], isolated.authorityMetrics[0]);
+  }
+  for (const secondLoad of [{ authenticated: false }, { role: "viewer" }, { plan: "lite", accountName: "Changed after first read" }, { prepared: false }, { fault: "account_taxonomy" }] satisfies AuthorityState[]) {
+    const scenario = { size: 1, complete: true, authority: { steps: [{ operation: "revalidation" as const }], secondLoad } };
+    const old = await exercise({ ...scenario, authority: { ...scenario.authority, baseline: true } });
+    const current = await exercise(scenario);
+    if (optimized) {
+      assert.equal((current.authorityResults[0] as Row).ok, true);
+      assert.equal(current.boundaryCalls.filter(b => b === "auth").length, 1);
+      if (secondLoad.role !== "viewer") assert.notDeepEqual(current.authorityResults, old.authorityResults);
+    } else assert.deepEqual(current.authorityResults, old.authorityResults);
+  }
+  // A failure of the removed HTTP request is not a failure of the new relationship.
+  for (const operation of ["detail", "revalidation"] as const) {
+    const scenario = { size: 1, complete: true, authority: { steps: [{ operation, fault: "removed_initial_request" }] } };
+    const old = await exercise({ ...scenario, authority: { ...scenario.authority, baseline: true } });
+    const current = await exercise(scenario);
+    assert.equal((old.authorityResults[0] as Row).ok, false);
+    assert.equal((current.authorityResults[0] as Row).ok, optimized);
+    if (optimized) {
+      const embeddedError = await exercise({ size: 1, authority: { steps: [{ operation, fault: "embed_relation" }] } });
+      assert.deepEqual(embeddedError.authorityResults, [{ ok: false, error: operation === "detail" ? "unavailable" : "read_failed" }]);
+      assert.equal(embeddedError.calls.some(u => u.includes("/business_taxons?")), false);
+    }
+  }
+  if (optimized) for (const embedShape of [null, [], {}, "bad"]) {
+    const result = await exercise({ size: 1, authority: { steps: [{ embedShape }] } });
+    assert.deepEqual(result.authorityResults, [{ ok: false, error: "read_failed" }]);
+    assert.equal(result.calls.some(u => u.includes("/business_taxons?")), false, "no fallback after invalid embed");
+  }
+  console.log("ok - AA07 " + comparisons + " full old/new DTO/error comparisons; fresh invocations, temporal delta, LEFT embed and external-boundary counts (synthetic, not DB timings)");
+}
+
 async function runWorkspaceValidation() {
   for (const validationCase of cases) {
     validationCase.run();
     console.log(`ok - ${validationCase.name}`);
   }
+  await validateAuthorityReads();
   await validateWorkspaceReads();
   await validateIdentityReads();
   validateIdentitySqlContract();

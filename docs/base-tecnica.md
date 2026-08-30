@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.83
+• Versão: v2.0.84
 • Data: 30/08/2026
 
 0.2 Contrato do documento (consulta)
@@ -317,7 +317,7 @@
 • A validação de identidade lê uma seleção completa e limitada de snapshots originais, independente da quantidade de revisões, preservando a primeira presença elegível de cada grupo e sua ordem interna; elegibilidade de seleção não substitui a avaliação de domínio. Baselines e revisão corrente devem vir do mesmo snapshot de leitura, e o save deve revalidar a revisão observada sob o lock existente. Erro ou resposta inválida falha fechado, sem truncamento ou fallback para varredura histórica; o contrato físico pertence a `docs/schema.md`.
 • Escrita ocorre exclusivamente por operação transacional server-side tenant-safe, sob lock da LP em draft e com attempt idempotente; acesso direto de runtime à tabela permanece read-only.
 • Mídia gerada é armazenada em Storage privado por referência canônica estável; URL assinada é criada somente no consumo autorizado e nunca é persistida como identidade.
-• Uma revisão só pode ser anexada depois de candidata, bindings, mídia, snapshot e revalidação de acesso integralmente válidos. Falha posterior a upload confirmado exige cleanup best-effort do path exato e não autoriza materialização parcial.
+• Uma revisão só pode ser anexada depois de candidata, bindings, mídia, snapshot e revalidação de acesso integralmente válidos. A autoridade pode ser reutilizada somente dentro da mesma invocação de leitura; cada nova chamada deve resolvê-la novamente, inclusive a revalidação posterior aos providers e ao upload. Esse reuso não constitui snapshot transacional nem garantia de revogação instantânea. Falha posterior a upload confirmado exige cleanup best-effort do path exato e não autoriza materialização parcial.
 • Conteúdo e snapshot persistidos devem ser autossuficientes para reprodução sem reler fontes mutáveis, sem secret, raciocínio privado, resposta bruta ou URL assinada; objetos físicos exatos pertencem a `docs/schema.md` e ao código.
 • O consumo privado de uma revisão deve revalidar ator, conta, membership, entitlement, LP e tenant da materialização antes de assinar mídia ou entregar o read model; divergência de identidade, binding ou referência de asset falha fechada.
 • O read model expõe somente allowlist explícita do contrato de apresentação e metadados necessários da revisão, acrescida da URL assinada transitória; linhas de banco, snapshot integral, pesquisa, valores operacionais, bucket, path, autenticação e provider não atravessam o boundary do renderer.
