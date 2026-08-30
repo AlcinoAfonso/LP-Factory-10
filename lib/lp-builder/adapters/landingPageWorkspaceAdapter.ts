@@ -47,7 +47,6 @@ const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const WORKSPACE_PAGE_SIZE = 25;
 const HISTORY_PAGE_SIZE = 25;
-const BASELINE_PAGE_SIZE = 100;
 export async function listAccountLandingPageWorkspace(input: Readonly<{
   accountId: string;
   cursor?: string;
@@ -619,33 +618,37 @@ async function validateIdentityMutation(
       result: Extract<SaveAccountLandingPageOperationalConfigurationResult, { ok: false }>;
     }>
 > {
+  const { data, error } = await client.rpc(
+    "read_account_landing_page_identity_baselines_v1",
+    { p_account_id: input.accountId, p_landing_page_id: input.landingPageId },
+  );
+  if (error || !Array.isArray(data) || data.length > 4) {
+    return { ok: false, result: { ok: false, error: "unavailable" } };
+  }
+  // The RPC returns the complete selection, not a page: first presence per
+  // identity group plus latest, from one SQL snapshot. Never scan history here.
   const generationContextSnapshots: unknown[] = [];
-  let offset = 0;
-  let hasRevision = false;
-  let latestMaterializationId: string | null = null;
-  while (true) {
-    const { data, error } = await client
-      .from("account_landing_page_materializations")
-      .select("id,generation_context_snapshot_json")
-      .eq("account_id", input.accountId)
-      .eq("landing_page_id", input.landingPageId)
-      .order("revision_number", { ascending: true })
-      .range(offset, offset + BASELINE_PAGE_SIZE - 1);
-    if (error || !Array.isArray(data)) {
+  const ids = new Set<string>();
+  const accountId = input.accountId.toLowerCase();
+  const landingPageId = input.landingPageId.toLowerCase();
+  let previousRevision = 0;
+  const latestMaterializationId: unknown = data.length ? data[data.length - 1]?.id : null;
+  for (const row of data) {
+    if (
+      !isRecord(row) || typeof row.id !== "string" || !UUID_RE.test(row.id) ||
+      ids.has(row.id) || row.account_id !== accountId ||
+      row.landing_page_id !== landingPageId ||
+      !isPositiveInteger(row.revision_number) || row.revision_number <= previousRevision ||
+      row.latest_materialization_id !== latestMaterializationId ||
+      !isRecord(row.generation_context_snapshot_json)
+    ) {
       return { ok: false, result: { ok: false, error: "unavailable" } };
     }
-    if (data.length === 0) break;
-    hasRevision = true;
-    for (const row of data) {
-      if (!isRecord(row) || typeof row.id !== "string") {
-        return { ok: false, result: { ok: false, error: "unavailable" } };
-      }
-      latestMaterializationId = row.id;
-      generationContextSnapshots.push(row.generation_context_snapshot_json);
-    }
-    if (data.length < BASELINE_PAGE_SIZE) break;
-    offset += data.length;
+    ids.add(row.id);
+    previousRevision = row.revision_number;
+    generationContextSnapshots.push(row.generation_context_snapshot_json);
   }
+  const hasRevision = data.length > 0;
   const currentOfferingScope = hasRevision
     ? await readCurrentConfiguredOfferingScope(client, input.accountId, input.landingPageId)
     : undefined;
@@ -656,7 +659,7 @@ async function validateIdentityMutation(
     sameCommercialWorkConfirmed: input.sameCommercialWorkConfirmed,
   });
   if (!evaluation.ok) return { ok: false, result: evaluation };
-  return { ok: true, latestMaterializationId };
+  return { ok: true, latestMaterializationId: latestMaterializationId as string | null };
 }
 
 async function readCurrentConfiguredOfferingScope(

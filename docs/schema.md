@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data da última atualização: 30/08/2026
-• Documento: LP Factory 10 — Schema (DB Contract) v1.0.63
+• Documento: LP Factory 10 — Schema (DB Contract) v1.0.64
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -826,6 +826,7 @@
 • `account_landing_page_materializations_created_by_idx`: btree em created_by.
 • `account_landing_page_materializations_attempt_id_uidx`: unicidade parcial de attempt_id não nulo.
 • `account_landing_page_materializations_current_idx`: btree em account_id, landing_page_id e revision_number desc.
+• Contrato versionado: `account_lp_materializations_identity_funnel_idx`, `account_lp_materializations_identity_transaction_idx` e `account_lp_materializations_identity_offer_idx`, btree parciais em `(account_id, landing_page_id, revision_number asc)`, sem INCLUDE. Os predicados literais correspondem, respectivamente, à presença elegível de funnel, transaction e oferta current/legacy da RPC em 3.8.5; acrescentam custo de armazenamento e de avaliação/indexação no append.
 
 1.27.5 Segurança e acesso
 • RLS habilitado e nenhuma policy.
@@ -1319,6 +1320,14 @@
 • `append_account_landing_page_materialization_v2(uuid, uuid, uuid, jsonb, jsonb, uuid, bigint, bigint) → table(materialization_id uuid, revision_number bigint)`: SECURITY INVOKER e search_path fixado; recebe as revisões compartilhada e específica usadas pelo contexto v4.
 • O RPC preserva retry idempotente do mesmo attempt, bloqueia a LP, compara as duas revisões operacionais e só então delega ao append canônico v1 na mesma transação; save concorrente ou proveniência stale falham fechados sem revisão parcial.
 • EXECUTE exclusivo de service_role; public, anon, authenticated e ai_readonly não executam.
+
+3.8.5 Leitura limitada dos baselines de identidade
+• Contrato versionado em `supabase/migrations/20260830201842_e19_identity_baselines.sql`. O consumo requer a aplicação pelo workflow canônico.
+• `read_account_landing_page_identity_baselines_v1(p_account_id uuid, p_landing_page_id uuid) → table(id uuid, account_id uuid, landing_page_id uuid, revision_number bigint, generation_context_snapshot_json jsonb, latest_materialization_id uuid)` retorna até quatro snapshots originais, deduplicados e ordenados por revisão ascendente: primeira presença elegível de `funnel_stage`, de `transaction_intent`, de qualquer oferta `landing_page_offering_scope | primary_service_or_offer`, mais latest. Ausência total de histórico retorna zero linhas.
+• Uma única instrução SQL STABLE lê baselines e latest no mesmo snapshot MVCC, selecionando IDs antes dos snapshots; não grava, bloqueia, agrega o histórico inteiro ou cria estado auxiliar. SECURITY INVOKER, `search_path=pg_catalog` e EXECUTE somente para service_role, com revogações explícitas de PUBLIC, anon, authenticated e ai_readonly quando existente; sem nova permissão de tabela ou alteração de RLS.
+• A seleção exige `generationContext.modelContext.facts` array, inclusive para considerar `bindingFacts`; JSONPath strict/silent aceita apenas fact objeto com fieldKey string e propriedade value presente, inclusive null. Oferta malformada permanece elegível: parser, precedência, igualdade e decisão continuam no evaluator E19 sem reinterpretar snapshots.
+• Latest acompanha cada linha e é a última revisão selecionada; o adapter valida limite, identidades, ordem, unicidade, snapshot objeto e coerência do token antes de avaliar. Save/append/approval e tokens operacionais existentes permanecem inalterados; append posterior invalida o token observado no save sob o lock já existente.
+• Prova diferencial read-only pré-apply: `supabase/tests/e19_identity_baselines.test.sql`. Verificação da RPC instalada, índices, predicados, ACL, tenant e latest: `supabase/snippets/e19_identity_baselines_verify.sql`.
 
 3.9 Conflitos de domínio seguros na Data API
 3.9.1 Helper transversal

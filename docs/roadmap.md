@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 30/08/2026
-• Versão: v1.5.199
+• Versão: v1.5.200
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2462,7 +2462,11 @@ Repositório — Ajustados
     - `public.e19_5_configuration_values_have_scopes(jsonb, text[])`;
     - `public.save_account_landing_page_configuration_v1(uuid, uuid, jsonb, jsonb, bigint, bigint, integer, uuid, uuid)`;
     - `public.approve_account_landing_page_materialization_v1(uuid, uuid, uuid, uuid)`;
-    - `public.append_account_landing_page_materialization_v2(uuid, uuid, uuid, jsonb, jsonb, uuid, bigint, bigint)`.
+    - `public.append_account_landing_page_materialization_v2(uuid, uuid, uuid, jsonb, jsonb, uuid, bigint, bigint)`;
+    - `public.read_account_landing_page_identity_baselines_v1(uuid, uuid)`;
+    - `public.account_lp_materializations_identity_funnel_idx`;
+    - `public.account_lp_materializations_identity_transaction_idx`;
+    - `public.account_lp_materializations_identity_offer_idx`.
   - Ajustados:
     - `public.account_landing_pages`;
     - `public.account_landing_page_materializations`.
@@ -2479,7 +2483,10 @@ Repositório — Ajustados
     - `lib/lp-builder/landing-page-workspace-validation-cases.ts`;
     - `supabase/migrations/20260822170000_e19_5_3_landing_page_workspace.sql`;
     - `supabase/snippets/e19_5_3_landing_page_workspace_verify.sql`;
-    - `supabase/tests/e19_5_3_landing_page_workspace.test.sql`.
+    - `supabase/tests/e19_5_3_landing_page_workspace.test.sql`;
+    - `supabase/migrations/20260830201842_e19_identity_baselines.sql`;
+    - `supabase/tests/e19_identity_baselines.test.sql`;
+    - `supabase/snippets/e19_identity_baselines_verify.sql`.
   - Ajustados:
     - `app/a/[account]/page.tsx`;
     - `app/a/[account]/_components/OnboardingConfigurationJourney.tsx`;
@@ -2517,6 +2524,7 @@ Repositório — Ajustados
   - a configuração reutiliza declarativamente o catálogo E20.2 v5 e separa fisicamente scopes compartilhados `account/business` dos contextuais `offer/campaign/landing_page`, sem lista paralela, placeholder, precriação, backfill, `is_initialized` ou completude persistida;
   - `primary_conversion_goal` é obrigatório e participa do núcleo de identidade após a primeira revisão válida que o contenha; `business_offerings_summary` é opcional, reside no compartilhado e sua ausência isolada não bloqueia completude;
   - o handoff da E19.2 é lazy e vinculado à LP exata; depois que a residência operacional existe, o agregado histórico permanece apenas como bootstrap/proveniência e não serve fallback concorrente;
+  - a validação corrente de identidade usa uma leitura atômica de até quatro snapshots originais: primeiras presenças elegíveis dos três grupos vigentes definidos em 20.2.9.3 e revisão latest, deduplicadas e ordenadas; preserva o evaluator e a configuração corrente, sem paginação histórica, truncamento, cache ou novo token;
   - o save das duas residências é atômico, `SECURITY INVOKER`, versionado e protegido por revisões otimistas independentes; no-op não incrementa, e conflito preserva integralmente o estado anterior;
   - geração e revalidação exigem literalmente a v5 e igualdade exata com `reviewed_input_catalog_version`, falhando fechado para ausência, divergência, versão não executável ou erro; não existe fallback para v4, `latest`, maior versão ou versão implícita;
   - novas revisões usam snapshot v2/contexto v4 com proveniência das residências; readers aceitam somente os pares históricos v1/contexto v3 e atuais v2/contexto v4, sem cruzamento ou reinterpretação retroativa;
