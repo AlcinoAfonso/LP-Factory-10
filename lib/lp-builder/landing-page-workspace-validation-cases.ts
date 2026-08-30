@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { runInThisContext } from "node:vm";
 import ts from "typescript";
@@ -357,15 +357,18 @@ const pageId = (i: number) => `20000000-0000-4000-8000-${String(i).padStart(12, 
 const revisionId = (i: number, r: number) => `30000000-0000-4000-8000-${String(i * 1000 + r).padStart(12, "0")}`;
 // Raw transport fixtures intentionally include malformed database shapes.
 type Row = Record<string, any>;
-type Scenario = { size: number; approval?: "none" | "mixed" | "all" | "latest"; history?: number; cursor?: string; role?: string; denied?: boolean; gate?: boolean; authenticated?: boolean; fault?: string; complete?: boolean; entitled?: boolean; prepared?: boolean; residence?: "bootstrap" | "historical"; detailCursor?: string; differentDates?: boolean };
+type Scenario = { identity?: IdentityScenario; size: number; approval?: "none" | "mixed" | "all" | "latest"; history?: number; cursor?: string; role?: string; denied?: boolean; gate?: boolean; authenticated?: boolean; fault?: string; complete?: boolean; entitled?: boolean; prepared?: boolean; residence?: "bootstrap" | "historical"; detailCursor?: string; differentDates?: boolean };
 const source = readFileSync(adapterPath, "utf8");
 const compiled = ts.transpileModule(source, { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS, esModuleInterop: true } }).outputText;
 
 // Test-only module boundary: execute the unmodified adapter, real domain resolvers,
 // and real supabase-js URL builder; replace only external I/O. No production seam.
-async function exercise(s: Scenario) {
+async function exercise<S extends Scenario>(s: S) {
   const calls: URL[] = [];
   const boundaryCalls: string[] = [];
+  const writerCalls: Row[] = [];
+  let ownWrites = 0;
+  let concurrent = false;
   let revisionRows = 0;
   let revisionBytes = 0;
   const pages: Row[] = Array.from({ length: s.size }, (_, n) => {
@@ -374,11 +377,11 @@ async function exercise(s: Scenario) {
   }).reverse();
   pages.push({ id: pageId(999), account_id: accountB, name: "Other tenant", slug: "other", status: "draft", updated_at: "2026-08-31T10:00:00Z", approved_materialization_id: null });
   pages.push({ id: pageId(998), account_id: accountA, name: "Archived", slug: "archived", status: "archived", updated_at: "2026-08-31T10:00:00Z", approved_materialization_id: null });
-  const revisions: Row[] = pages.flatMap((p) => Array.from({ length: s.history ?? 101 }, (_, n) => ({
+  const revisions: Row[] = pages.flatMap((p) => Array.from({ length: s.identity?.snapshots.length ?? s.history ?? 101 }, (_, n) => ({
     id: revisionId(Number(p.id.slice(-12)), n + 1), landing_page_id: p.id, account_id: p.account_id, revision_number: n + 1,
     // Deliberately reverse chronological dates: revision number is the authority.
     created_at: new Date(Date.UTC(2026, 0, 1) - n * 1000).toISOString(),
-    content_json: { forbidden: "x".repeat(1024) }, generation_context_snapshot_json: { forbidden: "x".repeat(1024) },
+    content_json: { forbidden: "x".repeat(1024) }, generation_context_snapshot_json: s.identity ? s.identity.snapshots[n] : { forbidden: "x".repeat(1024) },
   })));
   const metadata = (r: Row) => Object.fromEntries(["id", "revision_number", "created_at", "account_id", "landing_page_id"].map(k => [k, r[k]]));
   const core = requireAdapter("../onboardingConfiguration");
@@ -392,19 +395,68 @@ async function exercise(s: Scenario) {
     primary_conversion_goal: "contact", primary_conversion_channel: "whatsapp",
     whatsapp_destination: "+5511999999999", service_locations: ["São Paulo"],
   } : {};
+  if (s.identity?.next) Object.assign(rawValues, s.identity.next);
   const resolvedCatalog = catalog.resolveLandingPageInputCatalog({ version: 6, plan: "starter", taxonChain: { segment: taxon } });
   assert.equal(resolvedCatalog.ok, true);
   const values = Object.fromEntries(resolvedCatalog.value.fields.filter((f: { fieldKey: string }) => Object.hasOwn(rawValues, f.fieldKey)).map((f: { fieldKey: string; valueScope: string }) => [f.fieldKey, { scope: f.valueScope, value: rawValues[f.fieldKey] }]));
   const split = requireAdapter("../landingPageWorkspace").splitLandingPageWorkspaceValues(values);
+  const currentValues = { ...split.landingPageValues };
+  if (s.identity?.missingCurrentScope) delete currentValues.landing_page_offering_scope;
+  else if (s.identity?.currentScope !== undefined) currentValues.landing_page_offering_scope = { scope: "landing_page", value: s.identity.currentScope };
   const client = createTestClient("https://workspace.test", "test-only-key", {
     auth: { persistSession: false, autoRefreshToken: false },
     global: { fetch: async (input, init) => {
       const url = new URL(String(input));
       calls.push(url);
-      assert.equal(init?.method, "GET");
+
       const table = url.pathname.split("/").pop()!;
       const q = url.searchParams;
       if (s.fault === table) return new Response(JSON.stringify({ message: "fixture read error" }), { status: 500 });
+      if (url.pathname.includes("/rpc/")) {
+        assert.equal(init?.method, "POST");
+        const payload = JSON.parse(String(init?.body));
+        assert.equal(payload.p_account_id, accountA);
+        assert.equal(payload.p_landing_page_id, pageId(1));
+        if (table === "read_account_landing_page_identity_baselines_v1") {
+          const history = revisions.filter(r => r.account_id === payload.p_account_id && r.landing_page_id === payload.p_landing_page_id);
+          let selected: unknown = selectIdentityRows(history);
+          const rows = selected as Row[];
+          concurrent = s.identity?.interleave !== undefined;
+          switch (s.identity?.rpcFault) {
+            case "error": return new Response(JSON.stringify({ code: "PGRST202", message: "RPC not applied" }), { status: 404 });
+            case "throw": throw new Error("fixture transport");
+            case "object": selected = {}; break;
+            case "null": selected = null; break;
+            case "many": selected = Array(5).fill(rows[0]); break;
+            case "duplicate": rows.push(rows[0]); break;
+            case "reverse": rows.reverse(); break;
+            case "id": rows[0].id = "invalid"; break;
+            case "tenant": rows[0].account_id = accountB; break;
+            case "lp": rows[0].landing_page_id = pageId(999); break;
+            case "revision": rows[0].revision_number = 0; break;
+            case "fraction": rows[0].revision_number = 1.5; break;
+            case "unsafe": rows[0].revision_number = Number.MAX_SAFE_INTEGER + 1; break;
+            case "snapshot": rows[0].generation_context_snapshot_json = []; break;
+            case "missing_snapshot": delete rows[0].generation_context_snapshot_json; break;
+            case "token": rows[0].latest_materialization_id = revisionId(999, 1); break;
+            case "token_missing": delete rows[0].latest_materialization_id; break;
+          }
+          revisionRows += Array.isArray(selected) ? selected.length : 0;
+          revisionBytes += Buffer.byteLength(JSON.stringify(selected));
+          return new Response(JSON.stringify(selected), { status: 200 });
+        }
+        assert.equal(table, "save_account_landing_page_configuration_v1");
+        writerCalls.push(payload);
+        const currentLatest = s.identity?.interleave === "append" && concurrent ? revisionId(1, 9999) : revisions.filter(r => r.account_id === accountA && r.landing_page_id === pageId(1)).at(-1)?.id ?? null;
+        const sharedRevision = concurrent && s.identity?.interleave === "shared" ? 3 : 2;
+        const lpRevision = concurrent && s.identity?.interleave === "lp" ? 2 : 1;
+        if (payload.p_expected_latest_materialization_id !== currentLatest || payload.p_expected_shared_revision !== sharedRevision || payload.p_expected_landing_page_revision !== lpRevision) {
+          return new Response(JSON.stringify({ code: "40001", message: "fixture revision conflict" }), { status: 409 });
+        }
+        ownWrites++;
+        return new Response(JSON.stringify([{ shared_revision: 2, landing_page_revision: 1 }]), { status: 200 });
+      }
+      assert.equal(init?.method, "GET");
       let rows: Row[];
       switch (table) {
         case "accounts": rows = [{ id: accountA, name: "Conta", status: "active" }]; break;
@@ -415,7 +467,7 @@ async function exercise(s: Scenario) {
         case "account_landing_page_materializations": rows = revisions; break;
         case "account_landing_page_shared_configurations": rows = s.residence === "bootstrap" ? [] : [{ account_id: accountA, catalog_version: s.residence === "historical" ? 5 : 6, revision: 2, values: split.sharedValues }]; break;
         case "account_landing_page_onboarding_configurations": rows = [{ account_id: accountA, landing_page_id: pageId(1), values: s.residence === "bootstrap" ? values : {} }]; break;
-        case "account_landing_page_configurations": rows = s.residence === "bootstrap" ? [] : pages.map(p => ({ landing_page_id: p.id, account_id: p.account_id, catalog_version: s.residence === "historical" ? 5 : 6, revision: 1, values: split.landingPageValues })); break;
+        case "account_landing_page_configurations": rows = s.residence === "bootstrap" ? [] : pages.map(p => ({ landing_page_id: p.id, account_id: p.account_id, catalog_version: s.residence === "historical" ? 5 : 6, revision: 1, values: s.identity ? currentValues : split.landingPageValues })); break;
         default: throw new Error(`Unexpected table ${table}`);
       }
       for (const [key, filter] of q) {
@@ -486,13 +538,18 @@ async function exercise(s: Scenario) {
     "../onboardingConfiguration": core,
   };
   const exports = {} as typeof import("./adapters/landingPageWorkspaceAdapter");
-  runInThisContext(`(function(require, exports) { ${compiled}\n})`)((id: string) => Object.hasOwn(imports, id) ? imports[id] : requireAdapter(id), exports);
+  runInThisContext(`(function(require, exports) { ${s.identity?.baseline ? baselineCompiled : compiled}\n})`)((id: string) => Object.hasOwn(imports, id) ? imports[id] : requireAdapter(id), exports);
   const previous = process.env.E19_5_WORKSPACE_ENABLED;
   process.env.E19_5_WORKSPACE_ENABLED = s.gate === false ? "false" : "true";
   try {
-    const output = await exports.listAccountLandingPageWorkspace({ accountId: accountA, cursor: s.cursor });
+    const output = s.identity
+      ? await exports.saveAccountLandingPageOperationalConfiguration({
+          accountId: s.identity.accountId ?? accountA, landingPageId: s.identity.landingPageId ?? pageId(1), values,
+          expectedSharedRevision: 2, expectedLandingPageRevision: 1, sameCommercialWorkConfirmed: s.identity.sameWork,
+        })
+      : await exports.listAccountLandingPageWorkspace({ accountId: accountA, cursor: s.cursor });
     const detail = s.detailCursor === undefined ? undefined : await exports.getAccountLandingPageWorkspaceDetail({ accountId: accountA, landingPageId: pageId(1), historyCursor: s.detailCursor });
-    return { output, detail, calls: calls.map(u => u.href), boundaryCalls, revisionRows, revisionBytes };
+    return { output: output as S extends { identity: IdentityScenario } ? Awaited<ReturnType<typeof exports.saveAccountLandingPageOperationalConfiguration>> : Awaited<ReturnType<typeof exports.listAccountLandingPageWorkspace>>, detail, writerCalls, ownWrites, calls: calls.map(u => u.href), boundaryCalls, revisionRows, revisionBytes };
   } finally {
     if (previous === undefined) delete process.env.E19_5_WORKSPACE_ENABLED;
     else process.env.E19_5_WORKSPACE_ENABLED = previous;
@@ -595,14 +652,284 @@ async function validateWorkspaceReads() {
   console.log("ok - workspace real adapter: bounded requests, metadata, paging, tenants, states, failures and unchanged detail");
 }
 
+
+// Frozen executable reader from a024191 (AA05), injected only into the test module.
+// This is a baseline, never a runtime fallback. Keep the canonical evaluator real.
+const originalIdentityReader = String.raw`async function validateIdentityMutation(
+  client: ServiceClient,
+  input: Readonly<{
+    accountId: string;
+    landingPageId: string;
+    values: AccountLandingPageOnboardingStoredValues;
+    sameCommercialWorkConfirmed: boolean;
+  }>,
+): Promise<
+  | Readonly<{ ok: true; latestMaterializationId: string | null }>
+  | Readonly<{
+      ok: false;
+      result: Extract<SaveAccountLandingPageOperationalConfigurationResult, { ok: false }>;
+    }>
+> {
+  const BASELINE_PAGE_SIZE = 100;
+  const generationContextSnapshots: unknown[] = [];
+  let offset = 0;
+  let hasRevision = false;
+  let latestMaterializationId: string | null = null;
+  while (true) {
+    const { data, error } = await client
+      .from("account_landing_page_materializations")
+      .select("id,generation_context_snapshot_json")
+      .eq("account_id", input.accountId)
+      .eq("landing_page_id", input.landingPageId)
+      .order("revision_number", { ascending: true })
+      .range(offset, offset + BASELINE_PAGE_SIZE - 1);
+    if (error || !Array.isArray(data)) {
+      return { ok: false, result: { ok: false, error: "unavailable" } };
+    }
+    if (data.length === 0) break;
+    hasRevision = true;
+    for (const row of data) {
+      if (!isRecord(row) || typeof row.id !== "string") {
+        return { ok: false, result: { ok: false, error: "unavailable" } };
+      }
+      latestMaterializationId = row.id;
+      generationContextSnapshots.push(row.generation_context_snapshot_json);
+    }
+    if (data.length < BASELINE_PAGE_SIZE) break;
+    offset += data.length;
+  }
+  const currentOfferingScope = hasRevision
+    ? await readCurrentConfiguredOfferingScope(client, input.accountId, input.landingPageId)
+    : undefined;
+  const evaluation = evaluateLandingPageCommercialIdentityMutation({
+    generationContextSnapshots,
+    currentConfiguredOfferingScope: currentOfferingScope,
+    values: input.values,
+    sameCommercialWorkConfirmed: input.sameCommercialWorkConfirmed,
+  });
+  if (!evaluation.ok) return { ok: false, result: evaluation };
+  return { ok: true, latestMaterializationId };
+}
+
+`;
+const baselineSource = source.replace(
+  /async function validateIdentityMutation\([\s\S]*?(?=async function readCurrentConfiguredOfferingScope)/,
+  originalIdentityReader,
+);
+const baselineCompiled = ts.transpileModule(baselineSource, { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS, esModuleInterop: true } }).outputText;
+
+// Use the actual private canonical reader for the oracle, not a copy of its guards.
+const domainSource = readFileSync(new URL("./landingPageWorkspace.ts", import.meta.url), "utf8");
+const oracleModule: Row = {};
+const oracleCompiled = ts.transpileModule(domainSource + "\nexport { readSnapshotFacts };", { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS } }).outputText;
+runInThisContext("(function(require, exports) {" + oracleCompiled + "\n})")(
+  createRequire(new URL("./landingPageWorkspace.ts", import.meta.url)), oracleModule,
+);
+const identityGroups = [["funnel_stage"], ["transaction_intent"], ["landing_page_offering_scope", "primary_service_or_offer"]];
+function selectIdentityRows(rows: Row[]): Row[] {
+  const selected = new Set<Row>();
+  for (const keys of identityGroups) {
+    const first = rows.find(r => oracleModule.readSnapshotFacts(r.generation_context_snapshot_json).some((f: Row) => keys.includes(f.fieldKey)));
+    if (first) selected.add(first);
+  }
+  if (rows.length) selected.add(rows[rows.length - 1]);
+  return [...selected].sort((a, b) => a.revision_number - b.revision_number).map(r => ({
+    id: r.id, account_id: r.account_id, landing_page_id: r.landing_page_id,
+    revision_number: r.revision_number, generation_context_snapshot_json: r.generation_context_snapshot_json,
+    latest_materialization_id: rows[rows.length - 1].id,
+  }));
+}
+type IdentityScenario = {
+  snapshots: unknown[]; baseline?: boolean; sameWork?: boolean; next?: Row;
+  currentScope?: unknown; missingCurrentScope?: boolean; interleave?: "append" | "shared" | "lp";
+  rpcFault?: string; accountId?: string; landingPageId?: string;
+};
+const validIdentitySnapshot = generationContextSnapshot([
+  { fieldKey: "funnel_stage", value: "bofu" },
+  { fieldKey: "transaction_intent", value: "buy" },
+  { fieldKey: "primary_service_or_offer", value: "Consultoria" },
+]);
+const identityShapes: unknown[] = [
+  {}, { generationContext: {} }, { generationContext: [] },
+  { generationContext: { modelContext: [] } },
+  { generationContext: { modelContext: { facts: null }, bindingFacts: [{ fieldKey: "funnel_stage", value: "tofu" }] } },
+  { generationContext: { bindingFacts: [{ fieldKey: "primary_service_or_offer", value: null }] } },
+  { generationContext: { modelContext: { facts: {} }, bindingFacts: [{ fieldKey: "transaction_intent", value: "rent" }] } },
+  generationContextSnapshot([]),
+  ...identityGroups.flatMap(keys => keys.flatMap(fieldKey => [
+    ...["model", "binding"].map(location => {
+      const facts = [
+        {}, null, { value: "ignored" }, { fieldKey: [fieldKey], value: "ignored" },
+        [{ fieldKey, value: "ignored" }], { fieldKey },
+        { fieldKey, value: fieldKey === "funnel_stage" ? "bofu" : fieldKey === "transaction_intent" ? "buy" : fieldKey === "primary_service_or_offer" ? "Consultoria" : { mode: "single", offerings: ["Consultoria"] } },
+      ];
+      return { generationContext: { modelContext: { facts: location === "model" ? facts : [] }, bindingFacts: location === "binding" ? facts : [] } };
+    }),
+    generationContextSnapshot([{ fieldKey, value: null }]),
+    { generationContext: { modelContext: { facts: [{ fieldKey }] } } },
+    { generationContext: { modelContext: { facts: [[{ fieldKey, value: "invalid" }]] } } },
+    { generationContext: { modelContext: { facts: [{ fieldKey: [fieldKey], value: "invalid" }] } } },
+    { generationContext: { modelContext: { facts: [{ fieldKey: { name: fieldKey }, value: "invalid" }] } } },
+    { generationContext: { modelContext: { facts: [] }, bindingFacts: [{ fieldKey, value: null }] } },
+    { generationContext: { modelContext: { facts: [] }, bindingFacts: { fieldKey, value: null } } },
+  ])),
+  generationContextSnapshot([{ fieldKey: "funnel_stage", value: "bofu" }, { fieldKey: "funnel_stage", value: "tofu" }]),
+  generationContextSnapshot([{ fieldKey: "transaction_intent", value: "buy" }, { fieldKey: "transaction_intent", value: "rent" }]),
+  generationContextSnapshot([{ fieldKey: "primary_service_or_offer", value: "Consultoria" }, { fieldKey: "landing_page_offering_scope", value: null }]),
+  generationContextSnapshot([{ fieldKey: "landing_page_offering_scope", value: null }, { fieldKey: "primary_service_or_offer", value: "Consultoria" }]),
+  { generationContext: { modelContext: { facts: [{ fieldKey: "funnel_stage", value: "tofu" }] }, bindingFacts: [{ fieldKey: "funnel_stage", value: "bofu" }] } },
+  generationContextSnapshot([{ fieldKey: "primary_conversion_goal", value: "purchase" }]),
+  generationContextSnapshot([{ fieldKey: "landing_page_offering_scope", value: { mode: "single", offerings: ["Consultoria"] } }]),
+  generationContextSnapshot([{ fieldKey: "funnel_stage", value: { a: 1, b: 2 } }]),
+  generationContextSnapshot([{ fieldKey: "transaction_intent", value: ["buy"] }]),
+  validIdentitySnapshot,
+];
+function identityHistories(): unknown[][] {
+  const histories: unknown[][] = [[], [{}], [validIdentitySnapshot]];
+  for (const shape of identityShapes) {
+    histories.push([shape], [{}, shape, validIdentitySnapshot], [validIdentitySnapshot, shape], [shape, {}, ...identityShapes.slice(0, 8), validIdentitySnapshot]);
+  }
+  for (let seed = 0; seed < 100; seed++) {
+    histories.push(Array.from({ length: 7 }, (_, n) => identityShapes[(seed * 17 + n * 13) % identityShapes.length]));
+  }
+  return histories;
+}
+async function validateIdentityReads() {
+  let comparisons = 0;
+  for (const snapshots of identityHistories()) {
+    for (const sameWork of [false, true]) {
+      for (const next of [{}, { funnel_stage: "tofu" }, { transaction_intent: "rent" }, { landing_page_offering_scope: { mode: "single", offerings: ["Outra"] } }]) {
+        const spec = { size: 1, complete: true, history: snapshots.length, identity: { snapshots, sameWork, next } };
+        const old = await exercise({ ...spec, identity: { ...spec.identity, baseline: true } });
+        const current = await exercise(spec);
+        assert.deepEqual(current.output, old.output, "complete save result parity " + comparisons);
+        assert.deepEqual(current.writerCalls, old.writerCalls, "latest token and writer payload parity");
+        assert.ok(current.revisionRows <= 4);
+        assert.equal(current.calls.filter(u => u.includes("/rpc/read_account_landing_page_identity_baselines_v1")).length, 1);
+        assert.equal(current.calls.filter(u => new URL(u).pathname.endsWith("/account_landing_page_materializations")).length, 0);
+        comparisons++;
+      }
+    }
+  }
+  for (const n of [0, 1, 7, 100, 101, 1001]) {
+    // First occurrences are late and in distinct revisions; bytes include realistic ballast.
+    const snapshots = Array.from({ length: n }, (_, i) => ({
+      ...generationContextSnapshot(
+        i === Math.max(0, n - 4) ? [{ fieldKey: "funnel_stage", value: "bofu" }] :
+        i === Math.max(0, n - 3) ? [{ fieldKey: "transaction_intent", value: "buy" }] :
+        i === Math.max(0, n - 2) ? [{ fieldKey: "primary_service_or_offer", value: "Consultoria" }] : []),
+      ballast: "x".repeat(40000),
+    }));
+    const spec = { size: 1, complete: true, history: n, identity: { snapshots } };
+    const old = await exercise({ ...spec, identity: { ...spec.identity, baseline: true } });
+    const current = await exercise(spec);
+    assert.deepEqual(current.output, old.output);
+    assert.deepEqual(current.writerCalls, old.writerCalls);
+    const oldQueries = old.calls.filter(u => new URL(u).pathname.endsWith("/account_landing_page_materializations")).length;
+    assert.equal(oldQueries, Math.floor(n / 100) + 1);
+    assert.equal(current.revisionRows, Math.min(n, 4));
+    console.log("AA06 metrics " + JSON.stringify({ n, oldQueries, newQueries: 1, oldRows: old.revisionRows, newRows: current.revisionRows, oldBytes: old.revisionBytes, newBytes: current.revisionBytes }));
+  }
+  for (const current of [
+    { missingCurrentScope: true }, { currentScope: { mode: "single", offerings: ["Atual"] } },
+  ]) {
+    for (const complete of [true, false]) {
+      for (const sameWork of [true, false]) {
+        const identity = { snapshots: [validIdentitySnapshot], sameWork, ...current };
+        const old = await exercise({ size: 1, complete, identity: { ...identity, baseline: true } });
+        const result = await exercise({ size: 1, complete, identity });
+        assert.deepEqual(result.output, old.output);
+        assert.deepEqual(result.writerCalls, old.writerCalls);
+      }
+    }
+  }
+  for (const interleave of ["append", "shared", "lp"] as const) {
+    const result = await exercise({ size: 1, complete: true, identity: { snapshots: [validIdentitySnapshot], interleave } });
+    assert.deepEqual(result.output, { ok: false, error: "revision_conflict" });
+    assert.equal(result.writerCalls.length, 1);
+    assert.equal(result.ownWrites, 0, "conflict must have no partial effects");
+  }
+  for (const rpcFault of ["error", "throw", "object", "null", "many", "duplicate", "reverse", "id", "tenant", "lp", "revision", "fraction", "unsafe", "snapshot", "missing_snapshot", "token", "token_missing"]) {
+    const result = await exercise({ size: 1, complete: true, identity: { snapshots: [validIdentitySnapshot, {}], rpcFault } });
+    assert.deepEqual(result.output, { ok: false, error: "unavailable" }, rpcFault);
+    assert.equal(result.writerCalls.length, 0);
+  }
+  for (const [spec, error] of [
+    [{ gate: false }, "disabled"], [{ authenticated: false }, "unauthenticated"],
+    [{ denied: true }, "unauthorized"], [{ entitled: false }, "unauthorized"],
+    [{ role: "viewer" }, "unauthorized"], [{ prepared: false }, "unavailable"],
+    [{ fault: "account_users" }, "unavailable"], [{ fault: "account_landing_page_configurations" }, "unavailable"],
+  ] as const) {
+    const result = await exercise({ size: 1, complete: true, ...spec, identity: { snapshots: [validIdentitySnapshot] } });
+    assert.deepEqual(result.output, { ok: false, error }, JSON.stringify(spec));
+    assert.equal(result.writerCalls.length, 0);
+  }
+  const mismatch = await exercise({ size: 1, complete: true, identity: { snapshots: [validIdentitySnapshot], accountId: accountB } });
+  assert.deepEqual(mismatch.output, { ok: false, error: "unauthorized" });
+  assert.equal(mismatch.writerCalls.length, 0);
+  console.log("ok - AA06 identity: " + comparisons + " full adapter old/new comparisons; bounded reads, shape guards, current scope, tokens and simulated interleavings (not two PostgreSQL sessions)");
+}
+
+
+
+const identityMigrationPath = "../../supabase/migrations/20260830201842_e19_identity_baselines.sql";
+function identitySqlBody(): string {
+  const migration = readFileSync(new URL(identityMigrationPath, import.meta.url), "utf8");
+  return migration.split("$function$")[1].trim().replace(/;$/, "");
+}
+function buildIdentitySqlTest(): string {
+  const shapes = identityShapes.map(s => JSON.stringify(s));
+  const cases = identityHistories().map((history, i) => {
+    const rows = history.map((s, n) => ({ id: revisionId(i + 1, n + 1), account_id: accountA, landing_page_id: pageId(i + 1), revision_number: n + 1, generation_context_snapshot_json: s }));
+    return { case_number: i + 1, shape_indexes: history.map(s => shapes.indexOf(JSON.stringify(s))), expected: selectIdentityRows(rows).map(r => r.revision_number) };
+  });
+  assert.ok(cases.every(c => c.shape_indexes.every(n => n >= 0)));
+  const body = identitySqlBody().replaceAll("public.account_landing_page_materializations", "history").replaceAll("p_account_id", "targets.account_id").replaceAll("p_landing_page_id", "targets.landing_page_id");
+  return "-- AA06 read-only SQL differential fixtures; no DDL/DML, works before apply.\n" +
+    "-- Generated by AA06_SQL_EXPORT=1 npm run validate:landing-page-workspace.\n" +
+    "-- Expected revisions come from the actual canonical JS fact reader; body comes from the migration.\n" +
+    "with shapes as (select value as snapshot, (ordinality - 1)::integer as shape_index from jsonb_array_elements($shapes$" + JSON.stringify(identityShapes) + "$shapes$::jsonb) with ordinality),\n" +
+    "specimens as (select * from jsonb_to_recordset($cases$" + JSON.stringify(cases) + "$cases$::jsonb) as c(case_number integer, shape_indexes jsonb, expected jsonb)),\n" +
+    "targets as (select case_number, '" + accountA + "'::uuid as account_id, ('20000000-0000-4000-8000-' || lpad(case_number::text, 12, '0'))::uuid as landing_page_id, expected from specimens\n" +
+    " union all select 0, '" + accountB + "'::uuid, '" + pageId(1) + "'::uuid, '[]'::jsonb),\n" +
+    "history as (select md5(s.case_number::text || ':' || f.ordinality::text)::uuid as id, '" + accountA + "'::uuid as account_id,\n" +
+    " ('20000000-0000-4000-8000-' || lpad(s.case_number::text,12,'0'))::uuid as landing_page_id, f.ordinality::bigint as revision_number, shapes.snapshot as generation_context_snapshot_json\n" +
+    " from specimens s cross join lateral jsonb_array_elements_text(s.shape_indexes) with ordinality f(shape_index, ordinality)\n" +
+    " join shapes on shapes.shape_index = f.shape_index::integer),\n" +
+    "results as (select targets.case_number, targets.expected,\n" +
+    " coalesce(jsonb_agg(selected.revision_number order by selected.revision_number) filter (where selected.id is not null), '[]'::jsonb) as actual,\n" +
+    " count(selected.id) as snapshots,\n" +
+    " coalesce(bool_and(selected.account_id = targets.account_id and selected.landing_page_id = targets.landing_page_id and selected.latest_materialization_id = (select h.id from history h where h.account_id = targets.account_id and h.landing_page_id = targets.landing_page_id order by h.revision_number desc limit 1)), true) as tenant_and_latest\n" +
+    " from targets left join lateral (\n" + body + "\n) selected on true group by targets.case_number, targets.expected)\n" +
+    "select count(*) as cases, count(*) filter (where actual <> expected or snapshots > 4 or not tenant_and_latest) as failures,\n" +
+    " max(snapshots) as max_snapshots, coalesce(jsonb_agg(case_number) filter (where actual <> expected or snapshots > 4 or not tenant_and_latest), '[]'::jsonb) as failed_cases from results;\n";
+}
+function validateIdentitySqlContract() {
+  const test = readFileSync(new URL("../../supabase/tests/e19_identity_baselines.test.sql", import.meta.url), "utf8");
+  assert.equal(test, buildIdentitySqlTest(), "versioned SQL must execute the exact migration body and current canonical oracle");
+  const migration = readFileSync(new URL(identityMigrationPath, import.meta.url), "utf8");
+  const predicates = [...migration.matchAll(/where (jsonb_typeof[\s\S]*?)\;/g)].map(m => m[1]);
+  assert.equal(predicates.length, 3);
+  for (const predicate of predicates) assert.ok(identitySqlBody().includes(predicate), "literal partial index predicate equals selection WHERE");
+  assert.match(migration, /language sql\nstable\nsecurity invoker\nset search_path = pg_catalog/);
+  assert.equal((migration.match(/create index /g) ?? []).length, 3);
+  assert.equal((migration.match(/create function /g) ?? []).length, 1);
+  assert.doesNotMatch(migration, /\bsecurity definer\b|\binclude\s*\(|\b(insert into|update public|delete from|create table|create view|alter table)\b/i);
+  console.log("ok - AA06 exact SQL body, canonical oracle, literal index predicates and read-only contract");
+}
+
 async function runWorkspaceValidation() {
   for (const validationCase of cases) {
     validationCase.run();
     console.log(`ok - ${validationCase.name}`);
   }
   await validateWorkspaceReads();
+  await validateIdentityReads();
+  validateIdentitySqlContract();
 }
-void runWorkspaceValidation().catch((error: unknown) => {
+if (process.env.AA06_SQL_EXPORT === "1") {
+  writeFileSync(new URL("../../supabase/tests/e19_identity_baselines.test.sql", import.meta.url), buildIdentitySqlTest());
+} else void runWorkspaceValidation().catch((error: unknown) => {
   console.error(error);
   process.exitCode = 1;
 });
