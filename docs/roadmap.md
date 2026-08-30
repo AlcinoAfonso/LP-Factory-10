@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 29/08/2026
-• Versão: v1.5.195
+• Data: 30/08/2026
+• Versão: v1.5.196
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2896,18 +2896,18 @@ Repositório — Ajustados
 
 20.6.5 Avaliação factual com IA no runtime do Admin
 
-* Status: expand gate-off mergeado no #795 e migration `20260820213900` aplicada; o PR corretivo pós-apply repara os artefatos de prova sem alterar o schema e já revalidou testes SQL, snippets read-only, invariantes e Security Controls, enquanto seu merge, revisão operacional `2`, gates específicos, prova real, rollout e contract final permanecem pendentes.
+* Status: expand gate-off mergeado no #795 e migration `20260820213900` aplicada; o PR corretivo pós-apply repara os artefatos de prova sem alterar o schema e já revalidou testes SQL, snippets read-only, invariantes e Security Controls, enquanto seu merge, gates específicos, prova real, rollout e contract final permanecem pendentes. A revisão operacional `2` de `taxon_input_catalog_sufficiency_evaluation` está ativa em Preview e Production.
 * Conteúdo:
   * internalizar na Taxonomia administrativa existente a avaliação semântica não autoritativa nos modos sistemático e hipótese humana, preservando a decisão administrativa explícita, a revalidação determinística e o gate E20.6.4 sem IA;
   * o checkpoint pré-integração materializou domínio e contratos, identidade e reconstrução/revalidação do contexto, Structured Output estrito, UI route-local apresentacional não montada e testes com portas e fakes injetados, sem alterar `lib/openai-workloads/`, criar configuração repo-only, chamar provider real ou declarar a E20.6.5 completa;
   * o #795 implementou `taxon_input_catalog_sufficiency_evaluation` no agregado E21.2, com configuração inicial aprovada `gpt-5.6-terra` + `reasoning.effort=low`; mudanças posteriores de modelo ou effort ficam sob governança E21 e decisão humana;
   * `OPENAI_OPERATIONAL_CONFIG_ENABLED=true` já está ativo em Preview e Production e deve permanecer ativo; a E20.6.5 apenas verifica essa condição, sem etapa futura de habilitação do gate da E21.2;
-  * a migration do novo workload foi aplicada e o bootstrap hospedado está na revisão `1`, sem candidata ou revisão pendente; após o merge do PR corretivo pós-apply, verificar que o gate operacional permanece ativo em Preview e então provar, promover e ativar a revisão operacional `2` de `taxon_input_catalog_sufficiency_evaluation`; somente depois habilitar `E20_6_5_INPUT_CATALOG_EVALUATION_PROVIDER_ENABLED` em Preview e resolver os parâmetros exclusivamente pelo lifecycle dinâmico Supabase e sua API pública, sem consulta direta, configuração paralela ou transporte exclusivo da E20.6.5;
+  * a migration do novo workload foi aplicada e a revisão operacional `2` de `taxon_input_catalog_sufficiency_evaluation` está ativa em Preview e Production; a habilitação de `E20_6_5_INPUT_CATALOG_EVALUATION_PROVIDER_ENABLED` permanece sujeita ao rollout próprio, sem inferir seu estado pela revisão ativa; resolver os parâmetros exclusivamente pelo lifecycle dinâmico Supabase e sua API pública, sem consulta direta, configuração paralela ou transporte exclusivo da E20.6.5;
   * a avaliação exige uma versão executável E20.2 `N` escolhida explicitamente e mantida apenas no estado transitório da UI; a leitura canônica carrega a pesquisa E20.5 selecionada, valida e resolve `N` em `starter`, `lite`, `pro` e `ultra`, e somente a decisão humana de suficiência pode gravar `reviewed_input_catalog_version = N`; `loadTaxonPreparationForReviewedVersion()` permanece para E20.6.4 e consumidores posteriores;
   * `E20_6_5_INPUT_CATALOG_EVALUATION_PROVIDER_ENABLED` bloqueia servidor e UI; em Preview/Production, mesmo gate-on recusa `repo_catalog` e a revisão bootstrap `1`, exigindo fonte ativa `supabase_operational` em revisão operacional `2` ou posterior; somente o retorno explícito `ROLLOUT_GATE_OFF` preserva o handoff Codex;
   * `confirm_sufficient` aceita somente resultado `sufficient`; para `candidate_gaps`, o humano seleciona e reconhece somente gaps reais, recebendo handoff E20.2 transitório sem escrita, ou limpa a seleção e usa `reject_candidates_and_confirm_sufficient` para rejeitar todos e confirmar `N`, com `kind` distinto por decisão e sem veto da IA;
   * somente `ROLLOUT_GATE_OFF` mantém handoff Codex e registro legado; gate-on comprovado e `OPERATIONAL_CONFIGURATION_UNPROVEN` ocultam e bloqueiam ambos server-side, sem gravação, fallback Codex ou rotulagem gate-off, preservando reabertura;
-  * o #795 não constitui fechamento: a decisão expand/contract está aprovada, o expand gate-off foi mergeado e sua migration foi aplicada; o PR corretivo deve ser mergeado antes da revisão operacional `2` provada/promovida/ativada e do rollout do gate E20.6.5 em Preview → decisão humana → repetição controlada em Production; o PR contract remove definitivamente o legado e atualiza os documentos finais.
+  * o #795 não constitui fechamento: a decisão expand/contract está aprovada, o expand gate-off foi mergeado e sua migration foi aplicada; o PR corretivo deve ser mergeado antes do rollout do gate E20.6.5 em Preview → decisão humana → repetição controlada em Production; o PR contract remove definitivamente o legado e atualiza os documentos finais.
 
 20.7 Liberação taxonômica para geração de Landing Pages
 
@@ -3117,7 +3117,7 @@ Repositório — Ajustados
 - A prova despacha fixture segura pelos quatro transportes existentes, não cria persistência funcional, benchmark, ranking ou decisão autônoma e só promove após sucesso; erro preserva a candidata e nunca altera a revisão ativa. A prova comercial reutiliza o parser comum do shape REST real de `/v1/responses`.
 - O Preview aprovou os quatro transportes, criação/edição/descarte de candidata, promoção, ativação, execução subsequente com nova revisão, isolamento de Production e rollback, além de papéis positivo/negativo, desktop 1440 × 900, mobile 390 × 844, estados de sucesso/erro, reconhecimento do lifecycle e checklist proporcional WCAG 2.2.
 - O smoke mínimo de Production confirmou as quatro baselines ativas e uma execução comercial real com origem `supabase_operational` e revisão 1, criando somente draft não publicado; a janela autenticada permaneceu sem erro ou warning no runtime.
-- O estado operacional hospedado mantém os seis workloads de produto de Preview e Production sem candidata ou revisão pendente; `taxon_input_catalog_sufficiency_evaluation` permanece na revisão bootstrap `1`, e `landing_page_dynamic_market_research` já existe em ambos os ambientes no bootstrap revisão `1`, não autorizado para transporte. A prova, promoção e ativação de revisão `2` ou posterior desse workload dinâmico ficam para o futuro recorte E19.3 consumidor. Os eventos append-only dos lifecycles anteriores permanecem preservados.
+- O estado operacional hospedado mantém os seis workloads de produto de Preview e Production sem candidata ou revisão pendente; `taxon_input_catalog_sufficiency_evaluation` está na revisão operacional `2` ativa em Preview e Production, e `landing_page_dynamic_market_research` já existe em ambos os ambientes no bootstrap revisão `1`, não autorizado para transporte. A prova, promoção e ativação de revisão `2` ou posterior desse workload dinâmico ficam para o futuro recorte E19.3 consumidor. Os eventos append-only dos lifecycles anteriores permanecem preservados.
 - `OPENAI_API_KEY` permaneceu server-side e foi reutilizada sem cópia, exposição ou versionamento. A E21.3 não foi iniciada.
 
 21.2.5 Catálogo administrável e UX compacta dos workloads OpenAI
