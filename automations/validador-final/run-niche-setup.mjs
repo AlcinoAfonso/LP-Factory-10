@@ -9,6 +9,7 @@ import {
 } from "./login-playwright.mjs";
 import { buildMailboxAlias, normalizeMailboxBaseEmail } from "./mailbox-alias.mjs";
 import { findLatestEmailLinkForAlias } from "./mailbox-client.mjs";
+import { buildQaPassword } from "./qa-password.mjs";
 
 const MAILBOX_POLL_TIMEOUT_MS = 120000;
 const MAILBOX_POLL_INTERVAL_MS = 5000;
@@ -146,10 +147,6 @@ function readCases(casePreset) {
   }
 
   return rawCases.map((rawCase, index) => normalizeCase(rawCase, index, casePreset));
-}
-
-function buildPassword(sequence) {
-  return `Convite${sequence}!Aa`;
 }
 
 function buildProjectName(sequence, testCase) {
@@ -315,7 +312,7 @@ async function fillPendingSetup(page, { projectName, niche }) {
 
 async function runCase({ appUrl, appOrigin, mailboxEmail, testCase, sequence }) {
   const email = buildMailboxAlias(mailboxEmail, `convite${sequence}`);
-  const password = buildPassword(sequence);
+  const password = buildQaPassword();
   const projectName = buildProjectName(sequence, testCase);
 
   return withBrowserSession(async ({ page }) => {
