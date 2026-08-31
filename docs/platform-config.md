@@ -92,11 +92,11 @@
 • Contrato para executores e novos chats: consultar esta seção e reutilizar os consumidores e secrets já configurados por referência; não solicitar, copiar, revelar ou recriar a credencial quando o workflow autorizado atender ao teste.
 • Limite de acesso: todos os chats podem identificar a mailbox, sua finalidade, os nomes dos secrets e o caminho autorizado de consumo, mas não podem ler ou descriptografar os valores armazenados pelo GitHub Actions.
 • Limite de superfície: esta credencial habilita leitura automatizada da mailbox por POP3; não fornece login interativo na interface web do Gmail nem credenciais permanentes do Admin Dashboard ou Account Dashboard.
-• Evidência operacional: execução `Automation Niche Runtime Tests` nº 13 aprovada em 30/08/2026, com cadastro e confirmação automáticos do alias institucional `lpfactoryqa+convite83003@gmail.com`; run `https://github.com/AlcinoAfonso/LP-Factory-10/actions/runs/33321099026`.
+• Evidência operacional: execução `Automation Niche Runtime Tests` nº 13 aprovada em 30/08/2026, com cadastro e confirmação automáticos de alias institucional derivado de `MAILBOX_EMAIL`; run `https://github.com/AlcinoAfonso/LP-Factory-10/actions/runs/33321099026`.
 • Regra: usar conta dedicada de teste, nunca e-mail humano principal.
 • Regra: `MAILBOX_EMAIL` deve conter a caixa base `@gmail.com`, sem `+tag`; as automações derivam somente os novos aliases `+convite<sequence>` dessa configuração.
 • Regra: alterar a mailbox operacional não modifica usuários, aliases, contas ou evidências de execuções anteriores.
-• Regra: artifacts e Job Summary podem registrar o alias usado como evidência, mas não a senha de cadastro.
+• Regra: artifacts, Job Summary e documentação devem sanitizar aliases persistentes e nunca registrar senhas de cadastro nem dados que permitam deduzi-las.
 • Regra: não registrar valores reais.
 • Regra: se a senha/app password vazar, revogar imediatamente e substituir.
 
