@@ -2,8 +2,8 @@
 
 0.1 Cabeçalho
 • Documento: LP Factory 10 — Platform Config
-• Versão: v0.1.34
-• Data: 30/08/2026
+• Versão: v0.1.35
+• Data: 31/08/2026
 
 0.2 Contrato do documento
 • O QUE É: snapshot operacional e fonte única das configurações de plataformas externas do LP Factory 10, refletindo o estado conhecido/cadastrado nas plataformas conforme indicado.
@@ -69,19 +69,28 @@
 
 2.4 Mailbox operacional para automações
 • Provedor atual: Gmail via POP3.
+• Identidade institucional: `lpfactoryqa@gmail.com`.
+• Finalidade: caixa postal exclusiva do projeto para QA de confirmação de cadastro, convite e recuperação de senha, sem dependência do e-mail pessoal de Alcino.
 • Host/porta: `pop.gmail.com:995`.
 • Uso: leitura programática de e-mails de confirmação e reset nas automações.
+• Estado operacional: conta dedicada criada, e-mail de recuperação confirmado, verificação em duas etapas ativa e POP3 habilitado.
+• Credencial técnica: senha de app identificada no Google como `LP Factory QA Automation`; o valor não é recuperável por este documento.
+• Localização autorizada: repository secrets do GitHub Actions no repositório `AlcinoAfonso/LP-Factory-10`.
 • Secrets relacionados:
-• `MAILBOX_EMAIL`
-• `MAILBOX_PASSWORD`
+• `MAILBOX_EMAIL`: contém o endereço-base institucional.
+• `MAILBOX_PASSWORD`: contém a senha de app exclusiva da automação; não é a senha principal da Conta Google.
 • Consumidores:
 • `.github/workflows/automation-validador-final.yml`
 • `.github/workflows/automation-niche-runtime-tests.yml`
 • `automations/validador-final/mailbox-client.mjs`
+• Contrato para executores e novos chats: consultar esta seção e reutilizar os consumidores e secrets já configurados por referência; não solicitar, copiar, revelar ou recriar a credencial quando o workflow autorizado atender ao teste.
+• Limite de acesso: todos os chats podem identificar a mailbox, sua finalidade, os nomes dos secrets e o caminho autorizado de consumo, mas não podem ler ou descriptografar os valores armazenados pelo GitHub Actions.
+• Limite de superfície: esta credencial habilita leitura automatizada da mailbox por POP3; não fornece login interativo na interface web do Gmail nem credenciais permanentes do Admin Dashboard ou Account Dashboard.
+• Evidência operacional: execução `Automation Niche Runtime Tests` nº 13 aprovada em 30/08/2026, com cadastro e confirmação automáticos de alias institucional derivado de `MAILBOX_EMAIL`; run `https://github.com/AlcinoAfonso/LP-Factory-10/actions/runs/33321099026`.
 • Regra: usar conta dedicada de teste, nunca e-mail humano principal.
 • Regra: `MAILBOX_EMAIL` deve conter a caixa base `@gmail.com`, sem `+tag`; as automações derivam somente os novos aliases `+convite<sequence>` dessa configuração.
 • Regra: alterar a mailbox operacional não modifica usuários, aliases, contas ou evidências de execuções anteriores.
-• Regra: artifacts e Job Summary podem registrar o alias usado como evidência, mas não a senha de cadastro.
+• Regra: artifacts, Job Summary e documentação devem sanitizar aliases persistentes e nunca registrar senhas de cadastro nem dados que permitam deduzi-las.
 • Regra: não registrar valores reais.
 • Regra: se a senha/app password vazar, revogar imediatamente e substituir.
 
@@ -521,6 +530,8 @@ Regra:
 • Configurações de plataformas, secrets por nome, workflows, ambientes e endpoints usados por automações devem ser registrados neste documento.
 
 99. Changelog
+v0.1.35 — 31/08/2026 — Registradas a identidade institucional `lpfactoryqa@gmail.com`, sua credencial técnica por nome e localização autorizada, o contrato de reutilização por executores e a evidência operacional da confirmação automatizada, sem versionar valores secretos.
+
 v0.1.34 — 30/08/2026 — Mailbox operacional definida como caixa base Gmail sem `+tag`; novos aliases passam a ser derivados de `MAILBOX_EMAIL`, com preservação integral das execuções anteriores e proibição de senha de cadastro em artifacts e Job Summary.
 
 v0.1.33 — 29/08/2026 — Atualizado o estado pós-merge da E20.7.4: migration aplicada, bootstrap `gpt-5.6-luna + high` presente em Preview/Production e prova/promoção/ativação diferidas ao futuro recorte E19.3 consumidor, sem pendência operacional aberta na E20.7.
