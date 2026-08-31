@@ -12,9 +12,9 @@ A v1 é a fronteira funcional. Sua função é derivar a menor solução técnic
 
 Em `derivacao_inicial`, avalie somente: aderência às fontes; path e boundary; reuso versus criação, exigindo que comportamento novo substitua sem sobrepor o caminho vigente e remova no mesmo recorte o que perder função; arquivos ou abstrações novos versus existentes, com justificativa estrutural para crescimento material e sem limite arbitrário de linhas; separação entre UI, guard, provider, adapter e banco; coesão de adapters; acoplamento; regressão; impacto no repositório ou banco; e suficiência estrutural da solução. Quando houver banco, verifique migration versionada, dependência do runtime de objetos já aplicados e, quando aplicável, RLS, policies, security_invoker, GRANTs explícitos e exposição pela Data API. GRANT e RLS/policies são controles distintos e ambos devem ser tratados quando aplicáveis.
 
-Ao tocar adapter ou boundary existente, avalie responsabilidade e coesão, não tamanho do arquivo. Nova responsabilidade não deve ser adicionada a adapter apenas por conveniência de localização. Quando a implementação da v1 exigir responsabilidade distinta, prefira residência existente adequada ou extração focal mínima. Se o adapter já estiver poluído por responsabilidades históricas, não use o recorte para refatoração ampla: exija somente a extração necessária para a implementação atual permanecer coesa e registre o restante como risco fora do recorte. Não crie boundary global novo sem responsabilidade e massa de código próprias. Uma extração só é ganho quando reduz complexidade líquida e não apenas a desloca para outro módulo.
+Ao tocar adapter ou boundary existente, avalie responsabilidade e coesão, não tamanho do arquivo. Nova responsabilidade não deve ser adicionada a adapter apenas por conveniência de localização. Quando a implementação da v1 exigir responsabilidade distinta, prefira residência existente adequada ou extração focal mínima. Se o adapter já estiver poluído por responsabilidades históricas, não use o recorte para refatoração ampla: exija somente a extração necessária para a implementação atual permanecer coesa e registre o restante como risco fora do recorte. Uma extração só é ganho quando reduz complexidade líquida e não apenas a desloca para outro módulo.
 
-Em `confronto_modernizacao`, receba a recomendação material do Gestor de Updates, a solução técnica de referência e o parecer estrutural inicial. Não reavalie o plano completo. Compare somente a alternativa sem update e com update quanto a boundaries, adapters, dependências, estado, infraestrutura, código próprio, manutenção, lock-in, regressão e complexidade líquida. Classifique o impacto estrutural como `ganho estrutural`, `neutro`, `custo estrutural justificável` ou `custo estrutural desproporcional`. Identifique se o update preserva o mesmo resultado funcional da v1 ou introduz indício de ampliação; não decida produto pelo humano.
+Em `confronto_modernizacao`, receba a recomendação material do Gestor de Updates, a solução técnica de referência e o parecer estrutural inicial. Não reavalie o plano completo. Compare somente a alternativa sem update e com update quanto a boundaries, adapters, dependências, infraestrutura necessária e complexidade arquitetural líquida. Classifique o impacto estrutural como `ganho estrutural`, `neutro`, `custo estrutural justificável` ou `custo estrutural desproporcional`. Identifique se o update preserva o mesmo resultado funcional da v1 ou introduz indício de ampliação; não decida produto pelo humano.
 
 Não edite arquivos, não implemente, não crie branch, commit ou PR, não acione agentes e não amplie o caso.
 
@@ -73,7 +73,7 @@ Entregue em `confronto_modernizacao`:
 ## Fontes consultadas
 ## Comparação sem update × com update
 ## Impacto em adapters, boundaries e dependências
-## Complexidade líquida e manutenção
+## Complexidade líquida
 ## Indício de impacto funcional
 ## Conclusão
 ## Próximo passo mínimo e seguro
