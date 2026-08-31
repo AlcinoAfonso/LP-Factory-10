@@ -54,6 +54,7 @@ Nenhum parecer especializado foi acionado. Os achados abaixo são do Analista e 
 - Passagem 2: concluída no mesmo thread, com esta matriz e os pareceres aplicáveis (nenhum parecer especializado), sem reabrir especialistas; conclusão `aprovado com correções obrigatórias`.
 - Retomada: nova decisão humana incorporou o workflow Agent Builder ao alvo de retirada e resolveu o bloqueio anterior de classificação; a revisão delta do mesmo Analista aprovou a v2 e a matriz sem correções.
 - ABC do roadmap: o mesmo Analista aprovou o delta documental sem correções; a v2 ajustada permanece planejada, sem implementação ou mutação externa iniciada.
+- E22.3.3: o mesmo Analista aprovou a auditoria read-only para avançar; não houve delta de código, documento canônico ou mutação externa nesta fase.
 
 | ID | Gate | Correções/escopo auditados | Classe | Tratamento | Evidência |
 |---|---|---|---|---|---|
@@ -61,6 +62,7 @@ Nenhum parecer especializado foi acionado. Os achados abaixo são do Analista e 
 | `AN-P2-E22.3-02` | `revisao_delta` | Taxonomia contratual, origem dos achados e conflito documental do Agent Builder. | derivação técnica da v1 | Incorporado integralmente na v2 e na matriz; nenhuma correção restante. | Analista no mesmo thread; Passagem 2/revisão delta de 31/08/2026. |
 | `H-DELTA-E22.3-01` | `revisao_delta` | Nova decisão humana sobre o workflow Agent Builder, ausência de consumidor necessário independente fora dele e mutação OpenAI condicional à ferramenta autorizada. | derivação técnica da v1 | Incorporado na v2 e na matriz; o roadmap foi atualizado pelo ABC e aprovado no mesmo gate. | Analista no mesmo thread; revisão delta de 31/08/2026; nenhuma correção restante. |
 | `AN-ABC-E22.3-01` | `revisao_delta` | ABC mínimo do roadmap: v1.5.206, escopo humano incorporado, ordem E22.3.3/E22.3.4/E22.3.5 e ausência de implementação declarada. | derivação técnica da v1 | Incorporado; sem nova fase, renumeração, changelog ou remoção de mecanismos preservados. | Analista no mesmo thread; gate de consolidação documental de 31/08/2026; nenhuma correção restante. |
+| `AN-IMPL-E22.3.3-01` | `revisao_implementacao` | Auditoria repo-side e Vercel read-only de consumidores necessários independentes, workload do service, logs/erros e preservações. | derivação técnica da v1 | Gate aprovado para avançar; nenhum delta de implementação foi necessário. | Analista no mesmo thread; revisão de implementação de 31/08/2026; conclusão `aprovado para avançar`. |
 
 ## 6. Travas preservadas
 
@@ -72,4 +74,4 @@ Nenhum parecer especializado foi acionado. Os achados abaixo são do Analista e 
 
 ## 7. Próximo gate
 
-A retomada ajustou v2, matriz e roadmap conforme a decisão humana específica, com aprovação do mesmo Analista. Após versionar e publicar a consolidação no PR #868, o próximo gate é a auditoria read-only de E22.3.3 pelo mesmo Analista, sem iniciar mutação externa ou reabrir especialistas.
+A retomada ajustou v2, matriz e roadmap conforme a decisão humana específica, com aprovação do mesmo Analista. E22.3.3 foi aprovado para avançar sem delta de implementação. O próximo gate é iniciar E22.3.4 no mesmo PR, preservando os ativos declarados e sem criar substituto ou nova arquitetura.
