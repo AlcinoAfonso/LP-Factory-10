@@ -4,7 +4,7 @@
 
 ### 1.1 Estado
 
-- Versão: v0.1.
+- Versão: v0.2.
 - Data: 31/08/2026.
 - Status: debate aberto; não é plano-base nem autorização de implementação.
 - Path canônico: `docs/matriz-debate-geracao-minima.md`.
@@ -44,8 +44,10 @@
 
 ### 2.3 Regra de preservação
 
-- Dados e históricos existentes não são descartados por padrão.
-- Autenticação, multi-tenancy, autorização, persistência e leitores históricos ficam fora de qualquer remoção automática; sua participação no novo caminho deve ser avaliada pela responsabilidade que protegem.
+- As LPs existentes hoje são exclusivamente dados de teste. Nenhuma LP atual, revisão/materialização associada ou imagem produzida para esses testes precisa ser preservada como histórico de produto no redesenho greenfield.
+- O descarte desses dados de teste poderá fazer parte do futuro plano de implementação/cutover quando houver autorização operacional explícita; esta matriz, isoladamente, não executa nem autoriza deleção.
+- A dispensa de preservação das LPs de teste não se estende automaticamente a contas, taxonomia, pesquisas autorizadas, configurações, contratos de segurança, infraestrutura ou outros dados do projeto.
+- Autenticação, multi-tenancy, autorização e persistência ficam fora de qualquer remoção automática; sua participação no novo caminho deve ser avaliada pela responsabilidade que protegem.
 - Contratos e componentes atuais podem ser questionados; preservar o resultado necessário não implica preservar a implementação atual.
 
 ## 3. Matriz principal de debate
@@ -60,7 +62,7 @@
 | D06 | Copy e decisão persuasiva | Prompt + schema + validações determinísticas cercam a geração | Dar maior liberdade à IA e remover regras que antecipem decisões semânticas | claims objetivamente verificáveis e limites de segurança | argumento, hierarquia persuasiva, CTA e copy | invenção factual ou perda de qualidade | evaluator IA + amostra humana | Aberto |
 | D07 | Validação factual | Validação pós-modelo cruza claims verificáveis com fatos autorizados | Manter apenas verificações determinísticas de alto valor; evitar policiamento semântico excessivo | fatos de empresa, preço, endereço, credenciais, prova social e outras afirmações objetivas | evaluator pode sinalizar qualidade/risco sem virar autoridade factual | hallucination factual | catálogo de falhas reais e testes negativos | Aberto |
 | D08 | Imagem | Workload separado gera uma imagem antes da materialização | Avaliar se imagem deve permanecer obrigatória na primeira geração mínima | experiência visual e contrato atual do preview | gerar brief ou imagem diretamente dentro do fluxo mais simples possível | custo, latência e falha bloqueante | comparar LP com/sem imagem obrigatória | Aberto |
-| D09 | Workflow e persistência | Geração textual, imagem, validação e append formam workflow controlado | Reduzir o número de estados e passos sem permitir revisão parcial ou inconsistente | atomicidade lógica, append-only, concorrência e histórico | não aplicável a invariantes de persistência | materialização parcial ou duplicada | mapear o mínimo necessário para uma revisão válida | Aberto |
+| D09 | Workflow e persistência | Geração textual, imagem, validação e append formam workflow controlado | Reduzir o número de estados e passos sem permitir revisão parcial ou inconsistente | atomicidade lógica, concorrência e integridade das futuras LPs reais; o histórico das LPs atuais de teste não precisa ser preservado | não aplicável a invariantes de persistência | materialização parcial ou duplicada | mapear o mínimo necessário para uma revisão válida | Aberto |
 | D10 | Avaliação de qualidade | Qualidade hoje depende de QA, testes e avaliações pontuais | Criar baseline simples e comparar candidatas fora do runtime antes de sofisticar | critérios humanos do produto | evaluator IA para especificidade, persuasão, aderência factual e qualidade | evaluator virar autoridade única | rubrica + comparação cega/amostral | Aberto |
 
 ## 4. Questões abertas prioritárias
@@ -81,7 +83,7 @@
 
 - Qual é a menor estrutura determinística necessária para o renderer produzir uma LP segura e consistente?
 - A imagem precisa ser condição de sucesso da primeira geração mínima?
-- É possível reduzir estados intermediários sem perder materialização íntegra e histórico?
+- É possível reduzir estados intermediários sem perder materialização íntegra das futuras LPs reais?
 
 ### 4.4 Prova de valor
 
@@ -97,6 +99,12 @@
 - O redesenho pretendido é greenfield focal da geração.
 - Nenhuma implementação atual possui direito automático de permanência.
 - A nova geração deve buscar a menor complexidade capaz de preservar segurança, fatos, estado e qualidade comprovada.
+
+### 5.2 LPs atuais de teste
+
+- Todas as LPs existentes no estado atual do projeto são LPs de teste.
+- Não há requisito de produto para preservar essas LPs, suas revisões/materializações ou imagens durante o futuro redesenho/cutover.
+- A decisão elimina o histórico dessas LPs de teste como restrição arquitetural do greenfield, sem autorizar deleção imediata nesta matriz.
 
 ## 6. Ideias rejeitadas ou suspensas
 
