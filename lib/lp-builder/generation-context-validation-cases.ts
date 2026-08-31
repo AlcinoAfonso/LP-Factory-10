@@ -634,6 +634,7 @@ const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }
         currentTaxonChain: revalidationAuthority.currentTaxonChain,
         currentAuthoritativeValues: revalidationAuthority.currentAuthoritativeValues,
       };
+      const original = JSON.stringify({ legacyAuthority, landingPage, preparation });
       const result =
         await compileLegacyLandingPageGenerationContextForDraftWithDependencies(
           { accountId: ACCOUNT_ID, landingPageId: LANDING_PAGE_ID },
@@ -656,6 +657,24 @@ const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }
       assert.equal(result.ok, true);
       if (!result.ok) return;
       assert.equal(result.value.contractVersion, 3);
+      if (result.value.contractVersion !== 3) throw new Error("Expected legacy context");
+      const operational = compileLandingPageGenerationContext({
+        landingPage,
+        revalidationAuthority,
+        preparation,
+      });
+      assert.equal(operational.ok, true);
+      if (!operational.ok || operational.value.contractVersion !== 4) throw new Error("Expected operational context");
+      assert.deepEqual(result.value.modelContext, operational.value.modelContext);
+      assert.deepEqual(result.value.serverContext, operational.value.serverContext);
+      const { sharedCatalogVersion: _sharedCatalog, landingPageCatalogVersion: _pageCatalog,
+        sharedRevision: _sharedRevision, landingPageRevision: _pageRevision, ...commonIdentity } = operational.value.identities;
+      assert.deepEqual(result.value.identities, {
+        ...commonIdentity,
+        historicalConfigurationCatalogVersion: legacyAuthority.historicalConfiguration.catalogVersion,
+        configurationRevision: legacyAuthority.historicalConfiguration.revision,
+      });
+      assert.equal(JSON.stringify({ legacyAuthority, landingPage, preparation }), original);
       assert.equal(
         Object.hasOwn(result.value.identities, "landingPageRevision"),
         false,

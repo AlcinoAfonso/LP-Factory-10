@@ -45,6 +45,26 @@ const landingPageImageWorkloadId = "landing_page_draft_image_generation" as cons
 
 const cases = [
   {
+    name: "dynamic research active reader preserves environment, revision and unknown-workload rejection",
+    run: () => {
+      for (const environment of ["preview", "production"] as const) {
+        const workload = dynamicMarketResearchWorkloadId;
+        const unit = { environment, workload, modality: "responses_text", active_revision_id: "revision-2" };
+        const revision = { id: "revision-2", environment, workload, modality: "responses_text", revision_number: 2, model: "gpt-5.6-luna", reasoning_effort: "high", quality: null };
+        const read = (unitValue: unknown, revisionValue: unknown, workloadValue: string = workload) =>
+          translateOperationalConfigurationRows({ environment, workload: workloadValue }, { data: [unitValue], error: null }, { data: [revisionValue], error: null });
+        const valid = read(unit, revision);
+        assert.equal(valid.ok, true);
+        if (!valid.ok) throw new Error("Expected dynamic configuration");
+        assert.deepEqual(valid.value, { environment, workload, apiKind: "responses_text", model: "gpt-5.6-luna", reasoningEffort: "high", revision: "2" });
+        assert.equal(read(unit, { ...revision, environment: "development" }).ok, false);
+        assert.equal(read(unit, { ...revision, id: "other" }).ok, false);
+        assert.equal(read(unit, { ...revision, quality: "medium" }).ok, false);
+        assert.equal(read({ ...unit, workload: "unknown" }, { ...revision, workload: "unknown" }, "unknown").ok, false);
+      }
+    },
+  },
+  {
     name: "niche request uses resolved model and effort with deterministic transport",
     run: async () => {
       const candidate = {

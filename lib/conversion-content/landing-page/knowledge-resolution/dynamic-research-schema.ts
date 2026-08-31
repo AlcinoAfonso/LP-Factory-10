@@ -46,7 +46,9 @@ export const landingPageDynamicResearchOutputSchema = Object.freeze({
                     type: "array",
                     minItems: 1,
                     maxItems: 8,
-                    items: { type: "string", format: "uri", maxLength: 2048 },
+                    // Structured Outputs does not support format: uri. The parser
+                    // still requires HTTPS URLs present in provider evidence.
+                    items: { type: "string", maxLength: 2048 },
                   },
                 },
               },

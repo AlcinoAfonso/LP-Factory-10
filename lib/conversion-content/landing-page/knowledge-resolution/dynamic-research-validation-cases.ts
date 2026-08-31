@@ -1,5 +1,8 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { mock } from "node:test";
+import { Tiktoken } from "js-tiktoken/lite";
+import { estimateDynamicResearchInputTokens, DYNAMIC_RESEARCH_FRAMING_MARGIN_TOKENS } from "./dynamic-research-budget";
 
 import type {
   OpenAiWorkloadEvent,
@@ -8,6 +11,7 @@ import type {
 import {
   parseDynamicMarketResearchResponse,
   researchDynamicLandingPageMarketWithOpenAi,
+  buildDynamicLandingPageMarketRequest,
 } from "../../adapters/dynamicMarketResearchOpenAiAdapter";
 import type { LandingPageKnowledgeResolutionValue } from "./contracts";
 import { completeLandingPageKnowledge } from "./dynamic-research";
@@ -20,6 +24,168 @@ const sourceB = "https://example.net/evidence-b";
 
 const cases: readonly ValidationCase[] = [
   {
+    name: "AA-PR13 integral resident research fits a local o200k budget with unchanged reserves",
+    run: async () => {
+      const research = readFileSync(new URL("../../../../docs/pesquisas-brutas/corretor-imoveis/end_customer/v2.md", import.meta.url), "utf8");
+      const resolution = dynamicResolution(research);
+      const prepared = buildDynamicLandingPageMarketRequest({ ...input("preview", configuration("supabase_operational", "2")), resolution });
+      assert.ok(prepared.ok);
+      const prompt = buildLandingPageDynamicResearchPrompt(resolution, configuration("supabase_operational", "2"));
+      assert.ok(prompt.ok);
+      assert.equal(JSON.parse(prepared.value.request.input).authorizedBaseResearch.content, research);
+      assert.equal(prompt.value.contextWindowTokens, 128_000);
+      assert.ok(prompt.value.conservativeInputTokenUpperBound + 100_000 <= 128_000);
+      const serializedRequestEstimate = estimateDynamicResearchInputTokens([JSON.stringify(prepared.value.request)]);
+      assert.ok(serializedRequestEstimate !== null);
+      assert.ok(prompt.value.conservativeInputTokenUpperBound >= serializedRequestEstimate - DYNAMIC_RESEARCH_FRAMING_MARGIN_TOKENS);
+      assert.ok(Buffer.byteLength(research) > 28_000);
+      assert.equal(DYNAMIC_RESEARCH_FRAMING_MARGIN_TOKENS, 2048);
+      assert.equal(estimateDynamicResearchInputTokens(["hello world"]), 2050);
+      const literal = "Português ação 😀 日本語 <|endoftext|> <|fim_prefix|>";
+      const literalPrompt = buildLandingPageDynamicResearchPrompt(dynamicResolution(literal), configuration("supabase_operational", "2"));
+      assert.ok(literalPrompt.ok);
+      assert.equal(JSON.parse(literalPrompt.value.input).authorizedBaseResearch.content, literal);
+    },
+  },
+  {
+    name: "AA-PR13 exact budget boundary and tokenizer failure remain fail-closed",
+    run: async () => {
+      const config = configuration("supabase_operational", "2");
+      const baseline = buildLandingPageDynamicResearchPrompt(dynamicResolution(" a"), config);
+      assert.ok(baseline.ok);
+      const repeat = 1 + 28_000 - baseline.value.conservativeInputTokenUpperBound;
+      const exact = buildLandingPageDynamicResearchPrompt(dynamicResolution(" a".repeat(repeat)), config);
+      assert.ok(exact.ok);
+      assert.equal(exact.value.conservativeInputTokenUpperBound, 28_000);
+      const over = buildLandingPageDynamicResearchPrompt(dynamicResolution(" a".repeat(repeat + 1)), config);
+      assert.equal(over.ok, false);
+      let calls = 0;
+      const fault = mock.method(Tiktoken.prototype, "encode", () => { throw new Error("synthetic tokenizer failure"); });
+      try {
+        const failed = await researchDynamicLandingPageMarketWithOpenAi(input("preview", config), {
+          fetchImpl: async () => { calls += 1; return response(materialOutput(), []); },
+        });
+        assert.equal(failed.ok, false);
+        if (failed.ok) throw new Error("Expected failure");
+        assert.equal(failed.code, "CONTEXT_BUDGET_EXCEEDED");
+        assert.equal(calls, 0);
+      } finally { fault.mock.restore(); }
+    },
+  },
+  {
+    name: "AA-PR13 subtracts local preparation time from the remaining transport deadline",
+    run: async () => {
+      let nowCalls = 0;
+      const prepared = buildDynamicLandingPageMarketRequest(input("preview", configuration("supabase_operational", "2")), {
+        timeoutMs: 500, now: () => nowCalls++ === 0 ? 100 : 300,
+      });
+      assert.ok(prepared.ok);
+      assert.equal(prepared.value.timeoutMs, 300);
+      let calls = 0;
+      nowCalls = 0;
+      const expired = await researchDynamicLandingPageMarketWithOpenAi(input("preview", configuration("supabase_operational", "2")), {
+        timeoutMs: 500, now: () => nowCalls++ === 0 ? 100 : 700,
+        fetchImpl: async () => { calls += 1; return response(materialOutput(), []); }, emitEvent: () => undefined,
+      });
+      assert.equal(expired.ok, false);
+      assert.equal(calls, 0);
+    },
+  },
+  {
+    name: "AA-PR13 clamps research to 45 seconds and preserves parent cancellation without retry",
+    run: async () => {
+      mock.timers.enable({ apis: ["setTimeout"] });
+      try {
+        let calls = 0;
+        const signals: AbortSignal[] = [];
+        const pending = researchDynamicLandingPageMarketWithOpenAi(
+          input("preview", configuration("supabase_operational", "2")),
+          {
+            timeoutMs: 90_000,
+            now: () => 0,
+            fetchImpl: async (_url, init) => {
+              calls += 1;
+              assert.ok(init?.signal);
+              const signal = init.signal;
+              signals.push(signal);
+              return new Promise<Response>((_resolve, reject) => {
+                signal.addEventListener("abort", () => reject(new DOMException("aborted", "AbortError")), { once: true });
+              });
+            },
+            emitEvent: () => undefined,
+          },
+        );
+        assert.equal(calls, 1);
+        mock.timers.tick(44_999);
+        assert.equal(signals[0].aborted, false);
+        mock.timers.tick(1);
+        assert.equal(signals[0].aborted, true);
+        const result = await pending;
+        assert.equal(result.ok, false);
+        if (result.ok) throw new Error("Expected timeout");
+        assert.equal(result.message, "openai_timeout");
+        assert.equal(result.offeringInvalidated, false);
+        assert.equal(calls, 1);
+
+        const controller = new AbortController();
+        controller.abort();
+        let cancelledCalls = 0;
+        const cancelled = await researchDynamicLandingPageMarketWithOpenAi(
+          input("preview", configuration("supabase_operational", "2")),
+          { signal: controller.signal, fetchImpl: async () => { cancelledCalls += 1; throw new Error("must not transport"); }, emitEvent: () => undefined },
+        );
+        assert.equal(cancelled.ok, false);
+        assert.equal(cancelledCalls, 0);
+        assert.equal(calls, 1);
+      } finally {
+        mock.timers.reset();
+      }
+    },
+  },
+  {
+    name: "AA-PR13 hosted runtime rejects bootstrap in both environments and accepts revision 2 with fake transport only",
+    run: async () => {
+      for (const environment of ["preview", "production"] as const) {
+        let calls = 0;
+        for (const [source, revision, expected] of [
+          ["repo_catalog", "v1", false],
+          ["supabase_operational", "1", false],
+          ["supabase_operational", "2", true],
+        ] as const) {
+          const result = await researchDynamicLandingPageMarketWithOpenAi({
+            ...input("preview", configuration(source, revision)), environment,
+          }, {
+            fetchImpl: async () => { calls += 1; return response(noMaterialOutput(), [webCall([sourceA])]); },
+            emitEvent: () => undefined,
+          });
+          assert.equal(result.ok, expected);
+        }
+        assert.equal(calls, 1);
+      }
+    },
+  },
+  {
+    name: "AA-PR13 technical failures never silently become base-only or invalidate an offering",
+    run: async () => {
+      for (const fakeResponse of [
+        () => new Response("{}", { status: 429 }),
+        () => response(insufficientOutput(), [webCall([sourceA])]),
+        () => response(materialOutput("https://invented.example/evidence"), [webCall([sourceA])]),
+      ]) {
+        let calls = 0;
+        const result = await researchDynamicLandingPageMarketWithOpenAi(
+          input("preview", configuration("supabase_operational", "2")),
+          { fetchImpl: async () => { calls += 1; return fakeResponse(); }, emitEvent: () => undefined },
+        );
+        assert.equal(result.ok, false);
+        if (result.ok) throw new Error("Expected technical failure");
+        assert.equal(result.offeringInvalidated, false);
+        assert.equal(calls, 1);
+        assert.equal(completeLandingPageKnowledge(dynamicResolution(), null).ok, false);
+      }
+    },
+  },
+  {
     name: "serializes one foreground required Web Search request with code-owned limits",
     run: async () => {
       let captured: Record<string, unknown> | null = null;
@@ -29,6 +195,14 @@ const cases: readonly ValidationCase[] = [
         {
           fetchImpl: async (_url, init) => {
             captured = JSON.parse(String(init?.body));
+            const schema = (captured as { text: { format: { schema: Record<string, unknown> } } }).text.format.schema;
+            const assertSupportedFormats = (value: unknown): void => {
+              if (!value || typeof value !== "object") return;
+              const record = value as Record<string, unknown>;
+              if ("format" in record) assert.ok(["date-time", "time", "date", "duration", "email", "hostname", "ipv4", "ipv6", "uuid"].includes(String(record.format)));
+              Object.values(record).forEach(assertSupportedFormats);
+            };
+            assertSupportedFormats(schema);
             return response(materialOutput(), [webCall([sourceA])]);
           },
           emitEvent: (event) => events.push(event),
@@ -87,6 +261,8 @@ const cases: readonly ValidationCase[] = [
         payload(materialOutput(), [webCall([sourceA], "in_progress")]),
         payload(materialOutput(), [{ type: "web_search_call", status: "completed", action: { sources: [] } }]),
         payload(materialOutput("https://invented.example/path"), [webCall([sourceA])]),
+        payload(materialOutput("http://example.org/evidence-a"), [webCall(["http://example.org/evidence-a"])]),
+        payload(materialOutput("not-a-url"), [webCall(["not-a-url"])]),
       ];
       for (const variant of variants) {
         assert.equal(parseDynamicMarketResearchResponse(variant).ok, false);
@@ -131,7 +307,7 @@ const cases: readonly ValidationCase[] = [
     name: "fails before transport when the integral context exceeds the conservative budget",
     run: async () => {
       const withinBudget = buildLandingPageDynamicResearchPrompt(
-        dynamicResolution("x".repeat(20_000)),
+        dynamicResolution(" entry".repeat(20_000)),
         configuration("repo_catalog", "v1"),
       );
       assert.equal(withinBudget.ok, true);
@@ -139,7 +315,7 @@ const cases: readonly ValidationCase[] = [
       assert.equal(withinBudget.value.contextWindowTokens, 128_000);
 
       let fetchCalls = 0;
-      const huge = dynamicResolution("x".repeat(30_000));
+      const huge = dynamicResolution(" entry".repeat(40_000));
       const result = await researchDynamicLandingPageMarketWithOpenAi(
         { ...input("development", configuration("repo_catalog", "v1")), resolution: huge },
         {
