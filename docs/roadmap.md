@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 30/08/2026
-• Versão: v1.5.201
+• Versão: v1.5.202
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2480,6 +2480,7 @@ Repositório — Ajustados
     - `app/a/[account]/landing-pages/[landingPageId]/configuration-actions.ts`;
     - `lib/lp-builder/landingPageWorkspace.ts`;
     - `lib/lp-builder/adapters/landingPageWorkspaceAdapter.ts`;
+    - `lib/lp-builder/adapters/landingPageWorkspaceAuthority.ts`;
     - `lib/lp-builder/landing-page-workspace-validation-cases.ts`;
     - `supabase/migrations/20260822170000_e19_5_3_landing_page_workspace.sql`;
     - `supabase/snippets/e19_5_3_landing_page_workspace_verify.sql`;
