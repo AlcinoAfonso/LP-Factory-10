@@ -1,3 +1,4 @@
+import { validateLifecycleBoundedContracts } from "./lifecycle-validation-cases";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
@@ -42,6 +43,7 @@ const lifecycleAdapter = readFileSync(
   new URL("../../../../lib/admin/adapters/adminInputCatalogLifecycleAdapter.ts", import.meta.url),
   "utf8",
 );
+const lifecycleContext = readFileSync(new URL("../../../../lib/admin/adapters/adminInputCatalogLifecycleContext.ts", import.meta.url), "utf8");
 const lifecycleValidation = readFileSync(
   new URL("../../../../lib/admin/adapters/adminInputCatalogLifecycleValidation.ts", import.meta.url),
   "utf8",
@@ -100,9 +102,9 @@ assert.match(packageJson, /validate:taxon-preparation/);
 assert.match(packageJson, /validate:lp-builder-generation-context/);
 assert.match(page, /view === "entradas"[\s\S]*AdminInputCatalogLifecycle/);
 assert.match(lifecycleAdapter, /CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION/);
-assert.match(lifecycleAdapter, /account_landing_page_shared_configurations/);
-assert.match(lifecycleAdapter, /account_landing_page_configurations/);
-assert.match(lifecycleAdapter, /account_landing_page_onboarding_configurations/);
+assert.match(lifecycleContext, /account_landing_page_shared_configurations/);
+assert.match(lifecycleContext, /account_landing_page_configurations/);
+assert.match(lifecycleContext, /account_landing_page_onboarding_configurations/);
 assert.match(lifecycleAdapter, /invalidOperationalConfigurations/);
 assert.deepEqual(
   [...lifecycleValidation.matchAll(/from "(@\/lp-builder[^\"]*)"/g)].map((match) => match[1]),
@@ -618,9 +620,9 @@ if (!operationalAuthorities.ok) throw new Error("Expected valid operational auth
 assert.deepEqual(operationalAuthorities.value, [
   { accountId: "active-eligible", accountName: "Conta operacional", planKey: "pro" },
 ]);
-assert.match(lifecycleAdapter, /if \(!operationalAccountIds\.has\(configuration\.accountId\)\) continue/);
-assert.match(lifecycleAdapter, /normalizeValuesMap\([\s\S]*operationalAccountIds/);
-assert.match(lifecycleAdapter, /normalizeValuesMap\([\s\S]*operationalPageIds/);
+assert.match(lifecycleContext, /if \(pre && operational\)/);
+assert.match(lifecycleContext, /operational && shared && !isRecord\(shared.values\)/);
+assert.match(lifecycleContext, /operational && local && !isRecord\(local.values\)/);
 
 const beforePublicationReconciliation = planPublishedInputCatalogReviewReconciliation({
   currentVersion: 5,
@@ -688,6 +690,7 @@ const missingMandatoryDecision = planPublishedInputCatalogReviewReconciliation({
 assert.deepEqual(missingMandatoryDecision.blockingTaxonIds, [realEstateBrokerNicheTaxon.id]);
 assert.deepEqual(missingMandatoryDecision.taxonIdsToAdvance, []);
 
+await validateLifecycleBoundedContracts();
 console.log("ok - admin preserves consumers and proves complete service-only lifecycle pagination");
 }
 

@@ -15,7 +15,9 @@ import {
   type LandingPageInputCatalogDraftImpact,
   type LandingPageInputCatalogRegistry,
   type LandingPageInputCatalogRegistryEntry,
+  type LandingPageInputCatalogTaxonIdentity,
 } from "@/conversion-content/landing-page/input-catalog";
+import type { AccountLandingPageOnboardingStoredValues } from "@/lp-builder/contracts";
 import {
   reconstructCanonicalInputCatalogEvaluationContext,
   reconstructDraftInputCatalogEvaluationContext,
@@ -26,12 +28,17 @@ import {
   type InputCatalogEvaluationContextIdentity,
 } from "@/conversion-content/landing-page/taxon-preparation";
 import { createServiceClient } from "@/lib/supabase/service";
-import { readCompleteLifecycleContext, type LifecycleContext } from "./adminInputCatalogLifecycleContext";
+import { collectCompletePaginatedRows } from "./adminInputCatalogLifecyclePagination";
 import {
-  serializeInputCatalogLifecycleValue,
+  countInvalidInputCatalogOperationalConfigurations,
+  fingerprintInputCatalogOperationalContext,
   planPublishedInputCatalogReviewReconciliation,
+  resolveInputCatalogOperationalAccountAuthorities,
   validatePublishedInputCatalogReviewEvidenceContext,
+  type InputCatalogOperationalConfiguration,
 } from "./adminInputCatalogLifecycleValidation";
+
+const PAGE_SIZE = 500;
 
 type ServiceClient = ReturnType<typeof createServiceClient>;
 
@@ -75,12 +82,10 @@ export type AdminInputCatalogLifecycleMutationResult =
 
 export async function readAdminInputCatalogLifecycle(): Promise<AdminInputCatalogLifecycleState> {
   const client = createServiceClient();
-  const early = await readDraftRow(client);
-  const context = await readCandidateLifecycleContext(client, early.ok ? early.value?.catalogJson : undefined);
+  const context = await readCompleteLifecycleContext(client);
   if (!context.ok) return unavailableState(context.message);
   const row = await readDraftRow(client);
   if (!row.ok) return unavailableState(row.message, context);
-  if (!sameDraftIdentity(early, row)) return unavailableState(DRAFT_CHANGED, context);
   return await buildState(context, row.value);
 }
 
@@ -88,11 +93,10 @@ export async function initializeAdminInputCatalogDraft(input: Readonly<{
   actorUserId: string;
 }>): Promise<AdminInputCatalogLifecycleMutationResult> {
   const client = createServiceClient();
-  const draft = createNextLandingPageInputCatalogDraft();
-  const context = await readCandidateLifecycleContext(client, draft);
+  const context = await readCompleteLifecycleContext(client);
   if (!context.ok) return unavailable(context.message);
   const candidate = validateLandingPageInputCatalogDraft({
-    draft,
+    draft: createNextLandingPageInputCatalogDraft(),
     taxons: context.value.taxons,
   });
   if (!candidate.ok) return blocked(candidate.error.message);
@@ -144,7 +148,7 @@ export async function saveAdminInputCatalogDraft(input: Readonly<{
     return invalid("O draft não contém JSON válido.");
   }
   const client = createServiceClient();
-  const context = await readCandidateLifecycleContext(client, parsed);
+  const context = await readCompleteLifecycleContext(client);
   if (!context.ok) return unavailable(context.message);
   const candidate = validateLandingPageInputCatalogDraft({
     draft: parsed,
@@ -183,8 +187,7 @@ export async function validateAdminInputCatalogDraft(input: Readonly<{
   expectedRevision: number;
 }>): Promise<AdminInputCatalogLifecycleMutationResult> {
   const client = createServiceClient();
-  const early = await readDraftRow(client);
-  const context = await readCandidateLifecycleContext(client, early.ok ? early.value?.catalogJson : undefined);
+  const context = await readCompleteLifecycleContext(client);
   if (!context.ok) return unavailable(context.message);
   const current = await readDraftRow(client);
   if (!current.ok || !current.value) {
@@ -198,17 +201,19 @@ export async function validateAdminInputCatalogDraft(input: Readonly<{
     taxons: context.value.taxons,
   });
   if (!candidate.ok) return blocked(candidate.error.message);
-  if (!sameDraftIdentity(early, current)) return conflict(DRAFT_CHANGED);
-  const proof = proofForCandidate(context.value, candidate.value);
-  if (!proof) return unavailable(DRAFT_CHANGED);
-  const invalidOperationalConfigurations = proof.invalidOperationalConfigurations;
+  const invalidOperationalConfigurations = countInvalidInputCatalogOperationalConfigurations(
+    candidate.value,
+    context.value.operationalConfigurations,
+  );
   if (invalidOperationalConfigurations > 0) {
     return blocked(
       `${invalidOperationalConfigurations} configuração(ões) operacional(is) ficariam inválidas ou ilegíveis.`,
     );
   }
   const fingerprintValue = fingerprint(candidate.value.canonicalJson);
-  const operationalContextFingerprint = proof.fingerprint;
+  const operationalContextFingerprint = fingerprintInputCatalogOperationalContext(
+    context.value,
+  );
   if (fingerprintValue !== current.value.contentFingerprint) {
     return conflict("A identidade do draft não corresponde ao conteúdo salvo.");
   }
@@ -240,8 +245,7 @@ export async function prepareAdminInputCatalogPublication(input: Readonly<{
   expectedRevision: number;
 }>): Promise<AdminInputCatalogLifecycleMutationResult> {
   const client = createServiceClient();
-  const early = await readDraftRow(client);
-  const context = await readCandidateLifecycleContext(client, early.ok ? early.value?.catalogJson : undefined);
+  const context = await readCompleteLifecycleContext(client);
   if (!context.ok) return unavailable(context.message);
   const current = await readDraftRow(client);
   if (!current.ok || !current.value) {
@@ -255,11 +259,10 @@ export async function prepareAdminInputCatalogPublication(input: Readonly<{
     taxons: context.value.taxons,
   });
   if (!candidate.ok) return blocked(candidate.error.message);
-  if (!sameDraftIdentity(early, current)) return conflict(DRAFT_CHANGED);
-  const proof = proofForCandidate(context.value, candidate.value);
-  if (!proof) return unavailable(DRAFT_CHANGED);
   const fingerprintValue = fingerprint(candidate.value.canonicalJson);
-  const operationalContextFingerprint = proof.fingerprint;
+  const operationalContextFingerprint = fingerprintInputCatalogOperationalContext(
+    context.value,
+  );
   if (
     current.value.validationFingerprint !== fingerprintValue ||
     current.value.validationContextFingerprint !== operationalContextFingerprint ||
@@ -284,7 +287,10 @@ export async function prepareAdminInputCatalogPublication(input: Readonly<{
       "Existem taxons operacionais que exigem decisão E20.6.5 antes da publicação.",
     );
   }
-  const invalidOperationalConfigurations = proof.invalidOperationalConfigurations;
+  const invalidOperationalConfigurations = countInvalidInputCatalogOperationalConfigurations(
+    candidate.value,
+    context.value.operationalConfigurations,
+  );
   if (invalidOperationalConfigurations > 0) {
     return blocked(
       `${invalidOperationalConfigurations} configuração(ões) operacional(is) ficariam inválidas ou ilegíveis.`,
@@ -564,6 +570,17 @@ export async function recordAdminInputCatalogDraftSufficiencyDecision(input: Rea
   return { ok: true, revision: input.expectedRevision + 1 };
 }
 
+type LifecycleContext = Readonly<{
+  taxons: readonly Readonly<{
+    identity: LandingPageInputCatalogTaxonIdentity;
+    reviewedVersion: number | null;
+    selectedResearchVersion: number | null;
+    operational: boolean;
+  }>[];
+  operationalTaxonIds: ReadonlySet<string>;
+  operationalConfigurations: readonly InputCatalogOperationalConfiguration[];
+}>;
+
 type DraftRow = Readonly<{
   baseVersion: number;
   targetVersion: number;
@@ -589,38 +606,242 @@ type DraftTaxonReviewEvidence = Readonly<{
 const DRAFT_SELECT =
   "base_version,target_version,catalog_json,content_fingerprint,revision,validation_fingerprint,validation_context_fingerprint,publication_fingerprint,publication_context_fingerprint,taxon_review_evidence,updated_at";
 
-const DRAFT_CHANGED = "O draft mudou durante a leitura do contexto. Recarregue antes de continuar.";
+async function readCompleteLifecycleContext(
+  client: ServiceClient,
+): Promise<
+  | Readonly<{ ok: true; value: LifecycleContext }>
+  | Readonly<{ ok: false; message: string }>
+> {
+  const [
+    taxonRows,
+    pageRows,
+    onboardingConfigurationRows,
+    taxonomyRows,
+    accountRows,
+    entitlementRows,
+    sharedConfigurationRows,
+    landingPageConfigurationRows,
+  ] = await Promise.all([
+    readAll(client, "business_taxons", "id,parent_id,level,name,slug,is_active,selected_end_customer_research_version,reviewed_input_catalog_version", (query) =>
+      query.in("level", ["segment", "niche", "ultra_niche"]).order("id", { ascending: true }),
+    ),
+    readAll(client, "account_landing_pages", "id,account_id,status", (query) =>
+      query.in("status", ["draft", "active"]).order("id", { ascending: true }),
+    ),
+    readAll(client, "account_landing_page_onboarding_configurations", "account_id,landing_page_id,values", (query) =>
+      query.is("landing_page_id", null).order("account_id", { ascending: true }),
+    ),
+    readAll(client, "account_taxonomy", "account_id,taxon_id,is_primary,status", (query) =>
+      query.eq("is_primary", true).eq("status", "active").order("account_id", { ascending: true }),
+    ),
+    readAll(client, "accounts", "id,name,status", (query) => query.order("id", { ascending: true })),
+    readAll(client, "v_account_commercial_entitlement_effective", "account_id,plan_key,is_commercially_eligible", (query) =>
+      query.order("account_id", { ascending: true }),
+    ),
+    readAll(client, "account_landing_page_shared_configurations", "account_id,values", (query) =>
+      query.order("account_id", { ascending: true }),
+    ),
+    readAll(client, "account_landing_page_configurations", "landing_page_id,account_id,values", (query) =>
+      query.order("landing_page_id", { ascending: true }),
+    ),
+  ]);
+  if (
+    !taxonRows.ok ||
+    !pageRows.ok ||
+    !onboardingConfigurationRows.ok ||
+    !taxonomyRows.ok ||
+    !accountRows.ok ||
+    !entitlementRows.ok ||
+    !sharedConfigurationRows.ok ||
+    !landingPageConfigurationRows.ok
+  ) {
+    return { ok: false, message: "A coleção administrativa não pôde ser lida integralmente." };
+  }
+  const normalizedTaxons = taxonRows.rows.map(normalizeTaxon);
+  if (normalizedTaxons.some((taxon) => taxon === null)) {
+    return { ok: false, message: "A coleção de taxons contém estado inválido." };
+  }
+  const taxonValues = normalizedTaxons as readonly NonNullable<ReturnType<typeof normalizeTaxon>>[];
+  const identities = taxonValues.map((taxon) => taxon.identity);
 
-function readCandidateLifecycleContext(client: ServiceClient, draft: unknown) {
-  return readCompleteLifecycleContext(client, {
-    fingerprint: draft !== undefined,
-    prepareCandidate: draft === undefined ? undefined : (taxons) =>
-      validateLandingPageInputCatalogDraft({ draft, taxons }),
+  const candidateAccountIds = new Set<string>();
+  const candidatePages: Array<Readonly<{ id: string; accountId: string }>> = [];
+  const preHandoffConfigurations: Array<Readonly<{
+    accountId: string;
+    values: unknown;
+  }>> = [];
+  for (const row of pageRows.rows) {
+    if (
+      !isRecord(row) ||
+      typeof row.id !== "string" ||
+      typeof row.account_id !== "string"
+    ) {
+      return { ok: false, message: "A coleção de LPs operacionais é inválida." };
+    }
+    candidateAccountIds.add(row.account_id);
+    candidatePages.push({ id: row.id, accountId: row.account_id });
+  }
+  for (const row of onboardingConfigurationRows.rows) {
+    if (
+      !isRecord(row) ||
+      typeof row.account_id !== "string" ||
+      row.landing_page_id !== null
+    ) {
+      return { ok: false, message: "A residência E19.2 pré-handoff é inválida." };
+    }
+    candidateAccountIds.add(row.account_id);
+    preHandoffConfigurations.push({
+      accountId: row.account_id,
+      values: row.values,
+    });
+  }
+  const authority = resolveInputCatalogOperationalAccountAuthorities({
+    candidateAccountIds,
+    accounts: accountRows.rows,
+    entitlements: entitlementRows.rows,
   });
+  if (!authority.ok) {
+    return { ok: false, message: "A autoridade operacional de conta, entitlement ou plano é inválida." };
+  }
+  const operationalAccountIds = new Set(
+    authority.value.map((account) => account.accountId),
+  );
+  const accountNames = new Map(
+    authority.value.map((account) => [account.accountId, account.accountName]),
+  );
+  const plans = new Map(
+    authority.value.map((account) => [account.accountId, account.planKey]),
+  );
+  const operationalPages = candidatePages.filter((page) =>
+    operationalAccountIds.has(page.accountId),
+  );
+  const operationalPageIds = new Set(operationalPages.map((page) => page.id));
+
+  const primaryTaxonByAccount = new Map<string, string>();
+  const operationalTaxonIds = new Set<string>();
+  for (const row of taxonomyRows.rows) {
+    if (
+      !isRecord(row) ||
+      typeof row.account_id !== "string" ||
+      typeof row.taxon_id !== "string"
+    ) {
+      return { ok: false, message: "A coleção de taxonomia operacional é inválida." };
+    }
+    if (!operationalAccountIds.has(row.account_id)) continue;
+    if (primaryTaxonByAccount.has(row.account_id)) {
+      return { ok: false, message: "Uma conta operacional possui mais de um taxon primário ativo." };
+    }
+    primaryTaxonByAccount.set(row.account_id, row.taxon_id);
+    operationalTaxonIds.add(row.taxon_id);
+  }
+
+  const sharedValues = normalizeValuesMap(
+    sharedConfigurationRows.rows,
+    "account_id",
+    operationalAccountIds,
+  );
+  const landingPageValues = normalizeValuesMap(
+    landingPageConfigurationRows.rows,
+    "landing_page_id",
+    operationalPageIds,
+  );
+  if (!sharedValues || !landingPageValues) {
+    return { ok: false, message: "As configurações operacionais contêm estado inválido." };
+  }
+
+  const operationalConfigurations: InputCatalogOperationalConfiguration[] = [];
+  for (const page of operationalPages) {
+    const taxonId = primaryTaxonByAccount.get(page.accountId);
+    const planKey = plans.get(page.accountId);
+    const accountName = accountNames.get(page.accountId);
+    const taxon = identities.find((identity) => identity.id === taxonId);
+    if (!taxonId || !planKey || accountName === undefined || !taxon) {
+      return { ok: false, message: "Uma LP operacional não possui autoridade completa de conta, plano ou taxon." };
+    }
+    const taxonChain = buildLandingPageInputCatalogTaxonChain(taxon, identities);
+    if (!taxonChain.ok) {
+      return { ok: false, message: "Uma LP operacional possui cadeia taxonômica inválida." };
+    }
+    operationalConfigurations.push({
+      accountId: page.accountId,
+      landingPageId: page.id,
+      planKey,
+      taxonChain: taxonChain.value,
+      storedValues: {
+        ...(sharedValues.get(page.accountId) ?? {}),
+        ...(landingPageValues.get(page.id) ?? {}),
+      },
+      authoritativeValues: accountName.trim()
+        ? { business_display_name: accountName.trim() }
+        : {},
+    });
+  }
+  for (const configuration of preHandoffConfigurations) {
+    if (!operationalAccountIds.has(configuration.accountId)) continue;
+    if (!isRecord(configuration.values)) {
+      return { ok: false, message: "Uma configuração E19.2 operacional contém valores inválidos." };
+    }
+    const taxonId = primaryTaxonByAccount.get(configuration.accountId);
+    const planKey = plans.get(configuration.accountId);
+    const accountName = accountNames.get(configuration.accountId);
+    const taxon = identities.find((identity) => identity.id === taxonId);
+    if (!taxonId || !planKey || accountName === undefined || !taxon) {
+      return { ok: false, message: "Uma configuração E19.2 não possui autoridade completa de conta, plano ou taxon." };
+    }
+    const taxonChain = buildLandingPageInputCatalogTaxonChain(taxon, identities);
+    if (!taxonChain.ok) {
+      return { ok: false, message: "Uma configuração E19.2 possui cadeia taxonômica inválida." };
+    }
+    operationalConfigurations.push({
+      accountId: configuration.accountId,
+      landingPageId: null,
+      planKey,
+      taxonChain: taxonChain.value,
+      storedValues: configuration.values as AccountLandingPageOnboardingStoredValues,
+      authoritativeValues: accountName.trim()
+        ? { business_display_name: accountName.trim() }
+        : {},
+    });
+  }
+
+  const taxons = taxonValues.map((normalized) => ({
+    identity: normalized.identity,
+    reviewedVersion: normalized.reviewedVersion,
+    selectedResearchVersion: normalized.selectedResearchVersion,
+    operational: operationalTaxonIds.has(normalized.identity.id),
+  }));
+  return {
+    ok: true,
+    value: {
+      taxons,
+      operationalTaxonIds,
+      operationalConfigurations,
+    },
+  };
 }
 
-function sameDraftIdentity(
-  early: Awaited<ReturnType<typeof readDraftRow>>,
-  current: Awaited<ReturnType<typeof readDraftRow>>,
-): boolean {
-  if (!early.ok || !current.ok) return false;
-  if (!early.value || !current.value) return early.value === current.value;
-  return early.value.baseVersion === current.value.baseVersion &&
-    early.value.targetVersion === current.value.targetVersion &&
-    early.value.revision === current.value.revision &&
-    early.value.contentFingerprint === current.value.contentFingerprint &&
-    serializeInputCatalogLifecycleValue(early.value.catalogJson) ===
-      serializeInputCatalogLifecycleValue(current.value.catalogJson);
-}
-
-function proofForCandidate(
-  context: LifecycleContext,
-  candidate: Extract<ReturnType<typeof validateLandingPageInputCatalogDraft>, { ok: true }>["value"],
-) {
-  const proof = context.operationalProof;
-  if (!proof || proof.candidateContentFingerprint !== fingerprint(candidate.canonicalJson) ||
-      proof.invalidOperationalConfigurations === null) return null;
-  return { ...proof, invalidOperationalConfigurations: proof.invalidOperationalConfigurations };
+async function readAll(
+  client: ServiceClient,
+  relation: string,
+  columns: string,
+  refine: (query: any) => any,
+): Promise<Readonly<{ ok: true; rows: unknown[] }> | Readonly<{ ok: false }>> {
+  const result = await collectCompletePaginatedRows({
+    pageSize: PAGE_SIZE,
+    readPage: async (offset, limit) => {
+      const query = refine(
+        client.from(relation).select(columns, { count: "exact" }),
+      );
+      const { data, error, count } = await query.range(
+        offset,
+        offset + limit - 1,
+      );
+      return error || !Array.isArray(data) || count === null
+        ? null
+        : { rows: data, total: count };
+    },
+  });
+  return result.ok ? { ok: true, rows: [...result.rows] } : { ok: false };
 }
 
 async function readDraftRow(
@@ -658,7 +879,7 @@ async function buildState(
       error: null,
     };
   }
-  const operationalContextFingerprint = context.operationalProof?.fingerprint ?? "";
+  const operationalContextFingerprint = fingerprintInputCatalogOperationalContext(context);
   if (row.targetVersion === CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION) {
     const deployedFingerprint = fingerprint(
       serializeLandingPageInputCatalogEntry(
@@ -723,9 +944,10 @@ async function buildState(
     taxons: context.taxons,
   });
   if (!candidate.ok) return unavailableState(candidate.error.message, { ok: true, value: context });
-  const proof = proofForCandidate(context, candidate.value);
-  if (!proof) return unavailableState(DRAFT_CHANGED, { ok: true, value: context });
-  const invalidOperationalConfigurations = proof.invalidOperationalConfigurations;
+  const invalidOperationalConfigurations = countInvalidInputCatalogOperationalConfigurations(
+    candidate.value,
+    context.operationalConfigurations,
+  );
   const operationalReviewStatus = await validateOperationalReviewEvidence(
     candidate.value,
     row,
@@ -989,6 +1211,62 @@ async function advancePublishedReviewMarker(input: Readonly<{
     data.id === input.taxon.identity.id &&
     data.reviewed_input_catalog_version === input.targetVersion
   );
+}
+
+function normalizeValuesMap(
+  rows: readonly unknown[],
+  keyColumn: string,
+  operationalKeys: ReadonlySet<string>,
+): Map<string, AccountLandingPageOnboardingStoredValues> | null {
+  const result = new Map<string, AccountLandingPageOnboardingStoredValues>();
+  for (const row of rows) {
+    if (
+      !isRecord(row) ||
+      typeof row[keyColumn] !== "string"
+    ) return null;
+    if (!operationalKeys.has(row[keyColumn])) continue;
+    if (!isRecord(row.values) || result.has(row[keyColumn])) return null;
+    result.set(
+      row[keyColumn],
+      row.values as AccountLandingPageOnboardingStoredValues,
+    );
+  }
+  return result;
+}
+
+function normalizeTaxon(value: unknown): Readonly<{
+  identity: LandingPageInputCatalogTaxonIdentity;
+  reviewedVersion: number | null;
+  selectedResearchVersion: number | null;
+}> | null {
+  if (!isRecord(value)) return null;
+  if (
+    typeof value.id !== "string" ||
+    (value.parent_id !== null && typeof value.parent_id !== "string") ||
+    (value.level !== "segment" && value.level !== "niche" && value.level !== "ultra_niche") ||
+    typeof value.name !== "string" ||
+    typeof value.slug !== "string" ||
+    typeof value.is_active !== "boolean" ||
+    (value.selected_end_customer_research_version !== null &&
+      (!Number.isSafeInteger(value.selected_end_customer_research_version) ||
+        Number(value.selected_end_customer_research_version) <= 0)) ||
+    (value.reviewed_input_catalog_version !== null &&
+      (!Number.isSafeInteger(value.reviewed_input_catalog_version) ||
+        Number(value.reviewed_input_catalog_version) <= 0))
+  ) return null;
+  return {
+    identity: {
+      id: value.id,
+      parentId: value.parent_id,
+      level: value.level,
+      name: value.name,
+      slug: value.slug,
+      isActive: value.is_active,
+    },
+    reviewedVersion: value.reviewed_input_catalog_version as number | null,
+    selectedResearchVersion:
+      value.selected_end_customer_research_version as number | null,
+  };
 }
 
 function normalizeDraftRow(value: unknown): DraftRow | null {
