@@ -123,6 +123,14 @@ const cases: readonly ValidationCase[] = [
         {
           fetchImpl: async (_url, init) => {
             captured = JSON.parse(String(init?.body));
+            const schema = (captured as { text: { format: { schema: Record<string, unknown> } } }).text.format.schema;
+            const assertSupportedFormats = (value: unknown): void => {
+              if (!value || typeof value !== "object") return;
+              const record = value as Record<string, unknown>;
+              if ("format" in record) assert.ok(["date-time", "time", "date", "duration", "email", "hostname", "ipv4", "ipv6", "uuid"].includes(String(record.format)));
+              Object.values(record).forEach(assertSupportedFormats);
+            };
+            assertSupportedFormats(schema);
             return response(materialOutput(), [webCall([sourceA])]);
           },
           emitEvent: (event) => events.push(event),
@@ -181,6 +189,8 @@ const cases: readonly ValidationCase[] = [
         payload(materialOutput(), [webCall([sourceA], "in_progress")]),
         payload(materialOutput(), [{ type: "web_search_call", status: "completed", action: { sources: [] } }]),
         payload(materialOutput("https://invented.example/path"), [webCall([sourceA])]),
+        payload(materialOutput("http://example.org/evidence-a"), [webCall(["http://example.org/evidence-a"])]),
+        payload(materialOutput("not-a-url"), [webCall(["not-a-url"])]),
       ];
       for (const variant of variants) {
         assert.equal(parseDynamicMarketResearchResponse(variant).ok, false);
