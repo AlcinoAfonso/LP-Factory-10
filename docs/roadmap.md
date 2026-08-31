@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 30/08/2026
-• Versão: v1.5.204
+• Data: 31/08/2026
+• Versão: v1.5.205
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -3270,7 +3270,7 @@ Repositório — Ajustados
 
 22. E22 — Retirada controlada de ativos históricos
 - Objetivo: reduzir a superfície histórica que não participa do caminho canônico vigente, preservando consumidores reais e preparando a sequência E19.4 concluída → E22.1 → E19.5.
-- Status: E22.1 concluída; E22.2 candidata aguardando merge humano.
+- Status: E22.1 concluída; E22.2 candidata aguardando merge humano; E22.3 planejada.
 
 22.1 Retirada controlada de ativos históricos
 
@@ -3379,6 +3379,30 @@ Repositório — Ajustados
 - Nenhuma fonte transversal substitui `docs/lp-planejamento.md`.
 - Referências históricas não precisam ser reescritas.
 - Nenhuma alteração de banco, schema, infraestrutura ou arquitetura.
+
+22.3 Retirada controlada do Supabase Inspect MCP e infraestrutura associada
+
+22.3.1 Objetivo e status
+- Objetivo: retirar controladamente o service/MCP Supabase Inspect e, somente após auditoria, a infraestrutura Vercel exclusiva sem consumidor necessário, preservando automações, workflows, secret compartilhado e o Core.
+- Status: Planejada.
+
+22.3.3 Auditoria final de consumidores e gate de retirada
+- Status: Planejada.
+- Conteúdo:
+  - reconfirmar consumidores, referências, projeto Vercel, conflito documental do Agent Builder e mecanismos preservados antes de qualquer retirada;
+  - interromper diante de consumidor necessário sem substituto aprovado, outro workload ou necessidade material nova.
+
+22.3.4 Retirada do MCP e referências operacionais
+- Status: Planejada.
+- Conteúdo:
+  - retirar o service e referências operacionais sem remover automações, workflows, secret compartilhado ou contratos do Core;
+  - reconciliar os documentos canônicos pelo Prompt ABC.
+
+22.3.5 Retirada da infraestrutura Vercel sem workload
+- Status: Planejada.
+- Conteúdo:
+  - remover o projeto Vercel exclusivo somente após confirmar ausência de workload;
+  - preservar o Core e registrar somente a configuração externa efetivamente existente.
 
 99. Changelog
 v1.5.195 — 29/08/2026 — Encerrada a E20.7 após o merge do PR #835: migration E20.7.4 aplicada automaticamente, reconciliação v6 confirmada e rollout hospedado do workload dinâmico transferido para o futuro recorte de integração E19.3, quando existir consumidor real; removida essa validação operacional da lista de pendências da E20.7.

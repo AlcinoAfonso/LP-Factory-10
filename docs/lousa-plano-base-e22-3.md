@@ -140,7 +140,7 @@ Referências imutáveis de entrada:
 - Registrar a janela temporal observada, a fonte, o filtro e a identidade do deployment/alias usados na verificação de tráfego, distinguindo probes/health checks da utilização externa necessária. Se a plataforma não fornecer evidência suficiente para essa janela, manter a retirada externa pendente.
 - Classificar explicitamente `lib/openai-workloads/` e `app/admin/(protected)/workloads-openai/page.tsx` como inventário/referência do workflow GitHub preservado, não como consumidores do endpoint MCP; não removê-los.
 - Reconfirmar que o projeto Core `lp-factory-10` é distinto e permanece fora do alvo. A ausência de evidência externa suficiente não autoriza inferência: mantém a retirada externa pendente.
-- Considerar a validação do Agent Builder somente como histórico conforme a v1 e `docs/automations.md`; se for revelado consumidor externo necessário sem substituto aprovado, não remover o service nem prosseguir para a infraestrutura.
+- Reconciliar explicitamente o conflito canônico entre `docs/automations.md`, que registra o Agent Builder como validação funcional histórica, e `docs/platform-config.md`, que ainda o registra como ativo operacional dependente do endpoint MCP. Em `E22.3.3`, verificar o estado externo atual em vez de descartar essa divergência por classificação documental; até reconciliar a evidência, manter a retirada externa pendente e, se for confirmado consumidor necessário sem substituto aprovado, retornar ao Estrategista/humano sem remover o service nem prosseguir para a infraestrutura.
 - Não executar mutação de código, documento ou plataforma nesta fase. O gate libera apenas o avanço para E22.3.4.
 
 ### 5.3. E22.3.4 — Retirada do service e das referências órfãs
