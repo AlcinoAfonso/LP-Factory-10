@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { readFileSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { runInThisContext } from "node:vm";
@@ -226,7 +227,7 @@ const cases: readonly Readonly<{ name: string; run: () => void }>[] = [
         "utf8",
       );
       assert.ok(adapter.indexOf("isLandingPageWorkspaceEnabled()") < adapter.indexOf("account_landing_page_shared_configurations"));
-      assert.match(adapter, /loadTaxonPreparationForCurrentVersion\(\{/);
+      assert.match(authoritySource, /loadTaxonPreparationForCurrentVersion\(\{/);
       assert.match(adapter, /effectiveInputCatalogVersion/);
       assert.doesNotMatch(adapter, /LANDING_PAGE_WORKSPACE_REQUIRED_INPUT_CATALOG_VERSION/);
       assert.doesNotMatch(adapter, /loadTaxonPreparationForReviewedVersion|readAllLandingPageMaterializations|is_initialized|archive/i);
@@ -358,12 +359,248 @@ const revisionId = (i: number, r: number) => `30000000-0000-4000-8000-${String(i
 // Raw transport fixtures intentionally include malformed database shapes.
 type Row = Record<string, any>;
 type Scenario = { authority?: AuthorityScenario; identity?: IdentityScenario; size: number; approval?: "none" | "mixed" | "all" | "latest"; history?: number; cursor?: string; role?: string; denied?: boolean; gate?: boolean; authenticated?: boolean; fault?: string; complete?: boolean; entitled?: boolean; prepared?: boolean; residence?: "bootstrap" | "historical"; detailCursor?: string; differentDates?: boolean };
-const source = readFileSync(adapterPath, "utf8");
+const source = readFileSync(adapterPath, "utf8").replace(/\r\n/g, "\n");
 const compiled = ts.transpileModule(source, { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS, esModuleInterop: true } }).outputText;
+
+
+// AA08: captured before extraction from 5a6dbc546601e51bcce5064a6b204177337daf8f.
+// Freeze removed text and require the SHA-256 of the ENTIRE reconstructed original.
+// Current authority code and Git history are never the oracle. Changes to the
+// untouched remainder invalidate the hash; the baseline cannot track the candidate.
+const baselineAA08Header = String.raw`import "server-only";
+
+import { getCommercialEntitlementSignal } from "../../commercial-entitlements";
+import { loadTaxonPreparationForCurrentVersion } from "../../conversion-content/adapters/selectedEndCustomerResearchAdapter";
+import type {
+  LandingPageInputCatalogPlan,
+  LandingPageInputCatalogTaxonChain,
+} from "../../conversion-content/landing-page/input-catalog";
+import {
+  parseLandingPageOfferingScope,
+  projectLegacyLandingPageOfferingScope,
+} from "../../conversion-content/landing-page/input-catalog";
+import { createClient } from "../../supabase/server";
+import { createServiceClient } from "../../supabase/service";
+import { isOperationalLandingPageStatus } from "../../types/status";
+import type {
+  AccountLandingPageOnboardingStoredValues,
+  AccountLandingPageOperationalRevalidationResult,
+  AccountLandingPageOperationalConfiguration,
+  AccountLandingPageWorkspaceDetailResult,
+  AccountLandingPageWorkspaceItem,
+  AccountLandingPageWorkspaceResult,
+  LandingPageWorkspaceMutationResult,
+  SaveAccountLandingPageOperationalConfigurationResult,
+} from "../contracts";
+import {
+  deriveLandingPageWorkspaceState,
+  evaluateLandingPageCommercialIdentityMutation,
+  isLandingPageWorkspaceEnabled,
+  splitLandingPageWorkspaceValues,
+} from "../landingPageWorkspace";
+import { resolveAccountLandingPageOnboardingConfiguration } from "../onboardingConfiguration";
+import { createAccountLandingPage } from "./landingPagesAdapter";
+
+type ServiceClient = ReturnType<typeof createServiceClient>;
+type Authority = Readonly<{
+  actorUserId: string;
+  accountId: string;
+  canMutate: boolean;
+  planKey: LandingPageInputCatalogPlan;
+  taxonChain: LandingPageInputCatalogTaxonChain;
+  effectiveInputCatalogVersion: number;
+  authoritativeValues: Readonly<Record<string, unknown>>;
+}>;
+
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+`;
+const baselineAA08Authority = String.raw`async function loadAuthority(
+  accountIdInput: string,
+  client: ServiceClient,
+): Promise<
+  | Readonly<{ ok: true; value: Authority }>
+  | Readonly<{
+      ok: false;
+      workspaceResult: Extract<AccountLandingPageWorkspaceResult, { ok: false }>;
+      detailResult: Extract<AccountLandingPageWorkspaceDetailResult, { ok: false }>;
+      saveResult: Extract<SaveAccountLandingPageOperationalConfigurationResult, { ok: false }>;
+      mutationResult: Extract<LandingPageWorkspaceMutationResult, { ok: false }>;
+    }>
+> {
+  const accountId = String(accountIdInput ?? "").trim();
+  const actorUserId = await getAuthenticatedUserId();
+  if (!actorUserId) return authorityFailure("unauthenticated");
+  if (!UUID_RE.test(accountId)) return authorityFailure("unauthorized");
+  try {
+    const [{ data: account, error: accountError }, { data: membership, error: membershipError }] =
+      await Promise.all([
+        client.from("accounts").select("id,name,status").eq("id", accountId).limit(1).maybeSingle(),
+        client
+          .from("account_users")
+          .select("role,status")
+          .eq("account_id", accountId)
+          .eq("user_id", actorUserId)
+          .limit(1)
+          .maybeSingle(),
+      ]);
+    if (accountError || membershipError) return authorityFailure("unavailable");
+    if (
+      !isRecord(account) ||
+      account.status !== "active" ||
+      !isRecord(membership) ||
+      membership.status !== "active"
+    ) return authorityFailure("unauthorized");
+    const entitlement = await getCommercialEntitlementSignal({ accountId });
+    if (
+      !entitlement.isCommerciallyEligible ||
+      !["starter", "lite", "pro", "ultra"].includes(String(entitlement.planKey))
+    ) return authorityFailure("unauthorized");
+    const taxonChain = await readTaxonChain(client, accountId);
+    if (!taxonChain) return authorityFailure("unavailable");
+    const servedTaxon = taxonChain.ultraNiche ?? taxonChain.niche ?? taxonChain.segment;
+    const preparation = await loadTaxonPreparationForCurrentVersion({
+      taxonId: servedTaxon.id,
+    });
+    if (
+      !preparation.ok ||
+      !Number.isSafeInteger(preparation.value.effectiveInputCatalogVersion) ||
+      preparation.value.effectiveInputCatalogVersion <= 0
+    ) return authorityFailure("unavailable");
+    return {
+      ok: true,
+      value: {
+        actorUserId,
+        accountId,
+        canMutate: ["owner", "admin"].includes(String(membership.role)),
+        planKey: entitlement.planKey as LandingPageInputCatalogPlan,
+        taxonChain,
+        effectiveInputCatalogVersion:
+          preparation.value.effectiveInputCatalogVersion,
+        authoritativeValues:
+          typeof account.name === "string" && account.name.trim()
+            ? { business_display_name: account.name.trim() }
+            : {},
+      },
+    };
+  } catch {
+    return authorityFailure("unavailable");
+  }
+}
+
+async function readTaxonChain(
+  client: ServiceClient,
+  accountId: string,
+): Promise<LandingPageInputCatalogTaxonChain | null> {
+  const { data: link, error } = await client
+    .from("account_taxonomy")
+    .select("taxon_id,taxon:business_taxons!account_taxonomy_taxon_id_fkey(id,name,slug,level,is_active,parent_id)")
+    .eq("account_id", accountId)
+    .eq("is_primary", true)
+    .eq("status", "active")
+    .limit(1)
+    .maybeSingle();
+  if (error || !isRecord(link) || typeof link.taxon_id !== "string") return null;
+  const nodes: Array<{
+    id: string;
+    name: string;
+    slug: string;
+    level: "segment" | "niche" | "ultra_niche";
+    isActive: true;
+    parentId: string | null;
+  }> = [];
+  let currentId: string | null = link.taxon_id;
+  for (let depth = 0; depth < 3 && currentId; depth += 1) {
+    const response: { data: unknown; error: unknown } = depth === 0
+      ? { data: link.taxon, error: null }
+      : await client
+          .from("business_taxons")
+          .select("id,name,slug,level,is_active,parent_id")
+          .eq("id", currentId)
+          .limit(1)
+          .maybeSingle();
+    const data = response.data;
+    const nodeError = response.error;
+    if (
+      nodeError ||
+      !isRecord(data) ||
+      data.is_active !== true ||
+      typeof data.id !== "string" ||
+      typeof data.name !== "string" ||
+      typeof data.slug !== "string" ||
+      !["segment", "niche", "ultra_niche"].includes(String(data.level))
+    ) return null;
+    nodes.push({
+      id: data.id,
+      name: data.name,
+      slug: data.slug,
+      level: data.level as "segment" | "niche" | "ultra_niche",
+      isActive: true,
+      parentId: typeof data.parent_id === "string" ? data.parent_id : null,
+    });
+    if (data.level === "segment") break;
+    currentId = typeof data.parent_id === "string" ? data.parent_id : null;
+  }
+  const ordered = nodes.reverse();
+  const segment = ordered.find((node) => node.level === "segment");
+  const niche = ordered.find((node) => node.level === "niche");
+  const ultraNiche = ordered.find((node) => node.level === "ultra_niche");
+  return segment && (!ultraNiche || niche)
+    ? { segment, ...(niche ? { niche } : {}), ...(ultraNiche ? { ultraNiche } : {}) }
+    : null;
+}
+
+async function getAuthenticatedUserId() {
+  try {
+    const client = await createClient();
+    const { data: { user }, error } = await client.auth.getUser();
+    return error || !user?.id ? null : user.id;
+  } catch {
+    return null;
+  }
+}
+
+function authorityFailure(error: "unauthenticated" | "unauthorized" | "unavailable") {
+  return {
+    ok: false as const,
+    workspaceResult: { ok: false as const, error },
+    detailResult: { ok: false as const, error },
+    saveResult: { ok: false as const, error },
+    mutationResult: { ok: false as const, error },
+  };
+}
+
+`;
+const baselineAA08Source = baselineAA08Header + source.slice(source.indexOf("const WORKSPACE_PAGE_SIZE"))
+  .replaceAll("isWorkspaceUuid(", "UUID_RE.test(")
+  .replace("function normalizePage(", baselineAA08Authority + "function normalizePage(");
+assert.equal(createHash("sha256").update(baselineAA08Source).digest("hex"), "02086fd4e0882fdfdba1f9eaaa7a0426004bebfec64b708c01d96d63d371e0bd", "AA08 immutable full-source baseline");
+assert.notEqual(source, baselineAA08Source, "candidate is not its own baseline");
+const baselineAA08Compiled = ts.transpileModule(baselineAA08Source, { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS, esModuleInterop: true } }).outputText;
+const authoritySource = readFileSync(new URL("./adapters/landingPageWorkspaceAuthority.ts", import.meta.url), "utf8").replace(/\r\n/g, "\n");
+const authorityCompiled = ts.transpileModule(authoritySource, { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS, esModuleInterop: true } }).outputText;
+
+function replaceHistoricalFunction(current: string, frozen: string): string {
+  const name = frozen.match(/(?:async )?function (\w+)/)![1];
+  const pattern = new RegExp("(?:export )?(?:async )?function " + name + "\\([\\s\\S]*?\\n}(?=\\n|$)", "g");
+  assert.equal([...current.matchAll(pattern)].length, 1, "unique historical target: " + name);
+  return current.replace(pattern, () => frozen.trimEnd());
+}
+
+let aa08Comparisons = 0;
+async function exercise<S extends Scenario>(s: S) {
+  const current = await exerciseModule(s);
+  if (!s.authority?.baseline && !s.identity?.baseline) {
+    const old = await exerciseModule(s, true);
+    assert.deepEqual(current, old, "AA08 full results, ordered I/O, clients and writer payloads");
+    aa08Comparisons += s.authority ? s.authority.steps.length : 1 + Number(s.detailCursor !== undefined);
+  }
+  return current;
+}
 
 // Test-only module boundary: execute the unmodified adapter, real domain resolvers,
 // and real supabase-js URL builder; replace only external I/O. No production seam.
-async function exercise<S extends Scenario>(s: S) {
+async function exerciseModule<S extends Scenario>(s: S, baselineAA08 = false) {
   const fixtureAccountId = (s.identity?.uuidLetters || s.authority?.uuidLetters) ? "abcdefab-cdef-4abc-8def-abcdefabcdef" : accountA;
   const fixturePageId = (s.identity?.uuidLetters || s.authority?.uuidLetters)
     ? (i: number) => "abcdefab-cdef-4abc-8def-" + String(i).padStart(12, "0")
@@ -375,8 +612,10 @@ async function exercise<S extends Scenario>(s: S) {
   const authorityResults: unknown[] = [];
   const authorityMetrics: Array<{ requests: number; boundaries: string[]; clients: number; taxons: string[] }> = [];
   const calls: URL[] = [];
+  const events: unknown[] = [];
   const boundaryCalls: string[] = [];
   const writerCalls: Row[] = [];
+  const creationCalls: Row[] = [];
   let ownWrites = 0;
   let concurrent = false;
   let revisionRows = 0;
@@ -418,6 +657,7 @@ async function exercise<S extends Scenario>(s: S) {
     global: { fetch: async (input, init) => {
       const url = new URL(String(input));
       calls.push(url);
+      events.push({ method: init?.method, url: url.href, body: init?.body });
 
       const table = url.pathname.split("/").pop()!;
       const q = url.searchParams;
@@ -463,8 +703,18 @@ async function exercise<S extends Scenario>(s: S) {
           revisionBytes += Buffer.byteLength(JSON.stringify(selected));
           return new Response(JSON.stringify(selected), { status: 200 });
         }
+        if (table === "approve_account_landing_page_materialization_v1") {
+          writerCalls.push(payload);
+          assert.equal(payload.p_actor_user_id, "actor");
+          if (authorityState.writerFault === "throw") throw new Error("writer fixture");
+          if (authorityState.writerFault?.startsWith("error:")) return new Response(JSON.stringify({ message: authorityState.writerFault.slice(6) }), { status: 400 });
+          return new Response(JSON.stringify(authorityState.writerFault === "shape" ? null : payload.p_materialization_id), { status: 200 });
+        }
         assert.equal(table, "save_account_landing_page_configuration_v1");
         writerCalls.push(payload);
+        if (authorityState.writerFault === "throw") throw new Error("writer fixture");
+        if (authorityState.writerFault?.startsWith("error:")) return new Response(JSON.stringify({ code: authorityState.writerFault === "error:conflict" ? "40001" : "P0001", message: authorityState.writerFault.slice(6) }), { status: 400 });
+        if (authorityState.writerFault === "shape") return new Response(JSON.stringify([{ shared_revision: 0, landing_page_revision: null }]), { status: 200 });
         const currentLatest = s.identity?.interleave === "append" && concurrent ? revisionId(1, 9999) : revisions.filter(r => r.account_id === fixtureAccountId && r.landing_page_id === fixturePageId(1)).at(-1)?.id ?? null;
         const sharedRevision = concurrent && s.identity?.interleave === "shared" ? 3 : 2;
         const lpRevision = concurrent && s.identity?.interleave === "lp" ? 2 : 1;
@@ -575,19 +825,38 @@ async function exercise<S extends Scenario>(s: S) {
   });
   const imports: Record<string, unknown> = {
     "server-only": {},
-    "../../supabase/service": { createServiceClient: () => { serviceClients++; return client; } },
-    "../../supabase/server": { createClient: async () => ({ auth: { getUser: async () => { boundaryCalls.push("auth"); authWithinCall++;
+    "../../supabase/service": { createServiceClient: () => { serviceClients++; events.push("client"); return client; } },
+    "../../supabase/server": { createClient: async () => ({ auth: { getUser: async () => { boundaryCalls.push("auth"); events.push("auth"); authWithinCall++;
       if (authWithinCall === 2 && s.authority?.secondLoad) authorityState = { ...authorityState, ...s.authority.secondLoad };
       if (authorityState.authThrow) throw new Error("auth fixture");
       if (authorityState.authenticated === false) return { data: { user: null }, error: null };
       return { data: { user: s.authenticated === false ? null : { id: authorityState.actorId ?? "actor" } }, error: authorityState.authError ? { message: "auth fixture" } : null }; } } }) },
-    "../../commercial-entitlements": { getCommercialEntitlementSignal: async () => { boundaryCalls.push("entitlement"); if (authorityState.entitlementThrow) throw new Error("entitlement fixture"); return { isCommerciallyEligible: authorityState.entitled ?? s.entitled !== false, planKey: authorityState.plan ?? "starter" }; } },
-    "../../conversion-content/adapters/selectedEndCustomerResearchAdapter": { loadTaxonPreparationForCurrentVersion: async (input: { taxonId: string }) => { boundaryCalls.push("preparation"); preparationTaxons.push(input.taxonId); if (authorityState.preparationThrow) throw new Error("preparation fixture"); return { ok: authorityState.prepared ?? s.prepared !== false, value: { effectiveInputCatalogVersion: authorityState.preparationVersion ?? 6 } }; } },
-    "./landingPagesAdapter": { createAccountLandingPage: () => { throw new Error("No mutations in listing QA"); } },
+    "../../commercial-entitlements": { getCommercialEntitlementSignal: async () => { boundaryCalls.push("entitlement"); events.push("entitlement"); if (authorityState.entitlementThrow) throw new Error("entitlement fixture"); return { isCommerciallyEligible: authorityState.entitled ?? s.entitled !== false, planKey: authorityState.plan ?? "starter" }; } },
+    "../../conversion-content/adapters/selectedEndCustomerResearchAdapter": { loadTaxonPreparationForCurrentVersion: async (input: { taxonId: string }) => { boundaryCalls.push("preparation"); events.push("preparation"); preparationTaxons.push(input.taxonId); if (authorityState.preparationThrow) throw new Error("preparation fixture"); return { ok: authorityState.prepared ?? s.prepared !== false, value: { effectiveInputCatalogVersion: authorityState.preparationVersion ?? 6 } }; } },
+    "./landingPagesAdapter": { createAccountLandingPage: async (input: Row) => {
+      assert.equal(authorityState.operation, "create", "creation only in explicit synthetic case");
+      creationCalls.push(input); events.push({ create: input });
+      if (authorityState.createError === "throw") throw new Error("creation fixture");
+      return authorityState.createError ? { ok: false, error: authorityState.createError } : { ok: true, landingPage: { id: fixturePageId(1) } };
+    } },
     "../onboardingConfiguration": core,
   };
   const exports = {} as typeof import("./adapters/landingPageWorkspaceAdapter");
-  runInThisContext(`(function(require, exports) { ${s.authority?.baseline ? authorityBaselineCompiled : s.identity?.baseline ? baselineCompiled : compiled}\n})`)((id: string) => Object.hasOwn(imports, id) ? imports[id] : requireAdapter(id), exports);
+  const historical = Boolean(baselineAA08 || s.authority?.baseline || s.identity?.baseline);
+  let authorityModuleLoads = 0;
+  const requireFixture = (id: string): unknown => {
+    if (id === "./landingPageWorkspaceAuthority") {
+      assert.equal(historical, false, "only candidate loads the real extracted module");
+      authorityModuleLoads++;
+      const authorityExports = {};
+      runInThisContext("(function(require, exports) { " + authorityCompiled + "\n})")(requireFixture, authorityExports);
+      return authorityExports;
+    }
+    return Object.hasOwn(imports, id) ? imports[id] : requireAdapter(id);
+  };
+  const executable = baselineAA08 ? baselineAA08Compiled : s.authority?.baseline ? authorityBaselineCompiled : s.identity?.baseline ? baselineCompiled : compiled;
+  runInThisContext("(function(require, exports) { " + executable + "\n})")(requireFixture, exports);
+  assert.equal(authorityModuleLoads, historical ? 0 : 1, "real module or independent frozen baseline");
   const previous = process.env.E19_5_WORKSPACE_ENABLED;
   process.env.E19_5_WORKSPACE_ENABLED = s.gate === false ? "false" : "true";
   try {
@@ -598,7 +867,21 @@ async function exercise<S extends Scenario>(s: S) {
         process.env.E19_5_WORKSPACE_ENABLED = step.gate === false ? "false" : "true";
         const before = { requests: calls.length, boundaries: boundaryCalls.length, clients: serviceClients, taxons: preparationTaxons.length };
         const input = { accountId: step.accountId ?? fixtureAccountId, landingPageId: step.landingPageId ?? fixturePageId(1), historyCursor: step.historyCursor };
-        authorityResults.push(await (step.operation === "detail" ? exports.getAccountLandingPageWorkspaceDetail(input) : exports.getAccountLandingPageOperationalRevalidationAuthority(input)));
+        const invoke = () => {
+          switch (step.operation) {
+            case "list": return exports.listAccountLandingPageWorkspace({ accountId: input.accountId, cursor: step.cursor });
+            case "detail": return exports.getAccountLandingPageWorkspaceDetail(input);
+            case "save": return exports.saveAccountLandingPageOperationalConfiguration({ ...input, values, expectedSharedRevision: 2, expectedLandingPageRevision: 1 });
+            case "create": return exports.createWorkspaceLandingPage({ accountId: input.accountId, name: "Fixture", slug: "fixture" });
+            case "approve": return exports.approveAccountLandingPageRevision({ ...input, materializationId: step.materializationId ?? revisionId(1, 1) });
+            default: return exports.getAccountLandingPageOperationalRevalidationAuthority(input);
+          }
+        };
+        try { authorityResults.push(await invoke()); }
+        catch (error) {
+          assert.equal(step.createError, "throw", "unexpected rejected operation");
+          authorityResults.push({ rejected: error instanceof Error ? error.message : String(error) });
+        }
         authorityMetrics.push({ requests: calls.length - before.requests, boundaries: boundaryCalls.slice(before.boundaries), clients: serviceClients - before.clients, taxons: preparationTaxons.slice(before.taxons) });
       }
     }
@@ -609,7 +892,7 @@ async function exercise<S extends Scenario>(s: S) {
         })
       : await exports.listAccountLandingPageWorkspace({ accountId: fixtureAccountId, cursor: s.cursor });
     const detail = s.detailCursor === undefined ? undefined : await exports.getAccountLandingPageWorkspaceDetail({ accountId: fixtureAccountId, landingPageId: fixturePageId(1), historyCursor: s.detailCursor });
-    return { authorityResults, authorityMetrics, output: output as S extends { identity: IdentityScenario } ? Awaited<ReturnType<typeof exports.saveAccountLandingPageOperationalConfiguration>> : Awaited<ReturnType<typeof exports.listAccountLandingPageWorkspace>>, detail, writerCalls, ownWrites, calls: calls.map(u => u.href), boundaryCalls, revisionRows, revisionBytes };
+    return { creationCalls, events, serviceClients, authorityResults, authorityMetrics, output: output as S extends { identity: IdentityScenario } ? Awaited<ReturnType<typeof exports.saveAccountLandingPageOperationalConfiguration>> : Awaited<ReturnType<typeof exports.listAccountLandingPageWorkspace>>, detail, writerCalls, ownWrites, calls: calls.map(u => u.href), boundaryCalls, revisionRows, revisionBytes };
   } finally {
     if (previous === undefined) delete process.env.E19_5_WORKSPACE_ENABLED;
     else process.env.E19_5_WORKSPACE_ENABLED = previous;
@@ -772,10 +1055,7 @@ const originalIdentityReader = String.raw`async function validateIdentityMutatio
 }
 
 `;
-const baselineSource = source.replace(
-  /async function validateIdentityMutation\([\s\S]*?(?=async function readCurrentConfiguredOfferingScope)/,
-  originalIdentityReader,
-);
+const baselineSource = replaceHistoricalFunction(baselineAA08Source, originalIdentityReader);
 const baselineCompiled = ts.transpileModule(baselineSource, { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS, esModuleInterop: true } }).outputText;
 
 // Use the actual private canonical reader for the oracle, not a copy of its guards.
@@ -1193,14 +1473,12 @@ String.raw`async function readTaxonChain(
     : null;
 }`
 ];
-const authorityBaselineSource = authorityBaselineFunctions.reduce((current, frozen) => {
-  const name = frozen.match(/async function (\w+)/)![1];
-  return current.replace(new RegExp("(?:export )?async function " + name + "\\([\\s\\S]*?\\n}(?=\\n|$)"), () => frozen);
-}, source);
+const authorityBaselineSource = authorityBaselineFunctions.reduce(replaceHistoricalFunction, baselineAA08Source);
+assert.notEqual(authorityBaselineSource, baselineAA08Source, "pre-AA07 and pre-AA08 remain distinct");
 const authorityBaselineCompiled = ts.transpileModule(authorityBaselineSource, { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS, esModuleInterop: true } }).outputText;
 
 type AuthorityState = {
-  operation?: "detail" | "revalidation"; gate?: boolean; accountId?: string; landingPageId?: string; historyCursor?: string;
+  operation?: "list" | "detail" | "revalidation" | "save" | "create" | "approve"; cursor?: string; materializationId?: string; writerFault?: string; createError?: string; gate?: boolean; accountId?: string; landingPageId?: string; historyCursor?: string;
   authenticated?: boolean; actorId?: string; authError?: boolean; authThrow?: boolean; role?: string;
   entitled?: boolean; plan?: string; entitlementThrow?: boolean; prepared?: boolean; preparationVersion?: number; preparationThrow?: boolean;
   taxons?: Row[]; links?: Row[]; embedShape?: unknown; tables?: Record<string, Row[]>; fault?: string;
@@ -1352,15 +1630,107 @@ async function validateAuthorityReads() {
   console.log("ok - AA07 " + comparisons + " full old/new DTO/error comparisons; fresh invocations, temporal delta, LEFT embed and external-boundary counts (synthetic, not DB timings)");
 }
 
+
+function validateAuthorityExtraction() {
+  const parse = (text: string) => ts.createSourceFile("fixture.ts", text, ts.ScriptTarget.Latest, true);
+  const before = parse(baselineAA08Source), facade = parse(source), authority = parse(authoritySource);
+  const functions = (file: ts.SourceFile) => new Map(file.statements.filter(ts.isFunctionDeclaration).map(f => [f.name!.text, f.getText(file)]));
+  const normalize = (text: string) => text.replace(/^export /, "").replaceAll("isWorkspaceUuid(", "UUID_RE.test(");
+  const originalFunctions = functions(before), facadeFunctions = functions(facade), authorityFunctions = functions(authority);
+  const moved = ["loadAuthority", "readTaxonChain", "getAuthenticatedUserId", "authorityFailure"];
+  for (const [name, text] of originalFunctions) {
+    const current = moved.includes(name) ? authorityFunctions.get(name) : facadeFunctions.get(name);
+    assert.equal(normalize(current!), normalize(text), "literal AST function parity: " + name);
+  }
+  assert.deepEqual([...authorityFunctions.keys()].sort(), [...moved, "isRecord", "isWorkspaceUuid"].sort());
+  assert.equal(authorityFunctions.get("isRecord"), originalFunctions.get("isRecord"));
+  assert.equal(authorityFunctions.get("isWorkspaceUuid"), "export function isWorkspaceUuid(value: string): boolean {\n  return UUID_RE.test(value);\n}");
+  const originalType = before.statements.find(n => ts.isTypeAliasDeclaration(n) && n.name.text === "Authority")!;
+  const currentType = authority.statements.find(n => ts.isTypeAliasDeclaration(n) && n.name.text === "Authority")!;
+  assert.equal(normalize(currentType.getText(authority)), originalType.getText(before));
+  const uuidText = (f: ts.SourceFile) => f.statements.filter(ts.isVariableStatement).find(n => n.declarationList.declarations.some(d => d.name.getText(f) === "UUID_RE"))!.getText(f);
+  assert.equal(uuidText(authority), uuidText(before));
+  const exports = (f: ts.SourceFile) => f.statements.filter(n => ts.canHaveModifiers(n) && ts.getModifiers(n)?.some(m => m.kind === ts.SyntaxKind.ExportKeyword)).map(n => ts.isFunctionDeclaration(n) || ts.isTypeAliasDeclaration(n) ? n.name!.text : n.getText(f));
+  assert.equal(exports(facade).length, 6);
+  assert.deepEqual(exports(facade), exports(before));
+  assert.deepEqual(exports(authority).sort(), ["Authority", "isWorkspaceUuid", "loadAuthority"]);
+  const imports = (f: ts.SourceFile, runtime: boolean) => f.statements.filter(ts.isImportDeclaration).filter(n => !runtime || !n.importClause?.isTypeOnly).map(n => (n.moduleSpecifier as ts.StringLiteral).text);
+  const removed = ["../../supabase/server", "../../commercial-entitlements", "../../conversion-content/adapters/selectedEndCustomerResearchAdapter"];
+  for (const dependency of removed) { assert.ok(!imports(facade, true).includes(dependency)); assert.ok(imports(authority, true).includes(dependency)); }
+  assert.deepEqual(imports(authority, true).sort(), ["server-only", ...removed].sort());
+  assert.ok(imports(facade, true).includes("server-only"));
+  assert.ok(!authorityCompiled.includes('require("../../supabase/service")'), "ServiceClient import is erased");
+  assert.ok(!imports(authority, false).some(i => i.includes("landingPageWorkspaceAdapter")));
+  const publicIndex = readFileSync(new URL("./index.ts", import.meta.url), "utf8");
+  assert.doesNotMatch(publicIndex, /landingPageWorkspaceAuthority/);
+  assert.throws(() => replaceHistoricalFunction("", baselineAA08Authority), /unique historical target/);
+  assert.throws(() => replaceHistoricalFunction(baselineAA08Authority + baselineAA08Authority, baselineAA08Authority), /unique historical target/);
+  console.log("ok - AA08 AST/literal parity: " + originalFunctions.size + " original functions; four moved; six public exports; runtime imports " + imports(before, true).length + " -> " + imports(facade, true).length);
+}
+
+async function validateSixWorkspaceOperations() {
+  const operations = ["list", "detail", "revalidation", "save", "create", "approve"] as const;
+  const states: AuthorityState[] = [
+    {}, { gate: false }, { authenticated: false }, { authError: true }, { authThrow: true },
+    { accountId: "bad" }, { accountId: "bad", authenticated: false }, { accountId: accountB },
+    { landingPageId: "bad" }, { landingPageId: pageId(999) }, { materializationId: "bad" },
+    { accountId: " " + accountA + " " }, { landingPageId: " " + pageId(1) + " " },
+    { role: "owner" }, { role: "admin" }, { role: "viewer" }, { role: "other" },
+    ...["starter", "lite", "pro", "ultra", "invalid"].map(plan => ({ plan })),
+    { entitled: false }, { entitlementThrow: true }, { prepared: false }, { preparationThrow: true },
+    { preparationVersion: 0 }, { links: [] }, { embedShape: null }, { embedShape: [] },
+    ...["accounts", "account_users", "account_taxonomy", "embed_relation"].map(fault => ({ fault })),
+    { tables: { accounts: [] } }, { tables: { account_users: [] } },
+  ];
+  for (const operation of operations) {
+    const spec = { size: 1, complete: true, history: 0 };
+    for (const state of states) {
+      const result = await exercise({ ...spec, authority: { steps: [{ ...state, operation }] } });
+      const output = result.authorityResults[0] as Row;
+      if (Object.keys(state).length === 0) assert.equal(output.ok, true, operation + " success reaches the real use case");
+      if (state.role === "viewer" && ["save", "create", "approve"].includes(operation)) {
+        assert.deepEqual(output, { ok: false, error: "unauthorized" });
+        assert.equal(result.writerCalls.length + result.creationCalls.length, 0);
+      }
+      if (state.accountId === "bad" && state.authenticated === false) {
+        assert.deepEqual(output, { ok: false, error: "unauthenticated" });
+        assert.deepEqual(result.events, ["client", "auth"], "auth precedes invalid account UUID");
+      }
+      if (state.gate === false) assert.deepEqual(result.events, []);
+    }
+    for (const state of [{ role: "viewer" }, { authenticated: false }, { entitled: false }, { prepared: false }, { accountName: "Changed" }]) {
+      const sequence = await exercise({ ...spec, authority: { steps: [{ operation }, { ...state, operation }, { operation }] } });
+      const isolated = await exercise({ ...spec, authority: { steps: [{ ...state, operation }] } });
+      assert.deepEqual(sequence.authorityResults[1], isolated.authorityResults[0]);
+      assert.deepEqual(sequence.authorityResults[2], sequence.authorityResults[0]);
+      assert.deepEqual(sequence.authorityMetrics[1], isolated.authorityMetrics[0]);
+    }
+  }
+  for (const operation of ["save", "approve"] as const) for (const writerFault of ["throw", "shape", "error:conflict", "error:landing_page_not_operational", "error:materialization_not_found", "error:other"]) {
+    const result = await exercise({ size: 1, complete: true, history: 0, authority: { steps: [{ operation, writerFault }] } });
+    assert.equal((result.authorityResults[0] as Row).ok, false);
+    assert.equal(result.writerCalls.length, 1);
+  }
+  for (const createError of ["unauthenticated", "membership_inactive", "other", "throw"]) {
+    const result = await exercise({ size: 1, authority: { steps: [{ operation: "create", createError }] } });
+    assert.equal(result.creationCalls.length, 1);
+    assert.deepEqual(result.authorityResults, [createError === "throw" ? { rejected: "creation fixture" } : { ok: false, error: ["unauthenticated", "membership_inactive"].includes(createError) ? "unauthorized" : "unavailable" }]);
+  }
+  console.log("ok - AA08 six real operations: gates, roles, errors, mutation payloads and A-B-A fresh invocations; no real writes");
+}
+
 async function runWorkspaceValidation() {
   for (const validationCase of cases) {
     validationCase.run();
     console.log(`ok - ${validationCase.name}`);
   }
+  validateAuthorityExtraction();
+  await validateSixWorkspaceOperations();
   await validateAuthorityReads();
   await validateWorkspaceReads();
   await validateIdentityReads();
   validateIdentitySqlContract();
+  console.log("ok - AA08 " + aa08Comparisons + " full old/new operation comparisons; immutable full-source baseline");
 }
 if (process.env.AA06_SQL_EXPORT === "1") {
   writeFileSync(new URL("../../supabase/tests/e19_identity_baselines.test.sql", import.meta.url), buildIdentitySqlTest());
