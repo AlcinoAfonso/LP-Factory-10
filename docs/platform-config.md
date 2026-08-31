@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Documento: LP Factory 10 — Platform Config
-• Versão: v0.1.35
+• Versão: v0.1.36
 • Data: 31/08/2026
 
 0.2 Contrato do documento
@@ -38,6 +38,11 @@
 • `SUPABASE_DB_URL_READONLY`: conexão read-only para inspeções/automação de banco. Consumidores atuais: `pipeline-supabase-inspect` e `automation-niche-runtime-tests` quando houver verificação de banco.
 • `MAILBOX_EMAIL`: e-mail usado por automações de autenticação/mailbox. Consumidores atuais: `automation-validador-final` e `automation-niche-runtime-tests`.
 • `MAILBOX_PASSWORD`: senha/app password da mailbox usada por automações de autenticação/mailbox. Consumidores atuais: `automation-validador-final` e `automation-niche-runtime-tests`.
+• `QA_ACCOUNT_EMAIL`: pendente de configuração; e-mail da identidade comum permanente consumida por `automation-authenticated-qa`.
+• `QA_ACCOUNT_PASSWORD`: pendente de configuração; senha do LP Factory da identidade comum permanente consumida por `automation-authenticated-qa`.
+• `QA_ADMIN_EMAIL`: pendente de configuração; e-mail da identidade administrativa permanente consumida por `automation-authenticated-qa`.
+• `QA_ADMIN_PASSWORD`: pendente de configuração; senha do LP Factory da identidade administrativa permanente consumida por `automation-authenticated-qa`.
+• `QA_ACCOUNT_SUBDOMAIN`: variável de repositório pendente de configuração; subdomínio da conta institucional de teste consumido por `automation-authenticated-qa`.
 • `SUPABASE_ACCESS_TOKEN`: token usado pelo workflow de apply de migrations Supabase.
 • `SUPABASE_DB_PASSWORD`: senha do banco usada pelo workflow de apply de migrations Supabase.
 • `SUPABASE_APPLY_MIGRATIONS_ENABLED`: variável de repositório usada como gate operacional; valor operacional atual `true`.
@@ -52,6 +57,7 @@
 • `.github/workflows/pipeline-docs-apply-report.yml`: aplicação automatizada de reports em documentos Markdown e criação de Pull Request automático.
 • `.github/workflows/automation-validador-final.yml`: validação ponta a ponta de fluxos reais de autenticação, com mailbox operacional via `MAILBOX_EMAIL` e `MAILBOX_PASSWORD`.
 • `.github/workflows/automation-niche-runtime-tests.yml`: testes runtime de criação de conta e preenchimento de `pending_setup`, com mailbox operacional e uso opcional de `SUPABASE_DB_URL_READONLY` conforme modo de verificação.
+• `.github/workflows/automation-authenticated-qa.yml`: jornadas autenticadas dos dashboards por Playwright, com duas identidades permanentes injetadas exclusivamente por repository secrets.
 • `.github/workflows/pipeline-supabase-apply-migrations.yml`: workflow operacional para apply automático de migrations Supabase versionadas.
 • Gatilhos: push em `main` com mudanças em `supabase/migrations/**` e execução manual por `workflow_dispatch`.
 • Setup: `supabase/setup-cli` v2.1.1 fixada pelo SHA completo `3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf`, com Supabase CLI `2.106.0`.
@@ -93,6 +99,22 @@
 • Regra: artifacts e Job Summary podem registrar o alias usado como evidência, mas não a senha de cadastro.
 • Regra: não registrar valores reais.
 • Regra: se a senha/app password vazar, revogar imediatamente e substituir.
+
+2.5 QA autenticada dos dashboards
+• Status: implementação versionada preparada; operação bloqueada até configuração das identidades, dos quatro repository secrets e da repository variable registrados em 2.2.
+• Finalidade: permitir QA do Account Dashboard e do Admin Dashboard sem repasse de senha entre tasks, formulário seguro ou login humano por PR.
+• Identidade comum prevista: alias institucional da mailbox dedicado ao Account Dashboard, sem `platform_admin`, com membership ativa e entitlement compatível com os cenários mutantes.
+• Identidade administrativa prevista: alias institucional distinto, confirmado e autorizado como `platform_admin` pelo contrato vigente.
+• Separação obrigatória: a senha de login do LP Factory é independente da senha principal e da senha de app do Gmail.
+• Consumidor exclusivo: `.github/workflows/automation-authenticated-qa.yml`.
+• Runtime: `automations/authenticated-qa/run.mjs`.
+• Cenário `access_gates`: Account Dashboard positivo, bloqueio administrativo da identidade comum e Admin Dashboard positivo.
+• Cenário `create_landing_page`: repete os gates e cria uma Landing Page identificada pelo run; o runtime recusa o domínio oficial de Production.
+• Evidência: Job Summary sanitizado e artifact de 7 dias com relatório JSON e screenshots restritas à conta QA e à superfície administrativa sem dados de clientes.
+• Regra: secrets são injetados somente no passo de execução autorizado e não são entregues ao Codex, ao executor ou ao navegador interativo.
+• Regra de destino: `app_url` aceita somente o domínio oficial e Previews do projeto `lp-factory-10` na equipe Vercel autorizada; o runtime revalida a origem antes de preencher credenciais.
+• Regra: novas jornadas exigem código versionado; o workflow não aceita roteiro arbitrário por input.
+• Gate operacional: somente declarar autonomia após uma execução real aprovar os três gates com as identidades permanentes.
 
 3. Vercel
 
@@ -530,6 +552,8 @@ Regra:
 • Configurações de plataformas, secrets por nome, workflows, ambientes e endpoints usados por automações devem ser registrados neste documento.
 
 99. Changelog
+v0.1.36 — 31/08/2026 — Registrada a configuração pendente da QA autenticada dos dashboards, com identidades separadas, quatro repository secrets, uma repository variable, cenários versionados e evidências sanitizadas, sem repasse de senha entre tasks.
+
 v0.1.35 — 31/08/2026 — Registradas a identidade institucional `lpfactoryqa@gmail.com`, sua credencial técnica por nome e localização autorizada, o contrato de reutilização por executores e a evidência operacional da confirmação automatizada, sem versionar valores secretos.
 
 v0.1.34 — 30/08/2026 — Mailbox operacional definida como caixa base Gmail sem `+tag`; novos aliases passam a ser derivados de `MAILBOX_EMAIL`, com preservação integral das execuções anteriores e proibição de senha de cadastro em artifacts e Job Summary.
