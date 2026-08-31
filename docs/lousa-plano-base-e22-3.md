@@ -25,6 +25,10 @@ Plano conceitual: N/A.
 - Se, após essa retirada, `lpf-10-services` permanecer sem workload real, retirar também o projeto Vercel e somente as configurações externas exclusivas desse projeto.
 - Não remover secrets, variáveis ou recursos compartilhados com outros consumidores; `SUPABASE_DB_URL_READONLY`, por exemplo, permanece preservada onde continuar necessária às automações GitHub existentes.
 - Histórico técnico permanece no Git, PRs e migrations/documentos históricos aplicáveis; não criar arquivo ou infraestrutura de arquivo para o service retirado.
+- Decisão humana de processo em 31/08/2026: **Opção 2 — processo automatizado**.
+- Para este recorte de retirada, a participação especializada foi reduzida por decisão humana a **Analista somente**.
+- **Gestor Estrutural, Gestor de Updates e Gestor de Automação estão explicitamente dispensados na E22.3**; a dispensa é exclusiva deste recorte e não altera o processo padrão de outros casos.
+- Se a execução revelar necessidade material de nova arquitetura, boundary, automação, infraestrutura, segurança, banco ou decisão de produto, interromper a dispensa e devolver o ponto ao Estrategista/humano antes de prosseguir.
 
 ### 1.3. Evidência factual de entrada
 
