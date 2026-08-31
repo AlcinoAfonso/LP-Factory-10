@@ -24,18 +24,7 @@ Executar duas passagens sequenciais com uma única instância do custom agent `a
 
 ## Validar a matriz
 
-Exigir uma linha por achado com:
-
-- especialista;
-- ID estável;
-- achado fiel ou referência inequívoca;
-- origem: `v1`, `invariante técnico` ou `update`;
-- classe: `derivação técnica da v1`, `modernização técnica justificada` ou `ampliação de escopo`;
-- tratamento: `incorporado`, `não incorporado — justificado`, `requer decisão humana` ou `requer nova avaliação especializada`;
-- para update, destino: `aplicar agora`, `usar como referência, validação ou trava`, `preservar como oportunidade estratégica condicional` ou `não aplicável ao recorte`;
-- para modernização, ganho esperado, impacto estrutural (`baixo` ou `material`), impacto funcional (`nenhum` ou `potencial`) e referência ao confronto estrutural quando material;
-- seção ou trecho exato na v2, ou `N/A` justificável;
-- evidência ou justificativa.
+Exigir uma linha por achado com identificação estável, origem (`v1`, `invariante técnico` ou `update`), classe (`derivação técnica da v1`, `modernização técnica justificada` ou `ampliação de escopo`), tratamento, localização/evidência e, para updates, os dados exigidos pelo contrato do Gestor de Updates e referência ao confronto estrutural quando aplicável.
 
 Matriz incompleta, modernização material sem confronto ou linha sem correspondência verificável impede o handoff.
 
@@ -50,10 +39,8 @@ Matriz incompleta, modernização material sem confronto ou linha sem correspond
 
 1. Continuar no mesmo thread no modo `auditoria_consolidacao`.
 2. Entregar pareceres integrais, confrontos estruturais aplicáveis e matriz, sem reescrever achados.
-3. Exigir auditoria linha a linha contra os pareceres, confrontos e v2, preservando a Passagem 1.
-4. Exigir que o Analista confirme explicitamente cobertura funcional da v1, suficiência da derivação técnica, ganho líquido das modernizações, ausência de ampliação silenciosa e coesão de adapters/boundaries tocados.
-5. Antes da conclusão, exigir o filtro de bloqueio definido no contrato runtime: conflito resolvido por fonte ou invariante vira correção objetiva; validação exclusivamente pós-merge vira pendência; precedência de banco exige prova de inevitabilidade.
-6. Aguardar a conclusão formal definida no contrato runtime de `.codex/agents/analista.toml`.
+3. Solicitar a auditoria conforme o contrato runtime de `.codex/agents/analista.toml`, preservando a Passagem 1.
+4. Aguardar a conclusão formal definida no contrato runtime.
 
 ## Devolver
 
@@ -63,7 +50,7 @@ Conferir o estado Git. Se faltar passagem ou conclusão, devolver o conteúdo e 
 
 ## Revisar correções
 
-Usar `revisao_delta` no mesmo Analista, entregando versões ou diff e correções solicitadas. Retornar ao especialista somente diante de questão material nova ou conclusão especializada alterada. Não encaminhar bloqueio humano sem o filtro obrigatório do contrato runtime. Liberar o gate apenas após `aprovado para merge do plano-base v2`.
+Usar `revisao_delta` no mesmo Analista, entregando versões ou diff e correções solicitadas. Retornar ao especialista somente diante de questão material nova ou conclusão especializada alterada. Liberar o gate apenas após `aprovado para merge do plano-base v2`.
 
 ## Revisar o roadmap final
 
