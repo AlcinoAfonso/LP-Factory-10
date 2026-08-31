@@ -1,11 +1,11 @@
 ---
 name: lp-factory-orquestrar-plano
-description: "Orquestrar end-to-end um plano-base do LP Factory 10 a partir de uma v1 incorporada à main: produzir e aprovar a v2, reconciliar o roadmap e executar todas as subseções na mesma branch e no mesmo PR, usando especialistas uma vez antes da v2 e o Analista nos gates. Usar quando o humano informar o PR ou path da v1 e pedir para orquestrar, automatizar ou executar o plano completo."
+description: "Orquestrar end-to-end um plano-base do LP Factory 10 a partir de uma v1 funcional incorporada à main: produzir e aprovar uma v2 técnica, reconciliar o roadmap e executar todas as subseções na mesma branch e no mesmo PR, usando especialistas antes da v2 e o Analista nos gates. Usar quando o humano informar o PR ou path da v1 e pedir para orquestrar, automatizar ou executar o plano completo."
 ---
 
 # Orquestrar plano-base end-to-end
 
-Conduzir revisão, v2 e implementação com uma única instrução humana. O task principal orquestra e executa; custom agents apenas avaliam em modo read-only.
+Conduzir revisão, v2 técnica e implementação com uma única instrução humana. O task principal orquestra e executa; custom agents apenas avaliam em modo read-only.
 
 ## Entrada e invariantes
 
@@ -14,6 +14,7 @@ Aceitar como comando suficiente número, URL do PR ou path da v1, por exemplo: `
 No fluxo normal:
 
 - exigir a v1 incorporada à `main`; antes disso, limitar-se à avaliação read-only;
+- tratar a v1 como contrato funcional aprovado e a v2 como contrato técnico executável, sem ampliar silenciosamente o produto;
 - usar uma única branch e um único PR draft contra `main` para v2, roadmap e implementação;
 - não criar PR empilhado nem pedir nova instrução entre v2 e execução;
 - pedir somente informação que impeça selecionar com segurança plano, estágio ou worktree.
@@ -24,8 +25,9 @@ No fluxo normal:
 
 Ler `docs/orquestracao-plano-base.md` e seguir, sem copiar seus critérios:
 
-- `lp-factory-avaliar-plano-estrutura`;
+- `lp-factory-avaliar-plano-estrutura` em `derivacao_inicial`;
 - `lp-factory-avaliar-plano-updates`;
+- `lp-factory-avaliar-plano-estrutura` em `confronto_modernizacao`, somente para update com impacto estrutural material;
 - `lp-factory-avaliar-plano-automacoes`, somente com `Automação: sim` e sem dispensa humana explícita registrada na v1; na ausência desse registro, avaliar;
 - `lp-factory-avaliar-plano-analista`;
 - `lp-factory-executar-plano`;
@@ -36,6 +38,7 @@ Ler `docs/orquestracao-plano-base.md` e seguir, sem copiar seus critérios:
 Determinar o estágio pelo PR, Git e trailers:
 
 - reutilizar parecer completo somente para o mesmo blob da v1;
+- reutilizar confronto de modernização somente para o mesmo update, mesma alternativa técnica e mesmo blob da v1;
 - `LP-Factory-Stage: plan-v2-approved`: seguir para execução;
 - `LP-Factory-Phase: <identificador>`: seguir para a próxima subseção;
 - v2 pronta sem aprovação ou roadmap: retomar nesse gate.
@@ -54,26 +57,28 @@ Se o estágio não for inequívoco, pedir apenas a referência faltante; nunca r
 1. Confirmar a seção do roadmap, decisões registradas, dependências, consumidores, casos adjacentes e fontes técnicas competentes.
 2. Obter plano conceitual somente por referência competente ou vínculo inequívoco com o recorte; se não existir, registrar `N/A` e continuar.
 3. Exigir em cada fase o identificador exato da subseção do roadmap; não usar aliases ordinais.
-4. Acionar uma vez e preservar integralmente os pareceres do Gestor Estrutural e do Gestor de Updates sobre a mesma v1.
-5. Acionar o Gestor de Automações somente quando houver `Automação: sim` e a v1 não registrar dispensa humana da avaliação formal; na ausência de registro, acionar. Quando houver dispensa, registrar `N/A — avaliação formal dispensada na v1`.
-6. Aplicar as regras de conclusão e completude das skills especializadas. Não refazer avaliações no task principal nem completar patch que exija escolha técnica.
+4. Acionar o Gestor Estrutural em `derivacao_inicial` sobre a v1 congelada e preservar integralmente seu parecer.
+5. Acionar o Gestor de Updates sobre a mesma v1, entregando a derivação estrutural inicial como baseline comparativa.
+6. Para cada update com impacto estrutural material, acionar o Gestor Estrutural em `confronto_modernizacao`, limitado ao candidato; não repetir a derivação completa.
+7. Acionar o Gestor de Automações somente quando houver `Automação: sim` e a v1 não registrar dispensa humana da avaliação formal; na ausência de registro, acionar. Quando houver dispensa, registrar `N/A — avaliação formal dispensada na v1`.
+8. Aplicar as regras de conclusão e completude das skills especializadas. Não refazer avaliações no task principal nem completar patch que exija escolha técnica.
 
-Parar somente diante de handoff incompleto, investigação necessária ou decisão material sem autoridade. Não repetir especialista durante a consolidação; questão material nova segue ao domínio indicado pelo Analista.
+Parar somente diante de handoff incompleto, investigação necessária ou decisão material sem autoridade. Questão material nova segue ao domínio indicado pelo Analista; não repetir especialista por precaução.
 
-## 3. Produzir v2 e matriz
+## 3. Produzir v2 técnica e matriz
 
-1. Editar somente o plano na branch de automação e preservar objetivo, decisões válidas, ordem, hierarquia e granularidade da v1.
-2. Classificar cada acréscimo como `preservação`, `extensão adjacente necessária e proporcional` ou `expansão`; não incorporar expansão sem decisão humana ou novo recorte. Durante a consolidação, reduzir o conjunto à menor solução end-to-end suficiente, preservando proteções necessárias e eliminando distinções, camadas ou validações repetidas sem consumidor atual ou proteção indispensável.
-3. Aplicar somente patches autossuficientes e rastreáveis. Oportunidade estratégica condicional de update não autoriza implementação atual.
-4. Preparar uma linha de matriz por achado estrutural, update elegível e decisão de automação, com parecer especialista quando aplicável, ID, achado, classificação original, relação com o escopo, tratamento, destino do update quando aplicável, localização e evidência.
+1. Editar somente o plano na branch de automação e preservar objetivo, decisões funcionais válidas, ordem, hierarquia e granularidade da v1, acrescentando o detalhamento técnico necessário para torná-la executável.
+2. Classificar cada acréscimo técnico como `derivação técnica da v1`, `modernização técnica justificada` ou `ampliação de escopo`; não incorporar ampliação sem decisão humana ou novo recorte.
+3. Aplicar somente tratamentos autorizados pelos pareceres especializados. Modernização com impacto estrutural material só pode ser consolidada após o confronto focal correspondente; oportunidade estratégica condicional não autoriza implementação atual.
+4. Preparar a matriz com origem, classe, tratamento, localização e evidência de cada achado; para updates, registrar também o destino e a referência ao confronto estrutural quando aplicável.
 5. Antes da Passagem 1, não gravar nem expor matriz ou pareceres ao Analista. Validar a v2 e criar checkpoint `LP-Factory-Stage: plan-v2` somente com o plano.
 
 ## 4. Gate do Analista
 
-1. Executar a Passagem 1 com v1, v2, plano conceitual quando existente ou `N/A`, decisões e fontes do caso, sem pareceres ou matriz.
+1. Executar a Passagem 1 com v1, v2, plano conceitual quando existente ou `N/A`, decisões e fontes do caso, sem pareceres, confrontos ou matriz.
 2. Preservar a resposta, gravar e versionar `docs/matriz-consolidacao-<caso>.md` e continuar no mesmo Analista.
-3. Executar a Passagem 2 com os pareceres integrais aplicáveis e a matriz.
-4. Em correções objetivas, inclusive conflito resolvido por fonte ou invariante e validação exclusivamente pós-merge, atualizar v2 e matriz e pedir `revisao_delta` ao mesmo Analista. Antes de parar por decisão humana, exigir ausência de fonte determinante e, para precedência de banco, prova de que migration compatível, feature flag ou expand/contract não evita PR precursor. Retornar a especialista somente por questão material nova.
+3. Executar a Passagem 2 com os pareceres integrais, confrontos estruturais aplicáveis e a matriz.
+4. Em correções objetivas, inclusive conflito resolvido por fonte ou invariante e validação exclusivamente pós-merge, atualizar v2 e matriz e pedir `revisao_delta` ao mesmo Analista. Antes de parar por decisão humana, exigir ausência de fonte determinante e, para precedência de banco, prova de que migration compatível, feature flag ou expand/contract não evita PR precursor. Retornar a especialista somente por questão material nova ou conclusão especializada alterada.
 5. Avançar apenas com `aprovado para merge do plano-base v2`.
 
 ## 5. Reconciliar roadmap e abrir o PR
@@ -96,8 +101,8 @@ Manter a matriz disponível na entrega e durante o ciclo externo de avaliação.
 
 ## Devolução
 
-Informar referências de v1, worktree, branch, pareceres aplicáveis, Passagens 1 e 2, ABC e delta do roadmap, ABCs da implementação e seus resultados por documento, checkpoints, validações, arquivos, commits, PR e pendências. Não reescrever pareceres.
+Informar referências de v1, worktree, branch, pareceres aplicáveis, confrontos estruturais quando houver, Passagens 1 e 2, ABC e delta do roadmap, ABCs da implementação e seus resultados por documento, checkpoints, validações, arquivos, commits, PR e pendências. Não reescrever pareceres.
 
 ## Limites
 
-Não editar ou commitar na `main`; alterar a v1 ou seu PR; criar PR empilhado, segunda branch ou segundo PR; permitir edição por custom agents; ampliar escopo silenciosamente; repetir especialistas do mesmo blob; fazer merge; ou substituir decisão humana.
+Não editar ou commitar na `main`; alterar a v1 ou seu PR; criar PR empilhado, segunda branch ou segundo PR; permitir edição por custom agents; ampliar escopo silenciosamente; repetir especialistas do mesmo blob por precaução; fazer merge; ou substituir decisão humana.
