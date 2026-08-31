@@ -1,16 +1,3 @@
-import { getAccessContext } from "@/lib/access/getAccessContext";
-import { getCommercialActivationHierarchicalBundle } from "@/conversion-content";
-import { getCommercialEntitlementSignal } from "../../../lib/commercial-entitlements";
-import {
-  getAccountLandingPageOnboardingConfiguration,
-  isLandingPageWorkspaceEnabled,
-  listAccountLandingPageDrafts,
-  listAccountLandingPageWorkspace,
-  type AccountLandingPage,
-  type AccountLandingPageOnboardingConfiguration,
-} from "../../../lib/lp-builder";
-import { getActionableNicheResolutionForAccount } from "../../../lib/onboarding/niche-resolution/adapters/accountNicheResolutionUserAdapter";
-import { getActivePrimaryAccountTaxon } from "../../../lib/onboarding/niche-resolution/adapters/accountTaxonomyAdapter";
 import { PendingSetupFirstSteps } from "./_components/PendingSetupFirstSteps";
 import { NicheResolutionCard } from "./_components/NicheResolutionCard";
 import { OnboardingConfigurationJourney } from "./_components/OnboardingConfigurationJourney";
@@ -18,12 +5,7 @@ import { OnboardingCompletionJourney } from "./_components/OnboardingCompletionJ
 import { LandingPageWorkspace } from "./_components/LandingPageWorkspace";
 import { GenericCommercialPage } from "./_components/commercial-page/GenericCommercialPage";
 import { PublishedCommercialActivationPage } from "./_components/commercial-page/PublishedCommercialActivationPage";
-import {
-  decideAccountJourney,
-  type AccountOnboardingState,
-} from "./_components/onboarding-journey-policy";
-
-type DashState = "auth" | "onboarding" | "public";
+import { loadAccountJourney } from "./account-journey-loader";
 
 type PageProps = {
   params: Promise<{ account: string }> | { account: string };
@@ -38,208 +20,91 @@ export default async function Page({ params, searchParams }: PageProps) {
   const accountSubdomain = (resolvedParams.account ?? "").trim().toLowerCase();
   const editOnboarding = resolvedSearchParams.edit_onboarding === "1";
 
-  const isHome = accountSubdomain === "home";
-  const ctx = isHome
-    ? null
-    : await getAccessContext({
-        params: { account: accountSubdomain },
-        route: `/a/${accountSubdomain}`,
-      });
-  const hasCtx = Boolean(ctx?.account || ctx?.member);
+  const journey = await loadAccountJourney({
+    accountSubdomain,
+    workspaceCursor: resolvedSearchParams.workspace_cursor,
+  });
 
-  const state: DashState = (() => {
-    if (isHome && !hasCtx) return "onboarding";
-    if (hasCtx) return "auth";
-    return "public";
-  })();
-
-  if (state === "auth") {
-    const accountStatus = (ctx?.account?.status ?? null) as
-      | "pending_setup"
-      | "active"
-      | "inactive"
-      | "suspended"
-      | null;
-
-    if (accountStatus === "pending_setup") {
-      return <PendingSetupFirstSteps accountSubdomain={accountSubdomain} ctx={ctx} />;
-    }
-
-    if (accountStatus !== "active") {
-      return (
-        <main className="mx-auto max-w-5xl px-6 py-10">
-          <section className="rounded-xl border bg-white p-6 shadow-sm">
-            <h1 className="text-2xl font-semibold">Dashboard</h1>
-            <p className="mt-2 text-sm text-gray-600">
-              Esta conta não está disponível para exibir a página comercial.
-            </p>
-          </section>
-        </main>
-      );
-    }
-
-    const accountId = (ctx?.account?.id ?? ctx?.account_id ?? null) as string | null;
-    const [commercialEntitlement, nicheResolution, primaryTaxon] = accountId
-      ? await Promise.all([
-          getCommercialEntitlementSignal({ accountId }),
-          getActionableNicheResolutionForAccount({ accountId, accountStatus }),
-          getActivePrimaryAccountTaxon({ accountId }),
-        ])
-      : [null, null, null];
-    const actorRole = ctx?.role ?? "viewer";
-    const isCommerciallyEligible =
-      commercialEntitlement?.isCommerciallyEligible === true;
-    const workspace =
-      accountId && isCommerciallyEligible && isLandingPageWorkspaceEnabled()
-        ? await listAccountLandingPageWorkspace({
-            accountId,
-            cursor:
-              typeof resolvedSearchParams.workspace_cursor === "string"
-                ? resolvedSearchParams.workspace_cursor
-                : undefined,
-          })
-        : null;
-    if (
-      workspace?.ok &&
-      actorRole !== "owner" &&
-      actorRole !== "admin"
-    ) {
-      return (
-        <LandingPageWorkspace
-          accountSubdomain={accountSubdomain}
-          workspace={workspace}
-          error={
-            typeof resolvedSearchParams.workspace_error === "string"
-              ? resolvedSearchParams.workspace_error
-              : undefined
-          }
-        />
-      );
-    }
-    let onboardingState: AccountOnboardingState = "not_loaded";
-    let onboardingConfiguration: AccountLandingPageOnboardingConfiguration | null =
-      null;
-    let onboardingDrafts: readonly AccountLandingPage[] | null = null;
-
-    if (
-      accountId &&
-      isCommerciallyEligible &&
-      (actorRole === "owner" || actorRole === "admin")
-    ) {
-      const onboardingResult =
-        await getAccountLandingPageOnboardingConfiguration({ accountId });
-      if (onboardingResult.ok) {
-        onboardingConfiguration = onboardingResult.configuration;
-        if (!onboardingResult.configuration.complete) {
-          onboardingState = "incomplete";
-        } else if (onboardingResult.configuration.landingPageId) {
-          onboardingState = "complete_bound";
-        } else {
-          const draftsResult = await listAccountLandingPageDrafts({ accountId });
-          if (draftsResult.ok) {
-            onboardingDrafts = draftsResult.drafts;
-            onboardingState = "complete_unbound";
-          } else {
-            onboardingState = "blocked";
-          }
+  if (journey.view === "pending_setup") {
+    return <PendingSetupFirstSteps accountSubdomain={accountSubdomain} ctx={journey.ctx} />;
+  }
+  if (journey.view === "account_unavailable") {
+    return (
+      <main className="mx-auto max-w-5xl px-6 py-10">
+        <section className="rounded-xl border bg-white p-6 shadow-sm">
+          <h1 className="text-2xl font-semibold">Dashboard</h1>
+          <p className="mt-2 text-sm text-gray-600">
+            Esta conta não está disponível para exibir a página comercial.
+          </p>
+        </section>
+      </main>
+    );
+  }
+  if (journey.view === "workspace") {
+    return (
+      <LandingPageWorkspace
+        accountSubdomain={accountSubdomain}
+        workspace={journey.workspace}
+        error={
+          typeof resolvedSearchParams.workspace_error === "string"
+            ? resolvedSearchParams.workspace_error
+            : undefined
         }
-      } else {
-        onboardingState =
-          onboardingResult.error === "configuration_unavailable"
-            ? "unavailable"
-            : "blocked";
-      }
-    } else if (isCommerciallyEligible) {
-      onboardingState = "blocked";
-    }
-
-    const accountJourney = decideAccountJourney({
-      actorRole,
-      isCommerciallyEligible,
-      onboardingState,
-    });
-
-    if (accountJourney.mode === "waiting") {
-      return <CommercialWaitingState />;
-    }
-    if (accountJourney.mode === "onboarding" && onboardingConfiguration) {
+      />
+    );
+  }
+  if (journey.view === "waiting") return <CommercialWaitingState />;
+  if (journey.view === "onboarding") {
+    return (
+      <OnboardingConfigurationJourney
+        accountSubdomain={accountSubdomain}
+        configuration={journey.configuration}
+      />
+    );
+  }
+  if (journey.view === "review") {
+    if (editOnboarding) {
       return (
         <OnboardingConfigurationJourney
           accountSubdomain={accountSubdomain}
-          configuration={onboardingConfiguration}
+          configuration={journey.configuration}
+          reviewMode
         />
       );
     }
-    if (
-      accountJourney.mode === "review" &&
-      onboardingConfiguration &&
-      onboardingDrafts
-    ) {
-      if (editOnboarding) {
-        return (
-          <OnboardingConfigurationJourney
-            accountSubdomain={accountSubdomain}
-            configuration={onboardingConfiguration}
-            reviewMode
-          />
-        );
-      }
-      return (
-        <OnboardingCompletionJourney
-          accountSubdomain={accountSubdomain}
-          configuration={onboardingConfiguration}
-          drafts={onboardingDrafts}
-        />
-      );
-    }
-    if (accountJourney.mode === "operational") {
-      if (!accountId || !onboardingConfiguration?.landingPageId) {
-        return <OnboardingBlockedState />;
-      }
-      if (!isLandingPageWorkspaceEnabled()) return <WorkspaceRolloutPendingState />;
-      if (!workspace?.ok) return <WorkspaceUnavailableState />;
-      return (
-        <LandingPageWorkspace
-          accountSubdomain={accountSubdomain}
-          workspace={workspace}
-          error={
-            typeof resolvedSearchParams.workspace_error === "string"
-              ? resolvedSearchParams.workspace_error
-              : undefined
-          }
-        />
-      );
-    }
-    if (accountJourney.mode === "blocked") {
-      return <OnboardingBlockedState />;
-    }
-
-    const commercialActivation = primaryTaxon
-      ? await getCommercialActivationHierarchicalBundle({
-          taxonId: primaryTaxon.taxonId,
-        })
-      : null;
+    return (
+      <OnboardingCompletionJourney
+        accountSubdomain={accountSubdomain}
+        configuration={journey.configuration}
+        drafts={journey.drafts}
+      />
+    );
+  }
+  if (journey.view === "blocked") return <OnboardingBlockedState />;
+  if (journey.view === "workspace_rollout_pending") return <WorkspaceRolloutPendingState />;
+  if (journey.view === "workspace_unavailable") return <WorkspaceUnavailableState />;
+  if (journey.view === "commercial") {
     const commercialPage =
-      commercialActivation?.status === "ready" && commercialActivation.bundle ? (
+      journey.bundle ? (
         <PublishedCommercialActivationPage
           accountSubdomain={accountSubdomain}
-          bundle={commercialActivation.bundle}
-          showFinancialActions={accountJourney.showFinancialActions}
+          bundle={journey.bundle}
+          showFinancialActions={journey.showFinancialActions}
         />
       ) : (
         <GenericCommercialPage
           accountSubdomain={accountSubdomain}
-          showFinancialActions={accountJourney.showFinancialActions}
+          showFinancialActions={journey.showFinancialActions}
         />
       );
 
     return (
       <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-10">
         <div className="space-y-6">
-          {nicheResolution ? (
+          {journey.nicheResolution ? (
             <NicheResolutionCard
               accountSubdomain={accountSubdomain}
-              resolution={nicheResolution}
+              resolution={journey.nicheResolution}
             />
           ) : null}
 
@@ -249,7 +114,7 @@ export default async function Page({ params, searchParams }: PageProps) {
     );
   }
 
-  if (state === "onboarding") {
+  if (journey.view === "home") {
     return <DashboardOnboarding />;
   }
 

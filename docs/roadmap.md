@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 30/08/2026
-• Versão: v1.5.202
+• Versão: v1.5.203
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2167,6 +2167,7 @@ Repositório — Ajustados
     - `app/a/[account]/_components/OnboardingCompletionJourney.tsx`
     - `app/a/[account]/_components/onboarding-configuration-action-contract.ts`
     - `app/a/[account]/_components/onboarding-journey-policy.ts`
+    - `app/a/[account]/account-journey-loader.ts`
     - `app/a/[account]/_components/onboarding-journey-validation-cases.ts`
     - `app/a/[account]/onboarding-configuration-actions.ts`
     - `supabase/migrations/20260807162417_e19_2_3_account_landing_page_onboarding_configuration.sql`
