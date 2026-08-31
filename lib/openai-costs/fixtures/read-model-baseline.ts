@@ -1,3 +1,4 @@
+// Frozen AA-PR11 oracle: exact reader from authorized baseline 4ba09c96e76091a210541679a124d63ce88fadd0.
 import type {
   OpenAiCostsPeriod,
   OpenAiLpCostAccountSummary,
@@ -19,6 +20,7 @@ import {
 } from "../provider-error-metadata";
 
 export const OPENAI_LP_COST_PAGE_SIZE = 500;
+const OPENAI_LP_COST_MAX_PAGES = 200;
 
 export type OpenAiLpCostPage = Readonly<{
   data: unknown;
@@ -26,51 +28,31 @@ export type OpenAiLpCostPage = Readonly<{
   status?: number;
 }>;
 
-export async function readOpenAiLpCostPages(
-  input: Readonly<{
-    period: OpenAiCostsPeriod;
-    readPage: (from: number, to: number) => Promise<OpenAiLpCostPage>;
-    readCoverage: () => Promise<OpenAiLpCostPage>;
-  }>,
+export async function readCompleteOpenAiLpCostPages(
+  readPage: (from: number, to: number) => Promise<OpenAiLpCostPage>,
   pageSize = OPENAI_LP_COST_PAGE_SIZE,
-): Promise<OpenAiLpCostReadResult> {
-  if (!Number.isSafeInteger(pageSize) || pageSize < 1 || pageSize > OPENAI_LP_COST_PAGE_SIZE) {
-    return invalidResponse();
-  }
-  try {
-    const initial = await Promise.all([
-      input.readPage(0, pageSize - 1),
-      input.readCoverage(),
-    ]);
-    let page = initial[0];
-    const coverage = initial[1];
-    // Do not keep the first page reachable through the initial Promise result.
-    initial[0] = { data: null, error: null };
-    if (coverage.error) return readFailure();
-    const accumulator = createAccumulator(input.period, coverage.data);
-    if (!accumulator) return invalidResponse();
-    let from = 0;
-    for (;;) {
-      if (page.error) {
-        const code = asRecord(page.error)?.code ?? null;
-        return from > 0 && (page.status === 416 || code === "PGRST103")
-          ? accumulator.finish()
-          : readFailure();
+): Promise<Readonly<{ data: readonly unknown[]; error: unknown }>> {
+  const accumulated: unknown[] = [];
+  for (let pageNumber = 0; pageNumber < OPENAI_LP_COST_MAX_PAGES; pageNumber += 1) {
+    const from = pageNumber * pageSize;
+    const page = await readPage(from, from + pageSize - 1);
+    if (page.error) {
+      const code = asRecord(page.error)?.code ?? null;
+      if (
+        accumulated.length > 0 &&
+        (page.status === 416 || code === "PGRST103")
+      ) {
+        return { data: accumulated, error: null };
       }
-      if (!Array.isArray(page.data)) return readFailure();
-      if (page.data.length > pageSize) return invalidResponse();
-      if (page.data.length === 0) return accumulator.finish();
-      if (!accumulator.add(page.data)) return invalidResponse();
-      from += page.data.length;
-      if (!Number.isSafeInteger(from + pageSize - 1)) return paginationFailure();
-      // A short page may reflect a lower server row limit, not exhaustion.
-      // Release the previous page before awaiting the next one.
-      page = { data: null, error: null };
-      page = await input.readPage(from, from + pageSize - 1);
+      return { data: accumulated, error: page.error };
     }
-  } catch {
-    return readFailure();
+    if (!Array.isArray(page.data)) {
+      return { data: accumulated, error: new Error("partial_page") };
+    }
+    accumulated.push(...page.data);
+    if (page.data.length < pageSize) return { data: accumulated, error: null };
   }
+  return { data: accumulated, error: new Error("pagination_incomplete") };
 }
 
 export function translateOpenAiLpCostRows(input: Readonly<{
@@ -78,23 +60,19 @@ export function translateOpenAiLpCostRows(input: Readonly<{
   eventRows: unknown;
   coverageRows: unknown;
 }>): OpenAiLpCostReadResult {
-  const accumulator = createAccumulator(input.period, input.coverageRows);
-  return accumulator && Array.isArray(input.eventRows) && accumulator.add(input.eventRows)
-    ? accumulator.finish()
-    : invalidResponse();
-}
-
-function createAccumulator(period: OpenAiCostsPeriod, coverageRows: unknown) {
-  if (!Array.isArray(coverageRows) || coverageRows.length > 1) return null;
-  const coverageActivatedAt = coverageRows.length === 0
+  if (!Array.isArray(input.eventRows) || !Array.isArray(input.coverageRows)) {
+    return invalidResponse();
+  }
+  if (input.coverageRows.length > 1) return invalidResponse();
+  const coverageActivatedAt = input.coverageRows.length === 0
     ? null
-    : timestamp(asRecord(coverageRows[0])?.activated_at);
-  if (coverageRows.length === 1 && !coverageActivatedAt) return null;
+    : timestamp(asRecord(input.coverageRows[0])?.activated_at);
+  if (input.coverageRows.length === 1 && !coverageActivatedAt) {
+    return invalidResponse();
+  }
 
-  // O(page + output groups), including high cardinality. No retained event rows
-  // or per-attempt Set. The complete public result itself remains O(groups).
   const accounts = new Map<string, MutableAccount>();
-  let previousKey: string | null = null;
+  const keys = new Set<string>();
   let total = decimalZero();
   let attemptCount = 0;
   let unpricedAttemptCount = 0;
@@ -102,67 +80,50 @@ function createAccumulator(period: OpenAiCostsPeriod, coverageRows: unknown) {
   let providerCreditFailureCount = 0;
   let internalUpdatedAt: string | null = null;
 
-  function add(rows: readonly unknown[]) {
-    for (const raw of rows) {
-      const row = parseRow(raw, period);
-      if (!row) return false;
-      // The adapter requests this full unique key order, independent of timestamps.
-      // Strict monotonicity rejects duplicates across pages and non-progressing reads.
-      const key = `${row.attemptId.toLowerCase()}:${row.workload}`;
-      if (previousKey !== null && key <= previousKey) return false;
-      previousKey = key;
-      attemptCount += 1;
-      if (!row.terminalAt) pendingAttemptCount += 1;
-      else if (!row.cost) unpricedAttemptCount += 1;
-      if (row.providerCreditFailure) providerCreditFailureCount += 1;
-      if (row.cost) total = addDecimal(total, row.cost);
-      internalUpdatedAt = latestTimestamp(internalUpdatedAt, row.terminalAt ?? row.startedAt);
+  for (const raw of input.eventRows) {
+    const row = parseRow(raw, input.period);
+    if (!row) return invalidResponse();
+    const key = `${row.attemptId}:${row.workload}`;
+    if (keys.has(key)) return invalidResponse();
+    keys.add(key);
+    attemptCount += 1;
+    if (!row.terminalAt) pendingAttemptCount += 1;
+    else if (!row.cost) unpricedAttemptCount += 1;
+    if (row.providerCreditFailure) providerCreditFailureCount += 1;
+    if (row.cost) total = addDecimal(total, row.cost);
+    internalUpdatedAt = latestTimestamp(
+      internalUpdatedAt,
+      row.terminalAt ?? row.startedAt,
+    );
 
-      const account = getAccount(accounts, row.accountId, row.accountName);
-      if (!account || !addAttempt(account, row)) return false;
-    }
-    return true;
+    const account = getAccount(accounts, row.accountId, row.accountName);
+    if (!account || !addAttempt(account, row)) return invalidResponse();
   }
 
-  function finish(): OpenAiLpCostReadResult {
-    const startMs = period.startTime * 1_000;
-    const coverageStatus = !coverageActivatedAt
-      ? "not_activated"
-      : pendingAttemptCount > 0 || unpricedAttemptCount > 0
-        ? "degraded"
-        : startMs < Date.parse(coverageActivatedAt)
-          ? "partial"
-          : "complete";
+  const startMs = input.period.startTime * 1_000;
+  const coverageStatus = !coverageActivatedAt
+    ? "not_activated"
+    : pendingAttemptCount > 0 || unpricedAttemptCount > 0
+      ? "degraded"
+      : startMs < Date.parse(coverageActivatedAt)
+        ? "partial"
+        : "complete";
 
-    return {
-      ok: true,
-      value: {
-        totalUsd: formatDecimal(total),
-        coverageActivatedAt,
-        coverageStatus,
-        internalUpdatedAt,
-        attemptCount,
-        unpricedAttemptCount,
-        pendingAttemptCount,
-        providerCreditFailureCount,
-        accounts: [...accounts.values()].sort(byNameThenId).map(finalizeAccount),
-      },
-    };
-  }
-  return { add, finish };
-}
-
-function readFailure(): OpenAiLpCostReadResult {
   return {
-    ok: false,
-    error: { code: "READ_FAILED", message: "OpenAI LP costs could not be read" },
-  };
-}
-
-function paginationFailure(): OpenAiLpCostReadResult {
-  return {
-    ok: false,
-    error: { code: "PAGINATION_INCOMPLETE", message: "OpenAI LP costs pagination is incomplete" },
+    ok: true,
+    value: {
+      totalUsd: formatDecimal(total),
+      coverageActivatedAt,
+      coverageStatus,
+      internalUpdatedAt,
+      attemptCount,
+      unpricedAttemptCount,
+      pendingAttemptCount,
+      providerCreditFailureCount,
+      accounts: [...accounts.values()]
+        .sort(byNameThenId)
+        .map(finalizeAccount),
+    },
   };
 }
 
