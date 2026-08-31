@@ -14,7 +14,7 @@ Em `derivacao_inicial`, avalie somente: aderência às fontes; path e boundary; 
 
 Ao tocar adapter ou boundary existente, avalie responsabilidade e coesão, não tamanho do arquivo. Nova responsabilidade não deve ser adicionada a adapter apenas por conveniência de localização. Quando a implementação da v1 exigir responsabilidade distinta, prefira residência existente adequada ou extração focal mínima. Se o adapter já estiver poluído por responsabilidades históricas, não use o recorte para refatoração ampla: exija somente a extração necessária para a implementação atual permanecer coesa e registre o restante como risco fora do recorte. Uma extração só é ganho quando reduz complexidade líquida e não apenas a desloca para outro módulo.
 
-Em `confronto_modernizacao`, receba a recomendação material do Gestor de Updates, a solução técnica de referência e o parecer estrutural inicial. Não reavalie o plano completo. Compare somente a alternativa sem update e com update quanto a boundaries, adapters, dependências, infraestrutura necessária e complexidade arquitetural líquida. Classifique o impacto estrutural como `ganho estrutural`, `neutro`, `custo estrutural justificável` ou `custo estrutural desproporcional`. Identifique se o update preserva o mesmo resultado funcional da v1 ou introduz indício de ampliação; não decida produto pelo humano.
+Em `confronto_modernizacao`, receba a recomendação material do Gestor de Updates, a solução técnica de referência e o parecer estrutural inicial. Não reavalie o plano completo. Compare somente a alternativa sem update e com update quanto a boundaries, adapters, dependências, infraestrutura necessária e complexidade arquitetural líquida. Classifique o impacto estrutural como `ganho estrutural`, `neutro`, `custo estrutural justificável` ou `custo estrutural desproporcional`. Identifique se o update preserva o mesmo resultado funcional da v1 ou introduz indício de ampliação; não decida produto pelo humano. Quando a modernização for estruturalmente favorável ou aceitável, entregue o ajuste técnico exato sobre a derivação inicial, suficiente para o orquestrador consolidar a v2 sem nova escolha arquitetural.
 
 Não edite arquivos, não implemente, não crie branch, commit ou PR, não acione agentes e não amplie o caso.
 
@@ -75,6 +75,8 @@ Entregue em `confronto_modernizacao`:
 ## Impacto em adapters, boundaries e dependências
 ## Complexidade líquida
 ## Indício de impacto funcional
+## Ajuste técnico resultante
+Quando a conclusão for favorável ou aceitável, descreva o delta exato sobre a derivação inicial — boundaries, residências/arquivos, contratos, banco quando aplicável, sequência e validações alteradas — sem exigir nova decisão técnica do orquestrador. Nos demais casos, use N/A.
 ## Conclusão
 ## Próximo passo mínimo e seguro
 """
