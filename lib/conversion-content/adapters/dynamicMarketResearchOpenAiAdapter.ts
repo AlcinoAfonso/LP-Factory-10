@@ -103,8 +103,10 @@ export async function researchDynamicLandingPageMarketWithOpenAi(
  * Builds no proof, makes no call, and never changes a configuration revision. */
 export function buildDynamicLandingPageMarketRequest(
   input: DynamicMarketResearchOpenAiInput,
-  dependencies: Pick<DynamicMarketResearchOpenAiDependencies, "timeoutMs" | "signal"> = {},
+  dependencies: Pick<DynamicMarketResearchOpenAiDependencies, "timeoutMs" | "signal" | "now"> = {},
 ) {
+  const now = dependencies.now ?? Date.now;
+  const preparationStartedAt = now();
   const safetyIdentifier = normalizeSafetyIdentifier(input.safetyIdentifier);
   if (!safetyIdentifier) {
     return failure("INPUT_INVALID", "O safety identifier técnico é inválido.");
@@ -136,7 +138,7 @@ export function buildDynamicLandingPageMarketRequest(
       requestId: input.requestId,
       promptVersion: prompt.value.version,
       contractVersion: LANDING_PAGE_DYNAMIC_RESEARCH_CONTRACT_VERSION,
-      timeoutMs: boundedTimeout(dependencies.timeoutMs),
+      timeoutMs: Math.max(0, boundedTimeout(dependencies.timeoutMs) - Math.max(0, now() - preparationStartedAt)),
       signal: dependencies.signal,
       request: {
         instructions: prompt.value.instructions,

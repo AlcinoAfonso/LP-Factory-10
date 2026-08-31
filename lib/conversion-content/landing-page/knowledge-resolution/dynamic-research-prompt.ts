@@ -1,5 +1,7 @@
 import type { ResolvedOpenAiProductWorkload } from "../../../openai-workloads";
 import type { LandingPageKnowledgeResolutionValue } from "./contracts";
+import { estimateDynamicResearchInputTokens } from "./dynamic-research-budget";
+import { landingPageDynamicResearchOutputSchema } from "./dynamic-research-schema";
 
 export const LANDING_PAGE_DYNAMIC_RESEARCH_PROMPT_VERSION =
   "e20.7.4-dynamic-market-research-v1" as const;
@@ -34,6 +36,7 @@ export type LandingPageDynamicResearchPrompt = Readonly<{
   version: typeof LANDING_PAGE_DYNAMIC_RESEARCH_PROMPT_VERSION;
   instructions: string;
   input: string;
+  /** Local o200k_base count plus framing margin; not official provider usage. */
   conservativeInputTokenUpperBound: number;
   contextWindowTokens: number;
 }>;
@@ -93,11 +96,23 @@ export function buildLandingPageDynamicResearchPrompt(
       content: resolution.researchSource.research.content,
     },
   });
-  const conservativeInputTokenUpperBound = utf8Length(`${INSTRUCTIONS}\n${input}`);
+  const conservativeInputTokenUpperBound = estimateDynamicResearchInputTokens([
+    INSTRUCTIONS,
+    input,
+    JSON.stringify(landingPageDynamicResearchOutputSchema),
+    JSON.stringify([{
+      type: "web_search",
+      external_web_access: webSearch.externalWebAccess,
+      search_context_size: webSearch.searchContextSize,
+    }]),
+  ]);
   const searchReserve = webSearch.searchContextSize === "medium" ? 64_000 : 32_000;
   const reasoningReserve = 32_000;
   const reservedTokens =
     searchReserve + reasoningReserve + LANDING_PAGE_DYNAMIC_RESEARCH_MAX_OUTPUT_TOKENS;
+  if (conservativeInputTokenUpperBound === null) {
+    return failure("CONTEXT_BUDGET_EXCEEDED", "Não foi possível comprovar o orçamento de tokens; nenhum conteúdo foi enviado.");
+  }
   if (conservativeInputTokenUpperBound + reservedTokens > contextWindowTokens) {
     return failure(
       "CONTEXT_BUDGET_EXCEEDED",
@@ -115,10 +130,6 @@ export function buildLandingPageDynamicResearchPrompt(
       contextWindowTokens,
     }),
   });
-}
-
-function utf8Length(value: string) {
-  return new TextEncoder().encode(value).length;
 }
 
 function failure(
