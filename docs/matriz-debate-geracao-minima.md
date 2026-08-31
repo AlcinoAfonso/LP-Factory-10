@@ -10,7 +10,7 @@
 - Natureza: debate e definições preliminares anteriores a qualquer plano-base.
 - Não é plano-base, arquitetura-alvo, autorização de implementação, plano de cutover ou decisão operacional.
 - Path temporário do debate: `docs/matriz-debate-geracao-minima.md`.
-- PR de referência enquanto o debate estiver aberto: https://github.com/AlcinoAfonso/LP-Factory-10/pull/864
+- PR de referência enquanto o debate estiver aberto: `#864`.
 - Repositório: `AlcinoAfonso/LP-Factory-10`.
 
 ### 1.2 Finalidade
@@ -172,7 +172,7 @@
 
 ### 7.4 Handoff obrigatório
 
-- Todo handoff para outro chat que participe deste debate deve incluir explicitamente o link do PR #864: https://github.com/AlcinoAfonso/LP-Factory-10/pull/864
+- Todo handoff para outro chat que participe deste debate deve incluir explicitamente o PR #864.
 - O handoff deve instruir o próximo chat a ler a versão mais recente de `docs/matriz-debate-geracao-minima.md` na branch/HEAD do PR.
 - O handoff deve informar que o PR contém debate e definições preliminares, não plano-base ou autorização de implementação.
 - Quando o debate for encerrado, o último estado da matriz deve apenas apontar para o artefato posterior de plano-base, sem transformar o próprio PR #864 nesse plano.
