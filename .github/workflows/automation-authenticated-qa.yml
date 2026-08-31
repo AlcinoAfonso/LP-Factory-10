@@ -1,0 +1,86 @@
+name: Automation Authenticated QA
+
+on:
+  workflow_dispatch:
+    inputs:
+      app_url:
+        description: "URL HTTPS do Preview a validar"
+        required: true
+        default: ""
+      scenario:
+        description: "Jornada autenticada versionada"
+        required: true
+        default: "access_gates"
+        type: choice
+        options:
+          - access_gates
+          - create_landing_page
+
+permissions:
+  contents: read
+
+concurrency:
+  group: automation-authenticated-qa-${{ github.ref }}-${{ inputs.app_url }}
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: automations/authenticated-qa
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Validate required inputs and configuration
+        working-directory: .
+        env:
+          APP_URL_OVERRIDE: ${{ inputs.app_url }}
+          QA_ACCOUNT_EMAIL: ${{ secrets.QA_ACCOUNT_EMAIL }}
+          QA_ACCOUNT_PASSWORD: ${{ secrets.QA_ACCOUNT_PASSWORD }}
+          QA_ADMIN_EMAIL: ${{ secrets.QA_ADMIN_EMAIL }}
+          QA_ADMIN_PASSWORD: ${{ secrets.QA_ADMIN_PASSWORD }}
+          QA_ACCOUNT_SUBDOMAIN: ${{ vars.QA_ACCOUNT_SUBDOMAIN }}
+        run: |
+          test -n "$APP_URL_OVERRIDE" || (echo "Falta input app_url" && exit 1)
+          test -n "$QA_ACCOUNT_EMAIL" || (echo "Falta secret QA_ACCOUNT_EMAIL" && exit 1)
+          test -n "$QA_ACCOUNT_PASSWORD" || (echo "Falta secret QA_ACCOUNT_PASSWORD" && exit 1)
+          test -n "$QA_ADMIN_EMAIL" || (echo "Falta secret QA_ADMIN_EMAIL" && exit 1)
+          test -n "$QA_ADMIN_PASSWORD" || (echo "Falta secret QA_ADMIN_PASSWORD" && exit 1)
+          test -n "$QA_ACCOUNT_SUBDOMAIN" || (echo "Falta variable QA_ACCOUNT_SUBDOMAIN" && exit 1)
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+
+      - name: Install automation dependencies
+        run: npm ci
+
+      - name: Check automation subproject
+        run: npm run check
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run authenticated QA
+        env:
+          APP_URL_OVERRIDE: ${{ inputs.app_url }}
+          AUTHENTICATED_QA_SCENARIO: ${{ inputs.scenario }}
+          QA_ACCOUNT_EMAIL: ${{ secrets.QA_ACCOUNT_EMAIL }}
+          QA_ACCOUNT_PASSWORD: ${{ secrets.QA_ACCOUNT_PASSWORD }}
+          QA_ADMIN_EMAIL: ${{ secrets.QA_ADMIN_EMAIL }}
+          QA_ADMIN_PASSWORD: ${{ secrets.QA_ADMIN_PASSWORD }}
+          QA_ACCOUNT_SUBDOMAIN: ${{ vars.QA_ACCOUNT_SUBDOMAIN }}
+        run: npm run start
+
+      - name: Upload sanitized QA evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: authenticated-qa-results
+          path: automations/authenticated-qa/results
+          if-no-files-found: error
+          retention-days: 7
