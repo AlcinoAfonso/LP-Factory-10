@@ -1,7 +1,7 @@
 0.1 Cabeçalho
-Data: 30/08/2026
-Versão: v1.21
-Status: Alinhado ao Platform Config
+Data: 31/08/2026
+Versão: v1.22
+Status: Alinhado ao Platform Config e à retirada controlada E22.3.4
 
 0.2 Função do documento
 Registrar a camada de automações operacionais do LP Factory 10 como referência para integrações, automações operacionais e componentes consumidores, sem expor segredos.
@@ -115,33 +115,33 @@ Objetivo:
 Registrar a validação funcional histórica do Supabase Inspect no Agent Builder por meio da MCP base documentada em `docs/services.md`, sem acesso direto ao banco.
 
 Status:
-Concluído como validação funcional histórica
+Histórico em retirada controlada pela E22.3.4; não é automação vigente nem consumidor necessário independente.
 
 Nota de legado:
 O Agent Builder deixará de receber novos recursos e será descontinuado na plataforma OpenAI até 30/11/2026; esta integração não deve ser expandida.
 
-Referências / dependências:
-docs/services.md — `1.1 LPF Supabase Inspect MCP`
-services/mcp-supabase-inspect/README.md
+Decisão da E22.3:
+O workflow `wf_69b57fed963c8190b9da8e40797aa5820147027ff7bd60d7` é alvo da retirada controlada e não deve ser preservado como consumidor necessário independente do MCP.
+
+Bloqueio externo:
+A superfície autorizada disponível nesta execução não expõe ferramenta para consultar, excluir ou desativar workflows Agent Builder na OpenAI Platform; nenhuma mutação externa foi executada. O bloqueio exato está registrado na matriz e no PR #868.
+
+Referência histórica:
 Workflow ID: `wf_69b57fed963c8190b9da8e40797aa5820147027ff7bd60d7`
 
 3.3.1 Update — Agents SDK
 Status:
-Prioritário / pendente de migração
+Não iniciado; fora do escopo E22.3.4 e não autorizado como substituto.
 
 Objetivo:
-Migrar ou substituir o uso validado no Agent Builder por um fluxo programático mantido no Agents SDK.
+Registro histórico de update não materializado; a E22.3.4 não cria Agents SDK nem qualquer substituto.
 
 3.3.2 Update — ChatGPT + MCP
 Status:
-Bloqueado
+Não iniciado; sem continuidade operacional após a retirada controlada do MCP.
 
 Motivo:
-Incompatibilidade de autenticação no contrato atual da MCP
-
-Referências / dependências:
-docs/services.md — `1.1 LPF Supabase Inspect MCP`
-services/mcp-supabase-inspect/README.md
+Incompatibilidade de autenticação no contrato histórico da MCP; nenhuma migração ou substituto foi criado.
 
 3.4 Validador Final
 Objetivo:

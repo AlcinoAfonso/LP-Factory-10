@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Documento: LP Factory 10 — Platform Config
-• Versão: v0.1.35
+• Versão: v0.1.36
 • Data: 31/08/2026
 
 0.2 Contrato do documento
@@ -106,6 +106,7 @@
 
 3.2 Projeto de serviços
 • Projeto Vercel: `lpf-10-services`
+• Estado: configuração externa histórica/pendente de retirada pela E22.3.5; não é caminho operacional após a retirada repo-side da E22.3.4.
 • Finalidade: serviços implantáveis separados do Core.
 • Endpoint canônico MCP Supabase Inspect: `https://lpf-10-services.vercel.app/api/mcp`
 • Root Directory: `services/mcp-supabase-inspect`
@@ -255,16 +256,18 @@
 • Regra: não recriar as variáveis sem necessidade futura aprovada.
 
 • `LPF_MCP_SECRET`
+• Estado: referência histórica exclusiva do service retirado em E22.3.4; a remoção externa será consolidada na E22.3.5. Não usar para novo consumidor.
 • Finalidade: secret Bearer usado para autenticar chamadas ao MCP Supabase Inspect.
 • Projeto Vercel: `lpf-10-services`.
-• Consumidor: `services/mcp-supabase-inspect/api/mcp.js`.
+• Consumidor histórico no service retirado: `services/mcp-supabase-inspect/api/mcp.js`.
 • Escopo: Production e Preview, conforme deploy do service.
 • Valor real: não versionar.
 
 • `SUPABASE_DB_URL_READONLY`
+• Estado no service: referência histórica do service retirado em E22.3.4; o recurso compartilhado usado pela automação GitHub permanece preservado.
 • Finalidade: conexão read-only do MCP Supabase Inspect com o banco.
 • Projeto Vercel consumidor: `lpf-10-services`.
-• Consumidor: `services/mcp-supabase-inspect/api/mcp.js`.
+• Consumidor histórico no service retirado: `services/mcp-supabase-inspect/api/mcp.js`.
 • Regra: não usar para mutações.
 • Valor real: não versionar.
 
@@ -393,12 +396,12 @@
 • `automations/supabase-inspect/run.mjs`
 • Regra: novas APIs ou endpoints OpenAI devem ser registrados aqui quando virarem dependência operacional.
 
-6.4 Agent Builder — Supabase Inspect
-• Ativo operacional: Supabase Inspect Agente.
+6.4 Histórico de integração Agent Builder — Supabase Inspect
+• Estado: incluído no alvo de retirada controlada E22.3.4; não é consumidor necessário independente a preservar.
 • Workflow ID: `wf_69b57fed963c8190b9da8e40797aa5820147027ff7bd60d7`.
-• Uso: validação operacional do Supabase Inspect via Agent Builder.
+• Uso histórico: validação operacional do Supabase Inspect via Agent Builder.
 • Regra: não tratar como camada final robusta de orquestração.
-• Dependência: MCP Supabase Inspect em `https://lpf-10-services.vercel.app/api/mcp`.
+• Bloqueio externo: a superfície autorizada disponível nesta execução não expõe ferramenta para consultar, excluir ou desativar workflows Agent Builder na OpenAI Platform; nenhuma mutação externa foi executada. O bloqueio exato está registrado na matriz e no PR #868.
 
 7. Stripe
 
@@ -530,6 +533,8 @@ Regra:
 • Configurações de plataformas, secrets por nome, workflows, ambientes e endpoints usados por automações devem ser registrados neste documento.
 
 99. Changelog
+v0.1.36 — 31/08/2026 — Reclassificada a integração Agent Builder como histórico e alvo de retirada da E22.3.4; a configuração externa de `lpf-10-services` permanece explicitamente pendente da E22.3.5, sem criação de substituto ou remoção de recursos compartilhados.
+
 v0.1.35 — 31/08/2026 — Registradas a identidade institucional `lpfactoryqa@gmail.com`, sua credencial técnica por nome e localização autorizada, o contrato de reutilização por executores e a evidência operacional da confirmação automatizada, sem versionar valores secretos.
 
 v0.1.34 — 30/08/2026 — Mailbox operacional definida como caixa base Gmail sem `+tag`; novos aliases passam a ser derivados de `MAILBOX_EMAIL`, com preservação integral das execuções anteriores e proibição de senha de cadastro em artifacts e Job Summary.
