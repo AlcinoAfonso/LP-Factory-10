@@ -1,13 +1,11 @@
 ---
 name: lp-factory-executar-plano
-description: "Executar end-to-end um plano-base v2 técnico aprovado do LP Factory 10, uma subseção canônica do roadmap por vez, com validação e gate do Analista. Usar como subfluxo interno de lp-factory-orquestrar-plano na mesma branch e PR da v2 ou, de forma independente, quando a v2 já estiver incorporada à main."
+description: "Executar end-to-end um plano-base v2 aprovado do LP Factory 10, uma subseção canônica do roadmap por vez, com validação e gate do Analista. Usar como subfluxo interno de lp-factory-orquestrar-plano na mesma branch e PR da v2 ou, de forma independente, quando a v2 já estiver incorporada à main."
 ---
 
 # Executar plano-base aprovado
 
 Manter o task principal como orquestrador e executor. No handoff interno, continuar na branch e no PR únicos já abertos pela orquestração. Na execução independente, criar uma única branch a partir da `main` atualizada e um único PR de implementação contra `main`. Subseções são checkpoints internos, nunca PRs ou merges intermediários.
-
-A v2 aprovada é o contrato técnico executável da v1 funcional. O Executor implementa esse contrato; não o enriquece, redesenha por preferência própria nem adota modernização nova unilateralmente.
 
 ## Entrada
 
@@ -28,9 +26,9 @@ Quando invocada por `$lp-factory-orquestrar-plano`:
 1. Confirmar que branch, worktree e PR são os mesmos usados para produzir a v2.
 2. Confirmar o checkpoint `plan-v2-approved`, a matriz versionada no mesmo PR e usar esse commit como contrato imutável.
 3. Não criar branch, PR ou pedido de merge intermediário.
-4. Não acionar Gestor Estrutural, Gestor de Updates ou Gestor de Automações por rotina; usar somente o Analista nos gates de implementação.
+4. Não acionar Gestor Estrutural, Gestor de Updates ou Gestor de Automações; usar somente o Analista nos gates de implementação.
 5. Reutilizar checkpoints `LP-Factory-Phase: <identificador>` e continuar na próxima subseção pendente.
-6. Se houver mudança material fora da v2 aprovada, incompatibilidade do repositório ou modernização material nova potencialmente superior, não incorporar nem redesenhar por inferência: encaminhar ao Analista no próprio workflow; o retorno a especialista só ocorre se o Analista classificar a questão como material nova.
+6. Se houver mudança material fora da v2 aprovada, encaminhar ao Analista e, se necessário, ao humano; não reiniciar especialistas.
 
 ## Preparar
 
@@ -38,7 +36,7 @@ Quando invocada por `$lp-factory-orquestrar-plano`:
 2. Ler o plano integral, a seção competente de `docs/roadmap.md`, `docs/base-tecnica.md` e somente fontes adicionais exigidas pela subseção atual. No handoff interno, preservar `docs/matriz-consolidacao-<caso>.md` até o encerramento definitivo do recorte pelo Estrategista; ela serve à rastreabilidade do Analista e não amplia o plano aprovado.
 3. Validar que cada fase executável use exatamente o identificador do roadmap, como `E18.5.3 — título`; rejeitar aliases ordinais como `Fase 1` e agrupamentos de subseções independentes.
 4. No handoff interno, reutilizar a branch e o PR existentes. Na execução independente, criar ou selecionar uma única branch `codex-app/<caso>-implementacao` a partir da `main` e um único PR draft contra `main`. Recusar base diferente de `main` e nunca criar branch ou PR por subseção.
-5. Registrar o SHA do plano como contrato técnico imutável. Se houver execução anterior, identificar o último checkpoint pelo trailer de commit `LP-Factory-Phase: <identificador>`; se não for possível determinar unicamente a próxima subseção, parar e pedir o identificador.
+5. Registrar o SHA do plano como contrato imutável. Se houver execução anterior, identificar o último checkpoint pelo trailer de commit `LP-Factory-Phase: <identificador>`; se não for possível determinar unicamente a próxima subseção, parar e pedir o identificador.
 
 ## Gate Supabase pré-merge
 
@@ -53,8 +51,8 @@ Quando a subseção alterar schema ou migrations:
 
 Para a próxima subseção ainda não aprovada:
 
-1. Confirmar objetivo, arquivos prováveis, escopo negativo e critérios de aceite do plano. Antes de editar, confrontar o contrato técnico com o repositório real; se conflito, drift ou dependência alterar objetivo, escopo, arquitetura aprovada, banco ou comportamento do produto, não improvisar e encaminhar a incompatibilidade ao Analista no próprio workflow. Quando a subseção criar ou alterar prompt consumido por IA, invocar `$lp-factory-criar-prompt` como subfluxo somente leitura antes de editar esse artefato e validar os casos representativos definidos por ele.
-2. Implementar somente o necessário para essa subseção e conforme a solução técnica aprovada; não antecipar a próxima, refatorar poluição histórica sem relação com o recorte nem substituir boundary/adapter por alternativa própria. Extração focal já prevista na v2 pode ser executada; nova extração material volta ao gate se alterar o contrato técnico.
+1. Confirmar objetivo, arquivos prováveis, escopo negativo e critérios de aceite do plano. Antes de editar, confrontar o plano com o repositório real; se conflito, drift ou dependência alterar objetivo, escopo, arquitetura, banco ou comportamento do produto, não improvisar e encaminhar a incompatibilidade ao Analista no próprio workflow. Quando a subseção criar ou alterar prompt consumido por IA, invocar `$lp-factory-criar-prompt` como subfluxo somente leitura antes de editar esse artefato e validar os casos representativos definidos por ele.
+2. Implementar somente o necessário para essa subseção; não antecipar a próxima.
 3. Executar as validações aplicáveis. Para código, executar `npm ci` uma vez no início do lote contínuo e repeti-lo somente se `package-lock.json`, dependências ou o estado de instalação mudarem; executar a validação própria e `npm run check` antes de cada gate. Para alterações exclusivamente documentais, justificar esses comandos como não aplicáveis. Quando aplicável, incluir no gate do Analista evidências de observabilidade mínima e smoke ou QA funcional. Em subseção não final, se a evidência não puder ser obtida automaticamente, o Analista decide se exige teste humano. Na última subseção, executar também as validações integradas e corrigir regressões; avaliar explicitamente a necessidade de teste humano e, se exigido, parar e pedir a evidência antes do ABC de consolidação final; se `N/A`, registrar a justificativa.
 4. Antes do gate, identificar os documentos canônicos potencialmente afetados. Nas subseções não finais, considerar os documentos afetados pela subseção atual; na última subseção, incluir todos os documentos canônicos afetados ao longo do recorte. Para cada documento, preparar um relatório factual da implementação, preservar seu snapshot anterior e executar `$lp-factory-abc` de forma independente: usar `ETAPA: intermediária` somente nas subseções não finais ou uma única execução com `ETAPA: consolidação final` quando a subseção atual for a última do recorte, usando o estado final e o diff acumulado. Aplicar somente as operações literais emitidas. Se o resultado for `SEM ALTERAÇÕES NECESSÁRIAS`, não editar o documento. Documento canônico nunca é editado diretamente durante a implementação.
 5. Invocar `$lp-factory-avaliar-implementacao-analista` com o plano, o identificador, o diff, as evidências, a matriz e os pareceres especializados pertinentes. Para cada documento canônico avaliado, incluir snapshot anterior, relatório factual, resultado integral do ABC e documento resultante.
@@ -82,12 +80,10 @@ O resumo do PR deve refletir sempre o checkpoint publicado e a entrega completa.
 - Não alterar a `main` nem fazer merge.
 - Não executar fase fora do plano ou fora da ordem do roadmap.
 - Não iniciar a fase seguinte sem checkpoint aprovado.
-- Não redesenhar a v2, adotar modernização nova ou ampliar produto durante a execução.
-- Não usar adapter poluído ou dívida histórica como justificativa para refatoração ampla fora do contrato técnico.
 - Não recriar, resumir nem alterar a matriz durante a implementação, salvo correção de rastreabilidade exigida pelo Analista; preservá-la até o encerramento definitivo do recorte pelo Estrategista.
 - Não criar PR empilhado.
 - Não criar segundo PR quando houver handoff da orquestração.
-- Não acionar novamente os especialistas do plano por rotina.
+- Não acionar novamente os especialistas do plano durante a implementação.
 - Não acionar o Analista depois de declarar a entrega completa.
 - Não acionar o Estrategista nem simular handoff para ele.
 - Não substituir gate humano, decisão material ou teste humano exigido.
