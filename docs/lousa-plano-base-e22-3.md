@@ -1,6 +1,6 @@
 # E22.3 — Retirada controlada do Supabase Inspect MCP e infraestrutura associada
 
-Status: plano-base v1 consolidado em 31/08/2026 após encerramento do debate humano.
+Status: plano-base v2 técnico derivado em 31/08/2026 da v1 consolidada após encerramento do debate humano.
 
 Plano conceitual: N/A.
 
@@ -136,7 +136,9 @@ Referências imutáveis de entrada:
 
 - Executar somente investigação read-only e registrar evidência factual por categoria: código do service, workflows, automações, runtime do Core, agentes/integrações documentados, endpoint, secret, projeto Vercel e mecanismos preservados.
 - Usar busca reprodutível no repositório para `services/mcp-supabase-inspect`, `lpf-10-services`, `/api/mcp`, `LPF_MCP_SECRET` e consumidores relacionados; classificar cada ocorrência como operacional preservada, referência histórica ou referência operacional a remover.
-- Reconfirmar no Vercel conectado o projeto exato pelo nome e vínculo `AlcinoAfonso/LP-Factory-10`, seu estado, deployments paginados e eventual workload real. Se houver projeto homônimo ambíguo, deployment `READY`, tráfego funcional recente ou outro workload, parar.
+- Reconfirmar no Vercel conectado o projeto exato pelo nome e vínculo `AlcinoAfonso/LP-Factory-10`, seu estado, deployments paginados e eventual workload real. Um deployment `READY` do próprio MCP apenas confirma que o service existe e não bloqueia isoladamente; parar se houver projeto homônimo ambíguo, outro workload, alias/tráfego funcional necessário ou outra dependência material.
+- Registrar a janela temporal observada, a fonte, o filtro e a identidade do deployment/alias usados na verificação de tráfego, distinguindo probes/health checks da utilização externa necessária. Se a plataforma não fornecer evidência suficiente para essa janela, manter a retirada externa pendente.
+- Classificar explicitamente `lib/openai-workloads/` e `app/admin/(protected)/workloads-openai/page.tsx` como inventário/referência do workflow GitHub preservado, não como consumidores do endpoint MCP; não removê-los.
 - Reconfirmar que o projeto Core `lp-factory-10` é distinto e permanece fora do alvo. A ausência de evidência externa suficiente não autoriza inferência: mantém a retirada externa pendente.
 - Considerar a validação do Agent Builder somente como histórico conforme a v1 e `docs/automations.md`; se for revelado consumidor externo necessário sem substituto aprovado, não remover o service nem prosseguir para a infraestrutura.
 - Não executar mutação de código, documento ou plataforma nesta fase. O gate libera apenas o avanço para E22.3.4.
@@ -144,7 +146,7 @@ Referências imutáveis de entrada:
 ### 5.3. E22.3.4 — Retirada do service e das referências órfãs
 
 - Após o gate de E22.3.3, excluir do Git somente os seis arquivos versionados do diretório `services/mcp-supabase-inspect/` e manter o restante de `services/` sem novo conteúdo.
-- Executar ABC independente para `docs/services.md` e `docs/automations.md`, removendo somente o catálogo/dependência operacional do MCP retirado e preservando a automação GitHub ativa, o histórico necessário e updates não materializados como substitutos.
+- Executar ABC intermediário independente para `docs/services.md` e `docs/automations.md`, aplicando somente um estado de transição que retire o MCP do catálogo operacional e das dependências ativas, sem declarar a retirada externa do Vercel antes de ela ocorrer; preservar a automação GitHub ativa, o histórico necessário e updates não materializados como substitutos.
 - Não editar diretamente `docs/platform-config.md` nesta fase: seu estado final depende da retirada externa autorizada em E22.3.5.
 - Confirmar que não restam referências operacionais ao service, endpoint ou `LPF_MCP_SECRET` fora dos artefatos históricos, plano, matriz e catálogos de updates que preservem evidência histórica; não apagar histórico técnico por limpeza genérica.
 - Executar `npm ci` uma vez no início do lote de código, `npm run check` após a retirada, `git diff --check` e os checks focais possíveis sem secrets. Não executar `npm run build` como rotina de check.
@@ -154,7 +156,7 @@ Referências imutáveis de entrada:
 - Só depois dos checkpoints aprovados de E22.3.3 e E22.3.4, e com a confirmação de que não existe workload real, remover pelo controle Vercel autorizado somente o projeto `lpf-10-services` e suas configurações exclusivas, incluindo o secret `LPF_MCP_SECRET` e domínios/configurações vinculados ao projeto quando a própria remoção os atingir.
 - Nunca remover `lp-factory-10`, `SUPABASE_DB_URL_READONLY`, secrets GitHub compartilhados, automações preservadas, configurações Supabase ou qualquer recurso fora do projeto alvo.
 - Verificar após a mutação que `lpf-10-services` não está mais listado, que o endpoint e deployments do alvo deixaram de existir, que o Core continua separado e que nenhum novo deployment do projeto removido é gerado. Se a superfície autenticada de mutação não estiver disponível, registrar a pendência e não declarar a fase concluída.
-- Executar ABC final independente para cada documento canônico afetado (`docs/services.md`, `docs/automations.md`, `docs/platform-config.md` e `docs/roadmap.md`), aplicando somente deltas literais e registrando exclusivamente o estado externo e documental efetivamente confirmado.
+- Executar ABC final independente para cada documento canônico afetado (`docs/services.md`, `docs/automations.md`, `docs/platform-config.md` e `docs/roadmap.md`); nos dois primeiros, auditar o estado de transição já aplicado e retornar `SEM ALTERAÇÕES NECESSÁRIAS` quando ele já corresponder ao estado final, aplicando delta somente se houver fato novo. Aplicar nos demais somente deltas literais e registrar exclusivamente o estado externo e documental efetivamente confirmado.
 - Reexecutar as validações aplicáveis, confirmar a ausência de referências órfãs e registrar teste humano como `N/A` somente se não houver superfície funcional do produto alterada nem evidência visual necessária.
 
 ### 5.5. Critério técnico de conclusão
