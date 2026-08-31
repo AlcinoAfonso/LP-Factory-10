@@ -1,6 +1,6 @@
 0.1 Cabeçalho
-Data: 30/08/2026
-Versão: v1.21
+Data: 31/08/2026
+Versão: v1.22
 Status: Alinhado ao Platform Config
 
 0.2 Função do documento
@@ -24,6 +24,7 @@ docs/platform-config.md: configurações operacionais de plataformas, secrets po
 - `supabase-inspect` migrado para `automations/supabase-inspect/` com execução a partir da nova raiz canônica e sem fallback `npm install --no-save` no workflow.
 - `docs-apply-report` migrado para `automations/docs-apply-report/` com execução a partir da nova raiz canônica.
 - `niche-runtime-tests` criado como subprojeto canônico em `automations/niche-runtime-tests/`.
+- `authenticated-qa` criado como subprojeto canônico em `automations/authenticated-qa/` para jornadas dos dashboards com identidades permanentes via GitHub Actions secrets.
 - `pipelines/validador-final/`, `pipelines/supabase-inspect/` e `pipelines/docs-apply-report/` deixaram de ser paths oficiais.
 
 1. Objetivo e escopo
@@ -185,6 +186,50 @@ README local: `automations/validador-final/README.md`
 Workflow: `.github/workflows/automation-validador-final.yml`
 Runtime: `automations/validador-final/`
 Estado persistido: `automations/validador-final/state/test-account.json`
+
+3.4.1 QA autenticada dos dashboards
+
+Objetivo:
+Executar jornadas autenticadas repetíveis no Account Dashboard e no Admin Dashboard sem repasse de senha entre tasks, formulário seguro ou login humano por PR.
+
+Status:
+Implementação preparada no repositório; ativação operacional depende da criação ou reconciliação das duas identidades permanentes e da configuração dos secrets e da variável listados no Platform Config.
+
+Acesso:
+GitHub → Actions → workflow `automation-authenticated-qa`
+
+Como usar:
+- informar somente a URL HTTPS do Preview e escolher um cenário versionado;
+- usar `access_gates` para Account positivo, Admin negativo da identidade comum e Admin positivo;
+- usar `create_landing_page` quando o recorte exigir mutação real na conta QA; esse cenário é bloqueado em Production;
+- consumir Job Summary e artifact sanitizado como evidência, sem expor credenciais ao executor.
+
+Como funciona:
+- Playwright recebe as duas identidades exclusivamente por GitHub Actions secrets;
+- cada identidade usa contexto de navegador isolado;
+- a identidade comum valida o workspace e o bloqueio de `platform_admin`;
+- a identidade administrativa valida a superfície read-only de Estrutura da LP;
+- o cenário mutante cria uma Landing Page com nome e slug vinculados ao run;
+- o executor dispara e lê o resultado pela integração GitHub, sem operar o formulário de login do navegador do Codex.
+
+Configuração operacional:
+- `QA_ACCOUNT_EMAIL` e `QA_ACCOUNT_PASSWORD`: repository secrets da identidade comum;
+- `QA_ADMIN_EMAIL` e `QA_ADMIN_PASSWORD`: repository secrets da identidade administrativa;
+- `QA_ACCOUNT_SUBDOMAIN`: repository variable da conta institucional de teste.
+
+Limites:
+- não cria nem eleva identidades;
+- não concede membership, entitlement ou `platform_admin`;
+- não usa a senha principal do Gmail nem a senha de app da mailbox;
+- restringe `app_url` a Production e aos Previews do projeto `lp-factory-10` na equipe Vercel autorizada e revalida a origem antes de preencher credenciais;
+- não aceita roteiro arbitrário por input; novas jornadas são versionadas;
+- screenshots devem permanecer restritas às superfícies QA previstas e ao Admin sem dados de clientes.
+
+Referências / dependências:
+README local: `automations/authenticated-qa/README.md`
+Workflow: `.github/workflows/automation-authenticated-qa.yml`
+Runtime: `automations/authenticated-qa/run.mjs`
+Configuração: `docs/platform-config.md`
 
 3.5 Resolver IA de Nicho no pending_setup
 
