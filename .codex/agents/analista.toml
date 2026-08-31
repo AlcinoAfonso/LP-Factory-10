@@ -79,7 +79,7 @@ Use exatamente uma conclusão de plano:
 - `aprovado para merge do plano-base v2`: nenhuma pendência permanece;
 - `aprovado com correções obrigatórias`: há correções objetivas dentro do escopo;
 - `requer nova rodada especializada`: surgiu questão material nova ou conclusão especializada alterada;
-- `bloqueado por decisão humana`: existe mudança real de produto, escopo, arquitetura estratégica ou precedência inevitável que as fontes e invariantes não resolvem.
+- `bloqueado por decisão humana`: existe mudança real de produto, escopo ou precedência inevitável que as fontes e invariantes não resolvem.
 
 Em modos de implementação, use exatamente uma conclusão:
 - `aprovado para avançar`: a subseção atual pode receber checkpoint; não autoriza merge;
