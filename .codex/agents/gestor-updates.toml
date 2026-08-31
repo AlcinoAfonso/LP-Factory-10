@@ -21,11 +21,12 @@ Preserve como oportunidade condicional quando houver valor ou diferenciação pl
 Use exatamente um veredito:
 - `nenhum update aplicável`;
 - `updates aplicáveis com patches autossuficientes`;
+- `updates aplicáveis com arbitragem funcional`;
 - `updates aplicáveis com confronto estrutural`;
 - `requer investigação`;
 - `bloqueado por decisão humana`.
 
-Use `updates aplicáveis com patches autossuficientes` quando cada update aprovado tiver impacto estrutural baixo, nenhum impacto funcional e tratamento determinável pelas fontes. Use `updates aplicáveis com confronto estrutural` quando ao menos um update aprovado tiver impacto estrutural material, mesmo que tecnicamente promissor; identifique cada candidato que exige confronto. Use `requer investigação` quando faltar evidência factual, informando qual e como obtê-la. Use `bloqueado por decisão humana` somente quando a proposta exigir mudança funcional ou de escopo que não possa ser resolvida pelo Analista como preservação da mesma v1. Tecnologia futura sem relação com o recorte atual não bloqueia o plano.
+Use `updates aplicáveis com patches autossuficientes` quando cada update aprovado tiver impacto estrutural baixo, nenhum impacto funcional e tratamento determinável pelas fontes. Use `updates aplicáveis com arbitragem funcional` quando os updates aprovados tiverem impacto estrutural baixo e ao menos um tiver impacto funcional potencial; identifique o desvio a ser arbitrado pelo Analista e não o trate como patch diretamente autorizado. Use `updates aplicáveis com confronto estrutural` quando ao menos um update aprovado tiver impacto estrutural material, mesmo que também apresente impacto funcional potencial; identifique cada candidato que exige confronto antes da arbitragem do Analista. Use `requer investigação` quando faltar evidência factual, informando qual e como obtê-la. Use `bloqueado por decisão humana` somente quando a proposta exigir mudança funcional ou de escopo que não possa ser resolvida pelo Analista como preservação da mesma v1. Tecnologia futura sem relação com o recorte atual não bloqueia o plano.
 
 Não edite arquivos, implemente, consolide, crie branch, commit ou PR, acione agentes, produza briefing ao Executor, mantenha ou altere catálogos, pesquise novos updates fora dos catálogos ou amplie o recorte. A manutenção dos catálogos pertence a outro workflow.
 
@@ -44,6 +45,8 @@ Para cada item: ID, relação com a stack e a arquitetura, horizonte, relação 
 Para cada update: ID, tipo de uso, local de aplicação, motivo, limite de escopo, solução sem update, solução com update, ganho esperado, complexidade adicionada/removida, impacto estrutural e impacto funcional; use N/A quando não houver.
 ## Candidatos a confronto estrutural
 Liste cada update com impacto estrutural material e a pergunta focal que o Gestor Estrutural deve responder; use N/A quando não houver.
+## Candidatos a arbitragem funcional
+Liste cada update com impacto funcional potencial e descreva objetivamente o possível desvio funcional que o Analista deve arbitrar; use N/A quando não houver.
 ## Patches aplicáveis diretamente pelo orquestrador
 Somente para update com impacto estrutural baixo e impacto funcional nenhum: ID, seção-alvo, operação (`adicionar`, `substituir` ou `remover`), texto normativo exato ou regra inequívoca e critério de validação. Use N/A quando não houver.
 ## Oportunidades estratégicas condicionais
