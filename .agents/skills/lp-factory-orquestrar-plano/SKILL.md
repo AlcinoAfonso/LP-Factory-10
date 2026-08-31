@@ -14,7 +14,7 @@ Aceitar como comando suficiente número, URL do PR ou path da v1, por exemplo: `
 No fluxo normal:
 
 - exigir a v1 incorporada à `main`; antes disso, limitar-se à avaliação read-only;
-- tratar a v1 como contrato funcional aprovado e a v2 como contrato técnico executável; a v2 pode modernizar tecnologia, mas não ampliar produto silenciosamente;
+- tratar a v1 como contrato funcional aprovado e a v2 como contrato técnico executável, sem ampliar silenciosamente o produto;
 - usar uma única branch e um único PR draft contra `main` para v2, roadmap e implementação;
 - não criar PR empilhado nem pedir nova instrução entre v2 e execução;
 - pedir somente informação que impeça selecionar com segurança plano, estágio ou worktree.
@@ -27,7 +27,7 @@ Ler `docs/orquestracao-plano-base.md` e seguir, sem copiar seus critérios:
 
 - `lp-factory-avaliar-plano-estrutura` em `derivacao_inicial`;
 - `lp-factory-avaliar-plano-updates`;
-- `lp-factory-avaliar-plano-estrutura` em `confronto_modernizacao`, somente para cada update com impacto estrutural material;
+- `lp-factory-avaliar-plano-estrutura` em `confronto_modernizacao`, somente para update com impacto estrutural material;
 - `lp-factory-avaliar-plano-automacoes`, somente com `Automação: sim` e sem dispensa humana explícita registrada na v1; na ausência desse registro, avaliar;
 - `lp-factory-avaliar-plano-analista`;
 - `lp-factory-executar-plano`;
@@ -57,9 +57,9 @@ Se o estágio não for inequívoco, pedir apenas a referência faltante; nunca r
 1. Confirmar a seção do roadmap, decisões registradas, dependências, consumidores, casos adjacentes e fontes técnicas competentes.
 2. Obter plano conceitual somente por referência competente ou vínculo inequívoco com o recorte; se não existir, registrar `N/A` e continuar.
 3. Exigir em cada fase o identificador exato da subseção do roadmap; não usar aliases ordinais.
-4. Acionar o Gestor Estrutural em `derivacao_inicial` sobre a v1 congelada. Preservar integralmente seu parecer como baseline técnica.
-5. Acionar o Gestor de Updates sobre a mesma v1, entregando também a derivação estrutural inicial como baseline comparativa, sem transformá-la em fonte superior à v1 ou às fontes canônicas.
-6. Para cada update marcado com impacto estrutural material, acionar o Gestor Estrutural em `confronto_modernizacao`, limitado ao candidato, sua alternativa sem update e com update. Não repetir a derivação estrutural completa.
+4. Acionar o Gestor Estrutural em `derivacao_inicial` sobre a v1 congelada e preservar integralmente seu parecer.
+5. Acionar o Gestor de Updates sobre a mesma v1, entregando a derivação estrutural inicial como baseline comparativa.
+6. Para cada update com impacto estrutural material, acionar o Gestor Estrutural em `confronto_modernizacao`, limitado ao candidato; não repetir a derivação completa.
 7. Acionar o Gestor de Automações somente quando houver `Automação: sim` e a v1 não registrar dispensa humana da avaliação formal; na ausência de registro, acionar. Quando houver dispensa, registrar `N/A — avaliação formal dispensada na v1`.
 8. Aplicar as regras de conclusão e completude das skills especializadas. Não refazer avaliações no task principal nem completar patch que exija escolha técnica.
 
@@ -67,23 +67,19 @@ Parar somente diante de handoff incompleto, investigação necessária ou decis�
 
 ## 3. Produzir v2 técnica e matriz
 
-1. Editar somente o plano na branch de automação e preservar objetivo, decisões funcionais válidas, ordem, hierarquia e granularidade da v1. A v2 deve adicionar o detalhamento técnico necessário: boundaries, arquivos/residências, contratos, banco quando aplicável, sequência, validações e modernizações aprovadas.
-2. Para cada acréscimo técnico, registrar uma única classe: `derivação técnica da v1`, `modernização técnica justificada` ou `ampliação de escopo`.
-3. `Derivação técnica da v1` deve apontar requisito/decisão da v1 ou invariante técnico vigente. `Modernização técnica justificada` deve apontar update, comparação sem/com, ganho esperado e, quando material, confronto estrutural. Não incorporar `ampliação de escopo` sem decisão humana ou novo recorte.
-4. Antes de manter qualquer elemento não literal da v1, perguntar qual requisito, invariante ou ganho técnico proporcional justifica sua existência. Remover itens sustentados apenas por robustez genérica, preparação futura, conveniência, modernidade, boa prática sem consumidor atual ou mera possibilidade.
-5. Preservar coesão de adapters e boundaries conforme o parecer estrutural: não adicionar nova responsabilidade por conveniência; permitir apenas extração focal necessária ao recorte; não aproveitar poluição histórica para refatoração ampla.
-6. Aplicar diretamente somente patches autossuficientes de derivação ou update com impacto estrutural baixo e impacto funcional nenhum. Para modernização material, consolidar somente após o confronto estrutural. Oportunidade estratégica condicional de update não autoriza implementação atual.
-7. Preparar uma linha de matriz por achado estrutural, update elegível, confronto aplicável e decisão de automação, com ID, origem (`v1`, `invariante técnico` ou `update`), classe, tratamento, destino do update quando aplicável, ganho/impactos quando modernização, localização e evidência.
-8. Antes da Passagem 1, não gravar nem expor matriz ou pareceres ao Analista. Validar a v2 e criar checkpoint `LP-Factory-Stage: plan-v2` somente com o plano.
+1. Editar somente o plano na branch de automação e preservar objetivo, decisões funcionais válidas, ordem, hierarquia e granularidade da v1, acrescentando o detalhamento técnico necessário para torná-la executável.
+2. Classificar cada acréscimo técnico como `derivação técnica da v1`, `modernização técnica justificada` ou `ampliação de escopo`; não incorporar ampliação sem decisão humana ou novo recorte.
+3. Aplicar somente tratamentos autorizados pelos pareceres especializados. Modernização com impacto estrutural material só pode ser consolidada após o confronto focal correspondente; oportunidade estratégica condicional não autoriza implementação atual.
+4. Preparar a matriz com origem, classe, tratamento, localização e evidência de cada achado; para updates, registrar também o destino e a referência ao confronto estrutural quando aplicável.
+5. Antes da Passagem 1, não gravar nem expor matriz ou pareceres ao Analista. Validar a v2 e criar checkpoint `LP-Factory-Stage: plan-v2` somente com o plano.
 
 ## 4. Gate do Analista
 
 1. Executar a Passagem 1 com v1, v2, plano conceitual quando existente ou `N/A`, decisões e fontes do caso, sem pareceres, confrontos ou matriz.
 2. Preservar a resposta, gravar e versionar `docs/matriz-consolidacao-<caso>.md` e continuar no mesmo Analista.
 3. Executar a Passagem 2 com os pareceres integrais, confrontos estruturais aplicáveis e a matriz.
-4. Exigir que o Analista confirme cobertura funcional da v1, suficiência técnica, ganho líquido das modernizações, coesão de adapters/boundaries e ausência de ampliação silenciosa.
-5. Em correções objetivas, inclusive conflito resolvido por fonte ou invariante e validação exclusivamente pós-merge, atualizar v2 e matriz e pedir `revisao_delta` ao mesmo Analista. Antes de parar por decisão humana, exigir ausência de fonte determinante e, para precedência de banco, prova de que migration compatível, feature flag ou expand/contract não evita PR precursor. Retornar a especialista somente por questão material nova ou conclusão especializada alterada.
-6. Avançar apenas com `aprovado para merge do plano-base v2`.
+4. Em correções objetivas, inclusive conflito resolvido por fonte ou invariante e validação exclusivamente pós-merge, atualizar v2 e matriz e pedir `revisao_delta` ao mesmo Analista. Antes de parar por decisão humana, exigir ausência de fonte determinante e, para precedência de banco, prova de que migration compatível, feature flag ou expand/contract não evita PR precursor. Retornar a especialista somente por questão material nova ou conclusão especializada alterada.
+5. Avançar apenas com `aprovado para merge do plano-base v2`.
 
 ## 5. Reconciliar roadmap e abrir o PR
 
@@ -94,20 +90,19 @@ Parar somente diante de handoff incompleto, investigação necessária ou decis�
 
 ## 6. Executar no mesmo PR
 
-1. Invocar internamente `$lp-factory-executar-plano` no checkpoint aprovado, preservando branch, worktree e PR. A v2 aprovada é contrato técnico; o Executor não a redesenha por preferência própria.
+1. Invocar internamente `$lp-factory-executar-plano` no checkpoint aprovado, preservando branch, worktree e PR.
 2. Em cada subseção, exigir que o subfluxo identifique documentos canônicos afetados e execute `$lp-factory-abc` separadamente para cada um antes do gate do Analista. Aplicar somente o delta literal; com `SEM ALTERAÇÕES NECESSÁRIAS`, preservar o documento. Não permitir edição canônica direta.
-3. Não repetir especialistas por rotina. Se a execução revelar modernização material nova ou incompatibilidade que altere o contrato técnico, não incorporar unilateralmente: encaminhar ao Analista e retornar ao especialista pertinente somente se o Analista classificar a questão como material nova.
-4. Usar o Analista somente nos gates por subseção, com a matriz, os pareceres pertinentes e as evidências de execução do ABC quando houver documento canônico avaliado.
-5. Executar todas as subseções e validações aplicáveis; manter o PR draft atualizado e retomar por checkpoints.
-6. Depois da última subseção e dos testes aplicáveis, declarar a entrega completa, informar os ABCs executados e seus resultados por documento e parar. Não acionar nenhum modo do Analista nem o Estrategista após essa declaração.
-7. O Estrategista atua somente por instrução humana e lê diretamente o PR. Correções devolvidas pelo humano são aplicadas e publicadas sem novo Analista; o mesmo Estrategista reavalia quando instruído.
+3. Não repetir especialistas. Usar o Analista somente nos gates por subseção, com a matriz, os pareceres pertinentes e as evidências de execução do ABC quando houver documento canônico avaliado.
+4. Executar todas as subseções e validações aplicáveis; manter o PR draft atualizado e retomar por checkpoints.
+5. Depois da última subseção e dos testes aplicáveis, declarar a entrega completa, informar os ABCs executados e seus resultados por documento e parar. Não acionar nenhum modo do Analista nem o Estrategista após essa declaração.
+6. O Estrategista atua somente por instrução humana e lê diretamente o PR. Correções devolvidas pelo humano são aplicadas e publicadas sem novo Analista; o mesmo Estrategista reavalia quando instruído.
 
 Manter a matriz disponível na entrega e durante o ciclo externo de avaliação. Não removê-la antes de o Estrategista, acionado pelo humano, declarar o recorte definitivamente concluído; a remoção posterior é tarefa documental de encerramento e não cria novo gate do Analista nem reabre a orquestração.
 
 ## Devolução
 
-Informar referências de v1, worktree, branch, derivação estrutural, parecer de Updates, confrontos materiais aplicáveis, parecer de Automação quando houver, Passagens 1 e 2, ABC e delta do roadmap, ABCs da implementação e seus resultados por documento, checkpoints, validações, arquivos, commits, PR e pendências. Não reescrever pareceres.
+Informar referências de v1, worktree, branch, pareceres aplicáveis, confrontos estruturais quando houver, Passagens 1 e 2, ABC e delta do roadmap, ABCs da implementação e seus resultados por documento, checkpoints, validações, arquivos, commits, PR e pendências. Não reescrever pareceres.
 
 ## Limites
 
-Não editar ou commitar na `main`; alterar a v1 ou seu PR; criar PR empilhado, segunda branch ou segundo PR; permitir edição por custom agents; transformar modernização em ampliação silenciosa; usar poluição histórica como autorização para refatoração ampla; repetir especialistas do mesmo blob por precaução; fazer merge; ou substituir decisão humana.
+Não editar ou commitar na `main`; alterar a v1 ou seu PR; criar PR empilhado, segunda branch ou segundo PR; permitir edição por custom agents; ampliar escopo silenciosamente; repetir especialistas do mesmo blob por precaução; fazer merge; ou substituir decisão humana.
