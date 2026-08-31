@@ -66,6 +66,45 @@ export async function researchDynamicLandingPageMarketWithOpenAi(
       "Preview e Production exigem revisão operacional comprovada posterior ao bootstrap.",
     );
   }
+  const prepared = buildDynamicLandingPageMarketRequest(input, dependencies);
+  if (!prepared.ok) return prepared;
+  const result = await requestOpenAiResponses(prepared.value, {
+    fetchImpl: dependencies.fetchImpl,
+    emitEvent: dependencies.emitEvent,
+    now: dependencies.now,
+  });
+  if (!result.ok) return failure("PROVIDER_FAILURE", result.reason);
+  const parsed = result.value;
+  return Object.freeze({
+    ok: true,
+    value: deepFreeze({
+      status: parsed.output.status,
+      summary: parsed.output.summary,
+      supplement: parsed.output.supplement,
+      sources: parsed.sources,
+      searchedAt: validIso(dependencies.nowIso?.()) ?? new Date().toISOString(),
+      workload: "landing_page_dynamic_market_research",
+      configurationSource: input.configuration.source,
+      configurationRevision: input.configuration.revision,
+      model: input.configuration.model,
+      reasoningEffort: input.configuration.reasoningEffort,
+      promptVersion: LANDING_PAGE_DYNAMIC_RESEARCH_PROMPT_VERSION,
+      contractVersion: LANDING_PAGE_DYNAMIC_RESEARCH_CONTRACT_VERSION,
+      responseId: result.responseId,
+      providerRequestId: result.providerRequestId,
+      latencyMs: result.latencyMs,
+      usage: result.usage,
+      webSearchCallCount: parsed.webSearchCallCount,
+    }) as LandingPageDynamicResearchExecution,
+  });
+}
+
+/** Shared request contract for runtime and the separately authorized Admin canary.
+ * Builds no proof, makes no call, and never changes a configuration revision. */
+export function buildDynamicLandingPageMarketRequest(
+  input: DynamicMarketResearchOpenAiInput,
+  dependencies: Pick<DynamicMarketResearchOpenAiDependencies, "timeoutMs" | "signal"> = {},
+) {
   const safetyIdentifier = normalizeSafetyIdentifier(input.safetyIdentifier);
   if (!safetyIdentifier) {
     return failure("INPUT_INVALID", "O safety identifier técnico é inválido.");
@@ -87,12 +126,13 @@ export async function researchDynamicLandingPageMarketWithOpenAi(
     return failure("INPUT_INVALID", "A política Web Search do workload está ausente.");
   }
 
-  const result = await requestOpenAiResponses(
-    {
+  return {
+    ok: true as const,
+    value: {
       apiKey: input.apiKey,
       configuration: input.configuration,
       environment: input.environment,
-      expectedWorkload: "landing_page_dynamic_market_research",
+      expectedWorkload: "landing_page_dynamic_market_research" as const,
       requestId: input.requestId,
       promptVersion: prompt.value.version,
       contractVersion: LANDING_PAGE_DYNAMIC_RESEARCH_CONTRACT_VERSION,
@@ -123,37 +163,7 @@ export async function researchDynamicLandingPageMarketWithOpenAi(
       },
       parseResponse: parseDynamicMarketResearchResponse,
     },
-    {
-      fetchImpl: dependencies.fetchImpl,
-      emitEvent: dependencies.emitEvent,
-      now: dependencies.now,
-    },
-  );
-
-  if (!result.ok) return failure("PROVIDER_FAILURE", result.reason);
-  const parsed = result.value;
-  return Object.freeze({
-    ok: true,
-    value: deepFreeze({
-      status: parsed.output.status,
-      summary: parsed.output.summary,
-      supplement: parsed.output.supplement,
-      sources: parsed.sources,
-      searchedAt: validIso(dependencies.nowIso?.()) ?? new Date().toISOString(),
-      workload: "landing_page_dynamic_market_research",
-      configurationSource: input.configuration.source,
-      configurationRevision: input.configuration.revision,
-      model: input.configuration.model,
-      reasoningEffort: input.configuration.reasoningEffort,
-      promptVersion: LANDING_PAGE_DYNAMIC_RESEARCH_PROMPT_VERSION,
-      contractVersion: LANDING_PAGE_DYNAMIC_RESEARCH_CONTRACT_VERSION,
-      responseId: result.responseId,
-      providerRequestId: result.providerRequestId,
-      latencyMs: result.latencyMs,
-      usage: result.usage,
-      webSearchCallCount: parsed.webSearchCallCount,
-    }) as LandingPageDynamicResearchExecution,
-  });
+  };
 }
 
 export function parseDynamicMarketResearchResponse(payload: unknown) {
@@ -395,7 +405,7 @@ function validIso(value: unknown) {
 function failure(
   code: Extract<DynamicMarketResearchOpenAiResult, { ok: false }>["code"],
   message: string,
-): DynamicMarketResearchOpenAiResult {
+): Extract<DynamicMarketResearchOpenAiResult, { ok: false }> {
   return Object.freeze({ ok: false, offeringInvalidated: false, code, message });
 }
 

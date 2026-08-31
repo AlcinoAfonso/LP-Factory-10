@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { mock } from "node:test";
 
 import type {
   OpenAiWorkloadEvent,
@@ -19,6 +20,99 @@ const sourceA = "https://example.org/evidence-a";
 const sourceB = "https://example.net/evidence-b";
 
 const cases: readonly ValidationCase[] = [
+  {
+    name: "AA-PR13 clamps research to 45 seconds and preserves parent cancellation without retry",
+    run: async () => {
+      mock.timers.enable({ apis: ["setTimeout"] });
+      try {
+        let calls = 0;
+        const signals: AbortSignal[] = [];
+        const pending = researchDynamicLandingPageMarketWithOpenAi(
+          input("preview", configuration("supabase_operational", "2")),
+          {
+            timeoutMs: 90_000,
+            fetchImpl: async (_url, init) => {
+              calls += 1;
+              assert.ok(init?.signal);
+              const signal = init.signal;
+              signals.push(signal);
+              return new Promise<Response>((_resolve, reject) => {
+                signal.addEventListener("abort", () => reject(new DOMException("aborted", "AbortError")), { once: true });
+              });
+            },
+            emitEvent: () => undefined,
+          },
+        );
+        assert.equal(calls, 1);
+        mock.timers.tick(44_999);
+        assert.equal(signals[0].aborted, false);
+        mock.timers.tick(1);
+        assert.equal(signals[0].aborted, true);
+        const result = await pending;
+        assert.equal(result.ok, false);
+        if (result.ok) throw new Error("Expected timeout");
+        assert.equal(result.message, "openai_timeout");
+        assert.equal(result.offeringInvalidated, false);
+        assert.equal(calls, 1);
+
+        const controller = new AbortController();
+        controller.abort();
+        let cancelledCalls = 0;
+        const cancelled = await researchDynamicLandingPageMarketWithOpenAi(
+          input("preview", configuration("supabase_operational", "2")),
+          { signal: controller.signal, fetchImpl: async () => { cancelledCalls += 1; throw new Error("must not transport"); }, emitEvent: () => undefined },
+        );
+        assert.equal(cancelled.ok, false);
+        assert.equal(cancelledCalls, 0);
+        assert.equal(calls, 1);
+      } finally {
+        mock.timers.reset();
+      }
+    },
+  },
+  {
+    name: "AA-PR13 hosted runtime rejects bootstrap in both environments and accepts revision 2 with fake transport only",
+    run: async () => {
+      for (const environment of ["preview", "production"] as const) {
+        let calls = 0;
+        for (const [source, revision, expected] of [
+          ["repo_catalog", "v1", false],
+          ["supabase_operational", "1", false],
+          ["supabase_operational", "2", true],
+        ] as const) {
+          const result = await researchDynamicLandingPageMarketWithOpenAi({
+            ...input("preview", configuration(source, revision)), environment,
+          }, {
+            fetchImpl: async () => { calls += 1; return response(noMaterialOutput(), [webCall([sourceA])]); },
+            emitEvent: () => undefined,
+          });
+          assert.equal(result.ok, expected);
+        }
+        assert.equal(calls, 1);
+      }
+    },
+  },
+  {
+    name: "AA-PR13 technical failures never silently become base-only or invalidate an offering",
+    run: async () => {
+      for (const fakeResponse of [
+        () => new Response("{}", { status: 429 }),
+        () => response(insufficientOutput(), [webCall([sourceA])]),
+        () => response(materialOutput("https://invented.example/evidence"), [webCall([sourceA])]),
+      ]) {
+        let calls = 0;
+        const result = await researchDynamicLandingPageMarketWithOpenAi(
+          input("preview", configuration("supabase_operational", "2")),
+          { fetchImpl: async () => { calls += 1; return fakeResponse(); }, emitEvent: () => undefined },
+        );
+        assert.equal(result.ok, false);
+        if (result.ok) throw new Error("Expected technical failure");
+        assert.equal(result.offeringInvalidated, false);
+        assert.equal(calls, 1);
+        assert.equal(completeLandingPageKnowledge(dynamicResolution(), null).ok, false);
+      }
+    },
+  },
   {
     name: "serializes one foreground required Web Search request with code-owned limits",
     run: async () => {

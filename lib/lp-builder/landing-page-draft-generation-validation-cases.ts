@@ -34,6 +34,10 @@ import {
   validateLandingPageRevisionSnapshot,
 } from "./landingPageRevision";
 import { materializeLandingPageDraftRevisionWithDependencies } from "./landingPageRevisionWorkflow";
+import { resolveLandingPageGenerationKnowledge } from "./landingPageGenerationKnowledge";
+import type { LandingPageKnowledgeResolutionValue } from "../conversion-content/landing-page/knowledge-resolution";
+import { researchDynamicLandingPageMarketWithOpenAi } from "../conversion-content/adapters/dynamicMarketResearchOpenAiAdapter";
+import { resolveOpenAiProductWorkload } from "../openai-workloads";
 
 const candidate: LandingPagePresentationCandidate = {
   contractVersion: 1,
@@ -147,6 +151,174 @@ const context = {
 } as unknown as LandingPageGenerationContextPackage;
 
 const cases = [
+  {
+    name: "ARC-013 consultative knowledge preserves factual, identity and binding authority without mutating context",
+    run: async () => {
+      const before = structuredClone(context);
+      for (const status of ["base_only", "specialized_deep", "dynamic_required"] as const) {
+        const events: OpenAiWorkloadEvent[] = [];
+        let transports = 0;
+        const result = await resolveLandingPageGenerationKnowledge({
+          context, attemptId: "attempt-knowledge", requestId: "request-knowledge", deadlineAtMs: Date.now() + 270_000,
+        }, {
+          environment: "preview", apiKey: "synthetic-key",
+          resolveKnowledge: async (input) => {
+            assert.deepEqual(input, { servedTaxonId: context.identities.servedTaxon.id, offeringScope: context.modelContext.facts[0].value });
+            return { ok: true, value: knowledgeResolution(status) };
+          },
+          resolveConfiguration: () => resolveOpenAiProductWorkload("landing_page_dynamic_market_research", "preview", {
+            operationalConfigurationEnabled: "true",
+            readOperationalConfiguration: async () => ({ ok: true, value: { environment: "preview", workload: "landing_page_dynamic_market_research", apiKind: "responses_text", model: "gpt-5.6-luna", reasoningEffort: "high", revision: "2" } }),
+          }),
+          researchDynamic: (input, dependencies) => researchDynamicLandingPageMarketWithOpenAi(input, {
+            ...dependencies,
+            fetchImpl: async (_url, init) => {
+              transports += 1;
+              const body = JSON.parse(String(init?.body));
+              const data = JSON.parse(body.input);
+              assert.deepEqual(Object.keys(data), ["servedTaxon", "offeringScope", "authorizedBaseResearch"]);
+              assert.deepEqual(Object.keys(data.servedTaxon), ["name", "slug"]);
+              assert.equal(String(init?.body).includes(context.identities.accountId), false);
+              assert.equal(String(init?.body).includes("whatsapp_destination"), false);
+              assert.match(body.safety_identifier, /^[a-f0-9]{64}$/);
+              return new Response(JSON.stringify({
+                id: "resp_research", status: "completed",
+                output: [
+                  { type: "web_search_call", status: "completed", action: { type: "search", sources: [{ type: "url", url: "https://example.org/evidence", title: "Evidence" }] } },
+                  { type: "message", content: [{ type: "output_text", text: JSON.stringify({ schemaVersion: 1, status: "material_delta", summary: "Delta consultivo", supplement: { findings: [{ dimension: "objections", insight: "Dúvida atual documentada", sourceUrls: ["https://example.org/evidence"] }] } }) }] },
+                ], usage: { input_tokens: 10, output_tokens: 20 },
+              }), { status: 200 });
+            },
+          }),
+          emitEvent: (event) => events.push(event),
+        });
+        assert.equal(result.ok, true);
+        if (!result.ok) throw new Error("Expected knowledge");
+        const envelope = JSON.parse(result.research.content);
+        assert.equal(envelope.resolvedKnowledge.status, status === "dynamic_required" ? "base_plus_dynamic" : status);
+        assert.equal(envelope.financialAttribution, "not_attributed_e21_4_text_image_only");
+        assert.equal(envelope.resolvedKnowledge.researchSource.research.content, knowledgeResolution(status).researchSource.research.content);
+        assert.equal(envelope.resolvedKnowledge.researchSource.taxonSlug, knowledgeResolution(status).researchSource.taxonSlug);
+        assert.doesNotMatch(result.research.content, /relativePath|synthetic\/research\.md/);
+        const workflow = successfulCandidateWorkflow("30000000-0000-4000-8000-000000000003");
+        let textResearch: unknown;
+        const materialized = await materializeLandingPageDraftRevisionWithDependencies({
+          context, createdBy: "40000000-0000-4000-8000-000000000004", requestId: workflow.requestId,
+        }, {
+          prepareCandidate: (input) => prepareLandingPageDraftRevisionCandidate(input, {
+            createAttemptId: () => workflow.attemptId,
+            loadKnowledge: async () => result,
+            generateText: async (modelInput) => {
+              const request = buildLandingPageDraftResponsesRequest(modelInput);
+              assert.doesNotMatch(JSON.stringify(request), /relativePath|synthetic\/research\.md/);
+              const requestModelContext = JSON.parse(request.input[1].content[0].text.split("\n")[1]);
+              textResearch = requestModelContext.research;
+              assert.deepEqual(textResearch, result.research);
+              assert.deepEqual(requestModelContext.facts, before.modelContext.facts);
+              return workflow.text;
+            },
+            generateImage: async () => workflow.image,
+          }),
+          uploadAsset: async () => ({ ok: true }),
+          cleanupAsset: async () => {},
+          revalidate: async () => true,
+          appendRevision: async (input) => {
+            assert.deepEqual(input.snapshot.generationContext.modelContext.research, textResearch);
+            assert.doesNotMatch(JSON.stringify(input.snapshot), /relativePath|synthetic\/research\.md/);
+            assert.equal(validateLandingPageRevisionSnapshot(input.snapshot), true);
+            return { ok: true, revisionId: "revision-projected-knowledge", revisionNumber: 8 };
+          },
+        });
+        assert.equal(materialized.ok, true);
+        assert.equal(transports, status === "dynamic_required" ? 1 : 0);
+        if (status === "dynamic_required") {
+          assert.equal(events[0].attemptId, "attempt-knowledge");
+          assert.equal(events[0].requestId, "request-knowledge");
+        }
+        assert.deepEqual(context, before);
+      }
+    },
+  },
+  {
+    name: "ARC-013 workflow correlates research before later failures and snapshots exactly the text research",
+    run: async () => {
+      const before = structuredClone(context);
+      const success = successfulCandidateWorkflow("30000000-0000-4000-8000-000000000003", "request-arc013");
+      const research = { ...context.modelContext.research, content: "Consultative envelope for this exact attempt" };
+      for (const downstream of ["success", "text", "image", "revalidation", "append"] as const) {
+        const order: string[] = [];
+        const materialized = await materializeLandingPageDraftRevisionWithDependencies({ context, createdBy: "40000000-0000-4000-8000-000000000004", requestId: success.requestId }, {
+          prepareCandidate: (input) => prepareLandingPageDraftRevisionCandidate(input, {
+            createAttemptId: () => success.attemptId,
+            loadKnowledge: async (knowledgeInput) => {
+              order.push("research");
+              assert.equal(knowledgeInput.attemptId, success.attemptId);
+              assert.equal(knowledgeInput.requestId, success.requestId);
+              assert.equal(knowledgeInput.signal, input.signal);
+              assert.equal(knowledgeInput.deadlineAtMs, input.deadlineAtMs);
+              return { ok: true, research };
+            },
+            generateText: async (modelInput) => {
+              order.push("text");
+              assert.deepEqual(modelInput.identities, before.identities);
+              assert.deepEqual(modelInput.modelContext.facts, before.modelContext.facts);
+              assert.deepEqual(modelInput.serverContext.facts, before.serverContext.facts);
+              assert.deepEqual(modelInput.modelContext.research, research);
+              assert.deepEqual(resolveLandingPageConversionBinding(modelInput), resolveLandingPageConversionBinding(before));
+              return downstream === "text" ? { ok: false, kind: "refusal" } : success.text;
+            },
+            generateImage: async () => { order.push("image"); return downstream === "image" ? { ok: false, kind: "provider_error" } : success.image; },
+          }),
+          uploadAsset: async () => { order.push("upload"); return { ok: true }; },
+          cleanupAsset: async () => { order.push("cleanup"); },
+          revalidate: async () => { order.push("revalidation"); return downstream !== "revalidation"; },
+          appendRevision: async (input) => {
+            order.push("append");
+            assert.deepEqual(input.snapshot.generationContext.modelContext.research, research);
+            assert.equal(input.attemptId, success.attemptId);
+            assert.equal(validateLandingPageRevisionSnapshot(input.snapshot), true);
+            return downstream === "append" ? { ok: false, error: "APPEND_FAILED" } : { ok: true, revisionId: "revision-arc013", revisionNumber: 8 };
+          },
+        });
+        assert.equal(materialized.attemptId, success.attemptId);
+        assert.equal(materialized.requestId, success.requestId);
+        assert.equal(materialized.ok, downstream === "success");
+        assert.deepEqual(order.slice(0, 2), ["research", "text"]);
+        if (downstream === "text") assert.deepEqual(order, ["research", "text"]);
+        if (downstream === "revalidation" || downstream === "append") assert.equal(order.at(-1), "cleanup");
+        assert.deepEqual(context, before);
+      }
+    },
+  },
+  {
+    name: "ARC-013 refuses knowledge errors and expired budgets before any text or image call",
+    run: async () => {
+      let providerCalls = 0;
+      for (const reason of ["CONFIGURATION_UNPROVEN", "CONTEXT_BUDGET_EXCEEDED", "PROVIDER_FAILURE", "knowledge_identity_changed"]) {
+        const failed = await prepareLandingPageDraftRevisionCandidate({ context, requestId: "request-negative" }, {
+          loadKnowledge: async () => ({ ok: false, reason }),
+          generateText: async () => { providerCalls += 1; return { ok: false, kind: "provider_error" }; },
+        });
+        assert.equal(failed.ok, false);
+        if (failed.ok) throw new Error("Expected failure");
+        assert.equal(failed.stage, "text");
+        assert.equal(failed.reason, `knowledge:${reason}`);
+      }
+      assert.equal(providerCalls, 0);
+      let receivedTimeout = 0;
+      const parent = new AbortController();
+      await resolveLandingPageGenerationKnowledge({ context, requestId: "request-budget", attemptId: "attempt-budget", deadlineAtMs: 1000, signal: parent.signal }, {
+        now: () => 500, environment: "development",
+        resolveKnowledge: async () => ({ ok: true, value: knowledgeResolution("dynamic_required") }),
+        researchDynamic: async (_input, dependencies) => {
+          receivedTimeout = dependencies?.timeoutMs ?? 0;
+          assert.equal(dependencies?.signal, parent.signal);
+          return { ok: false, offeringInvalidated: false, code: "PROVIDER_FAILURE", message: "synthetic" };
+        },
+      });
+      assert.equal(receivedTimeout, 500);
+    },
+  },
   {
     name: "text, request and visual outputs match the pre-move baseline for v3/v4 modelContext",
     run: () => {
@@ -2073,6 +2245,22 @@ function schemaRecord(value: unknown): Record<string, unknown> {
 function schemaProperty(schema: unknown, property: string) {
   const properties = schemaRecord(schemaRecord(schema).properties);
   return schemaRecord(properties[property]);
+}
+
+function knowledgeResolution(status: LandingPageKnowledgeResolutionValue["status"]): LandingPageKnowledgeResolutionValue {
+  const taxon = context.identities.servedTaxon;
+  return {
+    status, mode: "single", offeringInvalidated: false, servedTaxon: taxon,
+    effectiveInputCatalogVersion: 6,
+    researchSource: {
+      taxonId: status === "specialized_deep" ? "21000000-0000-4000-8000-000000000099" : taxon.id,
+      taxonSlug: status === "specialized_deep" ? "specialized-descendant" : taxon.slug,
+      selectedResearchVersion: 1, reviewedInputCatalogVersion: 6, effectiveInputCatalogVersion: 6,
+      research: { ...context.modelContext.research, relativePath: "synthetic/research.md" },
+    },
+    matchProvenance: [], fallbackReason: status === "dynamic_required" ? "single_no_match" : null,
+    dynamicTarget: status === "dynamic_required" ? { mode: "single", offerings: ["Consultoria imobiliária"] } : null,
+  };
 }
 
 function assertStrictRequiredObjects(value: unknown): void {

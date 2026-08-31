@@ -349,7 +349,10 @@ export function buildLandingPageRevisionDocuments(input: Readonly<{
     generationContext: {
       contractVersion: input.context.contractVersion,
       identities: input.context.identities,
-      modelContext: input.context.modelContext,
+      modelContext: {
+        ...input.context.modelContext,
+        research: input.candidate.research ?? input.context.modelContext.research,
+      },
       bindingFacts,
     },
     workloads: {

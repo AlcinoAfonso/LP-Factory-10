@@ -121,7 +121,8 @@ function isTextWorkload(
     value === "niche_resolution" ||
     value === "commercial_activation_draft_generation" ||
     value === "landing_page_draft_generation" ||
-    value === "taxon_input_catalog_sufficiency_evaluation"
+    value === "taxon_input_catalog_sufficiency_evaluation" ||
+    value === "landing_page_dynamic_market_research"
   );
 }
 
