@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+import { mock } from "node:test";
 import ts from "typescript";
 
 import {
@@ -151,6 +152,93 @@ const context = {
 } as unknown as LandingPageGenerationContextPackage;
 
 const cases = [
+  {
+    name: "ARC-013 pending knowledge and configuration reads stop at deadline or cancellation with late settlement ignored",
+    run: async () => {
+      for (const blockedRead of ["knowledge", "configuration"] as const) {
+        for (const trigger of ["deadline", "abort"] as const) {
+          for (const late of ["resolve", "reject"] as const) {
+            mock.timers.enable({ apis: ["setTimeout"] });
+            try {
+              const parent = new AbortController();
+              let release!: () => void;
+              let rejectLate!: (error: Error) => void;
+              const pending = new Promise<void>((resolve, reject) => { release = resolve; rejectLate = reject; });
+              let configurationCalls = 0;
+              let researchCalls = 0;
+              let finished = false;
+              const result = resolveLandingPageGenerationKnowledge({
+                context, requestId: "request-read-deadline", attemptId: "attempt-read-deadline",
+                deadlineAtMs: 500, signal: trigger === "abort" ? parent.signal : undefined,
+              }, {
+                now: () => 0, environment: "development",
+                resolveKnowledge: async () => {
+                  if (blockedRead === "knowledge") await pending;
+                  return { ok: true, value: knowledgeResolution("dynamic_required") };
+                },
+                resolveConfiguration: async () => {
+                  configurationCalls += 1;
+                  if (blockedRead === "configuration") await pending;
+                  return resolveOpenAiProductWorkload("landing_page_dynamic_market_research", "development");
+                },
+                researchDynamic: async () => {
+                  researchCalls += 1;
+                  return { ok: false, offeringInvalidated: false, code: "PROVIDER_FAILURE", message: "synthetic" };
+                },
+              }).then((value) => { finished = true; return value; });
+              for (let index = 0; index < 4; index += 1) await Promise.resolve();
+              assert.equal(configurationCalls, blockedRead === "configuration" ? 1 : 0);
+              mock.timers.tick(trigger === "deadline" ? 499 : 200);
+              await Promise.resolve();
+              assert.equal(finished, false);
+              if (trigger === "deadline") mock.timers.tick(1);
+              else parent.abort();
+              assert.deepEqual(await result, { ok: false, reason: "total_timeout" });
+              if (late === "resolve") release();
+              else rejectLate(new Error("synthetic late read failure"));
+              for (let index = 0; index < 8; index += 1) await Promise.resolve();
+              assert.equal(researchCalls, 0);
+              assert.equal(configurationCalls, blockedRead === "configuration" ? 1 : 0);
+            } finally { mock.timers.reset(); }
+          }
+        }
+      }
+    },
+  },
+  {
+    name: "ARC-013 total deadline returns from stalled reads without text image upload or append and preserves IDs",
+    run: async () => {
+      mock.timers.enable({ apis: ["setTimeout"] });
+      try {
+        const effects: string[] = [];
+        const result = materializeLandingPageDraftRevisionWithDependencies({
+          context, createdBy: "40000000-0000-4000-8000-000000000004", requestId: "request-stalled-read",
+        }, {
+          prepareCandidate: (input) => prepareLandingPageDraftRevisionCandidate(input, {
+            createAttemptId: () => "30000000-0000-4000-8000-000000000003",
+            loadKnowledge: (knowledgeInput) => resolveLandingPageGenerationKnowledge(knowledgeInput, {
+              resolveKnowledge: () => new Promise(() => {}),
+              researchDynamic: async () => { effects.push("research"); throw new Error("Unexpected research"); },
+            }),
+            generateText: async () => { effects.push("text"); return { ok: false, kind: "provider_error" }; },
+            generateImage: async () => { effects.push("image"); return { ok: false, kind: "provider_error" }; },
+          }),
+          uploadAsset: async () => { effects.push("upload"); return { ok: true }; },
+          cleanupAsset: async () => { effects.push("cleanup"); },
+          revalidate: async () => { effects.push("revalidation"); return true; },
+          appendRevision: async () => { effects.push("append"); return { ok: false, error: "APPEND_FAILED" }; },
+        });
+        mock.timers.tick(270_000);
+        const failed = await result;
+        assert.equal(failed.ok, false);
+        if (failed.ok) throw new Error("Expected timeout");
+        assert.equal(failed.reason, "text:knowledge:total_timeout");
+        assert.equal(failed.attemptId, "30000000-0000-4000-8000-000000000003");
+        assert.equal(failed.requestId, "request-stalled-read");
+        assert.deepEqual(effects, []);
+      } finally { mock.timers.reset(); }
+    },
+  },
   {
     name: "ARC-013 consultative knowledge preserves factual, identity and binding authority without mutating context",
     run: async () => {

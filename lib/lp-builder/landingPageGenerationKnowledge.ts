@@ -53,10 +53,12 @@ export async function resolveLandingPageGenerationKnowledge(
   const offering = context.modelContext.facts.find((fact) => fact.fieldKey === "landing_page_offering_scope");
   if (!offering) return { ok: false, reason: "offering_scope_missing" };
 
-  const resolution = await dependencies.resolveKnowledge({
+  const resolutionRead = await readBeforeDeadline(() => dependencies.resolveKnowledge({
     servedTaxonId: context.identities.servedTaxon.id,
     offeringScope: offering.value,
-  });
+  }), input, now);
+  if (!resolutionRead.ok) return { ok: false, reason: "total_timeout" };
+  const resolution = resolutionRead.value;
   if (!resolution.ok) return { ok: false, reason: resolution.error.code };
   if (expired()) return { ok: false, reason: "total_timeout" };
   if (
@@ -67,9 +69,11 @@ export async function resolveLandingPageGenerationKnowledge(
   let dynamicResearch: LandingPageDynamicResearchExecution | null = null;
   if (resolution.value.status === "dynamic_required") {
     const environment = dependencies.environment ?? resolveOpenAiWorkloadEnvironment();
-    const configuration = await (dependencies.resolveConfiguration ?? resolveOpenAiProductWorkload)(
+    const configurationRead = await readBeforeDeadline(() => (dependencies.resolveConfiguration ?? resolveOpenAiProductWorkload)(
       "landing_page_dynamic_market_research", environment,
-    );
+    ), input, now);
+    if (!configurationRead.ok) return { ok: false, reason: "total_timeout" };
+    const configuration = configurationRead.value;
     if (!configuration.ok) return { ok: false, reason: "configuration_unavailable" };
     if (expired()) return { ok: false, reason: "total_timeout" };
     const result = await dependencies.researchDynamic({
@@ -127,4 +131,45 @@ export async function resolveLandingPageGenerationKnowledge(
       financialAttribution: "not_attributed_e21_4_text_image_only",
     }),
   }) };
+}
+
+/** Bounds this workflow's wait. Existing read APIs cannot cancel their underlying
+ * IO; late settlement is observed but cannot resume generation or persistence. */
+function readBeforeDeadline<T>(
+  read: () => Promise<T>,
+  input: Pick<LandingPageGenerationKnowledgeInput, "deadlineAtMs" | "signal">,
+  now: () => number,
+): Promise<{ ok: true; value: T } | { ok: false }> {
+  const remaining = input.deadlineAtMs - now();
+  if (input.signal?.aborted || remaining <= 0) return Promise.resolve({ ok: false });
+  return new Promise((resolve, reject) => {
+    let settled = false;
+    const cleanup = () => {
+      settled = true;
+      clearTimeout(timer);
+      input.signal?.removeEventListener("abort", onAbort);
+    };
+    const onAbort = () => {
+      if (settled) return;
+      cleanup();
+      resolve({ ok: false });
+    };
+    const timer = setTimeout(onAbort, remaining);
+    input.signal?.addEventListener("abort", onAbort, { once: true });
+    if (input.signal?.aborted) { onAbort(); return; }
+    const onRejected = (error: unknown) => {
+      if (settled) return;
+      if (input.signal?.aborted || now() >= input.deadlineAtMs) { onAbort(); return; }
+      cleanup();
+      reject(error);
+    };
+    try {
+      read().then((value) => {
+        if (settled) return;
+        if (input.signal?.aborted || now() >= input.deadlineAtMs) { onAbort(); return; }
+        cleanup();
+        resolve({ ok: true, value });
+      }, onRejected);
+    } catch (error) { onRejected(error); }
+  });
 }
