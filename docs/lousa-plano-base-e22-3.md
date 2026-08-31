@@ -114,3 +114,50 @@ Plano conceitual: N/A.
 - Dependência do Core ou de automação vigente identificada durante a auditoria.
 - Necessidade de nova infraestrutura, novo boundary, mudança de segurança, banco ou produto para manter comportamento necessário.
 - Qualquer um desses casos retorna ao Estrategista antes de ampliar o recorte.
+
+## 5. Plano-base v2 técnico
+
+Status: derivado da v1 aprovada e do estado real da `main` em 31/08/2026, sem alteração do resultado funcional ou das decisões fixas.
+
+Referências imutáveis de entrada:
+
+- v1 incorporada: PR #867, head `1b1f23b26877e631f5925d84dbb256a6e08b4dcd`, arquivo `docs/lousa-plano-base-e22-3.md`, blob `a55434418d572e3f5dae4d2bae58cee207fb7292` em `main` no commit `85cc4f20482a5b11de52821f61b9e942e3b54547`.
+- snapshot do roadmap: `docs/roadmap.md` em `main` no commit `85cc4f20482a5b11de52821f61b9e942e3b54547`, blob `74c1d7e14c3375f5ea3739085375ea96cf230494`.
+
+### 5.1. Boundary técnico e invariantes
+
+- A entrega é uma retirada controlada: não criar API, MCP, service, workflow, job, agente, automação, banco, migration, RLS, policy, permissão, infraestrutura ou configuração substituta.
+- `services/` contém somente `services/mcp-supabase-inspect`; o único código de service a retirar é o diretório versionado `services/mcp-supabase-inspect/`, incluindo `api/mcp.js`, `README.md`, `package.json`, `package-lock.json`, `vercel.json` e o teste local.
+- Preservar integralmente `automations/supabase-inspect/`, `.github/workflows/pipeline-supabase-inspect.yml`, `.github/workflows/automation-niche-runtime-tests.yml`, o uso compartilhado de `SUPABASE_DB_URL_READONLY`, os adapters do Core e o projeto Vercel `lp-factory-10`.
+- `package.json` e `package-lock.json` da raiz não recebem ajuste: não há consumidor no Core nem script raiz que dependa do service retirado.
+- Documentos canônicos só podem ser ajustados pelo Prompt ABC, com uma residência por assunto. A matriz de consolidação permanece versionada até o encerramento definitivo do recorte pelo Estrategista.
+
+### 5.2. E22.3.3 — Derivação técnica da auditoria final
+
+- Executar somente investigação read-only e registrar evidência factual por categoria: código do service, workflows, automações, runtime do Core, agentes/integrações documentados, endpoint, secret, projeto Vercel e mecanismos preservados.
+- Usar busca reprodutível no repositório para `services/mcp-supabase-inspect`, `lpf-10-services`, `/api/mcp`, `LPF_MCP_SECRET` e consumidores relacionados; classificar cada ocorrência como operacional preservada, referência histórica ou referência operacional a remover.
+- Reconfirmar no Vercel conectado o projeto exato pelo nome e vínculo `AlcinoAfonso/LP-Factory-10`, seu estado, deployments paginados e eventual workload real. Se houver projeto homônimo ambíguo, deployment `READY`, tráfego funcional recente ou outro workload, parar.
+- Reconfirmar que o projeto Core `lp-factory-10` é distinto e permanece fora do alvo. A ausência de evidência externa suficiente não autoriza inferência: mantém a retirada externa pendente.
+- Considerar a validação do Agent Builder somente como histórico conforme a v1 e `docs/automations.md`; se for revelado consumidor externo necessário sem substituto aprovado, não remover o service nem prosseguir para a infraestrutura.
+- Não executar mutação de código, documento ou plataforma nesta fase. O gate libera apenas o avanço para E22.3.4.
+
+### 5.3. E22.3.4 — Retirada do service e das referências órfãs
+
+- Após o gate de E22.3.3, excluir do Git somente os seis arquivos versionados do diretório `services/mcp-supabase-inspect/` e manter o restante de `services/` sem novo conteúdo.
+- Executar ABC independente para `docs/services.md` e `docs/automations.md`, removendo somente o catálogo/dependência operacional do MCP retirado e preservando a automação GitHub ativa, o histórico necessário e updates não materializados como substitutos.
+- Não editar diretamente `docs/platform-config.md` nesta fase: seu estado final depende da retirada externa autorizada em E22.3.5.
+- Confirmar que não restam referências operacionais ao service, endpoint ou `LPF_MCP_SECRET` fora dos artefatos históricos, plano, matriz e catálogos de updates que preservem evidência histórica; não apagar histórico técnico por limpeza genérica.
+- Executar `npm ci` uma vez no início do lote de código, `npm run check` após a retirada, `git diff --check` e os checks focais possíveis sem secrets. Não executar `npm run build` como rotina de check.
+
+### 5.4. E22.3.5 — Retirada externa condicionada e consolidação
+
+- Só depois dos checkpoints aprovados de E22.3.3 e E22.3.4, e com a confirmação de que não existe workload real, remover pelo controle Vercel autorizado somente o projeto `lpf-10-services` e suas configurações exclusivas, incluindo o secret `LPF_MCP_SECRET` e domínios/configurações vinculados ao projeto quando a própria remoção os atingir.
+- Nunca remover `lp-factory-10`, `SUPABASE_DB_URL_READONLY`, secrets GitHub compartilhados, automações preservadas, configurações Supabase ou qualquer recurso fora do projeto alvo.
+- Verificar após a mutação que `lpf-10-services` não está mais listado, que o endpoint e deployments do alvo deixaram de existir, que o Core continua separado e que nenhum novo deployment do projeto removido é gerado. Se a superfície autenticada de mutação não estiver disponível, registrar a pendência e não declarar a fase concluída.
+- Executar ABC final independente para cada documento canônico afetado (`docs/services.md`, `docs/automations.md`, `docs/platform-config.md` e `docs/roadmap.md`), aplicando somente deltas literais e registrando exclusivamente o estado externo e documental efetivamente confirmado.
+- Reexecutar as validações aplicáveis, confirmar a ausência de referências órfãs e registrar teste humano como `N/A` somente se não houver superfície funcional do produto alterada nem evidência visual necessária.
+
+### 5.5. Critério técnico de conclusão
+
+- O recorte só pode ser declarado completo quando os três identificadores `E22.3.3`, `E22.3.4` e `E22.3.5` tiverem checkpoints aprovados, os documentos canônicos tiverem sido atualizados por ABC, as validações aplicáveis estiverem registradas e nenhuma pendência de consumidor, workload, segurança, banco, infraestrutura ou produto permanecer.
+- Qualquer descoberta material que exija substituto, novo boundary, nova arquitetura, mudança de segurança, banco, infraestrutura ou decisão de produto encerra o fluxo no ponto da descoberta e retorna ao Estrategista/humano.
