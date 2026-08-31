@@ -1,6 +1,6 @@
 # E22.3 — Retirada controlada do Supabase Inspect MCP e infraestrutura associada
 
-Status: plano-base v2 técnico derivado em 31/08/2026 da v1 consolidada após encerramento do debate humano.
+Status: plano-base v2 técnico ajustado em 31/08/2026 após nova decisão humana de escopo, preservando a v1 e a ordem das fases.
 
 Plano conceitual: N/A.
 
@@ -10,7 +10,7 @@ Plano conceitual: N/A.
 
 - O `LPF Supabase Inspect MCP` foi criado como service read-only dedicado para inspeção do Supabase por consumidores externos.
 - No estado atual, sua superfície funcional está sobreposta por recursos já disponíveis: plugin Supabase conectado para ChatGPT/Codex e `automations/supabase-inspect` para inspeção read-only controlada pelo projeto.
-- O consumo documentado pelo Agent Builder tornou-se histórico, a integração `ChatGPT + MCP` não foi consolidada como caminho operacional e não foi identificado consumidor runtime ativo no repositório.
+- O workflow histórico do Agent Builder `wf_69b57fed963c8190b9da8e40797aa5820147027ff7bd60d7` integra explicitamente o alvo de retirada controlada por decisão humana; não é consumidor necessário independente a preservar do MCP.
 - O projeto Vercel `lpf-10-services` hospeda somente esse MCP e continua criando deployments cancelados para alterações sem relação com o service, ampliando manutenção e consumo de cota sem benefício atual comprovado.
 
 ### 1.2. Decisões já estabelecidas
@@ -21,7 +21,8 @@ Plano conceitual: N/A.
 - Preservar `automations/supabase-inspect` como inspeção read-only controlada do projeto.
 - Preservar o acesso Supabase disponível por plugin conectado para operações assistidas em ChatGPT/Codex.
 - Preservar os adapters e acessos Supabase próprios do Core; o runtime do produto não passa a depender de MCP.
-- Se a auditoria final confirmar ausência de consumidor externo ativo que dependa especificamente do endpoint MCP, retirar o `LPF Supabase Inspect MCP`.
+- A auditoria final deve confirmar ausência de consumidor necessário independente além do workflow Agent Builder explicitamente incluído no alvo de retirada; sua mera existência não exige preservar o `LPF Supabase Inspect MCP`.
+- Em E22.3.4, retirar o workflow/integração Agent Builder identificado e o MCP; se não houver ferramenta autorizada para a mutação na OpenAI Platform, registrar exatamente o bloqueio externo e continuar a retirada do MCP e de suas referências, sem criar substituto ou preservar o MCP por esse motivo.
 - Se, após essa retirada, `lpf-10-services` permanecer sem workload real, retirar também o projeto Vercel e somente as configurações externas exclusivas desse projeto.
 - Não remover secrets, variáveis ou recursos compartilhados com outros consumidores; `SUPABASE_DB_URL_READONLY`, por exemplo, permanece preservada onde continuar necessária às automações GitHub existentes.
 - Histórico técnico permanece no Git, PRs e migrations/documentos históricos aplicáveis; não criar arquivo ou infraestrutura de arquivo para o service retirado.
@@ -31,7 +32,7 @@ Plano conceitual: N/A.
 - `services/` contém atualmente somente `services/mcp-supabase-inspect`.
 - O MCP expõe quatro tools read-only: listagem de tabelas, inspeção estrutural de tabela, inspeção de RLS/policies e amostra controlada de linhas.
 - `automations/supabase-inspect` permanece implementada com execução read-only, guardrails e role próprio.
-- `docs/automations.md` classifica o uso no Agent Builder como validação funcional histórica e não como caminho a expandir.
+- `docs/automations.md` classifica o uso no Agent Builder como validação funcional histórica; a decisão humana o inclui no alvo de retirada e não autoriza tratá-lo como caminho a expandir.
 - Busca no repositório não identificou consumidor runtime do endpoint do MCP fora do próprio service e referências documentais.
 - A inspeção recente do projeto Vercel `lpf-10-services` não mostrou tráfego funcional de Production no período observado e mostrou deployments cancelados por Ignored Build Step em pushes sem alteração do service.
 
@@ -40,7 +41,7 @@ Plano conceitual: N/A.
 ### 2.1. Resultado esperado
 
 - Remover uma superfície operacional redundante sem alterar funcionalidade entregue ao cliente.
-- Eliminar o MCP, seu runtime dedicado e sua infraestrutura externa somente depois da prova de que não existe consumidor necessário sem substituto aprovado.
+- Eliminar o MCP, seu runtime dedicado e sua infraestrutura externa somente depois da confirmação de que não existe consumidor necessário independente fora do workflow Agent Builder explicitamente incluído no alvo de retirada.
 - Eliminar os deployments desnecessários gerados pelo projeto `lpf-10-services` caso o projeto deixe de possuir workload real.
 - Manter as capacidades necessárias de inspeção Supabase pelos mecanismos já vigentes e mais simples.
 
@@ -52,8 +53,9 @@ Plano conceitual: N/A.
   - tráfego recente disponível do projeto Vercel;
   - inexistência de outro workload hospedado em `lpf-10-services`;
   - cobertura suficiente pelos mecanismos preservados.
-- Referência documental histórica, isoladamente, não conta como consumidor ativo.
-- Se surgir consumidor externo ativo sem substituto aprovado, interromper a retirada e devolver o caso ao Estrategista/humano.
+- Referência documental histórica, isoladamente, não conta como consumidor ativo; o workflow Agent Builder identificado é exceção de escopo para retirada, não consumidor necessário a preservar.
+- A decisão humana de escopo integra o workflow Agent Builder identificado ao alvo de retirada e determina que E22.3.3 procure somente consumidor necessário independente fora dele.
+- Se surgir consumidor externo ativo necessário, fora do workflow Agent Builder explicitamente incluído como alvo de retirada, sem substituto aprovado, interromper a retirada e devolver o caso ao Estrategista/humano.
 
 ### 2.3. Ativos preservados
 
@@ -76,14 +78,16 @@ Plano conceitual: N/A.
 ### 3.1. E22.3.3 — Auditoria final de consumidores e gate de retirada
 
 - Automação: não.
-- Reconfirmar o inventário factual do MCP, do projeto `lpf-10-services`, dos consumidores e dos substitutos preservados.
-- Exigir prova suficiente de ausência de consumidor externo necessário antes de autorizar a retirada.
-- Não realizar mutação externa nesta fase se aparecer dependência material não resolvida.
+- Reconfirmar por auditoria o inventário factual do MCP, do projeto `lpf-10-services`, dos consumidores independentes e dos substitutos preservados.
+- Confirmar que não há consumidor necessário independente fora do workflow Agent Builder `wf_69b57fed963c8190b9da8e40797aa5820147027ff7bd60d7`, que a decisão humana definiu como alvo de retirada; a mera existência desse workflow não bloqueia a retirada do MCP.
+- Não realizar mutação externa nesta fase; a retirada do workflow Agent Builder será tratada em E22.3.4, e eventual indisponibilidade da ferramenta autorizada deve ser registrada como bloqueio externo sem preservar o MCP.
 
 ### 3.2. E22.3.4 — Retirada do MCP e referências operacionais
 
 - Automação: não.
-- Remover o service e somente os consumidores/referências operacionais que ficarem sem função.
+- Retirar o workflow/integração Agent Builder `wf_69b57fed963c8190b9da8e40797aa5820147027ff7bd60d7` do projeto OpenAI Platform quando houver controle autorizado para excluir ou desativar.
+- Remover o service MCP e somente os consumidores/referências operacionais que ficarem sem função.
+- Se a ferramenta autorizada da OpenAI Platform não estiver disponível, registrar exatamente essa indisponibilidade na matriz e no PR e continuar a retirada do service MCP e das referências operacionais; não tratar a existência do workflow como razão para preservar o MCP e não criar substituto.
 - Aplicar o menor delta documental necessário via Prompt ABC.
 - Preservar automações, secrets compartilhados e contratos do Core que tenham consumidor real independente.
 - Validar ausência de referências operacionais órfãs, `npm ci`, `npm run check` e `git diff --check` conforme aplicabilidade.
@@ -109,7 +113,7 @@ Plano conceitual: N/A.
 
 ### 4.2. Critérios de parada
 
-- Consumidor externo ativo sem substituto aprovado.
+- Consumidor externo ativo necessário, fora do workflow Agent Builder explicitamente incluído como alvo de retirada, sem substituto aprovado.
 - Outro workload real hospedado em `lpf-10-services`.
 - Dependência do Core ou de automação vigente identificada durante a auditoria.
 - Necessidade de nova infraestrutura, novo boundary, mudança de segurança, banco ou produto para manter comportamento necessário.
@@ -146,8 +150,8 @@ Referências imutáveis de entrada:
 ### 5.3. E22.3.4 — Retirada do service e das referências órfãs
 
 - Após o gate de E22.3.3, excluir do Git somente os seis arquivos versionados do diretório `services/mcp-supabase-inspect/` e manter o restante de `services/` sem novo conteúdo.
-- Executar ABC intermediário independente para `docs/services.md` e `docs/automations.md`, aplicando somente um estado de transição que retire o MCP do catálogo operacional e das dependências ativas, sem declarar a retirada externa do Vercel antes de ela ocorrer; preservar a automação GitHub ativa, o histórico necessário e updates não materializados como substitutos.
-- Não editar diretamente `docs/platform-config.md` nesta fase: seu estado final depende da retirada externa autorizada em E22.3.5.
+- Executar ABC intermediário independente para `docs/services.md`, `docs/automations.md` e o trecho do Agent Builder em `docs/platform-config.md`, aplicando somente o estado de transição que retire o MCP e a integração Agent Builder das referências operacionais; não declarar a retirada externa do Vercel antes de ela ocorrer; preservar a automação GitHub ativa, o histórico necessário e updates não materializados como substitutos.
+- No ABC intermediário de `docs/platform-config.md`, alterar somente o trecho operacional do Agent Builder; manter o bloco do projeto Vercel até E22.3.5, quando o estado externo final será consolidado.
 - Confirmar que não restam referências operacionais ao service, endpoint ou `LPF_MCP_SECRET` fora dos artefatos históricos, plano, matriz e catálogos de updates que preservem evidência histórica; não apagar histórico técnico por limpeza genérica.
 - Executar `npm ci` uma vez no início do lote de código, `npm run check` após a retirada, `git diff --check` e os checks focais possíveis sem secrets. Não executar `npm run build` como rotina de check.
 

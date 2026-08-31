@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 31/08/2026
-• Versão: v1.5.205
+• Versão: v1.5.206
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -3270,7 +3270,7 @@ Repositório — Ajustados
 
 22. E22 — Retirada controlada de ativos históricos
 - Objetivo: reduzir a superfície histórica que não participa do caminho canônico vigente, preservando consumidores reais e preparando a sequência E19.4 concluída → E22.1 → E19.5.
-- Status: E22.1 concluída; E22.2 candidata aguardando merge humano; E22.3 planejada.
+- Status: E22.1 concluída; E22.2 candidata aguardando merge humano; E22.3 planejada com o escopo humano de retirada do workflow Agent Builder explicitamente incorporado.
 
 22.1 Retirada controlada de ativos históricos
 
@@ -3389,19 +3389,22 @@ Repositório — Ajustados
 22.3.3 Auditoria final de consumidores e gate de retirada
 - Status: Planejada.
 - Conteúdo:
-  - reconfirmar consumidores, referências, projeto Vercel, conflito documental do Agent Builder e mecanismos preservados antes de qualquer retirada;
-  - interromper diante de consumidor necessário sem substituto aprovado, outro workload ou necessidade material nova.
+  - reconfirmar por auditoria os consumidores necessários independentes, referências, projeto Vercel, o workflow Agent Builder identificado como alvo de retirada e os mecanismos preservados antes de qualquer retirada;
+  - confirmar ausência de consumidor necessário independente fora desse workflow; sua mera existência não preserva o MCP;
+  - interromper diante de consumidor necessário independente sem substituto aprovado, outro workload ou necessidade material nova.
 
 22.3.4 Retirada do MCP e referências operacionais
 - Status: Planejada.
 - Conteúdo:
-  - retirar o service e referências operacionais sem remover automações, workflows, secret compartilhado ou contratos do Core;
+  - retirar o workflow/integração Agent Builder `wf_69b57fed963c8190b9da8e40797aa5820147027ff7bd60d7` do projeto OpenAI Platform quando houver controle autorizado para excluir ou desativar;
+  - retirar o service MCP e suas referências operacionais sem remover `automations/supabase-inspect`, workflows GitHub, secret compartilhado ou contratos do Core;
+  - se não houver ferramenta autorizada para a mutação na OpenAI Platform, registrar exatamente o bloqueio externo e continuar a retirada do MCP e das referências, sem preservá-lo por esse motivo e sem criar substituto;
   - reconciliar os documentos canônicos pelo Prompt ABC.
 
 22.3.5 Retirada da infraestrutura Vercel sem workload
 - Status: Planejada.
 - Conteúdo:
-  - remover o projeto Vercel exclusivo somente após confirmar ausência de workload;
+  - remover o projeto Vercel exclusivo somente após a E22.3.4 e confirmar que permanece sem workload;
   - preservar o Core e registrar somente a configuração externa efetivamente existente.
 
 99. Changelog
