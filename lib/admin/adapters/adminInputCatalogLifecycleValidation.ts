@@ -231,3 +231,54 @@ function isOperationalPlan(value: unknown): value is LandingPageInputCatalogPlan
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
+
+// Preserve stableJson's original body for the frozen baseline oracle.
+export { stableJson as serializeInputCatalogLifecycleValue };
+
+/** Feed configurations in the same account/LP order as the legacy fingerprint. */
+export function createInputCatalogOperationalProof(input: Readonly<{
+  fingerprint: boolean;
+  candidate?: Extract<ValidateLandingPageInputCatalogDraftResult, { ok: true }>["value"];
+}>) {
+  const hash = input.fingerprint ? createHash("sha256") : null;
+  hash?.update('{"operationalConfigurations":[');
+  let emitted = false;
+  let invalid = 0;
+  return {
+    add(configuration: InputCatalogOperationalConfiguration): void {
+      if (hash) {
+        if (emitted) hash.update(",");
+        hash.update(stableJson({
+          accountId: configuration.accountId,
+          landingPageId: configuration.landingPageId,
+          planKey: configuration.planKey,
+          taxonChain: configuration.taxonChain,
+          storedValues: configuration.storedValues,
+          authoritativeValues: configuration.authoritativeValues,
+        }));
+      }
+      if (input.candidate) {
+        invalid += countInvalidInputCatalogOperationalConfigurations(input.candidate, [configuration]);
+      }
+      emitted = true;
+    },
+    finish(context: Omit<Parameters<typeof fingerprintInputCatalogOperationalContext>[0], "operationalConfigurations">) {
+      hash?.update('],"operationalTaxonIds":');
+      hash?.update(stableJson([...context.operationalTaxonIds].sort()));
+      hash?.update(',"taxons":');
+      hash?.update(stableJson(context.taxons.map((taxon) => ({
+        identity: taxon.identity,
+        reviewedVersion: taxon.reviewedVersion,
+        selectedResearchVersion: taxon.selectedResearchVersion,
+        operational: taxon.operational,
+      })).sort((left, right) => left.identity.id.localeCompare(right.identity.id))));
+      hash?.update("}");
+      return {
+        fingerprint: hash?.digest("hex") ?? "",
+        candidateContentFingerprint: input.candidate
+          ? createHash("sha256").update(input.candidate.canonicalJson).digest("hex") : null,
+        invalidOperationalConfigurations: input.candidate ? invalid : null,
+      };
+    },
+  };
+}

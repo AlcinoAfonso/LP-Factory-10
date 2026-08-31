@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 30/08/2026
-• Versão: v1.5.203
+• Versão: v1.5.204
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2636,10 +2636,13 @@ Repositório — Ajustados
     * `lib/conversion-content/landing-page/input-catalog/lifecycle.ts`
     * `lib/conversion-content/landing-page/input-catalog/draft.ts`
     * `lib/admin/adapters/adminInputCatalogLifecycleAdapter.ts`
+    * `lib/admin/adapters/adminInputCatalogLifecycleContext.ts`
     * `lib/admin/adapters/adminInputCatalogLifecyclePagination.ts`
     * `lib/admin/adapters/adminInputCatalogLifecycleValidation.ts`
     * `lib/lp-builder/operationalCompatibility.ts`
     * `app/admin/(protected)/estrutura-lp/actions.ts`
+    * `app/admin/(protected)/estrutura-lp/lifecycle-validation-cases.ts`
+    * `app/admin/(protected)/estrutura-lp/__fixtures__/lifecycle-adapter-baseline.txt`
     * `app/admin/(protected)/estrutura-lp/_components/AdminInputCatalogLifecycle.tsx`
     * `supabase/migrations/20260824180000_e20_2_8_input_catalog_lifecycle.sql`
     * `supabase/tests/e20_2_8_input_catalog_lifecycle.test.sql`
@@ -2706,6 +2709,8 @@ Repositório — Ajustados
 * Conteúdo:
   * O draft pode ser resolvido e validado administrativamente, mas nunca é operacional; qualquer edição material torna stale as evidências dependentes.
   * O gate pré-publicação separa suficiência taxonômica E20.6 de validade estrutural das configurações E19.2 pré-handoff e E19.5, cobre com paginação e cardinalidade exata somente contas ativas com entitlement comercial elegível, plano válido e demais requisitos operacionais, e bloqueia diante de truncamento, cardinalidade divergente ou configuração operacional inválida/ilegível. LPs e configurações históricas de contas inativas ou inelegíveis permanecem preservadas sem bloquear a publicação global.
+  * A leitura administrativa integral permanece stateless e linear no volume consultado, retendo no máximo duas páginas válidas por fluxo, além da taxonomia e dos payloads correntes. Falhas semânticas preservam a precedência original e a leitura restante com descarte limitado; falhas de transporte ou completude interrompem novos fetches, observam as pendências e nunca retornam prova parcial. O limite de páginas não representa teto de bytes ou RSS, e as consultas paginadas não constituem snapshot transacional.
+  * Fingerprint operacional e contagem de incompatibilidades usam a mesma emissão integral, vinculada ao conteúdo candidato exato. Leitura, validação e preparação rechecam a identidade material integral do draft após o scan e exigem recarga diante de divergência; a reconciliação mantém suas revalidações próprias, sem acrescentar gate de fingerprint operacional ou contagem de incompatibilidades.
   * E20.2 define e valida fields; E19.5 governa continuidade da identidade comercial; E20.6 decide somente suficiência factual. No MVP, `funnel_stage`, `transaction_intent` quando aplicável, `primary_conversion_goal` e `primary_service_or_offer` bloqueiam a publicação quando retirados ou alterados de modo `review_required` sem autoridade E19.5 específica, independentemente da E20.6; `compatible_evolution`, inclusive expansão estrita de `allowedValues`, permanece permitida, e field novo não adquire autoridade de identidade.
   * Validação e handoff congelam fingerprints distintos do conteúdo do draft e da coleção operacional completa; qualquer drift posterior de taxonomia, configurações, LPs ou elegibilidade deixa a evidência stale e exige nova preparação antes da revisão/merge.
   * A visão agregada deve evoluir `/admin/estrutura-lp?view=entradas`; `/admin/taxonomia/[taxonId]` permanece responsável pela avaliação individual E20.6.5. Não criar nova rota de primeiro nível; qualquer proposta de nova rota depende de insuficiência comprovada das superfícies existentes.
