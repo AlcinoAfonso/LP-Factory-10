@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 
 import type { LandingPagePresentationCandidate } from "../conversion-content/landing-page/presentation";
 import type { LandingPageGenerationContextPackage } from "./generationContextContracts";
+import type { LandingPageGenerationKnowledgeInput, LandingPageGenerationKnowledgeResult } from "./landingPageGenerationKnowledge";
 import type { OpenAiLpCostTracker } from "../openai-costs";
 import {
   generateLandingPageDraftCandidate,
@@ -27,6 +28,7 @@ export type LandingPageDraftCandidateWorkflowResult =
       binding: Extract<LandingPageConversionBindingResult, { ok: true }>["value"];
       text: Extract<LandingPageDraftTextResult, { ok: true }>;
       image: Extract<LandingPageDraftImageResult, { ok: true }>;
+      research?: LandingPageGenerationContextPackage["modelContext"]["research"];
     }>
   | Readonly<{
       ok: false;
@@ -45,6 +47,7 @@ type Dependencies = Readonly<{
   deadlineAtMs?: number;
   signal?: AbortSignal;
   costTracker?: OpenAiLpCostTracker;
+  loadKnowledge?: (input: LandingPageGenerationKnowledgeInput) => Promise<LandingPageGenerationKnowledgeResult>;
 }>;
 
 export async function prepareLandingPageDraftRevisionCandidate(
@@ -72,8 +75,27 @@ export async function prepareLandingPageDraftRevisionCandidate(
     return failure(attemptId, requestId, "binding", binding.error);
   }
 
+  let generationContext = input.context;
+  if (dependencies.loadKnowledge) {
+    let knowledge: LandingPageGenerationKnowledgeResult;
+    try {
+      knowledge = await dependencies.loadKnowledge({
+        context: input.context, attemptId, requestId, deadlineAtMs, signal,
+      });
+    } catch {
+      return failure(attemptId, requestId, "text", "knowledge_read_failed");
+    }
+    if (!knowledge.ok) return failure(attemptId, requestId, "text", `knowledge:${knowledge.reason}`);
+    if (isExpired(deadlineAtMs, now, signal)) {
+      return failure(attemptId, requestId, "budget", "total_timeout");
+    }
+    generationContext = {
+      ...input.context,
+      modelContext: { ...input.context.modelContext, research: knowledge.research },
+    };
+  }
   const text = await (dependencies.generateText ?? generateLandingPageDraftCandidate)(
-    input.context,
+    generationContext,
     {
       apiKey: dependencies.apiKey,
       attemptId,
@@ -137,6 +159,7 @@ export async function prepareLandingPageDraftRevisionCandidate(
     binding: binding.value,
     text,
     image,
+    ...(dependencies.loadKnowledge ? { research: generationContext.modelContext.research } : {}),
   };
 }
 

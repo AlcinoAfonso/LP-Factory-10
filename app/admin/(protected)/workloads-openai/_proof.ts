@@ -20,6 +20,7 @@ import {
   type OpenAiCandidateProofMetadata,
 } from "./proofCore";
 import { parseCommercialProof } from "./commercialProof";
+import { proveDynamicMarketResearch } from "./dynamicResearchProof";
 
 export type { OpenAiCandidateProofMetadata } from "./proofCore";
 
@@ -45,6 +46,7 @@ export async function runOpenAiCandidateProof(
       inputCatalogEvaluation:
         dependencies.inputCatalogEvaluation ?? proveInputCatalogEvaluation,
       landingPageImage: dependencies.landingPageImage ?? proveLandingPageImage,
+      dynamicMarketResearch: dependencies.dynamicMarketResearch ?? proveDynamicMarketResearch,
     },
   );
 }
