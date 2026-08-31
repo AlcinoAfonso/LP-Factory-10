@@ -270,6 +270,105 @@ function dependencies(
 
 const cases = [
   {
+    name: "ARC-009 replay preserves v1/v3 and v2/v4 in current and historical previews",
+    run: async () => {
+      let accepted = 0;
+      let rejected = 0;
+      for (const status of ["draft", "active"] as const) {
+        const legacy = revisionFixture(status);
+        assert.equal(legacy.snapshot.generationContext.contractVersion, 3);
+        if (legacy.snapshot.generationContext.contractVersion !== 3) throw new Error("Expected v3 fixture");
+        const { historicalConfigurationCatalogVersion: _historical, configurationRevision: _revision, ...common } =
+          legacy.snapshot.generationContext.identities;
+        const current: CurrentLandingPageRevision = {
+          ...legacy,
+          snapshot: {
+            ...legacy.snapshot,
+            snapshotVersion: 2,
+            generationContext: {
+              ...legacy.snapshot.generationContext,
+              contractVersion: 4,
+              identities: {
+                ...common,
+                sharedCatalogVersion: 4,
+                landingPageCatalogVersion: 4,
+                sharedRevision: 2,
+                landingPageRevision: 3,
+              },
+            },
+          },
+        };
+        let expected: Awaited<ReturnType<typeof loadLandingPagePreviewWithDependencies>> | undefined;
+        for (const revision of [legacy, current]) {
+          const original = JSON.stringify(revision);
+          for (const historical of [false, true]) {
+            const calls: string[] = [];
+            const result = await loadLandingPagePreviewWithDependencies(
+              { accountSlug: "account", landingPageId: LANDING_PAGE_ID, ...(historical ? { revisionId: REVISION_ID } : {}) },
+              dependencies(calls, {
+                loadLandingPage: async () => {
+                  calls.push("landing_page");
+                  return { ok: true, landingPage: { id: LANDING_PAGE_ID, account_id: ACCOUNT_ID, name: "Replay", slug: "replay", status } };
+                },
+                readCurrentRevision: async () => {
+                  assert.equal(historical, false, "historical preview must not fall back to latest");
+                  calls.push("current");
+                  return { ok: true, value: revision };
+                },
+                readRevision: async (input) => {
+                  assert.equal(historical, true);
+                  assert.deepEqual(input, { accountId: ACCOUNT_ID, landingPageId: LANDING_PAGE_ID, revisionId: REVISION_ID });
+                  calls.push("historical");
+                  return { ok: true, value: revision };
+                },
+              }),
+            );
+            assert.equal(result.status, "ready");
+            assert.deepEqual(calls, ["access", "entitlement", "landing_page", historical ? "historical" : "current", "sign"]);
+            expected ??= result;
+            assert.deepEqual(result, expected, "complete presentation DTO must not reinterpret historical provenance");
+            assert.equal(JSON.stringify(revision), original);
+            if (result.status !== "ready") throw new Error("Expected ready replay");
+            const html = renderToStaticMarkup(<LandingPageRenderer model={result.model} />);
+            assert.equal((html.match(/<h1\b/g) ?? []).length, 1);
+            assert.doesNotMatch(html, /RESEARCH_MUST_NEVER|ARTIFICIAL_FACT_MUST_NOT_LEAK|response-private/);
+            accepted += 1;
+          }
+
+          // Invalid persisted envelopes stay invalid; never complete a missing
+          // legacy context or accept a crossed version pair on a historical read.
+          const invalidSnapshots: unknown[] = [
+            { ...revision.snapshot, snapshotVersion: revision.snapshot.snapshotVersion === 1 ? 2 : 1 },
+            { ...revision.snapshot, snapshotVersion: 999 },
+            { ...revision.snapshot, generationContext: undefined },
+          ];
+          for (const snapshot of invalidSnapshots) {
+            const invalid = { ...revision, snapshot } as CurrentLandingPageRevision;
+            const before = JSON.stringify(invalid);
+            let signed = false;
+            let latestRead = false;
+            const result = await loadLandingPagePreviewWithDependencies(
+              { accountSlug: "account", landingPageId: LANDING_PAGE_ID, revisionId: REVISION_ID },
+              dependencies([], {
+                readCurrentRevision: async () => { latestRead = true; return { ok: true, value: revision }; },
+                readRevision: async () => ({ ok: true, value: invalid }),
+                signAsset: async () => { signed = true; return { ok: true, signedUrl: SIGNED_URL }; },
+              }),
+            );
+            assert.deepEqual(result, { status: "unavailable" });
+            assert.equal(signed, false);
+            assert.equal(latestRead, false);
+            assert.equal(JSON.stringify(invalid), before);
+            rejected += 1;
+          }
+        }
+      }
+      assert.equal(accepted, 8);
+      assert.equal(rejected, 12);
+      console.log(`ok - ARC-009: ${accepted} complete immutable DTO replays; ${rejected} invalid historical pairs rejected before signing`);
+    },
+  },
+  {
     name: "authorized loader validates every gate before signing the current revision",
     run: async () => {
       const calls: string[] = [];
