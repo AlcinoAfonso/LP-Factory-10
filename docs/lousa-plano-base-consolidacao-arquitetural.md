@@ -2,13 +2,13 @@
 
 ## 1. Estado e decisões fixas
 
-- Estado: AA-PR01–AA-PR10 concluídos e mergeados; AA-PR11 é o próximo recorte, seguido por AA-PR12 e AA-PR13. A atualização pós-AA-PR10 é exclusivamente documental e não inicia o AA-PR11; os processos de cada recorte permanecem na seção 3.
+- Estado: AA-PR01–AA-PR10 concluídos e mergeados; AA-PR11 implementado em validação, sem merge. AA-PR12 e AA-PR13 não iniciados; os processos de cada recorte permanecem na seção 3.
 - Objetivo: manter a referência operacional única e atual do plano da auditoria, com resultados, evidências, riscos residuais e próximo recorte, sem ampliar escopo ou prescrever antecipadamente soluções.
 - Fonte operacional única: esta lousa. [Auditoria Arquitetural e Consolidação — versão 2](https://docs.google.com/document/d/1UpY8MjOoTHVYX7dEnP4WioEh2wjMXsK2_xOgFX4McBE/edit) é somente o relatório histórico de origem, sem autoridade sobre a execução atual. PRs e comentários sustentam os resultados; contratos canônicos continuam nos documentos próprios.
 - Fontes locais: `README.md`, `AGENTS.md`, `docs/prompt-estrategista-light.md`, `docs/prompt-executor.md`, `docs/prompt-abc.md`, `docs/roadmap.md`, `docs/base-tecnica.md`, `docs/schema.md`, `docs/platform-config.md` e os artefatos apontados abaixo.
 - Alternativa aprovada: consolidação in loco, incremental. Preservar UI → Providers → Adapters → DB, APIs públicas por owner, autorização, concorrência otimista, append-only, leitores históricos e tracking financeiro fail-open.
 - Uma task por recorte no projeto LP Factory; ajustes permanecem na mesma task. Uma branch e um PR por recorte, sem combinar mudança de ownership com migration de performance. Aplicam-se os canais de publicação e merge permitidos por `AGENTS.md`.
-- Autorizações humanas permanentes já concedidas para AA-PR11–AA-PR13: QA não destrutiva, uso das contas de teste, chamadas OpenAI necessárias, marcação como `ready` e merge remoto após aprovação dos gates. O registro não amplia permissões técnicas da plataforma nem autoriza novas ações destrutivas; esta task documental termina com PR pronto para revisão, sem merge e sem iniciar AA-PR11.
+- Autorizações humanas permanentes já concedidas para AA-PR11–AA-PR13: QA não destrutiva, uso das contas de teste, chamadas OpenAI necessárias, marcação como `ready` e merge remoto após aprovação dos gates. O registro não amplia permissões técnicas da plataforma nem autoriza novas ações destrutivas; o handoff atual autoriza o executor a entregar somente AA-PR11 em um PR ready, com QA autenticado próprio e sem merge.
 - Origem: AA-PR01 entregue pelos PRs #847 e #848; o complemento #848 encerrou ARC-010 e satisfez a trava de entrada do AA-PR02. A sequência AA-PR02–AA-PR10 foi concluída pelos PRs #849–#857, respectivamente, conforme 2.4.
 - Manutenção: o executor de cada recorte atualiza esta lousa na própria branch, registrando somente resultado, métrica, evidência, risco residual e próximo recorte. O orquestrador confere a atualização antes do merge. Não duplicar corpos de PR, roadmap ou documentação pertencente a outros documentos.
 
@@ -16,23 +16,23 @@
 
 ### 2.1 Corte e método
 
-- Baseline operacional pós-AA-PR10: `71f10281fa9b2e094ac5f116b97aa59001075d96`, merge do PR #857; `main` remota e local após `git pull --ff-only` reconfirmadas em 31/08/2026. PRs #847–#857 mergeados; nenhum AA-PR11 aberto no corte. A implementação local descartada do AA-PR11 não integra esta baseline nem será reaproveitada.
+- Baseline de entrada AA-PR11: `4ba09c96e76091a210541679a124d63ce88fadd0`, merge documental do PR #858 sobre o AA-PR10 (#857); HEAD da worktree, `main` remota, PR #858 MERGED e ausência de PRs abertos reconfirmados em 31/08/2026. A implementação descartada do AA-PR11 não foi inspecionada nem reaproveitada; o oráculo dos testes foi congelado exclusivamente desta baseline.
 - Cortes históricos: auditoria em `87e1054ee71bbfc6180540c6e98b4b95312e8d43`; revalidação AA-PR01 em `c16c533322e0bfe0e17ba584e85cb4c018ac4483`, de 30/08/2026. Não confundir esses cortes com o estado operacional atual.
-- Método atual: reconciliação documental dos metadados, corpos e comentários dos PRs diretamente pelo GitHub, sem reavaliação técnica, execução de código ou nova inspeção de banco. O AA-PR01 realizou inspeção estática focal e consultas Supabase somente `SELECT`, sem executar funções de negócio, testes SQL mutáveis, DDL, DML ou chamadas de IA.
+- Método AA-PR11: benchmark sintético local antes da decisão, inspeção focal read-only pelo plugin Supabase oficial e EXPLAIN ANALYZE do leitor e de seu SELECT, sem DDL/DML, seed remoto ou chamada de geração. O processo Estrategista confirmou consumo incremental com memória O(página + grupos de saída), preservando o contrato completo e sem migration; a reconciliação dos demais achados permanece histórica.
 - `supa#59` — Canal da inspeção histórica AA-PR01: plugin Supabase oficial conectado, pelos recursos `get_project`, `list_migrations` e `execute_sql`. Em `execute_sql`, foram enviados somente `SELECT` de metadados técnicos ou contagens agregadas; a leitura de definições em `pg_proc` não executou RPCs. A restrição read-only descreve as operações daquele recorte; permissões globais/OAuth do conector não foram auditadas e não devem ser declaradas read-only. Este registro não autoriza escrita, instalação de tooling, benchmark ou nova automação.
 - Classificação: **resolvido no recorte** = tratamento entregue e mergeado conforme evidência vinculada; **pendente** = tratamento reservado ao próximo recorte indicado; **transversal** = acompanhamento contínuo. As conclusões são limitadas às provas dos PRs, não comprovam capacidade global de carga nem ampliam QA realizada.
 - Leituras históricas do AA-PR01 iniciadas em 30/08/2026 às 14:17 America/Sao_Paulo (17:17 UTC). São fotografias, não garantia de imutabilidade do ambiente; seus números e versões não devem ser usados como estado vivo pós-AA-PR10.
 
 ### 2.2 Resultados individuais
 
-| Achado | Estado pós-AA-PR10 | Resultado, evidência e limite | Destino aprovado |
+| Achado | Estado atual | Resultado, evidência e limite | Destino aprovado |
 | --- | --- | --- | --- |
 | ARC-001 | Resolvido no recorte | Compositor textual realocado ao LP Builder; aresta conversion-content → lp-builder 1 → 0 e 12 comparações integrais aprovadas. Grafo focal, não prova de DAG global. | AA-PR03 / #850 concluído |
 | ARC-002 | Resolvido no recorte | API pública focal E19 substituiu o consumo privado pelo Admin; dependência no resolver interno 1 → 0, decisão de compatibilidade preservada. Sem promessa de performance. | AA-PR04 / #851 concluído |
 | ARC-003 | Resolvido no recorte | Embeds latest/approved eliminaram consultas por LP: fixture de 25 LPs aprovadas, 58 → 8 requests diretos e 50 → 0 adicionais de revisão; 56 cenários equivalentes. Métrica sintética, não redução de bytes ou latência. | AA-PR05 / #852 concluído |
 | ARC-004 | Resolvido no recorte | Leitura atômica de até quatro snapshots substituiu o scan histórico; migration, RPC e três índices confirmados no comentário pós-merge de #853. Tamanho individual do snapshot e custo dos índices permanecem limites. | AA-PR06 / #853 concluído |
 | ARC-005 | Resolvido no recorte | Merge de sete fluxos ordenados, até duas páginas válidas por fluxo, além de taxonomia e payloads correntes; fingerprint e compatibilidade na mesma passagem. Leituras/trabalho continuam lineares; limite de páginas não é teto de bytes/RSS nem snapshot transacional. | AA-PR10 / #857 concluído |
-| ARC-006 | Pendente | Achado de origem: `lib/openai-costs/adapters/lpCostReadModelAdapterCore.ts` acumula páginas de 500 linhas, com teto de 200 páginas e `pagination_incomplete` em 100.000 linhas. Tratamento, benchmark e query plan permanecem no AA-PR11; nenhuma solução da implementação descartada é incorporada. | AA-PR11 — próximo |
+| ARC-006 | Implementado; gates remotos pendentes | Consumo incremental sem array histórico ou Set por tentativa; ordenação completa tentativa/workload e progressão estrita. N=99.999/G=10: heap retido 51,67 → 0,46 MiB; 100.000, 100.001, 300.001 e 1.000.001 completos. O(página + saída), sem teto de eventos; memória e transporte da saída, materialização PL/pgSQL e Sort repetido continuam limites. | AA-PR11 — em validação |
 | ARC-007 | Resolvido no recorte | AA-PR07: revalidação sintética de cadeias 1/2/3 níveis, 13/15/17 → 8/9/10 requests internos, sem snapshot transacional. AA-PR08: autoridade extraída em módulo interno, seis operações públicas preservadas e 4.258 comparações; imports runtime diretos 10 → 8, sem reduzir dependências transitivas. | AA-PR07 / #854 e AA-PR08 / #855 concluídos |
 | ARC-008 | Resolvido no recorte | Loader server-only local da Account Journey extraído; 550 cenários comparados e módulos runtime diretos da page 14 → 8. IO e leitura antecipada do workspace preservados; não há alegação de redução de queries. | AA-PR09 / #856 concluído |
 | ARC-009 | Pendente | Achado de origem em `lib/lp-builder/adapters/generationContextAdapter.ts`, `lib/lp-builder/onboardingConfiguration.ts`, `lib/lp-builder/landingPageWorkspace.ts` e fingerprint legado Admin. Compatibilidade e readers históricos permanecem sujeitos ao inventário, replay v1/v3 e janela de rollback do AA-PR12. Contagens históricas do AA-PR01 não autorizam retirada de caminhos. | AA-PR12 |
@@ -41,7 +41,7 @@
 | ARC-012 | Transversal | Contagem de arquivos por PR registrada em 2.4; owners, domínios e separação código/QA/documentação permanecem nos PRs. Quantidade isolada não prova acoplamento. | Acompanhar em cada recorte, sem PR próprio |
 | ARC-013 | Pendente | Fotografia de origem: somente declarações, exports e testes dos dois entrypoints E20.7 em `app/` e `lib/`; `dynamicMarketResearchOpenAiAdapter.ts` com timeout máximo de 45 s e transporte hospedado exigindo `supabase_operational` revisão 2+. E20.7 bootstrap 1; custos E21.4 cobrem texto/imagem E19. Cutover permanece condicionado aos critérios de AA-PR13; autorizações gerais não dispensam esses gates. | AA-PR13 |
 
-- Resultados e métricas acima são os publicados nos PRs vinculados em 2.4, sem nova avaliação técnica nesta atualização. O estado remoto de merge prevalece sobre trechos históricos dos corpos que ainda digam draft, aberto ou sem merge.
+- Resultados anteriores ao AA-PR11 são os publicados nos PRs vinculados em 2.4; as provas novas de ARC-006 estão abaixo. O estado remoto de merge prevalece sobre trechos históricos dos corpos que ainda digam draft, aberto ou sem merge.
 - Limite aceito de AA-PR08: cenários positivos hospedados de workspace, configuração, histórico e preview histórico não foram executados; a aceitação específica apoiou-se na extração literal e provas locais. Não generalizar essa dispensa aos AA-PR11–AA-PR13. A sequência aprovada permanece inalterada.
 
 ### 2.3 Confronto Supabase, migrations e contratos
@@ -62,6 +62,13 @@
 
 ### 2.4 Deltas e validação documental
 
+- AA-PR11: oito arquivos, um owner produtivo (`openai-costs`), dois adapters existentes ajustados, zero arquivo produtivo novo; demais deltas são provas focais, fixture da baseline e esta lousa. Costs API, contratos públicos, UI, autorização, tracking append-only, banco, migrations, workflows e secrets preservados. ABC: sem delta canônico necessário; esta lousa concentra o resultado do recorte.
+- Provas locais reproduzíveis: `npm run validate:openai-costs` inclui 90 comparações integrais de DTO/erros contra fixture versionada (sem depender de Git/rede), mais casos de duplicata entre páginas, empate de timestamp, ordem completa, ausência de progresso, página curta/vazia/416 e erro tardio sem sucesso parcial. `node --expose-gc --import tsx lib/openai-costs/read-model-benchmark.ts` isola cada cenário em processo novo, mede heap retido pós-GC e pico amostrado; tempos excluem GC e não representam latência hospedada.
+- Escala local: G=10, N=10.000/99.999/100.000/100.001/300.001 mantém heap retido incremental de aproximadamente 0,46 MiB. N=1.000.001 conclui 2.002 leituras, +0,47 MiB retidos e +26,35 MiB de pico amostrado, sob heap V8 de 64 MiB. Baseline falha já em 100.000. Página curta exige confirmação de término, acrescentando uma leitura quando necessário. Sem alegação de custo SQL reduzido.
+- Alta cardinalidade G=N=99.999: saída idêntica de 54.099.746 bytes; heap retido 114,27 → 110,11 MiB e pico amostrado 221,72 → 183,42 MiB. A saída completa permanece O(G); isso não comprova suporte hospedado a esse payload. [Vercel documenta limite de 4,5 MB](https://vercel.com/docs/functions/limitations) para resposta não-streamed, com tratamento distinto para streaming; serialização RSC, memória, duração e transporte continuam limites preexistentes, sem novo volume arbitrário aprovado no produto.
+- Query plan focal: quatro tentativas reais, período 01–30/08, projeção sanitizada da RPC existente. Baseline em offset 0/2: `Limit → Function Scan`, 3,819/68,2 ms; ordenação externa final em `attempt_id, workload`, offset 0/2: `Limit → Sort → Function Scan`, quicksort 26 kB, 4,741/21,256 ms. SELECT interno usa `started_period_idx` já aplicado, 18 shared hits/0,197 ms. Sessões e aquecimento variam; esses números não medem escala PostgreSQL nem ganho de latência. Materialização e sort são repetidos por página; sem snapshot transacional entre leituras. Projeto saudável, 4 started + 4 terminal, RLS e service-only preservados; zero escrita remota.
+- Gates AA-PR11: `npm ci` aprovado; `npm run check`, revisão acumulada, checks/review remoto e QA autenticado do Preview serão confirmados antes da entrega. Build local não executado. Próximo recorte AA-PR12 ainda não iniciado; sem merge nesta task.
+
 - Reconciliação direta pelo GitHub em 31/08/2026: todos os PRs abaixo estão `MERGED`, com base `main`. Resultado e risco residual por achado em 2.2; evidência integral nos corpos e comentários vinculados. SHAs abaixo são de merge; arquivos são a contagem total de cada PR, não soma de arquivos únicos do programa.
 
 | Recorte concluído | PR / evidência | Merge | Arquivos |
@@ -79,14 +86,13 @@
 | AA-PR10 — scan do lifecycle E20 | [#857](https://github.com/AlcinoAfonso/LP-Factory-10/pull/857) | `71f10281` | 8 |
 
 - ARC-010 encerrado pelo complemento #848; trava AA-PR02 satisfeita. Os cinco scripts antes ausentes — `validate:account-members`, `validate:e11-checkout`, `validate:e11-commercial-experience`, `validate:admin-landing-page-structure` e `validate:lp-builder-onboarding-journey` — foram integrados por #849. Nenhuma pendência anterior ao AA-PR02 é transportada como bloqueio atual.
-- Validação desta atualização: `main..HEAD`, `main...HEAD` e `git diff --check`; diff limitado a esta lousa, com estrutura, numeração, ordem e critérios de AA-PR11–AA-PR13 preservados. ARC-012: um arquivo documental, zero domínios produtivos alterados; sem secrets, banco, workflows ou runtime.
-- `npm ci` e `npm run check`: não aplicáveis a este diff documental. Build, dev server, testes mutáveis e QA visual: não aplicáveis. Resultados de execução dos recortes anteriores são evidências dos respectivos PRs, não testes repetidos nesta task.
+- Validação histórica do PR #858: `main..HEAD`, `main...HEAD` e `git diff --check`; um arquivo documental, zero domínios produtivos. `npm ci` e `npm run check` não aplicáveis naquele PR. Resultados dos recortes anteriores não são testes repetidos nesta task.
 - Histórico do Gestor de Updates no AA-PR01: consulta read-only sobre o candidato `b97a71744a3c6e71f6bd9501c88ce8df8b6f8630` do PR #847; patches `supa#59` (2.1) e `supa#2` (2.3) incorporados como referência/trava, sem novo gate. Parecer e oportunidades condicionais permanecem no PR histórico; esta reconciliação não reabre avaliação nem cria etapa.
 
 ## 3. Sequência AA-PR02–AA-PR13 e critérios de entrada
 
 - Entrada comum: predecessor avaliado e mergeado conforme a autorização humana e os canais permitidos, base reconfirmada, escopo próprio aprovado e ausência de gatilho de parada. Preservar comportamento público, segurança e leitura histórica. Medir antes de escolher solução de performance; o mapa não prescreve RPC, read model, token, agregação SQL ou framework.
-- Estado do mapa: AA-PR02–AA-PR10 concluídos, com critérios abaixo mantidos como histórico do recorte; AA-PR11 é o próximo, seguido por AA-PR12 e AA-PR13. Os critérios destes três recortes permanecem vigentes e integrais; esta atualização não inicia sua execução.
+- Estado do mapa: AA-PR02–AA-PR10 concluídos, com critérios abaixo mantidos como histórico do recorte; AA-PR11 em validação, seguido por AA-PR12 e AA-PR13 ainda não iniciados. Seus critérios permanecem vigentes e integrais.
 
 | PR | Recorte / processo do mapa | Critério específico de entrada e validação |
 | --- | --- | --- |
@@ -107,8 +113,8 @@
 
 ## 4. Escopo negativo e critérios de parada
 
-- Nesta atualização documental, alterar somente esta lousa. Não alterar README, AGENTS, roadmap, Base Técnica, Platform Config, demais documentos, relatório Google Docs, código, testes, migrations, banco, configuração ou infraestrutura.
-- Não iniciar AA-PR11, AA-PR12 ou AA-PR13 nesta task; não reaproveitar a implementação local descartada do AA-PR11, reavaliar tecnicamente recortes concluídos, duplicar corpos de PR ou transformar propostas condicionais em arquitetura obrigatória.
-- Parar e reportar divergência exata se o GitHub contrariar a relação de PRs/merges reconciliada. Fonte crítica ausente, ambiguidade material, efeito externo não autorizado ou necessidade de ultrapassar o arquivo-alvo também interrompem esta atualização.
+- No AA-PR11, alterar somente o leitor interno de custos E21, suas provas e esta lousa. Não alterar contrato/UI, Costs API, tracking, README, AGENTS, demais documentos, Google Docs, migrations, banco remoto, workflows, configuração ou infraestrutura.
+- Não iniciar AA-PR12 ou AA-PR13 nem fazer merge nesta task; não inspecionar ou reaproveitar implementação descartada, stashes ou branches antigas, reabrir recortes concluídos ou transformar propostas condicionais em arquitetura obrigatória.
+- Parar e reportar divergência material, fonte crítica ausente, efeito externo não autorizado ou necessidade de ultrapassar o recorte; não extrapolar medições sintéticas para capacidade hospedada.
 - Nos recortes futuros, preservar critérios de entrada, escopo aprovado e gates aplicáveis. Correção urgente, divergência material migrations–Supabase, mudança de segurança ou ampliação arquitetural não coberta exigem retorno ao Estrategista; autorizações permanentes não dispensam esses limites.
-- Não inferir QA, rollout ou capacidade a partir de merge, revisão ativa ou checks isolados. Entrega desta task: PR documental pronto para revisão, sem merge; próximo recorte permanece AA-PR11.
+- Não inferir QA, rollout ou capacidade a partir de merge, revisão ativa ou checks isolados. Entrega desta task: um PR AA-PR11 ready, após gates, sem merge; próximo recorte AA-PR12 permanece não iniciado.

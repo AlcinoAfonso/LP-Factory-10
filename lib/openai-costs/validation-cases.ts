@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { runReadModelValidationCases } from "./read-model-validation-cases";
 
 import * as publicApi from "./index";
 import { priceOpenAiLpUsage } from "./pricing";
@@ -523,6 +524,7 @@ function jsonResponse(payload: unknown): Response {
 }
 
 async function runValidationCases() {
+  await runReadModelValidationCases();
   for (const validationCase of cases) {
     await validationCase.run();
     console.log(`ok - ${validationCase.name}`);

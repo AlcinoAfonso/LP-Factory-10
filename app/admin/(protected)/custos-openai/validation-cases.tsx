@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 
 import {
-  readCompleteOpenAiLpCostPages,
+  readOpenAiLpCostPages,
   translateOpenAiLpCostRows,
 } from "../../../../lib/openai-costs/adapters/lpCostReadModelAdapterCore";
 import {
@@ -127,13 +127,17 @@ assert.equal(unavailable.internal, null);
 assert.equal(unavailable.internalErrorCode, "READ_FAILED");
 
 let pageCalls = 0;
-const paged = await readCompleteOpenAiLpCostPages(async (from, to) => {
-  pageCalls += 1;
-  assert.equal(to - from + 1, 2);
-  return { data: pageCalls === 1 ? [1, 2] : [3], error: null };
+const paged = await readOpenAiLpCostPages({
+  period: current.period,
+  readCoverage: async () => ({ data: [{ activated_at: "2026-08-10T03:00:00.000Z" }], error: null }),
+  readPage: async (from, to) => {
+    pageCalls += 1;
+    assert.equal(to - from + 1, 2);
+    return { data: eventRows.slice(from, to + 1), error: null };
+  },
 }, 2);
-assert.deepEqual(paged, { data: [1, 2, 3], error: null });
-assert.equal(pageCalls, 2);
+assert.deepEqual(paged, internal);
+assert.equal(pageCalls, 3);
 
 const root = process.cwd();
 const [pageSource, actionSource, componentSource, navigationSource] = await Promise.all([
