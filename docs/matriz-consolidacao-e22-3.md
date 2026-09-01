@@ -77,6 +77,7 @@ Nenhum parecer especializado foi acionado. Os achados abaixo são do Analista e 
 - Não preservar o MCP por causa da mera existência do workflow Agent Builder; se a ferramenta autorizada da OpenAI Platform não permitir a exclusão/desativação, registrar o bloqueio externo exato e continuar a retirada controlada prevista.
 - Bloqueio externo OpenAI Platform constatado em E22.3.4: a superfície autorizada disponível nesta execução não expõe ferramenta para consultar, excluir ou desativar workflows Agent Builder; as únicas ferramentas OpenAI disponíveis são de criação/listagem de destinos de chaves e abertura de setup local, sem mutação do workflow. Nenhuma mutação externa foi executada.
 - Bloqueio externo Vercel constatado em E22.3.5: a superfície autorizada disponível nesta execução oferece listagem/leitura de projetos, deployments, logs e erros e operação de deploy, mas não oferece exclusão de projeto; o CLI `vercel` também não está instalado nesta execução (`The term 'vercel' is not recognized`). Nenhuma mutação Vercel foi executada.
+- Validação hospedada bloqueada em 31/08/2026: os checks `Vercel – lp-factory-10` e `Vercel – lpf-10-services` falharam com `Deployment rate limited — retry in 24 hours`; `no-implicit-flow` passou. Não repetir deployments enquanto a limitação externa permanecer.
 
 ## 7. Próximo gate
 
