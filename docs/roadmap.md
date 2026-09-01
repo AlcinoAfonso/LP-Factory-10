@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 30/08/2026
-• Versão: v1.5.204
+• Data: 01/09/2026
+• Versão: v1.5.208
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -3270,7 +3270,7 @@ Repositório — Ajustados
 
 22. E22 — Retirada controlada de ativos históricos
 - Objetivo: reduzir a superfície histórica que não participa do caminho canônico vigente, preservando consumidores reais e preparando a sequência E19.4 concluída → E22.1 → E19.5.
-- Status: E22.1 concluída; E22.2 candidata aguardando merge humano.
+- Status: E22.1 concluída; E22.2 candidata aguardando merge humano; E22.3 concluída em 01/09/2026 após a retirada do workflow Agent Builder, do service MCP e do projeto Vercel sem workload.
 
 22.1 Retirada controlada de ativos históricos
 
@@ -3379,6 +3379,56 @@ Repositório — Ajustados
 - Nenhuma fonte transversal substitui `docs/lp-planejamento.md`.
 - Referências históricas não precisam ser reescritas.
 - Nenhuma alteração de banco, schema, infraestrutura ou arquitetura.
+
+22.3 Retirada controlada do Supabase Inspect MCP e infraestrutura associada
+
+22.3.1 Objetivo e status
+- Objetivo: retirar controladamente o service/MCP Supabase Inspect e, somente após auditoria, a infraestrutura Vercel exclusiva sem consumidor necessário, preservando automações, workflows, secret compartilhado e o Core.
+- Status: Concluída em 01/09/2026 após a retirada controlada do service/MCP, do workflow Agent Builder alvo e da infraestrutura Vercel exclusiva sem workload; automações, workflows, secret compartilhado e Core preservados.
+
+22.3.2 Registros do recorte
+- Repositório:
+  - Excluídos:
+    - `services/mcp-supabase-inspect/README.md`
+    - `services/mcp-supabase-inspect/api/mcp.js`
+    - `services/mcp-supabase-inspect/package-lock.json`
+    - `services/mcp-supabase-inspect/package.json`
+    - `services/mcp-supabase-inspect/test/mcp.test.js`
+    - `services/mcp-supabase-inspect/vercel.json`
+- Referências:
+  - Configuração externa final: `docs/platform-config.md` — seção 3.2.
+  - Catálogo de services: `docs/services.md` — seção 1.1.
+  - Automação histórica: `docs/automations.md` — seção 3.3.
+
+22.3.3 Auditoria final de consumidores e gate de retirada
+- Status: Concluída.
+- Conteúdo:
+  - auditoria read-only confirmou ausência de consumidor necessário independente fora do workflow Agent Builder alvo e confirmou os mecanismos preservados;
+  - o repositório não mantém referências operacionais do MCP fora dos documentos históricos e de governança;
+  - não foi identificado outro workload, dependência do Core ou necessidade material nova.
+
+22.3.4 Retirada do MCP e referências operacionais
+- Status: Concluída em 01/09/2026.
+- Conteúdo:
+  - o workflow/integração Agent Builder `wf_69b57fed963c8190b9da8e40797aa5820147027ff7bd60d7` foi removido manualmente;
+  - o service MCP e suas referências operacionais foram retirados sem remover `automations/supabase-inspect`, workflows GitHub, secret compartilhado ou contratos do Core;
+  - os documentos canônicos foram reconciliados pelo Prompt ABC, sem substituto ou nova arquitetura.
+
+22.3.5 Retirada da infraestrutura Vercel sem workload
+- Status: Concluída em 01/09/2026.
+- Conteúdo:
+  - o projeto Vercel exclusivo `lpf-10-services` foi removido após a confirmação de ausência de workload; o domínio também deixou de aparecer na lista de projetos;
+  - o Core `lp-factory-10` permaneceu separado e presente; nenhum deployment/redeploy foi solicitado ou executado manualmente, mas a publicação final do commit acionou automaticamente um Preview do Core `lp-factory-10` pela integração Git/Vercel, concluído com sucesso; nenhum novo deployment adicional deve ser provocado; a configuração externa final foi registrada.
+
+22.3.6 Pendência — reduzir deployments gerados por pushes intermediários
+- Status: Pendente.
+- Conteúdo:
+  - a política atual da Vercel bloqueia deploy automático apenas para branches `docs/**`;
+  - branches `codex-app/**` continuam gerando Preview a cada push;
+  - a orquestração recente mostrou excesso de deployments por publicação de checkpoints intermediários;
+  - a remoção de `lpf-10-services` elimina a duplicação causada pelo segundo projeto, mas o Core ainda pode atingir o limite por pushes frequentes;
+  - avaliar em recorte futuro como fazer valer a regra de agrupar commits locais e publicar somente quando houver necessidade real de Preview, review remoto ou entrega;
+  - não implementar nenhuma mudança de Vercel, skill, `AGENTS.md` ou processo neste PR.
 
 99. Changelog
 v1.5.195 — 29/08/2026 — Encerrada a E20.7 após o merge do PR #835: migration E20.7.4 aplicada automaticamente, reconciliação v6 confirmada e rollout hospedado do workload dinâmico transferido para o futuro recorte de integração E19.3, quando existir consumidor real; removida essa validação operacional da lista de pendências da E20.7.

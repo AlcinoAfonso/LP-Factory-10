@@ -2,8 +2,8 @@
 
 0.1 Cabeçalho
 • Documento: LP Factory 10 — Platform Config
-• Versão: v0.1.35
-• Data: 31/08/2026
+• Versão: v0.1.37
+• Data: 01/09/2026
 
 0.2 Contrato do documento
 • O QUE É: snapshot operacional e fonte única das configurações de plataformas externas do LP Factory 10, refletindo o estado conhecido/cadastrado nas plataformas conforme indicado.
@@ -106,14 +106,8 @@
 
 3.2 Projeto de serviços
 • Projeto Vercel: `lpf-10-services`
-• Finalidade: serviços implantáveis separados do Core.
-• Endpoint canônico MCP Supabase Inspect: `https://lpf-10-services.vercel.app/api/mcp`
-• Root Directory: `services/mcp-supabase-inspect`
-• Include files outside the root directory in the Build Step: `OFF`
-• Ignored Build Step: customizado para reduzir builds desnecessários fora do escopo do serviço.
-• Endpoint público na Vercel protegido por `Authorization: Bearer <LPF_MCP_SECRET>`.
-• Banco acessado via `SUPABASE_DB_URL_READONLY`.
-• Valores reais de secrets não devem ser documentados.
+• Estado: removido em 01/09/2026 após confirmação read-only de ausência de workload; não há projeto ou configuração operacional remanescente.
+• Configurações exclusivas, domínio, endpoint, Root Directory, regras de build e variáveis do service foram removidos com o projeto.
 
 3.3 Runtime e build
 • Node.js: `22.x`
@@ -254,17 +248,9 @@
 • Validação pós-retirada das variáveis legadas: `OPENAI_API_KEY` permaneceu configurada nos dois ambientes; os redeploys de Production e Preview ficaram verdes; `/admin/workloads-openai` confirmou `repo_catalog`, modelo `gpt-5.4-mini` e esforço `none` para os consumidores textuais então ativos.
 • Regra: não recriar as variáveis sem necessidade futura aprovada.
 
-• `LPF_MCP_SECRET`
-• Finalidade: secret Bearer usado para autenticar chamadas ao MCP Supabase Inspect.
-• Projeto Vercel: `lpf-10-services`.
-• Consumidor: `services/mcp-supabase-inspect/api/mcp.js`.
-• Escopo: Production e Preview, conforme deploy do service.
-• Valor real: não versionar.
-
 • `SUPABASE_DB_URL_READONLY`
-• Finalidade: conexão read-only do MCP Supabase Inspect com o banco.
-• Projeto Vercel consumidor: `lpf-10-services`.
-• Consumidor: `services/mcp-supabase-inspect/api/mcp.js`.
+• Estado: compartilhado e preservado para a automação GitHub `automations/supabase-inspect`; não há consumidor Vercel.
+• Finalidade: conexão read-only usada pela automação GitHub de inspeção do Supabase.
 • Regra: não usar para mutações.
 • Valor real: não versionar.
 
@@ -393,12 +379,12 @@
 • `automations/supabase-inspect/run.mjs`
 • Regra: novas APIs ou endpoints OpenAI devem ser registrados aqui quando virarem dependência operacional.
 
-6.4 Agent Builder — Supabase Inspect
-• Ativo operacional: Supabase Inspect Agente.
+6.4 Histórico de integração Agent Builder — Supabase Inspect
+• Estado: removido manualmente em 01/09/2026; não é workflow operacional nem consumidor necessário independente.
 • Workflow ID: `wf_69b57fed963c8190b9da8e40797aa5820147027ff7bd60d7`.
-• Uso: validação operacional do Supabase Inspect via Agent Builder.
+• Uso histórico: validação operacional do Supabase Inspect via Agent Builder.
 • Regra: não tratar como camada final robusta de orquestração.
-• Dependência: MCP Supabase Inspect em `https://lpf-10-services.vercel.app/api/mcp`.
+• Estado externo final: o workflow foi removido manualmente em 01/09/2026, conforme confirmação do responsável; não há workflow operacional a catalogar. Nenhuma ferramenta de leitura independente do Agent Builder esteve disponível nesta execução.
 
 7. Stripe
 
@@ -530,6 +516,10 @@ Regra:
 • Configurações de plataformas, secrets por nome, workflows, ambientes e endpoints usados por automações devem ser registrados neste documento.
 
 99. Changelog
+v0.1.37 — 01/09/2026 — Consolidado o estado final da E22.3: workflow Agent Builder e projeto Vercel `lpf-10-services` removidos; nenhum deployment/redeploy foi solicitado ou executado manualmente, e a publicação final do commit acionou automaticamente um Preview do Core `lp-factory-10` pela integração Git/Vercel, concluído com sucesso; nenhum novo deployment adicional deve ser provocado.
+
+v0.1.36 — 31/08/2026 — Reclassificada a integração Agent Builder como histórico e alvo de retirada da E22.3.4; a configuração externa de `lpf-10-services` permanece explicitamente pendente da E22.3.5, sem criação de substituto ou remoção de recursos compartilhados.
+
 v0.1.35 — 31/08/2026 — Registradas a identidade institucional `lpfactoryqa@gmail.com`, sua credencial técnica por nome e localização autorizada, o contrato de reutilização por executores e a evidência operacional da confirmação automatizada, sem versionar valores secretos.
 
 v0.1.34 — 30/08/2026 — Mailbox operacional definida como caixa base Gmail sem `+tag`; novos aliases passam a ser derivados de `MAILBOX_EMAIL`, com preservação integral das execuções anteriores e proibição de senha de cadastro em artifacts e Job Summary.
