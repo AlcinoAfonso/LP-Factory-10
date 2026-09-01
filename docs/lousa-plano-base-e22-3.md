@@ -95,7 +95,7 @@ Plano conceitual: N/A.
 
 - Automação: não.
 - O projeto Vercel `lpf-10-services` e suas configurações exclusivas foram removidos manualmente em 01/09/2026 após a confirmação de ausência de workload real.
-- A verificação read-only posterior mostrou somente o Core `lp-factory-10` e seu domínio; nenhum deployment novo foi gerado e o Core permaneceu inalterado.
+- A verificação read-only posterior mostrou somente o Core `lp-factory-10` e seu domínio; nenhum deployment/redeploy foi solicitado ou executado manualmente; a publicação final do commit acionou automaticamente um Preview do Core `lp-factory-10` pela integração Git/Vercel, concluído com sucesso; nenhum novo deployment adicional deve ser provocado.
 - O estado documental canônico registra somente a configuração externa final efetivamente existente.
 
 ## 4. Escopo negativo e critérios de parada
@@ -158,7 +158,7 @@ Referências imutáveis de entrada:
 
 - Depois dos checkpoints aprovados de E22.3.3 e E22.3.4 e da confirmação de que não existia workload real, foi removido pelo controle Vercel autorizado somente o projeto `lpf-10-services` e suas configurações exclusivas, incluindo o secret `LPF_MCP_SECRET` e o domínio vinculado quando a própria remoção os atingiu.
 - Nunca remover `lp-factory-10`, `SUPABASE_DB_URL_READONLY`, secrets GitHub compartilhados, automações preservadas, configurações Supabase ou qualquer recurso fora do projeto alvo.
-- A verificação read-only posterior confirmou que `lpf-10-services` não está mais listado, que seu domínio não está mais listado, que o Core continua separado e que nenhum novo deployment do projeto removido foi gerado.
+- A verificação read-only posterior confirmou que `lpf-10-services` não está mais listado, que seu domínio não está mais listado e que o Core continua separado; nenhum deployment/redeploy foi solicitado ou executado manualmente; a publicação final do commit acionou automaticamente um Preview do Core `lp-factory-10` pela integração Git/Vercel, concluído com sucesso; nenhum novo deployment adicional deve ser provocado.
 - O ABC final independente foi aplicado aos documentos canônicos afetados (`docs/services.md`, `docs/automations.md`, `docs/platform-config.md` e `docs/roadmap.md`), registrando exclusivamente o estado externo e documental efetivamente confirmado.
 - As validações aplicáveis foram reexecutadas e a busca final confirmou a ausência de referências órfãs; a evidência visual da exclusão Vercel foi registrada na matriz.
 

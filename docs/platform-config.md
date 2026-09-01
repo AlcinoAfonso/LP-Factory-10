@@ -516,6 +516,8 @@ Regra:
 • Configurações de plataformas, secrets por nome, workflows, ambientes e endpoints usados por automações devem ser registrados neste documento.
 
 99. Changelog
+v0.1.37 — 01/09/2026 — Consolidado o estado final da E22.3: workflow Agent Builder e projeto Vercel `lpf-10-services` removidos; nenhum deployment/redeploy foi solicitado ou executado manualmente, e a publicação final do commit acionou automaticamente um Preview do Core `lp-factory-10` pela integração Git/Vercel, concluído com sucesso; nenhum novo deployment adicional deve ser provocado.
+
 v0.1.36 — 31/08/2026 — Reclassificada a integração Agent Builder como histórico e alvo de retirada da E22.3.4; a configuração externa de `lpf-10-services` permanece explicitamente pendente da E22.3.5, sem criação de substituto ou remoção de recursos compartilhados.
 
 v0.1.35 — 31/08/2026 — Registradas a identidade institucional `lpfactoryqa@gmail.com`, sua credencial técnica por nome e localização autorizada, o contrato de reutilização por executores e a evidência operacional da confirmação automatizada, sem versionar valores secretos.

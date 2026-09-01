@@ -3418,7 +3418,7 @@ Repositório — Ajustados
 - Status: Concluída em 01/09/2026.
 - Conteúdo:
   - o projeto Vercel exclusivo `lpf-10-services` foi removido após a confirmação de ausência de workload; o domínio também deixou de aparecer na lista de projetos;
-  - o Core `lp-factory-10` permaneceu separado e presente, sem deployment/redeploy novo nesta retomada; a configuração externa final foi registrada.
+  - o Core `lp-factory-10` permaneceu separado e presente; nenhum deployment/redeploy foi solicitado ou executado manualmente, mas a publicação final do commit acionou automaticamente um Preview do Core `lp-factory-10` pela integração Git/Vercel, concluído com sucesso; nenhum novo deployment adicional deve ser provocado; a configuração externa final foi registrada.
 
 22.3.6 Pendência — reduzir deployments gerados por pushes intermediários
 - Status: Pendente.
