@@ -21,7 +21,7 @@
 - `automations/supabase-inspect/`, seus workflows, `SUPABASE_DB_URL_READONLY`, adapters/acessos do Core e o projeto Vercel `lp-factory-10` permanecem preservados.
 - A decisão humana específica dispensa Gestor Estrutural, Gestor de Updates e Gestor de Automação; não houve rodada substituta de especialistas.
 - A decisão humana de 31/08/2026 integra o workflow Agent Builder `wf_69b57fed963c8190b9da8e40797aa5820147027ff7bd60d7` ao alvo de retirada; E22.3.3 audita apenas consumidores necessários independentes fora dele.
-- Se a ferramenta autorizada da OpenAI Platform não permitir excluir ou desativar o workflow, registrar exatamente esse bloqueio externo e continuar a retirada do MCP e das referências operacionais; a mera existência do workflow não preserva o MCP.
+- O workflow Agent Builder foi removido manualmente; sua mera existência não preserva o MCP e não houve substituto criado.
 - Cada achado usa a origem `v1`, `invariante técnico` ou `update` e a taxonomia contratual `derivação técnica da v1`, `modernização técnica justificada` ou `ampliação de escopo`. Os cinco achados da Passagem 1 são derivações técnicas da v1; não há update aplicado, modernização técnica ou ampliação de escopo. As linhas N/A da seção 4 registram avaliações formalmente dispensadas, não achados consolidados.
 
 ## 3. Achados da Passagem 1 e tratamento na v2
@@ -53,10 +53,10 @@ Nenhum parecer especializado foi acionado. Os achados abaixo são do Analista e 
 - Revisão delta no mesmo Analista: resposta integral preservada; conclusão `aprovado para merge do plano-base v2` no HEAD `dd64f654`.
 - Passagem 2: concluída no mesmo thread, com esta matriz e os pareceres aplicáveis (nenhum parecer especializado), sem reabrir especialistas; conclusão `aprovado com correções obrigatórias`.
 - Retomada: nova decisão humana incorporou o workflow Agent Builder ao alvo de retirada e resolveu o bloqueio anterior de classificação; a revisão delta do mesmo Analista aprovou a v2 e a matriz sem correções.
-- ABC do roadmap: o mesmo Analista aprovou o delta documental sem correções; a v2 ajustada permanece planejada, sem implementação ou mutação externa iniciada.
+- ABC do roadmap: o delta documental foi aplicado; a v2 ajustada e o roadmap agora refletem a execução final, sem nova fase ou substituto.
 - E22.3.3: o mesmo Analista aprovou a auditoria read-only para avançar; não houve delta de código, documento canônico ou mutação externa nesta fase.
-- E22.3.4: o mesmo Analista aprovou a retirada repo-side e a limpeza documental para avançar; a mutação externa OpenAI permanece bloqueada pela ausência de ferramenta autorizada.
-- E22.3.5: o mesmo Analista confirmou a ausência de workload e a preservação segura do Core, mas classificou a etapa como `requer teste humano` pela exclusão Vercel ainda não executada.
+- E22.3.4: a retirada repo-side e a limpeza documental foram concluídas; a remoção manual do workflow Agent Builder foi informada pelo responsável em 01/09/2026, sem substituto ou nova arquitetura.
+- E22.3.5: a ação humana removeu somente `lpf-10-services`; a verificação read-only posterior confirmou sua ausência e a preservação segura do Core.
 
 | ID | Gate | Correções/escopo auditados | Classe | Tratamento | Evidência |
 |---|---|---|---|---|---|
@@ -65,8 +65,8 @@ Nenhum parecer especializado foi acionado. Os achados abaixo são do Analista e 
 | `H-DELTA-E22.3-01` | `revisao_delta` | Nova decisão humana sobre o workflow Agent Builder, ausência de consumidor necessário independente fora dele e mutação OpenAI condicional à ferramenta autorizada. | derivação técnica da v1 | Incorporado na v2 e na matriz; o roadmap foi atualizado pelo ABC e aprovado no mesmo gate. | Analista no mesmo thread; revisão delta de 31/08/2026; nenhuma correção restante. |
 | `AN-ABC-E22.3-01` | `revisao_delta` | ABC mínimo do roadmap: v1.5.206, escopo humano incorporado, ordem E22.3.3/E22.3.4/E22.3.5 e ausência de implementação declarada. | derivação técnica da v1 | Incorporado; sem nova fase, renumeração, changelog ou remoção de mecanismos preservados. | Analista no mesmo thread; gate de consolidação documental de 31/08/2026; nenhuma correção restante. |
 | `AN-IMPL-E22.3.3-01` | `revisao_implementacao` | Auditoria repo-side e Vercel read-only de consumidores necessários independentes, workload do service, logs/erros e preservações. | derivação técnica da v1 | Gate aprovado para avançar; nenhum delta de implementação foi necessário. | Analista no mesmo thread; revisão de implementação de 31/08/2026; conclusão `aprovado para avançar`. |
-| `AN-IMPL-E22.3.4-01` | `revisao_implementacao` | Retirada dos seis arquivos versionados do service, limpeza de catálogo/referências operacionais, reclassificação histórica do Agent Builder e preservação de automations/Core/recursos compartilhados. | derivação técnica da v1 | Gate aprovado para avançar; bloqueio OpenAI externo registrado; nenhum substituto ou nova arquitetura criado. | Analista no mesmo thread; revisão de implementação de 31/08/2026; conclusão `aprovado para avançar`. |
-| `AN-IMPL-E22.3.5-01` | `revisao_implementacao` | Auditoria final de workload em `lpf-10-services`, deployments, build/logs/erros, separação do Core e disponibilidade do controle de exclusão. | derivação técnica da v1 | Auditoria suficiente, mas requer ação humana externa para excluir somente `lpf-10-services` e verificar a ausência posterior; E22.3 não é declarada concluída. | Analista no mesmo thread; revisão de implementação de 31/08/2026; conclusão `requer teste humano`. |
+| `AN-IMPL-E22.3.4-01` | `revisao_implementacao` | Retirada dos seis arquivos versionados do service, limpeza de catálogo/referências operacionais, remoção manual do Agent Builder e preservação de automations/Core/recursos compartilhados. | derivação técnica da v1 | Retirada concluída sem substituto ou nova arquitetura; a remoção manual do workflow é confirmação humana externa do estado final. | Analista no mesmo thread; revisão de implementação de 31/08/2026; conclusão anterior `aprovado para avançar`; confirmação humana de 01/09/2026. |
+| `AN-IMPL-E22.3.5-01` | `revisao_implementacao` | Auditoria de workload em `lpf-10-services`, separação do Core, exclusão manual do projeto e verificação posterior da lista Vercel. | derivação técnica da v1 | Estado final confirmado: projeto sem workload removido, domínio ausente da lista, Core preservado e nenhum deployment novo acionado. | Evidência visual Vercel de 01/09/2026; confirmação humana autorizada; sem novo gate. |
 
 ## 6. Travas preservadas
 
@@ -74,11 +74,11 @@ Nenhum parecer especializado foi acionado. Os achados abaixo são do Analista e 
 - Não remover o projeto Vercel Core `lp-factory-10` nem qualquer recurso Supabase, GitHub ou externo fora de `lpf-10-services`.
 - Não apagar referências históricas em catálogos de updates, plano, matriz ou histórico Git por limpeza genérica.
 - Não avançar se surgir consumidor externo necessário independente sem substituto aprovado, outro workload no projeto alvo, dependência do Core/automação preservada ou necessidade material nova.
-- Não preservar o MCP por causa da mera existência do workflow Agent Builder; se a ferramenta autorizada da OpenAI Platform não permitir a exclusão/desativação, registrar o bloqueio externo exato e continuar a retirada controlada prevista.
-- Bloqueio externo OpenAI Platform constatado em E22.3.4: a superfície autorizada disponível nesta execução não expõe ferramenta para consultar, excluir ou desativar workflows Agent Builder; as únicas ferramentas OpenAI disponíveis são de criação/listagem de destinos de chaves e abertura de setup local, sem mutação do workflow. Nenhuma mutação externa foi executada.
-- Bloqueio externo Vercel constatado em E22.3.5: a superfície autorizada disponível nesta execução oferece listagem/leitura de projetos, deployments, logs e erros e operação de deploy, mas não oferece exclusão de projeto; o CLI `vercel` também não está instalado nesta execução (`The term 'vercel' is not recognized`). Nenhuma mutação Vercel foi executada.
-- Validação hospedada bloqueada em 31/08/2026: os checks `Vercel – lp-factory-10` e `Vercel – lpf-10-services` falharam com `Deployment rate limited — retry in 24 hours`; `no-implicit-flow` passou. Não repetir deployments enquanto a limitação externa permanecer.
+- Não preservar o MCP por causa da mera existência do workflow Agent Builder; o workflow foi removido manualmente em 01/09/2026 e nenhum substituto foi criado.
+- Estado externo OpenAI Platform: a remoção manual do workflow Agent Builder `wf_69b57fed963c8190b9da8e40797aa5820147027ff7bd60d7` foi confirmada pelo responsável. Não há superfície read-only do Agent Builder disponível nesta execução para uma confirmação independente; a informação humana é registrada sem tratar o workflow como consumidor operacional.
+- Estado externo Vercel confirmado read-only em 01/09/2026: após a exclusão autorizada, a URL retornou `projectDeleted=lpf-10-services`; link exato do projeto removido = `0`, link exato do domínio removido = `0`, link exato do Core = `1` e link exato do domínio do Core = `1`. Nenhum deployment/redeploy foi acionado.
+- Validação hospedada registrada em 31/08/2026: os checks `Vercel – lp-factory-10` e `Vercel – lpf-10-services` falharam com `Deployment rate limited — retry in 24 hours`; `no-implicit-flow` passou. Não foi gerado novo deployment nesta retomada.
 
-## 7. Próximo gate
+## 7. Encaminhamento final
 
-A retomada ajustou v2, matriz e roadmap conforme a decisão humana específica, com aprovação do mesmo Analista. E22.3.3 e E22.3.4 foram aprovados para avançar. E22.3.5 confirmou ausência de workload, mas requer teste humano para excluir externamente somente `lpf-10-services` e verificar a remoção; até lá, não declarar E22.3 concluída nem remover o Core ou recursos compartilhados.
+A retirada controlada confirmou os três objetivos materiais da E22.3: não há consumidor operacional do MCP no repositório, o workflow Agent Builder foi removido manualmente e o projeto Vercel `lpf-10-services` foi removido sem tocar o Core. Os checkpoints E22.3.3, E22.3.4 e E22.3.5 estão refletidos no estado final; não há novo gate ou fase. Próxima ação: inspeção final do Estrategista no PR #868, sem merge automático.

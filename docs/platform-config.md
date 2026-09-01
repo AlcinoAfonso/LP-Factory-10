@@ -2,8 +2,8 @@
 
 0.1 Cabeçalho
 • Documento: LP Factory 10 — Platform Config
-• Versão: v0.1.36
-• Data: 31/08/2026
+• Versão: v0.1.37
+• Data: 01/09/2026
 
 0.2 Contrato do documento
 • O QUE É: snapshot operacional e fonte única das configurações de plataformas externas do LP Factory 10, refletindo o estado conhecido/cadastrado nas plataformas conforme indicado.
@@ -106,15 +106,8 @@
 
 3.2 Projeto de serviços
 • Projeto Vercel: `lpf-10-services`
-• Estado: configuração externa histórica/pendente de retirada pela E22.3.5; não é caminho operacional após a retirada repo-side da E22.3.4.
-• Finalidade: serviços implantáveis separados do Core.
-• Endpoint canônico MCP Supabase Inspect: `https://lpf-10-services.vercel.app/api/mcp`
-• Root Directory: `services/mcp-supabase-inspect`
-• Include files outside the root directory in the Build Step: `OFF`
-• Ignored Build Step: customizado para reduzir builds desnecessários fora do escopo do serviço.
-• Endpoint público na Vercel protegido por `Authorization: Bearer <LPF_MCP_SECRET>`.
-• Banco acessado via `SUPABASE_DB_URL_READONLY`.
-• Valores reais de secrets não devem ser documentados.
+• Estado: removido em 01/09/2026 após confirmação read-only de ausência de workload; não há projeto ou configuração operacional remanescente.
+• Configurações exclusivas, domínio, endpoint, Root Directory, regras de build e variáveis do service foram removidos com o projeto.
 
 3.3 Runtime e build
 • Node.js: `22.x`
@@ -255,19 +248,9 @@
 • Validação pós-retirada das variáveis legadas: `OPENAI_API_KEY` permaneceu configurada nos dois ambientes; os redeploys de Production e Preview ficaram verdes; `/admin/workloads-openai` confirmou `repo_catalog`, modelo `gpt-5.4-mini` e esforço `none` para os consumidores textuais então ativos.
 • Regra: não recriar as variáveis sem necessidade futura aprovada.
 
-• `LPF_MCP_SECRET`
-• Estado: referência histórica exclusiva do service retirado em E22.3.4; a remoção externa será consolidada na E22.3.5. Não usar para novo consumidor.
-• Finalidade: secret Bearer usado para autenticar chamadas ao MCP Supabase Inspect.
-• Projeto Vercel: `lpf-10-services`.
-• Consumidor histórico no service retirado: `services/mcp-supabase-inspect/api/mcp.js`.
-• Escopo: Production e Preview, conforme deploy do service.
-• Valor real: não versionar.
-
 • `SUPABASE_DB_URL_READONLY`
-• Estado no service: referência histórica do service retirado em E22.3.4; o recurso compartilhado usado pela automação GitHub permanece preservado.
-• Finalidade: conexão read-only do MCP Supabase Inspect com o banco.
-• Projeto Vercel consumidor: `lpf-10-services`.
-• Consumidor histórico no service retirado: `services/mcp-supabase-inspect/api/mcp.js`.
+• Estado: compartilhado e preservado para a automação GitHub `automations/supabase-inspect`; não há consumidor Vercel.
+• Finalidade: conexão read-only usada pela automação GitHub de inspeção do Supabase.
 • Regra: não usar para mutações.
 • Valor real: não versionar.
 
@@ -397,11 +380,11 @@
 • Regra: novas APIs ou endpoints OpenAI devem ser registrados aqui quando virarem dependência operacional.
 
 6.4 Histórico de integração Agent Builder — Supabase Inspect
-• Estado: incluído no alvo de retirada controlada E22.3.4; não é consumidor necessário independente a preservar.
+• Estado: removido manualmente em 01/09/2026; não é workflow operacional nem consumidor necessário independente.
 • Workflow ID: `wf_69b57fed963c8190b9da8e40797aa5820147027ff7bd60d7`.
 • Uso histórico: validação operacional do Supabase Inspect via Agent Builder.
 • Regra: não tratar como camada final robusta de orquestração.
-• Bloqueio externo: a superfície autorizada disponível nesta execução não expõe ferramenta para consultar, excluir ou desativar workflows Agent Builder na OpenAI Platform; nenhuma mutação externa foi executada. O bloqueio exato está registrado na matriz e no PR #868.
+• Estado externo final: o workflow foi removido manualmente em 01/09/2026, conforme confirmação do responsável; não há workflow operacional a catalogar. Nenhuma ferramenta de leitura independente do Agent Builder esteve disponível nesta execução.
 
 7. Stripe
 

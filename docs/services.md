@@ -1,9 +1,9 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 31/08/2026
-• Versão: v1.3
-• Status: Catálogo reconciliado com a retirada controlada E22.3.4; projeto Vercel externo pendente da E22.3.5
+• Data: 01/09/2026
+• Versão: v1.4
+• Status: Catálogo final após a conclusão da retirada controlada E22.3; nenhum service/MCP operacional permanece
 
 0.2 Função do documento
 Registrar a camada `services` do LP Factory 10 como referência oficial e amigável para humano para services implantáveis, MCPs, endpoints e infraestrutura reutilizável com identidade própria, sem expor segredos.
@@ -18,7 +18,7 @@ Registrar a camada `services` do LP Factory 10 como referência oficial e amigá
 
 1.1 Estado atual da camada
 • Nenhum service implantável ou MCP operacional está catalogado após a retirada repo-side da E22.3.4.
-• O projeto Vercel `lpf-10-services` e sua configuração externa permanecem registrados em `docs/platform-config.md` somente até a E22.3.5 confirmar a retirada se não houver workload.
+• O projeto Vercel `lpf-10-services` foi removido em 01/09/2026 após confirmação read-only de ausência de workload; não há configuração externa de service a manter.
 • `automations/supabase-inspect` é automação GitHub read-only preservada e não é service/MCP.
 
 2. Regras de fronteira desta camada

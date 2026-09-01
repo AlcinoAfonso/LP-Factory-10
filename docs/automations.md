@@ -1,7 +1,7 @@
 0.1 Cabeçalho
-Data: 31/08/2026
-Versão: v1.22
-Status: Alinhado ao Platform Config e à retirada controlada E22.3.4
+Data: 01/09/2026
+Versão: v1.23
+Status: Alinhado ao Platform Config e ao estado final da retirada controlada E22.3; `automations/supabase-inspect` preservada
 
 0.2 Função do documento
 Registrar a camada de automações operacionais do LP Factory 10 como referência para integrações, automações operacionais e componentes consumidores, sem expor segredos.
@@ -115,7 +115,7 @@ Objetivo:
 Registrar a validação funcional histórica do Supabase Inspect no Agent Builder por meio da MCP base documentada em `docs/services.md`, sem acesso direto ao banco.
 
 Status:
-Histórico em retirada controlada pela E22.3.4; não é automação vigente nem consumidor necessário independente.
+Removido manualmente em 01/09/2026; não é automação vigente nem consumidor necessário independente.
 
 Nota de legado:
 O Agent Builder deixará de receber novos recursos e será descontinuado na plataforma OpenAI até 30/11/2026; esta integração não deve ser expandida.
@@ -123,8 +123,8 @@ O Agent Builder deixará de receber novos recursos e será descontinuado na plat
 Decisão da E22.3:
 O workflow `wf_69b57fed963c8190b9da8e40797aa5820147027ff7bd60d7` é alvo da retirada controlada e não deve ser preservado como consumidor necessário independente do MCP.
 
-Bloqueio externo:
-A superfície autorizada disponível nesta execução não expõe ferramenta para consultar, excluir ou desativar workflows Agent Builder na OpenAI Platform; nenhuma mutação externa foi executada. O bloqueio exato está registrado na matriz e no PR #868.
+Estado externo final:
+A remoção manual do workflow foi confirmada pelo responsável em 01/09/2026. Não há workflow Agent Builder operacional a catalogar; nenhuma ferramenta de leitura independente do Agent Builder esteve disponível nesta execução.
 
 Referência histórica:
 Workflow ID: `wf_69b57fed963c8190b9da8e40797aa5820147027ff7bd60d7`
