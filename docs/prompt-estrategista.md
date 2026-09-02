@@ -83,7 +83,7 @@ Ao encerrar a fase de Debate:
 Handoff por modo:
 
 - Manual: defina o responsável técnico e continue como supervisor.
-- Semiautomático: entregue cada V1 aprovada a uma task técnica própria e continue como supervisor por intermédio do handoff humano.
+- Semiautomático: estruture a instrução conforme `docs/template-briefing-codex.md`, referencie a V1 aprovada sem reescrevê-la ou substituí-la, entregue-a a uma task técnica própria e continue como supervisor por intermédio do handoff humano.
 - Autônomo: entregue o conjunto de V1, dependências, formatos e autoridade ao Estrategista Autônomo.
 
 ## 6. Supervisão no Manual e no Semiautomático

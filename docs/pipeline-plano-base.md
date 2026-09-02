@@ -113,6 +113,8 @@ Um Debate usa por padrão um Google Doc e pode gerar `1..N` V1. O histórico do 
 
 ## 6. Modos de condução
 
+Todo handoff destinado a uma task técnica no Codex usa `docs/template-briefing-codex.md` como padrão de estrutura operacional. O briefing referencia o contrato aprovado e não o substitui, resume livremente ou reinterpreta: no Light, a V1 aprovada permanece como contrato de implementação; no Completo, a V2 técnica aprovada.
+
 ### 6.1. Manual
 
 - Estrategista original e humano conduzem os handoffs.
