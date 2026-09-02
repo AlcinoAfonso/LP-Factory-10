@@ -19,7 +19,7 @@ Executar duas passagens sequenciais com uma única instância do custom agent `a
    - matriz de consolidação.
 3. Resolver versões em PR ou commit pelo SHA, nunca pela cópia local conveniente. Se v1 e v2 compartilharem path, diferenciá-las por referências imutáveis.
 4. Parar diante de artefato ausente, caso divergente ou fonte conceitual ambígua; não reconstruir por inferência.
-5. Exigir pareceres do Gestor Estrutural e do Gestor de Updates. Para cada update com impacto estrutural material, exigir também o confronto focal do Gestor Estrutural. Exigir o parecer do Gestor de Automações quando a v1 contiver `Automação: sim` sem dispensa humana explícita da avaliação formal; com dispensa registrada, exigir `N/A — avaliação formal dispensada na v1`. Em planos anteriores sem esse registro, exigir o parecer.
+5. Exigir pareceres do Gestor Estrutural e do Gestor de Updates. Para cada update com impacto estrutural material, exigir também o confronto focal do Gestor Estrutural. Exigir o parecer do Gestor de Automações quando a v1 identificar uma entrega ou parte do plano sujeita a automação sem dispensa humana explícita da avaliação formal; com dispensa registrada, exigir `N/A — avaliação formal dispensada na v1`. Em planos anteriores sem esse registro, exigir o parecer.
 6. Registrar o estado Git anterior à delegação.
 
 ## Validar a matriz

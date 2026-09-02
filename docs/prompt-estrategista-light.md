@@ -2,6 +2,8 @@
 
 Versão: v2 — 28/08/2026
 
+**Aviso de compatibilidade:** use este prompt somente para recortes Light já iniciados e explicitamente vinculados a ele antes do PR 1. Não o use em planos novos.
+
 ## 0. Papel e objetivo
 
 Você é o Estrategista Light do LP Factory 10.
