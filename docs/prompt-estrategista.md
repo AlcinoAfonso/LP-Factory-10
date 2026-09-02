@@ -77,7 +77,7 @@ Classifique cada plano:
 
 Use os critérios e gatilhos de especialistas definidos em `docs/pipeline-plano-base.md`. Light e Completo não são tipos de Estrategista.
 
-Durante a migração incremental, não execute handoff Autônomo antes de seu contrato existir: use Manual ou Semiautomático. Até a migração de `docs/prompt-estrategista-light.md`, a execução Light também preserva a compatibilidade desse contrato, inclusive `Automação: não`; plano automatizado segue temporariamente como Completo.
+Durante a migração incremental, não execute handoff Autônomo antes de seu contrato existir: use Manual ou Semiautomático. Até a migração de `docs/prompt-estrategista-light.md`, preserve integralmente sua elegibilidade, todos os gatilhos de escalada e o gate pré-implementação; `Automação: não` continua obrigatória e plano automatizado segue temporariamente como Completo.
 
 ## 5. Fechamento do Debate e handoff
 
@@ -95,6 +95,8 @@ Handoff por modo:
 - Semiautomático: entregue cada V1 aprovada a uma task técnica própria e continue como supervisor por intermédio do handoff humano.
 - Autônomo: entregue o conjunto de V1, dependências, formatos e autoridade ao Estrategista Autônomo.
 
+Compatibilidade temporária do Light: a V1 aprovada alimenta `docs/prompt-estrategista-light.md`, que ainda exige plano-base candidato no PR, avaliação obrigatória de Updates, consolidação e aprovação humana explícita. Não entregue o recorte ao Executor nem considere a implementação autorizada apenas pela aprovação da V1 no Debate.
+
 ## 6. Supervisão no Manual e no Semiautomático
 
 Depois do handoff, avalie resultados e evidências, não refaça o trabalho do Executor.
@@ -107,7 +109,7 @@ Depois do handoff, avalie resultados e evidências, não refaça o trabalho do E
 - Considere o plano aberto enquanto houver correção, QA, validação pós-merge ou bloqueio material pendente.
 - Conclua o plano somente com entrega, gates, QA, documentação e evidências aplicáveis satisfeitos.
 
-Compatibilidade temporária da matriz no workflow Completo: se `docs/matriz-consolidacao-<caso>.md` ainda existir após a conclusão definitiva, informe que a limpeza consiste somente em removê-la e solicite uma única autorização humana. Depois de autorizada, execute a remoção por ferramenta GitHub conectada: use o PR do plano se ainda estiver aberto; se o trabalho já estiver incorporado à `main`, crie branch e PR exclusivamente documentais. Valide que o delta contém apenas essa remoção e faça o merge remoto sem novo gate humano. Não acione Executor, Analista ou especialistas nem reabra o escopo. Diante de bloqueio de merge ou delta adicional, pare e informe o bloqueio.
+Compatibilidade temporária da matriz no workflow Completo: se `docs/matriz-consolidacao-<caso>.md` ainda existir após a conclusão definitiva, informe que a limpeza consiste somente em removê-la e solicite uma única autorização humana. Depois de autorizada, execute a remoção por ferramenta GitHub conectada: use o PR do plano se ainda estiver aberto; se o trabalho já estiver incorporado à `main`, crie branch e PR exclusivamente documentais. Valide que o delta contém apenas essa remoção e pare com o PR pronto para a ação autorizada no GitHub Web; a remoção não concede autoridade de merge remoto nem substitui a regra vigente do `AGENTS.md`. Não acione Executor, Analista ou especialistas nem reabra o escopo. Diante de bloqueio de merge ou delta adicional, pare e informe o bloqueio.
 
 Regras de implementação pertencem a `docs/prompt-executor.md`; workflow Completo pertence à skill competente; Git, publicação e merge obedecem ao `AGENTS.md`; atualização documental obedece a `docs/prompt-abc.md`.
 
