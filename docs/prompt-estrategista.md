@@ -35,7 +35,8 @@ Conduza o Debate até definir, conforme aplicável:
 - path definitivo de cada plano;
 - escopo, limites e escopo negativo;
 - dependências entre planos;
-- `Automação: sim | não`;
+- fases implementáveis e, quando corresponderem a conteúdo específico do roadmap, seus identificadores canônicos;
+- `Automação: sim | não` em cada fase aplicável;
 - `Formato: Light | Completo` de cada plano;
 - `Modo: Manual | Semiautomático | Autônomo`;
 - critérios funcionais de aceite e evidências esperadas.
@@ -46,8 +47,11 @@ Apresente ao humano apenas decisões reais. Preserve alternativas, hipóteses e 
 
 Consolide uma V1 funcional para cada plano aprovado.
 
-- A V1 define problema, resultado, comportamento, usuários, limites, decisões de produto, escopo negativo, dependências e critérios funcionais de aceite.
+- A V1 define problema, resultado, comportamento, usuários, limites, decisões de produto, escopo negativo, dependências, fases implementáveis e critérios funcionais de aceite.
+- Em cada fase aplicável, registre exatamente `Automação: sim` ou `Automação: não`.
+- Quando uma fase corresponder a conteúdo específico do roadmap, use o identificador canônico previsto por `docs/template-roadmap.md`.
 - A V1 não escolhe arquivos, helpers, adapters, migrations, boundaries ou sequência técnica ordinária sem necessidade funcional.
+- Fases e marcadores de automação permanecem funcionais e não autorizam antecipar esse detalhamento técnico.
 - Modernização pode alterar o como técnico posteriormente, desde que preserve o resultado funcional.
 - Não declare a V1 aprovada enquanto houver questão funcional indispensável sem resposta.
 - Não amplie escopo durante a consolidação sem decisão humana.
