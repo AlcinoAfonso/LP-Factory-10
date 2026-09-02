@@ -154,29 +154,54 @@
   - mudanças de PostgREST ou Data API são avaliadas quando afetarem consultas reais, conforme o contrato durável de `docs/base-tecnica.md`.
 
 4. E4 — Account Dashboard (Infraestrutura SSR)
+- Objetivo: estabelecer o gateway e a seção privada server-side do Account Dashboard, com redirecionamento seguro e contexto sanitizado para a UI.
+- Status: concluído; infraestrutura SSR permanece ativa e suporta as jornadas funcionais implementadas nos recortes posteriores.
 
-4.1 Status
-• Concluído
+4.1 Gateway e seção privada do Account Dashboard
 
-27/01/2026 16:18 — E4.2 (enxuto / anti-drift)
+4.1.1 Objetivo e status
+- Objetivo: direcionar cada sessão ao destino seguro disponível, proteger `/a/[account]` por guard SSR e evitar loops ou exposição indevida de contexto.
+- Status: concluído; fluxo-base preservado no estado atual do produto.
 
-4.2 Implementado
-• Redirect `/a` → `/a/home`
-• Gateway `/a/home`
-• Público sem sessão
-• Com sessão: resolve conta/acesso e direciona para a melhor rota disponível
-• Sem qualquer vínculo: cria a 1ª conta em modo **vitrine** (`pending_setup`) e direciona para `/a/[account]`
-• Com vínculos, mas sem conta permitida: aplica anti-loop e direciona para um estado neutro de “acesso indisponível”
-• CTA “Criar conta” (público) no `/a/home` → `/auth/sign-up`
-• Rota privada `/a/[account]` com gate SSR (ponto único de decisão)
-• Persistência de “última conta” para melhorar retorno do usuário e evitar loops
-• Página neutra `/auth/confirm/info` para usuário autenticado sem vínculo válido
-• Bloqueios com UX dedicada (sem deny genérico)
-• Por **membership**: telas específicas (ver E15)
-• Por **status da conta**: telas específicas para conta inativa/suspensa (ver E16)
-4.2.1 Referências
-• Regras técnicas do gate/adapters: `docs/base-tecnica.md`
-• Contrato/DB e evidências: `docs/schema.md`
+4.1.2 Registros do recorte
+- Repositório:
+  - Criados:
+    - `app/a/page.tsx`;
+    - `app/a/home/page.tsx`;
+    - `app/a/[account]/layout.tsx`;
+    - `app/a/_server/section-guard.ts`;
+    - `providers/AccessProvider.tsx`;
+    - `app/auth/confirm/info/page.tsx`.
+- Referências:
+  - Arquitetura de acesso e gateway privado: `docs/base-tecnica.md` — seção 5.
+  - Contrato do Access Context: `docs/schema.md` — seção 2.1.
+
+4.1.3 Gateway e destino inicial
+- Status: implementado e vigente.
+- Conteúdo:
+  - `/a` redireciona server-side para `/a/home`;
+  - `/a/home` permanece acessível sem sessão e funciona como gateway para usuários autenticados;
+  - sessão autenticada tenta a última conta permitida e depois um fallback determinístico;
+  - usuário sem qualquer membership pode receber a primeira conta `pending_setup` somente pelo fluxo server-side aprovado;
+  - existência de qualquer membership impede criação automática de outra conta;
+  - ausência de destino permitido leva a estado informativo seguro, sem loop de redirecionamento.
+
+4.1.4 Seção privada e contexto para a UI
+- Status: implementado e vigente.
+- Conteúdo:
+  - `/a/[account]` usa um guard SSR como ponto autoritativo de allow, deny e redirecionamento;
+  - conta ou membership bloqueados seguem destinos específicos por estado, sem deny genérico quando o contexto conhecido permite distinção;
+  - a última conta permitida é persistida em cookie exclusivamente server-side e removida quando inválida ou bloqueada;
+  - `AccessProvider` recebe contexto já resolvido e sanitizado pelo servidor e não autoriza, consulta banco ou eleva privilégios;
+  - rotas dependentes de sessão e cookie permanecem dinâmicas e sem cache compartilhado entre usuários.
+
+4.1.5 Limites e evoluções posteriores
+- Status: vigente.
+- Conteúdo:
+  - resolução e governança do Access Context pertencem à E8;
+  - experiências de bloqueio por membership e status de conta pertencem às E15 e E16;
+  - onboarding, páginas comerciais e workspace do Account Dashboard pertencem às respectivas evoluções da E10 e da E19;
+  - convites exibidos no gateway pertencem à E11 e não alteram a responsabilidade estrutural da E4.
 
 5. E5 — UI/Auth Account Dashboard
 
