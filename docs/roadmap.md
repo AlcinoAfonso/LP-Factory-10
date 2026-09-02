@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 02/09/2026
-• Versão: v1.5.210
+• Versão: v1.5.211
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2651,6 +2651,8 @@
     - `lib/lp-builder/adapters/generationContextAdapter.ts`
     - `lib/lp-builder/adapters/generationContextAdapterCore.ts`
     - `lib/lp-builder/adapters/landingPageDraftCandidateWorkflowAdapter.ts`
+    - `lib/lp-builder/adapters/landingPageDraftGenerationAdapter.ts`
+    - `lib/lp-builder/adapters/landingPageDraftImageGenerationAdapter.ts`
     - `lib/lp-builder/adapters/landingPageGenerationKnowledgeAdapter.ts`
     - `lib/lp-builder/adapters/landingPageRevisionReadinessAdapter.ts`
     - `lib/lp-builder/adapters/landingPageRevisionWorkflowAdapter.ts`
@@ -2668,7 +2670,7 @@
 22.4.3 Cadeia removida
 - A cadeia removida era: action de geração → compilação de contexto → resolução E20.7 integrada → candidata textual e imagem → binding → documentos de revisão → upload privado → append transacional.
 - A action já falhava fechado e não possuía consumer alcançável depois da retirada da UI no SV-PR01; os módulos abaixo dela ficaram sem entrada funcional.
-- Exports, validators e adapters exclusivos da cadeia foram podados com os módulos produtores e escritores.
+- Exports, validators, adapters exclusivos da cadeia e wrappers server-only sem consumidor foram podados com os módulos produtores e escritores.
 
 22.4.4 Capacidades preservadas
 - `generationContextContracts.ts`, schemas de revisão e readers permanecem para validar e reproduzir snapshots históricos v1/v3 e v2/v4.

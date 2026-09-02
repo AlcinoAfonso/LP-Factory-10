@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Documento: LP Factory 10 — Platform Config
-• Versão: v0.1.38
+• Versão: v0.1.39
 • Data: 02/09/2026
 
 0.2 Contrato do documento
@@ -373,8 +373,6 @@
 • Consumidores atuais conhecidos:
 • `lib/conversion-content/adapters/commercialActivationOpenAiAdapter.ts`
 • `lib/conversion-content/adapters/landingPageGenerationProfileOpenAiAdapter.ts`
-• `lib/lp-builder/adapters/landingPageDraftGenerationAdapter.ts`
-• `lib/lp-builder/adapters/landingPageDraftImageGenerationAdapter.ts`
 • `lib/onboarding/niche-resolution/adapters/openAiResolver.ts`
 • `automations/supabase-inspect/run.mjs`
 • Regra: novas APIs ou endpoints OpenAI devem ser registrados aqui quando virarem dependência operacional.
@@ -516,6 +514,8 @@ Regra:
 • Configurações de plataformas, secrets por nome, workflows, ambientes e endpoints usados por automações devem ser registrados neste documento.
 
 99. Changelog
+v0.1.39 — 02/09/2026 — Removidos do inventário de consumidores atuais os wrappers server-only de texto e imagem do LP Builder, confirmados sem consumidor funcional; os cores usados diretamente pelas provas administrativas permanecem inalterados.
+
 v0.1.38 — 02/09/2026 — Reconciliado o estado dos workloads de Landing Page após a retirada da orquestração antiga: texto e imagem permanecem para prova administrativa, a integração E19.3 deixou de ser consumidora e o adapter inexistente foi removido do inventário, sem alteração de variável, secret, endpoint ou infraestrutura externa.
 
 v0.1.37 — 01/09/2026 — Consolidado o estado final da E22.3: workflow Agent Builder e projeto Vercel `lpf-10-services` removidos; nenhum deployment/redeploy foi solicitado ou executado manualmente, e a publicação final do commit acionou automaticamente um Preview do Core `lp-factory-10` pela integração Git/Vercel, concluído com sucesso; nenhum novo deployment adicional deve ser provocado.

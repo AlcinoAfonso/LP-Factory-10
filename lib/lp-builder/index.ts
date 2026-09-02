@@ -45,8 +45,6 @@ export {
   LANDING_PAGE_DRAFT_IMAGE_TIMEOUT_MS,
   type LandingPageDraftImageResult,
 } from "./landingPageDraftImageGeneration";
-export { generateLandingPageDraftCandidate } from "./adapters/landingPageDraftGenerationAdapter";
-export { generateLandingPageDraftImage } from "./adapters/landingPageDraftImageGenerationAdapter";
 export {
   LANDING_PAGE_REVISION_ASSET_BUCKET,
   LANDING_PAGE_REVISION_ASSET_MAX_BYTES,
