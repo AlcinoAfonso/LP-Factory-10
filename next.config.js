@@ -34,7 +34,6 @@ const nextConfig = {
       './docs/gestor-automations.md',
       './docs/gestor-seguranca.md',
       './docs/automations.md',
-      './docs/pipeline-plano-base.md',
       './docs/prompt-estrategista.md',
       './docs/prompt-executor.md',
       './docs/template-briefing-codex.md',
