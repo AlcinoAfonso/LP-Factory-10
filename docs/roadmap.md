@@ -503,7 +503,7 @@
     - `lib/commercial-entitlements/index.ts`
 
 9.1.3 Separação entre lifecycle operacional e condição comercial
-- Status: Concluído (definição)
+- Status: concluído.
 - Trial, plano, assinatura e liberação manual controlam permissões e limites de uso quando materializados como entitlement comercial válido.
 - Trial, plano, assinatura e liberação manual não definem `accounts.status`.
 - `accounts.status` representa lifecycle operacional da conta/setup.
@@ -542,7 +542,7 @@
 - Signal validado por contrato view → adapter.
 
 9.1.9 Gate do LP Builder
-- Status: Fases 1 e 5 concluídas.
+- Status: concluído.
 - Regra mínima: usuário autenticado + conta `active` + membership `active` + papel `owner`/`admin` + entitlement comercial válido.
 - Para gate de criação de LP, conta operacionalmente permitida significa `accounts.status = active`.
 - Membership ativo significa `account_users.status = active`.
@@ -551,7 +551,6 @@
 - O LP Builder consome `getCommercialEntitlementSignal({ accountId })` antes da persistência.
 - Sem entitlement comercial válido, o fluxo retorna `commercial_entitlement_required` antes do insert.
 - O LP Builder não consulta Stripe diretamente, não usa redirect de checkout como liberação e não usa apenas `accounts.status` como prova comercial.
-- A validação operacional direta da action é N/A neste recorte, pois não há superfície aprovada para disparo sem criar rota ou UI artificial.
 
 9.1.10 Fail-closed, limites e ressalvas
 - Fallback fail-closed: `accountId` vazio, erro, exceção ou ausência de linha retornam não elegível.
@@ -561,7 +560,7 @@
 
 9.2.1 Objetivo e status
 - Objetivo: permitir concessão, atualização e cancelamento manual mínimo de entitlement por `platform_admin`.
-- Status: concluída em 04/07/2026.
+- Status: concluído.
 
 9.2.2 Registros do recorte
 - Repositório:
@@ -592,7 +591,7 @@
 
 9.3.1 Objetivo e status
 - Objetivo: definir trial como origem futura de entitlement comercial.
-- Status: previsto / não implementado operacionalmente no recorte consolidado atual.
+- Status: não implementado; contrato operacional, vigência, limites, expiração e auditoria ainda dependem de recorte aprovado.
 
 9.3.3 Trial como origem futura de entitlement
 - Trial deve controlar permissões e limites de uso quando materializado como entitlement comercial válido.
@@ -612,8 +611,8 @@
 9.4 Stripe
 
 9.4.1 Objetivo e status
-- Objetivo: documentar o recorte mínimo de Stripe Checkout e webhook.
-- Status: Checkout mínimo concluído na Fase 6; webhook mínimo concluído na Fase 7.2.
+- Objetivo: integrar Stripe como mecanismo inicial de checkout e confirmação assíncrona, persistindo o resultado no entitlement comercial local.
+- Status: concluído para Checkout em modo `subscription` no ambiente de teste e webhook mínimo baseado em `invoice.paid`.
 
 9.4.2 Registros do recorte
 - Banco:
@@ -636,7 +635,7 @@
     - `lib/billing-checkout/index.ts`
 
 9.4.3 Checkout mínimo
-- Status: Fase 6 concluída em 30/06/2026.
+- Status: concluído.
 - Provedor inicial: Stripe.
 - Ambiente inicial: teste.
 - Stripe é mecanismo de checkout/confirmação/persistência, não origem comercial autônoma no gate.
@@ -648,7 +647,7 @@
 - `PlanId` legado não é contrato de negócio.
 
 9.4.4 Webhook mínimo
-- Status: Fase 7.2 concluída em 02/07/2026.
+- Status: concluído.
 - Endpoint produtivo: `POST /api/stripe/webhook`.
 - Persistência local validada em `public.account_commercial_entitlements`.
 - Payload bruto, secret, cartão e PII sensível não são persistidos.
@@ -661,7 +660,6 @@
 9.4.6 Idempotência e persistência
 - Idempotência operacional: `stripe_webhook_events.event_id`.
 - Retry validado para evento `failed` e para `processing` antigo com `retry_reason = stale_processing`.
-- Webhook, assinatura do webhook, idempotência e persistência em `account_commercial_entitlements` foram tratados na Fase 7.
 
 9.4.7 Limites: Stripe não substitui entitlement local
 - Stripe não substitui o entitlement local.
@@ -671,34 +669,26 @@
 9.5 Mercado Pago
 
 9.5.1 Objetivo e status
-- Objetivo: registrar Mercado Pago como provedor futuro possível.
-- Status: previsto / não implementado.
+- Objetivo: preservar a decisão sobre Mercado Pago sem antecipar integração.
+- Status: explicitamente adiado; não há adapter, SDK, endpoint, webhook, persistência ou credencial desse provedor no recorte atual.
 
 9.5.3 Critérios para abertura futura
-- Mercado Pago está previsto apenas como hipótese futura; nenhuma implementação está consolidada no E9 atual.
-- Abrir somente por recorte futuro aprovado, seguindo o contrato universal do 9.1.
-
-9.5.4 Fora do escopo atual
-- Permanece fora do escopo atual.
+- Uma integração futura exige recorte aprovado e deve seguir o contrato universal de entitlement definido em 9.1.
 
 9.6 Asaas
 
 9.6.1 Objetivo e status
-- Objetivo: registrar Asaas como provedor futuro possível.
-- Status: previsto / não implementado.
+- Objetivo: preservar Asaas como reserva operacional para avaliação posterior, sem antecipar integração.
+- Status: não implementado; não há adapter, SDK, endpoint, webhook, persistência ou credencial desse provedor no recorte atual.
 
 9.6.3 Critérios para abertura futura
-- Asaas está previsto apenas como hipótese futura; nenhuma implementação está consolidada no E9 atual.
-- Abrir somente por recorte futuro aprovado, seguindo o contrato universal do 9.1.
-
-9.6.4 Fora do escopo atual
-- Permanece fora do escopo atual.
+- Uma avaliação futura exige recorte aprovado e deve seguir o contrato universal de entitlement definido em 9.1.
 
 9.7 Catálogo canônico de capacidades e limites por plano
 
 9.7.1 Objetivo e status
 - Objetivo: definir e resolver um contrato canônico único que traduza o plano efetivo da conta em capacidades, níveis, limites e sinais suficientes para os domínios consumidores decidirem quais configurações podem ser apresentadas.
-- Status: Em andamento; E9.7.3 concluída, E9.7.4 e E9.7.5 planejadas.
+- Status: em andamento; o contrato canônico está concluído, enquanto o catálogo inicial e a integração pelo plano efetivo permanecem planejados.
 
 9.7.2 Registros do recorte
 - Repositório:
@@ -719,7 +709,7 @@
   - Contrato técnico: `docs/base-tecnica.md` — seção 3.11.
 
 9.7.3 Contrato canônico e fonte de resolução
-- Status: Concluído (06/08/2026).
+- Status: concluído.
 - Conteúdo:
   - materializa a identificação mínima por chave estável, nome, descrição, categoria, tipo com contrato de valor inequívoco e domínio consumidor;
   - suporta tipos booleano, nível fechado e limite numérico, inclusive `-1` somente quando o contrato do limite adota ilimitado explicitamente;
