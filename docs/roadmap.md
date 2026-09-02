@@ -204,63 +204,102 @@
   - convites exibidos no gateway pertencem à E11 e não alteram a responsabilidade estrutural da E4.
 
 5. E5 — UI/Auth Account Dashboard
+- Objetivo: oferecer fluxos page-based de login, signup, confirmação e recuperação de senha com tratamento seguro e orientação clara ao usuário.
+- Status: funcionalmente implementado; permanecem pendências residuais de normalização da copy e dos erros de Auth e de validação ponta a ponta em mobile.
 
-5.1 Status
-• Concluído
+5.1 Login e recuperação de senha
 
-5.2 Implementado
-• Tela de Login (page-based em /auth/login)
-• Tela "Esqueci minha senha" (/auth/forgot-password)
-• Recovery sem “Continuar”: link do e-mail abre direto em /auth/update-password; submit confirma e troca senha via POST /auth/confirm (anti-scanner)
-• Cooldown UI do reset: 60s com contador e botão desabilitado após solicitar
-• Tela de Signup (/auth/sign-up) com envio de e-mail de confirmação
-• Confirmação de e-mail (signup): link abre em /auth/confirm com type=signup e next=/a/home; token consumido somente no POST (anti-scanner)
-• Pós-confirmação: usuário autenticado cai em /a/home; se não houver membership, F2 auto-cria 1ª conta pending_setup + vínculo owner/active e redireciona para /a/acc-... (modo vitrine)
+5.1.1 Objetivo e status
+- Objetivo: permitir entrada por e-mail e senha e recuperação segura sem enumeração de usuários ou consumo de token no GET.
+- Status: implementado e em uso.
 
-5.3 Critérios de Aceite
-• Fluxo page-based (sem modal overlay primário)
-• Mensagens seguras e anti-enumeração no reset
-• Erros genéricos/seguro no login, sem expor detalhes sensíveis
+5.1.2 Registros do recorte
+- Repositório:
+  - Criados:
+    - `app/auth/login/page.tsx`;
+    - `components/login-form.tsx`;
+    - `app/auth/forgot-password/page.tsx`;
+    - `components/forgot-password-form.tsx`;
+    - `app/auth/update-password/page.tsx`.
+- Referências:
+  - Contrato técnico de sessão e Auth: `docs/base-tecnica.md` — seção 5.3.
+  - Redirects e envio transacional: `docs/platform-config.md` — seções 4.4 e 4.5.
 
-5.4 Signup/Confirmação mobile (Auth hardening — produto)
+5.1.3 Fluxo page-based
+- Status: implementado e vigente.
+- Conteúdo:
+  - login, solicitação de recuperação e definição de nova senha usam páginas próprias, sem modal como superfície principal;
+  - login por e-mail e senha aceita somente destino interno seguro e usa `/a/home` como fallback;
+  - recuperação apresenta resposta neutra, aplica cooldown visual e encaminha o usuário ao fluxo de nova senha;
+  - token ou código de recuperação é verificado somente no POST de `/auth/confirm`, antes da atualização da senha.
 
-• Status: Concluído (exec) (24/02/2026)
-• Implementado (estado final): fluxo sign-up → envio do e-mail de confirmação → clique no link → /auth/confirm → redirect para /a/home executado (happy path).
-• emailRedirectTo: configurado para apontar para /auth/confirm com next=/a/home e rid para correlação (não-PII).
-• UX mínima: página /auth/sign-up-success orientando “cadastro iniciado / confirme no e-mail”.
-• Observability mínima: logs estruturados no client para eventos de signup/resend sem PII, com rid (supa#5) e sinal mínimo via logs no runtime do front em produção (Vercel).
-• ARTEFATOS_REPO:
-• Ajustados: components/sign-up-form.tsx
+5.1.4 Pendência de mensagens de erro
+- Status: pendente.
+- Conteúdo:
+  - o formulário de login ainda pode exibir diretamente a mensagem devolvida pelo provedor de Auth;
+  - falta consolidar mensagens públicas neutras e consistentes sem perder o diagnóstico seguro em logs.
 
-5.4.1 Escopo
-• Garantir fluxo estável de sign-up/confirm no mobile (happy path) com redirect correto para /a/home.
-• Incluir correlação por rid (não-PII) no redirect para rastrear signup → confirm → redirect.
-• Entregar UX mínima de “cadastro iniciado / confirme no e-mail” em /auth/sign-up-success.
-• Emitir logs estruturados (supa#5) sem PII com rid e sinal mínimo no runtime Vercel.
+5.2 Signup, confirmação e e-mail já cadastrado
 
-5.4.2 Dependências
-• Fluxos Sistema de Acesso 2.0 (signup/confirm/resend).
-• Configurações do Supabase Auth (URL/redirect/confirm).
+5.2.1 Objetivo e status
+- Objetivo: iniciar cadastro, confirmar o e-mail, orientar o pós-envio e tratar e-mail previamente cadastrado sem criar fluxo paralelo.
+- Status: implementado; estado dedicado de e-mail já cadastrado e reenvio confirmados no código atual.
 
-5.4.3 Pendências
-• Repetir o happy path em mobile (teste manual ponta a ponta) para fechar “ponta a ponta no mobile”.
-• Repetição de tentativas pode ser afetada por rate limit (fora do escopo do E5.4; tratar em caso separado).
+5.2.2 Registros do recorte
+- Repositório:
+  - Criados:
+    - `app/auth/sign-up/page.tsx`;
+    - `app/auth/sign-up-success/page.tsx`;
+    - `app/auth/confirm/route.ts`.
+  - Ajustados:
+    - `components/sign-up-form.tsx`.
+- Referências:
+  - Contrato técnico de signup e confirmação: `docs/base-tecnica.md` — seções 5.3.2 e 5.3.3.
+  - Redirects e envio transacional: `docs/platform-config.md` — seções 4.4 e 4.5.
 
-5.5 E-mail já cadastrado (estado dedicado + cooldown)
-• Status: Briefing
-• Objetivo: reduzir fricção no sign-up quando o e-mail já foi usado (confirmado ou não), com estado dedicado + Reenviar confirmação + Fazer login + cooldown com contador e feedback.
-• Escopo (MVP): detectar duplicidade (erro exists/already registered ou ok com identities_count==0), ocultar senha/submit, auth.resend({ type: 'signup' }), cooldown ~60s, logs supa#5 sem PII (incl. resend).
-• Fora de escopo: diferenciar Caso 2 vs 3, mudanças de infra/SMTP/Resend, BD.
+5.2.3 Signup e confirmação anti-scanner
+- Status: implementado e vigente.
+- Conteúdo:
+  - signup envia confirmação com destino em `/auth/confirm`, retorno para `/a/home` e identificador de correlação sem PII;
+  - `/auth/sign-up-success` orienta o usuário a confirmar o cadastro pelo e-mail;
+  - o GET de confirmação apresenta intersticial e não consome token ou código;
+  - verificação e criação da sessão ocorrem somente no POST;
+  - após confirmação, o gateway da E4 resolve o destino permitido e o fluxo de primeira conta quando aplicável;
+  - eventos de signup, reenvio e confirmação usam logs estruturados sem registrar e-mail, senha, token ou código.
 
-5.6 Infra Auth — E-mail transacional (Supabase Auth via Resend SMTP)
-• Status: Concluído (exec) (26/02/2026)
-• Objetivo: estabilizar envio de e-mails transacionais do Supabase Auth (signup confirm e reset password) com entrega validada, baixo risco e zero custo adicional no MVP.
-• Implementado (estado final): Resend com domínio verificado `lpfactory.com.br` (plano Free); Supabase Auth configurado para SMTP Resend; sender `no-reply@lpfactory.com.br`; signup e forgot password testados com entrega confirmada e links funcionais.
-• Decisão: manter sender no domínio raiz (`no-reply@lpfactory.com.br`) no estágio atual; não adotar `no-reply@mail.lpfactory.com.br` por limitação do plano e ausência de escala/volume.
-• Consequência (domínio raiz): reputação compartilhada entre site, e-mails transacionais e futuros e-mails humanos (SPF/DKIM/DMARC únicos).
-• Operação: e-mails humanos (ex.: alcinoafonso@, support@, vendas@) em provedor humano (Workspace/M365/Zoho); Resend permanece apenas para envio transacional.
-• Evolução (quando houver escala): avaliar migração para subdomínio dedicado (`mail.`) para isolamento de reputação, com plano pago e novos registros DNS.
-• Referência técnica: detalhes e parâmetros ficam em `docs/base-tecnica.md` (Supabase Auth — E-mail transacional).
+5.2.4 Estado de e-mail já cadastrado
+- Status: implementado.
+- Conteúdo:
+  - duplicidade explícita ou retorno sem identidade nova ativa um estado dedicado;
+  - campos de senha e submit de criação são substituídos por orientação, reenvio de confirmação, acesso ao login e troca de e-mail;
+  - reenvio usa o fluxo nativo de signup do Supabase Auth;
+  - cooldown com contador e feedback trata repetição e rate limit sem criar infraestrutura própria;
+  - o fluxo não tenta distinguir publicamente usuário confirmado de não confirmado.
+
+5.2.5 Pendências residuais de UX e validação
+- Status: pendente.
+- Conteúdo:
+  - parte da copy e de mensagens do formulário de signup ainda permanece em inglês ou deriva diretamente do provedor;
+  - falta registro conclusivo de repetição manual do happy path signup → e-mail → confirmação → `/a/home` em dispositivo mobile real.
+
+5.3 E-mail transacional do Supabase Auth
+
+5.3.1 Objetivo e status
+- Objetivo: assegurar entrega de e-mails de confirmação de signup e recuperação de senha pelo Supabase Auth.
+- Status: concluído em 26/02/2026; entrega e links funcionais validados.
+
+5.3.2 Registros do recorte
+- Referências:
+  - SMTP, sender, DNS e estado operacional: `docs/platform-config.md` — seção 4.5.
+
+5.3.3 Decisão operacional vigente
+- Status: implementado e vigente.
+- Conteúdo:
+  - Supabase Auth usa Resend como provedor SMTP para e-mails transacionais;
+  - o sender permanece no domínio raiz durante o MVP;
+  - Resend é reservado ao envio transacional, enquanto caixas humanas permanecem em provedor próprio;
+  - credenciais, parâmetros SMTP e registros DNS residem exclusivamente em `docs/platform-config.md`;
+  - subdomínio dedicado de e-mail só deve ser reavaliado quando escala, volume ou isolamento de reputação justificarem plano e configuração adicionais.
 
 6. E6 — UI Kit Provisório
 
