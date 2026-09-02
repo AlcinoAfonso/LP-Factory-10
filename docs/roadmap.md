@@ -1295,8 +1295,12 @@
 - Objetivo: definir uma superfície de parceiros somente quando houver jornada, atores, permissões e resultado operacional aprovados.
 - Status: futuro sem escopo funcional aprovado.
 
+13.1.2 Registros do recorte
+- Referências:
+  - Contrato de banco: `docs/schema.md` — seções 1.6–1.7.
+
 13.1.3 Estado atual e limite
-- `partners` e `partner_accounts` existem como fundação de banco e permanecem registrados em E1 e no `docs/schema.md` — seções 1.6–1.7.
+- `partners` e `partner_accounts` existem como fundação de banco e permanecem registrados em E1.
 - Não há implementação atual de branding de agência, gestão de clientes, relatórios ou Partner API.
 - Uma boundary própria só deve ser criada junto do primeiro recorte funcional aprovado e de consumidores reais.
 
