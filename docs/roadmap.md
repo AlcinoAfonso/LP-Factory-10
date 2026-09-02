@@ -1356,65 +1356,55 @@
 - `/a/home` tenta a última conta válida e o fallback determinístico; sem membership disponível, retorna a `/auth/confirm/info`.
 - A primeira conta só pode nascer pelo fluxo server-side aprovado; a existência de qualquer membership impede auto-criação adicional.
 
-16. E16 — Accounts
+16. E16 — Lifecycle operacional de contas
 
-16.1 Status
-• Concluído
+- Objetivo: definir os estados operacionais de `accounts.status`, sua única transição de produto implementada e a experiência segura de cada bloqueio, sem misturar billing ou entitlement ao lifecycle da conta.
+- Status: contrato e consumo implementados; `pending_setup → active` é a mutação de produto vigente, enquanto suspensão, inativação e reativação administrativas não possuem operação própria no Admin atual.
 
-16.2 Objetivo
-• Definir o lifecycle de **contas** e o comportamento esperado no dashboard (Produto + UX).
-• Manter **billing/trial/entitlements** fora de `accounts.status` (ver E9).
-• Setup concluído (produto) é representado por **status** (ver E10.4/E10.4.6).
+16.1 Estados e transições da conta
 
-16.3 Status de conta (definição prática)
+16.1.1 Objetivo e status
+- Objetivo: manter uma interpretação única de `pending_setup`, `active`, `inactive` e `suspended` em adapters, guards e UX.
+- Status: implementado, com um drift de copy ainda presente na tela de conta inativa.
 
-16.3.1 `pending_setup` (onboarding mínimo)
-• Ao entrar no dashboard da conta, renderiza **“Primeiros passos”** (formulário inline).
-• Objetivo: coletar dados mínimos e concluir setup.
-• Ao salvar com sucesso, a conta **deixa de ser `pending_setup`** (ver transição 16.5).
-• CTAs típicos: “Salvar e continuar” (onboarding) e alternativas de suporte/consultoria (quando aplicável).
+16.1.2 Registros do recorte
+- Repositório:
+  - Criados:
+    - `app/auth/confirm/account/inactive/page.tsx`
+    - `app/auth/confirm/account/suspended/page.tsx`
+  - Ajustados:
+    - `lib/types/status.ts`
+    - `lib/access/adapters/accountAdapter.ts`
+    - `app/a/_server/section-guard.ts`
+- Referências:
+  - Contrato técnico: `docs/base-tecnica.md` — seções 5.1.1 e 5.4.
+  - Contrato de banco: `docs/schema.md` — seção 1.1.
+  - Setup da conta: E10.4.
+  - Entitlement comercial: E9.1.
 
-16.3.2 `active` (pós-setup / operação normal)
-• Setup concluído; uso normal do dashboard.
-• **Permissões de features** (ex.: criar/publicar recursos) são controladas por **entitlements/trial/plano** (E9), não por `accounts.status`.
+16.1.3 Estados vigentes
+- `pending_setup`: setup mínimo incompleto; `/a/[account]` apresenta “Primeiros passos”.
+- `active`: setup operacional concluído; a rota decide entre experiência comercial, onboarding de landing page e workspace conforme papel, entitlement e estado da E19.
+- `inactive`: bloqueio operacional reversível; o guard impede a seção privada e envia para a tela pública de conta inativa.
+- `suspended`: bloqueio administrativo; o guard impede a seção privada e envia para a tela pública de conta suspensa.
+- O status da conta é independente do status de cada membership: ambos precisam permitir a operação solicitada.
 
-16.3.3 `inactive` (restrição operacional — reversível)
-• Acesso restrito com explicação clara do motivo (ex.: billing), com CTA de reativação.
-• Enforcement automático fica para caso de uso operacional (Admin/Jobs).
+16.1.4 Transição implementada
+- `pending_setup → active` ocorre após o salvamento válido do onboarding mínimo da E10.4.
+- A mutação usa update condicional por estado e é idempotente.
+- Não existe no Admin atual ação geral de `active → inactive`, `inactive → active`, suspensão ou retirada de suspensão.
+- Billing, trial, plano, pagamento e entitlement não alteram `accounts.status`; sua autoridade reside em E9.
 
-16.3.4 `suspended` (bloqueio admin)
-• Acesso restrito com explicação clara do motivo (bloqueio administrativo).
-• CTA: contatar suporte.
-• Enforcement automático fica para caso de uso operacional (Admin/Jobs).
+16.1.5 UX dos bloqueios
+- Ao bloquear uma conta, o guard remove a última conta persistida em best effort antes do redirect.
+- A tela de conta inativa oferece contato por e-mail, troca de conta e retorno ao login.
+- A tela de conta suspensa oferece suporte, troca de conta e retorno ao login.
+- O Account Dashboard não escolhe silenciosamente outra conta quando a URL solicitada está bloqueada.
 
-16.4 Regras de produto (alto nível)
-• Bloqueio por conta é independente do vínculo do usuário: mesmo com membership “ativo”, pode haver restrição por status da conta.
-• Trial comercial não é status de conta; é estado de plano/assinatura/entitlements (ver E9).
-• `pending_setup` é exclusivo para **setup incompleto**; `active` é o estado pós-setup.
-
-16.5 Transições oficiais (lifecycle)
-• `pending_setup → active`: evento = **sucesso no “Salvar e continuar” de “Primeiros passos”** (E10.4.6).
-• `active → inactive`: evento de billing/operacional (E9/E12) (regras detalhadas fora deste item).
-• `inactive → active`: reativação (E9/E12).
-• `* → suspended` e `suspended → active`: decisão/admin/operacional (E12).
-
-16.6 UX por status (snapshot)
-• `pending_setup`: tela da conta com **Primeiros passos** (onboarding mínimo).
-• `active`: estado pós-setup (inclui vitrine/CTAs de conversão quando **sem plano/trial**, ver E10.5; gating de features via entitlements, ver E9).
-• `inactive`: tela de conta inativa com CTA reativar/pagar.
-• `suspended`: tela de conta suspensa com CTA suporte.
-• Observação: detalhes de rotas/gate e regras técnicas ficam em `docs/base-tecnica.md` (ver também E4/E8).
-
-16.7 QA e evidência (snapshot)
-• Confirmar que contas novas “nascem” em `pending_setup`.
-• Confirmar que, após sucesso no onboarding, a conta passa a renderizar estado `active` (sem “deny genérico”).
-• Detalhes de contrato/DB e evidências de hardening ficam em `docs/schema.md`.
-
-16.8 Casos relacionados / drifts (owners)
-• E10.4/E10.4.6: onboarding mínimo e transição `pending_setup → active` (setup status-based).
-• E10.5: “active persuasiva” sem plano/trial (UX pós-setup; gating por entitlements).
-• E9: trial/entitlements (fonte de verdade de permissões).
-• E12: enforcement operacional (jobs) e políticas de restrição/reativação/configurações.
+16.1.6 Limite e drift atual
+- A copy da tela `/auth/confirm/account/inactive` ainda associa a inatividade a pendência de pagamento e usa o CTA “Reativar / pagar”.
+- Essa copy não representa uma integração de billing nem uma transição automática e conflita com a separação canônica definida em E9.
+- Até existir recorte operacional aprovado para mudança de status, `inactive` e `suspended` devem ser tratados apenas como estados consumidos e bloqueados com segurança.
 
 17 E17 - Automations, Agents & Validation Infrastructure
 
