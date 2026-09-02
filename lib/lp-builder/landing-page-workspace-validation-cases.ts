@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { runInThisContext } from "node:vm";
 import ts from "typescript";
@@ -210,10 +210,7 @@ const cases: readonly Readonly<{ name: string; run: () => void }>[] = [
         new URL("../../supabase/migrations/20260824180000_e20_2_8_input_catalog_lifecycle.sql", import.meta.url),
         "utf8",
       );
-      const generationAdapter = readFileSync(
-        new URL("./adapters/generationContextAdapter.ts", import.meta.url),
-        "utf8",
-      );
+      const generationAdapterPath = new URL("./adapters/generationContextAdapter.ts", import.meta.url);
       const revisionAdapter = readFileSync(
         new URL("./adapters/landingPageRevisionAdapter.ts", import.meta.url),
         "utf8",
@@ -256,13 +253,10 @@ const cases: readonly Readonly<{ name: string; run: () => void }>[] = [
         adapter,
         /if \(isRecord\(operational\)\) \{[\s\S]*?return undefined;[\s\S]*?\}\s*const \{ data: onboarding/,
       );
-      assert.match(generationAdapter, /if \(!isLandingPageWorkspaceEnabled\(\)\)/);
-      assert.match(generationAdapter, /compileLegacyLandingPageGenerationContextForDraftWithDependencies/);
-      assert.match(generationAdapter, /loadTaxonPreparationForCurrentVersion/);
-      assert.doesNotMatch(generationAdapter, /loadTaxonPreparationForReviewedVersion|loadTaxonPreparationForVersion/);
+      assert.equal(existsSync(generationAdapterPath), false);
       assert.match(lifecycleMigration, /p_catalog_version is null or p_catalog_version <= 0/);
       assert.doesNotMatch(lifecycleMigration, /p_catalog_version is distinct from 5/);
-      assert.match(revisionAdapter, /append_account_landing_page_materialization_v2/);
+      assert.doesNotMatch(revisionAdapter, /append_account_landing_page_materialization/);
       assert.match(migration, /p_expected_shared_revision is null/);
       assert.match(migration, /p_expected_landing_page_revision is null/);
       assert.match(migration, /materialization_baseline_conflict/);

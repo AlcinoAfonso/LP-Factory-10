@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 02/09/2026
-• Versão: v1.5.209
+• Versão: v1.5.211
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -1672,8 +1672,8 @@
 - O caminho E19.3 → E19.4 não depende deste catálogo.
 
 19. E19 — LP Builder
-- Objetivo: manter o domínio Core de landing pages por conta, cobrindo identidade, configuração, geração controlada, revisões materializadas, Preview privado e aprovação humana.
-- Status: identidade, onboarding, workspace, geração base, histórico e aprovação implementados; workspace habilitado em Preview e Production. A integração de conhecimento E20.7 está mergeada no repositório, mas seu rollout end-to-end em Production permanece contido em deployment anterior após falha segura, sem nova materialização.
+- Objetivo: manter o domínio Core de landing pages por conta, cobrindo identidade, configuração, revisões históricas, Preview privado e aprovação humana.
+- Status: identidade, onboarding, workspace, histórico e aprovação implementados; workspace habilitado em Preview e Production. A orquestração antiga de geração e todas as escritas de revisão foram retiradas, sem alterar materializações existentes.
 
 19.1 Identidade e criação de landing page
 
@@ -1767,11 +1767,11 @@
 - A residência histórica pode inicializar a LP vinculada até a criação lazy das configurações operacionais.
 - Depois do handoff, `account_landing_page_shared_configurations` e `account_landing_page_configurations` são as únicas autoridades editáveis; o agregado da E19.2 permanece somente como bootstrap e proveniência.
 
-19.3 Contexto autorizado e conhecimento para geração
+19.3 Contratos históricos de contexto de geração
 
 19.3.1 Objetivo e status
-- Objetivo: compilar um pacote único, imutável e autorizado para a geração, separando contexto semântico do modelo e valores operacionais server-side.
-- Status: contrato v4 vigente para o workspace; contrato v3 preservado para revisões e rollback históricos. Integração E20.7 presente no repositório, com rollout de Production contido.
+- Objetivo: preservar a validação dos contratos de contexto necessários para reproduzir revisões históricas, sem reativar a orquestração retirada.
+- Status: contratos v3 e v4 preservados para leitura histórica; compilador, adapters de compilação, integração E20.7 e validator específico removidos.
 
 19.3.2 Registros do recorte
 - Repositório:
@@ -1794,33 +1794,26 @@
   - Parametrização raiz: `docs/roadmap.md` — seção 18.4.
   - Workloads e configuração operacional: `docs/platform-config.md`.
 
-19.3.3 Pacote de geração
-- O sucesso expõe somente `identities`, `modelContext` e `serverContext`; falhas não retornam pacote parcial.
-- A compilação revalida plano, cadeia taxonômica, catálogo E20.2 efetivo, configurações e parametrização raiz.
-- Fatos semanticamente visíveis permanecem em `modelContext.facts`; destinos e valores operacionais brutos ficam em `serverContext.facts`.
-- A pesquisa `end_customer` autorizada chega integralmente ao contexto consultivo, sem path físico; `business_buyer` não integra o contexto da LP.
-- O contrato v4 registra separadamente versões e revisões das configurações compartilhada e específica da LP.
-- Readers preservam o par histórico snapshot v1/contexto v3 e o par atual snapshot v2/contexto v4, sem cruzamento ou preenchimento retroativo.
+19.3.3 Contratos preservados
+- `generationContextContracts.ts` permanece porque os readers de revisão validam os pares snapshot v1/contexto v3 e snapshot v2/contexto v4.
+- Os contratos preservam identidades, contexto semântico e fatos operacionais já persistidos sem cruzamento, preenchimento retroativo ou reinterpretação.
+- Nenhum compilador ou adapter produz novos pacotes de contexto no runtime vigente.
 
-19.3.4 Integração E20.7 no repositório
-- Somente o workflow de candidata v4 resolve conhecimento; o caminho legado v3 conserva a pesquisa original.
-- A resolução mantém fatos, identidades e binding inalterados e pode retornar base, pesquisa especializada ou complemento dinâmico.
-- Complemento dinâmico exige configuração operacional provada, ocorre antes dos workloads de texto e imagem e usa o mesmo `attemptId` e `requestId`.
-- O resultado consultivo remove paths internos, é exatamente o conteúdo enviado ao workload textual e integra o snapshot da nova revisão.
-- Leituras e transporte respeitam o deadline total da tentativa; timeout, configuração indisponível ou resposta inválida falham fechado, sem retry, fallback ou materialização parcial.
+19.3.4 Desacoplamento da E20.7
+- A integração entre E19 e E20.7 foi removida junto com o workflow de candidata.
+- O resolver e o complemento dinâmico da E20.7 permanecem independentes em `lib/conversion-content/landing-page/knowledge-resolution/`, sem consumidor no fluxo de Landing Page.
+- Qualquer integração futura exige recorte próprio; configuração ou prova isolada da E20.7 não reativa geração, upload ou append.
 
 19.3.5 Estado operacional da integração
-- O caminho integrado foi aprovado no Preview com geração completa e nova revisão.
-- Em Production, canário e ativação da configuração passaram, mas duas tentativas completas retornaram resposta dinâmica inválida antes de texto e imagem; nenhuma revisão foi anexada.
-- O Core em Production foi revertido ao deployment anterior, promoções automáticas ficaram suspensas e nenhuma nova geração foi executada após a contenção.
-- O código integrado permanece na `main`; portanto merge e configuração ativa não equivalem a rollout end-to-end aprovado.
-- Workspace, histórico, revisões e mídia permaneceram legíveis durante a contenção.
+- O caminho integrado deixou de existir no runtime; a contenção anterior foi encerrada por retirada, não por nova ativação.
+- Workspace, histórico, revisões e mídia continuam legíveis; nenhuma materialização existente foi alterada.
+- Configuração E20.7 ativa ou evidência histórica de Preview não equivale a consumidor E19 vigente.
 
-19.4 Geração, materialização e Preview privado
+19.4 Revisões materializadas e Preview privado
 
 19.4.1 Objetivo e status
-- Objetivo: gerar uma candidata validada, anexar uma revisão completa e reproduzível e renderizá-la em Preview privado.
-- Status: Pipeline base implementado; materializações e assets existentes preservados. A geração com conhecimento dinâmico segue o limite operacional de 19.3.5.
+- Objetivo: preservar a leitura e a reprodução autorizada de revisões materializadas existentes em Preview privado.
+- Status: materializações e assets existentes preservados; pipeline de candidata, upload e append removido do runtime.
 
 19.4.2 Registros do recorte
 - Banco:
@@ -1858,21 +1851,18 @@
   - Objetos físicos: `docs/schema.md`.
   - Workloads vigentes: `docs/platform-config.md`.
 
-19.4.3 Geração controlada
-- O fluxo é server-side, linear e não agentic: contexto autorizado → conhecimento consultivo → texto estruturado → imagem → revalidação → append.
-- O contrato de apresentação e os schemas estritos validam as oito variantes suportadas antes da persistência.
-- Binding de conversão é derivado dos fatos operacionais e não pelo modelo.
-- Texto e imagem usam workloads separados; modelos, esforços e limites efetivos pertencem ao registry E21 e à configuração operacional.
-- A tentativa possui deadline total de 270 segundos e não aplica retry ou fallback automático.
-- Falha posterior ao upload executa cleanup best-effort do path exato e não autoriza revisão parcial.
+19.4.3 Geradores básicos preservados
+- Os geradores básicos de texto e imagem permanecem consumidos pelas provas administrativas da E21 e conservam contratos, telemetria e limites próprios.
+- Eles não são encadeados pelo Account Dashboard e não autorizam binding, upload, snapshot, append ou materialização.
+- O contrato de apresentação e seus schemas permanecem porque validam as oito variantes históricas suportadas pelo renderer.
 
 19.4.4 Revisões e mídia
-- Revisões são 1:N, append-only, numeradas por LP e idempotentes por `attempt_id`.
+- Revisões existentes são 1:N, numeradas por LP e imutáveis.
 - A revisão corrente é a de maior `revision_number`; a aprovada é um ponteiro explícito e pode ser anterior à corrente.
-- Append ocorre por RPC transacional tenant-safe; runtime não escreve diretamente na tabela.
-- Conteúdo e snapshot são autossuficientes e imutáveis, sem secret, prompt bruto, raciocínio privado ou URL assinada.
+- Não existe operação de append no runtime; RPCs e tabelas permanecem inertes para eventual decisão futura.
+- Conteúdo e snapshot históricos são autossuficientes e imutáveis, sem secret, prompt bruto, raciocínio privado ou URL assinada.
 - A imagem WebP reside no bucket privado por referência canônica; URL assinada é transitória e criada somente após autorização.
-- RLS permanece ativa; clientes `anon` e `authenticated` não executam os RPCs de append.
+- RLS permanece ativa; clientes `anon` e `authenticated` não executam os RPCs preservados.
 
 19.4.5 Preview
 - A rota privada revalida ator, conta, membership, entitlement, LP e tenant da revisão.
@@ -1884,8 +1874,8 @@
 19.5 Workspace operacional, configuração e aprovação
 
 19.5.1 Objetivo e status
-- Objetivo: operar múltiplas LPs por conta, editar configurações autorizadas, gerar revisões, navegar no histórico e aprovar explicitamente uma revisão.
-- Status: Implementado e habilitado em Preview e Production por `E19_5_WORKSPACE_ENABLED=true`; viewer permanece read-only.
+- Objetivo: operar múltiplas LPs por conta, editar configurações autorizadas, navegar no histórico e aprovar explicitamente uma revisão existente.
+- Status: Implementado e habilitado em Preview e Production por `E19_5_WORKSPACE_ENABLED=true`; geração está indisponível para todos os papéis e viewer permanece read-only.
 
 19.5.2 Registros do recorte
 - Banco:
@@ -1932,7 +1922,7 @@
 
 19.5.3 Lista e autoridade
 - O workspace usa master-detail paginado, com até 25 LPs por página e estados derivados de configuração, revisão corrente e aprovação.
-- Owner e admin podem criar, configurar, gerar e aprovar; viewer recebe leitura integral sem mutações.
+- Owner e admin podem criar, configurar e aprovar; viewer recebe leitura integral sem mutações. Nenhum papel pode gerar ou anexar revisão.
 - Toda operação revalida autenticação, conta ativa, membership, entitlement, taxonomia e versão efetiva do catálogo.
 - LPs sem revisão permanecem listáveis; o resumo transporta apenas metadados das revisões corrente e aprovada, não conteúdo ou snapshots.
 
@@ -1951,7 +1941,7 @@
 
 20. E20 — Preparação e liberação de taxons para geração de landing pages
 - Objetivo: manter o catálogo versionado de entradas, a pesquisa integral selecionada, a avaliação de suficiência e a resolução de conhecimento que autorizam o contexto factual da LP.
-- Status: catálogo E20.2 v6 vigente; perfil E20.3 retirado; seleção E20.5 e preparação determinística E20.6 operacionais; resolver E20.7 implementado e integrado ao código da E19, com rollout dinâmico de Production contido conforme 19.3.5.
+- Status: catálogo E20.2 v6 vigente; perfil E20.3 retirado; seleção E20.5 e preparação determinística E20.6 operacionais; resolver E20.7 implementado e preservado como capacidade independente, sem consumidor E19 vigente.
 
 20.2 Catálogo de entradas por taxon
 
@@ -2183,7 +2173,7 @@
 
 20.7.1 Objetivo e status
 - Objetivo: selecionar a fonte de conhecimento de mercado mais específica e segura para o escopo comercial da LP, sem alterar fatos E20.2 ou identidade da oferta.
-- Status: Resolver determinístico e complemento dinâmico implementados; consumidor E19 mergeado. Preview aprovou o fluxo completo, mas Production está contida no deployment anterior após falha segura do complemento dinâmico.
+- Status: Resolver determinístico e complemento dinâmico implementados e preservados como capacidade independente; a integração consumidora da E19 foi retirada.
 
 20.7.2 Registros do recorte
 - Banco:
@@ -2227,15 +2217,13 @@
 - O resultado completa a base como `base_plus_dynamic` ou preserva `base_only`; não cria fatos de negócio nem invalida a oferta.
 
 20.7.5 Consumo e estado operacional
-- O consumer da E19 executa a resolução somente no workflow de candidata v4, antes dos workloads de texto e imagem.
-- Preview comprovou resolução, Web Search, texto, imagem e append de revisão com correlação única.
-- Em Production, o workload foi provado e ativado, mas as duas tentativas end-to-end receberam saída dinâmica inválida e pararam antes de texto, imagem e append.
-- O Core foi contido no deployment anterior sem reescrever configuração, revisões, pesquisas ou snapshots.
-- O código E20.7 e sua integração permanecem na `main`; retomar Production exige novo diagnóstico e gate operacional próprio, não nova implementação do resolver.
+- O boundary E20.7, seus adapters e validadores permanecem disponíveis sem integração com o LP Builder.
+- Configuração, pesquisas e evidências históricas foram preservadas; nenhuma nova revisão de Landing Page é produzida por esse workload.
+- A eventual adoção por um novo consumidor exige diagnóstico, recorte e gates próprios, sem reutilizar implicitamente a integração retirada.
 
 21. E21 — Gestão e governança dos workloads OpenAI
 - Objetivo: manter uma autoridade única para identidade, configuração, execução observável e custo dos workloads OpenAI usados pelo produto, com operação administrativa segura e sem otimização autônoma.
-- Status: fundação e inventário vigentes; configuração operacional dinâmica e catálogo administrativo ativos; avaliação comparativa E21.3 pausada e sem implementação incorporada; visibilidade financeira em Production operacional para o total oficial e para os dois workloads de Landing Page cobertos prospectivamente. A configuração de pesquisa dinâmica permanece ativa, mas o rollout do Core que a consome está contido após falha end-to-end, sem alteração do lifecycle de IA.
+- Status: fundação e inventário vigentes; configuração operacional dinâmica e catálogo administrativo ativos; avaliação comparativa E21.3 pausada e sem implementação incorporada; visibilidade financeira em Production preserva o total oficial e o histórico prospectivo. Texto e imagem permanecem para provas administrativas, e a pesquisa dinâmica não possui consumidor no fluxo de Landing Page.
 
 21.1 Fundação, normalização e leitura dos workloads OpenAI
 
@@ -2281,11 +2269,11 @@
 - Modelo, esforço, qualidade e política de Web Search pertencem à configuração; prompts, Structured Outputs, limites funcionais, persistência e fallbacks continuam nos boundaries consumidores.
 
 21.1.4 Integração e observabilidade comum
-- Os seis workloads de produto consomem a resolução pública antes do transporte e preservam configuração, revisão e origem na proveniência ou no evento operacional aplicável.
+- Os workloads com consumidor vigente consomem a resolução pública antes do transporte e preservam configuração, revisão e origem na proveniência ou no evento operacional aplicável.
 - Eventos de texto e imagem registram somente identidade do workload, configuração efetiva, resultado, categoria segura de falha, latência, IDs técnicos e usage disponível.
 - Prompt, resposta integral, payload de negócio, pesquisa, fatos, PII, secrets e credenciais não integram a telemetria.
 - Métrica ausente permanece `null`; não há estimativa monetária transversal nem preenchimento inventado.
-- O workload de pesquisa dinâmica acrescenta contagem de chamadas e fontes Web Search quando disponíveis. Seu código consumidor está incorporado ao repositório, porém o Core de Production serve a versão anterior enquanto o diagnóstico do rollout end-to-end permanece aberto.
+- O workload de pesquisa dinâmica acrescenta contagem de chamadas e fontes Web Search quando disponíveis. Seu boundary e prova administrativa permanecem no repositório, sem consumidor no fluxo de Landing Page.
 - Variáveis legadas de seleção de modelo não são consumidas pelos workloads ativos.
 
 21.1.5 Inventário administrativo
@@ -2375,8 +2363,8 @@
 - A candidata pode ser salva ou descartada; prova bem-sucedida permite promoção; ativação e rollback sempre exigem ação humana e preservam histórico.
 - Falha na prova mantém a candidata e não altera a revisão ativa. Conflito de versão permanece rejeição funcional, sem retry autônomo.
 - As revisões ativas dos workloads comuns continuam operacionais em Preview e Production. A avaliação de suficiência do catálogo está em revisão comprovada 2 nos dois ambientes, embora seu gate funcional próprio ainda não esteja comprovado como liberado.
-- A pesquisa dinâmica foi provada e ativada no lifecycle; em Preview, a geração integrada foi aprovada. Em Production, duas respostas dinâmicas inválidas bloquearam a geração antes de texto, imagem e append. O Core foi revertido para a versão anterior, mas configuração operacional, banco e histórico de IA permaneceram intactos.
-- Portanto, configuração ativa não equivale a aprovação end-to-end do consumidor. Nova liberação do Core depende de diagnóstico e validação específicos, sem alterar automaticamente o lifecycle E21.2.
+- A pesquisa dinâmica foi provada e ativada no lifecycle, mas sua integração E19 foi retirada. Configuração operacional, banco e histórico de IA permaneceram intactos.
+- Configuração ativa não equivale a consumidor de produto vigente; uma nova integração depende de recorte e validação próprios, sem alterar automaticamente o lifecycle E21.2.
 
 21.2.5 Catálogo administrável e UX
 - O catálogo global controla quais combinações podem originar novas candidatas; save, prova e promoção revalidam a elegibilidade corrente.
@@ -2469,8 +2457,8 @@
 
 21.4.4 Tracking prospectivo das Landing Pages
 - `OPENAI_LP_COST_TRACKING_ENABLED=true` habilita o tracking somente em Production; Preview e Development permanecem fora.
-- O escopo financeiro interno cobre `landing_page_draft_generation` e `landing_page_draft_image_generation`. A pesquisa dinâmica mantém usage e latência operacionais, mas não recebe atribuição monetária causal à Landing Page.
-- Cada tentativa registra início e terminal append-only em orçamento curto e best effort. Falha ou timeout exclusivamente financeiro não bloqueia a chamada OpenAI nem invalida geração bem-sucedida.
+- O escopo financeiro interno cobre `landing_page_draft_generation` e `landing_page_draft_image_generation` quando invocados com identidade causal explícita. Os transports básicos permanecem para prova administrativa, sem rota de geração no Account Dashboard; a pesquisa dinâmica não recebe atribuição monetária causal à Landing Page.
+- Cada tentativa elegível registra início e terminal append-only em orçamento curto e best effort. Falha ou timeout exclusivamente financeiro não bloqueia a chamada OpenAI.
 - Custo interno é calculado apenas quando há unidades e preço versionado suficientes. Tentativa pendente ou sem preço fica fora da soma atribuída e dentro da reconciliação.
 - Falhas preservam somente status, código e tipo sanitizados; mensagem, payload bruto e detalhe sensível não são persistidos.
 - A cobertura confiável começa no corte imutável registrado; não há backfill nem reconstrução de tentativas anteriores.
@@ -2487,13 +2475,13 @@
 
 22. E22 — Retirada controlada de ativos históricos
 - Objetivo: reduzir superfícies, dados, documentos e infraestrutura sem consumidor vigente, após auditoria explícita de dependências e sem criar substitutos antecipados.
-- Status: E22.1, E22.2 e E22.3 concluídas. Foram retirados o perfil de geração, o catálogo de módulos, a resolução histórica de pesquisas, duas fontes documentais redundantes e o service/MCP Supabase Inspect com sua infraestrutura exclusiva. O Core, as automações GitHub e os dados ainda consumidos foram preservados. Permanece somente a decisão futura sobre reduzir Previews produzidos por pushes intermediários em branches não documentais.
+- Status: E22.1, E22.2, E22.3 e E22.4 concluídas. Foram retirados o perfil de geração, o catálogo de módulos, a resolução histórica de pesquisas, a orquestração antiga de geração e escrita de revisões, duas fontes documentais redundantes e o service/MCP Supabase Inspect com sua infraestrutura exclusiva. O Core, as automações GitHub, os leitores históricos e os dados ainda consumidos foram preservados. Permanece somente a decisão futura sobre reduzir Previews produzidos por pushes intermediários em branches não documentais.
 
 22.1 Retirada de ativos históricos do domínio de Landing Page
 
 22.1.1 Objetivo e status
 - Objetivo: remover boundaries, superfícies administrativas, validadores e objetos de banco históricos que deixaram de participar do caminho canônico, preservando autoridades e consumidores reais.
-- Status: concluída. Perfil de geração, catálogo de módulos e resolução histórica de pesquisas não existem mais no runtime; parametrização raiz, catálogo de entradas, preparação factual, pesquisa selecionada, workspace e geração de Landing Page permanecem ativos.
+- Status: concluída. Perfil de geração, catálogo de módulos e resolução histórica de pesquisas não existem mais no runtime; parametrização raiz, catálogo de entradas, preparação factual, pesquisa selecionada e workspace permanecem ativos. A geração antiga foi retirada posteriormente na E22.4.
 
 22.1.2 Registros do recorte
 - Banco:
@@ -2545,7 +2533,7 @@
   - a seleção da pesquisa integral `end_customer`;
   - a avaliação e preparação do taxon;
   - as tabelas `taxon_market_research` e `taxon_market_research_items`;
-  - o contexto de geração, workspace, revisões e histórico da Landing Page;
+  - os contratos históricos de contexto, workspace, revisões e histórico da Landing Page;
   - workloads OpenAI ainda consumidos.
 - Migrations históricas permanecem imutáveis; remoções de schema são forward-only e sem `CASCADE`.
 
@@ -2571,7 +2559,7 @@
 - Não permanecem imports, rotas ou scripts ativos dos três boundaries retirados.
 - `package.json` não contém mais validadores de perfil de geração, catálogo de módulos ou resolução histórica de pesquisas.
 - O Admin expõe somente superfícies sustentadas por autoridades vigentes.
-- O inventário OpenAI atual e os fluxos E19/E20 evoluíram independentemente das remoções e não devem ser reinterpretados a partir das evidências históricas da E22.1.
+- O inventário OpenAI e as capacidades E20 preservadas não devem ser reinterpretados a partir das evidências históricas da E22.1; a retirada posterior da orquestração E19 está registrada em 22.4.
 
 22.2 Retirada de documentação histórica redundante
 
@@ -2639,3 +2627,54 @@
 - Branches de implementação, inclusive `codex-app/**`, continuam gerando Preview a cada push; checkpoints publicados em excesso podem consumir a cota do Core.
 - A remoção do segundo projeto eliminou deployments duplicados do service, mas não reduz os Previews do Core.
 - Qualquer mudança adicional de política, processo, skill ou `AGENTS.md` exige recorte próprio e validação de que Production automática da `main` e Previews necessários continuam preservados.
+
+22.4 Retirada da orquestração antiga de geração de Landing Page
+
+22.4.1 Objetivo e status
+- Objetivo: remover o caminho funcional de geração e todas as escritas de revisão tornadas inalcançáveis, preservando leitores históricos, Preview, aprovação e capacidades independentes.
+- Status: concluída no repositório; rota de geração, compilação de contexto, resolução integrada E20.7, candidata, binding, upload e append foram removidos. Banco, migrations e dados existentes não foram alterados.
+
+22.4.2 Registros do recorte
+- Repositório:
+  - Ajustados:
+    - `app/admin/(protected)/estrutura-lp/validation-cases.ts`
+    - `lib/lp-builder/adapters/landingPageRevisionAdapter.ts`
+    - `lib/lp-builder/adapters/landingPageRevisionStorageAdapter.ts`
+    - `lib/lp-builder/index.ts`
+    - `lib/lp-builder/landing-page-draft-generation-validation-cases.ts`
+    - `lib/lp-builder/landing-page-preview-validation-cases.tsx`
+    - `lib/lp-builder/landing-page-workspace-validation-cases.ts`
+    - `lib/lp-builder/landingPageRevision.ts`
+    - `package.json`
+  - Excluídos:
+    - `app/a/[account]/landing-pages/[landingPageId]/preview/actions.ts`
+    - `lib/lp-builder/adapters/generationContextAdapter.ts`
+    - `lib/lp-builder/adapters/generationContextAdapterCore.ts`
+    - `lib/lp-builder/adapters/landingPageDraftCandidateWorkflowAdapter.ts`
+    - `lib/lp-builder/adapters/landingPageDraftGenerationAdapter.ts`
+    - `lib/lp-builder/adapters/landingPageDraftImageGenerationAdapter.ts`
+    - `lib/lp-builder/adapters/landingPageGenerationKnowledgeAdapter.ts`
+    - `lib/lp-builder/adapters/landingPageRevisionReadinessAdapter.ts`
+    - `lib/lp-builder/adapters/landingPageRevisionWorkflowAdapter.ts`
+    - `lib/lp-builder/generation-context-validation-cases.ts`
+    - `lib/lp-builder/generationContext.ts`
+    - `lib/lp-builder/landingPageDraftCandidateWorkflow.ts`
+    - `lib/lp-builder/landingPageDraftWorkflow.ts`
+    - `lib/lp-builder/landingPageGenerationKnowledge.ts`
+    - `lib/lp-builder/landingPageRevisionWorkflow.ts`
+- Referências:
+  - Boundary técnico vigente: `docs/base-tecnica.md` — seções 3.14.4, 3.15.8 e 3.15.9.
+  - Configuração preservada: `docs/platform-config.md` — workloads OpenAI e Storage privado.
+  - Contrato de banco preservado: `docs/schema.md` — materializações de Landing Page.
+
+22.4.3 Cadeia removida
+- A cadeia removida era: action de geração → compilação de contexto → resolução E20.7 integrada → candidata textual e imagem → binding → documentos de revisão → upload privado → append transacional.
+- A action já falhava fechado e não possuía consumer alcançável depois da retirada da UI no SV-PR01; os módulos abaixo dela ficaram sem entrada funcional.
+- Exports, validators, adapters exclusivos da cadeia e wrappers server-only sem consumidor foram podados com os módulos produtores e escritores.
+
+22.4.4 Capacidades preservadas
+- `generationContextContracts.ts`, schemas de revisão e readers permanecem para validar e reproduzir snapshots históricos v1/v3 e v2/v4.
+- Preview privado, assinatura transitória de mídia, histórico, configuração operacional e aprovação humana permanecem sob autenticação, tenant e entitlement existentes.
+- Os geradores básicos de texto e imagem permanecem apenas para provas administrativas da E21; não materializam revisão.
+- E20.7, preparação factual, catálogo de entradas e parametrização raiz permanecem independentes e sem integração ativa com E19.
+- RPCs, tabelas, bucket, migrations e dados históricos foram preservados inertes; qualquer nova escrita ou orquestração exige decisão e recorte futuros próprios.

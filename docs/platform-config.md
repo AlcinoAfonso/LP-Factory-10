@@ -2,8 +2,8 @@
 
 0.1 Cabeçalho
 • Documento: LP Factory 10 — Platform Config
-• Versão: v0.1.37
-• Data: 01/09/2026
+• Versão: v0.1.39
+• Data: 02/09/2026
 
 0.2 Contrato do documento
 • O QUE É: snapshot operacional e fonte única das configurações de plataformas externas do LP Factory 10, refletindo o estado conhecido/cadastrado nas plataformas conforme indicado.
@@ -204,7 +204,8 @@
 • Habilitação: somente o literal `true` ativa o tracker; variável ausente, vazia ou com qualquer outro valor preserva integralmente o runtime anterior.
 • Estado operacional final: configurado com `true` somente em Production após apply canônico, snippet read-only e Security Controls aprovados; Preview e Development permanecem sem instrumentação financeira.
 • Progressão pós-merge concluída: Production foi redeployada, o smoke real dos workloads de texto e imagem foi aprovado e a data de corte única foi registrada pela RPC versionada.
-• Regra de falha: com o gate ligado, falha ou timeout no registro inicial ou terminal degrada a cobertura financeira, mas não bloqueia a chamada OpenAI nem invalida uma geração de Landing Page bem-sucedida; a tentativa sem evidência completa fica fora da soma interna e permanece em Outros gastos / reconciliação.
+• Estado do consumidor: os transports básicos de texto e imagem permanecem disponíveis para prova administrativa, mas não existe rota ou workflow ativo de geração e materialização no Account Dashboard.
+• Regra de falha: com o gate ligado, falha ou timeout no registro inicial ou terminal degrada a cobertura financeira, mas não bloqueia a chamada OpenAI; a tentativa sem evidência completa fica fora da soma interna e permanece em Outros gastos / reconciliação.
 • Valor real: não versionar.
 
 • `OPENAI_OPERATIONAL_CONFIG_ENABLED`
@@ -230,11 +231,11 @@
 • Configuração efetiva dos workloads OpenAI de produto
 • Fonte canônica: `lib/openai-workloads/registry.ts` mantém identidade, baseline local e allowlist; Development usa `repo_catalog` revisão `v2`, e Preview/Production usam exclusivamente `supabase_operational` com revisão decimal ativa.
 • Workloads textuais validados operacionalmente: `niche_resolution` e `commercial_activation_draft_generation`, com modelo `gpt-5.4-mini` e esforço de raciocínio `none`.
-• Workload textual validado no ambiente alvo: `landing_page_draft_generation`, com modelo `gpt-5.6-luna`, esforço `max`, Responses API, Structured Output estrito, `store:false` e timeout de 120 s.
-• Workload de imagem validado no ambiente alvo: `landing_page_draft_image_generation`, com modelo `gpt-image-2`, saída WebP 1536 × 1024, qualidade `medium`, compressão 80, moderação `auto` e timeout de 120 s.
+• Workload textual preservado para prova administrativa: `landing_page_draft_generation`, com modelo `gpt-5.6-luna`, esforço `max`, Responses API, Structured Output estrito, `store:false` e timeout de 120 s.
+• Workload de imagem preservado para prova administrativa: `landing_page_draft_image_generation`, com modelo `gpt-image-2`, saída WebP 1536 × 1024, qualidade `medium`, compressão 80, moderação `auto` e timeout de 120 s.
 • Workload preparado para consumo futuro: `landing_page_dynamic_market_research`, com configuração inicial autorizada em Development `gpt-5.6-luna + high`, uma requisição foreground à Responses API, somente Web Search hospedado, Structured Output estrito, `store:false`, uma ou duas chamadas de busca e deadline máximo de 45 s. O lifecycle desse workload aceita para `save` e `promote` somente essa combinação; `low`, `max` e a matriz comparativa anterior permanecem fora.
 • Estado hospedado da E20.7.4: a migration `20260829171107_e20_7_4_dynamic_market_research_workload` foi aplicada automaticamente após o merge do PR #835; Preview e Production possuem o workload em bootstrap revisão `1`, `gpt-5.6-luna + high`, sem candidata ou revisão pendente e sem transporte hospedado autorizado.
-• Rollout futuro: prova, promoção e ativação de revisão `supabase_operational` `2` ou posterior ficam condicionadas ao futuro recorte de integração E19.3 que consumir a saída tipada da E20.7; não constituem pendência da E20.7 encerrada. O taxon piloto `corretor-imoveis` já está reconciliado em `reviewed_input_catalog_version=6`.
+• Integração futura: qualquer novo consumidor da saída tipada da E20.7 exigirá recorte e gates próprios; a integração histórica E19.3 foi retirada e não constitui pendência da E20.7 encerrada. O taxon piloto `corretor-imoveis` já está reconciliado em `reviewed_input_catalog_version=6`.
 • Credencial da E20.7.4: reutilizar a `OPENAI_API_KEY` compartilhada já configurada em Production e Preview; não criar, copiar ou registrar nova chave para esse workload.
 • Validação operacional: `niche_resolution` e `commercial_activation_draft_generation` foram executados uma única vez em Production em 10/08/2026; os Runtime Logs confirmaram sucesso e telemetria sanitizada, sem prompt, resposta integral, credencial ou dado pessoal.
 • Validação dos workloads de draft: por decisão humana, o gate de canários isolados sem persistência foi substituído pelo primeiro append integrado; duas execuções integradas hospedadas em 18/08/2026 comprovaram texto, imagem e o caminho oficial sem retry ou fallback.
@@ -372,9 +373,6 @@
 • Consumidores atuais conhecidos:
 • `lib/conversion-content/adapters/commercialActivationOpenAiAdapter.ts`
 • `lib/conversion-content/adapters/landingPageGenerationProfileOpenAiAdapter.ts`
-• `lib/lp-builder/adapters/landingPageDraftGenerationAdapter.ts`
-• `lib/lp-builder/adapters/landingPageDraftImageGenerationAdapter.ts`
-• `lib/lp-builder/adapters/landingPageGenerationOpenAiAdapter.ts`
 • `lib/onboarding/niche-resolution/adapters/openAiResolver.ts`
 • `automations/supabase-inspect/run.mjs`
 • Regra: novas APIs ou endpoints OpenAI devem ser registrados aqui quando virarem dependência operacional.
@@ -516,6 +514,10 @@ Regra:
 • Configurações de plataformas, secrets por nome, workflows, ambientes e endpoints usados por automações devem ser registrados neste documento.
 
 99. Changelog
+v0.1.39 — 02/09/2026 — Removidos do inventário de consumidores atuais os wrappers server-only de texto e imagem do LP Builder, confirmados sem consumidor funcional; os cores usados diretamente pelas provas administrativas permanecem inalterados.
+
+v0.1.38 — 02/09/2026 — Reconciliado o estado dos workloads de Landing Page após a retirada da orquestração antiga: texto e imagem permanecem para prova administrativa, a integração E19.3 deixou de ser consumidora e o adapter inexistente foi removido do inventário, sem alteração de variável, secret, endpoint ou infraestrutura externa.
+
 v0.1.37 — 01/09/2026 — Consolidado o estado final da E22.3: workflow Agent Builder e projeto Vercel `lpf-10-services` removidos; nenhum deployment/redeploy foi solicitado ou executado manualmente, e a publicação final do commit acionou automaticamente um Preview do Core `lp-factory-10` pela integração Git/Vercel, concluído com sucesso; nenhum novo deployment adicional deve ser provocado.
 
 v0.1.36 — 31/08/2026 — Reclassificada a integração Agent Builder como histórico e alvo de retirada da E22.3.4; a configuração externa de `lpf-10-services` permanece explicitamente pendente da E22.3.5, sem criação de substituto ou remoção de recursos compartilhados.

@@ -2,8 +2,8 @@
 
 0.1 Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.84
-• Data: 30/08/2026
+• Versão: v2.0.85
+• Data: 02/09/2026
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -234,20 +234,14 @@
 • Logs e metadata devem ser mínimos e não conter payload bruto, secrets, cartão ou PII sensível.
 
 3.14.4 LP Builder
-• Boundary canônico: `lib/lp-builder/`; contratos, adapter e action reais permanecem fontes da API.
+• Boundary canônico: `lib/lp-builder/`; contratos e adapters efetivamente exportados permanecem fontes da API.
 • Criação de LP é server-side e deve falhar fechado sem usuário autenticado, conta ativa, membership ativo autorizado e entitlement comercial válido.
 • O LP Builder deve consumir o boundary de entitlement existente, sem duplicar sua lógica.
 • Persistência inicial permanece limitada a draft; schema e campos exatos pertencem a `docs/schema.md` e ao código.
 • UI/client não acessa Supabase diretamente para criar LP; evolução funcional fora do runtime atual pertence ao roadmap.
-• O contexto de geração usa o contrato público vigente de `lib/lp-builder/`: sucesso contém somente identidades, contexto semântico para o modelo e contexto operacional server-side; falhas são explícitas e nunca retornam pacote parcial.
-• O compilador deve reutilizar as autoridades canônicas de preparação factual do taxon, configuração, catálogo de entradas e parametrização raiz, sem importar registries ou schemas internos de outros boundaries e sem criar mapa nominal paralelo de fields.
-• A versão E20.2 revisada deve chegar explicitamente pelo boundary de preparação, ser executável e dirigir a revalidação read-only dos valores históricos pelo plano e pela cadeia taxonômica atuais; a versão original da configuração permanece distinta, e maior versão, `latest`, fallback ou regravação silenciosa são proibidos.
 • Configuração histórica vinculada à LP pode servir de bootstrap somente enquanto a residência operacional daquela LP não existir; depois do handoff, a residência operacional é a única autoridade editável e a fonte histórica não vira fallback concorrente.
-• Evoluções de snapshot devem usar união discriminada entre pares completos de versões compatíveis: writers novos emitem somente o contrato vigente e readers preservam contratos históricos aceitos sem completar, cruzar versões ou reinterpretar revisões persistidas.
-• Todo fato aplicável e presente preserva metadata e proveniência canônicas; o `valueType` separa deterministicamente valores semanticamente visíveis de valores operacionais brutos, que não podem integrar o contexto textual do modelo.
-• Pesquisa destinada à LP preserva integralmente o Markdown `end_customer` selecionado e validado pelo boundary de preparação, sem resumo, atomização, ranking, filtro por módulo, funil, CTA, item ou julgamento editorial do compilador e sem expor seu path físico.
-• Entitlement é autorizado exclusivamente pelo boundary interno vigente; plano, assinatura, feature ou resposta externa de provedor comercial não substituem esse sinal.
-• O boundary server-only pode registrar somente resultado, motivo seguro, `request_id` e latência quando disponíveis; valores, pesquisa, fatos, evidências, guidance, payload bruto, PII, secrets, tokens e prompts não entram no log.
+• Contratos históricos de contexto e snapshot permanecem somente para validar e reproduzir revisões já materializadas; não existe compilador, rota de geração, workflow de candidata, upload ou append ativo no produto.
+• Readers devem preservar os pares históricos aceitos sem completar, cruzar versões ou reinterpretar revisões persistidas.
 
 3.14.5 Resolução de nicho e taxonomia
 • Boundary canônico: `lib/onboarding/niche-resolution/`; contratos, thresholds, reasons, schemas e adapters permanecem canônicos no código.
@@ -303,22 +297,18 @@
 • Após o deploy publicar o conteúdo repo-only exato, a reconciliação revalida as evidências humanas pré-publicação, materializa seus marcadores canônicos sem nova execução de IA, confirma a leitura final e somente então elimina o draft temporário.
 • A avaliação semântica usa o workload OpenAI comum autorizado e permanece não autoritativa; a decisão final de suficiência e seu registro administrativo são humanos, e o boundary apenas aplica deterministicamente a decisão autenticada e revalidada.
 
-3.15.8 Geração controlada da candidata de `landing_page`
-• A geração server-side consome somente o pacote público autorizado do LP Builder e deve separar contexto semântico enviado ao modelo de valores operacionais usados apenas pelo servidor.
-• A autoridade de apresentação, as regras de apresentação, o prompt visual, o schema estrito e a validação factual pertencem ao boundary `lib/conversion-content/landing-page/presentation/`; o compositor textual que consome o contexto de geração pertence a `lib/lp-builder/` e reutiliza as regras pela API pública de apresentação, sem dependência reversa de contratos. Uma candidata inválida nunca segue para persistência.
-• Texto e imagem são workloads independentes, com configuração, telemetria e falhas próprias; parâmetros exclusivos do workload textual não podem ser transportados para a API de mídia.
-• O fluxo permanece linear, controlado e não agentic, sem tools, retry ou fallback automático; falha ou recusa de qualquer provider encerra a tentativa sem materialização parcial.
-• O caso de uso deve aplicar deadline total próprio, propagar o tempo restante e cancelamento aos providers e impedir que mídia ou persistência posteriores comecem depois da expiração; o teto da Function não substitui esse orçamento.
-• Correlação deve preservar identificadores internos de tentativa e requisição distintos dos identificadores dos providers, sem registrar prompt, resposta integral, contexto de negócio, PII, secrets ou raciocínio privado.
-• Rotas e ações de geração devem falhar fechado antes dos providers enquanto o probe read-only de prontidão da materialização não comprovar o contrato exigido no ambiente alvo.
+3.15.8 Geradores básicos de `landing_page`
+• Os geradores básicos de texto e imagem permanecem como workloads independentes consumidos pelas provas administrativas da gestão OpenAI; não compõem um fluxo de geração de Landing Page no Account Dashboard.
+• A autoridade de apresentação, as regras de apresentação, o prompt visual, o schema estrito e a validação factual pertencem ao boundary `lib/conversion-content/landing-page/presentation/`; os geradores reutilizam essa API pública sem dependência reversa de contratos.
+• Texto e imagem preservam configuração, telemetria, deadline e falhas próprias; parâmetros exclusivos do workload textual não podem ser transportados para a API de mídia.
+• As chamadas permanecem controladas e sem retry ou fallback automático e não autorizam upload, append ou outra persistência de revisão.
+• Correlação preserva identificadores internos distintos dos identificadores dos providers, sem registrar prompt, resposta integral, contexto de negócio, PII, secrets ou raciocínio privado.
 
 3.15.9 Revisões materializadas de `landing_page`
-• Revisões pertencem ao agregado existente de materializações e são append-only; a corrente é derivada pela maior numeração, sem entidade paralela, flag mutável, update ou delete de revisão anterior. Listagens paginadas transportam somente os metadados necessários das revisões corrente e aprovada, com número limitado e estável de consultas por página e volume independente do histórico, preservando LPs sem revisão e o ponteiro explícito de aprovação.
+• Revisões já materializadas pertencem ao agregado existente e permanecem imutáveis; a corrente é derivada pela maior numeração. Listagens paginadas transportam somente os metadados necessários das revisões corrente e aprovada, com número limitado e estável de consultas por página e volume independente do histórico, preservando LPs sem revisão e o ponteiro explícito de aprovação.
 • A validação de identidade lê uma seleção completa e limitada de snapshots originais, independente da quantidade de revisões, preservando a primeira presença elegível de cada grupo e sua ordem interna; elegibilidade de seleção não substitui a avaliação de domínio. Baselines e revisão corrente devem vir do mesmo snapshot de leitura, e o save deve revalidar a revisão observada sob o lock existente. Erro ou resposta inválida falha fechado, sem truncamento ou fallback para varredura histórica; o contrato físico pertence a `docs/schema.md`.
-• Escrita ocorre exclusivamente por operação transacional server-side tenant-safe, sob lock da LP em draft e com attempt idempotente; acesso direto de runtime à tabela permanece read-only.
-• Mídia gerada é armazenada em Storage privado por referência canônica estável; URL assinada é criada somente no consumo autorizado e nunca é persistida como identidade.
-• Uma revisão só pode ser anexada depois de candidata, bindings, mídia, snapshot e revalidação de acesso integralmente válidos. A autoridade pode ser reutilizada somente dentro da mesma invocação de leitura; cada nova chamada deve resolvê-la novamente, inclusive a revalidação posterior aos providers e ao upload. Esse reuso não constitui snapshot transacional nem garantia de revogação instantânea. Falha posterior a upload confirmado exige cleanup best-effort do path exato e não autoriza materialização parcial.
-• Conteúdo e snapshot persistidos devem ser autossuficientes para reprodução sem reler fontes mutáveis, sem secret, raciocínio privado, resposta bruta ou URL assinada; objetos físicos exatos pertencem a `docs/schema.md` e ao código.
+• O runtime do produto não expõe operação de append, upload ou cleanup de revisão; RPCs, tabelas, bucket e dados existentes permanecem preservados e inertes para eventual decisão futura.
+• Conteúdo e snapshot históricos devem permanecer autossuficientes para reprodução sem reler fontes mutáveis, sem secret, raciocínio privado, resposta bruta ou URL assinada; objetos físicos exatos pertencem a `docs/schema.md` e ao código.
 • O consumo privado de uma revisão deve revalidar ator, conta, membership, entitlement, LP e tenant da materialização antes de assinar mídia ou entregar o read model; divergência de identidade, binding ou referência de asset falha fechada.
 • O read model expõe somente allowlist explícita do contrato de apresentação e metadados necessários da revisão, acrescida da URL assinada transitória; linhas de banco, snapshot integral, pesquisa, valores operacionais, bucket, path, autenticação e provider não atravessam o boundary do renderer.
 • O renderer de revisão é puro e read-only: recebe o read model validado, não consulta Supabase ou provider, não recompila contexto de geração e não usa fonte mutável para reinterpretar a revisão persistida.
@@ -355,7 +345,7 @@
 • Cada tentativa de provider deve emitir somente metadados operacionais normalizados e seguros, preservando métricas ausentes como `null`; prompts, respostas integrais, payloads de negócio, PII, secrets e cálculo monetário não entram no evento comum.
 • Workloads textuais podem acrescentar telemetria segura e nullable de chamadas Web Search e quantidade de fontes; URLs e conteúdo das fontes permanecem fora do evento comum.
 • Leitura administrativa de Costs, contratos financeiros e cálculo monetário pertencem ao boundary separado `lib/openai-costs/`; `lib/openai-workloads/` pode fornecer apenas identidade, configuração e usage públicos necessários, sem receber provider administrativo, persistência financeira ou regra de preço.
-• A atribuição financeira prospectiva limita-se aos transports `landing_page_draft_generation` e `landing_page_draft_image_generation` dentro do fluxo autorizado de revisão de LP. Conta e LP chegam pelo contexto v4 explícito; provas administrativas e outros workloads não inferem nem persistem atribuição.
+• A atribuição financeira prospectiva limita-se aos transports preservados `landing_page_draft_generation` e `landing_page_draft_image_generation` quando invocados com contexto explícito de conta e LP; a disponibilidade desses transports não constitui um fluxo ativo de geração ou revisão. Provas administrativas sem identidade causal válida e outros workloads não inferem nem persistem atribuição.
 • O tracker financeiro tenta iniciar antes do provider e usa o mesmo `attempt_id` para correlação append-only; início e terminal operam best effort em orçamento curto próprio, sem consumir materialmente o timeout funcional nem alterar o resultado da geração por falha exclusivamente financeira.
 • Preços são versionados no código e calculados em unidades decimais exatas, somente para combinação oficialmente suportada. Modelo, tier, faixa ou usage incompatíveis não são estimados nem bloqueiam o provider; a tentativa permanece sem custo calculado, e imagem sem unidades suficientes não publica custo parcial.
 • Prompt, resposta integral, payload de negócio, PII, secret e raciocínio privado nunca entram nos eventos financeiros; persistem apenas identidade autorizada, configuração efetiva, unidades normalizadas, preço aplicado e custo USD.

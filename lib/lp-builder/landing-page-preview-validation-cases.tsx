@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 
 import { renderToStaticMarkup } from "react-dom/server";
 
@@ -619,17 +619,18 @@ const cases = [
       const previewCore = readFileSync(new URL("./landingPagePreview.ts", import.meta.url), "utf8");
       const renderer = readFileSync(new URL("../../components/lp-builder/LandingPageRenderer.tsx", import.meta.url), "utf8");
       const page = readFileSync(new URL("../../app/a/[account]/landing-pages/[landingPageId]/preview/page.tsx", import.meta.url), "utf8");
-      const action = readFileSync(new URL("../../app/a/[account]/landing-pages/[landingPageId]/preview/actions.ts", import.meta.url), "utf8");
+      const actionPath = new URL("../../app/a/[account]/landing-pages/[landingPageId]/preview/actions.ts", import.meta.url);
       const generationTrigger = readFileSync(new URL("../../app/a/[account]/landing-pages/[landingPageId]/preview/GenerationTrigger.tsx", import.meta.url), "utf8");
 
       assert.match(revisionAdapter, /order\("revision_number", \{ ascending: false \}\)/);
       assert.match(revisionAdapter, /\.limit\(1\)/);
+      assert.doesNotMatch(revisionAdapter, /appendLandingPageRevision|append_account_landing_page_materialization/);
       assert.equal(LANDING_PAGE_PREVIEW_SIGNED_URL_TTL_SECONDS, 300);
       assert.match(storageAdapter, /createSignedUrl\(asset\.path, LANDING_PAGE_PREVIEW_SIGNED_URL_TTL_SECONDS\)/);
+      assert.doesNotMatch(storageAdapter, /\.upload\(|\.remove\(/);
       assert.match(previewAdapter, /access\.status !== "active"/);
       assert.doesNotMatch(previewAdapter, /requireAccountMembersManager/);
-      assert.match(action, /requireAccountMembersManager/);
-      assert.match(action, /if \(!legacyGenerationIsTemporarilyAvailable\(\)\)/);
+      assert.equal(existsSync(actionPath), false);
       assert.match(generationTrigger, /disabled/);
       assert.doesNotMatch(generationTrigger, /useActionState|generateLandingPageRevisionAction|<form/);
       assert.doesNotMatch(`${previewAdapter}\n${previewCore}\n${renderer}\n${page}`, /compileLandingPageGenerationContextForDraft/);
