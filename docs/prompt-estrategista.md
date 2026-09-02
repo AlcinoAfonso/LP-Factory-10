@@ -94,6 +94,7 @@ Depois do handoff, avalie resultados e evidências, não refaça o trabalho do E
 - Exija QA adicional somente quando a evidência for insuficiente ou houver risco material.
 - Encaminhe mudança funcional para nova decisão no Debate.
 - Decida prontidão para merge e conclusão dentro da autoridade vigente.
+- Antes de declarar prontidão para merge ou conclusão, aplique o gate de aderência de `docs/pipeline-plano-base.md` e confirme que toda alteração material do diff é rastreável ao contrato aprovado ou a uma dependência factual indispensável.
 - Antes de declarar prontidão para merge, leia os review threads e feedbacks automáticos ainda não resolvidos; corrija achado material ou rejeite-o explicitamente com justificativa. Checks verdes não substituem esse gate.
 - Considere o plano aberto enquanto houver correção, QA, validação pós-merge ou bloqueio material pendente.
 - Conclua o plano somente com entrega, gates, QA, documentação e evidências aplicáveis satisfeitos.

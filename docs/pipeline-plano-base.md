@@ -33,6 +33,18 @@ O Pipeline separa três decisões:
 
 Modo e formato são eixos independentes. Um plano pode ser Manual, Semiautomático ou Autônomo e, separadamente, Light ou Completo.
 
+### 3.1. Gate universal de aderência ao contrato aprovado
+
+O contrato aprovado define o que pode ser implementado. O repositório e as fontes técnicas servem para descobrir como materializá-lo, não para ampliar o que foi aprovado.
+
+- No Light, a V1 aprovada é o contrato exclusivo de implementação.
+- No Completo, a V2 técnica aprovada é o contrato exclusivo de implementação.
+- Todo arquivo alterado, novo mecanismo ou decisão técnica material deve ser rastreável ao contrato aprovado ou a uma dependência factual indispensável para materializá-lo.
+- Capacidade, conveniência ou legado encontrado no repositório não autoriza ampliar produto, arquitetura, infraestrutura, superfície ou escopo.
+- Diante de conflito com legado, deve-se primeiro adaptar ou remover o consumidor legado, sem deformar o novo contrato.
+- Decisão funcional, arquitetural ou de escopo não prevista retorna ao supervisor competente.
+- Antes da entrega, o Executor confronta contrato aprovado e diff final, removendo ou justificando toda alteração sem rastreabilidade; o supervisor repete o gate antes de merge ou conclusão.
+
 ## 4. Papéis
 
 ### 4.1. Estrategista original
@@ -177,6 +189,10 @@ Depois do congelamento, mudança funcional retorna ao Estrategista competente. D
 - Gestor de Updates confronta a solução com capacidades atuais.
 - Gestor Estrutural retorna apenas quando update material exigir confronto estrutural.
 - Gestor de Automações pode atuar em paralelo quando sua entrada for independente.
+- A V1 funcional aprovada limita a autoridade da derivação: especialistas, repositório e task técnica podem definir como cumpri-la, mas não acrescentar o que o produto deve entregar.
+- Todo acréscimo material da V2 deve ter origem verificável na V1, em derivação técnica indispensável ou em modernização técnica justificada que preserve integralmente o resultado funcional aprovado.
+- Legado, conveniência de implementação ou parecer de especialista não autoriza transportar complexidade nem ampliar produto, comportamento, usuário, escopo ou decisão funcional.
+- Se a melhor solução exigir mudança funcional ou decisão fora da V1, a derivação desse ponto para e retorna ao Estrategista competente.
 - A task técnica consolida a V2 a partir dos pareceres sem iniciar ainda o contrato do Executor.
 
 A V2 define estado técnico desejado, decisões, boundaries, responsabilidades, contratos, integrações, persistência quando aplicável, riscos, invariantes, validações e evidências. Ela não é novo plano funcional nem roteiro prescritivo de movimentos ordinários.
@@ -184,7 +200,7 @@ A V2 define estado técnico desejado, decisões, boundaries, responsabilidades, 
 ### 9.3. Rastreabilidade e gate
 
 - O Registro de Consolidação preserva origem, classe, tratamento, localização e evidência de cada achado material.
-- O gate da V2 mantém duas passagens do Analista: avaliação independente V1 → V2 e auditoria da consolidação com pareceres e registro.
+- O gate da V2 mantém duas passagens do Analista: a primeira confronta independentemente V1 e V2, sem pareceres nem registro, e identifica conteúdo material sem origem legítima; a segunda audita a consolidação e confirma que parecer ou legado não ampliou o contrato funcional.
 - Correções objetivas retornam apenas para revisão do delta.
 - Questão material nova pode exigir nova avaliação especializada.
 - Os gates do Analista por subseção permanecem no formato Completo.
@@ -199,6 +215,7 @@ A V2 aprovada é congelada por checkpoint no mesmo PR, sem merge intermediário,
 - O humano é acionado somente quando houver dependência real de autoridade, acesso ou julgamento indispensável.
 - O Executor declara entrega técnica completa, mas não declara o plano concluído.
 - O supervisor determina correções, QA adicional, prontidão para merge e conclusão.
+- Antes da entrega, o Executor aplica o gate da Seção 3.1 ao contrato aprovado e ao diff final; o supervisor repete esse confronto antes de declarar prontidão para merge ou conclusão.
 - O Prompt ABC trata documentos canônicos materialmente afetados; este Pipeline define apenas quando ele é necessário.
 
 ### 10.1. Merge
