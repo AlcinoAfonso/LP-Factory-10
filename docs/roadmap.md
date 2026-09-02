@@ -265,7 +265,7 @@
   - o GET de confirmação apresenta intersticial e não consome token ou código;
   - verificação e criação da sessão ocorrem somente no POST;
   - após confirmação, o gateway da E4 resolve o destino permitido e o fluxo de primeira conta quando aplicável;
-  - eventos de signup, reenvio e confirmação usam logs estruturados sem registrar e-mail, senha, token ou código.
+  - eventos de signup, reenvio e confirmação usam correlação por `rid` e não registram e-mail, senha, token ou código como campos diretos.
 
 5.2.4 Estado de e-mail já cadastrado
 - Status: implementado.
@@ -280,7 +280,7 @@
 - Status: pendente.
 - Conteúdo:
   - parte da copy e de mensagens do formulário de signup ainda permanece em inglês ou deriva diretamente do provedor;
-  - falta registro conclusivo de repetição manual do happy path signup → e-mail → confirmação → `/a/home` em dispositivo mobile real.
+  - falta registro conclusivo de repetição manual do happy path signup → e-mail → confirmação → `/a/home` em mobile.
 
 5.3 E-mail transacional do Supabase Auth
 
