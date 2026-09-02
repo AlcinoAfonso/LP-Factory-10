@@ -413,7 +413,7 @@
 
 7. E7 — Conta Consultiva — retirada
 - Objetivo: preservar o encerramento do fluxo consultivo legado e seu destino canônico sem reativar arquitetura removida.
-- Status: retirado em 18/10/2025; sem superfície ativa no runtime ou no Admin.
+- Status: retirado; sem superfície ativa no runtime ou no Admin.
 
 7.1 Encerramento do fluxo consultivo legado
 
@@ -1650,11 +1650,11 @@
 - O Admin apenas expõe os parâmetros e entradas vigentes; isso não promove o ciclo de vida `hypothesis`.
 - A implementação anterior de composição/renderização `landing_page` e o catálogo histórico de módulos não fazem parte do boundary atual.
 
-18.5 Catálogo histórico de módulos e variantes `landing_page`
+18.5 Catálogo de módulos e variantes `landing_page` — retirado
 
 18.5.1 Objetivo e status
 - Objetivo: registrar o destino do antigo catálogo repo-only de módulos e variantes da família `landing_page`.
-- Status: Retirada concluída pela E22.1.5; não há substituto nem consumidor no caminho canônico.
+- Status: retirado pela E22.1.5; não há substituto nem consumidor no caminho canônico.
 
 18.5.2 Registros do recorte
 - Repositório:
@@ -2046,7 +2046,7 @@
 
 20.3.1 Objetivo e status
 - Objetivo: registrar o destino do antigo perfil versionado de orientação à geração.
-- Status: Retirada concluída pela E22.1.4; não existe substituto.
+- Status: retirado pela E22.1.4; não existe substituto.
 
 20.3.2 Registros do recorte
 - Repositório:
