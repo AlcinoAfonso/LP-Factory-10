@@ -12,11 +12,11 @@ import {
   openAiReasoningEfforts,
 } from "../openai-workloads";
 import type {
-  LandingPageGenerationContextPackage,
   LandingPageGenerationContextPackageV3,
   LandingPageGenerationContextPackageV4,
 } from "./generationContextContracts";
-import type { LandingPageDraftCandidateWorkflowResult } from "./landingPageDraftCandidateWorkflow";
+import type { LandingPageDraftTextResult } from "./landingPageDraftGeneration";
+import type { LandingPageDraftImageResult } from "./landingPageDraftImageGeneration";
 
 export const LANDING_PAGE_REVISION_CONTRACT_VERSION = 1 as const;
 export const LANDING_PAGE_REVISION_SNAPSHOT_VERSION = 2 as const;
@@ -198,23 +198,23 @@ type LandingPageRevisionSnapshotCommon = Readonly<{
   workloads: Readonly<{
     text: Readonly<{
       configuration: Extract<
-        LandingPageDraftCandidateWorkflowResult,
+        LandingPageDraftTextResult,
         { ok: true }
-      >["text"]["configuration"];
+      >["configuration"];
       responseId: string | null;
       usage: Extract<
-        LandingPageDraftCandidateWorkflowResult,
+        LandingPageDraftTextResult,
         { ok: true }
-      >["text"]["usage"];
+      >["usage"];
       latencyMs: number;
       estimatedCost: null;
       costStatus: "unavailable";
     }>;
     image: Readonly<{
       configuration: Extract<
-        LandingPageDraftCandidateWorkflowResult,
+        LandingPageDraftImageResult,
         { ok: true }
-      >["image"]["configuration"];
+      >["configuration"];
       providerRequestId: string | null;
       latencyMs: number;
       estimatedCost: null;
@@ -265,130 +265,6 @@ export type LandingPageRevisionSnapshotV1 = LandingPageRevisionSnapshotCommon &
 export type LandingPageRevisionSnapshot =
   | LandingPageRevisionSnapshotV1
   | LandingPageRevisionSnapshotV2;
-
-export type BuildLandingPageRevisionDocumentsResult =
-  | Readonly<{
-      ok: true;
-      content: LandingPageRevisionContent;
-      snapshot: LandingPageRevisionSnapshot;
-    }>
-  | Readonly<{
-      ok: false;
-      error: "INVALID_ASSET_REFERENCE" | "INVALID_REVISION_DOCUMENTS";
-    }>;
-
-export function createLandingPageRevisionAssetReference(input: Readonly<{
-  accountId: string;
-  landingPageId: string;
-  attemptId: string;
-  bytes: number;
-  alt: string;
-  imageConfigVersion: string;
-  visualBriefVersion: string;
-}>): LandingPageRevisionAssetReference | null {
-  if (
-    !uuidSchema.safeParse(input.accountId).success ||
-    !uuidSchema.safeParse(input.landingPageId).success ||
-    !uuidSchema.safeParse(input.attemptId).success
-  ) {
-    return null;
-  }
-  const value = {
-    bucket: LANDING_PAGE_REVISION_ASSET_BUCKET,
-    path: `${input.accountId}/${input.landingPageId}/${input.attemptId}/main.webp`,
-    origin: "generated",
-    mimeType: "image/webp",
-    width: 1536,
-    height: 1024,
-    bytes: input.bytes,
-    alt: input.alt.trim(),
-    imageWorkload: "landing_page_draft_image_generation",
-    imageConfigVersion: input.imageConfigVersion.trim(),
-    visualBriefVersion: input.visualBriefVersion.trim(),
-  } as const;
-  const parsed = landingPageRevisionAssetReferenceSchema.safeParse(value);
-  return parsed.success ? deepFreeze(parsed.data) : null;
-}
-
-export function buildLandingPageRevisionDocuments(input: Readonly<{
-  context: LandingPageGenerationContextPackage;
-  candidate: Extract<LandingPageDraftCandidateWorkflowResult, { ok: true }>;
-  asset: LandingPageRevisionAssetReference;
-  generatedAt: string;
-}>): BuildLandingPageRevisionDocumentsResult {
-  const asset = landingPageRevisionAssetReferenceSchema.safeParse(input.asset);
-  const generatedAt = normalizeIsoDate(input.generatedAt);
-  if (!asset.success || !generatedAt) {
-    return { ok: false, error: "INVALID_ASSET_REFERENCE" };
-  }
-
-  const contentResult = landingPageRevisionContentSchema.safeParse({
-    contractVersion: LANDING_PAGE_REVISION_CONTRACT_VERSION,
-    presentation: input.candidate.candidate,
-    binding: input.candidate.binding,
-    media: { mainImage: asset.data },
-  });
-  if (!contentResult.success) {
-    return { ok: false, error: "INVALID_REVISION_DOCUMENTS" };
-  }
-
-  const bindingFacts = input.context.serverContext.facts.filter((fact) =>
-    fact.fieldKey === "primary_conversion_channel" ||
-    fact.fieldKey === input.candidate.binding.destinationFieldKey
-  );
-  const snapshot = toJsonValue({
-    snapshotVersion:
-      input.context.contractVersion === 4
-        ? LANDING_PAGE_REVISION_SNAPSHOT_VERSION
-        : LANDING_PAGE_REVISION_LEGACY_SNAPSHOT_VERSION,
-    attemptId: input.candidate.attemptId,
-    requestId: input.candidate.requestId,
-    generatedAt,
-    promptVersion: input.candidate.text.promptVersion,
-    presentationContractVersion: input.candidate.candidate.contractVersion,
-    generationContext: {
-      contractVersion: input.context.contractVersion,
-      identities: input.context.identities,
-      modelContext: {
-        ...input.context.modelContext,
-        research: input.candidate.research ?? input.context.modelContext.research,
-      },
-      bindingFacts,
-    },
-    workloads: {
-      text: {
-        configuration: input.candidate.text.configuration,
-        responseId: input.candidate.text.responseId,
-        usage: input.candidate.text.usage,
-        latencyMs: input.candidate.text.latencyMs,
-        estimatedCost: null,
-        costStatus: "unavailable",
-      },
-      image: {
-        configuration: input.candidate.image.configuration,
-        providerRequestId: input.candidate.image.providerRequestId,
-        latencyMs: input.candidate.image.latencyMs,
-        estimatedCost: null,
-        costStatus: "unavailable",
-      },
-    },
-    media: { mainImage: asset.data },
-    validators: {
-      presentation: "passed",
-      binding: "passed",
-      image: "passed",
-    },
-  });
-  if (!snapshot || !validateLandingPageRevisionSnapshot(snapshot)) {
-    return { ok: false, error: "INVALID_REVISION_DOCUMENTS" };
-  }
-
-  return {
-    ok: true,
-    content: deepFreeze(contentResult.data),
-    snapshot: deepFreeze(snapshot as LandingPageRevisionSnapshot),
-  };
-}
 
 export function validateLandingPageRevisionSnapshot(
   value: unknown,
@@ -636,14 +512,6 @@ function normalizeIsoDate(value: string) {
   return Number.isFinite(timestamp) ? new Date(timestamp).toISOString() : null;
 }
 
-function toJsonValue(value: unknown): unknown | null {
-  try {
-    return JSON.parse(JSON.stringify(value)) as unknown;
-  } catch {
-    return null;
-  }
-}
-
 function containsForbiddenSnapshotKey(value: unknown): boolean {
   if (Array.isArray(value)) return value.some(containsForbiddenSnapshotKey);
   if (!value || typeof value !== "object") return false;
@@ -669,12 +537,4 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function isNonNegativeNumber(value: unknown) {
   return typeof value === "number" && Number.isFinite(value) && value >= 0;
-}
-
-function deepFreeze<T>(value: T): T {
-  if (value && typeof value === "object" && !Object.isFrozen(value)) {
-    for (const nested of Object.values(value)) deepFreeze(nested);
-    Object.freeze(value);
-  }
-  return value;
 }

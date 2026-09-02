@@ -7,65 +7,6 @@ import {
   type LandingPageRevisionContent,
   type LandingPageRevisionSnapshot,
 } from "../landingPageRevision";
-import type { AppendLandingPageRevisionResult } from "../landingPageRevisionWorkflow";
-
-export async function appendLandingPageRevision(input: Readonly<{
-  accountId: string;
-  landingPageId: string;
-  attemptId: string;
-  content: LandingPageRevisionContent;
-  snapshot: LandingPageRevisionSnapshot;
-  createdBy: string;
-  expectedSharedRevision?: number | null;
-  expectedLandingPageRevision?: number;
-}>): Promise<AppendLandingPageRevisionResult> {
-  try {
-    const operational = input.snapshot.snapshotVersion === 2;
-    if (
-      operational &&
-      (!isPositiveInteger(input.expectedLandingPageRevision) ||
-        (input.expectedSharedRevision !== null &&
-          !isPositiveInteger(input.expectedSharedRevision)))
-    ) {
-      return { ok: false, error: "APPEND_FAILED" };
-    }
-    const { data, error } = await createServiceClient().rpc(
-      operational
-        ? "append_account_landing_page_materialization_v2"
-        : "append_account_landing_page_materialization_v1",
-      {
-        p_account_id: input.accountId,
-        p_landing_page_id: input.landingPageId,
-        p_attempt_id: input.attemptId,
-        p_content_json: input.content,
-        p_generation_context_snapshot_json: input.snapshot,
-        p_created_by: input.createdBy,
-        ...(operational
-          ? {
-              p_expected_shared_revision: input.expectedSharedRevision,
-              p_expected_landing_page_revision: input.expectedLandingPageRevision,
-            }
-          : {}),
-      },
-    );
-    if (error) return { ok: false, error: "APPEND_FAILED" };
-    const row = Array.isArray(data) ? data[0] : data;
-    if (
-      !isRecord(row) ||
-      typeof row.materialization_id !== "string" ||
-      !isPositiveInteger(row.revision_number)
-    ) {
-      return { ok: false, error: "APPEND_RESPONSE_INVALID" };
-    }
-    return {
-      ok: true,
-      revisionId: row.materialization_id,
-      revisionNumber: row.revision_number,
-    };
-  } catch {
-    return { ok: false, error: "APPEND_FAILED" };
-  }
-}
 
 export type CurrentLandingPageRevision = Readonly<{
   id: string;
