@@ -413,41 +413,30 @@
   - layout, responsividade e estados visuais residem exclusivamente em `docs/design-system.md`;
   - a padronização não autoriza redesign amplo nem componentização antecipada de superfícies sem necessidade real.
 
-7. E7 — Conta Consultiva
+7. E7 — Conta Consultiva — retirada
+- Objetivo: preservar o encerramento do fluxo consultivo legado e seu destino canônico sem reativar arquitetura removida.
+- Status: retirado em 18/10/2025; sem superfície ativa no runtime ou no Admin.
 
-7.1 Status
-• Concluído (18/10/2025)
+7.1 Encerramento do fluxo consultivo legado
 
-7.2 Escopo (entrega concluída)
-• Fluxo consultivo legado por token encerrado e removido do runtime atual
-• Estrutura de conta consultiva mantida como referência histórica de produto (sem superfície ativa em /admin)
+7.1.1 Objetivo e status
+- Objetivo: remover a dependência de token pós-venda e impedir que o onboarding consultivo legado permanecesse como caminho paralelo.
+- Status: concluído; runtime e contrato de banco atuais não dependem do fluxo removido.
 
-7.3 Critérios de Aceite (estado atual)
-• Sem dependência ativa de token pós-venda no runtime
-• Onboarding legado por token removido de app e contrato de BD
+7.1.3 Estado final e destino
+- Status: vigente.
+- Conteúdo:
+  - não existe superfície consultiva ativa em `/admin`;
+  - onboarding por token e dependência de token pós-venda não integram o runtime atual;
+  - refinamentos de UX anteriormente associados à E7 foram absorvidos pelo Account Dashboard na E10.3;
+  - a E7 permanece apenas para estabilidade do identificador e rastreabilidade da retirada.
 
-7.4 Pendências (migradas)
-• Refinamentos de UX migrados para Account Dashboard UX (ex-E7.2)
-
-7.5 Evolução — Conta Consultiva Update
-7.5.1 Status
-• Suspenso (aguardando novo Admin Dashboard)
-7.5.2 Objetivo
-• Reintroduzir operações consultivas em nova superfície administrativa (etapa posterior)
-7.5.3 Escopo
-• Definir novo fluxo administrativo sem reativar o legado removido
-• Coleta de dados do cliente e configuração comercial em arquitetura revisada
-• Integração futura com Billing Engine (E9) e Account Dashboard (E10)
-7.5.4 Critérios de Aceite
-• Novo fluxo sem dependências de legado removido
-• Registro auditável e consistente com contratos atuais de app/DB
-7.5.5 Valor agregado
-• Mantém a limpeza do legado intencional e reduz drift operacional
-• Permite evolução do Admin Dashboard com base estrutural atual
-7.5.6 Próximos Passos
-• Definir briefing do novo Admin Dashboard consultivo
-• Validar escopo com E9/E10 antes de implementação
-
+7.1.4 Limite de retomada
+- Status: vigente.
+- Conteúdo:
+  - a retirada não autoriza reconstrução do fluxo legado;
+  - operação consultiva futura depende de problema, escopo e plano aprovados em recorte próprio;
+  - integração futura com Billing ou Account Dashboard não constitui pendência vigente sem fonte competente.
 
 8. E8 — Access Context & Governança
 
