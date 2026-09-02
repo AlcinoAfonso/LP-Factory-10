@@ -222,7 +222,7 @@ A V2 aprovada é congelada por checkpoint no mesmo PR, sem merge intermediário,
 - Autônomo: Estrategista Autônomo conclui cada plano e libera dependências.
 - O conjunto de vários planos só é concluído quando todos os planos e dependências aplicáveis estiverem encerrados.
 - V1 ou V2 final permanece no GitHub; a V1 do Completo é recuperável pelo commit congelado.
-- A matriz permanece disponível durante a entrega e o ciclo externo e segue a rotina de encerramento vigente na skill Completa até sua migração específica. As demais evidências permanecem no workflow/PR.
+- A matriz permanece disponível durante a entrega e o ciclo externo. Até sua migração específica, a skill Completa entrega a limpeza ao supervisor; no Manual e no Semiautomático, a rotina temporária reside em `docs/prompt-estrategista.md`. As demais evidências permanecem no workflow/PR.
 
 ## 11. Arquitetura documental
 
