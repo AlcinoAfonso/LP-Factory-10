@@ -121,6 +121,8 @@ Um Debate usa por padrão um Google Doc e pode gerar `1..N` V1. O histórico do 
 - O Estrategista Autônomo controla dependências, paralelismo, correções, QA, avanço e conclusão.
 - Cada plano liberado recebe uma task técnica própria.
 
+O modo Autônomo torna-se operacional somente quando o contrato executável do Estrategista Autônomo existir no repositório. Até essa migração, o Debate pode registrá-lo como direção aprovada, mas a execução deve usar Manual ou Semiautomático.
+
 ## 7. Formatos de implementação
 
 ### 7.1. Light
@@ -136,6 +138,8 @@ Light é usado quando o resultado cabe em boundaries, autoridades e contratos ex
 - Não existe gate final obrigatório adicional do Analista.
 
 O fechamento segue implementação, validações, QA e evidências pelo Executor, entrega ao supervisor e decisão de correção, merge e conclusão.
+
+Até a migração e validação de `docs/prompt-estrategista-light.md`, a execução Light segue sua compatibilidade vigente, inclusive `Automação: não`. Os critérios aprovados acima tornam-se operacionais integralmente no PR específico do Light.
 
 ### 7.2. Completo
 
@@ -218,7 +222,7 @@ A V2 aprovada é congelada por checkpoint no mesmo PR, sem merge intermediário,
 - Autônomo: Estrategista Autônomo conclui cada plano e libera dependências.
 - O conjunto de vários planos só é concluído quando todos os planos e dependências aplicáveis estiverem encerrados.
 - V1 ou V2 final permanece no GitHub; a V1 do Completo é recuperável pelo commit congelado.
-- Pareceres e rastreabilidade permanecem como evidência operacional no workflow/PR, sem rotina canônica de limpeza.
+- A matriz permanece disponível durante a entrega e o ciclo externo e segue a rotina de encerramento vigente na skill Completa até sua migração específica. As demais evidências permanecem no workflow/PR.
 
 ## 11. Arquitetura documental
 
