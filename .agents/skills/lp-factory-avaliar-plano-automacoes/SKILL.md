@@ -24,14 +24,14 @@ Delegar uma avaliação read-only ao custom agent `gestor-automacoes` e devolver
 ## Delegar e devolver
 
 1. Iniciar exatamente um subagent `gestor-automacoes`.
-2. Entregar worktree, branch, metadados da fonte, path, conteúdo integral, caso e fases aplicáveis.
+2. Entregar worktree, branch, metadados da fonte, path, conteúdo integral, caso e recortes aplicáveis.
 3. Não repetir critérios de automação no handoff: o contrato runtime está em `.codex/agents/gestor-automacoes.toml` e a governança em `docs/gestor-automations.md`.
 4. Aguardar o parecer sem realizar avaliação paralela.
 5. Validar identificação, fontes, um veredito permitido, classificação, ambiente, necessidade de OpenAI, decisão, patches e próximo passo.
 6. Em `automação aplicável com patches autossuficientes`, exigir patch completo para cada decisão aprovada. Em `requer investigação factual`, exigir evidência faltante e forma de obtê-la. Em `requer validação material pelo Analista`, exigir decisão material e alternativas verificáveis, sem abrir gate humano neste estágio.
 7. Se o contrato estiver incompleto, devolver o conteúdo recebido e marcar o handoff como incompleto; não completar nem reinterpretar o parecer.
 8. Confirmar novamente o estado Git e distinguir alterações preexistentes.
-9. Exibir o parecer integral, seguido apenas de plano e fases avaliados, veredito, agente acionado e confirmação de que o repositório permaneceu inalterado.
+9. Exibir o parecer integral, seguido apenas de plano e recortes avaliados, veredito, agente acionado e confirmação de que o repositório permaneceu inalterado.
 
 ## Limites
 
