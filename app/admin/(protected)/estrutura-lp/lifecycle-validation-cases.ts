@@ -196,7 +196,7 @@ function assertFrozenOracle() {
   assert.equal(hash(baseline), "88cee168a14cd46055916943c25d7a921a57013e9591bee8dd371dea5e6e85ee", "baseline integral changed");
   const protectedFiles: Record<string, string> = {
     "lib/lp-builder/operationalCompatibility.ts": "db21de667763a79bf4157c5832297ff543a3134b32ad43ea4186180f6e6ce35c",
-    "lib/lp-builder/onboardingConfiguration.ts": "3f9ea252cdd5d3c3653c4f3f78cdffa7bc84bdbee32f5c9f275a42467e3fc282",
+    "lib/lp-builder/onboardingConfiguration.ts": "91f9306067a1fb6d8b740630dd5b2252b76bd368207985e4198ea861d2f89ef3",
     "lib/conversion-content/landing-page/input-catalog/draft.ts": "1c39f001d5bba1fad63fb55e1e266e4b64ae81aa411991255d2066f3c86622c5",
     "lib/conversion-content/landing-page/input-catalog/registry.ts": "9bbe6135d80465613a13813996f61c4a4822f34f1db369ce210ba2fa0681cb78",
   };

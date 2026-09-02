@@ -333,44 +333,7 @@ function classifyOfferingScopeCandidate(
   return compatible ? "compatible" : "invalid";
 }
 
-export function stripAuthoritativeOnboardingValues(
-  storedValues: AccountLandingPageOnboardingStoredValues,
-  authoritativeValues: Readonly<Record<string, unknown>>,
-): AccountLandingPageOnboardingStoredValues {
-  return Object.fromEntries(
-    Object.entries(storedValues).filter(
-      ([fieldKey]) => !Object.hasOwn(authoritativeValues, fieldKey),
-    ),
-  );
-}
-
-export function isAccountLandingPageOnboardingActorAuthorized(input: {
-  role: unknown;
-  status: unknown;
-}): boolean {
-  return (
-    input.status === "active" &&
-    (input.role === "owner" || input.role === "admin")
-  );
-}
-
-export function isUnavailableOnboardingConfigurationError(
-  error: unknown,
-): boolean {
-  if (!error || typeof error !== "object" || Array.isArray(error)) return false;
-  const record = error as Record<string, unknown>;
-  const code = typeof record.code === "string" ? record.code : "";
-  const message = typeof record.message === "string" ? record.message : "";
-  return (
-    code === "42P01" ||
-    code === "PGRST205" ||
-    /schema cache|does not exist|could not find the table|relation .* does not exist/i.test(
-      message,
-    )
-  );
-}
-
-export type StarterColorPaletteValidationResult =
+type StarterColorPaletteValidationResult =
   | Readonly<{
       ok: true;
       contrast: Readonly<{
@@ -388,7 +351,7 @@ export type StarterColorPaletteValidationResult =
         | "INSUFFICIENT_ROLE_CONTRAST";
     }>;
 
-export function validateStarterColorPalette(
+function validateStarterColorPalette(
   value: unknown,
 ): StarterColorPaletteValidationResult {
   if (!isPlainRecord(value)) return { ok: false, error: "INVALID_FORMAT" };

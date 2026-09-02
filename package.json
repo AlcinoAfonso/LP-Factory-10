@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "check": "npm run lint && npm run typecheck && npm run validate:commercial-capabilities && npm run validate:openai-workloads && npm run validate:openai-costs && npm run validate:openai-costs-dashboard && npm run validate:commercial-activation && npm run validate:landing-page-root && npm run validate:landing-page-input-catalog && npm run validate:taxon-preparation && npm run validate:landing-page-knowledge-resolution && npm run validate:landing-page-dynamic-research && npm run validate:lp-builder-onboarding && npm run validate:landing-page-workspace && npm run validate:landing-page-draft-generation && npm run validate:landing-page-preview && npm run validate:account-members && npm run validate:e11-checkout && npm run validate:e11-commercial-experience && npm run validate:admin-landing-page-structure && npm run validate:lp-builder-onboarding-journey",
+    "check": "npm run lint && npm run typecheck && npm run validate:commercial-capabilities && npm run validate:openai-workloads && npm run validate:admin-openai-workloads && npm run validate:openai-costs && npm run validate:openai-costs-dashboard && npm run validate:commercial-activation && npm run validate:landing-page-root && npm run validate:landing-page-input-catalog && npm run validate:taxon-preparation && npm run validate:landing-page-knowledge-resolution && npm run validate:landing-page-dynamic-research && npm run validate:lp-builder-onboarding && npm run validate:landing-page-draft-generation && npm run validate:account-members && npm run validate:e11-checkout && npm run validate:e11-commercial-experience && npm run validate:admin-landing-page-structure && npm run validate:lp-builder-onboarding-journey",
     "validate:account-members": "tsx lib/access/account-members/validation-cases.ts",
     "validate:e11-checkout": "tsx app/a/[account]/_components/commercial-page/checkout-validation-cases.ts",
     "validate:e11-commercial-experience": "tsx app/a/[account]/_components/commercial-page/commercial-experience-validation-cases.ts",
@@ -15,6 +15,7 @@
     "validate:commercial-activation": "tsx lib/conversion-content/commercial-activation/validation-cases.ts",
     "validate:commercial-capabilities": "tsx lib/commercial-capabilities/validation-cases.ts",
     "validate:openai-workloads": "tsx lib/openai-workloads/validation-cases.ts",
+    "validate:admin-openai-workloads": "tsx \"app/admin/(protected)/workloads-openai/validation-cases.ts\"",
     "validate:openai-costs": "tsx lib/openai-costs/validation-cases.ts",
     "validate:openai-costs-dashboard": "tsx \"app/admin/(protected)/custos-openai/validation-cases.tsx\"",
     "validate:landing-page-root": "tsx lib/conversion-content/landing-page/root-validation-cases.ts",
@@ -24,9 +25,7 @@
     "validate:landing-page-knowledge-resolution": "tsx lib/conversion-content/landing-page/knowledge-resolution/validation-cases.ts",
     "validate:landing-page-dynamic-research": "tsx lib/conversion-content/landing-page/knowledge-resolution/dynamic-research-validation-cases.ts",
     "validate:lp-builder-onboarding": "tsx lib/lp-builder/validation-cases.ts",
-    "validate:landing-page-workspace": "tsx lib/lp-builder/landing-page-workspace-validation-cases.ts",
     "validate:landing-page-draft-generation": "tsx lib/lp-builder/landing-page-draft-generation-validation-cases.ts",
-    "validate:landing-page-preview": "tsx lib/lp-builder/landing-page-preview-validation-cases.tsx",
     "validate:lp-builder-onboarding-journey": "tsx app/a/[account]/_components/onboarding-journey-validation-cases.ts"
   },
   "dependencies": {

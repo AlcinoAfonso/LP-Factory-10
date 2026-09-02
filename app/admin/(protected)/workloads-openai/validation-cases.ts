@@ -188,6 +188,20 @@ const cases: readonly Case[] = [
       assert.equal(actions.includes("process.env.OPENAI_API_KEY"), true);
       assert.equal(/formData\.get\(["']actor/i.test(actions), false);
       assert.equal(/OPENAI_API_KEY/.test(proof), false);
+      assert.match(proof, /contractVersion: 4/);
+      assert.match(proof, /as const satisfies LandingPageGenerationContextPackage/);
+      for (const v4Identity of [
+        "sharedCatalogVersion",
+        "landingPageCatalogVersion",
+        "sharedRevision",
+        "landingPageRevision",
+      ]) {
+        assert.equal(proof.includes(v4Identity), true);
+      }
+      assert.doesNotMatch(
+        proof,
+        /contractVersion: 3|historicalConfigurationCatalogVersion|configurationRevision/,
+      );
       for (const transport of [
         "resolveNicheWithOpenAi",
         "requestCommercialActivationOpenAi",
