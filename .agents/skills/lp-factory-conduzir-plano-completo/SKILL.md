@@ -1,15 +1,15 @@
 ---
-name: lp-factory-orquestrar-plano
-description: "Orquestrar end-to-end um plano-base Completo do LP Factory 10 a partir de uma v1 funcional aprovada e congelada no PR do plano: produzir e aprovar uma v2 técnica, reconciliar o roadmap e executar todas as subseções na mesma branch e no mesmo PR, usando especialistas antes da v2 e o Analista nos gates. Usar quando o supervisor ou o handoff informar o PR ou path da v1 e pedir para conduzir o plano completo."
+name: lp-factory-conduzir-plano-completo
+description: "Conduzir end-to-end um plano-base Completo do LP Factory 10 a partir de uma v1 funcional aprovada e congelada no PR do plano: produzir e aprovar uma v2 técnica, reconciliar o roadmap e executar todas as subseções na mesma branch e no mesmo PR, usando especialistas antes da v2 e o Analista nos gates. Usar quando o supervisor ou o handoff informar o PR ou path da v1 e pedir para conduzir o plano completo."
 ---
 
-# Orquestrar plano-base end-to-end
+# Conduzir plano-base Completo end-to-end
 
 Conduzir revisão, v2 técnica e implementação no PR único do plano. A task técnica coordena o workflow até a aprovação da v2 e então assume o contrato do Executor; custom agents apenas avaliam em modo read-only.
 
 ## Entrada e invariantes
 
-Aceitar como comando suficiente número, URL do PR ou path da v1 acompanhado da referência inequívoca do PR, por exemplo: `Use $lp-factory-orquestrar-plano no PR #577.`
+Aceitar como comando suficiente número, URL do PR ou path da v1 acompanhado da referência inequívoca do PR, por exemplo: `Use $lp-factory-conduzir-plano-completo no PR #577.`
 
 No fluxo normal:
 

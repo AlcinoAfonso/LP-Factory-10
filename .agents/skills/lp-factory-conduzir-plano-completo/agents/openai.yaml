@@ -1,0 +1,7 @@
+interface:
+  display_name: "Conduzir plano-base Completo"
+  short_description: "Produz a v2 e executa o plano no mesmo PR"
+  default_prompt: "Use $lp-factory-conduzir-plano-completo no PR informado para produzir a v2 e executar o plano completo."
+
+policy:
+  allow_implicit_invocation: false
