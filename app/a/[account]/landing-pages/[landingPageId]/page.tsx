@@ -72,12 +72,14 @@ export default async function LandingPageWorkspaceDetail({ params, searchParams 
               <h2 className="mt-2 text-xl font-bold text-ink-900">Versões da página</h2>
               <p className="mt-1 text-sm text-graytech-600">A versão mais recente e a aprovada podem ser diferentes.</p>
             </div>
-            {detail.landingPage.latestRevision || detail.canMutate ? (
+            {detail.landingPage.latestRevision ? (
               <Link href={`/a/${accountSubdomain}/landing-pages/${landingPageId}/preview`} className="inline-flex min-h-11 items-center justify-center rounded-lg bg-brand-700 px-4 text-sm font-semibold text-white">
-                {detail.landingPage.latestRevision
-                  ? "Ver versão mais recente"
-                  : "Gerar primeira versão"}
+                Ver versão mais recente
               </Link>
+            ) : detail.canMutate ? (
+              <p className="max-w-xs rounded-lg bg-graytech-100 px-4 py-3 text-sm font-medium text-graytech-700">
+                Gerar primeira versão está temporariamente indisponível durante a simplificação do fluxo de geração.
+              </p>
             ) : null}
           </div>
           <div className="mt-5 grid gap-3">
