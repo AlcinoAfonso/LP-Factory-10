@@ -38,7 +38,7 @@ A V1 aprovada limita o resultado funcional. Repositório, pareceres e conveniên
 1. Identificar quais planos estão liberados e quais aguardam dependências.
 2. Criar exatamente uma task técnica para cada plano liberado, sem combinar planos independentes.
 3. Estruturar o handoff conforme `docs/template-briefing-codex.md`, referenciando a V1 integral sem resumi-la livremente nem reinterpretá-la.
-4. Para Light, instruir a task a materializar a V1 no PR único do plano e assumir diretamente o contrato universal do Executor.
+4. Para Light, instruir a task a materializar e congelar a V1 por path, PR e commit SHA no PR único do plano antes de assumir o contrato universal do Executor.
 5. Para Completo, instruir a task a materializar e congelar a V1 no PR único do plano e usar `$lp-factory-conduzir-plano-completo`; depois da aprovação da V2, ela passa a ser o contrato exclusivo de implementação.
 6. Permitir paralelismo somente entre planos sem dependência pendente.
 
