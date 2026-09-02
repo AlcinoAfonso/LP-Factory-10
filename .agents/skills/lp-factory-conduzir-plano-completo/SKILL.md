@@ -50,7 +50,7 @@ Se o estágio não for inequívoco, pedir apenas a referência faltante; nunca r
 1. Confirmar PR, base `main`, head, SHAs, caso e exatamente um `docs/lousa-plano-base-*.md`; diante de ambiguidade, pedir o path.
 2. Confirmar que o commit congelado da v1 pertence ao histórico da branch head do PR e registrar commit SHA, blob SHA, path e conteúdo integral da v1.
 3. Registrar commit, blob e conteúdo de `docs/roadmap.md` na `main` usada como base do PR.
-4. Reutilizar a branch head, a worktree compatível e o PR da v1. Nunca editar `main`, criar segunda branch/PR ou reescrever o commit congelado da v1.
+4. Até o merge, reutilizar a branch head, a worktree compatível e o PR da v1. Nunca editar `main`, criar segunda branch/PR ou reescrever o commit congelado da v1. Se uma validação obrigatória pós-merge revelar defeito de implementação, a mesma task pode abrir exatamente uma branch e um PR corretivos mínimos, conforme o contrato do Executor.
 
 ## 2. Preparar contexto e especialistas
 
@@ -105,4 +105,4 @@ Informar referências de v1, worktree, branch, pareceres aplicáveis, confrontos
 
 ## Limites
 
-Não editar ou commitar na `main`; reescrever o commit congelado da v1; criar PR empilhado, segunda branch ou segundo PR; permitir edição por custom agents; ampliar escopo silenciosamente; repetir especialistas do mesmo blob por precaução; fazer merge; ou substituir o supervisor competente.
+Não editar ou commitar na `main`; reescrever o commit congelado da v1; criar PR empilhado, segunda branch ou segundo PR antes do merge, exceto o único PR corretivo pós-merge previsto acima; permitir edição por custom agents; ampliar escopo silenciosamente; repetir especialistas do mesmo blob por precaução; fazer merge; ou substituir o supervisor competente.
