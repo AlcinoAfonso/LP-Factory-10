@@ -33,7 +33,7 @@ export type GenerateLandingPageRevisionActionState =
     }>;
 
 const UNAVAILABLE_MESSAGE =
-  "A geração ainda não está disponível neste ambiente. Nenhuma revisão foi criada.";
+  "A geração de novas revisões está temporariamente indisponível enquanto este fluxo é simplificado. Nenhuma revisão foi criada.";
 
 export async function generateLandingPageRevisionAction(
   _previousState: GenerateLandingPageRevisionActionState,
@@ -52,7 +52,6 @@ export async function generateLandingPageRevisionAction(
     return actionError("ACCESS_DENIED", "Você não pode gerar uma revisão desta página.");
   }
 
-  const requestId = access.context.requestId ?? randomUUID();
   const entitlement = await getCommercialEntitlementSignal({
     accountId: access.context.accountId,
   });
@@ -63,6 +62,11 @@ export async function generateLandingPageRevisionAction(
     );
   }
 
+  if (!legacyGenerationIsTemporarilyAvailable()) {
+    return actionError("GENERATION_UNAVAILABLE", UNAVAILABLE_MESSAGE);
+  }
+
+  const requestId = access.context.requestId ?? randomUUID();
   const readiness = await loadLandingPageRevisionReadiness();
   if (!readiness.ready) {
     return actionError("GENERATION_UNAVAILABLE", UNAVAILABLE_MESSAGE);
@@ -149,6 +153,10 @@ export async function generateLandingPageRevisionAction(
     revisionId: materialized.revisionId,
     revisionNumber: materialized.revisionNumber,
   };
+}
+
+function legacyGenerationIsTemporarilyAvailable() {
+  return false;
 }
 
 function actionError(

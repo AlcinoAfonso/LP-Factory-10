@@ -48,13 +48,11 @@ export default async function LandingPagePreview({ params, searchParams }: PageP
                 Preview privado
               </p>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-graytech-600">
-                Esta superfície reproduz somente a revisão persistida selecionada. Gerar uma nova revisão continua sendo uma ação humana explícita.
+                Esta superfície continua exibindo revisões persistidas. A geração de novas revisões está temporariamente indisponível enquanto o fluxo é simplificado.
               </p>
             </div>
             <div className="flex flex-col gap-2 sm:flex-row">
-              {canMutate ? (
-                <GenerationTrigger accountSlug={accountSlug} landingPageId={landingPageId} />
-              ) : null}
+              {canMutate ? <GenerationTrigger /> : null}
               {workspaceEnabled && preview.status === "ready" && canMutate ? (
                 <form action={approveLandingPageRevisionAction}>
                   <input type="hidden" name="account" value={accountSlug} />
@@ -89,7 +87,7 @@ export default async function LandingPagePreview({ params, searchParams }: PageP
         ) : preview.status === "empty" ? (
           <PreviewState
             title="Ainda não há uma revisão para visualizar"
-            description="Use o gatilho acima quando quiser gerar a primeira revisão desta landing page."
+            description="A geração da primeira revisão está temporariamente indisponível enquanto o fluxo de geração é simplificado."
           />
         ) : preview.status === "invalid_cta" ? (
           <PreviewState

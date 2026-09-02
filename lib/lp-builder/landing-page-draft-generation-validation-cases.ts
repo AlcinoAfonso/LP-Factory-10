@@ -2042,7 +2042,7 @@ const cases = [
     },
   },
   {
-    name: "route action owns request correlation and revalidates access plus operational provenance",
+    name: "route action blocks legacy generation before readiness context binding or materialization",
     run: () => {
       const action = readFileSync(
         new URL(
@@ -2051,9 +2051,40 @@ const cases = [
         ),
         "utf8",
       );
-      assert.ok(
-        action.indexOf("const readiness = await loadLandingPageRevisionReadiness()") <
-          action.indexOf("const context = await compileLandingPageGenerationContextForDraft"),
+      const accessIndex = action.indexOf("const access = await requireAccountMembersManager(accountSlug)");
+      const entitlementIndex = action.indexOf("const entitlement = await getCommercialEntitlementSignal");
+      const cutIndex = action.indexOf("if (!legacyGenerationIsTemporarilyAvailable())");
+      const requestIdIndex = action.indexOf("const requestId = access.context.requestId ?? randomUUID();");
+      const readinessIndex = action.indexOf("const readiness = await loadLandingPageRevisionReadiness()");
+      const contextIndex = action.indexOf("const context = await compileLandingPageGenerationContextForDraft");
+      const bindingIndex = action.indexOf("const binding = resolveLandingPageConversionBinding(context.value)");
+      const materializationIndex = action.indexOf("const materialized = await materializeLandingPageDraftRevision");
+      for (const index of [
+        accessIndex,
+        entitlementIndex,
+        cutIndex,
+        requestIdIndex,
+        readinessIndex,
+        contextIndex,
+        bindingIndex,
+        materializationIndex,
+      ]) {
+        assert.notEqual(index, -1);
+      }
+      assert.ok(accessIndex < entitlementIndex);
+      assert.ok(entitlementIndex < cutIndex);
+      assert.ok(cutIndex < requestIdIndex);
+      assert.ok(requestIdIndex < readinessIndex);
+      assert.ok(readinessIndex < contextIndex);
+      assert.ok(contextIndex < bindingIndex);
+      assert.ok(bindingIndex < materializationIndex);
+      assert.match(
+        action,
+        /function legacyGenerationIsTemporarilyAvailable\(\) \{\s*return false;\s*\}/,
+      );
+      assert.match(
+        action.slice(cutIndex, requestIdIndex),
+        /return actionError\("GENERATION_UNAVAILABLE", UNAVAILABLE_MESSAGE\);/,
       );
       assert.match(
         action,
@@ -2072,7 +2103,10 @@ const cases = [
         action,
         /materializeLandingPageDraftRevision\(\{[\s\S]*?createdBy:[\s\S]*?requestId,[\s\S]*?revalidate:/,
       );
-      assert.doesNotMatch(action, /generateLandingPageDraftCandidate|generateLandingPageDraftImage/);
+      assert.doesNotMatch(
+        action,
+        /completeLandingPageKnowledge|dynamicMarketResearch|generateLandingPageDraftCandidate|generateLandingPageDraftImage/,
+      );
       assert.match(action, /UNSUPPORTED_PRIMARY_CONVERSION_CHANNEL/);
       assert.match(
         action,
