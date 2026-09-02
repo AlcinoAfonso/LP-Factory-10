@@ -13,12 +13,6 @@ export const adminDocsCatalog: AdminDocCatalogItem[] = [
     description: 'Estado final dos casos E*, escopos, dependencias e pendencias.',
   },
   {
-    id: 'pipeline-plano-base',
-    title: 'Pipeline de plano-base',
-    path: 'docs/pipeline-plano-base.md',
-    description: 'Arquitetura de Debate, modos, formatos, handoffs, gates e autoridades.',
-  },
-  {
     id: 'base-tecnica',
     title: 'Base tecnica',
     path: 'docs/base-tecnica.md',
@@ -64,7 +58,7 @@ export const adminDocsCatalog: AdminDocCatalogItem[] = [
     id: 'prompt-estrategista',
     title: 'Prompt estrategista',
     path: 'docs/prompt-estrategista.md',
-    description: 'Contrato do Estrategista para Debate, V1 e supervisao.',
+    description: 'Fluxo estrategista para briefing e execucao.',
   },
   {
     id: 'prompt-executor',
