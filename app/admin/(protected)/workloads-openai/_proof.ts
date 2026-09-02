@@ -274,7 +274,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 const proofLandingPageContext = {
-  contractVersion: 3,
+  contractVersion: 4,
   identities: {
     accountId: "10000000-0000-4000-8000-000000000001",
     landingPage: {
@@ -286,11 +286,25 @@ const proofLandingPageContext = {
       id: "30000000-0000-4000-8000-000000000003",
       slug: "consultoria-imobiliaria",
       name: "Consultoria imobiliária",
+      level: "segment",
+      isActive: true,
+      parentId: null,
     },
-    taxonChain: {},
-    historicalConfigurationCatalogVersion: 2,
+    taxonChain: {
+      segment: {
+        id: "30000000-0000-4000-8000-000000000003",
+        slug: "consultoria-imobiliaria",
+        name: "Consultoria imobiliária",
+        level: "segment",
+        isActive: true,
+        parentId: null,
+      },
+    },
     effectiveInputCatalogVersion: 4,
-    configurationRevision: 1,
+    sharedCatalogVersion: null,
+    landingPageCatalogVersion: 4,
+    sharedRevision: null,
+    landingPageRevision: 1,
     rootVersion: 1,
     endCustomerResearchVersion: 1,
   },
@@ -307,7 +321,7 @@ const proofLandingPageContext = {
         purpose: "offer",
         valueType: "string",
         value: "Consultoria imobiliária",
-        source: "account_configuration",
+        source: "configuration",
         provenance: [],
       },
       {
@@ -315,7 +329,7 @@ const proofLandingPageContext = {
         purpose: "conversion",
         valueType: "enum",
         value: "whatsapp",
-        source: "account_configuration",
+        source: "configuration",
         provenance: [],
       },
     ],
@@ -331,9 +345,9 @@ const proofLandingPageContext = {
         purpose: "conversion_destination",
         valueType: "phone",
         value: "+5521000000000",
-        source: "account_configuration",
+        source: "authoritative",
         provenance: [],
       },
     ],
   },
-} as unknown as LandingPageGenerationContextPackage;
+} as const satisfies LandingPageGenerationContextPackage;

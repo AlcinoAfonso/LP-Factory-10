@@ -1,7 +1,7 @@
 0.1 Cabeçalho
-Data: 01/09/2026
-Versão: v1.23
-Status: Alinhado ao Platform Config e ao estado final da retirada controlada E22.3; `automations/supabase-inspect` preservada
+Data: 02/09/2026
+Versão: v1.24
+Status: Alinhado à retirada do fluxo automatizado legado de Landing Pages; provas administrativas e `automations/supabase-inspect` preservadas
 
 0.2 Função do documento
 Registrar a camada de automações operacionais do LP Factory 10 como referência para integrações, automações operacionais e componentes consumidores, sem expor segredos.
@@ -395,59 +395,30 @@ Fluxo funcional: `docs/roadmap.md` — E20.6.3.
 Configuração do gate: `docs/platform-config.md` — seção 3.5.
 Contrato técnico: `docs/base-tecnica.md` — seção 3.15.7.
 
-3.11 E19.4.3 — geração controlada da candidata de landing page
+3.11 E19.4.3 — geração controlada da candidata de landing page — retirada
 
-Objetivo:
-Gerar e validar a candidata textual completa e sua imagem principal a partir do pacote autorizado da E19.3, sem materialização parcial.
+Objetivo histórico:
+O fluxo combinava texto, imagem, validação e materialização do antigo produto de Landing Pages.
 
 Status:
-Implementada e comprovada em duas execuções integradas hospedadas em 18/08/2026. Por decisão humana, o canário isolado sem persistência foi substituído pelo primeiro append integrado; texto, imagem e caminho oficial concluíram sem retry ou fallback, e o segmento produtivo permaneceu configurado com `maxDuration = 300` sem timeout incompatível.
+Retirado da árvore ativa pelos PRs #871, #872 e pelo SV-PR03. Não existe action, orquestração, upload, append, Preview, renderer ou gatilho no Account Dashboard.
 
-Recurso utilizado:
-- Responses API com Structured Output estrito;
-- Images API;
-- Server Action autenticada e fail-closed por readiness.
+Capacidades preservadas:
+- os geradores básicos de texto e imagem continuam disponíveis somente para provas administrativas da gestão OpenAI;
+- a autoridade `lib/conversion-content/landing-page/presentation/` continua consumida por esses geradores;
+- essas provas são chamadas explícitas e isoladas, sem workflow de produto, persistência de revisão, job, fila, retry ou fallback automático.
 
-Natureza:
-- Automação com IA em fluxo controlado.
-
-Ambiente principal:
-- Runtime do LP Factory.
-
-Plataforma dependente:
-- OpenAI Platform.
-
-Participação humana:
-- Gatilho autenticado explícito e revisão posterior do resultado; sem intervenção durante a execução.
-
-Como funciona:
-- Consome somente o pacote autorizado E19.3 v3 e mantém valores operacionais fora do contexto textual.
-- Executa um workload textual e um workload de imagem separados, com uma chamada por provider e telemetria própria.
-- Valida contrato, estrutura, bindings e factualidade antes de permitir qualquer materialização.
-- Preserva tentativa e requisição internas para correlação, separadas dos identificadores dos providers.
-- Aplica deadline total de 270 segundos, propaga cancelamento e tempo restante aos providers e impede imagem, upload ou append posterior quando o orçamento expira.
-
-Limites:
-- Não usa tools, Agents SDK, agente, job, fila, execução recorrente, retry ou fallback automático.
-- Falha, recusa, timeout ou candidata inválida encerram a tentativa sem revisão persistida.
-- Não registra prompt, resposta integral, contexto de negócio, PII, secrets ou raciocínio privado.
-
-Aplicação funcional no roadmap:
-- `docs/roadmap.md` — E19.4.3.
-
-Referências / dependências:
-Regra técnica: `docs/base-tecnica.md` — seção 3.15.8.
-Configuração de workloads: `docs/platform-config.md`.
-Boundary de geração: `lib/lp-builder/landingPageDraftGeneration.ts`.
-Autoridade de apresentação: `lib/conversion-content/landing-page/presentation/`.
-
+Referências:
+- estado vigente: `docs/roadmap.md` — E19 e E22.4;
+- boundaries preservados: `docs/base-tecnica.md` — seção 3.15.8;
+- configuração administrativa: `docs/platform-config.md`.
 3.12 E20.7.4 — complemento dinâmico controlado de conhecimento de mercado
 
 Objetivo:
 Complementar somente a resolução `dynamic_required` da E20.7.3 com evidência pública recente e rastreável, sem recusar a oferta nem substituir a autoridade factual E20.2.
 
 Status:
-Concluída no boundary da E20.7, implementada e validada deterministicamente no repositório, com apply automático da migration E20.7.4 concluído após o merge do PR #835. O transporte hospedado permanece não autorizado; prova hospedada, promoção e ativação do workload pertencem ao futuro recorte E19.3 consumidor e não constituem pendência da E20.7.
+Concluída no boundary da E20.7, implementada e validada deterministicamente no repositório, com apply automático da migration E20.7.4 concluído após o merge do PR #835. O transporte hospedado permanece não autorizado e não possui consumidor funcional após a retirada da integração E19; eventual uso futuro exige recorte próprio.
 
 Recurso utilizado:
 - Responses API com Structured Output estrito;
@@ -473,7 +444,7 @@ Como funciona:
 Limites:
 - Não usa agente, Agents SDK, retry, fallback, background, conversation, job, fila, RAG, cache global ou persistência de pesquisa.
 - Não altera a E20.2, não gera copy, layout, wireframe ou CTA e não integra a geração E19.
-- O piloto `corretor-imoveis` já está reconciliado em `reviewed_input_catalog_version=6`. O bootstrap revisão `1` não autoriza transporte hospedado; o futuro recorte E19.3 consumidor deverá comprovar, promover e ativar revisão `supabase_operational` `2` ou posterior pelo lifecycle E21.2, conforme `docs/platform-config.md`.
+- O piloto `corretor-imoveis` já está reconciliado em `reviewed_input_catalog_version=6`. O bootstrap revisão `1` não autoriza transporte hospedado; eventual novo consumidor deverá comprovar, promover e ativar revisão `supabase_operational` `2` ou posterior pelo lifecycle E21.2, conforme `docs/platform-config.md`.
 
 Aplicação funcional no roadmap:
 - `docs/roadmap.md` — E20.7.4.

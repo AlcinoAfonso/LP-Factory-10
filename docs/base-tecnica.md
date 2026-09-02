@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.85
+• Versão: v2.0.86
 • Data: 02/09/2026
 
 0.2 Contrato do documento (consulta)
@@ -304,14 +304,11 @@
 • As chamadas permanecem controladas e sem retry ou fallback automático e não autorizam upload, append ou outra persistência de revisão.
 • Correlação preserva identificadores internos distintos dos identificadores dos providers, sem registrar prompt, resposta integral, contexto de negócio, PII, secrets ou raciocínio privado.
 
-3.15.9 Revisões materializadas de `landing_page`
-• Revisões já materializadas pertencem ao agregado existente e permanecem imutáveis; a corrente é derivada pela maior numeração. Listagens paginadas transportam somente os metadados necessários das revisões corrente e aprovada, com número limitado e estável de consultas por página e volume independente do histórico, preservando LPs sem revisão e o ponteiro explícito de aprovação.
-• A validação de identidade lê uma seleção completa e limitada de snapshots originais, independente da quantidade de revisões, preservando a primeira presença elegível de cada grupo e sua ordem interna; elegibilidade de seleção não substitui a avaliação de domínio. Baselines e revisão corrente devem vir do mesmo snapshot de leitura, e o save deve revalidar a revisão observada sob o lock existente. Erro ou resposta inválida falha fechado, sem truncamento ou fallback para varredura histórica; o contrato físico pertence a `docs/schema.md`.
-• O runtime do produto não expõe operação de append, upload ou cleanup de revisão; RPCs, tabelas, bucket e dados existentes permanecem preservados e inertes para eventual decisão futura.
-• Conteúdo e snapshot históricos devem permanecer autossuficientes para reprodução sem reler fontes mutáveis, sem secret, raciocínio privado, resposta bruta ou URL assinada; objetos físicos exatos pertencem a `docs/schema.md` e ao código.
-• O consumo privado de uma revisão deve revalidar ator, conta, membership, entitlement, LP e tenant da materialização antes de assinar mídia ou entregar o read model; divergência de identidade, binding ou referência de asset falha fechada.
-• O read model expõe somente allowlist explícita do contrato de apresentação e metadados necessários da revisão, acrescida da URL assinada transitória; linhas de banco, snapshot integral, pesquisa, valores operacionais, bucket, path, autenticação e provider não atravessam o boundary do renderer.
-• O renderer de revisão é puro e read-only: recebe o read model validado, não consulta Supabase ou provider, não recompila contexto de geração e não usa fonte mutável para reinterpretar a revisão persistida.
+3.15.9 Estado residual do antigo produto de `landing_page`
+• O Account Dashboard não possui criação, onboarding operacional, workspace, configuração operacional, histórico, Preview, renderer, aprovação, readers de materialização ou assinatura de assets do produto legado.
+• Tabelas, RPCs, migrations, ponteiro de aprovação, dados históricos e o bucket privado permanecem fisicamente preservados e inertes; nenhum runtime do produto os usa para leitura, escrita, reprodução ou entrega de revisão.
+• As residências antigas de configuração permanecem uma exceção explícita: o lifecycle administrativo do catálogo ainda as lê para validar compatibilidade antes da publicação, sem reativar o produto de Landing Pages.
+• Eventual limpeza destrutiva de banco, dados ou Storage exige recorte próprio; o contrato físico continua inventariado em `docs/schema.md`.
 
 3.15.10 Resolução determinística de conhecimento de `landing_page`
 • Boundary canônico: `lib/conversion-content/landing-page/knowledge-resolution/`; contratos, equivalência factual e resolver puro são fontes executáveis, exportadas pela API pública de `lib/conversion-content/`.

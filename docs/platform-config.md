@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Documento: LP Factory 10 — Platform Config
-• Versão: v0.1.39
+• Versão: v0.1.40
 • Data: 02/09/2026
 
 0.2 Contrato do documento
@@ -154,12 +154,10 @@
 • Regra operacional: `E20_5_SELECTED_RESEARCH_ENABLED = true` permanece pré-requisito independente; mudanças futuras devem ser validadas primeiro em Preview autenticado antes de Production.
 
 • `E19_5_WORKSPACE_ENABLED`
-• Finalidade: gate server-only do workspace operacional de landing pages e de todo acesso aos novos objetos de configuração e aprovação da E19.5.
+• Finalidade histórica: gate server-only do workspace operacional de landing pages retirado no SV-PR03.
 • Escopo: Preview e Production do projeto Core, com configuração independente por ambiente.
-• Habilitação: somente o literal `true` ativa o workspace; variável ausente, vazia ou com qualquer outro valor preserva a experiência vigente e impede leitura ou mutação dos novos objetos.
-• Estado atual: `true` em Preview e Production, com entradas independentes por ambiente; ausência ou valor diferente do literal `true` mantém o workspace desabilitado no ambiente correspondente.
-• Progressão operacional concluída: migration e correção forward-only aplicadas, snippet read-only e Security Controls aprovados; Preview foi habilitado, redeployado e validado antes da decisão humana que autorizou a habilitação, o redeploy e o smoke focal de Production.
-• Gate de evidência: a avaliação E20.6 da v5 e a decisão humana de suficiência permanecem concluídas para o taxon servido `Corretor Imóveis` (`corretor-imoveis`), com `reviewed_input_catalog_version = 5` e sem gaps candidatos. Os smokes autenticados de Preview e Production aprovaram workspace, configuração v5, histórico, preview e aprovação existente; o rollout não promoveu o marcador nem alterou a E20.6.
+• Estado atual: sem consumidor no código; qualquer valor hospedado é inerte e não ativa rota, leitura ou mutação do workspace retirado.
+• Regra operacional: não é necessário remover a variável da Vercel neste recorte e nenhum novo consumidor deve ser criado sem decisão própria.
 
 • `INVITE_STATE_SECRET`
 • Finalidade: assinar o estado opaco transportado pelo convite nativo do Supabase Auth.
@@ -316,10 +314,10 @@
 
 4.8 Storage privado das revisões de landing page
 • Bucket definido no repositório: `landing-page-revision-assets`.
-• Estado operacional: ativo e configurado no ambiente hospedado pela migration E19.4.4 aplicada; readiness e verificador SQL read-only aprovados em 18/08/2026.
+• Estado operacional: infraestrutura hospedada preservada, porém inerte após a retirada dos readers, Preview e assinatura de assets do produto legado.
 • Configuração aprovada: privado, limite de 5 MB e MIME permitido somente `image/webp`.
-• Acesso do produto: exclusivamente server-side por service role; nenhuma policy direta para anon ou authenticated.
-• Identidade do asset: bucket e path estáveis; URL assinada temporária somente no consumo autorizado e nunca persistida.
+• Acesso do produto: não há consumidor runtime; nenhuma policy direta para anon ou authenticated foi alterada.
+• Limpeza do bucket ou de objetos depende de recorte destrutivo próprio.
 
 5. Resend
 
@@ -514,6 +512,7 @@ Regra:
 • Configurações de plataformas, secrets por nome, workflows, ambientes e endpoints usados por automações devem ser registrados neste documento.
 
 99. Changelog
+v0.1.40 — 02/09/2026 — Marcados `E19_5_WORKSPACE_ENABLED` e `landing-page-revision-assets` como recursos sem consumidor runtime após o SV-PR03; nenhuma variável, secret, bucket ou infraestrutura externa foi alterada.
 v0.1.39 — 02/09/2026 — Removidos do inventário de consumidores atuais os wrappers server-only de texto e imagem do LP Builder, confirmados sem consumidor funcional; os cores usados diretamente pelas provas administrativas permanecem inalterados.
 
 v0.1.38 — 02/09/2026 — Reconciliado o estado dos workloads de Landing Page após a retirada da orquestração antiga: texto e imagem permanecem para prova administrativa, a integração E19.3 deixou de ser consumidora e o adapter inexistente foi removido do inventário, sem alteração de variável, secret, endpoint ou infraestrutura externa.

@@ -139,12 +139,10 @@ const context = {
 
 const cases = [
   {
-    name: "text, request and visual outputs match the pre-move baseline for v3/v4 modelContext",
+    name: "text, request and visual outputs match the preserved v4 baseline",
     run: () => {
       // Complete output digests captured before the move at 5b924b42de3cd7eeb9384874f53124de582faddf.
-      // No provider call: v3 remains readable history, not authorization for live generation.
-      for (const version of [3, 4] as const) {
-        for (const special of [false, true]) {
+      for (const special of [false, true]) {
           const modelContext = special
             ? {
                 ...context.modelContext,
@@ -163,7 +161,6 @@ const cases = [
             : context.modelContext;
           const fixture = {
             ...context,
-            contractVersion: version,
             modelContext,
             serverContext: {
               facts: [{ ...context.serverContext.facts[0], value: "SERVER_ONLY_SENTINEL" }],
@@ -180,11 +177,10 @@ const cases = [
             special
               ? "b31bb44fa8b1d2c4da04f2e0b3251ed311faeacdbca8a03e3ca36a305d7d7e49"
               : "cfbad0e5b656754f3f15e47872bc126b3417cf27218341cdbffe556f3cc4db51",
-            `complete output equivalence: v${version}, special=${special}`,
+            `complete output equivalence: v4, special=${special}`,
           );
           assert.doesNotMatch(serialized, /SERVER_ONLY_SENTINEL/);
           assert.equal(outputs.request.text.format.schema, landingPagePresentationJsonSchema);
-        }
       }
     },
   },
