@@ -80,8 +80,8 @@
     - `public.has_account_min_role(uuid, text)`.
 - Referências:
   - Arquitetura de acesso e fluxos de Auth: `docs/base-tecnica.md` — seção 5.
-  - Helpers e políticas atuais: `docs/schema.md` — seções 1 e 3.3.
-  - Configuração externa de Auth: `docs/platform-config.md` — seções de Supabase Auth.
+  - Helpers e políticas atuais: `docs/schema.md` — seções 1.1 a 1.7 e 3.3.
+  - Redirects e envio transacional de Auth: `docs/platform-config.md` — seções 4.4 e 4.5.
 
 2.1.3 Identidade e papéis
 - Status: implementado e vigente.
@@ -107,7 +107,7 @@
   - links de confirmação e recuperação não consomem token ou código no GET;
   - verificação, criação da sessão e atualização de senha ocorrem somente no POST;
   - senha somente é alterada depois da validação do token ou código e do estabelecimento da sessão correspondente;
-  - configuração de templates, redirects e expiração pertence a `docs/platform-config.md`.
+  - redirects e envio transacional pertencem a `docs/platform-config.md`; validade de token ou código permanece sob autoridade do Supabase Auth.
 
 2.1.6 Limites do recorte
 - Status: vigente.
