@@ -764,6 +764,8 @@
     - `components/layout/Header.tsx`
     - `components/layout/UserMenu.tsx`
     - `providers/AccessProvider.tsx`
+- Referências:
+  - Contrato de banco: `docs/schema.md` — seção 2.2.
 
 10.3.3 Experiência vigente
 - O cabeçalho da conta exibe identidade, status, nicho resolvido quando disponível e acesso a membros para `owner` ou `admin` quando a funcionalidade está habilitada.
@@ -795,7 +797,7 @@
     - `lib/access/adapters/accessContextAdapter.ts`
     - `lib/access/getAccessContext.ts`
 - Referências:
-  - Contrato de banco: `docs/schema.md` — `account_profiles`.
+  - Contrato de banco: `docs/schema.md` — seção 1.8.
 
 10.4.3 Campos e validação compartilhada
 - `name` e `niche` são obrigatórios após `trim`.
@@ -843,7 +845,7 @@
     - `app/a/[account]/actions.ts`
     - `app/a/[account]/page.tsx`
 - Referências:
-  - Contrato de banco: `docs/schema.md` — taxonomia, pesquisas e classificação de conta.
+  - Contrato de banco: `docs/schema.md` — seções 1.11–1.19.
   - Fluxo operacional: `docs/prompt-nicho-identificacao.md`, `docs/prompt-nicho-pesquisa.md`, `docs/prompt-nicho-itens-estruturados.md`, `docs/prompt-nicho-carregamento.md` e `docs/prompt-nicho-verificacao.md`.
 
 10.5.3 Base de taxonomia e pesquisa
@@ -939,7 +941,7 @@
     - `prod#16`
 - Referências:
   - Plano do recorte: `docs/lousa-plano-base-e10-7.md`.
-  - Contrato de banco: `docs/schema.md` — templates, composições, artefatos e publicação.
+  - Contrato de banco: `docs/schema.md` — seções 1.22–1.23 e 3.3.
 
 10.7.3 Elegibilidade e geração
 - Um taxon elegível exige pesquisas ativas da versão 1 para `business_buyer` e `end_customer`, cada uma com os quatro blocos definidos em 10.5.3 e itens ativos.
