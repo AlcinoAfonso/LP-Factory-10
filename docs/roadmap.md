@@ -1530,7 +1530,7 @@
 - `content_template_compositions` e `content_template_composition_items` definem composição, ordem, obrigatoriedade e variante.
 - `content_artifacts` separa o conteúdo final do template e da composição.
 - `content_artifact_research_sources` registra as fontes estruturadas compatíveis com o artefato.
-- As famílias materializadas são `commercial_activation` e `landing_page`; somente `commercial_activation` possui composição e renderer ativos neste recorte.
+- O contrato reconhece `commercial_activation` e `landing_page`; somente `commercial_activation` possui templates, composição e renderer ativos no banco/runtime, enquanto `landing_page` mantém apenas a raiz repo-only de 18.4.
 
 18.2 Base `commercial_activation`
 
