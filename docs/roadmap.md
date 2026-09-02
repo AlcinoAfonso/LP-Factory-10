@@ -2491,16 +2491,24 @@
 - Classificação financeira ampla, outros workloads, câmbio, cobrança, créditos e reconstrução histórica permanecem fora do escopo vigente.
 
 22. E22 — Retirada controlada de ativos históricos
-- Objetivo: reduzir a superfície histórica que não participa do caminho canônico vigente, preservando consumidores reais e preparando a sequência E19.4 concluída → E22.1 → E19.5.
-- Status: E22.1 concluída; E22.2 candidata aguardando merge humano; E22.3 concluída em 01/09/2026 após a retirada do workflow Agent Builder, do service MCP e do projeto Vercel sem workload.
+- Objetivo: reduzir superfícies, dados, documentos e infraestrutura sem consumidor vigente, após auditoria explícita de dependências e sem criar substitutos antecipados.
+- Status: E22.1, E22.2 e E22.3 concluídas. Foram retirados o perfil de geração, o catálogo de módulos, a resolução histórica de pesquisas, duas fontes documentais redundantes e o service/MCP Supabase Inspect com sua infraestrutura exclusiva. O Core, as automações GitHub e os dados ainda consumidos foram preservados. Permanece somente a decisão futura sobre reduzir Previews produzidos por pushes intermediários em branches não documentais.
 
-22.1 Retirada controlada de ativos históricos
+22.1 Retirada de ativos históricos do domínio de Landing Page
 
 22.1.1 Objetivo e status
-- Objetivo: retirar de forma controlada ativos históricos e seus consumidores somente após classificação de dependências, preservando os boundaries e dados ainda necessários ao caminho ativo.
-- Status: Concluída em 19/08/2026 após o merge do PR #785 e o QA pós-merge final aprovado em produção; E22.1.4, E22.1.5, E22.1.6 e E22.1.7 permanecem concluídas. A E19.4 permanece concluída, e a E19.5 deixa de estar bloqueada pela E22.1 e passa a ser o próximo recorte a planejar, sem implementação iniciada.
+- Objetivo: remover boundaries, superfícies administrativas, validadores e objetos de banco históricos que deixaram de participar do caminho canônico, preservando autoridades e consumidores reais.
+- Status: concluída. Perfil de geração, catálogo de módulos e resolução histórica de pesquisas não existem mais no runtime; parametrização raiz, catálogo de entradas, preparação factual, pesquisa selecionada, workspace e geração de Landing Page permanecem ativos.
 
 22.1.2 Registros do recorte
+- Banco:
+  - Excluídos:
+    - `public.landing_page_generation_profiles`
+    - `public.landing_page_generation_profile_items`
+    - `public.save_landing_page_generation_profile_draft`
+    - `public.activate_landing_page_generation_profile`
+    - `public.archive_landing_page_generation_profile`
+    - `public.get_landing_page_generation_profile_lifecycle_status`
 - Repositório:
   - Criados:
     - `supabase/migrations/20260819153112_e22_1_4_remove_generation_profile.sql`
@@ -2531,82 +2539,71 @@
     - `supabase/tests/e12_4_3_generation_profile_lifecycle.test.sql`
     - `supabase/tests/e20_3_generation_profile.test.sql`
 - Referências:
-  - Contrato de banco: `docs/schema.md` — seções 1 e 3.
+  - Estado atual do banco: `docs/schema.md` — objetos de Landing Page e pesquisas taxonômicas.
+  - Boundary vigente: `docs/base-tecnica.md` — LP Builder e preparação factual.
 
-22.1.3 Auditoria e classificação integral de consumidores
-- Objetivo: mapear e classificar consumidores e ativos históricos como preservados, desacoplados ou removíveis, sem retirar qualquer item apenas por estar fora do caminho canônico.
-- Status: Concluída no planejamento; sem implementação material.
-- Conteúdo:
-  - classificar dependências de runtime, superfícies administrativas, validações e persistência antes de qualquer retirada;
-  - preservar E18.4, E20.2, E20.5, E20.6, E19.2, E19.3, E19.4, E10.6 e E10.7 enquanto houver consumidor real ou autoridade ativa;
-  - preservar a revisão 3 da E19.4 como baseline de regressão e manter a E19.5 pausada durante o recorte.
+22.1.3 Classificação de consumidores
+- A retirada exige classificar cada item como preservado, desacoplado ou removível a partir de consumo real, e não apenas por antiguidade ou localização.
+- Permanecem preservados:
+  - a parametrização raiz e seus presets;
+  - o catálogo de entradas v6 e seu lifecycle;
+  - a seleção da pesquisa integral `end_customer`;
+  - a avaliação e preparação do taxon;
+  - as tabelas `taxon_market_research` e `taxon_market_research_items`;
+  - o contexto de geração, workspace, revisões e histórico da Landing Page;
+  - workloads OpenAI ainda consumidos.
+- Migrations históricas permanecem imutáveis; remoções de schema são forward-only e sem `CASCADE`.
 
-22.1.4 Retirada de E20.3 e E12.4.3 associado
-- Objetivo: retirar o domínio histórico de perfil de geração e suas responsabilidades associadas sem criar persistência ou arquitetura substituta dentro da E22.1.
-- Status: Concluída em 19/08/2026 após os PRs #781 e #782, apply da migration `20260819153112` pelo workflow e prova read-only pós-apply sem drift.
-- Conteúdo:
-  - o primeiro merge retirou `generation-profile`, adapters, páginas/actions de `/admin/perfis-de-orientacao`, navegação e diagnósticos associados, o workload `landing_page_generation_profile_proposal`, exports e validator;
-  - `validate:landing-page-generation-profile` e sua chamada em `npm run check` foram retirados no mesmo recorte, e o QA pós-merge confirmou ausência das superfícies aposentadas;
-  - o gate read-only pré-DDL confirmou o conjunto aprovado de um perfil `active` do taxon `corretor-imoveis`, seus onze itens, duas tabelas, quatro RPCs e ausência de dependências externas inesperadas;
-  - a migration forward-only removeu exatamente as quatro RPCs, as duas tabelas e seus objetos próprios, sem `CASCADE`, preservando migrations históricas, `audit_logs`, `taxon_market_research` e `taxon_market_research_items`;
-  - a prova read-only pós-apply confirmou ausência dos seis objetos, preservação de `tg_set_updated_at`, 24 pesquisas e 379 itens; não houve archive, snapshot, backup paralelo ou persistência substituta.
+22.1.4 Perfil de geração retirado
+- O boundary `generation-profile`, seus adapters, páginas administrativas, actions, exports, workload e validadores foram excluídos.
+- A migration de retirada removeu duas tabelas e quatro RPCs próprias, sem criar arquivo paralelo, snapshot, archive ou persistência substituta.
+- A configuração da Landing Page passou a depender das autoridades vigentes de preparação do taxon, catálogo de entradas e workspace, sem fallback para o perfil retirado.
+- Pesquisas taxonômicas e `audit_logs` não foram apagados pela retirada.
 
-22.1.5 Retirada de E18.5 e poda dos consumidores administrativos
-- Objetivo: retirar o catálogo histórico de módulos e variantes e podar somente as responsabilidades administrativas que dependem dele.
-- Status: Concluída em 19/08/2026 após merge do PR #783 e QA pós-merge aprovado em produção.
-- Conteúdo:
-  - o boundary `module-catalog`, sua API pública, exports e validator foram retirados, junto de `validate:landing-page-module-catalog` e sua chamada em `npm run check`;
-  - somente os consumidores administrativos de módulos e variantes foram podados; no estado pós-merge da E22.1.5, `/admin/estrutura-lp` preservou Parâmetros, Entradas e Pesquisas, sem Módulos e variantes;
-  - E18.4 e E20.2 permanecem preservadas e validadas, sem mudança de banco, migration, persistência ou dados;
-  - as regressões locais confirmaram ausência de dependência de E18.5 no caminho E19.3 → E19.4; os QAs hospedado/autenticado e pós-merge em produção preservaram Parâmetros, Entradas e Pesquisas, e E20.2 resolveu 23 campos válidos em Entradas.
+22.1.5 Catálogo de módulos retirado
+- O boundary `module-catalog`, sua API pública, exports e validação executável foram removidos.
+- A superfície `/admin/estrutura-lp` não oferece mais módulos ou variantes; suas visões vigentes são Parâmetros e Entradas.
+- O contrato raiz e o catálogo de entradas permanecem independentes do catálogo removido.
+- Não houve DDL nem substituição por outro catálogo de composição.
 
-22.1.6 Desacoplamento da camada E10.8
-- Objetivo: desacoplar a camada histórica de resolução de pesquisas e seus consumidores históricos sem remover pesquisas estruturadas que possuam consumidor real independente.
-- Status: Concluída em 19/08/2026 após merge do PR #784 e QA pós-merge aprovado em produção.
-- Conteúdo:
-  - o boundary `research-resolution`, o adapter `landingPageResearchAdapter`, exports e validator foram retirados, junto de `validate:landing-page-research` e sua chamada em `npm run check`;
-  - os diagnósticos BB/EC E10.8 foram retirados da Taxonomia, e a visão Pesquisas foi retirada de `/admin/estrutura-lp`, que preserva somente Parâmetros e Entradas; queries antigas caem com segurança em Parâmetros;
-  - E20.5, E20.6, E19.3, E19.4, E10.6, E10.7, E18.4 e E20.2 permanecem preservadas e validadas; a E19.3 continua recebendo a pesquisa integral `end_customer` selecionada, sem `business_buyer` no `modelContext`;
-  - `taxon_market_research`, `taxon_market_research_items`, seus dados e migrations históricas permanecem intactos para consumidores independentes; não houve migration, DDL, substituto ou alteração de `docs/schema.md`;
-  - o QA hospedado/autenticado aprovou Taxonomia e Estrutura da LP em desktop e mobile, sem links, cards, estados órfãos, overflow de página ou erros de console; E20.2 resolveu 23 campos válidos para Corretor Imóveis em v4/Starter.
+22.1.6 Resolução histórica de pesquisas retirada
+- O boundary `research-resolution`, o adapter histórico, exports, validadores e diagnósticos administrativos dependentes foram removidos.
+- A visão Pesquisas deixou `/admin/estrutura-lp`; queries antigas são normalizadas para uma visão ainda válida.
+- A preparação factual continua lendo a pesquisa integral `end_customer` selecionada pelo fluxo E20.5, sem usar o resolver retirado.
+- As pesquisas estruturadas persistidas foram preservadas porque ainda possuem consumidores independentes.
 
-22.1.7 Consolidação transversal e regressão final
-- Objetivo: consolidar a retirada controlada, verificar a ausência de dependências residuais e preservar a integridade do caminho E19.4.
-- Status: Concluída em 19/08/2026 após o merge do PR #785 e o QA pós-merge final aprovado em produção.
-- Conteúdo:
-  - a auditoria focal encontrou e removeu somente o rótulo administrativo órfão `Pesquisas estruturadas por taxon`; ocorrências em migrations e registros históricos, além de asserções negativas de regressão, permanecem preservadas;
-  - `npm ci`, `npm run check`, `git diff --check` e os validadores focais de E19.3, E19.4, Preview, workloads OpenAI, ativação comercial, E20.5/E20.6 e Estrutura da LP foram aprovados;
-  - os QAs hospedado/autenticado e pós-merge final em produção aprovaram Admin em desktop (1280×900) e mobile (390×844), com Estrutura da LP somente em Parâmetros e Entradas, Taxonomia sem superfícies retiradas e cinco itens inventariados em Workloads OpenAI — quatro workloads de produto ativos e a referência operacional Supabase Inspect —, sem superfície órfã, overflow de página ou erro de console;
-  - a revisão 3 permaneceu persistida e reproduzível em desktop e mobile, inclusive no QA pós-merge final em produção, com três revisões materializadas e a revisão 3 vigente; nenhuma revisão 4 ou chamada real aos providers foi criada;
-  - E18.4, E20.2, E20.5/E20.6, E19.2/E19.3/E19.4, E10.6/E10.7, `commercial_activation`, `taxon_market_research`, `taxon_market_research_items` e os workloads ativos permanecem preservados;
-  - não houve migration, DDL, alteração de banco, infraestrutura ou mudança de `docs/schema.md`; a E19.5 não foi iniciada e, com a conclusão da E22.1, passa a ser o próximo recorte a planejar.
+22.1.7 Estado consolidado
+- Não permanecem imports, rotas ou scripts ativos dos três boundaries retirados.
+- `package.json` não contém mais validadores de perfil de geração, catálogo de módulos ou resolução histórica de pesquisas.
+- O Admin expõe somente superfícies sustentadas por autoridades vigentes.
+- O inventário OpenAI atual e os fluxos E19/E20 evoluíram independentemente das remoções e não devem ser reinterpretados a partir das evidências históricas da E22.1.
 
-22.2 Retirada controlada de documentação histórica redundante
+22.2 Retirada de documentação histórica redundante
 
 22.2.1 Objetivo e status
-- Objetivo: retirar fontes documentais redundantes ou obsoletas que duplicam autoridades vigentes.
-- Status: Implementação candidata.
+- Objetivo: remover fontes documentais que duplicavam autoridades vigentes, sem reescrever referências históricas preservadas como proveniência.
+- Status: concluída. Os dois documentos redundantes foram excluídos e o catálogo administrativo foi reconciliado.
 
 22.2.2 Registros do recorte
-- Excluídos:
-  - `docs/lp-planejamento.md`;
-  - `docs/prompt-catalogo-lp.md`.
-- Ajustados:
-  - `lib/admin/docsCatalog.ts`;
-  - `docs/roadmap.md`.
+- Repositório:
+  - Ajustados:
+    - `lib/admin/docsCatalog.ts`
+- Referências:
+  - `docs/lp-planejamento.md` — removido; planejamento corrente pertence ao roadmap e aos planos-base aprovados.
+  - `docs/prompt-catalogo-lp.md` — removido; não permanece como fonte operacional.
+  - `docs/roadmap.md` — autoridade para estado, dependências e evolução dos casos E*.
 
 22.2.3 Resultado e limites
-- `docs/roadmap.md` permanece autoridade para casos, estado, dependências, previsões e pendências.
-- Planos-base permanecem responsáveis pelo planejamento detalhado dos recortes.
-- Nenhuma fonte transversal substitui `docs/lp-planejamento.md`.
-- Referências históricas não precisam ser reescritas.
-- Nenhuma alteração de banco, schema, infraestrutura ou arquitetura.
+- `/admin/documentacao` não lista nem tenta ler os documentos removidos.
+- O roadmap mantém estado e direção; planos-base mantêm planejamento executável do recorte correspondente.
+- Referências históricas aos paths removidos podem permanecer em documentos de proveniência e não constituem fonte operacional.
+- A retirada não alterou banco, runtime de produto, rota, infraestrutura ou arquitetura.
 
-22.3 Retirada controlada do Supabase Inspect MCP e infraestrutura associada
+22.3 Retirada do Supabase Inspect MCP e infraestrutura associada
 
 22.3.1 Objetivo e status
-- Objetivo: retirar controladamente o service/MCP Supabase Inspect e, somente após auditoria, a infraestrutura Vercel exclusiva sem consumidor necessário, preservando automações, workflows, secret compartilhado e o Core.
-- Status: Concluída em 01/09/2026 após a retirada controlada do service/MCP, do workflow Agent Builder alvo e da infraestrutura Vercel exclusiva sem workload; automações, workflows, secret compartilhado e Core preservados.
+- Objetivo: remover o service/MCP Supabase Inspect e sua infraestrutura exclusiva depois de confirmar ausência de consumidor necessário, preservando a automação GitHub read-only e recursos compartilhados.
+- Status: concluída. O service, o workflow histórico do Agent Builder e o projeto Vercel exclusivo foram removidos; nenhum service/MCP implantável permanece catalogado.
 
 22.3.2 Registros do recorte
 - Repositório:
@@ -2618,39 +2615,35 @@
     - `services/mcp-supabase-inspect/test/mcp.test.js`
     - `services/mcp-supabase-inspect/vercel.json`
 - Referências:
-  - Configuração externa final: `docs/platform-config.md` — seção 3.2.
-  - Catálogo de services: `docs/services.md` — seção 1.1.
-  - Automação histórica: `docs/automations.md` — seção 3.3.
+  - Configuração externa final: `docs/platform-config.md` — camada de services e projeto Core.
+  - Catálogo da camada: `docs/services.md` — nenhum service/MCP operacional.
+  - Automação preservada: `docs/automations.md` — Supabase Inspect Actions.
 
-22.3.3 Auditoria final de consumidores e gate de retirada
-- Status: Concluída.
-- Conteúdo:
-  - auditoria read-only confirmou ausência de consumidor necessário independente fora do workflow Agent Builder alvo e confirmou os mecanismos preservados;
-  - o repositório não mantém referências operacionais do MCP fora dos documentos históricos e de governança;
-  - não foi identificado outro workload, dependência do Core ou necessidade material nova.
+22.3.3 Auditoria de consumidores
+- A auditoria repo-side confirmou ausência de chamada, endpoint ou dependência ativa do MCP fora do workflow histórico alvo.
+- O Core não dependia do service e não foi migrado para outro MCP.
+- `automations/supabase-inspect/` e `.github/workflows/pipeline-supabase-inspect.yml` permanecem como inspeção read-only via GitHub Actions.
+- O secret compartilhado `SUPABASE_DB_URL_READONLY` foi preservado para os consumidores GitHub autorizados.
+- Nenhum Agents SDK, novo service, job, automação ou integração substituta foi criado.
 
-22.3.4 Retirada do MCP e referências operacionais
-- Status: Concluída em 01/09/2026.
-- Conteúdo:
-  - o workflow/integração Agent Builder `wf_69b57fed963c8190b9da8e40797aa5820147027ff7bd60d7` foi removido manualmente;
-  - o service MCP e suas referências operacionais foram retirados sem remover `automations/supabase-inspect`, workflows GitHub, secret compartilhado ou contratos do Core;
-  - os documentos canônicos foram reconciliados pelo Prompt ABC, sem substituto ou nova arquitetura.
+22.3.4 Retirada do MCP
+- Os seis arquivos do service foram excluídos e a camada `services/` ficou sem workload implantável.
+- O workflow histórico do Agent Builder foi removido na plataforma e não permanece como consumidor.
+- Referências operacionais foram reconciliadas para distinguir service removido de automação preservada.
+- O inventário `supabase_inspect` da E21 continua apenas como referência operacional do workflow GitHub; não representa MCP ou configuração efetiva verificada pelo Core.
 
-22.3.5 Retirada da infraestrutura Vercel sem workload
-- Status: Concluída em 01/09/2026.
-- Conteúdo:
-  - o projeto Vercel exclusivo `lpf-10-services` foi removido após a confirmação de ausência de workload; o domínio também deixou de aparecer na lista de projetos;
-  - o Core `lp-factory-10` permaneceu separado e presente; nenhum deployment/redeploy foi solicitado ou executado manualmente, mas a publicação final do commit acionou automaticamente um Preview do Core `lp-factory-10` pela integração Git/Vercel, concluído com sucesso; nenhum novo deployment adicional deve ser provocado; a configuração externa final foi registrada.
+22.3.5 Retirada da infraestrutura Vercel
+- O projeto exclusivo `lpf-10-services` foi removido após confirmação de ausência de workload e domínio remanescente.
+- O projeto Core `lp-factory-10` e seu domínio permaneceram intactos.
+- A retirada não solicitou deployment ou redeploy manual do Core; o Preview acionado pela publicação final concluiu com sucesso.
+- Não resta configuração externa de service a manter.
 
-22.3.6 Pendência — reduzir deployments gerados por pushes intermediários
-- Status: Pendente.
-- Conteúdo:
-  - a política atual da Vercel bloqueia deploy automático apenas para branches `docs/**`;
-  - branches `codex-app/**` continuam gerando Preview a cada push;
-  - a orquestração recente mostrou excesso de deployments por publicação de checkpoints intermediários;
-  - a remoção de `lpf-10-services` elimina a duplicação causada pelo segundo projeto, mas o Core ainda pode atingir o limite por pushes frequentes;
-  - avaliar em recorte futuro como fazer valer a regra de agrupar commits locais e publicar somente quando houver necessidade real de Preview, review remoto ou entrega;
-  - não implementar nenhuma mudança de Vercel, skill, `AGENTS.md` ou processo neste PR.
+22.3.6 Limite operacional remanescente
+- Status: pendente de decisão.
+- A política versionada em `vercel.json` desabilita deploy automático apenas para branches `docs/**`.
+- Branches de implementação, inclusive `codex-app/**`, continuam gerando Preview a cada push; checkpoints publicados em excesso podem consumir a cota do Core.
+- A remoção do segundo projeto eliminou deployments duplicados do service, mas não reduz os Previews do Core.
+- Qualquer mudança adicional de política, processo, skill ou `AGENTS.md` exige recorte próprio e validação de que Production automática da `main` e Previews necessários continuam preservados.
 
 99. Changelog
 v1.5.195 — 29/08/2026 — Encerrada a E20.7 após o merge do PR #835: migration E20.7.4 aplicada automaticamente, reconciliação v6 confirmada e rollout hospedado do workload dinâmico transferido para o futuro recorte de integração E19.3, quando existir consumidor real; removida essa validação operacional da lista de pendências da E20.7.
