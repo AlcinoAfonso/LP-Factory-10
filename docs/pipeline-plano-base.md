@@ -14,6 +14,7 @@ Definir a arquitetura única que conduz um caso ou recorte desde o Debate até s
 - `README.md`: visão, escopo, stack e princípios do MVP.
 - Este documento: papéis, modos, formatos, handoffs, gates e autoridades do Pipeline de Plano Base.
 - `docs/prompt-estrategista.md`: contrato do Estrategista original para Debate, V1 funcional e supervisão nos modos aplicáveis.
+- Planos incompletos que registram uma versão anterior à v38 de `docs/prompt-estrategista.md`: workflow legado imutável em `2b8afeb2fa97a51e35043f7399048c94b33dd1e5:docs/prompt-estrategista.md`; o `AGENTS.md` vigente continua prevalecendo sobre suas regras operacionais.
 - `docs/prompt-executor.md`: contrato universal de implementação do Executor.
 - `AGENTS.md`: Git, branch, PR, publicação, validações e autoridade operacional vigente.
 - `.agents/skills/lp-factory-*/SKILL.md`: gatilhos, entradas, handoffs e integração dos subfluxos.
@@ -230,6 +231,7 @@ A V2 aprovada é congelada por checkpoint no mesmo PR, sem merge intermediário,
 - `docs/pipeline-plano-base.md`: arquitetura única do Pipeline.
 - `docs/orquestracao-plano-base.md`: contrato legado preservado somente para planos incompletos que o referenciam expressamente; não rege planos novos e será removido apenas depois da conclusão ou migração de todos esses consumidores.
 - `docs/prompt-estrategista.md`: Debate, V1 e supervisão do Estrategista original.
+- `2b8afeb2fa97a51e35043f7399048c94b33dd1e5:docs/prompt-estrategista.md`: snapshot v37 para retomar somente planos incompletos que registram o workflow anterior; não recebe planos novos, não substitui o `AGENTS.md` vigente e deixa de ser necessário após a conclusão ou migração desses consumidores.
 - `docs/prompt-estrategista-light.md`: compatibilidade temporária; será removido após a migração e validação do Light.
 - `docs/prompt-executor.md`: engenharia universal do Executor.
 - `lp-factory-orquestrar-plano`: nome temporário da skill do Completo; será renomeada em etapa própria.
