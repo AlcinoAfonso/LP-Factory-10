@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.86
+• Versão: v2.0.85
 • Data: 02/09/2026
 
 0.2 Contrato do documento (consulta)
@@ -96,7 +96,7 @@
 • Checkout não substitui o domínio de entitlement comercial; ativação exige confirmação server-side pelo fluxo aprovado.
 
 3.4 CI e validação
-• Alterações devem passar por PR, validações aplicáveis e preview quando houver impacto no runtime ou na UI; o merge final é humano.
+• Alterações devem passar por PR, validações aplicáveis e preview quando houver impacto no runtime ou na UI; o merge final segue a autoridade por modo definida no `AGENTS.md`.
 • Checks de segurança devem falhar fechado e bloquear padrões proibidos no client/UI; exceções server-side devem ser explícitas e mínimas no workflow canônico.
 • Alterações em acesso ou Auth devem validar os fluxos afetados conforme os contratos operacionais em `docs/automations.md` e nos READMEs locais.
 • Workflows, gatilhos, runners, actions, versões, inputs e steps têm fonte canônica no repositório real e em `docs/platform-config.md`; não duplicar esses detalhes aqui.
@@ -123,7 +123,7 @@
 • Alterações de schema devem usar nova migration em `supabase/migrations/`, com revisão e validação antes do apply remoto.
 • SQL avulso é permitido apenas para inspeção read-only ou exceção expressamente autorizada; o SQL Editor não integra o fluxo normal de alteração de schema.
 • Migration aplicada é imutável; correção ou reversão exige nova migration incremental, preservando histórico forward-only.
-• Apply remoto deve ocorrer somente pelo workflow aprovado após merge humano; gatilhos, gates, secrets, versões de CLI/Actions e projeto alvo pertencem ao workflow real e a `docs/platform-config.md`.
+• Apply remoto deve ocorrer somente pelo workflow aprovado após merge autorizado conforme o `AGENTS.md`; gatilhos, gates, secrets, versões de CLI/Actions e projeto alvo pertencem ao workflow real e a `docs/platform-config.md`.
 • Actions e CLIs capazes de alterar schema devem usar referências controladas e passar por revisão antes de qualquer mudança.
 
 3.5 Secrets & Variáveis
@@ -304,11 +304,14 @@
 • As chamadas permanecem controladas e sem retry ou fallback automático e não autorizam upload, append ou outra persistência de revisão.
 • Correlação preserva identificadores internos distintos dos identificadores dos providers, sem registrar prompt, resposta integral, contexto de negócio, PII, secrets ou raciocínio privado.
 
-3.15.9 Estado residual do antigo produto de `landing_page`
-• O Account Dashboard não possui criação, onboarding operacional, workspace, configuração operacional, histórico, Preview, renderer, aprovação, readers de materialização ou assinatura de assets do produto legado.
-• Tabelas, RPCs, migrations, ponteiro de aprovação, dados históricos e o bucket privado permanecem fisicamente preservados e inertes; nenhum runtime do produto os usa para leitura, escrita, reprodução ou entrega de revisão.
-• As residências antigas de configuração permanecem uma exceção explícita: o lifecycle administrativo do catálogo ainda as lê para validar compatibilidade antes da publicação, sem reativar o produto de Landing Pages.
-• Eventual limpeza destrutiva de banco, dados ou Storage exige recorte próprio; o contrato físico continua inventariado em `docs/schema.md`.
+3.15.9 Revisões materializadas de `landing_page`
+• Revisões já materializadas pertencem ao agregado existente e permanecem imutáveis; a corrente é derivada pela maior numeração. Listagens paginadas transportam somente os metadados necessários das revisões corrente e aprovada, com número limitado e estável de consultas por página e volume independente do histórico, preservando LPs sem revisão e o ponteiro explícito de aprovação.
+• A validação de identidade lê uma seleção completa e limitada de snapshots originais, independente da quantidade de revisões, preservando a primeira presença elegível de cada grupo e sua ordem interna; elegibilidade de seleção não substitui a avaliação de domínio. Baselines e revisão corrente devem vir do mesmo snapshot de leitura, e o save deve revalidar a revisão observada sob o lock existente. Erro ou resposta inválida falha fechado, sem truncamento ou fallback para varredura histórica; o contrato físico pertence a `docs/schema.md`.
+• O runtime do produto não expõe operação de append, upload ou cleanup de revisão; RPCs, tabelas, bucket e dados existentes permanecem preservados e inertes para eventual decisão futura.
+• Conteúdo e snapshot históricos devem permanecer autossuficientes para reprodução sem reler fontes mutáveis, sem secret, raciocínio privado, resposta bruta ou URL assinada; objetos físicos exatos pertencem a `docs/schema.md` e ao código.
+• O consumo privado de uma revisão deve revalidar ator, conta, membership, entitlement, LP e tenant da materialização antes de assinar mídia ou entregar o read model; divergência de identidade, binding ou referência de asset falha fechada.
+• O read model expõe somente allowlist explícita do contrato de apresentação e metadados necessários da revisão, acrescida da URL assinada transitória; linhas de banco, snapshot integral, pesquisa, valores operacionais, bucket, path, autenticação e provider não atravessam o boundary do renderer.
+• O renderer de revisão é puro e read-only: recebe o read model validado, não consulta Supabase ou provider, não recompila contexto de geração e não usa fonte mutável para reinterpretar a revisão persistida.
 
 3.15.10 Resolução determinística de conhecimento de `landing_page`
 • Boundary canônico: `lib/conversion-content/landing-page/knowledge-resolution/`; contratos, equivalência factual e resolver puro são fontes executáveis, exportadas pela API pública de `lib/conversion-content/`.
@@ -443,4 +446,4 @@ Fonte normativa da allowlist SULB para exceções de Auth. Qualquer novo arquivo
 • Boundaries e acesso a dados: validar 2.5, 3.2, 3.3, 3.14 e a allowlist 6.4.
 • Acesso e Auth: validar a seção 5 e, quando aplicável, `docs/platform-config.md`, `docs/automations.md` e os READMEs operacionais.
 • Contratos de domínio: consumir APIs públicas e validadores canônicos do código, sem duplicar lógica de registry, schema, provedor ou resolução.
-• Release: seguir 3.4 e `AGENTS.md`, executar ou justificar validações aplicáveis, revisar preview quando necessário e manter merge humano.
+• Release: seguir 3.4 e `AGENTS.md`, executar ou justificar validações aplicáveis, revisar preview quando necessário e respeitar a autoridade de merge definida por modo.
