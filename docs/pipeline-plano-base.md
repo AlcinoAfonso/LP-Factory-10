@@ -92,6 +92,7 @@ O Debate define, conforme aplicável:
 - dependências entre planos;
 - fases implementáveis e, quando corresponderem a conteúdo específico do roadmap, seus identificadores canônicos;
 - `Automação: sim | não` em cada fase aplicável;
+- quando `Automação: sim`, categoria aprovada, objetivo, limites e `Avaliação formal de Automação na V2: necessária | dispensada por decisão humana`;
 - `Formato: Light | Completo` por plano;
 - `Modo: Manual | Semiautomático | Autônomo`;
 - critérios funcionais de aceite e evidências esperadas.
