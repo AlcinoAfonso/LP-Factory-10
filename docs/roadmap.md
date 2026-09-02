@@ -2057,9 +2057,12 @@
     - `app/admin/(protected)/perfis-de-orientacao/`
 - Banco:
   - Excluídos:
-    - `landing_page_generation_profiles`
-    - `landing_page_generation_profile_items`
-    - quatro RPCs exclusivas do domínio
+    - `public.landing_page_generation_profiles`
+    - `public.landing_page_generation_profile_items`
+    - `public.save_landing_page_generation_profile_draft`
+    - `public.activate_landing_page_generation_profile`
+    - `public.archive_landing_page_generation_profile`
+    - `public.get_landing_page_generation_profile_lifecycle_status`
 - Referências:
   - Retirada controlada: `docs/roadmap.md` — seção 22.1.4.
 
