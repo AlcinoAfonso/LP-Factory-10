@@ -1304,15 +1304,23 @@
 - Não há implementação atual de branding de agência, gestão de clientes, relatórios ou Partner API.
 - Uma boundary própria só deve ser criada junto do primeiro recorte funcional aprovado e de consumidores reais.
 
-14. E14 — Workspace Dashboard
+14. E14 — Área pessoal do usuário — não iniciada
 
-14.1 Status
-• Planejado
+- Objetivo: registrar uma eventual área pessoal de perfil e preferências sem confundi-la com o Account Dashboard ou com o workspace operacional de landing pages.
+- Status: não iniciado; não existe rota, página, persistência de preferências ou boundary própria para esse domínio.
 
-14.2 Escopo
-• Perfil e preferências do usuário
-• Seleção de conta ativa
-• Integração com Access Context
+14.1 Perfil e preferências pessoais
+
+14.1.1 Objetivo e status
+- Objetivo: permitir gestão de dados pessoais somente após definição aprovada de campos, autoridade e resultado para o usuário.
+- Status: futuro sem recorte funcional aprovado.
+
+14.1.3 Estado atual e residência das responsabilidades
+- `components/layout/UserMenu.tsx` ainda expõe um link para `/workspace/profile`, mas a rota `app/workspace/` não existe; o link não entrega uma jornada funcional.
+- Seleção e persistência da conta atual residem em E10.3.
+- Decisão de acesso por conta reside em E8.
+- Onboarding e workspace operacional de landing pages residem em E19.
+- Nenhuma nova estrutura de Workspace Dashboard deve ser criada até existir um recorte pessoal aprovado que não duplique esses domínios.
 
 15. E15 — Usuário e Membership (B1)
 
