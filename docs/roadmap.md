@@ -734,555 +734,246 @@
   - manter entitlement como prova do plano e a E9.7 como prova da capacidade, sem inferência de comportamento pela UI a partir do nome do plano;
   - falhar fechado para plano, capacidade, associação ou valor ausente, desconhecido ou inválido.
 
-10. E10 — Account Dashboard (UX)
+10. E10 — Account Dashboard e jornada da conta
 
-10.1 Status
-• Em andamento (nova definição)
+- Objetivo: consolidar a experiência pós-login por conta, da navegação multi-conta e do setup inicial à resolução de nicho e à apresentação comercial, preservando decisões server-side de acesso, papel, entitlement e estado operacional.
+- Status: os fluxos principais estão implementados; permanecem como lacunas do E10 a ação inefetiva de criar outra conta no switcher, a ausência dos eventos específicos do switcher e a edição manual de copy da página comercial personalizada.
 
-10.2 Objetivo
-• Consolidar experiência pós-login do usuário principal
-• Incluir header unificado, troca de contas, persistência e telemetria
+10.3 Navegação multi-conta e cabeçalho
 
-10.3 Account Dashboard UX (ex-E7.2)
-10.3.1 Status
-• 100% concluído (29/10/2025)
-10.3.2 Versão
-• Roadmap 1.4
-10.3.3 Objetivos
-• Refinar UX e comportamento multi-conta no Account Dashboard
-• Consolidar persistência da última conta e previsibilidade no pipeline público/privado
-10.3.4 Implementado
-• Componentes AccountSwitcher, AccountSwitcherTrigger, AccountSwitcherList
-• Hooks useAccountSwitcher, useUserAccounts
-• Header unificado com nome da conta e avatar
-• Persistência da última conta via cookie (90d, HttpOnly)
-• Leitura do cookie no gateway /a/home para redirecionar para /a/{account}
-• Definição do cookie no SSR de /a/[account] quando allow=true
-• Middleware usado para limpeza do cookie quando necessário (clear_last=1)
-• Integração UserMenu + AccessProvider
-• Telemetria (account_switcher_open, account_selected, create_account_click)
-10.3.5 QA Validado
-• Known issue (produção, multi-contas): last account não reabre consistentemente a última conta após troca de conta e/ou após logout/login
-• Troca de conta (UI) e navegação para /a/{account}
-• Ocultação automática quando há ≤1 conta
-• Comportamento mobile/touch
-• SSR deny → público seguro
-10.3.6 Valor agregado
-• UX limpa e previsível
-• Pipeline público/privado estável
-• Componentes desacoplados e fáceis de manter
-10.3.7 Próxima revisão
-• UX Partner Dashboard
+10.3.1 Objetivo e status
+- Objetivo: permitir que o usuário identifique a conta atual, alterne entre vínculos disponíveis e retome com segurança a última conta acessada.
+- Status: implementado para listagem, troca e persistência da última conta; a ação “Criar outra conta” ainda não cria nem inicia uma conta nova.
 
-10.4 Primeiros passos (pending_setup — status-based)
+10.3.2 Registros do recorte
+- Banco:
+  - Criados:
+    - `public.v_user_accounts_list`
+- Repositório:
+  - Criados:
+    - `app/api/user/accounts/route.ts`
+    - `components/features/account-switcher/AccountSwitcher.tsx`
+    - `components/features/account-switcher/AccountSwitcherTrigger.tsx`
+    - `components/features/account-switcher/AccountSwitcherList.tsx`
+    - `components/features/account-switcher/useAccountSwitcher.ts`
+    - `components/features/account-switcher/useUserAccounts.ts`
+  - Ajustados:
+    - `app/a/home/page.tsx`
+    - `app/a/[account]/layout.tsx`
+    - `app/a/_server/section-guard.ts`
+    - `components/layout/Header.tsx`
+    - `components/layout/UserMenu.tsx`
+    - `providers/AccessProvider.tsx`
 
-• Status: Concluído (exec) (13/02/2026)
-• Escopo final: entregar o fluxo ponta a ponta de “Primeiros passos” em `/a/[account]` quando `accounts.status=pending_setup`, com formulário inline, validação, persistência do perfil v1, promoção `pending_setup → active` e redirecionamento para o pós-setup.
-• Estado atual: onboarding v1 inline em `pending_setup`, com `name` obrigatório, `niche` obrigatório, `preferred_channel` opcional com default `email`, `whatsapp` obrigatório somente quando `preferred_channel=whatsapp` e `site_url` opcional com normalização para URL válida.
-• Dependências: E9.1.
-• Nota: `setup_completed_at/account_setup_completed_at` não devem ser usados no runtime, no gating, no fluxo nem nos logs; ficam mantidos no DB apenas por segurança.
+10.3.3 Experiência vigente
+- O cabeçalho da conta exibe identidade, status, nicho resolvido quando disponível e acesso a membros para `owner` ou `admin` quando a funcionalidade está habilitada.
+- O menu do usuário incorpora o switcher; a lista vem de `v_user_accounts_list`, respeita o status do vínculo e oculta o gatilho quando há no máximo uma conta.
+- O switcher oferece navegação por teclado, foco controlado, estados de carregamento e erro e bloqueia contas ou memberships não clicáveis.
+- O gateway `/a/home` e o guard SSR mantêm a retomada por `last_account_subdomain` em cookie HttpOnly de 90 dias; a decisão de acesso e os redirects seguros residem em E4 e E8.
+- A ação “Criar outra conta” ainda aponta para `/a/home?consultive=1`; o gateway não interpreta esse parâmetro e não provisiona conta.
+- Os eventos históricos `account_switcher_open`, `account_selected` e `create_account_click` não são emitidos pelo código atual.
 
-10.4.1 Marcador legado de setup (deprecated)
-• Status: Concluído (deprecated) (06/02/2026)
-• Estado atual: a estratégia anterior baseada em `setup_completed_at/account_setup_completed_at` foi superada pelo modelo status-based em E10.4.6.
-• Regra atual: manter os campos legados no DB por segurança, sem uso no runtime, no gating, no fluxo ou nos logs.
+10.4 Primeiros passos com status `pending_setup`
 
-10.4.4 Onboarding: dados mínimos v1
-• Status: Concluído (definição consolidada)
-• Campos e regras atuais:
-• `name` obrigatório
-• `niche` obrigatório
-• `preferred_channel` opcional com default `email`
-• `whatsapp` obrigatório somente quando `preferred_channel=whatsapp`
-• `site_url` opcional
-• Validações consolidadas:
-• `name` e `niche` com `trim` e obrigatoriedade
-• `whatsapp` somente dígitos; 10–15 dígitos quando exigido
-• `site_url` aceita domínio sem esquema e normaliza para `https://` quando necessário
+10.4.1 Objetivo e status
+- Objetivo: coletar o perfil mínimo da conta, persistir os dados validados e promover a conta de `pending_setup` para `active`.
+- Status: implementado ponta a ponta em `/a/[account]`.
 
-10.4.5 Onboarding: persistência dos dados mínimos v1
-• Status: Concluído (definição) (07/02/2026)
-• Decisão: persistir o perfil do onboarding em `account_profiles` (1:1), mantendo `accounts.name` no core.
-• Referência: os campos persistidos seguem o contrato funcional definido em 10.4.4.
+10.4.2 Registros do recorte
+- Banco:
+  - Criados:
+    - `public.account_profiles`
+- Repositório:
+  - Criados:
+    - `lib/access/adapters/accountProfileAdapter.ts`
+    - `lib/onboarding/e10_4_setup_validation.ts`
+    - `app/a/[account]/_components/PendingSetupFirstSteps.tsx`
+  - Ajustados:
+    - `app/a/[account]/actions.ts`
+    - `app/a/[account]/page.tsx`
+    - `lib/access/adapters/accountAdapter.ts`
+    - `lib/access/adapters/accessContextAdapter.ts`
+    - `lib/access/getAccessContext.ts`
+- Referências:
+  - Contrato de banco: `docs/schema.md` — `account_profiles`.
 
-10.4.6 Exec: persistência do perfil v1 + setup status-based
-• Status: Concluído (13/02/2026)
-• Implementado:
-• persistência de `account_profiles` (v1)
-• atualização de `accounts.name`
-• promoção `pending_setup → active` com update condicional/idempotente
-• redirecionamento para a rota correta da conta após salvar
-• endurecimento do Access Context para seleção de conta e tratamento de bloqueios
-• ARTEFATOS_REPO:
-• Criados:
-• `lib/access/adapters/accountProfileAdapter.ts`
-• `supabase/migrations/0004__account_profiles.sql`
-• Ajustados:
-• `app/a/[account]/actions.ts`
-• `app/a/[account]/page.tsx`
-• `lib/access/getAccessContext.ts`
-• `lib/access/adapters/accessContextAdapter.ts`
-• `lib/access/adapters/accountAdapter.ts`
+10.4.3 Campos e validação compartilhada
+- `name` e `niche` são obrigatórios após `trim`.
+- `preferred_channel` é opcional e assume `email`; `whatsapp` se torna obrigatório quando esse canal é escolhido e aceita de 10 a 15 dígitos.
+- `site_url` é opcional, aceita domínio sem esquema e é normalizado para URL HTTPS quando necessário.
+- UI e Server Action usam `validateE10_4SetupForm`; erros preservam valores válidos e direcionam o foco para o primeiro campo inválido.
 
-10.4.7 Refinamentos de UX pós-implementação
-• Status: Concluído (exec) (21/02/2026)
-• Implementado/Definido:
-• preservação dos valores válidos do formulário em erro
-• `site_url` aceita domínio sem esquema e normaliza para `https://`
-• botão “Salvar e continuar” gated por nome válido
-• Enter com foco no primeiro inválido
-• progressive disclosure mobile
-• ARTEFATOS_REPO:
-• Criados:
-• `lib/onboarding/e10_4_setup_validation.ts`
-• `app/a/[account]/_components/PendingSetupFirstSteps.tsx`
-• Ajustados:
-• `app/a/[account]/actions.ts`
-• `app/a/[account]/page.tsx`
-• `app/a/[account]/_components/PendingSetupFirstSteps.tsx`
-• `lib/access/adapters/accountAdapter.ts`
+10.4.4 Persistência e transição
+- `accounts.name` permanece no core e o perfil v1 é persistido em `account_profiles` na relação 1:1.
+- A promoção `pending_setup → active` é condicional e idempotente.
+- Após salvar, o mesmo fluxo inicia a resolução de nicho descrita em 10.5 sem transformar uma falha dessa resolução em falha do setup.
+- `setup_completed_at` e `account_setup_completed_at` permanecem legados no banco e não participam do runtime, do gating, do fluxo nem dos logs.
 
-10.4.8 Anti-drift: validação compartilhada UI/server (opcional)
-• Status: Briefing (opcional)
-• Objetivo: consolidar as regras de validação do onboarding mínimo em módulo compartilhado entre UI e server, com outputs padronizados de erro.
-• Dependências: E10.4.6, E10.4.7, E12.8.1.
-• Fora de escopo: mudanças de BD, tracking interno e alteração do escopo de campos.
+10.5 Taxonomia, pesquisa de mercado e resolução de nicho
 
-10.5 Pós-setup persuasivo sem entitlements (active — conversão)
+10.5.1 Objetivo e status
+- Objetivo: transformar o nicho informado no setup em classificação operacional rastreável, vínculo oficial seguro e insumo reutilizável para conteúdo comercial.
+- Status: implementado para matching determinístico, escalonamento IA, persistência, vínculo oficial de alta confiança e confirmação ou reescrita pelo usuário.
 
-• Status: Em evolução
-• Escopo atual: separar o estado `active` do fluxo `pending_setup` e preparar a camada pós-setup do dashboard da conta.
-• Estado atual do runtime: `app/a/[account]/page.tsx` renderiza “Primeiros passos” somente para `accounts.status=pending_setup`; para conta autenticada fora desse estado, a rota ainda não entrega UX específica do E10.5.
-• Base já implementada no repo: estrutura de taxonomia/templates/guides no BD e pipeline operacional de resolução de nicho no pós-save do onboarding.
-• Dependências: E9.1, E10.4.6, E10.5.1, E10.5.2, E10.5.6.
-• Nota: `setup_completed_at/account_setup_completed_at` não devem ser usados no runtime, no gating, no fluxo nem nos logs; ficam mantidos no DB apenas por segurança.
+10.5.2 Registros do recorte
+- Banco:
+  - Criados:
+    - `public.taxon_message_guides`
+    - `public.account_niche_resolutions`
+    - `public.account_taxonomy`
+  - Ajustados:
+    - `public.taxon_market_research`
+    - `public.taxon_market_research_items`
+- Repositório:
+  - Criados:
+    - `lib/onboarding/niche-resolution/contracts.ts`
+    - `lib/onboarding/niche-resolution/deterministicConfidence.ts`
+    - `lib/onboarding/niche-resolution/adapters/taxonMatchAdapter.ts`
+    - `lib/onboarding/niche-resolution/adapters/accountNicheResolutionAdapter.ts`
+    - `lib/onboarding/niche-resolution/adapters/accountNicheResolutionUserAdapter.ts`
+    - `lib/onboarding/niche-resolution/adapters/accountTaxonomyAdapter.ts`
+    - `lib/onboarding/niche-resolution/adapters/openAiResolver.ts`
+    - `app/a/[account]/niche-resolution-actions.ts`
+    - `app/a/[account]/_components/NicheResolutionCard.tsx`
+    - `supabase/migrations/20260804201831_account_taxonomy_one_active_primary.sql`
+    - `supabase/snippets/account_taxonomy_one_active_primary_verify.sql`
+    - `supabase/snippets/e10_5_5_nicho_carregamento.sql`
+    - `supabase/snippets/e10_5_5_nicho_verificacao.sql`
+  - Ajustados:
+    - `app/a/[account]/actions.ts`
+    - `app/a/[account]/page.tsx`
+- Referências:
+  - Contrato de banco: `docs/schema.md` — taxonomia, pesquisas e classificação de conta.
+  - Fluxo operacional: `docs/prompt-nicho-identificacao.md`, `docs/prompt-nicho-pesquisa.md`, `docs/prompt-nicho-itens-estruturados.md`, `docs/prompt-nicho-carregamento.md` e `docs/prompt-nicho-verificacao.md`.
 
-10.5.1 Matriz “preparação vs produtivo” + enforcement (SSR + actions)
-• Status: Briefing
-• Objetivo: definir a matriz de ações/rotas “produtivas” vs “preparação” e aplicar enforcement server-side sem depender só de UI.
-• Escopo:
-• fechar status/entitlements mínimos por rota/ação
-• declarar o sinal canônico de entitlement/limite efetivo
-• definir mensagens e CTAs de bloqueio coerentes com o E10.5
-• Dependências: E9.1, E10.5.
-• Fora de escopo: implementação da UX principal do E10.5 nesta etapa.
+10.5.3 Base de taxonomia e pesquisa
+- `business_taxons` e `business_taxon_aliases` sustentam a classificação; `taxon_market_research` e `taxon_market_research_items` armazenam pesquisas versionadas e seus itens estruturados.
+- O fluxo operacional separa identificação do taxon, pesquisa bruta, estruturação, carregamento e verificação.
+- Para elegibilidade de `commercial_activation`, a versão 1 ativa deve ter itens nos blocos `strategic_core`, `lp_overview`, `lp_sections` e `seo` para `business_buyer` e `end_customer`.
 
-10.5.2 Base do BD do E10.5
-• Status: Concluído (26/04/2026)
-• Escopo final:
-• criação da base estrutural do E10.5 no BD
-• ajuste estrutural de `taxon_market_research`
-• ajuste estrutural de `taxon_market_research_items`
-• Estado final:
-• `taxon_market_research`: `id`, `taxon_id`, `research_block`, `audience_scope`, `version`, `status`, `created_at`, `updated_at`
-• unicidade por (`taxon_id`, `research_block`, `audience_scope`, `version`) e no máximo 1 versão `active` por (`taxon_id`, `research_block`, `audience_scope`)
-• `taxon_market_research_items`: `id`, `research_id`, `item_key`, `item_text`, `priority`, `sort_order`, `is_active`, `notes`, `created_at`, `updated_at`
-• `taxon_market_research_items`: herda `audience_scope` por `research_id`; sem UNIQUE extra nesta etapa; `sort_order` como `NOT NULL DEFAULT 999`
-• `taxon_message_guides`: base de guides por contexto vinculada à pesquisa-pai
-• ARTEFATOS_REPO:
-• Criados:
-• `supabase/migrations/0006__e10_5_2_taxonomy_content_base.sql`
-• `supabase/migrations/0007__e10_5_2_1_group_c_research_adjust.sql`
-• `supabase/migrations/0008__e10_5_2_1_research_audience_scope_parent.sql`
+10.5.4 Resolução determinística e IA
+- O matching server-side usa normalização textual, FTS e `pg_trgm`, produz candidatos tipados e passa por `evaluateDeterministicTaxonMatch`.
+- A resolução operacional é persistida em `account_niche_resolutions`, inclusive decisão, proveniência, estado IA e necessidade de confirmação ou revisão.
+- Quando o determinístico não resolve com segurança, `openAiResolver.ts` usa Structured Outputs server-side.
+- A IA não cria taxon, alias ou vínculo oficial e nunca grava diretamente `account_taxonomy`.
 
-10.5.3 Kit operacional de expansão do Grupo A
-• Status: Concluído (exec) (15/04/2026)
-• Objetivo: padronizar a expansão de `business_taxons` e `business_taxon_aliases` com investigação, proposta, aprovação, carga e validação sem drift entre chats.
-• Implementado:
-• guia operacional do Grupo A versionado em `docs/`
-• snippets SQL operacionais do Grupo A versionados em `supabase/snippets/`
-• investigação prévia, proposta, aprovação, carga e validação consolidadas como fluxo operacional
-• `parent_slug` nulo aceito para `niche` e `ultra_niche`
-• `parent_slug` preenchido e inexistente aborta explicitamente a carga
-• carga prática reportada para `implante-dentario` com pai `odontologia` e alias `implantodontia`
-• ARTEFATOS_REPO:
-• Criados:
-• `docs/e10-5-3-grupo-a-investigacao.md`
-• `supabase/snippets/e10_5_3_grupo_a_carga.sql`
-• `supabase/snippets/e10_5_3_grupo_a_investigacao_taxons.sql`
-• `supabase/snippets/e10_5_3_grupo_a_investigacao_aliases.sql`
+10.5.5 Confirmação pelo usuário
+- `NicheResolutionCard` aparece somente para conta `active`, sem taxon primário e com resolução acionável.
+- O usuário pode confirmar a sugestão oficial, escolher entre opções ou reescrever o nicho.
+- Opções sem taxon oficial podem encerrar a confirmação operacional, mas não inventam vínculo taxonômico.
 
-10.5.3.1 Curadoria operacional de aliases enxutos vs microvariações textuais
-• Status: Briefing
-• Objetivo: definir o critério operacional de curadoria de aliases no Grupo A, separando o que deve ser cadastrado manualmente do que deve ficar para matching textual leve futuro.
-• Dependências: E10.5.3, E10.5.6.
+10.5.6 Classificação oficial e consumo
+- `account_taxonomy` é o vínculo oficial da conta; a gravação automática ocorre apenas para alta confiança determinística e não substitui silenciosamente outro primário.
+- O banco permite no máximo um vínculo primário ativo por conta; leituras com cardinalidade inesperada falham fechado.
+- A rota da conta usa o taxon primário ativo para tentar conteúdo personalizado e mantém a página genérica quando não existe bundle publicável.
+- A resolução antecipada de template comercial foi retirada: E10.7 resolve o conteúdo comercial publicado, enquanto o onboarding e o workspace de landing pages residem em E19.
 
-10.5.4 Helper puro de confiança determinística para taxon match
-• Status: Concluído (exec) (10/05/2026)
-• Natureza: repo-only.
-• Objetivo: avaliar candidatos de taxonomia e produzir decisão determinística tipada para consumo pelo fluxo de resolução de nicho.
-• Implementado:
-• helper puro `evaluateDeterministicTaxonMatch`
-• contrato tipado de decisão determinística
-• `aiEscalationMode` para preparar escalonamento IA
-• ARTEFATOS_REPO:
-• Criados:
-• `lib/onboarding/niche-resolution/deterministicConfidence.ts`
-• Ajustados:
-• `lib/onboarding/niche-resolution/contracts.ts`
+10.6 Página comercial genérica
 
-10.5.5 Fluxo operacional de pesquisa por taxon
-• Status: Implementado e validado na `main`.
-• Objetivo: operar a pesquisa por taxon em etapas separadas de identificação, pesquisa bruta, estruturação dos itens, carregamento e verificação.
-• Modelo operacional:
-  • cada `research_block` é uma unidade operacional própria;
-  • não há `strategic_synthesis` nem nova tabela de síntese;
-  • `taxon_market_research` guarda o registro-pai e os metadados de cada bloco;
-  • `taxon_market_research_items` guarda os itens estruturados e é a fonte principal para templates futuros.
+10.6.1 Objetivo e status
+- Objetivo: oferecer uma apresentação comercial responsiva e segura para contas `active` quando não houver página personalizada consumível.
+- Status: implementado como `generic-v1` e fallback da página personalizada.
 
-10.5.5.1 Artefatos na ordem de uso
-• `docs/prompt-nicho-identificacao.md` — identifica o taxon, o `audience_scope` e os blocos da pesquisa.
-• `docs/prompt-nicho-pesquisa.md` — produz a pesquisa bruta por `research_block`.
-• `docs/prompt-nicho-itens-estruturados.md` — transforma a pesquisa aprovada em itens estruturados.
-• `docs/prompt-nicho-carregamento.md` — orienta a geração do SQL de carregamento.
-• `supabase/snippets/e10_5_5_nicho_carregamento.sql` — carrega registros-pai e itens com CTEs diretas.
-• `docs/prompt-nicho-verificacao.md` — orienta a conferência após o carregamento.
-• `supabase/snippets/e10_5_5_nicho_verificacao.sql` — retorna um resumo read-only da carga.
+10.6.2 Registros do recorte
+- Banco:
+  - Ajustados:
+    - `public.audit_context_event`
+- Repositório:
+  - Criados:
+    - `app/a/[account]/_components/commercial-page/GenericCommercialPage.tsx`
+    - `app/a/[account]/_components/commercial-page/actions.ts`
+    - `app/a/[account]/_components/commercial-page/checkout-actions.ts`
+    - `app/a/[account]/_content/commercial-page/generic-v1.ts`
+    - `supabase/migrations/20260614124000_fix_audit_context_event_event_column.sql`
+  - Ajustados:
+    - `app/a/[account]/page.tsx`
 
-10.5.5.2 Validação concluída
-• Fluxo validado na `main` para o taxon `Corretor de imóveis de médio padrão`, com `audience_scope = end_customer`, `version = 1`, `status = draft` e os blocos `strategic_core`, `lp_overview`, `lp_sections` e `seo`.
-• Foram carregados 74 itens; a verificação retornou `check_status = ok`, `invalid_items = 0` e `other_versions = 0` em todos os blocos.
+10.6.3 Experiência e tracking
+- A página reúne hero, benefícios, serviços, medição, planos, diferenciais, funcionamento, FAQ e CTA final.
+- Planos e ações financeiras aparecem somente quando a política da jornada autoriza; a autoridade de papel reside em E11.2 e o checkout Stripe em E9.4.
+- Os botões dos planos iniciam Checkout Stripe mensal server-side; o CTA final permanece direcionado ao WhatsApp.
+- `commercial_page_view`, `commercial_primary_cta_click` e `commercial_plan_cta_click` são persistidos via `audit_context_event`, vinculados a `account_id` e sem campos diretos de PII.
 
-10.5.5.3 Recorte aprovado para consumo pela E10.7
-• Para a E10.7, a pesquisa completa do taxon deve entregar `version = 1`, `status = active` e dois `audience_scope`: `business_buyer` e `end_customer`.
-• Cada `audience_scope` deve conter quatro blocos fixos: `strategic_core`, `lp_overview`, `lp_sections` e `seo`.
-• O recorte não resolve versões independentes por bloco nesta etapa: a E10.7 usa pesquisas `active version 1` completas.
-• O recorte não altera schema, não cria nova tabela e não muda a hierarquia dos taxons.
-• Novos blocos futuros ficam fora do recorte atual e dependem de planejamento próprio.
-
-10.5.5.4 Pendências
-• Decidir se a pesquisa bruta será arquivada no repo, no banco ou em ambos.
-• Se o arquivamento for no banco, avaliar o ajuste de schema necessário em etapa futura própria.
-• Usar os dados carregados futuramente na E10.7, para páginas comerciais personalizadas por nicho, sem vincular esse consumo à página genérica da E10.6.
-
-10.5.6 Classificação da conta e resolução do nicho
-• Status: Parcialmente concluído (14/05/2026)
-• Escopo atual: pipeline server-side no pós-save do `pending_setup`, com matching determinístico, decisão de confiança, persistência operacional, vínculo oficial sob alta confiança e escalonamento IA estruturado.
-
-10.5.6.1 Matching determinístico e adapter server-side
-• Status: Concluído
-• Matching determinístico por RPC read-only com normalização textual, FTS/`pg_trgm`, `match_source` e `score`.
-• Adapter server-side tipado para consumo no fluxo de resolução.
-
-10.5.6.2 Regra de confiança determinística
-• Status: Concluído
-• Avaliação de candidatos via `evaluateDeterministicTaxonMatch` com saída tipada de decisão.
-• Separação entre alta confiança, ambiguidade e escalonamento IA.
-• Match `pg_trgm` com candidato único forte segue sem fricção para decisão determinística.
-
-10.5.6.3 Persistência operacional em `account_niche_resolutions`
-• Status: Concluído
-• Camada operacional da resolução de nicho.
-• Não é vínculo oficial.
-• Base para decisão determinística, IA, fallback e revisão.
-
-10.5.6.4 Vínculo oficial em `account_taxonomy`
-• Status: Concluído
-• `account_taxonomy` é o vínculo oficial da conta com taxon aprovado.
-• Gravação automática apenas em alta confiança determinística.
-• Não substitui automaticamente vínculo primário diferente.
-• O banco garante no máximo um vínculo com `is_primary = true` e `status = 'active'` por conta; zero primários ativos e múltiplos vínculos não primários ou inativos permanecem permitidos.
-• As leituras de primário ativo não limitam o resultado antes de `maybeSingle()`: zero continua ausência e cardinalidade maior que um falha fechada, sem escolha silenciosa.
-• Artefatos: `supabase/migrations/20260804201831_account_taxonomy_one_active_primary.sql`, `supabase/tests/account_taxonomy_one_active_primary.test.sql`, `supabase/snippets/account_taxonomy_one_active_primary_verify.sql` e `lib/onboarding/niche-resolution/adapters/accountTaxonomyAdapter.ts`.
-
-10.5.6.5 IA estruturada e persistência `ai_*`
-• Status: Concluído
-• Resolver IA server-side com Structured Outputs quando o determinístico não resolve com segurança.
-• IA não cria taxon, não cria alias e não grava `account_taxonomy`.
-• Resultado IA persistido em `account_niche_resolutions`.
-
-10.5.6.6 Microdiálogo visual e fallback final
-• Status: Em andamento
-• Componente atual: `app/a/[account]/_components/NicheResolutionCard.tsx`.
-• O `NicheResolutionCard` é um componente da E10.5 para confirmação do nicho da conta; não é parte do conteúdo comercial da E10.6.
-• O card pode:
-• confirmar um único nicho sugerido;
-• permitir escolha entre opções;
-• solicitar que o usuário informe manualmente seu nicho quando não houver resultado seguro.
-• O card é exibido somente para conta `active`, sem taxon primário e com resolução acionável ainda não finalizada.
-• Quando necessário, deve permanecer acima da página comercial genérica da E10.6.
-• A E10.6 não deve redesenhar, remover nem alterar o comportamento funcional desse card.
-• Fallback elegante sem rechamar IA em loop.
-
-10.5.6.7 Resolução do template comercial
-• Status: Retirado do recorte atual (12/06/2026)
-• A resolução antecipada de template comercial foi removida junto com a implementação anterior da E10.6.
-• A E10.6 será genérica, independente de taxon e sem consulta a pesquisas ou itens estruturados.
-• A E10.7 será responsável futuramente pela personalização da página comercial por nicho.
-• Não existe, no estado atual, arquitetura universal ou multicanal, contrato universal, resolver de template ou fallback compartilhado para canais.
-
-• ARTEFATOS_REPO preservados do E10.5.6:
-• `supabase/snippets/e10_5_6_7_commercial_template_service_role_grants.sql`
-• `supabase/migrations/0014__e10_5_6_7_commercial_template_service_role_grants.sql`
-• `supabase/rollbacks/20260609__e10_5_6_7_commercial_template_service_role_grants.rollback.sql`
-• `supabase/migrations/0009__e10_5_6_deterministic_taxon_matching.sql`
-• `supabase/migrations/0011__e10_5_6_account_niche_resolutions.sql`
-• `supabase/migrations/0012__e10_5_6_account_taxonomy_service_role_grants.sql`
-• `supabase/migrations/0013__e10_5_6_ai_structured_outputs.sql`
-• `supabase/rollbacks/20260509__e10_5_6_deterministic_taxon_matching.rollback.sql`
-• `supabase/rollbacks/20260511__e10_5_6_account_niche_resolutions.rollback.sql`
-• `supabase/rollbacks/20260511__e10_5_6_account_taxonomy_service_role_grants.rollback.sql`
-• `supabase/rollbacks/20260514__e10_5_6_ai_structured_outputs.rollback.sql`
-• `lib/onboarding/niche-resolution/adapters/taxonMatchAdapter.ts`
-• `lib/onboarding/niche-resolution/adapters/accountNicheResolutionAdapter.ts`
-• `lib/onboarding/niche-resolution/adapters/accountTaxonomyAdapter.ts`
-• `lib/onboarding/niche-resolution/adapters/openAiResolver.ts`
-• `lib/onboarding/niche-resolution/deterministicConfidence.ts`
-• Ajustados:
-• `lib/onboarding/niche-resolution/contracts.ts`
-• `app/a/[account]/actions.ts`
-
-• Pendências gerais do E10.5.6:
-• a UX principal do E10.5 para conta `active` sem entitlements ainda não está implementada na rota `/a/[account]`
-• o resultado operacional da resolução de nicho ainda não está exposto em UX final do dashboard da conta
-
-10.6 Página comercial genérica do Account Dashboard
-• Status: Concluído (15/06/2026)
-• Objetivo: disponibilizar em `/a/[account]` uma página comercial genérica para contas `active`, antes da personalização por nicho da E10.7.
-• Implementado:
-• página responsiva com hero, benefícios, serviços, planos, diferenciais, funcionamento, FAQ e CTA final;
-• conteúdo fixo `generic-v1` mantido localmente na rota;
-• planos ilustrativos Starter, Lite, Pro e Ultra, com aviso de que não constituem oferta definitiva;
-• CTAs gerais e por plano direcionados ao WhatsApp;
-• `NicheResolutionCard` preservado acima da página quando aplicável;
-• tracking server-side vinculado ao `account_id`, sem PII, com os eventos `commercial_page_view`, `commercial_primary_cta_click` e `commercial_plan_cta_click`;
-• eventos armazenados em `audit_logs.event`, propriedades em `changes_json` e `action = insert`;
-• Preview, produção, WhatsApp e tracking validados.
-
-10.6.1 Estruturas e artefatos
-
-Banco — Ajustados
-• `public.audit_context_event`
-
-Repositório — Criados
-• `app/a/[account]/_components/commercial-page/GenericCommercialPage.tsx`
-• `app/a/[account]/_components/commercial-page/actions.ts`
-• `app/a/[account]/_content/commercial-page/generic-v1.ts`
-• `supabase/migrations/20260614124000_fix_audit_context_event_event_column.sql`
-
-Repositório — Ajustados
-• `app/a/[account]/page.tsx`
-
-10.6.2 Pendências
-• Aprovar ou refinar a página como referência visual para as futuras páginas nichadas.
-• Avaliar personalização por histórico da conta sem exigir CRM ou identificação individual.
-• Avaliar experiência específica do WhatsApp por dispositivo somente se o ganho justificar a complexidade.
-• Tracking de scroll, FAQ e “Como funciona” permanece fora desta versão.
-• Updates futuros já aprovados relacionados: `prod#3`, `vercel#8`, `vercel#10`, `vercel#11`, `vercel#20` e `prod#15`.
-
-10.6.3 Relação com a E10.7
-• A E10.7 permanece separada e será responsável pelas páginas comerciais personalizadas por nicho.
-• A página genérica da E10.6 permanece como fallback quando não houver página nichada publicada.
-• Persistência, edição, geração e publicação da E10.7 serão definidas no planejamento desse caso.
-
-10.6.4 Personalização por histórico da conta
-• Status: Futuro.
-• Usar eventos vinculados ao `account_id` para reconhecer contas recorrentes.
-• Considerar último acesso, quantidade de visitas, último plano clicado e CTAs utilizados.
-• Adaptar futuramente mensagem, plano destacado ou CTA.
-• Manter a página genérica como fallback.
-• Não exigir identificação individual nem CRM completo.
-
-10.6.5 Evoluções futuras de UX dos CTAs
-• Status: Futuro.
-• Avaliar `web.whatsapp.com/send` no desktop.
-• Manter `wa.me` no celular e como fallback.
-• Não realizar envio automático.
-• Implementar detecção por ambiente somente se o ganho justificar a complexidade.
+10.6.4 Limites e fallback
+- Os preços e serviços de `generic-v1` são ilustrativos e não constituem oferta comercial definitiva.
+- `NicheResolutionCard` permanece acima da página quando há confirmação de nicho pendente.
+- Ausência, erro ou bundle personalizado inválido mantêm a conta na página genérica; a rota não chama IA para renderizar conteúdo comercial.
 
 10.7 Páginas comerciais personalizadas por nicho
-• Status: Concluída até a Fase 7; Fase 8 permanece futura/pausada.
-• Próxima execução: Fase 8 — futura/pausada; não iniciada.
-• Objetivo: gerar, revisar, publicar e consumir páginas comerciais por taxon; a IA roda apenas em operação administrativa/server-side; `/a/[account]` consome somente artefato publicado e validado; ausência de conteúdo nichado não pode quebrar `/a/[account]`.
-• Dependência estrutural: a E18 define os contratos reutilizáveis mínimos; a E10.7 aplica, valida e ajusta esses contratos no caso comercial concreto.
-• A página genérica `generic-v1` da E10.6 permanece concluída e será o fallback obrigatório.
 
-10.7.1 Decisões aprovadas
-• Usar `version = 1` nas pesquisas consumidas pela E10.7.
-• Exigir quatro blocos fixos por `audience_scope`: `strategic_core`, `lp_overview`, `lp_sections` e `seo`.
-• Publicar o artefato com `audience_scope = business_buyer`.
-• Registrar `end_customer` apenas como contexto no `provenance_json`.
-• Não alterar a hierarquia dos taxons nesta etapa.
-• Não resolver versões independentes por bloco nesta etapa.
-• Não implementar LP Builder, liberação de LPs, continuidade de contas, bloqueio de novas ativações nem IA em runtime da página.
-• O conteúdo da página comercial é global por taxon e reutilizado por contas que resolvam a mesma página publicada; a exibição ocorre no contexto da conta e o tracking permanece vinculado ao `account_id`.
-• O taxon piloto valida o mecanismo, mas não limita a implementação ao seu slug.
-• Taxon elegível é definido por pesquisa estruturada completa.
-• Para `commercial_activation`, o template é universal por canal e não deve ser duplicado por taxon.
-• A estrutura da página comercial é fixa no MVP: Hero, Benefícios, Serviços, Planos, Diferenciais, Como funciona, FAQ e CTA final.
-• A IA gera copy dentro da estrutura definida; não decide seções nem ordem.
-• As cores permanecem universais do template comercial no MVP.
-• A composição por taxon é materialização técnica no schema atual, não composição estratégica nem tarefa manual do operador.
+10.7.1 Objetivo e status
+- Objetivo: gerar, revisar, publicar e consumir páginas `commercial_activation` por taxon, mantendo a IA no fluxo administrativo e o runtime da conta restrito a conteúdo publicado e validado.
+- Status: geração, operação Admin, publicação, consumo e fallback estão implementados; edição manual de copy permanece planejada.
 
-10.7.2 Fase 1 — Ajuste documental e patch estrutural mínimo
-• Status: Concluída e validada em 21/06/2026.
-• Resultado: escrita administrativa controlada viabilizada antes da persistência do draft; publicação transacional disponível no banco; detalhes de DB permanecem em `docs/schema.md`.
-• Fora do escopo preservado: geração IA, Account Dashboard, LP Builder, nova tabela, hierarquia de taxons e alteração de `research_version`.
-• Estruturas e artefatos:
-  • Banco — Ajustados: `content_artifacts`; `content_artifact_research_sources`
-  • Banco — Criados: `publish_content_artifact_draft(uuid)`
-  • Repositório — Criados: `supabase/migrations/20260621162400_e10_7_admin_artifact_write_publish.sql`; `supabase/migrations/20260621181742_e10_7_fix_research_sources_policy_name.sql`; `supabase/snippets/e10_7_admin_artifact_write_publish_verify.sql`
-  • Repositório — Ajustados: `docs/schema.md`
+10.7.2 Registros do recorte
+- Banco:
+  - Criados:
+    - `public.publish_content_artifact_draft(uuid)`
+    - `public.ensure_commercial_activation_composition(uuid)`
+  - Ajustados:
+    - `public.content_artifacts`
+    - `public.content_artifact_research_sources`
+- Repositório:
+  - Criados:
+    - `supabase/migrations/20260621162400_e10_7_admin_artifact_write_publish.sql`
+    - `supabase/migrations/20260621181742_e10_7_fix_research_sources_policy_name.sql`
+    - `supabase/migrations/20260624203000_e10_7_phase_5_ensure_commercial_activation_composition.sql`
+    - `lib/conversion-content/commercial-activation/draft-generation.ts`
+    - `lib/conversion-content/commercial-activation/composition.ts`
+    - `lib/admin/adapters/adminCommercialActivationTemplatesAdapter.ts`
+    - `app/admin/(protected)/templates/actions.ts`
+    - `app/admin/(protected)/templates/commercial-activation/[taxonSlug]/page.tsx`
+    - `app/a/[account]/_components/commercial-page/CommercialActivationTrackingScope.tsx`
+    - `app/a/[account]/_components/commercial-page/PublishedCommercialActivationPage.tsx`
+    - `supabase/snippets/e10_7_phase_7_commercial_activation_contract_verify.sql`
+  - Ajustados:
+    - `app/admin/(protected)/templates/page.tsx`
+    - `app/a/[account]/page.tsx`
+    - `lib/conversion-content/adapters/commercialActivationAdapter.ts`
+    - `lib/conversion-content/commercial-activation/renderer.tsx`
+- Updates:
+  - Aplicados:
+    - `supa#40`
+    - `supa#58`
+    - `prod#14`
+    - `prod#16`
+- Referências:
+  - Plano do recorte: `docs/lousa-plano-base-e10-7.md`.
+  - Contrato de banco: `docs/schema.md` — templates, composições, artefatos e publicação.
 
-10.7.3 Fase 2 — Geração IA administrativa de draft comercial
-• Status: Concluída em 22/06/2026.
-• Estado atual: geração server-side/Admin de draft comercial por taxon disponível, criando artifact `draft` validável antes de publicação.
-• Persistência e proveniência: fontes de pesquisa são vinculadas ao artifact e contexto complementar permanece no `provenance_json`.
-• Falha segura: inconsistência na persistência de fontes invalida/arquiva o draft recém-criado.
-• Limites: sem publicação automática, sem consumo em `/a/[account]`, sem IA em runtime público, sem LP Builder, sem job, fila ou agente, sem nova tabela, view, função, grant, policy, migration ou alteração de hierarquia dos taxons.
-• Estruturas e artefatos:
-  • Repositório — Criados: `app/admin/(protected)/templates/actions.ts`; `lib/conversion-content/commercial-activation/draft-generation.ts`; `supabase/snippets/e10_7_phase_2_draft_verify.sql`
+10.7.3 Elegibilidade e geração
+- Um taxon elegível exige pesquisas ativas da versão 1 para `business_buyer` e `end_customer`, cada uma com os quatro blocos definidos em 10.5.3 e itens ativos.
+- O template de página é universal para `commercial_activation`; a composição técnica é materializada por taxon quando necessário.
+- A geração cria draft administrativo com fontes vinculadas e proveniência; inconsistência de fontes ou conteúdo impede publicação.
+- A estrutura do MVP é fixa em Hero, Benefícios, Serviços, Planos, Diferenciais, Como funciona, FAQ e CTA final; a IA preenche copy, mas não decide seções, ordem, layout ou cores.
 
-10.7.4 Fase 3 — Operação administrativa mínima em `/admin/templates`
-• Status: Concluída em 23/06/2026.
-• Estado atual: `/admin/templates` oferece operação administrativa mínima para gerar, regenerar, revisar e publicar drafts comerciais `commercial_activation`.
-• IA: restrita ao fluxo administrativo/server-side, sem IA em runtime público.
-• Publicação: usa `publish_content_artifact_draft(uuid)` e valida server-side o draft publicável do bundle esperado.
-• Estado funcional: preview administrativo usa renderer existente; composição é resolvida por `content_template_taxons`; Templates está disponível na navegação Admin.
-• Limites: não inclui `/a/[account]`, Account Dashboard, consumo público, fallback por ancestral, segundo taxon, LP Builder, edição visual avançada, Agents SDK, Sandbox Agents, job, fila, agente, nova tabela, nova migration, nova função, novo grant, nova policy, alteração de `research_version`, liberação de LPs, continuidade de contas ou bloqueio de ativações.
+10.7.4 Operação administrativa
+- `/admin/templates` lista taxons e estados; `/admin/templates/commercial-activation/[taxonSlug]` concentra geração ou regeneração, preview, publicação, diagnóstico e histórico.
+- As operações exigem `platform_admin`; publicação usa `publish_content_artifact_draft(uuid)`, valida o bundle e arquiva a versão publicada anterior.
+- O fluxo atual não oferece edição manual do `content_json`.
 
-10.7.4.1 Estruturas e artefatos
+10.7.5 Consumo na conta
+- `/a/[account]` tenta resolver `commercial_activation` pelo taxon primário ativo e sua cadeia hierárquica.
+- Somente artifact `published`, composição válida e render model `ready` são consumidos.
+- Conta sem taxon válido, composição, publicação ou conteúdo consumível retorna a `generic-v1`.
+- A variante publicada reutiliza os eventos comerciais e o Checkout Stripe da página genérica, respeitando a mesma política de ações financeiras.
+- O runtime da conta não consome `draft` ou `archived` e não chama IA.
 
-Repositório — Criados
-• `lib/admin/adapters/adminCommercialActivationTemplatesAdapter.ts`
-• `lib/conversion-content/commercial-activation/composition.ts`
-
-Repositório — Ajustados
-• `app/admin/(protected)/templates/page.tsx`
-• `app/admin/(protected)/templates/actions.ts`
-• `components/admin/adminNavigation.ts`
-• `lib/conversion-content/commercial-activation/draft-generation.ts`
-
-10.7.5 Fase 4 — Consumo no Account Dashboard
-• Status: Concluída em 23/06/2026.
-• Estado atual: `/a/[account]` consome página comercial nichada quando existir bundle `commercial_activation` publicado e validado.
-• Fallback: ausência, erro, artefato inválido ou conteúdo não consumível retorna para `generic-v1`.
-• Limites: não consome `draft`, não consome `archived` e não usa IA em runtime público.
-• Tracking: mantém eventos comerciais vinculados ao `account_id`, sem PII.
-• Pendências: nenhuma vigente neste recorte.
-
-10.7.5.1 Estruturas e artefatos
-
-Repositório — Criados
-• `app/a/[account]/_components/commercial-page/CommercialActivationTrackingScope.tsx`
-• `app/a/[account]/_components/commercial-page/PublishedCommercialActivationPage.tsx`
-
-Repositório — Ajustados
-• `app/a/[account]/_components/commercial-page/actions.ts`
-• `app/a/[account]/page.tsx`
-• `lib/conversion-content/adapters/commercialActivationAdapter.ts`
-• `lib/conversion-content/commercial-activation/renderer.tsx`
-• `lib/conversion-content/commercial-activation/validation-cases.ts`
-
-10.7.6 Fase 5 — Validação com segundo taxon e composição genérica
-• Status: Concluída em 25/06/2026.
-• Estado atual: `/admin/templates` lista taxons elegíveis por pesquisa estruturada completa e permite gerar/publicar página `commercial_activation` para qualquer taxon elegível.
-• Geração: exige `taxonSlug`; o fallback implícito para o taxon piloto foi removido.
-• Composição: `ensureCommercialActivationCompositionForTaxon(taxonId)` materializa composição técnica sob demanda quando o taxon elegível ainda não tem composição ativa.
-• Publicação: continua usando `publish_content_artifact_draft(uuid)`.
-• Consumo: `/a/[account]` permanece consumindo somente página publicada e validada.
-• Limites: não cria template por taxon, não leva IA para runtime público, não cria procedimento manual de composição por taxon e não altera a hierarquia dos taxons.
-• Pendência vigente: trocar erro técnico `missing_openai_env` por mensagem amigável quando aplicável.
-• Updates Supabase aplicados: `#Supa36`, `#Supa05`, `#Supa40` e `#Supa58`.
-
-10.7.6.1 Estruturas e artefatos
-
-Banco — Criados
-• `ensure_commercial_activation_composition(p_taxon_id uuid)`
-
-Repositório — Criados
-• `supabase/migrations/20260624203000_e10_7_phase_5_ensure_commercial_activation_composition.sql`
-• `supabase/snippets/e10_7_phase_5_eligible_taxons_verify.sql`
-
-Repositório — Ajustados
-• `app/admin/(protected)/templates/page.tsx`
-• `app/admin/(protected)/templates/actions.ts`
-• `lib/admin/adapters/adminCommercialActivationTemplatesAdapter.ts`
-• `lib/conversion-content/commercial-activation/draft-generation.ts`
-• `lib/conversion-content/commercial-activation/composition.ts`
-• `docs/lousa-plano-base-e10-7.md`
-• `docs/schema.md`
-• `docs/platform-config.md`
-
-10.7.7 Fase 6 — Admin comercial enxuto e contrato fixo da página comercial
-• Status: Concluída em 26/06/2026.
-• Estado atual: `/admin/templates` funciona como lista limpa de taxons comerciais, sem preview, histórico completo, geração, publicação ou operação detalhada na lista.
-• Lista: exibe taxon, estado, pesquisa, composição, artefatos e ação Selecionar.
-• Página operacional: `/admin/templates/commercial-activation/[taxonSlug]` concentra status do taxon, gerar/regenerar draft, publicar draft, cards de estado, diagnóstico técnico mínimo, preview e histórico.
-• Botões: Gerar draft, Regenerar draft e Publicar draft usam loading/disable durante submissão.
-• Regra de ação: quando houver draft publicável, o próximo passo é Publicar draft; quando houver draft em revisão ou published sem draft ativo, a ação de geração aparece como Regenerar draft; quando não houver draft nem published, aparece como Gerar draft.
-• Mensagem de publicação: informa sucesso e, quando aplicável, arquivamento da versão anterior publicada.
-• Limites: não inclui edição manual de draft, IA assistida, regeneração baseada em latest published, seleção de published oficial, editor visual, alteração do layout público, alteração de cores, alteração do runtime público `/a/[account]`, nova migration, nova tabela, nova RPC, novo grant, nova policy, flags, A/B test, cache novo, server-side tracking novo ou navegação global multi-contas.
-• Updates aplicados: `prod#14` e `prod#16`.
-
-10.7.7.1 Estruturas e artefatos
-
-Repositório — Criados
-• `app/admin/(protected)/templates/_components/PendingSubmitButton.tsx`
-• `app/admin/(protected)/templates/commercial-activation/[taxonSlug]/page.tsx`
-
-Repositório — Ajustados
-• `app/admin/(protected)/templates/page.tsx`
-• `app/admin/(protected)/templates/actions.ts`
-• `lib/admin/adapters/adminCommercialActivationTemplatesAdapter.ts`
-
-10.7.8 Fase 7 — Auditoria e consolidação do contrato commercial_activation
-• Status: Concluída em 28/06/2026.
-• Resultado: auditoria determinística do contrato `commercial_activation` concluída, com verificação read-only versionada para template, composição, published, `content_json` e fontes.
-• Estrutura fixa confirmada no MVP: Hero, Benefícios, Serviços, Planos, Diferenciais, Como funciona, FAQ e CTA final.
-• Limite confirmado: IA preenche copy dentro da estrutura aprovada, mas não decide seções, ordem, layout ou cores.
-• Runtime público preservado: sem alteração em `/a/[account]`, sem IA em runtime público e sem novo consumo de `draft` ou `archived`.
-• Banco preservado: nenhuma tabela, view, RPC, policy, grant, constraint, trigger ou migration criada/alterada.
-• Updates relacionados: `supa#40`, `supa#58` e `prod#16`.
-• Pendência vigente: executar o snippet read-only no Supabase Inspect/SQL Editor quando for necessária evidência operacional do estado real do banco.
-
-10.7.8.1 Estruturas e artefatos
-
-Repositório — Criados
-• `supabase/snippets/e10_7_phase_7_commercial_activation_contract_verify.sql`
-
-Repositório — Ajustados
-• `docs/lousa-plano-base-e10-7.md`
-
-10.7.9 Fase 8 — Edição manual de copy e gestão simples de versões
-• Status: Planejada.
-• Objetivo: permitir ajuste humano de copy e gestão simples de versões depois do contrato fixo auditado.
-• Limites: não incluir IA assistida, editor visual, edição por bloco independente, múltiplas versões `published` ativas, alteração do runtime público, alteração de template, composição, layout ou cores.
-
-10.7.10 Exibição, fallbacks e tracking
-• Fluxo em `/a/[account]`: conta `active` → resolver `account_id` → resolver taxon primário ativo → procurar bundle `commercial_activation` publicado → renderizar página nichada somente quando o bundle estiver `ready` → usar `generic-v1` quando não houver bundle consumível.
-• Preservar `NicheResolutionCard` acima da página quando aplicável.
-• Conta sem taxon, taxon inativo ou inválido, pesquisa incompleta, composição ausente ou inválida, página não publicada, artifact inválido, erro de leitura ou render model não `ready` usam a página genérica E10.6 como fallback seguro.
-• Reutilizar `commercial_page_view`, `commercial_primary_cta_click` e `commercial_plan_cta_click`, com identificadores seguros e sem PII.
-• A E10.7 não pode bloquear o acesso à página comercial.
-• O runtime público não pode consumir `draft`, `archived` nem chamar IA para renderizar a página comercial.
+10.7.6 Próximo recorte aprovado
+- Status: planejado.
+- Conteúdo: permitir edição manual de copy e gestão simples de versões sem introduzir editor visual, edição independente por bloco, múltiplos `published` ativos, alteração do template, da composição, do layout, das cores ou do runtime público.
 
 10.8 Resolução de pesquisas estruturadas para `landing_page` — retirada
 
 10.8.1 Objetivo e status
+- Objetivo: registrar o encerramento do boundary histórico de resolução de pesquisas para `landing_page`.
+- Status: retirado pela E22.1.6; não existe substituto vigente no E10.
 
-* Objetivo histórico: disponibilizar um conjunto único, completo, determinístico e rastreável de pesquisas estruturadas para consumidores de `landing_page`.
-* Status: Retirada em 19/08/2026 pela E22.1.6.
-
-10.8.2 Registros do recorte
-
-* Status: Registro histórico preservado; os artefatos retirados permanecem consolidados na E22.1.2.
-* Conteúdo: o boundary `research-resolution`, o adapter, os exports e o validator foram removidos.
-
-10.8.3 Contrato de resolução e elegibilidade
-
-* Status: Contrato histórico retirado.
-* Conteúdo: não existe substituto para E10.8.
-
-10.8.4 Precedência, proveniência e falha fechada
-
-* Status: Responsabilidade histórica encerrada.
-* Conteúdo: E20.5 e E20.6 selecionam e avaliam o caminho vigente da pesquisa integral `end_customer`, consumido pela E19.3.
-
-10.8.5 Validação e limites do recorte
-
-* Status: Preservações vigentes confirmadas pela E22.1.6.
-* Conteúdo: `taxon_market_research`, `taxon_market_research_items` e seus consumidores independentes permanecem preservados.
+10.8.3 Estado e destino
+- `lib/conversion-content/landing-page/research-resolution/`, o adapter de pesquisa, os exports e o validator foram removidos.
+- E20.5 e E20.6 selecionam e avaliam o caminho vigente da pesquisa integral `end_customer`, consumido pela E19.3.
+- Os objetos `taxon_market_research` e `taxon_market_research_items` e seus consumidores independentes permanecem preservados.
+- O inventário material da retirada reside em E22.1.2.
 
 11. E11 — Gestão de Usuários e Convites
 - Objetivo: permitir gestão segura de membros não-owner e convites por conta, usando Supabase Auth e o Account Dashboard.
