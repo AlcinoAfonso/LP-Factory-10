@@ -141,9 +141,9 @@
 - Conteúdo:
   - acesso ao banco ocorre em adapters server-side, sem consulta direta pela UI;
   - registros do banco são convertidos em tipos e estados de domínio antes do consumo;
-  - adapters de acesso preservam o contexto da sessão e as políticas RLS aplicáveis;
-  - erro, ausência de dados e negação de acesso não produzem fallback permissivo;
-  - decisões críticas seguem o contrato de observabilidade segura da Base Técnica.
+  - adapters de acesso usam o client adequado ao contexto de leitura ou mutação e preservam as políticas RLS quando aplicáveis;
+  - leituras e mutações retornam estados controlados aos consumidores, enquanto a autorização final permanece responsabilidade dos guards server-side;
+  - `accessContextAdapter.ts` registra decisões estruturadas de acesso sem transferir a autorização para o logging.
 
 3.1.4 Evolução por boundary de domínio
 - Status: vigente.
