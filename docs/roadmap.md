@@ -2230,14 +2230,14 @@
 - O código E20.7 e sua integração permanecem na `main`; retomar Production exige novo diagnóstico e gate operacional próprio, não nova implementação do resolver.
 
 21. E21 — Gestão e governança dos workloads OpenAI
-- Objetivo: gerir e governar os workloads OpenAI por recortes aprovados, com configuração explícita, observabilidade segura, leitura administrativa e configuração operacional dinâmica por ambiente, sem otimização automatizada.
-- Status: a fundação E21.1 permanece preservada; a E21.2, incluindo o catálogo operacional da E21.2.5, está concluída com apply e gates hospedados aprovados; o plano-base v1 da E21.3 já está na `main`, enquanto a implementação experimental da E21.3.3 permaneceu no PR #819, fechado sem merge por repriorização humana; a E21.4 está concluída em Production com apply, gates de banco, instrumentação financeira, smoke, corte canônico e QA hospedado aprovados. A E21.3.4 permanece não iniciada e depende de nova decisão humana.
+- Objetivo: manter uma autoridade única para identidade, configuração, execução observável e custo dos workloads OpenAI usados pelo produto, com operação administrativa segura e sem otimização autônoma.
+- Status: fundação e inventário vigentes; configuração operacional dinâmica e catálogo administrativo ativos; avaliação comparativa E21.3 pausada e sem implementação incorporada; visibilidade financeira em Production operacional para o total oficial e para os dois workloads de Landing Page cobertos prospectivamente. A configuração de pesquisa dinâmica permanece ativa, mas o rollout do Core que a consome está contido após falha end-to-end, sem alteração do lifecycle de IA.
 
 21.1 Fundação, normalização e leitura dos workloads OpenAI
 
 21.1.1 Objetivo e status
-- Objetivo: estabelecer catálogo tipado e resolução explícita dos workloads OpenAI, integrar os consumidores de produto à configuração e à observabilidade comuns e expor inventário administrativo read-only.
-- Status: Fundação E21.1 implementada, validada e preservada; o catálogo repo-side possui seis workloads de produto e uma referência operacional, sem mudar a natureza repo-only e read-only do boundary.
+- Objetivo: centralizar identidades, modalidades, baselines locais, resolução e telemetria segura dos workloads OpenAI, mantendo prompts, schemas e regras funcionais nos domínios consumidores.
+- Status: implementada e vigente. O catálogo estrutural contém seis workloads de produto — cinco textuais e um de imagem — mais a referência operacional read-only do Supabase Inspect.
 
 21.1.2 Registros do recorte
 - Repositório:
@@ -2248,63 +2248,53 @@
     - `lib/openai-workloads/observability.ts`
     - `lib/openai-workloads/validation-cases.ts`
     - `lib/openai-workloads/index.ts`
-    - `lib/conversion-content/adapters/commercialActivationOpenAiAdapter.ts`
     - `app/admin/(protected)/workloads-openai/page.tsx`
   - Ajustados:
-    - `app/a/[account]/actions.ts`
-    - `app/admin/(protected)/perfis-de-orientacao/page.tsx`
-    - `app/admin/(protected)/perfis-de-orientacao/[taxonId]/page.tsx`
-    - `app/admin/(protected)/perfis-de-orientacao/_components/GenerationProfileEditor.tsx`
-    - `lib/admin/adapters/adminTaxonomyAdapter.ts`
-    - `lib/conversion-content/adapters/landingPageGenerationProfileOpenAiAdapter.ts`
-    - `lib/conversion-content/commercial-activation/draft-generation.ts`
-    - `lib/conversion-content/commercial-activation/validation-cases.ts`
-    - `lib/conversion-content/landing-page/generation-profile/index.ts`
-    - `lib/conversion-content/landing-page/generation-profile/proposal-server.ts`
-    - `lib/conversion-content/landing-page/generation-profile/proposal.ts`
-    - `lib/conversion-content/landing-page/generation-profile/validation-cases.ts`
+    - `lib/conversion-content/adapters/commercialActivationOpenAiAdapter.ts`
+    - `lib/conversion-content/adapters/inputCatalogEvaluationOpenAiAdapter.ts`
+    - `lib/conversion-content/adapters/dynamicMarketResearchOpenAiAdapter.ts`
+    - `lib/lp-builder/adapters/landingPageDraftGenerationAdapter.ts`
+    - `lib/lp-builder/adapters/landingPageDraftImageGenerationAdapter.ts`
     - `lib/onboarding/niche-resolution/adapters/openAiResolver.ts`
     - `components/admin/adminNavigation.ts`
     - `package.json`
 - Referências:
-  - Contrato técnico: `docs/base-tecnica.md` — 3.16.
-  - Configuração operacional: `docs/platform-config.md` — 3.5 e 6.3.
+  - Boundary técnico: `docs/base-tecnica.md` — seção 3.16.
+  - Configuração e credenciais: `docs/platform-config.md` — seções 3.5 e 6.3.
 
 21.1.3 Catálogo estrutural e resolução explícita
-- Status: Implementada e validada.
-- Conteúdo:
-  - O boundary transversal `lib/openai-workloads/` mantém registry interno, repo-only e profundamente imutável, com seis configurações de produto e uma referência operacional separada do Supabase Inspect.
-  - Dois workloads textuais preservam `gpt-5.4-mini + none`; a E19.4 acrescenta `landing_page_draft_generation` e o workload de mídia independente `landing_page_draft_image_generation`; a E20.6.5 acrescenta `taxon_input_catalog_sufficiency_evaluation` com baseline `gpt-5.6-terra + low`; e a E20.7.4 acrescenta `landing_page_dynamic_market_research` com configuração inicial de Development `gpt-5.6-luna + high` e política Web Search code-owned, sem transportar parâmetros inaplicáveis entre modalidades.
-  - O resolver público discrimina `responses_text | image_generation`, aceita somente workloads de produto conhecidos, falha fechado para identidade desconhecida ou referência operacional e projeta inventário seguro com classificação, origem, revisão e configuração efetiva.
-  - Ambiente, uniões discriminadas de resultado/evento e normalização de usage foram definidos como contratos puros comuns e integrados às chamadas reais na E21.1.4.
-  - Os casos executáveis fundacionais cobrem unicidade, resolução, separação effective/reference, imutabilidade, projeção sem secrets, ambiente, usage, evento e ausência de transporte, persistência ou payload funcional no boundary.
-  - Nenhum banco, integração remota, cliente universal, preço, prompt, schema funcional ou fallback silencioso foi criado.
+- O registry interno, repo-only e imutável mantém identidade, apresentação, modalidade, consumidor, fallback e baseline local de cada workload.
+- Os workloads de produto vigentes são:
+  - `niche_resolution`;
+  - `commercial_activation_draft_generation`;
+  - `landing_page_draft_generation`;
+  - `taxon_input_catalog_sufficiency_evaluation`;
+  - `landing_page_dynamic_market_research`;
+  - `landing_page_draft_image_generation`.
+- `supabase_inspect` permanece referência operacional externa, sem ser aceito pelo resolver de produto.
+- O resolver discrimina `responses_text` e `image_generation`, rejeita identidade, modalidade ou ambiente desconhecidos e não transporta parâmetros de texto para imagem nem parâmetros de mídia para texto.
+- Development usa o baseline versionado no repositório. Preview e Production podem resolver a revisão ativa do Supabase pelo gate operacional da E21.2, sem fallback silencioso quando esse gate está ligado.
+- Modelo, esforço, qualidade e política de Web Search pertencem à configuração; prompts, Structured Outputs, limites funcionais, persistência e fallbacks continuam nos boundaries consumidores.
 
-21.1.4 Integração dos consumidores e observabilidade comum
-- Status: integração técnica repo-side validada para os seis workloads de produto vigentes; as execuções integradas hospedadas da E19.4 comprovaram os dois workloads de draft, enquanto a prova hospedada da E20.6.5 permanece condicionada ao rollout próprio e a da E20.7.4 fica condicionada ao futuro recorte E19.3 que consumir sua saída.
-- Conteúdo:
-  - Consumidores textuais resolvem modelo e reasoning effort explícitos; o workload de imagem resolve somente sua configuração de mídia. Prompts, schemas, limites, persistência e fallbacks funcionais permanecem nos domínios consumidores.
-  - Eventos textuais e de imagem registram por tentativa somente metadados operacionais seguros e aplicáveis; métricas ausentes permanecem `null` e nenhum prompt, resposta integral, payload de negócio, PII ou secret é registrado.
-  - Os consumidores ativos não leem variáveis legadas de modelo nem mantêm hardcode client ou cálculo monetário local; as variáveis externas permanecem apenas como legado temporário de reversão conforme a configuração operacional canônica.
-  - O transporte OpenAI comercial foi isolado no adapter previsto e novos drafts registram workload, origem, revisão, modelo e effort resolvidos na proveniência existente, sem migration, backfill ou persistência de usage.
-  - Validators determinísticos exercitam os seis workloads de produto, separação textual/mídia, política Web Search aplicável somente ao complemento dinâmico, configuração inválida sem transporte, parâmetros exatos, IDs de provider, usage aplicável, eventos discriminados e ausência de referências legadas.
-  - As execuções integradas hospedadas da E19.4 comprovaram `landing_page_draft_generation` e `landing_page_draft_image_generation` e substituíram, por decisão humana, o gate de canários isolados; não permanece pendência de canários isolados.
-  - Permanece fora do PR #710 a correção separada da automação de smoke para remover senha de logs e artifacts, gerar credenciais não previsíveis e tratar colisões corretamente.
+21.1.4 Integração e observabilidade comum
+- Os seis workloads de produto consomem a resolução pública antes do transporte e preservam configuração, revisão e origem na proveniência ou no evento operacional aplicável.
+- Eventos de texto e imagem registram somente identidade do workload, configuração efetiva, resultado, categoria segura de falha, latência, IDs técnicos e usage disponível.
+- Prompt, resposta integral, payload de negócio, pesquisa, fatos, PII, secrets e credenciais não integram a telemetria.
+- Métrica ausente permanece `null`; não há estimativa monetária transversal nem preenchimento inventado.
+- O workload de pesquisa dinâmica acrescenta contagem de chamadas e fontes Web Search quando disponíveis. Seu código consumidor está incorporado ao repositório, porém o Core de Production serve a versão anterior enquanto o diagnóstico do rollout end-to-end permanece aberto.
+- Variáveis legadas de seleção de modelo não são consumidas pelos workloads ativos.
 
-21.1.5 Inventário read-only no Admin Dashboard
-- Status: inventário repo-side vigente com sete itens; o QA pós-merge da E22.1.4 aprovou os cinco itens então existentes em Preview e Production; a prova hospedada da E20.6.5 permanece no rollout próprio, e a da E20.7.4 fica condicionada ao futuro recorte E19.3 consumidor.
-- Conteúdo:
-  - A rota protegida `/admin/workloads-openai` integra o shell e a navegação administrativos vigentes e projeta diretamente da API pública do boundary os sete itens repo-side, sem adapter, API, componente client ou controle de mutação novos.
-  - Os seis workloads de produto exibem ambiente observado, configuração efetiva, origem e revisão; o Supabase Inspect permanece diferenciado como referência operacional externa e informa explicitamente `Ambiente da execução: não verificado nesta página`.
-  - A superfície é responsiva, sem consulta runtime à OpenAI, GitHub ou Vercel e sem configuração remota, métricas históricas ou capacidades inexistentes.
-  - As evidências hospedadas aprovaram desktop, viewport mobile de 390 × 844 sem overflow, navegação lógica por TAB com foco visível, acesso positivo de `platform_admin` e bloqueio da identidade preexistente sem esse papel.
+21.1.5 Inventário administrativo
+- A rota protegida `/admin/workloads-openai` projeta os sete itens do registry para `platform_admin`.
+- Os seis workloads de produto exibem modalidade, configuração, origem, revisão, consumidor e fallback; o Supabase Inspect permanece diferenciado como referência não verificada nessa superfície.
+- A leitura não consulta OpenAI, GitHub ou Vercel em runtime e não expõe secrets, prompts, respostas ou payloads funcionais.
+- O inventário é a entrada para a gestão operacional da E21.2, sem duplicar registry ou resolver no Admin.
 
 21.2 Configuração operacional dinâmica dos workloads OpenAI
 
 21.2.1 Objetivo e status
-- Objetivo: permitir configuração ativa por ambiente e workload, com candidata, validação, ativação humana, rollback e mudança ordinária sem redeploy.
-- Status: concluída em 28/08/2026; fonte operacional, catálogo e correção do transporte de conflitos pela Data API aplicados, com cutover e gates hospedados aprovados.
-- O recorte preserva a E21.1 como boundary transversal, mantém Development determinístico/local e deixa a E21.3 prevista, sem início de execução.
+- Objetivo: administrar configuração por `ambiente + workload` com candidata, prova, promoção, ativação e rollback humano, permitindo mudanças ordinárias em Preview e Production sem novo deploy de código.
+- Status: implementada e ativa. Preview e Production usam `supabase_operational`; Development permanece em `repo_catalog`. O agregado hospedado contém doze unidades — seis workloads de produto em cada ambiente — e falha fechado diante de leitura ausente, parcial ou inválida.
 
 21.2.2 Registros do recorte
 - Banco:
@@ -2328,140 +2318,94 @@
     - `public.check_openai_model_catalog_configuration_available_v1`
     - `public.raise_postgrest_safe_conflict_v1(text)`
   - Ajustados:
-    - `public.save_openai_workload_configuration_candidate_v1`
-    - `public.discard_openai_workload_configuration_candidate_v1`
-    - `public.promote_openai_workload_configuration_candidate_v1`
-    - `public.activate_openai_workload_configuration_revision_v1`
-    - `public.rollback_openai_workload_configuration_revision_v1`
-    - `public.check_openai_model_catalog_configuration_available_v1`
-    - `public.set_openai_model_catalog_model_availability_v1`
-    - `public.set_openai_model_catalog_parameter_availability_v1`
+    - lifecycle de candidata, promoção, ativação e rollback para validar elegibilidade corrente e transportar conflitos funcionais sem retry transacional.
 - Repositório:
   - Criados:
+    - `lib/openai-workloads/adapters/operationalConfigurationAdapter.ts`
+    - `lib/openai-workloads/adapters/operationalConfigurationAdapterCore.ts`
+    - `lib/openai-workloads/adapters/modelCatalogAdapter.ts`
+    - `lib/openai-workloads/adapters/modelCatalogAdapterCore.ts`
     - `app/admin/(protected)/workloads-openai/_components/OpenAiConfigurationManager.tsx`
+    - `app/admin/(protected)/workloads-openai/_components/OpenAiModelCatalogManager.tsx`
+    - `app/admin/(protected)/workloads-openai/_components/OpenAiWorkloadDetail.tsx`
     - `app/admin/(protected)/workloads-openai/_proof.ts`
     - `app/admin/(protected)/workloads-openai/actions.ts`
+    - `app/admin/(protected)/workloads-openai/catalogActions.ts`
     - `app/admin/(protected)/workloads-openai/commercialProof.ts`
+    - `app/admin/(protected)/workloads-openai/dynamicResearchProof.ts`
     - `app/admin/(protected)/workloads-openai/proofCore.ts`
     - `app/admin/(protected)/workloads-openai/validation-cases.ts`
     - `app/admin/(protected)/workloads-openai/validation-cases.tsx`
-    - `lib/openai-workloads/adapters/operationalConfigurationAdapter.ts`
-    - `lib/openai-workloads/adapters/operationalConfigurationAdapterCore.ts`
     - `supabase/migrations/20260820190422_e21_2_3_openai_workload_operational_configurations.sql`
-    - `supabase/snippets/e21_2_3_openai_workload_operational_configurations_verify.sql`
-    - `supabase/tests/e21_2_3_openai_workload_operational_configurations.test.sql`
-    - `app/admin/(protected)/workloads-openai/_components/OpenAiModelCatalogManager.tsx`
-    - `app/admin/(protected)/workloads-openai/_components/OpenAiWorkloadDetail.tsx`
-    - `app/admin/(protected)/workloads-openai/catalogActions.ts`
-    - `lib/openai-workloads/adapters/modelCatalogAdapter.ts`
-    - `lib/openai-workloads/adapters/modelCatalogAdapterCore.ts`
     - `supabase/migrations/20260823144334_e21_2_5_openai_model_catalog.sql`
-    - `supabase/snippets/e21_2_5_openai_model_catalog_verify.sql`
-    - `supabase/tests/e21_2_5_openai_model_catalog.test.sql`
     - `supabase/migrations/20260827203000_postgrest_safe_application_conflicts.sql`
+    - `supabase/snippets/e21_2_3_openai_workload_operational_configurations_verify.sql`
+    - `supabase/snippets/e21_2_5_openai_model_catalog_verify.sql`
     - `supabase/snippets/postgrest_safe_application_conflicts_verify.sql`
+    - `supabase/tests/e21_2_3_openai_workload_operational_configurations.test.sql`
+    - `supabase/tests/e21_2_5_openai_model_catalog.test.sql`
     - `supabase/tests/postgrest_safe_application_conflicts.test.sql`
   - Ajustados:
-    - `app/admin/(protected)/workloads-openai/page.tsx`
-    - `lib/access/guards.ts`
-    - `lib/conversion-content/adapters/commercialActivationOpenAiAdapter.ts`
-    - `lib/conversion-content/commercial-activation/draft-generation.ts`
-    - `lib/conversion-content/commercial-activation/validation-cases.ts`
-    - `lib/lp-builder/landing-page-draft-generation-validation-cases.ts`
-    - `lib/lp-builder/landingPageDraftGeneration.ts`
-    - `lib/lp-builder/landingPageDraftImageGeneration.ts`
-    - `lib/lp-builder/landingPageRevision.ts`
-    - `lib/onboarding/niche-resolution/adapters/openAiResolver.ts`
     - `lib/openai-workloads/contracts.ts`
     - `lib/openai-workloads/index.ts`
     - `lib/openai-workloads/registry.ts`
     - `lib/openai-workloads/resolve.ts`
     - `lib/openai-workloads/validation-cases.ts`
+    - `app/admin/(protected)/workloads-openai/page.tsx`
+    - `lib/access/guards.ts`
     - `lib/supabase/service.ts`
+    - `package.json`
 - Referências:
-  - Plano-base v1: `docs/lousa-plano-base-e21-2.md`.
-  - Plano-base v2 aprovado: `docs/lousa-plano-base-e21-2-v2.md`.
-  - Matriz integral de tratamentos: `docs/matriz-consolidacao-e21-2.md`.
-  - Plano-base v2 aprovado da E21.2.5: `docs/lousa-plano-base-e21-2-5.md`.
-  - Matriz de consolidação da E21.2.5: `docs/matriz-consolidacao-e21-2-5.md`.
-  - Contrato técnico: `docs/base-tecnica.md` — 3.12 e 3.16.
-  - Configuração operacional: `docs/platform-config.md` — 3.5 e 6.3.
-  - Contrato de banco: `docs/schema.md` — 1.28, 1.29, 1.30, 3.7 e 3.9.
+  - Boundary técnico: `docs/base-tecnica.md` — seções 3.12 e 3.16.
+  - Configuração efetiva e gates: `docs/platform-config.md` — seções 3.5 e 6.3.
+  - Contrato de banco: `docs/schema.md` — configuração, revisões, ativações e catálogo OpenAI.
 
-21.2.3 Fonte operacional dinâmica e resolução por ambiente/workload
-- Status: Concluída; fonte operacional aplicada e cutover aprovado em Preview e Production.
-- Automação: não.
-- As migrations forward-only materializam o agregado de configuração, revisões validadas e ativações/rollback por `ambiente + workload`, com bootstrap exato das dez unidades de Production e Preview, lifecycle transacional, concorrência otimista, constraints unit-safe, RLS/grants mínimos e metadados de prova fechados e sanitizados.
-- A migration E20.7.4 aplicada preservou o agregado e acrescentou duas unidades de `landing_page_dynamic_market_research`, totalizando doze unidades hospedadas; os read models aceitam integralmente dez ou doze unidades e rejeitam estado parcial.
-- `lib/openai-workloads/` permanece o boundary público comum: resolvers assíncronos recebem ambiente explícito, Development continua no baseline local, e os cinco callsites preservam transporte, fallback funcional e proveniência ao consumir `repo_catalog` ou `supabase_operational`.
-- Adapter server-side, comportamento fail-closed, shape tipado por workload, validação de snapshots funcionais, snippet SQL read-only, testes SQL e documentação canônica aplicável foram entregues; a elegibilidade corrente de novas candidatas foi posteriormente centralizada pela E21.2.5.
-- A migration foi aplicada pelo workflow canônico; o snippet hospedado aprovou 10/10 verificações e o Security Controls não apresentou alerta incompatível com as tabelas ou RPCs do recorte.
-- `OPENAI_OPERATIONAL_CONFIG_ENABLED=true` foi habilitada e redeployada primeiro em Preview e, somente após sua aprovação integral, em Production; os dois ambientes usam exclusivamente `supabase_operational`, enquanto Development permanece no baseline local.
-- Não usar `repo_catalog` como fallback quando o gate estiver ativo; não introduzir cache, Realtime, AI Gateway, Vercel Flags, Global Config, tracing, drains, workflow ou segunda residência.
-- Conflitos funcionais de versão ou revisão expostos pela Data API preservam a rejeição da tentativa sem serem transportados como falha transacional retryable; o corretivo foi aplicado e o gate hospedado confirmou ausência de retry autônomo.
+21.2.3 Fonte operacional e resolução por ambiente
+- O agregado separa configuração ativa, candidata, revisões validadas e ativações append-only por ambiente e workload.
+- Preview e Production consultam exclusivamente o Supabase quando `OPENAI_OPERATIONAL_CONFIG_ENABLED=true`; erro, ausência ou estado parcial bloqueia a execução e não retorna ao baseline local.
+- Development ignora o gate e usa o registry repo-side para manter execução local determinística.
+- A configuração dinâmica altera apenas os parâmetros permitidos pela modalidade: `model + reasoning effort` para texto e `model + quality` para imagem.
+- Política Web Search, tamanho, formato, compressão, moderação, prompts, schemas e timeouts permanecem code-owned quando não pertencem à unidade administrável.
+- O runtime não usa cache, Realtime, segunda residência ou resolução paralela.
 
-21.2.4 Gestão administrativa, validação, ativação e rollback
-- Status: Concluída; gestão administrativa, provas reais, lifecycle, QA hospedada e smoke mínimo de Production aprovados.
-- Automação: não.
-- `/admin/workloads-openai` passou a gerir ativa, candidata, prova, revisão validada pendente, ativação, histórico e rollback separadamente em Production e Preview; texto aceita somente `model + reasoning effort`, imagem somente `model + quality`, e o Supabase Inspect permanece referência read-only separada.
-- A página reautoriza `platform_admin` antes do read model service-role; cada action reexecuta o guard, deriva o ator no servidor, valida unidade, versão e shape tipado, e a E21.2.5 acrescenta a revalidação de elegibilidade corrente sem alterar concorrência otimista ou estados fail-closed.
-- A prova despacha fixture segura pelos quatro transportes existentes, não cria persistência funcional, benchmark, ranking ou decisão autônoma e só promove após sucesso; erro preserva a candidata e nunca altera a revisão ativa. A prova comercial reutiliza o parser comum do shape REST real de `/v1/responses`.
-- O Preview aprovou os quatro transportes, criação/edição/descarte de candidata, promoção, ativação, execução subsequente com nova revisão, isolamento de Production e rollback, além de papéis positivo/negativo, desktop 1440 × 900, mobile 390 × 844, estados de sucesso/erro, reconhecimento do lifecycle e checklist proporcional WCAG 2.2.
-- O smoke mínimo de Production confirmou as quatro baselines ativas e uma execução comercial real com origem `supabase_operational` e revisão 1, criando somente draft não publicado; a janela autenticada permaneceu sem erro ou warning no runtime.
-- O estado operacional hospedado mantém os seis workloads de produto de Preview e Production sem candidata ou revisão pendente; `taxon_input_catalog_sufficiency_evaluation` está na revisão operacional `2` ativa em Preview e Production, e `landing_page_dynamic_market_research` já existe em ambos os ambientes no bootstrap revisão `1`, não autorizado para transporte. A prova, promoção e ativação de revisão `2` ou posterior desse workload dinâmico ficam para o futuro recorte E19.3 consumidor. Os eventos append-only dos lifecycles anteriores permanecem preservados.
-- `OPENAI_API_KEY` permaneceu server-side e foi reutilizada sem cópia, exposição ou versionamento. A E21.3 não foi iniciada.
+21.2.4 Lifecycle administrativo e estado operacional
+- Cada Server Action reautoriza `platform_admin`, deriva o ator no servidor e valida ambiente, workload, versão, revisão e shape antes de qualquer mutação.
+- A candidata pode ser salva ou descartada; prova bem-sucedida permite promoção; ativação e rollback sempre exigem ação humana e preservam histórico.
+- Falha na prova mantém a candidata e não altera a revisão ativa. Conflito de versão permanece rejeição funcional, sem retry autônomo.
+- As revisões ativas dos workloads comuns continuam operacionais em Preview e Production. A avaliação de suficiência do catálogo está em revisão comprovada 2 nos dois ambientes, embora seu gate funcional próprio ainda não esteja comprovado como liberado.
+- A pesquisa dinâmica foi provada e ativada no lifecycle; em Preview, a geração integrada foi aprovada. Em Production, duas respostas dinâmicas inválidas bloquearam a geração antes de texto, imagem e append. O Core foi revertido para a versão anterior, mas configuração operacional, banco e histórico de IA permaneceram intactos.
+- Portanto, configuração ativa não equivale a aprovação end-to-end do consumidor. Nova liberação do Core depende de diagnóstico e validação específicos, sem alterar automaticamente o lifecycle E21.2.
 
-21.2.5 Catálogo administrável e UX compacta dos workloads OpenAI
-- Status: Concluída em 24/08/2026; catálogo aplicado e QA hospedado/autenticado integralmente aprovado em Production.
-- Automação: não.
-- O catálogo global separa elegibilidade corrente de novas candidatas do lifecycle por ambiente e workload; save e promoção revalidam a combinação de forma transacional, e a prova confirma a elegibilidade imediatamente antes do transporte sem manter lock durante a chamada externa.
-- Falha ou indisponibilidade exclusiva do catálogo bloqueia catálogo, save, prova e promoção, sem afetar resolução ativa, ativação de revisão validada ou rollback histórico; revisões e snapshots preservam qualquer identificador técnico com parâmetro tipado válido.
-- As leituras administrativas são completas, ordenadas e fail-closed; páginas acumuladas só são aceitas no término esperado, nunca após erro ou resposta parcial.
-- A superfície administrativa mantém catálogo global superior, seletor Preview/Production, lista compacta com cabeçalho sticky e um detalhe expandido; a geração de Landing Page agrupa texto e imagem apenas visualmente, preservando lifecycle independente.
-- A migration foi aplicada pelo fluxo canônico; o snippet read-only aprovou 8/8 verificações e o Security Controls não apresentou alerta incompatível com tabelas, constraints, RLS, policies, grants, RPCs ou triggers do catálogo. O INFO de RLS sem policy permaneceu compatível com a residência exclusiva de `service_role`.
-- O QA autenticado de Production aprovou `platform_admin` em desktop 1280 × 720 e mobile responsivo 482 × 698, sem overflow horizontal, com cabeçalho sticky, controles da superfície de 44 px ou mais, nomes/labels, lifecycle reconhecível e contraste de 5,54:1 no estado normal e 13,81:1 no hover dos botões primários.
-- O papel negativo foi redirecionado para o estado de acesso indisponível, sem formulário, catálogo, lifecycle ou controle administrativo exposto. O QA não alterou catálogo, candidata, revisão ou lifecycle; a E21.3 não foi iniciada.
+21.2.5 Catálogo administrável e UX
+- O catálogo global controla quais combinações podem originar novas candidatas; save, prova e promoção revalidam a elegibilidade corrente.
+- Indisponibilidade do catálogo bloqueia novas candidatas e promoções, mas não invalida revisões já ativas nem impede rollback para revisão histórica válida.
+- Modelos e parâmetros ficam separados por modalidade e podem ser disponibilizados ou retirados da seleção sem apagar o histórico.
+- A superfície administrativa combina catálogo, seletor Preview/Production, lista compacta e detalhe expandido. Texto e imagem da Landing Page podem ser agrupados visualmente, mas preservam lifecycle independente.
+- Leituras são completas, ordenadas e fail-closed; paginação parcial ou resposta inválida não produz estado administrativo utilizável.
+- O papel sem `platform_admin` não recebe catálogo, configuração, provas ou controles de mutação.
 
-21.3 Evidências e avaliação de custo-benefício dos workloads OpenAI
+21.3 Evidências e avaliação de custo-benefício
 
 21.3.1 Objetivo e status
-- Objetivo: produzir comparações reproduzíveis por workload considerando qualidade, sucesso, necessidade de correção humana, usage, latência, custo e estabilidade.
-- Status: Pausada por repriorização humana; o plano-base v1 da E21.3 já está na `main`, enquanto a implementação experimental da E21.3.3 permaneceu no PR #819, fechado sem merge.
-- Registrar a E19.4 como primeiro caso real de referência, especificamente:
-  - `landing_page_draft_generation`;
-  - `landing_page_draft_image_generation`.
-- Isso não reabre a E19.4.
+- Objetivo: comparar configurações por workload com evidência reproduzível de qualidade, validade, correção humana, usage, latência, custo e estabilidade.
+- Status: pausada e sem implementação incorporada ao produto. Não existe laboratório, banco, rota ou decisão automática de baseline em operação; qualquer retomada depende de nova decisão humana e de revalidação contra o estado vigente.
 
-21.3.3 Evidência experimental, pausa e limites de retomada
-- A implementação experimental da E21.3.3 e seu QA técnico em Preview permanecem preservados no PR fechado #819, sem aceite humano final de produto/UX e sem incorporação à `main`.
-- O PR #819 permanece referência histórica e técnica de retomada, incluindo plano v2, matriz, comparação Terra/Luna, decisões e aprendizados; sua implementação não constitui baseline automaticamente adotável.
-- A retomada da E21.3 deve comparar e revalidar a implementação do PR #819 contra a `main` então vigente antes de decidir qualquer reaproveitamento.
-- Unidade textual de comparação: `workload + modelo + reasoning effort`.
-- Workloads de mídia preservam configuração e métricas próprias.
-- Reutilizar observabilidade segura da E21.1.
-- `docs/openai-model-snapshot.md` permanece a residência das comparações decisórias.
-- Considerar, quando aplicável:
-  - qualidade;
-  - resultado válido;
-  - correção humana;
-  - input tokens;
-  - cached tokens;
-  - output tokens;
-  - reasoning tokens;
-  - latência;
-  - custo financeiro;
-  - estabilidade.
-- Não definir vencedor ou baseline universal antes de evidência representativa.
-- Não criar agora banco, tabela, rota, dashboard, job, engine, agente, automação ou infraestrutura.
+21.3.2 Registros do recorte
+- Referências:
+  - Critérios e snapshots decisórios: `docs/openai-model-snapshot.md`.
+  - Contratos de telemetria e configuração: `docs/base-tecnica.md` — seção 3.16.
 
-21.3.4 Continuação prevista
-- Status: Prevista e não iniciada; sua retomada permanece posterior à execução da E21.4 e depende de nova decisão humana.
+21.3.3 Condições de retomada
+- A unidade textual de comparação deve ser `workload + modelo + reasoning effort`; imagem mantém configuração e métricas próprias.
+- A avaliação deve reutilizar a observabilidade segura da E21.1 e considerar, quando disponíveis, resultado válido, qualidade, correção humana, tokens, latência, custo e estabilidade.
+- Não definir vencedor ou baseline universal sem amostra representativa e aceite humano.
+- Não criar banco, dashboard, job, agente, engine de otimização ou troca automática enquanto o recorte permanecer pausado.
 
 21.4 Visibilidade financeira e atribuição de custos OpenAI
 
 21.4.1 Objetivo e status
-- Objetivo: permitir ao `platform_admin` conhecer o gasto oficial total OpenAI do período e o custo prospectivo calculado das Landing Pages geradas, agregado por conta e detalhado por Landing Page nos workloads de texto e imagem, com a diferença apresentada como Outros gastos / reconciliação.
-- Status: concluída em 29/08/2026; implementação incorporada à `main`, apply canônico, snippet read-only, Security Controls, ativação e redeploy de Production, smoke real de texto/imagem, corte imutável e QA hospedado final aprovados. A E20.2.9 permanece um gate separado.
+- Objetivo: apresentar ao `platform_admin` o gasto oficial total da organização OpenAI e a parcela prospectivamente calculável dos workloads de texto e imagem das Landing Pages, com diferença explícita em Outros gastos / reconciliação.
+- Status: implementada e operacional em Production. A Costs API é a autoridade do total; o tracking interno cobre somente tentativas iniciadas após o corte registrado e pode produzir cobertura parcial em períodos que atravessem esse início.
 
 21.4.2 Registros do recorte
 - Banco:
@@ -2489,56 +2433,55 @@
     - `lib/openai-costs/decimal.ts`
     - `lib/openai-costs/providers/openAiCostsProvider.ts`
     - `lib/openai-costs/providers/openAiCostsProviderCore.ts`
+    - `lib/openai-costs/read-model-benchmark.ts`
+    - `lib/openai-costs/read-model-validation-cases.ts`
+    - `lib/openai-costs/fixtures/read-model-baseline.ts`
     - `lib/openai-costs/validation-cases.ts`
-    - `supabase/migrations/20260828131456_e21_4_4_openai_lp_cost_tracking.sql`
-    - `supabase/tests/e21_4_4_openai_lp_cost_tracking.test.sql`
-    - `supabase/snippets/e21_4_4_openai_lp_cost_tracking_verify.sql`
     - `app/admin/(protected)/custos-openai/actions.ts`
     - `app/admin/(protected)/custos-openai/page.tsx`
     - `app/admin/(protected)/custos-openai/_components/OpenAiCostsDashboard.tsx`
     - `app/admin/(protected)/custos-openai/validation-cases.tsx`
+    - `supabase/migrations/20260828131456_e21_4_4_openai_lp_cost_tracking.sql`
+    - `supabase/snippets/e21_4_4_openai_lp_cost_tracking_verify.sql`
+    - `supabase/tests/e21_4_4_openai_lp_cost_tracking.test.sql`
   - Ajustados:
-    - `package.json`
     - `lib/lp-builder/landingPageDraftCandidateWorkflow.ts`
     - `lib/lp-builder/landingPageDraftGeneration.ts`
     - `lib/lp-builder/landingPageDraftImageGeneration.ts`
     - `lib/lp-builder/adapters/landingPageDraftCandidateWorkflowAdapter.ts`
-    - `lib/lp-builder/landing-page-draft-generation-validation-cases.ts`
     - `lib/openai-workloads/contracts.ts`
     - `lib/openai-workloads/observability.ts`
     - `lib/openai-workloads/validation-cases.ts`
     - `components/admin/adminNavigation.ts`
+    - `package.json`
 - Referências:
-  - Plano-base v2 aprovado: `docs/lousa-plano-base-e21-4.md`.
-  - Matriz de consolidação: `docs/matriz-consolidacao-e21-4.md`.
-  - Boundary técnico: `docs/base-tecnica.md` — 3.16.
-  - Configuração administrativa OpenAI: `docs/platform-config.md` — 3.5 e 6.3.1.
+  - Boundary técnico: `docs/base-tecnica.md` — seção 3.16.
+  - Credenciais, gate e endpoints: `docs/platform-config.md` — seções 3.5 e 6.3.1.
+  - Contrato de banco: `docs/schema.md` — eventos e cobertura de custos OpenAI.
 
-21.4.3 Autoridade oficial de Costs
-- Status: implementada e validada em Preview e Production, com leitura oficial real de `US$ 0,4064` para agosto de 2026 e chave administrativa separada da chave de geração.
-- Automação: não.
-- Conteúdo:
-  - consultar sob demanda somente a Costs API com Admin API Key server-side para obter o gasto oficial total em USD no mês atual ou em período UTC personalizado;
-  - preservar o total oficial como autoridade organizacional completa, sem atribuição por heurística, Usage administrativo, saldo/créditos, cache, polling, cron ou fallback para preço local.
+21.4.3 Autoridade oficial de custos
+- A consulta sob demanda usa somente a Costs API da organização com `OPENAI_ADMIN_KEY` read-only e server-side.
+- O total oficial do período UTC é a autoridade organizacional e não é reconstruído por usage, tabela interna ou preço local.
+- A chave administrativa permanece separada de `OPENAI_API_KEY` e não atravessa client, banco, log ou resposta sanitizada.
+- Não há cache, polling, cron, leitura de saldo/créditos ou atribuição heurística do total oficial.
 
-21.4.4 Evidência prospectiva dos custos de Landing Pages
-- Status: concluída; migration aplicada, snippet read-only e Security Controls aprovados, gate habilitado somente em Production, smoke real de texto/imagem aprovado e corte imutável registrado uma única vez em `2026-08-29 21:55:36.827207+00`.
-- Automação: não.
-- Conteúdo:
-  - registrar prospectivamente evidências append-only das tentativas de `landing_page_draft_generation` e `landing_page_draft_image_generation` vinculadas ao contexto autorizado de conta e Landing Page; a cobertura confiável para agregação começa somente na data de corte explícita em Production;
-  - executar início e terminal do tracking em orçamento curto próprio e best effort, sem bloquear ou invalidar a geração por falha exclusivamente financeira;
-  - calcular custos internos com preços versionados e unidades efetivas, sem custo parcial ou inferido, mantendo tentativas não calculáveis fora da soma das LPs e dentro de Outros gastos / reconciliação por diferença;
-  - preservar somente status, código e tipo sanitizados de falha real do provider para diagnóstico administrativo agregado, sem mensagem, payload bruto ou detalhe financeiro interno no cliente.
+21.4.4 Tracking prospectivo das Landing Pages
+- `OPENAI_LP_COST_TRACKING_ENABLED=true` habilita o tracking somente em Production; Preview e Development permanecem fora.
+- O escopo financeiro interno cobre `landing_page_draft_generation` e `landing_page_draft_image_generation`. A pesquisa dinâmica mantém usage e latência operacionais, mas não recebe atribuição monetária causal à Landing Page.
+- Cada tentativa registra início e terminal append-only em orçamento curto e best effort. Falha ou timeout exclusivamente financeiro não bloqueia a chamada OpenAI nem invalida geração bem-sucedida.
+- Custo interno é calculado apenas quando há unidades e preço versionado suficientes. Tentativa pendente ou sem preço fica fora da soma atribuída e dentro da reconciliação.
+- Falhas preservam somente status, código e tipo sanitizados; mensagem, payload bruto e detalhe sensível não são persistidos.
+- A cobertura confiável começa no corte imutável registrado; não há backfill nem reconstrução de tentativas anteriores.
 
-21.4.5 Custos OpenAI e reconciliação administrativa
-- Status: concluída; prova oficial, instrumentação de Production e QA hospedado final aprovados.
-- Automação: não.
-- Conteúdo:
-  - criar superfície separada para `platform_admin` com total oficial, custos prospectivos calculados das LPs, Outros gastos / reconciliação e aprofundamento conta → Landing Page → texto/imagem;
-  - consultar sob demanda o provider oficial e o read model interno em paralelo, com paginação completa e reconciliação decimal exata, sem clamp;
-  - distinguir cobertura completa, parcial, degradada e indisponível, deixando explícito que falhas anteriores ao início persistido não são individualizáveis e permanecem no residual;
-  - o QA pré-merge aprovou desktop/mobile, contraste e estados seguros; o QA final de Production aprovou período atual/personalizado, atualização sob demanda, Costs oficial, atribuição por conta/LP/texto/imagem, Outros gastos/reconciliação, cobertura coerente com o corte, atalhos externos e bloqueio do papel negativo;
-  - adiar classificação financeira ampla, workloads adicionais, reconstrução histórica, créditos, câmbio, cobrança, AI Gateway, CDC e qualquer infraestrutura não indispensável ao núcleo aprovado.
+21.4.5 Read model e reconciliação administrativa
+- `/admin/custos-openai` consulta em paralelo o total oficial e o read model interno, com período atual ou personalizado, atualização sob demanda e acesso exclusivo de `platform_admin`.
+- O read model pagina eventos ordenados, agrega incrementalmente com decimais exatos e mantém memória proporcional à página mais os grupos exigidos pela saída, sem reter todas as linhas.
+- Páginas repetidas, regressivas, inválidas ou interrompidas falham fechado; fim de paginação por resposta vazia ou contrato PostgREST aplicável é tratado explicitamente.
+- O resultado detalha conta → Landing Page → workload, tentativas, pendências, itens sem preço e cobertura. Outros gastos / reconciliação é a diferença decimal entre total oficial e soma atribuível, sem clamp.
+- A superfície distingue cobertura completa, parcial, degradada e indisponível e não individualiza falhas anteriores ao início persistido.
+- O smoke autenticado de Production aprovou leitura oficial, atribuição prospectiva, reconciliação, cobertura parcial e bloqueio do papel comum após a evolução incremental do read model.
+- Permanecem limites explícitos: a RPC ainda materializa, ordena e aplica offset; não existe snapshot transacional entre páginas; a validação hospedada não comprova volume arbitrário nem ganho de tempo SQL.
+- Classificação financeira ampla, outros workloads, câmbio, cobrança, créditos e reconstrução histórica permanecem fora do escopo vigente.
 
 22. E22 — Retirada controlada de ativos históricos
 - Objetivo: reduzir a superfície histórica que não participa do caminho canônico vigente, preservando consumidores reais e preparando a sequência E19.4 concluída → E22.1 → E19.5.
