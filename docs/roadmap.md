@@ -22,22 +22,45 @@
 • 2026-02 — Supabase: Project Clone / Restore to a New Project (beta) pode ficar indisponível; sem impacto no runtime do projeto existente. Não depender disso para staging/espelho/backup. Se precisar duplicar ambiente: criar projeto novo + aplicar migrations do repositório + configurar env/secrets manualmente.
 
 1. E1 — Estrutura de Dados
+- Objetivo: estabelecer a base estrutural multi-tenant para contas, vínculos de usuários, planos, parceiros e auditoria.
+- Status: concluído; a base permanece em uso e seu contrato atual é mantido em `docs/schema.md` e nos recortes posteriores que a evoluíram.
 
-1.1 Status
-• Concluído (03/10/2025)
-1.2 Implementado
-• Tabelas: accounts, account_users, audit_logs, plans, partners, partner_accounts
-• Views: v_access_context_v2, v_account_effective_limits, v_account_effective_limits_secure, v_audit_logs_norm
-• Constraints e índices otimizados
-1.3 Critérios de Aceite
-• Multi-tenant funcional (subdomain/domain UNIQUE)
-• 1 owner ativo por conta
-• Auditoria automática
-1.4 Pendências
-• Nenhuma
-1.5 Updates externos (avaliar)
-• 2026-01 — Supabase: Index Advisor (Table Editor) — Link: https://supabase.com/docs/guides/database/extensions/index_advisor
-• Nota: quando revisitar performance/índices, rodar o advisor e avaliar recomendações antes de criar índices novos (sem auto-aplicar).
+1.1 Base estrutural multi-tenant
+
+1.1.1 Objetivo e status
+- Objetivo: disponibilizar as entidades e relações iniciais necessárias para identificar contas, vincular usuários, associar planos e parceiros e registrar auditoria.
+- Status: concluído em 03/10/2025; estruturas preservadas no estado atual do produto.
+
+1.1.2 Registros do recorte
+- Banco:
+  - Criados:
+    - `public.accounts`;
+    - `public.account_users`;
+    - `public.audit_logs`;
+    - `public.plans`;
+    - `public.partners`;
+    - `public.partner_accounts`;
+    - `public.v_access_context_v2`;
+    - `public.v_account_effective_limits`;
+    - `public.v_account_effective_limits_secure`;
+    - `public.v_audit_logs_norm`.
+- Referências:
+  - Contrato atual do banco: `docs/schema.md` — seções 1, 2 e 4.
+
+1.1.3 Invariantes preservados
+- Status: implementado e vigente.
+- Conteúdo:
+  - contas mantêm identificadores únicos de subdomínio, domínio e slug;
+  - vínculos entre conta e usuário permanecem únicos por par `account_id` e `user_id`;
+  - cada conta mantém um `owner_user_id`, e o ciclo de membros protege a permanência de ao menos um owner ativo;
+  - `audit_logs` permanece como destino da auditoria das estruturas centrais governadas pelo Trigger Hub.
+
+1.1.4 Limite do recorte
+- Status: vigente.
+- Conteúdo:
+  - a E1 registra somente a fundação estrutural inicial;
+  - tabelas, views, funções, constraints, índices e políticas adicionados ou alterados posteriormente pertencem aos respectivos recortes do roadmap;
+  - o contrato completo e atual do banco reside exclusivamente em `docs/schema.md`.
 
 2. E2 — Núcleo de Acesso
 
