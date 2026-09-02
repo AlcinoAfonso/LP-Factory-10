@@ -1191,11 +1191,11 @@
 - O layout protege a superfície e cada Server Action reexecuta `requirePlatformAdmin`.
 - Publicação, composição, elegibilidade, renderer e fallback permanecem definidos pela E10.7; a E12 não introduz editor visual nem LP Builder.
 
-12.4 Gestão do perfil de orientação — retirada
+12.4 Perfil de orientação — retirado
 
 12.4.1 Objetivo e status
 - Objetivo: registrar o encerramento da antiga operação administrativa de perfis de orientação.
-- Status: retirada pela E22.1.4; não existe rota, navegação ou boundary vigente para esse domínio.
+- Status: retirado pela E22.1.4; não existe rota, navegação ou boundary vigente para esse domínio.
 
 12.4.3 Estado e destino
 - `/admin/perfis-de-orientacao`, `generation-profile`, seus adapters, exports, validator e workload de proposta foram removidos.
