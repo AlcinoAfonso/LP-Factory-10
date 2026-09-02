@@ -1675,21 +1675,23 @@
 - O caminho E19.3 → E19.4 não depende deste catálogo.
 
 19. E19 — LP Builder
-- Objetivo: Consolidar o fluxo Core de landing pages por conta, da identidade mínima em `draft` às futuras etapas de geração, revisão, materialização e publicação, sempre por recortes aprovados.
-- Status: E19.1, E19.2 e E19.3 concluídas. E19.4.3, E19.4.4 e E19.4.5 concluídas; a E19.4 está encerrada e integrada à `main` pelo PR #776. A revisão 3 permanece preservada como baseline dos gaps persuasivos observados. A E19.5.3 está concluída e operacional em Preview e Production após os gates pós-merge e os smokes autenticados com a E20.2 v5.
+- Objetivo: manter o domínio Core de landing pages por conta, cobrindo identidade, configuração, geração controlada, revisões materializadas, Preview privado e aprovação humana.
+- Status: identidade, onboarding, workspace, geração base, histórico e aprovação implementados; workspace habilitado em Preview e Production. A integração de conhecimento E20.7 está mergeada no repositório, mas seu rollout end-to-end em Production permanece contido em deployment anterior após falha segura, sem nova materialização.
 
-19.1 Criação produtiva mínima de LP por conta
+19.1 Identidade e criação de landing page
 
 19.1.1 Objetivo e status
-- Objetivo: Criar a identidade mínima de uma LP real pertencente à conta, sem antecipar geração de conteúdo, revisão ou publicação.
-- Status: Concluído em 30/06/2026.
+- Objetivo: criar e manter a identidade tenant-safe de cada LP antes de conteúdo, revisão ou publicação.
+- Status: Implementado; novas LPs nascem em `draft`.
 
 19.1.2 Registros do recorte
 - Banco:
   - Criados:
-    - `public.account_landing_pages`
-    - `account_landing_pages_select_member_or_platform`
-    - `account_landing_pages_set_updated_at`
+    - `account_landing_pages`
+    - policy `account_landing_pages_select_member_or_platform`
+    - trigger `account_landing_pages_set_updated_at`
+  - Ajustados:
+    - constraint `account_landing_pages_status_chk`
 - Repositório:
   - Criados:
     - `app/lp-builder/actions.ts`
@@ -1697,423 +1699,258 @@
     - `lib/lp-builder/adapters/landingPagesAdapter.ts`
     - `lib/lp-builder/index.ts`
     - `supabase/migrations/20260630210213_e19_account_landing_pages.sql`
+    - `supabase/migrations/20260820214422_e19_5_expand_landing_page_status.sql`
     - `supabase/snippets/e19_account_landing_pages_verify.sql`
 - Referências:
   - Contrato de banco: `docs/schema.md` — `account_landing_pages`.
-  - Plano encerrado: `docs/lousa-plano-base-E19.md`.
+  - Boundary técnico: `docs/base-tecnica.md` — seção 3.14.4.
 
-19.1.3 Identidade mínima e persistência
-- Status: Implementadas.
-- Conteúdo:
-  - A LP nasce com status inicial `draft` e pertence a uma conta.
-  - A persistência mínima ocorre em `public.account_landing_pages`.
-  - Nome não pode ser vazio.
-  - Slug segue formato seguro e é único por conta.
+19.1.3 Criação e identidade
+- A LP pertence a uma conta, exige nome não vazio e usa slug seguro e único dentro da conta.
+- A criação é server-side e exige usuário autenticado, conta `active`, membership `active` com papel `owner` ou `admin` e entitlement comercial válido.
+- Falha de acesso ou entitlement ocorre antes da persistência.
+- O schema aceita `draft`, `active` e `archived`; criação continua limitada a `draft`, e o runtime operacional atual aceita `draft` ou `active`.
+- A identidade não incorpora conteúdo, configuração ou snapshot.
 
-19.1.4 Gate comercial e operacional
-- Status: Implementado server-side antes da persistência.
-- Conteúdo:
-  - A criação exige conta `active`.
-  - A criação exige membership `active` com papel `owner` ou `admin`.
-  - A criação exige entitlement comercial válido via E9.
-  - Ausência de entitlement falha fechado antes do insert.
-  - O recorte não resolve taxon, pesquisas, catálogo de entradas ou perfil de orientação.
+19.1.4 Boundary e limites
+- O boundary canônico é `lib/lp-builder/`; UI e Server Actions não acessam o banco diretamente.
+- Account Dashboard é consumidor da E19, não proprietário do domínio.
+- Não existe publicação pública, domínio customizado, hard delete, tracking, analytics ou teste A/B neste recorte.
+- Não há superfície operacional para ativar, arquivar ou restaurar uma LP.
 
-19.1.5 Boundary e limites do recorte
-- Status: Consolidados.
-- Conteúdo:
-  - E19 pertence à camada Core; o boundary vigente é `lib/lp-builder/` e a action server-side canônica é `app/lp-builder/actions.ts`.
-  - Account Dashboard, Admin Dashboard e Partner Dashboard podem fornecer superfícies consumidoras, mas não são proprietários do domínio da E19.
-  - O recorte concluído não gera conteúdo, não coleta valores da E20.2, não compõe E10.8/E18.4/E18.5/E20.2/E20.3 e não cria snapshot.
-  - Revisão, materialização, renderer, publicação, edição, regeneração e evolução entre planos permanecem para o plano-base próprio da próxima evolução da E19.
-  - Editor visual, domínio customizado, analytics, teste A/B, automação, agente, job e rotina recorrente permanecem fora deste recorte.
-
-19.2 Onboarding e configuração mínima da conta para LP Starter
+19.2 Onboarding e handoff para configuração operacional
 
 19.2.1 Objetivo e status
-- Objetivo: Criar a experiência pós-entitlement que configura a conta e os valores mínimos necessários para iniciar a primeira LP Starter, sem gerar conteúdo, materializar a LP final ou publicar.
-- Status: Concluído: PR #700 mergeado, migration aplicada, verificador SQL read-only aprovado e validação funcional hospedada autenticada concluída.
+- Objetivo: coletar e validar os valores mínimos da primeira LP após o entitlement, preservar retomada e transferir a autoridade para a residência operacional da LP.
+- Status: Implementado; configuração histórica permanece como bootstrap/proveniência e deixa de ser fallback após o handoff.
 
 19.2.2 Registros do recorte
+- Banco:
+  - Criados:
+    - `account_landing_page_onboarding_configurations`
 - Repositório:
   - Criados:
     - `lib/lp-builder/onboardingConfiguration.ts`
     - `lib/lp-builder/adapters/onboardingConfigurationAdapter.ts`
     - `lib/lp-builder/adapters/onboardingConfigurationAdapterCore.ts`
-    - `lib/lp-builder/validation-cases.ts`
     - `app/a/[account]/_components/OnboardingConfigurationJourney.tsx`
     - `app/a/[account]/_components/OnboardingCompletionJourney.tsx`
-    - `app/a/[account]/_components/onboarding-configuration-action-contract.ts`
-    - `app/a/[account]/_components/onboarding-journey-policy.ts`
     - `app/a/[account]/account-journey-loader.ts`
-    - `app/a/[account]/_components/onboarding-journey-validation-cases.ts`
     - `app/a/[account]/onboarding-configuration-actions.ts`
     - `supabase/migrations/20260807162417_e19_2_3_account_landing_page_onboarding_configuration.sql`
     - `supabase/snippets/e19_2_3_account_landing_page_onboarding_configuration_verify.sql`
     - `supabase/tests/e19_2_3_account_landing_page_onboarding_configuration.test.sql`
   - Ajustados:
-    - `lib/lp-builder/contracts.ts`
-    - `lib/lp-builder/index.ts`
     - `app/a/[account]/page.tsx`
-    - `package.json`
-- Updates:
-  - Aplicados:
-    - `supa#40`
-    - `prod#14`
-    - `prod#17`
-
-19.2.3 Contrato de configuração, completude e persistência mínima
-- Status: Implementado e validado após o merge: migration aplicada e verificador SQL hospedado aprovado.
-- Conteúdo:
-  - O boundary `lib/lp-builder/` resolve o catálogo E20.2 por versão e taxonomia autoritativa, valida valores por `fieldKey` e escopo, reutiliza fontes autoritativas sem duplicá-las e deriva completude sem `onboarding_status`.
-  - A persistência candidata usa um agregado 1:1 por conta, revisão otimista, FK tenant-safe e vínculo de `landing_page_id` write-once; o Data API permanece restrito ao adapter server-only com `service_role`, sem grants de cliente ou DELETE operacional.
-  - O runtime distingue ausência legítima, objeto ainda indisponível e falha operacional; nenhum `draft`, bucket, upload, Storage, UI ou infraestrutura de assets foi criado nesta subseção.
-  - Casos executáveis cobrem progresso parcial, completude derivada, precedência autoritativa, isolamento por conta, ator autorizado, contrato da migration, concorrência otimista e proteções de vínculo.
-
-19.2.4 Jornada guiada pós-entitlement e retomada
-- Objetivo: Substituir a permanência na experiência comercial por uma jornada curta de onboarding quando a conta elegível estiver incompleta.
-- Status: Implementado e validado na jornada hospedada autenticada.
-- Conteúdo:
-  - A superfície autenticada deriva os estados comercial, onboarding, operacional e bloqueado a partir de papel, entitlement e configuração; conta sem entitlement preserva a experiência comercial e objeto de configuração ainda indisponível mantém o fallback anterior.
-  - Owner ou admin elegível com configuração incompleta recebe uma jornada responsiva em dois passos, com taxon somente leitura, valores autoritativos reutilizados e campos existentes derivados do catálogo E20.2, sem lista de domínio paralela.
-  - Avançar, voltar e sair salvam o agregado por Server Action fina e boundary `lib/lp-builder/`; erro localizado preserva os demais valores e conflito de revisão solicita recarga explícita.
-  - A jornada usa componentes vigentes, associação entre label, hint e erro, foco após transição ou falha, alvos de ação ampliados e operação por teclado; identidade visual, logo, draft, geração, tracking e IA permanecem fora desta subseção.
-
-19.2.5 Identidade visual mínima da conta
-- Objetivo: Permitir confirmar a identidade visual mínima necessária ao Starter sem IA e sem tornar logo obrigatório.
-- Status: Implementado e validado na jornada hospedada autenticada.
-- Conteúdo:
-  - A E19.2.5 adiciona um terceiro passo à jornada, com três paletas iniciais e edição humana dos cinco papéis canônicos `primary`, `secondary`, `accent`, `background` e `text`, sem catálogo paralelo de campos.
-  - O boundary valida formato e contraste de modo determinístico: texto exige razão mínima 4,5:1 contra o fundo e cores principal, secundária e de destaque exigem 3:1.
-  - Somente paleta válida pode ser persistida e participar da completude derivada; a prévia exibe leitura e destaques antes do save.
-  - Logo permanece opcional e ausente quando não existe referência canônica autoritativa; nenhum campo livre, upload, bucket, Storage, Blob, URL ou infraestrutura de assets foi criado, e referência não autoritativa não é persistida pelo runtime.
-
-19.2.6 Revisão, conclusão e transição para LP `draft`
-- Objetivo: Concluir a configuração derivada e transferir a conta para o espaço operacional sem criar LP antes da hora.
-- Status: Implementado e validado no fluxo hospedado autenticado integrado.
-- Conteúdo:
-  - Configuração completa sem vínculo entra em revisão final; configuração incompleta não consulta nem cria LP, e configuração já vinculada segue para o estado operacional sem persistir `onboarding_status`.
-  - A leitura server-only do boundary `lib/lp-builder/` retorna zero, um ou vários drafts legítimos da conta em ordem determinística e preserva falha operacional como erro, sem consulta direta da página, UI ou Server Action a `account_landing_pages`.
-  - Zero drafts permite criação explícita pelo fluxo E19.1; um ou vários drafts exigem seleção humana explícita, sem escolha silenciosa, duplicação automática ou limite de quantidade antecipado.
-  - O agregado é vinculado somente ao draft escolhido da mesma conta, com revisão otimista, predicado de ausência de vínculo e mutação limitada a uma linha; valores não são copiados para `account_landing_pages` e rebind permanece proibido.
-  - A transição não inicia geração, revisão de copy, publicação, tracking, CRM, capability nova ou infraestrutura de assets.
-
-19.2.7 Evolução do catálogo operacional e handoff para E19.5
-
-19.2.7.1 Objetivo e status
-- Objetivo: Permitir que o onboarding pré-handoff opere contra a versão E20.2 explicitamente revisada para o taxon, preserve valores válidos durante a evolução e deixe E19.5 como única autoridade operacional após o vínculo da primeira jornada.
-- Status: Implementação do boundary concluída no PR #802; a E20.2 v5 está executável e operacionalmente autorizada para o taxon servido `Corretor Imóveis` (`corretor-imoveis`) por `reviewed_input_catalog_version = 5`.
-
-19.2.7.2 Registros do recorte
-- Repositório:
-  - Ajustados:
     - `lib/lp-builder/contracts.ts`
     - `lib/lp-builder/index.ts`
-    - `lib/lp-builder/adapters/onboardingConfigurationAdapter.ts`
-    - `lib/lp-builder/adapters/onboardingConfigurationAdapterCore.ts`
-    - `lib/lp-builder/validation-cases.ts`
-    - `app/a/[account]/onboarding-configuration-actions.ts`
-    - `app/a/[account]/_components/OnboardingConfigurationJourney.tsx`
-    - `app/a/[account]/_components/onboarding-journey-validation-cases.ts`
+    - `package.json`
 - Referências:
-  - Plano do recorte: `docs/lousa-plano-base-e19-2.md` — 3.6.
-  - Autoridade E20.6: `docs/lousa-plano-base-e20-6.md` — preparação por versão revisada.
-  - Handoff operacional: `docs/lousa-plano-base-e19-5.md` — fronteira E19.2/E19.5.
+  - Catálogo de entradas e versão vigente: `docs/roadmap.md` — seção 20.2.
+  - Contrato de banco: `docs/schema.md` — `account_landing_page_onboarding_configurations`.
 
-19.2.7.3 Autoridade pré-handoff e revalidação
-- Status: Implementado no boundary server-side.
-- Conteúdo:
-  - A E19.2 consome `loadTaxonPreparationForReviewedVersion` para resolver `reviewed_input_catalog_version` do taxon servido; a versão enviada pelo client e qualquer `latest`, maior chave ou fallback deixam de ser autoridade.
-  - Antes do handoff, a configuração é resolvida pelo catálogo autorizado, preserva valores ainda válidos e pode evoluir `catalog_version` do agregado após revalidação e persistência válidas; a completude continua derivada e novos obrigatórios permanecem pendentes até preenchimento humano.
-  - Ausência, divergência, versão não executável ou falha da preparação bloqueiam fechado. A E19.2 não promove a v5; somente a consome quando o taxon a autoriza pela E20.6.
+19.2.3 Configuração e completude
+- O boundary resolve a versão revisada autorizada para o taxon, atualmente alinhada ao catálogo E20.2 v6, e não aceita versão enviada pelo client, `latest` ou maior chave por inferência.
+- Valores são validados por `fieldKey`, tipo, escopo, plano e cadeia taxonômica; valores autoritativos são reutilizados sem duplicação.
+- Completude é derivada e não possui `onboarding_status` persistido.
+- O agregado é 1:1 por conta, usa revisão otimista e mantém `landing_page_id` write-once.
+- Ausência, divergência ou versão não executável da preparação falha fechado.
 
-19.2.7.4 Handoff e UI declarativa
-- Status: Implementado conforme o contrato do plano-base.
-- Conteúdo:
-  - Após o handoff válido da E19.2, o agregado permanece bootstrap/histórico, não sofre novas atualizações operacionais nem serve fallback; E19.5 assume a autoridade operacional, com materialização de suas residências somente de forma lazy.
-  - A jornada remove a autoridade do hidden `catalog_version`, continua derivando fields, tipos, obrigação, opções e condições do E20.2 resolvido e usa humanização localizada de `fieldKey` apenas quando não há label amigável existente; paleta e logo mantêm suas especializações.
-  - Não houve nova persistência, migration, schema, estado de migração, registry paralelo, backfill, upload ou infraestrutura de assets.
+19.2.4 Jornada e identidade visual
+- Conta elegível e incompleta recebe jornada guiada; conta sem entitlement preserva a experiência comercial.
+- Campos são derivados do catálogo E20.2 e não de uma lista paralela na UI.
+- A identidade visual usa os papéis `primary`, `secondary`, `accent`, `background` e `text`, com validação determinística de formato e contraste.
+- Logo permanece opcional e depende de referência canônica; não há upload, bucket ou infraestrutura própria de assets no onboarding.
+- Save parcial preserva progresso; conflito de revisão exige recarga explícita.
 
-19.2.7.5 Validação e autoridade vigente
-- Status: Validado nos casos focais locais com a v5 executável; avaliação E20.6 suficiente sem gaps candidatos e decisão administrativa humana confirmada para o taxon servido.
-- Conteúdo:
-  - Os casos executáveis cobrem evolução pré-handoff com versão autorizada executável, preservação de valor, payload de client adulterado sem efeito, autoridade ausente/divergente, isolamento tenant-safe e bloqueio de atualização após handoff; os validadores de catálogo, preparação E20.6, contexto de geração e jornada permanecem aprovados.
-  - Após a reconciliação com a `main` que contém o PR #803, os casos comprovam literalmente o agregado histórico/current em v2, a autoridade operacional simulada em v5, a preservação de valores válidos, `business_offerings_summary` opcional, `primary_conversion_goal` obrigatório, incompletude sem esse valor e evolução confirmada de `catalog_version` para 5.
-  - A autoridade operacional real registra `reviewed_input_catalog_version = 5` para `Corretor Imóveis` (`corretor-imoveis`); a E19.2 consome esse estado sem fallback ou inferência e não o promove.
+19.2.5 Conclusão e handoff
+- Configuração incompleta não cria nem seleciona LP.
+- Com configuração completa, zero drafts permite criação explícita; um ou vários drafts exigem seleção humana, sem escolha silenciosa.
+- O vínculo ocorre somente com LP da mesma conta e não pode ser refeito.
+- A residência histórica pode inicializar a LP vinculada até a criação lazy das configurações operacionais.
+- Depois do handoff, `account_landing_page_shared_configurations` e `account_landing_page_configurations` são as únicas autoridades editáveis; o agregado da E19.2 permanece somente como bootstrap e proveniência.
 
-19.3 Pacote autorizado para geração no Cenário E
+19.3 Contexto autorizado e conhecimento para geração
 
 19.3.1 Objetivo e status
-- Objetivo: manter a E19.3 como o menor boundary determinístico entre as fontes autorizadas do projeto e a E19.4, entregando um único pacote autorizado com pesquisa integral, fatos concretos revalidados, limites editoriais e contexto operacional.
-- Status: Concluída; implementação validada e mergeada pelo PR #757 no contrato v3.
+- Objetivo: compilar um pacote único, imutável e autorizado para a geração, separando contexto semântico do modelo e valores operacionais server-side.
+- Status: contrato v4 vigente para o workspace; contrato v3 preservado para revisões e rollback históricos. Integração E20.7 presente no repositório, com rollout de Production contido.
 
 19.3.2 Registros do recorte
 - Repositório:
-  - Ajustados:
-    - `app/a/[account]/page.tsx`
-    - `lib/conversion-content/adapters/selectedEndCustomerResearchAdapter.ts`
-    - `lib/conversion-content/landing-page/index.ts`
-    - `lib/conversion-content/landing-page/taxon-preparation/validation-cases.ts`
-    - `lib/lp-builder/adapters/generationContextAdapter.ts`
-    - `lib/lp-builder/adapters/generationContextAdapterCore.ts`
-    - `lib/lp-builder/generation-context-validation-cases.ts`
+  - Criados:
     - `lib/lp-builder/generationContext.ts`
     - `lib/lp-builder/generationContextContracts.ts`
+    - `lib/lp-builder/adapters/generationContextAdapter.ts`
+    - `lib/lp-builder/adapters/generationContextAdapterCore.ts`
+    - `lib/lp-builder/landingPageGenerationKnowledge.ts`
+    - `lib/lp-builder/adapters/landingPageGenerationKnowledgeAdapter.ts`
+    - `lib/lp-builder/generation-context-validation-cases.ts`
+  - Ajustados:
+    - `lib/lp-builder/landingPageDraftCandidateWorkflow.ts`
+    - `lib/lp-builder/adapters/landingPageDraftCandidateWorkflowAdapter.ts`
     - `lib/lp-builder/index.ts`
-    - `lib/openai-workloads/contracts.ts`
-    - `lib/openai-workloads/registry.ts`
-    - `lib/openai-workloads/validation-cases.ts`
     - `package.json`
-  - Excluídos:
-    - `app/a/[account]/_components/LandingPageDraftJourney.tsx`
-    - `app/a/[account]/_components/landing-page-generation-action-contract.ts`
-    - `app/a/[account]/landing-page-actions.ts`
-    - `app/a/[account]/landing-pages/[landingPageId]/preview/page.tsx`
-    - `lib/conversion-content/landing-page/materialization.ts`
-    - `lib/conversion-content/landing-page/materialized-renderer.tsx`
-    - `lib/lp-builder/adapters/landingPageDraftGenerationAdapter.ts`
-    - `lib/lp-builder/adapters/landingPageGenerationOpenAiAdapter.ts`
-    - `lib/lp-builder/adapters/landingPageMaterializationAdapter.ts`
-    - `lib/lp-builder/adapters/landingPageMaterializationAdapterCore.ts`
-    - `lib/lp-builder/adapters/landingPagePreviewAdapter.ts`
-    - `lib/lp-builder/adapters/materializeFirstLandingPageDraftAdapter.ts`
-    - `lib/lp-builder/landing-page-generation-validation-cases.ts`
-    - `lib/lp-builder/landing-page-materialization-validation-cases.ts`
-    - `lib/lp-builder/landing-page-preview-validation-cases.tsx`
-    - `lib/lp-builder/landingPageDraftGeneration.ts`
-    - `lib/lp-builder/landingPageGeneration.ts`
-    - `lib/lp-builder/landingPageGenerationContracts.ts`
-    - `lib/lp-builder/landingPageMaterialization.ts`
-    - `lib/lp-builder/landingPageMaterializationContracts.ts`
-    - `lib/lp-builder/landingPagePreview.ts`
-    - `lib/lp-builder/materializeFirstLandingPageDraft.ts`
-- Updates:
-  - Aplicados:
-    - `prod#19`
+    - `package-lock.json`
 - Referências:
-  - Contrato técnico: `docs/base-tecnica.md` — 3.14.4.
-  - Configuração operacional: `docs/platform-config.md` — configuração efetiva dos workloads OpenAI de produto.
-  - Plano-base v2 aprovado: `docs/lousa-plano-base-e19-3.md`.
+  - Preparação factual e pesquisas: `docs/roadmap.md` — seções 20.5, 20.6 e 20.7.
+  - Parametrização raiz: `docs/roadmap.md` — seção 18.4.
+  - Workloads e configuração operacional: `docs/platform-config.md`.
 
-19.3.3 Contrato v3, pesquisa integral e revalidação
-- Status: Concluída e mergeada pelo PR #757.
-- Conteúdo:
-  - A interface permanece exatamente `identities + modelContext + serverContext` e usa exclusivamente `contractVersion: 3`, sem alias ou fallback para v2.
-  - A operação aditiva `loadTaxonPreparationForReviewedVersion` faz uma única leitura canônica, usa a versão E20.2 revisada persistida como requisito explícito e preserva integralmente `loadTaxonPreparationForVersion` e seu controle negativo de incompatibilidade.
-  - A resolução usa o plano efetivo atual e a cadeia taxonômica autoritativa completa pelo resolver canônico, sem constante fixa, `latest`, maior versão do registry, slug ou layer codificado.
-  - Os valores históricos da E19.2 são revalidados read-only contra o catálogo efetivo, mantendo distintas e auditáveis a versão original da configuração e a versão E20.2 efetivamente usada.
-  - Novo field obrigatório aplicável, valor ausente ou incompatível retorna como gap factual à E19.2; defeito de catálogo, cadeia ou resolver retorna à E20.2, sem correção silenciosa ou regravação da configuração histórica.
-  - A pesquisa integral `end_customer` selecionada pela E20.5 chega ao `modelContext` sem resumo, atomização, ranking, seleção semântica, filtragem editorial ou leitura filesystem duplicada; `business_buyer` permanece ausente do contexto do modelo, sem depender do boundary histórico E10.8.
-  - Fatos permanecem separados por `valueType`, com valores operacionais brutos fora do `modelContext` e sem path físico da pesquisa no contrato entregue à E19.4.
-  - A prova read-only no draft real confirmou `E19.2 v2 → E20.2 v4`, pesquisa integral `end_customer` v1, separação entre fatos semânticos e operacionais, ausência de path físico e imutabilidade profunda como primeiro caso do mecanismo genérico temporal e taxonômico.
-  - `npm ci`, `npm run check`, os validadores focais e `git diff --check` foram aprovados; o lint permaneceu sem erros e seus warnings preexistentes não ampliaram o recorte.
-  - A E19.3 não implementa a E19.4, não chama OpenAI, não escolhe composição, não materializa conteúdo e não renderiza a landing page.
+19.3.3 Pacote de geração
+- O sucesso expõe somente `identities`, `modelContext` e `serverContext`; falhas não retornam pacote parcial.
+- A compilação revalida plano, cadeia taxonômica, catálogo E20.2 efetivo, configurações e parametrização raiz.
+- Fatos semanticamente visíveis permanecem em `modelContext.facts`; destinos e valores operacionais brutos ficam em `serverContext.facts`.
+- A pesquisa `end_customer` autorizada chega integralmente ao contexto consultivo, sem path físico; `business_buyer` não integra o contexto da LP.
+- O contrato v4 registra separadamente versões e revisões das configurações compartilhada e específica da LP.
+- Readers preservam o par histórico snapshot v1/contexto v3 e o par atual snapshot v2/contexto v4, sem cruzamento ou preenchimento retroativo.
 
-19.4 Geração e materialização da landing page em `draft`
+19.3.4 Integração E20.7 no repositório
+- Somente o workflow de candidata v4 resolve conhecimento; o caminho legado v3 conserva a pesquisa original.
+- A resolução mantém fatos, identidades e binding inalterados e pode retornar base, pesquisa especializada ou complemento dinâmico.
+- Complemento dinâmico exige configuração operacional provada, ocorre antes dos workloads de texto e imagem e usa o mesmo `attemptId` e `requestId`.
+- O resultado consultivo remove paths internos, é exatamente o conteúdo enviado ao workload textual e integra o snapshot da nova revisão.
+- Leituras e transporte respeitam o deadline total da tentativa; timeout, configuração indisponível ou resposta inválida falham fechado, sem retry, fallback ou materialização parcial.
+
+19.3.5 Estado operacional da integração
+- O caminho integrado foi aprovado no Preview com geração completa e nova revisão.
+- Em Production, canário e ativação da configuração passaram, mas duas tentativas completas retornaram resposta dinâmica inválida antes de texto e imagem; nenhuma revisão foi anexada.
+- O Core em Production foi revertido ao deployment anterior, promoções automáticas ficaram suspensas e nenhuma nova geração foi executada após a contenção.
+- O código integrado permanece na `main`; portanto merge e configuração ativa não equivalem a rollout end-to-end aprovado.
+- Workspace, histórico, revisões e mídia permaneceram legíveis durante a contenção.
+
+19.4 Geração, materialização e Preview privado
 
 19.4.1 Objetivo e status
-- Objetivo: gerar, validar, materializar e visualizar privadamente a primeira LP real em `draft` a partir do pacote v3 da E19.3, com revisões append-only, mídia privada estável e prova humana.
-- Status: E19.4.3, E19.4.4 e E19.4.5 concluídas e aprovadas em 18/08/2026. A primeira prova real confirmou o pipeline e o Preview; os gaps persuasivos da revisão 3 permanecem registrados como baseline de calibração futura, sem iniciar E19.5.
+- Objetivo: gerar uma candidata validada, anexar uma revisão completa e reproduzível e renderizá-la em Preview privado.
+- Status: Pipeline base implementado; materializações e assets existentes preservados. A geração com conhecimento dinâmico segue o limite operacional de 19.3.5.
 
 19.4.2 Registros do recorte
 - Banco:
   - Criados:
-    - `public.append_account_landing_page_materialization_v1(uuid, uuid, uuid, jsonb, jsonb, uuid)`
-    - `landing-page-revision-assets`
+    - `account_landing_page_materializations`
+    - RPC `append_account_landing_page_materialization_v1`
+    - RPC `append_account_landing_page_materialization_v2`
+    - bucket privado `landing-page-revision-assets`
   - Ajustados:
-    - `public.account_landing_page_materializations`
+    - `account_landing_page_materializations` para revisões 1:N append-only
 - Repositório:
   - Criados:
-    - `app/a/[account]/landing-pages/[landingPageId]/preview/`
-    - `app/a/[account]/landing-pages/[landingPageId]/preview/loading.tsx`
     - `components/lp-builder/LandingPageRenderer.tsx`
     - `lib/conversion-content/landing-page/presentation/`
-    - `lib/lp-builder/adapters/landingPageDraftCandidateWorkflowAdapter.ts`
-    - `lib/lp-builder/adapters/landingPageDraftGenerationAdapter.ts`
-    - `lib/lp-builder/adapters/landingPageDraftImageGenerationAdapter.ts`
-    - `lib/lp-builder/adapters/landingPageDraftAdapter.ts`
-    - `lib/lp-builder/adapters/landingPagePreviewAdapter.ts`
-    - `lib/lp-builder/adapters/landingPageRevisionAdapter.ts`
-    - `lib/lp-builder/adapters/landingPageRevisionReadinessAdapter.ts`
-    - `lib/lp-builder/adapters/landingPageRevisionStorageAdapter.ts`
-    - `lib/lp-builder/adapters/landingPageRevisionWorkflowAdapter.ts`
-    - `lib/lp-builder/landing-page-draft-generation-validation-cases.ts`
-    - `lib/lp-builder/landing-page-preview-validation-cases.tsx`
-    - `lib/lp-builder/landingPageDraftCandidateWorkflow.ts`
     - `lib/lp-builder/landingPageDraftGeneration.ts`
     - `lib/lp-builder/landingPageDraftImageGeneration.ts`
     - `lib/lp-builder/landingPageDraftPrompt.ts`
-    - `lib/lp-builder/landingPageDraftWorkflow.ts`
-    - `lib/lp-builder/landingPagePreview.ts`
     - `lib/lp-builder/landingPageRevision.ts`
     - `lib/lp-builder/landingPageRevisionWorkflow.ts`
+    - `lib/lp-builder/landingPagePreview.ts`
+    - `lib/lp-builder/adapters/landingPageDraftGenerationAdapter.ts`
+    - `lib/lp-builder/adapters/landingPageDraftImageGenerationAdapter.ts`
+    - `lib/lp-builder/adapters/landingPagePreviewAdapter.ts`
+    - `lib/lp-builder/adapters/landingPageRevisionAdapter.ts`
+    - `app/a/[account]/landing-pages/[landingPageId]/preview/`
+    - `supabase/migrations/20260811133500_e19_4_4_landing_page_materializations.sql`
     - `supabase/migrations/20260817180000_e19_4_4_landing_page_revisions.sql`
     - `supabase/snippets/e19_4_4_landing_page_materializations_verify.sql`
     - `supabase/tests/e19_4_4_landing_page_materializations.test.sql`
   - Ajustados:
-    - `app/a/[account]/landing-pages/[landingPageId]/preview/page.tsx`
-    - `app/admin/(protected)/workloads-openai/page.tsx`
-    - `lib/conversion-content/landing-page/generation-profile/validation-cases.ts`
-    - `lib/conversion-content/landing-page/index.ts`
-    - `lib/conversion-content/landing-page/taxon-preparation/validation-cases.ts`
-    - `lib/lp-builder/adapters/generationContextAdapterCore.ts`
-    - `lib/lp-builder/adapters/generationContextAdapter.ts`
-    - `lib/lp-builder/generation-context-validation-cases.ts`
-    - `lib/lp-builder/index.ts`
-    - `lib/openai-workloads/`
     - `next.config.js`
     - `package.json`
-- Updates:
-  - Aplicados na E19.4.3/E19.4.4:
-    - `supa#5`
-    - `supa#40`
-    - `supa#47`
-    - `prod#6`
-  - Aplicados na E19.4.5:
-    - `prod#14`
-    - `prod#16`
-    - `prod#17`
 - Referências:
-  - Plano-base aprovado: `docs/lousa-plano-base-e19-4.md`.
-  - Matriz auditada: `docs/matriz-consolidacao-e19-4.md`.
-  - Contrato técnico: `docs/base-tecnica.md`.
-  - Contrato de banco: `docs/schema.md`.
-  - Configuração operacional: `docs/platform-config.md`.
-  - Modelos e workloads: `docs/openai-model-snapshot.md`.
-  - Automação controlada: `docs/automations.md`.
+  - Contrato de revisão e segurança: `docs/base-tecnica.md` — seção 3.15.9.
+  - Objetos físicos: `docs/schema.md`.
+  - Workloads vigentes: `docs/platform-config.md`.
 
-19.4.3 Geração controlada e validação integral da candidata
-- Status: concluída e aprovada nos gates hospedados em 18/08/2026.
-- Automações: sim — `2.1.3`, IA em fluxo controlado no runtime do LP Factory.
-- Conteúdo:
-  - a autoridade de apresentação v1, o DTO discriminado, o Structured Output estrito, os validators determinísticos e o prompt `e19.4-presentation-v2` estão implementados a partir da autoridade canônica da E18.4;
-  - o workload textual `landing_page_draft_generation` usa uma única chamada a `gpt-5.6-luna`, `reasoning.effort=max`, `store:false` e nenhuma política de retry ou fallback;
-  - o workload separado `landing_page_draft_image_generation` usa `gpt-image-2` com configuração própria e sem transportar parâmetros exclusivos do workload textual;
-  - `modelContext.facts` é a única autoridade para fatos objetivos; `modelContext.research` permanece contexto consultivo para narrativa, dores e linguagem, sem autorizar preço, disponibilidade, localização, credencial, prova social, resultado, pessoa ou cliente;
-  - o canal primário é lido exclusivamente de `modelContext.facts` e o destino operacional correspondente de `serverContext.facts`, preservando bindings determinísticos e mantendo dados operacionais brutos fora do modelo;
-  - o workflow possui um único ownership de `requestId`, preserva `attemptId` e os pontos de injeção determinística e registra observabilidade segura para preparação e falhas HTTP do provider;
-  - a projeção destinada ao provider preserva a autoridade Zod e converte somente a união conhecida das oito variantes de seção para `anyOf`, falhando fechado diante de qualquer `oneOf` inesperado;
-  - por decisão humana, o gate originalmente previsto de canários isolados sem persistência foi substituído pelo primeiro append integrado do fluxo oficial; as duas execuções integradas posteriores comprovaram os workloads textual e de imagem e o caminho oficial sem retry ou fallback;
-  - o segmento produtivo permanece configurado com `maxDuration = 300`; deployment READY e duas execuções integradas completas sem timeout incompatível corroboraram operacionalmente esse gate.
+19.4.3 Geração controlada
+- O fluxo é server-side, linear e não agentic: contexto autorizado → conhecimento consultivo → texto estruturado → imagem → revalidação → append.
+- O contrato de apresentação e os schemas estritos validam as oito variantes suportadas antes da persistência.
+- Binding de conversão é derivado dos fatos operacionais e não pelo modelo.
+- Texto e imagem usam workloads separados; modelos, esforços e limites efetivos pertencem ao registry E21 e à configuração operacional.
+- A tentativa possui deadline total de 270 segundos e não aplica retry ou fallback automático.
+- Falha posterior ao upload executa cleanup best-effort do path exato e não autoriza revisão parcial.
 
-19.4.4 Revisões append-only, mídia e snapshot imutável
-- Status: concluída e aprovada nos gates hospedados em 18/08/2026.
-- Automações: não.
-- Conteúdo:
-  - a migration `20260817180000_e19_4_4_landing_page_revisions.sql` foi aplicada oficialmente e o readiness hospedado confirmou `ready: true` e `schema_version: 1`;
-  - `account_landing_page_materializations` opera em 1:N append-only, com PK em `id`, numeração positiva, unicidade por LP/revisão, `attempt_id` idempotente e revisão corrente definida pela maior numeração;
-  - a materialização histórica foi preservada como revisão 1 e os dois appends controlados criaram as revisões 2 e 3, com três conteúdos e três snapshots distintos e sem overwrite;
-  - a revisão 2 foi persistida como `963f0a37-8dd3-4240-9f31-8072aef40d60`, com `requestId d227c031-5068-499d-aeb8-a0b5f723ccf2` e `attemptId 41ced98d-331a-4e46-914e-c28e3b026802`;
-  - a revisão 3 foi persistida como `ab332478-c504-425a-a6bc-993d31142449`, com `requestId 8c67dfd6-d7c8-4bb0-9955-09fc9f988cef` e `attemptId dec1251f-297e-418a-93b5-e2722f773dcd`;
-  - P-01 foi comprovado ponta a ponta pela correspondência de `requestId` e `attemptId` entre compilação, workloads e snapshots persistidos;
-  - P-02 foi comprovado em runtime porque as duas execuções passaram pelos providers, pela nova validação de acesso, conta, ator e entitlement e pelo append transacional;
-  - o verificador SQL read-only retornou `ok` para colunas, constraints e índices, invariantes de revisão, prova de múltiplas revisões, projeção da revisão corrente, segurança, bucket e policies de Storage;
-  - RLS permanece habilitada, sem policies diretas; `service_role` possui leitura e execução do RPC, mas não escrita direta, e `anon` e `authenticated` não executam o append;
-  - o bucket `landing-page-revision-assets` é privado, aceita WebP conforme o limite aprovado e não possui policy pública ou autenticada;
-  - os dois novos snapshots referenciam dois paths canônicos distintos, não-URL, e os dois objetos correspondentes existem no Storage;
-  - a revisão corrente é a revisão 3.
+19.4.4 Revisões e mídia
+- Revisões são 1:N, append-only, numeradas por LP e idempotentes por `attempt_id`.
+- A revisão corrente é a de maior `revision_number`; a aprovada é um ponteiro explícito e pode ser anterior à corrente.
+- Append ocorre por RPC transacional tenant-safe; runtime não escreve diretamente na tabela.
+- Conteúdo e snapshot são autossuficientes e imutáveis, sem secret, prompt bruto, raciocínio privado ou URL assinada.
+- A imagem WebP reside no bucket privado por referência canônica; URL assinada é transitória e criada somente após autorização.
+- RLS permanece ativa; clientes `anon` e `authenticated` não executam os RPCs de append.
 
-19.4.5 Visualização privada e prova humana da primeira LP real
-- Status: concluída, aprovada e integrada à `main` pelo PR B #776 em 18/08/2026. A revisão 3 permanece como baseline da primeira prova real e dos gaps persuasivos identificados; nenhuma calibração posterior ou E19.5 foi iniciada.
-- Automações: não.
-- Conteúdo:
-  - a rota privada reutilizada carrega a revisão corrente sob nova validação de ator, conta, membership, entitlement, LP em `draft` e tenant da revisão, com estados fail-closed para indisponibilidade, acesso negado e conteúdo inválido;
-  - o read model usa allowlist explícita do conteúdo e snapshot persistidos, recebe URL assinada server-side com TTL de 300 segundos e não expõe `DBRow`, contexto de pesquisa, valores operacionais, bucket, path, autenticação ou provider;
-  - o renderer é puro, read-only e cobre as oito variantes do contrato v1 sem reler E19.3, chamar Supabase, provider ou qualquer fonte mutável;
-  - a prova hospedada da revisão corrente 3 (`revisionId ab332478-c504-425a-a6bc-993d31142449`, `attemptId dec1251f-297e-418a-93b5-e2722f773dcd`) confirmou imagem privada, CTA WhatsApp, ausência de overflow em 360, 768 e 1280 px, console limpo, estados de erro, foco/teclado, contraste e isolamento tenant-safe;
-  - no veredito humano, adequação público/oferta foi aprovada; imagem foi aprovada com ressalva de genericidade; CTA foi aprovado funcionalmente; jornada persuasiva, especificidade da copy e variação visual receberam ajuste necessário como aprendizado da prova, não como defeito técnico obrigatório do renderer;
-  - factualidade, segurança e funcionamento foram aprovados nos três gates binários;
-  - a E19.4.5 está aprovada como primeira prova real, mas a qualidade persuasiva da revisão 3 não é registrada genericamente como aprovada; repetição conceitual, linguagem genérica, baixa progressão de convicção e sensação de template permanecem baseline de calibração futura;
-  - não houve revisão 4 nem ajuste ad hoc do renderer; publicação, E19.5, calibração persuasiva, editor, histórico visual, DAM, formulário, tracking, analytics, CRM, agente e filas permanecem fora do recorte.
+19.4.5 Preview
+- A rota privada revalida ator, conta, membership, entitlement, LP e tenant da revisão.
+- O usuário pode abrir a revisão corrente ou uma revisão histórica compatível.
+- O read model usa allowlist de conteúdo e metadados e não expõe linha de banco, snapshot integral, pesquisa, bucket, path ou provider.
+- O renderer é puro e não consulta Supabase, OpenAI ou fontes mutáveis.
+- Revisão com par de contratos desconhecido ou materialização histórica incompleta falha fechado sem fallback para a mais recente.
 
-19.5 — Workspace operacional e lifecycle da LP
+19.5 Workspace operacional, configuração e aprovação
 
 19.5.1 Objetivo e status
-- Objetivo: entregar o ciclo operacional reduzido para múltiplas identidades de LP por conta, com configuração contextual lazy, revisões integrais append-only, histórico, preview e aprovação humana explícita.
-- Status: Concluída em 23/08/2026 após merge, apply canônico, verificações pós-apply e rollout controlado aprovado em Preview e Production.
+- Objetivo: operar múltiplas LPs por conta, editar configurações autorizadas, gerar revisões, navegar no histórico e aprovar explicitamente uma revisão.
+- Status: Implementado e habilitado em Preview e Production por `E19_5_WORKSPACE_ENABLED=true`; viewer permanece read-only.
 
 19.5.2 Registros do recorte
 - Banco:
   - Criados:
-    - `public.account_landing_page_shared_configurations`;
-    - `public.account_landing_page_configurations`;
-    - `public.e19_5_actor_can_manage(uuid, uuid)`;
-    - `public.e19_5_configuration_values_have_scopes(jsonb, text[])`;
-    - `public.save_account_landing_page_configuration_v1(uuid, uuid, jsonb, jsonb, bigint, bigint, integer, uuid, uuid)`;
-    - `public.approve_account_landing_page_materialization_v1(uuid, uuid, uuid, uuid)`;
-    - `public.append_account_landing_page_materialization_v2(uuid, uuid, uuid, jsonb, jsonb, uuid, bigint, bigint)`;
-    - `public.read_account_landing_page_identity_baselines_v1(uuid, uuid)`;
-    - `public.account_lp_materializations_identity_funnel_idx`;
-    - `public.account_lp_materializations_identity_transaction_idx`;
-    - `public.account_lp_materializations_identity_offer_idx`.
+    - `account_landing_page_shared_configurations`
+    - `account_landing_page_configurations`
+    - `e19_5_actor_can_manage(uuid, uuid)`
+    - `e19_5_configuration_values_have_scopes(jsonb, text[])`
+    - `save_account_landing_page_configuration_v1`
+    - `approve_account_landing_page_materialization_v1`
+    - `read_account_landing_page_identity_baselines_v1`
   - Ajustados:
-    - `public.account_landing_pages`;
-    - `public.account_landing_page_materializations`.
+    - `account_landing_pages.approved_materialization_id`
+    - `account_landing_page_materializations`
 - Repositório:
   - Criados:
-    - `app/a/[account]/_components/LandingPageWorkspace.tsx`;
-    - `app/a/[account]/_components/WorkspaceSubmitButton.tsx`;
-    - `app/a/[account]/workspace-actions.ts`;
-    - `app/a/[account]/landing-pages/[landingPageId]/page.tsx`;
-    - `app/a/[account]/landing-pages/[landingPageId]/actions.ts`;
-    - `app/a/[account]/landing-pages/[landingPageId]/configuration-actions.ts`;
-    - `lib/lp-builder/landingPageWorkspace.ts`;
-    - `lib/lp-builder/adapters/landingPageWorkspaceAdapter.ts`;
-    - `lib/lp-builder/adapters/landingPageWorkspaceAuthority.ts`;
-    - `lib/lp-builder/landing-page-workspace-validation-cases.ts`;
-    - `supabase/migrations/20260822170000_e19_5_3_landing_page_workspace.sql`;
-    - `supabase/snippets/e19_5_3_landing_page_workspace_verify.sql`;
-    - `supabase/tests/e19_5_3_landing_page_workspace.test.sql`;
-    - `supabase/migrations/20260830201842_e19_identity_baselines.sql`;
-    - `supabase/tests/e19_identity_baselines.test.sql`;
-    - `supabase/snippets/e19_identity_baselines_verify.sql`.
+    - `app/a/[account]/_components/LandingPageWorkspace.tsx`
+    - `app/a/[account]/_components/WorkspaceSubmitButton.tsx`
+    - `app/a/[account]/workspace-actions.ts`
+    - `app/a/[account]/landing-pages/[landingPageId]/page.tsx`
+    - `app/a/[account]/landing-pages/[landingPageId]/actions.ts`
+    - `app/a/[account]/landing-pages/[landingPageId]/configuration-actions.ts`
+    - `lib/lp-builder/landingPageWorkspace.ts`
+    - `lib/lp-builder/adapters/landingPageWorkspaceAdapter.ts`
+    - `lib/lp-builder/adapters/landingPageWorkspaceAuthority.ts`
+    - `lib/lp-builder/landing-page-workspace-validation-cases.ts`
+    - `supabase/migrations/20260822170000_e19_5_3_landing_page_workspace.sql`
+    - `supabase/migrations/20260830201842_e19_identity_baselines.sql`
+    - `supabase/snippets/e19_5_3_landing_page_workspace_verify.sql`
+    - `supabase/tests/e19_5_3_landing_page_workspace.test.sql`
+    - `supabase/snippets/e19_identity_baselines_verify.sql`
+    - `supabase/tests/e19_identity_baselines.test.sql`
   - Ajustados:
-    - `app/a/[account]/page.tsx`;
-    - `app/a/[account]/_components/OnboardingConfigurationJourney.tsx`;
-    - `app/a/[account]/_components/onboarding-configuration-action-contract.ts`;
-    - `app/a/[account]/landing-pages/[landingPageId]/preview/page.tsx`;
-    - `app/a/[account]/landing-pages/[landingPageId]/preview/GenerationTrigger.tsx`;
-    - `app/a/[account]/landing-pages/[landingPageId]/preview/actions.ts`;
-    - `lib/lp-builder/contracts.ts`;
-    - `lib/lp-builder/index.ts`;
-    - `lib/lp-builder/generationContext.ts`;
-    - `lib/lp-builder/generationContextContracts.ts`;
-    - `lib/lp-builder/adapters/generationContextAdapter.ts`;
-    - `lib/lp-builder/adapters/generationContextAdapterCore.ts`;
-    - `lib/lp-builder/landingPageRevision.ts`;
-    - `lib/lp-builder/landingPagePreview.ts`;
-    - `lib/lp-builder/adapters/landingPagePreviewAdapter.ts`;
-    - `lib/lp-builder/adapters/landingPageRevisionAdapter.ts`;
-    - `lib/lp-builder/landingPageDraftGeneration.ts`;
-    - `lib/lp-builder/generation-context-validation-cases.ts`;
-    - `lib/lp-builder/landing-page-draft-generation-validation-cases.ts`;
-    - `lib/lp-builder/landing-page-preview-validation-cases.tsx`;
-    - `package.json`.
+    - `app/a/[account]/page.tsx`
+    - `lib/lp-builder/contracts.ts`
+    - `lib/lp-builder/generationContext.ts`
+    - `lib/lp-builder/landingPageRevision.ts`
+    - `lib/lp-builder/landingPagePreview.ts`
+    - `package.json`
 - Referências:
-  - Plano-base aprovado: `docs/lousa-plano-base-e19-5.md` — seções 1, 2 e 3.
-  - Contrato de banco: `docs/schema.md` — seções 1.9, 1.27, 1.31, 1.32 e 3.8.
-  - Contrato técnico: `docs/base-tecnica.md` — seções 3.14.4 e 3.15.9.
-  - Configuração operacional: `docs/platform-config.md` — seção 3.5.
+  - Contrato de banco: `docs/schema.md`.
   - Contrato visual: `docs/design-system.md` — Workspace operacional do Account Dashboard.
+  - Flag e estado por ambiente: `docs/platform-config.md`.
 
-19.5.3 Workspace operacional reduzido, configuração e aprovação da LP
-- Status: Concluída em 23/08/2026, com implementação integrada à `main`, banco validado e operação autenticada aprovada em Preview e Production.
-- Conteúdo:
-  - o Account Dashboard ganha workspace master-detail paginado, uma entrada por identidade de LP, cinco estados de UX derivados, criação explícita para owner/admin e leitura integral sem mutações para viewer;
-  - a página de até 25 LPs e seus resumos de revisão são lidos em uma única consulta tenant-scoped com relações LEFT pelas FKs compostas existentes: latest pela maior `revision_number`, limitada por LP, e approved pelo ponteiro explícito, mesmo antigo; o transporte contém no máximo dois metadados de revisão por LP, sem conteúdo ou snapshot, mantendo count exato, ordem, cursor, estados e configuração;
-  - detalhe e revalidação operacional reutilizam uma única carga de autoridade por invocação, em contexto privado do adapter, preservando DTOs públicos, guards, erros, configuração, histórico, aprovação e tokens; a taxonomia lê vínculo primário ativo e primeiro nó pela relação LEFT não recursiva existente, mantendo filtros e o percurso de até dois pais;
-  - a configuração reutiliza declarativamente o catálogo E20.2 v5 e separa fisicamente scopes compartilhados `account/business` dos contextuais `offer/campaign/landing_page`, sem lista paralela, placeholder, precriação, backfill, `is_initialized` ou completude persistida;
-  - `primary_conversion_goal` é obrigatório e participa do núcleo de identidade após a primeira revisão válida que o contenha; `business_offerings_summary` é opcional, reside no compartilhado e sua ausência isolada não bloqueia completude;
-  - o handoff da E19.2 é lazy e vinculado à LP exata; depois que a residência operacional existe, o agregado histórico permanece apenas como bootstrap/proveniência e não serve fallback concorrente;
-  - a validação corrente de identidade usa uma leitura atômica de até quatro snapshots originais: primeiras presenças elegíveis dos três grupos vigentes definidos em 20.2.9.3 e revisão latest, deduplicadas e ordenadas; preserva o evaluator e a configuração corrente, sem paginação histórica, truncamento, cache ou novo token;
-  - o save das duas residências é atômico, `SECURITY INVOKER`, versionado e protegido por revisões otimistas independentes; no-op não incrementa, e conflito preserva integralmente o estado anterior;
-  - geração e revalidação exigem literalmente a v5 e igualdade exata com `reviewed_input_catalog_version`, falhando fechado para ausência, divergência, versão não executável ou erro; não existe fallback para v4, `latest`, maior versão ou versão implícita;
-  - novas revisões usam snapshot v2/contexto v4 com proveniência das residências; readers aceitam somente os pares históricos v1/contexto v3 e atuais v2/contexto v4, sem cruzamento ou reinterpretação retroativa;
-  - histórico e preview são carregados sob demanda por LP; o preview pode abrir a revisão mais recente ou uma revisão histórica e a aprovação idempotente move somente o ponteiro tenant-safe da revisão aprovada;
-  - os testes determinísticos cobrem v5, `primary_conversion_goal`, ausência válida de `business_offerings_summary`, evolução histórica × operacional, mismatch E20.6, fail-closed, viewer read-only, paginação, histórico e aprovação; `npm ci`, `npm run check` e `git diff --check` foram aprovados, com 24 warnings de lint preexistentes e nenhum erro;
-  - a migration foi aplicada pelo fluxo canônico; o verificador read-only e os Security Controls passaram após a correção forward-only das grants dos helpers, sem editar a migration aplicada;
-  - a avaliação E20.6 da v5 e a decisão humana de suficiência permanecem concluídas para o taxon real servido `Corretor Imóveis` (`corretor-imoveis`), com `reviewed_input_catalog_version = 5` e sem gaps candidatos; o smoke hospedado confirmou o consumo operacional da v5 sem promover o marcador nem alterar a E20.6;
-  - `E19_5_WORKSPACE_ENABLED` foi habilitado sequencialmente com redeploy e aprovação em Preview e Production; o smoke final confirmou workspace, configuração v5, histórico, preview e a revisão 4 já aprovada, sem gerar revisão adicional; archive/restore, publicação, editor manual, melhoria parcial por IA, hard delete, tracking, mensuração, testes A/B, catálogo avançado de ofertas e mecanismo global ou em massa permanecem fora do recorte.
+19.5.3 Lista e autoridade
+- O workspace usa master-detail paginado, com até 25 LPs por página e estados derivados de configuração, revisão corrente e aprovação.
+- Owner e admin podem criar, configurar, gerar e aprovar; viewer recebe leitura integral sem mutações.
+- Toda operação revalida autenticação, conta ativa, membership, entitlement, taxonomia e versão efetiva do catálogo.
+- LPs sem revisão permanecem listáveis; o resumo transporta apenas metadados das revisões corrente e aprovada, não conteúdo ou snapshots.
+
+19.5.4 Configuração operacional
+- Valores `account/business` residem na configuração compartilhada; `offer/campaign/landing_page` residem na configuração específica da LP.
+- As duas revisões otimistas são independentes e o save é atômico; no-op não incrementa revisão.
+- Campos, obrigação, tipos, opções e condições vêm do catálogo E20.2 vigente, sem registry paralelo.
+- `primary_conversion_goal` participa da identidade da LP; mudança material de identidade exige nova LP e mudança de oferta pode exigir confirmação explícita.
+- Baselines de identidade e revisão corrente são lidas no mesmo snapshot lógico e revalidadas antes do save.
+
+19.5.5 Histórico, Preview e aprovação
+- Histórico é carregado sob demanda e aceita revisões correntes ou históricas compatíveis.
+- Aprovação é idempotente e move apenas `approved_materialization_id` para uma revisão da mesma LP e conta.
+- Uma nova revisão após a aprovada deriva o estado `new_version_in_review`; aprovação não publica nem altera o status da LP.
+- Publication, archive/restore, editor manual, melhoria parcial por IA, tracking, CRM e automações em fila permanecem fora do produto atual.
 
 20. E20 — Preparação e liberação de taxons para geração de landing pages
 
