@@ -1322,30 +1322,39 @@
 - Onboarding e workspace operacional de landing pages residem em E19.
 - Nenhuma nova estrutura de Workspace Dashboard deve ser criada até existir um recorte pessoal aprovado que não duplique esses domínios.
 
-15. E15 — Usuário e Membership (B1)
+15. E15 — Usuário e membership por conta
 
-15.1 Status
-• Concluído
+- Objetivo: distinguir identidade autenticada de vínculo por conta e definir o comportamento seguro dos estados de membership.
+- Status: implementado; contrato de banco, Access Context, redirects por status e ciclo de convite estão ativos.
 
-15.2 Escopo
-• Definir Usuário vs Membership (vínculo por conta).
-• Definir status do membership: pending | active | inactive | revoked.
-• Regra única: pending → active somente via claim/aceite de convite.
-• Status é por membership (o mesmo usuário pode ter status diferentes em contas diferentes).
-• UX por status (snapshot): bloqueios por membership levam a telas dedicadas /auth/confirm/* (sem “deny genérico”).
-• Usuário autenticado sem membership: segue o fluxo de “primeiro acesso” (auto 1ª conta vitrine) e retorna ao dashboard (ver E5/E8)..
-15.2.1 Referências
-• Regras técnicas do gate/adapters: docs/base-tecnica.md
-• Contrato/DB (membership/status): docs/schema.md
+15.1 Contrato de membership
 
-15.3 Critérios de conclusão
-• Gate SSR diferencia corretamente todos os status de membership (UX dedicada por status).
-• Não existe “atalho” que ative membership fora do claim/aceite oficial.
-• Usuário autenticado sem membership não fica bloqueado (fluxo de 1ª conta vitrine concluído) (ver E5/E8).
+15.1.1 Objetivo e status
+- Objetivo: garantir que papéis e estados sejam avaliados por vínculo e nunca inferidos apenas da identidade global do usuário.
+- Status: concluído.
 
-15.4 Dependências resolvidas
-• Alinhamento com lifecycle de contas (vitrine pending_setup como entrada padrão) (ver E16).
-• Hardening do lifecycle de accounts.status aplicado (detalhes/evidências em docs/schema.md)..
+15.1.2 Registros do recorte
+- Referências:
+  - Contrato técnico: `docs/base-tecnica.md` — seções 5.1.1 e 5.4.
+  - Contrato de banco: `docs/schema.md` — seções 1.2 e 2.1.
+  - Ciclo de convite: E11.1.
+
+15.1.3 Identidade e vínculo
+- O usuário do Supabase Auth é uma identidade global; `account_users` representa seu membership em uma conta específica.
+- O mesmo usuário pode ter papel e status diferentes em contas diferentes.
+- Os estados vigentes do vínculo são `pending`, `active`, `inactive` e `revoked`.
+- Decisões de conta exigem membership do tenant solicitado e não reutilizam papel ou estado de outro vínculo.
+
+15.1.4 Ativação e bloqueios
+- Membership não-owner em `pending` torna-se `active` somente pelo aceite autenticado no produto ou pela confirmação validada do convite por e-mail da E11.1.
+- O Auth Hook amplo e as funções legadas de convite não participam do caminho operacional.
+- `pending`, `inactive` e `revoked` recebem destinos públicos específicos; conta bloqueada também recebe destino compatível com seu status.
+- A decisão final e os redirects seguros residem em E8 e no guard SSR da E4.
+
+15.1.5 Usuário sem membership
+- Usuário autenticado sem vínculo não recebe conta automática no gateway.
+- `/a/home` tenta a última conta válida e o fallback determinístico; sem membership disponível, retorna a `/auth/confirm/info`.
+- A primeira conta só pode nascer pelo fluxo server-side aprovado; a existência de qualquer membership impede auto-criação adicional.
 
 16. E16 — Accounts
 
