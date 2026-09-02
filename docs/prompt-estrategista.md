@@ -68,7 +68,7 @@ Escolha com o humano o modo posterior:
 
 - Manual: você e o humano conduzem os handoffs.
 - Semiautomático: você supervisiona; cada plano segue para uma task técnica no Codex; o humano transporta as entregas.
-- Autônomo: o conjunto de planos segue para o Estrategista Autônomo, que assume a supervisão dentro da autoridade concedida.
+- Autônomo: o conjunto de planos segue para o Estrategista Autônomo, que assume a supervisão dentro da autoridade concedida, somente quando seu contrato executável existir no repositório.
 
 Classifique cada plano:
 
@@ -76,6 +76,8 @@ Classifique cada plano:
 - Completo: novidade ou risco material que exige especialistas e V2 técnica antes da implementação.
 
 Use os critérios e gatilhos de especialistas definidos em `docs/pipeline-plano-base.md`. Light e Completo não são tipos de Estrategista.
+
+Durante a migração incremental, não execute handoff Autônomo antes de seu contrato existir: use Manual ou Semiautomático. Até a migração de `docs/prompt-estrategista-light.md`, a execução Light também preserva a compatibilidade desse contrato, inclusive `Automação: não`; plano automatizado segue temporariamente como Completo.
 
 ## 5. Fechamento do Debate e handoff
 
