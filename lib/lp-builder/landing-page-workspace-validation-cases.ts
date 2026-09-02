@@ -287,7 +287,7 @@ const cases: readonly Readonly<{ name: string; run: () => void }>[] = [
     },
   },
   {
-    name: "route surface exposes read-only viewers history selection and explicit approval",
+    name: "route surface preserves history and approval while generation stays unavailable",
     run: () => {
       const workspace = readFileSync(
         new URL("../../app/a/[account]/_components/LandingPageWorkspace.tsx", import.meta.url),
@@ -301,14 +301,23 @@ const cases: readonly Readonly<{ name: string; run: () => void }>[] = [
         new URL("../../app/a/[account]/landing-pages/[landingPageId]/preview/page.tsx", import.meta.url),
         "utf8",
       );
+      const generationTrigger = readFileSync(
+        new URL("../../app/a/[account]/landing-pages/[landingPageId]/preview/GenerationTrigger.tsx", import.meta.url),
+        "utf8",
+      );
       assert.match(workspace, /Somente leitura/);
       assert.match(workspace, /workspace_cursor/);
       assert.doesNotMatch(workspace, /Arquivar|Restaurar|Excluir/);
       assert.match(detail, /history_cursor/);
       assert.match(detail, /preview\?revision=/);
-      assert.match(detail, /Gerar primeira versão/);
+      assert.match(detail, /latestRevision\s*\?/);
+      assert.match(detail, /Gerar primeira versão está temporariamente indisponível/);
+      assert.doesNotMatch(detail, />\s*Gerar primeira versão\s*</);
       assert.match(preview, /canMutate\s*\?/);
-      assert.match(preview, /<GenerationTrigger/);
+      assert.match(preview, /<GenerationTrigger \/>/);
+      assert.match(generationTrigger, /disabled/);
+      assert.match(generationTrigger, /aria-disabled="true"/);
+      assert.doesNotMatch(generationTrigger, /useActionState|generateLandingPageRevisionAction|<form/);
       assert.match(preview, /workspaceEnabled && preview\.status === "ready"/);
       assert.match(preview, /Aprovar esta versão/);
     },

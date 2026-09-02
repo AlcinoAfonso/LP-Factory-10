@@ -611,7 +611,7 @@ const cases = [
     },
   },
   {
-    name: "source boundaries preserve max-revision read viewer access TTL and no mutable recompilation",
+    name: "source boundaries preserve persisted preview while generation has no UI trigger",
     run: () => {
       const revisionAdapter = readFileSync(new URL("./adapters/landingPageRevisionAdapter.ts", import.meta.url), "utf8");
       const storageAdapter = readFileSync(new URL("./adapters/landingPageRevisionStorageAdapter.ts", import.meta.url), "utf8");
@@ -620,6 +620,7 @@ const cases = [
       const renderer = readFileSync(new URL("../../components/lp-builder/LandingPageRenderer.tsx", import.meta.url), "utf8");
       const page = readFileSync(new URL("../../app/a/[account]/landing-pages/[landingPageId]/preview/page.tsx", import.meta.url), "utf8");
       const action = readFileSync(new URL("../../app/a/[account]/landing-pages/[landingPageId]/preview/actions.ts", import.meta.url), "utf8");
+      const generationTrigger = readFileSync(new URL("../../app/a/[account]/landing-pages/[landingPageId]/preview/GenerationTrigger.tsx", import.meta.url), "utf8");
 
       assert.match(revisionAdapter, /order\("revision_number", \{ ascending: false \}\)/);
       assert.match(revisionAdapter, /\.limit\(1\)/);
@@ -628,6 +629,9 @@ const cases = [
       assert.match(previewAdapter, /access\.status !== "active"/);
       assert.doesNotMatch(previewAdapter, /requireAccountMembersManager/);
       assert.match(action, /requireAccountMembersManager/);
+      assert.match(action, /if \(!legacyGenerationIsTemporarilyAvailable\(\)\)/);
+      assert.match(generationTrigger, /disabled/);
+      assert.doesNotMatch(generationTrigger, /useActionState|generateLandingPageRevisionAction|<form/);
       assert.doesNotMatch(`${previewAdapter}\n${previewCore}\n${renderer}\n${page}`, /compileLandingPageGenerationContextForDraft/);
       assert.doesNotMatch(`${previewCore}\n${renderer}`, /createServiceClient|OpenAI|openai|research\.content|generationContextAdapter/);
       assert.match(page, /status === "invalid_cta"/);
