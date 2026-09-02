@@ -1406,37 +1406,98 @@
 - Essa copy não representa uma integração de billing nem uma transição automática e conflita com a separação canônica definida em E9.
 - Até existir recorte operacional aprovado para mudança de status, `inactive` e `suspended` devem ser tratados apenas como estados consumidos e bloqueados com segurança.
 
-17 E17 - Automations, Agents & Validation Infrastructure
+17. E17 — Automações e infraestrutura de validação
 
-17.1 Status
-• Em evolução (setup mínimo concluído) (04/03/2026)
+- Objetivo: fornecer automações operacionais e facilitadores de teste com execução controlada, permissões mínimas, rastreabilidade e revisão humana, sem transferir a autoridade funcional dos casos de produto.
+- Status: infraestrutura implementada e em evolução; raiz canônica `automations/`, workflows de orquestração e pipelines operacionais estão ativos.
 
-17.2 Objetivo
-• Consolidar uma linha de evolução de automações/agentes (OpenAI, Supabase, Vercel, GitHub) para tarefas operacionais e diagnósticos.
-• Garantir execução controlada (permissões mínimas, read-only quando aplicável), com governança e baixo risco.
-• Padronizar rastreabilidade/observabilidade (logs estruturados, correlação) para acelerar investigação e execução de casos sem alterar o core do app.
+17.1 Automações operacionais e validação
 
-17.3 Implementado (exec) — OpenAI Platform (02/03/2026)
-• Projects criados: `LPF10-DEV` e `LPF10-PROD`.
-• Sharing: “Enabled for selected projects” com apenas `LPF10-DEV` selecionado (DEV compartilha; Default e PROD não).
-• Service Account criada no `LPF10-DEV` com key gerada.
-• Segurança de keys: revogação imediata em caso de exposição; estado final reportado = 1 key ativa no `LPF10-DEV`.
+17.1.1 Objetivo e status
+- Objetivo: padronizar inspeção, aplicação controlada, validações reais e manutenção documental por GitHub Actions.
+- Status: implementado para os fluxos catalogados em `docs/automations.md`.
 
-17.4 Codex (sandbox) checks determinísticos
-• Status: Concluído (exec) (03/03/2026)
-• Objetivo: padronizar checks determinísticos no sandbox antes de abrir PR.
-• Referência técnica: `docs/base-tecnica.md`.
+17.1.2 Registros do recorte
+- Repositório:
+  - Criados:
+    - `.github/workflows/security.yml`
+    - `.github/workflows/pipeline-supabase-inspect.yml`
+    - `.github/workflows/pipeline-docs-apply-report.yml`
+    - `.github/workflows/pipeline-supabase-apply-migrations.yml`
+    - `.github/workflows/automation-validador-final.yml`
+    - `.github/workflows/automation-niche-runtime-tests.yml`
+    - `automations/supabase-inspect/`
+    - `automations/docs-apply-report/`
+    - `automations/validador-final/`
+    - `automations/niche-runtime-tests/`
+  - Ajustados:
+    - `AGENTS.md`
+    - `package.json`
+- Referências:
+  - Catálogo operacional: `docs/automations.md` — seções 0.4–0.5 e 3.1–3.7.
+  - Configuração e secrets por nome: `docs/platform-config.md` — seções 2.2–2.4.
+  - Validação local: `docs/base-tecnica.md` — seção 3.4.2.
 
-17.5 Referência documental
-• Automações operacionais de produto, componentes consumidores, MCPs e evoluções dessa camada passam a ser documentados em `docs/automacoes.md`.
+17.1.3 Estrutura canônica
+- `.github/workflows/` é a camada de entrada e orquestração.
+- Novas automações operacionais devem nascer como subprojetos isolados em `automations/<nome>/`.
+- `pipelines/` permanece em revisão e não é a raiz oficial dos fluxos já migrados.
+- Cada automação mantém runtime e README locais; configuração de plataforma e nomes de secrets residem em `docs/platform-config.md`.
 
+17.1.4 Checks e segurança
+- Mudanças de código usam `npm ci` e `npm run check` como rotina local; build, quando aplicável, fica para CI ou Vercel.
+- Mudanças somente em `docs/**` seguem a exceção documental definida em `AGENTS.md`.
+- `security.yml` mantém os checks de segurança do repositório.
+- Inspeção de banco por automação é read-only, salvo mutação expressamente aprovada em contrato próprio.
 
-17.6 Supabase STAGING (espelho operacional para validação de casos de uso) — descontinuado
+17.1.5 Facilitadores de teste
+- `automation-validador-final` executa o fluxo determinístico de signup, confirmação por e-mail, login, recuperação, redefinição, novo login e logout contra uma URL informada.
+- `automation-niche-runtime-tests` cria e confirma contas reais, preenche `pending_setup` com nichos configurados e publica evidência sanitizada.
+- Esses workflows validam E5 e E10.5.6, mas não se tornam fonte de autoridade funcional desses casos.
+- A mailbox dedicada é consumida somente pelos workflows autorizados por meio de `MAILBOX_EMAIL` e `MAILBOX_PASSWORD`; valores não são versionados.
 
-• Objetivo: Criar ambiente Supabase separado para validação segura de alterações (schema, RLS, Auth e dados) antes de produção.
-• Resumo: O ambiente STAGING foi descontinuado; o projeto `LP-Factory-10-staging` foi efetivamente deletado em 31/03/2026 após alerta crítico do Security Advisor associado a esse projeto já descontinuado.
-• Situação atual: não existe STAGING ativo no Supabase; os previews permanecem no projeto principal.
-• Status: Descontinuado.
+17.1.6 Pipelines operacionais
+- `pipeline-supabase-inspect` executa SQL read-only com saída em logs e Job Summary.
+- `pipeline-docs-apply-report` aplica report JSON em Markdown, cria branch e Pull Request e mantém revisão humana antes do merge.
+- `pipeline-supabase-apply-migrations` aplica migrations versionadas após merge humano na `main`, condicionado a `SUPABASE_APPLY_MIGRATIONS_ENABLED=true`.
+- Migration aplicada não é reescrita; correção ou reversão exige nova migration incremental.
+- SQL Editor não faz parte do fluxo normal de alteração de schema.
+
+17.1.7 Limites
+- Automações de IA incorporadas ao produto continuam documentadas no caso funcional correspondente e no catálogo operacional, não na infraestrutura genérica da E17.
+- E21 é a autoridade para catálogo, configuração, prova, ativação, rollback e custos dos workloads OpenAI.
+- Não há agente autônomo, Agents SDK ou substituto ativo para o antigo fluxo Agent Builder removido.
+
+17.2 Fundação operacional da OpenAI Platform
+
+17.2.1 Objetivo e status
+- Objetivo: manter ambientes de projeto separados para desenvolvimento e produção sem expor credenciais.
+- Status: configurado na plataforma; não representa implementação de agente.
+
+17.2.2 Registros do recorte
+- Referências:
+  - Configuração canônica: `docs/platform-config.md` — seção 6.1.
+
+17.2.3 Estado atual
+- Os projetos `LPF10-DEV` e `LPF10-PROD` existem na OpenAI Platform.
+- O sharing conhecido está restrito aos projetos selecionados, com `LPF10-DEV` compartilhado e `LPF10-PROD` isolado.
+- A Service Account de desenvolvimento pertence a `LPF10-DEV`; chaves são referenciadas somente por localização e finalidade, nunca por valor.
+- Modelos e revisões efetivas dos workloads de produto são governados pela E21, não por este recorte.
+
+17.6 Supabase STAGING — descontinuado
+
+17.6.1 Objetivo e status
+- Objetivo: registrar o encerramento do antigo espelho operacional de validação.
+- Status: descontinuado; não existe projeto Supabase STAGING ativo.
+
+17.6.2 Registros do recorte
+- Referências:
+  - Estado da plataforma: `docs/platform-config.md` — seção 4.2.
+
+17.6.3 Estado atual
+- O projeto `LP-Factory-10-staging` foi removido.
+- Previews do app continuam usando o projeto principal conforme a configuração vigente.
+- Um novo staging exigiria recorte aprovado e controles mínimos de segurança; nenhum ambiente substituto está implícito.
 
 18. E18 — Base transversal de templates, módulos, composições e artefatos
 - Objetivo: Definir infraestrutura e contratos reutilizáveis para famílias de templates por canal, templates versionados, módulos de conteúdo, seções de página, variantes, composições e artefatos finais persistidos; sustentar primeiro a E10.7 sem produzir diretamente a página comercial de um taxon; e permitir consumidores futuros somente como visão de evolução, sem antecipar sua implementação.
