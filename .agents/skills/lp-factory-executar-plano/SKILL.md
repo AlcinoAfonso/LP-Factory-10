@@ -1,6 +1,6 @@
 ---
 name: lp-factory-executar-plano
-description: "Executar end-to-end um plano-base v2 aprovado do LP Factory 10, uma subseção canônica do roadmap por vez, com validação e gate do Analista. Usar como subfluxo interno de lp-factory-orquestrar-plano na mesma branch e PR da v2 ou, de forma independente, quando a v2 já estiver incorporada à main."
+description: "Executar end-to-end um plano-base v2 aprovado do LP Factory 10, uma subseção canônica do roadmap por vez, com validação e gate do Analista. Usar como subfluxo interno de lp-factory-conduzir-plano-completo na mesma branch e PR da v2 ou, de forma independente, quando a v2 já estiver incorporada à main."
 ---
 
 # Executar plano-base aprovado
@@ -15,7 +15,7 @@ Na execução independente, aceitar como comando suficiente a referência do pla
 
 `Use $lp-factory-executar-plano no plano-base aprovado do PR #<número>.`
 
-No handoff interno de `$lp-factory-orquestrar-plano`, não exigir nova instrução humana. Receber o checkpoint `LP-Factory-Stage: plan-v2-approved` e continuar no mesmo task.
+No handoff interno de `$lp-factory-conduzir-plano-completo`, não exigir nova instrução humana. Receber o checkpoint `LP-Factory-Stage: plan-v2-approved` e continuar no mesmo task.
 
 Usar `end-to-end` por padrão no fluxo normal. Exigir `experimental` explícito para parar nos checkpoints solicitados pelo humano.
 
@@ -23,7 +23,7 @@ Exigir que a v2 esteja na `main` somente na execução independente. No handoff 
 
 ## Handoff interno
 
-Quando invocada por `$lp-factory-orquestrar-plano`:
+Quando invocada por `$lp-factory-conduzir-plano-completo`:
 
 1. Confirmar que branch, worktree e PR são os mesmos usados para produzir a v2.
 2. Confirmar o checkpoint `plan-v2-approved`, a matriz versionada no mesmo PR e usar esse commit como contrato imutável.
