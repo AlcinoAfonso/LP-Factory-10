@@ -18,8 +18,6 @@
 • QUANDO NÃO CONSULTAR: regras técnicas do runtime (usar `docs/base-tecnica.md`) e contrato/inventário de DB (usar `docs/schema.md`).
 • NOTA: este documento registra estado final por caso; não é lugar de narrativa operacional.
 
-0.3 Nota operacional (dependência externa)
-• 2026-02 — Supabase: Project Clone / Restore to a New Project (beta) pode ficar indisponível; sem impacto no runtime do projeto existente. Não depender disso para staging/espelho/backup. Se precisar duplicar ambiente: criar projeto novo + aplicar migrations do repositório + configurar env/secrets manualmente.
 
 1. E1 — Estrutura de Dados
 - Objetivo: estabelecer a base estrutural multi-tenant para contas, vínculos de usuários, planos, parceiros e auditoria.
@@ -29,7 +27,7 @@
 
 1.1.1 Objetivo e status
 - Objetivo: disponibilizar as entidades e relações iniciais necessárias para identificar contas, vincular usuários, associar planos e parceiros e registrar auditoria.
-- Status: concluído em 03/10/2025; estruturas preservadas no estado atual do produto.
+- Status: concluído; estruturas preservadas no estado atual do produto.
 
 1.1.2 Registros do recorte
 - Banco:
@@ -286,7 +284,7 @@
 
 5.3.1 Objetivo e status
 - Objetivo: assegurar entrega de e-mails de confirmação de signup e recuperação de senha pelo Supabase Auth.
-- Status: concluído em 26/02/2026; entrega e links funcionais validados.
+- Status: concluído; entrega e links funcionais validados.
 
 5.3.2 Registros do recorte
 - Referências:
@@ -446,7 +444,7 @@
 
 8.1.1 Objetivo e status
 - Objetivo: resolver conta, membership, allow ou deny e motivo operacional em um único fluxo rastreável e fechado por padrão.
-- Status: concluído em 03/10/2025; contrato essencial preservado no runtime atual.
+- Status: concluído; contrato essencial preservado no runtime atual.
 
 8.1.2 Registros do recorte
 - Referências:
