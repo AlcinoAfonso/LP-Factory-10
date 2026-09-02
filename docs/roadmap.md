@@ -2087,7 +2087,6 @@
     - `lib/conversion-content/landing-page/taxon-preparation/validation-cases.ts`
     - `lib/conversion-content/landing-page/taxon-preparation/index.ts`
     - `lib/conversion-content/adapters/selectedEndCustomerResearchAdapter.ts`
-    - `lib/conversion-content/adapters/selectedEndCustomerResearchAdapterCore.ts`
     - `components/admin/AdminTaxonResearchSelectionForm.tsx`
     - `supabase/migrations/20260814174500_e20_5_selected_end_customer_research_version.sql`
     - `supabase/snippets/e20_5_selected_end_customer_research_version_verify.sql`
