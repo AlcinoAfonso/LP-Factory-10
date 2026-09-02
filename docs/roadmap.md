@@ -360,13 +360,12 @@
 - Referências:
   - Componentes e APIs mínimas: `docs/design-system.md` — seções “Componentes padronizados” e “API mínima esperada”.
 
-6.2.3 Contrato da biblioteca
+6.2.3 Biblioteca vigente e limite
 - Status: implementado e vigente.
 - Conteúdo:
-  - componentes preservam foco visível, estados desabilitados e tokens semânticos;
-  - `Select` permanece nativo e `FormField` fornece somente label, hint e erro;
-  - variações novas exigem uso real imediato e não transformam a biblioteca em framework próprio;
-  - contratos de props e detalhes de implementação residem no código e em `docs/design-system.md`.
+  - a biblioteca base cobre ações, campos e superfícies comuns nas adoções realizadas;
+  - APIs, acessibilidade e comportamento visual residem exclusivamente no código e em `docs/design-system.md`;
+  - variações novas exigem uso real imediato e não autorizam framework próprio.
 
 6.3 Estados visuais e feedback
 
@@ -389,12 +388,12 @@
 - Referências:
   - Estados reutilizáveis: `docs/design-system.md` — seções “Componentes padronizados”, “API mínima esperada” e “Aplicação mínima visível atual”.
 
-6.3.3 Contrato de estados
+6.3.3 Estados vigentes e limite
 - Status: implementado e vigente.
 - Conteúdo:
-  - feedback usa tons semânticos de erro, sucesso e aviso com tratamento acessível;
-  - estados vazios e de carregamento permanecem simples, sem ilustração, skeleton ou framework adicional por padrão;
-  - cor isolada não comunica estado quando houver significado operacional.
+  - feedback e estados reutilizáveis estão disponíveis nas superfícies adotadas;
+  - comportamento visual e acessibilidade residem exclusivamente em `docs/design-system.md`;
+  - a base permanece simples, sem framework adicional de feedback ou carregamento.
 
 6.4 Padrões de layout para dashboards
 
@@ -410,11 +409,9 @@
 6.4.3 Padrões vigentes e limites
 - Status: implementado e vigente.
 - Conteúdo:
-  - workspace usa composição master-detail com contexto e retorno previsíveis;
-  - Admin usa shell próprio separado do Account Dashboard e navegação responsiva;
-  - coleções e detalhes devem permanecer legíveis em mobile sem depender de rolagem horizontal;
-  - estados vazio, indisponível, pendente e erro devem ser explícitos e completos;
-  - a padronização não autoriza redesign amplo nem obriga componentização antecipada de superfícies sem necessidade real.
+  - workspace do Account Dashboard e Admin possuem padrões próprios documentados e aplicados;
+  - layout, responsividade e estados visuais residem exclusivamente em `docs/design-system.md`;
+  - a padronização não autoriza redesign amplo nem componentização antecipada de superfícies sem necessidade real.
 
 7. E7 — Conta Consultiva
 
