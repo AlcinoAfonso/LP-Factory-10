@@ -63,21 +63,58 @@
   - o contrato completo e atual do banco reside exclusivamente em `docs/schema.md`.
 
 2. E2 — Núcleo de Acesso
+- Objetivo: estabelecer autenticação e autorização básicas para o acesso seguro às contas da plataforma.
+- Status: concluído; autenticação, recuperação de senha e helpers de autorização permanecem em uso, enquanto o Access Context e a gestão de membros evoluem nos recortes E8 e E11.
 
-2.1 Status
-• Concluído
-2.2 Implementado
-• Autenticação email/senha (SULB)
-• Roles: owner, admin, editor, viewer, super_admin
-• RLS em todas as tabelas do núcleo de acesso
-• Helpers: is_super_admin, is_platform_admin, has_account_min_role
-• Recovery de senha: /auth/forgot-password → e-mail → /auth/update-password (token_hash/type=recovery); confirmação e troca somente no POST /auth/confirm (anti-scanner)
-2.3 Critérios de Aceite
-• Login funcional e seguro
-• Reset de senha com expiração (token consumido somente no POST)
-• Auditoria ativa
-2.4 Pendências
-• Futuras features (Magic Link, Social Login, 2FA)
+2.1 Autenticação e autorização básicas
+
+2.1.1 Objetivo e status
+- Objetivo: autenticar usuários por e-mail e senha, aplicar papéis de conta e proteger o acesso a dados por políticas e helpers server-side.
+- Status: concluído; contratos essenciais preservados no estado atual do produto.
+
+2.1.2 Registros do recorte
+- Banco:
+  - Criados:
+    - `public.is_super_admin()`;
+    - `public.is_platform_admin()`;
+    - `public.has_account_min_role(uuid, text)`.
+- Referências:
+  - Arquitetura de acesso e fluxos de Auth: `docs/base-tecnica.md` — seção 5.
+  - Helpers e políticas atuais: `docs/schema.md` — seções 1 e 3.3.
+  - Configuração externa de Auth: `docs/platform-config.md` — seções de Supabase Auth.
+
+2.1.3 Identidade e papéis
+- Status: implementado e vigente.
+- Conteúdo:
+  - autenticação de usuário ocorre pelo Supabase Auth com e-mail e senha;
+  - os papéis canônicos de membership são `owner`, `admin`, `editor` e `viewer`;
+  - `platform_admin` representa autoridade da plataforma e não integra os papéis de membership;
+  - `super_admin` permanece como compatibilidade técnica no helper e guard existentes, incluída pela verificação de `platform_admin`;
+  - autenticação não concede acesso isoladamente: a autorização final de conta permanece server-side e falha fechada.
+
+2.1.4 Autorização de dados
+- Status: implementado e vigente.
+- Conteúdo:
+  - RLS protege as estruturas expostas do núcleo de acesso conforme o contrato atual do schema;
+  - helpers de banco resolvem privilégios de plataforma, membership ativo e papel mínimo sem transferir a decisão para a UI;
+  - políticas, funções e grants exatos residem exclusivamente em `docs/schema.md` e no banco versionado.
+
+2.1.5 Login e recuperação de senha
+- Status: implementado e vigente.
+- Conteúdo:
+  - login utiliza e-mail e senha e encaminha o usuário autenticado ao gateway seguro da área de contas;
+  - solicitação de recuperação usa resposta neutra contra enumeração de usuários;
+  - links de confirmação e recuperação não consomem token ou código no GET;
+  - verificação, criação da sessão e atualização de senha ocorrem somente no POST;
+  - senha somente é alterada depois da validação do token ou código e do estabelecimento da sessão correspondente;
+  - configuração de templates, redirects e expiração pertence a `docs/platform-config.md`.
+
+2.1.6 Limites do recorte
+- Status: vigente.
+- Conteúdo:
+  - resolução do contexto e autorização final de uma conta pertencem à E8;
+  - gestão de membros, convites e transições de membership pertence à E11;
+  - Magic Link, login social e autenticação em dois fatores não integram o escopo implementado ou uma pendência aprovada da E2.
 
 3. E3 — Adapters Base
 
