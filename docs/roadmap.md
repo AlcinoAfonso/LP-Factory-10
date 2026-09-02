@@ -977,94 +977,77 @@
 - Os objetos `taxon_market_research` e `taxon_market_research_items` e seus consumidores independentes permanecem preservados.
 - O inventário material da retirada reside em E22.1.2.
 
-11. E11 — Gestão de Usuários e Convites
-- Objetivo: permitir gestão segura de membros não-owner e convites por conta, usando Supabase Auth e o Account Dashboard.
-- Status: implementação e validação hospedada concluídas; PR #656 mergeado, funcionalidade habilitada e smoke final aprovado em Production.
+11. E11 — Gestão de membros e autoridade comercial
+
+- Objetivo: permitir gestão segura de membros não-owner por conta e tornar explícitas as regras de papel e entitlement para checkout, novos convites e manutenção de vínculos.
+- Status: implementado e habilitado em Preview e Production; gestão de membros, convites, autoatendimento do convidado e políticas comerciais estão ativas.
 
 11.1 Gestão de membros e convites
 
 11.1.1 Objetivo e status
-- Objetivo: permitir que owner e admin convidem, acompanhem e administrem membros com papéis admin, editor e viewer, preservando o owner e o isolamento multi-tenant.
-- Status: concluído; migration aplicada, estado pós-apply verificado e ativação controlada aprovada em Production.
+- Objetivo: permitir que `owner` e `admin` convidem e administrem membros `admin`, `editor` e `viewer`, preservando o owner, o próprio ator e o isolamento multi-tenant.
+- Status: implementado, com gate `E11_MEMBERS_ENABLED=true` nos ambientes hospedados.
 
 11.1.2 Registros do recorte
 - Banco:
   - Ajustados:
-    - `public.account_users`;
-    - `public.accept_account_invite(uuid, integer)`;
-    - `public.revoke_account_invite(uuid, uuid)`;
-    - `public.invitation_expires_at(uuid, integer)`;
-    - `public.invitation_is_expired(uuid, integer)`;
-    - `public.activate_user_from_auth_hook(jsonb)`.
+    - `public.account_users`
+    - `public.accept_account_invite(uuid, integer)`
+    - `public.revoke_account_invite(uuid, uuid)`
+    - `public.invitation_expires_at(uuid, integer)`
+    - `public.invitation_is_expired(uuid, integer)`
+    - `public.activate_user_from_auth_hook(jsonb)`
 - Repositório:
   - Criados:
-    - `supabase/migrations/20260727155312_e11_account_members_security.sql`;
-    - `supabase/snippets/e11_account_members_verify.sql`;
-    - `lib/access/account-members/`;
-    - `app/a/[account]/members/`;
-    - `app/a/home/PendingInviteActionButton.tsx`;
-    - `app/a/home/member-invite-actions.ts`.
+    - `supabase/migrations/20260727155312_e11_account_members_security.sql`
+    - `supabase/snippets/e11_account_members_verify.sql`
+    - `lib/access/account-members/`
+    - `app/a/[account]/members/`
+    - `app/a/home/PendingInviteActionButton.tsx`
+    - `app/a/home/member-invite-actions.ts`
   - Ajustados:
-    - `app/a/[account]/layout.tsx`;
-    - `app/a/home/page.tsx`;
-    - `app/auth/confirm/route.ts`;
-    - `app/auth/update-password/page.tsx`;
-    - `components/layout/Header.tsx`;
-    - `lib/access/guards.ts`;
-    - `lib/supabase/service.ts`;
-    - `package.json`.
+    - `app/a/[account]/layout.tsx`
+    - `app/a/home/page.tsx`
+    - `app/auth/confirm/route.ts`
+    - `app/auth/update-password/page.tsx`
+    - `components/layout/Header.tsx`
+    - `lib/access/guards.ts`
+    - `lib/supabase/service.ts`
+    - `package.json`
+- Referências:
+  - Contrato de banco: `docs/schema.md` — seções 1.2 e 3.4.
+  - Configuração hospedada: `docs/platform-config.md` — seções 3.5 e 4.6.
 
-11.1.3 Domínio server-side e ciclo seguro de vínculos
-- Status: implementado.
-- Conteúdo:
-  - boundary server-only para operações de membros e Supabase Auth Admin;
-  - autorização administrativa por owner ou admin e autoatendimento do convidado vinculado à sessão autenticada;
-  - transições idempotentes por membership específico, com proteção do owner e do próprio ator;
-  - escrita direta restrita e funções legadas amplas indisponíveis aos papéis de runtime.
+11.1.3 Autoridade e transições
+- A rota `/a/[account]/members`, suas leituras e suas ações exigem o gate habilitado e contexto de `owner` ou `admin`.
+- Os papéis administráveis são `admin`, `editor` e `viewer`; `owner` não entra nas mutações comuns.
+- Alteração de papel, desativação e revogação operam sobre membership específico e são idempotentes quando o estado já corresponde ao resultado.
+- O owner e o próprio ator são protegidos contra mutações administrativas indevidas.
+- As funções legadas de convite permanecem no banco sem `EXECUTE` para os papéis de runtime; o fluxo atual usa o boundary server-only `lib/access/account-members/`.
 
-11.1.4 Convite de novo usuário e conclusão do cadastro
-- Status: implementado.
-- Conteúdo:
-  - template nativo `Invite user` para usuário novo ou ainda não confirmado;
-  - contexto versionado e assinado vinculado a um único `account_user_id`;
-  - confirmação anti-scanner, definição de senha e ativação apenas do vínculo validado, com retry idempotente;
-  - validade e reenvio sob responsabilidade do Supabase Auth, sem expiração local, e-mail próprio, hook amplo, job ou automação.
+11.1.4 Convite por e-mail
+- Usuário novo ou ainda não confirmado recebe o template nativo `Invite user` do Supabase Auth.
+- Cada emissão carrega estado versionado e assinado, vinculado a um único `account_user_id`, no `redirectTo` específico do convite.
+- A confirmação anti-scanner, a definição de senha e a ativação atingem somente o vínculo validado e aceitam retry idempotente.
+- Validade e reenvio permanecem sob responsabilidade do Supabase Auth; não há expiração local, e-mail customizado, Auth Hook amplo, job ou automação para esse ciclo.
 
-11.1.5 Gestão de membros no Account Dashboard
-- Status: implementado.
-- Conteúdo:
-  - rota `/a/[account]/members` restrita a owner e admin;
-  - lista de membros ativos e convites pendentes;
-  - convite, reenvio, revogação, alteração de papel e desativação, com proteção do owner e do próprio ator;
-  - navegação, rota e ações fechadas enquanto o gate da E11 estiver desabilitado.
+11.1.5 Convite dentro do produto
+- Usuário já confirmado recebe a pendência em `/a/home`, sem novo e-mail.
+- Aceite e recusa derivam a identidade da sessão e processam um vínculo pendente por vez.
+- O canal do convite é correlacionado ao ciclo `pending` atual; evento ausente ou pertencente a ciclo anterior falha fechado.
+- O membership permanece `pending` até aceite, recusa ou revogação.
 
-11.1.6 Pendências do usuário já cadastrado
-- Status: implementado.
-- Conteúdo:
-  - usuário confirmado recebe o convite na própria `/a/home`, sem novo e-mail;
-  - aceite ou recusa de uma pendência por vez, com identidade derivada da sessão;
-  - canal correlacionado ao ciclo `pending` atual, com falha fechada para evento ausente ou anterior;
-  - membership permanece `pending` até aceite, recusa ou revogação, sem expiração local.
+11.1.6 Superfície de gestão
+- A página de membros lista vínculos ativos e convites pendentes.
+- `owner` e `admin` podem convidar, reenviar, revogar, alterar papel e desativar dentro das proteções do domínio.
+- O cabeçalho expõe a navegação para membros apenas aos papéis autorizados e quando o gate está ativo.
+- Com o gate ausente ou diferente do literal `true`, rota, navegação, leituras e mutações permanecem fechadas.
 
-11.1.7 Ativação controlada e validação hospedada
-- Status: concluído; correção do transporte concorrente aprovada no Preview e smoke final aprovado em Production após o merge do PR #656.
-- Conteúdo:
-  - migration aplicada e estado pós-apply verificado;
-  - configuração remanescente do Supabase Auth concluída, com o template `Invite user` usando `RedirectTo`, `TokenHash` e `type=invite`;
-  - gate habilitado em Production após o merge do PR #656, com redeploy concluído;
-  - matriz hospedada anterior aprovada para convite de usuário novo e existente, aceite, recusa, reativação, troca de papel, desativação, proteções de owner e do próprio vínculo, isolamento de acesso, logout, navegação por teclado, responsividade e retorno da gestão de membros à página principal;
-  - transporte do estado assinado corrigido para ser codificado no `redirectTo` específico de cada emissão, sem gravação ou leitura por `data` ou `user_metadata` compartilhado;
-  - testes humanos corretivos aprovados para convite novo e reenvio, senha e ativação, dois convites do mesmo usuário não confirmado para contas diferentes, ativação exclusiva do respectivo `account_user_id` e adulteração do estado bloqueada;
-  - smoke final em Production aprovado na página de membros e convites, com dados e ações de gestão carregados;
-  - fase concluída sem teste manual remanescente.
-
-11.2 Autoridade comercial e elegibilidade para gestão de membros
+11.2 Autoridade comercial por papel
 
 11.2.1 Objetivo e status
-- Objetivo: conectar os papéis da E11 ao sinal canônico de entitlement da E9, separando autoridade financeira, elegibilidade para novos convites e ações de manutenção dos vínculos existentes.
-- Status: implementação e validação concluídas; Preview autenticado aprovado; HEAD funcional validado `7557f7053a95df07cd4c33b1224deed657671bfb`; merge humano do PR #667 pendente.
-- Plano-base: `docs/lousa-plano-base-e11-2.md`.
-- Automação: não.
+- Objetivo: combinar papéis da conta e o sinal canônico da E9 para decidir checkout, criação ou reenvio de convites e experiência comercial, sem alterar vínculos existentes.
+- Status: implementado; políticas server-side, experiência genérica e publicada e validações de regressão estão integradas ao runtime atual.
 
 11.2.2 Registros do recorte
 - Repositório:
@@ -1087,52 +1070,35 @@
     - `lib/access/guards.ts`
     - `lib/conversion-content/commercial-activation/renderer.tsx`
     - `package.json`
+- Referências:
+  - Plano do recorte: `docs/lousa-plano-base-e11-2.md`.
+  - Entitlement canônico: E9.1.
+  - Experiência comercial: E10.6–E10.7.
 
-11.2.3 Autoridade para o checkout
-- Status: implementado.
-- Conteúdo:
-  - somente owner ativo de conta ativa e sem entitlement comercial válido pode visualizar a ação de contratação e iniciar o checkout existente;
-  - admin, editor e viewer não iniciam checkout, com bloqueio server-side independente da UI;
-  - owner com `isCommerciallyEligible=true` não cria nova assinatura pela action atual;
-  - decisões server-side de checkout emitem evento estruturado seguro para `allowed`, `denied` e `error`, sem PII e sem alterar o resultado da operação;
-  - preço, recorrência, webhook, gestão de assinatura e outros fluxos de billing permanecem fora do recorte.
+11.2.3 Checkout
+- Somente `owner` com conta `active`, membership `active` e sem entitlement comercial válido pode visualizar a ação financeira e iniciar o checkout.
+- `admin`, `editor` e `viewer` não iniciam checkout; a Server Action repete o guard independentemente da UI.
+- `owner` já comercialmente elegível não cria nova assinatura pela action atual.
+- A decisão usa apenas `CommercialEntitlementSignal.isCommerciallyEligible`; preço, recorrência, webhook e persistência do pagamento residem em E9.4.
+- Cada decisão de checkout registra no máximo um evento estruturado `commercial_checkout_decision` com resultado `allowed`, `denied` ou `error`, sem campos diretos de PII e sem alterar o resultado da operação.
 
-11.2.4 Elegibilidade para criação e reenvio de convites
-- Status: implementado.
-- Conteúdo:
-  - owner e admin só criam ou reenviam convites quando `isCommerciallyEligible=true`;
-  - a conta precisa estar `active`, com `accountStatus` derivado do Access Context, e os guards ocorrem antes de leitura ou criação no Auth, preparação do membership, canal ou envio;
-  - ausência ou erro do sinal bloqueia criação e reenvio;
-  - o fluxo preserva `inviteUserByEmail` e o template nativo `Invite user`, sem envio customizado;
-  - decisões server-side de convite e reenvio emitem evento estruturado seguro sem interferir no resultado da operação;
-  - editor e viewer permanecem sem gestão de membros.
+11.2.4 Novos convites e reenvio
+- `owner` e `admin` só criam ou reenviam convites quando a conta está `active` e `isCommerciallyEligible=true`.
+- O guard comercial ocorre antes de leitura ou criação no Auth, preparação de membership, registro de canal ou envio.
+- Ausência ou erro do sinal de entitlement bloqueia criação e reenvio.
+- Cada decisão registra no máximo um evento `account_member_invite_decision`; o logging é não bloqueante.
+- `editor` e `viewer` permanecem sem gestão de membros.
 
-11.2.5 Experiência da conta sem entitlement
-- Status: implementado e aprovado em validação humana autenticada no Preview; HEAD funcional validado `7557f7053a95df07cd4c33b1224deed657671bfb`.
-- Conteúdo:
-  - `GenericCommercialPage` e `PublishedCommercialActivationPage` aplicam a mesma política de autoridade financeira;
-  - owner sem entitlement mantém a variante comercial vigente e inicia o checkout existente; owner com entitlement não inicia nova compra;
-  - admin, editor e viewer sem entitlement recebem estado simples de espera pela ativação comercial do proprietário, e nenhum não-owner recebe cards ou CTA financeiro;
-  - a variante publicada preserva bundle, conteúdo persistido, composição, ordem e schemas da E10.7;
-  - a E11.2 não cria novo dashboard produtivo nem antecipa a E10.5.1.
+11.2.5 Experiência sem entitlement
+- `owner` sem entitlement recebe a variante comercial vigente com ações financeiras.
+- `admin`, `editor` e `viewer` sem entitlement recebem estado de espera pela ativação comercial do proprietário, sem cards ou CTA financeiro.
+- `GenericCommercialPage` e `PublishedCommercialActivationPage` aplicam a mesma política; a variante publicada preserva bundle, conteúdo, composição, ordem e schemas da E10.7.
+- A política comercial não cria dashboard produtivo paralelo; quando há entitlement, a jornada operacional pertence a E19.
 
-11.2.6 Preservação dos vínculos e ações existentes
-- Status: implementado e coberto pela validação automatizada.
-- Conteúdo:
-  - listagem, aceite, recusa, revogação, desativação e alteração de papel permanecem regidos pela E11.1 e independentes de entitlement;
-  - memberships existentes não são apagados, desativados ou alterados retroativamente;
-  - a decisão comercial consome exclusivamente `CommercialEntitlementSignal.isCommerciallyEligible`, sem reinterpretar origem, plano ou provedor.
-
-11.2.7 Validação técnica, visual e humana
-- Status: validações automatizada e humana autenticada aprovadas.
-- Conteúdo:
-  - a matriz automatizada de variante genérica/publicada, owner/admin/editor/viewer e `isCommerciallyEligible=false/true` foi aprovada, incluindo visibilidade, chamada direta e comportamento preservado;
-  - os bloqueios de checkout e convite antes de efeitos externos ou persistência foram comprovados;
-  - os resultados `allowed`, `denied` e `error`, com exatamente um evento seguro por decisão e logging sem interferência no fluxo, foram comprovados;
-  - as ações preservadas continuaram funcionando sem entitlement;
-  - a validação humana autenticada em Preview aprovou owner e non-owner em desktop e mobile, incluindo conteúdo, responsividade, foco, ausência de CTA financeiro indevido e ausência de erro ou quebra visual;
-  - `npm ci`, `npm run check`, as validações específicas e `git diff --check` foram aprovados no fechamento final.
-
+11.2.6 Operações preservadas
+- Listagem, aceite, recusa, revogação, desativação e alteração de papel independem do entitlement.
+- Entitlement ausente não apaga, desativa ou altera retroativamente memberships existentes.
+- O gate comercial se restringe a criar e reenviar convites e não redefine as transições seguras da E11.1.
 
 12. E12 — Admin Dashboard
 - Objetivo: Consolidar o Admin Dashboard como seção administrativa protegida, separada do Account Dashboard, com navegação própria e leitura operacional read-only.
