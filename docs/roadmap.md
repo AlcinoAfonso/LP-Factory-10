@@ -1101,65 +1101,35 @@
 - O gate comercial se restringe a criar e reenviar convites e não redefine as transições seguras da E11.1.
 
 12. E12 — Admin Dashboard
-- Objetivo: Consolidar o Admin Dashboard como seção administrativa protegida, separada do Account Dashboard, com navegação própria e leitura operacional read-only.
-- Status: Em desenvolvimento.
+
+- Objetivo: oferecer uma seção administrativa protegida e independente do Account Dashboard, com shell próprio, leitura operacional e integração controlada das operações administrativas definidas pelos domínios responsáveis.
+- Status: base, navegação, documentação, contas, resoluções de nicho, taxonomia, páginas comerciais e estrutura da LP estão implementadas; Workloads e Custos OpenAI são integrados sob E21, e Auditoria permanece como área em preparação.
 
 12.1 Contrato administrativo base
 
 12.1.1 Objetivo e status
-- Objetivo: Definir o contrato administrativo base da E12, incluindo escopo geral, áreas atuais, limites e pendências gerais do Admin Dashboard.
-- Status: Em desenvolvimento.
+- Objetivo: definir a fronteira do Admin Dashboard, sua proteção e a residência das operações integradas.
+- Status: contrato implementado.
 
-12.1.2 Registros do recorte
-- Banco:
-  - Criados: N/A.
-  - Ajustados: N/A.
-- Repositório:
-  - Criados: N/A.
-  - Ajustados: N/A.
-  - Excluídos: N/A.
-- Updates:
-  - Aplicados: N/A.
-
-12.1.3 Escopo atual
-- Status: Consolidado como contrato vigente da E12.
-- Conteúdo:
-  - `/admin` é uma página pública de entrada do Admin Dashboard.
-  - Subrotas internas permanecem protegidas por gate SSR administrativo em `app/admin/(protected)/layout.tsx`.
-  - `/admin/contas` continua sendo o destino pós-login do admin.
-  - Header e menu próprios do Admin, sem `AccountSwitcher` e sem dependência de conta ativa.
-  - Shell operacional com sidebar, navegação administrativa e responsividade básica.
-  - Leitura read-only real para contas, resoluções de nicho e taxonomia.
-  - Sem billing, migrations, SQL ou alterações de RLS nesta fase; mutações administrativas gerais permanecem fora do escopo atual, exceto as mutações mínimas aprovadas para a E10.7 em `/admin/templates`.
+12.1.3 Fronteira vigente
+- `/admin` é a entrada pública; as rotas internas usam o gate SSR de `app/admin/(protected)/layout.tsx` e exigem `platform_admin`.
+- O destino administrativo pós-login é `/admin/contas`.
+- Header, menu, sidebar e navegação são próprios do Admin, sem `AccountSwitcher` e sem dependência de conta ativa.
+- O Admin oferece leituras e mutações apenas quando um recorte de domínio as autoriza; o shell não cria autoridade administrativa paralela.
+- A operação de páginas comerciais reside em E10.7, entitlement manual em E9.2, seleção e avaliação de insumos em E20.5–E20.6 e gestão e custos OpenAI em E21.
 
 12.1.4 Áreas atuais
-- Status: Áreas administrativas atuais e previstas do contrato base.
-- Conteúdo:
-  - Contas.
-  - Resoluções de nicho.
-  - Taxonomia.
-  - Templates.
-  - Documentação.
-  - Auditoria.
+- Disponíveis: Contas, Resoluções de nicho, Taxonomia, Páginas comerciais, Estrutura da LP, Workloads OpenAI, Custos OpenAI e Documentação.
+- Em preparação: Auditoria.
+- A navegação é responsiva e preserva o bloqueio de identidade autenticada sem autoridade de plataforma.
 
-12.1.5 Pendências e limites gerais
-- Status: Pendências mantidas para recortes futuros ou para a operação mínima já aprovada na E10.7.
-- Conteúdo:
-  - Templates e Auditoria permanecem como áreas previstas.
-  - Mutações administrativas gerais permanecem fora do escopo atual, exceto as mutações mínimas aprovadas para a E10.7 em `/admin/templates`, descritas em 12.3.
-  - Billing e operações de suspensão/reativação dependem de recorte futuro.
-  - Não há editor visual, LP Builder, curadoria de composição de nicho, LP teste ou liberação de nicho para clientes neste ajuste da E12.
-
-12.2 Base implementada do Admin Dashboard
+12.2 Shell, documentação e leituras administrativas base
 
 12.2.1 Objetivo e status
-- Objetivo: Consolidar o que já foi implementado e validado na base do Admin Dashboard, incluindo entrada pública, leitor read-only de documentação, shell administrativo e leitura operacional read-only.
-- Status: Concluído e validado nos recortes descritos abaixo.
+- Objetivo: fornecer entrada pública, shell protegido, leitor de documentação e superfícies administrativas base para contas, resoluções de nicho e taxonomia.
+- Status: implementado.
 
 12.2.2 Registros do recorte
-- Banco:
-  - Criados: N/A.
-  - Ajustados: N/A.
 - Repositório:
   - Criados:
     - `app/admin/(protected)/documentacao/page.tsx`
@@ -1170,6 +1140,7 @@
     - `app/admin/(protected)/taxonomia/page.tsx`
     - `app/admin/(protected)/taxonomia/[taxonId]/page.tsx`
     - `app/admin/(protected)/layout.tsx`
+    - `components/admin/AdminMobileMenu.tsx`
     - `components/admin/AdminPageHeader.tsx`
     - `components/admin/AdminPlaceholderPage.tsx`
     - `components/admin/AdminSidebar.tsx`
@@ -1189,203 +1160,100 @@
     - `app/admin/page.tsx`
     - `components/admin/AdminHeader.tsx`
     - `components/admin/AdminUserMenu.tsx`
-    - `components/admin/adminNavigation.ts`
     - `next.config.js`
-  - Excluídos: N/A.
-- Updates:
-  - Aplicados: N/A.
 
-12.2.3 Entrada pública do Admin Dashboard
-- Status: Concluído e validado em testes humanos (22/06/2026).
-- Conteúdo:
-  - `/admin` agora abre uma página pública de entrada do Admin Dashboard, com apresentação simples e botão de acesso.
-  - O botão de entrada aponta para `/auth/login?next=%2Fadmin%2Fcontas`.
-  - As subrotas internas continuam protegidas pelo gate administrativo deslocado para `app/admin/(protected)/layout.tsx`.
-  - `/admin/contas` permanece como destino pós-login do admin.
+12.2.3 Entrada e proteção
+- A entrada pública apresenta o Admin e envia o usuário para `/auth/login?next=%2Fadmin%2Fcontas`.
+- O layout protegido reexecuta `requirePlatformAdmin`; identidade não autenticada retorna ao login e identidade sem autoridade recebe destino público neutro.
+- O shell protegido usa `AdminHeader`, `AdminSidebar` e menu mobile dentro de uma largura operacional única.
 
-12.2.4 Leitor read-only de documentação
-- Status: Concluído e validado em testes humanos (22/06/2026).
-- Conteúdo:
-  - `/admin/documentacao` é uma área protegida pelo gate administrativo existente.
-  - A página lista uma whitelist fixa de documentos de `docs/` e permite leitura read-only do conteúdo.
-  - A leitura usa filesystem server-side do repositório, com inclusão explícita dos arquivos permitidos no tracing da rota.
-  - UI final: filtro superior, dropdown alfabético, conteúdo abaixo, sem lista intermediária e responsiva em desktop/mobile.
-  - Markdown é exibido como texto bruto; renderer Markdown fica como oportunidade futura por exigir dependência não instalada.
-  - Não usa Supabase, migrations, GitHub API em runtime, edição, salvamento, publicação ou mutações.
+12.2.4 Documentação read-only
+- `/admin/documentacao` lista uma whitelist fixa de documentos do repositório, com filtro e seleção.
+- `readRepoDoc` lê apenas paths autorizados pelo filesystem server-side e o tracing da rota inclui explicitamente esses arquivos.
+- O conteúdo Markdown é exibido como texto bruto; não há GitHub API em runtime, edição, salvamento, publicação, banco ou mutação.
 
-12.2.5 Shell e leitura operacional read-only
-- Status: Implementado como base operacional read-only da E12.
-- Conteúdo:
-  - Shell operacional com sidebar.
-  - Navegação administrativa.
-  - Responsividade básica.
-  - Leitura read-only real para contas, resoluções de nicho e taxonomia.
+12.2.5 Leituras e integrações de conta
+- Contas, resoluções de nicho e taxonomia usam adapters server-only com paginação, filtros e projeções próprias para o Admin.
+- A listagem de resoluções e seu detalhe são read-only.
+- O detalhe da conta integra a liberação manual de entitlement definida em E9.2; essa mutação não pertence ao contrato base da E12.
+- A taxonomia evoluiu para operação controlada e diagnóstico contextual, consolidada em 12.5.
 
-12.3 Operação administrativa mínima da E10.7
+12.3 Integração administrativa de `commercial_activation`
 
 12.3.1 Objetivo e status
-- Objetivo: Isolar a operação administrativa mínima de páginas comerciais por taxon aprovada pela E10.7 dentro da superfície administrativa da E12.
-- Status: Reintroduzido em recorte mínimo pela E10.7 em 19/06/2026.
+- Objetivo: integrar ao shell administrativo a geração, revisão e publicação de páginas comerciais definida pela E10.7.
+- Status: implementado; a autoridade funcional e os registros materiais residem em E10.7.
 
 12.3.2 Registros do recorte
-- Banco:
-  - Criados: N/A.
-  - Ajustados: N/A.
-- Repositório:
-  - Criados: N/A.
-  - Ajustados: N/A.
-  - Excluídos: N/A.
-- Updates:
-  - Aplicados: N/A.
+- Referências:
+  - Plano da operação: `docs/lousa-plano-base-e10-7.md`.
+  - Registros materiais e contrato funcional: E10.7.2–E10.7.5.
 
-12.3.3 Geração administrativa de página comercial por taxon
-- Status: Reintroduzido em recorte mínimo pela E10.7 em 19/06/2026.
-- Conteúdo:
-  - A operação administrativa não será um editor visual nem LP Builder.
-  - O recorte autorizado limita-se a gerar draft, regenerar draft, visualizar, publicar e arquivar `published` anterior, conforme 12.3.4.
+12.3.3 Superfície integrada
+- `/admin/templates` lista taxons e estados comerciais; `/admin/templates/commercial-activation/[taxonSlug]` concentra geração ou regeneração, preview, publicação, diagnóstico e histórico.
+- O layout protege a superfície e cada Server Action reexecuta `requirePlatformAdmin`.
+- Publicação, composição, elegibilidade, renderer e fallback permanecem definidos pela E10.7; a E12 não introduz editor visual nem LP Builder.
 
-12.3.4 Superfície inicial em `/admin/templates`
-- Status: Superfície inicial prevista para a operação administrativa mínima da E10.7.
-- Conteúdo:
-  - `/admin/templates` será a superfície inicial da operação administrativa mínima da E10.7.
-  - Operações permitidas: listar taxons elegíveis, mostrar checklist simples, indicar pesquisas presentes ou ausentes, indicar composição disponível, gerar draft, regenerar draft, visualizar draft com `CommercialActivationRenderer`, publicar draft e arquivar `published` anterior se existir.
-  - Esta tela passará a ter mutações administrativas controladas para a E10.7, respeitando permissões administrativas e operação transacional de publicação.
-
-12.3.5 Limites da operação administrativa da E10.7
-- Status: Limites mantidos como restrições do recorte mínimo aprovado.
-- Conteúdo:
-  - Sem editor visual.
-  - Sem múltiplos aprovadores.
-  - Sem gestão de clientes.
-  - Sem bloqueio de ativações.
-  - Sem permissão de criar LPs.
-  - Sem LP Builder.
-  - Sem curadoria de composição de nicho, LP teste ou liberação de nicho registrada como implementação da E12.
-
-12.4 Gestão do perfil de orientação
-- Objetivo: Definir a operação administrativa do perfil de orientação que direciona gerações futuras de landing pages sem materializar nem alterar LPs.
-- Status: E12.4.3, E12.4.3.1 e E12.4.3.2 concluídas e integradas à `main`, incluindo a correção técnica do PR #681; gate funcional único no Preview e inspeção final do Estrategista aprovados.
+12.4 Gestão do perfil de orientação — retirada
 
 12.4.1 Objetivo e status
-- Objetivo: Entregar a operação manual completa de criação, edição, revisão, ativação e arquivamento de versões do perfil, com proposta opcional por IA no mesmo editor.
-- Status: Operação manual e assistência opcional implementadas e validadas; provas automatizadas de banco e validações humanas autenticadas em Preview concluídas.
+- Objetivo: registrar o encerramento da antiga operação administrativa de perfis de orientação.
+- Status: retirada pela E22.1.4; não existe rota, navegação ou boundary vigente para esse domínio.
 
-12.4.3 Proposta, revisão, aprovação e ativação do perfil
-- Status: Concluída; implementação integrada à `main`, com workflow idempotente, teste SQL transacional, verificação read-only pós-apply, configuração da OpenAI em Preview e teste humano autenticado aprovados.
-- Conteúdo:
-  - Perfil próprio permitido somente para segmento e nicho; ultranicho resolve o perfil ativo do ancestral elegível mais próximo.
-  - Estados persistidos limitados a `draft`, `active` e `archived`; uma versão ativa é imutável e qualquer mudança exige nova versão em rascunho.
-  - A operação manual permanece completa; a IA apenas propõe conteúdo após ação explícita do `platform_admin`, sem salvar, aprovar, ativar, arquivar ou gerar LP.
-  - `Salvar rascunho`, `Aprovar e ativar` e arquivamento permanecem ações humanas; a troca da versão ativa deve ser atômica e auditada.
-  - A E12.4.3 reutiliza o contrato e a persistência da E20.3 sem alterar o resolver público do perfil ativo próprio ou herdado.
-  - Dependência técnica atendida em 28/07/2026: PR #655 mergeado, branch sincronizada com a `main` e `next`/`eslint-config-next` confirmados em `16.2.11` no lockfile antes da implementação.
-  - A proposta por IA exige resolução completa da E10.8 e identidades públicas vigentes da E18.5; ausência ou indisponibilidade da assistência não bloqueia o fluxo manual.
-  - A E12.4.4 foi retirada da implementação e absorvida pela jornada simplificada; geração, materialização, preview, publicação e alteração de LP permanecem fora do recorte.
-- Registros de implementação:
-  - Admin Dashboard: listagem e editor em `app/admin/(protected)/perfis-de-orientacao/`, com salvar draft, ativar e arquivar protegidos por `platform_admin`.
-  - Boundary e adapters: contratos administrativos, validação estrita, correlação da proposta, acesso server-only e integração opcional com Responses API em `lib/conversion-content/`.
-  - Banco: migration `20260728153500_e12_4_3_generation_profile_lifecycle.sql` aplicada; teste SQL transacional, snippet read-only, RPCs, ACLs, RLS e policies verificados pós-apply.
-  - Validação: casos executáveis do perfil, typecheck, check, checks hospedados e fluxo autenticado em Preview aprovados; proposta inicial, refinamento e gate negativo da E10.8 validados sem salvamento ou ativação automáticos.
+12.4.3 Estado e destino
+- `/admin/perfis-de-orientacao`, `generation-profile`, seus adapters, exports, validator e workload de proposta foram removidos.
+- As tabelas, RPCs e objetos próprios do perfil também foram removidos por migration forward-only.
+- Não há editor, lifecycle, proposta ou refinamento por IA de perfil no produto atual.
+- O inventário material da retirada reside em E22.1.2 e o contrato vigente de geração de landing pages não depende desse domínio.
 
-12.4.3.1 Refinamento iterativo assistido por IA
-- Status: Concluída; implementação integrada à `main`, com checks hospedados automatizados e teste humano autenticado do refinamento em Preview aprovados.
-- Conteúdo:
-  - Toda proposta inicial ou revisão depende de ação explícita do `platform_admin`.
-  - A implementação integrada à `main` ainda permite sugestões textuais; a candidata da E12.4.3.2 restringe a saída da IA a cobertura, módulos, variantes, prioridade, ordem, gaps e avisos transitórios, preservando as orientações exclusivamente humanas.
-  - O refinamento recebe o conteúdo atual do editor e o feedback humano mais recente, além das fontes já autorizadas pela E12.4.3.
-  - Cada acionamento autoriza somente uma chamada; não há refinamento nem retry automático.
-  - Nenhuma proposta salva, aprova ou ativa automaticamente; o `platform_admin` continua responsável por revisar, editar, salvar e ativar.
-  - Não existe conversa persistente, histórico de mensagens, agente ou memória própria.
-
-12.4.3.2 Criação e evolução estrutural baseada em `lp_sections`, catálogo vigente e debate humano–IA
-- Status: Implementada e integrada à `main` pelo PR #672, com correção localizada de cardinalidade integrada pelo PR #681; gate funcional no HEAD `e6f694454b11388f30355ddbf231bb8350ecef1f` e inspeção final do Estrategista aprovados, sem banco ou migration e sem reabrir lifecycle.
-- Conteúdo:
-  - Sem perfil próprio, a ação será `Criar perfil com IA`; com perfil `active` próprio, será `Evoluir perfil com IA`; o fluxo manual permanece completo.
-  - A evolução inicializará o editor da nova versão com a estrutura ativa completa como baseline não persistido e revalidará cada recomendação contra as versões vigentes da E10.8 e da E18.5.
-  - `coverage[]` avaliará cada item de `lp_sections`; `recommendations[]` será a lista final única por módulo.
-  - `covered` e `partial` exigem identidades compatíveis e escolhidas não vazias; `missing` exige ambas as listas vazias no Zod, no JSON Schema estrito e no validador fail-closed.
-  - A ocorrência `coverage_identity_count_invalid` de 03/08/2026 preservou o `active v1` e não criou `draft v2`; como a resposta rejeitada não foi armazenada, cobertura, status e aliases concretos não são inferidos.
-  - `coverage[]`, relações seção–módulo, gaps e estados do diff serão resultados derivados e transitórios; somente recomendações aplicadas e salvas integrarão o perfil.
-  - Várias seções poderão convergir para um módulo e uma seção poderá exigir vários módulos.
-  - A prioridade será convertida por `3 → P1`, `2 → P2`, `1 → P3`; a ordem final será determinística, positiva e única.
-  - Cada rodada explícita ocorrerá sobre a nova versão em `draft`, usando editor original, candidata atual e feedback humano; a candidata e o diff aparecerão antes de aplicar, refinar novamente ou descartar.
-  - Aplicar alterará somente o editor; `Salvar rascunho`, aprovação, ativação e arquivamento continuarão separados e humanos.
-  - A pesquisa bruta será contexto complementar opcional, resolvido pela proveniência efetiva da E10.8 e incluído apenas quando existir e couber integralmente no limite da requisição; ausência ou omissão não criarão gate.
-  - A IA não preencherá nem modificará `generation_guidance` ou `item_guidance`, que serão exceções humanas opcionais.
-  - A decisão `wait_for_modules` ou `proceed_with_available` é registrada no evento de auditoria do rascunho; `wait_for_modules` bloqueia a ativação e `proceed_with_available` permite a ativação com a decisão auditada.
-  - Não existe dependência futura de recálculo dos gaps pela E12.4.4 nem novo gate de autorização por conta.
-  - A E20.3.5 tornou `generation_guidance` opcional pela migration `20260730114633`, já aplicada, sem reabrir E20.3.3 ou E20.3.4.
-  - Snapshot e independência da LP permanecem consolidados; liberdade de edição e comportamento de regeneração serão decididos apenas no futuro plano-base da E19.4.
-  - Registros da implementação candidata:
-    - Admin Dashboard e Server Actions em `app/admin/(protected)/perfis-de-orientacao/`.
-    - Contrato estrutural, validação determinística, candidata, diff, carregamento opcional de pesquisa bruta e integração server-only em `lib/conversion-content/`.
-    - Migration incremental e provas em `supabase/migrations/`, `supabase/tests/` e `supabase/snippets/`.
-
-12.4.3.3 Refinamentos futuros do editor e da modelagem do perfil
-- Status: Futuro e não bloqueante para o PR #672; não constitui requisito para o merge atual e não possui implementação iniciada.
-- Escopo futuro:
-  - Substituir a digitação livre de módulo e variante por seleção vinculada ao catálogo público vigente.
-  - Derivar automaticamente as versões de módulo e variante, ou apresentá-las como somente leitura, evitando entrada numérica livre.
-  - Desabilitar `Salvar rascunho` quando o editor não possuir alterações pendentes.
-  - Avaliar no documento próprio da E10.8 se `formato_medio` e `formato_longo` devem permanecer como itens de `lp_sections`.
-  - Os gaps de `formato_medio` e `formato_longo` não autorizam automaticamente a criação de módulo ou variante na E18.5.
-
-12.4.4 Prontidão, autorização e revogação por conta, taxon e plano
-- Status: Retirada da implementação e absorvida pela jornada simplificada; não concluída.
-- Conteúdo:
-  - A decisão sobre gaps permanece no lifecycle vigente da E12.4.3.2: `wait_for_modules` bloqueia a ativação e `proceed_with_available` permite a ativação com auditoria.
-  - Não haverá recálculo posterior obrigatório dos gaps, prontidão persistida, autorização ou revogação por `conta + taxon + plano` neste recorte.
-  - A jornada futura não depende da implementação da E12.4.4 e não cria novo gate de autorização por conta.
-  - A observação sobre `rodape_contato` não autoriza criação automática de módulo ou variante nem alteração da E18.5.
-
-12.5 Diagnóstico e navegação operacional do Admin Dashboard
+12.5 Taxonomia e diagnóstico contextual
 
 12.5.1 Objetivo e status
-- Objetivo: Tornar explícito o diagnóstico operacional por taxon e conectar Taxonomia, Páginas comerciais e Resoluções de nicho sem criar prontidão persistida nem reabrir os contratos de mutação existentes.
-- Status: Concluída; os consumidores administrativos históricos de E20.3 e E10.8 foram retirados pelas E22.1.4 e E22.1.6, com Página comercial, E20.5 e E20.6 preservadas.
+- Objetivo: permitir consulta e gestão controlada da taxonomia, acompanhar resoluções de nicho e conectar o diagnóstico aos fluxos comerciais e de preparação vigentes.
+- Status: implementado; diagnósticos históricos de E20.3 e E10.8 foram retirados, enquanto página comercial, seleção E20.5 e avaliação E20.6 permanecem ativas.
 
 12.5.2 Registros do recorte
 - Repositório:
   - Ajustados:
-    - `app/admin/(protected)/perfis-de-orientacao/[taxonId]/page.tsx`
-    - `app/admin/(protected)/perfis-de-orientacao/page.tsx`
-    - `app/admin/(protected)/resolucoes-de-nicho/[accountId]/page.tsx`
-    - `app/admin/(protected)/resolucoes-de-nicho/page.tsx`
-    - `app/admin/(protected)/taxonomia/[taxonId]/page.tsx`
     - `app/admin/(protected)/taxonomia/page.tsx`
-    - `app/admin/(protected)/templates/commercial-activation/[taxonSlug]/page.tsx`
-    - `app/admin/(protected)/templates/page.tsx`
-    - `components/admin/adminNavigation.ts`
+    - `app/admin/(protected)/taxonomia/[taxonId]/page.tsx`
+    - `app/admin/(protected)/taxonomia/novo/page.tsx`
+    - `app/admin/(protected)/taxonomia/actions.ts`
+    - `app/admin/(protected)/resolucoes-de-nicho/page.tsx`
+    - `app/admin/(protected)/resolucoes-de-nicho/[accountId]/page.tsx`
+    - `components/admin/AdminTaxonCreateForm.tsx`
+    - `components/admin/AdminTaxonManageForm.tsx`
+    - `components/admin/AdminTaxonResearchSelectionForm.tsx`
     - `lib/admin/adapters/adminCommercialActivationTemplatesAdapter.ts`
+    - `lib/admin/adapters/adminInputCatalogLifecycleAdapter.ts`
+    - `lib/admin/adapters/adminInputCatalogLifecycleContext.ts`
+    - `lib/admin/adapters/adminInputCatalogLifecyclePagination.ts`
+    - `lib/admin/adapters/adminInputCatalogLifecycleValidation.ts`
     - `lib/admin/adapters/adminNicheResolutionsAdapter.ts`
-    - `lib/admin/adapters/adminReadOnlyHelpers.ts`
-    - `lib/admin/adapters/adminReadOnlyTypes.ts`
+    - `lib/admin/adapters/adminReadOnlyAdapter.ts`
     - `lib/admin/adapters/adminTaxonomyAdapter.ts`
-    - `lib/conversion-content/adapters/landingPageGenerationProfileAdminAdapter.ts`
-    - `lib/conversion-content/adapters/landingPageResearchAdapter.ts`
-    - `lib/conversion-content/landing-page/generation-profile/admin-contracts.ts`
+    - `lib/admin/adapters/adminTaxonomyReviewPolicy.ts`
 - Referências:
-  - Plano-base aprovado: `docs/lousa-plano-base-e12-5.md` — E12.5.3.
+  - Plano do recorte: `docs/lousa-plano-base-e12-5.md` — seção E12.5.3.
+  - Seleção e avaliação vigentes: E20.5–E20.6.
 
-12.5.3 Diagnóstico contextual e navegação
-- Status: Concluída no estado vigente, sem alteração de banco, rota, action, RPC ou chamada de IA.
-- Conteúdo:
-  - Taxonomia resume Status e Página comercial em tabela responsiva; o detalhe preserva o diagnóstico comercial e as ações vigentes da seleção E20.5 e da avaliação E20.6.
-  - Os diagnósticos BB/EC da camada E10.8 e os estados de perfil E20.3 foram retirados sem alterar a elegibilidade ou a operação de Páginas comerciais.
-  - Resoluções de nicho permanece centrada na conta e mantém as ações próprias a partir do taxon confirmado, sem inferir vínculo pela sugestão da IA.
-  - Leituras diagnósticas preservadas usam projeções server-side em lote e falha isolada por domínio; não há novo domínio de prontidão.
+12.5.3 Taxonomia
+- A lista permite busca e filtros por nível e status, mostra o estado do taxon e resume a página comercial.
+- O detalhe expõe identidade, hierarquia, uso operacional, aliases e diagnóstico comercial.
+- Criação, edição, ativação ou inativação, aliases e exclusão segura são ações de `platform_admin` e revalidam as dependências de preparação aplicáveis.
+- Seleção da pesquisa integral `end_customer` e revisão ou avaliação do catálogo de entradas aparecem somente quando seus gates e contratos próprios estão disponíveis.
 
-12.5.4 Validação e pendências
-- Status: Concluída após o merge da E22.1.6 e o QA pós-merge aprovado em produção.
-- Conteúdo:
-  - `npm ci`, `npm run check`, `git diff --check` e os validadores focais preservados foram aprovados localmente.
-  - Os QAs autenticados no Preview e pós-merge em produção aprovaram Taxonomia em desktop e mobile sem diagnósticos BB/EC E10.8, preservando Página comercial e os estados E20.5/E20.6, sem links, cards, estados órfãos, overflow de página ou erros de console.
+12.5.4 Resoluções de nicho e navegação
+- A lista e o detalhe de resoluções permanecem read-only, com entrada, confiança, decisão determinística, estado IA e necessidade de revisão.
+- A navegação para Taxonomia e Página comercial usa somente o taxon confirmado; sugestão IA isolada não é tratada como vínculo oficial.
+- Falha de um diagnóstico não inventa prontidão nem escolhe resultado silenciosamente.
+- Perfis de orientação, pesquisas da E10.8 e seus estados órfãos não aparecem nas superfícies atuais.
 
 12.6 Estrutura da LP no Admin Dashboard
 
 12.6.1 Objetivo e status
-- Objetivo: Expor no Admin uma consulta estrutural read-only da landing page, reunindo parâmetros e entradas em uma única rota.
-- Status: Concluído; a E22.1.5 retirou Módulos e variantes, e a E22.1.6 retirou Pesquisas, preservando Parâmetros e Entradas com QA hospedado/autenticado aprovado em desktop (1280×900) e mobile (390×844).
+- Objetivo: expor uma consulta estrutural read-only dos parâmetros raiz e das entradas resolvidas da landing page.
+- Status: implementado; as visões históricas de módulos, variantes e pesquisas foram retiradas.
 
 12.6.2 Registros do recorte
 - Repositório:
@@ -1393,27 +1261,28 @@
     - `app/admin/(protected)/estrutura-lp/page.tsx`
     - `lib/admin/adapters/adminLandingPageStructureAdapter.ts`
   - Ajustados:
+    - `app/admin/(protected)/estrutura-lp/validation-cases.ts`
     - `components/admin/AdminPageHeader.tsx`
     - `components/admin/adminNavigation.ts`
     - `lib/admin/adapters/adminTaxonomyAdapter.ts`
     - `lib/conversion-content/landing-page/index.ts`
     - `lib/conversion-content/landing-page/root-resolver.ts`
-    - `app/admin/(protected)/estrutura-lp/validation-cases.ts`
-  - Excluídos:
-    - `app/admin/(protected)/estrutura-lp/ModuleStructureFilters.tsx`
 - Updates:
-  - Aplicados: `prod#14`, `prod#16`, `prod#17`.
+  - Aplicados:
+    - `prod#14`
+    - `prod#16`
+    - `prod#17`
 - Referências:
-  - Plano-base aprovado: `docs/lousa-plano-base-e12-6.md` — E12.6.3.
+  - Plano do recorte: `docs/lousa-plano-base-e12-6.md` — seção E12.6.3.
+  - Parâmetros raiz: E18.4.
+  - Catálogo de entradas: E20.2.
 
-12.6.3 Consulta estrutural read-only
-- Status: Concluída após o merge da E22.1.6 e o QA pós-merge aprovado em produção, sem alteração de banco, persistência, mutation, IA, automação ou infraestrutura.
-- Conteúdo:
-  - O Admin possui um único item `Estrutura da LP` e uma única rota `/admin/estrutura-lp`; somente as visões Parâmetros e Entradas permanecem na rota por query string.
-  - Parâmetros consulta o contrato público vigente da E18.4; Entradas resolve o catálogo da E20.2 por versão, plano e taxon ativo.
-  - As visões históricas Módulos e variantes e Pesquisas foram retiradas pelas E22.1.5 e E22.1.6; queries antigas caem com segurança em Parâmetros.
-  - A leitura administrativa usa um único adapter e consultas server-side em lote, sem exportar registry ou schema privado, sem N+1 e sem regra de domínio em React.
-  - `npm ci`, `npm run check`, `git diff --check` e os validadores canônicos preservados da E18.4 e E20.2 foram aprovados localmente; os QAs hospedado/autenticado e pós-merge em produção, em desktop (1280×900) e mobile (390×844), aprovaram as duas visões e confirmaram 23 campos válidos resolvidos pela E20.2.
+12.6.3 Consulta vigente
+- O Admin possui um único item `Estrutura da LP` e uma única rota `/admin/estrutura-lp`.
+- `Parâmetros` consulta o contrato público da E18.4; `Entradas` resolve o catálogo da E20.2 por versão, plano e taxon ativo.
+- Queries antigas ou visão desconhecida retornam com segurança para `Parâmetros`.
+- A leitura usa um único adapter e consultas server-side em lote, sem exportar registry ou schema privado, sem N+1 e sem regra de domínio em React.
+- A rota não persiste, não chama IA e não executa mutações.
 
 13. E13 — Partner Dashboard
 
