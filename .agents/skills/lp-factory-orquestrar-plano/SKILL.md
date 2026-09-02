@@ -67,7 +67,7 @@ Parar somente diante de handoff incompleto, investigação necessária ou decis�
 
 ## 3. Produzir v2 técnica e matriz
 
-1. Editar somente o plano na branch de automação e preservar objetivo, decisões funcionais válidas, ordem, hierarquia e granularidade da v1, acrescentando o detalhamento técnico necessário para torná-la executável.
+1. Editar somente o plano na branch do plano e preservar objetivo, decisões funcionais válidas, ordem, hierarquia e granularidade da v1, acrescentando o detalhamento técnico necessário para torná-la executável.
 2. Classificar cada acréscimo técnico como `derivação técnica da v1`, `modernização técnica justificada` ou `ampliação de escopo`; não incorporar ampliação sem decisão humana ou novo recorte.
 3. Aplicar somente tratamentos autorizados pelos pareceres especializados. Modernização com impacto estrutural material só pode ser consolidada após o confronto focal correspondente; oportunidade estratégica condicional não autoriza implementação atual.
 4. Preparar a matriz com origem, classe, tratamento, localização e evidência de cada achado; para updates, registrar também o destino e a referência ao confronto estrutural quando aplicável.
