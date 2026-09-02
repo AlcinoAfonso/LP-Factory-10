@@ -117,23 +117,41 @@
   - Magic Link, login social e autenticação em dois fatores não integram o escopo implementado ou uma pendência aprovada da E2.
 
 3. E3 — Adapters Base
+- Objetivo: estabelecer boundaries server-side para acesso a dados e transformação de registros do banco em contratos consumíveis pela aplicação.
+- Status: concluído; os adapters-base permanecem em uso e foram expandidos por boundaries de domínio nos recortes posteriores.
 
-3.1 Status
-• Concluído
+3.1 Fundação de adapters server-side
 
-3.2 Implementado
-• accountAdapter
-• accessContextAdapter
-• adminAdapter
-• Tipos normalizados (DB → TS)
-• Logs estruturados
+3.1.1 Objetivo e status
+- Objetivo: concentrar leituras, mutações e normalização de dados fora da UI, preservando autorização, tipos de domínio e falha fechada.
+- Status: concluído; fundação preservada no repositório atual.
 
-3.3 Pendências
-• Adapters de planos e LPs futuras (planAdapter, landingPageAdapter, sectionAdapter)
+3.1.2 Registros do recorte
+- Repositório:
+  - Criados:
+    - `lib/access/adapters/accountAdapter.ts`;
+    - `lib/access/adapters/accessContextAdapter.ts`;
+    - `lib/admin/adapters/adminAdapter.ts`.
+- Referências:
+  - Fluxo de dados e classificação de boundaries: `docs/base-tecnica.md` — seções 3.2, 3.3 e 5.2.
+  - Regras de PostgREST e Data API: `docs/base-tecnica.md` — seção 3.12.
 
-3.4 Updates externos (avaliar)
-• 2026-01 — Supabase: Data API / PostgREST v14 — Link: https://github.com/orgs/supabase/discussions/41288
-• Nota: como há uso de supabase.from().select() em adapters/SSR, ao iniciar ajustes nessa camada, revisar o que muda na v14 (filters/embeds/comportamentos) e validar impacto antes de mexer em queries.
+3.1.3 Contrato dos adapters-base
+- Status: implementado e vigente.
+- Conteúdo:
+  - acesso ao banco ocorre em adapters server-side, sem consulta direta pela UI;
+  - registros do banco são convertidos em tipos e estados de domínio antes do consumo;
+  - adapters de acesso preservam o contexto da sessão e as políticas RLS aplicáveis;
+  - erro, ausência de dados e negação de acesso não produzem fallback permissivo;
+  - decisões críticas seguem o contrato de observabilidade segura da Base Técnica.
+
+3.1.4 Evolução por boundary de domínio
+- Status: vigente.
+- Conteúdo:
+  - novos adapters surgem dentro do boundary responsável e somente diante de consumidor e responsabilidade reais;
+  - o repositório é a fonte única do inventário atual de adapters, guards, providers e APIs;
+  - não permanecem pendentes adapters genéricos de plano, landing page ou seção definidos apenas por antecipação;
+  - mudanças de PostgREST ou Data API são avaliadas quando afetarem consultas reais, conforme o contrato durável de `docs/base-tecnica.md`.
 
 4. E4 — Account Dashboard (Infraestrutura SSR)
 
