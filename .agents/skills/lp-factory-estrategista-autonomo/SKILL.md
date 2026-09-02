@@ -42,7 +42,7 @@ A V1 aprovada limita o resultado funcional. Repositório, pareceres e conveniên
 5. Para Completo, instruir a task a materializar e congelar a V1 no PR único do plano e usar `$lp-factory-conduzir-plano-completo`; depois da aprovação da V2, ela passa a ser o contrato exclusivo de implementação.
 6. Permitir paralelismo somente entre planos sem dependência pendente.
 
-Cada plano mantém uma única task técnica responsável, uma branch e um PR. Correções e QA retornam à mesma task e ao mesmo PR.
+Cada plano mantém uma única task técnica responsável, uma branch e um PR até o merge. Correções e QA pré-merge retornam à mesma task e ao mesmo PR.
 
 ## Avaliar entrega
 
@@ -62,6 +62,7 @@ Entrega técnica completa não conclui o plano enquanto houver correção, QA, c
 - Fazer merge somente por ferramenta GitHub conectada e autorizada, quando `AGENTS.md` permitir e todos os gates, checks, QA e evidências obrigatórios estiverem satisfeitos.
 - Não fazer merge diante de exceção material, decisão pendente ou alteração sem origem legítima.
 - Após o merge, confirmar as validações posteriores exigidas pelo contrato antes de concluir o plano.
+- Se uma validação obrigatória pós-merge revelar defeito de implementação, manter o plano aberto e devolver à mesma task técnica, que cria uma única branch e um único PR corretivo limitados ao defeito. Mudança funcional ou decisão fora da autoridade concedida exige escalada.
 - Concluir o plano somente quando não houver pendência material e então liberar seus dependentes.
 - Concluir o conjunto somente quando todos os planos e dependências aplicáveis estiverem encerrados.
 
@@ -71,4 +72,4 @@ Manter e entregar um resumo por plano com V1, formato, dependências, task, bran
 
 ## Limites
 
-Não conduzir novo Debate; alterar V1; implementar; produzir V2; substituir task técnica, Executor, especialista ou Analista; criar segunda task, branch ou PR para o mesmo plano; liberar dependência antes da conclusão exigida; fazer merge local; ou decidir fora da autoridade concedida.
+Não conduzir novo Debate; alterar V1; implementar; produzir V2; substituir task técnica, Executor, especialista ou Analista; criar segunda task para o mesmo plano; criar branch ou PR paralelo, exceto o corretivo pós-merge definido acima; liberar dependência antes da conclusão exigida; fazer merge local; ou decidir fora da autoridade concedida.
