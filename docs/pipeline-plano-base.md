@@ -53,7 +53,8 @@ Modo e formato são eixos independentes. Um plano pode ser Manual, Semiautomáti
 ### 4.3. Task técnica do plano
 
 - Mantém a continuidade técnica de um único plano, branch e PR.
-- No Light, assume o contrato do Executor desde a V1 aprovada.
+- No Light, depois da migração específica do formato, assume o contrato do Executor desde a V1 aprovada.
+- Enquanto `docs/prompt-estrategista-light.md` permanecer vigente, executa antes o gate de compatibilidade desse contrato: plano-base candidato no PR, avaliação obrigatória de Updates, consolidação e aprovação humana explícita; somente então assume o contrato do Executor.
 - No Completo, conduz o workflow técnico até a V2 aprovada e somente então assume o contrato universal do Executor.
 
 ### 4.4. Executor
@@ -139,7 +140,7 @@ Light é usado quando o resultado cabe em boundaries, autoridades e contratos ex
 
 O fechamento segue implementação, validações, QA e evidências pelo Executor, entrega ao supervisor e decisão de correção, merge e conclusão.
 
-Até a migração e validação de `docs/prompt-estrategista-light.md`, a execução Light segue sua compatibilidade vigente, inclusive `Automação: não`. Os critérios aprovados acima tornam-se operacionais integralmente no PR específico do Light.
+Até a migração e validação de `docs/prompt-estrategista-light.md`, o Light segue integralmente esse contrato: elegibilidade, todos os gatilhos de escalada, plano-base candidato no PR, avaliação obrigatória de Updates, consolidação, aprovação humana explícita e `Automação: não`. A aprovação da V1 no Debate, isoladamente, ainda não autoriza a implementação Light. Os critérios aprovados acima tornam-se operacionais integralmente no PR específico do Light.
 
 ### 7.2. Completo
 
@@ -227,6 +228,7 @@ A V2 aprovada é congelada por checkpoint no mesmo PR, sem merge intermediário,
 ## 11. Arquitetura documental
 
 - `docs/pipeline-plano-base.md`: arquitetura única do Pipeline.
+- `docs/orquestracao-plano-base.md`: contrato legado preservado somente para planos incompletos que o referenciam expressamente; não rege planos novos e será removido apenas depois da conclusão ou migração de todos esses consumidores.
 - `docs/prompt-estrategista.md`: Debate, V1 e supervisão do Estrategista original.
 - `docs/prompt-estrategista-light.md`: compatibilidade temporária; será removido após a migração e validação do Light.
 - `docs/prompt-executor.md`: engenharia universal do Executor.
