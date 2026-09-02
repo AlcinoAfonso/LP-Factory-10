@@ -1519,7 +1519,7 @@
   - define tipos, schemas, registry, resolução e componentes visuais;
   - rejeita versões, variantes e payloads fora do contrato;
   - exige implementação explícita para cada nova estrutura visual.
-- Banco:
+- Persistência:
   - mantém identidade e versão de templates, elegibilidade por taxon, composição ordenada e artefatos;
   - preserva a proveniência entre artefato, template, composição, taxon e pesquisas utilizadas.
 - Regra: registros no banco não criam componentes ou variantes automaticamente.
