@@ -1953,424 +1953,282 @@
 - Publication, archive/restore, editor manual, melhoria parcial por IA, tracking, CRM e automações em fila permanecem fora do produto atual.
 
 20. E20 — Preparação e liberação de taxons para geração de landing pages
-
-* Objetivo: consolidar catálogo de entradas por taxon e plano, perfis versionados de orientação à geração, herança e, em recortes futuros, prontidão e liberação antes da geração de LPs por conta.
-* Status: E20.2 definida no contrato repo-only até a v5; E20.3 retirada; E20.5 concluída e ativada após merge do PR #746, apply canônico, prova SQL e smokes autenticados em Preview e Production.
+- Objetivo: manter o catálogo versionado de entradas, a pesquisa integral selecionada, a avaliação de suficiência e a resolução de conhecimento que autorizam o contexto factual da LP.
+- Status: catálogo E20.2 v6 vigente; perfil E20.3 retirado; seleção E20.5 e preparação determinística E20.6 operacionais; resolver E20.7 implementado e integrado ao código da E19, com rollout dinâmico de Production contido conforme 19.3.5.
 
 20.2 Catálogo de entradas por taxon
 
 20.2.1 Objetivo e status
-
-* Objetivo: definir e resolver um catálogo declarativo versionado de entradas de `landing_page` por taxon e plano, separado de valores operacionais, composição, conteúdo e entitlement.
-* Status: Contrato repo-only definido até a versão executável v5; consumo operacional depende de versão explicitamente requerida e de revisão compatível pela E20.6.
+- Objetivo: definir e resolver declarativamente quais valores uma LP exige por versão, taxon e plano, sem misturar valores concretos, entitlement ou geração.
+- Status: Versões v1–v6 publicadas e imutáveis no repositório; `CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION = 6`.
 
 20.2.2 Registros do recorte
+- Banco:
+  - Criados:
+    - `landing_page_input_catalog_drafts`
+  - Ajustados:
+    - `save_account_landing_page_configuration_v1`
+    - `append_account_landing_page_materialization_v2`
+- Repositório:
+  - Criados:
+    - `lib/conversion-content/landing-page/input-catalog/contracts.ts`
+    - `lib/conversion-content/landing-page/input-catalog/registry.ts`
+    - `lib/conversion-content/landing-page/input-catalog/schema.ts`
+    - `lib/conversion-content/landing-page/input-catalog/resolver.ts`
+    - `lib/conversion-content/landing-page/input-catalog/lifecycle.ts`
+    - `lib/conversion-content/landing-page/input-catalog/draft.ts`
+    - `lib/conversion-content/landing-page/input-catalog/validation-cases.ts`
+    - `lib/conversion-content/landing-page/input-catalog/index.ts`
+    - `lib/admin/adapters/adminInputCatalogLifecycleAdapter.ts`
+    - `lib/admin/adapters/adminInputCatalogLifecycleContext.ts`
+    - `lib/lp-builder/operationalCompatibility.ts`
+    - `app/admin/(protected)/estrutura-lp/_components/AdminInputCatalogLifecycle.tsx`
+    - `supabase/migrations/20260824180000_e20_2_8_input_catalog_lifecycle.sql`
+    - `supabase/migrations/20260829211349_e19_5_append_catalog_v6.sql`
+    - `supabase/tests/e20_2_8_input_catalog_lifecycle.test.sql`
+    - `supabase/snippets/e20_2_8_input_catalog_lifecycle_verify.sql`
+  - Ajustados:
+    - `app/admin/(protected)/estrutura-lp/page.tsx`
+    - `app/a/[account]/_components/OnboardingConfigurationJourney.tsx`
+    - `app/a/[account]/_components/onboarding-journey-validation-cases.ts`
+    - `lib/lp-builder/onboardingConfiguration.ts`
+    - `lib/lp-builder/landingPageWorkspace.ts`
+    - `lib/lp-builder/generationContext.ts`
+    - `package.json`
+    - `package-lock.json`
+- Referências:
+  - Contrato técnico: `docs/base-tecnica.md` — seção 3.15.4.
+  - Draft administrativo e RPCs: `docs/schema.md`.
 
-* Repositório:
+20.2.3 Registry e resolução
+- O registry repo-only é a autoridade exclusiva das versões publicadas e da versão atual.
+- O resolver exige versão explícita e cadeia taxonômica válida; não usa `latest`, maior chave ou fallback implícito.
+- A herança segue `universal → segmento → nicho → ultranicho`, com ordem e proveniência determinísticas.
+- Resolução preserva plano, taxon atendido, camadas aplicadas, definição, obrigação, condições, validação, evidência e política de substituição.
+- Strings vazias, shapes desconhecidos, relações inválidas entre planos, condições incoerentes ou especialização não autorizada falham fechado.
+- Starter, Lite, Pro e Ultra usam o mesmo contrato de fields no recorte atual; entitlement continua fora da E20.2.
 
-  * Criados:
+20.2.4 Evolução v1–v6
+- v1 preserva os 19 fields originais.
+- v2 acrescenta oferta principal, descrição factual, referência opaca opcional de asset e paleta visual de cinco papéis.
+- v3 acrescenta metadata declarativa de capabilities sem alterar os valores.
+- v4 acrescenta `rent` ao `transaction_intent`.
+- v5 acrescenta `business_offerings_summary` opcional e `primary_conversion_goal` obrigatório.
+- v6 retira da resolução corrente `primary_service_or_offer` e sua descrição e introduz `landing_page_offering_scope` e `landing_page_offering_scope_description`.
+- Versões anteriores permanecem resolvíveis para configurações e snapshots históricos; evolução funcional exige nova versão.
 
-    * `lib/conversion-content/landing-page/input-catalog/contracts.ts`
-    * `lib/conversion-content/landing-page/input-catalog/registry.ts`
-    * `lib/conversion-content/landing-page/input-catalog/schema.ts`
-    * `lib/conversion-content/landing-page/input-catalog/resolver.ts`
-    * `lib/conversion-content/landing-page/input-catalog/validation-cases.ts`
-    * `lib/conversion-content/landing-page/input-catalog/index.ts`
-    * `supabase/snippets/e20_2_taxon_chain_verify.sql`
-    * `app/admin/(protected)/estrutura-lp/validation-cases.ts`
-  * Ajustados:
+20.2.5 Escopo comercial v6
+- `landing_page_offering_scope` aceita:
+  - `single`: exatamente uma oferta;
+  - `multiple`: duas ou mais ofertas;
+  - `portfolio`: uma ou mais ofertas com declaração humana de portfólio.
+- Ofertas são entrada factual livre, sem catálogo, whitelist ou derivação de `business_offerings_summary`.
+- O parser aplica trim, rejeita vazio e duplicidade case-insensitive e mantém igualdade material canônica.
+- A UI deriva `single` ou `multiple` pela quantidade de ofertas; somente `portfolio` exige confirmação explícita.
+- Erro corrigível preserva valores e revisões submetidos, direciona foco ao controle afetado e não escreve.
+- O núcleo de identidade comercial é `funnel_stage`, `transaction_intent` quando aplicável e `landing_page_offering_scope`; `primary_conversion_goal` permanece estratégia obrigatória, não identidade.
+- Compatibilidade v5→v6 projeta os fields singulares somente em memória e não reescreve snapshots ou residências históricas.
 
-    * `lib/conversion-content/index.ts`
-    * `package.json`
-    * `app/admin/(protected)/estrutura-lp/page.tsx`
-    * `app/a/[account]/_components/OnboardingConfigurationJourney.tsx`
-    * `app/a/[account]/_components/onboarding-journey-validation-cases.ts`
-* Updates:
+20.2.6 Versão revisada e versão efetiva
+- `R` é a última versão com decisão humana explícita de suficiência; `C` é a versão efetivamente autorizada para consumo.
+- `C` acompanha a versão atual quando `R = C` ou quando a transição é classificada deterministicamente como `no_material_change` ou `compatible_evolution`.
+- Remoção, restrição, reinterpretação ou ambiguidade produz `review_required`.
+- E19.2, workspace E19.5 e geração usam o mesmo `C`; nenhum consumidor substitui `C` por `R`.
+- O taxon piloto está reconciliado em `R=6`, o draft v6 foi removido após leitura final positiva e a v6 é a versão efetiva vigente.
 
-  * Aplicados: `prod#14`, `prod#16`.
+20.2.7 Lifecycle administrativo
+- Pode existir somente um próximo draft, mutável, service-only e não operacional.
+- Editar o draft torna stale qualquer evidência dependente; versões publicadas não são copiadas para o banco.
+- Publicar exige congelar conteúdo e fingerprints, materializar a nova versão no registry, validar, revisar, mergear, implantar em Production e reconciliar a identidade exata.
+- O gate pré-publicação verifica estrutura, suficiência E20.6 e compatibilidade das configurações operacionais elegíveis, com paginação e cardinalidade exatas.
+- Divergência de taxonomia, catálogo, configuração, LP, elegibilidade ou fingerprint bloqueia a publicação/reconciliação sem prova parcial.
+- O Admin usa `/admin/estrutura-lp?view=entradas`; avaliação individual de suficiência permanece na Taxonomia.
+- Não há rollback de catálogo, múltiplos drafts, targeting por taxon, job, fila ou agente.
 
-20.2.3 Catálogo e resolução
-
-* Status: Implementados.
-* Conteúdo:
-
-  * O catálogo é declarativo, versionado no repositório e resolvido por taxon e plano, sempre com versão explícita e sem fallback automático.
-  * A v1 permanece integralmente preservada com os 19 campos e a ordem anteriores.
-  * A v2 contém 23 campos: os 19 da v1 e os quatro mínimos do Starter — serviço ou oferta principal, descrição factual curta, referência opaca opcional de logo ou asset principal e paleta visual confirmada.
-  * A v3 preserva integralmente os 23 campos, a ordem e a estrutura da v2 e acrescenta somente metadata declarativo que autoriza `financing_support_available` e `document_support_available` a sustentar `applicable_capabilities` quando o valor booleano for `true`; a v2 permanece imutável e continua validando os valores persistidos.
-  * A v4 preserva integralmente os 23 campos, a ordem, as camadas, a metadata e os bindings da v3 e acrescenta somente `rent` ao final do enum de `transaction_intent`, com evidência atualizada para locação exclusiva; v1–v3 permanecem imutáveis.
-  * A v5 preserva integralmente v1–v4 e acrescenta `business_offerings_summary` como contexto universal opcional de negócio e `primary_conversion_goal` como objetivo principal de conversão obrigatório da LP, com valores `contact`, `schedule`, `request_quote`, `purchase` e `register_interest`; a versão só se torna operacional para um consumidor quando é requerida explicitamente e coincide com a revisão humana registrada pela E20.6.
-  * Os quatro campos da v2 permanecem disponíveis em Starter, Lite, Pro e Ultra, sem diferenças adicionais entre planos neste recorte.
-  * Strings obrigatórias rejeitam valor vazio; o asset aceita somente objeto estrito com `asset_id` opaco não vazio; a paleta exige exatamente `primary`, `secondary`, `accent`, `background` e `text` em hexadecimal `#RRGGBB`.
-  * Os campos criados na v2 declaram `landingPageSubstitutionPolicy`: oferta, descrição e logo usam `forbidden`, enquanto a paleta usa `explicit_allowed`; ausência da política nos campos históricos da v1 não autoriza substituição.
-  * Campos próprios da LP usam `not_applicable`; campos reutilizáveis usam `forbidden` ou `explicit_allowed`. Especialização taxonômica de definições e substituição explícita de valores concretos por LP permanecem conceitos distintos, e a especialização não altera essa política.
-  * A herança segue `universal → segmento → nicho → ultranicho autorizado`.
-  * O ultranicho de corretor de imóveis de médio padrão herda o catálogo sem camada própria.
-  * O resultado preserva versão, plano, taxon atendido, camadas aplicadas, ordem determinística, proveniência, validação, evidência e sinal de validade.
-  * `requiredWhen` e `applicableWhen` permanecem declarativos e são preservados após o filtro por plano.
-  * Depois do merge da v2, mudança funcional no catálogo resolvido exige nova versão; refatoração interna sem alteração do resultado e novo taxon que apenas herda campos não exigem nova versão.
-
-20.2.4 Dependências e limites
-
-* Status: Validados.
-* Conteúdo:
-
-  * O resolver falha fechado para cadeia, camada, especialização, condição ou relação entre planos inválida.
-  * As retiradas concluídas da E20.3 e da E18.5 não alteram o catálogo, os valores nem a prontidão definidos pela E20.2.
-  * A E20.2 define os campos e valida o formato dos valores; a E19.2 coleta, valida, persiste e compõe os valores, implementa a substituição explícita por LP e preserva o snapshot dos valores efetivamente usados.
-  * O recorte não cria banco, migration, bucket, Storage, rota, API, Server Action, UI, onboarding, upload, adapter de banco, entitlement, capacidade comercial, tracking, Google Ads, Analytics, integração, valor operacional, snapshot operacional, geração, IA, automação, agente, job ou infraestrutura.
-
-20.2.7 Refinamento de `transaction_intent` para locação
-
-* Objetivo: criar a versão executável v4 do catálogo, preservando integralmente v1–v3 e acrescentando somente o valor canônico `rent`, com rótulo humano `Locação`, ao field existente `transaction_intent`.
-* Status: Concluída em 15/08/2026.
-* Conteúdo:
-
-  * A v4 parte de cópia profunda da v3, preserva os 23 fields, sua ordem, camadas, metadata, bindings de capabilities e equivalência entre `starter`, `lite`, `pro` e `ultra`, mantém `buy`, `sell`, `valuation` e `mixed` e acrescenta `rent` ao final do conjunto permitido.
-  * A consulta administrativa existente de estrutura exibe `Locação`; a jornada E19.2 recebeu somente o rótulo local correspondente e permanece na versão operacional v2, sem promoção de configurações ou do compilador E19.3 para v4.
-  * As regressões focais, `npm ci`, `npm run check`, `git diff --check` e a inspeção autenticada do Preview em desktop e largura móvel foram aprovados; o servidor local iniciou na porta 3000, mas a renderização local ficou indisponível por ausência das chaves públicas do Supabase no worktree isolado.
-  * A E20.6 deve ser executada novamente contra a versão explícita 4 antes de qualquer registro de suficiência.
-  * O recorte não criou field, banco, migration, rota, API, nova UI, persistência, infraestrutura, automação, agente, job ou workload OpenAI e não alterou a E20.6.
-
-20.2.8 Versão atual e propagação escalável do catálogo E20.2
-
-20.2.8.1 Objetivo e status
-
-* Objetivo: definir uma versão atual global, explícita e repo-only para o catálogo E20.2, propagá-la de forma determinística aos consumidores correntes e evitar reavaliação humana por taxon quando a evolução for comprovadamente compatível.
-* Status: Concluída em 26/08/2026; implementação mergeada na `main` pelo PR #814 no commit `63213cc338ca8b92320e57f976b261a26b99c2d1`, migration `20260824180000_e20_2_8_input_catalog_lifecycle.sql` aplicada e validada no Supabase, QA positivo autenticado e somente leitura aprovado em Production nos viewports desktop e mobile, e gate negativo aprovado com sessão autorizada sem `platform_admin`: o acesso a `/admin/estrutura-lp?view=entradas` foi redirecionado para `/auth/confirm/info` com “Acesso não disponível”, sem exposição da superfície, dados ou controles administrativos e sem mutações.
-
-20.2.8.2 Registros do recorte
-
-* Banco:
-  * Criados:
-    * `public.landing_page_input_catalog_drafts`
-  * Ajustados:
-    * `public.save_account_landing_page_configuration_v1`
-* Repositório:
-  * Criados:
-    * `lib/conversion-content/landing-page/input-catalog/lifecycle.ts`
-    * `lib/conversion-content/landing-page/input-catalog/draft.ts`
-    * `lib/admin/adapters/adminInputCatalogLifecycleAdapter.ts`
-    * `lib/admin/adapters/adminInputCatalogLifecycleContext.ts`
-    * `lib/admin/adapters/adminInputCatalogLifecyclePagination.ts`
-    * `lib/admin/adapters/adminInputCatalogLifecycleValidation.ts`
-    * `lib/lp-builder/operationalCompatibility.ts`
-    * `app/admin/(protected)/estrutura-lp/actions.ts`
-    * `app/admin/(protected)/estrutura-lp/lifecycle-validation-cases.ts`
-    * `app/admin/(protected)/estrutura-lp/__fixtures__/lifecycle-adapter-baseline.txt`
-    * `app/admin/(protected)/estrutura-lp/_components/AdminInputCatalogLifecycle.tsx`
-    * `supabase/migrations/20260824180000_e20_2_8_input_catalog_lifecycle.sql`
-    * `supabase/tests/e20_2_8_input_catalog_lifecycle.test.sql`
-    * `supabase/snippets/e20_2_8_input_catalog_lifecycle_verify.sql`
-  * Ajustados:
-    * `lib/conversion-content/landing-page/input-catalog/contracts.ts`
-    * `lib/conversion-content/landing-page/input-catalog/schema.ts`
-    * `lib/conversion-content/landing-page/input-catalog/resolver.ts`
-    * `lib/conversion-content/landing-page/input-catalog/index.ts`
-    * `lib/conversion-content/landing-page/input-catalog/validation-cases.ts`
-    * `lib/conversion-content/landing-page/taxon-preparation/contracts.ts`
-    * `lib/conversion-content/landing-page/taxon-preparation/preparation.ts`
-    * `lib/conversion-content/landing-page/taxon-preparation/input-catalog-evaluation.ts`
-    * `lib/conversion-content/landing-page/taxon-preparation/index.ts`
-    * `lib/conversion-content/landing-page/taxon-preparation/validation-cases.ts`
-    * `lib/conversion-content/adapters/selectedEndCustomerResearchAdapter.ts`
-    * `lib/conversion-content/adapters/inputCatalogEvaluationContextAdapter.ts`
-    * `lib/lp-builder/onboardingConfiguration.ts`
-    * `lib/lp-builder/adapters/onboardingConfigurationAdapter.ts`
-    * `lib/lp-builder/adapters/onboardingConfigurationAdapterCore.ts`
-    * `lib/lp-builder/adapters/landingPageWorkspaceAdapter.ts`
-    * `lib/lp-builder/adapters/generationContextAdapter.ts`
-    * `lib/lp-builder/adapters/generationContextAdapterCore.ts`
-    * `lib/lp-builder/generationContext.ts`
-    * `lib/lp-builder/landingPageWorkspace.ts`
-    * `lib/lp-builder/index.ts`
-    * `lib/lp-builder/validation-cases.ts`
-    * `lib/lp-builder/generation-context-validation-cases.ts`
-    * `lib/lp-builder/landing-page-workspace-validation-cases.ts`
-    * `lib/admin/adapters/adminLandingPageStructureAdapter.ts`
-    * `app/admin/(protected)/estrutura-lp/page.tsx`
-    * `app/admin/(protected)/estrutura-lp/validation-cases.ts`
-    * `app/admin/(protected)/taxonomia/[taxonId]/page.tsx`
-    * `app/admin/(protected)/taxonomia/[taxonId]/_components/AdminTaxonInputCatalogEvaluation.tsx`
-    * `app/admin/(protected)/taxonomia/actions.ts`
-* Referências:
-  * Catálogo e preparação factual: `docs/base-tecnica.md` — seções 3.15.4 e 3.15.7.
-  * Draft administrativo e RPC de configuração: `docs/schema.md` — seções 1.35 e 3.8.2.
-
-20.2.8.3 Autoridade e lifecycle de publicação
-
-* Status: Implementados.
-* Conteúdo:
-  * O registry versionado no repositório permanece a autoridade exclusiva das versões publicadas e da versão atual; v1–v5 não serão migradas para o banco.
-  * Pode existir somente um próximo draft mutável e não operacional. Persistência administrativa em banco só é admissível se a análise técnica a demonstrar como menor solução e nunca constitui autoridade do catálogo publicado.
-  * O draft preserva os fields publicados e sua `createdInVersion`; remoção direta ou proveniência retroativa falha fechada, e retirada usa somente `retiredInVersion` igual à versão alvo.
-  * A análise técnica confirmou um singleton service-only como menor residência robusta do draft e das evidências humanas vinculadas ao seu fingerprint, sem integração externa adicional e sem migrar v1–v5.
-  * Publicar exige congelar draft e evidências, materializar no repositório a nova versão executável e a declaração explícita de versão atual, validar em CI/Preview, obter revisão e merge humanos, concluir o deploy de Production e comprovar a identidade exata no runtime.
-  * A ativação bem-sucedida do artefato em Production torna a nova versão atual; qualquer falha anterior preserva a versão vigente. Eventual reconciliação administrativa posterior não pode substituir nem reverter a autoridade repo-only e, se atrasada, bloqueia novo draft/publicação administrativa até que o estado seja reconciliado com o artefato ativo exato.
-  * A reconciliação pós-deploy ocorre somente no runtime de Production quando versão, conteúdo e fingerprint do registry implantado coincidem exatamente com o handoff congelado; antes de remover a residência temporária, revalida identidade, conteúdo e contexto das decisões E20.6.5, materializa os marcadores `reviewed_input_catalog_version` ainda válidos sem nova IA e confirma a leitura final. Divergência, decisão obrigatória ausente/stale ou efeito não confirmado falha fechado e preserva o draft.
-
-20.2.8.4 Versão revisada, versão efetiva e compatibilidade
-
-* Status: Implementadas.
-* Conteúdo:
-  * `R` é a última versão com decisão humana explícita de suficiência; `C` é a versão operacional efetivamente autorizada pelo boundary canônico de preparação.
-  * `C` acompanha a versão atual quando `R = C` ou quando a transição resolvida for deterministicamente `sem mudança material` ou `evolução compatível`, sem escrita artificial em `reviewed_input_catalog_version`.
-  * Remoção, restrição, reinterpretação, ambiguidade ou mudança fora da allowlist conservadora exigem revisão E20.6.5; falhas permanecem fechadas e a IA não classifica compatibilidade estrutural.
-  * E19.2 pré-handoff, workspace E19.5 e geração E19.5 devem consumir o mesmo número concreto `C`; nenhum consumidor pode inferir `latest`, maior versão ou substituir `C` por `R`.
-
-20.2.8.5 Draft, gates e experiência administrativa
-
-* Status: Implementados; publicação de nova versão permanece sujeita a handoff repo-only, validações e decisão humana.
-* Conteúdo:
-  * O draft pode ser resolvido e validado administrativamente, mas nunca é operacional; qualquer edição material torna stale as evidências dependentes.
-  * O gate pré-publicação separa suficiência taxonômica E20.6 de validade estrutural das configurações E19.2 pré-handoff e E19.5, cobre com paginação e cardinalidade exata somente contas ativas com entitlement comercial elegível, plano válido e demais requisitos operacionais, e bloqueia diante de truncamento, cardinalidade divergente ou configuração operacional inválida/ilegível. LPs e configurações históricas de contas inativas ou inelegíveis permanecem preservadas sem bloquear a publicação global.
-  * A leitura administrativa integral permanece stateless e linear no volume consultado, retendo no máximo duas páginas válidas por fluxo, além da taxonomia e dos payloads correntes. Falhas semânticas preservam a precedência original e a leitura restante com descarte limitado; falhas de transporte ou completude interrompem novos fetches, observam as pendências e nunca retornam prova parcial. O limite de páginas não representa teto de bytes ou RSS, e as consultas paginadas não constituem snapshot transacional.
-  * Fingerprint operacional e contagem de incompatibilidades usam a mesma emissão integral, vinculada ao conteúdo candidato exato. Leitura, validação e preparação rechecam a identidade material integral do draft após o scan e exigem recarga diante de divergência; a reconciliação mantém suas revalidações próprias, sem acrescentar gate de fingerprint operacional ou contagem de incompatibilidades.
-  * E20.2 define e valida fields; E19.5 governa continuidade da identidade comercial; E20.6 decide somente suficiência factual. No MVP, `funnel_stage`, `transaction_intent` quando aplicável, `primary_conversion_goal` e `primary_service_or_offer` bloqueiam a publicação quando retirados ou alterados de modo `review_required` sem autoridade E19.5 específica, independentemente da E20.6; `compatible_evolution`, inclusive expansão estrita de `allowedValues`, permanece permitida, e field novo não adquire autoridade de identidade.
-  * Validação e handoff congelam fingerprints distintos do conteúdo do draft e da coleção operacional completa; qualquer drift posterior de taxonomia, configurações, LPs ou elegibilidade deixa a evidência stale e exige nova preparação antes da revisão/merge.
-  * A visão agregada deve evoluir `/admin/estrutura-lp?view=entradas`; `/admin/taxonomia/[taxonId]` permanece responsável pela avaliação individual E20.6.5. Não criar nova rota de primeiro nível; qualquer proposta de nova rota depende de insuficiência comprovada das superfícies existentes.
-  * A primeira entrega preserva histórico imutável, retirada forward-only de fields publicados e snapshots/configurações na versão efetivamente usada; não inclui rollback, múltiplos drafts, targeting por taxon, job, fila, agente, automação recorrente ou engine genérica de diff.
-
-20.2.9 Escopo comercial da LP e reconciliação da identidade
-
-20.2.9.1 Objetivo e status
-
-* Objetivo: substituir a representação singular de oferta por um escopo comercial capaz de expressar uma oferta, algumas ofertas ou o portfólio amplo, reconciliando a continuidade da identidade E19.5 sem alterar snapshots históricos.
-* Status: Em andamento em duas etapas. A Etapa 1 foi concluída e incorporada à `main` pelo PR #826; a v6 da Etapa 2 foi publicada em Production pelo PR #830 e reconciliada após o PR #836, com `R=6` e draft ausente. O fechamento permanece bloqueado somente pelo corretivo e pela retomada do QA do formulário operacional.
-
-20.2.9.2 Bootstrap mantendo v5
-
-* Status: Concluído e incorporado à `main` pelo PR #826, preservando `CURRENT=5` e o registry publicado v1–v5 nesse checkpoint.
-* Conteúdo:
-  * Mantém `CURRENT=5`, registry publicado v1–v5 e toda operação do cliente em v5.
-  * Adiciona ao contrato E20.2 o value type administrativo `offering_scope`, com modos técnicos `single | multiple | portfolio` e rótulos futuros `Uma oferta | Algumas ofertas | Todo o portfólio`.
-  * `offerings` permanece entrada livre: não é validado semanticamente, restringido ou derivado de `business_offerings_summary`, que continua opcional, não exaustivo e sem função de catálogo ou whitelist; após `trim`, a lista rejeita duplicidades case-insensitive e exige uma oferta distinta em `single`, pelo menos duas em `multiple` e pelo menos uma em `portfolio`.
-  * O resolver usado pelo gate E20.2.8 projeta em memória os dois fields v5 para os dois fields futuros somente quando valida um registry candidato que os retire, canonicaliza e falha fechado para legado malformado, sem persistência.
-  * O Admin recebe somente o reconhecimento mínimo do novo value type para visualizar/avaliar draft; não há registry v6 publicado, nova identidade E19.5, UI operacional do cliente, geração/snapshots v6, migration, DDL, ACL ou nova residência.
-
-20.2.9.3 Contrato e limites definidos
-
-* Status: Definidos.
-* Conteúdo:
-  * A próxima versão executável preserva v1–v5, introduz `landing_page_offering_scope` e `landing_page_offering_scope_description` e retira os fields singulares somente de forma forward-only.
-  * E20.2 mantém a autoridade de tipo, validação, canonicalização e igualdade material; E19.5 passa a considerar `funnel_stage`, `transaction_intent` quando aplicável e `landing_page_offering_scope` como núcleo de identidade, enquanto `primary_conversion_goal` permanece estratégia obrigatória fora desse núcleo.
-  * A adaptação lazy cobre E19.2 pré-handoff e E19.5 sob o mesmo `C`, sem regravar snapshots, criar residência, schema, migration, ACL ou autoridade paralela.
-  * A nova versão só pode tornar-se atual após os gates E20.2.8 e E20.6 aplicáveis; a configuração mínima dos novos fields não reabre home, detalhe, preview, grupos, A/B, prompt, algoritmo de geração ou renderer.
-
-20.2.9.4 Draft, revisão e publicação da v6
-
-* Status: v6 publicada em Production pelo PR #830, com registry repo-only e `CURRENT=6`; reconciliação canônica concluída após o PR #836, com `reviewed_input_catalog_version=6` e draft removido somente após a leitura final positiva. O QA operacional permanece pendente apenas pelo defeito focal de preservação do formulário após erro de campo corrigível.
-* Sequência:
-  * o lifecycle E20.2.8 criou exatamente o draft v6 a partir da `main` ainda em v5;
-  * as configurações operacionais completas foram validadas, a E20.6.5 pré-publicação resultou `sufficient` sem gaps ou refinamentos e a decisão humana vigente foi vinculada aos fingerprints revalidados;
-  * o PR #830 reconciliou identidade E19.5, UI operacional, save/reload, geração e snapshots e publicou a v6 no registry repo-only com `CURRENT=6`;
-  * o Preview do artefato v6 foi aprovado como gate de build/artefato; como Preview e Production compartilham o Supabase, a transição material exige `R=6` e a reconciliação canônica é exclusiva de Production, o QA operacional completo foi transferido, sem dispensa, para imediatamente após essa reconciliação, sem bypass ou escrita antecipada no marcador;
-  * o PR #836 reutilizou a canonicalização da E20.6, preservou a prova do fingerprint legado e permitiu a reconciliação somente após igualdade material e revalidação de conteúdo, taxon, cadeia, pesquisa e versão; a ação canônica avançou `R` para `6`, confirmou a leitura final e removeu o draft sem intervenção manual;
-  * o QA operacional pós-reconciliação encontrou perda visual de valores válidos e revisões hidden após `invalid_values` de `landing_page_offering_scope`, causada pelo reset nativo da Form Action; o corretivo focal preserva o snapshot somente para erros de campo corrigíveis, mantém conflitos e falhas de autoridade fechados e direciona o foco ao textarea editável de ofertas antes da retomada do QA completo.
-
-20.3 Perfil de orientação para geração
+20.3 Perfil de orientação para geração — retirado
 
 20.3.1 Objetivo e status
-- Objetivo histórico: orientar a geração de `landing_page` por perfil versionado de taxon, com recomendações baseadas no catálogo histórico da E18.5.
-- Status: Retirada concluída pela E22.1.4 em 19/08/2026; consumidores, superfícies administrativas, workload e validações foram removidos no PR #781, e as duas tabelas e quatro RPCs foram removidas pela migration `20260819153112` no PR #782.
-- Destino: sem substituto. A prova read-only pós-apply confirmou ausência dos objetos retirados, preservação de `tg_set_updated_at`, 24 registros em `taxon_market_research` e 379 registros em `taxon_market_research_items`; migrations históricas permanecem preservadas.
+- Objetivo: registrar o destino do antigo perfil versionado de orientação à geração.
+- Status: Retirada concluída pela E22.1.4; não existe substituto.
+
+20.3.2 Registros do recorte
+- Repositório:
+  - Excluídos:
+    - `lib/conversion-content/landing-page/generation-profile/`
+    - `lib/conversion-content/adapters/landingPageGenerationProfileAdapter.ts`
+    - `app/admin/(protected)/perfis-de-orientacao/`
+- Banco:
+  - Excluídos:
+    - `landing_page_generation_profiles`
+    - `landing_page_generation_profile_items`
+    - quatro RPCs exclusivas do domínio
+- Referências:
+  - Retirada controlada: `docs/roadmap.md` — seção 22.1.4.
+
+20.3.3 Estado vigente
+- Código, superfícies administrativas, workload e validators do perfil foram removidos.
+- A migration forward-only de retirada preserva migrations históricas, pesquisas estruturadas e `audit_logs`.
+- E18.4, E20.2 e o fluxo E19 não dependem deste domínio.
 
 20.5 Seleção da pesquisa integral `end_customer` por taxon
 
 20.5.1 Objetivo e status
-
-* Objetivo: permitir que um taxon ativo possua exatamente uma versão integral `end_customer` explicitamente selecionada por decisão humana autorizada e que essa versão possa ser lida integralmente por um boundary server-side, com validação de identidade e falha fechada.
-* Status: Concluída e ativada em 15/08/2026; PR #746 mergeado, migration aplicada, prova SQL aprovada e smokes autenticados gate-on aprovados em Preview e Production. O taxon `corretor-imoveis` mantém a versão integral `end_customer` v1 selecionada por decisão humana.
+- Objetivo: permitir que um taxon ativo selecione explicitamente uma versão integral de pesquisa `end_customer` e disponibilizá-la por boundary server-side.
+- Status: Implementado e ativo em Production; o taxon piloto mantém a pesquisa `end_customer` v1 selecionada.
 
 20.5.2 Registros do recorte
+- Banco:
+  - Ajustados:
+    - `business_taxons.selected_end_customer_research_version`
+- Repositório:
+  - Criados:
+    - `lib/conversion-content/landing-page/taxon-preparation/contracts.ts`
+    - `lib/conversion-content/landing-page/taxon-preparation/research.ts`
+    - `lib/conversion-content/landing-page/taxon-preparation/validation-cases.ts`
+    - `lib/conversion-content/landing-page/taxon-preparation/index.ts`
+    - `lib/conversion-content/adapters/selectedEndCustomerResearchAdapter.ts`
+    - `lib/conversion-content/adapters/selectedEndCustomerResearchAdapterCore.ts`
+    - `components/admin/AdminTaxonResearchSelectionForm.tsx`
+    - `supabase/migrations/20260814174500_e20_5_selected_end_customer_research_version.sql`
+    - `supabase/snippets/e20_5_selected_end_customer_research_version_verify.sql`
+  - Ajustados:
+    - `app/admin/(protected)/taxonomia/[taxonId]/page.tsx`
+    - `app/admin/(protected)/taxonomia/actions.ts`
+    - `lib/admin/adapters/adminTaxonomyAdapter.ts`
+    - `next.config.js`
+    - `package.json`
+- Referências:
+  - Contrato de banco: `docs/schema.md` — `business_taxons`.
+  - Gate operacional: `docs/platform-config.md` — `E20_5_SELECTED_RESEARCH_ENABLED`.
 
-* Banco:
+20.5.3 Pesquisa repo-only
+- O boundary deriva o path canônico da versão `end_customer` e confina a leitura a `docs/pesquisas-brutas/`.
+- O runtime lê o filesystem do artefato implantado e não consulta a API do GitHub.
+- Conteúdo é preservado integralmente e deve conter metadata única e coerente de taxon, slug, audiência e versão.
+- Path inválido, arquivo ausente, metadata incompatível ou conteúdo vazio falham sem payload parcial.
+- A pesquisa é contexto consultivo; não substitui fatos autorizados pelo catálogo E20.2.
 
-  * Ajustados:
+20.5.4 Seleção e consumo
+- A Server Action exige `platform_admin`, valida a candidata repo-only e atualiza somente a coluna de seleção do taxon ativo.
+- `E20_5_SELECTED_RESEARCH_ENABLED` bloqueia UI, leitura e mutação antes do acesso à coluna.
+- A leitura server-side distingue taxon ausente/inativo, seleção ausente, versão inválida, falha de banco e falha do arquivo.
+- Somente sucesso retorna taxon, slug, versão e conteúdo integral com `selectedResearchValid: true`.
+- Nenhum estado `prepared` é persistido; preparação é derivada pela E20.6.
 
-    * `public.business_taxons`
-
-* Repositório:
-
-  * Criados:
-
-    * `lib/conversion-content/landing-page/taxon-preparation/contracts.ts`
-    * `lib/conversion-content/landing-page/taxon-preparation/research.ts`
-    * `lib/conversion-content/landing-page/taxon-preparation/validation-cases.ts`
-    * `lib/conversion-content/landing-page/taxon-preparation/index.ts`
-    * `lib/conversion-content/adapters/selectedEndCustomerResearchAdapter.ts`
-    * `lib/conversion-content/adapters/selectedEndCustomerResearchAdapterCore.ts`
-    * `components/admin/AdminTaxonResearchSelectionForm.tsx`
-    * `supabase/migrations/20260814174500_e20_5_selected_end_customer_research_version.sql`
-    * `supabase/snippets/e20_5_selected_end_customer_research_version_verify.sql`
-  * Ajustados:
-
-    * `app/admin/(protected)/taxonomia/[taxonId]/page.tsx`
-    * `app/admin/(protected)/taxonomia/actions.ts`
-    * `lib/admin/adapters/adminReadOnlyAdapter.ts`
-    * `lib/admin/adapters/adminReadOnlyTypes.ts`
-    * `lib/admin/adapters/adminTaxonomyAdapter.ts`
-    * `next.config.js`
-    * `package.json`
-* Referências:
-
-  * Plano-base E20.5: `docs/lousa-plano-base-e20-5.md` — seções 3.1, 3.2 e 3.3.
-  * Configuração do gate: `docs/platform-config.md` — seção 3.5, secrets e variáveis server-side no Vercel.
-  * Contrato de banco: `docs/schema.md` — seção 1.11.
-
-20.5.3 Leitura e validação repo-only da pesquisa integral
-
-* Status: Concluída, validada e integrada à `main` pelo PR #746.
-* Conteúdo:
-
-  * O boundary repo-only deriva exclusivamente o path canônico de uma versão candidata `end_customer`, confina a leitura a `docs/pesquisas-brutas/` e nunca consulta a API do GitHub.
-  * A leitura preserva o conteúdo integral e valida taxon ativo, slug canônico, versão inteira positiva e metadata única na seção `## 1. Identificação e uso`; path inválido, arquivo ausente, falha operacional, metadata incompatível ou conteúdo vazio falham sem payload parcial.
-  * Casos determinísticos cobrem sucesso integral e falhas de versão, path, leitura, metadata e conteúdo; o script dedicado integra `npm run check`.
-
-20.5.4 Persistência e seleção humana mínima
-
-* Objetivo: adicionar a referência mínima de versão selecionada e permitir sua alteração somente por ação humana administrativa explícita, reutilizando a validação da E20.5.3.
-* Status: Concluída e ativada; migration aplicada, prova SQL aprovada e seleção humana validada em Preview e Production.
-* Conteúdo:
-
-  * A migration adiciona somente `selected_end_customer_research_version integer null`, com check positivo quando preenchida, sem nova tabela, lifecycle ou histórico; ela preserva RLS/policies, revoga o `UPDATE` de tabela inteira de `service_role` e mantém somente os grants de coluna usados pelo editor vigente (`name`, `slug`, `is_active`) e pela seleção. O snippet read-only comprovou esse conjunto exato após o apply.
-  * O gate server-only `E20_5_SELECTED_RESEARCH_ENABLED` aceita apenas o literal `true` e antecede toda leitura ou mutação da coluna. Com o gate desligado, a interface e a ação novas permanecem inacessíveis, sem fallback para schema ausente.
-  * A tela existente de detalhe do taxon recebe formulário separado com rótulos e associações programáticas; a Server Action exige `requirePlatformAdmin`, valida a candidata repo-only e atualiza somente a seleção por `id + slug + is_active`, com `.maxAffected(1)`.
-  * Apply canônico, prova SQL, ativação da flag e redeploy foram concluídos; os smokes autenticados gate-on aprovaram ausência de seleção, candidata inválida, seleção válida após reload, acesso negado a papel não autorizado, responsividade móvel e ausência de erros observados.
-  * O taxon `corretor-imoveis` possui `selected_end_customer_research_version = 1`, persistido após decisão humana explícita e confirmado no banco e na interface hospedada.
-
-20.5.5 Contrato de consumo da seleção válida
-
-* Objetivo: disponibilizar ao recorte seguinte uma leitura única que prove taxon ativo e pesquisa integral selecionada válida, sem antecipar o gate final de preparação.
-* Status: Concluída, integrada à `main` e validada com a funcionalidade ativa em Preview e Production.
-* Conteúdo:
-
-  * O adapter server-only exige `E20_5_SELECTED_RESEARCH_ENABLED` antes de criar o client Supabase ou alcançar a consulta da nova coluna.
-  * A leitura valida o identificador, exige taxon existente e ativo, distingue `NULL` legítimo de seleção inválida e carrega exatamente a versão persistida pelo boundary repo-only da E20.5.3.
-  * O resultado tipado separa funcionalidade desabilitada, taxon ausente/inativo, ausência de seleção, versão ou identidade inválida, falha de banco e falhas de arquivo, filesystem, metadata ou conteúdo.
-  * Somente o sucesso fornece taxon, slug, versão selecionada, conteúdo integral e a projeção derivada `selectedResearchValid: true`; nenhuma marca `prepared` é criada ou persistida.
-  * Casos determinísticos cobrem todos os estados públicos e comprovam que o gate antecede o acesso à coluna; as validações consolidadas permanecem verdes.
-
-20.6 Avaliação de suficiência factual da E20.2 por taxon
+20.6 Avaliação de suficiência e preparação do taxon
 
 20.6.1 Objetivo e status
-
-* Objetivo: avaliar a suficiência factual da pesquisa integral `end_customer` selecionada pela E20.5 em conjunto com uma versão executável explícita do catálogo E20.2 e definir o predicado final de preparação do taxon, sem autorizar geração.
-* Status: E20.6.3 e E20.6.4 concluídas e operacionais desde 15/08/2026; o expand gate-off da E20.6.5 foi mergeado no #795 e sua migration incremental foi aplicada, permanecendo pendentes o merge do PR corretivo pós-apply, a prova operacional, o rollout e o contract final.
+- Objetivo: verificar se a pesquisa selecionada cobre os fatos exigidos pelo catálogo efetivo e derivar a preparação sem criar estado paralelo de prontidão.
+- Status: Preparação determinística operacional com `R=6` no taxon piloto. O provider administrativo da E20.6.5 está implementado e possui configuração operacional revisão 2, mas seu gate, redeploy e QA final não estão comprovados como concluídos.
 
 20.6.2 Registros do recorte
+- Banco:
+  - Ajustados:
+    - `business_taxons.reviewed_input_catalog_version`
+    - agregado E21.2 com `taxon_input_catalog_sufficiency_evaluation`
+- Repositório:
+  - Criados:
+    - `lib/conversion-content/landing-page/taxon-preparation/input-catalog-review.ts`
+    - `lib/conversion-content/landing-page/taxon-preparation/input-catalog-evaluation-schema.ts`
+    - `lib/conversion-content/landing-page/taxon-preparation/input-catalog-evaluation.ts`
+    - `lib/conversion-content/landing-page/taxon-preparation/preparation.ts`
+    - `lib/conversion-content/adapters/inputCatalogEvaluationRuntimeGate.ts`
+    - `lib/conversion-content/adapters/inputCatalogEvaluationRuntimeGateCore.ts`
+    - `lib/conversion-content/adapters/inputCatalogEvaluationOpenAiAdapter.ts`
+    - `app/admin/(protected)/taxonomia/[taxonId]/_components/AdminTaxonInputCatalogEvaluation.tsx`
+    - `app/admin/(protected)/taxonomia/[taxonId]/_components/AdminTaxonInputCatalogReview.tsx`
+    - `supabase/migrations/20260815172449_e20_6_reviewed_input_catalog_version.sql`
+    - `supabase/migrations/20260820213900_e21_2_taxon_input_catalog_sufficiency_workload.sql`
+    - `supabase/snippets/e20_6_reviewed_input_catalog_version_verify.sql`
+    - `supabase/snippets/e21_2_taxon_input_catalog_sufficiency_workload_verify.sql`
+    - `supabase/tests/e21_2_taxon_input_catalog_sufficiency_workload.test.sql`
+  - Ajustados:
+    - `app/admin/(protected)/taxonomia/[taxonId]/page.tsx`
+    - `app/admin/(protected)/taxonomia/actions.ts`
+    - `lib/conversion-content/adapters/selectedEndCustomerResearchAdapter.ts`
+    - `lib/conversion-content/landing-page/taxon-preparation/contracts.ts`
+    - `lib/conversion-content/landing-page/taxon-preparation/validation-cases.ts`
+    - `lib/openai-workloads/registry.ts`
+    - `package.json`
+- Referências:
+  - Preparação factual: `docs/base-tecnica.md` — seção 3.15.7.
+  - Contrato de banco: `docs/schema.md`.
+  - Gates e workloads: `docs/platform-config.md`.
 
-* Banco:
-  * Ajustados:
-    * `public.business_taxons`.
-* Repositório:
-  * Criados:
-    * `app/admin/(protected)/taxonomia/[taxonId]/_components/AdminTaxonInputCatalogEvaluation.tsx`;
-    * `app/admin/(protected)/taxonomia/[taxonId]/_components/AdminTaxonInputCatalogReview.tsx`;
-    * `lib/admin/adapters/adminTaxonomyReviewPolicy.ts`;
-    * `lib/conversion-content/landing-page/input-catalog/taxon-chain.ts`;
-    * `lib/conversion-content/landing-page/taxon-preparation/input-catalog-review.ts`;
-    * `lib/conversion-content/landing-page/taxon-preparation/input-catalog-evaluation-schema.ts`;
-    * `lib/conversion-content/landing-page/taxon-preparation/input-catalog-evaluation.ts`;
-    * `lib/conversion-content/landing-page/taxon-preparation/preparation.ts`;
-    * `supabase/migrations/20260815172449_e20_6_reviewed_input_catalog_version.sql`;
-    * `supabase/migrations/20260820213900_e21_2_taxon_input_catalog_sufficiency_workload.sql`;
-    * `supabase/snippets/e21_2_taxon_input_catalog_sufficiency_workload_verify.sql`;
-    * `supabase/tests/e21_2_taxon_input_catalog_sufficiency_workload.test.sql`;
-    * `supabase/snippets/e20_6_reviewed_input_catalog_version_verify.sql`.
-  * Ajustados:
-    * `app/admin/(protected)/estrutura-lp/page.tsx`;
-    * `app/admin/(protected)/taxonomia/[taxonId]/page.tsx`;
-    * `app/admin/(protected)/taxonomia/actions.ts`;
-    * `lib/admin/adapters/adminLandingPageStructureAdapter.ts`;
-    * `lib/admin/adapters/adminReadOnlyAdapter.ts`;
-    * `lib/admin/adapters/adminReadOnlyTypes.ts`;
-    * `lib/admin/adapters/adminTaxonomyAdapter.ts`;
-    * `lib/conversion-content/adapters/selectedEndCustomerResearchAdapter.ts`;
-    * `lib/conversion-content/adapters/selectedEndCustomerResearchAdapterCore.ts`;
-    * `lib/conversion-content/landing-page/input-catalog/index.ts`;
-    * `lib/conversion-content/landing-page/input-catalog/resolver.ts`;
-    * `lib/conversion-content/landing-page/input-catalog/validation-cases.ts`;
-    * `lib/conversion-content/landing-page/taxon-preparation/contracts.ts`;
-    * `lib/conversion-content/landing-page/taxon-preparation/index.ts`;
-    * `lib/conversion-content/landing-page/taxon-preparation/validation-cases.ts`;
-    * `supabase/tests/e21_2_3_openai_workload_operational_configurations.test.sql`.
-* Updates:
-  * Aplicados:
-    * `prod#14`;
-    * `prod#16`;
-    * `prod#17`.
-* Referências:
-  * Plano-base E20.6: `docs/lousa-plano-base-e20-6.md` — seções 2 e 3.
-  * Contrato de banco: `docs/schema.md` — seção 1.11.
-  * Configuração do gate: `docs/platform-config.md` — seção 3.5.
-  * Boundary de preparação: `docs/base-tecnica.md` — seção 3.15.7.
-  * Fluxo assistido: `docs/automations.md` — seção 3.10.
+20.6.3 Predicado determinístico
+- A preparação exige taxon ativo, pesquisa E20.5 selecionada e válida e versão revisada compatível com a versão executável requerida.
+- `deriveTaxonPreparationForVersion` exige igualdade exata entre revisão e versão requerida.
+- `deriveEffectiveTaxonPreparation` permite carry-forward até a versão atual somente para transição sem mudança material ou compatível.
+- Versão ausente, posterior à atual, não executável ou transição que exige revisão falha fechado.
+- O resultado inclui pesquisa integral, `reviewedInputCatalogVersion`, `effectiveInputCatalogVersion` e classificação da transição.
+- O predicado é derivado em leitura e não persiste `prepared`.
 
-20.6.3 Avaliação assistida e registro humano da suficiência
+20.6.4 Decisão humana
+- A avaliação compara a pesquisa integral com a versão E20.2 escolhida explicitamente nos quatro planos.
+- O resultado assistido pode ser `sufficient`, `candidate_gaps` ou inconclusivo; a IA não decide a gravação.
+- Somente decisão administrativa explícita registra `reviewed_input_catalog_version`.
+- Mudança efetiva da pesquisa ou da identidade taxonômica invalida a avaliação aplicável.
+- Gaps factuais retornam à E20.2 e exigem nova avaliação após a evolução.
 
-* Status: Concluída em 15/08/2026; a reavaliação real de `corretor-imoveis` contra a versão executável E20.2 `4` resultou em `suficiente`, foi aceita por decisão humana e teve `reviewed_input_catalog_version = 4` registrado e confirmado após reload no Admin autenticado.
-* Conteúdo:
-  * usar o fluxo humano `Admin → Codex → Admin`, com IA em fluxo controlado no ambiente interno do Codex e sem workload OpenAI no runtime do LP Factory;
-  * confrontar integralmente a pesquisa E20.5 autorizada com uma versão executável E20.2 escolhida explicitamente pelo humano, resolvendo e comparando `starter`, `lite`, `pro` e `ultra`, sem `latest` ou fallback;
-  * a IA recomenda `suficiente`, `gaps candidatos` ou `inconclusivo`; a decisão final pertence ao humano;
-  * somente após suficiência aceita pelo humano registrar a versão avaliada em `business_taxons.reviewed_input_catalog_version`; gap factual real retorna ao recorte próprio da E20.2 e exige nova execução da E20.6 após a evolução aplicável;
-  * reutilizar a Taxonomia administrativa existente para orientar a ida ao Codex por instrução copiável que inclua a cadeia taxonômica autoritativa integral e para registrar ou reabrir a avaliação, sem nova rota nem integração direta com o Codex;
-  * invalidar a avaliação quando a seleção E20.5 mudar efetivamente e exigir reabertura explícita antes de alterar identidade ou cadeia taxonômica própria ou ancestral que afete avaliação preenchida do taxon ou de descendente.
+20.6.5 Provider administrativo
+- O workload `taxon_input_catalog_sufficiency_evaluation` usa o lifecycle compartilhado da E21 e não possui configuração paralela.
+- Preview e Production recusam `repo_catalog` e bootstrap revisão 1; runtime gate-on exige `supabase_operational` revisão 2 ou posterior.
+- `E20_6_5_INPUT_CATALOG_EVALUATION_PROVIDER_ENABLED` separa o rollout desse provider do gate geral `OPENAI_OPERATIONAL_CONFIG_ENABLED`.
+- `ROLLOUT_GATE_OFF` preserva o handoff humano legado; `OPERATIONAL_CONFIGURATION_UNPROVEN` bloqueia runtime e legado sem escrita ou fallback.
+- A configuração operacional revisão 2 está ativa nos dois ambientes, mas a documentação canônica ainda não comprova o valor do gate específico, redeploy, QA hospedado ou contract final.
+- Até essa comprovação, a E20.6.5 não deve ser declarada operacionalmente encerrada.
 
-20.6.4 Gate derivado de preparação do taxon
-
-* Status: Concluída em 15/08/2026; predicado derivado comprovado para a versão executável explicitamente requerida `4`.
-* Conteúdo:
-  * derivar deterministicamente a preparação por `taxon ativo + E20.5 selecionada/válida + reviewed_input_catalog_version compatível com a versão executável explicitamente requerida`;
-  * falhar fechado para ausência ou incompatibilidade e não persistir estado adicional de prontidão;
-  * a prova real de `corretor-imoveis`, com pesquisa integral `end_customer` v1, `reviewed_input_catalog_version = 4` e `requiredInputCatalogVersion = 4`, retornou `prepared: true`;
-  * o controle negativo com `requiredInputCatalogVersion = 3` retornou `INPUT_CATALOG_REVIEW_VERSION_MISMATCH`, comprovando igualdade exata sem `latest` ou fallback;
-  * preservar E19.2, E19.3 e E19.4 sem alteração neste recorte.
-
-20.6.5 Avaliação factual com IA no runtime do Admin
-
-* Status: expand gate-off mergeado no #795 e migration `20260820213900` aplicada; o PR corretivo pós-apply repara os artefatos de prova sem alterar o schema e já revalidou testes SQL, snippets read-only, invariantes e Security Controls, enquanto seu merge, gates específicos, prova real, rollout e contract final permanecem pendentes. A revisão operacional `2` de `taxon_input_catalog_sufficiency_evaluation` está ativa em Preview e Production.
-* Conteúdo:
-  * internalizar na Taxonomia administrativa existente a avaliação semântica não autoritativa nos modos sistemático e hipótese humana, preservando a decisão administrativa explícita, a revalidação determinística e o gate E20.6.4 sem IA;
-  * o checkpoint pré-integração materializou domínio e contratos, identidade e reconstrução/revalidação do contexto, Structured Output estrito, UI route-local apresentacional não montada e testes com portas e fakes injetados, sem alterar `lib/openai-workloads/`, criar configuração repo-only, chamar provider real ou declarar a E20.6.5 completa;
-  * o #795 implementou `taxon_input_catalog_sufficiency_evaluation` no agregado E21.2, com configuração inicial aprovada `gpt-5.6-terra` + `reasoning.effort=low`; mudanças posteriores de modelo ou effort ficam sob governança E21 e decisão humana;
-  * `OPENAI_OPERATIONAL_CONFIG_ENABLED=true` já está ativo em Preview e Production e deve permanecer ativo; a E20.6.5 apenas verifica essa condição, sem etapa futura de habilitação do gate da E21.2;
-  * a migration do novo workload foi aplicada e a revisão operacional `2` de `taxon_input_catalog_sufficiency_evaluation` está ativa em Preview e Production; a habilitação de `E20_6_5_INPUT_CATALOG_EVALUATION_PROVIDER_ENABLED` permanece sujeita ao rollout próprio, sem inferir seu estado pela revisão ativa; resolver os parâmetros exclusivamente pelo lifecycle dinâmico Supabase e sua API pública, sem consulta direta, configuração paralela ou transporte exclusivo da E20.6.5;
-  * a avaliação exige uma versão executável E20.2 `N` escolhida explicitamente e mantida apenas no estado transitório da UI; a leitura canônica carrega a pesquisa E20.5 selecionada, valida e resolve `N` em `starter`, `lite`, `pro` e `ultra`, e somente a decisão humana de suficiência pode gravar `reviewed_input_catalog_version = N`; `loadTaxonPreparationForReviewedVersion()` permanece para E20.6.4 e consumidores posteriores;
-  * `E20_6_5_INPUT_CATALOG_EVALUATION_PROVIDER_ENABLED` bloqueia servidor e UI; em Preview/Production, mesmo gate-on recusa `repo_catalog` e a revisão bootstrap `1`, exigindo fonte ativa `supabase_operational` em revisão operacional `2` ou posterior; somente o retorno explícito `ROLLOUT_GATE_OFF` preserva o handoff Codex;
-  * `confirm_sufficient` aceita somente resultado `sufficient`; para `candidate_gaps`, o humano seleciona e reconhece somente gaps reais, recebendo handoff E20.2 transitório sem escrita, ou limpa a seleção e usa `reject_candidates_and_confirm_sufficient` para rejeitar todos e confirmar `N`, com `kind` distinto por decisão e sem veto da IA;
-  * somente `ROLLOUT_GATE_OFF` mantém handoff Codex e registro legado; gate-on comprovado e `OPERATIONAL_CONFIGURATION_UNPROVEN` ocultam e bloqueiam ambos server-side, sem gravação, fallback Codex ou rotulagem gate-off, preservando reabertura;
-  * o #795 não constitui fechamento: a decisão expand/contract está aprovada, o expand gate-off foi mergeado e sua migration foi aplicada; o PR corretivo deve ser mergeado antes do rollout do gate E20.6.5 em Preview → decisão humana → repetição controlada em Production; o PR contract remove definitivamente o legado e atualiza os documentos finais.
-
-20.7 Liberação taxonômica para geração de Landing Pages
+20.7 Resolução de conhecimento para geração
 
 20.7.1 Objetivo e status
+- Objetivo: selecionar a fonte de conhecimento de mercado mais específica e segura para o escopo comercial da LP, sem alterar fatos E20.2 ou identidade da oferta.
+- Status: Resolver determinístico e complemento dinâmico implementados; consumidor E19 mergeado. Preview aprovou o fluxo completo, mas Production está contida no deployment anterior após falha segura do complemento dinâmico.
 
-* Objetivo: resolver a fonte de conhecimento de mercado mais específica e segura para o escopo comercial de uma LP, preservando a autoridade factual E20.2, a identidade taxonômica da conta e os boundaries E19.3/E19.4.
-* Status: Concluída em 29/08/2026; E20.7.3 e E20.7.4 implementadas, validadas deterministicamente e integradas à `main` pelo PR #835. A migration E20.7.4 foi aplicada automaticamente e a reconciliação v6 do taxon piloto está confirmada. Prova, promoção e ativação hospedadas de `landing_page_dynamic_market_research` ficam condicionadas ao futuro recorte de integração E19.3 que consumir a saída E20.7 e não constituem pendência deste recorte.
+20.7.2 Registros do recorte
+- Banco:
+  - Ajustados:
+    - agregado E21.2 com `landing_page_dynamic_market_research`
+- Repositório:
+  - Criados:
+    - `lib/conversion-content/landing-page/knowledge-resolution/`
+    - `lib/conversion-content/adapters/knowledgeResolutionAdapter.ts`
+    - `lib/conversion-content/adapters/dynamicMarketResearchOpenAiAdapter.ts`
+    - `supabase/migrations/20260829171107_e20_7_4_dynamic_market_research_workload.sql`
+  - Ajustados:
+    - `lib/conversion-content/index.ts`
+    - `lib/openai-workloads/contracts.ts`
+    - `lib/openai-workloads/registry.ts`
+    - `app/admin/(protected)/workloads-openai/actions.ts`
+    - `package.json`
+    - `package-lock.json`
+- Referências:
+  - Resolução e complemento: `docs/base-tecnica.md` — seções 3.15.10 e 3.15.11.
+  - Integração e contenção: `docs/roadmap.md` — seção 19.3.
+  - Configuração OpenAI: `docs/platform-config.md`.
 
-20.7.3 Resolver determinístico de conhecimento
+20.7.3 Resolver determinístico
+- A entrada `landing_page_offering_scope` preserva `single | multiple | portfolio`; shape inválido falha fechado.
+- `portfolio` usa `base_only`; `multiple` exige `dynamic_required`.
+- Para `single`, o resolver faz matching apenas entre descendentes ativos do taxon servido.
+- `specialized_deep` exige um único match de alta confiança por nome/alias autorizado, pesquisa especializada preparada e equivalência factual conservadora do catálogo.
+- Match fraco, ambíguo, não preparado ou materialmente diferente produz `dynamic_required` sem recusar nem invalidar a oferta.
+- Falha operacional permanece distinta de ausência legítima de match.
+- A saída é tipada e imutável e não possui persistência própria.
 
-* Status: Concluída no boundary E20.7 e validada deterministicamente; Automação: não.
-* Conteúdo:
-  * resolver `single | multiple | portfolio` por APIs públicas canônicas, com matching por nome/aliases, descendência ativa, preparação E20.5/E20.6 e equivalência factual conservadora; autorizar `specialized_deep` somente quando `matchSource` contiver `alias_exact`, `alias_normalized`, `taxon_name_exact` ou `taxon_name_normalized`, mantendo resultado apoiado apenas em `fts`, `trgm` ou `taxon_slug_normalized` como `dynamic_required` sem recusar nem invalidar a oferta;
-  * distinguir falha operacional de ausência ou ambiguidade legítima e produzir `specialized_deep | base_only | dynamic_required` sem recusa semântica da oferta;
-  * reutilizar a cadeia taxonômica paginada compartilhada e terminar em saída tipada imutável, sem persistência própria, IA, integração E19 ou mudança em geração, snapshot, materialização ou renderer;
-  * operar com `CURRENT=6` já na `main`; a reconciliação v6 necessária ao taxon piloto `corretor-imoveis` está confirmada com `reviewed_input_catalog_version=6`, sem validação hospedada adicional necessária para encerrar a E20.7.3.
+20.7.4 Complemento dinâmico
+- Somente `dynamic_required` pode acionar o workload.
+- O transporte é uma única requisição foreground à Responses API com Web Search hospedado obrigatório, uma ou duas buscas e Structured Output estrito.
+- O orçamento reserva busca, reasoning e saída antes do transporte; não trunca a entrada para caber.
+- Findings materiais exigem fontes HTTPS realmente retornadas pelo provider; URL inventada, resposta incompleta ou evidência insuficiente falha tecnicamente.
+- Não há agente, retry, fallback técnico, job, fila, RAG, cache global ou residência de pesquisa.
+- O resultado completa a base como `base_plus_dynamic` ou preserva `base_only`; não cria fatos de negócio nem invalida a oferta.
 
-20.7.4 Complemento dinâmico controlado
-
-* Status: Concluída no boundary E20.7 e integrada à `main` pelo PR #835; Automação: sim; categoria `2.1.3 — Automação com IA em fluxo controlado`.
-* Conteúdo:
-  * iniciada somente após a implementação da E20.7.3 e sua aprovação pelo Analista; o confronto prévio com o PR #831 não encontrou sobreposição material aberta, preservando fora deste recorte as alterações paralelas daquele PR;
-  * executar server-side uma única requisição foreground à Responses API com somente Web Search hospedado e Structured Output estrito, aceitando uma ou duas chamadas fundamentadas e falhando tecnicamente sem invalidar a oferta;
-  * governar o workload `landing_page_dynamic_market_research` pelos boundaries E21.1/E21.2, com configuração própria comprovada antes da ativação humana por ambiente e sem agente, retry, fallback, job, fila, RAG, cache global ou nova residência de negócio;
-  * usar `gpt-5.6-luna + high` como configuração inicial autorizada e única combinação elegível para `save`/`promote` desse workload; `low`, `max` e a matriz comparativa anterior permanecem fora por decisão humana registrada no #837;
-  * ampliar o agregado E21.2 por migration forward-only sem nova tabela ou coluna; a migration `20260829171107_e20_7_4_dynamic_market_research_workload` foi aplicada automaticamente após o merge do PR #835, preservando runtime anterior, segurança e falha fechada até configuração ativa válida;
-  * manter Development em baseline repo-only determinístico; Preview e Production possuem o workload em bootstrap revisão `1`, sem transporte autorizado. Provar, promover e ativar revisão `supabase_operational` `2` ou posterior somente no futuro recorte E19.3 que consumir a saída E20.7; esse rollout não reabre nem mantém pendente a E20.7;
-  * validar prompt e schema versionados, orçamento conservador sem truncamento, fontes HTTPS retornadas pelo provider, rejeição de URL inventada, telemetria segura e handoff tipado `base_plus_dynamic | base_only`, sem persistir pesquisa ou modificar a E20.2;
-  * preservar a atribuição financeira causal sob E21.4 e manter consumo pela geração, validação semântica de oferta e qualquer mudança E19 em recortes próprios posteriores.
+20.7.5 Consumo e estado operacional
+- O consumer da E19 executa a resolução somente no workflow de candidata v4, antes dos workloads de texto e imagem.
+- Preview comprovou resolução, Web Search, texto, imagem e append de revisão com correlação única.
+- Em Production, o workload foi provado e ativado, mas as duas tentativas end-to-end receberam saída dinâmica inválida e pararam antes de texto, imagem e append.
+- O Core foi contido no deployment anterior sem reescrever configuração, revisões, pesquisas ou snapshots.
+- O código E20.7 e sua integração permanecem na `main`; retomar Production exige novo diagnóstico e gate operacional próprio, não nova implementação do resolver.
 
 21. E21 — Gestão e governança dos workloads OpenAI
 - Objetivo: gerir e governar os workloads OpenAI por recortes aprovados, com configuração explícita, observabilidade segura, leitura administrativa e configuração operacional dinâmica por ambiente, sem otimização automatizada.
