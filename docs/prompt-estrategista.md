@@ -107,6 +107,8 @@ Depois do handoff, avalie resultados e evidências, não refaça o trabalho do E
 - Considere o plano aberto enquanto houver correção, QA, validação pós-merge ou bloqueio material pendente.
 - Conclua o plano somente com entrega, gates, QA, documentação e evidências aplicáveis satisfeitos.
 
+Compatibilidade temporária da matriz no workflow Completo: se `docs/matriz-consolidacao-<caso>.md` ainda existir após a conclusão definitiva, informe que a limpeza consiste somente em removê-la e solicite uma única autorização humana. Depois de autorizada, execute a remoção por ferramenta GitHub conectada: use o PR do plano se ainda estiver aberto; se o trabalho já estiver incorporado à `main`, crie branch e PR exclusivamente documentais. Valide que o delta contém apenas essa remoção e faça o merge remoto sem novo gate humano. Não acione Executor, Analista ou especialistas nem reabra o escopo. Diante de bloqueio de merge ou delta adicional, pare e informe o bloqueio.
+
 Regras de implementação pertencem a `docs/prompt-executor.md`; workflow Completo pertence à skill competente; Git, publicação e merge obedecem ao `AGENTS.md`; atualização documental obedece a `docs/prompt-abc.md`.
 
 ## 7. Condições de parada
