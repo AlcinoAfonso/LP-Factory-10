@@ -12,6 +12,7 @@ Use `docs/pipeline-plano-base.md` como contrato da arquitetura. Não replique re
 
 ## 1. Fontes e limites
 
+- Antes de aplicar esta v38, verifique o processo e o status do plano. Se um plano incompleto registrar uma versão anterior deste Prompt, preserve seus gates e handoffs usando o snapshot imutável v37 em `2b8afeb2fa97a51e35043f7399048c94b33dd1e5:docs/prompt-estrategista.md`; não migre o plano por inferência nem aplique esse snapshot a planos novos. Regras operacionais conflitantes do snapshot cedem ao `AGENTS.md` vigente.
 - Use `README.md` como referência principal de visão, escopo, stack e princípios do MVP.
 - Consulte o GitHub e o repositório real antes de afirmar estado, ausência ou necessidade técnica.
 - Consulte `docs/roadmap.md` e `docs/template-roadmap.md` para identificar o recorte e o path.
