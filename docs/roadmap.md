@@ -1286,14 +1286,19 @@
 
 13. E13 — Partner Dashboard
 
-13.1 Status
-• Planejado
+- Objetivo: reservar a jornada administrativa de parceiros sem antecipar produto, API ou arquitetura antes de um recorte funcional aprovado.
+- Status: não iniciado; não existe dashboard, rota, boundary de aplicação ou API de parceiros no repositório atual.
 
-13.2 Escopo
-• Painel de agências e parceiros
-• Branding, gestão de clientes, relatórios
-• Integração futura com Partner API
-• Partner só deve ganhar boundary própria quando houver massa real de código; até lá, novas estruturas não devem ser abertas por antecipação.
+13.1 Recorte futuro de parceiros
+
+13.1.1 Objetivo e status
+- Objetivo: definir uma superfície de parceiros somente quando houver jornada, atores, permissões e resultado operacional aprovados.
+- Status: futuro sem escopo funcional aprovado.
+
+13.1.3 Estado atual e limite
+- `partners` e `partner_accounts` existem como fundação de banco e permanecem registrados em E1 e no `docs/schema.md` — seções 1.6–1.7.
+- Não há implementação atual de branding de agência, gestão de clientes, relatórios ou Partner API.
+- Uma boundary própria só deve ser criada junto do primeiro recorte funcional aprovado e de consumidores reais.
 
 14. E14 — Workspace Dashboard
 
