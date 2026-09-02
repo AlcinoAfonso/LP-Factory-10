@@ -301,87 +301,120 @@
   - credenciais, parâmetros SMTP e registros DNS residem exclusivamente em `docs/platform-config.md`;
   - subdomínio dedicado de e-mail só deve ser reavaliado quando escala, volume ou isolamento de reputação justificarem plano e configuração adicionais.
 
-6. E6 — UI Kit Provisório
+6. E6 — Design System e UI Base
+- Objetivo: estabelecer fundamentos visuais, componentes reutilizáveis, estados de feedback e padrões de layout para as superfícies da LP Factory.
+- Status: base concluída e em uso; adoção permanece incremental e o asset oficial da logo ainda não está versionado.
 
-6.1 Status
-• Concluído
+6.1 Fundamentos visuais e identidade
 
-6.2 Implementado
-• Componentes: Button, Card, Input, Label, AlertBanner
-• Base: shadcn/ui
-• Tipografia oficial (UI do dashboard): Inter via next/font/google aplicada globalmente no <html> (PATH: app/layout.tsx)
-• Tailwind tokens LP Factory (aditivo, sem substituir tokens shadcn): namespaces brand/ink/graytech/surface/state + boxShadow.card (PATH: tailwind.config.ts)
-• Tailwind content: incluir js/jsx/mdx em {pages,components,app,src} para evitar purge silencioso (PATH: tailwind.config.ts)
+6.1.1 Objetivo e status
+- Objetivo: consolidar tipografia, tokens, superfícies e identidade visual próprias sem romper a base shadcn existente.
+- Status: concluído; contrato visual vigente em `docs/design-system.md`.
 
-6.3 Pendências
-• Futura migração para Supabase Platform Kit
+6.1.2 Registros do recorte
+- Repositório:
+  - Ajustados:
+    - `app/layout.tsx`;
+    - `app/globals.css`;
+    - `tailwind.config.ts`;
+    - `components/layout/Header.tsx`;
+    - `components/layout/UserMenu.tsx`;
+    - `components/features/account-switcher/AccountSwitcherList.tsx`.
+- Referências:
+  - Contrato visual vigente: `docs/design-system.md` — seções “Residência e fundamentos visuais” e “Regras de uso”.
 
-6.4 Identidade visual da LP Factory (design system / UI infra)
-• Status: Concluído (exec) (09/03/2026)
-• Implementado/Definido: base visual proprietária consolidada no repo (remapeamento semântico contido).
-• Docs: criado `docs/design-system.md` como documentação oficial do design system.
-• Aplicação mínima perceptível: header, menu do usuário, seletor de conta e área admin.
-• Escopo: repo-only (sem Supabase; sem alterações funcionais de fluxos).
-• Decisão: uso de wordmark textual temporário enquanto o asset oficial da logo não estiver versionado no repo.
-• ARTEFATOS_REPO:
-• Criados: `docs/design-system.md`
-• Ajustados:
-• `app/globals.css`
-• `components/layout/Header.tsx`
-• `components/layout/UserMenu.tsx`
-• `components/features/account-switcher/AccountSwitcherList.tsx`
-• Pendências:
-• asset oficial de logo ainda não versionado no repo
-• formulários/componentes-base ainda não padronizados pelo design system
-• telas como `pending_setup` e `/a/home` ainda herdam mais a infraestrutura do que uma componentização visual completa
-• responsividade ainda depende da implementação de cada nova página/componente
-• ajuste fino futuro desejável para uniformizar tratamento visual de estados como `pending_setup`
+6.1.3 Base visual vigente
+- Status: implementado.
+- Conteúdo:
+  - Inter é a tipografia global da UI;
+  - tokens semânticos próprios estendem a base shadcn sem substituir seus tokens essenciais;
+  - remapeamento de superfícies, bordas, foco, estados e sombra permanece canônico no CSS e no Tailwind;
+  - header, menu do usuário e seletor de conta adotam a identidade visual comum.
 
-6.5 UI Component Library
-• Status: Concluído (exec) (09/03/2026)
-• Natureza: repo-only (sem Supabase; sem migrations; sem SQL; sem backend novo; sem mudança de regra de negócio).
-• Objetivo: padronizar biblioteca base de UI proprietária e reduzir markup cru em Auth e onboarding mínimo com baixo risco.
-• Implementado (biblioteca base):
-• Ajustes leves e compatíveis em `Button`, `Input`, `Card`.
-• Novos componentes mínimos: `Select` proprietário simples e `FormField` mínimo (label/hint/error).
-• Aplicação mínima real:
-• Auth: login, sign up, forgot password, update password.
-• Onboarding: `pending_setup`.
-• Docs: `docs/design-system.md` atualizado com componentes padronizados desta fase, API mínima, regras de uso, superfícies cobertas e itens fora do escopo.
-• ARTEFATOS_REPO:
-• Criados:
-• `components/ui/form-field.tsx`
-• `components/ui/select.tsx`
-• Ajustados:
-• `app/a/[account]/page.tsx`
-• `app/auth/update-password/page.tsx`
-• `components/forgot-password-form.tsx`
-• `components/login-form.tsx`
-• `components/sign-up-form.tsx`
-• `components/ui/button.tsx`
-• `components/ui/card.tsx`
-• `components/ui/input.tsx`
-• `docs/design-system.md`
-• Checks/QA (reportado): `npm ci` ok; `npm run check` ok; QA manual ok nas superfícies tocadas (Auth e `pending_setup` com Email/WhatsApp).
-• Fora do escopo mantido: `Textarea`, `EmptyState`, redesign amplo de dashboards, Supabase/migrations/SQL/policies/backend.
+6.1.4 Identidade provisória e limite
+- Status: pendente.
+- Conteúdo:
+  - o produto usa wordmark textual “LP Factory” enquanto o asset oficial da logo não estiver versionado;
+  - branding visual por cliente permanece fora do escopo atual;
+  - migração para outro kit de plataforma não constitui pendência aprovada.
 
-6.6 Visual States & Feedback
-• Status: Concluído (exec) (10/03/2026)
-• Natureza: repo-only (sem Supabase; sem migrations; sem SQL; sem backend novo; sem mudança de regra de negócio).
-• Objetivo: padronizar estados visuais reutilizáveis (loading/empty/feedback) e completar a infraestrutura visual do ciclo E6.4–E6.6 com baixo risco.
-• Implementado:
-• Componentes novos: `Textarea`, `FeedbackMessage` (erro/sucesso/aviso), `EmptyState`, `LoadingState`.
-• Aplicação mínima real:
-• `components/forgot-password-form.tsx` (sucesso no novo padrão)
-• `app/auth/update-password/page.tsx` (aviso sem token no novo padrão)
-• `app/a/[account]/page.tsx` (`pending_setup` ajustado)
-• `app/a/[account]/loading.tsx` (loading reutilizável)
-• Docs: `docs/design-system.md` atualizado como documento consolidado do ciclo E6.4–E6.6 (componentes, API mínima, uso e superfícies cobertas).
-• Checks/QA (reportado): `npm ci` ok; `npm run check` ok; QA manual ok nas superfícies validadas (forgot password, update password sem token, `pending_setup`, loading da conta).
+6.2 Biblioteca de componentes base
 
-6.7 Dashboard Layout Patterns
-• Status: Planejado
-• Objetivo: consolidar padrões visuais reutilizáveis para corpo de páginas proprietárias.
+6.2.1 Objetivo e status
+- Objetivo: reduzir markup cru e padronizar campos, ações e superfícies comuns com componentes mínimos.
+- Status: concluído; biblioteca base disponível e adotada em Auth, onboarding e superfícies posteriores.
+
+6.2.2 Registros do recorte
+- Repositório:
+  - Criados:
+    - `components/ui/form-field.tsx`;
+    - `components/ui/select.tsx`.
+  - Ajustados:
+    - `components/ui/button.tsx`;
+    - `components/ui/card.tsx`;
+    - `components/ui/input.tsx`;
+    - `components/login-form.tsx`;
+    - `components/sign-up-form.tsx`;
+    - `components/forgot-password-form.tsx`;
+    - `app/auth/update-password/page.tsx`.
+- Referências:
+  - Componentes e APIs mínimas: `docs/design-system.md` — seções “Componentes padronizados” e “API mínima esperada”.
+
+6.2.3 Contrato da biblioteca
+- Status: implementado e vigente.
+- Conteúdo:
+  - componentes preservam foco visível, estados desabilitados e tokens semânticos;
+  - `Select` permanece nativo e `FormField` fornece somente label, hint e erro;
+  - variações novas exigem uso real imediato e não transformam a biblioteca em framework próprio;
+  - contratos de props e detalhes de implementação residem no código e em `docs/design-system.md`.
+
+6.3 Estados visuais e feedback
+
+6.3.1 Objetivo e status
+- Objetivo: padronizar feedback de erro, sucesso e aviso e estados simples de vazio e carregamento.
+- Status: concluído e adotado nas superfícies previstas.
+
+6.3.2 Registros do recorte
+- Repositório:
+  - Criados:
+    - `components/ui/textarea.tsx`;
+    - `components/ui/feedback-message.tsx`;
+    - `components/ui/empty-state.tsx`;
+    - `components/ui/loading-state.tsx`.
+  - Ajustados:
+    - `components/forgot-password-form.tsx`;
+    - `app/auth/update-password/page.tsx`;
+    - `app/a/[account]/page.tsx`;
+    - `app/a/[account]/loading.tsx`.
+- Referências:
+  - Estados reutilizáveis: `docs/design-system.md` — seções “Componentes padronizados”, “API mínima esperada” e “Aplicação mínima visível atual”.
+
+6.3.3 Contrato de estados
+- Status: implementado e vigente.
+- Conteúdo:
+  - feedback usa tons semânticos de erro, sucesso e aviso com tratamento acessível;
+  - estados vazios e de carregamento permanecem simples, sem ilustração, skeleton ou framework adicional por padrão;
+  - cor isolada não comunica estado quando houver significado operacional.
+
+6.4 Padrões de layout para dashboards
+
+6.4.1 Objetivo e status
+- Objetivo: consolidar padrões reutilizáveis para coleções, detalhes, navegação e estados nas superfícies autenticadas.
+- Status: concluído no contrato visual e materializado no workspace do Account Dashboard e no Admin.
+
+6.4.2 Registros do recorte
+- Referências:
+  - Workspace do Account Dashboard: `docs/design-system.md` — seção “Workspace operacional do Account Dashboard”.
+  - Superfície administrativa: `docs/design-system.md` — seção “Superfície administrativa do Admin”.
+
+6.4.3 Padrões vigentes e limites
+- Status: implementado e vigente.
+- Conteúdo:
+  - workspace usa composição master-detail com contexto e retorno previsíveis;
+  - Admin usa shell próprio separado do Account Dashboard e navegação responsiva;
+  - coleções e detalhes devem permanecer legíveis em mobile sem depender de rolagem horizontal;
+  - estados vazio, indisponível, pendente e erro devem ser explícitos e completos;
+  - a padronização não autoriza redesign amplo nem obriga componentização antecipada de superfícies sem necessidade real.
 
 7. E7 — Conta Consultiva
 
