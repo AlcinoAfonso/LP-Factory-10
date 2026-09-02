@@ -1686,10 +1686,10 @@
 - Banco:
   - Criados:
     - `account_landing_pages`
-    - policy `account_landing_pages_select_member_or_platform`
-    - trigger `account_landing_pages_set_updated_at`
+    - `account_landing_pages_select_member_or_platform`
+    - `account_landing_pages_set_updated_at`
   - Ajustados:
-    - constraint `account_landing_pages_status_chk`
+    - `account_landing_pages_status_chk`
 - Repositório:
   - Criados:
     - `app/lp-builder/actions.ts`
@@ -1827,11 +1827,11 @@
 - Banco:
   - Criados:
     - `account_landing_page_materializations`
-    - RPC `append_account_landing_page_materialization_v1`
-    - RPC `append_account_landing_page_materialization_v2`
-    - bucket privado `landing-page-revision-assets`
+    - `public.append_account_landing_page_materialization_v1`
+    - `public.append_account_landing_page_materialization_v2`
+    - `landing-page-revision-assets`
   - Ajustados:
-    - `account_landing_page_materializations` para revisões 1:N append-only
+    - `public.account_landing_page_materializations`
 - Repositório:
   - Criados:
     - `components/lp-builder/LandingPageRenderer.tsx`
@@ -2125,7 +2125,9 @@
 - Banco:
   - Ajustados:
     - `business_taxons.reviewed_input_catalog_version`
-    - agregado E21.2 com `taxon_input_catalog_sufficiency_evaluation`
+    - `public.openai_workload_operational_configurations`
+    - `public.openai_workload_configuration_revisions`
+    - `public.openai_workload_configuration_activations`
 - Repositório:
   - Criados:
     - `lib/conversion-content/landing-page/taxon-preparation/input-catalog-review.ts`
@@ -2187,7 +2189,9 @@
 20.7.2 Registros do recorte
 - Banco:
   - Ajustados:
-    - agregado E21.2 com `landing_page_dynamic_market_research`
+    - `public.openai_workload_operational_configurations`
+    - `public.openai_workload_configuration_revisions`
+    - `public.openai_workload_configuration_activations`
 - Repositório:
   - Criados:
     - `lib/conversion-content/landing-page/knowledge-resolution/`
