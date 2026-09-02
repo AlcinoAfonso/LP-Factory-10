@@ -630,7 +630,6 @@
   - Ajustados:
     - `app/a/[account]/page.tsx`
     - `app/a/[account]/_components/commercial-page/GenericCommercialPage.tsx`
-    - `lib/billing-checkout/index.ts`
 
 9.4.3 Checkout mínimo
 - Status: concluído.
@@ -2322,15 +2321,6 @@
     - `public.set_openai_model_catalog_parameter_availability_v1`
     - `public.check_openai_model_catalog_configuration_available_v1`
     - `public.raise_postgrest_safe_conflict_v1(text)`
-  - Ajustados:
-    - `public.save_openai_workload_configuration_candidate_v1`
-    - `public.discard_openai_workload_configuration_candidate_v1`
-    - `public.promote_openai_workload_configuration_candidate_v1`
-    - `public.activate_openai_workload_configuration_revision_v1`
-    - `public.rollback_openai_workload_configuration_revision_v1`
-    - `public.check_openai_model_catalog_configuration_available_v1`
-    - `public.set_openai_model_catalog_model_availability_v1`
-    - `public.set_openai_model_catalog_parameter_availability_v1`
 - Repositório:
   - Criados:
     - `lib/openai-workloads/adapters/operationalConfigurationAdapter.ts`
