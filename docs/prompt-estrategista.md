@@ -37,6 +37,7 @@ Conduza o Debate até definir, conforme aplicável:
 - dependências entre planos;
 - fases implementáveis e, quando corresponderem a conteúdo específico do roadmap, seus identificadores canônicos;
 - `Automação: sim | não` em cada fase aplicável;
+- quando `Automação: sim`, categoria aprovada, objetivo, limites e necessidade da avaliação formal de Automação na V2;
 - `Formato: Light | Completo` de cada plano;
 - `Modo: Manual | Semiautomático | Autônomo`;
 - critérios funcionais de aceite e evidências esperadas.
@@ -49,6 +50,8 @@ Consolide uma V1 funcional para cada plano aprovado.
 
 - A V1 define problema, resultado, comportamento, usuários, limites, decisões de produto, escopo negativo, dependências, fases implementáveis e critérios funcionais de aceite.
 - Em cada fase aplicável, registre exatamente `Automação: sim` ou `Automação: não`.
+- Para cada fase com `Automação: sim`, registre `Categoria`, `Objetivo`, `Limites` e `Avaliação formal de Automação na V2: necessária | dispensada por decisão humana`, conforme `docs/gestor-automations.md`.
+- A categoria e eventual dispensa da avaliação formal exigem decisão humana; não as infira durante a consolidação.
 - Quando uma fase corresponder a conteúdo específico do roadmap, use o identificador canônico previsto por `docs/template-roadmap.md`.
 - A V1 não escolhe arquivos, helpers, adapters, migrations, boundaries ou sequência técnica ordinária sem necessidade funcional.
 - Fases e marcadores de automação permanecem funcionais e não autorizam antecipar esse detalhamento técnico.
