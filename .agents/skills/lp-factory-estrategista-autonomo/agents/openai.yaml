@@ -1,0 +1,4 @@
+interface:
+  display_name: "Estrategista Autônomo"
+  short_description: "Supervisiona planos aprovados até a conclusão"
+  default_prompt: "Use $lp-factory-estrategista-autonomo para supervisionar o conjunto de planos aprovados no modo Autônomo."
