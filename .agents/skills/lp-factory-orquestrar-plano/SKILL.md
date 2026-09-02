@@ -97,7 +97,7 @@ Parar somente diante de handoff incompleto, investigação necessária ou decis�
 5. Depois da última subseção e dos testes aplicáveis, declarar a entrega completa, informar os ABCs executados e seus resultados por documento e devolver ao supervisor competente. Não acionar novo modo do Analista após essa declaração.
 6. Correções determinadas pelo supervisor são aplicadas e publicadas sem repetir especialistas ou Analista, salvo questão material nova que exija o gate competente.
 
-Manter a matriz disponível na entrega e durante o ciclo externo de avaliação. Não removê-la antes de o supervisor competente declarar o recorte definitivamente concluído; a remoção posterior é tarefa documental de encerramento e não cria novo gate do Analista nem reabre a orquestração.
+Manter a matriz disponível na entrega e durante o ciclo externo de avaliação. Não removê-la antes de o supervisor competente declarar o recorte definitivamente concluído; depois, devolver a limpeza ao supervisor. No Manual e no Semiautomático, aplicar a rotina temporária de `docs/prompt-estrategista.md`. A limpeza não cria novo gate do Analista nem reabre a orquestração.
 
 ## Devolução
 
