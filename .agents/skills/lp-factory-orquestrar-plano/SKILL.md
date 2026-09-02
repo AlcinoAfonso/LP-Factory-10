@@ -1,21 +1,21 @@
 ---
 name: lp-factory-orquestrar-plano
-description: "Orquestrar end-to-end um plano-base do LP Factory 10 a partir de uma v1 funcional incorporada à main: produzir e aprovar uma v2 técnica, reconciliar o roadmap e executar todas as subseções na mesma branch e no mesmo PR, usando especialistas antes da v2 e o Analista nos gates. Usar quando o humano informar o PR ou path da v1 e pedir para orquestrar, automatizar ou executar o plano completo."
+description: "Orquestrar end-to-end um plano-base Completo do LP Factory 10 a partir de uma v1 funcional aprovada e congelada no PR do plano: produzir e aprovar uma v2 técnica, reconciliar o roadmap e executar todas as subseções na mesma branch e no mesmo PR, usando especialistas antes da v2 e o Analista nos gates. Usar quando o supervisor ou o handoff informar o PR ou path da v1 e pedir para conduzir o plano completo."
 ---
 
 # Orquestrar plano-base end-to-end
 
-Conduzir revisão, v2 técnica e implementação com uma única instrução humana. O task principal orquestra e executa; custom agents apenas avaliam em modo read-only.
+Conduzir revisão, v2 técnica e implementação no PR único do plano. A task técnica coordena o workflow até a aprovação da v2 e então assume o contrato do Executor; custom agents apenas avaliam em modo read-only.
 
 ## Entrada e invariantes
 
-Aceitar como comando suficiente número, URL do PR ou path da v1, por exemplo: `Use $lp-factory-orquestrar-plano no PR #577.`
+Aceitar como comando suficiente número, URL do PR ou path da v1 acompanhado da referência inequívoca do PR, por exemplo: `Use $lp-factory-orquestrar-plano no PR #577.`
 
 No fluxo normal:
 
-- exigir a v1 incorporada à `main`; antes disso, limitar-se à avaliação read-only;
+- exigir a v1 funcional aprovada e congelada por commit no PR único do plano;
 - tratar a v1 como contrato funcional aprovado e a v2 como contrato técnico executável, sem ampliar silenciosamente o produto;
-- usar uma única branch e um único PR draft contra `main` para v2, roadmap e implementação;
+- reutilizar a branch head e o PR draft contra `main` que já contêm a v1;
 - não criar PR empilhado nem pedir nova instrução entre v2 e execução;
 - pedir somente informação que impeça selecionar com segurança plano, estágio ou worktree.
 
@@ -23,12 +23,12 @@ No fluxo normal:
 
 ## Contratos obrigatórios
 
-Ler `docs/orquestracao-plano-base.md` e seguir, sem copiar seus critérios:
+Ler `docs/pipeline-plano-base.md` e seguir, sem copiar seus critérios:
 
 - `lp-factory-avaliar-plano-estrutura` em `derivacao_inicial`;
 - `lp-factory-avaliar-plano-updates`;
 - `lp-factory-avaliar-plano-estrutura` em `confronto_modernizacao`, somente para update com impacto estrutural material;
-- `lp-factory-avaliar-plano-automacoes`, somente com `Automação: sim` e sem dispensa humana explícita registrada na v1; na ausência desse registro, avaliar;
+- `lp-factory-avaliar-plano-automacoes`, quando a v1 identificar automação aplicável e não registrar dispensa humana explícita da avaliação formal;
 - `lp-factory-avaliar-plano-analista`;
 - `lp-factory-executar-plano`;
 - `lp-factory-avaliar-implementacao-analista` nos gates por subseção.
@@ -47,10 +47,10 @@ Se o estágio não for inequívoco, pedir apenas a referência faltante; nunca r
 
 ## 1. Congelar fonte e preparar destino
 
-1. Confirmar PR, base, head, SHAs, caso e exatamente um `docs/lousa-plano-base-*.md`; diante de ambiguidade, pedir o path.
-2. Registrar head SHA, blob SHA, path e conteúdo integral da v1, além do commit, blob e conteúdo de `docs/roadmap.md` na `main`.
-3. Confirmar que a v1 congelada está na `main` atualizada.
-4. Criar branch `codex-app/<caso>-orquestracao` pelo modo simples ou reutilizar uma única worktree limpa e compatível quando houver frente paralela. Nunca editar `main`, branch manual ou head do PR da v1.
+1. Confirmar PR, base `main`, head, SHAs, caso e exatamente um `docs/lousa-plano-base-*.md`; diante de ambiguidade, pedir o path.
+2. Confirmar que o commit congelado da v1 pertence ao histórico da branch head do PR e registrar commit SHA, blob SHA, path e conteúdo integral da v1.
+3. Registrar commit, blob e conteúdo de `docs/roadmap.md` na `main` usada como base do PR.
+4. Reutilizar a branch head, a worktree compatível e o PR da v1. Nunca editar `main`, criar segunda branch/PR ou reescrever o commit congelado da v1.
 
 ## 2. Preparar contexto e especialistas
 
@@ -60,7 +60,7 @@ Se o estágio não for inequívoco, pedir apenas a referência faltante; nunca r
 4. Acionar o Gestor Estrutural em `derivacao_inicial` sobre a v1 congelada e preservar integralmente seu parecer.
 5. Acionar o Gestor de Updates sobre a mesma v1, entregando a derivação estrutural inicial como baseline comparativa.
 6. Para cada update com impacto estrutural material, acionar o Gestor Estrutural em `confronto_modernizacao`, limitado ao candidato; não repetir a derivação completa.
-7. Acionar o Gestor de Automações somente quando houver `Automação: sim` e a v1 não registrar dispensa humana da avaliação formal; na ausência de registro, acionar. Quando houver dispensa, registrar `N/A — avaliação formal dispensada na v1`.
+7. Acionar o Gestor de Automações quando a v1 identificar automação aplicável e não registrar dispensa humana da avaliação formal. Quando houver dispensa, registrar `N/A — avaliação formal dispensada na v1`; quando a decisão ou o recorte automatizado estiver ambíguo, pedir somente o esclarecimento necessário.
 8. Aplicar as regras de conclusão e completude das skills especializadas. Não refazer avaliações no task principal nem completar patch que exija escolha técnica.
 
 Parar somente diante de handoff incompleto, investigação necessária ou decisão material sem autoridade. Questão material nova segue ao domínio indicado pelo Analista; não repetir especialista por precaução.
@@ -81,12 +81,12 @@ Parar somente diante de handoff incompleto, investigação necessária ou decis�
 4. Em correções objetivas, inclusive conflito resolvido por fonte ou invariante e validação exclusivamente pós-merge, atualizar v2 e matriz e pedir `revisao_delta` ao mesmo Analista. Antes de parar por decisão humana, exigir ausência de fonte determinante e, para precedência de banco, prova de que migration compatível, feature flag ou expand/contract não evita PR precursor. Retornar a especialista somente por questão material nova ou conclusão especializada alterada.
 5. Avançar apenas com `aprovado para merge do plano-base v2`.
 
-## 5. Reconciliar roadmap e abrir o PR
+## 5. Reconciliar roadmap e atualizar o PR
 
 1. Em checkpoint limpo, verificar se fontes canônicas mudaram na `origin/main`; integrar por merge não destrutivo, reler somente o que mudou e pedir revisão delta apenas se houver conflito material.
 2. Usar `$lp-factory-abc` em modo planejamento para produzir o menor delta de `docs/roadmap.md` entre o snapshot e a v2 aprovada, conforme `docs/prompt-abc.md` e `docs/template-roadmap.md`.
 3. Submeter o roadmap ao mesmo Analista em `revisao_delta`, inclusive quando o ABC retornar `SEM ALTERAÇÕES NECESSÁRIAS`.
-4. Criar `LP-Factory-Stage: plan-v2-approved` com plano, roadmap e matriz; validar o diff e abrir ou atualizar o único PR draft contra `main`.
+4. Criar `LP-Factory-Stage: plan-v2-approved` com plano, roadmap e matriz; validar o diff e atualizar o único PR draft contra `main`.
 
 ## 6. Executar no mesmo PR
 
@@ -94,10 +94,10 @@ Parar somente diante de handoff incompleto, investigação necessária ou decis�
 2. Em cada subseção, exigir que o subfluxo identifique documentos canônicos afetados e execute `$lp-factory-abc` separadamente para cada um antes do gate do Analista. Aplicar somente o delta literal; com `SEM ALTERAÇÕES NECESSÁRIAS`, preservar o documento. Não permitir edição canônica direta.
 3. Não repetir especialistas. Usar o Analista somente nos gates por subseção, com a matriz, os pareceres pertinentes e as evidências de execução do ABC quando houver documento canônico avaliado.
 4. Executar todas as subseções e validações aplicáveis; manter o PR draft atualizado e retomar por checkpoints.
-5. Depois da última subseção e dos testes aplicáveis, declarar a entrega completa, informar os ABCs executados e seus resultados por documento e parar. Não acionar nenhum modo do Analista nem o Estrategista após essa declaração.
-6. O Estrategista atua somente por instrução humana e lê diretamente o PR. Correções devolvidas pelo humano são aplicadas e publicadas sem novo Analista; o mesmo Estrategista reavalia quando instruído.
+5. Depois da última subseção e dos testes aplicáveis, declarar a entrega completa, informar os ABCs executados e seus resultados por documento e devolver ao supervisor competente. Não acionar novo modo do Analista após essa declaração.
+6. Correções determinadas pelo supervisor são aplicadas e publicadas sem repetir especialistas ou Analista, salvo questão material nova que exija o gate competente.
 
-Manter a matriz disponível na entrega e durante o ciclo externo de avaliação. Não removê-la antes de o Estrategista, acionado pelo humano, declarar o recorte definitivamente concluído; a remoção posterior é tarefa documental de encerramento e não cria novo gate do Analista nem reabre a orquestração.
+Manter a matriz disponível na entrega e durante o ciclo externo de avaliação. Não removê-la antes de o supervisor competente declarar o recorte definitivamente concluído; a remoção posterior é tarefa documental de encerramento e não cria novo gate do Analista nem reabre a orquestração.
 
 ## Devolução
 
@@ -105,4 +105,4 @@ Informar referências de v1, worktree, branch, pareceres aplicáveis, confrontos
 
 ## Limites
 
-Não editar ou commitar na `main`; alterar a v1 ou seu PR; criar PR empilhado, segunda branch ou segundo PR; permitir edição por custom agents; ampliar escopo silenciosamente; repetir especialistas do mesmo blob por precaução; fazer merge; ou substituir decisão humana.
+Não editar ou commitar na `main`; reescrever o commit congelado da v1; criar PR empilhado, segunda branch ou segundo PR; permitir edição por custom agents; ampliar escopo silenciosamente; repetir especialistas do mesmo blob por precaução; fazer merge; ou substituir o supervisor competente.
