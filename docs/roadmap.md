@@ -438,26 +438,45 @@
   - operação consultiva futura depende de problema, escopo e plano aprovados em recorte próprio;
   - integração futura com Billing ou Account Dashboard não constitui pendência vigente sem fonte competente.
 
-8. E8 — Access Context & Governança
+8. E8 — Access Context e Governança
+- Objetivo: centralizar a decisão server-side de acesso a contas e fornecer contexto sanitizado aos consumidores sem transferir autorização para a UI.
+- Status: concluído; boundary, view, adapter e guard SSR permanecem ativos, com campos legados de compatibilidade ainda presentes no orquestrador.
 
-8.1 Status
-• Concluído (03/10/2025)
+8.1 Decisão canônica de acesso
 
-8.2 Implementado
-• Access Context como fonte única para decisão de acesso e roteamento (SSR/UI)
-• Contexto mínimo para UI (ex.: dados básicos da conta)
-• Decisão “fail-closed” (quando não houver contexto permitido, não entra)
-• Logs canônicos de decisão de acesso (para rastreabilidade)
-• Resolução de “melhor destino” pós-login (inclui cenário de usuário sem vínculo, em modo vitrine) — ver E4.2/E5.2/E16
-8.2.1 Referências
-• Regras técnicas (gate/adapters/logs): docs/base-tecnica.md
-• Contrato/DB do Access Context: docs/schema.md
+8.1.1 Objetivo e status
+- Objetivo: resolver conta, membership, allow ou deny e motivo operacional em um único fluxo rastreável e fechado por padrão.
+- Status: concluído em 03/10/2025; contrato essencial preservado no runtime atual.
 
-8.3 Critérios de Aceite
-• Decisão de acesso rastreável (log) e sem “deny genérico” quando houver status conhecido
-• Bloqueios por membership seguem UX dedicada (ver E15)
-• Bloqueios por status da conta seguem UX dedicada (ver E16)
-• Redirect seguro e anti-loop (ver E4.2
+8.1.2 Registros do recorte
+- Referências:
+  - Arquitetura de acesso, guards e consumidores: `docs/base-tecnica.md` — seções 5.1 e 5.2.
+  - View canônica do Access Context: `docs/schema.md` — seção 2.1.
+
+8.1.3 Autoridade e decisão
+- Status: implementado e vigente.
+- Conteúdo:
+  - `public.v_access_context_v2` fornece a relação user ↔ conta, estados de conta e membership, decisão `allow` e motivo;
+  - o adapter server-side lê a view e o orquestrador traduz o resultado para o contrato consumido pelos guards;
+  - ausência de sessão, conta, membership ou contexto permitido falha fechada;
+  - conta ou membership existentes, porém bloqueados, preservam contexto suficiente para tratamento específico;
+  - providers e componentes client recebem somente contexto já resolvido e não autorizam nem elevam privilégios.
+
+8.1.4 Governança, bloqueios e rastreabilidade
+- Status: implementado e vigente.
+- Conteúdo:
+  - decisões do adapter e do guard SSR produzem eventos estruturados de allow, deny ou erro seguro;
+  - bloqueios conhecidos são diferenciados por estado de membership ou conta;
+  - redirects inválidos ou loops retornam ao gateway seguro e limpam a última conta quando necessário;
+  - UX específica de membership e conta bloqueados permanece nas E15 e E16, e o gateway permanece na E4.
+
+8.1.5 Compatibilidade residual
+- Status: vigente, não autoritativo.
+- Conteúdo:
+  - `getAccessContext.ts` ainda expõe campos legados de compatibilidade como `is_super_admin`, `acting_as`, `plan` e `limits`;
+  - esses campos recebem placeholders e não podem decidir privilégio, entitlement, plano ou limite;
+  - autoridade administrativa pertence aos guards próprios, e autoridade comercial pertence ao sinal canônico da E9;
+  - remoção dos campos legados depende de confirmar consumidores reais e não autoriza refactor antecipado.
 
 9. E9 — Billing, trial e entitlements
 
