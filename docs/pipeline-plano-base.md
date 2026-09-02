@@ -90,7 +90,8 @@ O Debate define, conforme aplicável:
 - path de cada plano;
 - escopo, limites e escopo negativo;
 - dependências entre planos;
-- `Automação: sim | não`;
+- fases implementáveis e, quando corresponderem a conteúdo específico do roadmap, seus identificadores canônicos;
+- `Automação: sim | não` em cada fase aplicável;
 - `Formato: Light | Completo` por plano;
 - `Modo: Manual | Semiautomático | Autônomo`;
 - critérios funcionais de aceite e evidências esperadas.
