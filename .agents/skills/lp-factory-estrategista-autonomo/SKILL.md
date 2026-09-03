@@ -62,7 +62,7 @@ Entrega técnica completa não conclui o plano enquanto houver correção, QA, c
 - Fazer merge somente por ferramenta GitHub conectada e autorizada, quando `AGENTS.md` permitir e todos os gates, checks, QA e evidências obrigatórios estiverem satisfeitos.
 - Não fazer merge diante de exceção material, decisão pendente ou alteração sem origem legítima.
 - Após o merge, confirmar as validações posteriores exigidas pelo contrato antes de concluir o plano.
-- Se uma validação obrigatória pós-merge revelar defeito de implementação, manter o plano aberto e devolver à mesma task técnica, que cria uma única branch e um único PR corretivo limitados ao defeito. Mudança funcional ou decisão fora da autoridade concedida exige escalada.
+- Se uma validação obrigatória pós-merge revelar defeito de implementação, registrar a falha, manter o plano aberto, manter seus dependentes bloqueados e escalar como exceção material, sem criar nova branch ou PR.
 - Concluir o plano somente quando não houver pendência material e então liberar seus dependentes.
 - Concluir o conjunto somente quando todos os planos e dependências aplicáveis estiverem encerrados.
 
@@ -72,4 +72,4 @@ Manter e entregar um resumo por plano com V1, formato, dependências, task, bran
 
 ## Limites
 
-Não conduzir novo Debate; alterar V1; implementar; produzir V2; substituir task técnica, Executor, especialista ou Analista; criar segunda task para o mesmo plano; criar branch ou PR paralelo, exceto o corretivo pós-merge definido acima; liberar dependência antes da conclusão exigida; fazer merge local; ou decidir fora da autoridade concedida.
+Não conduzir novo Debate; alterar V1; implementar; produzir V2; substituir task técnica, Executor, especialista ou Analista; criar segunda task para o mesmo plano; criar segunda branch ou segundo PR; liberar dependência antes da conclusão exigida; fazer merge local; ou decidir fora da autoridade concedida.
