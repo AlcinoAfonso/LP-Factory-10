@@ -1,6 +1,6 @@
 0.1 Cabeçalho
-Data: 02/09/2026
-Versão: v1.25
+Data: 03/09/2026
+Versão: v1.26
 Status: Alinhado ao catálogo operacional vigente; `automations/supabase-inspect` preservada
 
 0.2 Função do documento
@@ -253,7 +253,7 @@ Acesso:
 GitHub → Actions → workflow `pipeline-supabase-apply-migrations`
 
 Como usar:
-Criar migration em `supabase/migrations/<timestamp>_<nome>.sql`, validar em PR exclusivo e realizar o merge autorizado para o modo vigente conforme `AGENTS.md`. O push na `main` dispara o apply automático.
+Criar migration em `supabase/migrations/<timestamp>_<nome>.sql`, validar no PR do plano e realizar o merge autorizado para o modo vigente conforme `AGENTS.md`. O push na `main` dispara o apply automático.
 
 Resumo de controle:
 A baseline oficial foi concluída, o histórico remoto foi alinhado e o smoke de criação/remoção foi validado. O gate `SUPABASE_APPLY_MIGRATIONS_ENABLED` permanece `true` no fluxo normal. O SQL Editor não faz parte do fluxo normal. Migration já aplicada não deve ser editada, apagada ou substituída; correções e reversões devem ser feitas por nova migration incremental.

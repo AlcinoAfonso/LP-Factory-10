@@ -1,18 +1,18 @@
 ---
 name: lp-factory-briefing-codex
-description: Criar briefings de implementação para o Codex trabalhar no repositório LP Factory 10, com contexto, objetivo, arquivos-alvo, limites, validações e entrega final. Usar quando o humano pedir briefing, task ou instrução para Codex ou executor realizar alterações em arquivos, código, banco, configuração, branch, commit ou PR.
+description: Criar briefings e handoffs para uma task técnica no Codex trabalhar sobre o repositório LP Factory 10, com contexto, objetivo, arquivos-alvo, limites, validações e entrega final. Usar quando o humano pedir uma instrução para task Codex executar implementação ou atividade técnica read-only no repositório, como investigação, auditoria ou mapeamento.
 ---
 
-# Criar briefing de implementação para Codex
+# Criar briefing técnico para Codex
 
-Produzir um briefing objetivo e executável para o Codex, sem implementar a tarefa descrita.
+Produzir um briefing objetivo e executável para o Codex, sem executar a tarefa descrita.
 
 ## Roteamento obrigatório
 
-1. Usar esta skill quando o destinatário for Codex, Codex App ou executor responsável por alterações no repositório.
-2. Esta skill tem precedência sobre `$lp-factory-criar-prompt` quando o pedido envolver arquivos-alvo, implementação, validação técnica, branch, commit ou PR.
-3. Para prompts de análise, pesquisa, avaliação, estratégia, UX, documentação ou outro trabalho sem mutação do repositório, usar `$lp-factory-criar-prompt` e não continuar nesta skill.
-4. Se o pedido for ambíguo, resolver pelas fontes e pelo resultado esperado. Perguntar somente quando não for possível determinar se haverá implementação no repositório.
+1. Usar esta skill quando o produto final solicitado for um briefing ou handoff para uma task técnica no Codex trabalhar sobre o repositório, com ou sem mutação.
+2. Esta skill tem precedência sobre `$lp-factory-criar-prompt` quando o pedido for produzir esse briefing ou handoff, inclusive para investigação, auditoria ou mapeamento read-only.
+3. Para prompt ou instrução destinada a outro papel ou IA, sem ser handoff para uma task técnica Codex sobre o repositório, usar `$lp-factory-criar-prompt` e não continuar nesta skill.
+4. Se o pedido for ambíguo, resolver pelo produto final e destinatário. Perguntar somente quando não for possível determinar se o usuário quer um briefing para task técnica Codex ou um prompt para outro papel/IA.
 
 ## Fontes obrigatórias
 
@@ -35,7 +35,7 @@ Confirmar no material disponível:
 2. problema ou necessidade;
 3. resultado esperado;
 4. critérios de sucesso;
-5. arquivos a criar ou alterar;
+5. arquivos-alvo a criar, alterar ou consultar, conforme o recorte;
 6. arquivos, áreas e comportamentos que não podem ser alterados;
 7. impacto visual ou frontend, somente quando aplicável;
 8. limites e regras de parada;
@@ -49,14 +49,15 @@ Se faltar fonte, permissão, decisão ou contexto indispensável, parar e pedir 
 ## Produzir o briefing
 
 1. Aplicar a estrutura vigente de `docs/template-briefing-codex.md`.
-2. Descrever o resultado esperado, sem prescrever implementação não sustentada pelas fontes.
-3. Informar paths concretos quando forem conhecidos.
-4. Preencher a seção visual somente quando houver impacto visual ou frontend.
-5. Referenciar `AGENTS.md` para regras operacionais, Git e publicação; não duplicar seu conteúdo no briefing.
-6. Exigir apenas validações aplicáveis ao recorte e justificar as não aplicáveis; quando houver prompt consumido por IA, exigir `$lp-factory-criar-prompt` como subfluxo somente leitura antes da edição do artefato e validar seus casos representativos.
-7. Incluir regras de parada específicas quando a tarefa depender de fonte, permissão ou decisão ainda ausente.
-8. Preservar estrutura, numeração e ordem de documentos existentes quando o briefing determinar sua alteração.
-9. Não inventar branch, rota, banco, job, agente, automação, engine ou infraestrutura.
+2. Em atividade técnica estritamente read-only, preencher o template sem autorizar mutação: `Arquivos alvo > Criar ou alterar: nenhum`; listar os paths consultados em `Contexto > Fonte ou estado atual`; usar `Arquivos alvo > Não alterar: todo o repositório`; e exigir na entrega `arquivos alterados: nenhum`, junto dos achados e evidências solicitados.
+3. Descrever o resultado esperado, sem prescrever implementação não sustentada pelas fontes.
+4. Informar paths concretos quando forem conhecidos.
+5. Preencher a seção visual somente quando houver impacto visual ou frontend.
+6. Referenciar `AGENTS.md` para regras operacionais, Git e publicação; não duplicar seu conteúdo no briefing.
+7. Exigir apenas validações aplicáveis ao recorte e justificar as não aplicáveis; quando houver prompt consumido por IA, exigir `$lp-factory-criar-prompt` como subfluxo somente leitura antes da edição do artefato e validar seus casos representativos.
+8. Incluir regras de parada específicas quando a tarefa depender de fonte, permissão ou decisão ainda ausente.
+9. Preservar estrutura, numeração e ordem de documentos existentes quando o briefing determinar sua alteração.
+10. Não inventar branch, rota, banco, job, agente, automação, engine ou infraestrutura.
 
 ## Entrega
 
@@ -68,4 +69,4 @@ Entregar:
 
 ## Limites
 
-Não executar a implementação; não criar ou alterar arquivos, branch, commit ou PR; não substituir `AGENTS.md`; não produzir prompt conceitual para outro papel; não ampliar o escopo além das fontes e decisões aprovadas.
+Não executar a tarefa descrita; não criar ou alterar arquivos, branch, commit ou PR; não substituir `AGENTS.md`; não produzir prompt conceitual para outro papel; não ampliar o escopo além das fontes e decisões aprovadas.
