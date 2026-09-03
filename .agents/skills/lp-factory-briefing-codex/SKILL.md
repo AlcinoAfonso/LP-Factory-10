@@ -1,18 +1,18 @@
 ---
 name: lp-factory-briefing-codex
-description: Criar briefings de implementação para o Codex trabalhar no repositório LP Factory 10, com contexto, objetivo, arquivos-alvo, limites, validações e entrega final. Usar quando o humano pedir briefing, task ou instrução para Codex ou executor realizar alterações em arquivos, código, banco, configuração, branch, commit ou PR.
+description: Criar briefings e handoffs para uma task técnica no Codex trabalhar sobre o repositório LP Factory 10, com contexto, objetivo, arquivos-alvo, limites, validações e entrega final. Usar quando o humano pedir uma instrução para task Codex executar implementação ou atividade técnica read-only no repositório, como investigação, auditoria ou mapeamento.
 ---
 
-# Criar briefing de implementação para Codex
+# Criar briefing técnico para Codex
 
-Produzir um briefing objetivo e executável para o Codex, sem implementar a tarefa descrita.
+Produzir um briefing objetivo e executável para o Codex, sem executar a tarefa descrita.
 
 ## Roteamento obrigatório
 
-1. Usar esta skill quando o destinatário for Codex, Codex App ou executor responsável por alterações no repositório.
-2. Esta skill tem precedência sobre `$lp-factory-criar-prompt` quando o pedido envolver arquivos-alvo, implementação, validação técnica, branch, commit ou PR.
-3. Para prompts de análise, pesquisa, avaliação, estratégia, UX, documentação ou outro trabalho sem mutação do repositório, usar `$lp-factory-criar-prompt` e não continuar nesta skill.
-4. Se o pedido for ambíguo, resolver pelas fontes e pelo resultado esperado. Perguntar somente quando não for possível determinar se haverá implementação no repositório.
+1. Usar esta skill quando o produto final solicitado for um briefing ou handoff para uma task técnica no Codex trabalhar sobre o repositório, com ou sem mutação.
+2. Esta skill tem precedência sobre `$lp-factory-criar-prompt` quando o pedido for produzir esse briefing ou handoff, inclusive para investigação, auditoria ou mapeamento read-only.
+3. Para prompt ou instrução destinada a outro papel ou IA, sem ser handoff para uma task técnica Codex sobre o repositório, usar `$lp-factory-criar-prompt` e não continuar nesta skill.
+4. Se o pedido for ambíguo, resolver pelo produto final e destinatário. Perguntar somente quando não for possível determinar se o usuário quer um briefing para task técnica Codex ou um prompt para outro papel/IA.
 
 ## Fontes obrigatórias
 
@@ -35,7 +35,7 @@ Confirmar no material disponível:
 2. problema ou necessidade;
 3. resultado esperado;
 4. critérios de sucesso;
-5. arquivos a criar ou alterar;
+5. arquivos-alvo a criar, alterar ou consultar, conforme o recorte;
 6. arquivos, áreas e comportamentos que não podem ser alterados;
 7. impacto visual ou frontend, somente quando aplicável;
 8. limites e regras de parada;
@@ -68,4 +68,4 @@ Entregar:
 
 ## Limites
 
-Não executar a implementação; não criar ou alterar arquivos, branch, commit ou PR; não substituir `AGENTS.md`; não produzir prompt conceitual para outro papel; não ampliar o escopo além das fontes e decisões aprovadas.
+Não executar a tarefa descrita; não criar ou alterar arquivos, branch, commit ou PR; não substituir `AGENTS.md`; não produzir prompt conceitual para outro papel; não ampliar o escopo além das fontes e decisões aprovadas.
