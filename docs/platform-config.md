@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Documento: LP Factory 10 — Platform Config
-• Versão: v0.1.40
+• Versão: v0.1.41
 • Data: 02/09/2026
 
 0.2 Contrato do documento
@@ -197,13 +197,11 @@
 • Valor real: não versionado nem registrado.
 
 • `OPENAI_LP_COST_TRACKING_ENABLED`
-• Finalidade: gate server-side da persistência financeira prospectiva das tentativas de texto e imagem de Landing Pages.
-• Escopo: somente Production; Preview e Development permanecem sem instrumentação financeira.
-• Habilitação: somente o literal `true` ativa o tracker; variável ausente, vazia ou com qualquer outro valor preserva integralmente o runtime anterior.
-• Estado operacional final: configurado com `true` somente em Production após apply canônico, snippet read-only e Security Controls aprovados; Preview e Development permanecem sem instrumentação financeira.
-• Progressão pós-merge concluída: Production foi redeployada, o smoke real dos workloads de texto e imagem foi aprovado e a data de corte única foi registrada pela RPC versionada.
-• Estado do consumidor: os transports básicos de texto e imagem permanecem disponíveis para prova administrativa, mas não existe rota ou workflow ativo de geração e materialização no Account Dashboard.
-• Regra de falha: com o gate ligado, falha ou timeout no registro inicial ou terminal degrada a cobertura financeira, mas não bloqueia a chamada OpenAI; a tentativa sem evidência completa fica fora da soma interna e permanece em Outros gastos / reconciliação.
+• Finalidade histórica: gate server-side da persistência financeira prospectiva dos antigos workloads de texto e imagem de Landing Pages.
+• Escopo hospedado conhecido: configurado com `true` somente em Production; Preview e Development permanecem sem a variável operacional.
+• Estado atual: sem consumidor no código após a retirada do write-side de custos e dos dois workloads produtores; o valor hospedado é inerte e não produz novos eventos.
+• Série preservada: a data de corte, a cobertura e os eventos anteriores permanecem somente leitura para o histórico congelado e a reconciliação administrativa.
+• Regra operacional: não é necessário remover a variável da Vercel neste recorte e nenhum novo consumidor deve ser criado sem decisão própria.
 • Valor real: não versionar.
 
 • `OPENAI_OPERATIONAL_CONFIG_ENABLED`
@@ -229,15 +227,14 @@
 • Configuração efetiva dos workloads OpenAI de produto
 • Fonte canônica: `lib/openai-workloads/registry.ts` mantém identidade, baseline local e allowlist; Development usa `repo_catalog` revisão `v2`, e Preview/Production usam exclusivamente `supabase_operational` com revisão decimal ativa.
 • Workloads textuais validados operacionalmente: `niche_resolution` e `commercial_activation_draft_generation`, com modelo `gpt-5.4-mini` e esforço de raciocínio `none`.
-• Workload textual preservado para prova administrativa: `landing_page_draft_generation`, com modelo `gpt-5.6-luna`, esforço `max`, Responses API, Structured Output estrito, `store:false` e timeout de 120 s.
-• Workload de imagem preservado para prova administrativa: `landing_page_draft_image_generation`, com modelo `gpt-image-2`, saída WebP 1536 × 1024, qualidade `medium`, compressão 80, moderação `auto` e timeout de 120 s.
+• Workload textual de avaliação factual: `taxon_input_catalog_sufficiency_evaluation`, com baseline repo-side `gpt-5.6-terra + low` e lifecycle hospedado próprio descrito acima.
 • Workload preparado para consumo futuro: `landing_page_dynamic_market_research`, com configuração inicial autorizada em Development `gpt-5.6-luna + high`, uma requisição foreground à Responses API, somente Web Search hospedado, Structured Output estrito, `store:false`, uma ou duas chamadas de busca e deadline máximo de 45 s. O lifecycle desse workload aceita para `save` e `promote` somente essa combinação; `low`, `max` e a matriz comparativa anterior permanecem fora.
 • Estado hospedado da E20.7.4: a migration `20260829171107_e20_7_4_dynamic_market_research_workload` foi aplicada automaticamente após o merge do PR #835; Preview e Production possuem o workload em bootstrap revisão `1`, `gpt-5.6-luna + high`, sem candidata ou revisão pendente e sem transporte hospedado autorizado.
 • Integração futura: qualquer novo consumidor da saída tipada da E20.7 exigirá recorte e gates próprios; a integração histórica E19.3 foi retirada e não constitui pendência da E20.7 encerrada. O taxon piloto `corretor-imoveis` já está reconciliado em `reviewed_input_catalog_version=6`.
 • Credencial da E20.7.4: reutilizar a `OPENAI_API_KEY` compartilhada já configurada em Production e Preview; não criar, copiar ou registrar nova chave para esse workload.
 • Validação operacional: `niche_resolution` e `commercial_activation_draft_generation` foram executados uma única vez em Production em 10/08/2026; os Runtime Logs confirmaram sucesso e telemetria sanitizada, sem prompt, resposta integral, credencial ou dado pessoal.
-• Validação dos workloads de draft: por decisão humana, o gate de canários isolados sem persistência foi substituído pelo primeiro append integrado; duas execuções integradas hospedadas em 18/08/2026 comprovaram texto, imagem e o caminho oficial sem retry ou fallback.
-• Validação do cutover E21.2: Preview aprovou lifecycle e provas reais dos quatro transportes; Production aprovou leitura das quatro baselines e execução comercial real com origem `supabase_operational` e revisão 1, sem publicação, erro ou warning na janela autenticada.
+• Estado das unidades retiradas: quatro unidades hospedadas dos workloads antigos de draft permanecem como histórico, mas a leitura corrente por allowlist administra somente os oito registros dos quatro workloads vigentes em Preview e Production.
+• Validação do cutover E21.2: Preview e Production permanecem em `supabase_operational`; registros históricos fora da allowlist vigente não alteram a cardinalidade nem invalidam a leitura corrente.
 • Duração da Function: o segmento produtivo permanece configurado com `maxDuration = 300`; deployment READY e duas execuções integradas completas sem timeout incompatível corroboraram operacionalmente o gate.
 • Variáveis legadas de modelo na Vercel
 • Nomes: `OPENAI_NICHE_RESOLVER_MODEL`, `OPENAI_LANDING_PAGE_GENERATION_PROFILE_MODEL` e `OPENAI_COMMERCIAL_ACTIVATION_MODEL`.
@@ -360,17 +357,16 @@
 
 6.3.1 Endpoint externo atual
 • Endpoint OpenAI Responses API: `https://api.openai.com/v1/responses`
-• Endpoint OpenAI Images API: `https://api.openai.com/v1/images/generations`
 • Endpoint OpenAI Costs API: `https://api.openai.com/v1/organization/costs`
 • Atalho oficial OpenAI Usage: `https://platform.openai.com/usage`
 • Atalho oficial OpenAI faturamento e créditos: `https://platform.openai.com/settings/organization/billing/overview`
 • Regra dos atalhos: `/admin/custos-openai` abre os destinos externamente, sem iframe, integração adicional, rota intermediária ou transmissão de credencial, período, conta, Landing Page ou outro dado da LP Factory; o acesso depende das permissões do usuário na organização OpenAI.
 • Consumidor versionado da Costs API: `lib/openai-costs/providers/openAiCostsProvider.ts`, exclusivamente server-side e autenticado por `OPENAI_ADMIN_KEY`.
-• Persistência prospectiva dos dois workloads de LP: `lib/openai-costs/adapters/lpCostTrackingAdapter.ts`, exclusivamente server-side, condicionada a Production e a `OPENAI_LP_COST_TRACKING_ENABLED=true`.
-• Leitura agregada interna: `lib/openai-costs/adapters/lpCostReadModelAdapter.ts`, exclusivamente server-side via RPC read-only paginada; superfície administrativa em `/admin/custos-openai`.
+• Leitura agregada interna: `lib/openai-costs/adapters/lpCostReadModelAdapter.ts`, exclusivamente server-side via RPC read-only paginada, preserva a série histórica congelada em `/admin/custos-openai`; não existe adapter de persistência prospectiva vigente.
 • Consumidores atuais conhecidos:
 • `lib/conversion-content/adapters/commercialActivationOpenAiAdapter.ts`
-• `lib/conversion-content/adapters/landingPageGenerationProfileOpenAiAdapter.ts`
+• `lib/conversion-content/adapters/inputCatalogEvaluationOpenAiAdapter.ts`
+• `lib/conversion-content/adapters/dynamicMarketResearchOpenAiAdapter.ts`
 • `lib/onboarding/niche-resolution/adapters/openAiResolver.ts`
 • `automations/supabase-inspect/run.mjs`
 • Regra: novas APIs ou endpoints OpenAI devem ser registrados aqui quando virarem dependência operacional.

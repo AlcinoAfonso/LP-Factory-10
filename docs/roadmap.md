@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 02/09/2026
-• Versão: v1.5.212
+• Versão: v1.5.213
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -477,7 +477,7 @@
 
 9. E9 — Billing, trial e entitlements
 
-- Objetivo: Separar condição comercial da conta do lifecycle operacional da conta; definir elegibilidade comercial para criação de LPs por entitlement local efetivo; manter provedores de pagamento como mecanismos de confirmação/persistência, não como prova direta de liberação no LP Builder.
+- Objetivo: separar condição comercial da conta do lifecycle operacional da conta; definir elegibilidade comercial por entitlement local efetivo; manter provedores de pagamento como mecanismos de confirmação/persistência, não como prova direta de liberação de produto.
 - Status: base universal, liberação manual administrativa, Stripe mínimo e gate produtivo concluídos; trial e provedores alternativos não implementados; o contrato do catálogo de capacidades está concluído, com catálogo inicial e integração aos consumidores ainda planejados.
 
 9.1 Base universal de entitlement comercial
@@ -527,7 +527,7 @@
 - Fonte de verdade: `public.account_commercial_entitlements`.
 - Contrato server-side: `CommercialEntitlementSignal`, com elegibilidade efetiva, status efetivo e `planKey`.
 - Consumidores server-side devem decidir a partir do sinal local efetivo; ausência, erro ou estado inválido falham fechado.
-- O gate produtivo do LP Builder está descrito em 9.1.9.
+- A retirada do antigo gate produtivo do LP Builder está descrita em 9.1.9.
 
 9.1.7 View efetiva
 - Leitura efetiva: `public.v_account_commercial_entitlement_effective`.
@@ -538,16 +538,11 @@
 - Adapter criado: `getCommercialEntitlementSignal({ accountId })`.
 - Signal validado por contrato view → adapter.
 
-9.1.9 Gate do LP Builder
-- Status: concluído.
-- Regra mínima: usuário autenticado + conta `active` + membership `active` + papel `owner`/`admin` + entitlement comercial válido.
-- Para gate de criação de LP, conta operacionalmente permitida significa `accounts.status = active`.
-- Membership ativo significa `account_users.status = active`.
-- Conta `active` não fica elegível para criação produtiva apenas por estar ativa.
-- Gate produtivo confirmado no ponto real entregue pela E19: `app/lp-builder/actions.ts`, `lib/lp-builder/` e `public.account_landing_pages`.
-- O LP Builder consome `getCommercialEntitlementSignal({ accountId })` antes da persistência.
-- Sem entitlement comercial válido, o fluxo retorna `commercial_entitlement_required` antes do insert.
-- O LP Builder não consulta Stripe diretamente, não usa redirect de checkout como liberação e não usa apenas `accounts.status` como prova comercial.
+9.1.9 Gate histórico do LP Builder — retirado
+- Status: retirado com o produto E19.
+- `getCommercialEntitlementSignal({ accountId })` permanece autoridade comercial para seus consumidores vigentes, sem consumidor em `lib/lp-builder/`.
+- Conta, membership e entitlement não são usados para reconstruir operacionalidade de Landing Page no lifecycle E20.2.
+- A retirada não altera billing, checkout ou as demais políticas comerciais da E9.
 
 9.1.10 Fail-closed, limites e ressalvas
 - Fallback fail-closed: `accountId` vazio, erro, exceção ou ausência de linha retornam não elegível.
@@ -660,7 +655,7 @@
 9.4.7 Limites: Stripe não substitui entitlement local
 - Stripe não substitui o entitlement local.
 - Redirect de sucesso não confirma pagamento nem libera entitlement.
-- Redirect, checkout e webhook não liberam o LP Builder sem entitlement local efetivo.
+- Redirect, checkout e webhook não substituem a decisão baseada no entitlement local efetivo.
 
 9.5 Mercado Pago
 
@@ -1605,7 +1600,7 @@
 - `research_version = 1` e `audience_scope = business_buyer` compõem o contrato atual do artefato comercial.
 - `content_artifact_research_sources` recebe fontes compatíveis com `business_buyer`; contexto adicional de pesquisa é preservado em `provenance_json`.
 - A E10.6 continua como fallback comercial genérico.
-- A infraestrutura da LP Builder permanece separada na E19.
+- A antiga infraestrutura da LP Builder foi retirada; E19 permanece apenas como registro do legado físico inerte.
 
 18.4 Parametrização raiz da família `landing_page`
 
@@ -1671,14 +1666,14 @@
 - O antigo caminho E19.3 → E19.4 foi retirado e não dependia deste catálogo.
 
 19. E19 — legado operacional de Landing Pages retirado
-- Objetivo vigente: registrar somente as fronteiras ainda consumidas e o estado físico residual do antigo produto de Landing Pages.
-- Status: criação, onboarding operacional, workspace, configuração operacional, histórico, Preview, renderer, aprovação, readers de revisões e assinatura de assets foram retirados da árvore ativa do Account Dashboard. A geração antiga permanece indisponível e nenhuma nova arquitetura greenfield é antecipada.
+- Objetivo vigente: registrar o estado físico residual do antigo produto de Landing Pages sem reintroduzir consumidor ou compatibilidade de runtime.
+- Status: produto, geração, `lib/lp-builder/`, apresentação, compatibilidade com E20.2 e escrita prospectiva de custos foram retirados. Nenhuma nova arquitetura greenfield é antecipada.
 
-19.1 Fronteiras preservadas
-- Os geradores básicos de texto e imagem, o prompt e seus validation cases permanecem em `lib/lp-builder/` porque são consumidos pelas provas administrativas de workloads OpenAI.
-- `generationContextContracts.ts` contém somente o shape V4 mínimo aceito por esses geradores; o contrato V3 e os contratos de compilação sem produtor foram removidos.
-- `lib/conversion-content/landing-page/presentation/` permanece como autoridade do schema, validação e prompts textual e visual usados pelos geradores; não existe renderer operacional de revisão.
-- `onboardingConfiguration.ts`, `operationalCompatibility.ts` e os tipos mínimos de `contracts.ts` permanecem exclusivamente para o lifecycle administrativo do catálogo de entradas e para as provas do Admin Estrutura LP.
+19.1 Fronteiras retiradas
+- `lib/lp-builder/` e `lib/conversion-content/landing-page/presentation/` não existem mais no boundary vigente.
+- Os workloads `landing_page_draft_generation` e `landing_page_draft_image_generation`, suas provas administrativas e branches exclusivas de image workload foram removidos.
+- O catálogo independente de modelos de imagem permanece disponível para governança de modelos, sem implicar workload de imagem ativo.
+- E20.2, E20.5, E20.6 e E20.7 permanecem capacidades independentes e não dependem de compatibilidade E19.
 
 19.2 Account Dashboard
 - Contas ativas seguem a experiência comercial preservada, sem desvio por estado de configuração, LP ou revisão.
@@ -1687,13 +1682,13 @@
 
 19.3 Estado físico residual
 - Tabelas, RPCs, migrations, ponteiro de aprovação, dados históricos e o bucket `landing-page-revision-assets` permanecem no estado físico descrito em `docs/schema.md`, sem limpeza destrutiva.
-- As residências antigas de configuração continuam lidas apenas pelo lifecycle administrativo do catálogo para preservar a semântica de compatibilidade anterior à publicação.
-- Os demais objetos de revisão, materialização e aprovação não possuem consumidor no runtime do produto e são resíduos inertes; sua eventual remoção exige recorte próprio.
+- As residências antigas de conta, configuração, revisão e materialização não participam mais do lifecycle E20.2 nem do runtime do produto.
+- Os objetos físicos e registros históricos não possuem consumidor no runtime do produto e são resíduos inertes; sua eventual remoção exige recorte próprio.
 - `E19_5_WORKSPACE_ENABLED` não possui consumidor no código e permanece apenas como variável hospedada inativa, sem alteração de plataforma neste recorte.
 
 19.4 Histórico
 - O detalhe da arquitetura abandonada permanece recuperável pelos PRs e pelo histórico Git; a documentação canônica não a mantém como obrigação vigente.
-- PR #871 tornou a geração antiga inalcançável e PR #872 retirou sua orquestração. O SV-PR03 retirou o produto operacional legado e parou nas duas fronteiras administrativas descritas em 19.1.
+- PR #871 tornou a geração antiga inalcançável, PR #872 retirou sua orquestração, o SV-PR03 retirou o produto operacional e o SV-PR04 eliminou as duas fronteiras administrativas residuais.
 20. E20 — Preparação e liberação de taxons para geração de landing pages
 - Objetivo: manter o catálogo versionado de entradas, a pesquisa integral selecionada, a avaliação de suficiência e a resolução de conhecimento que autorizam o contexto factual da LP.
 - Status: catálogo E20.2 v6 vigente; perfil E20.3 retirado; seleção E20.5 e preparação determinística E20.6 operacionais; resolver E20.7 implementado e preservado como capacidade independente, sem consumidor E19 vigente.
@@ -1782,8 +1777,9 @@
 - Pode existir somente um próximo draft, mutável, service-only e não operacional.
 - Editar o draft torna stale qualquer evidência dependente; versões publicadas não são copiadas para o banco.
 - Publicar exige congelar conteúdo e fingerprints, materializar a nova versão no registry, validar, revisar, mergear, implantar em Production e reconciliar a identidade exata.
-- O gate pré-publicação verifica estrutura, suficiência E20.6 e compatibilidade das configurações operacionais elegíveis, com paginação e cardinalidade exatas.
-- Divergência de taxonomia, catálogo, configuração, LP, elegibilidade ou fingerprint bloqueia a publicação/reconciliação sem prova parcial.
+- O gate pré-publicação valida estrutura, fingerprints E20 e evidência humana por taxon, com paginação e cardinalidade exatas, sem depender de conta, entitlement, configuração ou LP E19.
+- Evidência válida pode avançar o marcador do respectivo taxon; evidência ausente, inválida ou stale não avança esse marcador e mantém o taxon fail-closed em E20.6.
+- A reconciliação não possui blocker global de operacionalidade ou de “taxons preparados”; `no_material_change`, `compatible_evolution` e `review_required` continuam sendo classificados por taxon.
 - O Admin usa `/admin/estrutura-lp?view=entradas`; avaliação individual de suficiência permanece na Taxonomia.
 - Não há rollback de catálogo, múltiplos drafts, targeting por taxon, job, fila ou agente.
 
@@ -1978,13 +1974,13 @@
 
 21. E21 — Gestão e governança dos workloads OpenAI
 - Objetivo: manter uma autoridade única para identidade, configuração, execução observável e custo dos workloads OpenAI usados pelo produto, com operação administrativa segura e sem otimização autônoma.
-- Status: fundação e inventário vigentes; configuração operacional dinâmica e catálogo administrativo ativos; avaliação comparativa E21.3 pausada e sem implementação incorporada; visibilidade financeira em Production preserva o total oficial e o histórico prospectivo. Texto e imagem permanecem para provas administrativas, e a pesquisa dinâmica não possui consumidor no fluxo de Landing Page.
+- Status: fundação e inventário vigentes; configuração operacional dinâmica e catálogo administrativo ativos; avaliação comparativa E21.3 pausada; visibilidade financeira preserva o total oficial e a série histórica congelada de Landing Pages. A pesquisa dinâmica permanece sem consumidor no fluxo de Landing Page.
 
 21.1 Fundação, normalização e leitura dos workloads OpenAI
 
 21.1.1 Objetivo e status
 - Objetivo: centralizar identidades, modalidades, baselines locais, resolução e telemetria segura dos workloads OpenAI, mantendo prompts, schemas e regras funcionais nos domínios consumidores.
-- Status: implementada e vigente. O catálogo estrutural contém seis workloads de produto — cinco textuais e um de imagem — mais a referência operacional read-only do Supabase Inspect.
+- Status: implementada e vigente. O catálogo estrutural contém quatro workloads textuais de produto mais a referência operacional read-only do Supabase Inspect; não há workload de imagem ativo.
 
 21.1.2 Registros do recorte
 - Repositório:
@@ -2014,26 +2010,24 @@
 - Os workloads de produto vigentes são:
   - `niche_resolution`;
   - `commercial_activation_draft_generation`;
-  - `landing_page_draft_generation`;
   - `taxon_input_catalog_sufficiency_evaluation`;
-  - `landing_page_dynamic_market_research`;
-  - `landing_page_draft_image_generation`.
+  - `landing_page_dynamic_market_research`.
 - `supabase_inspect` permanece referência operacional externa, sem ser aceito pelo resolver de produto.
-- O resolver discrimina `responses_text` e `image_generation`, rejeita identidade, modalidade ou ambiente desconhecidos e não transporta parâmetros de texto para imagem nem parâmetros de mídia para texto.
+- O resolver de workloads de produto aceita somente `responses_text` e rejeita identidade, modalidade ou ambiente desconhecidos; a modalidade de imagem permanece apenas no catálogo independente de modelos.
 - Development usa o baseline versionado no repositório. Preview e Production podem resolver a revisão ativa do Supabase pelo gate operacional da E21.2, sem fallback silencioso quando esse gate está ligado.
 - Modelo, esforço, qualidade e política de Web Search pertencem à configuração; prompts, Structured Outputs, limites funcionais, persistência e fallbacks continuam nos boundaries consumidores.
 
 21.1.4 Integração e observabilidade comum
 - Os workloads com consumidor vigente consomem a resolução pública antes do transporte e preservam configuração, revisão e origem na proveniência ou no evento operacional aplicável.
-- Eventos de texto e imagem registram somente identidade do workload, configuração efetiva, resultado, categoria segura de falha, latência, IDs técnicos e usage disponível.
+- Eventos dos workloads vigentes registram somente identidade, configuração efetiva, resultado, categoria segura de falha, latência, IDs técnicos e usage disponível.
 - Prompt, resposta integral, payload de negócio, pesquisa, fatos, PII, secrets e credenciais não integram a telemetria.
 - Métrica ausente permanece `null`; não há estimativa monetária transversal nem preenchimento inventado.
 - O workload de pesquisa dinâmica acrescenta contagem de chamadas e fontes Web Search quando disponíveis. Seu boundary e prova administrativa permanecem no repositório, sem consumidor no fluxo de Landing Page.
 - Variáveis legadas de seleção de modelo não são consumidas pelos workloads ativos.
 
 21.1.5 Inventário administrativo
-- A rota protegida `/admin/workloads-openai` projeta os sete itens do registry para `platform_admin`.
-- Os seis workloads de produto exibem modalidade, configuração, origem, revisão, consumidor e fallback; o Supabase Inspect permanece diferenciado como referência não verificada nessa superfície.
+- A rota protegida `/admin/workloads-openai` projeta os cinco itens vigentes do registry para `platform_admin`.
+- Os quatro workloads de produto exibem modalidade, configuração, origem, revisão, consumidor e fallback; o Supabase Inspect permanece diferenciado como referência não verificada nessa superfície.
 - A leitura não consulta OpenAI, GitHub ou Vercel em runtime e não expõe secrets, prompts, respostas ou payloads funcionais.
 - O inventário é a entrada para a gestão operacional da E21.2, sem duplicar registry ou resolver no Admin.
 
@@ -2041,7 +2035,7 @@
 
 21.2.1 Objetivo e status
 - Objetivo: administrar configuração por `ambiente + workload` com candidata, prova, promoção, ativação e rollback humano, permitindo mudanças ordinárias em Preview e Production sem novo deploy de código.
-- Status: implementada e ativa. Preview e Production usam `supabase_operational`; Development permanece em `repo_catalog`. O agregado hospedado contém doze unidades — seis workloads de produto em cada ambiente — e falha fechado diante de leitura ausente, parcial ou inválida.
+- Status: implementada e ativa. Preview e Production usam `supabase_operational`; Development permanece em `repo_catalog`. A leitura corrente seleciona por allowlist as oito unidades vigentes — quatro workloads de produto em cada ambiente — e ignora quatro unidades históricas sem criar compatibilizador legado.
 
 21.2.2 Registros do recorte
 - Banco:
@@ -2125,7 +2119,7 @@
 - O catálogo global controla quais combinações podem originar novas candidatas; save, prova e promoção revalidam a elegibilidade corrente.
 - Indisponibilidade do catálogo bloqueia novas candidatas e promoções, mas não invalida revisões já ativas nem impede rollback para revisão histórica válida.
 - Modelos e parâmetros ficam separados por modalidade e podem ser disponibilizados ou retirados da seleção sem apagar o histórico.
-- A superfície administrativa combina catálogo, seletor Preview/Production, lista compacta e detalhe expandido. Texto e imagem da Landing Page podem ser agrupados visualmente, mas preservam lifecycle independente.
+- A superfície administrativa combina catálogo, seletor Preview/Production, lista compacta e detalhe expandido. O catálogo de modelos preserva suporte independente à modalidade de imagem, ainda que não exista workload de imagem vigente.
 - Leituras são completas, ordenadas e fail-closed; paginação parcial ou resposta inválida não produz estado administrativo utilizável.
 - O papel sem `platform_admin` não recebe catálogo, configuração, provas ou controles de mutação.
 
@@ -2146,11 +2140,11 @@
 - Não definir vencedor ou baseline universal sem amostra representativa e aceite humano.
 - Não criar banco, dashboard, job, agente, engine de otimização ou troca automática enquanto o recorte permanecer pausado.
 
-21.4 Visibilidade financeira e atribuição de custos OpenAI
+21.4 Visibilidade financeira e histórico de custos OpenAI
 
 21.4.1 Objetivo e status
-- Objetivo: apresentar ao `platform_admin` o gasto oficial total da organização OpenAI e a parcela prospectivamente calculável dos workloads de texto e imagem das Landing Pages, com diferença explícita em Outros gastos / reconciliação.
-- Status: implementada e operacional em Production. A Costs API é a autoridade do total; o tracking interno cobre somente tentativas iniciadas após o corte registrado e pode produzir cobertura parcial em períodos que atravessem esse início.
+- Objetivo: apresentar ao `platform_admin` o gasto oficial total da organização OpenAI e a série interna congelada dos antigos workloads de Landing Pages, com diferença explícita em Outros gastos / reconciliação.
+- Status: leitura implementada e operacional em Production. A Costs API é a autoridade do total atual; o histórico interno não recebe novos eventos após a retirada do write-side prospectivo.
 
 21.4.2 Registros do recorte
 - Banco:
@@ -2210,13 +2204,11 @@
 - A chave administrativa permanece separada de `OPENAI_API_KEY` e não atravessa client, banco, log ou resposta sanitizada.
 - Não há cache, polling, cron, leitura de saldo/créditos ou atribuição heurística do total oficial.
 
-21.4.4 Tracking prospectivo das Landing Pages
-- `OPENAI_LP_COST_TRACKING_ENABLED=true` habilita o tracking somente em Production; Preview e Development permanecem fora.
-- O escopo financeiro interno cobre `landing_page_draft_generation` e `landing_page_draft_image_generation` quando invocados com identidade causal explícita. Os transports básicos permanecem para prova administrativa, sem rota de geração no Account Dashboard; a pesquisa dinâmica não recebe atribuição monetária causal à Landing Page.
-- Cada tentativa elegível registra início e terminal append-only em orçamento curto e best effort. Falha ou timeout exclusivamente financeiro não bloqueia a chamada OpenAI.
-- Custo interno é calculado apenas quando há unidades e preço versionado suficientes. Tentativa pendente ou sem preço fica fora da soma atribuída e dentro da reconciliação.
-- Falhas preservam somente status, código e tipo sanitizados; mensagem, payload bruto e detalhe sensível não são persistidos.
-- A cobertura confiável começa no corte imutável registrado; não há backfill nem reconstrução de tentativas anteriores.
+21.4.4 Série histórica congelada de Landing Pages
+- O write-side, gate, budget, pricing e adapter prospectivos foram removidos junto dos únicos produtores elegíveis.
+- Eventos e cobertura já persistidos permanecem append-only e somente leitura; não há backfill, reconstrução ou novo produtor.
+- Custos oficiais posteriores continuam no total da Costs API e aparecem na reconciliação quando não pertencem à série interna histórica.
+- `OPENAI_LP_COST_TRACKING_ENABLED` não possui consumidor vigente e não foi alterada na plataforma por este recorte.
 
 21.4.5 Read model e reconciliação administrativa
 - `/admin/custos-openai` consulta em paralelo o total oficial e o read model interno, com período atual ou personalizado, atualização sob demanda e acesso exclusivo de `platform_admin`.
@@ -2224,13 +2216,13 @@
 - Páginas repetidas, regressivas, inválidas ou interrompidas falham fechado; fim de paginação por resposta vazia ou contrato PostgREST aplicável é tratado explicitamente.
 - O resultado detalha conta → Landing Page → workload, tentativas, pendências, itens sem preço e cobertura. Outros gastos / reconciliação é a diferença decimal entre total oficial e soma atribuível, sem clamp.
 - A superfície distingue cobertura completa, parcial, degradada e indisponível e não individualiza falhas anteriores ao início persistido.
-- O smoke autenticado de Production aprovou leitura oficial, atribuição prospectiva, reconciliação, cobertura parcial e bloqueio do papel comum após a evolução incremental do read model.
+- O smoke autenticado de Production aprovou leitura oficial, histórico congelado, reconciliação, cobertura parcial e bloqueio do papel comum após a evolução incremental do read model.
 - Permanecem limites explícitos: a RPC ainda materializa, ordena e aplica offset; não existe snapshot transacional entre páginas; a validação hospedada não comprova volume arbitrário nem ganho de tempo SQL.
 - Classificação financeira ampla, outros workloads, câmbio, cobrança, créditos e reconstrução histórica permanecem fora do escopo vigente.
 
 22. E22 — Retirada controlada de ativos históricos
 - Objetivo: reduzir superfícies, dados, documentos e infraestrutura sem consumidor vigente, após auditoria explícita de dependências e sem criar substitutos antecipados.
-- Status: E22.1, E22.2, E22.3 e E22.4 concluídas. Além dos ativos anteriores, o SV-PR03 retirou criação, onboarding operacional, workspace, configuração operacional, histórico, Preview, renderer, aprovação, readers e signing do antigo produto de Landing Pages. O Core, as automações GitHub, as duas fronteiras administrativas de LP e os resíduos físicos deliberadamente inertes foram preservados. Permanece somente a decisão futura sobre reduzir Previews produzidos por pushes intermediários em branches não documentais.
+- Status: E22.1, E22.2, E22.3, E22.4 e E22.5 concluídas. O produto operacional, o `lp-builder`, sua apresentação, workloads exclusivos, compatibilidade E19 e write-side de custos foram retirados; Core, capacidades E20 independentes, automações GitHub e resíduos físicos deliberadamente inertes permanecem preservados. Permanece somente a decisão futura sobre reduzir Previews produzidos por pushes intermediários em branches não documentais.
 
 22.1 Retirada de ativos históricos do domínio de Landing Page
 
@@ -2278,11 +2270,11 @@
     - `supabase/tests/e20_3_generation_profile.test.sql`
 - Referências:
   - Estado atual do banco: `docs/schema.md` — objetos de Landing Page e pesquisas taxonômicas.
-  - Boundary vigente: `docs/base-tecnica.md` — LP Builder e preparação factual.
+  - Boundary vigente após a retirada posterior: `docs/base-tecnica.md` — preparação factual.
 
 22.1.3 Classificação de consumidores
 - A retirada exige classificar cada item como preservado, desacoplado ou removível a partir de consumo real, e não apenas por antiguidade ou localização.
-- Permanecem preservados:
+- Naquele recorte permaneceram preservados:
   - a parametrização raiz e seus presets;
   - o catálogo de entradas v6 e seu lifecycle;
   - a seleção da pesquisa integral `end_customer`;
@@ -2418,7 +2410,7 @@
     - `lib/lp-builder/landingPageGenerationKnowledge.ts`
     - `lib/lp-builder/landingPageRevisionWorkflow.ts`
 - Referências:
-  - Boundary técnico vigente: `docs/base-tecnica.md` — seções 3.14.4, 3.15.8 e 3.15.9.
+  - Boundary técnico no fechamento do SV-PR03: `docs/base-tecnica.md` — antigas seções 3.14.4, 3.15.8 e 3.15.9.
   - Configuração preservada: `docs/platform-config.md` — workloads OpenAI e Storage privado.
   - Contrato de banco preservado: `docs/schema.md` — materializações de Landing Page.
 
@@ -2428,9 +2420,9 @@
 - Exports, validators, adapters exclusivos da cadeia e wrappers server-only sem consumidor foram podados com os módulos produtores e escritores.
 
 22.4.4 Capacidades preservadas
-- `generationContextContracts.ts` preserva somente o shape V4 mínimo consumido pelos geradores administrativos; V3, schemas de revisão e readers históricos foram removidos.
-- Os geradores básicos de texto e imagem e `presentation/` permanecem apenas para provas administrativas da E21; não materializam revisão.
-- A compatibilidade de configuração permanece exclusivamente para o lifecycle administrativo do catálogo, sem alterar sua semântica de publicação.
+- No fechamento do SV-PR03, `generationContextContracts.ts` preservava somente o shape V4 mínimo consumido pelos geradores administrativos; ele foi retirado no SV-PR04.
+- No fechamento do SV-PR03, os geradores básicos de texto e imagem e `presentation/` permaneciam apenas para provas administrativas da E21; foram retirados no SV-PR04.
+- No fechamento do SV-PR03, a compatibilidade de configuração ainda permanecia exclusivamente para o lifecycle administrativo do catálogo; ela foi retirada no SV-PR04.
 - E20.7, preparação factual, catálogo de entradas e parametrização raiz permanecem independentes e sem integração ativa com E19.
 - RPCs, tabelas, bucket, migrations e dados históricos foram preservados inertes; qualquer nova escrita, leitura de produto ou limpeza exige decisão e recorte futuros próprios.
 
@@ -2438,3 +2430,22 @@
 - O Account Dashboard não carrega configuração, drafts, workspace, revisão ou materialização e sempre segue a experiência comercial preservada conforme conta, papel e entitlement.
 - As rotas antigas de detail, configuração, histórico e Preview, suas Server Actions, renderer, adapters, contratos e validators exclusivos foram removidos sem substitutos ou redirects.
 - `E19_5_WORKSPACE_ENABLED` ficou sem consumidor e a infraestrutura física herdada permanece inventariada em `docs/schema.md`.
+
+22.5 Retirada do residual E19 e da compatibilidade com E20.2
+
+22.5.1 Objetivo e status
+- Objetivo: eliminar as últimas fronteiras de código mantidas apenas pelos geradores e pela antiga operacionalidade E19, sem alterar as autoridades factuais E20.
+- Status: concluída no SV-PR04, sem migration, DDL, limpeza de dados, Storage ou configuração hospedada.
+
+22.5.2 Resultado
+- `lib/lp-builder/` e `lib/conversion-content/landing-page/presentation/` foram removidos integralmente, junto dos dois workloads de draft, provas administrativas e branches exclusivas de image workload.
+- O Admin Workloads seleciona somente workloads vigentes; as quatro unidades históricas, seis revisões e oito ativações permanecem inertes no banco.
+- O lifecycle E20.2 não lê conta, entitlement, `account_taxonomy`, onboarding, configuração ou LP para derivar operacionalidade e não possui blocker global substituto.
+- Evidência humana válida avança somente o marcador do taxon correspondente; ausência ou invalidade preserva o marcador anterior e o fail-closed próprio da E20.6.
+- O write-side prospectivo de custos foi removido; Costs API, read model e oito eventos históricos permanecem disponíveis como série congelada e reconciliação.
+
+22.5.3 Capacidades preservadas
+- E20.2 mantém registry, resolução, versionamento, fingerprints e as classificações `no_material_change`, `compatible_evolution` e `review_required`.
+- E20.5 mantém a pesquisa integral selecionada; E20.6 mantém `reviewed_input_catalog_version`, decisão humana e preparação fail-closed por taxon; E20.7 permanece capacidade independente.
+- O framework OpenAI compartilhado, os quatro workloads textuais vigentes, `supabase_inspect` e o catálogo de modelos de imagem permanecem preservados.
+- Objetos físicos e registros históricos E19 permanecem deliberadamente inertes; qualquer limpeza posterior exige recorte próprio.

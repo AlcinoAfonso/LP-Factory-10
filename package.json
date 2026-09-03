@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "check": "npm run lint && npm run typecheck && npm run validate:commercial-capabilities && npm run validate:openai-workloads && npm run validate:admin-openai-workloads && npm run validate:openai-costs && npm run validate:openai-costs-dashboard && npm run validate:commercial-activation && npm run validate:landing-page-root && npm run validate:landing-page-input-catalog && npm run validate:taxon-preparation && npm run validate:landing-page-knowledge-resolution && npm run validate:landing-page-dynamic-research && npm run validate:account-members && npm run validate:e11-checkout && npm run validate:e11-commercial-experience && npm run validate:admin-landing-page-structure && npm run validate:lp-builder-onboarding-journey",
+    "check": "npm run lint && npm run typecheck && npm run validate:commercial-capabilities && npm run validate:openai-workloads && npm run validate:admin-openai-workloads && npm run validate:openai-costs && npm run validate:openai-costs-dashboard && npm run validate:commercial-activation && npm run validate:landing-page-root && npm run validate:landing-page-input-catalog && npm run validate:taxon-preparation && npm run validate:landing-page-knowledge-resolution && npm run validate:landing-page-dynamic-research && npm run validate:account-members && npm run validate:e11-checkout && npm run validate:e11-commercial-experience && npm run validate:admin-landing-page-structure && npm run validate:account-onboarding-journey",
     "validate:account-members": "tsx lib/access/account-members/validation-cases.ts",
     "validate:e11-checkout": "tsx app/a/[account]/_components/commercial-page/checkout-validation-cases.ts",
     "validate:e11-commercial-experience": "tsx app/a/[account]/_components/commercial-page/commercial-experience-validation-cases.ts",
@@ -24,7 +24,7 @@
     "validate:taxon-preparation": "tsx lib/conversion-content/landing-page/taxon-preparation/validation-cases.ts",
     "validate:landing-page-knowledge-resolution": "tsx lib/conversion-content/landing-page/knowledge-resolution/validation-cases.ts",
     "validate:landing-page-dynamic-research": "tsx lib/conversion-content/landing-page/knowledge-resolution/dynamic-research-validation-cases.ts",
-    "validate:lp-builder-onboarding-journey": "tsx app/a/[account]/_components/onboarding-journey-validation-cases.ts"
+    "validate:account-onboarding-journey": "tsx app/a/[account]/_components/onboarding-journey-validation-cases.ts"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "1.1.7",

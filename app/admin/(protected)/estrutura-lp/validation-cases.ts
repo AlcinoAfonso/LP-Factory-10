@@ -87,7 +87,8 @@ assert.doesNotMatch(conversionIndex, /landingPageResearch|landingPageResearchAda
 assert.doesNotMatch(packageJson, /validate:landing-page-research|research-resolution\/validation-cases/);
 assert.match(packageJson, /validate:commercial-activation/);
 assert.match(packageJson, /validate:taxon-preparation/);
-assert.doesNotMatch(packageJson, /validate:lp-builder-generation-context/);
+assert.match(packageJson, /validate:account-onboarding-journey/);
+assert.doesNotMatch(packageJson, /validate:lp-builder-/);
 assert.match(page, /view === "entradas"[\s\S]*AdminInputCatalogLifecycle/);
 assert.match(lifecycleAdapter, /CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION/);
 assert.doesNotMatch(
