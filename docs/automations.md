@@ -1,7 +1,7 @@
 0.1 Cabeçalho
 Data: 02/09/2026
-Versão: v1.24
-Status: Alinhado à retirada do fluxo automatizado legado de Landing Pages; provas administrativas e `automations/supabase-inspect` preservadas
+Versão: v1.25
+Status: Alinhado ao catálogo operacional vigente; `automations/supabase-inspect` preservada
 
 0.2 Função do documento
 Registrar a camada de automações operacionais do LP Factory 10 como referência para integrações, automações operacionais e componentes consumidores, sem expor segredos.
@@ -395,23 +395,6 @@ Fluxo funcional: `docs/roadmap.md` — E20.6.3.
 Configuração do gate: `docs/platform-config.md` — seção 3.5.
 Contrato técnico: `docs/base-tecnica.md` — seção 3.15.7.
 
-3.11 E19.4.3 — geração controlada da candidata de landing page — retirada
-
-Objetivo histórico:
-O fluxo combinava texto, imagem, validação e materialização do antigo produto de Landing Pages.
-
-Status:
-Retirado da árvore ativa pelos PRs #871, #872 e pelo SV-PR03. Não existe action, orquestração, upload, append, Preview, renderer ou gatilho no Account Dashboard.
-
-Capacidades preservadas:
-- os geradores básicos de texto e imagem continuam disponíveis somente para provas administrativas da gestão OpenAI;
-- a autoridade `lib/conversion-content/landing-page/presentation/` continua consumida por esses geradores;
-- essas provas são chamadas explícitas e isoladas, sem workflow de produto, persistência de revisão, job, fila, retry ou fallback automático.
-
-Referências:
-- estado vigente: `docs/roadmap.md` — E19 e E22.4;
-- boundaries preservados: `docs/base-tecnica.md` — seção 3.15.8;
-- configuração administrativa: `docs/platform-config.md`.
 3.12 E20.7.4 — complemento dinâmico controlado de conhecimento de mercado
 
 Objetivo:

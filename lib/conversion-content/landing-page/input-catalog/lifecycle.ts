@@ -29,36 +29,6 @@ export const landingPageInputCatalogOperationalPlans = [
   "ultra",
 ] as const satisfies readonly LandingPageInputCatalogPlan[];
 
-export const landingPageCommercialIdentityFieldKeys = Object.freeze([
-  "funnel_stage",
-  "transaction_intent",
-  "landing_page_offering_scope",
-] as const);
-
-export function collectCommercialIdentityReviewBlockers(
-  impacts: readonly Readonly<{
-    taxon: Readonly<{ id: string }>;
-    classification: LandingPageInputCatalogTransitionClassification;
-    reviewRequiredFieldKeys: readonly string[];
-  }>[],
-): readonly Readonly<{ taxonId: string; fieldKeys: readonly string[] }>[] {
-  const protectedKeys = new Set<string>(landingPageCommercialIdentityFieldKeys);
-  return Object.freeze(
-    impacts.flatMap((impact) => {
-      if (impact.classification !== "review_required") return [];
-      const fieldKeys = impact.reviewRequiredFieldKeys.filter((fieldKey) =>
-        protectedKeys.has(fieldKey),
-      );
-      return fieldKeys.length === 0
-        ? []
-        : [Object.freeze({
-            taxonId: impact.taxon.id,
-            fieldKeys: Object.freeze(fieldKeys),
-          })];
-    }),
-  );
-}
-
 export function listLandingPageInputCatalogVersions(): readonly number[] {
   return Object.freeze(
     Object.keys(landingPageInputCatalogRegistry)

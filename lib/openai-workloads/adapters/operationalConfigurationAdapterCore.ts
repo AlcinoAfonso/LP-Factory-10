@@ -1,5 +1,4 @@
 import {
-  openAiImageQualities,
   openAiReasoningEfforts,
   type OpenAiAdministrativeActivation,
   type OpenAiAdministrativeCandidate,
@@ -7,8 +6,6 @@ import {
   type OpenAiAdministrativeConfigurationUnit,
   type OpenAiAdministrativeConfigurationValue,
   type OpenAiAdministrativeRevision,
-  type OpenAiImageQuality,
-  type OpenAiImageWorkloadId,
   type OpenAiManagedWorkloadEnvironment,
   type OpenAiOperationalConfigurationReadResult,
   type OpenAiProductWorkloadId,
@@ -44,10 +41,7 @@ export function translateOperationalConfigurationRows(
   const revisionId = nonEmptyString(revision.id);
   const model = technicalModel(revision.model);
   const revisionNumber = positiveInteger(revision.revision_number);
-  const expectedModality =
-    input.workload === "landing_page_draft_image_generation"
-      ? "image_generation"
-      : "responses_text";
+  const expectedModality = "responses_text";
   if (
     unit.environment !== input.environment ||
     unit.workload !== input.workload ||
@@ -64,24 +58,6 @@ export function translateOperationalConfigurationRows(
       "ACTIVE_CONFIGURATION_INVALID",
       "Active operational configuration does not match its unit",
     );
-  }
-
-  if (input.workload === "landing_page_draft_image_generation") {
-    const quality = imageQuality(revision.quality);
-    if (quality === null || revision.reasoning_effort !== null) {
-      return failure(
-        "ACTIVE_CONFIGURATION_INVALID",
-        "Active image configuration has an invalid shape",
-      );
-    }
-    return success({
-      environment: input.environment,
-      workload: input.workload,
-      apiKind: "image_generation",
-      model,
-      quality,
-      revision: String(revisionNumber),
-    });
   }
 
   if (!isTextWorkload(input.workload)) {
@@ -120,7 +96,6 @@ function isTextWorkload(
   return (
     value === "niche_resolution" ||
     value === "commercial_activation_draft_generation" ||
-    value === "landing_page_draft_generation" ||
     value === "taxon_input_catalog_sufficiency_evaluation" ||
     value === "landing_page_dynamic_market_research"
   );
@@ -129,12 +104,6 @@ function isTextWorkload(
 function reasoningEffortValue(value: unknown): OpenAiReasoningEffort | null {
   return openAiReasoningEfforts.includes(value as OpenAiReasoningEffort)
     ? (value as OpenAiReasoningEffort)
-    : null;
-}
-
-function imageQuality(value: unknown): OpenAiImageQuality | null {
-  return openAiImageQualities.includes(value as OpenAiImageQuality)
-    ? (value as OpenAiImageQuality)
     : null;
 }
 
@@ -184,20 +153,11 @@ function deepFreeze<T>(value: T): T {
 }
 
 const managedEnvironments = ["production", "preview"] as const;
-const preDynamicResearchManagedWorkloads = [
-  "niche_resolution",
-  "commercial_activation_draft_generation",
-  "landing_page_draft_generation",
-  "taxon_input_catalog_sufficiency_evaluation",
-  "landing_page_draft_image_generation",
-] as const;
 const managedWorkloads = [
   "niche_resolution",
   "commercial_activation_draft_generation",
-  "landing_page_draft_generation",
   "taxon_input_catalog_sufficiency_evaluation",
   "landing_page_dynamic_market_research",
-  "landing_page_draft_image_generation",
 ] as const satisfies readonly ManagedWorkload[];
 
 const unitRowKeys = [
@@ -240,20 +200,20 @@ const activationRowKeys = [
   "created_at",
 ] as const;
 
-type ManagedWorkload = OpenAiProductWorkloadId | OpenAiImageWorkloadId;
+type ManagedWorkload = OpenAiProductWorkloadId;
 
 type ParsedRevision = OpenAiAdministrativeRevision &
   Readonly<{
     environment: OpenAiManagedWorkloadEnvironment;
     workload: ManagedWorkload;
-    modality: "responses_text" | "image_generation";
+    modality: "responses_text";
   }>;
 
 type ParsedActivation = OpenAiAdministrativeActivation &
   Readonly<{
     environment: OpenAiManagedWorkloadEnvironment;
     workload: ManagedWorkload;
-    modality: "responses_text" | "image_generation";
+    modality: "responses_text";
   }>;
 
 export function translateOpenAiAdministrativeConfigurationRows(
@@ -268,30 +228,19 @@ export function translateOpenAiAdministrativeConfigurationRows(
   const units = exactRecords(unitRead.data, unitRowKeys);
   const revisions = exactRecords(revisionRead.data, revisionRowKeys);
   const activations = exactRecords(activationRead.data, activationRowKeys);
-  const workloads = units?.length === 10
-    ? preDynamicResearchManagedWorkloads
-    : units?.length === 12
-      ? managedWorkloads
-      : null;
+  const workloads = units?.length === managedWorkloads.length * managedEnvironments.length
+    ? managedWorkloads
+    : null;
   if (!units || !revisions || !activations || !workloads) {
     return invalidAdministrativeConfiguration();
   }
 
-  const projections = listOpenAiWorkloadPresentations().map((presentation) =>
-    presentation.workload === "landing_page_draft_image_generation"
-      ? {
-          workload: presentation.workload,
-          displayName: presentation.name,
-          apiKind: "image_generation" as const,
-          options: [],
-        }
-      : {
-          workload: presentation.workload,
-          displayName: presentation.name,
-          apiKind: "responses_text" as const,
-          options: [],
-        },
-  );
+  const projections = listOpenAiWorkloadPresentations().map((presentation) => ({
+    workload: presentation.workload,
+    displayName: presentation.name,
+    apiKind: "responses_text" as const,
+    options: [],
+  }));
   const unitsByKey = new Map<string, Record<string, unknown>>();
   for (const unit of units) {
     const environment = managedEnvironment(unit.environment);
@@ -570,24 +519,14 @@ function configurationValue(
 ): OpenAiAdministrativeConfigurationValue | null {
   const model = technicalModel(rawModel);
   if (!model) return null;
-  if (projection.apiKind === "responses_text") {
-    const reasoningEffort = reasoningEffortValue(rawReasoningEffort);
-    if (
-      reasoningEffort === null ||
-      rawQuality !== null
-    ) {
-      return null;
-    }
-    return { apiKind: "responses_text", model, reasoningEffort };
-  }
-  const quality = imageQuality(rawQuality);
+  const reasoningEffort = reasoningEffortValue(rawReasoningEffort);
   if (
-    quality === null ||
-    rawReasoningEffort !== null
+    reasoningEffort === null ||
+    rawQuality !== null
   ) {
     return null;
   }
-  return { apiKind: "image_generation", model, quality };
+  return { apiKind: "responses_text", model, reasoningEffort };
 }
 
 function validActivationSequence(

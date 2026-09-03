@@ -29,8 +29,6 @@ import {
   CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION,
   classifyLandingPageInputCatalogTransition,
   classifyLandingPageInputCatalogTransitionForTaxon,
-  collectCommercialIdentityReviewBlockers,
-  landingPageCommercialIdentityFieldKeys,
   listLandingPageInputCatalogVersions,
 } from "./lifecycle";
 import {
@@ -449,12 +447,6 @@ const cases: Case[] = [
         "business_offerings_summary",
         "primary_conversion_goal",
       ]);
-      assert.equal(
-        collectCommercialIdentityReviewBlockers([
-          { taxon: realEstateBrokerNicheTaxon, ...transition },
-        ]).length,
-        0,
-      );
       assert.equal(
         createHash("sha256")
           .update(serializeLandingPageInputCatalogEntry(landingPageInputCatalogRegistry[6]))
@@ -1085,24 +1077,13 @@ const cases: Case[] = [
     },
   },
   {
-    name: "E19.5 commercial identity authority blocks retirement and material change but preserves compatible evolution",
+    name: "transition classification preserves review-required and compatible evolution semantics",
     run: () => {
-      assert.deepEqual(landingPageCommercialIdentityFieldKeys, [
-        "funnel_stage",
-        "transaction_intent",
-        "landing_page_offering_scope",
-      ]);
       const retirementRegistry = registryWithCandidate((candidate) => {
         mutableFieldInEntry(candidate, "funnel_stage").retiredInVersion = 6;
       });
       const retirement = classifyCandidateTransition(retirementRegistry);
       assert.equal(retirement.classification, "review_required");
-      assert.equal(
-        collectCommercialIdentityReviewBlockers([
-          { taxon: realEstateBrokerNicheTaxon, ...retirement },
-        ])[0]?.fieldKeys.includes("funnel_stage"),
-        true,
-      );
 
       const materialChangeRegistry = registryWithCandidate((candidate) => {
         mutableFieldInEntry(candidate, "funnel_stage").purpose =
@@ -1110,12 +1091,6 @@ const cases: Case[] = [
       });
       const materialChange = classifyCandidateTransition(materialChangeRegistry);
       assert.equal(materialChange.classification, "review_required");
-      assert.deepEqual(
-        collectCommercialIdentityReviewBlockers([
-          { taxon: realEstateBrokerNicheTaxon, ...materialChange },
-        ])[0]?.fieldKeys,
-        ["funnel_stage"],
-      );
 
       const nonIdentityChangeRegistry = registryWithCandidate((candidate) => {
         mutableFieldInEntry(candidate, "primary_conversion_goal").purpose =
@@ -1123,12 +1098,6 @@ const cases: Case[] = [
       });
       const nonIdentityChange = classifyCandidateTransition(nonIdentityChangeRegistry);
       assert.equal(nonIdentityChange.classification, "review_required");
-      assert.equal(
-        collectCommercialIdentityReviewBlockers([
-          { taxon: realEstateBrokerNicheTaxon, ...nonIdentityChange },
-        ]).length,
-        0,
-      );
 
       const compatibleRegistry = registryWithCandidate((candidate) => {
         const field = mutableFieldInEntry(candidate, "funnel_stage");
@@ -1143,12 +1112,6 @@ const cases: Case[] = [
       const compatible = classifyCandidateTransition(compatibleRegistry);
       assert.equal(compatible.classification, "compatible_evolution");
       assert.deepEqual(compatible.expandedAllowedValueFieldKeys, ["funnel_stage"]);
-      assert.equal(
-        collectCommercialIdentityReviewBlockers([
-          { taxon: realEstateBrokerNicheTaxon, ...compatible },
-        ]).length,
-        0,
-      );
 
       const additive = classifyLandingPageInputCatalogTransition(
         resolveRequired(v4Input),
@@ -1156,12 +1119,6 @@ const cases: Case[] = [
       );
       assert.equal(additive.classification, "compatible_evolution");
       assert.deepEqual(additive.addedFieldKeys, v5UniversalFieldKeys);
-      assert.equal(
-        collectCommercialIdentityReviewBlockers([
-          { taxon: realEstateBrokerNicheTaxon, ...additive },
-        ]).length,
-        0,
-      );
 
       const v6Registry = registryWithCandidate((candidate) => {
         mutableFieldInEntry(candidate, "primary_service_or_offer").retiredInVersion = 6;
@@ -1204,12 +1161,6 @@ const cases: Case[] = [
         "business_offerings_summary",
         "primary_conversion_goal",
       ]);
-      assert.equal(
-        collectCommercialIdentityReviewBlockers([
-          { taxon: realEstateBrokerNicheTaxon, ...v6Transition },
-        ]).length,
-        0,
-      );
     },
   },
   {
@@ -1229,31 +1180,25 @@ const cases: Case[] = [
       const transition = classifyLandingPageInputCatalogTransition(previous.value, next.value);
       assert.equal(transition.classification, "review_required");
       assert.deepEqual(transition.reviewRequiredFieldKeys, ["business_display_name"]);
-      assert.equal(
-        collectCommercialIdentityReviewBlockers([
-          { taxon: realEstateBrokerNicheTaxon, ...transition },
-        ]).length,
-        0,
-      );
     },
   },
   {
-    name: "draft remains non operational and blocks operational taxons without an executable review",
+    name: "draft remains repo-only and classifies taxons without changing review markers",
     run: () => {
       const draft = createNextLandingPageInputCatalogDraft();
       assert.equal(draft.version, 7);
       const unchanged = validateLandingPageInputCatalogDraft({
         draft,
         taxons: [
-          { identity: realEstateSegmentTaxon, reviewedVersion: 6, operational: false },
-          { identity: realEstateBrokerNicheTaxon, reviewedVersion: 6, operational: true },
-          { identity: mediumStandardRealEstateBrokerTaxon, reviewedVersion: null, operational: true },
+          { identity: realEstateSegmentTaxon, reviewedVersion: 6 },
+          { identity: realEstateBrokerNicheTaxon, reviewedVersion: 6 },
+          { identity: mediumStandardRealEstateBrokerTaxon, reviewedVersion: null },
         ],
       });
       assert.equal(unchanged.ok, true);
       if (!unchanged.ok) throw new Error("Expected valid draft fixture");
       assert.equal(unchanged.value.totals.noMaterialChange, 2);
-      assert.equal(unchanged.value.totals.blockingOperationalReviews, 1);
+      assert.equal(unchanged.value.totals.reviewRequired, 1);
       assert.equal(unchanged.value.entry.version, CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION + 1);
       assert.equal(Object.isFrozen(unchanged.value), true);
 

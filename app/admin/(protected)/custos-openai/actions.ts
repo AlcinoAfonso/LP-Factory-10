@@ -57,7 +57,7 @@ export async function refreshOpenAiCostsAction(
     code: dashboard.internalErrorCode,
     message: dashboard.internal
       ? "Custos atualizados sob demanda."
-      : "Total oficial atualizado; a cobertura interna está temporariamente indisponível.",
+      : "Total oficial atualizado; o histórico interno está temporariamente indisponível.",
     dashboard,
   };
 }

@@ -16,15 +16,12 @@ import {
 } from "./adapters/modelCatalogAdapterCore";
 import * as publicApi from "./index";
 import {
-  createOpenAiImageWorkloadFailureEvent,
-  createOpenAiImageWorkloadSuccessEvent,
   createOpenAiWorkloadFailureEvent,
   createOpenAiWorkloadSuccessEvent,
   emitOpenAiWorkloadEvent,
   listOpenAiWorkloadInventory,
   listOpenAiWorkloadPresentations,
   normalizeOpenAiResponseUsage,
-  resolveOpenAiImageWorkload,
   resolveOpenAiProductWorkload,
   resolveOpenAiWorkloadEnvironment,
   type OpenAiOperationalConfigurationReader,
@@ -36,12 +33,10 @@ const productIds = [
   "commercial_activation_draft_generation",
 ] as const;
 
-const landingPageTextWorkloadId = "landing_page_draft_generation" as const;
 const taxonInputCatalogEvaluationWorkloadId =
   "taxon_input_catalog_sufficiency_evaluation" as const;
 const dynamicMarketResearchWorkloadId =
   "landing_page_dynamic_market_research" as const;
-const landingPageImageWorkloadId = "landing_page_draft_image_generation" as const;
 
 const cases = [
   {
@@ -207,19 +202,17 @@ const cases = [
     },
   },
   {
-    name: "inventory exposes seven unique canonical workloads",
+    name: "inventory exposes five unique canonical workloads",
     run: () => {
       const inventory = listOpenAiWorkloadInventory();
-      assert.equal(inventory.length, 7);
-      assert.equal(new Set(inventory.map((item) => item.id)).size, 7);
+      assert.equal(inventory.length, 5);
+      assert.equal(new Set(inventory.map((item) => item.id)).size, 5);
       assert.deepEqual(
         inventory.map((item) => item.id),
         [
           ...productIds,
-          landingPageTextWorkloadId,
           taxonInputCatalogEvaluationWorkloadId,
           dynamicMarketResearchWorkloadId,
-          landingPageImageWorkloadId,
           "supabase_inspect",
         ],
       );
@@ -241,58 +234,6 @@ const cases = [
         assert.equal(result.value.configurationKind, "effective");
         assert.equal(result.value.effectiveConfigurationVerified, true);
       }
-    },
-  },
-  {
-    name: "landing page text and image workloads resolve independent configurations",
-    run: async () => {
-      const text = await resolveOpenAiProductWorkload(
-        landingPageTextWorkloadId,
-        "development",
-      );
-      assert.equal(text.ok, true);
-      assert.equal(text.value.apiKind, "responses_text");
-      assert.equal(text.value.model, "gpt-5.6-luna");
-      assert.equal(text.value.reasoningEffort, "max");
-      assert.equal(text.value.revision, "v2");
-
-      const image = await resolveOpenAiImageWorkload(
-        landingPageImageWorkloadId,
-        "development",
-      );
-      assert.equal(image.ok, true);
-      assert.deepEqual(image.value, {
-        id: landingPageImageWorkloadId,
-        displayName: "Geração da imagem principal da landing page em draft",
-        classification: "product_runtime",
-        configurationKind: "effective",
-        apiKind: "image_generation",
-        consumer: "E19.4 — mídia principal da candidata validada",
-        fallback: "Falhar a tentativa sem criar revisão",
-        model: "gpt-image-2",
-        size: "1536x1024",
-        quality: "medium",
-        format: "webp",
-        compression: 80,
-        moderation: "auto",
-        reasoningEffort: "not_applicable",
-        source: "repo_catalog",
-        revision: "v2",
-        effectiveConfigurationVerified: true,
-      });
-
-      const textAsImage = await resolveOpenAiImageWorkload(
-        landingPageTextWorkloadId,
-        "development",
-      );
-      assert.equal(textAsImage.ok, false);
-      assert.equal(textAsImage.error.code, "NOT_IMAGE_GENERATION_WORKLOAD");
-      const imageAsText = await resolveOpenAiProductWorkload(
-        landingPageImageWorkloadId,
-        "development",
-      );
-      assert.equal(imageAsText.ok, false);
-      assert.equal(imageAsText.error.code, "NOT_TEXT_PRODUCT_WORKLOAD");
     },
   },
   {
@@ -340,51 +281,6 @@ const cases = [
       );
       assert.equal(historical.ok, true);
       assert.equal(historical.value.reasoningEffort, "medium");
-    },
-  },
-  {
-    name: "image events expose media metrics without textual token fields",
-    run: async () => {
-      const resolved = await resolveOpenAiImageWorkload(
-        landingPageImageWorkloadId,
-        "development",
-      );
-      assert.equal(resolved.ok, true);
-      const success = createOpenAiImageWorkloadSuccessEvent({
-        workload: resolved.value,
-        environment: "preview",
-        requestId: " req_image_123 ",
-        latencyMs: 42,
-        imageCount: 1,
-        width: 1536,
-        height: 1024,
-        visualBriefVersion: "e19.4-visual-brief-v1",
-      });
-      assert.equal(success.result, "success");
-      assert.equal(success.requestId, "req_image_123");
-      assert.equal(success.imageCount, 1);
-      assert.equal(success.visualBriefVersion, "e19.4-visual-brief-v1");
-      assert.equal(success.httpStatus, null);
-      assert.equal(success.providerErrorCode, null);
-      assert.equal(success.providerErrorType, null);
-      assert.equal("inputTokens" in success, false);
-      assert.equal("reasoningEffort" in success, false);
-
-      const failure = createOpenAiImageWorkloadFailureEvent(
-        {
-          workload: resolved.value,
-          httpStatus: 429,
-          providerErrorCode: " credit_balance_exhausted ",
-          providerErrorType: "insufficient_quota",
-        },
-        "timeout",
-      );
-      assert.equal(failure.result, "failure");
-      assert.equal(failure.failureCategory, "timeout");
-      assert.equal(failure.httpStatus, 429);
-      assert.equal(failure.providerErrorCode, "credit_balance_exhausted");
-      assert.equal(failure.providerErrorType, "insufficient_quota");
-      assert.equal(Object.isFrozen(failure), true);
     },
   },
   {
@@ -457,8 +353,6 @@ const cases = [
         [
           "niche_resolution",
           "commercial_activation_draft_generation",
-          "landing_page_draft_generation",
-          "landing_page_draft_image_generation",
           "taxon_input_catalog_sufficiency_evaluation",
           "landing_page_dynamic_market_research",
         ],
@@ -474,11 +368,7 @@ const cases = [
       const niche = projection.find((item) => item.workload === "niche_resolution");
       assert.equal(niche?.name, "Resolução de nicho");
       const landingPage = projection.filter((item) => item.visualGroup === "landing_page");
-      assert.equal(landingPage.length, 3);
-      assert.equal(
-        landingPage.filter((item) => item.roadmapReference === "E19.4").length,
-        2,
-      );
+      assert.equal(landingPage.length, 1);
       assert.equal(
         landingPage.some((item) => item.roadmapReference === "E20.7.4"),
         true,
@@ -559,15 +449,11 @@ const cases = [
         listOpenAiWorkloadPresentations(),
       );
       const text = options.find((item) => item.workload === "niche_resolution");
-      const image = options.find(
-        (item) => item.workload === "landing_page_draft_image_generation",
-      );
       assert.ok(text?.apiKind === "responses_text");
       assert.deepEqual(text.options, [
         { model: "gpt-5.6-luna", reasoningEffort: "max" },
       ]);
-      assert.ok(image?.apiKind === "image_generation");
-      assert.deepEqual(image.options, []);
+      assert.equal(options.every((item) => item.apiKind === "responses_text"), true);
     },
   },
   {
@@ -887,27 +773,27 @@ const cases = [
     },
   },
   {
-    name: "adapter translation validates read, unit, active revision, modality and shape",
+    name: "adapter translation validates text read, unit, active revision, modality and shape",
     run: () => {
       const input = {
         environment: "preview" as const,
-        workload: "landing_page_draft_image_generation",
+        workload: "niche_resolution",
       };
       const unit = [{
         environment: "preview",
         workload: input.workload,
-        modality: "image_generation",
+        modality: "responses_text",
         active_revision_id: "revision-7",
       }];
       const revision = [{
         id: "revision-7",
         environment: "preview",
         workload: input.workload,
-        modality: "image_generation",
+        modality: "responses_text",
         revision_number: 7,
-        model: "gpt-image-2",
-        reasoning_effort: null,
-        quality: "high",
+        model: "gpt-5.4-mini",
+        reasoning_effort: "none",
+        quality: null,
       }];
 
       const valid = translateOperationalConfigurationRows(
@@ -917,10 +803,8 @@ const cases = [
       );
       assert.equal(valid.ok, true);
       assert.equal(valid.value.revision, "7");
-      assert.equal(valid.value.apiKind, "image_generation");
-      if (valid.value.apiKind === "image_generation") {
-        assert.equal(valid.value.quality, "high");
-      }
+      assert.equal(valid.value.apiKind, "responses_text");
+      assert.equal(valid.value.reasoningEffort, "none");
 
       const readFailure = translateOperationalConfigurationRows(
         input,
@@ -954,7 +838,7 @@ const cases = [
     },
   },
   {
-    name: "administrative read model accepts only complete ten or twelve unit aggregate states",
+    name: "administrative read model accepts only the complete eight-unit aggregate state",
     run: () => {
       const fixture = administrativeConfigurationFixture();
       const result = translateOpenAiAdministrativeConfigurationRows(
@@ -963,7 +847,7 @@ const cases = [
         { data: fixture.activations, error: null },
       );
       assert.equal(result.ok, true);
-      assert.equal(result.value.length, 12);
+      assert.equal(result.value.length, 8);
       assert.equal(Object.isFrozen(result), true);
       assert.equal(Object.isFrozen(result.value), true);
       assert.equal(Object.isFrozen(result.value[0]), true);
@@ -987,37 +871,10 @@ const cases = [
       assert.equal(Object.isFrozen(previewNiche.historicalRevisions), true);
       assert.equal(Object.isFrozen(previewNiche.activations), true);
 
-      const productionImage = result.value.find((unit) =>
-        unit.environment === "production" &&
-        unit.workload === "landing_page_draft_image_generation");
-      assert.ok(productionImage);
-      assert.equal(productionImage.candidate?.apiKind, "image_generation");
-      if (productionImage.candidate?.apiKind === "image_generation") {
-        assert.equal(productionImage.candidate.quality, "low");
-      }
       const serialized = JSON.stringify(result);
       assert.equal(serialized.includes("proof_metadata"), false);
       assert.equal(/api[_-]?key|secret|bearer|authorization/i.test(serialized), false);
 
-      const previousWorkloads = new Set([
-        "niche_resolution",
-        "commercial_activation_draft_generation",
-        "landing_page_draft_generation",
-        "taxon_input_catalog_sufficiency_evaluation",
-        "landing_page_draft_image_generation",
-      ]);
-      const previous = translateOpenAiAdministrativeConfigurationRows(
-        { data: fixture.units.filter((row) => previousWorkloads.has(String(row.workload))), error: null },
-        { data: fixture.revisions.filter((row) => previousWorkloads.has(String(row.workload))), error: null },
-        { data: fixture.activations.filter((row) => previousWorkloads.has(String(row.workload))), error: null },
-      );
-      assert.equal(previous.ok, true);
-      assert.equal(previous.value.length, 10);
-      assert.equal(
-        previous.value.some((unit) =>
-          unit.workload === "landing_page_dynamic_market_research"),
-        false,
-      );
     },
   },
   {
@@ -1046,15 +903,6 @@ const cases = [
         (() => {
           const fixture = administrativeConfigurationFixture();
           fixture.revisions[0].modality = "image_generation";
-          return fixture;
-        })(),
-        (() => {
-          const fixture = administrativeConfigurationFixture();
-          const imageCandidate = fixture.units.find((unit) =>
-            unit.environment === "production" &&
-            unit.workload === "landing_page_draft_image_generation");
-          assert.ok(imageCandidate);
-          imageCandidate.candidate_reasoning_effort = "high";
           return fixture;
         })(),
         (() => {
@@ -1097,7 +945,8 @@ const cases = [
       for (const workload of [
         "niche_resolution",
         "commercial_activation_draft_generation",
-        "landing_page_draft_generation",
+        "taxon_input_catalog_sufficiency_evaluation",
+        "landing_page_dynamic_market_research",
       ] as const) {
         for (const configuration of textConfigurations) {
           const result = await resolveOpenAiProductWorkload(
@@ -1121,27 +970,6 @@ const cases = [
         }
       }
 
-      for (const quality of ["low", "medium", "high"] as const) {
-        const result = await resolveOpenAiImageWorkload(
-          "landing_page_draft_image_generation",
-          "production",
-          {
-            operationalConfigurationEnabled: "true",
-            readOperationalConfiguration: async (input) => ({
-              ok: true,
-              value: {
-                environment: input.environment,
-                workload: "landing_page_draft_image_generation",
-                apiKind: "image_generation",
-                model: "gpt-historical-image",
-                quality,
-                revision: "4",
-              },
-            }),
-          },
-        );
-        assert.equal(result.ok, true);
-      }
     },
   },
   {
@@ -1504,10 +1332,8 @@ function administrativeConfigurationFixture(): Readonly<{
   const workloads = [
     "niche_resolution",
     "commercial_activation_draft_generation",
-    "landing_page_draft_generation",
     "taxon_input_catalog_sufficiency_evaluation",
     "landing_page_dynamic_market_research",
-    "landing_page_draft_image_generation",
   ] as const;
   const units: Record<string, unknown>[] = [];
   const revisions: Record<string, unknown>[] = [];
@@ -1516,30 +1342,21 @@ function administrativeConfigurationFixture(): Readonly<{
 
   for (const environment of environments) {
     for (const workload of workloads) {
-      const image = workload === "landing_page_draft_image_generation";
-      const landingPageText = workload === "landing_page_draft_generation";
       const inputCatalogEvaluation =
         workload === "taxon_input_catalog_sufficiency_evaluation";
       const dynamicMarketResearch =
         workload === "landing_page_dynamic_market_research";
-      const modality = image ? "image_generation" : "responses_text";
-      const baselineModel = image
-        ? "gpt-image-2"
-        : inputCatalogEvaluation
+      const modality = "responses_text";
+      const baselineModel = inputCatalogEvaluation
           ? "gpt-5.6-terra"
-        : landingPageText || dynamicMarketResearch
+        : dynamicMarketResearch
           ? "gpt-5.6-luna"
           : "gpt-5.4-mini";
-      const baselineReasoning = image
-        ? null
-        : inputCatalogEvaluation
+      const baselineReasoning = inputCatalogEvaluation
           ? "low"
-          : landingPageText
-            ? "max"
-            : dynamicMarketResearch
+          : dynamicMarketResearch
               ? "high"
             : "none";
-      const baselineQuality = image ? "medium" : null;
       const baselineRevisionId = administrativeUuid(sequence++);
       const bootstrapActivationId = administrativeUuid(sequence++);
 
@@ -1551,7 +1368,7 @@ function administrativeConfigurationFixture(): Readonly<{
         revision_number: 1,
         model: baselineModel,
         reasoning_effort: baselineReasoning,
-        quality: baselineQuality,
+        quality: null,
         validated_by: null,
         validated_at: "2026-08-20T12:00:00.000Z",
       });
@@ -1616,23 +1433,18 @@ function administrativeConfigurationFixture(): Readonly<{
         });
       }
 
-      const hasImageCandidate =
-        environment === "production" &&
-        workload === "landing_page_draft_image_generation";
       units.push({
         environment,
         workload,
         modality,
         active_revision_id: activeRevisionId,
         pending_revision_id: pendingRevisionId,
-        candidate_model: hasImageCandidate ? "gpt-image-2" : null,
+        candidate_model: null,
         candidate_reasoning_effort: null,
-        candidate_quality: hasImageCandidate ? "low" : null,
-        candidate_saved_by: hasImageCandidate ? administrativeActorId : null,
-        candidate_saved_at: hasImageCandidate
-          ? "2026-08-20T15:00:00.000Z"
-          : null,
-        configuration_version: hasImageCandidate ? 2 : configurationVersion,
+        candidate_quality: null,
+        candidate_saved_by: null,
+        candidate_saved_at: null,
+        configuration_version: configurationVersion,
       });
     }
   }

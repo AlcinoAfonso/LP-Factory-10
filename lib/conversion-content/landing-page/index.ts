@@ -23,5 +23,4 @@ export {
   listLandingPageRootVersions,
   resolveLandingPageRootParameters,
 } from "./root-resolver";
-export * from "./presentation";
 export * as knowledgeResolution from "./knowledge-resolution";
