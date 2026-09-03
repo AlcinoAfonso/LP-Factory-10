@@ -49,14 +49,15 @@ Se faltar fonte, permissão, decisão ou contexto indispensável, parar e pedir 
 ## Produzir o briefing
 
 1. Aplicar a estrutura vigente de `docs/template-briefing-codex.md`.
-2. Descrever o resultado esperado, sem prescrever implementação não sustentada pelas fontes.
-3. Informar paths concretos quando forem conhecidos.
-4. Preencher a seção visual somente quando houver impacto visual ou frontend.
-5. Referenciar `AGENTS.md` para regras operacionais, Git e publicação; não duplicar seu conteúdo no briefing.
-6. Exigir apenas validações aplicáveis ao recorte e justificar as não aplicáveis; quando houver prompt consumido por IA, exigir `$lp-factory-criar-prompt` como subfluxo somente leitura antes da edição do artefato e validar seus casos representativos.
-7. Incluir regras de parada específicas quando a tarefa depender de fonte, permissão ou decisão ainda ausente.
-8. Preservar estrutura, numeração e ordem de documentos existentes quando o briefing determinar sua alteração.
-9. Não inventar branch, rota, banco, job, agente, automação, engine ou infraestrutura.
+2. Em atividade técnica estritamente read-only, preencher o template sem autorizar mutação: `Arquivos alvo > Criar ou alterar: nenhum`; listar os paths consultados em `Contexto > Fonte ou estado atual`; usar `Arquivos alvo > Não alterar: todo o repositório`; e exigir na entrega `arquivos alterados: nenhum`, junto dos achados e evidências solicitados.
+3. Descrever o resultado esperado, sem prescrever implementação não sustentada pelas fontes.
+4. Informar paths concretos quando forem conhecidos.
+5. Preencher a seção visual somente quando houver impacto visual ou frontend.
+6. Referenciar `AGENTS.md` para regras operacionais, Git e publicação; não duplicar seu conteúdo no briefing.
+7. Exigir apenas validações aplicáveis ao recorte e justificar as não aplicáveis; quando houver prompt consumido por IA, exigir `$lp-factory-criar-prompt` como subfluxo somente leitura antes da edição do artefato e validar seus casos representativos.
+8. Incluir regras de parada específicas quando a tarefa depender de fonte, permissão ou decisão ainda ausente.
+9. Preservar estrutura, numeração e ordem de documentos existentes quando o briefing determinar sua alteração.
+10. Não inventar branch, rota, banco, job, agente, automação, engine ou infraestrutura.
 
 ## Entrega
 
