@@ -35,7 +35,7 @@ Quando invocada por `$lp-factory-conduzir-plano-completo`:
 ## Preparar
 
 1. Confirmar repositório, worktree, branch, estado Git limpo, plano, SHA e caso; na execução independente, confirmar que o plano está na `main` atualizada; no handoff interno, confirmar o checkpoint `plan-v2-approved` no PR único.
-2. Ler o plano integral, a seção competente de `docs/roadmap.md` e somente as fontes condicionais indicadas pelo Prompt Executor que forem exigidas pela subseção atual. No handoff interno, preservar `docs/matriz-consolidacao-<caso>.md` até o encerramento definitivo do recorte pelo Estrategista; ela serve à rastreabilidade do Analista e não amplia o plano aprovado.
+2. Ler o plano integral, a seção competente de `docs/roadmap.md` e somente as fontes condicionais indicadas pelo Prompt Executor que forem exigidas pela subseção atual. No handoff interno, preservar `docs/matriz-consolidacao-<caso>.md` até o encerramento definitivo do recorte pelo supervisor competente; ela serve à rastreabilidade do Analista e não amplia o plano aprovado.
 3. Validar que cada fase executável use exatamente o identificador do roadmap, como `E18.5.3 — título`; rejeitar aliases ordinais como `Fase 1` e agrupamentos de subseções independentes.
 4. No handoff interno, reutilizar a branch e o PR existentes. Na execução independente, criar ou selecionar uma única branch `codex-app/<caso>-implementacao` a partir da `main` e um único PR draft contra `main`. Recusar base diferente de `main` e nunca criar branch ou PR por subseção.
 5. Registrar o SHA do plano como contrato imutável. Se houver execução anterior, identificar o último checkpoint pelo trailer de commit `LP-Factory-Phase: <identificador>`; se não for possível determinar unicamente a próxima subseção, parar e pedir o identificador.
@@ -72,20 +72,20 @@ Depois do último checkpoint, sem repetir validações ou ABC:
 
 1. Atualizar o PR com checkpoints, arquivos, validações, decisão sobre teste humano, matriz, pendências e, por documento, os ABCs executados e o resultado `delta aplicado` ou `SEM ALTERAÇÕES NECESSÁRIAS`; declarar a entrega completa e parar.
 2. Depois dessa declaração, não acionar `revisao_final_implementacao`, `revisao_delta_implementacao` nem qualquer outro gate do Analista.
-3. Não acionar nem fazer handoff ao Estrategista. Ele será instruído pelo humano e consultará diretamente o repositório. Se o humano devolver seu relatório com correções, tratar o retorno como delta pós-entrega: confirmar de forma mínima objetivo, fontes competentes, limites, arquivos/boundary afetados e validação esperada; não reiniciar preparação, especialistas, changelog ou validações de plataforma sem impacto demonstrado; usar fontes condicionais, inclusive Supabase, somente quando o estado remoto for necessário para decidir ou validar a correção; sem essa necessidade, não investigar nem afirmar como concluído ou pendente estado remoto não verificado; quando necessário, obter somente a evidência mínima da fonte competente. Em delta de código, preservar as validações exigidas pelo `AGENTS.md`, incluindo `npm ci` e `npm run check`, além dos testes focais aplicáveis; aplicar somente esse delta no mesmo PR, atualizar a entrega e parar novamente, sem Analista.
-4. Manter a matriz disponível durante o ciclo externo de avaliação, inclusive quando houver merge, validação pós-merge ou PR corretivo. Não removê-la antes de o Estrategista, acionado pelo humano, declarar o recorte definitivamente concluído. A limpeza posterior é documental, preserva a rastreabilidade no resumo e no histórico do PR e não aciona Analista nem especialistas.
+3. Devolver a entrega ao supervisor competente. No Manual e no Semiautomático, não acionar o Estrategista original: o humano transporta a entrega. No Autônomo, devolver diretamente a `$lp-factory-estrategista-autonomo`, sem nova intervenção humana. Se o supervisor devolver seu relatório com correções, tratar o retorno como delta pós-entrega: confirmar de forma mínima objetivo, fontes competentes, limites, arquivos/boundary afetados e validação esperada; não reiniciar preparação, especialistas, changelog ou validações de plataforma sem impacto demonstrado; usar fontes condicionais, inclusive Supabase, somente quando o estado remoto for necessário para decidir ou validar a correção; sem essa necessidade, não investigar nem afirmar como concluído ou pendente estado remoto não verificado; quando necessário, obter somente a evidência mínima da fonte competente. Em delta de código, preservar as validações exigidas pelo `AGENTS.md`, incluindo `npm ci` e `npm run check`, além dos testes focais aplicáveis; antes do merge, aplicar somente esse delta no mesmo PR. Se uma validação obrigatória pós-merge revelar defeito, registrar a falha e devolvê-la ao supervisor como exceção material, sem criar ou selecionar nova branch ou PR. Atualizar a entrega e parar novamente, sem Analista.
+4. Manter a matriz disponível durante o ciclo externo de avaliação, inclusive quando houver merge ou validação pós-merge. Não removê-la antes de o supervisor competente declarar o recorte definitivamente concluído. A limpeza posterior é documental, preserva a rastreabilidade no resumo e no histórico do PR e não aciona Analista nem especialistas.
 
-O resumo do PR deve refletir sempre o checkpoint publicado e a entrega completa. A decisão de merge ocorre fora desta skill, depois da avaliação do Estrategista acionado pelo humano.
+O resumo do PR deve refletir sempre o checkpoint publicado e a entrega completa. A decisão de merge ocorre fora desta skill, depois da avaliação do supervisor competente.
 
 ## Limites
 
 - Não alterar a `main` nem fazer merge.
 - Não executar fase fora do plano ou fora da ordem do roadmap.
 - Não iniciar a fase seguinte sem checkpoint aprovado.
-- Não recriar, resumir nem alterar a matriz durante a implementação, salvo correção de rastreabilidade exigida pelo Analista; preservá-la até o encerramento definitivo do recorte pelo Estrategista.
+- Não recriar, resumir nem alterar a matriz durante a implementação, salvo correção de rastreabilidade exigida pelo Analista; preservá-la até o encerramento definitivo do recorte pelo supervisor competente.
 - Não criar PR empilhado.
 - Não criar segundo PR quando houver handoff da orquestração.
 - Não acionar novamente os especialistas do plano durante a implementação.
 - Não acionar o Analista depois de declarar a entrega completa.
-- Não acionar o Estrategista nem simular handoff para ele.
+- Não acionar o supervisor antes de declarar a entrega completa nem simular handoff diferente do modo informado.
 - Não substituir gate humano, decisão material ou teste humano exigido.

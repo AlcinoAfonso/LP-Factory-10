@@ -96,7 +96,7 @@
 • Checkout não substitui o domínio de entitlement comercial; ativação exige confirmação server-side pelo fluxo aprovado.
 
 3.4 CI e validação
-• Alterações devem passar por PR, validações aplicáveis e preview quando houver impacto no runtime ou na UI; o merge final é humano.
+• Alterações devem passar por PR, validações aplicáveis e preview quando houver impacto no runtime ou na UI; o merge final segue a autoridade por modo definida no `AGENTS.md`.
 • Checks de segurança devem falhar fechado e bloquear padrões proibidos no client/UI; exceções server-side devem ser explícitas e mínimas no workflow canônico.
 • Alterações em acesso ou Auth devem validar os fluxos afetados conforme os contratos operacionais em `docs/automations.md` e nos READMEs locais.
 • Workflows, gatilhos, runners, actions, versões, inputs e steps têm fonte canônica no repositório real e em `docs/platform-config.md`; não duplicar esses detalhes aqui.
@@ -123,7 +123,7 @@
 • Alterações de schema devem usar nova migration em `supabase/migrations/`, com revisão e validação antes do apply remoto.
 • SQL avulso é permitido apenas para inspeção read-only ou exceção expressamente autorizada; o SQL Editor não integra o fluxo normal de alteração de schema.
 • Migration aplicada é imutável; correção ou reversão exige nova migration incremental, preservando histórico forward-only.
-• Apply remoto deve ocorrer somente pelo workflow aprovado após merge humano; gatilhos, gates, secrets, versões de CLI/Actions e projeto alvo pertencem ao workflow real e a `docs/platform-config.md`.
+• Apply remoto deve ocorrer somente pelo workflow aprovado após merge autorizado conforme o `AGENTS.md`; gatilhos, gates, secrets, versões de CLI/Actions e projeto alvo pertencem ao workflow real e a `docs/platform-config.md`.
 • Actions e CLIs capazes de alterar schema devem usar referências controladas e passar por revisão antes de qualquer mudança.
 
 3.5 Secrets & Variáveis
@@ -443,4 +443,4 @@ Fonte normativa da allowlist SULB para exceções de Auth. Qualquer novo arquivo
 • Boundaries e acesso a dados: validar 2.5, 3.2, 3.3, 3.14 e a allowlist 6.4.
 • Acesso e Auth: validar a seção 5 e, quando aplicável, `docs/platform-config.md`, `docs/automations.md` e os READMEs operacionais.
 • Contratos de domínio: consumir APIs públicas e validadores canônicos do código, sem duplicar lógica de registry, schema, provedor ou resolução.
-• Release: seguir 3.4 e `AGENTS.md`, executar ou justificar validações aplicáveis, revisar preview quando necessário e manter merge humano.
+• Release: seguir 3.4 e `AGENTS.md`, executar ou justificar validações aplicáveis, revisar preview quando necessário e respeitar a autoridade de merge definida por modo.

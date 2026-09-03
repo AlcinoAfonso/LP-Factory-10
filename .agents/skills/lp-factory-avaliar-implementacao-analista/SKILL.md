@@ -21,7 +21,7 @@ Usar exatamente um custom agent `analista` read-only por revisão. O task princi
 3. Quando houver documento canônico, auditar se o diff corresponde somente às operações emitidas pelo ABC e se `SEM ALTERAÇÕES NECESSÁRIAS` preservou o documento. Não refazer os critérios internos do contrato canônico.
 4. Preservar a resposta integral e o estado Git antes e depois da delegação.
 
-No fluxo de `$lp-factory-conduzir-plano-completo`, usar esta skill somente nos gates por subseção. Depois que o Executor declarar a entrega completa, não acionar nenhuma revisão do Analista; a avaliação seguinte pertence ao Estrategista acionado pelo humano.
+No fluxo de `$lp-factory-conduzir-plano-completo`, usar esta skill somente nos gates por subseção. Depois que o Executor declarar a entrega completa, não acionar nenhuma revisão do Analista; a avaliação seguinte pertence ao supervisor competente conforme o modo definido no Pipeline.
 
 ## Tratar a conclusão
 
