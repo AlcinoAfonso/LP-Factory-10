@@ -2,9 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
 import {
-  resolveOpenAiImageWorkload,
   resolveOpenAiProductWorkload,
-  type ResolvedOpenAiImageWorkload,
   type ResolvedOpenAiProductWorkload,
 } from "@/openai-workloads";
 import {
@@ -188,29 +186,18 @@ const cases: readonly Case[] = [
       assert.equal(actions.includes("process.env.OPENAI_API_KEY"), true);
       assert.equal(/formData\.get\(["']actor/i.test(actions), false);
       assert.equal(/OPENAI_API_KEY/.test(proof), false);
-      assert.match(proof, /contractVersion: 4/);
-      assert.match(proof, /as const satisfies LandingPageGenerationContextPackage/);
-      for (const v4Identity of [
-        "sharedCatalogVersion",
-        "landingPageCatalogVersion",
-        "sharedRevision",
-        "landingPageRevision",
-      ]) {
-        assert.equal(proof.includes(v4Identity), true);
-      }
-      assert.doesNotMatch(
-        proof,
-        /contractVersion: 3|historicalConfigurationCatalogVersion|configurationRevision/,
-      );
       for (const transport of [
         "resolveNicheWithOpenAi",
         "requestCommercialActivationOpenAi",
-        "generateLandingPageDraftCandidate",
         "evaluateInputCatalogWithOpenAi",
-        "generateLandingPageDraftImage",
+        "proveDynamicMarketResearch",
       ]) {
         assert.equal(proof.includes(transport), true);
       }
+      assert.doesNotMatch(
+        proof,
+        /generateLandingPageDraftCandidate|generateLandingPageDraftImage|LandingPageGenerationContextPackage/,
+      );
     },
   },
 ];
@@ -222,14 +209,9 @@ async function resolvedWorkloads() {
       "commercial_activation_draft_generation",
       "development",
     ),
-    resolveOpenAiProductWorkload("landing_page_draft_generation", "development"),
     resolveOpenAiProductWorkload("landing_page_dynamic_market_research", "development"),
     resolveOpenAiProductWorkload(
       "taxon_input_catalog_sufficiency_evaluation",
-      "development",
-    ),
-    resolveOpenAiImageWorkload(
-      "landing_page_draft_image_generation",
       "development",
     ),
   ]);
@@ -261,17 +243,11 @@ function proofDependencies(
     calls.push(workload.id);
     return result;
   };
-  const image = async (workload: ResolvedOpenAiImageWorkload) => {
-    calls.push(workload.id);
-    return result;
-  };
   return {
     niche: product,
     commercial: product,
-    landingPageText: product,
     inputCatalogEvaluation: product,
     dynamicMarketResearch: product,
-    landingPageImage: image,
   };
 }
 

@@ -952,9 +952,9 @@ const cases: readonly ValidationCase[] = [
       const draft = validateLandingPageInputCatalogDraft({
         draft: createNextLandingPageInputCatalogDraft(),
         taxons: [
-          { identity: realEstateSegmentTaxon, reviewedVersion: 5, operational: false },
-          { identity: realEstateBrokerNicheTaxon, reviewedVersion: 5, operational: true },
-          { identity: mediumStandardRealEstateBrokerTaxon, reviewedVersion: 5, operational: true },
+          { identity: realEstateSegmentTaxon, reviewedVersion: 5 },
+          { identity: realEstateBrokerNicheTaxon, reviewedVersion: 5 },
+          { identity: mediumStandardRealEstateBrokerTaxon, reviewedVersion: 5 },
         ],
       });
       assert.equal(draft.ok, true);

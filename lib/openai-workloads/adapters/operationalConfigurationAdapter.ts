@@ -12,7 +12,11 @@ import type {
   OpenAiReasoningEffort,
   OpenAiWorkloadId,
 } from "../contracts";
-import { openAiImageQualities, openAiReasoningEfforts } from "../contracts";
+import {
+  openAiImageQualities,
+  openAiProductWorkloadIds,
+  openAiReasoningEfforts,
+} from "../contracts";
 import { readCompleteOrderedPages } from "./modelCatalogAdapterCore";
 import {
   translateOpenAiAdministrativeConfigurationRows,
@@ -31,6 +35,7 @@ export const readOpenAiAdministrativeConfigurations: OpenAiAdministrativeConfigu
             .select(
               "environment,workload,modality,active_revision_id,pending_revision_id,candidate_model,candidate_reasoning_effort,candidate_quality,candidate_saved_by,candidate_saved_at,configuration_version",
             )
+            .in("workload", [...openAiProductWorkloadIds])
             .order("environment", { ascending: true })
             .order("workload", { ascending: true })
             .range(from, to),
@@ -41,6 +46,7 @@ export const readOpenAiAdministrativeConfigurations: OpenAiAdministrativeConfigu
             .select(
               "id,environment,workload,modality,revision_number,model,reasoning_effort,quality,validated_by,validated_at",
             )
+            .in("workload", [...openAiProductWorkloadIds])
             .order("environment", { ascending: true })
             .order("workload", { ascending: true })
             .order("revision_number", { ascending: true })
@@ -52,6 +58,7 @@ export const readOpenAiAdministrativeConfigurations: OpenAiAdministrativeConfigu
             .select(
               "id,environment,workload,modality,activation_number,event_type,previous_revision_id,target_revision_id,actor_user_id,created_at",
             )
+            .in("workload", [...openAiProductWorkloadIds])
             .order("environment", { ascending: true })
             .order("workload", { ascending: true })
             .order("activation_number", { ascending: true })
@@ -120,9 +127,7 @@ export async function readOpenAiCandidateConfiguration(input: Readonly<{
     )
       ? (row.candidate_quality as OpenAiImageQuality)
       : null;
-    const validShape = input.workload === "landing_page_draft_image_generation"
-      ? quality !== null && row.candidate_reasoning_effort === null
-      : reasoningEffort !== null && row.candidate_quality === null;
+    const validShape = reasoningEffort !== null && row.candidate_quality === null;
     return model && version !== null && validShape
       ? {
           ok: true,

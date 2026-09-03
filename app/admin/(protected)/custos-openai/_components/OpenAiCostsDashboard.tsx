@@ -115,7 +115,7 @@ export function OpenAiCostsDashboard({ startDate, endDate }: Props) {
       <div aria-live="polite" aria-atomic="true">
         {pending ? (
           <StatusPanel tone="neutral" title="Consultando custos">
-            Buscando o total oficial e a cobertura interna do mesmo período.
+            Buscando o total oficial e o histórico interno congelado do mesmo período.
           </StatusPanel>
         ) : state.status === "error" ? (
           <StatusPanel tone="danger" title="Consulta indisponível" role="alert">
@@ -132,7 +132,7 @@ export function OpenAiCostsDashboard({ startDate, endDate }: Props) {
               ? "Período sem custos"
               : dashboard?.internal
                 ? "Consulta atualizada"
-                : "Cobertura interna indisponível"}
+                : "Histórico interno indisponível"}
           >
             {state.message}
           </StatusPanel>
@@ -162,27 +162,27 @@ export function OpenAiCostsDashboard({ startDate, endDate }: Props) {
             <div className="grid gap-4 md:grid-cols-3">
               <MetricCard label="Gasto oficial OpenAI" value={formatUsd(dashboard.officialTotalUsd)} detail="Fonte oficial · Costs API" />
               <MetricCard
-                label="Landing Pages calculadas"
+                label="Histórico de Landing Pages"
                 value={dashboard.internal ? formatUsd(dashboard.internal.totalUsd) : "Indisponível"}
-                detail="Prospectivo · texto e imagem"
+                detail="Série histórica congelada · texto e imagem"
               />
               <MetricCard
                 label="Outros gastos / reconciliação"
                 value={dashboard.reconciliationUsd === null ? "Indisponível" : formatUsd(dashboard.reconciliationUsd)}
-                detail="Oficial menos Landing Pages, sem ajuste"
+                detail="Oficial menos o histórico de Landing Pages, sem ajuste"
               />
             </div>
           </section>
 
           <section className="rounded-lg border border-border bg-card p-4 shadow-card sm:p-6" aria-labelledby="coverage-title">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <h2 id="coverage-title" className="text-base font-semibold text-foreground">Cobertura e atualização</h2>
-              {dashboard.internal ? <CoverageBadge status={dashboard.internal.coverageStatus} /> : <AdminStatusBadge tone="danger">Interno indisponível</AdminStatusBadge>}
+              <h2 id="coverage-title" className="text-base font-semibold text-foreground">Histórico e atualização</h2>
+              {dashboard.internal ? <CoverageBadge status={dashboard.internal.coverageStatus} /> : <AdminStatusBadge tone="danger">Histórico indisponível</AdminStatusBadge>}
             </div>
             <dl className="mt-4 grid gap-4 text-sm sm:grid-cols-2">
               <Timestamp label="Atualizado na OpenAI" value={dashboard.officialUpdatedAt} />
-              <Timestamp label="Atualizado na cobertura interna" value={dashboard.internal?.internalUpdatedAt ?? null} />
-              <Timestamp label="Início da cobertura prospectiva" value={dashboard.internal?.coverageActivatedAt ?? null} />
+              <Timestamp label="Último evento do histórico interno" value={dashboard.internal?.internalUpdatedAt ?? null} />
+              <Timestamp label="Início da série histórica" value={dashboard.internal?.coverageActivatedAt ?? null} />
               <div>
                 <dt className="font-medium text-foreground">Qualidade da atribuição</dt>
                 <dd className="mt-1 text-muted-foreground">
@@ -193,10 +193,10 @@ export function OpenAiCostsDashboard({ startDate, endDate }: Props) {
               </div>
             </dl>
             <p className="mt-4 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-950">
-              A OpenAI e a cobertura interna podem atualizar em instantes diferentes. Períodos anteriores ou que cruzam a data de corte não representam cobertura integral das Landing Pages.
+              A série interna de Landing Pages está congelada. Gastos oficiais posteriores aos eventos históricos aparecem somente em Outros gastos / reconciliação.
             </p>
             <p className="mt-3 text-sm leading-6 text-muted-foreground">
-              Falhas ocorridas antes da persistência inicial podem não aparecer na contagem individual. O valor correspondente permanece em Outros gastos / reconciliação.
+              A ausência de novos eventos internos não indica falha de rastreamento: o write-side prospectivo foi retirado e este painel preserva apenas o histórico existente.
             </p>
           </section>
 
@@ -221,7 +221,7 @@ function AccountBreakdown({ accounts }: Readonly<{ accounts: NonNullable<OpenAiC
       <h2 id="account-breakdown-title" className="text-lg font-semibold text-foreground">Custos por cliente e Landing Page</h2>
       {accounts.length === 0 ? (
         <StatusPanel tone="neutral" title="Nenhuma Landing Page no período">
-          Não há tentativas prospectivas de texto ou imagem atribuídas ao período selecionado.
+          Não há eventos históricos de texto ou imagem atribuídos ao período selecionado.
         </StatusPanel>
       ) : accounts.map((account) => (
         <details key={account.accountId} className="rounded-lg border border-border bg-card shadow-card">

@@ -2,14 +2,11 @@ import assert from "node:assert/strict";
 import { runReadModelValidationCases } from "./read-model-validation-cases";
 
 import * as publicApi from "./index";
-import { priceOpenAiLpUsage } from "./pricing";
 import {
   boundedOpenAiProviderErrorMetadata,
   isOpenAiCreditFailure,
   parseOpenAiProviderErrorMetadata,
 } from "./provider-error-metadata";
-import { runOpenAiLpCostTrackingOperation } from "./tracking-budget";
-import { isOpenAiLpCostTrackingEnabled } from "./tracking-gate";
 import { readOfficialOpenAiCostsWithKey } from "./providers/openAiCostsProviderCore";
 
 const period = Object.freeze({
@@ -25,62 +22,8 @@ const cases = [
     },
   },
   {
-    name: "prospective tracking is born off and accepts only literal true in Production",
+    name: "provider diagnostics remain bounded and sanitized",
     run: () => {
-      for (const environment of [
-        "preview",
-        "development",
-        "unknown",
-      ] as const) {
-        assert.equal(
-          isOpenAiLpCostTrackingEnabled({ environment, flag: "true" }),
-          false,
-        );
-      }
-      for (const flag of [undefined, "", "false", "TRUE", "1"]) {
-        assert.equal(
-          isOpenAiLpCostTrackingEnabled({ environment: "production", flag }),
-          false,
-        );
-      }
-      assert.equal(
-        isOpenAiLpCostTrackingEnabled({
-          environment: "production",
-          flag: "true",
-        }),
-        true,
-      );
-    },
-  },
-  {
-    name: "tracking budget and provider diagnostics degrade safely",
-    run: async () => {
-      assert.deepEqual(
-        await runOpenAiLpCostTrackingOperation(async () => "within-budget", 5),
-        { ok: true, value: "within-budget" },
-      );
-      let releaseLate: ((value: string) => void) | undefined;
-      const timedOut = await runOpenAiLpCostTrackingOperation(
-        async () =>
-          await new Promise<string>((resolve) => {
-            releaseLate = resolve;
-          }),
-        5,
-      );
-      if (timedOut.ok || timedOut.reason !== "timeout") {
-        assert.fail("late tracking operation must expose its eventual completion");
-      }
-      releaseLate?.("after-budget");
-      assert.deepEqual(await timedOut.completion, {
-        ok: true,
-        value: "after-budget",
-      });
-      assert.deepEqual(
-        await runOpenAiLpCostTrackingOperation(async () => {
-          throw new Error("sensitive-rpc-message");
-        }, 5),
-        { ok: false, reason: "failed" },
-      );
       assert.deepEqual(parseOpenAiProviderErrorMetadata({
         error: {
           code: " credit_balance_exhausted ",
@@ -101,147 +44,6 @@ const cases = [
       }), false);
       assert.equal(boundedOpenAiProviderErrorMetadata("x".repeat(129)), null);
       assert.equal(boundedOpenAiProviderErrorMetadata("invalid message"), null);
-    },
-  },
-  {
-    name: "prospective text pricing preserves exact USD units and context bands",
-    run: () => {
-      const start = {
-        attemptId: "e2144000-0000-4000-8000-000000000010",
-        accountId: "e2144000-0000-4000-8000-000000000011",
-        landingPageId: "e2144000-0000-4000-8000-000000000012",
-        workload: "landing_page_draft_generation",
-        source: "supabase_operational",
-        revision: "3",
-        model: "gpt-5.6-luna",
-        reasoningEffort: "max",
-      } as const;
-      const short = priceOpenAiLpUsage(start, {
-        serviceTier: "default",
-        usage: {
-          input_tokens: 100,
-          input_tokens_details: {
-            cached_tokens: 20,
-            cache_write_tokens: 10,
-          },
-          output_tokens: 30,
-        },
-      });
-      assert.deepEqual(short, {
-        usage: {
-          inputTokens: 100,
-          ordinaryInputTokens: 70,
-          cachedInputTokens: 20,
-          cacheWriteTokens: 10,
-          outputTokens: 30,
-        },
-        pricing: {
-          serviceTier: "default",
-          contextBand: "short",
-          inputUsdPerMillion: "0.20",
-          cachedInputUsdPerMillion: "0.02",
-          cacheWriteUsdPerMillion: "0.25",
-          outputUsdPerMillion: "1.20",
-        },
-        costUsd: "0.000052900000",
-      });
-      assert.equal(
-        priceOpenAiLpUsage(start, {
-          serviceTier: "default",
-          usage: { input_tokens: 272_001, output_tokens: 0 },
-        })?.pricing.contextBand,
-        "long",
-      );
-      assert.equal(
-        priceOpenAiLpUsage(start, {
-          serviceTier: "auto",
-          usage: { input_tokens: 1, output_tokens: 1 },
-        }),
-        null,
-      );
-      assert.equal(
-        priceOpenAiLpUsage(start, {
-          serviceTier: "default",
-          usage: {
-            input_tokens: 1,
-            input_tokens_details: { cached_tokens: 2 },
-            output_tokens: 1,
-          },
-        }),
-        null,
-      );
-    },
-  },
-  {
-    name: "prospective image pricing uses only the active published combination",
-    run: () => {
-      const start = {
-        attemptId: "e2144000-0000-4000-8000-000000000020",
-        accountId: "e2144000-0000-4000-8000-000000000021",
-        landingPageId: "e2144000-0000-4000-8000-000000000022",
-        workload: "landing_page_draft_image_generation",
-        source: "repo_catalog",
-        revision: "v2",
-        model: "gpt-image-2",
-        size: "1536x1024",
-        quality: "medium",
-      } as const;
-      assert.deepEqual(
-        priceOpenAiLpUsage(start, {
-          imageCount: 1,
-          usage: {
-            input_tokens_details: { text_tokens: 100, image_tokens: 0 },
-            output_tokens_details: { image_tokens: 8_192 },
-          },
-        }),
-        {
-          usage: {
-            textInputTokens: 100,
-            imageInputTokens: 0,
-            imageOutputTokens: 8_192,
-            imageCount: 1,
-          },
-          pricing: {
-            serviceTier: "default",
-            textInputUsdPerMillion: "5.00",
-            imageOutputUsdPerMillion: "30.00",
-            size: "1536x1024",
-            quality: "medium",
-          },
-          costUsd: "0.246260000000",
-        },
-      );
-      assert.equal(
-        priceOpenAiLpUsage(start, { imageCount: 1, usage: {} }),
-        null,
-      );
-      assert.equal(
-        priceOpenAiLpUsage(start, {
-          imageCount: 1,
-          usage: {
-            input_tokens_details: { text_tokens: 1, image_tokens: 1 },
-            output_tokens_details: { image_tokens: 1 },
-          },
-        }),
-        null,
-      );
-      assert.equal(
-        priceOpenAiLpUsage(start, {
-          imageCount: 1,
-          usage: {
-            input_tokens_details: { text_tokens: 1 },
-            output_tokens_details: {},
-          },
-        }),
-        null,
-      );
-      assert.equal(
-        priceOpenAiLpUsage({ ...start, quality: "high" }, {
-          imageCount: 1,
-          usage: { input_tokens_details: { text_tokens: 1 } },
-        }),
-        null,
-      );
     },
   },
   {

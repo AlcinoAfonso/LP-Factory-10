@@ -2,15 +2,11 @@ import "server-only";
 
 import { requestCommercialActivationOpenAi } from "@/conversion-content/adapters/commercialActivationOpenAiAdapter";
 import { evaluateInputCatalogWithOpenAi } from "@/conversion-content/adapters/inputCatalogEvaluationOpenAiAdapter";
-import { generateLandingPageDraftCandidate } from "@/lp-builder/landingPageDraftGeneration";
-import { generateLandingPageDraftImage } from "@/lp-builder/landingPageDraftImageGeneration";
-import type { LandingPageGenerationContextPackage } from "@/lp-builder/generationContextContracts";
 import { resolveNicheWithOpenAi } from "@/onboarding/niche-resolution/adapters/openAiResolver";
 import type {
   OpenAiOperationalConfigurationReader,
   OpenAiManagedWorkloadEnvironment,
   OpenAiWorkloadEvent,
-  ResolvedOpenAiImageWorkload,
   ResolvedOpenAiProductWorkload,
 } from "@/openai-workloads";
 import {
@@ -25,7 +21,7 @@ import { proveDynamicMarketResearch } from "./dynamicResearchProof";
 export type { OpenAiCandidateProofMetadata } from "./proofCore";
 
 export async function runOpenAiCandidateProof(
-  workload: ResolvedOpenAiProductWorkload | ResolvedOpenAiImageWorkload,
+  workload: ResolvedOpenAiProductWorkload,
   environment: OpenAiManagedWorkloadEnvironment,
   apiKey: string,
   requestId: string,
@@ -42,10 +38,8 @@ export async function runOpenAiCandidateProof(
     {
       niche: dependencies.niche ?? proveNicheResolution,
       commercial: dependencies.commercial ?? proveCommercialActivation,
-      landingPageText: dependencies.landingPageText ?? proveLandingPageText,
       inputCatalogEvaluation:
         dependencies.inputCatalogEvaluation ?? proveInputCatalogEvaluation,
-      landingPageImage: dependencies.landingPageImage ?? proveLandingPageImage,
       dynamicMarketResearch: dependencies.dynamicMarketResearch ?? proveDynamicMarketResearch,
     },
   );
@@ -151,28 +145,6 @@ async function proveCommercialActivation(
     : { ok: false, code: result.ok ? "contract" : "provider" };
 }
 
-async function proveLandingPageText(
-  workload: ResolvedOpenAiProductWorkload,
-  environment: OpenAiManagedWorkloadEnvironment,
-  apiKey: string,
-  requestId: string,
-): Promise<ProofAttempt> {
-  const result = await generateLandingPageDraftCandidate(proofLandingPageContext, {
-    apiKey,
-    attemptId: requestId,
-    requestId,
-    environment,
-    workloadResolver: proofResolver(workload, environment),
-  });
-  return result.ok
-    ? {
-        ok: true,
-        providerRequestId: result.responseId,
-        latencyMs: result.latencyMs,
-      }
-    : { ok: false, code: result.kind === "invalid_candidate" ? "contract" : "provider" };
-}
-
 async function proveInputCatalogEvaluation(
   workload: ResolvedOpenAiProductWorkload,
   environment: OpenAiManagedWorkloadEnvironment,
@@ -207,62 +179,22 @@ async function proveInputCatalogEvaluation(
     : { ok: false, code: result.status === "completed" ? "contract" : "provider" };
 }
 
-async function proveLandingPageImage(
-  workload: ResolvedOpenAiImageWorkload,
-  environment: OpenAiManagedWorkloadEnvironment,
-  apiKey: string,
-  requestId: string,
-): Promise<ProofAttempt> {
-  const result = await generateLandingPageDraftImage(
-    {
-      mediaBrief: "Ambiente profissional contemporâneo, acolhedor e sem pessoas identificáveis.",
-      semanticFacts: { offer: "Consultoria imobiliária" },
-    },
-    {
-      apiKey,
-      attemptId: requestId,
-      requestId,
-      environment,
-      workloadResolver: proofResolver(workload, environment),
-    },
-  );
-  return result.ok
-    ? {
-        ok: true,
-        providerRequestId: result.providerRequestId,
-        latencyMs: result.latencyMs,
-      }
-    : { ok: false, code: result.kind === "invalid_response" ? "contract" : "provider" };
-}
-
 function proofResolver(
-  workload: ResolvedOpenAiProductWorkload | ResolvedOpenAiImageWorkload,
+  workload: ResolvedOpenAiProductWorkload,
   environment: OpenAiManagedWorkloadEnvironment,
 ) {
   const readOperationalConfiguration: OpenAiOperationalConfigurationReader =
-    async () => workload.apiKind === "responses_text"
-      ? {
-          ok: true,
-          value: {
-            environment,
-            workload: workload.id,
-            apiKind: workload.apiKind,
-            model: workload.model,
-            reasoningEffort: workload.reasoningEffort,
-            revision: "1",
-          },
-        }
-      : {
-          ok: true,
-          value: {
-            environment,
-            workload: workload.id,
-            apiKind: workload.apiKind,
-            model: workload.model,
-            quality: workload.quality,
-            revision: "1",
-          },
-        };
+    async () => ({
+      ok: true,
+      value: {
+        environment,
+        workload: workload.id,
+        apiKind: workload.apiKind,
+        model: workload.model,
+        reasoningEffort: workload.reasoningEffort,
+        revision: "1",
+      },
+    });
   return {
     operationalConfigurationEnabled: "true",
     readOperationalConfiguration,
@@ -272,82 +204,3 @@ function proofResolver(
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
-
-const proofLandingPageContext = {
-  contractVersion: 4,
-  identities: {
-    accountId: "10000000-0000-4000-8000-000000000001",
-    landingPage: {
-      id: "20000000-0000-4000-8000-000000000002",
-      status: "draft",
-    },
-    planKey: "starter",
-    servedTaxon: {
-      id: "30000000-0000-4000-8000-000000000003",
-      slug: "consultoria-imobiliaria",
-      name: "Consultoria imobiliária",
-      level: "segment",
-      isActive: true,
-      parentId: null,
-    },
-    taxonChain: {
-      segment: {
-        id: "30000000-0000-4000-8000-000000000003",
-        slug: "consultoria-imobiliaria",
-        name: "Consultoria imobiliária",
-        level: "segment",
-        isActive: true,
-        parentId: null,
-      },
-    },
-    effectiveInputCatalogVersion: 4,
-    sharedCatalogVersion: null,
-    landingPageCatalogVersion: 4,
-    sharedRevision: null,
-    landingPageRevision: 1,
-    rootVersion: 1,
-    endCustomerResearchVersion: 1,
-  },
-  modelContext: {
-    research: {
-      taxonSlug: "consultoria-imobiliaria",
-      audienceScope: "end_customer",
-      researchVersion: 1,
-      content: "Pesquisa segura: clientes buscam orientação clara para avaliar imóveis.",
-    },
-    facts: [
-      {
-        fieldKey: "primary_service_or_offer",
-        purpose: "offer",
-        valueType: "string",
-        value: "Consultoria imobiliária",
-        source: "configuration",
-        provenance: [],
-      },
-      {
-        fieldKey: "primary_conversion_channel",
-        purpose: "conversion",
-        valueType: "enum",
-        value: "whatsapp",
-        source: "configuration",
-        provenance: [],
-      },
-    ],
-    editorialLimits: {
-      semanticRoles: [],
-      semanticHierarchy: ["h1", "h2", "h3"],
-    },
-  },
-  serverContext: {
-    facts: [
-      {
-        fieldKey: "whatsapp_destination",
-        purpose: "conversion_destination",
-        valueType: "phone",
-        value: "+5521000000000",
-        source: "authoritative",
-        provenance: [],
-      },
-    ],
-  },
-} as const satisfies LandingPageGenerationContextPackage;

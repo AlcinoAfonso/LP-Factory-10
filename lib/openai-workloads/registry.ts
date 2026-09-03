@@ -1,13 +1,10 @@
 import {
-  openAiImageQualities,
   openAiReasoningEfforts,
   openAiWebSearchContextSizes,
-  type OpenAiImageWorkloadDefinition,
   type OpenAiProductWorkloadDefinition,
   type OpenAiWorkloadDefinition,
   type OpenAiWorkloadId,
   type OpenAiWorkloadPresentation,
-  type ResolvedOpenAiImageWorkload,
   type ResolvedOpenAiProductWorkload,
 } from "./contracts";
 
@@ -42,22 +39,6 @@ export const openAiWorkloadRegistry = deepFreeze([
       apiKind: "responses_text",
       model: "gpt-5.4-mini",
       reasoningEffort: "none",
-      source: "repo_catalog",
-      revision,
-    },
-  },
-  {
-    id: "landing_page_draft_generation",
-    displayName: "Geração textual de landing page em draft",
-    classification: "product_runtime",
-    configurationKind: "effective",
-    consumer: "E19.4 — candidata estruturada da landing page",
-    fallback: "Falhar a tentativa sem criar revisão",
-    webSearch: null,
-    configuration: {
-      apiKind: "responses_text",
-      model: "gpt-5.6-luna",
-      reasoningEffort: "max",
       source: "repo_catalog",
       revision,
     },
@@ -100,25 +81,6 @@ export const openAiWorkloadRegistry = deepFreeze([
     },
   },
   {
-    id: "landing_page_draft_image_generation",
-    displayName: "Geração da imagem principal da landing page em draft",
-    classification: "product_runtime",
-    configurationKind: "effective",
-    consumer: "E19.4 — mídia principal da candidata validada",
-    fallback: "Falhar a tentativa sem criar revisão",
-    configuration: {
-      apiKind: "image_generation",
-      model: "gpt-image-2",
-      size: "1536x1024",
-      quality: "medium",
-      format: "webp",
-      compression: 80,
-      moderation: "auto",
-      source: "repo_catalog",
-      revision,
-    },
-  },
-  {
     id: "supabase_inspect",
     displayName: "Supabase Inspect",
     classification: "operational",
@@ -148,18 +110,6 @@ const workloadPresentations = deepFreeze([
     name: "Geração de draft de ativação comercial",
     roadmapReference: "E10.7.3",
     visualGroup: null,
-  },
-  {
-    workload: "landing_page_draft_generation",
-    name: "Geração da Landing Page",
-    roadmapReference: "E19.4",
-    visualGroup: "landing_page",
-  },
-  {
-    workload: "landing_page_draft_image_generation",
-    name: "Geração da Landing Page",
-    roadmapReference: "E19.4",
-    visualGroup: "landing_page",
   },
   {
     workload: "taxon_input_catalog_sufficiency_evaluation",
@@ -226,40 +176,6 @@ function sameWebSearchPolicy(
   );
 }
 
-export function isValidResolvedOpenAiImageWorkload(
-  actual: ResolvedOpenAiImageWorkload,
-) {
-  const workload = (
-    openAiWorkloadRegistry as readonly OpenAiWorkloadDefinition[]
-  ).find((candidate) => candidate.id === actual.id);
-
-  if (!workload || !isImageDefinition(workload)) return false;
-
-  const validOrigin =
-    (actual.source === "repo_catalog" &&
-      actual.revision === workload.configuration.revision) ||
-    (actual.source === "supabase_operational" &&
-      /^[1-9]\d*$/.test(actual.revision));
-
-  return (
-    actual.displayName === workload.displayName &&
-    actual.classification === workload.classification &&
-    actual.configurationKind === workload.configurationKind &&
-    actual.apiKind === workload.configuration.apiKind &&
-    actual.consumer === workload.consumer &&
-    actual.fallback === workload.fallback &&
-    actual.size === workload.configuration.size &&
-    actual.format === workload.configuration.format &&
-    actual.compression === workload.configuration.compression &&
-    actual.moderation === workload.configuration.moderation &&
-    actual.reasoningEffort === "not_applicable" &&
-    actual.effectiveConfigurationVerified === true &&
-    validOrigin &&
-    isTechnicalModel(actual.model) &&
-    openAiImageQualities.includes(actual.quality)
-  );
-}
-
 function assertValidRegistry(registry: readonly OpenAiWorkloadDefinition[]) {
   const ids = new Set<OpenAiWorkloadId>();
 
@@ -304,15 +220,6 @@ function isTextDefinition(
   return (
     workload.configurationKind === "effective" &&
     workload.configuration.apiKind === "responses_text"
-  );
-}
-
-function isImageDefinition(
-  workload: OpenAiWorkloadDefinition,
-): workload is OpenAiImageWorkloadDefinition {
-  return (
-    workload.configurationKind === "effective" &&
-    workload.configuration.apiKind === "image_generation"
   );
 }
 

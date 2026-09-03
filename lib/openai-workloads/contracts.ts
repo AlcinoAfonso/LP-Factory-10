@@ -1,13 +1,8 @@
 export const openAiProductWorkloadIds = [
   "niche_resolution",
   "commercial_activation_draft_generation",
-  "landing_page_draft_generation",
   "taxon_input_catalog_sufficiency_evaluation",
   "landing_page_dynamic_market_research",
-] as const;
-
-export const openAiImageWorkloadIds = [
-  "landing_page_draft_image_generation",
 ] as const;
 
 export const openAiOperationalWorkloadIds = ["supabase_inspect"] as const;
@@ -37,12 +32,10 @@ export const openAiWorkloadFailureCategories = [
 
 export type OpenAiProductWorkloadId =
   (typeof openAiProductWorkloadIds)[number];
-export type OpenAiImageWorkloadId = (typeof openAiImageWorkloadIds)[number];
 export type OpenAiOperationalWorkloadId =
   (typeof openAiOperationalWorkloadIds)[number];
 export type OpenAiWorkloadId =
   | OpenAiProductWorkloadId
-  | OpenAiImageWorkloadId
   | OpenAiOperationalWorkloadId;
 export type OpenAiReasoningEffort = (typeof openAiReasoningEfforts)[number];
 export type OpenAiImageQuality = (typeof openAiImageQualities)[number];
@@ -75,18 +68,6 @@ export type OpenAiWebSearchPolicy = Readonly<{
   contextWindowTokenBudget: 128000;
 }>;
 
-export type OpenAiImageGenerationConfiguration = Readonly<{
-  apiKind: "image_generation";
-  model: string;
-  size: "1536x1024";
-  quality: OpenAiImageQuality;
-  format: "webp";
-  compression: 80;
-  moderation: "auto";
-  source: "repo_catalog";
-  revision: string;
-}>;
-
 export type OpenAiInventoryReferenceConfiguration = Readonly<{
   model: string;
   reasoningEffort: "not_applicable";
@@ -105,16 +86,6 @@ export type OpenAiProductWorkloadDefinition = Readonly<{
   webSearch?: OpenAiWebSearchPolicy | null;
 }>;
 
-export type OpenAiImageWorkloadDefinition = Readonly<{
-  id: OpenAiImageWorkloadId;
-  displayName: string;
-  classification: "product_runtime";
-  configurationKind: "effective";
-  consumer: string;
-  fallback: string;
-  configuration: OpenAiImageGenerationConfiguration;
-}>;
-
 export type OpenAiOperationalWorkloadDefinition = Readonly<{
   id: OpenAiOperationalWorkloadId;
   displayName: string;
@@ -127,7 +98,6 @@ export type OpenAiOperationalWorkloadDefinition = Readonly<{
 
 export type OpenAiWorkloadDefinition =
   | OpenAiProductWorkloadDefinition
-  | OpenAiImageWorkloadDefinition
   | OpenAiOperationalWorkloadDefinition;
 
 export type ResolvedOpenAiProductWorkload = Readonly<{
@@ -146,30 +116,8 @@ export type ResolvedOpenAiProductWorkload = Readonly<{
   webSearch?: OpenAiWebSearchPolicy | null;
 }>;
 
-export type ResolvedOpenAiImageWorkload = Readonly<{
-  id: OpenAiImageWorkloadId;
-  displayName: string;
-  classification: "product_runtime";
-  configurationKind: "effective";
-  apiKind: "image_generation";
-  consumer: string;
-  fallback: string;
-  model: string;
-  size: "1536x1024";
-  quality: OpenAiImageQuality;
-  format: "webp";
-  compression: 80;
-  moderation: "auto";
-  reasoningEffort: "not_applicable";
-  source: OpenAiConfigurationSource;
-  revision: string;
-  effectiveConfigurationVerified: true;
-}>;
-
 export type OpenAiWorkloadInventoryItem =
   | (Omit<ResolvedOpenAiProductWorkload, "source"> &
-      Readonly<{ source: "repo_catalog" }>)
-  | (Omit<ResolvedOpenAiImageWorkload, "source"> &
       Readonly<{ source: "repo_catalog" }>)
   | Readonly<{
       id: OpenAiOperationalWorkloadId;
@@ -189,28 +137,18 @@ export type OpenAiWorkloadResolveErrorCode =
   | "UNKNOWN_WORKLOAD"
   | "NOT_PRODUCT_RUNTIME_WORKLOAD"
   | "NOT_TEXT_PRODUCT_WORKLOAD"
-  | "NOT_IMAGE_GENERATION_WORKLOAD"
   | "UNKNOWN_ENVIRONMENT"
   | "OPERATIONAL_CONFIGURATION_READ_FAILED"
   | "OPERATIONAL_CONFIGURATION_INVALID";
 
-export type OpenAiOperationalConfiguration =
-  | Readonly<{
-      environment: OpenAiManagedWorkloadEnvironment;
-      workload: OpenAiProductWorkloadId;
-      apiKind: "responses_text";
-      model: string;
-      reasoningEffort: OpenAiReasoningEffort;
-      revision: string;
-    }>
-  | Readonly<{
-      environment: OpenAiManagedWorkloadEnvironment;
-      workload: OpenAiImageWorkloadId;
-      apiKind: "image_generation";
-      model: string;
-      quality: OpenAiImageQuality;
-      revision: string;
-    }>;
+export type OpenAiOperationalConfiguration = Readonly<{
+  environment: OpenAiManagedWorkloadEnvironment;
+  workload: OpenAiProductWorkloadId;
+  apiKind: "responses_text";
+  model: string;
+  reasoningEffort: OpenAiReasoningEffort;
+  revision: string;
+}>;
 
 export type OpenAiOperationalConfigurationReadResult =
   | Readonly<{ ok: true; value: OpenAiOperationalConfiguration }>
@@ -224,7 +162,7 @@ export type OpenAiOperationalConfigurationReadResult =
 
 export type OpenAiOperationalConfigurationReader = (input: Readonly<{
   environment: OpenAiManagedWorkloadEnvironment;
-  workload: OpenAiProductWorkloadId | OpenAiImageWorkloadId;
+  workload: OpenAiProductWorkloadId;
 }>) => Promise<OpenAiOperationalConfigurationReadResult>;
 
 export type OpenAiTextWorkloadConfigurationOptions = Readonly<{
@@ -237,22 +175,10 @@ export type OpenAiTextWorkloadConfigurationOptions = Readonly<{
   }>[];
 }>;
 
-export type OpenAiImageWorkloadConfigurationOptions = Readonly<{
-  workload: OpenAiImageWorkloadId;
-  displayName: string;
-  apiKind: "image_generation";
-  options: readonly Readonly<{
-    model: string;
-    quality: OpenAiImageQuality;
-  }>[];
-}>;
-
-export type OpenAiWorkloadConfigurationOptions =
-  | OpenAiTextWorkloadConfigurationOptions
-  | OpenAiImageWorkloadConfigurationOptions;
+export type OpenAiWorkloadConfigurationOptions = OpenAiTextWorkloadConfigurationOptions;
 
 export type OpenAiWorkloadPresentation = Readonly<{
-  workload: OpenAiProductWorkloadId | OpenAiImageWorkloadId;
+  workload: OpenAiProductWorkloadId;
   name: string;
   roadmapReference: string;
   visualGroup: "landing_page" | null;
@@ -291,17 +217,11 @@ export type OpenAiModelCatalogReadResult =
       }>;
     }>;
 
-export type OpenAiAdministrativeConfigurationValue =
-  | Readonly<{
-      apiKind: "responses_text";
-      model: string;
-      reasoningEffort: OpenAiReasoningEffort;
-    }>
-  | Readonly<{
-      apiKind: "image_generation";
-      model: string;
-      quality: OpenAiImageQuality;
-    }>;
+export type OpenAiAdministrativeConfigurationValue = Readonly<{
+  apiKind: "responses_text";
+  model: string;
+  reasoningEffort: OpenAiReasoningEffort;
+}>;
 
 export type OpenAiAdministrativeCandidate =
   OpenAiAdministrativeConfigurationValue &
@@ -333,9 +253,9 @@ export type OpenAiAdministrativeActivation = Readonly<{
 
 export type OpenAiAdministrativeConfigurationUnit = Readonly<{
   environment: OpenAiManagedWorkloadEnvironment;
-  workload: OpenAiProductWorkloadId | OpenAiImageWorkloadId;
+  workload: OpenAiProductWorkloadId;
   displayName: string;
-  apiKind: "responses_text" | "image_generation";
+  apiKind: "responses_text";
   configurationVersion: number;
   activeRevision: OpenAiAdministrativeRevision;
   candidate: OpenAiAdministrativeCandidate | null;
@@ -362,16 +282,6 @@ export type OpenAiAdministrativeConfigurationReader =
 
 export type ResolveOpenAiProductWorkloadResult =
   | Readonly<{ ok: true; value: ResolvedOpenAiProductWorkload }>
-  | Readonly<{
-      ok: false;
-      error: Readonly<{
-        code: OpenAiWorkloadResolveErrorCode;
-        message: string;
-      }>;
-    }>;
-
-export type ResolveOpenAiImageWorkloadResult =
-  | Readonly<{ ok: true; value: ResolvedOpenAiImageWorkload }>
   | Readonly<{
       ok: false;
       error: Readonly<{
@@ -431,32 +341,3 @@ export type OpenAiWorkloadFailureEvent = OpenAiWorkloadEventBase &
 export type OpenAiWorkloadEvent =
   | OpenAiWorkloadSuccessEvent
   | OpenAiWorkloadFailureEvent;
-
-export type OpenAiImageWorkloadEvent = Readonly<{
-  workload: OpenAiImageWorkloadId;
-  apiKind: "image_generation";
-  environment: OpenAiWorkloadEnvironment;
-  configurationSource: OpenAiConfigurationSource;
-  configurationRevision: string;
-  model: string;
-  size: "1536x1024";
-  quality: OpenAiImageQuality;
-  format: "webp";
-  compression: 80;
-  moderation: "auto";
-  visualBriefVersion: string | null;
-  attemptId: string | null;
-  requestId: string | null;
-  providerRequestId: string | null;
-  httpStatus: number | null;
-  providerErrorCode: string | null;
-  providerErrorType: string | null;
-  latencyMs: number | null;
-  imageCount: number | null;
-  width: number | null;
-  height: number | null;
-  estimatedCost: number | null;
-  costStatus: "dated" | "unavailable";
-  result: "success" | "failure";
-  failureCategory: OpenAiWorkloadFailureCategory | null;
-}>;

@@ -135,7 +135,7 @@ export function OpenAiConfigurationManager({
                         <ConfigurationSummary units={group.units} />
                         <p className="text-xs text-foreground sm:text-sm">
                           <span className="mr-1 text-muted-foreground sm:hidden">Imagem:</span>
-                          {group.units.some((unit) => unit.apiKind === "image_generation") ? "Sim" : "Não"}
+                          Não
                         </p>
                       </div>
 
@@ -261,8 +261,7 @@ function groupUnits(
 
 function configurationLabel(unit: OpenAiAdministrativeConfigurationUnit) {
   const revision = unit.activeRevision;
-  const parameter = revision.apiKind === "responses_text" ? revision.reasoningEffort : revision.quality;
-  return `${revision.model} · ${parameter}`;
+  return `${revision.model} · ${revision.reasoningEffort}`;
 }
 
 function safeId(value: string) {
