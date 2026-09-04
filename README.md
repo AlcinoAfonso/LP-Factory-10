@@ -1,8 +1,8 @@
 0. Introdução
 0.1. Cabeçalho
 • Documento: README — LP Factory 10 (MVP)
-• Versão: 7 — 13/08/2026
-• Data: 13/08/2026
+• Versão: 8 — 04/09/2026
+• Data: 04/09/2026
 • Escopo: visão geral do produto + documentos de referência + pendências estratégicas
 
 1. Visão geral do produto
@@ -50,7 +50,7 @@
 • O WhatsApp é canal comercial prioritário para aquisição, atendimento, qualificação, venda e nutrição; suas capacidades oficiais de mensageria, automação e IA devem permanecer no radar e ser distribuídas progressivamente entre os planos, sem autorizar adoção antecipada.
 • Avaliação ou catalogação não autoriza implementação, mudança de stack, nova infraestrutura nem ampliação de escopo.
 • Em cada plano-base, fase ou recorte, o Gestor de Updates recomenda a aplicabilidade dos recursos catalogados, e o Estrategista decide sua consolidação no plano-base dentro do escopo aprovado.
-• A intervenção humana é necessária somente quando faltar autoridade ou definição indispensável de produto, ou quando houver ampliação do escopo aprovado; a materialidade, isoladamente, não constitui bloqueio.
+• A intervenção humana em decisões de produto ou escopo é necessária somente quando faltar autoridade ou definição indispensável, ou quando houver ampliação do escopo aprovado; a materialidade, isoladamente, não constitui bloqueio.
 
 1.5. Modelo de oferta
 • Planos em camadas (Starter → Lite → Pro → Ultra), com capacidades escalando ao longo do tempo.
