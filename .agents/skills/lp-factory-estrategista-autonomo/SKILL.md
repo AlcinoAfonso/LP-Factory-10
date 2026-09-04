@@ -38,7 +38,7 @@ A V1 aprovada limita o resultado funcional. Repositório, pareceres e conveniên
 
 1. Identificar quais planos estão liberados e quais aguardam dependências.
 2. Tratar a conversa ou task que recebeu o handoff como supervisora; ela não conta como task técnica do plano e não executa implementação.
-3. Para cada plano liberado, definir `medium` ou `high` conforme a complexidade e criar exatamente uma task técnica distinta usando `gpt-5.6-sol`. Se a task não puder ser criada ou invocada, parar e reportar o bloqueio; não assumir a execução técnica como fallback.
+3. Para cada plano liberado, aplicar a política de modelo e esforço da Seção 6.3 de `docs/pipeline-plano-base.md` e criar exatamente uma task técnica distinta. Se a task não puder ser criada ou invocada, parar e reportar o bloqueio; não assumir a execução técnica como fallback.
 4. Estruturar o handoff conforme `docs/template-briefing-codex.md`, referenciando a V1 integral sem resumi-la livremente nem reinterpretá-la.
 5. Para Light, instruir a task a materializar e congelar a V1 por path, PR e commit SHA no PR único do plano antes de assumir o contrato universal do Executor.
 6. Para Completo, instruir a task a materializar e congelar a V1 no PR único do plano e usar `$lp-factory-conduzir-plano-completo`; depois da aprovação da V2, ela passa a ser o contrato exclusivo de implementação.
