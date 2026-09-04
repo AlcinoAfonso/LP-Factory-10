@@ -17,7 +17,8 @@ Receber do Estrategista original:
 - o formato Light ou Completo de cada plano;
 - os recortes de automação aplicáveis;
 - os critérios funcionais e as evidências esperadas;
-- a autoridade concedida e eventuais limites específicos.
+- a autoridade concedida e eventuais limites específicos;
+- o esforço deste Estrategista Autônomo, definido pelo humano conforme `docs/pipeline-plano-base.md`.
 
 Confirmar que o modo é Autônomo e que cada plano pode ser identificado, executado e concluído separadamente. Pedir somente o dado indispensável quando uma lacuna impedir liberar um plano com segurança.
 
@@ -36,11 +37,12 @@ A V1 aprovada limita o resultado funcional. Repositório, pareceres e conveniên
 ## Liberar e conduzir planos
 
 1. Identificar quais planos estão liberados e quais aguardam dependências.
-2. Criar exatamente uma task técnica para cada plano liberado, sem combinar planos independentes.
-3. Estruturar o handoff conforme `docs/template-briefing-codex.md`, referenciando a V1 integral sem resumi-la livremente nem reinterpretá-la.
-4. Para Light, instruir a task a materializar e congelar a V1 por path, PR e commit SHA no PR único do plano antes de assumir o contrato universal do Executor.
-5. Para Completo, instruir a task a materializar e congelar a V1 no PR único do plano e usar `$lp-factory-conduzir-plano-completo`; depois da aprovação da V2, ela passa a ser o contrato exclusivo de implementação.
-6. Permitir paralelismo somente entre planos sem dependência pendente.
+2. Tratar a conversa ou task que recebeu o handoff como supervisora; ela não conta como task técnica do plano e não executa implementação.
+3. Para cada plano liberado, definir `medium` ou `high` conforme a complexidade e criar exatamente uma task técnica distinta usando `gpt-5.6-sol`. Se a task não puder ser criada ou invocada, parar e reportar o bloqueio; não assumir a execução técnica como fallback.
+4. Estruturar o handoff conforme `docs/template-briefing-codex.md`, referenciando a V1 integral sem resumi-la livremente nem reinterpretá-la.
+5. Para Light, instruir a task a materializar e congelar a V1 por path, PR e commit SHA no PR único do plano antes de assumir o contrato universal do Executor.
+6. Para Completo, instruir a task a materializar e congelar a V1 no PR único do plano e usar `$lp-factory-conduzir-plano-completo`; depois da aprovação da V2, ela passa a ser o contrato exclusivo de implementação.
+7. Permitir paralelismo somente entre planos sem dependência pendente.
 
 Cada plano mantém uma única task técnica responsável, uma branch e um PR até o merge. Correções e QA pré-merge retornam à mesma task e ao mesmo PR.
 
