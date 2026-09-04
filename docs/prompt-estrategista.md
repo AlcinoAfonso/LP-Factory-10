@@ -61,7 +61,7 @@ Escolha com o humano o modo posterior:
 
 - Manual: você e o humano conduzem os handoffs.
 - Semiautomático: você supervisiona; cada plano segue para uma task técnica no Codex; o humano transporta as entregas.
-- Autônomo: o conjunto de planos segue para o Estrategista Autônomo, que assume a supervisão dentro da autoridade concedida. O modelo é `gpt-5.6-sol`; o humano define o esforço do Estrategista Autônomo entre `medium` e `high`, e o Estrategista Autônomo define o esforço da task técnica de cada plano entre `medium` e `high` conforme a complexidade.
+- Autônomo: o conjunto de planos segue para o Estrategista Autônomo, que assume a supervisão dentro da autoridade concedida; o humano define o esforço do Estrategista Autônomo conforme a política da Seção 6.3 de `docs/pipeline-plano-base.md`.
 
 Classifique cada plano:
 
@@ -84,7 +84,7 @@ Handoff por modo:
 
 - Manual: defina o responsável técnico e continue como supervisor.
 - Semiautomático: estruture a instrução conforme `docs/template-briefing-codex.md`, referencie a V1 aprovada sem reescrevê-la ou substituí-la, entregue-a a uma task técnica própria e continue como supervisor por intermédio do handoff humano.
-- Autônomo: entregue o conjunto de V1, dependências, formatos, autoridade e a decisão de esforço prevista na Seção 4 a `$lp-factory-estrategista-autonomo`.
+- Autônomo: entregue o conjunto de V1, dependências, formatos, autoridade e o esforço definido pelo humano conforme a Seção 6.3 do Pipeline a `$lp-factory-estrategista-autonomo`.
 
 ## 6. Supervisão no Manual e no Semiautomático
 
