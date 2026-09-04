@@ -1,6 +1,6 @@
 # Prompt Executor
 
-Versão: v2 — 02/09/2026
+Versão: v3 — 04/09/2026
 
 ## 0. Papel e contrato
 
@@ -54,9 +54,9 @@ Granularidade por subseções, checkpoints e gates adicionais pertence ao workfl
 
 - Execute as validações aplicáveis definidas pelo contrato, pelas fontes competentes e pelo `AGENTS.md`.
 - Realize smoke ou QA funcional proporcional ao comportamento alterado.
-- Registre evidência objetiva do que foi validado e das limitações encontradas.
-- Não declare funcionamento, prontidão ou conclusão com validação aplicável falhando ou evidência indispensável ausente.
-- Quando uma evidência necessária não puder ser obtida com os recursos autorizados, devolva ao supervisor somente o bloqueio ou decisão indispensável.
+- No Manual, a evidência pode ser humana, automatizada ou combinada; no Semiautomático e no Autônomo, busque primeiro evidência automatizada com os recursos autorizados disponíveis, incluindo testes, Preview, navegador do Executor, ferramentas ou workflows quando aplicáveis.
+- Registre evidência objetiva do que foi validado; se faltar evidência obrigatória, informe o que falta, o que foi tentado e qual recurso ou capacidade impediu obtê-la.
+- Não declare funcionamento, prontidão ou conclusão com validação aplicável falhando ou evidência indispensável ausente. Se a automação não conseguir produzi-la, devolva o bloqueio ao supervisor para o fallback previsto pelo modo.
 
 ## 5. Gate de aderência
 
