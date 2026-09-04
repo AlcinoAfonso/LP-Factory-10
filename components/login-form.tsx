@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { FormField, FormFieldError, FormFieldLabel } from '@/components/ui/form-field'
 import { Input } from '@/components/ui/input'
+import { classifyLoginFailure } from '@/auth/loginError'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { useState } from 'react'
@@ -27,6 +28,7 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     const supabase = createClient()
+    const startedAt = performance.now()
     setIsLoading(true)
     setError(null)
 
@@ -39,7 +41,12 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
       const safeNext = sanitizeNext(searchParams.get('next'))
       window.location.assign(safeNext)
     } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : 'Ocorreu um erro')
+      const failure = classifyLoginFailure(error)
+      console.warn('auth_login_failed', {
+        ...failure.diagnostic,
+        durationMs: Math.round(performance.now() - startedAt),
+      })
+      setError(failure.publicMessage)
     } finally {
       setIsLoading(false)
     }
