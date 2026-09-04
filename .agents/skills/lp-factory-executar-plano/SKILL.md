@@ -60,7 +60,7 @@ Para a próxima subseção ainda não aprovada:
 5. Invocar `$lp-factory-avaliar-implementacao-analista` com o plano, o identificador, o diff, as evidências, a matriz e os pareceres especializados pertinentes. Para cada documento canônico avaliado, incluir snapshot anterior, relatório factual, resultado integral do ABC e documento resultante.
 6. Tratar `aprovado para avançar` como checkpoint: commitar com o trailer `LP-Factory-Phase: <identificador>`. O checkpoint pode permanecer local; atualizar código, título e resumo do mesmo PR draft somente quando esse estado for efetivamente publicado.
 7. Tratar `aprovado com correções obrigatórias` corrigindo somente o delta indicado e retornando ao mesmo Analista em `revisao_delta_implementacao`.
-8. Tratar `requer evidência de QA` obtendo a evidência pelo método aplicável ao modo e retornando ao mesmo Analista; tratar `bloqueado por decisão humana` parando e pedindo apenas a decisão necessária.
+8. Tratar `requer evidência de QA` tentando obtê-la pelo método aplicável ao modo e retornando ao mesmo Analista. Se a evidência não puder ser produzida com os recursos autorizados e o modo exigir fallback pelo supervisor, devolver antes da entrega final somente o bloqueio de QA ao supervisor competente; recebida a evidência, retornar ao mesmo Analista. Tratar `bloqueado por decisão humana` parando e pedindo apenas a decisão necessária.
 
 Não executar `git push` por rotina antes ou depois de cada gate. Checkpoints aprovados podem acumular localmente. Publicar o estado acumulado somente quando houver necessidade real de estado remoto, como Preview/QA hospedado, validação na Vercel, review ou evidência que dependa do GitHub remoto, entrega, ou quando uma parada necessária exigir persistência remota para garantir retomada. Alterações ainda não aprovadas pelo Analista não recebem trailer `LP-Factory-Phase`, não constituem checkpoint aprovado e não autorizam avanço ou merge.
 
@@ -87,5 +87,5 @@ O resumo do PR deve refletir sempre o checkpoint publicado e a entrega completa.
 - Não criar segundo PR quando houver handoff da orquestração.
 - Não acionar novamente os especialistas do plano durante a implementação.
 - Não acionar o Analista depois de declarar a entrega completa.
-- Não acionar o supervisor antes de declarar a entrega completa nem simular handoff diferente do modo informado.
+- Não acionar o supervisor antes de declarar a entrega completa, exceto para o bloqueio de QA previsto no item 8; não simular handoff diferente do modo informado.
 - Não ignorar evidência de QA pendente nem decisão material exigida.
