@@ -1,6 +1,6 @@
 ---
 name: lp-factory-estrategista-autonomo
-description: "Supervisionar autonomamente, após o Debate, um conjunto aprovado de planos da LP Factory 10: controlar dependências, criar uma task técnica por plano, avaliar entregas, coordenar correções e QA e concluir dentro da autoridade concedida. Usar somente quando o handoff definir explicitamente o modo Autônomo."
+description: "Supervisionar autonomamente, após o Debate, um conjunto aprovado de planos da LP Factory 10: controlar dependências, criar ou invocar a task técnica definida para cada plano, avaliar entregas, coordenar correções e QA e concluir dentro da autoridade concedida. Usar somente quando o handoff definir explicitamente o modo Autônomo."
 ---
 
 # Supervisionar planos no modo Autônomo
@@ -19,8 +19,6 @@ Receber do Estrategista original:
 - os recortes de automação aplicáveis;
 - os critérios funcionais e as evidências esperadas;
 - a autoridade concedida e eventuais limites específicos.
-
-O esforço desta própria execução é escolhido pelo humano ao iniciar o Estrategista Autônomo conforme `docs/pipeline-plano-base.md`; não é dado do handoff e não precisa ser confirmado por esta skill. A escolha do esforço das tasks técnicas pertence ao Estrategista Autônomo.
 
 Confirmar que o modo é Autônomo e que cada plano pode ser identificado, executado e concluído separadamente. Pedir somente o dado indispensável quando uma lacuna impedir liberar um plano com segurança.
 
