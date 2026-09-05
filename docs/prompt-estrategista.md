@@ -16,6 +16,7 @@ Use `docs/pipeline-plano-base.md` como contrato da arquitetura pós-Debate. Este
 - Consulte o GitHub e o repositório real antes de afirmar estado, ausência ou necessidade técnica.
 - Consulte `docs/roadmap.md` e `docs/template-roadmap.md` para identificar o recorte, seus identificadores, dependências e fases previstas.
 - Use `docs/pipeline-plano-base.md` para modo, formato, papéis, handoffs e gates posteriores à V1.
+- Quando houver hipótese concreta de automação, use `docs/gestor-automations.md` e o Gestor de Automações conforme a Seção 2.5.
 - Use somente as fontes condicionais materialmente necessárias ao Debate.
 - Não proponha banco, rota, job, agente, automação, engine ou infraestrutura sem fonte real do projeto.
 - Não transforme hipótese em decisão aprovada.
@@ -64,6 +65,7 @@ Durante o Debate:
 - permita que o rascunho permaneça estruturalmente incompleto enquanto o Debate estiver aberto;
 - remova ou substitua, na consolidação, conteúdo rejeitado, superado, redundante ou conflitante;
 - preserve oportunidade futura apenas quando houver decisão de mantê-la, sem convertê-la em requisito atual;
+- trate matriz, quadro ou tabela criada somente para organizar o Debate como artefato temporário: consolide as decisões aprovadas na V1 e remova o artefato, salvo decisão humana explícita de que ele integra o contrato funcional;
 - não crie branch, PR ou materialização técnica da V1 durante o Debate por rotina.
 
 A V1 final deve ser a consolidação do rascunho vivo correspondente, não uma reconstrução posterior que possa perder decisões do Debate.
@@ -92,6 +94,18 @@ A V1 deve decompor o plano somente nas fases ou entregas necessárias para execu
 - Registre ordem e dependências entre fases somente quando materialmente necessárias.
 - Se uma fase aprovada ainda não existir no roadmap, a V1 deve registrar o delta de planejamento necessário — identificador, título, objetivo/conteúdo e status planejado — para a task técnica reconciliar `docs/roadmap.md` por `docs/prompt-abc.md` e `docs/template-roadmap.md` antes da implementação dessa fase.
 - O Estrategista não registra implementação em `docs/roadmap.md` durante o Debate nem cria registros de Banco/Repositório sem fato implementado.
+
+### 2.5. Automação e agentes
+
+Quando houver hipótese concreta de automação:
+
+- consulte o Gestor de Automações antes de aprovar a V1 para recomendar se o caso deve ser automatizado, sua natureza e ambiente, conforme `docs/gestor-automations.md`;
+- submeta ao humano a decisão de adoção e a categoria recomendada;
+- registre na V1, por fase aplicável, `Automação: sim | não`;
+- quando `Automação: sim`, registre a categoria aprovada, o objetivo funcional e os limites essenciais, sem antecipar desenho técnico ordinário;
+- quando `Automação: não`, não invente categoria técnica;
+- preserve participação humana, fallback e ambiente somente no nível funcional necessário para o contrato;
+- a participação formal posterior do Gestor de Automações segue o formato e os gates de `docs/pipeline-plano-base.md`; este passo pré-V1 não substitui gate posterior obrigatório do Pipeline.
 
 ## 3. Consolidação e gate da V1 funcional
 
@@ -132,7 +146,7 @@ A V1 deve conter, conforme aplicável:
 - dependências entre planos e entre fases;
 - fases implementáveis com identificadores do roadmap;
 - delta de planejamento do roadmap ainda necessário, quando houver;
-- automação aplicável e seu objetivo funcional, sem antecipar detalhamento técnico ordinário;
+- `Automação: sim | não` por fase aplicável e, quando `sim`, categoria aprovada, objetivo e limites essenciais;
 - formato e modo de condução;
 - critérios funcionais de aceite e evidências esperadas;
 - riscos, fallback, escopo negativo e critérios de parada.
@@ -150,6 +164,7 @@ Antes de aprovar a V1, confirme:
 - complexidade sem consumidor atual, proteção indispensável ou decisão aprovada foi removida ou adiada;
 - nenhuma decisão técnica ordinária foi congelada sem necessidade funcional;
 - fases e identificadores permanecem coerentes com `docs/template-roadmap.md` e `docs/roadmap.md`;
+- automação aplicável possui decisão e categoria aprovadas sem transformar parecer em autorização técnica além da V1;
 - questões futuras preservadas não aparecem como implementação ou promessa atual.
 
 ### 3.4. Aprovação e congelamento funcional
