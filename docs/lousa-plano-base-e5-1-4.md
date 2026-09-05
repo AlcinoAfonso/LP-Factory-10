@@ -46,20 +46,20 @@ As seções 3 a 6 constituem a V1 funcional aprovada deste plano.
 - Dependências entre planos: nenhuma.
 - Execução: Light.
 - Automação: não aplicável; este recorte não cria automação.
-- Supervisão: Autônomo.
+- Supervisão: Semiautomático.
 - Justificativa: o resultado funcional cabe na estrutura e nos contratos existentes e não exige derivação técnica formal por novidade, risco ou impacto material conhecido.
 
-### 5.2. Regra do modo Autônomo
+### 5.2. Regra do modo Semiautomático
 
-- Após o handoff, a atuação rotineira do Estrategista original termina.
-- O fluxo autônomo competente prossegue conforme `docs/pipeline-plano-base.md`, usando a V1 como fronteira funcional.
-- O Estrategista original reassume somente em escaladas que envolvam produto, resultado funcional, escopo, mudança da V1, conflito de fontes sem precedência ou decisão humana indispensável.
+- O Estrategista original permanece supervisor do plano.
+- O humano transporta o handoff ao fluxo técnico competente e devolve ao Estrategista as entregas sucessivas.
+- O Estrategista original avalia as entregas sucessivas e define os ajustes necessários; mudança funcional ou de escopo retorna ao Debate.
 - Detalhes técnicos resolvíveis dentro da V1 devem retornar ao fluxo técnico sem reabrir o Debate.
 
 ### 5.3. Handoff previsto
 
 - Execução: Light.
-- Supervisão: Autônomo.
+- Supervisão: Semiautomático.
 - Automação: não aplicável.
 - O fluxo seguinte deve usar integralmente esta V1 como fronteira funcional e seguir o roteamento de `docs/pipeline-plano-base.md`, sem ampliar seu escopo.
 - O Debate não cria branch, PR, issue, V2 nem implementação.
