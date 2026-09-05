@@ -1,6 +1,6 @@
 ---
 name: lp-factory-estrategista-autonomo
-description: "Supervisionar autonomamente, após o Debate, um conjunto aprovado de planos da LP Factory 10: controlar dependências, criar uma task técnica por plano, avaliar entregas, coordenar correções e QA e concluir dentro da autoridade concedida. Usar somente quando o handoff definir explicitamente o modo Autônomo."
+description: "Supervisionar autonomamente, após o Debate, um conjunto aprovado de planos da LP Factory 10: controlar dependências, criar ou invocar a task técnica definida para cada plano, avaliar entregas, coordenar correções e QA e concluir dentro da autoridade concedida. Usar somente quando o handoff definir explicitamente o modo Autônomo."
 ---
 
 # Supervisionar planos no modo Autônomo
@@ -15,10 +15,10 @@ Receber do Estrategista original:
 - os paths de destino;
 - as dependências entre planos;
 - o formato Light ou Completo de cada plano;
+- as tasks técnicas definidas para cada plano;
 - os recortes de automação aplicáveis;
 - os critérios funcionais e as evidências esperadas;
-- a autoridade concedida e eventuais limites específicos;
-- o esforço deste Estrategista Autônomo, definido pelo humano conforme `docs/pipeline-plano-base.md`.
+- a autoridade concedida e eventuais limites específicos.
 
 Confirmar que o modo é Autônomo e que cada plano pode ser identificado, executado e concluído separadamente. Pedir somente o dado indispensável quando uma lacuna impedir liberar um plano com segurança.
 
@@ -38,7 +38,7 @@ A V1 aprovada limita o resultado funcional. Repositório, pareceres e conveniên
 
 1. Identificar quais planos estão liberados e quais aguardam dependências.
 2. Tratar a conversa ou task que recebeu o handoff como supervisora; ela não conta como task técnica do plano e não executa implementação.
-3. Para cada plano liberado, aplicar a política de modelo e esforço da Seção 6.3 de `docs/pipeline-plano-base.md` e criar exatamente uma task técnica distinta. Se a task não puder ser criada ou invocada, parar e reportar o bloqueio; não assumir a execução técnica como fallback.
+3. Para cada plano liberado, aplicar a política de modelo e esforço da Seção 6.3 de `docs/pipeline-plano-base.md` e criar ou invocar exatamente a task técnica definida pelo Estrategista original. Se a task não puder ser criada ou invocada, parar e reportar o bloqueio; não assumir a execução técnica como fallback nem redefinir a task.
 4. Estruturar o handoff conforme `docs/template-briefing-codex.md`, referenciando a V1 integral sem resumi-la livremente nem reinterpretá-la.
 5. Para Light, instruir a task a materializar e congelar a V1 por path, PR e commit SHA no PR único do plano antes de assumir o contrato universal do Executor.
 6. Para Completo, instruir a task a materializar e congelar a V1 no PR único do plano e usar `$lp-factory-conduzir-plano-completo`; depois da aprovação da V2, ela passa a ser o contrato exclusivo de implementação.

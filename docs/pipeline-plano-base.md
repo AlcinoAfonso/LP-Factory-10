@@ -52,14 +52,14 @@ O contrato aprovado define o que pode ser implementado. O repositório e as font
 - Conduz obrigatoriamente o Debate inicial.
 - Consolida uma ou várias V1 funcionais.
 - No Manual e no Semiautomático, supervisiona os planos até a conclusão.
-- No Autônomo, transfere a supervisão pós-Debate ao Estrategista Autônomo.
+- No Autônomo, define no handoff a task técnica de cada plano e transfere a supervisão pós-Debate ao Estrategista Autônomo; não cria nem invoca essas tasks.
 - Não substitui especialistas, Analista ou Executor.
 
 ### 4.2. Estrategista Autônomo
 
-- Recebe o conjunto de V1 aprovadas depois do Debate.
+- Recebe o conjunto de V1 aprovadas e as tasks técnicas definidas pelo Estrategista original depois do Debate.
 - A conversa ou task que recebe esse handoff é supervisora e não conta como task técnica do plano.
-- Interpreta dependências, libera planos e cria exatamente uma task técnica distinta para cada plano; se não puder criá-la ou invocá-la, para e reporta o bloqueio em vez de implementar.
+- Interpreta dependências, libera planos e cria ou invoca exatamente a task técnica já definida para cada plano; se não puder criá-la ou invocá-la, para e reporta o bloqueio em vez de implementar ou redefinir a task.
 - Avalia entregas, determina correções e QA adicional e conclui cada plano dentro da autoridade concedida.
 - Não conduz novo Debate funcional, não implementa e não produz diretamente a V2.
 
@@ -130,9 +130,8 @@ Todo handoff destinado a uma task técnica no Codex usa `docs/template-briefing-
 
 ### 6.3. Autônomo
 
-- O Estrategista original entrega o conjunto aprovado ao Estrategista Autônomo.
-- O modelo de trabalho é `gpt-5.6-sol`: o humano define o esforço do Estrategista Autônomo entre `medium` e `high`; o Estrategista Autônomo define o esforço da task técnica de cada plano entre `medium` e `high` conforme a complexidade.
-- O Estrategista Autônomo controla dependências, paralelismo, correções, QA, avanço e conclusão; a criação e a separação das tasks técnicas seguem a Seção 4.2.
+- O handoff inicial do Estrategista original para o Estrategista Autônomo é transportado pelo humano, que inicia essa execução.
+- O modelo de trabalho é `gpt-5.6-sol`: o humano define o esforço do Estrategista Autônomo entre `medium` e `high` ao iniciá-lo; o Estrategista Autônomo define o esforço da task técnica de cada plano entre `medium` e `high` conforme a complexidade.
 
 ## 7. Formatos de implementação
 
