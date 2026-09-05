@@ -80,18 +80,19 @@ Quando entregar SQL read-only para inspeção:
 - separar queries de forma inequívoca;
 - evitar `SELECT *` quando colunas explícitas forem suficientes.
 
-## 5. Consultar o Gestor de Updates
+## 5. Acionar o Gestor de Updates
 
 Todo plano, Light ou Complexo, deve passar pelo Gestor de Updates antes da V2.
 
-Entregue ao `gestor-updates`:
+O Executor aciona o `gestor-updates` e entrega somente o contexto factual necessário:
 
 - V1 integral;
 - identificação e recorte;
-- investigação factual relevante;
-- fontes competentes necessárias.
+- investigação factual relevante.
 
-Use o parecer para avaliar somente recursos que melhorem tecnicamente o mesmo resultado funcional. Modernidade isolada não autoriza adoção.
+O `gestor-updates` é responsável por consultar suas próprias fontes e aplicar o próprio contrato para produzir o parecer. O Executor não substitui essa consulta nem antecipa sua avaliação.
+
+Após receber o parecer, o Executor incorpora somente recursos que melhorem tecnicamente o mesmo resultado funcional. Modernidade isolada não autoriza adoção.
 
 Se um update exigir decisão funcional ou ampliar escopo, não o incorpore; encaminhe o ponto ao supervisor competente.
 
@@ -116,7 +117,7 @@ Se o estado real demonstrar que o plano exige derivação incompatível com Ligh
 
 Na Complexa:
 
-- consultar o Gestor de Updates;
+- acionar o Gestor de Updates;
 - acionar o Gestor Estrutural para a derivação técnica necessária e para confrontos estruturais materiais quando aplicáveis;
 - acionar o Gestor de Automações quando houver automação com detalhamento técnico aplicável;
 - acionar outros especialistas somente se já existirem como fonte real competente do projeto e forem necessários ao recorte;
