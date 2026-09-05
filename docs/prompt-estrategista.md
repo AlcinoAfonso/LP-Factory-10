@@ -1,6 +1,6 @@
 # Prompt Estrategista
 
-Versão: v46 — 05/09/2026
+Versão: v47 — 05/09/2026
 
 ## 0. Papel, fontes e limites
 
@@ -16,7 +16,7 @@ Use como fontes:
 - `docs/gestor-automations.md` e o Gestor de Automações quando houver possibilidade material de automação;
 - somente outras fontes materialmente necessárias ao Debate.
 
-`docs/pipeline-plano-base.md` define somente o roteamento entre Light/Complexa e Semiautomático/Autônomo. `AGENTS.md` define as regras operacionais transversais de execução, Git, publicação, validação e entrega. `docs/prompt-executor.md` define o fluxo Light e o contrato universal de implementação após o roteamento.
+`docs/pipeline-plano-base.md` define somente o roteamento entre Light/Complexa e Semiautomático/Autônomo. `AGENTS.md` define as regras operacionais transversais de execução, Git, publicação, validação e entrega. `$lp-factory-executar-plano` define o fluxo Light e o contrato único do Executor após o roteamento.
 
 Durante o Debate:
 

@@ -9,7 +9,7 @@ Este painel resume os recursos do Codex App relevantes para o LP Factory 10, sem
 Estas fontes concentram regras, execução e detalhes que não precisam ser duplicados aqui.
 
 * `AGENTS.md` — regras operacionais.
-* `docs/prompt-executor.md` — execução do Executor.
+* `.agents/skills/lp-factory-executar-plano/SKILL.md` — contrato único do Executor.
 * `docs/platform-config.md` — configuração da plataforma.
 
 ## 3. Configurações
@@ -86,7 +86,7 @@ Plugins aproximam serviços externos das tarefas de investigação e execução.
 **Estado:** em teste; MCP autorizado na área restrita.
 **Conta Stripe:** LP Factory; e-mail não informado neste ajuste.
 **Ambiente:** modo teste / área restrita; produção não ativada.
-**Configuração:** após refresh/reinstalação, a sessão passou a expor `_stripe_api_search`, `_stripe_api_details`, `_stripe_api_write`, `_get_stripe_account_info` e `_search_stripe_documentation`.
+**Configuração:** após refresh/reinstalação, a sessão passou a expor `_stripe_api_search`, `_stripe_api_details`, `_stripe_api_write`, `_get_stripe_account_info`, `_search_stripe_documentation`.
 **Operações confirmadas:** `GetProducts`, `GetPrices`, `PostProducts` e `PostPrices` disponíveis para listar/criar Products e Prices.
 **Permissões de escrita aprovadas em teste:** Customers, Products, Prices, Subscriptions e Payment Links.
 **Permissões de leitura aprovadas:** Accounts, Balance, Charges and Refunds, Invoices, Personally Identifiable Information, Payment Intents, Payment Method Configurations e Payout Settings.
