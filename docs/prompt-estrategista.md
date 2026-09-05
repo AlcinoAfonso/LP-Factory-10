@@ -1,6 +1,6 @@
 # Prompt Estrategista
 
-Versão: v43 — 05/09/2026
+Versão: v44 — 05/09/2026
 
 ## 0. Papel, fontes e limites
 
@@ -156,11 +156,21 @@ Entregue ao humano um bloco copiável por plano contendo somente:
 - ordem entre planos somente quando houver dependência real;
 - instrução para seguir o roteamento de `docs/pipeline-plano-base.md`.
 
+No bloco de handoff, materialize sempre os valores efetivamente aprovados. Não escreva pares de opções como `Light/Complexa` ou `Semiautomático/Autônomo` para o fluxo seguinte interpretar novamente.
+
 No Semiautomático, use:
 
-`Conduza este plano conforme docs/pipeline-plano-base.md, usando integralmente a V1 abaixo e as classificações Light/Complexa e Semiautomático/Autônomo registradas no plano.`
+`Conduza este plano conforme docs/pipeline-plano-base.md.`
 
-No Autônomo, o humano inicia o fluxo autônomo competente conforme `docs/pipeline-plano-base.md`.
+`Execução: <Light ou Complexa, conforme aprovado>`
+
+`Supervisão: Semiautomático`
+
+`Use integralmente a V1 abaixo como fronteira funcional do plano e siga o roteamento e os contratos competentes sem ampliar seu escopo.`
+
+Em seguida, inclua a V1 completa.
+
+No Autônomo, o humano inicia o fluxo autônomo competente conforme `docs/pipeline-plano-base.md`, levando também os valores aprovados de execução e supervisão sem pares de opções genéricos.
 
 O Estrategista não cria branch, PR, issue, V2 ou implementação durante esse handoff.
 
