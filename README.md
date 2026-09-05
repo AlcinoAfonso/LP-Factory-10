@@ -49,7 +49,6 @@
 • A simplicidade do MVP limita a implementação do momento, não o radar tecnológico nem a preservação de diferenciais estratégicos para a evolução dos planos.
 • O WhatsApp é canal comercial prioritário para aquisição, atendimento, qualificação, venda e nutrição; suas capacidades oficiais de mensageria, automação e IA devem permanecer no radar e ser distribuídas progressivamente entre os planos, sem autorizar adoção antecipada.
 • Avaliação ou catalogação não autoriza implementação, mudança de stack, nova infraestrutura nem ampliação de escopo.
-• Em cada plano-base, fase ou recorte, o Gestor de Updates recomenda a aplicabilidade dos recursos catalogados, e o Estrategista decide sua consolidação no plano-base dentro do escopo aprovado.
 • A intervenção humana em decisões de produto ou escopo é necessária somente quando faltar autoridade ou definição indispensável, ou quando houver ampliação do escopo aprovado; a materialidade, isoladamente, não constitui bloqueio.
 
 1.5. Modelo de oferta
