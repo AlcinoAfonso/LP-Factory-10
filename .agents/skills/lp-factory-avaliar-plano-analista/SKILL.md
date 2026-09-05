@@ -9,7 +9,7 @@ Roteie a avaliação pelo nível recebido sem misturar contratos.
 
 ## Roteamento
 
-1. Confirmar se o nível é `Light` ou `Complexa` a partir do handoff competente.
+1. Confirmar se o nível é `Light` ou `Complexa` a partir do handoff competente. Quando a invocação vier de `$lp-factory-conduzir-plano-completo`, tratar como `Complexa` sem exigir nova entrada.
 2. No `Light`, executar somente o fluxo da seção `Fluxo Light` e não exigir matriz, parecer estrutural, parecer de Automações ou segunda passagem.
 3. Na `Complexa`, preservar integralmente o fluxo existente a partir de `Preparar`, inclusive matriz, duas passagens, revisões delta e reconciliação do roadmap.
 4. Se o nível não puder ser determinado sem inferência, pedir somente essa informação.
