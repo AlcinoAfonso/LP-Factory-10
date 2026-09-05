@@ -109,7 +109,7 @@ A decisão funcional é fechada com o humano. A V1 deve registrar qual entrega o
 
 Escolha com o humano somente entre:
 
-- **Semiautomático:** o humano transporta o handoff ao Executor e devolve ao Estrategista as entregas sucessivas; o Estrategista permanece supervisor do plano;
+- **Semiautomático:** o humano transporta o handoff ao fluxo técnico competente e devolve ao Estrategista as entregas sucessivas; o Estrategista permanece supervisor do plano;
 - **Autônomo:** após o handoff, o fluxo segue sem supervisão rotineira do Estrategista original; ele permanece autoridade de escalada quando o fluxo não puder prosseguir dentro da autoridade concedida.
 
 O modo Manual não integra este fluxo.
