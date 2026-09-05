@@ -110,6 +110,8 @@ Valores secretos nao devem ser versionados. O workflow espera os seguintes GitHu
 
 `MAILBOX_EMAIL` deve ser uma caixa base `@gmail.com`, sem `+tag`. A automacao deriva novos aliases dessa caixa e nao altera usuarios, aliases ou contas de execucoes anteriores.
 
+Cada conta recebe uma senha aleatoria gerada somente durante a execucao, sem relacao com o alias ou a sequencia.
+
 O workflow escreve o resumo no Job Summary e publica o artifact `niche-runtime-results` com os subdominios criados e os dados necessarios para auditoria, sem incluir as senhas usadas durante o cadastro.
 
 ## Cleanup
