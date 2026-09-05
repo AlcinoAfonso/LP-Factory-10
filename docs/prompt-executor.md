@@ -155,8 +155,7 @@ A V2 Complexa deve resultar de:
 - V1;
 - investigação necessária;
 - Gestor de Updates;
-- especialistas aplicáveis;
-- correções exigidas pelo Analista antes da implementação.
+- especialistas aplicáveis.
 
 ## 8. Acionar o Analista
 
@@ -174,7 +173,7 @@ Na Complexa, o Analista é obrigatório após a consolidação da V2 e antes da 
 
 Entregue V1, V2, pareceres aplicáveis e fontes necessárias. O Analista avalia aderência, cobertura, executabilidade, riscos e eventual ampliação de escopo sem refazer a especialidade dos gestores.
 
-Correções objetivas permanecem com o Executor. Decisão funcional ou de escopo volta ao supervisor competente.
+Correções objetivas permanecem com o Executor e atualizam a V2 antes da implementação. Decisão funcional ou de escopo volta ao supervisor competente.
 
 ## 9. Implementar o plano aprovado
 
