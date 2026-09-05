@@ -84,7 +84,7 @@ Handoff por modo:
 
 - Manual: defina o responsável técnico e continue como supervisor.
 - Semiautomático: estruture a instrução conforme `docs/template-briefing-codex.md`, referencie a V1 aprovada sem reescrevê-la ou substituí-la, entregue-a a uma task técnica própria e continue como supervisor por intermédio do handoff humano.
-- Autônomo: defina a task técnica de cada plano conforme `docs/pipeline-plano-base.md`, inclua essas definições no handoff do conjunto de V1, dependências, formatos e autoridade para `$lp-factory-estrategista-autonomo` e pare. O humano transporta esse handoff para iniciar o Estrategista Autônomo e escolhe nesse momento o esforço dessa execução conforme o Pipeline. Não tente invocar o Estrategista Autônomo, não escolha nem peça seu esforço e não valide a capacidade dele de criar ou invocar a task técnica; essas responsabilidades começam somente após o handoff.
+- Autônomo: defina a task técnica de cada plano conforme `docs/pipeline-plano-base.md`, inclua essas definições no handoff do conjunto aprovado e pare. O humano transporta o handoff para iniciar `$lp-factory-estrategista-autonomo`. Não tente invocá-lo nem validar sua capacidade operacional.
 
 ## 6. Supervisão no Manual e no Semiautomático
 
