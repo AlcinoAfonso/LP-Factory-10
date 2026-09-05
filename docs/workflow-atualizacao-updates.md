@@ -1,5 +1,5 @@
 22/07/2026 — Workflow de Atualização dos Catálogos de Updates
-Atualizado em 10/08/2026
+Atualizado em 05/09/2026
 
 Fontes: chat, repositório e documentos indicados nos itens 2 e 3
 
@@ -17,7 +17,7 @@ Ao final de uma única execução:
 - todos os IDs publicados continuam localizáveis no catálogo, sem renumeração, reutilização ou desaparecimento físico;
 - itens implementados, parcialmente implementados, absorvidos, superados ou rejeitados preservam registro histórico e referências;
 - ausências de ajuste, bloqueios e exceções foram registradas;
-- existe um relatório final curto que consolida o que foi feito, orienta a prioridade dos updates e reapresenta os recursos transversais ainda ativos;
+- existe um relatório final curto que consolida o que foi feito, orienta a prioridade dos updates, reapresenta os recursos transversais ainda ativos e, quando houver ação transversal recomendada para o momento atual, pede autorização direta para criar o próximo Debate em `LP Factory/Debates`;
 - nenhum PR foi mergeado nem a catalogação transformada em implementação.
 
 ### 1.2. Papel
@@ -142,14 +142,21 @@ Os itens 1 a 10 compõem o relatório de cada catálogo. O item 11 é produzido 
    - reapresentar todos os recursos transversais ainda ativos nos catálogos resultantes, mesmo quando não forem novos nem tiverem mudado na rodada, deixando de reapresentá-los somente depois que saírem do catálogo ativo conforme a regra do item 4.2;
    - informar, para cada pendência transversal, ID e título, estado atual, ação pendente, prioridade, motivo da permanência, momento ou gatilho recomendado, mudança desde a rodada anterior — registrando `permanece pendente, sem mudança de prioridade` quando nada tiver mudado — e critério de encerramento;
    - deixar explícito que a orientação de prioridade não autoriza implementação;
-   - encerrar com até três melhorias observadas durante a própria execução e convidar o usuário a debatê-las, sem criar automaticamente documento, branch ou PR adicional.
+   - concluir explicitamente se existe implementação, configuração ou revisão operacional transversal recomendada para o momento atual, separando ação imediata ou temporal de capacidade ainda condicional;
+- quando existir ação transversal recomendada agora, encerrar o relatório com um pedido direto e destacado de autorização para criar o próximo Debate na pasta `LP Factory/Debates` do Google Drive; não substituir esse pedido por convite genérico ao debate;
+- informar no pedido o título proposto, o escopo, as prioridades, as dependências, a ordem sugerida, os critérios de conclusão, os riscos, os limites e os itens que não devem ser implementados;
+- após autorização humana explícita, criar o Debate com a proposta e o plano das implementações, configurações ou revisões necessárias, podendo fazê-lo na mesma interação em que a autorização for concedida, e entregar o link para análise;
+- quando nenhuma ação transversal for recomendada para o momento atual, declarar objetivamente que não há motivo para criar novo Debate;
+- deixar explícito que a criação ou aprovação do Debate não autoriza implementação, alteração de plataforma, merge ou ampliação de escopo;
+- encerrar também com até três melhorias observadas durante a própria execução.
 
 ## 6. Limites e parada
 
 - Não alterar código, roadmap, Base Técnica, schema, configuração ou outro catálogo.
 - Não transformar catalogação em implementação, mudança de stack, nova infraestrutura ou novo escopo do MVP.
 - Não decidir aplicação final em plano-base, fase ou recorte; o Gestor de Updates recomenda horizonte e o Estrategista consolida no fluxo competente.
-- Não criar documento, catálogo, seção permanente ou controle paralelo de pendências transversais; os catálogos são a fonte, e o relatório final apenas as reapresenta.
+- Não criar catálogo, seção permanente ou controle paralelo de pendências transversais; os catálogos permanecem como fonte.
+- Criar um Debate pontual sobre ações transversais somente após autorização humana explícita, conforme o item 5.11, sem tratá-lo como nova fonte do catálogo nem como autorização de implementação.
 - Não adicionar item sem fonte oficial, valor concreto e compatibilidade com o `README.md`.
 - Não realizar merge dos PRs.
 - Quando faltar fonte obrigatória, houver conflito material ou faltar permissão, informar exatamente o bloqueio e parar.
