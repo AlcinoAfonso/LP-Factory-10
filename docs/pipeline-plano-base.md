@@ -2,7 +2,7 @@
 
 ## 1. Roteamento
 
-- `Light` → `docs/prompt-executor.md`
+- `Light` → `$lp-factory-executar-plano`
 - `Complexa` → `$lp-factory-conduzir-plano-completo`
 - `Semiautomático` → Estrategista Original
 - `Autônomo` → `$lp-factory-estrategista-autonomo`
