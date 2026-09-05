@@ -2,246 +2,167 @@
 
 ## 1. Objetivo
 
-Definir a arquitetura única que conduz um caso ou recorte desde o Debate até sua conclusão, com processo proporcional ao risco e uma única residência para cada regra.
+Definir o roteamento permanente dos planos-base da LP Factory 10 sem duplicar os contratos internos de execução.
 
-- O Pipeline atende aos modos Manual, Semiautomático e Autônomo.
-- Cada plano usa o formato Light ou Completo.
-- O Pipeline preserva escopo, segurança, qualidade, QA, evidências e rastreabilidade sem criar contratos concorrentes.
-- Detalhes operacionais pertencem às fontes competentes referenciadas neste documento.
+- O Estrategista Original produz a V1 funcional e classifica cada plano.
+- O Pipeline recebe a classificação pronta e escolhe o fluxo competente.
+- O tipo de execução é `Light` ou `Complexa`.
+- A forma de supervisão é `Semiautomático` ou `Autônomo`.
+- Tipo e forma são eixos independentes.
 
-## 2. Fontes e precedência
+## 2. Fontes e responsabilidades
 
 - `README.md`: visão, escopo, stack e princípios do MVP.
-- Este documento: papéis, modos, formatos, handoffs, gates e autoridades do Pipeline.
-- `docs/prompt-estrategista.md`: Debate, V1 funcional e supervisão do Estrategista original.
-- `docs/prompt-executor.md`: contrato universal de implementação do Executor.
-- `AGENTS.md`: Git, branch, PR, publicação, validações e autoridade operacional.
-- `.agents/skills/lp-factory-*/SKILL.md`: gatilhos, entradas, handoffs e integração dos subfluxos.
-- `.codex/agents/*.toml`: competência, responsabilidade e critérios de julgamento dos especialistas e do Analista.
-- `docs/prompt-abc.md`: funcionamento do ABC e atualização de documentos canônicos.
-- Documentos canônicos do caso: requisitos e estado factual da matéria correspondente.
+- `docs/prompt-estrategista.md`: Debate, V1, classificação e supervisão do Estrategista Original.
+- Este documento: somente roteamento, invariantes universais, supervisão, merge e conclusão.
+- `docs/prompt-executor.md`: fluxo Light e contrato universal de implementação.
+- `.agents/skills/lp-factory-conduzir-plano-completo/SKILL.md`: derivação técnica e orquestração da Complexa.
+- `.agents/skills/lp-factory-executar-plano/SKILL.md`: controles específicos da implementação Complexa.
+- Skills especializadas: entrada, chamada e devolução dos especialistas e do Analista.
+- `.codex/agents/*.toml`: competência e julgamento read-only dos especialistas e do Analista.
+- `docs/prompt-abc.md`: reconciliação de documentos canônicos.
+- `AGENTS.md`: Git, publicação, validações e autoridade operacional.
+- Fontes canônicas do caso: estado factual e contratos do assunto correspondente.
 
-Conflito entre fontes deve ser devolvido ao supervisor competente. Este Pipeline não substitui regra operacional do `AGENTS.md` nem fonte canônica especializada.
+Nenhum documento deste Pipeline amplia a autoridade da V1 ou da V2 aprovada.
 
-## 3. Arquitetura-base
+## 3. Entrada do roteador
 
-O Pipeline separa três decisões:
+Para cada plano, receber:
 
-- Debate: define o contrato funcional e os planos necessários.
-- Modo de condução: define quem supervisiona e como ocorrem os handoffs.
-- Formato de implementação: define quanto processo técnico cada plano exige.
+- V1 funcional integral;
+- posição e fases no roadmap;
+- classificação `Light` ou `Complexa`;
+- forma `Semiautomático` ou `Autônomo`;
+- decisão de automação já fechada na V1;
+- critérios de aceite e evidências esperadas;
+- dependências entre planos, somente quando existirem.
 
-Modo e formato são eixos independentes. Um plano pode ser Manual, Semiautomático ou Autônomo e, separadamente, Light ou Completo.
+Se faltar classificação ou dado funcional indispensável, devolver ao Estrategista Original. O roteador não redefine produto, escopo, V1 ou classificação por conta própria.
 
-### 3.1. Gate universal de aderência ao contrato aprovado
+## 4. Roteamento por tipo de execução
 
-O contrato aprovado define o que pode ser implementado. O repositório e as fontes técnicas servem para descobrir como materializá-lo, não para ampliar o que foi aprovado.
+### 4.1. Light
 
-- No Light, a V1 aprovada é o contrato exclusivo de implementação.
-- No Completo, a V2 técnica aprovada é o contrato exclusivo de implementação.
-- Todo arquivo alterado, novo mecanismo ou decisão técnica material deve ser rastreável ao contrato aprovado ou a uma dependência factual indispensável para materializá-lo.
-- Capacidade, conveniência ou legado encontrado no repositório não autoriza ampliar produto, arquitetura, infraestrutura, superfície ou escopo.
-- Diante de conflito com legado, deve-se primeiro adaptar ou remover o consumidor legado, sem deformar o novo contrato.
-- Decisão funcional, arquitetural ou de escopo não prevista retorna ao supervisor competente.
-- Antes da entrega, o Executor confronta contrato aprovado e diff final, removendo ou justificando toda alteração sem rastreabilidade; o supervisor repete o gate antes de merge ou conclusão.
+Rota:
 
-## 4. Papéis
+`V1 → docs/prompt-executor.md → Updates obrigatório → V2 mínima → Analista se necessário → implementação → validação/QA/ABC → supervisor`
 
-### 4.1. Estrategista original
+Regras:
 
-- Conduz obrigatoriamente o Debate inicial.
-- Consolida uma ou várias V1 funcionais.
-- No Manual e no Semiautomático, supervisiona os planos até a conclusão.
-- No Autônomo, define no handoff a task técnica de cada plano e transfere a supervisão pós-Debate ao Estrategista Autônomo; não cria nem invoca essas tasks.
-- Não substitui especialistas, Analista ou Executor.
+- O Executor materializa e congela a V1 antes da derivação.
+- V1 e V2 Light usam o mesmo `docs/lousa-plano-base-<caso>.md`, a mesma branch e o mesmo PR; a V1 permanece recuperável pelo commit SHA congelado.
+- `$lp-factory-avaliar-plano-updates` é obrigatório.
+- Gestor Estrutural e Gestor de Automações não participam do Light depois da V1.
+- `$lp-factory-avaliar-plano-analista` é condicional e usa somente o modo Light previsto em sua skill.
+- Light não cria matriz de consolidação nem executa segunda passagem do Analista.
+- Se tornar a solução executável exigir derivação estrutural especializada, detalhamento técnico material de automação ou coordenação especializada, o Executor para e devolve ao Estrategista Original a incompatibilidade da classificação; não transforma o Light em uma Complexa parcial.
+- O detalhamento interno do Light pertence exclusivamente a `docs/prompt-executor.md` e às skills chamadas por ele.
 
-### 4.2. Estrategista Autônomo
+### 4.2. Complexa
 
-- Recebe o conjunto de V1 aprovadas e as tasks técnicas definidas pelo Estrategista original depois do Debate.
-- A conversa ou task que recebe esse handoff é supervisora e não conta como task técnica do plano.
-- Interpreta dependências, libera planos e cria ou invoca exatamente a task técnica já definida para cada plano; se não puder criá-la ou invocá-la, para e reporta o bloqueio em vez de implementar ou redefinir a task.
-- Avalia entregas, determina correções e QA adicional e conclui cada plano dentro da autoridade concedida.
-- Não conduz novo Debate funcional, não implementa e não produz diretamente a V2.
+Rota:
 
-### 4.3. Task técnica do plano
+`V1 → lp-factory-conduzir-plano-completo → V2 aprovada → lp-factory-executar-plano/Executor → validação/QA/ABC → supervisor`
 
-- Mantém a continuidade técnica de um único plano, branch e PR.
-- No Light, assume o contrato do Executor desde a V1 aprovada.
-- No Completo, conduz o workflow técnico até a V2 aprovada e somente então assume o contrato universal do Executor.
+Regras:
 
-### 4.4. Executor
+- A task técnica materializa e congela a V1 no PR único do plano.
+- `$lp-factory-conduzir-plano-completo` é o dono da derivação técnica Complexa.
+- O workflow competente coordena especialistas, matriz, duas passagens do Analista, checkpoints, reconciliação do roadmap e retomada.
+- Após a aprovação da V2, o contrato universal do Executor passa a reger a implementação, acrescido dos controles específicos de `$lp-factory-executar-plano`.
+- Este documento não replica sequência de especialistas, campos da matriz, passes do Analista ou checkpoints da Complexa.
+- O comportamento comprovado da Complexa não deve ser removido, reduzido ou redistribuído sem equivalência ou superioridade funcional demonstrada item a item e autorização humana explícita.
 
-- Implementa o contrato aprovado, executa validações e QA aplicáveis e produz evidências.
-- Light recebe a V1 funcional aprovada.
-- Completo recebe a V2 técnica aprovada.
-- Não escolhe unilateralmente formato, amplia escopo, redefine produto ou substitui o supervisor.
+## 5. Invariantes universais
 
-### 4.5. Especialistas e Analista
+### 5.1. V1 e V2
 
-- Gestor Estrutural: julga estrutura, boundaries, responsabilidades e coerência arquitetural.
-- Gestor de Updates: avalia capacidades atuais que possam alterar materialmente a solução ou sua qualidade.
-- Gestor de Automações: julga automação, autoridade, lifecycle e integração operacional.
-- Analista: avalia coerência, cobertura, risco e aderência; não refaz especialidades nem implementa.
+- A V1 é a fronteira funcional aprovada.
+- A V2 é derivação técnica e não pode ampliar produto, comportamento, usuário, escopo, limites, escopo negativo ou critérios funcionais de aceite da V1.
+- Repositório, especialista, update ou conveniência técnica não autorizam ampliação funcional.
+- Mudança funcional retorna ao Estrategista Original.
 
-### 4.6. Supervisor competente
+### 5.2. Continuidade técnica
 
-- Manual: Estrategista original.
-- Semiautomático: Estrategista original, com handoff transportado pelo humano.
-- Autônomo: Estrategista Autônomo.
+Cada plano preserva a relação:
 
-Supervisor competente é uma responsabilidade funcional, não um papel adicional.
+`1 plano = 1 V1 = 1 task técnica responsável = 1 branch = 1 PR`
 
-## 5. Debate e V1 funcional
-
-Todo caso ou recorte começa por Debate conduzido pelo Estrategista original no chat comum e registrado no Google Drive.
-
-O Debate define, conforme aplicável:
-
-- problema e objetivo;
-- resultado funcional e comportamento esperado;
-- usuários ou atores;
-- um ou vários planos e seus paths;
-- escopo, limites e escopo negativo;
-- dependências entre planos;
-- decisão de automação e recortes aplicáveis;
-- formato Light ou Completo de cada plano;
-- modo Manual, Semiautomático ou Autônomo;
-- critérios funcionais de aceite e evidências esperadas.
-
-A V1 é funcional. Não antecipa arquivos, helpers, adapters, migrations ou outras decisões técnicas ordinárias sem necessidade funcional.
-
-Um Debate usa por padrão um Google Doc e pode gerar `1..N` V1. O histórico do Debate preserva hipóteses, alternativas e decisões; o pipeline técnico recebe somente cada V1 aprovada e não depende desse histórico para executar.
-
-## 6. Modos de condução
-
-Todo handoff destinado a uma task técnica no Codex usa `docs/template-briefing-codex.md` como padrão de estrutura operacional. O briefing referencia o contrato aprovado e não o substitui, resume livremente ou reinterpreta: no Light, a V1 aprovada permanece como contrato de implementação; no Completo, a V2 técnica aprovada.
-
-### 6.1. Manual
-
-- Estrategista original e humano conduzem os handoffs.
-- Especialistas e Executor podem atuar em chats ou tasks diferentes.
-- O Estrategista original também pode exercer o papel de Executor.
-
-### 6.2. Semiautomático
-
-- O Estrategista original supervisiona.
-- Cada plano aprovado é entregue a uma task técnica própria no Codex.
-- O humano transporta entregas e decisões entre Estrategista e task técnica.
-
-### 6.3. Autônomo
-
-- O handoff inicial do Estrategista original para o Estrategista Autônomo é transportado pelo humano, que inicia essa execução.
-- O modelo de trabalho é `gpt-5.6-sol`: o humano define o esforço do Estrategista Autônomo entre `medium` e `high` ao iniciá-lo; o Estrategista Autônomo define o esforço da task técnica de cada plano entre `medium` e `high` conforme a complexidade.
-
-## 7. Formatos de implementação
-
-### 7.1. Light
-
-Light é usado quando o resultado cabe em boundaries, autoridades e contratos existentes. A presença isolada de banco, migration, escrita, IA ou código mutável não obriga o formato Completo.
-
-- Gestor de Updates participa quando a atualidade tecnológica puder alterar materialmente a solução, a qualidade ou a validação.
-- Gestor Estrutural pode confirmar que boundaries, autoridades e arquitetura existentes são suficientes; necessidade de decisão estrutural material nova exige Completo.
-- Gestor de Automações pode atuar dentro de automação, autoridade e lifecycle existentes; novidade material nesses pontos exige Completo.
-- Analista participa somente diante de dúvida, risco ou materialidade.
-- O Executor pode chamar diretamente o especialista pertinente e retorna ao supervisor quando o parecer exigir reclassificação, mudança funcional ou decisão fora de sua autoridade.
-- Não existe gate final obrigatório adicional do Analista.
-
-O fechamento segue implementação, validações, QA e evidências pelo Executor, entrega ao supervisor e decisão de correção, merge e conclusão.
-
-### 7.2. Completo
-
-Completo é usado quando o plano exige derivação técnica formal ou apresenta novidade ou risco material.
-
-- novo domínio, boundary ou arquitetura relevante;
-- mudança material de autenticação, autorização, tenant, segurança ou lifecycle;
-- nova infraestrutura, serviço ou automação operacional material;
-- mudança significativa de persistência ou compatibilidade;
-- cutover, rollout ou coordenação técnica de alto risco;
-- solução técnica não previsível a partir dos padrões e autoridades existentes.
-
-O fluxo é V1 funcional, especialistas, V2 técnica aprovada e Executor.
-
-## 8. V1, branch e PR
-
-Depois do Debate, cada plano segue a relação `1 plano = 1 V1 = 1 task técnica responsável = 1 branch = 1 PR`.
-
-- A task técnica ou o responsável técnico materializa a V1 aprovada no GitHub.
-- A V1 é congelada por path, PR e commit SHA antes da derivação ou implementação.
-- Blob SHA é evidência opcional quando necessário à ferramenta ou validação.
-- A V1 não exige merge intermediário na `main`.
-- No Light, a V1 permanece como contrato de execução.
-- No Completo, o mesmo arquivo evolui de V1 para V2 em commit posterior no mesmo branch e PR.
+- Não há merge intermediário entre V1, V2 e implementação do mesmo plano.
+- Correções pré-merge permanecem na mesma task, branch e PR.
 - Dependências controlam a liberação dos planos sem exigir PR compartilhado.
 
-Depois do congelamento, mudança funcional retorna ao Estrategista competente. Descoberta exclusivamente técnica não reabre a V1.
+### 5.3. Especialistas e Analista
 
-## 9. Workflow Completo e V2 técnica
+- Custom agents permanecem read-only.
+- Especialista emite parecer; não implementa nem redefine produto.
+- Parecer não é V2 e não é autorização de implementação por si só.
+- Analista avalia; não consolida, implementa ou substitui especialidade.
+- Cada fluxo chama somente as avaliações previstas por seu próprio contrato.
 
-### 9.1. Participação
+## 6. Roteamento por forma de supervisão
 
-- Gestor Estrutural participa obrigatoriamente.
-- Gestor de Updates participa obrigatoriamente.
-- Gestor de Automações participa quando houver automação aplicável.
-- Um especialista pode concluir `N/A` quando não houver contribuição material aplicável.
-- Analista atua como gate independente da V2.
+### 6.1. Semiautomático
 
-### 9.2. Derivação e consolidação
+- O Estrategista Original permanece supervisor.
+- O humano transporta a V1 ao fluxo técnico e devolve as entregas sucessivas ao Estrategista.
+- O fluxo técnico aplica correções dentro da V1 na mesma task, branch e PR.
+- Mudança funcional ou de escopo retorna ao Debate.
 
-- Gestor Estrutural estabelece a derivação técnica-base.
-- Gestor de Updates confronta a solução com capacidades atuais.
-- Gestor Estrutural retorna apenas quando update material exigir confronto estrutural.
-- Gestor de Automações pode atuar em paralelo quando sua entrada for independente.
-- A V1 funcional aprovada limita a autoridade da derivação: especialistas, repositório e task técnica podem definir como cumpri-la, mas não acrescentar o que o produto deve entregar.
-- Todo acréscimo material da V2 deve ter origem verificável na V1, em derivação técnica indispensável ou em modernização técnica justificada que preserve integralmente o resultado funcional aprovado.
-- Legado, conveniência de implementação ou parecer de especialista não autoriza transportar complexidade nem ampliar produto, comportamento, usuário, escopo ou decisão funcional.
-- Se a melhor solução exigir mudança funcional ou decisão fora da V1, a derivação desse ponto para e retorna ao Estrategista competente.
-- A task técnica consolida a V2 a partir dos pareceres sem iniciar ainda o contrato do Executor.
+### 6.2. Autônomo
 
-A V2 define estado técnico desejado, decisões, boundaries, responsabilidades, contratos, integrações, persistência quando aplicável, riscos, invariantes, validações e evidências. Ela não é novo plano funcional nem roteiro prescritivo de movimentos ordinários.
+- O humano inicia o Estrategista Autônomo após o Debate.
+- O Estrategista Autônomo supervisiona; não implementa, não produz V2 e não substitui a task técnica.
+- Para cada plano liberado, a task técnica segue o tipo já definido: Light ou Complexa.
+- Questão fora da autoridade concedida retorna ao Estrategista Original/humano.
+- Dependências são liberadas somente após a conclusão exigida do plano precedente.
 
-### 9.3. Rastreabilidade e gate
+### 6.3. Modelo e esforço do modo Autônomo
 
-- O Registro de Consolidação preserva origem, classe, tratamento, localização e evidência de cada achado material.
-- O gate da V2 mantém duas passagens do Analista: a primeira confronta independentemente V1 e V2, sem pareceres nem registro, e identifica conteúdo material sem origem legítima; a segunda audita a consolidação e confirma que parecer ou legado não ampliou o contrato funcional.
-- Correções objetivas retornam apenas para revisão do delta.
-- Questão material nova pode exigir nova avaliação especializada.
-- Os gates do Analista por subseção permanecem no formato Completo.
+- O modelo de trabalho é `gpt-5.6-sol` enquanto esse contrato permanecer vigente.
+- O humano define o esforço do Estrategista Autônomo entre `medium` e `high` ao iniciá-lo.
+- O Estrategista Autônomo define o esforço da task técnica de cada plano entre `medium` e `high` conforme a complexidade.
 
-A V2 aprovada é congelada por checkpoint no mesmo PR, sem merge intermediário, e torna-se o único contrato de implementação do Executor. V1, pareceres e rastreabilidade permanecem como fontes de origem e auditoria, não como instruções paralelas.
+## 7. QA, entrega, merge e conclusão
 
-## 10. Execução, QA e conclusão
+### 7.1. QA e evidências
 
-- O Executor executa o menor delta suficiente, valida, realiza o QA aplicável e entrega evidências, documentação, riscos, pendências e bloqueios.
-- QA e evidências obrigatórias são gate de merge e conclusão; falta de evidência mantém o plano aberto.
-- No Manual, o QA pode ser humano, automatizado ou combinado. No Semiautomático e no Autônomo, a evidência deve ser buscada primeiro por meios automatizados autorizados; se isso falhar durante o amadurecimento do Pipeline, o supervisor pode escalar fallback humano, registrando o teste pendente, as tentativas e a capacidade ausente. O fallback não dispensa a evidência nem libera conclusão antecipada.
-- O Executor declara entrega técnica completa, mas não declara o plano concluído.
-- O supervisor determina correções, QA adicional, prontidão para merge e conclusão.
-- Antes da entrega, o Executor aplica o gate da Seção 3.1 ao contrato aprovado e ao diff final; o supervisor repete esse confronto antes de declarar prontidão para merge ou conclusão.
-- O Prompt ABC trata documentos canônicos materialmente afetados; este Pipeline define apenas quando ele é necessário.
+- O Executor executa validações e QA aplicáveis e entrega evidência objetiva.
+- No Semiautomático e no Autônomo, buscar primeiro evidência automatizada com os recursos autorizados disponíveis.
+- Evidência obrigatória ausente mantém o plano aberto.
+- O supervisor pode exigir correção ou QA adicional sem reiniciar especialistas ou derivação já aprovados, salvo questão material nova prevista pelo fluxo competente.
 
-### 10.1. Merge
+### 7.2. Entrega
 
-- Manual e Semiautomático exigem autorização humana explícita para o merge final.
-- Autônomo permite merge pelo Estrategista Autônomo quando gates, checks, QA e evidências obrigatórios estiverem satisfeitos e não houver decisão material pendente.
-- Qualquer exceção material bloqueia o merge e exige escalada.
-- A autoridade operacional é materializada no `AGENTS.md`.
+- O Executor declara entrega técnica; não declara conclusão do plano.
+- O supervisor confronta contrato aprovado, resultado, evidências e, quando necessário, PR/diff.
+- Alteração material sem origem legítima impede prontidão.
 
-### 10.2. Conclusão
+### 7.3. Merge
 
-- Manual e Semiautomático: Estrategista original conclui o plano.
-- Autônomo: Estrategista Autônomo conclui cada plano e libera dependências.
-- O conjunto de vários planos só é concluído quando todos os planos e dependências aplicáveis estiverem encerrados.
-- V1 ou V2 final permanece no GitHub; a V1 do Completo é recuperável pelo commit congelado.
-- Pareceres e Registro de Consolidação permanecem como evidência operacional no workflow e no PR.
+- Semiautomático: merge final exige autorização humana explícita.
+- Autônomo: merge somente dentro da autoridade previamente concedida e com gates, checks, QA e evidências obrigatórios satisfeitos.
+- `AGENTS.md` rege o meio operacional do merge.
+- Decisão material pendente bloqueia merge.
 
-## 11. Arquitetura documental
+### 7.4. Conclusão
 
-- `docs/pipeline-plano-base.md`: arquitetura única do Pipeline.
-- `docs/prompt-estrategista.md`: Debate, V1 e supervisão do Estrategista original.
-- `docs/prompt-executor.md`: contrato universal do Executor.
-- `lp-factory-conduzir-plano-completo`: workflow técnico do formato Completo.
-- `lp-factory-executar-plano`: subfluxo específico da implementação Completa.
-- `lp-factory-estrategista-autonomo`: supervisão pós-Debate no modo Autônomo.
-- TOMLs: competência e julgamento especializado.
-- Skills especializadas: chamada, entrada, saída, handoff e integração.
-- `AGENTS.md` e Prompt ABC permanecem fontes transversais e não são reproduzidos nos contratos do Pipeline.
+- Semiautomático: Estrategista Original conclui o plano.
+- Autônomo: Estrategista Autônomo conclui o plano dentro da autoridade concedida.
+- Validação pós-merge obrigatória faz parte da conclusão quando aplicável.
+- Dependentes permanecem bloqueados enquanto o plano precedente não estiver concluído.
+
+## 8. Limites do roteador
+
+Este documento não deve:
+
+- duplicar o Prompt Estrategista ou o Prompt Executor;
+- reproduzir critérios internos dos especialistas;
+- reproduzir a matriz, as duas passagens ou os checkpoints da Complexa;
+- definir banco, rota, job, agente, automação, engine ou infraestrutura de produto;
+- substituir `AGENTS.md`, ABC ou fontes técnicas canônicas;
+- criar briefing intermediário para transportar V1 ou V2;
+- transformar Light em subconjunto procedural da Complexa.
+
+Quando um detalhe já possuir dono competente, este documento apenas aponta para esse contrato.
