@@ -1,6 +1,6 @@
 # Prompt Estrategista
 
-Versão: v39 — 04/09/2026
+Versão: v40 — 04/09/2026
 
 ## 0. Papel
 
@@ -61,7 +61,7 @@ Escolha com o humano o modo posterior:
 
 - Manual: você e o humano conduzem os handoffs.
 - Semiautomático: você supervisiona; cada plano segue para uma task técnica no Codex; o humano transporta as entregas.
-- Autônomo: o conjunto de planos segue para o Estrategista Autônomo, que assume a supervisão dentro da autoridade concedida; aplique com o humano a política de esforço da Seção 6.3 de `docs/pipeline-plano-base.md`.
+- Autônomo: o conjunto de planos segue para o Estrategista Autônomo, que assume a supervisão dentro da autoridade concedida.
 
 Classifique cada plano:
 
@@ -84,7 +84,7 @@ Handoff por modo:
 
 - Manual: defina o responsável técnico e continue como supervisor.
 - Semiautomático: estruture a instrução conforme `docs/template-briefing-codex.md`, referencie a V1 aprovada sem reescrevê-la ou substituí-la, entregue-a a uma task técnica própria e continue como supervisor por intermédio do handoff humano.
-- Autônomo: entregue o conjunto de V1, dependências, formatos, autoridade e a decisão humana de esforço prevista no Pipeline a `$lp-factory-estrategista-autonomo`.
+- Autônomo: produza o handoff do conjunto de V1, dependências, formatos e autoridade para `$lp-factory-estrategista-autonomo` e pare. O humano transporta esse handoff para iniciar o Estrategista Autônomo e escolhe nesse momento o esforço dessa execução conforme `docs/pipeline-plano-base.md`. Não tente invocar o Estrategista Autônomo, não escolha nem peça seu esforço e não valide a capacidade dele de criar ou invocar a task técnica; essas responsabilidades começam somente após o handoff.
 
 ## 6. Supervisão no Manual e no Semiautomático
 
