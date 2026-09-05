@@ -1,6 +1,6 @@
 ---
 name: lp-factory-avaliar-implementacao-analista
-description: Avaliar uma subseção implementada ou a entrega final de um plano-base aprovado do LP Factory 10 com o custom agent analista em modo read-only. Usar antes de avançar para a próxima subseção, de abrir o gate de teste humano ou de liberar o PR final para merge.
+description: Avaliar uma subseção implementada ou a entrega final de um plano-base aprovado do LP Factory 10 com o custom agent analista em modo read-only. Usar antes de avançar para a próxima subseção, de abrir o gate de evidência de QA ou de liberar o PR final para merge.
 ---
 
 # Avaliar implementação pelo Analista
@@ -11,7 +11,7 @@ Usar exatamente um custom agent `analista` read-only por revisão. O task princi
 
 1. Confirmar repositório, worktree, branch, estado Git, SHA do plano aprovado e identificador exato da subseção.
 2. Entregar ao Analista o trecho integral da subseção, critérios de aceite, diff desde o checkpoint anterior, arquivos alterados, validações executadas e fontes técnicas necessárias. No handoff da orquestração, incluir a matriz e os pareceres especializados nela referenciados que forem pertinentes à subseção. Para cada documento canônico avaliado, incluir snapshot anterior, relatório factual, resultado integral do ABC e documento resultante.
-3. Para revisão final solicitada fora do fluxo automatizado, entregar todos os checkpoints, diff acumulado, resultados integrados, delta documental, matriz, pareceres especializados preservados e eventuais evidências de teste humano.
+3. Para revisão final solicitada fora do fluxo automatizado, entregar todos os checkpoints, diff acumulado, resultados integrados, delta documental, matriz, pareceres especializados preservados e eventuais evidências de QA.
 4. Parar se plano, fase, diff ou evidência forem ambíguos; não reconstruir o escopo por inferência.
 
 ## Delegar
@@ -27,10 +27,10 @@ No fluxo de `$lp-factory-conduzir-plano-completo`, usar esta skill somente nos g
 
 - `aprovado para avançar`: permitir somente o checkpoint da subseção atual; validação dependente de recurso ambiental indisponível pode ficar registrada para o gate final quando não impedir avaliar a correção nem a continuidade segura.
 - `aprovado com correções obrigatórias`: corrigir o delta e pedir `revisao_delta_implementacao` ao mesmo Analista.
-- `requer teste humano`: parar e apresentar os passos e a evidência mínima solicitada.
+- `requer evidência de QA`: obter a evidência pelo método aplicável ao modo e retornar ao mesmo Analista; a conclusão não escolhe quem executa o teste.
 - `bloqueado por decisão humana`: parar e apresentar apenas a decisão necessária.
 - `aprovado para merge da implementação`: permitido somente na revisão final, depois de todas as subseções, testes e documentação.
 
 ## Limites
 
-O Analista não edita arquivos, implementa, cria branch, commit ou PR, decide produto/arquitetura, substitui testes humanos ou autoriza merge com pendência.
+O Analista não edita arquivos, implementa, cria branch, commit ou PR, decide produto/arquitetura, produz evidência de QA ou autoriza merge com pendência.

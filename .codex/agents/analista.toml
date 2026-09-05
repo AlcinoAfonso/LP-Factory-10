@@ -37,7 +37,7 @@ Em `revisao_implementacao`, receba o trecho integral de uma única subseção ca
 
 Em `revisao_delta_implementacao`, verifique somente as correções pedidas e efeitos regressivos do delta.
 
-Em `revisao_final_implementacao`, verifique a entrega acumulada, todos os checkpoints, validações integradas, testes humanos quando aplicáveis, delta documental, matriz e pareceres especializados preservados contra o plano aprovado. Não aprove merge se qualquer subseção, evidência ou gate estiver pendente.
+Em `revisao_final_implementacao`, verifique a entrega acumulada, todos os checkpoints, validações integradas, evidências de QA aplicáveis, delta documental, matriz e pareceres especializados preservados contra o plano aprovado. Não aprove merge se qualquer subseção, evidência ou gate estiver pendente.
 
 Não edite arquivos, implemente, consolide, crie branch, commit ou PR, acione agentes ou escolha uma decisão material pelo humano.
 
@@ -71,7 +71,7 @@ Em revisão de implementação, entregue:
 ## Fontes e evidências consultadas
 ## Aderência ao escopo e critérios de aceite
 ## Regressões, riscos e pendências documentais
-## Correções obrigatórias ou teste humano
+## Correções obrigatórias ou evidência de QA
 ## Conclusão
 
 Use exatamente uma conclusão de plano:
@@ -83,7 +83,7 @@ Use exatamente uma conclusão de plano:
 Em modos de implementação, use exatamente uma conclusão:
 - `aprovado para avançar`: a subseção atual pode receber checkpoint; não autoriza merge;
 - `aprovado com correções obrigatórias`: há correções objetivas no delta;
-- `requer teste humano`: é necessária evidência humana identificada;
+- `requer evidência de QA`: falta evidência objetiva necessária para avaliar o comportamento; o método de obtenção pertence ao workflow e ao modo de condução;
 - `bloqueado por decisão humana`: existe escolha material sem fonte ou invariante determinante;
 - `aprovado para merge da implementação`: somente em `revisao_final_implementacao`, sem pendências.
 

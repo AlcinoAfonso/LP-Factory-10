@@ -58,7 +58,8 @@ O contrato aprovado define o que pode ser implementado. O repositório e as font
 ### 4.2. Estrategista Autônomo
 
 - Recebe o conjunto de V1 aprovadas depois do Debate.
-- Interpreta dependências, libera planos e cria uma task técnica para cada plano.
+- A conversa ou task que recebe esse handoff é supervisora e não conta como task técnica do plano.
+- Interpreta dependências, libera planos e cria exatamente uma task técnica distinta para cada plano; se não puder criá-la ou invocá-la, para e reporta o bloqueio em vez de implementar.
 - Avalia entregas, determina correções e QA adicional e conclui cada plano dentro da autoridade concedida.
 - Não conduz novo Debate funcional, não implementa e não produz diretamente a V2.
 
@@ -130,8 +131,8 @@ Todo handoff destinado a uma task técnica no Codex usa `docs/template-briefing-
 ### 6.3. Autônomo
 
 - O Estrategista original entrega o conjunto aprovado ao Estrategista Autônomo.
-- O Estrategista Autônomo controla dependências, paralelismo, correções, QA, avanço e conclusão.
-- Cada plano liberado recebe uma task técnica própria.
+- O modelo de trabalho é `gpt-5.6-sol`: o humano define o esforço do Estrategista Autônomo entre `medium` e `high`; o Estrategista Autônomo define o esforço da task técnica de cada plano entre `medium` e `high` conforme a complexidade.
+- O Estrategista Autônomo controla dependências, paralelismo, correções, QA, avanço e conclusão; a criação e a separação das tasks técnicas seguem a Seção 4.2.
 
 ## 7. Formatos de implementação
 
@@ -212,9 +213,8 @@ A V2 aprovada é congelada por checkpoint no mesmo PR, sem merge intermediário,
 ## 10. Execução, QA e conclusão
 
 - O Executor executa o menor delta suficiente, valida, realiza o QA aplicável e entrega evidências, documentação, riscos, pendências e bloqueios.
-- Falta de evidência deve indicar o que falta, por que falta e o que comprovaria; não implica teste humano automaticamente.
-- O supervisor busca primeiro solução por ferramenta, agente, ambiente, QA ou validação posterior adequada.
-- O humano é acionado somente quando houver dependência real de autoridade, acesso ou julgamento indispensável.
+- QA e evidências obrigatórias são gate de merge e conclusão; falta de evidência mantém o plano aberto.
+- No Manual, o QA pode ser humano, automatizado ou combinado. No Semiautomático e no Autônomo, a evidência deve ser buscada primeiro por meios automatizados autorizados; se isso falhar durante o amadurecimento do Pipeline, o supervisor pode escalar fallback humano, registrando o teste pendente, as tentativas e a capacidade ausente. O fallback não dispensa a evidência nem libera conclusão antecipada.
 - O Executor declara entrega técnica completa, mas não declara o plano concluído.
 - O supervisor determina correções, QA adicional, prontidão para merge e conclusão.
 - Antes da entrega, o Executor aplica o gate da Seção 3.1 ao contrato aprovado e ao diff final; o supervisor repete esse confronto antes de declarar prontidão para merge ou conclusão.

@@ -73,7 +73,7 @@ Para cada update relevante:
 - Observabilidade aplicada: [descrição curta] | `N/A`
 - Validações técnicas: [comandos, checks ou referências]
 - Smoke ou QA funcional: [resultado e evidência] | `N/A`
-- Teste humano: [realizado | requerido | não aplicável]
+- Evidência de QA: [automatizada | humana | combinada | pendente | não aplicável]
 - Limitações do ambiente: [descrição curta] | `N/A`
 
 ## 9. Artefatos

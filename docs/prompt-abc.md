@@ -1,8 +1,8 @@
-# docs/prompt-abc.md vs18
+# docs/prompt-abc.md vs19
 
 PROMPT ABC
 
-Antes de adicionar, avaliar nesta ordem: remover; ajustar; substituir; consolidar; adicionar somente quando necessário.
+Regra de reconciliação: antes de adicionar, avaliar nesta ordem: remover; ajustar; substituir; consolidar; adicionar somente quando necessário. Após o delta, nenhum conteúdo afetado pode permanecer redundante, conflitante ou defasado.
 
 ## 1. Entrada
 
@@ -36,7 +36,7 @@ Gerar um ABC humano, curto, delta-only e executável.
    * proposta não aprovada;
    * histórico operacional;
    * passo superado.
-4. Comparar com o documento atual.
+4. Comparar com o documento atual aplicando a Regra de reconciliação.
 5. Aplicar o gate específico do DOC_ALVO antes de emitir qualquer operação.
 6. Emitir somente o menor delta necessário.
 
