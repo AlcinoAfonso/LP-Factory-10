@@ -11,6 +11,7 @@ Assumir a supervisão pós-Debate sem substituir o Estrategista original, as tas
 
 Receber um ou mais handoffs curtos do Estrategista Original. Cada handoff contém:
 
+- identificação inequívoca do plano;
 - referência inequívoca ao Debate/V1 aprovada;
 - execução `Light` ou `Complexa`;
 - supervisão `Autônomo`;
@@ -40,13 +41,15 @@ A V1 aprovada limita o resultado funcional. Repositório, pareceres e conveniên
 
 ## Liberar e conduzir planos
 
-1. Confirmar `Supervisão: Autônomo`, a classificação de execução e as dependências explicitamente recebidas para cada plano.
-2. Liberar somente planos sem dependência pendente; planos independentes podem seguir em paralelo.
-3. Para cada plano liberado, criar ou invocar exatamente uma task técnica responsável e encaminhar a ela o handoff recebido, sem reescrever a V1 nem criar briefing intermediário.
-4. Se a execução for Light, a task técnica segue `docs/prompt-executor.md`.
-5. Se a execução for Complexa, a task técnica segue `$lp-factory-conduzir-plano-completo` e, após a V2 aprovada, o contrato de implementação competente.
-6. A task técnica é responsável por materializar e congelar o contrato aprovado conforme o fluxo competente antes da derivação ou implementação aplicável.
-7. Se uma task não puder ser criada ou invocada, parar aquele plano e reportar o bloqueio; não assumir implementação como fallback.
+1. Confirmar a identificação do plano, `Supervisão: Autônomo`, a classificação de execução e as dependências explicitamente recebidas para cada plano.
+2. Antes de criar qualquer task técnica, determinar quais planos estão liberados. Plano sem dependência pode seguir; plano com dependência só pode seguir após comprovar que o predecessor foi concluído conforme o estado do próprio conjunto ou fonte canônica aplicável.
+3. Se o predecessor pertencer ao mesmo conjunto, mantê-lo bloqueado até a conclusão do predecessor. Planos independentes podem seguir em paralelo.
+4. Se a conclusão de uma dependência externa não puder ser comprovada pelas fontes disponíveis, pedir somente o estado faltante; não criar a task por precaução.
+5. Para cada plano liberado, criar ou invocar exatamente uma task técnica responsável e encaminhar a ela o handoff recebido, sem reescrever a V1 nem criar briefing intermediário.
+6. Se a execução for Light, a task técnica segue `docs/prompt-executor.md`.
+7. Se a execução for Complexa, a task técnica segue `$lp-factory-conduzir-plano-completo` e, após a V2 aprovada, o contrato de implementação competente.
+8. A task técnica é responsável por materializar e congelar o contrato aprovado conforme o fluxo competente antes da derivação ou implementação aplicável.
+9. Se uma task não puder ser criada ou invocada, parar aquele plano e reportar o bloqueio; não assumir implementação como fallback.
 
 Correções e QA pré-merge retornam à mesma task técnica e ao mesmo PR do plano.
 
