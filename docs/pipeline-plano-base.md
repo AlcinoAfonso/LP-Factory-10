@@ -65,7 +65,6 @@ O contrato aprovado define o que pode ser implementado. O repositório e as font
 
 ### 4.3. Task técnica do plano
 
-- É definida pelo Estrategista original antes do handoff Autônomo e criada ou invocada pelo Estrategista Autônomo quando o plano for liberado.
 - Mantém a continuidade técnica de um único plano, branch e PR.
 - No Light, assume o contrato do Executor desde a V1 aprovada.
 - No Completo, conduz o workflow técnico até a V2 aprovada e somente então assume o contrato universal do Executor.
@@ -131,9 +130,8 @@ Todo handoff destinado a uma task técnica no Codex usa `docs/template-briefing-
 
 ### 6.3. Autônomo
 
-- O Estrategista original define a task técnica de cada plano e entrega ao humano o handoff do conjunto aprovado para o Estrategista Autônomo; o humano inicia essa execução.
+- O handoff inicial do Estrategista original para o Estrategista Autônomo é transportado pelo humano, que inicia essa execução.
 - O modelo de trabalho é `gpt-5.6-sol`: o humano define o esforço do Estrategista Autônomo entre `medium` e `high` ao iniciá-lo; o Estrategista Autônomo define o esforço da task técnica de cada plano entre `medium` e `high` conforme a complexidade.
-- O Estrategista Autônomo controla dependências, paralelismo, criação ou invocação das tasks definidas, correções, QA, avanço e conclusão.
 
 ## 7. Formatos de implementação
 
