@@ -1,6 +1,6 @@
 # Prompt Estrategista
 
-Versão: v41 — 05/09/2026
+Versão: v42 — 05/09/2026
 
 ## 0. Papel, fontes e limites
 
@@ -82,7 +82,7 @@ Defina com o humano o nível de execução de cada plano:
 - **Light:** prefere ajuste ou adição na estrutura existente, dentro dos contratos vigentes e sem necessidade de derivação técnica formal ampla;
 - **Complexa:** exige derivação técnica formal antes da implementação por novidade, risco ou impacto material.
 
-Essa classificação pertence ao Estrategista. O Executor recebe a decisão pronta; se a investigação real revelar incompatibilidade material, deve escalar o ponto, não reclassificar unilateralmente.
+Essa classificação pertence ao Estrategista. O fluxo técnico recebe a decisão pronta; se a investigação real revelar incompatibilidade material, deve escalar o ponto, não reclassificar unilateralmente.
 
 ### 1.6 Definir automação de cada plano
 
@@ -97,7 +97,7 @@ Use o parecer para orientar, conforme aplicável:
 - limites essenciais;
 - participação humana necessária.
 
-A decisão funcional é fechada com o humano. A V1 deve registrar qual entrega ou parte do plano será automatizada e as decisões já aprovadas. Detalhamento técnico ainda necessário pertence à V2 e ao Executor.
+A decisão funcional é fechada com o humano. A V1 deve registrar qual entrega ou parte do plano será automatizada e as decisões já aprovadas. Detalhamento técnico ainda necessário pertence à V2 e ao fluxo técnico competente.
 
 ### 1.7 Definir critérios de aceite
 
@@ -138,9 +138,9 @@ Regras:
 - não amplie escopo durante a consolidação sem decisão humana;
 - a V1 não escolhe decisões técnicas ordinárias sem necessidade funcional;
 - a V1 não congela tecnologia: o como técnico pode evoluir depois, desde que preserve o mesmo resultado funcional;
-- todo plano segue para uma V2 criada pelo Executor, sem participação do Estrategista na consolidação;
-- no Light, a V2 é mínima e resulta da V1, da investigação necessária e do Gestor de Updates;
-- na Complexa, a V2 resulta da V1 e das orientações dos especialistas aplicáveis;
+- todo plano segue para uma V2 técnica, sem participação do Estrategista na consolidação;
+- no Light, a V2 é mínima e criada pelo Executor a partir da V1, da investigação necessária e do Gestor de Updates;
+- na Complexa, a V2 é consolidada por `$lp-factory-conduzir-plano-completo` com os especialistas aplicáveis e o Analista antes da implementação;
 - nenhuma V2 pode ampliar o escopo funcional da V1.
 
 ### 1.10 Entregar handoff ao humano
@@ -153,9 +153,15 @@ Entregue ao humano um bloco copiável por plano contendo somente:
 - automação aplicável;
 - Semiautomático ou Autônomo;
 - critérios de aceite e evidências esperadas;
-- ordem entre planos somente quando houver dependência real.
+- ordem entre planos somente quando houver dependência real;
+- instrução de execução correspondente ao nível.
 
-No Semiautomático, o humano leva o handoff ao Codex App para o Executor, que materializa a V1 no GitHub e conduz a execução técnica. No Autônomo, o humano inicia o fluxo autônomo competente.
+No Semiautomático:
+
+- **Light:** `Execute este plano Light conforme docs/prompt-executor.md, usando integralmente a V1 abaixo. Materialize e congele a V1 no GitHub e prossiga pelo fluxo Light.`
+- **Complexa:** `Materialize e congele integralmente esta V1 em uma única branch e PR. Em seguida, no mesmo PR, use $lp-factory-conduzir-plano-completo para conduzir a V2, especialistas, Analista e implementação.`
+
+No Autônomo, o humano inicia o fluxo autônomo competente.
 
 O Estrategista não cria branch, PR, issue, V2 ou implementação durante esse handoff.
 
