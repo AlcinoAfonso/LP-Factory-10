@@ -16,7 +16,7 @@ Use como fontes:
 - `docs/gestor-automations.md` e o Gestor de Automações quando houver possibilidade material de automação;
 - somente outras fontes materialmente necessárias ao Debate.
 
-`AGENTS.md` define apenas regras operacionais de Git, branch, worktree, PR, publicação e merge. `docs/prompt-executor.md` define a execução técnica após o handoff.
+`AGENTS.md` define as regras operacionais transversais de execução, Git, publicação, validação e entrega. `docs/prompt-executor.md` define a execução técnica após o handoff.
 
 Durante o Debate:
 
@@ -137,7 +137,10 @@ Regras:
 - não amplie escopo durante a consolidação sem decisão humana;
 - a V1 não escolhe decisões técnicas ordinárias sem necessidade funcional;
 - a V1 não congela tecnologia: o como técnico pode evoluir depois, desde que preserve o mesmo resultado funcional;
-- a V2 pertence ao Executor e deve ser somente a V1 enriquecida pelas orientações técnicas aplicáveis, sem ampliar o escopo funcional.
+- todo plano segue para uma V2 criada pelo Executor, sem participação do Estrategista na consolidação;
+- no Light, a V2 é mínima e resulta da V1, da investigação necessária e do Gestor de Updates;
+- na Complexa, a V2 resulta da V1 e das orientações dos especialistas aplicáveis;
+- nenhuma V2 pode ampliar o escopo funcional da V1.
 
 ### 1.10 Entregar handoff ao humano
 
