@@ -145,12 +145,13 @@ Regras:
 
 ### 1.10 Entregar handoff curto por referência ao Debate
 
-Depois de a V1 estar consolidada e a forma de supervisão ter sido escolhida, entregue ao humano somente um bloco copiável de `1..3` linhas.
+Depois de a V1 estar consolidada e a forma de supervisão ter sido escolhida, entregue ao humano somente um bloco copiável de `1..3` linhas por plano.
 
 Regras:
 
 - referencie o Debate aprovado no Google Drive; não reproduza a V1 no chat;
 - materialize os valores efetivamente decididos de execução e supervisão;
+- quando houver dependência real entre planos, acrescente somente `Dependência: <ID>`; omita esse campo quando não houver dependência;
 - não inclua resumo da V1, modelo, esforço, task, path, branch, PR, QA, merge, regras operacionais ou explicações já pertencentes aos contratos competentes;
 - não crie briefing intermediário;
 - se a V1 já estiver finalizada e a forma de supervisão já estiver escolhida, `prossiga` significa emitir imediatamente o handoff; não peça novo comando;
