@@ -1,11 +1,33 @@
 ---
 name: lp-factory-avaliar-plano-analista
-description: Avaliar um plano-base v2 técnico do LP Factory 10 com o custom agent analista, primeiro de forma independente e depois auditando a matriz, os pareceres e os confrontos de modernização aplicáveis. Usar quando o orquestrador já tiver produzido uma v2 a partir de uma v1 funcional e precisar do gate do Analista antes do merge do plano.
+description: Avaliar um plano-base v2 técnico do LP Factory 10 com o custom agent analista. No Light, executar uma avaliação independente sem matriz e sem segunda passagem. Na Complexa, preservar o gate existente em duas passagens com matriz, pareceres e confrontos aplicáveis.
 ---
 
-# Avaliar a consolidação do plano-base v2
+# Avaliar plano-base v2 com o Analista
 
-Executar duas passagens sequenciais com uma única instância do custom agent `analista`: avaliação independente e auditoria da consolidação.
+Roteie a avaliação pelo nível recebido sem misturar contratos.
+
+## Roteamento
+
+1. Confirmar se o nível é `Light` ou `Complexa` a partir do handoff competente.
+2. No `Light`, executar somente o fluxo da seção `Fluxo Light` e não exigir matriz, parecer estrutural, parecer de Automações ou segunda passagem.
+3. Na `Complexa`, preservar integralmente o fluxo existente a partir de `Preparar`, inclusive matriz, duas passagens, revisões delta e reconciliação do roadmap.
+4. Se o nível não puder ser determinado sem inferência, pedir somente essa informação.
+
+## Fluxo Light
+
+1. Confirmar worktree, branch, repositório, caso e estado Git.
+2. Obter referências imutáveis, paths e conteúdos integrais da V1 congelada e da V2 Light mínima. Se compartilharem o mesmo path, diferenciá-las pelos commits SHAs correspondentes.
+3. Não exigir nem receber matriz, parecer do Gestor Estrutural, parecer do Gestor de Automações ou cadeia de especialistas. Updates pode existir como origem técnica da V2, mas seu parecer não integra a entrada do Analista Light.
+4. Iniciar exatamente um subagent `analista` com `fork_turns=none`, quando disponível, no modo `avaliacao_light`.
+5. Entregar apenas V1, V2 Light, decisões registradas, caso, roadmap, casos adjacentes e fontes técnicas necessárias. Não entregar pareceres especializados, confrontos ou matriz.
+6. Preservar integralmente a resposta e tratar somente uma conclusão permitida pelo contrato runtime:
+   - `aprovado para implementar`: liberar a V2 Light para implementação;
+   - `aprovado com correções obrigatórias`: devolver somente as correções objetivas; após o Executor ajustar a V2, continuar no mesmo Analista em `revisao_delta_light`;
+   - `requer reclassificação como Complexa`: parar e devolver a necessidade de reclassificação ao supervisor competente;
+   - `bloqueado por decisão humana`: parar e devolver somente a decisão necessária.
+7. Em `revisao_delta_light`, entregar a referência anterior, a nova referência ou diff e as correções solicitadas. Verificar apenas o delta e seus efeitos regressivos. Liberar somente após `aprovado para implementar`.
+8. Confirmar novamente o estado Git e distinguir alterações preexistentes. O Analista permanece read-only.
 
 ## Preparar
 
@@ -60,4 +82,4 @@ Auditar somente se o roadmap corresponde à estrutura planejada da v2, se o delt
 
 ## Limites
 
-Não editar artefatos, criar branch/commit/PR, consolidar v2, refazer especialidade, acionar outros especialistas, avaliar implementação ou autorizar merge com pendência.
+Não editar artefatos, criar branch/commit/PR, consolidar v2, refazer especialidade, acionar outros especialistas, avaliar implementação ou autorizar merge com pendência. No Light, não exigir nem produzir artefato exclusivo da Complexa. Na Complexa, não reduzir, substituir ou pular matriz, passagem ou gate existente.
