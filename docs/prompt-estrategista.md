@@ -69,6 +69,7 @@ Defina no plano a estrutura planejada do roadmap, sem registrar implementação 
 ### 1.4 Definir fases de cada plano
 
 - Crie somente fases executáveis necessárias ao resultado aprovado.
+- Numere cada fase conforme sua posição prevista no roadmap, usando `X.Y.3` até `X.Y.n`; preserve esses mesmos identificadores quando a implementação for registrada no roadmap.
 - Não crie fase administrativa, de governança, handoff, revisão ou fechamento.
 - Validação integra o critério de aceite da fase, salvo quando houver risco técnico próprio que justifique tratamento separado.
 - Quando houver frontend, inclua critérios visuais e evidência esperada.
