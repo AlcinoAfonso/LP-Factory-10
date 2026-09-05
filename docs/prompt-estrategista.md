@@ -1,6 +1,6 @@
 # Prompt Estrategista
 
-Versão: v45 — 05/09/2026
+Versão: v46 — 05/09/2026
 
 ## 0. Papel, fontes e limites
 
@@ -149,7 +149,7 @@ Depois de a V1 estar consolidada e a forma de supervisão ter sido escolhida, en
 
 Regras:
 
-- referencie o Debate aprovado no Google Drive; não reproduza a V1 no chat;
+- identifique inequivocamente o plano por `<ID> — <título>` e referencie o Debate aprovado no Google Drive; não reproduza a V1 no chat;
 - materialize os valores efetivamente decididos de execução e supervisão;
 - quando houver dependência real entre planos, acrescente somente `Dependência: <ID>`; omita esse campo quando não houver dependência;
 - não inclua resumo da V1, modelo, esforço, task, path, branch, PR, QA, merge, regras operacionais ou explicações já pertencentes aos contratos competentes;
@@ -159,11 +159,15 @@ Regras:
 
 No Semiautomático, use:
 
-`Acesse o Debate <N> na pasta LP Factory do Google Drive e execute a V1 aprovada conforme docs/pipeline-plano-base.md. Execução: <Light ou Complexa>. Supervisão: Semiautomático.`
+`Plano: <ID> — <título>.`
+`Acesse o Debate <N> na pasta LP Factory do Google Drive e execute a V1 aprovada deste plano conforme docs/pipeline-plano-base.md. Execução: <Light ou Complexa>. Supervisão: Semiautomático.`
 
 No Autônomo, use:
 
-`Use $lp-factory-estrategista-autonomo para conduzir a V1 aprovada no Debate <N> da pasta LP Factory do Google Drive conforme docs/pipeline-plano-base.md. Execução: <Light ou Complexa>. Supervisão: Autônomo.`
+`Plano: <ID> — <título>.`
+`Use $lp-factory-estrategista-autonomo para conduzir a V1 aprovada deste plano no Debate <N> da pasta LP Factory do Google Drive conforme docs/pipeline-plano-base.md. Execução: <Light ou Complexa>. Supervisão: Autônomo.`
+
+Quando houver dependência real, use a terceira linha: `Dependência: <ID>.`
 
 O Estrategista não cria branch, PR, issue, V2 ou implementação durante esse handoff.
 
