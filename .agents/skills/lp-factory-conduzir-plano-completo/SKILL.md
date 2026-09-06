@@ -96,14 +96,14 @@ Parar somente diante de handoff incompleto, investigação necessária ou decis�
 ## 6. Handoff ao Executor no mesmo PR
 
 1. No checkpoint `LP-Factory-Stage: plan-v2-approved`, invocar internamente `$lp-factory-executar-plano`, preservando a mesma task, branch, worktree e PR e entregando a V2 aprovada, a matriz, os pareceres pertinentes e os identificadores canônicos do roadmap.
-2. A partir desse checkpoint, execução por subseções, validações e QA, ABC, gates do Analista de implementação, checkpoints, publicação, entrega e correções seguem exclusivamente `$lp-factory-executar-plano`; este workflow não replica nem redefine essas regras.
+2. A partir desse checkpoint, execução por subseções, validações e QA, ABC, gates do Analista de implementação, checkpoints, publicação, entrega, correções, retomada após liberação do supervisor, merge remoto, validações pós-merge e registro final no Debate seguem exclusivamente `$lp-factory-executar-plano`; este workflow não replica nem redefine essas regras.
 3. Preservar somente as invariantes de continuidade da orquestração: mesmo PR/branch/worktree, nenhum especialista repetido e matriz disponível ao Executor até o supervisor declarar o recorte definitivamente concluído.
 4. Se o Executor reportar questão material fora da V2 aprovada, seguir a escalada prevista no contrato dele; não reabrir derivação nem repetir especialista por precaução.
 
 ## Devolução
 
-Informar referências de V1, worktree, branch, pareceres aplicáveis, confrontos estruturais quando houver, Passagens 1 e 2, V2 aprovada, ABC e delta do roadmap, matriz, checkpoint `plan-v2-approved`, PR e pendências de derivação. Para implementação, incorporar por referência a entrega produzida por `$lp-factory-executar-plano`, sem reescrever seu relatório.
+Informar referências de V1, worktree, branch, pareceres aplicáveis, confrontos estruturais quando houver, Passagens 1 e 2, V2 aprovada, ABC e delta do roadmap, matriz, checkpoint `plan-v2-approved`, PR e pendências de derivação. Para implementação e encerramento, incorporar por referência a entrega e o recibo final produzidos por `$lp-factory-executar-plano`, sem reescrever seus relatórios.
 
 ## Limites
 
-Não editar ou commitar na `main`; reescrever o commit congelado da V1; criar PR empilhado, segunda branch ou segundo PR; permitir edição por custom agents; ampliar escopo silenciosamente; repetir especialistas do mesmo blob por precaução; fazer merge; ou substituir o supervisor competente.
+Não editar ou commitar na `main`; reescrever o commit congelado da V1; criar PR empilhado, segunda branch ou segundo PR; permitir edição por custom agents; ampliar escopo silenciosamente; repetir especialistas do mesmo blob por precaução; executar merge fora do ciclo liberado de `$lp-factory-executar-plano`; ou substituir o supervisor competente.
