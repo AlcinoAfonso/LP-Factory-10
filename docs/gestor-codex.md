@@ -4,9 +4,11 @@
 
 Este painel resume os recursos do Codex App relevantes para o LP Factory 10, sem repetir as regras operacionais do repositório.
 
+Não é contrato de execução nem fonte padrão do Executor. Consultá-lo somente quando a tarefa exigir avaliar, configurar ou diagnosticar capacidades do próprio Codex App.
+
 ## 2. Referências
 
-Estas fontes concentram regras, execução e detalhes que não precisam ser duplicados aqui.
+Estas fontes delimitam o painel e não constituem checklist de leitura do Executor.
 
 * `AGENTS.md` — regras operacionais.
 * `.agents/skills/lp-factory-executar-plano/SKILL.md` — contrato único do Executor.
@@ -101,7 +103,9 @@ Plugins aproximam serviços externos das tarefas de investigação e execução.
 
 Skills podem transformar procedimentos recorrentes em capacidades reutilizáveis.
 
-Nenhuma skill foi adotada formalmente após a reinstalação. Skills do Supabase permanecem no registro do Supabase Plugin para evitar duplicação.
+`$lp-factory-executar-plano` está formalmente adotada como contrato operacional do Executor. Essa adoção pertence ao fluxo do projeto e não transforma este painel em fonte de execução.
+
+Recursos adicionais de Skills do ambiente Codex permanecem em avaliação. Skills do Supabase permanecem no registro do Supabase Plugin para evitar duplicação.
 
 **Disponíveis não adotadas:** Spreadsheets e Presentations.
 
@@ -117,5 +121,5 @@ Os testes devem gerar evidência suficiente para adotar, limitar ou descartar re
 
 1. Validar uma worktree em uma frente paralela real.
 2. Ampliar testes de leitura do Supabase Plugin, sem escrita.
-3. Selecionar um procedimento candidato a skill.
+3. Selecionar outro procedimento candidato a skill do ambiente Codex.
 4. Comparar Chrome e navegador integrado em uma validação visual.
