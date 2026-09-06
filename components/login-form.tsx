@@ -17,6 +17,11 @@ function sanitizeNext(next?: string | null): string {
   return next
 }
 
+const INVALID_CREDENTIALS_MESSAGE = 'E-mail ou senha inválidos.'
+const EMAIL_NOT_CONFIRMED_MESSAGE =
+  'Não foi possível entrar. Verifique se o e-mail foi confirmado e tente novamente.'
+const OPERATIONAL_ERROR_MESSAGE = 'Não foi possível entrar agora. Tente novamente em instantes.'
+
 export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRef<'div'>) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -39,7 +44,39 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
       const safeNext = sanitizeNext(searchParams.get('next'))
       window.location.assign(safeNext)
     } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : 'Ocorreu um erro')
+      const errorCode =
+        typeof error === 'object' &&
+        error !== null &&
+        'code' in error &&
+        typeof error.code === 'string'
+          ? error.code
+          : null
+      const invalidCredentials = errorCode === 'invalid_credentials'
+      const emailNotConfirmed = errorCode === 'email_not_confirmed'
+      const denied = invalidCredentials || emailNotConfirmed
+
+      try {
+        console.error(
+          JSON.stringify({
+            ts: new Date().toISOString(),
+            event: 'auth_login_failed',
+            outcome: denied ? 'denied' : 'error',
+            reason: invalidCredentials
+              ? 'invalid_credentials'
+              : emailNotConfirmed
+                ? 'email_not_confirmed'
+                : 'operational_failure',
+          })
+        )
+      } catch {}
+
+      setError(
+        invalidCredentials
+          ? INVALID_CREDENTIALS_MESSAGE
+          : emailNotConfirmed
+            ? EMAIL_NOT_CONFIRMED_MESSAGE
+            : OPERATIONAL_ERROR_MESSAGE
+      )
     } finally {
       setIsLoading(false)
     }
