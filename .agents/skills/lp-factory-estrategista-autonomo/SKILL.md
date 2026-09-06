@@ -45,11 +45,13 @@ A V1 aprovada limita o resultado funcional. Repositório, pareceres e conveniên
 2. Antes de criar qualquer task técnica, determinar quais planos estão liberados. Plano sem dependência pode seguir; plano com dependência só pode seguir após comprovar que o predecessor foi concluído conforme o estado do próprio conjunto ou fonte canônica aplicável.
 3. Se o predecessor pertencer ao mesmo conjunto, mantê-lo bloqueado até a conclusão do predecessor. Planos independentes podem seguir em paralelo.
 4. Se a conclusão de uma dependência externa não puder ser comprovada pelas fontes disponíveis, pedir somente o estado faltante; não criar a task por precaução.
-5. Para cada plano liberado, criar ou invocar exatamente uma task técnica responsável e encaminhar a ela o handoff recebido, sem reescrever a V1 nem criar briefing intermediário.
-6. Se a execução for Light, a task técnica segue `$lp-factory-executar-plano`.
-7. Se a execução for Complexa, a task técnica segue `$lp-factory-conduzir-plano-completo` e, após a V2 aprovada, `$lp-factory-executar-plano`.
-8. A task técnica é responsável por materializar e congelar o contrato aprovado conforme o fluxo competente antes da derivação ou implementação aplicável.
-9. Se uma task não puder ser criada ou invocada, parar aquele plano e reportar o bloqueio; não assumir implementação como fallback.
+5. Para cada plano liberado, criar exatamente uma task/thread Codex independente, visível como unidade própria no Codex App, usando o mecanismo de criação de thread independente disponível na sessão; quando exposto com esse nome, usar `mcp__codex_app__create_thread`.
+6. `collaboration.spawn_agent` cria subagente subordinado e não substitui a task/thread técnica independente. Não tratar worker ou subagente interno como a task responsável do plano.
+7. Encaminhar à nova task/thread o handoff original recebido, sem reescrever a V1 nem criar briefing intermediário. A escolha `Supervisão: Autônomo` já autoriza essa criação; não pedir autorização humana adicional para abrir a task prevista pelo contrato.
+8. Se a execução for Light, a task técnica segue `$lp-factory-executar-plano`.
+9. Se a execução for Complexa, a task técnica segue `$lp-factory-conduzir-plano-completo` e, após a V2 aprovada, `$lp-factory-executar-plano`.
+10. A task técnica é responsável por materializar e congelar o contrato aprovado conforme o fluxo competente antes da derivação ou implementação aplicável e pode criar seus próprios subagentes especializados conforme os contratos que executa.
+11. Se a task/thread independente não puder ser criada ou invocada, parar aquele plano e reportar o bloqueio; não assumir implementação e não usar `spawn_agent` como fallback.
 
 Correções e QA pré-merge retornam à mesma task técnica e ao mesmo PR do plano.
 
@@ -81,4 +83,4 @@ Entregar resumo objetivo por plano com estado, task, PR, correções, QA, checks
 
 ## Limites
 
-Não conduzir novo Debate; alterar V1; implementar; produzir V2 por conta própria; substituir task técnica, Executor, especialista ou Analista; criar segunda task para o mesmo plano; liberar dependência antes da conclusão exigida; fazer merge local; ou decidir fora da autoridade concedida.
+Não conduzir novo Debate; alterar V1; implementar; produzir V2 por conta própria; substituir task técnica, Executor, especialista ou Analista; criar segunda task para o mesmo plano; usar subagente interno como substituto da task/thread técnica independente; liberar dependência antes da conclusão exigida; fazer merge local; ou decidir fora da autoridade concedida.
