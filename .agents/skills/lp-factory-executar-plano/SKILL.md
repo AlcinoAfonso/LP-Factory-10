@@ -214,7 +214,7 @@ Depois do último checkpoint, sem repetir validações ou ABC:
 3. devolver a entrega ao supervisor competente;
 4. se o supervisor devolver correções, tratar o retorno como delta pós-entrega: confirmar de forma mínima objetivo, fontes, limites, boundary afetado e validação esperada; não reiniciar preparação, especialistas, changelog ou validações de plataforma sem impacto demonstrado; usar fontes condicionais, inclusive Supabase, somente quando o estado remoto for necessário para decidir ou validar a correção; sem essa necessidade, não investigar nem afirmar como concluído ou pendente estado remoto não verificado; quando necessário, obter somente a evidência mínima da fonte competente; em delta de código, preservar `npm ci`, `npm run check` e testes focais aplicáveis; aplicar somente esse delta no mesmo PR;
 5. se o supervisor liberar o merge, retomar a mesma task e seguir exclusivamente o ciclo de merge e conclusão da seção 9, sem novo Analista ou nova derivação;
-6. se validação obrigatória pós-merge revelar defeito, registrar a falha e devolvê-la ao supervisor como exceção material, sem criar ou selecionar nova branch ou PR; atualizar a entrega e parar novamente, sem Analista;
+6. se validação obrigatória pós-merge revelar defeito, registrar a falha e devolvê-la ao supervisor como exceção material; não criar ou selecionar nova branch ou PR por inferência. O supervisor define o fluxo corretivo competente; atualizar a entrega e parar novamente, sem Analista;
 7. manter a matriz disponível durante o ciclo externo de avaliação e não removê-la antes de o supervisor declarar o recorte definitivamente concluído; a limpeza posterior é documental, preserva a rastreabilidade no resumo e no histórico do PR e não aciona Analista nem especialistas.
 
 O resumo do PR deve refletir sempre o checkpoint publicado e a entrega técnica completa. A liberação do merge ocorre fora desta skill; depois de recebida, a execução do merge e o encerramento pós-merge pertencem ao Executor conforme a seção 9.
@@ -247,13 +247,13 @@ No `Autônomo`, devolva a entrega a `$lp-factory-estrategista-autonomo`. A liber
 
 Depois de receber a liberação do supervisor competente:
 
-1. confirmar que a liberação corresponde ao mesmo plano, PR e head já avaliados e que não surgiu alteração material, check obrigatório falhando ou review thread material pendente depois da liberação;
-2. executar o merge remoto exclusivamente por GitHub Web ou ferramenta GitHub conectada e autorizada conforme `AGENTS.md`; merge local pela `main` permanece proibido;
+1. confirmar que a liberação corresponde ao mesmo plano, PR e `head SHA` já avaliados; registrar esse SHA, confirmar que não surgiu alteração material, check obrigatório falhando ou review thread material pendente e resolver antes do merge o Debate correspondente e um caminho autorizado de escrita; se o Debate ou o caminho de escrita não puderem ser comprovados, parar antes do merge;
+2. executar o merge remoto exclusivamente por GitHub Web ou ferramenta GitHub conectada e autorizada conforme `AGENTS.md`, exigindo atomicamente o mesmo `head SHA` registrado no passo anterior (`gh pr merge --match-head-commit <SHA>` ou guarda equivalente, como `expected_head_sha`); merge local pela `main` permanece proibido;
 3. obter o merge commit e executar ou confirmar somente as validações pós-merge exigidas pelo contrato e pelas fontes competentes;
 4. atualizar o Debate correspondente no Google Drive com a conclusão final da entrega, PR, merge commit e evidências, preservando a V1 aprovada e o histórico do Debate;
 5. devolver ao mesmo supervisor um recibo final com PR, merge commit, validações pós-merge, registro efetuado no Debate e qualquer pendência material.
 
-Se uma validação obrigatória pós-merge falhar ou o Debate não puder ser atualizado por recurso autorizado, não declare conclusão final. Registre o bloqueio e devolva-o ao supervisor competente sem criar nova branch, PR, automação ou infraestrutura por inferência.
+Se uma validação obrigatória pós-merge falhar ou o Debate não puder ser atualizado por recurso autorizado, não declare conclusão final. Registre o bloqueio e devolva-o ao supervisor competente; não crie nova branch, PR, automação ou infraestrutura por inferência. O supervisor define o fluxo corretivo competente.
 
 O supervisor competente conclui o plano e libera eventuais dependências somente após receber esse recibo final.
 
