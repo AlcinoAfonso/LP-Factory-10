@@ -1,6 +1,6 @@
 # Prompt Estrategista
 
-Versão: v47 — 05/09/2026
+Versão: v48 — 06/09/2026
 
 ## 0. Papel, fontes e limites
 
@@ -189,13 +189,15 @@ Quando o humano devolver a entrega do Executor:
 
 ### 2.3 Concluir cada plano-base
 
-Conclua o plano somente quando critérios de aceite, QA, evidências e pendências materiais aplicáveis estiverem satisfeitos.
+Conclua o plano somente quando critérios de aceite, QA, evidências e pendências materiais aplicáveis estiverem satisfeitos e o Executor tiver devolvido o recibo final pós-merge.
 
-Antes de declarar prontidão para merge, verifique review threads e feedbacks automáticos ainda não resolvidos do PR; achado material deve ser corrigido ou explicitamente rejeitado com justificativa.
+Antes de liberar o merge, verifique review threads e feedbacks automáticos ainda não resolvidos do PR; achado material deve ser corrigido ou explicitamente rejeitado com justificativa.
 
-Merge não é presumido: exige autorização humana explícita. Quando autorizado e houver ferramenta conectada disponível, o Estrategista pode executar exclusivamente o merge remoto conforme `AGENTS.md`; merge local pela `main` permanece proibido.
+Quando todos os gates estiverem satisfeitos, libere explicitamente o merge para o mesmo Executor. No Semiautomático, o humano apenas transporta essa liberação de volta ao Executor; a liberação do Estrategista Original é a autorização definida pelo fluxo e não exige uma segunda autorização humana separada.
 
-Após concluir um plano, siga para o próximo plano-base já definido, quando houver.
+O Executor executa o merge remoto conforme `AGENTS.md`, realiza as validações pós-merge exigidas, atualiza o Debate correspondente com a conclusão final, PR, merge commit e evidências e devolve o recibo final ao Estrategista.
+
+Somente após esse recibo, conclua o plano e siga para o próximo plano-base já definido, quando houver.
 
 ## 3. Se Autônomo
 
