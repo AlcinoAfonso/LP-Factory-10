@@ -93,20 +93,16 @@ Parar somente diante de handoff incompleto, investigação necessária ou decis�
 3. Submeter o roadmap ao mesmo Analista em `revisao_delta`, inclusive quando o ABC retornar `SEM ALTERAÇÕES NECESSÁRIAS`.
 4. Criar `LP-Factory-Stage: plan-v2-approved` com plano, roadmap e matriz; validar o diff e atualizar o único PR draft contra `main`.
 
-## 6. Executar no mesmo PR
+## 6. Handoff ao Executor no mesmo PR
 
-1. Invocar internamente `$lp-factory-executar-plano` no checkpoint aprovado, preservando branch, worktree e PR.
-2. Em cada subseção, exigir que o subfluxo identifique documentos canônicos afetados e execute `$lp-factory-abc` separadamente para cada um antes do gate do Analista. Aplicar somente o delta literal; com `SEM ALTERAÇÕES NECESSÁRIAS`, preservar o documento. Não permitir edição canônica direta.
-3. Não repetir especialistas. Usar o Analista somente nos gates por subseção, com a matriz, os pareceres pertinentes e as evidências de execução do ABC quando houver documento canônico avaliado.
-4. Executar todas as subseções e validações aplicáveis; manter o PR draft atualizado e retomar por checkpoints.
-5. Depois da última subseção e dos testes aplicáveis, declarar a entrega completa, informar os ABCs executados e seus resultados por documento e devolver ao supervisor competente. Não acionar novo modo do Analista após essa declaração.
-6. Correções determinadas pelo supervisor são aplicadas e publicadas sem repetir especialistas ou Analista, salvo questão material nova que exija o gate competente.
-
-Manter a matriz disponível na entrega e durante o ciclo externo de avaliação. Não removê-la antes de o supervisor competente declarar o recorte definitivamente concluído; a remoção posterior é tarefa documental de encerramento e não cria novo gate do Analista nem reabre a orquestração.
+1. No checkpoint `LP-Factory-Stage: plan-v2-approved`, invocar internamente `$lp-factory-executar-plano`, preservando a mesma task, branch, worktree e PR e entregando a V2 aprovada, a matriz, os pareceres pertinentes e os identificadores canônicos do roadmap.
+2. A partir desse checkpoint, execução por subseções, validações e QA, ABC, gates do Analista de implementação, checkpoints, publicação, entrega e correções seguem exclusivamente `$lp-factory-executar-plano`; este workflow não replica nem redefine essas regras.
+3. Preservar somente as invariantes de continuidade da orquestração: mesmo PR/branch/worktree, nenhum especialista repetido e matriz disponível ao Executor até o supervisor declarar o recorte definitivamente concluído.
+4. Se o Executor reportar questão material fora da V2 aprovada, seguir a escalada prevista no contrato dele; não reabrir derivação nem repetir especialista por precaução.
 
 ## Devolução
 
-Informar referências de V1, worktree, branch, pareceres aplicáveis, confrontos estruturais quando houver, Passagens 1 e 2, ABC e delta do roadmap, ABCs da implementação e seus resultados por documento, checkpoints, validações, arquivos, commits, PR e pendências. Não reescrever pareceres.
+Informar referências de V1, worktree, branch, pareceres aplicáveis, confrontos estruturais quando houver, Passagens 1 e 2, V2 aprovada, ABC e delta do roadmap, matriz, checkpoint `plan-v2-approved`, PR e pendências de derivação. Para implementação, incorporar por referência a entrega produzida por `$lp-factory-executar-plano`, sem reescrever seu relatório.
 
 ## Limites
 
