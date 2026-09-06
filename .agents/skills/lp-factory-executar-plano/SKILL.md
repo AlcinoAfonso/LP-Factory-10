@@ -56,7 +56,8 @@ Use somente as fontes materialmente necessárias:
 - `docs/prompt-abc.md`: reconciliação de documento canônico;
 - `docs/base-tecnica.md`: quando houver runtime, estrutura ou segurança;
 - `docs/schema.md`: quando houver banco;
-- `docs/platform-config.md`: quando houver impacto operacional de plataforma;
+- `docs/platform-config.md`: quando houver impacto operacional de plataforma ou QA que dependa de ambiente, Preview, credencial por referência ou recurso externo;
+- `docs/automations.md`: quando automação operacional ou facilitador de testes existente puder executar ou validar o recorte;
 - documentos canônicos e fontes específicas citados pelo contrato.
 
 Não invente fonte, path, schema, comportamento, dependência, rota, job, agente, automação, engine ou infraestrutura.
@@ -143,13 +144,19 @@ Ausência de ambiente ou confirmação externa é pendência de validação ou a
 
 ## 6. Validação e QA comum
 
-- execute as validações aplicáveis definidas pelo contrato, pelas fontes competentes e pelo `AGENTS.md`;
-- realize smoke ou QA funcional proporcional ao comportamento alterado;
-- no Semiautomático e no Autônomo, busque primeiro evidência automatizada com os recursos autorizados disponíveis;
-- registre evidência objetiva do que foi validado e, quando houver frontend, valide as superfícies e viewports definidos no plano;
-- não declare funcionamento, prontidão ou conclusão com validação aplicável falhando ou evidência indispensável ausente.
+A validação deve provar os critérios de aceite do contrato. O Executor não precisa reproduzir manualmente no próprio sandbox uma jornada que possa ser comprovada por recurso autorizado externo.
 
-Se a evidência não puder ser produzida, registre o que falta, o que foi tentado e o bloqueio para o supervisor competente.
+- execute as validações aplicáveis definidas pelo contrato, pelas fontes competentes e pelo `AGENTS.md`;
+- derive dos critérios de aceite somente as evidências necessárias e realize smoke ou QA funcional proporcional ao comportamento alterado;
+- quando o QA depender de Preview, conta ou identidade de teste, mailbox, secret por referência, banco read-only, browser automatizado ou outro recurso externo, consulte primeiro `docs/platform-config.md` e, se houver automação operacional aplicável, `docs/automations.md`;
+- trate recurso marcado como disponível ou operacional na plataforma indicada como utilizável pelo consumidor autorizado, ainda que o valor do secret não seja legível no sandbox; não solicite, copie, revele ou recrie a credencial;
+- priorize o Preview da branch quando aplicável e reutilize consumidor ou workflow autorizado já existente em vez de improvisar outro caminho de browser, rede ou mutação;
+- evidência produzida por GitHub Actions, Vercel, Supabase ou outro consumidor autorizado é válida para o aceite quando estiver vinculada ao mesmo código, Preview ou estado relevante e comprovar o critério correspondente;
+- no `Semiautomático` e no `Autônomo`, intervenção humana em QA é fallback excepcional, não etapa rotineira; não peça ao humano login, credencial, clique ou teste que recurso autorizado existente possa executar;
+- registre por critério a evidência objetiva obtida e, quando houver frontend, valide as superfícies e viewports definidos no plano;
+- não declare funcionamento, prontidão ou conclusão enquanto houver critério obrigatório sem evidência suficiente.
+
+Se um critério obrigatório continuar sem prova depois da consulta às fontes e recursos autorizados, não crie nova automação, infraestrutura, conta privilegiada ou mutação remota por inferência. Registre exatamente o critério não coberto, os caminhos autorizados tentados e o bloqueio; escale ao supervisor somente o que realmente exigir decisão humana ou recurso inexistente ou não autorizado.
 
 ## 7. Complexa — controles preservados
 
@@ -189,7 +196,7 @@ Para a próxima subseção ainda não aprovada:
 8. invocar `$lp-factory-avaliar-implementacao-analista` com plano, identificador, diff, evidências, matriz, pareceres pertinentes e, para cada documento canônico, snapshot anterior, relatório factual, resultado integral do ABC e documento resultante;
 9. tratar `aprovado para avançar` como checkpoint e commitar com o trailer `LP-Factory-Phase: <identificador>`; o checkpoint pode permanecer local e código, título e resumo do mesmo PR draft só devem refletir esse estado quando ele for efetivamente publicado;
 10. tratar `aprovado com correções obrigatórias` corrigindo somente o delta indicado e retornando ao mesmo Analista em `revisao_delta_implementacao`;
-11. tratar `requer evidência de QA` tentando obtê-la pelo método aplicável ao modo e retornando ao mesmo Analista; se não puder produzir a evidência e o modo exigir fallback pelo supervisor, devolver antes da entrega final somente o bloqueio de QA ao supervisor competente e, recebida a evidência, retornar ao mesmo Analista;
+11. tratar `requer evidência de QA` aplicando a seção 6 e retornando ao mesmo Analista com a evidência obtida; se um critério continuar sem prova após os caminhos autorizados, devolver antes da entrega final somente esse bloqueio ao supervisor competente e, recebida a decisão ou o recurso necessário, retornar ao mesmo Analista;
 12. tratar `bloqueado por decisão humana` parando e pedindo apenas a decisão necessária.
 
 Não executar `git push` por rotina antes ou depois de cada gate. Checkpoints aprovados podem acumular localmente. Publicar o estado acumulado somente quando houver necessidade real de estado remoto, como Preview/QA hospedado, validação na Vercel, review, evidência que dependa do GitHub remoto, entrega ou parada necessária para retomada segura.
