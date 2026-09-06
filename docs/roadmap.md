@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 06/09/2026
-• Versão: v1.5.214
+• Versão: v1.5.215
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -1512,7 +1512,7 @@
   - permitir jornadas variáveis orientadas pelo plano, porque as automações atuais executam somente cenários previamente codificados;
   - restaurar ou substituir a superfície operacional de Landing Page e, depois, comprovar criação, preenchimento, edição, visualização e avaliação ponta a ponta, porque a E22.4 removeu essa jornada sem substituto vigente;
   - integrar o recurso ao contrato do Executor, porque a orientação atual não garante seu uso antes de solicitar intervenção humana;
-  - decidir, após inventário de consumidores, o destino do Validador Final, do Niche Runtime Tests e das implementações candidatas ainda abertas, porque esses ativos entregam apenas partes do objetivo ou preservam mecanismos legados.
+  - decidir, após inventário de consumidores, o destino do Validador Final e do Niche Runtime Tests, porque esses ativos entregam apenas partes do objetivo e preservam mecanismos legados.
 
 18. E18 — Base transversal de templates, composições e artefatos
 - Objetivo: manter os contratos compartilhados de conteúdo versionado usados pela ativação comercial e a parametrização raiz da família `landing_page`, sem absorver geração, publicação ou execução da LP Builder.
