@@ -49,7 +49,7 @@ Fonte aprovada: [Debate 06 — Implementações transversais prioritárias — L
 
 ## 8. Plano-base V2 técnico mínimo
 
-Status: derivado da V1 congelada no commit `2d8fead39de7f5e2b1361a1807e0121e704a4289`, blob `007362b087885b23240b55e429ae90258128d219`, a partir da `main` `af82e672cbde2d388219fa7d4d2ac675bc786229`; pendente do gate Light do Analista antes da implementação.
+Status: derivado da V1 congelada no commit `2d8fead39de7f5e2b1361a1807e0121e704a4289`, blob `007362b087885b23240b55e429ae90258128d219`, a partir da `main` `af82e672d4f6e02edb2bfabe2bf5bed500a429ea`; pendente do gate Light do Analista antes da implementação.
 
 ### 8.1. Boundary técnico e invariantes
 
@@ -82,6 +82,7 @@ Status: derivado da V1 congelada no commit `2d8fead39de7f5e2b1361a1807e0121e704a
 - Publicar a branch somente no gate remoto da entrega e obter os checks do mesmo head remoto.
 - Validar o build pelo CI ou deployment Vercel da branch.
 - No Preview hospedado do mesmo head, verificar ausência de erro visível de runtime e preservar, em desktop e mobile, a renderização e a navegação públicas, a tela de autenticação e o acesso protegido representativo. Qualquer regressão bloqueia a entrega e não autoriza mudança funcional fora do recorte.
+- A execução termina após os checks, o build hospedado e o Preview do mesmo head, com entrega das evidências ao próximo gate e sem merge nesta execução.
 - A confirmação do deployment de Production após merge autorizado permanece evidência pós-merge e fora da autoridade desta execução.
 
 ### 8.5. Updates e decisão de derivação
