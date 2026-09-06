@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 06/09/2026
-• Versão: v1.5.216
+• Versão: v1.5.217
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2501,3 +2501,31 @@
 - A mailbox `lpfactoryqa@gmail.com` e os secrets `MAILBOX_EMAIL` e `MAILBOX_PASSWORD` permanecem reservados à E17.9.3, sem consumidor operacional vigente.
 - Usuários, contas, memberships, sessões, dados Supabase e evidências existentes não foram alterados nem excluídos.
 - Runs, checks, statuses, logs e artifacts do GitHub Actions são evidência suplementar e expirável; o diff/PR e os documentos canônicos preservam a prova durável da retirada.
+
+23. E23 — Segurança e governança transversal da plataforma
+- Objetivo: remover riscos prioritários de segurança e governança da plataforma por recortes independentes e controlados.
+- Status: E23.1 concluída no repositório e no Preview; merge e confirmação de Production permanecem sob a autoridade do fluxo Autônomo.
+
+23.1 Atualização de segurança do Next.js
+
+23.1.1 Objetivo e status
+- Objetivo: retirar do Core a versão Next.js afetada por vulnerabilidades críticas, preservando as jornadas e os comportamentos existentes.
+- Status: concluída no repositório e validada no Preview, sem mudança funcional intencional.
+
+23.1.2 Registros do recorte
+- Repositório:
+  - Ajustados:
+    - `package.json`
+    - `package-lock.json`
+- Updates:
+  - Aplicados:
+    - `vercel#31`
+- Referências:
+  - Plano-base V1 e V2 Light: `docs/lousa-plano-base-e23-1.md` — seções 1 a 8.
+
+23.1.3 Atualização segura e validação do Core
+- `next` e `eslint-config-next` permanecem alinhados em `16.3.3`; o lockfile contém somente a resolução transitiva necessária ao upgrade.
+- Nenhum recurso opcional do Next.js 16.3, código funcional, rota, banco, configuração, automação ou workflow foi alterado.
+- Instalação limpa, resolução das versões, lint, tipos, validadores do repositório, Security Checks e build hospedado foram aprovados.
+- O Preview preservou em desktop e mobile a renderização e navegação públicas, a autenticação e o redirecionamento fail-closed do acesso protegido representativo, sem erro visível de runtime.
+- A confirmação de Production ocorre somente após merge autorizado e permanece fora deste recorte de execução.
