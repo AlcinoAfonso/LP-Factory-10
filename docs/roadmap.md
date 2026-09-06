@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 02/09/2026
-• Versão: v1.5.213
+• Data: 06/09/2026
+• Versão: v1.5.214
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -203,7 +203,7 @@
 
 5. E5 — UI/Auth Account Dashboard
 - Objetivo: oferecer fluxos page-based de login, signup, confirmação e recuperação de senha com tratamento seguro e orientação clara ao usuário.
-- Status: funcionalmente implementado; permanecem pendências residuais de normalização da copy e dos erros de Auth e de validação ponta a ponta em mobile.
+- Status: funcionalmente implementado; permanecem pendências residuais de normalização da copy e dos erros do signup e de validação ponta a ponta em mobile.
 
 5.1 Login e recuperação de senha
 
@@ -219,6 +219,10 @@
     - `app/auth/forgot-password/page.tsx`;
     - `components/forgot-password-form.tsx`;
     - `app/auth/update-password/page.tsx`.
+- Updates:
+  - Aplicados:
+    - `prod#16`;
+    - `prod#17`.
 - Referências:
   - Contrato técnico de sessão e Auth: `docs/base-tecnica.md` — seção 5.3.
   - Redirects e envio transacional: `docs/platform-config.md` — seções 4.4 e 4.5.
@@ -231,11 +235,13 @@
   - recuperação apresenta resposta neutra, aplica cooldown visual e encaminha o usuário ao fluxo de nova senha;
   - token ou código de recuperação é verificado somente no POST de `/auth/confirm`, antes da atualização da senha.
 
-5.1.4 Pendência de mensagens de erro
-- Status: pendente.
+5.1.4 Mensagens públicas de erro
+- Status: implementado e validado.
 - Conteúdo:
-  - o formulário de login ainda pode exibir diretamente a mensagem devolvida pelo provedor de Auth;
-  - falta consolidar mensagens públicas neutras e consistentes sem perder o diagnóstico seguro em logs.
+  - credenciais não aceitas exibem `E-mail ou senha inválidos.` sem distinguir e-mail inexistente de senha incorreta;
+  - falhas operacionais e demais erros exibem `Não foi possível entrar agora. Tente novamente em instantes.`, sem mensagem técnica crua do provedor;
+  - falhas emitem evento estruturado seguro sem PII, credenciais ou erro bruto;
+  - login válido, redirect vigente, alerta programático e link `Esqueci minha senha` permanecem preservados.
 
 5.2 Signup, confirmação e e-mail já cadastrado
 
