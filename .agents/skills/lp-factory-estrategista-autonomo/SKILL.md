@@ -37,10 +37,8 @@ A V1 aprovada limita o resultado funcional. Repositório, pareceres e conveniên
 
 - O modelo de trabalho do Estrategista Autônomo é `gpt-5.6-sol` enquanto este contrato permanecer vigente.
 - O esforço do Estrategista Autônomo é definido pelo humano na configuração da execução entre `medium` e `high`; não é campo obrigatório do handoff.
-- A task técnica usa `gpt-5.6-sol` enquanto este contrato permanecer vigente.
-- Para plano `Light`, usar `medium` por padrão; elevar para `high` somente diante de risco técnico concreto identificado antes da criação da task.
-- Para plano `Complexa`, usar `high` por padrão; não reduzir para `medium` por conveniência operacional.
-- O Estrategista Original não define modelo nem esforço no handoff; essa escolha pertence exclusivamente ao Estrategista Autônomo dentro destas regras.
+- O Estrategista Autônomo deve criar cada task técnica com `gpt-5.6-sol` e definir o esforço pela classificação recebida: `Light` → `medium`; `Complexa` → `high`.
+- O Estrategista Original não define modelo nem esforço no handoff; essa configuração da task técnica pertence ao Estrategista Autônomo e não admite alteração por conveniência operacional.
 
 ## Liberar e conduzir planos
 
