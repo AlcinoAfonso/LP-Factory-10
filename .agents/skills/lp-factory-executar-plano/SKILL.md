@@ -41,7 +41,7 @@ Aceitar como comando suficiente:
 
 `Use $lp-factory-executar-plano no plano-base aprovado do PR #<número>.`
 
-Exigir que a V2 esteja na `main` somente na execução independente. Criar uma única branch `codex-app/<caso>-implementacao` a partir da `main` atualizada e um único PR de implementação contra `main`; recusar base diferente de `main` e nunca criar PR empilhado.
+Exigir que a V2 esteja na `main` somente na execução independente. Criar uma única branch `codex-app/<caso>-implementacao` a partir da `main` atualizada e um único PR draft de implementação contra `main`; recusar base diferente de `main` e nunca criar PR empilhado.
 
 Usar `end-to-end` por padrão. Exigir `experimental` explícito somente para parar nos checkpoints solicitados pelo humano.
 
@@ -132,14 +132,14 @@ Quando houver impacto em banco:
 
 - investigue primeiro o estado real por recurso read-only autorizado e confronte-o com `docs/schema.md`;
 - não use inspeção para escrita, migration, secret ou operação administrativa;
-- crie alteração de schema por migration canônica em `supabase/migrations/<timestamp>_<nome>.sql`;
+- crie alteração de schema por migration canônica em `supabase/migrations/<timestamp>_<nome>.sql` e, quando disponível, valide-a em ambiente local ou isolado;
 - antes do merge, quando aplicável e autorizado, permitir no projeto remoto apenas inspeção read-only, `supabase migration list --linked` e `supabase db push --linked --dry-run`;
 - não executar alteração remota de schema ou histórico de migrations fora do fluxo aprovado, inclusive `apply_migration`, SQL mutável, `migration repair` ou `supabase db push --linked` sem `--dry-run`;
 - manter migration aplicada imutável e fazer correção ou reversão por nova migration incremental;
 - preservar o fluxo em que o merge na `main` dispara o apply automático competente;
-- se o plano exigir aplicação remota pré-merge ou ela já tiver ocorrido fora do fluxo, parar em modo fail-closed e informar o supervisor; não aplicar rollback por inferência.
+- se o plano exigir aplicação remota pré-merge ou ela já tiver ocorrido fora do fluxo, parar em modo fail-closed, registrar a operação e o estado encontrados e informar o supervisor; não aplicar rollback, `migration repair`, nova migration corretiva ou outra mutação remota por inferência.
 
-Ausência de ambiente ou confirmação externa é pendência de validação ou aplicação. Ela só bloqueia a implementação quando impedir definir a solução com segurança e sempre impede declarar prontidão final quando a evidência obrigatória faltar.
+Ausência de ambiente ou confirmação externa é pendência de validação ou aplicação. Quando houver feature flag aplicável, mantê-lo desligado; produzir os artefatos candidatos e continuar o trabalho independente. Parar somente se a lacuna impedir definir com segurança a implementação; a pendência final impede declarar o PR pronto para merge quando a evidência obrigatória faltar.
 
 ## 6. Validação e QA comum
 
@@ -152,6 +152,8 @@ Ausência de ambiente ou confirmação externa é pendência de validação ou a
 Se a evidência não puder ser produzida, registre o que falta, o que foi tentado e o bloqueio para o supervisor competente.
 
 ## 7. Complexa — controles preservados
+
+Subseções são checkpoints internos; nunca criam PRs ou merges intermediários.
 
 ### 7.1 Handoff interno
 
@@ -170,7 +172,7 @@ Quando invocada por `$lp-factory-conduzir-plano-completo`:
 2. ler o plano integral, a seção competente de `docs/roadmap.md` e somente as fontes condicionais exigidas pela subseção atual;
 3. no handoff interno, preservar `docs/matriz-consolidacao-<caso>.md` até o encerramento definitivo do recorte pelo supervisor competente;
 4. validar que cada fase executável use exatamente o identificador do roadmap, como `E18.5.3 — título`; rejeitar aliases ordinais como `Fase 1` e agrupamentos de subseções independentes;
-5. no handoff interno, reutilizar a branch e o PR existentes; na execução independente, usar a branch e o PR únicos definidos em 1.3;
+5. no handoff interno, reutilizar a branch e o PR existentes; na execução independente, usar a branch e o PR draft únicos definidos em 1.3;
 6. registrar o SHA do plano como contrato imutável; se houver execução anterior, identificar o último checkpoint pelo trailer `LP-Factory-Phase: <identificador>`; se não for possível determinar unicamente a próxima subseção, parar e pedir o identificador.
 
 ### 7.3 Executar uma subseção
@@ -180,12 +182,12 @@ Para a próxima subseção ainda não aprovada:
 1. delimitar a próxima subseção pela V2 aprovada, com objetivo, arquivos prováveis, escopo negativo e critérios de aceite;
 2. quando a subseção criar ou alterar prompt consumido por IA, invocar `$lp-factory-criar-prompt` como subfluxo somente leitura antes de editar o artefato e validar os casos representativos definidos por ele;
 3. implementar somente o necessário para essa subseção; não antecipar a próxima;
-4. executar as validações aplicáveis; para código, executar `npm ci` uma vez no início do lote contínuo e repeti-lo somente se `package-lock.json`, dependências ou o estado de instalação mudarem; executar a validação própria e `npm run check` antes de cada gate;
+4. executar as validações aplicáveis; para código, executar `npm ci` uma vez no início do lote contínuo e repeti-lo somente se `package-lock.json`, dependências ou o estado de instalação mudarem; executar a validação própria e `npm run check` antes de cada gate; para alteração exclusivamente documental, justificar esses comandos como não aplicáveis; quando aplicável, incluir no gate do Analista evidências de observabilidade mínima e smoke ou QA funcional;
 5. na última subseção, executar também as validações integradas e corrigir regressões; evidência de QA obrigatória pendente deve ser resolvida antes do ABC de consolidação final;
 6. antes do gate, identificar os documentos canônicos potencialmente afetados; nas subseções não finais, considerar os documentos da subseção atual; na última, incluir todos os documentos canônicos afetados ao longo do recorte;
-7. para cada documento, preservar snapshot anterior e executar `$lp-factory-abc`: `ETAPA: intermediária` nas subseções não finais e `ETAPA: consolidação final` na última; aplicar somente operações literais emitidas; se o resultado for `SEM ALTERAÇÕES NECESSÁRIAS`, não editar o documento;
+7. para cada documento, preparar um relatório factual da implementação, preservar snapshot anterior e executar `$lp-factory-abc`: `ETAPA: intermediária` nas subseções não finais e `ETAPA: consolidação final` na última; aplicar somente operações literais emitidas; se o resultado for `SEM ALTERAÇÕES NECESSÁRIAS`, não editar o documento;
 8. invocar `$lp-factory-avaliar-implementacao-analista` com plano, identificador, diff, evidências, matriz, pareceres pertinentes e, para cada documento canônico, snapshot anterior, relatório factual, resultado integral do ABC e documento resultante;
-9. tratar `aprovado para avançar` como checkpoint e commitar com o trailer `LP-Factory-Phase: <identificador>`;
+9. tratar `aprovado para avançar` como checkpoint e commitar com o trailer `LP-Factory-Phase: <identificador>`; o checkpoint pode permanecer local e código, título e resumo do mesmo PR draft só devem refletir esse estado quando ele for efetivamente publicado;
 10. tratar `aprovado com correções obrigatórias` corrigindo somente o delta indicado e retornando ao mesmo Analista em `revisao_delta_implementacao`;
 11. tratar `requer evidência de QA` tentando obtê-la pelo método aplicável ao modo e retornando ao mesmo Analista; se não puder produzir a evidência e o modo exigir fallback pelo supervisor, devolver antes da entrega final somente o bloqueio de QA ao supervisor competente e, recebida a evidência, retornar ao mesmo Analista;
 12. tratar `bloqueado por decisão humana` parando e pedindo apenas a decisão necessária.
@@ -203,9 +205,9 @@ Depois do último checkpoint, sem repetir validações ou ABC:
 1. atualizar o PR com checkpoints, arquivos, validações, evidências de QA, matriz, pendências e, por documento, os ABCs executados e o resultado `delta aplicado` ou `SEM ALTERAÇÕES NECESSÁRIAS`; declarar a entrega completa e parar;
 2. depois dessa declaração, não acionar `revisao_final_implementacao`, `revisao_delta_implementacao` nem qualquer outro gate do Analista;
 3. devolver a entrega ao supervisor competente;
-4. se o supervisor devolver correções, tratar o retorno como delta pós-entrega: confirmar de forma mínima objetivo, fontes, limites, boundary afetado e validação esperada; não reiniciar preparação, especialistas, changelog ou validações de plataforma sem impacto demonstrado; usar fontes condicionais apenas quando necessárias; em delta de código, preservar `npm ci`, `npm run check` e testes focais aplicáveis; aplicar somente esse delta no mesmo PR;
-5. se validação obrigatória pós-merge revelar defeito, registrar a falha e devolvê-la ao supervisor como exceção material, sem criar ou selecionar nova branch ou PR;
-6. manter a matriz disponível durante o ciclo externo de avaliação e não removê-la antes de o supervisor declarar o recorte definitivamente concluído; a limpeza posterior é documental e não aciona Analista nem especialistas.
+4. se o supervisor devolver correções, tratar o retorno como delta pós-entrega: confirmar de forma mínima objetivo, fontes, limites, boundary afetado e validação esperada; não reiniciar preparação, especialistas, changelog ou validações de plataforma sem impacto demonstrado; usar fontes condicionais, inclusive Supabase, somente quando o estado remoto for necessário para decidir ou validar a correção; sem essa necessidade, não investigar nem afirmar como concluído ou pendente estado remoto não verificado; quando necessário, obter somente a evidência mínima da fonte competente; em delta de código, preservar `npm ci`, `npm run check` e testes focais aplicáveis; aplicar somente esse delta no mesmo PR;
+5. se validação obrigatória pós-merge revelar defeito, registrar a falha e devolvê-la ao supervisor como exceção material, sem criar ou selecionar nova branch ou PR; atualizar a entrega e parar novamente, sem Analista;
+6. manter a matriz disponível durante o ciclo externo de avaliação e não removê-la antes de o supervisor declarar o recorte definitivamente concluído; a limpeza posterior é documental, preserva a rastreabilidade no resumo e no histórico do PR e não aciona Analista nem especialistas.
 
 O resumo do PR deve refletir sempre o checkpoint publicado e a entrega completa. A decisão de merge ocorre fora desta skill, depois da avaliação do supervisor competente.
 
@@ -235,14 +237,15 @@ No `Semiautomático`, devolva a entrega ao humano para avaliação do Estrategis
 
 No `Autônomo`, devolva a entrega a `$lp-factory-estrategista-autonomo`.
 
-Não substitua supervisor, Estrategista, especialista ou Analista e não faça merge fora da autoridade vigente.
+Não substitua supervisor, Estrategista, especialista ou Analista. Não faça merge; a decisão de merge pertence ao supervisor competente fora desta skill.
 
 ## 10. Limites
 
-- não alterar a `main` nem fazer merge local;
+- não alterar a `main` nem fazer merge;
 - não executar fase fora do plano ou fora da ordem do roadmap;
 - no Light, não importar especialistas, matriz, segunda passagem ou gates da Complexa;
+- na Complexa, não iniciar a fase seguinte sem checkpoint aprovado;
 - na Complexa, não recriar ou ampliar a V2, repetir especialistas, criar PR empilhado, criar segundo PR no handoff interno ou recriar a matriz sem correção de rastreabilidade exigida;
 - na Complexa, não acionar o Analista depois de declarar a entrega completa;
-- não acionar o supervisor antes da entrega completa, exceto para bloqueio material previsto pelo contrato;
+- na Complexa, não acionar o supervisor antes da entrega completa, exceto para bloqueio de QA ou decisão humana já previstos pelo contrato; no Light, aplicar as escaladas previstas nas seções 2 e 3;
 - não ignorar evidência de QA pendente nem decisão material exigida.
