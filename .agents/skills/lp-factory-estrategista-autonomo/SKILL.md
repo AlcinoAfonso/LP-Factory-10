@@ -28,7 +28,7 @@ Ler e aplicar:
 - `README.md` para visão, escopo e princípios do MVP;
 - `docs/pipeline-plano-base.md` somente para roteamento;
 - `AGENTS.md` para Git, publicação, validações e autoridade operacional;
-- `docs/prompt-executor.md` quando a execução for Light;
+- `$lp-factory-executar-plano` quando a execução for Light;
 - `$lp-factory-conduzir-plano-completo` quando a execução for Complexa.
 
 A V1 aprovada limita o resultado funcional. Repositório, pareceres e conveniência técnica não autorizam ampliação de produto, arquitetura ou escopo. Decisão fora da autoridade concedida retorna ao Estrategista Original/humano.
@@ -46,8 +46,8 @@ A V1 aprovada limita o resultado funcional. Repositório, pareceres e conveniên
 3. Se o predecessor pertencer ao mesmo conjunto, mantê-lo bloqueado até a conclusão do predecessor. Planos independentes podem seguir em paralelo.
 4. Se a conclusão de uma dependência externa não puder ser comprovada pelas fontes disponíveis, pedir somente o estado faltante; não criar a task por precaução.
 5. Para cada plano liberado, criar ou invocar exatamente uma task técnica responsável e encaminhar a ela o handoff recebido, sem reescrever a V1 nem criar briefing intermediário.
-6. Se a execução for Light, a task técnica segue `docs/prompt-executor.md`.
-7. Se a execução for Complexa, a task técnica segue `$lp-factory-conduzir-plano-completo` e, após a V2 aprovada, o contrato de implementação competente.
+6. Se a execução for Light, a task técnica segue `$lp-factory-executar-plano`.
+7. Se a execução for Complexa, a task técnica segue `$lp-factory-conduzir-plano-completo` e, após a V2 aprovada, `$lp-factory-executar-plano`.
 8. A task técnica é responsável por materializar e congelar o contrato aprovado conforme o fluxo competente antes da derivação ou implementação aplicável.
 9. Se uma task não puder ser criada ou invocada, parar aquele plano e reportar o bloqueio; não assumir implementação como fallback.
 

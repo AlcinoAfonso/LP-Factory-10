@@ -103,6 +103,6 @@ Para cada update relevante:
 - Plano-base: [path]
 - Roadmap: `docs/roadmap.md`
 - Prompt ABC: `docs/prompt-abc.md`
-- Prompt do Executor: `docs/prompt-executor.md`
+- Contrato do Executor: `.agents/skills/lp-factory-executar-plano/SKILL.md`
 - PR e commits: [referências]
 - Outras fontes utilizadas: [paths ou URLs autorizadas] | `N/A`

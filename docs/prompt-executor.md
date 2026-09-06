@@ -1,6 +1,8 @@
 # Prompt Executor
 
-Versão: v6 — 05/09/2026
+Versão: v7 — 05/09/2026
+
+Estado: transicional — mantido temporariamente para comparação durante os testes da nova arquitetura. Não integra o roteamento operacional vigente e não deve ser usado como contrato operacional. O contrato vigente do Executor é `$lp-factory-executar-plano`. Remoção pendente após aprovação dos testes do novo fluxo.
 
 ## 0. Papel e contrato
 
