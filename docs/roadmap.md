@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 06/09/2026
-• Versão: v1.5.214
+• Versão: v1.5.215
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -239,7 +239,8 @@
 - Status: implementado e validado.
 - Conteúdo:
   - credenciais não aceitas exibem `E-mail ou senha inválidos.` sem distinguir e-mail inexistente de senha incorreta;
-  - falhas operacionais e demais erros exibem `Não foi possível entrar agora. Tente novamente em instantes.`, sem mensagem técnica crua do provedor;
+  - e-mail ainda não confirmado exibe `Não foi possível entrar. Verifique se o e-mail foi confirmado e tente novamente.`, sem criar reenvio, rota ou fluxo adicional de confirmação;
+  - falhas operacionais e demais erros não classificados exibem `Não foi possível entrar agora. Tente novamente em instantes.`, sem mensagem técnica crua do provedor;
   - falhas emitem evento estruturado seguro sem PII, credenciais ou erro bruto;
   - login válido, redirect vigente, alerta programático e link `Esqueci minha senha` permanecem preservados.
 

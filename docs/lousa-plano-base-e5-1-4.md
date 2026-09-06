@@ -81,7 +81,7 @@ As seções 3 a 6 constituem a V1 funcional aprovada deste plano.
 
 ### 7.1. Contrato e fase
 
-- Referência imutável da V1 oficial: commit `f5996af6e3aebfd0b01b579900bbff4914399e83`, neste mesmo arquivo.
+- Referência imutável da V1 oficial: commit `125622512b3a4f2439aa1c77b2bd4837d7180662`, neste mesmo arquivo.
 - Fonte funcional: seções 3 a 6 do `Debate 4 — E5.1.4 Mensagens públicas de erro de Auth`.
 - Fase única: `E5.1.4 — normalizar a experiência pública de erro do login`.
 - Arquivo de runtime autorizado: `components/login-form.tsx`.
@@ -89,10 +89,10 @@ As seções 3 a 6 constituem a V1 funcional aprovada deste plano.
 
 ### 7.2. Implementação mínima
 
-- No tratamento de falha já existente de `signInWithPassword`, classificar como credenciais não aceitas somente o erro cujo campo público `code` seja exatamente `invalid_credentials`; realizar essa verificação localmente no formulário, sem comparar texto do fornecedor e sem criar helper ou boundary novo.
-- Renderizar `E-mail ou senha inválidos.` nesse caso e `Não foi possível entrar agora. Tente novamente em instantes.` para toda falha restante.
+- No tratamento de falha já existente de `signInWithPassword`, classificar pelo campo público `code` somente `invalid_credentials` como credenciais não aceitas e `email_not_confirmed` como e-mail ainda não confirmado; realizar essa verificação localmente no formulário, sem comparar texto do fornecedor e sem criar helper ou boundary novo.
+- Renderizar `E-mail ou senha inválidos.` para `invalid_credentials`, `Não foi possível entrar. Verifique se o e-mail foi confirmado e tente novamente.` para `email_not_confirmed` e `Não foi possível entrar agora. Tente novamente em instantes.` para toda falha restante.
 - Não renderizar, interpolar, persistir ou transportar `error.message`, o objeto de erro bruto ou outra copy técnica do provedor.
-- Emitir o evento estruturado `auth_login_failed` pelo mecanismo de console vigente, serializado em JSON e limitado a timestamp, `outcome` (`denied` ou `error`) e `reason` (`invalid_credentials` ou `operational_failure`). A emissão não pode registrar e-mail, senha, token, código, formulário, secret ou o erro bruto, nem bloquear o fluxo quando o logging falhar.
+- Emitir o evento estruturado `auth_login_failed` pelo mecanismo de console vigente, serializado em JSON e limitado a timestamp, `outcome` (`denied` ou `error`) e `reason` (`invalid_credentials`, `email_not_confirmed` ou `operational_failure`). A emissão não pode registrar e-mail, senha, token, código, formulário, secret ou o erro bruto, nem bloquear o fluxo quando o logging falhar.
 - Preservar sem alteração o ramo de sucesso, `sanitizeNext`, o redirect e o link `Esqueci minha senha`.
 - Manter a mensagem dinâmica em `FormFieldError`, que já fornece exatamente um `role="alert"`, sem componente, framework ou alegação de conformidade WCAG integral novos.
 
@@ -107,7 +107,7 @@ As seções 3 a 6 constituem a V1 funcional aprovada deste plano.
 ### 7.4. Validação e evidências
 
 - Executar `npm ci`, `npm run check` e `git diff --check`.
-- No Preview do PR, validar login com credenciais não aceitas e falha operacional representativa em desktop e mobile; em cada estado, confirmar a copy exata, um único `role="alert"`, legibilidade e ausência de overflow.
+- No Preview do PR, validar login com credenciais não aceitas, `email_not_confirmed` e falha operacional representativa em desktop e mobile; em cada estado, confirmar a copy exata, um único `role="alert"`, legibilidade e ausência de overflow.
 - Para a falha operacional, provocar somente uma indisponibilidade transitória e controlada no cliente de teste, sem alterar configuração hospedada.
 - Confirmar que o DOM não contém mensagem técnica crua nos casos cobertos e que o console contém apenas o evento seguro previsto, sem PII ou credenciais introduzidas pelo plano.
 - Confirmar que `Esqueci minha senha` permanece disponível e navega para `/auth/forgot-password`.
