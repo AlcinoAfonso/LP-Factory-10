@@ -1,7 +1,7 @@
 0.1 Cabeçalho
-Data: 03/09/2026
-Versão: v1.26
-Status: Alinhado ao catálogo operacional vigente; `automations/supabase-inspect` preservada
+Data: 06/09/2026
+Versão: v1.27
+Status: Alinhado ao catálogo operacional vigente; Validador Final e Niche Runtime Tests retirados pela E22.6
 
 0.2 Função do documento
 Registrar a camada de automações operacionais do LP Factory 10 como referência para integrações, automações operacionais e componentes consumidores, sem expor segredos.
@@ -20,10 +20,8 @@ docs/platform-config.md: configurações operacionais de plataformas, secrets po
 - Novas automações canônicas devem nascer como subprojetos isolados em `automations/<nome>/`.
 
 0.5 Status de migração estrutural — 26/03/2026
-- `validador-final` migrado para `automations/validador-final/` e workflow legado removido.
 - `supabase-inspect` migrado para `automations/supabase-inspect/` com execução a partir da nova raiz canônica e sem fallback `npm install --no-save` no workflow.
 - `docs-apply-report` migrado para `automations/docs-apply-report/` com execução a partir da nova raiz canônica.
-- `niche-runtime-tests` criado como subprojeto canônico em `automations/niche-runtime-tests/`.
 - `pipelines/validador-final/`, `pipelines/supabase-inspect/` e `pipelines/docs-apply-report/` deixaram de ser paths oficiais.
 
 1. Objetivo e escopo
@@ -143,50 +141,6 @@ Não iniciado; sem continuidade operacional após a retirada controlada do MCP.
 Motivo:
 Incompatibilidade de autenticação no contrato histórico da MCP; nenhuma migração ou substituto foi criado.
 
-3.4 Validador Final
-Objetivo:
-Validar ponta a ponta fluxos reais de autenticação do app por execução da Fase 2 determinística (criação de conta, confirmação por e-mail, login, forgot password, reset, login com nova senha e logout).
-
-Status:
-Implementada e validada ponta a ponta na Fase 2 determinística.
-
-Acesso:
-GitHub → Actions → workflow `automation-validador-final`
-
-Como usar:
-Executar o workflow informando apenas o input manual `app_url`.
-
-Como testar feature branch antes do merge:
-- quando a feature branch **não altera o pipeline**, executar o workflow a partir da branch `main`
-- nesse cenário, informar em `app_url` a URL de preview da feature branch que está sendo validada
-- este é o modo operacional recomendado para validação pré-merge
-
-Exceção: quando a própria feature altera o pipeline:
-- quando a feature branch altera arquivos do pipeline (`workflow`, `run.mjs`, `login-playwright.mjs` ou `mailbox-client.mjs`), executar o workflow a partir da própria feature branch
-- nesse cenário, informar em `app_url` a URL de preview da mesma feature branch
-- essa exceção garante que a validação use exatamente a versão de automação alterada pela feature
-
-Motivo operacional do padrão:
-- evita problemas de `sequence` e cache inconsistente em feature branches comuns
-- na prática, `workflow` da `main` + preview da feature virou o modo recomendado para validar features antes do merge
-
-Contrato atual da Fase 2:
-- fluxo determinístico (sem briefing funcional JSON);
-- único input manual: `app_url`;
-- sem screenshot no contrato operacional;
-- estado local de 1 conta ativa persistido em `state/test-account.json`, sem senha;
-- novos aliases `+convite<sequence>` derivados da caixa base Gmail configurada em `MAILBOX_EMAIL`, sem alterar usuários ou contas de execuções anteriores.
-- senhas temporárias aleatórias por execução, não deriváveis do alias ou da sequência e não publicadas em cache, artifact ou Job Summary.
-
-Resposta esperada:
-Logs e resultado final da execução determinística no job do workflow.
-
-Referências / dependências:
-README local: `automations/validador-final/README.md`
-Workflow: `.github/workflows/automation-validador-final.yml`
-Runtime: `automations/validador-final/`
-Estado persistido: `automations/validador-final/state/test-account.json`
-
 3.5 Resolver IA de Nicho no pending_setup
 
 Objetivo:
@@ -263,45 +217,6 @@ Referências / dependências:
 `docs/base-tecnica.md`
 `docs/platform-config.md`
 `docs/lousa-automations3-6-1.md` — registro histórico da baseline concluída.
-
-3.7 Niche Runtime Tests
-
-Objetivo:
-Validar em runtime real o fluxo de criação de conta e preenchimento de `pending_setup` com nichos informados pelo usuário, usando contas reais, confirmação por e-mail e evidência operacional em Job Summary/artifact.
-
-Status:
-Implementada como piloto operacional flexível.
-
-Tipo de uso:
-- Facilitador de testes; não integra o runtime funcional do produto.
-
-Caso funcional validado:
-- `docs/roadmap.md` — E10.5.6.
-
-Acesso:
-GitHub → Actions → workflow `automation-niche-runtime-tests`
-
-Como usar:
-Executar o workflow informando:
-- `app_url`: URL do app ou preview;
-- `start_sequence`: número inicial do alias `+conviteXX` derivado da caixa base `MAILBOX_EMAIL`;
-- `niches`: lista livre separada por `;`, quando o objetivo for explorar nichos escolhidos manualmente;
-- `case_preset`: fallback versionado quando o objetivo for repetir uma suíte formal;
-- `verification_mode`: `setup_only` para validação funcional flexível ou modo versionado quando a etapa tiver expectativa rígida de banco.
-
-Resposta esperada:
-Contas criadas e confirmadas com senha aleatória não derivável do alias, `pending_setup` preenchido, subdomínios capturados, evidência no Job Summary e artifact `niche-runtime-results`, sem senha de cadastro no payload publicado.
-
-Regra operacional:
-A automação não deve ser engessada por verificação de banco genérica. O teste base é criar conta e preencher o pipeline. Verificações no Supabase só devem entrar como presets versionados, porque a expectativa de tabelas como `account_niche_resolutions` e `account_taxonomy` muda conforme a etapa funcional.
-
-Referências / dependências:
-README local: `automations/niche-runtime-tests/README.md`
-Workflow: `.github/workflows/automation-niche-runtime-tests.yml`
-Runtime: `automations/niche-runtime-tests/`
-Casos versionados: `automations/niche-runtime-tests/cases/`
-Reuso de mailbox: `automations/validador-final/`
-Verificação opcional de banco: `automations/supabase-inspect/verify-niche-runtime.mjs`
 
 3.8 E10.7 Fase 2 — geração administrativa de draft comercial por taxon
 
