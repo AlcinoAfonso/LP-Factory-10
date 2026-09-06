@@ -25,6 +25,15 @@ Configurações sustentam o fluxo local adotado para editar, validar e publicar 
 **Valor:** oferece ambiente controlado para execução e validação.
 **Limite:** não substitui `AGENTS.md`.
 
+### Checkout Local e Worktrees
+
+**Aptidão:** manter a base do projeto carregada pelo Codex App alinhada à fonte canônica e isolar implementações sem contaminar o checkout principal.
+**Estado:** validado em 06/09/2026 após correção dos nós de checkout inicial e descoberta de skills.
+**Regra operacional:** o checkout `Local` do projeto deve permanecer em `main`, sincronizada com `origin/main` e com working tree limpa. Tasks de implementação paralela ou que exijam isolamento devem iniciar em `Worktree`, selecionando `main` como base; não mover o checkout `Local` para branch de implementação.
+**Valor:** garante que novas tasks carreguem o pipeline e as skills atuais desde o início e reduz investigação causada por sessões abertas sobre branch obsoleta.
+**Aprendizado:** o checkout `Local` preso em `codex-app/e22-3-orquestracao` deixou a `main` local 165 commits atrasada; nesse estado, `docs/pipeline-plano-base.md` e `$lp-factory-estrategista-autonomo` não eram encontrados nativamente. Após retornar o checkout a `main`, executar `git pull --ff-only` e alinhar `HEAD`, `main` e `origin/main`, uma nova sessão reconheceu a skill nativamente no catálogo.
+**Limite:** criação, isolamento, sincronização, publicação e continuidade de branches/PRs continuam regidos por `AGENTS.md`; PR aberto não deve ser sincronizado com `main` apenas porque ela avançou.
+
 ### Personalizar o Codex
 
 **Aptidão:** usar arquivos do projeto e apps conectados para sugerir próximos passos no Codex App.
@@ -48,7 +57,7 @@ Configurações sustentam o fluxo local adotado para editar, validar e publicar 
 **Limite:** seguir as regras operacionais de `AGENTS.md`.
 **Aprendizado:** para operações GitHub no ambiente local, usar diretamente os recursos nativos do `gh`; scripts auxiliares em Python não foram adotados. O fluxo operacional está definido no `AGENTS.md`.
 
-**Outras configurações:** GitHub Web é a fonte de verdade para PRs, Actions, preview e merge; GitHub Desktop está fora do fluxo principal; não há hooks, conexões ou worktrees ativos.
+**Outras configurações:** GitHub Web é a fonte de verdade para PRs, Actions, preview e merge; GitHub Desktop está fora do fluxo principal; worktrees seguem a regra operacional desta seção.
 
 ## 4. Plugins
 
@@ -104,6 +113,8 @@ Plugins aproximam serviços externos das tarefas de investigação e execução.
 Skills podem transformar procedimentos recorrentes em capacidades reutilizáveis.
 
 `$lp-factory-executar-plano` está formalmente adotada como contrato operacional do Executor. Essa adoção pertence ao fluxo do projeto e não transforma este painel em fonte de execução.
+
+Skills versionadas do projeto são descobertas a partir de `$REPO_ROOT/.agents/skills` do checkout inicial da sessão. Se uma skill existente na `main` não aparecer no catálogo, verificar primeiro a regra de Checkout Local e Worktrees da seção 3 antes de alterar a própria skill.
 
 Recursos adicionais de Skills do ambiente Codex permanecem em avaliação. Skills do Supabase permanecem no registro do Supabase Plugin para evitar duplicação.
 
