@@ -137,16 +137,6 @@ Este documento define o contrato visual vigente do produto, com foco em componen
   - páginas de detalhe read-only quando aplicável
   - placeholders enxutos para áreas ainda não conectadas
 
-## Workspace operacional do Account Dashboard
-
-- A coleção principal usa composição master-detail: a lista resume cada identidade de landing page e o detalhe concentra configuração, revisões e ações contextuais.
-- Cada item da coleção exibe somente identidade, próxima decisão e estado derivado; configuração extensa e histórico completo permanecem no detalhe.
-- Estados derivados usam texto explícito acompanhado de tratamento visual semântico; cor isolada nunca comunica o estado.
-- Desktop pode usar tabela ou grade responsiva; mobile deve empilhar cards ou composição equivalente sem exigir rolagem horizontal.
-- O detalhe mantém contexto persistente Conta → landing page → seção e retorno previsível à coleção.
-- Ações mutáveis aparecem apenas para perfis autorizados; a mesma superfície permanece legível em modo somente leitura, sem controles desabilitados que sugiram permissão futura.
-- Estados indisponível, vazio, pendente e erro devem ser completos e explícitos; não apresentar coleção parcial como se fosse o conjunto integral.
-
 ## Superfície administrativa do Admin
 
 - Admin usa shell próprio, separado do Account Dashboard.

@@ -83,7 +83,7 @@ type ValidationCase = Readonly<{
 
 const cases: readonly ValidationCase[] = [
   {
-    name: "research files remain traced for both hosted consumer routes",
+    name: "research files remain traced only for the hosted Admin consumer",
     run: async () => {
       const nextConfig = requireFromValidation("../../../../next.config.js") as {
         outputFileTracingIncludes?: Record<string, readonly string[]>;
@@ -94,11 +94,11 @@ const cases: readonly ValidationCase[] = [
         nextConfig.outputFileTracingIncludes?.["/admin/taxonomia/[taxonId]"],
         [researchGlob],
       );
-      assert.deepEqual(
+      assert.equal(
         nextConfig.outputFileTracingIncludes?.[
           "/a/[account]/landing-pages/[landingPageId]/preview"
         ],
-        [researchGlob],
+        undefined,
       );
       assert.equal(nextConfig.outputFileTracingIncludes?.["/*"], undefined);
     },
@@ -952,9 +952,9 @@ const cases: readonly ValidationCase[] = [
       const draft = validateLandingPageInputCatalogDraft({
         draft: createNextLandingPageInputCatalogDraft(),
         taxons: [
-          { identity: realEstateSegmentTaxon, reviewedVersion: 5, operational: false },
-          { identity: realEstateBrokerNicheTaxon, reviewedVersion: 5, operational: true },
-          { identity: mediumStandardRealEstateBrokerTaxon, reviewedVersion: 5, operational: true },
+          { identity: realEstateSegmentTaxon, reviewedVersion: 5 },
+          { identity: realEstateBrokerNicheTaxon, reviewedVersion: 5 },
+          { identity: mediumStandardRealEstateBrokerTaxon, reviewedVersion: 5 },
         ],
       });
       assert.equal(draft.ok, true);

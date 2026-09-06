@@ -1979,6 +1979,78 @@ Avaliar somente quando houver:
 
 ---
 
+## 70 — Monitores read-only de observabilidade com agentes *(🧪 Oficial; adoção transversal condicionada)*
+
+2026-09-05  
+Catalogado em 2026-09-05
+
+### Status no Projeto
+
+- Status: não implementado; o projeto mantém inspeção SQL read-only via GitHub Actions e o Supabase Plugin preservado, mas não possui monitor agendado que use `query_logs`, `get_advisors` e `execute_sql` pelo Supabase MCP.
+- Evidência: `docs/roadmap.md` 17.1 e 22.3, `docs/automations.md` 3.1 e 3.3, `docs/platform-config.md` 4.7 e busca semântica no repositório no SHA inicial da rodada.
+- Natureza de uso: observabilidade operacional transversal.
+- Relação com a stack: complementar a `supa#5`, `supa#33`, `supa#46` e `supa#59`, mas sobreposto ao `pipeline-supabase-inspect` para verificações que a automação atual já consiga executar com menor custo e complexidade.
+- Horizonte: indefinido; depende de avaliação técnica ou operacional própria, não de plano comercial.
+
+### Descrição
+
+A Supabase passou a documentar rotinas de agente read-only para saúde, segurança, desempenho e capacidade. As rotinas usam o Supabase MCP limitado ao projeto, com `read_only=true`, e produzem achados sem alterar o ambiente.
+
+Para projetos pequenos, a orientação oficial é começar com um único monitor relevante em cadência diária ou semanal e somente separar agentes quando fontes, responsáveis, cadências ou limiares realmente diferirem. O Generalist reúne as quatro categorias e pode permanecer silencioso quando nada exigir ação.
+
+### Valor para o Projeto
+
+- Pode reduzir inspeção manual recorrente de erros, Auth, Advisors, queries lentas, locks e crescimento de recursos.
+- Pode transformar sinais já disponíveis em alertas com limiares explícitos e próximo passo humano, sem autorizar correção automática.
+- Pode complementar a inspeção pós-deploy e a governança do Gestor de Segurança.
+- Preserva uma alternativa oficial antes de construir monitor, dashboard ou serviço próprio.
+
+### Hipótese de superioridade e gatilho objetivo
+
+Avaliar somente quando houver:
+
+1. necessidade recorrente comprovada de detectar incidente, regressão, risco de segurança ou aproximação de limite;
+2. comparação com o `pipeline-supabase-inspect` atual, demonstrando ganho mensurável de cobertura, tempo de diagnóstico ou redução de SQL manual;
+3. acesso Supabase MCP project-scoped e read-only validado, com minimização e redação de dados sensíveis;
+4. execução inicial sob demanda e revisão humana dos primeiros resultados, limiares e falsos positivos;
+5. decisão entre um Generalist diário ou semanal e monitores especializados, preferindo um único fluxo enquanto o projeto permanecer pequeno.
+
+### Dependências, riscos e limites
+
+- Depende de Supabase MCP autorizado, harness com agendamento e custo conhecido das execuções de IA.
+- Logs e resultados podem conter dados pessoais ou sensíveis; evidências devem ser agregadas e redigidas.
+- O MCP não expõe totais de billing da organização, e estimativas de capacidade não podem ser tratadas como cobrança oficial.
+- O service/MCP próprio Supabase Inspect foi removido na E22.3; este item não autoriza recriá-lo, criar substituto ou reintroduzir infraestrutura.
+- Não substitui logs estruturados, `request_id`, tracing, Log Drains, validação humana nem o contrato do banco.
+- Não executar correções, SQL mutável, cancelamento de sessão, alteração de policy, grant, chave, compute, plano ou billing.
+- Não criar agente, automação, service, rota, job, dashboard, banco ou nova infraestrutura nesta rodada.
+
+### Ações Recomendadas
+
+1. Manter como capacidade transversal condicionada.
+2. Reavaliar no primeiro caso de monitoramento recorrente ou antes do go-live com tráfego real.
+3. Se o gatilho ocorrer, provar primeiro um Generalist read-only sob demanda e comparar com a automação atual.
+4. Encaminhar eventual adoção ao fluxo competente de automações e segurança, sem decisão final neste catálogo.
+
+### Fontes Oficiais
+
+- [Supabase Docs — Hire an agent](https://supabase.com/docs/guides/observability/automate-with-agents)
+- [Supabase Docs — Generalist](https://supabase.com/docs/guides/observability/automate-with-agents/all)
+- [Supabase Docs — Health monitor](https://supabase.com/docs/guides/observability/automate-with-agents/health)
+- [Supabase Docs — Security monitor](https://supabase.com/docs/guides/observability/automate-with-agents/security)
+- [Supabase Docs — Performance monitor](https://supabase.com/docs/guides/observability/automate-with-agents/performance)
+- [Supabase Docs — Capacity monitor](https://supabase.com/docs/guides/observability/automate-with-agents/usage)
+
+### Registro (Tipo C — Observabilidade transversal)
+
+- Status: PENDENTE
+- Verificado em: 2026-09-05
+- Ambiente futuro: Supabase MCP oficial read-only + harness autorizado
+- Evidência: fontes oficiais e gate de rastreabilidade no repositório.
+- Observação: o registro não autoriza implementação, agendamento nem nova infraestrutura.
+
+---
+
 ## Registro da rodada — Supabase Update August 2026 — 10/08/2026
 
 ### Updates ajustados ou incorporados
@@ -2068,3 +2140,50 @@ Avaliar somente quando houver:
 - Nenhuma dependência, extensão, tabela, policy, rota, job, agente, automação, tracer, Log Drain ou infraestrutura foi criada.
 - Nenhuma configuração do projeto Supabase nem runtime foi alterada.
 - O catálogo recomenda avaliação futura; não autoriza implementação, contratação ou mudança de stack.
+
+## Registro da rodada — Supabase Update September 2026 — 05/09/2026
+
+### Updates ajustados ou incorporados
+
+- `supa#70` foi adicionado como capacidade transversal condicionada para monitoramento read-only por agentes, com comparação obrigatória contra a inspeção GitHub existente e sem reintrodução automática do MCP removido na E22.3.
+- Nenhum item existente foi arquivado, absorvido, superado ou reclassificado nesta rodada.
+
+### Updates avaliados e não adicionados nesta atualização
+
+- Enterprise-managed auth para o Supabase MCP: disponível em Supabase Team ou Enterprise com Okta SSO e Claude Team ou Enterprise; não cobre o harness atual, não cria capacidade adicional para o produto e permanece absorvido pelo radar geral de governança de `supa#59`.
+- Novidades gerais de WhatsApp sobre segurança de conta e pagamentos de contas na Índia não alteram a WhatsApp Business Platform aplicável ao projeto nem criam recurso Supabase.
+- Não houve outro recurso oficial Supabase novo ou materialmente alterado entre 21/08/2026 e 05/09/2026 com valor concreto e horizonte plausível adicional para o LP Factory 10.
+- Nenhum recurso foi excluído apenas por estar fora do Starter ou do MVP.
+
+### Cobertura estratégica desta atualização
+
+- IA, automações e agentes: blog, changelog e documentação oficial Supabase; o impacto material foi registrado em `supa#70`.
+- Landing pages, Instagram e e-mail: não foi encontrada novidade oficial Supabase específica e relevante no período.
+- WhatsApp: fontes oficiais da WhatsApp Business Platform e Meta Business Messaging foram pesquisadas; não houve mudança aplicável ao catálogo Supabase.
+- Segurança e operação: a autenticação empresarial do MCP foi avaliada, mas não se aplica ao ambiente atual nem supera a governança existente.
+- Os canais permanecem sem alteração de fluxo, integração ou autorização de implementação.
+
+### IDs preservados por rastreabilidade
+
+- Todos os IDs publicados de `supa#2` a `supa#69`, inclusive registros históricos e intervalos não utilizados, permanecem sem renumeração, reutilização ou desaparecimento.
+- `supa#70` foi atribuído acima do maior ID histórico anterior.
+
+### Pontos não validados e lacunas documentais
+
+- A documentação oficial consultada não informa uma data de publicação na própria página dos monitores; a capacidade e as instruções estavam disponíveis e foram verificadas em 05/09/2026.
+- `supa#70`: não há baseline de falsos positivos, custo por execução, autorização de agendamento nem prova de superioridade sobre o `pipeline-supabase-inspect`.
+- Permanecem as lacunas anteriores que ainda não foram encerradas nos respectivos itens, inclusive Unified Logs, `pg_graphql`, Grafana Cloud e tracing.
+
+### Validação de IDs e rastreabilidade
+
+- Nenhum ID publicado desapareceu, foi renumerado ou reutilizado.
+- Antes da adição, foram buscados `supa#59`, `supa#5`, `supa#33`, `supa#46`, Supabase Inspect, MCP, `query_logs`, `get_advisors`, monitoramento, agentes e os artefatos associados em documentos, código e histórico de PRs.
+- A busca confirmou a automação GitHub read-only preservada, o plugin Supabase e a retirada do service/MCP próprio, sem monitor agendado equivalente.
+- A catalogação adere ao `README.md` e não adotou novidade, modernidade ou distância do MVP como decisão isolada.
+
+### Limite da rodada
+
+- Nenhuma dependência, extensão, tabela, policy, rota, job, agente, automação, monitor, MCP, service ou infraestrutura foi criada.
+- Nenhuma configuração do projeto Supabase nem runtime foi alterada.
+- O catálogo recomenda avaliação futura; não autoriza implementação, agendamento, contratação ou mudança de stack.
+

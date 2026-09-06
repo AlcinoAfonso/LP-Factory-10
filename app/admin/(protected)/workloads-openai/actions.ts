@@ -4,16 +4,12 @@ import { revalidatePath } from "next/cache";
 
 import { requirePlatformAdmin } from "@/lib/access/guards";
 import {
-  openAiImageQualities,
   openAiReasoningEfforts,
-  resolveOpenAiImageWorkload,
   resolveOpenAiProductWorkload,
-  type OpenAiImageQuality,
   type OpenAiManagedWorkloadEnvironment,
   type OpenAiProductWorkloadId,
   type OpenAiReasoningEffort,
   type OpenAiWorkloadId,
-  type ResolvedOpenAiImageWorkload,
   type ResolvedOpenAiProductWorkload,
 } from "@/openai-workloads";
 import {
@@ -36,7 +32,6 @@ const ADMIN_PATH = "/admin/workloads-openai";
 const productWorkloads = [
   "niche_resolution",
   "commercial_activation_draft_generation",
-  "landing_page_draft_generation",
   "taxon_input_catalog_sufficiency_evaluation",
   "landing_page_dynamic_market_research",
 ] as const;
@@ -254,8 +249,8 @@ async function authorizedUnit(formData: FormData): Promise<
 type ParsedCandidate = Readonly<{
   model: string;
   reasoningEffort: OpenAiReasoningEffort | null;
-  quality: OpenAiImageQuality | null;
-  configuration: ResolvedOpenAiProductWorkload | ResolvedOpenAiImageWorkload;
+  quality: null;
+  configuration: ResolvedOpenAiProductWorkload;
 }>;
 
 async function candidateIsEligibleForSave(candidate: ParsedCandidate) {
@@ -292,57 +287,13 @@ async function parseCandidate(
       ok: true;
       model: string;
       reasoningEffort: OpenAiReasoningEffort | null;
-      quality: OpenAiImageQuality | null;
-      configuration:
-        | ResolvedOpenAiProductWorkload
-        | ResolvedOpenAiImageWorkload;
+      quality: null;
+      configuration: ResolvedOpenAiProductWorkload;
     }>
   | Readonly<{ ok: false; state: OpenAiOperationalActionState }>
 > {
   const model = parseTechnicalValue(formData.get("model"), 128);
   if (!model) return { ok: false, state: validationFailure("Modelo inválido.") };
-
-  if (unit.workload === "landing_page_draft_image_generation") {
-    const imageWorkload = unit.workload;
-    const quality = parseImageQuality(formData.get("quality"));
-    if (!quality || parseOptionalValue(formData.get("reasoningEffort")) !== null) {
-      return {
-        ok: false,
-        state: validationFailure("Configuração de imagem inválida."),
-      };
-    }
-    const resolved = await resolveOpenAiImageWorkload(
-      imageWorkload,
-      unit.environment,
-      {
-        operationalConfigurationEnabled: "true",
-        readOperationalConfiguration: async () => ({
-          ok: true,
-          value: {
-            environment: unit.environment,
-            workload: imageWorkload,
-            apiKind: "image_generation",
-            model,
-            quality,
-            revision: "1",
-          },
-        }),
-      },
-    );
-    if (!resolved.ok) {
-      return {
-        ok: false,
-        state: validationFailure("Combinação de imagem fora da allowlist."),
-      };
-    }
-    return {
-      ok: true,
-      model,
-      reasoningEffort: null,
-      quality,
-      configuration: resolved.value,
-    };
-  }
 
   const reasoningEffort = parseReasoningEffort(formData.get("reasoningEffort"));
   if (!reasoningEffort || parseOptionalValue(formData.get("quality")) !== null) {
@@ -387,15 +338,11 @@ async function parseCandidate(
 function candidateFormData(value: Readonly<{
   model: string;
   reasoningEffort: OpenAiReasoningEffort | null;
-  quality: OpenAiImageQuality | null;
 }>) {
   const formData = new FormData();
   formData.set("model", value.model);
   if (value.reasoningEffort) {
     formData.set("reasoningEffort", value.reasoningEffort);
-  }
-  if (value.quality) {
-    formData.set("quality", value.quality);
   }
   return formData;
 }
@@ -406,8 +353,7 @@ function parseEnvironment(value: FormDataEntryValue | null) {
 
 function parseProductWorkload(value: FormDataEntryValue | null) {
   return typeof value === "string" &&
-    ([...productWorkloads, "landing_page_draft_image_generation"] as const)
-      .includes(value as never)
+    productWorkloads.includes(value as never)
     ? (value as UnitInput["workload"])
     : null;
 }
@@ -416,13 +362,6 @@ function parseReasoningEffort(value: FormDataEntryValue | null) {
   return typeof value === "string" &&
     openAiReasoningEfforts.includes(value as OpenAiReasoningEffort)
     ? (value as OpenAiReasoningEffort)
-    : null;
-}
-
-function parseImageQuality(value: FormDataEntryValue | null) {
-  return typeof value === "string" &&
-    openAiImageQualities.includes(value as OpenAiImageQuality)
-    ? (value as OpenAiImageQuality)
     : null;
 }
 

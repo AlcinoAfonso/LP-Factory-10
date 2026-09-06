@@ -164,36 +164,12 @@ export function projectOpenAiWorkloadConfigurationOptions(
 ): readonly OpenAiWorkloadConfigurationOptions[] {
   return deepFreeze(
     presentations.map((presentation) => {
-      const apiKind =
-        presentation.workload === "landing_page_draft_image_generation"
-          ? "image_generation"
-          : "responses_text";
+      const apiKind = "responses_text" as const;
       const models = catalog.filter(
         (model) => model.apiKind === apiKind && model.availableForSelection,
       );
-      if (apiKind === "image_generation") {
-        return {
-          workload: presentation.workload as "landing_page_draft_image_generation",
-          displayName: presentation.name,
-          apiKind,
-          options: models.flatMap((model) =>
-            model.parameters
-              .filter(
-                (parameter) =>
-                  parameter.kind === "quality" && parameter.availableForSelection,
-              )
-              .map((parameter) => ({
-                model: model.model,
-                quality: parameter.value as OpenAiImageQuality,
-              })),
-          ),
-        };
-      }
       return {
-        workload: presentation.workload as Exclude<
-          OpenAiWorkloadPresentation["workload"],
-          "landing_page_draft_image_generation"
-        >,
+        workload: presentation.workload,
         displayName: presentation.name,
         apiKind,
         options: models.flatMap((model) =>

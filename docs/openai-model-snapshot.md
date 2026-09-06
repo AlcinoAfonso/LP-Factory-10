@@ -2,7 +2,7 @@
 
 ## 1. Objetivo e validade
 
-- Data do snapshot: 29/08/2026.
+- Data do snapshot: 02/09/2026.
 - Objetivo: manter uma referência datada para decisões de custo-desempenho de modelos e avaliação de capacidades de execução dos workloads OpenAI do LP Factory 10.
 - Este documento compara candidatos; não define sozinho o modelo em produção e não autoriza migração, implementação ou mudança de arquitetura.
 - A configuração efetivamente adotada continua registrada em `docs/platform-config.md`; a governança da decisão continua em `docs/gestor-automations.md`.
@@ -26,9 +26,10 @@
 
 - `niche_resolution` → configuração efetiva atual `gpt-5.4-mini + none`.
 - `commercial_activation_draft_generation` → configuração efetiva atual `gpt-5.4-mini + none`.
-- `landing_page_draft_generation` → configuração efetiva versionada `gpt-5.6-luna + max`, comprovada no fluxo integrado hospedado.
-- `landing_page_draft_image_generation` → configuração efetiva versionada `gpt-image-2`, comprovada no fluxo integrado hospedado; parâmetros de imagem não herdam configuração textual.
-- Fonte de configuração efetiva: `lib/openai-workloads/registry.ts`, com `configurationSource: repo_catalog` e revisão `v2`, conforme a governança da E21.1.
+- `taxon_input_catalog_sufficiency_evaluation` → baseline repo-side `gpt-5.6-terra + low`.
+- `landing_page_dynamic_market_research` → configuração inicial aprovada `gpt-5.6-luna + high` com Web Search hospedado.
+- Fonte de configuração efetiva: `lib/openai-workloads/registry.ts`, com fonte `repo_catalog` no baseline e revisão própria por workload, conforme a governança da E21.1.
+- O catálogo de modelos preserva `gpt-image-2` e seus parâmetros como capacidade independente; não existe workload de imagem vigente.
 - Fonte operacional: `docs/platform-config.md`.
 - Variáveis legadas de modelo não são fonte runtime atual; seu estado operacional permanece exclusivamente em `docs/platform-config.md`.
 
@@ -109,12 +110,11 @@
 |---|---|---|---|
 | resolvedor IA de nicho | `gpt-5.4-mini + none` | Luna / Terra / Sol + effort aplicável | não comparado neste snapshot |
 | ativação comercial | `gpt-5.4-mini + none` | Luna / Terra / Sol + effort aplicável | não comparado neste snapshot |
-| geração textual do draft de landing page | `gpt-5.6-luna + max` | configuração inicial aprovada para o workload | duas execuções integradas hospedadas aprovadas em 18/08/2026 |
-| geração da imagem principal do draft | `gpt-image-2` | workload de mídia independente | duas execuções integradas hospedadas aprovadas em 18/08/2026 |
+| avaliação de suficiência factual do catálogo por taxon | `gpt-5.6-terra + low` | Luna / Terra / Sol + effort aplicável | configuração operacional própria governada pela E20.6.5/E21.2 |
 | complemento dinâmico de conhecimento de mercado da LP | configuração inicial aprovada `gpt-5.6-luna + high`, Web Search `medium` | comparação prévia Luna/Terra/Sol dispensada por decisão humana específica de 29/08/2026 | decisão registrada; parser, limites e casos determinísticos aprovados; revisão operacional e ativação ainda pendentes |
 
 - Para o complemento dinâmico, a política Web Search é constante code-owned e não integra a variável de modelo/effort: somente a tool hospedada, uma ou duas chamadas, `search_context_size = medium`, fontes incluídas, Structured Output estrito e orçamento integral limitado ao teto efetivo de 128k tokens do uso com Web Search.
-- A configuração inicial aprovada para `landing_page_dynamic_market_research` é `gpt-5.6-luna + high`. A decisão é específica desse workload e não altera `landing_page_draft_generation`, que permanece em `gpt-5.6-luna + max` conforme sua própria evidência.
+- A configuração inicial aprovada para `landing_page_dynamic_market_research` é `gpt-5.6-luna + high`. A decisão é específica desse workload e não se torna default dos demais workloads.
 - `max` não foi escolhido para o complemento dinâmico. Só deve ser reaberto se evidência operacional mostrar insuficiência material de `high` nos gates de qualidade/grounding e justificar o custo e a latência adicionais.
 - A ativação hospedada continua dependente dos gates E20.7/E21.2 aplicáveis, inclusive reconciliação operacional da E20.2 v6 e revisão operacional válida do novo workload.
 

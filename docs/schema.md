@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data da última atualização: 30/08/2026
-• Documento: LP Factory 10 — Schema (DB Contract) v1.0.64
+• Data da última atualização: 02/09/2026
+• Documento: LP Factory 10 — Schema (DB Contract) v1.0.65
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -1298,7 +1298,9 @@
 3.7.3 Helper de imutabilidade
 • `prevent_openai_workload_append_only_mutation_v1() → trigger`: SECURITY INVOKER, search_path fixado, sem EXECUTE externo; rejeita UPDATE/DELETE nas revisões e ativações.
 
-3.8 Workspace operacional de landing pages
+3.8 Infraestrutura física herdada do workspace de landing pages
+• Estado de consumo após o SV-PR03: os objetos abaixo permanecem instalados, mas não possuem consumidor no runtime do produto. As tabelas de configuração ainda são lidas exclusivamente pelo lifecycle administrativo do catálogo; save, append, baselines e aprovação permanecem inertes.
+• Esta seção inventaria o estado físico e não descreve uma jornada operacional vigente. Nenhum DROP, migration de limpeza, alteração de ACL/RLS, dado ou Storage foi executado no SV-PR03.
 3.8.1 Helpers internos
 • `e19_5_actor_can_manage(uuid, uuid) → boolean`: SECURITY DEFINER, stable e read-only; confirma conta ativa e membership owner/admin ativa.
 • `e19_5_configuration_values_have_scopes(jsonb, text[]) → boolean`: SECURITY INVOKER, immutable e valida somente o shape genérico `{ scope, value }` contra os scopes permitidos.
@@ -1398,6 +1400,7 @@
 • Rollback: não remove automaticamente a extensão, pois pode ser reutilizada por outros recursos
 
 99. Changelog
+v1.0.65 (02/09/2026) — SV-PR03: marcado o agregado físico E19.5 como infraestrutura herdada; configurações continuam lidas pelo lifecycle administrativo do catálogo e os demais RPCs, materializações, aprovação e Storage permanecem inertes, sem DDL, migration, dado ou ACL alterado.
 v1.0.61 (29/08/2026) — E20.7.4: registrada a migration candidata que amplia o agregado E21.2 de dez para doze unidades com `landing_page_dynamic_market_research`, preserva as três tabelas, RLS e grants existentes e mantém apply e revisão operacional comprovada pendentes do merge humano.
 
 v1.0.60 (28/08/2026) — E21.4.5 read model administrativo de custos

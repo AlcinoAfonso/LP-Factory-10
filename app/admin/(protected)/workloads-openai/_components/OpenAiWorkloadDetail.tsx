@@ -7,7 +7,6 @@ import type {
   OpenAiAdministrativeConfigurationUnit,
   OpenAiAdministrativeConfigurationValue,
   OpenAiAdministrativeRevision,
-  OpenAiImageQuality,
   OpenAiReasoningEffort,
   OpenAiWorkloadConfigurationOptions,
 } from "@/openai-workloads";
@@ -40,12 +39,6 @@ const effortLabels: Record<string, string> = {
   high: "Alto",
   xhigh: "Extra-alto",
   max: "Máximo",
-};
-
-const qualityLabels: Record<string, string> = {
-  low: "Baixa",
-  medium: "Média",
-  high: "Alta",
 };
 
 const eventLabels = {
@@ -179,21 +172,12 @@ function CandidateForm({
   return (
     <form action={formAction} className="mt-4 space-y-4">
       <UnitFields unit={unit} />
-      {options.apiKind === "responses_text" ? (
-        <TextFields
-          idPrefix={`${unit.environment}-${unit.workload}`}
-          options={options}
-          initialValue={initialValue}
-          disabled={pending}
-        />
-      ) : (
-        <ImageFields
-          idPrefix={`${unit.environment}-${unit.workload}`}
-          options={options}
-          initialValue={initialValue}
-          disabled={pending}
-        />
-      )}
+      <TextFields
+        idPrefix={`${unit.environment}-${unit.workload}`}
+        options={options}
+        initialValue={initialValue}
+        disabled={pending}
+      />
       <button type="submit" className={primaryButtonClassName} disabled={pending || options.options.length === 0}>
         {pending ? "Salvando candidata…" : unit.candidate ? "Salvar edição da candidata" : "Salvar candidata"}
       </button>
@@ -239,49 +223,6 @@ function TextFields({
         <label htmlFor={`${idPrefix}-effort`} className="text-sm font-medium text-foreground">Esforço de raciocínio</label>
         <select id={`${idPrefix}-effort`} name="reasoningEffort" value={effort} disabled={disabled} className={selectClassName} onChange={(event) => setEffort(event.target.value as OpenAiReasoningEffort)}>
           {efforts.map((value) => <option key={value} value={value}>{effortLabels[value] ?? value}</option>)}
-        </select>
-      </div>
-    </div>
-  );
-}
-
-function ImageFields({
-  idPrefix,
-  options,
-  initialValue,
-  disabled,
-}: Readonly<{
-  idPrefix: string;
-  options: Extract<OpenAiWorkloadConfigurationOptions, { apiKind: "image_generation" }>;
-  initialValue: OpenAiAdministrativeConfigurationValue;
-  disabled: boolean;
-}>) {
-  const selected = options.options.find(
-    (option) => initialValue.apiKind === "image_generation" && option.model === initialValue.model && option.quality === initialValue.quality,
-  ) ?? options.options[0];
-  const [model, setModel] = useState(selected?.model ?? "");
-  const [quality, setQuality] = useState<OpenAiImageQuality | "">(selected?.quality ?? "");
-  const models = useMemo(() => Array.from(new Set(options.options.map((option) => option.model))), [options]);
-  const qualities = useMemo(
-    () => Array.from(new Set(options.options.filter((option) => option.model === model).map((option) => option.quality))),
-    [model, options],
-  );
-  return (
-    <div className="grid gap-4 sm:grid-cols-2">
-      <div>
-        <label htmlFor={`${idPrefix}-model`} className="text-sm font-medium text-foreground">Modelo</label>
-        <select id={`${idPrefix}-model`} name="model" value={model} disabled={disabled} className={selectClassName} onChange={(event) => {
-          const next = event.target.value;
-          setModel(next);
-          setQuality(options.options.find((option) => option.model === next)?.quality ?? "");
-        }}>
-          {models.map((value) => <option key={value} value={value}>{value}</option>)}
-        </select>
-      </div>
-      <div>
-        <label htmlFor={`${idPrefix}-quality`} className="text-sm font-medium text-foreground">Qualidade da imagem</label>
-        <select id={`${idPrefix}-quality`} name="quality" value={quality} disabled={disabled} className={selectClassName} onChange={(event) => setQuality(event.target.value as OpenAiImageQuality)}>
-          {qualities.map((value) => <option key={value} value={value}>{qualityLabels[value] ?? value}</option>)}
         </select>
       </div>
     </div>
@@ -416,8 +357,8 @@ function ConfigurationValue({ value }: Readonly<{ value: OpenAiAdministrativeCon
     <dl className="grid gap-2 sm:grid-cols-2">
       <div><dt className="text-xs font-medium uppercase opacity-70">Modelo</dt><dd className="mt-1 break-all font-mono text-xs">{value.model}</dd></div>
       <div>
-        <dt className="text-xs font-medium uppercase opacity-70">{value.apiKind === "responses_text" ? "Esforço" : "Qualidade"}</dt>
-        <dd className="mt-1">{value.apiKind === "responses_text" ? effortLabels[value.reasoningEffort] ?? value.reasoningEffort : qualityLabels[value.quality] ?? value.quality}</dd>
+        <dt className="text-xs font-medium uppercase opacity-70">Esforço</dt>
+        <dd className="mt-1">{effortLabels[value.reasoningEffort] ?? value.reasoningEffort}</dd>
       </div>
     </dl>
   );
@@ -464,17 +405,9 @@ function configurationIsEligible(
   options: OpenAiWorkloadConfigurationOptions,
   value: OpenAiAdministrativeConfigurationValue,
 ) {
-  if (options.apiKind === "responses_text" && value.apiKind === "responses_text") {
-    return options.options.some(
-      (option) => option.model === value.model && option.reasoningEffort === value.reasoningEffort,
-    );
-  }
-  if (options.apiKind === "image_generation" && value.apiKind === "image_generation") {
-    return options.options.some(
-      (option) => option.model === value.model && option.quality === value.quality,
-    );
-  }
-  return false;
+  return options.options.some(
+    (option) => option.model === value.model && option.reasoningEffort === value.reasoningEffort,
+  );
 }
 
 function formatDate(value: string) {

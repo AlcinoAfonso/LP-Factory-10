@@ -16,7 +16,6 @@ import { buildLandingPageInputCatalogTaxonChain } from "./taxon-chain";
 export type LandingPageInputCatalogDraftImpact = Readonly<{
   taxon: LandingPageInputCatalogTaxonIdentity;
   reviewedVersion: number | null;
-  operational: boolean;
   classification: LandingPageInputCatalogTransitionClassification;
   addedFieldKeys: readonly string[];
   expandedAllowedValueFieldKeys: readonly string[];
@@ -35,7 +34,6 @@ export type ValidateLandingPageInputCatalogDraftResult =
           noMaterialChange: number;
           compatibleEvolution: number;
           reviewRequired: number;
-          blockingOperationalReviews: number;
         }>;
       }>;
     }>
@@ -66,7 +64,6 @@ export function validateLandingPageInputCatalogDraft(input: Readonly<{
   taxons: readonly Readonly<{
     identity: LandingPageInputCatalogTaxonIdentity;
     reviewedVersion: number | null;
-    operational: boolean;
   }>[];
 }>): ValidateLandingPageInputCatalogDraftResult {
   const entry = parseDraftEntry(input.draft);
@@ -93,7 +90,6 @@ export function validateLandingPageInputCatalogDraft(input: Readonly<{
       impacts.push({
         taxon: taxon.identity,
         reviewedVersion: null,
-        operational: taxon.operational,
         classification: "review_required",
         addedFieldKeys: [],
         expandedAllowedValueFieldKeys: [],
@@ -116,7 +112,6 @@ export function validateLandingPageInputCatalogDraft(input: Readonly<{
     impacts.push({
       taxon: taxon.identity,
       reviewedVersion: taxon.reviewedVersion,
-      operational: taxon.operational,
       ...transition,
     });
   }
@@ -130,10 +125,6 @@ export function validateLandingPageInputCatalogDraft(input: Readonly<{
     ).length,
     reviewRequired: impacts.filter(
       (impact) => impact.classification === "review_required",
-    ).length,
-    blockingOperationalReviews: impacts.filter(
-      (impact) =>
-        impact.operational && impact.classification === "review_required",
     ).length,
   };
   return {

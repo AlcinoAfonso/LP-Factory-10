@@ -1,14 +1,11 @@
 import type {
-  OpenAiImageWorkloadDefinition,
   OpenAiOperationalConfiguration,
   OpenAiOperationalConfigurationReader,
   OpenAiProductWorkloadDefinition,
   OpenAiWorkloadDefinition,
   OpenAiWorkloadEnvironment,
   OpenAiWorkloadInventoryItem,
-  ResolveOpenAiImageWorkloadResult,
   ResolveOpenAiProductWorkloadResult,
-  ResolvedOpenAiImageWorkload,
   ResolvedOpenAiProductWorkload,
 } from "./contracts";
 import {
@@ -85,58 +82,6 @@ export async function resolveOpenAiProductWorkload(
   );
 }
 
-export async function resolveOpenAiImageWorkload(
-  workloadId: string,
-  environment: OpenAiWorkloadEnvironment,
-  dependencies: OpenAiWorkloadResolverDependencies = {},
-): Promise<ResolveOpenAiImageWorkloadResult> {
-  const workload = findWorkload(workloadId);
-  if (!workload) {
-    return failure("UNKNOWN_WORKLOAD", `Unknown OpenAI workload: ${workloadId}`);
-  }
-  if (!isImageWorkload(workload)) {
-    return failure(
-      "NOT_IMAGE_GENERATION_WORKLOAD",
-      `OpenAI workload is not an image generation workload: ${workloadId}`,
-    );
-  }
-
-  if (environment === "unknown") return unknownEnvironmentFailure();
-  if (
-    environment === "development" ||
-    !usesOperationalConfiguration(dependencies)
-  ) {
-    return success(toResolvedImageWorkload(workload));
-  }
-
-  const operational = await readOperationalConfiguration(
-    { environment, workload: workload.id },
-    dependencies,
-  );
-  if (!operational.ok) return operational.error;
-  if (
-    operational.value.apiKind !== "image_generation" ||
-    operational.value.workload !== workload.id ||
-    operational.value.environment !== environment ||
-    !isDecimalRevision(operational.value.revision) ||
-    !isTechnicalModel(operational.value.model)
-  ) {
-    return failure(
-      "OPERATIONAL_CONFIGURATION_INVALID",
-      `Invalid active operational configuration: ${workload.id}`,
-    );
-  }
-
-  return success(
-    toResolvedImageWorkload(workload, {
-      model: operational.value.model,
-      quality: operational.value.quality,
-      source: "supabase_operational",
-      revision: operational.value.revision,
-    }),
-  );
-}
-
 export function listOpenAiWorkloadInventory(): readonly OpenAiWorkloadInventoryItem[] {
   return inventory;
 }
@@ -170,9 +115,7 @@ function usesOperationalConfiguration(
 async function readOperationalConfiguration(
   input: Readonly<{
     environment: "production" | "preview";
-    workload:
-      | OpenAiProductWorkloadDefinition["id"]
-      | OpenAiImageWorkloadDefinition["id"];
+    workload: OpenAiProductWorkloadDefinition["id"];
   }>,
   dependencies: OpenAiWorkloadResolverDependencies,
 ): Promise<
@@ -205,11 +148,7 @@ function toInventoryItem(
   workload: OpenAiWorkloadDefinition,
 ): OpenAiWorkloadInventoryItem {
   if (workload.configurationKind === "effective") {
-    return isImageWorkload(workload)
-      ? toInventoryImageWorkload(workload)
-      : toInventoryProductWorkload(
-          workload as OpenAiProductWorkloadDefinition,
-        );
+    return toInventoryProductWorkload(workload as OpenAiProductWorkloadDefinition);
   }
 
   return deepFreeze({
@@ -232,15 +171,6 @@ function toInventoryProductWorkload(
 ): Extract<OpenAiWorkloadInventoryItem, { apiKind: "responses_text" }> {
   return deepFreeze({
     ...toResolvedProductWorkload(workload),
-    source: "repo_catalog" as const,
-  });
-}
-
-function toInventoryImageWorkload(
-  workload: OpenAiImageWorkloadDefinition,
-): Extract<OpenAiWorkloadInventoryItem, { apiKind: "image_generation" }> {
-  return deepFreeze({
-    ...toResolvedImageWorkload(workload),
     source: "repo_catalog" as const,
   });
 }
@@ -271,51 +201,12 @@ function toResolvedProductWorkload(
   });
 }
 
-function toResolvedImageWorkload(
-  workload: OpenAiImageWorkloadDefinition,
-  configuration: Readonly<{
-    model: string;
-    quality: ResolvedOpenAiImageWorkload["quality"];
-    source: ResolvedOpenAiImageWorkload["source"];
-    revision: string;
-  }> = workload.configuration,
-): ResolvedOpenAiImageWorkload {
-  return deepFreeze({
-    id: workload.id,
-    displayName: workload.displayName,
-    classification: workload.classification,
-    configurationKind: workload.configurationKind,
-    apiKind: workload.configuration.apiKind,
-    consumer: workload.consumer,
-    fallback: workload.fallback,
-    model: configuration.model,
-    size: workload.configuration.size,
-    quality: configuration.quality,
-    format: workload.configuration.format,
-    compression: workload.configuration.compression,
-    moderation: workload.configuration.moderation,
-    reasoningEffort: "not_applicable",
-    source: configuration.source,
-    revision: configuration.revision,
-    effectiveConfigurationVerified: true,
-  });
-}
-
 function isTextWorkload(
   workload: OpenAiWorkloadDefinition,
 ): workload is OpenAiProductWorkloadDefinition {
   return (
     workload.configurationKind === "effective" &&
     workload.configuration.apiKind === "responses_text"
-  );
-}
-
-function isImageWorkload(
-  workload: OpenAiWorkloadDefinition,
-): workload is OpenAiImageWorkloadDefinition {
-  return (
-    workload.configurationKind === "effective" &&
-    workload.configuration.apiKind === "image_generation"
   );
 }
 

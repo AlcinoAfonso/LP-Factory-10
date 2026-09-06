@@ -1,6 +1,6 @@
 ---
 name: lp-factory-criar-prompt
-description: Criar prompts, instruções e handoffs outcome-first para papéis e IAs do LP Factory 10, exceto briefings de implementação destinados ao Codex. Usar quando o humano pedir prompt pronto, instrução para análise, pesquisa, avaliação, estratégia, UX, documentação ou outro papel que não executará alterações no repositório, ou como subfluxo somente leitura quando uma implementação criar ou alterar prompt consumido por IA.
+description: Criar prompts, instruções e handoffs outcome-first para papéis e IAs do LP Factory 10, exceto briefings destinados a uma task técnica no Codex trabalhar sobre o repositório. Usar quando o humano pedir prompt pronto, instrução para análise, pesquisa, avaliação, estratégia, UX, documentação ou outro papel/IA, ou como subfluxo somente leitura quando uma implementação criar ou alterar prompt consumido por IA.
 ---
 
 # Criar prompt outcome-first
@@ -9,9 +9,9 @@ Produzir uma instrução completa e executável por outra IA, usando as fontes v
 
 ## Roteamento obrigatório
 
-1. Usar esta skill quando o produto final for prompt, instrução ou handoff para análise, pesquisa, avaliação, decisão, estratégia, UX, documentação ou outro trabalho sem implementação no repositório; usá-la também como subfluxo somente leitura do Executor quando a implementação criar ou alterar prompt consumido por IA.
-2. Fora desse subfluxo, se o destinatário for Codex, Codex App ou executor que alterará arquivos, código, banco, configuração, branch, commit ou PR, usar `$lp-factory-briefing-codex` e não continuar nesta skill.
-3. Se o pedido for ambíguo, resolver pelas fontes e pelo resultado esperado. Perguntar somente quando não for possível determinar se haverá implementação no repositório.
+1. Usar esta skill quando o produto final for prompt, instrução ou handoff para análise, pesquisa, avaliação, decisão, estratégia, UX, documentação ou outro papel/IA que não seja uma task técnica Codex trabalhando sobre o repositório; usá-la também como subfluxo somente leitura do Executor quando a implementação criar ou alterar prompt consumido por IA.
+2. Fora desse subfluxo, se o produto final solicitado for um briefing ou handoff para uma task técnica no Codex trabalhar sobre o repositório, inclusive em atividade read-only como investigação, auditoria ou mapeamento, usar `$lp-factory-briefing-codex` e não continuar nesta skill.
+3. Se o pedido for ambíguo, resolver pelo produto final e destinatário. Perguntar somente quando não for possível determinar se o usuário quer um briefing para task técnica Codex ou um prompt para outro papel/IA.
 
 ## Fontes obrigatórias
 
@@ -61,4 +61,4 @@ Entregar:
 
 ## Limites
 
-Não executar a tarefa descrita no prompt; não criar implementação, branch, commit ou PR; não inventar rota, banco, job, agente, automação, engine ou infraestrutura; não transformar briefing de implementação para Codex em prompt geral.
+Não executar a tarefa descrita no prompt; não criar implementação, branch, commit ou PR; não inventar rota, banco, job, agente, automação, engine ou infraestrutura; não transformar briefing técnico para Codex em prompt geral.

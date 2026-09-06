@@ -1,7 +1,7 @@
 interface:
-  display_name: "Avaliar consolidação do plano"
-  short_description: "Audita plano-base v2 com o Analista"
-  default_prompt: "Use $lp-factory-avaliar-plano-analista para avaliar a v2 e auditar a consolidação informada."
+  display_name: "Avaliar plano com Analista"
+  short_description: "Avalia v2 Light ou Complexa conforme o fluxo"
+  default_prompt: "Use $lp-factory-avaliar-plano-analista para avaliar a v2 no nível informado, preservando o fluxo Light ou Complexa correspondente."
 
 policy:
   allow_implicit_invocation: false

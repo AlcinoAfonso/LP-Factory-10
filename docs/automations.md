@@ -1,7 +1,7 @@
 0.1 Cabeçalho
-Data: 30/08/2026
-Versão: v1.21
-Status: Alinhado ao Platform Config
+Data: 03/09/2026
+Versão: v1.26
+Status: Alinhado ao catálogo operacional vigente; `automations/supabase-inspect` preservada
 
 0.2 Função do documento
 Registrar a camada de automações operacionais do LP Factory 10 como referência para integrações, automações operacionais e componentes consumidores, sem expor segredos.
@@ -115,33 +115,33 @@ Objetivo:
 Registrar a validação funcional histórica do Supabase Inspect no Agent Builder por meio da MCP base documentada em `docs/services.md`, sem acesso direto ao banco.
 
 Status:
-Concluído como validação funcional histórica
+Removido manualmente em 01/09/2026; não é automação vigente nem consumidor necessário independente.
 
 Nota de legado:
 O Agent Builder deixará de receber novos recursos e será descontinuado na plataforma OpenAI até 30/11/2026; esta integração não deve ser expandida.
 
-Referências / dependências:
-docs/services.md — `1.1 LPF Supabase Inspect MCP`
-services/mcp-supabase-inspect/README.md
+Decisão da E22.3:
+O workflow `wf_69b57fed963c8190b9da8e40797aa5820147027ff7bd60d7` é alvo da retirada controlada e não deve ser preservado como consumidor necessário independente do MCP.
+
+Estado externo final:
+A remoção manual do workflow foi confirmada pelo responsável em 01/09/2026. Não há workflow Agent Builder operacional a catalogar; nenhuma ferramenta de leitura independente do Agent Builder esteve disponível nesta execução.
+
+Referência histórica:
 Workflow ID: `wf_69b57fed963c8190b9da8e40797aa5820147027ff7bd60d7`
 
 3.3.1 Update — Agents SDK
 Status:
-Prioritário / pendente de migração
+Não iniciado; fora do escopo E22.3.4 e não autorizado como substituto.
 
 Objetivo:
-Migrar ou substituir o uso validado no Agent Builder por um fluxo programático mantido no Agents SDK.
+Registro histórico de update não materializado; a E22.3.4 não cria Agents SDK nem qualquer substituto.
 
 3.3.2 Update — ChatGPT + MCP
 Status:
-Bloqueado
+Não iniciado; sem continuidade operacional após a retirada controlada do MCP.
 
 Motivo:
-Incompatibilidade de autenticação no contrato atual da MCP
-
-Referências / dependências:
-docs/services.md — `1.1 LPF Supabase Inspect MCP`
-services/mcp-supabase-inspect/README.md
+Incompatibilidade de autenticação no contrato histórico da MCP; nenhuma migração ou substituto foi criado.
 
 3.4 Validador Final
 Objetivo:
@@ -245,7 +245,7 @@ Decisão determinística: `lib/onboarding/niche-resolution/deterministicConfiden
 3.6 Apply automático de migrations no Supabase
 
 Objetivo:
-Aplicar migrations versionadas do Supabase automaticamente após merge humano na `main`, substituindo o uso manual do SQL Editor para alterações de schema.
+Aplicar migrations versionadas do Supabase automaticamente após o merge autorizado para o modo vigente na `main`, substituindo o uso manual do SQL Editor para alterações de schema.
 
 Status:
 Implementada e validada
@@ -254,7 +254,7 @@ Acesso:
 GitHub → Actions → workflow `pipeline-supabase-apply-migrations`
 
 Como usar:
-Criar migration em `supabase/migrations/<timestamp>_<nome>.sql`, validar em PR exclusivo e fazer merge humano na `main`. O push na `main` dispara o apply automático.
+Criar migration em `supabase/migrations/<timestamp>_<nome>.sql`, validar no PR do plano e realizar o merge autorizado para o modo vigente conforme `AGENTS.md`. O push na `main` dispara o apply automático.
 
 Resumo de controle:
 A baseline oficial foi concluída, o histórico remoto foi alinhado e o smoke de criação/remoção foi validado. O gate `SUPABASE_APPLY_MIGRATIONS_ENABLED` permanece `true` no fluxo normal. O SQL Editor não faz parte do fluxo normal. Migration já aplicada não deve ser editada, apagada ou substituída; correções e reversões devem ser feitas por nova migration incremental.
@@ -396,59 +396,13 @@ Fluxo funcional: `docs/roadmap.md` — E20.6.3.
 Configuração do gate: `docs/platform-config.md` — seção 3.5.
 Contrato técnico: `docs/base-tecnica.md` — seção 3.15.7.
 
-3.11 E19.4.3 — geração controlada da candidata de landing page
-
-Objetivo:
-Gerar e validar a candidata textual completa e sua imagem principal a partir do pacote autorizado da E19.3, sem materialização parcial.
-
-Status:
-Implementada e comprovada em duas execuções integradas hospedadas em 18/08/2026. Por decisão humana, o canário isolado sem persistência foi substituído pelo primeiro append integrado; texto, imagem e caminho oficial concluíram sem retry ou fallback, e o segmento produtivo permaneceu configurado com `maxDuration = 300` sem timeout incompatível.
-
-Recurso utilizado:
-- Responses API com Structured Output estrito;
-- Images API;
-- Server Action autenticada e fail-closed por readiness.
-
-Natureza:
-- Automação com IA em fluxo controlado.
-
-Ambiente principal:
-- Runtime do LP Factory.
-
-Plataforma dependente:
-- OpenAI Platform.
-
-Participação humana:
-- Gatilho autenticado explícito e revisão posterior do resultado; sem intervenção durante a execução.
-
-Como funciona:
-- Consome somente o pacote autorizado E19.3 v3 e mantém valores operacionais fora do contexto textual.
-- Executa um workload textual e um workload de imagem separados, com uma chamada por provider e telemetria própria.
-- Valida contrato, estrutura, bindings e factualidade antes de permitir qualquer materialização.
-- Preserva tentativa e requisição internas para correlação, separadas dos identificadores dos providers.
-- Aplica deadline total de 270 segundos, propaga cancelamento e tempo restante aos providers e impede imagem, upload ou append posterior quando o orçamento expira.
-
-Limites:
-- Não usa tools, Agents SDK, agente, job, fila, execução recorrente, retry ou fallback automático.
-- Falha, recusa, timeout ou candidata inválida encerram a tentativa sem revisão persistida.
-- Não registra prompt, resposta integral, contexto de negócio, PII, secrets ou raciocínio privado.
-
-Aplicação funcional no roadmap:
-- `docs/roadmap.md` — E19.4.3.
-
-Referências / dependências:
-Regra técnica: `docs/base-tecnica.md` — seção 3.15.8.
-Configuração de workloads: `docs/platform-config.md`.
-Boundary de geração: `lib/lp-builder/landingPageDraftGeneration.ts`.
-Autoridade de apresentação: `lib/conversion-content/landing-page/presentation/`.
-
 3.12 E20.7.4 — complemento dinâmico controlado de conhecimento de mercado
 
 Objetivo:
 Complementar somente a resolução `dynamic_required` da E20.7.3 com evidência pública recente e rastreável, sem recusar a oferta nem substituir a autoridade factual E20.2.
 
 Status:
-Concluída no boundary da E20.7, implementada e validada deterministicamente no repositório, com apply automático da migration E20.7.4 concluído após o merge do PR #835. O transporte hospedado permanece não autorizado; prova hospedada, promoção e ativação do workload pertencem ao futuro recorte E19.3 consumidor e não constituem pendência da E20.7.
+Concluída no boundary da E20.7, implementada e validada deterministicamente no repositório, com apply automático da migration E20.7.4 concluído após o merge do PR #835. O transporte hospedado permanece não autorizado e não possui consumidor funcional após a retirada da integração E19; eventual uso futuro exige recorte próprio.
 
 Recurso utilizado:
 - Responses API com Structured Output estrito;
@@ -474,7 +428,7 @@ Como funciona:
 Limites:
 - Não usa agente, Agents SDK, retry, fallback, background, conversation, job, fila, RAG, cache global ou persistência de pesquisa.
 - Não altera a E20.2, não gera copy, layout, wireframe ou CTA e não integra a geração E19.
-- O piloto `corretor-imoveis` já está reconciliado em `reviewed_input_catalog_version=6`. O bootstrap revisão `1` não autoriza transporte hospedado; o futuro recorte E19.3 consumidor deverá comprovar, promover e ativar revisão `supabase_operational` `2` ou posterior pelo lifecycle E21.2, conforme `docs/platform-config.md`.
+- O piloto `corretor-imoveis` já está reconciliado em `reviewed_input_catalog_version=6`. O bootstrap revisão `1` não autoriza transporte hospedado; eventual novo consumidor deverá comprovar, promover e ativar revisão `supabase_operational` `2` ou posterior pelo lifecycle E21.2, conforme `docs/platform-config.md`.
 
 Aplicação funcional no roadmap:
 - `docs/roadmap.md` — E20.7.4.

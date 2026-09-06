@@ -73,7 +73,7 @@ Para cada update relevante:
 - Observabilidade aplicada: [descrição curta] | `N/A`
 - Validações técnicas: [comandos, checks ou referências]
 - Smoke ou QA funcional: [resultado e evidência] | `N/A`
-- Teste humano: [realizado | requerido | não aplicável]
+- Evidência de QA: [automatizada | humana | combinada | pendente | não aplicável]
 - Limitações do ambiente: [descrição curta] | `N/A`
 
 ## 9. Artefatos
@@ -103,6 +103,6 @@ Para cada update relevante:
 - Plano-base: [path]
 - Roadmap: `docs/roadmap.md`
 - Prompt ABC: `docs/prompt-abc.md`
-- Prompt do Executor: `docs/prompt-executor.md`
+- Contrato do Executor: `.agents/skills/lp-factory-executar-plano/SKILL.md`
 - PR e commits: [referências]
 - Outras fontes utilizadas: [paths ou URLs autorizadas] | `N/A`

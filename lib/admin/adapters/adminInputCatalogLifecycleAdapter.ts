@@ -11,7 +11,6 @@ import {
   serializeLandingPageInputCatalogEntry,
   buildLandingPageInputCatalogTaxonChain,
   classifyLandingPageInputCatalogTransitionForTaxon,
-  collectCommercialIdentityReviewBlockers,
   type LandingPageInputCatalogDraftImpact,
   type LandingPageInputCatalogRegistry,
   type LandingPageInputCatalogRegistryEntry,
@@ -39,13 +38,12 @@ export type AdminInputCatalogLifecycleState = Readonly<{
   currentVersion: number;
   publishedVersions: readonly number[];
   totalActiveTaxons: number;
-  totalOperationalTaxons: number;
   draft: null | Readonly<{
     baseVersion: number;
     targetVersion: number;
     catalogJson: string;
     contentFingerprint: string;
-    operationalContextFingerprint: string;
+    lifecycleContextFingerprint: string;
     revision: number;
     validationCurrent: boolean;
     publicationPrepared: boolean;
@@ -58,8 +56,6 @@ export type AdminInputCatalogLifecycleState = Readonly<{
       noMaterialChange: number;
       compatibleEvolution: number;
       reviewRequired: number;
-      blockingOperationalReviews: number;
-      invalidOperationalConfigurations: number;
     }>;
   }>;
   error: string | null;
@@ -201,14 +197,8 @@ export async function validateAdminInputCatalogDraft(input: Readonly<{
   if (!sameDraftIdentity(early, current)) return conflict(DRAFT_CHANGED);
   const proof = proofForCandidate(context.value, candidate.value);
   if (!proof) return unavailable(DRAFT_CHANGED);
-  const invalidOperationalConfigurations = proof.invalidOperationalConfigurations;
-  if (invalidOperationalConfigurations > 0) {
-    return blocked(
-      `${invalidOperationalConfigurations} configuração(ões) operacional(is) ficariam inválidas ou ilegíveis.`,
-    );
-  }
   const fingerprintValue = fingerprint(candidate.value.canonicalJson);
-  const operationalContextFingerprint = proof.fingerprint;
+  const lifecycleContextFingerprint = proof.fingerprint;
   if (fingerprintValue !== current.value.contentFingerprint) {
     return conflict("A identidade do draft não corresponde ao conteúdo salvo.");
   }
@@ -216,7 +206,7 @@ export async function validateAdminInputCatalogDraft(input: Readonly<{
     .from("landing_page_input_catalog_drafts")
     .update({
       validation_fingerprint: fingerprintValue,
-      validation_context_fingerprint: operationalContextFingerprint,
+      validation_context_fingerprint: lifecycleContextFingerprint,
       validated_at: new Date().toISOString(),
       publication_fingerprint: null,
       publication_context_fingerprint: null,
@@ -259,42 +249,19 @@ export async function prepareAdminInputCatalogPublication(input: Readonly<{
   const proof = proofForCandidate(context.value, candidate.value);
   if (!proof) return unavailable(DRAFT_CHANGED);
   const fingerprintValue = fingerprint(candidate.value.canonicalJson);
-  const operationalContextFingerprint = proof.fingerprint;
+  const lifecycleContextFingerprint = proof.fingerprint;
   if (
     current.value.validationFingerprint !== fingerprintValue ||
-    current.value.validationContextFingerprint !== operationalContextFingerprint ||
+    current.value.validationContextFingerprint !== lifecycleContextFingerprint ||
     current.value.contentFingerprint !== fingerprintValue
   ) {
     return blocked("Valide novamente o conteúdo exato antes de preparar a publicação.");
-  }
-  const commercialIdentityBlockers = collectCommercialIdentityReviewBlockers(
-    candidate.value.impacts,
-  );
-  if (commercialIdentityBlockers.length > 0) {
-    return blocked(
-      "A publicação altera uma dimensão de identidade comercial protegida e exige autoridade E19.5 específica.",
-    );
-  }
-  const operationalReviewStatus = await validateOperationalReviewEvidence(
-    candidate.value,
-    current.value,
-  );
-  if (operationalReviewStatus.blocking > 0) {
-    return blocked(
-      "Existem taxons operacionais que exigem decisão E20.6.5 antes da publicação.",
-    );
-  }
-  const invalidOperationalConfigurations = proof.invalidOperationalConfigurations;
-  if (invalidOperationalConfigurations > 0) {
-    return blocked(
-      `${invalidOperationalConfigurations} configuração(ões) operacional(is) ficariam inválidas ou ilegíveis.`,
-    );
   }
   const { data, error } = await client
     .from("landing_page_input_catalog_drafts")
     .update({
       publication_fingerprint: fingerprintValue,
-      publication_context_fingerprint: operationalContextFingerprint,
+      publication_context_fingerprint: lifecycleContextFingerprint,
       publication_prepared_at: new Date().toISOString(),
       updated_by: input.actorUserId,
     })
@@ -313,7 +280,7 @@ export async function prepareAdminInputCatalogPublication(input: Readonly<{
     handoff: buildPublicationHandoff(
       row,
       candidate.value.canonicalJson,
-      operationalContextFingerprint,
+      lifecycleContextFingerprint,
     ),
   };
 }
@@ -371,12 +338,6 @@ export async function reconcileAdminInputCatalogPublishedDraft(input: Readonly<{
     impacts: initialProof.impacts,
     validEvidenceTaxonIds: new Set(initialProof.validEvidenceTaxonIds),
   });
-  if (initialPlan.blockingTaxonIds.length > 0) {
-    return blocked(
-      "Existem decisões E20.6.5 obrigatórias ausentes ou stale no draft publicado.",
-    );
-  }
-
   for (const taxonId of initialPlan.taxonIdsToAdvance) {
     const taxon = initialContext.value.taxons.find(
       (candidate) => candidate.identity.id === taxonId,
@@ -417,7 +378,6 @@ export async function reconcileAdminInputCatalogPublishedDraft(input: Readonly<{
     ]),
   );
   if (
-    finalPlan.blockingTaxonIds.length > 0 ||
     finalPlan.taxonIdsToAdvance.length > 0 ||
     initialProof.validEvidenceTaxonIds.some(
       (taxonId) =>
@@ -617,10 +577,11 @@ function proofForCandidate(
   context: LifecycleContext,
   candidate: Extract<ReturnType<typeof validateLandingPageInputCatalogDraft>, { ok: true }>["value"],
 ) {
-  const proof = context.operationalProof;
-  if (!proof || proof.candidateContentFingerprint !== fingerprint(candidate.canonicalJson) ||
-      proof.invalidOperationalConfigurations === null) return null;
-  return { ...proof, invalidOperationalConfigurations: proof.invalidOperationalConfigurations };
+  const proof = context.lifecycleProof;
+  if (!proof || proof.candidateContentFingerprint !== fingerprint(candidate.canonicalJson)) {
+    return null;
+  }
+  return proof;
 }
 
 async function readDraftRow(
@@ -653,12 +614,11 @@ async function buildState(
       currentVersion: CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION,
       publishedVersions: listLandingPageInputCatalogVersions(),
       totalActiveTaxons: context.taxons.filter((taxon) => taxon.identity.isActive).length,
-      totalOperationalTaxons: context.operationalTaxonIds.size,
       draft: null,
       error: null,
     };
   }
-  const operationalContextFingerprint = context.operationalProof?.fingerprint ?? "";
+  const lifecycleContextFingerprint = context.lifecycleProof?.fingerprint ?? "";
   if (row.targetVersion === CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION) {
     const deployedFingerprint = fingerprint(
       serializeLandingPageInputCatalogEntry(
@@ -686,13 +646,12 @@ async function buildState(
       currentVersion: CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION,
       publishedVersions: listLandingPageInputCatalogVersions(),
       totalActiveTaxons: context.taxons.filter((taxon) => taxon.identity.isActive).length,
-      totalOperationalTaxons: context.operationalTaxonIds.size,
       draft: {
         baseVersion: row.baseVersion,
         targetVersion: row.targetVersion,
         catalogJson: JSON.stringify(row.catalogJson, null, 2),
         contentFingerprint: row.contentFingerprint,
-        operationalContextFingerprint,
+        lifecycleContextFingerprint,
         revision: row.revision,
         validationCurrent: row.validationFingerprint === row.contentFingerprint,
         publicationPrepared: true,
@@ -705,8 +664,6 @@ async function buildState(
           noMaterialChange: 0,
           compatibleEvolution: 0,
           reviewRequired: 0,
-          blockingOperationalReviews: 0,
-          invalidOperationalConfigurations: 0,
         },
       },
       error: null,
@@ -725,8 +682,7 @@ async function buildState(
   if (!candidate.ok) return unavailableState(candidate.error.message, { ok: true, value: context });
   const proof = proofForCandidate(context, candidate.value);
   if (!proof) return unavailableState(DRAFT_CHANGED, { ok: true, value: context });
-  const invalidOperationalConfigurations = proof.invalidOperationalConfigurations;
-  const operationalReviewStatus = await validateOperationalReviewEvidence(
+  const reviewStatus = await validateReviewEvidence(
     candidate.value,
     row,
   );
@@ -734,51 +690,44 @@ async function buildState(
     currentVersion: CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION,
     publishedVersions: listLandingPageInputCatalogVersions(),
     totalActiveTaxons: context.taxons.filter((taxon) => taxon.identity.isActive).length,
-    totalOperationalTaxons: context.operationalTaxonIds.size,
     draft: {
       baseVersion: row.baseVersion,
       targetVersion: row.targetVersion,
       catalogJson: JSON.stringify(row.catalogJson, null, 2),
       contentFingerprint: row.contentFingerprint,
-      operationalContextFingerprint,
+      lifecycleContextFingerprint,
       revision: row.revision,
       validationCurrent:
         row.validationFingerprint === row.contentFingerprint &&
-        row.validationContextFingerprint === operationalContextFingerprint,
+        row.validationContextFingerprint === lifecycleContextFingerprint,
       publicationPrepared:
         row.publicationFingerprint === row.contentFingerprint &&
-        row.publicationContextFingerprint === operationalContextFingerprint &&
-        operationalReviewStatus.blocking === 0 &&
-        invalidOperationalConfigurations === 0,
+        row.publicationContextFingerprint === lifecycleContextFingerprint,
       publishedReconciliationRequired: false,
       publishedReconciliationAllowed: false,
-      reviewedTaxonIds: operationalReviewStatus.validTaxonIds,
+      reviewedTaxonIds: reviewStatus.validTaxonIds,
       updatedAt: row.updatedAt,
       impacts: candidate.value.impacts,
       totals: {
         ...candidate.value.totals,
-        blockingOperationalReviews: operationalReviewStatus.blocking,
-        invalidOperationalConfigurations,
       },
     },
     error: null,
   };
 }
 
-async function validateOperationalReviewEvidence(
+async function validateReviewEvidence(
   candidate: Extract<
     ReturnType<typeof validateLandingPageInputCatalogDraft>,
     { ok: true }
   >["value"],
   row: DraftRow,
-): Promise<Readonly<{ blocking: number; validTaxonIds: readonly string[] }>> {
-  let blocking = 0;
+): Promise<Readonly<{ validTaxonIds: readonly string[] }>> {
   const validTaxonIds: string[] = [];
   for (const impact of candidate.impacts) {
     if (impact.classification !== "review_required") continue;
     const evidence = row.taxonReviewEvidence[impact.taxon.id];
     if (!evidence || evidence.contentFingerprint !== row.contentFingerprint) {
-      if (impact.operational) blocking += 1;
       continue;
     }
     const current = await reconstructDraftInputCatalogEvaluationContext(
@@ -790,13 +739,11 @@ async function validateOperationalReviewEvidence(
       fingerprintInputCatalogEvaluationContextIdentity(current.value.identity) !==
         evidence.contextFingerprint
     ) {
-      if (impact.operational) blocking += 1;
       continue;
     }
     validTaxonIds.push(impact.taxon.id);
   }
   return Object.freeze({
-    blocking,
     validTaxonIds: Object.freeze(validTaxonIds.sort()),
   });
 }
@@ -804,7 +751,6 @@ async function validateOperationalReviewEvidence(
 type PublishedReviewImpact = Readonly<{
   taxonId: string;
   reviewedVersion: number | null;
-  operational: boolean;
   classification: LandingPageInputCatalogDraftImpact["classification"];
 }>;
 
@@ -902,7 +848,6 @@ function buildPublishedReviewImpacts(
       impacts.push({
         taxonId: taxon.identity.id,
         reviewedVersion: taxon.reviewedVersion,
-        operational: taxon.operational,
         classification: "no_material_change",
       });
       continue;
@@ -911,7 +856,6 @@ function buildPublishedReviewImpacts(
       impacts.push({
         taxonId: taxon.identity.id,
         reviewedVersion: null,
-        operational: taxon.operational,
         classification: "review_required",
       });
       continue;
@@ -940,7 +884,6 @@ function buildPublishedReviewImpacts(
     impacts.push({
       taxonId: taxon.identity.id,
       reviewedVersion: taxon.reviewedVersion,
-      operational: taxon.operational,
       classification: transition.classification,
     });
   }
@@ -1086,13 +1029,13 @@ function serializeDraftTaxonReviewEvidence(
 function buildPublicationHandoff(
   row: DraftRow,
   canonicalJson: string,
-  operationalContextFingerprint: string,
+  lifecycleContextFingerprint: string,
 ): string {
   return [
     `E20.2.8 — materializar versão ${row.targetVersion} no registry repo-only`,
     `Base publicada: ${row.baseVersion}`,
     `Fingerprint do conteúdo SHA-256: ${row.contentFingerprint}`,
-    `Fingerprint do contexto operacional SHA-256: ${operationalContextFingerprint}`,
+    `Fingerprint do contexto E20 SHA-256: ${lifecycleContextFingerprint}`,
     "",
     "Instruções vinculantes:",
     "- materializar este conteúdo como nova versão imutável no registry;",
@@ -1118,7 +1061,6 @@ function unavailableState(
     currentVersion: CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION,
     publishedVersions: listLandingPageInputCatalogVersions(),
     totalActiveTaxons: context?.value.taxons.length ?? 0,
-    totalOperationalTaxons: context?.value.operationalTaxonIds.size ?? 0,
     draft: null,
     error: message,
   };

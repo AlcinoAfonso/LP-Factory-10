@@ -1,9 +1,9 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 27/05/2026
-• Versão: v1.2
-• Status: Alinhado ao Platform Config e Automations
+• Data: 01/09/2026
+• Versão: v1.4
+• Status: Catálogo final após a conclusão da retirada controlada E22.3; nenhum service/MCP operacional permanece
 
 0.2 Função do documento
 Registrar a camada `services` do LP Factory 10 como referência oficial e amigável para humano para services implantáveis, MCPs, endpoints e infraestrutura reutilizável com identidade própria, sem expor segredos.
@@ -16,44 +16,10 @@ Registrar a camada `services` do LP Factory 10 como referência oficial e amigá
 
 1. Catálogo de services
 
-1.1 LPF Supabase Inspect MCP
-
-1.1.1 Objetivo
-• fornecer camada universal de acesso read-only ao Supabase via MCP
-• permitir reutilização por múltiplos agentes, workflows e componentes consumidores
-
-1.1.2 Como acessar
-• pela documentação técnica local em `services/mcp-supabase-inspect/README.md`
-• pelo endpoint canônico quando a integração exigir consumo da MCP remota autenticada
-
-1.1.3 Onde acessar
-• Projeto Vercel: `lpf-10-services`
-• Endpoint canônico: `https://lpf-10-services.vercel.app/api/mcp`
-
-1.1.3.1 Boundary operacional de deploy
-• Projeto Vercel: `lpf-10-services`
-• `Root Directory`: `services/mcp-supabase-inspect`
-• `Include files outside the root directory in the Build Step`: OFF
-• `Ignored Build Step`: customizado para reduzir builds desnecessários quando não houver mudança no service
-
-1.1.4 Status
-• implementado em serviço dedicado
-• validação fim a fim depende de operação/cutover externo por ambiente
-
-1.1.5 Referências / dependências
-• implementação canônica: `services/mcp-supabase-inspect/api/mcp.js`
-• README técnico local: `services/mcp-supabase-inspect/README.md`
-• docs/base-tecnica.md
-• consumidor atual: `docs/automations.md` — `3.3 Supabase Inspect Agente`
-
-1.2 Pendência operacional vinculada
-
-1.2.1 sample_rows
-• Objetivo: permitir amostragem real de linhas em modo read-only
-• Contexto: falha por permissão com RLS (`auth.uid()`)
-• Escopo: ajustar permissões mínimas no banco, validar retorno real e manter segurança read-only
-• Status: pendente em caso separado
-• Observação: a pendência não invalida a MCP como service base reutilizável; bloqueia apenas a completude funcional da tool
+1.1 Estado atual da camada
+• Nenhum service implantável ou MCP operacional está catalogado após a retirada repo-side da E22.3.4.
+• O projeto Vercel `lpf-10-services` foi removido em 01/09/2026 após confirmação read-only de ausência de workload; não há configuração externa de service a manter.
+• `automations/supabase-inspect` é automação GitHub read-only preservada e não é service/MCP.
 
 2. Regras de fronteira desta camada
 • `docs/services.md` registra services implantáveis, MCPs, endpoints, infraestrutura reutilizável com identidade própria e suas referências técnicas locais.
@@ -69,6 +35,9 @@ Registrar a camada `services` do LP Factory 10 como referência oficial e amigá
 • quando um service compartilhado com o Core tiver deploy independente no mesmo repositório, registrar explicitamente a boundary operacional (projeto Vercel, Root Directory e regras de build) para evitar drift documental e builds desnecessários
 
 99. Changelog
+v1.3 (31/08/2026)
+• retirado do catálogo operacional o `LPF Supabase Inspect MCP` e sua pendência `sample_rows`, preservando a configuração externa do projeto `lpf-10-services` somente como estado pendente da E22.3.5
+
 v1.2 (27/05/2026)
 • corrigidas referências antigas de `docs/automacoes.md` para `docs/automations.md`
 • adicionada relação documental com `docs/platform-config.md`

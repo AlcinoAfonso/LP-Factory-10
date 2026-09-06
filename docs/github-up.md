@@ -436,6 +436,59 @@ Para o LP Factory 10, a cobertura de Resend é concreta porque o provedor já op
 
 ---
 
+## github#14 — Retenção do Actions passa a abranger checks, runs e statuses *(🟨 Mudança agendada; revisão pendente)*
+
+2026-08-27  
+Catalogado em 2026-09-05
+
+### Status no Projeto
+
+- Status: mudança de plataforma agendada para 01/10/2026; impacto e necessidade de preservação adicional ainda não validados.
+- Evidência: o repositório público mantém sete workflows GitHub Actions. `.github/workflows/automation-niche-runtime-tests.yml` publica o artefato `niche-runtime-results` sem `retention-days`; os demais workflows produzem runs, checks, statuses e logs usados como evidência operacional. Não há configuração ou política de retenção documentada.
+- Natureza de uso: governança transversal de CI e evidências.
+- Relação com a stack: afeta apenas a disponibilidade histórica dos registros do GitHub Actions; não altera runtime, produto, deployment, banco ou canais.
+- Horizonte: Starter, com revisão antes de 01/10/2026.
+
+### Descrição
+
+A partir de 01/10/2026, checks, workflow runs e commit statuses passam a seguir a mesma configuração de retenção já aplicada a artefatos e logs. O padrão é 90 dias e, em repositórios públicos como o LP Factory 10, esse também é o limite máximo. Dados que ultrapassarem a janela serão removidos automaticamente; ampliar a configuração depois não restaura o que já foi excluído.
+
+A mudança não exige ação para a maioria dos repositórios. Neste projeto, porém, ao menos um workflow publica evidência de teste como artefato, e documentos técnicos citam checks e runs como prova de validação. O ponto a decidir é quais evidências precisam sobreviver além de 90 dias e quais podem permanecer efêmeras.
+
+### Valor para o Projeto
+
+- Evita tratar um run, check, status, log ou artefato expirável como única prova durável de aceite técnico.
+- Permite preservar somente evidências realmente necessárias, sem criar arquivo ou custo operacional indiscriminado.
+- Torna explícito o prazo de 90 dias para o repositório público antes de a limpeza começar.
+
+### Gatilho e aplicação
+
+Avaliar antes de 01/10/2026:
+
+1. inventariar workflows e documentos que dependem de evidência disponível por mais de 90 dias;
+2. confirmar a configuração efetiva de retenção no GitHub sem alterá-la;
+3. para cada evidência necessária além da janela, escolher residência canônica e segura no fluxo competente;
+4. aceitar explicitamente a expiração das demais evidências.
+
+### Dependências, riscos e limite
+
+- Aumentar retenção não ultrapassa 90 dias no repositório público e pode elevar armazenamento faturável de artefatos e logs.
+- Checks, runs e statuses não contam como armazenamento faturável, mas seus artefatos e logs contam.
+- A limpeza não é retroativamente reversível.
+- Exportar evidências pode duplicar dados, expor conteúdo sensível ou criar nova fonte de verdade; só fazer após inventário e decisão competente.
+- Não alterar settings, workflows, artefatos, secrets, documentos técnicos ou infraestrutura nesta rodada.
+
+### Critério de encerramento
+
+- Dependências de evidência acima de 90 dias identificadas e decididas; evidências duráveis, quando necessárias, passam a ter residência canônica aprovada, e as demais têm expiração aceita de forma explícita. Depois, preservar o ID como registro histórico com a decisão.
+
+### Fontes Oficiais
+
+- [GitHub Changelog — Actions retention will cover checks, workflow runs, and statuses](https://github.blog/changelog/2026-08-27-actions-retention-will-cover-checks-workflow-runs-and-statuses)
+- [GitHub Docs — Managing GitHub Actions settings for a repository](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/managing-repository-settings/managing-github-actions-settings-for-a-repository)
+
+---
+
 ## Registro da rodada — GitHub Update — 10/08/2026
 
 ### Updates ajustados ou incorporados
@@ -468,3 +521,43 @@ Para o LP Factory 10, a cobertura de Resend é concreta porque o provedor já op
 - A busca por referências explícitas e implementação semântica precedeu a classificação.
 - Nenhum workflow, setting, secret, regra, app, dependência ou infraestrutura foi criado ou alterado.
 - O catálogo registra a proteção; não autoriza teste com credencial, bypass, implementação ou mudança de plano.
+
+
+---
+
+## Registro da rodada — GitHub Update — 05/09/2026
+
+### Updates ajustados ou incorporados
+
+- `github#14` foi adicionado para registrar a expansão da retenção do Actions a checks, workflow runs e statuses a partir de 01/10/2026.
+- Nenhum item existente exigiu mudança material de estado, horizonte ou recomendação.
+
+### Updates avaliados e não adicionados
+
+- Actions Early September: a API de depreciação de runners não atende aos runners hospedados usados pelo projeto; o novo `vulnerability-alerts: read` não tem consumidor de Dependabot nos workflows; e não há reusable workflow que use os novos campos de contexto.
+- Multiple trusted publishing configurations for npm: o repositório não publica pacote npm nem mantém workflow de publicação.
+- License data quality improvements: melhoria passiva da plataforma; não há Dependency Review Action, SBOM ou gate de licenças configurado.
+- CodeQL 2.26.3/2.26.4 e Code Quality: `.github/workflows/security.yml` mantém checks próprios e não usa CodeQL ou Code Quality.
+- Migração de branch protection, rule insights e path exceptions: não há ruleset documentado nem escala ou conflito que prove ganho; o estado ao vivo das regras não foi validado.
+- Atualizações de Copilot, modelos e agentes: não há Copilot CLI/SDK, Copilot code review ou política empresarial no projeto; permanecem absorvidas pelos gates de `github#5` e `github#8`.
+- GitHub CLI signing key: nenhuma instalação Linux via repositório de pacotes está declarada no projeto; o estado de workstations externas não foi inferido.
+- Nenhum recurso foi excluído somente por estar fora do Starter ou do MVP.
+
+### Cobertura estratégica desta atualização
+
+- Actions, workflows, checks, artefatos, runners, branches, PRs, rulesets, Copilot, Apps, OAuth, Dependabot, secret scanning, code scanning, CodeQL, supply chain e governança foram pesquisados nas fontes oficiais prioritárias do GitHub.
+- Landing pages, Instagram, WhatsApp e e-mail foram confrontados com as novidades aplicáveis.
+- Nenhuma novidade GitHub publicada entre 11/08/2026 e 05/09/2026 alterou diretamente os fluxos dos quatro canais; a mudança de retenção é transversal às evidências técnicas.
+
+### Pontos não validados e lacunas documentais
+
+- A configuração efetiva de retenção do repositório não foi lida em Settings.
+- Não foi inventariado quais runs, checks, statuses, logs ou artefatos precisam sobreviver além de 90 dias.
+- O estado ao vivo de branch protection e rulesets não foi confirmado; a ausência documental não foi tratada como prova de ausência na plataforma.
+
+### Validação de IDs e limite
+
+- Nenhum ID publicado desapareceu, foi renumerado ou reutilizado; somente `github#14` foi acrescentado acima do maior ID anterior.
+- A busca por referências explícitas e implementação semântica precedeu a classificação; nenhum item foi arquivado nesta rodada.
+- Nenhum workflow, setting, secret, regra, app, dependência, artefato ou infraestrutura foi criado ou alterado.
+- O catálogo registra a avaliação; não autoriza exportação, mudança de retenção, implementação, contratação ou merge.

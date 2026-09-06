@@ -22,7 +22,7 @@ export default async function OpenAiCostsPage() {
       <AdminPageHeader
         eyebrow="Visibilidade financeira OpenAI"
         title="Custos OpenAI"
-        description="Consulte o gasto oficial total e compare com os custos prospectivos calculados para texto e imagem das Landing Pages, por cliente."
+        description="Consulte o gasto oficial total e compare com o histórico interno congelado de custos de texto e imagem das Landing Pages, por cliente."
         meta="USD · sob demanda"
       />
       <OpenAiCostsDashboard {...defaults} />

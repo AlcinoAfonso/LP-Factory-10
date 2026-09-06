@@ -440,12 +440,14 @@ Usar WCAG 2.2 como referência de produto para LPs, dashboards, autenticação e
 
 ## 18 — OpenAI Plugins e MCP Apps *(🟨 Avaliação futura)*
 2026-07-04  
-Atualizado em 2026-08-03
+Atualizado em 2026-09-05
 
 ### Status no Projeto
 
-- Status: Fundação parcial, sem produto distribuído.
-- Evidência: o repositório possui o service read-only `LPF Supabase Inspect MCP` e contratos operacionais de MCP, mas não possui manifesto de plugin, UI MCP Apps, autenticação de usuário final, submissão ou caso comercial aprovado.
+- Status: não implementado; sem produto distribuído nem MCP implantável no estado atual.
+- Evidência: a E22.3 retirou o `LPF Supabase Inspect MCP`, o projeto Vercel auxiliar e o workflow Agent Builder. `docs/roadmap.md`, `docs/services.md`, `docs/automations.md` e o PR #868 preservam a retirada; o repositório não possui manifesto de plugin, UI MCP Apps, autenticação de usuário final, submissão ou caso comercial aprovado.
+- Natureza de uso: canal assistido e distribuível, condicionado a produto e consumidor reais.
+- Horizonte: indefinido; somente após hipótese de experiência superior ao produto web ou fluxo manual.
 
 ### Descrição
 
@@ -476,7 +478,7 @@ Avaliar somente quando houver:
 - Validar inputs no servidor e assumir exposição a prompt injection.
 - Não enviar secrets ou dados além do necessário no conteúdo retornado.
 - Começar por leitura; writes exigem autorização, confirmação e trilha de auditoria.
-- Não confundir existência do MCP interno com prontidão para publicação.
+- Não assumir que automações locais, plugins instalados ou um MCP futuro equivalem a produto pronto para publicação.
 - Não criar plugin, UI, auth, rota, banco ou nova infraestrutura por causa deste registro.
 
 ### Fontes Oficiais
@@ -502,35 +504,52 @@ Atualizado em 2026-08-20
 - O ID permanece histórico e não pode ser reutilizado.
 
 ---
-## 20 — Search Generative AI Performance no Search Console *(🧪 Rollout limitado)*
+## 20 — Search Generative AI Performance no Search Console *(🟩 Disponível globalmente; uso condicional)*
 
-2026-06-03
+2026-06-03  
+Atualizado em 2026-09-05
+
+### Status no Projeto
+
+- Status: recurso disponível globalmente na plataforma desde 31/08/2026; acesso da propriedade, presença de dados e uso operacional não validados para o LP Factory 10.
+- Evidência: a fonte oficial removeu a limitação de rollout e declara disponibilidade para todos os websites; o repositório não registra propriedade, credencial, exportação, integração ou leitura desse relatório.
+- Natureza de uso: analytics de produto e SEO para LPs publicadas.
+- Horizonte: Starter quando houver domínio/propriedade elegível e LP real indexada a medir.
 
 ### Descrição
 
-Relatórios dedicados do Search Console mostram visibilidade de URLs em recursos generativos do Google Search e Discover, com impressões, páginas, países, dispositivos e evolução temporal. O lançamento está restrito inicialmente a um subconjunto de sites.
+Relatórios dedicados do Search Console mostram visibilidade de URLs em recursos generativos do Google Search e Discover, com impressões, páginas, países, dispositivos e evolução temporal. O lançamento, inicialmente limitado a um subconjunto de sites, foi concluído globalmente em 31/08/2026.
+
+A disponibilidade global elimina a espera pelo rollout, mas não comprova que uma propriedade específica tenha impressões, que o projeto possua acesso ao Search Console ou que exista causalidade entre visibilidade e conversão.
 
 ### Valor para o Projeto
 
 - Cria uma fonte oficial para avaliar presença de LPs e conteúdos em AI Overviews, AI Mode e experiências generativas do Discover.
 - Permite separar mensuração real de alegações genéricas de AEO/GEO.
 - Pode apoiar análise consultiva futura sem exigir tracking próprio da LP.
+- Passa a permitir validação imediata de elegibilidade/acesso quando existir propriedade real, sem aguardar rollout.
 
 ### Valor para o Usuário
 
-- Oferece evidência de como o conteúdo é descoberto em experiências generativas quando o relatório estiver disponível para o domínio.
+- Oferece evidência de como o conteúdo é descoberto em experiências generativas quando a propriedade possuir dados no relatório.
 
 ### Ações Recomendadas
 
-1. Não criar integração, dashboard ou promessa comercial enquanto o relatório não estiver disponível ao domínio avaliado.
-2. Quando disponível, usar como fonte complementar ao desempenho geral do Search Console.
-3. Interpretar impressões como visibilidade, não como lead, conversão ou receita.
+1. No primeiro recorte com domínio e propriedade Search Console autorizados, confirmar acesso e presença do relatório sem criar integração.
+2. Se houver dados, registrar baseline e usar o relatório como fonte complementar ao desempenho geral do Search Console.
+3. Interpretar impressões como visibilidade, não como lead, conversão, ranking ou receita.
+4. Só propor dashboard, exportação ou automação quando a leitura manual for insuficiente para uma decisão recorrente.
 
 ### Limites
 
-- Rollout limitado; disponibilidade não garantida para o projeto ou clientes.
+- Disponibilidade global não garante impressões, dados históricos ou acesso à propriedade específica.
 - O relatório não informa ranking interno, prompts completos nem causalidade de conversão.
 - Não substitui Search Console geral, analytics da LP ou dados de campanha.
+- Não conectar conta, ler propriedade, criar credencial, integração, dashboard ou promessa comercial nesta rodada.
+
+### Critério de encerramento
+
+- A propriedade real foi validada no fluxo competente e o uso do relatório foi absorvido como medição recorrente ou encerrado com evidência de ausência de valor; depois, preservar o ID como registro histórico.
 
 ### Fonte Oficial
 
@@ -834,3 +853,53 @@ Avaliar somente quando houver:
 - A atualização segue o `README.md`, preserva revisão humana e não autoriza código, configuração, integração, conexão de conta, campanha, nova infraestrutura ou decisão final de plano.
 
 ---
+
+
+---
+
+## Registro da rodada de 2026-09-05
+
+### Veredito
+
+- Ajustados `prod#18` e `prod#20`; nenhum novo ID foi criado.
+- `prod#18` foi reconciliado com a retirada E22.3 do MCP/service auxiliar, sem eliminar seu gate de produto futuro.
+- `prod#20` passou de rollout limitado para disponibilidade global, mantendo a validação da propriedade e do valor como condição de uso.
+- Nenhum item foi arquivado, absorvido, superado ou reclassificado como implementação nesta rodada.
+
+### Cobertura estratégica e fontes oficiais
+
+- IA, automações e agentes: documentação e changelog oficiais da OpenAI; GPT-6 Astra, async tool calling e mid-turn steering são capacidades de modelo/API a comparar por workload, não uma nova capacidade de produto por si só. O encerramento da Assistants API não afeta o projeto, que usa Responses API.
+- Landing pages, SEO e performance: Google Search Central e web.dev; a disponibilidade mundial do relatório generativo foi absorvida em `prod#20`. Recursos web Baseline de agosto não demonstraram dor ou ganho próprio além dos itens vigentes.
+- Aquisição e tracking: Google Ads e Meta Ads; a migração iniciada em setembro de Text Customization para AI Max já está coberta por `prod#9`, e não foi localizada mudança material em Value Rules ou Conversions API que alterasse `prod#8`.
+- Instagram: Meta for Developers e fontes oficiais relacionadas; nenhuma mudança alterou `prod#24`, cuja implementação continua dependente de conta profissional, permissões, escopo, custo e comparação.
+- WhatsApp: WhatsApp Business Platform, Meta Business Messaging e Meta Newsroom; novidades de segurança de conta e pagamentos regionais não alteram a integração, os gatilhos ou o horizonte de `prod#23`.
+- E-mail: Resend Changelog; Link Checker, Email Metrics API, Share Email, mais domínios Free, SSO e plugins não se aplicam ao uso atual via SMTP do Supabase Auth nem criam produto de campanhas.
+- Monetização: Stripe Docs/Changelog Dahlia; Customer Sessions, portal e entitlements não substituem a autoridade interna registrada em `prod#19`; filtros de cartão e demais APIs não têm caso aprovado.
+- Acessibilidade: W3C/WAI, WCAG 2.2 e notícias oficiais; nenhuma publicação posterior alterou o baseline de `prod#17`.
+- Catálogos técnicos concluídos nesta execução: `supa#70`, `vercel#31`, `vercel#32` e `github#14` foram revisados; são observabilidade, segurança/configuração ou governança técnica, sem capacidade de produto nova a duplicar aqui.
+
+### Itens avaliados e não adicionados
+
+- GPT-6 Astra: maior capacidade, contexto, ferramentas e novos controles não provam superioridade nos workloads reais; preço, qualidade, latência e compatibilidade devem ser comparados em `docs/openai-model-snapshot.md` e no lifecycle por workload.
+- OpenAI mTLS/X.509: segurança de infraestrutura sem caso de produto ou identidade de workload aprovada.
+- Deprecações de transcrição: não há workload de áudio/transcrição no projeto.
+- Fundo transparente no `gpt-image-2`: o caminho atual gera imagem landscape WebP integral; não existe caso aprovado de asset transparente ou compositor.
+- Stripe Dahlia: melhorias não alteram a fonte interna de entitlements nem o fluxo comercial vigente.
+- Resend: o uso atual é SMTP transacional do Supabase Auth, sem Broadcast, Template API, Email Metrics API ou automação de campanha.
+- Recursos web de agosto: disponibilidade de CSS/HTML/API isolada não demonstrou problema de UX, performance ou acessibilidade no produto.
+- Nenhum recurso foi descartado somente por estar fora do Starter ou do MVP.
+
+### Pontos não validados e lacunas documentais
+
+- `prod#20`: propriedade Search Console, autorização, presença do relatório e dados reais não foram inspecionados.
+- `prod#23` e `prod#24`: elegibilidade, permissões, custos, limites e comportamento de contas Meta continuam sem smoke operacional.
+- `prod#9`: estado de campanhas Google Ads externas não foi lido; a mudança da plataforma não autoriza conexão ou alteração.
+- Modelos OpenAI: GPT-6 Astra não foi executado nem comparado nos workloads do produto.
+- Resend e Stripe: contas, planos e configurações externas não foram alterados nem inferidos.
+
+### Validação e rastreabilidade
+
+- O maior ID permanece `prod#24`; nenhum ID desapareceu, foi renumerado ou reutilizado.
+- Antes dos ajustes, foram buscadas referências explícitas e implementação semântica de MCP/plugin, Search Console generativo, modelos, imagens, mensageria, e-mail, monetização e canais.
+- As referências e os gatilhos de `prod#18` e `prod#20` foram preservados; nenhuma capacidade foi removida.
+- A atualização segue o `README.md`, separa plataforma de estado no projeto e não autoriza código, configuração, conexão de conta, campanha, nova infraestrutura, adoção de modelo ou decisão final de plano.

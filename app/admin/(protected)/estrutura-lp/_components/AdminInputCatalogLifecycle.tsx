@@ -71,10 +71,9 @@ export function AdminInputCatalogLifecycle({
         </span>
       </div>
 
-      <dl className="grid gap-2 text-sm sm:grid-cols-3">
+      <dl className="grid gap-2 text-sm sm:grid-cols-2">
         <Metric label="Versões publicadas" value={state.publishedVersions.join(", ")} />
         <Metric label="Taxons ativos" value={String(state.totalActiveTaxons)} />
-        <Metric label="Taxons operacionais" value={String(state.totalOperationalTaxons)} />
       </dl>
 
       {state.error ? (
@@ -121,12 +120,10 @@ export function AdminInputCatalogLifecycle({
             </div>
           ) : (
             <>
-          <div className="grid gap-2 text-sm sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-2 text-sm sm:grid-cols-2 lg:grid-cols-3">
             <Metric label="Sem mudança material" value={String(draft.totals.noMaterialChange)} />
             <Metric label="Evolução compatível" value={String(draft.totals.compatibleEvolution)} />
             <Metric label="Revisão necessária" value={String(draft.totals.reviewRequired)} />
-            <Metric label="Bloqueios operacionais" value={String(draft.totals.blockingOperationalReviews)} />
-            <Metric label="Configurações inválidas" value={String(draft.totals.invalidOperationalConfigurations)} />
           </div>
 
           <details className="rounded-md border border-border bg-background p-3">
@@ -190,11 +187,7 @@ export function AdminInputCatalogLifecycle({
               <ActionButton
                 pending={publicationPending}
                 pendingLabel="Preparando…"
-                disabled={
-                  !draft.validationCurrent ||
-                  draft.totals.blockingOperationalReviews > 0 ||
-                  draft.totals.invalidOperationalConfigurations > 0
-                }
+                disabled={!draft.validationCurrent}
               >
                 Preparar handoff repo-only
               </ActionButton>

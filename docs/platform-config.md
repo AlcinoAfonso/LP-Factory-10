@@ -2,8 +2,8 @@
 
 0.1 Cabeçalho
 • Documento: LP Factory 10 — Platform Config
-• Versão: v0.1.35
-• Data: 31/08/2026
+• Versão: v0.1.41
+• Data: 02/09/2026
 
 0.2 Contrato do documento
 • O QUE É: snapshot operacional e fonte única das configurações de plataformas externas do LP Factory 10, refletindo o estado conhecido/cadastrado nas plataformas conforme indicado.
@@ -57,7 +57,7 @@
 • Setup: `supabase/setup-cli` v2.1.1 fixada pelo SHA completo `3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf`, com Supabase CLI `2.106.0`.
 • Motivo do pin por SHA: reprodutibilidade e proteção contra alteração futura da referência móvel `@v2`.
 • Gate: `SUPABASE_APPLY_MIGRATIONS_ENABLED = true` mantém o apply automático liberado no fluxo normal; valor diferente de `true` bloqueia o apply e deve ser usado apenas em incidente ou manutenção.
-• Fluxo normal: criar migration em `supabase/migrations/<timestamp>_<nome>.sql`, validar, abrir PR e fazer merge humano na `main`; o push resultante dispara o apply automático.
+• Fluxo normal: criar migration em `supabase/migrations/<timestamp>_<nome>.sql`, validar, abrir PR e realizar o merge autorizado para o modo vigente conforme `AGENTS.md`; o push resultante dispara o apply automático.
 • Regra: não usar SQL Editor para alterações de schema no fluxo normal.
 • Regra: migration aplicada não pode ser editada, apagada, renomeada ou substituída; correções e reversões exigem nova migration.
 • Com o gate fechado, um passo separado sem secrets registra `skipped`; a CLI não é instalada e `supabase link` e `supabase db push` não são executados.
@@ -106,14 +106,8 @@
 
 3.2 Projeto de serviços
 • Projeto Vercel: `lpf-10-services`
-• Finalidade: serviços implantáveis separados do Core.
-• Endpoint canônico MCP Supabase Inspect: `https://lpf-10-services.vercel.app/api/mcp`
-• Root Directory: `services/mcp-supabase-inspect`
-• Include files outside the root directory in the Build Step: `OFF`
-• Ignored Build Step: customizado para reduzir builds desnecessários fora do escopo do serviço.
-• Endpoint público na Vercel protegido por `Authorization: Bearer <LPF_MCP_SECRET>`.
-• Banco acessado via `SUPABASE_DB_URL_READONLY`.
-• Valores reais de secrets não devem ser documentados.
+• Estado: removido em 01/09/2026 após confirmação read-only de ausência de workload; não há projeto ou configuração operacional remanescente.
+• Configurações exclusivas, domínio, endpoint, Root Directory, regras de build e variáveis do service foram removidos com o projeto.
 
 3.3 Runtime e build
 • Node.js: `22.x`
@@ -160,12 +154,10 @@
 • Regra operacional: `E20_5_SELECTED_RESEARCH_ENABLED = true` permanece pré-requisito independente; mudanças futuras devem ser validadas primeiro em Preview autenticado antes de Production.
 
 • `E19_5_WORKSPACE_ENABLED`
-• Finalidade: gate server-only do workspace operacional de landing pages e de todo acesso aos novos objetos de configuração e aprovação da E19.5.
+• Finalidade histórica: gate server-only do workspace operacional de landing pages retirado no SV-PR03.
 • Escopo: Preview e Production do projeto Core, com configuração independente por ambiente.
-• Habilitação: somente o literal `true` ativa o workspace; variável ausente, vazia ou com qualquer outro valor preserva a experiência vigente e impede leitura ou mutação dos novos objetos.
-• Estado atual: `true` em Preview e Production, com entradas independentes por ambiente; ausência ou valor diferente do literal `true` mantém o workspace desabilitado no ambiente correspondente.
-• Progressão operacional concluída: migration e correção forward-only aplicadas, snippet read-only e Security Controls aprovados; Preview foi habilitado, redeployado e validado antes da decisão humana que autorizou a habilitação, o redeploy e o smoke focal de Production.
-• Gate de evidência: a avaliação E20.6 da v5 e a decisão humana de suficiência permanecem concluídas para o taxon servido `Corretor Imóveis` (`corretor-imoveis`), com `reviewed_input_catalog_version = 5` e sem gaps candidatos. Os smokes autenticados de Preview e Production aprovaram workspace, configuração v5, histórico, preview e aprovação existente; o rollout não promoveu o marcador nem alterou a E20.6.
+• Estado atual: sem consumidor no código; qualquer valor hospedado é inerte e não ativa rota, leitura ou mutação do workspace retirado.
+• Regra operacional: não é necessário remover a variável da Vercel neste recorte e nenhum novo consumidor deve ser criado sem decisão própria.
 
 • `INVITE_STATE_SECRET`
 • Finalidade: assinar o estado opaco transportado pelo convite nativo do Supabase Auth.
@@ -205,12 +197,11 @@
 • Valor real: não versionado nem registrado.
 
 • `OPENAI_LP_COST_TRACKING_ENABLED`
-• Finalidade: gate server-side da persistência financeira prospectiva das tentativas de texto e imagem de Landing Pages.
-• Escopo: somente Production; Preview e Development permanecem sem instrumentação financeira.
-• Habilitação: somente o literal `true` ativa o tracker; variável ausente, vazia ou com qualquer outro valor preserva integralmente o runtime anterior.
-• Estado operacional final: configurado com `true` somente em Production após apply canônico, snippet read-only e Security Controls aprovados; Preview e Development permanecem sem instrumentação financeira.
-• Progressão pós-merge concluída: Production foi redeployada, o smoke real dos workloads de texto e imagem foi aprovado e a data de corte única foi registrada pela RPC versionada.
-• Regra de falha: com o gate ligado, falha ou timeout no registro inicial ou terminal degrada a cobertura financeira, mas não bloqueia a chamada OpenAI nem invalida uma geração de Landing Page bem-sucedida; a tentativa sem evidência completa fica fora da soma interna e permanece em Outros gastos / reconciliação.
+• Finalidade histórica: gate server-side da persistência financeira prospectiva dos antigos workloads de texto e imagem de Landing Pages.
+• Escopo hospedado conhecido: configurado com `true` somente em Production; Preview e Development permanecem sem a variável operacional.
+• Estado atual: sem consumidor no código após a retirada do write-side de custos e dos dois workloads produtores; o valor hospedado é inerte e não produz novos eventos.
+• Série preservada: a data de corte, a cobertura e os eventos anteriores permanecem somente leitura para o histórico congelado e a reconciliação administrativa.
+• Regra operacional: não é necessário remover a variável da Vercel neste recorte e nenhum novo consumidor deve ser criado sem decisão própria.
 • Valor real: não versionar.
 
 • `OPENAI_OPERATIONAL_CONFIG_ENABLED`
@@ -236,15 +227,14 @@
 • Configuração efetiva dos workloads OpenAI de produto
 • Fonte canônica: `lib/openai-workloads/registry.ts` mantém identidade, baseline local e allowlist; Development usa `repo_catalog` revisão `v2`, e Preview/Production usam exclusivamente `supabase_operational` com revisão decimal ativa.
 • Workloads textuais validados operacionalmente: `niche_resolution` e `commercial_activation_draft_generation`, com modelo `gpt-5.4-mini` e esforço de raciocínio `none`.
-• Workload textual validado no ambiente alvo: `landing_page_draft_generation`, com modelo `gpt-5.6-luna`, esforço `max`, Responses API, Structured Output estrito, `store:false` e timeout de 120 s.
-• Workload de imagem validado no ambiente alvo: `landing_page_draft_image_generation`, com modelo `gpt-image-2`, saída WebP 1536 × 1024, qualidade `medium`, compressão 80, moderação `auto` e timeout de 120 s.
+• Workload textual de avaliação factual: `taxon_input_catalog_sufficiency_evaluation`, com baseline repo-side `gpt-5.6-terra + low` e lifecycle hospedado próprio descrito acima.
 • Workload preparado para consumo futuro: `landing_page_dynamic_market_research`, com configuração inicial autorizada em Development `gpt-5.6-luna + high`, uma requisição foreground à Responses API, somente Web Search hospedado, Structured Output estrito, `store:false`, uma ou duas chamadas de busca e deadline máximo de 45 s. O lifecycle desse workload aceita para `save` e `promote` somente essa combinação; `low`, `max` e a matriz comparativa anterior permanecem fora.
 • Estado hospedado da E20.7.4: a migration `20260829171107_e20_7_4_dynamic_market_research_workload` foi aplicada automaticamente após o merge do PR #835; Preview e Production possuem o workload em bootstrap revisão `1`, `gpt-5.6-luna + high`, sem candidata ou revisão pendente e sem transporte hospedado autorizado.
-• Rollout futuro: prova, promoção e ativação de revisão `supabase_operational` `2` ou posterior ficam condicionadas ao futuro recorte de integração E19.3 que consumir a saída tipada da E20.7; não constituem pendência da E20.7 encerrada. O taxon piloto `corretor-imoveis` já está reconciliado em `reviewed_input_catalog_version=6`.
+• Integração futura: qualquer novo consumidor da saída tipada da E20.7 exigirá recorte e gates próprios; a integração histórica E19.3 foi retirada e não constitui pendência da E20.7 encerrada. O taxon piloto `corretor-imoveis` já está reconciliado em `reviewed_input_catalog_version=6`.
 • Credencial da E20.7.4: reutilizar a `OPENAI_API_KEY` compartilhada já configurada em Production e Preview; não criar, copiar ou registrar nova chave para esse workload.
 • Validação operacional: `niche_resolution` e `commercial_activation_draft_generation` foram executados uma única vez em Production em 10/08/2026; os Runtime Logs confirmaram sucesso e telemetria sanitizada, sem prompt, resposta integral, credencial ou dado pessoal.
-• Validação dos workloads de draft: por decisão humana, o gate de canários isolados sem persistência foi substituído pelo primeiro append integrado; duas execuções integradas hospedadas em 18/08/2026 comprovaram texto, imagem e o caminho oficial sem retry ou fallback.
-• Validação do cutover E21.2: Preview aprovou lifecycle e provas reais dos quatro transportes; Production aprovou leitura das quatro baselines e execução comercial real com origem `supabase_operational` e revisão 1, sem publicação, erro ou warning na janela autenticada.
+• Estado das unidades retiradas: quatro unidades hospedadas dos workloads antigos de draft permanecem como histórico, mas a leitura corrente por allowlist administra somente os oito registros dos quatro workloads vigentes em Preview e Production.
+• Validação do cutover E21.2: Preview e Production permanecem em `supabase_operational`; registros históricos fora da allowlist vigente não alteram a cardinalidade nem invalidam a leitura corrente.
 • Duração da Function: o segmento produtivo permanece configurado com `maxDuration = 300`; deployment READY e duas execuções integradas completas sem timeout incompatível corroboraram operacionalmente o gate.
 • Variáveis legadas de modelo na Vercel
 • Nomes: `OPENAI_NICHE_RESOLVER_MODEL`, `OPENAI_LANDING_PAGE_GENERATION_PROFILE_MODEL` e `OPENAI_COMMERCIAL_ACTIVATION_MODEL`.
@@ -254,17 +244,9 @@
 • Validação pós-retirada das variáveis legadas: `OPENAI_API_KEY` permaneceu configurada nos dois ambientes; os redeploys de Production e Preview ficaram verdes; `/admin/workloads-openai` confirmou `repo_catalog`, modelo `gpt-5.4-mini` e esforço `none` para os consumidores textuais então ativos.
 • Regra: não recriar as variáveis sem necessidade futura aprovada.
 
-• `LPF_MCP_SECRET`
-• Finalidade: secret Bearer usado para autenticar chamadas ao MCP Supabase Inspect.
-• Projeto Vercel: `lpf-10-services`.
-• Consumidor: `services/mcp-supabase-inspect/api/mcp.js`.
-• Escopo: Production e Preview, conforme deploy do service.
-• Valor real: não versionar.
-
 • `SUPABASE_DB_URL_READONLY`
-• Finalidade: conexão read-only do MCP Supabase Inspect com o banco.
-• Projeto Vercel consumidor: `lpf-10-services`.
-• Consumidor: `services/mcp-supabase-inspect/api/mcp.js`.
+• Estado: compartilhado e preservado para a automação GitHub `automations/supabase-inspect`; não há consumidor Vercel.
+• Finalidade: conexão read-only usada pela automação GitHub de inspeção do Supabase.
 • Regra: não usar para mutações.
 • Valor real: não versionar.
 
@@ -329,10 +311,10 @@
 
 4.8 Storage privado das revisões de landing page
 • Bucket definido no repositório: `landing-page-revision-assets`.
-• Estado operacional: ativo e configurado no ambiente hospedado pela migration E19.4.4 aplicada; readiness e verificador SQL read-only aprovados em 18/08/2026.
+• Estado operacional: infraestrutura hospedada preservada, porém inerte após a retirada dos readers, Preview e assinatura de assets do produto legado.
 • Configuração aprovada: privado, limite de 5 MB e MIME permitido somente `image/webp`.
-• Acesso do produto: exclusivamente server-side por service role; nenhuma policy direta para anon ou authenticated.
-• Identidade do asset: bucket e path estáveis; URL assinada temporária somente no consumo autorizado e nunca persistida.
+• Acesso do produto: não há consumidor runtime; nenhuma policy direta para anon ou authenticated foi alterada.
+• Limpeza do bucket ou de objetos depende de recorte destrutivo próprio.
 
 5. Resend
 
@@ -375,30 +357,26 @@
 
 6.3.1 Endpoint externo atual
 • Endpoint OpenAI Responses API: `https://api.openai.com/v1/responses`
-• Endpoint OpenAI Images API: `https://api.openai.com/v1/images/generations`
 • Endpoint OpenAI Costs API: `https://api.openai.com/v1/organization/costs`
 • Atalho oficial OpenAI Usage: `https://platform.openai.com/usage`
 • Atalho oficial OpenAI faturamento e créditos: `https://platform.openai.com/settings/organization/billing/overview`
 • Regra dos atalhos: `/admin/custos-openai` abre os destinos externamente, sem iframe, integração adicional, rota intermediária ou transmissão de credencial, período, conta, Landing Page ou outro dado da LP Factory; o acesso depende das permissões do usuário na organização OpenAI.
 • Consumidor versionado da Costs API: `lib/openai-costs/providers/openAiCostsProvider.ts`, exclusivamente server-side e autenticado por `OPENAI_ADMIN_KEY`.
-• Persistência prospectiva dos dois workloads de LP: `lib/openai-costs/adapters/lpCostTrackingAdapter.ts`, exclusivamente server-side, condicionada a Production e a `OPENAI_LP_COST_TRACKING_ENABLED=true`.
-• Leitura agregada interna: `lib/openai-costs/adapters/lpCostReadModelAdapter.ts`, exclusivamente server-side via RPC read-only paginada; superfície administrativa em `/admin/custos-openai`.
+• Leitura agregada interna: `lib/openai-costs/adapters/lpCostReadModelAdapter.ts`, exclusivamente server-side via RPC read-only paginada, preserva a série histórica congelada em `/admin/custos-openai`; não existe adapter de persistência prospectiva vigente.
 • Consumidores atuais conhecidos:
 • `lib/conversion-content/adapters/commercialActivationOpenAiAdapter.ts`
-• `lib/conversion-content/adapters/landingPageGenerationProfileOpenAiAdapter.ts`
-• `lib/lp-builder/adapters/landingPageDraftGenerationAdapter.ts`
-• `lib/lp-builder/adapters/landingPageDraftImageGenerationAdapter.ts`
-• `lib/lp-builder/adapters/landingPageGenerationOpenAiAdapter.ts`
+• `lib/conversion-content/adapters/inputCatalogEvaluationOpenAiAdapter.ts`
+• `lib/conversion-content/adapters/dynamicMarketResearchOpenAiAdapter.ts`
 • `lib/onboarding/niche-resolution/adapters/openAiResolver.ts`
 • `automations/supabase-inspect/run.mjs`
 • Regra: novas APIs ou endpoints OpenAI devem ser registrados aqui quando virarem dependência operacional.
 
-6.4 Agent Builder — Supabase Inspect
-• Ativo operacional: Supabase Inspect Agente.
+6.4 Histórico de integração Agent Builder — Supabase Inspect
+• Estado: removido manualmente em 01/09/2026; não é workflow operacional nem consumidor necessário independente.
 • Workflow ID: `wf_69b57fed963c8190b9da8e40797aa5820147027ff7bd60d7`.
-• Uso: validação operacional do Supabase Inspect via Agent Builder.
+• Uso histórico: validação operacional do Supabase Inspect via Agent Builder.
 • Regra: não tratar como camada final robusta de orquestração.
-• Dependência: MCP Supabase Inspect em `https://lpf-10-services.vercel.app/api/mcp`.
+• Estado externo final: o workflow foi removido manualmente em 01/09/2026, conforme confirmação do responsável; não há workflow operacional a catalogar. Nenhuma ferramenta de leitura independente do Agent Builder esteve disponível nesta execução.
 
 7. Stripe
 
@@ -530,6 +508,15 @@ Regra:
 • Configurações de plataformas, secrets por nome, workflows, ambientes e endpoints usados por automações devem ser registrados neste documento.
 
 99. Changelog
+v0.1.40 — 02/09/2026 — Marcados `E19_5_WORKSPACE_ENABLED` e `landing-page-revision-assets` como recursos sem consumidor runtime após o SV-PR03; nenhuma variável, secret, bucket ou infraestrutura externa foi alterada.
+v0.1.39 — 02/09/2026 — Removidos do inventário de consumidores atuais os wrappers server-only de texto e imagem do LP Builder, confirmados sem consumidor funcional; os cores usados diretamente pelas provas administrativas permanecem inalterados.
+
+v0.1.38 — 02/09/2026 — Reconciliado o estado dos workloads de Landing Page após a retirada da orquestração antiga: texto e imagem permanecem para prova administrativa, a integração E19.3 deixou de ser consumidora e o adapter inexistente foi removido do inventário, sem alteração de variável, secret, endpoint ou infraestrutura externa.
+
+v0.1.37 — 01/09/2026 — Consolidado o estado final da E22.3: workflow Agent Builder e projeto Vercel `lpf-10-services` removidos; nenhum deployment/redeploy foi solicitado ou executado manualmente, e a publicação final do commit acionou automaticamente um Preview do Core `lp-factory-10` pela integração Git/Vercel, concluído com sucesso; nenhum novo deployment adicional deve ser provocado.
+
+v0.1.36 — 31/08/2026 — Reclassificada a integração Agent Builder como histórico e alvo de retirada da E22.3.4; a configuração externa de `lpf-10-services` permanece explicitamente pendente da E22.3.5, sem criação de substituto ou remoção de recursos compartilhados.
+
 v0.1.35 — 31/08/2026 — Registradas a identidade institucional `lpfactoryqa@gmail.com`, sua credencial técnica por nome e localização autorizada, o contrato de reutilização por executores e a evidência operacional da confirmação automatizada, sem versionar valores secretos.
 
 v0.1.34 — 30/08/2026 — Mailbox operacional definida como caixa base Gmail sem `+tag`; novos aliases passam a ser derivados de `MAILBOX_EMAIL`, com preservação integral das execuções anteriores e proibição de senha de cadastro em artifacts e Job Summary.

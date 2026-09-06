@@ -1,6 +1,5 @@
 import type {
   OpenAiManagedWorkloadEnvironment,
-  ResolvedOpenAiImageWorkload,
   ResolvedOpenAiProductWorkload,
 } from "@/openai-workloads";
 
@@ -30,24 +29,15 @@ type ProductProof = (
   requestId: string,
 ) => Promise<OpenAiCandidateProofAttempt>;
 
-type ImageProof = (
-  workload: ResolvedOpenAiImageWorkload,
-  environment: OpenAiManagedWorkloadEnvironment,
-  apiKey: string,
-  requestId: string,
-) => Promise<OpenAiCandidateProofAttempt>;
-
 export type OpenAiCandidateProofDependencies = Readonly<{
   niche: ProductProof;
   commercial: ProductProof;
-  landingPageText: ProductProof;
   inputCatalogEvaluation: ProductProof;
   dynamicMarketResearch?: ProductProof;
-  landingPageImage: ImageProof;
 }>;
 
 export async function runOpenAiCandidateProofCore(
-  workload: ResolvedOpenAiProductWorkload | ResolvedOpenAiImageWorkload,
+  workload: ResolvedOpenAiProductWorkload,
   environment: OpenAiManagedWorkloadEnvironment,
   apiKey: string,
   requestId: string,
@@ -80,14 +70,6 @@ export async function runOpenAiCandidateProofCore(
         normalizedRequestId,
       );
       break;
-    case "landing_page_draft_generation":
-      attempt = await dependencies.landingPageText(
-        workload,
-        environment,
-        normalizedKey,
-        normalizedRequestId,
-      );
-      break;
     case "taxon_input_catalog_sufficiency_evaluation":
       attempt = await dependencies.inputCatalogEvaluation(
         workload,
@@ -100,14 +82,6 @@ export async function runOpenAiCandidateProofCore(
       if (!dependencies.dynamicMarketResearch) return { ok: false, code: "configuration" };
       attempt = await dependencies.dynamicMarketResearch(
         workload, environment, normalizedKey, normalizedRequestId,
-      );
-      break;
-    case "landing_page_draft_image_generation":
-      attempt = await dependencies.landingPageImage(
-        workload,
-        environment,
-        normalizedKey,
-        normalizedRequestId,
       );
       break;
     default:
