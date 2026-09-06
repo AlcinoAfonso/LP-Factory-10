@@ -13,6 +13,7 @@ import {
 } from "./login-playwright.mjs";
 import { buildMailboxAlias, normalizeMailboxBaseEmail } from "./mailbox-alias.mjs";
 import { findLatestEmailLinkForAlias } from "./mailbox-client.mjs";
+import { buildQaPassword } from "./qa-password.mjs";
 
 const MAX_ALIAS_RETRIES = 20;
 const MAILBOX_POLL_TIMEOUT_MS = 120000;
@@ -57,7 +58,6 @@ function ensureStateFile() {
     JSON.stringify(
       {
         email: "",
-        password: "",
         status: "empty",
         sequence: INITIAL_SEQUENCE,
         last_updated_at: null,
@@ -74,7 +74,6 @@ function loadState() {
   const parsed = JSON.parse(readFileSync(statePath, "utf-8"));
   return {
     email: typeof parsed.email === "string" ? parsed.email : "",
-    password: typeof parsed.password === "string" ? parsed.password : "",
     status: typeof parsed.status === "string" ? parsed.status : "empty",
     sequence: Number.isInteger(parsed.sequence) ? parsed.sequence : INITIAL_SEQUENCE,
     last_updated_at: parsed.last_updated_at ?? null,
@@ -86,20 +85,18 @@ function saveState(nextState) {
   writeFileSync(`${statePath}`, `${JSON.stringify(nextState, null, 2)}\n`, "utf-8");
 }
 
-function savePendingConfirmationState({ sequence, email, password }) {
+function savePendingConfirmationState({ sequence, email }) {
   saveState({
     email,
-    password,
     status: "pending_confirmation",
     sequence,
     last_updated_at: nowIso(),
   });
 }
 
-function saveActiveState({ sequence, email, password }) {
+function saveActiveState({ sequence, email }) {
   saveState({
     email,
-    password,
     status: "active",
     sequence,
     last_updated_at: nowIso(),
@@ -109,7 +106,6 @@ function saveActiveState({ sequence, email, password }) {
 function saveStateWithAdvancedSequence({ state, nextSequence }) {
   saveState({
     email: state.email,
-    password: state.password,
     status: state.status,
     sequence: nextSequence,
     last_updated_at: nowIso(),
@@ -122,10 +118,6 @@ function requireAppUrl() {
     die("APP_URL_OVERRIDE obrigatório (workflow input app_url)");
   }
   return value.trim();
-}
-
-function buildPassword(sequence) {
-  return `Convite${sequence}!Aa`;
 }
 
 function evaluateGlobalStatus(steps) {
@@ -259,7 +251,7 @@ async function main() {
       const candidateSequence = state.sequence + retry;
       lastTriedSequence = candidateSequence;
       const candidateEmail = buildMailboxAlias(mailboxEmail, `convite${candidateSequence}`);
-      const candidatePassword = buildPassword(candidateSequence);
+      const candidatePassword = buildQaPassword();
 
       const signupResult = await createAccount({
         page,
@@ -323,7 +315,6 @@ async function main() {
     savePendingConfirmationState({
       sequence: usedSequence,
       email: activeEmail,
-      password: activePassword,
     });
 
     let signupMail;
@@ -376,7 +367,6 @@ async function main() {
     saveActiveState({
       sequence: usedSequence,
       email: activeEmail,
-      password: activePassword,
     });
 
     const logoutAfterSignup = await logout({ page });
@@ -458,7 +448,7 @@ async function main() {
       mismatchAttempt.detail,
     );
 
-    const nextPassword = `Reset${usedSequence}!Bb`;
+    const nextPassword = buildQaPassword();
     const successReset = await submitNewPassword({
       page,
       newPassword: nextPassword,
@@ -476,7 +466,6 @@ async function main() {
     saveActiveState({
       sequence: usedSequence,
       email: activeEmail,
-      password: activePassword,
     });
 
     const authenticatedAfterReset = hasAuthSuccessUrl(page.url());

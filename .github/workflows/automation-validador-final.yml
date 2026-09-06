@@ -35,21 +35,29 @@ jobs:
           restore-keys: |
             automation-validador-final-state-${{ github.ref_name }}-
 
-      - name: Ensure default state
+      - name: Sanitize restored state
         working-directory: .
         run: |
-          if [ ! -f automations/validador-final/state/test-account.json ]; then
-            mkdir -p automations/validador-final/state
-            printf '%s\n' \
-              '{' \
-              '  "email": "",' \
-              '  "password": "",' \
-              '  "status": "empty",' \
-              '  "sequence": 30,' \
-              '  "last_updated_at": null' \
-              '}' \
-              > automations/validador-final/state/test-account.json
-          fi
+          mkdir -p automations/validador-final/state
+          node <<'NODE'
+          const fs = require("node:fs");
+          const statePath = "automations/validador-final/state/test-account.json";
+          let restored = {};
+          try {
+            if (fs.existsSync(statePath)) {
+              restored = JSON.parse(fs.readFileSync(statePath, "utf-8"));
+            }
+          } catch {
+            restored = {};
+          }
+          const sanitized = {
+            email: typeof restored.email === "string" ? restored.email : "",
+            status: typeof restored.status === "string" ? restored.status : "empty",
+            sequence: Number.isInteger(restored.sequence) ? restored.sequence : 30,
+            last_updated_at: restored.last_updated_at ?? null,
+          };
+          fs.writeFileSync(statePath, `${JSON.stringify(sanitized, null, 2)}\n`, "utf-8");
+          NODE
 
       - name: Setup Node
         uses: actions/setup-node@v5

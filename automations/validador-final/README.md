@@ -6,10 +6,11 @@ Subprojeto isolado da automação **Validador Final** na **Fase 2 determinístic
 
 - pipeline determinístico com ciclo completo de criação, confirmação, login e reset de senha;
 - único input manual no workflow: `app_url`;
-- estado local de **1 conta ativa por vez** em `state/test-account.json`;
+- estado local de **1 conta ativa por vez**, sem senha, em `state/test-account.json`;
 - persistência de estado entre execuções via `actions/cache/restore@v4` e `actions/cache/save@v4` no workflow;
 - caixa postal base via credenciais `MAILBOX_EMAIL` e `MAILBOX_PASSWORD`;
 - aliases de teste `+convite<sequence>` derivados da caixa base `MAILBOX_EMAIL`, sem endereço pessoal fixo;
+- senhas temporárias geradas aleatoriamente por execução, sem relação com o alias ou a sequência;
 - cliente da caixa postal implementado de forma programática via protocolo de e-mail (`mailbox-client.mjs`), sem Gmail web UI;
 - sem screenshot;
 - sem briefing funcional JSON no contrato da Fase 2.
@@ -36,7 +37,6 @@ Estrutura padrão:
 ```json
 {
   "email": "",
-  "password": "",
   "status": "empty",
   "sequence": 30,
   "last_updated_at": null

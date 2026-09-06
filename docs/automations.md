@@ -174,8 +174,9 @@ Contrato atual da Fase 2:
 - fluxo determinístico (sem briefing funcional JSON);
 - único input manual: `app_url`;
 - sem screenshot no contrato operacional;
-- estado local de 1 conta ativa persistido em `state/test-account.json`;
+- estado local de 1 conta ativa persistido em `state/test-account.json`, sem senha;
 - novos aliases `+convite<sequence>` derivados da caixa base Gmail configurada em `MAILBOX_EMAIL`, sem alterar usuários ou contas de execuções anteriores.
+- senhas temporárias aleatórias por execução, não deriváveis do alias ou da sequência e não publicadas em cache, artifact ou Job Summary.
 
 Resposta esperada:
 Logs e resultado final da execução determinística no job do workflow.
@@ -289,7 +290,7 @@ Executar o workflow informando:
 - `verification_mode`: `setup_only` para validação funcional flexível ou modo versionado quando a etapa tiver expectativa rígida de banco.
 
 Resposta esperada:
-Contas criadas e confirmadas, `pending_setup` preenchido, subdomínios capturados, evidência no Job Summary e artifact `niche-runtime-results`, sem senha de cadastro no payload publicado.
+Contas criadas e confirmadas com senha aleatória não derivável do alias, `pending_setup` preenchido, subdomínios capturados, evidência no Job Summary e artifact `niche-runtime-results`, sem senha de cadastro no payload publicado.
 
 Regra operacional:
 A automação não deve ser engessada por verificação de banco genérica. O teste base é criar conta e preencher o pipeline. Verificações no Supabase só devem entrar como presets versionados, porque a expectativa de tabelas como `account_niche_resolutions` e `account_taxonomy` muda conforme a etapa funcional.
