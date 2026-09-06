@@ -1510,7 +1510,7 @@
   - criar ou reconciliar identidades institucionais permanentes e seus papéis, porque a mailbox não cria nem autoriza usuários dos dashboards;
   - definir uso seguro dessas identidades pela IA sem repassar secrets no chat nem expor credenciais ao código de Previews, porque o mecanismo atual ainda não oferece essa fronteira;
   - permitir jornadas variáveis orientadas pelo plano, porque as automações atuais executam somente cenários previamente codificados;
-  - comprovar criação, preenchimento, edição, visualização e avaliação de uma landing page ponta a ponta, porque essa capacidade ainda não foi entregue;
+  - restaurar ou substituir a superfície operacional de Landing Page e, depois, comprovar criação, preenchimento, edição, visualização e avaliação ponta a ponta, porque a E22.4 removeu essa jornada sem substituto vigente;
   - integrar o recurso ao contrato do Executor, porque a orientação atual não garante seu uso antes de solicitar intervenção humana;
   - decidir, após inventário de consumidores, o destino do Validador Final, do Niche Runtime Tests e das implementações candidatas ainda abertas, porque esses ativos entregam apenas partes do objetivo ou preservam mecanismos legados.
 
