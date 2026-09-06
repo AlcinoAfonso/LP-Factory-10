@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Documento: LP Factory 10 — Platform Config
-• Versão: v0.1.42
+• Versão: v0.1.43
 • Data: 06/09/2026
 
 0.2 Contrato do documento
@@ -100,7 +100,7 @@
 3.2 Projeto de serviços
 • Projeto Vercel: `lpf-10-services`
 • Estado: removido em 01/09/2026 após confirmação read-only de ausência de workload; não há projeto ou configuração operacional remanescente.
-• Configurações exclusivas, domínio, endpoint, Root Directory, regras de build e variáveis do service foram removidos com o projeto.
+• O projeto, domínio, endpoint, Root Directory e regras de build exclusivos foram removidos. A inspeção do Core em 06/09/2026 encontrou `MCP_SUPABASE_INSPECT_URL` e `LPF_MCP_SECRET` ainda cadastrados em `lp-factory-10`, sem consumidor Vercel canônico vigente; as entradas foram preservadas sem alteração porque remoção ou mudança de escopo exige recorte próprio.
 
 3.3 Runtime e build
 • Node.js: `22.x`
@@ -242,6 +242,18 @@
 • Finalidade: conexão read-only usada pela automação GitHub de inspeção do Supabase.
 • Regra: não usar para mutações.
 • Valor real: não versionar.
+
+3.6 Classificação Config e Secret no Core
+• Inspeção read-only confirmada em 06/09/2026 no projeto `lp-factory-10`: 51 entradas por combinação de nome, ambiente e branch scope, sem leitura ou recuperação de valores.
+• Regra: `Secret` é reservado a credenciais, tokens, senhas, chaves privadas e material de assinatura ou autenticação; `Config` é usado para URLs, chaves publishable, flags, gates, IDs e demais configurações não sensíveis, inclusive server-side. Toda variável `NEXT_PUBLIC_*` deve permanecer `Config`.
+• Classificações conformes de credenciais: `INVITE_STATE_SECRET`, `SUPABASE_SECRET_KEY`, `OPENAI_API_KEY`, `OPENAI_ADMIN_KEY`, `STRIPE_SECRET_KEY` e `STRIPE_WEBHOOK_SECRET` estão como `Secret` nos ambientes cadastrados.
+• Classificações conformes de configuração: `ACCESS_CONTEXT_ENFORCED`, `ACCESS_CTX_USE_V2`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` e `OPENAI_LP_COST_TRACKING_ENABLED` estão como `Config`; `E11_MEMBERS_ENABLED`, `E20_5_SELECTED_RESEARCH_ENABLED`, `E20_6_5_INPUT_CATALOG_EVALUATION_PROVIDER_ENABLED` e `OPENAI_OPERATIONAL_CONFIG_ENABLED` possuem ao menos uma entrada geral conforme e outras divergências listadas abaixo.
+• Pendência de tipo: entradas de `E19_5_WORKSPACE_ENABLED`, `E20_6_INPUT_CATALOG_REVIEW_ENABLED` e os 16 nomes `STRIPE_TEST_*_PRODUCT_ID`/`STRIPE_TEST_*_PRICE_ID` estão como `Secret`, embora a finalidade documentada exija `Config`.
+• Pendência de tipo parcial: também estão como `Secret` duas entradas Preview de `E20_5_SELECTED_RESEARCH_ENABLED`, uma delas com branch scope legado, uma entrada Preview de `E20_6_5_INPUT_CATALOG_EVALUATION_PROVIDER_ENABLED` e uma entrada Preview de `OPENAI_OPERATIONAL_CONFIG_ENABLED`.
+• Pendências de branch scope: permanecem entradas ligadas a `codex-app/e11-11-1-7`, `codex-app/e20-5-pos-merge`, `codex-app/e20-6-5-post-apply-corrections` e `codex-app/e11-2-orquestracao`; a última é a única entrada cadastrada de `NEXT_PUBLIC_SITE_URL` encontrada na inspeção.
+• Drifts preservados: `MCP_SUPABASE_INSPECT_URL`, `LPF_MCP_SECRET` e `SUPABASE_DB_URL_READONLY` permanecem cadastrados no Core sem consumidor Vercel canônico vigente; `E7_ONBOARD_SERVICE_ONLY` permanece em Preview como `Config`, sem finalidade canônica atual localizada.
+• Estado da reconciliação: 21 entradas conformes, 30 pendentes fora do escopo e nenhuma correção aplicada. A Vercel desabilita a conversão de `Secret` salvo para `Config` porque o valor é write-only; reclassificar exigiria substituir ou reinserir o valor, operação não autorizada.
+• Limite operacional: nenhuma entrada foi criada, removida, renomeada, rotacionada, reescopada ou submetida à policy de separação de Production; sem mutação, nenhum redeploy ou smoke foi necessário.
 
 4. Supabase
 

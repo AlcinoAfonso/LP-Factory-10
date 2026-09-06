@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 06/09/2026
-• Versão: v1.5.216
+• Versão: v1.5.217
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2501,3 +2501,30 @@
 - A mailbox `lpfactoryqa@gmail.com` e os secrets `MAILBOX_EMAIL` e `MAILBOX_PASSWORD` permanecem reservados à E17.9.3, sem consumidor operacional vigente.
 - Usuários, contas, memberships, sessões, dados Supabase e evidências existentes não foram alterados nem excluídos.
 - Runs, checks, statuses, logs e artifacts do GitHub Actions são evidência suplementar e expirável; o diff/PR e os documentos canônicos preservam a prova durável da retirada.
+
+23. E23 — Segurança e governança transversal da plataforma
+- Objetivo: reduzir riscos de segurança e governança na configuração e na operação das plataformas externas, por recortes independentes, pequenos e reversíveis.
+- Status: E23.2 teve a inspeção metadata-only concluída, mas a reconciliação funcional permanece bloqueada por divergências que não podem ser corrigidas sem manipular valores ou escopos proibidos; E23.1 e E23.3 permanecem fora deste recorte.
+
+23.2 Classificação segura das variáveis Vercel
+
+23.2.1 Objetivo e status
+- Objetivo: manter as variáveis ativas do projeto Core coerentes com os tipos Vercel `Config` e `Secret`, sem exposição de valores nem mudança indevida de consumidores ou ambientes.
+- Status: inspeção concluída e reconciliação parcial. Das 51 entradas ativas inventariadas por nome, ambiente e branch scope, 21 estão conformes e 30 permanecem pendentes fora do escopo; nenhuma configuração foi alterada.
+
+23.2.2 Registros do recorte
+- Updates:
+  - Aplicados:
+    - `vercel#32`.
+- Referências:
+  - Classificação efetiva e pendências operacionais: `docs/platform-config.md` — seção 3.6.
+
+23.2.3 Inspeção e reconciliação segura das classificações
+- Status: inspeção concluída; conclusão funcional bloqueada pelas pendências registradas.
+- Conteúdo:
+  - o inventário read-only cobriu somente nomes, tipos, ambientes e branch scopes, sem revelar, recuperar, copiar ou registrar valores;
+  - credenciais confirmadas permanecem `Secret`, e configurações públicas ou não sensíveis confirmadas permanecem `Config`;
+  - entradas salvas como `Secret` que deveriam ser `Config` não foram reclassificadas porque a Vercel torna o valor write-only e desabilita essa conversão sem substituição;
+  - branch scopes legados, variáveis sem consumidor Vercel canônico e uma finalidade não documentada permaneceram inalterados porque renomear, remover, reescopar, rotacionar ou reinserir valor está fora do plano;
+  - nenhuma mutation, policy adicional, automação, alteração de código, redeploy ou smoke de runtime foi executado;
+  - a conclusão exige decisão própria sobre valores e escopos, sem ampliar retroativamente a autoridade da E23.2.
