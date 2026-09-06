@@ -15,7 +15,8 @@ As seções 3 a 6 constituem a V1 funcional aprovada deste plano.
 ### 3.2. Comportamento público
 
 - Credenciais não aceitas: apresentar `E-mail ou senha inválidos.` sem distinguir e-mail inexistente de senha incorreta.
-- Falha operacional, indisponibilidade ou erro não classificado como credencial: apresentar `Não foi possível entrar agora. Tente novamente em instantes.`
+- E-mail ainda não confirmado (`email_not_confirmed`): apresentar `Não foi possível entrar. Verifique se o e-mail foi confirmado e tente novamente.` sem criar reenvio, nova rota ou novo fluxo de confirmação neste recorte.
+- Falha operacional, indisponibilidade ou erro não classificado como credencial nem como `email_not_confirmed`: apresentar `Não foi possível entrar agora. Tente novamente em instantes.`
 - Nenhuma mensagem técnica crua do provedor de Auth pode ser usada como copy pública.
 - O link existente `Esqueci minha senha` permanece disponível; não criar nova ação ou fluxo de recuperação neste recorte.
 - A linguagem pública deve ser clara, neutra, consistente e sem terminologia do fornecedor.
@@ -68,12 +69,13 @@ As seções 3 a 6 constituem a V1 funcional aprovada deste plano.
 
 - Login válido continua autenticando e redirecionando como hoje.
 - Credenciais não aceitas exibem somente a mensagem pública aprovada para esse estado.
+- `email_not_confirmed` exibe somente `Não foi possível entrar. Verifique se o e-mail foi confirmado e tente novamente.`, sem criar fluxo adicional de confirmação.
 - Falha operacional representativa exibe a mensagem pública aprovada para indisponibilidade, sem sugerir credenciais incorretas.
 - Nenhum caso aprovado renderiza `error.message` ou outra mensagem técnica crua do provedor na interface.
 - `Esqueci minha senha` continua disponível e funcional.
 - O comportamento permanece diagnosticável de forma segura quando aplicável.
 - Nenhuma outra superfície de Auth é alterada.
-- As evidências devem cobrir login válido, credenciais não aceitas, falha operacional representativa, ausência de mensagem técnica pública, preservação do link de recuperação e diagnóstico seguro sem PII/credenciais introduzidas pelo plano.
+- As evidências devem cobrir login válido, credenciais não aceitas, `email_not_confirmed`, falha operacional representativa, ausência de mensagem técnica pública, preservação do link de recuperação e diagnóstico seguro sem PII/credenciais introduzidas pelo plano.
 
 ## 7. V2 Light mínima
 
