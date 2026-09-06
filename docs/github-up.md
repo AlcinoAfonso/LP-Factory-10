@@ -177,7 +177,7 @@ Atualizado em 2026-08-03
 ### Status no Projeto
 
 - Status: Não implementado.
-- Evidência: `docs/gestor-codex.md` registra navegador integrado/Chrome como não adotados; os workflows `automation-validador-final.yml` e `automation-niche-runtime-tests.yml` já usam Playwright para fluxos determinísticos. Não há padrão operacional de Copilot no VS Code.
+- Evidência: `docs/gestor-codex.md` registra navegador integrado/Chrome como não adotados; os workflows Playwright legados foram retirados pela E22.6, sem adoção de Copilot no VS Code nem criação de substituto.
 
 ### Descrição
 
@@ -443,8 +443,8 @@ Catalogado em 2026-09-05
 
 ### Status no Projeto
 
-- Status: mudança de plataforma agendada para 01/10/2026; impacto e necessidade de preservação adicional ainda não validados.
-- Evidência: o repositório público mantém sete workflows GitHub Actions. `.github/workflows/automation-niche-runtime-tests.yml` publica o artefato `niche-runtime-results` sem `retention-days`; os demais workflows produzem runs, checks, statuses e logs usados como evidência operacional. Não há configuração ou política de retenção documentada.
+- Status: mudança de plataforma agendada para 01/10/2026; regra de evidência durável aplicada na E22.6, com revisão geral de retenção ainda pendente.
+- Evidência: o repositório público mantém cinco workflows GitHub Actions após a E22.6. O workflow e o artifact `niche-runtime-results` foram retirados; runs, checks, statuses e logs remanescentes continuam sendo evidência suplementar e expirável. O diff/PR e os documentos canônicos preservam a prova durável da E22.6. Não há configuração ou política de retenção documentada.
 - Natureza de uso: governança transversal de CI e evidências.
 - Relação com a stack: afeta apenas a disponibilidade histórica dos registros do GitHub Actions; não altera runtime, produto, deployment, banco ou canais.
 - Horizonte: Starter, com revisão antes de 01/10/2026.
@@ -453,7 +453,7 @@ Catalogado em 2026-09-05
 
 A partir de 01/10/2026, checks, workflow runs e commit statuses passam a seguir a mesma configuração de retenção já aplicada a artefatos e logs. O padrão é 90 dias e, em repositórios públicos como o LP Factory 10, esse também é o limite máximo. Dados que ultrapassarem a janela serão removidos automaticamente; ampliar a configuração depois não restaura o que já foi excluído.
 
-A mudança não exige ação para a maioria dos repositórios. Neste projeto, porém, ao menos um workflow publica evidência de teste como artefato, e documentos técnicos citam checks e runs como prova de validação. O ponto a decidir é quais evidências precisam sobreviver além de 90 dias e quais podem permanecer efêmeras.
+A mudança não exige ação para a maioria dos repositórios. Neste projeto, documentos técnicos citam checks e runs como prova de validação; a E22.6 estabeleceu que esses registros são suplementares e que sua prova durável reside no diff/PR e na reconciliação canônica. Permanece a decisão geral sobre quais outras evidências precisam sobreviver além de 90 dias e quais podem expirar.
 
 ### Valor para o Projeto
 

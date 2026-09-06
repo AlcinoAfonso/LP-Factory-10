@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 06/09/2026
-• Versão: v1.5.215
+• Versão: v1.5.216
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -1422,17 +1422,13 @@
     - `.github/workflows/pipeline-supabase-inspect.yml`
     - `.github/workflows/pipeline-docs-apply-report.yml`
     - `.github/workflows/pipeline-supabase-apply-migrations.yml`
-    - `.github/workflows/automation-validador-final.yml`
-    - `.github/workflows/automation-niche-runtime-tests.yml`
     - `automations/supabase-inspect/`
     - `automations/docs-apply-report/`
-    - `automations/validador-final/`
-    - `automations/niche-runtime-tests/`
   - Ajustados:
     - `AGENTS.md`
     - `package.json`
 - Referências:
-  - Catálogo operacional: `docs/automations.md` — seções 0.4–0.5 e 3.1–3.7.
+  - Catálogo operacional: `docs/automations.md` — automações vigentes.
   - Configuração e secrets por nome: `docs/platform-config.md` — seções 2.2–2.4.
   - Validação local: `docs/base-tecnica.md` — seção 3.4.2.
 
@@ -1448,11 +1444,10 @@
 - `security.yml` mantém os checks de segurança do repositório.
 - Inspeção de banco por automação é read-only, salvo mutação expressamente aprovada em contrato próprio.
 
-17.1.5 Facilitadores de teste
-- `automation-validador-final` executa o fluxo determinístico de signup, confirmação por e-mail, login, recuperação, redefinição, novo login e logout contra uma URL informada.
-- `automation-niche-runtime-tests` cria e confirma contas reais, preenche `pending_setup` com nichos configurados e publica evidência sanitizada.
-- Esses workflows validam E5 e E10.5.6, mas não se tornam fonte de autoridade funcional desses casos.
-- A mailbox dedicada é consumida somente pelos workflows autorizados por meio de `MAILBOX_EMAIL` e `MAILBOX_PASSWORD`; valores não são versionados.
+17.1.5 Facilitadores de teste retirados
+- Status: Validador Final e Niche Runtime Tests retirados pela E22.6, sem substituto neste recorte.
+- A retirada não altera a autoridade funcional de E5 ou E10.5.6 e não apaga contas nem evidências existentes.
+- A mailbox dedicada e os secrets `MAILBOX_EMAIL` e `MAILBOX_PASSWORD` permanecem preservados para a E17.9.3, sem consumidor operacional vigente.
 
 17.1.6 Pipelines operacionais
 - `pipeline-supabase-inspect` executa SQL read-only com saída em logs e Job Summary.
@@ -1511,15 +1506,15 @@
   - a IA deve poder receber confirmações, convites e redefinições, autenticar-se, preencher formulários, criar e editar landing pages, executar o roteiro definido pelo plano, avaliar comportamento, conteúdo e interface e entregar relatório com evidências;
   - a operação deve ocorrer sem autorização, login ou fornecimento de credenciais por Alcino a cada execução;
   - aliases sequenciais e cenários Playwright fixos não satisfazem isoladamente esse objetivo;
+  - o Validador Final e o Niche Runtime Tests foram retirados pela E22.6 sem substituto, preservando a mailbox e os secrets institucionais para este recorte futuro;
   - os testes devem permanecer restritos a contas, dados, ambientes e ações de QA autorizados;
   - a definição técnica não antecipa Agents SDK, service, rota, banco, job ou runtime.
 - Pendências vigentes:
   - criar ou reconciliar identidades institucionais permanentes e seus papéis, porque a mailbox não cria nem autoriza usuários dos dashboards;
   - definir uso seguro dessas identidades pela IA sem repassar secrets no chat nem expor credenciais ao código de Previews, porque o mecanismo atual ainda não oferece essa fronteira;
-  - permitir jornadas variáveis orientadas pelo plano, porque as automações atuais executam somente cenários previamente codificados;
+  - permitir jornadas variáveis orientadas pelo plano, porque não há mecanismo operacional vigente capaz de executá-las;
   - restaurar ou substituir a superfície operacional de Landing Page e, depois, comprovar criação, preenchimento, edição, visualização e avaliação ponta a ponta, porque a E22.4 removeu essa jornada sem substituto vigente;
   - integrar o recurso ao contrato do Executor, porque a orientação atual não garante seu uso antes de solicitar intervenção humana;
-  - decidir, após inventário de consumidores, o destino do Validador Final e do Niche Runtime Tests, porque esses ativos entregam apenas partes do objetivo e preservam mecanismos legados.
 
 18. E18 — Base transversal de templates, composições e artefatos
 - Objetivo: manter os contratos compartilhados de conteúdo versionado usados pela ativação comercial e a parametrização raiz da família `landing_page`, sem absorver geração, publicação ou execução da LP Builder.
@@ -2253,7 +2248,7 @@
 
 22. E22 — Retirada controlada de ativos históricos
 - Objetivo: reduzir superfícies, dados, documentos e infraestrutura sem consumidor vigente, após auditoria explícita de dependências e sem criar substitutos antecipados.
-- Status: E22.1, E22.2, E22.3, E22.4 e E22.5 concluídas. O produto operacional, o `lp-builder`, sua apresentação, workloads exclusivos, compatibilidade E19 e write-side de custos foram retirados; Core, capacidades E20 independentes, automações GitHub e resíduos físicos deliberadamente inertes permanecem preservados. Permanece somente a decisão futura sobre reduzir Previews produzidos por pushes intermediários em branches não documentais.
+- Status: E22.1, E22.2, E22.3, E22.4, E22.5 e E22.6 concluídas. O produto operacional, o `lp-builder`, sua apresentação, workloads exclusivos, compatibilidade E19, write-side de custos e os facilitadores legados Validador Final e Niche Runtime Tests foram retirados; Core, capacidades E20 independentes, automações GitHub com consumidores vigentes, mailbox institucional e resíduos físicos deliberadamente inertes permanecem preservados. Permanece somente a decisão futura sobre reduzir Previews produzidos por pushes intermediários em branches não documentais.
 
 22.1 Retirada de ativos históricos do domínio de Landing Page
 
@@ -2480,3 +2475,29 @@
 - E20.5 mantém a pesquisa integral selecionada; E20.6 mantém `reviewed_input_catalog_version`, decisão humana e preparação fail-closed por taxon; E20.7 permanece capacidade independente.
 - O framework OpenAI compartilhado, os quatro workloads textuais vigentes, `supabase_inspect` e o catálogo de modelos de imagem permanecem preservados.
 - Objetos físicos e registros históricos E19 permanecem deliberadamente inertes; qualquer limpeza posterior exige recorte próprio.
+
+22.6 Remoção do Validador Final e automações adjacentes
+
+22.6.1 Objetivo e status
+- Objetivo: retirar conjuntamente o Validador Final e o Niche Runtime Tests, incluindo seus componentes exclusivos, sem alterar produto, CI preservado, mailbox institucional ou dados existentes.
+- Status: concluída no repositório, sem automação substituta, migration, SQL, limpeza de dados ou configuração externa.
+
+22.6.2 Registros do recorte
+- Repositório:
+  - Excluídos:
+    - `.github/workflows/automation-validador-final.yml`
+    - `.github/workflows/automation-niche-runtime-tests.yml`
+    - `automations/validador-final/`
+    - `automations/niche-runtime-tests/`
+    - `automations/supabase-inspect/verify-niche-runtime.mjs`
+- Referências:
+  - Catálogo operacional vigente: `docs/automations.md`.
+  - Mailbox e secrets preservados: `docs/platform-config.md` — seção 2.4.
+  - Operador institucional futuro: `docs/roadmap.md` — E17.9.3.
+
+22.6.3 Resultado e limites
+- A busca de consumidores confirmou que o Niche Runtime Tests dependia do runtime do Validador Final e que os ativos retirados não eram gate automático, script raiz nem dependência do Core.
+- Os dois workflows, os dois subprojetos e o verificador Supabase exclusivo foram removidos conjuntamente; o restante de `automations/supabase-inspect/`, seus consumidores e os demais workflows permanecem preservados.
+- A mailbox `lpfactoryqa@gmail.com` e os secrets `MAILBOX_EMAIL` e `MAILBOX_PASSWORD` permanecem reservados à E17.9.3, sem consumidor operacional vigente.
+- Usuários, contas, memberships, sessões, dados Supabase e evidências existentes não foram alterados nem excluídos.
+- Runs, checks, statuses, logs e artifacts do GitHub Actions são evidência suplementar e expirável; o diff/PR e os documentos canônicos preservam a prova durável da retirada.

@@ -2,8 +2,8 @@
 
 0.1 Cabeçalho
 • Documento: LP Factory 10 — Platform Config
-• Versão: v0.1.41
-• Data: 02/09/2026
+• Versão: v0.1.42
+• Data: 06/09/2026
 
 0.2 Contrato do documento
 • O QUE É: snapshot operacional e fonte única das configurações de plataformas externas do LP Factory 10, refletindo o estado conhecido/cadastrado nas plataformas conforme indicado.
@@ -35,9 +35,9 @@
 2.2 GitHub Actions
 • Secrets e variáveis conhecidos:
 • `OPENAI_API_KEY`: usado por automações/CI que chamam OpenAI. Consumidor atual: `pipeline-supabase-inspect`.
-• `SUPABASE_DB_URL_READONLY`: conexão read-only para inspeções/automação de banco. Consumidores atuais: `pipeline-supabase-inspect` e `automation-niche-runtime-tests` quando houver verificação de banco.
-• `MAILBOX_EMAIL`: e-mail usado por automações de autenticação/mailbox. Consumidores atuais: `automation-validador-final` e `automation-niche-runtime-tests`.
-• `MAILBOX_PASSWORD`: senha/app password da mailbox usada por automações de autenticação/mailbox. Consumidores atuais: `automation-validador-final` e `automation-niche-runtime-tests`.
+• `SUPABASE_DB_URL_READONLY`: conexão read-only para inspeções/automação de banco. Consumidor atual: `pipeline-supabase-inspect`.
+• `MAILBOX_EMAIL`: e-mail institucional preservado para o futuro Operador Institucional Autônomo de QA da E17.9.3; sem consumidor operacional vigente após a E22.6.
+• `MAILBOX_PASSWORD`: senha/app password da mailbox preservada para o futuro Operador Institucional Autônomo de QA da E17.9.3; sem consumidor operacional vigente após a E22.6.
 • `SUPABASE_ACCESS_TOKEN`: token usado pelo workflow de apply de migrations Supabase.
 • `SUPABASE_DB_PASSWORD`: senha do banco usada pelo workflow de apply de migrations Supabase.
 • `SUPABASE_APPLY_MIGRATIONS_ENABLED`: variável de repositório usada como gate operacional; valor operacional atual `true`.
@@ -50,8 +50,6 @@
 • `.github/workflows/security.yml`: checks de segurança.
 • `.github/workflows/pipeline-supabase-inspect.yml`: pipeline de inspeção Supabase read-only, com uso de `OPENAI_API_KEY` e `SUPABASE_DB_URL_READONLY`.
 • `.github/workflows/pipeline-docs-apply-report.yml`: aplicação automatizada de reports em documentos Markdown e criação de Pull Request automático.
-• `.github/workflows/automation-validador-final.yml`: validação ponta a ponta de fluxos reais de autenticação, com mailbox operacional via `MAILBOX_EMAIL` e `MAILBOX_PASSWORD`.
-• `.github/workflows/automation-niche-runtime-tests.yml`: testes runtime de criação de conta e preenchimento de `pending_setup`, com mailbox operacional e uso opcional de `SUPABASE_DB_URL_READONLY` conforme modo de verificação.
 • `.github/workflows/pipeline-supabase-apply-migrations.yml`: workflow operacional para apply automático de migrations Supabase versionadas.
 • Gatilhos: push em `main` com mudanças em `supabase/migrations/**` e execução manual por `workflow_dispatch`.
 • Setup: `supabase/setup-cli` v2.1.1 fixada pelo SHA completo `3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf`, com Supabase CLI `2.106.0`.
@@ -72,25 +70,20 @@
 • Identidade institucional: `lpfactoryqa@gmail.com`.
 • Finalidade: caixa postal exclusiva do projeto para QA de confirmação de cadastro, convite e recuperação de senha, sem dependência do e-mail pessoal de Alcino.
 • Host/porta: `pop.gmail.com:995`.
-• Uso: leitura programática de e-mails de confirmação e reset nas automações.
+• Uso planejado: recurso institucional reservado à implementação futura da E17.9.3; não há consumidor operacional vigente após a E22.6.
 • Estado operacional: conta dedicada criada, e-mail de recuperação confirmado, verificação em duas etapas ativa e POP3 habilitado.
 • Credencial técnica: senha de app identificada no Google como `LP Factory QA Automation`; o valor não é recuperável por este documento.
 • Localização autorizada: repository secrets do GitHub Actions no repositório `AlcinoAfonso/LP-Factory-10`.
 • Secrets relacionados:
 • `MAILBOX_EMAIL`: contém o endereço-base institucional.
 • `MAILBOX_PASSWORD`: contém a senha de app exclusiva da automação; não é a senha principal da Conta Google.
-• Consumidores:
-• `.github/workflows/automation-validador-final.yml`
-• `.github/workflows/automation-niche-runtime-tests.yml`
-• `automations/validador-final/mailbox-client.mjs`
-• Contrato para executores e novos chats: consultar esta seção e reutilizar os consumidores e secrets já configurados por referência; não solicitar, copiar, revelar ou recriar a credencial quando o workflow autorizado atender ao teste.
+• Consumidores vigentes: nenhum; mailbox e secrets preservados por decisão aprovada para a E17.9.3.
+• Contrato para executores e novos chats: consultar esta seção e tratar mailbox e secrets somente por referência; não solicitar, copiar, revelar, recriar nem presumir consumidor autorizado antes da implementação competente da E17.9.3.
 • Limite de acesso: todos os chats podem identificar a mailbox, sua finalidade, os nomes dos secrets e o caminho autorizado de consumo, mas não podem ler ou descriptografar os valores armazenados pelo GitHub Actions.
 • Limite de superfície: esta credencial habilita leitura automatizada da mailbox por POP3; não fornece login interativo na interface web do Gmail nem credenciais permanentes do Admin Dashboard ou Account Dashboard.
-• Evidência operacional: execução `Automation Niche Runtime Tests` nº 13 aprovada em 30/08/2026, com cadastro e confirmação automáticos de alias institucional derivado de `MAILBOX_EMAIL`; run `https://github.com/AlcinoAfonso/LP-Factory-10/actions/runs/33321099026`.
 • Regra: usar conta dedicada de teste, nunca e-mail humano principal.
-• Regra: `MAILBOX_EMAIL` deve conter a caixa base `@gmail.com`, sem `+tag`; as automações derivam somente os novos aliases `+convite<sequence>` dessa configuração.
-• Regra: alterar a mailbox operacional não modifica usuários, aliases, contas ou evidências de execuções anteriores.
-• Regra: artifacts, Job Summary e documentação devem sanitizar aliases persistentes e nunca registrar senhas de cadastro nem dados que permitam deduzi-las.
+• Regra: preservar `MAILBOX_EMAIL` como caixa base institucional e manter o valor exclusivamente no GitHub Actions repository secret.
+• Regra: alterar a mailbox operacional não modifica usuários, aliases, contas ou evidências existentes.
 • Regra: não registrar valores reais.
 • Regra: se a senha/app password vazar, revogar imediatamente e substituir.
 
