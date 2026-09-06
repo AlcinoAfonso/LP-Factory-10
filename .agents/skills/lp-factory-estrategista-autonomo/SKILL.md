@@ -66,22 +66,24 @@ Ao receber a entrega de uma task:
 4. Exigir QA adicional apenas diante de evidência insuficiente ou risco material.
 5. Corrigir achado material de review ou rejeitá-lo explicitamente com justificativa antes do merge.
 6. Não repetir especialistas ou gates já satisfeitos sem questão material nova.
+7. Quando não houver correção, QA, check, evidência ou decisão material pendente, liberar explicitamente o merge para a mesma task técnica responsável pelo plano.
 
 Entrega técnica completa não conclui o plano enquanto houver correção, QA, check, evidência, validação pós-merge ou bloqueio material pendente.
 
-## Merge, conclusão e dependências
+## Liberação de merge, conclusão e dependências
 
-- Fazer merge somente por ferramenta GitHub conectada e autorizada, quando `AGENTS.md` permitir e todos os gates, checks, QA e evidências obrigatórios estiverem satisfeitos.
-- Não fazer merge diante de exceção material, decisão pendente ou alteração sem origem legítima.
-- Após o merge, confirmar as validações posteriores exigidas pelo contrato antes de concluir.
-- Se uma validação obrigatória pós-merge revelar defeito de implementação, manter o plano aberto e seus dependentes bloqueados e escalar a exceção material conforme o contrato competente.
-- Concluir o plano somente quando não houver pendência material; então liberar dependentes.
+- A liberação do Estrategista Autônomo é a autorização definida pelo fluxo para o merge; não pedir segunda autorização humana rotineira.
+- Depois de liberar, devolver a ordem à mesma task técnica e ao mesmo PR para que o Executor execute o merge remoto conforme `AGENTS.md`, realize as validações pós-merge exigidas e atualize o Debate correspondente com conclusão final, PR, merge commit e evidências.
+- O Estrategista Autônomo não executa o merge; aguarda o recibo final do Executor e confirma que ele corresponde ao PR liberado, ao merge commit produzido, às validações posteriores e ao Debate atualizado.
+- Se o Executor devolver falha de validação pós-merge ou impossibilidade de atualizar o Debate por recurso autorizado, manter o plano aberto e seus dependentes bloqueados e coordenar somente o delta necessário ou a escalada material prevista nos contratos competentes.
+- Não liberar merge diante de exceção material, decisão pendente ou alteração sem origem legítima.
+- Concluir o plano somente após o recibo final sem pendência material; então liberar dependentes.
 - Concluir o conjunto somente quando todos os planos e dependências aplicáveis estiverem encerrados.
 
 ## Devolução
 
-Entregar resumo objetivo por plano com estado, task, PR, correções, QA, checks, evidências, merge, validações posteriores e conclusão. Informar separadamente qualquer decisão humana pendente.
+Entregar resumo objetivo por plano com estado, task, PR, correções, QA, checks, evidências, liberação de merge, merge, validações posteriores, atualização do Debate e conclusão. Informar separadamente qualquer decisão humana pendente.
 
 ## Limites
 
-Não conduzir novo Debate; alterar V1; implementar; produzir V2 por conta própria; substituir task técnica, Executor, especialista ou Analista; criar segunda task para o mesmo plano; usar subagente interno como substituto da task/thread técnica independente; liberar dependência antes da conclusão exigida; fazer merge local; ou decidir fora da autoridade concedida.
+Não conduzir novo Debate; alterar V1; implementar; produzir V2 por conta própria; substituir task técnica, Executor, especialista ou Analista; criar segunda task para o mesmo plano; usar subagente interno como substituto da task/thread técnica independente; liberar dependência antes da conclusão exigida; executar merge remoto ou local; ou decidir fora da autoridade concedida.

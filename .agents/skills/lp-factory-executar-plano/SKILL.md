@@ -209,14 +209,15 @@ No modo `experimental`, parar somente nos checkpoints solicitados pelo humano. N
 
 Depois do último checkpoint, sem repetir validações ou ABC:
 
-1. atualizar o PR com checkpoints, arquivos, validações, evidências de QA, matriz, pendências e, por documento, os ABCs executados e o resultado `delta aplicado` ou `SEM ALTERAÇÕES NECESSÁRIAS`; declarar a entrega completa e parar;
+1. atualizar o PR com checkpoints, arquivos, validações, evidências de QA, matriz, pendências e, por documento, os ABCs executados e o resultado `delta aplicado` ou `SEM ALTERAÇÕES NECESSÁRIAS`; declarar a entrega técnica completa e parar aguardando avaliação do supervisor;
 2. depois dessa declaração, não acionar `revisao_final_implementacao`, `revisao_delta_implementacao` nem qualquer outro gate do Analista;
 3. devolver a entrega ao supervisor competente;
 4. se o supervisor devolver correções, tratar o retorno como delta pós-entrega: confirmar de forma mínima objetivo, fontes, limites, boundary afetado e validação esperada; não reiniciar preparação, especialistas, changelog ou validações de plataforma sem impacto demonstrado; usar fontes condicionais, inclusive Supabase, somente quando o estado remoto for necessário para decidir ou validar a correção; sem essa necessidade, não investigar nem afirmar como concluído ou pendente estado remoto não verificado; quando necessário, obter somente a evidência mínima da fonte competente; em delta de código, preservar `npm ci`, `npm run check` e testes focais aplicáveis; aplicar somente esse delta no mesmo PR;
-5. se validação obrigatória pós-merge revelar defeito, registrar a falha e devolvê-la ao supervisor como exceção material, sem criar ou selecionar nova branch ou PR; atualizar a entrega e parar novamente, sem Analista;
-6. manter a matriz disponível durante o ciclo externo de avaliação e não removê-la antes de o supervisor declarar o recorte definitivamente concluído; a limpeza posterior é documental, preserva a rastreabilidade no resumo e no histórico do PR e não aciona Analista nem especialistas.
+5. se o supervisor liberar o merge, retomar a mesma task e seguir exclusivamente o ciclo de merge e conclusão da seção 9, sem novo Analista ou nova derivação;
+6. se validação obrigatória pós-merge revelar defeito, registrar a falha e devolvê-la ao supervisor como exceção material; não criar ou selecionar nova branch ou PR por inferência. O supervisor define o fluxo corretivo competente; atualizar a entrega e parar novamente, sem Analista;
+7. manter a matriz disponível durante o ciclo externo de avaliação e não removê-la antes de o supervisor declarar o recorte definitivamente concluído; a limpeza posterior é documental, preserva a rastreabilidade no resumo e no histórico do PR e não aciona Analista nem especialistas.
 
-O resumo do PR deve refletir sempre o checkpoint publicado e a entrega completa. A decisão de merge ocorre fora desta skill, depois da avaliação do supervisor competente.
+O resumo do PR deve refletir sempre o checkpoint publicado e a entrega técnica completa. A liberação do merge ocorre fora desta skill; depois de recebida, a execução do merge e o encerramento pós-merge pertencem ao Executor conforme a seção 9.
 
 ## 8. Gate de aderência
 
@@ -227,9 +228,9 @@ Antes da entrega, confronte o contrato aprovado com o diff final.
 - legado e parecer técnico não autorizam ampliação funcional, arquitetural ou de escopo;
 - se a melhor solução exigir decisão fora do contrato, devolva o ponto ao supervisor competente.
 
-## 9. Entrega e supervisão
+## 9. Entrega, merge e conclusão
 
-Informe:
+Na entrega técnica ao supervisor, informe:
 
 - contrato executado e referência imutável;
 - no Light, referências imutáveis da V1 e da V2 mínima e skills acionadas;
@@ -240,19 +241,31 @@ Informe:
 - riscos, limitações, fallbacks e bloqueios;
 - estado final e decisão ainda exigida do supervisor, quando houver.
 
-No `Semiautomático`, devolva a entrega ao humano para avaliação do Estrategista Original.
+No `Semiautomático`, devolva a entrega ao humano para avaliação do Estrategista Original. A liberação do Estrategista Original, transportada pelo humano de volta à mesma task, é a autorização definida pelo fluxo e não exige autorização humana separada adicional.
 
-No `Autônomo`, devolva a entrega a `$lp-factory-estrategista-autonomo`.
+No `Autônomo`, devolva a entrega a `$lp-factory-estrategista-autonomo`. A liberação do Estrategista Autônomo é a autorização definida pelo fluxo e não exige segunda autorização humana rotineira.
 
-Não substitua supervisor, Estrategista, especialista ou Analista. Não faça merge; a decisão de merge pertence ao supervisor competente fora desta skill.
+Depois de receber a liberação do supervisor competente:
+
+1. confirmar que a liberação corresponde ao mesmo plano, PR e `head SHA` já avaliados; registrar esse SHA, confirmar que não surgiu alteração material, check obrigatório falhando ou review thread material pendente e resolver antes do merge o Debate correspondente e um caminho autorizado de escrita; se o Debate ou o caminho de escrita não puderem ser comprovados, parar antes do merge;
+2. executar o merge remoto exclusivamente por GitHub Web ou ferramenta GitHub conectada e autorizada conforme `AGENTS.md`, exigindo atomicamente o mesmo `head SHA` registrado no passo anterior (`gh pr merge --match-head-commit <SHA>` ou guarda equivalente, como `expected_head_sha`); merge local pela `main` permanece proibido;
+3. obter o merge commit e executar ou confirmar somente as validações pós-merge exigidas pelo contrato e pelas fontes competentes;
+4. atualizar o Debate correspondente no Google Drive com a conclusão final da entrega, PR, merge commit e evidências, preservando a V1 aprovada e o histórico do Debate;
+5. devolver ao mesmo supervisor um recibo final com PR, merge commit, validações pós-merge, registro efetuado no Debate e qualquer pendência material.
+
+Se uma validação obrigatória pós-merge falhar ou o Debate não puder ser atualizado por recurso autorizado, não declare conclusão final. Registre o bloqueio e devolva-o ao supervisor competente; não crie nova branch, PR, automação ou infraestrutura por inferência. O supervisor define o fluxo corretivo competente.
+
+O supervisor competente conclui o plano e libera eventuais dependências somente após receber esse recibo final.
+
+Não substitua supervisor, Estrategista, especialista ou Analista; o Executor executa o merge somente depois da liberação do supervisor competente.
 
 ## 10. Limites
 
-- não alterar a `main` nem fazer merge;
+- não editar nem commitar diretamente na `main`; não fazer merge sem liberação do supervisor competente e nunca fazer merge local pela `main`;
 - não executar fase fora do plano ou fora da ordem do roadmap;
 - no Light, não importar especialistas, matriz, segunda passagem ou gates da Complexa;
 - na Complexa, não iniciar a fase seguinte sem checkpoint aprovado;
 - na Complexa, não recriar ou ampliar a V2, repetir especialistas, criar PR empilhado, criar segundo PR no handoff interno ou recriar a matriz sem correção de rastreabilidade exigida;
-- na Complexa, não acionar o Analista depois de declarar a entrega completa;
-- na Complexa, não acionar o supervisor antes da entrega completa, exceto para bloqueio de QA ou decisão humana já previstos pelo contrato; no Light, aplicar as escaladas previstas nas seções 2 e 3;
+- na Complexa, não acionar o Analista depois de declarar a entrega técnica completa;
+- na Complexa, não acionar o supervisor antes da entrega técnica completa, exceto para bloqueio de QA ou decisão humana já previstos pelo contrato; no Light, aplicar as escaladas previstas nas seções 2 e 3;
 - não ignorar evidência de QA pendente nem decisão material exigida.
