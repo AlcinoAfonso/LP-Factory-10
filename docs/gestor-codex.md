@@ -27,9 +27,9 @@ Configurações sustentam o fluxo local adotado para editar, validar e publicar 
 
 ### Checkout Local e Worktrees
 
-**Aptidão:** manter a base do projeto carregada pelo Codex App alinhada à fonte canônica e isolar implementações sem contaminar o checkout principal.
+**Aptidão:** manter a base do projeto carregada pelo Codex App alinhada à fonte canônica e isolar implementações quando necessário.
 **Estado:** validado em 06/09/2026 após correção dos nós de checkout inicial e descoberta de skills.
-**Regra operacional:** o checkout `Local` do projeto deve permanecer em `main`, sincronizada com `origin/main` e com working tree limpa. Tasks de implementação paralela ou que exijam isolamento devem iniciar em `Worktree`, selecionando `main` como base; não mover o checkout `Local` para branch de implementação.
+**Regra operacional:** como estado-base para novas tasks e descoberta de skills, o checkout `Local` deve estar em `main`, sincronizada com `origin/main` e com working tree limpa. No modo simples definido por `AGENTS.md`, a própria task pode criar e trabalhar em branch dedicada no `Local`; ao encerrar essa frente e retornar o projeto ao estado-base, o `Local` deve voltar a `main` atualizada e limpa. Tasks paralelas ou que exijam isolamento devem iniciar em `Worktree`, selecionando `main` como base; não deixar o checkout `Local` persistir entre tasks em branch antiga de implementação.
 **Valor:** garante que novas tasks carreguem o pipeline e as skills atuais desde o início e reduz investigação causada por sessões abertas sobre branch obsoleta.
 **Aprendizado:** o checkout `Local` preso em `codex-app/e22-3-orquestracao` deixou a `main` local 165 commits atrasada; nesse estado, `docs/pipeline-plano-base.md` e `$lp-factory-estrategista-autonomo` não eram encontrados nativamente. Após retornar o checkout a `main`, executar `git pull --ff-only` e alinhar `HEAD`, `main` e `origin/main`, uma nova sessão reconheceu a skill nativamente no catálogo.
 **Limite:** criação, isolamento, sincronização, publicação e continuidade de branches/PRs continuam regidos por `AGENTS.md`; PR aberto não deve ser sincronizado com `main` apenas porque ela avançou.
