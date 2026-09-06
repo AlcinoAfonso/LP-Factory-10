@@ -253,7 +253,7 @@
 • Pendências de branch scope: permanecem entradas ligadas a `codex-app/e11-11-1-7`, `codex-app/e20-5-pos-merge`, `codex-app/e20-6-5-post-apply-corrections` e `codex-app/e11-2-orquestracao`; a última é a única entrada cadastrada de `NEXT_PUBLIC_SITE_URL` encontrada na inspeção.
 • Drifts preservados: `MCP_SUPABASE_INSPECT_URL`, `LPF_MCP_SECRET` e `SUPABASE_DB_URL_READONLY` permanecem cadastrados no Core sem consumidor Vercel canônico vigente; `E7_ONBOARD_SERVICE_ONLY` permanece em Preview como `Config`, sem finalidade canônica atual localizada.
 • Estado da reconciliação: 21 entradas conformes, 30 pendentes fora do escopo e nenhuma correção aplicada. A Vercel desabilita a conversão de `Secret` salvo para `Config` porque o valor é write-only; reclassificar exigiria substituir ou reinserir o valor, operação não autorizada.
-• Limite operacional: nenhuma entrada foi criada, removida, renomeada, rotacionada, reescopada ou submetida à policy de separação de Production; sem mutação, nenhum redeploy ou smoke foi necessário.
+• Limite operacional: nenhuma entrada foi criada, removida, renomeada, rotacionada, reescopada ou submetida à policy de separação de Production; nenhum redeploy decorrente de variável nem smoke foi necessário. A publicação da branch acionou apenas o Preview automático previsto pela integração Git/Vercel, concluído com sucesso no mesmo head remoto.
 
 4. Supabase
 

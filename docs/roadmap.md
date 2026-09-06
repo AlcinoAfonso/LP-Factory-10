@@ -2526,5 +2526,5 @@
   - credenciais confirmadas permanecem `Secret`, e configurações públicas ou não sensíveis confirmadas permanecem `Config`;
   - entradas salvas como `Secret` que deveriam ser `Config` não foram reclassificadas porque a Vercel torna o valor write-only e desabilita essa conversão sem substituição;
   - branch scopes legados, variáveis sem consumidor Vercel canônico e uma finalidade não documentada permaneceram inalterados porque renomear, remover, reescopar, rotacionar ou reinserir valor está fora do plano;
-  - nenhuma mutation, policy adicional, automação, alteração de código, redeploy ou smoke de runtime foi executado;
+  - nenhuma mutation, policy adicional, automação, alteração de código, redeploy decorrente de variável ou smoke de runtime foi executado; a publicação da branch acionou somente o Preview automático previsto pela integração Git/Vercel, concluído com sucesso no mesmo head remoto;
   - a conclusão exige decisão própria sobre valores e escopos, sem ampliar retroativamente a autoridade da E23.2.

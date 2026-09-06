@@ -100,7 +100,7 @@ Status: derivado da V1 congelada no commit `939df3b60e2f1faeeefddc455b158c73c753
 - Resultado: 21 entradas `conforme`; 0 `corrigido`; 30 `pendente fora do escopo`.
 - Nenhuma mutação foi executada. Não houve alteração de tipo, nome, valor, ambiente, branch scope, consumidor, policy, criação, remoção ou rotação.
 - A edição de uma entrada já classificada como `Secret` mostrou a opção `Config` desabilitada e a informação de que secrets salvos são write-only. Corrigir essas divergências exigiria substituir ou reinserir o valor, ação proibida pela V1 e pela V2.
-- Como não houve correção operacional, nenhum redeploy ou smoke de runtime foi necessário.
+- Como não houve correção operacional, nenhum redeploy decorrente de variável nem smoke de runtime foi necessário. A publicação da branch acionou o Preview automático previsto pela integração Git/Vercel, concluído com sucesso no mesmo head remoto.
 
 ### 9.2. Inventário atual × esperado
 
