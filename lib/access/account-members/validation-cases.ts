@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 
+import { resolveAccountMembersConfirmUrl } from "./confirm-url";
 import {
   createInviteStatePayload,
   createInviteTransportOptions,
@@ -33,6 +34,76 @@ const ACCOUNT_ID = "10000000-0000-4000-8000-000000000003";
 const INVITE_STATE_SECRET = "test-only-secret-with-at-least-32-characters";
 
 const cases: readonly Readonly<{ name: string; run: () => void | Promise<void> }>[] = [
+  {
+    name: "resolves the invite callback from explicit and hosted origins with fail-closed precedence",
+    run: () => {
+      assert.deepEqual(
+        resolveAccountMembersConfirmUrl({
+          NEXT_PUBLIC_SITE_URL: "http://localhost:3000/current?query=1#hash",
+          VERCEL_ENV: "preview",
+          VERCEL_BRANCH_URL: "ignored.vercel.app",
+        }),
+        { ok: true, value: "http://localhost:3000/auth/confirm" },
+      );
+      assert.deepEqual(
+        resolveAccountMembersConfirmUrl({
+          VERCEL_ENV: "preview",
+          VERCEL_BRANCH_URL: "branch-preview.vercel.app",
+          VERCEL_URL: "deployment-preview.vercel.app",
+        }),
+        { ok: true, value: "https://branch-preview.vercel.app/auth/confirm" },
+      );
+      assert.deepEqual(
+        resolveAccountMembersConfirmUrl({
+          VERCEL_ENV: "preview",
+          VERCEL_URL: "deployment-preview.vercel.app",
+        }),
+        { ok: true, value: "https://deployment-preview.vercel.app/auth/confirm" },
+      );
+      assert.deepEqual(
+        resolveAccountMembersConfirmUrl({
+          VERCEL_ENV: "production",
+          VERCEL_PROJECT_PRODUCTION_URL: "lp-factory-10.vercel.app",
+          VERCEL_URL: "production-deployment.vercel.app",
+        }),
+        { ok: true, value: "https://lp-factory-10.vercel.app/auth/confirm" },
+      );
+      assert.deepEqual(
+        resolveAccountMembersConfirmUrl({
+          VERCEL_ENV: "production",
+          VERCEL_URL: "production-deployment.vercel.app",
+        }),
+        { ok: true, value: "https://production-deployment.vercel.app/auth/confirm" },
+      );
+      assert.deepEqual(resolveAccountMembersConfirmUrl({}), {
+        ok: false,
+        error: "external_config_missing",
+      });
+      assert.deepEqual(
+        resolveAccountMembersConfirmUrl({
+          NEXT_PUBLIC_SITE_URL: "not-a-url",
+          VERCEL_ENV: "preview",
+          VERCEL_URL: "must-not-bypass-explicit-invalid.vercel.app",
+        }),
+        { ok: false, error: "external_config_missing" },
+      );
+      assert.deepEqual(
+        resolveAccountMembersConfirmUrl({
+          VERCEL_ENV: "preview",
+          VERCEL_BRANCH_URL: "https://invalid-with-scheme.vercel.app",
+          VERCEL_URL: "valid-fallback.vercel.app",
+        }),
+        { ok: true, value: "https://valid-fallback.vercel.app/auth/confirm" },
+      );
+      assert.deepEqual(
+        resolveAccountMembersConfirmUrl({
+          VERCEL_ENV: "development",
+          VERCEL_URL: "must-not-enable-local.vercel.app",
+        }),
+        { ok: false, error: "external_config_missing" },
+      );
+    },
+  },
   {
     name: "covers owner and admin entitlement decisions for invite and resend",
     run: async () => {
