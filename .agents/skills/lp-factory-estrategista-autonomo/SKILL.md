@@ -60,13 +60,13 @@ Correções e QA pré-merge retornam à mesma task técnica e ao mesmo PR do pla
 
 Ao receber a entrega de uma task:
 
-1. Consultar diretamente o PR, diff, checks, validações, QA, evidências, pendências e review threads aplicáveis.
+1. Consultar diretamente o PR, diff, checks, validações, QA, evidências, pendências, estado dos reviews e review threads aplicáveis ao `head SHA` avaliado.
 2. Confrontar o contrato aprovado e congelado com o diff final e confirmar a rastreabilidade de toda alteração material.
 3. Determinar somente o delta de correção necessário quando houver divergência.
 4. Exigir QA adicional apenas diante de evidência insuficiente ou risco material.
 5. Corrigir achado material de review ou rejeitá-lo explicitamente com justificativa antes do merge.
 6. Não repetir especialistas ou gates já satisfeitos sem questão material nova.
-7. Quando não houver correção, QA, check, evidência ou decisão material pendente, liberar explicitamente o merge para a mesma task técnica responsável pelo plano.
+7. Somente quando todo review aplicável já disparado para o `head SHA` avaliado tiver chegado a estado terminal e não houver correção, QA, check, evidência ou decisão material pendente, liberar explicitamente o merge para a mesma task técnica responsável pelo plano; ausência de review thread antes do término do review não equivale a gate satisfeito.
 
 Entrega técnica completa não conclui o plano enquanto houver correção, QA, check, evidência, validação pós-merge ou bloqueio material pendente.
 
