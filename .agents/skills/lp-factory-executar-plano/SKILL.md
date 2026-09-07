@@ -247,7 +247,7 @@ No `Autônomo`, devolva a entrega a `$lp-factory-estrategista-autonomo`. A liber
 
 Depois de receber a liberação do supervisor competente:
 
-1. confirmar que a liberação corresponde ao mesmo plano, PR e `head SHA` já avaliados; registrar esse SHA, confirmar que não surgiu alteração material, check obrigatório falhando ou review thread material pendente e resolver antes do merge o Debate correspondente e um caminho autorizado de escrita; se o Debate ou o caminho de escrita não puderem ser comprovados, parar antes do merge;
+1. confirmar que a liberação corresponde ao mesmo plano, PR e `head SHA` já avaliados; registrar esse SHA, confirmar que todo review aplicável já disparado para esse SHA chegou a estado terminal e, somente então, revalidar que não surgiu alteração material, check obrigatório falhando ou review thread material pendente; ausência de review thread antes do término do review não autoriza merge; resolver antes do merge o Debate correspondente e um caminho autorizado de escrita; se o Debate ou o caminho de escrita não puderem ser comprovados, parar antes do merge;
 2. executar o merge remoto exclusivamente por GitHub Web ou ferramenta GitHub conectada e autorizada conforme `AGENTS.md`, exigindo atomicamente o mesmo `head SHA` registrado no passo anterior (`gh pr merge --match-head-commit <SHA>` ou guarda equivalente, como `expected_head_sha`); merge local pela `main` permanece proibido;
 3. obter o merge commit e executar ou confirmar somente as validações pós-merge exigidas pelo contrato e pelas fontes competentes;
 4. atualizar o Debate correspondente no Google Drive com a conclusão final da entrega, PR, merge commit e evidências, preservando a V1 aprovada e o histórico do Debate;
