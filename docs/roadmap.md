@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 06/09/2026
-• Versão: v1.5.217
+• Versão: v1.5.219
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2503,28 +2503,77 @@
 - Runs, checks, statuses, logs e artifacts do GitHub Actions são evidência suplementar e expirável; o diff/PR e os documentos canônicos preservam a prova durável da retirada.
 
 23. E23 — Segurança e governança transversal da plataforma
-- Objetivo: reduzir riscos de segurança e governança na configuração e na operação das plataformas externas, por recortes independentes, pequenos e reversíveis.
-- Status: E23.2 teve a inspeção metadata-only concluída, mas a reconciliação funcional permanece bloqueada por divergências que não podem ser corrigidas sem manipular valores ou escopos proibidos; E23.1 e E23.3 permanecem fora deste recorte.
+- Objetivo: remover riscos prioritários de segurança e governança da plataforma por recortes independentes e controlados.
+- Status: E23.1 concluída no repositório e no Preview; E23.3 concluída documentalmente; E23.2 permanece em reconciliação operacional autorizada. Merge e confirmações finais permanecem sob a autoridade do fluxo Autônomo.
+
+23.1 Atualização de segurança do Next.js
+
+23.1.1 Objetivo e status
+- Objetivo: retirar do Core a versão Next.js afetada por vulnerabilidades críticas, preservando as jornadas e os comportamentos existentes.
+- Status: concluída no repositório e validada no Preview, sem mudança funcional intencional.
+
+23.1.2 Registros do recorte
+- Repositório:
+  - Ajustados:
+    - `package.json`
+    - `package-lock.json`
+- Updates:
+  - Aplicados:
+    - `vercel#31`
+- Referências:
+  - Plano-base V1 e V2 Light: `docs/lousa-plano-base-e23-1.md` — seções 1 a 8.
+
+23.1.3 Atualização segura e validação do Core
+- `next` e `eslint-config-next` permanecem alinhados em `16.3.3`; o lockfile contém somente a resolução transitiva necessária ao upgrade.
+- Nenhum recurso opcional do Next.js 16.3, código funcional, rota, banco, configuração, automação ou workflow foi alterado.
+- Instalação limpa, resolução das versões, lint, tipos, validadores do repositório, Security Checks e build hospedado foram aprovados.
+- O Preview preservou em desktop e mobile a renderização e navegação públicas, a autenticação e o redirecionamento fail-closed do acesso protegido representativo, sem erro visível de runtime.
+- A confirmação de Production ocorre somente após merge autorizado e permanece fora deste recorte de execução.
 
 23.2 Classificação segura das variáveis Vercel
 
 23.2.1 Objetivo e status
 - Objetivo: manter as variáveis ativas do projeto Core coerentes com os tipos Vercel `Config` e `Secret`, sem exposição de valores nem mudança indevida de consumidores ou ambientes.
-- Status: inspeção concluída e reconciliação parcial. Das 51 entradas ativas inventariadas por nome, ambiente e branch scope, 21 estão conformes e 30 permanecem pendentes fora do escopo; nenhuma configuração foi alterada.
+- Status: inspeção concluída e reconciliação operacional retomada por autorização humana complementar. Das 51 entradas inicialmente inventariadas por nome, ambiente e branch scope, 21 estavam conformes e 30 exigiam tratamento; o estado final depende das operações e validações registradas neste recorte.
 
 23.2.2 Registros do recorte
 - Updates:
   - Aplicados:
     - `vercel#32`.
 - Referências:
-  - Classificação efetiva e pendências operacionais: `docs/platform-config.md` — seção 3.6.
+  - Classificação efetiva e estado operacional: `docs/platform-config.md` — seção 3.6.
 
 23.2.3 Inspeção e reconciliação segura das classificações
-- Status: inspeção concluída; conclusão funcional bloqueada pelas pendências registradas.
+- Status: reconciliação operacional em andamento, sem exposição de valores.
 - Conteúdo:
-  - o inventário read-only cobriu somente nomes, tipos, ambientes e branch scopes, sem revelar, recuperar, copiar ou registrar valores;
+  - o inventário read-only cobre somente nomes, tipos, ambientes e branch scopes, sem revelar, recuperar, copiar ou registrar valores;
   - credenciais confirmadas permanecem `Secret`, e configurações públicas ou não sensíveis confirmadas permanecem `Config`;
-  - entradas salvas como `Secret` que deveriam ser `Config` não foram reclassificadas porque a Vercel torna o valor write-only e desabilita essa conversão sem substituição;
-  - branch scopes legados, variáveis sem consumidor Vercel canônico e uma finalidade não documentada permaneceram inalterados porque renomear, remover, reescopar, rotacionar ou reinserir valor está fora do plano;
-  - nenhuma mutation, policy adicional, automação, alteração de código, redeploy decorrente de variável ou smoke de runtime foi executado; a publicação da branch acionou somente o Preview automático previsto pela integração Git/Vercel, concluído com sucesso no mesmo head remoto;
-  - a conclusão exige decisão própria sobre valores e escopos, sem ampliar retroativamente a autoridade da E23.2.
+  - reinserções `Secret` → `Config` dependem exclusivamente de operador humano credenciado agindo diretamente na Vercel a partir de fonte oficial; nenhum valor transita pelo Executor;
+  - remoções e substituições de branch scope ficam limitadas às entradas autorizadas e exigem confirmação prévia de cobertura canônica equivalente;
+  - o secret homônimo `SUPABASE_DB_URL_READONLY` do GitHub Actions e seu consumidor `.github/workflows/pipeline-supabase-inspect.yml` permanecem preservados.
+
+23.3 Retenção proporcional das evidências GitHub Actions
+
+23.3.1 Objetivo e status
+
+- Objetivo: manter o fechamento dos recortes verificável por fontes duráveis mesmo após a expiração de runs, checks, commit statuses, logs, Job Summaries e artefatos do GitHub Actions.
+- Status: concluída documentalmente, sem alteração de workflow, setting, secret, runtime, banco ou infraestrutura.
+
+23.3.2 Registros do recorte
+
+- Updates:
+  - Aplicados:
+    - `github#14`
+- Referências:
+  - Contrato técnico de evidência durável: `docs/base-tecnica.md` — seção 3.4.
+  - Retenção efetiva e configuração GitHub Actions: `docs/platform-config.md` — seção 2.2.
+  - Update incorporado: `docs/github-up.md` — `github#14`.
+
+23.3.3 Contrato de evidência durável e expiração
+
+- O repositório público mantém cinco workflows vigentes; nenhum produz artefato por upload e nenhum resultado final inventariado exige preservar evidência bruta além da janela do GitHub.
+- A retenção efetiva observada para artefatos e logs é de 90 dias, máximo exibido para o repositório público. A partir de 01/10/2026, checks, workflow runs e commit statuses seguem a mesma configuração; a expiração é normal e irreversível para os registros já removidos.
+- Runs, checks, statuses, logs, Job Summaries e artefatos servem à validação enquanto disponíveis, mas não constituem prova exclusiva de encerramento.
+- PR, commit, roadmap e documentos canônicos competentes preservam a conclusão durável; não há armazenamento externo, exportação recorrente, arquivo paralelo, job, agente ou nova automação.
+- A E22.6 comprova a regra: o PR #905, os commits do recorte e a seção 22.6 mantêm a retirada rastreável mesmo após a futura expiração do check, run, status e logs correspondentes.
+- Exigência futura de preservar evidência bruta além da janela interrompe este contrato e exige nova decisão com o Gestor de Automações e o humano.

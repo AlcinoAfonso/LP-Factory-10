@@ -436,24 +436,24 @@ Para o LP Factory 10, a cobertura de Resend é concreta porque o provedor já op
 
 ---
 
-## github#14 — Retenção do Actions passa a abranger checks, runs e statuses *(🟨 Mudança agendada; revisão pendente)*
+## github#14 — Retenção do Actions passa a abranger checks, runs e statuses *(⚪ Registro histórico — implementado globalmente pela E23.3)*
 
 2026-08-27  
 Catalogado em 2026-09-05
 
 ### Status no Projeto
 
-- Status: mudança de plataforma agendada para 01/10/2026; regra de evidência durável aplicada na E22.6, com revisão geral de retenção ainda pendente.
-- Evidência: o repositório público mantém cinco workflows GitHub Actions após a E22.6. O workflow e o artifact `niche-runtime-results` foram retirados; runs, checks, statuses e logs remanescentes continuam sendo evidência suplementar e expirável. O diff/PR e os documentos canônicos preservam a prova durável da E22.6. Não há configuração ou política de retenção documentada.
+- Status: implementado globalmente pela E23.3; a mudança da plataforma permanece agendada para 01/10/2026.
+- Evidência: a leitura read-only de GitHub Settings confirmou retenção efetiva de 90 dias para artefatos e logs, máximo exibido para o repositório público. Os cinco workflows vigentes foram inventariados, nenhum usa `upload-artifact` e nenhuma conclusão exige preservar evidência bruta além da janela. `docs/base-tecnica.md`, `docs/platform-config.md` e `docs/roadmap.md` mantêm o contrato e o estado final.
 - Natureza de uso: governança transversal de CI e evidências.
 - Relação com a stack: afeta apenas a disponibilidade histórica dos registros do GitHub Actions; não altera runtime, produto, deployment, banco ou canais.
-- Horizonte: Starter, com revisão antes de 01/10/2026.
+- Horizonte: incorporado pela E23.3.
 
 ### Descrição
 
 A partir de 01/10/2026, checks, workflow runs e commit statuses passam a seguir a mesma configuração de retenção já aplicada a artefatos e logs. O padrão é 90 dias e, em repositórios públicos como o LP Factory 10, esse também é o limite máximo. Dados que ultrapassarem a janela serão removidos automaticamente; ampliar a configuração depois não restaura o que já foi excluído.
 
-A mudança não exige ação para a maioria dos repositórios. Neste projeto, documentos técnicos citam checks e runs como prova de validação; a E22.6 estabeleceu que esses registros são suplementares e que sua prova durável reside no diff/PR e na reconciliação canônica. Permanece a decisão geral sobre quais outras evidências precisam sobreviver além de 90 dias e quais podem expirar.
+A E23.3 confirmou que nenhuma evidência bruta inventariada precisa sobreviver além de 90 dias. A prova durável reside no PR, no commit, no roadmap e nos documentos canônicos competentes; a expiração das demais evidências foi aceita explicitamente.
 
 ### Valor para o Projeto
 
@@ -461,14 +461,12 @@ A mudança não exige ação para a maioria dos repositórios. Neste projeto, do
 - Permite preservar somente evidências realmente necessárias, sem criar arquivo ou custo operacional indiscriminado.
 - Torna explícito o prazo de 90 dias para o repositório público antes de a limpeza começar.
 
-### Gatilho e aplicação
+### Aplicação concluída
 
-Avaliar antes de 01/10/2026:
-
-1. inventariar workflows e documentos que dependem de evidência disponível por mais de 90 dias;
-2. confirmar a configuração efetiva de retenção no GitHub sem alterá-la;
-3. para cada evidência necessária além da janela, escolher residência canônica e segura no fluxo competente;
-4. aceitar explicitamente a expiração das demais evidências.
+1. Os cinco workflows vigentes e as referências documentais competentes foram inventariados.
+2. A configuração efetiva de 90 dias foi confirmada no GitHub sem alteração.
+3. Nenhuma evidência bruta exige residência adicional; a expiração normal foi aceita.
+4. A E22.6 foi validada como amostra rastreável por PR #905, commits e roadmap sem depender da permanência do run.
 
 ### Dependências, riscos e limite
 
@@ -476,11 +474,11 @@ Avaliar antes de 01/10/2026:
 - Checks, runs e statuses não contam como armazenamento faturável, mas seus artefatos e logs contam.
 - A limpeza não é retroativamente reversível.
 - Exportar evidências pode duplicar dados, expor conteúdo sensível ou criar nova fonte de verdade; só fazer após inventário e decisão competente.
-- Não alterar settings, workflows, artefatos, secrets, documentos técnicos ou infraestrutura nesta rodada.
+- A E23.3 não alterou settings, workflows, artefatos, secrets, runtime, banco ou infraestrutura.
 
 ### Critério de encerramento
 
-- Dependências de evidência acima de 90 dias identificadas e decididas; evidências duráveis, quando necessárias, passam a ter residência canônica aprovada, e as demais têm expiração aceita de forma explícita. Depois, preservar o ID como registro histórico com a decisão.
+- Encerrado pela E23.3: nenhuma dependência de evidência bruta acima de 90 dias foi encontrada; o ID permanece como registro histórico, e PR, commit, roadmap e documentos canônicos preservam a decisão.
 
 ### Fontes Oficiais
 

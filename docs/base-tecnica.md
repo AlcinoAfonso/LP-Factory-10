@@ -2,8 +2,8 @@
 
 0.1 Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.87
-• Data: 02/09/2026
+• Versão: v2.0.88
+• Data: 06/09/2026
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -100,6 +100,7 @@
 • Checks de segurança devem falhar fechado e bloquear padrões proibidos no client/UI; exceções server-side devem ser explícitas e mínimas no workflow canônico.
 • Alterações em acesso ou Auth devem validar os fluxos afetados conforme os contratos operacionais em `docs/automations.md` e nos READMEs locais.
 • Workflows, gatilhos, runners, actions, versões, inputs e steps têm fonte canônica no repositório real e em `docs/platform-config.md`; não duplicar esses detalhes aqui.
+• Runs, checks, commit statuses, logs, Job Summaries e artefatos do GitHub Actions são evidências operacionais suplementares e expiráveis; nenhum encerramento de recorte pode depender exclusivamente deles. A prova durável deve permanecer no PR, no commit e no estado final registrado no roadmap e nos documentos canônicos competentes.
 • Antes do merge, aplicar o checklist da seção 7.
 
 3.4.1 Manutenção de dependências
