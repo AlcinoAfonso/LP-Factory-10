@@ -303,9 +303,9 @@ Status: proposta técnica derivada da v1 funcional, sujeita aos gates do Analist
 
 ### 8.10. Decisões de updates incorporadas
 
-- Derivação técnica da v1 e do contrato Supabase Auth vigente: reutilizar `inviteUserByEmail`, template `Invite user`, redirect por emissão e `/auth/confirm`, sem transporte paralelo.
-- Derivação técnica da v1 e da fronteira hospedada vigente: usar o Supabase Plugin para inspeção read-only e sanitizada, sem escrita remota.
-- Derivação técnica da v1 e dos critérios de evidência: aplicar inspeção visual proporcional às superfícies disponíveis, sem suíte fixa.
-- Derivação técnica da v1 e do critério de avaliação de interface: aplicar o recorte focal de 8.6, sem alegar conformidade global nem abrir correções externas.
+- **Modernização técnica justificada — update `supa#30`:** reutilizar `inviteUserByEmail`, o template `Invite user`, o `redirectTo` por emissão e `/auth/confirm`, sem e-mail customizado, rota ou transporte alternativo. Sem o update, o tratamento permaneceria genérico; com ele, o plano reduz código próprio e superfície de segurança sem alterar o resultado funcional.
+- **Modernização técnica justificada — update `supa#59`:** usar o Supabase Plugin aprovado exclusivamente em modo read-only, sem escrita, novo MCP, script ou workflow. Sem o update, a inspeção hospedada exigiria plumbing manual; com ele, reduz latência e exposição de credenciais sem alterar domínio ou runtime.
+- **Modernização técnica justificada — update `prod#16`:** executar QA visual e de UX proporcional às superfícies, atores e viewports materialmente relevantes, sem suíte fixa. Sem o update, restaria um smoke ad hoc; com ele, aumenta a confiabilidade da evidência sem ampliar o produto.
+- **Modernização técnica justificada — update `prod#17`:** avaliar os critérios WCAG 2.2 materialmente aplicáveis à jornada, sem declarar conformidade integral nem corrigir produto fora do recorte. Sem o update, a avaliação seria genérica; com ele, passa a ter oráculos verificáveis sem impacto funcional.
 - Derivação técnica da v1: tratar conteúdo de e-mail e páginas como não confiável, materializar allowlist fechada e distinguir defeito do produto de falha do operador.
 - Referências sem adoção: Next.js, Vercel, Playwright, Agents SDK e demais itens de catálogo permanecem apenas contexto; nenhuma atualização adicional é necessária para esta entrega.
