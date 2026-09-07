@@ -4,10 +4,12 @@ Status: V1 funcional aprovada no Debate 06; execução Light; supervisão Autôn
 
 Fonte aprovada: [Debate 06 — Implementações transversais prioritárias — LP Factory 10](https://docs.google.com/document/d/1HvHycy9dHY2GdnrChVjhuqrtqk3TCRT7cd5iS9v1dhs/edit), seção 11, documento `1HvHycy9dHY2GdnrChVjhuqrtqk3TCRT7cd5iS9v1dhs`, revisão `ANLCKQkyv3QKi4d5bpXOOV2Y0qUhf7Saj7WUE5TL7hgFHMb0p-YUqtDXk6FvP28vvPyRe3DyeLE8z4WiGOXtJ6XKgTdnKRmAFOt8WY8xL0Q`, consultada em 06/09/2026.
 
+Decisão funcional superveniente: a seção 11 do mesmo Debate foi reconciliada em 07/09/2026 e relida na revisão `ANLCKQk7DtuS7jjp9PNGA9Hc0o5eI3xmIAnr8m03NHK2vX88dBsTMo0IC8bRtYcX8y9ufzYwNMitTOd6E6iVnFeaI-1ZCgwPbBj2uMn7chA`; ela preserva a rastreabilidade da V1 congelada e governa o fechamento funcional descrito abaixo.
+
 ## 1. Problema e resultado
 
-- Problema: o projeto documenta finalidade e escopo das variáveis, mas ainda não confirmou sua classificação efetiva entre Config e Secret na Vercel.
-- Resultado funcional: todas as variáveis ativas ficam coerentes com sua natureza e seus ambientes, sem exposição de valores e sem mudança indevida de consumidores.
+- Problema original: o projeto documentava finalidade e escopo das variáveis, mas ainda não havia confirmado sua classificação efetiva entre Config e Secret na Vercel.
+- Resultado funcional: seis ocorrências sem consumidor são removidas; 22 configurações sobreclassificadas como `Secret` e quatro branch scopes legados são aceitos temporariamente como estado conservador, sem exposição de valores, mudança indevida de consumidores ou impacto comprovado no runtime.
 
 ## 2. Atores e comportamento esperado
 
@@ -19,14 +21,14 @@ Fonte aprovada: [Debate 06 — Implementações transversais prioritárias — L
 - Escopo negativo: não ler, copiar, imprimir, trocar ou versionar valores; não renomear variável, alterar consumidor, ampliar ambiente ou rotacionar credencial.
 - Risco funcional material: uma classificação incorreta ou redeploy inadequado pode indisponibilizar um consumidor.
 - Dependências reais: projeto Core da Vercel, inventário de `docs/platform-config.md` e acesso operacional autorizado.
-- Se a inspeção revelar mudança além da classificação Config/Secret, o ponto fica fora desta V1 e exige nova decisão.
+- Não há trabalho pendente de reclassificação ou branch scope nesta V1. Correção futura só pode nascer de risco ou impacto funcional material comprovado e exige decisão própria.
 
 ## 4. Posição e fase planejadas no roadmap
 
 - Caso macro planejado: E23 — Segurança e governança transversal da plataforma.
 - Plano-base: E23.2 — Classificação segura das variáveis Vercel.
 - Estrutura planejada: 23.2.1 Objetivo e status; 23.2.2 Registros do recorte quando houver entrega material; 23.2.3 Inspeção e reconciliação segura das classificações.
-- Fase 23.2.3: confirmar a classificação e corrigir somente divergências comprovadas dentro dos limites aprovados.
+- Fase 23.2.3: concluir as seis remoções autorizadas e preservar o restante do inventário sob a decisão funcional conservadora, sem manipular valores ou branch scopes.
 
 ## 5. Classificação e automação
 
@@ -36,17 +38,19 @@ Fonte aprovada: [Debate 06 — Implementações transversais prioritárias — L
 ## 6. Aceite e evidências
 
 - Critério de aceite: nomes, tipos e escopos das variáveis ativas inventariados sem valores.
-- Critério de aceite: cada credencial confirmada como Secret e cada configuração pública confirmada como Config.
-- Critério de aceite: divergências necessárias corrigidas e consumidores preservados; redeploy e smoke somente quando exigidos pela mudança.
-- Evidências esperadas: relatório sanitizado por nome, tipo e ambiente, confirmação operacional da Vercel e atualização de `docs/platform-config.md` somente se houver estado material novo.
+- Critério de aceite: credenciais confirmadas permanecem `Secret`; as 22 sobreclassificações como `Secret` e os quatro branch scopes legados permanecem protegidos e aceitos temporariamente sem impacto funcional material comprovado.
+- Critério de aceite: seis ocorrências sem consumidor removidas, consumidores necessários preservados e nenhum trabalho pendente de reclassificação ou branch scope; nova correção exige decisão própria sustentada por risco ou impacto material comprovado.
+- Evidências esperadas: relatório sanitizado por nome, tipo e ambiente, ausência das seis ocorrências removidas, preservação metadata-only das 22 sobreclassificações e dos quatro scopes, confirmação operacional do Preview e atualização de `docs/platform-config.md` somente para o estado material confirmado.
 
 ## 7. Estado da V1
 
-- V1 funcional aprovada. Execução: Light. Supervisão: Autônomo.
+- V1 funcional aprovada e reconciliada pela decisão superveniente do Debate. Execução: Light. Supervisão: Autônomo. Estado final: seis ocorrências removidas; 22 sobreclassificações e quatro branch scopes preservados temporariamente; nenhuma reclassificação ou mudança de scope pendente.
 
 ## 8. Plano-base V2 técnico mínimo
 
 Status: derivado da V1 congelada no commit `939df3b60e2f1faeeefddc455b158c73c753fb4b`, blob `a53bf88c8d2af7490c0a52ab62238a045932a649`, a partir da `main` `8105378cffbb6044c0704d9adfaec2aeb7d8511a`; pronto para implementação Light.
+
+Rastreabilidade: as regras desta V2 registram a derivação histórica daquele congelamento. A decisão funcional superveniente acima encerra as reclassificações e mudanças de branch scope sem apagar ou reescrever esse histórico.
 
 ### 8.1. Boundary técnico e invariantes
 

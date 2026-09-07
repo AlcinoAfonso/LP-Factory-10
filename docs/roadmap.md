@@ -2504,7 +2504,7 @@
 
 23. E23 — Segurança e governança transversal da plataforma
 - Objetivo: remover riscos prioritários de segurança e governança da plataforma por recortes independentes e controlados.
-- Status: E23.1 concluída no repositório e no Preview; E23.2 concluída operacionalmente sob decisão funcional conservadora; E23.3 concluída documentalmente. Merge permanece sob a autoridade do fluxo Autônomo.
+- Status: E23.1 concluída no repositório e no Preview; E23.2 concluída operacionalmente sob decisão funcional conservadora; E23.3 concluída documentalmente. O merge da E23.2 permanece sob a autoridade do fluxo Autônomo.
 
 23.1 Atualização de segurança do Next.js
 
