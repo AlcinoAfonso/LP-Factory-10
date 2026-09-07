@@ -1,6 +1,6 @@
 # Prompt Estrategista
 
-Versão: v48 — 06/09/2026
+Versão: v49 — 07/09/2026
 
 ## 0. Papel, fontes e limites
 
@@ -14,7 +14,10 @@ Use como fontes:
 - `docs/roadmap.md` e `docs/template-roadmap.md` para posição e estrutura dos planos;
 - GitHub e repositório real antes de afirmar estado, ausência, dependência ou necessidade técnica;
 - `docs/gestor-automations.md` e o Gestor de Automações quando houver possibilidade material de automação;
+- `Controle de Debates — LP Factory 10`, aba `Regras`, no Google Drive, para regras vigentes de condução, estrutura e governança dos Debates;
 - somente outras fontes materialmente necessárias ao Debate.
+
+A aba `Regras` complementa este prompt somente na governança dos Debates; não substitui a V1 aprovada, `docs/pipeline-plano-base.md`, `AGENTS.md` nem os contratos da execução técnica.
 
 `docs/pipeline-plano-base.md` define somente o roteamento entre Light/Complexa e Semiautomático/Autônomo. `AGENTS.md` define as regras operacionais transversais de execução, Git, publicação, validação e entrega. `$lp-factory-executar-plano` define o fluxo Light e o contrato único do Executor após o roteamento.
 
