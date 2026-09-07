@@ -177,3 +177,124 @@ Fonte aprovada: Debate 08 — Operador Institucional Autônomo de QA — LP Fact
 - Execução: Complexa.
 - Supervisão: Autônomo.
 - Decisão de automação: não criar nova automação; reutilizar o próprio Executor no Codex App como operador adaptativo de QA, com auxiliares determinísticos e mínimos.
+
+## 8. Plano-base v2 técnico
+
+Status: proposta técnica derivada da v1 funcional, sujeita aos gates do Analista antes da implementação.
+
+### 8.1. Entradas imutáveis e estado factual
+
+- Plano-base v1: commit `ed84641dd3eb8695070ccb44433874b51077e923`, blob `5c330706d35bb1f4f6e6cd9152989462aa341171`, caminho `docs/lousa-plano-base-e17-9.md`.
+- Base congelada: `origin/main` em `9a80e58bda9079b9a573992a70857543ae6414cb`; `docs/roadmap.md` no blob `7d819673c27d5c96b5e14423a6b372a4708bc8b3`.
+- Plano conceitual: N/A.
+- PR da frente: #914, branch `codex-app/e17-9-autonomia-qa`, base `main`, criado inicialmente apenas com o plano-base v1.
+- Fonte funcional: Google Docs identificado no cabeçalho, na revisão ali congelada.
+- O repositório registra `MAILBOX_EMAIL` e `MAILBOX_PASSWORD` como secrets do GitHub, sem expor valores, mas não contém consumidor executável vigente da mailbox.
+- A conexão Gmail nativa está disponível no ambiente do Codex, porém a conta conectada na investigação não corresponde à mailbox institucional.
+- O Computer Use dispõe, nesta investigação, apenas do navegador interno do Codex, sem sessão aberta e sem Chrome, Edge ou aplicativo nativo conectado; isso comprova capacidade básica de navegação adaptativa, não sessão institucional persistente.
+- O projeto Supabase hospedado está saudável. A função vigente `public.is_platform_admin()` não é `SECURITY DEFINER`, fixa `search_path` e aceita claim superior `platform_admin`, UUID legado ou `is_super_admin()`. Nenhum usuário hospedado possui hoje `app_metadata.platform_admin`, e a mailbox institucional ainda não corresponde a usuário de Auth.
+- O Preview do PR #912 está pronto, mas o próprio PR mantém pendente a validação autenticada de convite. O Preview do PR #914 está pronto no commit da v1.
+
+### 8.2. Arquitetura e fronteiras
+
+- O operador é o contrato existente do Executor em `.agents/skills/lp-factory-executar-plano/SKILL.md`; não existe novo agente, runtime, workflow, job, service, rota, banco ou workload OpenAI.
+- O Gmail conectado ao Codex é o consumidor preferencial da mailbox para busca e leitura adaptativa. POP3 permanece apenas configuração registrada e não autoriza criar consumidor próprio.
+- O navegador controlado pelo Codex executa a jornada visual. Sessão persistente, perfil separado ou gerenciador de senhas só podem ser usados depois de comprovados no ambiente; a v2 não presume capacidades ausentes.
+- O Supabase Plugin é usado para inspeção hospedada somente leitura e evidência agregada. Alterações hospedadas continuam pelo fluxo versionado de migrations do repositório.
+- GitHub e Vercel fornecem estado de PR, checks, Preview e metadados de deploy. A evidência deve ser reduzida ao necessário e sanitizada.
+- Auxiliares determinísticos permanecem limitados a validação, seleção ou sanitização. Eles não substituem a navegação e o julgamento adaptativos do Executor.
+
+### 8.3. Identidades e menor privilégio
+
+- Identidade comum permanente: `lpfactoryqa@gmail.com`, sem claim administrativo.
+- Identidade administrativa permanente: alias estável de função `lpfactoryqa+admin@gmail.com`, com `app_metadata.platform_admin=true` e sem dependência do UUID pessoal legado.
+- Identidade transitória: alias não sequencial `lpfactoryqa+<nonce-opaco>@gmail.com`, criado somente quando o estado novo for material para a jornada e descartado ou desativado ao final conforme a capacidade autorizada da superfície.
+- A seleção automática começa pela identidade comum, usa a transitória quando o caso exigir estado novo e usa a administrativa somente quando o critério exigir privilégio de plataforma; o Executor troca de identidade apenas pelo motivo registrado no roteiro.
+- Usuário comum e administrador usam contextos de navegador separados quando a capacidade estiver disponível. Sem isolamento comprovado, o Executor encerra a sessão anterior e comprova a troca de ator antes de prosseguir.
+- Provisionamento inicial pode exigir uma intervenção humana única para vincular a mailbox institucional ao Gmail nativo e criar ou armazenar credenciais permanentes fora da visibilidade do modelo. Isso não vira gate por execução. Se o ambiente não oferecer mecanismo seguro, o recurso ausente volta ao supervisor sem transportar segredo por chat, arquivo, log ou argumento de ferramenta.
+
+### 8.4. Contrato administrativo hospedado
+
+- A E17.9.4 adiciona uma única migration focal que estende `public.is_platform_admin()` para reconhecer `auth.jwt()->'app_metadata'->>'platform_admin'`, preservando os ramos legados vigentes, o modo `SECURITY INVOKER`, o `search_path` e os grants atuais.
+- A migration não cria tabela, coluna, rota, adapter, RLS, policy, papel de banco ou privilégio novo. O claim é metadado administrativo emitido pelo projeto e não dado editável pelo próprio usuário.
+- A atribuição do claim ocorre apenas na identidade institucional administrativa, por operação administrativa autorizada. A identidade comum deve ser comprovada negativa para o mesmo helper.
+- Como o helper hospedado só muda após aplicação da migration, a comprovação institucional do Admin Dashboard é gate pós-merge da migration. Antes disso, a entrega deve validar estaticamente a migration e pode comprovar as capacidades comuns sem usar identidade pessoal ou elevar privilégio por atalho.
+- Se a inspeção imediatamente anterior à implementação mostrar que o helper ou seus grants mudaram, a migration deve ser recalculada sobre a versão corrente; não sobrescrever definição divergente.
+
+### 8.5. Mailbox, autenticação e jornadas
+
+- Convites reutilizam `supabase.auth.admin.inviteUserByEmail`, o template nativo `Invite user`, o estado assinado já existente e o callback `/auth/confirm`; não criar rota de e-mail, token ou convite paralela.
+- Confirmação, convite e recuperação são concluídos pelo link recebido na mailbox institucional. Códigos, tokens e URL completos não integram o relato nem screenshots.
+- O Executor registra para cada jornada: ator, ambiente, início, ação esperada, comportamento observado, resultado, bloqueio quando houver e referência sanitizada da evidência.
+- O roteiro é derivado dos critérios da subseção em execução. Não criar suíte fixa para simular adaptabilidade.
+- Qualquer mutação em Production fica restrita a contas e dados institucionais de QA, deve ser reversível e deve ter limpeza ou estado final explicitado.
+
+### 8.6. Qualidade visual e acessibilidade proporcional
+
+- Nas superfícies disponíveis, o Executor faz inspeção visual proporcional em viewport comum e administrativa e inclui mobile quando o comportamento for material.
+- O recorte focal de acessibilidade verifica teclado, foco visível, rótulos e nomes acessíveis, mensagens de erro, contraste material, alvos de toque e ausência de dependência exclusiva de hover.
+- O resultado não declara conformidade global WCAG e não abre correções fora do caso. Achados externos ao escopo são registrados para o supervisor.
+- Screenshot só é produzida quando acrescenta prova material e deve excluir e-mail pessoal, conteúdo da mailbox, token, cookie, secret, identificador sensível ou dado real.
+
+### 8.7. Implementação por subseção
+
+#### 8.7.1. E17.9.3 — Consolidar o contrato funcional
+
+- Confirmar que esta lousa preserva integralmente a v1 aprovada e publicar o plano técnico aprovado no mesmo PR.
+- Não criar código para esta subseção.
+- Gate: v1 e v2 aprovadas pelo Analista, com matriz de consolidação versionada depois da Passagem 1.
+
+#### 8.7.2. E17.9.4 — Reconciliar identidades, papéis e fronteira segura de acesso
+
+- Implementar a migration focal descrita em 8.4 e validar sua forma contra schema e migration vigentes.
+- Especializar o contrato existente do Executor somente onde faltarem regras operacionais explícitas para seleção de identidade, Gmail institucional, isolamento de sessão, sanitização e bloqueio seguro.
+- Registrar nos documentos canônicos apenas deltas comprovados: claim administrativo, fonte da identidade, recurso de mailbox e limites de sessão.
+- Gate pré-publicação: `npm ci`, `npm run check`, `git diff --check` e revisão de `main..HEAD` e `main...HEAD`.
+- Gate hospedado: após aplicação versionada, sessão nova deve provar usuário comum rejeitado e identidade administrativa aceita, sem revelar o JWT ou o UUID legado.
+
+#### 8.7.3. E17.9.5 — Comprovar capacidades operacionais do Executor
+
+- Vincular o Gmail nativo à mailbox institucional e provisionar as duas identidades permanentes pelo mecanismo seguro disponível; segredo permanente permanece fora do modelo e do repositório.
+- Executar a jornada representativa do PR #912: convite institucional, recebimento na mailbox, consumo do link, passagem por `/auth/confirm`, ativação e acesso ao destino esperado.
+- Executar uma jornada de recuperação e uma troca de ator comum/admin para comprovar identidade, sessão e menor privilégio.
+- Gate: nenhum pedido rotineiro de login, senha, clique ou código a Alcino; evidência sanitizada suficiente para reproduzir o resultado, não a credencial.
+- Se Gmail institucional, sessão segura ou armazenamento de credencial não puder ser disponibilizado sem exposição, devolver ao supervisor o recurso exato ausente. Não implementar POP3, proxy, cofre ou automação alternativa.
+
+#### 8.7.4. E17.9.6 — Comprovar QA ponta a ponta nas superfícies disponíveis
+
+- Executar, com roteiro derivado do plano, ao menos uma jornada autenticada relevante em Account Dashboard e uma em Admin Dashboard, respeitando os gates hospedados de 8.7.2.
+- Avaliar comportamento, conteúdo, interface e o recorte proporcional de acessibilidade de 8.6.
+- Usar dados institucionais reversíveis, registrar limpeza ou estado final e anexar somente evidência sanitizada.
+- Gate: capacidades de Auth, Account Dashboard e Admin Dashboard comprovadas sem intervenção humana rotineira e sem conta pessoal.
+
+#### 8.7.5. E17.9.7 — Comprovar QA de Landing Pages
+
+- Manter a subseção planejada e não executável enquanto não existir superfície operacional de criação e edição de Landing Pages.
+- Quando a superfície existir, derivar o roteiro da etapa responsável e aplicar as mesmas fronteiras de identidade, ambiente, sanitização, qualidade visual e acessibilidade.
+- O estado condicionado desta subseção não reabre nem bloqueia a conclusão das capacidades E17.9.3 a E17.9.6.
+
+### 8.8. Validação e evidência da entrega
+
+- Código ou configuração executável: `npm ci`, seguido de `npm run check`; não executar `npm run build` no sandbox do Codex.
+- Documentação isolada: revisão estrutural, `git diff --check` e conferência de residência canônica; `npm ci` e `npm run check` são não aplicáveis somente enquanto o checkpoint for exclusivamente documental.
+- Migration: conferir definição anterior, função resultante, invocação, `search_path`, grants, resultado negativo comum e positivo administrativo.
+- Preview: conferir deploy contra o SHA remoto correto e executar a jornada na URL correspondente, nunca em Preview divergente.
+- Evidência mínima por capacidade: SHA, ambiente, ator funcional, comportamento esperado e observado, resultado e risco residual; valores secretos, mailbox bruta e identificadores sensíveis são proibidos.
+
+### 8.9. Condições de parada técnica
+
+- A conta Gmail conectada não é a institucional e não pode ser reconectada por mecanismo autorizado.
+- A identidade não dispõe de credencial armazenada fora da visibilidade do modelo ou de sessão segura reutilizável.
+- O deploy não corresponde ao SHA remoto da branch.
+- A definição hospedada do helper administrativo diverge da base usada pela migration.
+- A migration não foi aplicada quando a jornada depender do novo claim.
+- CAPTCHA, MFA, isolamento de sessão ou trust boundary não podem ser resolvidos pelos recursos institucionais já autorizados.
+- A solução passaria a exigir nova automação, agente, Agents SDK, workflow, job, service, rota, banco, privilégio ou infraestrutura não aprovada.
+
+### 8.10. Decisões de updates incorporadas
+
+- Reutilizar o fluxo nativo de convite do Supabase e `/auth/confirm` já existentes.
+- Usar o Supabase Plugin apenas para inspeção hospedada sanitizada; escrita continua por migration versionada.
+- Aplicar inspeção visual proporcional às superfícies disponíveis, sem suíte fixa nem cenário novo codificado.
+- Aplicar recorte focal de WCAG 2.2 sem alegar conformidade global ou ampliar o escopo de correção.
+- Next.js, Vercel, Playwright, Agents SDK e demais referências ficam apenas como contexto; nenhuma atualização ou adoção adicional é necessária para esta entrega.
