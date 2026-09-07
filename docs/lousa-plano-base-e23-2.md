@@ -165,3 +165,69 @@ Status: derivado da V1 congelada no commit `939df3b60e2f1faeeefddc455b158c73c753
 - Resolver a presença de `MCP_SUPABASE_INSPECT_URL`, `LPF_MCP_SECRET` e `SUPABASE_DB_URL_READONLY` no Core exige decisão de limpeza ou de consumidor, fora desta V1.
 - Definir a finalidade vigente de `E7_ONBOARD_SERVICE_ONLY` exige decisão documental/funcional própria; o tipo atual não foi alterado por inferência.
 - As categorias se sobrepõem em algumas entradas; o total único permanece 30 pendências.
+
+## 10. Retomada autorizada e handoff metadata-only ao operador
+
+Autorização complementar recebida depois da primeira devolução técnica:
+
+- remover do Core somente as duas entradas de `E19_5_WORKSPACE_ENABLED`, `MCP_SUPABASE_INSPECT_URL`, `LPF_MCP_SECRET`, `SUPABASE_DB_URL_READONLY` e `E7_ONBOARD_SERVICE_ONLY`;
+- preservar integralmente o secret homônimo `SUPABASE_DB_URL_READONLY` do GitHub Actions e seu consumidor `.github/workflows/pipeline-supabase-inspect.yml`;
+- permitir que operador humano credenciado reinira diretamente na Vercel configurações obtidas de fonte oficial, sem que qualquer valor transite pelo Executor, chat, terminal, logs ou repositório;
+- substituir branch scopes legados somente depois de confirmar e validar cobertura canônica equivalente;
+- validar alterações operacionais primeiro em Preview e somente depois em Production.
+
+### 10.1. Instruções por entrada e ambiente
+
+O operador não deve enviar valores ao Executor. Para cada linha marcada como ação humana, o operador deve obter o valor diretamente da fonte oficial indicada, substituir a entrada na própria Vercel mantendo nome, ambiente, consumidor e significado, selecionar o tipo `Config` e comunicar somente o resultado metadata-only: nome, ambiente, tipo final, scope final, fonte confirmada sem conteúdo e estado do Preview.
+
+| Entrada | Ambiente / scope atual | Ação metadata-only | Fonte oficial a confirmar diretamente pelo operador | Estado |
+|---|---|---|---|---|
+| `E11_MEMBERS_ENABLED` | Preview / `codex-app/e11-11-1-7` | Não reinserir; tratar somente no fluxo separado de substituição dos quatro branch scopes, fora do lote literal de limpeza dos recursos órfãos | Vercel Core, entrada geral já cadastrada | cobertura observada; preservada neste lote |
+| `E20_5_SELECTED_RESEARCH_ENABLED` | Preview geral | Substituir `Secret` por `Config`, preservando Preview e o consumidor atual | decisão de rollout vigente e configuração oficial do Core | pausada até ação humana |
+| `E20_5_SELECTED_RESEARCH_ENABLED` | Preview / `codex-app/e20-6-5-post-apply-corrections` | Não reinserir no scope legado; remover somente depois de a entrada Preview geral corrigida passar no Preview | nova cobertura Preview geral validada | pausada até cobertura equivalente |
+| `E20_6_5_INPUT_CATALOG_EVALUATION_PROVIDER_ENABLED` | Preview | Substituir `Secret` por `Config`, preservando Preview e o consumidor atual | decisão de rollout vigente e configuração oficial do Core | pausada até ação humana |
+| `E20_6_INPUT_CATALOG_REVIEW_ENABLED` | Production and Preview | Substituir `Secret` por `Config`, validando Preview antes de Production | decisão de rollout vigente e configuração oficial do Core | pausada até ação humana |
+| `OPENAI_OPERATIONAL_CONFIG_ENABLED` | Preview | Substituir `Secret` por `Config`, preservando Preview e o consumidor atual | configuração operacional oficial do Core | pausada até ação humana |
+| `STRIPE_TEST_LITE_ANNUAL_PRICE_ID` | Production and Preview | Substituir `Secret` por `Config`, validando Preview antes de Production | Stripe Dashboard em modo de teste | pausada até ação humana |
+| `STRIPE_TEST_LITE_ANNUAL_PRODUCT_ID` | Production and Preview | Substituir `Secret` por `Config`, validando Preview antes de Production | Stripe Dashboard em modo de teste | pausada até ação humana |
+| `STRIPE_TEST_LITE_MONTHLY_PRICE_ID` | Production and Preview | Substituir `Secret` por `Config`, validando Preview antes de Production | Stripe Dashboard em modo de teste | pausada até ação humana |
+| `STRIPE_TEST_LITE_MONTHLY_PRODUCT_ID` | Production and Preview | Substituir `Secret` por `Config`, validando Preview antes de Production | Stripe Dashboard em modo de teste | pausada até ação humana |
+| `STRIPE_TEST_PRO_ANNUAL_PRICE_ID` | Production and Preview | Substituir `Secret` por `Config`, validando Preview antes de Production | Stripe Dashboard em modo de teste | pausada até ação humana |
+| `STRIPE_TEST_PRO_ANNUAL_PRODUCT_ID` | Production and Preview | Substituir `Secret` por `Config`, validando Preview antes de Production | Stripe Dashboard em modo de teste | pausada até ação humana |
+| `STRIPE_TEST_PRO_MONTHLY_PRICE_ID` | Production and Preview | Substituir `Secret` por `Config`, validando Preview antes de Production | Stripe Dashboard em modo de teste | pausada até ação humana |
+| `STRIPE_TEST_PRO_MONTHLY_PRODUCT_ID` | Production and Preview | Substituir `Secret` por `Config`, validando Preview antes de Production | Stripe Dashboard em modo de teste | pausada até ação humana |
+| `STRIPE_TEST_STARTER_ANNUAL_PRICE_ID` | Production and Preview | Substituir `Secret` por `Config`, validando Preview antes de Production | Stripe Dashboard em modo de teste | pausada até ação humana |
+| `STRIPE_TEST_STARTER_ANNUAL_PRODUCT_ID` | Production and Preview | Substituir `Secret` por `Config`, validando Preview antes de Production | Stripe Dashboard em modo de teste | pausada até ação humana |
+| `STRIPE_TEST_STARTER_MONTHLY_PRICE_ID` | Production and Preview | Substituir `Secret` por `Config`, validando Preview antes de Production | Stripe Dashboard em modo de teste | pausada até ação humana |
+| `STRIPE_TEST_STARTER_MONTHLY_PRODUCT_ID` | Production and Preview | Substituir `Secret` por `Config`, validando Preview antes de Production | Stripe Dashboard em modo de teste | pausada até ação humana |
+| `STRIPE_TEST_ULTRA_ANNUAL_PRICE_ID` | Production and Preview | Substituir `Secret` por `Config`, validando Preview antes de Production | Stripe Dashboard em modo de teste | pausada até ação humana |
+| `STRIPE_TEST_ULTRA_ANNUAL_PRODUCT_ID` | Production and Preview | Substituir `Secret` por `Config`, validando Preview antes de Production | Stripe Dashboard em modo de teste | pausada até ação humana |
+| `STRIPE_TEST_ULTRA_MONTHLY_PRICE_ID` | Production and Preview | Substituir `Secret` por `Config`, validando Preview antes de Production | Stripe Dashboard em modo de teste | pausada até ação humana |
+| `STRIPE_TEST_ULTRA_MONTHLY_PRODUCT_ID` | Production and Preview | Substituir `Secret` por `Config`, validando Preview antes de Production | Stripe Dashboard em modo de teste | pausada até ação humana |
+
+### 10.2. Branch scopes ainda dependentes de substituto
+
+| Entrada | Scope legado | Substituto canônico exigido antes da remoção | Estado |
+|---|---|---|---|
+| `E20_5_SELECTED_RESEARCH_ENABLED` | `codex-app/e20-5-pos-merge` | entrada `Config` Preview geral, corrigida por operador e validada no Preview | pausada |
+| `E20_5_SELECTED_RESEARCH_ENABLED` | `codex-app/e20-6-5-post-apply-corrections` | entrada `Config` Preview geral, corrigida por operador e validada no Preview | pausada |
+| `NEXT_PUBLIC_SITE_URL` | `codex-app/e11-2-orquestracao` | nova entrada `Config` Preview geral criada diretamente pelo operador a partir da configuração oficial do domínio e validada no Preview | pausada |
+
+As seis remoções literais de recursos órfãos são independentes dessas ações humanas: duas ocorrências de `E19_5_WORKSPACE_ENABLED` e uma ocorrência de cada um dos quatro nomes sem consumidor autorizados. Os quatro branch scopes legados permanecem no fluxo separado de substituição, inclusive `E11_MEMBERS_ENABLED`. Nenhuma reinserção, rotação ou leitura de valor foi delegada ao Executor.
+
+### 10.3. Remoções metadata-only concluídas
+
+As seis ocorrências autorizadas foram removidas do projeto Vercel Core e tiveram a ausência confirmada individualmente pela busca nominal do Dashboard:
+
+| Nome | Ambiente / branch scope removido | Verificação |
+|---|---|---|
+| `E19_5_WORKSPACE_ENABLED` | Production / sem branch scope | nenhum resultado remanescente para o nome depois da remoção das duas ocorrências |
+| `E19_5_WORKSPACE_ENABLED` | Preview / sem branch scope | nenhum resultado remanescente para o nome depois da remoção das duas ocorrências |
+| `MCP_SUPABASE_INSPECT_URL` | All Environments / sem branch scope | nenhum resultado remanescente para o nome |
+| `LPF_MCP_SECRET` | Production and Preview / sem branch scope | nenhum resultado remanescente para o nome |
+| `SUPABASE_DB_URL_READONLY` | Production and Preview / sem branch scope | nenhum resultado remanescente para o nome na Vercel Core |
+| `E7_ONBOARD_SERVICE_ONLY` | Preview / sem branch scope | nenhum resultado remanescente para o nome |
+
+O secret homônimo `SUPABASE_DB_URL_READONLY` do GitHub Actions não foi alterado. O repositório reconciliado preserva `.github/workflows/pipeline-supabase-inspect.yml` consumindo `${{ secrets.SUPABASE_DB_URL_READONLY }}` e `automations/supabase-inspect/run.mjs` usando a variável somente no processo da automação.
+
+As remoções alteram a configuração disponível a novos deployments, mas não modificam deployments já construídos. O rollout permanece pendente: publicação do estado do PR para gerar Preview com a configuração atual, validação proporcional e somente então redeploy de Production.
