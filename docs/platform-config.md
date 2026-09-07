@@ -2,8 +2,8 @@
 
 0.1 Cabeçalho
 • Documento: LP Factory 10 — Platform Config
-• Versão: v0.1.43
-• Data: 06/09/2026
+• Versão: v0.1.44
+• Data: 07/09/2026
 
 0.2 Contrato do documento
 • O QUE É: snapshot operacional e fonte única das configurações de plataformas externas do LP Factory 10, refletindo o estado conhecido/cadastrado nas plataformas conforme indicado.
@@ -103,7 +103,7 @@
 3.2 Projeto de serviços
 • Projeto Vercel: `lpf-10-services`
 • Estado: removido em 01/09/2026 após confirmação read-only de ausência de workload; não há projeto ou configuração operacional remanescente.
-• Configurações exclusivas, domínio, endpoint, Root Directory, regras de build e variáveis do service foram removidos com o projeto.
+• O projeto, domínio, endpoint, Root Directory e regras de build exclusivos foram removidos. `MCP_SUPABASE_INSPECT_URL` e `LPF_MCP_SECRET`, encontrados sem consumidor Vercel canônico no Core, também foram removidos por autorização expressa na E23.2.
 
 3.3 Runtime e build
 • Node.js: `22.x`
@@ -151,9 +151,9 @@
 
 • `E19_5_WORKSPACE_ENABLED`
 • Finalidade histórica: gate server-only do workspace operacional de landing pages retirado no SV-PR03.
-• Escopo: Preview e Production do projeto Core, com configuração independente por ambiente.
-• Estado atual: sem consumidor no código; qualquer valor hospedado é inerte e não ativa rota, leitura ou mutação do workspace retirado.
-• Regra operacional: não é necessário remover a variável da Vercel neste recorte e nenhum novo consumidor deve ser criado sem decisão própria.
+• Escopo histórico: Preview e Production do projeto Core, sem branch scope.
+• Estado atual: as duas ocorrências sem consumidor foram removidas da Vercel Core por autorização expressa na E23.2.
+• Regra operacional: não recriar a variável nem criar novo consumidor sem decisão própria.
 
 • `INVITE_STATE_SECRET`
 • Finalidade: assinar o estado opaco transportado pelo convite nativo do Supabase Auth.
@@ -245,6 +245,17 @@
 • Finalidade: conexão read-only usada pela automação GitHub de inspeção do Supabase.
 • Regra: não usar para mutações.
 • Valor real: não versionar.
+
+3.6 Classificação Config e Secret no Core
+• Inspeção metadata-only confirmada em 07/09/2026 no projeto `lp-factory-10`: das 51 entradas inicialmente inventariadas por combinação de nome, ambiente e branch scope, seis ocorrências sem consumidor foram removidas e 45 permanecem ativas; nenhum valor foi lido, recuperado, copiado, reinserido ou substituído.
+• Regra: `Secret` é reservado a credenciais, tokens, senhas, chaves privadas e material de assinatura ou autenticação; `Config` é usado para URLs, chaves publishable, flags, gates, IDs e demais configurações não sensíveis, inclusive server-side. Toda variável `NEXT_PUBLIC_*` deve permanecer `Config`.
+• Classificações conformes de credenciais: `INVITE_STATE_SECRET`, `SUPABASE_SECRET_KEY`, `OPENAI_API_KEY`, `OPENAI_ADMIN_KEY`, `STRIPE_SECRET_KEY` e `STRIPE_WEBHOOK_SECRET` estão como `Secret` nos ambientes cadastrados.
+• Classificações conformes de configuração: `ACCESS_CONTEXT_ENFORCED`, `ACCESS_CTX_USE_V2`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` e `OPENAI_LP_COST_TRACKING_ENABLED` estão como `Config`; `E11_MEMBERS_ENABLED`, `E20_5_SELECTED_RESEARCH_ENABLED`, `E20_6_5_INPUT_CATALOG_EVALUATION_PROVIDER_ENABLED` e `OPENAI_OPERATIONAL_CONFIG_ENABLED` possuem ao menos uma entrada geral conforme e outras divergências listadas abaixo.
+• Estado conservador aprovado: 22 configurações permanecem sobreclassificadas como `Secret` — `E11_MEMBERS_ENABLED` no branch scope legado, duas entradas Preview de `E20_5_SELECTED_RESEARCH_ENABLED`, `E20_6_5_INPUT_CATALOG_EVALUATION_PROVIDER_ENABLED` em Preview, `E20_6_INPUT_CATALOG_REVIEW_ENABLED`, `OPENAI_OPERATIONAL_CONFIG_ENABLED` em Preview e os 16 nomes `STRIPE_TEST_*_PRODUCT_ID`/`STRIPE_TEST_*_PRICE_ID`. A Vercel mantém secrets salvos como write-only; não houve substituição ou reinserção de valor.
+• Branch scopes preservados por decisão funcional: `codex-app/e11-11-1-7`, `codex-app/e20-5-pos-merge`, `codex-app/e20-6-5-post-apply-corrections` e `codex-app/e11-2-orquestracao`; os dois primeiros grupos se sobrepõem a duas das 22 sobreclassificações. Não há impacto material comprovado no runtime.
+• Remoções concluídas: duas ocorrências de `E19_5_WORKSPACE_ENABLED` e uma ocorrência de cada nome `MCP_SUPABASE_INSPECT_URL`, `LPF_MCP_SECRET`, `SUPABASE_DB_URL_READONLY` e `E7_ONBOARD_SERVICE_ONLY` foram removidas somente da Vercel Core. O secret GitHub homônimo `SUPABASE_DB_URL_READONLY` e seu consumidor permanecem preservados.
+• Estado da reconciliação: 21 entradas conformes e 24 entradas únicas preservadas por decisão funcional conservadora, totalizando 45 ativas. Não há reclassificação nem remoção de branch scope pendente neste recorte; nova correção exige risco ou impacto funcional material comprovado e decisão própria.
+• Validação operacional: o Preview gerado após as remoções ficou `READY`, e o smoke proporcional confirmou HTTP 200 na rota de login. Nenhum redeploy de Production foi executado.
 
 4. Supabase
 
@@ -504,6 +515,8 @@ Regra:
 • Configurações de plataformas, secrets por nome, workflows, ambientes e endpoints usados por automações devem ser registrados neste documento.
 
 99. Changelog
+v0.1.44 — 07/09/2026 — Consolidado o fechamento da E23.2: seis ocorrências sem consumidor removidas da Vercel Core; 22 sobreclassificações como Secret e quatro branch scopes legados preservados por decisão funcional conservadora; Preview aprovado sem exposição ou substituição de valores.
+
 v0.1.40 — 02/09/2026 — Marcados `E19_5_WORKSPACE_ENABLED` e `landing-page-revision-assets` como recursos sem consumidor runtime após o SV-PR03; nenhuma variável, secret, bucket ou infraestrutura externa foi alterada.
 v0.1.39 — 02/09/2026 — Removidos do inventário de consumidores atuais os wrappers server-only de texto e imagem do LP Builder, confirmados sem consumidor funcional; os cores usados diretamente pelas provas administrativas permanecem inalterados.
 
