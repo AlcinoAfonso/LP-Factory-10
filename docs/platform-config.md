@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Documento: LP Factory 10 — Platform Config
-• Versão: v0.1.42
+• Versão: v0.1.43
 • Data: 06/09/2026
 
 0.2 Contrato do documento
@@ -45,6 +45,9 @@
 • Regra: secrets de mailbox devem existir apenas nos escopos necessários dos workflows que os consomem.
 • Regra: `SUPABASE_DB_URL_READONLY` deve autenticar com role/usuário read-only e usar preferencialmente session pooler.
 • Regra: workflows que acessam banco para inspeção devem ser read-only, salvo caso explicitamente aprovado.
+• Retenção observada em leitura read-only de GitHub → Settings → Actions → General em 06/09/2026: artefatos e logs são mantidos por 90 dias, que também é o limite máximo exibido para este repositório público.
+• A partir de 01/10/2026, checks, workflow runs e commit statuses passam a seguir a mesma configuração de retenção de artefatos e logs. Dados já expirados não são restaurados por aumento posterior da janela.
+• Regra de evidência: a expiração das evidências operacionais é normal; o estado final durável permanece em PR, commit, roadmap e documentos canônicos competentes, sem exportação ou armazenamento paralelo por padrão.
 
 2.3 Workflows conhecidos
 • `.github/workflows/security.yml`: checks de segurança.

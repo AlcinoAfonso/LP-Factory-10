@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 06/09/2026
-• Versão: v1.5.217
+• Versão: v1.5.218
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2529,3 +2529,29 @@
 - Instalação limpa, resolução das versões, lint, tipos, validadores do repositório, Security Checks e build hospedado foram aprovados.
 - O Preview preservou em desktop e mobile a renderização e navegação públicas, a autenticação e o redirecionamento fail-closed do acesso protegido representativo, sem erro visível de runtime.
 - A confirmação de Production ocorre somente após merge autorizado e permanece fora deste recorte de execução.
+
+23.3 Retenção proporcional das evidências GitHub Actions
+
+23.3.1 Objetivo e status
+
+- Objetivo: manter o fechamento dos recortes verificável por fontes duráveis mesmo após a expiração de runs, checks, commit statuses, logs, Job Summaries e artefatos do GitHub Actions.
+- Status: concluída documentalmente, sem alteração de workflow, setting, secret, runtime, banco ou infraestrutura.
+
+23.3.2 Registros do recorte
+
+- Updates:
+  - Aplicados:
+    - `github#14`
+- Referências:
+  - Contrato técnico de evidência durável: `docs/base-tecnica.md` — seção 3.4.
+  - Retenção efetiva e configuração GitHub Actions: `docs/platform-config.md` — seção 2.2.
+  - Update incorporado: `docs/github-up.md` — `github#14`.
+
+23.3.3 Contrato de evidência durável e expiração
+
+- O repositório público mantém cinco workflows vigentes; nenhum produz artefato por upload e nenhum resultado final inventariado exige preservar evidência bruta além da janela do GitHub.
+- A retenção efetiva observada para artefatos e logs é de 90 dias, máximo exibido para o repositório público. A partir de 01/10/2026, checks, workflow runs e commit statuses seguem a mesma configuração; a expiração é normal e irreversível para os registros já removidos.
+- Runs, checks, statuses, logs, Job Summaries e artefatos servem à validação enquanto disponíveis, mas não constituem prova exclusiva de encerramento.
+- PR, commit, roadmap e documentos canônicos competentes preservam a conclusão durável; não há armazenamento externo, exportação recorrente, arquivo paralelo, job, agente ou nova automação.
+- A E22.6 comprova a regra: o PR #905, os commits do recorte e a seção 22.6 mantêm a retirada rastreável mesmo após a futura expiração do check, run, status e logs correspondentes.
+- Exigência futura de preservar evidência bruta além da janela interrompe este contrato e exige nova decisão com o Gestor de Automações e o humano.
