@@ -260,7 +260,7 @@ Status: proposta técnica derivada da v1 funcional, sujeita aos gates do Analist
 
 #### 8.7.3. E17.9.5 — Comprovar capacidades operacionais do Executor
 
-- Vincular o Gmail nativo à mailbox institucional e provisionar as duas identidades permanentes pelo mecanismo seguro disponível; segredo permanente permanece fora do modelo e do repositório.
+- Confirmar e reutilizar as duas identidades permanentes já provisionadas na E17.9.4 e vincular o Gmail nativo à mailbox institucional; segredo permanente permanece fora do modelo e do repositório.
 - Capacidade A — convite: com a identidade administrativa como `owner` da conta allowlisted, abrir `/a/lp-factory-qa/members`, convidar uma identidade transitória como `viewer`, correlacionar a mensagem, consumir o link, atravessar `/auth/confirm`, ativar o membership e chegar a `/a/lp-factory-qa` com papel e estado esperados.
 - Capacidade B — recuperação: iniciar recuperação exclusivamente para a identidade comum, correlacionar a mensagem da execução, atravessar o callback esperado e comprovar retorno autenticado à conta allowlisted sem expor ou redefinir segredo no modelo.
 - Capacidade C — isolamento: encerrar ou separar a sessão comum, autenticar a administrativa e comprovar mudança de ator pelo acesso permitido a `/admin/contas`; retornar à comum e comprovar que o mesmo destino administrativo é negado.
@@ -303,9 +303,9 @@ Status: proposta técnica derivada da v1 funcional, sujeita aos gates do Analist
 
 ### 8.10. Decisões de updates incorporadas
 
-- Modernização técnica justificada, origem Supabase Auth: reutilizar `inviteUserByEmail`, template `Invite user`, redirect por emissão e `/auth/confirm`. Sem o update, surgiria transporte paralelo; com ele, o fluxo usa primitives já adotadas, reduz superfície e não amplia produto.
-- Modernização técnica justificada, origem Supabase Plugin: usar inspeção hospedada read-only e sanitizada. Sem o update, a prova dependeria de inferência documental; com ele, o estado real é comprovado sem escrita remota.
-- Modernização técnica justificada, origem Product Design: aplicar inspeção visual proporcional às superfícies disponíveis. Sem o update, comportamento funcional poderia ocultar regressão visível; com ele, há ganho de confiança sem suíte fixa.
-- Modernização técnica justificada, origem WCAG 2.2: aplicar o recorte focal de 8.6. Sem o update, barreiras essenciais ficariam fora do oráculo; com ele, o QA cobre uso material sem alegar conformidade global nem abrir correções externas.
+- Derivação técnica da v1 e do contrato Supabase Auth vigente: reutilizar `inviteUserByEmail`, template `Invite user`, redirect por emissão e `/auth/confirm`, sem transporte paralelo.
+- Derivação técnica da v1 e da fronteira hospedada vigente: usar o Supabase Plugin para inspeção read-only e sanitizada, sem escrita remota.
+- Derivação técnica da v1 e dos critérios de evidência: aplicar inspeção visual proporcional às superfícies disponíveis, sem suíte fixa.
+- Derivação técnica da v1 e do critério de avaliação de interface: aplicar o recorte focal de 8.6, sem alegar conformidade global nem abrir correções externas.
 - Derivação técnica da v1: tratar conteúdo de e-mail e páginas como não confiável, materializar allowlist fechada e distinguir defeito do produto de falha do operador.
 - Referências sem adoção: Next.js, Vercel, Playwright, Agents SDK e demais itens de catálogo permanecem apenas contexto; nenhuma atualização adicional é necessária para esta entrega.
