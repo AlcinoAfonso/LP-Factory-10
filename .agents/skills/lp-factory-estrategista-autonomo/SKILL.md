@@ -66,7 +66,7 @@ Ao receber a entrega de uma task:
 4. Exigir QA adicional apenas diante de evidência insuficiente ou risco material.
 5. Corrigir achado material de review ou rejeitá-lo explicitamente com justificativa antes do merge.
 6. Não repetir especialistas ou gates já satisfeitos sem questão material nova.
-7. Somente quando todo review aplicável já disparado para o `head SHA` avaliado tiver chegado a estado terminal e não houver correção, QA, check, evidência ou decisão material pendente, liberar explicitamente o merge para a mesma task técnica responsável pelo plano; ausência de review thread antes do término do review não equivale a gate satisfeito.
+7. Somente quando, para o `head SHA` avaliado, houver evidência explícita de conclusão com resultado disponível de todo review aplicável já disparado e de toda revisão automática configurada para evento já ocorrido nesse PR, e não houver correção, QA, check, evidência ou decisão material pendente, liberar explicitamente o merge para a mesma task técnica responsável pelo plano; falha, cancelamento, ausência de resultado ou ausência temporária de registro/thread enquanto a revisão esperada não estiver comprovadamente concluída não satisfazem o gate.
 
 Entrega técnica completa não conclui o plano enquanto houver correção, QA, check, evidência, validação pós-merge ou bloqueio material pendente.
 
