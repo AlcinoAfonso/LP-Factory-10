@@ -96,11 +96,12 @@ Status: derivado da V1 congelada no commit `939df3b60e2f1faeeefddc455b158c73c753
 ### 9.1. Fonte, cobertura e resultado
 
 - Inspeção read-only realizada no Dashboard autorizado do projeto Core `lp-factory-10`, depois da confirmação independente do projeto e da conta pela conexão Vercel.
-- Cobertura: 51 entradas ativas, contadas por combinação de nome, ambiente e branch scope; nenhum valor foi aberto, revelado, recuperado, copiado, impresso, transmitido ou versionado.
-- Resultado: 21 entradas `conforme`; 0 `corrigido`; 30 `pendente fora do escopo`.
-- Nenhuma mutação foi executada. Não houve alteração de tipo, nome, valor, ambiente, branch scope, consumidor, policy, criação, remoção ou rotação.
+- Cobertura inicial: 51 entradas ativas, contadas por combinação de nome, ambiente e branch scope; nenhum valor foi aberto, revelado, recuperado, copiado, impresso, transmitido ou versionado.
+- Resultado final: 45 entradas ativas — 21 `conforme` e 24 preservadas por decisão funcional conservadora —, além de seis remoções metadata-only concluídas.
+- Nenhuma entrada foi reclassificada, reinserida, renomeada, rotacionada ou reescopada. Foram removidas somente as seis ocorrências sem consumidor expressamente autorizadas.
 - A edição de uma entrada já classificada como `Secret` mostrou a opção `Config` desabilitada e a informação de que secrets salvos são write-only. Corrigir essas divergências exigiria substituir ou reinserir o valor, ação proibida pela V1 e pela V2.
-- Como não houve correção operacional, nenhum redeploy decorrente de variável nem smoke de runtime foi necessário. A publicação da branch acionou o Preview automático previsto pela integração Git/Vercel, concluído com sucesso no mesmo head remoto.
+- A sobreclassificação de 22 configurações como `Secret` e os quatro branch scopes legados foram aceitos como estado funcional conservador, sem impacto material comprovado. Correção futura exige risco ou impacto funcional material comprovado e decisão própria.
+- A publicação da branch acionou o Preview automático previsto pela integração Git/Vercel; deployment e smoke de runtime foram aprovados com a configuração final.
 
 ### 9.2. Inventário atual × esperado
 
@@ -109,23 +110,23 @@ Status: derivado da V1 congelada no commit `939df3b60e2f1faeeefddc455b158c73c753
 | `ACCESS_CONTEXT_ENFORCED` | `Config` | `Config` | Preview | `conforme` | tipo e escopo observados |
 | `ACCESS_CONTEXT_ENFORCED` | `Config` | `Config` | Production | `conforme` | tipo e escopo observados |
 | `ACCESS_CTX_USE_V2` | `Config` | `Config` | Production and Preview | `conforme` | tipo e escopo observados |
-| `E11_MEMBERS_ENABLED` | `Secret` | `Config` | Preview / `codex-app/e11-11-1-7` | `pendente fora do escopo` | conversão `Secret` → `Config` bloqueada sem substituir o valor; branch scope não canônico, alteração proibida |
+| `E11_MEMBERS_ENABLED` | `Secret` | `Config` | Preview / `codex-app/e11-11-1-7` | `preservado — decisão funcional` | sobreclassificação e branch scope aceitos sem impacto material comprovado |
 | `E11_MEMBERS_ENABLED` | `Config` | `Config` | Production and Preview | `conforme` | tipo e escopo observados |
-| `E19_5_WORKSPACE_ENABLED` | `Secret` | `Config` | Preview | `pendente fora do escopo` | conversão `Secret` → `Config` bloqueada sem substituir o valor |
-| `E19_5_WORKSPACE_ENABLED` | `Secret` | `Config` | Production | `pendente fora do escopo` | conversão `Secret` → `Config` bloqueada sem substituir o valor |
-| `E20_5_SELECTED_RESEARCH_ENABLED` | `Secret` | `Config` | Preview | `pendente fora do escopo` | conversão `Secret` → `Config` bloqueada sem substituir o valor |
-| `E20_5_SELECTED_RESEARCH_ENABLED` | `Config` | `Config` | Preview / `codex-app/e20-5-pos-merge` | `pendente fora do escopo` | branch scope não canônico, alteração proibida |
-| `E20_5_SELECTED_RESEARCH_ENABLED` | `Secret` | `Config` | Preview / `codex-app/e20-6-5-post-apply-corrections` | `pendente fora do escopo` | conversão `Secret` → `Config` bloqueada sem substituir o valor; branch scope não canônico, alteração proibida |
+| `E19_5_WORKSPACE_ENABLED` | `Secret` | `Config` | Preview | `removido` | ocorrência sem consumidor removida por autorização expressa |
+| `E19_5_WORKSPACE_ENABLED` | `Secret` | `Config` | Production | `removido` | ocorrência sem consumidor removida por autorização expressa |
+| `E20_5_SELECTED_RESEARCH_ENABLED` | `Secret` | `Config` | Preview | `preservado — decisão funcional` | sobreclassificação aceita sem impacto material comprovado |
+| `E20_5_SELECTED_RESEARCH_ENABLED` | `Config` | `Config` | Preview / `codex-app/e20-5-pos-merge` | `preservado — decisão funcional` | branch scope aceito sem impacto material comprovado |
+| `E20_5_SELECTED_RESEARCH_ENABLED` | `Secret` | `Config` | Preview / `codex-app/e20-6-5-post-apply-corrections` | `preservado — decisão funcional` | sobreclassificação e branch scope aceitos sem impacto material comprovado |
 | `E20_5_SELECTED_RESEARCH_ENABLED` | `Config` | `Config` | Production | `conforme` | tipo e escopo observados |
-| `E20_6_5_INPUT_CATALOG_EVALUATION_PROVIDER_ENABLED` | `Secret` | `Config` | Preview | `pendente fora do escopo` | conversão `Secret` → `Config` bloqueada sem substituir o valor |
+| `E20_6_5_INPUT_CATALOG_EVALUATION_PROVIDER_ENABLED` | `Secret` | `Config` | Preview | `preservado — decisão funcional` | sobreclassificação aceita sem impacto material comprovado |
 | `E20_6_5_INPUT_CATALOG_EVALUATION_PROVIDER_ENABLED` | `Config` | `Config` | Production | `conforme` | tipo e escopo observados |
-| `E20_6_INPUT_CATALOG_REVIEW_ENABLED` | `Secret` | `Config` | Production and Preview | `pendente fora do escopo` | conversão `Secret` → `Config` bloqueada sem substituir o valor |
-| `E7_ONBOARD_SERVICE_ONLY` | `Config` | `não determinado` | Preview | `pendente fora do escopo` | finalidade canônica atual não localizada |
+| `E20_6_INPUT_CATALOG_REVIEW_ENABLED` | `Secret` | `Config` | Production and Preview | `preservado — decisão funcional` | sobreclassificação aceita sem impacto material comprovado |
+| `E7_ONBOARD_SERVICE_ONLY` | `Config` | `não determinado` | Preview | `removido` | ocorrência sem consumidor removida por autorização expressa |
 | `INVITE_STATE_SECRET` | `Secret` | `Secret` | Preview | `conforme` | tipo e escopo observados |
 | `INVITE_STATE_SECRET` | `Secret` | `Secret` | Production | `conforme` | tipo e escopo observados |
-| `LPF_MCP_SECRET` | `Secret` | `Secret` | Production and Preview | `pendente fora do escopo` | presença no Core sem consumidor Vercel canônico atual; remoção ou mudança de escopo não autorizada |
-| `MCP_SUPABASE_INSPECT_URL` | `Config` | `Config` | All Environments | `pendente fora do escopo` | presença no Core sem consumidor Vercel canônico atual; remoção ou mudança de escopo não autorizada |
-| `NEXT_PUBLIC_SITE_URL` | `Config` | `Config` | Preview / `codex-app/e11-2-orquestracao` | `pendente fora do escopo` | branch scope não canônico, alteração proibida |
+| `LPF_MCP_SECRET` | `Secret` | `Secret` | Production and Preview | `removido` | ocorrência sem consumidor removida por autorização expressa |
+| `MCP_SUPABASE_INSPECT_URL` | `Config` | `Config` | All Environments | `removido` | ocorrência sem consumidor removida por autorização expressa |
+| `NEXT_PUBLIC_SITE_URL` | `Config` | `Config` | Preview / `codex-app/e11-2-orquestracao` | `preservado — decisão funcional` | branch scope aceito sem impacto material comprovado |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | `Config` | `Config` | Preview | `conforme` | tipo e escopo observados |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | `Config` | `Config` | Production | `conforme` | tipo e escopo observados |
 | `NEXT_PUBLIC_SUPABASE_URL` | `Config` | `Config` | Preview | `conforme` | tipo e escopo observados |
@@ -134,88 +135,40 @@ Status: derivado da V1 congelada no commit `939df3b60e2f1faeeefddc455b158c73c753
 | `OPENAI_ADMIN_KEY` | `Secret` | `Secret` | Production | `conforme` | tipo e escopo observados |
 | `OPENAI_API_KEY` | `Secret` | `Secret` | Production and Preview | `conforme` | tipo e escopo observados |
 | `OPENAI_LP_COST_TRACKING_ENABLED` | `Config` | `Config` | Production | `conforme` | tipo e escopo observados |
-| `OPENAI_OPERATIONAL_CONFIG_ENABLED` | `Secret` | `Config` | Preview | `pendente fora do escopo` | conversão `Secret` → `Config` bloqueada sem substituir o valor |
+| `OPENAI_OPERATIONAL_CONFIG_ENABLED` | `Secret` | `Config` | Preview | `preservado — decisão funcional` | sobreclassificação aceita sem impacto material comprovado |
 | `OPENAI_OPERATIONAL_CONFIG_ENABLED` | `Config` | `Config` | Production | `conforme` | tipo e escopo observados |
 | `STRIPE_SECRET_KEY` | `Secret` | `Secret` | Production and Preview | `conforme` | tipo e escopo observados |
-| `STRIPE_TEST_LITE_ANNUAL_PRICE_ID` | `Secret` | `Config` | Production and Preview | `pendente fora do escopo` | conversão `Secret` → `Config` bloqueada sem substituir o valor |
-| `STRIPE_TEST_LITE_ANNUAL_PRODUCT_ID` | `Secret` | `Config` | Production and Preview | `pendente fora do escopo` | conversão `Secret` → `Config` bloqueada sem substituir o valor |
-| `STRIPE_TEST_LITE_MONTHLY_PRICE_ID` | `Secret` | `Config` | Production and Preview | `pendente fora do escopo` | conversão `Secret` → `Config` bloqueada sem substituir o valor |
-| `STRIPE_TEST_LITE_MONTHLY_PRODUCT_ID` | `Secret` | `Config` | Production and Preview | `pendente fora do escopo` | conversão `Secret` → `Config` bloqueada sem substituir o valor |
-| `STRIPE_TEST_PRO_ANNUAL_PRICE_ID` | `Secret` | `Config` | Production and Preview | `pendente fora do escopo` | conversão `Secret` → `Config` bloqueada sem substituir o valor |
-| `STRIPE_TEST_PRO_ANNUAL_PRODUCT_ID` | `Secret` | `Config` | Production and Preview | `pendente fora do escopo` | conversão `Secret` → `Config` bloqueada sem substituir o valor |
-| `STRIPE_TEST_PRO_MONTHLY_PRICE_ID` | `Secret` | `Config` | Production and Preview | `pendente fora do escopo` | conversão `Secret` → `Config` bloqueada sem substituir o valor |
-| `STRIPE_TEST_PRO_MONTHLY_PRODUCT_ID` | `Secret` | `Config` | Production and Preview | `pendente fora do escopo` | conversão `Secret` → `Config` bloqueada sem substituir o valor |
-| `STRIPE_TEST_STARTER_ANNUAL_PRICE_ID` | `Secret` | `Config` | Production and Preview | `pendente fora do escopo` | conversão `Secret` → `Config` bloqueada sem substituir o valor |
-| `STRIPE_TEST_STARTER_ANNUAL_PRODUCT_ID` | `Secret` | `Config` | Production and Preview | `pendente fora do escopo` | conversão `Secret` → `Config` bloqueada sem substituir o valor |
-| `STRIPE_TEST_STARTER_MONTHLY_PRICE_ID` | `Secret` | `Config` | Production and Preview | `pendente fora do escopo` | conversão `Secret` → `Config` bloqueada sem substituir o valor |
-| `STRIPE_TEST_STARTER_MONTHLY_PRODUCT_ID` | `Secret` | `Config` | Production and Preview | `pendente fora do escopo` | conversão `Secret` → `Config` bloqueada sem substituir o valor |
-| `STRIPE_TEST_ULTRA_ANNUAL_PRICE_ID` | `Secret` | `Config` | Production and Preview | `pendente fora do escopo` | conversão `Secret` → `Config` bloqueada sem substituir o valor |
-| `STRIPE_TEST_ULTRA_ANNUAL_PRODUCT_ID` | `Secret` | `Config` | Production and Preview | `pendente fora do escopo` | conversão `Secret` → `Config` bloqueada sem substituir o valor |
-| `STRIPE_TEST_ULTRA_MONTHLY_PRICE_ID` | `Secret` | `Config` | Production and Preview | `pendente fora do escopo` | conversão `Secret` → `Config` bloqueada sem substituir o valor |
-| `STRIPE_TEST_ULTRA_MONTHLY_PRODUCT_ID` | `Secret` | `Config` | Production and Preview | `pendente fora do escopo` | conversão `Secret` → `Config` bloqueada sem substituir o valor |
+| `STRIPE_TEST_LITE_ANNUAL_PRICE_ID` | `Secret` | `Config` | Production and Preview | `preservado — decisão funcional` | sobreclassificação aceita sem impacto material comprovado |
+| `STRIPE_TEST_LITE_ANNUAL_PRODUCT_ID` | `Secret` | `Config` | Production and Preview | `preservado — decisão funcional` | sobreclassificação aceita sem impacto material comprovado |
+| `STRIPE_TEST_LITE_MONTHLY_PRICE_ID` | `Secret` | `Config` | Production and Preview | `preservado — decisão funcional` | sobreclassificação aceita sem impacto material comprovado |
+| `STRIPE_TEST_LITE_MONTHLY_PRODUCT_ID` | `Secret` | `Config` | Production and Preview | `preservado — decisão funcional` | sobreclassificação aceita sem impacto material comprovado |
+| `STRIPE_TEST_PRO_ANNUAL_PRICE_ID` | `Secret` | `Config` | Production and Preview | `preservado — decisão funcional` | sobreclassificação aceita sem impacto material comprovado |
+| `STRIPE_TEST_PRO_ANNUAL_PRODUCT_ID` | `Secret` | `Config` | Production and Preview | `preservado — decisão funcional` | sobreclassificação aceita sem impacto material comprovado |
+| `STRIPE_TEST_PRO_MONTHLY_PRICE_ID` | `Secret` | `Config` | Production and Preview | `preservado — decisão funcional` | sobreclassificação aceita sem impacto material comprovado |
+| `STRIPE_TEST_PRO_MONTHLY_PRODUCT_ID` | `Secret` | `Config` | Production and Preview | `preservado — decisão funcional` | sobreclassificação aceita sem impacto material comprovado |
+| `STRIPE_TEST_STARTER_ANNUAL_PRICE_ID` | `Secret` | `Config` | Production and Preview | `preservado — decisão funcional` | sobreclassificação aceita sem impacto material comprovado |
+| `STRIPE_TEST_STARTER_ANNUAL_PRODUCT_ID` | `Secret` | `Config` | Production and Preview | `preservado — decisão funcional` | sobreclassificação aceita sem impacto material comprovado |
+| `STRIPE_TEST_STARTER_MONTHLY_PRICE_ID` | `Secret` | `Config` | Production and Preview | `preservado — decisão funcional` | sobreclassificação aceita sem impacto material comprovado |
+| `STRIPE_TEST_STARTER_MONTHLY_PRODUCT_ID` | `Secret` | `Config` | Production and Preview | `preservado — decisão funcional` | sobreclassificação aceita sem impacto material comprovado |
+| `STRIPE_TEST_ULTRA_ANNUAL_PRICE_ID` | `Secret` | `Config` | Production and Preview | `preservado — decisão funcional` | sobreclassificação aceita sem impacto material comprovado |
+| `STRIPE_TEST_ULTRA_ANNUAL_PRODUCT_ID` | `Secret` | `Config` | Production and Preview | `preservado — decisão funcional` | sobreclassificação aceita sem impacto material comprovado |
+| `STRIPE_TEST_ULTRA_MONTHLY_PRICE_ID` | `Secret` | `Config` | Production and Preview | `preservado — decisão funcional` | sobreclassificação aceita sem impacto material comprovado |
+| `STRIPE_TEST_ULTRA_MONTHLY_PRODUCT_ID` | `Secret` | `Config` | Production and Preview | `preservado — decisão funcional` | sobreclassificação aceita sem impacto material comprovado |
 | `STRIPE_WEBHOOK_SECRET` | `Secret` | `Secret` | Production and Preview | `conforme` | tipo e escopo observados |
-| `SUPABASE_DB_URL_READONLY` | `Secret` | `Secret` | Production and Preview | `pendente fora do escopo` | presença no Core sem consumidor Vercel canônico atual; remoção ou mudança de escopo não autorizada |
+| `SUPABASE_DB_URL_READONLY` | `Secret` | `Secret` | Production and Preview | `removido` | ocorrência sem consumidor removida somente da Vercel Core; secret GitHub homônimo preservado |
 | `SUPABASE_SECRET_KEY` | `Secret` | `Secret` | Preview | `conforme` | tipo e escopo observados |
 | `SUPABASE_SECRET_KEY` | `Secret` | `Secret` | Production | `conforme` | tipo e escopo observados |
 
-### 9.3. Pendências devolvidas ao supervisor
+### 9.3. Decisão funcional final
 
-- Reclassificar as 24 entradas `Secret` → `Config` exige acesso ao valor ou substituição dele e não pode ocorrer neste plano.
-- Corrigir ou remover quatro branch scopes legados exige mudança de escopo, proibida nesta V1.
-- Resolver a presença de `MCP_SUPABASE_INSPECT_URL`, `LPF_MCP_SECRET` e `SUPABASE_DB_URL_READONLY` no Core exige decisão de limpeza ou de consumidor, fora desta V1.
-- Definir a finalidade vigente de `E7_ONBOARD_SERVICE_ONLY` exige decisão documental/funcional própria; o tipo atual não foi alterado por inferência.
-- As categorias se sobrepõem em algumas entradas; o total único permanece 30 pendências.
+- As 22 sobreclassificações `Secret` → `Config` permanecem inalteradas e são aceitas como estado funcional conservador; as categorias se sobrepõem a dois dos branch scopes preservados.
+- Os quatro branch scopes legados permanecem inalterados enquanto não houver risco ou impacto funcional material comprovado.
+- As seis remoções de ocorrências sem consumidor foram concluídas; não há ação humana de reinserção, substituição de valor ou troca de scope pendente neste recorte.
+- Nova correção de classificação ou de scope exige decisão própria sustentada por impacto funcional material comprovado.
 
-## 10. Retomada autorizada e handoff metadata-only ao operador
+## 10. Fechamento operacional metadata-only
 
-Autorização complementar recebida depois da primeira devolução técnica:
-
-- remover do Core somente as duas entradas de `E19_5_WORKSPACE_ENABLED`, `MCP_SUPABASE_INSPECT_URL`, `LPF_MCP_SECRET`, `SUPABASE_DB_URL_READONLY` e `E7_ONBOARD_SERVICE_ONLY`;
-- preservar integralmente o secret homônimo `SUPABASE_DB_URL_READONLY` do GitHub Actions e seu consumidor `.github/workflows/pipeline-supabase-inspect.yml`;
-- permitir que operador humano credenciado reinira diretamente na Vercel configurações obtidas de fonte oficial, sem que qualquer valor transite pelo Executor, chat, terminal, logs ou repositório;
-- substituir branch scopes legados somente depois de confirmar e validar cobertura canônica equivalente;
-- validar alterações operacionais primeiro em Preview e somente depois em Production.
-
-### 10.1. Instruções por entrada e ambiente
-
-O operador não deve enviar valores ao Executor. Para cada linha marcada como ação humana, o operador deve obter o valor diretamente da fonte oficial indicada, substituir a entrada na própria Vercel mantendo nome, ambiente, consumidor e significado, selecionar o tipo `Config` e comunicar somente o resultado metadata-only: nome, ambiente, tipo final, scope final, fonte confirmada sem conteúdo e estado do Preview.
-
-| Entrada | Ambiente / scope atual | Ação metadata-only | Fonte oficial a confirmar diretamente pelo operador | Estado |
-|---|---|---|---|---|
-| `E11_MEMBERS_ENABLED` | Preview / `codex-app/e11-11-1-7` | Não reinserir; tratar somente no fluxo separado de substituição dos quatro branch scopes, fora do lote literal de limpeza dos recursos órfãos | Vercel Core, entrada geral já cadastrada | cobertura observada; preservada neste lote |
-| `E20_5_SELECTED_RESEARCH_ENABLED` | Preview geral | Substituir `Secret` por `Config`, preservando Preview e o consumidor atual | decisão de rollout vigente e configuração oficial do Core | pausada até ação humana |
-| `E20_5_SELECTED_RESEARCH_ENABLED` | Preview / `codex-app/e20-6-5-post-apply-corrections` | Não reinserir no scope legado; remover somente depois de a entrada Preview geral corrigida passar no Preview | nova cobertura Preview geral validada | pausada até cobertura equivalente |
-| `E20_6_5_INPUT_CATALOG_EVALUATION_PROVIDER_ENABLED` | Preview | Substituir `Secret` por `Config`, preservando Preview e o consumidor atual | decisão de rollout vigente e configuração oficial do Core | pausada até ação humana |
-| `E20_6_INPUT_CATALOG_REVIEW_ENABLED` | Production and Preview | Substituir `Secret` por `Config`, validando Preview antes de Production | decisão de rollout vigente e configuração oficial do Core | pausada até ação humana |
-| `OPENAI_OPERATIONAL_CONFIG_ENABLED` | Preview | Substituir `Secret` por `Config`, preservando Preview e o consumidor atual | configuração operacional oficial do Core | pausada até ação humana |
-| `STRIPE_TEST_LITE_ANNUAL_PRICE_ID` | Production and Preview | Substituir `Secret` por `Config`, validando Preview antes de Production | Stripe Dashboard em modo de teste | pausada até ação humana |
-| `STRIPE_TEST_LITE_ANNUAL_PRODUCT_ID` | Production and Preview | Substituir `Secret` por `Config`, validando Preview antes de Production | Stripe Dashboard em modo de teste | pausada até ação humana |
-| `STRIPE_TEST_LITE_MONTHLY_PRICE_ID` | Production and Preview | Substituir `Secret` por `Config`, validando Preview antes de Production | Stripe Dashboard em modo de teste | pausada até ação humana |
-| `STRIPE_TEST_LITE_MONTHLY_PRODUCT_ID` | Production and Preview | Substituir `Secret` por `Config`, validando Preview antes de Production | Stripe Dashboard em modo de teste | pausada até ação humana |
-| `STRIPE_TEST_PRO_ANNUAL_PRICE_ID` | Production and Preview | Substituir `Secret` por `Config`, validando Preview antes de Production | Stripe Dashboard em modo de teste | pausada até ação humana |
-| `STRIPE_TEST_PRO_ANNUAL_PRODUCT_ID` | Production and Preview | Substituir `Secret` por `Config`, validando Preview antes de Production | Stripe Dashboard em modo de teste | pausada até ação humana |
-| `STRIPE_TEST_PRO_MONTHLY_PRICE_ID` | Production and Preview | Substituir `Secret` por `Config`, validando Preview antes de Production | Stripe Dashboard em modo de teste | pausada até ação humana |
-| `STRIPE_TEST_PRO_MONTHLY_PRODUCT_ID` | Production and Preview | Substituir `Secret` por `Config`, validando Preview antes de Production | Stripe Dashboard em modo de teste | pausada até ação humana |
-| `STRIPE_TEST_STARTER_ANNUAL_PRICE_ID` | Production and Preview | Substituir `Secret` por `Config`, validando Preview antes de Production | Stripe Dashboard em modo de teste | pausada até ação humana |
-| `STRIPE_TEST_STARTER_ANNUAL_PRODUCT_ID` | Production and Preview | Substituir `Secret` por `Config`, validando Preview antes de Production | Stripe Dashboard em modo de teste | pausada até ação humana |
-| `STRIPE_TEST_STARTER_MONTHLY_PRICE_ID` | Production and Preview | Substituir `Secret` por `Config`, validando Preview antes de Production | Stripe Dashboard em modo de teste | pausada até ação humana |
-| `STRIPE_TEST_STARTER_MONTHLY_PRODUCT_ID` | Production and Preview | Substituir `Secret` por `Config`, validando Preview antes de Production | Stripe Dashboard em modo de teste | pausada até ação humana |
-| `STRIPE_TEST_ULTRA_ANNUAL_PRICE_ID` | Production and Preview | Substituir `Secret` por `Config`, validando Preview antes de Production | Stripe Dashboard em modo de teste | pausada até ação humana |
-| `STRIPE_TEST_ULTRA_ANNUAL_PRODUCT_ID` | Production and Preview | Substituir `Secret` por `Config`, validando Preview antes de Production | Stripe Dashboard em modo de teste | pausada até ação humana |
-| `STRIPE_TEST_ULTRA_MONTHLY_PRICE_ID` | Production and Preview | Substituir `Secret` por `Config`, validando Preview antes de Production | Stripe Dashboard em modo de teste | pausada até ação humana |
-| `STRIPE_TEST_ULTRA_MONTHLY_PRODUCT_ID` | Production and Preview | Substituir `Secret` por `Config`, validando Preview antes de Production | Stripe Dashboard em modo de teste | pausada até ação humana |
-
-### 10.2. Branch scopes ainda dependentes de substituto
-
-| Entrada | Scope legado | Substituto canônico exigido antes da remoção | Estado |
-|---|---|---|---|
-| `E20_5_SELECTED_RESEARCH_ENABLED` | `codex-app/e20-5-pos-merge` | entrada `Config` Preview geral, corrigida por operador e validada no Preview | pausada |
-| `E20_5_SELECTED_RESEARCH_ENABLED` | `codex-app/e20-6-5-post-apply-corrections` | entrada `Config` Preview geral, corrigida por operador e validada no Preview | pausada |
-| `NEXT_PUBLIC_SITE_URL` | `codex-app/e11-2-orquestracao` | nova entrada `Config` Preview geral criada diretamente pelo operador a partir da configuração oficial do domínio e validada no Preview | pausada |
-
-As seis remoções literais de recursos órfãos são independentes dessas ações humanas: duas ocorrências de `E19_5_WORKSPACE_ENABLED` e uma ocorrência de cada um dos quatro nomes sem consumidor autorizados. Os quatro branch scopes legados permanecem no fluxo separado de substituição, inclusive `E11_MEMBERS_ENABLED`. Nenhuma reinserção, rotação ou leitura de valor foi delegada ao Executor.
-
-### 10.3. Remoções metadata-only concluídas
+### 10.1. Remoções concluídas
 
 As seis ocorrências autorizadas foram removidas do projeto Vercel Core e tiveram a ausência confirmada individualmente pela busca nominal do Dashboard:
 
@@ -230,4 +183,8 @@ As seis ocorrências autorizadas foram removidas do projeto Vercel Core e tivera
 
 O secret homônimo `SUPABASE_DB_URL_READONLY` do GitHub Actions não foi alterado. O repositório reconciliado preserva `.github/workflows/pipeline-supabase-inspect.yml` consumindo `${{ secrets.SUPABASE_DB_URL_READONLY }}` e `automations/supabase-inspect/run.mjs` usando a variável somente no processo da automação.
 
-As remoções alteram a configuração disponível a novos deployments, mas não modificam deployments já construídos. O rollout permanece pendente: publicação do estado do PR para gerar Preview com a configuração atual, validação proporcional e somente então redeploy de Production.
+As remoções alteraram a configuração disponível a novos deployments, sem modificar deployments já construídos. O Preview gerado pela publicação do PR ficou `READY` e o smoke proporcional confirmou resposta HTTP 200 na rota de login. Nenhum redeploy de Production foi executado.
+
+### 10.2. Evidência documental externa
+
+A seção 11 do Google Doc `Debate 06 — Implementações transversais prioritárias — LP Factory 10`, tab `t.0`, foi reconciliada somente nos seis parágrafos de E23.2. A revisão final relida foi `ANLCKQk7DtuS7jjp9PNGA9Hc0o5eI3xmIAnr8m03NHK2vX88dBsTMo0IC8bRtYcX8y9ufzYwNMitTOd6E6iVnFeaI-1ZCgwPbBj2uMn7chA`; os estados de E23.1 e E23.3 permaneceram textualmente inalterados.

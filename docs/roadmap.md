@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 06/09/2026
-• Versão: v1.5.219
+• Data: 07/09/2026
+• Versão: v1.5.220
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2504,7 +2504,7 @@
 
 23. E23 — Segurança e governança transversal da plataforma
 - Objetivo: remover riscos prioritários de segurança e governança da plataforma por recortes independentes e controlados.
-- Status: E23.1 concluída no repositório e no Preview; E23.3 concluída documentalmente; E23.2 permanece em reconciliação operacional autorizada. Merge e confirmações finais permanecem sob a autoridade do fluxo Autônomo.
+- Status: E23.1 concluída no repositório e no Preview; E23.2 concluída operacionalmente sob decisão funcional conservadora; E23.3 concluída documentalmente. Merge permanece sob a autoridade do fluxo Autônomo.
 
 23.1 Atualização de segurança do Next.js
 
@@ -2534,7 +2534,7 @@
 
 23.2.1 Objetivo e status
 - Objetivo: manter as variáveis ativas do projeto Core coerentes com os tipos Vercel `Config` e `Secret`, sem exposição de valores nem mudança indevida de consumidores ou ambientes.
-- Status: inspeção concluída e reconciliação operacional retomada por autorização humana complementar. Das 51 entradas inicialmente inventariadas por nome, ambiente e branch scope, 21 estavam conformes e 30 exigiam tratamento; o estado final depende das operações e validações registradas neste recorte.
+- Status: concluída operacionalmente. Das 51 entradas inicialmente inventariadas por nome, ambiente e branch scope, seis ocorrências sem consumidor foram removidas; 21 entradas conformes e 24 entradas únicas preservadas por decisão funcional conservadora totalizam 45 ativas.
 
 23.2.2 Registros do recorte
 - Updates:
@@ -2544,13 +2544,14 @@
   - Classificação efetiva e estado operacional: `docs/platform-config.md` — seção 3.6.
 
 23.2.3 Inspeção e reconciliação segura das classificações
-- Status: reconciliação operacional em andamento, sem exposição de valores.
+- Status: concluída, sem exposição ou substituição de valores.
 - Conteúdo:
   - o inventário read-only cobre somente nomes, tipos, ambientes e branch scopes, sem revelar, recuperar, copiar ou registrar valores;
   - credenciais confirmadas permanecem `Secret`, e configurações públicas ou não sensíveis confirmadas permanecem `Config`;
-  - reinserções `Secret` → `Config` dependem exclusivamente de operador humano credenciado agindo diretamente na Vercel a partir de fonte oficial; nenhum valor transita pelo Executor;
-  - remoções e substituições de branch scope ficam limitadas às entradas autorizadas e exigem confirmação prévia de cobertura canônica equivalente;
+  - 22 configurações sobreclassificadas como `Secret` e quatro branch scopes legados permanecem preservados como estado funcional conservador enquanto não houver risco ou impacto funcional material comprovado;
+  - seis ocorrências sem consumidor foram removidas somente da Vercel Core: duas de `E19_5_WORKSPACE_ENABLED` e uma de cada nome `MCP_SUPABASE_INSPECT_URL`, `LPF_MCP_SECRET`, `SUPABASE_DB_URL_READONLY` e `E7_ONBOARD_SERVICE_ONLY`;
   - o secret homônimo `SUPABASE_DB_URL_READONLY` do GitHub Actions e seu consumidor `.github/workflows/pipeline-supabase-inspect.yml` permanecem preservados.
+  - o Preview pós-remoção ficou `READY`, e o smoke proporcional confirmou HTTP 200 na rota de login; nenhum redeploy de Production foi executado.
 
 23.3 Retenção proporcional das evidências GitHub Actions
 
