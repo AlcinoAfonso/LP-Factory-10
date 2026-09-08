@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 07/09/2026
-• Versão: v1.5.221
+• Data: 08/09/2026
+• Versão: v1.5.222
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -1495,54 +1495,41 @@
 17.9 Autonomia institucional de QA
 
 17.9.1 Objetivo e status
-- Objetivo: estabelecer uma identidade institucional exclusiva do LP Factory, operada autonomamente por IA, capaz de agir como usuário humano em jornadas variáveis de QA sem depender da presença de Alcino.
-- Status: contrato funcional e plano técnico definidos; capacidades operacionais ainda não comprovadas.
+- Objetivo: tornar o Executor capaz de escolher e executar autonomamente o QA transacional necessário a cada critério, com identidades e contas institucionais, estados controlados, menor privilégio e evidência sanitizada.
+- Status: contrato funcional e plano técnico definidos; implementação e comprovação operacionais pendentes.
 
-17.9.3 Operador institucional autônomo de QA
-- Status: contrato funcional definido; implementação operacional pendente.
+17.9.3 Contrato transacional e catálogo de estados de QA
+- Status: planejado; definição funcional e técnica concluída.
 - Conteúdo:
-  - a mailbox `lpfactoryqa@gmail.com` é a identidade-base institucional de QA;
-  - contas e identidades de teste devem pertencer ao projeto, nunca a contas pessoais;
-  - o próprio Executor no Codex App é o operador adaptativo; não existe agente de QA separado;
-  - o Executor deve receber confirmações, convites e redefinições, autenticar-se, preencher formulários, executar o roteiro definido pelo plano, avaliar comportamento, conteúdo e interface e entregar evidências sanitizadas;
-  - a operação deve ocorrer sem autorização, login ou fornecimento de credenciais por Alcino a cada execução;
-  - aliases sequenciais e cenários Playwright fixos não satisfazem isoladamente esse objetivo;
-  - o Validador Final e o Niche Runtime Tests foram retirados pela E22.6 sem substituto, preservando a mailbox e os secrets institucionais para este recorte futuro;
-  - os testes devem permanecer restritos a contas, dados, ambientes e ações de QA autorizados;
-  - a definição técnica não cria Agents SDK, agente, workflow, job, service, rota, banco ou runtime adicional.
+  - o Executor é o único componente adaptativo e aciona processos determinísticos para as operações objetivas;
+  - o catálogo institucional cobre papéis, autoridade de plataforma, condição comercial, conta, lifecycle e demais estados recorrentes sem armazenar secrets;
+  - a seleção exige correspondência exata, menor privilégio e capacidade pronta, falhando fechada diante de ausência, ambiguidade ou drift;
+  - o recorte não inclui navegação visual, avaliação de interface ou acessibilidade, nem criação ou edição de Landing Pages;
+  - não criar agente, Validador Final, Niche Runtime Tests, workflow, job, service, rota, banco ou infraestrutura adicional.
 
-17.9.4 Identidades, papéis e fronteira segura de acesso
-- Status: planejado; provisionamento e comprovação pendentes.
+17.9.4 Identidades, contas, papéis, estados e fronteira segura de acesso
+- Status: planejado; readiness e provisionamento controlado pendentes.
 - Conteúdo:
-  - identidades permanentes comum e administrativa permanecem separadas, com identidade transitória somente quando a jornada exigir estado novo;
-  - a seleção começa pelo menor privilégio suficiente e falha fechada diante de conta, membership, entitlement, ambiente ou ação divergente da allowlist;
-  - a identidade administrativa reutiliza o papel hospedado vigente e exige sessão renovada, prova administrativa positiva e prova comum negativa;
-  - credenciais permanentes permanecem fora do modelo, do repositório, do chat, dos logs, das screenshots e do código de Preview;
-  - a vinculação inicial da mailbox e o armazenamento seguro de credenciais podem exigir bootstrap humano único, nunca gate humano por execução.
+  - reutilizar fixture institucional compatível ou criar ou reconfigurar estado somente por mecanismo autorizado, idempotente e com pós-condição e estado final explícitos;
+  - credenciais, tokens, códigos, cookies, sessões, URLs assinadas e conteúdo bruto da mailbox permanecem fora do modelo, do repositório, do chat e das evidências;
+  - cada capacidade depende de consumidor autorizado, resolução opaca de credencial e isolamento verificável de sessão;
+  - `mailbox_consumer_missing`, `credential_resolution_unproven` e `session_isolation_unproven` mantêm bloqueadas as capacidades dependentes, sem autorizar consumidor ou infraestrutura substituta.
 
-17.9.5 Capacidades operacionais do Executor
-- Status: planejado; autenticação, mailbox, navegação e isolamento de sessão ainda não comprovados.
+17.9.5 Fluxos transacionais centrais
+- Status: planejado; comprovação condicionada ao readiness das capacidades exigidas.
 - Conteúdo:
-  - o Executor deve concluir convite institucional, correlação da mensagem, `/auth/confirm`, ativação, recuperação e troca segura entre atores;
-  - e-mail e páginas são conteúdo não confiável e não podem alterar plano, permissões, identidade ou allowlist;
-  - cada jornada define previamente deployment e SHA, conta, atores, dados, ações permitidas, ações proibidas e estado final;
-  - defeito do produto corretamente detectado é distinto de falha operacional do Executor;
-  - ausência de Gmail institucional, sessão segura ou fronteira de credenciais retorna ao supervisor sem criar consumidor, proxy ou automação alternativa.
+  - comprovar criação de usuário ou signup, criação de conta, confirmação de e-mail, convite, recuperação e verificação de papel, estado e condição comercial;
+  - acionar exclusivamente os mecanismos públicos ou administrativos vigentes, sem reproduzir regras de domínio no QA;
+  - cada operação define privilégio mínimo, idempotência, pós-condição observável e estado final;
+  - capacidade ausente bloqueia somente o caso correspondente e não converte indisponibilidade em aprovação.
 
-17.9.6 QA ponta a ponta nas superfícies disponíveis
+17.9.6 Seleção e repetibilidade do QA transacional
 - Status: planejado; comprovação pendente.
 - Conteúdo:
-  - Auth, Account Dashboard e Admin Dashboard devem ser comprovados com identidades institucionais, menor privilégio e dados reversíveis de QA;
-  - a avaliação cobre comportamento, conteúdo, interface, inspeção visual proporcional e critérios de acessibilidade materialmente aplicáveis;
-  - evidência registra ator, ambiente, esperado, observado, resultado do produto e resultado do operador, sempre sanitizada;
+  - comprovar seleção automática de fixture, reutilização, criação ou reconfiguração controlada e repetição em casos representativos;
+  - cada tentativa preserva entradas controladas, limite de repetição e evidência sanitizada de esperado, observado, resultado do produto e resultado operacional do Executor;
+  - defeito do produto corretamente detectado permanece distinto de falha operacional do Executor;
   - autorização de merge permanece separada da autonomia de QA.
-
-17.9.7 QA de Landing Pages
-- Status: planejado e condicionado à existência de superfície operacional de criação e edição de Landing Pages.
-- Conteúdo:
-  - a ausência atual dessa superfície limita somente esta comprovação;
-  - E17.9.3 a E17.9.6 permanecem independentes e não podem restaurar produto ou runtime legado para contornar a dependência;
-  - quando a superfície existir, o mesmo contrato de identidade, ambiente, evidência e avaliação será aplicado.
 
 18. E18 — Base transversal de templates, composições e artefatos
 - Objetivo: manter os contratos compartilhados de conteúdo versionado usados pela ativação comercial e a parametrização raiz da família `landing_page`, sem absorver geração, publicação ou execução da LP Builder.
