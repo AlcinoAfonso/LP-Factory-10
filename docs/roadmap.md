@@ -1447,7 +1447,7 @@
 17.1.5 Facilitadores de teste retirados
 - Status: Validador Final e Niche Runtime Tests retirados pela E22.6, sem substituto neste recorte.
 - A retirada não altera a autoridade funcional de E5 ou E10.5.6 e não apaga contas nem evidências existentes.
-- A mailbox dedicada e os secrets `MAILBOX_EMAIL` e `MAILBOX_PASSWORD` permanecem preservados para a E17.9.3, sem consumidor operacional vigente.
+- A mailbox dedicada e os secrets `MAILBOX_EMAIL` e `MAILBOX_PASSWORD` permanecem preservados para a E17.9, sem consumidor operacional vigente.
 
 17.1.6 Pipelines operacionais
 - `pipeline-supabase-inspect` executa SQL read-only com saída em logs e Job Summary.
@@ -2508,12 +2508,12 @@
 - Referências:
   - Catálogo operacional vigente: `docs/automations.md`.
   - Mailbox e secrets preservados: `docs/platform-config.md` — seção 2.4.
-  - Operador institucional futuro: `docs/roadmap.md` — E17.9.3.
+  - QA transacional institucional: `docs/roadmap.md` — E17.9.
 
 22.6.3 Resultado e limites
 - A busca de consumidores confirmou que o Niche Runtime Tests dependia do runtime do Validador Final e que os ativos retirados não eram gate automático, script raiz nem dependência do Core.
 - Os dois workflows, os dois subprojetos e o verificador Supabase exclusivo foram removidos conjuntamente; o restante de `automations/supabase-inspect/`, seus consumidores e os demais workflows permanecem preservados.
-- A mailbox `lpfactoryqa@gmail.com` e os secrets `MAILBOX_EMAIL` e `MAILBOX_PASSWORD` permanecem reservados à E17.9.3, sem consumidor operacional vigente.
+- A mailbox `lpfactoryqa@gmail.com` e os secrets `MAILBOX_EMAIL` e `MAILBOX_PASSWORD` permanecem reservados à E17.9, sem consumidor operacional vigente.
 - Usuários, contas, memberships, sessões, dados Supabase e evidências existentes não foram alterados nem excluídos.
 - Runs, checks, statuses, logs e artifacts do GitHub Actions são evidência suplementar e expirável; o diff/PR e os documentos canônicos preservam a prova durável da retirada.
 
