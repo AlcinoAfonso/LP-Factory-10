@@ -1,17 +1,17 @@
 # Matriz de consolidação — E17.9
 
-Status: matriz reconciliada com a decisão canônica 3.30 e aprovada pelo Analista após o parecer focal do Gestor de Automações.
+Status: matriz reconciliada com a decisão canônica 3.31 após pareceres focais de Automações e Estrutural; o Analista concluiu `bloqueado por decisão humana` antes de implementação privilegiada.
 
 ## 1. Objetos auditáveis
 
 - Caso: E17.9 — QA transacional/determinístico, subseções E17.9.3 a E17.9.6.
-- Fonte funcional vigente: Debate 08, seção 4.1 e decisão 3.30, revisão `ANLCKQnX2zyDmbUIl03m7zOK8eL4YH9a7u2rUiXNjPQRGxirIc7PjYyu0_RqfgQBWjLKfTP2p3jDDeW-Lqic0XMeCjT-dohwMhXxqxVwAMg`; seção 4.2/E17.10 não liberada.
+- Fonte funcional vigente: Debate 08, seção 4.1 e decisão 3.31, aba `t.0`, revisão `ANLCKQlwRiGhWEqMKZmQQXY2cKZOfajqrN0r2h7pVMC8hW5bn-DxedOse4ytpi2LqYIeOews5BnGgHNGygOIQ8ZIK73zS0RgpeEkIU4Cjws`; seção 4.2/E17.10 não liberada.
 - V1 funcional reconsolidada: commit `abe38ce3de0fc645e0813375590447bea4d76ef0`, blob `29281ecacb9ba3811ddfd03f0d0c91670eb628ec`.
 - V2 inicial da Passagem 1: commit `469da488f1d50a990544ff253e61f1fca435d480`, blob `a8591922741a3ca9475e8765333c1a38d23761f0`.
 - Delta obrigatório da Passagem 1: commit `ea9f59fc` sobre o mesmo path.
 - Plano conceitual: N/A.
-- Pareceres: Gestor Estrutural, Gestor de Updates e Gestor de Automações, todos sobre a V1 reconsolidada.
-- Confrontos estruturais de modernização: N/A; Updates confirmou impacto estrutural baixo para todos os updates incorporados.
+- Pareceres preservados: Gestor Estrutural, Gestor de Updates e Gestor de Automações sobre a V1 reconsolidada; pareceres focais adicionais de Automações e Estrutural sobre a decisão 3.31.
+- Confrontos estruturais de modernização: N/A; o impacto estrutural material atual deriva da decisão funcional 3.31, não de update de catálogo.
 - Readiness I-01: zero consumidores institucionais autorizados de mailbox; secrets GitHub existem sem consumidor e o Gmail conectado não é a identidade institucional.
 - Estado anterior reconciliado: a V1/V2 antigas e a matriz anterior foram superadas pela nova fonte; somente guardrails compatíveis do Executor permanecem aproveitáveis.
 
@@ -26,13 +26,19 @@ Status: matriz reconciliada com a decisão canônica 3.30 e aprovada pelo Analis
 | V1R2-05 | v1 | derivação técnica da v1 | Fluxos centrais incluem signup/criação de usuário, conta, confirmação, convite, recuperação e verificação de papel/estado. | Mapear cada operação a adapter, mecanismo, privilégio, idempotência, pós-condição e estado final. | V1 6.3 e 8; V2 10.5 e 10.7.3. | N/A |
 | V1R2-06 | v1 | derivação técnica da v1 | Falhas e correções devem ser repetíveis com evidência por tentativa. | Limite de tentativas, entradas controladas e duas rodadas representativas. | V1 7 e 8; V2 10.3 e 10.7.4. | N/A |
 | V1R2-07 | v1 | derivação técnica da v1 | Evidência é sanitizada por critério, ator, ambiente, fixture, esperado, observado, resultado e bloqueio. | Projeção allowlisted, separação produto/operador e residência durável mínima. | V1 9; V2 10.3 e 10.8. | N/A |
-| V1R2-08 | v1 | derivação técnica da v1 | Não criar agente, Validador Final, Niche Runtime Tests, workflow, job, service, rota, banco ou infraestrutura por inferência. | Boundary local on-demand, sem scheduler/endpoint/runtime e com condições de parada explícitas. | V1 5.1; V2 10.2 e 10.9. | N/A |
+| V1R2-08 | v1 | derivação técnica da v1 | Não criar agente, Validador Final, Niche Runtime Tests, workflow, job, service, rota, banco ou infraestrutura por inferência. | Histórico preservado; proibição de workflow/job superada somente pela exceção estrita de V1R3-01. Demais proibições permanecem. | V1 5.1; V2 10.2 e 10.9. | N/A |
 | V1R2-09 | v1 | derivação técnica da v1 | Navegação visual, UI/acessibilidade e criação/edição de Landing Pages não pertencem à E17.9. | Remover do plano técnico, roadmap e matriz; não detalhar/liberar E17.10. | V1 5.1 e 6; V2 10.2, 10.6 e 10.7.1. | N/A |
-| V1R2-10 | v1 | derivação técnica da v1 | A decisão 3.30 esclarece que a proibição de nova automação não alcança mecanismos determinísticos mínimos, locais/on-demand e sem IA própria, mas não autoriza componente, infraestrutura ou privilégio adicional nem mera renomeação. | Preservar o boundary já aprovado e submeter somente a fronteira esclarecida ao Gestor de Automações; não reabrir o desenho estrutural. | Debate 08, decisão 3.30; V1 7; V2 10.1 e 10.2. | N/A |
+| V1R2-10 | v1 | derivação técnica da v1 | A decisão 3.30 esclarece que a proibição de nova automação não alcança mecanismos determinísticos mínimos, locais/on-demand e sem IA própria, mas não autoriza componente, infraestrutura ou privilégio adicional nem mera renomeação. | Histórico preservado; residência exclusivamente local e proibição absoluta de workflow/job foram superadas pela decisão 3.31. | Debate 08, decisão 3.30; V1 7; V2 10.1 e 10.2. | N/A |
 | V1R2-11 | v1 | derivação técnica da v1 | Readiness deve ser confrontado separadamente para oito operações, sem eliminar proteção por hipótese. | Exigir matriz por operação com credenciais, isolamento, mailbox, mecanismo autorizado, pós-condição e fonte autoritativa antes de alterar proteção ou materializar adapter. | Debate 08, decisão 3.30; V2 10.4 e 10.7.2. | N/A |
 | V1R2-12 | v1 | derivação técnica da v1 | `mailbox_consumer_missing` bloqueia somente operações realmente dependentes de mailbox; evidência independente permanece válida sem concluir integralmente E17.9.4. | Aplicar o bloqueio à aceitação da capacidade realmente dependente de mailbox; permitir preservar evidência parcial de etapas anteriores autorizadas sem marcar a capacidade pronta e manter a fase aberta enquanto faltar a cadeia obrigatória. | Debate 08, decisão 3.30; V2 10.4 e 10.7.2. | N/A |
 | V1R2-13 | v1 | derivação técnica da v1 | `productResult`, resposta de API ou mutação privilegiada isolada não bastam para aceitar capacidade. | Exigir operação real, pós-condição na fonte autoritativa e evidência sanitizada separando produto e Executor. | Debate 08, decisão 3.30; V2 10.8. | N/A |
 | V1R2-14 | v1 | derivação técnica da v1 | Convite, mailbox e `/auth/confirm` permanecem aceite obrigatório posterior. | Proibir substituição da cadeia real por criação direta do estado final. | Debate 08, decisões 3.23, 3.29 e 3.30; V2 10.5 e 10.8. | N/A |
+| V1R3-01 | v1 | derivação técnica da v1 | A decisão 3.31 autoriza exatamente um workflow GitHub Actions com exatamente um job de QA, determinístico e sem IA; o Executor permanece a única inteligência. | Manter comportamento em `automations/qa-transacional/` e planejar somente uma entrada dedicada em `.github/workflows/pipeline-qa-transacional.yml`, sem segunda automação ou job. | Debate 08, decisão 3.31; V1 5.1 e 7; V2 10.1–10.3. | N/A |
+| V1R3-02 | v1 | derivação técnica da v1 | GitHub Actions é a superfície autorizada dos três secrets; Preview e Production compartilham Supabase/Auth e o poder administrativo é limitado por código confiável, não pelo nome do secret. | Injetar cada secret apenas no passo allowlisted competente; nunca no Executor, Preview, nível global do job, log, summary, artifact ou evidência. | Debate 08, decisão 3.31; V2 10.4. | N/A |
+| V1R3-03 | v1 | derivação técnica da v1 | O cenário é somente dado estruturado validado; PR head, `pull_request_target`, checkout/fetch/artifact não confiável, conteúdo executável dinâmico e leaks são proibidos. | Schema e allowlist fechada antes de secrets; nenhum input seleciona código, comando, action, script, expressão, dependência, ref, SHA, path ou módulo. | Debate 08, decisão 3.31; V2 10.2, 10.4, 10.8 e 10.9. | N/A |
+| V1R3-04 | v1 | derivação técnica da v1 | O workflow privilegiado deve existir em fonte confiável antes do merge funcional; mudança da sequência de publicação exige decisão humana. | Bloquear adapters e `create_user` enquanto workflow/runtime não existirem na `main`; não alterar o contrato de uma PR sem autorização. | Debate 08, decisão 3.31; inventário da `main`; V2 10.7.2 e 10.10. | N/A |
+| AUT-D331-01 | invariante técnico | derivação técnica da v1 | A automação é determinística sem OpenAI e o workflow não pode receber inteligência, regra de domínio ou código dinâmico. | Workflow manual de um job apenas orquestra o runtime confiável e retorna razão/evidência sanitizada. | Parecer focal de Automações; V2 10.2–10.4. | N/A |
+| EST-D331-01 | invariante técnico | derivação técnica da v1 | A decisão 3.31 muda materialmente ambiente e fronteira de secrets, mas não banco nem produto. | Separar orquestração em workflow dedicado do comportamento em `automations/qa-transacional/`; manter adapters do produto intocados. | Parecer Estrutural GE-D331-01–08; V2 10.2–10.5. | N/A |
 | EST-01 | invariante técnico | derivação técnica da v1 | Roadmap vigente ainda descreve o recorte anterior. | Reconciliar por ABC somente E17.9.3–E17.9.6 transacionais. | Parecer Estrutural GE-E17.9-01; V2 10.7.1. | N/A |
 | EST-02 | invariante técnico | derivação técnica da v1 | A skill do Executor contém guardrails úteis, mas não catálogo, seleção ou repetibilidade. | Preservar guardrails e acrescentar apenas roteamento ao boundary focal. | GE-E17.9-02; V2 10.1, 10.2 e 10.7.1. | N/A |
 | EST-03 | invariante técnico | derivação técnica da v1 | Falta boundary operacional determinístico vigente. | Criar `automations/qa-transacional/` sem importar pela UI ou restaurar legados. | GE-E17.9-03; PS-E17.9-01; V2 10.2 e 10.3. | N/A |
@@ -84,11 +90,12 @@ Status: matriz reconciliada com a decisão canônica 3.30 e aprovada pelo Analis
 
 - Ampliações de escopo incorporadas: nenhuma.
 - Modernizações técnicas incorporadas: `supa#30`, `supa#59`, `github#14` e `supa#5` condicional; todas com impacto estrutural baixo e impacto funcional nulo.
-- Modernizações com impacto estrutural material: nenhuma; confrontos estruturais exigidos: nenhum.
-- Boundary: `automations/qa-transacional/`, local e on-demand, sem workflow, serviço, agente, rota ou banco.
+- Modernizações com impacto estrutural material: nenhuma; a decisão funcional 3.31 tem impacto estrutural material e recebeu avaliação focal do Gestor Estrutural.
+- Boundary: comportamento em `automations/qa-transacional/`; entrada operacional planejada em exatamente um workflow GitHub Actions com um job, on-demand, sem IA, serviço, agente, rota ou banco.
 - Estado factual preservado: `mailbox_consumer_missing` bloqueia somente operações dependentes de mailbox; capacidades independentes podem preservar evidência depois do gate competente, mas E17.9.4 e E17.9.5 não podem ser concluídas enquanto seus critérios obrigatórios permanecerem sem prova.
 - Escopo redistribuído removido: navegação visual, UI/acessibilidade e Landing Pages; E17.10 permanece não detalhada e não liberada.
-- Impacto estrutural do delta canônico 3.30: nenhum; não há novo componente, boundary, banco, rota, service, workflow, job, infraestrutura ou privilégio, portanto o Gestor Estrutural não é repetido.
-- Gate focal de Automações concluído: `automação aplicável com patches autossuficientes`; o parecer confirmou o boundary local/on-demand e corrigiu o bloqueio de mailbox para incidir sobre o aceite da capacidade dependente, preservando evidência parcial autorizada.
-- Gate do Analista concluído em `revisao_delta`: `aprovado para merge do plano-base v2`; a aprovação é do contrato técnico e não autoriza merge da PR.
-- Próximo gate: revisão factual separada das oito operações em E17.9.4 antes de alterar proteção ou materializar adapter.
+- Impacto estrutural do delta canônico 3.31: material e focal; muda ambiente de execução, acrescenta uma entrada operacional e redefine a fronteira de credenciais, sem alterar banco, produto ou comportamento funcional.
+- Gate focal de Automações concluído: `requer validação material pelo Analista`; automação determinística sem OpenAI, com bootstrap seguro dependente de mudança da sequência de publicação.
+- Gate focal Estrutural concluído: `bloqueado por decisão humana`; a `main` não contém workflow QA confiável e o head da PR #914 não pode executar com secrets.
+- Revisão delta do Analista concluída: `bloqueado por decisão humana`; o checkpoint exclusivamente documental pode ser publicado no PR #914 draft, sem autorizar implementação, execução privilegiada ou merge.
+- Próximo gate após a decisão humana: se autorizada a sequência, implementar o bootstrap sem execução privilegiada pré-merge; se não autorizada, manter E17.9.4 bloqueada.
