@@ -115,6 +115,7 @@ Status: proposta técnica derivada da v1 funcional, sujeita aos gates do Analist
 - O repositório possui os secrets GitHub `MAILBOX_EMAIL` e `MAILBOX_PASSWORD`, sem expor seus valores, mas a busca nos workflows e automações vigentes não encontrou consumidor desses secrets.
 - O Gmail conectado ao Codex na investigação pertence a uma identidade diferente da mailbox institucional. Ele não é consumidor autorizado para esta E17.9.
 - Resultado do readiness I-01: zero consumidores institucionais autorizados de mailbox. Esse resultado bloqueia operações de confirmação, convite e recuperação que dependam de e-mail; não autoriza criar consumidor substituto.
+- Resultados atuais da fronteira segura: `credential_resolution_unproven` e `session_isolation_unproven`. Nenhum adapter dependente dessas capacidades pode ser materializado ou marcado pronto antes de readiness positivo.
 - O contrato do Executor introduzido em `28236bb08874931341ce5b24016f8a988e21291b` é parcialmente reutilizável: preservam-se allowlist, menor privilégio, correlação segura, sanitização, separação entre produto e operador e parada fail-closed.
 
 ### 10.2. Arquitetura e fronteiras
@@ -138,7 +139,7 @@ Status: proposta técnica derivada da v1 funcional, sujeita aos gates do Analist
   - `automations/qa-transacional/lib/evidence.mjs`;
   - `automations/qa-transacional/lib/readiness.mjs`;
   - `automations/qa-transacional/lib/adapters/index.mjs`, como registry não secreto das capacidades e de seus contratos;
-  - `automations/qa-transacional/lib/adapters/auth-public.mjs`, `auth-admin.mjs`, `accounts.mjs`, `access-state.mjs` e `mailbox.mjs` somente nas fases em que o mecanismo correspondente possua consumidor autorizado e gate factual aprovado.
+  - `automations/qa-transacional/lib/adapters/auth-public.mjs`, `auth-admin.mjs`, `accounts.mjs`, `entitlements.mjs`, `access-state.mjs` e `mailbox.mjs` somente nas fases em que o mecanismo correspondente possua consumidor autorizado e gate factual aprovado.
 - Entrada: versão do contrato, critério, cenário transacional, ambiente exato, estado requerido, ações permitidas, ações proibidas, estado final e limite de tentativas.
 - Catálogo: ID lógico da fixture, identidade ou e-mail funcional, finalidade, ambiente, conta ou tenant, papel, status, autoridade de plataforma, condição comercial, lifecycle, capacidades e referências opacas de credencial e mailbox.
 - O catálogo nunca contém senha, token, código, cookie, sessão, URL assinada, conteúdo da mailbox ou valor de secret.
@@ -157,6 +158,7 @@ Status: proposta técnica derivada da v1 funcional, sujeita aos gates do Analist
 - O adapter de mailbox só pode ser materializado depois que o readiness identificar exatamente um consumidor institucional existente e autorizado com interface e ambiente inequívocos.
 - Zero consumidores, mais de um consumidor compatível ou identidade ambígua bloqueiam o caso correspondente. Não criar POP3/IMAP, Gmail API, proxy, cofre, workflow, job, service, rota, nova credencial ou consumidor substituto por inferência.
 - O resultado factual atual é `mailbox_consumer_missing`; por isso, E17.9.4 não pode liberar os fluxos de e-mail de E17.9.5 até que um consumidor autorizado exista e seja revalidado.
+- Os resultados factuais atuais `credential_resolution_unproven` e `session_isolation_unproven` bloqueiam todo adapter que dependa dessas capacidades, mesmo quando a operação não usa mailbox.
 
 ### 10.5. Banco e produto sob teste
 
@@ -169,8 +171,9 @@ Status: proposta técnica derivada da v1 funcional, sujeita aos gates do Analist
 - Mapa de operações e adapters:
   - `signup`: `auth-public.mjs`, usando `supabase.auth.signUp` no ambiente exato; idempotência por identidade/estado esperado; pós-condição `auth.users` compatível e confirmação pendente quando aplicável;
   - `create_user`: `auth-admin.mjs`, usando `supabase.auth.admin.createUser` somente com `credential_resolution` administrativa pronta; idempotência por busca paginada de e-mail; pós-condição de usuário e confirmação conforme cenário;
-  - `create_account`: `accounts.mjs`, usando os objetos e contratos server-side vigentes somente com credencial administrativa autorizada; idempotência por identificador institucional exato; pós-condição em `accounts` e estado comercial requerido;
-  - `invite`: `auth-admin.mjs`, usando `inviteUserByEmail`, estado assinado e `redirectTo`; idempotência pelas regras vigentes de ciclo de convite; pós-condição de membership pendente e emissão correlacionável;
+  - `create_account`: `accounts.mjs`, usando o boundary vigente de contas somente com credencial administrativa autorizada; idempotência por identificador institucional exato; pós-condição limitada à conta e ao seu lifecycle operacional, sem conceder ou reconciliar entitlement;
+  - `verify_entitlement`: `entitlements.mjs`, consumindo exclusivamente o boundary público de `lib/commercial-entitlements/`; lê cliente/não cliente e condição comercial sem acoplar esse estado ao adapter de conta e retorna `capability_unavailable` quando o mecanismo autorizado não estiver pronto;
+  - `invite`: adapter que consome exclusivamente `inviteAccountMember` da API pública de `lib/access/account-members/`, cujo boundary interno preserva `inviteUserByEmail`, estado assinado, `redirectTo`, ciclo e idempotência; se o contrato público não puder ser acionado pelo consumidor autorizado, retorna `capability_unavailable` sem reproduzir suas regras no subprojeto;
   - `confirm` e `recover`: `mailbox.mjs` combinado ao callback HTTP `/auth/confirm`; exigem `search`, `read`, `consume`, `credential_resolution` e `session_isolation`; pós-condição de usuário confirmado ou sessão recuperada e estado final sanitizado;
   - `verify_role_state`: `access-state.mjs`, lendo conta, membership, papel, autoridade de plataforma, condição comercial, RLS/policies e GRANTs pelas fontes autorizadas; não altera estado e falha diante de divergência.
 - Nenhum adapter replica regra de domínio do produto. Ele aciona o mecanismo público ou administrativo vigente e verifica a pós-condição nas autoridades existentes.
