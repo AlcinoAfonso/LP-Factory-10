@@ -137,12 +137,14 @@ Status: proposta técnica derivada da v1 funcional, sujeita aos gates do Analist
   - `automations/qa-transacional/lib/selection.mjs`;
   - `automations/qa-transacional/lib/evidence.mjs`;
   - `automations/qa-transacional/lib/readiness.mjs`;
-  - adapters de Supabase e mailbox somente nas fases que possuam mecanismo autorizado e gate factual aprovado.
+  - `automations/qa-transacional/lib/adapters/index.mjs`, como registry não secreto das capacidades e de seus contratos;
+  - `automations/qa-transacional/lib/adapters/auth-public.mjs`, `auth-admin.mjs`, `accounts.mjs`, `access-state.mjs` e `mailbox.mjs` somente nas fases em que o mecanismo correspondente possua consumidor autorizado e gate factual aprovado.
 - Entrada: versão do contrato, critério, cenário transacional, ambiente exato, estado requerido, ações permitidas, ações proibidas, estado final e limite de tentativas.
 - Catálogo: ID lógico da fixture, identidade ou e-mail funcional, finalidade, ambiente, conta ou tenant, papel, status, autoridade de plataforma, condição comercial, lifecycle, capacidades e referências opacas de credencial e mailbox.
 - O catálogo nunca contém senha, token, código, cookie, sessão, URL assinada, conteúdo da mailbox ou valor de secret.
 - Seleção exige correspondência exata entre estado requerido e fixture. Ambiguidade, ausência de correspondência ou capacidade incompleta retorna erro estável e não escolhe por aproximação.
 - Criação ou reconfiguração exige mecanismo já autorizado, estado anterior conhecido, pós-condição explícita e restauração ou novo estado estável. Sem essas condições, a operação bloqueia antes da mutação.
+- O registry de adapters declara por operação capacidade, mecanismo, entradas não secretas, referência opaca exigida, privilégio mínimo, regra de idempotência, pós-condição observável e estado final. Adapter ausente ou não pronto retorna `capability_unavailable` antes de qualquer efeito.
 - Cada tentativa gera projeção sanitizada com critério, ator funcional, ambiente, fixture criada, reutilizada ou reconfigurada, esperado, observado, resultado do produto, resultado operacional do Executor, tentativa e bloqueio.
 - Logs, runs, checks, Job Summaries e artifacts podem suplementar a prova, mas não são sua única residência. A síntese durável fica no PR, commit e documento canônico competente, sem exportar conteúdo bruto para prolongar retenção.
 
@@ -150,7 +152,8 @@ Status: proposta técnica derivada da v1 funcional, sujeita aos gates do Analist
 
 - Antes de qualquer autenticação ou mutação, a execução fixa deployment e SHA quando aplicáveis, ambiente, conta, atores, papéis, dados, ações permitidas, ações proibidas e estado final.
 - Credenciais, tokens, códigos, cookies, URLs assinadas e conteúdo bruto da mailbox permanecem fora do modelo, chat, terminal, argumentos de ferramenta, logs, screenshots, artifacts e código de Preview.
-- A existência de secret por nome não comprova consumidor. O readiness retorna somente disponibilidade, identidade funcional, ambiente, capacidades `search`, `read` e `consume` e motivo sanitizado.
+- A existência de secret por nome não comprova consumidor. O readiness retorna somente disponibilidade, identidade funcional, ambiente, capacidades `search`, `read`, `consume`, `credential_resolution` e `session_isolation` e motivo sanitizado.
+- `credential_resolution` só fica pronta quando exatamente um consumidor autorizado resolve a referência opaca e entrega a credencial diretamente ao adapter sem expô-la ao Executor, ao terminal ou a argumento de ferramenta. `session_isolation` só fica pronta quando o mecanismo mantém atores separados ou encerra e substitui a sessão de forma verificável e sanitizada.
 - O adapter de mailbox só pode ser materializado depois que o readiness identificar exatamente um consumidor institucional existente e autorizado com interface e ambiente inequívocos.
 - Zero consumidores, mais de um consumidor compatível ou identidade ambígua bloqueiam o caso correspondente. Não criar POP3/IMAP, Gmail API, proxy, cofre, workflow, job, service, rota, nova credencial ou consumidor substituto por inferência.
 - O resultado factual atual é `mailbox_consumer_missing`; por isso, E17.9.4 não pode liberar os fluxos de e-mail de E17.9.5 até que um consumidor autorizado exista e seja revalidado.
@@ -163,6 +166,14 @@ Status: proposta técnica derivada da v1 funcional, sujeita aos gates do Analist
 - Supabase Auth e `/auth/confirm` permanecem as autoridades para criação/signup, confirmação, convite e recuperação.
 - Confirmação, convite e recuperação reutilizam os redirects autorizados e `/auth/confirm`. Convite preserva `inviteUserByEmail`, o template `Invite user` e o transporte vigente por `redirectTo`; não criar envio customizado, template no Core, rota ou transporte paralelo de token.
 - Uma capacidade ainda não comprovada pelo readiness bloqueia somente o caso correspondente.
+- Mapa de operações e adapters:
+  - `signup`: `auth-public.mjs`, usando `supabase.auth.signUp` no ambiente exato; idempotência por identidade/estado esperado; pós-condição `auth.users` compatível e confirmação pendente quando aplicável;
+  - `create_user`: `auth-admin.mjs`, usando `supabase.auth.admin.createUser` somente com `credential_resolution` administrativa pronta; idempotência por busca paginada de e-mail; pós-condição de usuário e confirmação conforme cenário;
+  - `create_account`: `accounts.mjs`, usando os objetos e contratos server-side vigentes somente com credencial administrativa autorizada; idempotência por identificador institucional exato; pós-condição em `accounts` e estado comercial requerido;
+  - `invite`: `auth-admin.mjs`, usando `inviteUserByEmail`, estado assinado e `redirectTo`; idempotência pelas regras vigentes de ciclo de convite; pós-condição de membership pendente e emissão correlacionável;
+  - `confirm` e `recover`: `mailbox.mjs` combinado ao callback HTTP `/auth/confirm`; exigem `search`, `read`, `consume`, `credential_resolution` e `session_isolation`; pós-condição de usuário confirmado ou sessão recuperada e estado final sanitizado;
+  - `verify_role_state`: `access-state.mjs`, lendo conta, membership, papel, autoridade de plataforma, condição comercial, RLS/policies e GRANTs pelas fontes autorizadas; não altera estado e falha diante de divergência.
+- Nenhum adapter replica regra de domínio do produto. Ele aciona o mecanismo público ou administrativo vigente e verifica a pós-condição nas autoridades existentes.
 
 ### 10.6. Updates incorporados
 
@@ -181,6 +192,7 @@ Status: proposta técnica derivada da v1 funcional, sujeita aos gates do Analist
 - Incluir casos determinísticos para schema válido e inválido, menor privilégio, todas as dimensões funcionais do catálogo, ausência e ambiguidade de fixture, criação/reconfiguração planejada, idempotência, pós-condição e remoção de campos sensíveis.
 - Ajustar a skill do Executor somente para rotear o cenário escolhido ao boundary e interpretar o resultado, preservando os guardrails seguros já existentes.
 - Reconciliar `docs/roadmap.md` por ABC para conter somente E17.9.3 a E17.9.6 no recorte transacional/determinístico. Não detalhar ou liberar E17.10.
+- Registrar a nova automação em `docs/automations.md` por ABC, com vínculo à E17.9, execução on-demand local pelo Executor, ausência de workflow/agendamento e estado das capacidades. Atualizar `docs/platform-config.md` somente quando o estado factual de consumidor ou referência autorizada mudar; `mailbox_consumer_missing` não deve ser mascarado como capacidade operacional.
 - Gate: `npm ci` e testes próprios no subprojeto; `npm ci` e `npm run check` no repositório; `git diff --check`; revisão de secrets e escopo; ABCs aplicáveis; Analista de implementação.
 
 #### 10.7.2. E17.9.4 — Reconciliar ou provisionar identidades, contas, papéis, estados e fronteira segura de acesso
@@ -189,6 +201,7 @@ Status: proposta técnica derivada da v1 funcional, sujeita aos gates do Analist
 - Usar o Supabase Plugin somente em leitura para confrontar o estado hospedado; mutações não são autorizadas por esse recurso.
 - Provisionar ou reconfigurar somente por mecanismo determinístico já autorizado, idempotente e com pós-condição/restauração. Não ampliar adapters de produto nem criar mecanismo privilegiado.
 - Gate atual: `mailbox_consumer_missing`. A fase termina bloqueada enquanto o readiness não identificar exatamente um consumidor institucional autorizado; nenhum adapter de mailbox é criado nesse estado.
+- Evidência independente obtida antes do bloqueio permanece válida, mas não conclui esta subseção nem qualquer subseção cujo critério obrigatório dependa da capacidade ausente. E17.9.5 permanece inconclusiva enquanto confirmação, convite ou recuperação obrigatórios não puderem consumir a mailbox com segurança.
 - Quando a dependência externa mudar, revalidar somente o readiness afetado e o gate desta subseção antes de avançar.
 
 #### 10.7.3. E17.9.5 — Comprovar os fluxos transacionais centrais
