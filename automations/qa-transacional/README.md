@@ -9,6 +9,7 @@ Boundary local e on-demand da E17.9. O Executor escolhe o cenário; este subproj
 - Adapters registrados como contratos, mas não materializados.
 - Readiness inicial fail-closed: `mailbox_consumer_missing`, `credential_resolution_unproven` e `session_isolation_unproven`.
 - Nenhuma autenticação, mutação, mailbox, workflow, job, service, rota, banco ou chamada de rede é executada.
+- A revisão factual separada das oito operações está registrada em [`READINESS_E17_9_4.md`](./READINESS_E17_9_4.md); nenhuma delas autorizou materialização de adapter neste checkpoint.
 
 ## Uso
 
