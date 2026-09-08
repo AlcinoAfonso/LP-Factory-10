@@ -354,6 +354,48 @@ Configuração de workloads: `docs/platform-config.md` — seção 3.5.
 Contrato de banco: `docs/schema.md` — seções 1.28 a 1.30.
 Boundary funcional: `lib/conversion-content/landing-page/knowledge-resolution/`.
 
+3.13 E17.9 — QA transacional determinístico
+
+Objetivo:
+Validar cenários transacionais escolhidos pelo Executor, selecionar fixtures institucionais por correspondência exata, verificar readiness e produzir evidência sanitizada sem decidir o teste nem executar capacidades não autorizadas.
+
+Status:
+Contrato e catálogo não secreto implementados e validados na E17.9.3; catálogo operacional vazio e adapters não materializados até os gates factuais das subseções seguintes.
+
+Natureza:
+- Automação determinística local e on-demand, sem IA própria.
+
+Ambiente principal:
+- Worktree local autorizada do Executor.
+
+Consumidor:
+- Executor no Codex App, após derivar o cenário a partir do critério aprovado.
+
+Como usar:
+- Executar `automations/qa-transacional/run.mjs` com contrato JSON não secreto por `stdin` ou arquivo local.
+- Tratar seleção ausente, ambígua ou incompleta, readiness negativo e adapter indisponível como bloqueios fail-closed.
+- Tratar criação ou reconfiguração somente como estrutura contratual pretendida enquanto o mecanismo autorizado não estiver materializado; `capability_unavailable` bloqueia qualquer efeito.
+
+Resposta esperada:
+- Resultado estável de seleção ou bloqueio e projeção sanitizada por tentativa, distinguindo resultado do produto e resultado operacional do Executor.
+
+Estado das capacidades:
+- `mailbox_consumer_missing`;
+- `credential_resolution_unproven`;
+- `session_isolation_unproven`.
+
+Limites:
+- Não executa autenticação, mutação, mailbox ou chamada de rede na E17.9.3.
+- Não cria agente, Validador Final, Niche Runtime Tests, workflow, agendamento, job, service, rota, banco ou infraestrutura.
+- Não cobre navegação visual, UI, acessibilidade nem criação ou edição de Landing Pages.
+
+Aplicação funcional no roadmap:
+- `docs/roadmap.md` — E17.9.3.
+
+Referências / dependências:
+Runtime e contrato: `automations/qa-transacional/README.md`.
+Guardrails do consumidor: `.agents/skills/lp-factory-executar-plano/SKILL.md` — seção 6.2.
+
 4. Aprendizados operacionais
 
 Status: Deprecada em 04/08/2026.

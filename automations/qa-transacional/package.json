@@ -1,0 +1,11 @@
+{
+  "name": "@lpf10/automation-qa-transacional",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node run.mjs",
+    "test": "node --test validation-cases.mjs",
+    "check": "node --check run.mjs && node --check lib/contracts.mjs && node --check lib/catalog.mjs && node --check lib/selection.mjs && node --check lib/evidence.mjs && node --check lib/readiness.mjs && node --check lib/adapters/index.mjs && npm test"
+  }
+}

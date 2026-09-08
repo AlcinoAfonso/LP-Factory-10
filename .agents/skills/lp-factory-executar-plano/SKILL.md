@@ -170,6 +170,16 @@ Quando o plano aprovado exigir jornada autenticada operada pelo Executor:
 
 Se um critério obrigatório continuar sem prova depois da consulta às fontes e recursos autorizados, não crie nova automação, infraestrutura, conta privilegiada ou mutação remota por inferência. Registre exatamente o critério não coberto, os caminhos autorizados tentados e o bloqueio; escale ao supervisor somente o que realmente exigir decisão humana ou recurso inexistente ou não autorizado.
 
+### 6.2 Roteamento ao QA transacional determinístico
+
+Quando o critério exigir o QA transacional institucional da E17.9:
+
+1. Derive o cenário e materialize somente os campos não secretos exigidos pelo contrato de `automations/qa-transacional/README.md`; o boundary determinístico não escolhe o teste nem amplia a allowlist.
+2. Acione `automations/qa-transacional/run.mjs` antes de autenticação ou mutação e use somente fixture selecionada por correspondência exata. Ausência, ambiguidade, capacidade incompleta ou readiness negativo bloqueiam o caso sem escolha aproximada ou bypass.
+3. Um `fixtureChange` válido descreve apenas a estrutura pretendida. Criação ou reconfiguração só pode ocorrer quando o adapter e o mecanismo autorizados estiverem materializados, com estado anterior quando aplicável, idempotência, pós-condição e estado final explícitos; `capability_unavailable` continua bloqueando qualquer efeito.
+4. Interprete separadamente resultado do produto e resultado operacional do Executor, preserve o limite de tentativas e repita somente após correção técnica verificável, usando a projeção sanitizada como evidência.
+5. Não roteie a este boundary navegação visual, avaliação de UI ou acessibilidade, criação ou edição de Landing Pages, nem conteúdo fora da E17.9. Não materialize adapter, consumidor de mailbox, workflow, job, service, rota, banco, credencial ou infraestrutura para contornar `capability_unavailable`.
+
 ## 7. Complexa — controles preservados
 
 Subseções são checkpoints internos; nunca criam PRs ou merges intermediários.
