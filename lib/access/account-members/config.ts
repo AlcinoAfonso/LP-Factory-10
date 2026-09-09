@@ -1,5 +1,6 @@
 import "server-only";
 
+import { resolveAccountMembersConfirmUrl } from "./confirm-url";
 import type { AccountMemberResult } from "./contracts";
 
 export function isAccountMembersEnabled(): boolean {
@@ -7,19 +8,11 @@ export function isAccountMembersEnabled(): boolean {
 }
 
 export function getAccountMembersConfirmUrl(): AccountMemberResult<string> {
-  const configured = process.env.NEXT_PUBLIC_SITE_URL?.trim();
-  if (!configured) return { ok: false, error: "external_config_missing" };
-
-  try {
-    const url = new URL(configured);
-    if (url.protocol !== "https:" && url.protocol !== "http:") {
-      return { ok: false, error: "external_config_missing" };
-    }
-    url.pathname = "/auth/confirm";
-    url.search = "";
-    url.hash = "";
-    return { ok: true, value: url.toString() };
-  } catch {
-    return { ok: false, error: "external_config_missing" };
-  }
+  return resolveAccountMembersConfirmUrl({
+    NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
+    VERCEL_ENV: process.env.VERCEL_ENV,
+    VERCEL_BRANCH_URL: process.env.VERCEL_BRANCH_URL,
+    VERCEL_PROJECT_PRODUCTION_URL: process.env.VERCEL_PROJECT_PRODUCTION_URL,
+    VERCEL_URL: process.env.VERCEL_URL,
+  });
 }
