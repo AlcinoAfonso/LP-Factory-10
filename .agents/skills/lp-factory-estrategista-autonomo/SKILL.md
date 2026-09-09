@@ -56,6 +56,14 @@ A V1 aprovada limita o resultado funcional. Repositório, pareceres e conveniên
 
 Correções e QA pré-merge retornam à mesma task técnica e ao mesmo PR do plano.
 
+## Tratar bloqueios durante a execução
+
+1. Antes de aceitar um bloqueio técnico como terminal, distinguir falha do caminho tentado de impossibilidade real do plano.
+2. Enquanto a questão permanecer técnica, dentro da V1 e houver alternativa autorizada plausível, devolver à mesma task técnica responsável para investigar focalmente e executar a menor solução compatível, preservando a mesma task, branch e PR.
+3. Não escalar apenas porque a primeira abordagem falhou; exigir que a task verifique os caminhos autorizados aplicáveis e preserve trabalho já válido.
+4. Escalar ao Estrategista Original/humano somente quando ficar comprovado que o avanço exige mudança funcional da V1, nova autoridade, recurso inexistente ou não autorizado, mutação material fora do recorte, conflito de fontes sem precedência ou quando as alternativas compatíveis tiverem sido efetivamente esgotadas.
+5. Ao devolver um bloqueio terminal, informar os caminhos autorizados avaliados, o motivo factual pelo qual não resolvem e exatamente qual decisão, autoridade ou recurso falta.
+
 ## Avaliar entrega
 
 Ao receber a entrega de uma task:
