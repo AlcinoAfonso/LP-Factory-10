@@ -52,9 +52,20 @@ A V1 aprovada limita o resultado funcional. Repositório, pareceres e conveniên
 8. Se a execução for Light, a task técnica segue `$lp-factory-executar-plano`.
 9. Se a execução for Complexa, a task técnica segue `$lp-factory-conduzir-plano-completo` e, após a V2 aprovada, `$lp-factory-executar-plano`.
 10. A task técnica é responsável por materializar e congelar o contrato aprovado conforme o fluxo competente antes da derivação ou implementação aplicável e pode criar seus próprios subagentes especializados conforme os contratos que executa.
-11. Se a task/thread independente não puder ser criada ou invocada, parar aquele plano e reportar o bloqueio; não assumir implementação e não usar `spawn_agent` como fallback.
+11. Se a task/thread independente não puder ser criada ou, quando já existente, invocada, não assumir implementação nem usar `spawn_agent` como fallback. Verificar no próprio supervisor os mecanismos autorizados disponíveis de criação ou invocação; falha transitória ou de primeira tentativa não é terminal. Se nenhum mecanismo autorizado estiver operacional, tratar a indisponibilidade como `Impossibilidade técnica comprovada` conforme o critério 2 de `Tratar bloqueios durante a execução`.
 
 Correções e QA pré-merge retornam à mesma task técnica e ao mesmo PR do plano.
+
+## Tratar bloqueios durante a execução
+
+Quando o Executor reportar bloqueio ou sugerir intervenção humana, o Estrategista Autônomo deve primeiro tentar eliminar essa necessidade coordenando a mesma task técnica, sem assumir implementação nem criar segunda task.
+
+Só aceitar parada e escalar ao Estrategista Original/humano quando um destes dois critérios estiver comprovado:
+
+1. **Decisão, autoridade ou fonte indispensável fora da autonomia:** continuar depende de decisão, autorização, classificação, fonte/entrada ou ação que, segundo a V1 e os contratos ou fontes competentes, não pertença à autoridade do fluxo autônomo e não possua caminho autorizado equivalente. Inclui, sem se limitar a, mudança de V1, resultado funcional, escopo ou autoridade aprovada; reclassificação entre `Light` e `Complexa` por incompatibilidade material comprovada; conflito entre fontes canônicas sem precedência; decisão humana indispensável; fonte ou entrada indispensável inacessível; ou ação que a plataforma imponha explicitamente como humana sem caminho autorizado equivalente.
+2. **Impossibilidade técnica comprovada:** nenhum caminho autorizado disponível consegue satisfazer um critério obrigatório depois de verificadas as alternativas tecnicamente plausíveis pelo ator competente.
+
+Fora desses dois casos, não parar nem escalar: coordenar a menor ação autorizada capaz de resolver o bloqueio e, quando houver task técnica disponível, devolver o ponto à mesma task para investigação focal e execução da menor solução autorizada, preservando o trabalho já válido. Se o bloqueio for a própria indisponibilidade da task/thread, aplicar o item 11. Ao escalar, informar objetivamente os caminhos avaliados, por que não resolvem e a decisão, autoridade, classificação, fonte ou recurso exato que falta.
 
 ## Avaliar entrega
 
@@ -75,7 +86,7 @@ Entrega técnica completa não conclui o plano enquanto houver correção, QA, c
 - A liberação do Estrategista Autônomo é a autorização definida pelo fluxo para o merge; não pedir segunda autorização humana rotineira.
 - Depois de liberar, devolver a ordem à mesma task técnica e ao mesmo PR para que o Executor execute o merge remoto conforme `AGENTS.md`, realize as validações pós-merge exigidas e atualize o Debate correspondente com conclusão final, PR, merge commit e evidências.
 - O Estrategista Autônomo não executa o merge; aguarda o recibo final do Executor e confirma que ele corresponde ao PR liberado, ao merge commit produzido, às validações posteriores e ao Debate atualizado.
-- Se o Executor devolver falha de validação pós-merge ou impossibilidade de atualizar o Debate por recurso autorizado, manter o plano aberto e seus dependentes bloqueados e coordenar somente o delta necessário ou a escalada material prevista nos contratos competentes.
+- Se o Executor devolver falha de validação pós-merge ou impossibilidade de atualizar o Debate por recurso autorizado, manter o plano aberto e seus dependentes bloqueados e coordenar somente o delta necessário ou a escalada material prevista nos contratos competentes; quando a correção pós-merge exigir código, preservar a mesma task e coordenar a próxima etapa em nova branch/PR conforme `AGENTS.md`, sem recriar a task.
 - Não liberar merge diante de exceção material, decisão pendente ou alteração sem origem legítima.
 - Concluir o plano somente após o recibo final sem pendência material; então liberar dependentes.
 - Concluir o conjunto somente quando todos os planos e dependências aplicáveis estiverem encerrados.
