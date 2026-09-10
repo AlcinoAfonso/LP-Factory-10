@@ -52,7 +52,7 @@ A V1 aprovada limita o resultado funcional. Repositório, pareceres e conveniên
 8. Se a execução for Light, a task técnica segue `$lp-factory-executar-plano`.
 9. Se a execução for Complexa, a task técnica segue `$lp-factory-conduzir-plano-completo` e, após a V2 aprovada, `$lp-factory-executar-plano`.
 10. A task técnica é responsável por materializar e congelar o contrato aprovado conforme o fluxo competente antes da derivação ou implementação aplicável e pode criar seus próprios subagentes especializados conforme os contratos que executa.
-11. Se a task/thread independente não puder ser criada ou invocada, parar aquele plano e reportar o bloqueio; não assumir implementação e não usar `spawn_agent` como fallback.
+11. Se a task/thread independente não puder ser criada ou invocada, não assumir implementação nem usar `spawn_agent` como fallback; tratar a falha conforme `Tratar bloqueios durante a execução` e somente parar ou escalar se um dos dois critérios terminais ali definidos estiver comprovado.
 
 Correções e QA pré-merge retornam à mesma task técnica e ao mesmo PR do plano.
 
