@@ -1028,6 +1028,10 @@
 - Cada emissão carrega estado versionado e assinado, vinculado a um único `account_user_id`, no `redirectTo` específico do convite.
 - A confirmação anti-scanner, a definição de senha e a ativação atingem somente o vínculo validado e aceitam retry idempotente.
 - Validade e reenvio permanecem sob responsabilidade do Supabase Auth; não há expiração local, e-mail customizado, Auth Hook amplo, job ou automação para esse ciclo.
+- A E11.1.4 permanece proprietária funcional de toda a jornada de convite.
+- A origem do callback prioriza o override explícito `NEXT_PUBLIC_SITE_URL`; em deployments Vercel, usa `VERCEL_BRANCH_URL` no Preview ou `VERCEL_PROJECT_PRODUCTION_URL` em Production, com `VERCEL_URL` como fallback. Ausência ou origem inválida continua falhando de forma fechada.
+- A correção foi entregue pelo PR #912, merge commit `79b0575de63c5ab48e1229e1c628917e72b7be76`.
+- A validação funcional em Production comprovou e-mail recebido, `/auth/confirm` sem `/auth/error`, cadastro concluído, membership `viewer/active` e login no tenant correto; não houve comprovação de todos os papéis, ambientes ou casos extremos.
 
 11.1.5 Convite dentro do produto
 - Usuário já confirmado recebe a pendência em `/a/home`, sem novo e-mail.
@@ -1447,7 +1451,6 @@
 17.1.5 Facilitadores de teste retirados
 - Status: Validador Final e Niche Runtime Tests retirados pela E22.6, sem substituto neste recorte.
 - A retirada não altera a autoridade funcional de E5 ou E10.5.6 e não apaga contas nem evidências existentes.
-- A mailbox dedicada e os secrets `MAILBOX_EMAIL` e `MAILBOX_PASSWORD` permanecem preservados para a E17.9.3, sem consumidor operacional vigente.
 
 17.1.6 Pipelines operacionais
 - `pipeline-supabase-inspect` executa SQL read-only com saída em logs e Job Summary.
@@ -1498,23 +1501,10 @@
 - Objetivo: estabelecer uma identidade institucional exclusiva do LP Factory, operada autonomamente por IA, capaz de agir como usuário humano em jornadas variáveis de QA sem depender da presença de Alcino.
 - Status: planejado; objetivo ainda não atingido.
 
-17.9.3 Operador institucional autônomo de QA
-- Status: decisão funcional aprovada; implementação operacional pendente.
-- Conteúdo:
-  - a mailbox `lpfactoryqa@gmail.com` é a identidade-base institucional de QA;
-  - contas e identidades de teste devem pertencer ao projeto, nunca a contas pessoais;
-  - a IA deve poder receber confirmações, convites e redefinições, autenticar-se, preencher formulários, criar e editar landing pages, executar o roteiro definido pelo plano, avaliar comportamento, conteúdo e interface e entregar relatório com evidências;
-  - a operação deve ocorrer sem autorização, login ou fornecimento de credenciais por Alcino a cada execução;
-  - aliases sequenciais e cenários Playwright fixos não satisfazem isoladamente esse objetivo;
-  - o Validador Final e o Niche Runtime Tests foram retirados pela E22.6 sem substituto, preservando a mailbox e os secrets institucionais para este recorte futuro;
-  - os testes devem permanecer restritos a contas, dados, ambientes e ações de QA autorizados;
-  - a definição técnica não antecipa Agents SDK, service, rota, banco, job ou runtime.
-- Pendências vigentes:
-  - criar ou reconciliar identidades institucionais permanentes e seus papéis, porque a mailbox não cria nem autoriza usuários dos dashboards;
-  - definir uso seguro dessas identidades pela IA sem repassar secrets no chat nem expor credenciais ao código de Previews, porque o mecanismo atual ainda não oferece essa fronteira;
-  - permitir jornadas variáveis orientadas pelo plano, porque não há mecanismo operacional vigente capaz de executá-las;
-  - restaurar ou substituir a superfície operacional de Landing Page e, depois, comprovar criação, preenchimento, edição, visualização e avaliação ponta a ponta, porque a E22.4 removeu essa jornada sem substituto vigente;
-  - integrar o recurso ao contrato do Executor, porque a orientação atual não garante seu uso antes de solicitar intervenção humana;
+17.9.3 Consulta autônoma ao catálogo institucional de QA
+- Objetivo: disponibilizar e comprovar a consulta autônoma pelo Executor ao catálogo institucional de contas e usuários QA.
+- Status: concluída pelo piloto do PR #912.
+- O piloto comprovou a localização e a consulta da identidade QA autorizada no catálogo vigente; convite, autenticação e demais fases operacionais posteriores permanecem fora deste recorte.
 
 18. E18 — Base transversal de templates, composições e artefatos
 - Objetivo: manter os contratos compartilhados de conteúdo versionado usados pela ativação comercial e a parametrização raiz da família `landing_page`, sem absorver geração, publicação ou execução da LP Builder.
@@ -2493,18 +2483,17 @@
 - Referências:
   - Catálogo operacional vigente: `docs/automations.md`.
   - Mailbox e secrets preservados: `docs/platform-config.md` — seção 2.4.
-  - Operador institucional futuro: `docs/roadmap.md` — E17.9.3.
+  - Consulta autônoma ao catálogo institucional de QA: `docs/roadmap.md` — E17.9.3.
 
 22.6.3 Resultado e limites
 - A busca de consumidores confirmou que o Niche Runtime Tests dependia do runtime do Validador Final e que os ativos retirados não eram gate automático, script raiz nem dependência do Core.
 - Os dois workflows, os dois subprojetos e o verificador Supabase exclusivo foram removidos conjuntamente; o restante de `automations/supabase-inspect/`, seus consumidores e os demais workflows permanecem preservados.
-- A mailbox `lpfactoryqa@gmail.com` e os secrets `MAILBOX_EMAIL` e `MAILBOX_PASSWORD` permanecem reservados à E17.9.3, sem consumidor operacional vigente.
 - Usuários, contas, memberships, sessões, dados Supabase e evidências existentes não foram alterados nem excluídos.
 - Runs, checks, statuses, logs e artifacts do GitHub Actions são evidência suplementar e expirável; o diff/PR e os documentos canônicos preservam a prova durável da retirada.
 
 23. E23 — Segurança e governança transversal da plataforma
 - Objetivo: remover riscos prioritários de segurança e governança da plataforma por recortes independentes e controlados.
-- Status: E23.1 concluída no repositório e no Preview; E23.2 concluída operacionalmente sob decisão funcional conservadora; E23.3 concluída documentalmente. O merge da E23.2 permanece sob a autoridade do fluxo Autônomo.
+- Status: E23.1 concluída no repositório e no Preview; E23.2 concluída operacionalmente sob decisão funcional conservadora, com seu merge e a correção pós-merge concluídos; E23.3 concluída documentalmente.
 
 23.1 Atualização de segurança do Next.js
 
@@ -2552,6 +2541,7 @@
   - seis ocorrências sem consumidor foram removidas somente da Vercel Core: duas de `E19_5_WORKSPACE_ENABLED` e uma de cada nome `MCP_SUPABASE_INSPECT_URL`, `LPF_MCP_SECRET`, `SUPABASE_DB_URL_READONLY` e `E7_ONBOARD_SERVICE_ONLY`;
   - o secret homônimo `SUPABASE_DB_URL_READONLY` do GitHub Actions e seu consumidor `.github/workflows/pipeline-supabase-inspect.yml` permanecem preservados.
   - o Preview pós-remoção ficou `READY`, e o smoke proporcional confirmou HTTP 200 na rota de login; nenhum redeploy de Production foi executado.
+  - a inspeção revelou a dependência frágil da origem do callback de convite e originou o PR #912; a propriedade funcional da jornada permanece em E11.1.4.
 
 23.3 Retenção proporcional das evidências GitHub Actions
 
