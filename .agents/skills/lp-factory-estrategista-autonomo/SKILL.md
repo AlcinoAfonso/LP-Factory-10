@@ -52,7 +52,7 @@ A V1 aprovada limita o resultado funcional. Repositório, pareceres e conveniên
 8. Se a execução for Light, a task técnica segue `$lp-factory-executar-plano`.
 9. Se a execução for Complexa, a task técnica segue `$lp-factory-conduzir-plano-completo` e, após a V2 aprovada, `$lp-factory-executar-plano`.
 10. A task técnica é responsável por materializar e congelar o contrato aprovado conforme o fluxo competente antes da derivação ou implementação aplicável e pode criar seus próprios subagentes especializados conforme os contratos que executa.
-11. Se a task/thread independente não puder ser criada ou invocada, não assumir implementação nem usar `spawn_agent` como fallback; tratar a falha conforme `Tratar bloqueios durante a execução` e somente parar ou escalar se um dos dois critérios terminais ali definidos estiver comprovado.
+11. Se a task/thread independente não puder ser criada ou, quando já existente, invocada, não assumir implementação nem usar `spawn_agent` como fallback. Verificar no próprio supervisor os mecanismos autorizados disponíveis de criação ou invocação; se nenhum estiver operacional, registrar essa indisponibilidade como `Impossibilidade técnica comprovada` do mecanismo obrigatório de execução, nos termos do critério 2 abaixo. Falha transitória ou de primeira tentativa, sem essa verificação, não basta para parar.
 
 Correções e QA pré-merge retornam à mesma task técnica e ao mesmo PR do plano.
 
@@ -63,7 +63,7 @@ Quando o Executor reportar bloqueio ou sugerir intervenção humana, o Estrategi
 Só aceitar parada e escalar ao Estrategista Original/humano quando um destes dois critérios estiver comprovado:
 
 1. **Decisão de governança, autoridade ou fonte indispensável:** continuar exige alterar V1, resultado funcional, escopo ou autoridade aprovada; reclassificar a execução entre `Light` e `Complexa` por incompatibilidade material comprovada; resolver conflito entre fontes canônicas sem precedência; suprir fonte ou entrada indispensável que não esteja acessível ao fluxo; ou executar ação que a plataforma imponha explicitamente como humana sem caminho autorizado equivalente.
-2. **Impossibilidade técnica comprovada:** nenhum caminho autorizado disponível consegue satisfazer um critério obrigatório depois de a mesma task técnica verificar as alternativas tecnicamente plausíveis.
+2. **Impossibilidade técnica comprovada:** nenhum caminho autorizado disponível consegue satisfazer um critério obrigatório depois de a mesma task técnica verificar as alternativas tecnicamente plausíveis; quando o próprio mecanismo obrigatório de task/thread estiver indisponível, a comprovação cabe ao Estrategista Autônomo após verificar os mecanismos autorizados disponíveis de criação ou invocação, sem exigir uma task inexistente ou inacessível para provar a própria indisponibilidade.
 
 Fora desses dois casos, não parar nem escalar: devolver o ponto à mesma task para investigação focal e execução da menor solução autorizada, preservando o trabalho já válido. Ao escalar, informar objetivamente os caminhos avaliados, por que não resolvem e a decisão, autoridade, classificação, fonte ou recurso exato que falta.
 
