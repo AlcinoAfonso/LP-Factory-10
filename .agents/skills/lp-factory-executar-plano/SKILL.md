@@ -59,7 +59,7 @@ Use somente as fontes materialmente necessárias:
 - `docs/platform-config.md`: quando houver impacto operacional de plataforma ou QA que dependa de ambiente, Preview, credencial por referência ou recurso externo;
 - `docs/automations.md`: quando automação operacional ou facilitador de testes existente puder executar ou validar o recorte;
 - documentos canônicos e fontes específicas citados pelo contrato;
-- recurso conectado identificado pela V1 e não restringido pelo contrato técnico aplicável pode ser consumido diretamente pelo Executor para a finalidade aprovada, sem duplicar seu conteúdo no repositório nem convertê-lo em nova infraestrutura.
+- recurso conectado identificado e expressamente autorizado pela V1 e não restringido pelo contrato técnico aplicável pode ser consumido diretamente pelo Executor para a finalidade aprovada, sem duplicar seu conteúdo no repositório nem convertê-lo em nova infraestrutura.
 
 Não invente fonte, path, schema, comportamento, dependência, rota, job, agente, automação, engine ou infraestrutura.
 
