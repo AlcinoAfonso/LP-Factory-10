@@ -58,7 +58,8 @@ Use somente as fontes materialmente necessárias:
 - `docs/schema.md`: quando houver banco;
 - `docs/platform-config.md`: quando houver impacto operacional de plataforma ou QA que dependa de ambiente, Preview, credencial por referência ou recurso externo;
 - `docs/automations.md`: quando automação operacional ou facilitador de testes existente puder executar ou validar o recorte;
-- documentos canônicos e fontes específicas citados pelo contrato.
+- documentos canônicos e fontes específicas citados pelo contrato;
+- recurso conectado identificado e expressamente autorizado pela V1 e não restringido pelo contrato técnico aplicável pode ser consumido diretamente pelo Executor para a finalidade aprovada, sem duplicar seu conteúdo no repositório nem convertê-lo em nova infraestrutura.
 
 Não invente fonte, path, schema, comportamento, dependência, rota, job, agente, automação, engine ou infraestrutura.
 
@@ -149,14 +150,17 @@ A validação deve provar os critérios de aceite do contrato. O Executor não p
 - execute as validações aplicáveis definidas pelo contrato, pelas fontes competentes e pelo `AGENTS.md`;
 - derive dos critérios de aceite somente as evidências necessárias e realize smoke ou QA funcional proporcional ao comportamento alterado;
 - quando o QA depender de Preview, conta ou identidade de teste, mailbox, secret por referência, banco read-only, browser automatizado ou outro recurso externo, consulte primeiro `docs/platform-config.md` e, se houver automação operacional aplicável, `docs/automations.md`;
-- trate recurso marcado como disponível ou operacional na plataforma indicada como utilizável pelo consumidor autorizado, ainda que o valor do secret não seja legível no sandbox; não solicite, copie, revele ou recrie a credencial;
+- trate recurso marcado como disponível ou operacional na plataforma indicada como utilizável pelo consumidor autorizado, ainda que o valor de secret ou credencial técnica por referência não seja legível no sandbox; não solicite, copie, revele ou recrie esse valor;
+- quando a V1 autorizar funcionalmente a leitura de credencial de conta exclusiva de QA e o contrato técnico aplicável não restringir nem mediar esse acesso, o Executor pode lê-la e utilizá-la somente na jornada autorizada e pela fonte conectada aprovada, sem reproduzi-la em chat, logs, evidências, screenshots, repositório ou outro artefato; essa exceção não alcança API keys, tokens, cookies, sessions, secrets GitHub/Vercel/Supabase nem outras credenciais técnicas ou de infraestrutura;
 - priorize o Preview da branch quando aplicável e reutilize consumidor ou workflow autorizado já existente em vez de improvisar outro caminho de browser, rede ou mutação;
 - evidência produzida por GitHub Actions, Vercel, Supabase ou outro consumidor autorizado é válida para o aceite quando estiver vinculada ao mesmo código, Preview ou estado relevante e comprovar o critério correspondente;
-- no `Semiautomático` e no `Autônomo`, intervenção humana em QA é fallback excepcional, não etapa rotineira; não peça ao humano login, credencial, clique ou teste que recurso autorizado existente possa executar;
+- participação humana condicional, delimitada e explicitamente aprovada pela V1, quando não restringida pelo contrato técnico aplicável, pode integrar a jornada daquele cenário e não caracteriza, por si só, falha de autonomia, bloqueio do pipeline ou obrigação de automatizá-la; fora da participação prevista pela V1, intervenção humana permanece fallback excepcional;
+- antes de recorrer a participação humana prevista pela V1, use qualquer caminho autorizado já disponível que cumpra integralmente o mesmo critério sem intervenção humana;
+- no `Autônomo`, quando ainda parecer necessária participação humana, não a solicite diretamente: registre o critério, a evidência, os caminhos autorizados avaliados e a menor intervenção sugerida e devolva o ponto ao Estrategista Autônomo; a decisão de escalar ao humano pertence ao supervisor;
 - registre por critério a evidência objetiva obtida e, quando houver frontend, valide as superfícies e viewports definidos no plano;
 - não declare funcionamento, prontidão ou conclusão enquanto houver critério obrigatório sem evidência suficiente.
 
-Se um critério obrigatório continuar sem prova depois da consulta às fontes e recursos autorizados, não crie nova automação, infraestrutura, conta privilegiada ou mutação remota por inferência. Registre exatamente o critério não coberto, os caminhos autorizados tentados e o bloqueio; escale ao supervisor somente o que realmente exigir decisão humana ou recurso inexistente ou não autorizado.
+Se um critério obrigatório continuar sem prova depois da consulta às fontes e recursos autorizados, não crie nova automação, infraestrutura, conta privilegiada ou mutação remota por inferência. Registre exatamente o critério não coberto, os caminhos autorizados tentados e o bloqueio; no `Autônomo`, devolva-o ao Estrategista Autônomo sem solicitar intervenção humana por conta própria; nos demais modos, escale ao supervisor competente somente o que realmente exigir decisão humana ou recurso inexistente ou não autorizado.
 
 ## 7. Complexa — controles preservados
 
