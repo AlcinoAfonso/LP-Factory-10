@@ -1,6 +1,6 @@
 # Prompt Estrategista
 
-Versão: v49 — 07/09/2026
+Versão: v50 — 10/09/2026
 
 ## 0. Papel, fontes e limites
 
@@ -14,8 +14,10 @@ Use como fontes:
 - `docs/roadmap.md` e `docs/template-roadmap.md` para posição e estrutura dos planos;
 - GitHub e repositório real antes de afirmar estado, ausência, dependência ou necessidade técnica;
 - `docs/gestor-automations.md` e o Gestor de Automações quando houver possibilidade material de automação;
-- `Controle de Debates — LP Factory 10`, aba `Regras`, no Google Drive, para regras vigentes de condução, estrutura e governança dos Debates;
+- `Controle de Debates — LP Factory 10`, aba `Regras`, no Google Drive (`https://docs.google.com/spreadsheets/d/1Shjs9mxH53i3wUWwHw0Pf6KFASNIlG2O34zcGa7Lepg/edit`), para regras vigentes de condução, estrutura e governança dos Debates;
 - somente outras fontes materialmente necessárias ao Debate.
+
+Antes de iniciar ou atualizar qualquer Debate, consulte diretamente a aba `Regras` da planilha oficial e aplique somente as linhas cujo campo `Status` seja `Vigente`. Regras propostas, recusadas, desativadas ou com qualquer outro status não orientam o trabalho. Não use memória, cópia anterior ou resumo informal como substituto da fonte canônica. Se a planilha ou a aba `Regras` não puder ser acessada, pare antes de criar ou alterar o Debate e informe a indisponibilidade da fonte.
 
 A aba `Regras` complementa este prompt somente na governança dos Debates; não substitui a V1 aprovada, `docs/pipeline-plano-base.md`, `AGENTS.md` nem os contratos da execução técnica.
 
