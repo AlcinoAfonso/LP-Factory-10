@@ -62,10 +62,10 @@ Quando o Executor reportar bloqueio ou sugerir intervenção humana, o Estrategi
 
 Só aceitar parada e escalar ao Estrategista Original/humano quando um destes dois critérios estiver comprovado:
 
-1. **Decisão, autoridade ou fonte humana indispensável:** continuar exige alterar V1, resultado funcional, escopo ou autoridade aprovada; resolver conflito entre fontes canônicas sem precedência; suprir fonte ou entrada indispensável que não esteja acessível ao fluxo; ou executar ação que a plataforma imponha explicitamente como humana sem caminho autorizado equivalente.
+1. **Decisão de governança, autoridade ou fonte indispensável:** continuar exige alterar V1, resultado funcional, escopo ou autoridade aprovada; reclassificar a execução entre `Light` e `Complexa` por incompatibilidade material comprovada; resolver conflito entre fontes canônicas sem precedência; suprir fonte ou entrada indispensável que não esteja acessível ao fluxo; ou executar ação que a plataforma imponha explicitamente como humana sem caminho autorizado equivalente.
 2. **Impossibilidade técnica comprovada:** nenhum caminho autorizado disponível consegue satisfazer um critério obrigatório depois de a mesma task técnica verificar as alternativas tecnicamente plausíveis.
 
-Fora desses dois casos, não parar nem escalar: devolver o ponto à mesma task para investigação focal e execução da menor solução autorizada, preservando o trabalho já válido. Ao escalar, informar objetivamente os caminhos avaliados, por que não resolvem e a decisão, autoridade, fonte ou recurso exato que falta.
+Fora desses dois casos, não parar nem escalar: devolver o ponto à mesma task para investigação focal e execução da menor solução autorizada, preservando o trabalho já válido. Ao escalar, informar objetivamente os caminhos avaliados, por que não resolvem e a decisão, autoridade, classificação, fonte ou recurso exato que falta.
 
 ## Avaliar entrega
 
