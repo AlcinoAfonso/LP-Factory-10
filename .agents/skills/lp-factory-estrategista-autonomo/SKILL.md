@@ -58,7 +58,7 @@ Correções e QA pré-merge retornam à mesma task técnica e ao mesmo PR do pla
 
 ## Tratar bloqueios durante a execução
 
-Quando o Executor reportar bloqueio ou sugerir intervenção humana, o Estrategista Autônomo deve primeiro tentar eliminar essa necessidade coordenando a mesma task técnica, sem assumir implementação nem criar segunda task, branch ou PR.
+Quando o Executor reportar bloqueio ou sugerir intervenção humana, o Estrategista Autônomo deve primeiro tentar eliminar essa necessidade coordenando a mesma task técnica, sem assumir implementação nem criar segunda task. Antes do merge, preserve a mesma branch e o mesmo PR; depois de merge já consumado, eventual correção material que exija código permanece na mesma task e pode seguir em nova branch/PR somente como próxima etapa, conforme `AGENTS.md` e o fluxo corretivo definido pelo supervisor.
 
 Só aceitar parada e escalar ao Estrategista Original/humano quando um destes dois critérios estiver comprovado:
 
@@ -86,7 +86,7 @@ Entrega técnica completa não conclui o plano enquanto houver correção, QA, c
 - A liberação do Estrategista Autônomo é a autorização definida pelo fluxo para o merge; não pedir segunda autorização humana rotineira.
 - Depois de liberar, devolver a ordem à mesma task técnica e ao mesmo PR para que o Executor execute o merge remoto conforme `AGENTS.md`, realize as validações pós-merge exigidas e atualize o Debate correspondente com conclusão final, PR, merge commit e evidências.
 - O Estrategista Autônomo não executa o merge; aguarda o recibo final do Executor e confirma que ele corresponde ao PR liberado, ao merge commit produzido, às validações posteriores e ao Debate atualizado.
-- Se o Executor devolver falha de validação pós-merge ou impossibilidade de atualizar o Debate por recurso autorizado, manter o plano aberto e seus dependentes bloqueados e coordenar somente o delta necessário ou a escalada material prevista nos contratos competentes.
+- Se o Executor devolver falha de validação pós-merge ou impossibilidade de atualizar o Debate por recurso autorizado, manter o plano aberto e seus dependentes bloqueados e coordenar somente o delta necessário ou a escalada material prevista nos contratos competentes; quando a correção pós-merge exigir código, preservar a mesma task e coordenar a próxima etapa em nova branch/PR conforme `AGENTS.md`, sem recriar a task.
 - Não liberar merge diante de exceção material, decisão pendente ou alteração sem origem legítima.
 - Concluir o plano somente após o recibo final sem pendência material; então liberar dependentes.
 - Concluir o conjunto somente quando todos os planos e dependências aplicáveis estiverem encerrados.
