@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "start": "node run.mjs",
-    "check": "node --check run.mjs"
+    "check": "node --check run.mjs && node validation-cases.mjs"
   },
   "dependencies": {
     "pg": "^8.16.0"

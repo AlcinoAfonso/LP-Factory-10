@@ -16,6 +16,7 @@ import {
 import type { LandingPageKnowledgeResolutionValue } from "./contracts";
 import { completeLandingPageKnowledge } from "./dynamic-research";
 import { buildLandingPageDynamicResearchPrompt } from "./dynamic-research-prompt";
+import { lpFactoryOpenAiCostContext } from "../../../openai-costs";
 
 type ValidationCase = Readonly<{ name: string; run: () => Promise<void> }>;
 
@@ -450,6 +451,8 @@ function input(
     resolution: dynamicResolution(),
     requestId: "request_e20_7_4",
     safetyIdentifier: "account_hash_e20_7_4",
+    financialContext: lpFactoryOpenAiCostContext,
+    executionOrigin: "runtime",
   } as const;
 }
 

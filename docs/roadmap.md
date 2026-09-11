@@ -2240,10 +2240,38 @@
 
 21.5.1 Objetivo e status
 - Objetivo: atribuir e reconciliar o custo do uso programático da OpenAI por universo, conta quando comprovável, workload, execução, operação, modelo e effort, preservando o total oficial como autoridade e a série E21.4 como histórico congelado.
-- Status: plano-base v2 aprovado tecnicamente; implementação ainda não iniciada e condicionada ao checkpoint `plan-v2-approved`.
+- Status: plano-base v2 aprovado tecnicamente; E21.5.3 implementada no repositório e pendente de gate técnico, merge humano, apply e ativação controlada.
+
+21.5.2 Registros do recorte
+- Banco:
+  - `openai_cost_executions`
+  - `openai_cost_operations`
+  - `openai_cost_coverage`
+  - `start_openai_cost_execution_v1`
+  - `finish_openai_cost_execution_v1`
+  - `start_openai_cost_operation_v1`
+  - `finish_openai_cost_operation_v1`
+  - `register_openai_cost_coverage_v1`
+- Repositório:
+  - `lib/openai-costs/active-contracts.ts`
+  - `lib/openai-costs/ingestion.ts`
+  - `lib/openai-costs/recorder.ts`
+  - `lib/openai-costs/adapters/activeCostTrackingAdapter.ts`
+  - `app/api/internal/openai-costs/route.ts`
+  - `automations/supabase-inspect/costRecorder.mjs`
+  - `automations/supabase-inspect/responsesClient.mjs`
+  - `.github/workflows/pipeline-supabase-inspect.yml`
+  - `supabase/migrations/20260911150000_e21_5_3_openai_active_cost_tracking.sql`
+  - `supabase/tests/e21_5_3_openai_active_cost_tracking.test.sql`
+  - `supabase/snippets/e21_5_3_openai_active_cost_tracking_verify.sql`
+- Updates:
+  - `vercel#32`
+- Referências:
+  - `docs/lousa-plano-base-e21-5.md`
+  - `docs/matriz-consolidacao-e21-5.md`
 
 21.5.3 Atribuição e evidência por execução
-- Status: planejada.
+- Status: implementada no repositório; pendente de gate técnico, merge humano, apply, configuração externa e validação hospedada.
 - Conteúdo:
   - criar ledger ativo separado de `openai_lp_*`, com execução funcional, operação cobrável, retry e replay idempotente;
   - exigir universo e contexto econômico explícitos, mantendo Cliente sem conta comprovável como não atribuído e sem heurística;

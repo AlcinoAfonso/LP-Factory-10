@@ -11,6 +11,14 @@ import {
   type OpenAiWorkloadUsage,
   type ResolvedOpenAiProductWorkload,
 } from "../../openai-workloads";
+import {
+  newOpenAiCostId,
+  openAiCostRecorder,
+  isOpenAiActiveCostTrackingEnabled,
+  type OpenAiCostEconomicContext,
+  type OpenAiCostExecutionOrigin,
+  type OpenAiCostRecorder,
+} from "../../openai-costs";
 
 export type OpenAiResponsesParser<T> = (
   payload: unknown,
@@ -40,12 +48,17 @@ export type OpenAiResponsesInput<T> = Readonly<{
   contractVersion?: number;
   timeoutMs?: number;
   signal?: AbortSignal;
+  financialContext: OpenAiCostEconomicContext;
+  executionOrigin: OpenAiCostExecutionOrigin;
 }>;
 
 export type OpenAiResponsesDependencies = Readonly<{
   fetchImpl?: typeof fetch;
   emitEvent?: (event: OpenAiWorkloadEvent) => void;
   now?: () => number;
+  nowIso?: () => string;
+  costRecorder?: OpenAiCostRecorder;
+  createId?: () => string;
 }>;
 
 export type OpenAiResponsesResult<T> =
@@ -111,6 +124,70 @@ export async function requestOpenAiResponses<T>(
 
   const fetchImpl = dependencies.fetchImpl ?? fetch;
   const now = dependencies.now ?? Date.now;
+  const nowIso = dependencies.nowIso ?? (() => new Date().toISOString());
+  const recorder = dependencies.costRecorder ?? openAiCostRecorder;
+  const createId = dependencies.createId ?? newOpenAiCostId;
+  const executionId = createId();
+  const operationId = createId();
+  const financialStartedAt = nowIso();
+  const financialTrackingStarted = environment !== "unknown" &&
+    (Boolean(dependencies.costRecorder) || isOpenAiActiveCostTrackingEnabled(environment));
+  if (financialTrackingStarted) {
+    await recorder.startExecution({
+      executionId,
+      workload: input.configuration.id,
+      environment,
+      executionOrigin: input.executionOrigin,
+      economicContext: input.financialContext,
+      startedAt: financialStartedAt,
+    });
+    await recorder.startOperation({
+      operationId,
+      executionId,
+      sequence: 1,
+      model: input.configuration.model,
+      reasoningEffort: input.configuration.reasoningEffort,
+      configurationSource: input.configuration.source,
+      configurationRevision: input.configuration.revision,
+      promptVersion: input.promptVersion,
+      contractVersion: input.contractVersion?.toString(),
+      requestId: input.requestId,
+      startedAt: financialStartedAt,
+    });
+  }
+  const finishFinancial = async (input: Readonly<{
+    result: "success" | "failure";
+    failureCategory?: OpenAiWorkloadFailureCategory | null;
+    httpStatus?: number | null;
+    responseId?: string | null;
+    providerRequestId?: string | null;
+    providerErrorCode?: string | null;
+    providerErrorType?: string | null;
+    usage?: unknown;
+    webSearchCallCount?: number | null;
+  }>) => {
+    if (!financialTrackingStarted) return;
+    const finishedAt = nowIso();
+    await recorder.finishOperation({
+      operationId,
+      result: input.result,
+      failureCategory: input.failureCategory,
+      httpStatus: input.httpStatus,
+      providerResponseId: input.responseId,
+      providerRequestId: input.providerRequestId,
+      providerErrorCode: input.providerErrorCode,
+      providerErrorType: input.providerErrorType,
+      usage: normalizeOpenAiResponseUsage(input.usage),
+      webSearchCallCount: input.webSearchCallCount,
+      finishedAt,
+    });
+    await recorder.finishExecution({
+      executionId,
+      result: input.result,
+      failureCategory: input.failureCategory,
+      finishedAt,
+    });
+  };
   const startedAt = now();
   const controller = new AbortController();
   const abortFromParent = () => controller.abort();
@@ -144,6 +221,13 @@ export async function requestOpenAiResponses<T>(
         providerRequestId,
         ...providerError,
       }, "http_error"));
+      await finishFinancial({
+        result: "failure",
+        failureCategory: "http_error",
+        httpStatus: response.status,
+        providerRequestId,
+        ...providerError,
+      });
       return { ok: false, kind: "http_error", reason: `openai_http_${response.status}` };
     }
 
@@ -156,6 +240,11 @@ export async function requestOpenAiResponses<T>(
         latencyMs,
         providerRequestId,
       }, "invalid_response"));
+      await finishFinancial({
+        result: "failure",
+        failureCategory: "invalid_response",
+        providerRequestId,
+      });
       return { ok: false, kind: "invalid_response", reason: "openai_invalid_response" };
     }
 
@@ -174,6 +263,15 @@ export async function requestOpenAiResponses<T>(
         providerErrorCode: providerError?.code,
         providerErrorType: providerError?.type,
       }, "provider_error"));
+      await finishFinancial({
+        result: "failure",
+        failureCategory: "provider_error",
+        responseId: nonEmptyString(responseRecord?.id),
+        providerRequestId,
+        providerErrorCode: nonEmptyString(providerError?.code),
+        providerErrorType: nonEmptyString(providerError?.type),
+        usage: responseRecord?.usage,
+      });
       return {
         ok: false,
         kind: "provider_error",
@@ -190,6 +288,14 @@ export async function requestOpenAiResponses<T>(
         ...responseMetadata,
         ...parsed.telemetry,
       }, parsed.kind));
+      await finishFinancial({
+        result: "failure",
+        failureCategory: parsed.kind,
+        responseId: nonEmptyString(responseRecord?.id),
+        providerRequestId,
+        usage: responseRecord?.usage,
+        webSearchCallCount: parsed.telemetry?.webSearchCallCount,
+      });
       return { ok: false, kind: parsed.kind, reason: parsed.reason };
     }
 
@@ -198,6 +304,13 @@ export async function requestOpenAiResponses<T>(
       ...responseMetadata,
       ...("telemetry" in parsed ? parsed.telemetry : undefined),
     }));
+    await finishFinancial({
+      result: "success",
+      responseId: nonEmptyString(responseRecord?.id),
+      providerRequestId,
+      usage: responseRecord?.usage,
+      webSearchCallCount: parsed.telemetry?.webSearchCallCount,
+    });
     return {
       ok: true,
       value: parsed.value,
@@ -215,6 +328,7 @@ export async function requestOpenAiResponses<T>(
       ...eventContext,
       latencyMs: now() - startedAt,
     }, failureCategory));
+    await finishFinancial({ result: "failure", failureCategory });
     return {
       ok: false,
       kind: failureCategory,
@@ -231,8 +345,8 @@ async function readProviderErrorMetadata(response: Response) {
     const payload = asRecord(await response.clone().json());
     const error = asRecord(payload?.error);
     return {
-      providerErrorCode: error?.code,
-      providerErrorType: error?.type,
+      providerErrorCode: nonEmptyString(error?.code),
+      providerErrorType: nonEmptyString(error?.type),
     };
   } catch {
     return {};

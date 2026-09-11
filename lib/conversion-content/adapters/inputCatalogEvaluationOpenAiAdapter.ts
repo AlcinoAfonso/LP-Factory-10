@@ -9,6 +9,7 @@ import type {
   ResolvedOpenAiProductWorkload,
 } from "../../openai-workloads";
 import { requestOpenAiResponses } from "./openAiResponsesAdapter";
+import { lpFactoryOpenAiCostContext } from "../../openai-costs";
 
 export type InputCatalogEvaluationOpenAiInput = Readonly<{
   apiKey?: string;
@@ -17,6 +18,7 @@ export type InputCatalogEvaluationOpenAiInput = Readonly<{
   request: InputCatalogEvaluationProviderRequest;
   requestId: string;
   safetyIdentifier: string;
+  executionOrigin?: "runtime" | "administrative_proof";
 }>;
 
 export type InputCatalogEvaluationOpenAiDependencies = Readonly<{
@@ -47,6 +49,8 @@ export async function evaluateInputCatalogWithOpenAi(
       contractVersion: INPUT_CATALOG_EVALUATION_SCHEMA_VERSION,
       timeoutMs: dependencies.timeoutMs,
       signal: dependencies.signal,
+      financialContext: lpFactoryOpenAiCostContext,
+      executionOrigin: input.executionOrigin ?? "runtime",
       request: {
         instructions: input.request.prompt.instructions,
         input: input.request.prompt.input,

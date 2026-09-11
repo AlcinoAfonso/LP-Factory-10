@@ -3,6 +3,7 @@ import { requestOpenAiResponses } from "@/conversion-content/adapters/openAiResp
 import type { LandingPageKnowledgeResolutionValue } from "@/conversion-content/landing-page/knowledge-resolution";
 import type { OpenAiManagedWorkloadEnvironment, ResolvedOpenAiProductWorkload } from "@/openai-workloads";
 import type { OpenAiCandidateProofAttempt } from "./proofCore";
+import { lpFactoryOpenAiCostContext } from "@/openai-costs";
 
 /** Admin lifecycle canary: synthetic data, no persistence, no runtime revision override. */
 export async function proveDynamicMarketResearch(
@@ -16,6 +17,8 @@ export async function proveDynamicMarketResearch(
     configuration, environment, apiKey, requestId,
     resolution: proofResolution,
     safetyIdentifier: "e20_7_admin_operational_canary",
+    financialContext: lpFactoryOpenAiCostContext,
+    executionOrigin: "administrative_proof",
   });
   if (!prepared.ok) return { ok: false, code: "configuration" };
   const result = await requestOpenAiResponses(prepared.value, dependencies);

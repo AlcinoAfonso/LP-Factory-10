@@ -36,6 +36,11 @@
 • Secrets e variáveis conhecidos:
 • `OPENAI_API_KEY`: usado por automações/CI que chamam OpenAI. Consumidor atual: `pipeline-supabase-inspect`.
 • `SUPABASE_DB_URL_READONLY`: conexão read-only para inspeções/automação de banco. Consumidor atual: `pipeline-supabase-inspect`.
+• `OPENAI_COST_INGESTION_HMAC_SECRET`: secret de assinatura do ingresso financeiro do `pipeline-supabase-inspect`; configuração externa pendente antes da ativação.
+• `OPENAI_COST_INGESTION_ENABLED`: variável não sensível que libera o envio financeiro do `pipeline-supabase-inspect`; deve permanecer diferente de `true` até o apply e a validação do endpoint.
+• `OPENAI_COST_INGESTION_URL`: URL HTTPS do endpoint interno do Core; configuração externa pendente.
+• `OPENAI_COST_INGESTION_ENVIRONMENT`: ambiente explícito enviado pelo workflow, restrito a `production`, `preview` ou `development`; configuração externa pendente.
+• `OPENAI_COST_INGESTION_PROTOCOL_VERSION`: versão do protocolo aceito pelo cliente do `supabase_inspect`; configuração externa pendente.
 • `MAILBOX_EMAIL`: e-mail institucional preservado para o futuro Operador Institucional Autônomo de QA da E17.9.3; sem consumidor operacional vigente após a E22.6.
 • `MAILBOX_PASSWORD`: senha/app password da mailbox preservada para o futuro Operador Institucional Autônomo de QA da E17.9.3; sem consumidor operacional vigente após a E22.6.
 • `SUPABASE_ACCESS_TOKEN`: token usado pelo workflow de apply de migrations Supabase.
@@ -199,6 +204,31 @@
 • Série preservada: a data de corte, a cobertura e os eventos anteriores permanecem somente leitura para o histórico congelado e a reconciliação administrativa.
 • Regra operacional: não é necessário remover a variável da Vercel neste recorte e nenhum novo consumidor deve ser criado sem decisão própria.
 • Valor real: não versionar.
+
+• `OPENAI_ACTIVE_COST_TRACKING_ENABLED`
+• Finalidade: gate server-side independente por ambiente do ledger ativo transversal de custos OpenAI.
+• Escopo: Preview e Production do Core.
+• Estado: configuração externa pendente; ausência, vazio ou valor diferente do literal `true` mantém a captura financeira desligada sem bloquear o workload.
+• Progressão: ativar primeiro em Preview após apply e verificação de Security Controls; Production exige validação própria e redeploy do ambiente.
+• Classificação: Config, não Secret.
+
+• `OPENAI_COST_INGESTION_ENABLED`
+• Finalidade: gate server-side do endpoint interno que recebe fatos assinados do `supabase_inspect`.
+• Escopo: Preview e Production do Core, alinhado ao ambiente do workflow chamador.
+• Estado: configuração externa pendente e desligada por padrão.
+• Classificação: Config, não Secret.
+
+• `OPENAI_COST_INGESTION_HMAC_SECRET`
+• Finalidade: segredo exclusivo para autenticar envelopes financeiros do GitHub Actions no endpoint interno do Core.
+• Escopo: GitHub Actions e ambiente correspondente do Core; usar valores independentes por ambiente.
+• Estado: configuração externa pendente; valor real não versionar.
+• Classificação: Secret.
+
+• `OPENAI_COST_INGESTION_ENVIRONMENT`
+• Finalidade: validar no Core o ambiente declarado pelo `supabase_inspect`; a revisão de referência permanece code-owned no inventário E21.
+• Escopo: Preview e Production.
+• Estado: configuração externa pendente.
+• Classificação: Config, não Secret.
 
 • `OPENAI_OPERATIONAL_CONFIG_ENABLED`
 • Finalidade: gate server-side temporário do cutover da configuração operacional dinâmica dos workloads OpenAI de produto.
