@@ -142,6 +142,7 @@
   - `id uuid` como identidade idempotente da execução funcional;
   - `workload text`, validado contra vocabulário governado por E21;
   - `environment text` em `production`, `preview` ou `development`;
+  - `execution_origin text` em `runtime` ou `administrative_proof`, imutável e sem criar workload paralelo;
   - `universe text` em `lp_factory` ou `client`;
   - `attribution_status text` em `attributed` ou `unassigned`;
   - `account_id uuid null`, FK para `public.accounts(id)` com `ON UPDATE RESTRICT ON DELETE RESTRICT`;
@@ -155,7 +156,8 @@
   - `retry_of_operation_id uuid null`, referindo uma operação anterior da mesma execução;
   - modelo, `reasoning_effort`, fonte e revisão da configuração efetiva, versões de prompt/contrato quando existirem e IDs técnicos sanitizados necessários à correlação;
   - usage normalizado em colunas numéricas não negativas: input, cached input, cache write, output, reasoning e total;
-  - `pricing_version`, `pricing_effective_at` e snapshot estritamente validado da regra aplicada;
+  - `web_search_call_count` não negativo, modalidade/versionamento da ferramenta e preço por chamada quando a operação usar Web Search;
+  - `pricing_version`, `pricing_effective_at` e snapshot estritamente validado das regras de tokens e unidades cobradas aplicadas;
   - `cost_status` em `calculated` ou `unavailable`, `cost_unavailable_reason` sanitizado e `cost_usd numeric null` com coerência obrigatória;
   - `started_at`, `finished_at null`, `result null`, categoria/status/código/tipo de falha sanitizados;
   - unicidade `(execution_id, sequence)` e finalização única.
@@ -211,6 +213,8 @@
 - `app/api/internal/openai-costs/route.ts` aceita somente envelope versionado, timestamp recente, nonce/IDs idempotentes e assinatura HMAC sobre bytes canônicos.
 - Rejeitar método, content type, versão, timestamp expirado/futuro, replay divergente, assinatura inválida ou payload fora do schema antes de qualquer escrita.
 - Comparar assinatura em tempo constante e limitar tamanho do body; não registrar assinatura nem payload bruto.
+- O envelope declara `environment` a partir da Config allowlisted `OPENAI_COST_INGESTION_ENVIRONMENT`, além de modelo efetivo, origem/revisão `github_actions_default_reference` e `reasoningEffort = not_applicable`; o ingresso valida esses valores contra o contrato catalogado de `supabase_inspect`.
+- Somente o modo do workflow que realiza chamada à Responses API cria execução financeira; SQL batch sem chamada OpenAI não cria execução ou operação.
 - O endpoint converte o envelope validado em chamadas ao mesmo recorder/adapters do Core; não contém regra de preço duplicada.
 - `automations/supabase-inspect/costRecorder.mjs` encapsula canonicalização, assinatura, timeout e envio; falha financeira é registrada no workflow e não concede acesso adicional ao banco.
 
@@ -222,6 +226,8 @@
 - Antes de incluir uma combinação, confirmar a tarifa na fonte oficial vigente. Tarifa ausente, divergente ou unidade de usage insuficiente não recebe aproximação.
 - O terminal da operação seleciona a regra vigente no instante da chamada, valida usage sem sobreposição e persiste versão, vigência e snapshot da regra aplicada.
 - Entrada ordinária é derivada sem sobreposição entre input, cached input e cache write; reasoning já incluído em output não é cobrado novamente.
+- Web Search é unidade cobrável própria por chamada além dos tokens: o cálculo valida a quantidade, modalidade e regra vigente, soma uma ou duas chamadas quando ocorrerem e preserva essas unidades no snapshot.
+- Se faltar tarifa ou unidade necessária de qualquer componente cobrável da operação, o custo integral fica `unavailable`; não publicar subtotal parcial de tokens ou ferramenta.
 - O cálculo usa aritmética decimal exata, sem arredondamento intermediário; `decimal.ts` permanece a primitiva compartilhada.
 - Histórico nunca é reprecificado por tarifa corrente. Correções futuras de pricing exigem nova versão prospectiva, sem UPDATE retroativo.
 
@@ -230,7 +236,8 @@
 - O read model agrega por universo, conta quando aplicável, workload, execução e operação, preservando retries, modelo, effort, baseline opcional, status de custo e resultado.
 - Operação `unavailable` permanece contada e visível, mas fora do subtotal calculável.
 - Execução não atribuída permanece em grupo explícito de exceções e não entra em conta nem em LP Factory por conveniência.
-- Cobertura deriva dos cortes por ambiente/workload e das falhas observáveis; ativação parcial nunca é chamada de cobertura global.
+- Cobertura deriva somente dos cortes imutáveis por ambiente/workload e dos estados persistidos de operações pendentes ou indisponíveis; logs isolados de falha anterior à persistência não integram o read model e aparecem apenas como risco de cobertura refletido pela reconciliação.
+- Ativação parcial nunca é chamada de cobertura global; falha do recorder que não chegou ao ledger não recebe contagem inventada.
 - Leitura grande pagina integralmente por keyset, detecta cursor repetido/regressivo, valida cada página e falha sem publicar agregado incompleto como completo.
 
 ### 11.3. Composição financeira global
@@ -268,8 +275,9 @@
 ### 13.1. Configuração mínima — `vercel#32`
 
 - `OPENAI_ACTIVE_COST_TRACKING_ENABLED`: Config server-side por ambiente; somente o literal `true` habilita escrita ativa e nasce desligado.
+- `OPENAI_COST_INGESTION_ENABLED`: Config não secreta do workflow; somente o literal `true` habilita o envio do `supabase_inspect` e nasce desligado.
 - `OPENAI_COST_INGESTION_HMAC_SECRET`: Secret independente por ambiente/ingresso, disponível somente ao verificador Core e ao consumidor GitHub correspondente.
-- `OPENAI_COST_INGESTION_URL`, `OPENAI_COST_INGESTION_PROTOCOL_VERSION` e demais parâmetros não sensíveis de tolerância/gate: Config na Vercel ou variável não secreta no GitHub, com escopo mínimo.
+- `OPENAI_COST_INGESTION_URL`, `OPENAI_COST_INGESTION_PROTOCOL_VERSION`, `OPENAI_COST_INGESTION_ENVIRONMENT` e demais parâmetros não sensíveis de tolerância/gate: Config na Vercel ou variável não secreta no GitHub, com escopo mínimo e valor allowlisted.
 - Todo material de assinatura/verificação é Secret; URL, versão, tolerância temporal e gates não sensíveis são Config.
 - Nenhum valor é copiado entre ambientes por rotina, versionado, impresso, registrado em log, devolvido ao client ou incluído em evidência.
 - Alteração de valor consumido pelo Core exige redeploy e validação do ambiente afetado.
@@ -280,9 +288,9 @@
 - Pré-merge: migration, código, testes, docs e UI no mesmo PR; gate ativo desligado; nenhuma mutação remota de schema ou secret.
 - Pré-merge quando autorizado: inspeção read-only, `supabase migration list --linked` e `supabase db push --linked --dry-run`.
 - Pós-merge: apply canônico automático da migration; snippet read-only; inspeção do Security Controls (`supa#2`); cadastro metadata-only das Configs/Secrets; redeploy dos ambientes afetados.
-- Ativar progressivamente o gate por ambiente e workload somente depois de schema, credencial e recorder estarem disponíveis.
-- Para cada unidade, executar smoke de sucesso e falha financeira fail-open; então registrar uma única data de corte de cobertura.
-- `supabase_inspect` só aponta para o ingresso depois que assinatura válida e rejeições de assinatura inválida, expirada e adulterada estiverem comprovadas.
+- Ativar `OPENAI_ACTIVE_COST_TRACKING_ENABLED` por ambiente somente depois de schema, credencial e recorder estarem disponíveis para os quatro workloads Core daquele ambiente; não alegar seletividade por workload inexistente.
+- Após o gate ambiental, executar smoke de sucesso e falha financeira fail-open de cada workload Core e registrar individualmente seu único corte de cobertura.
+- Ativar separadamente `OPENAI_COST_INGESTION_ENABLED` para `supabase_inspect` somente depois que ambiente/configuração catalogada, assinatura válida e rejeições de assinatura inválida, expirada e adulterada estiverem comprovados; após smoke real, registrar o corte desse workload.
 - QA final em Preview/Production comprova total oficial, ativo, legado, reconciliação, filtros, exceções, indisponibilidade, retries, acesso positivo e negativo e ausência de dados sensíveis.
 
 ## 14. Fases executáveis
@@ -293,11 +301,13 @@
 - Entregas: migration e RPCs; contratos ativos; adapters de escrita; recorder; instrumentação dos quatro runtimes Core e das provas administrativas; ingresso HMAC e cliente do `supabase_inspect`; gate/configuração documentados.
 - Critérios de aceite:
   - os cinco workloads catalogados têm produtor instrumentado;
+  - runtime e prova administrativa permanecem distinguíveis por `execution_origin`, sem workload paralelo;
   - Cliente com conta, Cliente sem atribuição e LP Factory respeitam checks e não usam heurística;
   - duas operações cobradas podem pertencer à mesma execução;
   - retry cobrado liga nova operação à anterior; replay de persistência não duplica;
   - falhas de start, finish, timeout e resposta inválida do recorder não mudam o resultado funcional;
   - workflow não recebe `service_role` nem DSN mutável;
+  - envelope do `supabase_inspect` valida ambiente, modelo, origem/revisão e effort não aplicável; SQL batch sem OpenAI não gera fato financeiro;
   - HMAC válida é aceita e inválida, expirada, futura ou adulterada é rejeitada;
   - migration não altera qualquer objeto `openai_lp_*`.
 
@@ -308,6 +318,8 @@
 - Critérios de aceite:
   - modelo, effort, usage, retry e baseline opcional permanecem rastreáveis por operação;
   - custo deriva somente de usage e snapshot de preço compatíveis;
+  - uma e duas chamadas de Web Search são cobradas como unidades próprias além dos tokens, sem sobreposição;
+  - ausência da tarifa de Web Search torna o custo integral da operação indisponível, sem subtotal parcial;
   - sem preço/usage produz `unavailable` e `cost_usd = null`, não zero;
   - história não é reprecificada;
   - paginação completa, decimal exato e cursor defensivo são comprovados;
@@ -335,7 +347,7 @@
 - Executar validadores focais da subseção e `npm run check` antes de cada gate do Analista.
 - Executar `git diff --check` e revisar `main..HEAD` e `main...HEAD` antes de publicação.
 - E21.5.3: testes unitários do recorder/protocolo/consumidores, teste SQL transacional e inspeção de que `openai_lp_*` não aparece no diff da migration.
-- E21.5.4: fixtures de Cliente, LP Factory, não atribuído, retry, replay, falha, custo indisponível, múltiplas páginas e decimal exato.
+- E21.5.4: fixtures de Cliente, LP Factory, não atribuído, retry, replay, falha, custo indisponível, Web Search com uma e duas chamadas, tarifa de ferramenta ausente, múltiplas páginas e decimal exato.
 - E21.5.5: validações de Server Action/DTO/componentes, papel positivo/negativo, desktop/mobile, teclado, foco, nome acessível, contraste e estados sem dependência exclusiva de cor.
 
 ### 15.2. Evidência hospedada e pós-merge
@@ -357,6 +369,10 @@
 | Recorder best-effort aguardado e fail-open | derivação técnica da V1 | `GE-E21.5-08`, incorporar |
 | Ingresso HMAC para `supabase_inspect` | derivação técnica da V1 | `GE-E21.5-04..05`, incorporar |
 | Pricing temporal e snapshot imutável | derivação técnica da V1 | `GE-E21.5-06`, incorporar |
+| Cobrança explícita de Web Search por chamada | derivação técnica da V1 | correção objetiva da Passagem 1; fechar toda unidade cobrável vigente |
+| Origem `runtime` ou `administrative_proof` | derivação técnica da V1 | correção objetiva da Passagem 1; distinguir prova sem workload paralelo |
+| Protocolo ambiental/configuração do `supabase_inspect` | derivação técnica da V1 | correção objetiva da Passagem 1; representar o workload operacional sem contar SQL batch |
+| Gates por ambiente/ingresso e cobertura persistida por workload | derivação técnica da V1 | correção objetiva da Passagem 1; remover seletividade e evidência não consumível |
 | Composição oficial + ativo + legado | derivação técnica da V1 | `GE-E21.5-07..09`, incorporar |
 | Classificação Secret/Config do ingresso | modernização técnica justificada | `vercel#32`, patch autossuficiente, impacto estrutural baixo |
 | WCAG 2.2 focal na superfície existente | modernização técnica justificada | `prod#17`, patch autossuficiente, impacto estrutural baixo |
