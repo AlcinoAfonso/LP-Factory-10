@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 07/09/2026
-• Versão: v1.5.220
+• Data: 11/09/2026
+• Versão: v1.5.221
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2235,6 +2235,35 @@
 - O smoke autenticado de Production aprovou leitura oficial, histórico congelado, reconciliação, cobertura parcial e bloqueio do papel comum após a evolução incremental do read model.
 - Permanecem limites explícitos: a RPC ainda materializa, ordena e aplica offset; não existe snapshot transacional entre páginas; a validação hospedada não comprova volume arbitrário nem ganho de tempo SQL.
 - Classificação financeira ampla, outros workloads, câmbio, cobrança, créditos e reconstrução histórica permanecem fora do escopo vigente.
+
+21.5 Controle ativo de custos OpenAI por workload e conta
+
+21.5.1 Objetivo e status
+- Objetivo: atribuir e reconciliar o custo do uso programático da OpenAI por universo, conta quando comprovável, workload, execução, operação, modelo e effort, preservando o total oficial como autoridade e a série E21.4 como histórico congelado.
+- Status: plano-base v2 aprovado tecnicamente; implementação ainda não iniciada e condicionada ao checkpoint `plan-v2-approved` no PR #921.
+
+21.5.3 Atribuição e evidência por execução
+- Status: planejada.
+- Conteúdo:
+  - criar ledger ativo separado de `openai_lp_*`, com execução funcional, operação cobrável, retry e replay idempotente;
+  - exigir universo e contexto econômico explícitos, mantendo Cliente sem conta comprovável como não atribuído e sem heurística;
+  - instrumentar os cinco workloads atuais por contrato financeiro comum, com recorder fail-open e ingresso assinado para `supabase_inspect` sem credencial mutável de banco;
+  - preservar RLS, grants mínimos, RPCs versionadas, transições terminais e gate desligado até o fluxo pós-merge.
+
+21.5.4 Cálculo e reconciliação de custos
+- Status: planejada.
+- Conteúdo:
+  - calcular cada operação somente com usage e unidades cobradas confirmadas, inclusive Web Search, usando pricing temporal versionado e snapshot imutável;
+  - manter custo indisponível distinto de zero e impedir subtotal parcial enganoso;
+  - agregar por universo, conta, workload, execução e operação e reconciliar `total oficial - subtotal ativo calculável - histórico legado`, sem clamp;
+  - usar paginação keyset e manter filtros internos sem alterar semanticamente o total oficial ou a reconciliação global.
+
+21.5.5 Visão administrativa de custos
+- Status: planejada.
+- Conteúdo:
+  - evoluir somente `/admin/custos-openai` para exibir total oficial, subtotal ativo calculável, histórico congelado, reconciliação, cobertura, não atribuídos, indisponibilidade, retries, modelo, effort e baseline opcional;
+  - preservar consulta sob demanda e acesso exclusivo de `platform_admin`, sem payload de negócio, prompt, resposta integral, PII ou secrets;
+  - validar filtros, atualização e detalhes em desktop e mobile, com teclado, foco visível, nomes acessíveis e estados que não dependam apenas de cor, sem alegar conformidade WCAG integral.
 
 22. E22 — Retirada controlada de ativos históricos
 - Objetivo: reduzir superfícies, dados, documentos e infraestrutura sem consumidor vigente, após auditoria explícita de dependências e sem criar substitutos antecipados.
