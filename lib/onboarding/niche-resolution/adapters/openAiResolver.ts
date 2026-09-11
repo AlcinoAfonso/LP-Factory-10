@@ -10,12 +10,22 @@ import {
   createOpenAiWorkloadFailureEvent,
   createOpenAiWorkloadSuccessEvent,
   emitOpenAiWorkloadEvent,
+  normalizeOpenAiResponseUsage,
   resolveOpenAiProductWorkload,
   resolveOpenAiWorkloadEnvironment,
   type OpenAiWorkloadEnvironment,
   type OpenAiWorkloadEvent,
+  type OpenAiWorkloadFailureCategory,
   type OpenAiWorkloadResolverDependencies,
 } from "../../../openai-workloads";
+import {
+  newOpenAiCostId,
+  openAiCostRecorder,
+  isOpenAiActiveCostTrackingEnabled,
+  type OpenAiCostEconomicContext,
+  type OpenAiCostExecutionOrigin,
+  type OpenAiCostRecorder,
+} from "../../../openai-costs";
 
 const OPENAI_RESPONSES_ENDPOINT = "https://api.openai.com/v1/responses";
 const MAX_AI_OPTIONS = 3;
@@ -76,6 +86,9 @@ type OpenAiResolverDependencies = Readonly<{
   now?: () => number;
   environment?: OpenAiWorkloadEnvironment;
   workloadResolver?: OpenAiWorkloadResolverDependencies;
+  costRecorder?: OpenAiCostRecorder;
+  createId?: () => string;
+  nowIso?: () => string;
 }>;
 
 const AI_NICHE_RESOLUTION_SCHEMA = {
@@ -153,6 +166,8 @@ export async function resolveNicheWithOpenAi(input: {
   decision: DeterministicMatchDecision;
   candidates: TaxonMatchCandidate[];
   apiKey?: string;
+  financialContext: OpenAiCostEconomicContext;
+  executionOrigin?: OpenAiCostExecutionOrigin;
 }, dependencies: OpenAiResolverDependencies = {}): Promise<ResolveAiNicheResolutionResult> {
   if (!shouldResolveNicheWithAi(input.decision)) {
     return {
@@ -207,6 +222,55 @@ export async function resolveNicheWithOpenAi(input: {
 
   const fetchImpl = dependencies.fetchImpl ?? fetch;
   const now = dependencies.now ?? Date.now;
+  const recorder = dependencies.costRecorder ?? openAiCostRecorder;
+  const createId = dependencies.createId ?? newOpenAiCostId;
+  const nowIso = dependencies.nowIso ?? (() => new Date().toISOString());
+  const financialContext = input.financialContext;
+  const executionId = createId();
+  const operationId = createId();
+  const financialStartedAt = nowIso();
+  const financialTrackingStarted = Boolean(financialContext) && environment !== "unknown" &&
+    (Boolean(dependencies.costRecorder) || isOpenAiActiveCostTrackingEnabled(environment));
+  if (financialContext && environment !== "unknown" && financialTrackingStarted) {
+    await recorder.startExecution({
+      executionId,
+      workload: workload.id,
+      environment,
+      executionOrigin: input.executionOrigin ?? "runtime",
+      economicContext: financialContext,
+      startedAt: financialStartedAt,
+    });
+    await recorder.startOperation({
+      operationId,
+      executionId,
+      sequence: 1,
+      model: workload.model,
+      reasoningEffort: workload.reasoningEffort,
+      configurationSource: workload.source,
+      configurationRevision: workload.revision,
+      contractVersion: AI_NICHE_RESOLUTION_SCHEMA_VERSION.toString(),
+      startedAt: financialStartedAt,
+    });
+  }
+  const finishFinancial = async (
+    result: "success" | "failure",
+    failureCategory: OpenAiWorkloadFailureCategory | null,
+    data?: ResponsesApiResponse,
+    httpStatus?: number,
+  ) => {
+    if (!financialTrackingStarted) return;
+    const finishedAt = nowIso();
+    await recorder.finishOperation({
+      operationId,
+      result,
+      failureCategory,
+      httpStatus,
+      providerResponseId: typeof data?.id === "string" ? data.id : null,
+      usage: normalizeOpenAiResponseUsage(data?.usage),
+      finishedAt,
+    });
+    await recorder.finishExecution({ executionId, result, failureCategory, finishedAt });
+  };
   const startedAt = now();
 
   try {
@@ -240,6 +304,7 @@ export async function resolveNicheWithOpenAi(input: {
         ...eventContext,
         latencyMs: now() - startedAt,
       }, "http_error"));
+      await finishFinancial("failure", "http_error", undefined, response.status);
       return {
         ok: false,
         status: "failed",
@@ -257,6 +322,7 @@ export async function resolveNicheWithOpenAi(input: {
         ...eventContext,
         latencyMs: now() - startedAt,
       }, "invalid_response"));
+      await finishFinancial("failure", "invalid_response");
       return {
         ok: false,
         status: "failed",
@@ -271,6 +337,7 @@ export async function resolveNicheWithOpenAi(input: {
         ...eventContext,
         latencyMs: now() - startedAt,
       }, "invalid_response"));
+      await finishFinancial("failure", "invalid_response");
       return {
         ok: false,
         status: "failed",
@@ -289,6 +356,7 @@ export async function resolveNicheWithOpenAi(input: {
         latencyMs: now() - startedAt,
         usage: data.usage,
       }, "provider_error"));
+      await finishFinancial("failure", "provider_error", data);
       return {
         ok: false,
         status: "failed",
@@ -306,6 +374,11 @@ export async function resolveNicheWithOpenAi(input: {
         latencyMs: now() - startedAt,
         usage: data.usage,
       }, outputText.kind === "refusal" ? "refusal" : "invalid_response"));
+      await finishFinancial(
+        "failure",
+        outputText.kind === "refusal" ? "refusal" : "invalid_response",
+        data,
+      );
       return {
         ok: false,
         status: "failed",
@@ -323,6 +396,7 @@ export async function resolveNicheWithOpenAi(input: {
         latencyMs: now() - startedAt,
         usage: data.usage,
       }, "invalid_response"));
+      await finishFinancial("failure", "invalid_response", data);
       return {
         ok: false,
         status: "failed",
@@ -338,6 +412,7 @@ export async function resolveNicheWithOpenAi(input: {
       latencyMs: now() - startedAt,
       usage: data.usage,
     }));
+    await finishFinancial("success", null, data);
 
     return {
       ok: true,
@@ -354,6 +429,7 @@ export async function resolveNicheWithOpenAi(input: {
       ...eventContext,
       latencyMs: now() - startedAt,
     }, failureCategory));
+    await finishFinancial("failure", failureCategory);
     return {
       ok: false,
       status: "failed",

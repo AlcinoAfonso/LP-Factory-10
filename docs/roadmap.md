@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 07/09/2026
-• Versão: v1.5.220
+• Data: 11/09/2026
+• Versão: v1.5.221
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2235,6 +2235,71 @@
 - O smoke autenticado de Production aprovou leitura oficial, histórico congelado, reconciliação, cobertura parcial e bloqueio do papel comum após a evolução incremental do read model.
 - Permanecem limites explícitos: a RPC ainda materializa, ordena e aplica offset; não existe snapshot transacional entre páginas; a validação hospedada não comprova volume arbitrário nem ganho de tempo SQL.
 - Classificação financeira ampla, outros workloads, câmbio, cobrança, créditos e reconstrução histórica permanecem fora do escopo vigente.
+
+21.5 Controle ativo de custos OpenAI por workload e conta
+
+21.5.1 Objetivo e status
+- Objetivo: atribuir e reconciliar o custo do uso programático da OpenAI por universo, conta quando comprovável, workload, execução, operação, modelo e effort, preservando o total oficial como autoridade e a série E21.4 como histórico congelado.
+- Status: plano-base v2 aprovado tecnicamente; E21.5.3 e E21.5.4 implementadas no repositório e pendentes dos respectivos gates técnicos, merge humano, apply e ativação controlada.
+
+21.5.2 Registros do recorte
+- Banco:
+  - `openai_cost_executions`
+  - `openai_cost_operations`
+  - `openai_cost_coverage`
+  - `start_openai_cost_execution_v1`
+  - `finish_openai_cost_execution_v1`
+  - `start_openai_cost_operation_v1`
+  - `finish_openai_cost_operation_v1`
+  - `finish_openai_cost_operation_v2`
+  - `register_openai_cost_coverage_v1`
+  - `read_openai_active_cost_rows_v1`
+- Repositório:
+  - `lib/openai-costs/active-contracts.ts`
+  - `lib/openai-costs/ingestion.ts`
+  - `lib/openai-costs/recorder.ts`
+  - `lib/openai-costs/pricing.ts`
+  - `lib/openai-costs/adapters/activeCostReadModelAdapter.ts`
+  - `lib/openai-costs/adapters/activeCostTrackingAdapter.ts`
+  - `app/api/internal/openai-costs/route.ts`
+  - `automations/supabase-inspect/costRecorder.mjs`
+  - `automations/supabase-inspect/responsesClient.mjs`
+  - `.github/workflows/pipeline-supabase-inspect.yml`
+  - `supabase/migrations/20260911150000_e21_5_3_openai_active_cost_tracking.sql`
+  - `supabase/tests/e21_5_3_openai_active_cost_tracking.test.sql`
+  - `supabase/snippets/e21_5_3_openai_active_cost_tracking_verify.sql`
+  - `supabase/migrations/20260911190000_e21_5_4_openai_cost_calculation_read_model.sql`
+  - `supabase/tests/e21_5_4_openai_cost_calculation_read_model.test.sql`
+  - `supabase/snippets/e21_5_4_openai_cost_calculation_read_model_verify.sql`
+- Updates:
+  - `vercel#32`
+- Referências:
+  - `docs/lousa-plano-base-e21-5.md`
+  - `docs/matriz-consolidacao-e21-5.md`
+
+21.5.3 Atribuição e evidência por execução
+- Status: implementada no repositório; pendente de gate técnico, merge humano, apply, configuração externa e validação hospedada.
+- Conteúdo:
+  - criar ledger ativo separado de `openai_lp_*`, com execução funcional, operação cobrável, retry e replay idempotente;
+  - exigir universo e contexto econômico explícitos, mantendo Cliente sem conta comprovável como não atribuído e sem heurística;
+  - instrumentar os cinco workloads atuais por contrato financeiro comum, com recorder fail-open e ingresso assinado para `supabase_inspect` sem credencial mutável de banco;
+  - preservar RLS, grants mínimos, RPCs versionadas, transições terminais e gate desligado até o fluxo pós-merge.
+
+21.5.4 Cálculo e reconciliação de custos
+- Status: implementada no repositório; pendente de gate técnico, merge humano, apply e evidência hospedada.
+- Conteúdo:
+  - calcula cada operação somente com usage e unidades cobradas confirmadas, inclusive faixas curta/longa e Web Search, usando pricing temporal versionado e snapshot imutável;
+  - mantém custo indisponível distinto de zero e impede subtotal parcial enganoso;
+  - agrega por universo, conta, workload, execução e operação e compõe `total oficial - subtotal ativo calculável - histórico legado`, sem clamp;
+  - pagina por keyset e mantém filtros internos sem alterar semanticamente o total oficial ou a reconciliação global.
+
+21.5.5 Visão administrativa de custos
+- Status: implementada no repositório; gate técnico e QA local estático concluídos, com QA visual hospedado, merge humano, apply e evidências pós-apply pendentes.
+- Conteúdo:
+  - evolui somente `/admin/custos-openai` para exibir total oficial, subtotal ativo calculável, histórico congelado, reconciliação, cobertura, não atribuídos, indisponibilidade, retries, modelo, effort e baseline opcional;
+  - preserva consulta sob demanda e acesso exclusivo de `platform_admin`, com as três fontes lidas em paralelo e sem payload de negócio, prompt, resposta integral, PII ou secrets;
+  - filtros de universo, conta e workload alteram somente o subtotal e os detalhes ativos, enquanto o total oficial e a reconciliação permanecem globais;
+  - componentes e validações focais cobrem teclado nativo, foco gerenciado e visível, nomes acessíveis, estados textuais e leiaute responsivo, sem alegar conformidade WCAG integral; a inspeção visual no Preview permanece no gate hospedado.
 
 22. E22 — Retirada controlada de ativos históricos
 - Objetivo: reduzir superfícies, dados, documentos e infraestrutura sem consumidor vigente, após auditoria explícita de dependências e sem criar substitutos antecipados.

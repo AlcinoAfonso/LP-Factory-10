@@ -17,6 +17,7 @@ import {
 } from "./proofCore";
 import { parseCommercialProof } from "./commercialProof";
 import { proveDynamicMarketResearch } from "./dynamicResearchProof";
+import { lpFactoryOpenAiCostContext } from "@/openai-costs";
 
 export type { OpenAiCandidateProofMetadata } from "./proofCore";
 
@@ -77,6 +78,8 @@ async function proveNicheResolution(
       },
       candidates: [candidate],
       apiKey,
+      financialContext: lpFactoryOpenAiCostContext,
+      executionOrigin: "administrative_proof",
     },
     {
       environment,
@@ -132,6 +135,7 @@ async function proveCommercialActivation(
         },
       },
       parseResponse: parseCommercialProof,
+      executionOrigin: "administrative_proof",
     },
     { emitEvent: (event) => events.push(event) },
   );
@@ -157,6 +161,7 @@ async function proveInputCatalogEvaluation(
     environment,
     requestId,
     safetyIdentifier: "platform_admin_operational_proof",
+    executionOrigin: "administrative_proof",
     request: {
       mode: "systematic",
       prompt: {

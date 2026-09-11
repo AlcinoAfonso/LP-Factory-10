@@ -35,6 +35,7 @@ import {
   resolveNicheWithOpenAi,
   shouldResolveNicheWithAi,
 } from '../../../lib/onboarding/niche-resolution/adapters/openAiResolver';
+import { clientOpenAiCostContext } from '../../../lib/openai-costs';
 
 export type RenameAccountState = {
   ok: boolean;
@@ -461,6 +462,8 @@ export async function saveSetupAndContinueAction(
           decision,
           candidates,
           apiKey: process.env.OPENAI_API_KEY,
+          financialContext: clientOpenAiCostContext(accountId),
+          executionOrigin: 'runtime',
         });
 
         aiResolutionStatus = aiResult.status;

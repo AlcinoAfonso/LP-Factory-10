@@ -1,29 +1,9 @@
 import { readFileSync, existsSync, appendFileSync } from "node:fs";
 import pg from "pg";
+import { createCostRecorder } from "./costRecorder.mjs";
+import { callResponsesApi } from "./responsesClient.mjs";
 
 const { Client } = pg;
-
-async function callResponsesApi({ apiKey, model, tools, input }) {
-  const res = await fetch("https://api.openai.com/v1/responses", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model,
-      tools,
-      input,
-    }),
-  });
-
-  if (!res.ok) {
-    const body = await res.text().catch(() => "");
-    throw new Error(`OpenAI API error (${res.status}): ${body || "sem body"}`);
-  }
-
-  return res.json();
-}
 
 const MAX_QUERIES = 20;
 const MAX_ROWS = 50;
@@ -357,6 +337,7 @@ async function main() {
 
   if (!openaiKey) die("Falta OPENAI_API_KEY (GitHub secret).");
   if (!dbUrl) die("Falta SUPABASE_DB_URL_READONLY (GitHub secret).");
+  if (model !== "gpt-4.1-mini") die("OPENAI_MODEL deve corresponder à referência catalogada gpt-4.1-mini.");
 
   const { briefing, source } = loadBriefing();
   const batchMode = detectBatchMode(briefing);
@@ -381,6 +362,8 @@ async function main() {
     ssl: { rejectUnauthorized: false }, // piloto
   });
   let dbConnected = false;
+  let costRecorder = null;
+  let costExecutionFinished = false;
 
   try {
     await db.connect();
@@ -400,6 +383,9 @@ async function main() {
 
       return;
     }
+
+    costRecorder = createCostRecorder();
+    await costRecorder.start(model);
 
     let queryCount = 0;
     const executed = [];
@@ -483,6 +469,7 @@ async function main() {
       model,
       tools,
       input,
+      costRecorder,
     });
 
     // Loop de tool-calling
@@ -526,6 +513,7 @@ async function main() {
         model,
         tools,
         input,
+        costRecorder,
       });
     }
 
@@ -544,7 +532,12 @@ async function main() {
     writeSummary(`\n## Relatório\n\n${finalText || "_(sem output)_"}\n`);
 
     // Se o modelo não devolveu nada, ainda assim finalizar ok
+    await costRecorder.finish("success");
+    costExecutionFinished = true;
   } finally {
+    if (costRecorder && !costExecutionFinished) {
+      await costRecorder.finish("failure", "unknown_error");
+    }
     if (dbConnected) {
       await db.end();
     }

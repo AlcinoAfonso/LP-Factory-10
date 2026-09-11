@@ -3,6 +3,12 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 
+const lpfCostContext = {
+  universe: "lp_factory",
+  attributionStatus: "attributed",
+  accountId: null,
+} as const;
+
 import { resolveNicheWithOpenAi } from "../onboarding/niche-resolution/adapters/openAiResolver";
 import { requestCommercialActivationOpenAi } from "../conversion-content/adapters/commercialActivationOpenAiAdapter";
 import {
@@ -89,6 +95,7 @@ const cases = [
         decision,
         candidates: [candidate],
         apiKey: "test-key",
+        financialContext: lpfCostContext,
       }, {
         environment: "development",
         fetchImpl: async (_url, init) => {
@@ -169,6 +176,7 @@ const cases = [
         decision,
         candidates: [candidate],
         apiKey: "test-key",
+        financialContext: lpfCostContext,
       }, {
         environment: "development",
         fetchImpl: async () => new Response("{", {
@@ -187,6 +195,7 @@ const cases = [
         decision,
         candidates: [candidate],
         apiKey: "",
+        financialContext: lpfCostContext,
       }, {
         environment: "development",
         fetchImpl: async () => {
@@ -978,7 +987,7 @@ const cases = [
       const fixture = nicheResolutionFixture();
       let transportCalls = 0;
       const result = await resolveNicheWithOpenAi(
-        { ...fixture, apiKey: "test-key" },
+        { ...fixture, apiKey: "test-key", financialContext: lpfCostContext },
         {
           environment: "preview",
           workloadResolver: {
@@ -1006,7 +1015,7 @@ const cases = [
       const events: OpenAiWorkloadEvent[] = [];
       let requestBody: Record<string, unknown> | null = null;
       const result = await resolveNicheWithOpenAi(
-        { ...fixture, apiKey: "test-key" },
+        { ...fixture, apiKey: "test-key", financialContext: lpfCostContext },
         {
           environment: "preview",
           workloadResolver: {
@@ -1260,7 +1269,10 @@ const cases = [
             `${relative(repositoryRoot, file)} still references ${variable}`,
           );
         }
-        if (!file.endsWith(join("lib", "openai-workloads", "registry.ts"))) {
+        if (
+          !file.endsWith(join("lib", "openai-workloads", "registry.ts")) &&
+          !file.endsWith(join("lib", "openai-costs", "pricing.ts"))
+        ) {
           assert.equal(
             source.includes("gpt-5.4-mini"),
             false,
