@@ -1,12 +1,13 @@
 import type {
   OpenAiWorkloadEnvironment,
-  OpenAiWorkloadEvent,
   ResolvedOpenAiProductWorkload,
 } from "../../openai-workloads";
 import {
   requestOpenAiResponses,
+  type OpenAiResponsesDependencies,
   type OpenAiResponsesParser,
 } from "./openAiResponsesAdapter";
+import { lpFactoryOpenAiCostContext } from "../../openai-costs";
 
 type CommercialActivationOpenAiInput<T> = Readonly<{
   apiKey?: string;
@@ -14,13 +15,10 @@ type CommercialActivationOpenAiInput<T> = Readonly<{
   environment?: OpenAiWorkloadEnvironment;
   request: Readonly<Record<string, unknown>>;
   parseResponse: OpenAiResponsesParser<T>;
+  executionOrigin?: "runtime" | "administrative_proof";
 }>;
 
-type CommercialActivationOpenAiDependencies = Readonly<{
-  fetchImpl?: typeof fetch;
-  emitEvent?: (event: OpenAiWorkloadEvent) => void;
-  now?: () => number;
-}>;
+type CommercialActivationOpenAiDependencies = OpenAiResponsesDependencies;
 
 export type CommercialActivationOpenAiResult<T> =
   | Readonly<{
@@ -64,6 +62,8 @@ export async function requestCommercialActivationOpenAi<T>(
     {
       ...input,
       expectedWorkload: "commercial_activation_draft_generation",
+      financialContext: lpFactoryOpenAiCostContext,
+      executionOrigin: input.executionOrigin ?? "runtime",
     },
     dependencies,
   );

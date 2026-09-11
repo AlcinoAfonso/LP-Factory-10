@@ -16,6 +16,10 @@ import {
   type LandingPageKnowledgeResolutionValue,
 } from "../landing-page/knowledge-resolution";
 import { requestOpenAiResponses } from "./openAiResponsesAdapter";
+import type {
+  OpenAiCostEconomicContext,
+  OpenAiCostExecutionOrigin,
+} from "../../openai-costs";
 
 export type DynamicMarketResearchOpenAiInput = Readonly<{
   apiKey?: string;
@@ -24,6 +28,8 @@ export type DynamicMarketResearchOpenAiInput = Readonly<{
   resolution: LandingPageKnowledgeResolutionValue;
   requestId: string;
   safetyIdentifier: string;
+  financialContext: OpenAiCostEconomicContext;
+  executionOrigin: OpenAiCostExecutionOrigin;
 }>;
 
 export type DynamicMarketResearchOpenAiDependencies = Readonly<{
@@ -140,6 +146,8 @@ export function buildDynamicLandingPageMarketRequest(
       contractVersion: LANDING_PAGE_DYNAMIC_RESEARCH_CONTRACT_VERSION,
       timeoutMs: Math.max(0, boundedTimeout(dependencies.timeoutMs) - Math.max(0, now() - preparationStartedAt)),
       signal: dependencies.signal,
+      financialContext: input.financialContext,
+      executionOrigin: input.executionOrigin,
       request: {
         instructions: prompt.value.instructions,
         input: prompt.value.input,

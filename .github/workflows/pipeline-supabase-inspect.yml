@@ -12,8 +12,11 @@ on:
         required: false
         default: ""
       openai_model:
-        description: "Override do modelo (opcional). Default: gpt-4.1-mini"
+        description: "Modelo catalogado do workload"
         required: false
+        type: choice
+        options:
+          - gpt-4.1-mini
         default: "gpt-4.1-mini"
 
 permissions:
@@ -51,6 +54,11 @@ jobs:
           SUPABASE_DB_URL_READONLY: ${{ secrets.SUPABASE_DB_URL_READONLY }}
           BRIEFING: ${{ inputs.briefing }}
           OPENAI_MODEL: ${{ inputs.openai_model }}
+          OPENAI_COST_INGESTION_ENABLED: ${{ vars.OPENAI_COST_INGESTION_ENABLED }}
+          OPENAI_COST_INGESTION_URL: ${{ vars.OPENAI_COST_INGESTION_URL }}
+          OPENAI_COST_INGESTION_ENVIRONMENT: ${{ vars.OPENAI_COST_INGESTION_ENVIRONMENT }}
+          OPENAI_COST_INGESTION_PROTOCOL_VERSION: ${{ vars.OPENAI_COST_INGESTION_PROTOCOL_VERSION }}
+          OPENAI_COST_INGESTION_HMAC_SECRET: ${{ secrets.OPENAI_COST_INGESTION_HMAC_SECRET }}
         run: |
           if [ -n "${{ inputs.briefing_path }}" ]; then
             export BRIEFING_PATH="${{ github.workspace }}/${{ inputs.briefing_path }}"
