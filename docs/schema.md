@@ -1367,11 +1367,16 @@
 
 3.11.2 RPCs e segurança candidatas
 • `start_openai_cost_execution_v1`, `finish_openai_cost_execution_v1`, `start_openai_cost_operation_v1`, `finish_openai_cost_operation_v1` e `register_openai_cost_coverage_v1` usam `SECURITY INVOKER`, `search_path` fixado e replay idempotente com conflito divergente fechado.
+• `finish_openai_cost_operation_v2` acrescenta a finalização financeira atômica com pricing temporal, snapshot, Web Search e custo calculado ou indisponível; replay idêntico é aceito e divergência falha fechada.
+• `read_openai_active_cost_rows_v1` expõe somente o DTO financeiro sanitizado ao `service_role`, ordenado e paginado por keyset `(started_at, execution_id, operation_sequence)`; não concede leitura a `public`, `anon`, `authenticated` ou `ai_readonly`.
 • As três tabelas usam RLS sem policies diretas. `anon`, `authenticated` e `ai_readonly` não possuem acesso; `service_role` recebe somente leitura, inserção e atualização terminal necessárias, sem DELETE ou TRUNCATE.
 • Triggers preservam identidade e impedem DELETE, segunda finalização e mutação posterior dos cortes de cobertura.
 • Migration candidata: `supabase/migrations/20260911150000_e21_5_3_openai_active_cost_tracking.sql`; apply hospedado permanece pendente do merge humano e do workflow canônico.
 • Teste transacional: `supabase/tests/e21_5_3_openai_active_cost_tracking.test.sql`.
 • Verificador read-only: `supabase/snippets/e21_5_3_openai_active_cost_tracking_verify.sql`.
+• Delta candidato de cálculo e leitura: `supabase/migrations/20260911190000_e21_5_4_openai_cost_calculation_read_model.sql`; apply permanece no mesmo gate pós-merge.
+• Teste transacional do delta: `supabase/tests/e21_5_4_openai_cost_calculation_read_model.test.sql`.
+• Verificador read-only do delta: `supabase/snippets/e21_5_4_openai_cost_calculation_read_model_verify.sql`.
 
 4. Triggers
 

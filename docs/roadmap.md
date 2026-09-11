@@ -2240,7 +2240,7 @@
 
 21.5.1 Objetivo e status
 - Objetivo: atribuir e reconciliar o custo do uso programático da OpenAI por universo, conta quando comprovável, workload, execução, operação, modelo e effort, preservando o total oficial como autoridade e a série E21.4 como histórico congelado.
-- Status: plano-base v2 aprovado tecnicamente; E21.5.3 implementada no repositório e pendente de gate técnico, merge humano, apply e ativação controlada.
+- Status: plano-base v2 aprovado tecnicamente; E21.5.3 e E21.5.4 implementadas no repositório e pendentes dos respectivos gates técnicos, merge humano, apply e ativação controlada.
 
 21.5.2 Registros do recorte
 - Banco:
@@ -2251,11 +2251,15 @@
   - `finish_openai_cost_execution_v1`
   - `start_openai_cost_operation_v1`
   - `finish_openai_cost_operation_v1`
+  - `finish_openai_cost_operation_v2`
   - `register_openai_cost_coverage_v1`
+  - `read_openai_active_cost_rows_v1`
 - Repositório:
   - `lib/openai-costs/active-contracts.ts`
   - `lib/openai-costs/ingestion.ts`
   - `lib/openai-costs/recorder.ts`
+  - `lib/openai-costs/pricing.ts`
+  - `lib/openai-costs/adapters/activeCostReadModelAdapter.ts`
   - `lib/openai-costs/adapters/activeCostTrackingAdapter.ts`
   - `app/api/internal/openai-costs/route.ts`
   - `automations/supabase-inspect/costRecorder.mjs`
@@ -2264,6 +2268,9 @@
   - `supabase/migrations/20260911150000_e21_5_3_openai_active_cost_tracking.sql`
   - `supabase/tests/e21_5_3_openai_active_cost_tracking.test.sql`
   - `supabase/snippets/e21_5_3_openai_active_cost_tracking_verify.sql`
+  - `supabase/migrations/20260911190000_e21_5_4_openai_cost_calculation_read_model.sql`
+  - `supabase/tests/e21_5_4_openai_cost_calculation_read_model.test.sql`
+  - `supabase/snippets/e21_5_4_openai_cost_calculation_read_model_verify.sql`
 - Updates:
   - `vercel#32`
 - Referências:
@@ -2279,12 +2286,12 @@
   - preservar RLS, grants mínimos, RPCs versionadas, transições terminais e gate desligado até o fluxo pós-merge.
 
 21.5.4 Cálculo e reconciliação de custos
-- Status: planejada.
+- Status: implementada no repositório; pendente de gate técnico, merge humano, apply e evidência hospedada.
 - Conteúdo:
-  - calcular cada operação somente com usage e unidades cobradas confirmadas, inclusive Web Search, usando pricing temporal versionado e snapshot imutável;
-  - manter custo indisponível distinto de zero e impedir subtotal parcial enganoso;
-  - agregar por universo, conta, workload, execução e operação e reconciliar `total oficial - subtotal ativo calculável - histórico legado`, sem clamp;
-  - usar paginação keyset e manter filtros internos sem alterar semanticamente o total oficial ou a reconciliação global.
+  - calcula cada operação somente com usage e unidades cobradas confirmadas, inclusive faixas curta/longa e Web Search, usando pricing temporal versionado e snapshot imutável;
+  - mantém custo indisponível distinto de zero e impede subtotal parcial enganoso;
+  - agrega por universo, conta, workload, execução e operação e compõe `total oficial - subtotal ativo calculável - histórico legado`, sem clamp;
+  - pagina por keyset e mantém filtros internos sem alterar semanticamente o total oficial ou a reconciliação global.
 
 21.5.5 Visão administrativa de custos
 - Status: planejada.

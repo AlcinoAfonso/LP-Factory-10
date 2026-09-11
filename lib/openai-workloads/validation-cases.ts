@@ -1269,7 +1269,10 @@ const cases = [
             `${relative(repositoryRoot, file)} still references ${variable}`,
           );
         }
-        if (!file.endsWith(join("lib", "openai-workloads", "registry.ts"))) {
+        if (
+          !file.endsWith(join("lib", "openai-workloads", "registry.ts")) &&
+          !file.endsWith(join("lib", "openai-costs", "pricing.ts"))
+        ) {
           assert.equal(
             source.includes("gpt-5.4-mini"),
             false,

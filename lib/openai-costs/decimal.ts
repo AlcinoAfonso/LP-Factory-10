@@ -27,6 +27,28 @@ export function subtractDecimal(
   return combineDecimal(left, right, -1n);
 }
 
+export function multiplyDecimalByNonNegativeInteger(
+  value: DecimalValue,
+  multiplier: number,
+): DecimalValue | null {
+  if (!Number.isSafeInteger(multiplier) || multiplier < 0) return null;
+  return normalizeDecimal({
+    coefficient: value.coefficient * BigInt(multiplier),
+    scale: value.scale,
+  });
+}
+
+export function divideDecimalByPowerOfTen(
+  value: DecimalValue,
+  exponent: number,
+): DecimalValue | null {
+  if (!Number.isSafeInteger(exponent) || exponent < 0 || exponent > 30) return null;
+  return normalizeDecimal({
+    coefficient: value.coefficient,
+    scale: value.scale + exponent,
+  });
+}
+
 export function formatDecimal(value: DecimalValue): string {
   const negative = value.coefficient < 0n;
   const absolute = negative ? -value.coefficient : value.coefficient;
@@ -63,10 +85,19 @@ function combineDecimal(
   rightSign: 1n | -1n,
 ) {
   const scale = Math.max(left.scale, right.scale);
-  return {
+  return normalizeDecimal({
     coefficient:
       left.coefficient * 10n ** BigInt(scale - left.scale) +
       rightSign * right.coefficient * 10n ** BigInt(scale - right.scale),
     scale,
-  };
+  });
+}
+
+function normalizeDecimal(value: DecimalValue): DecimalValue {
+  let { coefficient, scale } = value;
+  while (scale > 0 && coefficient % 10n === 0n) {
+    coefficient /= 10n;
+    scale -= 1;
+  }
+  return { coefficient, scale };
 }

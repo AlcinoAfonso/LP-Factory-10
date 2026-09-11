@@ -4,6 +4,8 @@ import type {
   OpenAiCostOperationContext,
   OpenAiCostOperationTerminal,
 } from "../active-contracts";
+import type { OpenAiCostFinancialTerminal } from "../pricing";
+import { unavailableOpenAiOperationCost } from "../pricing";
 
 export class OpenAiCostTrackingPersistenceError extends Error {
   constructor(readonly kind: "conflict" | "unavailable") {
@@ -49,7 +51,10 @@ export function operationStartRpc(input: OpenAiCostOperationContext) {
   };
 }
 
-export function operationFinishRpc(input: OpenAiCostOperationTerminal) {
+export function operationFinishRpc(
+  input: OpenAiCostOperationTerminal,
+  financial: OpenAiCostFinancialTerminal = unavailableOpenAiOperationCost(),
+) {
   const usage = input.usage;
   return {
     p_id: input.operationId,
@@ -67,6 +72,14 @@ export function operationFinishRpc(input: OpenAiCostOperationTerminal) {
     p_reasoning_tokens: usage?.reasoningTokens ?? null,
     p_total_tokens: usage?.totalTokens ?? null,
     p_web_search_call_count: input.webSearchCallCount ?? null,
+    p_web_search_tool_version: financial.webSearchToolVersion,
+    p_web_search_price_per_call_usd: financial.webSearchPricePerCallUsd,
+    p_pricing_version: financial.pricingVersion,
+    p_pricing_effective_at: financial.pricingEffectiveAt,
+    p_pricing_snapshot: financial.pricingSnapshot,
+    p_cost_status: financial.costStatus,
+    p_cost_unavailable_reason: financial.costUnavailableReason,
+    p_cost_usd: financial.costUsd,
     p_finished_at: input.finishedAt,
   };
 }

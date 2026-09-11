@@ -1,9 +1,15 @@
 import type {
+  OpenAiActiveCostFilters,
+  OpenAiActiveCostReadModel,
+  OpenAiActiveCostReadResult,
+} from "./active-contracts";
+import type {
   OpenAiCostsPeriod,
   OpenAiLpCostReadModel,
   OpenAiLpCostReadResult,
   OpenAiOfficialCostsReadResult,
 } from "./contracts";
+import { filterOpenAiActiveCosts } from "./adapters/activeCostReadModelAdapterCore";
 import {
   decimalFromNonNegativeString,
   formatDecimal,
@@ -28,6 +34,20 @@ export type OpenAiCostsDashboard = Readonly<{
   internalErrorCode: string | null;
   reconciliationUsd: string | null;
   reconciliationAnomalous: boolean;
+}>;
+
+export type OpenAiCostsFinancialComposition = Readonly<{
+  selection: OpenAiCostsPeriodSelection;
+  officialTotalUsd: string;
+  officialUpdatedAt: string;
+  active: OpenAiActiveCostReadModel | null;
+  activeErrorCode: string | null;
+  filteredActive: OpenAiActiveCostReadModel | null;
+  activeFilters: OpenAiActiveCostFilters;
+  legacy: OpenAiLpCostReadModel | null;
+  legacyErrorCode: string | null;
+  globalReconciliationUsd: string | null;
+  globalReconciliationAnomalous: boolean;
 }>;
 
 export function parseOpenAiCostsPeriodSelection(
@@ -106,6 +126,44 @@ export function buildOpenAiCostsDashboard(input: Readonly<{
     reconciliationUsd: formatDecimal(reconciliation),
     reconciliationAnomalous: reconciliation.coefficient < 0n,
   };
+}
+
+export function buildOpenAiCostsFinancialComposition(input: Readonly<{
+  selection: OpenAiCostsPeriodSelection;
+  official: OpenAiOfficialCostsReadResult;
+  active: OpenAiActiveCostReadResult;
+  legacy: OpenAiLpCostReadResult;
+  activeFilters?: OpenAiActiveCostFilters;
+}>): OpenAiCostsFinancialComposition | null {
+  if (!input.official.ok) return null;
+  const official = decimalFromNonNegativeString(input.official.value.totalUsd);
+  if (!official) return null;
+  const activeFilters = Object.freeze({ ...(input.activeFilters ?? {}) });
+  const active = input.active.ok ? input.active.value : null;
+  const legacy = input.legacy.ok ? input.legacy.value : null;
+  let reconciliationUsd: string | null = null;
+  let anomalous = false;
+  if (active && legacy) {
+    const activeTotal = decimalFromNonNegativeString(active.totalCalculatedUsd);
+    const legacyTotal = decimalFromNonNegativeString(legacy.totalUsd);
+    if (!activeTotal || !legacyTotal) return null;
+    const reconciliation = subtractDecimal(subtractDecimal(official, activeTotal), legacyTotal);
+    reconciliationUsd = formatDecimal(reconciliation);
+    anomalous = reconciliation.coefficient < 0n;
+  }
+  return Object.freeze({
+    selection: input.selection,
+    officialTotalUsd: input.official.value.totalUsd,
+    officialUpdatedAt: input.official.value.fetchedAt,
+    active,
+    activeErrorCode: input.active.ok ? null : input.active.error.code,
+    filteredActive: active ? filterOpenAiActiveCosts(active, activeFilters) : null,
+    activeFilters,
+    legacy,
+    legacyErrorCode: input.legacy.ok ? null : input.legacy.error.code,
+    globalReconciliationUsd: reconciliationUsd,
+    globalReconciliationAnomalous: anomalous,
+  });
 }
 
 export function defaultOpenAiCostsDates(now = new Date()) {
