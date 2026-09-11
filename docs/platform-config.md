@@ -2,8 +2,8 @@
 
 0.1 Cabeçalho
 • Documento: LP Factory 10 — Platform Config
-• Versão: v0.1.45
-• Data: 11/09/2026
+• Versão: v0.1.44
+• Data: 07/09/2026
 
 0.2 Contrato do documento
 • O QUE É: snapshot operacional e fonte única das configurações de plataformas externas do LP Factory 10, refletindo o estado conhecido/cadastrado nas plataformas conforme indicado.
@@ -22,7 +22,6 @@
 • Stripe: provedor inicial de checkout em modo teste para assinatura.
 • Registro.com: domínio e DNS.
 • Zoho Mail: e-mail humano/corporativo quando aplicável.
-• Google Workspace: catálogo institucional de QA no Drive e mailbox do Plano B acessível pelo Gmail conectado ao Codex App.
 
 2. GitHub
 
@@ -467,19 +466,6 @@ Regra:
 • Direção operacional: e-mails humanos da LP Factory devem usar provedor humano/corporativo, como Zoho/M365/Workspace, não Resend.
 • Resend deve permanecer como transacional.
 
-8.4 Google Workspace — recursos operacionais de QA do Plano B
-• Pasta autorizada: `LP Factory`, id `1SCJkUsQKyDu-Yr9A-MOJAfocn3hnDx0Z`.
-• Catálogo operacional: `Catálogo de QA — Debate 09 — LP Factory 10`, spreadsheet `15I8EYtZK2GbHHEVkZ0nr9EY3BF-Bf7BhTPL3VPoBOfI`, com as abas `Contas QA` e `Mailbox`.
-• Finalidade: localizar identidades, papéis, estados e recursos de QA aprovados para o Plano B E17.11.
-• Fonte de credenciais de conta: somente o catálogo restrito do Google Drive, para contas exclusivas de QA e pela jornada autorizada; senhas não podem ser copiadas para repositório, logs, screenshots, evidências ou respostas.
-• Mailbox do Plano B: `alcinoafonso380@gmail.com`, acessível pelo Gmail conectado no Codex App; o perfil conectado foi confirmado em 11/09/2026 e dispensa abertura humana rotineira da caixa no navegador.
-• Navegador: superfície autorizada para login e jornadas funcionais no Core hospedado; sessão existente não substitui confirmação de papel, tenant e estado reais no produto.
-• Estado operacional: catálogo, Drive, Gmail e navegador disponíveis ao Executor no recorte autorizado; expiração da conexão, MFA ou CAPTCHA insolúvel deve ser registrada como bloqueio específico.
-• Estrutura mínima das entradas: ambiente, jornada suportada, identidade QA por referência não secreta, papel ou autoridade, estado relevante, fonte autorizada da credencial, superfície de uso, último estado verificado e data, além de restrição ou intervenção humana excepcional quando aplicável.
-• Autoridade do estado: o catálogo orienta seleção e reutilização; papel, membership, confirmação, condição comercial e demais estados observados no produto permanecem efetivos para concluir o QA.
-• Escopo negativo: não armazenar no catálogo API keys, tokens, cookies, sessões, secrets GitHub/Vercel/Supabase, credenciais técnicas da mailbox, dados reais de clientes ou integrações reais.
-• Distinção do Plano A: a mailbox POP3 `lpfactoryqa@gmail.com` e os secrets `MAILBOX_EMAIL`/`MAILBOX_PASSWORD` da seção 2.4 permanecem preservados para a E17.9.3 e não são o método operacional do catálogo Plano B.
-
 9. Regras operacionais de mudança
 
 9.1 Alteração de env na Vercel
@@ -529,8 +515,6 @@ Regra:
 • Configurações de plataformas, secrets por nome, workflows, ambientes e endpoints usados por automações devem ser registrados neste documento.
 
 99. Changelog
-v0.1.45 — 11/09/2026 — Registrados o catálogo operacional de QA do Plano B no Google Drive, a mailbox acessível pelo Gmail conectado ao Codex App e o navegador como superfície autorizada, distinguindo-os da mailbox POP3 histórica do Plano A e sem versionar credenciais.
-
 v0.1.44 — 07/09/2026 — Consolidado o fechamento da E23.2: seis ocorrências sem consumidor removidas da Vercel Core; 22 sobreclassificações como Secret e quatro branch scopes legados preservados por decisão funcional conservadora; Preview aprovado sem exposição ou substituição de valores.
 
 v0.1.40 — 02/09/2026 — Marcados `E19_5_WORKSPACE_ENABLED` e `landing-page-revision-assets` como recursos sem consumidor runtime após o SV-PR03; nenhuma variável, secret, bucket ou infraestrutura externa foi alterada.
