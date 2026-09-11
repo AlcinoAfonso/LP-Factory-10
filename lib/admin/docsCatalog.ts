@@ -61,12 +61,6 @@ export const adminDocsCatalog: AdminDocCatalogItem[] = [
     description: 'Fluxo estrategista para briefing e execucao.',
   },
   {
-    id: 'prompt-executor',
-    title: 'Prompt executor',
-    path: 'docs/prompt-executor.md',
-    description: 'Contrato operacional do executor Codex.',
-  },
-  {
     id: 'template-briefing-codex',
     title: 'Template briefing Codex',
     path: 'docs/template-briefing-codex.md',
