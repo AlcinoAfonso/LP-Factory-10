@@ -2294,11 +2294,12 @@
   - pagina por keyset e mantém filtros internos sem alterar semanticamente o total oficial ou a reconciliação global.
 
 21.5.5 Visão administrativa de custos
-- Status: planejada.
+- Status: implementada no repositório; gate técnico e QA local estático concluídos, com QA visual hospedado, merge humano, apply e evidências pós-apply pendentes.
 - Conteúdo:
-  - evoluir somente `/admin/custos-openai` para exibir total oficial, subtotal ativo calculável, histórico congelado, reconciliação, cobertura, não atribuídos, indisponibilidade, retries, modelo, effort e baseline opcional;
-  - preservar consulta sob demanda e acesso exclusivo de `platform_admin`, sem payload de negócio, prompt, resposta integral, PII ou secrets;
-  - validar filtros, atualização e detalhes em desktop e mobile, com teclado, foco visível, nomes acessíveis e estados que não dependam apenas de cor, sem alegar conformidade WCAG integral.
+  - evolui somente `/admin/custos-openai` para exibir total oficial, subtotal ativo calculável, histórico congelado, reconciliação, cobertura, não atribuídos, indisponibilidade, retries, modelo, effort e baseline opcional;
+  - preserva consulta sob demanda e acesso exclusivo de `platform_admin`, com as três fontes lidas em paralelo e sem payload de negócio, prompt, resposta integral, PII ou secrets;
+  - filtros de universo, conta e workload alteram somente o subtotal e os detalhes ativos, enquanto o total oficial e a reconciliação permanecem globais;
+  - componentes e validações focais cobrem teclado nativo, foco gerenciado e visível, nomes acessíveis, estados textuais e leiaute responsivo, sem alegar conformidade WCAG integral; a inspeção visual no Preview permanece no gate hospedado.
 
 22. E22 — Retirada controlada de ativos históricos
 - Objetivo: reduzir superfícies, dados, documentos e infraestrutura sem consumidor vigente, após auditoria explícita de dependências e sem criar substitutos antecipados.

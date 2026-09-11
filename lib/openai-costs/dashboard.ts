@@ -3,6 +3,10 @@ import type {
   OpenAiActiveCostReadModel,
   OpenAiActiveCostReadResult,
 } from "./active-contracts";
+import {
+  openAiOperationalWorkloadIds,
+  openAiProductWorkloadIds,
+} from "../openai-workloads";
 import type {
   OpenAiCostsPeriod,
   OpenAiLpCostReadModel,
@@ -17,6 +21,10 @@ import {
 } from "./decimal";
 
 const MAX_CUSTOM_PERIOD_DAYS = 180;
+const OPENAI_COST_WORKLOAD_IDS = [
+  ...openAiProductWorkloadIds,
+  ...openAiOperationalWorkloadIds,
+] as const;
 
 export type OpenAiCostsPeriodSelection = Readonly<{
   mode: "current_month" | "custom";
@@ -166,6 +174,32 @@ export function buildOpenAiCostsFinancialComposition(input: Readonly<{
   });
 }
 
+export function parseOpenAiActiveCostFilters(input: Readonly<{
+  universe: unknown;
+  accountId: unknown;
+  workload: unknown;
+}>): OpenAiActiveCostFilters | null {
+  const universe = input.universe === "" || input.universe === null
+    ? null
+    : input.universe === "lp_factory" || input.universe === "client"
+      ? input.universe
+      : undefined;
+  const accountId = input.accountId === "" || input.accountId === null
+    ? null
+    : typeof input.accountId === "string" && isUuid(input.accountId)
+      ? input.accountId.toLowerCase()
+      : undefined;
+  const workload = input.workload === "" || input.workload === null
+    ? null
+    : typeof input.workload === "string" &&
+        (OPENAI_COST_WORKLOAD_IDS as readonly string[]).includes(input.workload)
+      ? input.workload as OpenAiActiveCostFilters["workload"]
+      : undefined;
+  if (universe === undefined || accountId === undefined || workload === undefined) return null;
+  if (universe === "lp_factory" && accountId !== null) return null;
+  return Object.freeze({ universe, accountId, workload });
+}
+
 export function defaultOpenAiCostsDates(now = new Date()) {
   const today = utcDate(now);
   return { startDate: `${today.slice(0, 7)}-01`, endDate: today };
@@ -199,4 +233,8 @@ function nextDate(value: string) {
     String(next.getUTCMonth() + 1).padStart(2, "0"),
     String(next.getUTCDate()).padStart(2, "0"),
   ].join("-");
+}
+
+function isUuid(value: string) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 }
