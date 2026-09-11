@@ -175,7 +175,7 @@ Quando invocada por `$lp-factory-conduzir-plano-completo`:
 3. não criar branch, PR ou pedido de merge intermediário;
 4. não acionar Gestor Estrutural, Gestor de Updates ou Gestor de Automações; usar somente o Analista nos gates de implementação;
 5. reutilizar checkpoints `LP-Factory-Phase: <identificador>` e continuar na próxima subseção pendente;
-6. se houver mudança material fora da V2 aprovada, encaminhar ao Analista e, se necessário, ao humano; não reiniciar especialistas.
+6. se houver mudança material fora da V2 aprovada, encaminhar ao Analista e, se necessário, ao supervisor competente; não reiniciar especialistas.
 
 ### 7.2 Preparar
 
@@ -201,7 +201,7 @@ Para a próxima subseção ainda não aprovada:
 9. tratar `aprovado para avançar` como checkpoint e commitar com o trailer `LP-Factory-Phase: <identificador>`; o checkpoint pode permanecer local e código, título e resumo do mesmo PR draft só devem refletir esse estado quando ele for efetivamente publicado;
 10. tratar `aprovado com correções obrigatórias` corrigindo somente o delta indicado e retornando ao mesmo Analista em `revisao_delta_implementacao`;
 11. tratar `requer evidência de QA` aplicando a seção 6 e retornando ao mesmo Analista com a evidência obtida; se um critério continuar sem prova após os caminhos autorizados, devolver antes da entrega final somente esse bloqueio ao supervisor competente e, recebida a decisão ou o recurso necessário, retornar ao mesmo Analista;
-12. tratar `bloqueado por decisão humana` parando e pedindo apenas a decisão necessária.
+12. tratar `bloqueado por decisão humana` parando e devolvendo ao supervisor competente apenas a decisão necessária.
 
 Não executar `git push` por rotina antes ou depois de cada gate. Checkpoints aprovados podem acumular localmente. Publicar o estado acumulado somente quando houver necessidade real de estado remoto, como Preview/QA hospedado, validação na Vercel, review, evidência que dependa do GitHub remoto, entrega ou parada necessária para retomada segura.
 
