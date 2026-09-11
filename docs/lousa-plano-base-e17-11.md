@@ -45,6 +45,7 @@
 - Os commits derivados da V1 revogada permanecem no histórico e foram neutralizados por commits de reversão na mesma branch.
 - O catálogo foi restaurado com base na revisão pré-task `9`, limitada às células alteradas por esta execução; dados preexistentes foram preservados.
 - O convite piloto permaneceu sem envio e foi cancelado como continuação da task.
+- O commit da V1 vigente deve permanecer ancestral do resultado final; este PR exige merge commit e não admite squash ou rebase no merge.
 
 ## 2. V2 mínima Light
 
@@ -77,7 +78,7 @@
 
 - Confirmar por leitura do Google Drive que o catálogo existe e permanece consultável.
 - Confirmar por confronto literal que o contrato contém as quatro regras da seção 2.3 sem conceder autorização adicional ao teste consumidor.
-- Executar `git diff --check` e revisar `origin/main..HEAD` e `origin/main...HEAD`, comprovando que o diff efetivo contém somente a lousa vigente e o delta mínimo do contrato.
+- Executar `git diff --check` e revisar `origin/main..HEAD` e `origin/main...HEAD`, comprovando que o diff efetivo contém somente a lousa vigente, o delta mínimo do contrato e sua reconciliação canônica no roadmap.
 - `npm ci` e `npm run check`: não aplicáveis, pois o delta efetivo é exclusivamente documental e contratual.
 - Não há QA funcional, visual, de banco ou de infraestrutura aplicável à V1 vigente.
 
@@ -85,3 +86,4 @@
 
 - `docs/lousa-plano-base-e17-11.md`.
 - `.agents/skills/lp-factory-executar-plano/SKILL.md`.
+- `docs/roadmap.md`.
