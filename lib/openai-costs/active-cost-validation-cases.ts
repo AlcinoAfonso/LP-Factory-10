@@ -78,7 +78,12 @@ async function main() {
   }
 
   const rows = [
-    activeRow({ cost_usd: "0.000000000001" }),
+    activeRow({
+      cost_usd: 0.000000000001,
+      web_search_call_count: 1,
+      web_search_tool_version: "web-search-2026-09-11-v1",
+      web_search_price_per_call_usd: 0.01,
+    }),
     activeRow({
       operation_sequence: 2,
       operation_id: "40000000-0000-4000-8000-000000000002",
@@ -141,6 +146,7 @@ async function main() {
   assert.equal(translated.value.operationCount, 2);
   assert.equal(translated.value.unavailableOperationCount, 1);
   assert.equal(translated.value.unassignedExecutionCount, 1);
+  assert.equal(translated.value.executions[0]?.operations[0]?.webSearchPricePerCallUsd, "0.01");
   assert.equal(translated.value.executions[0]?.operations[1]?.retryOfOperationId, "40000000-0000-4000-8000-000000000001");
 
   const filtered = filterOpenAiActiveCosts(translated.value, { universe: "client" });
@@ -188,6 +194,8 @@ async function main() {
     [rows[1], rows[0]],
     [rows[0], rows[0]],
     [{ ...rows[0], cost_status: "calculated", cost_usd: null }],
+    [{ ...rows[0], cost_usd: -0.000000000001 }],
+    [{ ...rows[0], web_search_price_per_call_usd: Number.POSITIVE_INFINITY }],
     [{ ...rows[0], attribution_status: "unassigned", account_id: "40000000-0000-4000-8000-000000000099" }],
   ]) {
     const result = translateOpenAiActiveCostRows({ period, rows: invalidRows, coverageRows });
