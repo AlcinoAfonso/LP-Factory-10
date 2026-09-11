@@ -2240,7 +2240,7 @@
 
 21.5.1 Objetivo e status
 - Objetivo: atribuir e reconciliar o custo do uso programático da OpenAI por universo, conta quando comprovável, workload, execução, operação, modelo e effort, preservando o total oficial como autoridade e a série E21.4 como histórico congelado.
-- Status: plano-base v2 aprovado tecnicamente; implementação ainda não iniciada e condicionada ao checkpoint `plan-v2-approved` no PR #921.
+- Status: plano-base v2 aprovado tecnicamente; implementação ainda não iniciada e condicionada ao checkpoint `plan-v2-approved`.
 
 21.5.3 Atribuição e evidência por execução
 - Status: planejada.
