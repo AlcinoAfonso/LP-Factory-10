@@ -42,6 +42,7 @@ import {
   isGenericTaxonActivation,
   isInputCatalogReviewEnabled,
   loadEndCustomerResearchCandidate,
+  normalizeFactualReviewCatalogChangeDecision,
   parseInputCatalogEvaluationOutput,
   readInputCatalogEvaluationDecisionToken,
   revalidateInputCatalogEvaluationContext,
@@ -136,6 +137,75 @@ const cases: readonly ValidationCase[] = [
     },
   },
   {
+    name: "factual catalog-change decisions separate recommendations from explicit human choices",
+    run: async () => {
+      const zero = normalizeFactualReviewCatalogChangeDecision({
+        recommendationCandidateCount: 2,
+        recommendationSelection: "zero",
+        acceptedCandidates: [],
+        rejectedCandidateIndexes: [1, 0],
+        ownCandidate: { factualNeed: "  Necessidade humana própria  ", layer: "segment" },
+      });
+      assert.equal(zero.ok, true);
+      if (!zero.ok) throw new Error("Expected zero-selection decision");
+      assert.deepEqual(zero.value.rejectedCandidateIndexes, [0, 1]);
+      assert.deepEqual(zero.value.ownCandidate, {
+        factualNeed: "Necessidade humana própria",
+        layer: "segment",
+      });
+      assert.equal(zero.value.decisionKind, "catalog_change");
+
+      const partial = normalizeFactualReviewCatalogChangeDecision({
+        recommendationCandidateCount: 2,
+        recommendationSelection: "partial",
+        acceptedCandidates: [{ index: 1, layer: "niche" }],
+        rejectedCandidateIndexes: [0],
+        ownCandidate: null,
+      });
+      assert.equal(partial.ok, true);
+
+      const total = normalizeFactualReviewCatalogChangeDecision({
+        recommendationCandidateCount: 2,
+        recommendationSelection: "total",
+        acceptedCandidates: [
+          { index: 1, layer: "ultra_niche" },
+          { index: 0, layer: "universal" },
+        ],
+        rejectedCandidateIndexes: [],
+        ownCandidate: null,
+      });
+      assert.equal(total.ok, true);
+      if (!total.ok) throw new Error("Expected total-selection decision");
+      assert.equal(total.value.decisionKind, "catalog_change");
+      assert.deepEqual(total.value.acceptedCandidates.map((candidate) => candidate.index), [0, 1]);
+
+      assert.equal(normalizeFactualReviewCatalogChangeDecision({
+        recommendationCandidateCount: 1,
+        recommendationSelection: "total",
+        acceptedCandidates: [{ index: 0 }],
+        rejectedCandidateIndexes: [],
+        ownCandidate: null,
+      }).ok, false);
+      const noChange = normalizeFactualReviewCatalogChangeDecision({
+        recommendationCandidateCount: 2,
+        recommendationSelection: "zero",
+        acceptedCandidates: [],
+        rejectedCandidateIndexes: [1, 0],
+        ownCandidate: null,
+      });
+      assert.equal(noChange.ok, true);
+      if (!noChange.ok) throw new Error("Expected no-change human decision");
+      assert.equal(noChange.value.decisionKind, "no_change");
+      assert.equal(normalizeFactualReviewCatalogChangeDecision({
+        recommendationCandidateCount: 1,
+        recommendationSelection: "partial",
+        acceptedCandidates: [{ index: 0, layer: "segment" }],
+        rejectedCandidateIndexes: [0],
+        ownCandidate: null,
+      }).ok, false);
+    },
+  },
+  {
     name: "factual lifecycle keeps generic creation and activation unavailable",
     run: async () => {
       const adminSource = readFileSync(
@@ -206,6 +276,25 @@ const cases: readonly ValidationCase[] = [
       assert.match(migration, /order by taxons\.id[\s\S]*for update of taxons/g);
       assert.match(migration, /'expected_revision', p_expected_revision/g);
       assert.match(migration, /security invoker/g);
+      assert.match(migration, /record_business_taxon_factual_catalog_change_decision_v1/);
+      assert.match(migration, /save_business_taxon_factual_review_draft_v1/);
+      assert.match(migration, /authorize_business_taxon_factual_review_publication_v1/);
+      assert.match(migration, /reconcile_business_taxon_factual_review_publication_v1/);
+      assert.match(migration, /factual_review_projection_is_rpc_derived/);
+      assert.match(migration, /'draft_invalidated'/);
+      assert.match(migration, /'publication_authorized'/);
+      assert.match(migration, /'reconciled_published'/);
+      assert.match(migration, /order by reviews\.id[\s\S]*for update of reviews/g);
+      assert.equal(
+        migration.match(/e20_6_factual_review_open_authorize_v1/g)?.length,
+        2,
+      );
+      assert.doesNotMatch(migration, /landing_page_input_catalog_fields/);
+      assert.match(factualAdapterSource, /normalizeFactualReviewCatalogChangeDecision/);
+      assert.match(factualAdapterSource, /record_business_taxon_factual_catalog_change_decision_v1/);
+      assert.match(factualAdapterSource, /closeAdminTaxonFactualReviewWithoutChangeForCurrentCoverage/);
+      assert.match(factualAdapterSource, /decision\.value\.decisionKind !== "catalog_change"/);
+      assert.match(factualAdapterSource, /reconcile_business_taxon_factual_review_publication_v1/);
       assert.doesNotMatch(factualAdapterSource, /OpenAI|evaluateInputCatalogWithOpenAi|web_search/);
     },
   },

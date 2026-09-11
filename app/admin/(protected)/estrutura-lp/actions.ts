@@ -80,6 +80,7 @@ export async function reconcileInputCatalogPublishedDraftAction(
   const actor = await requirePlatformAdmin();
   if (!actor.allowed) return denied(previous);
   const result = await reconcileAdminInputCatalogPublishedDraft({
+    actorUserId: actor.actorUserId,
     expectedRevision: Number(formData.get("expectedRevision")),
     runtimeEnvironment: process.env.VERCEL_ENV,
   });

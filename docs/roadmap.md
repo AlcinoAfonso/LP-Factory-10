@@ -1903,7 +1903,7 @@
 
 20.6.1 Objetivo e status
 - Objetivo: permitir que um `platform_admin` libere taxon novo e revise taxon ativo por cobertura herdada, avaliação factual opcional e lifecycle versionado E20.2, sem transferir decisão à IA.
-- Status: baseline de preparação determinística e provider administrativo existente; 20.6.3 implementada no repositório e 20.6.4–20.6.7 definidas, ainda não implementadas.
+- Status: baseline de preparação determinística e provider administrativo existente; 20.6.3 e 20.6.4 implementadas no repositório, com apply hospedado ainda pendente; 20.6.5–20.6.7 definidas, ainda não implementadas.
 
 20.6.2 Registros do recorte
 - Banco:
@@ -1912,7 +1912,12 @@
     - `business_taxon_factual_review_events`
     - `public.open_business_taxon_factual_review_v1(...)`
     - `public.close_business_taxon_factual_review_without_change_v1(...)`
+    - `public.record_business_taxon_factual_catalog_change_decision_v1(...)`
+    - `public.save_business_taxon_factual_review_draft_v1(...)`
+    - `public.authorize_business_taxon_factual_review_publication_v1(...)`
+    - `public.reconcile_business_taxon_factual_review_publication_v1(...)`
   - Ajustados:
+    - `landing_page_input_catalog_drafts.factual_review_save_receipts`
     - `business_taxons.is_active`
     - `business_taxons.reviewed_input_catalog_version`
     - `public.openai_workload_operational_configurations`
@@ -1949,6 +1954,12 @@
     - `lib/admin/adapters/adminReadOnlyAdapter.ts`
     - `lib/admin/adapters/adminTaxonomyAdapter.ts`
     - `lib/admin/adapters/adminTaxonomyReviewPolicy.ts`
+    - `lib/admin/adapters/adminInputCatalogLifecycleAdapter.ts`
+    - `lib/admin/adapters/adminInputCatalogLifecycleContext.ts`
+    - `lib/admin/adapters/adminInputCatalogLifecycleValidation.ts`
+    - `app/admin/(protected)/estrutura-lp/actions.ts`
+    - `app/admin/(protected)/estrutura-lp/lifecycle-e20-validation-cases.ts`
+    - `app/admin/(protected)/estrutura-lp/validation-cases.ts`
     - `components/admin/AdminTaxonCreateForm.tsx`
     - `components/admin/AdminTaxonManageForm.tsx`
     - `components/admin/AdminTaxonResearchSelectionForm.tsx`
@@ -1967,11 +1978,13 @@
   - taxon ativo mantém atividade e última versão válida durante revisão, falha ou abandono.
 
 20.6.4 Decisão humana e lifecycle E20.2
-- Status: definido; não implementado.
+- Status: implementado no repositório; execução do teste SQL, apply hospedado, snippet pós-apply e reconciliação Production permanecem pendentes dos gates finais.
 - Conteúdo:
   - recomendação, decisão, autorização, publicação e ativação são estados distintos;
   - o humano pode rejeitar todos, aceitar alguns ou todos e incluir candidato próprio, sempre com camada explícita;
-  - mudança autoriza o próximo draft, mas só altera versão factual ou atividade após publicação implantada e reconciliação transacional de todos os taxons afetados.
+  - rejeição integral sem candidato próprio fecha a sessão sem mudança; qualquer aceitação ou candidato próprio permanece decisão candidata e nunca cria field por si;
+  - a projeção do draft é derivada somente pela RPC da decisão, e editar o draft invalida e reabre atomicamente todas as sessões vinculadas;
+  - autorização exige cobertura exata dos impactos ativos e das liberações inativas pendentes; mudança só altera versão factual ou atividade após publicação implantada e reconciliação transacional de todos os taxons afetados.
 
 20.6.5 Provider e fontes
 - Status: definido; não implementado.

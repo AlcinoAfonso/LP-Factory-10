@@ -3,6 +3,13 @@ export type {
   EndCustomerResearchErrorCode,
   EndCustomerResearchTaxonIdentity,
   FactualReviewKind,
+  FactualReviewCatalogChangeDecision,
+  FactualReviewHumanDecision,
+  NormalizedFactualReviewHumanDecision,
+  FactualReviewAcceptedCandidate,
+  FactualReviewDecisionLayer,
+  FactualReviewOwnCandidate,
+  FactualReviewRecommendationSelection,
   FactualReviewSession,
   FactualReviewStatus,
   FactualReviewTaxonBaseline,
@@ -40,6 +47,7 @@ export type {
   RevalidateInputCatalogEvaluationContextResult,
   ResolveInheritedInputCatalogCoverageInput,
   ResolveInheritedInputCatalogCoverageResult,
+  NormalizeFactualReviewCatalogChangeDecisionResult,
 } from "./contracts";
 export type {
   InputCatalogEvaluationAdministrativeDecision,
@@ -49,6 +57,7 @@ export {
   END_CUSTOMER_RESEARCH_AUDIENCE_SCOPE,
   INPUT_CATALOG_EVALUATION_SCHEMA_VERSION,
   factualReviewKinds,
+  factualReviewDecisionLayers,
   factualReviewStatuses,
   inputCatalogEvaluationCandidateConclusions,
   inputCatalogEvaluationCandidateOrigins,
@@ -59,6 +68,7 @@ export {
 export {
   deriveFactualReviewKind,
   isGenericTaxonActivation,
+  normalizeFactualReviewCatalogChangeDecision,
   resolveInheritedInputCatalogCoverage,
 } from "./factual-review";
 export { loadEndCustomerResearchCandidate } from "./research";

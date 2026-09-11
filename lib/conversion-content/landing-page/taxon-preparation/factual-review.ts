@@ -8,10 +8,13 @@ import {
   type ResolvedLandingPageInputCatalog,
 } from "../input-catalog";
 import type {
+  FactualReviewCatalogChangeDecision,
   FactualReviewKind,
+  NormalizeFactualReviewCatalogChangeDecisionResult,
   ResolveInheritedInputCatalogCoverageInput,
   ResolveInheritedInputCatalogCoverageResult,
 } from "./contracts";
+import { factualReviewDecisionLayers } from "./contracts";
 
 export function deriveFactualReviewKind(isActive: boolean): FactualReviewKind {
   return isActive ? "revision" : "release";
@@ -22,6 +25,100 @@ export function isGenericTaxonActivation(
   nextIsActive: boolean,
 ): boolean {
   return !currentIsActive && nextIsActive;
+}
+
+export function normalizeFactualReviewCatalogChangeDecision(
+  value: unknown,
+): NormalizeFactualReviewCatalogChangeDecisionResult {
+  if (!isRecord(value)) return invalidDecision();
+  const candidateCount = value.recommendationCandidateCount;
+  const accepted = value.acceptedCandidates;
+  const rejected = value.rejectedCandidateIndexes;
+  const own = value.ownCandidate;
+  if (
+    !Number.isSafeInteger(candidateCount) ||
+    Number(candidateCount) < 0 ||
+    Number(candidateCount) > 100 ||
+    !Array.isArray(accepted) ||
+    !Array.isArray(rejected) ||
+    accepted.length > Number(candidateCount) ||
+    rejected.length > Number(candidateCount)
+  ) {
+    return invalidDecision();
+  }
+
+  const acceptedCandidates: Array<{ index: number; layer: (typeof factualReviewDecisionLayers)[number] }> = [];
+  const coveredIndexes = new Set<number>();
+  for (const candidate of accepted) {
+    if (
+      !isRecord(candidate) ||
+      !Number.isSafeInteger(candidate.index) ||
+      Number(candidate.index) < 0 ||
+      Number(candidate.index) >= Number(candidateCount) ||
+      !isDecisionLayer(candidate.layer) ||
+      coveredIndexes.has(Number(candidate.index))
+    ) {
+      return invalidDecision();
+    }
+    coveredIndexes.add(Number(candidate.index));
+    acceptedCandidates.push({ index: Number(candidate.index), layer: candidate.layer });
+  }
+  const rejectedCandidateIndexes: number[] = [];
+  for (const index of rejected) {
+    if (
+      !Number.isSafeInteger(index) ||
+      Number(index) < 0 ||
+      Number(index) >= Number(candidateCount) ||
+      coveredIndexes.has(Number(index))
+    ) {
+      return invalidDecision();
+    }
+    coveredIndexes.add(Number(index));
+    rejectedCandidateIndexes.push(Number(index));
+  }
+  if (coveredIndexes.size !== Number(candidateCount)) return invalidDecision();
+
+  let ownCandidate: FactualReviewCatalogChangeDecision["ownCandidate"] = null;
+  if (own !== null) {
+    if (
+      !isRecord(own) ||
+      typeof own.factualNeed !== "string" ||
+      own.factualNeed.trim().length === 0 ||
+      own.factualNeed.trim().length > 1000 ||
+      !isDecisionLayer(own.layer)
+    ) {
+      return invalidDecision();
+    }
+    ownCandidate = Object.freeze({
+      factualNeed: own.factualNeed.trim(),
+      layer: own.layer,
+    });
+  }
+
+  const recommendationSelection = acceptedCandidates.length === 0
+    ? "zero"
+    : acceptedCandidates.length === Number(candidateCount)
+      ? "total"
+      : "partial";
+  if (value.recommendationSelection !== recommendationSelection) {
+    return invalidDecision();
+  }
+  return {
+    ok: true,
+    value: Object.freeze({
+      decisionKind:
+        acceptedCandidates.length === 0 && ownCandidate === null
+          ? "no_change"
+          : "catalog_change",
+      recommendationCandidateCount: Number(candidateCount),
+      recommendationSelection,
+      acceptedCandidates: Object.freeze(
+        acceptedCandidates.sort((left, right) => left.index - right.index),
+      ),
+      rejectedCandidateIndexes: Object.freeze(rejectedCandidateIndexes.sort((a, b) => a - b)),
+      ownCandidate,
+    }),
+  };
 }
 
 export function resolveInheritedInputCatalogCoverage(
@@ -146,6 +243,26 @@ function canonicalize(value: unknown): string {
       .sort()
       .map((key) => `${JSON.stringify(key)}:${canonicalize(record[key])}`)
       .join(",")}}`;
+}
+
+function isDecisionLayer(value: unknown): value is (typeof factualReviewDecisionLayers)[number] {
+  return typeof value === "string" && factualReviewDecisionLayers.includes(
+    value as (typeof factualReviewDecisionLayers)[number],
+  );
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function invalidDecision(): NormalizeFactualReviewCatalogChangeDecisionResult {
+  return {
+    ok: false,
+    error: {
+      code: "INVALID_FACTUAL_REVIEW_DECISION",
+      message: "A decisão factual precisa cobrir cada recomendação e explicitar a camada aceita.",
+    },
+  };
 }
 
 function failure(

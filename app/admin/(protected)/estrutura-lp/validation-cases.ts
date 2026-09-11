@@ -6,7 +6,9 @@ import { createRequire } from "node:module";
 
 import { collectCompletePaginatedRows } from "../../../../lib/admin/adapters/adminInputCatalogLifecyclePagination";
 import {
+  collectRequiredFactualReviewTaxonIds,
   fingerprintInputCatalogLifecycleContext,
+  hasCompleteFactualReviewCoverage,
   planPublishedInputCatalogReviewReconciliation,
   validatePublishedInputCatalogReviewEvidenceContext,
 } from "../../../../lib/admin/adapters/adminInputCatalogLifecycleValidation";
@@ -98,6 +100,8 @@ assert.doesNotMatch(
 assert.match(lifecycleContext, /business_taxons/);
 assert.match(lifecycleContext, /selected_end_customer_research_version/);
 assert.match(lifecycleContext, /reviewed_input_catalog_version/);
+assert.match(lifecycleContext, /business_taxon_factual_reviews/);
+assert.match(lifecycleContext, /unclosedReleaseTaxonIds/);
 assert.doesNotMatch(lifecycleValidation, /lp-builder|OperationalConfiguration|operationalTaxonIds/);
 assert.deepEqual(
   Object.keys(createRequire(import.meta.url).cache).filter((path) =>
@@ -112,25 +116,18 @@ assert.match(lifecycleAdapter, /publication_context_fingerprint/);
 assert.match(lifecycleAdapter, /taxon_review_evidence/);
 assert.match(lifecycleAdapter, /reconstructDraftInputCatalogEvaluationContext/);
 assert.match(lifecycleAdapter, /recordAdminInputCatalogDraftSufficiencyDecision/);
+assert.match(lifecycleAdapter, /closeAdminTaxonFactualReviewWithoutChangeForCurrentCoverage/);
+assert.match(lifecycleAdapter, /requiredFactualReviewTaxonIds\(candidate\.value, context\.value\)/);
 assert.match(lifecycleAdapter, /reconcileAdminInputCatalogPublishedDraft/);
 assert.match(lifecycleAdapter, /runtimeEnvironment !== "production"/);
-assert.match(lifecycleAdapter, /reconstructCanonicalInputCatalogEvaluationContext/);
-assert.match(lifecycleAdapter, /advancePublishedReviewMarker/);
-assert.match(lifecycleAdapter, /selected_end_customer_research_version/);
 assert.match(lifecycleAdapter, /storedDraftFingerprint !== deployedFingerprint/);
-assert.match(lifecycleAdapter, /finalProof[\s\S]*landing_page_input_catalog_drafts"\)[\s\S]*\.delete\(\)/);
-const publishedEvidenceValidationIndex = lifecycleAdapter.indexOf(
-  "const initialProof = await validatePublishedReviewEvidence",
-);
-const publishedReviewWriteIndex = lifecycleAdapter.indexOf(
-  "const advanced = await advancePublishedReviewMarker",
-);
-const publishedDraftDeleteIndex = lifecycleAdapter.indexOf(
-  '.from("landing_page_input_catalog_drafts")\n    .delete()',
-);
-assert.ok(publishedEvidenceValidationIndex >= 0);
-assert.ok(publishedReviewWriteIndex > publishedEvidenceValidationIndex);
-assert.ok(publishedDraftDeleteIndex > publishedReviewWriteIndex);
+assert.match(lifecycleAdapter, /saveAdminInputCatalogDraftAndInvalidateFactualReviews/);
+assert.match(lifecycleAdapter, /authorizeAdminInputCatalogFactualPublication/);
+assert.match(lifecycleAdapter, /reconcileAdminInputCatalogFactualPublication/);
+assert.match(lifecycleAdapter, /hasCompleteFactualReviewCoverage/);
+assert.doesNotMatch(lifecycleAdapter, /advancePublishedReviewMarker/);
+assert.doesNotMatch(lifecycleAdapter, /\.update\(\{\s*taxon_review_evidence:/);
+assert.doesNotMatch(lifecycleAdapter, /reviewed_input_catalog_version:\s*currentVersion/);
 assert.doesNotMatch(
   lifecycleAdapter,
   /blockingTaxonIds|blockingOperationalReviews|invalidOperationalConfigurations|collectCommercialIdentityReviewBlockers|preparedTaxonIds/,
@@ -165,6 +162,22 @@ assert.match(lifecycleMigration, /taxon_review_evidence jsonb not null default '
 assert.doesNotMatch(lifecycleMigration, /insert into public\.landing_page_input_catalog_drafts/);
 
 async function validateBehavioralContracts(): Promise<void> {
+assert.deepEqual(collectRequiredFactualReviewTaxonIds({
+  activeReviewRequiredTaxonIds: ["active-b", "active-a"],
+  unclosedReleaseTaxonIds: ["release-z", "active-a"],
+}), ["active-a", "active-b", "release-z"]);
+assert.equal(hasCompleteFactualReviewCoverage({
+  requiredTaxonIds: ["b", "a"],
+  evidenceTaxonIds: ["a", "b"],
+}), true);
+assert.equal(hasCompleteFactualReviewCoverage({
+  requiredTaxonIds: ["a", "b"],
+  evidenceTaxonIds: ["a"],
+}), false);
+assert.equal(hasCompleteFactualReviewCoverage({
+  requiredTaxonIds: ["a", "a"],
+  evidenceTaxonIds: ["a"],
+}), false);
 const largeCollection = Array.from({ length: 1_207 }, (_, index) => index);
 const completePagination = await collectCompletePaginatedRows({
   pageSize: 500,
@@ -222,6 +235,13 @@ const staleContextFingerprint = fingerprintInputCatalogLifecycleContext({
 });
 assert.match(originalContextFingerprint, /^[0-9a-f]{64}$/);
 assert.notEqual(staleContextFingerprint, originalContextFingerprint);
+assert.notEqual(
+  fingerprintInputCatalogLifecycleContext({
+    ...lifecycleFingerprintContext,
+    unclosedReleaseTaxonIds: ["release-session-taxon"],
+  }),
+  originalContextFingerprint,
+);
 
 const preservedDraftIdentity = inputCatalogReviewEvidenceIdentity();
 const deployedIdentity = reorderedInputCatalogReviewEvidenceIdentity(

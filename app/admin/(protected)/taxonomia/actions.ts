@@ -385,9 +385,10 @@ async function executeAdministrativeEvaluationDecision(input: Readonly<{
             expectedContentFingerprint,
             expectedContextFingerprint: evidence.contextFingerprint,
             decision: input.decision,
+            recommendationCandidateCount: input.output.candidates.length,
           });
           if (!recorded.ok) return recorded;
-          return { ok: true as const, reviewedVersion: evidence.inputCatalogVersion };
+          return { ok: true as const, reviewedVersion: recorded.reviewedVersion };
         },
       },
     );

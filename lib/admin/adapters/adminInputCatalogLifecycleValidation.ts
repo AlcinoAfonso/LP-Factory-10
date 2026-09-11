@@ -30,6 +30,32 @@ export function planPublishedInputCatalogReviewReconciliation(input: Readonly<{
   });
 }
 
+export function hasCompleteFactualReviewCoverage(input: Readonly<{
+  requiredTaxonIds: readonly string[];
+  evidenceTaxonIds: readonly string[];
+}>): boolean {
+  const required = [...new Set(input.requiredTaxonIds)].sort();
+  const evidence = [...new Set(input.evidenceTaxonIds)].sort();
+  return (
+    required.length === input.requiredTaxonIds.length &&
+    evidence.length === input.evidenceTaxonIds.length &&
+    required.length === evidence.length &&
+    required.every((taxonId, index) => taxonId === evidence[index])
+  );
+}
+
+export function collectRequiredFactualReviewTaxonIds(input: Readonly<{
+  activeReviewRequiredTaxonIds: readonly string[];
+  unclosedReleaseTaxonIds: readonly string[];
+}>): readonly string[] {
+  return Object.freeze([
+    ...new Set([
+      ...input.activeReviewRequiredTaxonIds,
+      ...input.unclosedReleaseTaxonIds,
+    ]),
+  ].sort());
+}
+
 export function validatePublishedInputCatalogReviewEvidenceContext(input: Readonly<{
   storedContextFingerprint: string;
   preservedDraftIdentity: InputCatalogEvaluationContextIdentity;
@@ -73,6 +99,7 @@ export function fingerprintInputCatalogLifecycleContext(input: Readonly<{
     reviewedVersion: number | null;
     selectedResearchVersion: number | null;
   }>[];
+  unclosedReleaseTaxonIds?: readonly string[];
 }>): string {
   const canonical = stableJson({
     taxons: input.taxons
@@ -82,6 +109,7 @@ export function fingerprintInputCatalogLifecycleContext(input: Readonly<{
         selectedResearchVersion: taxon.selectedResearchVersion,
       }))
       .sort((left, right) => left.identity.id.localeCompare(right.identity.id)),
+    unclosedReleaseTaxonIds: [...(input.unclosedReleaseTaxonIds ?? [])].sort(),
   });
   return createHash("sha256").update(canonical).digest("hex");
 }
@@ -123,6 +151,8 @@ export function createInputCatalogLifecycleProof(input: Readonly<{
         reviewedVersion: taxon.reviewedVersion,
         selectedResearchVersion: taxon.selectedResearchVersion,
       })).sort((left, right) => left.identity.id.localeCompare(right.identity.id))));
+      hash?.update(',"unclosedReleaseTaxonIds":');
+      hash?.update(stableJson([...(context.unclosedReleaseTaxonIds ?? [])].sort()));
       hash?.update("}");
       return {
         fingerprint: hash?.digest("hex") ?? "",

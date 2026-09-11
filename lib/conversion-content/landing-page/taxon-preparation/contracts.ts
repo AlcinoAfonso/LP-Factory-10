@@ -186,6 +186,49 @@ export type FactualReviewSession = Readonly<{
 
 export type FactualReviewTaxonChainSnapshot = readonly LandingPageInputCatalogTaxonIdentity[];
 
+export const factualReviewDecisionLayers = [
+  "universal",
+  "segment",
+  "niche",
+  "ultra_niche",
+] as const;
+
+export type FactualReviewDecisionLayer = (typeof factualReviewDecisionLayers)[number];
+export type FactualReviewRecommendationSelection = "zero" | "partial" | "total";
+
+export type FactualReviewAcceptedCandidate = Readonly<{
+  index: number;
+  layer: FactualReviewDecisionLayer;
+}>;
+
+export type FactualReviewOwnCandidate = Readonly<{
+  factualNeed: string;
+  layer: FactualReviewDecisionLayer;
+}>;
+
+export type FactualReviewHumanDecision = Readonly<{
+  recommendationCandidateCount: number;
+  recommendationSelection: FactualReviewRecommendationSelection;
+  acceptedCandidates: readonly FactualReviewAcceptedCandidate[];
+  rejectedCandidateIndexes: readonly number[];
+  ownCandidate: FactualReviewOwnCandidate | null;
+}>;
+
+export type FactualReviewCatalogChangeDecision = FactualReviewHumanDecision;
+
+export type NormalizedFactualReviewHumanDecision = FactualReviewHumanDecision &
+  Readonly<{ decisionKind: "no_change" | "catalog_change" }>;
+
+export type NormalizeFactualReviewCatalogChangeDecisionResult =
+  | Readonly<{ ok: true; value: NormalizedFactualReviewHumanDecision }>
+  | Readonly<{
+      ok: false;
+      error: Readonly<{
+        code: "INVALID_FACTUAL_REVIEW_DECISION";
+        message: string;
+      }>;
+    }>;
+
 export type InheritedInputCatalogCoverage = Readonly<{
   inputCatalogVersion: number;
   taxonChain: LandingPageInputCatalogTaxonChain;

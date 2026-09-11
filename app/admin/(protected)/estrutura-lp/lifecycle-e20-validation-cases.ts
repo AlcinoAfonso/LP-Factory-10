@@ -2,7 +2,9 @@ import assert from "node:assert/strict";
 
 import { collectCompletePaginatedRows } from "../../../../lib/admin/adapters/adminInputCatalogLifecyclePagination";
 import {
+  collectRequiredFactualReviewTaxonIds,
   fingerprintInputCatalogLifecycleContext,
+  hasCompleteFactualReviewCoverage,
   planPublishedInputCatalogReviewReconciliation,
 } from "../../../../lib/admin/adapters/adminInputCatalogLifecycleValidation";
 import {
@@ -11,6 +13,18 @@ import {
 } from "../../../../lib/conversion-content/landing-page/input-catalog";
 
 export async function validateLifecycleE20Contracts(): Promise<void> {
+  assert.deepEqual(collectRequiredFactualReviewTaxonIds({
+    activeReviewRequiredTaxonIds: [realEstateSegmentTaxon.id],
+    unclosedReleaseTaxonIds: [realEstateBrokerNicheTaxon.id],
+  }), [realEstateSegmentTaxon.id, realEstateBrokerNicheTaxon.id].sort());
+  assert.equal(hasCompleteFactualReviewCoverage({
+    requiredTaxonIds: [realEstateSegmentTaxon.id, realEstateBrokerNicheTaxon.id],
+    evidenceTaxonIds: [realEstateBrokerNicheTaxon.id, realEstateSegmentTaxon.id],
+  }), true);
+  assert.equal(hasCompleteFactualReviewCoverage({
+    requiredTaxonIds: [realEstateSegmentTaxon.id, realEstateBrokerNicheTaxon.id],
+    evidenceTaxonIds: [realEstateSegmentTaxon.id],
+  }), false);
   const rows = Array.from({ length: 1_207 }, (_, index) => ({ id: index }));
   const complete = await collectCompletePaginatedRows({
     pageSize: 500,

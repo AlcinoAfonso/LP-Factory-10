@@ -16,6 +16,7 @@ export type LifecycleTaxon = Readonly<{
 }>;
 export type LifecycleContext = Readonly<{
   taxons: readonly LifecycleTaxon[];
+  unclosedReleaseTaxonIds: readonly string[];
   lifecycleProof: ReturnType<ReturnType<typeof createInputCatalogLifecycleProof>["finish"]> | null;
 }>;
 const PAGE_SIZE = 500;
@@ -29,7 +30,7 @@ export async function readCompleteLifecycleContext(
     prepareCandidate?: (taxons: readonly LifecycleTaxon[]) => ValidateLandingPageInputCatalogDraftResult;
   }> = { fingerprint: false },
 ): Promise<Readonly<{ ok: true; value: LifecycleContext }> | Readonly<{ ok: false; message: string }>> {
-  const taxonRows = await collectCompletePaginatedRows({
+  const [taxonRows, releaseRows] = await Promise.all([collectCompletePaginatedRows({
     pageSize: PAGE_SIZE,
     readPage: async (offset, limit) => {
       try {
@@ -46,8 +47,27 @@ export async function readCompleteLifecycleContext(
         return null;
       }
     },
-  });
-  if (!taxonRows.ok) return { ok: false, message: READ_ERROR };
+  }), collectCompletePaginatedRows({
+    pageSize: PAGE_SIZE,
+    readPage: async (offset, limit) => {
+      try {
+        const { data, error, count } = await client
+          .from("business_taxon_factual_reviews")
+          .select("id,taxon_id,kind,status", { count: "exact" })
+          .eq("kind", "release")
+          .in("status", ["open", "awaiting_catalog_publication"])
+          .order("id", { ascending: true })
+          .range(offset, offset + limit - 1);
+        if (error || !Array.isArray(data) || count === null || data.length > limit) {
+          return null;
+        }
+        return { rows: data, total: count };
+      } catch {
+        return null;
+      }
+    },
+  })]);
+  if (!taxonRows.ok || !releaseRows.ok) return { ok: false, message: READ_ERROR };
   const taxons: LifecycleTaxon[] = [];
   for (const raw of taxonRows.rows) {
     const taxon = normalizeTaxon(raw);
@@ -56,13 +76,33 @@ export async function readCompleteLifecycleContext(
     }
     taxons.push(taxon);
   }
+  const taxonsById = new Map(taxons.map((taxon) => [taxon.identity.id, taxon]));
+  const unclosedReleaseTaxonIds: string[] = [];
+  for (const raw of releaseRows.rows) {
+    if (
+      !isRecord(raw) ||
+      typeof raw.id !== "string" ||
+      typeof raw.taxon_id !== "string" ||
+      raw.kind !== "release" ||
+      (raw.status !== "open" && raw.status !== "awaiting_catalog_publication") ||
+      unclosedReleaseTaxonIds.includes(raw.taxon_id) ||
+      taxonsById.get(raw.taxon_id)?.identity.isActive !== false
+    ) {
+      return { ok: false, message: "As sessões factuais de liberação contêm estado inválido." };
+    }
+    unclosedReleaseTaxonIds.push(raw.taxon_id);
+  }
+  unclosedReleaseTaxonIds.sort();
   const candidate = options.prepareCandidate?.(taxons);
   const proof = options.fingerprint || candidate?.ok ? createInputCatalogLifecycleProof({
     fingerprint: options.fingerprint,
     candidate: candidate?.ok ? candidate.value : undefined,
   }) : null;
 
-  const context = { taxons };
+  const context = {
+    taxons,
+    unclosedReleaseTaxonIds: Object.freeze(unclosedReleaseTaxonIds),
+  };
   return { ok: true, value: { ...context, lifecycleProof: proof?.finish(context) ?? null } };
 }
 

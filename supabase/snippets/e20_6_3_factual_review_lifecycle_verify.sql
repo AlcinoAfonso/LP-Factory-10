@@ -42,7 +42,8 @@ expected_event_columns(column_name) as (
 ),
 expected_constraints(table_name, constraint_name, constraint_type) as (
   values
-    ('business_taxon_factual_reviews'::text, 'business_taxon_factual_reviews_pkey', 'p'::"char"),
+    ('landing_page_input_catalog_drafts'::text, 'landing_page_input_catalog_drafts_factual_review_save_receipts_chk', 'c'::"char"),
+    ('business_taxon_factual_reviews', 'business_taxon_factual_reviews_pkey', 'p'::"char"),
     ('business_taxon_factual_reviews', 'business_taxon_factual_reviews_taxon_id_fkey', 'f'::"char"),
     ('business_taxon_factual_reviews', 'business_taxon_factual_reviews_opened_by_fkey', 'f'::"char"),
     ('business_taxon_factual_reviews', 'business_taxon_factual_reviews_closed_by_fkey', 'f'::"char"),
@@ -82,6 +83,19 @@ checks as (
         and table_name = 'business_taxons'
         and column_name = 'is_active'
     ), false) as ok
+
+  union all
+
+  select 'draft_save_receipts',
+    coalesce((
+      select columns.is_nullable = 'NO'
+        and columns.data_type = 'jsonb'
+        and columns.column_default = '''{}''::jsonb'
+      from information_schema.columns
+      where columns.table_schema = 'public'
+        and columns.table_name = 'landing_page_input_catalog_drafts'
+        and columns.column_name = 'factual_review_save_receipts'
+    ), false)
 
   union all
 
@@ -225,13 +239,17 @@ checks as (
 
   select 'material_triggers',
     coalesce((
-      select count(*) = 2
+      select count(*) = 4
         and bool_and(not trigger_state.tgisinternal)
         and bool_and(trigger_state.tgenabled = 'O')
         and bool_and(
           (trigger_state.tgname = 'business_taxon_factual_reviews_set_updated_at' and trigger_state.tgtype = 19)
           or
           (trigger_state.tgname = 'business_taxon_factual_review_events_append_only' and trigger_state.tgtype = 27)
+          or
+          (trigger_state.tgname = 'landing_page_input_catalog_drafts_set_updated_at' and trigger_state.tgtype = 19)
+          or
+          (trigger_state.tgname = 'landing_page_input_catalog_drafts_guard_factual_projection' and trigger_state.tgtype = 23)
         )
       from pg_trigger trigger_state
       where (
@@ -241,6 +259,13 @@ checks as (
       or (
         trigger_state.tgrelid = 'public.business_taxon_factual_review_events'::regclass
         and trigger_state.tgname = 'business_taxon_factual_review_events_append_only'
+      )
+      or (
+        trigger_state.tgrelid = 'public.landing_page_input_catalog_drafts'::regclass
+        and trigger_state.tgname in (
+          'landing_page_input_catalog_drafts_set_updated_at',
+          'landing_page_input_catalog_drafts_guard_factual_projection'
+        )
       )
     ), false)
 
@@ -253,7 +278,11 @@ checks as (
       where routine_schema = 'public'
         and routine_name in (
           'open_business_taxon_factual_review_v1',
-          'close_business_taxon_factual_review_without_change_v1'
+          'close_business_taxon_factual_review_without_change_v1',
+          'record_business_taxon_factual_catalog_change_decision_v1',
+          'save_business_taxon_factual_review_draft_v1',
+          'authorize_business_taxon_factual_review_publication_v1',
+          'reconcile_business_taxon_factual_review_publication_v1'
         )
         and grantee = 'PUBLIC'
         and privilege_type = 'EXECUTE'
@@ -261,14 +290,30 @@ checks as (
       and not has_function_privilege('anon', 'public.open_business_taxon_factual_review_v1(uuid,text,jsonb,uuid,uuid,boolean,integer)', 'EXECUTE')
       and not has_function_privilege('authenticated', 'public.open_business_taxon_factual_review_v1(uuid,text,jsonb,uuid,uuid,boolean,integer)', 'EXECUTE')
       and has_function_privilege('service_role', 'public.open_business_taxon_factual_review_v1(uuid,text,jsonb,uuid,uuid,boolean,integer)', 'EXECUTE')
-      and not has_function_privilege('anon', 'public.close_business_taxon_factual_review_without_change_v1(uuid,uuid,uuid,bigint,integer,text,text,jsonb)', 'EXECUTE')
-      and not has_function_privilege('authenticated', 'public.close_business_taxon_factual_review_without_change_v1(uuid,uuid,uuid,bigint,integer,text,text,jsonb)', 'EXECUTE')
-      and has_function_privilege('service_role', 'public.close_business_taxon_factual_review_without_change_v1(uuid,uuid,uuid,bigint,integer,text,text,jsonb)', 'EXECUTE')
+      and not has_function_privilege('anon', 'public.close_business_taxon_factual_review_without_change_v1(uuid,uuid,uuid,bigint,integer,text,text,jsonb,jsonb)', 'EXECUTE')
+      and not has_function_privilege('authenticated', 'public.close_business_taxon_factual_review_without_change_v1(uuid,uuid,uuid,bigint,integer,text,text,jsonb,jsonb)', 'EXECUTE')
+      and has_function_privilege('service_role', 'public.close_business_taxon_factual_review_without_change_v1(uuid,uuid,uuid,bigint,integer,text,text,jsonb,jsonb)', 'EXECUTE')
+      and not has_function_privilege('anon', 'public.record_business_taxon_factual_catalog_change_decision_v1(uuid,uuid,uuid,bigint,text,jsonb,bigint,integer,text,text,jsonb)', 'EXECUTE')
+      and not has_function_privilege('authenticated', 'public.record_business_taxon_factual_catalog_change_decision_v1(uuid,uuid,uuid,bigint,text,jsonb,bigint,integer,text,text,jsonb)', 'EXECUTE')
+      and has_function_privilege('service_role', 'public.record_business_taxon_factual_catalog_change_decision_v1(uuid,uuid,uuid,bigint,text,jsonb,bigint,integer,text,text,jsonb)', 'EXECUTE')
+      and not has_function_privilege('anon', 'public.save_business_taxon_factual_review_draft_v1(uuid,uuid,bigint,jsonb,text)', 'EXECUTE')
+      and not has_function_privilege('authenticated', 'public.save_business_taxon_factual_review_draft_v1(uuid,uuid,bigint,jsonb,text)', 'EXECUTE')
+      and has_function_privilege('service_role', 'public.save_business_taxon_factual_review_draft_v1(uuid,uuid,bigint,jsonb,text)', 'EXECUTE')
+      and not has_function_privilege('anon', 'public.authorize_business_taxon_factual_review_publication_v1(uuid,uuid,bigint,text,text,uuid[])', 'EXECUTE')
+      and not has_function_privilege('authenticated', 'public.authorize_business_taxon_factual_review_publication_v1(uuid,uuid,bigint,text,text,uuid[])', 'EXECUTE')
+      and has_function_privilege('service_role', 'public.authorize_business_taxon_factual_review_publication_v1(uuid,uuid,bigint,text,text,uuid[])', 'EXECUTE')
+      and not has_function_privilege('anon', 'public.reconcile_business_taxon_factual_review_publication_v1(uuid,uuid,bigint,integer,text,text)', 'EXECUTE')
+      and not has_function_privilege('authenticated', 'public.reconcile_business_taxon_factual_review_publication_v1(uuid,uuid,bigint,integer,text,text)', 'EXECUTE')
+      and has_function_privilege('service_role', 'public.reconcile_business_taxon_factual_review_publication_v1(uuid,uuid,bigint,integer,text,text)', 'EXECUTE')
       and (
         to_regrole('ai_readonly') is null
         or (
           not has_function_privilege('ai_readonly', 'public.open_business_taxon_factual_review_v1(uuid,text,jsonb,uuid,uuid,boolean,integer)', 'EXECUTE')
-          and not has_function_privilege('ai_readonly', 'public.close_business_taxon_factual_review_without_change_v1(uuid,uuid,uuid,bigint,integer,text,text,jsonb)', 'EXECUTE')
+          and not has_function_privilege('ai_readonly', 'public.close_business_taxon_factual_review_without_change_v1(uuid,uuid,uuid,bigint,integer,text,text,jsonb,jsonb)', 'EXECUTE')
+          and not has_function_privilege('ai_readonly', 'public.record_business_taxon_factual_catalog_change_decision_v1(uuid,uuid,uuid,bigint,text,jsonb,bigint,integer,text,text,jsonb)', 'EXECUTE')
+          and not has_function_privilege('ai_readonly', 'public.save_business_taxon_factual_review_draft_v1(uuid,uuid,bigint,jsonb,text)', 'EXECUTE')
+          and not has_function_privilege('ai_readonly', 'public.authorize_business_taxon_factual_review_publication_v1(uuid,uuid,bigint,text,text,uuid[])', 'EXECUTE')
+          and not has_function_privilege('ai_readonly', 'public.reconcile_business_taxon_factual_review_publication_v1(uuid,uuid,bigint,integer,text,text)', 'EXECUTE')
         )
       )
       and coalesce((
@@ -278,10 +323,18 @@ checks as (
         where procedures.oid = 'public.open_business_taxon_factual_review_v1(uuid,text,jsonb,uuid,uuid,boolean,integer)'::regprocedure
       ), false)
       and coalesce((
-        select not procedures.prosecdef
-          and procedures.proconfig @> array['search_path=public, pg_catalog']::text[]
+        select count(*) = 6
+          and bool_and(not procedures.prosecdef)
+          and bool_and(procedures.proconfig @> array['search_path=public, pg_catalog']::text[])
         from pg_proc procedures
-        where procedures.oid = 'public.close_business_taxon_factual_review_without_change_v1(uuid,uuid,uuid,bigint,integer,text,text,jsonb)'::regprocedure
+        where procedures.oid in (
+          'public.open_business_taxon_factual_review_v1(uuid,text,jsonb,uuid,uuid,boolean,integer)'::regprocedure,
+          'public.close_business_taxon_factual_review_without_change_v1(uuid,uuid,uuid,bigint,integer,text,text,jsonb,jsonb)'::regprocedure,
+          'public.record_business_taxon_factual_catalog_change_decision_v1(uuid,uuid,uuid,bigint,text,jsonb,bigint,integer,text,text,jsonb)'::regprocedure,
+          'public.save_business_taxon_factual_review_draft_v1(uuid,uuid,bigint,jsonb,text)'::regprocedure,
+          'public.authorize_business_taxon_factual_review_publication_v1(uuid,uuid,bigint,text,text,uuid[])'::regprocedure,
+          'public.reconcile_business_taxon_factual_review_publication_v1(uuid,uuid,bigint,integer,text,text)'::regprocedure
+        )
       ), false)
 )
 select

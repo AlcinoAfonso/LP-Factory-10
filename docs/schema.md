@@ -1041,14 +1041,16 @@
 1.35.2 Evidências e constraints
 • content_fingerprint é SHA-256 hexadecimal obrigatório; validation_fingerprint/validation_context_fingerprint/validated_at e publication_fingerprint/publication_context_fingerprint/publication_prepared_at formam conjuntos consistentes.
 • Evidência de publicação só pode referenciar o mesmo conteúdo e a mesma coleção operacional integral validados. Drift de taxonomia, configuração E19.2 pré-handoff, configuração E19.5, LP ou elegibilidade torna o handoff stale. O registro significa handoff repo-only preparado, não publicação, ativação ou autoridade operacional.
-• taxon_review_evidence é objeto JSON server-only de decisões humanas pré-publicação vinculadas ao fingerprint exato do conteúdo e do contexto E20.6.5; editar o draft limpa essas evidências, e registrá-las não atualiza reviewed_input_catalog_version.
+• taxon_review_evidence é projeção JSON server-only e RPC-only das decisões autoritativas por taxon e draft exato. Cada entrada contém somente review_id, decision_event_id, draft_revision, content_fingerprint e context_fingerprint; decisão, ator e candidatos residem nos eventos append-only.
+• Gravar decisão não incrementa a revisão material do draft nem altera reviewed_input_catalog_version. Editar o conteúdo trava o singleton e as sessões vinculadas, limpa integralmente a projeção, registra draft_invalidated, reabre as sessões e limpa validação/autorização na mesma transação.
+• factual_review_save_receipts é mapa JSON server-only e RPC-only de recibos compactos de save por operation_id; cada recibo vincula ator, revisão esperada/resultante, identidade do conteúdo e fingerprint para tornar replay exato idempotente e rejeitar reutilização divergente.
 • singleton é a primary key booleana e aceita somente true; no máximo uma linha pode existir.
 • created_by e updated_by referenciam auth.users(id) com ON UPDATE CASCADE e ON DELETE RESTRICT; created_at e updated_at são timestamptz não nulos, e trigger canônico mantém updated_at.
 
 1.35.3 Segurança e artefatos
 • RLS habilitado e nenhuma policy; public, anon, authenticated e ai_readonly não possuem grants.
 • service_role possui SELECT, INSERT, UPDATE e DELETE; não há acesso direto do client.
-• DELETE é usado somente pela reconciliação humana no runtime de Production pós-deploy, depois de o boundary comprovar que versão atual, conteúdo e fingerprint do registry implantado correspondem exatamente ao draft congelado.
+• DELETE é usado somente pela reconciliação humana no runtime de Production pós-deploy, depois de uma RPC comprovar versão, revisão, conteúdo, contexto, decisões e autorizações da coleção integral e materializar todos os efeitos na mesma transação.
 • Migration forward-only: `supabase/migrations/20260824180000_e20_2_8_input_catalog_lifecycle.sql`; teste transacional: `supabase/tests/e20_2_8_input_catalog_lifecycle.test.sql`; verificador read-only: `supabase/snippets/e20_2_8_input_catalog_lifecycle_verify.sql`.
 • A migration não cria linha e não migra v1–v5. O apply hospedado foi concluído em 25/08/2026; o verificador read-only aprovou 4/4 checks, o teste SQL transacional foi aprovado sem resíduos e o Security Controls apresentou somente o INFO esperado de RLS sem policy, compatível com acesso exclusivo por service_role.
 
@@ -1089,17 +1091,19 @@
 • Autoridade service-only do lifecycle factual por taxon; `kind` aceita `release | revision` e `status` aceita `open | awaiting_catalog_publication | closed_without_change | closed_published`.
 • Preserva baseline de atividade e versão revisada, fingerprints, snapshot canônico da identidade completa do taxon e de seus ancestrais, revisão otimista, operação idempotente de abertura, atores e instantes. Índice parcial permite no máximo uma sessão não encerrada por taxon.
 • Abrir sessão não altera `business_taxons`. Abertura e fechamento revalidam a cadeia sob locks em ordem estável; o fechamento sem mudança avança a versão revisada e ativa somente uma `release` na mesma transação, enquanto uma `revision` permanece ativa.
+• Decisão com mudança vincula sessão, evento autoritativo, versão alvo, revisão do draft e fingerprints e move a sessão para awaiting_catalog_publication sem alterar taxon ou catálogo. Edição do draft invalida e reabre todas as sessões vinculadas; reconciliação fecha a coleção como closed_published.
 
 1.38.2 Segurança e artefatos
 • RLS habilitado e zero policies; public, anon, authenticated e ai_readonly sem grants. `service_role` possui somente SELECT, INSERT e UPDATE.
 • Não participa do Trigger Hub; trigger dedicado mantém `updated_at`.
-• RPCs `open_business_taxon_factual_review_v1` e `close_business_taxon_factual_review_without_change_v1` usam SECURITY INVOKER, search_path fixado e EXECUTE exclusivo de service_role.
+• RPCs `open_business_taxon_factual_review_v1`, `close_business_taxon_factual_review_without_change_v1`, `record_business_taxon_factual_catalog_change_decision_v1`, `save_business_taxon_factual_review_draft_v1`, `authorize_business_taxon_factual_review_publication_v1` e `reconcile_business_taxon_factual_review_publication_v1` usam SECURITY INVOKER, search_path fixado e EXECUTE exclusivo de service_role.
 • Migration forward-only: `supabase/migrations/20260911213324_e20_6_3_factual_review_lifecycle.sql`; teste transacional e snippet read-only homônimos. Estado: artefatos repo-side criados; apply hospedado e verificações pós-apply ainda não executados.
 
 1.39 business_taxon_factual_review_events
 1.39.1 Função e contrato
 • Trilha append-only das sessões factuais, ordenada por sequência e idempotente por operação em cada sessão.
 • Vocabulários de evento, estratégia de fonte e decisão são fechados; payload é objeto e fingerprints são exigidos conforme o tipo do evento.
+• decision_recorded é a autoridade da partição humana entre recomendações aceitas e rejeitadas, candidato próprio e camadas. draft_linked, publication_authorized, draft_invalidated e reconciled_published mantêm decisão, autorização, publicação e ativação como transições distintas e idempotentes por sessão.
 • Payload não armazena prompt, pesquisa integral, conteúdo web, secret, Base, Oferta, tarefa, conta ou PII.
 
 1.39.2 Segurança e imutabilidade
