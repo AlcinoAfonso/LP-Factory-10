@@ -66,7 +66,8 @@
 - `business_taxons.reviewed_input_catalog_version` é a última versão factual válida; estado candidato nunca o substitui.
 - O registry E20.2 implantado e `CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION` permanecem autoridade das versões publicadas e da versão atual.
 - `landing_page_input_catalog_drafts` permanece o singleton mutável, administrativo e não operacional do próximo draft.
-- As novas sessões/eventos preservam lifecycle, decisão e evidência; não substituem o registry nem tornam candidato um field.
+- `business_taxon_factual_reviews` é a autoridade do estado do lifecycle factual e `business_taxon_factual_review_events` é a autoridade append-only das avaliações e decisões humanas. `landing_page_input_catalog_drafts.taxon_review_evidence` deixa de aceitar escrita independente e passa a ser somente projeção derivada dessas decisões para o draft exato; não existe segunda autoridade factual.
+- As novas sessões/eventos não substituem o registry nem tornam candidato um field.
 - Identidade, cadeia, versão, fonte, validade, impacto, autorização, persistência, publicação e ativação são determinísticos.
 - A IA é consultiva e limitada a significado, cobertura, refinamento e possíveis gaps.
 
@@ -81,16 +82,21 @@
 
 ### 5.2 `business_taxon_factual_reviews`
 
-- Criar tabela service-only com `id uuid`, `taxon_id uuid`, `kind release | revision`, `status open | awaiting_catalog_publication | closed_without_change | closed_published`, `baseline_is_active`, `baseline_reviewed_input_catalog_version`, `target_input_catalog_version`, referência opcional ao draft/revisão, `context_fingerprint`, `revision bigint`, `opened_by`, `closed_by`, `opened_at`, `closed_at`, `created_at` e `updated_at`.
-- Checks garantem versões/revisão positivas, pares de fechamento coerentes e presença de referência de draft apenas quando o estado exigir publicação.
+- Criar tabela service-only com `id uuid`, `taxon_id uuid`, `kind release | revision`, `status open | awaiting_catalog_publication | closed_without_change | closed_published`, `baseline_is_active`, `baseline_reviewed_input_catalog_version`, `target_input_catalog_version`, `draft_revision`, `draft_content_fingerprint`, `draft_context_fingerprint`, `context_fingerprint`, `revision bigint`, `opened_operation_id uuid`, `opened_by`, `closed_by`, `opened_at`, `closed_at`, `created_at` e `updated_at`.
+- `kind` e `status` usam checks fechados; versões, revisão e `draft_revision` são positivas quando presentes; fingerprints são SHA-256 hexadecimais; `baseline_is_active`, versão baseline, status e pares de fechamento são coerentes. A referência completa ao draft é toda nula em `open | closed_without_change` e toda presente em `awaiting_catalog_publication | closed_published`.
 - FK de taxon usa `ON UPDATE CASCADE ON DELETE RESTRICT`; atores referenciam `auth.users` com `ON UPDATE CASCADE ON DELETE RESTRICT`.
+- `opened_operation_id` é único e torna a abertura idempotente: repetição semanticamente idêntica retorna a sessão existente; reutilização com outro taxon/kind/contexto falha fechada.
 - Índice único parcial garante no máximo uma sessão não encerrada por taxon.
 
 ### 5.3 `business_taxon_factual_review_events`
 
-- Criar tabela append-only com `id uuid`, `review_id uuid`, sequência monotônica por sessão, `event_kind`, `source_strategy`, `decision_kind`, `payload_json`, `context_fingerprint`, `content_fingerprint`, `actor_user_id` e `created_at`.
+- Criar tabela append-only com `id uuid`, `review_id uuid`, `operation_id uuid`, sequência monotônica por sessão, `event_kind`, `source_strategy`, `decision_kind`, `payload_json`, `context_fingerprint`, `content_fingerprint`, `actor_user_id` e `created_at`.
+- `event_kind` aceita somente `opened | evaluation_requested | evaluation_completed | evaluation_inconclusive | decision_recorded | draft_linked | publication_authorized | draft_invalidated | closed_without_change | reconciled_published`; `source_strategy` aceita somente `e20_5 | web_search_fallback | web_search_focal`; `decision_kind` aceita somente `no_change | catalog_change`.
+- `source_strategy` é obrigatório apenas em eventos de avaliação; `decision_kind` é obrigatório apenas em `decision_recorded | publication_authorized`; fingerprints SHA-256 são exigidos nos eventos que registram output, decisão, vínculo ou reconciliação e proibidos onde não há conteúdo associado. `payload_json` é `jsonb not null default '{}'::jsonb` e sempre objeto.
+- `review_id` referencia a sessão com `ON UPDATE CASCADE ON DELETE RESTRICT`; `actor_user_id` referencia `auth.users` com `ON UPDATE CASCADE ON DELETE RESTRICT`; `sequence_number` é positivo e `created_at` é não nulo com default `now()`.
 - `payload_json` aceita somente objeto e preserva output estruturado validado, referências Web necessárias, candidatos aceitos/rejeitados, candidato próprio, camada e metadados de decisão; não armazena prompt, pesquisa integral, conteúdo web, secret, Base, Oferta, tarefa, conta ou PII.
-- Trigger rejeita `UPDATE` e `DELETE`; unicidade `(review_id, sequence_number)` preserva ordenação e idempotência.
+- Trigger dedicado rejeita `UPDATE` e `DELETE`; unicidade `(review_id, sequence_number)` preserva ordenação, e `(review_id, operation_id)` torna cada comando idempotente. Retry com o mesmo `operation_id` e mesmo fingerprint retorna o evento; divergência falha fechada.
+- As duas tabelas não participam do Trigger Hub: a residência de eventos já é a trilha factual competente, e triggers dedicados mantêm `updated_at` da sessão e a imutabilidade dos eventos sem duplicar payload no hub genérico.
 
 ### 5.4 RPCs e atomicidade
 
@@ -98,7 +104,10 @@
 - Todas usam `SECURITY INVOKER`, `SET search_path = public, pg_catalog`, nomes schema-qualified, locks das linhas participantes, ator/estado esperados e token de revisão otimista.
 - Fechamento sem mudança de uma liberação grava a versão atual revisada e ativa o taxon na mesma transação; fechamento de revisão preserva atividade e atualiza o marcador apenas quando a decisão autorizar a versão atual.
 - Autorização com mudança vincula sessão, `target_version`, revisão do draft, fingerprint do conteúdo e fingerprint do contexto; não ativa nem altera o marcador.
-- Reconciliação pós-deploy comprova registry/versão/fingerprints, aplica o marcador, ativa somente sessão `release` autorizada, encerra a sessão e reconcilia o draft na mesma transação.
+- Registrar decisão com mudança anexa primeiro o evento autoritativo e atualiza, na mesma transação, `taxon_review_evidence` como mapa derivado por `taxon_id`, contendo `review_id`, `decision_event_id`, `draft_revision`, `content_fingerprint` e `context_fingerprint`. Nenhum adapter pode gravar essa projeção fora da RPC.
+- Qualquer edição do draft trava o singleton e todas as sessões vinculadas em ordem estável, limpa a projeção inteira, registra `draft_invalidated` e retorna todas as sessões afetadas para `open`; nova autorização exige decisões válidas para a nova revisão e os novos fingerprints.
+- A preparação da publicação só passa quando a projeção e os eventos autoritativos cobrem todos os taxons afetados pelo draft exato; ausência, duplicidade ou decisão stale impede handoff parcial.
+- Reconciliação pós-deploy trava o singleton e todas as sessões cobertas em ordem estável, comprova registry/versão/revisão/fingerprints, atualiza todos os marcadores e ativa somente sessões `release` autorizadas, encerra todas as sessões e exclui o singleton na mesma transação. Não existe reconciliação parcial por taxon.
 - Staleness, conflito, publicação ausente ou qualquer falha produzem rollback integral e preservam estado anterior.
 
 ### 5.5 ACL e inspeção
@@ -107,6 +116,7 @@
 - `service_role` recebe somente privilégios necessários; eventos não recebem `UPDATE`, `DELETE` ou `TRUNCATE`.
 - Revogar `EXECUTE` público das RPCs e conceder somente a `service_role`.
 - Criar teste SQL transacional e snippet read-only cobrindo objetos, constraints, índices, RLS, policies, ACL, triggers, RPCs, append-only, stale token, rollback e impossibilidade de ativação antecipada.
+- Os testes cobrem ainda vocabulários fechados, nulabilidade, FKs, idempotência, projeção derivada, múltiplos taxons no mesmo draft, invalidação global e reconciliação atômica sem publicação/ativação parcial.
 - Após apply, inspecionar Security Controls apenas para objetos novos/alterados. INFO de RLS sem policy é aceitável quando consistente com a residência service-only; alerta incompatível bloqueia encerramento.
 - Não criar view. Se evidência durante implementação provar necessidade indispensável, voltar ao planejamento; qualquer view autorizada exigiria `security_invoker=true` e residência no Schema.
 
@@ -137,13 +147,13 @@
 
 - A seleção de fonte é determinística e distingue: (a) cobertura herdada liberada sem IA: nenhuma chamada; (b) E20.5 selecionada e integralmente válida: uma requisição Responses sem Web Search; (c) ausência legítima de E20.5: uma requisição Responses com Web Search fallback obrigatório e no máximo duas tool calls; (d) pesquisa focal solicitada pelo humano: uma requisição Responses com Web Search obrigatório e no máximo uma tool call, usando E20.5 válida apenas como contexto complementar; (e) pesquisa E20.5 inválida, stale ou com falha de leitura: falha tipada ou resultado inconclusivo, sem converter defeito técnico em ausência legítima.
 - A falha de qualquer modo nunca confirma cobertura, não altera nem fecha sessão e não bloqueia o caminho humano sem IA.
-- Leitura administrativa de E20.5 valida slug, versão, path, metadata e conteúdo sem exigir `is_active=true`; o requisito de ativo permanece apenas em consumidor operacional que realmente o necessite.
+- A leitura administrativa usa entrada própria em `inputCatalogEvaluationSourceAdapter.ts`: carrega o taxon e sua cadeia no boundary server-only sem filtrar `is_active`, então reutiliza apenas a resolução pura de cadeia e valida slug, versão, path, metadata e conteúdo. `selectedEndCustomerResearchAdapter.ts`, a leitura operacional de `taxonChainAdapter.ts` e todos os consumidores E20.5/E20.6/E20.7 permanecem inalterados e continuam retornando `TAXON_INACTIVE` para taxon inativo.
 
 #### Contrato do provider
 
 - Preservar `taxon_input_catalog_sufficiency_evaluation` e resolver `model + reasoning.effort` exclusivamente por E21.1/E21.2, sem configuração paralela.
 - Cada execução humana produz no máximo uma requisição foreground à Responses API, com deadline total de 45 segundos, `store:false`, sem conversation, `previous_response_id`, background ou retry automático.
-- Com Web Search, usar somente `web_search` com `external_web_access:true`, `search_context_size:"medium"`, `return_token_budget:"default"`, `tool_choice:"required"`, `include:["web_search_call.action.sources"]` e `max_tool_calls` igual a 2 no fallback ou 1 na pesquisa focal.
+- Com Web Search, usar somente `web_search` com `external_web_access:true`, `search_context_size:"medium"`, `tool_choice:"required"`, `include:["web_search_call.action.sources"]` e `max_tool_calls` igual a 2 no fallback ou 1 na pesquisa focal. Não enviar `return_token_budget`, ausente do schema atual de `WebSearchTool`; o orçamento de retorno permanece o default do provider.
 - O modo sem Web Search envia `tools:[]`.
 - A saída usa Structured Outputs com JSON Schema estrito, `max_output_tokens:6000` e contrato versionado v2.
 - O preflight reserva busca, reasoning e saída, respeita o limite efetivo de 128k dos modos Web Search e falha antes do transporte quando o orçamento não couber; truncamento silencioso é proibido.
@@ -154,7 +164,7 @@
 - Toda afirmação web material referencia fonte retornada pelo provider. URLs são HTTPS, normalizadas, deduplicadas e derivadas exclusivamente de `web_search_call.action.sources`; URL inventada no JSON ou texto invalida o resultado.
 - Recusa, resposta incompleta, schema/semântica inválidos, busca obrigatória ausente, excesso de chamadas ou fonte material não mapeada produzem falha tipada/inconclusão.
 - Pesquisa, catálogo, hipótese, feedback e conteúdo web são dados não confiáveis e não alteram instruções, autorização, lifecycle ou ferramentas permitidas.
-- Critérios: matriz completa de fontes, request exata, budget pré-transporte, overcall, fontes ausentes/inventadas, injection, refusal, incomplete, JSON inválido, timeout e nenhuma segunda request.
+- Critérios: matriz completa de fontes, serialização exata da request sem propriedade desconhecida, preservação do `TAXON_INACTIVE` operacional com leitura administrativa do mesmo taxon inativo, budget pré-transporte, overcall, fontes ausentes/inventadas, injection, refusal, incomplete, JSON inválido, timeout e nenhuma segunda request.
 
 ### 6.4 `20.6.6 — Evolução e transições`
 
@@ -244,7 +254,7 @@
 ## 12. Classificação dos acréscimos técnicos
 
 - Derivação técnica da V1: lifecycle persistido, default inativo, atomicidade, optimistic concurrency, boundaries, matriz de fonte, output v2, Web Search controlada, decisões/candidatos, integração com draft, retirada do legado, validações, QA e documentação canônica.
-- Modernização técnica justificada: Security Controls pós-apply (`supa#2`), reconhecimento de estados/próximo passo (`prod#14`) e baseline WCAG 2.2 proporcional (`prod#17`).
+- Derivações técnicas de validação e UX: Security Controls pós-apply (`supa#2`) fecha os invariantes de banco já exigidos; reconhecimento de estados/próximo passo (`prod#14`) e baseline WCAG 2.2 proporcional (`prod#17`) fecham diretamente a compreensão e a acessibilidade requeridas pela V1. Nenhum dos três é modernização independente.
 - Referências/travas: migration/teste/snippet (`supa#40`), QA hospedado (`prod#16`), Next.js 16.3.3 (`vercel#31`), classificação Config/Secret (`vercel#32`) e evidência durável (`github#14`).
 - Oportunidades fora do recorte: Unified Logs (`supa#5`), Audit Log Drains (`supa#46`), Queues (`supa#53`), W3C Trace Context (`supa#69`) e AI Gateway (`vercel#1`). Seus gatilhos futuros não autorizam implementação agora.
 - Ampliação de escopo: qualquer nova rota, view, workload, provider, agente, fila, job, service, consumidor E19/E20.7, integração greenfield, dado de conta/Oferta/tarefa ou mudança de modelo/effort; não incorporada.
