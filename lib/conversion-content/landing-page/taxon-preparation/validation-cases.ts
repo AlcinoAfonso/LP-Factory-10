@@ -32,21 +32,25 @@ import {
   classifyRequiredInputCatalogVersion,
   coordinateInputCatalogEvaluation,
   createInputCatalogEvaluationDecisionToken,
+  deriveFactualReviewKind,
   deriveTaxonPreparationForVersion,
   executeInputCatalogEvaluationAdministrativeDecision,
   fingerprintInputCatalogEvaluationContextIdentity,
   fingerprintInputCatalogEvaluationOutput,
   inputCatalogEvaluationOutputJsonSchema,
   isEndCustomerResearchSelectionEnabled,
+  isGenericTaxonActivation,
   isInputCatalogReviewEnabled,
   loadEndCustomerResearchCandidate,
   parseInputCatalogEvaluationOutput,
   readInputCatalogEvaluationDecisionToken,
   revalidateInputCatalogEvaluationContext,
+  resolveInheritedInputCatalogCoverage,
   resolveInputCatalogReview,
   sameInputCatalogEvaluationContextIdentity,
 } from "./index";
 import {
+  CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION,
   mediumStandardRealEstateBrokerTaxon,
   realEstateBrokerNicheTaxon,
   realEstateSegmentTaxon,
@@ -82,6 +86,129 @@ type ValidationCase = Readonly<{
 }>;
 
 const cases: readonly ValidationCase[] = [
+  {
+    name: "factual review resolves inherited coverage for all four plans without activating the taxon",
+    run: async () => {
+      const inactiveNiche = {
+        id: "e2063000-0000-4000-8000-000000000101",
+        parentId: realEstateSegmentTaxon.id,
+        level: "niche" as const,
+        name: "Cobertura herdada E20.6.3",
+        slug: "cobertura-herdada-e20-6-3",
+        isActive: false,
+      };
+      const input = {
+        baseline: {
+          taxon: inactiveNiche,
+          reviewedInputCatalogVersion: null,
+        },
+        taxons: [inactiveNiche, realEstateSegmentTaxon],
+        inputCatalogVersion: CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION,
+        resolvePlan: resolveLandingPageInputCatalog,
+      };
+      const coverage = resolveInheritedInputCatalogCoverage(input);
+      const repeated = resolveInheritedInputCatalogCoverage(input);
+
+      assert.equal(coverage.ok, true);
+      assert.equal(repeated.ok, true);
+      if (!coverage.ok || !repeated.ok) throw new Error("Expected inherited coverage");
+      assert.deepEqual(coverage.value.catalogs.map((catalog) => catalog.plan), [
+        "starter",
+        "lite",
+        "pro",
+        "ultra",
+      ]);
+      assert.equal(coverage.value.taxonChain.niche?.isActive, false);
+      assert.deepEqual(coverage.value.chainSnapshot, [
+        realEstateSegmentTaxon,
+        inactiveNiche,
+      ]);
+      assert.equal(coverage.value.chainSnapshot[1]?.name, inactiveNiche.name);
+      assert.match(coverage.value.contextFingerprint, /^[0-9a-f]{64}$/);
+      assert.match(coverage.value.contentFingerprint, /^[0-9a-f]{64}$/);
+      assert.equal(coverage.value.contextFingerprint, repeated.value.contextFingerprint);
+      assert.equal(coverage.value.contentFingerprint, repeated.value.contentFingerprint);
+      assert.equal(deriveFactualReviewKind(false), "release");
+      assert.equal(deriveFactualReviewKind(true), "revision");
+      assert.equal(isGenericTaxonActivation(false, true), true);
+      assert.equal(isGenericTaxonActivation(true, false), false);
+      assert.equal(isGenericTaxonActivation(true, true), false);
+    },
+  },
+  {
+    name: "factual lifecycle keeps generic creation and activation unavailable",
+    run: async () => {
+      const adminSource = readFileSync(
+        new URL("../../../admin/adapters/adminTaxonomyAdapter.ts", import.meta.url),
+        "utf8",
+      );
+      const factualAdapterSource = readFileSync(
+        new URL("../../../admin/adapters/adminTaxonFactualReviewAdapter.ts", import.meta.url),
+        "utf8",
+      );
+      const actionsSource = readFileSync(
+        new URL("../../../../app/admin/(protected)/taxonomia/actions.ts", import.meta.url),
+        "utf8",
+      );
+      const createFormSource = readFileSync(
+        new URL("../../../../components/admin/AdminTaxonCreateForm.tsx", import.meta.url),
+        "utf8",
+      );
+      const manageFormSource = readFileSync(
+        new URL("../../../../components/admin/AdminTaxonManageForm.tsx", import.meta.url),
+        "utf8",
+      );
+      const researchSelectionFormSource = readFileSync(
+        new URL("../../../../components/admin/AdminTaxonResearchSelectionForm.tsx", import.meta.url),
+        "utf8",
+      );
+      const migration = readFileSync(
+        new URL("../../../../supabase/migrations/20260911213324_e20_6_3_factual_review_lifecycle.sql", import.meta.url),
+        "utf8",
+      );
+
+      const createStart = adminSource.indexOf("export async function createAdminTaxon");
+      const updateStart = adminSource.indexOf("export async function updateAdminTaxon");
+      const recordStart = adminSource.indexOf("export async function recordAdminInputCatalogReview");
+      const reopenStart = adminSource.indexOf("export async function reopenAdminInputCatalogReview");
+      const createBoundary = adminSource.slice(createStart, updateStart);
+      const updateBoundary = adminSource.slice(updateStart, adminSource.indexOf("export async function selectAdminEndCustomerResearchVersion"));
+      const selectionBoundary = adminSource.slice(
+        adminSource.indexOf("export async function selectAdminEndCustomerResearchVersion"),
+        recordStart,
+      );
+      const recordBoundary = adminSource.slice(recordStart, reopenStart);
+      const reopenBoundary = adminSource.slice(reopenStart, adminSource.indexOf("export async function addAdminTaxonAlias"));
+      const createActionStart = actionsSource.indexOf("export async function createTaxonAction");
+      const createAction = actionsSource.slice(createActionStart, actionsSource.indexOf("export async function updateTaxonAction"));
+
+      assert.match(createBoundary, /is_active: false/);
+      assert.doesNotMatch(createBoundary, /input\.isActive/);
+      assert.doesNotMatch(selectionBoundary, /O taxon precisa estar ativo/);
+      assert.match(selectionBoundary, /taxon: \{ slug: taxon\.slug, isActive: true \}/);
+      assert.match(selectionBoundary, /\.eq\("is_active", taxon\.is_active\)/);
+      assert.doesNotMatch(recordBoundary, /\.update\(|reviewed_input_catalog_version:/);
+      assert.match(recordBoundary, /O registro legado foi encerrado/);
+      assert.doesNotMatch(reopenBoundary, /reviewed_input_catalog_version: null|\.update\(/);
+      assert.match(reopenBoundary, /A última versão válida não é apagada/);
+      assert.doesNotMatch(createAction, /formData\.get\("isActive"\)/);
+      assert.doesNotMatch(createFormSource, /name="isActive"|Criar como ativo/);
+      assert.match(manageFormSource, /taxon\.isActive[\s\S]*A ativação exige concluir a liberação factual/);
+      assert.doesNotMatch(researchSelectionFormSource, /disabled=\{!isActive \|\| pending\}/);
+      assert.match(researchSelectionFormSource, /A seleção ficará dormente e não ativará o taxon/);
+      assert.ok(updateBoundary.indexOf("isGenericTaxonActivation") < updateBoundary.indexOf(".update("));
+      assert.match(factualAdapterSource, /resolveInheritedInputCatalogCoverage/);
+      assert.match(factualAdapterSource, /open_business_taxon_factual_review_v1/);
+      assert.match(factualAdapterSource, /close_business_taxon_factual_review_without_change_v1/);
+      assert.match(factualAdapterSource, /p_chain_snapshot: coverage\.value\.chainSnapshot/g);
+      assert.match(migration, /alter column is_active set default false/);
+      assert.match(migration, /chain_snapshot jsonb not null/);
+      assert.match(migration, /order by taxons\.id[\s\S]*for update of taxons/g);
+      assert.match(migration, /'expected_revision', p_expected_revision/g);
+      assert.match(migration, /security invoker/g);
+      assert.doesNotMatch(factualAdapterSource, /OpenAI|evaluateInputCatalogWithOpenAi|web_search/);
+    },
+  },
   {
     name: "research files remain traced only for the hosted Admin consumer",
     run: async () => {
@@ -137,7 +264,7 @@ const cases: readonly ValidationCase[] = [
         "utf8",
       );
       assert.match(selectedCore, /includeInputCatalogReview[\s\S]*reviewed_input_catalog_version/);
-      assert.match(adminSource, /reviewed_input_catalog_version: null/);
+      assert.doesNotMatch(adminSource, /update\(\{ reviewed_input_catalog_version: null \}\)/);
       assert.match(adminSource, /findAffectedInputCatalogReviews/);
 
       const migration = readFileSync(
@@ -340,30 +467,30 @@ const cases: readonly ValidationCase[] = [
     },
   },
   {
-    name: "selection mutation invalidates review only on an effective version change",
+    name: "administrative research selection remains dormant and preserves the last valid review",
     run: async () => {
       assert.deepEqual(
-        planEndCustomerResearchSelectionMutation({ currentVersion: null, nextVersion: 1, inputCatalogReviewEnabled: true }),
-        { idempotent: false, update: { selected_end_customer_research_version: 1, reviewed_input_catalog_version: null } },
+        planEndCustomerResearchSelectionMutation({ currentVersion: null, nextVersion: 1 }),
+        { idempotent: false, update: { selected_end_customer_research_version: 1 } },
       );
       assert.deepEqual(
-        planEndCustomerResearchSelectionMutation({ currentVersion: 1, nextVersion: 2, inputCatalogReviewEnabled: true }),
-        { idempotent: false, update: { selected_end_customer_research_version: 2, reviewed_input_catalog_version: null } },
+        planEndCustomerResearchSelectionMutation({ currentVersion: 1, nextVersion: 2 }),
+        { idempotent: false, update: { selected_end_customer_research_version: 2 } },
       );
       assert.deepEqual(
-        planEndCustomerResearchSelectionMutation({ currentVersion: 1, nextVersion: 1, inputCatalogReviewEnabled: true }),
+        planEndCustomerResearchSelectionMutation({ currentVersion: 1, nextVersion: 1 }),
         { idempotent: true, update: null },
       );
     },
   },
   {
-    name: "taxonomy guard covers name slug activity ancestors and descendants",
+    name: "taxonomy guard covers identity and descendants while explicit deactivation remains available",
     run: async () => {
       const current = { name: "Imobiliário", slug: "imobiliario", isActive: true };
       assert.equal(taxonomyMutationAffectsInputCatalogResolution(current, current), false);
       assert.equal(taxonomyMutationAffectsInputCatalogResolution(current, { ...current, name: "Imóveis" }), true);
       assert.equal(taxonomyMutationAffectsInputCatalogResolution(current, { ...current, slug: "imoveis" }), true);
-      assert.equal(taxonomyMutationAffectsInputCatalogResolution(current, { ...current, isActive: false }), true);
+      assert.equal(taxonomyMutationAffectsInputCatalogResolution(current, { ...current, isActive: false }), false);
       const rows = [
         { id: "segment", parentId: null, reviewedVersion: null },
         { id: "niche", parentId: "segment", reviewedVersion: 1 },

@@ -2,6 +2,12 @@ export type {
   EndCustomerResearchContent,
   EndCustomerResearchErrorCode,
   EndCustomerResearchTaxonIdentity,
+  FactualReviewKind,
+  FactualReviewSession,
+  FactualReviewStatus,
+  FactualReviewTaxonBaseline,
+  FactualReviewTaxonChainSnapshot,
+  InheritedInputCatalogCoverage,
   LoadSelectedEndCustomerResearchResult,
   LoadEndCustomerResearchCandidateInput,
   LoadEndCustomerResearchCandidateResult,
@@ -32,6 +38,8 @@ export type {
   InputCatalogEvaluationTaxonomicLayer,
   ParseInputCatalogEvaluationOutputResult,
   RevalidateInputCatalogEvaluationContextResult,
+  ResolveInheritedInputCatalogCoverageInput,
+  ResolveInheritedInputCatalogCoverageResult,
 } from "./contracts";
 export type {
   InputCatalogEvaluationAdministrativeDecision,
@@ -40,12 +48,19 @@ export type {
 export {
   END_CUSTOMER_RESEARCH_AUDIENCE_SCOPE,
   INPUT_CATALOG_EVALUATION_SCHEMA_VERSION,
+  factualReviewKinds,
+  factualReviewStatuses,
   inputCatalogEvaluationCandidateConclusions,
   inputCatalogEvaluationCandidateOrigins,
   inputCatalogEvaluationModes,
   inputCatalogEvaluationStatuses,
   inputCatalogEvaluationTaxonomicLayers,
 } from "./contracts";
+export {
+  deriveFactualReviewKind,
+  isGenericTaxonActivation,
+  resolveInheritedInputCatalogCoverage,
+} from "./factual-review";
 export { loadEndCustomerResearchCandidate } from "./research";
 
 export function isEndCustomerResearchSelectionEnabled(): boolean {

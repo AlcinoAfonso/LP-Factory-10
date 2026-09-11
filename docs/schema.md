@@ -295,7 +295,7 @@
 • level text not null
 • name text not null
 • slug text not null
-• is_active boolean not null default true
+• is_active boolean not null default false
 • selected_end_customer_research_version integer null
 • reviewed_input_catalog_version integer null
 
@@ -1083,6 +1083,28 @@
 • RLS habilitado e zero policies; ACLs idênticas às de `openai_lp_cost_events`.
 • O trigger `openai_lp_cost_coverage_prevent_mutation` rejeita UPDATE e DELETE.
 • O registro ocorre uma única vez, depois do smoke pós-apply em Production, pela RPC `register_openai_lp_cost_coverage_v1`.
+
+1.38 business_taxon_factual_reviews
+1.38.1 Função e estado
+• Autoridade service-only do lifecycle factual por taxon; `kind` aceita `release | revision` e `status` aceita `open | awaiting_catalog_publication | closed_without_change | closed_published`.
+• Preserva baseline de atividade e versão revisada, fingerprints, snapshot canônico da identidade completa do taxon e de seus ancestrais, revisão otimista, operação idempotente de abertura, atores e instantes. Índice parcial permite no máximo uma sessão não encerrada por taxon.
+• Abrir sessão não altera `business_taxons`. Abertura e fechamento revalidam a cadeia sob locks em ordem estável; o fechamento sem mudança avança a versão revisada e ativa somente uma `release` na mesma transação, enquanto uma `revision` permanece ativa.
+
+1.38.2 Segurança e artefatos
+• RLS habilitado e zero policies; public, anon, authenticated e ai_readonly sem grants. `service_role` possui somente SELECT, INSERT e UPDATE.
+• Não participa do Trigger Hub; trigger dedicado mantém `updated_at`.
+• RPCs `open_business_taxon_factual_review_v1` e `close_business_taxon_factual_review_without_change_v1` usam SECURITY INVOKER, search_path fixado e EXECUTE exclusivo de service_role.
+• Migration forward-only: `supabase/migrations/20260911213324_e20_6_3_factual_review_lifecycle.sql`; teste transacional e snippet read-only homônimos. Estado: artefatos repo-side criados; apply hospedado e verificações pós-apply ainda não executados.
+
+1.39 business_taxon_factual_review_events
+1.39.1 Função e contrato
+• Trilha append-only das sessões factuais, ordenada por sequência e idempotente por operação em cada sessão.
+• Vocabulários de evento, estratégia de fonte e decisão são fechados; payload é objeto e fingerprints são exigidos conforme o tipo do evento.
+• Payload não armazena prompt, pesquisa integral, conteúdo web, secret, Base, Oferta, tarefa, conta ou PII.
+
+1.39.2 Segurança e imutabilidade
+• RLS habilitado e zero policies; public, anon, authenticated e ai_readonly sem grants. `service_role` possui somente SELECT e INSERT.
+• Trigger dedicado rejeita UPDATE e DELETE. A tabela não participa do Trigger Hub.
 
 2. Views
 

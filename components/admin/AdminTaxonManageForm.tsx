@@ -90,15 +90,24 @@ export function AdminTaxonManageForm({
             />
           </label>
 
-          <label className="flex items-center gap-2 text-sm text-muted-foreground">
-            <input
-              className="h-4 w-4 rounded border-border text-brand-600"
-              name="isActive"
-              type="checkbox"
-              defaultChecked={taxon.isActive}
-            />
-            Manter ativo
-          </label>
+          {taxon.isActive ? (
+            <label className="flex items-center gap-2 text-sm text-muted-foreground">
+              <input
+                className="h-4 w-4 rounded border-border text-brand-600"
+                name="isActive"
+                type="checkbox"
+                defaultChecked
+              />
+              Manter ativo
+            </label>
+          ) : (
+            <>
+              <input name="isActive" type="hidden" value="off" />
+              <p className="text-sm text-muted-foreground">
+                A ativação exige concluir a liberação factual.
+              </p>
+            </>
+          )}
         </div>
       </form>
 

@@ -470,7 +470,6 @@ export async function createTaxonAction(
     parentId: String(formData.get("parentId") ?? ""),
     slug: String(formData.get("slug") ?? ""),
     aliases: [String(formData.get("aliases") ?? "")],
-    isActive: formData.get("isActive") === "on",
   });
 
   if (!result.ok) return { error: result.error };

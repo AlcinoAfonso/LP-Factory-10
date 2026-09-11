@@ -11,19 +11,13 @@ export type InputCatalogReviewBaseline = Readonly<{
 export function planEndCustomerResearchSelectionMutation(input: {
   currentVersion: number | null;
   nextVersion: number;
-  inputCatalogReviewEnabled: boolean;
 }) {
   if (input.currentVersion === input.nextVersion) {
     return { idempotent: true as const, update: null };
   }
   return {
     idempotent: false as const,
-    update: input.inputCatalogReviewEnabled
-      ? {
-          selected_end_customer_research_version: input.nextVersion,
-          reviewed_input_catalog_version: null,
-        }
-      : { selected_end_customer_research_version: input.nextVersion },
+    update: { selected_end_customer_research_version: input.nextVersion },
   };
 }
 
@@ -31,7 +25,7 @@ export function taxonomyMutationAffectsInputCatalogResolution(
   current: Readonly<{ name: string; slug: string; isActive: boolean }>,
   next: Readonly<{ name: string; slug: string; isActive: boolean }>,
 ): boolean {
-  return current.name !== next.name || current.slug !== next.slug || current.isActive !== next.isActive;
+  return current.name !== next.name || current.slug !== next.slug;
 }
 
 export function collectAffectedReviewedTaxonIds(

@@ -2,6 +2,8 @@ import type {
   LandingPageInputCatalogPlan,
   LandingPageInputCatalogTaxonChain,
   LandingPageInputCatalogTaxonIdentity,
+  ResolveLandingPageInputCatalogInput,
+  ResolveLandingPageInputCatalogResult,
   ResolvedLandingPageInputCatalog,
 } from "../input-catalog";
 
@@ -151,6 +153,66 @@ export type TaxonPreparationResult =
       ok: false;
       error: Readonly<{
         code: TaxonPreparationErrorCode;
+        message: string;
+      }>;
+    }>;
+
+export const factualReviewKinds = ["release", "revision"] as const;
+export const factualReviewStatuses = [
+  "open",
+  "awaiting_catalog_publication",
+  "closed_without_change",
+  "closed_published",
+] as const;
+
+export type FactualReviewKind = (typeof factualReviewKinds)[number];
+export type FactualReviewStatus = (typeof factualReviewStatuses)[number];
+
+export type FactualReviewTaxonBaseline = Readonly<{
+  taxon: LandingPageInputCatalogTaxonIdentity;
+  reviewedInputCatalogVersion: number | null;
+}>;
+
+export type FactualReviewSession = Readonly<{
+  id: string;
+  taxonId: string;
+  kind: FactualReviewKind;
+  status: FactualReviewStatus;
+  baselineIsActive: boolean;
+  baselineReviewedInputCatalogVersion: number | null;
+  contextFingerprint: string;
+  revision: number;
+}>;
+
+export type FactualReviewTaxonChainSnapshot = readonly LandingPageInputCatalogTaxonIdentity[];
+
+export type InheritedInputCatalogCoverage = Readonly<{
+  inputCatalogVersion: number;
+  taxonChain: LandingPageInputCatalogTaxonChain;
+  chainSnapshot: FactualReviewTaxonChainSnapshot;
+  catalogs: readonly ResolvedLandingPageInputCatalog[];
+  contextFingerprint: string;
+  contentFingerprint: string;
+}>;
+
+export type ResolveInheritedInputCatalogCoverageInput = Readonly<{
+  baseline: FactualReviewTaxonBaseline;
+  taxons: readonly LandingPageInputCatalogTaxonIdentity[];
+  inputCatalogVersion: number;
+  resolvePlan: (
+    input: ResolveLandingPageInputCatalogInput,
+  ) => ResolveLandingPageInputCatalogResult;
+}>;
+
+export type ResolveInheritedInputCatalogCoverageResult =
+  | Readonly<{ ok: true; value: InheritedInputCatalogCoverage }>
+  | Readonly<{
+      ok: false;
+      error: Readonly<{
+        code:
+          | "INVALID_INPUT_CATALOG_VERSION"
+          | "INVALID_TAXON_CHAIN"
+          | "INPUT_CATALOG_RESOLUTION_FAILED";
         message: string;
       }>;
     }>;

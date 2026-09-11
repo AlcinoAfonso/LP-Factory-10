@@ -89,7 +89,7 @@ export function AdminTaxonResearchSelectionForm({
               aria-describedby={versionDescriptionIds}
               aria-invalid={state.error ? true : undefined}
               className="mt-1 h-10 w-full rounded-md border border-border bg-background px-3 text-sm outline-none ring-brand-600/20 transition focus-visible:ring-4 disabled:cursor-not-allowed disabled:opacity-60"
-              disabled={!isActive || pending}
+              disabled={pending}
               id="end-customer-research-version"
               inputMode="numeric"
               min={1}
@@ -104,8 +104,8 @@ export function AdminTaxonResearchSelectionForm({
           </div>
 
           {!isActive ? (
-            <p className="text-sm text-amber-800" role="status">
-              Ative o taxon antes de selecionar uma pesquisa integral.
+            <p className="text-sm text-muted-foreground" role="status">
+              A seleção ficará dormente e não ativará o taxon.
             </p>
           ) : null}
           {state.error ? (
@@ -129,7 +129,7 @@ export function AdminTaxonResearchSelectionForm({
 
           <button
             className="inline-flex h-10 items-center justify-center rounded-md bg-brand-600 px-4 text-sm font-medium text-white transition hover:bg-brand-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-600/30 disabled:cursor-not-allowed disabled:opacity-60"
-            disabled={!isActive || pending}
+            disabled={pending}
             type="submit"
           >
             {pending ? "Validando e salvando..." : "Selecionar versão candidata"}

@@ -1,6 +1,10 @@
 export { getAdminAccountDetail, listAdminAccounts } from "./adminAccountsAdapter";
 export { getAdminNicheResolutionDetail, listAdminNicheResolutions } from "./adminNicheResolutionsAdapter";
 export {
+  closeAdminTaxonFactualReviewWithoutChange,
+  openAdminTaxonFactualReview,
+} from "./adminTaxonFactualReviewAdapter";
+export {
   addAdminTaxonAlias,
   createAdminTaxon,
   deleteAdminTaxon,

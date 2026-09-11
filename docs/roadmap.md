@@ -1864,7 +1864,6 @@
     - `lib/conversion-content/landing-page/taxon-preparation/contracts.ts`
     - `lib/conversion-content/landing-page/taxon-preparation/research.ts`
     - `lib/conversion-content/landing-page/taxon-preparation/validation-cases.ts`
-    - `lib/conversion-content/landing-page/taxon-preparation/index.ts`
     - `lib/conversion-content/adapters/selectedEndCustomerResearchAdapter.ts`
     - `components/admin/AdminTaxonResearchSelectionForm.tsx`
     - `supabase/migrations/20260814174500_e20_5_selected_end_customer_research_version.sql`
@@ -1904,11 +1903,17 @@
 
 20.6.1 Objetivo e status
 - Objetivo: permitir que um `platform_admin` libere taxon novo e revise taxon ativo por cobertura herdada, avaliação factual opcional e lifecycle versionado E20.2, sem transferir decisão à IA.
-- Status: baseline de preparação determinística e provider administrativo existente; evolução 20.6.3–20.6.7 definida e ainda não implementada.
+- Status: baseline de preparação determinística e provider administrativo existente; 20.6.3 implementada no repositório e 20.6.4–20.6.7 definidas, ainda não implementadas.
 
 20.6.2 Registros do recorte
 - Banco:
+  - Criados:
+    - `business_taxon_factual_reviews`
+    - `business_taxon_factual_review_events`
+    - `public.open_business_taxon_factual_review_v1(...)`
+    - `public.close_business_taxon_factual_review_without_change_v1(...)`
   - Ajustados:
+    - `business_taxons.is_active`
     - `business_taxons.reviewed_input_catalog_version`
     - `public.openai_workload_operational_configurations`
     - `public.openai_workload_configuration_revisions`
@@ -1918,23 +1923,35 @@
     - `lib/conversion-content/landing-page/taxon-preparation/input-catalog-review.ts`
     - `lib/conversion-content/landing-page/taxon-preparation/input-catalog-evaluation-schema.ts`
     - `lib/conversion-content/landing-page/taxon-preparation/input-catalog-evaluation.ts`
+    - `lib/conversion-content/landing-page/taxon-preparation/factual-review.ts`
     - `lib/conversion-content/landing-page/taxon-preparation/preparation.ts`
     - `lib/conversion-content/adapters/inputCatalogEvaluationRuntimeGate.ts`
     - `lib/conversion-content/adapters/inputCatalogEvaluationRuntimeGateCore.ts`
     - `lib/conversion-content/adapters/inputCatalogEvaluationOpenAiAdapter.ts`
+    - `lib/admin/adapters/adminTaxonFactualReviewAdapter.ts`
     - `app/admin/(protected)/taxonomia/[taxonId]/_components/AdminTaxonInputCatalogEvaluation.tsx`
     - `app/admin/(protected)/taxonomia/[taxonId]/_components/AdminTaxonInputCatalogReview.tsx`
     - `supabase/migrations/20260815172449_e20_6_reviewed_input_catalog_version.sql`
     - `supabase/migrations/20260820213900_e21_2_taxon_input_catalog_sufficiency_workload.sql`
+    - `supabase/migrations/20260911213324_e20_6_3_factual_review_lifecycle.sql`
     - `supabase/snippets/e20_6_reviewed_input_catalog_version_verify.sql`
     - `supabase/snippets/e21_2_taxon_input_catalog_sufficiency_workload_verify.sql`
     - `supabase/tests/e21_2_taxon_input_catalog_sufficiency_workload.test.sql`
+    - `supabase/tests/e20_6_3_factual_review_lifecycle.test.sql`
+    - `supabase/snippets/e20_6_3_factual_review_lifecycle_verify.sql`
   - Ajustados:
     - `app/admin/(protected)/taxonomia/[taxonId]/page.tsx`
     - `app/admin/(protected)/taxonomia/actions.ts`
     - `lib/conversion-content/adapters/selectedEndCustomerResearchAdapter.ts`
     - `lib/conversion-content/landing-page/taxon-preparation/contracts.ts`
+    - `lib/conversion-content/landing-page/taxon-preparation/index.ts`
     - `lib/conversion-content/landing-page/taxon-preparation/validation-cases.ts`
+    - `lib/admin/adapters/adminReadOnlyAdapter.ts`
+    - `lib/admin/adapters/adminTaxonomyAdapter.ts`
+    - `lib/admin/adapters/adminTaxonomyReviewPolicy.ts`
+    - `components/admin/AdminTaxonCreateForm.tsx`
+    - `components/admin/AdminTaxonManageForm.tsx`
+    - `components/admin/AdminTaxonResearchSelectionForm.tsx`
     - `lib/openai-workloads/registry.ts`
     - `package.json`
 - Referências:
@@ -1943,7 +1960,7 @@
   - Gates e workloads: `docs/platform-config.md`.
 
 20.6.3 Liberação determinística e estado de revisão
-- Status: definido; não implementado.
+- Status: implementado no repositório; apply hospedado, snippet pós-apply, Security Controls e QA administrativo permanecem pendentes dos gates finais.
 - Conteúdo:
   - novo taxon nasce indisponível, resolve cobertura herdada nos quatro planos e pode ser liberado por confirmação humana sem IA, pesquisa ou justificativa textual;
   - sessões `release | revision` preservam baseline, revisão otimista e eventos imutáveis;
