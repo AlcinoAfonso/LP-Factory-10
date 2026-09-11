@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 07/09/2026
-• Versão: v1.5.220
+• Data: 11/09/2026
+• Versão: v1.5.222
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -1505,6 +1505,24 @@
 - Objetivo: disponibilizar e comprovar a consulta autônoma pelo Executor ao catálogo institucional de contas e usuários QA.
 - Status: concluída pelo piloto do PR #912.
 - O piloto comprovou a localização e a consulta da identidade QA autorizada no catálogo vigente; convite, autenticação e demais fases operacionais posteriores permanecem fora deste recorte.
+
+17.11 Uso do Catálogo de QA
+
+17.11.1 Objetivo e status
+- Objetivo: explicitar no contrato do Executor a consulta ao Catálogo de QA durante testes já autorizados e a atualização estritamente correspondente quando o próprio teste alterar valor catalogado.
+- Status: concluído no contrato do Executor, sem QA de produto, ampliação de autoridade ou mutação funcional do catálogo.
+
+17.11.2 Registros do recorte
+- Repositório:
+  - Ajustados:
+    - `.agents/skills/lp-factory-executar-plano/SKILL.md`
+- Referências:
+  - Plano-base V1 e V2 Light: `docs/lousa-plano-base-e17-11.md` — seções 1 e 2.
+
+17.11.3 Contrato de consulta e atualização pontual
+- O Executor pode consultar o Catálogo de QA quando um teste já autorizado pelo recorte competente precisar de valor catalogado; a consulta não amplia o escopo nem a autoridade do teste consumidor.
+- Se o próprio teste alterar valor já catalogado, somente o registro correspondente é atualizado; sem alteração de valor catalogado, o catálogo não é mutado.
+- A E17.11 não autoriza jornada de produto, mailbox, browser, Preview, convite, autenticação, recuperação, automação ou infraestrutura.
 
 18. E18 — Base transversal de templates, composições e artefatos
 - Objetivo: manter os contratos compartilhados de conteúdo versionado usados pela ativação comercial e a parametrização raiz da família `landing_page`, sem absorver geração, publicação ou execução da LP Builder.
