@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 12/09/2026
-• Versão: v1.5.224
+• Versão: v1.5.226
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -1903,7 +1903,7 @@
 
 20.6.1 Objetivo e status
 - Objetivo: permitir que um `platform_admin` libere taxon novo e revise taxon ativo por cobertura herdada, avaliação factual opcional e lifecycle versionado E20.2, sem transferir decisão à IA.
-- Status: 20.6.3–20.6.6 implementadas no repositório; apply, snippet, Security Controls e QA hospedado permanecem pendentes dos gates finais; 20.6.7 segue definida e ainda não implementada.
+- Status: 20.6.3–20.6.7 implementadas no repositório; apply, snippet, Security Controls e QA hospedado permanecem pendentes dos gates finais, sem autorização de merge.
 
 20.6.2 Registros do recorte
 - Banco:
@@ -1938,7 +1938,7 @@
     - `lib/admin/adapters/adminInputCatalogEvaluationSourceAdapter.ts`
     - `lib/admin/adapters/adminTaxonFactualReviewAdapter.ts`
     - `app/admin/(protected)/taxonomia/[taxonId]/_components/AdminTaxonInputCatalogEvaluation.tsx`
-    - `app/admin/(protected)/taxonomia/[taxonId]/_components/AdminTaxonInputCatalogReview.tsx`
+    - `app/admin/(protected)/taxonomia/[taxonId]/_components/AdminTaxonFactualReviewLifecycle.tsx`
     - `supabase/migrations/20260815172449_e20_6_reviewed_input_catalog_version.sql`
     - `supabase/migrations/20260820213900_e21_2_taxon_input_catalog_sufficiency_workload.sql`
     - `supabase/migrations/20260911213324_e20_6_3_factual_review_lifecycle.sql`
@@ -2009,11 +2009,15 @@
   - todas as releases abertas são projetadas como ativas no futuro catálogo e nos impactos, inclusive sob operação universal ou ancestral; identificador ausente, duplicado ou já ativo falha fechado, sem mudança operacional pré-deploy.
 
 20.6.7 Experiência administrativa
-- Status: definido; não implementado.
+- Status: implementado no repositório; QA visual local/hospedado, teste SQL, apply, snippet e Security Controls permanecem pendentes dos gates finais.
 - Conteúdo:
   - Taxonomia concentra o lifecycle factual e Estrutura da LP continua proprietária do draft, sem rota nova;
   - estado atual, próximo passo, consequência, bloqueio, recomendação e decisão permanecem semanticamente distintos;
   - o fluxo será validado em desktop/mobile, teclado, leitor de tela, foco, toque, contraste e ausência de overflow ou ação exclusiva por hover.
+  - abertura e fechamento humano permanecem disponíveis sem provider; lista e detalhe distinguem ausência de histórico, sessão aberta, espera de publicação, fechamento sem mudança, fechamento reconciliado e leitura indisponível, preservando a última sessão após reload e revalidando a identidade exibida antes da mutação;
+  - avaliação v2 exibe fontes e coleta decisão zero/parcial/total, camada por aceitação e candidato próprio, exigindo o draft e o evento exatos para mudança;
+  - Estrutura LP usa editor estruturado `add | change | retire`, recebe DTO seguro sem JSON integral no client e mostra impactos completos antes de autorização/publicação;
+  - actions, adapters, handoffs, componente, token HMAC e helpers de record/reopen/gap transitórios foram removidos; o gate do provider informa somente indisponibilidade da avaliação opcional.
 
 20.7 Resolução de conhecimento para geração
 

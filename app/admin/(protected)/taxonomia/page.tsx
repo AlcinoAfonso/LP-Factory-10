@@ -5,6 +5,7 @@ import { AdminStatusBadge } from "@/components/admin/AdminStatusBadge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { getParamValue } from "@/lib/admin/adminFormat";
 import { listAdminTaxons } from "@/lib/admin/adapters/adminReadOnlyAdapter";
+import { listLatestAdminTaxonFactualReviews } from "@/lib/admin/adapters/adminTaxonFactualReviewAdapter";
 import type { AdminOperationalDiagnosticItem } from "@/lib/admin/adapters/adminReadOnlyTypes";
 
 export const dynamic = "force-dynamic";
@@ -33,6 +34,10 @@ export default async function AdminTaxonomyPage({ searchParams }: AdminTaxonomyP
   const level = getParamValue(params.level);
   const status = getParamValue(params.status);
   const result = await listAdminTaxons({ search, level, status });
+  const factualReviews = await listLatestAdminTaxonFactualReviews(result.items.map((taxon) => taxon.id));
+  const factualReviewByTaxonId = new Map(
+    factualReviews.ok ? factualReviews.reviews.map((review) => [review.taxonId, review] as const) : [],
+  );
 
   return (
     <div className="space-y-6">
@@ -43,7 +48,7 @@ export default async function AdminTaxonomyPage({ searchParams }: AdminTaxonomyP
           meta={`${result.total} taxon${result.total === 1 ? "" : "s"}`}
         />
         <Link
-          className="inline-flex h-10 w-fit items-center justify-center rounded-md bg-brand-600 px-4 text-sm font-medium text-white transition hover:bg-brand-700"
+          className="inline-flex min-h-11 w-fit items-center justify-center rounded-md bg-brand-600 px-4 text-sm font-medium text-white transition hover:bg-brand-700"
           href="/admin/taxonomia/novo"
         >
           Novo taxon
@@ -55,7 +60,7 @@ export default async function AdminTaxonomyPage({ searchParams }: AdminTaxonomyP
           <label className="space-y-1">
             <span className="text-xs font-medium text-muted-foreground">Buscar</span>
             <input
-              className="h-10 w-full rounded-md border border-border bg-background px-3 text-sm outline-none ring-brand-600/20 transition focus:ring-4"
+              className="min-h-11 w-full rounded-md border border-border bg-background px-3 text-sm outline-none ring-brand-600/20 transition focus:ring-4"
               name="q"
               placeholder="Nome ou identificador"
               defaultValue={search}
@@ -65,7 +70,7 @@ export default async function AdminTaxonomyPage({ searchParams }: AdminTaxonomyP
           <label className="space-y-1">
             <span className="text-xs font-medium text-muted-foreground">Nivel</span>
             <select
-              className="h-10 w-full rounded-md border border-border bg-background px-3 text-sm outline-none ring-brand-600/20 transition focus:ring-4"
+              className="min-h-11 w-full rounded-md border border-border bg-background px-3 text-sm outline-none ring-brand-600/20 transition focus:ring-4"
               name="level"
               defaultValue={level}
             >
@@ -80,7 +85,7 @@ export default async function AdminTaxonomyPage({ searchParams }: AdminTaxonomyP
           <label className="space-y-1">
             <span className="text-xs font-medium text-muted-foreground">Status</span>
             <select
-              className="h-10 w-full rounded-md border border-border bg-background px-3 text-sm outline-none ring-brand-600/20 transition focus:ring-4"
+              className="min-h-11 w-full rounded-md border border-border bg-background px-3 text-sm outline-none ring-brand-600/20 transition focus:ring-4"
               name="status"
               defaultValue={status}
             >
@@ -93,11 +98,11 @@ export default async function AdminTaxonomyPage({ searchParams }: AdminTaxonomyP
           </label>
 
           <div className="flex items-end gap-2">
-            <button className="h-10 rounded-md bg-brand-600 px-4 text-sm font-medium text-white transition hover:bg-brand-700">
+            <button className="min-h-11 rounded-md bg-brand-600 px-4 text-sm font-medium text-white transition hover:bg-brand-700">
               Filtrar
             </button>
             <Link
-              className="inline-flex h-10 items-center rounded-md border border-border px-4 text-sm font-medium text-muted-foreground transition hover:bg-muted"
+              className="inline-flex min-h-11 items-center rounded-md border border-border px-4 text-sm font-medium text-muted-foreground transition hover:bg-muted"
               href="/admin/taxonomia"
             >
               Limpar
@@ -118,13 +123,15 @@ export default async function AdminTaxonomyPage({ searchParams }: AdminTaxonomyP
               <colgroup>
                 <col className="w-[48%]" />
                 <col className="w-[14%]" />
-                <col className="w-[23%]" />
-                <col className="w-[15%]" />
+                <col className="w-[18%]" />
+                <col className="w-[18%]" />
+                <col className="w-[12%]" />
               </colgroup>
               <thead className="sticky top-0 z-10 bg-muted text-left text-xs font-medium uppercase text-muted-foreground">
                 <tr>
                   <th className="px-4 py-3">Taxon</th>
-                  <th className="px-4 py-3">Status</th>
+                  <th className="px-4 py-3">Operacional</th>
+                  <th className="px-4 py-3">Sessão factual</th>
                   <th className="px-4 py-3">Página comercial</th>
                   <th className="px-4 py-3 text-right">Acao</th>
                 </tr>
@@ -143,6 +150,18 @@ export default async function AdminTaxonomyPage({ searchParams }: AdminTaxonomyP
                         {taxon.isActive ? "Ativo" : "Inativo"}
                       </AdminStatusBadge>
                     </td>
+                    <td className="px-4 py-3">
+                      {!factualReviews.ok ? (
+                        <div className="min-w-0">
+                          <AdminStatusBadge tone="warning">Indisponível</AdminStatusBadge>
+                          <p className="mt-1 break-words text-xs text-muted-foreground">{factualReviews.message}</p>
+                        </div>
+                      ) : factualReviewByTaxonId.get(taxon.id) ? (
+                        <AdminStatusBadge tone={factualReviewByTaxonId.get(taxon.id)?.status === "open" ? "warning" : "neutral"}>
+                          {factualReviewStatusLabel(factualReviewByTaxonId.get(taxon.id)!.status)}
+                        </AdminStatusBadge>
+                      ) : <AdminStatusBadge tone="neutral">Sem sessão</AdminStatusBadge>}
+                    </td>
                     <DiagnosticCell item={taxon.diagnostic.commercialPage} />
                     <td className="px-4 py-3 text-right">
                       <Link className="font-medium text-brand-700 hover:underline" href={`/admin/taxonomia/${taxon.id}`}>
@@ -158,6 +177,15 @@ export default async function AdminTaxonomyPage({ searchParams }: AdminTaxonomyP
       )}
     </div>
   );
+}
+
+function factualReviewStatusLabel(
+  status: import("@/lib/admin/adapters/adminTaxonFactualReviewAdapter").AdminTaxonFactualReviewSummary["status"],
+): string {
+  if (status === "open") return "Aberta";
+  if (status === "awaiting_catalog_publication") return "Aguardando publicação";
+  if (status === "closed_published") return "Publicada e reconciliada";
+  return "Concluída sem mudança";
 }
 
 function DiagnosticCell({

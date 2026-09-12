@@ -51,10 +51,6 @@ export type {
   ResolveInheritedInputCatalogCoverageResult,
   NormalizeFactualReviewCatalogChangeDecisionResult,
 } from "./contracts";
-export type {
-  InputCatalogEvaluationAdministrativeDecision,
-  InputCatalogEvaluationAdministrativeDecisionResult,
-} from "./input-catalog-evaluation-decision";
 export {
   END_CUSTOMER_RESEARCH_AUDIENCE_SCOPE,
   INPUT_CATALOG_EVALUATION_SCHEMA_VERSION,
@@ -83,7 +79,7 @@ export function isInputCatalogReviewEnabled(): boolean {
   return process.env.E20_6_INPUT_CATALOG_REVIEW_ENABLED === "true";
 }
 
-export { buildInputCatalogReviewHandoff, resolveInputCatalogReview } from "./input-catalog-review";
+export { resolveInputCatalogReview } from "./input-catalog-review";
 export {
   classifyRequiredInputCatalogVersion,
   deriveEffectiveTaxonPreparation,
@@ -107,11 +103,6 @@ export {
   type BuildInputCatalogEvaluationContextOptions,
   type BuildInputCatalogEvaluationPromptInput,
 } from "./input-catalog-evaluation";
-export { executeInputCatalogEvaluationAdministrativeDecision } from "./input-catalog-evaluation-decision";
-export { buildInputCatalogEvaluationGapHandoff } from "./input-catalog-evaluation-gap-handoff";
-export type { InputCatalogEvaluationDecisionTokenPayload } from "./input-catalog-evaluation-decision-token";
 export {
-  createInputCatalogEvaluationDecisionToken,
   fingerprintInputCatalogEvaluationOutput,
-  readInputCatalogEvaluationDecisionToken,
-} from "./input-catalog-evaluation-decision-token";
+} from "./input-catalog-evaluation-output-fingerprint";

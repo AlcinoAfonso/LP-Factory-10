@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.90
+• Versão: v2.0.92
 • Data: 12/09/2026
 
 0.2 Contrato do documento (consulta)
@@ -296,7 +296,11 @@
 • A fonte da avaliação é derivada de forma fechada: E20.5 válida usa uma Responses sem Web Search; ausência legítima usa uma Responses com uma ou duas buscas; hipótese focal usa uma Responses com exatamente uma busca. Seleção inválida, erro de banco ou artefato falham sem fallback, e confirmação de cobertura herdada continua com zero chamada.
 • O adapter administrativo reutiliza a leitura integral e paginada da cadeia taxonômica por um entrypoint server-only que admite somente o taxon servido inativo; os leitores operacionais permanecem inalterados e retornam `TAXON_INACTIVE`.
 • Cada execução humana possui deadline integral de 45 segundos, incluindo autorização, preparação, recorder financeiro, transporte, parsing e persistência terminal, com zero retry, `store:false`, preflight conservador de 128k por limite superior em bytes UTF-8 e Structured Output v2. Em estratégia Web, todo candidato e toda URL presente em texto material referenciam somente URLs HTTPS autenticadas nas fontes do provider; ausência, invenção ou excesso de chamadas produz inconclusão segura.
-• A sessão aberta recebe eventos idempotentes `evaluation_requested | evaluation_completed | evaluation_inconclusive`; somente o concluído preserva output v2, evidências Web necessárias e seu fingerprint. O fingerprint exato da identidade da avaliação é persistido separadamente do fingerprint de concorrência da sessão; feedback e decisão revalidam o primeiro, enquanto locks e revisão usam o segundo. Decisão sobre candidatos é vinculada ao evento concluído persistido; token HMAC legado, quando emitido, é apenas compatibilidade transitória e não autoridade.
+• A sessão aberta recebe eventos idempotentes `evaluation_requested | evaluation_completed | evaluation_inconclusive`; somente o concluído preserva output v2, evidências Web necessárias e seu fingerprint. O fingerprint exato da identidade da avaliação é persistido separadamente do fingerprint de concorrência da sessão; feedback e decisão revalidam o primeiro, enquanto locks e revisão usam o segundo. Decisão sobre candidatos é vinculada exclusivamente ao evento concluído persistido, sem token paralelo.
+• `/admin/taxonomia` separa estado operacional de sessão factual, e o detalhe permite abrir ou fechar o lifecycle humano mesmo quando a avaliação assistida está indisponível. Ausência de histórico, sessão aberta, espera de publicação, fechamento sem mudança e fechamento reconciliado continuam reconhecíveis após reload; falha de leitura é estado distinto. Fechamento revalida ID, revisão e fingerprint exibidos antes da RPC.
+• A avaliação v2 apresenta estratégia, estado e fontes, mas aceita somente decisão humana completa: zero, parcial ou total, camada explícita por aceitação e candidato próprio opcional. Mudança exige draft, sessão, evento e fingerprints exatos e nunca materializa field automaticamente.
+• `/admin/estrutura-lp?view=entradas` coleta somente operações estruturadas e recebe do servidor targets, fields editáveis e impactos seguros; JSON integral do catálogo e regras do registry não atravessam o boundary do client. Validação, autorização, publicação e reconciliação continuam etapas separadas.
+• As superfícies administrativas usam controles nativos, labels e hints associados, feedback anunciável com foco após transição, alvos de toque de pelo menos 44 px, foco visível, quebra de texto e overflow horizontal restrito a tabelas.
 
 3.15.9 Estado residual do antigo produto de `landing_page`
 • O Account Dashboard não possui criação, onboarding operacional, workspace, configuração operacional, histórico, Preview, renderer, aprovação, readers de materialização ou assinatura de assets do produto legado.

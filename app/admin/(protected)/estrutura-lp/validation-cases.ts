@@ -57,6 +57,19 @@ const navigation = readFileSync(
 );
 const taxonomyList = readFileSync(new URL("../taxonomia/page.tsx", import.meta.url), "utf8");
 const taxonomyDetail = readFileSync(new URL("../taxonomia/[taxonId]/page.tsx", import.meta.url), "utf8");
+const taxonomyActions = readFileSync(new URL("../taxonomia/actions.ts", import.meta.url), "utf8");
+const factualReviewAdapter = readFileSync(
+  new URL("../../../../lib/admin/adapters/adminTaxonFactualReviewAdapter.ts", import.meta.url),
+  "utf8",
+);
+const factualReviewLifecycle = readFileSync(
+  new URL("../taxonomia/[taxonId]/_components/AdminTaxonFactualReviewLifecycle.tsx", import.meta.url),
+  "utf8",
+);
+const taxonManageForm = readFileSync(
+  new URL("../../../../components/admin/AdminTaxonManageForm.tsx", import.meta.url),
+  "utf8",
+);
 const taxonomyAdapter = readFileSync(
   new URL("../../../../lib/admin/adapters/adminTaxonomyAdapter.ts", import.meta.url),
   "utf8",
@@ -85,9 +98,27 @@ assert.match(page, /entradas:\s*"Entradas"/);
 assert.doesNotMatch(taxonomyList, /Pesquisa BB|Pesquisa EC|diagnostic\.(businessBuyer|endCustomer)/);
 assert.doesNotMatch(taxonomyDetail, /Pesquisa BB|Pesquisa EC|diagnostic\.(businessBuyer|endCustomer)/);
 assert.match(taxonomyDetail, /AdminTaxonResearchSelectionForm/);
-assert.match(taxonomyDetail, /AdminTaxonInputCatalogReview/);
+assert.match(taxonomyDetail, /AdminTaxonFactualReviewLifecycle/);
+assert.match(taxonomyList, /factualReviews\.ok/);
+assert.match(taxonomyList, /Indisponível/);
+assert.doesNotMatch(taxonomyList, /\bh-10\b/);
+assert.match(taxonomyDetail, /factualReviewResult\.ok/);
+assert.match(taxonomyDetail, /unavailableMessage/);
+assert.match(factualReviewAdapter, /AdminTaxonFactualReviewListResult/);
+assert.match(factualReviewAdapter, /As sessões factuais estão temporariamente indisponíveis/);
+assert.doesNotMatch(factualReviewAdapter, /if \(error \|\| !Array\.isArray\(data\)\)[\s\S]{0,300}return Object\.freeze\(\[\]\)/);
+assert.match(factualReviewLifecycle, /name="reviewId"/);
+assert.match(factualReviewLifecycle, /name="expectedRevision"/);
+assert.match(factualReviewLifecycle, /name="expectedContextFingerprint"/);
+assert.match(factualReviewLifecycle, /unavailableMessage/);
+assert.match(taxonomyActions, /current\.id !== reviewId/);
+assert.match(taxonomyActions, /current\.revision !== expectedRevision/);
+assert.match(taxonomyActions, /current\.contextFingerprint !== expectedContextFingerprint/);
+assert.doesNotMatch(taxonManageForm, /\bh-10\b/);
+assert.match(taxonManageForm, /min-h-11/);
 assert.doesNotMatch(taxonomyAdapter, /landingPageResearchAdapter|research-resolution|resolveLandingPageResearch|E10\.8/);
-assert.match(taxonomyAdapter, /loadSelectedEndCustomerResearchFromClient/);
+assert.doesNotMatch(taxonomyAdapter, /RecordAdminInputCatalogReviewInput/);
+assert.match(taxonomyAdapter, /loadAdminInputCatalogEvaluationSources/);
 assert.match(taxonomyAdapter, /readAdminCommercialActivationOverview/);
 assert.doesNotMatch(conversionIndex, /landingPageResearch|landingPageResearchAdapter|research-resolution/);
 assert.doesNotMatch(packageJson, /validate:landing-page-research|research-resolution\/validation-cases/);
@@ -119,15 +150,19 @@ assert.match(lifecycleAdapter, /validation_context_fingerprint/);
 assert.match(lifecycleAdapter, /publication_context_fingerprint/);
 assert.match(lifecycleAdapter, /taxon_review_evidence/);
 assert.match(lifecycleAdapter, /reconstructDraftInputCatalogEvaluationContext/);
-assert.match(lifecycleAdapter, /recordAdminInputCatalogDraftSufficiencyDecision/);
+assert.match(lifecycleAdapter, /recordAdminInputCatalogDraftHumanDecision/);
 assert.match(lifecycleAdapter, /closeAdminTaxonFactualReviewWithoutChangeForCurrentCoverage/);
 assert.match(lifecycleAdapter, /requiredFactualReviewTaxonIds\(candidate\.value, context\.value\)/);
 assert.match(lifecycleAdapter, /reconcileAdminInputCatalogPublishedDraft/);
 assert.match(lifecycleAdapter, /runtimeEnvironment !== "production"/);
 assert.match(lifecycleAdapter, /storedDraftFingerprint !== deployedFingerprint/);
 assert.match(lifecycleAdapter, /saveAdminInputCatalogDraftAndInvalidateFactualReviews/);
+assert.doesNotMatch(lifecycleAdapter, /export async function saveAdminInputCatalogDraft\(/);
 assert.match(lifecycleAdapter, /applyAdminInputCatalogDraftOperation/);
 assert.match(lifecycleAdapter, /applyLandingPageInputCatalogDraftOperation/);
+assert.match(lifecycleAdapter, /editorLayers/);
+assert.match(lifecycleAdapter, /buildEditorLayers/);
+assert.match(lifecycleAdapter, /ownFields/);
 assert.match(lifecycleAdapter, /readProjectedCandidateLifecycleContext/);
 assert.match(lifecycleAdapter, /projectLandingPageInputCatalogDraftReleaseTaxons/);
 assert.match(lifecycleAdapter, /validateLandingPageInputCatalogDraftProjectedImpacts/);
@@ -153,12 +188,32 @@ assert.doesNotMatch(
 );
 assert.doesNotMatch(lifecycleAdapter, /coordinateInputCatalogEvaluation|executeInputCatalogEvaluationProvider/);
 assert.doesNotMatch(lifecycleAdapter, /Math\.max|versions\.at\(-1\)|latest/i);
-assert.match(lifecycleComponent, /Preparar handoff repo-only/);
+assert.match(lifecycleComponent, /Preparar publicação repo-only/);
+assert.match(lifecycleComponent, /operationKind/);
+assert.match(lifecycleComponent, /Adicionar ao draft/);
+assert.match(lifecycleComponent, /Aplicar alteração/);
+assert.match(lifecycleComponent, /Retirar no draft/);
+assert.doesNotMatch(lifecycleComponent, /name="catalogJson"/);
+assert.doesNotMatch(lifecycleComponent, /catalogJson|JSON\.parse/);
+assert.match(lifecycleComponent, /draft\.editorLayers/);
+assert.match(lifecycleComponent, /from "next\/link"/);
+assert.match(lifecycleComponent, /<Link/);
+assert.match(lifecycleComponent, /prefix="requiredWhen"/);
+assert.match(lifecycleComponent, /prefix="applicableWhen"/);
+assert.match(lifecycleComponent, /applicableWhenEnabled/);
+assert.match(lifecycleComponent, /capabilityBindingEnabled/);
+assert.match(lifecycleComponent, /feedbackRef\.current\?\.focus/);
+assert.doesNotMatch(lifecycleComponent, /\bh-10\b/);
 assert.doesNotMatch(lifecycleComponent, /Taxons operacionais|Bloqueios operacionais|Configurações inválidas/);
 assert.match(lifecycleComponent, /catalogDraftRevision/);
-assert.match(lifecycleComponent, /Decisão vinculada ao draft atual/);
+assert.match(lifecycleComponent, /Abrir decisão factual/);
 assert.match(lifecycleComponent, /Reconciliar draft já implantado/);
 assert.match(lifecycleActions, /requirePlatformAdmin/);
+assert.match(lifecycleActions, /parseCondition/);
+assert.match(lifecycleActions, /requiredWhen/);
+assert.match(lifecycleActions, /applicableWhen/);
+assert.match(lifecycleActions, /applicable_capabilities/);
+assert.match(lifecycleActions, /if \(result\.ok\) revalidatePath\("\/admin\/taxonomia"\)/);
 const lifecycleRuntimeExports = lifecycleActions.match(
   /^export\s+(?!type\b|interface\b)[^\r\n]+/gm,
 ) ?? [];
@@ -172,7 +227,7 @@ assert.ok(
 assert.doesNotMatch(lifecycleActions, /export const initialInputCatalogLifecycleActionState/);
 assert.match(
   lifecycleComponent,
-  /const initialInputCatalogLifecycleActionState:\s*InputCatalogLifecycleActionState\s*=\s*\{/,
+  /const initialState:\s*InputCatalogLifecycleActionState\s*=\s*\{/,
 );
 assert.match(lifecycleMigration, /create table public\.landing_page_input_catalog_drafts/);
 assert.match(lifecycleMigration, /revoke all on table public\.landing_page_input_catalog_drafts[\s\S]*from public, anon, authenticated/);

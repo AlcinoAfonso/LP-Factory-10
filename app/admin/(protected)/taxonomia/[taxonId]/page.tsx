@@ -16,17 +16,16 @@ import {
   deleteTaxonAliasAction,
   selectEndCustomerResearchAction,
   updateTaxonAction,
-  recordInputCatalogReviewAction,
-  reopenInputCatalogReviewAction,
+  openFactualReviewAction,
+  closeFactualReviewWithoutChangeAction,
   evaluateInputCatalogAction,
-  confirmInputCatalogEvaluationAction,
-  rejectInputCatalogCandidatesAndConfirmSufficientAction,
-  acknowledgeInputCatalogGapAction,
+  recordInputCatalogHumanDecisionAction,
 } from "../actions";
 import { AdminTaxonInputCatalogEvaluationRuntime } from "./_components/AdminTaxonInputCatalogEvaluation";
-import { AdminTaxonInputCatalogReview } from "./_components/AdminTaxonInputCatalogReview";
+import { AdminTaxonFactualReviewLifecycle } from "./_components/AdminTaxonFactualReviewLifecycle";
 import { CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION } from "@/conversion-content/landing-page/input-catalog";
 import { loadAdminInputCatalogDraftEvaluationContext } from "@/lib/admin/adapters/adminInputCatalogLifecycleAdapter";
+import { loadLatestAdminTaxonFactualReview } from "@/lib/admin/adapters/adminTaxonFactualReviewAdapter";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -48,17 +47,11 @@ export default async function AdminTaxonDetailPage({ params, searchParams }: Adm
   const taxon = await getAdminTaxonDetail(taxonId);
 
   if (!taxon) notFound();
-  const inputCatalogEvaluationRuntime = taxon.inputCatalogReview.status === "available"
+  const factualReviewResult = await loadLatestAdminTaxonFactualReview(taxonId);
+  const factualReview = factualReviewResult.ok ? factualReviewResult.review : null;
+  const inputCatalogEvaluationRuntime = factualReview?.status === "open" && taxon.inputCatalogReview.status === "available"
     ? await resolveInputCatalogEvaluationRuntimeReadiness()
     : null;
-  const inputCatalogLegacyMode = inputCatalogEvaluationRuntime === null
-    ? "unavailable"
-    : inputCatalogEvaluationRuntime.ok
-      ? "runtime_active"
-      : inputCatalogEvaluationRuntime.code === "ROLLOUT_GATE_OFF"
-        ? "rollout_gate_off"
-        : "operational_configuration_unproven";
-  const legacyAvailable = inputCatalogLegacyMode === "rollout_gate_off";
   const draftEvaluation = draftRevision === null
     ? null
     : await loadAdminInputCatalogDraftEvaluationContext({
@@ -141,30 +134,23 @@ export default async function AdminTaxonDetailPage({ params, searchParams }: Adm
         />
       )}
 
-      {taxon.inputCatalogReview.status === "disabled" ? null : (
-        <AdminTaxonInputCatalogReview
-          legacyMode={inputCatalogLegacyMode}
-          recordAction={recordInputCatalogReviewAction}
-          reopenAction={reopenInputCatalogReviewAction}
-          review={
-            !legacyAvailable && taxon.inputCatalogReview.status === "available"
-              ? { ...taxon.inputCatalogReview, handoff: "" }
-              : taxon.inputCatalogReview
-          }
-          taxonId={taxon.id}
-        />
-      )}
+      <AdminTaxonFactualReviewLifecycle
+        closeWithoutChangeAction={closeFactualReviewWithoutChangeAction}
+        isActive={taxon.isActive}
+        openAction={openFactualReviewAction}
+        review={factualReview}
+        taxonId={taxon.id}
+        unavailableMessage={factualReviewResult.ok ? null : factualReviewResult.message}
+      />
 
       {taxon.inputCatalogReview.status === "available" && inputCatalogEvaluationRuntime?.ok && (!draftEvaluation || draftEvaluation.ok) ? (
         <AdminTaxonInputCatalogEvaluationRuntime
-          acknowledgeGapAction={acknowledgeInputCatalogGapAction}
-          confirmAction={confirmInputCatalogEvaluationAction}
+          decisionAction={recordInputCatalogHumanDecisionAction}
           currentInputCatalogVersion={draftEvaluation?.ok
             ? draftEvaluation.value.targetVersion
             : CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION}
           currentReviewedVersion={taxon.inputCatalogReview.reviewedVersion}
           evaluateAction={evaluateInputCatalogAction}
-          rejectCandidatesAndConfirmAction={rejectInputCatalogCandidatesAndConfirmSufficientAction}
           taxonId={taxon.id}
           {...(draftEvaluation?.ok ? { draftRevision: Number(draftRevision) } : {})}
         />
@@ -176,19 +162,15 @@ export default async function AdminTaxonDetailPage({ params, searchParams }: Adm
         </section>
       ) : null}
 
-      {taxon.inputCatalogReview.status === "available" && inputCatalogEvaluationRuntime && !inputCatalogEvaluationRuntime.ok ? (
+      {factualReview?.status === "open" && inputCatalogEvaluationRuntime && !inputCatalogEvaluationRuntime.ok ? (
         <section className="rounded-lg border border-border bg-card p-5 shadow-card">
           <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            {inputCatalogEvaluationRuntime.code === "ROLLOUT_GATE_OFF"
-              ? "Runtime OpenAI gate-off"
-              : "Runtime OpenAI bloqueado"}
+            Avaliação automatizada indisponível
           </p>
           <h2 className="mt-1 text-lg font-semibold text-card-foreground">Avaliação factual do catálogo E20.2</h2>
           <p className="mt-2 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
             {inputCatalogEvaluationRuntime.message}
-            {inputCatalogEvaluationRuntime.code === "ROLLOUT_GATE_OFF"
-              ? " O handoff Codex acima permanece o caminho autorizado."
-              : " Runtime e caminhos legados permanecem bloqueados até a configuração ser comprovada."}
+            {" "}A sessão factual e a decisão humana sem mudança continuam disponíveis acima.
           </p>
         </section>
       ) : null}

@@ -1,7 +1,7 @@
 0.1 Cabeçalho
-Data: 06/09/2026
-Versão: v1.27
-Status: Alinhado ao catálogo operacional vigente; Validador Final e Niche Runtime Tests retirados pela E22.6
+Data: 12/09/2026
+Versão: v1.28
+Status: Alinhado ao catálogo operacional vigente; avaliação factual E20.6 integrada ao runtime administrativo foreground
 
 0.2 Função do documento
 Registrar a camada de automações operacionais do LP Factory 10 como referência para integrações, automações operacionais e componentes consumidores, sem expor segredos.
@@ -278,36 +278,35 @@ Objetivo:
 Confrontar a pesquisa integral `end_customer` selecionada pela E20.5 com uma versão executável explícita da E20.2 e produzir recomendação fundamentada para decisão humana.
 
 Status:
-Implementada e validada operacionalmente no primeiro taxon real, sem workload OpenAI no runtime do produto.
+Implementada no repositório como fluxo foreground do Admin. Apply, configuração do gate e QA hospedado permanecem pendentes dos gates finais.
 
 Recurso utilizado:
-- instrução copiável no Admin;
-- Codex App;
-- registro administrativo humano explícito.
+- Responses API com Structured Output estrito;
+- Web Search hospedado somente nas estratégias que exigem fonte pública;
+- eventos factuais persistidos e decisão administrativa humana explícita.
 
 Natureza:
 - Automação com IA em fluxo controlado.
 
 Ambiente principal:
-- Codex App.
+- Runtime server-side do Admin do LP Factory, condicionado pelo gate exclusivo do provider.
 
 Participação humana:
-- O humano escolhe a versão executável, decide entre suficiência e gap factual real e, somente quando suficiente, registra a versão avaliada no Admin.
+- O humano abre e conclui a sessão factual, solicita opcionalmente a avaliação e decide entre zero, parte ou totalidade dos candidatos, podendo acrescentar candidato próprio com camada explícita.
 
 Como usar:
-- Copiar no Admin a instrução vinculada ao taxon e à pesquisa E20.5 selecionada.
-- Informar explicitamente a versão E20.2; não usar maior versão, `latest` ou fallback.
-- Confrontar `starter`, `lite`, `pro` e `ultra`; falha, diferença material ou fonte incompleta produz `inconclusivo`.
-- Tratar a recomendação como transitória e não autoritativa; somente a ação administrativa humana persiste suficiência.
+- Abrir uma sessão `release | revision` no detalhe do taxon e escolher a estratégia disponível: pesquisa E20.5 válida, ausência legítima com Web ou hipótese focal com Web.
+- Confrontar `starter`, `lite`, `pro` e `ultra` em uma única execução com deadline integral de 45 segundos, zero retry e `store:false`.
+- Tratar a recomendação como não autoritativa; somente a decisão humana revalidada altera o lifecycle.
 
 Resultado esperado:
-- `suficiente`, `gaps candidatos` ou `inconclusivo`, com rastreabilidade das versões e sem persistência do relatório da IA.
+- saída v2 `suficiente | gaps candidatos | inconclusivo`, com fontes autenticadas quando aplicáveis; eventos `requested | completed | inconclusive` persistem a evidência mínima e os fingerprints que vinculam a decisão ao resultado exato.
 
 Limites:
-- Não altera a E20.2, não grava suficiência automaticamente, não cria agente, Agents SDK, rota de integração, job, fila ou automação recorrente.
+- Não altera a E20.2 nem grava suficiência automaticamente; não cria agente, Agents SDK, handoff Codex, job, fila, background ou automação recorrente. Gate desligado ou provider indisponível afeta somente a avaliação opcional, nunca o lifecycle humano.
 
 Referências / dependências:
-Fluxo funcional: `docs/roadmap.md` — E20.6.3.
+Fluxo funcional: `docs/roadmap.md` — E20.6.3 a E20.6.7.
 Configuração do gate: `docs/platform-config.md` — seção 3.5.
 Contrato técnico: `docs/base-tecnica.md` — seção 3.15.7.
 

@@ -19,6 +19,7 @@ import {
   type InputCatalogEvaluationSourceStrategy,
 } from "@/conversion-content/landing-page/taxon-preparation";
 import { createServiceClient } from "@/lib/supabase/service";
+import { collectCompletePaginatedRows } from "./adminInputCatalogLifecyclePagination";
 
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -107,7 +108,7 @@ export async function loadOpenAdminTaxonFactualReview(
   const client = createServiceClient();
   const { data, error } = await (client as any)
     .from("business_taxon_factual_reviews")
-    .select("id,taxon_id,review_kind,status,baseline_is_active,baseline_reviewed_input_catalog_version,context_fingerprint,revision")
+    .select("id,taxon_id,kind,status,baseline_is_active,baseline_reviewed_input_catalog_version,context_fingerprint,revision")
     .eq("taxon_id", taxonId)
     .eq("status", "open")
     .limit(1)
@@ -121,6 +122,94 @@ export async function loadOpenAdminTaxonFactualReview(
     return failure("Abra uma sessão factual para este taxon antes de solicitar a avaliação.");
   }
   return { ok: true, review };
+}
+
+export type AdminTaxonFactualReviewSummary = Readonly<{
+  id: string;
+  taxonId: string;
+  kind: FactualReviewSession["kind"];
+  status: FactualReviewSession["status"];
+  revision: number;
+  contextFingerprint: string;
+}>;
+
+export type AdminTaxonFactualReviewListResult =
+  | Readonly<{ ok: true; reviews: readonly AdminTaxonFactualReviewSummary[] }>
+  | Readonly<{ ok: false; message: string }>;
+
+export type AdminTaxonFactualReviewReadResult =
+  | Readonly<{ ok: true; review: AdminTaxonFactualReviewSummary | null }>
+  | Readonly<{ ok: false; message: string }>;
+
+export async function listLatestAdminTaxonFactualReviews(
+  taxonIds: readonly string[],
+): Promise<AdminTaxonFactualReviewListResult> {
+  const ids = [...new Set(taxonIds.filter((taxonId) => UUID_PATTERN.test(taxonId)))];
+  if (ids.length === 0) return Object.freeze({ ok: true, reviews: Object.freeze([]) });
+  const client = createServiceClient();
+  const rows = await collectCompletePaginatedRows({
+    pageSize: 500,
+    readPage: async (offset, limit) => {
+      try {
+        const { data, error, count } = await (client as any)
+          .from("business_taxon_factual_reviews")
+          .select("id,taxon_id,kind,status,baseline_is_active,baseline_reviewed_input_catalog_version,context_fingerprint,revision,created_at", { count: "exact" })
+          .in("taxon_id", ids)
+          .order("taxon_id", { ascending: true })
+          .order("created_at", { ascending: false })
+          .order("id", { ascending: false })
+          .range(offset, offset + limit - 1);
+        if (error || !Array.isArray(data) || count === null || data.length > limit) {
+          console.error("listLatestAdminTaxonFactualReviews failed:", {
+            code: error?.code,
+            message: error?.message,
+          });
+          return null;
+        }
+        return { rows: data, total: count };
+      } catch (error) {
+        console.error("listLatestAdminTaxonFactualReviews failed:", {
+          message: error instanceof Error ? error.message : "unknown_error",
+        });
+        return null;
+      }
+    },
+  });
+  if (!rows.ok) {
+    return failure("As sessões factuais estão temporariamente indisponíveis.");
+  }
+  const reviewsByTaxonId = new Map<string, AdminTaxonFactualReviewSummary>();
+  for (const row of rows.rows) {
+    const review = normalizeStoredReviewRow(row);
+    if (!review) {
+      console.error("listLatestAdminTaxonFactualReviews received invalid state");
+      return failure("As sessões factuais contêm estado indisponível para leitura.");
+    }
+    if (reviewsByTaxonId.has(review.taxonId)) continue;
+    reviewsByTaxonId.set(review.taxonId, Object.freeze({
+      id: review.id,
+      taxonId: review.taxonId,
+      kind: review.kind,
+      status: review.status,
+      revision: review.revision,
+      contextFingerprint: review.contextFingerprint,
+    }));
+  }
+  return Object.freeze({
+    ok: true,
+    reviews: Object.freeze([...reviewsByTaxonId.values()]),
+  });
+}
+
+export async function loadLatestAdminTaxonFactualReview(
+  taxonId: string,
+): Promise<AdminTaxonFactualReviewReadResult> {
+  if (!UUID_PATTERN.test(taxonId)) {
+    return failure("O taxon da sessão factual é inválido.");
+  }
+  const result = await listLatestAdminTaxonFactualReviews([taxonId]);
+  if (!result.ok) return result;
+  return Object.freeze({ ok: true, review: result.reviews[0] ?? null });
 }
 
 export async function appendAdminTaxonFactualEvaluationEvent(
@@ -739,7 +828,7 @@ function normalizeStoredReviewRow(value: unknown): FactualReviewSession | null {
   return normalizeReviewRpcRow(
     {
       review_id: value.id,
-      review_kind: value.review_kind,
+      review_kind: value.kind,
       review_status: value.status,
       review_revision: value.revision,
       review_baseline_is_active: value.baseline_is_active,

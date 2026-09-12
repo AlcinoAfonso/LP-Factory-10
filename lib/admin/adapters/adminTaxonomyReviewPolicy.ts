@@ -66,24 +66,3 @@ export function sameInputCatalogReviewBaseline(
     left.chainFingerprint === right.chainFingerprint
   );
 }
-
-export type InputCatalogReviewPresentation = Readonly<{
-  reviewedVersion: number | null;
-  lastAction: "record" | "reopen" | null;
-}>;
-
-export function nextInputCatalogReviewActionRevision(current: number): number {
-  return current + 1;
-}
-
-export function applyInputCatalogReviewPresentation(
-  _current: InputCatalogReviewPresentation,
-  event: Readonly<
-    | { type: "record"; reviewedVersion: number }
-    | { type: "reopen" }
-  >,
-): InputCatalogReviewPresentation {
-  return event.type === "record"
-    ? { reviewedVersion: event.reviewedVersion, lastAction: "record" }
-    : { reviewedVersion: null, lastAction: "reopen" };
-}

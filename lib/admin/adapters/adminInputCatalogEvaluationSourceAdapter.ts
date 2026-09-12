@@ -17,6 +17,7 @@ export type AdminInputCatalogEvaluationSourcesResult =
       ok: true;
       selectedResearch: LoadSelectedEndCustomerResearchResult;
       taxonChain: LandingPageInputCatalogTaxonChain;
+      reviewedInputCatalogVersion: number | null;
     }>
   | Readonly<{ ok: false; message: string }>;
 
@@ -34,7 +35,7 @@ export async function loadAdminInputCatalogEvaluationSources(
   try {
     const { data, error } = await client
       .from("business_taxons")
-      .select("id,selected_end_customer_research_version")
+      .select("id,selected_end_customer_research_version,reviewed_input_catalog_version")
       .eq("id", chain.value.selected.id)
       .limit(1)
       .maybeSingle();
@@ -51,10 +52,20 @@ export async function loadAdminInputCatalogEvaluationSources(
     chain.value.selected,
     selection.selected_end_customer_research_version,
   );
+  const reviewedInputCatalogVersion = selection.reviewed_input_catalog_version === null
+    ? null
+    : Number(selection.reviewed_input_catalog_version);
+  if (
+    reviewedInputCatalogVersion !== null &&
+    (!Number.isSafeInteger(reviewedInputCatalogVersion) || reviewedInputCatalogVersion <= 0)
+  ) {
+    return { ok: false, message: "O marcador factual administrativo do taxon é inválido." };
+  }
   return Object.freeze({
     ok: true,
     selectedResearch,
     taxonChain: chain.value.chain,
+    reviewedInputCatalogVersion,
   });
 }
 

@@ -9,28 +9,26 @@ import { reconstructCanonicalInputCatalogEvaluationContext } from "@/conversion-
 import { evaluateInputCatalogWithOpenAi } from "@/conversion-content/adapters/inputCatalogEvaluationOpenAiAdapter";
 import { resolveInputCatalogEvaluationRuntimeReadiness } from "@/conversion-content/adapters/inputCatalogEvaluationRuntimeGate";
 import {
-  executeInputCatalogEvaluationAdministrativeActionCore,
-  executeLegacyInputCatalogReviewRecordCore,
-} from "@/conversion-content/adapters/inputCatalogEvaluationAdministrativeActionCore";
-import {
   coordinateInputCatalogEvaluation,
-  createInputCatalogEvaluationDecisionToken,
   fingerprintInputCatalogEvaluationContextIdentity,
   fingerprintInputCatalogEvaluationOutput,
+  normalizeFactualReviewCatalogChangeDecision,
+  type FactualReviewDecisionLayer,
   revalidateInputCatalogEvaluationContext,
   type InputCatalogEvaluationMode,
   type InputCatalogEvaluationOutput,
 } from "@/conversion-content/landing-page/taxon-preparation";
-import { nextInputCatalogReviewActionRevision } from "@/lib/admin/adapters/adminTaxonomyReviewPolicy";
 import {
   loadAdminInputCatalogDraftEvaluationContext,
-  recordAdminInputCatalogDraftSufficiencyDecision,
+  recordAdminInputCatalogDraftHumanDecision,
 } from "@/lib/admin/adapters/adminInputCatalogLifecycleAdapter";
 import {
   appendAdminTaxonFactualEvaluationEvent,
   closeAdminTaxonFactualReviewWithoutChangeForCurrentCoverage,
   loadAdminTaxonFactualEvaluationEvidence,
+  loadLatestAdminTaxonFactualReview,
   loadOpenAdminTaxonFactualReview,
+  openAdminTaxonFactualReview,
 } from "@/lib/admin/adapters/adminTaxonFactualReviewAdapter";
 import {
   addAdminTaxonAlias,
@@ -38,8 +36,6 @@ import {
   deleteAdminTaxon,
   deleteAdminTaxonAlias,
   selectAdminEndCustomerResearchVersion,
-  recordAdminInputCatalogReview,
-  reopenAdminInputCatalogReview,
   updateAdminTaxon,
 } from "@/lib/admin/adapters/adminReadOnlyAdapter";
 
@@ -56,15 +52,13 @@ export type SelectEndCustomerResearchActionState = {
   selectedVersion: number | null;
 };
 
-export type InputCatalogReviewActionState = {
+export type FactualReviewLifecycleActionState = {
   error: string | null;
-  reviewedVersion: number | null;
-  reopened: boolean;
+  message: string | null;
   revision: number;
 };
 
 export type InputCatalogEvaluationReference = Readonly<{
-  decisionToken: string;
   taxonId?: string;
   reviewId?: string;
   reviewRevision?: number;
@@ -85,20 +79,8 @@ export type InputCatalogEvaluationActionResult =
     }>
   | Readonly<{ ok: false; code: string; message: string }>;
 
-export type ConfirmInputCatalogEvaluationActionResult =
-  | Readonly<{ ok: true; kind: "sufficiency_confirmed"; reviewedVersion: number }>
-  | Readonly<{ ok: false; stale: boolean; message: string }>;
-
-export type RejectInputCatalogCandidatesActionResult =
-  | Readonly<{
-      ok: true;
-      kind: "candidates_rejected_and_sufficiency_confirmed";
-      reviewedVersion: number;
-    }>
-  | Readonly<{ ok: false; stale: boolean; message: string }>;
-
-export type AcknowledgeInputCatalogGapActionResult =
-  | Readonly<{ ok: true; handoff: string; selectedCandidateCount: number }>
+export type InputCatalogHumanDecisionActionResult =
+  | Readonly<{ ok: true; decisionKind: "no_change" | "catalog_change"; reviewedVersion: number }>
   | Readonly<{ ok: false; stale: boolean; message: string }>;
 
 export async function evaluateInputCatalogAction(input: Readonly<{
@@ -332,16 +314,6 @@ export async function evaluateInputCatalogAction(input: Readonly<{
   if (Date.now() >= evaluationDeadlineAtMs) {
     return { ok: false, code: "PROVIDER_FAILURE", message: "O prazo total da avaliação expirou." };
   }
-  const decisionToken = createInputCatalogEvaluationDecisionToken(
-    {
-      taxonId: result.value.contextIdentity.taxonId,
-      inputCatalogVersion: result.value.contextIdentity.inputCatalog.version,
-      contextFingerprint,
-      outputFingerprint,
-      status: result.value.output.status,
-    },
-    process.env.OPENAI_API_KEY,
-  );
   const completedEvent = await appendAdminTaxonFactualEvaluationEvent({
     review: factualReview.review,
     operationId: randomUUID(),
@@ -371,7 +343,6 @@ export async function evaluateInputCatalogAction(input: Readonly<{
     ok: true,
     output: result.value.output,
     reference: {
-      decisionToken: decisionToken ?? "",
       taxonId: result.value.contextIdentity.taxonId,
       reviewId: factualReview.review.id,
       reviewRevision: factualReview.review.revision,
@@ -390,266 +361,106 @@ export async function evaluateInputCatalogAction(input: Readonly<{
   };
 }
 
-export async function confirmInputCatalogEvaluationAction(input: Readonly<{
+export async function recordInputCatalogHumanDecisionAction(input: Readonly<{
   reference: InputCatalogEvaluationReference;
   output: InputCatalogEvaluationOutput;
-}>): Promise<ConfirmInputCatalogEvaluationActionResult> {
-  const result = await executeAdministrativeEvaluationDecision({
-    decision: "confirm_sufficient",
-    reference: input.reference,
-    output: input.output,
-  });
-  if (!result.ok) return result;
-  if (result.kind !== "sufficiency_confirmed") {
-    return { ok: false, stale: false, message: "A confirmação não produziu a decisão esperada." };
-  }
-  revalidatePath("/admin/taxonomia");
-  if (input.reference.taxonId) revalidatePath(`/admin/taxonomia/${input.reference.taxonId}`);
-  return { ok: true, kind: result.kind, reviewedVersion: result.reviewedVersion };
-}
-
-export async function rejectInputCatalogCandidatesAndConfirmSufficientAction(input: Readonly<{
-  reference: InputCatalogEvaluationReference;
-  output: InputCatalogEvaluationOutput;
-  selectedCandidateIndexes: readonly number[];
-}>): Promise<RejectInputCatalogCandidatesActionResult> {
-  const result = await executeAdministrativeEvaluationDecision({
-    decision: "reject_candidates_and_confirm_sufficient",
-    reference: input.reference,
-    output: input.output,
-    selectedCandidateIndexes: input.selectedCandidateIndexes,
-  });
-  if (!result.ok) return result;
-  if (result.kind !== "candidates_rejected_and_sufficiency_confirmed") {
-    return { ok: false, stale: false, message: "A rejeição dos candidatos não produziu a decisão esperada." };
-  }
-  revalidatePath("/admin/taxonomia");
-  if (input.reference.taxonId) revalidatePath(`/admin/taxonomia/${input.reference.taxonId}`);
-  return { ok: true, kind: result.kind, reviewedVersion: result.reviewedVersion };
-}
-
-export async function acknowledgeInputCatalogGapAction(input: Readonly<{
-  reference: InputCatalogEvaluationReference;
-  output: InputCatalogEvaluationOutput;
-  selectedCandidateIndexes: readonly number[];
-}>): Promise<AcknowledgeInputCatalogGapActionResult> {
-  const result = await executeAdministrativeEvaluationDecision({
-    decision: "acknowledge_factual_gap",
-    reference: input.reference,
-    output: input.output,
-    selectedCandidateIndexes: input.selectedCandidateIndexes,
-  });
-  if (!result.ok) return result;
-  return result.kind === "factual_gap_acknowledged" && result.handoff
-    ? {
-        ok: true,
-        handoff: result.handoff,
-        selectedCandidateCount: result.selectedCandidates.length,
-      }
-    : { ok: false, stale: false, message: "O reconhecimento do gap não produziu a decisão esperada." };
-}
-
-async function executeAdministrativeEvaluationDecision(input: Readonly<{
-  decision:
-    | "confirm_sufficient"
-    | "reject_candidates_and_confirm_sufficient"
-    | "acknowledge_factual_gap";
-  reference: InputCatalogEvaluationReference;
-  output: InputCatalogEvaluationOutput;
-  selectedCandidateIndexes?: readonly number[];
-}>) {
+  acceptedCandidates: readonly Readonly<{ index: number; layer: FactualReviewDecisionLayer }>[];
+  ownCandidate: Readonly<{ factualNeed: string; layer: FactualReviewDecisionLayer }> | null;
+}>): Promise<InputCatalogHumanDecisionActionResult> {
   const gate = await requirePlatformAdmin();
   if (!gate.allowed) {
-    return { ok: false as const, stale: false, message: "Acesso administrativo não autorizado." };
+    return { ok: false, stale: false, message: "Acesso administrativo não autorizado." };
   }
-  const loadPersistedEvidence = async () => {
-    if (
-      !input.reference.reviewId ||
-      !input.reference.recommendationEventId ||
-      !input.reference.outputFingerprint ||
-      !input.reference.evaluationContextFingerprint
-    ) {
-      return { ok: false as const, message: "A referência factual persistida está incompleta." };
-    }
-    return loadAdminTaxonFactualEvaluationEvidence({
-      reviewId: input.reference.reviewId,
-      eventId: input.reference.recommendationEventId,
-      outputFingerprint: input.reference.outputFingerprint,
-      evaluationContextFingerprint: input.reference.evaluationContextFingerprint,
-      output: input.output,
-    });
-  };
+  const candidateCount = input.output.candidates.length;
+  const acceptedIndexes = new Set(input.acceptedCandidates.map((candidate) => candidate.index));
+  const normalized = normalizeFactualReviewCatalogChangeDecision({
+    recommendationCandidateCount: candidateCount,
+    recommendationSelection: input.acceptedCandidates.length === 0
+      ? "zero"
+      : input.acceptedCandidates.length === candidateCount
+        ? "total"
+        : "partial",
+    acceptedCandidates: input.acceptedCandidates,
+    rejectedCandidateIndexes: Array.from({ length: candidateCount }, (_, index) => index)
+      .filter((index) => !acceptedIndexes.has(index)),
+    ownCandidate: input.ownCandidate,
+  });
+  if (!normalized.ok) return { ok: false, stale: false, message: normalized.error.message };
+  const { reviewId, recommendationEventId, outputFingerprint, evaluationContextFingerprint } = input.reference;
+  if (!reviewId || !recommendationEventId || !outputFingerprint || !evaluationContextFingerprint) {
+    return { ok: false, stale: true, message: "A referência factual persistida está incompleta." };
+  }
+  const persisted = await loadAdminTaxonFactualEvaluationEvidence({
+    reviewId,
+    eventId: recommendationEventId,
+    outputFingerprint,
+    evaluationContextFingerprint,
+    output: input.output,
+  });
+  if (!persisted.ok) return { ok: false, stale: true, message: persisted.message };
+  const evidence = persisted.evidence;
+  const recommendationBinding = candidateCount > 0
+    ? {
+        recommendationEventId,
+        recommendationOutputFingerprint: outputFingerprint,
+        recommendationEvaluationContextFingerprint: evaluationContextFingerprint,
+      }
+    : {};
+
   if ((input.reference.source ?? "published") === "draft") {
-    const expectedRevision = input.reference.draftRevision;
+    const expectedRevision = Number(input.reference.draftRevision);
     const expectedContentFingerprint = input.reference.draftContentFingerprint;
-    if (
-      !Number.isSafeInteger(expectedRevision) ||
-      Number(expectedRevision) <= 0 ||
-      typeof expectedContentFingerprint !== "string"
-    ) {
-      return { ok: false as const, stale: true, message: "A referência do draft é inválida." };
+    if (!Number.isSafeInteger(expectedRevision) || expectedRevision <= 0 || !expectedContentFingerprint) {
+      return { ok: false, stale: true, message: "A referência do draft é inválida." };
     }
-    const result = await executeInputCatalogEvaluationAdministrativeActionCore(
-      {
-        decision: input.decision,
-        decisionToken: input.reference.decisionToken,
-        decisionTokenSecret: process.env.OPENAI_API_KEY,
-        output: input.output,
-        selectedCandidateIndexes: input.selectedCandidateIndexes,
-      },
-      {
-        requireRuntime: async () => {
-          const runtime = await resolveInputCatalogEvaluationRuntimeReadiness();
-          return runtime.ok
-            ? { ok: true as const }
-            : { ok: false as const, message: runtime.message };
-        },
-        loadPersistedEvidence,
-        revalidate: async (evidence) => {
-          const draft = await loadAdminInputCatalogDraftEvaluationContext({
-            expectedRevision: Number(expectedRevision),
-            taxonId: evidence.taxonId,
-            mode: input.output.mode,
-          });
-          if (
-            !draft.ok ||
-            draft.value.targetVersion !== evidence.inputCatalogVersion ||
-            draft.value.contentFingerprint !== expectedContentFingerprint ||
-            fingerprintInputCatalogEvaluationContextIdentity(draft.value.context.identity) !==
-              evidence.evaluationContextFingerprint
-          ) {
-            return {
-              ok: false as const,
-              message: draft.ok
-                ? "O draft ou suas fontes mudaram desde a avaliação."
-                : draft.message,
-            };
-          }
-          return { ok: true as const };
-        },
-        recordReviewedVersion: async (evidence) => {
-          if (input.decision === "acknowledge_factual_gap") {
-            return { ok: false as const, message: "Reconhecimento de gap não registra suficiência." };
-          }
-          const recorded = await recordAdminInputCatalogDraftSufficiencyDecision({
-            actorUserId: gate.actorUserId,
-            expectedRevision: Number(expectedRevision),
-            taxonId: evidence.taxonId,
-            expectedContentFingerprint,
-            expectedEvaluationContextFingerprint: evidence.evaluationContextFingerprint,
-            decision: input.decision,
-            recommendationCandidateCount: input.output.candidates.length,
-            ...(input.decision !== "confirm_sufficient" && input.output.candidates.length > 0
-              ? {
-                  recommendationEventId: input.reference.recommendationEventId,
-                  recommendationOutputFingerprint: input.reference.outputFingerprint,
-                  recommendationEvaluationContextFingerprint:
-                    input.reference.evaluationContextFingerprint,
-                }
-              : {}),
-            mode: input.output.mode,
-          });
-          if (!recorded.ok) return recorded;
-          return { ok: true as const, reviewedVersion: recorded.reviewedVersion };
-        },
-      },
-    );
-    if (result.ok && result.kind !== "factual_gap_acknowledged") {
-      revalidatePath("/admin/estrutura-lp");
-    }
-    return result;
+    const recorded = await recordAdminInputCatalogDraftHumanDecision({
+      actorUserId: gate.actorUserId,
+      expectedRevision,
+      taxonId: evidence.taxonId,
+      expectedContentFingerprint,
+      expectedEvaluationContextFingerprint: evidence.evaluationContextFingerprint,
+      decision: normalized.value,
+      ...recommendationBinding,
+      mode: input.output.mode,
+    });
+    if (!recorded.ok) return { ok: false, stale: true, message: recorded.message };
+    revalidatePath("/admin/estrutura-lp");
+    revalidatePath("/admin/taxonomia");
+    revalidatePath(`/admin/taxonomia/${evidence.taxonId}`);
+    return { ok: true, decisionKind: recorded.decisionKind, reviewedVersion: recorded.reviewedVersion };
   }
-  return executeInputCatalogEvaluationAdministrativeActionCore(
-    {
-      decision: input.decision,
-      decisionToken: input.reference.decisionToken,
-      decisionTokenSecret: process.env.OPENAI_API_KEY,
-      output: input.output,
-      selectedCandidateIndexes: input.selectedCandidateIndexes,
-    },
-    {
-      requireRuntime: async () => {
-        const runtime = await resolveInputCatalogEvaluationRuntimeReadiness();
-        return runtime.ok
-          ? { ok: true as const }
-          : { ok: false as const, message: runtime.message };
-      },
-      loadPersistedEvidence,
-      revalidate: async (evidence) => {
-        const current = await reconstructCanonicalInputCatalogEvaluationContext({
-          taxonId: evidence.taxonId,
-          inputCatalogVersion: evidence.inputCatalogVersion,
-          mode: input.output.mode,
-        });
-        if (!current.ok) return { ok: false as const, message: current.error.message };
-        const revalidated = await revalidateInputCatalogEvaluationContext(
-          current.value.identity,
-          {
-            taxonId: evidence.taxonId,
-            inputCatalogVersion: evidence.inputCatalogVersion,
-            mode: input.output.mode,
-          },
-          reconstructCanonicalInputCatalogEvaluationContext,
-        );
-        if (
-          !revalidated.ok ||
-          fingerprintInputCatalogEvaluationContextIdentity(revalidated.value.contextIdentity) !==
-            evidence.evaluationContextFingerprint
-        ) {
-          return {
-            ok: false as const,
-            message: revalidated.ok
-              ? "As fontes mudaram desde a avaliação. Execute uma nova avaliação."
-              : revalidated.error.message,
-          };
-        }
-        return { ok: true as const };
-      },
-      recordReviewedVersion: async (evidence) => {
-        if (
-          !input.reference.reviewId ||
-          !Number.isSafeInteger(input.reference.reviewRevision) ||
-          !input.reference.reviewContextFingerprint
-        ) {
-          return { ok: false as const, message: "A referência da sessão factual é inválida." };
-        }
-        const recommendationCandidateCount = input.decision === "confirm_sufficient"
-          ? 0
-          : input.output.candidates.length;
-        const recorded = await closeAdminTaxonFactualReviewWithoutChangeForCurrentCoverage({
-          reviewId: input.reference.reviewId,
-          operationId: randomUUID(),
-          actorUserId: gate.actorUserId,
-          taxonId: evidence.taxonId,
-          expectedRevision: Number(input.reference.reviewRevision),
-          expectedContextFingerprint: input.reference.reviewContextFingerprint,
-          ...(recommendationCandidateCount > 0
-            ? {
-                recommendationEventId: input.reference.recommendationEventId,
-                recommendationOutputFingerprint: input.reference.outputFingerprint,
-                recommendationEvaluationContextFingerprint:
-                  input.reference.evaluationContextFingerprint,
-              }
-            : {}),
-          humanDecision: {
-            recommendationCandidateCount,
-            recommendationSelection: "zero",
-            acceptedCandidates: [],
-            rejectedCandidateIndexes: Array.from(
-              { length: recommendationCandidateCount },
-              (_, index) => index,
-            ),
-            ownCandidate: null,
-          },
-        });
-        if (!recorded.ok) return recorded;
-        return {
-          ok: true as const,
-          reviewedVersion: recorded.value.coverage.inputCatalogVersion,
-        };
-      },
-    },
-  );
+
+  if (normalized.value.decisionKind === "catalog_change") {
+    return { ok: false, stale: false, message: "Decisão com mudança exige o draft exato aberto pela Estrutura da LP." };
+  }
+  if (!input.reference.reviewContextFingerprint || !Number.isSafeInteger(input.reference.reviewRevision)) {
+    return { ok: false, stale: true, message: "A referência da sessão factual é inválida." };
+  }
+  const current = await reconstructCanonicalInputCatalogEvaluationContext({
+    taxonId: evidence.taxonId,
+    inputCatalogVersion: evidence.inputCatalogVersion,
+    mode: input.output.mode,
+  });
+  if (
+    !current.ok ||
+    fingerprintInputCatalogEvaluationContextIdentity(current.value.identity) !== evidence.evaluationContextFingerprint
+  ) {
+    return { ok: false, stale: true, message: current.ok ? "As fontes mudaram desde a avaliação." : current.error.message };
+  }
+  const recorded = await closeAdminTaxonFactualReviewWithoutChangeForCurrentCoverage({
+    reviewId,
+    operationId: randomUUID(),
+    actorUserId: gate.actorUserId,
+    taxonId: evidence.taxonId,
+    expectedRevision: Number(input.reference.reviewRevision),
+    expectedContextFingerprint: input.reference.reviewContextFingerprint,
+    ...recommendationBinding,
+    humanDecision: normalized.value,
+  });
+  if (!recorded.ok) return { ok: false, stale: true, message: recorded.message };
+  revalidatePath("/admin/taxonomia");
+  revalidatePath(`/admin/taxonomia/${evidence.taxonId}`);
+  return { ok: true, decisionKind: "no_change", reviewedVersion: recorded.value.coverage.inputCatalogVersion };
 }
 
 export async function createTaxonAction(
@@ -691,7 +502,7 @@ export async function updateTaxonAction(
     id: String(formData.get("taxonId") ?? ""),
     name: String(formData.get("name") ?? ""),
     slug: String(formData.get("slug") ?? ""),
-    isActive: formData.get("isActive") === "on",
+    isActive: formData.get("operationalState") === "active",
   });
 
   if (!result.ok) return { error: result.error };
@@ -723,48 +534,81 @@ export async function selectEndCustomerResearchAction(
   return { error: null, selectedVersion: result.selectedVersion };
 }
 
-export async function recordInputCatalogReviewAction(
-  previousState: InputCatalogReviewActionState,
+export async function openFactualReviewAction(
+  previousState: FactualReviewLifecycleActionState,
   formData: FormData,
-): Promise<InputCatalogReviewActionState> {
-  const revision = nextInputCatalogReviewActionRevision(previousState.revision);
+): Promise<FactualReviewLifecycleActionState> {
+  const revision = nextActionRevision(previousState.revision);
   const gate = await requirePlatformAdmin();
   if (!gate.allowed) {
-    return { error: "Acesso administrativo não autorizado.", reviewedVersion: null, reopened: false, revision };
+    return { error: "Acesso administrativo não autorizado.", message: null, revision };
   }
-  const legacy = await executeLegacyInputCatalogReviewRecordCore({
-    resolveRuntime: resolveInputCatalogEvaluationRuntimeReadiness,
-    record: () => recordAdminInputCatalogReview({
-      taxonId: String(formData.get("taxonId") ?? ""),
-      inputCatalogVersion: Number(formData.get("inputCatalogVersion")),
-    }),
+  const taxonId = String(formData.get("taxonId") ?? "");
+  const result = await openAdminTaxonFactualReview({
+    taxonId,
+    operationId: randomUUID(),
+    actorUserId: gate.actorUserId,
   });
-  if (!legacy.ok) {
-    return { error: legacy.message, reviewedVersion: null, reopened: false, revision };
-  }
-  const result = legacy.value;
-  if (!result.ok) return { error: result.error, reviewedVersion: null, reopened: false, revision };
+  if (!result.ok) return { error: result.message, message: null, revision };
   revalidatePath("/admin/taxonomia");
-  revalidatePath(`/admin/taxonomia/${result.taxonId}`);
-  return { error: null, reviewedVersion: result.reviewedVersion, reopened: false, revision };
+  revalidatePath(`/admin/taxonomia/${taxonId}`);
+  return { error: null, message: "Sessão factual aberta sem alterar o estado operacional.", revision };
 }
 
-export async function reopenInputCatalogReviewAction(
-  previousState: InputCatalogReviewActionState,
+export async function closeFactualReviewWithoutChangeAction(
+  previousState: FactualReviewLifecycleActionState,
   formData: FormData,
-): Promise<InputCatalogReviewActionState> {
-  const revision = nextInputCatalogReviewActionRevision(previousState.revision);
+): Promise<FactualReviewLifecycleActionState> {
+  const revision = nextActionRevision(previousState.revision);
   const gate = await requirePlatformAdmin();
   if (!gate.allowed) {
-    return { error: "Acesso administrativo não autorizado.", reviewedVersion: null, reopened: false, revision };
+    return { error: "Acesso administrativo não autorizado.", message: null, revision };
   }
-  const result = await reopenAdminInputCatalogReview({
-    taxonId: String(formData.get("taxonId") ?? ""),
+  const taxonId = String(formData.get("taxonId") ?? "");
+  const reviewId = String(formData.get("reviewId") ?? "");
+  const expectedRevision = Number(formData.get("expectedRevision"));
+  const expectedContextFingerprint = String(formData.get("expectedContextFingerprint") ?? "");
+  const currentResult = await loadLatestAdminTaxonFactualReview(taxonId);
+  if (!currentResult.ok) {
+    return { error: currentResult.message, message: null, revision };
+  }
+  const current = currentResult.review;
+  if (!current || current.status !== "open") {
+    return { error: "Não há sessão factual aberta que possa ser fechada sem mudança.", message: null, revision };
+  }
+  if (
+    current.id !== reviewId ||
+    current.revision !== expectedRevision ||
+    current.contextFingerprint !== expectedContextFingerprint
+  ) {
+    return {
+      error: "A sessão factual mudou desde a renderização. Recarregue antes de fechar.",
+      message: null,
+      revision,
+    };
+  }
+  const result = await closeAdminTaxonFactualReviewWithoutChangeForCurrentCoverage({
+    reviewId,
+    operationId: randomUUID(),
+    actorUserId: gate.actorUserId,
+    taxonId,
+    expectedRevision,
+    expectedContextFingerprint,
   });
-  if (!result.ok) return { error: result.error, reviewedVersion: null, reopened: false, revision };
+  if (!result.ok) return { error: result.message, message: null, revision };
   revalidatePath("/admin/taxonomia");
-  revalidatePath(`/admin/taxonomia/${result.taxonId}`);
-  return { error: null, reviewedVersion: null, reopened: true, revision };
+  revalidatePath(`/admin/taxonomia/${taxonId}`);
+  return {
+    error: null,
+    message: result.value.review.kind === "release"
+      ? "Liberação factual concluída por decisão humana; o taxon foi ativado pelo lifecycle."
+      : "Revisão factual fechada sem mudança no catálogo.",
+    revision,
+  };
+}
+
+function nextActionRevision(value: number): number {
+  return Number.isSafeInteger(value) && value >= 0 ? value + 1 : 1;
 }
 
 export async function addTaxonAliasAction(
