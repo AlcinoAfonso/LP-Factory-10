@@ -15,7 +15,6 @@ import type {
 import type { OpenAiCostsPeriod } from "../contracts";
 import {
   addDecimal,
-  decimalFromNonNegativeNumber,
   decimalFromNonNegativeString,
   decimalZero,
   formatDecimal,
@@ -405,7 +404,7 @@ function nullableNonNegativeInteger(value: unknown): number | null | undefined {
   return value === null ? null : nonNegativeInteger(value) ?? undefined;
 }
 function decimal(value: unknown): string | null | undefined {
-  const parsed = decimalFromNonNegativeString(value) ?? decimalFromNonNegativeNumber(value);
+  const parsed = decimalFromNonNegativeString(value);
   return parsed ? formatDecimal(parsed) : undefined;
 }
 function nullableResult(value: unknown): OpenAiCostResult | null | undefined {
