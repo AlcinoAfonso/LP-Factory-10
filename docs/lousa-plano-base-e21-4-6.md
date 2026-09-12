@@ -132,7 +132,7 @@
 
 ### 9.4. Regressão contra reintrodução do produtor legado
 
-- Acrescentar a `lib/openai-costs/validation-cases.ts` um caso focal que inspecione apenas código runtime em `app/`, `lib/` e `automations/`.
+- Acrescentar a `lib/openai-costs/validation-cases.ts` um caso focal que inspecione apenas código runtime em `app/`, `lib/`, `automations/` e `services/` quando esse último path existir.
 - A prova deve falhar se runtime voltar a consumir `OPENAI_LP_COST_TRACKING_ENABLED`, as três RPCs legadas de escrita/corte ou um tracker E21.4.
 - Excluir da busca migrations, snippets, testes, validações e documentação históricos para não transformar referências de prova em falso positivo.
 - Permitir `read_openai_lp_cost_events_v1` somente no adapter legado read-only e falhar se outro runtime passar a consumi-la.
@@ -154,9 +154,10 @@
 - Atualizar `docs/schema.md`, exclusivamente pelo resultado do ABC competente, para registrar a série `openai_lp_*` como histórica e congelada, `service_role` somente leitura, read RPC executável e write RPCs sem executor runtime.
 - Registrar no Schema a migration, o teste e o snippet E21.4.6; estado pós-apply somente após evidência real.
 - Atualizar `docs/roadmap.md`, exclusivamente pelo ABC, com `E21.4.6 — Transição para histórico legado`, a autoridade ativa em E21.5, o histórico E21.4 preservado e a matriz correspondente.
-- Corrigir o estado de E21.5 no roadmap e no Schema somente pelos recibos sanitizados já confirmados pelo supervisor; preservar o histórico de criação e migrations anteriores.
+- Atualizar `docs/platform-config.md`, exclusivamente pelo ABC, para reconciliar o estado efetivo dos gates e da configuração E21.5 com os recibos sanitizados já confirmados pelo supervisor.
+- Corrigir o estado de E21.5 no roadmap, no Schema e na configuração de plataforma somente pelos recibos sanitizados já confirmados; preservar o histórico de criação e migrations anteriores.
 - Preservar `docs/lousa-plano-base-e21-4.md` como registro histórico; não reescrever a V1/V2 original da E21.4.
-- `docs/platform-config.md` permanece sem alteração: `OPENAI_LP_COST_TRACKING_ENABLED` já está inerte e documentada, e removê-la da plataforma não acrescenta garantia ao congelamento por ACL.
+- Preservar em `docs/platform-config.md` a declaração de que `OPENAI_LP_COST_TRACKING_ENABLED` está inerte; não remover a variável da plataforma, porque isso não acrescenta garantia ao congelamento por ACL.
 
 ## 10. Classificação dos acréscimos técnicos
 
@@ -167,12 +168,12 @@
 - Regressão focal contra reintrodução de produtor legado no runtime.
 - Matriz item a item e reconciliação documental mínima.
 
-### 10.2. Modernizações técnicas justificadas
+### 10.2. Qualificação por updates, sem modernização autônoma remanescente
 
-- `supa#40`: snippet hospedado versionado e exclusivamente read-only como prova reproduzível do estado pós-apply.
-- `supa#2`: inspeção de Security Controls após apply como defesa em profundidade, sem alterar policies, papéis ou configuração pelo Dashboard.
-- `github#14`: recibos materiais sanitizados em fontes duráveis, sem exportar logs, criar artefato ou armazenamento paralelo.
-- Os três tratamentos têm impacto estrutural baixo e impacto funcional nulo; nenhum exige confronto estrutural focal.
+- `supa#40` confirma o snippet hospedado versionado e exclusivamente read-only. Sem esse tratamento, a prova poderia permanecer ad hoc ou divergir do estado congelado; com ele, os checks são reproduzíveis e não mutáveis. O ganho concreto é rastreabilidade e eliminação de falso drift, com impacto funcional nulo. Como a V1 já exige prova do histórico preservado, a classificação final é `derivação técnica da V1`, de origem `update`.
+- `supa#2` confirma a inspeção de Security Controls após apply. Sem a inspeção, restariam apenas teste e snippet; com ela, há defesa em profundidade contra drift visível pela plataforma, sem alterar policies, papéis ou configuração. Como esse gate já é invariante vigente de migrations sensíveis, a classificação final é `derivação técnica da V1`, de origem `invariante técnico`.
+- `github#14` confirma recibos materiais sanitizados em fontes duráveis. Sem o tratamento, a evidência dependeria de runs expiráveis; com ele, o encerramento permanece auditável sem exportar logs ou criar armazenamento paralelo. Como a Base Técnica já exige evidência durável, a classificação final é `derivação técnica da V1`, de origem `invariante técnico`.
+- Nenhum dos três tratamentos constitui modernização autônoma remanescente, impacto estrutural material ou ampliação funcional; não há confronto estrutural focal.
 
 ### 10.3. Ampliações de escopo rejeitadas
 
@@ -189,32 +190,43 @@
 
 ### 11.2. Ordem executável
 
-1. Confirmar o checkpoint `LP-Factory-Stage: plan-v2-approved`, a matriz versionada e a mesma branch, worktree e PR.
+1. Confirmar o checkpoint `LP-Factory-Stage: plan-v2-approved`, o SHA imutável deste plano, a matriz já versionada e a mesma branch, worktree e PR.
 2. Executar `npm ci` uma vez no lote contínuo.
-3. Gerar a migration com Supabase CLI, implementar somente as revogações aprovadas e revisar o SQL conforme as regras de segurança/RLS e funções.
-4. Substituir o teste e o snippet E21.4.4 pelos artefatos E21.4.6 e adicionar a regressão focal do runtime.
-5. Executar validações locais focais, o teste SQL local/isolado quando disponível, `npm run check` e `git diff --check`.
-6. Produzir relatórios factuais e executar ABC para `docs/schema.md` e, na consolidação final, `docs/roadmap.md`; aplicar somente operações literais emitidas.
-7. Submeter diff, evidências, matriz, pareceres pertinentes e resultados dos ABCs ao Analista de implementação.
-8. Com `aprovado para avançar`, criar o checkpoint `LP-Factory-Phase: E21.4.6 — Transição para histórico legado`.
-9. Publicar o mesmo PR draft quando estado remoto for necessário e executar apenas inspeções pré-merge autorizadas, incluindo migration list e dry-run quando disponíveis.
-10. Após merge humano, aguardar o apply canônico; executar o snippet read-only; inspecionar Security Controls; realizar QA hospedado positivo e negativo de `/admin/custos-openai`; registrar recibos sanitizados duráveis.
+3. Registrar por consulta read-only a baseline pré-apply: oito eventos históricos, exatamente uma linha de cobertura e corte `2026-08-29 21:55:36.827207+00`.
+4. Gerar a migration com Supabase CLI, implementar somente as revogações aprovadas e revisar o SQL conforme as regras de segurança/RLS e funções.
+5. Substituir o teste e o snippet E21.4.4 pelos artefatos E21.4.6 e adicionar a regressão focal do runtime.
+6. Executar validações locais focais, o teste SQL local/isolado quando disponível, `npm run check` e `git diff --check`.
+7. Produzir relatórios factuais e executar ABC para `docs/schema.md`, `docs/platform-config.md` e `docs/roadmap.md`; aplicar somente operações literais emitidas, distinguindo o delta planejado do roadmap e o estado final comprovado.
+8. Submeter diff, evidências, matriz, pareceres pertinentes e resultados dos ABCs ao Analista de implementação.
+9. Com `aprovado para avançar`, criar somente o checkpoint `LP-Factory-Phase: E21.4.6 — Transição para histórico legado`; essa conclusão não autoriza merge.
+10. Publicar o mesmo PR draft quando estado remoto for necessário, executar apenas inspeções pré-merge autorizadas e declarar a entrega completa ao supervisor. Conforme o contrato vigente do Executor, não executar `revisao_final_implementacao` após essa declaração.
+11. A decisão de merge, o apply canônico, o snippet hospedado, Security Controls e o QA pós-merge pertencem ao supervisor e aos fluxos canônicos externos; esta task preserva esses gates como pendências obrigatórias e não os antecipa.
 
-### 11.3. Arquivos previstos
+### 11.3. Artefatos concluídos antes de `plan-v2-approved`
 
-- Alterar:
-  - `docs/lousa-plano-base-e21-4-6.md`;
-  - `docs/roadmap.md`;
-  - `docs/schema.md`;
-  - `lib/openai-costs/validation-cases.ts`.
+- Plano imutável: `docs/lousa-plano-base-e21-4-6.md`.
+- Matriz única versionada: `docs/matriz-consolidacao-e21-4-6.md`.
+- Delta planejado de `docs/roadmap.md`, produzido por ABC e aprovado em revisão delta.
+- Esses artefatos não integram o conjunto mutável da implementação após o checkpoint.
+
+### 11.4. Delta implementável
+
+- Alterar `lib/openai-costs/validation-cases.ts`.
 - Adicionar:
-  - `docs/matriz-consolidacao-e21-4-6.md`;
   - `supabase/migrations/<timestamp>_e21_4_6_freeze_openai_lp_cost_history.sql`;
   - `supabase/tests/e21_4_6_openai_lp_cost_history.test.sql`;
   - `supabase/snippets/e21_4_6_openai_lp_cost_history_verify.sql`.
 - Remover do conjunto operacional corrente:
   - `supabase/tests/e21_4_4_openai_lp_cost_tracking.test.sql`;
   - `supabase/snippets/e21_4_4_openai_lp_cost_tracking_verify.sql`.
+
+### 11.5. Atualizações documentais pós-evidência
+
+- Avaliar por ABC e alterar somente quando o delta literal for emitido:
+  - `docs/schema.md`;
+  - `docs/platform-config.md`;
+  - `docs/roadmap.md`, apenas para o estado final comprovado que não esteja coberto pelo delta planejado já aprovado.
+- Não alterar o plano aprovado nem a matriz após `plan-v2-approved`.
 
 ## 12. Validações e evidências
 
@@ -237,6 +249,7 @@
 ### 12.3. Pós-merge obrigatório
 
 - Apply da migration somente pelo workflow canônico.
+- Comparação read-only pré/pós-apply confirma oito eventos históricos, uma linha de cobertura e corte `2026-08-29 21:55:36.827207+00` sem alteração.
 - Snippet E21.4.6 read-only com todos os checks `ok`, contagens e corte preservados.
 - Security Controls sem alerta novo incompatível com tabelas, RLS, policies, grants ou funções E21.4.
 - QA autenticado positivo de `/admin/custos-openai` comprovando total oficial, subtotal ativo, histórico legado identificável e reconciliação sem dupla contagem.
@@ -257,3 +270,4 @@
 
 - A V2 só autoriza implementação após as duas passagens do Analista, a auditoria da matriz, a revisão delta do roadmap e a conclusão formal `aprovado para merge do plano-base v2`.
 - Após o checkpoint `LP-Factory-Stage: plan-v2-approved`, a execução continua na mesma task, branch, worktree e PR sob `$lp-factory-executar-plano`.
+- Na execução Complexa interna, o Analista atua somente no gate da subseção. `Aprovado para avançar` autoriza o checkpoint da fase, nunca o merge; depois da declaração de entrega completa, a avaliação seguinte pertence ao supervisor e não existe `revisao_final_implementacao` nesta task.
