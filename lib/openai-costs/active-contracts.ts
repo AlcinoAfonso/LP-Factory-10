@@ -7,18 +7,36 @@ import type {
   OpenAiWorkloadUsage,
 } from "../openai-workloads";
 
-export const OPENAI_ACTIVE_COST_CONTRACT_VERSION = "e21.5.3-v1";
+export const OPENAI_ACTIVE_COST_CONTRACT_VERSION = "e21.5.6-v2";
 
 export type OpenAiCostEnvironment = Exclude<OpenAiWorkloadEnvironment, "unknown">;
 export type OpenAiCostExecutionOrigin = "runtime" | "administrative_proof";
 export type OpenAiCostUniverse = "lp_factory" | "client";
 export type OpenAiCostAttributionStatus = "attributed" | "unassigned";
 export type OpenAiCostResult = "success" | "failure";
+export type OpenAiEconomicDimensionStatus = "v2_active" | "v1_fallback";
+
+export type OpenAiCostEconomicEvent =
+  | Readonly<{
+      kind: "landing_page";
+      eventId: string;
+      landingPageId: string;
+    }>
+  | Readonly<{
+      kind: "niche_resolution";
+      eventId: string;
+    }>
+  | Readonly<{
+      kind: "lp_factory_internal";
+      eventId: string;
+      taxonId: string | null;
+    }>;
 
 export type OpenAiCostEconomicContext = Readonly<{
   universe: OpenAiCostUniverse;
   attributionStatus: OpenAiCostAttributionStatus;
   accountId: string | null;
+  event?: OpenAiCostEconomicEvent | null;
 }>;
 
 export type OpenAiCostExecutionContext = Readonly<{
@@ -115,6 +133,10 @@ export type OpenAiActiveCostExecution = Readonly<{
   universe: OpenAiCostUniverse;
   attributionStatus: OpenAiCostAttributionStatus;
   accountId: string | null;
+  accountName: string | null;
+  economicEvent: OpenAiCostEconomicEvent | null;
+  landingPageName: string | null;
+  taxonName: string | null;
   baselineReference: string | null;
   baselineVersion: string | null;
   startedAt: string;
@@ -147,6 +169,7 @@ export type OpenAiActiveCostCoverage = Readonly<{
 }>;
 
 export type OpenAiActiveCostReadModel = Readonly<{
+  economicDimensionStatus: OpenAiEconomicDimensionStatus;
   totalCalculatedUsd: string;
   executionCount: number;
   operationCount: number;
@@ -175,12 +198,22 @@ export type OpenAiActiveCostFilters = Readonly<{
   workload?: OpenAiWorkloadId | null;
 }>;
 
-export function clientOpenAiCostContext(accountId: string): OpenAiCostEconomicContext {
-  return { universe: "client", attributionStatus: "attributed", accountId };
+export function clientOpenAiCostContext(
+  accountId: string,
+  event: Extract<OpenAiCostEconomicEvent, { kind: "landing_page" | "niche_resolution" }> | null = null,
+): OpenAiCostEconomicContext {
+  return { universe: "client", attributionStatus: "attributed", accountId, event };
 }
 
 export const lpFactoryOpenAiCostContext: OpenAiCostEconomicContext = Object.freeze({
   universe: "lp_factory",
   attributionStatus: "attributed",
   accountId: null,
+  event: null,
 });
+
+export function lpFactoryOpenAiEventCostContext(
+  event: Extract<OpenAiCostEconomicEvent, { kind: "lp_factory_internal" }>,
+): OpenAiCostEconomicContext {
+  return { ...lpFactoryOpenAiCostContext, event };
+}

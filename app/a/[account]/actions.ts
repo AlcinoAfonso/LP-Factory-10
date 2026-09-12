@@ -457,12 +457,16 @@ export async function saveSetupAndContinueAction(
         );
       } else if (aiEligible) {
         const aiResolutionStartedAt = Date.now();
+        const economicEventId = crypto.randomUUID();
         const aiResult = await resolveNicheWithOpenAi({
           rawInput: validated.values.niche,
           decision,
           candidates,
           apiKey: process.env.OPENAI_API_KEY,
-          financialContext: clientOpenAiCostContext(accountId),
+          financialContext: clientOpenAiCostContext(accountId, {
+            kind: 'niche_resolution',
+            eventId: economicEventId,
+          }),
           executionOrigin: 'runtime',
         });
 

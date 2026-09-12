@@ -6,6 +6,8 @@ import { calculateOpenAiOperationCost } from "../pricing";
 import {
   executionFinishRpc,
   executionStartRpc,
+  isExpectedMissingRpcError,
+  legacyExecutionStartRpc,
   operationFinishRpc,
   operationStartRpc,
   OpenAiCostTrackingPersistenceError,
@@ -22,8 +24,21 @@ async function invoke(client: ServiceClient, name: string, args: Record<string, 
   }
 }
 
+async function startExecutionWithRollout(
+  client: ServiceClient,
+  input: Parameters<OpenAiCostTrackingAdapter["startExecution"]>[0],
+) {
+  const { error } = await client.rpc("start_openai_cost_execution_v2", executionStartRpc(input));
+  if (!error) return;
+  if (isExpectedMissingRpcError(error, "start_openai_cost_execution_v2")) {
+    await invoke(client, "start_openai_cost_execution_v1", legacyExecutionStartRpc(input));
+    return;
+  }
+  throw new OpenAiCostTrackingPersistenceError(error.code === "23505" ? "conflict" : "unavailable");
+}
+
 export const activeCostTrackingAdapter: OpenAiCostTrackingAdapter = Object.freeze({
-  startExecution: (input) => invoke(createServiceClient(), "start_openai_cost_execution_v1", executionStartRpc(input)),
+  startExecution: (input) => startExecutionWithRollout(createServiceClient(), input),
   startOperation: (input) => invoke(createServiceClient(), "start_openai_cost_operation_v1", operationStartRpc(input)),
   finishOperation: async (input) => {
     const client = createServiceClient();

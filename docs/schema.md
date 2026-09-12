@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data da última atualização: 12/09/2026
-• Documento: LP Factory 10 — Schema (DB Contract) v1.0.66
+• Documento: LP Factory 10 — Schema (DB Contract) v1.0.67
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -1359,25 +1359,30 @@
 • `prevent_openai_lp_cost_mutation_v1() → trigger` não possui EXECUTE externo e rejeita UPDATE/DELETE nas duas residências.
 
 3.11 Ledger ativo transversal de custos OpenAI
-3.11.1 Estrutura candidata
-• `openai_cost_executions`: execução funcional por workload, ambiente, origem, universo e atribuição econômica explícita; conta é obrigatória somente para Cliente atribuído e nunca é inferida.
+3.11.1 Estrutura vigente e extensão econômica candidata
+• `openai_cost_executions`: execução funcional por workload, ambiente, origem, universo e atribuição econômica explícita; conta é obrigatória somente para Cliente atribuído e nunca é inferida. A extensão repo-only E21.5.6 acrescenta `economic_event_kind`, `economic_event_id`, `landing_page_id` e `taxon_id`, todos nulos para linhas anteriores e sempre preenchidos como conjunto coerente quando houver correlação econômica comprovada na origem.
 • `openai_cost_operations`: uma linha por chamada cobrável, com sequência e retry anterior na mesma execução, configuração efetiva, IDs técnicos sanitizados, usage normalizado, Web Search, estado de custo e terminal imutável.
 • `openai_cost_coverage`: corte imutável por ambiente e workload, com versão do contrato financeiro.
 • A série `openai_lp_*` permanece independente, congelada e sem alteração pela migration candidata.
+• A correlação `landing_page` exige universo Cliente atribuído, conta presente, `economic_event_id = landing_page_id` e FK composta para `account_landing_pages(id, account_id)`; `niche_resolution` exige UUID econômico próprio sem LP ou taxon; `lp_factory_internal` exige universo LP Factory, conta nula e admite `taxon_id` comprovado por FK para `business_taxons(id)`.
+• O índice parcial `openai_cost_executions_economic_event_idx` cobre evento, início e execução somente nas linhas correlacionadas. Não há backfill, reclassificação retroativa, identidade inferida nem nova residência analítica.
 
-3.11.2 RPCs e segurança candidatas
+3.11.2 RPCs, segurança e rollout
 • `start_openai_cost_execution_v1`, `finish_openai_cost_execution_v1`, `start_openai_cost_operation_v1`, `finish_openai_cost_operation_v1` e `register_openai_cost_coverage_v1` usam `SECURITY INVOKER`, `search_path` fixado e replay idempotente com conflito divergente fechado.
 • `finish_openai_cost_operation_v2` acrescenta a finalização financeira atômica com pricing temporal, snapshot, Web Search e custo calculado ou indisponível; replay idêntico é aceito e divergência falha fechada.
 • `read_openai_active_cost_rows_v1` expõe somente o DTO financeiro sanitizado ao `service_role`, ordenado e paginado por keyset `(started_at, execution_id, operation_sequence)`; não concede leitura a `public`, `anon`, `authenticated` ou `ai_readonly`.
+• A extensão repo-only E21.5.6 cria `start_openai_cost_execution_v2` com identidade econômica imutável e `read_openai_active_cost_rows_v2` com os quatro campos de correlação e nomes autorizados de conta, Landing Page e taxon; ambas preservam paginação keyset, execução sem operação e decimais como texto.
+• Durante o rollout não atômico, o runtime tenta v2 e usa v1 somente quando PostgREST retorna `PGRST202` identificando exatamente a RPC v2 esperada no schema `public`; qualquer outra falha mantém o tratamento financeiro vigente sem fallback. As RPCs v1 não são removidas neste recorte.
 • O consumidor administrativo `/admin/custos-openai` acessa esse DTO somente após `platform_admin`, agrega em código por universo, conta, workload, execução e operação e aplica filtros na projeção ativa sem alterar o total oficial ou a reconciliação global.
 • As três tabelas usam RLS sem policies diretas. `anon`, `authenticated` e `ai_readonly` não possuem acesso; `service_role` recebe somente leitura, inserção e atualização terminal necessárias, sem DELETE ou TRUNCATE.
 • Triggers preservam identidade e impedem DELETE, segunda finalização e mutação posterior dos cortes de cobertura.
-• Migration candidata: `supabase/migrations/20260911150000_e21_5_3_openai_active_cost_tracking.sql`; apply hospedado permanece pendente do merge humano e do workflow canônico.
+• Migrations aplicadas no ambiente hospedado: `supabase/migrations/20260911150000_e21_5_3_openai_active_cost_tracking.sql`, `supabase/migrations/20260911190000_e21_5_4_openai_cost_calculation_read_model.sql` e `supabase/migrations/20260912190000_e21_5_lossless_active_cost_read_model.sql`.
 • Teste transacional: `supabase/tests/e21_5_3_openai_active_cost_tracking.test.sql`.
 • Verificador read-only: `supabase/snippets/e21_5_3_openai_active_cost_tracking_verify.sql`.
-• Delta candidato de cálculo e leitura: `supabase/migrations/20260911190000_e21_5_4_openai_cost_calculation_read_model.sql`; apply permanece no mesmo gate pós-merge.
 • Teste transacional do delta: `supabase/tests/e21_5_4_openai_cost_calculation_read_model.test.sql`.
 • Verificador read-only do delta: `supabase/snippets/e21_5_4_openai_cost_calculation_read_model_verify.sql`.
+• Migration E21.5.6 repo-only, ainda pendente do merge humano e do apply canônico: `supabase/migrations/20260912215000_e21_5_6_openai_cost_event_correlation.sql`.
+• Teste transacional E21.5.6: `supabase/tests/e21_5_6_openai_cost_event_hierarchy.test.sql`; verificador read-only: `supabase/snippets/e21_5_6_openai_economic_events_verify.sql`.
 
 4. Triggers
 
@@ -1404,6 +1409,7 @@
 • openai_workload_configuration_activations_append_only: rejeita UPDATE e DELETE de eventos de ativação/rollback.
 • openai_lp_cost_events_prevent_mutation: rejeita UPDATE e DELETE dos eventos financeiros históricos congelados.
 • openai_lp_cost_coverage_prevent_mutation: rejeita UPDATE e DELETE da data de corte histórica.
+• openai_cost_executions_guard: preserva a identidade técnica, econômica e de baseline da execução, rejeita DELETE, segunda finalização e mutação após o terminal.
 
 5. Tipos canônicos
 • Fonte única: PATH: lib/types/status.ts

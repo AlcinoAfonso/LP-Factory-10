@@ -20,6 +20,7 @@ export function openAiCostPersistenceFailure(error: unknown) {
 }
 
 export function executionStartRpc(input: OpenAiCostExecutionContext) {
+  const event = input.economicContext.event ?? null;
   return {
     p_id: input.executionId,
     p_workload: input.workload,
@@ -28,10 +29,34 @@ export function executionStartRpc(input: OpenAiCostExecutionContext) {
     p_universe: input.economicContext.universe,
     p_attribution_status: input.economicContext.attributionStatus,
     p_account_id: input.economicContext.accountId,
+    p_economic_event_kind: event?.kind ?? null,
+    p_economic_event_id: event?.eventId ?? null,
+    p_landing_page_id: event?.kind === "landing_page" ? event.landingPageId : null,
+    p_taxon_id: event?.kind === "lp_factory_internal" ? event.taxonId : null,
     p_baseline_reference: clean(input.baselineReference),
     p_baseline_version: clean(input.baselineVersion),
     p_started_at: input.startedAt,
   };
+}
+
+export function legacyExecutionStartRpc(input: OpenAiCostExecutionContext) {
+  const payload = executionStartRpc(input);
+  const {
+    p_economic_event_kind: _eventKind,
+    p_economic_event_id: _eventId,
+    p_landing_page_id: _landingPageId,
+    p_taxon_id: _taxonId,
+    ...legacy
+  } = payload;
+  return legacy;
+}
+
+export function isExpectedMissingRpcError(error: unknown, rpcName: string) {
+  if (!error || typeof error !== "object" || Array.isArray(error)) return false;
+  const record = error as Record<string, unknown>;
+  return record.code === "PGRST202" &&
+    typeof record.message === "string" &&
+    record.message.includes(`public.${rpcName}(`);
 }
 
 export function operationStartRpc(input: OpenAiCostOperationContext) {
