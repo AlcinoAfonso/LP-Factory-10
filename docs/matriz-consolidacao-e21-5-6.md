@@ -43,7 +43,7 @@
 | GE-E2156-07 | invariante técnico | derivação técnica da V1 | Compor ativo e legado em função pura, preservando decimal e indisponibilidade | V2 6.1 e 10 | N/A | N/A |
 | GE-E2156-08 | invariante técnico | derivação técnica da V1 | Manter árvore route-local na rota existente | V2 6.1 e 11 | `UP-prod-17` confirma invariantes visuais | compatível |
 | GE-E2156-C1 | invariante técnico | correção factual | Reconciliar em `docs/schema.md` o drift de E21.5.3, E21.5.4 e lossless conforme estado hospedado competente | V2 14 | N/A | N/A |
-| GE-E2156-C2 | invariante técnico | derivação técnica da V1 | Usar RPC v2 aditiva e ponte v1 segura; retirada v1 somente em recorte posterior com ausência de deployment chamador comprovada | V2 7.3 | N/A | compatível após correção da Passagem 1 |
+| GE-E2156-C2 | invariante técnico | derivação técnica da V1 | Preferir RPC v2 e admitir ponte v1 somente para `PGRST202` que identifique exatamente a RPC `public` esperada; propagar `v2_active` ou `v1_fallback`, sem backfill nem fallback para outros erros; retirar v1 apenas após ausência de deployment chamador comprovada | V2 7.3, 8, 10, 11 e 13 | N/A | compatível |
 | GE-E2156-C3 | invariante técnico | derivação técnica da V1 | Cobrir negativas contra correlação por IDs técnicos, nome, horário ou proximidade | V2 4, 5 e 13 | `UP-supa-69` como trava negativa | compatível |
 | GE-E2156-C4 | V1 | preservação funcional | Não fazer backfill; linhas anteriores e registros sob fallback permanecem não correlacionados | V2 7.1 e 7.3 | N/A | N/A |
 | GE-E2156-C5 | invariante técnico | derivação técnica da V1 | Após apply, provar nicho real, evento interno real, LP histórica e execução sem correlação | V2 13 e 16 | `UP-prod-16` como QA proporcional | compatível |
@@ -53,10 +53,10 @@
 | ID | Origem | Classe | Tratamento | Localização/evidência | Destino de update | Confronto estrutural |
 | --- | --- | --- | --- | --- | --- | --- |
 | UP-supa-40 | update | modernização técnica justificada | Aplicar snippet SQL read-only versionado; sem update há provas dispersas, com update há repetibilidade e auditabilidade; custo é um arquivo focal e impacto funcional é nulo | V2 12, 13 e 15.1 | `supabase/snippets/e21_5_6_openai_economic_events_verify.sql` | compatível; ganho líquido positivo |
-| UP-prod-17 | invariante técnico | derivação técnica da V1 | Aplicar teclado, foco, nomes acessíveis, estado e texto não dependente de cor conforme design system vigente; sem parcela funcional extra | V2 11 e 15 | UI e validação focal | compatível |
-| UP-supa-02 | invariante técnico | derivação técnica da V1 | Usar Security Controls como prova complementar pós-apply, sem mutar configuração | V2 13 e 15 | gate pós-merge | compatível |
-| UP-prod-16 | invariante técnico | derivação técnica da V1 | Executar QA hospedado desktop/mobile e positivo/negativo na mesma rota | V2 13 e 15 | gate pós-merge | compatível |
-| UP-supa-69 | invariante técnico | derivação técnica da V1 | Proibir identificadores técnicos como identidade econômica ou rótulo primário, sem instalar tracing | V2 4, 5, 10 e 15 | contratos, testes e UI | compatível |
+| UP-prod-17 | update | derivação técnica da V1 | Aplicar teclado, foco, nomes acessíveis, estado e texto não dependente de cor conforme design system vigente; sem parcela funcional extra | V2 11 e 15 | UI e validação focal | compatível |
+| UP-supa-02 | update | derivação técnica da V1 | Usar Security Controls como prova complementar pós-apply, sem mutar configuração | V2 13 e 15 | gate pós-merge | compatível |
+| UP-prod-16 | update | derivação técnica da V1 | Executar QA hospedado desktop/mobile e positivo/negativo na mesma rota | V2 13 e 15 | gate pós-merge | compatível |
+| UP-supa-69 | update | derivação técnica da V1 | Proibir identificadores técnicos como identidade econômica ou rótulo primário, sem instalar tracing | V2 4, 5, 10 e 15 | contratos, testes e UI | compatível |
 | UP-supa-35 | update | ampliação de escopo | Não criar índice adicional sem problema mensurado; o índice parcial derivado do acesso canônico já integra a V1 | V2 7.1 e 16 | oportunidade condicional fora do recorte | N/A — rejeitado |
 | UP-supa-50 | update | ampliação de escopo | Não criar réplica de leitura para o ledger atual | V2 5 e 15 | oportunidade condicional fora do recorte | N/A — rejeitado |
 | UP-supa-63 | update | ampliação de escopo | Não instalar `rlsautotest`; manter teste SQL focal, grants e Security Controls | V2 5 e 13 | oportunidade condicional fora do recorte | N/A — rejeitado |
@@ -78,6 +78,7 @@
 ## 6. Confrontos e decisões
 
 - Gestor Estrutural e Gestor de Updates não produziram conclusões incompatíveis entre si.
+- O confronto focal de C2 concluiu pela alternativa A: call-and-fallback estrito é estruturalmente equivalente quanto ao resultado de rollout seguro; o esclarecimento substitui somente a redação prescritiva original de C2 e não exige decisão humana.
 - As condicionantes estruturais foram incorporadas como derivação, correção factual ou preservação funcional, sem decisão de produto.
 - Os updates aceitos apenas reforçam validação, segurança, acessibilidade e auditabilidade do mesmo resultado. Os demais permanecem fora do recorte.
 - Não existe lacuna que autorize reabrir PB 1/PB 2, criar nova fase, dividir o PR ou ampliar a residência técnica.
