@@ -141,8 +141,9 @@
 ### 7.3. Rollout compatível com deploy e apply independentes
 
 - O PR preserva as RPCs v1 como ponte de compatibilidade porque o deploy Vercel e o apply de migrations disparam independentemente após o mesmo merge.
-- O runtime passa a preferir v2 e usa v1 somente quando a função v2 ainda não existe durante a janela de rollout; qualquer outro erro permanece falha financeira fail-open categorizada, sem fallback semântico.
-- A leitura administrativa prefere v2 e usa v1 somente enquanto a RPC v2 ainda não existir; nesse estado a hierarquia identifica a dimensão de evento como ainda não aplicada e preserva a visão vigente.
+- O runtime passa a preferir v2 e usa v1 somente quando o erro tiver `code = 'PGRST202'` e a mensagem identificar exatamente a RPC v2 esperada no schema `public`; código isolado, mensagem de outra função, erro de autenticação, schema, rede ou dado nunca aciona v1 e permanece falha financeira fail-open categorizada.
+- A leitura administrativa prefere v2 e usa o mesmo predicado estrito para v1; seu resultado carrega `economicDimensionStatus = 'v2_active' | 'v1_fallback'` do adapter até DTO, composição e UI, de modo que evento nulo em v2 signifique ausência real de correlação e fallback v1 signifique dimensão econômica ainda indisponível.
+- O marco de ativação da correlação E21.5.6 é a conjunção observável de migration aplicada, snippet confirmando as RPCs v2 e runtime selecionando `v2_active`; registros criados antes desse marco ou sob `v1_fallback` permanecem honestamente sem correlação, sem backfill ou reclassificação.
 - Após o apply, o caminho canônico é exclusivamente v2; v1 não recebe nova funcionalidade, não vira autoridade paralela e fica elegível para retirada em recorte técnico posterior somente quando nenhum deployment acessível ainda puder chamá-la.
 - Não remover RPC v1 no mesmo lote do apply que cria v2; isso violaria a ordem segura de rollout e poderia quebrar o runtime anterior.
 
@@ -152,10 +153,10 @@
 - Adicionar tipos discriminados de evento econômico a `active-contracts.ts` e validar coerência entre evento, universo, atribuição e conta.
 - `clientOpenAiCostContext(accountId, event?)` e o contexto LP Factory passam evento explícito apenas quando fornecido pelo produtor; ausência permanece `null`.
 - `executionStartRpc` projeta os quatro argumentos econômicos da v2.
-- `activeCostTrackingAdapter.startExecution` invoca v2 com fallback estritamente por função inexistente para v1.
-- `activeCostReadModelAdapter` pagina v2 e preserva fallback estritamente por função inexistente para v1 durante rollout.
+- `activeCostTrackingAdapter.startExecution` invoca v2 e usa uma função pura compartilhada para reconhecer somente `PGRST202` referente a `public.start_openai_cost_execution_v2`; os testes negativos cobrem demais códigos e mensagens.
+- `activeCostReadModelAdapter` pagina v2, usa o mesmo classificador estrito para `public.read_openai_active_cost_rows_v2` e preserva fallback v1 somente durante rollout.
 - `activeCostReadModelAdapterCore` valida os novos campos e nomes humanos, rejeita combinações impossíveis e mantém paginação completa, cursor monotônico e decimais lossless.
-- DTOs preservam `source = active | legacy`, evento, nomes humanos e detalhe técnico; nenhum nome ausente é inventado a partir de UUID.
+- DTOs preservam `source = active | legacy`, `economicDimensionStatus`, evento, nomes humanos e detalhe técnico; nenhum nome ausente é inventado a partir de UUID.
 - Atualizar exports de `lib/openai-costs/index.ts` apenas para os novos contratos e composição usados por consumidores reais.
 
 ## 9. Produtores autorizados
@@ -187,8 +188,10 @@
 - LP histórica é evento `landing_page`, preserva fonte `legacy` e agrega seus dois workloads históricos.
 - Evento ativo preserva kind, ID, nome humano quando disponível, fonte `active`, contagens pendentes/indisponíveis e suas execuções.
 - Execuções sem evento permanecem em `uncorrelatedExecutions` dentro do responsável ou universo correspondente e continuam compondo o subtotal superior.
+- Em `v1_fallback`, a composição preserva os totais vigentes e marca a dimensão econômica como indisponível; não mistura essas linhas com a coleção de eventos realmente não correlacionados de uma leitura `v2_active`.
 - Eventos com operação pendente ou custo indisponível preservam estado textual; subtotal calculável não é rotulado como custo completo.
-- Ordenar contas e eventos por nome humano e ID como desempate determinístico; workloads por identificador canônico; execuções por início e ID.
+- O rótulo primário de `landing_page` usa o nome persistido da LP. `niche_resolution` usa `Resolução de nicho — <started_at UTC>` e `lp_factory_internal` sem taxon usa `<nome humano do workload> — <started_at UTC>`; quando há taxon, usa seu nome. O timestamp vem da própria execução e o UUID aparece apenas no detalhe técnico e como desempate, nunca como identidade visual ou correlação heurística.
+- Ordenar contas e eventos por rótulo humano, início e ID como desempates determinísticos; workloads por identificador canônico; execuções por início e ID.
 - `dashboard.ts` incorpora a hierarquia construída sobre o ativo global e o legado, sem mudar período, total oficial, pricing, coverage, filtros ou reconciliação.
 - A projeção filtrada vigente continua secundária e altera somente subtotal/detalhe ativo; não altera a hierarquia global, total oficial ou reconciliação.
 
@@ -197,6 +200,7 @@
 - Evoluir somente `/admin/custos-openai`.
 - Resumo inicial: gasto oficial, Clientes, LP Factory e reconciliação global, com timestamps e estados existentes preservados.
 - `OpenAiEconomicHierarchy.tsx` apresenta disclosures nativos ou controles semanticamente equivalentes: Clientes → contas por nome → eventos → workloads → execuções/operações; LP Factory → eventos internos → workloads → execuções/operações; e coleção explícita `Sem correlação de evento`.
+- Quando `economicDimensionStatus = 'v1_fallback'`, a árvore informa em texto que a dimensão por evento ainda não está ativa e não apresenta ausência de evento como correlação concluída.
 - Reutilizar o detalhe técnico vigente; não duplicar telemetria ou esconder retries, modelo, effort, baseline, indisponibilidade e origem.
 - UUIDs aparecem somente como detalhe técnico quando necessário; rótulo primário usa conta, LP ou taxon por nome.
 - Cada nível expansível funciona por teclado, expõe nome acessível e estado aberto/fechado, preserva foco visível e ordem lógica e não depende somente de hover ou cor.
@@ -217,7 +221,7 @@
 - Evoluir contratos, adapters e produtores com evento explícito apenas nas origens autorizadas.
 - Implementar composição pura ativo + legado e a árvore route-local na superfície existente.
 - Executar `npm ci` uma vez no lote contínuo.
-- Executar validadores TypeScript focais para contratos/RPC payload, LP, nicho, evento interno, ausência de correlação, aritmética por nível, decimais lossless, custo indisponível e negativas de heurística.
+- Executar validadores TypeScript focais para contratos/RPC payload, `v2_active` versus `v1_fallback`, classificador `PGRST202` limitado à RPC exata, LP, nicho, evento interno, ausência de correlação, rótulos determinísticos, aritmética por nível, decimais lossless, custo indisponível e negativas de heurística.
 - Executar teste SQL transacional para colunas, constraint, FKs, índice, imutabilidade, replay, keyset, execução sem operação, RLS, zero policies, grants, negativas Data API, segurança das RPCs e ausência de backfill.
 - Executar validação focal da UI para teclado, foco, nomes acessíveis, estado aberto/fechado, responsividade e conteúdo seguro.
 - Executar `npm run check`, `git diff --check` e revisar `main..HEAD` e `main...HEAD`.
@@ -245,12 +249,19 @@
 | Correlação em nicho e eventos internos com ID na origem | derivação técnica da V1 | incorporar somente nos produtores autorizados |
 | LP histórica como evento no read model E21.4 | derivação técnica da V1 | compor sem alterar história |
 | `economic-hierarchy.ts` puro e componente route-local | derivação técnica da V1 | separar responsabilidade sem nova residência |
-| Snippet read-only versionado | modernização técnica justificada | `UP-supa-40`, aplicar agora |
-| Acessibilidade focal da árvore | modernização técnica justificada | `UP-prod-17`, aplicar agora sem alegação integral |
+| Snippet read-only versionado | modernização técnica justificada | `UP-supa-40`, aplicar agora após comparação explícita de ganho e custo |
+| Acessibilidade focal da árvore | derivação técnica da V1 | aplicar invariantes vigentes do design system; `UP-prod-17` apenas confirma o gate, sem parcela extra nem alegação integral |
 | Security Controls pós-apply | derivação técnica da V1 | `UP-supa-02`, validação complementar |
 | QA hospedado desktop/mobile e papéis | derivação técnica da V1 | `UP-prod-16`, validação proporcional |
 | Identificadores técnicos como trava negativa | derivação técnica da V1 | `UP-supa-69`, sem implementar tracing |
 | AI Gateway, CDC, réplica, RUM, rlsautotest e índice especulativo | ampliação de escopo | não implementar; oportunidades condicionais fora do recorte |
+
+### 15.1. Comparação explícita do `UP-supa-40`
+
+- Sem o update: as provas pós-apply ficam dispersas entre testes e consultas manuais, com repetição e maior risco de variar a verificação entre ambientes.
+- Com o update: um único snippet SQL read-only, versionado e sem mutação comprova schema, segurança, disponibilidade das RPCs v2 e amostras prospectivas.
+- Ganho: repetibilidade, auditabilidade e menor risco de consulta ad hoc inconsistente; custo: um arquivo SQL focal para manter junto ao contrato.
+- Impacto funcional: nenhum. O ganho líquido justifica o update, sem criar objeto de banco, dado ou superfície nova.
 
 ## 16. Riscos e critérios de parada
 
