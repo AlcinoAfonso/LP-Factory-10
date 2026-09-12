@@ -11,6 +11,7 @@ import { resolveInputCatalogEvaluationRuntimeReadiness } from "@/conversion-cont
 import {
   coordinateInputCatalogEvaluation,
   fingerprintInputCatalogEvaluationContextIdentity,
+  isInputCatalogReviewEnabled,
   normalizeFactualReviewCatalogChangeDecision,
   type FactualReviewDecisionLayer,
   revalidateInputCatalogEvaluationContext,
@@ -91,6 +92,9 @@ export async function evaluateInputCatalogAction(input: Readonly<{
   const gate = await requirePlatformAdmin();
   if (!gate.allowed) {
     return { ok: false, code: "UNAUTHORIZED", message: "Acesso administrativo não autorizado." };
+  }
+  if (!isInputCatalogReviewEnabled()) {
+    return { ok: false, code: "ROLLOUT_GATE_OFF", message: "A revisão factual E20.6 está desabilitada." };
   }
 
   const runtime = await resolveInputCatalogEvaluationRuntimeReadiness();
@@ -267,6 +271,9 @@ export async function recordInputCatalogHumanDecisionAction(input: Readonly<{
   const gate = await requirePlatformAdmin();
   if (!gate.allowed) {
     return { ok: false, stale: false, message: "Acesso administrativo não autorizado." };
+  }
+  if (!isInputCatalogReviewEnabled()) {
+    return { ok: false, stale: false, message: "A revisão factual E20.6 está desabilitada." };
   }
   const persisted = await loadAdminTaxonFactualEvaluationEvidence({
     reviewId: input.reviewId,
@@ -449,6 +456,9 @@ export async function openFactualReviewAction(
   if (!gate.allowed) {
     return { error: "Acesso administrativo não autorizado.", message: null, revision };
   }
+  if (!isInputCatalogReviewEnabled()) {
+    return { error: "A revisão factual E20.6 está desabilitada.", message: null, revision };
+  }
   const taxonId = String(formData.get("taxonId") ?? "");
   const result = await openAdminTaxonFactualReview({
     taxonId,
@@ -468,6 +478,9 @@ export async function closeFactualReviewWithoutChangeAction(
   const gate = await requirePlatformAdmin();
   if (!gate.allowed) {
     return { error: "Acesso administrativo não autorizado.", message: null, revision };
+  }
+  if (!isInputCatalogReviewEnabled()) {
+    return { error: "A revisão factual E20.6 está desabilitada.", message: null, revision };
   }
   const taxonId = String(formData.get("taxonId") ?? "");
   const reviewId = String(formData.get("reviewId") ?? "");

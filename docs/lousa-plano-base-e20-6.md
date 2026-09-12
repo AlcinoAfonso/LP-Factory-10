@@ -86,6 +86,7 @@
 - A avaliação registra fonte publicada ou draft, modo, versão, contexto e output somente após resultado válido. O output integral na própria revisão é a autoridade; não existe fingerprint redundante dele. Falha ou timeout do provider não grava transição ou marcador intermediário.
 - FK de taxon usa `ON UPDATE CASCADE ON DELETE RESTRICT`; atores referenciam `auth.users` com `ON UPDATE CASCADE ON DELETE RESTRICT`.
 - Índice único parcial garante no máximo uma revisão aberta por taxon. Trigger dedicado rejeita qualquer UPDATE ou DELETE depois do fechamento.
+- A troca da pesquisa E20.5 selecionada é serializada e rejeitada enquanto houver revisão factual aberta; o histórico factual, inclusive fechado, bloqueia a exclusão administrativa do taxon em coerência com a FK.
 
 ### 5.3 Decisão e evidência do draft
 

@@ -208,6 +208,70 @@ const cases: readonly ValidationCase[] = [
     },
   },
   {
+    name: "human factual release opens and closes deterministically with E20.5 disabled",
+    run: async () => {
+      const previousResearchGate = process.env.E20_5_SELECTED_RESEARCH_ENABLED;
+      try {
+        delete process.env.E20_5_SELECTED_RESEARCH_ENABLED;
+        assert.equal(isEndCustomerResearchSelectionEnabled(), false);
+
+        const inactiveNiche = {
+          id: "e2063000-0000-4000-8000-000000000102",
+          parentId: realEstateSegmentTaxon.id,
+          level: "niche" as const,
+          name: "Liberação humana sem E20.5",
+          slug: "liberacao-humana-sem-e20-5",
+          isActive: false,
+        };
+        const coverage = resolveInheritedInputCatalogCoverage({
+          baseline: {
+            taxon: inactiveNiche,
+            selectedResearchVersion: null,
+            reviewedInputCatalogVersion: null,
+          },
+          taxons: [inactiveNiche, realEstateSegmentTaxon],
+          inputCatalogVersion: CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION,
+          resolvePlan: resolveLandingPageInputCatalog,
+        });
+        const closeDecision = normalizeFactualReviewCatalogChangeDecision({
+          recommendationCandidateCount: 0,
+          recommendationSelection: "zero",
+          acceptedCandidates: [],
+          rejectedCandidateIndexes: [],
+          ownCandidate: null,
+        });
+        assert.equal(coverage.ok, true);
+        assert.equal(closeDecision.ok, true);
+        if (!coverage.ok || !closeDecision.ok) throw new Error("Expected deterministic human release");
+        assert.equal(deriveFactualReviewKind(coverage.value.taxonChain.niche?.isActive ?? true), "release");
+        assert.equal(closeDecision.value.decisionKind, "no_change");
+
+        const adapterSource = readFileSync(
+          new URL("../../../admin/adapters/adminTaxonFactualReviewAdapter.ts", import.meta.url),
+          "utf8",
+        );
+        const openStart = adapterSource.indexOf("export async function openAdminTaxonFactualReview");
+        const openBoundary = adapterSource.slice(
+          openStart,
+          adapterSource.indexOf("export async function persistAdminTaxonFactualEvaluation", openStart),
+        );
+        const closeStart = adapterSource.indexOf("export async function closeAdminTaxonFactualReviewWithoutEvaluation");
+        const closeBoundary = adapterSource.slice(
+          closeStart,
+          adapterSource.indexOf("export async function saveAdminInputCatalogDraft", closeStart),
+        );
+        assert.match(openBoundary, /if \(!isInputCatalogReviewEnabled\(\)\)/);
+        assert.match(openBoundary, /resolveCoverage\(context\.value\)/);
+        assert.match(closeBoundary, /if \(!isInputCatalogReviewEnabled\(\)\)/);
+        assert.match(closeBoundary, /resolveCoverage\(context\.value\)[\s\S]*finalize_business_taxon_factual_review_v1/);
+        assert.doesNotMatch(`${openBoundary}\n${closeBoundary}`, /isEndCustomerResearchSelectionEnabled/);
+      } finally {
+        if (previousResearchGate === undefined) delete process.env.E20_5_SELECTED_RESEARCH_ENABLED;
+        else process.env.E20_5_SELECTED_RESEARCH_ENABLED = previousResearchGate;
+      }
+    },
+  },
+  {
     name: "factual lifecycle keeps generic creation and activation unavailable",
     run: async () => {
       const adminSource = readFileSync(
@@ -248,6 +312,13 @@ const cases: readonly ValidationCase[] = [
       );
       const createActionStart = actionsSource.indexOf("export async function createTaxonAction");
       const createAction = actionsSource.slice(createActionStart, actionsSource.indexOf("export async function updateTaxonAction"));
+      const openReviewStart = factualAdapterSource.indexOf("export async function openAdminTaxonFactualReview");
+      const openReviewBoundary = factualAdapterSource.slice(
+        openReviewStart,
+        factualAdapterSource.indexOf("export async function persistAdminTaxonFactualEvaluation", openReviewStart),
+      );
+      const closeActionStart = actionsSource.indexOf("export async function closeFactualReviewWithoutChangeAction");
+      const closeActionBoundary = actionsSource.slice(closeActionStart);
 
       assert.match(createBoundary, /is_active: false/);
       assert.doesNotMatch(createBoundary, /input\.isActive/);
@@ -275,6 +346,7 @@ const cases: readonly ValidationCase[] = [
       assert.match(migration, /chain_snapshot jsonb not null/);
       assert.match(migration, /baseline_selected_end_customer_research_version integer/);
       assert.match(migration, /business_taxons_factual_research_selection_guard/);
+      assert.match(migration, /reviews\.taxon_id = new\.id and reviews\.status = 'open'[\s\S]*taxon_factual_review_open/);
       assert.match(migration, /security invoker/g);
       assert.match(migration, /status text not null default 'open' check \(status in \('open', 'closed'\)\)/);
       assert.match(migration, /guard_open_business_taxon_factual_review_v1/);
@@ -300,6 +372,17 @@ const cases: readonly ValidationCase[] = [
       assert.match(migration, /evaluation_context_fingerprint <> \(evidence\.value ->> 'context_fingerprint'\)/);
       assert.ok(updateBoundary.indexOf("hasUnclosedFactualReview") < updateBoundary.lastIndexOf(".update("));
       assert.ok(updateBoundary.indexOf("update_business_taxon_with_factual_review_invalidation_v1") < updateBoundary.lastIndexOf(".update("));
+      assert.ok(
+        openReviewBoundary.indexOf("if (!isInputCatalogReviewEnabled())") <
+          openReviewBoundary.indexOf("createServiceClient()"),
+      );
+      assert.doesNotMatch(openReviewBoundary, /isEndCustomerResearchSelectionEnabled/);
+      assert.ok(
+        closeActionBoundary.indexOf("if (!isInputCatalogReviewEnabled())") <
+          closeActionBoundary.indexOf("loadLatestAdminTaxonFactualReview"),
+      );
+      assert.match(adminSource, /business_taxon_factual_reviews[\s\S]*countRowsStrict/);
+      assert.match(adminSource, /factualReviews > 0[\s\S]*revisão\(ões\) factual\(is\)/);
       assert.match(adminSource, /findAffectedInputCatalogReviews[\s\S]*collectCompletePaginatedRows\([\s\S]*count: "exact"[\s\S]*\.order\("id"[\s\S]*\.range\(offset, offset \+ limit - 1\)/);
       const humanDecisionStart = actionsSource.indexOf("export async function recordInputCatalogHumanDecisionAction");
       const humanDecisionEnd = actionsSource.indexOf("export async function createTaxonAction", humanDecisionStart);

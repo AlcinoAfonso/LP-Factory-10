@@ -100,6 +100,10 @@ export default async function AdminTaxonDetailPage({ params, searchParams }: Adm
             <Detail label="Sugestao IA" value={String(taxon.usage.aiSuggestedResolutions)} />
             <Detail label="Templates" value={String(taxon.usage.contentTemplateLinks)} />
             <Detail label="Pesquisas" value={String(taxon.usage.marketResearch)} />
+            <Detail
+              label="Revisões factuais"
+              value={taxon.usage.factualReviews === null ? "Indisponível" : String(taxon.usage.factualReviews)}
+            />
             <Detail label="Filhos diretos" value={String(taxon.children.length)} />
           </dl>
         </div>

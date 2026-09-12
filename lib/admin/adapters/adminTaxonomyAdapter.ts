@@ -167,6 +167,7 @@ export async function getAdminTaxonDetail(taxonId: string): Promise<AdminTaxonDe
     diagnostics,
     endCustomerResearchSelection,
     inputCatalogReview,
+    factualReviewHistory,
   ] = await Promise.all([
     supabase.from("business_taxon_aliases").select("id,alias_text,is_active").eq("taxon_id", taxonId).order("alias_text", { ascending: true }).limit(100),
     supabase.from("business_taxons").select("id,parent_id,level,name,slug,is_active").eq("parent_id", taxonId).order("name", { ascending: true }).limit(100),
@@ -185,6 +186,12 @@ export async function getAdminTaxonDetail(taxonId: string): Promise<AdminTaxonDe
     ]),
     readAdminEndCustomerResearchSelection(supabase, taxonId),
     readAdminInputCatalogReview(supabase, taxonId),
+    isInputCatalogReviewEnabled()
+      ? countRowsStrict(
+          supabase.from("business_taxon_factual_reviews").select("id", { count: "exact", head: true }).eq("taxon_id", taxonId),
+          "business_taxon_factual_reviews",
+        )
+      : Promise.resolve(0),
   ]);
 
   const parentNames = new Map(Array.from(parentTaxons.entries()).map(([id, row]) => [id, row.name]));
@@ -197,6 +204,7 @@ export async function getAdminTaxonDetail(taxonId: string): Promise<AdminTaxonDe
     aiSuggestedResolutions,
     contentTemplateLinks,
     marketResearch,
+    factualReviews: factualReviewHistory,
   };
   const mappedChildren = ((children as any[]) ?? []).map((row) => mapAdminTaxon(row, new Map([[taxonId, mappedTaxon.name]]), emptyAliasCounts));
   const deleteBlockers = buildDeleteBlockers(mappedChildren.length, usage);
@@ -660,7 +668,12 @@ export async function selectAdminEndCustomerResearchVersion(
       message: updateError.message,
       taxonId: input.taxonId,
     });
-    return { ok: false, error: "Não foi possível salvar a seleção agora." };
+    return {
+      ok: false,
+      error: updateError.code === "40001" && updateError.message?.includes("taxon_factual_review_open")
+        ? "Feche a revisão factual aberta antes de trocar a pesquisa selecionada."
+        : "Não foi possível salvar a seleção agora.",
+    };
   }
   if (!updated) {
     return {
@@ -975,12 +988,27 @@ async function countRows(query: PromiseLike<{ count: number | null; error: { cod
   return count ?? 0;
 }
 
+async function countRowsStrict(
+  query: PromiseLike<{ count: number | null; error: { code?: string; message?: string } | null }>,
+  label: string,
+): Promise<number | null> {
+  const { count, error } = await query;
+
+  if (error || count === null) {
+    console.error("admin taxon protected usage count failed:", { label, code: error?.code, message: error?.message });
+    return null;
+  }
+
+  return count;
+}
+
 function buildDeleteBlockers(childCount: number, usage: {
   accountLinks: number;
   selectedResolutions: number;
   aiSuggestedResolutions: number;
   contentTemplateLinks: number;
   marketResearch: number;
+  factualReviews: number | null;
 }) {
   const blockers: string[] = [];
 
@@ -990,6 +1018,8 @@ function buildDeleteBlockers(childCount: number, usage: {
   if (usage.aiSuggestedResolutions > 0) blockers.push(`${usage.aiSuggestedResolutions} sugestao(oes) de IA`);
   if (usage.contentTemplateLinks > 0) blockers.push(`${usage.contentTemplateLinks} vinculo(s) com templates`);
   if (usage.marketResearch > 0) blockers.push(`${usage.marketResearch} pesquisa(s) de mercado`);
+  if (usage.factualReviews === null) blockers.push("histórico de revisão factual indisponível");
+  else if (usage.factualReviews > 0) blockers.push(`${usage.factualReviews} revisão(ões) factual(is)`);
 
   return blockers;
 }

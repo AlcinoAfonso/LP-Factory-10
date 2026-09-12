@@ -55,6 +55,7 @@ type ReviewMutationResult =
   | Readonly<{ ok: false; message: string }>;
 
 export async function loadOpenAdminTaxonFactualReview(taxonId: string) {
+  if (!isInputCatalogReviewEnabled()) return failure("A revisão factual E20.6 está desabilitada.");
   if (!UUID_PATTERN.test(taxonId)) return failure("O taxon da revisão factual é inválido.");
   const client = createServiceClient();
   const { data, error } = await (client as any)
@@ -74,6 +75,7 @@ export async function loadOpenAdminTaxonFactualReview(taxonId: string) {
 export async function listLatestAdminTaxonFactualReviews(
   taxonIds: readonly string[],
 ): Promise<AdminTaxonFactualReviewListResult> {
+  if (!isInputCatalogReviewEnabled()) return { ok: true, reviews: [] };
   const ids = [...new Set(taxonIds.filter((id) => UUID_PATTERN.test(id)))];
   if (ids.length === 0) return { ok: true, reviews: [] };
   const client = createServiceClient();
@@ -168,6 +170,7 @@ export async function persistAdminTaxonFactualEvaluation(input: Readonly<{
   evaluationContextFingerprint: string;
   output: InputCatalogEvaluationOutput;
 }>): Promise<Readonly<{ ok: true; reviewRevision: number }> | Readonly<{ ok: false; message: string }>> {
+  if (!isInputCatalogReviewEnabled()) return failure("A revisão factual E20.6 está desabilitada.");
   const parsedOutput = parseInputCatalogEvaluationOutput(input.output);
   if (
     !UUID_PATTERN.test(input.review.id) ||
@@ -220,6 +223,7 @@ export async function loadAdminTaxonFactualEvaluationEvidence(input: Readonly<{
   reviewId: string;
   expectedRevision: number;
 }>): Promise<Readonly<{ ok: true; evidence: AdminTaxonFactualEvaluationEvidence }> | Readonly<{ ok: false; message: string }>> {
+  if (!isInputCatalogReviewEnabled()) return failure("A revisão factual E20.6 está desabilitada.");
   if (!UUID_PATTERN.test(input.reviewId) || !Number.isSafeInteger(input.expectedRevision)) {
     return failure("A referência persistida da avaliação factual é inválida.");
   }
@@ -267,6 +271,7 @@ export async function finalizeAdminTaxonFactualReview(input: Readonly<{
   decision: FactualReviewHumanDecision;
   draft: null | Readonly<{ revision: number; contentFingerprint: string; contextFingerprint: string }>;
 }>): Promise<Readonly<{ ok: true; reviewedVersion: number; decisionKind: "no_change" | "catalog_change" }> | Readonly<{ ok: false; message: string }>> {
+  if (!isInputCatalogReviewEnabled()) return failure("A revisão factual E20.6 está desabilitada.");
   const evidence = await loadAdminTaxonFactualEvaluationEvidence({
     reviewId: input.reviewId,
     expectedRevision: input.expectedRevision,
@@ -317,6 +322,7 @@ export async function closeAdminTaxonFactualReviewWithoutEvaluation(input: Reado
   expectedRevision: number;
   actorUserId: string;
 }>): Promise<Readonly<{ ok: true; reviewedVersion: number }> | Readonly<{ ok: false; message: string }>> {
+  if (!isInputCatalogReviewEnabled()) return failure("A revisão factual E20.6 está desabilitada.");
   if (!UUID_PATTERN.test(input.reviewId) || !Number.isSafeInteger(input.expectedRevision)) {
     return failure("A referência da revisão factual é inválida.");
   }

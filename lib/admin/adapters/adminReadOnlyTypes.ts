@@ -83,6 +83,7 @@ export type AdminTaxonUsage = {
   aiSuggestedResolutions: number;
   contentTemplateLinks: number;
   marketResearch: number;
+  factualReviews: number | null;
 };
 
 export type AdminEndCustomerResearchSelection =

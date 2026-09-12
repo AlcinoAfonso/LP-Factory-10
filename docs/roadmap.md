@@ -1990,7 +1990,7 @@
 - Status: implementado no repositório; apply hospedado, snippet pós-apply, Security Controls e QA administrativo permanecem pendentes dos gates finais.
 - Conteúdo:
   - novo taxon nasce indisponível, resolve cobertura herdada nos quatro planos e pode ser liberado por confirmação humana sem IA, pesquisa ou justificativa textual;
-  - revisões `release | revision` preservam atividade, pesquisa E20.5 selecionada, versão factual, snapshot da cadeia, revisão otimista, última recomendação e decisão final na mesma linha; somente `open | closed` são estados persistidos, linhas fechadas são imutáveis e abertura, finalização e reconciliação são serializadas com mutações taxonômicas e troca da pesquisa selecionada mediante revalidação do baseline completo;
+  - revisões `release | revision` preservam atividade, pesquisa E20.5 selecionada, versão factual, snapshot da cadeia, revisão otimista, última recomendação e decisão final na mesma linha; somente `open | closed` são estados persistidos, linhas fechadas são imutáveis e abertura, finalização e reconciliação são serializadas com mutações taxonômicas e troca da pesquisa selecionada mediante revalidação do baseline completo; a troca é rejeitada enquanto houver revisão aberta, e qualquer histórico factual bloqueia a exclusão administrativa do taxon;
   - taxon ativo mantém atividade e última versão válida durante revisão, falha ou abandono.
 
 20.6.4 Decisão humana e lifecycle E20.2

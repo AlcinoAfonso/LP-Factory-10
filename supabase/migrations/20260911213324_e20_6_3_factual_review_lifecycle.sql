@@ -88,6 +88,13 @@ returns trigger language plpgsql security invoker set search_path = public, pg_c
 begin
   if old.selected_end_customer_research_version is distinct from new.selected_end_customer_research_version then
     perform pg_advisory_xact_lock(hashtextextended('lpf10:e20.6:factual-review', 0));
+    if exists (
+      select 1
+      from public.business_taxon_factual_reviews reviews
+      where reviews.taxon_id = new.id and reviews.status = 'open'
+    ) then
+      raise exception using errcode = '40001', message = 'taxon_factual_review_open';
+    end if;
   end if;
   return new;
 end;

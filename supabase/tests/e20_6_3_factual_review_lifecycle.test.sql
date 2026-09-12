@@ -195,7 +195,19 @@ begin
   exception when invalid_parameter_value then null;
   end;
 
-  update public.business_taxons set selected_end_customer_research_version = 1
+  begin
+    update public.business_taxons set selected_end_customer_research_version = 1
+    where id = 'e2063000-0000-4000-8000-000000000020';
+    raise exception 'research selection changed while factual review was open';
+  exception when serialization_failure then null;
+  end;
+  if (select selected_end_customer_research_version from public.business_taxons
+      where id = 'e2063000-0000-4000-8000-000000000020') is not null
+     or (select status from public.business_taxon_factual_reviews where id = v_review_id) <> 'open'
+     or (select taxon_review_evidence from public.landing_page_input_catalog_drafts where singleton) <> '{}'::jsonb then
+    raise exception 'research-selection conflict did not preserve the open review and draft evidence';
+  end if;
+  update public.business_taxons set name = 'Filho alterado durante revisão'
   where id = 'e2063000-0000-4000-8000-000000000020';
   begin
     perform * from public.finalize_business_taxon_factual_review_v1(
@@ -213,7 +225,7 @@ begin
      or (select taxon_review_evidence from public.landing_page_input_catalog_drafts where singleton) <> '{}'::jsonb then
     raise exception 'stale finalization did not roll back without closing or recording evidence';
   end if;
-  update public.business_taxons set selected_end_customer_research_version = null
+  update public.business_taxons set name = 'Filho'
   where id = 'e2063000-0000-4000-8000-000000000020';
 
   select * into v_final from public.finalize_business_taxon_factual_review_v1(
