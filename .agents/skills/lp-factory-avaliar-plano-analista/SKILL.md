@@ -46,7 +46,7 @@ Roteie a avaliação pelo nível recebido sem misturar contratos.
 
 ## Validar a matriz
 
-Exigir uma linha por achado com identificação estável, origem (`v1`, `invariante técnico` ou `update`), classe (`derivação técnica da v1`, `modernização técnica justificada` ou `ampliação de escopo`), tratamento, localização/evidência e, para updates, os dados exigidos pelo contrato do Gestor de Updates e referência ao confronto estrutural quando aplicável.
+Exigir uma linha por achado com identificação estável, origem (`v1`, `invariante técnico` ou `update`), classe (`derivação técnica da v1`, `modernização técnica justificada` ou `ampliação de escopo`), tratamento, localização/evidência e, para updates, os dados exigidos pelo contrato do Gestor de Updates e referência ao confronto estrutural quando aplicável. Para cada crescimento estrutural material, exigir rastreabilidade na matriz da prova de minimalidade: requisito da v1 ou invariante preexistente, contrato ou residência existente avaliado para reuso, alternativa mais simples, insuficiência factual e complexidade líquida. Rejeitar justificativa circular fundada em necessidade criada exclusivamente pela própria solução; ela exige correção da v2, não novas proteções sobre a arquitetura candidata.
 
 Matriz incompleta, modernização material sem confronto ou linha sem correspondência verificável impede o handoff.
 
@@ -60,7 +60,7 @@ Matriz incompleta, modernização material sem confronto ou linha sem correspond
 ## Passagem 2
 
 1. Continuar no mesmo thread no modo `auditoria_consolidacao`.
-2. Entregar pareceres integrais, confrontos estruturais aplicáveis e matriz, sem reescrever achados.
+2. Entregar pareceres integrais, confrontos estruturais aplicáveis e matriz, sem reescrever achados; auditar a suficiência e a rastreabilidade da prova de minimalidade de qualquer crescimento estrutural material, sem refazer a especialidade.
 3. Solicitar a auditoria conforme o contrato runtime de `.codex/agents/analista.toml`, preservando a Passagem 1.
 4. Aguardar a conclusão formal definida no contrato runtime.
 
@@ -74,6 +74,8 @@ Conferir o estado Git. Se faltar passagem ou conclusão, devolver o conteúdo e 
 
 Usar `revisao_delta` no mesmo Analista, entregando versões ou diff e correções solicitadas. Retornar ao especialista somente diante de questão material nova ou conclusão especializada alterada. Liberar o gate apenas após `aprovado para merge do plano-base v2`.
 
+Quando a revisão decorrer de retorno estrutural focal durante a implementação, entregar ao mesmo Analista a referência imutável anterior e a nova referência da v2, somente o delta da matriz, o parecer focal, a evidência que desafiou a v2 e os checkpoints afetados. Auditar apenas a prova de minimalidade, sua rastreabilidade, a ausência de justificativa circular, o menor delta e os efeitos nos checkpoints; manter válidos os checkpoints não afetados, sem repetir a Passagem 1, o fluxo completo ou especialistas por precaução. Liberar o delta somente após `aprovado para merge do plano-base v2`.
+
 ## Revisar o roadmap final
 
 Após a primeira aprovação da v2, continuar no mesmo Analista em `revisao_delta`. Entregar a v2 aprovada, o snapshot imutável do roadmap anterior, o ABC emitido por `$lp-factory-abc`, o roadmap resultante e os contratos `docs/prompt-abc.md` e `docs/template-roadmap.md`; exigir leitura integral desses contratos antes da conclusão.
@@ -82,4 +84,4 @@ Auditar somente se o roadmap corresponde à estrutura planejada da v2, se o delt
 
 ## Limites
 
-Não editar artefatos, criar branch/commit/PR, consolidar v2, refazer especialidade, acionar outros especialistas, avaliar implementação ou autorizar merge com pendência. No Light, não exigir nem produzir artefato exclusivo da Complexa. Na Complexa, não reduzir, substituir ou pular matriz, passagem ou gate existente.
+Não editar artefatos, criar branch/commit/PR, consolidar v2, refazer especialidade, acionar outros especialistas, avaliar implementação ou autorizar merge com pendência. No Light, não exigir nem produzir artefato exclusivo da Complexa. Na Complexa, não reduzir, substituir ou pular matriz, passagem ou gate existente; a revisão delta focal apenas atualiza o ponto estrutural afetado e não reinicia o fluxo nem invalida checkpoints não afetados.

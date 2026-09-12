@@ -119,6 +119,7 @@ Implemente somente depois de a V2 mínima estar consolidada e, quando o Analista
 Implemente somente o contrato aprovado: V2 mínima no Light ou V2 aprovada na Complexa.
 
 - produza o menor delta suficiente;
+- na Complexa, trate a arquitetura vigente e o menor delta suficiente como hipótese padrão; não implemente por inferência crescimento estrutural material fora da v2 aprovada nem necessidade criada exclusivamente pela própria solução;
 - preserve padrões, boundaries, autoridades e comportamentos fora do recorte;
 - não remova, reduza, substitua ou redistribua comportamento funcional existente sem autorização correspondente no contrato aprovado;
 - evite refatoração ampla, mecanismo novo ou alteração não relacionada;
@@ -173,9 +174,9 @@ Quando invocada por `$lp-factory-conduzir-plano-completo`:
 1. confirmar que branch, worktree e PR são os mesmos usados para produzir a V2;
 2. confirmar o checkpoint `plan-v2-approved`, a matriz versionada no mesmo PR e usar esse commit como contrato imutável;
 3. não criar branch, PR ou pedido de merge intermediário;
-4. não acionar Gestor Estrutural, Gestor de Updates ou Gestor de Automações; usar somente o Analista nos gates de implementação;
+4. não acionar Gestor Estrutural, Gestor de Updates ou Gestor de Automações; usar somente o Analista nos gates de implementação; quando houver evidência estrutural material, registrar o ponto e entregá-lo ao gate competente, sem escolher a arquitetura nem acionar especialista diretamente;
 5. reutilizar checkpoints `LP-Factory-Phase: <identificador>` e continuar na próxima subseção pendente;
-6. se houver mudança material fora da V2 aprovada, encaminhar ao Analista e, se necessário, ao supervisor competente; não reiniciar especialistas.
+6. se houver mudança material fora da V2 aprovada, encaminhar ao Analista e, se necessário, ao supervisor competente; se a evidência mostrar que correção local não basta ou que mecanismo da própria v2 criou obrigações estruturais relevantes, suspender somente o ponto afetado e devolver ao workflow para revisão estrutural focal; não implementar a estrutura por inferência nem reiniciar a derivação completa.
 
 ### 7.2 Preparar
 
@@ -193,6 +194,7 @@ Para a próxima subseção ainda não aprovada:
 1. delimitar a próxima subseção pela V2 aprovada, com objetivo, arquivos prováveis, escopo negativo e critérios de aceite;
 2. quando a subseção criar ou alterar prompt consumido por IA, invocar `$lp-factory-criar-prompt` como subfluxo somente leitura antes de editar o artefato e validar os casos representativos definidos por ele;
 3. implementar somente o necessário para essa subseção; não antecipar a próxima;
+   Se surgir necessidade de nova estrutura material não prevista na v2, ou obrigação estrutural relevante criada pelo mecanismo aprovado da própria v2, não adicionar uma correção local para encobri-la: preservar o trabalho válido, registrar a evidência e seguir o retorno focal pelo Analista e pelo workflow competente.
 4. executar as validações aplicáveis; para código, executar `npm ci` uma vez no início do lote contínuo e repeti-lo somente se `package-lock.json`, dependências ou o estado de instalação mudarem; executar a validação própria e `npm run check` antes de cada gate; para alteração exclusivamente documental, justificar esses comandos como não aplicáveis; quando aplicável, incluir no gate do Analista evidências de observabilidade mínima e smoke ou QA funcional;
 5. na última subseção, executar também as validações integradas e corrigir regressões; evidência de QA obrigatória pendente deve ser resolvida antes do ABC de consolidação final;
 6. antes do gate, identificar os documentos canônicos potencialmente afetados; nas subseções não finais, considerar os documentos da subseção atual; na última, incluir todos os documentos canônicos afetados ao longo do recorte;
@@ -201,7 +203,8 @@ Para a próxima subseção ainda não aprovada:
 9. tratar `aprovado para avançar` como checkpoint e commitar com o trailer `LP-Factory-Phase: <identificador>`; o checkpoint pode permanecer local e código, título e resumo do mesmo PR draft só devem refletir esse estado quando ele for efetivamente publicado;
 10. tratar `aprovado com correções obrigatórias` corrigindo somente o delta indicado e retornando ao mesmo Analista em `revisao_delta_implementacao`;
 11. tratar `requer evidência de QA` aplicando a seção 6 e retornando ao mesmo Analista com a evidência obtida; se um critério continuar sem prova após os caminhos autorizados, devolver antes da entrega final somente esse bloqueio ao supervisor competente e, recebida a decisão ou o recurso necessário, retornar ao mesmo Analista;
-12. tratar `bloqueado por decisão humana` parando e devolvendo ao supervisor competente apenas a decisão necessária.
+12. tratar `requer nova rodada especializada` suspendendo somente o ponto afetado e devolvendo-o ao workflow para `revisao_focal_implementacao` do Gestor Estrutural; preservar a mesma task, branch, PR, v1 e checkpoints não afetados, e retomar a mesma subseção somente após aprovação do delta pelo Analista;
+13. tratar `bloqueado por decisão humana` parando e devolvendo ao supervisor competente apenas a decisão necessária.
 
 Não executar `git push` por rotina antes ou depois de cada gate. Checkpoints aprovados podem acumular localmente. Publicar o estado acumulado somente quando houver necessidade real de estado remoto, como Preview/QA hospedado, validação na Vercel, review, evidência que dependa do GitHub remoto, entrega ou parada necessária para retomada segura.
 
@@ -228,6 +231,7 @@ O resumo do PR deve refletir sempre o checkpoint publicado e a entrega técnica 
 Antes da entrega, confronte o contrato aprovado com o diff final.
 
 - todo arquivo alterado, mecanismo novo ou decisão técnica material deve ser rastreável ao contrato ou a dependência factual indispensável;
+- na Complexa, todo crescimento estrutural material deve estar na v2 aprovada ou em delta focal aprovado, com prova de minimalidade e comparação com a arquitetura vigente e alternativa mais simples; justificativa circular baseada em necessidade criada pela própria solução não é rastreabilidade válida;
 - remova alteração sem rastreabilidade ou justifique sua necessidade factual;
 - legado e parecer técnico não autorizam ampliação funcional, arquitetural ou de escopo;
 - se a melhor solução exigir decisão fora do contrato, devolva o ponto ao supervisor competente.
@@ -269,7 +273,7 @@ Não substitua supervisor, Estrategista, especialista ou Analista; o Executor ex
 - não executar fase fora do plano ou fora da ordem do roadmap;
 - no Light, não importar especialistas, matriz, segunda passagem ou gates da Complexa;
 - na Complexa, não iniciar a fase seguinte sem checkpoint aprovado;
-- na Complexa, não recriar ou ampliar a V2, repetir especialistas, criar PR empilhado, criar segundo PR no handoff interno ou recriar a matriz sem correção de rastreabilidade exigida;
+- na Complexa, não recriar a V2 nem ampliar sua estrutura por inferência, repetir especialistas, criar PR empilhado, criar segundo PR no handoff interno ou recriar a matriz sem correção de rastreabilidade exigida; crescimento estrutural material só entra por revisão focal autorizada pelo workflow;
 - na Complexa, não acionar o Analista depois de declarar a entrega técnica completa;
 - na Complexa, não acionar o supervisor antes da entrega técnica completa, exceto para bloqueio de QA ou decisão humana já previstos pelo contrato; no Light, aplicar as escaladas previstas nas seções 2 e 3;
 - não ignorar evidência de QA pendente nem decisão material exigida.
