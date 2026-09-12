@@ -4,12 +4,16 @@ import { createHash, randomUUID } from "node:crypto";
 
 import {
   CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION,
+  applyLandingPageInputCatalogDraftOperation,
   createNextLandingPageInputCatalogDraft,
   landingPageInputCatalogRegistry,
   listLandingPageInputCatalogVersions,
+  projectLandingPageInputCatalogDraftReleaseTaxons,
+  validateLandingPageInputCatalogDraftProjectedImpacts,
   validateLandingPageInputCatalogDraft,
   serializeLandingPageInputCatalogEntry,
   type LandingPageInputCatalogDraftImpact,
+  type LandingPageInputCatalogDraftOperation,
   type LandingPageInputCatalogRegistryEntry,
 } from "@/conversion-content/landing-page/input-catalog";
 import { reconstructDraftInputCatalogEvaluationContext } from "@/conversion-content/adapters/inputCatalogEvaluationContextAdapter";
@@ -27,6 +31,7 @@ import {
 import { readCompleteLifecycleContext, type LifecycleContext } from "./adminInputCatalogLifecycleContext";
 import {
   collectRequiredFactualReviewTaxonIds,
+  createInputCatalogLifecycleProof,
   hasCompleteFactualReviewCoverage,
   serializeInputCatalogLifecycleValue,
 } from "./adminInputCatalogLifecycleValidation";
@@ -160,6 +165,56 @@ export async function saveAdminInputCatalogDraft(input: Readonly<{
     return unavailable("O draft salvo não pôde ser relido integralmente.");
   }
   return { ok: true, state: await buildState(context, refreshed.value) };
+}
+
+export async function applyAdminInputCatalogDraftOperation(input: Readonly<{
+  actorUserId: string;
+  expectedRevision: number;
+  operation: LandingPageInputCatalogDraftOperation;
+}>): Promise<AdminInputCatalogLifecycleMutationResult> {
+  if (!Number.isSafeInteger(input.expectedRevision) || input.expectedRevision <= 0) {
+    return invalid("A revisão esperada do draft é inválida.");
+  }
+  const client = createServiceClient();
+  const current = await readDraftRow(client);
+  if (!current.ok || !current.value) {
+    return unavailable(current.ok ? "O draft não existe." : current.message);
+  }
+  if (current.value.revision !== input.expectedRevision) {
+    return conflict("O draft mudou em outra sessão. Recarregue antes de editar.");
+  }
+  const context = await readCompleteLifecycleContext(client, { fingerprint: false });
+  if (!context.ok) return unavailable(context.message);
+  const applied = applyLandingPageInputCatalogDraftOperation({
+    draft: current.value.catalogJson,
+    operation: input.operation,
+    taxons: context.value.taxons,
+    releaseTaxonIds: context.value.unclosedReleaseTaxonIds,
+  });
+  if (!applied.ok) return invalid(applied.error.message);
+  const contentFingerprint = fingerprint(applied.value.canonicalJson);
+  const saved = await saveAdminInputCatalogDraftAndInvalidateFactualReviews({
+    operationId: randomUUID(),
+    actorUserId: input.actorUserId,
+    expectedRevision: input.expectedRevision,
+    catalogJson: applied.value.entry,
+    contentFingerprint,
+  });
+  if (!saved.ok) return conflict(saved.message);
+
+  const refreshedContext = await readProjectedCandidateLifecycleContext(
+    client,
+    applied.value.entry,
+  );
+  if (!refreshedContext.ok) return unavailable(refreshedContext.message);
+  const refreshed = await readDraftRow(client);
+  if (!refreshed.ok || !refreshed.value || refreshed.value.revision !== saved.revision) {
+    return unavailable("O draft editado não pôde ser relido integralmente.");
+  }
+  return {
+    ok: true,
+    state: await buildState(refreshedContext, refreshed.value),
+  };
 }
 
 export async function validateAdminInputCatalogDraft(input: Readonly<{
@@ -535,12 +590,53 @@ const DRAFT_SELECT =
 
 const DRAFT_CHANGED = "O draft mudou durante a leitura do contexto. Recarregue antes de continuar.";
 
-function readCandidateLifecycleContext(client: ServiceClient, draft: unknown) {
-  return readCompleteLifecycleContext(client, {
-    fingerprint: draft !== undefined,
-    prepareCandidate: draft === undefined ? undefined : (taxons) =>
-      validateLandingPageInputCatalogDraft({ draft, taxons }),
+async function readCandidateLifecycleContext(client: ServiceClient, draft: unknown) {
+  if (draft === undefined) {
+    return readCompleteLifecycleContext(client, { fingerprint: false });
+  }
+  const projected = await readProjectedCandidateLifecycleContext(client, draft);
+  return projected.ok
+    ? { ok: true as const, value: projected.value }
+    : projected;
+}
+
+async function readProjectedCandidateLifecycleContext(
+  client: ServiceClient,
+  draft: unknown,
+): Promise<
+  | Readonly<{
+      ok: true;
+      value: LifecycleContext;
+    }>
+  | Readonly<{ ok: false; message: string }>
+> {
+  const context = await readCompleteLifecycleContext(client, { fingerprint: false });
+  if (!context.ok) return context;
+  const projection = projectLandingPageInputCatalogDraftReleaseTaxons({
+    taxons: context.value.taxons,
+    releaseTaxonIds: context.value.unclosedReleaseTaxonIds,
   });
+  if (!projection.ok) return { ok: false, message: projection.error.message };
+  const candidate = validateLandingPageInputCatalogDraftProjectedImpacts({
+    draft,
+    taxons: projection.value,
+    projectedTaxonIds: context.value.unclosedReleaseTaxonIds,
+  });
+  if (!candidate.ok) return { ok: false, message: candidate.error.message };
+  const projectedContext = {
+    taxons: projection.value,
+    unclosedReleaseTaxonIds: context.value.unclosedReleaseTaxonIds,
+  };
+  return {
+    ok: true,
+    value: {
+      ...projectedContext,
+      lifecycleProof: createInputCatalogLifecycleProof({
+        fingerprint: true,
+        candidate: candidate.value,
+      }).finish(projectedContext),
+    },
+  };
 }
 
 function sameDraftIdentity(
@@ -593,11 +689,15 @@ async function buildState(
   row: DraftRow | null,
 ): Promise<AdminInputCatalogLifecycleState> {
   const context = "value" in contextResult ? contextResult.value : contextResult;
+  const releaseTaxonIds = new Set(context.unclosedReleaseTaxonIds);
+  const totalActiveTaxons = context.taxons.filter(
+    (taxon) => taxon.identity.isActive && !releaseTaxonIds.has(taxon.identity.id),
+  ).length;
   if (!row) {
     return {
       currentVersion: CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION,
       publishedVersions: listLandingPageInputCatalogVersions(),
-      totalActiveTaxons: context.taxons.filter((taxon) => taxon.identity.isActive).length,
+      totalActiveTaxons,
       draft: null,
       error: null,
     };
@@ -629,7 +729,7 @@ async function buildState(
     return {
       currentVersion: CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION,
       publishedVersions: listLandingPageInputCatalogVersions(),
-      totalActiveTaxons: context.taxons.filter((taxon) => taxon.identity.isActive).length,
+      totalActiveTaxons,
       draft: {
         baseVersion: row.baseVersion,
         targetVersion: row.targetVersion,
@@ -659,10 +759,30 @@ async function buildState(
       { ok: true, value: context },
     );
   }
-  const candidate = validateLandingPageInputCatalogDraft({
-    draft: row.catalogJson,
-    taxons: context.taxons,
-  });
+  const projectedReleaseTaxonIds = context.unclosedReleaseTaxonIds.filter((taxonId) =>
+    context.taxons.some(
+      (taxon) => taxon.identity.id === taxonId && taxon.identity.isActive,
+    ),
+  );
+  if (
+    projectedReleaseTaxonIds.length > 0 &&
+    projectedReleaseTaxonIds.length !== context.unclosedReleaseTaxonIds.length
+  ) {
+    return unavailableState(
+      "A projeção das releases está incompleta.",
+      { ok: true, value: context },
+    );
+  }
+  const candidate = projectedReleaseTaxonIds.length > 0
+    ? validateLandingPageInputCatalogDraftProjectedImpacts({
+        draft: row.catalogJson,
+        taxons: context.taxons,
+        projectedTaxonIds: projectedReleaseTaxonIds,
+      })
+    : validateLandingPageInputCatalogDraft({
+        draft: row.catalogJson,
+        taxons: context.taxons,
+      });
   if (!candidate.ok) return unavailableState(candidate.error.message, { ok: true, value: context });
   const proof = proofForCandidate(context, candidate.value);
   if (!proof) return unavailableState(DRAFT_CHANGED, { ok: true, value: context });
@@ -674,7 +794,7 @@ async function buildState(
   return {
     currentVersion: CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION,
     publishedVersions: listLandingPageInputCatalogVersions(),
-    totalActiveTaxons: context.taxons.filter((taxon) => taxon.identity.isActive).length,
+    totalActiveTaxons,
     draft: {
       baseVersion: row.baseVersion,
       targetVersion: row.targetVersion,

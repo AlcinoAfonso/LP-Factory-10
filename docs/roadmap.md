@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 12/09/2026
-• Versão: v1.5.223
+• Versão: v1.5.224
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -1903,7 +1903,7 @@
 
 20.6.1 Objetivo e status
 - Objetivo: permitir que um `platform_admin` libere taxon novo e revise taxon ativo por cobertura herdada, avaliação factual opcional e lifecycle versionado E20.2, sem transferir decisão à IA.
-- Status: 20.6.3–20.6.5 implementadas no repositório; apply, snippet, Security Controls e QA hospedado permanecem pendentes dos gates finais; 20.6.6–20.6.7 seguem definidas e ainda não implementadas.
+- Status: 20.6.3–20.6.6 implementadas no repositório; apply, snippet, Security Controls e QA hospedado permanecem pendentes dos gates finais; 20.6.7 segue definida e ainda não implementada.
 
 20.6.2 Registros do recorte
 - Banco:
@@ -1931,6 +1931,7 @@
     - `lib/conversion-content/landing-page/taxon-preparation/input-catalog-evaluation.ts`
     - `lib/conversion-content/landing-page/taxon-preparation/factual-review.ts`
     - `lib/conversion-content/landing-page/taxon-preparation/preparation.ts`
+    - `lib/conversion-content/landing-page/input-catalog/draft-operations.ts`
     - `lib/conversion-content/adapters/inputCatalogEvaluationRuntimeGate.ts`
     - `lib/conversion-content/adapters/inputCatalogEvaluationRuntimeGateCore.ts`
     - `lib/conversion-content/adapters/inputCatalogEvaluationOpenAiAdapter.ts`
@@ -1999,11 +2000,13 @@
   - requested, completed e inconclusive são eventos idempotentes da sessão aberta; completed preserva output, evidência Web e fingerprint próprio da identidade da avaliação, separado do fingerprint da sessão, e toda decisão sobre candidatos comprova o evento persistido exato.
 
 20.6.6 Evolução e transições
-- Status: definido; não implementado.
+- Status: implementado no repositório; integração visual pertence à 20.6.7 e publicação/reconciliação permanecem nos gates futuros.
 - Conteúdo:
   - inclusão, alteração e inativação de field são operações humanas tipadas sobre o draft singleton;
   - cada mudança preserva camada, impacto, versionamento imutável e histórico;
   - IA e candidato nunca escrevem field nem alteram atividade ou marcador factual.
+  - a operação pura reusa schema, continuidade, resolução dos quatro planos e classificação de impacto; a persistência estreita reusa revisão otimista e invalidação factual atômica existentes;
+  - todas as releases abertas são projetadas como ativas no futuro catálogo e nos impactos, inclusive sob operação universal ou ancestral; identificador ausente, duplicado ou já ativo falha fechado, sem mudança operacional pré-deploy.
 
 20.6.7 Experiência administrativa
 - Status: definido; não implementado.

@@ -38,6 +38,10 @@ const lifecycleValidation = readFileSync(
   new URL("../../../../lib/admin/adapters/adminInputCatalogLifecycleValidation.ts", import.meta.url),
   "utf8",
 );
+const draftOperations = readFileSync(
+  new URL("../../../../lib/conversion-content/landing-page/input-catalog/draft-operations.ts", import.meta.url),
+  "utf8",
+);
 const lifecycleComponent = readFileSync(
   new URL("./_components/AdminInputCatalogLifecycle.tsx", import.meta.url),
   "utf8",
@@ -122,6 +126,21 @@ assert.match(lifecycleAdapter, /reconcileAdminInputCatalogPublishedDraft/);
 assert.match(lifecycleAdapter, /runtimeEnvironment !== "production"/);
 assert.match(lifecycleAdapter, /storedDraftFingerprint !== deployedFingerprint/);
 assert.match(lifecycleAdapter, /saveAdminInputCatalogDraftAndInvalidateFactualReviews/);
+assert.match(lifecycleAdapter, /applyAdminInputCatalogDraftOperation/);
+assert.match(lifecycleAdapter, /applyLandingPageInputCatalogDraftOperation/);
+assert.match(lifecycleAdapter, /readProjectedCandidateLifecycleContext/);
+assert.match(lifecycleAdapter, /projectLandingPageInputCatalogDraftReleaseTaxons/);
+assert.match(lifecycleAdapter, /validateLandingPageInputCatalogDraftProjectedImpacts/);
+assert.match(lifecycleAdapter, /createInputCatalogLifecycleProof/);
+assert.match(lifecycleAdapter, /!releaseTaxonIds\.has\(taxon\.identity\.id\)/);
+assert.match(draftOperations, /kind:\s*"add"/);
+assert.match(draftOperations, /kind:\s*"change"/);
+assert.match(draftOperations, /kind:\s*"retire"/);
+assert.match(draftOperations, /releaseTaxonIds/);
+assert.match(draftOperations, /isActive:\s*true as const/);
+assert.match(draftOperations, /validateLandingPageInputCatalogDraft/);
+assert.match(draftOperations, /landingPageInputCatalogOperationalPlans/);
+assert.doesNotMatch(draftOperations, /openai|provider|candidate_gaps|recommendation/i);
 assert.match(lifecycleAdapter, /authorizeAdminInputCatalogFactualPublication/);
 assert.match(lifecycleAdapter, /reconcileAdminInputCatalogFactualPublication/);
 assert.match(lifecycleAdapter, /hasCompleteFactualReviewCoverage/);
