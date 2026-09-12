@@ -1056,7 +1056,7 @@
 
 1.36 openai_lp_cost_events
 1.36.1 Função e identidade
-• Residência financeira prospectiva append-only, limitada a `landing_page_draft_generation` e `landing_page_draft_image_generation` em Production.
+• Residência financeira histórica append-only, limitada aos registros preservados de `landing_page_draft_generation` e `landing_page_draft_image_generation` em Production; o write-side prospectivo foi encerrado.
 • Cada tentativa usa `attempt_id`, `account_id`, `landing_page_id`, workload e `event_kind = started | terminal`; `(attempt_id, workload, event_kind)` é único e torna retries idempotentes.
 • A FK composta `(landing_page_id, account_id)` referencia `account_landing_pages(id, account_id)` com ON UPDATE/DELETE RESTRICT e impede atribuição cruzada entre tenants.
 • Eventos started preservam configuração e versão de preço sem result, usage, custo ou diagnóstico do provider; eventos terminal preservam `success | failure` e podem ter custo nulo quando as unidades do provider não forem suficientes ou o preço não for suportado.
@@ -1070,10 +1070,10 @@
 
 1.36.3 Segurança, imutabilidade e estado de apply
 • RLS habilitado e zero policies; public, anon, authenticated e ai_readonly sem grants.
-• service_role possui somente SELECT e INSERT, sem UPDATE, DELETE ou TRUNCATE.
+• service_role possui somente SELECT, sem INSERT, UPDATE, DELETE ou TRUNCATE.
 • O trigger `openai_lp_cost_events_prevent_mutation` rejeita UPDATE e DELETE mesmo sob privilégio superior.
-• Migration aplicada pelo fluxo canônico: `supabase/migrations/20260828131456_e21_4_4_openai_lp_cost_tracking.sql`; snippet read-only e Security Controls aprovados.
-• Teste transacional: `supabase/tests/e21_4_4_openai_lp_cost_tracking.test.sql`; verificador read-only: `supabase/snippets/e21_4_4_openai_lp_cost_tracking_verify.sql`.
+• Migrations aplicadas pelo fluxo canônico: `supabase/migrations/20260828131456_e21_4_4_openai_lp_cost_tracking.sql` e `supabase/migrations/20260912143448_e21_4_6_freeze_openai_lp_cost_history.sql`; snippet read-only e Security Controls aprovados após o fechamento dos grants residuais.
+• Teste transacional vigente: `supabase/tests/e21_4_6_openai_lp_cost_history.test.sql`; verificador read-only vigente: `supabase/snippets/e21_4_6_openai_lp_cost_history_verify.sql`.
 
 1.37 openai_lp_cost_coverage
 1.37.1 Função e invariantes
@@ -1084,7 +1084,7 @@
 1.37.2 Segurança e imutabilidade
 • RLS habilitado e zero policies; ACLs idênticas às de `openai_lp_cost_events`.
 • O trigger `openai_lp_cost_coverage_prevent_mutation` rejeita UPDATE e DELETE.
-• O registro ocorre uma única vez, depois do smoke pós-apply em Production, pela RPC `register_openai_lp_cost_coverage_v1`.
+• A única linha registrada em Production permanece congelada; `register_openai_lp_cost_coverage_v1` foi preservada historicamente sem EXECUTE para papéis externos.
 
 1.38 business_taxon_factual_reviews
 1.38.1 Função e estado
@@ -1374,8 +1374,8 @@
 • Verificador read-only: `supabase/snippets/postgrest_safe_application_conflicts_verify.sql`.
 • Estado hospedado: a migration `supabase/migrations/20260827203000_postgrest_safe_application_conflicts.sql` está aplicada; o comportamento corrigido foi validado no ambiente hospedado, sem retry autônomo em conflito de domínio.
 
-3.10 Evidência prospectiva de custos OpenAI das Landing Pages
-3.10.1 RPCs versionadas
+3.10 Histórico de custos OpenAI das Landing Pages
+3.10.1 RPCs versionadas preservadas
 • `append_openai_lp_cost_start_v1(uuid, uuid, uuid, text, text, text, text, text, text, text, text) → uuid`: anexa ou retorna idempotentemente o início tenant-safe da tentativa; conflito de identidade na mesma chave falha fechado.
 • `append_openai_lp_cost_terminal_v1(uuid, text, text, jsonb, jsonb, numeric, integer, text, text) → uuid`: exige início prévio, herda identidade/configuração e anexa ou retorna idempotentemente o terminal; os três últimos argumentos são status HTTP, código e tipo sanitizados do erro real do provider; retry divergente falha fechado.
 • `register_openai_lp_cost_coverage_v1(timestamptz) → timestamptz`: cria uma única data de corte Production; retry idêntico é idempotente e qualquer tentativa de alteração falha fechado.
@@ -1383,7 +1383,7 @@
 
 3.10.2 Segurança e execução
 • As quatro RPCs usam SECURITY INVOKER e search_path fixado em pg_catalog, com referências schema-qualified.
-• EXECUTE é exclusivo de service_role; public, anon, authenticated e ai_readonly não executam as RPCs.
+• Somente `read_openai_lp_cost_events_v1` mantém EXECUTE para service_role; as três RPCs de escrita/corte não possuem EXECUTE para papéis externos. public, anon, authenticated e ai_readonly não executam nenhuma das quatro RPCs.
 • `prevent_openai_lp_cost_mutation_v1() → trigger` não possui EXECUTE externo e rejeita UPDATE/DELETE nas duas residências.
 
 3.11 Ledger ativo transversal de custos OpenAI
@@ -1430,8 +1430,8 @@
 • account_niche_resolutions_set_updated_at: trigger de atualização de updated_at em account_niche_resolutions
 • openai_workload_configuration_revisions_append_only: rejeita UPDATE e DELETE de revisões validadas.
 • openai_workload_configuration_activations_append_only: rejeita UPDATE e DELETE de eventos de ativação/rollback.
-• openai_lp_cost_events_prevent_mutation: rejeita UPDATE e DELETE dos eventos financeiros prospectivos.
-• openai_lp_cost_coverage_prevent_mutation: rejeita UPDATE e DELETE da data de corte.
+• openai_lp_cost_events_prevent_mutation: rejeita UPDATE e DELETE dos eventos financeiros históricos congelados.
+• openai_lp_cost_coverage_prevent_mutation: rejeita UPDATE e DELETE da data de corte histórica.
 
 5. Tipos canônicos
 • Fonte única: PATH: lib/types/status.ts

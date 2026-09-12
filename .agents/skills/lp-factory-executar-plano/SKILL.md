@@ -60,6 +60,7 @@ Use somente as fontes materialmente necessárias:
 - `docs/automations.md`: quando automação operacional ou facilitador de testes existente puder executar ou validar o recorte;
 - documentos canônicos e fontes específicas citados pelo contrato;
 - recurso conectado identificado e expressamente autorizado pela V1 e não restringido pelo contrato técnico aplicável pode ser consumido diretamente pelo Executor para a finalidade aprovada, sem duplicar seu conteúdo no repositório nem convertê-lo em nova infraestrutura.
+- para um teste já autorizado pelo recorte competente, o Executor pode consultar o `Catálogo de QA — Debate 09 — LP Factory 10` na pasta `LP Factory` do Google Drive conectado quando precisar de valor catalogado; a consulta não amplia o escopo nem a autoridade do teste, e, se o próprio teste alterar um valor já catalogado, o Executor atualiza somente o registro correspondente; sem alteração de valor catalogado, não muta o catálogo.
 
 Não invente fonte, path, schema, comportamento, dependência, rota, job, agente, automação, engine ou infraestrutura.
 

@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 12/09/2026
-• Versão: v1.5.227
+• Versão: v1.5.226
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -1521,6 +1521,24 @@
 - Status: concluída pelo piloto do PR #912.
 - O piloto comprovou a localização e a consulta da identidade QA autorizada no catálogo vigente; convite, autenticação e demais fases operacionais posteriores permanecem fora deste recorte.
 
+17.11 Uso do Catálogo de QA
+
+17.11.1 Objetivo e status
+- Objetivo: explicitar no contrato do Executor a consulta ao Catálogo de QA durante testes já autorizados e a atualização estritamente correspondente quando o próprio teste alterar valor catalogado.
+- Status: concluído no contrato do Executor, sem QA de produto, ampliação de autoridade ou mutação funcional do catálogo.
+
+17.11.2 Registros do recorte
+- Repositório:
+  - Ajustados:
+    - `.agents/skills/lp-factory-executar-plano/SKILL.md`
+- Referências:
+  - Plano-base V1 e V2 Light: `docs/lousa-plano-base-e17-11.md` — seções 1 e 2.
+
+17.11.3 Contrato de consulta e atualização pontual
+- O Executor pode consultar o Catálogo de QA quando um teste já autorizado pelo recorte competente precisar de valor catalogado; a consulta não amplia o escopo nem a autoridade do teste consumidor.
+- Se o próprio teste alterar valor já catalogado, somente o registro correspondente é atualizado; sem alteração de valor catalogado, o catálogo não é mutado.
+- A E17.11 não autoriza jornada de produto, mailbox, browser, Preview, convite, autenticação, recuperação, automação ou infraestrutura.
+
 18. E18 — Base transversal de templates, composições e artefatos
 - Objetivo: manter os contratos compartilhados de conteúdo versionado usados pela ativação comercial e a parametrização raiz da família `landing_page`, sem absorver geração, publicação ou execução da LP Builder.
 - Status: base `commercial_activation` e parametrização raiz `landing_page` implementadas; consumo comercial ativo na E10.7; catálogo repo-only de módulos `landing_page` retirado pela E22.1.5.
@@ -2073,7 +2091,7 @@
 
 21. E21 — Gestão e governança dos workloads OpenAI
 - Objetivo: manter uma autoridade única para identidade, configuração, execução observável e custo dos workloads OpenAI usados pelo produto, com operação administrativa segura e sem otimização autônoma.
-- Status: fundação e inventário vigentes; configuração operacional dinâmica e catálogo administrativo ativos; avaliação comparativa E21.3 pausada; visibilidade financeira preserva o total oficial e a série histórica congelada de Landing Pages. A pesquisa dinâmica permanece sem consumidor no fluxo de Landing Page.
+- Status: fundação, inventário, configuração operacional e catálogo administrativo vigentes; avaliação comparativa E21.3 pausada; E21.5 é a autoridade ativa do controle de custos programáticos, enquanto E21.4 preserva o total oficial e a série histórica congelada de Landing Pages. A pesquisa dinâmica permanece sem consumidor no fluxo de Landing Page.
 
 21.1 Fundação, normalização e leitura dos workloads OpenAI
 
@@ -2243,7 +2261,7 @@
 
 21.4.1 Objetivo e status
 - Objetivo: apresentar ao `platform_admin` o gasto oficial total da organização OpenAI e a série interna congelada dos antigos workloads de Landing Pages, com diferença explícita em Outros gastos / reconciliação.
-- Status: leitura implementada e operacional em Production. A Costs API é a autoridade do total atual; o histórico interno não recebe novos eventos após a retirada do write-side prospectivo.
+- Status: leitura implementada e operacional em Production. A Costs API é a autoridade do total atual; o histórico interno não recebe novos eventos após a retirada do write-side prospectivo. A transição E21.4.6 está concluída no repositório e no ambiente hospedado, com grants residuais de escrita encerrados e gates pós-apply aprovados.
 
 21.4.2 Registros do recorte
 - Banco:
@@ -2319,11 +2337,61 @@
 - Permanecem limites explícitos: a RPC ainda materializa, ordena e aplica offset; não existe snapshot transacional entre páginas; a validação hospedada não comprova volume arbitrário nem ganho de tempo SQL.
 - Classificação financeira ampla, outros workloads, câmbio, cobrança, créditos e reconstrução histórica permanecem fora do escopo vigente.
 
+21.4.6 Transição para histórico legado
+
+21.4.6.1 Objetivo e status
+- Objetivo: encerrar a escrita residual da série E21.4 e preservá-la como histórico legado somente leitura, com E21.5 vigente como controle ativo.
+- Status: concluída no repositório e no ambiente hospedado; a migration foi aplicada pelo fluxo canônico e os gates pós-apply confirmaram a série E21.4 como histórico legado somente leitura.
+
+21.4.6.2 Registros do recorte
+- Banco:
+  - Ajustados:
+    - `public.openai_lp_cost_events`
+    - `public.openai_lp_cost_coverage`
+    - `public.prevent_openai_lp_cost_mutation_v1`
+    - `public.append_openai_lp_cost_start_v1`
+    - `public.append_openai_lp_cost_terminal_v1`
+    - `public.register_openai_lp_cost_coverage_v1`
+- Repositório:
+  - Criados:
+    - `supabase/migrations/20260912143448_e21_4_6_freeze_openai_lp_cost_history.sql`
+    - `supabase/tests/e21_4_6_openai_lp_cost_history.test.sql`
+    - `supabase/snippets/e21_4_6_openai_lp_cost_history_verify.sql`
+  - Ajustados:
+    - `lib/openai-costs/validation-cases.ts`
+  - Excluídos:
+    - `supabase/tests/e21_4_4_openai_lp_cost_tracking.test.sql`
+    - `supabase/snippets/e21_4_4_openai_lp_cost_tracking_verify.sql`
+- Updates:
+  - Aplicados:
+    - `supa#40`
+- Referências:
+  - Plano aprovado: `docs/lousa-plano-base-e21-4-6.md` — seções 9–14.
+  - Matriz de transição: `docs/matriz-consolidacao-e21-4-6.md` — seções 2–5.
+  - Configuração operacional E21.5: `docs/platform-config.md` — seções 2.2 e 3.5.
+  - Contrato preservado do histórico: `docs/schema.md` — seções 1.36, 1.37 e 3.10.
+
+21.4.6.3 Implementação e limites
+- Status: concluída no repositório e aplicada no ambiente hospedado pelo fluxo canônico pós-merge.
+- Conteúdo:
+  - a migration forward-only retira do `service_role` INSERT, UPDATE, DELETE e TRUNCATE nas duas tabelas legadas e o EXECUTE das três RPCs de escrita/corte, preservando SELECT e a RPC de leitura;
+  - o teste e o snippet E21.4.6 substituem as provas operacionais antigas e verificam estrutura, RLS, zero policies, ACLs read-only, negativas de mutação e baseline hospedado;
+  - a validação de `lib/openai-costs/` impede a reintrodução de gate, produtor ou RPC de escrita E21.4 no runtime e mantém a leitura restrita ao adapter histórico;
+  - permanecem fora backfill, reprecificação, reclassificação retroativa, exclusão de linha, alteração do corte, nova UI, novo produtor e mudança na migration E21.4.4 aplicada.
+
+21.4.6.4 Gates externos
+- Status: concluídos; baseline antes/depois, apply canônico, snippet read-only, Security Controls e QA autenticado positivo/negativo aprovados.
+- Conteúdo:
+  - o baseline permaneceu idêntico antes e depois do apply, com oito eventos, uma linha de cobertura e corte `2026-08-29 21:55:36.827207+00`;
+  - o snippet aprovou estrutura, RLS sem policies, ACL de leitura exclusiva do `service_role` e ausência de acesso público ou client; o Security Controls não apontou WARN ou ERROR para as duas tabelas do recorte;
+  - o QA hospedado confirmou total oficial, controle ativo, histórico legado e reconciliação na mesma superfície para `platform_admin`; uma conta comum `viewer`, com acesso ao próprio tenant preservado, permaneceu bloqueada no Admin Dashboard;
+  - a Costs API continua autoridade do total, E21.5 continua autoridade ativa, E21.4 permanece histórico legado e `/admin/custos-openai` permanece a superfície financeira única.
+
 21.5 Controle ativo de custos OpenAI por workload e conta
 
 21.5.1 Objetivo e status
 - Objetivo: atribuir e reconciliar o custo do uso programático da OpenAI por universo, conta quando comprovável, workload, execução, operação, modelo e effort, preservando o total oficial como autoridade e a série E21.4 como histórico congelado.
-- Status: plano-base v2 aprovado tecnicamente; E21.5.3 e E21.5.4 implementadas no repositório e pendentes dos respectivos gates técnicos, merge humano, apply e ativação controlada.
+- Status: concluída e vigente como autoridade ativa do custo programático por workload e conta, preservando a Costs API como autoridade do total e a E21.4 como histórico congelado.
 
 21.5.2 Registros do recorte
 - Banco:
@@ -2361,15 +2429,15 @@
   - `docs/matriz-consolidacao-e21-5.md`
 
 21.5.3 Atribuição e evidência por execução
-- Status: implementada no repositório; pendente de gate técnico, merge humano, apply, configuração externa e validação hospedada.
+- Status: concluída e ativa nos ambientes comprovados pelo fluxo pós-merge.
 - Conteúdo:
   - criar ledger ativo separado de `openai_lp_*`, com execução funcional, operação cobrável, retry e replay idempotente;
   - exigir universo e contexto econômico explícitos, mantendo Cliente sem conta comprovável como não atribuído e sem heurística;
   - instrumentar os cinco workloads atuais por contrato financeiro comum, com recorder fail-open e ingresso assinado para `supabase_inspect` sem credencial mutável de banco;
-  - preservar RLS, grants mínimos, RPCs versionadas, transições terminais e gate desligado até o fluxo pós-merge.
+  - preservar RLS, grants mínimos, RPCs versionadas e transições terminais, com gates ativos somente nos ambientes comprovados pelo fluxo pós-merge.
 
 21.5.4 Cálculo e reconciliação de custos
-- Status: implementada no repositório; pendente de gate técnico, merge humano, apply e evidência hospedada.
+- Status: concluída e vigente, com leitura ativa final válida.
 - Conteúdo:
   - calcula cada operação somente com usage e unidades cobradas confirmadas, inclusive faixas curta/longa e Web Search, usando pricing temporal versionado e snapshot imutável;
   - mantém custo indisponível distinto de zero e impede subtotal parcial enganoso;
@@ -2377,12 +2445,12 @@
   - pagina por keyset e mantém filtros internos sem alterar semanticamente o total oficial ou a reconciliação global.
 
 21.5.5 Visão administrativa de custos
-- Status: implementada no repositório; gate técnico e QA local estático concluídos, com QA visual hospedado, merge humano, apply e evidências pós-apply pendentes.
+- Status: concluída e vigente; QA autenticado positivo e negativo aprovado no fluxo pós-merge.
 - Conteúdo:
   - evolui somente `/admin/custos-openai` para exibir total oficial, subtotal ativo calculável, histórico congelado, reconciliação, cobertura, não atribuídos, indisponibilidade, retries, modelo, effort e baseline opcional;
   - preserva consulta sob demanda e acesso exclusivo de `platform_admin`, com as três fontes lidas em paralelo e sem payload de negócio, prompt, resposta integral, PII ou secrets;
   - filtros de universo, conta e workload alteram somente o subtotal e os detalhes ativos, enquanto o total oficial e a reconciliação permanecem globais;
-  - componentes e validações focais cobrem teclado nativo, foco gerenciado e visível, nomes acessíveis, estados textuais e leiaute responsivo, sem alegar conformidade WCAG integral; a inspeção visual no Preview permanece no gate hospedado.
+  - componentes e validações focais cobrem teclado nativo, foco gerenciado e visível, nomes acessíveis, estados textuais e leiaute responsivo, sem alegar conformidade WCAG integral; a inspeção visual hospedada integra o aceite concluído.
 
 22. E22 — Retirada controlada de ativos históricos
 - Objetivo: reduzir superfícies, dados, documentos e infraestrutura sem consumidor vigente, após auditoria explícita de dependências e sem criar substitutos antecipados.

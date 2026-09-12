@@ -1,4 +1,6 @@
 import assert from "node:assert/strict";
+import { readdir, readFile } from "node:fs/promises";
+import { join, relative, resolve } from "node:path";
 import { runReadModelValidationCases } from "./read-model-validation-cases";
 
 import * as publicApi from "./index";
@@ -14,11 +16,117 @@ const period = Object.freeze({
   endTime: 1_787_712_000,
 });
 
+type RuntimeSource = Readonly<{
+  path: string;
+  contents: string;
+}>;
+
+const repositoryRoot = resolve(process.cwd());
+const runtimeRoots = ["app", "lib", "automations", "services"] as const;
+const validationFile = "lib/openai-costs/validation-cases.ts";
+const readModelAdapter = "lib/openai-costs/adapters/lpCostReadModelAdapter.ts";
+const readRpc = "read_openai_lp_cost_events_v1";
+
+const forbiddenLegacyProducerPatterns = [
+  /OPENAI_LP_COST_TRACKING_ENABLED/,
+  /append_openai_lp_cost_start_v1/,
+  /append_openai_lp_cost_terminal_v1/,
+  /register_openai_lp_cost_coverage_v1/,
+  /(?:create)?OpenAiLpCostTracker/,
+  /openai[-_]?lp[-_]?cost[-_]?tracker/i,
+] as const;
+
+function normalizeRepositoryPath(path: string) {
+  return path.replaceAll("\\", "/");
+}
+
+function isRuntimeProofPath(path: string) {
+  return path.split("/").some((segment) =>
+    /^(?:__tests__|tests?|specs?)$/i.test(segment)
+    || /(?:^|[-_.])(?:validation(?:-cases)?|tests?|specs?)(?:[-_.]|$)/i.test(segment));
+}
+
+function assertRuntimeCostHistoryIsReadOnly(sources: readonly RuntimeSource[]) {
+  for (const source of sources) {
+    for (const forbiddenPattern of forbiddenLegacyProducerPatterns) {
+      if (forbiddenPattern.test(source.contents)) {
+        throw new Error(`legacy OpenAI LP cost producer or gate found in ${source.path}`);
+      }
+    }
+
+    if (source.contents.includes(readRpc) && source.path !== readModelAdapter) {
+      throw new Error(`OpenAI LP cost read RPC used outside the read-model adapter: ${source.path}`);
+    }
+  }
+
+  const adapter = sources.find((source) => source.path === readModelAdapter);
+  assert.ok(adapter?.contents.includes(readRpc), "read-model adapter must retain the historical read RPC");
+}
+
+async function readRuntimeSources() {
+  const sources: RuntimeSource[] = [];
+
+  async function visit(directory: string): Promise<void> {
+    let entries;
+    try {
+      entries = await readdir(directory, { withFileTypes: true });
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === "ENOENT") return;
+      throw error;
+    }
+
+    for (const entry of entries) {
+      const absolutePath = join(directory, entry.name);
+      if (entry.isDirectory()) {
+        await visit(absolutePath);
+      } else if (entry.isFile() && /\.(?:[cm]?[jt]sx?)$/.test(entry.name)) {
+        const repositoryPath = normalizeRepositoryPath(relative(repositoryRoot, absolutePath));
+        if (repositoryPath === validationFile || isRuntimeProofPath(repositoryPath)) continue;
+        sources.push({
+          path: repositoryPath,
+          contents: await readFile(absolutePath, "utf8"),
+        });
+      }
+    }
+  }
+
+  for (const root of runtimeRoots) {
+    await visit(join(repositoryRoot, root));
+  }
+
+  return sources;
+}
+
 const cases = [
   {
     name: "public API exposes the official Costs reader",
     run: () => {
       assert.equal(typeof publicApi.readOfficialOpenAiCosts, "function");
+    },
+  },
+  {
+    name: "runtime keeps the legacy LP cost history read-only",
+    run: async () => {
+      const sources = await readRuntimeSources();
+      assertRuntimeCostHistoryIsReadOnly(sources);
+    },
+  },
+  {
+    name: "runtime history guard fails closed for a reintroduced producer gate",
+    run: () => {
+      assert.throws(
+        () => assertRuntimeCostHistoryIsReadOnly([
+          {
+            path: "app/api/reintroduced-producer.ts",
+            contents: "const enabled = process.env.OPENAI_LP_COST_TRACKING_ENABLED;",
+          },
+          {
+            path: readModelAdapter,
+            contents: readRpc,
+          },
+        ]),
+        /legacy OpenAI LP cost producer or gate/,
+      );
     },
   },
   {
