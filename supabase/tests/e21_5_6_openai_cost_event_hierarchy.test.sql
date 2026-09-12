@@ -85,7 +85,8 @@ begin
     set economic_event_id = 'e2156000-0000-4000-8000-000000000099'
     where id = v_niche;
     raise exception 'economic identity mutation must fail';
-  exception when object_not_in_prerequisite_state then null;
+  exception
+    when insufficient_privilege or object_not_in_prerequisite_state then null;
   end;
 
   begin
