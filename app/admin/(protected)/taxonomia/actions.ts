@@ -11,7 +11,6 @@ import { resolveInputCatalogEvaluationRuntimeReadiness } from "@/conversion-cont
 import {
   coordinateInputCatalogEvaluation,
   fingerprintInputCatalogEvaluationContextIdentity,
-  fingerprintInputCatalogEvaluationOutput,
   normalizeFactualReviewCatalogChangeDecision,
   type FactualReviewDecisionLayer,
   revalidateInputCatalogEvaluationContext,
@@ -21,15 +20,15 @@ import {
 import { CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION } from "@/conversion-content/landing-page/input-catalog";
 import {
   loadAdminInputCatalogDraftEvaluationContext,
-  recordAdminInputCatalogDraftHumanDecision,
 } from "@/lib/admin/adapters/adminInputCatalogLifecycleAdapter";
 import {
-  appendAdminTaxonFactualEvaluationEvent,
-  closeAdminTaxonFactualReviewWithoutChangeForCurrentCoverage,
+  closeAdminTaxonFactualReviewWithoutEvaluation,
+  finalizeAdminTaxonFactualReview,
   loadAdminTaxonFactualEvaluationEvidence,
   loadLatestAdminTaxonFactualReview,
   loadOpenAdminTaxonFactualReview,
   openAdminTaxonFactualReview,
+  persistAdminTaxonFactualEvaluation,
 } from "@/lib/admin/adapters/adminTaxonFactualReviewAdapter";
 import {
   addAdminTaxonAlias,
@@ -60,16 +59,8 @@ export type FactualReviewLifecycleActionState = {
 };
 
 export type InputCatalogEvaluationReference = Readonly<{
-  taxonId?: string;
-  reviewId?: string;
-  reviewRevision?: number;
-  reviewContextFingerprint?: string;
-  evaluationContextFingerprint?: string;
-  recommendationEventId?: string;
-  outputFingerprint?: string;
-  source?: "published" | "draft";
-  draftRevision?: number;
-  draftContentFingerprint?: string;
+  reviewId: string;
+  reviewRevision: number;
 }>;
 
 export type InputCatalogEvaluationActionResult =
@@ -91,8 +82,8 @@ export async function evaluateInputCatalogAction(input: Readonly<{
   focalHypothesis: string | null;
   feedback: Readonly<{
     text: string;
-    previousOutput: InputCatalogEvaluationOutput;
-    reference: InputCatalogEvaluationReference;
+    reviewId: string;
+    expectedRevision: number;
   }> | null;
   draftRevision?: number;
 }>): Promise<InputCatalogEvaluationActionResult> {
@@ -108,7 +99,6 @@ export async function evaluateInputCatalogAction(input: Readonly<{
   }
 
   const source = input.draftRevision === undefined ? "published" : "draft";
-  let draftContentFingerprint: string | undefined;
   const baseReconstructContext: typeof reconstructCanonicalInputCatalogEvaluationContext =
     source === "published"
       ? reconstructCanonicalInputCatalogEvaluationContext
@@ -129,7 +119,6 @@ export async function evaluateInputCatalogAction(input: Readonly<{
               },
             };
           }
-          draftContentFingerprint = draft.value.contentFingerprint;
           return { ok: true as const, value: draft.value.context };
         };
   let cachedReconstruction:
@@ -150,40 +139,17 @@ export async function evaluateInputCatalogAction(input: Readonly<{
 
   let feedback: Parameters<typeof coordinateInputCatalogEvaluation>[0]["feedback"] = null;
   if (input.feedback) {
-    const previousEventId = input.feedback.reference.recommendationEventId;
-    const previousReviewId = input.feedback.reference.reviewId;
-    const previousOutputFingerprint = input.feedback.reference.outputFingerprint;
-    const previousEvaluationContextFingerprint =
-      input.feedback.reference.evaluationContextFingerprint;
-    if (
-      !previousEventId ||
-      !previousReviewId ||
-      !previousOutputFingerprint ||
-      !previousEvaluationContextFingerprint
-    ) {
-      return {
-        ok: false,
-        code: "CONTEXT_STALE",
-        message: "A referência factual da avaliação anterior está incompleta.",
-      };
-    }
     const previousPersisted = await loadAdminTaxonFactualEvaluationEvidence({
-      reviewId: previousReviewId,
-      eventId: previousEventId,
-      outputFingerprint: previousOutputFingerprint,
-      evaluationContextFingerprint: previousEvaluationContextFingerprint,
-      output: input.feedback.previousOutput,
+      reviewId: input.feedback.reviewId,
+      expectedRevision: input.feedback.expectedRevision,
     });
     const previousEvidence = previousPersisted.ok ? previousPersisted.evidence : null;
     if (
       !previousEvidence ||
-      previousEvidence.taxonId !== input.taxonId ||
+      previousEvidence.review.taxonId !== input.taxonId ||
       previousEvidence.inputCatalogVersion !== input.inputCatalogVersion ||
-      (input.feedback.reference.source ?? "published") !== source ||
-      (source === "draft" && input.feedback.reference.draftRevision !== input.draftRevision) ||
-      previousEvidence.status !== input.feedback.previousOutput.status ||
-      fingerprintInputCatalogEvaluationOutput(input.feedback.previousOutput) !==
-        previousEvidence.outputFingerprint
+      previousEvidence.source !== source ||
+      (source === "draft" && previousEvidence.draftRevision !== input.draftRevision)
     ) {
       return {
         ok: false,
@@ -192,7 +158,7 @@ export async function evaluateInputCatalogAction(input: Readonly<{
       };
     }
     const previousContext = await reconstructContext({
-      taxonId: previousEvidence.taxonId,
+      taxonId: previousEvidence.review.taxonId,
       inputCatalogVersion: previousEvidence.inputCatalogVersion,
       mode: input.mode,
     });
@@ -211,7 +177,7 @@ export async function evaluateInputCatalogAction(input: Readonly<{
     }
     feedback = {
       text: input.feedback.text,
-      previousOutput: input.feedback.previousOutput,
+      previousOutput: previousEvidence.output,
       previousContextIdentity: previousContext.value.identity,
     };
   }
@@ -237,26 +203,6 @@ export async function evaluateInputCatalogAction(input: Readonly<{
   if (Date.now() >= evaluationDeadlineAtMs) {
     return { ok: false, code: "PROVIDER_FAILURE", message: "O prazo total da avaliação expirou." };
   }
-  const requestedEvent = await appendAdminTaxonFactualEvaluationEvent({
-    review: factualReview.review,
-    operationId: randomUUID(),
-    actorUserId: gate.actorUserId,
-    eventKind: "evaluation_requested",
-    sourceStrategy: requestedContext.value.identity.sourceStrategy,
-    contentFingerprint: null,
-    evaluationContextFingerprint: requestedEvaluationContextFingerprint,
-    deadlineAtMs: evaluationDeadlineAtMs,
-    payload: {
-      inputCatalogVersion: input.inputCatalogVersion,
-      mode: input.mode,
-      sourceState: requestedContext.value.identity.sourceState,
-      schemaVersion: 2,
-    },
-  });
-  if (!requestedEvent.ok) {
-    return { ok: false, code: "FACTUAL_EVENT_WRITE_FAILED", message: requestedEvent.message };
-  }
-
   const requestId = randomUUID();
   const result = await coordinateInputCatalogEvaluation(
     {
@@ -284,87 +230,37 @@ export async function evaluateInputCatalogAction(input: Readonly<{
     },
   );
 
-  if (!result.ok) {
-    if (Date.now() >= evaluationDeadlineAtMs) {
-      return { ok: false, code: result.error.code, message: result.error.message };
-    }
-    const inconclusiveEvent = await appendAdminTaxonFactualEvaluationEvent({
-      review: factualReview.review,
-      operationId: randomUUID(),
-      actorUserId: gate.actorUserId,
-      eventKind: "evaluation_inconclusive",
-      sourceStrategy: requestedContext.value.identity.sourceStrategy,
-      contentFingerprint: null,
-      evaluationContextFingerprint: requestedEvaluationContextFingerprint,
-      deadlineAtMs: evaluationDeadlineAtMs,
-      payload: {
-        requestedEventId: requestedEvent.eventId,
-        inputCatalogVersion: input.inputCatalogVersion,
-        mode: input.mode,
-        sourceState: requestedContext.value.identity.sourceState,
-        errorCode: result.error.code,
-      },
-    });
-    if (!inconclusiveEvent.ok) {
-      return { ok: false, code: "FACTUAL_EVENT_WRITE_FAILED", message: inconclusiveEvent.message };
-    }
-    return { ok: false, code: result.error.code, message: result.error.message };
-  }
+  if (!result.ok) return { ok: false, code: result.error.code, message: result.error.message };
   const contextFingerprint = result.value.evaluationContextFingerprint;
-  const outputFingerprint = fingerprintInputCatalogEvaluationOutput(result.value.output);
   if (Date.now() >= evaluationDeadlineAtMs) {
     return { ok: false, code: "PROVIDER_FAILURE", message: "O prazo total da avaliação expirou." };
   }
-  const completedEvent = await appendAdminTaxonFactualEvaluationEvent({
+  const persisted = await persistAdminTaxonFactualEvaluation({
     review: factualReview.review,
-    operationId: randomUUID(),
     actorUserId: gate.actorUserId,
-    eventKind: "evaluation_completed",
-    sourceStrategy: result.value.contextIdentity.sourceStrategy,
-    contentFingerprint: outputFingerprint,
+    mode: input.mode,
+    source,
+    draftRevision: input.draftRevision ?? null,
+    inputCatalogVersion: input.inputCatalogVersion,
     evaluationContextFingerprint: contextFingerprint,
-    deadlineAtMs: evaluationDeadlineAtMs,
-    payload: {
-      requestedEventId: requestedEvent.eventId,
-      inputCatalogVersion: input.inputCatalogVersion,
-      mode: input.mode,
-      sourceState: result.value.contextIdentity.sourceState,
-      outputFingerprint,
-      candidateCount: result.value.output.candidates.length,
-      output: result.value.output,
-      webSearchCallCount: result.value.sourceEvidence.webSearchCallCount,
-      webSearchSources: result.value.sourceEvidence.webSearchSources,
-      materialTextUrlProjection: result.value.sourceEvidence.materialTextUrlProjection,
-    },
+    output: result.value.output,
   });
-  if (!completedEvent.ok) {
-    return { ok: false, code: "FACTUAL_EVENT_WRITE_FAILED", message: completedEvent.message };
+  if (!persisted.ok) {
+    return { ok: false, code: "FACTUAL_REVIEW_WRITE_FAILED", message: persisted.message };
   }
   return {
     ok: true,
     output: result.value.output,
     reference: {
-      taxonId: result.value.contextIdentity.taxonId,
       reviewId: factualReview.review.id,
-      reviewRevision: factualReview.review.revision,
-      reviewContextFingerprint: factualReview.review.contextFingerprint,
-      evaluationContextFingerprint: contextFingerprint,
-      recommendationEventId: completedEvent.eventId,
-      outputFingerprint,
-      source,
-      ...(source === "draft"
-        ? {
-            draftRevision: input.draftRevision,
-            draftContentFingerprint,
-          }
-        : {}),
+      reviewRevision: persisted.reviewRevision,
     },
   };
 }
 
 export async function recordInputCatalogHumanDecisionAction(input: Readonly<{
-  reference: InputCatalogEvaluationReference;
-  output: InputCatalogEvaluationOutput;
+  reviewId: string;
+  expectedRevision: number;
   acceptedCandidates: readonly Readonly<{ index: number; layer: FactualReviewDecisionLayer }>[];
   ownCandidate: Readonly<{ factualNeed: string; layer: FactualReviewDecisionLayer }> | null;
 }>): Promise<InputCatalogHumanDecisionActionResult> {
@@ -372,7 +268,26 @@ export async function recordInputCatalogHumanDecisionAction(input: Readonly<{
   if (!gate.allowed) {
     return { ok: false, stale: false, message: "Acesso administrativo não autorizado." };
   }
-  const candidateCount = input.output.candidates.length;
+  const persisted = await loadAdminTaxonFactualEvaluationEvidence({
+    reviewId: input.reviewId,
+    expectedRevision: input.expectedRevision,
+  });
+  if (!persisted.ok) return { ok: false, stale: true, message: persisted.message };
+  const evidence = persisted.evidence;
+  if (evidence.output.status === "inconclusive") {
+    return {
+      ok: false,
+      stale: false,
+      message: "Uma avaliação inconclusiva não autoriza decisão; refine a avaliação ou use o caminho humano sem IA.",
+    };
+  }
+  const candidateCount = evidence.output.candidates.length;
+  if (input.acceptedCandidates.some(({ index }) => {
+    const conclusion = evidence.output.candidates[index]?.conclusion;
+    return conclusion !== "refine_existing_field" && conclusion !== "possible_new_field";
+  })) {
+    return { ok: false, stale: false, message: "A decisão tenta aceitar um candidato não acionável." };
+  }
   const acceptedIndexes = new Set(input.acceptedCandidates.map((candidate) => candidate.index));
   const normalized = normalizeFactualReviewCatalogChangeDecision({
     recommendationCandidateCount: candidateCount,
@@ -387,47 +302,34 @@ export async function recordInputCatalogHumanDecisionAction(input: Readonly<{
     ownCandidate: input.ownCandidate,
   });
   if (!normalized.ok) return { ok: false, stale: false, message: normalized.error.message };
-  const { reviewId, recommendationEventId, outputFingerprint, evaluationContextFingerprint } = input.reference;
-  if (!reviewId || !recommendationEventId || !outputFingerprint || !evaluationContextFingerprint) {
-    return { ok: false, stale: true, message: "A referência factual persistida está incompleta." };
-  }
-  const persisted = await loadAdminTaxonFactualEvaluationEvidence({
-    reviewId,
-    eventId: recommendationEventId,
-    outputFingerprint,
-    evaluationContextFingerprint,
-    output: input.output,
-  });
-  if (!persisted.ok) return { ok: false, stale: true, message: persisted.message };
-  const evidence = persisted.evidence;
-  const recommendationBinding = candidateCount > 0
-    ? {
-        recommendationEventId,
-        recommendationOutputFingerprint: outputFingerprint,
-        recommendationEvaluationContextFingerprint: evaluationContextFingerprint,
-      }
-    : {};
-
-  if ((input.reference.source ?? "published") === "draft") {
-    const expectedRevision = Number(input.reference.draftRevision);
-    const expectedContentFingerprint = input.reference.draftContentFingerprint;
-    if (!Number.isSafeInteger(expectedRevision) || expectedRevision <= 0 || !expectedContentFingerprint) {
-      return { ok: false, stale: true, message: "A referência do draft é inválida." };
+  if (evidence.source === "draft") {
+    const draftRevision = evidence.draftRevision;
+    if (!draftRevision) return { ok: false, stale: true, message: "A referência do draft é inválida." };
+    const draft = await loadAdminInputCatalogDraftEvaluationContext({
+      expectedRevision: draftRevision,
+      taxonId: evidence.review.taxonId,
+      mode: evidence.output.mode,
+    });
+    if (!draft.ok) return { ok: false, stale: true, message: draft.message };
+    const contextFingerprint = fingerprintInputCatalogEvaluationContextIdentity(draft.value.context.identity);
+    if (contextFingerprint !== evidence.evaluationContextFingerprint) {
+      return { ok: false, stale: true, message: "O draft ou suas fontes mudaram desde a avaliação." };
     }
-    const recorded = await recordAdminInputCatalogDraftHumanDecision({
+    const recorded = await finalizeAdminTaxonFactualReview({
+      reviewId: input.reviewId,
+      expectedRevision: input.expectedRevision,
       actorUserId: gate.actorUserId,
-      expectedRevision,
-      taxonId: evidence.taxonId,
-      expectedContentFingerprint,
-      expectedEvaluationContextFingerprint: evidence.evaluationContextFingerprint,
       decision: normalized.value,
-      ...recommendationBinding,
-      mode: input.output.mode,
+      draft: {
+        revision: draftRevision,
+        contentFingerprint: draft.value.contentFingerprint,
+        contextFingerprint,
+      },
     });
     if (!recorded.ok) return { ok: false, stale: true, message: recorded.message };
     revalidatePath("/admin/estrutura-lp");
     revalidatePath("/admin/taxonomia");
-    revalidatePath(`/admin/taxonomia/${evidence.taxonId}`);
+    revalidatePath(`/admin/taxonomia/${evidence.review.taxonId}`);
     return { ok: true, decisionKind: recorded.decisionKind, reviewedVersion: recorded.reviewedVersion };
   }
 
@@ -441,13 +343,10 @@ export async function recordInputCatalogHumanDecisionAction(input: Readonly<{
       message: "Avaliações de versões históricas são somente leitura; avalie a versão atual antes de registrar uma decisão.",
     };
   }
-  if (!input.reference.reviewContextFingerprint || !Number.isSafeInteger(input.reference.reviewRevision)) {
-    return { ok: false, stale: true, message: "A referência da sessão factual é inválida." };
-  }
   const current = await reconstructCanonicalInputCatalogEvaluationContext({
-    taxonId: evidence.taxonId,
+    taxonId: evidence.review.taxonId,
     inputCatalogVersion: evidence.inputCatalogVersion,
-    mode: input.output.mode,
+    mode: evidence.output.mode,
   });
   if (
     !current.ok ||
@@ -455,20 +354,17 @@ export async function recordInputCatalogHumanDecisionAction(input: Readonly<{
   ) {
     return { ok: false, stale: true, message: current.ok ? "As fontes mudaram desde a avaliação." : current.error.message };
   }
-  const recorded = await closeAdminTaxonFactualReviewWithoutChangeForCurrentCoverage({
-    reviewId,
-    operationId: randomUUID(),
+  const recorded = await finalizeAdminTaxonFactualReview({
+    reviewId: input.reviewId,
+    expectedRevision: input.expectedRevision,
     actorUserId: gate.actorUserId,
-    taxonId: evidence.taxonId,
-    expectedRevision: Number(input.reference.reviewRevision),
-    expectedContextFingerprint: input.reference.reviewContextFingerprint,
-    ...recommendationBinding,
-    humanDecision: normalized.value,
+    decision: normalized.value,
+    draft: null,
   });
   if (!recorded.ok) return { ok: false, stale: true, message: recorded.message };
   revalidatePath("/admin/taxonomia");
-  revalidatePath(`/admin/taxonomia/${evidence.taxonId}`);
-  return { ok: true, decisionKind: "no_change", reviewedVersion: recorded.value.coverage.inputCatalogVersion };
+  revalidatePath(`/admin/taxonomia/${evidence.review.taxonId}`);
+  return { ok: true, decisionKind: "no_change", reviewedVersion: recorded.reviewedVersion };
 }
 
 export async function createTaxonAction(
@@ -556,7 +452,6 @@ export async function openFactualReviewAction(
   const taxonId = String(formData.get("taxonId") ?? "");
   const result = await openAdminTaxonFactualReview({
     taxonId,
-    operationId: randomUUID(),
     actorUserId: gate.actorUserId,
   });
   if (!result.ok) return { error: result.message, message: null, revision };
@@ -577,7 +472,6 @@ export async function closeFactualReviewWithoutChangeAction(
   const taxonId = String(formData.get("taxonId") ?? "");
   const reviewId = String(formData.get("reviewId") ?? "");
   const expectedRevision = Number(formData.get("expectedRevision"));
-  const expectedContextFingerprint = String(formData.get("expectedContextFingerprint") ?? "");
   const currentResult = await loadLatestAdminTaxonFactualReview(taxonId);
   if (!currentResult.ok) {
     return { error: currentResult.message, message: null, revision };
@@ -588,8 +482,7 @@ export async function closeFactualReviewWithoutChangeAction(
   }
   if (
     current.id !== reviewId ||
-    current.revision !== expectedRevision ||
-    current.contextFingerprint !== expectedContextFingerprint
+    current.revision !== expectedRevision
   ) {
     return {
       error: "A sessão factual mudou desde a renderização. Recarregue antes de fechar.",
@@ -597,20 +490,17 @@ export async function closeFactualReviewWithoutChangeAction(
       revision,
     };
   }
-  const result = await closeAdminTaxonFactualReviewWithoutChangeForCurrentCoverage({
+  const result = await closeAdminTaxonFactualReviewWithoutEvaluation({
     reviewId,
-    operationId: randomUUID(),
     actorUserId: gate.actorUserId,
-    taxonId,
     expectedRevision,
-    expectedContextFingerprint,
   });
   if (!result.ok) return { error: result.message, message: null, revision };
   revalidatePath("/admin/taxonomia");
   revalidatePath(`/admin/taxonomia/${taxonId}`);
   return {
     error: null,
-    message: result.value.review.kind === "release"
+    message: current.kind === "release"
       ? "Liberação factual concluída por decisão humana; o taxon foi ativado pelo lifecycle."
       : "Revisão factual fechada sem mudança no catálogo.",
     revision,

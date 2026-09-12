@@ -55,7 +55,7 @@ export async function readCompleteLifecycleContext(
           .from("business_taxon_factual_reviews")
           .select("id,taxon_id,kind,status", { count: "exact" })
           .eq("kind", "release")
-          .in("status", ["open", "awaiting_catalog_publication"])
+          .eq("status", "open")
           .order("id", { ascending: true })
           .range(offset, offset + limit - 1);
         if (error || !Array.isArray(data) || count === null || data.length > limit) {
@@ -84,7 +84,7 @@ export async function readCompleteLifecycleContext(
       typeof raw.id !== "string" ||
       typeof raw.taxon_id !== "string" ||
       raw.kind !== "release" ||
-      (raw.status !== "open" && raw.status !== "awaiting_catalog_publication") ||
+      raw.status !== "open" ||
       unclosedReleaseTaxonIds.includes(raw.taxon_id) ||
       taxonsById.get(raw.taxon_id)?.identity.isActive !== false
     ) {

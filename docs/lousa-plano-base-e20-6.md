@@ -1,8 +1,8 @@
-# Plano-base V2 — E20.6 Auditoria, liberação e revisão factual de taxons
+# Plano-base V2 simplificada — E20.6 Auditoria, liberação e revisão factual de taxons
 
 ## 1. Estado, fonte e referências imutáveis
 
-- Estado: V2 técnica candidata; aguarda o gate do Analista antes do checkpoint `plan-v2-approved` e da implementação.
+- Estado: implementação repo-side em revalidação contra a V1 funcional congelada; merge e gates pós-merge suspensos.
 - Classificação de execução: Complexa.
 - Supervisão: Autônomo.
 - Caso macro: `E20`.
@@ -58,7 +58,7 @@
 - `selectedEndCustomerResearchAdapter.ts` continuará limitado à preparação operacional que realmente exige pesquisa ativa; não absorverá auditoria administrativa.
 - `inputCatalogEvaluationContextAdapter.ts` reconstruirá a identidade canônica pela estratégia autorizada e aceitará pesquisa ausente apenas no fallback Web Search.
 - `inputCatalogEvaluationOpenAiAdapter.ts` continuará responsável pelo mesmo workload e incorporará política Web Search, validação de fontes e output v2; `openAiResponsesAdapter.ts` permanecerá transporte compartilhado neutro.
-- `adminInputCatalogLifecycleAdapter.ts` continuará proprietário do draft/publicação E20.2 e consumirá apenas decisões autenticadas vinculadas a sessão, versão, revisão e fingerprints.
+- `adminInputCatalogLifecycleAdapter.ts` continuará proprietário do draft/publicação E20.2 e consumirá apenas decisões autenticadas vinculadas a sessão, versão, revisão e fingerprints materiais do contexto e do draft.
 
 ### 4.2 Autoridades
 
@@ -66,8 +66,8 @@
 - `business_taxons.reviewed_input_catalog_version` é a última versão factual válida; estado candidato nunca o substitui.
 - O registry E20.2 implantado e `CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION` permanecem autoridade das versões publicadas e da versão atual.
 - `landing_page_input_catalog_drafts` permanece o singleton mutável, administrativo e não operacional do próximo draft.
-- `business_taxon_factual_reviews` é a autoridade do estado do lifecycle factual e `business_taxon_factual_review_events` é a autoridade append-only das avaliações e decisões humanas. `landing_page_input_catalog_drafts.taxon_review_evidence` deixa de aceitar escrita independente e passa a ser somente projeção derivada dessas decisões para o draft exato; não existe segunda autoridade factual.
-- As novas sessões/eventos não substituem o registry nem tornam candidato um field.
+- `business_taxon_factual_reviews` é a única autoridade persistida do lifecycle factual: cada linha reúne baseline, última recomendação e decisão final. `landing_page_input_catalog_drafts.taxon_review_evidence` permanece somente a projeção da decisão fechada para o draft exato.
+- As revisões não substituem o registry nem tornam candidato um field.
 - Identidade, cadeia, versão, fonte, validade, impacto, autorização, persistência, publicação e ativação são determinísticos.
 - A IA é consultiva e limitada a significado, cobertura, refinamento e possíveis gaps.
 
@@ -82,40 +82,34 @@
 
 ### 5.2 `business_taxon_factual_reviews`
 
-- Criar tabela service-only com `id uuid`, `taxon_id uuid`, `kind release | revision`, `status open | awaiting_catalog_publication | closed_without_change | closed_published`, `baseline_is_active`, `baseline_reviewed_input_catalog_version`, `target_input_catalog_version`, `draft_revision`, `draft_content_fingerprint`, `draft_context_fingerprint`, `context_fingerprint`, `revision bigint`, `opened_operation_id uuid`, `opened_by`, `closed_by`, `opened_at`, `closed_at`, `created_at` e `updated_at`.
-- `kind` e `status` usam checks fechados; versões, revisão e `draft_revision` são positivas quando presentes; fingerprints são SHA-256 hexadecimais; `baseline_is_active`, versão baseline, status e pares de fechamento são coerentes. A referência completa ao draft é toda nula em `open | closed_without_change` e toda presente em `awaiting_catalog_publication | closed_published`.
+- Criar uma única tabela service-only com `kind release | revision`, `status open | closed`, `outcome no_change | catalog_change | invalidated`, baseline de atividade/pesquisa E20.5/versão factual, snapshot da cadeia, contexto, revisão otimista, última avaliação estruturada, decisão humana, atores e instantes.
+- A avaliação registra fonte publicada ou draft, modo, versão, contexto e output somente após resultado válido. O output integral na própria revisão é a autoridade; não existe fingerprint redundante dele. Falha ou timeout do provider não grava transição ou marcador intermediário.
 - FK de taxon usa `ON UPDATE CASCADE ON DELETE RESTRICT`; atores referenciam `auth.users` com `ON UPDATE CASCADE ON DELETE RESTRICT`.
-- `opened_operation_id` é único e torna a abertura idempotente: repetição semanticamente idêntica retorna a sessão existente; reutilização com outro taxon/kind/contexto falha fechada.
-- Índice único parcial garante no máximo uma sessão não encerrada por taxon.
+- Índice único parcial garante no máximo uma revisão aberta por taxon. Trigger dedicado rejeita qualquer UPDATE ou DELETE depois do fechamento.
 
-### 5.3 `business_taxon_factual_review_events`
+### 5.3 Decisão e evidência do draft
 
-- Criar tabela append-only com `id uuid`, `review_id uuid`, `operation_id uuid`, sequência monotônica por sessão, `event_kind`, `source_strategy`, `decision_kind`, `payload_json`, `context_fingerprint`, `content_fingerprint`, `actor_user_id` e `created_at`.
-- `event_kind` aceita somente `opened | evaluation_requested | evaluation_completed | evaluation_inconclusive | decision_recorded | draft_linked | publication_authorized | draft_invalidated | closed_without_change | reconciled_published`; `source_strategy` aceita somente `e20_5 | web_search_fallback | web_search_focal`; `decision_kind` aceita somente `no_change | catalog_change`.
-- `source_strategy` é obrigatório apenas em eventos de avaliação; `decision_kind` é obrigatório apenas em `decision_recorded | publication_authorized`; fingerprints SHA-256 são exigidos nos eventos que registram output, decisão, vínculo ou reconciliação e proibidos onde não há conteúdo associado. `payload_json` é `jsonb not null default '{}'::jsonb` e sempre objeto.
-- `review_id` referencia a sessão com `ON UPDATE CASCADE ON DELETE RESTRICT`; `actor_user_id` referencia `auth.users` com `ON UPDATE CASCADE ON DELETE RESTRICT`; `sequence_number` é positivo e `created_at` é não nulo com default `now()`.
-- `payload_json` aceita somente objeto e preserva output estruturado validado, referências Web necessárias, candidatos aceitos/rejeitados, candidato próprio, camada e metadados de decisão; não armazena prompt, pesquisa integral, conteúdo web, secret, Base, Oferta, tarefa, conta ou PII.
-- Trigger dedicado rejeita `UPDATE` e `DELETE`; unicidade `(review_id, sequence_number)` preserva ordenação, e `(review_id, operation_id)` torna cada comando idempotente. Retry com o mesmo `operation_id` e mesmo fingerprint retorna o evento; divergência falha fechada.
-- As duas tabelas não participam do Trigger Hub: a residência de eventos já é a trilha factual competente, e triggers dedicados mantêm `updated_at` da sessão e a imutabilidade dos eventos sem duplicar payload no hub genérico.
+- O browser envia somente `reviewId`, revisão esperada, índices/camadas escolhidos e candidato próprio opcional; output, candidatos, contexto, versão e identidade do draft são recarregados e validados no servidor.
+- A decisão final fica na mesma linha factual fechada. Candidato próprio recebe origem humana explícita; recomendação continua separada da decisão.
+- Em draft, `taxon_review_evidence` contém `review_id`, `review_revision`, `draft_revision`, `content_fingerprint` e `context_fingerprint`, inclusive quando a decisão for `no_change`.
+- Não criar tabela de eventos, tabela de invalidações, recibos JSON ou token/HMAC decisório derivado de `OPENAI_API_KEY`.
 
 ### 5.4 RPCs e atomicidade
 
-- Criar RPCs versionadas para abrir sessão, anexar evento/decisão, fechar sem mudança, autorizar publicação e reconciliar publicação implantada.
-- Todas usam `SECURITY INVOKER`, `SET search_path = public, pg_catalog`, nomes schema-qualified, locks das linhas participantes, ator/estado esperados e token de revisão otimista.
+- Usar RPC somente nas três fronteiras multi-write: finalizar decisão, atualizar taxonomia com invalidação do subtree e reconciliar publicação implantada.
+- As três usam `SECURITY INVOKER`, `SET search_path = public, pg_catalog`, nomes schema-qualified, locks das linhas participantes e revisão otimista.
 - Fechamento sem mudança de uma liberação grava a versão atual revisada e ativa o taxon na mesma transação; fechamento de revisão preserva atividade e atualiza o marcador apenas quando a decisão autorizar a versão atual.
-- Autorização com mudança vincula sessão, `target_version`, revisão do draft, fingerprint do conteúdo e fingerprint do contexto; não ativa nem altera o marcador.
-- Registrar decisão com mudança anexa primeiro o evento autoritativo e atualiza, na mesma transação, `taxon_review_evidence` como mapa derivado por `taxon_id`, contendo `review_id`, `decision_event_id`, `draft_revision`, `content_fingerprint` e `context_fingerprint`. Nenhum adapter pode gravar essa projeção fora da RPC.
-- Qualquer edição do draft trava o singleton e todas as sessões vinculadas em ordem estável, limpa a projeção inteira, registra `draft_invalidated` e retorna todas as sessões afetadas para `open`; nova autorização exige decisões válidas para a nova revisão e os novos fingerprints.
-- A preparação da publicação só passa quando a projeção e os eventos autoritativos cobrem todos os taxons afetados pelo draft exato; ausência, duplicidade ou decisão stale impede handoff parcial.
-- Reconciliação pós-deploy trava o singleton e todas as sessões cobertas em ordem estável, comprova registry/versão/revisão/fingerprints, atualiza todos os marcadores e ativa somente sessões `release` autorizadas, encerra todas as sessões e exclui o singleton na mesma transação. Não existe reconciliação parcial por taxon.
+- Finalizar decisão sobre draft fecha a revisão e grava a evidência exata na mesma transação, sem ativar nem alterar marcador. Edição posterior do draft limpa a projeção com update otimista; linhas fechadas permanecem histórico imutável.
+- Alteração material de identidade ou inativação de ancestral fecha revisões abertas afetadas como `invalidated`, limpa seus marcadores e atualiza o taxon raiz na mesma transação.
+- A preparação da publicação é update otimista de uma linha após validação server-side da coleção integral. Reconciliação pós-deploy comprova registry, revisão, conteúdo, contexto e evidências fechadas, atualiza marcadores, ativa somente `release` e exclui o singleton na mesma transação.
 - Staleness, conflito, publicação ausente ou qualquer falha produzem rollback integral e preservam estado anterior.
 
 ### 5.5 ACL e inspeção
 
-- Habilitar RLS nas duas tabelas, manter zero policies públicas e revogar todos os grants de `public`, `anon`, `authenticated` e `ai_readonly` quando existir.
-- `service_role` recebe somente privilégios necessários; eventos não recebem `UPDATE`, `DELETE` ou `TRUNCATE`.
+- Habilitar RLS na tabela factual, manter zero policies públicas e revogar todos os grants de `public`, `anon`, `authenticated` e `ai_readonly` quando existir.
+- `service_role` recebe somente `SELECT`, `INSERT` e `UPDATE`; linhas fechadas são protegidas pelo trigger mesmo sob privilégio superior.
 - Revogar `EXECUTE` público das RPCs e conceder somente a `service_role`.
-- Criar teste SQL transacional e snippet read-only cobrindo objetos, constraints, índices, RLS, policies, ACL, triggers, RPCs, append-only, stale token, rollback e impossibilidade de ativação antecipada.
+- Criar teste SQL transacional e snippet read-only cobrindo objetos, constraints, índices, RLS, policies, ACL, triggers, as três RPCs, imutabilidade de revisões fechadas, revisão stale, rollback e impossibilidade de ativação antecipada.
 - Os testes cobrem ainda vocabulários fechados, nulabilidade, FKs, idempotência, projeção derivada, múltiplos taxons no mesmo draft, invalidação global e reconciliação atômica sem publicação/ativação parcial.
 - Após apply, inspecionar Security Controls apenas para objetos novos/alterados. INFO de RLS sem policy é aceitável quando consistente com a residência service-only; alerta incompatível bloqueia encerramento.
 - Não criar view. Se evidência durante implementação provar necessidade indispensável, voltar ao planejamento; qualquer view autorizada exigiria `security_invoker=true` e residência no Schema.
@@ -137,7 +131,7 @@
 - Separar recomendação, decisão, autorização, publicação e ativação em estados e ações diferentes.
 - O humano pode rejeitar todos, aceitar alguns ou todos os candidatos e incluir candidato próprio; cada candidato aceito exige camada explícita `universal | segment | niche | ultra_niche` e vínculo ao contexto autenticado.
 - Recomendação de IA nunca cria, altera, publica ou inativa field. O `platform_admin` pode rejeitar todos, aceitar alguns ou todos os candidatos e incluir candidato próprio, sempre escolhendo explicitamente a camada. A mutação publica primeiro uma versão imutável E20.2, valida as transições e somente depois revalida autorização, taxon, pesquisa, versão, fingerprints e decisão autenticada para ativar. Qualquer falha preserva a versão e a disponibilidade anteriores.
-- Decisão sem mudança fecha a sessão; decisão com mudança cria ou vincula o draft E20.2 e move a sessão para `awaiting_catalog_publication`.
+- Toda decisão fecha a revisão. Quando houver draft, a decisão fechada é projetada no draft exato e aguarda publicação sem estado intermediário na linha factual.
 - A decisão autenticada persiste candidatos aceitos/rejeitados, candidato próprio e camada, mas não produz definição executável de field.
 - Critérios: seleção zero/parcial/total, candidato próprio, camada, autorização única, conflito/stale, publicação antes de ativação e rollback integral.
 
@@ -191,11 +185,11 @@
 
 ## 7. Segurança, observabilidade, custo e manutenção
 
-- Toda ação reautoriza `platform_admin`, deriva ator no servidor, usa DTO mínimo e revalida taxon, cadeia, fonte, versão, estado, revisão e fingerprints antes da mutação.
+- Toda ação reautoriza `platform_admin`, deriva ator no servidor, usa DTO mínimo e revalida taxon, cadeia, pesquisa E20.5 selecionada, fonte, versão, estado, revisão e fingerprints antes da mutação; seleção E20.5, abertura, finalização e reconciliação compartilham o mesmo lock transacional.
 - O provider é server-only, reutiliza somente `OPENAI_API_KEY` e envia `safety_identifier` pseudônimo válido.
 - Payload OpenAI exclui Base, Oferta concreta, tarefa, conta e PII.
 - A telemetria E21 registra workload, ambiente, origem/revisão de configuração, modelo, effort, versão de prompt/schema, estratégia de fonte, resultado/categoria segura de falha, latência, usage, contagem Web Search e quantidade de fontes.
-- Prompt, resposta integral, pesquisa, fatos, conteúdo/URLs de fontes, PII e secrets permanecem fora dos eventos comuns e logs.
+- Prompt, resposta integral, pesquisa, fatos, conteúdo/URLs de fontes, PII e secrets permanecem fora da telemetria comum e dos logs.
 - O custo usa o ledger compartilhado E21; não duplicar pricing nem tracking. O custo máximo de ferramenta resulta do teto de uma ou duas chamadas, mas não constitui orçamento independente nem garantia de fonte útil.
 - Timeout, indisponibilidade, recusa ou resultado inválido preservam todo estado válido.
 - Preservar `next` e `eslint-config-next` em `16.3.3`; nenhuma dependência precisa mudar neste plano.

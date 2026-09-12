@@ -98,7 +98,7 @@ export function AdminTaxonManageForm({
               <legend className="text-xs font-medium text-muted-foreground">Estado operacional</legend>
               <p className="mt-1 text-xs text-muted-foreground" id="taxon-operational-state-hint">
                 {hasUnclosedFactualReview
-                  ? "Encerre a sessão factual atual antes de inativar o taxon."
+                  ? "A inativação fecha a revisão factual aberta como invalidada; descendentes afetados também são reconciliados."
                   : "A inativação é direta e explícita; a reativação futura exige concluir nova liberação factual."}
               </p>
               <div aria-describedby="taxon-operational-state-hint" className="mt-2 flex flex-wrap gap-2">
@@ -107,7 +107,7 @@ export function AdminTaxonManageForm({
                   Manter ativo
                 </label>
                 <label className="flex min-h-11 items-center gap-2 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
-                  <input disabled={hasUnclosedFactualReview} name="operationalState" type="radio" value="inactive" />
+                  <input name="operationalState" type="radio" value="inactive" />
                   Inativar diretamente
                 </label>
               </div>

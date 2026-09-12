@@ -167,18 +167,14 @@ export type TaxonPreparationResult =
     }>;
 
 export const factualReviewKinds = ["release", "revision"] as const;
-export const factualReviewStatuses = [
-  "open",
-  "awaiting_catalog_publication",
-  "closed_without_change",
-  "closed_published",
-] as const;
+export const factualReviewStatuses = ["open", "closed"] as const;
 
 export type FactualReviewKind = (typeof factualReviewKinds)[number];
 export type FactualReviewStatus = (typeof factualReviewStatuses)[number];
 
 export type FactualReviewTaxonBaseline = Readonly<{
   taxon: LandingPageInputCatalogTaxonIdentity;
+  selectedResearchVersion: number | null;
   reviewedInputCatalogVersion: number | null;
 }>;
 
@@ -188,6 +184,7 @@ export type FactualReviewSession = Readonly<{
   kind: FactualReviewKind;
   status: FactualReviewStatus;
   baselineIsActive: boolean;
+  baselineSelectedResearchVersion: number | null;
   baselineReviewedInputCatalogVersion: number | null;
   contextFingerprint: string;
   revision: number;

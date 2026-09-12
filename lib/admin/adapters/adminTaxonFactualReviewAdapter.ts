@@ -7,128 +7,26 @@ import {
 } from "@/conversion-content/landing-page/input-catalog";
 import {
   isInputCatalogReviewEnabled,
-  fingerprintInputCatalogEvaluationOutput,
   normalizeFactualReviewCatalogChangeDecision,
   parseInputCatalogEvaluationOutput,
   resolveInheritedInputCatalogCoverage,
-  type FactualReviewCatalogChangeDecision,
   type FactualReviewHumanDecision,
   type FactualReviewSession,
   type InheritedInputCatalogCoverage,
+  type InputCatalogEvaluationMode,
   type InputCatalogEvaluationOutput,
-  type InputCatalogEvaluationSourceStrategy,
 } from "@/conversion-content/landing-page/taxon-preparation";
 import { createServiceClient } from "@/lib/supabase/service";
 import { collectCompletePaginatedRows } from "./adminInputCatalogLifecyclePagination";
 
-const UUID_PATTERN =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-
-type OpenAdminTaxonFactualReviewInput = Readonly<{
-  taxonId: string;
-  operationId: string;
-  actorUserId: string;
-}>;
-
-type CloseAdminTaxonFactualReviewWithoutChangeInput = Readonly<{
-  reviewId: string;
-  operationId: string;
-  actorUserId: string;
-  expectedRevision: number;
-  expectedContextFingerprint: string;
-  expectedContentFingerprint: string;
-  taxonId: string;
-  humanDecision?: FactualReviewHumanDecision;
-  recommendationEventId?: string;
-  recommendationOutputFingerprint?: string;
-  recommendationEvaluationContextFingerprint?: string;
-}>;
-
-type CloseAdminTaxonFactualReviewForCurrentCoverageInput = Omit<
-  CloseAdminTaxonFactualReviewWithoutChangeInput,
-  "expectedContentFingerprint"
->;
-
-type AdminTaxonFactualReviewResult =
-  | Readonly<{
-      ok: true;
-      value: Readonly<{
-        review: FactualReviewSession;
-        coverage: InheritedInputCatalogCoverage;
-      }>;
-    }>
-  | Readonly<{ ok: false; message: string }>;
-
-export type AdminTaxonFactualEvaluationEventKind =
-  | "evaluation_requested"
-  | "evaluation_completed"
-  | "evaluation_inconclusive";
-
-export type AppendAdminTaxonFactualEvaluationEventInput = Readonly<{
-  review: FactualReviewSession;
-  operationId: string;
-  actorUserId: string;
-  eventKind: AdminTaxonFactualEvaluationEventKind;
-  sourceStrategy: InputCatalogEvaluationSourceStrategy;
-  contentFingerprint: string | null;
-  evaluationContextFingerprint: string;
-  deadlineAtMs: number;
-  payload: Readonly<Record<string, unknown>>;
-}>;
-
-export type AppendAdminTaxonFactualEvaluationEventResult =
-  | Readonly<{ ok: true; eventId: string; reviewRevision: number }>
-  | Readonly<{ ok: false; message: string }>;
-
-export type LoadAdminTaxonFactualEvaluationEvidenceInput = Readonly<{
-  reviewId: string;
-  eventId: string;
-  outputFingerprint: string;
-  evaluationContextFingerprint: string;
-  output: InputCatalogEvaluationOutput;
-}>;
-
-export type LoadAdminTaxonFactualEvaluationEvidenceResult =
-  | Readonly<{
-      ok: true;
-      evidence: Readonly<{
-        taxonId: string;
-        inputCatalogVersion: number;
-        evaluationContextFingerprint: string;
-        outputFingerprint: string;
-        status: InputCatalogEvaluationOutput["status"];
-      }>;
-    }>
-  | Readonly<{ ok: false; message: string }>;
-
-export async function loadOpenAdminTaxonFactualReview(
-  taxonId: string,
-): Promise<Readonly<{ ok: true; review: FactualReviewSession }> | Readonly<{ ok: false; message: string }>> {
-  if (!taxonId) return failure("O taxon da sessão factual é inválido.");
-  const client = createServiceClient();
-  const { data, error } = await (client as any)
-    .from("business_taxon_factual_reviews")
-    .select("id,taxon_id,kind,status,baseline_is_active,baseline_reviewed_input_catalog_version,context_fingerprint,revision")
-    .eq("taxon_id", taxonId)
-    .eq("status", "open")
-    .limit(1)
-    .maybeSingle();
-  const review = normalizeStoredReviewRow(data);
-  if (error || !review) {
-    console.error("loadOpenAdminTaxonFactualReview failed:", {
-      code: error?.code,
-      message: error?.message,
-    });
-    return failure("Abra uma sessão factual para este taxon antes de solicitar a avaliação.");
-  }
-  return { ok: true, review };
-}
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export type AdminTaxonFactualReviewSummary = Readonly<{
   id: string;
   taxonId: string;
   kind: FactualReviewSession["kind"];
   status: FactualReviewSession["status"];
+  outcome: "no_change" | "catalog_change" | "invalidated" | null;
   revision: number;
   contextFingerprint: string;
 }>;
@@ -141,754 +39,507 @@ export type AdminTaxonFactualReviewReadResult =
   | Readonly<{ ok: true; review: AdminTaxonFactualReviewSummary | null }>
   | Readonly<{ ok: false; message: string }>;
 
+export type AdminTaxonFactualEvaluationEvidence = Readonly<{
+  review: FactualReviewSession;
+  output: InputCatalogEvaluationOutput;
+  inputCatalogVersion: number;
+  source: "published" | "draft";
+  draftRevision: number | null;
+  evaluationContextFingerprint: string;
+}>;
+
+type ReviewMutationResult =
+  | Readonly<{ ok: true; review: FactualReviewSession; coverage: InheritedInputCatalogCoverage }>
+  | Readonly<{ ok: false; message: string }>;
+
+export async function loadOpenAdminTaxonFactualReview(taxonId: string) {
+  if (!UUID_PATTERN.test(taxonId)) return failure("O taxon da revisão factual é inválido.");
+  const client = createServiceClient();
+  const { data, error } = await (client as any)
+    .from("business_taxon_factual_reviews")
+    .select(REVIEW_SELECT)
+    .eq("taxon_id", taxonId)
+    .eq("status", "open")
+    .limit(1)
+    .maybeSingle();
+  const review = normalizeStoredReviewRow(data);
+  if (error || !review) {
+    return failure("Abra uma revisão factual para este taxon antes de solicitar a avaliação.");
+  }
+  return { ok: true as const, review };
+}
+
 export async function listLatestAdminTaxonFactualReviews(
   taxonIds: readonly string[],
 ): Promise<AdminTaxonFactualReviewListResult> {
-  const ids = [...new Set(taxonIds.filter((taxonId) => UUID_PATTERN.test(taxonId)))];
-  if (ids.length === 0) return Object.freeze({ ok: true, reviews: Object.freeze([]) });
+  const ids = [...new Set(taxonIds.filter((id) => UUID_PATTERN.test(id)))];
+  if (ids.length === 0) return { ok: true, reviews: [] };
   const client = createServiceClient();
   const rows = await collectCompletePaginatedRows({
     pageSize: 500,
     readPage: async (offset, limit) => {
-      try {
-        const { data, error, count } = await (client as any)
-          .from("business_taxon_factual_reviews")
-          .select("id,taxon_id,kind,status,baseline_is_active,baseline_reviewed_input_catalog_version,context_fingerprint,revision,created_at", { count: "exact" })
-          .in("taxon_id", ids)
-          .order("taxon_id", { ascending: true })
-          .order("created_at", { ascending: false })
-          .order("id", { ascending: false })
-          .range(offset, offset + limit - 1);
-        if (error || !Array.isArray(data) || count === null || data.length > limit) {
-          console.error("listLatestAdminTaxonFactualReviews failed:", {
-            code: error?.code,
-            message: error?.message,
-          });
-          return null;
-        }
-        return { rows: data, total: count };
-      } catch (error) {
-        console.error("listLatestAdminTaxonFactualReviews failed:", {
-          message: error instanceof Error ? error.message : "unknown_error",
-        });
-        return null;
-      }
+      const { data, error, count } = await (client as any)
+        .from("business_taxon_factual_reviews")
+        .select(`${REVIEW_SELECT},outcome,opened_at`, { count: "exact" })
+        .in("taxon_id", ids)
+        .order("taxon_id", { ascending: true })
+        .order("opened_at", { ascending: false })
+        .order("id", { ascending: false })
+        .range(offset, offset + limit - 1);
+      if (error || !Array.isArray(data) || count === null || data.length > limit) return null;
+      return { rows: data, total: count };
     },
   });
-  if (!rows.ok) {
-    return failure("As sessões factuais estão temporariamente indisponíveis.");
-  }
-  const reviewsByTaxonId = new Map<string, AdminTaxonFactualReviewSummary>();
+  if (!rows.ok) return failure("As sessões factuais estão temporariamente indisponíveis.");
+  const latest = new Map<string, AdminTaxonFactualReviewSummary>();
   for (const row of rows.rows) {
     const review = normalizeStoredReviewRow(row);
-    if (!review) {
-      console.error("listLatestAdminTaxonFactualReviews received invalid state");
-      return failure("As sessões factuais contêm estado indisponível para leitura.");
+    if (!review || !isRecord(row) || !isOutcome(row.outcome)) {
+      return failure("As revisões factuais contêm estado indisponível para leitura.");
     }
-    if (reviewsByTaxonId.has(review.taxonId)) continue;
-    reviewsByTaxonId.set(review.taxonId, Object.freeze({
-      id: review.id,
-      taxonId: review.taxonId,
-      kind: review.kind,
-      status: review.status,
-      revision: review.revision,
-      contextFingerprint: review.contextFingerprint,
-    }));
+    if (!latest.has(review.taxonId)) {
+      latest.set(review.taxonId, {
+        id: review.id,
+        taxonId: review.taxonId,
+        kind: review.kind,
+        status: review.status,
+        outcome: row.outcome,
+        revision: review.revision,
+        contextFingerprint: review.contextFingerprint,
+      });
+    }
   }
-  return Object.freeze({
-    ok: true,
-    reviews: Object.freeze([...reviewsByTaxonId.values()]),
-  });
+  return { ok: true, reviews: [...latest.values()] };
 }
 
 export async function loadLatestAdminTaxonFactualReview(
   taxonId: string,
 ): Promise<AdminTaxonFactualReviewReadResult> {
-  if (!UUID_PATTERN.test(taxonId)) {
-    return failure("O taxon da sessão factual é inválido.");
-  }
+  if (!UUID_PATTERN.test(taxonId)) return failure("O taxon da revisão factual é inválido.");
   const result = await listLatestAdminTaxonFactualReviews([taxonId]);
-  if (!result.ok) return result;
-  return Object.freeze({ ok: true, review: result.reviews[0] ?? null });
+  return result.ok ? { ok: true, review: result.reviews[0] ?? null } : result;
 }
 
-export async function appendAdminTaxonFactualEvaluationEvent(
-  input: AppendAdminTaxonFactualEvaluationEventInput,
-): Promise<AppendAdminTaxonFactualEvaluationEventResult> {
-  const client = createServiceClient();
-  const { data, error } = await (client as any).rpc(
-    "append_business_taxon_factual_review_evaluation_event_v1",
-    {
-      p_review_id: input.review.id,
-      p_operation_id: input.operationId,
-      p_actor_user_id: input.actorUserId,
-      p_expected_review_revision: input.review.revision,
-      p_review_context_fingerprint: input.review.contextFingerprint,
-      p_event_kind: input.eventKind,
-      p_source_strategy: input.sourceStrategy,
-      p_content_fingerprint: input.contentFingerprint,
-      p_payload_json: {
-        ...input.payload,
-        reviewContextFingerprint: input.review.contextFingerprint,
-        evaluationContextFingerprint: input.evaluationContextFingerprint,
-        deadlineAtMs: input.deadlineAtMs,
-      },
-    },
-  );
-  const row = Array.isArray(data) ? data[0] : data;
-  if (
-    error ||
-    !isRecord(row) ||
-    typeof row.event_id !== "string" ||
-    !Number.isSafeInteger(Number(row.review_revision)) ||
-    Number(row.review_revision) !== input.review.revision
-  ) {
-    console.error("appendAdminTaxonFactualEvaluationEvent failed:", {
-      code: error?.code,
-      message: error?.message,
-    });
-    return failure("O evento da avaliação não pôde ser vinculado à sessão factual aberta.");
+export async function openAdminTaxonFactualReview(input: Readonly<{
+  taxonId: string;
+  actorUserId: string;
+}>): Promise<ReviewMutationResult> {
+  if (!isInputCatalogReviewEnabled()) return failure("A revisão factual E20.6 está desabilitada.");
+  if (!UUID_PATTERN.test(input.taxonId) || !UUID_PATTERN.test(input.actorUserId)) {
+    return failure("A abertura da revisão factual possui entrada inválida.");
   }
-  return {
-    ok: true,
-    eventId: row.event_id,
-    reviewRevision: Number(row.review_revision),
-  };
+  const client = createServiceClient();
+  const context = await loadFactualReviewContext(client as any, input.taxonId);
+  if (!context.ok) return context;
+  const coverage = resolveCoverage(context.value);
+  if (!coverage.ok) return failure(coverage.error.message);
+  const { data, error } = await (client as any)
+    .from("business_taxon_factual_reviews")
+    .insert({
+      taxon_id: input.taxonId,
+      kind: context.value.selected.isActive ? "revision" : "release",
+      baseline_is_active: context.value.selected.isActive,
+      baseline_selected_end_customer_research_version: context.value.selectedResearchVersion,
+      baseline_reviewed_input_catalog_version: context.value.reviewedInputCatalogVersion,
+      context_fingerprint: coverage.value.contextFingerprint,
+      chain_snapshot: coverage.value.chainSnapshot,
+      opened_by: input.actorUserId,
+    })
+    .select(REVIEW_SELECT)
+    .maybeSingle();
+  const review = normalizeStoredReviewRow(data);
+  if (error || !review) {
+    return failure(error?.code === "23505"
+      ? "Já existe uma revisão factual aberta para este taxon."
+      : "Não foi possível abrir a revisão factual sem alterar o taxon.");
+  }
+  return { ok: true, review, coverage: coverage.value };
 }
 
-export async function loadAdminTaxonFactualEvaluationEvidence(
-  input: LoadAdminTaxonFactualEvaluationEvidenceInput,
-): Promise<LoadAdminTaxonFactualEvaluationEvidenceResult> {
-  const expectedOutputFingerprint = fingerprintInputCatalogEvaluationOutput(input.output);
+export async function persistAdminTaxonFactualEvaluation(input: Readonly<{
+  review: FactualReviewSession;
+  actorUserId: string;
+  mode: InputCatalogEvaluationMode;
+  source: "published" | "draft";
+  draftRevision: number | null;
+  inputCatalogVersion: number;
+  evaluationContextFingerprint: string;
+  output: InputCatalogEvaluationOutput;
+}>): Promise<Readonly<{ ok: true; reviewRevision: number }> | Readonly<{ ok: false; message: string }>> {
+  const parsedOutput = parseInputCatalogEvaluationOutput(input.output);
   if (
-    !UUID_PATTERN.test(input.reviewId) ||
-    !UUID_PATTERN.test(input.eventId) ||
-    input.outputFingerprint !== expectedOutputFingerprint
-    || !/^[0-9a-f]{64}$/.test(input.evaluationContextFingerprint)
+    !UUID_PATTERN.test(input.review.id) ||
+    !UUID_PATTERN.test(input.review.taxonId) ||
+    !UUID_PATTERN.test(input.actorUserId) ||
+    !Number.isSafeInteger(input.review.revision) ||
+    input.review.revision <= 0 ||
+    (input.mode !== "systematic" && input.mode !== "hypothesis") ||
+    (input.source !== "published" && input.source !== "draft") ||
+    !Number.isSafeInteger(input.inputCatalogVersion) ||
+    input.inputCatalogVersion <= 0 ||
+    !/^[0-9a-f]{64}$/.test(input.evaluationContextFingerprint) ||
+    (input.source === "draft") !== (
+      Number.isSafeInteger(input.draftRevision) && Number(input.draftRevision) > 0
+    ) ||
+    !parsedOutput.ok ||
+    parsedOutput.value.mode !== input.mode
   ) {
+    return failure("A avaliação factual concluída possui identidade inválida para persistência.");
+  }
+  const client = createServiceClient();
+  const { data, error } = await (client as any)
+    .from("business_taxon_factual_reviews")
+    .update({
+      evaluation_mode: input.mode,
+      evaluation_source: input.source,
+      evaluation_input_catalog_version: input.inputCatalogVersion,
+      evaluation_draft_revision: input.source === "draft" ? input.draftRevision : null,
+      evaluation_context_fingerprint: input.evaluationContextFingerprint,
+      evaluation_output: parsedOutput.value,
+      evaluation_by: input.actorUserId,
+      evaluated_at: new Date().toISOString(),
+      revision: input.review.revision + 1,
+    })
+    .eq("id", input.review.id)
+    .eq("taxon_id", input.review.taxonId)
+    .eq("status", "open")
+    .eq("revision", input.review.revision)
+    .eq("context_fingerprint", input.review.contextFingerprint)
+    .maxAffected(1)
+    .select("revision")
+    .maybeSingle();
+  if (error || !isRecord(data) || Number(data.revision) !== input.review.revision + 1) {
+    return failure("A avaliação não pôde ser persistida na revisão factual aberta.");
+  }
+  return { ok: true, reviewRevision: Number(data.revision) };
+}
+
+export async function loadAdminTaxonFactualEvaluationEvidence(input: Readonly<{
+  reviewId: string;
+  expectedRevision: number;
+}>): Promise<Readonly<{ ok: true; evidence: AdminTaxonFactualEvaluationEvidence }> | Readonly<{ ok: false; message: string }>> {
+  if (!UUID_PATTERN.test(input.reviewId) || !Number.isSafeInteger(input.expectedRevision)) {
     return failure("A referência persistida da avaliação factual é inválida.");
   }
   const client = createServiceClient();
-  const { data: eventData, error: eventError } = await (client as any)
-    .from("business_taxon_factual_review_events")
-    .select("id,review_id,event_kind,source_strategy,context_fingerprint,content_fingerprint,payload_json")
-    .eq("id", input.eventId)
-    .eq("review_id", input.reviewId)
-    .limit(1)
-    .maybeSingle();
-  const payload = isRecord(eventData) && isRecord(eventData.payload_json)
-    ? eventData.payload_json
-    : null;
-  const parsedOutput = payload ? parseInputCatalogEvaluationOutput(payload.output) : null;
-  const inputCatalogVersion = payload ? Number(payload.inputCatalogVersion) : Number.NaN;
-  if (
-    eventError ||
-    !isRecord(eventData) ||
-    eventData.event_kind !== "evaluation_completed" ||
-    eventData.content_fingerprint !== expectedOutputFingerprint ||
-    payload?.reviewContextFingerprint !== eventData.context_fingerprint ||
-    payload?.evaluationContextFingerprint !== input.evaluationContextFingerprint ||
-    payload?.outputFingerprint !== expectedOutputFingerprint ||
-    Number(payload?.candidateCount) !== input.output.candidates.length ||
-    !Number.isSafeInteger(inputCatalogVersion) ||
-    inputCatalogVersion <= 0 ||
-    !parsedOutput?.ok ||
-    fingerprintInputCatalogEvaluationOutput(parsedOutput.value) !== expectedOutputFingerprint ||
-    eventData.source_strategy !== parsedOutput.value.sourceStrategy
-  ) {
-    return failure("O evento factual persistido não autentica este resultado de avaliação.");
-  }
-  const { data: reviewData, error: reviewError } = await (client as any)
+  const { data, error } = await (client as any)
     .from("business_taxon_factual_reviews")
-    .select("id,taxon_id,status,context_fingerprint")
+    .select(`${REVIEW_SELECT},evaluation_mode,evaluation_source,evaluation_input_catalog_version,evaluation_draft_revision,evaluation_context_fingerprint,evaluation_output`)
     .eq("id", input.reviewId)
+    .eq("status", "open")
+    .eq("revision", input.expectedRevision)
     .limit(1)
     .maybeSingle();
-  if (
-    reviewError ||
-    !isRecord(reviewData) ||
-    reviewData.status !== "open" ||
-    typeof reviewData.taxon_id !== "string" ||
-    typeof reviewData.context_fingerprint !== "string" ||
-    eventData.context_fingerprint !== reviewData.context_fingerprint
-  ) {
-    return failure("A sessão factual vinculada à avaliação não está aberta ou mudou.");
+  const review = normalizeStoredReviewRow(data);
+  const parsed = isRecord(data) ? parseInputCatalogEvaluationOutput(data.evaluation_output) : null;
+  if (error || !review || !parsed?.ok || !isRecord(data)
+      || (data.evaluation_source !== "published" && data.evaluation_source !== "draft")
+      || data.evaluation_mode !== parsed.value.mode
+      || !Number.isSafeInteger(Number(data.evaluation_input_catalog_version))
+      || Number(data.evaluation_input_catalog_version) <= 0
+      || (data.evaluation_source === "draft") !== (
+        Number.isSafeInteger(Number(data.evaluation_draft_revision)) &&
+        Number(data.evaluation_draft_revision) > 0
+      )
+      || typeof data.evaluation_context_fingerprint !== "string"
+      || !/^[0-9a-f]{64}$/.test(data.evaluation_context_fingerprint)) {
+    return failure("A revisão factual aberta não autentica uma avaliação persistida.");
   }
-  return Object.freeze({
+  return {
     ok: true,
-    evidence: Object.freeze({
-      taxonId: reviewData.taxon_id,
-      inputCatalogVersion,
-      evaluationContextFingerprint: input.evaluationContextFingerprint,
-      outputFingerprint: expectedOutputFingerprint,
-      status: parsedOutput.value.status,
-    }),
-  });
+    evidence: {
+      review,
+      output: parsed.value,
+      inputCatalogVersion: Number(data.evaluation_input_catalog_version),
+      source: data.evaluation_source,
+      draftRevision: data.evaluation_draft_revision === null ? null : Number(data.evaluation_draft_revision),
+      evaluationContextFingerprint: data.evaluation_context_fingerprint,
+    },
+  };
 }
 
-export type RecordAdminTaxonFactualCatalogChangeDecisionInput = Readonly<{
+export async function finalizeAdminTaxonFactualReview(input: Readonly<{
   reviewId: string;
-  operationId: string;
+  expectedRevision: number;
   actorUserId: string;
-  taxonId: string;
-  expectedReviewRevision: number;
-  expectedReviewContextFingerprint: string;
-  draftRevision: number;
-  targetInputCatalogVersion: number;
-  draftContentFingerprint: string;
-  draftContextFingerprint: string;
-  decision: FactualReviewCatalogChangeDecision;
-  recommendationEventId?: string;
-  recommendationOutputFingerprint?: string;
-  recommendationEvaluationContextFingerprint?: string;
-}>;
-
-type FactualDraftMutationResult =
-  | Readonly<{ ok: true; revision: number }>
-  | Readonly<{ ok: false; message: string }>;
-
-export async function openAdminTaxonFactualReview(
-  input: OpenAdminTaxonFactualReviewInput,
-): Promise<AdminTaxonFactualReviewResult> {
-  if (!isInputCatalogReviewEnabled()) {
-    return failure("A revisão factual E20.6 está desabilitada.");
-  }
-  if (!input.taxonId || !input.operationId || !input.actorUserId) {
-    return failure("A abertura da revisão factual possui entrada inválida.");
-  }
-
-  const supabase = createServiceClient();
-  const context = await loadFactualReviewContext(supabase as any, input.taxonId);
-  if (!context.ok) return context;
-
-  const coverage = resolveInheritedInputCatalogCoverage({
-    baseline: {
-      taxon: context.value.selected,
-      reviewedInputCatalogVersion: context.value.reviewedInputCatalogVersion,
-    },
-    taxons: context.value.taxons,
-    inputCatalogVersion: CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION,
-    resolvePlan: resolveLandingPageInputCatalog,
+  decision: FactualReviewHumanDecision;
+  draft: null | Readonly<{ revision: number; contentFingerprint: string; contextFingerprint: string }>;
+}>): Promise<Readonly<{ ok: true; reviewedVersion: number; decisionKind: "no_change" | "catalog_change" }> | Readonly<{ ok: false; message: string }>> {
+  const evidence = await loadAdminTaxonFactualEvaluationEvidence({
+    reviewId: input.reviewId,
+    expectedRevision: input.expectedRevision,
   });
-  if (!coverage.ok) return failure(coverage.error.message);
-
-  const { data, error } = await (supabase as any).rpc(
-    "open_business_taxon_factual_review_v1",
-    {
-      p_taxon_id: input.taxonId,
-      p_context_fingerprint: coverage.value.contextFingerprint,
-      p_chain_snapshot: coverage.value.chainSnapshot,
-      p_opened_operation_id: input.operationId,
-      p_actor_user_id: input.actorUserId,
-      p_expected_is_active: context.value.selected.isActive,
-      p_expected_reviewed_input_catalog_version:
-        context.value.reviewedInputCatalogVersion,
-    },
-  );
-  const review = normalizeReviewRpcRow(data, input.taxonId, coverage.value.contextFingerprint);
-  if (error || !review) {
-    console.error("openAdminTaxonFactualReview failed:", {
-      code: error?.code,
-      message: error?.message,
-    });
-    return failure("Não foi possível abrir a revisão factual sem alterar o taxon.");
+  if (!evidence.ok) return evidence;
+  const normalized = normalizeFactualReviewCatalogChangeDecision(input.decision);
+  if (!normalized.ok
+      || evidence.evidence.output.status === "inconclusive"
+      || normalized.value.recommendationCandidateCount !== evidence.evidence.output.candidates.length
+      || (input.draft === null && normalized.value.decisionKind !== "no_change")) {
+    return failure(normalized.ok ? "A decisão não corresponde à recomendação persistida." : normalized.error.message);
   }
-
-  return { ok: true, value: { review, coverage: coverage.value } };
-}
-
-export async function closeAdminTaxonFactualReviewWithoutChange(
-  input: CloseAdminTaxonFactualReviewWithoutChangeInput,
-): Promise<AdminTaxonFactualReviewResult> {
-  if (!isInputCatalogReviewEnabled()) {
-    return failure("A revisão factual E20.6 está desabilitada.");
-  }
-  if (
-    !input.reviewId ||
-    !input.operationId ||
-    !input.actorUserId ||
-    !input.taxonId ||
-    !Number.isSafeInteger(input.expectedRevision) ||
-    input.expectedRevision <= 0
-  ) {
-    return failure("O fechamento da revisão factual possui entrada inválida.");
-  }
-
-  const supabase = createServiceClient();
-  const context = await loadFactualReviewContext(supabase as any, input.taxonId);
-  if (!context.ok) return context;
-  const coverage = resolveInheritedInputCatalogCoverage({
-    baseline: {
-      taxon: context.value.selected,
-      reviewedInputCatalogVersion: context.value.reviewedInputCatalogVersion,
-    },
-    taxons: context.value.taxons,
-    inputCatalogVersion: CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION,
-    resolvePlan: resolveLandingPageInputCatalog,
-  });
-  if (!coverage.ok) return failure(coverage.error.message);
-  if (
-    coverage.value.contextFingerprint !== input.expectedContextFingerprint ||
-    coverage.value.contentFingerprint !== input.expectedContentFingerprint
-  ) {
-    return failure("A cobertura herdada mudou. Reabra a revisão factual.");
-  }
-
-  return closeAdminTaxonFactualReviewWithCoverage(input, coverage.value);
-}
-
-export async function closeAdminTaxonFactualReviewWithoutChangeForCurrentCoverage(
-  input: CloseAdminTaxonFactualReviewForCurrentCoverageInput,
-): Promise<AdminTaxonFactualReviewResult> {
-  if (!isInputCatalogReviewEnabled()) {
-    return failure("A revisão factual E20.6 está desabilitada.");
-  }
-  if (
-    !input.reviewId ||
-    !input.operationId ||
-    !input.actorUserId ||
-    !input.taxonId ||
-    !Number.isSafeInteger(input.expectedRevision) ||
-    input.expectedRevision <= 0
-  ) {
-    return failure("O fechamento da revisão factual possui entrada inválida.");
-  }
-  const supabase = createServiceClient();
-  const context = await loadFactualReviewContext(supabase as any, input.taxonId);
-  if (!context.ok) return context;
-  const coverage = resolveInheritedInputCatalogCoverage({
-    baseline: {
-      taxon: context.value.selected,
-      reviewedInputCatalogVersion: context.value.reviewedInputCatalogVersion,
-    },
-    taxons: context.value.taxons,
-    inputCatalogVersion: CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION,
-    resolvePlan: resolveLandingPageInputCatalog,
-  });
-  if (!coverage.ok) return failure(coverage.error.message);
-  if (coverage.value.contextFingerprint !== input.expectedContextFingerprint) {
-    return failure("A cobertura herdada mudou. Reabra a revisão factual.");
-  }
-  return closeAdminTaxonFactualReviewWithCoverage(input, coverage.value);
-}
-
-async function closeAdminTaxonFactualReviewWithCoverage(
-  input: CloseAdminTaxonFactualReviewForCurrentCoverageInput,
-  coverage: InheritedInputCatalogCoverage,
-): Promise<AdminTaxonFactualReviewResult> {
-  const decision = input.humanDecision === undefined
-    ? null
-    : normalizeFactualReviewCatalogChangeDecision(input.humanDecision);
-  if (decision && (!decision.ok || decision.value.decisionKind !== "no_change")) {
-    return failure("O fechamento sem mudança exige rejeição integral sem candidato próprio.");
-  }
-  if (decision?.ok && !hasValidRecommendationBinding(
-    decision.value,
-    input.recommendationEventId,
-    input.recommendationOutputFingerprint,
-    input.recommendationEvaluationContextFingerprint,
-  )) {
-    return failure("A decisão não corresponde à recomendação factual persistida.");
-  }
-
-  const supabase = createServiceClient();
-  const { data, error } = await (supabase as any).rpc(
-    "close_business_taxon_factual_review_without_change_v1",
-    {
-      p_review_id: input.reviewId,
-      p_operation_id: input.operationId,
-      p_actor_user_id: input.actorUserId,
-      p_expected_revision: input.expectedRevision,
-      p_input_catalog_version: CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION,
-      p_context_fingerprint: coverage.contextFingerprint,
-      p_content_fingerprint: coverage.contentFingerprint,
-      p_chain_snapshot: coverage.chainSnapshot,
-      p_human_decision: decision?.ok
-        ? serializeHumanDecisionWithRecommendation(
-            decision.value,
-            input.recommendationEventId,
-            input.recommendationOutputFingerprint,
-            input.recommendationEvaluationContextFingerprint,
-          )
+  const client = createServiceClient();
+  const { data, error } = await (client as any).rpc("finalize_business_taxon_factual_review_v1", {
+    p_review_id: input.reviewId,
+    p_expected_revision: input.expectedRevision,
+    p_actor_user_id: input.actorUserId,
+    p_reviewed_version: evidence.evidence.inputCatalogVersion,
+    p_decision_payload: {
+      ...normalized.value,
+      ownCandidate: normalized.value.ownCandidate
+        ? { ...normalized.value.ownCandidate, origin: "human" }
         : null,
     },
-  );
-  const review = normalizeReviewRpcRow(data, input.taxonId, coverage.contextFingerprint);
-  if (error || !review) {
-    console.error("closeAdminTaxonFactualReviewWithoutChange failed:", {
-      code: error?.code,
-      message: error?.message,
-    });
-    return failure("Não foi possível confirmar a cobertura herdada. O estado anterior foi preservado.");
-  }
-
-  return { ok: true, value: { review, coverage } };
-}
-
-export async function recordAdminTaxonFactualCatalogChangeDecision(
-  input: RecordAdminTaxonFactualCatalogChangeDecisionInput,
-): Promise<AdminTaxonFactualReviewResult> {
-  if (!isInputCatalogReviewEnabled()) {
-    return failure("A revisão factual E20.6 está desabilitada.");
-  }
-  const decision = normalizeFactualReviewCatalogChangeDecision(input.decision);
-  if (
-    !decision.ok ||
-    decision.value.decisionKind !== "catalog_change" ||
-    !input.reviewId ||
-    !input.operationId ||
-    !input.actorUserId ||
-    !input.taxonId ||
-    !Number.isSafeInteger(input.expectedReviewRevision) ||
-    input.expectedReviewRevision <= 0 ||
-    !Number.isSafeInteger(input.draftRevision) ||
-    input.draftRevision <= 0 ||
-    !Number.isSafeInteger(input.targetInputCatalogVersion) ||
-    input.targetInputCatalogVersion <= 0 ||
-    !hasValidRecommendationBinding(
-      decision.ok ? decision.value : null,
-      input.recommendationEventId,
-      input.recommendationOutputFingerprint,
-      input.recommendationEvaluationContextFingerprint,
-    )
-  ) {
-    return failure("A decisão factual com mudança possui entrada inválida.");
-  }
-  const supabase = createServiceClient();
-  const context = await loadFactualReviewContext(supabase as any, input.taxonId);
-  if (!context.ok) return context;
-  const coverage = resolveInheritedInputCatalogCoverage({
-    baseline: {
-      taxon: context.value.selected,
-      reviewedInputCatalogVersion: context.value.reviewedInputCatalogVersion,
-    },
-    taxons: context.value.taxons,
-    inputCatalogVersion: CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION,
-    resolvePlan: resolveLandingPageInputCatalog,
+    p_expected_draft_revision: input.draft?.revision ?? null,
+    p_expected_draft_content_fingerprint: input.draft?.contentFingerprint ?? null,
+    p_expected_draft_context_fingerprint: input.draft?.contextFingerprint ?? null,
   });
-  if (!coverage.ok) return failure(coverage.error.message);
-  if (coverage.value.contextFingerprint !== input.expectedReviewContextFingerprint) {
-    return failure("O baseline da sessão factual mudou. Reabra a revisão.");
+  const row = Array.isArray(data) ? data[0] : data;
+  if (error || !isRecord(row) || row.review_status !== "closed"
+      || row.decision_kind !== normalized.value.decisionKind
+      || !Number.isSafeInteger(Number(row.reviewed_version))) {
+    return failure("A decisão factual não pôde ser concluída sobre o estado exato.");
   }
-  const { data, error } = await (supabase as any).rpc(
-    "record_business_taxon_factual_catalog_change_decision_v1",
-    {
-      p_review_id: input.reviewId,
-      p_operation_id: input.operationId,
-      p_actor_user_id: input.actorUserId,
-      p_expected_review_revision: input.expectedReviewRevision,
-      p_review_context_fingerprint: input.expectedReviewContextFingerprint,
-      p_chain_snapshot: coverage.value.chainSnapshot,
-      p_draft_revision: input.draftRevision,
-      p_target_input_catalog_version: input.targetInputCatalogVersion,
-      p_draft_content_fingerprint: input.draftContentFingerprint,
-      p_draft_context_fingerprint: input.draftContextFingerprint,
-      p_decision_payload: serializeHumanDecisionWithRecommendation(
-        decision.value,
-        input.recommendationEventId,
-        input.recommendationOutputFingerprint,
-        input.recommendationEvaluationContextFingerprint,
-      ),
-    },
-  );
-  const review = normalizeReviewRpcRow(
-    data,
-    input.taxonId,
-    input.expectedReviewContextFingerprint,
-  );
-  if (error || !review) {
-    console.error("recordAdminTaxonFactualCatalogChangeDecision failed:", {
-      code: error?.code,
-      message: error?.message,
-    });
-    return failure("A decisão factual não pôde ser vinculada ao draft exato.");
-  }
-  return { ok: true, value: { review, coverage: coverage.value } };
+  return {
+    ok: true,
+    reviewedVersion: Number(row.reviewed_version),
+    decisionKind: normalized.value.decisionKind,
+  };
 }
 
-export async function saveAdminInputCatalogDraftAndInvalidateFactualReviews(input: Readonly<{
-  operationId: string;
+export async function closeAdminTaxonFactualReviewWithoutEvaluation(input: Readonly<{
+  reviewId: string;
+  expectedRevision: number;
+  actorUserId: string;
+}>): Promise<Readonly<{ ok: true; reviewedVersion: number }> | Readonly<{ ok: false; message: string }>> {
+  if (!UUID_PATTERN.test(input.reviewId) || !Number.isSafeInteger(input.expectedRevision)) {
+    return failure("A referência da revisão factual é inválida.");
+  }
+  const client = createServiceClient();
+  const { data: stored, error: storedError } = await (client as any)
+    .from("business_taxon_factual_reviews")
+    .select(REVIEW_SELECT)
+    .eq("id", input.reviewId)
+    .eq("status", "open")
+    .eq("revision", input.expectedRevision)
+    .maybeSingle();
+  const review = normalizeStoredReviewRow(stored);
+  if (storedError || !review) return failure("A revisão factual aberta mudou.");
+  const context = await loadFactualReviewContext(client as any, review.taxonId);
+  if (!context.ok) return context;
+  const coverage = resolveCoverage(context.value);
+  if (!coverage.ok || coverage.value.contextFingerprint !== review.contextFingerprint) {
+    return failure("A cobertura herdada mudou. Reabra a revisão factual.");
+  }
+  const decision = {
+    decisionKind: "no_change",
+    recommendationCandidateCount: 0,
+    recommendationSelection: "zero",
+    acceptedCandidates: [],
+    rejectedCandidateIndexes: [],
+    ownCandidate: null,
+  };
+  const { data, error } = await (client as any).rpc("finalize_business_taxon_factual_review_v1", {
+    p_review_id: input.reviewId,
+    p_expected_revision: input.expectedRevision,
+    p_actor_user_id: input.actorUserId,
+    p_reviewed_version: coverage.value.inputCatalogVersion,
+    p_decision_payload: decision,
+    p_expected_draft_revision: null,
+    p_expected_draft_content_fingerprint: null,
+    p_expected_draft_context_fingerprint: null,
+  });
+  const row = Array.isArray(data) ? data[0] : data;
+  if (error || !isRecord(row) || row.review_status !== "closed") {
+    return failure("Não foi possível concluir a revisão factual sem avaliação opcional.");
+  }
+  return { ok: true, reviewedVersion: coverage.value.inputCatalogVersion };
+}
+
+export async function saveAdminInputCatalogDraft(input: Readonly<{
   actorUserId: string;
   expectedRevision: number;
   catalogJson: unknown;
   contentFingerprint: string;
-}>): Promise<FactualDraftMutationResult> {
+}>) {
   const client = createServiceClient();
-  const { data, error } = await (client as any).rpc(
-    "save_business_taxon_factual_review_draft_v1",
-    {
-      p_operation_id: input.operationId,
-      p_actor_user_id: input.actorUserId,
-      p_expected_revision: input.expectedRevision,
-      p_catalog_json: input.catalogJson,
-      p_content_fingerprint: input.contentFingerprint,
-    },
-  );
-  const row = Array.isArray(data) ? data[0] : data;
-  if (error || !isRecord(row) || Number(row.draft_revision) !== input.expectedRevision + 1) {
-    console.error("saveAdminInputCatalogDraftAndInvalidateFactualReviews failed:", {
-      code: error?.code,
-      message: error?.message,
-    });
-    return failure("O draft mudou ou suas decisões não puderam ser invalidadas atomicamente.");
+  const { data, error } = await (client as any)
+    .from("landing_page_input_catalog_drafts")
+    .update({
+      catalog_json: input.catalogJson,
+      content_fingerprint: input.contentFingerprint,
+      revision: input.expectedRevision + 1,
+      validation_fingerprint: null,
+      validation_context_fingerprint: null,
+      validated_at: null,
+      publication_fingerprint: null,
+      publication_context_fingerprint: null,
+      publication_prepared_at: null,
+      taxon_review_evidence: {},
+      updated_by: input.actorUserId,
+    })
+    .eq("singleton", true)
+    .eq("revision", input.expectedRevision)
+    .maxAffected(1)
+    .select("revision")
+    .maybeSingle();
+  if (error || !isRecord(data) || Number(data.revision) !== input.expectedRevision + 1) {
+    return failure("O draft mudou durante a edição.");
   }
-  return { ok: true, revision: Number(row.draft_revision) };
+  return { ok: true as const, revision: Number(data.revision) };
 }
 
 export async function authorizeAdminInputCatalogFactualPublication(input: Readonly<{
-  operationId: string;
   actorUserId: string;
   expectedRevision: number;
   contentFingerprint: string;
   contextFingerprint: string;
-  requiredTaxonIds: readonly string[];
-}>): Promise<FactualDraftMutationResult> {
+}>) {
   const client = createServiceClient();
-  const { data, error } = await (client as any).rpc(
-    "authorize_business_taxon_factual_review_publication_v1",
-    {
-      p_operation_id: input.operationId,
-      p_actor_user_id: input.actorUserId,
-      p_expected_draft_revision: input.expectedRevision,
-      p_draft_content_fingerprint: input.contentFingerprint,
-      p_draft_context_fingerprint: input.contextFingerprint,
-      p_required_taxon_ids: [...input.requiredTaxonIds].sort(),
-    },
-  );
-  const row = Array.isArray(data) ? data[0] : data;
-  if (error || !isRecord(row) || Number(row.draft_revision) !== input.expectedRevision) {
-    console.error("authorizeAdminInputCatalogFactualPublication failed:", {
-      code: error?.code,
-      message: error?.message,
-    });
-    return failure("A publicação não pôde ser autorizada para todas as decisões factuais.");
+  const { data, error } = await (client as any)
+    .from("landing_page_input_catalog_drafts")
+    .update({
+      publication_fingerprint: input.contentFingerprint,
+      publication_context_fingerprint: input.contextFingerprint,
+      publication_prepared_at: new Date().toISOString(),
+      updated_by: input.actorUserId,
+    })
+    .eq("singleton", true)
+    .eq("revision", input.expectedRevision)
+    .eq("content_fingerprint", input.contentFingerprint)
+    .eq("validation_fingerprint", input.contentFingerprint)
+    .eq("validation_context_fingerprint", input.contextFingerprint)
+    .maxAffected(1)
+    .select("revision")
+    .maybeSingle();
+  if (error || !isRecord(data) || Number(data.revision) !== input.expectedRevision) {
+    return failure("A publicação não pôde ser preparada para o draft exato.");
   }
-  return { ok: true, revision: Number(row.draft_revision) };
+  return { ok: true as const, revision: Number(data.revision) };
 }
 
 export async function reconcileAdminInputCatalogFactualPublication(input: Readonly<{
-  operationId: string;
   actorUserId: string;
   expectedRevision: number;
   deployedVersion: number;
   deployedContentFingerprint: string;
   publicationContextFingerprint: string;
-}>): Promise<Readonly<{ ok: true; reconciledTaxonCount: number }> | Readonly<{ ok: false; message: string }>> {
+}>) {
   const client = createServiceClient();
-  const { data, error } = await (client as any).rpc(
-    "reconcile_business_taxon_factual_review_publication_v1",
-    {
-      p_operation_id: input.operationId,
-      p_actor_user_id: input.actorUserId,
-      p_expected_draft_revision: input.expectedRevision,
-      p_deployed_version: input.deployedVersion,
-      p_deployed_content_fingerprint: input.deployedContentFingerprint,
-      p_publication_context_fingerprint: input.publicationContextFingerprint,
-    },
-  );
+  const { data, error } = await (client as any).rpc("reconcile_business_taxon_factual_review_publication_v1", {
+    p_actor_user_id: input.actorUserId,
+    p_expected_draft_revision: input.expectedRevision,
+    p_deployed_version: input.deployedVersion,
+    p_deployed_content_fingerprint: input.deployedContentFingerprint,
+    p_publication_context_fingerprint: input.publicationContextFingerprint,
+  });
   const row = Array.isArray(data) ? data[0] : data;
-  if (
-    error ||
-    !isRecord(row) ||
-    !Number.isSafeInteger(Number(row.reconciled_taxon_count)) ||
-    Number(row.reconciled_taxon_count) < 0
-  ) {
-    console.error("reconcileAdminInputCatalogFactualPublication failed:", {
-      code: error?.code,
-      message: error?.message,
-    });
+  if (error || !isRecord(row) || !Number.isSafeInteger(Number(row.reconciled_taxon_count))) {
     return failure("A publicação implantada não pôde ser reconciliada atomicamente.");
   }
-  return { ok: true, reconciledTaxonCount: Number(row.reconciled_taxon_count) };
+  return { ok: true as const, reconciledTaxonCount: Number(row.reconciled_taxon_count) };
 }
 
-async function loadFactualReviewContext(
-  client: any,
-  taxonId: string,
-): Promise<
-  | Readonly<{
-      ok: true;
-      value: Readonly<{
-        selected: LandingPageInputCatalogTaxonIdentity;
-        reviewedInputCatalogVersion: number | null;
-        taxons: readonly LandingPageInputCatalogTaxonIdentity[];
-      }>;
-    }>
-  | Readonly<{ ok: false; message: string }>
-> {
+const REVIEW_SELECT = "id,taxon_id,kind,status,baseline_is_active,baseline_selected_end_customer_research_version,baseline_reviewed_input_catalog_version,context_fingerprint,revision";
+
+async function loadFactualReviewContext(client: any, taxonId: string) {
   const taxons: LandingPageInputCatalogTaxonIdentity[] = [];
   const visited = new Set<string>();
   let nextId: string | null = taxonId;
+  let selectedResearchVersion: number | null = null;
   let reviewedInputCatalogVersion: number | null = null;
-
   while (nextId !== null && taxons.length < 3) {
     if (visited.has(nextId)) return failure("A cadeia taxonômica contém um ciclo.");
     visited.add(nextId);
-    const { data, error } = await client
-      .from("business_taxons")
-      .select("id,parent_id,level,name,slug,is_active,reviewed_input_catalog_version")
-      .eq("id", nextId)
-      .maybeSingle();
+    const { data, error } = await client.from("business_taxons")
+      .select("id,parent_id,level,name,slug,is_active,selected_end_customer_research_version,reviewed_input_catalog_version")
+      .eq("id", nextId).maybeSingle();
     const taxon = normalizeTaxonRow(data);
-    if (error || !taxon) {
-      return failure("Não foi possível reconstruir integralmente a cadeia do taxon.");
-    }
+    if (error || !taxon) return failure("Não foi possível reconstruir integralmente a cadeia do taxon.");
     if (taxons.length === 0) {
-      reviewedInputCatalogVersion = normalizePositiveIntegerOrNull(
-        data.reviewed_input_catalog_version,
-      );
-      if (
-        reviewedInputCatalogVersion === null &&
-        data.reviewed_input_catalog_version !== null
-      ) {
-        return failure("O marcador factual atual do taxon é inválido.");
+      selectedResearchVersion = data.selected_end_customer_research_version === null
+        ? null : Number(data.selected_end_customer_research_version);
+      if (selectedResearchVersion !== null && (
+        !Number.isSafeInteger(selectedResearchVersion) || selectedResearchVersion <= 0
+      )) {
+        return failure("A pesquisa E20.5 selecionada do taxon é inválida.");
+      }
+      reviewedInputCatalogVersion = data.reviewed_input_catalog_version === null
+        ? null : Number(data.reviewed_input_catalog_version);
+      if (reviewedInputCatalogVersion !== null && (
+        !Number.isSafeInteger(reviewedInputCatalogVersion) || reviewedInputCatalogVersion <= 0
+      )) {
+        return failure("O marcador factual vigente do taxon é inválido.");
       }
     }
     taxons.push(taxon);
     nextId = taxon.parentId;
   }
-  if (nextId !== null || taxons.length === 0) {
-    return failure("A cadeia taxonômica excede os níveis autorizados.");
-  }
+  if (nextId !== null || taxons.length === 0) return failure("A cadeia taxonômica excede os níveis autorizados.");
+  return { ok: true as const, value: {
+    selected: taxons[0], selectedResearchVersion, reviewedInputCatalogVersion, taxons,
+  } };
+}
 
-  return {
-    ok: true,
-    value: {
-      selected: taxons[0],
-      reviewedInputCatalogVersion,
-      taxons: Object.freeze(taxons),
+function resolveCoverage(context: Readonly<{
+  selected: LandingPageInputCatalogTaxonIdentity;
+  selectedResearchVersion: number | null;
+  reviewedInputCatalogVersion: number | null;
+  taxons: readonly LandingPageInputCatalogTaxonIdentity[];
+}>) {
+  return resolveInheritedInputCatalogCoverage({
+    baseline: {
+      taxon: context.selected,
+      selectedResearchVersion: context.selectedResearchVersion,
+      reviewedInputCatalogVersion: context.reviewedInputCatalogVersion,
     },
+    taxons: context.taxons,
+    inputCatalogVersion: CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION,
+    resolvePlan: resolveLandingPageInputCatalog,
+  });
+}
+
+function normalizeStoredReviewRow(value: unknown): FactualReviewSession | null {
+  if (!isRecord(value) || typeof value.id !== "string" || typeof value.taxon_id !== "string"
+      || (value.kind !== "release" && value.kind !== "revision")
+      || (value.status !== "open" && value.status !== "closed")
+      || typeof value.baseline_is_active !== "boolean"
+      || (value.baseline_selected_end_customer_research_version !== null && (
+        !Number.isSafeInteger(Number(value.baseline_selected_end_customer_research_version)) ||
+        Number(value.baseline_selected_end_customer_research_version) <= 0
+      ))
+      || (value.baseline_reviewed_input_catalog_version !== null && (
+        !Number.isSafeInteger(Number(value.baseline_reviewed_input_catalog_version)) ||
+        Number(value.baseline_reviewed_input_catalog_version) <= 0
+      ))
+      || typeof value.context_fingerprint !== "string"
+      || !Number.isSafeInteger(Number(value.revision))) return null;
+  return {
+    id: value.id,
+    taxonId: value.taxon_id,
+    kind: value.kind,
+    status: value.status,
+    baselineIsActive: value.baseline_is_active,
+    baselineSelectedResearchVersion: value.baseline_selected_end_customer_research_version === null
+      ? null : Number(value.baseline_selected_end_customer_research_version),
+    baselineReviewedInputCatalogVersion: value.baseline_reviewed_input_catalog_version === null
+      ? null : Number(value.baseline_reviewed_input_catalog_version),
+    contextFingerprint: value.context_fingerprint,
+    revision: Number(value.revision),
   };
 }
 
 function normalizeTaxonRow(value: unknown): LandingPageInputCatalogTaxonIdentity | null {
-  if (!isRecord(value)) return null;
-  if (
-    typeof value.id !== "string" ||
-    (value.parent_id !== null && typeof value.parent_id !== "string") ||
-    (value.level !== "segment" && value.level !== "niche" && value.level !== "ultra_niche") ||
-    typeof value.name !== "string" ||
-    typeof value.slug !== "string" ||
-    typeof value.is_active !== "boolean"
-  ) {
-    return null;
-  }
-  return {
-    id: value.id,
-    parentId: value.parent_id,
-    level: value.level,
-    name: value.name,
-    slug: value.slug,
-    isActive: value.is_active,
-  };
+  if (!isRecord(value) || typeof value.id !== "string"
+      || (value.parent_id !== null && typeof value.parent_id !== "string")
+      || !["segment", "niche", "ultra_niche"].includes(value.level)
+      || typeof value.name !== "string" || typeof value.slug !== "string"
+      || typeof value.is_active !== "boolean") return null;
+  return { id: value.id, parentId: value.parent_id, level: value.level,
+    name: value.name, slug: value.slug, isActive: value.is_active } as LandingPageInputCatalogTaxonIdentity;
 }
 
-function normalizeReviewRpcRow(
-  value: unknown,
-  taxonId: string,
-  contextFingerprint: string,
-): FactualReviewSession | null {
-  const row = Array.isArray(value) ? value[0] : value;
-  if (!isRecord(row)) return null;
-  if (
-    typeof row.review_id !== "string" ||
-    (row.review_kind !== "release" && row.review_kind !== "revision") ||
-    (row.review_status !== "open" &&
-      row.review_status !== "awaiting_catalog_publication" &&
-      row.review_status !== "closed_without_change" &&
-      row.review_status !== "closed_published") ||
-    !Number.isSafeInteger(Number(row.review_revision)) ||
-    Number(row.review_revision) <= 0 ||
-    typeof row.review_baseline_is_active !== "boolean" ||
-    (row.review_baseline_reviewed_input_catalog_version !== null &&
-      (!Number.isSafeInteger(Number(row.review_baseline_reviewed_input_catalog_version)) ||
-        Number(row.review_baseline_reviewed_input_catalog_version) <= 0))
-  ) {
-    return null;
-  }
-  return {
-    id: row.review_id,
-    taxonId,
-    kind: row.review_kind,
-    status: row.review_status,
-    baselineIsActive: row.review_baseline_is_active,
-    baselineReviewedInputCatalogVersion:
-      row.review_baseline_reviewed_input_catalog_version === null
-        ? null
-        : Number(row.review_baseline_reviewed_input_catalog_version),
-    contextFingerprint,
-    revision: Number(row.review_revision),
-  };
-}
-
-function normalizeStoredReviewRow(value: unknown): FactualReviewSession | null {
-  if (!isRecord(value) || typeof value.taxon_id !== "string" || typeof value.context_fingerprint !== "string") {
-    return null;
-  }
-  return normalizeReviewRpcRow(
-    {
-      review_id: value.id,
-      review_kind: value.kind,
-      review_status: value.status,
-      review_revision: value.revision,
-      review_baseline_is_active: value.baseline_is_active,
-      review_baseline_reviewed_input_catalog_version:
-        value.baseline_reviewed_input_catalog_version,
-    },
-    value.taxon_id,
-    value.context_fingerprint,
-  );
-}
-
-function normalizePositiveIntegerOrNull(value: unknown): number | null {
-  return Number.isSafeInteger(value) && Number(value) > 0 ? Number(value) : null;
-}
-
-function serializeHumanDecision(
-  decision: FactualReviewHumanDecision,
-): FactualReviewHumanDecision {
-  return {
-    recommendationCandidateCount: decision.recommendationCandidateCount,
-    recommendationSelection: decision.recommendationSelection,
-    acceptedCandidates: decision.acceptedCandidates,
-    rejectedCandidateIndexes: decision.rejectedCandidateIndexes,
-    ownCandidate: decision.ownCandidate,
-  };
-}
-
-function serializeHumanDecisionWithRecommendation(
-  decision: FactualReviewHumanDecision,
-  recommendationEventId: string | undefined,
-  recommendationOutputFingerprint: string | undefined,
-  recommendationEvaluationContextFingerprint: string | undefined,
-): FactualReviewHumanDecision & Readonly<Record<string, unknown>> {
-  return {
-    ...serializeHumanDecision(decision),
-    ...(decision.recommendationCandidateCount > 0 && recommendationEventId && recommendationOutputFingerprint && recommendationEvaluationContextFingerprint
-      ? { recommendationEventId, recommendationOutputFingerprint, recommendationEvaluationContextFingerprint }
-      : {}),
-  };
-}
-
-function hasValidRecommendationBinding(
-  decision: FactualReviewHumanDecision | null,
-  recommendationEventId: string | undefined,
-  recommendationOutputFingerprint: string | undefined,
-  recommendationEvaluationContextFingerprint: string | undefined,
-): boolean {
-  if (!decision) return false;
-  const hasBinding = Boolean(
-    recommendationEventId ||
-    recommendationOutputFingerprint ||
-    recommendationEvaluationContextFingerprint,
-  );
-  return decision.recommendationCandidateCount > 0
-    ? Boolean(
-        recommendationEventId &&
-        recommendationOutputFingerprint &&
-        /^[0-9a-f]{64}$/.test(recommendationEvaluationContextFingerprint ?? ""),
-      )
-    : !hasBinding;
+function isOutcome(value: unknown): value is AdminTaxonFactualReviewSummary["outcome"] {
+  return value === null || value === "no_change" || value === "catalog_change" || value === "invalidated";
 }
 
 function isRecord(value: unknown): value is Record<string, any> {

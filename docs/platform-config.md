@@ -248,7 +248,7 @@
 • Estado inicial: desabilitado durante o PR #795, o merge humano, o apply e as provas operacionais do novo workload.
 • Pré-condição operacional: `OPENAI_OPERATIONAL_CONFIG_ENABLED=true` já está ativo em Preview e Production e deve permanecer ativo durante todo o rollout da E20.6.5; este recorte apenas verifica essa condição e não volta a habilitar o gate da E21.2.
 • Progressão operacional: a revisão operacional `2` de `taxon_input_catalog_sufficiency_evaluation` já está ativa em Preview e Production. O estado atual de `E20_6_5_INPUT_CATALOG_EVALUATION_PROVIDER_ENABLED`, o redeploy, o QA hospedado e a conclusão do rollout permanecem não comprovados neste confronto; nenhum desses estados pode ser inferido da revisão ativa.
-• Regra de credencial: reutilizar a `OPENAI_API_KEY` compartilhada já autorizada para o provider; não criar chave específica da E20.6.5. O evento factual persistido é a única evidência da recomendação aceita pelo fluxo de decisão; não existe token paralelo de autoridade ou compatibilidade.
+• Regra de credencial: reutilizar a `OPENAI_API_KEY` compartilhada já autorizada somente para o provider; não criar chave específica da E20.6.5 nem derivar HMAC ou token decisório dessa credencial. A recomendação persistida na revisão factual aberta é recarregada pelo backend no fluxo de decisão.
 
 • Configuração efetiva dos workloads OpenAI de produto
 • Fonte canônica: `lib/openai-workloads/registry.ts` mantém identidade, baseline local e allowlist; Development usa `repo_catalog` revisão `v2`, e Preview/Production usam exclusivamente `supabase_operational` com revisão decimal ativa.
@@ -545,7 +545,7 @@ Regra:
 • Configurações de plataformas, secrets por nome, workflows, ambientes e endpoints usados por automações devem ser registrados neste documento.
 
 99. Changelog
-v0.1.46 — 12/09/2026 — E20.6.5–E20.6.7 preservaram a `OPENAI_API_KEY` compartilhada e retiraram handoff, registro e token HMAC legados; gate e falha de configuração afetam somente a avaliação assistida opcional, enquanto o lifecycle humano e os eventos factuais persistidos permanecem independentes. Gate, apply, redeploy e QA hospedados permanecem não comprovados.
+v0.1.46 — 12/09/2026 — E20.6.5–E20.6.7 preservaram a `OPENAI_API_KEY` compartilhada e retiraram handoff e token HMAC legados; gate e falha de configuração afetam somente a avaliação assistida opcional, enquanto o lifecycle humano permanece independente. Gate, apply, redeploy e QA hospedados permanecem não comprovados.
 
 v0.1.45 — 12/09/2026 — Reconciliada a configuração operacional concluída da E21.5: captura ativa validada em Preview e Production e ingresso assinado do `supabase_inspect` validado em Production, sem registrar valores de secrets.
 v0.1.44 — 07/09/2026 — Consolidado o fechamento da E23.2: seis ocorrências sem consumidor removidas da Vercel Core; 22 sobreclassificações como Secret e quatro branch scopes legados preservados por decisão funcional conservadora; Preview aprovado sem exposição ou substituição de valores.

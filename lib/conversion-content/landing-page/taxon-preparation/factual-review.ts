@@ -153,6 +153,7 @@ export function resolveInheritedInputCatalogCoverage(
 
   const contextIdentity = {
     taxon: input.baseline.taxon,
+    selectedResearchVersion: input.baseline.selectedResearchVersion,
     reviewedInputCatalogVersion: input.baseline.reviewedInputCatalogVersion,
     chainSnapshot: buildCanonicalChainSnapshot(chain.value.factual),
     inputCatalogVersion: input.inputCatalogVersion,

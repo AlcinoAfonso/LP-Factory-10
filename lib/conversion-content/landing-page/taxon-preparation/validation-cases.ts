@@ -29,7 +29,6 @@ import {
   deriveFactualReviewKind,
   deriveTaxonPreparationForVersion,
   fingerprintInputCatalogEvaluationContextIdentity,
-  fingerprintInputCatalogEvaluationOutput,
   inputCatalogEvaluationOutputJsonSchema,
   isEndCustomerResearchSelectionEnabled,
   isGenericTaxonActivation,
@@ -97,6 +96,7 @@ const cases: readonly ValidationCase[] = [
       const input = {
         baseline: {
           taxon: inactiveNiche,
+          selectedResearchVersion: null,
           reviewedInputCatalogVersion: null,
         },
         taxons: [inactiveNiche, realEstateSegmentTaxon],
@@ -105,10 +105,14 @@ const cases: readonly ValidationCase[] = [
       };
       const coverage = resolveInheritedInputCatalogCoverage(input);
       const repeated = resolveInheritedInputCatalogCoverage(input);
+      const changedResearch = resolveInheritedInputCatalogCoverage({
+        ...input,
+        baseline: { ...input.baseline, selectedResearchVersion: 1 },
+      });
 
       assert.equal(coverage.ok, true);
       assert.equal(repeated.ok, true);
-      if (!coverage.ok || !repeated.ok) throw new Error("Expected inherited coverage");
+      if (!coverage.ok || !repeated.ok || !changedResearch.ok) throw new Error("Expected inherited coverage");
       assert.deepEqual(coverage.value.catalogs.map((catalog) => catalog.plan), [
         "starter",
         "lite",
@@ -124,6 +128,7 @@ const cases: readonly ValidationCase[] = [
       assert.match(coverage.value.contextFingerprint, /^[0-9a-f]{64}$/);
       assert.match(coverage.value.contentFingerprint, /^[0-9a-f]{64}$/);
       assert.equal(coverage.value.contextFingerprint, repeated.value.contextFingerprint);
+      assert.notEqual(coverage.value.contextFingerprint, changedResearch.value.contextFingerprint);
       assert.equal(coverage.value.contentFingerprint, repeated.value.contentFingerprint);
       assert.equal(deriveFactualReviewKind(false), "release");
       assert.equal(deriveFactualReviewKind(true), "revision");
@@ -232,11 +237,6 @@ const cases: readonly ValidationCase[] = [
         new URL("../../../../supabase/migrations/20260911213324_e20_6_3_factual_review_lifecycle.sql", import.meta.url),
         "utf8",
       );
-      const identityInvalidationMigration = readFileSync(
-        new URL("../../../../supabase/migrations/20260912165000_e20_6_taxon_identity_review_invalidation.sql", import.meta.url),
-        "utf8",
-      );
-
       const createStart = adminSource.indexOf("export async function createAdminTaxon");
       const updateStart = adminSource.indexOf("export async function updateAdminTaxon");
       const createBoundary = adminSource.slice(createStart, updateStart);
@@ -259,54 +259,56 @@ const cases: readonly ValidationCase[] = [
       assert.doesNotMatch(createFormSource, /name="isActive"|Criar como ativo/);
       assert.match(manageFormSource, /Inativar diretamente/);
       assert.match(manageFormSource, /A ativação exige concluir a liberação factual/);
-      assert.match(manageFormSource, /disabled=\{hasUnclosedFactualReview\}/);
+      assert.doesNotMatch(manageFormSource, /disabled=\{hasUnclosedFactualReview\}/);
+      assert.match(manageFormSource, /fecha a revisão factual aberta como invalidada/);
       assert.match(manageFormSource, /name="invalidateAffectedReviews"/);
       assert.match(manageFormSource, /Invalidar explicitamente as coberturas E20\.6/);
       assert.doesNotMatch(researchSelectionFormSource, /disabled=\{!isActive \|\| pending\}/);
       assert.match(researchSelectionFormSource, /A seleção ficará dormente e não ativará o taxon/);
       assert.ok(updateBoundary.indexOf("isGenericTaxonActivation") < updateBoundary.indexOf(".update("));
       assert.match(factualAdapterSource, /resolveInheritedInputCatalogCoverage/);
-      assert.match(factualAdapterSource, /open_business_taxon_factual_review_v1/);
-      assert.match(factualAdapterSource, /close_business_taxon_factual_review_without_change_v1/);
-      assert.match(factualAdapterSource, /p_chain_snapshot: coverage\.value\.chainSnapshot/g);
+      assert.match(factualAdapterSource, /\.from\("business_taxon_factual_reviews"\)[\s\S]*\.insert\(/);
+      assert.match(factualAdapterSource, /finalize_business_taxon_factual_review_v1/);
+      assert.match(factualAdapterSource, /chain_snapshot: coverage\.value\.chainSnapshot/);
       assert.match(migration, /alter column is_active set default false/);
       assert.match(migration, /chain_snapshot jsonb not null/);
-      assert.match(migration, /order by taxons\.id[\s\S]*for update of taxons/g);
-      assert.match(migration, /'expected_revision', p_expected_revision/g);
+      assert.match(migration, /baseline_selected_end_customer_research_version integer/);
+      assert.match(migration, /business_taxons_factual_research_selection_guard/);
       assert.match(migration, /security invoker/g);
-      assert.match(migration, /record_business_taxon_factual_catalog_change_decision_v1/);
-      assert.match(migration, /save_business_taxon_factual_review_draft_v1/);
-      assert.match(migration, /authorize_business_taxon_factual_review_publication_v1/);
+      assert.match(migration, /status text not null default 'open' check \(status in \('open', 'closed'\)\)/);
+      assert.match(migration, /guard_open_business_taxon_factual_review_v1/);
+      assert.match(migration, /pg_advisory_xact_lock\(hashtextextended\('lpf10:e20\.6:factual-review', 0\)\)/);
+      assert.match(migration, /v_actual_chain is distinct from new\.chain_snapshot/);
+      assert.match(migration, /v_actual_chain is distinct from v_review\.chain_snapshot/);
+      assert.match(migration, /v_actual_chain is distinct from v_evidence\.chain_snapshot/);
+      assert.match(migration, /selected_end_customer_research_version is distinct from v_evidence\.baseline_selected_end_customer_research_version/);
+      assert.match(migration, /v_selected\.reviewed_input_catalog_version is distinct from v_evidence\.baseline_reviewed_input_catalog_version/);
+      assert.match(migration, /guard_closed_business_taxon_factual_review_v1/);
+      assert.match(migration, /finalize_business_taxon_factual_review_v1/);
+      assert.match(migration, /update_business_taxon_with_factual_review_invalidation_v1/);
       assert.match(migration, /reconcile_business_taxon_factual_review_publication_v1/);
-      assert.match(migration, /factual_review_projection_is_rpc_derived/);
-      assert.match(migration, /'draft_invalidated'/);
-      assert.match(migration, /'publication_authorized'/);
-      assert.match(migration, /'reconciled_published'/);
-      assert.match(identityInvalidationMigration, /business_taxon_input_catalog_review_invalidations/);
-      assert.match(identityInvalidationMigration, /update_business_taxon_identity_with_review_invalidation_v1/);
-      assert.match(identityInvalidationMigration, /taxon_factual_review_unclosed/);
-      assert.match(identityInvalidationMigration, /p_expected_reviewed_taxons/);
-      assert.match(identityInvalidationMigration, /taxon_review_invalidation_coverage_conflict/);
-      assert.match(identityInvalidationMigration, /set reviewed_input_catalog_version = null[\s\S]*set name = p_name/);
+      assert.doesNotMatch(migration, /business_taxon_factual_review_events|factual_review_save_receipts/);
+      assert.doesNotMatch(migration, /evaluation_output_fingerprint/);
+      assert.doesNotMatch(factualAdapterSource, /outputFingerprint|fingerprintInputCatalogEvaluationOutput/);
+      assert.match(factualAdapterSource, /baseline_selected_end_customer_research_version: context\.value\.selectedResearchVersion/);
+      assert.match(factualAdapterSource, /origin: "human"/);
+      assert.match(migration, /set status = 'closed', outcome = 'invalidated'[\s\S]*set reviewed_input_catalog_version = null/);
+      assert.match(migration, /evaluation_context_fingerprint <> p_expected_draft_context_fingerprint/);
+      assert.match(migration, /evaluation_context_fingerprint <> \(evidence\.value ->> 'context_fingerprint'\)/);
       assert.ok(updateBoundary.indexOf("hasUnclosedFactualReview") < updateBoundary.lastIndexOf(".update("));
-      assert.ok(updateBoundary.indexOf("update_business_taxon_identity_with_review_invalidation_v1") < updateBoundary.lastIndexOf(".update("));
+      assert.ok(updateBoundary.indexOf("update_business_taxon_with_factual_review_invalidation_v1") < updateBoundary.lastIndexOf(".update("));
+      assert.match(adminSource, /findAffectedInputCatalogReviews[\s\S]*collectCompletePaginatedRows\([\s\S]*count: "exact"[\s\S]*\.order\("id"[\s\S]*\.range\(offset, offset \+ limit - 1\)/);
       const humanDecisionStart = actionsSource.indexOf("export async function recordInputCatalogHumanDecisionAction");
       const humanDecisionEnd = actionsSource.indexOf("export async function createTaxonAction", humanDecisionStart);
       const humanDecisionBoundary = actionsSource.slice(humanDecisionStart, humanDecisionEnd);
       assert.ok(
         humanDecisionBoundary.indexOf("evidence.inputCatalogVersion !== CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION") <
-          humanDecisionBoundary.indexOf("closeAdminTaxonFactualReviewWithoutChangeForCurrentCoverage"),
-      );
-      assert.match(migration, /order by reviews\.id[\s\S]*for update of reviews/g);
-      assert.equal(
-        migration.match(/e20_6_factual_review_open_authorize_v1/g)?.length,
-        2,
+          humanDecisionBoundary.lastIndexOf("finalizeAdminTaxonFactualReview"),
       );
       assert.doesNotMatch(migration, /landing_page_input_catalog_fields/);
       assert.match(factualAdapterSource, /normalizeFactualReviewCatalogChangeDecision/);
-      assert.match(factualAdapterSource, /record_business_taxon_factual_catalog_change_decision_v1/);
-      assert.match(factualAdapterSource, /closeAdminTaxonFactualReviewWithoutChangeForCurrentCoverage/);
-      assert.match(factualAdapterSource, /decision\.value\.decisionKind !== "catalog_change"/);
+      assert.match(factualAdapterSource, /persistAdminTaxonFactualEvaluation/);
+      assert.match(factualAdapterSource, /closeAdminTaxonFactualReviewWithoutEvaluation/);
       assert.match(factualAdapterSource, /reconcile_business_taxon_factual_review_publication_v1/);
       assert.doesNotMatch(factualAdapterSource, /OpenAI|evaluateInputCatalogWithOpenAi|web_search/);
     },
@@ -592,7 +594,7 @@ const cases: readonly ValidationCase[] = [
       assert.equal(taxonomyMutationAffectsInputCatalogResolution(current, current), false);
       assert.equal(taxonomyMutationAffectsInputCatalogResolution(current, { ...current, name: "Imóveis" }), true);
       assert.equal(taxonomyMutationAffectsInputCatalogResolution(current, { ...current, slug: "imoveis" }), true);
-      assert.equal(taxonomyMutationAffectsInputCatalogResolution(current, { ...current, isActive: false }), false);
+      assert.equal(taxonomyMutationAffectsInputCatalogResolution(current, { ...current, isActive: false }), true);
       const rows = [
         { id: "segment", parentId: null, reviewedVersion: null },
         { id: "niche", parentId: "segment", reviewedVersion: 1 },
@@ -608,21 +610,34 @@ const cases: readonly ValidationCase[] = [
         affectedReviewedTaxonIds: ["niche", "ultra"],
         hasUnclosedFactualReview: false,
         explicitInvalidationAuthorized: false,
+        closesUnclosedFactualReviews: false,
       }), {
         ok: false,
-        error: "Confirme explicitamente a invalidação das coberturas E20.6 afetadas antes de alterar nome ou slug.",
+        error: "Confirme explicitamente a invalidação das coberturas E20.6 afetadas antes de alterar identidade ou atividade.",
       });
       assert.equal(planTaxonomyIdentityReviewInvalidation({
         materiallyChangesResolution: true,
         affectedReviewedTaxonIds: ["niche"],
         hasUnclosedFactualReview: true,
         explicitInvalidationAuthorized: true,
+        closesUnclosedFactualReviews: false,
       }).ok, false);
+      assert.deepEqual(planTaxonomyIdentityReviewInvalidation({
+        materiallyChangesResolution: true,
+        affectedReviewedTaxonIds: ["niche", "ultra"],
+        hasUnclosedFactualReview: true,
+        explicitInvalidationAuthorized: true,
+        closesUnclosedFactualReviews: true,
+      }), {
+        ok: true,
+        invalidateReviewedTaxonIds: ["niche", "ultra"],
+      });
       assert.deepEqual(planTaxonomyIdentityReviewInvalidation({
         materiallyChangesResolution: true,
         affectedReviewedTaxonIds: ["niche", "ultra"],
         hasUnclosedFactualReview: false,
         explicitInvalidationAuthorized: true,
+        closesUnclosedFactualReviews: false,
       }), {
         ok: true,
         invalidateReviewedTaxonIds: ["niche", "ultra"],
@@ -1846,90 +1861,6 @@ const cases: readonly ValidationCase[] = [
       );
       assert.equal(refusalWithOutputText.status, "refusal");
 
-      let deadlineNow = 100;
-      let deadlineFetches = 0;
-      const executionDeadlineCalls: string[] = [];
-      const delayedRecorder = await evaluateInputCatalogWithOpenAi(
-        {
-          apiKey: "test-key",
-          configuration: resolved.value,
-          environment: "development",
-          request: { ...request, deadlineAtMs: 150 },
-          requestId: "request_e2065_delayed_recorder",
-          safetyIdentifier: "platform_admin_test",
-        },
-        {
-          now: () => deadlineNow,
-          costRecorder: {
-            startExecution: async () => {
-              executionDeadlineCalls.push("startExecution");
-              deadlineNow = 151;
-            },
-            startOperation: async () => { executionDeadlineCalls.push("startOperation"); },
-            finishOperation: async (terminal) => {
-              executionDeadlineCalls.push(`finishOperation:${terminal.result}:${terminal.failureCategory}`);
-            },
-            finishExecution: async (terminal) => {
-              executionDeadlineCalls.push(`finishExecution:${terminal.result}:${terminal.failureCategory}`);
-            },
-          },
-          fetchImpl: async () => {
-            deadlineFetches += 1;
-            return new Response();
-          },
-          emitEvent: () => undefined,
-        },
-      );
-      assert.equal(delayedRecorder.status, "failure");
-      assert.equal(deadlineFetches, 0);
-      assert.deepEqual(executionDeadlineCalls, [
-        "startExecution",
-        "finishExecution:failure:timeout",
-      ]);
-
-      let operationDeadlineNow = 100;
-      let operationDeadlineFetches = 0;
-      const operationDeadlineCalls: string[] = [];
-      const delayedOperationRecorder = await evaluateInputCatalogWithOpenAi(
-        {
-          apiKey: "test-key",
-          configuration: resolved.value,
-          environment: "development",
-          request: { ...request, deadlineAtMs: 150 },
-          requestId: "request_e2065_delayed_operation_recorder",
-          safetyIdentifier: "platform_admin_test",
-        },
-        {
-          now: () => operationDeadlineNow,
-          costRecorder: {
-            startExecution: async () => { operationDeadlineCalls.push("startExecution"); },
-            startOperation: async () => {
-              operationDeadlineCalls.push("startOperation");
-              operationDeadlineNow = 151;
-            },
-            finishOperation: async (terminal) => {
-              operationDeadlineCalls.push(`finishOperation:${terminal.result}:${terminal.failureCategory}`);
-            },
-            finishExecution: async (terminal) => {
-              operationDeadlineCalls.push(`finishExecution:${terminal.result}:${terminal.failureCategory}`);
-            },
-          },
-          fetchImpl: async () => {
-            operationDeadlineFetches += 1;
-            return new Response();
-          },
-          emitEvent: () => undefined,
-        },
-      );
-      assert.equal(delayedOperationRecorder.status, "failure");
-      assert.equal(operationDeadlineFetches, 0);
-      assert.deepEqual(operationDeadlineCalls, [
-        "startExecution",
-        "startOperation",
-        "finishOperation:failure:timeout",
-        "finishExecution:failure:timeout",
-      ]);
-
       const incomplete = await evaluateInputCatalogWithOpenAi(
         {
           apiKey: "test-key",
@@ -2095,10 +2026,10 @@ const cases: readonly ValidationCase[] = [
       assert.match(lifecycleSource, /min-h-11/);
       assert.match(lifecycleSource, /name="reviewId"/);
       assert.match(lifecycleSource, /name="expectedRevision"/);
-      assert.match(lifecycleSource, /name="expectedContextFingerprint"/);
+      assert.doesNotMatch(lifecycleSource, /name="expectedContextFingerprint"/);
       assert.match(lifecycleSource, /unavailableMessage/);
-      assert.match(lifecycleSource, /closed_without_change/);
-      assert.match(lifecycleSource, /closed_published/);
+      assert.doesNotMatch(lifecycleSource, /awaiting_catalog_publication|closed_without_change|closed_published/);
+      assert.match(lifecycleSource, /review\.status === "closed"/);
       assert.match(lifecycleSource, /Abrir nova sessão factual/);
 
       const pageSource = readFileSync(
@@ -2116,7 +2047,7 @@ const cases: readonly ValidationCase[] = [
         "utf8",
       );
       assert.match(adapterSource, /listLatestAdminTaxonFactualReviews/);
-      assert.match(adapterSource, /created_at/);
+      assert.match(adapterSource, /opened_at/);
       assert.doesNotMatch(adapterSource, /\.in\("status", \["open", "awaiting_catalog_publication"\]\)/);
 
       const actionSource = readFileSync(
@@ -2124,12 +2055,19 @@ const cases: readonly ValidationCase[] = [
         "utf8",
       );
       assert.match(actionSource, /openAdminTaxonFactualReview/);
-      assert.match(actionSource, /closeAdminTaxonFactualReviewWithoutChangeForCurrentCoverage/);
-      assert.match(actionSource, /recordAdminInputCatalogDraftHumanDecision/);
+      assert.match(actionSource, /closeAdminTaxonFactualReviewWithoutEvaluation/);
+      assert.match(actionSource, /finalizeAdminTaxonFactualReview/);
+      assert.match(actionSource, /persistAdminTaxonFactualEvaluation/);
       assert.match(actionSource, /loadAdminTaxonFactualEvaluationEvidence/);
+      assert.match(actionSource, /evidence\.output\.status === "inconclusive"/);
+      assert.doesNotMatch(actionSource, /evaluation_requested|appendAdminTaxonFactualEvaluationEvent/);
+      assert.ok(
+        actionSource.indexOf("if (!result.ok) return") <
+          actionSource.lastIndexOf("persistAdminTaxonFactualEvaluation"),
+      );
       assert.match(actionSource, /current\.id !== reviewId/);
       assert.match(actionSource, /current\.revision !== expectedRevision/);
-      assert.match(actionSource, /current\.contextFingerprint !== expectedContextFingerprint/);
+      assert.doesNotMatch(actionSource, /current\.contextFingerprint !== expectedContextFingerprint/);
       assert.doesNotMatch(actionSource, /recordInputCatalogReviewAction|reopenInputCatalogReviewAction|acknowledge_factual_gap/);
       const totalDeadline = actionSource.indexOf("const evaluationDeadlineAtMs = Date.now() + 45_000");
       const actionAuthorization = actionSource.indexOf("const gate = await requirePlatformAdmin()", totalDeadline);

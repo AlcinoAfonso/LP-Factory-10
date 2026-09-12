@@ -25,7 +25,11 @@ export function taxonomyMutationAffectsInputCatalogResolution(
   current: Readonly<{ name: string; slug: string; isActive: boolean }>,
   next: Readonly<{ name: string; slug: string; isActive: boolean }>,
 ): boolean {
-  return current.name !== next.name || current.slug !== next.slug;
+  return (
+    current.name !== next.name ||
+    current.slug !== next.slug ||
+    current.isActive !== next.isActive
+  );
 }
 
 export function collectAffectedReviewedTaxonIds(
@@ -68,20 +72,21 @@ export function planTaxonomyIdentityReviewInvalidation(input: Readonly<{
   affectedReviewedTaxonIds: readonly string[];
   hasUnclosedFactualReview: boolean;
   explicitInvalidationAuthorized: boolean;
+  closesUnclosedFactualReviews: boolean;
 }>) {
   if (!input.materiallyChangesResolution) {
     return { ok: true as const, invalidateReviewedTaxonIds: Object.freeze([] as string[]) };
   }
-  if (input.hasUnclosedFactualReview) {
+  if (input.hasUnclosedFactualReview && !input.closesUnclosedFactualReviews) {
     return {
       ok: false as const,
-      error: "Encerre a sessão factual aberta do taxon ou de seus descendentes antes de alterar nome ou slug.",
+      error: "Encerre a sessão factual aberta do taxon ou de seus descendentes antes de alterar sua identidade.",
     };
   }
   if (input.affectedReviewedTaxonIds.length > 0 && !input.explicitInvalidationAuthorized) {
     return {
       ok: false as const,
-      error: "Confirme explicitamente a invalidação das coberturas E20.6 afetadas antes de alterar nome ou slug.",
+      error: "Confirme explicitamente a invalidação das coberturas E20.6 afetadas antes de alterar identidade ou atividade.",
     };
   }
   return {

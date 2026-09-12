@@ -39,7 +39,7 @@ export function AdminTaxonFactualReviewLifecycle({
   );
   const feedback = closeState.revision >= openState.revision ? closeState : openState;
   const busy = openPending || closePending;
-  const canOpen = !review || review.status === "closed_without_change" || review.status === "closed_published";
+  const canOpen = !review || review.status === "closed";
 
   useEffect(() => {
     if (feedback.revision > 0) feedbackRef.current?.focus();
@@ -89,7 +89,6 @@ export function AdminTaxonFactualReviewLifecycle({
             <input type="hidden" name="taxonId" value={taxonId} />
             <input type="hidden" name="reviewId" value={review.id} />
             <input type="hidden" name="expectedRevision" value={review.revision} />
-            <input type="hidden" name="expectedContextFingerprint" value={review.contextFingerprint} />
             <ActionButton disabled={busy} pending={closePending}>
               {review.kind === "release" ? "Concluir liberação sem mudança" : "Fechar revisão sem mudança"}
             </ActionButton>
@@ -97,13 +96,7 @@ export function AdminTaxonFactualReviewLifecycle({
         </div>
       ) : null}
 
-      {review?.status === "awaiting_catalog_publication" ? (
-        <p className="mt-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900" role="status">
-          A decisão humana com mudança está vinculada ao draft exato e aguarda publicação e reconciliação.
-        </p>
-      ) : null}
-
-      {review?.status === "closed_without_change" || review?.status === "closed_published" ? (
+      {review?.status === "closed" ? (
         <p className="mt-4 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900" role="status">
           Esta é a última sessão factual concluída. O histórico permanece reconhecível após recarregar a página;
           uma nova sessão pode ser aberta quando outra revisão ou liberação for necessária.
@@ -161,10 +154,7 @@ function ActionButton({ children, disabled, pending }: Readonly<{
 }
 
 function statusLabel(status: AdminTaxonFactualReviewSummary["status"]): string {
-  if (status === "open") return "Aberta";
-  if (status === "awaiting_catalog_publication") return "Aguardando publicação";
-  if (status === "closed_published") return "Publicada e reconciliada";
-  return "Concluída sem mudança";
+  return status === "open" ? "Aberta" : "Concluída";
 }
 
 function kindLabel(kind: AdminTaxonFactualReviewSummary["kind"]): string {

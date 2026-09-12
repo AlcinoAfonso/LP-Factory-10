@@ -183,9 +183,7 @@ function factualReviewStatusLabel(
   status: import("@/lib/admin/adapters/adminTaxonFactualReviewAdapter").AdminTaxonFactualReviewSummary["status"],
 ): string {
   if (status === "open") return "Aberta";
-  if (status === "awaiting_catalog_publication") return "Aguardando publicação";
-  if (status === "closed_published") return "Publicada e reconciliada";
-  return "Concluída sem mudança";
+  return "Concluída";
 }
 
 function DiagnosticCell({

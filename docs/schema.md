@@ -1041,9 +1041,8 @@
 1.35.2 Evidências e constraints
 • content_fingerprint é SHA-256 hexadecimal obrigatório; validation_fingerprint/validation_context_fingerprint/validated_at e publication_fingerprint/publication_context_fingerprint/publication_prepared_at formam conjuntos consistentes.
 • Evidência de publicação só pode referenciar o mesmo conteúdo e a mesma coleção operacional integral validados. Drift de taxonomia, configuração E19.2 pré-handoff, configuração E19.5, LP ou elegibilidade torna o handoff stale. O registro significa handoff repo-only preparado, não publicação, ativação ou autoridade operacional.
-• taxon_review_evidence é projeção JSON server-only e RPC-only das decisões autoritativas por taxon e draft exato. Cada entrada contém somente review_id, decision_event_id, draft_revision, content_fingerprint e context_fingerprint; decisão, ator e candidatos residem nos eventos append-only.
-• Gravar decisão não incrementa a revisão material do draft nem altera reviewed_input_catalog_version. Editar o conteúdo trava o singleton e as sessões vinculadas, limpa integralmente a projeção, registra draft_invalidated, reabre as sessões e limpa validação/autorização na mesma transação.
-• factual_review_save_receipts é mapa JSON server-only e RPC-only de recibos compactos de save por operation_id; cada recibo vincula ator, revisão esperada/resultante, identidade do conteúdo e fingerprint para tornar replay exato idempotente e rejeitar reutilização divergente.
+• taxon_review_evidence é a projeção server-only das decisões fechadas por taxon e draft exato. Cada entrada contém somente review_id, review_revision, draft_revision, content_fingerprint e context_fingerprint; decisão, ator e candidatos permanecem na linha factual referenciada.
+• Gravar decisão não incrementa a revisão material do draft nem altera reviewed_input_catalog_version. Editar o conteúdo usa concorrência otimista, limpa integralmente a projeção e também limpa validação e preparação de publicação; as revisões factuais já fechadas permanecem imutáveis no histórico.
 • singleton é a primary key booleana e aceita somente true; no máximo uma linha pode existir.
 • created_by e updated_by referenciam auth.users(id) com ON UPDATE CASCADE e ON DELETE RESTRICT; created_at e updated_at são timestamptz não nulos, e trigger canônico mantém updated_at.
 
@@ -1088,41 +1087,17 @@
 
 1.38 business_taxon_factual_reviews
 1.38.1 Função e estado
-• Autoridade service-only do lifecycle factual por taxon; `kind` aceita `release | revision` e `status` aceita `open | awaiting_catalog_publication | closed_without_change | closed_published`.
-• Preserva baseline de atividade e versão revisada, fingerprints, snapshot canônico da identidade completa do taxon e de seus ancestrais, revisão otimista, operação idempotente de abertura, atores e instantes. Índice parcial permite no máximo uma sessão não encerrada por taxon.
-• Abrir sessão não altera `business_taxons`. Abertura e fechamento revalidam a cadeia sob locks em ordem estável; o fechamento sem mudança avança a versão revisada e ativa somente uma `release` na mesma transação, enquanto uma `revision` permanece ativa.
-• Decisão com mudança vincula sessão, evento autoritativo, versão alvo, revisão do draft e fingerprints e move a sessão para awaiting_catalog_publication sem alterar taxon ou catálogo. Edição do draft invalida e reabre todas as sessões vinculadas; reconciliação fecha a coleção como closed_published.
+• Única autoridade factual persistida por revisão de taxon. `kind` aceita `release | revision`, `status` aceita somente `open | closed` e `outcome` registra `no_change | catalog_change | invalidated` apenas no fechamento.
+• Preserva baseline de atividade, `selected_end_customer_research_version` e versão revisada, snapshot canônico da cadeia, contexto, última avaliação estruturada, decisão humana, revisão otimista, atores e instantes. Índice parcial permite no máximo uma revisão aberta por taxon.
+• Abertura é insert de uma linha e não altera `business_taxons`; triggers compartilham o advisory lock com a mutação taxonômica e com a troca da pesquisa E20.5 selecionada. Abertura, finalização e reconciliação revalidam baseline e snapshot integral sob o mesmo lock. Avaliação bem-sucedida substitui somente a recomendação persistida da revisão aberta; falha ou timeout do provider não grava estado autoritativo.
+• Decisão fecha a linha imediatamente. Em cobertura publicada sem mudança, a mesma transação avança o marcador e ativa somente uma `release`; sobre draft, a mesma transação grava a evidência exata inclusive para `no_change`, sem ativação antecipada.
+• Linha fechada é imutável. Alteração material ou inativação de ancestral fecha revisões abertas afetadas como `invalidated` e limpa marcadores do subtree na mesma transação, sem ledger paralelo.
 
 1.38.2 Segurança e artefatos
 • RLS habilitado e zero policies; public, anon, authenticated e ai_readonly sem grants. `service_role` possui somente SELECT, INSERT e UPDATE.
-• Não participa do Trigger Hub; trigger dedicado mantém `updated_at`.
-• RPCs `open_business_taxon_factual_review_v1`, `close_business_taxon_factual_review_without_change_v1`, `append_business_taxon_factual_review_evaluation_event_v1`, `record_business_taxon_factual_catalog_change_decision_v1`, `save_business_taxon_factual_review_draft_v1`, `authorize_business_taxon_factual_review_publication_v1` e `reconcile_business_taxon_factual_review_publication_v1` usam SECURITY INVOKER, search_path fixado e EXECUTE exclusivo de service_role.
+• Não participa do Trigger Hub; triggers dedicados serializam a abertura e a seleção E20.5, mantêm `updated_at` e rejeitam UPDATE ou DELETE quando a linha já está fechada.
+• Somente as fronteiras multi-write usam RPC: `finalize_business_taxon_factual_review_v1`, `update_business_taxon_with_factual_review_invalidation_v1` e `reconcile_business_taxon_factual_review_publication_v1`. Todas usam SECURITY INVOKER, search_path fixado e EXECUTE exclusivo de service_role.
 • Migration forward-only: `supabase/migrations/20260911213324_e20_6_3_factual_review_lifecycle.sql`; teste transacional e snippet read-only homônimos. Estado: artefatos repo-side criados; apply hospedado e verificações pós-apply ainda não executados.
-
-1.39 business_taxon_factual_review_events
-1.39.1 Função e contrato
-• Trilha append-only das sessões factuais, ordenada por sequência e idempotente por operação em cada sessão.
-• Vocabulários de evento, estratégia de fonte e decisão são fechados; payload é objeto. `evaluation_requested` e inconclusão técnica sem output não possuem fingerprint; `evaluation_completed`, inconclusão com output, decisão, vínculo, autorização e reconciliação exigem fingerprint do conteúdo associado.
-• `append_business_taxon_factual_review_evaluation_event_v1` anexa idempotentemente requested, completed ou inconclusive somente à sessão aberta, com revisão, fingerprint da sessão e fingerprint distinto da identidade exata da avaliação, sem alterar sessão ou taxon. Completed preserva output estruturado v2, versão do catálogo, contagem e URLs HTTPS autenticadas; estratégia Web exige evidência dentro do teto, fonte em todos os candidatos e qualquer URL textual contida nesse conjunto.
-• Decisão que cobre recomendações exige o `evaluation_completed` da mesma sessão, contexto e fingerprint, com cardinalidade e índices exatos. Candidato próprio sem recomendação não aceita vínculo artificial.
-• decision_recorded é a autoridade da partição humana entre recomendações aceitas e rejeitadas, candidato próprio e camadas. draft_linked, publication_authorized, draft_invalidated e reconciled_published mantêm decisão, autorização, publicação e ativação como transições distintas e idempotentes por sessão.
-• Payload não armazena prompt, pesquisa integral, conteúdo web, secret, Base, Oferta, tarefa, conta ou PII.
-
-1.39.2 Segurança e imutabilidade
-• RLS habilitado e zero policies; public, anon, authenticated e ai_readonly sem grants. `service_role` possui somente SELECT e INSERT.
-• Trigger dedicado rejeita UPDATE e DELETE. A tabela não participa do Trigger Hub.
-
-1.40 business_taxon_input_catalog_review_invalidations
-1.40.1 Função e contrato
-• Trilha append-only dos recibos de invalidação explícita de cobertura E20.6 antes de alteração de nome ou slug de um taxon.
-• Cada operação registra taxon raiz, taxon afetado, versão revisada anterior, identidade raiz anterior e posterior, ator e instante. A operação é idempotente por `operation_id + affected_taxon_id` e preserva o histórico mesmo quando o taxon for removido posteriormente.
-• `update_business_taxon_identity_with_review_invalidation_v1` trava a taxonomia em ordem estável, revalida os ids e versões revisadas exatamente confirmados pelo administrador, rejeita ativação genérica e qualquer sessão factual não encerrada no taxon ou descendentes, grava todos os recibos, limpa somente os marcadores revisados afetados e então atualiza a identidade raiz na mesma transação. Falha ou conflito produz rollback integral.
-• Abrir uma sessão factual continua preservando `reviewed_input_catalog_version`; esta transição não reintroduz o `reopen` destrutivo e só é chamada após confirmação administrativa explícita.
-
-1.40.2 Segurança e artefatos
-• RLS habilitado e zero policies; public, anon, authenticated e ai_readonly sem grants. `service_role` possui somente SELECT e INSERT, e trigger dedicado rejeita UPDATE e DELETE.
-• A RPC usa SECURITY INVOKER, search_path fixado e EXECUTE exclusivo de `service_role`. A tabela não participa do Trigger Hub.
-• Migration: `supabase/migrations/20260912165000_e20_6_taxon_identity_review_invalidation.sql`; teste transacional e snippet read-only homônimos. Estado: artefatos repo-side criados; apply hospedado e verificações pós-apply ainda não executados.
 
 2. Views
 
@@ -1461,7 +1436,7 @@
 • Rollback: não remove automaticamente a extensão, pois pode ser reutilizada por outros recursos
 
 99. Changelog
-v1.0.66 (12/09/2026) — E20.6.5: registrado o append RPC-only de eventos de avaliação, fingerprints distintos de sessão e identidade da avaliação, output v2 e fontes Web autenticadas, e autoridade persistida das recomendações; apply hospedado permanece pendente.
+v1.0.66 (12/09/2026) — E20.6.3–E20.6.7: registrada uma única residência factual por revisão, com estados `open | closed`, última avaliação v2, decisão humana imutável, três RPCs multi-write e abertura serializada com mutações taxonômicas; sem ledger de eventos/invalidações, recibo JSON, token decisório ou fingerprint redundante do output. Apply hospedado permanece pendente.
 v1.0.65 (02/09/2026) — SV-PR03: marcado o agregado físico E19.5 como infraestrutura herdada; configurações continuam lidas pelo lifecycle administrativo do catálogo e os demais RPCs, materializações, aprovação e Storage permanecem inertes, sem DDL, migration, dado ou ACL alterado.
 v1.0.61 (29/08/2026) — E20.7.4: registrada a migration candidata que amplia o agregado E21.2 de dez para doze unidades com `landing_page_dynamic_market_research`, preserva as três tabelas, RLS e grants existentes e mantém apply e revisão operacional comprovada pendentes do merge humano.
 

@@ -2,1227 +2,277 @@ begin;
 set local search_path = public, pg_catalog;
 
 insert into auth.users (id, aud, role, email, created_at, updated_at)
-values (
-  'e2063000-0000-4000-8000-000000000001',
-  'authenticated',
-  'authenticated',
-  'e20.6.3-test@example.com',
-  now(),
-  now()
-);
+values ('e2063000-0000-4000-8000-000000000001', 'authenticated', 'authenticated',
+  'e20.6.3-test@example.com', now(), now());
 
 do $$
 declare
-  v_default text;
-  v_open record;
-  v_retry record;
-  v_release_snapshot jsonb;
-  v_revision_snapshot jsonb;
+  v_review_id uuid;
+  v_final record;
+  v_taxonomy record;
+  v_reconcile record;
+  v_output jsonb := jsonb_build_object(
+    'schemaVersion', 2,
+    'status', 'sufficient',
+    'mode', 'systematic',
+    'sourceStrategy', 'e20_5',
+    'sourceState', 'e20_5_available',
+    'summary', 'Cobertura suficiente.',
+    'summarySourceUrls', '[]'::jsonb,
+    'candidates', jsonb_build_array(jsonb_build_object(
+      'origin', 'evaluation', 'conclusion', 'possible_new_field',
+      'factualNeed', 'Necessidade factual', 'evidence', 'Evidência factual',
+      'sourceUrls', '[]'::jsonb
+    )),
+    'followUpQuestion', null
+  );
 begin
-  select column_default into v_default
-  from information_schema.columns
-  where table_schema = 'public'
-    and table_name = 'business_taxons'
-    and column_name = 'is_active';
-  if lower(coalesce(v_default, '')) not in ('false', 'false::boolean') then
-    raise exception 'E20.6.3 taxons must default to inactive';
-  end if;
-
   if to_regclass('public.business_taxon_factual_reviews') is null
-     or to_regclass('public.business_taxon_factual_review_events') is null
+     or to_regclass('public.business_taxon_factual_review_events') is not null
+     or to_regclass('public.business_taxon_input_catalog_review_invalidations') is not null
      or not (select relrowsecurity from pg_class where oid = 'public.business_taxon_factual_reviews'::regclass)
-     or not (select relrowsecurity from pg_class where oid = 'public.business_taxon_factual_review_events'::regclass)
-     or exists (
-       select 1 from pg_policies
-       where schemaname = 'public'
-         and tablename in ('business_taxon_factual_reviews', 'business_taxon_factual_review_events')
-     ) then
-    raise exception 'E20.6.3 factual lifecycle tables or service-only RLS drifted';
+     or exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'business_taxon_factual_reviews') then
+    raise exception 'single factual-review residence or service-only RLS drifted';
   end if;
   if has_table_privilege('anon', 'public.business_taxon_factual_reviews', 'SELECT')
      or has_table_privilege('authenticated', 'public.business_taxon_factual_reviews', 'SELECT')
-     or has_table_privilege('anon', 'public.business_taxon_factual_review_events', 'SELECT')
-     or has_table_privilege('authenticated', 'public.business_taxon_factual_review_events', 'SELECT')
      or not has_table_privilege('service_role', 'public.business_taxon_factual_reviews', 'SELECT,INSERT,UPDATE')
-     or has_table_privilege('service_role', 'public.business_taxon_factual_reviews', 'DELETE,TRUNCATE')
-     or not has_table_privilege('service_role', 'public.business_taxon_factual_review_events', 'SELECT,INSERT')
-     or has_table_privilege('service_role', 'public.business_taxon_factual_review_events', 'UPDATE,DELETE,TRUNCATE')
-     or (to_regrole('ai_readonly') is not null and (
-       has_table_privilege('ai_readonly', 'public.business_taxon_factual_reviews', 'SELECT,INSERT,UPDATE,DELETE')
-       or has_table_privilege('ai_readonly', 'public.business_taxon_factual_review_events', 'SELECT,INSERT,UPDATE,DELETE')
-     )) then
-    raise exception 'E20.6.3 factual lifecycle ACL drifted';
+     or has_table_privilege('service_role', 'public.business_taxon_factual_reviews', 'DELETE') then
+    raise exception 'factual-review ACL drifted';
   end if;
-  if has_function_privilege(
-       'anon',
-       'public.open_business_taxon_factual_review_v1(uuid,text,jsonb,uuid,uuid,boolean,integer)',
-       'EXECUTE'
-     )
-     or has_function_privilege(
-       'authenticated',
-       'public.open_business_taxon_factual_review_v1(uuid,text,jsonb,uuid,uuid,boolean,integer)',
-       'EXECUTE'
-     )
-     or not has_function_privilege(
-       'service_role',
-       'public.open_business_taxon_factual_review_v1(uuid,text,jsonb,uuid,uuid,boolean,integer)',
-       'EXECUTE'
-     )
-     or has_function_privilege(
-       'anon',
-       'public.close_business_taxon_factual_review_without_change_v1(uuid,uuid,uuid,bigint,integer,text,text,jsonb,jsonb)',
-       'EXECUTE'
-     )
-     or has_function_privilege(
-       'authenticated',
-       'public.close_business_taxon_factual_review_without_change_v1(uuid,uuid,uuid,bigint,integer,text,text,jsonb,jsonb)',
-       'EXECUTE'
-     )
-     or not has_function_privilege(
-       'service_role',
-       'public.close_business_taxon_factual_review_without_change_v1(uuid,uuid,uuid,bigint,integer,text,text,jsonb,jsonb)',
-       'EXECUTE'
-     )
-     or has_function_privilege(
-       'anon',
-       'public.append_business_taxon_factual_review_evaluation_event_v1(uuid,uuid,uuid,bigint,text,text,text,text,jsonb)',
-       'EXECUTE'
-     )
-     or has_function_privilege(
-       'authenticated',
-       'public.append_business_taxon_factual_review_evaluation_event_v1(uuid,uuid,uuid,bigint,text,text,text,text,jsonb)',
-       'EXECUTE'
-     )
-     or not has_function_privilege(
-       'service_role',
-       'public.append_business_taxon_factual_review_evaluation_event_v1(uuid,uuid,uuid,bigint,text,text,text,text,jsonb)',
-       'EXECUTE'
-     ) then
-    raise exception 'E20.6.3 RPC ACL drifted';
+  if not has_function_privilege('service_role',
+       'public.finalize_business_taxon_factual_review_v1(uuid,bigint,uuid,integer,jsonb,bigint,text,text)', 'EXECUTE')
+     or not has_function_privilege('service_role',
+       'public.update_business_taxon_with_factual_review_invalidation_v1(uuid,text,text,boolean,text,text,boolean,uuid)', 'EXECUTE')
+     or not has_function_privilege('service_role',
+       'public.reconcile_business_taxon_factual_review_publication_v1(uuid,bigint,integer,text,text)', 'EXECUTE') then
+    raise exception 'focused factual-review RPC ACL drifted';
+  end if;
+  if has_function_privilege('anon', 'public.guard_open_business_taxon_factual_review_v1()', 'EXECUTE')
+     or has_function_privilege('authenticated', 'public.guard_open_business_taxon_factual_review_v1()', 'EXECUTE')
+     or has_function_privilege('anon', 'public.guard_closed_business_taxon_factual_review_v1()', 'EXECUTE')
+     or has_function_privilege('authenticated', 'public.guard_closed_business_taxon_factual_review_v1()', 'EXECUTE')
+     or has_function_privilege('anon', 'public.guard_business_taxon_factual_research_selection_v1()', 'EXECUTE')
+     or has_function_privilege('authenticated', 'public.guard_business_taxon_factual_research_selection_v1()', 'EXECUTE') then
+    raise exception 'factual-review trigger function ACL drifted';
+  end if;
+  if (select count(*) from pg_proc
+      where pronamespace = 'public'::regnamespace
+        and proname in (
+          'finalize_business_taxon_factual_review_v1',
+          'update_business_taxon_with_factual_review_invalidation_v1',
+          'reconcile_business_taxon_factual_review_publication_v1'
+        )) <> 3 then
+    raise exception 'factual-review RPC count drifted';
   end if;
 
-  insert into public.business_taxons (id, parent_id, level, name, slug, is_active)
-  values (
-    'e2063000-0000-4000-8000-000000000010', null, 'segment',
-    'E20.6.3 active parent', 'e20-6-3-active-parent', true
-  );
-  insert into public.business_taxons (id, parent_id, level, name, slug)
-  values (
-    'e2063000-0000-4000-8000-000000000011',
-    'e2063000-0000-4000-8000-000000000010', 'niche',
-    'E20.6.3 inactive release', 'e20-6-3-inactive-release'
-  );
-
-  v_release_snapshot := jsonb_build_array(
-    jsonb_build_object(
-      'id', 'e2063000-0000-4000-8000-000000000010',
-      'parentId', null,
-      'level', 'segment',
-      'name', 'E20.6.3 active parent',
-      'slug', 'e20-6-3-active-parent',
-      'isActive', true
-    ),
-    jsonb_build_object(
-      'id', 'e2063000-0000-4000-8000-000000000011',
-      'parentId', 'e2063000-0000-4000-8000-000000000010',
-      'level', 'niche',
-      'name', 'E20.6.3 inactive release',
-      'slug', 'e20-6-3-inactive-release',
-      'isActive', false
-    )
-  );
-
-  select * into v_open
-  from public.open_business_taxon_factual_review_v1(
-    'e2063000-0000-4000-8000-000000000011', repeat('a', 64),
-    v_release_snapshot,
-    'e2063000-0000-4000-8000-000000000020',
-    'e2063000-0000-4000-8000-000000000001', false, null
-  );
-  if v_open.review_kind <> 'release'
-     or v_open.review_status <> 'open'
-     or v_open.review_revision <> 1
-     or (select chain_snapshot from public.business_taxon_factual_reviews where id = v_open.review_id) <> v_release_snapshot then
-    raise exception 'E20.6.3 release opening returned invalid state';
-  end if;
-
-  select * into v_retry
-  from public.open_business_taxon_factual_review_v1(
-    'e2063000-0000-4000-8000-000000000011', repeat('a', 64),
-    v_release_snapshot,
-    'e2063000-0000-4000-8000-000000000020',
-    'e2063000-0000-4000-8000-000000000001', false, null
-  );
-  if v_retry.review_id is distinct from v_open.review_id then
-    raise exception 'E20.6.3 idempotent opening created another session';
-  end if;
+  insert into public.business_taxons
+    (id, parent_id, level, name, slug, is_active, reviewed_input_catalog_version)
+  values
+    ('e2063000-0000-4000-8000-000000000010', null, 'segment', 'Raiz', 'raiz-e206', true, 5),
+    ('e2063000-0000-4000-8000-000000000011', 'e2063000-0000-4000-8000-000000000010', 'niche', 'Filho', 'filho-e206', true, 5),
+    ('e2063000-0000-4000-8000-000000000012', 'e2063000-0000-4000-8000-000000000011', 'ultra_niche', 'Neto', 'neto-e206', true, 5);
 
   begin
-    perform * from public.open_business_taxon_factual_review_v1(
-      'e2063000-0000-4000-8000-000000000011', repeat('a', 64),
-      v_release_snapshot,
-      'e2063000-0000-4000-8000-000000000021',
-      'e2063000-0000-4000-8000-000000000001', false, null
+    insert into public.business_taxon_factual_reviews
+      (taxon_id, kind, baseline_is_active, baseline_reviewed_input_catalog_version,
+       context_fingerprint, chain_snapshot, opened_by)
+    values (
+      'e2063000-0000-4000-8000-000000000010', 'revision', true, 5, repeat('9', 64),
+      jsonb_build_array(jsonb_build_object(
+        'id', 'e2063000-0000-4000-8000-000000000010', 'name', 'Snapshot obsoleto',
+        'slug', 'raiz-e206', 'level', 'segment', 'isActive', true, 'parentId', null
+      )),
+      'e2063000-0000-4000-8000-000000000001'
     );
-    raise exception 'parallel factual session unexpectedly accepted';
+    raise exception 'stale factual-review snapshot unexpectedly opened';
   exception when serialization_failure then null;
   end;
 
-  begin
-    perform * from public.close_business_taxon_factual_review_without_change_v1(
-      v_open.review_id, 'e2063000-0000-4000-8000-000000000022',
-      'e2063000-0000-4000-8000-000000000001', 2, 6,
-      repeat('a', 64), repeat('b', 64), v_release_snapshot
-    );
-    raise exception 'stale factual revision unexpectedly accepted';
-  exception when serialization_failure then null;
-  end;
-  if (select is_active from public.business_taxons where id = 'e2063000-0000-4000-8000-000000000011')
-     or (select status <> 'open' or revision <> 1 from public.business_taxon_factual_reviews where id = v_open.review_id)
-     or (select count(*) from public.business_taxon_factual_review_events where review_id = v_open.review_id) <> 1 then
-    raise exception 'failed stale closure did not preserve the prior state';
-  end if;
-
-  begin
-    update public.business_taxons
-    set name = 'E20.6.3 drifted release'
-    where id = 'e2063000-0000-4000-8000-000000000011';
-    perform * from public.close_business_taxon_factual_review_without_change_v1(
-      v_open.review_id, 'e2063000-0000-4000-8000-000000000031',
-      'e2063000-0000-4000-8000-000000000001', 1, 6,
-      repeat('a', 64), repeat('b', 64), v_release_snapshot
-    );
-    raise exception 'selected taxon identity drift unexpectedly accepted';
-  exception when serialization_failure then null;
-  end;
-  if (select name from public.business_taxons where id = 'e2063000-0000-4000-8000-000000000011') <> 'E20.6.3 inactive release'
-     or (select count(*) from public.business_taxon_factual_review_events where review_id = v_open.review_id) <> 1 then
-    raise exception 'selected taxon drift rollback did not preserve state';
-  end if;
-
-  begin
-    update public.business_taxons
-    set slug = 'e20-6-3-drifted-parent'
-    where id = 'e2063000-0000-4000-8000-000000000010';
-    perform * from public.close_business_taxon_factual_review_without_change_v1(
-      v_open.review_id, 'e2063000-0000-4000-8000-000000000032',
-      'e2063000-0000-4000-8000-000000000001', 1, 6,
-      repeat('a', 64), repeat('b', 64), v_release_snapshot
-    );
-    raise exception 'ancestor identity drift unexpectedly accepted';
-  exception when serialization_failure then null;
-  end;
-  if (select slug from public.business_taxons where id = 'e2063000-0000-4000-8000-000000000010') <> 'e20-6-3-active-parent'
-     or (select status <> 'open' or revision <> 1 from public.business_taxon_factual_reviews where id = v_open.review_id)
-     or (select count(*) from public.business_taxon_factual_review_events where review_id = v_open.review_id) <> 1 then
-    raise exception 'ancestor drift rollback did not preserve state';
-  end if;
-
-  select * into v_retry
-  from public.close_business_taxon_factual_review_without_change_v1(
-    v_open.review_id, 'e2063000-0000-4000-8000-000000000023',
-    'e2063000-0000-4000-8000-000000000001', 1, 6,
-    repeat('a', 64), repeat('b', 64), v_release_snapshot
-  );
-  if v_retry.review_status <> 'closed_without_change'
-     or v_retry.review_revision <> 2
-     or not (select is_active from public.business_taxons where id = 'e2063000-0000-4000-8000-000000000011')
-     or (select reviewed_input_catalog_version from public.business_taxons where id = 'e2063000-0000-4000-8000-000000000011') <> 6
-     or (select count(*) from public.business_taxon_factual_review_events where review_id = v_open.review_id) <> 3
-     or (select payload_json ->> 'expected_revision'
-         from public.business_taxon_factual_review_events
-         where review_id = v_open.review_id and operation_id = 'e2063000-0000-4000-8000-000000000023') <> '1' then
-    raise exception 'E20.6.3 atomic no-change release failed';
-  end if;
-
-  begin
-    perform * from public.close_business_taxon_factual_review_without_change_v1(
-      v_open.review_id, 'e2063000-0000-4000-8000-000000000023',
-      'e2063000-0000-4000-8000-000000000001', 2, 6,
-      repeat('a', 64), repeat('b', 64), v_release_snapshot
-    );
-    raise exception 'divergent replay revision unexpectedly accepted';
-  exception when invalid_parameter_value then null;
-  end;
-  if (select count(*) from public.business_taxon_factual_review_events where review_id = v_open.review_id) <> 3
-     or (select revision from public.business_taxon_factual_reviews where id = v_open.review_id) <> 2 then
-    raise exception 'divergent replay changed factual state';
-  end if;
-
-  select * into v_retry
-  from public.close_business_taxon_factual_review_without_change_v1(
-    v_open.review_id, 'e2063000-0000-4000-8000-000000000023',
-    'e2063000-0000-4000-8000-000000000001', 1, 6,
-    repeat('a', 64), repeat('b', 64), v_release_snapshot
-  );
-  if v_retry.review_revision <> 2
-     or (select count(*) from public.business_taxon_factual_review_events where review_id = v_open.review_id) <> 3 then
-    raise exception 'E20.6.3 idempotent closure duplicated effects';
-  end if;
-
-  update public.business_taxons
-  set reviewed_input_catalog_version = 5
-  where id = 'e2063000-0000-4000-8000-000000000010';
-  v_revision_snapshot := jsonb_build_array(
-    jsonb_build_object(
-      'id', 'e2063000-0000-4000-8000-000000000010',
-      'parentId', null,
-      'level', 'segment',
-      'name', 'E20.6.3 active parent',
-      'slug', 'e20-6-3-active-parent',
-      'isActive', true
-    )
-  );
-  select * into v_open
-  from public.open_business_taxon_factual_review_v1(
-    'e2063000-0000-4000-8000-000000000010', repeat('c', 64),
-    v_revision_snapshot,
-    'e2063000-0000-4000-8000-000000000024',
-    'e2063000-0000-4000-8000-000000000001', true, 5
-  );
-  if v_open.review_kind <> 'revision'
-     or v_open.review_baseline_reviewed_input_catalog_version <> 5 then
-    raise exception 'active revision did not preserve its non-null marker';
-  end if;
-
-  begin
-    update public.business_taxons
-    set name = 'E20.6.3 drifted active revision'
-    where id = 'e2063000-0000-4000-8000-000000000010';
-    perform * from public.close_business_taxon_factual_review_without_change_v1(
-      v_open.review_id, 'e2063000-0000-4000-8000-000000000025',
-      'e2063000-0000-4000-8000-000000000001', 1, 6,
-      repeat('c', 64), repeat('d', 64), v_revision_snapshot
-    );
-    raise exception 'active revision identity drift unexpectedly accepted';
-  exception when serialization_failure then null;
-  end;
-  if (select name from public.business_taxons where id = 'e2063000-0000-4000-8000-000000000010') <> 'E20.6.3 active parent'
-     or (select reviewed_input_catalog_version from public.business_taxons where id = 'e2063000-0000-4000-8000-000000000010') <> 5
-     or not (select is_active from public.business_taxons where id = 'e2063000-0000-4000-8000-000000000010')
-     or (select status <> 'open' or revision <> 1 from public.business_taxon_factual_reviews where id = v_open.review_id) then
-    raise exception 'active revision rollback did not preserve state';
-  end if;
-
-  select * into v_retry
-  from public.close_business_taxon_factual_review_without_change_v1(
-    v_open.review_id, 'e2063000-0000-4000-8000-000000000026',
-    'e2063000-0000-4000-8000-000000000001', 1, 6,
-    repeat('c', 64), repeat('d', 64), v_revision_snapshot,
-    jsonb_build_object(
-      'recommendationCandidateCount', 0,
-      'recommendationSelection', 'zero',
-      'acceptedCandidates', '[]'::jsonb,
-      'rejectedCandidateIndexes', '[]'::jsonb,
-      'ownCandidate', null
-    )
-  );
-  if v_retry.review_status <> 'closed_without_change'
-     or v_retry.review_revision <> 2
-     or not (select is_active from public.business_taxons where id = 'e2063000-0000-4000-8000-000000000010')
-     or (select reviewed_input_catalog_version from public.business_taxons where id = 'e2063000-0000-4000-8000-000000000010') <> 6
-     or (select payload_json -> 'human_decision' ->> 'recommendationSelection'
-         from public.business_taxon_factual_review_events
-         where review_id = v_open.review_id
-           and operation_id = 'e2063000-0000-4000-8000-000000000026') <> 'zero' then
-    raise exception 'active no-change revision failed';
-  end if;
-
-  select * into v_retry
-  from public.close_business_taxon_factual_review_without_change_v1(
-    v_open.review_id, 'e2063000-0000-4000-8000-000000000026',
-    'e2063000-0000-4000-8000-000000000001', 1, 6,
-    repeat('c', 64), repeat('d', 64), v_revision_snapshot,
-    jsonb_build_object(
-      'recommendationCandidateCount', 0,
-      'recommendationSelection', 'zero',
-      'acceptedCandidates', '[]'::jsonb,
-      'rejectedCandidateIndexes', '[]'::jsonb,
-      'ownCandidate', null
-    )
-  );
-  if v_retry.review_revision <> 2
-     or (select count(*) from public.business_taxon_factual_review_events
-         where review_id = v_open.review_id) <> 3 then
-    raise exception 'exact human no-change replay duplicated effects';
-  end if;
-
-  begin
-    perform * from public.close_business_taxon_factual_review_without_change_v1(
-      v_open.review_id, 'e2063000-0000-4000-8000-000000000026',
-      'e2063000-0000-4000-8000-000000000001', 1, 6,
-      repeat('c', 64), repeat('d', 64), v_revision_snapshot,
-      jsonb_build_object(
-        'recommendationCandidateCount', 0,
-        'recommendationSelection', 'zero',
-        'acceptedCandidates', '[]'::jsonb,
-        'rejectedCandidateIndexes', '[]'::jsonb,
-        'ownCandidate', null,
-        'unexpected', true
+  insert into public.business_taxon_factual_reviews
+    (taxon_id, kind, baseline_is_active, baseline_reviewed_input_catalog_version,
+     context_fingerprint, chain_snapshot, opened_by)
+  select child.id, 'revision', true, 5, repeat('a', 64),
+    case child.level
+      when 'niche' then jsonb_build_array(
+        jsonb_build_object('id', root.id, 'name', root.name, 'slug', root.slug,
+          'level', root.level, 'isActive', root.is_active, 'parentId', root.parent_id),
+        jsonb_build_object('id', child.id, 'name', child.name, 'slug', child.slug,
+          'level', child.level, 'isActive', child.is_active, 'parentId', child.parent_id)
       )
-    );
-    raise exception 'divergent human no-change replay unexpectedly accepted';
-  exception when invalid_parameter_value then null;
-  end;
+      else jsonb_build_array(
+        jsonb_build_object('id', root.id, 'name', root.name, 'slug', root.slug,
+          'level', root.level, 'isActive', root.is_active, 'parentId', root.parent_id),
+        jsonb_build_object('id', parent.id, 'name', parent.name, 'slug', parent.slug,
+          'level', parent.level, 'isActive', parent.is_active, 'parentId', parent.parent_id),
+        jsonb_build_object('id', child.id, 'name', child.name, 'slug', child.slug,
+          'level', child.level, 'isActive', child.is_active, 'parentId', child.parent_id)
+      )
+    end,
+    'e2063000-0000-4000-8000-000000000001'
+  from public.business_taxons child
+  join public.business_taxons root on root.id = 'e2063000-0000-4000-8000-000000000010'
+  left join public.business_taxons parent on parent.id = child.parent_id
+  where child.id in ('e2063000-0000-4000-8000-000000000011', 'e2063000-0000-4000-8000-000000000012');
+
+  select * into v_taxonomy
+  from public.update_business_taxon_with_factual_review_invalidation_v1(
+    'e2063000-0000-4000-8000-000000000010', 'Raiz', 'raiz-e206', true,
+    'Raiz', 'raiz-e206', false, 'e2063000-0000-4000-8000-000000000001'
+  );
+  if v_taxonomy.invalidated_review_count <> 2 or v_taxonomy.cleared_marker_count <> 3
+     or (select count(*) from public.business_taxon_factual_reviews
+         where taxon_id in ('e2063000-0000-4000-8000-000000000011', 'e2063000-0000-4000-8000-000000000012')
+           and status = 'closed' and outcome = 'invalidated') <> 2 then
+    raise exception 'ancestor deactivation did not close subtree reviews and clear markers atomically';
+  end if;
 
   begin
-    update public.business_taxon_factual_review_events
-    set payload_json = '{"tampered":true}'::jsonb
-    where review_id = v_open.review_id;
-    raise exception 'append-only factual event unexpectedly updated';
+    update public.business_taxon_factual_reviews set revision = revision + 1
+    where taxon_id = 'e2063000-0000-4000-8000-000000000011';
+    raise exception 'closed review unexpectedly mutable';
   exception when insufficient_privilege then null;
   end;
-end;
-$$;
 
-do $$
-declare
-  v_actor constant uuid := 'e2063000-0000-4000-8000-000000000001';
-  v_release_taxon constant uuid := 'e2064000-0000-4000-8000-000000000101';
-  v_revision_taxon constant uuid := 'e2064000-0000-4000-8000-000000000102';
-  v_uncovered_release_taxon constant uuid := 'e2064000-0000-4000-8000-000000000103';
-  v_release_review record;
-  v_revision_review record;
-  v_uncovered_release_review record;
-  v_release_recommendation record;
-  v_revision_recommendation record;
-  v_result record;
-  v_release_snapshot jsonb;
-  v_revision_snapshot jsonb;
-  v_uncovered_release_snapshot jsonb;
-  v_zero_decision jsonb;
-  v_partial_decision jsonb;
-  v_total_decision jsonb;
-  v_drift_taxon uuid;
-  v_evaluation_output jsonb;
-  v_release_event_metadata jsonb;
-  v_revision_event_metadata jsonb;
-begin
-  insert into public.business_taxons (
-    id, parent_id, level, name, slug, is_active, reviewed_input_catalog_version
-  ) values
-    (
-      v_release_taxon, null, 'segment', 'E20.6.4 inactive release',
-      'e20-6-4-inactive-release', false, null
-    ),
-    (
-      v_revision_taxon, null, 'segment', 'E20.6.4 active revision',
-      'e20-6-4-active-revision', true, 6
-    );
-
-  v_release_snapshot := jsonb_build_array(jsonb_build_object(
-    'id', v_release_taxon::text,
-    'parentId', null,
-    'level', 'segment',
-    'name', 'E20.6.4 inactive release',
-    'slug', 'e20-6-4-inactive-release',
-    'isActive', false
-  ));
-  v_revision_snapshot := jsonb_build_array(jsonb_build_object(
-    'id', v_revision_taxon::text,
-    'parentId', null,
-    'level', 'segment',
-    'name', 'E20.6.4 active revision',
-    'slug', 'e20-6-4-active-revision',
-    'isActive', true
-  ));
-
-  select * into v_release_review
-  from public.open_business_taxon_factual_review_v1(
-    v_release_taxon, repeat('a', 64), v_release_snapshot,
-    'e2064000-0000-4000-8000-000000000201', v_actor, false, null
-  );
-  select * into v_revision_review
-  from public.open_business_taxon_factual_review_v1(
-    v_revision_taxon, repeat('b', 64), v_revision_snapshot,
-    'e2064000-0000-4000-8000-000000000202', v_actor, true, 6
-  );
-  v_release_event_metadata := jsonb_build_object(
-    'reviewContextFingerprint', repeat('a', 64),
-    'evaluationContextFingerprint', repeat('3', 64),
-    'deadlineAtMs', floor(extract(epoch from clock_timestamp()) * 1000) + 60000
-  );
-  v_revision_event_metadata := jsonb_build_object(
-    'reviewContextFingerprint', repeat('b', 64),
-    'evaluationContextFingerprint', repeat('4', 64),
-    'deadlineAtMs', floor(extract(epoch from clock_timestamp()) * 1000) + 60000
-  );
-
-  v_evaluation_output := jsonb_build_object(
-    'schemaVersion', 2,
-    'sourceStrategy', 'e20_5',
-    'sourceState', 'e20_5_available',
-    'summarySourceUrls', '[]'::jsonb,
-    'candidates', jsonb_build_array(
-      jsonb_build_object('conclusion', 'possible_new_field', 'sourceUrls', '[]'::jsonb),
-      jsonb_build_object('conclusion', 'refine_existing_field', 'sourceUrls', '[]'::jsonb)
-    )
-  );
-  select * into v_release_recommendation
-  from public.append_business_taxon_factual_review_evaluation_event_v1(
-    v_release_review.review_id, 'e2064000-0000-4000-8000-000000000203', v_actor,
-    1, repeat('a', 64), 'evaluation_completed', 'e20_5', repeat('1', 64),
-    jsonb_build_object(
-      'inputCatalogVersion', 6,
-      'outputFingerprint', repeat('1', 64),
-      'candidateCount', 2,
-      'output', v_evaluation_output,
-      'webSearchCallCount', 0,
-      'webSearchSources', '[]'::jsonb,
-      'materialTextUrlProjection', '[]'::jsonb
-    ) || v_release_event_metadata
-  );
-  select * into v_revision_recommendation
-  from public.append_business_taxon_factual_review_evaluation_event_v1(
-    v_revision_review.review_id, 'e2064000-0000-4000-8000-000000000204', v_actor,
-    1, repeat('b', 64), 'evaluation_completed', 'e20_5', repeat('2', 64),
-    jsonb_build_object(
-      'inputCatalogVersion', 6,
-      'outputFingerprint', repeat('2', 64),
-      'candidateCount', 2,
-      'output', v_evaluation_output,
-      'webSearchCallCount', 0,
-      'webSearchSources', '[]'::jsonb,
-      'materialTextUrlProjection', '[]'::jsonb
-    ) || v_revision_event_metadata
-  );
-
-  insert into public.landing_page_input_catalog_drafts (
-    base_version, target_version, catalog_json, content_fingerprint,
-    created_by, updated_by
-  ) values (6, 7, '{"version":7}'::jsonb, repeat('c', 64), v_actor, v_actor);
-
-  v_zero_decision := jsonb_build_object(
-    'recommendationCandidateCount', 2,
-    'recommendationSelection', 'zero',
-    'acceptedCandidates', '[]'::jsonb,
-    'rejectedCandidateIndexes', '[0,1]'::jsonb,
-    'ownCandidate', jsonb_build_object(
-      'factualNeed', 'Necessidade própria sem criar field',
-      'layer', 'segment'
-    ),
-    'recommendationEventId', v_release_recommendation.event_id,
-    'recommendationOutputFingerprint', repeat('1', 64),
-    'recommendationEvaluationContextFingerprint', repeat('3', 64)
-  );
-  v_partial_decision := jsonb_build_object(
-    'recommendationCandidateCount', 2,
-    'recommendationSelection', 'partial',
-    'acceptedCandidates', jsonb_build_array(jsonb_build_object(
-      'index', 0,
-      'layer', 'universal'
+  insert into public.business_taxons (id, parent_id, level, name, slug, is_active)
+  values ('e2063000-0000-4000-8000-000000000020', null, 'segment', 'Draft', 'draft-e206', true);
+  insert into public.landing_page_input_catalog_drafts
+    (singleton, base_version, target_version, catalog_json, content_fingerprint, revision,
+     validation_fingerprint, validation_context_fingerprint, validated_at,
+     publication_fingerprint, publication_context_fingerprint, publication_prepared_at,
+     taxon_review_evidence, created_by, updated_by)
+  values (true, 5, 6, '{}'::jsonb, repeat('b', 64), 1,
+    repeat('b', 64), repeat('c', 64), now(), repeat('b', 64), repeat('c', 64), now(),
+    '{}'::jsonb, 'e2063000-0000-4000-8000-000000000001', 'e2063000-0000-4000-8000-000000000001');
+  insert into public.business_taxon_factual_reviews
+    (taxon_id, kind, baseline_is_active, context_fingerprint, chain_snapshot,
+     evaluation_mode, evaluation_source, evaluation_input_catalog_version,
+     evaluation_draft_revision, evaluation_context_fingerprint, evaluation_output,
+     evaluation_by, evaluated_at, revision, opened_by)
+  values ('e2063000-0000-4000-8000-000000000020', 'revision', true, repeat('d', 64),
+    jsonb_build_array(jsonb_build_object(
+      'id', 'e2063000-0000-4000-8000-000000000020', 'name', 'Draft', 'slug', 'draft-e206',
+      'level', 'segment', 'isActive', true, 'parentId', null
     )),
-    'rejectedCandidateIndexes', '[1]'::jsonb,
-    'ownCandidate', null,
-    'recommendationEventId', v_revision_recommendation.event_id,
-    'recommendationOutputFingerprint', repeat('2', 64),
-    'recommendationEvaluationContextFingerprint', repeat('4', 64)
-  );
-  v_total_decision := jsonb_build_object(
-    'recommendationCandidateCount', 2,
-    'recommendationSelection', 'total',
-    'acceptedCandidates', jsonb_build_array(
-      jsonb_build_object('index', 0, 'layer', 'segment'),
-      jsonb_build_object('index', 1, 'layer', 'niche')
-    ),
-    'rejectedCandidateIndexes', '[]'::jsonb,
-    'ownCandidate', null,
-    'recommendationEventId', v_release_recommendation.event_id,
-    'recommendationOutputFingerprint', repeat('1', 64),
-    'recommendationEvaluationContextFingerprint', repeat('3', 64)
-  );
+    'systematic', 'draft', 6, 1, repeat('e', 64), v_output,
+    'e2063000-0000-4000-8000-000000000001', now(), 2,
+    'e2063000-0000-4000-8000-000000000001')
+  returning id into v_review_id;
 
-  select * into v_result
-  from public.record_business_taxon_factual_catalog_change_decision_v1(
-    v_release_review.review_id,
-    'e2064000-0000-4000-8000-000000000211', v_actor,
-    1, repeat('a', 64), v_release_snapshot,
-    1, 7, repeat('c', 64), repeat('d', 64), v_zero_decision
-  );
-  if v_result.review_status <> 'awaiting_catalog_publication'
-     or v_result.review_revision <> 2 then
-    raise exception 'E20.6.4 zero plus own decision did not persist';
-  end if;
-  select * into v_result
-  from public.record_business_taxon_factual_catalog_change_decision_v1(
-    v_revision_review.review_id,
-    'e2064000-0000-4000-8000-000000000212', v_actor,
-    1, repeat('b', 64), v_revision_snapshot,
-    1, 7, repeat('c', 64), repeat('e', 64), v_partial_decision
-  );
-  if v_result.review_status <> 'awaiting_catalog_publication'
-     or v_result.review_revision <> 2 then
-    raise exception 'E20.6.4 partial decision did not persist';
-  end if;
-
-  if (select count(*)
-      from public.landing_page_input_catalog_drafts drafts,
-        lateral jsonb_object_keys(drafts.taxon_review_evidence)
-      where drafts.singleton) <> 2
-     or (select taxon_review_evidence -> v_release_taxon::text ->> 'draft_revision'
-         from public.landing_page_input_catalog_drafts where singleton) <> '1'
-     or (select is_active from public.business_taxons where id = v_release_taxon)
-     or (select reviewed_input_catalog_version from public.business_taxons where id = v_release_taxon) is not null
-     or not (select is_active from public.business_taxons where id = v_revision_taxon)
-     or (select reviewed_input_catalog_version from public.business_taxons where id = v_revision_taxon) <> 6 then
-    raise exception 'E20.6.4 decision changed publication or activation state';
-  end if;
-
+  update public.business_taxons set selected_end_customer_research_version = 1
+  where id = 'e2063000-0000-4000-8000-000000000020';
   begin
-    update public.landing_page_input_catalog_drafts
-    set taxon_review_evidence = '{"tampered":true}'::jsonb
-    where singleton;
-    raise exception 'direct factual projection mutation unexpectedly accepted';
-  exception when insufficient_privilege then null;
-  end;
-
-  select * into v_result
-  from public.record_business_taxon_factual_catalog_change_decision_v1(
-    v_release_review.review_id,
-    'e2064000-0000-4000-8000-000000000211', v_actor,
-    1, repeat('a', 64), v_release_snapshot,
-    1, 7, repeat('c', 64), repeat('d', 64), v_zero_decision
-  );
-  if v_result.review_revision <> 2
-     or (select count(*) from public.business_taxon_factual_review_events
-         where review_id = v_release_review.review_id) <> 4 then
-    raise exception 'E20.6.4 exact decision replay duplicated effects';
-  end if;
-
-  begin
-    perform *
-    from public.record_business_taxon_factual_catalog_change_decision_v1(
-      v_release_review.review_id,
-      'e2064000-0000-4000-8000-000000000211', v_actor,
-      1, repeat('a', 64), v_release_snapshot,
-      1, 7, repeat('c', 64), repeat('d', 64), v_total_decision
+    perform * from public.finalize_business_taxon_factual_review_v1(
+      v_review_id, 2, 'e2063000-0000-4000-8000-000000000001', 6,
+      jsonb_build_object(
+        'decisionKind', 'no_change', 'recommendationCandidateCount', 1,
+        'recommendationSelection', 'zero', 'acceptedCandidates', '[]'::jsonb,
+        'rejectedCandidateIndexes', '[0]'::jsonb, 'ownCandidate', null
+      ), 1, repeat('b', 64), repeat('e', 64)
     );
-    raise exception 'divergent factual decision replay unexpectedly accepted';
-  exception when invalid_parameter_value then null;
-  end;
-
-  begin
-    perform *
-    from public.record_business_taxon_factual_catalog_change_decision_v1(
-      v_release_review.review_id,
-      'e2064000-0000-4000-8000-000000000211', v_actor,
-      1, repeat('a', 64),
-      jsonb_set(v_release_snapshot, '{0,name}', '"identity drift"'::jsonb),
-      1, 7, repeat('c', 64), repeat('d', 64), v_zero_decision
-    );
-    raise exception 'divergent chain snapshot replay unexpectedly accepted';
-  exception when invalid_parameter_value then null;
-  end;
-
-  select * into v_result
-  from public.save_business_taxon_factual_review_draft_v1(
-    'e2064000-0000-4000-8000-000000000221', v_actor,
-    1, '{"version":7,"edited":true}'::jsonb, repeat('f', 64)
-  );
-  if v_result.draft_revision <> 2
-     or (select taxon_review_evidence <> '{}'::jsonb
-         from public.landing_page_input_catalog_drafts where singleton)
-     or (select validation_fingerprint is not null or publication_fingerprint is not null
-         from public.landing_page_input_catalog_drafts where singleton)
-     or (select count(*) from public.business_taxon_factual_reviews
-         where id in (v_release_review.review_id, v_revision_review.review_id)
-           and status = 'open' and revision = 3
-           and draft_revision is null) <> 2
-     or (select count(*) from public.business_taxon_factual_review_events
-         where event_kind = 'draft_invalidated'
-           and operation_id = 'e2064000-0000-4000-8000-000000000221') <> 2 then
-    raise exception 'E20.6.4 draft edit did not globally invalidate and reopen';
-  end if;
-
-  select * into v_result
-  from public.save_business_taxon_factual_review_draft_v1(
-    'e2064000-0000-4000-8000-000000000221', v_actor,
-    1, '{"version":7,"edited":true}'::jsonb, repeat('f', 64)
-  );
-  if v_result.draft_revision <> 2
-     or (select count(*) from public.business_taxon_factual_review_events
-         where event_kind = 'draft_invalidated'
-           and operation_id = 'e2064000-0000-4000-8000-000000000221') <> 2
-     or (select count(*) from public.business_taxon_factual_reviews
-         where id in (v_release_review.review_id, v_revision_review.review_id)
-           and status = 'open' and revision = 3) <> 2 then
-    raise exception 'E20.6.4 exact draft-save replay duplicated effects';
-  end if;
-
-  begin
-    perform *
-    from public.save_business_taxon_factual_review_draft_v1(
-      'e2064000-0000-4000-8000-000000000221', v_actor,
-      1, '{"version":7,"edited":"divergent"}'::jsonb, repeat('f', 64)
-    );
-    raise exception 'divergent draft-save replay unexpectedly accepted';
-  exception when invalid_parameter_value then null;
-  end;
-  if (select count(*) from public.business_taxon_factual_review_events
-      where event_kind = 'draft_invalidated'
-        and operation_id = 'e2064000-0000-4000-8000-000000000221') <> 2
-     or (select revision from public.landing_page_input_catalog_drafts where singleton) <> 2 then
-    raise exception 'divergent draft-save replay left duplicate effects';
-  end if;
-
-  perform *
-  from public.record_business_taxon_factual_catalog_change_decision_v1(
-    v_release_review.review_id,
-    'e2064000-0000-4000-8000-000000000231', v_actor,
-    3, repeat('a', 64), v_release_snapshot,
-    2, 7, repeat('f', 64), repeat('d', 64), v_total_decision
-  );
-  perform *
-  from public.record_business_taxon_factual_catalog_change_decision_v1(
-    v_revision_review.review_id,
-    'e2064000-0000-4000-8000-000000000232', v_actor,
-    3, repeat('b', 64), v_revision_snapshot,
-    2, 7, repeat('f', 64), repeat('e', 64), v_zero_decision
-  );
-
-  update public.landing_page_input_catalog_drafts
-  set validation_fingerprint = repeat('f', 64),
-      validation_context_fingerprint = repeat('c', 64),
-      validated_at = now()
-  where singleton;
-
-  begin
-    perform *
-    from public.authorize_business_taxon_factual_review_publication_v1(
-      'e2064000-0000-4000-8000-000000000241', v_actor,
-      2, repeat('f', 64), repeat('c', 64), array[v_release_taxon]
-    );
-    raise exception 'incomplete factual publication coverage unexpectedly accepted';
+    raise exception 'stale factual-review decision unexpectedly finalized';
   exception when serialization_failure then null;
   end;
-  if (select publication_fingerprint is not null
-      from public.landing_page_input_catalog_drafts where singleton)
-     or exists (
-       select 1 from public.business_taxon_factual_review_events
-       where event_kind = 'publication_authorized'
-     ) then
-    raise exception 'incomplete authorization was not rolled back';
+  if (select status from public.business_taxon_factual_reviews where id = v_review_id) <> 'open'
+     or (select taxon_review_evidence from public.landing_page_input_catalog_drafts where singleton) <> '{}'::jsonb then
+    raise exception 'stale finalization did not roll back without closing or recording evidence';
   end if;
+  update public.business_taxons set selected_end_customer_research_version = null
+  where id = 'e2063000-0000-4000-8000-000000000020';
 
-  v_uncovered_release_snapshot := jsonb_build_array(jsonb_build_object(
-    'id', v_uncovered_release_taxon::text,
-    'parentId', null,
-    'level', 'segment',
-    'name', 'E20.6.4 uncovered inactive release',
-    'slug', 'e20-6-4-uncovered-inactive-release',
-    'isActive', false
-  ));
-  begin
-    insert into public.business_taxons (
-      id, parent_id, level, name, slug, is_active
-    ) values (
-      v_uncovered_release_taxon, null, 'segment',
-      'E20.6.4 uncovered inactive release',
-      'e20-6-4-uncovered-inactive-release', false
-    );
-    select * into v_uncovered_release_review
-    from public.open_business_taxon_factual_review_v1(
-      v_uncovered_release_taxon, repeat('a', 64), v_uncovered_release_snapshot,
-      'e2064000-0000-4000-8000-000000000244', v_actor, false, null
-    );
-    perform *
-    from public.authorize_business_taxon_factual_review_publication_v1(
-      'e2064000-0000-4000-8000-000000000245', v_actor,
-      2, repeat('f', 64), repeat('c', 64),
-      array[v_release_taxon, v_revision_taxon]
-    );
-    raise exception 'uncovered inactive release unexpectedly ignored';
-  exception when serialization_failure then null;
-  end;
-  if exists (
-    select 1 from public.business_taxons where id = v_uncovered_release_taxon
-  ) then
-    raise exception 'uncovered release authorization rollback was incomplete';
-  end if;
-
-  select * into v_result
-  from public.authorize_business_taxon_factual_review_publication_v1(
-    'e2064000-0000-4000-8000-000000000242', v_actor,
-    2, repeat('f', 64), repeat('c', 64),
-    array[v_release_taxon, v_revision_taxon]
+  select * into v_final from public.finalize_business_taxon_factual_review_v1(
+    v_review_id, 2, 'e2063000-0000-4000-8000-000000000001', 6,
+    jsonb_build_object(
+      'decisionKind', 'no_change', 'recommendationCandidateCount', 1,
+      'recommendationSelection', 'zero', 'acceptedCandidates', '[]'::jsonb,
+      'rejectedCandidateIndexes', '[0]'::jsonb, 'ownCandidate', null
+    ), 1, repeat('b', 64), repeat('e', 64)
   );
-  if v_result.draft_revision <> 2
-     or (select publication_fingerprint
-         from public.landing_page_input_catalog_drafts where singleton) <> repeat('f', 64)
-     or (select count(*) from public.business_taxon_factual_review_events
-         where event_kind = 'publication_authorized'
-           and operation_id = 'e2064000-0000-4000-8000-000000000242') <> 2
-     or exists (
-       select 1 from public.business_taxons
-       where id in (v_release_taxon, v_revision_taxon)
-         and reviewed_input_catalog_version = 7
-     ) then
-    raise exception 'E20.6.4 authorization was not distinct from publication';
+  if v_final.review_status <> 'closed' or v_final.decision_kind <> 'no_change'
+     or (select taxon_review_evidence -> 'e2063000-0000-4000-8000-000000000020' ->> 'review_id'
+         from public.landing_page_input_catalog_drafts where singleton) <> v_review_id::text then
+    raise exception 'draft no_change did not preserve exact evidence';
   end if;
 
-  select * into v_result
-  from public.authorize_business_taxon_factual_review_publication_v1(
-    'e2064000-0000-4000-8000-000000000242', v_actor,
-    2, repeat('f', 64), repeat('c', 64),
-    array[v_release_taxon, v_revision_taxon]
+  select * into v_reconcile from public.reconcile_business_taxon_factual_review_publication_v1(
+    'e2063000-0000-4000-8000-000000000001', 1, 6, repeat('b', 64), repeat('c', 64)
   );
-  if v_result.draft_revision <> 2
-     or (select count(*) from public.business_taxon_factual_review_events
-         where event_kind = 'publication_authorized'
-           and operation_id = 'e2064000-0000-4000-8000-000000000242') <> 2 then
-    raise exception 'E20.6.4 exact authorization replay duplicated effects';
-  end if;
-
-  begin
-    perform *
-    from public.authorize_business_taxon_factual_review_publication_v1(
-      'e2064000-0000-4000-8000-000000000242', v_actor,
-      2, repeat('f', 64), repeat('c', 64), array[v_release_taxon]
-    );
-    raise exception 'divergent authorization replay unexpectedly accepted';
-  exception when serialization_failure then null;
-  end;
-
-  begin
-    perform *
-    from public.authorize_business_taxon_factual_review_publication_v1(
-      'e2064000-0000-4000-8000-000000000243', v_actor,
-      2, repeat('f', 64), repeat('c', 64),
-      array[v_release_taxon, v_revision_taxon]
-    );
-    raise exception 'second publication authorization unexpectedly accepted';
-  exception when serialization_failure then null;
-  end;
-
-  begin
-    perform *
-    from public.reconcile_business_taxon_factual_review_publication_v1(
-      'e2064000-0000-4000-8000-000000000251', v_actor,
-      2, 7, repeat('e', 64), repeat('c', 64)
-    );
-    raise exception 'divergent deployed fingerprint unexpectedly reconciled';
-  exception when serialization_failure then null;
-  end;
-  if not exists (select 1 from public.landing_page_input_catalog_drafts where singleton)
-     or (select is_active from public.business_taxons where id = v_release_taxon)
-     or (select reviewed_input_catalog_version from public.business_taxons where id = v_revision_taxon) <> 6 then
-    raise exception 'failed multi-taxon reconciliation did not roll back atomically';
-  end if;
-
-  begin
-    v_drift_taxon := case
-      when v_release_review.review_id < v_revision_review.review_id
-        then v_revision_taxon
-      else v_release_taxon
-    end;
-    update public.business_taxons
-    set reviewed_input_catalog_version = 5
-    where id = v_drift_taxon;
-    perform *
-    from public.reconcile_business_taxon_factual_review_publication_v1(
-      'e2064000-0000-4000-8000-000000000253', v_actor,
-      2, 7, repeat('f', 64), repeat('c', 64)
-    );
-    raise exception 'mid-set taxon drift unexpectedly reconciled';
-  exception when serialization_failure then null;
-  end;
-  if (select is_active from public.business_taxons where id = v_release_taxon)
-     or (select reviewed_input_catalog_version from public.business_taxons where id = v_release_taxon) is not null
-     or (select reviewed_input_catalog_version from public.business_taxons where id = v_revision_taxon) <> 6
-     or exists (
-       select 1 from public.business_taxon_factual_review_events
-       where operation_id = 'e2064000-0000-4000-8000-000000000253'
-     ) then
-    raise exception 'mid-set reconciliation failure left a partial taxon effect';
-  end if;
-
-  select * into v_result
-  from public.reconcile_business_taxon_factual_review_publication_v1(
-    'e2064000-0000-4000-8000-000000000252', v_actor,
-    2, 7, repeat('f', 64), repeat('c', 64)
-  );
-  if v_result.reconciled_taxon_count <> 2
+  if v_reconcile.reconciled_taxon_count <> 1
      or exists (select 1 from public.landing_page_input_catalog_drafts where singleton)
-     or not (select is_active from public.business_taxons where id = v_release_taxon)
-     or not (select is_active from public.business_taxons where id = v_revision_taxon)
-     or (select count(*) from public.business_taxons
-         where id in (v_release_taxon, v_revision_taxon)
-           and reviewed_input_catalog_version = 7) <> 2
-     or (select count(*) from public.business_taxon_factual_reviews
-         where id in (v_release_review.review_id, v_revision_review.review_id)
-           and status = 'closed_published') <> 2 then
-    raise exception 'E20.6.4 atomic multi-taxon reconciliation failed';
+     or (select reviewed_input_catalog_version from public.business_taxons
+         where id = 'e2063000-0000-4000-8000-000000000020') <> 6 then
+    raise exception 'publication reconciliation did not consume exact closed evidence';
   end if;
 
-  select * into v_result
-  from public.reconcile_business_taxon_factual_review_publication_v1(
-    'e2064000-0000-4000-8000-000000000252', v_actor,
-    2, 7, repeat('f', 64), repeat('c', 64)
+  insert into public.landing_page_input_catalog_drafts
+    (singleton, base_version, target_version, catalog_json, content_fingerprint, revision,
+     validation_fingerprint, validation_context_fingerprint, validated_at,
+     publication_fingerprint, publication_context_fingerprint, publication_prepared_at,
+     taxon_review_evidence, created_by, updated_by)
+  values (true, 6, 7, '{}'::jsonb, repeat('f', 64), 2,
+    repeat('f', 64), repeat('0', 64), now(), repeat('f', 64), repeat('0', 64), now(),
+    '{}'::jsonb, 'e2063000-0000-4000-8000-000000000001', 'e2063000-0000-4000-8000-000000000001');
+  insert into public.business_taxon_factual_reviews
+    (taxon_id, kind, baseline_is_active, baseline_reviewed_input_catalog_version,
+     context_fingerprint, chain_snapshot, evaluation_mode, evaluation_source,
+     evaluation_input_catalog_version, evaluation_draft_revision,
+     evaluation_context_fingerprint, evaluation_output, evaluation_by,
+     evaluated_at, revision, opened_by)
+  values ('e2063000-0000-4000-8000-000000000020', 'revision', true, 6, repeat('2', 64),
+    jsonb_build_array(jsonb_build_object(
+      'id', 'e2063000-0000-4000-8000-000000000020', 'name', 'Draft', 'slug', 'draft-e206',
+      'level', 'segment', 'isActive', true, 'parentId', null
+    )),
+    'systematic', 'draft', 7, 2, repeat('3', 64), v_output,
+    'e2063000-0000-4000-8000-000000000001', now(), 2,
+    'e2063000-0000-4000-8000-000000000001')
+  returning id into v_review_id;
+  perform * from public.finalize_business_taxon_factual_review_v1(
+    v_review_id, 2, 'e2063000-0000-4000-8000-000000000001', 7,
+    jsonb_build_object(
+      'decisionKind', 'no_change', 'recommendationCandidateCount', 1,
+      'recommendationSelection', 'zero', 'acceptedCandidates', '[]'::jsonb,
+      'rejectedCandidateIndexes', '[0]'::jsonb, 'ownCandidate', null
+    ), 2, repeat('f', 64), repeat('3', 64)
   );
-  if v_result.reconciled_taxon_count <> 2
-     or (select count(*) from public.business_taxon_factual_review_events
-         where operation_id = 'e2064000-0000-4000-8000-000000000252') <> 2 then
-    raise exception 'E20.6.4 reconciliation replay duplicated effects';
-  end if;
-
+  update public.business_taxons set selected_end_customer_research_version = 1
+  where id = 'e2063000-0000-4000-8000-000000000020';
   begin
-    perform *
-    from public.reconcile_business_taxon_factual_review_publication_v1(
-      'e2064000-0000-4000-8000-000000000252', v_actor,
-      2, 8, repeat('f', 64), repeat('c', 64)
+    perform * from public.reconcile_business_taxon_factual_review_publication_v1(
+      'e2063000-0000-4000-8000-000000000001', 2, 7, repeat('f', 64), repeat('0', 64)
     );
-    raise exception 'divergent reconciliation replay unexpectedly accepted';
-  exception when invalid_parameter_value then null;
+    raise exception 'stale publication evidence unexpectedly reconciled';
+  exception when serialization_failure then null;
   end;
-end;
-$$;
+  if not exists (select 1 from public.landing_page_input_catalog_drafts where singleton and revision = 2)
+     or (select reviewed_input_catalog_version from public.business_taxons
+         where id = 'e2063000-0000-4000-8000-000000000020') <> 6 then
+    raise exception 'stale reconciliation did not roll back without consuming the draft';
+  end if;
+  delete from public.landing_page_input_catalog_drafts where singleton and revision = 2;
 
-do $$
-declare
-  v_review record;
-  v_requested record;
-  v_completed record;
-  v_replay record;
-  v_snapshot jsonb;
-  v_output jsonb;
-  v_event_metadata jsonb;
-  v_text_projection jsonb;
-begin
   insert into public.business_taxons (id, parent_id, level, name, slug, is_active)
-  values (
-    'e2065000-0000-4000-8000-000000000010', null, 'segment',
-    'E20.6.5 event taxon', 'e20-6-5-event-taxon', true
-  );
-  v_snapshot := jsonb_build_array(jsonb_build_object(
-    'id', 'e2065000-0000-4000-8000-000000000010',
-    'parentId', null,
-    'level', 'segment',
-    'name', 'E20.6.5 event taxon',
-    'slug', 'e20-6-5-event-taxon',
-    'isActive', true
-  ));
-  select * into v_review
-  from public.open_business_taxon_factual_review_v1(
-    'e2065000-0000-4000-8000-000000000010', repeat('a', 64), v_snapshot,
-    'e2065000-0000-4000-8000-000000000020',
-    'e2063000-0000-4000-8000-000000000001', true, null
-  );
-  v_event_metadata := jsonb_build_object(
-    'reviewContextFingerprint', repeat('a', 64),
-    'evaluationContextFingerprint', repeat('e', 64),
-    'deadlineAtMs', floor(extract(epoch from clock_timestamp()) * 1000) + 60000
-  );
-
-  select * into v_requested
-  from public.append_business_taxon_factual_review_evaluation_event_v1(
-    v_review.review_id, 'e2065000-0000-4000-8000-000000000021',
-    'e2063000-0000-4000-8000-000000000001', 1, repeat('a', 64),
-    'evaluation_requested', 'web_search_fallback', null,
-    jsonb_build_object('mode', 'systematic', 'sourceState', 'e20_5_absent_authorized') || v_event_metadata
-  );
-  select * into v_replay
-  from public.append_business_taxon_factual_review_evaluation_event_v1(
-    v_review.review_id, 'e2065000-0000-4000-8000-000000000021',
-    'e2063000-0000-4000-8000-000000000001', 1, repeat('a', 64),
-    'evaluation_requested', 'web_search_fallback', null,
-    jsonb_build_object('mode', 'systematic', 'sourceState', 'e20_5_absent_authorized') || v_event_metadata
-  );
-  if v_replay.event_id is distinct from v_requested.event_id then
-    raise exception 'E20.6.5 exact evaluation event replay changed identity';
-  end if;
-  begin
-    perform * from public.append_business_taxon_factual_review_evaluation_event_v1(
-      v_review.review_id, 'e2065000-0000-4000-8000-000000000021',
-      'e2063000-0000-4000-8000-000000000001', 1, repeat('a', 64),
-      'evaluation_requested', 'web_search_fallback', null,
-      jsonb_build_object('mode', 'hypothesis', 'sourceState', 'e20_5_absent_authorized') || v_event_metadata
-    );
-    raise exception 'divergent E20.6.5 evaluation event replay unexpectedly accepted';
-  exception when invalid_parameter_value then null;
-  end;
-  begin
-    perform * from public.append_business_taxon_factual_review_evaluation_event_v1(
-      v_review.review_id, 'e2065000-0000-4000-8000-000000000021',
-      'e2063000-0000-4000-8000-000000000001', 1, repeat('a', 64),
-      'evaluation_requested', 'web_search_fallback', null,
-      jsonb_build_object('mode', 'systematic', 'sourceState', 'e20_5_absent_authorized') ||
-        jsonb_set(v_event_metadata, '{evaluationContextFingerprint}', to_jsonb(repeat('f', 64)))
-    );
-    raise exception 'evaluation context fingerprint drift unexpectedly accepted';
-  exception when invalid_parameter_value then null;
-  end;
-  begin
-    perform * from public.append_business_taxon_factual_review_evaluation_event_v1(
-      v_review.review_id, 'e2065000-0000-4000-8000-000000000029',
-      'e2063000-0000-4000-8000-000000000001', 1, repeat('a', 64),
-      'evaluation_requested', 'web_search_fallback', null,
-      jsonb_build_object('mode', 'systematic', 'sourceState', 'e20_5_absent_authorized') ||
-        jsonb_set(
-          v_event_metadata,
-          '{deadlineAtMs}',
-          to_jsonb(floor(extract(epoch from clock_timestamp()) * 1000) - 1)
-        )
-    );
-    raise exception 'expired evaluation request unexpectedly persisted';
-  exception when query_canceled then null;
-  end;
-
-  v_output := jsonb_build_object(
-    'schemaVersion', 2,
-    'sourceStrategy', 'web_search_fallback',
-    'sourceState', 'e20_5_absent_authorized',
-    'summary', 'Veja HTTPS://EXAMPLE.COM:443/source#fragment,',
-    'summarySourceUrls', '["https://example.com/source"]'::jsonb,
-    'candidates', jsonb_build_array(jsonb_build_object(
-      'conclusion', 'possible_new_field',
-      'sourceUrls', '["https://example.com/source"]'::jsonb
-    ))
-  );
-  v_text_projection := jsonb_build_array(jsonb_build_object(
-    'raw', 'HTTPS://EXAMPLE.COM:443/source#fragment',
-    'canonical', 'https://example.com/source'
-  ));
-
-  begin
-    perform * from public.append_business_taxon_factual_review_evaluation_event_v1(
-      v_review.review_id, 'e2065000-0000-4000-8000-000000000024',
-      'e2063000-0000-4000-8000-000000000001', 1, repeat('a', 64),
-      'evaluation_completed', 'web_search_fallback', repeat('b', 64),
-      jsonb_build_object(
-        'inputCatalogVersion', 1,
-        'outputFingerprint', repeat('b', 64),
-        'candidateCount', 1,
-        'output', v_output,
-        'webSearchCallCount', 1,
-        'materialTextUrlProjection', v_text_projection
-      ) || v_event_metadata
-    );
-    raise exception 'web completion without authenticated source metadata unexpectedly accepted';
-  exception when invalid_parameter_value then null;
-  end;
-  begin
-    perform * from public.append_business_taxon_factual_review_evaluation_event_v1(
-      v_review.review_id, 'e2065000-0000-4000-8000-000000000030',
-      'e2063000-0000-4000-8000-000000000001', 1, repeat('a', 64),
-      'evaluation_completed', 'web_search_fallback', repeat('f', 64),
-      jsonb_build_object(
-        'inputCatalogVersion', 1,
-        'outputFingerprint', repeat('f', 64),
-        'candidateCount', 1,
-        'output', jsonb_set(
-          jsonb_set(v_output, '{candidates,0,conclusion}', '"covered"'::jsonb),
-          '{candidates,0,sourceUrls}', '[]'::jsonb
-        ),
-        'webSearchCallCount', 1,
-        'webSearchSources', '["https://example.com/source"]'::jsonb,
-        'materialTextUrlProjection', v_text_projection
-      ) || v_event_metadata
-    );
-    raise exception 'covered web candidate without source unexpectedly accepted';
-  exception when invalid_parameter_value then null;
-  end;
-  begin
-    perform * from public.append_business_taxon_factual_review_evaluation_event_v1(
-      v_review.review_id, 'e2065000-0000-4000-8000-000000000031',
-      'e2063000-0000-4000-8000-000000000001', 1, repeat('a', 64),
-      'evaluation_completed', 'web_search_fallback', repeat('9', 64),
-      jsonb_build_object(
-        'inputCatalogVersion', 1,
-        'outputFingerprint', repeat('9', 64),
-        'candidateCount', 1,
-        'output', jsonb_set(v_output, '{summary}', '"Veja https://invented.example/fake"'::jsonb),
-        'webSearchCallCount', 1,
-        'webSearchSources', '["https://example.com/source"]'::jsonb,
-        'materialTextUrlProjection', jsonb_build_array(jsonb_build_object(
-          'raw', 'https://invented.example/fake',
-          'canonical', 'https://invented.example/fake'
-        ))
-      ) || v_event_metadata
-    );
-    raise exception 'invented textual web source unexpectedly accepted';
-  exception when invalid_parameter_value then null;
-  end;
-  begin
-    perform * from public.append_business_taxon_factual_review_evaluation_event_v1(
-      v_review.review_id, 'e2065000-0000-4000-8000-000000000033',
-      'e2063000-0000-4000-8000-000000000001', 1, repeat('a', 64),
-      'evaluation_completed', 'web_search_fallback', repeat('8', 64),
-      jsonb_build_object(
-        'inputCatalogVersion', 1,
-        'outputFingerprint', repeat('8', 64),
-        'candidateCount', 1,
-        'output', jsonb_set(v_output, '{summary}', '"Veja http://example.com/source."'::jsonb),
-        'webSearchCallCount', 1,
-        'webSearchSources', '["https://example.com/source"]'::jsonb,
-        'materialTextUrlProjection', jsonb_build_array(jsonb_build_object(
-          'raw', 'http://example.com/source',
-          'canonical', null
-        ))
-      ) || v_event_metadata
-    );
-    raise exception 'non-HTTPS textual source unexpectedly accepted';
-  exception when invalid_parameter_value then null;
-  end;
-  begin
-    perform * from public.append_business_taxon_factual_review_evaluation_event_v1(
-      v_review.review_id, 'e2065000-0000-4000-8000-000000000028',
-      'e2063000-0000-4000-8000-000000000001', 1, repeat('a', 64),
-      'evaluation_completed', 'web_search_fallback', repeat('d', 64),
-      jsonb_build_object(
-        'inputCatalogVersion', 1,
-        'outputFingerprint', repeat('d', 64),
-        'candidateCount', 1,
-        'output', jsonb_set(
-          jsonb_set(v_output, '{summarySourceUrls}', '["http://example.com/source"]'::jsonb),
-          '{candidates,0,sourceUrls}', '["http://example.com/source"]'::jsonb
-        ),
-        'webSearchCallCount', 1,
-        'webSearchSources', '["http://example.com/source"]'::jsonb,
-        'materialTextUrlProjection', v_text_projection
-      ) || v_event_metadata
-    );
-    raise exception 'non-HTTPS web evidence unexpectedly accepted';
-  exception when invalid_parameter_value then null;
-  end;
-
-  select * into v_completed
-  from public.append_business_taxon_factual_review_evaluation_event_v1(
-    v_review.review_id, 'e2065000-0000-4000-8000-000000000022',
-    'e2063000-0000-4000-8000-000000000001', 1, repeat('a', 64),
-    'evaluation_completed', 'web_search_fallback', repeat('b', 64),
+  values ('e2063000-0000-4000-8000-000000000030', null, 'segment', 'Release', 'release-e206', false);
+  insert into public.business_taxon_factual_reviews
+    (taxon_id, kind, baseline_is_active, context_fingerprint, chain_snapshot, opened_by)
+  values ('e2063000-0000-4000-8000-000000000030', 'release', false, repeat('1', 64),
+    jsonb_build_array(jsonb_build_object(
+      'id', 'e2063000-0000-4000-8000-000000000030', 'name', 'Release', 'slug', 'release-e206',
+      'level', 'segment', 'isActive', false, 'parentId', null
+    )),
+    'e2063000-0000-4000-8000-000000000001') returning id into v_review_id;
+  perform * from public.finalize_business_taxon_factual_review_v1(
+    v_review_id, 1, 'e2063000-0000-4000-8000-000000000001', 5,
     jsonb_build_object(
-      'requestedEventId', v_requested.event_id,
-      'inputCatalogVersion', 1,
-      'outputFingerprint', repeat('b', 64),
-      'candidateCount', 1,
-      'output', v_output,
-      'webSearchCallCount', 1,
-      'webSearchSources', '["https://example.com/source"]'::jsonb,
-      'materialTextUrlProjection', v_text_projection
-    ) || v_event_metadata
+      'decisionKind', 'no_change', 'recommendationCandidateCount', 0,
+      'recommendationSelection', 'zero', 'acceptedCandidates', '[]'::jsonb,
+      'rejectedCandidateIndexes', '[]'::jsonb, 'ownCandidate', null
+    ), null, null, null
   );
-  select * into v_replay
-  from public.append_business_taxon_factual_review_evaluation_event_v1(
-    v_review.review_id, 'e2065000-0000-4000-8000-000000000022',
-    'e2063000-0000-4000-8000-000000000001', 1, repeat('a', 64),
-    'evaluation_completed', 'web_search_fallback', repeat('b', 64),
-    jsonb_build_object(
-      'requestedEventId', v_requested.event_id,
-      'inputCatalogVersion', 1,
-      'outputFingerprint', repeat('b', 64),
-      'candidateCount', 1,
-      'output', v_output,
-      'webSearchCallCount', 1,
-      'webSearchSources', '["https://example.com/source"]'::jsonb,
-      'materialTextUrlProjection', v_text_projection
-    ) || v_event_metadata
-  );
-  if v_replay.event_id is distinct from v_completed.event_id then
-    raise exception 'exact completed evaluation replay changed identity';
-  end if;
-  begin
-    perform * from public.append_business_taxon_factual_review_evaluation_event_v1(
-      v_review.review_id, 'e2065000-0000-4000-8000-000000000022',
-      'e2063000-0000-4000-8000-000000000001', 1, repeat('a', 64),
-      'evaluation_completed', 'web_search_fallback', repeat('b', 64),
-      jsonb_build_object(
-        'requestedEventId', v_requested.event_id,
-        'inputCatalogVersion', 1,
-        'outputFingerprint', repeat('b', 64),
-        'candidateCount', 1,
-        'output', v_output,
-        'webSearchCallCount', 1,
-        'webSearchSources', '["https://example.com/other"]'::jsonb,
-        'materialTextUrlProjection', v_text_projection
-      ) || v_event_metadata
-    );
-    raise exception 'divergent completed evaluation replay unexpectedly accepted';
-  exception when invalid_parameter_value then null;
-  end;
-  begin
-    perform * from public.close_business_taxon_factual_review_without_change_v1(
-      v_review.review_id, 'e2065000-0000-4000-8000-000000000025',
-      'e2063000-0000-4000-8000-000000000001', 1, 1,
-      repeat('a', 64), repeat('c', 64), v_snapshot,
-      jsonb_build_object(
-        'recommendationCandidateCount', 1,
-        'recommendationSelection', 'zero',
-        'acceptedCandidates', '[]'::jsonb,
-        'rejectedCandidateIndexes', '[0]'::jsonb,
-        'ownCandidate', null
-      )
-    );
-    raise exception 'candidate decision without recommendation binding unexpectedly accepted';
-  exception when invalid_parameter_value then null;
-  end;
-  begin
-    perform * from public.close_business_taxon_factual_review_without_change_v1(
-      v_review.review_id, 'e2065000-0000-4000-8000-000000000032',
-      'e2063000-0000-4000-8000-000000000001', 1, 1,
-      repeat('a', 64), repeat('c', 64), v_snapshot,
-      jsonb_build_object(
-        'recommendationCandidateCount', 1,
-        'recommendationSelection', 'zero',
-        'acceptedCandidates', '[]'::jsonb,
-        'rejectedCandidateIndexes', '[0]'::jsonb,
-        'ownCandidate', null,
-        'recommendationEventId', v_completed.event_id,
-        'recommendationOutputFingerprint', repeat('b', 64),
-        'recommendationEvaluationContextFingerprint', repeat('f', 64)
-      )
-    );
-    raise exception 'divergent recommendation evaluation fingerprint unexpectedly accepted';
-  exception when invalid_parameter_value then null;
-  end;
-  begin
-    perform * from public.close_business_taxon_factual_review_without_change_v1(
-      v_review.review_id, 'e2065000-0000-4000-8000-000000000026',
-      'e2063000-0000-4000-8000-000000000001', 1, 1,
-      repeat('a', 64), repeat('c', 64), v_snapshot,
-      jsonb_build_object(
-        'recommendationCandidateCount', 0,
-        'recommendationSelection', 'zero',
-        'acceptedCandidates', '[]'::jsonb,
-        'rejectedCandidateIndexes', '[]'::jsonb,
-        'ownCandidate', null,
-        'recommendationEventId', v_completed.event_id,
-        'recommendationOutputFingerprint', repeat('b', 64),
-        'recommendationEvaluationContextFingerprint', repeat('e', 64)
-      )
-    );
-    raise exception 'zero-candidate decision with invented recommendation binding unexpectedly accepted';
-  exception when invalid_parameter_value then null;
-  end;
-  begin
-    perform * from public.close_business_taxon_factual_review_without_change_v1(
-      v_review.review_id, 'e2065000-0000-4000-8000-000000000027',
-      'e2063000-0000-4000-8000-000000000001', 1, 1,
-      repeat('a', 64), repeat('c', 64), v_snapshot,
-      jsonb_build_object(
-        'recommendationCandidateCount', 2,
-        'recommendationSelection', 'zero',
-        'acceptedCandidates', '[]'::jsonb,
-        'rejectedCandidateIndexes', '[0,1]'::jsonb,
-        'ownCandidate', null,
-        'recommendationEventId', v_completed.event_id,
-        'recommendationOutputFingerprint', repeat('b', 64),
-        'recommendationEvaluationContextFingerprint', repeat('e', 64)
-      )
-    );
-    raise exception 'recommendation candidate-count mismatch unexpectedly accepted';
-  exception when invalid_parameter_value then null;
-  end;
-  perform * from public.append_business_taxon_factual_review_evaluation_event_v1(
-    v_review.review_id, 'e2065000-0000-4000-8000-000000000023',
-    'e2063000-0000-4000-8000-000000000001', 1, repeat('a', 64),
-    'evaluation_inconclusive', 'web_search_fallback', null,
-    jsonb_build_object('requestedEventId', v_requested.event_id, 'errorCode', 'PROVIDER_FAILURE') || v_event_metadata
-  );
-  if (select status from public.business_taxon_factual_reviews where id = v_review.review_id) <> 'open'
-     or (select revision from public.business_taxon_factual_reviews where id = v_review.review_id) <> 1
-     or (select count(*) from public.business_taxon_factual_review_events where review_id = v_review.review_id) <> 4
-     or not (select is_active from public.business_taxons where id = 'e2065000-0000-4000-8000-000000000010') then
-    raise exception 'E20.6.5 evaluation events mutated lifecycle state or duplicated effects';
+  if not (select is_active from public.business_taxons where id = 'e2063000-0000-4000-8000-000000000030')
+     or (select reviewed_input_catalog_version from public.business_taxons
+         where id = 'e2063000-0000-4000-8000-000000000030') <> 5 then
+    raise exception 'human no-AI release did not activate and mark the taxon';
   end if;
 end;
 $$;

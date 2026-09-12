@@ -1,6 +1,5 @@
 import "server-only";
 
-import { randomUUID } from "node:crypto";
 
 import {
   buildLandingPageInputCatalogTaxonChain,
@@ -14,6 +13,7 @@ import {
   loadEndCustomerResearchCandidate,
 } from "@/conversion-content/landing-page/taxon-preparation";
 import { loadAdminInputCatalogEvaluationSources } from "./adminInputCatalogEvaluationSourceAdapter";
+import { collectCompletePaginatedRows } from "./adminInputCatalogLifecyclePagination";
 import { createServiceClient } from "@/lib/supabase/service";
 import {
   ADMIN_PAGE_SIZE,
@@ -504,16 +504,6 @@ export async function updateAdminTaxon(input: UpdateAdminTaxonInput): Promise<Ad
       error: "A ativação exige concluir a liberação factual do taxon.",
     };
   }
-  if (isInputCatalogReviewEnabled() && current.is_active && !input.isActive) {
-    const unclosedReview = await hasUnclosedFactualReview(supabase, [input.id]);
-    if (!unclosedReview.ok) return { ok: false, error: unclosedReview.error };
-    if (unclosedReview.found) {
-      return {
-        ok: false,
-        error: "Encerre a sessão factual aberta antes de inativar o taxon.",
-      };
-    }
-  }
   const materiallyChangesResolution = taxonomyMutationAffectsInputCatalogResolution(
     { name: current.name, slug: current.slug, isActive: current.is_active },
     { name, slug, isActive: input.isActive },
@@ -528,9 +518,12 @@ export async function updateAdminTaxon(input: UpdateAdminTaxonInput): Promise<Ad
       materiallyChangesResolution,
       affectedReviewedTaxonIds: reviewBlock.reviewedTaxonIds,
       hasUnclosedFactualReview: unclosedReview.found,
-      explicitInvalidationAuthorized: input.invalidateAffectedReviews,
+      explicitInvalidationAuthorized:
+        input.invalidateAffectedReviews || (current.is_active && !input.isActive),
+      closesUnclosedFactualReviews: current.is_active && !input.isActive,
     });
     if (!invalidation.ok) return { ok: false, error: invalidation.error };
+    reviewBlock = { ...reviewBlock, hasUnclosedFactualReview: unclosedReview.found };
   }
 
   const { data: existingSlug, error: slugError } = await supabase
@@ -547,9 +540,9 @@ export async function updateAdminTaxon(input: UpdateAdminTaxonInput): Promise<Ad
 
   if (existingSlug) return { ok: false, error: "Ja existe outro taxon com este slug." };
 
-  if (reviewBlock?.ok && reviewBlock.reviewedTaxonIds.length > 0) {
+  if (reviewBlock?.ok) {
     const { data, error } = await (supabase as any).rpc(
-      "update_business_taxon_identity_with_review_invalidation_v1",
+      "update_business_taxon_with_factual_review_invalidation_v1",
       {
         p_taxon_id: input.id,
         p_expected_name: current.name,
@@ -558,8 +551,6 @@ export async function updateAdminTaxon(input: UpdateAdminTaxonInput): Promise<Ad
         p_name: name,
         p_slug: slug,
         p_next_is_active: input.isActive,
-        p_expected_reviewed_taxons: reviewBlock.reviewedTaxons,
-        p_operation_id: randomUUID(),
         p_actor_user_id: input.actorUserId,
       },
     );
@@ -571,23 +562,10 @@ export async function updateAdminTaxon(input: UpdateAdminTaxonInput): Promise<Ad
       });
       return {
         ok: false,
-        error: error?.message?.includes("taxon_factual_review_unclosed")
-          ? "Encerre a sessão factual aberta do taxon ou de seus descendentes antes de alterar nome ou slug."
-          : "Não foi possível invalidar atomicamente as coberturas E20.6 afetadas.",
+        error: "Não foi possível atualizar o taxon e invalidar atomicamente as revisões E20.6 afetadas.",
       };
     }
     return { ok: true, taxonId: input.id };
-  }
-
-  if (isInputCatalogReviewEnabled() && materiallyChangesResolution) {
-    const latestReviewBlock = await findAffectedInputCatalogReviews(supabase, input.id);
-    if (!latestReviewBlock.ok) return { ok: false, error: latestReviewBlock.error };
-    if (latestReviewBlock.reviewedTaxonIds.length > 0) {
-      return {
-        ok: false,
-        error: "Uma cobertura E20.6 foi registrada durante a alteração. Recarregue e confirme sua invalidação antes de continuar.",
-      };
-    }
   }
 
   const { data: updated, error } = await supabase
@@ -843,13 +821,26 @@ async function findAffectedInputCatalogReviews(
   supabase: ReturnType<typeof createServiceClient>,
   rootTaxonId: string,
 ) {
-  const { data, error } = await supabase
-    .from("business_taxons")
-    .select("id,parent_id,reviewed_input_catalog_version");
-  if (error || !Array.isArray(data)) {
+  const result = await collectCompletePaginatedRows({
+    pageSize: 500,
+    readPage: async (offset, limit) => {
+      try {
+        const { data, error, count } = await supabase
+          .from("business_taxons")
+          .select("id,parent_id,reviewed_input_catalog_version", { count: "exact" })
+          .order("id", { ascending: true })
+          .range(offset, offset + limit - 1);
+        if (error || !Array.isArray(data) || count === null || data.length > limit) return null;
+        return { rows: data, total: count };
+      } catch {
+        return null;
+      }
+    },
+  });
+  if (!result.ok) {
     return { ok: false as const, error: "Não foi possível verificar as avaliações E20.6 afetadas." };
   }
-  const normalized = data.flatMap((row) =>
+  const normalized = result.rows.flatMap((row) =>
     isRecord(row) &&
     typeof row.id === "string" &&
     (row.parent_id === null || typeof row.parent_id === "string") &&
@@ -857,24 +848,21 @@ async function findAffectedInputCatalogReviews(
       ? [{
           id: row.id,
           parentId: row.parent_id,
-          reviewedVersion: row.reviewed_input_catalog_version,
+          reviewedVersion: row.reviewed_input_catalog_version as number | null,
         }]
       : [],
   );
-  if (normalized.length !== data.length) {
+  if (normalized.length !== result.rows.length) {
     return { ok: false as const, error: "As avaliações E20.6 afetadas possuem estado inválido." };
   }
   const reviewedTaxonIds = collectAffectedReviewedTaxonIds(normalized, rootTaxonId);
   const affectedTaxonIds = collectAffectedTaxonIds(normalized, rootTaxonId);
-  const reviewedTaxonIdSet = new Set(reviewedTaxonIds);
-  const reviewedTaxons = normalized
-    .flatMap((row) =>
-      reviewedTaxonIdSet.has(row.id) && row.reviewedVersion !== null
-        ? [{ taxonId: row.id, reviewedVersion: row.reviewedVersion }]
-        : [],
-    )
-    .sort((left, right) => left.taxonId.localeCompare(right.taxonId));
-  return { ok: true as const, affectedTaxonIds, reviewedTaxonIds, reviewedTaxons };
+  return {
+    ok: true as const,
+    affectedTaxonIds,
+    reviewedTaxonIds,
+    hasUnclosedFactualReview: false,
+  };
 }
 
 async function hasUnclosedFactualReview(
@@ -886,7 +874,7 @@ async function hasUnclosedFactualReview(
     .from("business_taxon_factual_reviews")
     .select("id")
     .in("taxon_id", [...taxonIds])
-    .in("status", ["open", "awaiting_catalog_publication"])
+    .eq("status", "open")
     .limit(1)
     .maybeSingle();
   if (error) {

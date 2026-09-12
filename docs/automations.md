@@ -283,7 +283,7 @@ Implementada no repositório como fluxo foreground do Admin. Apply, configuraç�
 Recurso utilizado:
 - Responses API com Structured Output estrito;
 - Web Search hospedado somente nas estratégias que exigem fonte pública;
-- eventos factuais persistidos e decisão administrativa humana explícita.
+- recomendação persistida na revisão factual aberta e decisão administrativa humana explícita.
 
 Natureza:
 - Automação com IA em fluxo controlado.
@@ -292,7 +292,7 @@ Ambiente principal:
 - Runtime server-side do Admin do LP Factory, condicionado pelo gate exclusivo do provider.
 
 Participação humana:
-- O humano abre e conclui a sessão factual, solicita opcionalmente a avaliação e decide entre zero, parte ou totalidade dos candidatos, podendo acrescentar candidato próprio com camada explícita.
+- O humano abre e conclui a revisão factual, solicita opcionalmente a avaliação e decide entre zero, parte ou totalidade dos candidatos, podendo acrescentar candidato próprio marcado como humano e com camada explícita.
 
 Como usar:
 - Abrir uma sessão `release | revision` no detalhe do taxon e escolher a estratégia disponível: pesquisa E20.5 válida, ausência legítima com Web ou hipótese focal com Web.
@@ -300,7 +300,7 @@ Como usar:
 - Tratar a recomendação como não autoritativa; somente a decisão humana revalidada altera o lifecycle.
 
 Resultado esperado:
-- saída v2 `suficiente | gaps candidatos | inconclusivo`, com fontes autenticadas quando aplicáveis; eventos `requested | completed | inconclusive` persistem a evidência mínima e os fingerprints que vinculam a decisão ao resultado exato.
+- saída v2 `suficiente | gaps candidatos | inconclusivo`, com fontes autenticadas quando aplicáveis; somente resultado validado é persistido na revisão aberta. Falha ou timeout não cria estado autoritativo, e a decisão recarrega o resultado pelo identificador e revisão esperada.
 
 Limites:
 - Não altera a E20.2 nem grava suficiência automaticamente; não cria agente, Agents SDK, handoff Codex, job, fila, background ou automação recorrente. Gate desligado ou provider indisponível afeta somente a avaliação opcional, nunca o lifecycle humano.

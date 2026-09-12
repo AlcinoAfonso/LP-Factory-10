@@ -1927,16 +1927,11 @@
 - Banco:
   - Criados:
     - `business_taxon_factual_reviews`
-    - `business_taxon_factual_review_events`
-    - `public.open_business_taxon_factual_review_v1(...)`
-    - `public.close_business_taxon_factual_review_without_change_v1(...)`
-    - `public.append_business_taxon_factual_review_evaluation_event_v1(...)`
-    - `public.record_business_taxon_factual_catalog_change_decision_v1(...)`
-    - `public.save_business_taxon_factual_review_draft_v1(...)`
-    - `public.authorize_business_taxon_factual_review_publication_v1(...)`
+    - `public.finalize_business_taxon_factual_review_v1(...)`
+    - `public.update_business_taxon_with_factual_review_invalidation_v1(...)`
     - `public.reconcile_business_taxon_factual_review_publication_v1(...)`
   - Ajustados:
-    - `landing_page_input_catalog_drafts.factual_review_save_receipts`
+    - `landing_page_input_catalog_drafts.taxon_review_evidence`
     - `business_taxons.is_active`
     - `business_taxons.reviewed_input_catalog_version`
     - `public.openai_workload_operational_configurations`
@@ -1995,16 +1990,16 @@
 - Status: implementado no repositório; apply hospedado, snippet pós-apply, Security Controls e QA administrativo permanecem pendentes dos gates finais.
 - Conteúdo:
   - novo taxon nasce indisponível, resolve cobertura herdada nos quatro planos e pode ser liberado por confirmação humana sem IA, pesquisa ou justificativa textual;
-  - sessões `release | revision` preservam baseline, revisão otimista e eventos imutáveis;
+  - revisões `release | revision` preservam atividade, pesquisa E20.5 selecionada, versão factual, snapshot da cadeia, revisão otimista, última recomendação e decisão final na mesma linha; somente `open | closed` são estados persistidos, linhas fechadas são imutáveis e abertura, finalização e reconciliação são serializadas com mutações taxonômicas e troca da pesquisa selecionada mediante revalidação do baseline completo;
   - taxon ativo mantém atividade e última versão válida durante revisão, falha ou abandono.
 
 20.6.4 Decisão humana e lifecycle E20.2
 - Status: implementado no repositório; execução do teste SQL, apply hospedado, snippet pós-apply e reconciliação Production permanecem pendentes dos gates finais.
 - Conteúdo:
-  - recomendação, decisão, autorização, publicação e ativação são estados distintos;
+  - recomendação, decisão, autorização, publicação e ativação são responsabilidades distintas sem exigir um estado persistido para cada passo;
   - o humano pode rejeitar todos, aceitar alguns ou todos e incluir candidato próprio, sempre com camada explícita;
   - rejeição integral sem candidato próprio fecha a sessão sem mudança; qualquer aceitação ou candidato próprio permanece decisão candidata e nunca cria field por si;
-  - a projeção do draft é derivada somente pela RPC da decisão, e editar o draft invalida e reabre atomicamente todas as sessões vinculadas;
+  - a RPC de decisão fecha a revisão e grava a projeção do draft exato inclusive para `no_change`; editar o draft limpa essa projeção por concorrência otimista sem reabrir ou reescrever histórico fechado;
   - autorização exige cobertura exata dos impactos ativos e das liberações inativas pendentes; mudança só altera versão factual ou atividade após publicação implantada e reconciliação transacional de todos os taxons afetados.
 
 20.6.5 Provider e fontes
@@ -2015,7 +2010,7 @@
   - o workload e a configuração E21 existentes permanecem, com execução foreground, `store:false`, prazo de 45 segundos, zero retry e Structured Output v2 com fontes autenticadas.
   - a leitura administrativa de taxon inativo reutiliza a paginação canônica da cadeia por entrypoint server-only; leitores operacionais continuam fail-closed;
   - o deadline cobre toda a execução, o preflight de 128k usa limite superior por bytes UTF-8 e toda candidata ou URL textual Web precisa pertencer às fontes autenticadas;
-  - requested, completed e inconclusive são eventos idempotentes da sessão aberta; completed preserva output, evidência Web e fingerprint próprio da identidade da avaliação, separado do fingerprint da sessão, e toda decisão sobre candidatos comprova o evento persistido exato.
+  - somente a última avaliação validada é persistida na revisão aberta; falha ou timeout não grava estado autoritativo, e feedback ou decisão recarrega contexto, output e candidatos pelo `reviewId` e revisão esperada.
 
 20.6.6 Evolução e transições
 - Status: implementado no repositório; integração visual pertence à 20.6.7 e publicação/reconciliação permanecem nos gates futuros.
@@ -2023,7 +2018,7 @@
   - inclusão, alteração e inativação de field são operações humanas tipadas sobre o draft singleton;
   - cada mudança preserva camada, impacto, versionamento imutável e histórico;
   - IA e candidato nunca escrevem field nem alteram atividade ou marcador factual.
-  - a operação pura reusa schema, continuidade, resolução dos quatro planos e classificação de impacto; a persistência estreita reusa revisão otimista e invalidação factual atômica existentes;
+  - a operação pura reusa schema, continuidade, resolução dos quatro planos e classificação de impacto; a persistência estreita usa update otimista do draft e limpa sua evidência factual stale;
   - todas as releases abertas são projetadas como ativas no futuro catálogo e nos impactos, inclusive sob operação universal ou ancestral; identificador ausente, duplicado ou já ativo falha fechado, sem mudança operacional pré-deploy.
 
 20.6.7 Experiência administrativa
@@ -2032,8 +2027,8 @@
   - Taxonomia concentra o lifecycle factual e Estrutura da LP continua proprietária do draft, sem rota nova;
   - estado atual, próximo passo, consequência, bloqueio, recomendação e decisão permanecem semanticamente distintos;
   - o fluxo será validado em desktop/mobile, teclado, leitor de tela, foco, toque, contraste e ausência de overflow ou ação exclusiva por hover.
-  - abertura e fechamento humano permanecem disponíveis sem provider; lista e detalhe distinguem ausência de histórico, sessão aberta, espera de publicação, fechamento sem mudança, fechamento reconciliado e leitura indisponível, preservando a última sessão após reload e revalidando a identidade exibida antes da mutação;
-  - avaliação v2 exibe fontes e coleta decisão zero/parcial/total, camada por aceitação e candidato próprio, exigindo o draft e o evento exatos para mudança;
+  - abertura e fechamento humano permanecem disponíveis sem provider; lista e detalhe distinguem ausência de histórico, revisão aberta, revisão concluída e leitura indisponível, preservando a última revisão após reload;
+  - avaliação v2 exibe fontes e coleta decisão zero/parcial/total, camada por aceitação e candidato próprio marcado como humano; o browser envia somente referência mínima e escolhas humanas, enquanto o backend recarrega a recomendação persistida;
   - Estrutura LP usa editor estruturado `add | change | retire`, recebe DTO seguro sem JSON integral no client e mostra impactos completos antes de autorização/publicação;
   - actions, adapters, handoffs, componente, token HMAC e helpers de record/reopen/gap transitórios foram removidos; o gate do provider informa somente indisponibilidade da avaliação opcional.
 

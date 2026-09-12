@@ -1,6 +1,6 @@
 import "server-only";
 
-import { createHash, randomUUID } from "node:crypto";
+import { createHash } from "node:crypto";
 
 import {
   CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION,
@@ -20,17 +20,13 @@ import {
 import { reconstructDraftInputCatalogEvaluationContext } from "@/conversion-content/adapters/inputCatalogEvaluationContextAdapter";
 import {
   fingerprintInputCatalogEvaluationContextIdentity,
-  normalizeFactualReviewCatalogChangeDecision,
   type BuildInputCatalogEvaluationContextResult,
-  type FactualReviewHumanDecision,
 } from "@/conversion-content/landing-page/taxon-preparation";
 import { createServiceClient } from "@/lib/supabase/service";
 import {
   authorizeAdminInputCatalogFactualPublication,
-  closeAdminTaxonFactualReviewWithoutChangeForCurrentCoverage,
-  recordAdminTaxonFactualCatalogChangeDecision,
   reconcileAdminInputCatalogFactualPublication,
-  saveAdminInputCatalogDraftAndInvalidateFactualReviews,
+  saveAdminInputCatalogDraft,
 } from "./adminTaxonFactualReviewAdapter";
 import { readCompleteLifecycleContext, type LifecycleContext } from "./adminInputCatalogLifecycleContext";
 import {
@@ -166,8 +162,7 @@ export async function applyAdminInputCatalogDraftOperation(input: Readonly<{
   });
   if (!applied.ok) return invalid(applied.error.message);
   const contentFingerprint = fingerprint(applied.value.canonicalJson);
-  const saved = await saveAdminInputCatalogDraftAndInvalidateFactualReviews({
-    operationId: randomUUID(),
+  const saved = await saveAdminInputCatalogDraft({
     actorUserId: input.actorUserId,
     expectedRevision: input.expectedRevision,
     catalogJson: applied.value.entry,
@@ -286,12 +281,10 @@ export async function prepareAdminInputCatalogPublication(input: Readonly<{
     return blocked("Todas as decisões factuais do draft exato são obrigatórias antes da autorização.");
   }
   const authorized = await authorizeAdminInputCatalogFactualPublication({
-    operationId: randomUUID(),
     actorUserId: input.actorUserId,
     expectedRevision: input.expectedRevision,
     contentFingerprint: fingerprintValue,
     contextFingerprint: lifecycleContextFingerprint,
-    requiredTaxonIds,
   });
   if (!authorized.ok) return blocked(authorized.message);
   const refreshed = await readDraftRow(client);
@@ -351,7 +344,6 @@ export async function reconcileAdminInputCatalogPublishedDraft(input: Readonly<{
   }
 
   const reconciled = await reconcileAdminInputCatalogFactualPublication({
-    operationId: randomUUID(),
     actorUserId: input.actorUserId,
     expectedRevision: input.expectedRevision,
     deployedVersion: CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION,
@@ -433,103 +425,6 @@ export async function loadAdminInputCatalogDraftEvaluationContext(input: Readonl
   };
 }
 
-export async function recordAdminInputCatalogDraftHumanDecision(input: Readonly<{
-  actorUserId: string;
-  expectedRevision: number;
-  taxonId: string;
-  expectedContentFingerprint: string;
-  expectedEvaluationContextFingerprint: string;
-  decision: FactualReviewHumanDecision;
-  recommendationEventId?: string;
-  recommendationOutputFingerprint?: string;
-  recommendationEvaluationContextFingerprint?: string;
-  mode: import("@/conversion-content/landing-page/taxon-preparation").InputCatalogEvaluationMode;
-}>): Promise<Readonly<{
-  ok: true;
-  revision: number;
-  reviewedVersion: number;
-  decisionKind: "no_change" | "catalog_change";
-}> | Readonly<{ ok: false; message: string }>> {
-  const normalized = normalizeFactualReviewCatalogChangeDecision(input.decision);
-  if (!normalized.ok) return { ok: false, message: normalized.error.message };
-  const current = await loadAdminInputCatalogDraftEvaluationContext({
-    expectedRevision: input.expectedRevision,
-    taxonId: input.taxonId,
-    mode: input.mode,
-  });
-  if (!current.ok) return current;
-  const evaluationContextFingerprint = fingerprintInputCatalogEvaluationContextIdentity(
-    current.value.context.identity,
-  );
-  if (
-    current.value.contentFingerprint !== input.expectedContentFingerprint ||
-    evaluationContextFingerprint !== input.expectedEvaluationContextFingerprint
-  ) {
-    return { ok: false, message: "O draft, a pesquisa, a estratégia ou a cadeia mudaram desde a avaliação." };
-  }
-  const client = createServiceClient();
-  const row = await readDraftRow(client);
-  if (!row.ok || !row.value || row.value.revision !== input.expectedRevision) {
-    return { ok: false, message: "O draft mudou durante a decisão." };
-  }
-  const { data: reviewRow, error: reviewError } = await client
-    .from("business_taxon_factual_reviews")
-    .select("id,revision,context_fingerprint")
-    .eq("taxon_id", input.taxonId)
-    .eq("status", "open")
-    .limit(1)
-    .maybeSingle();
-  if (
-    reviewError ||
-    !isRecord(reviewRow) ||
-    typeof reviewRow.id !== "string" ||
-    !Number.isSafeInteger(Number(reviewRow.revision)) ||
-    typeof reviewRow.context_fingerprint !== "string"
-  ) {
-    return { ok: false, message: "Abra uma sessão factual antes de decidir sobre o draft." };
-  }
-  const binding = normalized.value.recommendationCandidateCount > 0
-    ? {
-        recommendationEventId: input.recommendationEventId,
-        recommendationOutputFingerprint: input.recommendationOutputFingerprint,
-        recommendationEvaluationContextFingerprint:
-          input.recommendationEvaluationContextFingerprint,
-      }
-    : {};
-  const recorded = normalized.value.decisionKind === "no_change"
-    ? await closeAdminTaxonFactualReviewWithoutChangeForCurrentCoverage({
-        reviewId: reviewRow.id,
-        operationId: randomUUID(),
-        actorUserId: input.actorUserId,
-        taxonId: input.taxonId,
-        expectedRevision: Number(reviewRow.revision),
-        expectedContextFingerprint: reviewRow.context_fingerprint,
-        ...binding,
-        humanDecision: normalized.value,
-      })
-    : await recordAdminTaxonFactualCatalogChangeDecision({
-        reviewId: reviewRow.id,
-        operationId: randomUUID(),
-        actorUserId: input.actorUserId,
-        taxonId: input.taxonId,
-        expectedReviewRevision: Number(reviewRow.revision),
-        expectedReviewContextFingerprint: reviewRow.context_fingerprint,
-        draftRevision: row.value.revision,
-        targetInputCatalogVersion: current.value.targetVersion,
-        draftContentFingerprint: row.value.contentFingerprint,
-        draftContextFingerprint: evaluationContextFingerprint,
-        decision: normalized.value,
-        ...binding,
-      });
-  if (!recorded.ok) return recorded;
-  return {
-    ok: true,
-    revision: row.value.revision,
-    reviewedVersion: recorded.value.coverage.inputCatalogVersion,
-    decisionKind: normalized.value.decisionKind,
-  };
-}
-
 type DraftRow = Readonly<{
   baseVersion: number;
   targetVersion: number;
@@ -546,7 +441,7 @@ type DraftRow = Readonly<{
 
 type DraftTaxonReviewEvidence = Readonly<{
   reviewId: string;
-  decisionEventId: string;
+  reviewRevision: number;
   draftRevision: number;
   contentFingerprint: string;
   contextFingerprint: string;
@@ -845,31 +740,20 @@ async function validateReviewEvidence(
     ) {
       continue;
     }
-    const [{ data: review }, { data: decision }] = await Promise.all([
-      client
-        .from("business_taxon_factual_reviews")
-        .select("id,taxon_id,status,draft_revision,draft_content_fingerprint,draft_context_fingerprint")
-        .eq("id", evidence.reviewId)
-        .maybeSingle(),
-      client
-        .from("business_taxon_factual_review_events")
-        .select("id,review_id,event_kind,decision_kind,context_fingerprint,content_fingerprint")
-        .eq("id", evidence.decisionEventId)
-        .maybeSingle(),
-    ]);
+    const { data: review } = await client
+      .from("business_taxon_factual_reviews")
+      .select("id,taxon_id,status,outcome,revision,evaluation_source,evaluation_draft_revision,evaluation_context_fingerprint")
+      .eq("id", evidence.reviewId)
+      .maybeSingle();
     if (
       !isRecord(review) ||
       review.taxon_id !== taxonId ||
-      review.status !== "awaiting_catalog_publication" ||
-      Number(review.draft_revision) !== row.revision ||
-      review.draft_content_fingerprint !== row.contentFingerprint ||
-      review.draft_context_fingerprint !== evidence.contextFingerprint ||
-      !isRecord(decision) ||
-      decision.review_id !== evidence.reviewId ||
-      decision.event_kind !== "decision_recorded" ||
-      decision.decision_kind !== "catalog_change" ||
-      decision.context_fingerprint !== evidence.contextFingerprint ||
-      decision.content_fingerprint !== row.contentFingerprint
+      review.status !== "closed" ||
+      (review.outcome !== "no_change" && review.outcome !== "catalog_change") ||
+      Number(review.revision) !== evidence.reviewRevision ||
+      review.evaluation_source !== "draft" ||
+      Number(review.evaluation_draft_revision) !== row.revision ||
+      review.evaluation_context_fingerprint !== evidence.contextFingerprint
     ) {
       continue;
     }
@@ -962,7 +846,8 @@ function normalizeDraftTaxonReviewEvidence(
       !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(taxonId) ||
       !isRecord(raw) ||
       typeof raw.review_id !== "string" ||
-      typeof raw.decision_event_id !== "string" ||
+      !Number.isSafeInteger(raw.review_revision) ||
+      Number(raw.review_revision) <= 0 ||
       !Number.isSafeInteger(raw.draft_revision) ||
       Number(raw.draft_revision) <= 0 ||
       typeof raw.content_fingerprint !== "string" ||
@@ -972,7 +857,7 @@ function normalizeDraftTaxonReviewEvidence(
     ) return null;
     normalized[taxonId] = Object.freeze({
       reviewId: raw.review_id,
-      decisionEventId: raw.decision_event_id,
+      reviewRevision: Number(raw.review_revision),
       draftRevision: Number(raw.draft_revision),
       contentFingerprint: raw.content_fingerprint,
       contextFingerprint: raw.context_fingerprint,

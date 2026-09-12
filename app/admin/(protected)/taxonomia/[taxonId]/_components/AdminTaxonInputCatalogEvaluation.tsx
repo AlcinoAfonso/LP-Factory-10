@@ -10,8 +10,8 @@ const strategyLabels: Record<InputCatalogEvaluationOutput["sourceStrategy"], str
 const stateLabels: Record<InputCatalogEvaluationOutput["sourceState"], string> = { e20_5_available: "E20.5 válida disponível", e20_5_absent_authorized: "Ausência E20.5 autorizada" };
 
 type DecisionAction = (input: Readonly<{
-  reference: InputCatalogEvaluationReference;
-  output: InputCatalogEvaluationOutput;
+  reviewId: string;
+  expectedRevision: number;
   acceptedCandidates: readonly Readonly<{ index: number; layer: FactualReviewDecisionLayer }>[];
   ownCandidate: Readonly<{ factualNeed: string; layer: FactualReviewDecisionLayer }> | null;
 }>) => Promise<InputCatalogHumanDecisionActionResult>;
@@ -21,7 +21,7 @@ export function AdminTaxonInputCatalogEvaluationRuntime({ taxonId, currentInputC
   currentInputCatalogVersion: number;
   currentReviewedVersion: number | null;
   draftRevision?: number;
-  evaluateAction: (input: Readonly<{ taxonId: string; inputCatalogVersion: number; mode: InputCatalogEvaluationMode; focalHypothesis: string | null; feedback: Readonly<{ text: string; previousOutput: InputCatalogEvaluationOutput; reference: InputCatalogEvaluationReference }> | null; draftRevision?: number }>) => Promise<InputCatalogEvaluationActionResult>;
+  evaluateAction: (input: Readonly<{ taxonId: string; inputCatalogVersion: number; mode: InputCatalogEvaluationMode; focalHypothesis: string | null; feedback: Readonly<{ text: string; reviewId: string; expectedRevision: number }> | null; draftRevision?: number }>) => Promise<InputCatalogEvaluationActionResult>;
   decisionAction: DecisionAction;
 }>) {
   const resultHeadingRef = useRef<HTMLHeadingElement>(null);
@@ -71,7 +71,9 @@ export function AdminTaxonInputCatalogEvaluationRuntime({ taxonId, currentInputC
         inputCatalogVersion: parsedVersion,
         mode,
         focalHypothesis: mode === "hypothesis" ? hypothesis.trim() : null,
-        feedback: output && reference && feedback.trim() ? { text: feedback.trim(), previousOutput: output, reference } : null,
+        feedback: output && reference && feedback.trim()
+          ? { text: feedback.trim(), reviewId: reference.reviewId, expectedRevision: reference.reviewRevision }
+          : null,
         ...(draftRevision === undefined ? {} : { draftRevision }),
       });
       if (!result.ok) {
@@ -103,7 +105,12 @@ export function AdminTaxonInputCatalogEvaluationRuntime({ taxonId, currentInputC
     setPending("decision");
     setMessage(null);
     try {
-      const result = await decisionAction({ reference, output, acceptedCandidates, ownCandidate });
+      const result = await decisionAction({
+        reviewId: reference.reviewId,
+        expectedRevision: reference.reviewRevision,
+        acceptedCandidates,
+        ownCandidate,
+      });
       if (!result.ok) {
         if (result.stale) setStale(true);
         return showMessage({ tone: "error", text: result.message });
@@ -170,7 +177,7 @@ export function AdminTaxonInputCatalogEvaluationRuntime({ taxonId, currentInputC
           <Field label="Necessidade factual" hint="Deixe vazio quando não houver candidato humano adicional." id="own-candidate"><textarea aria-describedby="own-candidate-hint" id="own-candidate" maxLength={1000} value={ownNeed} onChange={(event) => setOwnNeed(event.currentTarget.value)} className="min-h-24 w-full rounded-md border border-border bg-background p-3 text-sm outline-none focus-visible:ring-4 focus-visible:ring-brand-600/20" /></Field>
           <Field label="Camada explícita" hint="Obrigatória quando houver candidato próprio." id="own-layer"><select aria-describedby="own-layer-hint" id="own-layer" value={ownLayer} onChange={(event) => setOwnLayer(event.currentTarget.value as FactualReviewDecisionLayer)} className="min-h-11 w-full rounded-md border border-border bg-background px-3 text-sm outline-none focus-visible:ring-4 focus-visible:ring-brand-600/20">{layers.map((layer) => <option key={layer} value={layer}>{layerLabels[layer]}</option>)}</select></Field>
         </fieldset> : null}
-        <div className="mt-5 rounded-md border-2 border-border p-4"><p className="text-sm font-semibold text-foreground">Decisão preparada: {decisionKind === "no_change" ? "sem mudança" : "com mudança"}</p><p className="mt-1 text-xs text-muted-foreground">{decisionKind === "catalog_change" ? "Só pode ser persistida sobre o draft e evento exatos; nenhum field é criado aqui." : "Todos os candidatos acionáveis foram rejeitados e não há candidato próprio."}</p><button className="mt-3 min-h-11 rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white outline-none transition hover:bg-brand-700 focus-visible:ring-4 focus-visible:ring-brand-600/30 disabled:opacity-60" disabled={pending !== null || stale || output.status === "inconclusive"} onClick={recordDecision} type="button">{pending === "decision" ? "Registrando…" : "Registrar decisão humana"}</button></div>
+        <div className="mt-5 rounded-md border-2 border-border p-4"><p className="text-sm font-semibold text-foreground">Decisão preparada: {decisionKind === "no_change" ? "sem mudança" : "com mudança"}</p><p className="mt-1 text-xs text-muted-foreground">{decisionKind === "catalog_change" ? "Só pode ser persistida sobre o draft e a revisão exatos; nenhum field é criado aqui." : "Todos os candidatos acionáveis foram rejeitados e não há candidato próprio."}</p><button className="mt-3 min-h-11 rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white outline-none transition hover:bg-brand-700 focus-visible:ring-4 focus-visible:ring-brand-600/30 disabled:opacity-60" disabled={pending !== null || stale || output.status === "inconclusive"} onClick={recordDecision} type="button">{pending === "decision" ? "Registrando…" : "Registrar decisão humana"}</button></div>
       </div> : null}
     </section>
   );
