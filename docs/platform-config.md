@@ -2,8 +2,8 @@
 
 0.1 Cabeçalho
 • Documento: LP Factory 10 — Platform Config
-• Versão: v0.1.44
-• Data: 07/09/2026
+• Versão: v0.1.45
+• Data: 12/09/2026
 
 0.2 Contrato do documento
 • O QUE É: snapshot operacional e fonte única das configurações de plataformas externas do LP Factory 10, refletindo o estado conhecido/cadastrado nas plataformas conforme indicado.
@@ -36,11 +36,11 @@
 • Secrets e variáveis conhecidos:
 • `OPENAI_API_KEY`: usado por automações/CI que chamam OpenAI. Consumidor atual: `pipeline-supabase-inspect`.
 • `SUPABASE_DB_URL_READONLY`: conexão read-only para inspeções/automação de banco. Consumidor atual: `pipeline-supabase-inspect`.
-• `OPENAI_COST_INGESTION_HMAC_SECRET`: secret de assinatura do ingresso financeiro do `pipeline-supabase-inspect`; configuração externa pendente antes da ativação.
-• `OPENAI_COST_INGESTION_ENABLED`: variável não sensível que libera o envio financeiro do `pipeline-supabase-inspect`; deve permanecer diferente de `true` até o apply e a validação do endpoint.
-• `OPENAI_COST_INGESTION_URL`: URL HTTPS do endpoint interno do Core; configuração externa pendente.
-• `OPENAI_COST_INGESTION_ENVIRONMENT`: ambiente explícito enviado pelo workflow, restrito a `production`, `preview` ou `development`; configuração externa pendente.
-• `OPENAI_COST_INGESTION_PROTOCOL_VERSION`: versão do protocolo aceito pelo cliente do `supabase_inspect`; configuração externa pendente.
+• `OPENAI_COST_INGESTION_HMAC_SECRET`: secret de assinatura do ingresso financeiro do `pipeline-supabase-inspect`; configurado no GitHub Actions e no Core, sem valor versionado.
+• `OPENAI_COST_INGESTION_ENABLED`: variável não sensível que libera o envio financeiro do `pipeline-supabase-inspect`; configurada e ativa no fluxo Production validado.
+• `OPENAI_COST_INGESTION_URL`: URL HTTPS do endpoint interno do Core; configurada no GitHub Actions para o ingresso Production validado.
+• `OPENAI_COST_INGESTION_ENVIRONMENT`: ambiente explícito enviado pelo workflow, restrito a `production`, `preview` ou `development`; configurada como variável do fluxo validado.
+• `OPENAI_COST_INGESTION_PROTOCOL_VERSION`: versão do protocolo aceito pelo cliente do `supabase_inspect`; configurada como variável do fluxo validado.
 • `MAILBOX_EMAIL`: e-mail institucional preservado para o futuro Operador Institucional Autônomo de QA da E17.9.3; sem consumidor operacional vigente após a E22.6.
 • `MAILBOX_PASSWORD`: senha/app password da mailbox preservada para o futuro Operador Institucional Autônomo de QA da E17.9.3; sem consumidor operacional vigente após a E22.6.
 • `SUPABASE_ACCESS_TOKEN`: token usado pelo workflow de apply de migrations Supabase.
@@ -208,26 +208,26 @@
 • `OPENAI_ACTIVE_COST_TRACKING_ENABLED`
 • Finalidade: gate server-side independente por ambiente do ledger ativo transversal de custos OpenAI.
 • Escopo: Preview e Production do Core.
-• Estado: configuração externa pendente; ausência, vazio ou valor diferente do literal `true` mantém a captura financeira desligada sem bloquear o workload.
-• Progressão: ativar primeiro em Preview após apply e verificação de Security Controls; Production exige validação própria e redeploy do ambiente.
+• Estado operacional: configurada e ativa em Preview e Production; migrations, Security Controls, redeploys e smokes dos quatro workloads Core foram aprovados nos dois ambientes.
+• Regra operacional: ausência, vazio ou valor diferente do literal `true` mantém a captura financeira desligada sem bloquear o workload; alterações exigem redeploy e validação do ambiente afetado.
 • Classificação: Config, não Secret.
 
 • `OPENAI_COST_INGESTION_ENABLED`
 • Finalidade: gate server-side do endpoint interno que recebe fatos assinados do `supabase_inspect`.
 • Escopo: Preview e Production do Core, alinhado ao ambiente do workflow chamador.
-• Estado: configuração externa pendente e desligada por padrão.
+• Estado operacional: configurada no Core e no GitHub Actions; o ingresso Production foi aprovado com assinatura válida, rejeição de assinatura inválida e expirada e execução real concluída do `pipeline-supabase-inspect`.
 • Classificação: Config, não Secret.
 
 • `OPENAI_COST_INGESTION_HMAC_SECRET`
 • Finalidade: segredo exclusivo para autenticar envelopes financeiros do GitHub Actions no endpoint interno do Core.
 • Escopo: GitHub Actions e ambiente correspondente do Core; usar valores independentes por ambiente.
-• Estado: configuração externa pendente; valor real não versionar.
+• Estado operacional: configurado no GitHub Actions e no Core para o ingresso Production validado; valor real não versionar.
 • Classificação: Secret.
 
 • `OPENAI_COST_INGESTION_ENVIRONMENT`
 • Finalidade: validar no Core o ambiente declarado pelo `supabase_inspect`; a revisão de referência permanece code-owned no inventário E21.
 • Escopo: Preview e Production.
-• Estado: configuração externa pendente.
+• Estado operacional: configurada no GitHub Actions e no Core para o fluxo Production validado.
 • Classificação: Config, não Secret.
 
 • `OPENAI_OPERATIONAL_CONFIG_ENABLED`
@@ -545,6 +545,8 @@ Regra:
 • Configurações de plataformas, secrets por nome, workflows, ambientes e endpoints usados por automações devem ser registrados neste documento.
 
 99. Changelog
+v0.1.45 — 12/09/2026 — Reconciliada a configuração operacional concluída da E21.5: captura ativa validada em Preview e Production e ingresso assinado do `supabase_inspect` validado em Production, sem registrar valores de secrets.
+
 v0.1.44 — 07/09/2026 — Consolidado o fechamento da E23.2: seis ocorrências sem consumidor removidas da Vercel Core; 22 sobreclassificações como Secret e quatro branch scopes legados preservados por decisão funcional conservadora; Preview aprovado sem exposição ou substituição de valores.
 
 v0.1.40 — 02/09/2026 — Marcados `E19_5_WORKSPACE_ENABLED` e `landing-page-revision-assets` como recursos sem consumidor runtime após o SV-PR03; nenhuma variável, secret, bucket ou infraestrutura externa foi alterada.

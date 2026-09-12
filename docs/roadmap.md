@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 12/09/2026
-• Versão: v1.5.223
+• Versão: v1.5.224
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2255,12 +2255,44 @@
 - Classificação financeira ampla, outros workloads, câmbio, cobrança, créditos e reconstrução histórica permanecem fora do escopo vigente.
 
 21.4.6 Transição para histórico legado
-- Status: plano-base v2 aprovado tecnicamente; implementação e gates externos pendentes. A dependência E21.5 está satisfeita.
+
+21.4.6.1 Objetivo e status
+- Objetivo: encerrar a escrita residual da série E21.4 e preservá-la como histórico legado somente leitura, com E21.5 vigente como controle ativo.
+- Status: implementação concluída no repositório; migration candidata aguarda merge humano, apply canônico e gates hospedados pós-apply.
+
+21.4.6.2 Registros do recorte
+- Repositório:
+  - Criados:
+    - `supabase/migrations/20260912143448_e21_4_6_freeze_openai_lp_cost_history.sql`
+    - `supabase/tests/e21_4_6_openai_lp_cost_history.test.sql`
+    - `supabase/snippets/e21_4_6_openai_lp_cost_history_verify.sql`
+  - Ajustados:
+    - `lib/openai-costs/validation-cases.ts`
+  - Excluídos:
+    - `supabase/tests/e21_4_4_openai_lp_cost_tracking.test.sql`
+    - `supabase/snippets/e21_4_4_openai_lp_cost_tracking_verify.sql`
+- Updates:
+  - Aplicados:
+    - `supa#40`
+- Referências:
+  - Plano aprovado: `docs/lousa-plano-base-e21-4-6.md` — seções 9–14.
+  - Matriz de transição: `docs/matriz-consolidacao-e21-4-6.md` — seções 2–5.
+  - Configuração operacional E21.5: `docs/platform-config.md` — seções 2.2 e 3.5.
+  - Contrato preservado do histórico: `docs/schema.md` — seções 1.36, 1.37 e 3.10.
+
+21.4.6.3 Implementação e limites
+- Status: concluída no repositório, sem mutação hospedada pré-merge.
 - Conteúdo:
-  - retirar por migration forward-only somente os grants residuais de escrita e de execução das RPCs de escrita/corte E21.4, preservando leitura, objetos, linhas, corte, constraints, índices, RLS, zero policies, triggers, funções e assinaturas;
-  - substituir as provas operacionais antigas por teste transacional e snippet read-only coerentes com o histórico congelado e impedir a reintrodução de produtor legado no runtime;
-  - manter a Costs API como autoridade do total, E21.5 como controle ativo, E21.4 como histórico legado e `/admin/custos-openai` como superfície financeira única;
-  - classificar a transição item a item em `docs/matriz-consolidacao-e21-4-6.md`, sem backfill, reprecificação, reclassificação retroativa, novo produtor ou exclusão de histórico.
+  - a migration forward-only retira do `service_role` INSERT, UPDATE, DELETE e TRUNCATE nas duas tabelas legadas e o EXECUTE das três RPCs de escrita/corte, preservando SELECT e a RPC de leitura;
+  - o teste e o snippet E21.4.6 substituem as provas operacionais antigas e verificam estrutura, RLS, zero policies, ACLs read-only, negativas de mutação e baseline hospedado;
+  - a validação de `lib/openai-costs/` impede a reintrodução de gate, produtor ou RPC de escrita E21.4 no runtime e mantém a leitura restrita ao adapter histórico;
+  - permanecem fora backfill, reprecificação, reclassificação retroativa, exclusão de linha, alteração do corte, nova UI, novo produtor e mudança na migration E21.4.4 aplicada.
+
+21.4.6.4 Gates externos
+- Status: baseline pré-apply confirmado; apply, snippet read-only, Security Controls e receipt sanitizado permanecem pós-merge sob decisão do supervisor.
+- Conteúdo:
+  - o baseline preservado contém oito eventos, uma linha de cobertura e corte `2026-08-29 21:55:36.827207+00`;
+  - a Costs API continua autoridade do total, E21.5 continua autoridade ativa, E21.4 permanece histórico legado e `/admin/custos-openai` permanece a superfície financeira única.
 
 21.5 Controle ativo de custos OpenAI por workload e conta
 
