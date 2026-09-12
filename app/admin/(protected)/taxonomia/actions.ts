@@ -194,12 +194,14 @@ export async function evaluateInputCatalogAction(input: Readonly<{
     {
       reconstructContext,
       evaluate: async (request) => {
+        const economicEventId = randomUUID();
         return evaluateInputCatalogWithOpenAi({
           apiKey: process.env.OPENAI_API_KEY,
           configuration: runtime.configuration,
           environment: runtime.environment,
           request,
           requestId,
+          economicEvent: { eventId: economicEventId, taxonId: input.taxonId },
           safetyIdentifier: `platform_admin_${gate.actorUserId.replaceAll("-", "")}`,
         });
       },

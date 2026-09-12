@@ -6,6 +6,7 @@ import {
   translateOpenAiActiveCostRows,
 } from "./adapters/activeCostReadModelAdapterCore";
 import { buildOpenAiCostsFinancialComposition } from "./dashboard";
+import { buildOpenAiEconomicHierarchy } from "./economic-hierarchy";
 import {
   calculateOpenAiOperationCost,
   OPENAI_COST_PRICING_CATALOG,
@@ -142,12 +143,81 @@ async function main() {
   assert.equal(translated.ok, true);
   if (!translated.ok) throw new Error("active read model must be valid");
   assert.equal(translated.value.totalCalculatedUsd, "0.000000000001");
+  assert.equal(translated.value.economicDimensionStatus, "v2_active");
   assert.equal(translated.value.executionCount, 2);
   assert.equal(translated.value.operationCount, 2);
   assert.equal(translated.value.unavailableOperationCount, 1);
   assert.equal(translated.value.unassignedExecutionCount, 1);
   assert.equal(translated.value.executions[0]?.operations[0]?.webSearchPricePerCallUsd, "0.01");
   assert.equal(translated.value.executions[0]?.operations[1]?.retryOfOperationId, "40000000-0000-4000-8000-000000000001");
+
+  const correlated = translateOpenAiActiveCostRows({
+    period,
+    coverageRows,
+    rows: [activeRow({
+      cursor_started_at: "2026-09-11T14:00:00.000Z",
+      execution_id: "40000000-0000-4000-8000-000000000020",
+      operation_id: "40000000-0000-4000-8000-000000000021",
+      workload: "niche_resolution",
+      universe: "client",
+      attribution_status: "attributed",
+      account_id: "40000000-0000-4000-8000-000000000099",
+      account_name: "Cliente econômico",
+      economic_event_kind: "niche_resolution",
+      economic_event_id: "40000000-0000-4000-8000-000000000088",
+    })],
+  });
+  assert.equal(correlated.ok, true);
+  if (!correlated.ok) throw new Error("correlated read model must be valid");
+  assert.deepEqual(correlated.value.executions[0]?.economicEvent, {
+    kind: "niche_resolution",
+    eventId: "40000000-0000-4000-8000-000000000088",
+  });
+  const hierarchy = buildOpenAiEconomicHierarchy(correlated.value, {
+    totalUsd: "0.25",
+    coverageActivatedAt: null,
+    coverageStatus: "not_activated",
+    internalUpdatedAt: null,
+    attemptCount: 1,
+    unpricedAttemptCount: 0,
+    pendingAttemptCount: 0,
+    providerCreditFailureCount: 0,
+    accounts: [{
+      accountId: "40000000-0000-4000-8000-000000000099",
+      accountName: "Cliente econômico",
+      totalUsd: "0.25",
+      attemptCount: 1,
+      unpricedAttemptCount: 0,
+      pendingAttemptCount: 0,
+      landingPages: [{
+        landingPageId: "40000000-0000-4000-8000-000000000077",
+        landingPageName: "LP histórica",
+        totalUsd: "0.25",
+        attemptCount: 1,
+        unpricedAttemptCount: 0,
+        pendingAttemptCount: 0,
+        workloads: [{
+          workload: "landing_page_draft_generation",
+          totalUsd: "0.25",
+          attemptCount: 1,
+          unpricedAttemptCount: 0,
+          pendingAttemptCount: 0,
+        }],
+      }],
+    }],
+  });
+  assert.equal(hierarchy.clients.calculatedCostUsd, "0.2500014");
+  assert.equal(hierarchy.clients.accounts[0]?.events.length, 2);
+  assert.equal(hierarchy.clients.accounts[0]?.events[1]?.label, "Resolução de nicho — 2026-09-11T14:00:00.000Z");
+
+  const fallback = translateOpenAiActiveCostRows({
+    period,
+    rows: [activeRow({})],
+    coverageRows,
+    economicDimensionStatus: "v1_fallback",
+  });
+  assert.equal(fallback.ok && fallback.value.economicDimensionStatus, "v1_fallback");
+  assert.equal(fallback.ok && fallback.value.executions[0]?.economicEvent, null);
 
   const lossless = translateOpenAiActiveCostRows({
     period,
@@ -216,6 +286,10 @@ async function main() {
     [{ ...rows[0], cost_usd: "-0.000000000001" }],
     [{ ...rows[0], web_search_price_per_call_usd: Number.POSITIVE_INFINITY }],
     [{ ...rows[0], attribution_status: "unassigned", account_id: "40000000-0000-4000-8000-000000000099" }],
+    [{ ...rows[0], economic_event_kind: "niche_resolution", economic_event_id: rows[0].execution_id }],
+    [{ ...rows[0], economic_event_kind: "lp_factory_internal", economic_event_id: "40000000-0000-4000-8000-000000000090", taxon_id: "40000000-0000-4000-8000-000000000091", taxon_name: null }],
+    [{ ...rows[0], universe: "client", attribution_status: "attributed", account_id: "40000000-0000-4000-8000-000000000099", account_name: null }],
+    [{ ...rows[0], universe: "lp_factory", attribution_status: "attributed", account_id: null, account_name: "Nome incompatível" }],
   ]) {
     const result = translateOpenAiActiveCostRows({ period, rows: invalidRows, coverageRows });
     assert.equal(result.ok ? "ok" : result.error.code, "INVALID_RESPONSE");
@@ -244,6 +318,18 @@ async function main() {
   });
   assert.ok(incomplete);
   assert.equal(incomplete.globalReconciliationUsd, null);
+  assert.equal(incomplete.economicHierarchy?.activeAvailable, false);
+  assert.equal(incomplete.economicHierarchy?.legacyAvailable, true);
+  assert.equal(incomplete.economicHierarchy?.clients.calculatedCostUsd, "3");
+  const missingLegacy = buildOpenAiCostsFinancialComposition({
+    selection: composition.selection, official,
+    active: translated,
+    legacy: { ok: false, error: { code: "READ_FAILED", message: "sanitized" } },
+  });
+  assert.ok(missingLegacy);
+  assert.equal(missingLegacy.economicHierarchy?.activeAvailable, true);
+  assert.equal(missingLegacy.economicHierarchy?.legacyAvailable, false);
+  assert.equal(missingLegacy.economicHierarchy?.lpFactory.calculatedCostUsd, "0.000000000001");
 
   const migration = readFileSync("supabase/migrations/20260911190000_e21_5_4_openai_cost_calculation_read_model.sql", "utf8");
   assert.match(migration, /finish_openai_cost_operation_v2/);
@@ -258,6 +344,9 @@ async function main() {
   const adapter = readFileSync("lib/openai-costs/adapters/activeCostReadModelAdapter.ts", "utf8");
   assert.match(adapter, /import "server-only"/);
   assert.match(adapter, /p_after_operation_sequence/);
+  const economicMigration = readFileSync("supabase/migrations/20260912215000_e21_5_6_openai_cost_event_correlation.sql", "utf8");
+  assert.match(economicMigration, /economic_event_chk check \(\([\s\S]*\) is true\)/);
+  assert.equal(/update\s+public\.openai_cost_executions/i.test(economicMigration), false);
   console.log("PASS E21.5.4 pricing, keyset read model and global reconciliation");
 }
 
@@ -284,6 +373,13 @@ function activeRow(overrides: Record<string, unknown>) {
     universe: "lp_factory",
     attribution_status: "attributed",
     account_id: null,
+    account_name: null,
+    economic_event_kind: null,
+    economic_event_id: null,
+    landing_page_id: null,
+    landing_page_name: null,
+    taxon_id: null,
+    taxon_name: null,
     baseline_reference: null,
     baseline_version: null,
     execution_finished_at: "2026-09-11T12:00:03.000Z",

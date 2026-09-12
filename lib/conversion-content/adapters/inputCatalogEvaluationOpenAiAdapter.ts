@@ -9,7 +9,10 @@ import type {
   ResolvedOpenAiProductWorkload,
 } from "../../openai-workloads";
 import { requestOpenAiResponses } from "./openAiResponsesAdapter";
-import { lpFactoryOpenAiCostContext } from "../../openai-costs";
+import {
+  lpFactoryOpenAiCostContext,
+  lpFactoryOpenAiEventCostContext,
+} from "../../openai-costs";
 
 export type InputCatalogEvaluationOpenAiInput = Readonly<{
   apiKey?: string;
@@ -19,6 +22,7 @@ export type InputCatalogEvaluationOpenAiInput = Readonly<{
   requestId: string;
   safetyIdentifier: string;
   executionOrigin?: "runtime" | "administrative_proof";
+  economicEvent?: Readonly<{ eventId: string; taxonId: string }>;
 }>;
 
 export type InputCatalogEvaluationOpenAiDependencies = Readonly<{
@@ -49,7 +53,13 @@ export async function evaluateInputCatalogWithOpenAi(
       contractVersion: INPUT_CATALOG_EVALUATION_SCHEMA_VERSION,
       timeoutMs: dependencies.timeoutMs,
       signal: dependencies.signal,
-      financialContext: lpFactoryOpenAiCostContext,
+      financialContext: input.economicEvent
+        ? lpFactoryOpenAiEventCostContext({
+            kind: "lp_factory_internal",
+            eventId: input.economicEvent.eventId,
+            taxonId: input.economicEvent.taxonId,
+          })
+        : lpFactoryOpenAiCostContext,
       executionOrigin: input.executionOrigin ?? "runtime",
       request: {
         instructions: input.request.prompt.instructions,

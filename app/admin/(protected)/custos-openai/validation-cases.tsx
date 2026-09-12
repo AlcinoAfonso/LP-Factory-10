@@ -144,6 +144,7 @@ assert.equal(parseOpenAiActiveCostFilters({ universe: "client", accountId: "not-
 assert.equal(parseOpenAiActiveCostFilters({ universe: "", accountId: "", workload: "unknown" }), null);
 
 const activeModel = {
+  economicDimensionStatus: "v2_active" as const,
   totalCalculatedUsd: "0.05",
   executionCount: 1,
   operationCount: 2,
@@ -176,6 +177,13 @@ const activeModel = {
     universe: "client" as const,
     attributionStatus: "attributed" as const,
     accountId: "e2155000-0000-4000-8000-000000000010",
+    accountName: "Cliente E21.5.6",
+    economicEvent: {
+      kind: "niche_resolution" as const,
+      eventId: "e2155000-0000-4000-8000-000000000040",
+    },
+    landingPageName: null,
+    taxonName: null,
     baselineReference: "baseline-e21",
     baselineVersion: "v1",
     startedAt: "2026-08-28T14:00:00.000Z",
@@ -312,6 +320,8 @@ const [pageSource, actionSource, actionCoreSource, componentSource, navigationSo
   readFile(path.join(root, "app/admin/(protected)/custos-openai/_components/OpenAiCostsDashboard.tsx"), "utf8"),
   readFile(path.join(root, "components/admin/adminNavigation.ts"), "utf8"),
 ]);
+const hierarchySource = await readFile(path.join(root, "app/admin/(protected)/custos-openai/_components/OpenAiEconomicHierarchy.tsx"), "utf8");
+const hierarchyModelSource = await readFile(path.join(root, "lib/openai-costs/economic-hierarchy.ts"), "utf8");
 assert.match(pageSource, /await requirePlatformAdmin\(\)/);
 assert.match(pageSource, /next=%2Fadmin%2Fcustos-openai/);
 assert.match(actionSource, /readOfficialOpenAiCosts/);
@@ -326,8 +336,8 @@ for (const expected of [
   "Personalizado",
   "Atualizar custos",
   "Gasto oficial OpenAI",
-  "Controle ativo calculável",
-  "Histórico congelado",
+  "Clientes",
+  "LP Factory",
   "Outros gastos / reconciliação",
   "Provisório",
   "Período encerrado",
@@ -354,8 +364,27 @@ for (const expected of [
   "Abrir Usage na OpenAI",
   "Abrir faturamento e créditos na OpenAI",
 ]) {
-  assert.equal(componentSource.includes(expected), true, `missing UI evidence: ${expected}`);
+  assert.equal(
+    [componentSource, hierarchySource, hierarchyModelSource].some((source) => source.includes(expected)),
+    true,
+    `missing UI evidence: ${expected}`,
+  );
 }
+for (const expected of [
+  "Visão econômica por evento",
+  "Dimensão por evento ainda não ativa",
+  "Sem correlação de evento",
+  "Sem conta atribuída",
+  "Subtotal calculável",
+  "Abrir detalhes",
+]) assert.equal(hierarchySource.includes(expected), true, `missing economic hierarchy UI evidence: ${expected}`);
+assert.match(hierarchySource, /<details/);
+assert.match(hierarchySource, /focus-visible:ring-4/);
+assert.match(hierarchySource, /min-h-11/);
+assert.match(hierarchySource, /pendingCount/);
+assert.match(hierarchySource, /Subtotal parcial das fontes saudáveis/);
+assert.match(hierarchySource, /const hasIncompleteCost = universe\.pendingCount > 0 \|\| universe\.unavailableCount > 0/);
+assert.match(hierarchySource, /hasIncompleteCost \? "Subtotal calculável · "/);
 assert.match(componentSource, /const OPENAI_USAGE_URL = "https:\/\/platform\.openai\.com\/usage"/);
 assert.match(componentSource, /const OPENAI_BILLING_URL = "https:\/\/platform\.openai\.com\/settings\/organization\/billing\/overview"/);
 assert.equal((componentSource.match(/<ExternalLink href=/g) ?? []).length, 2);
@@ -365,7 +394,7 @@ assert.match(componentSource, /aria-live="polite"/);
 assert.match(componentSource, /tabIndex=\{-1\}/);
 assert.match(componentSource, /focus-visible:ring-4/);
 assert.match(componentSource, /overflow-x-auto/);
-assert.match(componentSource, /<details/);
+assert.match(`${componentSource}\n${hierarchySource}`, /<details/);
 assert.match(componentSource, /<caption className="sr-only">/);
 assert.match(componentSource, /state\.status === "error"/);
 assert.match(componentSource, /state\.status === "idle"/);
@@ -374,7 +403,7 @@ assert.match(componentSource, /bg-brand-700/);
 assert.match(navigationSource, /href: '\/admin\/custos-openai'/);
 assert.equal(actionSource.includes("export const OPENAI_COSTS_INITIAL_STATE"), false);
 for (const forbidden of ["promptText", "responseText", "providerPayload", "sourceUrl", "OPENAI_API_KEY", "SUPABASE_SERVICE_ROLE_KEY"]) {
-  assert.equal(componentSource.includes(forbidden), false, `forbidden client field: ${forbidden}`);
+  assert.equal(`${componentSource}\n${hierarchySource}`.includes(forbidden), false, `forbidden client field: ${forbidden}`);
 }
 
 console.log("ok - E21.4.5 and E21.5.5 dashboard authorization, composition, filters and accessible UI states");

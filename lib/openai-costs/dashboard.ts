@@ -19,6 +19,10 @@ import {
   formatDecimal,
   subtractDecimal,
 } from "./decimal";
+import {
+  buildOpenAiEconomicHierarchy,
+  type OpenAiEconomicHierarchy,
+} from "./economic-hierarchy";
 
 const MAX_CUSTOM_PERIOD_DAYS = 180;
 const OPENAI_COST_WORKLOAD_IDS = [
@@ -54,6 +58,7 @@ export type OpenAiCostsFinancialComposition = Readonly<{
   activeFilters: OpenAiActiveCostFilters;
   legacy: OpenAiLpCostReadModel | null;
   legacyErrorCode: string | null;
+  economicHierarchy: OpenAiEconomicHierarchy | null;
   globalReconciliationUsd: string | null;
   globalReconciliationAnomalous: boolean;
 }>;
@@ -169,6 +174,9 @@ export function buildOpenAiCostsFinancialComposition(input: Readonly<{
     activeFilters,
     legacy,
     legacyErrorCode: input.legacy.ok ? null : input.legacy.error.code,
+    economicHierarchy: active || legacy
+      ? buildOpenAiEconomicHierarchy(active, legacy)
+      : null,
     globalReconciliationUsd: reconciliationUsd,
     globalReconciliationAnomalous: anomalous,
   });
