@@ -136,6 +136,43 @@ export async function requestOpenAiResponses<T>(
   const financialStartedAt = nowIso();
   const financialTrackingStarted = environment !== "unknown" &&
     (Boolean(dependencies.costRecorder) || isOpenAiActiveCostTrackingEnabled(environment));
+  let executionStarted = false;
+  let operationStarted = false;
+  const finishFinancial = async (input: Readonly<{
+    result: "success" | "failure";
+    failureCategory?: OpenAiWorkloadFailureCategory | null;
+    httpStatus?: number | null;
+    responseId?: string | null;
+    providerRequestId?: string | null;
+    providerErrorCode?: string | null;
+    providerErrorType?: string | null;
+    usage?: unknown;
+    webSearchCallCount?: number | null;
+  }>) => {
+    if (!executionStarted) return;
+    const finishedAt = nowIso();
+    if (operationStarted) {
+      await recorder.finishOperation({
+        operationId,
+        result: input.result,
+        failureCategory: input.failureCategory,
+        httpStatus: input.httpStatus,
+        providerResponseId: input.responseId,
+        providerRequestId: input.providerRequestId,
+        providerErrorCode: input.providerErrorCode,
+        providerErrorType: input.providerErrorType,
+        usage: normalizeOpenAiResponseUsage(input.usage),
+        webSearchCallCount: input.webSearchCallCount,
+        finishedAt,
+      });
+    }
+    await recorder.finishExecution({
+      executionId,
+      result: input.result,
+      failureCategory: input.failureCategory,
+      finishedAt,
+    });
+  };
   if (financialTrackingStarted) {
     await recorder.startExecution({
       executionId,
@@ -145,8 +182,10 @@ export async function requestOpenAiResponses<T>(
       economicContext: input.financialContext,
       startedAt: financialStartedAt,
     });
+    executionStarted = true;
     if (remainingUntilDeadline(input.deadlineAtMs, now()) === 0) {
       emitEvent(createOpenAiWorkloadFailureEvent(eventContext, "timeout"));
+      await finishFinancial({ result: "failure", failureCategory: "timeout" });
       return { ok: false, kind: "timeout", reason: "openai_timeout" };
     }
     await recorder.startOperation({
@@ -162,44 +201,13 @@ export async function requestOpenAiResponses<T>(
       requestId: input.requestId,
       startedAt: financialStartedAt,
     });
+    operationStarted = true;
     if (remainingUntilDeadline(input.deadlineAtMs, now()) === 0) {
       emitEvent(createOpenAiWorkloadFailureEvent(eventContext, "timeout"));
+      await finishFinancial({ result: "failure", failureCategory: "timeout" });
       return { ok: false, kind: "timeout", reason: "openai_timeout" };
     }
   }
-  const finishFinancial = async (input: Readonly<{
-    result: "success" | "failure";
-    failureCategory?: OpenAiWorkloadFailureCategory | null;
-    httpStatus?: number | null;
-    responseId?: string | null;
-    providerRequestId?: string | null;
-    providerErrorCode?: string | null;
-    providerErrorType?: string | null;
-    usage?: unknown;
-    webSearchCallCount?: number | null;
-  }>) => {
-    if (!financialTrackingStarted) return;
-    const finishedAt = nowIso();
-    await recorder.finishOperation({
-      operationId,
-      result: input.result,
-      failureCategory: input.failureCategory,
-      httpStatus: input.httpStatus,
-      providerResponseId: input.responseId,
-      providerRequestId: input.providerRequestId,
-      providerErrorCode: input.providerErrorCode,
-      providerErrorType: input.providerErrorType,
-      usage: normalizeOpenAiResponseUsage(input.usage),
-      webSearchCallCount: input.webSearchCallCount,
-      finishedAt,
-    });
-    await recorder.finishExecution({
-      executionId,
-      result: input.result,
-      failureCategory: input.failureCategory,
-      finishedAt,
-    });
-  };
   const startedAt = now();
   const transportTimeoutMs = Math.min(
     timeoutMs,
@@ -207,6 +215,7 @@ export async function requestOpenAiResponses<T>(
   );
   if (transportTimeoutMs === 0) {
     emitEvent(createOpenAiWorkloadFailureEvent(eventContext, "timeout"));
+    await finishFinancial({ result: "failure", failureCategory: "timeout" });
     return { ok: false, kind: "timeout", reason: "openai_timeout" };
   }
   const controller = new AbortController();

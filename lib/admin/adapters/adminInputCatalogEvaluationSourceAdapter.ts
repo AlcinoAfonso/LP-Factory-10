@@ -6,6 +6,7 @@ import type {
 } from "@/conversion-content/landing-page/input-catalog";
 import { readCompleteTaxonChainForAdminEvaluation } from "@/conversion-content/adapters/taxonChainAdapter";
 import {
+  isEndCustomerResearchSelectionEnabled,
   loadEndCustomerResearchCandidate,
   type LoadSelectedEndCustomerResearchResult,
   type SelectedEndCustomerResearchErrorCode,
@@ -26,6 +27,9 @@ export async function loadAdminInputCatalogEvaluationSources(
 ): Promise<AdminInputCatalogEvaluationSourcesResult> {
   if (!UUID_PATTERN.test(taxonId)) {
     return { ok: false, message: "O identificador do taxon é inválido." };
+  }
+  if (!isEndCustomerResearchSelectionEnabled()) {
+    return { ok: false, message: "A leitura da pesquisa selecionada está desabilitada." };
   }
   const chain = await readCompleteTaxonChainForAdminEvaluation(taxonId);
   if (!chain.ok) return { ok: false, message: chain.error.message };
