@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 12/09/2026
-• Versão: v1.5.224
+• Versão: v1.5.225
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2178,7 +2178,7 @@
 
 21.4.1 Objetivo e status
 - Objetivo: apresentar ao `platform_admin` o gasto oficial total da organização OpenAI e a série interna congelada dos antigos workloads de Landing Pages, com diferença explícita em Outros gastos / reconciliação.
-- Status: leitura implementada e operacional em Production. A Costs API é a autoridade do total atual; o histórico interno não recebe novos eventos após a retirada do write-side prospectivo. A transição E21.4.6 está definida e aprovada tecnicamente, pendente do fechamento dos grants residuais de escrita e dos gates externos pós-merge.
+- Status: leitura implementada e operacional em Production. A Costs API é a autoridade do total atual; o histórico interno não recebe novos eventos após a retirada do write-side prospectivo. A transição E21.4.6 está concluída no repositório e no ambiente hospedado, com grants residuais de escrita encerrados e gates pós-apply aprovados.
 
 21.4.2 Registros do recorte
 - Banco:
@@ -2258,9 +2258,17 @@
 
 21.4.6.1 Objetivo e status
 - Objetivo: encerrar a escrita residual da série E21.4 e preservá-la como histórico legado somente leitura, com E21.5 vigente como controle ativo.
-- Status: implementação concluída no repositório; migration candidata aguarda merge humano, apply canônico e gates hospedados pós-apply.
+- Status: concluída no repositório e no ambiente hospedado; a migration foi aplicada pelo fluxo canônico e os gates pós-apply confirmaram a série E21.4 como histórico legado somente leitura.
 
 21.4.6.2 Registros do recorte
+- Banco:
+  - Ajustados:
+    - `public.openai_lp_cost_events`
+    - `public.openai_lp_cost_coverage`
+    - `public.prevent_openai_lp_cost_mutation_v1`
+    - `public.append_openai_lp_cost_start_v1`
+    - `public.append_openai_lp_cost_terminal_v1`
+    - `public.register_openai_lp_cost_coverage_v1`
 - Repositório:
   - Criados:
     - `supabase/migrations/20260912143448_e21_4_6_freeze_openai_lp_cost_history.sql`
@@ -2281,7 +2289,7 @@
   - Contrato preservado do histórico: `docs/schema.md` — seções 1.36, 1.37 e 3.10.
 
 21.4.6.3 Implementação e limites
-- Status: concluída no repositório, sem mutação hospedada pré-merge.
+- Status: concluída no repositório e aplicada no ambiente hospedado pelo fluxo canônico pós-merge.
 - Conteúdo:
   - a migration forward-only retira do `service_role` INSERT, UPDATE, DELETE e TRUNCATE nas duas tabelas legadas e o EXECUTE das três RPCs de escrita/corte, preservando SELECT e a RPC de leitura;
   - o teste e o snippet E21.4.6 substituem as provas operacionais antigas e verificam estrutura, RLS, zero policies, ACLs read-only, negativas de mutação e baseline hospedado;
@@ -2289,9 +2297,11 @@
   - permanecem fora backfill, reprecificação, reclassificação retroativa, exclusão de linha, alteração do corte, nova UI, novo produtor e mudança na migration E21.4.4 aplicada.
 
 21.4.6.4 Gates externos
-- Status: baseline pré-apply confirmado; apply, snippet read-only, Security Controls e receipt sanitizado permanecem pós-merge sob decisão do supervisor.
+- Status: concluídos; baseline antes/depois, apply canônico, snippet read-only, Security Controls e QA autenticado positivo/negativo aprovados.
 - Conteúdo:
-  - o baseline preservado contém oito eventos, uma linha de cobertura e corte `2026-08-29 21:55:36.827207+00`;
+  - o baseline permaneceu idêntico antes e depois do apply, com oito eventos, uma linha de cobertura e corte `2026-08-29 21:55:36.827207+00`;
+  - o snippet aprovou estrutura, RLS sem policies, ACL de leitura exclusiva do `service_role` e ausência de acesso público ou client; o Security Controls não apontou WARN ou ERROR para as duas tabelas do recorte;
+  - o QA hospedado confirmou total oficial, controle ativo, histórico legado e reconciliação na mesma superfície para `platform_admin`; uma conta comum `viewer`, com acesso ao próprio tenant preservado, permaneceu bloqueada no Admin Dashboard;
   - a Costs API continua autoridade do total, E21.5 continua autoridade ativa, E21.4 permanece histórico legado e `/admin/custos-openai` permanece a superfície financeira única.
 
 21.5 Controle ativo de custos OpenAI por workload e conta
