@@ -18,7 +18,7 @@ Delegar uma avaliação read-only ao custom agent `gestor-estrutural` e devolver
    - PR: confirmar número, URL, base, head, head SHA e estado; selecionar automaticamente apenas quando houver exatamente um `docs/lousa-plano-base-*.md`; obter seu conteúdo integral pelo head SHA;
    - path local: confirmar existência e coerência entre path, conteúdo e caso.
 4. Em `confronto_modernizacao`, exigir referência imutável da mesma v1, parecer estrutural inicial, recomendação integral do update candidato, alternativa sem update e alternativa com update. Não exigir nova seleção de plano quando essas referências já vierem do orquestrador.
-5. Em `revisao_focal_implementacao`, exigir a mesma v1, task, worktree, branch e PR, a referência imutável da v2 aprovada vigente, a subseção suspensa, os checkpoints existentes, a evidência factual, a correção local ou delta candidato e as fontes competentes pertinentes. Não exigir nova seleção do plano nem reabrir a derivação inicial.
+5. Em `revisao_focal_implementacao`, exigir a mesma v1, task, worktree, branch e PR, a referência imutável da v2 aprovada vigente, a subseção suspensa, o ponto afetado, os checkpoints existentes, a evidência factual e as fontes competentes pertinentes. Correção local ou delta estrutural candidato entram somente quando já existirem; o Gestor Estrutural deriva o patch estrutural mínimo pelas fontes. Não exigir nova seleção do plano nem reabrir a derivação inicial.
 6. Parar e pedir somente o dado ausente se a seleção, o confronto ou a revisão focal continuar incompleto.
 7. Registrar o estado Git anterior à delegação.
 
@@ -27,7 +27,7 @@ Delegar uma avaliação read-only ao custom agent `gestor-estrutural` e devolver
 1. Iniciar exatamente um subagent `gestor-estrutural`.
 2. Em `derivacao_inicial`, entregar modo, worktree, branch, metadados da fonte, path, conteúdo integral, caso e pedido de avaliação do plano completo.
 3. Em `confronto_modernizacao`, entregar modo e somente o contexto necessário ao candidato: referências da v1, parecer estrutural inicial, recomendação do Gestor de Updates, solução sem update, solução com update e fontes competentes pertinentes. Não pedir nova avaliação completa.
-4. Em `revisao_focal_implementacao`, entregar somente o contexto do ponto afetado: v1 e v2 imutáveis, evidência da implementação, subseção suspensa, checkpoints, correção local ou delta candidato e fontes pertinentes; preservar explicitamente os checkpoints não afetados.
+4. Em `revisao_focal_implementacao`, entregar somente o contexto do ponto afetado: v1 e v2 imutáveis, evidência da implementação, subseção suspensa, ponto afetado, checkpoints e fontes pertinentes; incluir correção local ou delta candidato somente quando já existir e preservar explicitamente os checkpoints não afetados.
 5. Não repetir critérios estruturais no handoff: o contrato runtime está em `.codex/agents/gestor-estrutural.toml`.
 6. Aguardar o parecer sem realizar avaliação estrutural paralela.
 7. Validar somente que o parecer contém as seções exigidas e uma conclusão permitida pelo contrato runtime do modo correspondente. Em `revisao_focal_implementacao`, verificar a presença de identificação do ponto afetado, evidência, prova de minimalidade quando aplicável, checkpoints preservados/afetados, patch focal e próximo passo, sem reavaliar o conteúdo estrutural nem escolher arquitetura substituta.
