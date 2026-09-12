@@ -18,6 +18,7 @@ import {
   type InputCatalogEvaluationMode,
   type InputCatalogEvaluationOutput,
 } from "@/conversion-content/landing-page/taxon-preparation";
+import { CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION } from "@/conversion-content/landing-page/input-catalog";
 import {
   loadAdminInputCatalogDraftEvaluationContext,
   recordAdminInputCatalogDraftHumanDecision,
@@ -433,6 +434,13 @@ export async function recordInputCatalogHumanDecisionAction(input: Readonly<{
   if (normalized.value.decisionKind === "catalog_change") {
     return { ok: false, stale: false, message: "Decisão com mudança exige o draft exato aberto pela Estrutura da LP." };
   }
+  if (evidence.inputCatalogVersion !== CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION) {
+    return {
+      ok: false,
+      stale: false,
+      message: "Avaliações de versões históricas são somente leitura; avalie a versão atual antes de registrar uma decisão.",
+    };
+  }
   if (!input.reference.reviewContextFingerprint || !Number.isSafeInteger(input.reference.reviewRevision)) {
     return { ok: false, stale: true, message: "A referência da sessão factual é inválida." };
   }
@@ -503,6 +511,8 @@ export async function updateTaxonAction(
     name: String(formData.get("name") ?? ""),
     slug: String(formData.get("slug") ?? ""),
     isActive: formData.get("operationalState") === "active",
+    actorUserId: gate.actorUserId,
+    invalidateAffectedReviews: formData.get("invalidateAffectedReviews") === "yes",
   });
 
   if (!result.ok) return { error: result.error };

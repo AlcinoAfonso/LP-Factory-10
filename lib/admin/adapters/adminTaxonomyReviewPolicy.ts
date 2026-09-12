@@ -36,6 +36,19 @@ export function collectAffectedReviewedTaxonIds(
   }>[],
   rootTaxonId: string,
 ): readonly string[] {
+  const affected = collectAffectedTaxonIds(rows, rootTaxonId);
+  return rows
+    .filter((row) => affected.includes(row.id) && row.reviewedVersion !== null)
+    .map((row) => row.id);
+}
+
+export function collectAffectedTaxonIds(
+  rows: readonly Readonly<{
+    id: string;
+    parentId: string | null;
+  }>[],
+  rootTaxonId: string,
+): readonly string[] {
   const affected = new Set([rootTaxonId]);
   let changed = true;
   while (changed) {
@@ -47,9 +60,34 @@ export function collectAffectedReviewedTaxonIds(
       }
     }
   }
-  return rows
-    .filter((row) => affected.has(row.id) && row.reviewedVersion !== null)
-    .map((row) => row.id);
+  return rows.filter((row) => affected.has(row.id)).map((row) => row.id);
+}
+
+export function planTaxonomyIdentityReviewInvalidation(input: Readonly<{
+  materiallyChangesResolution: boolean;
+  affectedReviewedTaxonIds: readonly string[];
+  hasUnclosedFactualReview: boolean;
+  explicitInvalidationAuthorized: boolean;
+}>) {
+  if (!input.materiallyChangesResolution) {
+    return { ok: true as const, invalidateReviewedTaxonIds: Object.freeze([] as string[]) };
+  }
+  if (input.hasUnclosedFactualReview) {
+    return {
+      ok: false as const,
+      error: "Encerre a sessão factual aberta do taxon ou de seus descendentes antes de alterar nome ou slug.",
+    };
+  }
+  if (input.affectedReviewedTaxonIds.length > 0 && !input.explicitInvalidationAuthorized) {
+    return {
+      ok: false as const,
+      error: "Confirme explicitamente a invalidação das coberturas E20.6 afetadas antes de alterar nome ou slug.",
+    };
+  }
+  return {
+    ok: true as const,
+    invalidateReviewedTaxonIds: Object.freeze([...input.affectedReviewedTaxonIds]),
+  };
 }
 
 export function sameInputCatalogReviewBaseline(

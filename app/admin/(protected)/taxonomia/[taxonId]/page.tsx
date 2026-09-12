@@ -118,6 +118,9 @@ export default async function AdminTaxonDetailPage({ params, searchParams }: Adm
       </section>
 
       <AdminTaxonManageForm
+        hasUnclosedFactualReview={
+          factualReview?.status === "open" || factualReview?.status === "awaiting_catalog_publication"
+        }
         taxon={taxon}
         updateAction={updateTaxonAction}
         addAliasAction={addTaxonAliasAction}

@@ -1112,6 +1112,18 @@
 • RLS habilitado e zero policies; public, anon, authenticated e ai_readonly sem grants. `service_role` possui somente SELECT e INSERT.
 • Trigger dedicado rejeita UPDATE e DELETE. A tabela não participa do Trigger Hub.
 
+1.40 business_taxon_input_catalog_review_invalidations
+1.40.1 Função e contrato
+• Trilha append-only dos recibos de invalidação explícita de cobertura E20.6 antes de alteração de nome ou slug de um taxon.
+• Cada operação registra taxon raiz, taxon afetado, versão revisada anterior, identidade raiz anterior e posterior, ator e instante. A operação é idempotente por `operation_id + affected_taxon_id` e preserva o histórico mesmo quando o taxon for removido posteriormente.
+• `update_business_taxon_identity_with_review_invalidation_v1` trava a taxonomia em ordem estável, revalida os ids e versões revisadas exatamente confirmados pelo administrador, rejeita ativação genérica e qualquer sessão factual não encerrada no taxon ou descendentes, grava todos os recibos, limpa somente os marcadores revisados afetados e então atualiza a identidade raiz na mesma transação. Falha ou conflito produz rollback integral.
+• Abrir uma sessão factual continua preservando `reviewed_input_catalog_version`; esta transição não reintroduz o `reopen` destrutivo e só é chamada após confirmação administrativa explícita.
+
+1.40.2 Segurança e artefatos
+• RLS habilitado e zero policies; public, anon, authenticated e ai_readonly sem grants. `service_role` possui somente SELECT e INSERT, e trigger dedicado rejeita UPDATE e DELETE.
+• A RPC usa SECURITY INVOKER, search_path fixado e EXECUTE exclusivo de `service_role`. A tabela não participa do Trigger Hub.
+• Migration: `supabase/migrations/20260912165000_e20_6_taxon_identity_review_invalidation.sql`; teste transacional e snippet read-only homônimos. Estado: artefatos repo-side criados; apply hospedado e verificações pós-apply ainda não executados.
+
 2. Views
 
 2.1 v_access_context_v2

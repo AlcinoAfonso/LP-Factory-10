@@ -54,8 +54,10 @@ import {
   resolveLandingPageInputCatalogFromRegistry,
 } from "../input-catalog";
 import {
+  collectAffectedTaxonIds,
   collectAffectedReviewedTaxonIds,
   planEndCustomerResearchSelectionMutation,
+  planTaxonomyIdentityReviewInvalidation,
   sameInputCatalogReviewBaseline,
   taxonomyMutationAffectsInputCatalogResolution,
 } from "../../../admin/adapters/adminTaxonomyReviewPolicy";
@@ -230,6 +232,10 @@ const cases: readonly ValidationCase[] = [
         new URL("../../../../supabase/migrations/20260911213324_e20_6_3_factual_review_lifecycle.sql", import.meta.url),
         "utf8",
       );
+      const identityInvalidationMigration = readFileSync(
+        new URL("../../../../supabase/migrations/20260912165000_e20_6_taxon_identity_review_invalidation.sql", import.meta.url),
+        "utf8",
+      );
 
       const createStart = adminSource.indexOf("export async function createAdminTaxon");
       const updateStart = adminSource.indexOf("export async function updateAdminTaxon");
@@ -253,6 +259,9 @@ const cases: readonly ValidationCase[] = [
       assert.doesNotMatch(createFormSource, /name="isActive"|Criar como ativo/);
       assert.match(manageFormSource, /Inativar diretamente/);
       assert.match(manageFormSource, /A ativação exige concluir a liberação factual/);
+      assert.match(manageFormSource, /disabled=\{hasUnclosedFactualReview\}/);
+      assert.match(manageFormSource, /name="invalidateAffectedReviews"/);
+      assert.match(manageFormSource, /Invalidar explicitamente as coberturas E20\.6/);
       assert.doesNotMatch(researchSelectionFormSource, /disabled=\{!isActive \|\| pending\}/);
       assert.match(researchSelectionFormSource, /A seleção ficará dormente e não ativará o taxon/);
       assert.ok(updateBoundary.indexOf("isGenericTaxonActivation") < updateBoundary.indexOf(".update("));
@@ -273,6 +282,21 @@ const cases: readonly ValidationCase[] = [
       assert.match(migration, /'draft_invalidated'/);
       assert.match(migration, /'publication_authorized'/);
       assert.match(migration, /'reconciled_published'/);
+      assert.match(identityInvalidationMigration, /business_taxon_input_catalog_review_invalidations/);
+      assert.match(identityInvalidationMigration, /update_business_taxon_identity_with_review_invalidation_v1/);
+      assert.match(identityInvalidationMigration, /taxon_factual_review_unclosed/);
+      assert.match(identityInvalidationMigration, /p_expected_reviewed_taxons/);
+      assert.match(identityInvalidationMigration, /taxon_review_invalidation_coverage_conflict/);
+      assert.match(identityInvalidationMigration, /set reviewed_input_catalog_version = null[\s\S]*set name = p_name/);
+      assert.ok(updateBoundary.indexOf("hasUnclosedFactualReview") < updateBoundary.lastIndexOf(".update("));
+      assert.ok(updateBoundary.indexOf("update_business_taxon_identity_with_review_invalidation_v1") < updateBoundary.lastIndexOf(".update("));
+      const humanDecisionStart = actionsSource.indexOf("export async function recordInputCatalogHumanDecisionAction");
+      const humanDecisionEnd = actionsSource.indexOf("export async function createTaxonAction", humanDecisionStart);
+      const humanDecisionBoundary = actionsSource.slice(humanDecisionStart, humanDecisionEnd);
+      assert.ok(
+        humanDecisionBoundary.indexOf("evidence.inputCatalogVersion !== CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION") <
+          humanDecisionBoundary.indexOf("closeAdminTaxonFactualReviewWithoutChangeForCurrentCoverage"),
+      );
       assert.match(migration, /order by reviews\.id[\s\S]*for update of reviews/g);
       assert.equal(
         migration.match(/e20_6_factual_review_open_authorize_v1/g)?.length,
@@ -578,6 +602,31 @@ const cases: readonly ValidationCase[] = [
       assert.deepEqual(collectAffectedReviewedTaxonIds(rows, "segment"), ["niche", "ultra"]);
       assert.deepEqual(collectAffectedReviewedTaxonIds(rows, "niche"), ["niche", "ultra"]);
       assert.deepEqual(collectAffectedReviewedTaxonIds(rows, "ultra"), ["ultra"]);
+      assert.deepEqual(collectAffectedTaxonIds(rows, "segment"), ["segment", "niche", "ultra"]);
+      assert.deepEqual(planTaxonomyIdentityReviewInvalidation({
+        materiallyChangesResolution: true,
+        affectedReviewedTaxonIds: ["niche", "ultra"],
+        hasUnclosedFactualReview: false,
+        explicitInvalidationAuthorized: false,
+      }), {
+        ok: false,
+        error: "Confirme explicitamente a invalidação das coberturas E20.6 afetadas antes de alterar nome ou slug.",
+      });
+      assert.equal(planTaxonomyIdentityReviewInvalidation({
+        materiallyChangesResolution: true,
+        affectedReviewedTaxonIds: ["niche"],
+        hasUnclosedFactualReview: true,
+        explicitInvalidationAuthorized: true,
+      }).ok, false);
+      assert.deepEqual(planTaxonomyIdentityReviewInvalidation({
+        materiallyChangesResolution: true,
+        affectedReviewedTaxonIds: ["niche", "ultra"],
+        hasUnclosedFactualReview: false,
+        explicitInvalidationAuthorized: true,
+      }), {
+        ok: true,
+        invalidateReviewedTaxonIds: ["niche", "ultra"],
+      });
     },
   },
   {

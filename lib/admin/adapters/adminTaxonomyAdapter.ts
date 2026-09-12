@@ -1,5 +1,7 @@
 import "server-only";
 
+import { randomUUID } from "node:crypto";
+
 import {
   buildLandingPageInputCatalogTaxonChain,
   type LandingPageInputCatalogTaxonChain,
@@ -36,8 +38,10 @@ import {
   type AdminCommercialActivationListItem,
 } from "./adminCommercialActivationTemplatesAdapter";
 import {
+  collectAffectedTaxonIds,
   collectAffectedReviewedTaxonIds,
   planEndCustomerResearchSelectionMutation,
+  planTaxonomyIdentityReviewInvalidation,
   taxonomyMutationAffectsInputCatalogResolution,
 } from "./adminTaxonomyReviewPolicy";
 
@@ -60,6 +64,8 @@ type UpdateAdminTaxonInput = {
   name: string;
   slug?: string;
   isActive: boolean;
+  actorUserId: string;
+  invalidateAffectedReviews: boolean;
 };
 
 type SelectAdminEndCustomerResearchInput = {
@@ -498,22 +504,33 @@ export async function updateAdminTaxon(input: UpdateAdminTaxonInput): Promise<Ad
       error: "A ativação exige concluir a liberação factual do taxon.",
     };
   }
+  if (isInputCatalogReviewEnabled() && current.is_active && !input.isActive) {
+    const unclosedReview = await hasUnclosedFactualReview(supabase, [input.id]);
+    if (!unclosedReview.ok) return { ok: false, error: unclosedReview.error };
+    if (unclosedReview.found) {
+      return {
+        ok: false,
+        error: "Encerre a sessão factual aberta antes de inativar o taxon.",
+      };
+    }
+  }
   const materiallyChangesResolution = taxonomyMutationAffectsInputCatalogResolution(
     { name: current.name, slug: current.slug, isActive: current.is_active },
     { name, slug, isActive: input.isActive },
   );
-  if (
-    isInputCatalogReviewEnabled() &&
-    materiallyChangesResolution
-  ) {
-    const reviewBlock = await findAffectedInputCatalogReviews(supabase, input.id);
+  let reviewBlock: Awaited<ReturnType<typeof findAffectedInputCatalogReviews>> | null = null;
+  if (isInputCatalogReviewEnabled() && materiallyChangesResolution) {
+    reviewBlock = await findAffectedInputCatalogReviews(supabase, input.id);
     if (!reviewBlock.ok) return { ok: false, error: reviewBlock.error };
-    if (reviewBlock.reviewedTaxonIds.length > 0) {
-      return {
-        ok: false,
-        error: "Reabra a avaliação E20.6 do taxon e dos descendentes afetados antes de alterar nome, slug ou atividade.",
-      };
-    }
+    const unclosedReview = await hasUnclosedFactualReview(supabase, reviewBlock.affectedTaxonIds);
+    if (!unclosedReview.ok) return { ok: false, error: unclosedReview.error };
+    const invalidation = planTaxonomyIdentityReviewInvalidation({
+      materiallyChangesResolution,
+      affectedReviewedTaxonIds: reviewBlock.reviewedTaxonIds,
+      hasUnclosedFactualReview: unclosedReview.found,
+      explicitInvalidationAuthorized: input.invalidateAffectedReviews,
+    });
+    if (!invalidation.ok) return { ok: false, error: invalidation.error };
   }
 
   const { data: existingSlug, error: slugError } = await supabase
@@ -530,11 +547,46 @@ export async function updateAdminTaxon(input: UpdateAdminTaxonInput): Promise<Ad
 
   if (existingSlug) return { ok: false, error: "Ja existe outro taxon com este slug." };
 
+  if (reviewBlock?.ok && reviewBlock.reviewedTaxonIds.length > 0) {
+    const { data, error } = await (supabase as any).rpc(
+      "update_business_taxon_identity_with_review_invalidation_v1",
+      {
+        p_taxon_id: input.id,
+        p_expected_name: current.name,
+        p_expected_slug: current.slug,
+        p_expected_is_active: current.is_active,
+        p_name: name,
+        p_slug: slug,
+        p_next_is_active: input.isActive,
+        p_expected_reviewed_taxons: reviewBlock.reviewedTaxons,
+        p_operation_id: randomUUID(),
+        p_actor_user_id: input.actorUserId,
+      },
+    );
+    const row = Array.isArray(data) ? data[0] : data;
+    if (error || !isRecord(row) || row.taxon_id !== input.id) {
+      console.error("updateAdminTaxon review invalidation failed:", {
+        code: error?.code,
+        message: error?.message,
+      });
+      return {
+        ok: false,
+        error: error?.message?.includes("taxon_factual_review_unclosed")
+          ? "Encerre a sessão factual aberta do taxon ou de seus descendentes antes de alterar nome ou slug."
+          : "Não foi possível invalidar atomicamente as coberturas E20.6 afetadas.",
+      };
+    }
+    return { ok: true, taxonId: input.id };
+  }
+
   if (isInputCatalogReviewEnabled() && materiallyChangesResolution) {
     const latestReviewBlock = await findAffectedInputCatalogReviews(supabase, input.id);
     if (!latestReviewBlock.ok) return { ok: false, error: latestReviewBlock.error };
     if (latestReviewBlock.reviewedTaxonIds.length > 0) {
-      return { ok: false, error: "Uma avaliação E20.6 foi registrada durante a alteração. Reabra-a antes de continuar." };
+      return {
+        ok: false,
+        error: "Uma cobertura E20.6 foi registrada durante a alteração. Recarregue e confirme sua invalidação antes de continuar.",
+      };
     }
   }
 
@@ -813,7 +865,34 @@ async function findAffectedInputCatalogReviews(
     return { ok: false as const, error: "As avaliações E20.6 afetadas possuem estado inválido." };
   }
   const reviewedTaxonIds = collectAffectedReviewedTaxonIds(normalized, rootTaxonId);
-  return { ok: true as const, reviewedTaxonIds };
+  const affectedTaxonIds = collectAffectedTaxonIds(normalized, rootTaxonId);
+  const reviewedTaxonIdSet = new Set(reviewedTaxonIds);
+  const reviewedTaxons = normalized
+    .flatMap((row) =>
+      reviewedTaxonIdSet.has(row.id) && row.reviewedVersion !== null
+        ? [{ taxonId: row.id, reviewedVersion: row.reviewedVersion }]
+        : [],
+    )
+    .sort((left, right) => left.taxonId.localeCompare(right.taxonId));
+  return { ok: true as const, affectedTaxonIds, reviewedTaxonIds, reviewedTaxons };
+}
+
+async function hasUnclosedFactualReview(
+  supabase: ReturnType<typeof createServiceClient>,
+  taxonIds: readonly string[],
+) {
+  if (taxonIds.length === 0) return { ok: true as const, found: false };
+  const { data, error } = await (supabase as any)
+    .from("business_taxon_factual_reviews")
+    .select("id")
+    .in("taxon_id", [...taxonIds])
+    .in("status", ["open", "awaiting_catalog_publication"])
+    .limit(1)
+    .maybeSingle();
+  if (error) {
+    return { ok: false as const, error: "Não foi possível verificar as sessões factuais abertas." };
+  }
+  return { ok: true as const, found: Boolean(data) };
 }
 
 function mapInputCatalogTaxonIdentity(

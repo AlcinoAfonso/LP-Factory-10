@@ -15,6 +15,7 @@ type TaxonAction = (
 
 type AdminTaxonManageFormProps = {
   taxon: AdminTaxonDetail;
+  hasUnclosedFactualReview: boolean;
   updateAction: TaxonAction;
   addAliasAction: TaxonAction;
   deleteAliasAction: TaxonAction;
@@ -25,6 +26,7 @@ const initialState: ManageTaxonActionState = { error: null };
 
 export function AdminTaxonManageForm({
   taxon,
+  hasUnclosedFactualReview,
   updateAction,
   addAliasAction,
   deleteAliasAction,
@@ -39,6 +41,7 @@ export function AdminTaxonManageForm({
   const [slugEdited, setSlugEdited] = useState(false);
   const [confirmSlug, setConfirmSlug] = useState("");
   const [aliasToConfirm, setAliasToConfirm] = useState<string | null>(null);
+  const changesIdentity = name.replace(/\s+/g, " ").trim() !== taxon.name || slug !== taxon.slug;
 
   useEffect(() => {
     if (!slugEdited) setSlug(slugify(name));
@@ -94,7 +97,9 @@ export function AdminTaxonManageForm({
             <fieldset className="min-w-0 lg:col-span-2">
               <legend className="text-xs font-medium text-muted-foreground">Estado operacional</legend>
               <p className="mt-1 text-xs text-muted-foreground" id="taxon-operational-state-hint">
-                A inativação é direta e explícita; a reativação futura exige concluir nova liberação factual.
+                {hasUnclosedFactualReview
+                  ? "Encerre a sessão factual atual antes de inativar o taxon."
+                  : "A inativação é direta e explícita; a reativação futura exige concluir nova liberação factual."}
               </p>
               <div aria-describedby="taxon-operational-state-hint" className="mt-2 flex flex-wrap gap-2">
                 <label className="flex min-h-11 items-center gap-2 rounded-md border border-border px-3 py-2 text-sm">
@@ -102,7 +107,7 @@ export function AdminTaxonManageForm({
                   Manter ativo
                 </label>
                 <label className="flex min-h-11 items-center gap-2 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
-                  <input name="operationalState" type="radio" value="inactive" />
+                  <input disabled={hasUnclosedFactualReview} name="operationalState" type="radio" value="inactive" />
                   Inativar diretamente
                 </label>
               </div>
@@ -115,6 +120,14 @@ export function AdminTaxonManageForm({
               </p>
             </>
           )}
+          {changesIdentity ? (
+            <label className="flex min-h-11 items-start gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950 lg:col-span-2">
+              <input className="mt-1" name="invalidateAffectedReviews" type="checkbox" value="yes" />
+              <span>
+                Invalidar explicitamente as coberturas E20.6 já revisadas deste taxon e dos descendentes afetados. A alteração exigirá nova revisão factual.
+              </span>
+            </label>
+          ) : null}
         </div>
       </form>
 
