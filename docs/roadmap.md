@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 12/09/2026
-• Versão: v1.5.226
+• Versão: v1.5.227
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -1212,7 +1212,7 @@
 
 12.5.1 Objetivo e status
 - Objetivo: permitir consulta e gestão controlada da taxonomia, acompanhar resoluções de nicho e conectar o diagnóstico aos fluxos comerciais e de preparação vigentes.
-- Status: baseline implementado; diagnósticos históricos de E20.3 e E10.8 foram retirados. A evolução administrativa da E20.6 para liberação e revisão factual está definida e ainda não implementada.
+- Status: baseline e evolução administrativa E20.6 implementados no repositório; diagnósticos históricos de E20.3 e E10.8 foram retirados. Apply e QA hospedado do lifecycle factual permanecem nos gates finais da E20.6.
 
 12.5.2 Registros do recorte
 - Repositório:
@@ -1722,7 +1722,7 @@
 - PR #871 tornou a geração antiga inalcançável, PR #872 retirou sua orquestração, o SV-PR03 retirou o produto operacional e o SV-PR04 eliminou as duas fronteiras administrativas residuais.
 20. E20 — Preparação e liberação de taxons para geração de landing pages
 - Objetivo: manter o catálogo versionado de entradas, a pesquisa integral selecionada, a avaliação de suficiência e a resolução de conhecimento que autorizam o contexto factual da LP.
-- Status: catálogo E20.2 v6 vigente; perfil E20.3 retirado; seleção E20.5 e preparação determinística atuais operacionais. A evolução E20.6 para auditoria, liberação e revisão factual está definida e ainda não implementada; E20.7 permanece capacidade independente sem consumidor E19 vigente.
+- Status: catálogo E20.2 v6 vigente; perfil E20.3 retirado; seleção E20.5 e preparação determinística atuais operacionais. A E20.6 está implementada no repositório e aguarda seus gates finais hospedados; E20.7 permanece capacidade independente sem consumidor E19 vigente.
 
 20.2 Catálogo de entradas por taxon
 
@@ -1853,7 +1853,7 @@
 
 20.5.1 Objetivo e status
 - Objetivo: permitir que um taxon ativo selecione explicitamente uma versão integral de pesquisa `end_customer` e disponibilizá-la por boundary server-side.
-- Status: seleção operacional implementada e ativa em Production; o taxon piloto mantém a pesquisa `end_customer` v1 selecionada. A seleção administrativa dormente para taxon inativo está definida na evolução E20.6 e ainda não implementada.
+- Status: seleção operacional implementada e ativa em Production; o taxon piloto mantém a pesquisa `end_customer` v1 selecionada. A seleção administrativa dormente para taxon inativo está implementada no repositório pela E20.6 e aguarda validação hospedada.
 
 20.5.2 Registros do recorte
 - Banco:
