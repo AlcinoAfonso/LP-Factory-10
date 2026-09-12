@@ -9,6 +9,8 @@ export type {
   FactualReviewAcceptedCandidate,
   FactualReviewDecisionLayer,
   FactualReviewOwnCandidate,
+  FactualReviewPersistedDecision,
+  FactualReviewPersistedOwnCandidate,
   FactualReviewRecommendationSelection,
   FactualReviewSession,
   FactualReviewStatus,
@@ -53,6 +55,7 @@ export type {
 } from "./contracts";
 export {
   END_CUSTOMER_RESEARCH_AUDIENCE_SCOPE,
+  FACTUAL_REVIEW_HUMAN_ADDED_ORIGIN,
   INPUT_CATALOG_EVALUATION_SCHEMA_VERSION,
   factualReviewKinds,
   factualReviewDecisionLayers,

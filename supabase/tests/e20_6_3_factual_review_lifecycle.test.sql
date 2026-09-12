@@ -159,6 +159,42 @@ begin
     'e2063000-0000-4000-8000-000000000001')
   returning id into v_review_id;
 
+  begin
+    perform * from public.finalize_business_taxon_factual_review_v1(
+      v_review_id, 2, 'e2063000-0000-4000-8000-000000000001', 6,
+      jsonb_build_object(
+        'decisionKind', 'catalog_change', 'recommendationCandidateCount', 1,
+        'recommendationSelection', 'zero', 'acceptedCandidates', '[]'::jsonb,
+        'rejectedCandidateIndexes', '[0]'::jsonb,
+        'ownCandidate', jsonb_build_object(
+          'factualNeed', 'Candidato próprio', 'layer', 'segment', 'origin', 'human-added'
+        )
+      ), 1, repeat('b', 64), repeat('e', 64)
+    );
+    if (select decision_payload -> 'ownCandidate' ->> 'origin'
+        from public.business_taxon_factual_reviews where id = v_review_id) <> 'human-added' then
+      raise exception 'human-added origin was not persisted exactly';
+    end if;
+    raise exception using errcode = 'ZX001', message = 'rollback_human_added_probe';
+  exception when sqlstate 'ZX001' then null;
+  end;
+
+  begin
+    perform * from public.finalize_business_taxon_factual_review_v1(
+      v_review_id, 2, 'e2063000-0000-4000-8000-000000000001', 6,
+      jsonb_build_object(
+        'decisionKind', 'catalog_change', 'recommendationCandidateCount', 1,
+        'recommendationSelection', 'zero', 'acceptedCandidates', '[]'::jsonb,
+        'rejectedCandidateIndexes', '[0]'::jsonb,
+        'ownCandidate', jsonb_build_object(
+          'factualNeed', 'Candidato próprio', 'layer', 'segment', 'origin', 'human'
+        )
+      ), 1, repeat('b', 64), repeat('e', 64)
+    );
+    raise exception 'legacy human origin unexpectedly persisted';
+  exception when invalid_parameter_value then null;
+  end;
+
   update public.business_taxons set selected_end_customer_research_version = 1
   where id = 'e2063000-0000-4000-8000-000000000020';
   begin

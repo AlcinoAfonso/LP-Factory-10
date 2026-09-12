@@ -212,6 +212,12 @@ export type FactualReviewOwnCandidate = Readonly<{
   layer: FactualReviewDecisionLayer;
 }>;
 
+export const FACTUAL_REVIEW_HUMAN_ADDED_ORIGIN = "human-added" as const;
+
+export type FactualReviewPersistedOwnCandidate = FactualReviewOwnCandidate & Readonly<{
+  origin: typeof FACTUAL_REVIEW_HUMAN_ADDED_ORIGIN;
+}>;
+
 export type FactualReviewHumanDecision = Readonly<{
   recommendationCandidateCount: number;
   recommendationSelection: FactualReviewRecommendationSelection;
@@ -224,6 +230,11 @@ export type FactualReviewCatalogChangeDecision = FactualReviewHumanDecision;
 
 export type NormalizedFactualReviewHumanDecision = FactualReviewHumanDecision &
   Readonly<{ decisionKind: "no_change" | "catalog_change" }>;
+
+export type FactualReviewPersistedDecision = Omit<
+  NormalizedFactualReviewHumanDecision,
+  "ownCandidate"
+> & Readonly<{ ownCandidate: FactualReviewPersistedOwnCandidate | null }>;
 
 export type NormalizeFactualReviewCatalogChangeDecisionResult =
   | Readonly<{ ok: true; value: NormalizedFactualReviewHumanDecision }>

@@ -90,7 +90,7 @@
 ### 5.3 Decisão e evidência do draft
 
 - O browser envia somente `reviewId`, revisão esperada, índices/camadas escolhidos e candidato próprio opcional; output, candidatos, contexto, versão e identidade do draft são recarregados e validados no servidor.
-- A decisão final fica na mesma linha factual fechada. Candidato próprio recebe origem humana explícita; recomendação continua separada da decisão.
+- A decisão final fica na mesma linha factual fechada. Candidato próprio recebe a origem humana explícita literal `human-added`; recomendação continua separada da decisão.
 - Em draft, `taxon_review_evidence` contém `review_id`, `review_revision`, `draft_revision`, `content_fingerprint` e `context_fingerprint`, inclusive quando a decisão for `no_change`.
 - Não criar tabela de eventos, tabela de invalidações, recibos JSON ou token/HMAC decisório derivado de `OPENAI_API_KEY`.
 

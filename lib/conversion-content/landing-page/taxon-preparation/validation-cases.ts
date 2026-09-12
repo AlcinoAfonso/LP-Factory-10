@@ -21,6 +21,7 @@ import type {
   TaxonPreparationResult,
 } from "./contracts";
 import {
+  FACTUAL_REVIEW_HUMAN_ADDED_ORIGIN,
   INPUT_CATALOG_EVALUATION_SCHEMA_VERSION,
   buildInputCatalogEvaluationContext,
   buildInputCatalogEvaluationPrompt,
@@ -291,7 +292,9 @@ const cases: readonly ValidationCase[] = [
       assert.doesNotMatch(migration, /evaluation_output_fingerprint/);
       assert.doesNotMatch(factualAdapterSource, /outputFingerprint|fingerprintInputCatalogEvaluationOutput/);
       assert.match(factualAdapterSource, /baseline_selected_end_customer_research_version: context\.value\.selectedResearchVersion/);
-      assert.match(factualAdapterSource, /origin: "human"/);
+      assert.equal(FACTUAL_REVIEW_HUMAN_ADDED_ORIGIN, "human-added");
+      assert.match(factualAdapterSource, /origin: FACTUAL_REVIEW_HUMAN_ADDED_ORIGIN/);
+      assert.match(migration, /p_decision_payload -> 'ownCandidate' ->> 'origin' = 'human-added'/);
       assert.match(migration, /set status = 'closed', outcome = 'invalidated'[\s\S]*set reviewed_input_catalog_version = null/);
       assert.match(migration, /evaluation_context_fingerprint <> p_expected_draft_context_fingerprint/);
       assert.match(migration, /evaluation_context_fingerprint <> \(evidence\.value ->> 'context_fingerprint'\)/);

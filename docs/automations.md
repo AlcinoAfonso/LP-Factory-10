@@ -292,7 +292,7 @@ Ambiente principal:
 - Runtime server-side do Admin do LP Factory, condicionado pelo gate exclusivo do provider.
 
 Participação humana:
-- O humano abre e conclui a revisão factual, solicita opcionalmente a avaliação e decide entre zero, parte ou totalidade dos candidatos, podendo acrescentar candidato próprio marcado como humano e com camada explícita.
+- O humano abre e conclui a revisão factual, solicita opcionalmente a avaliação e decide entre zero, parte ou totalidade dos candidatos, podendo acrescentar candidato próprio persistido com origem literal `human-added` e camada explícita.
 
 Como usar:
 - Abrir uma sessão `release | revision` no detalhe do taxon e escolher a estratégia disponível: pesquisa E20.5 válida, ausência legítima com Web ou hipótese focal com Web.

@@ -2028,7 +2028,7 @@
   - estado atual, próximo passo, consequência, bloqueio, recomendação e decisão permanecem semanticamente distintos;
   - o fluxo será validado em desktop/mobile, teclado, leitor de tela, foco, toque, contraste e ausência de overflow ou ação exclusiva por hover.
   - abertura e fechamento humano permanecem disponíveis sem provider; lista e detalhe distinguem ausência de histórico, revisão aberta, revisão concluída e leitura indisponível, preservando a última revisão após reload;
-  - avaliação v2 exibe fontes e coleta decisão zero/parcial/total, camada por aceitação e candidato próprio marcado como humano; o browser envia somente referência mínima e escolhas humanas, enquanto o backend recarrega a recomendação persistida;
+  - avaliação v2 exibe fontes e coleta decisão zero/parcial/total, camada por aceitação e candidato próprio persistido com origem literal `human-added`; o browser envia somente referência mínima e escolhas humanas, enquanto o backend recarrega a recomendação persistida;
   - Estrutura LP usa editor estruturado `add | change | retire`, recebe DTO seguro sem JSON integral no client e mostra impactos completos antes de autorização/publicação;
   - actions, adapters, handoffs, componente, token HMAC e helpers de record/reopen/gap transitórios foram removidos; o gate do provider informa somente indisponibilidade da avaliação opcional.
 

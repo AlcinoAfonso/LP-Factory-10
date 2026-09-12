@@ -6,11 +6,13 @@ import {
   type LandingPageInputCatalogTaxonIdentity,
 } from "@/conversion-content/landing-page/input-catalog";
 import {
+  FACTUAL_REVIEW_HUMAN_ADDED_ORIGIN,
   isInputCatalogReviewEnabled,
   normalizeFactualReviewCatalogChangeDecision,
   parseInputCatalogEvaluationOutput,
   resolveInheritedInputCatalogCoverage,
   type FactualReviewHumanDecision,
+  type FactualReviewPersistedDecision,
   type FactualReviewSession,
   type InheritedInputCatalogCoverage,
   type InputCatalogEvaluationMode,
@@ -278,17 +280,21 @@ export async function finalizeAdminTaxonFactualReview(input: Readonly<{
     return failure(normalized.ok ? "A decisão não corresponde à recomendação persistida." : normalized.error.message);
   }
   const client = createServiceClient();
+  const persistedDecision: FactualReviewPersistedDecision = {
+    ...normalized.value,
+    ownCandidate: normalized.value.ownCandidate
+      ? {
+          ...normalized.value.ownCandidate,
+          origin: FACTUAL_REVIEW_HUMAN_ADDED_ORIGIN,
+        }
+      : null,
+  };
   const { data, error } = await (client as any).rpc("finalize_business_taxon_factual_review_v1", {
     p_review_id: input.reviewId,
     p_expected_revision: input.expectedRevision,
     p_actor_user_id: input.actorUserId,
     p_reviewed_version: evidence.evidence.inputCatalogVersion,
-    p_decision_payload: {
-      ...normalized.value,
-      ownCandidate: normalized.value.ownCandidate
-        ? { ...normalized.value.ownCandidate, origin: "human" }
-        : null,
-    },
+    p_decision_payload: persistedDecision,
     p_expected_draft_revision: input.draft?.revision ?? null,
     p_expected_draft_content_fingerprint: input.draft?.contentFingerprint ?? null,
     p_expected_draft_context_fingerprint: input.draft?.contextFingerprint ?? null,

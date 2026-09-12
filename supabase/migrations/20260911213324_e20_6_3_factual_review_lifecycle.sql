@@ -273,7 +273,17 @@ begin
   if v_decision_kind not in ('no_change', 'catalog_change')
      or v_review.evaluation_output ->> 'status' = 'inconclusive'
      or jsonb_typeof(p_decision_payload -> 'recommendationCandidateCount') is distinct from 'number'
-     or (p_decision_payload ->> 'recommendationCandidateCount')::integer <> v_candidate_count then
+     or (p_decision_payload ->> 'recommendationCandidateCount')::integer <> v_candidate_count
+     or not (
+       p_decision_payload ? 'ownCandidate'
+       and (
+         p_decision_payload -> 'ownCandidate' = 'null'::jsonb
+         or (
+           jsonb_typeof(p_decision_payload -> 'ownCandidate') = 'object'
+           and p_decision_payload -> 'ownCandidate' ->> 'origin' = 'human-added'
+         )
+       )
+     ) then
     raise exception using errcode = '22023', message = 'factual_review_decision_invalid';
   end if;
 
