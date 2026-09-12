@@ -79,10 +79,10 @@ async function main() {
 
   const rows = [
     activeRow({
-      cost_usd: 0.000000000001,
+      cost_usd: "0.000000000001",
       web_search_call_count: 1,
       web_search_tool_version: "web-search-2026-09-11-v1",
-      web_search_price_per_call_usd: 0.01,
+      web_search_price_per_call_usd: "0.01",
     }),
     activeRow({
       operation_sequence: 2,
@@ -149,6 +149,23 @@ async function main() {
   assert.equal(translated.value.executions[0]?.operations[0]?.webSearchPricePerCallUsd, "0.01");
   assert.equal(translated.value.executions[0]?.operations[1]?.retryOfOperationId, "40000000-0000-4000-8000-000000000001");
 
+  const lossless = translateOpenAiActiveCostRows({
+    period,
+    coverageRows,
+    rows: [activeRow({
+      cost_usd: "9007199254740993.123456789012",
+      web_search_call_count: 1,
+      web_search_tool_version: "web-search-2026-09-11-v1",
+      web_search_price_per_call_usd: "9007199254740993.987654321012",
+    })],
+  });
+  assert.equal(lossless.ok, true);
+  assert.equal(lossless.ok && lossless.value.totalCalculatedUsd, "9007199254740993.123456789012");
+  assert.equal(
+    lossless.ok && lossless.value.executions[0]?.operations[0]?.webSearchPricePerCallUsd,
+    "9007199254740993.987654321012",
+  );
+
   const filtered = filterOpenAiActiveCosts(translated.value, { universe: "client" });
   assert.equal(filtered.executionCount, 1);
   assert.equal(filtered.totalCalculatedUsd, "0");
@@ -194,7 +211,9 @@ async function main() {
     [rows[1], rows[0]],
     [rows[0], rows[0]],
     [{ ...rows[0], cost_status: "calculated", cost_usd: null }],
-    [{ ...rows[0], cost_usd: -0.000000000001 }],
+    [{ ...rows[0], cost_usd: 0.000000000001 }],
+    [{ ...rows[0], web_search_price_per_call_usd: 0.01 }],
+    [{ ...rows[0], cost_usd: "-0.000000000001" }],
     [{ ...rows[0], web_search_price_per_call_usd: Number.POSITIVE_INFINITY }],
     [{ ...rows[0], attribution_status: "unassigned", account_id: "40000000-0000-4000-8000-000000000099" }],
   ]) {
@@ -231,6 +250,11 @@ async function main() {
   assert.match(migration, /read_openai_active_cost_rows_v1/);
   assert.match(migration, /order by e\.started_at, e\.id, coalesce\(o\.sequence, 0\)/);
   assert.equal(migration.includes("openai_lp_"), false);
+  const losslessMigration = readFileSync("supabase/migrations/20260912190000_e21_5_lossless_active_cost_read_model.sql", "utf8");
+  assert.match(losslessMigration, /web_search_price_per_call_usd text/);
+  assert.match(losslessMigration, /cost_usd text/);
+  assert.match(losslessMigration, /o\.web_search_price_per_call_usd::text/);
+  assert.match(losslessMigration, /o\.cost_usd::text/);
   const adapter = readFileSync("lib/openai-costs/adapters/activeCostReadModelAdapter.ts", "utf8");
   assert.match(adapter, /import "server-only"/);
   assert.match(adapter, /p_after_operation_sequence/);

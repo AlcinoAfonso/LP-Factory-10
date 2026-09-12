@@ -24,16 +24,16 @@ begin
   perform public.finish_openai_cost_operation_v2(
     v_operation, 'success', null, 200, 'resp_1', 'req_1', null, null,
     1000000, 100000, 50000, 200000, 10000, 1200000, 2,
-    'web-search-2026-09-11-v1', 0.01, '2026-09-11-standard-v1',
+    'web-search-2026-09-11-v1', 9007199254740993.987654321012, '2026-09-11-standard-v1',
     '2026-09-11T00:00:00Z', '{"currency":"usd","model":"gpt-5.6-luna"}'::jsonb,
-    'calculated', null, 0.4445, v_started + interval '2 seconds'
+    'calculated', null, 9007199254740993.123456789012, v_started + interval '2 seconds'
   );
   perform public.finish_openai_cost_operation_v2(
     v_operation, 'success', null, 200, 'resp_1', 'req_1', null, null,
     1000000, 100000, 50000, 200000, 10000, 1200000, 2,
-    'web-search-2026-09-11-v1', 0.01, '2026-09-11-standard-v1',
+    'web-search-2026-09-11-v1', 9007199254740993.987654321012, '2026-09-11-standard-v1',
     '2026-09-11T00:00:00Z', '{"currency":"usd","model":"gpt-5.6-luna"}'::jsonb,
-    'calculated', null, 0.4445, v_started + interval '2 seconds'
+    'calculated', null, 9007199254740993.123456789012, v_started + interval '2 seconds'
   );
   perform public.finish_openai_cost_operation_v2(
     v_retry, 'failure', 'provider_error', 429, null, null, 'rate_limit', 'provider_error',
@@ -43,7 +43,7 @@ begin
   );
   perform public.finish_openai_cost_execution_v1(v_execution, 'success', null, v_started + interval '4 seconds');
 
-  if (select cost_usd from public.openai_cost_operations where id = v_operation) <> 0.4445 then
+  if (select cost_usd from public.openai_cost_operations where id = v_operation) <> 9007199254740993.123456789012 then
     raise exception 'exact calculated cost missing';
   end if;
   if (select cost_usd is not null or cost_status <> 'unavailable' from public.openai_cost_operations where id = v_retry) then
@@ -59,6 +59,12 @@ begin
   );
   if v_first.operation_sequence <> 1 or v_second.operation_sequence <> 2 then
     raise exception 'keyset pagination did not progress';
+  end if;
+  if pg_typeof(v_first.cost_usd) <> 'text'::regtype
+     or pg_typeof(v_first.web_search_price_per_call_usd) <> 'text'::regtype
+     or v_first.cost_usd <> '9007199254740993.123456789012'
+     or v_first.web_search_price_per_call_usd <> '9007199254740993.987654321012' then
+    raise exception 'lossless decimal read contract violated';
   end if;
 
   begin
