@@ -2,8 +2,8 @@
 
 0.1 Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.88
-• Data: 06/09/2026
+• Versão: v2.0.89
+• Data: 12/09/2026
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -290,6 +290,10 @@
 • Autorizar publicação comprova, em uma transação, a coleção integral afetada, sessões, decisões e fingerprints sem alterar atividade ou marcador factual. Após o deploy publicar o conteúdo repo-only exato, a reconciliação revalida a mesma identidade, atualiza todos os marcadores, ativa somente sessões `release`, fecha todas as sessões e exclui o singleton sem permitir sucesso parcial.
 • Ausência, invalidade, staleness ou conflito preserva atividade, última versão factual válida e draft anterior por rollback integral.
 • A avaliação semântica usa o workload OpenAI comum autorizado e permanece não autoritativa; a decisão final de suficiência e seu registro administrativo são humanos, e o boundary apenas aplica deterministicamente a decisão autenticada e revalidada.
+• A fonte da avaliação é derivada de forma fechada: E20.5 válida usa uma Responses sem Web Search; ausência legítima usa uma Responses com uma ou duas buscas; hipótese focal usa uma Responses com exatamente uma busca. Seleção inválida, erro de banco ou artefato falham sem fallback, e confirmação de cobertura herdada continua com zero chamada.
+• O adapter administrativo reutiliza a leitura integral e paginada da cadeia taxonômica por um entrypoint server-only que admite somente o taxon servido inativo; os leitores operacionais permanecem inalterados e retornam `TAXON_INACTIVE`.
+• Cada execução humana possui deadline integral de 45 segundos, incluindo autorização, preparação, recorder financeiro, transporte, parsing e persistência terminal, com zero retry, `store:false`, preflight conservador de 128k por limite superior em bytes UTF-8 e Structured Output v2. Em estratégia Web, todo candidato e toda URL presente em texto material referenciam somente URLs HTTPS autenticadas nas fontes do provider; ausência, invenção ou excesso de chamadas produz inconclusão segura.
+• A sessão aberta recebe eventos idempotentes `evaluation_requested | evaluation_completed | evaluation_inconclusive`; somente o concluído preserva output v2, evidências Web necessárias e seu fingerprint. O fingerprint exato da identidade da avaliação é persistido separadamente do fingerprint de concorrência da sessão; feedback e decisão revalidam o primeiro, enquanto locks e revisão usam o segundo. Decisão sobre candidatos é vinculada ao evento concluído persistido; token HMAC legado, quando emitido, é apenas compatibilidade transitória e não autoridade.
 
 3.15.9 Estado residual do antigo produto de `landing_page`
 • O Account Dashboard não possui criação, onboarding operacional, workspace, configuração operacional, histórico, Preview, renderer, aprovação, readers de materialização ou assinatura de assets do produto legado.

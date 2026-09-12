@@ -271,6 +271,52 @@ checks as (
 
   union all
 
+  select 'evaluation_event_contract',
+    coalesce((
+      select lower(pg_get_constraintdef(constraints.oid)) like '%evaluation_inconclusive%'
+        and lower(pg_get_constraintdef(constraints.oid)) like '%content_fingerprint is null%'
+      from pg_constraint constraints
+      where constraints.conrelid = 'public.business_taxon_factual_review_events'::regclass
+        and constraints.conname = 'business_taxon_factual_review_events_content_fingerprint_chk'
+    ), false)
+      and coalesce((
+        select pg_get_functiondef(procedures.oid) like '%outputFingerprint%'
+          and pg_get_functiondef(procedures.oid) like '%inputCatalogVersion%'
+          and pg_get_functiondef(procedures.oid) like '%candidateCount%'
+          and pg_get_functiondef(procedures.oid) like '%webSearchSources%'
+          and pg_get_functiondef(procedures.oid) like '%materialTextUrlProjection%'
+          and pg_get_functiondef(procedures.oid) like '%factual_review_evaluation_text_sources_invalid%'
+          and pg_get_functiondef(procedures.oid) like '%regexp_replace%[.,;:!?]+$%'
+          and pg_get_functiondef(procedures.oid) like '%v_url_parts[3] = ''443''%'
+          and pg_get_functiondef(procedures.oid) like '%lower(v_url_parts[1])%'
+          and pg_get_functiondef(procedures.oid) like '%evaluationContextFingerprint%'
+          and pg_get_functiondef(procedures.oid) like '%reviewContextFingerprint%'
+          and pg_get_functiondef(procedures.oid) like '%deadlineAtMs%'
+          and pg_get_functiondef(procedures.oid) like '%factual_review_evaluation_deadline_exceeded%'
+          and pg_get_functiondef(procedures.oid) like '%web_search_focal%'
+          and pg_get_functiondef(procedures.oid) like '%evaluation_inconclusive%'
+        from pg_proc procedures
+        where procedures.oid =
+          'public.append_business_taxon_factual_review_evaluation_event_v1(uuid,uuid,uuid,bigint,text,text,text,text,jsonb)'::regprocedure
+      ), false)
+
+  union all
+
+  select 'evaluation_decision_binding',
+    coalesce((
+      select count(*) = 2
+        and bool_and(pg_get_functiondef(procedures.oid) like '%recommendationEvaluationContextFingerprint%')
+        and bool_and(pg_get_functiondef(procedures.oid) like '%evaluationContextFingerprint%')
+        and bool_and(pg_get_functiondef(procedures.oid) like '%reviewContextFingerprint%')
+      from pg_proc procedures
+      where procedures.oid in (
+        'public.close_business_taxon_factual_review_without_change_v1(uuid,uuid,uuid,bigint,integer,text,text,jsonb,jsonb)'::regprocedure,
+        'public.record_business_taxon_factual_catalog_change_decision_v1(uuid,uuid,uuid,bigint,text,jsonb,bigint,integer,text,text,jsonb)'::regprocedure
+      )
+    ), false)
+
+  union all
+
   select 'rpc_security',
     not exists (
       select 1
@@ -279,6 +325,7 @@ checks as (
         and routine_name in (
           'open_business_taxon_factual_review_v1',
           'close_business_taxon_factual_review_without_change_v1',
+          'append_business_taxon_factual_review_evaluation_event_v1',
           'record_business_taxon_factual_catalog_change_decision_v1',
           'save_business_taxon_factual_review_draft_v1',
           'authorize_business_taxon_factual_review_publication_v1',
@@ -293,6 +340,9 @@ checks as (
       and not has_function_privilege('anon', 'public.close_business_taxon_factual_review_without_change_v1(uuid,uuid,uuid,bigint,integer,text,text,jsonb,jsonb)', 'EXECUTE')
       and not has_function_privilege('authenticated', 'public.close_business_taxon_factual_review_without_change_v1(uuid,uuid,uuid,bigint,integer,text,text,jsonb,jsonb)', 'EXECUTE')
       and has_function_privilege('service_role', 'public.close_business_taxon_factual_review_without_change_v1(uuid,uuid,uuid,bigint,integer,text,text,jsonb,jsonb)', 'EXECUTE')
+      and not has_function_privilege('anon', 'public.append_business_taxon_factual_review_evaluation_event_v1(uuid,uuid,uuid,bigint,text,text,text,text,jsonb)', 'EXECUTE')
+      and not has_function_privilege('authenticated', 'public.append_business_taxon_factual_review_evaluation_event_v1(uuid,uuid,uuid,bigint,text,text,text,text,jsonb)', 'EXECUTE')
+      and has_function_privilege('service_role', 'public.append_business_taxon_factual_review_evaluation_event_v1(uuid,uuid,uuid,bigint,text,text,text,text,jsonb)', 'EXECUTE')
       and not has_function_privilege('anon', 'public.record_business_taxon_factual_catalog_change_decision_v1(uuid,uuid,uuid,bigint,text,jsonb,bigint,integer,text,text,jsonb)', 'EXECUTE')
       and not has_function_privilege('authenticated', 'public.record_business_taxon_factual_catalog_change_decision_v1(uuid,uuid,uuid,bigint,text,jsonb,bigint,integer,text,text,jsonb)', 'EXECUTE')
       and has_function_privilege('service_role', 'public.record_business_taxon_factual_catalog_change_decision_v1(uuid,uuid,uuid,bigint,text,jsonb,bigint,integer,text,text,jsonb)', 'EXECUTE')
@@ -310,6 +360,7 @@ checks as (
         or (
           not has_function_privilege('ai_readonly', 'public.open_business_taxon_factual_review_v1(uuid,text,jsonb,uuid,uuid,boolean,integer)', 'EXECUTE')
           and not has_function_privilege('ai_readonly', 'public.close_business_taxon_factual_review_without_change_v1(uuid,uuid,uuid,bigint,integer,text,text,jsonb,jsonb)', 'EXECUTE')
+          and not has_function_privilege('ai_readonly', 'public.append_business_taxon_factual_review_evaluation_event_v1(uuid,uuid,uuid,bigint,text,text,text,text,jsonb)', 'EXECUTE')
           and not has_function_privilege('ai_readonly', 'public.record_business_taxon_factual_catalog_change_decision_v1(uuid,uuid,uuid,bigint,text,jsonb,bigint,integer,text,text,jsonb)', 'EXECUTE')
           and not has_function_privilege('ai_readonly', 'public.save_business_taxon_factual_review_draft_v1(uuid,uuid,bigint,jsonb,text)', 'EXECUTE')
           and not has_function_privilege('ai_readonly', 'public.authorize_business_taxon_factual_review_publication_v1(uuid,uuid,bigint,text,text,uuid[])', 'EXECUTE')
@@ -323,13 +374,14 @@ checks as (
         where procedures.oid = 'public.open_business_taxon_factual_review_v1(uuid,text,jsonb,uuid,uuid,boolean,integer)'::regprocedure
       ), false)
       and coalesce((
-        select count(*) = 6
+        select count(*) = 7
           and bool_and(not procedures.prosecdef)
           and bool_and(procedures.proconfig @> array['search_path=public, pg_catalog']::text[])
         from pg_proc procedures
         where procedures.oid in (
           'public.open_business_taxon_factual_review_v1(uuid,text,jsonb,uuid,uuid,boolean,integer)'::regprocedure,
           'public.close_business_taxon_factual_review_without_change_v1(uuid,uuid,uuid,bigint,integer,text,text,jsonb,jsonb)'::regprocedure,
+          'public.append_business_taxon_factual_review_evaluation_event_v1(uuid,uuid,uuid,bigint,text,text,text,text,jsonb)'::regprocedure,
           'public.record_business_taxon_factual_catalog_change_decision_v1(uuid,uuid,uuid,bigint,text,jsonb,bigint,integer,text,text,jsonb)'::regprocedure,
           'public.save_business_taxon_factual_review_draft_v1(uuid,uuid,bigint,jsonb,text)'::regprocedure,
           'public.authorize_business_taxon_factual_review_publication_v1(uuid,uuid,bigint,text,text,uuid[])'::regprocedure,

@@ -2,12 +2,19 @@ import {
   buildInputCatalogEvaluationGapHandoff,
   executeInputCatalogEvaluationAdministrativeDecision,
   fingerprintInputCatalogEvaluationOutput,
-  readInputCatalogEvaluationDecisionToken,
   type InputCatalogEvaluationAdministrativeDecision,
   type InputCatalogEvaluationAdministrativeDecisionResult,
-  type InputCatalogEvaluationDecisionTokenPayload,
   type InputCatalogEvaluationOutput,
+  type InputCatalogEvaluationStatus,
 } from "../landing-page/taxon-preparation";
+
+export type PersistedInputCatalogEvaluationDecisionEvidence = Readonly<{
+  taxonId: string;
+  inputCatalogVersion: number;
+  evaluationContextFingerprint: string;
+  outputFingerprint: string;
+  status: InputCatalogEvaluationStatus;
+}>;
 
 export async function executeInputCatalogEvaluationAdministrativeActionCore(
   input: Readonly<{
@@ -19,27 +26,29 @@ export async function executeInputCatalogEvaluationAdministrativeActionCore(
   }>,
   ports: Readonly<{
     requireRuntime: () => Promise<Readonly<{ ok: true }> | Readonly<{ ok: false; message: string }>>;
+    loadPersistedEvidence: () => Promise<
+      | Readonly<{ ok: true; evidence: PersistedInputCatalogEvaluationDecisionEvidence }>
+      | Readonly<{ ok: false; message: string }>
+    >;
     revalidate: (
-      evidence: InputCatalogEvaluationDecisionTokenPayload,
+      evidence: PersistedInputCatalogEvaluationDecisionEvidence,
     ) => Promise<Readonly<{ ok: true }> | Readonly<{ ok: false; message: string }>>;
     recordReviewedVersion: (
-      evidence: InputCatalogEvaluationDecisionTokenPayload,
+      evidence: PersistedInputCatalogEvaluationDecisionEvidence,
     ) => Promise<Readonly<{ ok: true; reviewedVersion: number }> | Readonly<{ ok: false; message: string }>>;
   }>,
 ): Promise<InputCatalogEvaluationAdministrativeDecisionResult> {
   const runtime = await ports.requireRuntime();
   if (!runtime.ok) return blocked(runtime.message);
 
-  const evidence = readInputCatalogEvaluationDecisionToken(
-    input.decisionToken,
-    input.decisionTokenSecret,
-  );
+  const persisted = await ports.loadPersistedEvidence();
+  if (!persisted.ok) return blocked(persisted.message);
+  const evidence = persisted.evidence;
   if (
-    !evidence ||
     evidence.status !== input.output.status ||
     evidence.outputFingerprint !== fingerprintInputCatalogEvaluationOutput(input.output)
   ) {
-    return blocked("O resultado informado não corresponde à avaliação autenticada pelo servidor.");
+    return blocked("O resultado informado não corresponde ao evento factual persistido pelo servidor.");
   }
 
   const result = await executeInputCatalogEvaluationAdministrativeDecision(

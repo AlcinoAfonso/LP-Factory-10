@@ -74,6 +74,10 @@ import {
   loadSelectedEndCustomerResearchFromClient,
   type SelectedEndCustomerResearchReadClient,
 } from "../../adapters/selectedEndCustomerResearchAdapterCore";
+import {
+  readCompleteTaxonChainForAdminEvaluationFromPages,
+  readCompleteTaxonChainFromPages,
+} from "../../adapters/taxonChainAdapterCore";
 
 const VALID_INPUT: LoadEndCustomerResearchCandidateInput = {
   taxon: { slug: "corretor-imoveis", isActive: true },
@@ -1049,7 +1053,10 @@ const cases: readonly ValidationCase[] = [
         "schemaVersion",
         "status",
         "mode",
+        "sourceStrategy",
+        "sourceState",
         "summary",
+        "summarySourceUrls",
         "candidates",
         "followUpQuestion",
       ]);
@@ -1066,6 +1073,7 @@ const cases: readonly ValidationCase[] = [
         "concreteHarm",
         "suggestedTaxonomyLayer",
         "uncertainties",
+        "sourceUrls",
       ]);
       assert.equal(candidates.maxItems, 8);
       assert.equal(schemaRecord(properties.summary).maxLength, 2_000);
@@ -1125,6 +1133,14 @@ const cases: readonly ValidationCase[] = [
           ...validSystematicEvaluationOutput(),
           status: "inconclusive",
           followUpQuestion: null,
+        },
+        {
+          ...validHypothesisEvaluationOutput(),
+          candidates: [{ ...hypothesisGapCandidate(), sourceUrls: [] }],
+        },
+        {
+          ...validHypothesisEvaluationOutput(),
+          summary: "Fonte insegura http://example.com/evidence",
         },
       ];
       for (const fixture of invalidFixtures) {
@@ -1331,12 +1347,129 @@ const cases: readonly ValidationCase[] = [
       assert.equal(success.ok, true);
       if (!success.ok) throw new Error("Expected coordinator success");
       assert.equal(
+        success.value.evaluationContextFingerprint,
+        fingerprintInputCatalogEvaluationContextIdentity(context.identity),
+      );
+      assert.equal(
         sameInputCatalogEvaluationContextIdentity(
           success.value.contextIdentity,
           context.identity,
         ),
         true,
       );
+
+      const hypothesisContext = assertEvaluationContextSuccess(
+        buildInputCatalogEvaluationContext(
+          { ...evaluationContextInput(4), mode: "hypothesis" },
+        ),
+      );
+      const missingAuthenticatedWebEvidence = await coordinateInputCatalogEvaluation(
+        evaluationRequest({ mode: "hypothesis", focalHypothesis: "Teste focal" }),
+        {
+          reconstructContext: async () => ({ ok: true, value: hypothesisContext }),
+          evaluate: async () => ({
+            status: "completed",
+            output: validHypothesisEvaluationOutput(),
+          }),
+        },
+      );
+      assertCoordinatorFailure(missingAuthenticatedWebEvidence, "OUTPUT_INVALID");
+      const authenticatedWebEvidence = await coordinateInputCatalogEvaluation(
+        evaluationRequest({ mode: "hypothesis", focalHypothesis: "Teste focal" }),
+        {
+          reconstructContext: async () => ({ ok: true, value: hypothesisContext }),
+          evaluate: async () => ({
+            status: "completed",
+            output: validHypothesisEvaluationOutput(),
+            webSearchCallCount: 1,
+            webSearchSources: ["https://example.com/evidence"],
+          }),
+        },
+      );
+      assert.equal(authenticatedWebEvidence.ok, true);
+      if (authenticatedWebEvidence.ok) {
+        assert.deepEqual(authenticatedWebEvidence.value.sourceEvidence, {
+          webSearchCallCount: 1,
+          webSearchSources: ["https://example.com/evidence"],
+          materialTextUrlProjection: [],
+        });
+      }
+      const normalizedTextualSource = await coordinateInputCatalogEvaluation(
+        evaluationRequest({ mode: "hypothesis", focalHypothesis: "Teste focal" }),
+        {
+          reconstructContext: async () => ({ ok: true, value: hypothesisContext }),
+          evaluate: async () => ({
+            status: "completed",
+            output: {
+              ...validHypothesisEvaluationOutput(),
+              summary: "Cobertura confirmada por HTTPS://EXAMPLE.COM:443/evidence#section,",
+            },
+            webSearchCallCount: 1,
+            webSearchSources: ["https://example.com/evidence"],
+          }),
+        },
+      );
+      assert.equal(normalizedTextualSource.ok, true);
+      if (normalizedTextualSource.ok) {
+        assert.deepEqual(
+          normalizedTextualSource.value.sourceEvidence.materialTextUrlProjection,
+          [{
+            raw: "HTTPS://EXAMPLE.COM:443/evidence#section",
+            canonical: "https://example.com/evidence",
+          }],
+        );
+      }
+      const inventedTextualSource = await coordinateInputCatalogEvaluation(
+        evaluationRequest({ mode: "hypothesis", focalHypothesis: "Teste focal" }),
+        {
+          reconstructContext: async () => ({ ok: true, value: hypothesisContext }),
+          evaluate: async () => ({
+            status: "completed",
+            output: {
+              ...validHypothesisEvaluationOutput(),
+              candidates: [{
+                ...hypothesisGapCandidate(),
+                evidence: "Evidência em https://invented.example/fake",
+              }],
+            },
+            webSearchCallCount: 1,
+            webSearchSources: ["https://example.com/evidence"],
+          }),
+        },
+      );
+      assertCoordinatorFailure(inventedTextualSource, "OUTPUT_INVALID");
+
+      let expiredEvaluations = 0;
+      const expired = await coordinateInputCatalogEvaluation(
+        evaluationRequest({ deadlineAtMs: 99 }),
+        {
+          reconstructContext: async () => ({ ok: true, value: context }),
+          evaluate: async () => {
+            expiredEvaluations += 1;
+            return { status: "completed", output: validSystematicEvaluationOutput() };
+          },
+          now: () => 100,
+        },
+      );
+      assertCoordinatorFailure(expired, "PROVIDER_FAILURE");
+      assert.equal(expiredEvaluations, 0);
+
+      let lateNow = 100;
+      let lateEvaluations = 0;
+      const late = await coordinateInputCatalogEvaluation(
+        evaluationRequest({ deadlineAtMs: 150 }),
+        {
+          reconstructContext: async () => ({ ok: true, value: context }),
+          evaluate: async () => {
+            lateEvaluations += 1;
+            lateNow = 151;
+            return { status: "completed", output: validSystematicEvaluationOutput() };
+          },
+          now: () => lateNow,
+        },
+      );
+      assertCoordinatorFailure(late, "PROVIDER_FAILURE");
+      assert.equal(lateEvaluations, 1);
 
       assertCoordinatorFailure(
         await executeWith({ status: "completed", output: { invalid: true } }),
@@ -1457,6 +1590,17 @@ const cases: readonly ValidationCase[] = [
           (identity.inputCatalog as { version: number }).version -= 1;
         },
         (identity) => {
+          (identity as { mode: "systematic" | "hypothesis" }).mode = "hypothesis";
+        },
+        (identity) => {
+          (identity as { sourceStrategy: "e20_5" | "web_search_fallback" }).sourceStrategy =
+            "web_search_fallback";
+        },
+        (identity) => {
+          (identity as { sourceState: "e20_5_available" | "e20_5_absent_authorized" }).sourceState =
+            "e20_5_absent_authorized";
+        },
+        (identity) => {
           const mutableCatalogs = identity.inputCatalog.catalogs as unknown as Array<{
             fields: unknown[];
           }>;
@@ -1515,6 +1659,7 @@ const cases: readonly ValidationCase[] = [
       });
       const request = {
         mode: "systematic" as const,
+        sourceStrategy: "e20_5" as const,
         prompt,
         outputSchema: inputCatalogEvaluationOutputJsonSchema,
       };
@@ -1550,11 +1695,139 @@ const cases: readonly ValidationCase[] = [
       assert.equal(captured.model, "gpt-5.6-terra");
       assert.deepEqual(captured.reasoning, { effort: "low" });
       assert.equal(captured.store, false);
+      assert.equal(captured.background, false);
       assert.deepEqual(captured.tools, []);
       assert.equal(captured.safety_identifier, "platform_admin_test");
       assert.equal(events[0]?.workload, "taxon_input_catalog_sufficiency_evaluation");
       assert.equal(events[0]?.result, "success");
-      assert.equal(events[0]?.promptVersion, "e20.6.5-input-catalog-evaluation-v1");
+      assert.equal(events[0]?.promptVersion, "e20.6.5-input-catalog-evaluation-v2");
+
+      const webUrl = "https://example.com/e20-6-5-source";
+      let webBody: Record<string, unknown> | null = null;
+      const webOutput: InputCatalogEvaluationOutput = {
+        ...validSystematicEvaluationOutput(),
+        sourceStrategy: "web_search_fallback",
+        sourceState: "e20_5_absent_authorized",
+        summarySourceUrls: [webUrl],
+        candidates: [{ ...coveredCandidate(), sourceUrls: [webUrl] }],
+      };
+      const webCompleted = await evaluateInputCatalogWithOpenAi(
+        {
+          apiKey: "test-key",
+          configuration: resolved.value,
+          environment: "development",
+          request: { ...request, sourceStrategy: "web_search_fallback" },
+          requestId: "request_e2065_web",
+          safetyIdentifier: "platform_admin_test",
+        },
+        {
+          fetchImpl: async (_url, init) => {
+            webBody = JSON.parse(String(init?.body));
+            return new Response(JSON.stringify({
+              id: "resp_e2065_web",
+              status: "completed",
+              output: [{
+                type: "web_search_call",
+                status: "completed",
+                action: { sources: [{ url: webUrl }] },
+              }],
+              output_text: JSON.stringify(webOutput),
+              usage: { input_tokens: 10, output_tokens: 5, total_tokens: 15 },
+            }), { status: 200 });
+          },
+          emitEvent: () => undefined,
+        },
+      );
+      assert.equal(webCompleted.status, "completed");
+      if (webCompleted.status === "completed") {
+        assert.equal(webCompleted.webSearchCallCount, 1);
+        assert.deepEqual(webCompleted.webSearchSources, [webUrl]);
+      }
+      const capturedWeb = webBody as unknown as Record<string, unknown>;
+      assert.deepEqual(capturedWeb.tools, [{
+        type: "web_search",
+        external_web_access: true,
+        search_context_size: "medium",
+      }]);
+      assert.equal(capturedWeb.tool_choice, "required");
+      assert.equal(capturedWeb.max_tool_calls, 2);
+      assert.deepEqual(capturedWeb.include, ["web_search_call.action.sources"]);
+      assert.equal("return_token_budget" in capturedWeb, false);
+
+      let oversizedFetches = 0;
+      const oversized = await evaluateInputCatalogWithOpenAi(
+        {
+          apiKey: "test-key",
+          configuration: resolved.value,
+          environment: "development",
+          request: {
+            ...request,
+            prompt: { ...request.prompt, input: "x".repeat(400_000) },
+            sourceStrategy: "web_search_focal",
+          },
+          requestId: "request_e2065_budget",
+          safetyIdentifier: "platform_admin_test",
+        },
+        {
+          fetchImpl: async () => {
+            oversizedFetches += 1;
+            return new Response();
+          },
+          emitEvent: () => undefined,
+        },
+      );
+      assert.equal(oversized.status, "failure");
+      assert.equal(oversizedFetches, 0);
+
+      let boundaryFetches = 0;
+      const boundaryAccepted = await evaluateInputCatalogWithOpenAi(
+        {
+          apiKey: "test-key",
+          configuration: resolved.value,
+          environment: "development",
+          request: {
+            ...request,
+            prompt: { ...request.prompt, input: "x".repeat(20_000) },
+          },
+          requestId: "request_e2065_budget_boundary_ok",
+          safetyIdentifier: "platform_admin_test",
+        },
+        {
+          fetchImpl: async () => {
+            boundaryFetches += 1;
+            return new Response(JSON.stringify({
+              id: "resp_e2065_budget_boundary_ok",
+              output_text: JSON.stringify(validSystematicEvaluationOutput()),
+            }), { status: 200 });
+          },
+          emitEvent: () => undefined,
+        },
+      );
+      assert.equal(boundaryAccepted.status, "completed");
+      assert.equal(boundaryFetches, 1);
+
+      const denseUnicodeRejected = await evaluateInputCatalogWithOpenAi(
+        {
+          apiKey: "test-key",
+          configuration: resolved.value,
+          environment: "development",
+          request: {
+            ...request,
+            prompt: { ...request.prompt, input: "😀".repeat(30_000) },
+          },
+          requestId: "request_e2065_budget_unicode",
+          safetyIdentifier: "platform_admin_test",
+        },
+        {
+          fetchImpl: async () => {
+            boundaryFetches += 1;
+            return new Response();
+          },
+          emitEvent: () => undefined,
+        },
+      );
+      assert.equal(denseUnicodeRejected.status, "failure");
+      assert.equal(boundaryFetches, 1);
 
       const refusal = await evaluateInputCatalogWithOpenAi(
         {
@@ -1574,6 +1847,55 @@ const cases: readonly ValidationCase[] = [
         },
       );
       assert.equal(refusal.status, "refusal");
+
+      const refusalWithOutputText = await evaluateInputCatalogWithOpenAi(
+        {
+          apiKey: "test-key",
+          configuration: resolved.value,
+          environment: "development",
+          request: { ...request, sourceStrategy: "web_search_fallback" },
+          requestId: "request_e2065_refusal_precedence",
+          safetyIdentifier: "platform_admin_test",
+        },
+        {
+          fetchImpl: async () => new Response(JSON.stringify({
+            id: "resp_e2065_refusal_precedence",
+            output_text: JSON.stringify(validSystematicEvaluationOutput()),
+            output: [{ content: [{ type: "refusal", refusal: "blocked" }] }],
+          }), { status: 200 }),
+          emitEvent: () => undefined,
+        },
+      );
+      assert.equal(refusalWithOutputText.status, "refusal");
+
+      let deadlineNow = 100;
+      let deadlineFetches = 0;
+      const delayedRecorder = await evaluateInputCatalogWithOpenAi(
+        {
+          apiKey: "test-key",
+          configuration: resolved.value,
+          environment: "development",
+          request: { ...request, deadlineAtMs: 150 },
+          requestId: "request_e2065_delayed_recorder",
+          safetyIdentifier: "platform_admin_test",
+        },
+        {
+          now: () => deadlineNow,
+          costRecorder: {
+            startExecution: async () => { deadlineNow = 151; },
+            startOperation: async () => undefined,
+            finishOperation: async () => undefined,
+            finishExecution: async () => undefined,
+          },
+          fetchImpl: async () => {
+            deadlineFetches += 1;
+            return new Response();
+          },
+          emitEvent: () => undefined,
+        },
+      );
+      assert.equal(delayedRecorder.status, "failure");
+      assert.equal(deadlineFetches, 0);
 
       const incomplete = await evaluateInputCatalogWithOpenAi(
         {
@@ -1671,6 +1993,16 @@ const cases: readonly ValidationCase[] = [
       let writeCalls = 0;
       const ports = {
         requireRuntime: async () => ({ ok: false as const, message: "gate-off" }),
+        loadPersistedEvidence: async () => ({
+          ok: true as const,
+          evidence: {
+            taxonId: realEstateBrokerNicheTaxon.id,
+            inputCatalogVersion: 4,
+            evaluationContextFingerprint: "a".repeat(64),
+            outputFingerprint: fingerprintInputCatalogEvaluationOutput(inconclusive),
+            status: inconclusive.status,
+          },
+        }),
         revalidate: async () => {
           revalidationCalls += 1;
           return { ok: true as const };
@@ -1986,7 +2318,6 @@ const cases: readonly ValidationCase[] = [
   {
     name: "E20.6.5 authenticated selected gaps produce a transient E20.2 handoff only",
     run: async () => {
-      const secret = "decision-token-test-secret-32-bytes-minimum";
       const output: InputCatalogEvaluationOutput = {
         ...validHypothesisEvaluationOutput(),
         candidates: [
@@ -2001,28 +2332,27 @@ const cases: readonly ValidationCase[] = [
           },
         ],
       };
-      const token = createInputCatalogEvaluationDecisionToken(
-        {
-          taxonId: realEstateBrokerNicheTaxon.id,
-          inputCatalogVersion: 4,
-          contextFingerprint: "a".repeat(64),
-          outputFingerprint: fingerprintInputCatalogEvaluationOutput(output),
-          status: output.status,
-        },
-        secret,
-      );
-      assert.ok(token);
       let writeCalls = 0;
       const result = await executeInputCatalogEvaluationAdministrativeActionCore(
         {
           decision: "acknowledge_factual_gap",
-          decisionToken: token,
-          decisionTokenSecret: secret,
+          decisionToken: "legacy-token-not-authoritative",
+          decisionTokenSecret: undefined,
           output,
           selectedCandidateIndexes: [0],
         },
         {
           requireRuntime: async () => ({ ok: true }),
+          loadPersistedEvidence: async () => ({
+            ok: true as const,
+            evidence: {
+              taxonId: realEstateBrokerNicheTaxon.id,
+              inputCatalogVersion: 4,
+              evaluationContextFingerprint: "a".repeat(64),
+              outputFingerprint: fingerprintInputCatalogEvaluationOutput(output),
+              status: output.status,
+            },
+          }),
           revalidate: async () => ({ ok: true }),
           recordReviewedVersion: async () => {
             writeCalls += 1;
@@ -2156,25 +2486,40 @@ const cases: readonly ValidationCase[] = [
       assert.match(actionSource, /reject_candidates_and_confirm_sufficient/);
       assert.match(actionSource, /recordAdminInputCatalogDraftSufficiencyDecision/);
       assert.match(actionSource, /feedback,/);
+      const totalDeadline = actionSource.indexOf("const evaluationDeadlineAtMs = Date.now() + 45_000");
+      const actionAuthorization = actionSource.indexOf("const gate = await requirePlatformAdmin()", totalDeadline);
+      assert.ok(totalDeadline >= 0 && actionAuthorization > totalDeadline);
+      assert.match(actionSource, /deadlineAtMs: evaluationDeadlineAtMs/);
+      assert.match(actionSource, /loadAdminTaxonFactualEvaluationEvidence/);
       assert.doesNotMatch(actionSource, /loadTaxonPreparationForReviewedVersion/);
       const administrativeActionCore = readFileSync(
         new URL("../../adapters/inputCatalogEvaluationAdministrativeActionCore.ts", import.meta.url),
         "utf8",
       );
       const administrativeGate = administrativeActionCore.indexOf("await ports.requireRuntime()");
-      const evidenceRead = administrativeActionCore.indexOf("const evidence = readInputCatalogEvaluationDecisionToken");
+      const evidenceRead = administrativeActionCore.indexOf("await ports.loadPersistedEvidence()");
       const administrativeUseCase = administrativeActionCore.lastIndexOf("await executeInputCatalogEvaluationAdministrativeDecision");
       assert.ok(administrativeGate >= 0 && administrativeGate < evidenceRead);
       assert.ok(evidenceRead < administrativeUseCase);
+      assert.doesNotMatch(administrativeActionCore, /readInputCatalogEvaluationDecisionToken/);
 
       const contextAdapterSource = readFileSync(
         new URL("../../adapters/inputCatalogEvaluationContextAdapter.ts", import.meta.url),
         "utf8",
       );
-      assert.match(contextAdapterSource, /loadSelectedEndCustomerResearchForTaxon/);
+      assert.match(contextAdapterSource, /loadAdminInputCatalogEvaluationSources/);
       assert.match(contextAdapterSource, /reconstructDraftInputCatalogEvaluationContext/);
-      assert.match(contextAdapterSource, /readCompleteTaxonChainForTaxon/);
       assert.doesNotMatch(contextAdapterSource, /\.range\(/);
+      const adminEvaluationSource = readFileSync(
+        new URL("../../../../lib/admin/adapters/adminInputCatalogEvaluationSourceAdapter.ts", import.meta.url),
+        "utf8",
+      );
+      assert.match(adminEvaluationSource, /import "server-only"/);
+      assert.match(adminEvaluationSource, /createServiceClient/);
+      assert.match(adminEvaluationSource, /loadEndCustomerResearchCandidate/);
+      assert.match(adminEvaluationSource, /readCompleteTaxonChainForAdminEvaluation/);
+      assert.doesNotMatch(adminEvaluationSource, /buildLandingPageInputCatalogTaxonChain|while \(nextId|\.range\(/);
+      assert.doesNotMatch(adminEvaluationSource, /loadSelectedEndCustomerResearchForTaxon|readCompleteTaxonChainForTaxon/);
       const taxonChainAdapterSource = readFileSync(
         new URL("../../adapters/taxonChainAdapter.ts", import.meta.url),
         "utf8",
@@ -2183,6 +2528,20 @@ const cases: readonly ValidationCase[] = [
         taxonChainAdapterSource,
         /\.order\("id", \{ ascending: true \}\)[\s\S]*?\.range\(offset, offset \+ limit - 1\)/,
       );
+      assert.match(
+        taxonChainAdapterSource,
+        /readCompleteTaxonChainFromPages\(taxonId, createTaxonChainPageReader\(supabase\)\)/,
+      );
+      assert.match(
+        taxonChainAdapterSource,
+        /readCompleteTaxonChainForAdminEvaluationFromPages\([\s\S]*?createTaxonChainPageReader\(supabase\)/,
+      );
+      assert.doesNotMatch(taxonChainAdapterSource, /allowInactive/);
+      const researchAdapterSource = readFileSync(
+        new URL("../../adapters/selectedEndCustomerResearchAdapter.ts", import.meta.url),
+        "utf8",
+      );
+      assert.doesNotMatch(researchAdapterSource, /allowInactive/);
       assert.doesNotMatch(contextAdapterSource, /loadTaxonPreparationForReviewedVersion/);
       assert.doesNotMatch(contextAdapterSource, /loadTaxonPreparationForVersion/);
 
@@ -2194,6 +2553,45 @@ const cases: readonly ValidationCase[] = [
         "utf8",
       );
       assert.match(activeReviewSource, /Copiar instrução para o Codex/);
+    },
+  },
+  {
+    name: "E20.6.5 admin chain reader shares complete pagination and relaxes only the served taxon",
+    run: async () => {
+      const rows = Array.from({ length: 501 }, (_, index) => ({
+        id: `taxon-${String(index).padStart(4, "0")}`,
+        parent_id: null,
+        level: "segment",
+        name: `Taxon ${index}`,
+        slug: `taxon-${index}`,
+        is_active: index !== 500,
+      }));
+      const createReader = (offsets: number[]) => async (offset: number, limit: number) => {
+        offsets.push(offset);
+        return { data: rows.slice(offset, offset + limit), error: null, status: 200 };
+      };
+
+      const adminOffsets: number[] = [];
+      const admin = await readCompleteTaxonChainForAdminEvaluationFromPages(
+        "taxon-0500",
+        createReader(adminOffsets),
+      );
+      assert.equal(admin.ok, true);
+      if (!admin.ok) throw new Error("Expected inactive served taxon in the admin reader");
+      assert.deepEqual(adminOffsets, [0, 500]);
+      assert.equal(admin.value.taxons.length, 501);
+      assert.equal(admin.value.selected.isActive, false);
+      assert.equal(admin.value.chain.segment.isActive, false);
+
+      const operationalOffsets: number[] = [];
+      const operational = await readCompleteTaxonChainFromPages(
+        "taxon-0500",
+        createReader(operationalOffsets),
+      );
+      assert.equal(operational.ok, false);
+      if (operational.ok) throw new Error("Operational reader accepted an inactive taxon");
+      assert.equal(operational.error.code, "TAXON_INACTIVE");
+      assert.deepEqual(operationalOffsets, [0, 500]);
     },
   },
   {
@@ -2253,6 +2651,7 @@ function coveredCandidate(): InputCatalogEvaluationOutput["candidates"][number] 
     concreteHarm: null,
     suggestedTaxonomyLayer: null,
     uncertainties: [],
+    sourceUrls: [],
   };
 }
 
@@ -2270,6 +2669,7 @@ function hypothesisGapCandidate(): InputCatalogEvaluationOutput["candidates"][nu
     concreteHarm: "A LP pode atribuir ao negócio um serviço que ele não oferece.",
     suggestedTaxonomyLayer: "niche",
     uncertainties: [],
+    sourceUrls: ["https://example.com/evidence"],
   };
 }
 
@@ -2278,7 +2678,10 @@ function validSystematicEvaluationOutput(): InputCatalogEvaluationOutput {
     schemaVersion: INPUT_CATALOG_EVALUATION_SCHEMA_VERSION,
     status: "sufficient",
     mode: "systematic",
+    sourceStrategy: "e20_5",
+    sourceState: "e20_5_available",
     summary: "O catálogo atual cobre as necessidades factuais encontradas.",
+    summarySourceUrls: [],
     candidates: [coveredCandidate()],
     followUpQuestion: null,
   };
@@ -2289,7 +2692,10 @@ function validHypothesisEvaluationOutput(): InputCatalogEvaluationOutput {
     schemaVersion: INPUT_CATALOG_EVALUATION_SCHEMA_VERSION,
     status: "candidate_gaps",
     mode: "hypothesis",
+    sourceStrategy: "web_search_focal",
+    sourceState: "e20_5_available",
     summary: "A hipótese focal indica possível refinamento de field existente.",
+    summarySourceUrls: ["https://example.com/evidence"],
     candidates: [hypothesisGapCandidate()],
     followUpQuestion: "O humano reconhece a insuficiência como gap factual real?",
   };
@@ -2391,12 +2797,11 @@ function reorderEvaluationContextIdentity(
       plans: identity.inputCatalog.plans,
       version: identity.inputCatalog.version,
     },
+    sourceStrategy: identity.sourceStrategy,
+    sourceState: identity.sourceState,
+    mode: identity.mode,
     research: {
-      content: identity.research.content,
-      relativePath: identity.research.relativePath,
-      researchVersion: identity.research.researchVersion,
-      audienceScope: identity.research.audienceScope,
-      taxonSlug: identity.research.taxonSlug,
+      ...(identity.research ?? (() => { throw new Error("Expected research"); })()),
     },
     taxonChain: {
       ultraNiche: identity.taxonChain.ultraNiche,

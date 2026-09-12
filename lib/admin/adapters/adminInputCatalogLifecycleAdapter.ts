@@ -343,6 +343,7 @@ export async function reconcileAdminInputCatalogPublishedDraft(input: Readonly<{
 export async function loadAdminInputCatalogDraftEvaluationContext(input: Readonly<{
   expectedRevision: number;
   taxonId: string;
+  mode?: import("@/conversion-content/landing-page/taxon-preparation").InputCatalogEvaluationMode;
 }>): Promise<
   | Readonly<{
       ok: true;
@@ -386,7 +387,11 @@ export async function loadAdminInputCatalogDraftEvaluationContext(input: Readonl
     };
   }
   const evaluation = await reconstructDraftInputCatalogEvaluationContext(
-    { taxonId: input.taxonId, inputCatalogVersion: candidate.value.entry.version },
+    {
+      taxonId: input.taxonId,
+      inputCatalogVersion: candidate.value.entry.version,
+      mode: input.mode,
+    },
     candidate.value.registry,
   );
   if (!evaluation.ok) return { ok: false, message: evaluation.error.message };
@@ -405,9 +410,13 @@ export async function recordAdminInputCatalogDraftSufficiencyDecision(input: Rea
   expectedRevision: number;
   taxonId: string;
   expectedContentFingerprint: string;
-  expectedContextFingerprint: string;
+  expectedEvaluationContextFingerprint: string;
   decision: "confirm_sufficient" | "reject_candidates_and_confirm_sufficient";
   recommendationCandidateCount?: number;
+  recommendationEventId?: string;
+  recommendationOutputFingerprint?: string;
+  recommendationEvaluationContextFingerprint?: string;
+  mode?: import("@/conversion-content/landing-page/taxon-preparation").InputCatalogEvaluationMode;
 }>): Promise<Readonly<{
   ok: true;
   revision: number;
@@ -416,6 +425,7 @@ export async function recordAdminInputCatalogDraftSufficiencyDecision(input: Rea
   const current = await loadAdminInputCatalogDraftEvaluationContext({
     expectedRevision: input.expectedRevision,
     taxonId: input.taxonId,
+    mode: input.mode,
   });
   if (!current.ok) return current;
   const contextFingerprint = fingerprintInputCatalogEvaluationContextIdentity(
@@ -423,7 +433,7 @@ export async function recordAdminInputCatalogDraftSufficiencyDecision(input: Rea
   );
   if (
     current.value.contentFingerprint !== input.expectedContentFingerprint ||
-    contextFingerprint !== input.expectedContextFingerprint
+    contextFingerprint !== input.expectedEvaluationContextFingerprint
   ) {
     return { ok: false, message: "O draft, a pesquisa ou a cadeia mudaram desde a avaliação." };
   }
@@ -438,7 +448,17 @@ export async function recordAdminInputCatalogDraftSufficiencyDecision(input: Rea
   if (
     !Number.isSafeInteger(recommendationCandidateCount) ||
     Number(recommendationCandidateCount) < 0 ||
-    Number(recommendationCandidateCount) > 100
+    Number(recommendationCandidateCount) > 100 ||
+    (Number(recommendationCandidateCount) > 0 &&
+      (!input.recommendationEventId ||
+        !input.recommendationOutputFingerprint ||
+        !input.recommendationEvaluationContextFingerprint)) ||
+    (Number(recommendationCandidateCount) === 0 &&
+      Boolean(
+        input.recommendationEventId ||
+        input.recommendationOutputFingerprint ||
+        input.recommendationEvaluationContextFingerprint,
+      ))
   ) {
     return { ok: false, message: "A quantidade de recomendações rejeitadas é inválida." };
   }
@@ -465,6 +485,10 @@ export async function recordAdminInputCatalogDraftSufficiencyDecision(input: Rea
     taxonId: input.taxonId,
     expectedRevision: Number(reviewRow.revision),
     expectedContextFingerprint: reviewRow.context_fingerprint,
+    recommendationEventId: input.recommendationEventId,
+    recommendationOutputFingerprint: input.recommendationOutputFingerprint,
+    recommendationEvaluationContextFingerprint:
+      input.recommendationEvaluationContextFingerprint,
     humanDecision: {
       recommendationCandidateCount: Number(recommendationCandidateCount),
       recommendationSelection: "zero",

@@ -434,5 +434,5 @@ function reorderedInputCatalogReviewEvidenceIdentity(
     taxonChain: identity.taxonChain,
     taxonSlug: identity.taxonSlug,
     taxonId: identity.taxonId,
-  };
+  } as unknown as InputCatalogEvaluationContextIdentity;
 }

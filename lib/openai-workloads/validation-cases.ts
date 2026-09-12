@@ -162,6 +162,7 @@ const cases = [
         latencyMs: 7,
         webSearchCallCount: null,
         webSearchSourceCount: null,
+        sourceStrategy: null,
         inputTokens: 50,
         cachedInputTokens: 20,
         cacheWriteTokens: null,

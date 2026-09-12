@@ -17,7 +17,6 @@ import {
   createInputCatalogEvaluationDecisionToken,
   fingerprintInputCatalogEvaluationContextIdentity,
   fingerprintInputCatalogEvaluationOutput,
-  readInputCatalogEvaluationDecisionToken,
   revalidateInputCatalogEvaluationContext,
   type InputCatalogEvaluationMode,
   type InputCatalogEvaluationOutput,
@@ -27,6 +26,12 @@ import {
   loadAdminInputCatalogDraftEvaluationContext,
   recordAdminInputCatalogDraftSufficiencyDecision,
 } from "@/lib/admin/adapters/adminInputCatalogLifecycleAdapter";
+import {
+  appendAdminTaxonFactualEvaluationEvent,
+  closeAdminTaxonFactualReviewWithoutChangeForCurrentCoverage,
+  loadAdminTaxonFactualEvaluationEvidence,
+  loadOpenAdminTaxonFactualReview,
+} from "@/lib/admin/adapters/adminTaxonFactualReviewAdapter";
 import {
   addAdminTaxonAlias,
   createAdminTaxon,
@@ -60,6 +65,13 @@ export type InputCatalogReviewActionState = {
 
 export type InputCatalogEvaluationReference = Readonly<{
   decisionToken: string;
+  taxonId?: string;
+  reviewId?: string;
+  reviewRevision?: number;
+  reviewContextFingerprint?: string;
+  evaluationContextFingerprint?: string;
+  recommendationEventId?: string;
+  outputFingerprint?: string;
   source?: "published" | "draft";
   draftRevision?: number;
   draftContentFingerprint?: string;
@@ -101,6 +113,7 @@ export async function evaluateInputCatalogAction(input: Readonly<{
   }> | null;
   draftRevision?: number;
 }>): Promise<InputCatalogEvaluationActionResult> {
+  const evaluationDeadlineAtMs = Date.now() + 45_000;
   const gate = await requirePlatformAdmin();
   if (!gate.allowed) {
     return { ok: false, code: "UNAUTHORIZED", message: "Acesso administrativo não autorizado." };
@@ -113,13 +126,14 @@ export async function evaluateInputCatalogAction(input: Readonly<{
 
   const source = input.draftRevision === undefined ? "published" : "draft";
   let draftContentFingerprint: string | undefined;
-  const reconstructContext: typeof reconstructCanonicalInputCatalogEvaluationContext =
+  const baseReconstructContext: typeof reconstructCanonicalInputCatalogEvaluationContext =
     source === "published"
       ? reconstructCanonicalInputCatalogEvaluationContext
       : async (reconstructionInput) => {
           const draft = await loadAdminInputCatalogDraftEvaluationContext({
             expectedRevision: input.draftRevision as number,
             taxonId: reconstructionInput.taxonId,
+            mode: reconstructionInput.mode,
           });
           if (!draft.ok || draft.value.targetVersion !== reconstructionInput.inputCatalogVersion) {
             return {
@@ -135,13 +149,49 @@ export async function evaluateInputCatalogAction(input: Readonly<{
           draftContentFingerprint = draft.value.contentFingerprint;
           return { ok: true as const, value: draft.value.context };
         };
+  let cachedReconstruction:
+    | Readonly<{
+        key: string;
+        value: Awaited<ReturnType<typeof reconstructCanonicalInputCatalogEvaluationContext>>;
+      }>
+    | undefined;
+  const reconstructContext: typeof reconstructCanonicalInputCatalogEvaluationContext = async (
+    reconstructionInput,
+  ) => {
+    const key = JSON.stringify(reconstructionInput);
+    if (cachedReconstruction?.key === key) return cachedReconstruction.value;
+    const value = await baseReconstructContext(reconstructionInput);
+    cachedReconstruction = { key, value };
+    return value;
+  };
 
   let feedback: Parameters<typeof coordinateInputCatalogEvaluation>[0]["feedback"] = null;
   if (input.feedback) {
-    const previousEvidence = readInputCatalogEvaluationDecisionToken(
-      input.feedback.reference.decisionToken,
-      process.env.OPENAI_API_KEY,
-    );
+    const previousEventId = input.feedback.reference.recommendationEventId;
+    const previousReviewId = input.feedback.reference.reviewId;
+    const previousOutputFingerprint = input.feedback.reference.outputFingerprint;
+    const previousEvaluationContextFingerprint =
+      input.feedback.reference.evaluationContextFingerprint;
+    if (
+      !previousEventId ||
+      !previousReviewId ||
+      !previousOutputFingerprint ||
+      !previousEvaluationContextFingerprint
+    ) {
+      return {
+        ok: false,
+        code: "CONTEXT_STALE",
+        message: "A referência factual da avaliação anterior está incompleta.",
+      };
+    }
+    const previousPersisted = await loadAdminTaxonFactualEvaluationEvidence({
+      reviewId: previousReviewId,
+      eventId: previousEventId,
+      outputFingerprint: previousOutputFingerprint,
+      evaluationContextFingerprint: previousEvaluationContextFingerprint,
+      output: input.feedback.previousOutput,
+    });
+    const previousEvidence = previousPersisted.ok ? previousPersisted.evidence : null;
     if (
       !previousEvidence ||
       previousEvidence.taxonId !== input.taxonId ||
@@ -161,11 +211,12 @@ export async function evaluateInputCatalogAction(input: Readonly<{
     const previousContext = await reconstructContext({
       taxonId: previousEvidence.taxonId,
       inputCatalogVersion: previousEvidence.inputCatalogVersion,
+      mode: input.mode,
     });
     if (
       !previousContext.ok ||
       fingerprintInputCatalogEvaluationContextIdentity(previousContext.value.identity) !==
-        previousEvidence.contextFingerprint
+        previousEvidence.evaluationContextFingerprint
     ) {
       return {
         ok: false,
@@ -182,6 +233,47 @@ export async function evaluateInputCatalogAction(input: Readonly<{
     };
   }
 
+  const requestedContext = await reconstructContext({
+    taxonId: input.taxonId,
+    inputCatalogVersion: input.inputCatalogVersion,
+    mode: input.mode,
+  });
+  if (!requestedContext.ok) {
+    return {
+      ok: false,
+      code: requestedContext.error.code,
+      message: requestedContext.error.message,
+    };
+  }
+  const requestedEvaluationContextFingerprint =
+    fingerprintInputCatalogEvaluationContextIdentity(requestedContext.value.identity);
+  const factualReview = await loadOpenAdminTaxonFactualReview(input.taxonId);
+  if (!factualReview.ok) {
+    return { ok: false, code: "FACTUAL_REVIEW_REQUIRED", message: factualReview.message };
+  }
+  if (Date.now() >= evaluationDeadlineAtMs) {
+    return { ok: false, code: "PROVIDER_FAILURE", message: "O prazo total da avaliação expirou." };
+  }
+  const requestedEvent = await appendAdminTaxonFactualEvaluationEvent({
+    review: factualReview.review,
+    operationId: randomUUID(),
+    actorUserId: gate.actorUserId,
+    eventKind: "evaluation_requested",
+    sourceStrategy: requestedContext.value.identity.sourceStrategy,
+    contentFingerprint: null,
+    evaluationContextFingerprint: requestedEvaluationContextFingerprint,
+    deadlineAtMs: evaluationDeadlineAtMs,
+    payload: {
+      inputCatalogVersion: input.inputCatalogVersion,
+      mode: input.mode,
+      sourceState: requestedContext.value.identity.sourceState,
+      schemaVersion: 2,
+    },
+  });
+  if (!requestedEvent.ok) {
+    return { ok: false, code: "FACTUAL_EVENT_WRITE_FAILED", message: requestedEvent.message };
+  }
+
   const requestId = randomUUID();
   const result = await coordinateInputCatalogEvaluation(
     {
@@ -190,6 +282,7 @@ export async function evaluateInputCatalogAction(input: Readonly<{
       mode: input.mode,
       focalHypothesis: input.focalHypothesis,
       feedback,
+      deadlineAtMs: evaluationDeadlineAtMs,
     },
     {
       reconstructContext,
@@ -201,18 +294,44 @@ export async function evaluateInputCatalogAction(input: Readonly<{
           request,
           requestId,
           safetyIdentifier: `platform_admin_${gate.actorUserId.replaceAll("-", "")}`,
+        }, {
+          timeoutMs: request.timeoutMs,
         });
       },
     },
   );
 
   if (!result.ok) {
+    if (Date.now() >= evaluationDeadlineAtMs) {
+      return { ok: false, code: result.error.code, message: result.error.message };
+    }
+    const inconclusiveEvent = await appendAdminTaxonFactualEvaluationEvent({
+      review: factualReview.review,
+      operationId: randomUUID(),
+      actorUserId: gate.actorUserId,
+      eventKind: "evaluation_inconclusive",
+      sourceStrategy: requestedContext.value.identity.sourceStrategy,
+      contentFingerprint: null,
+      evaluationContextFingerprint: requestedEvaluationContextFingerprint,
+      deadlineAtMs: evaluationDeadlineAtMs,
+      payload: {
+        requestedEventId: requestedEvent.eventId,
+        inputCatalogVersion: input.inputCatalogVersion,
+        mode: input.mode,
+        sourceState: requestedContext.value.identity.sourceState,
+        errorCode: result.error.code,
+      },
+    });
+    if (!inconclusiveEvent.ok) {
+      return { ok: false, code: "FACTUAL_EVENT_WRITE_FAILED", message: inconclusiveEvent.message };
+    }
     return { ok: false, code: result.error.code, message: result.error.message };
   }
-  const contextFingerprint = fingerprintInputCatalogEvaluationContextIdentity(
-    result.value.contextIdentity,
-  );
+  const contextFingerprint = result.value.evaluationContextFingerprint;
   const outputFingerprint = fingerprintInputCatalogEvaluationOutput(result.value.output);
+  if (Date.now() >= evaluationDeadlineAtMs) {
+    return { ok: false, code: "PROVIDER_FAILURE", message: "O prazo total da avaliação expirou." };
+  }
   const decisionToken = createInputCatalogEvaluationDecisionToken(
     {
       taxonId: result.value.contextIdentity.taxonId,
@@ -223,18 +342,43 @@ export async function evaluateInputCatalogAction(input: Readonly<{
     },
     process.env.OPENAI_API_KEY,
   );
-  if (!decisionToken) {
-    return {
-      ok: false,
-      code: "DECISION_EVIDENCE_UNAVAILABLE",
-      message: "A avaliação foi descartada porque sua evidência administrativa não pôde ser autenticada.",
-    };
+  const completedEvent = await appendAdminTaxonFactualEvaluationEvent({
+    review: factualReview.review,
+    operationId: randomUUID(),
+    actorUserId: gate.actorUserId,
+    eventKind: "evaluation_completed",
+    sourceStrategy: result.value.contextIdentity.sourceStrategy,
+    contentFingerprint: outputFingerprint,
+    evaluationContextFingerprint: contextFingerprint,
+    deadlineAtMs: evaluationDeadlineAtMs,
+    payload: {
+      requestedEventId: requestedEvent.eventId,
+      inputCatalogVersion: input.inputCatalogVersion,
+      mode: input.mode,
+      sourceState: result.value.contextIdentity.sourceState,
+      outputFingerprint,
+      candidateCount: result.value.output.candidates.length,
+      output: result.value.output,
+      webSearchCallCount: result.value.sourceEvidence.webSearchCallCount,
+      webSearchSources: result.value.sourceEvidence.webSearchSources,
+      materialTextUrlProjection: result.value.sourceEvidence.materialTextUrlProjection,
+    },
+  });
+  if (!completedEvent.ok) {
+    return { ok: false, code: "FACTUAL_EVENT_WRITE_FAILED", message: completedEvent.message };
   }
   return {
     ok: true,
     output: result.value.output,
     reference: {
-      decisionToken,
+      decisionToken: decisionToken ?? "",
+      taxonId: result.value.contextIdentity.taxonId,
+      reviewId: factualReview.review.id,
+      reviewRevision: factualReview.review.revision,
+      reviewContextFingerprint: factualReview.review.contextFingerprint,
+      evaluationContextFingerprint: contextFingerprint,
+      recommendationEventId: completedEvent.eventId,
+      outputFingerprint,
       source,
       ...(source === "draft"
         ? {
@@ -259,13 +403,8 @@ export async function confirmInputCatalogEvaluationAction(input: Readonly<{
   if (result.kind !== "sufficiency_confirmed") {
     return { ok: false, stale: false, message: "A confirmação não produziu a decisão esperada." };
   }
-  const evidence = readInputCatalogEvaluationDecisionToken(
-    input.reference.decisionToken,
-    process.env.OPENAI_API_KEY,
-  );
-  if (!evidence) return { ok: false, stale: false, message: "A evidência da avaliação é inválida." };
   revalidatePath("/admin/taxonomia");
-  revalidatePath(`/admin/taxonomia/${evidence.taxonId}`);
+  if (input.reference.taxonId) revalidatePath(`/admin/taxonomia/${input.reference.taxonId}`);
   return { ok: true, kind: result.kind, reviewedVersion: result.reviewedVersion };
 }
 
@@ -284,13 +423,8 @@ export async function rejectInputCatalogCandidatesAndConfirmSufficientAction(inp
   if (result.kind !== "candidates_rejected_and_sufficiency_confirmed") {
     return { ok: false, stale: false, message: "A rejeição dos candidatos não produziu a decisão esperada." };
   }
-  const evidence = readInputCatalogEvaluationDecisionToken(
-    input.reference.decisionToken,
-    process.env.OPENAI_API_KEY,
-  );
-  if (!evidence) return { ok: false, stale: false, message: "A evidência da avaliação é inválida." };
   revalidatePath("/admin/taxonomia");
-  revalidatePath(`/admin/taxonomia/${evidence.taxonId}`);
+  if (input.reference.taxonId) revalidatePath(`/admin/taxonomia/${input.reference.taxonId}`);
   return { ok: true, kind: result.kind, reviewedVersion: result.reviewedVersion };
 }
 
@@ -328,6 +462,23 @@ async function executeAdministrativeEvaluationDecision(input: Readonly<{
   if (!gate.allowed) {
     return { ok: false as const, stale: false, message: "Acesso administrativo não autorizado." };
   }
+  const loadPersistedEvidence = async () => {
+    if (
+      !input.reference.reviewId ||
+      !input.reference.recommendationEventId ||
+      !input.reference.outputFingerprint ||
+      !input.reference.evaluationContextFingerprint
+    ) {
+      return { ok: false as const, message: "A referência factual persistida está incompleta." };
+    }
+    return loadAdminTaxonFactualEvaluationEvidence({
+      reviewId: input.reference.reviewId,
+      eventId: input.reference.recommendationEventId,
+      outputFingerprint: input.reference.outputFingerprint,
+      evaluationContextFingerprint: input.reference.evaluationContextFingerprint,
+      output: input.output,
+    });
+  };
   if ((input.reference.source ?? "published") === "draft") {
     const expectedRevision = input.reference.draftRevision;
     const expectedContentFingerprint = input.reference.draftContentFingerprint;
@@ -353,17 +504,19 @@ async function executeAdministrativeEvaluationDecision(input: Readonly<{
             ? { ok: true as const }
             : { ok: false as const, message: runtime.message };
         },
+        loadPersistedEvidence,
         revalidate: async (evidence) => {
           const draft = await loadAdminInputCatalogDraftEvaluationContext({
             expectedRevision: Number(expectedRevision),
             taxonId: evidence.taxonId,
+            mode: input.output.mode,
           });
           if (
             !draft.ok ||
             draft.value.targetVersion !== evidence.inputCatalogVersion ||
             draft.value.contentFingerprint !== expectedContentFingerprint ||
             fingerprintInputCatalogEvaluationContextIdentity(draft.value.context.identity) !==
-              evidence.contextFingerprint
+              evidence.evaluationContextFingerprint
           ) {
             return {
               ok: false as const,
@@ -383,9 +536,18 @@ async function executeAdministrativeEvaluationDecision(input: Readonly<{
             expectedRevision: Number(expectedRevision),
             taxonId: evidence.taxonId,
             expectedContentFingerprint,
-            expectedContextFingerprint: evidence.contextFingerprint,
+            expectedEvaluationContextFingerprint: evidence.evaluationContextFingerprint,
             decision: input.decision,
             recommendationCandidateCount: input.output.candidates.length,
+            ...(input.decision !== "confirm_sufficient" && input.output.candidates.length > 0
+              ? {
+                  recommendationEventId: input.reference.recommendationEventId,
+                  recommendationOutputFingerprint: input.reference.outputFingerprint,
+                  recommendationEvaluationContextFingerprint:
+                    input.reference.evaluationContextFingerprint,
+                }
+              : {}),
+            mode: input.output.mode,
           });
           if (!recorded.ok) return recorded;
           return { ok: true as const, reviewedVersion: recorded.reviewedVersion };
@@ -412,10 +574,12 @@ async function executeAdministrativeEvaluationDecision(input: Readonly<{
           ? { ok: true as const }
           : { ok: false as const, message: runtime.message };
       },
+      loadPersistedEvidence,
       revalidate: async (evidence) => {
         const current = await reconstructCanonicalInputCatalogEvaluationContext({
           taxonId: evidence.taxonId,
           inputCatalogVersion: evidence.inputCatalogVersion,
+          mode: input.output.mode,
         });
         if (!current.ok) return { ok: false as const, message: current.error.message };
         const revalidated = await revalidateInputCatalogEvaluationContext(
@@ -423,13 +587,14 @@ async function executeAdministrativeEvaluationDecision(input: Readonly<{
           {
             taxonId: evidence.taxonId,
             inputCatalogVersion: evidence.inputCatalogVersion,
+            mode: input.output.mode,
           },
           reconstructCanonicalInputCatalogEvaluationContext,
         );
         if (
           !revalidated.ok ||
           fingerprintInputCatalogEvaluationContextIdentity(revalidated.value.contextIdentity) !==
-            evidence.contextFingerprint
+            evidence.evaluationContextFingerprint
         ) {
           return {
             ok: false as const,
@@ -441,15 +606,47 @@ async function executeAdministrativeEvaluationDecision(input: Readonly<{
         return { ok: true as const };
       },
       recordReviewedVersion: async (evidence) => {
-        const recorded = await recordAdminInputCatalogReview({
-          taxonId: evidence.taxonId,
-          inputCatalogVersion: evidence.inputCatalogVersion,
-        });
-        if (!recorded.ok) return { ok: false as const, message: recorded.error };
-        if (recorded.reviewedVersion === null) {
-          return { ok: false as const, message: "A versão E20.2 não foi preservada pela confirmação." };
+        if (
+          !input.reference.reviewId ||
+          !Number.isSafeInteger(input.reference.reviewRevision) ||
+          !input.reference.reviewContextFingerprint
+        ) {
+          return { ok: false as const, message: "A referência da sessão factual é inválida." };
         }
-        return { ok: true as const, reviewedVersion: recorded.reviewedVersion };
+        const recommendationCandidateCount = input.decision === "confirm_sufficient"
+          ? 0
+          : input.output.candidates.length;
+        const recorded = await closeAdminTaxonFactualReviewWithoutChangeForCurrentCoverage({
+          reviewId: input.reference.reviewId,
+          operationId: randomUUID(),
+          actorUserId: gate.actorUserId,
+          taxonId: evidence.taxonId,
+          expectedRevision: Number(input.reference.reviewRevision),
+          expectedContextFingerprint: input.reference.reviewContextFingerprint,
+          ...(recommendationCandidateCount > 0
+            ? {
+                recommendationEventId: input.reference.recommendationEventId,
+                recommendationOutputFingerprint: input.reference.outputFingerprint,
+                recommendationEvaluationContextFingerprint:
+                  input.reference.evaluationContextFingerprint,
+              }
+            : {}),
+          humanDecision: {
+            recommendationCandidateCount,
+            recommendationSelection: "zero",
+            acceptedCandidates: [],
+            rejectedCandidateIndexes: Array.from(
+              { length: recommendationCandidateCount },
+              (_, index) => index,
+            ),
+            ownCandidate: null,
+          },
+        });
+        if (!recorded.ok) return recorded;
+        return {
+          ok: true as const,
+          reviewedVersion: recorded.value.coverage.inputCatalogVersion,
+        };
       },
     },
   );

@@ -75,6 +75,8 @@ export function validatePublishedInputCatalogReviewEvidenceContext(input: Readon
   if (
     input.preservedDraftIdentity.taxonId !== input.expectedTaxonId ||
     input.deployedIdentity.taxonId !== input.expectedTaxonId ||
+    input.preservedDraftIdentity.research === null ||
+    input.deployedIdentity.research === null ||
     input.preservedDraftIdentity.research.researchVersion !==
       input.expectedResearchVersion ||
     input.deployedIdentity.research.researchVersion !==

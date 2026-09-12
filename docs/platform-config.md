@@ -2,8 +2,8 @@
 
 0.1 Cabeçalho
 • Documento: LP Factory 10 — Platform Config
-• Versão: v0.1.44
-• Data: 07/09/2026
+• Versão: v0.1.45
+• Data: 12/09/2026
 
 0.2 Contrato do documento
 • O QUE É: snapshot operacional e fonte única das configurações de plataformas externas do LP Factory 10, refletindo o estado conhecido/cadastrado nas plataformas conforme indicado.
@@ -248,7 +248,7 @@
 • Estado inicial: desabilitado durante o PR #795, o merge humano, o apply e as provas operacionais do novo workload.
 • Pré-condição operacional: `OPENAI_OPERATIONAL_CONFIG_ENABLED=true` já está ativo em Preview e Production e deve permanecer ativo durante todo o rollout da E20.6.5; este recorte apenas verifica essa condição e não volta a habilitar o gate da E21.2.
 • Progressão operacional: a revisão operacional `2` de `taxon_input_catalog_sufficiency_evaluation` já está ativa em Preview e Production. O estado atual de `E20_6_5_INPUT_CATALOG_EVALUATION_PROVIDER_ENABLED`, o redeploy, o QA hospedado e a conclusão do rollout permanecem não comprovados neste confronto; nenhum desses estados pode ser inferido da revisão ativa.
-• Regra de credencial: reutilizar a `OPENAI_API_KEY` compartilhada já autorizada para o provider e para autenticar, com domínio criptográfico próprio, a evidência transitória de decisão emitida pelo servidor; não criar chave específica da E20.6.5.
+• Regra de credencial: reutilizar a `OPENAI_API_KEY` compartilhada já autorizada para o provider; não criar chave específica da E20.6.5. O evento factual persistido é a autoridade da recomendação; eventual evidência HMAC transitória permanece apenas compatibilidade e não autoriza decisão.
 
 • Configuração efetiva dos workloads OpenAI de produto
 • Fonte canônica: `lib/openai-workloads/registry.ts` mantém identidade, baseline local e allowlist; Development usa `repo_catalog` revisão `v2`, e Preview/Production usam exclusivamente `supabase_operational` com revisão decimal ativa.
@@ -545,6 +545,7 @@ Regra:
 • Configurações de plataformas, secrets por nome, workflows, ambientes e endpoints usados por automações devem ser registrados neste documento.
 
 99. Changelog
+v0.1.45 — 12/09/2026 — E20.6.5 preservou o reuso da `OPENAI_API_KEY` compartilhada e retirou do token HMAC transitório qualquer autoridade sobre decisões; gate, apply, redeploy e QA hospedados permanecem não comprovados.
 v0.1.44 — 07/09/2026 — Consolidado o fechamento da E23.2: seis ocorrências sem consumidor removidas da Vercel Core; 22 sobreclassificações como Secret e quatro branch scopes legados preservados por decisão funcional conservadora; Preview aprovado sem exposição ou substituição de valores.
 
 v0.1.40 — 02/09/2026 — Marcados `E19_5_WORKSPACE_ENABLED` e `landing-page-revision-assets` como recursos sem consumidor runtime após o SV-PR03; nenhuma variável, secret, bucket ou infraestrutura externa foi alterada.

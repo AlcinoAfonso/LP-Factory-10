@@ -151,7 +151,6 @@ create table public.business_taxon_factual_review_events (
       (
         event_kind in (
           'evaluation_completed',
-          'evaluation_inconclusive',
           'decision_recorded',
           'draft_linked',
           'publication_authorized',
@@ -160,6 +159,10 @@ create table public.business_taxon_factual_review_events (
         )
         and content_fingerprint is not null
         and content_fingerprint ~ '^[0-9a-f]{64}$'
+      )
+      or (
+        event_kind = 'evaluation_inconclusive'
+        and (content_fingerprint is null or content_fingerprint ~ '^[0-9a-f]{64}$')
       )
       or (
         event_kind not in (
@@ -497,6 +500,7 @@ declare
   v_human_candidate jsonb;
   v_human_index integer;
   v_human_seen integer[] := '{}'::integer[];
+  v_recommendation public.business_taxon_factual_review_events%rowtype;
   v_is_idempotent_replay boolean := false;
 begin
   if p_review_id is null
@@ -533,7 +537,7 @@ begin
          'recommendationCandidateCount', 'recommendationSelection',
          'acceptedCandidates', 'rejectedCandidateIndexes', 'ownCandidate'
        ]
-       or (select count(*) from jsonb_object_keys(p_human_decision)) <> 5
+       or (select count(*) from jsonb_object_keys(p_human_decision)) not in (5, 8)
        or jsonb_typeof(p_human_decision -> 'recommendationCandidateCount') <> 'number'
        or (p_human_decision ->> 'recommendationCandidateCount') !~ '^[0-9]+$'
        or p_human_decision ->> 'recommendationSelection' <> 'zero'
@@ -546,6 +550,18 @@ begin
       (p_human_decision ->> 'recommendationCandidateCount')::integer;
     if v_human_candidate_count > 100 then
       raise exception using errcode = '22023', message = 'factual_review_no_change_decision_invalid';
+    end if;
+    if (v_human_candidate_count > 0 and (
+         p_human_decision ->> 'recommendationEventId' is null
+         or p_human_decision ->> 'recommendationOutputFingerprint' !~ '^[0-9a-f]{64}$'
+         or p_human_decision ->> 'recommendationEvaluationContextFingerprint' !~ '^[0-9a-f]{64}$'
+       ))
+       or (v_human_candidate_count = 0 and (
+         p_human_decision ? 'recommendationEventId'
+         or p_human_decision ? 'recommendationOutputFingerprint'
+         or p_human_decision ? 'recommendationEvaluationContextFingerprint'
+       )) then
+      raise exception using errcode = '22023', message = 'factual_review_recommendation_invalid';
     end if;
     for v_human_candidate in
       select value
@@ -641,6 +657,35 @@ begin
      or v_review.chain_snapshot is distinct from p_chain_snapshot
      or (p_chain_snapshot -> (v_chain_size - 1) ->> 'id') is distinct from v_review.taxon_id::text then
     raise exception using errcode = '40001', message = 'factual_review_context_conflict';
+  end if;
+
+  if p_human_decision is not null and v_human_candidate_count > 0 then
+    begin
+      select events.* into v_recommendation
+      from public.business_taxon_factual_review_events events
+      where events.id = (p_human_decision ->> 'recommendationEventId')::uuid
+        and events.review_id = v_review.id;
+    exception when invalid_text_representation then
+      raise exception using errcode = '22023', message = 'factual_review_recommendation_invalid';
+    end;
+    if not found
+       or v_recommendation.event_kind <> 'evaluation_completed'
+       or v_recommendation.context_fingerprint <> v_review.context_fingerprint
+       or v_recommendation.content_fingerprint
+         <> p_human_decision ->> 'recommendationOutputFingerprint'
+       or v_recommendation.payload_json ->> 'outputFingerprint'
+         <> p_human_decision ->> 'recommendationOutputFingerprint'
+       or v_recommendation.payload_json ->> 'evaluationContextFingerprint'
+         <> p_human_decision ->> 'recommendationEvaluationContextFingerprint'
+       or v_recommendation.payload_json ->> 'reviewContextFingerprint'
+         <> p_context_fingerprint
+       or v_recommendation.payload_json ->> 'candidateCount'
+         <> v_human_candidate_count::text
+       or jsonb_typeof(v_recommendation.payload_json -> 'output' -> 'candidates') <> 'array'
+       or jsonb_array_length(v_recommendation.payload_json -> 'output' -> 'candidates')
+         <> v_human_candidate_count then
+      raise exception using errcode = '22023', message = 'factual_review_recommendation_invalid';
+    end if;
   end if;
 
   if (
@@ -836,6 +881,268 @@ before insert or update
 on public.landing_page_input_catalog_drafts
 for each row execute function public.guard_landing_page_input_catalog_draft_factual_projection_v1();
 
+create or replace function public.append_business_taxon_factual_review_evaluation_event_v1(
+  p_review_id uuid,
+  p_operation_id uuid,
+  p_actor_user_id uuid,
+  p_expected_review_revision bigint,
+  p_review_context_fingerprint text,
+  p_event_kind text,
+  p_source_strategy text,
+  p_content_fingerprint text,
+  p_payload_json jsonb
+)
+returns table(event_id uuid, review_revision bigint)
+language plpgsql
+security invoker
+set search_path = public, pg_catalog
+as $$
+declare
+  v_review public.business_taxon_factual_reviews%rowtype;
+  v_existing public.business_taxon_factual_review_events%rowtype;
+  v_next_sequence bigint;
+  v_candidate jsonb;
+  v_material_text text;
+  v_material_texts text[] := array[]::text[];
+  v_url_match text[];
+  v_url_parts text[];
+  v_raw_url text;
+  v_canonical_url text;
+  v_material_text_url_projection jsonb := '[]'::jsonb;
+begin
+  if p_review_id is null or p_operation_id is null or p_actor_user_id is null
+     or p_expected_review_revision is null or p_expected_review_revision <= 0
+     or p_review_context_fingerprint !~ '^[0-9a-f]{64}$'
+     or p_event_kind not in ('evaluation_requested', 'evaluation_completed', 'evaluation_inconclusive')
+     or p_source_strategy not in ('e20_5', 'web_search_fallback', 'web_search_focal')
+     or jsonb_typeof(p_payload_json) is distinct from 'object'
+     or p_payload_json ->> 'reviewContextFingerprint' is distinct from p_review_context_fingerprint
+     or coalesce(p_payload_json ->> 'evaluationContextFingerprint', '') !~ '^[0-9a-f]{64}$'
+     or jsonb_typeof(p_payload_json -> 'deadlineAtMs') is distinct from 'number'
+     or coalesce(p_payload_json ->> 'deadlineAtMs', '') !~ '^[1-9][0-9]{11,15}$'
+     or (p_event_kind = 'evaluation_requested' and p_content_fingerprint is not null)
+     or (p_event_kind = 'evaluation_completed' and p_content_fingerprint !~ '^[0-9a-f]{64}$')
+     or (p_event_kind = 'evaluation_inconclusive'
+       and p_content_fingerprint is not null
+       and p_content_fingerprint !~ '^[0-9a-f]{64}$')
+     or (p_event_kind = 'evaluation_completed' and (
+       p_payload_json ->> 'outputFingerprint' is distinct from p_content_fingerprint
+       or jsonb_typeof(p_payload_json -> 'output') is distinct from 'object'
+       or p_payload_json -> 'output' ->> 'schemaVersion' is distinct from '2'
+       or jsonb_typeof(p_payload_json -> 'output' -> 'candidates') is distinct from 'array'
+       or coalesce(p_payload_json ->> 'inputCatalogVersion', '') !~ '^[1-9][0-9]*$'
+       or coalesce(p_payload_json ->> 'candidateCount', '') !~ '^[0-9]+$'
+       or jsonb_array_length(p_payload_json -> 'output' -> 'candidates')
+         <> (p_payload_json ->> 'candidateCount')::integer
+       or coalesce(p_payload_json ->> 'webSearchCallCount', '') !~ '^[0-9]+$'
+       or jsonb_typeof(p_payload_json -> 'webSearchSources') is distinct from 'array'
+       or jsonb_typeof(p_payload_json -> 'materialTextUrlProjection') is distinct from 'array'
+     ))
+     or (p_event_kind = 'evaluation_inconclusive' and (
+       (p_content_fingerprint is null and p_payload_json ? 'output')
+       or (p_content_fingerprint is not null and (
+         p_payload_json ->> 'outputFingerprint' is distinct from p_content_fingerprint
+         or jsonb_typeof(p_payload_json -> 'output') is distinct from 'object'
+       ))
+     )) then
+    raise exception using errcode = '22023', message = 'factual_review_evaluation_event_input_invalid';
+  end if;
+
+  if p_event_kind = 'evaluation_completed' then
+    v_material_texts := array_append(v_material_texts, p_payload_json -> 'output' ->> 'summary');
+    v_material_texts := array_append(v_material_texts, p_payload_json -> 'output' ->> 'followUpQuestion');
+    for v_candidate in
+      select value from jsonb_array_elements(p_payload_json -> 'output' -> 'candidates')
+    loop
+      v_material_texts := array_append(v_material_texts, v_candidate ->> 'factualNeed');
+      if jsonb_typeof(v_candidate -> 'relatedFields') = 'array' then
+        select v_material_texts || coalesce(array_agg(value order by ordinal), array[]::text[])
+          into v_material_texts
+        from jsonb_array_elements_text(v_candidate -> 'relatedFields') with ordinality fields(value, ordinal);
+      end if;
+      v_material_texts := array_append(v_material_texts, v_candidate ->> 'currentCoverage');
+      v_material_texts := array_append(v_material_texts, v_candidate ->> 'allegedInsufficiency');
+      v_material_texts := array_append(v_material_texts, v_candidate ->> 'evidence');
+      v_material_texts := array_append(v_material_texts, v_candidate ->> 'expectedOperationalSource');
+      v_material_texts := array_append(v_material_texts, v_candidate ->> 'realConsumer');
+      v_material_texts := array_append(v_material_texts, v_candidate ->> 'concreteHarm');
+      if jsonb_typeof(v_candidate -> 'uncertainties') = 'array' then
+        select v_material_texts || coalesce(array_agg(value order by ordinal), array[]::text[])
+          into v_material_texts
+        from jsonb_array_elements_text(v_candidate -> 'uncertainties') with ordinality uncertainties(value, ordinal);
+      end if;
+    end loop;
+
+    foreach v_material_text in array v_material_texts
+    loop
+      if v_material_text is null then continue; end if;
+      for v_url_match in
+        select regexp_matches(
+          v_material_text,
+          '(([a-z][a-z0-9+.-]*://|www\.)[^[:space:]<>"''`)\]}]+)',
+          'gi'
+        )
+      loop
+        v_raw_url := regexp_replace(v_url_match[1], '[.,;:!?]+$', '');
+        v_canonical_url := null;
+        if v_raw_url ~* '^https://' then
+          v_url_parts := regexp_match(
+            v_raw_url,
+            '^https://([^/?#:@]+)(:([0-9]+))?([^#]*)?(#.*)?$',
+            'i'
+          );
+          if v_url_parts is not null then
+            v_canonical_url := 'https://' || lower(v_url_parts[1]) ||
+              case when v_url_parts[3] is null or v_url_parts[3] = '443'
+                then '' else ':' || v_url_parts[3] end ||
+              case
+                when coalesce(v_url_parts[4], '') = '' then '/'
+                when left(v_url_parts[4], 1) = '?' then '/' || v_url_parts[4]
+                else v_url_parts[4]
+              end;
+          end if;
+        end if;
+        if not exists (
+          select 1
+          from jsonb_array_elements(v_material_text_url_projection) projected(value)
+          where projected.value ->> 'raw' = v_raw_url
+        ) then
+          v_material_text_url_projection := v_material_text_url_projection || jsonb_build_array(
+            jsonb_build_object('raw', v_raw_url, 'canonical', v_canonical_url)
+          );
+        end if;
+      end loop;
+    end loop;
+
+    if p_payload_json -> 'materialTextUrlProjection'
+         is distinct from v_material_text_url_projection
+       or exists (
+         select 1
+         from jsonb_array_elements(v_material_text_url_projection) projected(value)
+         where jsonb_typeof(projected.value) is distinct from 'object'
+            or (select count(*) from jsonb_object_keys(projected.value)) <> 2
+            or jsonb_typeof(projected.value -> 'raw') is distinct from 'string'
+            or jsonb_typeof(projected.value -> 'canonical') is distinct from 'string'
+            or projected.value ->> 'canonical' !~ '^https://[^[:space:]]+$'
+            or projected.value ->> 'canonical' not in (
+              select value from jsonb_array_elements_text(p_payload_json -> 'webSearchSources')
+            )
+       ) then
+      raise exception using errcode = '22023', message = 'factual_review_evaluation_text_sources_invalid';
+    end if;
+  end if;
+
+  if p_event_kind = 'evaluation_completed' and (
+       p_payload_json -> 'output' ->> 'sourceStrategy' is distinct from p_source_strategy
+       or (p_source_strategy = 'e20_5' and (
+         (p_payload_json ->> 'webSearchCallCount')::integer <> 0
+         or p_payload_json -> 'webSearchSources' is distinct from '[]'::jsonb
+         or p_payload_json -> 'output' -> 'summarySourceUrls' is distinct from '[]'::jsonb
+       ))
+       or (p_source_strategy <> 'e20_5' and (
+         (p_payload_json ->> 'webSearchCallCount')::integer < 1
+         or (p_source_strategy = 'web_search_focal'
+           and (p_payload_json ->> 'webSearchCallCount')::integer > 1)
+         or (p_source_strategy = 'web_search_fallback'
+           and (p_payload_json ->> 'webSearchCallCount')::integer > 2)
+         or jsonb_array_length(p_payload_json -> 'webSearchSources') = 0
+         or exists (
+           select 1
+           from jsonb_array_elements(p_payload_json -> 'webSearchSources') source(value)
+           where jsonb_typeof(source.value) is distinct from 'string'
+              or length(source.value #>> '{}') > 2048
+              or source.value #>> '{}' !~ '^https://[^[:space:]]+$'
+         )
+         or jsonb_array_length(p_payload_json -> 'webSearchSources') <> (
+           select count(distinct source.value #>> '{}')
+           from jsonb_array_elements(p_payload_json -> 'webSearchSources') source(value)
+         )
+         or jsonb_typeof(p_payload_json -> 'output' -> 'summarySourceUrls') is distinct from 'array'
+         or jsonb_array_length(p_payload_json -> 'output' -> 'summarySourceUrls') = 0
+         or exists (
+           select 1
+           from jsonb_array_elements(p_payload_json -> 'output' -> 'candidates') candidate(value)
+           where (
+               jsonb_typeof(candidate.value -> 'sourceUrls') is distinct from 'array'
+               or jsonb_array_length(candidate.value -> 'sourceUrls') = 0
+             )
+         )
+       ))
+       or exists (
+         select 1
+         from jsonb_array_elements_text(
+           coalesce(p_payload_json -> 'output' -> 'summarySourceUrls', '[]'::jsonb)
+         ) cited(url)
+         where cited.url not in (
+           select value from jsonb_array_elements_text(p_payload_json -> 'webSearchSources')
+         )
+       )
+       or exists (
+         select 1
+         from jsonb_array_elements(p_payload_json -> 'output' -> 'candidates') candidate(value),
+              jsonb_array_elements_text(coalesce(candidate.value -> 'sourceUrls', '[]'::jsonb)) cited(url)
+         where cited.url not in (
+           select value from jsonb_array_elements_text(p_payload_json -> 'webSearchSources')
+         )
+       )
+     ) then
+    raise exception using errcode = '22023', message = 'factual_review_evaluation_sources_invalid';
+  end if;
+
+  select reviews.* into v_review
+  from public.business_taxon_factual_reviews reviews
+  where reviews.id = p_review_id
+  for update;
+  if not found then
+    raise exception using errcode = 'P0001', message = 'factual_review_not_found';
+  end if;
+
+  select events.* into v_existing
+  from public.business_taxon_factual_review_events events
+  where events.review_id = p_review_id and events.operation_id = p_operation_id;
+  if found then
+    if v_existing.event_kind <> p_event_kind
+       or v_existing.source_strategy <> p_source_strategy
+       or v_existing.actor_user_id <> p_actor_user_id
+       or v_existing.context_fingerprint <> p_review_context_fingerprint
+       or v_existing.content_fingerprint is distinct from p_content_fingerprint
+       or v_existing.payload_json <> (
+         p_payload_json || jsonb_build_object('expectedReviewRevision', p_expected_review_revision)
+       )
+       or v_existing.payload_json ->> 'expectedReviewRevision' <> p_expected_review_revision::text then
+      raise exception using errcode = '22023', message = 'factual_review_operation_reused';
+    end if;
+    return query select v_existing.id, p_expected_review_revision;
+    return;
+  end if;
+
+  if floor(extract(epoch from clock_timestamp()) * 1000)
+       >= (p_payload_json ->> 'deadlineAtMs')::numeric then
+    raise exception using errcode = '57014', message = 'factual_review_evaluation_deadline_exceeded';
+  end if;
+
+  if v_review.status <> 'open'
+     or v_review.revision <> p_expected_review_revision
+     or v_review.context_fingerprint <> p_review_context_fingerprint then
+    raise exception using errcode = '40001', message = 'factual_review_state_conflict';
+  end if;
+
+  select coalesce(max(events.sequence_number), 0) + 1 into v_next_sequence
+  from public.business_taxon_factual_review_events events
+  where events.review_id = p_review_id;
+  insert into public.business_taxon_factual_review_events (
+    review_id, operation_id, sequence_number, event_kind, source_strategy,
+    payload_json, context_fingerprint, content_fingerprint, actor_user_id
+  ) values (
+    p_review_id, p_operation_id, v_next_sequence, p_event_kind, p_source_strategy,
+    p_payload_json || jsonb_build_object('expectedReviewRevision', p_expected_review_revision),
+    p_review_context_fingerprint, p_content_fingerprint, p_actor_user_id
+  ) returning id into event_id;
+  review_revision := v_review.revision;
+  return next;
+end;
+$$;
+
 create or replace function public.record_business_taxon_factual_catalog_change_decision_v1(
   p_review_id uuid,
   p_operation_id uuid,
@@ -874,6 +1181,7 @@ declare
   v_index integer;
   v_seen integer[] := '{}'::integer[];
   v_expected_selection text;
+  v_recommendation public.business_taxon_factual_review_events%rowtype;
 begin
   if p_review_id is null
      or p_operation_id is null
@@ -896,7 +1204,7 @@ begin
        'rejectedCandidateIndexes',
        'ownCandidate'
      ]
-     or (select count(*) from jsonb_object_keys(p_decision_payload)) <> 5
+     or (select count(*) from jsonb_object_keys(p_decision_payload)) not in (5, 8)
      or jsonb_typeof(p_decision_payload -> 'recommendationCandidateCount') <> 'number'
      or (p_decision_payload ->> 'recommendationCandidateCount') !~ '^[0-9]+$'
      or jsonb_typeof(p_decision_payload -> 'acceptedCandidates') <> 'array'
@@ -909,6 +1217,18 @@ begin
   v_candidate_count := (p_decision_payload ->> 'recommendationCandidateCount')::integer;
   if v_candidate_count > 100 then
     raise exception using errcode = '22023', message = 'factual_review_catalog_change_decision_invalid';
+  end if;
+  if (v_candidate_count > 0 and (
+       p_decision_payload ->> 'recommendationEventId' is null
+       or p_decision_payload ->> 'recommendationOutputFingerprint' !~ '^[0-9a-f]{64}$'
+       or p_decision_payload ->> 'recommendationEvaluationContextFingerprint' !~ '^[0-9a-f]{64}$'
+     ))
+     or (v_candidate_count = 0 and (
+       p_decision_payload ? 'recommendationEventId'
+       or p_decision_payload ? 'recommendationOutputFingerprint'
+       or p_decision_payload ? 'recommendationEvaluationContextFingerprint'
+     )) then
+    raise exception using errcode = '22023', message = 'factual_review_recommendation_invalid';
   end if;
 
   for v_candidate in
@@ -1037,6 +1357,34 @@ begin
      or v_review.context_fingerprint <> p_review_context_fingerprint
      or v_review.chain_snapshot <> p_chain_snapshot then
     raise exception using errcode = '40001', message = 'factual_review_state_conflict';
+  end if;
+
+  if v_candidate_count > 0 then
+    begin
+      select events.* into v_recommendation
+      from public.business_taxon_factual_review_events events
+      where events.id = (p_decision_payload ->> 'recommendationEventId')::uuid
+        and events.review_id = v_review.id;
+    exception when invalid_text_representation then
+      raise exception using errcode = '22023', message = 'factual_review_recommendation_invalid';
+    end;
+    if not found
+       or v_recommendation.event_kind <> 'evaluation_completed'
+       or v_recommendation.context_fingerprint <> v_review.context_fingerprint
+       or v_recommendation.content_fingerprint
+         <> p_decision_payload ->> 'recommendationOutputFingerprint'
+       or v_recommendation.payload_json ->> 'outputFingerprint'
+         <> p_decision_payload ->> 'recommendationOutputFingerprint'
+       or v_recommendation.payload_json ->> 'evaluationContextFingerprint'
+         <> p_decision_payload ->> 'recommendationEvaluationContextFingerprint'
+       or v_recommendation.payload_json ->> 'reviewContextFingerprint'
+         <> p_review_context_fingerprint
+       or v_recommendation.payload_json ->> 'candidateCount' <> v_candidate_count::text
+       or jsonb_typeof(v_recommendation.payload_json -> 'output' -> 'candidates') <> 'array'
+       or jsonb_array_length(v_recommendation.payload_json -> 'output' -> 'candidates')
+         <> v_candidate_count then
+      raise exception using errcode = '22023', message = 'factual_review_recommendation_invalid';
+    end if;
   end if;
 
   select taxons.*
@@ -1738,6 +2086,8 @@ revoke all on function public.close_business_taxon_factual_review_without_change
   from public, anon, authenticated;
 revoke all on function public.guard_landing_page_input_catalog_draft_factual_projection_v1()
   from public, anon, authenticated;
+revoke all on function public.append_business_taxon_factual_review_evaluation_event_v1(uuid, uuid, uuid, bigint, text, text, text, text, jsonb)
+  from public, anon, authenticated;
 revoke all on function public.record_business_taxon_factual_catalog_change_decision_v1(uuid, uuid, uuid, bigint, text, jsonb, bigint, integer, text, text, jsonb)
   from public, anon, authenticated;
 revoke all on function public.save_business_taxon_factual_review_draft_v1(uuid, uuid, bigint, jsonb, text)
@@ -1754,6 +2104,7 @@ begin
     execute 'revoke all on function public.open_business_taxon_factual_review_v1(uuid, text, jsonb, uuid, uuid, boolean, integer) from ai_readonly';
     execute 'revoke all on function public.close_business_taxon_factual_review_without_change_v1(uuid, uuid, uuid, bigint, integer, text, text, jsonb, jsonb) from ai_readonly';
     execute 'revoke all on function public.guard_landing_page_input_catalog_draft_factual_projection_v1() from ai_readonly';
+    execute 'revoke all on function public.append_business_taxon_factual_review_evaluation_event_v1(uuid, uuid, uuid, bigint, text, text, text, text, jsonb) from ai_readonly';
     execute 'revoke all on function public.record_business_taxon_factual_catalog_change_decision_v1(uuid, uuid, uuid, bigint, text, jsonb, bigint, integer, text, text, jsonb) from ai_readonly';
     execute 'revoke all on function public.save_business_taxon_factual_review_draft_v1(uuid, uuid, bigint, jsonb, text) from ai_readonly';
     execute 'revoke all on function public.authorize_business_taxon_factual_review_publication_v1(uuid, uuid, bigint, text, text, uuid[]) from ai_readonly';
@@ -1767,6 +2118,8 @@ grant execute on function public.reject_business_taxon_factual_review_event_muta
 grant execute on function public.open_business_taxon_factual_review_v1(uuid, text, jsonb, uuid, uuid, boolean, integer)
   to service_role;
 grant execute on function public.close_business_taxon_factual_review_without_change_v1(uuid, uuid, uuid, bigint, integer, text, text, jsonb, jsonb)
+  to service_role;
+grant execute on function public.append_business_taxon_factual_review_evaluation_event_v1(uuid, uuid, uuid, bigint, text, text, text, text, jsonb)
   to service_role;
 grant execute on function public.record_business_taxon_factual_catalog_change_decision_v1(uuid, uuid, uuid, bigint, text, jsonb, bigint, integer, text, text, jsonb)
   to service_role;
@@ -1785,6 +2138,8 @@ comment on function public.open_business_taxon_factual_review_v1(uuid, text, jso
   'E20.6.3: abre idempotentemente release ou revision sem alterar disponibilidade ou ultima versao valida.';
 comment on function public.close_business_taxon_factual_review_without_change_v1(uuid, uuid, uuid, bigint, integer, text, text, jsonb, jsonb) is
   'E20.6.3: confirma cobertura herdada e, atomicamente, ativa apenas uma release ou preserva uma revision ativa.';
+comment on function public.append_business_taxon_factual_review_evaluation_event_v1(uuid, uuid, uuid, bigint, text, text, text, text, jsonb) is
+  'E20.6.5: anexa evento idempotente de avaliacao a sessao aberta exata sem mutar sessao ou taxon.';
 comment on function public.record_business_taxon_factual_catalog_change_decision_v1(uuid, uuid, uuid, bigint, text, jsonb, bigint, integer, text, text, jsonb) is
   'E20.6.4: persiste decisao humana autoritativa e sua projecao para o draft exato, sem criar ou alterar fields.';
 comment on function public.save_business_taxon_factual_review_draft_v1(uuid, uuid, bigint, jsonb, text) is

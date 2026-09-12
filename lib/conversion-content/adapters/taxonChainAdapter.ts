@@ -2,6 +2,7 @@ import "server-only";
 
 import { createServiceClient } from "@/lib/supabase/service";
 import {
+  readCompleteTaxonChainForAdminEvaluationFromPages,
   readCompleteTaxonChainFromPages,
   type CompleteTaxonChainResult,
   type ReadTaxonChainPage,
@@ -11,7 +12,23 @@ export async function readCompleteTaxonChainForTaxon(
   taxonId: string,
 ): Promise<CompleteTaxonChainResult> {
   const supabase = createServiceClient();
-  const readPage: ReadTaxonChainPage = async (offset, limit) => {
+  return readCompleteTaxonChainFromPages(taxonId, createTaxonChainPageReader(supabase));
+}
+
+export async function readCompleteTaxonChainForAdminEvaluation(
+  taxonId: string,
+): Promise<CompleteTaxonChainResult> {
+  const supabase = createServiceClient();
+  return readCompleteTaxonChainForAdminEvaluationFromPages(
+    taxonId,
+    createTaxonChainPageReader(supabase),
+  );
+}
+
+function createTaxonChainPageReader(
+  supabase: ReturnType<typeof createServiceClient>,
+): ReadTaxonChainPage {
+  return async (offset, limit) => {
     const response = await supabase
       .from("business_taxons")
       .select("id,parent_id,level,name,slug,is_active")
@@ -24,5 +41,4 @@ export async function readCompleteTaxonChainForTaxon(
       status: response.status,
     };
   };
-  return readCompleteTaxonChainFromPages(taxonId, readPage);
 }

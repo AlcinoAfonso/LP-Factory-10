@@ -164,8 +164,9 @@ async function proveInputCatalogEvaluation(
     executionOrigin: "administrative_proof",
     request: {
       mode: "systematic",
+      sourceStrategy: "e20_5",
       prompt: {
-        version: "e20.6.5-input-catalog-evaluation-v1",
+        version: "e20.6.5-input-catalog-evaluation-v2",
         instructions: "Retorne somente o objeto JSON solicitado para a prova técnica segura.",
         input: "Confirme o contrato do transporte com o valor approved.",
       },

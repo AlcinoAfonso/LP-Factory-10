@@ -10,53 +10,47 @@ import {
   type BuildInputCatalogEvaluationContextResult,
   type InputCatalogEvaluationReconstructionInput,
 } from "../landing-page/taxon-preparation";
-import { loadSelectedEndCustomerResearchForTaxon } from "./selectedEndCustomerResearchAdapter";
-import { readCompleteTaxonChainForTaxon } from "./taxonChainAdapter";
+import { loadAdminInputCatalogEvaluationSources } from "@/lib/admin/adapters/adminInputCatalogEvaluationSourceAdapter";
 
 export async function reconstructCanonicalInputCatalogEvaluationContext(
   input: InputCatalogEvaluationReconstructionInput,
 ): Promise<BuildInputCatalogEvaluationContextResult> {
-  const selectedResearch = await loadSelectedEndCustomerResearchForTaxon({
-    taxonId: input.taxonId,
-  });
-  if (!selectedResearch.ok) {
-    return failure(
-      "AUTHORIZED_RESEARCH_INVALID",
-      selectedResearch.error.message,
-    );
-  }
-  const taxonChain = await readCompleteTaxonChainForTaxon(input.taxonId);
-  if (!taxonChain.ok) {
-    return failure("CONTEXT_IDENTITY_INVALID", taxonChain.error.message);
+  const sources = await loadAdminInputCatalogEvaluationSources(input.taxonId);
+  if (!sources.ok) return failure("CONTEXT_IDENTITY_INVALID", sources.message);
+  if (!sources.selectedResearch.ok && sources.selectedResearch.error.code !== "SELECTION_ABSENT") {
+    return failure("AUTHORIZED_RESEARCH_INVALID", sources.selectedResearch.error.message);
   }
 
-  return buildInputCatalogEvaluationContext({
-    selectedResearch,
-    taxonChain: taxonChain.value.chain,
-    inputCatalogVersion: input.inputCatalogVersion,
-  });
+  return buildInputCatalogEvaluationContext(
+    {
+      selectedResearch: sources.selectedResearch,
+      taxonChain: sources.taxonChain,
+      inputCatalogVersion: input.inputCatalogVersion,
+      mode: input.mode,
+    },
+    { allowInactiveServedTaxon: true },
+  );
 }
 
 export async function reconstructDraftInputCatalogEvaluationContext(
   input: InputCatalogEvaluationReconstructionInput,
   registry: LandingPageInputCatalogRegistry,
 ): Promise<BuildInputCatalogEvaluationContextResult> {
-  const selectedResearch = await loadSelectedEndCustomerResearchForTaxon({
-    taxonId: input.taxonId,
-  });
-  if (!selectedResearch.ok) {
-    return failure("AUTHORIZED_RESEARCH_INVALID", selectedResearch.error.message);
+  const sources = await loadAdminInputCatalogEvaluationSources(input.taxonId);
+  if (!sources.ok) return failure("CONTEXT_IDENTITY_INVALID", sources.message);
+  if (!sources.selectedResearch.ok && sources.selectedResearch.error.code !== "SELECTION_ABSENT") {
+    return failure("AUTHORIZED_RESEARCH_INVALID", sources.selectedResearch.error.message);
   }
-  const taxonChain = await readCompleteTaxonChainForTaxon(input.taxonId);
-  if (!taxonChain.ok) return failure("CONTEXT_IDENTITY_INVALID", taxonChain.error.message);
   return buildInputCatalogEvaluationContext(
     {
-      selectedResearch,
-      taxonChain: taxonChain.value.chain,
+      selectedResearch: sources.selectedResearch,
+      taxonChain: sources.taxonChain,
       inputCatalogVersion: input.inputCatalogVersion,
+      mode: input.mode,
     },
     {
       allowNonPublishedVersion: true,
+      allowInactiveServedTaxon: true,
       resolveReview: (reviewInput) => resolveInputCatalogReview(
         reviewInput,
         (catalogInput) => resolveLandingPageInputCatalogFromRegistry(catalogInput, registry),

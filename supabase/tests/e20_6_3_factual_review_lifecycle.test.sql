@@ -82,6 +82,21 @@ begin
        'service_role',
        'public.close_business_taxon_factual_review_without_change_v1(uuid,uuid,uuid,bigint,integer,text,text,jsonb,jsonb)',
        'EXECUTE'
+     )
+     or has_function_privilege(
+       'anon',
+       'public.append_business_taxon_factual_review_evaluation_event_v1(uuid,uuid,uuid,bigint,text,text,text,text,jsonb)',
+       'EXECUTE'
+     )
+     or has_function_privilege(
+       'authenticated',
+       'public.append_business_taxon_factual_review_evaluation_event_v1(uuid,uuid,uuid,bigint,text,text,text,text,jsonb)',
+       'EXECUTE'
+     )
+     or not has_function_privilege(
+       'service_role',
+       'public.append_business_taxon_factual_review_evaluation_event_v1(uuid,uuid,uuid,bigint,text,text,text,text,jsonb)',
+       'EXECUTE'
      ) then
     raise exception 'E20.6.3 RPC ACL drifted';
   end if;
@@ -295,10 +310,10 @@ begin
     'e2063000-0000-4000-8000-000000000001', 1, 6,
     repeat('c', 64), repeat('d', 64), v_revision_snapshot,
     jsonb_build_object(
-      'recommendationCandidateCount', 2,
+      'recommendationCandidateCount', 0,
       'recommendationSelection', 'zero',
       'acceptedCandidates', '[]'::jsonb,
-      'rejectedCandidateIndexes', '[0,1]'::jsonb,
+      'rejectedCandidateIndexes', '[]'::jsonb,
       'ownCandidate', null
     )
   );
@@ -319,10 +334,10 @@ begin
     'e2063000-0000-4000-8000-000000000001', 1, 6,
     repeat('c', 64), repeat('d', 64), v_revision_snapshot,
     jsonb_build_object(
-      'recommendationCandidateCount', 2,
+      'recommendationCandidateCount', 0,
       'recommendationSelection', 'zero',
       'acceptedCandidates', '[]'::jsonb,
-      'rejectedCandidateIndexes', '[0,1]'::jsonb,
+      'rejectedCandidateIndexes', '[]'::jsonb,
       'ownCandidate', null
     )
   );
@@ -338,11 +353,12 @@ begin
       'e2063000-0000-4000-8000-000000000001', 1, 6,
       repeat('c', 64), repeat('d', 64), v_revision_snapshot,
       jsonb_build_object(
-        'recommendationCandidateCount', 1,
+        'recommendationCandidateCount', 0,
         'recommendationSelection', 'zero',
         'acceptedCandidates', '[]'::jsonb,
-        'rejectedCandidateIndexes', '[0]'::jsonb,
-        'ownCandidate', null
+        'rejectedCandidateIndexes', '[]'::jsonb,
+        'ownCandidate', null,
+        'unexpected', true
       )
     );
     raise exception 'divergent human no-change replay unexpectedly accepted';
@@ -368,6 +384,8 @@ declare
   v_release_review record;
   v_revision_review record;
   v_uncovered_release_review record;
+  v_release_recommendation record;
+  v_revision_recommendation record;
   v_result record;
   v_release_snapshot jsonb;
   v_revision_snapshot jsonb;
@@ -376,6 +394,9 @@ declare
   v_partial_decision jsonb;
   v_total_decision jsonb;
   v_drift_taxon uuid;
+  v_evaluation_output jsonb;
+  v_release_event_metadata jsonb;
+  v_revision_event_metadata jsonb;
 begin
   insert into public.business_taxons (
     id, parent_id, level, name, slug, is_active, reviewed_input_catalog_version
@@ -416,6 +437,55 @@ begin
     v_revision_taxon, repeat('b', 64), v_revision_snapshot,
     'e2064000-0000-4000-8000-000000000202', v_actor, true, 6
   );
+  v_release_event_metadata := jsonb_build_object(
+    'reviewContextFingerprint', repeat('a', 64),
+    'evaluationContextFingerprint', repeat('3', 64),
+    'deadlineAtMs', floor(extract(epoch from clock_timestamp()) * 1000) + 60000
+  );
+  v_revision_event_metadata := jsonb_build_object(
+    'reviewContextFingerprint', repeat('b', 64),
+    'evaluationContextFingerprint', repeat('4', 64),
+    'deadlineAtMs', floor(extract(epoch from clock_timestamp()) * 1000) + 60000
+  );
+
+  v_evaluation_output := jsonb_build_object(
+    'schemaVersion', 2,
+    'sourceStrategy', 'e20_5',
+    'sourceState', 'e20_5_available',
+    'summarySourceUrls', '[]'::jsonb,
+    'candidates', jsonb_build_array(
+      jsonb_build_object('conclusion', 'possible_new_field', 'sourceUrls', '[]'::jsonb),
+      jsonb_build_object('conclusion', 'refine_existing_field', 'sourceUrls', '[]'::jsonb)
+    )
+  );
+  select * into v_release_recommendation
+  from public.append_business_taxon_factual_review_evaluation_event_v1(
+    v_release_review.review_id, 'e2064000-0000-4000-8000-000000000203', v_actor,
+    1, repeat('a', 64), 'evaluation_completed', 'e20_5', repeat('1', 64),
+    jsonb_build_object(
+      'inputCatalogVersion', 6,
+      'outputFingerprint', repeat('1', 64),
+      'candidateCount', 2,
+      'output', v_evaluation_output,
+      'webSearchCallCount', 0,
+      'webSearchSources', '[]'::jsonb,
+      'materialTextUrlProjection', '[]'::jsonb
+    ) || v_release_event_metadata
+  );
+  select * into v_revision_recommendation
+  from public.append_business_taxon_factual_review_evaluation_event_v1(
+    v_revision_review.review_id, 'e2064000-0000-4000-8000-000000000204', v_actor,
+    1, repeat('b', 64), 'evaluation_completed', 'e20_5', repeat('2', 64),
+    jsonb_build_object(
+      'inputCatalogVersion', 6,
+      'outputFingerprint', repeat('2', 64),
+      'candidateCount', 2,
+      'output', v_evaluation_output,
+      'webSearchCallCount', 0,
+      'webSearchSources', '[]'::jsonb,
+      'materialTextUrlProjection', '[]'::jsonb
+    ) || v_revision_event_metadata
+  );
 
   insert into public.landing_page_input_catalog_drafts (
     base_version, target_version, catalog_json, content_fingerprint,
@@ -430,7 +500,10 @@ begin
     'ownCandidate', jsonb_build_object(
       'factualNeed', 'Necessidade própria sem criar field',
       'layer', 'segment'
-    )
+    ),
+    'recommendationEventId', v_release_recommendation.event_id,
+    'recommendationOutputFingerprint', repeat('1', 64),
+    'recommendationEvaluationContextFingerprint', repeat('3', 64)
   );
   v_partial_decision := jsonb_build_object(
     'recommendationCandidateCount', 2,
@@ -440,7 +513,10 @@ begin
       'layer', 'universal'
     )),
     'rejectedCandidateIndexes', '[1]'::jsonb,
-    'ownCandidate', null
+    'ownCandidate', null,
+    'recommendationEventId', v_revision_recommendation.event_id,
+    'recommendationOutputFingerprint', repeat('2', 64),
+    'recommendationEvaluationContextFingerprint', repeat('4', 64)
   );
   v_total_decision := jsonb_build_object(
     'recommendationCandidateCount', 2,
@@ -450,7 +526,10 @@ begin
       jsonb_build_object('index', 1, 'layer', 'niche')
     ),
     'rejectedCandidateIndexes', '[]'::jsonb,
-    'ownCandidate', null
+    'ownCandidate', null,
+    'recommendationEventId', v_release_recommendation.event_id,
+    'recommendationOutputFingerprint', repeat('1', 64),
+    'recommendationEvaluationContextFingerprint', repeat('3', 64)
   );
 
   select * into v_result
@@ -506,7 +585,7 @@ begin
   );
   if v_result.review_revision <> 2
      or (select count(*) from public.business_taxon_factual_review_events
-         where review_id = v_release_review.review_id) <> 3 then
+         where review_id = v_release_review.review_id) <> 4 then
     raise exception 'E20.6.4 exact decision replay duplicated effects';
   end if;
 
@@ -795,6 +874,356 @@ begin
     raise exception 'divergent reconciliation replay unexpectedly accepted';
   exception when invalid_parameter_value then null;
   end;
+end;
+$$;
+
+do $$
+declare
+  v_review record;
+  v_requested record;
+  v_completed record;
+  v_replay record;
+  v_snapshot jsonb;
+  v_output jsonb;
+  v_event_metadata jsonb;
+  v_text_projection jsonb;
+begin
+  insert into public.business_taxons (id, parent_id, level, name, slug, is_active)
+  values (
+    'e2065000-0000-4000-8000-000000000010', null, 'segment',
+    'E20.6.5 event taxon', 'e20-6-5-event-taxon', true
+  );
+  v_snapshot := jsonb_build_array(jsonb_build_object(
+    'id', 'e2065000-0000-4000-8000-000000000010',
+    'parentId', null,
+    'level', 'segment',
+    'name', 'E20.6.5 event taxon',
+    'slug', 'e20-6-5-event-taxon',
+    'isActive', true
+  ));
+  select * into v_review
+  from public.open_business_taxon_factual_review_v1(
+    'e2065000-0000-4000-8000-000000000010', repeat('a', 64), v_snapshot,
+    'e2065000-0000-4000-8000-000000000020',
+    'e2063000-0000-4000-8000-000000000001', true, null
+  );
+  v_event_metadata := jsonb_build_object(
+    'reviewContextFingerprint', repeat('a', 64),
+    'evaluationContextFingerprint', repeat('e', 64),
+    'deadlineAtMs', floor(extract(epoch from clock_timestamp()) * 1000) + 60000
+  );
+
+  select * into v_requested
+  from public.append_business_taxon_factual_review_evaluation_event_v1(
+    v_review.review_id, 'e2065000-0000-4000-8000-000000000021',
+    'e2063000-0000-4000-8000-000000000001', 1, repeat('a', 64),
+    'evaluation_requested', 'web_search_fallback', null,
+    jsonb_build_object('mode', 'systematic', 'sourceState', 'e20_5_absent_authorized') || v_event_metadata
+  );
+  select * into v_replay
+  from public.append_business_taxon_factual_review_evaluation_event_v1(
+    v_review.review_id, 'e2065000-0000-4000-8000-000000000021',
+    'e2063000-0000-4000-8000-000000000001', 1, repeat('a', 64),
+    'evaluation_requested', 'web_search_fallback', null,
+    jsonb_build_object('mode', 'systematic', 'sourceState', 'e20_5_absent_authorized') || v_event_metadata
+  );
+  if v_replay.event_id is distinct from v_requested.event_id then
+    raise exception 'E20.6.5 exact evaluation event replay changed identity';
+  end if;
+  begin
+    perform * from public.append_business_taxon_factual_review_evaluation_event_v1(
+      v_review.review_id, 'e2065000-0000-4000-8000-000000000021',
+      'e2063000-0000-4000-8000-000000000001', 1, repeat('a', 64),
+      'evaluation_requested', 'web_search_fallback', null,
+      jsonb_build_object('mode', 'hypothesis', 'sourceState', 'e20_5_absent_authorized') || v_event_metadata
+    );
+    raise exception 'divergent E20.6.5 evaluation event replay unexpectedly accepted';
+  exception when invalid_parameter_value then null;
+  end;
+  begin
+    perform * from public.append_business_taxon_factual_review_evaluation_event_v1(
+      v_review.review_id, 'e2065000-0000-4000-8000-000000000021',
+      'e2063000-0000-4000-8000-000000000001', 1, repeat('a', 64),
+      'evaluation_requested', 'web_search_fallback', null,
+      jsonb_build_object('mode', 'systematic', 'sourceState', 'e20_5_absent_authorized') ||
+        jsonb_set(v_event_metadata, '{evaluationContextFingerprint}', to_jsonb(repeat('f', 64)))
+    );
+    raise exception 'evaluation context fingerprint drift unexpectedly accepted';
+  exception when invalid_parameter_value then null;
+  end;
+  begin
+    perform * from public.append_business_taxon_factual_review_evaluation_event_v1(
+      v_review.review_id, 'e2065000-0000-4000-8000-000000000029',
+      'e2063000-0000-4000-8000-000000000001', 1, repeat('a', 64),
+      'evaluation_requested', 'web_search_fallback', null,
+      jsonb_build_object('mode', 'systematic', 'sourceState', 'e20_5_absent_authorized') ||
+        jsonb_set(
+          v_event_metadata,
+          '{deadlineAtMs}',
+          to_jsonb(floor(extract(epoch from clock_timestamp()) * 1000) - 1)
+        )
+    );
+    raise exception 'expired evaluation request unexpectedly persisted';
+  exception when query_canceled then null;
+  end;
+
+  v_output := jsonb_build_object(
+    'schemaVersion', 2,
+    'sourceStrategy', 'web_search_fallback',
+    'sourceState', 'e20_5_absent_authorized',
+    'summary', 'Veja HTTPS://EXAMPLE.COM:443/source#fragment,',
+    'summarySourceUrls', '["https://example.com/source"]'::jsonb,
+    'candidates', jsonb_build_array(jsonb_build_object(
+      'conclusion', 'possible_new_field',
+      'sourceUrls', '["https://example.com/source"]'::jsonb
+    ))
+  );
+  v_text_projection := jsonb_build_array(jsonb_build_object(
+    'raw', 'HTTPS://EXAMPLE.COM:443/source#fragment',
+    'canonical', 'https://example.com/source'
+  ));
+
+  begin
+    perform * from public.append_business_taxon_factual_review_evaluation_event_v1(
+      v_review.review_id, 'e2065000-0000-4000-8000-000000000024',
+      'e2063000-0000-4000-8000-000000000001', 1, repeat('a', 64),
+      'evaluation_completed', 'web_search_fallback', repeat('b', 64),
+      jsonb_build_object(
+        'inputCatalogVersion', 1,
+        'outputFingerprint', repeat('b', 64),
+        'candidateCount', 1,
+        'output', v_output,
+        'webSearchCallCount', 1,
+        'materialTextUrlProjection', v_text_projection
+      ) || v_event_metadata
+    );
+    raise exception 'web completion without authenticated source metadata unexpectedly accepted';
+  exception when invalid_parameter_value then null;
+  end;
+  begin
+    perform * from public.append_business_taxon_factual_review_evaluation_event_v1(
+      v_review.review_id, 'e2065000-0000-4000-8000-000000000030',
+      'e2063000-0000-4000-8000-000000000001', 1, repeat('a', 64),
+      'evaluation_completed', 'web_search_fallback', repeat('f', 64),
+      jsonb_build_object(
+        'inputCatalogVersion', 1,
+        'outputFingerprint', repeat('f', 64),
+        'candidateCount', 1,
+        'output', jsonb_set(
+          jsonb_set(v_output, '{candidates,0,conclusion}', '"covered"'::jsonb),
+          '{candidates,0,sourceUrls}', '[]'::jsonb
+        ),
+        'webSearchCallCount', 1,
+        'webSearchSources', '["https://example.com/source"]'::jsonb,
+        'materialTextUrlProjection', v_text_projection
+      ) || v_event_metadata
+    );
+    raise exception 'covered web candidate without source unexpectedly accepted';
+  exception when invalid_parameter_value then null;
+  end;
+  begin
+    perform * from public.append_business_taxon_factual_review_evaluation_event_v1(
+      v_review.review_id, 'e2065000-0000-4000-8000-000000000031',
+      'e2063000-0000-4000-8000-000000000001', 1, repeat('a', 64),
+      'evaluation_completed', 'web_search_fallback', repeat('9', 64),
+      jsonb_build_object(
+        'inputCatalogVersion', 1,
+        'outputFingerprint', repeat('9', 64),
+        'candidateCount', 1,
+        'output', jsonb_set(v_output, '{summary}', '"Veja https://invented.example/fake"'::jsonb),
+        'webSearchCallCount', 1,
+        'webSearchSources', '["https://example.com/source"]'::jsonb,
+        'materialTextUrlProjection', jsonb_build_array(jsonb_build_object(
+          'raw', 'https://invented.example/fake',
+          'canonical', 'https://invented.example/fake'
+        ))
+      ) || v_event_metadata
+    );
+    raise exception 'invented textual web source unexpectedly accepted';
+  exception when invalid_parameter_value then null;
+  end;
+  begin
+    perform * from public.append_business_taxon_factual_review_evaluation_event_v1(
+      v_review.review_id, 'e2065000-0000-4000-8000-000000000033',
+      'e2063000-0000-4000-8000-000000000001', 1, repeat('a', 64),
+      'evaluation_completed', 'web_search_fallback', repeat('8', 64),
+      jsonb_build_object(
+        'inputCatalogVersion', 1,
+        'outputFingerprint', repeat('8', 64),
+        'candidateCount', 1,
+        'output', jsonb_set(v_output, '{summary}', '"Veja http://example.com/source."'::jsonb),
+        'webSearchCallCount', 1,
+        'webSearchSources', '["https://example.com/source"]'::jsonb,
+        'materialTextUrlProjection', jsonb_build_array(jsonb_build_object(
+          'raw', 'http://example.com/source',
+          'canonical', null
+        ))
+      ) || v_event_metadata
+    );
+    raise exception 'non-HTTPS textual source unexpectedly accepted';
+  exception when invalid_parameter_value then null;
+  end;
+  begin
+    perform * from public.append_business_taxon_factual_review_evaluation_event_v1(
+      v_review.review_id, 'e2065000-0000-4000-8000-000000000028',
+      'e2063000-0000-4000-8000-000000000001', 1, repeat('a', 64),
+      'evaluation_completed', 'web_search_fallback', repeat('d', 64),
+      jsonb_build_object(
+        'inputCatalogVersion', 1,
+        'outputFingerprint', repeat('d', 64),
+        'candidateCount', 1,
+        'output', jsonb_set(
+          jsonb_set(v_output, '{summarySourceUrls}', '["http://example.com/source"]'::jsonb),
+          '{candidates,0,sourceUrls}', '["http://example.com/source"]'::jsonb
+        ),
+        'webSearchCallCount', 1,
+        'webSearchSources', '["http://example.com/source"]'::jsonb,
+        'materialTextUrlProjection', v_text_projection
+      ) || v_event_metadata
+    );
+    raise exception 'non-HTTPS web evidence unexpectedly accepted';
+  exception when invalid_parameter_value then null;
+  end;
+
+  select * into v_completed
+  from public.append_business_taxon_factual_review_evaluation_event_v1(
+    v_review.review_id, 'e2065000-0000-4000-8000-000000000022',
+    'e2063000-0000-4000-8000-000000000001', 1, repeat('a', 64),
+    'evaluation_completed', 'web_search_fallback', repeat('b', 64),
+    jsonb_build_object(
+      'requestedEventId', v_requested.event_id,
+      'inputCatalogVersion', 1,
+      'outputFingerprint', repeat('b', 64),
+      'candidateCount', 1,
+      'output', v_output,
+      'webSearchCallCount', 1,
+      'webSearchSources', '["https://example.com/source"]'::jsonb,
+      'materialTextUrlProjection', v_text_projection
+    ) || v_event_metadata
+  );
+  select * into v_replay
+  from public.append_business_taxon_factual_review_evaluation_event_v1(
+    v_review.review_id, 'e2065000-0000-4000-8000-000000000022',
+    'e2063000-0000-4000-8000-000000000001', 1, repeat('a', 64),
+    'evaluation_completed', 'web_search_fallback', repeat('b', 64),
+    jsonb_build_object(
+      'requestedEventId', v_requested.event_id,
+      'inputCatalogVersion', 1,
+      'outputFingerprint', repeat('b', 64),
+      'candidateCount', 1,
+      'output', v_output,
+      'webSearchCallCount', 1,
+      'webSearchSources', '["https://example.com/source"]'::jsonb,
+      'materialTextUrlProjection', v_text_projection
+    ) || v_event_metadata
+  );
+  if v_replay.event_id is distinct from v_completed.event_id then
+    raise exception 'exact completed evaluation replay changed identity';
+  end if;
+  begin
+    perform * from public.append_business_taxon_factual_review_evaluation_event_v1(
+      v_review.review_id, 'e2065000-0000-4000-8000-000000000022',
+      'e2063000-0000-4000-8000-000000000001', 1, repeat('a', 64),
+      'evaluation_completed', 'web_search_fallback', repeat('b', 64),
+      jsonb_build_object(
+        'requestedEventId', v_requested.event_id,
+        'inputCatalogVersion', 1,
+        'outputFingerprint', repeat('b', 64),
+        'candidateCount', 1,
+        'output', v_output,
+        'webSearchCallCount', 1,
+        'webSearchSources', '["https://example.com/other"]'::jsonb,
+        'materialTextUrlProjection', v_text_projection
+      ) || v_event_metadata
+    );
+    raise exception 'divergent completed evaluation replay unexpectedly accepted';
+  exception when invalid_parameter_value then null;
+  end;
+  begin
+    perform * from public.close_business_taxon_factual_review_without_change_v1(
+      v_review.review_id, 'e2065000-0000-4000-8000-000000000025',
+      'e2063000-0000-4000-8000-000000000001', 1, 1,
+      repeat('a', 64), repeat('c', 64), v_snapshot,
+      jsonb_build_object(
+        'recommendationCandidateCount', 1,
+        'recommendationSelection', 'zero',
+        'acceptedCandidates', '[]'::jsonb,
+        'rejectedCandidateIndexes', '[0]'::jsonb,
+        'ownCandidate', null
+      )
+    );
+    raise exception 'candidate decision without recommendation binding unexpectedly accepted';
+  exception when invalid_parameter_value then null;
+  end;
+  begin
+    perform * from public.close_business_taxon_factual_review_without_change_v1(
+      v_review.review_id, 'e2065000-0000-4000-8000-000000000032',
+      'e2063000-0000-4000-8000-000000000001', 1, 1,
+      repeat('a', 64), repeat('c', 64), v_snapshot,
+      jsonb_build_object(
+        'recommendationCandidateCount', 1,
+        'recommendationSelection', 'zero',
+        'acceptedCandidates', '[]'::jsonb,
+        'rejectedCandidateIndexes', '[0]'::jsonb,
+        'ownCandidate', null,
+        'recommendationEventId', v_completed.event_id,
+        'recommendationOutputFingerprint', repeat('b', 64),
+        'recommendationEvaluationContextFingerprint', repeat('f', 64)
+      )
+    );
+    raise exception 'divergent recommendation evaluation fingerprint unexpectedly accepted';
+  exception when invalid_parameter_value then null;
+  end;
+  begin
+    perform * from public.close_business_taxon_factual_review_without_change_v1(
+      v_review.review_id, 'e2065000-0000-4000-8000-000000000026',
+      'e2063000-0000-4000-8000-000000000001', 1, 1,
+      repeat('a', 64), repeat('c', 64), v_snapshot,
+      jsonb_build_object(
+        'recommendationCandidateCount', 0,
+        'recommendationSelection', 'zero',
+        'acceptedCandidates', '[]'::jsonb,
+        'rejectedCandidateIndexes', '[]'::jsonb,
+        'ownCandidate', null,
+        'recommendationEventId', v_completed.event_id,
+        'recommendationOutputFingerprint', repeat('b', 64),
+        'recommendationEvaluationContextFingerprint', repeat('e', 64)
+      )
+    );
+    raise exception 'zero-candidate decision with invented recommendation binding unexpectedly accepted';
+  exception when invalid_parameter_value then null;
+  end;
+  begin
+    perform * from public.close_business_taxon_factual_review_without_change_v1(
+      v_review.review_id, 'e2065000-0000-4000-8000-000000000027',
+      'e2063000-0000-4000-8000-000000000001', 1, 1,
+      repeat('a', 64), repeat('c', 64), v_snapshot,
+      jsonb_build_object(
+        'recommendationCandidateCount', 2,
+        'recommendationSelection', 'zero',
+        'acceptedCandidates', '[]'::jsonb,
+        'rejectedCandidateIndexes', '[0,1]'::jsonb,
+        'ownCandidate', null,
+        'recommendationEventId', v_completed.event_id,
+        'recommendationOutputFingerprint', repeat('b', 64),
+        'recommendationEvaluationContextFingerprint', repeat('e', 64)
+      )
+    );
+    raise exception 'recommendation candidate-count mismatch unexpectedly accepted';
+  exception when invalid_parameter_value then null;
+  end;
+  perform * from public.append_business_taxon_factual_review_evaluation_event_v1(
+    v_review.review_id, 'e2065000-0000-4000-8000-000000000023',
+    'e2063000-0000-4000-8000-000000000001', 1, repeat('a', 64),
+    'evaluation_inconclusive', 'web_search_fallback', null,
+    jsonb_build_object('requestedEventId', v_requested.event_id, 'errorCode', 'PROVIDER_FAILURE') || v_event_metadata
+  );
+  if (select status from public.business_taxon_factual_reviews where id = v_review.review_id) <> 'open'
+     or (select revision from public.business_taxon_factual_reviews where id = v_review.review_id) <> 1
+     or (select count(*) from public.business_taxon_factual_review_events where review_id = v_review.review_id) <> 4
+     or not (select is_active from public.business_taxons where id = 'e2065000-0000-4000-8000-000000000010') then
+    raise exception 'E20.6.5 evaluation events mutated lifecycle state or duplicated effects';
+  end if;
 end;
 $$;
 

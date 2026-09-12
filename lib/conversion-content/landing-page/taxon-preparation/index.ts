@@ -40,6 +40,8 @@ export type {
   InputCatalogEvaluationProviderRequest,
   InputCatalogEvaluationProviderResult,
   InputCatalogEvaluationReconstructionInput,
+  InputCatalogEvaluationSourceState,
+  InputCatalogEvaluationSourceStrategy,
   InputCatalogEvaluationStatus,
   InputCatalogEvaluationTaxonChainSnapshot,
   InputCatalogEvaluationTaxonomicLayer,

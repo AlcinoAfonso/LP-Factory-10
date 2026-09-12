@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 11/09/2026
-• Versão: v1.5.222
+• Data: 12/09/2026
+• Versão: v1.5.223
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -1903,7 +1903,7 @@
 
 20.6.1 Objetivo e status
 - Objetivo: permitir que um `platform_admin` libere taxon novo e revise taxon ativo por cobertura herdada, avaliação factual opcional e lifecycle versionado E20.2, sem transferir decisão à IA.
-- Status: baseline de preparação determinística e provider administrativo existente; 20.6.3 e 20.6.4 implementadas no repositório, com apply hospedado ainda pendente; 20.6.5–20.6.7 definidas, ainda não implementadas.
+- Status: 20.6.3–20.6.5 implementadas no repositório; apply, snippet, Security Controls e QA hospedado permanecem pendentes dos gates finais; 20.6.6–20.6.7 seguem definidas e ainda não implementadas.
 
 20.6.2 Registros do recorte
 - Banco:
@@ -1912,6 +1912,7 @@
     - `business_taxon_factual_review_events`
     - `public.open_business_taxon_factual_review_v1(...)`
     - `public.close_business_taxon_factual_review_without_change_v1(...)`
+    - `public.append_business_taxon_factual_review_evaluation_event_v1(...)`
     - `public.record_business_taxon_factual_catalog_change_decision_v1(...)`
     - `public.save_business_taxon_factual_review_draft_v1(...)`
     - `public.authorize_business_taxon_factual_review_publication_v1(...)`
@@ -1933,6 +1934,7 @@
     - `lib/conversion-content/adapters/inputCatalogEvaluationRuntimeGate.ts`
     - `lib/conversion-content/adapters/inputCatalogEvaluationRuntimeGateCore.ts`
     - `lib/conversion-content/adapters/inputCatalogEvaluationOpenAiAdapter.ts`
+    - `lib/admin/adapters/adminInputCatalogEvaluationSourceAdapter.ts`
     - `lib/admin/adapters/adminTaxonFactualReviewAdapter.ts`
     - `app/admin/(protected)/taxonomia/[taxonId]/_components/AdminTaxonInputCatalogEvaluation.tsx`
     - `app/admin/(protected)/taxonomia/[taxonId]/_components/AdminTaxonInputCatalogReview.tsx`
@@ -1987,11 +1989,14 @@
   - autorização exige cobertura exata dos impactos ativos e das liberações inativas pendentes; mudança só altera versão factual ou atividade após publicação implantada e reconciliação transacional de todos os taxons afetados.
 
 20.6.5 Provider e fontes
-- Status: definido; não implementado.
+- Status: implementado no repositório; execução do teste SQL, apply hospedado, snippet pós-apply, Security Controls e QA dos três modos e falhas permanecem pendentes dos gates finais.
 - Conteúdo:
   - E20.5 integralmente válida usa uma Responses sem Web Search; ausência legítima usa fallback obrigatório com até duas buscas; pesquisa focal usa uma busca sob pedido humano;
   - seleção inválida ou falha de banco/artefato produz falha tipada, sem fallback; liberação por cobertura herdada produz zero chamadas;
   - o workload e a configuração E21 existentes permanecem, com execução foreground, `store:false`, prazo de 45 segundos, zero retry e Structured Output v2 com fontes autenticadas.
+  - a leitura administrativa de taxon inativo reutiliza a paginação canônica da cadeia por entrypoint server-only; leitores operacionais continuam fail-closed;
+  - o deadline cobre toda a execução, o preflight de 128k usa limite superior por bytes UTF-8 e toda candidata ou URL textual Web precisa pertencer às fontes autenticadas;
+  - requested, completed e inconclusive são eventos idempotentes da sessão aberta; completed preserva output, evidência Web e fingerprint próprio da identidade da avaliação, separado do fingerprint da sessão, e toda decisão sobre candidatos comprova o evento persistido exato.
 
 20.6.6 Evolução e transições
 - Status: definido; não implementado.
