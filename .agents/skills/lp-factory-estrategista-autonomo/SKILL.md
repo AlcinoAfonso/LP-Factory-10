@@ -31,7 +31,7 @@ Ler e aplicar:
 - `$lp-factory-executar-plano` quando a execução for Light;
 - `$lp-factory-conduzir-plano-completo` quando a execução for Complexa.
 
-A V1 aprovada limita o resultado funcional. Repositório, pareceres e conveniência técnica não autorizam ampliação de produto, arquitetura ou escopo. Decisão fora da autoridade concedida retorna ao Estrategista Original/humano.
+A V1 aprovada limita o resultado funcional. Dentro do resultado funcional aprovado pela V1 e do contrato técnico aplicável, materialidade, permanência ou efeito transversal, isoladamente, não exigem nova autorização humana. Repositório, pareceres e conveniência técnica não autorizam ampliação de produto, arquitetura ou escopo. Decisão fora da autoridade concedida retorna ao Estrategista Original/humano.
 
 ## Modelo e esforço
 
@@ -52,18 +52,20 @@ A V1 aprovada limita o resultado funcional. Repositório, pareceres e conveniên
 8. Se a execução for Light, a task técnica segue `$lp-factory-executar-plano`.
 9. Se a execução for Complexa, a task técnica segue `$lp-factory-conduzir-plano-completo` e, após a V2 aprovada, `$lp-factory-executar-plano`.
 10. A task técnica é responsável por materializar e congelar o contrato aprovado conforme o fluxo competente antes da derivação ou implementação aplicável e pode criar seus próprios subagentes especializados conforme os contratos que executa.
-11. Se a task/thread independente não puder ser criada ou, quando já existente, invocada, não assumir implementação nem usar `spawn_agent` como fallback. Verificar no próprio supervisor os mecanismos autorizados disponíveis de criação ou invocação; falha transitória ou de primeira tentativa não é terminal. Se nenhum mecanismo autorizado estiver operacional, tratar a indisponibilidade como `Impossibilidade técnica comprovada` conforme o critério 2 de `Tratar bloqueios durante a execução`.
+11. Se a task/thread independente não puder ser criada ou, quando já existente, invocada, o Estrategista Autônomo deve retomar/tentar invocar ativamente a mesma task técnica pelos mecanismos autorizados disponíveis, sem assumir implementação nem usar `spawn_agent` como fallback. Falha transitória ou de primeira tentativa não é terminal. Se uma invocação não produzir erro nem progresso observável, diagnosticar o estado de execução e controle da task/thread e dos mecanismos autorizados antes de repetir retries; polling ou agendamento são apenas fallback de recuperação e não substituem a condução ativa. Se nenhum mecanismo autorizado estiver operacional, tratar a indisponibilidade como `Impossibilidade técnica comprovada` conforme o critério 2 de `Tratar bloqueios durante a execução`.
 
 Correções e QA pré-merge retornam à mesma task técnica e ao mesmo PR do plano.
 
 ## Tratar bloqueios durante a execução
 
-Quando o Executor reportar bloqueio ou sugerir intervenção humana, o Estrategista Autônomo deve primeiro tentar eliminar essa necessidade coordenando a mesma task técnica, sem assumir implementação nem criar segunda task.
+Quando o Executor reportar bloqueio ou sugerir intervenção humana, o Estrategista Autônomo deve primeiro tentar eliminar essa necessidade coordenando e, diante de pendência operacional, retomando/invocando ativamente a mesma task técnica, sem assumir implementação nem criar segunda task.
 
 Só aceitar parada e escalar ao Estrategista Original/humano quando um destes dois critérios estiver comprovado:
 
 1. **Decisão, autoridade ou fonte indispensável fora da autonomia:** continuar depende de decisão, autorização, classificação, fonte/entrada ou ação que, segundo a V1 e os contratos ou fontes competentes, não pertença à autoridade do fluxo autônomo e não possua caminho autorizado equivalente. Inclui, sem se limitar a, mudança de V1, resultado funcional, escopo ou autoridade aprovada; reclassificação entre `Light` e `Complexa` por incompatibilidade material comprovada; conflito entre fontes canônicas sem precedência; decisão humana indispensável; fonte ou entrada indispensável inacessível; ou ação que a plataforma imponha explicitamente como humana sem caminho autorizado equivalente.
 2. **Impossibilidade técnica comprovada:** nenhum caminho autorizado disponível consegue satisfazer um critério obrigatório depois de verificadas as alternativas tecnicamente plausíveis pelo ator competente.
+
+Quando o critério 1 decorrer de ação que a plataforma imponha como humana sem caminho autorizado equivalente, solicitar somente esse ato mínimo e retomar/invocar automaticamente a mesma task assim que a conclusão puder ser verificada, sem exigir novo `prossiga` ou confirmação humana redundante.
 
 Fora desses dois casos, não parar nem escalar: coordenar a menor ação autorizada capaz de resolver o bloqueio e, quando houver task técnica disponível, devolver o ponto à mesma task para investigação focal e execução da menor solução autorizada, preservando o trabalho já válido. Se o bloqueio for a própria indisponibilidade da task/thread, aplicar o item 11. Ao escalar, informar objetivamente os caminhos avaliados, por que não resolvem e a decisão, autoridade, classificação, fonte ou recurso exato que falta.
 
