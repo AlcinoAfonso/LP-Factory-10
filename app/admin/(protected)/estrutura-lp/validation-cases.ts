@@ -173,6 +173,9 @@ assert.match(draftOperations, /releaseTaxonIds/);
 assert.match(draftOperations, /isActive:\s*true as const/);
 assert.match(draftOperations, /validateLandingPageInputCatalogDraft/);
 assert.match(draftOperations, /landingPageInputCatalogOperationalPlans/);
+assert.match(draftOperations, /kind:\s*"specialization"/);
+assert.match(draftOperations, /resolveInheritedField/);
+assert.match(draftOperations, /preserveNumberRangeBounds/);
 assert.doesNotMatch(draftOperations, /openai|provider|candidate_gaps|recommendation/i);
 assert.match(lifecycleAdapter, /authorizeAdminInputCatalogFactualPublication/);
 assert.match(lifecycleAdapter, /reconcileAdminInputCatalogFactualPublication/);
@@ -200,6 +203,9 @@ assert.match(lifecycleComponent, /prefix="requiredWhen"/);
 assert.match(lifecycleComponent, /prefix="applicableWhen"/);
 assert.match(lifecycleComponent, /applicableWhenEnabled/);
 assert.match(lifecycleComponent, /capabilityBindingEnabled/);
+assert.match(lifecycleComponent, /name="minimum"/);
+assert.match(lifecycleComponent, /name="maximum"/);
+assert.match(lifecycleComponent, /vazio preserva o limite atual/);
 assert.match(lifecycleComponent, /feedbackRef\.current\?\.focus/);
 assert.doesNotMatch(lifecycleComponent, /\bh-10\b/);
 assert.doesNotMatch(lifecycleComponent, /Taxons operacionais|Bloqueios operacionais|Configurações inválidas/);
@@ -211,6 +217,8 @@ assert.match(lifecycleActions, /parseCondition/);
 assert.match(lifecycleActions, /requiredWhen/);
 assert.match(lifecycleActions, /applicableWhen/);
 assert.match(lifecycleActions, /applicable_capabilities/);
+assert.match(lifecycleActions, /parseOptionalFiniteNumber/);
+assert.match(lifecycleActions, /minimum > maximum/);
 assert.match(lifecycleActions, /if \(result\.ok\) revalidatePath\("\/admin\/taxonomia"\)/);
 const lifecycleRuntimeExports = lifecycleActions.match(
   /^export\s+(?!type\b|interface\b)[^\r\n]+/gm,

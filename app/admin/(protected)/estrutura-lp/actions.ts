@@ -148,7 +148,12 @@ function parseDraftOperation(formData: FormData): Readonly<{ ok: true; value: La
 function parseFieldContract(formData: FormData, fieldKey: string): Readonly<{ ok: true; value: LandingPageInputCatalogDraftFieldContract }> | Readonly<{ ok: false; message: string }> {
   const valueType = String(formData.get("valueType") ?? "");
   const obligation = String(formData.get("obligation") ?? "");
-  const validation = validationFor(valueType, String(formData.get("allowedValues") ?? ""));
+  const validation = validationFor(
+    valueType,
+    String(formData.get("allowedValues") ?? ""),
+    String(formData.get("minimum") ?? ""),
+    String(formData.get("maximum") ?? ""),
+  );
   const allowedPlans = formData.getAll("allowedPlans").map(String);
   const purpose = String(formData.get("purpose") ?? "").trim();
   const evidenceSummary = String(formData.get("evidenceSummary") ?? "").trim();
@@ -222,7 +227,12 @@ function parseCondition(
   };
 }
 
-function validationFor(valueType: string, rawValues: string): LandingPageInputCatalogDraftFieldContract["validation"] | null {
+function validationFor(
+  valueType: string,
+  rawValues: string,
+  rawMinimum: string,
+  rawMaximum: string,
+): LandingPageInputCatalogDraftFieldContract["validation"] | null {
   const values = rawValues.split(",").map((value) => value.trim()).filter(Boolean);
   if (valueType === "string" || valueType === "boolean") return { kind: "type_only" };
   if (valueType === "phone") return { kind: "e164" };
@@ -234,6 +244,25 @@ function validationFor(valueType: string, rawValues: string): LandingPageInputCa
   if (valueType === "offering_scope") return { kind: "offering_scope" };
   if (valueType === "enum" && values.length > 0) return { kind: "enum", allowedValues: values };
   if (valueType === "string_list") return { kind: "string_list", ...(values.length > 0 ? { allowedValues: values } : {}) };
-  if (valueType === "number_range") return { kind: "number_range", currency: "BRL" };
+  if (valueType === "number_range") {
+    const minimum = parseOptionalFiniteNumber(rawMinimum);
+    const maximum = parseOptionalFiniteNumber(rawMaximum);
+    if (minimum === null || maximum === null || (minimum !== undefined && maximum !== undefined && minimum > maximum)) {
+      return null;
+    }
+    return {
+      kind: "number_range",
+      currency: "BRL",
+      ...(minimum === undefined ? {} : { minimum }),
+      ...(maximum === undefined ? {} : { maximum }),
+    };
+  }
   return null;
+}
+
+function parseOptionalFiniteNumber(rawValue: string): number | undefined | null {
+  const value = rawValue.trim();
+  if (!value) return undefined;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
 }

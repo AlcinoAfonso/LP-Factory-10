@@ -5,6 +5,7 @@ import type {
   LandingPageInputCatalogTaxonIdentity,
   LandingPageInputCatalogTransitionResult,
   LandingPageInputFieldDefinition,
+  LandingPageInputFieldSpecialization,
 } from "./contracts";
 import type {
   LandingPageInputCatalogDraftImpact,
@@ -128,18 +129,60 @@ export function applyLandingPageInputCatalogDraftOperation(input: Readonly<{
       if (operation.field.fieldKey !== operation.fieldKey) {
         return invalid("A alteração não pode trocar a chave do field.");
       }
-      const index = entries.findIndex(
+      const fieldIndex = entries.findIndex(
         (entry) => entry.kind === "field" && entry.fieldKey === operation.fieldKey,
       );
-      if (index < 0) return invalid(`O field ${operation.fieldKey} não existe na camada alvo.`);
-      const current = entries[index];
-      if (current.kind !== "field") return invalid(`O field ${operation.fieldKey} é inválido.`);
-      entries[index] = materializeField({
-        contract: operation.field,
-        layer: layer.value,
-        createdInVersion: current.createdInVersion,
-        retiredInVersion: current.retiredInVersion,
+      if (fieldIndex >= 0) {
+        const current = entries[fieldIndex];
+        if (current.kind !== "field") return invalid(`O field ${operation.fieldKey} é inválido.`);
+        entries[fieldIndex] = materializeField({
+          contract: preserveNumberRangeBounds(operation.field, current),
+          layer: layer.value,
+          createdInVersion: current.createdInVersion,
+          retiredInVersion: current.retiredInVersion,
+        });
+        break;
+      }
+
+      if (!prepared.targetTaxon) {
+        return invalid(`O field ${operation.fieldKey} não existe na camada alvo.`);
+      }
+      const specializationIndex = entries.findIndex(
+        (entry) => entry.kind === "specialization" && entry.fieldKey === operation.fieldKey,
+      );
+      const currentEffective = specializationIndex < 0
+        ? null
+        : resolveInheritedField({
+            draft,
+            taxons: prepared.taxons,
+            targetTaxon: prepared.targetTaxon,
+            fieldKey: operation.fieldKey,
+          });
+      if (currentEffective && !currentEffective.ok) return currentEffective;
+      const currentSpecialization = specializationIndex < 0
+        ? null
+        : entries.splice(specializationIndex, 1)[0];
+      const inherited = resolveInheritedField({
+        draft,
+        taxons: prepared.taxons,
+        targetTaxon: prepared.targetTaxon,
+        fieldKey: operation.fieldKey,
       });
+      if (!inherited.ok) return inherited;
+      const specialization = materializeSpecialization({
+        fieldKey: operation.fieldKey,
+        inherited: inherited.value,
+        contract: preserveNumberRangeBounds(
+          operation.field,
+          currentEffective?.value ?? inherited.value,
+        ),
+      });
+      if (!specialization.ok) return specialization;
+      if (currentSpecialization && currentSpecialization.kind !== "specialization") {
+        return invalid(`A especialização de ${operation.fieldKey} é inválida.`);
+      }
+      if (specializationIndex < 0) entries.push(specialization.value);
+      else entries.splice(specializationIndex, 0, specialization.value);
       break;
     }
     case "retire": {
@@ -393,7 +436,7 @@ function selectMutableLayer(
   }
   let layer = slugLayer;
   if (!layer) {
-    if (operation.kind !== "add") return invalid("A camada taxonômica alvo não existe no draft.");
+    if (operation.kind === "retire") return invalid("A camada taxonômica alvo não existe no draft.");
     layer = { level: targetTaxon.level, taxon: targetTaxon, entries: [] };
     (draft.taxonLayers as Record<string, LandingPageInputCatalogLayer>)[targetTaxon.slug] = layer;
   }
@@ -435,6 +478,115 @@ function materializeField(input: Readonly<{
       ? {}
       : { retiredInVersion: input.retiredInVersion }),
   } as LandingPageInputFieldDefinition;
+}
+
+function resolveInheritedField(input: Readonly<{
+  draft: LandingPageInputCatalogRegistryEntry;
+  taxons: readonly Readonly<{ identity: LandingPageInputCatalogTaxonIdentity }>[];
+  targetTaxon: LandingPageInputCatalogTaxonIdentity;
+  fieldKey: string;
+}>): Readonly<{ ok: true; value: LandingPageInputFieldDefinition }> |
+  Extract<ValidateLandingPageInputCatalogDraftResult, { ok: false }> {
+  const chain = buildLandingPageInputCatalogTaxonChain(
+    input.targetTaxon,
+    input.taxons.map((taxon) => taxon.identity),
+  );
+  if (!chain.ok) return invalid(chain.error.message);
+  for (const plan of landingPageInputCatalogOperationalPlans) {
+    const resolved = resolveLandingPageInputCatalogFromRegistry(
+      {
+        version: input.draft.version,
+        plan,
+        taxonChain: chain.value,
+        ultraNicheLayerAuthorized: input.targetTaxon.level === "ultra_niche",
+      },
+      { [input.draft.version]: input.draft },
+    );
+    if (!resolved.ok) return invalid(resolved.error.message);
+    const field = resolved.value.fields.find((candidate) => candidate.fieldKey === input.fieldKey);
+    if (field) {
+      const { provenance: _provenance, ...definition } = cloneJson(field);
+      return { ok: true, value: definition };
+    }
+  }
+  return invalid(`O field ${input.fieldKey} não existe na cobertura herdada da camada alvo.`);
+}
+
+function materializeSpecialization(input: Readonly<{
+  fieldKey: string;
+  inherited: LandingPageInputFieldDefinition;
+  contract: LandingPageInputCatalogDraftFieldContract;
+}>): Readonly<{ ok: true; value: LandingPageInputFieldSpecialization }> |
+  Extract<ValidateLandingPageInputCatalogDraftResult, { ok: false }> {
+  const inheritedContract = stripFieldHistory(input.inherited);
+  const immutableInherited = cloneJson(inheritedContract) as Record<string, unknown>;
+  const immutableProposed = cloneJson(input.contract) as Record<string, unknown>;
+  for (const key of ["obligation", "allowedPlans", "validation"]) {
+    delete immutableInherited[key];
+    delete immutableProposed[key];
+  }
+  if (stableStringify(immutableInherited) !== stableStringify(immutableProposed)) {
+    return invalid(`A especialização de ${input.fieldKey} não pode alterar propriedades imutáveis.`);
+  }
+
+  const changes: Record<string, unknown> = {};
+  for (const key of ["obligation", "allowedPlans", "validation"] as const) {
+    if (stableStringify(inheritedContract[key]) !== stableStringify(input.contract[key])) {
+      changes[key] = cloneJson(input.contract[key]);
+    }
+  }
+  if (Object.keys(changes).length === 0) {
+    return invalid(`A alteração de ${input.fieldKey} não contém especialização material.`);
+  }
+  return {
+    ok: true,
+    value: {
+      kind: "specialization",
+      fieldKey: input.fieldKey,
+      changes: changes as LandingPageInputFieldSpecialization["changes"],
+    },
+  };
+}
+
+function preserveNumberRangeBounds(
+  contract: LandingPageInputCatalogDraftFieldContract,
+  current: LandingPageInputFieldDefinition,
+): LandingPageInputCatalogDraftFieldContract {
+  if (contract.validation.kind !== "number_range" || current.validation.kind !== "number_range") {
+    return contract;
+  }
+  return {
+    ...cloneJson(contract),
+    validation: {
+      ...cloneJson(contract.validation),
+      ...(contract.validation.minimum === undefined && current.validation.minimum !== undefined
+        ? { minimum: current.validation.minimum }
+        : {}),
+      ...(contract.validation.maximum === undefined && current.validation.maximum !== undefined
+        ? { maximum: current.validation.maximum }
+        : {}),
+    },
+  };
+}
+
+function stripFieldHistory(field: LandingPageInputFieldDefinition): LandingPageInputCatalogDraftFieldContract {
+  const {
+    originLayer: _originLayer,
+    originTaxon: _originTaxon,
+    createdInVersion: _createdInVersion,
+    retiredInVersion: _retiredInVersion,
+    ...contract
+  } = cloneJson(field);
+  return contract;
+}
+
+function stableStringify(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(stableStringify).join(",")}]`;
+  if (value && typeof value === "object") {
+    const record = value as Record<string, unknown>;
+    return `{${Object.keys(record).sort().map((key) => `${JSON.stringify(key)}:${stableStringify(record[key])}`).join(",")}}`;
+  }
+  return JSON.stringify(value);
 }
 
 function sameTaxon(

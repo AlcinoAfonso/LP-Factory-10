@@ -2016,7 +2016,7 @@
 - Status: implementado no repositório; integração visual pertence à 20.6.7 e publicação/reconciliação permanecem nos gates futuros.
 - Conteúdo:
   - inclusão, alteração e inativação de field são operações humanas tipadas sobre o draft singleton;
-  - cada mudança preserva camada, impacto, versionamento imutável e histórico;
+  - cada mudança preserva camada, impacto, versionamento imutável e histórico; `change` em field herdado materializa ou atualiza uma especialização restritiva, e limites `number_range` omitidos permanecem inalterados;
   - IA e candidato nunca escrevem field nem alteram atividade ou marcador factual.
   - a operação pura reusa schema, continuidade, resolução dos quatro planos e classificação de impacto; a persistência estreita usa update otimista do draft e limpa sua evidência factual stale;
   - todas as releases abertas são projetadas como ativas no futuro catálogo e nos impactos, inclusive sob operação universal ou ancestral; identificador ausente, duplicado ou já ativo falha fechado, sem mudança operacional pré-deploy.

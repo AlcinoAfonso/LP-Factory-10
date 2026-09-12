@@ -1610,6 +1610,117 @@ const cases: Case[] = [
     },
   },
   {
+    name: "draft change specializes inherited fields and preserves omitted number bounds",
+    run: () => {
+      const draft = createNextLandingPageInputCatalogDraft();
+      const segmentField = draft.taxonLayers[realEstateSegmentTaxon.slug].entries.find(
+        (entry) => entry.kind === "field" && entry.fieldKey === "property_price_range",
+      );
+      assert.ok(segmentField?.kind === "field" && segmentField.validation.kind === "number_range");
+      assert.equal(segmentField.validation.minimum, 0);
+      const contract = fieldContractFrom(segmentField);
+
+      const specialized = applyLandingPageInputCatalogDraftOperation({
+        draft,
+        operation: {
+          kind: "change",
+          target: { kind: "taxon_layer", taxonId: realEstateBrokerNicheTaxon.id },
+          fieldKey: segmentField.fieldKey,
+          field: {
+            ...contract,
+            validation: { kind: "number_range", currency: "BRL", minimum: 100000 },
+          },
+        },
+        taxons: lifecycleTaxons(),
+      });
+      assert.equal(specialized.ok, true);
+      if (!specialized.ok) throw new Error("Expected inherited specialization");
+      const nicheEntries = specialized.value.entry.taxonLayers[realEstateBrokerNicheTaxon.slug].entries;
+      const specialization = nicheEntries.find(
+        (entry) => entry.kind === "specialization" && entry.fieldKey === segmentField.fieldKey,
+      );
+      assert.ok(specialization?.kind === "specialization");
+      assert.deepEqual(specialization.changes, {
+        validation: { kind: "number_range", currency: "BRL", minimum: 100000 },
+      });
+
+      const preservedSpecialization = applyLandingPageInputCatalogDraftOperation({
+        draft: specialized.value.entry,
+        operation: {
+          kind: "change",
+          target: { kind: "taxon_layer", taxonId: realEstateBrokerNicheTaxon.id },
+          fieldKey: segmentField.fieldKey,
+          field: {
+            ...contract,
+            obligation: "required",
+            validation: { kind: "number_range", currency: "BRL" },
+          },
+        },
+        taxons: lifecycleTaxons(),
+      });
+      assert.equal(preservedSpecialization.ok, true);
+      if (!preservedSpecialization.ok) throw new Error("Expected preserved inherited bounds");
+      const preservedEntries = preservedSpecialization.value.entry.taxonLayers[realEstateBrokerNicheTaxon.slug].entries;
+      const preservedSpecializations = preservedEntries.filter(
+        (entry) => entry.kind === "specialization" && entry.fieldKey === segmentField.fieldKey,
+      );
+      assert.equal(preservedSpecializations.length, 1);
+      const preservedSpecializationEntry = preservedSpecializations[0];
+      assert.ok(preservedSpecializationEntry?.kind === "specialization");
+      assert.deepEqual(preservedSpecializationEntry.changes, {
+        obligation: "required",
+        validation: { kind: "number_range", currency: "BRL", minimum: 100000 },
+      });
+
+      const updated = applyLandingPageInputCatalogDraftOperation({
+        draft: specialized.value.entry,
+        operation: {
+          kind: "change",
+          target: { kind: "taxon_layer", taxonId: realEstateBrokerNicheTaxon.id },
+          fieldKey: segmentField.fieldKey,
+          field: {
+            ...contract,
+            validation: { kind: "number_range", currency: "BRL", minimum: 200000 },
+          },
+        },
+        taxons: lifecycleTaxons(),
+      });
+      assert.equal(updated.ok, true);
+      if (!updated.ok) throw new Error("Expected updated inherited specialization");
+      const updatedSpecializations = updated.value.entry.taxonLayers[realEstateBrokerNicheTaxon.slug].entries.filter(
+        (entry) => entry.kind === "specialization" && entry.fieldKey === segmentField.fieldKey,
+      );
+      assert.equal(updatedSpecializations.length, 1);
+      const updatedSpecialization = updatedSpecializations[0];
+      assert.ok(updatedSpecialization?.kind === "specialization");
+      assert.deepEqual(updatedSpecialization.changes, {
+        validation: { kind: "number_range", currency: "BRL", minimum: 200000 },
+      });
+
+      const preserved = applyLandingPageInputCatalogDraftOperation({
+        draft,
+        operation: {
+          kind: "change",
+          target: { kind: "taxon_layer", taxonId: realEstateSegmentTaxon.id },
+          fieldKey: segmentField.fieldKey,
+          field: {
+            ...contract,
+            purpose: "Faixa real de preço preservando o limite inferior vigente.",
+            validation: { kind: "number_range", currency: "BRL" },
+          },
+        },
+        taxons: lifecycleTaxons(),
+      });
+      assert.equal(preserved.ok, true);
+      if (!preserved.ok) throw new Error("Expected preserved number bounds");
+      const preservedField = preserved.value.entry.taxonLayers[realEstateSegmentTaxon.slug].entries.find(
+        (entry) => entry.kind === "field" && entry.fieldKey === segmentField.fieldKey,
+      );
+      assert.ok(preservedField?.kind === "field" && preservedField.validation.kind === "number_range");
+      assert.equal(preservedField.validation.minimum, 0);
+    },
+  },
+  {
     name: "draft retire preserves the complete field and only records forward retirement",
     run: () => {
       const draft = createNextLandingPageInputCatalogDraft();

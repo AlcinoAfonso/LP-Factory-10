@@ -166,6 +166,7 @@
 - Criar `lib/conversion-content/landing-page/input-catalog/draft-operations.ts` com operações puras tipadas `add | change | retire` sobre o draft singleton.
 - Reutilizar schema, continuidade, `createdInVersion`, `retiredInVersion`, resolução dos quatro planos e cálculo de impacto vigentes.
 - Inclusão, alteração e inativação de field exigem contrato completo do field, camada explícita, impacto e autorização humana; candidato é somente insumo.
+- `change` em field herdado emite ou atualiza `specialization` restritiva na camada escolhida; limites opcionais de `number_range` são editáveis e, quando omitidos, preservam os bounds vigentes.
 - A UI não manipula regras do registry nem grava candidato como field.
 - Fluxo: editar draft → validar conteúdo/impacto → vincular decisões humanas necessárias → preparar handoff → materializar registry no mesmo PR → review/merge/deploy futuros → reconciliar identidade exata.
 - Field publicado só muda por nova versão imutável; inativação usa `retiredInVersion` e preserva histórico.
