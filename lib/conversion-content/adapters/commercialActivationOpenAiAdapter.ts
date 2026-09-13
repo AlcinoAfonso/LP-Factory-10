@@ -7,7 +7,10 @@ import {
   type OpenAiResponsesDependencies,
   type OpenAiResponsesParser,
 } from "./openAiResponsesAdapter";
-import { lpFactoryOpenAiCostContext } from "../../openai-costs";
+import {
+  lpFactoryOpenAiCostContext,
+  lpFactoryOpenAiEventCostContext,
+} from "../../openai-costs";
 
 type CommercialActivationOpenAiInput<T> = Readonly<{
   apiKey?: string;
@@ -16,6 +19,7 @@ type CommercialActivationOpenAiInput<T> = Readonly<{
   request: Readonly<Record<string, unknown>>;
   parseResponse: OpenAiResponsesParser<T>;
   executionOrigin?: "runtime" | "administrative_proof";
+  economicEvent?: Readonly<{ eventId: string; taxonId: string | null }>;
 }>;
 
 type CommercialActivationOpenAiDependencies = OpenAiResponsesDependencies;
@@ -62,7 +66,13 @@ export async function requestCommercialActivationOpenAi<T>(
     {
       ...input,
       expectedWorkload: "commercial_activation_draft_generation",
-      financialContext: lpFactoryOpenAiCostContext,
+      financialContext: input.economicEvent
+        ? lpFactoryOpenAiEventCostContext({
+            kind: "lp_factory_internal",
+            eventId: input.economicEvent.eventId,
+            taxonId: input.economicEvent.taxonId,
+          })
+        : lpFactoryOpenAiCostContext,
       executionOrigin: input.executionOrigin ?? "runtime",
     },
     dependencies,

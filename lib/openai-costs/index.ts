@@ -5,6 +5,7 @@ export * from "./active-gate";
 export * from "./recorder";
 export * from "./pricing";
 export * from "./dashboard";
+export * from "./economic-hierarchy";
 
 export async function readOfficialOpenAiCosts(
   ...args: Parameters<import("./contracts").OpenAiOfficialCostsReader>

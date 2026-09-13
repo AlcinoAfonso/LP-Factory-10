@@ -4,6 +4,8 @@ import { readFileSync } from "node:fs";
 import { createOpenAiCostRecorder } from "./recorder";
 import {
   executionStartRpc,
+  isExpectedMissingRpcError,
+  legacyExecutionStartRpc,
   operationFinishRpc,
   OpenAiCostTrackingPersistenceError,
   openAiCostPersistenceFailure,
@@ -96,10 +98,51 @@ async function main() {
     p_universe: "client",
     p_attribution_status: "attributed",
     p_account_id: execution.economicContext.accountId,
+    p_economic_event_kind: null,
+    p_economic_event_id: null,
+    p_landing_page_id: null,
+    p_taxon_id: null,
     p_baseline_reference: null,
     p_baseline_version: null,
     p_started_at: execution.startedAt,
   });
+  assert.deepEqual(legacyExecutionStartRpc(execution), {
+    p_id: execution.executionId,
+    p_workload: "niche_resolution",
+    p_environment: "development",
+    p_execution_origin: "runtime",
+    p_universe: "client",
+    p_attribution_status: "attributed",
+    p_account_id: execution.economicContext.accountId,
+    p_baseline_reference: null,
+    p_baseline_version: null,
+    p_started_at: execution.startedAt,
+  });
+  assert.equal(isExpectedMissingRpcError({
+    code: "PGRST202",
+    message: "Could not find the public.start_openai_cost_execution_v2(p_id) function in the schema cache",
+  }, "start_openai_cost_execution_v2"), true);
+  for (const error of [
+    { code: "PGRST202", message: "Could not find the public.other_rpc() function in the schema cache" },
+    { code: "42501", message: "permission denied" },
+    { code: "PGRST000", message: "connection failed" },
+    new Error("network failed"),
+  ]) assert.equal(isExpectedMissingRpcError(error, "start_openai_cost_execution_v2"), false);
+
+  const correlatedStart = executionStartRpc({
+    ...execution,
+    economicContext: {
+      ...execution.economicContext,
+      event: {
+        kind: "niche_resolution",
+        eventId: "10000000-0000-4000-8000-000000000099",
+      },
+    },
+  });
+  assert.equal(correlatedStart.p_economic_event_kind, "niche_resolution");
+  assert.equal(correlatedStart.p_economic_event_id, "10000000-0000-4000-8000-000000000099");
+  assert.equal(correlatedStart.p_landing_page_id, null);
+  assert.equal(correlatedStart.p_taxon_id, null);
 
   const terminal = operationFinishRpc({
     operationId: "10000000-0000-4000-8000-000000000003",
@@ -214,6 +257,34 @@ async function main() {
     "landing_page_dynamic_market_research",
     "supabase_inspect",
   ]) assert.ok(sources.includes(workload), `missing producer ${workload}`);
+  assert.match(sources, /kind:\s*["']niche_resolution["']/);
+  assert.match(sources, /kind:\s*["']lp_factory_internal["']/);
+  for (const forbidden of ["trace_id", "traceparent", "tracestate", "baggage"]) {
+    assert.equal(sources.includes(`economicEvent: ${forbidden}`), false);
+  }
+
+  const eventMigration = readFileSync(
+    "supabase/migrations/20260912215000_e21_5_6_openai_cost_event_correlation.sql",
+    "utf8",
+  );
+  assert.match(eventMigration, /start_openai_cost_execution_v2/);
+  assert.match(eventMigration, /read_openai_active_cost_rows_v2/);
+  assert.match(eventMigration, /economic_event_id <> id/);
+  assert.match(eventMigration, /economic_event_chk check \(\([\s\S]*\) is true\)/);
+  assert.doesNotMatch(eventMigration, /\bupdate\s+public\.openai_cost_executions\s+set\s+economic_/i);
+  const eventSqlTest = readFileSync(
+    "supabase/tests/e21_5_6_openai_cost_event_hierarchy.test.sql",
+    "utf8",
+  );
+  for (const evidence of [
+    "openai_cost_executions_landing_page_fkey",
+    "openai_cost_executions_taxon_id_fkey",
+    "openai_cost_executions_economic_event_idx",
+    "relrowsecurity",
+    "pg_policies",
+    "ai_readonly",
+    "v1 bridge row must remain uncorrelated without backfill",
+  ]) assert.ok(eventSqlTest.includes(evidence), `missing SQL evidence: ${evidence}`);
 
   const workflow = readFileSync(".github/workflows/pipeline-supabase-inspect.yml", "utf8");
   assert.ok(workflow.includes("SUPABASE_DB_URL_READONLY"));

@@ -562,10 +562,15 @@ async function generateWithOpenAi(input: {
   environment: OpenAiWorkloadEnvironment;
   apiKey: string;
 }): Promise<GeneratedOutput> {
+  const economicEventId = crypto.randomUUID();
   const result = await requestCommercialActivationOpenAi({
     apiKey: input.apiKey,
     configuration: input.configuration,
     environment: input.environment,
+    economicEvent: {
+      eventId: economicEventId,
+      taxonId: input.context.taxon.id,
+    },
     request: {
       input: [
         {

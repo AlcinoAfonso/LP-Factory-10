@@ -9,13 +9,14 @@ import type {
   OpenAiCostAttributionStatus,
   OpenAiCostEnvironment,
   OpenAiCostExecutionOrigin,
+  OpenAiCostEconomicEvent,
+  OpenAiEconomicDimensionStatus,
   OpenAiCostResult,
   OpenAiCostUniverse,
 } from "../active-contracts";
 import type { OpenAiCostsPeriod } from "../contracts";
 import {
   addDecimal,
-  decimalFromNonNegativeNumber,
   decimalFromNonNegativeString,
   decimalZero,
   formatDecimal,
@@ -46,6 +47,7 @@ export async function readOpenAiActiveCostPages(input: Readonly<{
   period: OpenAiCostsPeriod;
   readPage: (cursor: OpenAiActiveCostCursor | null, limit: number) => Promise<Page>;
   readCoverage: () => Promise<Page>;
+  economicDimensionStatus?: OpenAiEconomicDimensionStatus;
 }>, pageSize = OPENAI_ACTIVE_COST_PAGE_SIZE): Promise<OpenAiActiveCostReadResult> {
   if (!validPeriod(input.period) || !Number.isSafeInteger(pageSize) || pageSize < 1 || pageSize > OPENAI_ACTIVE_COST_PAGE_SIZE) {
     return invalidResponse();
@@ -55,7 +57,11 @@ export async function readOpenAiActiveCostPages(input: Readonly<{
     if (coveragePage.error) return readFailure();
     const coverage = parseCoverage(coveragePage.data);
     if (!coverage) return invalidResponse();
-    const accumulator = createAccumulator(input.period, coverage);
+    const accumulator = createAccumulator(
+      input.period,
+      coverage,
+      input.economicDimensionStatus ?? "v2_active",
+    );
     let cursor: OpenAiActiveCostCursor | null = null;
     for (let pageNumber = 0; pageNumber < MAX_PAGES; pageNumber += 1) {
       const page = await input.readPage(cursor, pageSize);
@@ -77,10 +83,15 @@ export function translateOpenAiActiveCostRows(input: Readonly<{
   period: OpenAiCostsPeriod;
   rows: unknown;
   coverageRows: unknown;
+  economicDimensionStatus?: OpenAiEconomicDimensionStatus;
 }>): OpenAiActiveCostReadResult {
   const coverage = parseCoverage(input.coverageRows);
   if (!validPeriod(input.period) || !coverage || !Array.isArray(input.rows)) return invalidResponse();
-  const accumulator = createAccumulator(input.period, coverage);
+  const accumulator = createAccumulator(
+    input.period,
+    coverage,
+    input.economicDimensionStatus ?? "v2_active",
+  );
   return accumulator.add(input.rows) || input.rows.length === 0
     ? accumulator.finish()
     : invalidResponse();
@@ -94,17 +105,21 @@ export function filterOpenAiActiveCosts(
     (!filters.universe || execution.universe === filters.universe) &&
     (!filters.accountId || execution.accountId === filters.accountId) &&
     (!filters.workload || execution.workload === filters.workload));
-  return aggregateExecutions(executions, model.coverage);
+  return aggregateExecutions(executions, model.coverage, model.economicDimensionStatus);
 }
 
-function createAccumulator(period: OpenAiCostsPeriod, coverage: readonly OpenAiActiveCostCoverage[]) {
+function createAccumulator(
+  period: OpenAiCostsPeriod,
+  coverage: readonly OpenAiActiveCostCoverage[],
+  economicDimensionStatus: OpenAiEconomicDimensionStatus,
+) {
   const executions = new Map<string, MutableExecution>();
   let previousKey: string | null = null;
 
   function add(rows: readonly unknown[]): OpenAiActiveCostCursor | null {
     let cursor: OpenAiActiveCostCursor | null = null;
     for (const raw of rows) {
-      const row = parseRow(raw, period);
+      const row = parseRow(raw, period, economicDimensionStatus);
       if (!row) return null;
       const key = cursorKey(row.cursor);
       if (previousKey !== null && key <= previousKey) return null;
@@ -123,7 +138,10 @@ function createAccumulator(period: OpenAiCostsPeriod, coverage: readonly OpenAiA
   }
 
   function finish(): OpenAiActiveCostReadResult {
-    return { ok: true, value: aggregateExecutions([...executions.values()], coverage) };
+    return {
+      ok: true,
+      value: aggregateExecutions([...executions.values()], coverage, economicDimensionStatus),
+    };
   }
   return { add, finish };
 }
@@ -136,6 +154,7 @@ type MutableExecution = Omit<OpenAiActiveCostExecution,
 function aggregateExecutions(
   input: readonly (OpenAiActiveCostExecution | MutableExecution)[],
   coverage: readonly OpenAiActiveCostCoverage[],
+  economicDimensionStatus: OpenAiEconomicDimensionStatus,
 ): OpenAiActiveCostReadModel {
   let total = decimalZero();
   let operationCount = 0;
@@ -191,6 +210,7 @@ function aggregateExecutions(
     });
   });
   return Object.freeze({
+    economicDimensionStatus,
     totalCalculatedUsd: formatDecimal(total),
     executionCount: executions.length,
     operationCount,
@@ -242,7 +262,11 @@ type ParsedRow = Readonly<{
   operation: OpenAiActiveCostOperation | null;
 }>;
 
-function parseRow(raw: unknown, period: OpenAiCostsPeriod): ParsedRow | null {
+function parseRow(
+  raw: unknown,
+  period: OpenAiCostsPeriod,
+  economicDimensionStatus: OpenAiEconomicDimensionStatus,
+): ParsedRow | null {
   const row = record(raw);
   if (!row) return null;
   const startedAt = timestamp(row?.cursor_started_at);
@@ -254,6 +278,18 @@ function parseRow(raw: unknown, period: OpenAiCostsPeriod): ParsedRow | null {
   const universe = oneOf(row?.universe, ["lp_factory", "client"] as const);
   const attributionStatus = oneOf(row?.attribution_status, ["attributed", "unassigned"] as const);
   const accountId = row?.account_id === null ? null : uuid(row?.account_id);
+  const accountName = economicDimensionStatus === "v1_fallback"
+    ? null
+    : nullableText(row?.account_name, 256);
+  const landingPageName = economicDimensionStatus === "v1_fallback"
+    ? null
+    : nullableText(row?.landing_page_name, 256);
+  const taxonName = economicDimensionStatus === "v1_fallback"
+    ? null
+    : nullableText(row?.taxon_name, 256);
+  const economicEvent = economicDimensionStatus === "v1_fallback"
+    ? null
+    : parseEconomicEvent(row);
   const executionFinishedAt = row?.execution_finished_at === null ? null : timestamp(row?.execution_finished_at);
   const executionResult = nullableResult(row?.execution_result);
   const executionFailure = nullableText(row?.execution_failure_category, 64);
@@ -262,10 +298,22 @@ function parseRow(raw: unknown, period: OpenAiCostsPeriod): ParsedRow | null {
   if (!startedAt || !executionId || sequence === null || !workload || !environment || !executionOrigin ||
       !universe || !attributionStatus || accountId === undefined || executionFinishedAt === undefined ||
       executionResult === undefined || executionFailure === undefined || baselineReference === undefined || baselineVersion === undefined ||
+      accountName === undefined || landingPageName === undefined || taxonName === undefined || economicEvent === undefined ||
       Math.floor(Date.parse(startedAt) / 1000) < period.startTime || Math.floor(Date.parse(startedAt) / 1000) >= period.endTime ||
       (universe === "lp_factory" && (attributionStatus !== "attributed" || accountId !== null)) ||
       (universe === "client" && attributionStatus === "attributed" && accountId === null) ||
       (universe === "client" && attributionStatus === "unassigned" && accountId !== null) ||
+      !validEconomicEventContext({
+        economicDimensionStatus,
+        economicEvent,
+        executionId,
+        universe,
+        attributionStatus,
+        accountId,
+        accountName,
+        landingPageName,
+        taxonName,
+      }) ||
       !validTerminal(executionFinishedAt, executionResult, executionFailure)) return null;
 
   const operation = row?.operation_id === null ? null : parseOperation(row, sequence);
@@ -280,6 +328,10 @@ function parseRow(raw: unknown, period: OpenAiCostsPeriod): ParsedRow | null {
       universe,
       attributionStatus,
       accountId,
+      accountName,
+      economicEvent,
+      landingPageName,
+      taxonName,
       baselineReference,
       baselineVersion,
       startedAt,
@@ -290,6 +342,61 @@ function parseRow(raw: unknown, period: OpenAiCostsPeriod): ParsedRow | null {
     },
     operation,
   };
+}
+
+function validEconomicEventContext(input: Readonly<{
+  economicDimensionStatus: OpenAiEconomicDimensionStatus;
+  economicEvent: OpenAiCostEconomicEvent | null;
+  executionId: string;
+  universe: OpenAiCostUniverse;
+  attributionStatus: OpenAiCostAttributionStatus;
+  accountId: string | null;
+  accountName: string | null;
+  landingPageName: string | null;
+  taxonName: string | null;
+}>) {
+  if (input.economicDimensionStatus === "v1_fallback") return input.economicEvent === null;
+  if (input.universe === "client" && input.attributionStatus === "attributed" && input.accountName === null) return false;
+  if ((input.universe === "lp_factory" || input.attributionStatus === "unassigned") && input.accountName !== null) return false;
+  if (!input.economicEvent) return input.landingPageName === null && input.taxonName === null;
+  if (input.economicEvent.eventId === input.executionId) return false;
+  if (input.economicEvent.kind === "landing_page") {
+    return input.universe === "client" && input.attributionStatus === "attributed" &&
+      input.accountId !== null && input.landingPageName !== null && input.taxonName === null;
+  }
+  if (input.economicEvent.kind === "niche_resolution") {
+    return input.universe === "client" && input.attributionStatus === "attributed" &&
+      input.accountId !== null && input.landingPageName === null && input.taxonName === null;
+  }
+  return input.universe === "lp_factory" && input.attributionStatus === "attributed" &&
+    input.accountId === null && input.landingPageName === null &&
+    (input.economicEvent.taxonId === null) === (input.taxonName === null);
+}
+
+function parseEconomicEvent(
+  row: Record<string, unknown>,
+): OpenAiCostEconomicEvent | null | undefined {
+  const kind = row.economic_event_kind === null
+    ? null
+    : oneOf(row.economic_event_kind, ["landing_page", "niche_resolution", "lp_factory_internal"] as const);
+  const eventId = row.economic_event_id === null ? null : uuid(row.economic_event_id);
+  const landingPageId = row.landing_page_id === null ? null : uuid(row.landing_page_id);
+  const taxonId = row.taxon_id === null ? null : uuid(row.taxon_id);
+  if (kind === null && eventId === null && landingPageId === null && taxonId === null) return null;
+  if (!kind || !eventId || landingPageId === undefined || taxonId === undefined) return undefined;
+  if (kind === "landing_page") {
+    return landingPageId === eventId && taxonId === null
+      ? Object.freeze({ kind, eventId, landingPageId })
+      : undefined;
+  }
+  if (kind === "niche_resolution") {
+    return landingPageId === null && taxonId === null
+      ? Object.freeze({ kind, eventId })
+      : undefined;
+  }
+  return landingPageId === null
+    ? Object.freeze({ kind, eventId, taxonId })
+    : undefined;
 }
 
 function parseOperation(row: Record<string, unknown>, sequence: number): OpenAiActiveCostOperation | null {
@@ -405,7 +512,7 @@ function nullableNonNegativeInteger(value: unknown): number | null | undefined {
   return value === null ? null : nonNegativeInteger(value) ?? undefined;
 }
 function decimal(value: unknown): string | null | undefined {
-  const parsed = decimalFromNonNegativeString(value) ?? decimalFromNonNegativeNumber(value);
+  const parsed = decimalFromNonNegativeString(value);
   return parsed ? formatDecimal(parsed) : undefined;
 }
 function nullableResult(value: unknown): OpenAiCostResult | null | undefined {
