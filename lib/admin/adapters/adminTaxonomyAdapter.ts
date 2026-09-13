@@ -272,8 +272,6 @@ async function readAdminInputCatalogReview(
   if (!coverage.ok) {
     return { status: "read_failed", errorCode: "INPUT_CATALOG_RESOLUTION_FAILED", message: coverage.error.message };
   }
-  const representative = coverage.value.catalogs[0];
-
   return {
     status: "available",
     selectedResearchVersion: data.selected_end_customer_research_version,
@@ -294,14 +292,26 @@ async function readAdminInputCatalogReview(
     chainFingerprint: fingerprintTaxonChain(chain.value),
     coverage: {
       plans: coverage.value.plans,
-      appliedLayers: representative.appliedLayers.map((layer) => ({
-        level: layer.level,
-        taxonName: layer.taxon?.name ?? null,
-      })),
-      fields: representative.fields.map((field) => ({
-        fieldKey: field.fieldKey,
-        purpose: field.purpose,
-        originLayer: field.originLayer,
+      catalogs: coverage.value.catalogs.map((catalog) => ({
+        plan: catalog.plan,
+        appliedLayers: catalog.appliedLayers.map((layer) => ({
+          level: layer.level,
+          taxonName: layer.taxon?.name ?? null,
+        })),
+        fields: catalog.fields.map((field) => ({
+          fieldKey: field.fieldKey,
+          purpose: field.purpose,
+          originLayer: field.originLayer,
+          valueType: field.valueType,
+          valueScope: field.valueScope,
+          expectedValueOrigin: field.expectedValueOrigin,
+          obligation: field.obligation,
+          requiredWhen: field.requiredWhen ?? null,
+          applicableWhen: field.applicableWhen ?? null,
+          validation: field.validation,
+          allowedPlans: field.allowedPlans,
+          landingPageSubstitutionPolicy: field.landingPageSubstitutionPolicy ?? null,
+        })),
       })),
     },
   };

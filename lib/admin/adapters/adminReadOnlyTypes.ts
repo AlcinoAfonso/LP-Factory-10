@@ -1,4 +1,13 @@
 import type { AccountStatus } from "@/lib/types/status";
+import type {
+  LandingPageInputCondition,
+  LandingPageInputExpectedValueOrigin,
+  LandingPageInputObligation,
+  LandingPageInputSubstitutionPolicy,
+  LandingPageInputValidation,
+  LandingPageInputValueScope,
+  LandingPageInputValueType,
+} from "@/conversion-content/landing-page/input-catalog";
 
 export type AdminAccountListItem = {
   id: string;
@@ -90,6 +99,21 @@ export type AdminEndCustomerResearchSelection =
   | { status: "read_failed"; message: string }
   | { status: "available"; selectedVersion: number | null };
 
+export type AdminInputCatalogCoverageField = Readonly<{
+  fieldKey: string;
+  purpose: string;
+  originLayer: string;
+  valueType: LandingPageInputValueType;
+  valueScope: LandingPageInputValueScope;
+  expectedValueOrigin: LandingPageInputExpectedValueOrigin;
+  obligation: LandingPageInputObligation;
+  requiredWhen: LandingPageInputCondition | null;
+  applicableWhen: LandingPageInputCondition | null;
+  validation: LandingPageInputValidation;
+  allowedPlans: readonly string[];
+  landingPageSubstitutionPolicy: LandingPageInputSubstitutionPolicy | null;
+}>;
+
 export type AdminInputCatalogReview =
   | { status: "disabled" }
   | { status: "blocked"; errorCode: string; message: string }
@@ -108,8 +132,11 @@ export type AdminInputCatalogReview =
       chainFingerprint: string;
       coverage: Readonly<{
         plans: readonly string[];
-        appliedLayers: readonly Readonly<{ level: string; taxonName: string | null }>[];
-        fields: readonly Readonly<{ fieldKey: string; purpose: string; originLayer: string }>[];
+        catalogs: readonly Readonly<{
+          plan: string;
+          appliedLayers: readonly Readonly<{ level: string; taxonName: string | null }>[];
+          fields: readonly AdminInputCatalogCoverageField[];
+        }>[];
       }>;
     };
 

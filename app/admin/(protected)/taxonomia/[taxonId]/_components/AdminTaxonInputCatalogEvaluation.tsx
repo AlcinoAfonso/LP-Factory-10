@@ -268,7 +268,7 @@ export function AdminTaxonInputCatalogEvaluationRuntime({
         reference,
         output: state.output,
         selectedCandidateIndexes,
-        humanCandidate: humanCandidateText.trim()
+        humanCandidate: humanCandidateText.trim().length >= 5
           ? { factualNeed: humanCandidateText, suggestedTaxonomyLayer: humanCandidateLayer }
           : null,
       });
@@ -456,6 +456,9 @@ export function AdminTaxonInputCatalogEvaluation({
   const resultInvalid = stale || modeMismatch;
   const normalizedHypothesis = hypothesis.trim();
   const normalizedFeedback = feedback.trim();
+  const normalizedHumanCandidate = humanCandidateText.trim();
+  const hasHumanCandidate = normalizedHumanCandidate.length > 0;
+  const hasValidHumanCandidate = normalizedHumanCandidate.length >= 5;
   const parsedInputCatalogVersion = Number(inputCatalogVersion);
   const displayedHypothesisError = mode === "hypothesis"
     ? hypothesisError ?? (normalizedHypothesis ? null : "Descreva uma hipótese factual focal para avaliar.")
@@ -475,23 +478,25 @@ export function AdminTaxonInputCatalogEvaluation({
     resultInvalid ||
     state.kind !== "result" ||
     output?.status !== "sufficient" ||
+    hasHumanCandidate ||
     administrativeDecisionPending;
   const candidateRejectionBlocked =
     resultInvalid ||
     state.kind !== "result" ||
     output?.status !== "candidate_gaps" ||
     selectedCandidateIndexes.length > 0 ||
-    humanCandidateText.trim().length >= 5 ||
+    hasHumanCandidate ||
     administrativeDecisionPending;
   const factualGapDecisionBlocked =
     resultInvalid ||
     state.kind !== "result" ||
-    (output?.status !== "candidate_gaps" && humanCandidateText.trim().length < 5) ||
-    (selectedCandidateIndexes.length === 0 && humanCandidateText.trim().length < 5) ||
+    (hasHumanCandidate && !hasValidHumanCandidate) ||
+    (output?.status !== "candidate_gaps" && !hasValidHumanCandidate) ||
+    (selectedCandidateIndexes.length === 0 && !hasValidHumanCandidate) ||
     administrativeDecisionPending;
   const administrativeBlockReason = getAdministrativeBlockReason({
     administrativeDecisionPending,
-    hasHumanCandidate: humanCandidateText.trim().length >= 5,
+    hasHumanCandidate,
     modeMismatch,
     selectedCandidateCount: selectedCandidateIndexes.length,
     stale,
@@ -1128,6 +1133,9 @@ function getAdministrativeBlockReason({
   }
   if (state.kind === "idle") {
     return "Bloqueado: execute uma avaliação válida antes de decidir.";
+  }
+  if (hasHumanCandidate) {
+    return "Há uma sugestão própria preenchida: complete e encaminhe-a para a E20.2 ou limpe o campo antes de confirmar suficiência.";
   }
   if (state.output.status === "inconclusive" && !hasHumanCandidate) {
     return "Bloqueado: resultado inconclusivo não permite confirmação nem reconhecimento de gap factual.";

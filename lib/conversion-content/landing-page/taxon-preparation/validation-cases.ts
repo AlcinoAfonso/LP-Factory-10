@@ -1976,6 +1976,20 @@ const cases: readonly ValidationCase[] = [
       assert.match(componentSource, /Reconhecer este candidato como gap factual real/);
       assert.match(componentSource, /Rejeitar todos os candidatos e confirmar N como suficiente/);
       assert.match(componentSource, /Limpe a seleção para rejeitar todos/);
+      assert.match(componentSource, /const hasHumanCandidate = normalizedHumanCandidate\.length > 0/);
+      assert.match(
+        componentSource,
+        /const sufficiencyConfirmationBlocked =[\s\S]*?hasHumanCandidate \|\|[\s\S]*?administrativeDecisionPending/,
+      );
+      assert.match(
+        componentSource,
+        /const candidateRejectionBlocked =[\s\S]*?hasHumanCandidate \|\|[\s\S]*?administrativeDecisionPending/,
+      );
+      assert.match(
+        componentSource,
+        /const factualGapDecisionBlocked =[\s\S]*?\(hasHumanCandidate && !hasValidHumanCandidate\)/,
+      );
+      assert.match(componentSource, /humanCandidateText\.trim\(\)\.length >= 5/);
       assert.match(componentSource, /Handoff transitório para o recorte E20\.2/);
       assert.match(componentSource, /aria-live="polite"/);
       assert.match(componentSource, /focus-visible:ring/);
@@ -1999,6 +2013,10 @@ const cases: readonly ValidationCase[] = [
       assert.match(pageSource, /inputCatalogEvaluationRuntime\.code === "ROLLOUT_GATE_OFF"/);
       assert.match(pageSource, /legacyMode={inputCatalogLegacyMode}/);
       assert.match(pageSource, /review={taxon\.inputCatalogReview}/);
+      assert.match(
+        pageSource,
+        /inputCatalogReviewEnabled={taxon\.inputCatalogReview\.status !== "disabled"}/,
+      );
       assert.match(pageSource, /A liberação humana sem IA acima permanece disponível/);
       assert.match(pageSource, /catalogDraftRevision/);
 
@@ -2036,6 +2054,8 @@ const cases: readonly ValidationCase[] = [
       assert.match(contextAdapterSource, /loadSelectedEndCustomerResearchForTaxon/);
       assert.match(contextAdapterSource, /reconstructDraftInputCatalogEvaluationContext/);
       assert.match(contextAdapterSource, /readCompleteTaxonChainForTaxon/);
+      assert.doesNotMatch(contextAdapterSource, /error\.code !== "FEATURE_DISABLED"/);
+      assert.match(contextAdapterSource, /error\.code !== "SELECTION_ABSENT"/);
       assert.doesNotMatch(contextAdapterSource, /\.range\(/);
       const taxonChainAdapterSource = readFileSync(
         new URL("../../adapters/taxonChainAdapter.ts", import.meta.url),
@@ -2056,6 +2076,21 @@ const cases: readonly ValidationCase[] = [
         "utf8",
       );
       assert.match(activeReviewSource, /Copiar instrução para o Codex/);
+      assert.match(activeReviewSource, /availableReview\.coverage\.catalogs\.map/);
+      assert.match(activeReviewSource, /field\.valueType/);
+      assert.match(activeReviewSource, /field\.valueScope/);
+      assert.match(activeReviewSource, /field\.obligation/);
+      assert.match(activeReviewSource, /formatCoverageValidation\(field\)/);
+      assert.match(activeReviewSource, /formatCoverageCondition\(field\.requiredWhen\)/);
+      assert.match(activeReviewSource, /formatCoverageCondition\(field\.applicableWhen\)/);
+
+      const manageFormSource = readFileSync(
+        new URL("../../../../components/admin/AdminTaxonManageForm.tsx", import.meta.url),
+        "utf8",
+      );
+      assert.match(manageFormSource, /taxon\.isActive \|\| !inputCatalogReviewEnabled/);
+      assert.match(manageFormSource, /defaultChecked={taxon\.isActive}/);
+      assert.match(manageFormSource, /Ativar taxon/);
     },
   },
   {

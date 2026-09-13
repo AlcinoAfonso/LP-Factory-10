@@ -2,7 +2,10 @@
 
 import { useActionState, useEffect, useState } from "react";
 
-import type { AdminInputCatalogReview } from "@/lib/admin/adapters/adminReadOnlyTypes";
+import type {
+  AdminInputCatalogCoverageField,
+  AdminInputCatalogReview,
+} from "@/lib/admin/adapters/adminReadOnlyTypes";
 import { applyInputCatalogReviewPresentation } from "@/lib/admin/adapters/adminTaxonomyReviewPolicy";
 import type { InputCatalogReviewActionState } from "../../actions";
 
@@ -120,20 +123,43 @@ export function AdminTaxonInputCatalogReview({
         <p className="mt-2 text-sm text-foreground">
           Planos confrontados: {availableReview.coverage.plans.join(", ")}.
         </p>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Camadas aplicadas: {availableReview.coverage.appliedLayers.map((layer) =>
-            layer.taxonName ? `${layer.level} (${layer.taxonName})` : layer.level
-          ).join(" → ")}.
-        </p>
-        <ul className="mt-3 grid gap-2 md:grid-cols-2" aria-label="Fields herdados da E20.2">
-          {availableReview.coverage.fields.map((field) => (
-            <li className="rounded border border-border bg-muted/20 px-3 py-2" key={field.fieldKey}>
-              <p className="text-sm font-medium text-foreground">{field.fieldKey}</p>
-              <p className="mt-1 text-xs text-muted-foreground">{field.purpose}</p>
-              <p className="mt-1 text-xs text-muted-foreground">Origem: {field.originLayer}</p>
-            </li>
+        <div className="mt-3 grid gap-4" aria-label="Catálogos completos herdados da E20.2">
+          {availableReview.coverage.catalogs.map((catalog) => (
+            <section className="rounded border border-border bg-muted/20 px-3 py-3" key={catalog.plan}>
+              <h3 className="text-sm font-semibold text-foreground">Plano {humanizeCoverageValue(catalog.plan)}</h3>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Camadas aplicadas: {catalog.appliedLayers.map((layer) =>
+                  layer.taxonName ? `${humanizeCoverageValue(layer.level)} (${layer.taxonName})` : humanizeCoverageValue(layer.level)
+                ).join(" → ")}.
+              </p>
+              <ul className="mt-3 grid gap-3" aria-label={`Fields herdados do plano ${catalog.plan}`}>
+                {catalog.fields.map((field) => (
+                  <li className="rounded border border-border bg-background px-3 py-3" key={field.fieldKey}>
+                    <p className="text-sm font-medium text-foreground">{field.fieldKey}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">{field.purpose}</p>
+                    <dl className="mt-2 grid gap-1 text-xs text-muted-foreground sm:grid-cols-2">
+                      <CoverageDetail label="Tipo" value={humanizeCoverageValue(field.valueType)} />
+                      <CoverageDetail label="Escopo do valor" value={humanizeCoverageValue(field.valueScope)} />
+                      <CoverageDetail label="Origem da definição" value={humanizeCoverageValue(field.originLayer)} />
+                      <CoverageDetail label="Origem esperada do valor" value={humanizeCoverageValue(field.expectedValueOrigin)} />
+                      <CoverageDetail label="Obrigação" value={humanizeCoverageValue(field.obligation)} />
+                      <CoverageDetail label="Validação" value={formatCoverageValidation(field)} />
+                      <CoverageDetail label="Condição de obrigatoriedade" value={formatCoverageCondition(field.requiredWhen)} />
+                      <CoverageDetail label="Condição de aplicabilidade" value={formatCoverageCondition(field.applicableWhen)} />
+                      <CoverageDetail label="Planos permitidos" value={field.allowedPlans.map(humanizeCoverageValue).join(", ")} />
+                      <CoverageDetail
+                        label="Política de substituição"
+                        value={field.landingPageSubstitutionPolicy
+                          ? humanizeCoverageValue(field.landingPageSubstitutionPolicy)
+                          : "Não declarada"}
+                      />
+                    </dl>
+                  </li>
+                ))}
+              </ul>
+            </section>
           ))}
-        </ul>
+        </div>
       </div>
 
       {legacyAvailable ? (
@@ -198,4 +224,54 @@ export function AdminTaxonInputCatalogReview({
       {!actionError && attemptedAction === "reopen" && lastAction === "reopen" && reopenState.reopened ? <p className="mt-4 text-sm text-emerald-800" role="status">Avaliação reaberta; o estado voltou para não avaliado.</p> : null}
     </section>
   );
+}
+
+function CoverageDetail({ label, value }: Readonly<{ label: string; value: string }>) {
+  return (
+    <div>
+      <dt className="font-medium text-foreground">{label}</dt>
+      <dd>{value}</dd>
+    </div>
+  );
+}
+
+function formatCoverageCondition(
+  condition: AdminInputCatalogCoverageField["requiredWhen"],
+): string {
+  if (!condition) return "Nenhuma";
+  const value = typeof condition.value === "string"
+    ? humanizeCoverageValue(condition.value)
+    : typeof condition.value === "boolean"
+      ? condition.value ? "Sim" : "Não"
+      : condition.value.map(humanizeCoverageValue).join(", ");
+  return `${condition.fieldKey} ${condition.operator === "equals" ? "igual a" : "em"} ${value}`;
+}
+
+function formatCoverageValidation(field: AdminInputCatalogCoverageField): string {
+  const validation = field.validation;
+  if (validation.kind === "enum") {
+    return `Opções: ${validation.allowedValues.map(humanizeCoverageValue).join(", ")}`;
+  }
+  if (validation.kind === "string_list") {
+    const constraints = [
+      validation.allowedValues?.length
+        ? `opções ${validation.allowedValues.map(humanizeCoverageValue).join(", ")}`
+        : null,
+      validation.minItems !== undefined ? `mínimo ${validation.minItems}` : null,
+      validation.maxItems !== undefined ? `máximo ${validation.maxItems}` : null,
+    ].filter((value): value is string => value !== null);
+    return constraints.length ? `Lista de textos: ${constraints.join("; ")}` : "Lista de textos";
+  }
+  if (validation.kind === "number_range") {
+    const limits = [
+      validation.minimum !== undefined ? `mínimo ${validation.minimum}` : null,
+      validation.maximum !== undefined ? `máximo ${validation.maximum}` : null,
+    ].filter((value): value is string => value !== null);
+    return `Faixa numérica${limits.length ? `: ${limits.join(", ")}` : ""} (${validation.currency})`;
+  }
+  return humanizeCoverageValue(validation.kind);
+}
+
+function humanizeCoverageValue(value: string): string {
+  return value.replace(/[._-]/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 }

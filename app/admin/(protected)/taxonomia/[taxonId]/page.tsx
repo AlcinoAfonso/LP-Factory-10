@@ -125,6 +125,7 @@ export default async function AdminTaxonDetailPage({ params, searchParams }: Adm
 
       <AdminTaxonManageForm
         taxon={taxon}
+        inputCatalogReviewEnabled={taxon.inputCatalogReview.status !== "disabled"}
         updateAction={updateTaxonAction}
         addAliasAction={addTaxonAliasAction}
         deleteAliasAction={deleteTaxonAliasAction}

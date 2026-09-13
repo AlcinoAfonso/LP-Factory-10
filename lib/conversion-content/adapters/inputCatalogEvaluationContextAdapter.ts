@@ -22,7 +22,6 @@ export async function reconstructCanonicalInputCatalogEvaluationContext(
   });
   if (
     !selectedResearch.ok &&
-    selectedResearch.error.code !== "FEATURE_DISABLED" &&
     selectedResearch.error.code !== "SELECTION_ABSENT"
   ) {
     return failure(
@@ -54,7 +53,6 @@ export async function reconstructDraftInputCatalogEvaluationContext(
   });
   if (
     !selectedResearch.ok &&
-    selectedResearch.error.code !== "FEATURE_DISABLED" &&
     selectedResearch.error.code !== "SELECTION_ABSENT"
   ) {
     return failure("AUTHORIZED_RESEARCH_INVALID", selectedResearch.error.message);
