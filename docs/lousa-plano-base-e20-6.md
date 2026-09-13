@@ -1,11 +1,14 @@
-# Plano-base E20.6 — V1 funcional consolidada do Debate 12
+# Plano-base E20.6 — V2 técnica executável do Debate 12
 
-- Estado: V1 funcional consolidada; execução técnica suspensa até a emissão da V2 aprovada.
+- Estado: V2 técnica candidata; execução suspensa até aprovação pelo Analista e reconciliação do roadmap.
 - Plano: E20.6 — Liberação e revisão factual de taxons.
 - Fonte funcional: seções 4.1–4.10 do Google Doc `Debate 12 — Evolução da revisão factual e UX administrativa da E20 — LP Factory 10`.
 - Documento fonte: `1XxMtfz_W0pTEWKiwQ00JIzrjQMC64fIAT40bIJpGZ5w`.
 - Revisão fonte: `ANLCKQl7xrJb-Wnad68kW00rg7fezszGop5fqv1nZRlzYfvt62xkp8mWMJkldGi3-KuPHUi4Ukdo_D0vNyg8J1H1Y2c788pikhljBOrjHhw`.
 - Base: `origin/main` em `71bd3041a8c59a0922fc5aa1c5344de8cf1a66dc`.
+- V1 imutável: commit `ed5d43654772bf7abd3cc5681db25cfd332fce1d`, blob `76d5ae3fff5b4361989552bf0257c51bacfd2996`.
+- Roadmap da base: blob `2284269cd4c7c281deb57c3db9d0e7930bb360d6`.
+- Plano conceitual: N/A.
 
 ## 4.1 V1 funcional consolidada — E20.6 Liberação e revisão factual de taxons
 
@@ -102,3 +105,122 @@
 - O PR #933 permanece mergeado e integra o estado real da `main`; a nova execução parte da `main` vigente e não faz revert amplo por conveniência.
 - A execução deverá derivar nova V2 sobre esta V1, em nova branch e novo PR. Alterações locais da tentativa suspensa só podem ser reaproveitadas se forem novamente justificadas pela nova V2.
 - Exceção específica ao handoff curto: por troca de instância Autônoma, o handoff pode citar o PR #923 fechado como referência histórica consultável e o PR #933 como implementação já incorporada à `main`, sem transportar briefing técnico adicional.
+
+## 5. V2 técnica executável
+
+### 5.1 Resultado técnico e classificação dos deltas
+
+- Resultado: substituir o caminho operacional corrente da E20.6 por um catálogo factual plan-neutral, liberação humana simples de taxon novo, revisão voluntária de taxon ativo e apoio opcional por IA, sem criar estado, lifecycle ou infraestrutura paralelos.
+- `Derivação técnica da V1`: projeção corrente plan-neutral da E20.2; publicação sem coordenação por taxon; liberação por compare-and-set de `is_active`; avaliação e handoff transitórios; página administrativa única; preservação da capacidade dormente E20.7.
+- `Modernização técnica justificada`: verificador SQL read-only versionado e teste transacional focal para o novo default; critérios WCAG 2.2 proporcionais à superfície alterada.
+- `Ampliação de escopo`: nenhuma. Filas, vetores, RAG, AI Gateway, cache, agentes, novos services, nova telemetria e auditoria global de acessibilidade permanecem fora do recorte.
+
+### 5.2 Boundaries e invariantes compartilhados
+
+- `lib/conversion-content/landing-page/input-catalog/` permanece autoridade repo-only das versões publicadas, da versão corrente, da identidade dos fields e da resolução factual.
+- O contrato operacional corrente recebe versão explícita e cadeia taxonômica, resolve Universal → Segmento → Nicho → Ultranicho e devolve um único catálogo com proveniência por camada.
+- A API corrente e os novos consumidores não recebem nem devolvem plano comercial ou `allowedPlans`. Se a representação histórica interna produzir projeções materialmente diferentes entre Starter, Lite, Pro e Ultra, a projeção plan-neutral falha fechado.
+- O resolver histórico por plano pode permanecer somente para leitura de versões históricas e para capacidades dormentes já existentes; não alimenta a E20.6, a UI corrente nem novos consumidores.
+- `business_taxons.is_active` é o único estado de liberação. `reviewed_input_catalog_version` e evidências históricas são preservados, mas ficam inertes no fluxo corrente e não recebem novos writes pela E20.6 ou pela publicação E20.2.
+- Nenhuma ação de IA publica, adiciona, edita, inativa ou reativa field; ativa ou desativa taxon; ou cria estado persistente da avaliação.
+- Autorizações e mutações permanecem server-side e reexecutam `requirePlatformAdmin()`; componentes client recebem somente DTO mínimo e nunca acessam OpenAI, secret, configuração operacional ou banco privilegiado.
+
+### 5.3 Fase 20.6.3 — Liberação de novo taxon
+
+- `createAdminTaxon` grava `is_active=false` explicitamente, independentemente do payload do cliente.
+- Uma migration forward-only altera somente o default físico de `public.business_taxons.is_active` para `false`; não atualiza linhas existentes, não cria objeto e não altera RLS, policies, grants ou exposição Data API.
+- A leitura administrativa resolve a cadeia completa e admite somente o taxon servido inativo; todos os ancestrais aplicados continuam obrigatoriamente ativos.
+- A página mostra a cobertura corrente plan-neutral e a proveniência de cada field antes da decisão.
+- A liberação relê taxon, cadeia e versão corrente, revalida identidade e cobertura, executa compare-and-set de `is_active=false` para `true` e confirma a leitura final.
+- A mutação altera somente `is_active`. Pesquisa E20.5, OpenAI, justificativa textual e `reviewed_input_catalog_version` não são pré-condições nem writes.
+- O CRUD administrativo genérico não pode realizar a transição inativo → ativo; a Server Action focal de liberação é o único caminho da aplicação.
+- Conflito, drift ou concorrência falham com mensagem segura e exigem reload; não se cria lock, RPC, receipt, sessão ou ledger.
+
+### 5.4 Fase 20.6.4 — Apoio opcional e decisão humana
+
+- A liberação simples é determinística e não chama OpenAI.
+- Somente ação explícita de `platform_admin` solicita o workload `taxon_input_catalog_sufficiency_evaluation`.
+- A saída é consultiva e transitória. O humano pode rejeitar todos, aceitar alguns ou todos os candidatos e incluir candidato próprio.
+- Aceitar nenhum candidato não executa write E20.6 e não impede a liberação.
+- Candidatos aceitos e a sugestão própria são normalizados, vinculados ao contexto revalidado e formam somente um handoff transitório para o lifecycle E20.2.
+- O handoff não publica nem altera field. Depois de eventual publicação E20.2, a página passa a mostrar a nova versão corrente e o humano decide separadamente se libera o taxon.
+- Falha, recusa, incompletude, timeout, indisponibilidade ou output inválido da IA não alteram o taxon nem removem o caminho humano sem IA.
+
+### 5.5 Fase 20.6.5 — Provider, fontes e output
+
+- Reutilizar o workload E21 `taxon_input_catalog_sufficiency_evaluation`, o runtime, a resolução de configuração por ambiente, a credencial compartilhada, os custos e a observabilidade existentes; não criar variável, modelo, secret, workload ou telemetria paralelos.
+- Development usa o baseline repo-side. Preview e Production exigem configuração ativa `supabase_operational` conforme E21.2. Preservar `gpt-5.6-terra + low` como baseline/configuração vigente e provar o novo prompt/schema antes do rollout; eventual troca exige avaliação própria.
+- A avaliação usa o taxon selecionado, sua cadeia, a versão factual E20.2 corrente e a E20.5 válida quando existir. Não inclui planos, forks, versão corrente por taxon ou `reviewed_input_catalog_version` como autoridade.
+- Taxon novo inativo pode ser avaliado no modo administrativo; taxon ativo pode ser revisto voluntariamente.
+- Com E20.5 válida, a avaliação sistemática usa essa fonte sem Web Search. Sem E20.5 válida, o fallback exige Web Search com `search_context_size="medium"` e no máximo duas chamadas. Pesquisa focal humana exige exatamente uma busca, inclusive quando complementar à E20.5.
+- Executar uma única Responses API foreground com `store:false`, timeout aplicativo de 45 segundos, zero retry automático, sem conversation, background ou Agents SDK.
+- Quando houver busca, `web_search` é a única tool permitida, `tool_choice="required"`, `max_tool_calls` corresponde ao modo e `web_search_call.action.sources` é incluído.
+- Structured Output estrito, schema limitado e parser semântico determinístico aceitam somente cobertura suficiente, gaps candidatos ou inconclusivo.
+- Fonte web precisa ser HTTPS, ter sido devolvida pelo provider e sustentar explicitamente o candidato correspondente. URL inventada, fonte ausente, recusa, resposta incompleta, schema inválido ou contradição semântica falham tecnicamente e sem mutação.
+- Pesquisa, web, feedback e output anterior são dados não confiáveis. Prompt e resposta integral, pesquisa, payload de negócio, URLs, PII, secrets e raciocínio privado não entram na telemetria comum.
+- Cada tentativa registra, quando disponível, somente workload, ambiente, configuração/revisão, origem, resultado, falha sanitizada, latência, usage e contagens de buscas/fontes. Custos são best-effort e não alteram o resultado funcional. `store:false` não é apresentado como garantia de Zero Data Retention.
+- Gate específico desligado apenas indisponibiliza a assistência por IA; não aciona fallback Codex e não bloqueia a liberação humana.
+
+### 5.6 Fase 20.6.6 — Revisão voluntária de taxon ativo
+
+- A revisão é iniciada exclusivamente por `platform_admin` e reutiliza o mesmo workload, contexto plan-neutral, fonte, prompt/schema, parser e guardrails da 20.6.5.
+- Publicar nova versão E20.2 não dispara avaliação, não reabre o taxon, não altera `is_active`, não grava marcador e não reprocessa usos anteriores.
+- Durante avaliação, evolução e publicação, o taxon permanece ativo. Falha do provider ou resultado inconclusivo preserva todo estado válido.
+- Candidatos aceitos seguem apenas para o lifecycle E20.2; encerramento sem mudança não grava estado E20.6.
+
+### 5.7 Fase 20.6.7 — Experiência administrativa
+
+- `/admin/taxonomia/[taxonId]` é a página única principal da E20.6; lista e criação continuam em suas rotas atuais.
+- A página apresenta, nesta ordem: identidade e estado do taxon; hierarquia Universal → Segmento → Nicho → Ultranicho; cobertura por camada; distinção entre fields próprios e herdados; ações humanas; assistência opcional por IA; detalhes técnicos progressivos.
+- Field é `próprio` quando sua origem é o taxon servido e `herdado` quando vem de ancestral aplicado.
+- Taxon inativo recebe ação de liberação sem IA; taxon ativo recebe revisão voluntária. Recomendação da IA e decisão humana são separadas visual e semanticamente.
+- Planos comerciais, fingerprints, IDs diagnósticos e seletor manual de versão não aparecem no nível principal.
+- Estados `idle`, `pending`, `completed`, `inconclusive`, `refusal`, `timeout`, `error` e `success` preservam conteúdo, não disparam decisão pela renderização e não removem ações humanas válidas.
+- Aplicar WCAG 2.2 somente aos critérios pertinentes da superfície alterada: fluxo integral por teclado, foco visível e previsível, nomes/labels/descrições programáticos, anúncio de erro e feedback dinâmico, contraste e alvos de toque adequados, ausência de ação exclusiva por hover e preservação segura dos estados.
+- A validação combina inspeção automatizada e roteiro manual; o recorte não declara conformidade WCAG integral sem auditoria própria.
+
+### 5.8 Lifecycle E20.2 e evolução de fields
+
+- Preservar registry, draft singleton, validação, materialização repo-only, prova do artefato implantado, merge, deploy, reconciliação e remoção final do draft.
+- O draft corrente aceita somente cobertura factual comum e plan-neutral; `allowedPlans` especializado ou subset comercial falha na validação.
+- Adição exige novo `fieldKey` e `createdInVersion` igual à versão-alvo.
+- Edição preserva `fieldKey`, residência taxonômica e `createdInVersion`.
+- Inativação define `retiredInVersion` igual à versão-alvo.
+- Reativação remove `retiredInVersion` somente em versão posterior, preservando identidade, residência e `createdInVersion`.
+- Versões publicadas anteriores permanecem imutáveis e resolvíveis.
+- Validar ou publicar versão E20.2 não depende de evidência, compatibilidade, marcador ou revisão individual por taxon.
+- A reconciliação confirma o registry implantado e encerra o draft sem gravar `reviewed_input_catalog_version` e sem alterar `business_taxons.is_active`.
+- A UI de `/admin/estrutura-lp?view=entradas` remove blockers, contagens e decisões por taxon; pode mostrar impacto factual por field, sem plano e sem gate E20.6.
+
+### 5.9 Preservação de compatibilidade e escopo negativo
+
+- Preservar a coluna `reviewed_input_catalog_version`, evidências, migrations, registros e versões históricas; não remover nem limpar dados para simplificar o modelo.
+- Preservar `taxonChainAdapter`, adapters da pesquisa E20.5, runtime/provider OpenAI e infraestrutura E21, alterando apenas os contratos necessários ao contexto e à decisão plan-neutral.
+- Preservar `preparation.ts` e dependências estritamente necessárias à capacidade dormente E20.7, sem reconectá-la ao fluxo corrente nem declarar compatibilidade nova.
+- Não implementar consumidor greenfield, E19, Base/Oferta/tarefa, valores concretos, sincronização, snapshot, formulário, landing page, E20.7, E21, novo papel ou infraestrutura.
+
+### 5.10 Residências técnicas prováveis
+
+- Contrato plan-neutral e lifecycle: `lib/conversion-content/landing-page/input-catalog/` e seus validators.
+- Avaliação e handoff transitórios: `lib/conversion-content/landing-page/taxon-preparation/` e adapters `inputCatalogEvaluation*`.
+- Leitura e liberação E20.6: extrair focalmente do adapter amplo de taxonomia para um adapter dedicado; não refatorar responsabilidades adjacentes por conveniência.
+- Actions e UI: `app/admin/(protected)/taxonomia/actions.ts`, página do taxon e componentes E20.6; substituir o componente antigo de confirmação por cobertura/liberação, sem manter dois caminhos concorrentes.
+- Lifecycle E20.2 no Admin: `lib/admin/adapters/adminInputCatalogLifecycle*`, `adminLandingPageStructureAdapter` e componentes/validators de `/admin/estrutura-lp`.
+- Banco: uma migration focal e um snippet read-only em `supabase/`; refletir somente o default alterado em `docs/schema.md`.
+- Documentação durável afetada: `docs/base-tecnica.md`, `docs/schema.md`, `docs/automations.md`, `docs/platform-config.md` somente se o estado operacional realmente mudar, e `docs/roadmap.md` pela reconciliação governada.
+
+### 5.11 Checkpoints e validações
+
+1. `20.6.3`: contrato plan-neutral, criação inativa, migration do default, cobertura e liberação CAS sem IA.
+2. `20.6.4`: apoio opcional, decisão transitória e lifecycle add/edit/inactivate/reactivate da E20.2 sem evidência ou marcador por taxon.
+3. `20.6.5`: provider, fontes, output estruturado e falhas sem mutação.
+4. `20.6.6`: revisão voluntária de taxon ativo sem mutação automática.
+5. `20.6.7`: página única, acessibilidade, regressões integradas, documentação e Preview/QA de fechamento.
+
+- Cada checkpoint executa os validators focais aplicáveis e o gate do Analista de implementação antes do próximo.
+- Gate local acumulado: `npm ci`, `npm run check`, `npm run validate:landing-page-input-catalog`, `npm run validate:taxon-preparation`, `npm run validate:admin-landing-page-structure` e `git diff --check`.
+- Teste SQL transacional prova que linhas existentes mantêm seus valores e novo insert sem `is_active` nasce inativo; o snippet read-only pós-apply confirma `column_default=false`, nulabilidade, constraints, RLS, policies e grants sem drift.
+- Security Controls é evidência suplementar read-only e não substitui migration, teste ou `docs/schema.md`.
+- QA hospedado autenticado cobre desktop e mobile, hierarquia, próprios/herdados, overflow, teclado, foco, labels, toque, contraste, feedback, separação IA/decisão, liberação sem E20.5 e comportamento com provider indisponível.
+- Checks, logs e Preview são evidências suplementares e expiráveis; PR, commits e documentos canônicos preservam a prova durável.
+- Nenhum merge ocorre antes da liberação explícita do Estrategista Autônomo.
