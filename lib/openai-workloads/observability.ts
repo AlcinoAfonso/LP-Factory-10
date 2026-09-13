@@ -29,6 +29,7 @@ type EventInput = OpenAiWorkloadEventContext &
     usage?: unknown;
     webSearchCallCount?: unknown;
     webSearchSourceCount?: unknown;
+    sourceStrategy?: unknown;
   }>;
 
 export function resolveOpenAiWorkloadEnvironment(
@@ -111,10 +112,19 @@ function createEvent(
     latencyMs: durationMetric(input.latencyMs),
     webSearchCallCount: integerMetric(input.webSearchCallCount),
     webSearchSourceCount: integerMetric(input.webSearchSourceCount),
+    sourceStrategy: sourceStrategyMetric(input.sourceStrategy),
     ...normalizeOpenAiResponseUsage(input.usage),
   };
 
   return deepFreeze(event) as OpenAiWorkloadEvent;
+}
+
+function sourceStrategyMetric(
+  value: unknown,
+): "e20_5" | "web_search_fallback" | "web_search_focal" | null {
+  return value === "e20_5" || value === "web_search_fallback" || value === "web_search_focal"
+    ? value
+    : null;
 }
 
 function asRecord(value: unknown): Record<string, unknown> | null {

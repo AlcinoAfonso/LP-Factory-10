@@ -10,6 +10,14 @@ import {
   type InputCatalogEvaluationContextIdentity,
 } from "@/conversion-content/landing-page/taxon-preparation";
 
+export type PersistedInputCatalogEvaluationMode = "systematic" | "hypothesis";
+
+export function parsePersistedInputCatalogEvaluationMode(
+  value: unknown,
+): PersistedInputCatalogEvaluationMode | null {
+  return value === "systematic" || value === "hypothesis" ? value : null;
+}
+
 export function planPublishedInputCatalogReviewReconciliation(input: Readonly<{
   currentVersion: number;
   impacts: readonly Readonly<{
@@ -28,6 +36,32 @@ export function planPublishedInputCatalogReviewReconciliation(input: Readonly<{
   return Object.freeze({
     taxonIdsToAdvance: Object.freeze(taxonIdsToAdvance.sort()),
   });
+}
+
+export function hasCompleteFactualReviewCoverage(input: Readonly<{
+  requiredTaxonIds: readonly string[];
+  evidenceTaxonIds: readonly string[];
+}>): boolean {
+  const required = [...new Set(input.requiredTaxonIds)].sort();
+  const evidence = [...new Set(input.evidenceTaxonIds)].sort();
+  return (
+    required.length === input.requiredTaxonIds.length &&
+    evidence.length === input.evidenceTaxonIds.length &&
+    required.length === evidence.length &&
+    required.every((taxonId, index) => taxonId === evidence[index])
+  );
+}
+
+export function collectRequiredFactualReviewTaxonIds(input: Readonly<{
+  activeReviewRequiredTaxonIds: readonly string[];
+  unclosedReleaseTaxonIds: readonly string[];
+}>): readonly string[] {
+  return Object.freeze([
+    ...new Set([
+      ...input.activeReviewRequiredTaxonIds,
+      ...input.unclosedReleaseTaxonIds,
+    ]),
+  ].sort());
 }
 
 export function validatePublishedInputCatalogReviewEvidenceContext(input: Readonly<{
@@ -49,6 +83,8 @@ export function validatePublishedInputCatalogReviewEvidenceContext(input: Readon
   if (
     input.preservedDraftIdentity.taxonId !== input.expectedTaxonId ||
     input.deployedIdentity.taxonId !== input.expectedTaxonId ||
+    input.preservedDraftIdentity.research === null ||
+    input.deployedIdentity.research === null ||
     input.preservedDraftIdentity.research.researchVersion !==
       input.expectedResearchVersion ||
     input.deployedIdentity.research.researchVersion !==
@@ -73,17 +109,39 @@ export function fingerprintInputCatalogLifecycleContext(input: Readonly<{
     reviewedVersion: number | null;
     selectedResearchVersion: number | null;
   }>[];
+  unclosedReleaseTaxonIds?: readonly string[];
 }>): string {
-  const canonical = stableJson({
-    taxons: input.taxons
-      .map((taxon) => ({
-        identity: taxon.identity,
+  const canonical = stableJson(snapshotInputCatalogLifecycleContext(input));
+  return createHash("sha256").update(canonical).digest("hex");
+}
+
+export function snapshotInputCatalogLifecycleContext(input: Readonly<{
+  taxons: readonly Readonly<{
+    identity: LandingPageInputCatalogTaxonIdentity;
+    reviewedVersion: number | null;
+    selectedResearchVersion: number | null;
+  }>[];
+  unclosedReleaseTaxonIds?: readonly string[];
+}>): Readonly<{
+  taxons: readonly Readonly<{
+    identity: LandingPageInputCatalogTaxonIdentity;
+    reviewedVersion: number | null;
+    selectedResearchVersion: number | null;
+  }>[];
+  unclosedReleaseTaxonIds: readonly string[];
+}> {
+  return Object.freeze({
+    taxons: Object.freeze(input.taxons
+      .map((taxon) => Object.freeze({
+        identity: Object.freeze({ ...taxon.identity }),
         reviewedVersion: taxon.reviewedVersion,
         selectedResearchVersion: taxon.selectedResearchVersion,
       }))
-      .sort((left, right) => left.identity.id.localeCompare(right.identity.id)),
+      .sort((left, right) => left.identity.id.localeCompare(right.identity.id))),
+    unclosedReleaseTaxonIds: Object.freeze([
+      ...(input.unclosedReleaseTaxonIds ?? []),
+    ].sort()),
   });
-  return createHash("sha256").update(canonical).digest("hex");
 }
 
 function stableJson(value: unknown): string {
@@ -123,6 +181,8 @@ export function createInputCatalogLifecycleProof(input: Readonly<{
         reviewedVersion: taxon.reviewedVersion,
         selectedResearchVersion: taxon.selectedResearchVersion,
       })).sort((left, right) => left.identity.id.localeCompare(right.identity.id))));
+      hash?.update(',"unclosedReleaseTaxonIds":');
+      hash?.update(stableJson([...(context.unclosedReleaseTaxonIds ?? [])].sort()));
       hash?.update("}");
       return {
         fingerprint: hash?.digest("hex") ?? "",

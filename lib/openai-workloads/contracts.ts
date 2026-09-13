@@ -305,6 +305,7 @@ export type OpenAiWorkloadEventContext = Readonly<{
   configurationRevision: string;
   model: string;
   reasoningEffort: OpenAiReasoningEffort;
+  sourceStrategy?: "e20_5" | "web_search_fallback" | "web_search_focal" | null;
 }>;
 
 type OpenAiWorkloadEventBase = OpenAiWorkloadEventContext &
@@ -324,6 +325,7 @@ type OpenAiWorkloadEventBase = OpenAiWorkloadEventContext &
     latencyMs: number | null;
     webSearchCallCount: number | null;
     webSearchSourceCount: number | null;
+    sourceStrategy: "e20_5" | "web_search_fallback" | "web_search_focal" | null;
   }>;
 
 export type OpenAiWorkloadSuccessEvent = OpenAiWorkloadEventBase &

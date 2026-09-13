@@ -1,6 +1,9 @@
 export { getAdminAccountDetail, listAdminAccounts } from "./adminAccountsAdapter";
 export { getAdminNicheResolutionDetail, listAdminNicheResolutions } from "./adminNicheResolutionsAdapter";
 export {
+  openAdminTaxonFactualReview,
+} from "./adminTaxonFactualReviewAdapter";
+export {
   addAdminTaxonAlias,
   createAdminTaxon,
   deleteAdminTaxon,
@@ -9,8 +12,6 @@ export {
   listAdminTaxonParentOptions,
   listAdminTaxons,
   selectAdminEndCustomerResearchVersion,
-  recordAdminInputCatalogReview,
-  reopenAdminInputCatalogReview,
   updateAdminTaxon,
 } from "./adminTaxonomyAdapter";
 export type {

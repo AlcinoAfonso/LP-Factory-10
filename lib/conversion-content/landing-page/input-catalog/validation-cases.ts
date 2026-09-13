@@ -5,6 +5,7 @@ import type {
   LandingPageInputCatalogLayer,
   LandingPageInputCatalogLayerEntry,
   LandingPageInputCatalogRegistry,
+  LandingPageInputCatalogTaxonIdentity,
   LandingPageInputFieldDefinition,
   LandingPageInputFieldSpecialization,
   ResolveLandingPageInputCatalogInput,
@@ -36,6 +37,11 @@ import {
   serializeLandingPageInputCatalogEntry,
   validateLandingPageInputCatalogDraft,
 } from "./draft";
+import {
+  applyLandingPageInputCatalogDraftOperation,
+  projectLandingPageInputCatalogDraftReleaseTaxons,
+  type LandingPageInputCatalogDraftFieldContract,
+} from "./draft-operations";
 import {
   areLandingPageOfferingScopesMateriallyEqual,
   parseLandingPageOfferingScope,
@@ -1258,6 +1264,572 @@ const cases: Case[] = [
       assert.equal(createdInPastResult.error.code, "INVALID_DRAFT");
     },
   },
+  {
+    name: "draft add materializes system provenance and compatible impacts without mutating input",
+    run: () => {
+      const draft = createNextLandingPageInputCatalogDraft();
+      const contract = draftFieldContract("draft_universal_add");
+      const mutableTaxons = lifecycleTaxons().map((taxon) =>
+        JSON.parse(JSON.stringify(taxon)) as typeof taxon,
+      );
+      const before = serializeLandingPageInputCatalogEntry(draft);
+      const result = applyLandingPageInputCatalogDraftOperation({
+        draft,
+        operation: { kind: "add", target: { kind: "universal" }, field: contract },
+        taxons: mutableTaxons,
+      });
+      assert.equal(result.ok, true);
+      const added = result.value.entry.universal.entries.at(-1);
+      assert.ok(added?.kind === "field");
+      assert.equal(added.fieldKey, "draft_universal_add");
+      assert.equal(added.createdInVersion, draft.version);
+      assert.equal(added.retiredInVersion, undefined);
+      assert.equal(added.originLayer, "universal");
+      assert.equal(added.originTaxon, undefined);
+      assert.equal(serializeLandingPageInputCatalogEntry(draft), before);
+      assert.equal(mutableTaxons.some((taxon) => Object.isFrozen(taxon.identity)), false);
+      assert.equal(Object.isFrozen(result.value), true);
+      assert.equal(result.value.canonicalJson, serializeLandingPageInputCatalogEntry(result.value.entry));
+      assert.equal(result.value.totals.compatibleEvolution, 3);
+      assert.equal(
+        result.value.impacts.every(
+          (impact) =>
+            impact.classification === "compatible_evolution" &&
+            impact.addedFieldKeys.includes("draft_universal_add"),
+        ),
+        true,
+      );
+      for (const plan of ["starter", "lite", "pro", "ultra"] as const) {
+        const resolved = resolveLandingPageInputCatalogFromRegistry(
+          { ...baseInput, version: draft.version, plan },
+          result.value.registry,
+        );
+        assert.equal(resolved.ok, true);
+        assert.equal(resolved.value.fields.some((field) => field.fieldKey === added.fieldKey), true);
+      }
+    },
+  },
+  {
+    name: "draft add supports explicit segment niche and authorized ultra-niche layers in order",
+    run: () => {
+      const taxons = lifecycleTaxons();
+      let draft = createNextLandingPageInputCatalogDraft();
+      const targets = [
+        [realEstateSegmentTaxon, "draft_segment_add"],
+        [realEstateBrokerNicheTaxon, "draft_niche_add"],
+        [mediumStandardRealEstateBrokerTaxon, "draft_ultra_add"],
+      ] as const;
+      for (const [taxon, fieldKey] of targets) {
+        const result = applyLandingPageInputCatalogDraftOperation({
+          draft,
+          operation: {
+            kind: "add",
+            target: { kind: "taxon_layer", taxonId: taxon.id },
+            field: draftFieldContract(fieldKey),
+          },
+          taxons,
+        });
+        assert.equal(result.ok, true);
+        draft = result.value.entry;
+        const layer = draft.taxonLayers[taxon.slug];
+        const added = layer.entries.at(-1);
+        assert.equal(layer.level, taxon.level);
+        assert.deepEqual(layer.taxon, taxon);
+        assert.ok(added?.kind === "field");
+        assert.deepEqual(added.originTaxon, taxon);
+      }
+      for (const plan of ["starter", "lite", "pro", "ultra"] as const) {
+        const validated = validateLandingPageInputCatalogDraft({ draft, taxons });
+        assert.equal(validated.ok, true);
+        const resolved = resolveLandingPageInputCatalogFromRegistry(
+          {
+            version: draft.version,
+            plan,
+            taxonChain: baseInput.taxonChain,
+            ultraNicheLayerAuthorized: true,
+          },
+          validated.value.registry,
+        );
+        assert.equal(resolved.ok, true);
+        const fieldKeys = resolved.value.fields.map((field) => field.fieldKey);
+        const addedIndexes = targets.map(([, fieldKey]) => fieldKeys.indexOf(fieldKey));
+        assert.equal(addedIndexes.every((index) => index >= 0), true);
+        assert.equal(addedIndexes[0] < addedIndexes[1] && addedIndexes[1] < addedIndexes[2], true);
+      }
+    },
+  },
+  {
+    name: "inactive release target uses an active catalog projection without mutating taxonomy",
+    run: () => {
+      const inactiveRelease: LandingPageInputCatalogTaxonIdentity = {
+        id: "d2066000-0000-4000-8000-000000000001",
+        parentId: realEstateSegmentTaxon.id,
+        level: "niche",
+        name: "Release projetada",
+        slug: "release-projetada",
+        isActive: false,
+      };
+      const taxons = [
+        { identity: realEstateSegmentTaxon, reviewedVersion: 6 },
+        { identity: inactiveRelease, reviewedVersion: null },
+      ];
+      const operation = {
+        kind: "add" as const,
+        target: { kind: "taxon_layer" as const, taxonId: inactiveRelease.id },
+        field: draftFieldContract("draft_release_add"),
+      };
+      const blocked = applyLandingPageInputCatalogDraftOperation({
+        draft: createNextLandingPageInputCatalogDraft(),
+        operation,
+        taxons,
+      });
+      assert.equal(blocked.ok, false);
+
+      const result = applyLandingPageInputCatalogDraftOperation({
+        draft: createNextLandingPageInputCatalogDraft(),
+        operation,
+        taxons,
+        releaseTaxonIds: [inactiveRelease.id],
+      });
+      assert.equal(result.ok, true);
+      const layer = result.value.entry.taxonLayers[inactiveRelease.slug];
+      const projected = layer.taxon;
+      const added = layer.entries.at(-1);
+      assert.equal(inactiveRelease.isActive, false);
+      assert.equal(projected?.isActive, true);
+      assert.ok(added?.kind === "field");
+      assert.equal(added.originTaxon?.isActive, true);
+      for (const plan of ["starter", "lite", "pro", "ultra"] as const) {
+        const resolved = resolveLandingPageInputCatalogFromRegistry(
+          {
+            version: result.value.entry.version,
+            plan,
+            taxonChain: { segment: realEstateSegmentTaxon, niche: projected! },
+          },
+          result.value.registry,
+        );
+        assert.equal(resolved.ok, true);
+        assert.equal(resolved.value.fields.some((field) => field.fieldKey === "draft_release_add"), true);
+      }
+    },
+  },
+  {
+    name: "universal operation projects every inactive release through impacts and four-plan resolution",
+    run: () => {
+      const inactiveNiche: LandingPageInputCatalogTaxonIdentity = {
+        id: "d2066000-0000-4000-8000-000000000010",
+        parentId: realEstateSegmentTaxon.id,
+        level: "niche",
+        name: "Release niche múltipla",
+        slug: "release-niche-multipla",
+        isActive: false,
+      };
+      const inactiveUltra: LandingPageInputCatalogTaxonIdentity = {
+        id: "d2066000-0000-4000-8000-000000000011",
+        parentId: inactiveNiche.id,
+        level: "ultra_niche",
+        name: "Release ultra múltipla",
+        slug: "release-ultra-multipla",
+        isActive: false,
+      };
+      const taxons = [
+        { identity: JSON.parse(JSON.stringify(realEstateSegmentTaxon)) as LandingPageInputCatalogTaxonIdentity, reviewedVersion: 6 },
+        { identity: inactiveNiche, reviewedVersion: 6 },
+        { identity: inactiveUltra, reviewedVersion: 6 },
+      ];
+      const releaseTaxonIds = [inactiveNiche.id, inactiveUltra.id];
+      const draft = JSON.parse(
+        JSON.stringify(createNextLandingPageInputCatalogDraft()),
+      ) as LandingPageInputCatalogRegistry[number];
+      for (const [taxon, fieldKey] of [
+        [inactiveNiche, "inactive_niche_existing"],
+        [inactiveUltra, "inactive_ultra_existing"],
+      ] as const) {
+        (draft.taxonLayers as Record<string, LandingPageInputCatalogLayer>)[taxon.slug] = {
+          level: taxon.level,
+          taxon,
+          entries: [{
+            ...draftFieldContract(fieldKey),
+            originLayer: taxon.level,
+            originTaxon: taxon,
+            createdInVersion: draft.version,
+          } as LandingPageInputFieldDefinition],
+        };
+      }
+      const result = applyLandingPageInputCatalogDraftOperation({
+        draft,
+        operation: {
+          kind: "add",
+          target: { kind: "universal" },
+          field: draftFieldContract("draft_multi_release_add"),
+        },
+        taxons,
+        releaseTaxonIds,
+      });
+      assert.equal(result.ok, true);
+      assert.equal(result.value.impacts.length, 3);
+      assert.equal(
+        result.value.impacts.every(
+          (impact) =>
+            impact.taxon.isActive &&
+            impact.classification === "compatible_evolution" &&
+            impact.addedFieldKeys.includes("draft_multi_release_add"),
+        ),
+        true,
+      );
+      assert.equal(inactiveNiche.isActive, false);
+      assert.equal(inactiveUltra.isActive, false);
+      assert.equal(draft.taxonLayers[inactiveNiche.slug].taxon?.isActive, false);
+      assert.equal(draft.taxonLayers[inactiveUltra.slug].taxon?.isActive, false);
+      assert.equal(result.value.entry.taxonLayers[inactiveNiche.slug].taxon?.isActive, true);
+      assert.equal(result.value.entry.taxonLayers[inactiveUltra.slug].taxon?.isActive, true);
+      const projectedNicheField = result.value.entry.taxonLayers[inactiveNiche.slug].entries[0];
+      const projectedUltraField = result.value.entry.taxonLayers[inactiveUltra.slug].entries[0];
+      assert.ok(projectedNicheField?.kind === "field");
+      assert.ok(projectedUltraField?.kind === "field");
+      assert.equal(projectedNicheField.originTaxon?.isActive, true);
+      assert.equal(projectedUltraField.originTaxon?.isActive, true);
+      assert.equal(Object.isFrozen(inactiveNiche), false);
+      assert.equal(Object.isFrozen(inactiveUltra), false);
+
+      const projectedById = new Map(
+        result.value.impacts.map((impact) => [impact.taxon.id, impact.taxon]),
+      );
+      for (const served of [inactiveNiche, inactiveUltra]) {
+        const niche = projectedById.get(inactiveNiche.id)!;
+        const ultra = served.level === "ultra_niche"
+          ? projectedById.get(inactiveUltra.id)
+          : undefined;
+        for (const plan of ["starter", "lite", "pro", "ultra"] as const) {
+          const resolved = resolveLandingPageInputCatalogFromRegistry(
+            {
+              version: result.value.entry.version,
+              plan,
+              taxonChain: {
+                segment: projectedById.get(realEstateSegmentTaxon.id)!,
+                niche,
+                ...(ultra ? { ultraNiche: ultra } : {}),
+              },
+              ultraNicheLayerAuthorized: !!ultra,
+            },
+            result.value.registry,
+          );
+          assert.equal(resolved.ok, true);
+          assert.equal(
+            resolved.value.fields.some((field) => field.fieldKey === "draft_multi_release_add"),
+            true,
+          );
+        }
+      }
+
+      assert.equal(projectLandingPageInputCatalogDraftReleaseTaxons({
+        taxons,
+        releaseTaxonIds: [inactiveNiche.id, inactiveNiche.id],
+      }).ok, false);
+      assert.equal(projectLandingPageInputCatalogDraftReleaseTaxons({
+        taxons,
+        releaseTaxonIds: ["d2066000-0000-4000-8000-000000000099"],
+      }).ok, false);
+      assert.equal(projectLandingPageInputCatalogDraftReleaseTaxons({
+        taxons,
+        releaseTaxonIds: [realEstateSegmentTaxon.id],
+      }).ok, false);
+    },
+  },
+  {
+    name: "draft change replaces the full contract while preserving key position and history",
+    run: () => {
+      const draft = createNextLandingPageInputCatalogDraft();
+      const currentIndex = draft.universal.entries.findIndex(
+        (entry) => entry.kind === "field" && entry.fieldKey === "traffic_source",
+      );
+      const current = draft.universal.entries[currentIndex];
+      assert.ok(current?.kind === "field" && current.validation.kind === "enum");
+      const contract = fieldContractFrom(current);
+      const expanded: LandingPageInputCatalogDraftFieldContract = {
+        ...contract,
+        validation: {
+          kind: "enum",
+          allowedValues: [...current.validation.allowedValues, "referral"],
+        },
+      };
+      const result = applyLandingPageInputCatalogDraftOperation({
+        draft,
+        operation: {
+          kind: "change",
+          target: { kind: "universal" },
+          fieldKey: current.fieldKey,
+          field: expanded,
+        },
+        taxons: [{ identity: realEstateSegmentTaxon, reviewedVersion: 6 }],
+      });
+      assert.equal(result.ok, true);
+      const changedIndex = result.value.entry.universal.entries.findIndex(
+        (entry) => entry.fieldKey === current.fieldKey,
+      );
+      const changed = result.value.entry.universal.entries[changedIndex];
+      assert.ok(changed.kind === "field");
+      assert.equal(changedIndex, currentIndex);
+      assert.equal(changed.fieldKey, current.fieldKey);
+      assert.equal(changed.createdInVersion, current.createdInVersion);
+      assert.equal(changed.retiredInVersion, current.retiredInVersion);
+      assert.equal(result.value.impacts[0]?.classification, "compatible_evolution");
+
+      const forgedHistory = applyLandingPageInputCatalogDraftOperation({
+        draft,
+        operation: {
+          kind: "change",
+          target: { kind: "universal" },
+          fieldKey: current.fieldKey,
+          field: {
+            ...contract,
+            retiredInVersion: draft.version,
+            createdInVersion: draft.version,
+          } as LandingPageInputCatalogDraftFieldContract,
+        },
+        taxons: [{ identity: realEstateSegmentTaxon, reviewedVersion: 6 }],
+      });
+      assert.equal(forgedHistory.ok, true);
+      const historyPreserved = forgedHistory.value.entry.universal.entries[currentIndex];
+      assert.ok(historyPreserved.kind === "field");
+      assert.equal(historyPreserved.createdInVersion, current.createdInVersion);
+      assert.equal(historyPreserved.retiredInVersion, current.retiredInVersion);
+
+      const material = applyLandingPageInputCatalogDraftOperation({
+        draft,
+        operation: {
+          kind: "change",
+          target: { kind: "universal" },
+          fieldKey: current.fieldKey,
+          field: { ...contract, purpose: "Contrato completo materialmente substituído." },
+        },
+        taxons: [{ identity: realEstateSegmentTaxon, reviewedVersion: 6 }],
+      });
+      assert.equal(material.ok, true);
+      assert.equal(material.value.impacts[0]?.classification, "review_required");
+    },
+  },
+  {
+    name: "draft change specializes inherited fields and preserves omitted number bounds",
+    run: () => {
+      const draft = createNextLandingPageInputCatalogDraft();
+      const segmentField = draft.taxonLayers[realEstateSegmentTaxon.slug].entries.find(
+        (entry) => entry.kind === "field" && entry.fieldKey === "property_price_range",
+      );
+      assert.ok(segmentField?.kind === "field" && segmentField.validation.kind === "number_range");
+      assert.equal(segmentField.validation.minimum, 0);
+      const contract = fieldContractFrom(segmentField);
+
+      const specialized = applyLandingPageInputCatalogDraftOperation({
+        draft,
+        operation: {
+          kind: "change",
+          target: { kind: "taxon_layer", taxonId: realEstateBrokerNicheTaxon.id },
+          fieldKey: segmentField.fieldKey,
+          field: {
+            ...contract,
+            validation: { kind: "number_range", currency: "BRL", minimum: 100000 },
+          },
+        },
+        taxons: lifecycleTaxons(),
+      });
+      assert.equal(specialized.ok, true);
+      if (!specialized.ok) throw new Error("Expected inherited specialization");
+      const nicheEntries = specialized.value.entry.taxonLayers[realEstateBrokerNicheTaxon.slug].entries;
+      const specialization = nicheEntries.find(
+        (entry) => entry.kind === "specialization" && entry.fieldKey === segmentField.fieldKey,
+      );
+      assert.ok(specialization?.kind === "specialization");
+      assert.deepEqual(specialization.changes, {
+        validation: { kind: "number_range", currency: "BRL", minimum: 100000 },
+      });
+
+      const preservedSpecialization = applyLandingPageInputCatalogDraftOperation({
+        draft: specialized.value.entry,
+        operation: {
+          kind: "change",
+          target: { kind: "taxon_layer", taxonId: realEstateBrokerNicheTaxon.id },
+          fieldKey: segmentField.fieldKey,
+          field: {
+            ...contract,
+            obligation: "required",
+            validation: { kind: "number_range", currency: "BRL" },
+          },
+        },
+        taxons: lifecycleTaxons(),
+      });
+      assert.equal(preservedSpecialization.ok, true);
+      if (!preservedSpecialization.ok) throw new Error("Expected preserved inherited bounds");
+      const preservedEntries = preservedSpecialization.value.entry.taxonLayers[realEstateBrokerNicheTaxon.slug].entries;
+      const preservedSpecializations = preservedEntries.filter(
+        (entry) => entry.kind === "specialization" && entry.fieldKey === segmentField.fieldKey,
+      );
+      assert.equal(preservedSpecializations.length, 1);
+      const preservedSpecializationEntry = preservedSpecializations[0];
+      assert.ok(preservedSpecializationEntry?.kind === "specialization");
+      assert.deepEqual(preservedSpecializationEntry.changes, {
+        obligation: "required",
+        validation: { kind: "number_range", currency: "BRL", minimum: 100000 },
+      });
+
+      const updated = applyLandingPageInputCatalogDraftOperation({
+        draft: specialized.value.entry,
+        operation: {
+          kind: "change",
+          target: { kind: "taxon_layer", taxonId: realEstateBrokerNicheTaxon.id },
+          fieldKey: segmentField.fieldKey,
+          field: {
+            ...contract,
+            validation: { kind: "number_range", currency: "BRL", minimum: 200000 },
+          },
+        },
+        taxons: lifecycleTaxons(),
+      });
+      assert.equal(updated.ok, true);
+      if (!updated.ok) throw new Error("Expected updated inherited specialization");
+      const updatedSpecializations = updated.value.entry.taxonLayers[realEstateBrokerNicheTaxon.slug].entries.filter(
+        (entry) => entry.kind === "specialization" && entry.fieldKey === segmentField.fieldKey,
+      );
+      assert.equal(updatedSpecializations.length, 1);
+      const updatedSpecialization = updatedSpecializations[0];
+      assert.ok(updatedSpecialization?.kind === "specialization");
+      assert.deepEqual(updatedSpecialization.changes, {
+        validation: { kind: "number_range", currency: "BRL", minimum: 200000 },
+      });
+
+      const preserved = applyLandingPageInputCatalogDraftOperation({
+        draft,
+        operation: {
+          kind: "change",
+          target: { kind: "taxon_layer", taxonId: realEstateSegmentTaxon.id },
+          fieldKey: segmentField.fieldKey,
+          field: {
+            ...contract,
+            purpose: "Faixa real de preço preservando o limite inferior vigente.",
+            validation: { kind: "number_range", currency: "BRL" },
+          },
+        },
+        taxons: lifecycleTaxons(),
+      });
+      assert.equal(preserved.ok, true);
+      if (!preserved.ok) throw new Error("Expected preserved number bounds");
+      const preservedField = preserved.value.entry.taxonLayers[realEstateSegmentTaxon.slug].entries.find(
+        (entry) => entry.kind === "field" && entry.fieldKey === segmentField.fieldKey,
+      );
+      assert.ok(preservedField?.kind === "field" && preservedField.validation.kind === "number_range");
+      assert.equal(preservedField.validation.minimum, 0);
+    },
+  },
+  {
+    name: "draft retire preserves the complete field and only records forward retirement",
+    run: () => {
+      const draft = createNextLandingPageInputCatalogDraft();
+      const current = draft.universal.entries.find(
+        (entry) => entry.kind === "field" && entry.fieldKey === "business_display_name",
+      );
+      assert.ok(current?.kind === "field");
+      const result = applyLandingPageInputCatalogDraftOperation({
+        draft,
+        operation: {
+          kind: "retire",
+          target: { kind: "universal" },
+          fieldKey: current.fieldKey,
+        },
+        taxons: [{ identity: realEstateSegmentTaxon, reviewedVersion: 6 }],
+      });
+      assert.equal(result.ok, true);
+      const retired = result.value.entry.universal.entries.find(
+        (entry) => entry.kind === "field" && entry.fieldKey === current.fieldKey,
+      );
+      assert.ok(retired?.kind === "field");
+      const { retiredInVersion: _currentRetirement, ...currentContract } = current;
+      const { retiredInVersion, ...retiredContract } = retired;
+      assert.deepEqual(retiredContract, currentContract);
+      assert.equal(retiredInVersion, draft.version);
+      assert.equal(result.value.impacts[0]?.classification, "review_required");
+    },
+  },
+  {
+    name: "draft operations reject duplicate missing renamed invalid and repeated mutations",
+    run: () => {
+      const draft = createNextLandingPageInputCatalogDraft();
+      const taxons = [{ identity: realEstateSegmentTaxon, reviewedVersion: 6 }];
+      const existing = draft.universal.entries.find(
+        (entry) => entry.kind === "field" && entry.fieldKey === "business_display_name",
+      );
+      assert.ok(existing?.kind === "field");
+      const contract = fieldContractFrom(existing);
+      const operations = [
+        {
+          kind: "add" as const,
+          target: { kind: "universal" as const },
+          field: contract,
+        },
+        {
+          kind: "change" as const,
+          target: { kind: "universal" as const },
+          fieldKey: "missing_field",
+          field: { ...contract, fieldKey: "missing_field" },
+        },
+        {
+          kind: "change" as const,
+          target: { kind: "universal" as const },
+          fieldKey: existing.fieldKey,
+          field: { ...contract, fieldKey: "renamed_field" },
+        },
+        {
+          kind: "retire" as const,
+          target: { kind: "universal" as const },
+          fieldKey: "missing_field",
+        },
+        {
+          kind: "add" as const,
+          target: { kind: "universal" as const },
+          field: { ...draftFieldContract("invalid_draft_add"), allowedPlans: [] },
+        },
+      ];
+      for (const operation of operations) {
+        assert.equal(
+          applyLandingPageInputCatalogDraftOperation({ draft, operation, taxons }).ok,
+          false,
+        );
+      }
+      const retired = applyLandingPageInputCatalogDraftOperation({
+        draft,
+        operation: {
+          kind: "retire",
+          target: { kind: "universal" },
+          fieldKey: existing.fieldKey,
+        },
+        taxons,
+      });
+      assert.equal(retired.ok, true);
+      assert.equal(
+        applyLandingPageInputCatalogDraftOperation({
+          draft: retired.value.entry,
+          operation: {
+            kind: "retire",
+            target: { kind: "universal" },
+            fieldKey: existing.fieldKey,
+          },
+          taxons,
+        }).ok,
+        false,
+      );
+      assert.equal(
+        applyLandingPageInputCatalogDraftOperation({
+          draft,
+          operation: {
+            kind: "add",
+            target: { kind: "taxon_layer", taxonId: "d2066000-0000-4000-8000-000000000099" },
+            field: draftFieldContract("missing_taxon_add"),
+          },
+          taxons,
+        }).ok,
+        false,
+      );
+    },
+  },
 ];
 
 for (const validationCase of cases) {
@@ -1376,6 +1948,34 @@ function fixtureField(
     obligation: "optional", validation: { kind: "type_only" }, allowedPlans: ["starter", "lite", "pro", "ultra"],
     snapshotPolicy: "include_if_used", evidence: { summary: "Fixture backed by the approved human decision.", references: ["decision:e20-2-human"] }, createdInVersion: 1,
   };
+}
+
+function lifecycleTaxons() {
+  return [
+    { identity: realEstateSegmentTaxon, reviewedVersion: 6 },
+    { identity: realEstateBrokerNicheTaxon, reviewedVersion: 6 },
+    { identity: mediumStandardRealEstateBrokerTaxon, reviewedVersion: 6 },
+  ];
+}
+
+function fieldContractFrom(
+  field: LandingPageInputFieldDefinition,
+): LandingPageInputCatalogDraftFieldContract {
+  const {
+    originLayer: _originLayer,
+    originTaxon: _originTaxon,
+    createdInVersion: _createdInVersion,
+    retiredInVersion: _retiredInVersion,
+    ...contract
+  } = JSON.parse(JSON.stringify(field)) as LandingPageInputFieldDefinition;
+  return contract;
+}
+
+function draftFieldContract(fieldKey: string): LandingPageInputCatalogDraftFieldContract {
+  return fieldContractFrom({
+    ...fixtureField(fieldKey),
+    landingPageSubstitutionPolicy: "explicit_allowed",
+  });
 }
 
 function reverseEntryPropertyOrder(

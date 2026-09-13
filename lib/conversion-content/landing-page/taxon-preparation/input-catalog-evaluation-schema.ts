@@ -5,9 +5,12 @@ import {
   inputCatalogEvaluationCandidateConclusions,
   inputCatalogEvaluationCandidateOrigins,
   inputCatalogEvaluationModes,
+  inputCatalogEvaluationSourceStates,
+  inputCatalogEvaluationSourceStrategies,
   inputCatalogEvaluationStatuses,
   inputCatalogEvaluationTaxonomicLayers,
   type InputCatalogEvaluationOutput,
+  type InputCatalogEvaluationMaterialTextUrlProjection,
   type ParseInputCatalogEvaluationOutputResult,
 } from "./contracts";
 
@@ -22,9 +25,11 @@ const MAX_EVIDENCE_LENGTH = 1_600;
 const MAX_UNCERTAINTIES = 8;
 const MAX_UNCERTAINTY_LENGTH = 500;
 const MAX_FOLLOW_UP_LENGTH = 1_000;
+const MAX_SOURCE_URLS = 16;
 
 const text = (maximum: number) => z.string().trim().min(1).max(maximum);
 const nullableText = (maximum: number) => text(maximum).nullable();
+const sourceUrls = z.array(z.url().max(2_048)).max(MAX_SOURCE_URLS);
 
 export const inputCatalogEvaluationCandidateSchema = z
   .object({
@@ -46,6 +51,7 @@ export const inputCatalogEvaluationCandidateSchema = z
     uncertainties: z
       .array(text(MAX_UNCERTAINTY_LENGTH))
       .max(MAX_UNCERTAINTIES),
+    sourceUrls,
   })
   .strict();
 
@@ -54,7 +60,10 @@ export const inputCatalogEvaluationOutputSchema = z
     schemaVersion: z.literal(INPUT_CATALOG_EVALUATION_SCHEMA_VERSION),
     status: z.enum(inputCatalogEvaluationStatuses),
     mode: z.enum(inputCatalogEvaluationModes),
+    sourceStrategy: z.enum(inputCatalogEvaluationSourceStrategies),
+    sourceState: z.enum(inputCatalogEvaluationSourceStates),
     summary: text(MAX_SUMMARY_LENGTH),
+    summarySourceUrls: sourceUrls,
     candidates: z
       .array(inputCatalogEvaluationCandidateSchema)
       .max(MAX_CANDIDATES),
@@ -81,18 +90,28 @@ export function parseInputCatalogEvaluationOutput(
   if (!parsed.success) {
     return failure(
       "INVALID_SCHEMA",
-      "A resposta não corresponde ao contrato estrito E20.6.5 v1.",
+      "A resposta não corresponde ao contrato estrito E20.6.5 v2.",
     );
   }
 
-  const semanticError = validateSemantics(parsed.data);
+  const normalized = normalizeSourceUrls(parsed.data);
+  if (!normalized) {
+    return failure("INVALID_SEMANTICS", "Fontes devem usar URLs HTTPS canônicas sem credenciais.");
+  }
+  if (!collectInputCatalogEvaluationMaterialTextUrls(normalized).ok) {
+    return failure(
+      "INVALID_SEMANTICS",
+      "URLs em campos textuais materiais devem usar HTTPS canônico sem credenciais.",
+    );
+  }
+  const semanticError = validateSemantics(normalized);
   if (semanticError) {
     return failure("INVALID_SEMANTICS", semanticError);
   }
 
   return deepFreeze({
     ok: true as const,
-    value: structuredClone(parsed.data) as InputCatalogEvaluationOutput,
+    value: structuredClone(normalized) as InputCatalogEvaluationOutput,
   });
 }
 
@@ -115,6 +134,30 @@ function decodeCandidate(
 function validateSemantics(
   output: z.infer<typeof inputCatalogEvaluationOutputSchema>,
 ): string | null {
+  if (
+    (output.mode === "systematic" && output.sourceStrategy === "web_search_focal") ||
+    (output.mode === "hypothesis" && output.sourceStrategy !== "web_search_focal") ||
+    (output.sourceStrategy === "e20_5" && output.sourceState !== "e20_5_available") ||
+    (output.sourceStrategy === "web_search_fallback" && output.sourceState !== "e20_5_absent_authorized")
+  ) {
+    return "Modo, estratégia e estado das fontes são incompatíveis.";
+  }
+  const allUrls = [
+    ...output.summarySourceUrls,
+    ...output.candidates.flatMap((candidate) => candidate.sourceUrls),
+  ];
+  if (output.sourceStrategy === "e20_5" && allUrls.length > 0) {
+    return "A estratégia E20.5 não admite URLs web.";
+  }
+  if (
+    output.sourceStrategy !== "e20_5" &&
+    (
+      output.summarySourceUrls.length === 0 ||
+      output.candidates.some((candidate) => candidate.sourceUrls.length === 0)
+    )
+  ) {
+    return "Estratégia web exige citação no resumo e em cada candidato.";
+  }
   for (const candidate of output.candidates) {
     if (hasDuplicates(candidate.relatedFields) || hasDuplicates(candidate.uncertainties)) {
       return "Fields relacionados e incertezas não podem conter duplicatas.";
@@ -196,6 +239,86 @@ function validateSemantics(
   }
 
   return null;
+}
+
+export function collectInputCatalogEvaluationMaterialTextUrls(
+  output: InputCatalogEvaluationOutput,
+):
+  | Readonly<{
+      ok: true;
+      value: readonly string[];
+      projection: readonly InputCatalogEvaluationMaterialTextUrlProjection[];
+    }>
+  | Readonly<{ ok: false }> {
+  const materialTexts = [
+    output.summary,
+    output.followUpQuestion,
+    ...output.candidates.flatMap((candidate) => [
+      candidate.factualNeed,
+      ...candidate.relatedFields,
+      candidate.currentCoverage,
+      candidate.allegedInsufficiency,
+      candidate.evidence,
+      candidate.expectedOperationalSource,
+      candidate.realConsumer,
+      candidate.concreteHarm,
+      ...candidate.uncertainties,
+    ]),
+  ].filter((value): value is string => typeof value === "string");
+  const normalized = new Set<string>();
+  const projection = new Map<string, string>();
+  const urlPattern = /(?:[a-z][a-z0-9+.-]*:\/\/|www\.)[^\s<>"'`)\]}]+/giu;
+  for (const text of materialTexts) {
+    for (const match of text.matchAll(urlPattern)) {
+      const candidate = match[0]?.replace(/[.,;:!?]+$/u, "") ?? "";
+      try {
+        const url = new URL(candidate);
+        if (url.protocol !== "https:" || url.username || url.password) return { ok: false };
+        url.hash = "";
+        const canonical = url.toString();
+        normalized.add(canonical);
+        projection.set(candidate, canonical);
+      } catch {
+        return { ok: false };
+      }
+    }
+  }
+  return Object.freeze({
+    ok: true,
+    value: Object.freeze([...normalized]),
+    projection: Object.freeze(
+      [...projection].map(([raw, canonical]) => Object.freeze({ raw, canonical })),
+    ),
+  });
+}
+
+function normalizeSourceUrls<T extends z.infer<typeof inputCatalogEvaluationOutputSchema>>(
+  output: T,
+): T | null {
+  const normalize = (values: readonly string[]) => {
+    const normalized: string[] = [];
+    for (const value of values) {
+      try {
+        const url = new URL(value);
+        if (url.protocol !== "https:" || url.username || url.password) return null;
+        url.hash = "";
+        const canonical = url.toString();
+        if (!normalized.includes(canonical)) normalized.push(canonical);
+      } catch {
+        return null;
+      }
+    }
+    return normalized;
+  };
+  const summary = normalize(output.summarySourceUrls);
+  if (!summary) return null;
+  const candidates = [];
+  for (const candidate of output.candidates) {
+    const urls = normalize(candidate.sourceUrls);
+    if (!urls) return null;
+    candidates.push({ ...candidate, sourceUrls: urls });
+  }
+  return { ...output, summarySourceUrls: summary, candidates } as T;
 }
 
 function hasDuplicates(values: readonly string[]): boolean {

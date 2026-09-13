@@ -295,7 +295,7 @@
 • level text not null
 • name text not null
 • slug text not null
-• is_active boolean not null default true
+• is_active boolean not null default false
 • selected_end_customer_research_version integer null
 • reviewed_input_catalog_version integer null
 
@@ -1041,14 +1041,15 @@
 1.35.2 Evidências e constraints
 • content_fingerprint é SHA-256 hexadecimal obrigatório; validation_fingerprint/validation_context_fingerprint/validated_at e publication_fingerprint/publication_context_fingerprint/publication_prepared_at formam conjuntos consistentes.
 • Evidência de publicação só pode referenciar o mesmo conteúdo e a mesma coleção operacional integral validados. Drift de taxonomia, configuração E19.2 pré-handoff, configuração E19.5, LP ou elegibilidade torna o handoff stale. O registro significa handoff repo-only preparado, não publicação, ativação ou autoridade operacional.
-• taxon_review_evidence é objeto JSON server-only de decisões humanas pré-publicação vinculadas ao fingerprint exato do conteúdo e do contexto E20.6.5; editar o draft limpa essas evidências, e registrá-las não atualiza reviewed_input_catalog_version.
+• taxon_review_evidence é a projeção server-only das decisões fechadas por taxon e draft exato. Cada entrada contém somente review_id, review_revision, draft_revision, content_fingerprint e context_fingerprint; decisão, ator e candidatos permanecem na linha factual referenciada.
+• Gravar decisão não incrementa a revisão material do draft nem altera reviewed_input_catalog_version. Editar o conteúdo usa concorrência otimista, limpa integralmente a projeção e também limpa validação e preparação de publicação; as revisões factuais já fechadas permanecem imutáveis no histórico.
 • singleton é a primary key booleana e aceita somente true; no máximo uma linha pode existir.
 • created_by e updated_by referenciam auth.users(id) com ON UPDATE CASCADE e ON DELETE RESTRICT; created_at e updated_at são timestamptz não nulos, e trigger canônico mantém updated_at.
 
 1.35.3 Segurança e artefatos
 • RLS habilitado e nenhuma policy; public, anon, authenticated e ai_readonly não possuem grants.
 • service_role possui SELECT, INSERT, UPDATE e DELETE; não há acesso direto do client.
-• DELETE é usado somente pela reconciliação humana no runtime de Production pós-deploy, depois de o boundary comprovar que versão atual, conteúdo e fingerprint do registry implantado correspondem exatamente ao draft congelado.
+• DELETE é usado somente pela reconciliação humana no runtime de Production pós-deploy, depois de uma RPC comprovar versão, revisão, conteúdo, contexto, decisões e autorizações da coleção integral e materializar todos os efeitos na mesma transação.
 • Migration forward-only: `supabase/migrations/20260824180000_e20_2_8_input_catalog_lifecycle.sql`; teste transacional: `supabase/tests/e20_2_8_input_catalog_lifecycle.test.sql`; verificador read-only: `supabase/snippets/e20_2_8_input_catalog_lifecycle_verify.sql`.
 • A migration não cria linha e não migra v1–v5. O apply hospedado foi concluído em 25/08/2026; o verificador read-only aprovou 4/4 checks, o teste SQL transacional foi aprovado sem resíduos e o Security Controls apresentou somente o INFO esperado de RLS sem policy, compatível com acesso exclusivo por service_role.
 
@@ -1083,6 +1084,21 @@
 • RLS habilitado e zero policies; ACLs idênticas às de `openai_lp_cost_events`.
 • O trigger `openai_lp_cost_coverage_prevent_mutation` rejeita UPDATE e DELETE.
 • A única linha registrada em Production permanece congelada; `register_openai_lp_cost_coverage_v1` foi preservada historicamente sem EXECUTE para papéis externos.
+
+1.38 business_taxon_factual_reviews
+1.38.1 Função e estado
+• Única autoridade factual persistida por revisão de taxon. `kind` aceita `release | revision`, `status` aceita somente `open | closed` e `outcome` registra `no_change | catalog_change | invalidated` apenas no fechamento.
+• Preserva baseline de atividade, `selected_end_customer_research_version` e versão revisada, snapshot canônico da cadeia, contexto, última avaliação estruturada, decisão humana, revisão otimista, atores e instantes. Índice parcial permite no máximo uma revisão aberta por taxon.
+• Abertura é insert de uma linha e não altera `business_taxons`; triggers compartilham o advisory lock com a mutação taxonômica e com a troca da pesquisa E20.5 selecionada. Abertura, finalização e reconciliação revalidam baseline e snapshot integral sob o mesmo lock; troca da pesquisa selecionada é rejeitada enquanto a revisão estiver aberta. Avaliação bem-sucedida substitui somente a recomendação persistida da revisão aberta; falha ou timeout do provider não grava estado autoritativo.
+• A FK `taxon_id` usa `ON DELETE RESTRICT`; o detalhe administrativo contabiliza qualquer histórico factual e bloqueia a oferta de exclusão do taxon.
+• Decisão fecha a linha imediatamente. Em cobertura publicada sem mudança, a mesma transação avança o marcador e ativa somente uma `release`; sobre draft, a mesma transação grava a evidência exata inclusive para `no_change`, sem ativação antecipada.
+• Linha fechada é imutável. Alteração material ou inativação de ancestral fecha revisões abertas afetadas como `invalidated` e limpa marcadores do subtree na mesma transação, sem ledger paralelo.
+
+1.38.2 Segurança e artefatos
+• RLS habilitado e zero policies; public, anon, authenticated e ai_readonly sem grants. `service_role` possui somente SELECT, INSERT e UPDATE.
+• Não participa do Trigger Hub; triggers dedicados serializam a abertura e a seleção E20.5, mantêm `updated_at` e rejeitam UPDATE ou DELETE quando a linha já está fechada.
+• Somente as fronteiras multi-write usam RPC: `finalize_business_taxon_factual_review_v1`, `update_business_taxon_with_factual_review_invalidation_v1` e `reconcile_business_taxon_factual_review_publication_v1`. Todas usam SECURITY INVOKER, search_path fixado e EXECUTE exclusivo de service_role.
+• Migration forward-only: `supabase/migrations/20260911213324_e20_6_3_factual_review_lifecycle.sql`; teste transacional e snippet read-only homônimos. Estado: artefatos repo-side criados; apply hospedado e verificações pós-apply ainda não executados.
 
 2. Views
 
@@ -1427,6 +1443,7 @@
 • Rollback: não remove automaticamente a extensão, pois pode ser reutilizada por outros recursos
 
 99. Changelog
+v1.0.66 (12/09/2026) — E20.6.3–E20.6.7: registrada uma única residência factual por revisão, com estados `open | closed`, última avaliação v2, decisão humana imutável, três RPCs multi-write e abertura serializada com mutações taxonômicas; sem ledger de eventos/invalidações, recibo JSON, token decisório ou fingerprint redundante do output. Apply hospedado permanece pendente.
 v1.0.65 (02/09/2026) — SV-PR03: marcado o agregado físico E19.5 como infraestrutura herdada; configurações continuam lidas pelo lifecycle administrativo do catálogo e os demais RPCs, materializações, aprovação e Storage permanecem inertes, sem DDL, migration, dado ou ACL alterado.
 v1.0.61 (29/08/2026) — E20.7.4: registrada a migration candidata que amplia o agregado E21.2 de dez para doze unidades com `landing_page_dynamic_market_research`, preserva as três tabelas, RLS e grants existentes e mantém apply e revisão operacional comprovada pendentes do merge humano.
 

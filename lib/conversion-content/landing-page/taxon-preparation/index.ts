@@ -2,6 +2,21 @@ export type {
   EndCustomerResearchContent,
   EndCustomerResearchErrorCode,
   EndCustomerResearchTaxonIdentity,
+  FactualReviewKind,
+  FactualReviewCatalogChangeDecision,
+  FactualReviewHumanDecision,
+  NormalizedFactualReviewHumanDecision,
+  FactualReviewAcceptedCandidate,
+  FactualReviewDecisionLayer,
+  FactualReviewOwnCandidate,
+  FactualReviewPersistedDecision,
+  FactualReviewPersistedOwnCandidate,
+  FactualReviewRecommendationSelection,
+  FactualReviewSession,
+  FactualReviewStatus,
+  FactualReviewTaxonBaseline,
+  FactualReviewTaxonChainSnapshot,
+  InheritedInputCatalogCoverage,
   LoadSelectedEndCustomerResearchResult,
   LoadEndCustomerResearchCandidateInput,
   LoadEndCustomerResearchCandidateResult,
@@ -27,25 +42,36 @@ export type {
   InputCatalogEvaluationProviderRequest,
   InputCatalogEvaluationProviderResult,
   InputCatalogEvaluationReconstructionInput,
+  InputCatalogEvaluationSourceState,
+  InputCatalogEvaluationSourceStrategy,
   InputCatalogEvaluationStatus,
   InputCatalogEvaluationTaxonChainSnapshot,
   InputCatalogEvaluationTaxonomicLayer,
   ParseInputCatalogEvaluationOutputResult,
   RevalidateInputCatalogEvaluationContextResult,
+  ResolveInheritedInputCatalogCoverageInput,
+  ResolveInheritedInputCatalogCoverageResult,
+  NormalizeFactualReviewCatalogChangeDecisionResult,
 } from "./contracts";
-export type {
-  InputCatalogEvaluationAdministrativeDecision,
-  InputCatalogEvaluationAdministrativeDecisionResult,
-} from "./input-catalog-evaluation-decision";
 export {
   END_CUSTOMER_RESEARCH_AUDIENCE_SCOPE,
+  FACTUAL_REVIEW_HUMAN_ADDED_ORIGIN,
   INPUT_CATALOG_EVALUATION_SCHEMA_VERSION,
+  factualReviewKinds,
+  factualReviewDecisionLayers,
+  factualReviewStatuses,
   inputCatalogEvaluationCandidateConclusions,
   inputCatalogEvaluationCandidateOrigins,
   inputCatalogEvaluationModes,
   inputCatalogEvaluationStatuses,
   inputCatalogEvaluationTaxonomicLayers,
 } from "./contracts";
+export {
+  deriveFactualReviewKind,
+  isGenericTaxonActivation,
+  normalizeFactualReviewCatalogChangeDecision,
+  resolveInheritedInputCatalogCoverage,
+} from "./factual-review";
 export { loadEndCustomerResearchCandidate } from "./research";
 
 export function isEndCustomerResearchSelectionEnabled(): boolean {
@@ -56,7 +82,7 @@ export function isInputCatalogReviewEnabled(): boolean {
   return process.env.E20_6_INPUT_CATALOG_REVIEW_ENABLED === "true";
 }
 
-export { buildInputCatalogReviewHandoff, resolveInputCatalogReview } from "./input-catalog-review";
+export { resolveInputCatalogReview } from "./input-catalog-review";
 export {
   classifyRequiredInputCatalogVersion,
   deriveEffectiveTaxonPreparation,
@@ -80,11 +106,3 @@ export {
   type BuildInputCatalogEvaluationContextOptions,
   type BuildInputCatalogEvaluationPromptInput,
 } from "./input-catalog-evaluation";
-export { executeInputCatalogEvaluationAdministrativeDecision } from "./input-catalog-evaluation-decision";
-export { buildInputCatalogEvaluationGapHandoff } from "./input-catalog-evaluation-gap-handoff";
-export type { InputCatalogEvaluationDecisionTokenPayload } from "./input-catalog-evaluation-decision-token";
-export {
-  createInputCatalogEvaluationDecisionToken,
-  fingerprintInputCatalogEvaluationOutput,
-  readInputCatalogEvaluationDecisionToken,
-} from "./input-catalog-evaluation-decision-token";

@@ -151,7 +151,7 @@ begin
     update public.landing_page_input_catalog_drafts
     set taxon_review_evidence = '[]'::jsonb;
     raise exception 'non-object review evidence unexpectedly accepted';
-  exception when check_violation then
+  exception when check_violation or insufficient_privilege then
     null;
   end;
 end;

@@ -2,8 +2,12 @@ import assert from "node:assert/strict";
 
 import { collectCompletePaginatedRows } from "../../../../lib/admin/adapters/adminInputCatalogLifecyclePagination";
 import {
+  collectRequiredFactualReviewTaxonIds,
   fingerprintInputCatalogLifecycleContext,
+  hasCompleteFactualReviewCoverage,
+  parsePersistedInputCatalogEvaluationMode,
   planPublishedInputCatalogReviewReconciliation,
+  snapshotInputCatalogLifecycleContext,
 } from "../../../../lib/admin/adapters/adminInputCatalogLifecycleValidation";
 import {
   realEstateBrokerNicheTaxon,
@@ -11,6 +15,21 @@ import {
 } from "../../../../lib/conversion-content/landing-page/input-catalog";
 
 export async function validateLifecycleE20Contracts(): Promise<void> {
+  assert.equal(parsePersistedInputCatalogEvaluationMode("hypothesis"), "hypothesis");
+  assert.equal(parsePersistedInputCatalogEvaluationMode("systematic"), "systematic");
+  assert.equal(parsePersistedInputCatalogEvaluationMode("unknown"), null);
+  assert.deepEqual(collectRequiredFactualReviewTaxonIds({
+    activeReviewRequiredTaxonIds: [realEstateSegmentTaxon.id],
+    unclosedReleaseTaxonIds: [realEstateBrokerNicheTaxon.id],
+  }), [realEstateSegmentTaxon.id, realEstateBrokerNicheTaxon.id].sort());
+  assert.equal(hasCompleteFactualReviewCoverage({
+    requiredTaxonIds: [realEstateSegmentTaxon.id, realEstateBrokerNicheTaxon.id],
+    evidenceTaxonIds: [realEstateBrokerNicheTaxon.id, realEstateSegmentTaxon.id],
+  }), true);
+  assert.equal(hasCompleteFactualReviewCoverage({
+    requiredTaxonIds: [realEstateSegmentTaxon.id, realEstateBrokerNicheTaxon.id],
+    evidenceTaxonIds: [realEstateSegmentTaxon.id],
+  }), false);
   const rows = Array.from({ length: 1_207 }, (_, index) => ({ id: index }));
   const complete = await collectCompletePaginatedRows({
     pageSize: 500,
@@ -51,6 +70,13 @@ export async function validateLifecycleE20Contracts(): Promise<void> {
     }),
     fingerprint,
   );
+  const snapshot = snapshotInputCatalogLifecycleContext({
+    taxons: [...taxons].reverse(),
+    unclosedReleaseTaxonIds: [realEstateBrokerNicheTaxon.id],
+  });
+  assert.deepEqual(snapshot.taxons.map((taxon) => taxon.identity.id),
+    taxons.map((taxon) => taxon.identity.id).sort());
+  assert.deepEqual(snapshot.unclosedReleaseTaxonIds, [realEstateBrokerNicheTaxon.id]);
 
   const withEvidence = planPublishedInputCatalogReviewReconciliation({
     currentVersion: 6,

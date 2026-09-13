@@ -2,12 +2,23 @@ import type {
   LandingPageInputCatalogPlan,
   LandingPageInputCatalogTaxonChain,
   LandingPageInputCatalogTaxonIdentity,
+  ResolveLandingPageInputCatalogInput,
+  ResolveLandingPageInputCatalogResult,
   ResolvedLandingPageInputCatalog,
 } from "../input-catalog";
 
 export const END_CUSTOMER_RESEARCH_AUDIENCE_SCOPE = "end_customer" as const;
 
-export const INPUT_CATALOG_EVALUATION_SCHEMA_VERSION = 1 as const;
+export const INPUT_CATALOG_EVALUATION_SCHEMA_VERSION = 2 as const;
+export const inputCatalogEvaluationSourceStrategies = [
+  "e20_5",
+  "web_search_fallback",
+  "web_search_focal",
+] as const;
+export const inputCatalogEvaluationSourceStates = [
+  "e20_5_available",
+  "e20_5_absent_authorized",
+] as const;
 export const inputCatalogEvaluationModes = ["systematic", "hypothesis"] as const;
 export const inputCatalogEvaluationStatuses = [
   "sufficient",
@@ -155,6 +166,117 @@ export type TaxonPreparationResult =
       }>;
     }>;
 
+export const factualReviewKinds = ["release", "revision"] as const;
+export const factualReviewStatuses = ["open", "closed"] as const;
+
+export type FactualReviewKind = (typeof factualReviewKinds)[number];
+export type FactualReviewStatus = (typeof factualReviewStatuses)[number];
+
+export type FactualReviewTaxonBaseline = Readonly<{
+  taxon: LandingPageInputCatalogTaxonIdentity;
+  selectedResearchVersion: number | null;
+  reviewedInputCatalogVersion: number | null;
+}>;
+
+export type FactualReviewSession = Readonly<{
+  id: string;
+  taxonId: string;
+  kind: FactualReviewKind;
+  status: FactualReviewStatus;
+  baselineIsActive: boolean;
+  baselineSelectedResearchVersion: number | null;
+  baselineReviewedInputCatalogVersion: number | null;
+  contextFingerprint: string;
+  revision: number;
+}>;
+
+export type FactualReviewTaxonChainSnapshot = readonly LandingPageInputCatalogTaxonIdentity[];
+
+export const factualReviewDecisionLayers = [
+  "universal",
+  "segment",
+  "niche",
+  "ultra_niche",
+] as const;
+
+export type FactualReviewDecisionLayer = (typeof factualReviewDecisionLayers)[number];
+export type FactualReviewRecommendationSelection = "zero" | "partial" | "total";
+
+export type FactualReviewAcceptedCandidate = Readonly<{
+  index: number;
+  layer: FactualReviewDecisionLayer;
+}>;
+
+export type FactualReviewOwnCandidate = Readonly<{
+  factualNeed: string;
+  layer: FactualReviewDecisionLayer;
+}>;
+
+export const FACTUAL_REVIEW_HUMAN_ADDED_ORIGIN = "human-added" as const;
+
+export type FactualReviewPersistedOwnCandidate = FactualReviewOwnCandidate & Readonly<{
+  origin: typeof FACTUAL_REVIEW_HUMAN_ADDED_ORIGIN;
+}>;
+
+export type FactualReviewHumanDecision = Readonly<{
+  recommendationCandidateCount: number;
+  recommendationSelection: FactualReviewRecommendationSelection;
+  acceptedCandidates: readonly FactualReviewAcceptedCandidate[];
+  rejectedCandidateIndexes: readonly number[];
+  ownCandidate: FactualReviewOwnCandidate | null;
+}>;
+
+export type FactualReviewCatalogChangeDecision = FactualReviewHumanDecision;
+
+export type NormalizedFactualReviewHumanDecision = FactualReviewHumanDecision &
+  Readonly<{ decisionKind: "no_change" | "catalog_change" }>;
+
+export type FactualReviewPersistedDecision = Omit<
+  NormalizedFactualReviewHumanDecision,
+  "ownCandidate"
+> & Readonly<{ ownCandidate: FactualReviewPersistedOwnCandidate | null }>;
+
+export type NormalizeFactualReviewCatalogChangeDecisionResult =
+  | Readonly<{ ok: true; value: NormalizedFactualReviewHumanDecision }>
+  | Readonly<{
+      ok: false;
+      error: Readonly<{
+        code: "INVALID_FACTUAL_REVIEW_DECISION";
+        message: string;
+      }>;
+    }>;
+
+export type InheritedInputCatalogCoverage = Readonly<{
+  inputCatalogVersion: number;
+  taxonChain: LandingPageInputCatalogTaxonChain;
+  chainSnapshot: FactualReviewTaxonChainSnapshot;
+  catalogs: readonly ResolvedLandingPageInputCatalog[];
+  contextFingerprint: string;
+  contentFingerprint: string;
+}>;
+
+export type ResolveInheritedInputCatalogCoverageInput = Readonly<{
+  baseline: FactualReviewTaxonBaseline;
+  taxons: readonly LandingPageInputCatalogTaxonIdentity[];
+  inputCatalogVersion: number;
+  resolvePlan: (
+    input: ResolveLandingPageInputCatalogInput,
+  ) => ResolveLandingPageInputCatalogResult;
+}>;
+
+export type ResolveInheritedInputCatalogCoverageResult =
+  | Readonly<{ ok: true; value: InheritedInputCatalogCoverage }>
+  | Readonly<{
+      ok: false;
+      error: Readonly<{
+        code:
+          | "INVALID_INPUT_CATALOG_VERSION"
+          | "INVALID_TAXON_CHAIN"
+          | "INPUT_CATALOG_RESOLUTION_FAILED";
+        message: string;
+      }>;
+    }>;
+
 export type InputCatalogEvaluationMode =
   (typeof inputCatalogEvaluationModes)[number];
 export type InputCatalogEvaluationStatus =
@@ -165,6 +287,10 @@ export type InputCatalogEvaluationCandidateConclusion =
   (typeof inputCatalogEvaluationCandidateConclusions)[number];
 export type InputCatalogEvaluationTaxonomicLayer =
   (typeof inputCatalogEvaluationTaxonomicLayers)[number];
+export type InputCatalogEvaluationSourceStrategy =
+  (typeof inputCatalogEvaluationSourceStrategies)[number];
+export type InputCatalogEvaluationSourceState =
+  (typeof inputCatalogEvaluationSourceStates)[number];
 
 export type InputCatalogEvaluationCandidate = Readonly<{
   origin: InputCatalogEvaluationCandidateOrigin;
@@ -179,15 +305,24 @@ export type InputCatalogEvaluationCandidate = Readonly<{
   concreteHarm: string | null;
   suggestedTaxonomyLayer: InputCatalogEvaluationTaxonomicLayer | null;
   uncertainties: readonly string[];
+  sourceUrls: readonly string[];
 }>;
 
 export type InputCatalogEvaluationOutput = Readonly<{
   schemaVersion: typeof INPUT_CATALOG_EVALUATION_SCHEMA_VERSION;
   status: InputCatalogEvaluationStatus;
   mode: InputCatalogEvaluationMode;
+  sourceStrategy: InputCatalogEvaluationSourceStrategy;
+  sourceState: InputCatalogEvaluationSourceState;
   summary: string;
+  summarySourceUrls: readonly string[];
   candidates: readonly InputCatalogEvaluationCandidate[];
   followUpQuestion: string | null;
+}>;
+
+export type InputCatalogEvaluationMaterialTextUrlProjection = Readonly<{
+  raw: string;
+  canonical: string;
 }>;
 
 export type ParseInputCatalogEvaluationOutputResult =
@@ -209,14 +344,17 @@ export type InputCatalogEvaluationTaxonChainSnapshot = Readonly<{
 export type InputCatalogEvaluationContextIdentity = Readonly<{
   taxonId: string;
   taxonSlug: string;
+  mode: InputCatalogEvaluationMode;
   taxonChain: InputCatalogEvaluationTaxonChainSnapshot;
+  sourceStrategy: InputCatalogEvaluationSourceStrategy;
+  sourceState: InputCatalogEvaluationSourceState;
   research: Readonly<{
     taxonSlug: string;
     audienceScope: typeof END_CUSTOMER_RESEARCH_AUDIENCE_SCOPE;
     researchVersion: number;
     relativePath: string;
     content: string;
-  }>;
+  }> | null;
   inputCatalog: Readonly<{
     version: number;
     plans: readonly LandingPageInputCatalogPlan[];
@@ -259,27 +397,37 @@ export type InputCatalogEvaluationExecutionRequest = Readonly<{
   mode: InputCatalogEvaluationMode;
   focalHypothesis?: string | null;
   feedback?: InputCatalogEvaluationFeedback | null;
+  deadlineAtMs?: number;
 }>;
 
 export type InputCatalogEvaluationReconstructionInput = Readonly<{
   taxonId: string;
   inputCatalogVersion: number;
+  mode?: InputCatalogEvaluationMode;
 }>;
 
 export type InputCatalogEvaluationPrompt = Readonly<{
-  version: "e20.6.5-input-catalog-evaluation-v1";
+  version: "e20.6.5-input-catalog-evaluation-v2";
   instructions: string;
   input: string;
 }>;
 
 export type InputCatalogEvaluationProviderRequest = Readonly<{
   mode: InputCatalogEvaluationMode;
+  sourceStrategy: InputCatalogEvaluationSourceStrategy;
+  deadlineAtMs?: number;
+  timeoutMs?: number;
   prompt: InputCatalogEvaluationPrompt;
   outputSchema: Readonly<Record<string, unknown>>;
 }>;
 
 export type InputCatalogEvaluationProviderResult =
-  | Readonly<{ status: "completed"; output: unknown }>
+  | Readonly<{
+      status: "completed";
+      output: unknown;
+      webSearchCallCount?: number;
+      webSearchSources?: readonly string[];
+    }>
   | Readonly<{ status: "refusal"; message: string }>
   | Readonly<{ status: "incomplete"; message: string }>
   | Readonly<{ status: "failure"; message: string }>;
@@ -291,6 +439,7 @@ export type InputCatalogEvaluationPorts = Readonly<{
   evaluate: (
     input: InputCatalogEvaluationProviderRequest,
   ) => Promise<InputCatalogEvaluationProviderResult>;
+  now?: () => number;
 }>;
 
 export type CoordinateInputCatalogEvaluationResult =
@@ -298,7 +447,13 @@ export type CoordinateInputCatalogEvaluationResult =
       ok: true;
       value: Readonly<{
         contextIdentity: InputCatalogEvaluationContextIdentity;
+        evaluationContextFingerprint: string;
         output: InputCatalogEvaluationOutput;
+        sourceEvidence: Readonly<{
+          webSearchCallCount: number;
+          webSearchSources: readonly string[];
+          materialTextUrlProjection: readonly InputCatalogEvaluationMaterialTextUrlProjection[];
+        }>;
       }>;
     }>
   | Readonly<{

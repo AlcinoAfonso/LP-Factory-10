@@ -1,5 +1,6 @@
 export * from "./contracts";
 export * from "./draft";
+export * from "./draft-operations";
 export * from "./lifecycle";
 export * from "./offering-scope";
 export * from "./registry";

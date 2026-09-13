@@ -4,35 +4,53 @@ import { createHash } from "node:crypto";
 
 import {
   CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION,
+  applyLandingPageInputCatalogDraftOperation,
   createNextLandingPageInputCatalogDraft,
   landingPageInputCatalogRegistry,
   listLandingPageInputCatalogVersions,
+  projectLandingPageInputCatalogDraftReleaseTaxons,
+  validateLandingPageInputCatalogDraftProjectedImpacts,
   validateLandingPageInputCatalogDraft,
   serializeLandingPageInputCatalogEntry,
-  buildLandingPageInputCatalogTaxonChain,
-  classifyLandingPageInputCatalogTransitionForTaxon,
   type LandingPageInputCatalogDraftImpact,
-  type LandingPageInputCatalogRegistry,
+  type LandingPageInputCatalogDraftOperation,
+  type LandingPageInputCatalogLayerLevel,
   type LandingPageInputCatalogRegistryEntry,
 } from "@/conversion-content/landing-page/input-catalog";
-import {
-  reconstructCanonicalInputCatalogEvaluationContext,
-  reconstructDraftInputCatalogEvaluationContext,
-} from "@/conversion-content/adapters/inputCatalogEvaluationContextAdapter";
+import { reconstructDraftInputCatalogEvaluationContext } from "@/conversion-content/adapters/inputCatalogEvaluationContextAdapter";
 import {
   fingerprintInputCatalogEvaluationContextIdentity,
   type BuildInputCatalogEvaluationContextResult,
-  type InputCatalogEvaluationContextIdentity,
 } from "@/conversion-content/landing-page/taxon-preparation";
 import { createServiceClient } from "@/lib/supabase/service";
+import {
+  authorizeAdminInputCatalogFactualPublication,
+  reconcileAdminInputCatalogFactualPublication,
+  saveAdminInputCatalogDraft,
+} from "./adminTaxonFactualReviewAdapter";
 import { readCompleteLifecycleContext, type LifecycleContext } from "./adminInputCatalogLifecycleContext";
 import {
+  collectRequiredFactualReviewTaxonIds,
+  createInputCatalogLifecycleProof,
+  hasCompleteFactualReviewCoverage,
+  parsePersistedInputCatalogEvaluationMode,
   serializeInputCatalogLifecycleValue,
-  planPublishedInputCatalogReviewReconciliation,
-  validatePublishedInputCatalogReviewEvidenceContext,
+  snapshotInputCatalogLifecycleContext,
 } from "./adminInputCatalogLifecycleValidation";
 
 type ServiceClient = ReturnType<typeof createServiceClient>;
+
+export type AdminInputCatalogEditorLayer = Readonly<{
+  target:
+    | Readonly<{ kind: "universal" }>
+    | Readonly<{ kind: "taxon_layer"; taxonId: string }>;
+  label: string;
+  level: LandingPageInputCatalogLayerLevel;
+  ownFields: readonly Readonly<{
+    fieldKey: string;
+    retiredInVersion: number | null;
+  }>[];
+}>;
 
 export type AdminInputCatalogLifecycleState = Readonly<{
   currentVersion: number;
@@ -41,7 +59,7 @@ export type AdminInputCatalogLifecycleState = Readonly<{
   draft: null | Readonly<{
     baseVersion: number;
     targetVersion: number;
-    catalogJson: string;
+    editorLayers: readonly AdminInputCatalogEditorLayer[];
     contentFingerprint: string;
     lifecycleContextFingerprint: string;
     revision: number;
@@ -107,6 +125,8 @@ export async function initializeAdminInputCatalogDraft(input: Readonly<{
       validated_at: null,
       publication_fingerprint: null,
       publication_context_fingerprint: null,
+      publication_context_snapshot: null,
+      publication_required_taxon_ids: [],
       publication_prepared_at: null,
       taxon_review_evidence: {},
       created_by: input.actorUserId,
@@ -120,58 +140,53 @@ export async function initializeAdminInputCatalogDraft(input: Readonly<{
   return { ok: true, state: await buildState(context, row) };
 }
 
-export async function saveAdminInputCatalogDraft(input: Readonly<{
+export async function applyAdminInputCatalogDraftOperation(input: Readonly<{
   actorUserId: string;
   expectedRevision: number;
-  catalogJson: string;
+  operation: LandingPageInputCatalogDraftOperation;
 }>): Promise<AdminInputCatalogLifecycleMutationResult> {
-  if (
-    !Number.isSafeInteger(input.expectedRevision) ||
-    input.expectedRevision <= 0 ||
-    typeof input.catalogJson !== "string" ||
-    input.catalogJson.length > 1_000_000
-  ) {
-    return invalid("O draft informado é inválido.");
-  }
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(input.catalogJson);
-  } catch {
-    return invalid("O draft não contém JSON válido.");
+  if (!Number.isSafeInteger(input.expectedRevision) || input.expectedRevision <= 0) {
+    return invalid("A revisão esperada do draft é inválida.");
   }
   const client = createServiceClient();
-  const context = await readCandidateLifecycleContext(client, parsed);
+  const current = await readDraftRow(client);
+  if (!current.ok || !current.value) {
+    return unavailable(current.ok ? "O draft não existe." : current.message);
+  }
+  if (current.value.revision !== input.expectedRevision) {
+    return conflict("O draft mudou em outra sessão. Recarregue antes de editar.");
+  }
+  const context = await readCompleteLifecycleContext(client, { fingerprint: false });
   if (!context.ok) return unavailable(context.message);
-  const candidate = validateLandingPageInputCatalogDraft({
-    draft: parsed,
+  const applied = applyLandingPageInputCatalogDraftOperation({
+    draft: current.value.catalogJson,
+    operation: input.operation,
     taxons: context.value.taxons,
+    releaseTaxonIds: context.value.unclosedReleaseTaxonIds,
   });
-  if (!candidate.ok) return invalid(candidate.error.message);
-  const contentFingerprint = fingerprint(candidate.value.canonicalJson);
-  const { data, error } = await client
-    .from("landing_page_input_catalog_drafts")
-    .update({
-      catalog_json: candidate.value.entry,
-      content_fingerprint: contentFingerprint,
-      revision: input.expectedRevision + 1,
-      validation_fingerprint: null,
-      validation_context_fingerprint: null,
-      validated_at: null,
-      publication_fingerprint: null,
-      publication_context_fingerprint: null,
-      publication_prepared_at: null,
-      taxon_review_evidence: {},
-      updated_by: input.actorUserId,
-    })
-    .eq("singleton", true)
-    .eq("revision", input.expectedRevision)
-    .maxAffected(1)
-    .select(DRAFT_SELECT)
-    .maybeSingle();
-  if (error) return unavailable("O draft não pôde ser salvo.");
-  const row = normalizeDraftRow(data);
-  if (!row) return conflict("O draft mudou em outra sessão. Recarregue antes de salvar.");
-  return { ok: true, state: await buildState(context, row) };
+  if (!applied.ok) return invalid(applied.error.message);
+  const contentFingerprint = fingerprint(applied.value.canonicalJson);
+  const saved = await saveAdminInputCatalogDraft({
+    actorUserId: input.actorUserId,
+    expectedRevision: input.expectedRevision,
+    catalogJson: applied.value.entry,
+    contentFingerprint,
+  });
+  if (!saved.ok) return conflict(saved.message);
+
+  const refreshedContext = await readProjectedCandidateLifecycleContext(
+    client,
+    applied.value.entry,
+  );
+  if (!refreshedContext.ok) return unavailable(refreshedContext.message);
+  const refreshed = await readDraftRow(client);
+  if (!refreshed.ok || !refreshed.value || refreshed.value.revision !== saved.revision) {
+    return unavailable("O draft editado não pôde ser relido integralmente.");
+  }
+  return {
+    ok: true,
+    state: await buildState(refreshedContext, refreshed.value),
+  };
 }
 
 export async function validateAdminInputCatalogDraft(input: Readonly<{
@@ -210,6 +225,8 @@ export async function validateAdminInputCatalogDraft(input: Readonly<{
       validated_at: new Date().toISOString(),
       publication_fingerprint: null,
       publication_context_fingerprint: null,
+      publication_context_snapshot: null,
+      publication_required_taxon_ids: [],
       publication_prepared_at: null,
       updated_by: input.actorUserId,
     })
@@ -257,23 +274,37 @@ export async function prepareAdminInputCatalogPublication(input: Readonly<{
   ) {
     return blocked("Valide novamente o conteúdo exato antes de preparar a publicação.");
   }
-  const { data, error } = await client
-    .from("landing_page_input_catalog_drafts")
-    .update({
-      publication_fingerprint: fingerprintValue,
-      publication_context_fingerprint: lifecycleContextFingerprint,
-      publication_prepared_at: new Date().toISOString(),
-      updated_by: input.actorUserId,
-    })
-    .eq("singleton", true)
-    .eq("revision", input.expectedRevision)
-    .eq("validation_fingerprint", fingerprintValue)
-    .maxAffected(1)
-    .select(DRAFT_SELECT)
-    .maybeSingle();
-  if (error) return unavailable("A preparação da publicação falhou.");
-  const row = normalizeDraftRow(data);
-  if (!row) return conflict("O draft mudou durante a preparação.");
+  const requiredTaxonIds = Object.freeze([
+    ...new Set([
+      ...requiredFactualReviewTaxonIds(candidate.value, context.value),
+      ...Object.keys(current.value.taxonReviewEvidence),
+    ]),
+  ].sort());
+  const reviewStatus = await validateReviewEvidence(
+    candidate.value,
+    current.value,
+    requiredTaxonIds,
+  );
+  if (!hasCompleteFactualReviewCoverage({
+    requiredTaxonIds,
+    evidenceTaxonIds: reviewStatus.validTaxonIds,
+  })) {
+    return blocked("Todas as decisões factuais do draft exato são obrigatórias antes da autorização.");
+  }
+  const authorized = await authorizeAdminInputCatalogFactualPublication({
+    actorUserId: input.actorUserId,
+    expectedRevision: input.expectedRevision,
+    contentFingerprint: fingerprintValue,
+    contextFingerprint: lifecycleContextFingerprint,
+    contextSnapshot: snapshotInputCatalogLifecycleContext(context.value),
+    requiredTaxonIds,
+  });
+  if (!authorized.ok) return blocked(authorized.message);
+  const refreshed = await readDraftRow(client);
+  if (!refreshed.ok || !refreshed.value) {
+    return unavailable("O draft autorizado não pôde ser relido.");
+  }
+  const row = refreshed.value;
   return {
     ok: true,
     state: await buildState(context, row),
@@ -286,6 +317,7 @@ export async function prepareAdminInputCatalogPublication(input: Readonly<{
 }
 
 export async function reconcileAdminInputCatalogPublishedDraft(input: Readonly<{
+  actorUserId: string;
   expectedRevision: number;
   runtimeEnvironment: string | undefined;
 }>): Promise<AdminInputCatalogLifecycleMutationResult> {
@@ -296,13 +328,9 @@ export async function reconcileAdminInputCatalogPublishedDraft(input: Readonly<{
     return invalid("A revisão administrativa do draft é inválida.");
   }
   const client = createServiceClient();
-  const [current, initialContext] = await Promise.all([
-    readDraftRow(client),
-    readCompleteLifecycleContext(client),
-  ]);
+  const current = await readDraftRow(client);
   if (!current.ok) return unavailable(current.message);
   if (!current.value) return unavailable("O draft não existe.");
-  if (!initialContext.ok) return unavailable(initialContext.message);
   const currentEntry = landingPageInputCatalogRegistry[
     CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION
   ];
@@ -321,98 +349,35 @@ export async function reconcileAdminInputCatalogPublishedDraft(input: Readonly<{
     storedDraftFingerprint !== deployedFingerprint ||
     current.value.contentFingerprint !== deployedFingerprint ||
     current.value.publicationFingerprint !== deployedFingerprint ||
-    current.value.publicationContextFingerprint === null
+    current.value.publicationContextFingerprint === null ||
+    current.value.publicationContextSnapshot === null
   ) {
     return blocked(
       "O registry implantado ainda não comprova exatamente o draft congelado.",
     );
   }
 
-  const initialProof = await validatePublishedReviewEvidence(
-    initialContext.value,
-    current.value,
-  );
-  if (!initialProof.ok) return blocked(initialProof.message);
-  const initialPlan = planPublishedInputCatalogReviewReconciliation({
-    currentVersion: CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION,
-    impacts: initialProof.impacts,
-    validEvidenceTaxonIds: new Set(initialProof.validEvidenceTaxonIds),
+  const reconciled = await reconcileAdminInputCatalogFactualPublication({
+    actorUserId: input.actorUserId,
+    expectedRevision: input.expectedRevision,
+    deployedVersion: CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION,
+    deployedContentFingerprint: deployedFingerprint,
+    publicationContextFingerprint: current.value.publicationContextFingerprint,
   });
-  for (const taxonId of initialPlan.taxonIdsToAdvance) {
-    const taxon = initialContext.value.taxons.find(
-      (candidate) => candidate.identity.id === taxonId,
-    );
-    const evidenceContext = initialProof.contextsByTaxonId.get(taxonId);
-    if (!taxon || !evidenceContext) {
-      return blocked("A evidência E20.6.5 não possui identidade canônica revalidada.");
-    }
-    const advanced = await advancePublishedReviewMarker({
-      client,
-      taxon,
-      evidenceContext,
-      targetVersion: CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION,
-    });
-    if (!advanced) {
-      return conflict(
-        "Uma decisão E20.6.5 mudou durante a materialização pós-publicação; o draft foi preservado.",
-      );
-    }
-  }
-
+  if (!reconciled.ok) return conflict(reconciled.message);
   const finalContext = await readCompleteLifecycleContext(client);
   if (!finalContext.ok) return unavailable(finalContext.message);
-  const finalProof = await validatePublishedReviewEvidence(
-    finalContext.value,
-    current.value,
-  );
-  if (!finalProof.ok) return blocked(finalProof.message);
-  const finalPlan = planPublishedInputCatalogReviewReconciliation({
-    currentVersion: CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION,
-    impacts: finalProof.impacts,
-    validEvidenceTaxonIds: new Set(finalProof.validEvidenceTaxonIds),
-  });
-  const finalReviewedByTaxonId = new Map(
-    finalContext.value.taxons.map((taxon) => [
-      taxon.identity.id,
-      taxon.reviewedVersion,
-    ]),
-  );
-  if (
-    finalPlan.taxonIdsToAdvance.length > 0 ||
-    initialProof.validEvidenceTaxonIds.some(
-      (taxonId) =>
-        !finalProof.validEvidenceTaxonIds.includes(taxonId) ||
-        finalReviewedByTaxonId.get(taxonId) !==
-          CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION,
-    )
-  ) {
-    return conflict(
-      "A leitura final não confirmou todos os efeitos das decisões E20.6.5; o draft foi preservado.",
-    );
-  }
-
-  const { data, error } = await client
-    .from("landing_page_input_catalog_drafts")
-    .delete()
-    .eq("singleton", true)
-    .eq("revision", input.expectedRevision)
-    .eq("content_fingerprint", deployedFingerprint)
-    .maxAffected(1)
-    .select("revision")
-    .maybeSingle();
-  if (error || !isRecord(data)) {
-    return conflict("O draft mudou durante a reconciliação pós-deploy.");
-  }
   return {
     ok: true,
     state: await buildState(finalContext, null),
-    handoff: `Versão ${CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION} reconciliada com o registry implantado; decisões E20.6.5 válidas foram materializadas, a leitura final foi confirmada e a residência temporária foi encerrada.`,
+    handoff: `Versão ${CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION} reconciliada atomicamente com ${reconciled.reconciledTaxonCount} sessão(ões) factual(is); a residência temporária foi encerrada.`,
   };
 }
 
 export async function loadAdminInputCatalogDraftEvaluationContext(input: Readonly<{
   expectedRevision: number;
   taxonId: string;
+  mode?: import("@/conversion-content/landing-page/taxon-preparation").InputCatalogEvaluationMode;
 }>): Promise<
   | Readonly<{
       ok: true;
@@ -446,14 +411,21 @@ export async function loadAdminInputCatalogDraftEvaluationContext(input: Readonl
   const impact = candidate.value.impacts.find(
     (candidateImpact) => candidateImpact.taxon.id === input.taxonId,
   );
-  if (!impact || impact.classification !== "review_required") {
+  if (
+    (!impact || impact.classification !== "review_required") &&
+    !context.value.unclosedReleaseTaxonIds.includes(input.taxonId)
+  ) {
     return {
       ok: false,
       message: "O taxon não exige avaliação semântica para o conteúdo atual do draft.",
     };
   }
   const evaluation = await reconstructDraftInputCatalogEvaluationContext(
-    { taxonId: input.taxonId, inputCatalogVersion: candidate.value.entry.version },
+    {
+      taxonId: input.taxonId,
+      inputCatalogVersion: candidate.value.entry.version,
+      mode: input.mode,
+    },
     candidate.value.registry,
   );
   if (!evaluation.ok) return { ok: false, message: evaluation.error.message };
@@ -467,63 +439,6 @@ export async function loadAdminInputCatalogDraftEvaluationContext(input: Readonl
   };
 }
 
-export async function recordAdminInputCatalogDraftSufficiencyDecision(input: Readonly<{
-  actorUserId: string;
-  expectedRevision: number;
-  taxonId: string;
-  expectedContentFingerprint: string;
-  expectedContextFingerprint: string;
-  decision: "confirm_sufficient" | "reject_candidates_and_confirm_sufficient";
-}>): Promise<Readonly<{ ok: true; revision: number }> | Readonly<{ ok: false; message: string }>> {
-  const current = await loadAdminInputCatalogDraftEvaluationContext({
-    expectedRevision: input.expectedRevision,
-    taxonId: input.taxonId,
-  });
-  if (!current.ok) return current;
-  const contextFingerprint = fingerprintInputCatalogEvaluationContextIdentity(
-    current.value.context.identity,
-  );
-  if (
-    current.value.contentFingerprint !== input.expectedContentFingerprint ||
-    contextFingerprint !== input.expectedContextFingerprint
-  ) {
-    return { ok: false, message: "O draft, a pesquisa ou a cadeia mudaram desde a avaliação." };
-  }
-  const client = createServiceClient();
-  const row = await readDraftRow(client);
-  if (!row.ok || !row.value || row.value.revision !== input.expectedRevision) {
-    return { ok: false, message: "O draft mudou durante a decisão." };
-  }
-  const evidence = serializeDraftTaxonReviewEvidence(row.value.taxonReviewEvidence);
-  evidence[input.taxonId] = {
-    content_fingerprint: input.expectedContentFingerprint,
-    context_fingerprint: input.expectedContextFingerprint,
-    decision: input.decision,
-    decided_by: input.actorUserId,
-    decided_at: new Date().toISOString(),
-  };
-  const { data, error } = await client
-    .from("landing_page_input_catalog_drafts")
-    .update({
-      taxon_review_evidence: evidence,
-      revision: input.expectedRevision + 1,
-      publication_fingerprint: null,
-      publication_context_fingerprint: null,
-      publication_prepared_at: null,
-      updated_by: input.actorUserId,
-    })
-    .eq("singleton", true)
-    .eq("revision", input.expectedRevision)
-    .eq("content_fingerprint", input.expectedContentFingerprint)
-    .maxAffected(1)
-    .select("revision")
-    .maybeSingle();
-  if (error || !isRecord(data) || data.revision !== input.expectedRevision + 1) {
-    return { ok: false, message: "A decisão pré-publicação não pôde ser registrada." };
-  }
-  return { ok: true, revision: input.expectedRevision + 1 };
-}
-
 type DraftRow = Readonly<{
   baseVersion: number;
   targetVersion: number;
@@ -534,29 +449,72 @@ type DraftRow = Readonly<{
   validationContextFingerprint: string | null;
   publicationFingerprint: string | null;
   publicationContextFingerprint: string | null;
+  publicationContextSnapshot: Readonly<Record<string, unknown>> | null;
+  publicationRequiredTaxonIds: readonly string[];
   taxonReviewEvidence: Readonly<Record<string, DraftTaxonReviewEvidence>>;
   updatedAt: string;
 }>;
 
 type DraftTaxonReviewEvidence = Readonly<{
+  reviewId: string;
+  reviewRevision: number;
+  draftRevision: number;
   contentFingerprint: string;
   contextFingerprint: string;
-  decision: "confirm_sufficient" | "reject_candidates_and_confirm_sufficient";
-  decidedBy: string;
-  decidedAt: string;
 }>;
 
 const DRAFT_SELECT =
-  "base_version,target_version,catalog_json,content_fingerprint,revision,validation_fingerprint,validation_context_fingerprint,publication_fingerprint,publication_context_fingerprint,taxon_review_evidence,updated_at";
+  "base_version,target_version,catalog_json,content_fingerprint,revision,validation_fingerprint,validation_context_fingerprint,publication_fingerprint,publication_context_fingerprint,publication_context_snapshot,publication_required_taxon_ids,taxon_review_evidence,updated_at";
 
 const DRAFT_CHANGED = "O draft mudou durante a leitura do contexto. Recarregue antes de continuar.";
 
-function readCandidateLifecycleContext(client: ServiceClient, draft: unknown) {
-  return readCompleteLifecycleContext(client, {
-    fingerprint: draft !== undefined,
-    prepareCandidate: draft === undefined ? undefined : (taxons) =>
-      validateLandingPageInputCatalogDraft({ draft, taxons }),
+async function readCandidateLifecycleContext(client: ServiceClient, draft: unknown) {
+  if (draft === undefined) {
+    return readCompleteLifecycleContext(client, { fingerprint: false });
+  }
+  const projected = await readProjectedCandidateLifecycleContext(client, draft);
+  return projected.ok
+    ? { ok: true as const, value: projected.value }
+    : projected;
+}
+
+async function readProjectedCandidateLifecycleContext(
+  client: ServiceClient,
+  draft: unknown,
+): Promise<
+  | Readonly<{
+      ok: true;
+      value: LifecycleContext;
+    }>
+  | Readonly<{ ok: false; message: string }>
+> {
+  const context = await readCompleteLifecycleContext(client, { fingerprint: false });
+  if (!context.ok) return context;
+  const projection = projectLandingPageInputCatalogDraftReleaseTaxons({
+    taxons: context.value.taxons,
+    releaseTaxonIds: context.value.unclosedReleaseTaxonIds,
   });
+  if (!projection.ok) return { ok: false, message: projection.error.message };
+  const candidate = validateLandingPageInputCatalogDraftProjectedImpacts({
+    draft,
+    taxons: projection.value,
+    projectedTaxonIds: context.value.unclosedReleaseTaxonIds,
+  });
+  if (!candidate.ok) return { ok: false, message: candidate.error.message };
+  const projectedContext = {
+    taxons: projection.value,
+    unclosedReleaseTaxonIds: context.value.unclosedReleaseTaxonIds,
+  };
+  return {
+    ok: true,
+    value: {
+      ...projectedContext,
+      lifecycleProof: createInputCatalogLifecycleProof({
+        fingerprint: true,
+        candidate: candidate.value,
+      }).finish(projectedContext),
+    },
+  };
 }
 
 function sameDraftIdentity(
@@ -609,11 +567,15 @@ async function buildState(
   row: DraftRow | null,
 ): Promise<AdminInputCatalogLifecycleState> {
   const context = "value" in contextResult ? contextResult.value : contextResult;
+  const releaseTaxonIds = new Set(context.unclosedReleaseTaxonIds);
+  const totalActiveTaxons = context.taxons.filter(
+    (taxon) => taxon.identity.isActive && !releaseTaxonIds.has(taxon.identity.id),
+  ).length;
   if (!row) {
     return {
       currentVersion: CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION,
       publishedVersions: listLandingPageInputCatalogVersions(),
-      totalActiveTaxons: context.taxons.filter((taxon) => taxon.identity.isActive).length,
+      totalActiveTaxons,
       draft: null,
       error: null,
     };
@@ -635,7 +597,8 @@ async function buildState(
       storedDraftFingerprint !== deployedFingerprint ||
       row.contentFingerprint !== deployedFingerprint ||
       row.publicationFingerprint !== deployedFingerprint ||
-      row.publicationContextFingerprint === null
+      row.publicationContextFingerprint === null ||
+      row.publicationContextSnapshot === null
     ) {
       return unavailableState(
         "O draft implantado diverge do registry atual e não pode ser reconciliado automaticamente.",
@@ -645,11 +608,11 @@ async function buildState(
     return {
       currentVersion: CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION,
       publishedVersions: listLandingPageInputCatalogVersions(),
-      totalActiveTaxons: context.taxons.filter((taxon) => taxon.identity.isActive).length,
+      totalActiveTaxons,
       draft: {
         baseVersion: row.baseVersion,
         targetVersion: row.targetVersion,
-        catalogJson: JSON.stringify(row.catalogJson, null, 2),
+        editorLayers: [],
         contentFingerprint: row.contentFingerprint,
         lifecycleContextFingerprint,
         revision: row.revision,
@@ -675,25 +638,46 @@ async function buildState(
       { ok: true, value: context },
     );
   }
-  const candidate = validateLandingPageInputCatalogDraft({
-    draft: row.catalogJson,
-    taxons: context.taxons,
-  });
+  const projectedReleaseTaxonIds = context.unclosedReleaseTaxonIds.filter((taxonId) =>
+    context.taxons.some(
+      (taxon) => taxon.identity.id === taxonId && taxon.identity.isActive,
+    ),
+  );
+  if (
+    projectedReleaseTaxonIds.length > 0 &&
+    projectedReleaseTaxonIds.length !== context.unclosedReleaseTaxonIds.length
+  ) {
+    return unavailableState(
+      "A projeção das releases está incompleta.",
+      { ok: true, value: context },
+    );
+  }
+  const candidate = projectedReleaseTaxonIds.length > 0
+    ? validateLandingPageInputCatalogDraftProjectedImpacts({
+        draft: row.catalogJson,
+        taxons: context.taxons,
+        projectedTaxonIds: projectedReleaseTaxonIds,
+      })
+    : validateLandingPageInputCatalogDraft({
+        draft: row.catalogJson,
+        taxons: context.taxons,
+      });
   if (!candidate.ok) return unavailableState(candidate.error.message, { ok: true, value: context });
   const proof = proofForCandidate(context, candidate.value);
   if (!proof) return unavailableState(DRAFT_CHANGED, { ok: true, value: context });
   const reviewStatus = await validateReviewEvidence(
     candidate.value,
     row,
+    requiredFactualReviewTaxonIds(candidate.value, context),
   );
   return {
     currentVersion: CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION,
     publishedVersions: listLandingPageInputCatalogVersions(),
-    totalActiveTaxons: context.taxons.filter((taxon) => taxon.identity.isActive).length,
+    totalActiveTaxons,
     draft: {
       baseVersion: row.baseVersion,
       targetVersion: row.targetVersion,
-      catalogJson: JSON.stringify(row.catalogJson, null, 2),
+      editorLayers: buildEditorLayers(candidate.value.entry, candidate.value.impacts),
       contentFingerprint: row.contentFingerprint,
       lifecycleContextFingerprint,
       revision: row.revision,
@@ -702,7 +686,8 @@ async function buildState(
         row.validationContextFingerprint === lifecycleContextFingerprint,
       publicationPrepared:
         row.publicationFingerprint === row.contentFingerprint &&
-        row.publicationContextFingerprint === lifecycleContextFingerprint,
+        row.publicationContextFingerprint === lifecycleContextFingerprint &&
+        row.publicationContextSnapshot !== null,
       publishedReconciliationRequired: false,
       publishedReconciliationAllowed: false,
       reviewedTaxonIds: reviewStatus.validTaxonIds,
@@ -716,22 +701,86 @@ async function buildState(
   };
 }
 
+function buildEditorLayers(
+  entry: LandingPageInputCatalogRegistryEntry,
+  impacts: readonly LandingPageInputCatalogDraftImpact[],
+): readonly AdminInputCatalogEditorLayer[] {
+  const ownFields = (
+    entries: LandingPageInputCatalogRegistryEntry["universal"]["entries"],
+  ): AdminInputCatalogEditorLayer["ownFields"] => entries.flatMap((field) =>
+    field.kind === "field"
+      ? [{
+          fieldKey: field.fieldKey,
+          retiredInVersion: field.retiredInVersion ?? null,
+        }]
+      : [],
+  );
+  const layersByTaxonId = new Map(
+    Object.values(entry.taxonLayers).flatMap((layer) =>
+      layer.taxon ? [[layer.taxon.id, layer] as const] : [],
+    ),
+  );
+  return [
+    {
+      target: { kind: "universal" },
+      label: "Universal",
+      level: "universal",
+      ownFields: ownFields(entry.universal.entries),
+    },
+    ...impacts.map((impact) => {
+      const layer = layersByTaxonId.get(impact.taxon.id);
+      return {
+        target: { kind: "taxon_layer" as const, taxonId: impact.taxon.id },
+        label: impact.taxon.name,
+        level: impact.taxon.level,
+        ownFields: layer ? ownFields(layer.entries) : [],
+      };
+    }),
+  ];
+}
+
 async function validateReviewEvidence(
   candidate: Extract<
     ReturnType<typeof validateLandingPageInputCatalogDraft>,
     { ok: true }
   >["value"],
   row: DraftRow,
+  requiredTaxonIds: readonly string[],
 ): Promise<Readonly<{ validTaxonIds: readonly string[] }>> {
+  const client = createServiceClient();
   const validTaxonIds: string[] = [];
-  for (const impact of candidate.impacts) {
-    if (impact.classification !== "review_required") continue;
-    const evidence = row.taxonReviewEvidence[impact.taxon.id];
-    if (!evidence || evidence.contentFingerprint !== row.contentFingerprint) {
+  for (const taxonId of requiredTaxonIds) {
+    const evidence = row.taxonReviewEvidence[taxonId];
+    if (
+      !evidence ||
+      evidence.draftRevision !== row.revision ||
+      evidence.contentFingerprint !== row.contentFingerprint
+    ) {
+      continue;
+    }
+    const { data: review } = await client
+      .from("business_taxon_factual_reviews")
+      .select("id,taxon_id,status,outcome,revision,evaluation_mode,evaluation_source,evaluation_draft_revision,evaluation_context_fingerprint")
+      .eq("id", evidence.reviewId)
+      .maybeSingle();
+    const evaluationMode = isRecord(review)
+      ? parsePersistedInputCatalogEvaluationMode(review.evaluation_mode)
+      : null;
+    if (
+      !isRecord(review) ||
+      evaluationMode === null ||
+      review.taxon_id !== taxonId ||
+      review.status !== "closed" ||
+      (review.outcome !== "no_change" && review.outcome !== "catalog_change") ||
+      Number(review.revision) !== evidence.reviewRevision ||
+      review.evaluation_source !== "draft" ||
+      Number(review.evaluation_draft_revision) !== row.revision ||
+      review.evaluation_context_fingerprint !== evidence.contextFingerprint
+    ) {
       continue;
     }
     const current = await reconstructDraftInputCatalogEvaluationContext(
-      { taxonId: impact.taxon.id, inputCatalogVersion: candidate.entry.version },
+      { taxonId, inputCatalogVersion: candidate.entry.version, mode: evaluationMode },
       candidate.registry,
     );
     if (
@@ -741,197 +790,26 @@ async function validateReviewEvidence(
     ) {
       continue;
     }
-    validTaxonIds.push(impact.taxon.id);
+    validTaxonIds.push(taxonId);
   }
   return Object.freeze({
     validTaxonIds: Object.freeze(validTaxonIds.sort()),
   });
 }
 
-type PublishedReviewImpact = Readonly<{
-  taxonId: string;
-  reviewedVersion: number | null;
-  classification: LandingPageInputCatalogDraftImpact["classification"];
-}>;
-
-type PublishedReviewEvidenceValidationResult =
-  | Readonly<{
-      ok: true;
-      impacts: readonly PublishedReviewImpact[];
-      validEvidenceTaxonIds: readonly string[];
-      contextsByTaxonId: ReadonlyMap<string, InputCatalogEvaluationContextIdentity>;
-    }>
-  | Readonly<{ ok: false; message: string }>;
-
-async function validatePublishedReviewEvidence(
+function requiredFactualReviewTaxonIds(
+  candidate: Extract<
+    ReturnType<typeof validateLandingPageInputCatalogDraft>,
+    { ok: true }
+  >["value"],
   context: LifecycleContext,
-  row: DraftRow,
-): Promise<PublishedReviewEvidenceValidationResult> {
-  const impacts = buildPublishedReviewImpacts(context);
-  if (!impacts.ok) return impacts;
-
-  const preservedDraftEntry = row.catalogJson as LandingPageInputCatalogRegistryEntry;
-  const deployedEntry =
-    landingPageInputCatalogRegistry[CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION];
-  if (
-    fingerprint(serializeLandingPageInputCatalogEntry(preservedDraftEntry)) !==
-      row.contentFingerprint ||
-    fingerprint(serializeLandingPageInputCatalogEntry(deployedEntry)) !==
-      row.contentFingerprint
-  ) {
-    return {
-      ok: false,
-      message: "O conteúdo preservado do draft não corresponde ao registry implantado.",
-    };
-  }
-  const preservedDraftRegistry: LandingPageInputCatalogRegistry = {
-    ...landingPageInputCatalogRegistry,
-    [row.targetVersion]: preservedDraftEntry,
-  };
-
-  const validEvidenceTaxonIds: string[] = [];
-  const contextsByTaxonId = new Map<string, InputCatalogEvaluationContextIdentity>();
-  for (const [taxonId, evidence] of Object.entries(row.taxonReviewEvidence)) {
-    const taxon = context.taxons.find(
-      (candidate) => candidate.identity.id === taxonId && candidate.identity.isActive,
-    );
-    if (!taxon || evidence.contentFingerprint !== row.contentFingerprint) continue;
-    if (taxon.selectedResearchVersion === null) continue;
-    const [preservedDraft, current] = await Promise.all([
-      reconstructDraftInputCatalogEvaluationContext(
-        {
-          taxonId,
-          inputCatalogVersion: CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION,
-        },
-        preservedDraftRegistry,
-      ),
-      reconstructCanonicalInputCatalogEvaluationContext({
-        taxonId,
-        inputCatalogVersion: CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION,
-      }),
-    ]);
-    if (
-      !preservedDraft.ok ||
-      !current.ok ||
-      !validatePublishedInputCatalogReviewEvidenceContext({
-        storedContextFingerprint: evidence.contextFingerprint,
-        preservedDraftIdentity: preservedDraft.value.identity,
-        deployedIdentity: current.value.identity,
-        expectedTaxonId: taxonId,
-        expectedResearchVersion: taxon.selectedResearchVersion,
-        expectedInputCatalogVersion: CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION,
-      })
-    ) {
-      continue;
-    }
-    validEvidenceTaxonIds.push(taxonId);
-    contextsByTaxonId.set(taxonId, current.value.identity);
-  }
-  return Object.freeze({
-    ok: true,
-    impacts: impacts.value,
-    validEvidenceTaxonIds: Object.freeze(validEvidenceTaxonIds.sort()),
-    contextsByTaxonId,
+): readonly string[] {
+  return collectRequiredFactualReviewTaxonIds({
+    activeReviewRequiredTaxonIds: candidate.impacts
+      .filter((impact) => impact.classification === "review_required")
+      .map((impact) => impact.taxon.id),
+    unclosedReleaseTaxonIds: context.unclosedReleaseTaxonIds,
   });
-}
-
-function buildPublishedReviewImpacts(
-  context: LifecycleContext,
-):
-  | Readonly<{ ok: true; value: readonly PublishedReviewImpact[] }>
-  | Readonly<{ ok: false; message: string }> {
-  const identities = context.taxons.map((taxon) => taxon.identity);
-  const impacts: PublishedReviewImpact[] = [];
-  for (const taxon of context.taxons) {
-    if (!taxon.identity.isActive) continue;
-    if (taxon.reviewedVersion === CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION) {
-      impacts.push({
-        taxonId: taxon.identity.id,
-        reviewedVersion: taxon.reviewedVersion,
-        classification: "no_material_change",
-      });
-      continue;
-    }
-    if (taxon.reviewedVersion === null) {
-      impacts.push({
-        taxonId: taxon.identity.id,
-        reviewedVersion: null,
-        classification: "review_required",
-      });
-      continue;
-    }
-    if (
-      taxon.reviewedVersion > CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION ||
-      !listLandingPageInputCatalogVersions().includes(taxon.reviewedVersion)
-    ) {
-      return {
-        ok: false,
-        message: "Uma versão revisada não corresponde ao histórico executável implantado.",
-      };
-    }
-    const chain = buildLandingPageInputCatalogTaxonChain(taxon.identity, identities);
-    if (!chain.ok) {
-      return {
-        ok: false,
-        message: "Uma cadeia taxonômica mudou durante a reconciliação pós-publicação.",
-      };
-    }
-    const transition = classifyLandingPageInputCatalogTransitionForTaxon({
-      previousVersion: taxon.reviewedVersion,
-      nextVersion: CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION,
-      taxonChain: chain.value,
-    });
-    impacts.push({
-      taxonId: taxon.identity.id,
-      reviewedVersion: taxon.reviewedVersion,
-      classification: transition.classification,
-    });
-  }
-  return { ok: true, value: Object.freeze(impacts) };
-}
-
-async function advancePublishedReviewMarker(input: Readonly<{
-  client: ServiceClient;
-  taxon: LifecycleContext["taxons"][number];
-  evidenceContext: InputCatalogEvaluationContextIdentity;
-  targetVersion: number;
-}>): Promise<boolean> {
-  if (
-    input.evidenceContext.taxonId !== input.taxon.identity.id ||
-    input.evidenceContext.taxonSlug !== input.taxon.identity.slug ||
-    input.evidenceContext.research.researchVersion !==
-      input.taxon.selectedResearchVersion
-  ) {
-    return false;
-  }
-  let updateQuery: any = input.client
-    .from("business_taxons")
-    .update({ reviewed_input_catalog_version: input.targetVersion })
-    .eq("id", input.taxon.identity.id)
-    .eq("name", input.taxon.identity.name)
-    .eq("slug", input.taxon.identity.slug)
-    .eq("level", input.taxon.identity.level)
-    .eq("is_active", true)
-    .eq(
-      "selected_end_customer_research_version",
-      input.evidenceContext.research.researchVersion,
-    );
-  updateQuery = input.taxon.identity.parentId === null
-    ? updateQuery.is("parent_id", null)
-    : updateQuery.eq("parent_id", input.taxon.identity.parentId);
-  updateQuery = input.taxon.reviewedVersion === null
-    ? updateQuery.is("reviewed_input_catalog_version", null)
-    : updateQuery.eq("reviewed_input_catalog_version", input.taxon.reviewedVersion);
-  const { data, error } = await updateQuery
-    .select("id,reviewed_input_catalog_version")
-    .maxAffected(1)
-    .maybeSingle();
-  return (
-    !error &&
-    isRecord(data) &&
-    data.id === input.taxon.identity.id &&
-    data.reviewed_input_catalog_version === input.targetVersion
-  );
 }
 
 function normalizeDraftRow(value: unknown): DraftRow | null {
@@ -957,6 +835,13 @@ function normalizeDraftRow(value: unknown): DraftRow | null {
     (value.publication_context_fingerprint !== null &&
       (typeof value.publication_context_fingerprint !== "string" ||
         !/^[0-9a-f]{64}$/.test(value.publication_context_fingerprint))) ||
+    (value.publication_context_snapshot !== null && !isRecord(value.publication_context_snapshot)) ||
+    !Array.isArray(value.publication_required_taxon_ids) ||
+    value.publication_required_taxon_ids.some((taxonId) =>
+      typeof taxonId !== "string" ||
+      !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(taxonId)
+    ) ||
+    new Set(value.publication_required_taxon_ids).size !== value.publication_required_taxon_ids.length ||
     typeof value.updated_at !== "string"
   ) return null;
   const taxonReviewEvidence = normalizeDraftTaxonReviewEvidence(
@@ -975,6 +860,11 @@ function normalizeDraftRow(value: unknown): DraftRow | null {
     publicationFingerprint: value.publication_fingerprint as string | null,
     publicationContextFingerprint:
       value.publication_context_fingerprint as string | null,
+    publicationContextSnapshot:
+      value.publication_context_snapshot as Readonly<Record<string, unknown>> | null,
+    publicationRequiredTaxonIds: Object.freeze([
+      ...(value.publication_required_taxon_ids as string[]),
+    ].sort()),
     taxonReviewEvidence,
     updatedAt: value.updated_at,
   };
@@ -989,41 +879,25 @@ function normalizeDraftTaxonReviewEvidence(
     if (
       !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(taxonId) ||
       !isRecord(raw) ||
+      typeof raw.review_id !== "string" ||
+      !Number.isSafeInteger(raw.review_revision) ||
+      Number(raw.review_revision) <= 0 ||
+      !Number.isSafeInteger(raw.draft_revision) ||
+      Number(raw.draft_revision) <= 0 ||
       typeof raw.content_fingerprint !== "string" ||
       !/^[0-9a-f]{64}$/.test(raw.content_fingerprint) ||
       typeof raw.context_fingerprint !== "string" ||
-      !/^[0-9a-f]{64}$/.test(raw.context_fingerprint) ||
-      (raw.decision !== "confirm_sufficient" &&
-        raw.decision !== "reject_candidates_and_confirm_sufficient") ||
-      typeof raw.decided_by !== "string" ||
-      typeof raw.decided_at !== "string"
+      !/^[0-9a-f]{64}$/.test(raw.context_fingerprint)
     ) return null;
     normalized[taxonId] = Object.freeze({
+      reviewId: raw.review_id,
+      reviewRevision: Number(raw.review_revision),
+      draftRevision: Number(raw.draft_revision),
       contentFingerprint: raw.content_fingerprint,
       contextFingerprint: raw.context_fingerprint,
-      decision: raw.decision,
-      decidedBy: raw.decided_by,
-      decidedAt: raw.decided_at,
     });
   }
   return Object.freeze(normalized);
-}
-
-function serializeDraftTaxonReviewEvidence(
-  value: Readonly<Record<string, DraftTaxonReviewEvidence>>,
-): Record<string, Record<string, string>> {
-  return Object.fromEntries(
-    Object.entries(value).map(([taxonId, evidence]) => [
-      taxonId,
-      {
-        content_fingerprint: evidence.contentFingerprint,
-        context_fingerprint: evidence.contextFingerprint,
-        decision: evidence.decision,
-        decided_by: evidence.decidedBy,
-        decided_at: evidence.decidedAt,
-      },
-    ]),
-  );
 }
 
 function buildPublicationHandoff(

@@ -2,8 +2,8 @@
 
 0.1 Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.88
-• Data: 06/09/2026
+• Versão: v2.0.92
+• Data: 12/09/2026
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -273,20 +273,35 @@
 • Resolução segue `universal → segmento → nicho → ultranicho`; especializações só podem restringir e devem preservar identidade, tipo, origem, condições e evidência.
 • Evolução forward-only pode retirar um field publicado somente a partir de nova versão; valores históricos dessa chave permanecem reconhecíveis e inertes, enquanto chaves nunca publicadas continuam inválidas.
 • O draft deve preservar cada field já publicado e sua `createdInVersion`; remoção direta e proveniência retroativa são inválidas. Field novo nasce na versão alvo e retirada de field publicado usa exclusivamente `retiredInVersion` igual à nova versão.
+• A evolução administrativa do singleton usa operações puras e discriminadas `add | change | retire`, sempre com alvo/camada explícitos e contrato humano completo. `add` materializa origem e `createdInVersion`; `change` preserva chave, posição, histórico e limites numéricos omitidos, emitindo ou atualizando `specialization` quando o field for herdado; `retire` preserva o field e registra somente `retiredInVersion` forward-only.
+• Toda operação valida o draft, resolve impacto nos quatro planos e persiste pela mesma RPC atômica de revisão otimista e invalidação factual. Todas as sessões `release` abertas são projetadas como `isActive:true` somente no catálogo candidato e nos impactos, inclusive em operação universal ou ancestral; IDs ausentes, duplicados ou já ativos falham fechado, e `business_taxons` não é mutada.
+• Candidato ou output de IA é somente insumo da decisão humana e nunca entra no boundary de operações nem cria, altera ou retira field automaticamente.
 • Referências condicionais devem existir e permanecer válidas após o filtro de plano; avaliação dos valores concretos pertence ao consumidor.
 • A saída deve ser determinística, rastreável e profundamente imutável.
 
 3.15.7 Preparação factual do taxon para `landing_page`
-• Boundary canônico: `lib/conversion-content/landing-page/taxon-preparation/`; a derivação permanece pura e não persiste estado de prontidão.
-• O adapter server-only deve ler pelo caminho único da pesquisa selecionada o taxon ativo, a pesquisa E20.5 integralmente válida e a última versão E20.2 efetivamente revisada; UI e componentes client não consultam esses marcadores diretamente.
+• Boundary canônico: `lib/conversion-content/landing-page/taxon-preparation/`; cobertura e preparação permanecem derivações puras e nenhum estado paralelo `prepared` é persistido. Sessões factuais persistem somente lifecycle, decisão e evidência administrativa.
+• Consumidores operacionais continuam exigindo taxon ativo, pesquisa E20.5 integralmente válida e última versão E20.2 efetivamente revisada. A leitura administrativa de cobertura usa boundary server-only próprio, pode examinar taxon inativo sem torná-lo operacional e não relaxa os adapters operacionais.
 • Avaliações administrativas históricas continuam recebendo uma versão executável explícita. Consumidores operacionais correntes recebem a versão atual explícita da API pública do catálogo; maior versão, `latest` e qualquer fallback implícito são proibidos.
 • A versão efetiva corrente é a versão atual quando coincide com a revisada ou quando a comparação resolvida em todos os planos classifica a transição como sem mudança material ou evolução compatível. Mudança fora da allowlist conservadora exige nova revisão; ausência, incompatibilidade, feature gate ou falha operacional permanecem erros tipados e fail-closed.
 • Carry-forward compatível não reescreve a versão revisada e não reinterpreta snapshots ou configurações históricas; cada residência preserva o número concretamente usado.
-• O lifecycle administrativo lê integralmente `business_taxons` e ancora separadamente a identidade do conteúdo e o contexto E20 formado por identidade taxonômica, pesquisa selecionada e versão revisada; drift em qualquer fingerprint torna validação ou handoff stale.
-• O catálogo continua classificando `no_material_change`, `compatible_evolution` e `review_required`. A publicação não depende de blocker global por operacionalidade, preparação ou evidência completa de todos os taxons.
-• Evidência humana válida e revalidada para o conteúdo e o contexto atuais permite avançar `reviewed_input_catalog_version`; ausência, invalidade ou staleness preserva o marcador anterior e mantém o taxon fail-closed na preparação E20.6 quando a nova revisão for necessária.
-• Após o deploy publicar o conteúdo repo-only exato, a reconciliação materializa somente os marcadores respaldados por evidência válida, confirma a leitura final e encerra o draft temporário sem transformar taxons ainda não revisados em bloqueio global.
+• O lifecycle administrativo mantém uma única revisão `release | revision` aberta por taxon. A mesma linha ancora atividade, pesquisa E20.5 selecionada, versão factual revisada, snapshot da cadeia, última recomendação persistida e decisão final; usa somente `open | closed`, concorrência otimista e imutabilidade após fechamento. Abertura, finalização, reconciliação, mutação taxonômica e troca da pesquisa selecionada compartilham lock transacional e revalidam o baseline completo antes de qualquer efeito autoritativo; a pesquisa selecionada não pode mudar enquanto houver revisão aberta. Invalidação de identidade, contagem de histórico e exclusão atômica permanecem obrigatórias mesmo quando a superfície E20.6 está desabilitada.
+• Taxon novo nasce inativo e somente o lifecycle factual pode executar `false → true`; edição genérica preserva a inativação explícita. Abrir ou abandonar revisão de taxon ativo nunca limpa sua última versão válida nem o torna indisponível.
+• O catálogo continua classificando `no_material_change`, `compatible_evolution` e `review_required`. A autorização do draft exige cobertura exata somente dos taxons materialmente afetados e das sessões `release` inativas ainda não encerradas; nenhum blocker operacional histórico é reintroduzido.
+• A decisão humana cobre cada recomendação exatamente uma vez entre aceita e rejeitada, atribui camada explícita a toda aceitação e pode acrescentar candidato próprio com necessidade e camada. Rejeição integral sem candidato próprio fecha como `no_change`; qualquer aceitação ou candidato próprio permanece apenas `catalog_change` candidato.
+• `landing_page_input_catalog_drafts.taxon_review_evidence` projeta a decisão fechada por revisão e draft exato, inclusive `no_change`. Editar o conteúdo limpa a projeção por update otimista; o histórico factual fechado não é reaberto nem reescrito.
+• O histórico em `business_taxon_factual_reviews` restringe a exclusão do taxon por FK; o Admin conta esse histórico e não oferece exclusão quando existir revisão factual.
+• Preparar publicação comprova a coleção integral afetada sem alterar atividade ou marcador factual e congela por update otimista o snapshot completo do contexto e o conjunto exato de taxons com evidência. Após o deploy publicar o conteúdo repo-only exato, a reconciliação recompõe esse contexto sob o lock compartilhado, rejeita qualquer taxon ou evidência superveniente, atualiza todos os marcadores, ativa somente revisões `release` e exclui o singleton sem permitir sucesso parcial.
+• Ausência, invalidade, staleness ou conflito preserva atividade, última versão factual válida e draft anterior por rollback integral.
 • A avaliação semântica usa o workload OpenAI comum autorizado e permanece não autoritativa; a decisão final de suficiência e seu registro administrativo são humanos, e o boundary apenas aplica deterministicamente a decisão autenticada e revalidada.
+• A fonte da avaliação é derivada de forma fechada: E20.5 válida usa uma Responses sem Web Search; ausência legítima usa uma Responses com uma ou duas buscas; hipótese focal usa uma Responses com exatamente uma busca. Seleção inválida, erro de banco ou artefato falham sem fallback, e confirmação de cobertura herdada continua com zero chamada.
+• O adapter administrativo reutiliza a leitura integral e paginada da cadeia taxonômica por um entrypoint server-only que admite somente o taxon servido inativo; os leitores operacionais permanecem inalterados e retornam `TAXON_INACTIVE`.
+• Cada execução humana possui deadline integral de 45 segundos no workload, com zero retry, `store:false`, preflight conservador de 128k por limite superior em bytes UTF-8 e Structured Output v2. Em estratégia Web, todo candidato e toda URL presente em texto material referenciam somente URLs HTTPS autenticadas nas fontes do provider; ausência, invenção ou excesso de chamadas produz inconclusão segura.
+• Somente uma avaliação validada é persistida na revisão aberta. Falha ou timeout do provider não grava transição; feedback e decisão enviam a referência mínima e o backend recarrega contexto, output e candidatos persistidos. Não existe token paralelo nem autoridade de candidatos no browser.
+• `/admin/taxonomia` separa estado operacional de revisão factual, e o detalhe permite abrir ou concluir o lifecycle humano mesmo quando a avaliação assistida está indisponível. Ausência de histórico, revisão aberta, revisão concluída e falha de leitura continuam reconhecíveis após reload.
+• A avaliação v2 apresenta estratégia, estado e fontes, mas aceita somente decisão humana completa: zero, parcial ou total, camada explícita por aceitação e candidato próprio persistido com origem literal `human-added`. Mudança exige draft e revisão exatos e nunca materializa field automaticamente.
+• `/admin/estrutura-lp?view=entradas` coleta somente operações estruturadas e recebe do servidor targets, fields editáveis e impactos seguros; JSON integral do catálogo e regras do registry não atravessam o boundary do client. Validação, autorização, publicação e reconciliação continuam etapas separadas.
+• As superfícies administrativas usam controles nativos, labels e hints associados, feedback anunciável com foco após transição, alvos de toque de pelo menos 44 px, foco visível, quebra de texto e overflow horizontal restrito a tabelas.
 
 3.15.9 Estado residual do antigo produto de `landing_page`
 • O Account Dashboard não possui criação, onboarding operacional, workspace, configuração operacional, histórico, Preview, renderer, aprovação, readers de materialização ou assinatura de assets do produto legado.

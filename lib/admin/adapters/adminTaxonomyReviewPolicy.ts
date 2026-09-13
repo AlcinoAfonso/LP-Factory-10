@@ -11,19 +11,13 @@ export type InputCatalogReviewBaseline = Readonly<{
 export function planEndCustomerResearchSelectionMutation(input: {
   currentVersion: number | null;
   nextVersion: number;
-  inputCatalogReviewEnabled: boolean;
 }) {
   if (input.currentVersion === input.nextVersion) {
     return { idempotent: true as const, update: null };
   }
   return {
     idempotent: false as const,
-    update: input.inputCatalogReviewEnabled
-      ? {
-          selected_end_customer_research_version: input.nextVersion,
-          reviewed_input_catalog_version: null,
-        }
-      : { selected_end_customer_research_version: input.nextVersion },
+    update: { selected_end_customer_research_version: input.nextVersion },
   };
 }
 
@@ -31,7 +25,11 @@ export function taxonomyMutationAffectsInputCatalogResolution(
   current: Readonly<{ name: string; slug: string; isActive: boolean }>,
   next: Readonly<{ name: string; slug: string; isActive: boolean }>,
 ): boolean {
-  return current.name !== next.name || current.slug !== next.slug || current.isActive !== next.isActive;
+  return (
+    current.name !== next.name ||
+    current.slug !== next.slug ||
+    current.isActive !== next.isActive
+  );
 }
 
 export function collectAffectedReviewedTaxonIds(
@@ -39,6 +37,19 @@ export function collectAffectedReviewedTaxonIds(
     id: string;
     parentId: string | null;
     reviewedVersion: number | null;
+  }>[],
+  rootTaxonId: string,
+): readonly string[] {
+  const affected = collectAffectedTaxonIds(rows, rootTaxonId);
+  return rows
+    .filter((row) => affected.includes(row.id) && row.reviewedVersion !== null)
+    .map((row) => row.id);
+}
+
+export function collectAffectedTaxonIds(
+  rows: readonly Readonly<{
+    id: string;
+    parentId: string | null;
   }>[],
   rootTaxonId: string,
 ): readonly string[] {
@@ -53,9 +64,35 @@ export function collectAffectedReviewedTaxonIds(
       }
     }
   }
-  return rows
-    .filter((row) => affected.has(row.id) && row.reviewedVersion !== null)
-    .map((row) => row.id);
+  return rows.filter((row) => affected.has(row.id)).map((row) => row.id);
+}
+
+export function planTaxonomyIdentityReviewInvalidation(input: Readonly<{
+  materiallyChangesResolution: boolean;
+  affectedReviewedTaxonIds: readonly string[];
+  hasUnclosedFactualReview: boolean;
+  explicitInvalidationAuthorized: boolean;
+  closesUnclosedFactualReviews: boolean;
+}>) {
+  if (!input.materiallyChangesResolution) {
+    return { ok: true as const, invalidateReviewedTaxonIds: Object.freeze([] as string[]) };
+  }
+  if (input.hasUnclosedFactualReview && !input.closesUnclosedFactualReviews) {
+    return {
+      ok: false as const,
+      error: "Encerre a sessão factual aberta do taxon ou de seus descendentes antes de alterar sua identidade.",
+    };
+  }
+  if (input.affectedReviewedTaxonIds.length > 0 && !input.explicitInvalidationAuthorized) {
+    return {
+      ok: false as const,
+      error: "Confirme explicitamente a invalidação das coberturas E20.6 afetadas antes de alterar identidade ou atividade.",
+    };
+  }
+  return {
+    ok: true as const,
+    invalidateReviewedTaxonIds: Object.freeze([...input.affectedReviewedTaxonIds]),
+  };
 }
 
 export function sameInputCatalogReviewBaseline(
@@ -71,25 +108,4 @@ export function sameInputCatalogReviewBaseline(
     left.reviewedVersion === right.reviewedVersion &&
     left.chainFingerprint === right.chainFingerprint
   );
-}
-
-export type InputCatalogReviewPresentation = Readonly<{
-  reviewedVersion: number | null;
-  lastAction: "record" | "reopen" | null;
-}>;
-
-export function nextInputCatalogReviewActionRevision(current: number): number {
-  return current + 1;
-}
-
-export function applyInputCatalogReviewPresentation(
-  _current: InputCatalogReviewPresentation,
-  event: Readonly<
-    | { type: "record"; reviewedVersion: number }
-    | { type: "reopen" }
-  >,
-): InputCatalogReviewPresentation {
-  return event.type === "record"
-    ? { reviewedVersion: event.reviewedVersion, lastAction: "record" }
-    : { reviewedVersion: null, lastAction: "reopen" };
 }

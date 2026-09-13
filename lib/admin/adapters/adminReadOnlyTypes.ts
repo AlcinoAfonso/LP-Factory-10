@@ -83,6 +83,7 @@ export type AdminTaxonUsage = {
   aiSuggestedResolutions: number;
   contentTemplateLinks: number;
   marketResearch: number;
+  factualReviews: number | null;
 };
 
 export type AdminEndCustomerResearchSelection =
@@ -96,9 +97,8 @@ export type AdminInputCatalogReview =
   | { status: "read_failed"; errorCode: string; message: string }
   | {
       status: "available";
-      selectedResearchVersion: number;
+      selectedResearchVersion: number | null;
       reviewedVersion: number | null;
-      handoff: string;
       taxonName: string;
       taxonSlug: string;
       taxonLevel: AdminTaxonLevel;

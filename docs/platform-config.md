@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Documento: LP Factory 10 — Platform Config
-• Versão: v0.1.45
+• Versão: v0.1.46
 • Data: 12/09/2026
 
 0.2 Contrato do documento
@@ -243,12 +243,12 @@
 • `E20_6_5_INPUT_CATALOG_EVALUATION_PROVIDER_ENABLED`
 • Finalidade: gate server-side e de UI exclusivo do rollout do provider da avaliação factual E20.6.5.
 • Escopo: Preview e Production do projeto Core, com configuração independente por ambiente.
-• Habilitação: somente o literal `true` autoriza a tentativa; ausente, vazio ou qualquer outro valor produz `ROLLOUT_GATE_OFF`. Somente esse retorno explícito preserva handoff Codex e registro legado.
-• Condição adicional hospedada: mesmo com este gate ligado, Preview e Production recusam `repo_catalog` e a revisão bootstrap `1`; exigem resolução efetiva `supabase_operational` de revisão `2` ou posterior, já promovida com prova operacional aprovada e ativada pelo lifecycle E21.2. `OPENAI_OPERATIONAL_CONFIG_ENABLED=false` nunca constitui provider-off. Falha dessa comprovação retorna `OPERATIONAL_CONFIGURATION_UNPROVEN` e bloqueia runtime e legado, sem escrita, fallback Codex ou rotulagem gate-off.
+• Habilitação: somente o literal `true` autoriza a tentativa; ausente, vazio ou qualquer outro valor produz `ROLLOUT_GATE_OFF` apenas para a avaliação assistida opcional. O lifecycle factual humano permanece disponível e não existe handoff ou registro legado.
+• Condição adicional hospedada: mesmo com este gate ligado, Preview e Production recusam `repo_catalog` e a revisão bootstrap `1`; exigem resolução efetiva `supabase_operational` de revisão `2` ou posterior, já promovida com prova operacional aprovada e ativada pelo lifecycle E21.2. `OPENAI_OPERATIONAL_CONFIG_ENABLED=false` nunca constitui provider-off. Falha dessa comprovação retorna `OPERATIONAL_CONFIGURATION_UNPROVEN` e bloqueia somente a avaliação assistida, sem escrita ou fallback.
 • Estado inicial: desabilitado durante o PR #795, o merge humano, o apply e as provas operacionais do novo workload.
 • Pré-condição operacional: `OPENAI_OPERATIONAL_CONFIG_ENABLED=true` já está ativo em Preview e Production e deve permanecer ativo durante todo o rollout da E20.6.5; este recorte apenas verifica essa condição e não volta a habilitar o gate da E21.2.
 • Progressão operacional: a revisão operacional `2` de `taxon_input_catalog_sufficiency_evaluation` já está ativa em Preview e Production. O estado atual de `E20_6_5_INPUT_CATALOG_EVALUATION_PROVIDER_ENABLED`, o redeploy, o QA hospedado e a conclusão do rollout permanecem não comprovados neste confronto; nenhum desses estados pode ser inferido da revisão ativa.
-• Regra de credencial: reutilizar a `OPENAI_API_KEY` compartilhada já autorizada para o provider e para autenticar, com domínio criptográfico próprio, a evidência transitória de decisão emitida pelo servidor; não criar chave específica da E20.6.5.
+• Regra de credencial: reutilizar a `OPENAI_API_KEY` compartilhada já autorizada somente para o provider; não criar chave específica da E20.6.5 nem derivar HMAC ou token decisório dessa credencial. A recomendação persistida na revisão factual aberta é recarregada pelo backend no fluxo de decisão.
 
 • Configuração efetiva dos workloads OpenAI de produto
 • Fonte canônica: `lib/openai-workloads/registry.ts` mantém identidade, baseline local e allowlist; Development usa `repo_catalog` revisão `v2`, e Preview/Production usam exclusivamente `supabase_operational` com revisão decimal ativa.
@@ -545,8 +545,9 @@ Regra:
 • Configurações de plataformas, secrets por nome, workflows, ambientes e endpoints usados por automações devem ser registrados neste documento.
 
 99. Changelog
-v0.1.45 — 12/09/2026 — Reconciliada a configuração operacional concluída da E21.5: captura ativa validada em Preview e Production e ingresso assinado do `supabase_inspect` validado em Production, sem registrar valores de secrets.
+v0.1.46 — 12/09/2026 — E20.6.5–E20.6.7 preservaram a `OPENAI_API_KEY` compartilhada e retiraram handoff e token HMAC legados; gate e falha de configuração afetam somente a avaliação assistida opcional, enquanto o lifecycle humano permanece independente. Gate, apply, redeploy e QA hospedados permanecem não comprovados.
 
+v0.1.45 — 12/09/2026 — Reconciliada a configuração operacional concluída da E21.5: captura ativa validada em Preview e Production e ingresso assinado do `supabase_inspect` validado em Production, sem registrar valores de secrets.
 v0.1.44 — 07/09/2026 — Consolidado o fechamento da E23.2: seis ocorrências sem consumidor removidas da Vercel Core; 22 sobreclassificações como Secret e quatro branch scopes legados preservados por decisão funcional conservadora; Preview aprovado sem exposição ou substituição de valores.
 
 v0.1.40 — 02/09/2026 — Marcados `E19_5_WORKSPACE_ENABLED` e `landing-page-revision-assets` como recursos sem consumidor runtime após o SV-PR03; nenhuma variável, secret, bucket ou infraestrutura externa foi alterada.
