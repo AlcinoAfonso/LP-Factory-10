@@ -2,7 +2,10 @@
 
 import { useActionState, useEffect, useState } from "react";
 
-import type { AdminInputCatalogReview } from "@/lib/admin/adapters/adminReadOnlyTypes";
+import type {
+  AdminInputCatalogCoverageField,
+  AdminInputCatalogReview,
+} from "@/lib/admin/adapters/adminReadOnlyTypes";
 import { applyInputCatalogReviewPresentation } from "@/lib/admin/adapters/adminTaxonomyReviewPolicy";
 import type { InputCatalogReviewActionState } from "../../actions";
 
@@ -96,21 +99,67 @@ export function AdminTaxonInputCatalogReview({
         Avaliar suficiência da E20.2
       </h2>
       <p className="mt-1 text-sm text-muted-foreground">
-        {legacyMode === "rollout_gate_off"
-          ? "Copie a instrução, conclua a análise no Codex App e só depois registre a versão E20.2 aceita por decisão humana."
-          : legacyMode === "operational_configuration_unproven"
-            ? "A configuração operacional não foi comprovada. Runtime, handoff Codex e registro legado permanecem bloqueados neste estado."
-            : "O runtime E20.6.5 está comprovado e ativo. A suficiência só pode ser registrada por decisão autenticada da avaliação factual."}
+        Compare a cobertura herdada. Você pode liberar sem IA quando ela já for suficiente ou pedir sugestões opcionais abaixo.
       </p>
 
       <div className="mt-4 rounded-md border border-border bg-muted/30 px-4 py-3">
         <p className="text-xs font-medium uppercase text-muted-foreground">Estado da avaliação</p>
         <p className="mt-1 text-sm font-medium text-foreground">
-          {reviewedVersion === null ? "Não avaliado" : `Versão ${reviewedVersion} avaliada`}
+          {reviewedVersion === null
+            ? availableReview.isActive ? "Ativo, sem revisão E20.2 vigente" : "Inativo, aguardando revisão E20.2"
+            : `Versão ${reviewedVersion} avaliada${availableReview.isActive ? "" : "; taxon ainda inativo"}`}
         </p>
         <p className="mt-1 text-xs text-muted-foreground">
-          Pesquisa integral E20.5 selecionada: v{availableReview.selectedResearchVersion}.
+          {availableReview.selectedResearchVersion === null
+            ? "Pesquisa E20.5 ausente; isso não impede a liberação sem IA."
+            : `Pesquisa integral E20.5 selecionada: v${availableReview.selectedResearchVersion}.`}
         </p>
+      </div>
+
+      <div className="mt-4 rounded-md border border-border px-4 py-3">
+        <p className="text-xs font-medium uppercase text-muted-foreground">
+          Cobertura herdada da E20.2 v{availableReview.currentInputCatalogVersion}
+        </p>
+        <p className="mt-2 text-sm text-foreground">
+          Planos confrontados: {availableReview.coverage.plans.join(", ")}.
+        </p>
+        <div className="mt-3 grid gap-4" aria-label="Catálogos completos herdados da E20.2">
+          {availableReview.coverage.catalogs.map((catalog) => (
+            <section className="rounded border border-border bg-muted/20 px-3 py-3" key={catalog.plan}>
+              <h3 className="text-sm font-semibold text-foreground">Plano {humanizeCoverageValue(catalog.plan)}</h3>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Camadas aplicadas: {catalog.appliedLayers.map((layer) =>
+                  layer.taxonName ? `${humanizeCoverageValue(layer.level)} (${layer.taxonName})` : humanizeCoverageValue(layer.level)
+                ).join(" → ")}.
+              </p>
+              <ul className="mt-3 grid gap-3" aria-label={`Fields herdados do plano ${catalog.plan}`}>
+                {catalog.fields.map((field) => (
+                  <li className="rounded border border-border bg-background px-3 py-3" key={field.fieldKey}>
+                    <p className="text-sm font-medium text-foreground">{field.fieldKey}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">{field.purpose}</p>
+                    <dl className="mt-2 grid gap-1 text-xs text-muted-foreground sm:grid-cols-2">
+                      <CoverageDetail label="Tipo" value={humanizeCoverageValue(field.valueType)} />
+                      <CoverageDetail label="Escopo do valor" value={humanizeCoverageValue(field.valueScope)} />
+                      <CoverageDetail label="Origem da definição" value={humanizeCoverageValue(field.originLayer)} />
+                      <CoverageDetail label="Origem esperada do valor" value={humanizeCoverageValue(field.expectedValueOrigin)} />
+                      <CoverageDetail label="Obrigação" value={humanizeCoverageValue(field.obligation)} />
+                      <CoverageDetail label="Validação" value={formatCoverageValidation(field)} />
+                      <CoverageDetail label="Condição de obrigatoriedade" value={formatCoverageCondition(field.requiredWhen)} />
+                      <CoverageDetail label="Condição de aplicabilidade" value={formatCoverageCondition(field.applicableWhen)} />
+                      <CoverageDetail label="Planos permitidos" value={field.allowedPlans.map(humanizeCoverageValue).join(", ")} />
+                      <CoverageDetail
+                        label="Política de substituição"
+                        value={field.landingPageSubstitutionPolicy
+                          ? humanizeCoverageValue(field.landingPageSubstitutionPolicy)
+                          : "Não declarada"}
+                      />
+                    </dl>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ))}
+        </div>
       </div>
 
       {legacyAvailable ? (
@@ -136,32 +185,24 @@ export function AdminTaxonInputCatalogReview({
       ) : null}
 
       <div className="mt-6 grid gap-4 lg:grid-cols-2">
-        {legacyAvailable ? (
-          <form action={recordFormAction} className="space-y-3 rounded-md border border-border p-4" onSubmit={() => setAttemptedAction("record")}>
+        <form action={recordFormAction} className="space-y-3 rounded-md border border-border p-4" onSubmit={() => setAttemptedAction("record")}>
             <input name="taxonId" type="hidden" value={taxonId} />
-            <label className="text-xs font-medium text-muted-foreground" htmlFor="input-catalog-review-version">
-              Versão E20.2 aceita como suficiente
-            </label>
-            <input
-              className="h-11 w-full rounded-md border border-border bg-background px-3 text-sm outline-none focus-visible:ring-4 focus-visible:ring-brand-600/20 disabled:opacity-60"
-              disabled={busy}
-              id="input-catalog-review-version"
-              inputMode="numeric"
-              min={1}
-              name="inputCatalogVersion"
-              required
-              step={1}
-              type="number"
-            />
+            <input name="inputCatalogVersion" type="hidden" value={availableReview.currentInputCatalogVersion} />
+            <p className="text-sm text-muted-foreground">
+              Confirmo que a cobertura herdada da versão E20.2 {availableReview.currentInputCatalogVersion} é suficiente para este taxon.
+            </p>
             <button
               className="inline-flex min-h-11 items-center justify-center rounded-md bg-brand-600 px-4 text-sm font-medium text-white transition hover:bg-brand-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-600/30 disabled:opacity-60"
               disabled={busy}
               type="submit"
             >
-              {recordPending ? "Registrando..." : "Registrar versão avaliada"}
+              {recordPending
+                ? "Liberando..."
+                : availableReview.isActive
+                  ? "Confirmar cobertura sem IA"
+                  : "Liberar taxon sem IA"}
             </button>
           </form>
-        ) : null}
 
         <form action={reopenFormAction} className="space-y-3 rounded-md border border-border p-4" onSubmit={() => setAttemptedAction("reopen")}>
           <input name="taxonId" type="hidden" value={taxonId} />
@@ -179,8 +220,58 @@ export function AdminTaxonInputCatalogReview({
       </div>
 
       {actionError ? <p className="mt-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">{actionError}</p> : null}
-      {legacyAvailable && !actionError && attemptedAction === "record" && lastAction === "record" && recordState.reviewedVersion !== null ? <p className="mt-4 text-sm text-emerald-800" role="status">Versão {recordState.reviewedVersion} registrada como avaliada.</p> : null}
+      {!actionError && attemptedAction === "record" && lastAction === "record" && recordState.reviewedVersion !== null ? <p className="mt-4 text-sm text-emerald-800" role="status">Versão {recordState.reviewedVersion} registrada e taxon liberado.</p> : null}
       {!actionError && attemptedAction === "reopen" && lastAction === "reopen" && reopenState.reopened ? <p className="mt-4 text-sm text-emerald-800" role="status">Avaliação reaberta; o estado voltou para não avaliado.</p> : null}
     </section>
   );
+}
+
+function CoverageDetail({ label, value }: Readonly<{ label: string; value: string }>) {
+  return (
+    <div>
+      <dt className="font-medium text-foreground">{label}</dt>
+      <dd>{value}</dd>
+    </div>
+  );
+}
+
+function formatCoverageCondition(
+  condition: AdminInputCatalogCoverageField["requiredWhen"],
+): string {
+  if (!condition) return "Nenhuma";
+  const value = typeof condition.value === "string"
+    ? humanizeCoverageValue(condition.value)
+    : typeof condition.value === "boolean"
+      ? condition.value ? "Sim" : "Não"
+      : condition.value.map(humanizeCoverageValue).join(", ");
+  return `${condition.fieldKey} ${condition.operator === "equals" ? "igual a" : "em"} ${value}`;
+}
+
+function formatCoverageValidation(field: AdminInputCatalogCoverageField): string {
+  const validation = field.validation;
+  if (validation.kind === "enum") {
+    return `Opções: ${validation.allowedValues.map(humanizeCoverageValue).join(", ")}`;
+  }
+  if (validation.kind === "string_list") {
+    const constraints = [
+      validation.allowedValues?.length
+        ? `opções ${validation.allowedValues.map(humanizeCoverageValue).join(", ")}`
+        : null,
+      validation.minItems !== undefined ? `mínimo ${validation.minItems}` : null,
+      validation.maxItems !== undefined ? `máximo ${validation.maxItems}` : null,
+    ].filter((value): value is string => value !== null);
+    return constraints.length ? `Lista de textos: ${constraints.join("; ")}` : "Lista de textos";
+  }
+  if (validation.kind === "number_range") {
+    const limits = [
+      validation.minimum !== undefined ? `mínimo ${validation.minimum}` : null,
+      validation.maximum !== undefined ? `máximo ${validation.maximum}` : null,
+    ].filter((value): value is string => value !== null);
+    return `Faixa numérica${limits.length ? `: ${limits.join(", ")}` : ""} (${validation.currency})`;
+  }
+  return humanizeCoverageValue(validation.kind);
+}
+
+function humanizeCoverageValue(value: string): string {
+  return value.replace(/[._-]/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 }

@@ -3,8 +3,9 @@ export type InputCatalogReviewBaseline = Readonly<{
   taxonSlug: string;
   taxonLevel: "segment" | "niche" | "ultra_niche";
   parentTaxonId: string | null;
-  selectedResearchVersion: number;
+  selectedResearchVersion: number | null;
   reviewedVersion: number | null;
+  isActive: boolean;
   chainFingerprint: string;
 }>;
 
@@ -12,13 +13,14 @@ export function planEndCustomerResearchSelectionMutation(input: {
   currentVersion: number | null;
   nextVersion: number;
   inputCatalogReviewEnabled: boolean;
+  preserveReviewedVersion?: boolean;
 }) {
   if (input.currentVersion === input.nextVersion) {
     return { idempotent: true as const, update: null };
   }
   return {
     idempotent: false as const,
-    update: input.inputCatalogReviewEnabled
+    update: input.inputCatalogReviewEnabled && !input.preserveReviewedVersion
       ? {
           selected_end_customer_research_version: input.nextVersion,
           reviewed_input_catalog_version: null,
@@ -69,6 +71,7 @@ export function sameInputCatalogReviewBaseline(
     left.parentTaxonId === right.parentTaxonId &&
     left.selectedResearchVersion === right.selectedResearchVersion &&
     left.reviewedVersion === right.reviewedVersion &&
+    left.isActive === right.isActive &&
     left.chainFingerprint === right.chainFingerprint
   );
 }

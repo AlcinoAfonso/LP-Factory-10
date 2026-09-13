@@ -81,7 +81,12 @@ assert.doesNotMatch(taxonomyDetail, /Pesquisa BB|Pesquisa EC|diagnostic\.(busine
 assert.match(taxonomyDetail, /AdminTaxonResearchSelectionForm/);
 assert.match(taxonomyDetail, /AdminTaxonInputCatalogReview/);
 assert.doesNotMatch(taxonomyAdapter, /landingPageResearchAdapter|research-resolution|resolveLandingPageResearch|E10\.8/);
-assert.match(taxonomyAdapter, /loadSelectedEndCustomerResearchFromClient/);
+assert.match(taxonomyAdapter, /selected_end_customer_research_version,reviewed_input_catalog_version/);
+assert.doesNotMatch(taxonomyAdapter, /loadSelectedEndCustomerResearchFromClient/);
+assert.match(taxonomyAdapter, /handoff: buildInputCatalogReviewHandoff\(\{/);
+assert.match(taxonomyAdapter, /researchVersion: data\.selected_end_customer_research_version/);
+assert.match(taxonomyAdapter, /inputCatalogVersion: CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION/);
+assert.doesNotMatch(taxonomyAdapter, /A pesquisa E20\.5 não está selecionada\. Libere sem IA/);
 assert.match(taxonomyAdapter, /readAdminCommercialActivationOverview/);
 assert.doesNotMatch(conversionIndex, /landingPageResearch|landingPageResearchAdapter|research-resolution/);
 assert.doesNotMatch(packageJson, /validate:landing-page-research|research-resolution\/validation-cases/);
@@ -245,6 +250,22 @@ assert.equal(
 );
 assert.equal(
   validatePublishedInputCatalogReviewEvidenceContext(publishedEvidenceInput),
+  true,
+);
+const preservedWithoutResearch = structuredClone(preservedDraftIdentity);
+const deployedWithoutResearch = structuredClone(deployedIdentity);
+(preservedWithoutResearch as { research: null }).research = null;
+(deployedWithoutResearch as { research: null }).research = null;
+assert.equal(
+  validatePublishedInputCatalogReviewEvidenceContext({
+    ...publishedEvidenceInput,
+    storedContextFingerprint: fingerprintInputCatalogEvaluationContextIdentity(
+      preservedWithoutResearch,
+    ),
+    preservedDraftIdentity: preservedWithoutResearch,
+    deployedIdentity: deployedWithoutResearch,
+    expectedResearchVersion: null,
+  }),
   true,
 );
 const stalePublishedIdentityMutations: readonly ((

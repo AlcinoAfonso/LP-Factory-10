@@ -35,7 +35,7 @@ export function validatePublishedInputCatalogReviewEvidenceContext(input: Readon
   preservedDraftIdentity: InputCatalogEvaluationContextIdentity;
   deployedIdentity: InputCatalogEvaluationContextIdentity;
   expectedTaxonId: string;
-  expectedResearchVersion: number;
+  expectedResearchVersion: number | null;
   expectedInputCatalogVersion: number;
 }>): boolean {
   const storedFingerprintMatches =
@@ -46,13 +46,13 @@ export function validatePublishedInputCatalogReviewEvidenceContext(input: Readon
     ) === input.storedContextFingerprint;
   if (!storedFingerprintMatches) return false;
 
+  const preservedResearchVersion = input.preservedDraftIdentity.research?.researchVersion ?? null;
+  const deployedResearchVersion = input.deployedIdentity.research?.researchVersion ?? null;
   if (
     input.preservedDraftIdentity.taxonId !== input.expectedTaxonId ||
     input.deployedIdentity.taxonId !== input.expectedTaxonId ||
-    input.preservedDraftIdentity.research.researchVersion !==
-      input.expectedResearchVersion ||
-    input.deployedIdentity.research.researchVersion !==
-      input.expectedResearchVersion ||
+    preservedResearchVersion !== input.expectedResearchVersion ||
+    deployedResearchVersion !== input.expectedResearchVersion ||
     input.preservedDraftIdentity.inputCatalog.version !==
       input.expectedInputCatalogVersion ||
     input.deployedIdentity.inputCatalog.version !==

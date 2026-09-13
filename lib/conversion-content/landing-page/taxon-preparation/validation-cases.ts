@@ -1,7 +1,11 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
-import { evaluateInputCatalogWithOpenAi } from "../../adapters/inputCatalogEvaluationOpenAiAdapter";
+import {
+  INPUT_CATALOG_EVALUATION_TIMEOUT_MS,
+  evaluateInputCatalogWithOpenAi,
+  parseEvaluationResponse,
+} from "../../adapters/inputCatalogEvaluationOpenAiAdapter";
 import { resolveInputCatalogEvaluationRuntimeReadinessCore } from "../../adapters/inputCatalogEvaluationRuntimeGateCore";
 import {
   executeInputCatalogEvaluationAdministrativeActionCore,
@@ -131,7 +135,8 @@ const cases: readonly ValidationCase[] = [
       const reviewReadEnd = adminSource.indexOf("async function readAdminEndCustomerResearchSelection", reviewReadStart);
       const reviewRead = adminSource.slice(reviewReadStart, reviewReadEnd);
       assert.ok(reviewRead.indexOf("if (!isInputCatalogReviewEnabled())") >= 0);
-      assert.ok(reviewRead.indexOf("loadSelectedEndCustomerResearchFromClient") > reviewRead.indexOf("if (!isInputCatalogReviewEnabled())"));
+      assert.ok(reviewRead.indexOf('.from("business_taxons")') > reviewRead.indexOf("if (!isInputCatalogReviewEnabled())"));
+      assert.doesNotMatch(reviewRead, /isEndCustomerResearchSelectionEnabled/);
       const selectedCore = readFileSync(
         new URL("../../adapters/selectedEndCustomerResearchAdapterCore.ts", import.meta.url),
         "utf8",
@@ -139,7 +144,19 @@ const cases: readonly ValidationCase[] = [
       assert.match(selectedCore, /includeInputCatalogReview[\s\S]*reviewed_input_catalog_version/);
       assert.match(adminSource, /reviewed_input_catalog_version: null/);
       assert.match(adminSource, /findAffectedInputCatalogReviews/);
-
+      assert.match(reviewRead, /coverage: \{/);
+      assert.match(adminSource, /readCompleteTaxonChainFromPages/);
+      assert.match(adminSource, /\.order\("id", \{ ascending: true \}\)[\s\S]*\.range\(/);
+      assert.match(adminSource, /A cadeia taxonômica mudou em paralelo\. A liberação foi revertida\./);
+      assert.match(adminSource, /mutationQuery\.(?:is|eq)\("reviewed_input_catalog_version"/);
+      const deleteStart = adminSource.indexOf("export async function deleteAdminTaxon(");
+      const deleteEnd = adminSource.indexOf("async function validateTaxonParent", deleteStart);
+      const deleteSource = adminSource.slice(deleteStart, deleteEnd);
+      assert.match(deleteSource, /Remova os aliases individualmente antes de excluir/);
+      assert.match(deleteSource, /deleteQuery\.(?:is|eq)\("reviewed_input_catalog_version"/);
+      assert.match(deleteSource, /\.select\("id"\)[\s\S]*\.maxAffected\(1\)[\s\S]*\.maybeSingle\(\)/);
+      assert.match(adminSource, /deleteQuery\.(?:is|eq)\("reviewed_input_catalog_version"/);
+      assert.match(adminSource, /Remova os aliases individualmente antes de excluir o taxon/);
       const migration = readFileSync(
         new URL("../../../../supabase/migrations/20260815172449_e20_6_reviewed_input_catalog_version.sql", import.meta.url),
         "utf8",
@@ -385,6 +402,7 @@ const cases: readonly ValidationCase[] = [
         parentTaxonId: "segment",
         selectedResearchVersion: 1,
         reviewedVersion: null,
+        isActive: false,
         chainFingerprint: "chain-v1",
       };
       assert.equal(sameInputCatalogReviewBaseline(baseline, { ...baseline }), true);
@@ -394,6 +412,7 @@ const cases: readonly ValidationCase[] = [
         { ...baseline, parentTaxonId: "other" },
         { ...baseline, selectedResearchVersion: 2 },
         { ...baseline, reviewedVersion: 1 },
+        { ...baseline, isActive: true },
         { ...baseline, chainFingerprint: "chain-v2" },
       ]) assert.equal(sameInputCatalogReviewBaseline(baseline, changed), false);
     },
@@ -449,7 +468,7 @@ const cases: readonly ValidationCase[] = [
     },
   },
   {
-    name: "handoff carries authoritative chain and never selects an E20.2 version",
+    name: "handoff carries authoritative chain current catalog and an actionable factual source policy",
     run: async () => {
       const handoff = buildInputCatalogReviewHandoff({
         taxonSlug: "corretor-imoveis",
@@ -458,13 +477,31 @@ const cases: readonly ValidationCase[] = [
           niche: realEstateBrokerNicheTaxon,
         },
         researchVersion: 1,
+        inputCatalogVersion: 4,
       });
       assert.match(handoff, /corretor-imoveis/);
       assert.match(handoff, /"segment"/);
       assert.match(handoff, /end_customer` v1/);
-      assert.match(handoff, /solicite minha escolha/);
-      assert.match(handoff, /Não use pesquisa web, conectores, escrita, subagentes/);
-      assert.doesNotMatch(handoff, /versão E20\.2 3 como/);
+      assert.match(handoff, /versão executável corrente E20\.2 v4/);
+      assert.match(handoff, /Não use pesquisa web/);
+      assert.doesNotMatch(handoff, /solicite minha escolha/);
+
+      const noResearchHandoff = buildInputCatalogReviewHandoff({
+        taxonSlug: "corretor-imoveis",
+        taxonChain: {
+          segment: realEstateSegmentTaxon,
+          niche: realEstateBrokerNicheTaxon,
+        },
+        researchVersion: null,
+        inputCatalogVersion: 4,
+      });
+      assert.match(noResearchHandoff, /corretor-imoveis/);
+      assert.match(noResearchHandoff, /"segment"/);
+      assert.match(noResearchHandoff, /versão executável corrente E20\.2 v4/);
+      assert.match(noResearchHandoff, /Não há pesquisa integral E20\.5 selecionada/);
+      assert.match(noResearchHandoff, /Web Search controlada/);
+      assert.match(noResearchHandoff, /no máximo duas chamadas/);
+      assert.match(noResearchHandoff, /URLs das fontes efetivamente retornadas/);
     },
   },
   {
@@ -1340,6 +1377,65 @@ const cases: readonly ValidationCase[] = [
       assert.equal(events[0]?.result, "success");
       assert.equal(events[0]?.promptVersion, "e20.6.5-input-catalog-evaluation-v1");
 
+      let webBody: Record<string, unknown> | null = null;
+      const webEvents: OpenAiWorkloadEvent[] = [];
+      const webCompleted = await evaluateInputCatalogWithOpenAi(
+        {
+          apiKey: "test-key",
+          configuration: resolved.value,
+          environment: "development",
+          request: { ...request, webSearchMaxCalls: 2 },
+          requestId: "request_e2065_web",
+          safetyIdentifier: "platform_admin_test",
+        },
+        {
+          fetchImpl: async (_url, init) => {
+            webBody = JSON.parse(String(init?.body));
+            return new Response(JSON.stringify({
+              id: "resp_e2065_web",
+              status: "completed",
+              output: [
+                {
+                  type: "web_search_call",
+                  status: "completed",
+                  action: { sources: [{ title: "Fonte factual", url: "https://example.com/fonte" }] },
+                },
+                {
+                  type: "message",
+                  content: [{
+                    type: "output_text",
+                    text: JSON.stringify(validSystematicEvaluationOutput()),
+                  }],
+                },
+              ],
+              usage: { input_tokens: 10, output_tokens: 5, total_tokens: 15 },
+            }), { status: 200 });
+          },
+          emitEvent: (event) => webEvents.push(event),
+        },
+      );
+      assert.equal(webCompleted.status, "completed");
+      const capturedWeb = webBody as unknown as Record<string, unknown>;
+      assert.deepEqual(capturedWeb.tools, [{
+        type: "web_search",
+        external_web_access: true,
+        search_context_size: "medium",
+      }]);
+      assert.equal(capturedWeb.tool_choice, "required");
+      assert.equal(capturedWeb.max_tool_calls, 2);
+      assert.deepEqual(capturedWeb.include, ["web_search_call.action.sources"]);
+      assert.deepEqual(
+        webCompleted.status === "completed" ? webCompleted.provenance : null,
+        {
+          webSearchCallCount: 1,
+          webSources: [{ title: "Fonte factual", url: "https://example.com/fonte" }],
+        },
+      );
+      assert.equal(webEvents[0]?.webSearchCallCount, 1);
+      assert.equal(webEvents[0]?.webSearchSourceCount, 1);
+      assert.equal(INPUT_CATALOG_EVALUATION_TIMEOUT_MS, 45_000);
+      assert.equal(parseEvaluationResponse({ output_text: "{}" }, 1).ok, false);
+
       const refusal = await evaluateInputCatalogWithOpenAi(
         {
           apiKey: "test-key",
@@ -1895,9 +1991,28 @@ const cases: readonly ValidationCase[] = [
       assert.match(componentSource, /Reavaliar com feedback/);
       assert.match(componentSource, /input-catalog-evaluation-feedback/);
       assert.match(componentSource, /input-catalog-evaluation-version/);
+      assert.match(
+        componentSource,
+        /parsedInputCatalogVersion !== currentInputCatalogVersion/,
+      );
+      assert.match(componentSource, /A avaliação publicada está fixada na versão corrente/);
       assert.match(componentSource, /Reconhecer este candidato como gap factual real/);
       assert.match(componentSource, /Rejeitar todos os candidatos e confirmar N como suficiente/);
       assert.match(componentSource, /Limpe a seleção para rejeitar todos/);
+      assert.match(componentSource, /const hasHumanCandidate = normalizedHumanCandidate\.length > 0/);
+      assert.match(
+        componentSource,
+        /const sufficiencyConfirmationBlocked =[\s\S]*?hasHumanCandidate \|\|[\s\S]*?administrativeDecisionPending/,
+      );
+      assert.match(
+        componentSource,
+        /const candidateRejectionBlocked =[\s\S]*?hasHumanCandidate \|\|[\s\S]*?administrativeDecisionPending/,
+      );
+      assert.match(
+        componentSource,
+        /const factualGapDecisionBlocked =[\s\S]*?\(hasHumanCandidate && !hasValidHumanCandidate\)/,
+      );
+      assert.match(componentSource, /humanCandidateText\.trim\(\)\.length >= 5/);
       assert.match(componentSource, /Handoff transitório para o recorte E20\.2/);
       assert.match(componentSource, /aria-live="polite"/);
       assert.match(componentSource, /focus-visible:ring/);
@@ -1920,9 +2035,12 @@ const cases: readonly ValidationCase[] = [
       assert.match(pageSource, /inputCatalogEvaluationRuntime\?\.ok/);
       assert.match(pageSource, /inputCatalogEvaluationRuntime\.code === "ROLLOUT_GATE_OFF"/);
       assert.match(pageSource, /legacyMode={inputCatalogLegacyMode}/);
-      assert.match(pageSource, /\? \{ \.\.\.taxon\.inputCatalogReview, handoff: "" \}/);
-      assert.match(pageSource, /O handoff Codex acima permanece o caminho autorizado/);
-      assert.match(pageSource, /Runtime e caminhos legados permanecem bloqueados/);
+      assert.match(pageSource, /review={taxon\.inputCatalogReview}/);
+      assert.match(
+        pageSource,
+        /inputCatalogReviewEnabled={taxon\.inputCatalogReview\.status !== "disabled"}/,
+      );
+      assert.match(pageSource, /A liberação humana sem IA acima permanece disponível/);
       assert.match(pageSource, /catalogDraftRevision/);
 
       const actionSource = readFileSync(
@@ -1932,11 +2050,20 @@ const cases: readonly ValidationCase[] = [
         ),
         "utf8",
       );
+      const publishedVersionGuard = actionSource.indexOf(
+        "input.inputCatalogVersion !== CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION",
+      );
+      const evaluationRuntimeRead = actionSource.indexOf(
+        "const runtime = await resolveInputCatalogEvaluationRuntimeReadiness()",
+      );
+      assert.ok(publishedVersionGuard >= 0);
+      assert.ok(evaluationRuntimeRead > publishedVersionGuard);
       assert.match(actionSource, /previousContextIdentity/);
       assert.match(actionSource, /contextFingerprint/);
       assert.match(actionSource, /decisionToken/);
       assert.match(actionSource, /executeInputCatalogEvaluationAdministrativeActionCore/);
-      assert.match(actionSource, /executeLegacyInputCatalogReviewRecordCore/);
+      assert.match(actionSource, /recordAdminInputCatalogReview/);
+      assert.doesNotMatch(actionSource, /executeLegacyInputCatalogReviewRecordCore/);
       assert.match(actionSource, /reject_candidates_and_confirm_sufficient/);
       assert.match(actionSource, /recordAdminInputCatalogDraftSufficiencyDecision/);
       assert.match(actionSource, /feedback,/);
@@ -1958,6 +2085,8 @@ const cases: readonly ValidationCase[] = [
       assert.match(contextAdapterSource, /loadSelectedEndCustomerResearchForTaxon/);
       assert.match(contextAdapterSource, /reconstructDraftInputCatalogEvaluationContext/);
       assert.match(contextAdapterSource, /readCompleteTaxonChainForTaxon/);
+      assert.doesNotMatch(contextAdapterSource, /error\.code !== "FEATURE_DISABLED"/);
+      assert.match(contextAdapterSource, /error\.code !== "SELECTION_ABSENT"/);
       assert.doesNotMatch(contextAdapterSource, /\.range\(/);
       const taxonChainAdapterSource = readFileSync(
         new URL("../../adapters/taxonChainAdapter.ts", import.meta.url),
@@ -1978,6 +2107,128 @@ const cases: readonly ValidationCase[] = [
         "utf8",
       );
       assert.match(activeReviewSource, /Copiar instrução para o Codex/);
+      assert.match(activeReviewSource, /availableReview\.coverage\.catalogs\.map/);
+      assert.match(activeReviewSource, /field\.valueType/);
+      assert.match(activeReviewSource, /field\.valueScope/);
+      assert.match(activeReviewSource, /field\.obligation/);
+      assert.match(activeReviewSource, /formatCoverageValidation\(field\)/);
+      assert.match(activeReviewSource, /formatCoverageCondition\(field\.requiredWhen\)/);
+      assert.match(activeReviewSource, /formatCoverageCondition\(field\.applicableWhen\)/);
+
+      const manageFormSource = readFileSync(
+        new URL("../../../../components/admin/AdminTaxonManageForm.tsx", import.meta.url),
+        "utf8",
+      );
+      assert.match(manageFormSource, /taxon\.isActive \|\| !inputCatalogReviewEnabled/);
+      assert.match(manageFormSource, /defaultChecked={taxon\.isActive}/);
+      assert.match(manageFormSource, /Ativar taxon/);
+    },
+  },
+  {
+    name: "admin evaluation accepts an inactive selected taxon without relaxing the operational loader",
+    run: async () => {
+      let candidateSawActive = false;
+      const result = await loadSelectedEndCustomerResearchFromClient(
+        { taxonId: VALID_TAXON_ID, allowInactiveTaxon: true },
+        selectionClient({
+          data: selectedTaxonRow({
+            is_active: false,
+            selected_end_customer_research_version: 1,
+          }),
+          error: null,
+        }),
+        async (input) => {
+          candidateSawActive = input.taxon.isActive;
+          return {
+            ok: true,
+            value: {
+              taxonSlug: input.taxon.slug,
+              audienceScope: "end_customer",
+              researchVersion: input.researchVersion,
+              relativePath: "corretor-imoveis/end_customer/v1.md",
+              content: validContent(),
+            },
+          };
+        },
+      );
+      assert.equal(result.ok, true);
+      assert.equal(candidateSawActive, true);
+    },
+  },
+  {
+    name: "evaluation without E20.5 authorizes only the bounded web-search policy",
+    run: async () => {
+      const input = { ...evaluationContextInput(4), selectedResearch: null };
+      const context = assertEvaluationContextSuccess(buildInputCatalogEvaluationContext(input));
+      let observedMaxCalls: number | undefined;
+      const result = await coordinateInputCatalogEvaluation(
+        {
+          taxonId: context.identity.taxonId,
+          inputCatalogVersion: 4,
+          mode: "systematic",
+        },
+        {
+          reconstructContext: async () => ({ ok: true, value: context }),
+          evaluate: async (request) => {
+            observedMaxCalls = request.webSearchMaxCalls;
+            return { status: "completed", output: validSystematicEvaluationOutput() };
+          },
+        },
+      );
+      assert.equal(result.ok, true);
+      assert.equal(observedMaxCalls, 2);
+    },
+  },
+  {
+    name: "human candidate is revalidated and handed to E20.2 without persistence",
+    run: async () => {
+      const secret = "decision-token-test-secret-32-bytes-minimum";
+      const output = validSystematicEvaluationOutput();
+      const token = createInputCatalogEvaluationDecisionToken(
+        {
+          taxonId: realEstateBrokerNicheTaxon.id,
+          inputCatalogVersion: 4,
+          contextFingerprint: "b".repeat(64),
+          outputFingerprint: fingerprintInputCatalogEvaluationOutput(output),
+          status: output.status,
+        },
+        secret,
+      );
+      assert.ok(token);
+      let revalidations = 0;
+      let writes = 0;
+      const result = await executeInputCatalogEvaluationAdministrativeActionCore(
+        {
+          decision: "acknowledge_factual_gap",
+          decisionToken: token,
+          decisionTokenSecret: secret,
+          output,
+          selectedCandidateIndexes: [],
+          humanCandidate: {
+            factualNeed: "Registrar a credencial profissional exigida para este nicho.",
+            suggestedTaxonomyLayer: "niche",
+          },
+        },
+        {
+          requireRuntime: async () => ({ ok: true }),
+          revalidate: async () => {
+            revalidations += 1;
+            return { ok: true };
+          },
+          recordReviewedVersion: async () => {
+            writes += 1;
+            return { ok: true, reviewedVersion: 4 };
+          },
+        },
+      );
+      assert.equal(result.ok, true);
+      if (!result.ok || result.kind !== "factual_gap_acknowledged" || !result.handoff) {
+        throw new Error("Expected human candidate handoff");
+      }
+      assert.match(result.handoff, /credencial profissional/);
+      assert.match(result.handoff, /human_hypothesis/);
+      assert.equal(revalidations, 1);
+      assert.equal(writes, 0);
     },
   },
   {
@@ -2169,6 +2420,7 @@ function omitKey(value: object, key: string): Record<string, unknown> {
 function reorderEvaluationContextIdentity(
   identity: InputCatalogEvaluationContextIdentity,
 ): InputCatalogEvaluationContextIdentity {
+  if (identity.research === null) throw new Error("Expected E20.5 research identity");
   return {
     inputCatalog: {
       catalogs: identity.inputCatalog.catalogs,

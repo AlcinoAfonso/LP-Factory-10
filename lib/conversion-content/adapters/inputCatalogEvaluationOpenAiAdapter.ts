@@ -14,6 +14,8 @@ import {
   lpFactoryOpenAiEventCostContext,
 } from "../../openai-costs";
 
+export const INPUT_CATALOG_EVALUATION_TIMEOUT_MS = 45_000;
+
 export type InputCatalogEvaluationOpenAiInput = Readonly<{
   apiKey?: string;
   configuration: ResolvedOpenAiProductWorkload;
@@ -29,7 +31,6 @@ export type InputCatalogEvaluationOpenAiDependencies = Readonly<{
   fetchImpl?: typeof fetch;
   emitEvent?: (event: OpenAiWorkloadEvent) => void;
   now?: () => number;
-  timeoutMs?: number;
   signal?: AbortSignal;
 }>;
 
@@ -41,6 +42,13 @@ export async function evaluateInputCatalogWithOpenAi(
   if (!safetyIdentifier) {
     return { status: "failure", message: "openai_safety_identifier_invalid" };
   }
+  const webSearchMaxCalls = input.request.webSearchMaxCalls ?? 0;
+  const webSearch = webSearchMaxCalls > 0
+    ? input.configuration.webSearch
+    : null;
+  if (webSearchMaxCalls > 0 && !webSearch) {
+    return { status: "failure", message: "openai_web_search_policy_missing" };
+  }
 
   const result = await requestOpenAiResponses(
     {
@@ -51,7 +59,7 @@ export async function evaluateInputCatalogWithOpenAi(
       requestId: input.requestId,
       promptVersion: input.request.prompt.version,
       contractVersion: INPUT_CATALOG_EVALUATION_SCHEMA_VERSION,
-      timeoutMs: dependencies.timeoutMs,
+      timeoutMs: INPUT_CATALOG_EVALUATION_TIMEOUT_MS,
       signal: dependencies.signal,
       financialContext: input.economicEvent
         ? lpFactoryOpenAiEventCostContext({
@@ -65,7 +73,20 @@ export async function evaluateInputCatalogWithOpenAi(
         instructions: input.request.prompt.instructions,
         input: input.request.prompt.input,
         store: false,
-        tools: [],
+        tools: webSearch
+          ? [{
+              type: "web_search",
+              external_web_access: webSearch.externalWebAccess,
+              search_context_size: webSearch.searchContextSize,
+            }]
+          : [],
+        ...(webSearch
+          ? {
+              tool_choice: "required",
+              max_tool_calls: Math.min(webSearchMaxCalls, webSearch.maxToolCalls),
+              include: ["web_search_call.action.sources"],
+            }
+          : {}),
         max_output_tokens: 6_000,
         safety_identifier: safetyIdentifier,
         text: {
@@ -77,7 +98,7 @@ export async function evaluateInputCatalogWithOpenAi(
           },
         },
       },
-      parseResponse: parseEvaluationResponse,
+      parseResponse: (payload) => parseEvaluationResponse(payload, webSearchMaxCalls),
     },
     {
       fetchImpl: dependencies.fetchImpl,
@@ -86,7 +107,13 @@ export async function evaluateInputCatalogWithOpenAi(
     },
   );
 
-  if (result.ok) return { status: "completed", output: result.value };
+  if (result.ok) {
+    return {
+      status: "completed",
+      output: result.value.output,
+      provenance: result.value.provenance,
+    };
+  }
   if (result.kind === "refusal") {
     return { status: "refusal", message: result.reason };
   }
@@ -96,10 +123,44 @@ export async function evaluateInputCatalogWithOpenAi(
   return { status: "failure", message: result.reason };
 }
 
-function parseEvaluationResponse(payload: unknown) {
+export function parseEvaluationResponse(payload: unknown, webSearchMaxCalls: 0 | 1 | 2 = 0) {
   const response = asRecord(payload);
   if (!response) {
     return failure("invalid_response", "openai_response_invalid");
+  }
+
+  const outputItems = Array.isArray(response.output) ? response.output : [];
+  const webCalls = outputItems.filter((item) => asRecord(item)?.type === "web_search_call");
+  const sources = new Map<string, Readonly<{ title: string | null; url: string }>>();
+  if (webSearchMaxCalls === 0 && webCalls.length > 0) {
+    return failure("invalid_response", "openai_web_search_unexpected", webCalls.length, 0);
+  }
+  if (webSearchMaxCalls > 0) {
+    if (webCalls.length < 1 || webCalls.length > webSearchMaxCalls) {
+      return failure("invalid_response", "openai_web_search_call_count_invalid", webCalls.length, 0);
+    }
+    for (const item of webCalls) {
+      const call = asRecord(item);
+      const rawSources = Array.isArray(asRecord(call?.action)?.sources)
+        ? asRecord(call?.action)?.sources as unknown[]
+        : null;
+      if (call?.status !== "completed" || !rawSources?.length) {
+        return failure("invalid_response", "openai_web_search_evidence_invalid", webCalls.length, sources.size);
+      }
+      let usableInCall = 0;
+      for (const rawSource of rawSources) {
+        const source = normalizeWebSource(rawSource);
+        if (!source) continue;
+        usableInCall += 1;
+        sources.set(source.url, source);
+        if (sources.size > 50) {
+          return failure("invalid_response", "openai_web_search_evidence_invalid", webCalls.length, sources.size);
+        }
+      }
+      if (usableInCall === 0) {
+        return failure("invalid_response", "openai_web_search_evidence_invalid", webCalls.length, sources.size);
+      }
+    }
   }
 
   const extracted = extractOutputText(response);
@@ -107,13 +168,48 @@ function parseEvaluationResponse(payload: unknown) {
     return failure(
       extracted.kind,
       extracted.kind === "refusal" ? "openai_refusal" : "openai_output_missing",
+      webCalls.length,
+      sources.size,
     );
   }
 
   try {
-    return { ok: true as const, value: JSON.parse(extracted.value) as unknown };
+    return {
+      ok: true as const,
+      value: {
+        output: JSON.parse(extracted.value) as unknown,
+        provenance: {
+          webSearchCallCount: webCalls.length,
+          webSources: [...sources.values()],
+        },
+      },
+      telemetry: {
+        webSearchCallCount: webCalls.length,
+        webSearchSourceCount: sources.size,
+      },
+    };
   } catch {
-    return failure("invalid_response", "openai_output_json_invalid");
+    return failure("invalid_response", "openai_output_json_invalid", webCalls.length, sources.size);
+  }
+}
+
+function normalizeWebSource(value: unknown) {
+  const source = asRecord(value);
+  if (typeof source?.url !== "string" || source.url.length > 2_048) return null;
+  try {
+    const url = new URL(source.url);
+    if (url.protocol !== "https:" || url.username || url.password) return null;
+    const title = source.title === undefined || source.title === null
+      ? null
+      : typeof source.title === "string" &&
+          source.title.trim().length >= 1 &&
+          source.title.trim().length <= 300
+        ? source.title.trim()
+        : null;
+    if (source.title !== undefined && source.title !== null && title === null) return null;
+    return Object.freeze({ title, url: url.toString() });
+  } catch {
+    return null;
   }
 }
 
@@ -155,8 +251,15 @@ function normalizeSafetyIdentifier(value: string) {
 function failure(
   kind: "invalid_response" | "refusal",
   reason: string,
+  webSearchCallCount = 0,
+  webSearchSourceCount = 0,
 ) {
-  return { ok: false as const, kind, reason };
+  return {
+    ok: false as const,
+    kind,
+    reason,
+    telemetry: { webSearchCallCount, webSearchSourceCount },
+  };
 }
 
 function asRecord(value: unknown): Record<string, unknown> | null {

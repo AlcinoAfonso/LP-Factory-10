@@ -50,7 +50,12 @@ export const openAiWorkloadRegistry = deepFreeze([
     configurationKind: "effective",
     consumer: "E20.6.5 — avaliação administrativa da suficiência factual E20.2",
     fallback: "Falhar fechado sem registrar suficiência",
-    webSearch: null,
+    webSearch: {
+      externalWebAccess: true,
+      searchContextSize: "medium",
+      maxToolCalls: 2,
+      contextWindowTokenBudget: 128000,
+    },
     configuration: {
       apiKind: "responses_text",
       model: "gpt-5.6-terra",

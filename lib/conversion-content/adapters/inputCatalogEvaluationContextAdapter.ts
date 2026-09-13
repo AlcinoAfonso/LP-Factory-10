@@ -18,20 +18,26 @@ export async function reconstructCanonicalInputCatalogEvaluationContext(
 ): Promise<BuildInputCatalogEvaluationContextResult> {
   const selectedResearch = await loadSelectedEndCustomerResearchForTaxon({
     taxonId: input.taxonId,
+    allowInactiveTaxon: true,
   });
-  if (!selectedResearch.ok) {
+  if (
+    !selectedResearch.ok &&
+    selectedResearch.error.code !== "SELECTION_ABSENT"
+  ) {
     return failure(
       "AUTHORIZED_RESEARCH_INVALID",
       selectedResearch.error.message,
     );
   }
-  const taxonChain = await readCompleteTaxonChainForTaxon(input.taxonId);
+  const taxonChain = await readCompleteTaxonChainForTaxon(input.taxonId, {
+    allowInactiveSelected: true,
+  });
   if (!taxonChain.ok) {
     return failure("CONTEXT_IDENTITY_INVALID", taxonChain.error.message);
   }
 
   return buildInputCatalogEvaluationContext({
-    selectedResearch,
+    selectedResearch: selectedResearch.ok ? selectedResearch : null,
     taxonChain: taxonChain.value.chain,
     inputCatalogVersion: input.inputCatalogVersion,
   });
@@ -43,15 +49,21 @@ export async function reconstructDraftInputCatalogEvaluationContext(
 ): Promise<BuildInputCatalogEvaluationContextResult> {
   const selectedResearch = await loadSelectedEndCustomerResearchForTaxon({
     taxonId: input.taxonId,
+    allowInactiveTaxon: true,
   });
-  if (!selectedResearch.ok) {
+  if (
+    !selectedResearch.ok &&
+    selectedResearch.error.code !== "SELECTION_ABSENT"
+  ) {
     return failure("AUTHORIZED_RESEARCH_INVALID", selectedResearch.error.message);
   }
-  const taxonChain = await readCompleteTaxonChainForTaxon(input.taxonId);
+  const taxonChain = await readCompleteTaxonChainForTaxon(input.taxonId, {
+    allowInactiveSelected: true,
+  });
   if (!taxonChain.ok) return failure("CONTEXT_IDENTITY_INVALID", taxonChain.error.message);
   return buildInputCatalogEvaluationContext(
     {
-      selectedResearch,
+      selectedResearch: selectedResearch.ok ? selectedResearch : null,
       taxonChain: taxonChain.value.chain,
       inputCatalogVersion: input.inputCatalogVersion,
     },
