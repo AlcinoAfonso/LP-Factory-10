@@ -15,7 +15,7 @@ Delegar uma avaliação read-only ao custom agent `gestor-updates` e devolver se
    - path local: confirmar existência e coerência entre path, conteúdo e caso.
 3. Confirmar o plano completo como recorte padrão; aceitar fase ou recorte parcial somente quando informado explicitamente.
 4. Confirmar a existência dos quatro catálogos obrigatórios: `docs/supa-up.md`, `docs/vercel-up.md`, `docs/github-up.md` e `docs/prod-up.md`.
-5. Quando invocada pela orquestração automatizada, incluir a derivação técnica inicial do Gestor Estrutural como referência comparativa, sem tratá-la como fonte superior à v1 ou às fontes canônicas.
+5. Quando invocada por `$lp-factory-conduzir-plano-completo`, incluir a derivação técnica inicial do Gestor Estrutural como referência comparativa, sem tratá-la como fonte superior à v1 ou às fontes canônicas.
 6. Parar e pedir somente o dado ausente se a seleção continuar ambígua ou faltar fonte obrigatória.
 7. Registrar o estado Git anterior à delegação.
 
