@@ -34,7 +34,7 @@ Usar quando o `RELATÓRIO` for um plano-base v1 ou v2 aprovado. Esse modo regist
 Para reconciliar `docs/roadmap.md` após a v2, exigir:
 
 - referência imutável e conteúdo integral da v2 aprovada;
-- snapshot imutável e conteúdo integral do roadmap produzido a partir da v1;
+- snapshot imutável e conteúdo integral do roadmap anterior à reconciliação, fornecido pelo fluxo competente;
 - `DOC_ALVO: docs/roadmap.md`;
 - `docs/prompt-abc.md` e `docs/template-roadmap.md` da referência competente.
 
