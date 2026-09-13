@@ -175,7 +175,7 @@ Quando invocada por `$lp-factory-conduzir-plano-completo`:
 3. não criar branch, PR ou pedido de merge intermediário;
 4. não acionar Gestor Estrutural, Gestor de Updates ou Gestor de Automações; usar somente o Analista nos gates de implementação;
 5. reutilizar checkpoints `LP-Factory-Phase: <identificador>` e continuar na próxima subseção pendente;
-6. se houver mudança material fora da V2 aprovada, encaminhar ao Analista e, se necessário, ao supervisor competente; não reiniciar especialistas.
+6. antes da entrega técnica completa, se evidência factual questionar materialmente a estrutura da própria V2 ou exigir crescimento estrutural material não previsto, suspender somente o ponto afetado e devolvê-lo a `$lp-factory-conduzir-plano-completo`, conforme a seção 6 daquele contrato, com a identidade da execução, as referências imutáveis e conteúdos de V1/V2, o ponto/subseção suspensa, a evidência, os checkpoints e as fontes pertinentes; não escolher arquitetura, exigir correção tentada ou candidato nem acionar especialista diretamente. Aguardar a liberação do ponto pelo workflow; se a V2 continuar suficiente, derivar a correção ordinária e seguir o gate aplicável; se houver delta aprovado, retomar conforme a seção 7.2. Nas demais mudanças materiais fora da V2, encaminhar ao Analista e, se necessário, ao supervisor competente; não reiniciar especialistas.
 
 ### 7.2 Preparar
 
@@ -184,7 +184,7 @@ Quando invocada por `$lp-factory-conduzir-plano-completo`:
 3. no handoff interno, preservar `docs/matriz-consolidacao-<caso>.md` até o encerramento definitivo do recorte pelo supervisor competente;
 4. validar que cada fase executável use exatamente o identificador do roadmap, como `E18.5.3 — título`; rejeitar aliases ordinais como `Fase 1` e agrupamentos de subseções independentes;
 5. no handoff interno, reutilizar a branch e o PR existentes; na execução independente, usar a branch e o PR draft únicos definidos em 1.3;
-6. registrar o SHA do plano como contrato imutável; se houver execução anterior, identificar o último checkpoint pelo trailer `LP-Factory-Phase: <identificador>`; se não for possível determinar unicamente a próxima subseção, parar e pedir o identificador.
+6. registrar o SHA do plano aprovado vigente como contrato imutável; se houver execução anterior, identificar o último checkpoint pelo trailer `LP-Factory-Phase: <identificador>`. No handoff interno, em toda retomada, confrontar os checkpoints com os deltas aprovados e seus impactos registrados na V2/matriz; não executar delta candidato ainda não liberado pelo workflow. Determinar a primeira subseção pendente na ordem do roadmap, incluindo as afetadas sem novo checkpoint aprovado contra a correção correspondente; revalidá-las pelos gates existentes e reutilizar as não afetadas ou já revalidadas. Sem delta, manter a retomada pelo último checkpoint. Se não for possível determinar unicamente a próxima subseção, parar e pedir o identificador.
 
 ### 7.3 Executar uma subseção
 
@@ -192,7 +192,7 @@ Para a próxima subseção ainda não aprovada:
 
 1. delimitar a próxima subseção pela V2 aprovada, com objetivo, arquivos prováveis, escopo negativo e critérios de aceite;
 2. quando a subseção criar ou alterar prompt consumido por IA, invocar `$lp-factory-criar-prompt` como subfluxo somente leitura antes de editar o artefato e validar os casos representativos definidos por ele;
-3. implementar somente o necessário para essa subseção; não antecipar a próxima;
+3. implementar somente o necessário para essa subseção; não antecipar a próxima; no handoff interno, diante da evidência estrutural prevista em 7.1, item 6, seguir esse retorno antes de implementar o ponto afetado;
 4. executar as validações aplicáveis; para código, executar `npm ci` uma vez no início do lote contínuo e repeti-lo somente se `package-lock.json`, dependências ou o estado de instalação mudarem; executar a validação própria e `npm run check` antes de cada gate; para alteração exclusivamente documental, justificar esses comandos como não aplicáveis; quando aplicável, incluir no gate do Analista evidências de observabilidade mínima e smoke ou QA funcional;
 5. na última subseção, executar também as validações integradas e corrigir regressões; evidência de QA obrigatória pendente deve ser resolvida antes do ABC de consolidação final;
 6. antes do gate, identificar os documentos canônicos potencialmente afetados; nas subseções não finais, considerar os documentos da subseção atual; na última, incluir todos os documentos canônicos afetados ao longo do recorte;
