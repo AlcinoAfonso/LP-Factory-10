@@ -278,13 +278,12 @@ async function readAdminInputCatalogReview(
     reviewedVersion: data.reviewed_input_catalog_version,
     currentInputCatalogVersion: CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION,
     isActive: data.is_active,
-    handoff: data.selected_end_customer_research_version === null
-      ? "A pesquisa E20.5 não está selecionada. Libere sem IA se a cobertura herdada for suficiente ou execute a avaliação com web search controlada."
-      : buildInputCatalogReviewHandoff({
-          taxonSlug: data.slug,
-          taxonChain: chain.value,
-          researchVersion: data.selected_end_customer_research_version,
-        }),
+    handoff: buildInputCatalogReviewHandoff({
+      taxonSlug: data.slug,
+      taxonChain: chain.value,
+      researchVersion: data.selected_end_customer_research_version,
+      inputCatalogVersion: CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION,
+    }),
     taxonName: data.name,
     taxonSlug: data.slug,
     taxonLevel: data.level,

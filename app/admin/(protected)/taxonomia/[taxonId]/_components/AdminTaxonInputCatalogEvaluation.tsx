@@ -339,9 +339,11 @@ export function AdminTaxonInputCatalogEvaluationRuntime({
   }
 
   const parsedInputCatalogVersion = Number(inputCatalogVersion);
-  const inputCatalogVersionError = Number.isSafeInteger(parsedInputCatalogVersion) && parsedInputCatalogVersion > 0
-    ? null
-    : "Escolha explicitamente uma versão executável E20.2 positiva.";
+  const inputCatalogVersionError = !Number.isSafeInteger(parsedInputCatalogVersion) || parsedInputCatalogVersion <= 0
+    ? "A versão executável E20.2 deve ser um inteiro positivo."
+    : !draftMode && parsedInputCatalogVersion !== currentInputCatalogVersion
+      ? `A avaliação publicada deve usar a versão E20.2 corrente ${currentInputCatalogVersion}.`
+      : null;
 
   return (
     <AdminTaxonInputCatalogEvaluation
@@ -532,13 +534,13 @@ export function AdminTaxonInputCatalogEvaluation({
         <p className="mt-1 text-sm text-muted-foreground" id="input-catalog-evaluation-version-instruction">
           {draftMode
             ? "A próxima versão sequencial é fixada pelo draft administrativo atual."
-            : <>Escolha N explicitamente. A seleção não é persistida; hoje está registrada {currentReviewedVersion === null ? "nenhuma versão" : `a versão ${currentReviewedVersion}`}.</>}
+            : <>A avaliação publicada está fixada na versão corrente {inputCatalogVersion}; hoje está registrada {currentReviewedVersion === null ? "nenhuma versão" : `a versão ${currentReviewedVersion}`}.</>}
         </p>
         <input
           aria-describedby={`input-catalog-evaluation-version-instruction${inputCatalogVersionError ? " input-catalog-evaluation-version-error" : ""}`}
           aria-invalid={inputCatalogVersionError ? true : undefined}
           className="mt-2 min-h-11 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground outline-none focus-visible:ring-4 focus-visible:ring-brand-600/20 disabled:opacity-60 sm:max-w-48"
-          disabled={isLoading || draftMode}
+          disabled
           id="input-catalog-evaluation-version"
           inputMode="numeric"
           min={1}

@@ -468,7 +468,7 @@ const cases: readonly ValidationCase[] = [
     },
   },
   {
-    name: "handoff carries authoritative chain and never selects an E20.2 version",
+    name: "handoff carries authoritative chain current catalog and an actionable factual source policy",
     run: async () => {
       const handoff = buildInputCatalogReviewHandoff({
         taxonSlug: "corretor-imoveis",
@@ -477,13 +477,31 @@ const cases: readonly ValidationCase[] = [
           niche: realEstateBrokerNicheTaxon,
         },
         researchVersion: 1,
+        inputCatalogVersion: 4,
       });
       assert.match(handoff, /corretor-imoveis/);
       assert.match(handoff, /"segment"/);
       assert.match(handoff, /end_customer` v1/);
-      assert.match(handoff, /solicite minha escolha/);
-      assert.match(handoff, /Não use pesquisa web, conectores, escrita, subagentes/);
-      assert.doesNotMatch(handoff, /versão E20\.2 3 como/);
+      assert.match(handoff, /versão executável corrente E20\.2 v4/);
+      assert.match(handoff, /Não use pesquisa web/);
+      assert.doesNotMatch(handoff, /solicite minha escolha/);
+
+      const noResearchHandoff = buildInputCatalogReviewHandoff({
+        taxonSlug: "corretor-imoveis",
+        taxonChain: {
+          segment: realEstateSegmentTaxon,
+          niche: realEstateBrokerNicheTaxon,
+        },
+        researchVersion: null,
+        inputCatalogVersion: 4,
+      });
+      assert.match(noResearchHandoff, /corretor-imoveis/);
+      assert.match(noResearchHandoff, /"segment"/);
+      assert.match(noResearchHandoff, /versão executável corrente E20\.2 v4/);
+      assert.match(noResearchHandoff, /Não há pesquisa integral E20\.5 selecionada/);
+      assert.match(noResearchHandoff, /Web Search controlada/);
+      assert.match(noResearchHandoff, /no máximo duas chamadas/);
+      assert.match(noResearchHandoff, /URLs das fontes efetivamente retornadas/);
     },
   },
   {
@@ -1973,6 +1991,11 @@ const cases: readonly ValidationCase[] = [
       assert.match(componentSource, /Reavaliar com feedback/);
       assert.match(componentSource, /input-catalog-evaluation-feedback/);
       assert.match(componentSource, /input-catalog-evaluation-version/);
+      assert.match(
+        componentSource,
+        /parsedInputCatalogVersion !== currentInputCatalogVersion/,
+      );
+      assert.match(componentSource, /A avaliação publicada está fixada na versão corrente/);
       assert.match(componentSource, /Reconhecer este candidato como gap factual real/);
       assert.match(componentSource, /Rejeitar todos os candidatos e confirmar N como suficiente/);
       assert.match(componentSource, /Limpe a seleção para rejeitar todos/);
@@ -2027,6 +2050,14 @@ const cases: readonly ValidationCase[] = [
         ),
         "utf8",
       );
+      const publishedVersionGuard = actionSource.indexOf(
+        "input.inputCatalogVersion !== CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION",
+      );
+      const evaluationRuntimeRead = actionSource.indexOf(
+        "const runtime = await resolveInputCatalogEvaluationRuntimeReadiness()",
+      );
+      assert.ok(publishedVersionGuard >= 0);
+      assert.ok(evaluationRuntimeRead > publishedVersionGuard);
       assert.match(actionSource, /previousContextIdentity/);
       assert.match(actionSource, /contextFingerprint/);
       assert.match(actionSource, /decisionToken/);

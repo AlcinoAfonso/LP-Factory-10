@@ -12,6 +12,9 @@ import {
   executeInputCatalogEvaluationAdministrativeActionCore,
 } from "@/conversion-content/adapters/inputCatalogEvaluationAdministrativeActionCore";
 import {
+  CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION,
+} from "@/conversion-content/landing-page/input-catalog";
+import {
   coordinateInputCatalogEvaluation,
   createInputCatalogEvaluationDecisionToken,
   fingerprintInputCatalogEvaluationContextIdentity,
@@ -107,12 +110,23 @@ export async function evaluateInputCatalogAction(input: Readonly<{
     return { ok: false, code: "UNAUTHORIZED", message: "Acesso administrativo não autorizado." };
   }
 
+  const source = input.draftRevision === undefined ? "published" : "draft";
+  if (
+    source === "published" &&
+    input.inputCatalogVersion !== CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION
+  ) {
+    return {
+      ok: false,
+      code: "INVALID_INPUT_CATALOG_VERSION",
+      message: `A avaliação publicada deve usar a versão E20.2 corrente ${CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION}.`,
+    };
+  }
+
   const runtime = await resolveInputCatalogEvaluationRuntimeReadiness();
   if (!runtime.ok) {
     return { ok: false, code: runtime.code, message: runtime.message };
   }
 
-  const source = input.draftRevision === undefined ? "published" : "draft";
   let draftContentFingerprint: string | undefined;
   const reconstructContext: typeof reconstructCanonicalInputCatalogEvaluationContext =
     source === "published"
