@@ -1963,6 +1963,90 @@ const cases: readonly ValidationCase[] = [
       );
       assert.equal(refusalWithOutputText.status, "refusal");
 
+      let deadlineNow = 100;
+      let deadlineFetches = 0;
+      const executionDeadlineCalls: string[] = [];
+      const delayedRecorder = await evaluateInputCatalogWithOpenAi(
+        {
+          apiKey: "test-key",
+          configuration: resolved.value,
+          environment: "development",
+          request: { ...request, deadlineAtMs: 150 },
+          requestId: "request_e2065_delayed_recorder",
+          safetyIdentifier: "platform_admin_test",
+        },
+        {
+          now: () => deadlineNow,
+          costRecorder: {
+            startExecution: async () => {
+              executionDeadlineCalls.push("startExecution");
+              deadlineNow = 151;
+            },
+            startOperation: async () => { executionDeadlineCalls.push("startOperation"); },
+            finishOperation: async (terminal) => {
+              executionDeadlineCalls.push(`finishOperation:${terminal.result}:${terminal.failureCategory}`);
+            },
+            finishExecution: async (terminal) => {
+              executionDeadlineCalls.push(`finishExecution:${terminal.result}:${terminal.failureCategory}`);
+            },
+          },
+          fetchImpl: async () => {
+            deadlineFetches += 1;
+            return new Response();
+          },
+          emitEvent: () => undefined,
+        },
+      );
+      assert.equal(delayedRecorder.status, "failure");
+      assert.equal(deadlineFetches, 0);
+      assert.deepEqual(executionDeadlineCalls, [
+        "startExecution",
+        "finishExecution:failure:timeout",
+      ]);
+
+      let operationDeadlineNow = 100;
+      let operationDeadlineFetches = 0;
+      const operationDeadlineCalls: string[] = [];
+      const delayedOperationRecorder = await evaluateInputCatalogWithOpenAi(
+        {
+          apiKey: "test-key",
+          configuration: resolved.value,
+          environment: "development",
+          request: { ...request, deadlineAtMs: 150 },
+          requestId: "request_e2065_delayed_operation_recorder",
+          safetyIdentifier: "platform_admin_test",
+        },
+        {
+          now: () => operationDeadlineNow,
+          costRecorder: {
+            startExecution: async () => { operationDeadlineCalls.push("startExecution"); },
+            startOperation: async () => {
+              operationDeadlineCalls.push("startOperation");
+              operationDeadlineNow = 151;
+            },
+            finishOperation: async (terminal) => {
+              operationDeadlineCalls.push(`finishOperation:${terminal.result}:${terminal.failureCategory}`);
+            },
+            finishExecution: async (terminal) => {
+              operationDeadlineCalls.push(`finishExecution:${terminal.result}:${terminal.failureCategory}`);
+            },
+          },
+          fetchImpl: async () => {
+            operationDeadlineFetches += 1;
+            return new Response();
+          },
+          emitEvent: () => undefined,
+        },
+      );
+      assert.equal(delayedOperationRecorder.status, "failure");
+      assert.equal(operationDeadlineFetches, 0);
+      assert.deepEqual(operationDeadlineCalls, [
+        "startExecution",
+        "startOperation",
+        "finishOperation:failure:timeout",
+        "finishExecution:failure:timeout",
+      ]);
+
       const incomplete = await evaluateInputCatalogWithOpenAi(
         {
           apiKey: "test-key",

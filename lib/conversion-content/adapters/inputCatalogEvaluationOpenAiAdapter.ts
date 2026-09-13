@@ -115,6 +115,7 @@ export function buildInputCatalogEvaluationOpenAiRequest(
       requestId: input.requestId,
       promptVersion: input.request.prompt.version,
       contractVersion: INPUT_CATALOG_EVALUATION_SCHEMA_VERSION,
+      deadlineAtMs: input.request.deadlineAtMs,
       timeoutMs: Math.max(0, Math.min(requestedTimeout - elapsed, absoluteRemaining)),
       signal: dependencies.signal,
       financialContext: input.economicEvent
