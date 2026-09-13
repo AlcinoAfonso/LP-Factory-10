@@ -1990,7 +1990,7 @@
 - Status: implementado no repositório; apply hospedado, snippet pós-apply, Security Controls e QA administrativo permanecem pendentes dos gates finais.
 - Conteúdo:
   - novo taxon nasce indisponível, resolve cobertura herdada nos quatro planos e pode ser liberado por confirmação humana sem IA, pesquisa ou justificativa textual;
-  - revisões `release | revision` preservam atividade, pesquisa E20.5 selecionada, versão factual, snapshot da cadeia, revisão otimista, última recomendação e decisão final na mesma linha; somente `open | closed` são estados persistidos, linhas fechadas são imutáveis e abertura, finalização e reconciliação são serializadas com mutações taxonômicas e troca da pesquisa selecionada mediante revalidação do baseline completo; a troca é rejeitada enquanto houver revisão aberta, e qualquer histórico factual bloqueia a exclusão administrativa do taxon;
+  - revisões `release | revision` preservam atividade, pesquisa E20.5 selecionada, versão factual, snapshot da cadeia, revisão otimista, última recomendação e decisão final na mesma linha; somente `open | closed` são estados persistidos, linhas fechadas são imutáveis e abertura, finalização e reconciliação são serializadas com mutações taxonômicas e troca da pesquisa selecionada mediante revalidação do baseline completo; a troca é rejeitada enquanto houver revisão aberta, qualquer histórico factual bloqueia a exclusão administrativa atômica do taxon mesmo com E20.6 desabilitada, e mutações de identidade sempre invalidam a cobertura sob lock;
   - taxon ativo mantém atividade e última versão válida durante revisão, falha ou abandono.
 
 20.6.4 Decisão humana e lifecycle E20.2
@@ -2000,7 +2000,7 @@
   - o humano pode rejeitar todos, aceitar alguns ou todos e incluir candidato próprio, sempre com camada explícita;
   - rejeição integral sem candidato próprio fecha a sessão sem mudança; qualquer aceitação ou candidato próprio permanece decisão candidata e nunca cria field por si;
   - a RPC de decisão fecha a revisão e grava a projeção do draft exato inclusive para `no_change`; editar o draft limpa essa projeção por concorrência otimista sem reabrir ou reescrever histórico fechado;
-  - autorização exige cobertura exata dos impactos ativos e das liberações inativas pendentes; mudança só altera versão factual ou atividade após publicação implantada e reconciliação transacional de todos os taxons afetados.
+  - autorização exige cobertura exata dos impactos ativos e das liberações inativas pendentes e congela por update otimista o snapshot integral do contexto e os IDs evidenciados; mudança só altera versão factual ou atividade após publicação implantada e reconciliação transacional que recompõe esse snapshot sob lock e rejeita taxon ou evidência superveniente.
 
 20.6.5 Provider e fontes
 - Status: implementado no repositório; execução do teste SQL, apply hospedado, snippet pós-apply, Security Controls e QA dos três modos e falhas permanecem pendentes dos gates finais.

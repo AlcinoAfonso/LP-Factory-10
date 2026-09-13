@@ -148,6 +148,8 @@ assert.deepEqual(
 assert.match(lifecycleAdapter, /publication_fingerprint/);
 assert.match(lifecycleAdapter, /validation_context_fingerprint/);
 assert.match(lifecycleAdapter, /publication_context_fingerprint/);
+assert.match(lifecycleAdapter, /publication_context_snapshot/);
+assert.match(lifecycleAdapter, /publication_required_taxon_ids/);
 assert.match(lifecycleAdapter, /taxon_review_evidence/);
 assert.match(lifecycleAdapter, /reconstructDraftInputCatalogEvaluationContext/);
 assert.doesNotMatch(lifecycleAdapter, /recordAdminInputCatalogDraftHumanDecision/);
@@ -178,6 +180,7 @@ assert.match(draftOperations, /resolveInheritedField/);
 assert.match(draftOperations, /preserveNumberRangeBounds/);
 assert.doesNotMatch(draftOperations, /openai|provider|candidate_gaps|recommendation/i);
 assert.match(lifecycleAdapter, /authorizeAdminInputCatalogFactualPublication/);
+assert.match(lifecycleAdapter, /snapshotInputCatalogLifecycleContext/);
 assert.match(lifecycleAdapter, /reconcileAdminInputCatalogFactualPublication/);
 assert.match(lifecycleAdapter, /hasCompleteFactualReviewCoverage/);
 assert.doesNotMatch(lifecycleAdapter, /advancePublishedReviewMarker/);

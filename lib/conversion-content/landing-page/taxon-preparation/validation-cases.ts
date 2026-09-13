@@ -306,6 +306,8 @@ const cases: readonly ValidationCase[] = [
       const updateStart = adminSource.indexOf("export async function updateAdminTaxon");
       const createBoundary = adminSource.slice(createStart, updateStart);
       const updateBoundary = adminSource.slice(updateStart, adminSource.indexOf("export async function selectAdminEndCustomerResearchVersion"));
+      const deleteStart = adminSource.indexOf("export async function deleteAdminTaxon(");
+      const deleteBoundary = adminSource.slice(deleteStart, adminSource.indexOf("async function validateTaxonParent", deleteStart));
       const selectionBoundary = adminSource.slice(
         adminSource.indexOf("export async function selectAdminEndCustomerResearchVersion"),
         adminSource.indexOf("export async function addAdminTaxonAlias"),
@@ -360,6 +362,13 @@ const cases: readonly ValidationCase[] = [
       assert.match(migration, /finalize_business_taxon_factual_review_v1/);
       assert.match(migration, /update_business_taxon_with_factual_review_invalidation_v1/);
       assert.match(migration, /reconcile_business_taxon_factual_review_publication_v1/);
+      assert.match(migration, /publication_context_snapshot jsonb/);
+      assert.match(migration, /publication_required_taxon_ids uuid\[\]/);
+      assert.match(migration, /business_taxons_factual_context_lock/);
+      assert.match(migration, /business_taxon_factual_reviews_context_lock/);
+      assert.match(migration, /business_taxon_aliases_taxon_id_fkey[\s\S]*on update cascade on delete cascade/);
+      assert.match(migration, /v_current_context is distinct from v_draft\.publication_context_snapshot/);
+      assert.match(migration, /v_evidence_taxon_ids is distinct from v_draft\.publication_required_taxon_ids/);
       assert.doesNotMatch(migration, /business_taxon_factual_review_events|factual_review_save_receipts/);
       assert.doesNotMatch(migration, /evaluation_output_fingerprint/);
       assert.doesNotMatch(factualAdapterSource, /outputFingerprint|fingerprintInputCatalogEvaluationOutput/);
@@ -372,6 +381,10 @@ const cases: readonly ValidationCase[] = [
       assert.match(migration, /evaluation_context_fingerprint <> \(evidence\.value ->> 'context_fingerprint'\)/);
       assert.ok(updateBoundary.indexOf("hasUnclosedFactualReview") < updateBoundary.lastIndexOf(".update("));
       assert.ok(updateBoundary.indexOf("update_business_taxon_with_factual_review_invalidation_v1") < updateBoundary.lastIndexOf(".update("));
+      assert.doesNotMatch(updateBoundary, /isInputCatalogReviewEnabled\(\)[\s\S]{0,120}materiallyChangesResolution/);
+      assert.match(deleteBoundary, /\.from\("business_taxons"\)[\s\S]*\.delete\(\)/);
+      assert.doesNotMatch(deleteBoundary, /\.from\("business_taxon_aliases"\)/);
+      assert.doesNotMatch(deleteBoundary, /isInputCatalogReviewEnabled/);
       assert.ok(
         openReviewBoundary.indexOf("if (!isInputCatalogReviewEnabled())") <
           openReviewBoundary.indexOf("createServiceClient()"),
@@ -382,6 +395,7 @@ const cases: readonly ValidationCase[] = [
           closeActionBoundary.indexOf("loadLatestAdminTaxonFactualReview"),
       );
       assert.match(adminSource, /business_taxon_factual_reviews[\s\S]*countRowsStrict/);
+      assert.doesNotMatch(adminSource, /isInputCatalogReviewEnabled\(\)[\s\S]{0,120}countRowsStrict/);
       assert.match(adminSource, /factualReviews > 0[\s\S]*revisão\(ões\) factual\(is\)/);
       assert.match(adminSource, /findAffectedInputCatalogReviews[\s\S]*collectCompletePaginatedRows\([\s\S]*count: "exact"[\s\S]*\.order\("id"[\s\S]*\.range\(offset, offset \+ limit - 1\)/);
       const humanDecisionStart = actionsSource.indexOf("export async function recordInputCatalogHumanDecisionAction");
@@ -396,6 +410,8 @@ const cases: readonly ValidationCase[] = [
       assert.match(factualAdapterSource, /persistAdminTaxonFactualEvaluation/);
       assert.match(factualAdapterSource, /closeAdminTaxonFactualReviewWithoutEvaluation/);
       assert.match(factualAdapterSource, /reconcile_business_taxon_factual_review_publication_v1/);
+      assert.match(factualAdapterSource, /publication_context_snapshot: input\.contextSnapshot/);
+      assert.match(factualAdapterSource, /publication_required_taxon_ids: \[\.\.\.input\.requiredTaxonIds\]/);
       assert.doesNotMatch(factualAdapterSource, /OpenAI|evaluateInputCatalogWithOpenAi|web_search/);
     },
   },

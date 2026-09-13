@@ -6,6 +6,7 @@ import {
   fingerprintInputCatalogLifecycleContext,
   hasCompleteFactualReviewCoverage,
   planPublishedInputCatalogReviewReconciliation,
+  snapshotInputCatalogLifecycleContext,
 } from "../../../../lib/admin/adapters/adminInputCatalogLifecycleValidation";
 import {
   realEstateBrokerNicheTaxon,
@@ -65,6 +66,13 @@ export async function validateLifecycleE20Contracts(): Promise<void> {
     }),
     fingerprint,
   );
+  const snapshot = snapshotInputCatalogLifecycleContext({
+    taxons: [...taxons].reverse(),
+    unclosedReleaseTaxonIds: [realEstateBrokerNicheTaxon.id],
+  });
+  assert.deepEqual(snapshot.taxons.map((taxon) => taxon.identity.id),
+    taxons.map((taxon) => taxon.identity.id).sort());
+  assert.deepEqual(snapshot.unclosedReleaseTaxonIds, [realEstateBrokerNicheTaxon.id]);
 
   const withEvidence = planPublishedInputCatalogReviewReconciliation({
     currentVersion: 6,

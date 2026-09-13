@@ -385,6 +385,8 @@ export async function saveAdminInputCatalogDraft(input: Readonly<{
       validated_at: null,
       publication_fingerprint: null,
       publication_context_fingerprint: null,
+      publication_context_snapshot: null,
+      publication_required_taxon_ids: [],
       publication_prepared_at: null,
       taxon_review_evidence: {},
       updated_by: input.actorUserId,
@@ -405,6 +407,8 @@ export async function authorizeAdminInputCatalogFactualPublication(input: Readon
   expectedRevision: number;
   contentFingerprint: string;
   contextFingerprint: string;
+  contextSnapshot: Readonly<Record<string, unknown>>;
+  requiredTaxonIds: readonly string[];
 }>) {
   const client = createServiceClient();
   const { data, error } = await (client as any)
@@ -412,6 +416,8 @@ export async function authorizeAdminInputCatalogFactualPublication(input: Readon
     .update({
       publication_fingerprint: input.contentFingerprint,
       publication_context_fingerprint: input.contextFingerprint,
+      publication_context_snapshot: input.contextSnapshot,
+      publication_required_taxon_ids: [...input.requiredTaxonIds],
       publication_prepared_at: new Date().toISOString(),
       updated_by: input.actorUserId,
     })

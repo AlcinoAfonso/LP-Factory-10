@@ -186,12 +186,10 @@ export async function getAdminTaxonDetail(taxonId: string): Promise<AdminTaxonDe
     ]),
     readAdminEndCustomerResearchSelection(supabase, taxonId),
     readAdminInputCatalogReview(supabase, taxonId),
-    isInputCatalogReviewEnabled()
-      ? countRowsStrict(
-          supabase.from("business_taxon_factual_reviews").select("id", { count: "exact", head: true }).eq("taxon_id", taxonId),
-          "business_taxon_factual_reviews",
-        )
-      : Promise.resolve(0),
+    countRowsStrict(
+      supabase.from("business_taxon_factual_reviews").select("id", { count: "exact", head: true }).eq("taxon_id", taxonId),
+      "business_taxon_factual_reviews",
+    ),
   ]);
 
   const parentNames = new Map(Array.from(parentTaxons.entries()).map(([id, row]) => [id, row.name]));
@@ -517,7 +515,7 @@ export async function updateAdminTaxon(input: UpdateAdminTaxonInput): Promise<Ad
     { name, slug, isActive: input.isActive },
   );
   let reviewBlock: Awaited<ReturnType<typeof findAffectedInputCatalogReviews>> | null = null;
-  if (isInputCatalogReviewEnabled() && materiallyChangesResolution) {
+  if (materiallyChangesResolution) {
     reviewBlock = await findAffectedInputCatalogReviews(supabase, input.id);
     if (!reviewBlock.ok) return { ok: false, error: reviewBlock.error };
     const unclosedReview = await hasUnclosedFactualReview(supabase, reviewBlock.affectedTaxonIds);
@@ -734,28 +732,22 @@ export async function deleteAdminTaxon(input: DeleteAdminTaxonInput): Promise<Ad
   if (!taxon) return { ok: false, error: "Taxon nao encontrado." };
   if (input.confirmSlug.trim() !== taxon.slug) return { ok: false, error: "Digite o slug do taxon para confirmar a exclusao." };
   if (!taxon.canDelete) return { ok: false, error: `Nao e possivel excluir: ${taxon.deleteBlockers.join(", ")}.` };
-  if (isInputCatalogReviewEnabled()) {
-    const reviewBlock = await findAffectedInputCatalogReviews(supabase, input.taxonId);
-    if (!reviewBlock.ok) return { ok: false, error: reviewBlock.error };
-    if (reviewBlock.reviewedTaxonIds.length > 0) {
-      return { ok: false, error: "Reabra a avaliação E20.6 antes de excluir o taxon." };
-    }
+  const reviewBlock = await findAffectedInputCatalogReviews(supabase, input.taxonId);
+  if (!reviewBlock.ok) return { ok: false, error: reviewBlock.error };
+  if (reviewBlock.reviewedTaxonIds.length > 0) {
+    return { ok: false, error: "Reabra a avaliação E20.6 antes de excluir o taxon." };
   }
 
-  const { error: aliasError } = await supabase
-    .from("business_taxon_aliases")
+  const { data, error } = await supabase
+    .from("business_taxons")
     .delete()
-    .eq("taxon_id", input.taxonId);
-
-  if (aliasError) {
-    console.error("deleteAdminTaxon aliases failed:", { code: aliasError.code, message: aliasError.message });
-    return { ok: false, error: "Nao foi possivel remover os aliases do taxon." };
-  }
-
-  const { error } = await supabase.from("business_taxons").delete().eq("id", input.taxonId);
-
-  if (error) {
-    console.error("deleteAdminTaxon failed:", { code: error.code, message: error.message });
+    .eq("id", input.taxonId)
+    .eq("slug", taxon.slug)
+    .select("id")
+    .maxAffected(1)
+    .maybeSingle();
+  if (error || !data || data.id !== input.taxonId) {
+    console.error("deleteAdminTaxon failed:", { code: error?.code, message: error?.message });
     return { ok: false, error: "Nao foi possivel excluir o taxon." };
   }
 

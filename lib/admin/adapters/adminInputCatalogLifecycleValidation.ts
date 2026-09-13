@@ -103,17 +103,37 @@ export function fingerprintInputCatalogLifecycleContext(input: Readonly<{
   }>[];
   unclosedReleaseTaxonIds?: readonly string[];
 }>): string {
-  const canonical = stableJson({
-    taxons: input.taxons
-      .map((taxon) => ({
-        identity: taxon.identity,
+  const canonical = stableJson(snapshotInputCatalogLifecycleContext(input));
+  return createHash("sha256").update(canonical).digest("hex");
+}
+
+export function snapshotInputCatalogLifecycleContext(input: Readonly<{
+  taxons: readonly Readonly<{
+    identity: LandingPageInputCatalogTaxonIdentity;
+    reviewedVersion: number | null;
+    selectedResearchVersion: number | null;
+  }>[];
+  unclosedReleaseTaxonIds?: readonly string[];
+}>): Readonly<{
+  taxons: readonly Readonly<{
+    identity: LandingPageInputCatalogTaxonIdentity;
+    reviewedVersion: number | null;
+    selectedResearchVersion: number | null;
+  }>[];
+  unclosedReleaseTaxonIds: readonly string[];
+}> {
+  return Object.freeze({
+    taxons: Object.freeze(input.taxons
+      .map((taxon) => Object.freeze({
+        identity: Object.freeze({ ...taxon.identity }),
         reviewedVersion: taxon.reviewedVersion,
         selectedResearchVersion: taxon.selectedResearchVersion,
       }))
-      .sort((left, right) => left.identity.id.localeCompare(right.identity.id)),
-    unclosedReleaseTaxonIds: [...(input.unclosedReleaseTaxonIds ?? [])].sort(),
+      .sort((left, right) => left.identity.id.localeCompare(right.identity.id))),
+    unclosedReleaseTaxonIds: Object.freeze([
+      ...(input.unclosedReleaseTaxonIds ?? []),
+    ].sort()),
   });
-  return createHash("sha256").update(canonical).digest("hex");
 }
 
 function stableJson(value: unknown): string {

@@ -34,6 +34,7 @@ import {
   createInputCatalogLifecycleProof,
   hasCompleteFactualReviewCoverage,
   serializeInputCatalogLifecycleValue,
+  snapshotInputCatalogLifecycleContext,
 } from "./adminInputCatalogLifecycleValidation";
 
 type ServiceClient = ReturnType<typeof createServiceClient>;
@@ -123,6 +124,8 @@ export async function initializeAdminInputCatalogDraft(input: Readonly<{
       validated_at: null,
       publication_fingerprint: null,
       publication_context_fingerprint: null,
+      publication_context_snapshot: null,
+      publication_required_taxon_ids: [],
       publication_prepared_at: null,
       taxon_review_evidence: {},
       created_by: input.actorUserId,
@@ -221,6 +224,8 @@ export async function validateAdminInputCatalogDraft(input: Readonly<{
       validated_at: new Date().toISOString(),
       publication_fingerprint: null,
       publication_context_fingerprint: null,
+      publication_context_snapshot: null,
+      publication_required_taxon_ids: [],
       publication_prepared_at: null,
       updated_by: input.actorUserId,
     })
@@ -268,7 +273,12 @@ export async function prepareAdminInputCatalogPublication(input: Readonly<{
   ) {
     return blocked("Valide novamente o conteúdo exato antes de preparar a publicação.");
   }
-  const requiredTaxonIds = requiredFactualReviewTaxonIds(candidate.value, context.value);
+  const requiredTaxonIds = Object.freeze([
+    ...new Set([
+      ...requiredFactualReviewTaxonIds(candidate.value, context.value),
+      ...Object.keys(current.value.taxonReviewEvidence),
+    ]),
+  ].sort());
   const reviewStatus = await validateReviewEvidence(
     candidate.value,
     current.value,
@@ -285,6 +295,8 @@ export async function prepareAdminInputCatalogPublication(input: Readonly<{
     expectedRevision: input.expectedRevision,
     contentFingerprint: fingerprintValue,
     contextFingerprint: lifecycleContextFingerprint,
+    contextSnapshot: snapshotInputCatalogLifecycleContext(context.value),
+    requiredTaxonIds,
   });
   if (!authorized.ok) return blocked(authorized.message);
   const refreshed = await readDraftRow(client);
@@ -336,7 +348,8 @@ export async function reconcileAdminInputCatalogPublishedDraft(input: Readonly<{
     storedDraftFingerprint !== deployedFingerprint ||
     current.value.contentFingerprint !== deployedFingerprint ||
     current.value.publicationFingerprint !== deployedFingerprint ||
-    current.value.publicationContextFingerprint === null
+    current.value.publicationContextFingerprint === null ||
+    current.value.publicationContextSnapshot === null
   ) {
     return blocked(
       "O registry implantado ainda não comprova exatamente o draft congelado.",
@@ -435,6 +448,8 @@ type DraftRow = Readonly<{
   validationContextFingerprint: string | null;
   publicationFingerprint: string | null;
   publicationContextFingerprint: string | null;
+  publicationContextSnapshot: Readonly<Record<string, unknown>> | null;
+  publicationRequiredTaxonIds: readonly string[];
   taxonReviewEvidence: Readonly<Record<string, DraftTaxonReviewEvidence>>;
   updatedAt: string;
 }>;
@@ -448,7 +463,7 @@ type DraftTaxonReviewEvidence = Readonly<{
 }>;
 
 const DRAFT_SELECT =
-  "base_version,target_version,catalog_json,content_fingerprint,revision,validation_fingerprint,validation_context_fingerprint,publication_fingerprint,publication_context_fingerprint,taxon_review_evidence,updated_at";
+  "base_version,target_version,catalog_json,content_fingerprint,revision,validation_fingerprint,validation_context_fingerprint,publication_fingerprint,publication_context_fingerprint,publication_context_snapshot,publication_required_taxon_ids,taxon_review_evidence,updated_at";
 
 const DRAFT_CHANGED = "O draft mudou durante a leitura do contexto. Recarregue antes de continuar.";
 
@@ -581,7 +596,8 @@ async function buildState(
       storedDraftFingerprint !== deployedFingerprint ||
       row.contentFingerprint !== deployedFingerprint ||
       row.publicationFingerprint !== deployedFingerprint ||
-      row.publicationContextFingerprint === null
+      row.publicationContextFingerprint === null ||
+      row.publicationContextSnapshot === null
     ) {
       return unavailableState(
         "O draft implantado diverge do registry atual e não pode ser reconciliado automaticamente.",
@@ -669,7 +685,8 @@ async function buildState(
         row.validationContextFingerprint === lifecycleContextFingerprint,
       publicationPrepared:
         row.publicationFingerprint === row.contentFingerprint &&
-        row.publicationContextFingerprint === lifecycleContextFingerprint,
+        row.publicationContextFingerprint === lifecycleContextFingerprint &&
+        row.publicationContextSnapshot !== null,
       publishedReconciliationRequired: false,
       publishedReconciliationAllowed: false,
       reviewedTaxonIds: reviewStatus.validTaxonIds,
@@ -813,6 +830,13 @@ function normalizeDraftRow(value: unknown): DraftRow | null {
     (value.publication_context_fingerprint !== null &&
       (typeof value.publication_context_fingerprint !== "string" ||
         !/^[0-9a-f]{64}$/.test(value.publication_context_fingerprint))) ||
+    (value.publication_context_snapshot !== null && !isRecord(value.publication_context_snapshot)) ||
+    !Array.isArray(value.publication_required_taxon_ids) ||
+    value.publication_required_taxon_ids.some((taxonId) =>
+      typeof taxonId !== "string" ||
+      !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(taxonId)
+    ) ||
+    new Set(value.publication_required_taxon_ids).size !== value.publication_required_taxon_ids.length ||
     typeof value.updated_at !== "string"
   ) return null;
   const taxonReviewEvidence = normalizeDraftTaxonReviewEvidence(
@@ -831,6 +855,11 @@ function normalizeDraftRow(value: unknown): DraftRow | null {
     publicationFingerprint: value.publication_fingerprint as string | null,
     publicationContextFingerprint:
       value.publication_context_fingerprint as string | null,
+    publicationContextSnapshot:
+      value.publication_context_snapshot as Readonly<Record<string, unknown>> | null,
+    publicationRequiredTaxonIds: Object.freeze([
+      ...(value.publication_required_taxon_ids as string[]),
+    ].sort()),
     taxonReviewEvidence,
     updatedAt: value.updated_at,
   };

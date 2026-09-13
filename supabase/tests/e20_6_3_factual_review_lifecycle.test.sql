@@ -11,6 +11,7 @@ declare
   v_final record;
   v_taxonomy record;
   v_reconcile record;
+  v_publication_context jsonb;
   v_output jsonb := jsonb_build_object(
     'schemaVersion', 2,
     'status', 'sufficient',
@@ -139,10 +140,9 @@ begin
   insert into public.landing_page_input_catalog_drafts
     (singleton, base_version, target_version, catalog_json, content_fingerprint, revision,
      validation_fingerprint, validation_context_fingerprint, validated_at,
-     publication_fingerprint, publication_context_fingerprint, publication_prepared_at,
      taxon_review_evidence, created_by, updated_by)
   values (true, 5, 6, '{}'::jsonb, repeat('b', 64), 1,
-    repeat('b', 64), repeat('c', 64), now(), repeat('b', 64), repeat('c', 64), now(),
+    repeat('b', 64), repeat('c', 64), now(),
     '{}'::jsonb, 'e2063000-0000-4000-8000-000000000001', 'e2063000-0000-4000-8000-000000000001');
   insert into public.business_taxon_factual_reviews
     (taxon_id, kind, baseline_is_active, context_fingerprint, chain_snapshot,
@@ -242,6 +242,28 @@ begin
     raise exception 'draft no_change did not preserve exact evidence';
   end if;
 
+  select jsonb_build_object(
+    'taxons', coalesce((select jsonb_agg(jsonb_build_object(
+      'identity', jsonb_build_object(
+        'id', taxons.id::text, 'parentId', taxons.parent_id::text, 'level', taxons.level,
+        'name', taxons.name, 'slug', taxons.slug, 'isActive', taxons.is_active
+      ),
+      'reviewedVersion', taxons.reviewed_input_catalog_version,
+      'selectedResearchVersion', taxons.selected_end_customer_research_version
+    ) order by taxons.id) from public.business_taxons taxons
+      where taxons.level in ('segment', 'niche', 'ultra_niche')), '[]'::jsonb),
+    'unclosedReleaseTaxonIds', coalesce((select jsonb_agg(reviews.taxon_id::text order by reviews.taxon_id)
+      from public.business_taxon_factual_reviews reviews
+      where reviews.kind = 'release' and reviews.status = 'open'), '[]'::jsonb)
+  ) into v_publication_context;
+  update public.landing_page_input_catalog_drafts
+  set publication_fingerprint = repeat('b', 64),
+      publication_context_fingerprint = repeat('c', 64),
+      publication_context_snapshot = v_publication_context,
+      publication_required_taxon_ids = array['e2063000-0000-4000-8000-000000000020'::uuid],
+      publication_prepared_at = now()
+  where singleton and revision = 1;
+
   select * into v_reconcile from public.reconcile_business_taxon_factual_review_publication_v1(
     'e2063000-0000-4000-8000-000000000001', 1, 6, repeat('b', 64), repeat('c', 64)
   );
@@ -255,10 +277,9 @@ begin
   insert into public.landing_page_input_catalog_drafts
     (singleton, base_version, target_version, catalog_json, content_fingerprint, revision,
      validation_fingerprint, validation_context_fingerprint, validated_at,
-     publication_fingerprint, publication_context_fingerprint, publication_prepared_at,
      taxon_review_evidence, created_by, updated_by)
   values (true, 6, 7, '{}'::jsonb, repeat('f', 64), 2,
-    repeat('f', 64), repeat('0', 64), now(), repeat('f', 64), repeat('0', 64), now(),
+    repeat('f', 64), repeat('0', 64), now(),
     '{}'::jsonb, 'e2063000-0000-4000-8000-000000000001', 'e2063000-0000-4000-8000-000000000001');
   insert into public.business_taxon_factual_reviews
     (taxon_id, kind, baseline_is_active, baseline_reviewed_input_catalog_version,
@@ -283,8 +304,31 @@ begin
       'rejectedCandidateIndexes', '[0]'::jsonb, 'ownCandidate', null
     ), 2, repeat('f', 64), repeat('3', 64)
   );
-  update public.business_taxons set selected_end_customer_research_version = 1
-  where id = 'e2063000-0000-4000-8000-000000000020';
+  select jsonb_build_object(
+    'taxons', coalesce((select jsonb_agg(jsonb_build_object(
+      'identity', jsonb_build_object(
+        'id', taxons.id::text, 'parentId', taxons.parent_id::text, 'level', taxons.level,
+        'name', taxons.name, 'slug', taxons.slug, 'isActive', taxons.is_active
+      ),
+      'reviewedVersion', taxons.reviewed_input_catalog_version,
+      'selectedResearchVersion', taxons.selected_end_customer_research_version
+    ) order by taxons.id) from public.business_taxons taxons
+      where taxons.level in ('segment', 'niche', 'ultra_niche')), '[]'::jsonb),
+    'unclosedReleaseTaxonIds', coalesce((select jsonb_agg(reviews.taxon_id::text order by reviews.taxon_id)
+      from public.business_taxon_factual_reviews reviews
+      where reviews.kind = 'release' and reviews.status = 'open'), '[]'::jsonb)
+  ) into v_publication_context;
+  update public.landing_page_input_catalog_drafts
+  set publication_fingerprint = repeat('f', 64),
+      publication_context_fingerprint = repeat('0', 64),
+      publication_context_snapshot = v_publication_context,
+      publication_required_taxon_ids = array['e2063000-0000-4000-8000-000000000020'::uuid],
+      publication_prepared_at = now()
+  where singleton and revision = 2;
+  insert into public.business_taxons (id, parent_id, level, name, slug, is_active)
+  values ('e2063000-0000-4000-8000-000000000021', null, 'segment', 'Novo pós-prepare', 'novo-pos-prepare-e206', true);
+  insert into public.business_taxon_aliases (taxon_id, alias_text, is_active)
+  values ('e2063000-0000-4000-8000-000000000021', 'Novo pós-prepare E20.6', true);
   begin
     perform * from public.reconcile_business_taxon_factual_review_publication_v1(
       'e2063000-0000-4000-8000-000000000001', 2, 7, repeat('f', 64), repeat('0', 64)
@@ -296,6 +340,10 @@ begin
      or (select reviewed_input_catalog_version from public.business_taxons
          where id = 'e2063000-0000-4000-8000-000000000020') <> 6 then
     raise exception 'stale reconciliation did not roll back without consuming the draft';
+  end if;
+  delete from public.business_taxons where id = 'e2063000-0000-4000-8000-000000000021';
+  if exists (select 1 from public.business_taxon_aliases where taxon_id = 'e2063000-0000-4000-8000-000000000021') then
+    raise exception 'taxon delete did not cascade aliases in the same statement';
   end if;
   delete from public.landing_page_input_catalog_drafts where singleton and revision = 2;
 
@@ -321,6 +369,19 @@ begin
      or (select reviewed_input_catalog_version from public.business_taxons
          where id = 'e2063000-0000-4000-8000-000000000030') <> 5 then
     raise exception 'human no-AI release did not activate and mark the taxon';
+  end if;
+  insert into public.business_taxon_aliases (taxon_id, alias_text, is_active)
+  values ('e2063000-0000-4000-8000-000000000030', 'Release E20.6', true);
+  begin
+    delete from public.business_taxons where id = 'e2063000-0000-4000-8000-000000000030';
+    raise exception 'taxon with factual history unexpectedly deleted';
+  exception when foreign_key_violation then null;
+  end;
+  if not exists (
+    select 1 from public.business_taxon_aliases
+    where taxon_id = 'e2063000-0000-4000-8000-000000000030'
+  ) then
+    raise exception 'failed factual-history delete did not preserve aliases atomically';
   end if;
 end;
 $$;

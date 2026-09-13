@@ -2,6 +2,16 @@ begin;
 
 alter table public.business_taxons alter column is_active set default false;
 
+alter table public.landing_page_input_catalog_drafts
+  add column publication_context_snapshot jsonb,
+  add column publication_required_taxon_ids uuid[] not null default '{}'::uuid[];
+
+alter table public.business_taxon_aliases
+  drop constraint business_taxon_aliases_taxon_id_fkey,
+  add constraint business_taxon_aliases_taxon_id_fkey
+    foreign key (taxon_id) references public.business_taxons(id)
+    on update cascade on delete cascade;
+
 create table public.business_taxon_factual_reviews (
   id uuid primary key default gen_random_uuid(),
   taxon_id uuid not null references public.business_taxons(id) on update cascade on delete restrict,
@@ -78,6 +88,22 @@ begin
 end;
 $$;
 grant select, insert, update on table public.business_taxon_factual_reviews to service_role;
+
+create or replace function public.lock_business_taxon_factual_context_v1()
+returns trigger language plpgsql security invoker set search_path = public, pg_catalog as $$
+begin
+  perform pg_advisory_xact_lock(hashtextextended('lpf10:e20.6:factual-review', 0));
+  return null;
+end;
+$$;
+
+create trigger business_taxons_factual_context_lock
+before insert or update or delete on public.business_taxons
+for each statement execute function public.lock_business_taxon_factual_context_v1();
+
+create trigger business_taxon_factual_reviews_context_lock
+before insert or update or delete on public.business_taxon_factual_reviews
+for each statement execute function public.lock_business_taxon_factual_context_v1();
 
 create trigger business_taxon_factual_reviews_set_updated_at
 before update on public.business_taxon_factual_reviews
@@ -413,6 +439,8 @@ declare
   v_evidence record;
   v_selected public.business_taxons%rowtype;
   v_actual_chain jsonb;
+  v_current_context jsonb;
+  v_evidence_taxon_ids uuid[];
 begin
   if p_actor_user_id is null or p_expected_draft_revision is null or p_expected_draft_revision <= 0
      or p_deployed_version is null or p_deployed_version <= 0 then
@@ -424,8 +452,44 @@ begin
      or v_draft.target_version <> p_deployed_version
      or v_draft.content_fingerprint <> p_deployed_content_fingerprint
      or v_draft.publication_fingerprint <> p_deployed_content_fingerprint
-     or v_draft.publication_context_fingerprint <> p_publication_context_fingerprint then
+     or v_draft.publication_context_fingerprint <> p_publication_context_fingerprint
+     or v_draft.publication_context_snapshot is null then
     raise exception using errcode = '40001', message = 'factual_review_reconciliation_conflict';
+  end if;
+
+  select jsonb_build_object(
+    'taxons', coalesce((
+      select jsonb_agg(
+        jsonb_build_object(
+          'identity', jsonb_build_object(
+            'id', taxons.id::text,
+            'parentId', taxons.parent_id::text,
+            'level', taxons.level,
+            'name', taxons.name,
+            'slug', taxons.slug,
+            'isActive', taxons.is_active
+          ),
+          'reviewedVersion', taxons.reviewed_input_catalog_version,
+          'selectedResearchVersion', taxons.selected_end_customer_research_version
+        ) order by taxons.id
+      )
+      from public.business_taxons taxons
+      where taxons.level in ('segment', 'niche', 'ultra_niche')
+    ), '[]'::jsonb),
+    'unclosedReleaseTaxonIds', coalesce((
+      select jsonb_agg(reviews.taxon_id::text order by reviews.taxon_id)
+      from public.business_taxon_factual_reviews reviews
+      where reviews.kind = 'release' and reviews.status = 'open'
+    ), '[]'::jsonb)
+  ) into v_current_context;
+  if v_current_context is distinct from v_draft.publication_context_snapshot then
+    raise exception using errcode = '40001', message = 'factual_review_reconciliation_context_conflict';
+  end if;
+  select coalesce(array_agg(evidence.key::uuid order by evidence.key::uuid), '{}'::uuid[])
+  into v_evidence_taxon_ids
+  from jsonb_each(v_draft.taxon_review_evidence) evidence;
+  if v_evidence_taxon_ids is distinct from v_draft.publication_required_taxon_ids then
+    raise exception using errcode = '40001', message = 'factual_review_reconciliation_taxons_conflict';
   end if;
 
   if exists (
@@ -537,6 +601,7 @@ $$;
 revoke all on function public.guard_closed_business_taxon_factual_review_v1() from public, anon, authenticated;
 revoke all on function public.guard_open_business_taxon_factual_review_v1() from public, anon, authenticated;
 revoke all on function public.guard_business_taxon_factual_research_selection_v1() from public, anon, authenticated;
+revoke all on function public.lock_business_taxon_factual_context_v1() from public, anon, authenticated;
 revoke all on function public.finalize_business_taxon_factual_review_v1(uuid, bigint, uuid, integer, jsonb, bigint, text, text) from public, anon, authenticated;
 revoke all on function public.update_business_taxon_with_factual_review_invalidation_v1(uuid, text, text, boolean, text, text, boolean, uuid) from public, anon, authenticated;
 revoke all on function public.reconcile_business_taxon_factual_review_publication_v1(uuid, bigint, integer, text, text) from public, anon, authenticated;
