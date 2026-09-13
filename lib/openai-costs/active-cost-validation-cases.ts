@@ -173,6 +173,27 @@ async function main() {
     kind: "niche_resolution",
     eventId: "40000000-0000-4000-8000-000000000088",
   });
+
+  const longAccountName = "A".repeat(257);
+  const longAccount = translateOpenAiActiveCostRows({
+    period,
+    coverageRows,
+    rows: [activeRow({
+      cursor_started_at: "2026-09-11T14:30:00.000Z",
+      execution_id: "40000000-0000-4000-8000-000000000030",
+      universe: "client",
+      attribution_status: "attributed",
+      account_id: "40000000-0000-4000-8000-000000000099",
+      account_name: longAccountName,
+      workload: "niche_resolution",
+      economic_event_kind: "niche_resolution",
+      economic_event_id: "40000000-0000-4000-8000-000000000031",
+    })],
+  });
+  assert.equal(longAccount.ok, true);
+  if (!longAccount.ok) throw new Error("account names beyond 256 characters must remain valid");
+  assert.equal(longAccount.value.executions[0]?.accountName, longAccountName);
+
   const hierarchy = buildOpenAiEconomicHierarchy(correlated.value, {
     totalUsd: "0.25",
     coverageActivatedAt: null,
