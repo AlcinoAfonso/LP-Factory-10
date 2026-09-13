@@ -81,15 +81,6 @@ begin
   end if;
 
   begin
-    update public.openai_cost_executions
-    set economic_event_id = 'e2156000-0000-4000-8000-000000000099'
-    where id = v_niche;
-    raise exception 'economic identity mutation must fail';
-  exception
-    when insufficient_privilege or object_not_in_prerequisite_state then null;
-  end;
-
-  begin
     perform public.start_openai_cost_execution_v2(
       'e2156000-0000-4000-8000-000000000030', 'niche_resolution', 'production', 'runtime',
       'client', 'attributed', 'e2156000-0000-4000-8000-000000000002',
@@ -120,6 +111,42 @@ begin
     );
     raise exception 'partial correlation with null kind must fail';
   exception when check_violation then null;
+  end;
+end;
+$$;
+
+reset role;
+
+do $$
+begin
+  if not has_table_privilege(current_user, 'public.openai_cost_executions', 'UPDATE') then
+    raise exception 'authorized trigger proof context lacks UPDATE privilege: %', current_user;
+  end if;
+  begin
+    update public.openai_cost_executions
+    set economic_event_id = 'e2156000-0000-4000-8000-000000000099'
+    where id = 'e2156000-0000-4000-8000-000000000011';
+    raise exception 'economic identity mutation must fail in trigger proof context';
+  exception
+    when sqlstate '55000' then
+      if sqlerrm <> 'openai_cost_execution_mutation_forbidden' then
+        raise exception 'unexpected trigger error: %', sqlerrm;
+      end if;
+  end;
+end;
+$$;
+
+set local role service_role;
+
+do $$
+begin
+  begin
+    update public.openai_cost_executions
+    set economic_event_id = 'e2156000-0000-4000-8000-000000000099'
+    where id = 'e2156000-0000-4000-8000-000000000011';
+    raise exception 'service_role UPDATE must fail before the trigger by ACL';
+  exception
+    when insufficient_privilege then null;
   end;
 end;
 $$;

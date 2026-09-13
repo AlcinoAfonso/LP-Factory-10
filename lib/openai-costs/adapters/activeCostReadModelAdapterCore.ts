@@ -280,7 +280,7 @@ function parseRow(
   const accountId = row?.account_id === null ? null : uuid(row?.account_id);
   const accountName = economicDimensionStatus === "v1_fallback"
     ? null
-    : nullableText(row?.account_name, 256);
+    : nullableText(row?.account_name);
   const landingPageName = economicDimensionStatus === "v1_fallback"
     ? null
     : nullableText(row?.landing_page_name, 256);
@@ -501,9 +501,9 @@ function timestamp(value: unknown): string | null | undefined {
 function technicalText(value: unknown) {
   return typeof value === "string" && value.length > 0 && value.length <= 128 && /^[A-Za-z0-9][A-Za-z0-9._:-]*$/.test(value) ? value : null;
 }
-function nullableText(value: unknown, maximum: number): string | null | undefined {
+function nullableText(value: unknown, maximum?: number): string | null | undefined {
   if (value === null) return null;
-  return typeof value === "string" && value.length > 0 && value.length <= maximum && !/[\u0000-\u001f]/.test(value) ? value : undefined;
+  return typeof value === "string" && value.length > 0 && (maximum === undefined || value.length <= maximum) && !/[\u0000-\u001f]/.test(value) ? value : undefined;
 }
 function nonNegativeInteger(value: unknown) {
   return typeof value === "number" && Number.isSafeInteger(value) && value >= 0 ? value : null;
