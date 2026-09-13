@@ -112,15 +112,16 @@
 
 - Resultado: substituir o caminho operacional corrente da E20.6 por um catálogo factual plan-neutral, liberação humana simples de taxon novo, revisão voluntária de taxon ativo e apoio opcional por IA, sem criar estado, lifecycle ou infraestrutura paralelos.
 - `Derivação técnica da V1`: projeção corrente plan-neutral da E20.2; publicação sem coordenação por taxon; liberação por compare-and-set de `is_active`; avaliação e handoff transitórios; página administrativa única; preservação da capacidade dormente E20.7.
-- `Modernização técnica justificada`: verificador SQL read-only versionado e teste transacional focal para o novo default; critérios WCAG 2.2 proporcionais à superfície alterada.
+- `Modernização técnica justificada — supa#40`: sem o update, a prova hospedada do default, constraints e ACLs dependeria de consulta avulsa; com ele, snippet read-only e teste transacional tornam a evidência reexecutável, detectam drift e não acrescentam runtime ou infraestrutura.
+- `Modernização técnica justificada — prod#17`: sem o update, acessibilidade ficaria parcialmente implícita; com ele, critérios WCAG 2.2 proporcionais combinam inspeção automatizada e roteiro manual, sem biblioteca nova nem alegação de conformidade integral.
 - `Ampliação de escopo`: nenhuma. Filas, vetores, RAG, AI Gateway, cache, agentes, novos services, nova telemetria e auditoria global de acessibilidade permanecem fora do recorte.
 
 ### 5.2 Boundaries e invariantes compartilhados
 
 - `lib/conversion-content/landing-page/input-catalog/` permanece autoridade repo-only das versões publicadas, da versão corrente, da identidade dos fields e da resolução factual.
-- O contrato operacional corrente recebe versão explícita e cadeia taxonômica, resolve Universal → Segmento → Nicho → Ultranicho e devolve um único catálogo com proveniência por camada.
+- O contrato operacional corrente seleciona internamente `CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION`, recebe somente a cadeia taxonômica, resolve Universal → Segmento → Nicho → Ultranicho e devolve um único catálogo com proveniência por camada. Argumento público de versão é rejeitado nesse caminho.
 - A API corrente e os novos consumidores não recebem nem devolvem plano comercial ou `allowedPlans`. Se a representação histórica interna produzir projeções materialmente diferentes entre Starter, Lite, Pro e Ultra, a projeção plan-neutral falha fechado.
-- O resolver histórico por plano pode permanecer somente para leitura de versões históricas e para capacidades dormentes já existentes; não alimenta a E20.6, a UI corrente nem novos consumidores.
+- O resolver histórico mantém entrada de versão explícita e pode permanecer somente para leitura de versões históricas e para capacidades dormentes já existentes; não alimenta a E20.6, a UI corrente nem novos consumidores.
 - `business_taxons.is_active` é o único estado de liberação. `reviewed_input_catalog_version` e evidências históricas são preservados, mas ficam inertes no fluxo corrente e não recebem novos writes pela E20.6 ou pela publicação E20.2.
 - Nenhuma ação de IA publica, adiciona, edita, inativa ou reativa field; ativa ou desativa taxon; ou cria estado persistente da avaliação.
 - Autorizações e mutações permanecem server-side e reexecutam `requirePlatformAdmin()`; componentes client recebem somente DTO mínimo e nunca acessam OpenAI, secret, configuração operacional ou banco privilegiado.
@@ -160,6 +161,9 @@
 - Pesquisa, web, feedback e output anterior são dados não confiáveis. Prompt e resposta integral, pesquisa, payload de negócio, URLs, PII, secrets e raciocínio privado não entram na telemetria comum.
 - Cada tentativa registra, quando disponível, somente workload, ambiente, configuração/revisão, origem, resultado, falha sanitizada, latência, usage e contagens de buscas/fontes. Custos são best-effort e não alteram o resultado funcional. `store:false` não é apresentado como garantia de Zero Data Retention.
 - Gate específico desligado apenas indisponibiliza a assistência por IA; não aciona fallback Codex e não bloqueia a liberação humana.
+- `E20_6_INPUT_CATALOG_REVIEW_ENABLED` deixa de ter consumidor no caminho corrente e é documentado como gate legado inerte, preservado até recorte próprio de limpeza; nenhum código novo o consulta.
+- `E20_5_SELECTED_RESEARCH_ENABLED` governa somente seleção e leitura da fonte E20.5. `not_selected` e `feature_disabled` permanecem resultados tipados e permitem fallback Web Search na avaliação sistemática; `invalid_selection`, `database_failure` e `file_failure` permanecem falhas técnicas, não são colapsadas em ausência e encerram somente a avaliação dependente.
+- `E20_6_5_INPUT_CATALOG_EVALUATION_PROVIDER_ENABLED` governa somente o botão e a execução opcional do provider. `false` ou ausência retorna assistência indisponível sem fallback Codex, sem mutação e sem bloquear cobertura ou liberação humanas.
 
 ### 5.6 Fase 20.6.6 — Revisão voluntária de taxon ativo
 
@@ -185,6 +189,8 @@
 - O draft corrente aceita somente cobertura factual comum e plan-neutral; `allowedPlans` especializado ou subset comercial falha na validação.
 - Adição exige novo `fieldKey` e `createdInVersion` igual à versão-alvo.
 - Edição preserva `fieldKey`, residência taxonômica e `createdInVersion`.
+- A edição calcula diff versionado e apresenta alcance ancestral antes da confirmação humana. `valueScope` ou residência taxonômica diferentes exigem novo `fieldKey`; alteração de tipo, obrigatoriedade, condições ou validação só permanece sob a mesma identidade quando o humano confirma que representa o mesmo fato.
+- Mudança de significado factual exige novo `fieldKey`; refinamento de label ou descrição sob a mesma identidade exige confirmação humana explícita no lifecycle. Validators cobrem os atributos determinísticos e a UI não transforma equivalência semântica em decisão automática.
 - Inativação define `retiredInVersion` igual à versão-alvo.
 - Reativação remove `retiredInVersion` somente em versão posterior, preservando identidade, residência e `createdInVersion`.
 - Versões publicadas anteriores permanecem imutáveis e resolvíveis.
@@ -207,7 +213,7 @@
 - Actions e UI: `app/admin/(protected)/taxonomia/actions.ts`, página do taxon e componentes E20.6; substituir o componente antigo de confirmação por cobertura/liberação, sem manter dois caminhos concorrentes.
 - Lifecycle E20.2 no Admin: `lib/admin/adapters/adminInputCatalogLifecycle*`, `adminLandingPageStructureAdapter` e componentes/validators de `/admin/estrutura-lp`.
 - Banco: uma migration focal e um snippet read-only em `supabase/`; refletir somente o default alterado em `docs/schema.md`.
-- Documentação durável afetada: `docs/base-tecnica.md`, `docs/schema.md`, `docs/automations.md`, `docs/platform-config.md` somente se o estado operacional realmente mudar, e `docs/roadmap.md` pela reconciliação governada.
+- Documentação durável afetada: `docs/base-tecnica.md`, `docs/schema.md`, `docs/automations.md`, `docs/platform-config.md` obrigatoriamente para a nova semântica e composição dos gates mesmo sem mudança de valor hospedado, e `docs/roadmap.md` pela reconciliação governada.
 
 ### 5.11 Checkpoints e validações
 
@@ -218,6 +224,9 @@
 5. `20.6.7`: página única, acessibilidade, regressões integradas, documentação e Preview/QA de fechamento.
 
 - Cada checkpoint executa os validators focais aplicáveis e o gate do Analista de implementação antes do próximo.
+- Validators comprovam que a API corrente não aceita versão histórica, seleciona `CURRENT` internamente e que somente o resolver histórico/dormente aceita versão explícita.
+- Casos de gate cobrem `E20_6_INPUT_CATALOG_REVIEW_ENABLED` inerte, E20.5 válida/ausente/desabilitada/inválida/falha de banco/falha de arquivo e provider habilitado/desabilitado, sempre preservando a liberação humana.
+- Casos do lifecycle cobrem edição sem redefinição semântica, exigência de nova identidade, impacto de field ancestral e reativação forward-only.
 - Gate local acumulado: `npm ci`, `npm run check`, `npm run validate:landing-page-input-catalog`, `npm run validate:taxon-preparation`, `npm run validate:admin-landing-page-structure` e `git diff --check`.
 - Teste SQL transacional prova que linhas existentes mantêm seus valores e novo insert sem `is_active` nasce inativo; o snippet read-only pós-apply confirma `column_default=false`, nulabilidade, constraints, RLS, policies e grants sem drift.
 - Security Controls é evidência suplementar read-only e não substitui migration, teste ou `docs/schema.md`.
