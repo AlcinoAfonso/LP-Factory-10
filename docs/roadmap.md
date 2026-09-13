@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 12/09/2026
-• Versão: v1.5.226
+• Data: 13/09/2026
+• Versão: v1.5.227
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -1251,6 +1251,13 @@
 - Falha de um diagnóstico não inventa prontidão nem escolhe resultado silenciosamente.
 - Perfis de orientação, pesquisas da E10.8 e seus estados órfãos não aparecem nas superfícies atuais.
 
+12.5.5 Evolução da revisão factual por taxon
+- Status: planejado na E20.6.
+- Conteúdo:
+  - concentrar no detalhe do taxon a hierarquia Universal → Segmento → Nicho → Ultranicho, a cobertura factual corrente e a distinção entre fields próprios e herdados;
+  - oferecer liberação humana de taxon novo sem IA e revisão voluntária de taxon ativo, mantendo recomendação da IA separada da decisão humana;
+  - preservar uma única página principal, responsiva e acessível, com detalhes técnicos em segundo nível e sem plano comercial, fingerprint, identificador diagnóstico ou seletor manual de versão no nível principal.
+
 12.6 Estrutura da LP no Admin Dashboard
 
 12.6.1 Objetivo e status
@@ -1285,6 +1292,13 @@
 - Queries antigas ou visão desconhecida retornam com segurança para `Parâmetros`.
 - A leitura usa um único adapter e consultas server-side em lote, sem exportar registry ou schema privado, sem N+1 e sem regra de domínio em React.
 - A rota não persiste, não chama IA e não executa mutações.
+
+12.6.4 Evolução do catálogo factual
+- Status: planejado na E20.6.
+- Conteúdo:
+  - a visão `Entradas` passa a operar o lifecycle factual comum e plan-neutral da E20.2 e pode mostrar alcance por field;
+  - blockers, contagens e decisões por taxon, divisão por plano e coordenação de versão por taxon deixam de integrar essa superfície;
+  - a publicação permanece humana, versionada e independente da revisão individual de taxons.
 
 13. E13 — Partner Dashboard
 
@@ -1723,15 +1737,15 @@
 19.4 Histórico
 - O detalhe da arquitetura abandonada permanece recuperável pelos PRs e pelo histórico Git; a documentação canônica não a mantém como obrigação vigente.
 - PR #871 tornou a geração antiga inalcançável, PR #872 retirou sua orquestração, o SV-PR03 retirou o produto operacional e o SV-PR04 eliminou as duas fronteiras administrativas residuais.
-20. E20 — Preparação e liberação de taxons para geração de landing pages
-- Objetivo: manter o catálogo versionado de entradas, a pesquisa integral selecionada, a avaliação de suficiência e a resolução de conhecimento que autorizam o contexto factual da LP.
-- Status: catálogo E20.2 v6 vigente; perfil E20.3 retirado; seleção E20.5 e preparação determinística E20.6 operacionais; resolver E20.7 implementado e preservado como capacidade independente, sem consumidor E19 vigente.
+20. E20 — Catálogo factual, pesquisa opcional e revisão de taxons
+- Objetivo: manter um catálogo factual versionado e plan-neutral, fontes opcionais de conhecimento e decisões humanas de liberação ou revisão por taxon, sem coordenar consumidores ou usos anteriores.
+- Status: em evolução; o catálogo E20.2 v6, a seleção E20.5, a preparação E20.6 e o resolver dormente E20.7 permanecem no estado implementado atual, enquanto a substituição factual da E20.6 está aprovada e planejada.
 
 20.2 Catálogo de entradas por taxon
 
 20.2.1 Objetivo e status
-- Objetivo: definir e resolver declarativamente quais valores uma LP exige por versão, taxon e plano, sem misturar valores concretos, entitlement ou geração.
-- Status: Versões v1–v6 publicadas e imutáveis no repositório; `CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION = 6`.
+- Objetivo: definir e resolver declarativamente quais fatos um novo uso exige por versão e cadeia taxonômica, sem valores concretos, entitlement, plano comercial ou coordenação do consumidor.
+- Status: versões v1–v6 publicadas e imutáveis no repositório; `CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION = 6`; evolução plan-neutral aprovada e planejada na E20.6.
 
 20.2.2 Registros do recorte
 - Banco:
@@ -1817,6 +1831,14 @@
 - O Admin usa `/admin/estrutura-lp?view=entradas`; avaliação individual de suficiência permanece na Taxonomia.
 - Não há rollback de catálogo, múltiplos drafts, targeting por taxon, job, fila ou agente.
 
+20.2.8 Evolução factual plan-neutral
+- Status: planejado na E20.6.
+- Conteúdo:
+  - o caminho corrente seleciona internamente a versão publicada atual e resolve um único catálogo por Universal → Segmento → Nicho → Ultranicho, sem plano comercial ou fork por taxon;
+  - o lifecycle comum permite adicionar, editar, inativar e reativar fields, preservando identidade, histórico e alcance ancestral, com nova identidade quando mudar escopo, residência taxonômica ou significado factual;
+  - validar, publicar e reconciliar uma versão deixa de depender de evidência, marcador ou revisão individual por taxon;
+  - cada novo uso consulta a versão publicada corrente e preserva seu próprio resultado; usos anteriores não são atualizados retroativamente.
+
 20.3 Perfil de orientação para geração — retirado
 
 20.3.1 Objetivo e status
@@ -1848,8 +1870,8 @@
 20.5 Seleção da pesquisa integral `end_customer` por taxon
 
 20.5.1 Objetivo e status
-- Objetivo: permitir que um taxon ativo selecione explicitamente uma versão integral de pesquisa `end_customer` e disponibilizá-la por boundary server-side.
-- Status: Implementado e ativo em Production; o taxon piloto mantém a pesquisa `end_customer` v1 selecionada.
+- Objetivo: permitir seleção opcional de uma versão integral de pesquisa `end_customer` por taxon e disponibilizá-la como fonte consultiva server-side.
+- Status: implementado e ativo em Production para taxon ativo; extensão ao taxon inativo antes da liberação aprovada e planejada na E20.6.
 
 20.5.2 Registros do recorte
 - Banco:
@@ -1889,11 +1911,18 @@
 - Somente sucesso retorna taxon, slug, versão e conteúdo integral com `selectedResearchValid: true`.
 - Nenhum estado `prepared` é persistido; preparação é derivada pela E20.6.
 
-20.6 Avaliação de suficiência e preparação do taxon
+20.5.5 Papel opcional na revisão factual
+- Status: planejado na E20.6.
+- Conteúdo:
+  - a fonte pode ser selecionada para taxon inativo antes da liberação e permanece opcional para a decisão humana;
+  - quando a IA for solicitada, pesquisa válida é preferencial; ausência ou gate desligado permite fallback Web Search controlado, enquanto seleção inválida e falhas de banco ou arquivo encerram somente a avaliação dependente;
+  - a pesquisa não substitui os fatos autorizados pela E20.2 nem cria estado de preparação.
+
+20.6 Liberação e revisão factual de taxons
 
 20.6.1 Objetivo e status
-- Objetivo: verificar se a pesquisa selecionada cobre os fatos exigidos pelo catálogo efetivo e derivar a preparação sem criar estado paralelo de prontidão.
-- Status: Preparação determinística operacional com `R=6` no taxon piloto. O provider administrativo da E20.6.5 está implementado e possui configuração operacional revisão 2, mas seu gate, redeploy e QA final não estão comprovados como concluídos.
+- Objetivo: liberar taxon novo por decisão humana sobre a cobertura factual corrente e permitir revisão voluntária de taxon ativo, com apoio opcional por IA e sem gate de versão por taxon.
+- Status: substituição funcional e técnica aprovada e planejada; a preparação baseada em versão revisada permanece como estado implementado anterior até a execução deste recorte.
 
 20.6.2 Registros do recorte
 - Banco:
@@ -1931,28 +1960,42 @@
   - Contrato de banco: `docs/schema.md`.
   - Gates e workloads: `docs/platform-config.md`.
 
-20.6.3 Predicado determinístico
-- A preparação exige taxon ativo, pesquisa E20.5 selecionada e válida e versão revisada compatível com a versão executável requerida.
-- `deriveTaxonPreparationForVersion` exige igualdade exata entre revisão e versão requerida.
-- `deriveEffectiveTaxonPreparation` permite carry-forward até a versão atual somente para transição sem mudança material ou compatível.
-- Versão ausente, posterior à atual, não executável ou transição que exige revisão falha fechado.
-- O resultado inclui pesquisa integral, `reviewedInputCatalogVersion`, `effectiveInputCatalogVersion` e classificação da transição.
-- O predicado é derivado em leitura e não persiste `prepared`.
+20.6.3 Liberação de novo taxon
+- Status: planejado.
+- Conteúdo:
+  - taxon novo nasce inativo e apresenta a cobertura factual corrente com proveniência por camada;
+  - `platform_admin` pode liberar sem IA, pesquisa ou justificativa textual, por decisão separada que altera somente `is_active`;
+  - a decisão relê taxon, cadeia e versão corrente e falha com segurança diante de drift, conflito ou concorrência.
 
-20.6.4 Decisão humana
-- A avaliação compara a pesquisa integral com a versão E20.2 escolhida explicitamente nos quatro planos.
-- O resultado assistido pode ser `sufficient`, `candidate_gaps` ou inconclusivo; a IA não decide a gravação.
-- Somente decisão administrativa explícita registra `reviewed_input_catalog_version`.
-- Mudança efetiva da pesquisa ou da identidade taxonômica invalida a avaliação aplicável.
-- Gaps factuais retornam à E20.2 e exigem nova avaliação após a evolução.
+20.6.4 Apoio opcional e decisão humana
+- Status: planejado.
+- Conteúdo:
+  - somente ação explícita de `platform_admin` solicita sugestões de lacunas;
+  - o humano pode aceitar nenhum, alguns ou todos os candidatos e incluir candidato próprio;
+  - candidato aceito forma somente handoff transitório para o lifecycle E20.2 e não publica field, altera taxon ou cria estado E20.6;
+  - falha ou indisponibilidade da IA não bloqueia a liberação humana nem altera estado válido.
 
-20.6.5 Provider administrativo
-- O workload `taxon_input_catalog_sufficiency_evaluation` usa o lifecycle compartilhado da E21 e não possui configuração paralela.
-- Preview e Production recusam `repo_catalog` e bootstrap revisão 1; runtime gate-on exige `supabase_operational` revisão 2 ou posterior.
-- `E20_6_5_INPUT_CATALOG_EVALUATION_PROVIDER_ENABLED` separa o rollout desse provider do gate geral `OPENAI_OPERATIONAL_CONFIG_ENABLED`.
-- `ROLLOUT_GATE_OFF` preserva o handoff humano legado; `OPERATIONAL_CONFIGURATION_UNPROVEN` bloqueia runtime e legado sem escrita ou fallback.
-- A configuração operacional revisão 2 está ativa nos dois ambientes, mas a documentação canônica ainda não comprova o valor do gate específico, redeploy, QA hospedado ou contract final.
-- Até essa comprovação, a E20.6.5 não deve ser declarada operacionalmente encerrada.
+20.6.5 Provider, fontes e output
+- Status: planejado.
+- Conteúdo:
+  - preservar o workload `taxon_input_catalog_sufficiency_evaluation` e reutilizar configuração, telemetria e custos da E21;
+  - usar E20.5 válida como fonte preferencial e Web Search controlada como fallback ou pesquisa focal humana;
+  - executar uma única Responses API foreground, com Structured Output estrito, fontes externas preservadas, `store:false`, timeout de 45 segundos, zero retry e sem Agents SDK;
+  - a IA permanece consultiva, sem mutação, fallback Codex ou gate sobre o caminho humano.
+
+20.6.6 Revisão voluntária de taxon ativo
+- Status: planejado.
+- Conteúdo:
+  - a revisão é iniciada exclusivamente por `platform_admin` e reutiliza o mesmo workload e os mesmos guardrails da avaliação opcional;
+  - publicar nova versão E20.2 não dispara revisão, não reabre o taxon, não altera `is_active` e não reprocessa usos anteriores;
+  - candidato aceito segue somente para o lifecycle E20.2 e o taxon permanece ativo durante todo o fluxo.
+
+20.6.7 Experiência administrativa
+- Status: planejado.
+- Conteúdo:
+  - `/admin/taxonomia/[taxonId]` concentra identidade, hierarquia, cobertura por camada, distinção entre fields próprios e herdados, ações humanas e assistência opcional;
+  - recomendação da IA e decisão humana permanecem visual e semanticamente separadas, com detalhes técnicos progressivos;
+  - a superfície deve ser responsiva e aplicar os critérios WCAG 2.2 pertinentes, sem alegar conformidade integral sem auditoria própria.
 
 20.7 Resolução de conhecimento para geração
 
