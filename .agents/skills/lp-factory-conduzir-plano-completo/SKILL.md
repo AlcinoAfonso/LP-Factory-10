@@ -89,7 +89,7 @@ Parar somente diante de handoff incompleto, investigação necessária ou decis�
 
 ## 5. Reconciliar roadmap e atualizar o PR
 
-1. Em checkpoint limpo, verificar se fontes canônicas mudaram na `origin/main`; integrar por merge não destrutivo, reler somente o que mudou e pedir revisão delta apenas se houver conflito material.
+1. Em checkpoint limpo, aplicar a regra de sincronização do `AGENTS.md`; reler somente as fontes pertinentes alteradas e pedir revisão delta apenas se houver impacto material.
 2. Usar `$lp-factory-abc` em modo planejamento para produzir o menor delta de `docs/roadmap.md` entre o snapshot e a V2 aprovada, conforme `docs/prompt-abc.md` e `docs/template-roadmap.md`.
 3. Submeter o roadmap ao mesmo Analista em `revisao_delta`, inclusive quando o ABC retornar `SEM ALTERAÇÕES NECESSÁRIAS`.
 4. Criar `LP-Factory-Stage: plan-v2-approved` com plano, roadmap e matriz; validar o diff e atualizar o único PR draft contra `main`.
