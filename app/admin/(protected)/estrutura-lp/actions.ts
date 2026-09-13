@@ -40,7 +40,7 @@ export async function saveInputCatalogDraftAction(
     expectedRevision: Number(formData.get("expectedRevision")),
     catalogJson: String(formData.get("catalogJson") ?? ""),
   });
-  return complete(previous, result, "Draft salvo; evidências anteriores foram invalidadas.");
+  return complete(previous, result, "Draft salvo; validação e handoff anteriores foram invalidados.");
 }
 
 export async function validateInputCatalogDraftAction(
@@ -52,8 +52,11 @@ export async function validateInputCatalogDraftAction(
   const result = await validateAdminInputCatalogDraft({
     actorUserId: actor.actorUserId,
     expectedRevision: Number(formData.get("expectedRevision")),
+    expectedContentFingerprint: String(formData.get("expectedContentFingerprint") ?? ""),
+    expectedLifecycleContextFingerprint: String(formData.get("expectedLifecycleContextFingerprint") ?? ""),
+    sameFactConfirmed: formData.get("sameFactConfirmed") === "on",
   });
-  return complete(previous, result, "Draft e impacto foram revalidados sobre o conteúdo atual.");
+  return complete(previous, result, "Draft e alcance factual foram revalidados sobre o conteúdo atual.");
 }
 
 export async function prepareInputCatalogPublicationAction(

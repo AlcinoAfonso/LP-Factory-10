@@ -9,7 +9,6 @@ import {
 import { resolveInputCatalogEvaluationRuntimeReadinessCore } from "../../adapters/inputCatalogEvaluationRuntimeGateCore";
 import {
   executeInputCatalogEvaluationAdministrativeActionCore,
-  executeLegacyInputCatalogReviewRecordCore,
 } from "../../adapters/inputCatalogEvaluationAdministrativeActionCore";
 import {
   resolveOpenAiProductWorkload,
@@ -64,10 +63,7 @@ import {
 import { executeAdminTaxonFactualReleaseCore } from "../../../admin/adapters/adminTaxonFactualReleaseCore";
 import {
   collectAffectedReviewedTaxonIds,
-  applyInputCatalogReviewPresentation,
-  nextInputCatalogReviewActionRevision,
   planEndCustomerResearchSelectionMutation,
-  sameInputCatalogReviewBaseline,
   taxonomyMutationAffectsInputCatalogResolution,
 } from "../../../admin/adapters/adminTaxonomyReviewPolicy";
 import { loadEndCustomerResearchCandidateForValidation } from "./research";
@@ -144,13 +140,10 @@ const cases: readonly ValidationCase[] = [
         "utf8",
       );
       assert.match(selectedCore, /includeInputCatalogReview[\s\S]*reviewed_input_catalog_version/);
-      assert.match(adminSource, /reviewed_input_catalog_version: null/);
-      assert.match(adminSource, /findAffectedInputCatalogReviews/);
+      assert.doesNotMatch(adminSource, /recordAdminInputCatalogReview|reopenAdminInputCatalogReview/);
+      assert.doesNotMatch(adminSource, /\.update\(\{\s*reviewed_input_catalog_version/);
       assert.match(reviewRead, /coverage: \{/);
       assert.match(adminSource, /readCompleteTaxonChainFromPages/);
-      assert.match(adminSource, /\.order\("id", \{ ascending: true \}\)[\s\S]*\.range\(/);
-      assert.match(adminSource, /A cadeia taxonômica mudou em paralelo\. A liberação foi revertida\./);
-      assert.match(adminSource, /mutationQuery\.(?:is|eq)\("reviewed_input_catalog_version"/);
       const deleteStart = adminSource.indexOf("export async function deleteAdminTaxon(");
       const deleteEnd = adminSource.indexOf("async function validateTaxonParent", deleteStart);
       const deleteSource = adminSource.slice(deleteStart, deleteEnd);
@@ -392,82 +385,6 @@ const cases: readonly ValidationCase[] = [
       assert.deepEqual(collectAffectedReviewedTaxonIds(rows, "segment"), ["niche", "ultra"]);
       assert.deepEqual(collectAffectedReviewedTaxonIds(rows, "niche"), ["niche", "ultra"]);
       assert.deepEqual(collectAffectedReviewedTaxonIds(rows, "ultra"), ["ultra"]);
-    },
-  },
-  {
-    name: "review baseline rejects concurrent identity research review or chain changes",
-    run: async () => {
-      const baseline = {
-        taxonName: "Corretor Imóveis",
-        taxonSlug: "corretor-imoveis",
-        taxonLevel: "niche" as const,
-        parentTaxonId: "segment",
-        selectedResearchVersion: 1,
-        reviewedVersion: null,
-        isActive: false,
-        chainFingerprint: "chain-v1",
-      };
-      assert.equal(sameInputCatalogReviewBaseline(baseline, { ...baseline }), true);
-      for (const changed of [
-        { ...baseline, taxonName: "Corretores" },
-        { ...baseline, taxonSlug: "corretores" },
-        { ...baseline, parentTaxonId: "other" },
-        { ...baseline, selectedResearchVersion: 2 },
-        { ...baseline, reviewedVersion: 1 },
-        { ...baseline, isActive: true },
-        { ...baseline, chainFingerprint: "chain-v2" },
-      ]) assert.equal(sameInputCatalogReviewBaseline(baseline, changed), false);
-    },
-  },
-  {
-    name: "historical review presentation stays isolated from the factual release UI",
-    run: async () => {
-      let presentation = { reviewedVersion: null, lastAction: null } as {
-        reviewedVersion: number | null;
-        lastAction: "record" | "reopen" | null;
-      };
-      let recordRevision = 0;
-      let reopenRevision = 0;
-
-      recordRevision = nextInputCatalogReviewActionRevision(recordRevision);
-      presentation = applyInputCatalogReviewPresentation(presentation, { type: "record", reviewedVersion: 2 });
-      assert.deepEqual({ presentation, recordRevision, reopenRevision }, {
-        presentation: { reviewedVersion: 2, lastAction: "record" },
-        recordRevision: 1,
-        reopenRevision: 0,
-      });
-
-      reopenRevision = nextInputCatalogReviewActionRevision(reopenRevision);
-      presentation = applyInputCatalogReviewPresentation(presentation, { type: "reopen" });
-      assert.deepEqual({ presentation, recordRevision, reopenRevision }, {
-        presentation: { reviewedVersion: null, lastAction: "reopen" },
-        recordRevision: 1,
-        reopenRevision: 1,
-      });
-
-      recordRevision = nextInputCatalogReviewActionRevision(recordRevision);
-      presentation = applyInputCatalogReviewPresentation(presentation, { type: "record", reviewedVersion: 2 });
-      assert.deepEqual({ presentation, recordRevision, reopenRevision }, {
-        presentation: { reviewedVersion: 2, lastAction: "record" },
-        recordRevision: 2,
-        reopenRevision: 1,
-      });
-
-      reopenRevision = nextInputCatalogReviewActionRevision(reopenRevision);
-      presentation = applyInputCatalogReviewPresentation(presentation, { type: "reopen" });
-      assert.deepEqual({ presentation, recordRevision, reopenRevision }, {
-        presentation: { reviewedVersion: null, lastAction: "reopen" },
-        recordRevision: 2,
-        reopenRevision: 2,
-      });
-
-      const componentSource = readFileSync(
-        new URL("../../../../app/admin/(protected)/taxonomia/[taxonId]/_components/AdminTaxonFactualCoverage.tsx", import.meta.url),
-        "utf8",
-      );
-      assert.match(componentSource, /release\.coverageFingerprint/);
-      assert.match(componentSource, /Liberar taxon sem IA/);
-      assert.doesNotMatch(componentSource, /reviewedVersion|recordInputCatalogReviewAction|reopenInputCatalogReviewAction/);
     },
   },
   {
@@ -992,9 +909,9 @@ const cases: readonly ValidationCase[] = [
       const draft = validateLandingPageInputCatalogDraft({
         draft: createNextLandingPageInputCatalogDraft(),
         taxons: [
-          { identity: realEstateSegmentTaxon, reviewedVersion: 5 },
-          { identity: realEstateBrokerNicheTaxon, reviewedVersion: 5 },
-          { identity: mediumStandardRealEstateBrokerTaxon, reviewedVersion: 5 },
+          { identity: realEstateSegmentTaxon },
+          { identity: realEstateBrokerNicheTaxon },
+          { identity: mediumStandardRealEstateBrokerTaxon },
         ],
       });
       assert.equal(draft.ok, true);
@@ -1551,16 +1468,11 @@ const cases: readonly ValidationCase[] = [
       );
       assert.ok(token);
       let revalidationCalls = 0;
-      let writeCalls = 0;
       const ports = {
         requireRuntime: async () => ({ ok: false as const, message: "gate-off" }),
         revalidate: async () => {
           revalidationCalls += 1;
           return { ok: true as const };
-        },
-        recordReviewedVersion: async () => {
-          writeCalls += 1;
-          return { ok: true as const, reviewedVersion: 4 };
         },
       };
       const gateOff = await executeInputCatalogEvaluationAdministrativeActionCore(
@@ -1574,7 +1486,6 @@ const cases: readonly ValidationCase[] = [
       );
       assert.equal(gateOff.ok, false);
       assert.equal(revalidationCalls, 0);
-      assert.equal(writeCalls, 0);
 
       const forgedStatus = await executeInputCatalogEvaluationAdministrativeActionCore(
         {
@@ -1587,7 +1498,6 @@ const cases: readonly ValidationCase[] = [
       );
       assert.equal(forgedStatus.ok, false);
       assert.equal(revalidationCalls, 0);
-      assert.equal(writeCalls, 0);
     },
   },
   {
@@ -1681,7 +1591,6 @@ const cases: readonly ValidationCase[] = [
     name: "E20.6.5 server decision rejects inconclusive output before revalidation or write",
     run: async () => {
       let revalidationCalls = 0;
-      let writeCalls = 0;
       const inconclusive: InputCatalogEvaluationOutput = {
         ...validHypothesisEvaluationOutput(),
         status: "inconclusive",
@@ -1694,22 +1603,16 @@ const cases: readonly ValidationCase[] = [
             revalidationCalls += 1;
             return { ok: true };
           },
-          recordReviewedVersion: async () => {
-            writeCalls += 1;
-            return { ok: true, reviewedVersion: 4 };
-          },
         },
       );
       assert.equal(result.ok, false);
       assert.equal(revalidationCalls, 0);
-      assert.equal(writeCalls, 0);
     },
   },
   {
     name: "E20.6.5 factual gap acknowledgement revalidates without writing E20.2",
     run: async () => {
       let revalidationCalls = 0;
-      let writeCalls = 0;
       const result = await executeInputCatalogEvaluationAdministrativeDecision(
         {
           decision: "acknowledge_factual_gap",
@@ -1721,34 +1624,23 @@ const cases: readonly ValidationCase[] = [
             revalidationCalls += 1;
             return { ok: true };
           },
-          recordReviewedVersion: async () => {
-            writeCalls += 1;
-            return { ok: true, reviewedVersion: 4 };
-          },
         },
       );
       assert.equal(result.ok, true);
       if (!result.ok) throw new Error("Expected factual gap acknowledgement");
       assert.equal(result.kind, "factual_gap_acknowledged");
-      assert.equal(result.reviewedVersion, null);
       assert.deepEqual(result.selectedCandidates.map(({ index }) => index), [0]);
       assert.equal(revalidationCalls, 1);
-      assert.equal(writeCalls, 0);
     },
   },
   {
     name: "E20.6.5 human confirmations preserve distinct sufficient and candidate-rejection semantics",
     run: async () => {
       let revalidationCalls = 0;
-      let writeCalls = 0;
       const ports = {
         revalidate: async () => {
           revalidationCalls += 1;
           return { ok: true as const };
-        },
-        recordReviewedVersion: async () => {
-          writeCalls += 1;
-          return { ok: true as const, reviewedVersion: 4 };
         },
       };
       const sufficient = await executeInputCatalogEvaluationAdministrativeDecision(
@@ -1757,7 +1649,7 @@ const cases: readonly ValidationCase[] = [
       );
       assert.equal(sufficient.ok, true);
       if (!sufficient.ok) throw new Error("Expected sufficient confirmation");
-      assert.equal(sufficient.kind, "sufficiency_confirmed");
+      assert.equal(sufficient.kind, "sufficiency_acknowledged");
 
       const rejected = await executeInputCatalogEvaluationAdministrativeDecision(
         {
@@ -1769,25 +1661,18 @@ const cases: readonly ValidationCase[] = [
       );
       assert.equal(rejected.ok, true);
       if (!rejected.ok) throw new Error("Expected candidate rejection and sufficient confirmation");
-      assert.equal(rejected.kind, "candidates_rejected_and_sufficiency_confirmed");
-      assert.equal(rejected.reviewedVersion, 4);
+      assert.equal(rejected.kind, "candidates_rejected");
       assert.equal(revalidationCalls, 2);
-      assert.equal(writeCalls, 2);
     },
   },
   {
     name: "E20.6.5 confirmation decisions reject mismatched status and non-empty candidate selection",
     run: async () => {
       let revalidationCalls = 0;
-      let writeCalls = 0;
       const ports = {
         revalidate: async () => {
           revalidationCalls += 1;
           return { ok: true as const };
-        },
-        recordReviewedVersion: async () => {
-          writeCalls += 1;
-          return { ok: true as const, reviewedVersion: 4 };
         },
       };
       const invalidDecisions = [
@@ -1820,22 +1705,16 @@ const cases: readonly ValidationCase[] = [
       );
       assert.equal(malformedSelection.ok, false);
       assert.equal(revalidationCalls, 0);
-      assert.equal(writeCalls, 0);
     },
   },
   {
     name: "E20.6.5 selected gap indexes are validated before revalidation or write",
     run: async () => {
       let revalidationCalls = 0;
-      let writeCalls = 0;
       const ports = {
         revalidate: async () => {
           revalidationCalls += 1;
           return { ok: true as const };
-        },
-        recordReviewedVersion: async () => {
-          writeCalls += 1;
-          return { ok: true as const, reviewedVersion: 4 };
         },
       };
       for (const selectedCandidateIndexes of [[], [0, 0], [1], [-1]]) {
@@ -1863,7 +1742,6 @@ const cases: readonly ValidationCase[] = [
       );
       assert.equal(nonActionableResult.ok, false);
       assert.equal(revalidationCalls, 0);
-      assert.equal(writeCalls, 0);
     },
   },
   {
@@ -1895,7 +1773,6 @@ const cases: readonly ValidationCase[] = [
         secret,
       );
       assert.ok(token);
-      let writeCalls = 0;
       const result = await executeInputCatalogEvaluationAdministrativeActionCore(
         {
           decision: "acknowledge_factual_gap",
@@ -1907,10 +1784,6 @@ const cases: readonly ValidationCase[] = [
         {
           requireRuntime: async () => ({ ok: true }),
           revalidate: async () => ({ ok: true }),
-          recordReviewedVersion: async () => {
-            writeCalls += 1;
-            return { ok: true, reviewedVersion: 4 };
-          },
         },
       );
       assert.equal(result.ok, true);
@@ -1923,52 +1796,6 @@ const cases: readonly ValidationCase[] = [
       assert.match(result.handoff, /BEGIN_E20_2_APPROVED_GAP_DATA/);
       assert.doesNotMatch(result.handoff, /Segundo candidato não aprovado/);
       assert.match(result.handoff, /Não persistir este handoff/);
-      assert.equal(writeCalls, 0);
-    },
-  },
-  {
-    name: "E20.6.5 legacy record requires explicit rollout gate-off and otherwise writes nothing",
-    run: async () => {
-      let writeCalls = 0;
-      const active = await executeLegacyInputCatalogReviewRecordCore({
-        resolveRuntime: async () => ({ ok: true as const }),
-        record: async () => {
-          writeCalls += 1;
-          return 4;
-        },
-      });
-      assert.equal(active.ok, false);
-      assert.equal(writeCalls, 0);
-
-      const unproven = await executeLegacyInputCatalogReviewRecordCore({
-        resolveRuntime: async () => ({
-          ok: false as const,
-          code: "OPERATIONAL_CONFIGURATION_UNPROVEN" as const,
-          message: "Configuração operacional não comprovada.",
-        }),
-        record: async () => {
-          writeCalls += 1;
-          return 4;
-        },
-      });
-      assert.equal(unproven.ok, false);
-      if (unproven.ok) throw new Error("Expected unproven operational configuration rejection");
-      assert.match(unproven.message, /não comprovada/);
-      assert.equal(writeCalls, 0);
-
-      const gateOff = await executeLegacyInputCatalogReviewRecordCore({
-        resolveRuntime: async () => ({
-          ok: false as const,
-          code: "ROLLOUT_GATE_OFF" as const,
-          message: "Gate de rollout desligado.",
-        }),
-        record: async () => {
-          writeCalls += 1;
-          return 4;
-        },
-      });
-      assert.equal(gateOff.ok, true);
-      assert.equal(writeCalls, 1);
     },
   },
   {
@@ -1989,8 +1816,8 @@ const cases: readonly ValidationCase[] = [
       assert.match(componentSource, /hypothesis/);
       assert.match(componentSource, /Resultado desatualizado/);
       assert.match(componentSource, /Ação humana separada/);
-      assert.match(componentSource, /Checkpoint de integração final/);
-      assert.match(componentSource, /Gate pré-publicação/);
+      assert.match(componentSource, /Apoio opcional por IA/);
+      assert.doesNotMatch(componentSource, /Gate pré-publicação|draftMode/);
       assert.match(componentSource, /Reavaliar com feedback/);
       assert.match(componentSource, /input-catalog-evaluation-feedback/);
       assert.match(componentSource, /input-catalog-evaluation-version/);
@@ -1998,7 +1825,7 @@ const cases: readonly ValidationCase[] = [
         componentSource,
         /parsedInputCatalogVersion !== currentInputCatalogVersion/,
       );
-      assert.match(componentSource, /A avaliação publicada está fixada na versão corrente/);
+      assert.match(componentSource, /A avaliação está fixada na versão factual corrente/);
       assert.match(componentSource, /Reconhecer este candidato como gap factual real/);
       assert.match(componentSource, /Rejeitar todos os candidatos e confirmar N como suficiente/);
       assert.match(componentSource, /Limpe a seleção para rejeitar todos/);
@@ -2042,7 +1869,7 @@ const cases: readonly ValidationCase[] = [
       assert.match(pageSource, /releaseAction={releaseTaxonAction}/);
       assert.doesNotMatch(pageSource, /legacyMode=|inputCatalogReviewEnabled=|review={taxon\.inputCatalogReview}/);
       assert.match(pageSource, /A liberação humana sem IA acima permanece disponível/);
-      assert.match(pageSource, /catalogDraftRevision/);
+      assert.doesNotMatch(pageSource, /catalogDraftRevision/);
 
       const actionSource = readFileSync(
         new URL(
@@ -2063,10 +1890,10 @@ const cases: readonly ValidationCase[] = [
       assert.match(actionSource, /contextFingerprint/);
       assert.match(actionSource, /decisionToken/);
       assert.match(actionSource, /executeInputCatalogEvaluationAdministrativeActionCore/);
-      assert.match(actionSource, /recordAdminInputCatalogReview/);
+      assert.doesNotMatch(actionSource, /recordInputCatalogReviewAction|reopenInputCatalogReviewAction|recordAdminInputCatalogReview|reopenAdminInputCatalogReview/);
       assert.doesNotMatch(actionSource, /executeLegacyInputCatalogReviewRecordCore/);
       assert.match(actionSource, /reject_candidates_and_confirm_sufficient/);
-      assert.match(actionSource, /recordAdminInputCatalogDraftSufficiencyDecision/);
+      assert.doesNotMatch(actionSource, /recordAdminInputCatalogDraftSufficiencyDecision/);
       assert.match(actionSource, /feedback,/);
       assert.doesNotMatch(actionSource, /loadTaxonPreparationForReviewedVersion/);
       const administrativeActionCore = readFileSync(
@@ -2078,6 +1905,8 @@ const cases: readonly ValidationCase[] = [
       const administrativeUseCase = administrativeActionCore.lastIndexOf("await executeInputCatalogEvaluationAdministrativeDecision");
       assert.ok(administrativeGate >= 0 && administrativeGate < evidenceRead);
       assert.ok(evidenceRead < administrativeUseCase);
+      assert.doesNotMatch(administrativeActionCore, /recordReviewedVersion|reviewed_input_catalog_version/);
+      assert.doesNotMatch(administrativeActionCore, /executeLegacyInputCatalogReviewRecordCore/);
 
       const contextAdapterSource = readFileSync(
         new URL("../../adapters/inputCatalogEvaluationContextAdapter.ts", import.meta.url),
@@ -2200,7 +2029,6 @@ const cases: readonly ValidationCase[] = [
       );
       assert.ok(token);
       let revalidations = 0;
-      let writes = 0;
       const result = await executeInputCatalogEvaluationAdministrativeActionCore(
         {
           decision: "acknowledge_factual_gap",
@@ -2219,10 +2047,6 @@ const cases: readonly ValidationCase[] = [
             revalidations += 1;
             return { ok: true };
           },
-          recordReviewedVersion: async () => {
-            writes += 1;
-            return { ok: true, reviewedVersion: 4 };
-          },
         },
       );
       assert.equal(result.ok, true);
@@ -2232,7 +2056,6 @@ const cases: readonly ValidationCase[] = [
       assert.match(result.handoff, /credencial profissional/);
       assert.match(result.handoff, /human_hypothesis/);
       assert.equal(revalidations, 1);
-      assert.equal(writes, 0);
     },
   },
   {

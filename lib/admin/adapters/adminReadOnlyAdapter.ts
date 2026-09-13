@@ -9,8 +9,6 @@ export {
   listAdminTaxonParentOptions,
   listAdminTaxons,
   selectAdminEndCustomerResearchVersion,
-  recordAdminInputCatalogReview,
-  reopenAdminInputCatalogReview,
   updateAdminTaxon,
 } from "./adminTaxonomyAdapter";
 export {

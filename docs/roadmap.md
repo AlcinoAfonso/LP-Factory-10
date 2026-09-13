@@ -1155,6 +1155,7 @@
     - `lib/admin/adapters/adminReadOnlyHelpers.ts`
     - `lib/admin/adapters/adminReadOnlyTypes.ts`
     - `lib/admin/adapters/adminTaxonomyAdapter.ts`
+    - `lib/admin/adapters/adminTaxonomyReviewPolicy.ts`
     - `lib/admin/docsCatalog.ts`
     - `lib/admin/readRepoDoc.ts`
   - Ajustados:
@@ -1922,7 +1923,7 @@
 
 20.6.1 Objetivo e status
 - Objetivo: liberar taxon novo por decisão humana sobre a cobertura factual corrente e permitir revisão voluntária de taxon ativo, com apoio opcional por IA e sem gate de versão por taxon.
-- Status: substituição funcional e técnica em execução; a liberação factual humana de taxon novo está concluída no repositório, enquanto apoio opcional, provider, revisão voluntária e fechamento integrado permanecem em implementação.
+- Status: substituição funcional e técnica em execução; a liberação factual humana e o apoio opcional com decisão transitória estão concluídos no repositório, enquanto provider, revisão voluntária e fechamento integrado permanecem em implementação.
 
 20.6.2 Registros do recorte
 - Banco:
@@ -1958,13 +1959,22 @@
   - Ajustados:
     - `app/admin/(protected)/taxonomia/[taxonId]/page.tsx`
     - `app/admin/(protected)/taxonomia/actions.ts`
+    - `app/admin/(protected)/estrutura-lp/_components/AdminInputCatalogLifecycle.tsx`
+    - `app/admin/(protected)/estrutura-lp/actions.ts`
+    - `app/admin/(protected)/estrutura-lp/lifecycle-e20-validation-cases.ts`
     - `app/admin/(protected)/estrutura-lp/validation-cases.ts`
     - `components/admin/AdminTaxonManageForm.tsx`
     - `lib/admin/adapters/adminReadOnlyAdapter.ts`
     - `lib/admin/adapters/adminReadOnlyTypes.ts`
     - `lib/admin/adapters/adminTaxonomyAdapter.ts`
+    - `lib/admin/adapters/adminInputCatalogLifecycleAdapter.ts`
+    - `lib/admin/adapters/adminInputCatalogLifecycleContext.ts`
+    - `lib/admin/adapters/adminInputCatalogLifecycleValidation.ts`
+    - `lib/conversion-content/adapters/inputCatalogEvaluationAdministrativeActionCore.ts`
     - `lib/conversion-content/adapters/selectedEndCustomerResearchAdapter.ts`
+    - `lib/conversion-content/landing-page/input-catalog/draft.ts`
     - `lib/conversion-content/landing-page/taxon-preparation/contracts.ts`
+    - `lib/conversion-content/landing-page/taxon-preparation/input-catalog-evaluation-decision.ts`
     - `lib/conversion-content/landing-page/taxon-preparation/validation-cases.ts`
     - `lib/conversion-content/landing-page/input-catalog/contracts.ts`
     - `lib/conversion-content/landing-page/input-catalog/index.ts`
@@ -1986,12 +1996,15 @@
   - a decisão relê taxon, cadeia e versão corrente e falha com segurança diante de drift, conflito ou concorrência.
 
 20.6.4 Apoio opcional e decisão humana
-- Status: planejado.
+- Status: concluída no repositório; o QA hospedado integra o fechamento da 20.6.7.
 - Conteúdo:
   - somente ação explícita de `platform_admin` solicita sugestões de lacunas;
   - o humano pode aceitar nenhum, alguns ou todos os candidatos e incluir candidato próprio;
   - candidato aceito forma somente handoff transitório para o lifecycle E20.2 e não publica field, altera taxon ou cria estado E20.6;
-  - falha ou indisponibilidade da IA não bloqueia a liberação humana nem altera estado válido.
+  - rejeição, confirmação sem mudança, falha ou indisponibilidade da IA não gravam marker e não bloqueiam a liberação humana;
+  - o lifecycle E20.2 valida cobertura comum e plan-neutral, rejeita camada sem taxonomia correspondente e mudança de residência, resolve internamente a autorização ultra-niche e mostra antes da decisão o diff exato de atributos, valores e alcance ancestral por field;
+  - salvar e confirmar são etapas separadas; confirmação de mesmo fato é vinculada à revisão e aos fingerprints de conteúdo e contexto taxonômico exibidos, falha se conteúdo ou alcance ficar obsoleto, e as ações atuais de registrar ou reabrir versão revisada foram removidas;
+  - reconciliação pós-deploy encerra somente o draft comprovado, sem gravar `reviewed_input_catalog_version` nem alterar `business_taxons.is_active`.
 
 20.6.5 Provider, fontes e output
 - Status: planejado.

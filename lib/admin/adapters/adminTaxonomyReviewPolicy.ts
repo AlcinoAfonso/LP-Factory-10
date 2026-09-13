@@ -1,14 +1,3 @@
-export type InputCatalogReviewBaseline = Readonly<{
-  taxonName: string;
-  taxonSlug: string;
-  taxonLevel: "segment" | "niche" | "ultra_niche";
-  parentTaxonId: string | null;
-  selectedResearchVersion: number | null;
-  reviewedVersion: number | null;
-  isActive: boolean;
-  chainFingerprint: string;
-}>;
-
 export function planEndCustomerResearchSelectionMutation(input: {
   currentVersion: number | null;
   nextVersion: number;
@@ -58,41 +47,4 @@ export function collectAffectedReviewedTaxonIds(
   return rows
     .filter((row) => affected.has(row.id) && row.reviewedVersion !== null)
     .map((row) => row.id);
-}
-
-export function sameInputCatalogReviewBaseline(
-  left: InputCatalogReviewBaseline,
-  right: InputCatalogReviewBaseline,
-): boolean {
-  return (
-    left.taxonName === right.taxonName &&
-    left.taxonSlug === right.taxonSlug &&
-    left.taxonLevel === right.taxonLevel &&
-    left.parentTaxonId === right.parentTaxonId &&
-    left.selectedResearchVersion === right.selectedResearchVersion &&
-    left.reviewedVersion === right.reviewedVersion &&
-    left.isActive === right.isActive &&
-    left.chainFingerprint === right.chainFingerprint
-  );
-}
-
-export type InputCatalogReviewPresentation = Readonly<{
-  reviewedVersion: number | null;
-  lastAction: "record" | "reopen" | null;
-}>;
-
-export function nextInputCatalogReviewActionRevision(current: number): number {
-  return current + 1;
-}
-
-export function applyInputCatalogReviewPresentation(
-  _current: InputCatalogReviewPresentation,
-  event: Readonly<
-    | { type: "record"; reviewedVersion: number }
-    | { type: "reopen" }
-  >,
-): InputCatalogReviewPresentation {
-  return event.type === "record"
-    ? { reviewedVersion: event.reviewedVersion, lastAction: "record" }
-    : { reviewedVersion: null, lastAction: "reopen" };
 }

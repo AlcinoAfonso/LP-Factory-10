@@ -11,8 +11,6 @@ import { createInputCatalogLifecycleProof } from "./adminInputCatalogLifecycleVa
 type ServiceClient = ReturnType<typeof createServiceClient>;
 export type LifecycleTaxon = Readonly<{
   identity: LandingPageInputCatalogTaxonIdentity;
-  reviewedVersion: number | null;
-  selectedResearchVersion: number | null;
 }>;
 export type LifecycleContext = Readonly<{
   taxons: readonly LifecycleTaxon[];
@@ -34,7 +32,7 @@ export async function readCompleteLifecycleContext(
     readPage: async (offset, limit) => {
       try {
         const { data, error, count } = await client.from("business_taxons")
-          .select("id,parent_id,level,name,slug,is_active,selected_end_customer_research_version,reviewed_input_catalog_version", { count: "exact" })
+          .select("id,parent_id,level,name,slug,is_active", { count: "exact" })
           .in("level", ["segment", "niche", "ultra_niche"])
           .order("id", { ascending: true })
           .range(offset, offset + limit - 1);
@@ -72,8 +70,6 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function normalizeTaxon(value: unknown): Readonly<{
   identity: LandingPageInputCatalogTaxonIdentity;
-  reviewedVersion: number | null;
-  selectedResearchVersion: number | null;
 }> | null {
   if (!isRecord(value)) return null;
   if (
@@ -82,13 +78,7 @@ function normalizeTaxon(value: unknown): Readonly<{
     (value.level !== "segment" && value.level !== "niche" && value.level !== "ultra_niche") ||
     typeof value.name !== "string" ||
     typeof value.slug !== "string" ||
-    typeof value.is_active !== "boolean" ||
-    (value.selected_end_customer_research_version !== null &&
-      (!Number.isSafeInteger(value.selected_end_customer_research_version) ||
-        Number(value.selected_end_customer_research_version) <= 0)) ||
-    (value.reviewed_input_catalog_version !== null &&
-      (!Number.isSafeInteger(value.reviewed_input_catalog_version) ||
-        Number(value.reviewed_input_catalog_version) <= 0))
+    typeof value.is_active !== "boolean"
   ) return null;
   return {
     identity: {
@@ -99,8 +89,5 @@ function normalizeTaxon(value: unknown): Readonly<{
       slug: value.slug,
       isActive: value.is_active,
     },
-    reviewedVersion: value.reviewed_input_catalog_version as number | null,
-    selectedResearchVersion:
-      value.selected_end_customer_research_version as number | null,
   };
 }

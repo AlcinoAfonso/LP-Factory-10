@@ -25,11 +25,6 @@ import {
   type InputCatalogEvaluationOutput,
   type InputCatalogEvaluationProviderProvenance,
 } from "@/conversion-content/landing-page/taxon-preparation";
-import { nextInputCatalogReviewActionRevision } from "@/lib/admin/adapters/adminTaxonomyReviewPolicy";
-import {
-  loadAdminInputCatalogDraftEvaluationContext,
-  recordAdminInputCatalogDraftSufficiencyDecision,
-} from "@/lib/admin/adapters/adminInputCatalogLifecycleAdapter";
 import {
   addAdminTaxonAlias,
   createAdminTaxon,
@@ -37,8 +32,6 @@ import {
   deleteAdminTaxonAlias,
   releaseAdminTaxon,
   selectAdminEndCustomerResearchVersion,
-  recordAdminInputCatalogReview,
-  reopenAdminInputCatalogReview,
   updateAdminTaxon,
 } from "@/lib/admin/adapters/adminReadOnlyAdapter";
 
@@ -61,18 +54,8 @@ export type SelectEndCustomerResearchActionState = {
   selectedVersion: number | null;
 };
 
-export type InputCatalogReviewActionState = {
-  error: string | null;
-  reviewedVersion: number | null;
-  reopened: boolean;
-  revision: number;
-};
-
 export type InputCatalogEvaluationReference = Readonly<{
   decisionToken: string;
-  source?: "published" | "draft";
-  draftRevision?: number;
-  draftContentFingerprint?: string;
 }>;
 
 export type InputCatalogEvaluationActionResult =
@@ -85,14 +68,13 @@ export type InputCatalogEvaluationActionResult =
   | Readonly<{ ok: false; code: string; message: string }>;
 
 export type ConfirmInputCatalogEvaluationActionResult =
-  | Readonly<{ ok: true; kind: "sufficiency_confirmed"; reviewedVersion: number }>
+  | Readonly<{ ok: true; kind: "sufficiency_acknowledged" }>
   | Readonly<{ ok: false; stale: boolean; message: string }>;
 
 export type RejectInputCatalogCandidatesActionResult =
   | Readonly<{
       ok: true;
-      kind: "candidates_rejected_and_sufficiency_confirmed";
-      reviewedVersion: number;
+      kind: "candidates_rejected";
     }>
   | Readonly<{ ok: false; stale: boolean; message: string }>;
 
@@ -110,18 +92,13 @@ export async function evaluateInputCatalogAction(input: Readonly<{
     previousOutput: InputCatalogEvaluationOutput;
     reference: InputCatalogEvaluationReference;
   }> | null;
-  draftRevision?: number;
 }>): Promise<InputCatalogEvaluationActionResult> {
   const gate = await requirePlatformAdmin();
   if (!gate.allowed) {
     return { ok: false, code: "UNAUTHORIZED", message: "Acesso administrativo não autorizado." };
   }
 
-  const source = input.draftRevision === undefined ? "published" : "draft";
-  if (
-    source === "published" &&
-    input.inputCatalogVersion !== CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION
-  ) {
+  if (input.inputCatalogVersion !== CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION) {
     return {
       ok: false,
       code: "INVALID_INPUT_CATALOG_VERSION",
@@ -134,29 +111,7 @@ export async function evaluateInputCatalogAction(input: Readonly<{
     return { ok: false, code: runtime.code, message: runtime.message };
   }
 
-  let draftContentFingerprint: string | undefined;
-  const reconstructContext: typeof reconstructCanonicalInputCatalogEvaluationContext =
-    source === "published"
-      ? reconstructCanonicalInputCatalogEvaluationContext
-      : async (reconstructionInput) => {
-          const draft = await loadAdminInputCatalogDraftEvaluationContext({
-            expectedRevision: input.draftRevision as number,
-            taxonId: reconstructionInput.taxonId,
-          });
-          if (!draft.ok || draft.value.targetVersion !== reconstructionInput.inputCatalogVersion) {
-            return {
-              ok: false as const,
-              error: {
-                code: "CONTEXT_IDENTITY_INVALID" as const,
-                message: draft.ok
-                  ? "A versão solicitada não corresponde ao draft atual."
-                  : draft.message,
-              },
-            };
-          }
-          draftContentFingerprint = draft.value.contentFingerprint;
-          return { ok: true as const, value: draft.value.context };
-        };
+  const reconstructContext = reconstructCanonicalInputCatalogEvaluationContext;
 
   let feedback: Parameters<typeof coordinateInputCatalogEvaluation>[0]["feedback"] = null;
   if (input.feedback) {
@@ -168,8 +123,6 @@ export async function evaluateInputCatalogAction(input: Readonly<{
       !previousEvidence ||
       previousEvidence.taxonId !== input.taxonId ||
       previousEvidence.inputCatalogVersion !== input.inputCatalogVersion ||
-      (input.feedback.reference.source ?? "published") !== source ||
-      (source === "draft" && input.feedback.reference.draftRevision !== input.draftRevision) ||
       previousEvidence.status !== input.feedback.previousOutput.status ||
       fingerprintInputCatalogEvaluationOutput(input.feedback.previousOutput) !==
         previousEvidence.outputFingerprint
@@ -260,13 +213,6 @@ export async function evaluateInputCatalogAction(input: Readonly<{
     provenance: result.value.provenance,
     reference: {
       decisionToken,
-      source,
-      ...(source === "draft"
-        ? {
-            draftRevision: input.draftRevision,
-            draftContentFingerprint,
-          }
-        : {}),
     },
   };
 }
@@ -281,17 +227,10 @@ export async function confirmInputCatalogEvaluationAction(input: Readonly<{
     output: input.output,
   });
   if (!result.ok) return result;
-  if (result.kind !== "sufficiency_confirmed") {
+  if (result.kind !== "sufficiency_acknowledged") {
     return { ok: false, stale: false, message: "A confirmação não produziu a decisão esperada." };
   }
-  const evidence = readInputCatalogEvaluationDecisionToken(
-    input.reference.decisionToken,
-    process.env.OPENAI_API_KEY,
-  );
-  if (!evidence) return { ok: false, stale: false, message: "A evidência da avaliação é inválida." };
-  revalidatePath("/admin/taxonomia");
-  revalidatePath(`/admin/taxonomia/${evidence.taxonId}`);
-  return { ok: true, kind: result.kind, reviewedVersion: result.reviewedVersion };
+  return { ok: true, kind: result.kind };
 }
 
 export async function rejectInputCatalogCandidatesAndConfirmSufficientAction(input: Readonly<{
@@ -306,17 +245,10 @@ export async function rejectInputCatalogCandidatesAndConfirmSufficientAction(inp
     selectedCandidateIndexes: input.selectedCandidateIndexes,
   });
   if (!result.ok) return result;
-  if (result.kind !== "candidates_rejected_and_sufficiency_confirmed") {
+  if (result.kind !== "candidates_rejected") {
     return { ok: false, stale: false, message: "A rejeição dos candidatos não produziu a decisão esperada." };
   }
-  const evidence = readInputCatalogEvaluationDecisionToken(
-    input.reference.decisionToken,
-    process.env.OPENAI_API_KEY,
-  );
-  if (!evidence) return { ok: false, stale: false, message: "A evidência da avaliação é inválida." };
-  revalidatePath("/admin/taxonomia");
-  revalidatePath(`/admin/taxonomia/${evidence.taxonId}`);
-  return { ok: true, kind: result.kind, reviewedVersion: result.reviewedVersion };
+  return { ok: true, kind: result.kind };
 }
 
 export async function acknowledgeInputCatalogGapAction(input: Readonly<{
@@ -362,75 +294,6 @@ async function executeAdministrativeEvaluationDecision(input: Readonly<{
   if (!gate.allowed) {
     return { ok: false as const, stale: false, message: "Acesso administrativo não autorizado." };
   }
-  if ((input.reference.source ?? "published") === "draft") {
-    const expectedRevision = input.reference.draftRevision;
-    const expectedContentFingerprint = input.reference.draftContentFingerprint;
-    if (
-      !Number.isSafeInteger(expectedRevision) ||
-      Number(expectedRevision) <= 0 ||
-      typeof expectedContentFingerprint !== "string"
-    ) {
-      return { ok: false as const, stale: true, message: "A referência do draft é inválida." };
-    }
-    const result = await executeInputCatalogEvaluationAdministrativeActionCore(
-      {
-        decision: input.decision,
-        decisionToken: input.reference.decisionToken,
-        decisionTokenSecret: process.env.OPENAI_API_KEY,
-        output: input.output,
-        selectedCandidateIndexes: input.selectedCandidateIndexes,
-        humanCandidate: input.humanCandidate,
-      },
-      {
-        requireRuntime: async () => {
-          const runtime = await resolveInputCatalogEvaluationRuntimeReadiness();
-          return runtime.ok
-            ? { ok: true as const }
-            : { ok: false as const, message: runtime.message };
-        },
-        revalidate: async (evidence) => {
-          const draft = await loadAdminInputCatalogDraftEvaluationContext({
-            expectedRevision: Number(expectedRevision),
-            taxonId: evidence.taxonId,
-          });
-          if (
-            !draft.ok ||
-            draft.value.targetVersion !== evidence.inputCatalogVersion ||
-            draft.value.contentFingerprint !== expectedContentFingerprint ||
-            fingerprintInputCatalogEvaluationContextIdentity(draft.value.context.identity) !==
-              evidence.contextFingerprint
-          ) {
-            return {
-              ok: false as const,
-              message: draft.ok
-                ? "O draft ou suas fontes mudaram desde a avaliação."
-                : draft.message,
-            };
-          }
-          return { ok: true as const };
-        },
-        recordReviewedVersion: async (evidence) => {
-          if (input.decision === "acknowledge_factual_gap") {
-            return { ok: false as const, message: "Reconhecimento de gap não registra suficiência." };
-          }
-          const recorded = await recordAdminInputCatalogDraftSufficiencyDecision({
-            actorUserId: gate.actorUserId,
-            expectedRevision: Number(expectedRevision),
-            taxonId: evidence.taxonId,
-            expectedContentFingerprint,
-            expectedContextFingerprint: evidence.contextFingerprint,
-            decision: input.decision,
-          });
-          if (!recorded.ok) return recorded;
-          return { ok: true as const, reviewedVersion: evidence.inputCatalogVersion };
-        },
-      },
-    );
-    if (result.ok && result.kind !== "factual_gap_acknowledged") {
-      revalidatePath("/admin/estrutura-lp");
-    }
-    return result;
-  }
   return executeInputCatalogEvaluationAdministrativeActionCore(
     {
       decision: input.decision,
@@ -474,17 +337,6 @@ async function executeAdministrativeEvaluationDecision(input: Readonly<{
           };
         }
         return { ok: true as const };
-      },
-      recordReviewedVersion: async (evidence) => {
-        const recorded = await recordAdminInputCatalogReview({
-          taxonId: evidence.taxonId,
-          inputCatalogVersion: evidence.inputCatalogVersion,
-        });
-        if (!recorded.ok) return { ok: false as const, message: recorded.error };
-        if (recorded.reviewedVersion === null) {
-          return { ok: false as const, message: "A versão E20.2 não foi preservada pela confirmação." };
-        }
-        return { ok: true as const, reviewedVersion: recorded.reviewedVersion };
       },
     },
   );
@@ -586,43 +438,6 @@ export async function selectEndCustomerResearchAction(
   revalidatePath("/admin/taxonomia");
   revalidatePath(`/admin/taxonomia/${result.taxonId}`);
   return { error: null, selectedVersion: result.selectedVersion };
-}
-
-export async function recordInputCatalogReviewAction(
-  previousState: InputCatalogReviewActionState,
-  formData: FormData,
-): Promise<InputCatalogReviewActionState> {
-  const revision = nextInputCatalogReviewActionRevision(previousState.revision);
-  const gate = await requirePlatformAdmin();
-  if (!gate.allowed) {
-    return { error: "Acesso administrativo não autorizado.", reviewedVersion: null, reopened: false, revision };
-  }
-  const result = await recordAdminInputCatalogReview({
-    taxonId: String(formData.get("taxonId") ?? ""),
-    inputCatalogVersion: Number(formData.get("inputCatalogVersion")),
-  });
-  if (!result.ok) return { error: result.error, reviewedVersion: null, reopened: false, revision };
-  revalidatePath("/admin/taxonomia");
-  revalidatePath(`/admin/taxonomia/${result.taxonId}`);
-  return { error: null, reviewedVersion: result.reviewedVersion, reopened: false, revision };
-}
-
-export async function reopenInputCatalogReviewAction(
-  previousState: InputCatalogReviewActionState,
-  formData: FormData,
-): Promise<InputCatalogReviewActionState> {
-  const revision = nextInputCatalogReviewActionRevision(previousState.revision);
-  const gate = await requirePlatformAdmin();
-  if (!gate.allowed) {
-    return { error: "Acesso administrativo não autorizado.", reviewedVersion: null, reopened: false, revision };
-  }
-  const result = await reopenAdminInputCatalogReview({
-    taxonId: String(formData.get("taxonId") ?? ""),
-  });
-  if (!result.ok) return { error: result.error, reviewedVersion: null, reopened: false, revision };
-  revalidatePath("/admin/taxonomia");
-  revalidatePath(`/admin/taxonomia/${result.taxonId}`);
-  return { error: null, reviewedVersion: null, reopened: true, revision };
 }
 
 export async function addTaxonAliasAction(

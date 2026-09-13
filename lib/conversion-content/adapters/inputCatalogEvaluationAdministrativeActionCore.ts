@@ -26,9 +26,6 @@ export async function executeInputCatalogEvaluationAdministrativeActionCore(
     revalidate: (
       evidence: InputCatalogEvaluationDecisionTokenPayload,
     ) => Promise<Readonly<{ ok: true }> | Readonly<{ ok: false; message: string }>>;
-    recordReviewedVersion: (
-      evidence: InputCatalogEvaluationDecisionTokenPayload,
-    ) => Promise<Readonly<{ ok: true; reviewedVersion: number }> | Readonly<{ ok: false; message: string }>>;
   }>,
 ): Promise<InputCatalogEvaluationAdministrativeDecisionResult> {
   const runtime = await ports.requireRuntime();
@@ -66,7 +63,6 @@ export async function executeInputCatalogEvaluationAdministrativeActionCore(
     return Object.freeze({
       ok: true as const,
       kind: "factual_gap_acknowledged" as const,
-      reviewedVersion: null,
       selectedCandidates: Object.freeze([Object.freeze({ index: -1, candidate: humanCandidate })]),
       handoff: buildInputCatalogEvaluationGapHandoff({
         taxonId: evidence.taxonId,
@@ -84,7 +80,6 @@ export async function executeInputCatalogEvaluationAdministrativeActionCore(
     },
     {
       revalidate: () => ports.revalidate(evidence),
-      recordReviewedVersion: () => ports.recordReviewedVersion(evidence),
     },
   );
   if (!result.ok || result.kind !== "factual_gap_acknowledged") return result;
@@ -131,32 +126,6 @@ function normalizeHumanCandidate(
     suggestedTaxonomyLayer: input.suggestedTaxonomyLayer,
     uncertainties: Object.freeze(["Candidato humano ainda não validado pelo lifecycle E20.2."]),
   });
-}
-
-export async function executeLegacyInputCatalogReviewRecordCore<T>(
-  ports: Readonly<{
-    resolveRuntime: () => Promise<
-      | Readonly<{ ok: true }>
-      | Readonly<{
-          ok: false;
-          code: "ROLLOUT_GATE_OFF" | "OPERATIONAL_CONFIGURATION_UNPROVEN";
-          message: string;
-        }>
-    >;
-    record: () => Promise<T>;
-  }>,
-): Promise<Readonly<{ ok: true; value: T }> | Readonly<{ ok: false; message: string }>> {
-  const runtime = await ports.resolveRuntime();
-  if (runtime.ok) {
-    return Object.freeze({
-      ok: false,
-      message: "O runtime E20.6.5 está ativo; use uma decisão autenticada da avaliação factual.",
-    });
-  }
-  if (runtime.code !== "ROLLOUT_GATE_OFF") {
-    return Object.freeze({ ok: false, message: runtime.message });
-  }
-  return Object.freeze({ ok: true, value: await ports.record() });
 }
 
 function blocked(message: string): Extract<InputCatalogEvaluationAdministrativeDecisionResult, { ok: false }> {

@@ -12,18 +12,15 @@ export type InputCatalogEvaluationAdministrativeDecision =
 export type InputCatalogEvaluationAdministrativeDecisionResult =
   | Readonly<{
       ok: true;
-      kind: "sufficiency_confirmed";
-      reviewedVersion: number;
+      kind: "sufficiency_acknowledged";
     }>
   | Readonly<{
       ok: true;
-      kind: "candidates_rejected_and_sufficiency_confirmed";
-      reviewedVersion: number;
+      kind: "candidates_rejected";
     }>
   | Readonly<{
       ok: true;
       kind: "factual_gap_acknowledged";
-      reviewedVersion: null;
       selectedCandidates: readonly Readonly<{
         index: number;
         candidate: InputCatalogEvaluationCandidate;
@@ -33,7 +30,7 @@ export type InputCatalogEvaluationAdministrativeDecisionResult =
   | Readonly<{
       ok: false;
       stale: boolean;
-      code: "OUTPUT_INVALID" | "DECISION_NOT_ALLOWED" | "CONTEXT_STALE" | "RECORD_FAILED";
+      code: "OUTPUT_INVALID" | "DECISION_NOT_ALLOWED" | "CONTEXT_STALE";
       message: string;
     }>;
 
@@ -45,10 +42,6 @@ export async function executeInputCatalogEvaluationAdministrativeDecision(
   }>,
   ports: Readonly<{
     revalidate: () => Promise<Readonly<{ ok: true }> | Readonly<{ ok: false; message: string }>>;
-    recordReviewedVersion: () => Promise<
-      | Readonly<{ ok: true; reviewedVersion: number }>
-      | Readonly<{ ok: false; message: string }>
-    >;
   }>,
 ): Promise<InputCatalogEvaluationAdministrativeDecisionResult> {
   const parsed = parseInputCatalogEvaluationOutput(input.output);
@@ -98,21 +91,15 @@ export async function executeInputCatalogEvaluationAdministrativeDecision(
     return Object.freeze({
       ok: true,
       kind: "factual_gap_acknowledged",
-      reviewedVersion: null,
       selectedCandidates: Object.freeze(selectedCandidates ?? []),
     });
   }
 
-  const recorded = await ports.recordReviewedVersion();
-  if (!recorded.ok) {
-    return failure("RECORD_FAILED", true, recorded.message);
-  }
   return Object.freeze({
     ok: true,
     kind: input.decision === "reject_candidates_and_confirm_sufficient"
-      ? "candidates_rejected_and_sufficiency_confirmed"
-      : "sufficiency_confirmed",
-    reviewedVersion: recorded.reviewedVersion,
+      ? "candidates_rejected"
+      : "sufficiency_acknowledged",
   });
 }
 
