@@ -36,6 +36,7 @@ import {
   readAdminCommercialActivationOverview,
   type AdminCommercialActivationListItem,
 } from "./adminCommercialActivationTemplatesAdapter";
+import { readAdminTaxonFactualRelease } from "./adminTaxonFactualReleaseAdapter";
 import {
   collectAffectedReviewedTaxonIds,
   planEndCustomerResearchSelectionMutation,
@@ -171,6 +172,7 @@ export async function getAdminTaxonDetail(taxonId: string): Promise<AdminTaxonDe
     marketResearch,
     diagnostics,
     endCustomerResearchSelection,
+    factualRelease,
     inputCatalogReview,
   ] = await Promise.all([
     supabase.from("business_taxon_aliases").select("id,alias_text,is_active").eq("taxon_id", taxonId).order("alias_text", { ascending: true }).limit(100),
@@ -189,6 +191,7 @@ export async function getAdminTaxonDetail(taxonId: string): Promise<AdminTaxonDe
       ),
     ]),
     readAdminEndCustomerResearchSelection(supabase, taxonId),
+    readAdminTaxonFactualRelease(taxonId),
     readAdminInputCatalogReview(supabase, taxonId),
   ]);
 
@@ -220,6 +223,7 @@ export async function getAdminTaxonDetail(taxonId: string): Promise<AdminTaxonDe
     deleteBlockers,
     canDelete: deleteBlockers.length === 0,
     endCustomerResearchSelection,
+    factualRelease,
     inputCatalogReview,
   };
 }
@@ -538,7 +542,7 @@ export async function updateAdminTaxon(input: UpdateAdminTaxonInput): Promise<Ad
     .maybeSingle();
   const current = currentData as any;
   if (currentError || !current) return { ok: false, error: "Taxon nao encontrado." };
-  if (reviewEnabled && !current.is_active && input.isActive) {
+  if (!current.is_active && input.isActive) {
     return {
       ok: false,
       error: "Use a liberação E20.6 para ativar um taxon novo após revisar a cobertura herdada.",

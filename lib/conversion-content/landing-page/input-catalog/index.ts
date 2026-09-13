@@ -1,4 +1,5 @@
 export * from "./contracts";
+export { resolveCurrentLandingPageInputCatalog } from "./current-resolver";
 export * from "./draft";
 export * from "./lifecycle";
 export * from "./offering-scope";

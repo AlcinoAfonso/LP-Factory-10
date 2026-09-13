@@ -35,6 +35,7 @@ import {
   createAdminTaxon,
   deleteAdminTaxon,
   deleteAdminTaxonAlias,
+  releaseAdminTaxon,
   selectAdminEndCustomerResearchVersion,
   recordAdminInputCatalogReview,
   reopenAdminInputCatalogReview,
@@ -47,6 +48,12 @@ export type CreateTaxonActionState = {
 
 export type ManageTaxonActionState = {
   error: string | null;
+};
+
+export type ReleaseTaxonActionState = {
+  error: string | null;
+  released: boolean;
+  revision: number;
 };
 
 export type SelectEndCustomerResearchActionState = {
@@ -530,6 +537,33 @@ export async function updateTaxonAction(
   revalidatePath("/admin/taxonomia");
   revalidatePath(`/admin/taxonomia/${result.taxonId}`);
   return { error: null };
+}
+
+export async function releaseTaxonAction(
+  previousState: ReleaseTaxonActionState,
+  formData: FormData,
+): Promise<ReleaseTaxonActionState> {
+  const revision = previousState.revision + 1;
+  const gate = await requirePlatformAdmin();
+  if (!gate.allowed) {
+    return {
+      error: "Acesso administrativo não autorizado.",
+      released: false,
+      revision,
+    };
+  }
+
+  const result = await releaseAdminTaxon({
+    taxonId: String(formData.get("taxonId") ?? ""),
+    coverageFingerprint: String(formData.get("coverageFingerprint") ?? ""),
+  });
+  if (!result.ok) {
+    return { error: result.error, released: false, revision };
+  }
+
+  revalidatePath("/admin/taxonomia");
+  revalidatePath(`/admin/taxonomia/${result.taxonId}`);
+  return { error: null, released: true, revision };
 }
 
 export async function selectEndCustomerResearchAction(

@@ -7,6 +7,7 @@ import type {
   LandingPageInputCatalogRegistry,
   LandingPageInputFieldDefinition,
   LandingPageInputFieldSpecialization,
+  ResolveCurrentLandingPageInputCatalogInput,
   ResolveLandingPageInputCatalogInput,
   ResolvedLandingPageInputField,
 } from "./contracts";
@@ -20,6 +21,10 @@ import {
   resolveLandingPageInputCatalog,
   resolveLandingPageInputCatalogFromRegistry,
 } from "./resolver";
+import {
+  resolveCurrentLandingPageInputCatalog,
+  resolveCurrentLandingPageInputCatalogWithResolver,
+} from "./current-resolver";
 import { buildLandingPageInputCatalogTaxonChain } from "./taxon-chain";
 import {
   landingPageInputFieldDefinitionSchema,
@@ -124,6 +129,87 @@ const cases: Case[] = [
         "property_price_range", "property_stage", "transaction_intent", "financing_support_available",
         "document_support_available", "creci_registration", "attendance_modes",
       ]);
+    },
+  },
+  {
+    name: "current resolver selects CURRENT internally and returns one plan-neutral catalog",
+    run: () => {
+      const input: ResolveCurrentLandingPageInputCatalogInput = {
+        taxonChain: baseInput.taxonChain,
+      };
+      const result = resolveCurrentLandingPageInputCatalog(input);
+      assert.equal(result.ok, true);
+      if (!result.ok) throw new Error("Expected current catalog resolution to succeed");
+      assert.equal(result.value.version, CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION);
+      assert.equal(Object.hasOwn(result.value, "plan"), false);
+      assert.equal(result.value.fields.length, 25);
+      assert.equal(
+        result.value.fields.some((field) => Object.hasOwn(field, "allowedPlans")),
+        false,
+      );
+      assert.equal(
+        result.value.fields.some((field) =>
+          field.provenance.some((entry) => entry.property === ("allowedPlans" as never))),
+        false,
+      );
+      assert.equal(Object.isFrozen(result.value), true);
+      assert.equal(Object.isFrozen(result.value.fields), true);
+    },
+  },
+  {
+    name: "current resolver rejects public historical version and commercial plan arguments",
+    run: () => {
+      for (const forbidden of [
+        { taxonChain: baseInput.taxonChain, version: 5 },
+        { taxonChain: baseInput.taxonChain, plan: "starter" },
+        { taxonChain: baseInput.taxonChain, ultraNicheLayerAuthorized: true },
+      ]) {
+        const result = resolveCurrentLandingPageInputCatalog(
+          forbidden as unknown as ResolveCurrentLandingPageInputCatalogInput,
+        );
+        assert.equal(result.ok, false);
+        if (result.ok) throw new Error("Expected historical input to be rejected");
+        assert.equal(result.error.code, "HISTORICAL_INPUT_NOT_ALLOWED");
+      }
+    },
+  },
+  {
+    name: "current resolver rejects a missing or undefined taxon chain without throwing",
+    run: () => {
+      for (const malformed of [{}, { taxonChain: undefined }]) {
+        const result = resolveCurrentLandingPageInputCatalog(
+          malformed as unknown as ResolveCurrentLandingPageInputCatalogInput,
+        );
+        assert.equal(result.ok, false);
+        if (result.ok) throw new Error("Expected an invalid taxon chain");
+        assert.equal(result.error.code, "INVALID_TAXON_CHAIN");
+      }
+    },
+  },
+  {
+    name: "current resolver fails closed when commercial projections diverge",
+    run: () => {
+      const result = resolveCurrentLandingPageInputCatalogWithResolver(
+        { taxonChain: baseInput.taxonChain },
+        (input) => {
+          const historical = resolveLandingPageInputCatalog(input);
+          if (!historical.ok || input.plan !== "lite") return historical;
+          const [firstField, ...remainingFields] = historical.value.fields;
+          return {
+            ok: true,
+            value: {
+              ...historical.value,
+              fields: [
+                { ...firstField, purpose: `${firstField.purpose} Divergent.` },
+                ...remainingFields,
+              ],
+            },
+          };
+        },
+      );
+      assert.equal(result.ok, false);
+      if (result.ok) throw new Error("Expected divergent plan projections to fail closed");
+      assert.equal(result.error.code, "PLAN_NEUTRAL_PROJECTION_MISMATCH");
     },
   },
   {

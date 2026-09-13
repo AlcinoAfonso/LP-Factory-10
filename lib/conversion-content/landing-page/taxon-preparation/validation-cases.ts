@@ -59,7 +59,9 @@ import {
   isLandingPageInputCatalogVersionExecutable,
   resolveLandingPageInputCatalog,
   resolveLandingPageInputCatalogFromRegistry,
+  type LandingPageInputCatalogTaxonIdentity,
 } from "../input-catalog";
+import { executeAdminTaxonFactualReleaseCore } from "../../../admin/adapters/adminTaxonFactualReleaseCore";
 import {
   collectAffectedReviewedTaxonIds,
   applyInputCatalogReviewPresentation,
@@ -418,7 +420,7 @@ const cases: readonly ValidationCase[] = [
     },
   },
   {
-    name: "review presentation follows the last successful record or reopen action",
+    name: "historical review presentation stays isolated from the factual release UI",
     run: async () => {
       let presentation = { reviewedVersion: null, lastAction: null } as {
         reviewedVersion: number | null;
@@ -460,11 +462,12 @@ const cases: readonly ValidationCase[] = [
       });
 
       const componentSource = readFileSync(
-        new URL("../../../../app/admin/(protected)/taxonomia/[taxonId]/_components/AdminTaxonInputCatalogReview.tsx", import.meta.url),
+        new URL("../../../../app/admin/(protected)/taxonomia/[taxonId]/_components/AdminTaxonFactualCoverage.tsx", import.meta.url),
         "utf8",
       );
-      assert.match(componentSource, /recordState\.revision\]\);/);
-      assert.match(componentSource, /reopenState\.revision\]\);/);
+      assert.match(componentSource, /release\.coverageFingerprint/);
+      assert.match(componentSource, /Liberar taxon sem IA/);
+      assert.doesNotMatch(componentSource, /reviewedVersion|recordInputCatalogReviewAction|reopenInputCatalogReviewAction/);
     },
   },
   {
@@ -2034,12 +2037,10 @@ const cases: readonly ValidationCase[] = [
       assert.match(pageSource, /rejectInputCatalogCandidatesAndConfirmSufficientAction/);
       assert.match(pageSource, /inputCatalogEvaluationRuntime\?\.ok/);
       assert.match(pageSource, /inputCatalogEvaluationRuntime\.code === "ROLLOUT_GATE_OFF"/);
-      assert.match(pageSource, /legacyMode={inputCatalogLegacyMode}/);
-      assert.match(pageSource, /review={taxon\.inputCatalogReview}/);
-      assert.match(
-        pageSource,
-        /inputCatalogReviewEnabled={taxon\.inputCatalogReview\.status !== "disabled"}/,
-      );
+      assert.match(pageSource, /AdminTaxonFactualCoverage/);
+      assert.match(pageSource, /release={taxon\.factualRelease}/);
+      assert.match(pageSource, /releaseAction={releaseTaxonAction}/);
+      assert.doesNotMatch(pageSource, /legacyMode=|inputCatalogReviewEnabled=|review={taxon\.inputCatalogReview}/);
       assert.match(pageSource, /A liberação humana sem IA acima permanece disponível/);
       assert.match(pageSource, /catalogDraftRevision/);
 
@@ -2099,29 +2100,32 @@ const cases: readonly ValidationCase[] = [
       assert.doesNotMatch(contextAdapterSource, /loadTaxonPreparationForReviewedVersion/);
       assert.doesNotMatch(contextAdapterSource, /loadTaxonPreparationForVersion/);
 
-      const activeReviewSource = readFileSync(
+      const factualCoverageSource = readFileSync(
         new URL(
-          "../../../../app/admin/(protected)/taxonomia/[taxonId]/_components/AdminTaxonInputCatalogReview.tsx",
+          "../../../../app/admin/(protected)/taxonomia/[taxonId]/_components/AdminTaxonFactualCoverage.tsx",
           import.meta.url,
         ),
         "utf8",
       );
-      assert.match(activeReviewSource, /Copiar instrução para o Codex/);
-      assert.match(activeReviewSource, /availableReview\.coverage\.catalogs\.map/);
-      assert.match(activeReviewSource, /field\.valueType/);
-      assert.match(activeReviewSource, /field\.valueScope/);
-      assert.match(activeReviewSource, /field\.obligation/);
-      assert.match(activeReviewSource, /formatCoverageValidation\(field\)/);
-      assert.match(activeReviewSource, /formatCoverageCondition\(field\.requiredWhen\)/);
-      assert.match(activeReviewSource, /formatCoverageCondition\(field\.applicableWhen\)/);
+      assert.match(factualCoverageSource, /release\.appliedLayers\.map/);
+      assert.match(factualCoverageSource, /release\.fields\.map/);
+      assert.match(factualCoverageSource, /field\.ownership === "own" \? "Próprio" : "Herdado"/);
+      assert.match(factualCoverageSource, /field\.valueType/);
+      assert.match(factualCoverageSource, /field\.valueScope/);
+      assert.match(factualCoverageSource, /field\.obligation/);
+      assert.match(factualCoverageSource, /formatValidation\(field\)/);
+      assert.match(factualCoverageSource, /formatCondition\(field\.requiredWhen\)/);
+      assert.match(factualCoverageSource, /formatCondition\(field\.applicableWhen\)/);
+      assert.match(factualCoverageSource, /Liberar taxon sem IA/);
+      assert.doesNotMatch(factualCoverageSource, /OpenAI|Codex|reviewed_input_catalog_version|allowedPlans/);
 
       const manageFormSource = readFileSync(
         new URL("../../../../components/admin/AdminTaxonManageForm.tsx", import.meta.url),
         "utf8",
       );
-      assert.match(manageFormSource, /taxon\.isActive \|\| !inputCatalogReviewEnabled/);
+      assert.match(manageFormSource, /taxon\.isActive \? \(/);
       assert.match(manageFormSource, /defaultChecked={taxon\.isActive}/);
-      assert.match(manageFormSource, /Ativar taxon/);
+      assert.match(manageFormSource, /A ativação é feita somente pela liberação E20\.6/);
     },
   },
   {
@@ -2232,6 +2236,181 @@ const cases: readonly ValidationCase[] = [
     },
   },
   {
+    name: "E20.6.3 factual release keeps the coverage identity paired with the CAS",
+    run: async () => {
+      const fingerprint = "a".repeat(64);
+      const snapshotIdentity = factualReleaseIdentity();
+      let liveIdentity = snapshotIdentity;
+      let verificationCalls = 0;
+      const result = await executeAdminTaxonFactualReleaseCore(
+        { taxonId: snapshotIdentity.id, coverageFingerprint: fingerprint },
+        {
+          readSnapshot: async () => {
+            liveIdentity = { ...snapshotIdentity, name: "Identidade concorrente" };
+            return {
+              ok: true,
+              value: { coverageFingerprint: fingerprint, identity: snapshotIdentity },
+            };
+          },
+          activate: async (identity) => {
+            assert.deepEqual(identity, snapshotIdentity);
+            return sameFactualReleaseIdentity(identity, liveIdentity);
+          },
+          verifyIdentity: async () => {
+            verificationCalls += 1;
+            return liveIdentity;
+          },
+        },
+      );
+      assert.equal(result.ok, false);
+      assert.equal(verificationCalls, 0);
+    },
+  },
+  {
+    name: "E20.6.3 factual release rejects a stale coverage fingerprint before CAS",
+    run: async () => {
+      let activationCalls = 0;
+      const result = await executeAdminTaxonFactualReleaseCore(
+        { taxonId: "taxon", coverageFingerprint: "b".repeat(64) },
+        {
+          readSnapshot: async () => ({
+            ok: true,
+            value: {
+              coverageFingerprint: "a".repeat(64),
+              identity: factualReleaseIdentity(),
+            },
+          }),
+          activate: async () => {
+            activationCalls += 1;
+            return true;
+          },
+          verifyIdentity: async () => null,
+        },
+      );
+      assert.equal(result.ok, false);
+      assert.equal(activationCalls, 0);
+    },
+  },
+  {
+    name: "E20.6.3 factual release fails when the CAS affects no row",
+    run: async () => {
+      const fingerprint = "a".repeat(64);
+      let verificationCalls = 0;
+      const result = await executeAdminTaxonFactualReleaseCore(
+        { taxonId: "taxon", coverageFingerprint: fingerprint },
+        {
+          readSnapshot: async () => ({
+            ok: true,
+            value: { coverageFingerprint: fingerprint, identity: factualReleaseIdentity() },
+          }),
+          activate: async () => false,
+          verifyIdentity: async () => {
+            verificationCalls += 1;
+            return null;
+          },
+        },
+      );
+      assert.equal(result.ok, false);
+      assert.equal(verificationCalls, 0);
+    },
+  },
+  {
+    name: "E20.6.3 factual release fails when final identity verification diverges",
+    run: async () => {
+      const fingerprint = "a".repeat(64);
+      const result = await executeAdminTaxonFactualReleaseCore(
+        { taxonId: "taxon", coverageFingerprint: fingerprint },
+        {
+          readSnapshot: async () => ({
+            ok: true,
+            value: { coverageFingerprint: fingerprint, identity: factualReleaseIdentity() },
+          }),
+          activate: async () => true,
+          verifyIdentity: async () => ({
+            ...factualReleaseIdentity(),
+            name: "Identidade divergente",
+            isActive: true,
+          }),
+        },
+      );
+      assert.equal(result.ok, false);
+    },
+  },
+  {
+    name: "E20.6.3 factual release is plan-neutral, human-only, CAS-protected, and changes only activity",
+    run: async () => {
+      const releaseAdapter = readFileSync(
+        new URL("../../../admin/adapters/adminTaxonFactualReleaseAdapter.ts", import.meta.url),
+        "utf8",
+      );
+      assert.match(releaseAdapter, /resolveCurrentLandingPageInputCatalog/);
+      assert.match(releaseAdapter, /allowInactiveSelected: true/);
+      assert.match(releaseAdapter, /\.update\(\{ is_active: true \}\)/);
+      assert.match(releaseAdapter, /\.eq\("is_active", false\)/);
+      assert.match(releaseAdapter, /\.maxAffected\(1\)/);
+      assert.match(releaseAdapter, /sameTaxonIdentity/);
+      assert.doesNotMatch(
+        releaseAdapter,
+        /OpenAI|E20_5|reviewed_input_catalog_version|allowedPlans|inputCatalogReview/i,
+      );
+
+      const releaseCore = readFileSync(
+        new URL("../../../admin/adapters/adminTaxonFactualReleaseCore.ts", import.meta.url),
+        "utf8",
+      );
+      assert.match(releaseCore, /snapshot\.value\.coverageFingerprint !== input\.coverageFingerprint/);
+      assert.match(releaseCore, /ports\.activate\(snapshot\.value\.identity\)/);
+      assert.match(releaseCore, /ports\.verifyIdentity\(input\.taxonId\)/);
+
+      const taxonomyAdapter = readFileSync(
+        new URL("../../../admin/adapters/adminTaxonomyAdapter.ts", import.meta.url),
+        "utf8",
+      );
+      assert.match(
+        taxonomyAdapter,
+        /\.insert\(\{[\s\S]*?is_active: false,[\s\S]*?\}\)/,
+      );
+      assert.match(
+        taxonomyAdapter,
+        /if \(!current\.is_active && input\.isActive\) \{[\s\S]*?Use a liberação E20\.6/,
+      );
+
+      const actions = readFileSync(
+        new URL("../../../../app/admin/(protected)/taxonomia/actions.ts", import.meta.url),
+        "utf8",
+      );
+      const releaseActionStart = actions.indexOf("export async function releaseTaxonAction");
+      const releaseAuthorization = actions.indexOf("await requirePlatformAdmin()", releaseActionStart);
+      const releaseMutation = actions.indexOf("await releaseAdminTaxon", releaseActionStart);
+      assert.ok(releaseActionStart >= 0);
+      assert.ok(releaseAuthorization > releaseActionStart && releaseAuthorization < releaseMutation);
+
+      const migration = readFileSync(
+        new URL("../../../../supabase/migrations/20260913174607_e20_6_factual_taxon_release_default_inactive.sql", import.meta.url),
+        "utf8",
+      );
+      assert.match(migration, /alter column is_active set default false/);
+      assert.doesNotMatch(migration, /\bupdate\b|\binsert\b|\bdelete\b|\bgrant\b|\brevoke\b|\bpolicy\b/i);
+
+      const sqlTest = readFileSync(
+        new URL("../../../../supabase/tests/e20_6_factual_taxon_release_default_inactive.test.sql", import.meta.url),
+        "utf8",
+      );
+      assert.match(sqlTest, /historical active/);
+      assert.match(sqlTest, /default inactive/);
+      assert.match(sqlTest, /rollback;/);
+
+      const verifySnippet = readFileSync(
+        new URL("../../../../supabase/snippets/e20_6_factual_taxon_release_default_inactive_verify.sql", import.meta.url),
+        "utf8",
+      );
+      assert.match(verifySnippet, /set transaction read only/);
+      assert.match(verifySnippet, /column_default = 'false'/);
+      assert.match(verifySnippet, /business_taxons_update_admin_only/);
+      assert.match(verifySnippet, /expected_update_columns/);
+    },
+  },
+  {
     name: "rejects an inactive taxon without returning partial content",
     run: async () => {
       assertFailure(
@@ -2255,6 +2434,31 @@ async function run(): Promise<void> {
     await validationCase.run();
     console.log(`ok - ${validationCase.name}`);
   }
+}
+
+function factualReleaseIdentity(): LandingPageInputCatalogTaxonIdentity {
+  return {
+    id: "taxon",
+    parentId: "parent",
+    level: "niche",
+    name: "Taxon factual",
+    slug: "taxon-factual",
+    isActive: false,
+  };
+}
+
+function sameFactualReleaseIdentity(
+  left: LandingPageInputCatalogTaxonIdentity,
+  right: LandingPageInputCatalogTaxonIdentity,
+): boolean {
+  return (
+    left.id === right.id &&
+    left.parentId === right.parentId &&
+    left.level === right.level &&
+    left.name === right.name &&
+    left.slug === right.slug &&
+    left.isActive === right.isActive
+  );
 }
 
 function validContent(): string {

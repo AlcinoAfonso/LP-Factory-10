@@ -15,7 +15,6 @@ type TaxonAction = (
 
 type AdminTaxonManageFormProps = {
   taxon: AdminTaxonDetail;
-  inputCatalogReviewEnabled: boolean;
   updateAction: TaxonAction;
   addAliasAction: TaxonAction;
   deleteAliasAction: TaxonAction;
@@ -26,7 +25,6 @@ const initialState: ManageTaxonActionState = { error: null };
 
 export function AdminTaxonManageForm({
   taxon,
-  inputCatalogReviewEnabled,
   updateAction,
   addAliasAction,
   deleteAliasAction,
@@ -92,7 +90,7 @@ export function AdminTaxonManageForm({
             />
           </label>
 
-          {taxon.isActive || !inputCatalogReviewEnabled ? (
+          {taxon.isActive ? (
             <label className="flex items-center gap-2 text-sm text-muted-foreground">
               <input
                 className="h-4 w-4 rounded border-border text-brand-600"
@@ -100,11 +98,11 @@ export function AdminTaxonManageForm({
                 type="checkbox"
                 defaultChecked={taxon.isActive}
               />
-              {taxon.isActive ? "Manter ativo" : "Ativar taxon"}
+              Manter ativo
             </label>
           ) : (
             <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
-              A ativação é feita somente pela liberação E20.6 após a revisão da cobertura herdada.
+              A ativação é feita somente pela liberação E20.6 após a leitura da cobertura factual corrente.
             </p>
           )}
         </div>

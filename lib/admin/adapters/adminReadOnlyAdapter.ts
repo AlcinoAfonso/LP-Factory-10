@@ -13,6 +13,11 @@ export {
   reopenAdminInputCatalogReview,
   updateAdminTaxon,
 } from "./adminTaxonomyAdapter";
+export {
+  readAdminTaxonFactualRelease,
+  releaseAdminTaxon,
+} from "./adminTaxonFactualReleaseAdapter";
+export type { ReleaseAdminTaxonResult } from "./adminTaxonFactualReleaseAdapter";
 export type {
   AdminAccountDetail,
   AdminAccountListItem,
@@ -22,6 +27,7 @@ export type {
   AdminNicheResolutionListItem,
   AdminTaxonDetail,
   AdminEndCustomerResearchSelection,
+  AdminTaxonFactualRelease,
   AdminInputCatalogReview,
   AdminTaxonLevel,
   AdminTaxonListItem,

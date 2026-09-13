@@ -1922,11 +1922,12 @@
 
 20.6.1 Objetivo e status
 - Objetivo: liberar taxon novo por decisão humana sobre a cobertura factual corrente e permitir revisão voluntária de taxon ativo, com apoio opcional por IA e sem gate de versão por taxon.
-- Status: substituição funcional e técnica aprovada e planejada; a preparação baseada em versão revisada permanece como estado implementado anterior até a execução deste recorte.
+- Status: substituição funcional e técnica em execução; a liberação factual humana de taxon novo está concluída no repositório, enquanto apoio opcional, provider, revisão voluntária e fechamento integrado permanecem em implementação.
 
 20.6.2 Registros do recorte
 - Banco:
   - Ajustados:
+    - `business_taxons.is_active`
     - `business_taxons.reviewed_input_catalog_version`
     - `public.openai_workload_operational_configurations`
     - `public.openai_workload_configuration_revisions`
@@ -1937,31 +1938,48 @@
     - `lib/conversion-content/landing-page/taxon-preparation/input-catalog-evaluation-schema.ts`
     - `lib/conversion-content/landing-page/taxon-preparation/input-catalog-evaluation.ts`
     - `lib/conversion-content/landing-page/taxon-preparation/preparation.ts`
+    - `lib/conversion-content/landing-page/input-catalog/current-resolver.ts`
+    - `lib/admin/adapters/adminTaxonFactualReleaseAdapter.ts`
+    - `lib/admin/adapters/adminTaxonFactualReleaseCore.ts`
     - `lib/conversion-content/adapters/inputCatalogEvaluationRuntimeGate.ts`
     - `lib/conversion-content/adapters/inputCatalogEvaluationRuntimeGateCore.ts`
     - `lib/conversion-content/adapters/inputCatalogEvaluationOpenAiAdapter.ts`
     - `app/admin/(protected)/taxonomia/[taxonId]/_components/AdminTaxonInputCatalogEvaluation.tsx`
+    - `app/admin/(protected)/taxonomia/[taxonId]/_components/AdminTaxonFactualCoverage.tsx`
     - `app/admin/(protected)/taxonomia/[taxonId]/_components/AdminTaxonInputCatalogReview.tsx`
     - `supabase/migrations/20260815172449_e20_6_reviewed_input_catalog_version.sql`
     - `supabase/migrations/20260820213900_e21_2_taxon_input_catalog_sufficiency_workload.sql`
+    - `supabase/migrations/20260913174607_e20_6_factual_taxon_release_default_inactive.sql`
+    - `supabase/snippets/e20_6_factual_taxon_release_default_inactive_verify.sql`
     - `supabase/snippets/e20_6_reviewed_input_catalog_version_verify.sql`
     - `supabase/snippets/e21_2_taxon_input_catalog_sufficiency_workload_verify.sql`
     - `supabase/tests/e21_2_taxon_input_catalog_sufficiency_workload.test.sql`
+    - `supabase/tests/e20_6_factual_taxon_release_default_inactive.test.sql`
   - Ajustados:
     - `app/admin/(protected)/taxonomia/[taxonId]/page.tsx`
     - `app/admin/(protected)/taxonomia/actions.ts`
+    - `app/admin/(protected)/estrutura-lp/validation-cases.ts`
+    - `components/admin/AdminTaxonManageForm.tsx`
+    - `lib/admin/adapters/adminReadOnlyAdapter.ts`
+    - `lib/admin/adapters/adminReadOnlyTypes.ts`
+    - `lib/admin/adapters/adminTaxonomyAdapter.ts`
     - `lib/conversion-content/adapters/selectedEndCustomerResearchAdapter.ts`
     - `lib/conversion-content/landing-page/taxon-preparation/contracts.ts`
     - `lib/conversion-content/landing-page/taxon-preparation/validation-cases.ts`
+    - `lib/conversion-content/landing-page/input-catalog/contracts.ts`
+    - `lib/conversion-content/landing-page/input-catalog/index.ts`
+    - `lib/conversion-content/landing-page/input-catalog/validation-cases.ts`
     - `lib/openai-workloads/registry.ts`
     - `package.json`
+  - Excluídos:
+    - `app/admin/(protected)/taxonomia/[taxonId]/_components/AdminTaxonInputCatalogReview.tsx`
 - Referências:
   - Preparação factual: `docs/base-tecnica.md` — seção 3.15.7.
   - Contrato de banco: `docs/schema.md`.
   - Gates e workloads: `docs/platform-config.md`.
 
 20.6.3 Liberação de novo taxon
-- Status: planejado.
+- Status: concluída no repositório; a migration permanece pendente do merge humano e do apply canônico, e o QA hospedado integra o fechamento da 20.6.7.
 - Conteúdo:
   - taxon novo nasce inativo e apresenta a cobertura factual corrente com proveniência por camada;
   - `platform_admin` pode liberar sem IA, pesquisa ou justificativa textual, por decisão separada que altera somente `is_active`;

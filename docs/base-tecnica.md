@@ -269,6 +269,7 @@
 • Boundary canônico: `lib/conversion-content/landing-page/input-catalog/`; registry, contracts, schema e resolver são fontes executáveis.
 • O resolver é puro e repo-only, sem consultar Supabase, Stripe, assinatura, entitlement ou valores operacionais.
 • As versões publicadas e a declaração explícita da versão atual permanecem repo-only; consumidores operacionais não podem inferir `latest`, maior chave ou outra versão por fallback.
+• A API operacional corrente seleciona internamente a versão declarada como atual, recebe somente a cadeia taxonômica e devolve um catálogo factual plan-neutral único; versão histórica, plano comercial e `allowedPlans` não atravessam esse contrato. O resolver histórico explícito por versão e plano permanece restrito a leituras históricas e capacidades dormentes.
 • Persistência administrativa pode guardar somente o próximo draft sequencial, mutável e não operacional. Publicação exige materialização imutável no registry, validação, revisão, merge e deploy antes de a declaração repo-only da versão atual produzir efeito.
 • Resolução segue `universal → segmento → nicho → ultranicho`; especializações só podem restringir e devem preservar identidade, tipo, origem, condições e evidência.
 • Evolução forward-only pode retirar um field publicado somente a partir de nova versão; valores históricos dessa chave permanecem reconhecíveis e inertes, enquanto chaves nunca publicadas continuam inválidas.
@@ -279,7 +280,7 @@
 3.15.7 Preparação factual do taxon para `landing_page`
 • Boundary canônico: `lib/conversion-content/landing-page/taxon-preparation/`; a derivação permanece pura e não persiste estado de prontidão.
 • O adapter server-only deve ler pelo caminho único da pesquisa selecionada o taxon ativo, a pesquisa E20.5 integralmente válida e a última versão E20.2 efetivamente revisada; UI e componentes client não consultam esses marcadores diretamente.
-• Avaliações administrativas históricas continuam recebendo uma versão executável explícita. Consumidores operacionais correntes recebem a versão atual explícita da API pública do catálogo; maior versão, `latest` e qualquer fallback implícito são proibidos.
+• Avaliações administrativas históricas continuam recebendo uma versão executável explícita. Consumidores operacionais correntes usam a API plan-neutral que seleciona internamente a versão atual declarada; maior versão, `latest`, versão ou plano fornecido pelo consumidor e qualquer fallback implícito são proibidos.
 • A versão efetiva corrente é a versão atual quando coincide com a revisada ou quando a comparação resolvida em todos os planos classifica a transição como sem mudança material ou evolução compatível. Mudança fora da allowlist conservadora exige nova revisão; ausência, incompatibilidade, feature gate ou falha operacional permanecem erros tipados e fail-closed.
 • Carry-forward compatível não reescreve a versão revisada e não reinterpreta snapshots ou configurações históricas; cada residência preserva o número concretamente usado.
 • O lifecycle administrativo lê integralmente `business_taxons` e ancora separadamente a identidade do conteúdo e o contexto E20 formado por identidade taxonômica, pesquisa selecionada e versão revisada; drift em qualquer fingerprint torna validação ou handoff stale.
@@ -287,6 +288,11 @@
 • Evidência humana válida e revalidada para o conteúdo e o contexto atuais permite avançar `reviewed_input_catalog_version`; ausência, invalidade ou staleness preserva o marcador anterior e mantém o taxon fail-closed na preparação E20.6 quando a nova revisão for necessária.
 • Após o deploy publicar o conteúdo repo-only exato, a reconciliação materializa somente os marcadores respaldados por evidência válida, confirma a leitura final e encerra o draft temporário sem transformar taxons ainda não revisados em bloqueio global.
 • A avaliação semântica usa o workload OpenAI comum autorizado e permanece não autoritativa; a decisão final de suficiência e seu registro administrativo são humanos, e o boundary apenas aplica deterministicamente a decisão autenticada e revalidada.
+
+3.15.8 Liberação factual administrativa de taxon
+• Taxon novo nasce inativo e só pode ser ativado por ação humana administrativa focal depois da leitura da cadeia e da cobertura factual corrente; o CRUD genérico não realiza a transição de inativo para ativo.
+• A leitura admite somente o taxon servido inativo e exige ancestrais aplicados ativos. A liberação relê identidade e cobertura, falha diante de drift ou concorrência e usa compare-and-set para alterar exclusivamente `is_active`.
+• Pesquisa, IA, justificativa textual e marcador de versão revisada não são pré-condições nem writes da liberação; componentes client recebem somente o DTO mínimo e a Server Action reautoriza `platform_admin`.
 
 3.15.9 Estado residual do antigo produto de `landing_page`
 • O Account Dashboard não possui criação, onboarding operacional, workspace, configuração operacional, histórico, Preview, renderer, aprovação, readers de materialização ou assinatura de assets do produto legado.

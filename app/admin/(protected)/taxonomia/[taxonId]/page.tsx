@@ -16,15 +16,14 @@ import {
   deleteTaxonAliasAction,
   selectEndCustomerResearchAction,
   updateTaxonAction,
-  recordInputCatalogReviewAction,
-  reopenInputCatalogReviewAction,
+  releaseTaxonAction,
   evaluateInputCatalogAction,
   confirmInputCatalogEvaluationAction,
   rejectInputCatalogCandidatesAndConfirmSufficientAction,
   acknowledgeInputCatalogGapAction,
 } from "../actions";
 import { AdminTaxonInputCatalogEvaluationRuntime } from "./_components/AdminTaxonInputCatalogEvaluation";
-import { AdminTaxonInputCatalogReview } from "./_components/AdminTaxonInputCatalogReview";
+import { AdminTaxonFactualCoverage } from "./_components/AdminTaxonFactualCoverage";
 import { CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION } from "@/conversion-content/landing-page/input-catalog";
 import { loadAdminInputCatalogDraftEvaluationContext } from "@/lib/admin/adapters/adminInputCatalogLifecycleAdapter";
 
@@ -51,13 +50,6 @@ export default async function AdminTaxonDetailPage({ params, searchParams }: Adm
   const inputCatalogEvaluationRuntime = taxon.inputCatalogReview.status === "available"
     ? await resolveInputCatalogEvaluationRuntimeReadiness()
     : null;
-  const inputCatalogLegacyMode = inputCatalogEvaluationRuntime === null
-    ? "unavailable"
-    : inputCatalogEvaluationRuntime.ok
-      ? "runtime_active"
-      : inputCatalogEvaluationRuntime.code === "ROLLOUT_GATE_OFF"
-        ? "rollout_gate_off"
-        : "operational_configuration_unproven";
   const draftEvaluation = draftRevision === null
     ? null
     : await loadAdminInputCatalogDraftEvaluationContext({
@@ -125,11 +117,16 @@ export default async function AdminTaxonDetailPage({ params, searchParams }: Adm
 
       <AdminTaxonManageForm
         taxon={taxon}
-        inputCatalogReviewEnabled={taxon.inputCatalogReview.status !== "disabled"}
         updateAction={updateTaxonAction}
         addAliasAction={addTaxonAliasAction}
         deleteAliasAction={deleteTaxonAliasAction}
         deleteAction={deleteTaxonAction}
+      />
+
+      <AdminTaxonFactualCoverage
+        release={taxon.factualRelease}
+        releaseAction={releaseTaxonAction}
+        taxonId={taxon.id}
       />
 
       {taxon.endCustomerResearchSelection.status === "disabled" ? null : (
@@ -137,16 +134,6 @@ export default async function AdminTaxonDetailPage({ params, searchParams }: Adm
           action={selectEndCustomerResearchAction}
           isActive={taxon.isActive}
           selection={taxon.endCustomerResearchSelection}
-          taxonId={taxon.id}
-        />
-      )}
-
-      {taxon.inputCatalogReview.status === "disabled" ? null : (
-        <AdminTaxonInputCatalogReview
-          legacyMode={inputCatalogLegacyMode}
-          recordAction={recordInputCatalogReviewAction}
-          reopenAction={reopenInputCatalogReviewAction}
-          review={taxon.inputCatalogReview}
           taxonId={taxon.id}
         />
       )}

@@ -114,6 +114,36 @@ export type AdminInputCatalogCoverageField = Readonly<{
   landingPageSubstitutionPolicy: LandingPageInputSubstitutionPolicy | null;
 }>;
 
+export type AdminFactualCoverageField = Readonly<{
+  fieldKey: string;
+  purpose: string;
+  ownership: "own" | "inherited";
+  originLayer: string;
+  originTaxonName: string | null;
+  valueType: LandingPageInputValueType;
+  valueScope: LandingPageInputValueScope;
+  expectedValueOrigin: LandingPageInputExpectedValueOrigin;
+  obligation: LandingPageInputObligation;
+  requiredWhen: LandingPageInputCondition | null;
+  applicableWhen: LandingPageInputCondition | null;
+  validation: LandingPageInputValidation;
+}>;
+
+export type AdminTaxonFactualRelease =
+  | { status: "read_failed"; errorCode: string; message: string }
+  | {
+      status: "available";
+      currentInputCatalogVersion: number;
+      coverageFingerprint: string;
+      isActive: boolean;
+      appliedLayers: readonly Readonly<{
+        level: string;
+        taxonName: string | null;
+        served: boolean;
+      }>[];
+      fields: readonly AdminFactualCoverageField[];
+    };
+
 export type AdminInputCatalogReview =
   | { status: "disabled" }
   | { status: "blocked"; errorCode: string; message: string }
@@ -151,6 +181,7 @@ export type AdminTaxonDetail = AdminTaxonListItem & {
   deleteBlockers: string[];
   canDelete: boolean;
   endCustomerResearchSelection: AdminEndCustomerResearchSelection;
+  factualRelease: AdminTaxonFactualRelease;
   inputCatalogReview: AdminInputCatalogReview;
 };
 
