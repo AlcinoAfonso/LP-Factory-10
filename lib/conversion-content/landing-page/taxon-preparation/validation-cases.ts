@@ -369,6 +369,10 @@ const cases: readonly ValidationCase[] = [
       assert.match(migration, /business_taxon_aliases_taxon_id_fkey[\s\S]*on update cascade on delete cascade/);
       assert.match(migration, /v_current_context is distinct from v_draft\.publication_context_snapshot/);
       assert.match(migration, /v_evidence_taxon_ids is distinct from v_draft\.publication_required_taxon_ids/);
+      assert.match(migration, /p_invalidation_authorized boolean/);
+      assert.match(migration, /taxon_factual_invalidation_authorization_conflict/);
+      assert.match(migration, /factual_review_reconciliation_open_review_conflict/);
+      assert.match(updateBoundary, /p_invalidation_authorized: invalidationAuthorized/);
       assert.doesNotMatch(migration, /business_taxon_factual_review_events|factual_review_save_receipts/);
       assert.doesNotMatch(migration, /evaluation_output_fingerprint/);
       assert.doesNotMatch(factualAdapterSource, /outputFingerprint|fingerprintInputCatalogEvaluationOutput/);

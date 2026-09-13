@@ -44,7 +44,7 @@ begin
   if not has_function_privilege('service_role',
        'public.finalize_business_taxon_factual_review_v1(uuid,bigint,uuid,integer,jsonb,bigint,text,text)', 'EXECUTE')
      or not has_function_privilege('service_role',
-       'public.update_business_taxon_with_factual_review_invalidation_v1(uuid,text,text,boolean,text,text,boolean,uuid)', 'EXECUTE')
+       'public.update_business_taxon_with_factual_review_invalidation_v1(uuid,text,text,boolean,text,text,boolean,uuid,boolean)', 'EXECUTE')
      or not has_function_privilege('service_role',
        'public.reconcile_business_taxon_factual_review_publication_v1(uuid,bigint,integer,text,text)', 'EXECUTE') then
     raise exception 'focused factual-review RPC ACL drifted';
@@ -116,10 +116,28 @@ begin
   left join public.business_taxons parent on parent.id = child.parent_id
   where child.id in ('e2063000-0000-4000-8000-000000000011', 'e2063000-0000-4000-8000-000000000012');
 
+  begin
+    perform * from public.update_business_taxon_with_factual_review_invalidation_v1(
+      'e2063000-0000-4000-8000-000000000010', 'Raiz', 'raiz-e206', true,
+      'Raiz concorrente', 'raiz-e206', true, 'e2063000-0000-4000-8000-000000000001', false
+    );
+    raise exception 'subtree review state was invalidated without under-lock authorization';
+  exception when serialization_failure then null;
+  end;
+  if (select name from public.business_taxons where id = 'e2063000-0000-4000-8000-000000000010') <> 'Raiz'
+     or (select count(*) from public.business_taxon_factual_reviews
+         where taxon_id in ('e2063000-0000-4000-8000-000000000011', 'e2063000-0000-4000-8000-000000000012')
+           and status = 'open') <> 2
+     or (select count(*) from public.business_taxons
+         where id in ('e2063000-0000-4000-8000-000000000010', 'e2063000-0000-4000-8000-000000000011', 'e2063000-0000-4000-8000-000000000012')
+           and reviewed_input_catalog_version = 5) <> 3 then
+    raise exception 'authorization conflict did not preserve taxonomy review state';
+  end if;
+
   select * into v_taxonomy
   from public.update_business_taxon_with_factual_review_invalidation_v1(
     'e2063000-0000-4000-8000-000000000010', 'Raiz', 'raiz-e206', true,
-    'Raiz', 'raiz-e206', false, 'e2063000-0000-4000-8000-000000000001'
+    'Raiz', 'raiz-e206', false, 'e2063000-0000-4000-8000-000000000001', true
   );
   if v_taxonomy.invalidated_review_count <> 2 or v_taxonomy.cleared_marker_count <> 3
      or (select count(*) from public.business_taxon_factual_reviews
@@ -263,6 +281,31 @@ begin
       publication_required_taxon_ids = array['e2063000-0000-4000-8000-000000000020'::uuid],
       publication_prepared_at = now()
   where singleton and revision = 1;
+
+  begin
+    insert into public.business_taxon_factual_reviews
+      (taxon_id, kind, baseline_is_active, context_fingerprint, chain_snapshot, opened_by)
+    values (
+      'e2063000-0000-4000-8000-000000000020', 'revision', true, repeat('4', 64),
+      jsonb_build_array(jsonb_build_object(
+        'id', 'e2063000-0000-4000-8000-000000000020', 'name', 'Draft', 'slug', 'draft-e206',
+        'level', 'segment', 'isActive', true, 'parentId', null
+      )),
+      'e2063000-0000-4000-8000-000000000001'
+    );
+    perform * from public.reconcile_business_taxon_factual_review_publication_v1(
+      'e2063000-0000-4000-8000-000000000001', 1, 6, repeat('b', 64), repeat('c', 64)
+    );
+    raise exception 'publication reconciled stale evidence while a newer review was open';
+  exception when serialization_failure then null;
+  end;
+  if not exists (select 1 from public.landing_page_input_catalog_drafts where singleton)
+     or (select reviewed_input_catalog_version from public.business_taxons
+         where id = 'e2063000-0000-4000-8000-000000000020') is not null
+     or exists (select 1 from public.business_taxon_factual_reviews
+         where taxon_id = 'e2063000-0000-4000-8000-000000000020' and status = 'open') then
+    raise exception 'open-review reconciliation conflict did not preserve draft and marker state';
+  end if;
 
   select * into v_reconcile from public.reconcile_business_taxon_factual_review_publication_v1(
     'e2063000-0000-4000-8000-000000000001', 1, 6, repeat('b', 64), repeat('c', 64)

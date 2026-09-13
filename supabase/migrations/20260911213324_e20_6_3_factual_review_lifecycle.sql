@@ -382,7 +382,8 @@ $$;
 
 create or replace function public.update_business_taxon_with_factual_review_invalidation_v1(
   p_taxon_id uuid, p_expected_name text, p_expected_slug text, p_expected_is_active boolean,
-  p_name text, p_slug text, p_next_is_active boolean, p_actor_user_id uuid
+  p_name text, p_slug text, p_next_is_active boolean, p_actor_user_id uuid,
+  p_invalidation_authorized boolean
 )
 returns table(taxon_id uuid, invalidated_review_count integer, cleared_marker_count integer)
 language plpgsql security invoker set search_path = public, pg_catalog as $$
@@ -391,7 +392,7 @@ begin
   if p_taxon_id is null or p_actor_user_id is null
      or p_expected_name is null or p_expected_slug is null or p_expected_is_active is null
      or nullif(btrim(p_name), '') is null or nullif(btrim(p_slug), '') is null
-     or p_next_is_active is null then
+     or p_next_is_active is null or p_invalidation_authorized is null then
     raise exception using errcode = '22023', message = 'taxon_factual_invalidation_input_invalid';
   end if;
   perform pg_advisory_xact_lock(hashtextextended('lpf10:e20.6:factual-review', 0));
@@ -399,6 +400,28 @@ begin
   if not found or v_root.name <> p_expected_name or v_root.slug <> p_expected_slug
      or v_root.is_active <> p_expected_is_active then
     raise exception using errcode = '40001', message = 'taxon_factual_invalidation_conflict';
+  end if;
+
+  if not p_invalidation_authorized and (
+    exists (
+      with recursive affected as (
+        select id from public.business_taxons where id = p_taxon_id
+        union all select child.id from public.business_taxons child join affected parent on child.parent_id = parent.id
+      )
+      select 1 from public.business_taxon_factual_reviews reviews
+      where reviews.status = 'open' and reviews.taxon_id in (select id from affected)
+    )
+    or exists (
+      with recursive affected as (
+        select id from public.business_taxons where id = p_taxon_id
+        union all select child.id from public.business_taxons child join affected parent on child.parent_id = parent.id
+      )
+      select 1 from public.business_taxons taxons
+      where taxons.id in (select id from affected)
+        and taxons.reviewed_input_catalog_version is not null
+    )
+  ) then
+    raise exception using errcode = '40001', message = 'taxon_factual_invalidation_authorization_conflict';
   end if;
 
   with recursive affected as (
@@ -490,6 +513,16 @@ begin
   from jsonb_each(v_draft.taxon_review_evidence) evidence;
   if v_evidence_taxon_ids is distinct from v_draft.publication_required_taxon_ids then
     raise exception using errcode = '40001', message = 'factual_review_reconciliation_taxons_conflict';
+  end if;
+
+  if exists (
+    select 1
+    from jsonb_each(v_draft.taxon_review_evidence) evidence
+    join public.business_taxon_factual_reviews reviews
+      on reviews.taxon_id = evidence.key::uuid
+    where reviews.status = 'open'
+  ) then
+    raise exception using errcode = '40001', message = 'factual_review_reconciliation_open_review_conflict';
   end if;
 
   if exists (
@@ -603,10 +636,10 @@ revoke all on function public.guard_open_business_taxon_factual_review_v1() from
 revoke all on function public.guard_business_taxon_factual_research_selection_v1() from public, anon, authenticated;
 revoke all on function public.lock_business_taxon_factual_context_v1() from public, anon, authenticated;
 revoke all on function public.finalize_business_taxon_factual_review_v1(uuid, bigint, uuid, integer, jsonb, bigint, text, text) from public, anon, authenticated;
-revoke all on function public.update_business_taxon_with_factual_review_invalidation_v1(uuid, text, text, boolean, text, text, boolean, uuid) from public, anon, authenticated;
+revoke all on function public.update_business_taxon_with_factual_review_invalidation_v1(uuid, text, text, boolean, text, text, boolean, uuid, boolean) from public, anon, authenticated;
 revoke all on function public.reconcile_business_taxon_factual_review_publication_v1(uuid, bigint, integer, text, text) from public, anon, authenticated;
 grant execute on function public.finalize_business_taxon_factual_review_v1(uuid, bigint, uuid, integer, jsonb, bigint, text, text) to service_role;
-grant execute on function public.update_business_taxon_with_factual_review_invalidation_v1(uuid, text, text, boolean, text, text, boolean, uuid) to service_role;
+grant execute on function public.update_business_taxon_with_factual_review_invalidation_v1(uuid, text, text, boolean, text, text, boolean, uuid, boolean) to service_role;
 grant execute on function public.reconcile_business_taxon_factual_review_publication_v1(uuid, bigint, integer, text, text) to service_role;
 
 comment on table public.business_taxon_factual_reviews is
@@ -615,8 +648,8 @@ comment on function public.guard_open_business_taxon_factual_review_v1() is
   'Serializa abertura com mutacoes taxonomicas e revalida o snapshot integral antes do insert.';
 comment on function public.finalize_business_taxon_factual_review_v1(uuid, bigint, uuid, integer, jsonb, bigint, text, text) is
   'Fecha uma revisao e aplica atomicamente a decisao ao taxon publicado ou a evidencia do draft exato.';
-comment on function public.update_business_taxon_with_factual_review_invalidation_v1(uuid, text, text, boolean, text, text, boolean, uuid) is
-  'Atualiza identidade ou atividade e fecha revisoes abertas afetadas sem ledger paralelo.';
+comment on function public.update_business_taxon_with_factual_review_invalidation_v1(uuid, text, text, boolean, text, text, boolean, uuid, boolean) is
+  'Atualiza identidade ou atividade e fecha revisoes abertas afetadas somente com autorizacao explicita confirmada sob lock.';
 comment on function public.reconcile_business_taxon_factual_review_publication_v1(uuid, bigint, integer, text, text) is
   'Reconcilia evidencias fechadas do draft implantado, avanca marcadores e encerra a residencia temporaria.';
 

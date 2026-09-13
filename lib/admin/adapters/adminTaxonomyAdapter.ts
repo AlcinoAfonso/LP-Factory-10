@@ -515,17 +515,19 @@ export async function updateAdminTaxon(input: UpdateAdminTaxonInput): Promise<Ad
     { name, slug, isActive: input.isActive },
   );
   let reviewBlock: Awaited<ReturnType<typeof findAffectedInputCatalogReviews>> | null = null;
+  let invalidationAuthorized = false;
   if (materiallyChangesResolution) {
     reviewBlock = await findAffectedInputCatalogReviews(supabase, input.id);
     if (!reviewBlock.ok) return { ok: false, error: reviewBlock.error };
     const unclosedReview = await hasUnclosedFactualReview(supabase, reviewBlock.affectedTaxonIds);
     if (!unclosedReview.ok) return { ok: false, error: unclosedReview.error };
+    invalidationAuthorized =
+      input.invalidateAffectedReviews || (current.is_active && !input.isActive);
     const invalidation = planTaxonomyIdentityReviewInvalidation({
       materiallyChangesResolution,
       affectedReviewedTaxonIds: reviewBlock.reviewedTaxonIds,
       hasUnclosedFactualReview: unclosedReview.found,
-      explicitInvalidationAuthorized:
-        input.invalidateAffectedReviews || (current.is_active && !input.isActive),
+      explicitInvalidationAuthorized: invalidationAuthorized,
       closesUnclosedFactualReviews: current.is_active && !input.isActive,
     });
     if (!invalidation.ok) return { ok: false, error: invalidation.error };
@@ -558,6 +560,7 @@ export async function updateAdminTaxon(input: UpdateAdminTaxonInput): Promise<Ad
         p_slug: slug,
         p_next_is_active: input.isActive,
         p_actor_user_id: input.actorUserId,
+        p_invalidation_authorized: invalidationAuthorized,
       },
     );
     const row = Array.isArray(data) ? data[0] : data;
