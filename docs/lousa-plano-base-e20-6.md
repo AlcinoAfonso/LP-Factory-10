@@ -1,6 +1,6 @@
 # Plano-base E20.6 — V2 técnica executável do Debate 12
 
-- Estado: V2 técnica candidata; execução suspensa até aprovação pelo Analista e reconciliação do roadmap.
+- Estado: V2 técnica aprovada pelo Analista após as duas passagens e a reconciliação governada do roadmap; pronta para execução na mesma branch e no mesmo PR, sem autorizar merge.
 - Plano: E20.6 — Liberação e revisão factual de taxons.
 - Fonte funcional: seções 4.1–4.10 do Google Doc `Debate 12 — Evolução da revisão factual e UX administrativa da E20 — LP Factory 10`.
 - Documento fonte: `1XxMtfz_W0pTEWKiwQ00JIzrjQMC64fIAT40bIJpGZ5w`.
