@@ -5,6 +5,7 @@ import {
   collectRequiredFactualReviewTaxonIds,
   fingerprintInputCatalogLifecycleContext,
   hasCompleteFactualReviewCoverage,
+  parsePersistedInputCatalogEvaluationMode,
   planPublishedInputCatalogReviewReconciliation,
   snapshotInputCatalogLifecycleContext,
 } from "../../../../lib/admin/adapters/adminInputCatalogLifecycleValidation";
@@ -14,6 +15,9 @@ import {
 } from "../../../../lib/conversion-content/landing-page/input-catalog";
 
 export async function validateLifecycleE20Contracts(): Promise<void> {
+  assert.equal(parsePersistedInputCatalogEvaluationMode("hypothesis"), "hypothesis");
+  assert.equal(parsePersistedInputCatalogEvaluationMode("systematic"), "systematic");
+  assert.equal(parsePersistedInputCatalogEvaluationMode("unknown"), null);
   assert.deepEqual(collectRequiredFactualReviewTaxonIds({
     activeReviewRequiredTaxonIds: [realEstateSegmentTaxon.id],
     unclosedReleaseTaxonIds: [realEstateBrokerNicheTaxon.id],

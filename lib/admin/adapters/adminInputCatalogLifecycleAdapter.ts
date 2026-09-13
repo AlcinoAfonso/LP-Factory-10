@@ -33,6 +33,7 @@ import {
   collectRequiredFactualReviewTaxonIds,
   createInputCatalogLifecycleProof,
   hasCompleteFactualReviewCoverage,
+  parsePersistedInputCatalogEvaluationMode,
   serializeInputCatalogLifecycleValue,
   snapshotInputCatalogLifecycleContext,
 } from "./adminInputCatalogLifecycleValidation";
@@ -759,11 +760,15 @@ async function validateReviewEvidence(
     }
     const { data: review } = await client
       .from("business_taxon_factual_reviews")
-      .select("id,taxon_id,status,outcome,revision,evaluation_source,evaluation_draft_revision,evaluation_context_fingerprint")
+      .select("id,taxon_id,status,outcome,revision,evaluation_mode,evaluation_source,evaluation_draft_revision,evaluation_context_fingerprint")
       .eq("id", evidence.reviewId)
       .maybeSingle();
+    const evaluationMode = isRecord(review)
+      ? parsePersistedInputCatalogEvaluationMode(review.evaluation_mode)
+      : null;
     if (
       !isRecord(review) ||
+      evaluationMode === null ||
       review.taxon_id !== taxonId ||
       review.status !== "closed" ||
       (review.outcome !== "no_change" && review.outcome !== "catalog_change") ||
@@ -775,7 +780,7 @@ async function validateReviewEvidence(
       continue;
     }
     const current = await reconstructDraftInputCatalogEvaluationContext(
-      { taxonId, inputCatalogVersion: candidate.entry.version },
+      { taxonId, inputCatalogVersion: candidate.entry.version, mode: evaluationMode },
       candidate.registry,
     );
     if (

@@ -152,6 +152,8 @@ assert.match(lifecycleAdapter, /publication_context_snapshot/);
 assert.match(lifecycleAdapter, /publication_required_taxon_ids/);
 assert.match(lifecycleAdapter, /taxon_review_evidence/);
 assert.match(lifecycleAdapter, /reconstructDraftInputCatalogEvaluationContext/);
+assert.match(lifecycleAdapter, /evaluation_mode/);
+assert.match(lifecycleAdapter, /mode: evaluationMode/);
 assert.doesNotMatch(lifecycleAdapter, /recordAdminInputCatalogDraftHumanDecision/);
 assert.match(lifecycleAdapter, /requiredFactualReviewTaxonIds\(candidate\.value, context\.value\)/);
 assert.match(lifecycleAdapter, /reconcileAdminInputCatalogPublishedDraft/);

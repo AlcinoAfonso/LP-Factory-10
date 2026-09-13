@@ -10,6 +10,14 @@ import {
   type InputCatalogEvaluationContextIdentity,
 } from "@/conversion-content/landing-page/taxon-preparation";
 
+export type PersistedInputCatalogEvaluationMode = "systematic" | "hypothesis";
+
+export function parsePersistedInputCatalogEvaluationMode(
+  value: unknown,
+): PersistedInputCatalogEvaluationMode | null {
+  return value === "systematic" || value === "hypothesis" ? value : null;
+}
+
 export function planPublishedInputCatalogReviewReconciliation(input: Readonly<{
   currentVersion: number;
   impacts: readonly Readonly<{
