@@ -47,6 +47,8 @@ export function validatePublishedInputCatalogReviewEvidenceContext(input: Readon
   if (!storedFingerprintMatches) return false;
 
   if (
+    input.preservedDraftIdentity.research === null ||
+    input.deployedIdentity.research === null ||
     input.preservedDraftIdentity.taxonId !== input.expectedTaxonId ||
     input.deployedIdentity.taxonId !== input.expectedTaxonId ||
     input.preservedDraftIdentity.research.researchVersion !==

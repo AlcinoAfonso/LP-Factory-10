@@ -138,15 +138,9 @@ export function AdminTaxonCreateForm({ action, parentOptions }: AdminTaxonCreate
             />
           </label>
 
-          <label className="flex items-end gap-2 pb-2 text-sm text-muted-foreground">
-            <input
-              className="h-4 w-4 rounded border-border text-brand-600"
-              name="isActive"
-              type="checkbox"
-              defaultChecked
-            />
-            Criar como ativo
-          </label>
+          <div className="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            O novo taxon será criado inativo e só poderá ser liberado após a revisão humana da cobertura E20.2.
+          </div>
 
           <label className="space-y-1 lg:col-span-2">
             <span className="text-xs font-medium text-muted-foreground">Aliases opcionais</span>

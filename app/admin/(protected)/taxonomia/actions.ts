@@ -10,7 +10,6 @@ import { evaluateInputCatalogWithOpenAi } from "@/conversion-content/adapters/in
 import { resolveInputCatalogEvaluationRuntimeReadiness } from "@/conversion-content/adapters/inputCatalogEvaluationRuntimeGate";
 import {
   executeInputCatalogEvaluationAdministrativeActionCore,
-  executeLegacyInputCatalogReviewRecordCore,
 } from "@/conversion-content/adapters/inputCatalogEvaluationAdministrativeActionCore";
 import {
   coordinateInputCatalogEvaluation,
@@ -300,12 +299,17 @@ export async function acknowledgeInputCatalogGapAction(input: Readonly<{
   reference: InputCatalogEvaluationReference;
   output: InputCatalogEvaluationOutput;
   selectedCandidateIndexes: readonly number[];
+  humanCandidate?: Readonly<{
+    factualNeed: string;
+    suggestedTaxonomyLayer: "universal" | "segment" | "niche" | "ultra_niche";
+  }> | null;
 }>): Promise<AcknowledgeInputCatalogGapActionResult> {
   const result = await executeAdministrativeEvaluationDecision({
     decision: "acknowledge_factual_gap",
     reference: input.reference,
     output: input.output,
     selectedCandidateIndexes: input.selectedCandidateIndexes,
+    humanCandidate: input.humanCandidate,
   });
   if (!result.ok) return result;
   return result.kind === "factual_gap_acknowledged" && result.handoff
@@ -325,6 +329,10 @@ async function executeAdministrativeEvaluationDecision(input: Readonly<{
   reference: InputCatalogEvaluationReference;
   output: InputCatalogEvaluationOutput;
   selectedCandidateIndexes?: readonly number[];
+  humanCandidate?: Readonly<{
+    factualNeed: string;
+    suggestedTaxonomyLayer: "universal" | "segment" | "niche" | "ultra_niche";
+  }> | null;
 }>) {
   const gate = await requirePlatformAdmin();
   if (!gate.allowed) {
@@ -347,6 +355,7 @@ async function executeAdministrativeEvaluationDecision(input: Readonly<{
         decisionTokenSecret: process.env.OPENAI_API_KEY,
         output: input.output,
         selectedCandidateIndexes: input.selectedCandidateIndexes,
+        humanCandidate: input.humanCandidate,
       },
       {
         requireRuntime: async () => {
@@ -405,6 +414,7 @@ async function executeAdministrativeEvaluationDecision(input: Readonly<{
       decisionTokenSecret: process.env.OPENAI_API_KEY,
       output: input.output,
       selectedCandidateIndexes: input.selectedCandidateIndexes,
+      humanCandidate: input.humanCandidate,
     },
     {
       requireRuntime: async () => {
@@ -472,7 +482,6 @@ export async function createTaxonAction(
     parentId: String(formData.get("parentId") ?? ""),
     slug: String(formData.get("slug") ?? ""),
     aliases: [String(formData.get("aliases") ?? "")],
-    isActive: formData.get("isActive") === "on",
   });
 
   if (!result.ok) return { error: result.error };
@@ -537,17 +546,10 @@ export async function recordInputCatalogReviewAction(
   if (!gate.allowed) {
     return { error: "Acesso administrativo não autorizado.", reviewedVersion: null, reopened: false, revision };
   }
-  const legacy = await executeLegacyInputCatalogReviewRecordCore({
-    resolveRuntime: resolveInputCatalogEvaluationRuntimeReadiness,
-    record: () => recordAdminInputCatalogReview({
-      taxonId: String(formData.get("taxonId") ?? ""),
-      inputCatalogVersion: Number(formData.get("inputCatalogVersion")),
-    }),
+  const result = await recordAdminInputCatalogReview({
+    taxonId: String(formData.get("taxonId") ?? ""),
+    inputCatalogVersion: Number(formData.get("inputCatalogVersion")),
   });
-  if (!legacy.ok) {
-    return { error: legacy.message, reviewedVersion: null, reopened: false, revision };
-  }
-  const result = legacy.value;
   if (!result.ok) return { error: result.error, reviewedVersion: null, reopened: false, revision };
   revalidatePath("/admin/taxonomia");
   revalidatePath(`/admin/taxonomia/${result.taxonId}`);

@@ -216,7 +216,7 @@ export type InputCatalogEvaluationContextIdentity = Readonly<{
     researchVersion: number;
     relativePath: string;
     content: string;
-  }>;
+  }> | null;
   inputCatalog: Readonly<{
     version: number;
     plans: readonly LandingPageInputCatalogPlan[];
@@ -274,6 +274,7 @@ export type InputCatalogEvaluationPrompt = Readonly<{
 
 export type InputCatalogEvaluationProviderRequest = Readonly<{
   mode: InputCatalogEvaluationMode;
+  webSearchMaxCalls?: 0 | 1 | 2;
   prompt: InputCatalogEvaluationPrompt;
   outputSchema: Readonly<Record<string, unknown>>;
 }>;

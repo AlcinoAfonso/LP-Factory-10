@@ -131,7 +131,8 @@ const cases: readonly ValidationCase[] = [
       const reviewReadEnd = adminSource.indexOf("async function readAdminEndCustomerResearchSelection", reviewReadStart);
       const reviewRead = adminSource.slice(reviewReadStart, reviewReadEnd);
       assert.ok(reviewRead.indexOf("if (!isInputCatalogReviewEnabled())") >= 0);
-      assert.ok(reviewRead.indexOf("loadSelectedEndCustomerResearchFromClient") > reviewRead.indexOf("if (!isInputCatalogReviewEnabled())"));
+      assert.ok(reviewRead.indexOf('.from("business_taxons")') > reviewRead.indexOf("if (!isInputCatalogReviewEnabled())"));
+      assert.doesNotMatch(reviewRead, /isEndCustomerResearchSelectionEnabled/);
       const selectedCore = readFileSync(
         new URL("../../adapters/selectedEndCustomerResearchAdapterCore.ts", import.meta.url),
         "utf8",
@@ -385,6 +386,7 @@ const cases: readonly ValidationCase[] = [
         parentTaxonId: "segment",
         selectedResearchVersion: 1,
         reviewedVersion: null,
+        isActive: false,
         chainFingerprint: "chain-v1",
       };
       assert.equal(sameInputCatalogReviewBaseline(baseline, { ...baseline }), true);
@@ -394,6 +396,7 @@ const cases: readonly ValidationCase[] = [
         { ...baseline, parentTaxonId: "other" },
         { ...baseline, selectedResearchVersion: 2 },
         { ...baseline, reviewedVersion: 1 },
+        { ...baseline, isActive: true },
         { ...baseline, chainFingerprint: "chain-v2" },
       ]) assert.equal(sameInputCatalogReviewBaseline(baseline, changed), false);
     },
@@ -1340,6 +1343,40 @@ const cases: readonly ValidationCase[] = [
       assert.equal(events[0]?.result, "success");
       assert.equal(events[0]?.promptVersion, "e20.6.5-input-catalog-evaluation-v1");
 
+      let webBody: Record<string, unknown> | null = null;
+      const webCompleted = await evaluateInputCatalogWithOpenAi(
+        {
+          apiKey: "test-key",
+          configuration: resolved.value,
+          environment: "development",
+          request: { ...request, webSearchMaxCalls: 2 },
+          requestId: "request_e2065_web",
+          safetyIdentifier: "platform_admin_test",
+        },
+        {
+          fetchImpl: async (_url, init) => {
+            webBody = JSON.parse(String(init?.body));
+            return new Response(JSON.stringify({
+              id: "resp_e2065_web",
+              status: "completed",
+              output_text: JSON.stringify(validSystematicEvaluationOutput()),
+              usage: { input_tokens: 10, output_tokens: 5, total_tokens: 15 },
+            }), { status: 200 });
+          },
+          emitEvent: () => undefined,
+        },
+      );
+      assert.equal(webCompleted.status, "completed");
+      const capturedWeb = webBody as unknown as Record<string, unknown>;
+      assert.deepEqual(capturedWeb.tools, [{
+        type: "web_search",
+        external_web_access: true,
+        search_context_size: "medium",
+      }]);
+      assert.equal(capturedWeb.tool_choice, "required");
+      assert.equal(capturedWeb.max_tool_calls, 2);
+      assert.deepEqual(capturedWeb.include, ["web_search_call.action.sources"]);
+
       const refusal = await evaluateInputCatalogWithOpenAi(
         {
           apiKey: "test-key",
@@ -1920,9 +1957,8 @@ const cases: readonly ValidationCase[] = [
       assert.match(pageSource, /inputCatalogEvaluationRuntime\?\.ok/);
       assert.match(pageSource, /inputCatalogEvaluationRuntime\.code === "ROLLOUT_GATE_OFF"/);
       assert.match(pageSource, /legacyMode={inputCatalogLegacyMode}/);
-      assert.match(pageSource, /\? \{ \.\.\.taxon\.inputCatalogReview, handoff: "" \}/);
-      assert.match(pageSource, /O handoff Codex acima permanece o caminho autorizado/);
-      assert.match(pageSource, /Runtime e caminhos legados permanecem bloqueados/);
+      assert.match(pageSource, /review={taxon\.inputCatalogReview}/);
+      assert.match(pageSource, /A liberação humana sem IA acima permanece disponível/);
       assert.match(pageSource, /catalogDraftRevision/);
 
       const actionSource = readFileSync(
@@ -1936,7 +1972,8 @@ const cases: readonly ValidationCase[] = [
       assert.match(actionSource, /contextFingerprint/);
       assert.match(actionSource, /decisionToken/);
       assert.match(actionSource, /executeInputCatalogEvaluationAdministrativeActionCore/);
-      assert.match(actionSource, /executeLegacyInputCatalogReviewRecordCore/);
+      assert.match(actionSource, /recordAdminInputCatalogReview/);
+      assert.doesNotMatch(actionSource, /executeLegacyInputCatalogReviewRecordCore/);
       assert.match(actionSource, /reject_candidates_and_confirm_sufficient/);
       assert.match(actionSource, /recordAdminInputCatalogDraftSufficiencyDecision/);
       assert.match(actionSource, /feedback,/);
@@ -1978,6 +2015,113 @@ const cases: readonly ValidationCase[] = [
         "utf8",
       );
       assert.match(activeReviewSource, /Copiar instrução para o Codex/);
+    },
+  },
+  {
+    name: "admin evaluation accepts an inactive selected taxon without relaxing the operational loader",
+    run: async () => {
+      let candidateSawActive = false;
+      const result = await loadSelectedEndCustomerResearchFromClient(
+        { taxonId: VALID_TAXON_ID, allowInactiveTaxon: true },
+        selectionClient({
+          data: selectedTaxonRow({
+            is_active: false,
+            selected_end_customer_research_version: 1,
+          }),
+          error: null,
+        }),
+        async (input) => {
+          candidateSawActive = input.taxon.isActive;
+          return {
+            ok: true,
+            value: {
+              taxonSlug: input.taxon.slug,
+              audienceScope: "end_customer",
+              researchVersion: input.researchVersion,
+              relativePath: "corretor-imoveis/end_customer/v1.md",
+              content: validContent(),
+            },
+          };
+        },
+      );
+      assert.equal(result.ok, true);
+      assert.equal(candidateSawActive, true);
+    },
+  },
+  {
+    name: "evaluation without E20.5 authorizes only the bounded web-search policy",
+    run: async () => {
+      const input = { ...evaluationContextInput(4), selectedResearch: null };
+      const context = assertEvaluationContextSuccess(buildInputCatalogEvaluationContext(input));
+      let observedMaxCalls: number | undefined;
+      const result = await coordinateInputCatalogEvaluation(
+        {
+          taxonId: context.identity.taxonId,
+          inputCatalogVersion: 4,
+          mode: "systematic",
+        },
+        {
+          reconstructContext: async () => ({ ok: true, value: context }),
+          evaluate: async (request) => {
+            observedMaxCalls = request.webSearchMaxCalls;
+            return { status: "completed", output: validSystematicEvaluationOutput() };
+          },
+        },
+      );
+      assert.equal(result.ok, true);
+      assert.equal(observedMaxCalls, 2);
+    },
+  },
+  {
+    name: "human candidate is revalidated and handed to E20.2 without persistence",
+    run: async () => {
+      const secret = "decision-token-test-secret-32-bytes-minimum";
+      const output = validSystematicEvaluationOutput();
+      const token = createInputCatalogEvaluationDecisionToken(
+        {
+          taxonId: realEstateBrokerNicheTaxon.id,
+          inputCatalogVersion: 4,
+          contextFingerprint: "b".repeat(64),
+          outputFingerprint: fingerprintInputCatalogEvaluationOutput(output),
+          status: output.status,
+        },
+        secret,
+      );
+      assert.ok(token);
+      let revalidations = 0;
+      let writes = 0;
+      const result = await executeInputCatalogEvaluationAdministrativeActionCore(
+        {
+          decision: "acknowledge_factual_gap",
+          decisionToken: token,
+          decisionTokenSecret: secret,
+          output,
+          selectedCandidateIndexes: [],
+          humanCandidate: {
+            factualNeed: "Registrar a credencial profissional exigida para este nicho.",
+            suggestedTaxonomyLayer: "niche",
+          },
+        },
+        {
+          requireRuntime: async () => ({ ok: true }),
+          revalidate: async () => {
+            revalidations += 1;
+            return { ok: true };
+          },
+          recordReviewedVersion: async () => {
+            writes += 1;
+            return { ok: true, reviewedVersion: 4 };
+          },
+        },
+      );
+      assert.equal(result.ok, true);
+      if (!result.ok || result.kind !== "factual_gap_acknowledged" || !result.handoff) {
+        throw new Error("Expected human candidate handoff");
+      }
+      assert.match(result.handoff, /credencial profissional/);
+      assert.match(result.handoff, /human_hypothesis/);
+      assert.equal(revalidations, 1);
+      assert.equal(writes, 0);
     },
   },
   {
@@ -2169,6 +2313,7 @@ function omitKey(value: object, key: string): Record<string, unknown> {
 function reorderEvaluationContextIdentity(
   identity: InputCatalogEvaluationContextIdentity,
 ): InputCatalogEvaluationContextIdentity {
+  if (identity.research === null) throw new Error("Expected E20.5 research identity");
   return {
     inputCatalog: {
       catalogs: identity.inputCatalog.catalogs,

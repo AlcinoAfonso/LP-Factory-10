@@ -81,7 +81,8 @@ assert.doesNotMatch(taxonomyDetail, /Pesquisa BB|Pesquisa EC|diagnostic\.(busine
 assert.match(taxonomyDetail, /AdminTaxonResearchSelectionForm/);
 assert.match(taxonomyDetail, /AdminTaxonInputCatalogReview/);
 assert.doesNotMatch(taxonomyAdapter, /landingPageResearchAdapter|research-resolution|resolveLandingPageResearch|E10\.8/);
-assert.match(taxonomyAdapter, /loadSelectedEndCustomerResearchFromClient/);
+assert.match(taxonomyAdapter, /selected_end_customer_research_version,reviewed_input_catalog_version/);
+assert.doesNotMatch(taxonomyAdapter, /loadSelectedEndCustomerResearchFromClient/);
 assert.match(taxonomyAdapter, /readAdminCommercialActivationOverview/);
 assert.doesNotMatch(conversionIndex, /landingPageResearch|landingPageResearchAdapter|research-resolution/);
 assert.doesNotMatch(packageJson, /validate:landing-page-research|research-resolution\/validation-cases/);

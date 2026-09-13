@@ -96,8 +96,10 @@ export type AdminInputCatalogReview =
   | { status: "read_failed"; errorCode: string; message: string }
   | {
       status: "available";
-      selectedResearchVersion: number;
+      selectedResearchVersion: number | null;
       reviewedVersion: number | null;
+      currentInputCatalogVersion: number;
+      isActive: boolean;
       handoff: string;
       taxonName: string;
       taxonSlug: string;

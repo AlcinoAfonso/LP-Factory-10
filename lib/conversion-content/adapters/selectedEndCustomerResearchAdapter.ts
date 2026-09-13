@@ -14,6 +14,7 @@ import { readCompleteTaxonChainForTaxon } from "./taxonChainAdapter";
 
 export async function loadSelectedEndCustomerResearchForTaxon(input: {
   taxonId: string;
+  allowInactiveTaxon?: boolean;
 }): Promise<LoadSelectedEndCustomerResearchResult> {
   if (!isEndCustomerResearchSelectionEnabled()) {
     return {

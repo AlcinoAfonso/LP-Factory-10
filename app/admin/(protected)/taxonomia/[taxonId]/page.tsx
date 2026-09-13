@@ -58,7 +58,6 @@ export default async function AdminTaxonDetailPage({ params, searchParams }: Adm
       : inputCatalogEvaluationRuntime.code === "ROLLOUT_GATE_OFF"
         ? "rollout_gate_off"
         : "operational_configuration_unproven";
-  const legacyAvailable = inputCatalogLegacyMode === "rollout_gate_off";
   const draftEvaluation = draftRevision === null
     ? null
     : await loadAdminInputCatalogDraftEvaluationContext({
@@ -146,11 +145,7 @@ export default async function AdminTaxonDetailPage({ params, searchParams }: Adm
           legacyMode={inputCatalogLegacyMode}
           recordAction={recordInputCatalogReviewAction}
           reopenAction={reopenInputCatalogReviewAction}
-          review={
-            !legacyAvailable && taxon.inputCatalogReview.status === "available"
-              ? { ...taxon.inputCatalogReview, handoff: "" }
-              : taxon.inputCatalogReview
-          }
+          review={taxon.inputCatalogReview}
           taxonId={taxon.id}
         />
       )}
@@ -163,6 +158,7 @@ export default async function AdminTaxonDetailPage({ params, searchParams }: Adm
             ? draftEvaluation.value.targetVersion
             : CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION}
           currentReviewedVersion={taxon.inputCatalogReview.reviewedVersion}
+          selectedResearchVersion={taxon.inputCatalogReview.selectedResearchVersion}
           evaluateAction={evaluateInputCatalogAction}
           rejectCandidatesAndConfirmAction={rejectInputCatalogCandidatesAndConfirmSufficientAction}
           taxonId={taxon.id}
@@ -187,8 +183,8 @@ export default async function AdminTaxonDetailPage({ params, searchParams }: Adm
           <p className="mt-2 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
             {inputCatalogEvaluationRuntime.message}
             {inputCatalogEvaluationRuntime.code === "ROLLOUT_GATE_OFF"
-              ? " O handoff Codex acima permanece o caminho autorizado."
-              : " Runtime e caminhos legados permanecem bloqueados até a configuração ser comprovada."}
+              ? " A liberação humana sem IA acima permanece disponível."
+              : " A liberação humana sem IA acima permanece disponível; apenas as sugestões por IA estão bloqueadas."}
           </p>
         </section>
       ) : null}

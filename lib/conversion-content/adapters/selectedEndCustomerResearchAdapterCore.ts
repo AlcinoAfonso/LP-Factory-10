@@ -17,7 +17,11 @@ type CandidateLoader = (input: {
 }) => Promise<LoadEndCustomerResearchCandidateResult>;
 
 export async function loadSelectedEndCustomerResearchFromClient(
-  input: { taxonId: string; includeInputCatalogReview?: boolean },
+  input: {
+    taxonId: string;
+    includeInputCatalogReview?: boolean;
+    allowInactiveTaxon?: boolean;
+  },
   supabase: SelectedEndCustomerResearchReadClient,
   loadCandidate: CandidateLoader = loadEndCustomerResearchCandidate,
 ): Promise<LoadSelectedEndCustomerResearchResult> {
@@ -53,7 +57,9 @@ export async function loadSelectedEndCustomerResearchFromClient(
   if (typeof row.is_active !== "boolean") {
     return failure("TAXON_IDENTITY_INVALID", "O estado persistido do taxon é inválido.");
   }
-  if (!row.is_active) return failure("TAXON_INACTIVE", "O taxon está inativo.");
+  if (!row.is_active && !input.allowInactiveTaxon) {
+    return failure("TAXON_INACTIVE", "O taxon está inativo.");
+  }
 
   const selectedVersion = row.selected_end_customer_research_version;
   if (selectedVersion === null) {
@@ -87,7 +93,7 @@ export async function loadSelectedEndCustomerResearchFromClient(
   let candidate: LoadEndCustomerResearchCandidateResult;
   try {
     candidate = await loadCandidate({
-      taxon: { slug: row.slug, isActive: row.is_active },
+      taxon: { slug: row.slug, isActive: input.allowInactiveTaxon ? true : row.is_active },
       researchVersion: Number(selectedVersion),
     });
   } catch {

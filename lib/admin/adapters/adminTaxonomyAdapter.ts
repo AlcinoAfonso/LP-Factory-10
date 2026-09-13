@@ -1,6 +1,7 @@
 import "server-only";
 
 import {
+  CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION,
   buildLandingPageInputCatalogTaxonChain,
   type LandingPageInputCatalogTaxonChain,
   type LandingPageInputCatalogTaxonIdentity,
@@ -12,7 +13,6 @@ import {
   loadEndCustomerResearchCandidate,
   resolveInputCatalogReview,
 } from "@/conversion-content/landing-page/taxon-preparation";
-import { loadSelectedEndCustomerResearchFromClient } from "@/conversion-content/adapters/selectedEndCustomerResearchAdapterCore";
 import { createServiceClient } from "@/lib/supabase/service";
 import {
   ADMIN_PAGE_SIZE,
@@ -49,7 +49,6 @@ type CreateAdminTaxonInput = {
   parentId?: string | null;
   slug?: string;
   aliases?: string[];
-  isActive: boolean;
 };
 
 type CreateAdminTaxonResult =
@@ -230,51 +229,37 @@ async function readAdminInputCatalogReview(
   taxonId: string,
 ): Promise<AdminTaxonDetail["inputCatalogReview"]> {
   if (!isInputCatalogReviewEnabled()) return { status: "disabled" };
-  if (!isEndCustomerResearchSelectionEnabled()) {
+  const { data, error } = await supabase
+    .from("business_taxons")
+    .select("id,parent_id,level,name,slug,is_active,selected_end_customer_research_version,reviewed_input_catalog_version")
+    .eq("id", taxonId)
+    .limit(1)
+    .maybeSingle();
+  if (error) {
     return {
-      status: "blocked",
-      errorCode: "FEATURE_DISABLED",
-      message: "A seleção E20.5 precisa estar habilitada antes da avaliação E20.6.",
+      status: "read_failed",
+      errorCode: "DATABASE_READ_FAILED",
+      message: "Não foi possível ler a avaliação E20.6.",
     };
   }
-
-  const selectedResearch = await loadSelectedEndCustomerResearchFromClient(
-    { taxonId, includeInputCatalogReview: true },
-    supabase,
-  );
-  if (!selectedResearch.ok) {
-    const blockedCodes = new Set([
-      "TAXON_INACTIVE",
-      "SELECTION_ABSENT",
-      "SELECTED_VERSION_INVALID",
-    ]);
-    return {
-      status: blockedCodes.has(selectedResearch.error.code) ? "blocked" : "read_failed",
-      errorCode: selectedResearch.error.code,
-      message: selectedResearch.error.message,
-    };
+  if (!data) {
+    return { status: "read_failed", errorCode: "TAXON_NOT_FOUND", message: "O taxon não existe." };
   }
-  const selected = selectedResearch.value;
-  if (
-    selected.taxonName === undefined ||
-    selected.taxonLevel === undefined ||
-    selected.parentTaxonId === undefined ||
-    selected.reviewedInputCatalogVersion === undefined
-  ) {
+  if (!isInputCatalogReviewTaxonRow(data)) {
     return {
       status: "read_failed",
       errorCode: "TAXON_IDENTITY_INVALID",
-      message: "A identidade taxonômica da avaliação E20.6 está incompleta.",
+      message: "A identidade taxonômica da avaliação E20.6 é inválida.",
     };
   }
 
   const expectedIdentity: LandingPageInputCatalogTaxonIdentity = {
-    id: selected.taxonId,
-    name: selected.taxonName,
-    slug: selected.taxonSlug,
-    level: selected.taxonLevel,
-    isActive: true,
-    parentId: selected.parentTaxonId,
+    id: data.id,
+    name: data.name,
+    slug: data.slug,
+    level: data.level,
+    isActive: data.is_active,
+    parentId: data.parent_id,
   };
   const chain = await readInputCatalogTaxonChain(supabase, taxonId, expectedIdentity);
   if (!chain.ok) {
@@ -283,17 +268,21 @@ async function readAdminInputCatalogReview(
 
   return {
     status: "available",
-    selectedResearchVersion: selected.selectedResearchVersion,
-    reviewedVersion: selected.reviewedInputCatalogVersion,
-    handoff: buildInputCatalogReviewHandoff({
-      taxonSlug: selected.taxonSlug,
-      taxonChain: chain.value,
-      researchVersion: selected.selectedResearchVersion,
-    }),
-    taxonName: selected.taxonName,
-    taxonSlug: selected.taxonSlug,
-    taxonLevel: selected.taxonLevel,
-    parentTaxonId: selected.parentTaxonId,
+    selectedResearchVersion: data.selected_end_customer_research_version,
+    reviewedVersion: data.reviewed_input_catalog_version,
+    currentInputCatalogVersion: CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION,
+    isActive: data.is_active,
+    handoff: data.selected_end_customer_research_version === null
+      ? "A pesquisa E20.5 não está selecionada. Libere sem IA se a cobertura herdada for suficiente ou execute a avaliação com web search controlada."
+      : buildInputCatalogReviewHandoff({
+          taxonSlug: data.slug,
+          taxonChain: chain.value,
+          researchVersion: data.selected_end_customer_research_version,
+        }),
+    taxonName: data.name,
+    taxonSlug: data.slug,
+    taxonLevel: data.level,
+    parentTaxonId: data.parent_id,
     chainFingerprint: fingerprintTaxonChain(chain.value),
   };
 }
@@ -475,7 +464,7 @@ export async function createAdminTaxon(input: CreateAdminTaxonInput): Promise<Cr
       level,
       slug,
       parent_id: level === "segment" ? null : parentId,
-      is_active: input.isActive,
+      is_active: false,
     })
     .select("id")
     .single();
@@ -515,6 +504,12 @@ export async function updateAdminTaxon(input: UpdateAdminTaxonInput): Promise<Ad
     .eq("id", input.id)
     .maybeSingle();
   if (currentError || !current) return { ok: false, error: "Taxon nao encontrado." };
+  if (isInputCatalogReviewEnabled() && !current.is_active && input.isActive) {
+    return {
+      ok: false,
+      error: "Use a liberação E20.6 para ativar um taxon novo após revisar a cobertura herdada.",
+    };
+  }
   const materiallyChangesResolution = taxonomyMutationAffectsInputCatalogResolution(
     { name: current.name, slug: current.slug, isActive: current.is_active },
     { name, slug, isActive: input.isActive },
@@ -606,10 +601,8 @@ export async function selectAdminEndCustomerResearchVersion(
     return { ok: false, error: "Não foi possível ler o taxon agora." };
   }
   if (!taxon) return { ok: false, error: "Taxon não encontrado." };
-  if (!taxon.is_active) return { ok: false, error: "O taxon precisa estar ativo." };
-
   const candidate = await loadEndCustomerResearchCandidate({
-    taxon: { slug: taxon.slug, isActive: taxon.is_active },
+    taxon: { slug: taxon.slug, isActive: true },
     researchVersion: input.researchVersion,
   });
   if (!candidate.ok) {
@@ -625,6 +618,7 @@ export async function selectAdminEndCustomerResearchVersion(
     currentVersion: taxon.selected_end_customer_research_version,
     nextVersion: input.researchVersion,
     inputCatalogReviewEnabled: reviewEnabled,
+    preserveReviewedVersion: taxon.is_active,
   });
   if (selectionMutation.idempotent) {
     return { ok: true, taxonId: taxon.id, selectedVersion: input.researchVersion };
@@ -635,7 +629,7 @@ export async function selectAdminEndCustomerResearchVersion(
     .update(selectionMutation.update)
     .eq("id", taxon.id)
     .eq("slug", taxon.slug)
-    .eq("is_active", true);
+    .eq("is_active", taxon.is_active);
   updateQuery = taxon.selected_end_customer_research_version === null
     ? updateQuery.is("selected_end_customer_research_version", null)
     : updateQuery.eq(
@@ -675,12 +669,12 @@ export async function recordAdminInputCatalogReview(
   if (!isInputCatalogReviewEnabled()) {
     return { ok: false, error: "A avaliação factual E20.2 está desabilitada." };
   }
-  if (!isEndCustomerResearchSelectionEnabled()) {
-    return { ok: false, error: "A seleção E20.5 precisa estar habilitada." };
-  }
   if (!input.taxonId) return { ok: false, error: "Taxon não informado." };
   if (!Number.isSafeInteger(input.inputCatalogVersion) || input.inputCatalogVersion <= 0) {
     return { ok: false, error: "Informe uma versão E20.2 inteira positiva." };
+  }
+  if (input.inputCatalogVersion !== CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION) {
+    return { ok: false, error: "A liberação deve confirmar a versão E20.2 corrente." };
   }
 
   const supabase = createServiceClient();
@@ -698,7 +692,7 @@ export async function recordAdminInputCatalogReview(
     name: review.taxonName,
     slug: review.taxonSlug,
     level: review.taxonLevel,
-    isActive: true,
+    isActive: review.isActive,
     parentId: review.parentTaxonId,
   };
   const chain = await readInputCatalogTaxonChain(supabase, input.taxonId, expectedIdentity);
@@ -716,13 +710,18 @@ export async function recordAdminInputCatalogReview(
 
   let updateQuery: any = supabase
     .from("business_taxons")
-    .update({ reviewed_input_catalog_version: input.inputCatalogVersion })
+    .update({
+      reviewed_input_catalog_version: input.inputCatalogVersion,
+      is_active: true,
+    })
     .eq("id", input.taxonId)
     .eq("name", review.taxonName)
     .eq("slug", review.taxonSlug)
     .eq("level", review.taxonLevel)
-    .eq("is_active", true)
-    .eq("selected_end_customer_research_version", review.selectedResearchVersion);
+    .eq("is_active", review.isActive);
+  updateQuery = review.selectedResearchVersion === null
+    ? updateQuery.is("selected_end_customer_research_version", null)
+    : updateQuery.eq("selected_end_customer_research_version", review.selectedResearchVersion);
   updateQuery = review.parentTaxonId === null
     ? updateQuery.is("parent_id", null)
     : updateQuery.eq("parent_id", review.parentTaxonId);
@@ -744,9 +743,6 @@ export async function reopenAdminInputCatalogReview(input: {
 }): Promise<AdminInputCatalogReviewActionResult> {
   if (!isInputCatalogReviewEnabled()) {
     return { ok: false, error: "A avaliação factual E20.2 está desabilitada." };
-  }
-  if (!isEndCustomerResearchSelectionEnabled()) {
-    return { ok: false, error: "A seleção E20.5 precisa estar habilitada." };
   }
   if (!input.taxonId) return { ok: false, error: "Taxon não informado." };
 
@@ -879,7 +875,11 @@ async function readInputCatalogTaxonChain(
   if (expectedSelected && !sameInputCatalogTaxonIdentity(selected, expectedSelected)) {
     return { ok: false as const, error: "O taxon mudou durante a validação da cadeia taxonômica." };
   }
-  const chain = buildLandingPageInputCatalogTaxonChain(selected, identities);
+  const resolutionSelected = selected.isActive ? selected : { ...selected, isActive: true };
+  const resolutionIdentities = selected.isActive
+    ? identities
+    : identities.map((taxon) => taxon.id === selected.id ? resolutionSelected : taxon);
+  const chain = buildLandingPageInputCatalogTaxonChain(resolutionSelected, resolutionIdentities);
   return chain.ok
     ? chain
     : { ok: false as const, error: chain.error.message };

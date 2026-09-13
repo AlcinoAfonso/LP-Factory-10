@@ -96,20 +96,20 @@ export function AdminTaxonInputCatalogReview({
         Avaliar suficiência da E20.2
       </h2>
       <p className="mt-1 text-sm text-muted-foreground">
-        {legacyMode === "rollout_gate_off"
-          ? "Copie a instrução, conclua a análise no Codex App e só depois registre a versão E20.2 aceita por decisão humana."
-          : legacyMode === "operational_configuration_unproven"
-            ? "A configuração operacional não foi comprovada. Runtime, handoff Codex e registro legado permanecem bloqueados neste estado."
-            : "O runtime E20.6.5 está comprovado e ativo. A suficiência só pode ser registrada por decisão autenticada da avaliação factual."}
+        Compare a cobertura herdada. Você pode liberar sem IA quando ela já for suficiente ou pedir sugestões opcionais abaixo.
       </p>
 
       <div className="mt-4 rounded-md border border-border bg-muted/30 px-4 py-3">
         <p className="text-xs font-medium uppercase text-muted-foreground">Estado da avaliação</p>
         <p className="mt-1 text-sm font-medium text-foreground">
-          {reviewedVersion === null ? "Não avaliado" : `Versão ${reviewedVersion} avaliada`}
+          {reviewedVersion === null
+            ? availableReview.isActive ? "Ativo, sem revisão E20.2 vigente" : "Inativo, aguardando revisão E20.2"
+            : `Versão ${reviewedVersion} avaliada${availableReview.isActive ? "" : "; taxon ainda inativo"}`}
         </p>
         <p className="mt-1 text-xs text-muted-foreground">
-          Pesquisa integral E20.5 selecionada: v{availableReview.selectedResearchVersion}.
+          {availableReview.selectedResearchVersion === null
+            ? "Pesquisa E20.5 ausente; isso não impede a liberação sem IA."
+            : `Pesquisa integral E20.5 selecionada: v${availableReview.selectedResearchVersion}.`}
         </p>
       </div>
 
@@ -136,32 +136,24 @@ export function AdminTaxonInputCatalogReview({
       ) : null}
 
       <div className="mt-6 grid gap-4 lg:grid-cols-2">
-        {legacyAvailable ? (
-          <form action={recordFormAction} className="space-y-3 rounded-md border border-border p-4" onSubmit={() => setAttemptedAction("record")}>
+        <form action={recordFormAction} className="space-y-3 rounded-md border border-border p-4" onSubmit={() => setAttemptedAction("record")}>
             <input name="taxonId" type="hidden" value={taxonId} />
-            <label className="text-xs font-medium text-muted-foreground" htmlFor="input-catalog-review-version">
-              Versão E20.2 aceita como suficiente
-            </label>
-            <input
-              className="h-11 w-full rounded-md border border-border bg-background px-3 text-sm outline-none focus-visible:ring-4 focus-visible:ring-brand-600/20 disabled:opacity-60"
-              disabled={busy}
-              id="input-catalog-review-version"
-              inputMode="numeric"
-              min={1}
-              name="inputCatalogVersion"
-              required
-              step={1}
-              type="number"
-            />
+            <input name="inputCatalogVersion" type="hidden" value={availableReview.currentInputCatalogVersion} />
+            <p className="text-sm text-muted-foreground">
+              Confirmo que a cobertura herdada da versão E20.2 {availableReview.currentInputCatalogVersion} é suficiente para este taxon.
+            </p>
             <button
               className="inline-flex min-h-11 items-center justify-center rounded-md bg-brand-600 px-4 text-sm font-medium text-white transition hover:bg-brand-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-600/30 disabled:opacity-60"
               disabled={busy}
               type="submit"
             >
-              {recordPending ? "Registrando..." : "Registrar versão avaliada"}
+              {recordPending
+                ? "Liberando..."
+                : availableReview.isActive
+                  ? "Confirmar cobertura sem IA"
+                  : "Liberar taxon sem IA"}
             </button>
           </form>
-        ) : null}
 
         <form action={reopenFormAction} className="space-y-3 rounded-md border border-border p-4" onSubmit={() => setAttemptedAction("reopen")}>
           <input name="taxonId" type="hidden" value={taxonId} />
@@ -179,7 +171,7 @@ export function AdminTaxonInputCatalogReview({
       </div>
 
       {actionError ? <p className="mt-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">{actionError}</p> : null}
-      {legacyAvailable && !actionError && attemptedAction === "record" && lastAction === "record" && recordState.reviewedVersion !== null ? <p className="mt-4 text-sm text-emerald-800" role="status">Versão {recordState.reviewedVersion} registrada como avaliada.</p> : null}
+      {!actionError && attemptedAction === "record" && lastAction === "record" && recordState.reviewedVersion !== null ? <p className="mt-4 text-sm text-emerald-800" role="status">Versão {recordState.reviewedVersion} registrada e taxon liberado.</p> : null}
       {!actionError && attemptedAction === "reopen" && lastAction === "reopen" && reopenState.reopened ? <p className="mt-4 text-sm text-emerald-800" role="status">Avaliação reaberta; o estado voltou para não avaliado.</p> : null}
     </section>
   );

@@ -41,6 +41,13 @@ export async function evaluateInputCatalogWithOpenAi(
   if (!safetyIdentifier) {
     return { status: "failure", message: "openai_safety_identifier_invalid" };
   }
+  const webSearchMaxCalls = input.request.webSearchMaxCalls ?? 0;
+  const webSearch = webSearchMaxCalls > 0
+    ? input.configuration.webSearch
+    : null;
+  if (webSearchMaxCalls > 0 && !webSearch) {
+    return { status: "failure", message: "openai_web_search_policy_missing" };
+  }
 
   const result = await requestOpenAiResponses(
     {
@@ -65,7 +72,20 @@ export async function evaluateInputCatalogWithOpenAi(
         instructions: input.request.prompt.instructions,
         input: input.request.prompt.input,
         store: false,
-        tools: [],
+        tools: webSearch
+          ? [{
+              type: "web_search",
+              external_web_access: webSearch.externalWebAccess,
+              search_context_size: webSearch.searchContextSize,
+            }]
+          : [],
+        ...(webSearch
+          ? {
+              tool_choice: "required",
+              max_tool_calls: Math.min(webSearchMaxCalls, webSearch.maxToolCalls),
+              include: ["web_search_call.action.sources"],
+            }
+          : {}),
         max_output_tokens: 6_000,
         safety_identifier: safetyIdentifier,
         text: {

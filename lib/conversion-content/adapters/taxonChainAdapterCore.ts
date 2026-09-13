@@ -44,6 +44,7 @@ export type ReadTaxonChainPage = (
 export async function readCompleteTaxonChainFromPages(
   taxonId: string,
   readPage: ReadTaxonChainPage,
+  options: Readonly<{ allowInactiveSelected?: boolean }> = {},
 ): Promise<CompleteTaxonChainResult> {
   if (taxonId.trim().length === 0) {
     return failure("TAXON_IDENTITY_INVALID", "O identificador do taxon é inválido.");
@@ -106,19 +107,23 @@ export async function readCompleteTaxonChainFromPages(
       "O taxon não pertence à cadeia taxonômica autoritativa.",
     );
   }
-  if (!selected.isActive) {
+  if (!selected.isActive && !options.allowInactiveSelected) {
     return failure("TAXON_INACTIVE", "O taxon selecionado está inativo.");
   }
 
-  const chain = buildLandingPageInputCatalogTaxonChain(selected, taxons);
+  const resolutionSelected = selected.isActive ? selected : { ...selected, isActive: true };
+  const resolutionTaxons = selected.isActive
+    ? taxons
+    : taxons.map((taxon) => taxon.id === selected.id ? resolutionSelected : taxon);
+  const chain = buildLandingPageInputCatalogTaxonChain(resolutionSelected, resolutionTaxons);
   if (!chain.ok) {
     return failure("INVALID_TAXON_CHAIN", chain.error.message);
   }
   return Object.freeze({
     ok: true,
     value: Object.freeze({
-      selected: Object.freeze({ ...selected }),
-      taxons: Object.freeze(taxons.map((taxon) => Object.freeze({ ...taxon }))),
+      selected: Object.freeze({ ...resolutionSelected }),
+      taxons: Object.freeze(resolutionTaxons.map((taxon) => Object.freeze({ ...taxon }))),
       chain: deepFreeze(cloneJson(chain.value)),
     }),
   });

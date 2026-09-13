@@ -9,6 +9,7 @@ import {
 
 export async function readCompleteTaxonChainForTaxon(
   taxonId: string,
+  options: Readonly<{ allowInactiveSelected?: boolean }> = {},
 ): Promise<CompleteTaxonChainResult> {
   const supabase = createServiceClient();
   const readPage: ReadTaxonChainPage = async (offset, limit) => {
@@ -24,5 +25,5 @@ export async function readCompleteTaxonChainForTaxon(
       status: response.status,
     };
   };
-  return readCompleteTaxonChainFromPages(taxonId, readPage);
+  return readCompleteTaxonChainFromPages(taxonId, readPage, options);
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import type {
   AcknowledgeInputCatalogGapActionResult,
@@ -18,6 +19,7 @@ export type AdminTaxonInputCatalogEvaluationRuntimeProps = Readonly<{
   taxonId: string;
   currentInputCatalogVersion: number;
   currentReviewedVersion: number | null;
+  selectedResearchVersion: number | null;
   draftRevision?: number;
   evaluateAction: (input: Readonly<{
     taxonId: string;
@@ -44,6 +46,10 @@ export type AdminTaxonInputCatalogEvaluationRuntimeProps = Readonly<{
     reference: InputCatalogEvaluationReference;
     output: InputCatalogEvaluationPresentationOutput;
     selectedCandidateIndexes: readonly number[];
+    humanCandidate?: Readonly<{
+      factualNeed: string;
+      suggestedTaxonomyLayer: "universal" | "segment" | "niche" | "ultra_niche";
+    }> | null;
   }>) => Promise<AcknowledgeInputCatalogGapActionResult>;
 }>;
 
@@ -55,6 +61,7 @@ export type InputCatalogEvaluationPresentationState =
 
 export type AdminTaxonInputCatalogEvaluationProps = Readonly<{
   currentReviewedVersion: number | null;
+  selectedResearchVersion: number | null;
   draftMode?: boolean;
   mode: InputCatalogEvaluationPresentationMode;
   inputCatalogVersion: string;
@@ -69,6 +76,8 @@ export type AdminTaxonInputCatalogEvaluationProps = Readonly<{
     message: string;
   }> | null;
   selectedCandidateIndexes: readonly number[];
+  humanCandidateText: string;
+  humanCandidateLayer: "universal" | "segment" | "niche" | "ultra_niche";
   gapHandoff: string | null;
   gapHandoffCopyStatus: string | null;
   onModeChange: (mode: InputCatalogEvaluationPresentationMode) => void;
@@ -88,6 +97,8 @@ export type AdminTaxonInputCatalogEvaluationProps = Readonly<{
   onConfirmAdministrativeSufficiency: () => void;
   onRejectCandidatesAndConfirmSufficiency: () => void;
   onCandidateSelectionChange: (index: number, selected: boolean) => void;
+  onHumanCandidateTextChange: (value: string) => void;
+  onHumanCandidateLayerChange: (value: "universal" | "segment" | "niche" | "ultra_niche") => void;
   onRecognizeFactualGap: () => void;
   onCopyGapHandoff: () => void;
 }>;
@@ -141,6 +152,7 @@ export function AdminTaxonInputCatalogEvaluationRuntime({
   taxonId,
   currentInputCatalogVersion,
   currentReviewedVersion,
+  selectedResearchVersion,
   evaluateAction,
   confirmAction,
   rejectCandidatesAndConfirmAction,
@@ -162,6 +174,8 @@ export function AdminTaxonInputCatalogEvaluationRuntime({
     Readonly<{ kind: "success" | "failure"; message: string }> | null
   >(null);
   const [selectedCandidateIndexes, setSelectedCandidateIndexes] = useState<readonly number[]>([]);
+  const [humanCandidateText, setHumanCandidateText] = useState("");
+  const [humanCandidateLayer, setHumanCandidateLayer] = useState<"universal" | "segment" | "niche" | "ultra_niche">("niche");
   const [gapHandoff, setGapHandoff] = useState<string | null>(null);
   const [gapHandoffCopyStatus, setGapHandoffCopyStatus] = useState<string | null>(null);
 
@@ -249,6 +263,9 @@ export function AdminTaxonInputCatalogEvaluationRuntime({
         reference,
         output: state.output,
         selectedCandidateIndexes,
+        humanCandidate: humanCandidateText.trim()
+          ? { factualNeed: humanCandidateText, suggestedTaxonomyLayer: humanCandidateLayer }
+          : null,
       });
     } catch {
       setDecisionPending(false);
@@ -269,6 +286,7 @@ export function AdminTaxonInputCatalogEvaluationRuntime({
       message: `${result.selectedCandidateCount} gap(s) factual(is) reconhecido(s). A versão E20.2 não foi alterada.`,
     });
     setGapHandoff(result.handoff);
+    setHumanCandidateText("");
     setGapHandoffCopyStatus(null);
   }
 
@@ -328,6 +346,8 @@ export function AdminTaxonInputCatalogEvaluationRuntime({
       draftMode={draftMode}
       feedback={feedback}
       hypothesis={hypothesis}
+      humanCandidateLayer={humanCandidateLayer}
+      humanCandidateText={humanCandidateText}
       inputCatalogVersion={inputCatalogVersion}
       inputCatalogVersionError={inputCatalogVersionError}
       gapHandoff={gapHandoff}
@@ -360,6 +380,12 @@ export function AdminTaxonInputCatalogEvaluationRuntime({
         setGapHandoff(null);
         if (state.kind === "result") setStale(true);
       }}
+      onHumanCandidateLayerChange={setHumanCandidateLayer}
+      onHumanCandidateTextChange={(value) => {
+        setHumanCandidateText(value);
+        setGapHandoff(null);
+        setDecisionFeedback(null);
+      }}
       onModeChange={(value) => {
         setMode(value);
         setFeedback("");
@@ -370,6 +396,7 @@ export function AdminTaxonInputCatalogEvaluationRuntime({
       onRejectCandidatesAndConfirmSufficiency={rejectCandidatesAndConfirm}
       onRecognizeFactualGap={acknowledgeGap}
       selectedCandidateIndexes={selectedCandidateIndexes}
+      selectedResearchVersion={selectedResearchVersion}
       stale={stale}
       state={state}
     />
@@ -388,11 +415,14 @@ const taxonomyLayerLabels: Record<
 
 export function AdminTaxonInputCatalogEvaluation({
   currentReviewedVersion,
+  selectedResearchVersion,
   draftMode = false,
   mode,
   inputCatalogVersion,
   inputCatalogVersionError = null,
   hypothesis,
+  humanCandidateLayer,
+  humanCandidateText,
   hypothesisError = null,
   state,
   stale,
@@ -405,6 +435,8 @@ export function AdminTaxonInputCatalogEvaluation({
   onModeChange,
   onInputCatalogVersionChange,
   onHypothesisChange,
+  onHumanCandidateLayerChange,
+  onHumanCandidateTextChange,
   onEvaluate,
   onFeedbackChange,
   onConfirmAdministrativeSufficiency,
@@ -444,15 +476,17 @@ export function AdminTaxonInputCatalogEvaluation({
     state.kind !== "result" ||
     output?.status !== "candidate_gaps" ||
     selectedCandidateIndexes.length > 0 ||
+    humanCandidateText.trim().length >= 5 ||
     administrativeDecisionPending;
   const factualGapDecisionBlocked =
     resultInvalid ||
     state.kind !== "result" ||
-    output?.status !== "candidate_gaps" ||
-    selectedCandidateIndexes.length === 0 ||
+    (output?.status !== "candidate_gaps" && humanCandidateText.trim().length < 5) ||
+    (selectedCandidateIndexes.length === 0 && humanCandidateText.trim().length < 5) ||
     administrativeDecisionPending;
   const administrativeBlockReason = getAdministrativeBlockReason({
     administrativeDecisionPending,
+    hasHumanCandidate: humanCandidateText.trim().length >= 5,
     modeMismatch,
     selectedCandidateCount: selectedCandidateIndexes.length,
     stale,
@@ -509,6 +543,30 @@ export function AdminTaxonInputCatalogEvaluation({
           <p className="mt-2 text-sm text-red-700" id="input-catalog-evaluation-version-error" role="alert">
             {inputCatalogVersionError}
           </p>
+        ) : null}
+      </div>
+
+      <div className="mt-4 flex flex-wrap gap-2" aria-label="Fontes desta avaliação">
+        {selectedResearchVersion === null ? (
+          <span className="rounded-full border border-sky-300 bg-sky-50 px-3 py-1 text-xs font-medium text-sky-900">
+            Web Search controlada: até {mode === "systematic" ? "2 chamadas" : "1 chamada"}
+          </span>
+        ) : (
+          <span className="rounded-full border border-emerald-300 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-900">
+            Pesquisa E20.5 v{selectedResearchVersion}
+          </span>
+        )}
+        {mode === "hypothesis" ? (
+          <>
+            {selectedResearchVersion !== null ? (
+              <span className="rounded-full border border-sky-300 bg-sky-50 px-3 py-1 text-xs font-medium text-sky-900">
+                Web Search focal: 1 chamada
+              </span>
+            ) : null}
+            <span className="rounded-full border border-violet-300 bg-violet-50 px-3 py-1 text-xs font-medium text-violet-900">
+              Hipótese humana
+            </span>
+          </>
         ) : null}
       </div>
 
@@ -725,6 +783,37 @@ export function AdminTaxonInputCatalogEvaluation({
         <p className="mt-1 text-sm text-muted-foreground" id="input-catalog-administrative-decision-description">
           A decisão final pertence ao administrador. A recomendação da IA nunca veta a confirmação nem executa qualquer ação.
         </p>
+        <div className="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_12rem]">
+          <div>
+            <label className="text-sm font-medium text-foreground" htmlFor="input-catalog-human-candidate">
+              Sugestão própria opcional
+            </label>
+            <input
+              className="mt-1 min-h-11 w-full rounded-md border border-border bg-background px-3 text-sm outline-none focus-visible:ring-4 focus-visible:ring-brand-600/20"
+              id="input-catalog-human-candidate"
+              maxLength={500}
+              onChange={(event) => onHumanCandidateTextChange(event.currentTarget.value)}
+              placeholder="Descreva uma necessidade factual para validar na E20.2"
+              value={humanCandidateText}
+            />
+          </div>
+          <div>
+            <label className="text-sm font-medium text-foreground" htmlFor="input-catalog-human-candidate-layer">
+              Camada pretendida
+            </label>
+            <select
+              className="mt-1 min-h-11 w-full rounded-md border border-border bg-background px-3 text-sm outline-none focus-visible:ring-4 focus-visible:ring-brand-600/20"
+              id="input-catalog-human-candidate-layer"
+              onChange={(event) => onHumanCandidateLayerChange(event.currentTarget.value as typeof humanCandidateLayer)}
+              value={humanCandidateLayer}
+            >
+              <option value="universal">Universal</option>
+              <option value="segment">Segmento</option>
+              <option value="niche">Nicho</option>
+              <option value="ultra_niche">Ultranicho</option>
+            </select>
+          </div>
+        </div>
         {administrativeBlockReason ? (
           <p className="mt-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900" id="input-catalog-administrative-decision-blocker">
             {administrativeBlockReason}
@@ -766,9 +855,9 @@ export function AdminTaxonInputCatalogEvaluation({
         >
           {administrativeDecisionPending
             ? "Registrando decisão..."
-            : selectedCandidateIndexes.length
-              ? `Reconhecer ${selectedCandidateIndexes.length} gap(s) sem alterar a E20.2`
-              : "Selecione candidatos acionáveis para reconhecer"}
+            : selectedCandidateIndexes.length || humanCandidateText.trim().length >= 5
+              ? `Encaminhar ${selectedCandidateIndexes.length + (humanCandidateText.trim().length >= 5 ? 1 : 0)} candidato(s) para E20.2`
+              : "Selecione ou descreva candidatos acionáveis"}
         </button>
         {administrativeDecisionFeedback ? (
           <p
@@ -801,6 +890,12 @@ export function AdminTaxonInputCatalogEvaluation({
             >
               Copiar handoff para E20.2
             </button>
+            <Link
+              className="mt-3 inline-flex min-h-11 items-center justify-center rounded-md bg-brand-600 px-4 text-sm font-medium text-white transition hover:bg-brand-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-600/30 sm:ml-3"
+              href="/admin/estrutura-lp?view=entradas"
+            >
+              Abrir lifecycle E20.2
+            </Link>
             {gapHandoffCopyStatus ? (
               <p className="mt-2 text-sm text-muted-foreground" role="status">{gapHandoffCopyStatus}</p>
             ) : null}
@@ -973,12 +1068,14 @@ function CompactDescription({ label, children }: Readonly<{ label: string; child
 
 function getAdministrativeBlockReason({
   administrativeDecisionPending,
+  hasHumanCandidate,
   modeMismatch,
   selectedCandidateCount,
   stale,
   state,
 }: Readonly<{
   administrativeDecisionPending: boolean;
+  hasHumanCandidate: boolean;
   modeMismatch: boolean;
   selectedCandidateCount: number;
   stale: boolean;
@@ -1002,11 +1099,11 @@ function getAdministrativeBlockReason({
   if (state.kind === "idle") {
     return "Bloqueado: execute uma avaliação válida antes de decidir.";
   }
-  if (state.output.status === "inconclusive") {
+  if (state.output.status === "inconclusive" && !hasHumanCandidate) {
     return "Bloqueado: resultado inconclusivo não permite confirmação nem reconhecimento de gap factual.";
   }
   if (state.output.status === "candidate_gaps") {
-    return selectedCandidateCount > 0
+    return selectedCandidateCount > 0 || hasHumanCandidate
       ? "Há candidatos selecionados: reconheça os selecionados ou limpe a seleção antes de rejeitar todos."
       : "Revise os candidatos: selecione os gaps reais ou rejeite todos e confirme N como suficiente.";
   }

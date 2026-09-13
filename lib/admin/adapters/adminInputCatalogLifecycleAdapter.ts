@@ -897,6 +897,7 @@ async function advancePublishedReviewMarker(input: Readonly<{
   targetVersion: number;
 }>): Promise<boolean> {
   if (
+    input.evidenceContext.research === null ||
     input.evidenceContext.taxonId !== input.taxon.identity.id ||
     input.evidenceContext.taxonSlug !== input.taxon.identity.slug ||
     input.evidenceContext.research.researchVersion !==
