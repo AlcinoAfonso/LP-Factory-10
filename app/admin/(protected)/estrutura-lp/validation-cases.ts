@@ -248,6 +248,22 @@ assert.equal(
   validatePublishedInputCatalogReviewEvidenceContext(publishedEvidenceInput),
   true,
 );
+const preservedWithoutResearch = structuredClone(preservedDraftIdentity);
+const deployedWithoutResearch = structuredClone(deployedIdentity);
+(preservedWithoutResearch as { research: null }).research = null;
+(deployedWithoutResearch as { research: null }).research = null;
+assert.equal(
+  validatePublishedInputCatalogReviewEvidenceContext({
+    ...publishedEvidenceInput,
+    storedContextFingerprint: fingerprintInputCatalogEvaluationContextIdentity(
+      preservedWithoutResearch,
+    ),
+    preservedDraftIdentity: preservedWithoutResearch,
+    deployedIdentity: deployedWithoutResearch,
+    expectedResearchVersion: null,
+  }),
+  true,
+);
 const stalePublishedIdentityMutations: readonly ((
   identity: InputCatalogEvaluationContextIdentity,
 ) => void)[] = [

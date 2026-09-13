@@ -113,6 +113,29 @@ export function AdminTaxonInputCatalogReview({
         </p>
       </div>
 
+      <div className="mt-4 rounded-md border border-border px-4 py-3">
+        <p className="text-xs font-medium uppercase text-muted-foreground">
+          Cobertura herdada da E20.2 v{availableReview.currentInputCatalogVersion}
+        </p>
+        <p className="mt-2 text-sm text-foreground">
+          Planos confrontados: {availableReview.coverage.plans.join(", ")}.
+        </p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Camadas aplicadas: {availableReview.coverage.appliedLayers.map((layer) =>
+            layer.taxonName ? `${layer.level} (${layer.taxonName})` : layer.level
+          ).join(" → ")}.
+        </p>
+        <ul className="mt-3 grid gap-2 md:grid-cols-2" aria-label="Fields herdados da E20.2">
+          {availableReview.coverage.fields.map((field) => (
+            <li className="rounded border border-border bg-muted/20 px-3 py-2" key={field.fieldKey}>
+              <p className="text-sm font-medium text-foreground">{field.fieldKey}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{field.purpose}</p>
+              <p className="mt-1 text-xs text-muted-foreground">Origem: {field.originLayer}</p>
+            </li>
+          ))}
+        </ul>
+      </div>
+
       {legacyAvailable ? (
         <>
           <label className="mt-4 block text-xs font-medium text-muted-foreground" htmlFor="input-catalog-review-handoff">

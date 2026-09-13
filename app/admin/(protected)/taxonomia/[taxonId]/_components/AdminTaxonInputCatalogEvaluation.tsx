@@ -13,6 +13,7 @@ import type {
   InputCatalogEvaluationCandidate as InputCatalogEvaluationPresentationCandidate,
   InputCatalogEvaluationMode as InputCatalogEvaluationPresentationMode,
   InputCatalogEvaluationOutput as InputCatalogEvaluationPresentationOutput,
+  InputCatalogEvaluationProviderProvenance,
 } from "@/conversion-content/landing-page/taxon-preparation";
 
 export type AdminTaxonInputCatalogEvaluationRuntimeProps = Readonly<{
@@ -56,7 +57,11 @@ export type AdminTaxonInputCatalogEvaluationRuntimeProps = Readonly<{
 export type InputCatalogEvaluationPresentationState =
   | Readonly<{ kind: "idle" }>
   | Readonly<{ kind: "loading" }>
-  | Readonly<{ kind: "result"; output: InputCatalogEvaluationPresentationOutput }>
+  | Readonly<{
+      kind: "result";
+      output: InputCatalogEvaluationPresentationOutput;
+      provenance: InputCatalogEvaluationProviderProvenance;
+    }>
   | Readonly<{ kind: "failure"; message: string }>;
 
 export type AdminTaxonInputCatalogEvaluationProps = Readonly<{
@@ -220,7 +225,7 @@ export function AdminTaxonInputCatalogEvaluationRuntime({
       return;
     }
     setReference(result.reference);
-    setState({ kind: "result", output: result.output });
+    setState({ kind: "result", output: result.output, provenance: result.provenance });
     setFeedback("");
   }
 
@@ -767,6 +772,7 @@ export function AdminTaxonInputCatalogEvaluation({
             invalidForDecision={resultInvalid}
             onCandidateSelectionChange={onCandidateSelectionChange}
             output={output}
+            provenance={state.kind === "result" ? state.provenance : { webSearchCallCount: 0, webSources: [] }}
             selectedCandidateIndexes={selectedCandidateIndexes}
           />
         ) : null}
@@ -910,11 +916,13 @@ function EvaluationResult({
   invalidForDecision,
   onCandidateSelectionChange,
   output,
+  provenance,
   selectedCandidateIndexes,
 }: Readonly<{
   invalidForDecision: boolean;
   onCandidateSelectionChange: (index: number, selected: boolean) => void;
   output: InputCatalogEvaluationPresentationOutput;
+  provenance: InputCatalogEvaluationProviderProvenance;
   selectedCandidateIndexes: readonly number[];
 }>) {
   const status = statusContent[output.status];
@@ -938,6 +946,28 @@ function EvaluationResult({
           Recomendação da IA para revisão humana; não constitui aprovação da E20.2.
         </p>
       </div>
+
+      {provenance.webSearchCallCount > 0 ? (
+        <div className="mt-4 rounded-md border border-sky-200 bg-sky-50 px-4 py-3">
+          <p className="text-xs font-semibold uppercase tracking-wide text-sky-900">
+            Evidência Web Search — {provenance.webSearchCallCount} chamada(s)
+          </p>
+          <ul className="mt-2 space-y-2">
+            {provenance.webSources.map((source) => (
+              <li className="text-sm" key={source.url}>
+                <a
+                  className="break-all text-sky-900 underline underline-offset-2"
+                  href={source.url}
+                  rel="noreferrer"
+                  target="_blank"
+                >
+                  {source.title ?? source.url}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
 
       <div className="mt-4 min-w-0">
         <h3 className="text-base font-semibold text-foreground">Candidatos avaliados</h3>

@@ -279,8 +279,17 @@ export type InputCatalogEvaluationProviderRequest = Readonly<{
   outputSchema: Readonly<Record<string, unknown>>;
 }>;
 
+export type InputCatalogEvaluationProviderProvenance = Readonly<{
+  webSearchCallCount: number;
+  webSources: readonly Readonly<{ title: string | null; url: string }>[];
+}>;
+
 export type InputCatalogEvaluationProviderResult =
-  | Readonly<{ status: "completed"; output: unknown }>
+  | Readonly<{
+      status: "completed";
+      output: unknown;
+      provenance?: InputCatalogEvaluationProviderProvenance;
+    }>
   | Readonly<{ status: "refusal"; message: string }>
   | Readonly<{ status: "incomplete"; message: string }>
   | Readonly<{ status: "failure"; message: string }>;
@@ -300,6 +309,7 @@ export type CoordinateInputCatalogEvaluationResult =
       value: Readonly<{
         contextIdentity: InputCatalogEvaluationContextIdentity;
         output: InputCatalogEvaluationOutput;
+        provenance: InputCatalogEvaluationProviderProvenance;
       }>;
     }>
   | Readonly<{

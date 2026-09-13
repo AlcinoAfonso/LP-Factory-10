@@ -20,6 +20,7 @@ import {
   revalidateInputCatalogEvaluationContext,
   type InputCatalogEvaluationMode,
   type InputCatalogEvaluationOutput,
+  type InputCatalogEvaluationProviderProvenance,
 } from "@/conversion-content/landing-page/taxon-preparation";
 import { nextInputCatalogReviewActionRevision } from "@/lib/admin/adapters/adminTaxonomyReviewPolicy";
 import {
@@ -68,6 +69,7 @@ export type InputCatalogEvaluationActionResult =
   | Readonly<{
       ok: true;
       output: InputCatalogEvaluationOutput;
+      provenance: InputCatalogEvaluationProviderProvenance;
       reference: InputCatalogEvaluationReference;
     }>
   | Readonly<{ ok: false; code: string; message: string }>;
@@ -234,6 +236,7 @@ export async function evaluateInputCatalogAction(input: Readonly<{
   return {
     ok: true,
     output: result.value.output,
+    provenance: result.value.provenance,
     reference: {
       decisionToken,
       source,

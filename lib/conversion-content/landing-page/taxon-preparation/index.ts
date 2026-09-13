@@ -25,6 +25,7 @@ export type {
   InputCatalogEvaluationPorts,
   InputCatalogEvaluationPrompt,
   InputCatalogEvaluationProviderRequest,
+  InputCatalogEvaluationProviderProvenance,
   InputCatalogEvaluationProviderResult,
   InputCatalogEvaluationReconstructionInput,
   InputCatalogEvaluationStatus,

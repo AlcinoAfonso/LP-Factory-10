@@ -106,6 +106,11 @@ export type AdminInputCatalogReview =
       taxonLevel: AdminTaxonLevel;
       parentTaxonId: string | null;
       chainFingerprint: string;
+      coverage: Readonly<{
+        plans: readonly string[];
+        appliedLayers: readonly Readonly<{ level: string; taxonName: string | null }>[];
+        fields: readonly Readonly<{ fieldKey: string; purpose: string; originLayer: string }>[];
+      }>;
     };
 
 export type AdminTaxonDetail = AdminTaxonListItem & {

@@ -353,6 +353,10 @@ export async function coordinateInputCatalogEvaluation(
     value: {
       contextIdentity: context.value.identity,
       output: parsed.value,
+      provenance: providerResult.provenance ?? {
+        webSearchCallCount: 0,
+        webSources: [],
+      },
     },
   });
 }

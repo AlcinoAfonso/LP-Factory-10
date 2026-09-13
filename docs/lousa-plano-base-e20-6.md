@@ -29,6 +29,7 @@ A recomendação da IA nunca é decisão. Se houver mudança de fields, o taxon 
 - A criação administrativa ignora ativação solicitada pelo cliente e persiste o taxon como inativo.
 - A liberação sem IA é uma única mutação condicional da linha de `business_taxons`: grava a versão revisada e ativa apenas taxon ainda inativo; para taxon já ativo, atualiza somente o marcador de revisão.
 - A revalidação imediatamente anterior à escrita falha fechado diante de mudança de taxon, cadeia, versão executável ou marcador.
+- No MVP, conflitos administrativos observáveis usam revalidação, CAS e erro com reload. O risco residual estreito de interrupção ou janela cross-instance entre linhas é aceito; serialização multirow exigiria RPC/lock/trigger novo e permanece fora do escopo.
 - Não há sessão, recibo, ledger, snapshot persistido, lock próprio ou RPC nova.
 
 ### E20.6.4 — Decisão humana e mudanças pela E20.2

@@ -1,7 +1,11 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
-import { evaluateInputCatalogWithOpenAi } from "../../adapters/inputCatalogEvaluationOpenAiAdapter";
+import {
+  INPUT_CATALOG_EVALUATION_TIMEOUT_MS,
+  evaluateInputCatalogWithOpenAi,
+  parseEvaluationResponse,
+} from "../../adapters/inputCatalogEvaluationOpenAiAdapter";
 import { resolveInputCatalogEvaluationRuntimeReadinessCore } from "../../adapters/inputCatalogEvaluationRuntimeGateCore";
 import {
   executeInputCatalogEvaluationAdministrativeActionCore,
@@ -140,7 +144,19 @@ const cases: readonly ValidationCase[] = [
       assert.match(selectedCore, /includeInputCatalogReview[\s\S]*reviewed_input_catalog_version/);
       assert.match(adminSource, /reviewed_input_catalog_version: null/);
       assert.match(adminSource, /findAffectedInputCatalogReviews/);
-
+      assert.match(reviewRead, /coverage: \{/);
+      assert.match(adminSource, /readCompleteTaxonChainFromPages/);
+      assert.match(adminSource, /\.order\("id", \{ ascending: true \}\)[\s\S]*\.range\(/);
+      assert.match(adminSource, /A cadeia taxonômica mudou em paralelo\. A liberação foi revertida\./);
+      assert.match(adminSource, /mutationQuery\.(?:is|eq)\("reviewed_input_catalog_version"/);
+      const deleteStart = adminSource.indexOf("export async function deleteAdminTaxon(");
+      const deleteEnd = adminSource.indexOf("async function validateTaxonParent", deleteStart);
+      const deleteSource = adminSource.slice(deleteStart, deleteEnd);
+      assert.match(deleteSource, /Remova os aliases individualmente antes de excluir/);
+      assert.match(deleteSource, /deleteQuery\.(?:is|eq)\("reviewed_input_catalog_version"/);
+      assert.match(deleteSource, /\.select\("id"\)[\s\S]*\.maxAffected\(1\)[\s\S]*\.maybeSingle\(\)/);
+      assert.match(adminSource, /deleteQuery\.(?:is|eq)\("reviewed_input_catalog_version"/);
+      assert.match(adminSource, /Remova os aliases individualmente antes de excluir o taxon/);
       const migration = readFileSync(
         new URL("../../../../supabase/migrations/20260815172449_e20_6_reviewed_input_catalog_version.sql", import.meta.url),
         "utf8",
@@ -1344,6 +1360,7 @@ const cases: readonly ValidationCase[] = [
       assert.equal(events[0]?.promptVersion, "e20.6.5-input-catalog-evaluation-v1");
 
       let webBody: Record<string, unknown> | null = null;
+      const webEvents: OpenAiWorkloadEvent[] = [];
       const webCompleted = await evaluateInputCatalogWithOpenAi(
         {
           apiKey: "test-key",
@@ -1359,11 +1376,24 @@ const cases: readonly ValidationCase[] = [
             return new Response(JSON.stringify({
               id: "resp_e2065_web",
               status: "completed",
-              output_text: JSON.stringify(validSystematicEvaluationOutput()),
+              output: [
+                {
+                  type: "web_search_call",
+                  status: "completed",
+                  action: { sources: [{ title: "Fonte factual", url: "https://example.com/fonte" }] },
+                },
+                {
+                  type: "message",
+                  content: [{
+                    type: "output_text",
+                    text: JSON.stringify(validSystematicEvaluationOutput()),
+                  }],
+                },
+              ],
               usage: { input_tokens: 10, output_tokens: 5, total_tokens: 15 },
             }), { status: 200 });
           },
-          emitEvent: () => undefined,
+          emitEvent: (event) => webEvents.push(event),
         },
       );
       assert.equal(webCompleted.status, "completed");
@@ -1376,6 +1406,17 @@ const cases: readonly ValidationCase[] = [
       assert.equal(capturedWeb.tool_choice, "required");
       assert.equal(capturedWeb.max_tool_calls, 2);
       assert.deepEqual(capturedWeb.include, ["web_search_call.action.sources"]);
+      assert.deepEqual(
+        webCompleted.status === "completed" ? webCompleted.provenance : null,
+        {
+          webSearchCallCount: 1,
+          webSources: [{ title: "Fonte factual", url: "https://example.com/fonte" }],
+        },
+      );
+      assert.equal(webEvents[0]?.webSearchCallCount, 1);
+      assert.equal(webEvents[0]?.webSearchSourceCount, 1);
+      assert.equal(INPUT_CATALOG_EVALUATION_TIMEOUT_MS, 45_000);
+      assert.equal(parseEvaluationResponse({ output_text: "{}" }, 1).ok, false);
 
       const refusal = await evaluateInputCatalogWithOpenAi(
         {

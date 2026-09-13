@@ -796,7 +796,6 @@ async function validatePublishedReviewEvidence(
       (candidate) => candidate.identity.id === taxonId && candidate.identity.isActive,
     );
     if (!taxon || evidence.contentFingerprint !== row.contentFingerprint) continue;
-    if (taxon.selectedResearchVersion === null) continue;
     const [preservedDraft, current] = await Promise.all([
       reconstructDraftInputCatalogEvaluationContext(
         {
@@ -897,10 +896,9 @@ async function advancePublishedReviewMarker(input: Readonly<{
   targetVersion: number;
 }>): Promise<boolean> {
   if (
-    input.evidenceContext.research === null ||
     input.evidenceContext.taxonId !== input.taxon.identity.id ||
     input.evidenceContext.taxonSlug !== input.taxon.identity.slug ||
-    input.evidenceContext.research.researchVersion !==
+    (input.evidenceContext.research?.researchVersion ?? null) !==
       input.taxon.selectedResearchVersion
   ) {
     return false;
@@ -912,11 +910,13 @@ async function advancePublishedReviewMarker(input: Readonly<{
     .eq("name", input.taxon.identity.name)
     .eq("slug", input.taxon.identity.slug)
     .eq("level", input.taxon.identity.level)
-    .eq("is_active", true)
-    .eq(
-      "selected_end_customer_research_version",
-      input.evidenceContext.research.researchVersion,
-    );
+    .eq("is_active", true);
+  updateQuery = input.taxon.selectedResearchVersion === null
+    ? updateQuery.is("selected_end_customer_research_version", null)
+    : updateQuery.eq(
+        "selected_end_customer_research_version",
+        input.taxon.selectedResearchVersion,
+      );
   updateQuery = input.taxon.identity.parentId === null
     ? updateQuery.is("parent_id", null)
     : updateQuery.eq("parent_id", input.taxon.identity.parentId);

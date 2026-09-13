@@ -122,8 +122,8 @@ export async function readCompleteTaxonChainFromPages(
   return Object.freeze({
     ok: true,
     value: Object.freeze({
-      selected: Object.freeze({ ...resolutionSelected }),
-      taxons: Object.freeze(resolutionTaxons.map((taxon) => Object.freeze({ ...taxon }))),
+      selected: Object.freeze({ ...selected }),
+      taxons: Object.freeze(taxons.map((taxon) => Object.freeze({ ...taxon }))),
       chain: deepFreeze(cloneJson(chain.value)),
     }),
   });
