@@ -31,6 +31,7 @@ Ler `docs/pipeline-plano-base.md` somente para roteamento e seguir os contratos 
 - `lp-factory-avaliar-plano-estrutura` em `derivacao_inicial`;
 - `lp-factory-avaliar-plano-updates`;
 - `lp-factory-avaliar-plano-estrutura` em `confronto_modernizacao`, somente para update com impacto estrutural material;
+- `lp-factory-avaliar-plano-estrutura` em `revisao_focal_implementacao`, somente no retorno previsto na seção 6;
 - `lp-factory-avaliar-plano-automacoes`, quando a V1 identificar automação aplicável e não registrar dispensa humana explícita da avaliação formal;
 - `lp-factory-avaliar-plano-analista`;
 - `lp-factory-executar-plano`;
@@ -43,8 +44,8 @@ Determinar o estágio pelo PR, Git e trailers:
 - reutilizar parecer completo somente para o mesmo blob da V1;
 - reutilizar confronto de modernização somente para o mesmo update, mesma alternativa técnica e mesmo blob da V1;
 - `LP-Factory-Stage: plan-v2-approved`: seguir para execução;
-- `LP-Factory-Phase: <identificador>`: seguir para a próxima subseção;
-- V2 pronta sem aprovação ou roadmap: retomar nesse gate.
+- `LP-Factory-Phase: <identificador>`: determinar a próxima subseção conforme a seção 7.2 do Executor;
+- V2 ou delta focal candidato sem aprovação ou roadmap: retomar nesse gate, sem usar a aprovação anterior para implementar o candidato.
 
 Se o estágio não for inequívoco, pedir apenas a referência faltante; nunca reiniciar por precaução.
 
@@ -88,7 +89,7 @@ Parar somente diante de handoff incompleto, investigação necessária ou decis�
 
 ## 5. Reconciliar roadmap e atualizar o PR
 
-1. Em checkpoint limpo, verificar se fontes canônicas mudaram na `origin/main`; integrar por merge não destrutivo, reler somente o que mudou e pedir revisão delta apenas se houver conflito material.
+1. Em checkpoint limpo, aplicar a regra de sincronização do `AGENTS.md`; reler somente as fontes pertinentes alteradas e pedir revisão delta apenas se houver impacto material.
 2. Usar `$lp-factory-abc` em modo planejamento para produzir o menor delta de `docs/roadmap.md` entre o snapshot e a V2 aprovada, conforme `docs/prompt-abc.md` e `docs/template-roadmap.md`.
 3. Submeter o roadmap ao mesmo Analista em `revisao_delta`, inclusive quando o ABC retornar `SEM ALTERAÇÕES NECESSÁRIAS`.
 4. Criar `LP-Factory-Stage: plan-v2-approved` com plano, roadmap e matriz; validar o diff e atualizar o único PR draft contra `main`.
@@ -97,8 +98,11 @@ Parar somente diante de handoff incompleto, investigação necessária ou decis�
 
 1. No checkpoint `LP-Factory-Stage: plan-v2-approved`, invocar internamente `$lp-factory-executar-plano`, preservando a mesma task, branch, worktree e PR e entregando a V2 aprovada, a matriz, os pareceres pertinentes e os identificadores canônicos do roadmap.
 2. A partir desse checkpoint, execução por subseções, validações e QA, ABC, gates do Analista de implementação, checkpoints, publicação, entrega, correções, retomada após liberação do supervisor, merge remoto, validações pós-merge e registro final no Debate seguem exclusivamente `$lp-factory-executar-plano`; este workflow não replica nem redefine essas regras.
-3. Preservar somente as invariantes de continuidade da orquestração: mesmo PR/branch/worktree, nenhum especialista repetido e matriz disponível ao Executor até o supervisor declarar o recorte definitivamente concluído.
-4. Se o Executor reportar questão material fora da V2 aprovada, seguir a escalada prevista no contrato dele; não reabrir derivação nem repetir especialista por precaução.
+3. Preservar somente as invariantes de continuidade da orquestração: mesmo PR/branch/worktree, nenhum especialista repetido salvo o retorno focal do item 4 e matriz disponível ao Executor até o supervisor declarar o recorte definitivamente concluído.
+4. Se, antes da entrega técnica completa, o Executor devolver evidência material que questione a estrutura da própria V2 ou exija crescimento estrutural material não previsto, acionar `lp-factory-avaliar-plano-estrutura` em `revisao_focal_implementacao` com o contexto recebido, na mesma task, worktree, branch e PR. Esse retorno não depende de nova conclusão do Analista de implementação. Para as demais questões materiais, seguir a escalada prevista no Executor; não reiniciar a derivação nem repetir especialista por precaução. Tratar o parecer pelas conclusões e regras de completude já existentes:
+   - Se a V2 precisar mudar, aplicar somente o patch autossuficiente do Gestor e registrar na V2/matriz existentes o delta e as subseções/checkpoints afetados e preservados, mantendo as referências anteriores no histórico. Versionar a V2/matriz candidatas antes de entregar ao mesmo Analista de plano a referência anterior, a nova referência, o parecer focal e o delta. Reutilizar a revisão `revisao_delta` da seção 4 e a reconciliação do roadmap da seção 5, inclusive com `SEM ALTERAÇÕES NECESSÁRIAS`, antes do novo `plan-v2-approved`; não repetir as duas passagens ou os demais especialistas. A retomada e os gates de implementação permanecem com o Executor.
+   - Se a V2 continuar suficiente e não houver condicionante ou investigação pendente, preservá-la com a matriz e devolver o ponto ao Executor para derivar a correção ordinária e seguir o gate de implementação aplicável; não criar novo checkpoint de aprovação de plano.
+   - Handoff incompleto, investigação, condicionante pendente, rejeição por conflito com fonte competente ou decisão sem autoridade mantêm o ponto suspenso, pelo tratamento vigente; não inventar patch nem transformar a revisão focal em autorização de produto ou merge.
 
 ## Devolução
 
