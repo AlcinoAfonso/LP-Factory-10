@@ -49,7 +49,7 @@
 • A simplicidade do MVP limita a implementação do momento, não o radar tecnológico nem a preservação de diferenciais estratégicos para a evolução dos planos.
 • O WhatsApp é canal comercial prioritário para aquisição, atendimento, qualificação, venda e nutrição; suas capacidades oficiais de mensageria, automação e IA devem permanecer no radar e ser distribuídas progressivamente entre os planos, sem autorizar adoção antecipada.
 • Avaliação ou catalogação não autoriza implementação, mudança de stack, nova infraestrutura nem ampliação de escopo.
-• A intervenção humana em decisões de produto ou escopo é necessária somente quando faltar autoridade ou definição indispensável, ou quando houver ampliação do escopo aprovado; a materialidade, isoladamente, não constitui bloqueio.
+• Em `Supervisão: Autônomo`, a escolha humana delega ao Estrategista Autônomo autoridade contínua e integral para decidir e conduzir o plano até a conclusão sem nova intervenção humana, preservando a V1 aprovada e o escopo negativo; em `Semiautomático`, decisões de produto ou escopo fora do contrato permanecem humanas. A materialidade, isoladamente, não constitui bloqueio.
 
 1.5. Modelo de oferta
 • Planos em camadas (Starter → Lite → Pro → Ultra), com capacidades escalando ao longo do tempo.
