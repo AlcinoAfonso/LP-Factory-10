@@ -2,8 +2,8 @@
 
 0.1 Cabeçalho
 • Documento: LP Factory 10 — Platform Config
-• Versão: v0.1.45
-• Data: 12/09/2026
+• Versão: v0.1.47
+• Data: 14/09/2026
 
 0.2 Contrato do documento
 • O QUE É: snapshot operacional e fonte única das configurações de plataformas externas do LP Factory 10, refletindo o estado conhecido/cadastrado nas plataformas conforme indicado.
@@ -148,11 +148,11 @@
 • Regra operacional: validar primeiro em Preview autenticado; Production só pode ser habilitada após as evidências aplicáveis, sem registrar valor sensível ou branch override como estado canônico.
 
 • `E20_6_INPUT_CATALOG_REVIEW_ENABLED`
-• Finalidade: gate server-only e fail-closed da avaliação administrativa da suficiência factual da E20.2 e da leitura do predicado derivado de preparação do taxon.
+• Finalidade histórica: gate server-only da preparação por marcador de versão anterior à substituição factual da E20.6; não controla a liberação humana nem a avaliação assistida correntes.
 • Escopo: Preview e Production do projeto Core, com configuração independente por ambiente.
-• Estado atual: `true` em Preview e Production; ausência ou valor diferente do literal `true` desabilita leitura, mutação e renderização dependentes de `reviewed_input_catalog_version`.
-• Estado operacional: migration aplicada pelo workflow canônico, snippet SQL read-only aprovado, redeploy de Production concluído e Admin autenticado gate-on validado em 15/08/2026.
-• Regra operacional: `E20_5_SELECTED_RESEARCH_ENABLED = true` permanece pré-requisito independente; mudanças futuras devem ser validadas primeiro em Preview autenticado antes de Production.
+• Estado atual: valor `true` preservado em Preview e Production para consumidores históricos ou dormentes que ainda consultem explicitamente o boundary anterior; a E20.6 corrente não lê esse gate nem `reviewed_input_catalog_version` como autoridade operacional.
+• Estado operacional: configuração e infraestrutura históricas permanecem disponíveis, sem atribuir prontidão, bloqueio ou pré-requisito ao fluxo factual corrente.
+• Regra operacional: não tratar `E20_5_SELECTED_RESEARCH_ENABLED` nem este gate legado como pré-requisito da liberação humana; a avaliação assistida aplica somente seus gates e dependências correntes registrados neste documento.
 
 • `E19_5_WORKSPACE_ENABLED`
 • Finalidade histórica: gate server-only do workspace operacional de landing pages retirado no SV-PR03.
@@ -243,11 +243,11 @@
 • `E20_6_5_INPUT_CATALOG_EVALUATION_PROVIDER_ENABLED`
 • Finalidade: gate server-side e de UI exclusivo do rollout do provider da avaliação factual E20.6.5.
 • Escopo: Preview e Production do projeto Core, com configuração independente por ambiente.
-• Habilitação: somente o literal `true` autoriza a tentativa; ausente, vazio ou qualquer outro valor produz `ROLLOUT_GATE_OFF`. Somente esse retorno explícito preserva handoff Codex e registro legado.
-• Condição adicional hospedada: mesmo com este gate ligado, Preview e Production recusam `repo_catalog` e a revisão bootstrap `1`; exigem resolução efetiva `supabase_operational` de revisão `2` ou posterior, já promovida com prova operacional aprovada e ativada pelo lifecycle E21.2. `OPENAI_OPERATIONAL_CONFIG_ENABLED=false` nunca constitui provider-off. Falha dessa comprovação retorna `OPERATIONAL_CONFIGURATION_UNPROVEN` e bloqueia runtime e legado, sem escrita, fallback Codex ou rotulagem gate-off.
-• Estado inicial: desabilitado durante o PR #795, o merge humano, o apply e as provas operacionais do novo workload.
+• Habilitação: somente o literal `true` autoriza a tentativa; ausente, vazio ou qualquer outro valor produz `ROLLOUT_GATE_OFF` e deixa somente a assistência indisponível. O caminho humano permanece ativo, sem handoff Codex ou registro legado.
+• Condição adicional hospedada: mesmo com este gate ligado, Preview e Production recusam `repo_catalog` e a revisão bootstrap `1`; exigem resolução efetiva `supabase_operational` de revisão `2` ou posterior, já promovida com prova operacional aprovada e ativada pelo lifecycle E21.2. `OPENAI_OPERATIONAL_CONFIG_ENABLED=false` nunca constitui provider-off. Falha dessa comprovação retorna `OPERATIONAL_CONFIGURATION_UNPROVEN` e bloqueia a tentativa do provider, sem escrita, fallback Codex ou rotulagem gate-off.
+• Estado operacional do gate: habilitado no Preview do rollout corrente, com redeploy e QA hospedado autenticado concluídos; o estado em Production não foi validado nem alterado neste recorte e permanece pendente de rollout controlado após merge autorizado.
 • Pré-condição operacional: `OPENAI_OPERATIONAL_CONFIG_ENABLED=true` já está ativo em Preview e Production e deve permanecer ativo durante todo o rollout da E20.6.5; este recorte apenas verifica essa condição e não volta a habilitar o gate da E21.2.
-• Progressão operacional: a revisão operacional `2` de `taxon_input_catalog_sufficiency_evaluation` já está ativa em Preview e Production. O estado atual de `E20_6_5_INPUT_CATALOG_EVALUATION_PROVIDER_ENABLED`, o redeploy, o QA hospedado e a conclusão do rollout permanecem não comprovados neste confronto; nenhum desses estados pode ser inferido da revisão ativa.
+• Progressão operacional: o Preview resolveu `supabase_operational` revisão `3` de `taxon_input_catalog_sufficiency_evaluation` e concluiu com sucesso uma avaliação provider-backed em Structured Output v2. Production preserva a revisão operacional `2` já ativa, mas o estado do gate, o redeploy e o QA do provider nesse ambiente não foram comprovados neste recorte.
 • Regra de credencial: reutilizar a `OPENAI_API_KEY` compartilhada já autorizada para o provider e para autenticar, com domínio criptográfico próprio, a evidência transitória de decisão emitida pelo servidor; não criar chave específica da E20.6.5.
 
 • Configuração efetiva dos workloads OpenAI de produto

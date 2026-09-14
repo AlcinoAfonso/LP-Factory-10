@@ -1,6 +1,7 @@
 import type {
   InputCatalogEvaluationProviderRequest,
   InputCatalogEvaluationProviderResult,
+  InputCatalogEvaluationSourceStrategy,
 } from "../landing-page/taxon-preparation";
 import { INPUT_CATALOG_EVALUATION_SCHEMA_VERSION } from "../landing-page/taxon-preparation";
 import type {
@@ -42,12 +43,28 @@ export async function evaluateInputCatalogWithOpenAi(
   if (!safetyIdentifier) {
     return { status: "failure", message: "openai_safety_identifier_invalid" };
   }
-  const webSearchMaxCalls = input.request.webSearchMaxCalls ?? 0;
+  const webSearchMaxCalls = webSearchCallsForStrategy(input.request.sourceStrategy);
+  if (webSearchMaxCalls === null) {
+    return { status: "failure", message: "openai_source_strategy_invalid" };
+  }
   const webSearch = webSearchMaxCalls > 0
     ? input.configuration.webSearch
     : null;
   if (webSearchMaxCalls > 0 && !webSearch) {
     return { status: "failure", message: "openai_web_search_policy_missing" };
+  }
+
+  const remainingDeadlineMs = input.request.deadlineAtMs === undefined
+    ? INPUT_CATALOG_EVALUATION_TIMEOUT_MS
+    : Math.floor(input.request.deadlineAtMs - (dependencies.now ?? Date.now)());
+  const requestedTimeoutMs = input.request.timeoutMs ?? INPUT_CATALOG_EVALUATION_TIMEOUT_MS;
+  const timeoutMs = Math.min(
+    INPUT_CATALOG_EVALUATION_TIMEOUT_MS,
+    requestedTimeoutMs,
+    remainingDeadlineMs,
+  );
+  if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) {
+    return { status: "timeout", message: "openai_deadline_expired" };
   }
 
   const result = await requestOpenAiResponses(
@@ -59,7 +76,7 @@ export async function evaluateInputCatalogWithOpenAi(
       requestId: input.requestId,
       promptVersion: input.request.prompt.version,
       contractVersion: INPUT_CATALOG_EVALUATION_SCHEMA_VERSION,
-      timeoutMs: INPUT_CATALOG_EVALUATION_TIMEOUT_MS,
+      timeoutMs,
       signal: dependencies.signal,
       financialContext: input.economicEvent
         ? lpFactoryOpenAiEventCostContext({
@@ -73,6 +90,7 @@ export async function evaluateInputCatalogWithOpenAi(
         instructions: input.request.prompt.instructions,
         input: input.request.prompt.input,
         store: false,
+        background: false,
         tools: webSearch
           ? [{
               type: "web_search",
@@ -92,13 +110,16 @@ export async function evaluateInputCatalogWithOpenAi(
         text: {
           format: {
             type: "json_schema",
-            name: "taxon_input_catalog_sufficiency_evaluation_v1",
+            name: "taxon_input_catalog_sufficiency_evaluation_v2",
             strict: true,
             schema: input.request.outputSchema,
           },
         },
       },
-      parseResponse: (payload) => parseEvaluationResponse(payload, webSearchMaxCalls),
+      parseResponse: (payload) => parseEvaluationResponse(
+        payload,
+        input.request.sourceStrategy,
+      ),
     },
     {
       fetchImpl: dependencies.fetchImpl,
@@ -120,13 +141,24 @@ export async function evaluateInputCatalogWithOpenAi(
   if (result.reason === "openai_incomplete") {
     return { status: "incomplete", message: result.reason };
   }
+  if (result.kind === "timeout") {
+    return { status: "timeout", message: result.reason };
+  }
   return { status: "failure", message: result.reason };
 }
 
-export function parseEvaluationResponse(payload: unknown, webSearchMaxCalls: 0 | 1 | 2 = 0) {
+export function parseEvaluationResponse(
+  payload: unknown,
+  sourceStrategy: InputCatalogEvaluationSourceStrategy = "e20_5",
+) {
   const response = asRecord(payload);
   if (!response) {
     return failure("invalid_response", "openai_response_invalid");
+  }
+
+  const webSearchMaxCalls = webSearchCallsForStrategy(sourceStrategy);
+  if (webSearchMaxCalls === null) {
+    return failure("invalid_response", "openai_source_strategy_invalid");
   }
 
   const outputItems = Array.isArray(response.output) ? response.output : [];
@@ -199,6 +231,7 @@ function normalizeWebSource(value: unknown) {
   try {
     const url = new URL(source.url);
     if (url.protocol !== "https:" || url.username || url.password) return null;
+    url.hash = "";
     const title = source.title === undefined || source.title === null
       ? null
       : typeof source.title === "string" &&
@@ -211,6 +244,15 @@ function normalizeWebSource(value: unknown) {
   } catch {
     return null;
   }
+}
+
+function webSearchCallsForStrategy(
+  strategy: InputCatalogEvaluationSourceStrategy,
+): 0 | 1 | 2 | null {
+  if (strategy === "e20_5") return 0;
+  if (strategy === "web_search_focal") return 1;
+  if (strategy === "web_search_fallback") return 2;
+  return null;
 }
 
 function extractOutputText(response: Record<string, unknown>):

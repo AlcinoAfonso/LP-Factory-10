@@ -7,6 +7,7 @@ import type {
   LandingPageInputCatalogRegistry,
   LandingPageInputFieldDefinition,
   LandingPageInputFieldSpecialization,
+  ResolveCurrentLandingPageInputCatalogInput,
   ResolveLandingPageInputCatalogInput,
   ResolvedLandingPageInputField,
 } from "./contracts";
@@ -20,6 +21,10 @@ import {
   resolveLandingPageInputCatalog,
   resolveLandingPageInputCatalogFromRegistry,
 } from "./resolver";
+import {
+  resolveCurrentLandingPageInputCatalog,
+  resolveCurrentLandingPageInputCatalogWithResolver,
+} from "./current-resolver";
 import { buildLandingPageInputCatalogTaxonChain } from "./taxon-chain";
 import {
   landingPageInputFieldDefinitionSchema,
@@ -78,6 +83,12 @@ const v6Input: ResolveLandingPageInputCatalogInput = {
   version: 6,
 };
 
+const draftTaxons = [
+  { identity: realEstateSegmentTaxon },
+  { identity: realEstateBrokerNicheTaxon },
+  { identity: mediumStandardRealEstateBrokerTaxon },
+];
+
 const starterV2FieldKeys = [
   "primary_service_or_offer",
   "primary_service_or_offer_description",
@@ -124,6 +135,87 @@ const cases: Case[] = [
         "property_price_range", "property_stage", "transaction_intent", "financing_support_available",
         "document_support_available", "creci_registration", "attendance_modes",
       ]);
+    },
+  },
+  {
+    name: "current resolver selects CURRENT internally and returns one plan-neutral catalog",
+    run: () => {
+      const input: ResolveCurrentLandingPageInputCatalogInput = {
+        taxonChain: baseInput.taxonChain,
+      };
+      const result = resolveCurrentLandingPageInputCatalog(input);
+      assert.equal(result.ok, true);
+      if (!result.ok) throw new Error("Expected current catalog resolution to succeed");
+      assert.equal(result.value.version, CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION);
+      assert.equal(Object.hasOwn(result.value, "plan"), false);
+      assert.equal(result.value.fields.length, 25);
+      assert.equal(
+        result.value.fields.some((field) => Object.hasOwn(field, "allowedPlans")),
+        false,
+      );
+      assert.equal(
+        result.value.fields.some((field) =>
+          field.provenance.some((entry) => entry.property === ("allowedPlans" as never))),
+        false,
+      );
+      assert.equal(Object.isFrozen(result.value), true);
+      assert.equal(Object.isFrozen(result.value.fields), true);
+    },
+  },
+  {
+    name: "current resolver rejects public historical version and commercial plan arguments",
+    run: () => {
+      for (const forbidden of [
+        { taxonChain: baseInput.taxonChain, version: 5 },
+        { taxonChain: baseInput.taxonChain, plan: "starter" },
+        { taxonChain: baseInput.taxonChain, ultraNicheLayerAuthorized: true },
+      ]) {
+        const result = resolveCurrentLandingPageInputCatalog(
+          forbidden as unknown as ResolveCurrentLandingPageInputCatalogInput,
+        );
+        assert.equal(result.ok, false);
+        if (result.ok) throw new Error("Expected historical input to be rejected");
+        assert.equal(result.error.code, "HISTORICAL_INPUT_NOT_ALLOWED");
+      }
+    },
+  },
+  {
+    name: "current resolver rejects a missing or undefined taxon chain without throwing",
+    run: () => {
+      for (const malformed of [{}, { taxonChain: undefined }]) {
+        const result = resolveCurrentLandingPageInputCatalog(
+          malformed as unknown as ResolveCurrentLandingPageInputCatalogInput,
+        );
+        assert.equal(result.ok, false);
+        if (result.ok) throw new Error("Expected an invalid taxon chain");
+        assert.equal(result.error.code, "INVALID_TAXON_CHAIN");
+      }
+    },
+  },
+  {
+    name: "current resolver fails closed when commercial projections diverge",
+    run: () => {
+      const result = resolveCurrentLandingPageInputCatalogWithResolver(
+        { taxonChain: baseInput.taxonChain },
+        (input) => {
+          const historical = resolveLandingPageInputCatalog(input);
+          if (!historical.ok || input.plan !== "lite") return historical;
+          const [firstField, ...remainingFields] = historical.value.fields;
+          return {
+            ok: true,
+            value: {
+              ...historical.value,
+              fields: [
+                { ...firstField, purpose: `${firstField.purpose} Divergent.` },
+                ...remainingFields,
+              ],
+            },
+          };
+        },
+      );
+      assert.equal(result.ok, false);
+      if (result.ok) throw new Error("Expected divergent plan projections to fail closed");
+      assert.equal(result.error.code, "PLAN_NEUTRAL_PROJECTION_MISMATCH");
     },
   },
   {
@@ -1183,28 +1275,24 @@ const cases: Case[] = [
     },
   },
   {
-    name: "draft remains repo-only and classifies taxons without changing review markers",
+    name: "draft remains repo-only and reports only factual field changes",
     run: () => {
       const draft = createNextLandingPageInputCatalogDraft();
       assert.equal(draft.version, 7);
       const unchanged = validateLandingPageInputCatalogDraft({
         draft,
-        taxons: [
-          { identity: realEstateSegmentTaxon, reviewedVersion: 6 },
-          { identity: realEstateBrokerNicheTaxon, reviewedVersion: 6 },
-          { identity: mediumStandardRealEstateBrokerTaxon, reviewedVersion: null },
-        ],
+        taxons: draftTaxons,
       });
       assert.equal(unchanged.ok, true);
       if (!unchanged.ok) throw new Error("Expected valid draft fixture");
-      assert.equal(unchanged.value.totals.noMaterialChange, 2);
-      assert.equal(unchanged.value.totals.reviewRequired, 1);
+      assert.deepEqual(unchanged.value.fieldChanges, []);
+      assert.deepEqual(unchanged.value.sameFactConfirmationFieldKeys, []);
       assert.equal(unchanged.value.entry.version, CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION + 1);
       assert.equal(Object.isFrozen(unchanged.value), true);
 
       const invalidVersion = validateLandingPageInputCatalogDraft({
         draft: { ...draft, version: 8 },
-        taxons: [],
+        taxons: draftTaxons,
       });
       assert.equal(invalidVersion.ok, false);
       if (invalidVersion.ok) throw new Error("Expected invalid draft version");
@@ -1224,7 +1312,7 @@ const cases: Case[] = [
       );
       const removedResult = validateLandingPageInputCatalogDraft({
         draft: removed,
-        taxons: [],
+        taxons: draftTaxons,
       });
       assert.equal(removedResult.ok, false);
       if (removedResult.ok) throw new Error("Expected direct published-field removal to fail");
@@ -1236,7 +1324,7 @@ const cases: Case[] = [
       mutableFieldInEntry(forged, "business_display_name").createdInVersion = 6;
       const forgedResult = validateLandingPageInputCatalogDraft({
         draft: forged,
-        taxons: [],
+        taxons: draftTaxons,
       });
       assert.equal(forgedResult.ok, false);
       if (forgedResult.ok) throw new Error("Expected forged published provenance to fail");
@@ -1251,11 +1339,122 @@ const cases: Case[] = [
       });
       const createdInPastResult = validateLandingPageInputCatalogDraft({
         draft: createdInPast,
-        taxons: [],
+        taxons: draftTaxons,
       });
       assert.equal(createdInPastResult.ok, false);
       if (createdInPastResult.ok) throw new Error("Expected false new-field provenance to fail");
       assert.equal(createdInPastResult.error.code, "INVALID_DRAFT");
+    },
+  },
+  {
+    name: "draft lifecycle enforces plan-neutral add edit inactivate and reactivate semantics",
+    run: () => {
+      const taxons = draftTaxons;
+      const edited = structuredClone(createNextLandingPageInputCatalogDraft()) as LandingPageInputCatalogRegistry[5];
+      mutableFieldInEntry(edited, "business_display_name").purpose =
+        "Identificar o nome público do negócio com descrição editorial refinada.";
+      const editedResult = validateLandingPageInputCatalogDraft({ draft: edited, taxons });
+      assert.equal(editedResult.ok, true);
+      if (!editedResult.ok) throw new Error("Expected same-fact edit candidate");
+      assert.deepEqual(editedResult.value.sameFactConfirmationFieldKeys, ["business_display_name"]);
+      assert.deepEqual(editedResult.value.fieldChanges[0]?.affectedTaxonIds, taxons.map(({ identity }) => identity.id).sort());
+      assert.deepEqual(editedResult.value.fieldChanges[0]?.attributeChanges, [{
+        attribute: "purpose",
+        previousValue: JSON.stringify(mutableFieldInEntry(createNextLandingPageInputCatalogDraft(), "business_display_name").purpose),
+        nextValue: JSON.stringify(mutableFieldInEntry(edited, "business_display_name").purpose),
+      }]);
+
+      const added = structuredClone(createNextLandingPageInputCatalogDraft()) as LandingPageInputCatalogRegistry[5];
+      mutableEntries(added.taxonLayers[realEstateBrokerNicheTaxon.slug]).push({
+        ...fixtureField("new_plan_neutral_fact", "niche", realEstateBrokerNicheTaxon),
+        createdInVersion: 7,
+        landingPageSubstitutionPolicy: "forbidden",
+      });
+      const addedResult = validateLandingPageInputCatalogDraft({ draft: added, taxons });
+      assert.equal(addedResult.ok, true);
+      if (!addedResult.ok) throw new Error("Expected plan-neutral addition");
+      assert.equal(addedResult.value.fieldChanges[0]?.kind, "added");
+
+      const planSubset = structuredClone(createNextLandingPageInputCatalogDraft()) as LandingPageInputCatalogRegistry[5];
+      mutableFieldInEntry(planSubset, "business_display_name").allowedPlans = ["starter"];
+      const planSubsetResult = validateLandingPageInputCatalogDraft({ draft: planSubset, taxons });
+      assert.equal(planSubsetResult.ok, false);
+      if (planSubsetResult.ok) throw new Error("Expected commercial subset rejection");
+      assert.match(planSubsetResult.error.message, /plan-neutral/);
+
+      const changedScope = structuredClone(createNextLandingPageInputCatalogDraft()) as LandingPageInputCatalogRegistry[5];
+      mutableFieldInEntry(changedScope, "business_display_name").valueScope = "landing_page";
+      const changedScopeResult = validateLandingPageInputCatalogDraft({ draft: changedScope, taxons });
+      assert.equal(changedScopeResult.ok, false);
+      if (changedScopeResult.ok) throw new Error("Expected valueScope identity rejection");
+      assert.match(changedScopeResult.error.message, /novo fieldKey/);
+
+      const inactivated = structuredClone(createNextLandingPageInputCatalogDraft()) as LandingPageInputCatalogRegistry[5];
+      mutableFieldInEntry(inactivated, "business_display_name").retiredInVersion = 7;
+      const inactivatedResult = validateLandingPageInputCatalogDraft({ draft: inactivated, taxons });
+      assert.equal(inactivatedResult.ok, true);
+      if (!inactivatedResult.ok) throw new Error("Expected forward inactivation");
+      assert.equal(inactivatedResult.value.fieldChanges[0]?.kind, "inactivated");
+
+      const reactivated = structuredClone(createNextLandingPageInputCatalogDraft()) as LandingPageInputCatalogRegistry[5];
+      delete mutableFieldInEntry(reactivated, "primary_service_or_offer").retiredInVersion;
+      const reactivatedResult = validateLandingPageInputCatalogDraft({ draft: reactivated, taxons });
+      assert.equal(reactivatedResult.ok, true);
+      if (!reactivatedResult.ok) throw new Error("Expected forward reactivation");
+      assert.equal(
+        reactivatedResult.value.fieldChanges.find(({ fieldKey }) => fieldKey === "primary_service_or_offer")?.kind,
+        "reactivated",
+      );
+
+      const ultraAddition = structuredClone(createNextLandingPageInputCatalogDraft()) as LandingPageInputCatalogRegistry[5];
+      (ultraAddition.taxonLayers as Record<string, LandingPageInputCatalogLayer>)[mediumStandardRealEstateBrokerTaxon.slug] = {
+        level: "ultra_niche",
+        taxon: mediumStandardRealEstateBrokerTaxon,
+        entries: [{
+          ...fixtureField("ultra_niche_fact", "ultra_niche", mediumStandardRealEstateBrokerTaxon),
+          createdInVersion: 7,
+          landingPageSubstitutionPolicy: "explicit_allowed",
+        }],
+      };
+      const ultraAdditionResult = validateLandingPageInputCatalogDraft({ draft: ultraAddition, taxons });
+      assert.equal(ultraAdditionResult.ok, true);
+      if (!ultraAdditionResult.ok) throw new Error("Expected internally authorized ultra-niche resolution");
+      assert.equal(ultraAdditionResult.value.fieldChanges[0]?.fieldKey, "ultra_niche_fact");
+
+      const moved = structuredClone(createNextLandingPageInputCatalogDraft()) as LandingPageInputCatalogRegistry[5];
+      const movedEntries = mutableEntries(moved.universal);
+      const movedIndex = movedEntries.findIndex((entry) => entry.fieldKey === "business_display_name");
+      const movedField = movedEntries.splice(movedIndex, 1)[0];
+      if (!movedField || movedField.kind !== "field") throw new Error("Expected movable field fixture");
+      mutableEntries(moved.taxonLayers[realEstateSegmentTaxon.slug]).push({
+        ...movedField,
+        originLayer: "segment",
+        originTaxon: realEstateSegmentTaxon,
+      });
+      const movedResult = validateLandingPageInputCatalogDraft({ draft: moved, taxons });
+      assert.equal(movedResult.ok, false);
+      if (movedResult.ok) throw new Error("Expected published residence move rejection");
+      assert.match(movedResult.error.message, /residência publicada/);
+
+      const orphanLayer = structuredClone(createNextLandingPageInputCatalogDraft()) as LandingPageInputCatalogRegistry[5];
+      const unknownTaxon = {
+        ...mediumStandardRealEstateBrokerTaxon,
+        id: "11111111-1111-4111-8111-111111111111",
+        slug: "unknown-taxon",
+      };
+      (orphanLayer.taxonLayers as Record<string, LandingPageInputCatalogLayer>)[unknownTaxon.slug] = {
+        level: "ultra_niche",
+        taxon: unknownTaxon,
+        entries: [{
+          ...fixtureField("orphan_fact", "ultra_niche", unknownTaxon),
+          createdInVersion: 7,
+          landingPageSubstitutionPolicy: "explicit_allowed",
+        }],
+      };
+      const orphanLayerResult = validateLandingPageInputCatalogDraft({ draft: orphanLayer, taxons });
+      assert.equal(orphanLayerResult.ok, false);
+      if (orphanLayerResult.ok) throw new Error("Expected unknown layer rejection");
+      assert.match(orphanLayerResult.error.message, /taxonomia factual atual/);
     },
   },
 ];

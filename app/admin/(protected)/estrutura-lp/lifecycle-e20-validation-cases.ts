@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { collectCompletePaginatedRows } from "../../../../lib/admin/adapters/adminInputCatalogLifecyclePagination";
 import {
   fingerprintInputCatalogLifecycleContext,
-  planPublishedInputCatalogReviewReconciliation,
+  matchesInputCatalogLifecycleConfirmation,
 } from "../../../../lib/admin/adapters/adminInputCatalogLifecycleValidation";
 import {
   realEstateBrokerNicheTaxon,
@@ -24,16 +24,8 @@ export async function validateLifecycleE20Contracts(): Promise<void> {
   assert.deepEqual(complete.rows, rows);
 
   const taxons = [
-    {
-      identity: realEstateSegmentTaxon,
-      reviewedVersion: 6,
-      selectedResearchVersion: 1,
-    },
-    {
-      identity: realEstateBrokerNicheTaxon,
-      reviewedVersion: 5,
-      selectedResearchVersion: 2,
-    },
+    { identity: realEstateSegmentTaxon },
+    { identity: realEstateBrokerNicheTaxon },
   ];
   const fingerprint = fingerprintInputCatalogLifecycleContext({ taxons });
   assert.match(fingerprint, /^[0-9a-f]{64}$/);
@@ -41,28 +33,42 @@ export async function validateLifecycleE20Contracts(): Promise<void> {
     fingerprintInputCatalogLifecycleContext({ taxons: [...taxons].reverse() }),
     fingerprint,
   );
+  assert.equal(
+    fingerprintInputCatalogLifecycleContext({
+      taxons: taxons.map((taxon) =>
+        taxon.identity.id === realEstateBrokerNicheTaxon.id
+          ? { identity: { ...taxon.identity, isActive: !taxon.identity.isActive } }
+          : taxon,
+      ),
+    }),
+    fingerprint,
+  );
   assert.notEqual(
     fingerprintInputCatalogLifecycleContext({
       taxons: taxons.map((taxon) =>
         taxon.identity.id === realEstateBrokerNicheTaxon.id
-          ? { ...taxon, reviewedVersion: 6 }
+          ? { identity: { ...taxon.identity, name: "Corretores de imóveis" } }
           : taxon,
       ),
     }),
     fingerprint,
   );
 
-  const withEvidence = planPublishedInputCatalogReviewReconciliation({
-    currentVersion: 6,
-    impacts: [{ taxonId: realEstateBrokerNicheTaxon.id, reviewedVersion: 5 }],
-    validEvidenceTaxonIds: new Set([realEstateBrokerNicheTaxon.id]),
-  });
-  assert.deepEqual(withEvidence.taxonIdsToAdvance, [realEstateBrokerNicheTaxon.id]);
-
-  const withoutEvidence = planPublishedInputCatalogReviewReconciliation({
-    currentVersion: 6,
-    impacts: [{ taxonId: realEstateBrokerNicheTaxon.id, reviewedVersion: 5 }],
-    validEvidenceTaxonIds: new Set(),
-  });
-  assert.deepEqual(withoutEvidence.taxonIdsToAdvance, []);
+  const contentFingerprint = "a".repeat(64);
+  assert.equal(matchesInputCatalogLifecycleConfirmation({
+    expectedRevision: 3,
+    expectedContentFingerprint: contentFingerprint,
+    expectedLifecycleContextFingerprint: fingerprint,
+    currentRevision: 3,
+    currentContentFingerprint: contentFingerprint,
+    currentLifecycleContextFingerprint: fingerprint,
+  }), true);
+  assert.equal(matchesInputCatalogLifecycleConfirmation({
+    expectedRevision: 3,
+    expectedContentFingerprint: contentFingerprint,
+    expectedLifecycleContextFingerprint: fingerprint,
+    currentRevision: 3,
+    currentContentFingerprint: contentFingerprint,
+    currentLifecycleContextFingerprint: "b".repeat(64),
+  }), false, "A change in ancestry reach must stale confirmation even when revision and content are unchanged");
 }

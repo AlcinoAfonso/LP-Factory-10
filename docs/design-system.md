@@ -147,6 +147,8 @@ Este documento define o contrato visual vigente do produto, com foco em componen
 - Páginas administrativas usam cabeçalho operacional com título; descrição e marcador de status/contagem são opcionais e só aparecem quando agregam contexto, evitando repetir informação já evidente na própria superfície.
 - Listagens read-only usam filtros simples, tabela e links de detalhe.
 - Páginas de detalhe read-only usam blocos funcionais para dados da entidade e relações associadas.
+- Fluxos de detalhe que combinam cobertura, ação humana e assistência automatizada apresentam primeiro identidade e estado, depois o contexto de decisão e as ações humanas; recomendação automatizada e decisão permanecem visual e semanticamente separadas, enquanto diagnósticos e identificadores técnicos ficam sob revelação progressiva.
+- Estados assíncronos preservam conteúdo válido já exibido, anunciam feedback textual sem executar decisão pela renderização e mantêm ações humanas independentes disponíveis. Controles alterados devem preservar fluxo por teclado, foco visível e alvo mínimo de 44 px na superfície responsiva.
 - Estados vazios devem ser enxutos, sem ilustração e sem inventar métricas.
 - Cards devem ser usados apenas para blocos funcionais, detalhes ou estados vazios.
 - O Admin não usa `AccountSwitcher` nem depende de conta ativa.

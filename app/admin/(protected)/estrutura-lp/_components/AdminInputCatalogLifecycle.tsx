@@ -47,6 +47,9 @@ export function AdminInputCatalogLifecycle({
   const feedback = [reconciliationState, publicationState, validationState, saveState, initializeState]
     .find((item) => item.revision > 0);
   const draft = state.draft;
+  const requiresSameFactConfirmation = draft?.fieldChanges.some(
+    (change) => change.sameFactConfirmationRequired,
+  ) ?? false;
 
   return (
     <section
@@ -71,9 +74,8 @@ export function AdminInputCatalogLifecycle({
         </span>
       </div>
 
-      <dl className="grid gap-2 text-sm sm:grid-cols-2">
+      <dl className="grid gap-2 text-sm sm:grid-cols-1">
         <Metric label="Versões publicadas" value={state.publishedVersions.join(", ")} />
-        <Metric label="Taxons ativos" value={String(state.totalActiveTaxons)} />
       </dl>
 
       {state.error ? (
@@ -92,7 +94,7 @@ export function AdminInputCatalogLifecycle({
 
       {draft ? (
         <div className="space-y-4">
-          <div className="grid gap-2 text-sm sm:grid-cols-2 lg:grid-cols-5">
+          <div className="grid gap-2 text-sm sm:grid-cols-2 lg:grid-cols-4">
             <Metric label="Draft" value={`v${draft.targetVersion}`} />
             <Metric label="Revisão administrativa" value={String(draft.revision)} />
             <Metric label="Validação" value={draft.validationCurrent ? "Atual" : "Pendente"} />
@@ -120,38 +122,55 @@ export function AdminInputCatalogLifecycle({
             </div>
           ) : (
             <>
-          <div className="grid gap-2 text-sm sm:grid-cols-2 lg:grid-cols-3">
-            <Metric label="Sem mudança material" value={String(draft.totals.noMaterialChange)} />
-            <Metric label="Evolução compatível" value={String(draft.totals.compatibleEvolution)} />
-            <Metric label="Revisão necessária" value={String(draft.totals.reviewRequired)} />
-          </div>
-
           <details className="rounded-md border border-border bg-background p-3">
             <summary className="cursor-pointer font-medium text-foreground">
-              Taxons que exigem revisão ({draft.totals.reviewRequired})
+              Mudanças factuais e alcance ancestral ({draft.fieldChanges.length})
             </summary>
             <ul className="mt-3 space-y-2 text-sm">
-              {draft.impacts
-                .filter((impact) => impact.classification === "review_required")
-                .map((impact) => (
-                  <li key={impact.taxon.id} className="flex flex-wrap items-center justify-between gap-2 rounded border border-border px-3 py-2">
-                    <span>
-                      <span className="font-medium text-foreground">{impact.taxon.name}</span>
-                      <span className="ml-2 text-muted-foreground">{impact.taxon.slug}</span>
-                      {draft.reviewedTaxonIds.includes(impact.taxon.id) ? (
-                        <span className="ml-2 font-medium text-emerald-700">Decisão vinculada ao draft atual</span>
-                      ) : null}
-                    </span>
-                    <a
-                      href={`/admin/taxonomia/${impact.taxon.id}?catalogDraftRevision=${draft.revision}`}
-                      className="rounded px-2 py-1 font-medium text-brand-700 outline-none focus-visible:ring-4 focus-visible:ring-brand-600/20"
-                    >
-                      {draft.reviewedTaxonIds.includes(impact.taxon.id)
-                        ? "Reavaliar E20.6.5"
-                        : "Avaliar draft na E20.6.5"}
-                    </a>
+              {draft.fieldChanges.map((change) => (
+                  <li key={`${change.originLayer}:${change.originTaxonId ?? "universal"}:${change.fieldKey}`} className="rounded border border-border px-3 py-2">
+                    <p className="font-medium text-foreground">
+                      {change.fieldKey} · {changeKindLabel(change.kind)}
+                    </p>
+                    <p className="mt-1 text-muted-foreground">
+                      Residência: {change.originLayer}
+                      {change.originTaxonId ? ` (${change.originTaxonId})` : ""}. Alcance: {change.affectedTaxonIds.length} taxon(s).
+                    </p>
+                    {change.attributeChanges.length > 0 ? (
+                      <dl className="mt-2 space-y-2 rounded bg-muted/30 p-2 text-xs">
+                        {change.attributeChanges.map((attributeChange) => (
+                          <div key={attributeChange.attribute}>
+                            <dt className="font-semibold text-foreground">{attributeChange.attribute}</dt>
+                            <dd className="break-all text-muted-foreground">
+                              Antes: {attributeChange.previousValue}
+                            </dd>
+                            <dd className="break-all text-muted-foreground">
+                              Depois: {attributeChange.nextValue}
+                            </dd>
+                          </div>
+                        ))}
+                      </dl>
+                    ) : null}
+                    {change.sameFactConfirmationRequired ? (
+                      <p className="mt-1 font-medium text-amber-700">
+                        Exige confirmação humana explícita de que o field continua representando o mesmo fato.
+                      </p>
+                    ) : null}
+                    {change.affectedTaxonIds.length > 0 ? (
+                      <details className="mt-2">
+                        <summary className="cursor-pointer text-xs font-medium text-brand-700">
+                          Ver taxons alcançados
+                        </summary>
+                        <p className="mt-1 break-all text-xs text-muted-foreground">
+                          {change.affectedTaxonIds.join(", ")}
+                        </p>
+                      </details>
+                    ) : null}
                   </li>
                 ))}
+              {draft.fieldChanges.length === 0 ? (
+                <li className="text-muted-foreground">O draft ainda não altera fields factuais.</li>
+              ) : null}
             </ul>
           </details>
 
@@ -176,10 +195,25 @@ export function AdminInputCatalogLifecycle({
           </form>
 
           <div className="flex flex-wrap gap-3">
-            <form action={validationAction}>
+            <form action={validationAction} className="space-y-2">
               <input type="hidden" name="expectedRevision" value={draft.revision} />
+              <input type="hidden" name="expectedContentFingerprint" value={draft.contentFingerprint} />
+              <input type="hidden" name="expectedLifecycleContextFingerprint" value={draft.lifecycleContextFingerprint} />
+              <p className="max-w-xl break-all text-xs text-muted-foreground">
+                Confirmação vinculada à revisão {draft.revision}, ao conteúdo {draft.contentFingerprint}
+                {" "}e ao contexto de alcance {draft.lifecycleContextFingerprint}.
+              </p>
+              {requiresSameFactConfirmation ? (
+                <label className="flex max-w-xl items-start gap-2 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950">
+                  <input type="checkbox" name="sameFactConfirmed" className="mt-1" />
+                  <span>
+                    Após revisar os atributos, valores e alcance exibidos acima, confirmo que toda edição
+                    sinalizada preserva o mesmo fato. Caso contrário, usarei um novo fieldKey.
+                  </span>
+                </label>
+              ) : null}
               <ActionButton pending={validationPending} pendingLabel="Validando…" secondary>
-                Revalidar conteúdo e impacto
+                Revalidar conteúdo e alcance
               </ActionButton>
             </form>
             <form action={publicationAction}>
@@ -210,6 +244,15 @@ export function AdminInputCatalogLifecycle({
       ) : null}
     </section>
   );
+}
+
+function changeKindLabel(kind: "added" | "edited" | "inactivated" | "reactivated") {
+  return {
+    added: "adição",
+    edited: "edição",
+    inactivated: "inativação",
+    reactivated: "reativação",
+  }[kind];
 }
 
 function Metric({ label, value }: { label: string; value: string }) {

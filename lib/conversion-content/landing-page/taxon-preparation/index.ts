@@ -28,6 +28,8 @@ export type {
   InputCatalogEvaluationProviderProvenance,
   InputCatalogEvaluationProviderResult,
   InputCatalogEvaluationReconstructionInput,
+  InputCatalogEvaluationSourceState,
+  InputCatalogEvaluationSourceStrategy,
   InputCatalogEvaluationStatus,
   InputCatalogEvaluationTaxonChainSnapshot,
   InputCatalogEvaluationTaxonomicLayer,
@@ -44,6 +46,8 @@ export {
   inputCatalogEvaluationCandidateConclusions,
   inputCatalogEvaluationCandidateOrigins,
   inputCatalogEvaluationModes,
+  inputCatalogEvaluationSourceStates,
+  inputCatalogEvaluationSourceStrategies,
   inputCatalogEvaluationStatuses,
   inputCatalogEvaluationTaxonomicLayers,
 } from "./contracts";

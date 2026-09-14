@@ -295,7 +295,7 @@
 • level text not null
 • name text not null
 • slug text not null
-• is_active boolean not null default true
+• is_active boolean not null default false; a alteração do default é forward-only e não modifica valores de linhas existentes
 • selected_end_customer_research_version integer null
 • reviewed_input_catalog_version integer null
 

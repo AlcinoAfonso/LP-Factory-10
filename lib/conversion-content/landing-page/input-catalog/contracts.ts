@@ -222,6 +222,10 @@ export type ResolveLandingPageInputCatalogInput = Readonly<{
   ultraNicheLayerAuthorized?: boolean;
 }>;
 
+export type ResolveCurrentLandingPageInputCatalogInput = Readonly<{
+  taxonChain: LandingPageInputCatalogTaxonChain;
+}>;
+
 export type LandingPageInputFieldProvenance = Readonly<{
   property: "definition" | "obligation" | "allowedPlans" | "validation";
   layer: LandingPageInputCatalogLayerLevel;
@@ -233,6 +237,23 @@ export type ResolvedLandingPageInputField = LandingPageInputFieldDefinition &
     provenance: readonly LandingPageInputFieldProvenance[];
   }>;
 
+type WithoutPlanProjection<T> = T extends unknown
+  ? Omit<T, "allowedPlans" | "provenance">
+  : never;
+
+export type PlanNeutralLandingPageInputFieldProvenance = Readonly<
+  Omit<LandingPageInputFieldProvenance, "property"> & {
+    property: Exclude<LandingPageInputFieldProvenance["property"], "allowedPlans">;
+  }
+>;
+
+export type ResolvedCurrentLandingPageInputField = WithoutPlanProjection<
+  ResolvedLandingPageInputField
+> &
+  Readonly<{
+    provenance: readonly PlanNeutralLandingPageInputFieldProvenance[];
+  }>;
+
 export type ResolvedLandingPageInputCatalog = Readonly<{
   version: number;
   servedTaxon: LandingPageInputCatalogTaxonIdentity;
@@ -242,6 +263,18 @@ export type ResolvedLandingPageInputCatalog = Readonly<{
     taxon?: LandingPageInputCatalogTaxonIdentity;
   }>[];
   fields: readonly ResolvedLandingPageInputField[];
+  retiredFieldKeys: readonly string[];
+  valid: true;
+}>;
+
+export type ResolvedCurrentLandingPageInputCatalog = Readonly<{
+  version: number;
+  servedTaxon: LandingPageInputCatalogTaxonIdentity;
+  appliedLayers: readonly Readonly<{
+    level: LandingPageInputCatalogLayerLevel;
+    taxon?: LandingPageInputCatalogTaxonIdentity;
+  }>[];
+  fields: readonly ResolvedCurrentLandingPageInputField[];
   retiredFieldKeys: readonly string[];
   valid: true;
 }>;
@@ -282,6 +315,19 @@ export type ResolveLandingPageInputCatalogResult =
       ok: false;
       error: Readonly<{
         code: LandingPageInputCatalogErrorCode;
+        message: string;
+      }>;
+    }>;
+
+export type ResolveCurrentLandingPageInputCatalogResult =
+  | Readonly<{ ok: true; value: ResolvedCurrentLandingPageInputCatalog }>
+  | Readonly<{
+      ok: false;
+      error: Readonly<{
+        code:
+          | LandingPageInputCatalogErrorCode
+          | "HISTORICAL_INPUT_NOT_ALLOWED"
+          | "PLAN_NEUTRAL_PROJECTION_MISMATCH";
         message: string;
       }>;
     }>;
