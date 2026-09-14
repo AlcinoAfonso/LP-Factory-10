@@ -33,7 +33,6 @@ const productWorkloads = [
   "niche_resolution",
   "commercial_activation_draft_generation",
   "taxon_input_catalog_sufficiency_evaluation",
-  "landing_page_dynamic_market_research",
 ] as const;
 
 export type OpenAiOperationalActionState = Readonly<{
@@ -45,7 +44,7 @@ export type OpenAiOperationalActionState = Readonly<{
 
 type UnitInput = Readonly<{
   environment: OpenAiManagedWorkloadEnvironment;
-  workload: Exclude<OpenAiWorkloadId, "supabase_inspect">;
+  workload: OpenAiProductWorkloadId;
   expectedVersion: number;
 }>;
 

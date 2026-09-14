@@ -29,7 +29,7 @@ import {
   type OpenAiWorkloadId,
 } from "../../openai-workloads";
 
-const openAiWorkloadIds = [...openAiProductWorkloadIds, ...openAiOperationalWorkloadIds] as const;
+const openAiWorkloadIds = [...openAiProductWorkloadIds, ...openAiOperationalWorkloadIds, "landing_page_dynamic_market_research"] as const;
 const openAiConfigurationSources = ["repo_catalog", "supabase_operational"] as const;
 
 export const OPENAI_ACTIVE_COST_PAGE_SIZE = 500;

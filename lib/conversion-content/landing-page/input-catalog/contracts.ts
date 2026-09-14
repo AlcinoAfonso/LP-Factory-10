@@ -1,357 +1,75 @@
-export const landingPageInputCatalogPlans = [
-  "starter",
-  "lite",
-  "pro",
-  "ultra",
+export const factualTaxonLevels = ["segment", "niche", "ultra_niche"] as const;
+export const factualFieldValueTypes = [
+  "string", "phone", "email", "url", "enum", "string_list", "boolean",
+  "number_range", "keyword_map", "asset_reference", "color_palette", "offering_scope",
 ] as const;
-
-export const landingPageInputCatalogEvidenceReferences = [
-  "decision:lp-planning",
-  "decision:e20-2-human",
-  "technical:current-contracts",
-  "empirical:real-estate-research",
-  "context:real-estate-pilot",
+export const factualFieldValueScopes = ["account", "business", "offer", "campaign", "landing_page"] as const;
+export const factualFieldExpectedOrigins = [
+  "account_provided", "business_provided", "offer_provided", "campaign_provided", "landing_page_provided",
 ] as const;
+export const factualFieldObligations = ["required", "optional", "conditional"] as const;
 
-export const landingPageInputColorPaletteRoles = [
-  "primary",
-  "secondary",
-  "accent",
-  "background",
-  "text",
-] as const;
+export type FactualTaxonLevel = (typeof factualTaxonLevels)[number];
+export type FactualFieldValueType = (typeof factualFieldValueTypes)[number];
+export type FactualFieldValueScope = (typeof factualFieldValueScopes)[number];
+export type FactualFieldExpectedOrigin = (typeof factualFieldExpectedOrigins)[number];
+export type FactualFieldObligation = (typeof factualFieldObligations)[number];
 
-export type LandingPageInputCatalogPlan =
-  (typeof landingPageInputCatalogPlans)[number];
-export type LandingPageInputCatalogEvidenceReference =
-  (typeof landingPageInputCatalogEvidenceReferences)[number];
-export type LandingPageInputColorPaletteRole =
-  (typeof landingPageInputColorPaletteRoles)[number];
-export type LandingPageInputCatalogLayerLevel =
-  | "universal"
-  | "segment"
-  | "niche"
-  | "ultra_niche";
-export type LandingPageInputValueType =
-  | "string"
-  | "phone"
-  | "email"
-  | "url"
-  | "enum"
-  | "string_list"
-  | "boolean"
-  | "number_range"
-  | "keyword_map"
-  | "asset_reference"
-  | "color_palette"
-  | "offering_scope";
-export type LandingPageInputValueScope =
-  | "account"
-  | "business"
-  | "offer"
-  | "campaign"
-  | "landing_page";
-export type LandingPageInputExpectedValueOrigin =
-  | "account_provided"
-  | "business_provided"
-  | "offer_provided"
-  | "campaign_provided"
-  | "landing_page_provided";
-export type LandingPageInputObligation =
-  | "required"
-  | "optional"
-  | "conditional";
-export type LandingPageInputSubstitutionPolicy =
-  | "not_applicable"
-  | "forbidden"
-  | "explicit_allowed";
-
-export type LandingPageInputCapabilityBinding = Readonly<{
-  slotKey: "applicable_capabilities";
-  supportedWhenValue: true;
+export type FactualTaxonIdentity = Readonly<{
+  id: string; name: string; slug: string; level: FactualTaxonLevel; isActive: boolean; parentId: string | null;
 }>;
 
-export type LandingPageInputCondition = Readonly<{
-  fieldKey: string;
-  operator: "equals" | "in";
-  value: string | boolean | readonly string[];
+export type FactualTaxonChain = Readonly<{
+  segment: FactualTaxonIdentity; niche?: FactualTaxonIdentity; ultraNiche?: FactualTaxonIdentity;
 }>;
 
-export type LandingPageInputValidation =
+export type FactualFieldCondition = Readonly<{
+  fieldKey: string; operator: "equals" | "in"; value: string | boolean | readonly string[];
+}>;
+
+export type FactualFieldValidation =
   | Readonly<{ kind: "type_only" }>
   | Readonly<{ kind: "enum"; allowedValues: readonly string[] }>
-  | Readonly<{
-      kind: "string_list";
-      allowedValues?: readonly string[];
-      minItems?: number;
-      maxItems?: number;
-    }>
-  | Readonly<{
-      kind: "number_range";
-      currency: "BRL";
-      minimum?: number;
-      maximum?: number;
-    }>
-  | Readonly<{ kind: "e164" }>
-  | Readonly<{ kind: "email" }>
-  | Readonly<{ kind: "https_url" }>
-  | Readonly<{ kind: "keyword_map" }>
-  | Readonly<{ kind: "asset_reference" }>
-  | Readonly<{ kind: "color_palette" }>
-  | Readonly<{ kind: "offering_scope" }>;
+  | Readonly<{ kind: "string_list"; allowedValues?: readonly string[]; minItems?: number; maxItems?: number }>
+  | Readonly<{ kind: "number_range"; currency: "BRL"; minimum?: number; maximum?: number }>
+  | Readonly<{ kind: "e164" | "email" | "https_url" | "keyword_map" | "asset_reference" | "color_palette" | "offering_scope" }>;
 
-export type LandingPageInputTypeValidationContract =
-  | Readonly<{
-      valueType: "string" | "boolean";
-      validation: Extract<LandingPageInputValidation, { kind: "type_only" }>;
-    }>
-  | Readonly<{
-      valueType: "phone";
-      validation: Extract<LandingPageInputValidation, { kind: "e164" }>;
-    }>
-  | Readonly<{
-      valueType: "email";
-      validation: Extract<LandingPageInputValidation, { kind: "email" }>;
-    }>
-  | Readonly<{
-      valueType: "url";
-      validation: Extract<LandingPageInputValidation, { kind: "https_url" }>;
-    }>
-  | Readonly<{
-      valueType: "enum";
-      validation: Extract<LandingPageInputValidation, { kind: "enum" }>;
-    }>
-  | Readonly<{
-      valueType: "string_list";
-      validation: Extract<LandingPageInputValidation, { kind: "string_list" }>;
-    }>
-  | Readonly<{
-      valueType: "number_range";
-      validation: Extract<LandingPageInputValidation, { kind: "number_range" }>;
-    }>
-  | Readonly<{
-      valueType: "keyword_map";
-      validation: Extract<LandingPageInputValidation, { kind: "keyword_map" }>;
-    }>
-  | Readonly<{
-      valueType: "asset_reference";
-      validation: Extract<LandingPageInputValidation, { kind: "asset_reference" }>;
-    }>
-  | Readonly<{
-      valueType: "color_palette";
-      validation: Extract<LandingPageInputValidation, { kind: "color_palette" }>;
-    }>
-  | Readonly<{
-      valueType: "offering_scope";
-      validation: Extract<LandingPageInputValidation, { kind: "offering_scope" }>;
-    }>;
-
-export type LandingPageInputEvidence = Readonly<{
-  summary: string;
-  references: readonly LandingPageInputCatalogEvidenceReference[];
-}>;
-
-type LandingPageInputFieldDefinitionBase = Readonly<{
-  kind: "field";
-  fieldKey: string;
+export type FactualFieldDefinition = Readonly<{
   purpose: string;
-  originLayer: LandingPageInputCatalogLayerLevel;
-  originTaxon?: LandingPageInputCatalogTaxonIdentity;
-  valueScope: LandingPageInputValueScope;
-  expectedValueOrigin: LandingPageInputExpectedValueOrigin;
-  obligation: LandingPageInputObligation;
-  requiredWhen?: LandingPageInputCondition;
-  applicableWhen?: LandingPageInputCondition;
-  allowedPlans: readonly LandingPageInputCatalogPlan[];
-  snapshotPolicy: "include_if_used";
-  landingPageSubstitutionPolicy?: LandingPageInputSubstitutionPolicy;
-  capabilityBindings?: readonly LandingPageInputCapabilityBinding[];
-  evidence: LandingPageInputEvidence;
-  createdInVersion: number;
-  retiredInVersion?: number;
+  valueType: FactualFieldValueType;
+  valueScope: FactualFieldValueScope;
+  expectedValueOrigin: FactualFieldExpectedOrigin;
+  obligation: FactualFieldObligation;
+  requiredWhen?: FactualFieldCondition;
+  applicableWhen?: FactualFieldCondition;
+  validation: FactualFieldValidation;
 }>;
 
-export type LandingPageInputFieldDefinition =
-  LandingPageInputFieldDefinitionBase & LandingPageInputTypeValidationContract;
-
-export type LandingPageInputFieldSpecialization = Readonly<{
-  kind: "specialization";
-  fieldKey: string;
-  changes: Readonly<Partial<Omit<LandingPageInputFieldDefinition, "kind" | "fieldKey">>>;
+export type FactualFieldRow = Readonly<{
+  id: string; fieldKey: string; taxonId: string | null; definition: FactualFieldDefinition; isActive: boolean;
+  createdBy: string | null; updatedBy: string | null; createdAt: string; updatedAt: string;
 }>;
 
-export type LandingPageInputCatalogLayerEntry =
-  | LandingPageInputFieldDefinition
-  | LandingPageInputFieldSpecialization;
-
-export type LandingPageInputCatalogTaxonIdentity = Readonly<{
-  id: string;
-  name: string;
-  slug: string;
-  level: Exclude<LandingPageInputCatalogLayerLevel, "universal">;
-  isActive: boolean;
-  parentId: string | null;
+export type ResolvedFactualField = FactualFieldDefinition & Readonly<{
+  id: string; fieldKey: string; taxonId: string | null;
+  originLayer: "universal" | FactualTaxonLevel; originTaxon: FactualTaxonIdentity | null;
+  ownership: "own" | "inherited"; isActive: boolean; updatedAt: string;
 }>;
 
-export type LandingPageInputCatalogLayer = Readonly<{
-  level: LandingPageInputCatalogLayerLevel;
-  taxon?: LandingPageInputCatalogTaxonIdentity;
-  entries: readonly LandingPageInputCatalogLayerEntry[];
+export type ResolvedFactualCoverage = Readonly<{
+  servedTaxon: FactualTaxonIdentity;
+  appliedLayers: readonly Readonly<{ level: "universal" | FactualTaxonLevel; taxon: FactualTaxonIdentity | null }>[];
+  fields: readonly ResolvedFactualField[];
 }>;
 
-export type LandingPageInputCatalogRegistryEntry = Readonly<{
-  version: number;
-  universal: LandingPageInputCatalogLayer;
-  taxonLayers: Readonly<Record<string, LandingPageInputCatalogLayer>>;
-}>;
+export type FactualCoverageErrorCode =
+  | "INVALID_TAXON_CHAIN" | "DUPLICATE_FIELD_KEY" | "INVALID_FIELD_ROW"
+  | "INVALID_FIELD_DEFINITION" | "FIELD_OUTSIDE_CHAIN" | "MISSING_CONDITION_REFERENCE";
 
-export type LandingPageInputCatalogRegistry = Readonly<
-  Record<number, LandingPageInputCatalogRegistryEntry>
->;
+export type ResolveFactualCoverageResult =
+  | Readonly<{ ok: true; value: ResolvedFactualCoverage }>
+  | Readonly<{ ok: false; error: Readonly<{ code: FactualCoverageErrorCode; message: string }> }>;
 
-export type LandingPageInputCatalogTaxonChain = Readonly<{
-  segment: LandingPageInputCatalogTaxonIdentity;
-  niche?: LandingPageInputCatalogTaxonIdentity;
-  ultraNiche?: LandingPageInputCatalogTaxonIdentity;
-}>;
-
-export type ResolveLandingPageInputCatalogInput = Readonly<{
-  version: number;
-  plan: LandingPageInputCatalogPlan | string;
-  taxonChain: LandingPageInputCatalogTaxonChain;
-  ultraNicheLayerAuthorized?: boolean;
-}>;
-
-export type ResolveCurrentLandingPageInputCatalogInput = Readonly<{
-  taxonChain: LandingPageInputCatalogTaxonChain;
-}>;
-
-export type LandingPageInputFieldProvenance = Readonly<{
-  property: "definition" | "obligation" | "allowedPlans" | "validation";
-  layer: LandingPageInputCatalogLayerLevel;
-  taxon?: LandingPageInputCatalogTaxonIdentity;
-}>;
-
-export type ResolvedLandingPageInputField = LandingPageInputFieldDefinition &
-  Readonly<{
-    provenance: readonly LandingPageInputFieldProvenance[];
-  }>;
-
-type WithoutPlanProjection<T> = T extends unknown
-  ? Omit<T, "allowedPlans" | "provenance">
-  : never;
-
-export type PlanNeutralLandingPageInputFieldProvenance = Readonly<
-  Omit<LandingPageInputFieldProvenance, "property"> & {
-    property: Exclude<LandingPageInputFieldProvenance["property"], "allowedPlans">;
-  }
->;
-
-export type ResolvedCurrentLandingPageInputField = WithoutPlanProjection<
-  ResolvedLandingPageInputField
-> &
-  Readonly<{
-    provenance: readonly PlanNeutralLandingPageInputFieldProvenance[];
-  }>;
-
-export type ResolvedLandingPageInputCatalog = Readonly<{
-  version: number;
-  servedTaxon: LandingPageInputCatalogTaxonIdentity;
-  plan: LandingPageInputCatalogPlan;
-  appliedLayers: readonly Readonly<{
-    level: LandingPageInputCatalogLayerLevel;
-    taxon?: LandingPageInputCatalogTaxonIdentity;
-  }>[];
-  fields: readonly ResolvedLandingPageInputField[];
-  retiredFieldKeys: readonly string[];
-  valid: true;
-}>;
-
-export type ResolvedCurrentLandingPageInputCatalog = Readonly<{
-  version: number;
-  servedTaxon: LandingPageInputCatalogTaxonIdentity;
-  appliedLayers: readonly Readonly<{
-    level: LandingPageInputCatalogLayerLevel;
-    taxon?: LandingPageInputCatalogTaxonIdentity;
-  }>[];
-  fields: readonly ResolvedCurrentLandingPageInputField[];
-  retiredFieldKeys: readonly string[];
-  valid: true;
-}>;
-
-export const landingPageInputCatalogTransitionClassifications = [
-  "no_material_change",
-  "compatible_evolution",
-  "review_required",
-] as const;
-
-export type LandingPageInputCatalogTransitionClassification =
-  (typeof landingPageInputCatalogTransitionClassifications)[number];
-
-export type LandingPageInputCatalogTransitionResult = Readonly<{
-  classification: LandingPageInputCatalogTransitionClassification;
-  addedFieldKeys: readonly string[];
-  expandedAllowedValueFieldKeys: readonly string[];
-  reviewRequiredFieldKeys: readonly string[];
-}>;
-
-export type LandingPageInputCatalogErrorCode =
-  | "UNKNOWN_VERSION"
-  | "INVALID_PLAN"
-  | "INVALID_TAXON_CHAIN"
-  | "INVALID_LAYER"
-  | "UNAUTHORIZED_ULTRA_NICHE_LAYER"
-  | "DUPLICATE_FIELD"
-  | "IMMUTABLE_PROPERTY_CONFLICT"
-  | "INVALID_SPECIALIZATION"
-  | "INVALID_CONDITION"
-  | "INVALID_VALIDATION"
-  | "MISSING_EVIDENCE_ORIGIN"
-  | "INVALID_PAID_SEARCH_KEYWORD_MAP";
-
-export type ResolveLandingPageInputCatalogResult =
-  | Readonly<{ ok: true; value: ResolvedLandingPageInputCatalog }>
-  | Readonly<{
-      ok: false;
-      error: Readonly<{
-        code: LandingPageInputCatalogErrorCode;
-        message: string;
-      }>;
-    }>;
-
-export type ResolveCurrentLandingPageInputCatalogResult =
-  | Readonly<{ ok: true; value: ResolvedCurrentLandingPageInputCatalog }>
-  | Readonly<{
-      ok: false;
-      error: Readonly<{
-        code:
-          | LandingPageInputCatalogErrorCode
-          | "HISTORICAL_INPUT_NOT_ALLOWED"
-          | "PLAN_NEUTRAL_PROJECTION_MISMATCH";
-        message: string;
-      }>;
-    }>;
-
-export type LandingPageInputValueValidationResult =
-  | Readonly<{ ok: true }>
-  | Readonly<{
-      ok: false;
-      error: Readonly<{
-        code: "INVALID_VALUE";
-        message: string;
-      }>;
-    }>;
-
-export type LandingPageKeywordMapItem = Readonly<{
-  keyword_or_cluster: string;
-  message_anchor: string;
-  ad_context?: string;
-}>;
-
-export type LandingPageInputAssetReference = Readonly<{
-  asset_id: string;
-}>;
-
-export type LandingPageInputColorPalette = Readonly<
-  Record<LandingPageInputColorPaletteRole, string>
->;
+export type BuildFactualTaxonChainResult =
+  | Readonly<{ ok: true; value: FactualTaxonChain }>
+  | Readonly<{ ok: false; error: Readonly<{ code: "INVALID_TAXON_CHAIN"; message: string }> }>;

@@ -2,10 +2,10 @@ export const openAiProductWorkloadIds = [
   "niche_resolution",
   "commercial_activation_draft_generation",
   "taxon_input_catalog_sufficiency_evaluation",
-  "landing_page_dynamic_market_research",
 ] as const;
 
 export const openAiOperationalWorkloadIds = ["supabase_inspect"] as const;
+export const openAiHistoricalWorkloadIds = ["landing_page_dynamic_market_research"] as const;
 
 export const openAiReasoningEfforts = [
   "none",
@@ -34,9 +34,12 @@ export type OpenAiProductWorkloadId =
   (typeof openAiProductWorkloadIds)[number];
 export type OpenAiOperationalWorkloadId =
   (typeof openAiOperationalWorkloadIds)[number];
+export type OpenAiHistoricalWorkloadId =
+  (typeof openAiHistoricalWorkloadIds)[number];
 export type OpenAiWorkloadId =
   | OpenAiProductWorkloadId
-  | OpenAiOperationalWorkloadId;
+  | OpenAiOperationalWorkloadId
+  | OpenAiHistoricalWorkloadId;
 export type OpenAiReasoningEffort = (typeof openAiReasoningEfforts)[number];
 export type OpenAiImageQuality = (typeof openAiImageQualities)[number];
 export type OpenAiWebSearchContextSize =

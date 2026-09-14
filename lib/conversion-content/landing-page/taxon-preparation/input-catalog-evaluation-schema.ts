@@ -93,7 +93,7 @@ export function parseInputCatalogEvaluationOutput(
   if (!parsed.success) {
     return failure(
       "INVALID_SCHEMA",
-      "A resposta não corresponde ao contrato estrito E20.6.5 v2.",
+      "A resposta não corresponde ao contrato estrito E20.8.7.",
     );
   }
 

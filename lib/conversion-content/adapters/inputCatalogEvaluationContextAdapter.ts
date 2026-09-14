@@ -1,39 +1,12 @@
 import "server-only";
 
-import {
-  buildInputCatalogEvaluationContext,
-  type BuildInputCatalogEvaluationContextResult,
-  type InputCatalogEvaluationReconstructionInput,
-} from "../landing-page/taxon-preparation";
+import { readFactualCoverageForTaxon } from "./factualFieldsAdapter";
 import { loadSelectedEndCustomerResearchForTaxon } from "./selectedEndCustomerResearchAdapter";
-import { readCompleteTaxonChainForTaxon } from "./taxonChainAdapter";
+import { buildInputCatalogEvaluationContext, type InputCatalogEvaluationContext, type InputCatalogEvaluationMode } from "../landing-page/taxon-preparation";
 
-export async function reconstructCanonicalInputCatalogEvaluationContext(
-  input: InputCatalogEvaluationReconstructionInput,
-): Promise<BuildInputCatalogEvaluationContextResult> {
-  const selectedResearch = await loadSelectedEndCustomerResearchForTaxon({
-    taxonId: input.taxonId,
-    allowInactiveTaxon: true,
-  });
-  const taxonChain = await readCompleteTaxonChainForTaxon(input.taxonId, {
-    allowInactiveSelected: true,
-  });
-  if (!taxonChain.ok) {
-    return failure("CONTEXT_IDENTITY_INVALID", taxonChain.error.message);
-  }
-
-  return buildInputCatalogEvaluationContext({
-    selectedResearch,
-    taxonChain: taxonChain.value.chain,
-    servedTaxon: taxonChain.value.selected,
-    inputCatalogVersion: input.inputCatalogVersion,
-    mode: input.mode,
-  });
-}
-
-function failure(
-  code: Extract<BuildInputCatalogEvaluationContextResult, { ok: false }>["error"]["code"],
-  message: string,
-): BuildInputCatalogEvaluationContextResult {
-  return Object.freeze({ ok: false, error: Object.freeze({ code, message }) });
+export async function reconstructCanonicalInputCatalogEvaluationContext(input: Readonly<{ taxonId: string; mode: InputCatalogEvaluationMode }>): Promise<Readonly<{ ok: true; value: InputCatalogEvaluationContext }> | Readonly<{ ok: false; error: Readonly<{ message: string }> }>> {
+  const coverage = await readFactualCoverageForTaxon(input.taxonId, { allowInactiveSelected: true });
+  if (!coverage.ok) return { ok: false, error: { message: coverage.error.message } };
+  const research = await loadSelectedEndCustomerResearchForTaxon({ taxonId: input.taxonId, allowInactiveTaxon: true });
+  return { ok: true, value: buildInputCatalogEvaluationContext({ coverage: coverage.value, selectedResearch: research, mode: input.mode }) };
 }

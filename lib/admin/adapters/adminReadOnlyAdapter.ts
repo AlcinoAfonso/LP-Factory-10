@@ -26,7 +26,6 @@ export type {
   AdminTaxonDetail,
   AdminEndCustomerResearchSelection,
   AdminTaxonFactualRelease,
-  AdminInputCatalogReview,
   AdminTaxonLevel,
   AdminTaxonListItem,
   AdminTaxonParentOption,

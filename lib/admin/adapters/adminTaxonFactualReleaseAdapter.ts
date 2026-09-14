@@ -2,11 +2,8 @@ import "server-only";
 
 import { createHash } from "node:crypto";
 
-import { readCompleteTaxonChainFromPages } from "@/conversion-content/adapters/taxonChainAdapterCore";
-import {
-  resolveCurrentLandingPageInputCatalog,
-  type LandingPageInputCatalogTaxonIdentity,
-} from "@/conversion-content/landing-page/input-catalog";
+import { readFactualCoverageForTaxon } from "@/conversion-content/adapters/factualFieldsAdapter";
+import { type FactualTaxonIdentity } from "@/conversion-content/landing-page/input-catalog";
 import { createServiceClient } from "@/lib/supabase/service";
 import type {
   AdminTaxonFactualRelease,
@@ -28,7 +25,7 @@ type ReadFactualReleaseSnapshotResult =
   | Readonly<{
       ok: true;
       value: Readonly<{
-        identity: LandingPageInputCatalogTaxonIdentity;
+        identity: FactualTaxonIdentity;
         release: Extract<AdminTaxonFactualRelease, { status: "available" }>;
       }>;
     }>
@@ -61,30 +58,14 @@ async function readFactualReleaseSnapshot(
   const identity = await readTaxonIdentity(supabase, taxonId);
   if (!identity.ok) return { ok: false, error: identity.error };
 
-  const chain = await readCompleteTaxonChainFromPages(
-    taxonId,
-    async (offset, limit) => {
-      const response = await supabase
-        .from("business_taxons")
-        .select("id,parent_id,level,name,slug,is_active")
-        .in("level", VALID_TAXON_LEVELS)
-        .order("id", { ascending: true })
-        .range(offset, offset + limit - 1);
-      return {
-        data: response.data,
-        error: response.error,
-        status: response.status,
-      };
-    },
-    { allowInactiveSelected: true },
-  );
-  if (!chain.ok) {
+  const coverage = await readFactualCoverageForTaxon(taxonId, { allowInactiveSelected: true });
+  if (!coverage.ok) {
     return {
       ok: false,
-      error: readFailed("INVALID_TAXON_CHAIN", chain.error.message),
+      error: readFailed("FACTUAL_COVERAGE_READ_FAILED", coverage.error.message),
     };
   }
-  if (!sameTaxonIdentity(chain.value.selected, identity.value)) {
+  if (!sameTaxonIdentity(coverage.value.servedTaxon, identity.value)) {
     return {
       ok: false,
       error: readFailed(
@@ -94,22 +75,12 @@ async function readFactualReleaseSnapshot(
     };
   }
 
-  const catalog = resolveCurrentLandingPageInputCatalog({
-    taxonChain: chain.value.chain,
-  });
-  if (!catalog.ok) {
-    return {
-      ok: false,
-      error: readFailed("INPUT_CATALOG_RESOLUTION_FAILED", catalog.error.message),
-    };
-  }
-
-  const appliedLayers = catalog.value.appliedLayers.map((layer) => ({
+  const appliedLayers = coverage.value.appliedLayers.map((layer) => ({
     level: layer.level,
     taxonName: layer.taxon?.name ?? null,
     served: layer.taxon?.id === identity.value.id,
   }));
-  const fields = catalog.value.fields.map((field) => ({
+  const fields = coverage.value.fields.map((field) => ({
     fieldKey: field.fieldKey,
     purpose: field.purpose,
     ownership: field.originTaxon?.id === identity.value.id
@@ -127,10 +98,8 @@ async function readFactualReleaseSnapshot(
   }));
   const fingerprintPayload = {
     taxon: identity.value,
-    version: catalog.value.version,
     appliedLayers,
-    fields: catalog.value.fields,
-    retiredFieldKeys: catalog.value.retiredFieldKeys,
+    fields: coverage.value.fields,
   };
 
   return {
@@ -139,7 +108,6 @@ async function readFactualReleaseSnapshot(
       identity: identity.value,
       release: {
         status: "available",
-        currentInputCatalogVersion: catalog.value.version,
         coverageFingerprint: createHash("sha256")
           .update(JSON.stringify(fingerprintPayload))
           .digest("hex"),
@@ -178,7 +146,7 @@ export async function releaseAdminTaxon(
 
 async function activateTaxonByIdentity(
   supabase: ReturnType<typeof createServiceClient>,
-  identity: LandingPageInputCatalogTaxonIdentity,
+  identity: FactualTaxonIdentity,
 ): Promise<boolean> {
   let updateQuery: any = supabase
     .from("business_taxons")
@@ -202,7 +170,7 @@ async function readTaxonIdentity(
   supabase: ReturnType<typeof createServiceClient>,
   taxonId: string,
 ): Promise<
-  | Readonly<{ ok: true; value: LandingPageInputCatalogTaxonIdentity }>
+  | Readonly<{ ok: true; value: FactualTaxonIdentity }>
   | Readonly<{ ok: false; error: Extract<AdminTaxonFactualRelease, { status: "read_failed" }> }>
 > {
   const { data, error } = await supabase
@@ -256,8 +224,8 @@ function isTaxonRow(value: unknown): value is Readonly<{
 }
 
 function sameTaxonIdentity(
-  left: LandingPageInputCatalogTaxonIdentity,
-  right: LandingPageInputCatalogTaxonIdentity,
+  left: FactualTaxonIdentity,
+  right: FactualTaxonIdentity,
 ): boolean {
   return (
     left.id === right.id &&

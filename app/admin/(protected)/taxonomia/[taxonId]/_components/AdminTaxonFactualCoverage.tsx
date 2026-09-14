@@ -74,9 +74,7 @@ export function AdminTaxonFactualCoverage({
     >
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            E20.2 v{release.currentInputCatalogVersion}
-          </p>
+          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">E20.8 · Supabase corrente</p>
           <h2
             className="mt-1 text-lg font-semibold text-card-foreground"
             id="factual-coverage-title"
@@ -84,7 +82,7 @@ export function AdminTaxonFactualCoverage({
             Cobertura factual corrente
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Catálogo factual único aplicado pela hierarquia corrente.
+            Fields factuais correntes aplicados pela hierarquia selecionada.
           </p>
         </div>
         <span
@@ -210,7 +208,7 @@ export function AdminTaxonFactualCoverage({
         </form>
       ) : (
         <p className="mt-5 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900" role="status">
-          Taxon ativo. Alterações futuras do catálogo não reabrem esta decisão automaticamente.
+          Taxon ativo. Alterações futuras de fields não reabrem esta decisão automaticamente.
         </p>
       )}
 

@@ -16,7 +16,6 @@ import {
   type OpenAiCandidateProofMetadata,
 } from "./proofCore";
 import { parseCommercialProof } from "./commercialProof";
-import { proveDynamicMarketResearch } from "./dynamicResearchProof";
 import { lpFactoryOpenAiCostContext } from "@/openai-costs";
 
 export type { OpenAiCandidateProofMetadata } from "./proofCore";
@@ -41,7 +40,6 @@ export async function runOpenAiCandidateProof(
       commercial: dependencies.commercial ?? proveCommercialActivation,
       inputCatalogEvaluation:
         dependencies.inputCatalogEvaluation ?? proveInputCatalogEvaluation,
-      dynamicMarketResearch: dependencies.dynamicMarketResearch ?? proveDynamicMarketResearch,
     },
   );
 }
@@ -166,7 +164,7 @@ async function proveInputCatalogEvaluation(
       mode: "systematic",
       sourceStrategy: "e20_5",
       prompt: {
-        version: "e20.6.5-input-catalog-evaluation-v2",
+        version: "e20.8.7-factual-coverage-evaluation-v1",
         instructions: "Retorne somente o objeto JSON solicitado para a prova técnica segura.",
         input: "Confirme o contrato do transporte com o valor approved.",
       },

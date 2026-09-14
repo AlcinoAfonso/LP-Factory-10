@@ -33,7 +33,6 @@ export type OpenAiCandidateProofDependencies = Readonly<{
   niche: ProductProof;
   commercial: ProductProof;
   inputCatalogEvaluation: ProductProof;
-  dynamicMarketResearch?: ProductProof;
 }>;
 
 export async function runOpenAiCandidateProofCore(
@@ -76,12 +75,6 @@ export async function runOpenAiCandidateProofCore(
         environment,
         normalizedKey,
         normalizedRequestId,
-      );
-      break;
-    case "landing_page_dynamic_market_research":
-      if (!dependencies.dynamicMarketResearch) return { ok: false, code: "configuration" };
-      attempt = await dependencies.dynamicMarketResearch(
-        workload, environment, normalizedKey, normalizedRequestId,
       );
       break;
     default:

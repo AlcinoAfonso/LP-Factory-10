@@ -18,13 +18,9 @@ import {
   updateTaxonAction,
   releaseTaxonAction,
   evaluateInputCatalogAction,
-  confirmInputCatalogEvaluationAction,
-  rejectInputCatalogCandidatesAndConfirmSufficientAction,
-  acknowledgeInputCatalogGapAction,
 } from "../actions";
-import { AdminTaxonInputCatalogEvaluationRuntime } from "./_components/AdminTaxonInputCatalogEvaluation";
+import { AdminTaxonInputCatalogEvaluation } from "./_components/AdminTaxonInputCatalogEvaluation";
 import { AdminTaxonFactualCoverage } from "./_components/AdminTaxonFactualCoverage";
-import { CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION } from "@/conversion-content/landing-page/input-catalog";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -39,9 +35,6 @@ export default async function AdminTaxonDetailPage({ params }: AdminTaxonDetailP
 
   if (!taxon) notFound();
   const inputCatalogEvaluationAvailable = taxon.factualRelease.status === "available";
-  const selectedResearchVersion = taxon.endCustomerResearchSelection.status === "available"
-    ? taxon.endCustomerResearchSelection.selectedVersion
-    : null;
   const inputCatalogEvaluationRuntime = inputCatalogEvaluationAvailable
     ? await resolveInputCatalogEvaluationRuntimeReadiness()
     : null;
@@ -123,14 +116,9 @@ export default async function AdminTaxonDetailPage({ params }: AdminTaxonDetailP
       </section>
 
       {inputCatalogEvaluationAvailable && inputCatalogEvaluationRuntime?.ok ? (
-        <AdminTaxonInputCatalogEvaluationRuntime
-          acknowledgeGapAction={acknowledgeInputCatalogGapAction}
-          confirmAction={confirmInputCatalogEvaluationAction}
-          currentInputCatalogVersion={CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION}
+        <AdminTaxonInputCatalogEvaluation
           isActive={taxon.isActive}
-          selectedResearchVersion={selectedResearchVersion}
           evaluateAction={evaluateInputCatalogAction}
-          rejectCandidatesAndConfirmAction={rejectInputCatalogCandidatesAndConfirmSufficientAction}
           taxonId={taxon.id}
         />
       ) : null}
@@ -142,8 +130,8 @@ export default async function AdminTaxonDetailPage({ params }: AdminTaxonDetailP
           </p>
           <h2 className="mt-1 text-lg font-semibold text-card-foreground">
             {taxon.isActive
-              ? "Revisão factual voluntária do catálogo E20.2"
-              : "Avaliação factual do catálogo E20.2"}
+              ? "Revisão factual voluntária dos fields correntes"
+              : "Avaliação factual dos fields correntes"}
           </h2>
           <p className="mt-2 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
             {inputCatalogEvaluationRuntime.message}
