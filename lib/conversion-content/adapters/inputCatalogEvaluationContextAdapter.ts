@@ -8,5 +8,8 @@ export async function reconstructCanonicalInputCatalogEvaluationContext(input: R
   const coverage = await readFactualCoverageForTaxon(input.taxonId, { allowInactiveSelected: true });
   if (!coverage.ok) return { ok: false, error: { message: coverage.error.message } };
   const research = await loadSelectedEndCustomerResearchForTaxon({ taxonId: input.taxonId, allowInactiveTaxon: true });
+  if (!research.ok && research.error.code !== "SELECTION_ABSENT" && research.error.code !== "FEATURE_DISABLED") {
+    return { ok: false, error: { message: research.error.message } };
+  }
   return { ok: true, value: buildInputCatalogEvaluationContext({ coverage: coverage.value, selectedResearch: research, mode: input.mode }) };
 }

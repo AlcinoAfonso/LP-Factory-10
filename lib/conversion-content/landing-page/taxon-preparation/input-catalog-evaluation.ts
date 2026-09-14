@@ -54,5 +54,11 @@ export function validateInputCatalogEvaluationBinding(input: Readonly<{
 
 function deriveSource(mode: InputCatalogEvaluationMode, selected: LoadSelectedEndCustomerResearchResult): Readonly<{ sourceStrategy: InputCatalogEvaluationSourceStrategy; sourceState: InputCatalogEvaluationSourceState }> {
   if (selected.ok) return { sourceStrategy: mode === "hypothesis" ? "web_search_focal" : "e20_5", sourceState: "e20_5_valid" };
-  return { sourceStrategy: mode === "hypothesis" ? "web_search_focal" : "web_search_fallback", sourceState: selected.error.code === "FEATURE_DISABLED" ? "feature_disabled" : "not_selected" };
+  if (selected.error.code === "FEATURE_DISABLED") {
+    return { sourceStrategy: mode === "hypothesis" ? "web_search_focal" : "web_search_fallback", sourceState: "feature_disabled" };
+  }
+  if (selected.error.code === "SELECTION_ABSENT") {
+    return { sourceStrategy: mode === "hypothesis" ? "web_search_focal" : "web_search_fallback", sourceState: "not_selected" };
+  }
+  throw new Error("A fonte E20.5 selecionada está indisponível para avaliação.");
 }
