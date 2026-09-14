@@ -188,6 +188,34 @@ create table public.taxon_factual_fields (
   )
 );
 
+do $$
+declare
+  constraint_row record;
+  fingerprinted_count integer := 0;
+begin
+  for constraint_row in
+    select oid, conname, conbin::text as predicate_tree
+    from pg_constraint
+    where conrelid = 'public.taxon_factual_fields'::regclass
+      and conname in (
+        'taxon_factual_fields_definition_object_chk',
+        'taxon_factual_fields_definition_keys_chk',
+        'taxon_factual_fields_definition_values_chk',
+        'taxon_factual_fields_definition_validation_chk',
+        'taxon_factual_fields_definition_conditions_chk'
+      )
+  loop
+    execute format(
+      'comment on constraint %I on public.taxon_factual_fields is %L',
+      constraint_row.conname,
+      'E20.8_CANONICAL_PREDICATE_MD5:' || md5(constraint_row.predicate_tree)
+    );
+    fingerprinted_count := fingerprinted_count + 1;
+  end loop;
+  if fingerprinted_count <> 5 then raise exception 'E20.8_CONSTRAINT_FINGERPRINT_MISMATCH'; end if;
+end
+$$;
+
 create index taxon_factual_fields_taxon_id_idx on public.taxon_factual_fields (taxon_id, field_key);
 create index taxon_factual_fields_created_by_idx on public.taxon_factual_fields (created_by) where created_by is not null;
 create index taxon_factual_fields_updated_by_idx on public.taxon_factual_fields (updated_by) where updated_by is not null;

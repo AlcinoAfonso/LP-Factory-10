@@ -51,11 +51,17 @@ with table_columns as (
     exists (select 1 from pg_constraint where conrelid = 'public.taxon_factual_fields'::regclass and conname = 'taxon_factual_fields_field_key_key' and contype = 'u' and pg_get_constraintdef(oid) = 'UNIQUE (field_key)') as field_key_unique,
     exists (select 1 from pg_constraint where conrelid = 'public.taxon_factual_fields'::regclass and conname = 'taxon_factual_fields_field_key_chk' and contype = 'c' and pg_get_constraintdef(oid) like '%field_key ~ ''^[a-z][a-z0-9_]*$''%') as field_key_format_constraint,
     (select count(*) = 7 from pg_constraint where conrelid = 'public.taxon_factual_fields'::regclass and contype = 'c')
-      and exists (select 1 from pg_constraint where conrelid = 'public.taxon_factual_fields'::regclass and conname = 'taxon_factual_fields_definition_object_chk' and contype = 'c' and pg_get_constraintdef(oid) like '%jsonb_typeof(definition)%object%')
-      and exists (select 1 from pg_constraint where conrelid = 'public.taxon_factual_fields'::regclass and conname = 'taxon_factual_fields_definition_keys_chk' and contype = 'c' and pg_get_constraintdef(oid) like '%definition ?&%' and pg_get_constraintdef(oid) like '%purpose%' and pg_get_constraintdef(oid) like '%requiredWhen%' and pg_get_constraintdef(oid) like '%applicableWhen%' and pg_get_constraintdef(oid) like '%validation%')
-      and exists (select 1 from pg_constraint where conrelid = 'public.taxon_factual_fields'::regclass and conname = 'taxon_factual_fields_definition_values_chk' and contype = 'c' and pg_get_constraintdef(oid) like '%expectedValueOrigin%' and pg_get_constraintdef(oid) like '%account_provided%' and pg_get_constraintdef(oid) like '%landing_page_provided%' and pg_get_constraintdef(oid) like '%obligation%' and pg_get_constraintdef(oid) like '%conditional%' and pg_get_constraintdef(oid) like '%validation%')
-      and exists (select 1 from pg_constraint where conrelid = 'public.taxon_factual_fields'::regclass and conname = 'taxon_factual_fields_definition_validation_chk' and contype = 'c' and pg_get_constraintdef(oid) like '%valueType%' and pg_get_constraintdef(oid) like '%type_only%' and pg_get_constraintdef(oid) like '%e164%' and pg_get_constraintdef(oid) like '%https_url%' and pg_get_constraintdef(oid) like '%offering_scope%')
-      and exists (select 1 from pg_constraint where conrelid = 'public.taxon_factual_fields'::regclass and conname = 'taxon_factual_fields_definition_conditions_chk' and contype = 'c' and pg_get_constraintdef(oid) like '%requiredWhen%' and pg_get_constraintdef(oid) like '%applicableWhen%' and pg_get_constraintdef(oid) like '%fieldKey%' and pg_get_constraintdef(oid) like '%operator%' and pg_get_constraintdef(oid) like '%equals%' and pg_get_constraintdef(oid) like '%in%') as auxiliary_definition_constraints,
+      and (select count(*) = 5 from pg_constraint
+        where conrelid = 'public.taxon_factual_fields'::regclass and contype = 'c'
+          and conname in (
+            'taxon_factual_fields_definition_object_chk',
+            'taxon_factual_fields_definition_keys_chk',
+            'taxon_factual_fields_definition_values_chk',
+            'taxon_factual_fields_definition_validation_chk',
+            'taxon_factual_fields_definition_conditions_chk'
+          )
+          and obj_description(oid, 'pg_constraint') = 'E20.8_CANONICAL_PREDICATE_MD5:' || md5(conbin::text)
+      ) as auxiliary_definition_constraints,
     (select count(*) = 3 from pg_constraint where conrelid = 'public.taxon_factual_fields'::regclass and contype = 'f')
       and exists (select 1 from pg_constraint c join pg_attribute source on source.attrelid = c.conrelid and source.attnum = c.conkey[1] join pg_attribute target on target.attrelid = c.confrelid and target.attnum = c.confkey[1] where c.conrelid = 'public.taxon_factual_fields'::regclass and c.contype = 'f' and array_length(c.conkey, 1) = 1 and source.attname = 'taxon_id' and c.confrelid = 'public.business_taxons'::regclass and target.attname = 'id' and c.confupdtype = 'c' and c.confdeltype = 'r')
       and exists (select 1 from pg_constraint c join pg_attribute source on source.attrelid = c.conrelid and source.attnum = c.conkey[1] join pg_attribute target on target.attrelid = c.confrelid and target.attnum = c.confkey[1] where c.conrelid = 'public.taxon_factual_fields'::regclass and c.contype = 'f' and array_length(c.conkey, 1) = 1 and source.attname = 'created_by' and c.confrelid = 'auth.users'::regclass and target.attname = 'id' and c.confupdtype = 'c' and c.confdeltype = 'n')
