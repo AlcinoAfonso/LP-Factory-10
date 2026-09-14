@@ -1,6 +1,6 @@
 0.1 Cabeçalho
-Data: 13/09/2026
-Versão: v1.29
+Data: 14/09/2026
+Versão: v1.30
 Status: Alinhado ao catálogo operacional vigente; Validador Final e Niche Runtime Tests retirados pela E22.6
 
 0.2 Função do documento
@@ -278,7 +278,7 @@ Objetivo:
 Avaliar, por ação administrativa explícita, se o catálogo factual corrente cobre as necessidades do taxon e produzir recomendação rastreável para decisão humana.
 
 Status:
-Implementada e validada deterministicamente no repositório; habilitação e QA do provider em Preview e Production permanecem condicionados ao rollout registrado em `docs/platform-config.md`.
+Implementada e validada deterministicamente no repositório; provider habilitado e validado em Preview com Structured Output v2, enquanto habilitação e QA em Production permanecem condicionados ao rollout registrado em `docs/platform-config.md`.
 
 Recurso utilizado:
 - Responses API com Structured Output estrito;
