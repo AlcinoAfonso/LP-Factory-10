@@ -20,7 +20,7 @@
 - Os pareceres originais dos Gestores Estrutural, de Updates e de Automações foram recuperados dos mesmos agentes que avaliaram o blob imutável da V1; não houve reavaliação ou novo especialista.
 - A Passagem 1 e sua revisão delta foram recuperadas do mesmo Analista e permanecem integralmente registradas na lousa.
 - A conclusão `aprovado para merge do plano-base v2` de `13cd5084` encerrou somente a revisão delta dos sete achados da Passagem 1. Ela não substituiu a Passagem 2 obrigatória com pareceres integrais e esta matriz.
-- A Passagem 2 auditou os pareceres integrais e esta matriz, solicitou dois fechamentos documentais e aprovou o delta no mesmo Analista. A revisão do roadmap ainda deve concluir antes do novo checkpoint `LP-Factory-Stage: plan-v2-approved`.
+- A Passagem 2 auditou os pareceres integrais e esta matriz, solicitou dois fechamentos documentais e aprovou o delta no mesmo Analista. A revisão delta do roadmap também foi aprovada; o gate Complexo está completo para o novo checkpoint `LP-Factory-Stage: plan-v2-approved`.
 - Nenhum achado abaixo amplia o resultado funcional da V1. Cada tratamento é classificado como `derivação técnica da V1`, `modernização técnica justificada` ou `não incorporado`.
 
 ## 3. Parecer do Gestor Estrutural — derivação inicial
@@ -154,3 +154,5 @@ ALVO: 20.6.2 Contrato vigente
 CONTEUDO:
 20.6.3 Contrato vigente
 ```
+
+- Revisão delta final do roadmap: executada pelo mesmo Analista em 14/09/2026 15:49 sobre `4eb3ebd1..d0634880`; os dois achados foram encerrados, nenhuma regressão ou hierarquia inválida foi introduzida e a conclusão formal foi `aprovado para merge do plano-base v2`.
