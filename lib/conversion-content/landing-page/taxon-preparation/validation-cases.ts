@@ -64,6 +64,7 @@ import {
   taxonomyMutationAffectsInputCatalogResolution,
 } from "../../../admin/adapters/adminTaxonomyReviewPolicy";
 import { loadEndCustomerResearchCandidateForValidation } from "./research";
+import { getEvaluationUiState } from "../../../../app/admin/(protected)/taxonomia/[taxonId]/_components/AdminTaxonInputCatalogEvaluation";
 import {
   loadSelectedEndCustomerResearchFromClient,
   type SelectedEndCustomerResearchReadClient,
@@ -1030,8 +1031,22 @@ const cases: readonly ValidationCase[] = [
         evaluationRequest({ deadlineAtMs: 100 }),
         { ...ports, now: () => 100 },
       );
-      assertCoordinatorFailure(expired, "PROVIDER_FAILURE");
+      assertCoordinatorFailure(expired, "PROVIDER_TIMEOUT");
       assert.equal(evaluations, 0);
+
+      let deadlineReads = 0;
+      const expiredAfterProvider = await coordinateInputCatalogEvaluation(
+        evaluationRequest({ deadlineAtMs: 100 }),
+        {
+          ...ports,
+          now: () => {
+            deadlineReads += 1;
+            return deadlineReads === 1 ? 99 : 100;
+          },
+        },
+      );
+      assertCoordinatorFailure(expiredAfterProvider, "PROVIDER_TIMEOUT");
+      assert.equal(evaluations, 1);
     },
   },
   {
@@ -1087,7 +1102,24 @@ const cases: readonly ValidationCase[] = [
         await executeWith({ status: "failure", message: "offline" }),
         "PROVIDER_FAILURE",
       );
-      assert.equal(evaluations, 6);
+      const timedOut = await executeWith({ status: "timeout", message: "openai_timeout" });
+      assertCoordinatorFailure(timedOut, "PROVIDER_TIMEOUT");
+      if (timedOut.ok) throw new Error("Expected typed provider timeout");
+      const actionResult = {
+        ok: false,
+        code: timedOut.error.code,
+        message: timedOut.error.message,
+      } as const;
+      assert.equal(
+        getEvaluationUiState({
+          kind: "failure",
+          code: actionResult.code,
+          message: actionResult.message,
+          previousResult: null,
+        }),
+        "timeout",
+      );
+      assert.equal(evaluations, 7);
     },
   },
   {
@@ -1440,6 +1472,24 @@ const cases: readonly ValidationCase[] = [
         },
       );
       assert.equal(incomplete.status, "incomplete");
+
+      const aborted = new AbortController();
+      aborted.abort();
+      const timedOut = await evaluateInputCatalogWithOpenAi(
+        {
+          apiKey: "test-key",
+          configuration: resolved.value,
+          environment: "development",
+          request,
+          requestId: "request_e2065_timeout",
+          safetyIdentifier: "platform_admin_test",
+        },
+        {
+          signal: aborted.signal,
+          emitEvent: () => undefined,
+        },
+      );
+      assert.deepEqual(timedOut, { status: "timeout", message: "openai_timeout" });
 
       let transportCalls = 0;
       const missingCredential = await evaluateInputCatalogWithOpenAi(
@@ -1872,12 +1922,15 @@ const cases: readonly ValidationCase[] = [
       assert.doesNotMatch(componentSource, /Gate pré-publicação|draftMode/);
       assert.match(componentSource, /Reavaliar com feedback/);
       assert.match(componentSource, /input-catalog-evaluation-feedback/);
-      assert.match(componentSource, /input-catalog-evaluation-version/);
-      assert.match(
-        componentSource,
-        /parsedInputCatalogVersion !== currentInputCatalogVersion/,
-      );
-      assert.match(componentSource, /A avaliação está fixada na versão factual corrente/);
+      assert.doesNotMatch(componentSource, /input-catalog-evaluation-version/);
+      assert.doesNotMatch(componentSource, /onInputCatalogVersionChange|parsedInputCatalogVersion/);
+      assert.match(componentSource, /inputCatalogVersion: currentInputCatalogVersion/);
+      assert.match(componentSource, /data-evaluation-state={evaluationUiState}/);
+      assert.match(componentSource, /state\.code === "PROVIDER_TIMEOUT"/);
+      assert.match(componentSource, /"idle" \| "pending" \| "completed" \| "inconclusive" \| "refusal" \| "timeout" \| "error"/);
+      assert.match(componentSource, /data-decision-state=.*?"success".*?"error"/s);
+      assert.match(componentSource, /Último resultado válido preservado para consulta/);
+      assert.match(componentSource, /previousResult: PreservedEvaluationResult \| null/);
       assert.match(componentSource, /Reconhecer este candidato como gap factual real/);
       assert.match(componentSource, /Rejeitar todos os candidatos e confirmar N como suficiente/);
       assert.match(componentSource, /Limpe a seleção para rejeitar todos/);
@@ -1898,6 +1951,10 @@ const cases: readonly ValidationCase[] = [
       assert.match(componentSource, /Handoff transitório para o recorte E20\.2/);
       assert.match(componentSource, /aria-live="polite"/);
       assert.match(componentSource, /focus-visible:ring/);
+      assert.match(
+        componentSource,
+        /className="inline-flex min-h-11 items-center break-all rounded-md[^\"]*focus-visible:ring-4"[\s\S]*?href={source\.url}/,
+      );
       assert.doesNotMatch(
         componentSource,
         /createServiceClient|supabase|openai-workloads|fetch\s*\(/i,
@@ -1915,7 +1972,6 @@ const cases: readonly ValidationCase[] = [
       assert.match(pageSource, /confirmInputCatalogEvaluationAction/);
       assert.match(pageSource, /rejectInputCatalogCandidatesAndConfirmSufficientAction/);
       assert.match(pageSource, /inputCatalogEvaluationRuntime\?\.ok/);
-      assert.match(pageSource, /inputCatalogEvaluationRuntime\.code === "ROLLOUT_GATE_OFF"/);
       assert.match(pageSource, /taxon\.factualRelease\.status === "available"/);
       assert.match(pageSource, /taxon\.endCustomerResearchSelection\.selectedVersion/);
       assert.doesNotMatch(pageSource, /taxon\.inputCatalogReview/);
@@ -1926,6 +1982,23 @@ const cases: readonly ValidationCase[] = [
       assert.doesNotMatch(pageSource, /legacyMode=|inputCatalogReviewEnabled=|review={taxon\.inputCatalogReview}/);
       assert.match(pageSource, /A liberação humana sem IA acima permanece disponível/);
       assert.doesNotMatch(pageSource, /catalogDraftRevision/);
+      assert.doesNotMatch(pageSource, /meta={taxon\.id}/);
+      assert.doesNotMatch(pageSource, /Runtime OpenAI/);
+      assert.match(pageSource, /Detalhes técnicos e operacionais/);
+      assert.match(
+        pageSource,
+        /className="mt-3 inline-flex min-h-11 items-center rounded-md[^\"]*focus-visible:ring-4"[\s\S]*?href={item\.href}/,
+      );
+      assert.match(pageSource, /<details className=/);
+      const identityPosition = pageSource.indexOf("Identidade e estado");
+      const coveragePosition = pageSource.indexOf("<AdminTaxonFactualCoverage");
+      const humanActionsPosition = pageSource.indexOf("Ações humanas");
+      const assistancePosition = pageSource.indexOf("<AdminTaxonInputCatalogEvaluationRuntime");
+      const technicalDetailsPosition = pageSource.indexOf("Detalhes técnicos e operacionais");
+      assert.ok(identityPosition >= 0 && identityPosition < coveragePosition);
+      assert.ok(coveragePosition < humanActionsPosition);
+      assert.ok(humanActionsPosition < assistancePosition);
+      assert.ok(assistancePosition < technicalDetailsPosition);
 
       const actionSource = readFileSync(
         new URL(
@@ -1945,6 +2018,10 @@ const cases: readonly ValidationCase[] = [
       assert.match(actionSource, /previousContextIdentity/);
       assert.match(actionSource, /contextFingerprint/);
       assert.match(actionSource, /decisionToken/);
+      assert.match(
+        actionSource,
+        /return \{ ok: false, code: result\.error\.code, message: result\.error\.message \}/,
+      );
       assert.match(actionSource, /executeInputCatalogEvaluationAdministrativeActionCore/);
       assert.doesNotMatch(actionSource, /recordInputCatalogReviewAction|reopenInputCatalogReviewAction|recordAdminInputCatalogReview|reopenAdminInputCatalogReview/);
       assert.doesNotMatch(actionSource, /executeLegacyInputCatalogReviewRecordCore/);
@@ -1992,8 +2069,12 @@ const cases: readonly ValidationCase[] = [
         "utf8",
       );
       assert.match(factualCoverageSource, /release\.appliedLayers\.map/);
-      assert.match(factualCoverageSource, /release\.fields\.map/);
+      assert.match(factualCoverageSource, /const coverageByLayer = release\.appliedLayers\.map/);
+      assert.match(factualCoverageSource, /layer\.fields\.map/);
       assert.match(factualCoverageSource, /field\.ownership === "own" \? "Próprio" : "Herdado"/);
+      assert.match(factualCoverageSource, /Próprio: origem no taxon servido/);
+      assert.match(factualCoverageSource, /Herdado: origem em camada ancestral/);
+      assert.match(factualCoverageSource, /Cobertura factual por camada/);
       assert.match(factualCoverageSource, /field\.valueType/);
       assert.match(factualCoverageSource, /field\.valueScope/);
       assert.match(factualCoverageSource, /field\.obligation/);
@@ -2009,7 +2090,24 @@ const cases: readonly ValidationCase[] = [
       );
       assert.match(manageFormSource, /taxon\.isActive \? \(/);
       assert.match(manageFormSource, /defaultChecked={taxon\.isActive}/);
+      assert.match(
+        manageFormSource,
+        /<label className="flex min-h-11 cursor-pointer[^\"]*focus-within:ring-4">[\s\S]*?Manter ativo/,
+      );
       assert.match(manageFormSource, /A ativação é feita somente pela liberação E20\.6/);
+      assert.match(manageFormSource, /min-h-11/);
+      assert.match(manageFormSource, /focus-visible:ring/);
+      assert.match(manageFormSource, /aria-live="assertive"/);
+
+      const researchSelectionSource = readFileSync(
+        new URL("../../../../components/admin/AdminTaxonResearchSelectionForm.tsx", import.meta.url),
+        "utf8",
+      );
+      assert.match(researchSelectionSource, /min-h-11/);
+      assert.match(researchSelectionSource, /focus-visible:ring/);
+      assert.match(componentSource, /!invalidForDecision &&[\s\S]*?output\.status === "candidate_gaps"/);
+      assert.match(componentSource, /aria-labelledby="input-catalog-administrative-decision-title"/);
+      assert.match(componentSource, /role="region"/);
     },
   },
   {

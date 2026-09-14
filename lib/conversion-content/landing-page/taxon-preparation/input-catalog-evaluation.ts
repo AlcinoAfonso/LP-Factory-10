@@ -509,7 +509,7 @@ export async function coordinateInputCatalogEvaluation(
       : Math.floor(normalized.value.deadlineAtMs - (ports.now ?? Date.now)());
     if (timeoutMs !== undefined && timeoutMs <= 0) {
       return coordinatorFailure(
-        "PROVIDER_FAILURE",
+        "PROVIDER_TIMEOUT",
         "O prazo total da avaliação expirou antes do provider.",
       );
     }
@@ -532,7 +532,7 @@ export async function coordinateInputCatalogEvaluation(
     (ports.now ?? Date.now)() >= normalized.value.deadlineAtMs
   ) {
     return coordinatorFailure(
-      "PROVIDER_FAILURE",
+      "PROVIDER_TIMEOUT",
       "O prazo total da avaliação expirou após o provider.",
     );
   }
@@ -548,6 +548,9 @@ export async function coordinateInputCatalogEvaluation(
   }
   if (providerResult.status === "incomplete") {
     return coordinatorFailure("PROVIDER_INCOMPLETE", "A avaliação ficou incompleta.");
+  }
+  if (providerResult.status === "timeout") {
+    return coordinatorFailure("PROVIDER_TIMEOUT", "A avaliação excedeu o tempo limite.");
   }
   if (providerResult.status === "failure") {
     return coordinatorFailure("PROVIDER_FAILURE", "A avaliação falhou.");

@@ -54,7 +54,7 @@ export function AdminTaxonManageForm({
             <p className="mt-1 text-sm text-muted-foreground">Edite nome, slug e status sem alterar a hierarquia.</p>
           </div>
           <button
-            className="inline-flex h-10 items-center justify-center rounded-md bg-brand-600 px-4 text-sm font-medium text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex min-h-11 items-center justify-center rounded-md bg-brand-600 px-4 text-sm font-medium text-white outline-none transition hover:bg-brand-700 focus-visible:ring-4 focus-visible:ring-brand-600/30 disabled:cursor-not-allowed disabled:opacity-60"
             disabled={updatePending}
           >
             {updatePending ? "Salvando..." : "Salvar dados do taxon"}
@@ -67,7 +67,7 @@ export function AdminTaxonManageForm({
           <label className="space-y-1">
             <span className="text-xs font-medium text-muted-foreground">Nome</span>
             <input
-              className="h-10 w-full rounded-md border border-border bg-background px-3 text-sm outline-none ring-brand-600/20 transition focus:ring-4"
+              className="min-h-11 w-full rounded-md border border-border bg-background px-3 text-sm outline-none ring-brand-600/20 transition focus-visible:ring-4"
               name="name"
               value={name}
               onChange={(event) => setName(event.target.value)}
@@ -79,7 +79,7 @@ export function AdminTaxonManageForm({
           <label className="space-y-1">
             <span className="text-xs font-medium text-muted-foreground">Slug</span>
             <input
-              className="h-10 w-full rounded-md border border-border bg-background px-3 text-sm outline-none ring-brand-600/20 transition focus:ring-4"
+              className="min-h-11 w-full rounded-md border border-border bg-background px-3 text-sm outline-none ring-brand-600/20 transition focus-visible:ring-4"
               name="slug"
               value={slug}
               onChange={(event) => {
@@ -91,7 +91,7 @@ export function AdminTaxonManageForm({
           </label>
 
           {taxon.isActive ? (
-            <label className="flex items-center gap-2 text-sm text-muted-foreground">
+            <label className="flex min-h-11 cursor-pointer items-center gap-2 rounded-md px-2 text-sm text-muted-foreground outline-none ring-brand-600/20 focus-within:ring-4">
               <input
                 className="h-4 w-4 rounded border-border text-brand-600"
                 name="isActive"
@@ -113,13 +113,13 @@ export function AdminTaxonManageForm({
         <form action={addAliasFormAction} className="mt-4 flex flex-col gap-3 sm:flex-row">
           <input type="hidden" name="taxonId" value={taxon.id} />
           <input
-            className="h-10 min-w-0 flex-1 rounded-md border border-border bg-background px-3 text-sm outline-none ring-brand-600/20 transition focus:ring-4"
+            className="min-h-11 min-w-0 flex-1 rounded-md border border-border bg-background px-3 text-sm outline-none ring-brand-600/20 transition focus-visible:ring-4"
             name="aliasText"
             placeholder="Novo alias"
             required
           />
           <button
-            className="inline-flex h-10 items-center justify-center rounded-md border border-border px-4 text-sm font-medium text-muted-foreground transition hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex min-h-11 items-center justify-center rounded-md border border-border px-4 text-sm font-medium text-muted-foreground outline-none transition hover:bg-muted focus-visible:ring-4 focus-visible:ring-brand-600/30 disabled:cursor-not-allowed disabled:opacity-60"
             disabled={addAliasPending}
           >
             {addAliasPending ? "Adicionando..." : "Adicionar alias"}
@@ -145,13 +145,13 @@ export function AdminTaxonManageForm({
                   {isConfirmingAlias ? (
                     <>
                       <button
-                        className="inline-flex items-center rounded-md border border-red-300 bg-red-50 px-2.5 py-1 text-xs font-medium text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
+                        className="inline-flex min-h-11 items-center rounded-md border border-red-300 bg-red-50 px-3 py-2 text-xs font-medium text-red-700 outline-none transition hover:bg-red-100 focus-visible:ring-4 focus-visible:ring-red-600/20 disabled:cursor-not-allowed disabled:opacity-60"
                         disabled={deleteAliasPending}
                       >
                         Confirmar remocao de {alias.aliasText}
                       </button>
                       <button
-                        className="inline-flex items-center rounded-md border border-border bg-background px-2.5 py-1 text-xs text-muted-foreground transition hover:bg-muted"
+                        className="inline-flex min-h-11 items-center rounded-md border border-border bg-background px-3 py-2 text-xs text-muted-foreground outline-none transition hover:bg-muted focus-visible:ring-4 focus-visible:ring-brand-600/20"
                         onClick={() => setAliasToConfirm(null)}
                         type="button"
                       >
@@ -160,7 +160,7 @@ export function AdminTaxonManageForm({
                     </>
                   ) : (
                     <button
-                      className="inline-flex items-center gap-2 rounded-md border border-border bg-muted px-2.5 py-1 text-xs text-muted-foreground transition hover:border-red-300 hover:bg-red-50 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+                      className="inline-flex min-h-11 items-center gap-2 rounded-md border border-border bg-muted px-3 py-2 text-xs text-muted-foreground outline-none transition hover:border-red-300 hover:bg-red-50 hover:text-red-700 focus-visible:ring-4 focus-visible:ring-red-600/20 disabled:cursor-not-allowed disabled:opacity-60"
                       disabled={deleteAliasPending}
                       onClick={() => setAliasToConfirm(alias.id)}
                       title="Remover alias"
@@ -185,7 +185,7 @@ export function AdminTaxonManageForm({
             <label className="space-y-1">
               <span className="text-xs font-medium text-red-900">Digite o slug para confirmar</span>
               <input
-                className="h-10 w-full rounded-md border border-red-200 bg-background px-3 text-sm outline-none ring-red-600/20 transition focus:ring-4"
+                className="min-h-11 w-full rounded-md border border-red-200 bg-background px-3 text-sm outline-none ring-red-600/20 transition focus-visible:ring-4"
                 name="confirmSlug"
                 value={confirmSlug}
                 onChange={(event) => setConfirmSlug(event.target.value)}
@@ -194,7 +194,7 @@ export function AdminTaxonManageForm({
             </label>
             {deleteState.error ? <ErrorMessage message={deleteState.error} /> : null}
             <button
-              className="inline-flex h-10 items-center justify-center rounded-md bg-red-600 px-4 text-sm font-medium text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex min-h-11 items-center justify-center rounded-md bg-red-600 px-4 text-sm font-medium text-white outline-none transition hover:bg-red-700 focus-visible:ring-4 focus-visible:ring-red-600/30 disabled:cursor-not-allowed disabled:opacity-60"
               disabled={deletePending || confirmSlug !== taxon.slug}
             >
               {deletePending ? "Excluindo..." : "Excluir taxon definitivamente"}
@@ -212,7 +212,11 @@ export function AdminTaxonManageForm({
 
 function ErrorMessage({ message }: { message: string }) {
   return (
-    <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+    <div
+      aria-live="assertive"
+      className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+      role="alert"
+    >
       {message}
     </div>
   );

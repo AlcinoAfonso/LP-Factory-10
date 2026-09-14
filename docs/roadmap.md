@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 13/09/2026
-• Versão: v1.5.229
+• Versão: v1.5.230
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -1253,7 +1253,7 @@
 - Perfis de orientação, pesquisas da E10.8 e seus estados órfãos não aparecem nas superfícies atuais.
 
 12.5.5 Evolução da revisão factual por taxon
-- Status: planejado na E20.6.
+- Status: implementado e validado deterministicamente no repositório pela E20.6; o QA hospedado permanece no fechamento do recorte.
 - Conteúdo:
   - concentrar no detalhe do taxon a hierarquia Universal → Segmento → Nicho → Ultranicho, a cobertura factual corrente e a distinção entre fields próprios e herdados;
   - oferecer liberação humana de taxon novo sem IA e revisão voluntária de taxon ativo, mantendo recomendação da IA separada da decisão humana;
@@ -1923,7 +1923,7 @@
 
 20.6.1 Objetivo e status
 - Objetivo: liberar taxon novo por decisão humana sobre a cobertura factual corrente e permitir revisão voluntária de taxon ativo, com apoio opcional por IA e sem gate de versão por taxon.
-- Status: substituição funcional e técnica em execução; liberação factual humana, apoio opcional, decisão transitória, provider e revisão voluntária estão concluídos no repositório, enquanto o fechamento integrado permanece em implementação.
+- Status: substituição funcional e técnica concluída e validada no repositório; o QA hospedado e os gates remotos permanecem no fechamento integrado.
 
 20.6.2 Registros do recorte
 - Banco:
@@ -1965,6 +1965,7 @@
     - `app/admin/(protected)/estrutura-lp/lifecycle-e20-validation-cases.ts`
     - `app/admin/(protected)/estrutura-lp/validation-cases.ts`
     - `components/admin/AdminTaxonManageForm.tsx`
+    - `components/admin/AdminTaxonResearchSelectionForm.tsx`
     - `lib/admin/adapters/adminReadOnlyAdapter.ts`
     - `lib/admin/adapters/adminReadOnlyTypes.ts`
     - `lib/admin/adapters/adminTaxonomyAdapter.ts`
@@ -2033,11 +2034,13 @@
   - falha, resultado inconclusivo ou encerramento sem mudança preservam todo estado válido e não gravam estado E20.6.
 
 20.6.7 Experiência administrativa
-- Status: planejado.
+- Status: implementada e validada deterministicamente no repositório; inspeção visual autenticada e QA hospedado permanecem no fechamento integrado.
 - Conteúdo:
   - `/admin/taxonomia/[taxonId]` concentra identidade, hierarquia, cobertura por camada, distinção entre fields próprios e herdados, ações humanas e assistência opcional;
   - recomendação da IA e decisão humana permanecem visual e semanticamente separadas, com detalhes técnicos progressivos;
-  - a superfície deve ser responsiva e aplicar os critérios WCAG 2.2 pertinentes, sem alegar conformidade integral sem auditoria própria.
+  - seletor manual E20.2, identificadores e diagnósticos não aparecem no nível principal;
+  - estados ociosos, pendentes, concluídos, inconclusivos, recusados, expirados, de erro e de sucesso preservam conteúdo válido e não disparam decisão pela renderização;
+  - inspeções automatizadas cobrem ordem, semântica, foco, anúncios, alvos e responsividade; a alegação permanece limitada aos critérios WCAG 2.2 pertinentes, sem conformidade integral presumida.
 
 20.7 Resolução de conhecimento para geração
 

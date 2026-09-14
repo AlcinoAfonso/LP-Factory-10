@@ -52,22 +52,30 @@ export type AdminTaxonInputCatalogEvaluationRuntimeProps = Readonly<{
   }>) => Promise<AcknowledgeInputCatalogGapActionResult>;
 }>;
 
+type PreservedEvaluationResult = Readonly<{
+  output: InputCatalogEvaluationPresentationOutput;
+  provenance: InputCatalogEvaluationProviderProvenance;
+}>;
+
 export type InputCatalogEvaluationPresentationState =
   | Readonly<{ kind: "idle" }>
-  | Readonly<{ kind: "loading" }>
+  | Readonly<{ kind: "loading"; previousResult: PreservedEvaluationResult | null }>
   | Readonly<{
       kind: "result";
       output: InputCatalogEvaluationPresentationOutput;
       provenance: InputCatalogEvaluationProviderProvenance;
     }>
-  | Readonly<{ kind: "failure"; message: string }>;
+  | Readonly<{
+      kind: "failure";
+      code: string;
+      message: string;
+      previousResult: PreservedEvaluationResult | null;
+    }>;
 
 export type AdminTaxonInputCatalogEvaluationProps = Readonly<{
   isActive: boolean;
   selectedResearchVersion: number | null;
   mode: InputCatalogEvaluationPresentationMode;
-  inputCatalogVersion: string;
-  inputCatalogVersionError?: string | null;
   hypothesis: string;
   hypothesisError?: string | null;
   state: InputCatalogEvaluationPresentationState;
@@ -83,10 +91,8 @@ export type AdminTaxonInputCatalogEvaluationProps = Readonly<{
   gapHandoff: string | null;
   gapHandoffCopyStatus: string | null;
   onModeChange: (mode: InputCatalogEvaluationPresentationMode) => void;
-  onInputCatalogVersionChange: (value: string) => void;
   onHypothesisChange: (value: string) => void;
   onEvaluate: (input: Readonly<{
-    inputCatalogVersion: number;
     mode: InputCatalogEvaluationPresentationMode;
     hypothesis: string | null;
     feedback: Readonly<{
@@ -161,9 +167,6 @@ export function AdminTaxonInputCatalogEvaluationRuntime({
   acknowledgeGapAction,
 }: AdminTaxonInputCatalogEvaluationRuntimeProps) {
   const [mode, setMode] = useState<InputCatalogEvaluationPresentationMode>("systematic");
-  const [inputCatalogVersion, setInputCatalogVersion] = useState(
-    String(currentInputCatalogVersion),
-  );
   const [hypothesis, setHypothesis] = useState("");
   const [feedback, setFeedback] = useState("");
   const [state, setState] = useState<InputCatalogEvaluationPresentationState>({ kind: "idle" });
@@ -180,7 +183,6 @@ export function AdminTaxonInputCatalogEvaluationRuntime({
   const [gapHandoffCopyStatus, setGapHandoffCopyStatus] = useState<string | null>(null);
 
   async function evaluate(input: Readonly<{
-    inputCatalogVersion: number;
     mode: InputCatalogEvaluationPresentationMode;
     hypothesis: string | null;
     feedback: Readonly<{
@@ -191,7 +193,8 @@ export function AdminTaxonInputCatalogEvaluationRuntime({
     const feedbackInput = input.feedback && reference
       ? { ...input.feedback, reference }
       : null;
-    setState({ kind: "loading" });
+    const previousResult = getPreservedEvaluationResult(state);
+    setState({ kind: "loading", previousResult });
     setReference(null);
     setStale(false);
     setDecisionFeedback(null);
@@ -202,7 +205,7 @@ export function AdminTaxonInputCatalogEvaluationRuntime({
     try {
       result = await evaluateAction({
         taxonId,
-        inputCatalogVersion: input.inputCatalogVersion,
+        inputCatalogVersion: currentInputCatalogVersion,
         mode: input.mode,
         focalHypothesis: input.hypothesis,
         feedback: feedbackInput,
@@ -210,12 +213,19 @@ export function AdminTaxonInputCatalogEvaluationRuntime({
     } catch {
       setState({
         kind: "failure",
+        code: "CLIENT_ERROR",
         message: "A comunicação com o servidor falhou. Nenhuma alteração foi persistida.",
+        previousResult,
       });
       return;
     }
     if (!result.ok) {
-      setState({ kind: "failure", message: result.message });
+      setState({
+        kind: "failure",
+        code: result.code,
+        message: result.message,
+        previousResult,
+      });
       return;
     }
     setReference(result.reference);
@@ -328,13 +338,6 @@ export function AdminTaxonInputCatalogEvaluationRuntime({
     }
   }
 
-  const parsedInputCatalogVersion = Number(inputCatalogVersion);
-  const inputCatalogVersionError = !Number.isSafeInteger(parsedInputCatalogVersion) || parsedInputCatalogVersion <= 0
-    ? "A versão executável E20.2 deve ser um inteiro positivo."
-    : parsedInputCatalogVersion !== currentInputCatalogVersion
-      ? `A avaliação publicada deve usar a versão E20.2 corrente ${currentInputCatalogVersion}.`
-      : null;
-
   return (
     <AdminTaxonInputCatalogEvaluation
       administrativeDecisionFeedback={decisionFeedback}
@@ -344,8 +347,6 @@ export function AdminTaxonInputCatalogEvaluationRuntime({
       humanCandidateLayer={humanCandidateLayer}
       humanCandidateText={humanCandidateText}
       isActive={isActive}
-      inputCatalogVersion={inputCatalogVersion}
-      inputCatalogVersionError={inputCatalogVersionError}
       gapHandoff={gapHandoff}
       gapHandoffCopyStatus={gapHandoffCopyStatus}
       mode={mode}
@@ -359,13 +360,6 @@ export function AdminTaxonInputCatalogEvaluationRuntime({
         setDecisionFeedback(null);
       }}
       onCopyGapHandoff={copyGapHandoff}
-      onInputCatalogVersionChange={(value) => {
-        setInputCatalogVersion(value);
-        setFeedback("");
-        setSelectedCandidateIndexes([]);
-        setGapHandoff(null);
-        if (state.kind === "result") setStale(true);
-      }}
       onEvaluate={evaluate}
       onFeedbackChange={setFeedback}
       onHypothesisChange={(value) => {
@@ -412,8 +406,6 @@ export function AdminTaxonInputCatalogEvaluation({
   isActive,
   selectedResearchVersion,
   mode,
-  inputCatalogVersion,
-  inputCatalogVersionError = null,
   hypothesis,
   humanCandidateLayer,
   humanCandidateText,
@@ -427,7 +419,6 @@ export function AdminTaxonInputCatalogEvaluation({
   gapHandoffCopyStatus,
   feedback,
   onModeChange,
-  onInputCatalogVersionChange,
   onHypothesisChange,
   onHumanCandidateLayerChange,
   onHumanCandidateTextChange,
@@ -440,7 +431,14 @@ export function AdminTaxonInputCatalogEvaluation({
   onCopyGapHandoff,
 }: AdminTaxonInputCatalogEvaluationProps) {
   const isLoading = state.kind === "loading";
-  const output = state.kind === "result" ? state.output : null;
+  const displayedResult = getPreservedEvaluationResult(state);
+  const output = displayedResult?.output ?? null;
+  const evaluationUiState = getEvaluationUiState(state);
+  const failureTitle = evaluationUiState === "refusal"
+    ? "A avaliação foi recusada"
+    : evaluationUiState === "timeout"
+      ? "A avaliação excedeu o tempo limite"
+      : "Não foi possível concluir a avaliação";
   const modeMismatch = output !== null && output.mode !== mode;
   const resultInvalid = stale || modeMismatch;
   const normalizedHypothesis = hypothesis.trim();
@@ -448,7 +446,6 @@ export function AdminTaxonInputCatalogEvaluation({
   const normalizedHumanCandidate = humanCandidateText.trim();
   const hasHumanCandidate = normalizedHumanCandidate.length > 0;
   const hasValidHumanCandidate = normalizedHumanCandidate.length >= 5;
-  const parsedInputCatalogVersion = Number(inputCatalogVersion);
   const displayedHypothesisError = mode === "hypothesis"
     ? hypothesisError ?? (normalizedHypothesis ? null : "Descreva uma hipótese factual focal para avaliar.")
     : null;
@@ -460,7 +457,6 @@ export function AdminTaxonInputCatalogEvaluation({
     : null;
   const evaluationBlocked =
     isLoading ||
-    inputCatalogVersionError !== null ||
     (mode === "hypothesis" && displayedHypothesisError !== null) ||
     feedbackError !== null;
   const sufficiencyConfirmationBlocked =
@@ -514,35 +510,6 @@ export function AdminTaxonInputCatalogEvaluation({
           catálogo, markers, publicação ou estado operacional.
           {isActive ? " O taxon permanece ativo durante todo o fluxo." : ""}
         </p>
-      </div>
-
-      <div className="mt-5 min-w-0">
-        <label className="text-sm font-semibold text-foreground" htmlFor="input-catalog-evaluation-version">
-          Versão executável E20.2 para esta análise
-        </label>
-        <p className="mt-1 text-sm text-muted-foreground" id="input-catalog-evaluation-version-instruction">
-          A avaliação está fixada na versão factual corrente {inputCatalogVersion}.
-        </p>
-        <input
-          aria-describedby={`input-catalog-evaluation-version-instruction${inputCatalogVersionError ? " input-catalog-evaluation-version-error" : ""}`}
-          aria-invalid={inputCatalogVersionError ? true : undefined}
-          className="mt-2 min-h-11 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground outline-none focus-visible:ring-4 focus-visible:ring-brand-600/20 disabled:opacity-60 sm:max-w-48"
-          disabled
-          id="input-catalog-evaluation-version"
-          inputMode="numeric"
-          min={1}
-          onChange={(event) => onInputCatalogVersionChange(event.currentTarget.value)}
-          placeholder="Ex.: 4"
-          required
-          step={1}
-          type="number"
-          value={inputCatalogVersion}
-        />
-        {inputCatalogVersionError ? (
-          <p className="mt-2 text-sm text-red-700" id="input-catalog-evaluation-version-error" role="alert">
-            {inputCatalogVersionError}
-          </p>
-        ) : null}
       </div>
 
       <div className="mt-4 flex flex-wrap gap-2" aria-label="Fontes desta avaliação">
@@ -696,7 +663,6 @@ export function AdminTaxonInputCatalogEvaluation({
         className="mt-5 inline-flex min-h-11 w-full items-center justify-center rounded-md bg-brand-600 px-4 text-sm font-medium text-white transition hover:bg-brand-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-600/30 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
         disabled={evaluationBlocked}
         onClick={() => onEvaluate({
-          inputCatalogVersion: parsedInputCatalogVersion,
           mode,
           hypothesis: mode === "hypothesis" ? normalizedHypothesis : null,
           feedback: canRefine && output
@@ -719,6 +685,7 @@ export function AdminTaxonInputCatalogEvaluation({
         aria-busy={isLoading}
         aria-live="polite"
         className="mt-6 min-w-0"
+        data-evaluation-state={evaluationUiState}
       >
         {stale ? (
           <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800" role="alert">
@@ -755,31 +722,42 @@ export function AdminTaxonInputCatalogEvaluation({
 
         {state.kind === "failure" ? (
           <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800" role="alert">
-            <p className="font-semibold">Não foi possível concluir a avaliação</p>
+            <p className="font-semibold">{failureTitle}</p>
             <p className="mt-1 break-words">{state.message}</p>
             <p className="mt-1">Nenhuma alteração foi persistida. Tente novamente por ação explícita.</p>
           </div>
         ) : null}
 
         {output ? (
-          <EvaluationResult
-            invalidForDecision={resultInvalid}
-            onCandidateSelectionChange={onCandidateSelectionChange}
-            output={output}
-            provenance={state.kind === "result" ? state.provenance : { webSearchCallCount: 0, webSources: [] }}
-            selectedCandidateIndexes={selectedCandidateIndexes}
-          />
+          <div className="mt-4">
+            {state.kind !== "result" ? (
+              <p className="mb-3 text-xs font-medium text-muted-foreground" role="status">
+                Último resultado válido preservado para consulta; decisões permanecem bloqueadas.
+              </p>
+            ) : null}
+            <EvaluationResult
+              invalidForDecision={resultInvalid || state.kind !== "result"}
+              onCandidateSelectionChange={onCandidateSelectionChange}
+              output={output}
+              provenance={displayedResult?.provenance ?? { webSearchCallCount: 0, webSources: [] }}
+              selectedCandidateIndexes={selectedCandidateIndexes}
+            />
+          </div>
         ) : null}
       </div>
 
       <div
         aria-describedby="input-catalog-administrative-decision-description"
+        aria-labelledby="input-catalog-administrative-decision-title"
         className="mt-6 min-w-0 rounded-md border-2 border-border bg-background p-4"
+        role="region"
       >
         <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
           Ação humana separada
         </p>
-        <h3 className="mt-1 text-base font-semibold text-foreground">Decisão administrativa</h3>
+        <h3 className="mt-1 text-base font-semibold text-foreground" id="input-catalog-administrative-decision-title">
+          Decisão administrativa
+        </h3>
         <p className="mt-1 text-sm text-muted-foreground" id="input-catalog-administrative-decision-description">
           A decisão final pertence ao administrador. Aceitar, rejeitar ou ignorar recomendações
           não publica, ativa nem grava estado; somente candidatos aceitos geram handoff transitório para a E20.2.
@@ -865,6 +843,7 @@ export function AdminTaxonInputCatalogEvaluation({
             className={`mt-3 text-sm ${
               administrativeDecisionFeedback.kind === "success" ? "text-emerald-800" : "text-red-700"
             }`}
+            data-decision-state={administrativeDecisionFeedback.kind === "success" ? "success" : "error"}
             role={administrativeDecisionFeedback.kind === "failure" ? "alert" : "status"}
           >
             {administrativeDecisionFeedback.message}
@@ -951,7 +930,7 @@ function EvaluationResult({
             {provenance.webSources.map((source) => (
               <li className="text-sm" key={source.url}>
                 <a
-                  className="break-all text-sky-900 underline underline-offset-2"
+                  className="inline-flex min-h-11 items-center break-all rounded-md text-sky-900 underline underline-offset-2 outline-none ring-sky-700/20 focus-visible:ring-4"
                   href={source.url}
                   rel="noreferrer"
                   target="_blank"
@@ -975,6 +954,7 @@ function EvaluationResult({
                   onSelectionChange={(selected) => onCandidateSelectionChange(index, selected)}
                   position={index + 1}
                   selectable={
+                    !invalidForDecision &&
                     output.status === "candidate_gaps" &&
                     (candidate.conclusion === "refine_existing_field" ||
                       candidate.conclusion === "possible_new_field")
@@ -1089,6 +1069,31 @@ function CompactDescription({ label, children }: Readonly<{ label: string; child
       <dd className="mt-1 break-words text-sm text-foreground">{children}</dd>
     </div>
   );
+}
+
+function getPreservedEvaluationResult(
+  state: InputCatalogEvaluationPresentationState,
+): PreservedEvaluationResult | null {
+  if (state.kind === "result") {
+    return { output: state.output, provenance: state.provenance };
+  }
+  if (state.kind === "loading" || state.kind === "failure") {
+    return state.previousResult;
+  }
+  return null;
+}
+
+export function getEvaluationUiState(
+  state: InputCatalogEvaluationPresentationState,
+): "idle" | "pending" | "completed" | "inconclusive" | "refusal" | "timeout" | "error" {
+  if (state.kind === "idle") return "idle";
+  if (state.kind === "loading") return "pending";
+  if (state.kind === "result") {
+    return state.output.status === "inconclusive" ? "inconclusive" : "completed";
+  }
+  if (state.code === "PROVIDER_REFUSAL") return "refusal";
+  if (state.code === "PROVIDER_TIMEOUT") return "timeout";
+  return "error";
 }
 
 function getAdministrativeBlockReason({

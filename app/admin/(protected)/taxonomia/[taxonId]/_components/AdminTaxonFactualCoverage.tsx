@@ -58,6 +58,14 @@ export function AdminTaxonFactualCoverage({
   }
 
   const isActive = release.isActive || state.released;
+  const coverageByLayer = release.appliedLayers.map((layer) => ({
+    ...layer,
+    fields: release.fields.filter(
+      (field) =>
+        field.originLayer === layer.level &&
+        field.originTaxonName === layer.taxonName,
+    ),
+  }));
 
   return (
     <section
@@ -76,7 +84,7 @@ export function AdminTaxonFactualCoverage({
             Cobertura factual corrente
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Catálogo único aplicado pela hierarquia, sem divisão por plano comercial.
+            Catálogo factual único aplicado pela hierarquia corrente.
           </p>
         </div>
         <span
@@ -106,44 +114,80 @@ export function AdminTaxonFactualCoverage({
             >
               {humanize(layer.level)}
               {layer.taxonName ? ` — ${layer.taxonName}` : ""}
+              {layer.served ? <span className="sr-only">, taxon servido</span> : null}
             </li>
           ))}
         </ol>
       </div>
 
-      <ul className="mt-4 grid gap-3" aria-label="Fields da cobertura factual corrente">
-        {release.fields.map((field) => (
-          <li
-            className="rounded-md border border-border bg-background px-4 py-3"
-            key={field.fieldKey}
+      <div
+        aria-label="Legenda de origem dos fields"
+        className="mt-4 flex flex-wrap gap-2 text-xs text-muted-foreground"
+      >
+        <span className="rounded-full border border-brand-200 bg-brand-50 px-2.5 py-1 text-brand-800">
+          Próprio: origem no taxon servido
+        </span>
+        <span className="rounded-full border border-border bg-muted px-2.5 py-1">
+          Herdado: origem em camada ancestral
+        </span>
+      </div>
+
+      <div className="mt-4 grid gap-4" aria-label="Cobertura factual por camada">
+        {coverageByLayer.map((layer, layerIndex) => (
+          <section
+            aria-labelledby={`factual-layer-${layerIndex}`}
+            className="rounded-lg border border-border bg-muted/20 p-4"
+            key={`${layer.level}:${layer.taxonName ?? "universal"}`}
           >
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-              <div>
-                <p className="text-sm font-semibold text-foreground">{field.fieldKey}</p>
-                <p className="mt-1 text-sm text-muted-foreground">{field.purpose}</p>
-              </div>
-              <span className="inline-flex w-fit rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
-                {field.ownership === "own" ? "Próprio" : "Herdado"}
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h3 className="text-base font-semibold text-foreground" id={`factual-layer-${layerIndex}`}>
+                {humanize(layer.level)}
+                {layer.taxonName ? ` — ${layer.taxonName}` : ""}
+              </h3>
+              <span className="text-xs font-medium text-muted-foreground">
+                {layer.fields.length} field(s)
               </span>
             </div>
-            <details className="mt-3 text-sm text-muted-foreground">
-              <summary className="cursor-pointer font-medium text-foreground focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-600/20">
-                Ver detalhes do field
-              </summary>
-              <dl className="mt-3 grid gap-2 sm:grid-cols-2">
-                <Detail label="Camada de origem" value={formatOrigin(field)} />
-                <Detail label="Tipo" value={humanize(field.valueType)} />
-                <Detail label="Escopo do valor" value={humanize(field.valueScope)} />
-                <Detail label="Origem esperada" value={humanize(field.expectedValueOrigin)} />
-                <Detail label="Obrigação" value={humanize(field.obligation)} />
-                <Detail label="Validação" value={formatValidation(field)} />
-                <Detail label="Condição obrigatória" value={formatCondition(field.requiredWhen)} />
-                <Detail label="Condição aplicável" value={formatCondition(field.applicableWhen)} />
-              </dl>
-            </details>
-          </li>
+            {layer.fields.length === 0 ? (
+              <p className="mt-3 text-sm text-muted-foreground">Nenhum field tem origem nesta camada.</p>
+            ) : (
+              <ul className="mt-3 grid gap-3" aria-label={`Fields de ${humanize(layer.level)}`}>
+                {layer.fields.map((field) => (
+                  <li
+                    className="rounded-md border border-border bg-background px-4 py-3"
+                    key={field.fieldKey}
+                  >
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                      <div>
+                        <p className="text-sm font-semibold text-foreground">{field.fieldKey}</p>
+                        <p className="mt-1 text-sm text-muted-foreground">{field.purpose}</p>
+                      </div>
+                      <span className="inline-flex w-fit rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
+                        {field.ownership === "own" ? "Próprio" : "Herdado"}
+                      </span>
+                    </div>
+                    <details className="mt-3 text-sm text-muted-foreground">
+                      <summary className="flex min-h-11 cursor-pointer items-center rounded-md font-medium text-foreground outline-none focus-visible:ring-4 focus-visible:ring-brand-600/20">
+                        Ver detalhes do field
+                      </summary>
+                      <dl className="mt-3 grid gap-2 sm:grid-cols-2">
+                        <Detail label="Camada de origem" value={formatOrigin(field)} />
+                        <Detail label="Tipo" value={humanize(field.valueType)} />
+                        <Detail label="Escopo do valor" value={humanize(field.valueScope)} />
+                        <Detail label="Origem esperada" value={humanize(field.expectedValueOrigin)} />
+                        <Detail label="Obrigação" value={humanize(field.obligation)} />
+                        <Detail label="Validação" value={formatValidation(field)} />
+                        <Detail label="Condição obrigatória" value={formatCondition(field.requiredWhen)} />
+                        <Detail label="Condição aplicável" value={formatCondition(field.applicableWhen)} />
+                      </dl>
+                    </details>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
         ))}
-      </ul>
+      </div>
 
       {!isActive ? (
         <form action={formAction} className="mt-5 rounded-md border border-brand-200 bg-brand-50/50 p-4">

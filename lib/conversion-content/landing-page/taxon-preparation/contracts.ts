@@ -312,6 +312,7 @@ export type InputCatalogEvaluationProviderResult =
     }>
   | Readonly<{ status: "refusal"; message: string }>
   | Readonly<{ status: "incomplete"; message: string }>
+  | Readonly<{ status: "timeout"; message: string }>
   | Readonly<{ status: "failure"; message: string }>;
 
 export type InputCatalogEvaluationPorts = Readonly<{
@@ -342,6 +343,7 @@ export type CoordinateInputCatalogEvaluationResult =
           | "CONTEXT_STALE"
           | "PROVIDER_REFUSAL"
           | "PROVIDER_INCOMPLETE"
+          | "PROVIDER_TIMEOUT"
           | "PROVIDER_FAILURE"
           | "OUTPUT_INVALID"
           | "OUTPUT_MODE_MISMATCH";

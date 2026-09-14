@@ -64,7 +64,7 @@ export async function evaluateInputCatalogWithOpenAi(
     remainingDeadlineMs,
   );
   if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) {
-    return { status: "failure", message: "openai_deadline_expired" };
+    return { status: "timeout", message: "openai_deadline_expired" };
   }
 
   const result = await requestOpenAiResponses(
@@ -140,6 +140,9 @@ export async function evaluateInputCatalogWithOpenAi(
   }
   if (result.reason === "openai_incomplete") {
     return { status: "incomplete", message: result.reason };
+  }
+  if (result.kind === "timeout") {
+    return { status: "timeout", message: result.reason };
   }
   return { status: "failure", message: result.reason };
 }
