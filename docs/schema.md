@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data da última atualização: 12/09/2026
-• Documento: LP Factory 10 — Schema (DB Contract) v1.0.67
+• Data da última atualização: 14/09/2026
+• Documento: LP Factory 10 — Schema (DB Contract) v1.0.68
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -287,7 +287,6 @@
 • UNIQUE: slug
 • CHECK: business_taxons_level_chk (level IN ('segment', 'niche', 'ultra_niche'))
 • CHECK: business_taxons_selected_end_customer_research_version_chk (selected_end_customer_research_version IS NULL OR selected_end_customer_research_version > 0)
-• CHECK: business_taxons_reviewed_input_catalog_version_chk (reviewed_input_catalog_version IS NULL OR reviewed_input_catalog_version > 0)
 • FK: parent_id → business_taxons(id) ON UPDATE CASCADE ON DELETE SET NULL
 
 1.11.2 Campos
@@ -297,13 +296,12 @@
 • slug text not null
 • is_active boolean not null default false; a alteração do default é forward-only e não modifica valores de linhas existentes
 • selected_end_customer_research_version integer null
-• reviewed_input_catalog_version integer null
 
 1.11.3 Segurança
 • Trigger Hub: não
 • RLS: ativo (enable row level security)
-• service_role: SELECT; sem UPDATE da tabela inteira; UPDATE somente em is_active, name, reviewed_input_catalog_version, selected_end_customer_research_version e slug
-• anon/authenticated: sem UPDATE em selected_end_customer_research_version e reviewed_input_catalog_version
+• service_role: SELECT; sem UPDATE da tabela inteira; UPDATE somente em is_active, name, selected_end_customer_research_version e slug
+• anon/authenticated: sem UPDATE em selected_end_customer_research_version
 
 1.11.4 Policies
 • business_taxons_select_admin_only (SELECT to public): is_super_admin() OU is_platform_admin()
@@ -857,7 +855,7 @@
 • A PK composta `(environment, workload)` é o lock canônico das RPCs e impede mais de uma unidade para a mesma combinação.
 • A migration forward-only `supabase/migrations/20260820190422_e21_2_3_openai_workload_operational_configurations.sql` está aplicada no ambiente hospedado; o snippet read-only aprovou 10/10 verificações e o Security Controls não apresentou alerta incompatível com o agregado ou suas RPCs.
 • A migration incremental forward-only `supabase/migrations/20260820213900_e21_2_taxon_input_catalog_sufficiency_workload.sql` também está aplicada no ambiente hospedado e estende o mesmo agregado com `taxon_input_catalog_sufficiency_evaluation`, sem nova entidade ou tabela de negócio; os testes SQL, snippets read-only e invariantes pós-apply foram aprovados, e o Security Controls reportou para as três tabelas apenas o INFO esperado de RLS sem policy, compatível com a residência service-only sem grants públicos.
-• A migration forward-only `supabase/migrations/20260829171107_e20_7_4_dynamic_market_research_workload.sql` está aplicada automaticamente no ambiente hospedado após o merge do PR #835 e acrescenta `landing_page_dynamic_market_research` às três allowlists e às validações das RPCs existentes, sem tabela, coluna, policy ou grant público novo. Para esse workload, `save` e `promote` autorizam exclusivamente `gpt-5.6-luna + high`; `low`, `max` e a matriz comparativa anterior ficam fora.
+• A migration histórica `supabase/migrations/20260829171107_e20_7_4_dynamic_market_research_workload.sql` introduziu `landing_page_dynamic_market_research`; a migration E20.8 remove suas linhas mutáveis deste agregado. Revisões e ativações append-only permanecem históricas e inertes.
 
 1.28.2 Colunas
 • environment text not null
@@ -886,8 +884,7 @@
 1.28.4 Índices, bootstrap e segurança
 • `openai_workload_operational_configurations_active_revision_idx`: btree em active_revision_id + unidade.
 • `openai_workload_operational_configurations_pending_revision_idx`: btree parcial em pending_revision_id + unidade quando não nulo.
-• O estado hospedado confirmado mantém doze unidades Production/Preview × seis workloads. As duas unidades de `landing_page_dynamic_market_research` estão presentes pelo bootstrap idempotente da migration E20.7.4, sem candidata ou revisão pendente e com active_revision_id na revisão 1 correspondente.
-• A revisão bootstrap `1` do novo workload usa `gpt-5.6-luna + high` somente como origem repo_catalog; não comprova nem autoriza transporte hospedado, que exige revisão operacional `2` ou posterior.
+• Após o apply E20.8, o agregado físico mantém dez unidades: seis unidades correntes Production/Preview × três workloads de produto e quatro unidades antigas de drafts preservadas como história. As duas unidades mutáveis de `landing_page_dynamic_market_research` são removidas e não integram a allowlist corrente.
 • RLS habilitado e nenhuma policy.
 • public, anon, authenticated e ai_readonly: sem grants.
 • service_role: SELECT e UPDATE somente dos nove campos necessários às transições; sem INSERT, DELETE ou TRUNCATE.
@@ -1032,25 +1029,24 @@
 • Teste transacional: `supabase/tests/e21_2_5_openai_model_catalog.test.sql`; verificador read-only: `supabase/snippets/e21_2_5_openai_model_catalog_verify.sql`.
 • Estado atual: migration aplicada no ambiente hospedado pelo fluxo canônico; o verificador read-only aprovou 8/8 verificações e o Security Controls não apresentou alerta incompatível com as tabelas, constraints, RLS, policies, ACLs, RPCs ou triggers do catálogo. O INFO de RLS sem policy é esperado e compatível com acesso exclusivo por service_role.
 
-1.35 landing_page_input_catalog_drafts
+1.35 taxon_factual_fields
 1.35.1 Função e autoridade
-• Residência singleton do único próximo draft administrativo do catálogo E20.2; o conteúdo é mutável e não operacional.
-• A tabela não armazena nem replica as versões publicadas e não define a versão atual. Registry, versionamento publicado e declaração de versão atual permanecem autoridade exclusiva do repositório implantado.
-• base_version e target_version são inteiros positivos e sequenciais; catalog_json é objeto JSON; revision é bigint positiva e suporta concorrência otimista.
+• Autoridade factual corrente e única do catálogo de entradas E20.8, sem versão, plano, registry, draft, snapshot, publisher, reconciliação, override ou segunda residência.
+• `id uuid primary key default gen_random_uuid()`; `field_key text not null unique`; `taxon_id uuid null`; `definition jsonb not null`; `is_active boolean not null default true`; `created_by` e `updated_by` uuid null; timestamps não nulos com `now()`.
+• `taxon_id` nulo representa Universal; valor não nulo referencia `business_taxons(id)` com ON UPDATE CASCADE e ON DELETE RESTRICT. `created_by` e `updated_by` referenciam `auth.users(id)` com ON UPDATE CASCADE e ON DELETE SET NULL.
 
-1.35.2 Evidências e constraints
-• content_fingerprint é SHA-256 hexadecimal obrigatório; validation_fingerprint/validation_context_fingerprint/validated_at e publication_fingerprint/publication_context_fingerprint/publication_prepared_at formam conjuntos consistentes.
-• Evidência de publicação só pode referenciar o mesmo conteúdo e a mesma coleção operacional integral validados. Drift de taxonomia, configuração E19.2 pré-handoff, configuração E19.5, LP ou elegibilidade torna o handoff stale. O registro significa handoff repo-only preparado, não publicação, ativação ou autoridade operacional.
-• taxon_review_evidence é objeto JSON server-only de decisões humanas pré-publicação vinculadas ao fingerprint exato do conteúdo e do contexto E20.6.5; editar o draft limpa essas evidências, e registrá-las não atualiza reviewed_input_catalog_version.
-• singleton é a primary key booleana e aceita somente true; no máximo uma linha pode existir.
-• created_by e updated_by referenciam auth.users(id) com ON UPDATE CASCADE e ON DELETE RESTRICT; created_at e updated_at são timestamptz não nulos, e trigger canônico mantém updated_at.
+1.35.2 Contrato e carga inicial
+• `field_key` usa snake_case fechado. `definition` aceita somente finalidade, tipo, escopo, origem esperada, obrigação, condições opcionais e validação coerente; objetos, enums, listas, ranges e operadores são validados com equivalência ao schema Zod do domínio.
+• `public.e20_8_factual_field_definition_is_valid(jsonb)` é função IMMUTABLE, search_path vazio e acesso externo restrito ao `service_role`; a constraint estrita a usa e cinco constraints auxiliares mantêm fingerprint canônico do predicado.
+• A carga inicial aborta se as identidades `imobiliario` e `corretor-imoveis` divergirem e cria exatamente 25 rows ativas: 16 Universal, quatro Segmento, cinco Nicho e zero Ultranicho. `created_by` e `updated_by` nulos são permitidos somente nesse bootstrap.
+• Índices: `(taxon_id, field_key)`, `created_by` parcial não nulo e `updated_by` parcial não nulo. O trigger `taxon_factual_fields_set_updated_at` executa `public.tg_set_updated_at()` antes de UPDATE.
 
-1.35.3 Segurança e artefatos
-• RLS habilitado e nenhuma policy; public, anon, authenticated e ai_readonly não possuem grants.
-• service_role possui SELECT, INSERT, UPDATE e DELETE; não há acesso direto do client.
-• DELETE é usado somente pela reconciliação humana no runtime de Production pós-deploy, depois de o boundary comprovar que versão atual, conteúdo e fingerprint do registry implantado correspondem exatamente ao draft congelado.
-• Migration forward-only: `supabase/migrations/20260824180000_e20_2_8_input_catalog_lifecycle.sql`; teste transacional: `supabase/tests/e20_2_8_input_catalog_lifecycle.test.sql`; verificador read-only: `supabase/snippets/e20_2_8_input_catalog_lifecycle_verify.sql`.
-• A migration não cria linha e não migra v1–v5. O apply hospedado foi concluído em 25/08/2026; o verificador read-only aprovou 4/4 checks, o teste SQL transacional foi aprovado sem resíduos e o Security Controls apresentou somente o INFO esperado de RLS sem policy, compatível com acesso exclusivo por service_role.
+1.35.3 Segurança, retirada e artefatos
+• RLS habilitado e nenhuma policy. public, anon, authenticated e ai_readonly não possuem grants; service_role possui somente SELECT, INSERT e UPDATE, sem DELETE ou TRUNCATE.
+• A E20.8 não participa do Trigger Hub e não cria trilha de auditoria própria. CRUD lógico usa `is_active`; remoção física operacional não é autorizada.
+• A mesma migration remove `landing_page_input_catalog_drafts`, `business_taxons.reviewed_input_catalog_version` e as unidades mutáveis de `landing_page_dynamic_market_research`, preservando revisões, ativações e custos históricos.
+• Migration forward-only: `supabase/migrations/20260914132000_e20_8_factual_fields_greenfield.sql`; teste transacional: `supabase/tests/e20_8_factual_fields_greenfield.test.sql`; verificador read-only: `supabase/snippets/e20_8_factual_fields_verify.sql`.
+• Estado hospedado: apply, snippet e Security Controls permanecem gates pós-merge do cutover supervisionado; este contrato descreve o estado produzido pela migration, sem afirmar aplicação antecipada.
 
 1.36 openai_lp_cost_events
 1.36.1 Função e identidade
@@ -1427,6 +1423,8 @@
 • Rollback: não remove automaticamente a extensão, pois pode ser reutilizada por outros recursos
 
 99. Changelog
+v1.0.68 (14/09/2026) — E20.8: substituído o draft/versionamento por `taxon_factual_fields`, documentada a retirada de `reviewed_input_catalog_version` e das unidades mutáveis E20.7, com lifecycle e custos históricos preservados.
+
 v1.0.65 (02/09/2026) — SV-PR03: marcado o agregado físico E19.5 como infraestrutura herdada; configurações continuam lidas pelo lifecycle administrativo do catálogo e os demais RPCs, materializações, aprovação e Storage permanecem inertes, sem DDL, migration, dado ou ACL alterado.
 v1.0.61 (29/08/2026) — E20.7.4: registrada a migration candidata que amplia o agregado E21.2 de dez para doze unidades com `landing_page_dynamic_market_research`, preserva as três tabelas, RLS e grants existentes e mantém apply e revisão operacional comprovada pendentes do merge humano.
 

@@ -1,7 +1,7 @@
 0.1 Cabeçalho
 Data: 14/09/2026
-Versão: v1.30
-Status: Alinhado ao catálogo operacional vigente; Validador Final e Niche Runtime Tests retirados pela E22.6
+Versão: v1.31
+Status: Alinhado ao catálogo operacional vigente; assistência factual E20.8.7 preservada e automação E20.7 retirada
 
 0.2 Função do documento
 Registrar a camada de automações operacionais do LP Factory 10 como referência para integrações, automações operacionais e componentes consumidores, sem expor segredos.
@@ -272,13 +272,13 @@ Action administrativa: `app/admin/(protected)/templates/actions.ts`
 Adapter de geração: `lib/conversion-content/commercial-activation/draft-generation.ts`
 Snippet de validação: `supabase/snippets/e10_7_phase_2_draft_verify.sql`
 
-3.10 E20.6 — avaliação assistida da suficiência factual da E20.2 por taxon
+3.10 E20.8.7 — avaliação assistida da suficiência factual corrente por taxon
 
 Objetivo:
-Avaliar, por ação administrativa explícita, se o catálogo factual corrente cobre as necessidades do taxon e produzir recomendação rastreável para decisão humana.
+Avaliar, por ação administrativa explícita, se os fields ativos correntes cobrem as necessidades factuais do taxon e produzir recomendação transitória para decisão humana.
 
 Status:
-Implementada e validada deterministicamente no repositório; provider habilitado e validado em Preview com Structured Output v2, enquanto habilitação e QA em Production permanecem condicionados ao rollout registrado em `docs/platform-config.md`.
+Implementada no boundary E20.8 e validada deterministicamente no repositório; a disponibilidade hospedada continua condicionada ao gate e à configuração operacional registrados em `docs/platform-config.md`.
 
 Recurso utilizado:
 - Responses API com Structured Output estrito;
@@ -292,66 +292,23 @@ Ambiente principal:
 - Admin do Core, com execução server-side.
 
 Participação humana:
-- `platform_admin` inicia a avaliação, decide quais candidatos reconhecer e pode seguir pela liberação humana sem IA independentemente do provider; em taxon ativo, inicia a mesma avaliação somente de forma voluntária.
+- `platform_admin` inicia a avaliação e decide, fora da resposta da IA, se editará algum field pelo CRUD factual. A liberação humana sem IA permanece independente do provider; em taxon ativo, a avaliação é voluntária.
 
 Como usar:
 - Executar a avaliação sistemática para o taxon ou informar uma única hipótese focal.
 - Com pesquisa E20.5 válida, a avaliação sistemática não consulta a web; ausência de seleção ou feature desabilitada autoriza fallback de uma ou duas buscas; hipótese focal executa exatamente uma busca.
-- Tratar `suficiente`, `gaps candidatos` ou `inconclusivo` como recomendação transitória; candidato reconhecido segue apenas como handoff ao lifecycle E20.2.
+- Tratar `suficiente`, `gaps candidatos` ou `inconclusivo` como recomendação transitória; a resposta não cria handoff, draft, versão ou mutação automática.
 
 Resultado esperado:
 - Recomendação estruturada com contexto corrente e, quando houver busca, URLs HTTPS comprovadas pela metadata do provider, sem persistência do relatório da IA.
 
 Limites:
-- Não altera a E20.2, não ativa nem desativa taxon, não grava suficiência, não dispara por publicação e não bloqueia a decisão humana; também não usa Codex, agente, Agents SDK, job, fila ou execução recorrente como fallback.
+- Não altera `taxon_factual_fields`, não ativa nem desativa taxon, não grava suficiência e não bloqueia a decisão humana; também não usa Codex, agente, Agents SDK, job, fila ou execução recorrente como fallback.
 
 Referências / dependências:
-Fluxo funcional: `docs/roadmap.md` — E20.6.5 e E20.6.6.
+Fluxo funcional: `docs/roadmap.md` — E20.8.7.
 Configuração do gate: `docs/platform-config.md` — seção 3.5.
 Contrato técnico: `docs/base-tecnica.md` — seção 3.15.7.
-
-3.12 E20.7.4 — complemento dinâmico controlado de conhecimento de mercado
-
-Objetivo:
-Complementar somente a resolução `dynamic_required` da E20.7.3 com evidência pública recente e rastreável, sem recusar a oferta nem substituir a autoridade factual E20.2.
-
-Status:
-Concluída no boundary da E20.7, implementada e validada deterministicamente no repositório, com apply automático da migration E20.7.4 concluído após o merge do PR #835. O transporte hospedado permanece não autorizado e não possui consumidor funcional após a retirada da integração E19; eventual uso futuro exige recorte próprio.
-
-Recurso utilizado:
-- Responses API com Structured Output estrito;
-- ferramenta hospedada Web Search como única tool permitida;
-- configuração de workload pelo lifecycle E21.2.
-
-Natureza:
-- Automação com IA em fluxo controlado.
-
-Ambiente principal:
-- Runtime server-side do LP Factory, após ativação humana por ambiente.
-
-Participação humana:
-- O gatilho funcional futuro pertence ao consumidor autorizado; configuração, prova, promoção e ativação do workload exigem as ações humanas já governadas pela E21.2.
-
-Como funciona:
-- Executa uma única requisição foreground e exige uma ou duas chamadas Web Search concluídas, com fontes HTTPS retornadas pelo provider.
-- Usa prompt e schema versionados no boundary de resolução de conhecimento; trata entrada funcional como não confiável e rejeita URL material que não tenha sido retornada pelo provider.
-- Limita contexto de busca, chamadas, orçamento de entrada, saída e deadline por política code-owned; modelo e reasoning effort vêm da configuração efetiva do workload.
-- A configuração inicial e única combinação elegível para `save`/`promote` desse workload é `gpt-5.6-luna + high`; a hipótese `low`, `max` e a matriz comparativa anterior não são autorizadas.
-- Retorna complemento material ou ausência de materialidade com fontes, proveniência, usage e telemetria sanitizada; evidência insuficiente ou falha técnica não invalida a oferta.
-
-Limites:
-- Não usa agente, Agents SDK, retry, fallback, background, conversation, job, fila, RAG, cache global ou persistência de pesquisa.
-- Não altera a E20.2, não gera copy, layout, wireframe ou CTA e não integra a geração E19.
-- O piloto `corretor-imoveis` já está reconciliado em `reviewed_input_catalog_version=6`. O bootstrap revisão `1` não autoriza transporte hospedado; eventual novo consumidor deverá comprovar, promover e ativar revisão `supabase_operational` `2` ou posterior pelo lifecycle E21.2, conforme `docs/platform-config.md`.
-
-Aplicação funcional no roadmap:
-- `docs/roadmap.md` — E20.7.4.
-
-Referências / dependências:
-Regra técnica: `docs/base-tecnica.md` — seção 3.15.11.
-Configuração de workloads: `docs/platform-config.md` — seção 3.5.
-Contrato de banco: `docs/schema.md` — seções 1.28 a 1.30.
-Boundary funcional: `lib/conversion-content/landing-page/knowledge-resolution/`.
 
 4. Aprendizados operacionais
 

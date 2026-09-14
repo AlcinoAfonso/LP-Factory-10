@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 14/09/2026
-• Versão: v1.5.232
+• Versão: v1.5.233
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -1722,7 +1722,7 @@
 - `lib/lp-builder/` e `lib/conversion-content/landing-page/presentation/` não existem mais no boundary vigente.
 - Os workloads `landing_page_draft_generation` e `landing_page_draft_image_generation`, suas provas administrativas e branches exclusivas de image workload foram removidos.
 - O catálogo independente de modelos de imagem permanece disponível para governança de modelos, sem implicar workload de imagem ativo.
-- E20.2, E20.5, E20.6 e E20.7 permanecem capacidades independentes e não dependem de compatibilidade E19.
+- A autoridade factual E20.8, a pesquisa E20.5 e a liberação humana preservada permanecem independentes da E19; E20.7 foi retirada terminalmente depois deste fechamento histórico.
 
 19.2 Account Dashboard
 - Contas ativas seguem a experiência comercial preservada, sem desvio por estado de configuração, LP ou revisão.
@@ -1739,14 +1739,14 @@
 - O detalhe da arquitetura abandonada permanece recuperável pelos PRs e pelo histórico Git; a documentação canônica não a mantém como obrigação vigente.
 - PR #871 tornou a geração antiga inalcançável, PR #872 retirou sua orquestração, o SV-PR03 retirou o produto operacional e o SV-PR04 eliminou as duas fronteiras administrativas residuais.
 20. E20 — Catálogo factual, pesquisa opcional e revisão de taxons
-- Objetivo: manter um catálogo factual versionado e plan-neutral, fontes opcionais de conhecimento e decisões humanas de liberação ou revisão por taxon, sem coordenar consumidores ou usos anteriores.
-- Status: em evolução; o catálogo E20.2 v6, a seleção E20.5, a liberação e revisão factual E20.6 e o resolver dormente E20.7 estão implementados; a E20.6 foi integrada à `main`, recebeu a migration canônica e foi validada em Preview e Production autenticados.
+- Objetivo: manter fields factuais correntes por cadeia taxonômica, fonte de pesquisa opcional e decisão humana de liberação, sem versão, plano, draft, segunda autoridade ou coordenação de consumidores.
+- Status: substituição greenfield E20.8 implementada e aprovada nos gates de código 20.8.3–20.8.7; ABC canônico 20.8.8 concluído no branch e candidato ao gate documental. Merge, apply, snippet, Security Controls e QA hospedado permanecem sob gate posterior do supervisor.
 
 20.2 Catálogo de entradas por taxon
 
 20.2.1 Objetivo e status
-- Objetivo: definir e resolver declarativamente quais fatos um novo uso exige por versão e cadeia taxonômica, sem valores concretos, entitlement, plano comercial ou coordenação do consumidor.
-- Status: versões v1–v6 publicadas e imutáveis no repositório; `CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION = 6`; evolução plan-neutral implementada e validada pela E20.6.
+- Objetivo: histórico da evolução v1–v6 que antecedeu a substituição greenfield.
+- Status: encerrado e substituído in place pela E20.8. Registry, versão corrente, drafts, publisher e compatibilidade não integram o runtime vigente; os detalhes 20.2.2–20.2.8 abaixo são história do recorte anterior.
 
 20.2.2 Registros do recorte
 - Banco:
@@ -1786,7 +1786,7 @@
   - Contrato técnico: `docs/base-tecnica.md` — seção 3.15.4.
   - Draft administrativo e RPCs: `docs/schema.md`.
 
-20.2.3 Registry e resolução
+20.2.3 Registry e resolução — histórico encerrado
 - O registry repo-only é a autoridade exclusiva das versões publicadas e da versão atual.
 - O resolver exige versão explícita e cadeia taxonômica válida; não usa `latest`, maior chave ou fallback implícito.
 - A herança segue `universal → segmento → nicho → ultranicho`, com ordem e proveniência determinísticas.
@@ -1815,13 +1815,13 @@
 - O núcleo de identidade comercial é `funnel_stage`, `transaction_intent` quando aplicável e `landing_page_offering_scope`; `primary_conversion_goal` permanece estratégia obrigatória, não identidade.
 - Compatibilidade v5→v6 projeta os fields singulares somente em memória e não reescreve snapshots ou residências históricas.
 
-20.2.6 Versão corrente e compatibilidade histórica
+20.2.6 Versão corrente e compatibilidade histórica — retiradas
 - A versão publicada corrente selecionada internamente pelo resolver é a autoridade operacional para cada novo uso.
 - O modelo `R/C` e `reviewed_input_catalog_version` permanecem apenas como histórico inerte, sem autorizar, bloquear ou coordenar taxons, consumidores ou a versão corrente.
 - `no_material_change`, `compatible_evolution` e `review_required` podem classificar deterministicamente a transição para inspeção administrativa, sem criar gate individual por taxon.
 - O produto E19.2/E19.5 e sua geração foram retirados e não são consumidores vigentes.
 
-20.2.7 Lifecycle administrativo
+20.2.7 Lifecycle administrativo — retirado
 - Pode existir somente um próximo draft, mutável, service-only e não operacional.
 - Editar o draft torna stale qualquer evidência dependente; versões publicadas não são copiadas para o banco.
 - Publicar exige congelar conteúdo e fingerprints, materializar a nova versão no registry, validar, revisar, mergear, implantar em Production e reconciliar a identidade exata.
@@ -1831,7 +1831,7 @@
 - O Admin usa `/admin/estrutura-lp?view=entradas`; avaliação individual de suficiência permanece na Taxonomia.
 - Não há rollback de catálogo, múltiplos drafts, targeting por taxon, job, fila ou agente.
 
-20.2.8 Evolução factual plan-neutral
+20.2.8 Evolução factual plan-neutral — substituída
 - Status: implementado e validado pela E20.6.
 - Conteúdo:
   - o caminho corrente seleciona internamente a versão publicada atual e resolve um único catálogo por Universal → Segmento → Nicho → Ultranicho, sem plano comercial ou fork por taxon;
@@ -1922,7 +1922,7 @@
 
 20.6.1 Objetivo e status
 - Objetivo: liberar taxon novo por decisão humana sobre a cobertura factual corrente e permitir revisão voluntária de taxon ativo, com apoio opcional por IA e sem gate de versão por taxon.
-- Status: substituição funcional e técnica concluída, integrada à `main` e validada no repositório, em Preview autenticado e em Production; migration canônica aplicada e verificada, com fechamento pós-merge concluído.
+- Status: decisão humana e apoio consultivo preservados pela E20.8 sobre a nova autoridade factual. Contratos antigos de versão, review, decision token, handoff e lifecycle foram retirados; os registros abaixo permanecem históricos quando nomeiam esses artefatos.
 
 20.6.2 Registros do recorte
 - Banco:
@@ -2008,18 +2008,17 @@
 - Conteúdo:
   - somente ação explícita de `platform_admin` solicita sugestões de lacunas;
   - o humano pode aceitar nenhum, alguns ou todos os candidatos e incluir candidato próprio;
-  - candidato aceito forma somente handoff transitório para o lifecycle E20.2 e não publica field, altera taxon ou cria estado E20.6;
-  - rejeição, confirmação sem mudança, falha ou indisponibilidade da IA não gravam marker e não bloqueiam a liberação humana;
-  - o lifecycle E20.2 valida cobertura comum e plan-neutral, rejeita camada sem taxonomia correspondente e mudança de residência, resolve internamente a autorização ultra-niche e mostra antes da decisão o diff exato de atributos, valores e alcance ancestral por field;
-  - salvar e confirmar são etapas separadas; confirmação de mesmo fato é vinculada à revisão e aos fingerprints de conteúdo e contexto taxonômico exibidos, falha se conteúdo ou alcance ficar obsoleto, e as ações atuais de registrar ou reabrir versão revisada foram removidas;
-  - reconciliação pós-deploy encerra somente o draft comprovado, sem gravar `reviewed_input_catalog_version` nem alterar `business_taxons.is_active`.
+  - candidato apresentado pela IA é somente recomendação transitória; qualquer mudança ocorre depois, por ação humana no CRUD de `taxon_factual_fields`;
+  - rejeição, confirmação sem mudança, falha ou indisponibilidade da IA não gravam estado e não bloqueiam a liberação humana;
+  - o CRUD factual valida a definição fechada e a residência, distingue alteração do mesmo fato de nova identidade e usa concorrência otimista;
+  - não existem draft, publicação, reconciliação, marker por taxon ou handoff automático.
 
 20.6.5 Provider, fontes e output
 - Status: concluída no repositório; provider habilitado e validado em Preview e Production com configuração `supabase_operational` revisão `3` e Structured Output v2.
 - Conteúdo:
   - o workload `taxon_input_catalog_sufficiency_evaluation` reutiliza configuração, telemetria e custos da E21 com baseline `gpt-5.6-terra + low` em Development e configuração operacional ativa nos ambientes hospedados;
   - avaliação sistemática usa a E20.5 válida sem web; ausência de seleção ou feature desabilitada autoriza fallback de uma ou duas buscas; hipótese focal executa exatamente uma busca, com E20.5 válida apenas como complemento;
-  - o contexto usa somente taxon e cadeia correntes, catálogo E20.2 plan-neutral atual e fonte autorizada, sem planos, versões históricas ou marcador por taxon;
+  - o contexto usa somente taxon, cadeia e fields ativos da autoridade E20.8 e a fonte autorizada, sem planos, versões históricas ou marcador por taxon;
   - uma única Responses API foreground usa somente Web Search quando autorizada, Structured Output estrito, `store:false`, `background:false`, deadline total de 45 segundos e zero retry;
   - resumo e cada candidato web exigem URL HTTPS presente na metadata autenticada do provider; recusa, incompletude, schema inválido, evidência ausente ou fonte inventada falham fechado;
   - a IA permanece consultiva e transitória, sem mutação, fallback Codex ou gate sobre o caminho humano.
@@ -2044,8 +2043,8 @@
 20.7 Resolução de conhecimento para geração
 
 20.7.1 Objetivo e status
-- Objetivo: selecionar a fonte de conhecimento de mercado mais específica e segura para o escopo comercial da LP, sem alterar fatos E20.2 ou identidade da oferta.
-- Status: Resolver determinístico e complemento dinâmico implementados e preservados como capacidade independente; a integração consumidora da E19 foi retirada.
+- Objetivo: registrar historicamente a antiga resolução de conhecimento de mercado.
+- Status: retirada terminalmente pela E20.8. Não existem boundary, resolver, provider, proof, action, validator, script, configuração mutável ou consumidor corrente; somente migrations, revisões, ativações e custos históricos permanecem inertes.
 
 20.7.2 Registros do recorte
 - Banco:
@@ -2071,7 +2070,7 @@
   - Integração e contenção: `docs/roadmap.md` — seção 19.3.
   - Configuração OpenAI: `docs/platform-config.md`.
 
-20.7.3 Resolver determinístico
+20.7.3 Resolver determinístico — retirado
 - A entrada `landing_page_offering_scope` preserva `single | multiple | portfolio`; shape inválido falha fechado.
 - `portfolio` usa `base_only`; `multiple` exige `dynamic_required`.
 - Para `single`, o resolver faz matching apenas entre descendentes ativos do taxon servido.
@@ -2080,7 +2079,7 @@
 - Falha operacional permanece distinta de ausência legítima de match.
 - A saída é tipada e imutável e não possui persistência própria.
 
-20.7.4 Complemento dinâmico
+20.7.4 Complemento dinâmico — retirado
 - Somente `dynamic_required` pode acionar o workload.
 - O transporte é uma única requisição foreground à Responses API com Web Search hospedado obrigatório, uma ou duas buscas e Structured Output estrito.
 - O orçamento reserva busca, reasoning e saída antes do transporte; não trunca a entrada para caber.
@@ -2089,9 +2088,41 @@
 - O resultado completa a base como `base_plus_dynamic` ou preserva `base_only`; não cria fatos de negócio nem invalida a oferta.
 
 20.7.5 Consumo e estado operacional
-- O boundary E20.7, seus adapters e validadores permanecem disponíveis sem integração com o LP Builder.
-- Configuração, pesquisas e evidências históricas foram preservadas; nenhuma nova revisão de Landing Page é produzida por esse workload.
-- A eventual adoção por um novo consumidor exige diagnóstico, recorte e gates próprios, sem reutilizar implicitamente a integração retirada.
+- Nenhum boundary, adapter, validator ou workload corrente permanece disponível.
+- Revisões, ativações e custos históricos são somente leitura; o write side corrente rejeita o identificador aposentado.
+- Eventual capacidade semelhante exigirá caso novo, sem reativar ou compatibilizar a E20.7 retirada.
+
+20.8 Substituição greenfield e simplificação terminal da E20
+
+20.8.1 Objetivo e status
+- Objetivo: substituir in place o catálogo versionado por uma autoridade factual única no Supabase, preservar liberação humana e assistência consultiva estrita e remover integralmente a E20.7 corrente.
+- Status: implementação de repositório e gates do Analista para 20.8.3–20.8.7 aprovados no branch dedicado. O cutover hospedado permanece pendente de merge humano, sequência segura de apply, snippet, Security Controls e QA.
+
+20.8.2 Autoridade factual e bootstrap
+- `public.taxon_factual_fields` usa `id` UUID, `field_key` globalmente UNIQUE, residência Universal ou por taxon, `definition` fechada, estado ativo e autoria.
+- A carga inicial contém exatamente 25 fields ativos: 16 Universal, quatro em `imobiliario`, cinco em `corretor-imoveis` e zero em Ultranicho; autores nulos existem somente no bootstrap.
+- Não há versão, plano, `allowedPlans`, registry, draft, snapshot, publisher, reconciliação, override, trilha de auditoria própria ou Trigger Hub.
+- Migration, teste e snippet: `supabase/migrations/20260914132000_e20_8_factual_fields_greenfield.sql`, `supabase/tests/e20_8_factual_fields_greenfield.test.sql` e `supabase/snippets/e20_8_factual_fields_verify.sql`.
+
+20.8.3 Domínio, resolução e Admin
+- O boundary `lib/conversion-content/landing-page/input-catalog/` mantém contracts/schema, cadeia e resolver puros; adapters server-only leem páginas completas e falham fechado diante de erro ou resposta inválida.
+- Herança segue Universal → Segmento → Nicho → Ultranicho, com raiz, parentesco, unicidade, referências condicionais e rows validados; cobertura vazia é resultado legítimo.
+- `/admin/estrutura-lp?view=entradas` oferece formulários estruturados para criar, editar o mesmo fato, inativar e reativar, distinguindo próprio/herdado. Escritas usam `platform_admin`, compare-and-set por `updated_at` e confirmação da row persistida completa.
+
+20.8.4 Liberação e assistência opcional
+- Taxon novo continua inativo até liberação humana explícita, que relê fingerprint/identidade, usa compare-and-set e funciona sem pesquisa ou IA.
+- A assistência opcional usa `taxon_input_catalog_sufficiency_evaluation`, Responses API foreground, `gpt-5.6-terra + low`, Structured Output estrito, `store:false`, `background:false`, deadline de 45 s e zero retry.
+- Pesquisa E20.5 válida sustenta avaliação sistemática sem web; fallback e hipótese usam Web Search limitada. Mode, estratégia, estado e URLs ficam vinculados ao contexto/provider; a resposta é transitória e não muta fields nem taxon.
+
+20.8.5 Retiradas e preservações
+- Foram removidos registry/lifecycle/draft/current resolver antigos, review/handoff por versão, publishers, adapters e componentes correspondentes, além de todo boundary executável E20.7 e sua configuração corrente.
+- `landing_page_input_catalog_drafts` e `business_taxons.reviewed_input_catalog_version` são removidos pela migration. A unidade mutável de `landing_page_dynamic_market_research` também é removida; revisões, ativações e custos históricos E21 permanecem inertes.
+- E18.4, E20.5, liberação humana, assistência consultiva e E21 comum permanecem preservados.
+
+20.8.6 Cutover e gates restantes
+- O supervisor deve fechar temporariamente `SUPABASE_APPLY_MIGRATIONS_ENABLED`, confirmar apply automático `skipped`, autorizar o merge e aguardar Production do mesmo SHA `READY` antes de reabrir o gate e disparar manualmente a migration em `main`.
+- Após o apply: executar snippet read-only, Security Controls, recuperação dinâmica do runtime e QA autenticado em 1440×900, 320×844 e 390×844. Falha interrompe a progressão sem fallback.
+- O Executor não altera o gate, não aplica a migration antecipadamente e não executa merge.
 
 21. E21 — Gestão e governança dos workloads OpenAI
 - Objetivo: manter uma autoridade única para identidade, configuração, execução observável e custo dos workloads OpenAI usados pelo produto, com operação administrativa segura e sem otimização autônoma.
@@ -2101,7 +2132,7 @@
 
 21.1.1 Objetivo e status
 - Objetivo: centralizar identidades, modalidades, baselines locais, resolução e telemetria segura dos workloads OpenAI, mantendo prompts, schemas e regras funcionais nos domínios consumidores.
-- Status: implementada e vigente. O catálogo estrutural contém quatro workloads textuais de produto mais a referência operacional read-only do Supabase Inspect; não há workload de imagem ativo.
+- Status: implementada e vigente. O catálogo estrutural contém três workloads textuais de produto mais a referência operacional read-only do Supabase Inspect; não há workload de imagem ativo.
 
 21.1.2 Registros do recorte
 - Repositório:
@@ -2116,7 +2147,6 @@
   - Ajustados:
     - `lib/conversion-content/adapters/commercialActivationOpenAiAdapter.ts`
     - `lib/conversion-content/adapters/inputCatalogEvaluationOpenAiAdapter.ts`
-    - `lib/conversion-content/adapters/dynamicMarketResearchOpenAiAdapter.ts`
     - `lib/lp-builder/adapters/landingPageDraftGenerationAdapter.ts`
     - `lib/lp-builder/adapters/landingPageDraftImageGenerationAdapter.ts`
     - `lib/onboarding/niche-resolution/adapters/openAiResolver.ts`
@@ -2132,7 +2162,6 @@
   - `niche_resolution`;
   - `commercial_activation_draft_generation`;
   - `taxon_input_catalog_sufficiency_evaluation`;
-  - `landing_page_dynamic_market_research`.
 - `supabase_inspect` permanece referência operacional externa, sem ser aceito pelo resolver de produto.
 - O resolver de workloads de produto aceita somente `responses_text` e rejeita identidade, modalidade ou ambiente desconhecidos; a modalidade de imagem permanece apenas no catálogo independente de modelos.
 - Development usa o baseline versionado no repositório. Preview e Production podem resolver a revisão ativa do Supabase pelo gate operacional da E21.2, sem fallback silencioso quando esse gate está ligado.
@@ -2143,12 +2172,12 @@
 - Eventos dos workloads vigentes registram somente identidade, configuração efetiva, resultado, categoria segura de falha, latência, IDs técnicos e usage disponível.
 - Prompt, resposta integral, payload de negócio, pesquisa, fatos, PII, secrets e credenciais não integram a telemetria.
 - Métrica ausente permanece `null`; não há estimativa monetária transversal nem preenchimento inventado.
-- O workload de pesquisa dinâmica acrescenta contagem de chamadas e fontes Web Search quando disponíveis. Seu boundary e prova administrativa permanecem no repositório, sem consumidor no fluxo de Landing Page.
+- Registros históricos de pesquisa dinâmica podem manter contagens e fontes Web Search no read model financeiro, mas não integram o registry, prova administrativa ou transporte corrente.
 - Variáveis legadas de seleção de modelo não são consumidas pelos workloads ativos.
 
 21.1.5 Inventário administrativo
-- A rota protegida `/admin/workloads-openai` projeta os cinco itens vigentes do registry para `platform_admin`.
-- Os quatro workloads de produto exibem modalidade, configuração, origem, revisão, consumidor e fallback; o Supabase Inspect permanece diferenciado como referência não verificada nessa superfície.
+- A rota protegida `/admin/workloads-openai` projeta os quatro itens vigentes do registry para `platform_admin`.
+- Os três workloads de produto exibem modalidade, configuração, origem, revisão, consumidor e fallback; o Supabase Inspect permanece diferenciado como referência não verificada nessa superfície.
 - A leitura não consulta OpenAI, GitHub ou Vercel em runtime e não expõe secrets, prompts, respostas ou payloads funcionais.
 - O inventário é a entrada para a gestão operacional da E21.2, sem duplicar registry ou resolver no Admin.
 
@@ -2156,7 +2185,7 @@
 
 21.2.1 Objetivo e status
 - Objetivo: administrar configuração por `ambiente + workload` com candidata, prova, promoção, ativação e rollback humano, permitindo mudanças ordinárias em Preview e Production sem novo deploy de código.
-- Status: implementada e ativa. Preview e Production usam `supabase_operational`; Development permanece em `repo_catalog`. A leitura corrente seleciona por allowlist as oito unidades vigentes — quatro workloads de produto em cada ambiente — e ignora quatro unidades históricas sem criar compatibilizador legado.
+- Status: implementada e ativa. Preview e Production usam `supabase_operational`; Development permanece em `repo_catalog`. Após o apply E20.8, a leitura corrente seleciona por allowlist seis unidades vigentes — três workloads de produto em cada ambiente —, ignora quatro unidades antigas de drafts e não mantém unidade mutável da E20.7.
 
 21.2.2 Registros do recorte
 - Banco:
@@ -2690,7 +2719,7 @@
 - No fechamento do SV-PR03, `generationContextContracts.ts` preservava somente o shape V4 mínimo consumido pelos geradores administrativos; ele foi retirado no SV-PR04.
 - No fechamento do SV-PR03, os geradores básicos de texto e imagem e `presentation/` permaneciam apenas para provas administrativas da E21; foram retirados no SV-PR04.
 - No fechamento do SV-PR03, a compatibilidade de configuração ainda permanecia exclusivamente para o lifecycle administrativo do catálogo; ela foi retirada no SV-PR04.
-- E20.7, preparação factual, catálogo de entradas e parametrização raiz permanecem independentes e sem integração ativa com E19.
+- A preparação factual, a autoridade de fields e a parametrização raiz permanecem independentes e sem integração ativa com E19; E20.7 foi posteriormente retirada pela E20.8.
 - RPCs, tabelas, bucket, migrations e dados históricos foram preservados inertes; qualquer nova escrita, leitura de produto ou limpeza exige decisão e recorte futuros próprios.
 
 22.4.5 Produto operacional retirado no SV-PR03
@@ -2708,13 +2737,13 @@
 - `lib/lp-builder/` e `lib/conversion-content/landing-page/presentation/` foram removidos integralmente, junto dos dois workloads de draft, provas administrativas e branches exclusivas de image workload.
 - O Admin Workloads seleciona somente workloads vigentes; as quatro unidades históricas, seis revisões e oito ativações permanecem inertes no banco.
 - O lifecycle E20.2 não lê conta, entitlement, `account_taxonomy`, onboarding, configuração ou LP para derivar operacionalidade e não possui blocker global substituto.
-- `reviewed_input_catalog_version` permanece preservado apenas como histórico inerte; a E20.6 corrente não lê esse marcador e falhas diretas de contexto, fonte ou provider encerram somente a assistência dependente, sem bloquear a decisão humana.
+- `reviewed_input_catalog_version` permaneceu inerte neste recorte e foi posteriormente removido pela E20.8; falhas diretas de contexto, fonte ou provider continuam encerrando somente a assistência dependente.
 - O write-side prospectivo de custos foi removido; Costs API, read model e oito eventos históricos permanecem disponíveis como série congelada e reconciliação.
 
 22.5.3 Capacidades preservadas
-- E20.2 mantém registry, resolução, versionamento, fingerprints e as classificações `no_material_change`, `compatible_evolution` e `review_required`.
-- E20.5 mantém a pesquisa integral selecionada; E20.6 mantém a decisão humana independente e a avaliação assistida fail-closed em suas dependências diretas, sem autoridade corrente do marcador histórico; E20.7 permanece capacidade independente.
-- O framework OpenAI compartilhado, os quatro workloads textuais vigentes, `supabase_inspect` e o catálogo de modelos de imagem permanecem preservados.
+- Registry, versionamento, fingerprints e classificações da E20.2 foram preservados neste recorte histórico e posteriormente substituídos pela autoridade E20.8.
+- E20.5 mantém a pesquisa integral selecionada; a decisão humana e a avaliação assistida foram preservadas sobre E20.8; E20.7 foi retirada.
+- O framework OpenAI compartilhado, os três workloads textuais de produto vigentes, `supabase_inspect` e o catálogo de modelos de imagem permanecem preservados.
 - Objetos físicos e registros históricos E19 permanecem deliberadamente inertes; qualquer limpeza posterior exige recorte próprio.
 
 22.6 Remoção do Validador Final e automações adjacentes
