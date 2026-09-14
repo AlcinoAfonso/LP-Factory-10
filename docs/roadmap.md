@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 13/09/2026
-• Versão: v1.5.227
+• Versão: v1.5.228
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -1923,7 +1923,7 @@
 
 20.6.1 Objetivo e status
 - Objetivo: liberar taxon novo por decisão humana sobre a cobertura factual corrente e permitir revisão voluntária de taxon ativo, com apoio opcional por IA e sem gate de versão por taxon.
-- Status: substituição funcional e técnica em execução; a liberação factual humana e o apoio opcional com decisão transitória estão concluídos no repositório, enquanto provider, revisão voluntária e fechamento integrado permanecem em implementação.
+- Status: substituição funcional e técnica em execução; liberação factual humana, apoio opcional, decisão transitória e provider estão concluídos no repositório, enquanto revisão voluntária e fechamento integrado permanecem em implementação.
 
 20.6.2 Registros do recorte
 - Banco:
@@ -1959,6 +1959,7 @@
   - Ajustados:
     - `app/admin/(protected)/taxonomia/[taxonId]/page.tsx`
     - `app/admin/(protected)/taxonomia/actions.ts`
+    - `app/admin/(protected)/workloads-openai/_proof.ts`
     - `app/admin/(protected)/estrutura-lp/_components/AdminInputCatalogLifecycle.tsx`
     - `app/admin/(protected)/estrutura-lp/actions.ts`
     - `app/admin/(protected)/estrutura-lp/lifecycle-e20-validation-cases.ts`
@@ -1971,10 +1972,17 @@
     - `lib/admin/adapters/adminInputCatalogLifecycleContext.ts`
     - `lib/admin/adapters/adminInputCatalogLifecycleValidation.ts`
     - `lib/conversion-content/adapters/inputCatalogEvaluationAdministrativeActionCore.ts`
+    - `lib/conversion-content/adapters/inputCatalogEvaluationContextAdapter.ts`
+    - `lib/conversion-content/adapters/inputCatalogEvaluationOpenAiAdapter.ts`
+    - `lib/conversion-content/adapters/inputCatalogEvaluationRuntimeGateCore.ts`
     - `lib/conversion-content/adapters/selectedEndCustomerResearchAdapter.ts`
     - `lib/conversion-content/landing-page/input-catalog/draft.ts`
     - `lib/conversion-content/landing-page/taxon-preparation/contracts.ts`
+    - `lib/conversion-content/landing-page/taxon-preparation/index.ts`
+    - `lib/conversion-content/landing-page/taxon-preparation/input-catalog-evaluation-decision-token.ts`
     - `lib/conversion-content/landing-page/taxon-preparation/input-catalog-evaluation-decision.ts`
+    - `lib/conversion-content/landing-page/taxon-preparation/input-catalog-evaluation-schema.ts`
+    - `lib/conversion-content/landing-page/taxon-preparation/input-catalog-evaluation.ts`
     - `lib/conversion-content/landing-page/taxon-preparation/validation-cases.ts`
     - `lib/conversion-content/landing-page/input-catalog/contracts.ts`
     - `lib/conversion-content/landing-page/input-catalog/index.ts`
@@ -2007,12 +2015,14 @@
   - reconciliação pós-deploy encerra somente o draft comprovado, sem gravar `reviewed_input_catalog_version` nem alterar `business_taxons.is_active`.
 
 20.6.5 Provider, fontes e output
-- Status: planejado.
+- Status: concluída no repositório; habilitação e QA hospedado integram o fechamento da 20.6.7.
 - Conteúdo:
-  - preservar o workload `taxon_input_catalog_sufficiency_evaluation` e reutilizar configuração, telemetria e custos da E21;
-  - usar E20.5 válida como fonte preferencial e Web Search controlada como fallback ou pesquisa focal humana;
-  - executar uma única Responses API foreground, com Structured Output estrito, fontes externas preservadas, `store:false`, timeout de 45 segundos, zero retry e sem Agents SDK;
-  - a IA permanece consultiva, sem mutação, fallback Codex ou gate sobre o caminho humano.
+  - o workload `taxon_input_catalog_sufficiency_evaluation` reutiliza configuração, telemetria e custos da E21 com baseline `gpt-5.6-terra + low` em Development e configuração operacional ativa nos ambientes hospedados;
+  - avaliação sistemática usa a E20.5 válida sem web; ausência de seleção ou feature desabilitada autoriza fallback de uma ou duas buscas; hipótese focal executa exatamente uma busca, com E20.5 válida apenas como complemento;
+  - o contexto usa somente taxon e cadeia correntes, catálogo E20.2 plan-neutral atual e fonte autorizada, sem planos, versões históricas ou marcador por taxon;
+  - uma única Responses API foreground usa somente Web Search quando autorizada, Structured Output estrito, `store:false`, `background:false`, deadline total de 45 segundos e zero retry;
+  - resumo e cada candidato web exigem URL HTTPS presente na metadata autenticada do provider; recusa, incompletude, schema inválido, evidência ausente ou fonte inventada falham fechado;
+  - a IA permanece consultiva e transitória, sem mutação, fallback Codex ou gate sobre o caminho humano.
 
 20.6.6 Revisão voluntária de taxon ativo
 - Status: planejado.

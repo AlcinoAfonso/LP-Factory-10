@@ -112,6 +112,7 @@ export async function evaluateInputCatalogAction(input: Readonly<{
   }
 
   const reconstructContext = reconstructCanonicalInputCatalogEvaluationContext;
+  const deadlineAtMs = Date.now() + 45_000;
 
   let feedback: Parameters<typeof coordinateInputCatalogEvaluation>[0]["feedback"] = null;
   if (input.feedback) {
@@ -136,6 +137,7 @@ export async function evaluateInputCatalogAction(input: Readonly<{
     const previousContext = await reconstructContext({
       taxonId: previousEvidence.taxonId,
       inputCatalogVersion: previousEvidence.inputCatalogVersion,
+      mode: previousEvidence.mode,
     });
     if (
       !previousContext.ok ||
@@ -165,6 +167,7 @@ export async function evaluateInputCatalogAction(input: Readonly<{
       mode: input.mode,
       focalHypothesis: input.focalHypothesis,
       feedback,
+      deadlineAtMs,
     },
     {
       reconstructContext,
@@ -194,6 +197,7 @@ export async function evaluateInputCatalogAction(input: Readonly<{
     {
       taxonId: result.value.contextIdentity.taxonId,
       inputCatalogVersion: result.value.contextIdentity.inputCatalog.version,
+      mode: result.value.output.mode,
       contextFingerprint,
       outputFingerprint,
       status: result.value.output.status,
@@ -314,6 +318,7 @@ async function executeAdministrativeEvaluationDecision(input: Readonly<{
         const current = await reconstructCanonicalInputCatalogEvaluationContext({
           taxonId: evidence.taxonId,
           inputCatalogVersion: evidence.inputCatalogVersion,
+          mode: evidence.mode,
         });
         if (!current.ok) return { ok: false as const, message: current.error.message };
         const revalidated = await revalidateInputCatalogEvaluationContext(
@@ -321,6 +326,7 @@ async function executeAdministrativeEvaluationDecision(input: Readonly<{
           {
             taxonId: evidence.taxonId,
             inputCatalogVersion: evidence.inputCatalogVersion,
+            mode: evidence.mode,
           },
           reconstructCanonicalInputCatalogEvaluationContext,
         );

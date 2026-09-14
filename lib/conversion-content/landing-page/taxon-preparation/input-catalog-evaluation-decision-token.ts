@@ -2,11 +2,12 @@ import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 
 import {
   inputCatalogEvaluationStatuses,
+  type InputCatalogEvaluationMode,
   type InputCatalogEvaluationOutput,
   type InputCatalogEvaluationStatus,
 } from "./contracts";
 
-const DECISION_TOKEN_VERSION = 1 as const;
+const DECISION_TOKEN_VERSION = 2 as const;
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const FINGERPRINT_PATTERN = /^[0-9a-f]{64}$/;
 
@@ -14,6 +15,7 @@ export type InputCatalogEvaluationDecisionTokenPayload = Readonly<{
   v: typeof DECISION_TOKEN_VERSION;
   taxonId: string;
   inputCatalogVersion: number;
+  mode: InputCatalogEvaluationMode;
   contextFingerprint: string;
   outputFingerprint: string;
   status: InputCatalogEvaluationStatus;
@@ -53,7 +55,7 @@ export function fingerprintInputCatalogEvaluationOutput(output: InputCatalogEval
 
 function sign(body: string, secret: string): string {
   return createHmac("sha256", secret)
-    .update("e20.6.5-input-catalog-evaluation-decision-v1\0", "utf8")
+    .update("e20.6.5-input-catalog-evaluation-decision-v2\0", "utf8")
     .update(body, "utf8")
     .digest("base64url");
 }
@@ -71,12 +73,13 @@ function isValidPayload(value: unknown): value is InputCatalogEvaluationDecision
     UUID_PATTERN.test(payload.taxonId) &&
     Number.isSafeInteger(payload.inputCatalogVersion) &&
     Number(payload.inputCatalogVersion) > 0 &&
+    (payload.mode === "systematic" || payload.mode === "hypothesis") &&
     typeof payload.contextFingerprint === "string" &&
     FINGERPRINT_PATTERN.test(payload.contextFingerprint) &&
     typeof payload.outputFingerprint === "string" &&
     FINGERPRINT_PATTERN.test(payload.outputFingerprint) &&
     typeof payload.status === "string" &&
     inputCatalogEvaluationStatuses.includes(payload.status as InputCatalogEvaluationStatus) &&
-    Object.keys(payload).length === 6
+    Object.keys(payload).length === 7
   );
 }

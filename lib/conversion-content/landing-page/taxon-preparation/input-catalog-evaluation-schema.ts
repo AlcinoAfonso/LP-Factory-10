@@ -5,6 +5,8 @@ import {
   inputCatalogEvaluationCandidateConclusions,
   inputCatalogEvaluationCandidateOrigins,
   inputCatalogEvaluationModes,
+  inputCatalogEvaluationSourceStates,
+  inputCatalogEvaluationSourceStrategies,
   inputCatalogEvaluationStatuses,
   inputCatalogEvaluationTaxonomicLayers,
   type InputCatalogEvaluationOutput,
@@ -22,9 +24,11 @@ const MAX_EVIDENCE_LENGTH = 1_600;
 const MAX_UNCERTAINTIES = 8;
 const MAX_UNCERTAINTY_LENGTH = 500;
 const MAX_FOLLOW_UP_LENGTH = 1_000;
+const MAX_SOURCE_URLS = 16;
 
 const text = (maximum: number) => z.string().trim().min(1).max(maximum);
 const nullableText = (maximum: number) => text(maximum).nullable();
+const sourceUrls = z.array(z.url().max(2_048)).max(MAX_SOURCE_URLS);
 
 export const inputCatalogEvaluationCandidateSchema = z
   .object({
@@ -46,6 +50,7 @@ export const inputCatalogEvaluationCandidateSchema = z
     uncertainties: z
       .array(text(MAX_UNCERTAINTY_LENGTH))
       .max(MAX_UNCERTAINTIES),
+    sourceUrls,
   })
   .strict();
 
@@ -54,7 +59,10 @@ export const inputCatalogEvaluationOutputSchema = z
     schemaVersion: z.literal(INPUT_CATALOG_EVALUATION_SCHEMA_VERSION),
     status: z.enum(inputCatalogEvaluationStatuses),
     mode: z.enum(inputCatalogEvaluationModes),
+    sourceStrategy: z.enum(inputCatalogEvaluationSourceStrategies),
+    sourceState: z.enum(inputCatalogEvaluationSourceStates),
     summary: text(MAX_SUMMARY_LENGTH),
+    summarySourceUrls: sourceUrls,
     candidates: z
       .array(inputCatalogEvaluationCandidateSchema)
       .max(MAX_CANDIDATES),
@@ -81,7 +89,7 @@ export function parseInputCatalogEvaluationOutput(
   if (!parsed.success) {
     return failure(
       "INVALID_SCHEMA",
-      "A resposta não corresponde ao contrato estrito E20.6.5 v1.",
+      "A resposta não corresponde ao contrato estrito E20.6.5 v2.",
     );
   }
 
@@ -116,8 +124,15 @@ function validateSemantics(
   output: z.infer<typeof inputCatalogEvaluationOutputSchema>,
 ): string | null {
   for (const candidate of output.candidates) {
-    if (hasDuplicates(candidate.relatedFields) || hasDuplicates(candidate.uncertainties)) {
-      return "Fields relacionados e incertezas não podem conter duplicatas.";
+    if (
+      hasDuplicates(candidate.relatedFields) ||
+      hasDuplicates(candidate.uncertainties) ||
+      hasDuplicates(candidate.sourceUrls)
+    ) {
+      return "Fields relacionados, incertezas e fontes não podem conter duplicatas.";
+    }
+    if (candidate.sourceUrls.some((url) => !isHttpsUrl(url))) {
+      return "Toda fonte declarada deve usar URL HTTPS sem credenciais.";
     }
     if (
       candidate.conclusion === "refine_existing_field" &&
@@ -144,6 +159,32 @@ function validateSemantics(
     ) {
       return "Candidato inconclusivo deve declarar ao menos uma incerteza.";
     }
+  }
+
+  if (
+    hasDuplicates(output.summarySourceUrls) ||
+    output.summarySourceUrls.some((url) => !isHttpsUrl(url))
+  ) {
+    return "As fontes do resumo devem ser URLs HTTPS únicas e sem credenciais.";
+  }
+  if (
+    (output.sourceStrategy === "e20_5" && output.sourceState !== "e20_5_valid") ||
+    (output.sourceStrategy === "web_search_fallback" && output.sourceState === "e20_5_valid")
+  ) {
+    return "A estratégia declarada não corresponde ao estado da fonte E20.5.";
+  }
+  const webStrategy = output.sourceStrategy !== "e20_5";
+  if (
+    (webStrategy &&
+      (output.summarySourceUrls.length === 0 ||
+        output.candidates.some((candidate) => candidate.sourceUrls.length === 0))) ||
+    (!webStrategy &&
+      (output.summarySourceUrls.length > 0 ||
+        output.candidates.some((candidate) => candidate.sourceUrls.length > 0)))
+  ) {
+    return webStrategy
+      ? "Resultado com Web Search deve citar fontes no resumo e em cada candidato."
+      : "Resultado baseado somente na E20.5 não admite fontes web.";
   }
 
   if (
@@ -200,6 +241,15 @@ function validateSemantics(
 
 function hasDuplicates(values: readonly string[]): boolean {
   return new Set(values).size !== values.length;
+}
+
+function isHttpsUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" && !url.username && !url.password;
+  } catch {
+    return false;
+  }
 }
 
 function failure(

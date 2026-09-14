@@ -2,8 +2,8 @@
 
 0.1 Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.88
-• Data: 06/09/2026
+• Versão: v2.0.89
+• Data: 13/09/2026
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -280,12 +280,13 @@
 3.15.7 Preparação factual do taxon para `landing_page`
 • Boundary canônico: `lib/conversion-content/landing-page/taxon-preparation/`; a derivação permanece pura e não persiste estado de prontidão.
 • A preparação factual corrente recebe a cadeia taxonômica e o catálogo E20.2 plan-neutral atual. Para liberação humana, admite o taxon focal inativo com ancestrais ativos; atividade do focal, pesquisa selecionada e marcador de versão revisada não autorizam nem bloqueiam a cobertura factual.
-• A pesquisa E20.5, quando usada pela avaliação consultiva opcional, é fonte preferencial e independente da decisão humana. Sua ausência pode seguir somente o fallback explicitamente autorizado; seleção inválida ou falha de leitura encerra a avaliação dependente sem alterar catálogo ou taxon.
+• A avaliação consultiva opcional reconstrói a fonte no servidor: pesquisa selecionada válida sustenta a análise sistemática sem Web Search; ausência de seleção ou feature desabilitada autoriza o fallback web limitado; hipótese humana focal exige exatamente uma busca, com a pesquisa válida apenas como complemento. Falhas de identidade, banco, arquivo, conteúdo ou schema encerram somente a assistência.
 • Readers por versão e plano, comparações de compatibilidade, `reviewed_input_catalog_version`, carry-forward e apresentações de registrar ou reabrir revisão pertencem apenas ao histórico preservado. Não há Server Action, export administrativo de mutação nem consumidor operacional corrente que os use como autoridade.
 • Consumidores correntes usam a API plan-neutral que seleciona internamente a versão atual declarada; maior versão, `latest`, versão ou plano fornecido pelo consumidor e qualquer fallback implícito são proibidos.
 • O lifecycle administrativo lê integralmente somente a identidade taxonômica necessária ao alcance ancestral e ancora separadamente conteúdo e contexto; atividade, pesquisa selecionada, evidência e marcador por taxon não participam da validade do draft nem da publicação.
 • Validar e preparar publicação não dependem de blocker, contagem, compatibilidade ou decisão individual por taxon. Após o deploy publicar o conteúdo repo-only exato, a reconciliação confirma registry e contexto e encerra somente o draft, sem gravar `reviewed_input_catalog_version` nem alterar `business_taxons.is_active`.
-• A avaliação semântica usa o workload OpenAI comum somente por ação explícita de `platform_admin` e permanece consultiva e transitória. Rejeitar ou ignorar candidatos não grava estado; candidatos aceitos e sugestões humanas formam apenas handoff revalidado ao lifecycle E20.2, sem publicar field, ativar taxon ou substituir a liberação humana sem IA.
+• A avaliação semântica usa o workload OpenAI comum somente por ação explícita de `platform_admin`: uma única Responses API foreground, Structured Output estrito, `store=false`, sem conversation, background, retry, Agents SDK ou fallback para Codex e com deadline total limitado pelo servidor. Quando há Web Search, somente URLs HTTPS presentes na metadata autenticada do provider podem sustentar o resumo e cada candidato; fonte ausente, inventada ou incompleta falha fechado.
+• A recomendação permanece consultiva e transitória. Rejeitar ou ignorar candidatos não grava estado; candidatos aceitos e sugestões humanas formam apenas handoff revalidado ao lifecycle E20.2, sem publicar field, ativar taxon ou substituir a liberação humana sem IA. Indisponibilidade do provider nunca bloqueia o caminho humano.
 
 3.15.8 Liberação factual administrativa de taxon
 • Taxon novo nasce inativo e só pode ser ativado por ação humana administrativa focal depois da leitura da cadeia e da cobertura factual corrente; o CRUD genérico não realiza a transição de inativo para ativo.

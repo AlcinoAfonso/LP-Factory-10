@@ -125,6 +125,7 @@ function normalizeHumanCandidate(
     concreteHarm: "A confirmar antes da publicação da nova versão E20.2.",
     suggestedTaxonomyLayer: input.suggestedTaxonomyLayer,
     uncertainties: Object.freeze(["Candidato humano ainda não validado pelo lifecycle E20.2."]),
+    sourceUrls: Object.freeze([]),
   });
 }
 

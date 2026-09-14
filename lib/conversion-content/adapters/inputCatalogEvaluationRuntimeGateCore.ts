@@ -25,7 +25,7 @@ export async function resolveInputCatalogEvaluationRuntimeReadinessCore(
     return Object.freeze({
       ok: false,
       code: "ROLLOUT_GATE_OFF",
-      message: "A avaliação OpenAI E20.6.5 permanece gate-off. Use o handoff Codex.",
+      message: "A avaliação factual E20.6.5 está indisponível enquanto o rollout estiver desativado.",
     });
   }
 

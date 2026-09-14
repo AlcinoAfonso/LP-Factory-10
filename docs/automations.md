@@ -1,6 +1,6 @@
 0.1 Cabeçalho
-Data: 06/09/2026
-Versão: v1.27
+Data: 13/09/2026
+Versão: v1.28
 Status: Alinhado ao catálogo operacional vigente; Validador Final e Niche Runtime Tests retirados pela E22.6
 
 0.2 Função do documento
@@ -275,39 +275,38 @@ Snippet de validação: `supabase/snippets/e10_7_phase_2_draft_verify.sql`
 3.10 E20.6 — avaliação assistida da suficiência factual da E20.2 por taxon
 
 Objetivo:
-Confrontar a pesquisa integral `end_customer` selecionada pela E20.5 com uma versão executável explícita da E20.2 e produzir recomendação fundamentada para decisão humana.
+Avaliar, por ação administrativa explícita, se o catálogo factual corrente cobre as necessidades do taxon e produzir recomendação rastreável para decisão humana.
 
 Status:
-Implementada e validada operacionalmente no primeiro taxon real, sem workload OpenAI no runtime do produto.
+Implementada e validada deterministicamente no repositório; habilitação e QA do provider em Preview e Production permanecem condicionados ao rollout registrado em `docs/platform-config.md`.
 
 Recurso utilizado:
-- instrução copiável no Admin;
-- Codex App;
-- registro administrativo humano explícito.
+- Responses API com Structured Output estrito;
+- Web Search hospedado somente no fallback autorizado ou na hipótese focal;
+- configuração, telemetria e custos compartilhados da E21.
 
 Natureza:
 - Automação com IA em fluxo controlado.
 
 Ambiente principal:
-- Codex App.
+- Admin do Core, com execução server-side.
 
 Participação humana:
-- O humano escolhe a versão executável, decide entre suficiência e gap factual real e, somente quando suficiente, registra a versão avaliada no Admin.
+- `platform_admin` inicia a avaliação, decide quais candidatos reconhecer e pode seguir pela liberação humana sem IA independentemente do provider.
 
 Como usar:
-- Copiar no Admin a instrução vinculada ao taxon e à pesquisa E20.5 selecionada.
-- Informar explicitamente a versão E20.2; não usar maior versão, `latest` ou fallback.
-- Confrontar `starter`, `lite`, `pro` e `ultra`; falha, diferença material ou fonte incompleta produz `inconclusivo`.
-- Tratar a recomendação como transitória e não autoritativa; somente a ação administrativa humana persiste suficiência.
+- Executar a avaliação sistemática para o taxon ou informar uma única hipótese focal.
+- Com pesquisa E20.5 válida, a avaliação sistemática não consulta a web; ausência de seleção ou feature desabilitada autoriza fallback de uma ou duas buscas; hipótese focal executa exatamente uma busca.
+- Tratar `suficiente`, `gaps candidatos` ou `inconclusivo` como recomendação transitória; candidato reconhecido segue apenas como handoff ao lifecycle E20.2.
 
 Resultado esperado:
-- `suficiente`, `gaps candidatos` ou `inconclusivo`, com rastreabilidade das versões e sem persistência do relatório da IA.
+- Recomendação estruturada com contexto corrente e, quando houver busca, URLs HTTPS comprovadas pela metadata do provider, sem persistência do relatório da IA.
 
 Limites:
-- Não altera a E20.2, não grava suficiência automaticamente, não cria agente, Agents SDK, rota de integração, job, fila ou automação recorrente.
+- Não altera a E20.2, não ativa taxon, não grava suficiência, não bloqueia a decisão humana e não usa Codex, agente, Agents SDK, job, fila ou execução recorrente como fallback.
 
 Referências / dependências:
-Fluxo funcional: `docs/roadmap.md` — E20.6.3.
+Fluxo funcional: `docs/roadmap.md` — E20.6.5.
 Configuração do gate: `docs/platform-config.md` — seção 3.5.
 Contrato técnico: `docs/base-tecnica.md` — seção 3.15.7.
 
