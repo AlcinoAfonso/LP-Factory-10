@@ -140,16 +140,29 @@
 ### 3. Persistência e segurança
 
 - Criar `public.taxon_factual_fields` com:
-  - `field_key text primary key`, com `CHECK` de snake_case e identidade global;
+  - `id uuid primary key default gen_random_uuid()`, conforme a convenção transversal de entidade nova;
+  - `field_key text not null unique`, com `CHECK` de snake_case e identidade global;
   - `taxon_id uuid null references public.business_taxons(id) on update cascade on delete restrict`, sendo `null` a residência Universal;
-  - `definition jsonb not null`, restrito a finalidade, tipo, `valueScope`, origem esperada, obrigação, condições e validação;
+  - `definition jsonb not null`, com exatamente `purpose`, `valueType`, `valueScope`, `expectedValueOrigin`, `obligation`, `requiredWhen` opcional, `applicableWhen` opcional e `validation`; propriedades desconhecidas são rejeitadas;
   - `is_active boolean not null default true`;
-  - `created_by uuid not null references auth.users(id)`, `updated_by uuid not null references auth.users(id)`, `created_at timestamptz not null default now()` e `updated_at timestamptz not null default now()`;
+  - `created_by uuid null references auth.users(id) on update cascade on delete set null`, `updated_by uuid null references auth.users(id) on update cascade on delete set null`, `created_at timestamptz not null default now()` e `updated_at timestamptz not null default now()`;
   - trigger canônico para `updated_at` e índice operacional somente quando necessário às leituras por `taxon_id`.
+- O contrato fechado de `definition` usa nomes camelCase iguais no banco e no domínio:
+  - `purpose`: texto aparado não vazio;
+  - `valueType`: `string | phone | email | url | enum | string_list | boolean | number_range | keyword_map | asset_reference | color_palette | offering_scope`;
+  - `valueScope`: `account | business | offer | campaign | landing_page`;
+  - `expectedValueOrigin`: `account_provided | business_provided | offer_provided | campaign_provided | landing_page_provided`, sempre correspondente ao `valueScope`;
+  - `obligation`: `required | optional | conditional`; somente `conditional` exige `requiredWhen` e as demais não podem declará-lo;
+  - `requiredWhen` e `applicableWhen`: quando presentes, objeto estrito `{ fieldKey, operator, value }`, com `operator = equals` para escalar textual/booleano e `operator = in` para array textual não vazio;
+  - `validation`: união discriminada estrita por `kind`: `type_only`; `enum` com `allowedValues` textual não vazio e sem duplicatas; `string_list` com `allowedValues` opcional e limites inteiros positivos coerentes; `number_range` com `currency = BRL` e limites finitos não negativos coerentes; ou `e164 | email | https_url | keyword_map | asset_reference | color_palette | offering_scope` sem propriedades extras;
+  - a migration protege chaves, tipos, enums e invariantes estruturais com constraints JSONB; o schema Zod aplica o mesmo contrato e a compatibilidade `valueType`/`validation` antes de qualquer row entrar no domínio ou ser gravada.
+- Autoria do bootstrap: as 25 rows da carga inicial usam `created_by = null` e `updated_by = null`, ausência explicitamente reservada à materialização técnica sem ator humano. Toda criação ou edição posterior exige `auth.uid()` obtido pela Server Action autorizada; criação preenche ambos e edição preserva `created_by` e atualiza `updated_by`.
+- Decisões de governança da tabela: segurança `RLS enabled`; acesso somente por `service_role` atrás de `requirePlatformAdmin()` ou adapter server-only; auditoria funcional `não`; participação no Trigger Hub `não`. A V1 proíbe histórico/lifecycle próprio, portanto não se criam eventos ou `audit_logs` da E20; timestamps e autoria são somente metadados operacionais genéricos.
 - Não criar coluna, tabela ou objeto para version, revision, draft, snapshot, rollback, histórico funcional, plano, entitlement, `allowedPlans`, retirement por versão, registry, specialization, fingerprint, handoff, reconciliação, sessão, cache, fila, job ou evento da E20.
-- A migration forward-only deve criar a tabela, carregar somente os fields ativos da v6 corrente como estado inicial, retirar propriedades proibidas e não copiar v1–v5, fields aposentados ou histórico.
+- A migration forward-only deve criar a tabela e carregar por manifesto SQL explícito exatamente 25 fields ativos da v6 corrente: 16 Universais, quatro residentes no Segmento `imobiliario` (`f9ba36cd-fcd9-478b-9823-c2f003cf037a`), cinco no Nicho `corretor-imoveis` (`c7952d16-678c-4615-9483-a003e57d94aa`) e zero no Ultranicho. A transformação preserva somente `fieldKey` e as oito propriedades permitidas de `definition`; remove `version`, `originLayer`, `originTaxon`, `allowedPlans`, `snapshotPolicy`, `landingPageSubstitutionPolicy`, `capabilityBindings`, `evidence`, `createdInVersion` e `retiredInVersion`; não copia v1–v5, `primary_service_or_offer`, `primary_service_or_offer_description`, fields aposentados ou histórico.
+- A unicidade global e a residência desses 25 fields são provadas antes do insert. A v6 corrente não contém chave ativa duplicada nem specialization; qualquer divergência de cardinalidade, chave, residência ou taxon aborta a transação em vez de escolher precedência ou criar override.
 - Antes da carga, a migration valida IDs, slugs, níveis e relações dos taxons específicos referenciados; qualquer divergência aborta a transação inteira.
-- Na mesma migration, após a carga válida, remover `public.landing_page_input_catalog_drafts` e `public.business_taxons.reviewed_input_catalog_version`. Migrations históricas permanecem imutáveis.
+- Na mesma migration, após a carga válida, remover `public.landing_page_input_catalog_drafts` e `public.business_taxons.reviewed_input_catalog_version`. Essa migration só pode ser aplicada depois que o novo SHA estiver implantado, pelo gate operacional explícito da seção 10; migrations históricas permanecem imutáveis.
 - Habilitar RLS sem policies públicas; revogar `PUBLIC`, `anon`, `authenticated` e `ai_readonly`; conceder a `service_role` somente `SELECT`, `INSERT` e `UPDATE`, sem `DELETE` ou `TRUNCATE`.
 - Versionar migration, teste SQL transacional e `supabase/snippets/e20_8_factual_fields_verify.sql`. O snippet é estritamente read-only e deve falhar se schema, constraints, FK, índice, trigger, RLS, grants, carga inicial ou ausência dos contratos removidos divergirem.
 - Após o apply, confrontar também o Security Controls como evidência complementar; essa inspeção não substitui migration, teste ou snippet.
@@ -175,7 +188,7 @@
 - Classificar cada alvo como removido E20-only, responsabilidade preservada ou histórico inerte. Consumidor necessário fora da classificação suspende somente o ponto afetado antes da exclusão.
 - Remover integralmente a capacidade E20.7: `lib/conversion-content/landing-page/knowledge-resolution/`, adapters exclusivos, exports públicos, provas/actions administrativas, validators e scripts exclusivos.
 - Remover `landing_page_dynamic_market_research` de contracts, registry, apresentação, allowlists, configuração operacional e UI correntes da E21; não manter alias, stub, flag, bridge ou código dormente.
-- Preservar linhas históricas de custo e auditoria somente quando a E21 possuir responsabilidade transversal independente. Separar no boundary `lib/openai-costs/` o literal retirado como tipo aceito exclusivamente pelo read model histórico; entradas de tracking aceitam somente workloads ativos.
+- Preservar, como histórico append-only e inerte da E21, revisões, ativações, eventos de custo e cobertura financeira já existentes para `landing_page_dynamic_market_research`; eles não autorizam nova ativação, resolução operacional ou tracking. Remover o literal dos workloads ativos, allowlists de configuração, resolvers, UI operacional e portas de escrita. Separar no boundary `lib/openai-costs/` o literal retirado como tipo aceito exclusivamente pelo read model histórico; entradas de tracking aceitam somente workloads ativos.
 - Preservar `taxon_input_catalog_sufficiency_evaluation`, E20.5, E18.4, o taxon chain compartilhado, a liberação humana e os contratos E21 comuns.
 - Este checkpoint pode retirar E20.7 e preparar o mapa de substituição, mas não pode publicar um estado que sobreponha ou deixe simultaneamente necessárias as duas autoridades factuais.
 
@@ -186,7 +199,7 @@
 - Implementar o adapter factual paginado e fail-closed sem fallback ao registry.
 - Repontar a leitura operacional para `public.taxon_factual_fields` e remover na mesma unidade lógica as dependências executáveis da autoridade repo-only.
 - Manter migration, repontamento e remoção do registry como mudança atômica no PR; nenhum checkpoint intermediário publicado pode depender de duas autoridades.
-- Não aplicar schema remoto antes do merge. O runtime publicado sem objeto aplicado deve exibir indisponibilidade explícita e não aproximar dados.
+- Não aplicar schema remoto antes do merge. O runtime publicado sem objeto aplicado deve exibir indisponibilidade explícita e não aproximar dados. O apply automático é bloqueado durante o merge pela sequência operacional da seção 10, impedindo que a remoção física alcance o runtime antigo.
 
 ### 7. `20.8.5 — Herança e resolução factual`
 
@@ -227,6 +240,14 @@
 ### 10. `20.8.8 — Cutover e limpeza terminal`
 
 - Remover resíduos executáveis da E20 antiga somente depois que os consumidores preservados apontarem para a autoridade nova; nenhuma compatibilidade permanece no runtime final.
+- O merge exige janela de manutenção curta e a seguinte sequência indivisível sob controle do supervisor, usando apenas mecanismos já existentes:
+  1. confirmar PR, `main`, head SHA aprovado, deployment atual e workflow `Pipeline Supabase — Apply Migrations` sem run concorrente;
+  2. definir temporariamente `SUPABASE_APPLY_MIGRATIONS_ENABLED != true` antes do merge, registrar a mudança e confirmar que o apply automático ficará `skipped`;
+  3. autorizar e executar o merge do PR único; aguardar o deployment Vercel de Production do mesmo SHA ficar `READY` e fazer smoke das rotas não E20; a E20 permanece fail-closed e explicitamente indisponível enquanto a tabela ainda não existe;
+  4. somente com o novo SHA implantado, restaurar `SUPABASE_APPLY_MIGRATIONS_ENABLED = true` e disparar manualmente o workflow canônico em `main` no mesmo SHA; a migration então cria/carga a autoridade nova e remove fisicamente draft e reviewed marker sem atingir runtime antigo;
+  5. confirmar run verde, executar snippet read-only e Security Controls, validar recuperação dinâmica da E20 no mesmo deployment e redeployar o mesmo SHA apenas se houver evidência de cache incompatível;
+  6. concluir QA hospedado e registrar que o gate voltou ao estado operacional `true`. Falha em qualquer passo para a progressão, preserva o estado conhecido e exige diagnóstico; não se ativa fallback nem se antecipa o contract step.
+- A mudança temporária do gate não integra o PR e não altera o workflow. É uma ação operacional pós-autorização de merge; este Executor não a realiza antes da liberação do supervisor.
 - Atualizar scripts do `package.json`: substituir validators antigos pelos casos greenfield e retirar comandos exclusivos da E20.7 e do lifecycle abandonado.
 - Executar auditoria final de imports e busca de termos proibidos limitada ao runtime E20 novo. Migrations históricas, planos encerrados e read model financeiro histórico podem manter referências inertes justificadas.
 - Reconciliar por ABC `docs/roadmap.md`, `docs/base-tecnica.md`, `docs/schema.md`, `docs/automations.md`, `docs/platform-config.md` e `docs/openai-model-snapshot.md` para descrever somente a arquitetura vigente. `docs/services.md` não recebe registro porque nenhum service novo é criado.
@@ -234,7 +255,7 @@
 - Resolver por fonte operacional competente qualquer divergência factual de Preview/Production no momento do cutover; não usar documentação antiga para afirmar estado hospedado.
 - Preservar Next.js `16.3.3` ou baseline corrigida superior já aprovada; não introduzir Cache Components, nova política de cache ou upgrade adicional.
 - Executar `npm ci`, validators focais, `npm run check`, testes SQL, `git diff --check`, auditoria de dependências e busca terminal.
-- Após merge e apply canônico, executar o snippet read-only, confrontar Security Controls e validar o runtime no mesmo SHA. Se o deploy tiver ocorrido antes do objeto, confirmar recuperação e redeploy do mesmo SHA somente quando necessário.
+- Após merge e apply canônico, executar o snippet read-only, confrontar Security Controls e validar o runtime no mesmo SHA conforme a sequência acima.
 - Executar QA hospedado com `platform_admin` em desktop `1440×900` e mobile `320×844` e `390×844`, cobrindo cadeia, próprios/herdados, criação, edição, inativação, reativação, estado vazio, erro, concorrência, liberação sem IA e assistência indisponível.
 - A evidência de QA deve identificar deployment/ambiente, papel, viewport, fluxo/estado e resultado. Runs e logs são suplementares e expiráveis; PR, commits e documentos canônicos preservam a prova durável.
 
@@ -249,6 +270,7 @@
 
 - Banco, domínio, adapter e Admin não contêm versão, plano, registry, draft, snapshot, publisher, reconciliação, override ou segunda autoridade da E20.
 - A carga inicial contém somente fields ativos correntes, sem propriedades proibidas, e a migration aborta diante de taxonomia incompatível.
+- A tabela usa `id` UUID como PK, `field_key` UNIQUE, autoria nula somente no bootstrap, decisão explícita de não auditar/não participar do Trigger Hub e `definition` fechado pelo mesmo contrato no banco e no domínio.
 - RLS, revogações e grants mínimos estão comprovados por teste, snippet e inspeção complementar.
 - Resolver e adapter provam herança, unicidade global, ativo/inativo, cobertura vazia, paginação completa e falhas explícitas.
 - Admin prova CRUD lógico estruturado, concorrência, guard `platform_admin`, hierarquia e distinção próprio/herdado em viewports desktop/mobile.
@@ -257,6 +279,7 @@
 - E18.4, E20.5, E20.6 humano/consultivo, E21 comum e responsabilidades de outros casos permanecem aprovados nos validadores e na auditoria de imports.
 - `npm ci`, validators focais, `npm run check`, `git diff --check`, testes SQL, snippet pós-apply, Security Controls e QA hospedado estão aprovados no gate correspondente.
 - Qualquer evidência de consumidor necessário não classificado, necessidade de mudança material da estrutura aprovada ou responsabilidade de outro caso afetada suspende apenas o ponto e retorna ao workflow competente; não se inventa compatibilidade.
+- O merge é bloqueado se o supervisor não puder executar o gate de cutover da seção 10; não se aplica a migration destrutiva enquanto o runtime antigo puder receber tráfego.
 
 ### 13. Classificação dos acréscimos técnicos
 
