@@ -130,11 +130,27 @@
 - Delta corretivo: commit `cc0c330a74ba0bd40d4f76dced9cfd99d1f8a8d2`, plano blob `643f81033df64898e3ef205fe6d6e7899fb82e3e`, matriz blob `2d753148aaf6adbf8c7c587acaf3ae2232b0aa8e`.
 - Revisão delta da Passagem 2: executada pelo mesmo Analista em 14/09/2026 15:41; os dois achados foram encerrados, nenhuma regressão material foi identificada e a conclusão formal foi `aprovado para merge do plano-base v2`.
 - Snapshot-base do roadmap: `origin/main@806bf0f8cf13d5222537953eef175fbde355c0fb`, blob `f948e5fd2c3ebc9f2dd2fa6ed987fdff36ee2eb2`.
-- Roadmap resultante vigente: `docs/roadmap.md`, blob `e5a88cf6f393b57768c226c078555514aa883eba`.
-- O ABC de planejamento verificou que as duas correções da Passagem 2 pertencem ao contrato técnico do plano/matriz e não exigem novo conteúdo estrutural no roadmap. A seção 20.8 vigente já preserva objetivo, recortes, dependências, limites e estado do cutover sem duplicar templates de prompt ou criar telemetria.
+- A primeira revisão do roadmap, em 14/09/2026 15:47, confirmou que as duas correções da Passagem 2 não pertencem ao roadmap, mas rejeitou o `SEM ALTERAÇÕES NECESSÁRIAS` por duas violações da hierarquia do template em recortes materialmente afetados.
+- Roadmap resultante corrigido: `docs/roadmap.md`, blob `b46d51ffd54ba3b7d5fd550937a1c329ad98c2fb`.
+- O delta preserva todo o conteúdo vigente e apenas renumera `20.2.2 Encerramento` para `20.2.3` e `20.6.2 Contrato vigente` para `20.6.3`, sem criar blocos `.2` vazios ou duplicar os registros residentes em `20.8.2`.
 
 ```txt
-14/09/2026 15:42 — ABC (DELTA-ONLY) para docs/roadmap.md
+14/09/2026 15:47 — ABC (DELTA-ONLY) para docs/roadmap.md
 DOC_ALVO: docs/roadmap.md
-SEM ALTERAÇÕES NECESSÁRIAS
+VERSAO_NOVA: v1.5.234
+DATA_NOVA: 14/09/2026
+
+OPERAÇÕES
+
+OP1)
+TIPO: SUBSTITUIR_TRECHO
+ALVO: 20.2.2 Encerramento
+CONTEUDO:
+20.2.3 Encerramento
+
+OP2)
+TIPO: SUBSTITUIR_TRECHO
+ALVO: 20.6.2 Contrato vigente
+CONTEUDO:
+20.6.3 Contrato vigente
 ```

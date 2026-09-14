@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 14/09/2026
-• Versão: v1.5.233
+• Versão: v1.5.234
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -1748,7 +1748,7 @@
 - Objetivo: histórico da evolução v1–v6 que antecedeu a substituição greenfield.
 - Status: encerrado e substituído in place pela E20.8. Registry, versão corrente, drafts, publisher e compatibilidade não integram o runtime vigente.
 
-20.2.2 Encerramento
+20.2.3 Encerramento
 - Registry, versões v1–v6, draft, publisher, compatibilidade e revisão por versão foram removidos do runtime pela E20.8.
 - O estado factual corrente e seus artefatos estão registrados exclusivamente em 20.8; a evolução anterior permanece recuperável pelo histórico Git.
 
@@ -1837,7 +1837,7 @@
 - Objetivo: liberar taxon novo por decisão humana sobre a cobertura factual corrente e permitir revisão voluntária de taxon ativo, com apoio opcional por IA e sem gate de versão por taxon.
 - Status: decisão humana e apoio consultivo preservados pela E20.8 sobre a nova autoridade factual; contratos antigos de versão, review, decision token, handoff e lifecycle foram retirados.
 
-20.6.2 Contrato vigente
+20.6.3 Contrato vigente
 - Taxon novo nasce inativo e somente `platform_admin` pode liberá-lo por decisão humana explícita, com releitura da cadeia e da cobertura factual e compare-and-set sobre `is_active`.
 - Pesquisa E20.5, assistência por IA e justificativa não são pré-condições; indisponibilidade ou resultado inconclusivo preservam o caminho humano.
 - Taxon ativo pode solicitar avaliação consultiva voluntária sem reabertura automática. Sugestões são transitórias e qualquer alteração de field ocorre separadamente na gestão factual E20.8.
