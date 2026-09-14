@@ -50,9 +50,9 @@ assert.equal(sourceMismatch.code, "CONTEXT_BINDING_INVALID");
 const inventedSource = validateInputCatalogEvaluationBinding({ context: e205Context, output: { ...parsed.value, summarySourceUrls: ["https://invented.example/"] }, allowedSourceUrls: new Set() });
 assert.ok(!inventedSource.ok);
 assert.equal(inventedSource.code, "SOURCE_PROVENANCE_INVALID");
-const missingRequiredWebSource = parseEvaluationResponse({ output_text: JSON.stringify(parsed.value), output: [] }, "web_search_fallback");
+const missingRequiredWebSource = parseEvaluationResponse({ output_text: JSON.stringify(parsed.value), output: [{ type: "web_search_call", status: "completed", action: { sources: [] } }] }, "web_search_fallback");
 assert.ok(!missingRequiredWebSource.ok);
-assert.equal(missingRequiredWebSource.reason, "openai_web_search_call_count_invalid");
+assert.equal(missingRequiredWebSource.reason, "openai_web_search_evidence_invalid");
 
 let resolvedWhileOff = false;
 const gateOff = await resolveInputCatalogEvaluationRuntimeReadinessCore({ environment: "development", rolloutGateValue: "false" }, { resolveConfiguration: async () => { resolvedWhileOff = true; return resolveOpenAiProductWorkload("taxon_input_catalog_sufficiency_evaluation", "development"); } });
