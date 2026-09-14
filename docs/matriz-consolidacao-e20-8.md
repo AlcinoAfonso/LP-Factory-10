@@ -27,43 +27,43 @@
 
 | ID | Origem | Achado vinculante | Classe | Tratamento | Localização na V2 | Evidência |
 |---|---|---|---|---|---|---|
-| `GE-E20.8-01` | estrutura | Registry v1–v6, `CURRENT_VERSION`, planos e lifecycle conflitam com a V1. | derivação técnica da V1 | Substituir in place o boundary por fields factuais correntes. | §§2, 4 e 5 | Boundary final sem registry/lifecycle/versionamento. |
-| `GE-E20.8-02` | estrutura | `landing_page_input_catalog_drafts` materializa o lifecycle proibido. | derivação técnica da V1 | Remover pela migration de substituição após o cutover seguro. | §§3 e 10 | Migration, teste e snippet E20.8. |
-| `GE-E20.8-03` | estrutura | `reviewed_input_catalog_version` atravessa schema e adapters sem responsabilidade vigente. | derivação técnica da V1 | Remover coluna, leituras, writes, DTOs e gates. | §§3, 9 e 10 | Migration e auditoria de runtime. |
-| `GE-E20.8-04` | estrutura | `/admin/estrutura-lp?view=entradas` é a residência administrativa mínima. | derivação técnica da V1 | Reutilizar a rota e preservar a visão E18.4. | §8 | Página única e Admin estruturado. |
-| `GE-E20.8-05` | estrutura | Editor JSON de draft é incompatível com gestão direta. | derivação técnica da V1 | Substituir por formulário estruturado com CRUD lógico. | §§8 e 12 | Componente e actions de factual fields. |
-| `GE-E20.8-06` | estrutura | Release humano, taxon chain, E20.5 e assistência consultiva são preserváveis, mas dependiam de versão. | derivação técnica da V1 | Repontar para a cobertura factual corrente e remover marker/handoff. | §§2, 4 e 9 | Contratos e adapters greenfield. |
-| `GE-E20.8-07` | estrutura | E20.7 não possui consumidor funcional. | derivação técnica da V1 | Remover boundary, adapters, workload, proofs, validators e scripts exclusivos. | §§5, 10 e 11 | Auditoria de dependências terminal. |
-| `GE-E20.8-08` | estrutura | Custos E21 podem conter histórico de E20.7. | derivação técnica da V1 | Isolar o literal retirado somente no read model histórico; bloquear tracking novo. | §§5 e 12 | Boundary de custos separado da allowlist ativa. |
-| `GE-E20.8-09` | estrutura | Objetos físicos E19 com `catalog_version` pertencem a outro caso. | não incorporado | Preservar integralmente; excluir da busca terminal focal da E20. | §§2 e 12 | Escopo negativo explícito. |
-| `GE-E20.8-10` | estrutura | RLS e grants são controles independentes da Data API server-only. | derivação técnica da V1 | RLS sem policies públicas e grants mínimos para `service_role`. | §§3, 6 e 12 | SQL test, snippet e Security Controls. |
-| `GE-E20.8-11` | estrutura | Deploy e apply não são atomicamente ordenados. | derivação técnica da V1 | Falhar fechado e executar o cutover supervisionado com apply suspenso. | §§2 e 10 | Sequência operacional de seis passos. |
-| `GE-E20.8-12` | estrutura | Fontes canônicas ainda descrevem contratos superseded. | derivação técnica da V1 | Substituir seções vigentes por ABC, sem preservar arquitetura antiga como corrente. | §10 | Roadmap e documentos canônicos reconciliados. |
+| `GE-E20.8-01` | invariante técnico | Registry v1–v6, `CURRENT_VERSION`, planos e lifecycle conflitam com a V1. | derivação técnica da V1 | Substituir in place o boundary por fields factuais correntes. | §§2, 4 e 5 | Boundary final sem registry/lifecycle/versionamento. |
+| `GE-E20.8-02` | invariante técnico | `landing_page_input_catalog_drafts` materializa o lifecycle proibido. | derivação técnica da V1 | Remover pela migration de substituição após o cutover seguro. | §§3 e 10 | Migration, teste e snippet E20.8. |
+| `GE-E20.8-03` | invariante técnico | `reviewed_input_catalog_version` atravessa schema e adapters sem responsabilidade vigente. | derivação técnica da V1 | Remover coluna, leituras, writes, DTOs e gates. | §§3, 9 e 10 | Migration e auditoria de runtime. |
+| `GE-E20.8-04` | invariante técnico | `/admin/estrutura-lp?view=entradas` é a residência administrativa mínima. | derivação técnica da V1 | Reutilizar a rota e preservar a visão E18.4. | §8 | Página única e Admin estruturado. |
+| `GE-E20.8-05` | invariante técnico | Editor JSON de draft é incompatível com gestão direta. | derivação técnica da V1 | Substituir por formulário estruturado com CRUD lógico. | §§8 e 12 | Componente e actions de factual fields. |
+| `GE-E20.8-06` | invariante técnico | Release humano, taxon chain, E20.5 e assistência consultiva são preserváveis, mas dependiam de versão. | derivação técnica da V1 | Repontar para a cobertura factual corrente e remover marker/handoff. | §§2, 4 e 9 | Contratos e adapters greenfield. |
+| `GE-E20.8-07` | invariante técnico | E20.7 não possui consumidor funcional. | derivação técnica da V1 | Remover boundary, adapters, workload, proofs, validators e scripts exclusivos. | §§5, 10 e 11 | Auditoria de dependências terminal. |
+| `GE-E20.8-08` | invariante técnico | Custos E21 podem conter histórico de E20.7. | derivação técnica da V1 | Isolar o literal retirado somente no read model histórico; bloquear tracking novo. | §§5 e 12 | Boundary de custos separado da allowlist ativa. |
+| `GE-E20.8-09` | invariante técnico | Objetos físicos E19 com `catalog_version` pertencem a outro caso. | não incorporado | Preservar integralmente; excluir da busca terminal focal da E20. | §§2 e 12 | Escopo negativo explícito. |
+| `GE-E20.8-10` | invariante técnico | RLS e grants são controles independentes da Data API server-only. | derivação técnica da V1 | RLS sem policies públicas e grants mínimos para `service_role`. | §§3, 6 e 12 | SQL test, snippet e Security Controls. |
+| `GE-E20.8-11` | invariante técnico | Deploy e apply não são atomicamente ordenados. | derivação técnica da V1 | Falhar fechado e executar o cutover supervisionado com apply suspenso. | §§2 e 10 | Sequência operacional de seis passos. |
+| `GE-E20.8-12` | invariante técnico | Fontes canônicas ainda descrevem contratos superseded. | derivação técnica da V1 | Substituir seções vigentes por ABC, sem preservar arquitetura antiga como corrente. | §10 | Roadmap e documentos canônicos reconciliados. |
 
 ### 3.1 Condicionantes estruturais
 
-| ID | Condicionante | Classe | Tratamento | Localização/evidência |
-|---|---|---|---|---|
-| `C-E20.8-01` | Carga somente dos fields ativos da v6, sem propriedades proibidas. | derivação técnica da V1 | Manifesto explícito de 25 rows; negativas verificáveis. | §§3, 6 e 12. |
-| `C-E20.8-02` | Validar IDs, slugs, níveis e parentes antes da carga. | derivação técnica da V1 | Incompatibilidade aborta a transação inteira. | §§3 e 6. |
-| `C-E20.8-03` | Preservar E18.4, E20.5, E20.6 humano/consultivo, E21 comum e resíduos E19. | derivação técnica da V1 | Auditoria de imports e validators focais. | §§2, 5, 9 e 12. |
-| `C-E20.8-04` | E20.7 histórica só pode residir no boundary financeiro read-only. | derivação técnica da V1 | Remover capacidade operacional e manter evidência transversal inerte. | §§5 e 12. |
-| `C-E20.8-05` | Migration, repontamento e remoção formam checkpoint íntegro. | derivação técnica da V1 | Nenhum estado publicado depende de duas autoridades; apply ocorre após o runtime novo. | §§6 e 10. |
-| `C-E20.8-06` | Migration aplicada e verificada antes do encerramento hospedado. | derivação técnica da V1 | Workflow canônico, snippet e QA pós-apply. | §§10 e 12. |
+| ID | Origem | Condicionante | Classe | Tratamento | Localização/evidência |
+|---|---|---|---|---|---|
+| `C-E20.8-01` | invariante técnico | Carga somente dos fields ativos da v6, sem propriedades proibidas. | derivação técnica da V1 | Manifesto explícito de 25 rows; negativas verificáveis. | §§3, 6 e 12. |
+| `C-E20.8-02` | invariante técnico | Validar IDs, slugs, níveis e parentes antes da carga. | derivação técnica da V1 | Incompatibilidade aborta a transação inteira. | §§3 e 6. |
+| `C-E20.8-03` | invariante técnico | Preservar E18.4, E20.5, E20.6 humano/consultivo, E21 comum e resíduos E19. | derivação técnica da V1 | Auditoria de imports e validators focais. | §§2, 5, 9 e 12. |
+| `C-E20.8-04` | invariante técnico | E20.7 histórica só pode residir no boundary financeiro read-only. | derivação técnica da V1 | Remover capacidade operacional e manter evidência transversal inerte. | §§5 e 12. |
+| `C-E20.8-05` | invariante técnico | Migration, repontamento e remoção formam checkpoint íntegro. | derivação técnica da V1 | Nenhum estado publicado depende de duas autoridades; apply ocorre após o runtime novo. | §§6 e 10. |
+| `C-E20.8-06` | invariante técnico | Migration aplicada e verificada antes do encerramento hospedado. | derivação técnica da V1 | Workflow canônico, snippet e QA pós-apply. | §§10 e 12. |
 
 ## 4. Parecer do Gestor de Updates
 
-| ID | Relação/horizonte | Decisão | Classe | Tratamento e destino | Evidência |
-|---|---|---|---|---|---|
-| `supa#2` | complementar/atual | referência e trava | derivação técnica da V1 | Confrontar Security Controls após o apply sem substituir SQL test/snippet. | §§3, 6, 10 e 12. |
-| `supa#40` | complementar/atual | aplicar agora | modernização técnica justificada | Versionar snippet read-only reexecutável. | §§3, 6, 10, 12 e 13. |
-| `supa#52` | sobreposto/atual | rejeitado | não incorporado | Não criar coluna normalizada que duplique `fieldKey`. | §§2, 3 e 13. |
-| `supa#63` | complementar/condicional | oportunidade futura | não incorporado | Não instalar ferramenta, pgTAP ou workflow; reavaliar só diante de lacuna RLS demonstrável. | §13. |
-| `vercel#31` | substituto/atual | referência e trava | derivação técnica da V1 | Preservar Next.js `16.3.3` ou baseline corrigida superior; sem novo upgrade/cache. | §10. |
-| `github#14` | complementar/atual | referência e trava | derivação técnica da V1 | Evidência durável em PR, commits e documentos; runs/logs apenas suplementares. | §10. |
-| `prod#14` | complementar/atual | aplicar agora | modernização técnica justificada | Tornar camada, próprio/herdado e próxima ação reconhecíveis sem detalhes técnicos. | §§8, 12 e 13. |
-| `prod#16` | complementar/atual | referência e trava | derivação técnica da V1 | QA hospedado desktop/mobile dos fluxos e estados relevantes. | §§8, 10 e 12. |
-| `prod#17` | complementar/atual | aplicar agora | modernização técnica justificada | Validar teclado, foco, labels, erros, anúncios, contraste, alvos de 44 px e ausência de hover-only. | §§8, 10, 12 e 13. |
+| ID | Origem | Relação/horizonte | Decisão | Classe | Tratamento e destino | Evidência |
+|---|---|---|---|---|---|---|
+| `supa#2` | update | complementar/atual | referência e trava | derivação técnica da V1 | Confrontar Security Controls após o apply sem substituir SQL test/snippet. | §§3, 6, 10 e 12. |
+| `supa#40` | update | complementar/atual | aplicar agora | modernização técnica justificada | Versionar snippet read-only reexecutável. | §§3, 6, 10, 12 e 13. |
+| `supa#52` | update | sobreposto/atual | rejeitado | não incorporado | Não criar coluna normalizada que duplique `fieldKey`. | §§2, 3 e 13. |
+| `supa#63` | update | complementar/condicional | oportunidade futura | não incorporado | Não instalar ferramenta, pgTAP ou workflow; reavaliar só diante de lacuna RLS demonstrável. | §13. |
+| `vercel#31` | update | substituto/atual | referência e trava | derivação técnica da V1 | Preservar Next.js `16.3.3` ou baseline corrigida superior; sem novo upgrade/cache. | §10. |
+| `github#14` | update | complementar/atual | referência e trava | derivação técnica da V1 | Evidência durável em PR, commits e documentos; runs/logs apenas suplementares. | §10. |
+| `prod#14` | update | complementar/atual | aplicar agora | modernização técnica justificada | Tornar camada, próprio/herdado e próxima ação reconhecíveis sem detalhes técnicos. | §§8, 12 e 13. |
+| `prod#16` | update | complementar/atual | referência e trava | derivação técnica da V1 | QA hospedado desktop/mobile dos fluxos e estados relevantes. | §§8, 10 e 12. |
+| `prod#17` | update | complementar/atual | aplicar agora | modernização técnica justificada | Validar teclado, foco, labels, erros, anúncios, contraste, alvos de 44 px e ausência de hover-only. | §§8, 10, 12 e 13. |
 
 ### 4.1 Patches de update incorporados
 
@@ -76,9 +76,9 @@
 
 | ID | Origem | Conclusão | Classe | Tratamento | Localização/evidência |
 |---|---|---|---|---|---|
-| `GA-E20.8-01` | automação | Preservar `taxon_input_catalog_sufficiency_evaluation` como único workload OpenAI da E20, foreground, opcional e consultivo. | derivação técnica da V1 | Adaptar ao Supabase corrente; `gpt-5.6-terra + low`, Structured Output, `store:false`, `background:false`, 45 s, zero retry e Web Search estritamente limitada. Nenhuma mutação/persistência pela IA. | §§9, 10 e 12. |
-| `GA-E20.8-02` | automação | Retirar integralmente E20.7 e `landing_page_dynamic_market_research` das superfícies correntes. | derivação técnica da V1 | Remover runtime/configuração ativa; preservar somente histórico E21 com responsabilidade independente e inerte. | §§5, 10 e 12. |
-| `GA-E20.8-03` | automação | Reconciliar a documentação de automações/configuração/modelos. | derivação técnica da V1 | E20.8.7 substitui E20.6 corrente; E20.7 deixa de ser capacidade vigente; estado hospedado vem da fonte operacional. | §10. |
+| `GA-E20.8-01` | v1 | Preservar `taxon_input_catalog_sufficiency_evaluation` como único workload OpenAI da E20, foreground, opcional e consultivo. | derivação técnica da V1 | Adaptar ao Supabase corrente; `gpt-5.6-terra + low`, Structured Output, `store:false`, `background:false`, 45 s, zero retry e Web Search estritamente limitada. Nenhuma mutação/persistência pela IA. | §§9, 10 e 12. |
+| `GA-E20.8-02` | v1 | Retirar integralmente E20.7 e `landing_page_dynamic_market_research` das superfícies correntes. | derivação técnica da V1 | Remover runtime/configuração ativa; preservar somente histórico E21 com responsabilidade independente e inerte. | §§5, 10 e 12. |
+| `GA-E20.8-03` | v1 | Reconciliar a documentação de automações/configuração/modelos. | derivação técnica da V1 | E20.8.7 substitui E20.6 corrente; E20.7 deixa de ser capacidade vigente; estado hospedado vem da fonte operacional. | §10. |
 
 ### 5.1 Limites vinculantes da automação
 
@@ -93,11 +93,11 @@
 |---|---|---|---|---|---|
 | `AN-P1-E20.8-01` | `field_key` como PK divergia da convenção de entidade. | invariante técnico | derivação técnica da V1 | Adotar `id uuid` como PK e `field_key` UNIQUE. | §3; revisão delta item 1. |
 | `AN-P1-E20.8-02` | Bootstrap não possuía ator humano canônico para autoria NOT NULL. | invariante técnico | derivação técnica da V1 | Permitir autoria nula apenas no bootstrap; exigir ator nas mutações. | §3; revisão delta item 2. |
-| `AN-P1-E20.8-03` | Faltava decisão de auditoria e Trigger Hub. | governança | derivação técnica da V1 | Registrar explicitamente `não` para ambos. | §3; revisão delta item 3. |
-| `AN-P1-E20.8-04` | `definition jsonb` não estava tecnicamente fechado. | contrato | derivação técnica da V1 | Fixar propriedades, enums, invariantes e paridade SQL/Zod. | §3; revisão delta item 4. |
-| `AN-P1-E20.8-05` | Cutover não protegia runtime antigo do DROP automático. | operação | derivação técnica da V1 | Suspender apply, implantar novo SHA, restaurar gate e aplicar manualmente. | §10; revisão delta item 5. |
-| `AN-P1-E20.8-06` | Carga v6 não declarava transformação/cardinalidade determinística. | dados | derivação técnica da V1 | Manifesto exato de 25 rows e aborto por qualquer divergência. | §§3 e 6; revisão delta item 6. |
-| `AN-P1-E20.8-07` | Retirada E20.7 não separava allowlist ativa de histórico append-only. | boundary | derivação técnica da V1 | Preservar histórico inerte e retirar consumidores, allowlists e tracking novo. | §§5 e 12; revisão delta item 7. |
+| `AN-P1-E20.8-03` | Faltava decisão de auditoria e Trigger Hub. | invariante técnico | derivação técnica da V1 | Registrar explicitamente `não` para ambos. | §3; revisão delta item 3. |
+| `AN-P1-E20.8-04` | `definition jsonb` não estava tecnicamente fechado. | invariante técnico | derivação técnica da V1 | Fixar propriedades, enums, invariantes e paridade SQL/Zod. | §3; revisão delta item 4. |
+| `AN-P1-E20.8-05` | Cutover não protegia runtime antigo do DROP automático. | invariante técnico | derivação técnica da V1 | Suspender apply, implantar novo SHA, restaurar gate e aplicar manualmente. | §10; revisão delta item 5. |
+| `AN-P1-E20.8-06` | Carga v6 não declarava transformação/cardinalidade determinística. | invariante técnico | derivação técnica da V1 | Manifesto exato de 25 rows e aborto por qualquer divergência. | §§3 e 6; revisão delta item 6. |
+| `AN-P1-E20.8-07` | Retirada E20.7 não separava allowlist ativa de histórico append-only. | invariante técnico | derivação técnica da V1 | Preservar histórico inerte e retirar consumidores, allowlists e tracking novo. | §§5 e 12; revisão delta item 7. |
 
 - Passagem 1: `aprovado com correções obrigatórias` sobre `0e46babf`.
 - Revisão delta do mesmo Analista: os sete itens foram encerrados sobre `4cd8efa7`, com conclusão `aprovado para merge do plano-base v2`.
