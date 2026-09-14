@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 14/09/2026
-• Versão: v1.5.231
+• Versão: v1.5.232
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -1740,7 +1740,7 @@
 - PR #871 tornou a geração antiga inalcançável, PR #872 retirou sua orquestração, o SV-PR03 retirou o produto operacional e o SV-PR04 eliminou as duas fronteiras administrativas residuais.
 20. E20 — Catálogo factual, pesquisa opcional e revisão de taxons
 - Objetivo: manter um catálogo factual versionado e plan-neutral, fontes opcionais de conhecimento e decisões humanas de liberação ou revisão por taxon, sem coordenar consumidores ou usos anteriores.
-- Status: em evolução; o catálogo E20.2 v6, a seleção E20.5, a liberação e revisão factual E20.6 e o resolver dormente E20.7 estão implementados, com a E20.6 validada em Preview; migration, rollout de Production e fechamento pós-merge permanecem pendentes.
+- Status: em evolução; o catálogo E20.2 v6, a seleção E20.5, a liberação e revisão factual E20.6 e o resolver dormente E20.7 estão implementados; a E20.6 foi integrada à `main`, recebeu a migration canônica e foi validada em Preview e Production autenticados.
 
 20.2 Catálogo de entradas por taxon
 
@@ -1871,7 +1871,7 @@
 
 20.5.1 Objetivo e status
 - Objetivo: permitir seleção opcional de uma versão integral de pesquisa `end_customer` por taxon e disponibilizá-la como fonte consultiva server-side.
-- Status: implementado e ativo em Production para taxon ativo; extensão ao taxon inativo antes da liberação implementada e validada em Preview pela E20.6, ainda pendente do merge e rollout de Production.
+- Status: implementado e ativo em Production para taxon ativo; a extensão ao taxon inativo antes da liberação foi incorporada à `main` e entregue em Production pela E20.6.
 
 20.5.2 Registros do recorte
 - Banco:
@@ -1922,7 +1922,7 @@
 
 20.6.1 Objetivo e status
 - Objetivo: liberar taxon novo por decisão humana sobre a cobertura factual corrente e permitir revisão voluntária de taxon ativo, com apoio opcional por IA e sem gate de versão por taxon.
-- Status: substituição funcional e técnica concluída e validada no repositório e em Preview autenticado; migration, rollout de Production e fechamento pós-merge permanecem pendentes.
+- Status: substituição funcional e técnica concluída, integrada à `main` e validada no repositório, em Preview autenticado e em Production; migration canônica aplicada e verificada, com fechamento pós-merge concluído.
 
 20.6.2 Registros do recorte
 - Banco:
@@ -1997,7 +1997,7 @@
   - Gates e workloads: `docs/platform-config.md`.
 
 20.6.3 Liberação de novo taxon
-- Status: concluída no repositório e validada em Preview autenticado, inclusive pela liberação humana sem IA; a migration permanece pendente do merge humano e do apply canônico.
+- Status: concluída no repositório e validada em Preview e Production autenticados, inclusive pela liberação humana sem IA; migration aplicada e verificada após o merge.
 - Conteúdo:
   - taxon novo nasce inativo e apresenta a cobertura factual corrente com proveniência por camada;
   - `platform_admin` pode liberar sem IA, pesquisa ou justificativa textual, por decisão separada que altera somente `is_active`;
@@ -2015,7 +2015,7 @@
   - reconciliação pós-deploy encerra somente o draft comprovado, sem gravar `reviewed_input_catalog_version` nem alterar `business_taxons.is_active`.
 
 20.6.5 Provider, fontes e output
-- Status: concluída no repositório; provider habilitado e validado em Preview com configuração `supabase_operational` revisão `3` e Structured Output v2, enquanto o rollout e o QA de Production permanecem pendentes.
+- Status: concluída no repositório; provider habilitado e validado em Preview e Production com configuração `supabase_operational` revisão `3` e Structured Output v2.
 - Conteúdo:
   - o workload `taxon_input_catalog_sufficiency_evaluation` reutiliza configuração, telemetria e custos da E21 com baseline `gpt-5.6-terra + low` em Development e configuração operacional ativa nos ambientes hospedados;
   - avaliação sistemática usa a E20.5 válida sem web; ausência de seleção ou feature desabilitada autoriza fallback de uma ou duas buscas; hipótese focal executa exatamente uma busca, com E20.5 válida apenas como complemento;
