@@ -1,6 +1,6 @@
 0.1 Cabeçalho
 Data: 13/09/2026
-Versão: v1.28
+Versão: v1.29
 Status: Alinhado ao catálogo operacional vigente; Validador Final e Niche Runtime Tests retirados pela E22.6
 
 0.2 Função do documento
@@ -292,7 +292,7 @@ Ambiente principal:
 - Admin do Core, com execução server-side.
 
 Participação humana:
-- `platform_admin` inicia a avaliação, decide quais candidatos reconhecer e pode seguir pela liberação humana sem IA independentemente do provider.
+- `platform_admin` inicia a avaliação, decide quais candidatos reconhecer e pode seguir pela liberação humana sem IA independentemente do provider; em taxon ativo, inicia a mesma avaliação somente de forma voluntária.
 
 Como usar:
 - Executar a avaliação sistemática para o taxon ou informar uma única hipótese focal.
@@ -303,10 +303,10 @@ Resultado esperado:
 - Recomendação estruturada com contexto corrente e, quando houver busca, URLs HTTPS comprovadas pela metadata do provider, sem persistência do relatório da IA.
 
 Limites:
-- Não altera a E20.2, não ativa taxon, não grava suficiência, não bloqueia a decisão humana e não usa Codex, agente, Agents SDK, job, fila ou execução recorrente como fallback.
+- Não altera a E20.2, não ativa nem desativa taxon, não grava suficiência, não dispara por publicação e não bloqueia a decisão humana; também não usa Codex, agente, Agents SDK, job, fila ou execução recorrente como fallback.
 
 Referências / dependências:
-Fluxo funcional: `docs/roadmap.md` — E20.6.5.
+Fluxo funcional: `docs/roadmap.md` — E20.6.5 e E20.6.6.
 Configuração do gate: `docs/platform-config.md` — seção 3.5.
 Contrato técnico: `docs/base-tecnica.md` — seção 3.15.7.
 

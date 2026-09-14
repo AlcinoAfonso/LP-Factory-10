@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 13/09/2026
-• Versão: v1.5.228
+• Versão: v1.5.229
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -1923,7 +1923,7 @@
 
 20.6.1 Objetivo e status
 - Objetivo: liberar taxon novo por decisão humana sobre a cobertura factual corrente e permitir revisão voluntária de taxon ativo, com apoio opcional por IA e sem gate de versão por taxon.
-- Status: substituição funcional e técnica em execução; liberação factual humana, apoio opcional, decisão transitória e provider estão concluídos no repositório, enquanto revisão voluntária e fechamento integrado permanecem em implementação.
+- Status: substituição funcional e técnica em execução; liberação factual humana, apoio opcional, decisão transitória, provider e revisão voluntária estão concluídos no repositório, enquanto o fechamento integrado permanece em implementação.
 
 20.6.2 Registros do recorte
 - Banco:
@@ -2025,11 +2025,12 @@
   - a IA permanece consultiva e transitória, sem mutação, fallback Codex ou gate sobre o caminho humano.
 
 20.6.6 Revisão voluntária de taxon ativo
-- Status: planejado.
+- Status: concluída no repositório; o QA hospedado integra o fechamento da 20.6.7.
 - Conteúdo:
   - a revisão é iniciada exclusivamente por `platform_admin` e reutiliza o mesmo workload e os mesmos guardrails da avaliação opcional;
   - publicar nova versão E20.2 não dispara revisão, não reabre o taxon, não altera `is_active` e não reprocessa usos anteriores;
-  - candidato aceito segue somente para o lifecycle E20.2 e o taxon permanece ativo durante todo o fluxo.
+  - candidato aceito segue somente para o lifecycle E20.2 e o taxon permanece ativo durante avaliação, evolução e publicação;
+  - falha, resultado inconclusivo ou encerramento sem mudança preservam todo estado válido e não gravam estado E20.6.
 
 20.6.7 Experiência administrativa
 - Status: planejado.

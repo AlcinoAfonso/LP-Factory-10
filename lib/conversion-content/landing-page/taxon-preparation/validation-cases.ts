@@ -1867,6 +1867,8 @@ const cases: readonly ValidationCase[] = [
       assert.match(componentSource, /Resultado desatualizado/);
       assert.match(componentSource, /Ação humana separada/);
       assert.match(componentSource, /Apoio opcional por IA/);
+      assert.match(componentSource, /Revisão factual voluntária do catálogo E20\.2/);
+      assert.match(componentSource, /O taxon permanece ativo durante todo o fluxo/);
       assert.doesNotMatch(componentSource, /Gate pré-publicação|draftMode/);
       assert.match(componentSource, /Reavaliar com feedback/);
       assert.match(componentSource, /input-catalog-evaluation-feedback/);
@@ -1914,6 +1916,10 @@ const cases: readonly ValidationCase[] = [
       assert.match(pageSource, /rejectInputCatalogCandidatesAndConfirmSufficientAction/);
       assert.match(pageSource, /inputCatalogEvaluationRuntime\?\.ok/);
       assert.match(pageSource, /inputCatalogEvaluationRuntime\.code === "ROLLOUT_GATE_OFF"/);
+      assert.match(pageSource, /taxon\.factualRelease\.status === "available"/);
+      assert.match(pageSource, /taxon\.endCustomerResearchSelection\.selectedVersion/);
+      assert.doesNotMatch(pageSource, /taxon\.inputCatalogReview/);
+      assert.match(pageSource, /O taxon permanece ativo; apenas as sugestões por IA estão indisponíveis/);
       assert.match(pageSource, /AdminTaxonFactualCoverage/);
       assert.match(pageSource, /release={taxon\.factualRelease}/);
       assert.match(pageSource, /releaseAction={releaseTaxonAction}/);

@@ -18,6 +18,7 @@ import type {
 
 export type AdminTaxonInputCatalogEvaluationRuntimeProps = Readonly<{
   taxonId: string;
+  isActive: boolean;
   currentInputCatalogVersion: number;
   selectedResearchVersion: number | null;
   evaluateAction: (input: Readonly<{
@@ -62,6 +63,7 @@ export type InputCatalogEvaluationPresentationState =
   | Readonly<{ kind: "failure"; message: string }>;
 
 export type AdminTaxonInputCatalogEvaluationProps = Readonly<{
+  isActive: boolean;
   selectedResearchVersion: number | null;
   mode: InputCatalogEvaluationPresentationMode;
   inputCatalogVersion: string;
@@ -150,6 +152,7 @@ const conclusionLabels: Record<InputCatalogEvaluationPresentationCandidate["conc
 
 export function AdminTaxonInputCatalogEvaluationRuntime({
   taxonId,
+  isActive,
   currentInputCatalogVersion,
   selectedResearchVersion,
   evaluateAction,
@@ -340,6 +343,7 @@ export function AdminTaxonInputCatalogEvaluationRuntime({
       hypothesis={hypothesis}
       humanCandidateLayer={humanCandidateLayer}
       humanCandidateText={humanCandidateText}
+      isActive={isActive}
       inputCatalogVersion={inputCatalogVersion}
       inputCatalogVersionError={inputCatalogVersionError}
       gapHandoff={gapHandoff}
@@ -405,6 +409,7 @@ const taxonomyLayerLabels: Record<
 };
 
 export function AdminTaxonInputCatalogEvaluation({
+  isActive,
   selectedResearchVersion,
   mode,
   inputCatalogVersion,
@@ -500,11 +505,14 @@ export function AdminTaxonInputCatalogEvaluation({
           className="mt-1 text-lg font-semibold text-card-foreground"
           id="input-catalog-evaluation-title"
         >
-          Avaliação factual do catálogo E20.2
+          {isActive
+            ? "Revisão factual voluntária do catálogo E20.2"
+            : "Avaliação factual do catálogo E20.2"}
         </h2>
         <p className="mt-1 text-sm text-muted-foreground">
           A avaliação é uma recomendação não autoritativa. Ela não altera fields,
           catálogo, markers, publicação ou estado operacional.
+          {isActive ? " O taxon permanece ativo durante todo o fluxo." : ""}
         </p>
       </div>
 

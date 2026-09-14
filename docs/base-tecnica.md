@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.89
+• Versão: v2.0.90
 • Data: 13/09/2026
 
 0.2 Contrato do documento (consulta)
@@ -286,7 +286,7 @@
 • O lifecycle administrativo lê integralmente somente a identidade taxonômica necessária ao alcance ancestral e ancora separadamente conteúdo e contexto; atividade, pesquisa selecionada, evidência e marcador por taxon não participam da validade do draft nem da publicação.
 • Validar e preparar publicação não dependem de blocker, contagem, compatibilidade ou decisão individual por taxon. Após o deploy publicar o conteúdo repo-only exato, a reconciliação confirma registry e contexto e encerra somente o draft, sem gravar `reviewed_input_catalog_version` nem alterar `business_taxons.is_active`.
 • A avaliação semântica usa o workload OpenAI comum somente por ação explícita de `platform_admin`: uma única Responses API foreground, Structured Output estrito, `store=false`, sem conversation, background, retry, Agents SDK ou fallback para Codex e com deadline total limitado pelo servidor. Quando há Web Search, somente URLs HTTPS presentes na metadata autenticada do provider podem sustentar o resumo e cada candidato; fonte ausente, inventada ou incompleta falha fechado.
-• A recomendação permanece consultiva e transitória. Rejeitar ou ignorar candidatos não grava estado; candidatos aceitos e sugestões humanas formam apenas handoff revalidado ao lifecycle E20.2, sem publicar field, ativar taxon ou substituir a liberação humana sem IA. Indisponibilidade do provider nunca bloqueia o caminho humano.
+• A recomendação permanece consultiva e transitória. Rejeitar ou ignorar candidatos não grava estado; candidatos aceitos e sugestões humanas formam apenas handoff revalidado ao lifecycle E20.2, sem publicar field, ativar taxon ou substituir a liberação humana sem IA. Taxon ativo pode iniciar voluntariamente o mesmo fluxo e permanece ativo durante avaliação, evolução e publicação; indisponibilidade do provider nunca altera esse estado nem bloqueia o caminho humano.
 
 3.15.8 Liberação factual administrativa de taxon
 • Taxon novo nasce inativo e só pode ser ativado por ação humana administrativa focal depois da leitura da cadeia e da cobertura factual corrente; o CRUD genérico não realiza a transição de inativo para ativo.

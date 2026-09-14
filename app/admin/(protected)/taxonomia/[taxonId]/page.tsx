@@ -38,7 +38,11 @@ export default async function AdminTaxonDetailPage({ params }: AdminTaxonDetailP
   const taxon = await getAdminTaxonDetail(taxonId);
 
   if (!taxon) notFound();
-  const inputCatalogEvaluationRuntime = taxon.inputCatalogReview.status === "available"
+  const inputCatalogEvaluationAvailable = taxon.factualRelease.status === "available";
+  const selectedResearchVersion = taxon.endCustomerResearchSelection.status === "available"
+    ? taxon.endCustomerResearchSelection.selectedVersion
+    : null;
+  const inputCatalogEvaluationRuntime = inputCatalogEvaluationAvailable
     ? await resolveInputCatalogEvaluationRuntimeReadiness()
     : null;
 
@@ -118,19 +122,20 @@ export default async function AdminTaxonDetailPage({ params }: AdminTaxonDetailP
         />
       )}
 
-      {taxon.inputCatalogReview.status === "available" && inputCatalogEvaluationRuntime?.ok ? (
+      {inputCatalogEvaluationAvailable && inputCatalogEvaluationRuntime?.ok ? (
         <AdminTaxonInputCatalogEvaluationRuntime
           acknowledgeGapAction={acknowledgeInputCatalogGapAction}
           confirmAction={confirmInputCatalogEvaluationAction}
           currentInputCatalogVersion={CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION}
-          selectedResearchVersion={taxon.inputCatalogReview.selectedResearchVersion}
+          isActive={taxon.isActive}
+          selectedResearchVersion={selectedResearchVersion}
           evaluateAction={evaluateInputCatalogAction}
           rejectCandidatesAndConfirmAction={rejectInputCatalogCandidatesAndConfirmSufficientAction}
           taxonId={taxon.id}
         />
       ) : null}
 
-      {taxon.inputCatalogReview.status === "available" && inputCatalogEvaluationRuntime && !inputCatalogEvaluationRuntime.ok ? (
+      {inputCatalogEvaluationAvailable && inputCatalogEvaluationRuntime && !inputCatalogEvaluationRuntime.ok ? (
         <section className="rounded-lg border border-border bg-card p-5 shadow-card">
           <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
             {inputCatalogEvaluationRuntime.code === "ROLLOUT_GATE_OFF"
@@ -140,9 +145,9 @@ export default async function AdminTaxonDetailPage({ params }: AdminTaxonDetailP
           <h2 className="mt-1 text-lg font-semibold text-card-foreground">Avaliação factual do catálogo E20.2</h2>
           <p className="mt-2 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
             {inputCatalogEvaluationRuntime.message}
-            {inputCatalogEvaluationRuntime.code === "ROLLOUT_GATE_OFF"
-              ? " A liberação humana sem IA acima permanece disponível."
-              : " A liberação humana sem IA acima permanece disponível; apenas as sugestões por IA estão bloqueadas."}
+            {taxon.isActive
+              ? " O taxon permanece ativo; apenas as sugestões por IA estão indisponíveis."
+              : " A liberação humana sem IA acima permanece disponível; apenas as sugestões por IA estão indisponíveis."}
           </p>
         </section>
       ) : null}
