@@ -76,7 +76,7 @@
 
 | ID | Origem | Conclusão | Classe | Tratamento | Localização/evidência |
 |---|---|---|---|---|---|
-| `GA-E20.8-01` | v1 | Preservar `taxon_input_catalog_sufficiency_evaluation` como único workload OpenAI da E20, foreground, opcional e consultivo. | derivação técnica da V1 | Adaptar ao Supabase corrente; `gpt-5.6-terra + low`, Structured Output, `store:false`, `background:false`, 45 s, zero retry e Web Search estritamente limitada. Nenhuma mutação/persistência pela IA. | §§9, 10 e 12. |
+| `GA-E20.8-01` | v1 | Preservar `taxon_input_catalog_sufficiency_evaluation` como único workload OpenAI da E20, foreground, opcional e consultivo. | derivação técnica da V1 | Adaptar ao Supabase corrente; `gpt-5.6-terra + low`, Structured Output, `store:false`, `background:false`, 45 s, zero retry e Web Search estritamente limitada. Nenhuma mutação/persistência pela IA. Validar o prompt/contrato greenfield contra `docs/template-prompts.md` e `docs/template-prompts-gpt-5-6.md`. | §§9, 10 e 12. |
 | `GA-E20.8-02` | v1 | Retirar integralmente E20.7 e `landing_page_dynamic_market_research` das superfícies correntes. | derivação técnica da V1 | Remover runtime/configuração ativa; preservar somente histórico E21 com responsabilidade independente e inerte. | §§5, 10 e 12. |
 | `GA-E20.8-03` | v1 | Reconciliar a documentação de automações/configuração/modelos. | derivação técnica da V1 | E20.8.7 substitui E20.6 corrente; E20.7 deixa de ser capacidade vigente; estado hospedado vem da fonte operacional. | §10. |
 
@@ -86,6 +86,7 @@
 - Web Search ocorre somente quando autorizada pela estratégia: exatamente uma chamada para hipótese focal ou no máximo duas para fallback, aceitando apenas URLs HTTPS presentes na metadata do provider.
 - Falha, recusa, timeout, indisponibilidade ou inconclusão afetam apenas a assistência e nunca bloqueiam CRUD ou liberação humana.
 - Telemetria é sanitizada e não registra prompt, resposta integral, conteúdo de fontes, PII, secrets ou payload de negócio.
+- O prompt/contrato greenfield só é aceito após confronto explícito com `docs/template-prompts.md` e `docs/template-prompts-gpt-5-6.md`.
 
 ## 6. Passagem 1 do Analista e revisão delta
 

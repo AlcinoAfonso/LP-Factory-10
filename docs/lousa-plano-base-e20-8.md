@@ -219,7 +219,7 @@
 - Criar diretamente na camada escolhida; editar somente o mesmo fato e exigir confirmação humana explícita; rejeitar alteração de residência ou `valueScope` sob a mesma chave.
 - Usar `updated_at` como token de concorrência otimista sem convertê-lo em version ou revision funcional.
 - Cada Server Action reexecuta `requirePlatformAdmin()`, revalida payload, row e identidade, aplica compare-and-set e confirma o estado final antes de revalidar a página.
-- O administrador deve reconhecer, sem abrir detalhes técnicos, a camada de origem, a condição próprio/herdado e a próxima ação humana disponível.
+- O administrador deve reconhecer, sem abrir detalhes técnicos, a camada de origem, a condição próprio/herdado e a próxima ação humana disponível. Esse critério de reconhecibilidade não cria telemetria nem métricas de tempo ou clique.
 - Validar WCAG 2.2 proporcional: teclado, foco visível e previsível, labels e erros associados, anúncio textual de sucesso/erro, contraste, alvos de toque de pelo menos 44 px e nenhuma ação exclusiva por hover. Combinar inspeção automática e manual sem alegar conformidade integral.
 
 ### 9. `20.8.7 — Liberação humana e apoio opcional por IA`
@@ -235,7 +235,7 @@
 - Separar instruções estáveis de dados não confiáveis; não enviar conta, oferta concreta, PII ou secrets. Telemetria sanitizada registra somente metadados técnicos, configuração, IDs de request/provider, resultado, latência, usage, custo e contagens de busca/fontes, sem prompt, resposta integral ou conteúdo de fontes.
 - Falha, recusa, timeout, indisponibilidade ou resultado inconclusivo tornam somente a assistência indisponível. CRUD e liberação humana sem IA permanecem completos.
 - Remover preparação/revisão por versão, `input-catalog-review`, gap handoff e tokens/decisões exclusivos do fluxo antigo, `adminTaxonomyReviewPolicy`, `inputCatalogReview` dos DTOs e toda leitura/escrita de `reviewed_input_catalog_version`.
-- Versionar prompt/contrato greenfield próximo ao consumidor e validar casos típicos, limites, drift, concorrência, schema inválido, prompt injection, fonte ausente/inventada, provider indisponível e operação humana com o gate desligado.
+- Versionar prompt/contrato greenfield próximo ao consumidor, confrontá-lo explicitamente com `docs/template-prompts.md` e `docs/template-prompts-gpt-5-6.md` e validar casos típicos, limites, drift, concorrência, schema inválido, prompt injection, fonte ausente/inventada, provider indisponível e operação humana com o gate desligado.
 
 ### 10. `20.8.8 — Cutover e limpeza terminal`
 
