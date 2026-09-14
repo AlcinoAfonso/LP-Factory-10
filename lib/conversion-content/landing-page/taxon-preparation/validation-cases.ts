@@ -2085,6 +2085,8 @@ const cases: readonly ValidationCase[] = [
       assert.match(factualCoverageSource, /Próprio: origem no taxon servido/);
       assert.match(factualCoverageSource, /Herdado: origem em camada ancestral/);
       assert.match(factualCoverageSource, /Cobertura factual por camada/);
+      assert.match(factualCoverageSource, /className="min-w-0 rounded-lg border border-border bg-muted\/20 p-4"/);
+      assert.match(factualCoverageSource, /\[overflow-wrap:anywhere\]/);
       assert.match(factualCoverageSource, /field\.valueType/);
       assert.match(factualCoverageSource, /field\.valueScope/);
       assert.match(factualCoverageSource, /field\.obligation/);

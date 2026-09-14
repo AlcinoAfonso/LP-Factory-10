@@ -136,7 +136,7 @@ export function AdminTaxonFactualCoverage({
         {coverageByLayer.map((layer, layerIndex) => (
           <section
             aria-labelledby={`factual-layer-${layerIndex}`}
-            className="rounded-lg border border-border bg-muted/20 p-4"
+            className="min-w-0 rounded-lg border border-border bg-muted/20 p-4"
             key={`${layer.level}:${layer.taxonName ?? "universal"}`}
           >
             <div className="flex flex-wrap items-center justify-between gap-2">
@@ -159,7 +159,7 @@ export function AdminTaxonFactualCoverage({
                   >
                     <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                       <div>
-                        <p className="text-sm font-semibold text-foreground">{field.fieldKey}</p>
+                        <p className="text-sm font-semibold text-foreground [overflow-wrap:anywhere]">{field.fieldKey}</p>
                         <p className="mt-1 text-sm text-muted-foreground">{field.purpose}</p>
                       </div>
                       <span className="inline-flex w-fit rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
