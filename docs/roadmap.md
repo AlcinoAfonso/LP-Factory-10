@@ -1285,7 +1285,7 @@
 - Referências:
   - Plano do recorte: `docs/lousa-plano-base-e12-6.md` — seção E12.6.3.
   - Parâmetros raiz: E18.4.
-  - Catálogo de entradas: E20.2.
+  - Autoridade factual: E20.8.
 
 12.6.3 Consulta vigente
 - O Admin possui um único item `Estrutura da LP` e uma única rota `/admin/estrutura-lp`.
@@ -1689,7 +1689,7 @@
 
 18.4.5 Limites do recorte
 - A raiz não define catálogo de módulos, composição, renderização, persistência ou lifecycle da LP.
-- A E20.2 mantém o catálogo de entradas; materialização, revisão, Preview e publicação não possuem produto operacional vigente na E19.
+- A E20.8 mantém a autoridade factual; materialização, revisão, Preview e publicação não possuem produto operacional vigente na E19.
 - O Admin apenas expõe os parâmetros e entradas vigentes; isso não promove o ciclo de vida `hypothesis`.
 - A implementação anterior de composição/renderização `landing_page` e o catálogo histórico de módulos não fazem parte do boundary atual.
 
@@ -1711,7 +1711,7 @@
 
 18.5.3 Estado vigente
 - O boundary, seus exports e seu validator foram removidos.
-- A E18.4 e a E20.2 permanecem independentes e preservadas.
+- A E18.4 e a E20.8 permanecem independentes e preservadas.
 - O antigo caminho E19.3 → E19.4 foi retirado e não dependia deste catálogo.
 
 19. E19 — legado operacional de Landing Pages retirado
@@ -1778,7 +1778,7 @@
 20.3.3 Estado vigente
 - Código, superfícies administrativas, workload e validators do perfil foram removidos.
 - A migration forward-only de retirada preserva migrations históricas, pesquisas estruturadas e `audit_logs`.
-- E18.4, E20.2 e o fluxo E19 não dependem deste domínio.
+- E18.4, a autoridade vigente E20.8 e o fluxo E19 não dependem deste domínio.
 
 20.5 Seleção da pesquisa integral `end_customer` por taxon
 
@@ -1815,7 +1815,7 @@
 - O runtime lê o filesystem do artefato implantado e não consulta a API do GitHub.
 - Conteúdo é preservado integralmente e deve conter metadata única e coerente de taxon, slug, audiência e versão.
 - Path inválido, arquivo ausente, metadata incompatível ou conteúdo vazio falham sem payload parcial.
-- A pesquisa é contexto consultivo; não substitui fatos autorizados pelo catálogo E20.2.
+- A pesquisa é contexto consultivo; não substitui fatos autorizados pela autoridade E20.8.
 
 20.5.4 Seleção e consumo
 - A Server Action exige `platform_admin`, valida a candidata repo-only e atualiza somente a coluna de seleção do taxon ativo.
