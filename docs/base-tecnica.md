@@ -267,11 +267,11 @@
 
 3.15.4 Catálogo de entradas de `landing_page`
 • Boundary canônico: `lib/conversion-content/landing-page/input-catalog/`; contracts, schema, cadeia e resolver puro são fontes executáveis. A autoridade factual corrente e única é `public.taxon_factual_fields`, lida integralmente pelos adapters server-only.
-• Não existem versão corrente, registry publicado, plano, `allowedPlans`, draft, snapshot, publisher, reconciliação, override ou segunda autoridade. Migrations e snapshots anteriores permanecem apenas como história técnica, sem API de compatibilidade no runtime.
-• Cada row possui `field_key` globalmente único, residência `taxon_id` nula para Universal ou vinculada a um taxon, `definition` fechada, estado `is_active` e autoria. Os 25 fields iniciais são bootstrap corrente: 16 universais, quatro de `imobiliario`, cinco de `corretor-imoveis` e zero de ultranicho.
+• Não existem versão corrente, registry publicado, plano, `allowedPlans`, draft, snapshot, publisher, reconciliação, override ou segunda autoridade, nem API de compatibilidade para esses contratos.
+• Cada field possui identidade globalmente única, residência Universal ou vinculada a um taxon, definição fechada, estado ativo/inativo e autoria operacional; o contrato físico completo pertence a `docs/schema.md`.
 • A cadeia válida segue `universal → segmento → nicho → ultranicho`; Segmento é raiz, cada descendente aponta para o ancestral imediato e a resolução rejeita ciclo, duplicidade, row inválida, field fora da cadeia ou referência condicional ausente.
 • O adapter prova paginação completa antes de resolver. Falha de leitura, resposta inválida ou cobertura vazia são estados explícitos; não há fallback para catálogo repo-only.
-• O lifecycle administrativo é CRUD lógico estruturado no mesmo agregado: criar, editar preservando a identidade factual, inativar e reativar. Mudança de `fieldKey`, residência, `valueScope` ou significado cria outro fato; update e toggle usam compare-and-set por `updated_at`, retornam a row completa e confirmam o estado persistido.
+• A administração usa mutações estruturadas no mesmo agregado, preserva a identidade factual e trata mudança de residência, escopo ou significado como outro fato. Autorização, validação integral, concorrência otimista e confirmação do estado persistido são obrigatórias nas bordas de escrita.
 • Referências condicionais devem existir na cobertura ativa. A saída resolvida é determinística, imutável e distingue fields próprios e herdados; valores concretos continuam responsabilidade do consumidor.
 
 3.15.7 Preparação factual do taxon para `landing_page`
@@ -290,13 +290,8 @@
 3.15.9 Estado residual do antigo produto de `landing_page`
 • O Account Dashboard não possui criação, onboarding operacional, workspace, configuração operacional, histórico, Preview, renderer, aprovação, readers de materialização ou assinatura de assets do produto legado.
 • Tabelas, RPCs, migrations, ponteiro de aprovação, dados históricos e o bucket privado permanecem fisicamente preservados e inertes; nenhum runtime corrente os usa para leitura, escrita, reprodução, entrega de revisão ou compatibilidade do catálogo.
-• O lifecycle administrativo E20 não lê contas, entitlement, `account_taxonomy`, LPs ou configurações antigas para determinar operacionalidade, compatibilidade ou bloqueio de publicação.
+• A administração factual corrente não lê contas, entitlement, `account_taxonomy`, LPs ou configurações antigas para determinar cobertura, mutações de field ou liberação de taxon.
 • Eventual limpeza destrutiva de banco, dados ou Storage exige recorte próprio; o contrato físico continua inventariado em `docs/schema.md`.
-
-3.15.10 Estado terminal da antiga E20.7
-• O resolver e o complemento dinâmico de conhecimento da E20.7 foram removidos do runtime, dos exports, adapters, actions, provas, validators, scripts e catálogo corrente de workloads. Não existe consumidor, fallback ou compatibilidade operacional.
-• Revisões e ativações históricas do workload retirado e eventos/cobertura de custos permanecem append-only e legíveis somente pelos read models históricos E21. Nenhum contrato de escrita corrente aceita o identificador aposentado.
-• Migrations históricas podem preservar o identificador para reproduzir a evolução do banco; isso não constitui autoridade ou capacidade disponível.
 
 3.16 Configuração e observabilidade de workloads OpenAI
 • O boundary transversal canônico é `lib/openai-workloads/`; consumidores de produto usam somente sua API pública para resolver modelo e reasoning effort, sem ler variáveis de modelo nem acessar o registry interno.

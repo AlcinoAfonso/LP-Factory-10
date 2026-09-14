@@ -954,9 +954,8 @@
 
 1.31 account_landing_page_shared_configurations
 1.31.1 Função e residência
-• Residência operacional lazy dos fields E20.2 com `scope = account | business`, compartilhada pelas LPs da conta.
-• A linha pode não existir enquanto nenhum valor compartilhado tiver sido salvo; ausência não equivale a incompletude persistida.
-• O shape de `values` permanece declarativo por `scope`; a tabela não replica uma lista de fields do catálogo.
+• Residência física herdada de configurações compartilhadas do produto E19 retirado; não é autoridade factual e não possui consumidor E20 vigente.
+• O shape legado de `values` permanece declarativo por `scope`; a tabela não replica `taxon_factual_fields` nem participa da cobertura corrente.
 
 1.31.2 Colunas e constraints
 • account_id uuid primary key
@@ -974,13 +973,12 @@
 • public, anon, authenticated e ai_readonly: sem grants.
 • service_role: SELECT, INSERT e UPDATE; sem DELETE ou TRUNCATE.
 • O trigger `account_landing_page_shared_configurations_set_updated_at` atualiza updated_at antes de update.
-• Não há backfill, placeholder ou criação eager.
+• Não há backfill, placeholder ou criação corrente; eventual limpeza destrutiva exige recorte próprio.
 
 1.32 account_landing_page_configurations
 1.32.1 Função e residência
-• Residência operacional lazy por LP dos fields E20.2 com `scope = offer | campaign | landing_page`.
-• A linha nasce no primeiro save da LP; configuração parcial é válida e completude continua derivada em runtime pela versão atual explícita do catálogo repo-only.
-• O shape de `values` permanece declarativo por `scope`; a tabela não replica uma lista de fields do catálogo.
+• Residência física herdada de configurações por LP do produto E19 retirado; não é autoridade factual e não possui consumidor E20 vigente.
+• O shape legado de `values` permanece declarativo por `scope`; a tabela não replica `taxon_factual_fields` e nenhuma completude corrente é derivada de `catalog_version`.
 
 1.32.2 Colunas, constraints e índice
 • landing_page_id uuid primary key; account_id uuid not null
@@ -999,7 +997,7 @@
 • public, anon, authenticated e ai_readonly: sem grants.
 • service_role: SELECT, INSERT e UPDATE; sem DELETE ou TRUNCATE.
 • O trigger `account_landing_page_configurations_set_updated_at` atualiza updated_at antes de update.
-• Não há backfill, placeholder, inicialização eager ou cópia da configuração histórica de onboarding para este agregado.
+• Não há backfill, placeholder, inicialização ou escrita corrente; eventual limpeza destrutiva exige recorte próprio.
 • O contrato foi aplicado no ambiente hospedado por `supabase/migrations/20260822170000_e19_5_3_landing_page_workspace.sql` e validado pelos testes e verificadores focais da E19.5.3.
 
 1.33 openai_model_catalog_models
@@ -1423,8 +1421,6 @@
 • Rollback: não remove automaticamente a extensão, pois pode ser reutilizada por outros recursos
 
 99. Changelog
-v1.0.68 (14/09/2026) — E20.8: substituído o draft/versionamento por `taxon_factual_fields`, documentada a retirada de `reviewed_input_catalog_version` e das unidades mutáveis E20.7, com lifecycle e custos históricos preservados.
-
 v1.0.65 (02/09/2026) — SV-PR03: marcado o agregado físico E19.5 como infraestrutura herdada; configurações continuam lidas pelo lifecycle administrativo do catálogo e os demais RPCs, materializações, aprovação e Storage permanecem inertes, sem DDL, migration, dado ou ACL alterado.
 v1.0.61 (29/08/2026) — E20.7.4: registrada a migration candidata que amplia o agregado E21.2 de dez para doze unidades com `landing_page_dynamic_market_research`, preserva as três tabelas, RLS e grants existentes e mantém apply e revisão operacional comprovada pendentes do merge humano.
 

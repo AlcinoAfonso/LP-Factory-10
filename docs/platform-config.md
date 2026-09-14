@@ -244,6 +244,11 @@
 • Progressão operacional: o Preview resolveu `supabase_operational` revisão `3` de `taxon_input_catalog_sufficiency_evaluation` e concluiu com sucesso uma avaliação provider-backed em Structured Output v2. Production preserva a revisão operacional `2` já ativa, mas o estado do gate, o redeploy e o QA do provider nesse ambiente não foram comprovados neste recorte.
 • Regra de credencial: reutilizar a `OPENAI_API_KEY` compartilhada já autorizada para o provider; não criar chave específica da avaliação factual.
 
+• `E20_6_INPUT_CATALOG_REVIEW_ENABLED`
+• Estado hospedado confirmado em 14/09/2026: uma entrada classificada como `Secret`, com escopo Production e Preview, permanece no projeto Core; nenhum valor foi revelado.
+• Estado no candidato E20.8: resíduo de configuração sem consumidor no runtime novo; não autoriza revisão, versão, liberação ou qualquer comportamento corrente.
+• Regra operacional: preservar até o cutover supervisionado para não alterar o runtime anterior fora do PR; a retirada posterior exige confirmação de que o mesmo SHA E20.8 está implantado e não altera a autoridade factual.
+
 • Configuração efetiva dos workloads OpenAI de produto
 • Fonte canônica: `lib/openai-workloads/registry.ts` mantém identidade, baseline local e allowlist; Development usa `repo_catalog` revisão `v2`, e Preview/Production usam exclusivamente `supabase_operational` com revisão decimal ativa.
 • Workloads textuais validados operacionalmente: `niche_resolution` e `commercial_activation_draft_generation`, com modelo `gpt-5.4-mini` e esforço de raciocínio `none`.
@@ -535,8 +540,6 @@ Regra:
 • Configurações de plataformas, secrets por nome, workflows, ambientes e endpoints usados por automações devem ser registrados neste documento.
 
 99. Changelog
-v0.1.48 — 14/09/2026 — E20.8: preservado somente o gate/configuração da avaliação factual consultiva; removidos gate de revisão por versão e capacidade E20.7 do inventário corrente, com história de revisões, ativações e custos mantida inerte.
-
 v0.1.45 — 12/09/2026 — Reconciliada a configuração operacional concluída da E21.5: captura ativa validada em Preview e Production e ingresso assinado do `supabase_inspect` validado em Production, sem registrar valores de secrets.
 
 v0.1.44 — 07/09/2026 — Consolidado o fechamento da E23.2: seis ocorrências sem consumidor removidas da Vercel Core; 22 sobreclassificações como Secret e quatro branch scopes legados preservados por decisão funcional conservadora; Preview aprovado sem exposição ou substituição de valores.
