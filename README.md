@@ -37,19 +37,12 @@
 • Suporte para ajustes e testes guiados por dados.
 
 1.4.4. Princípios de implementação
-• O MVP prioriza simplicidade, não fragilidade.
-• Runtime não pode depender de objetos ou comportamentos de banco ainda não aplicados e validados no ambiente alvo.
-• A stack base do MVP permanece Next.js, Supabase e TypeScript.
-• IA, automações e agentes devem evoluir incrementalmente, por problema real e benefício mensurável em qualidade, custo, latência, controle ou valor ao cliente; sofisticação tecnológica, isoladamente, não justifica adoção.
-• A escolha entre backend determinístico, chamadas de IA, tools e arquitetura agentic deve preservar a menor complexidade capaz de cumprir os gates, e o grau de determinismo deve acompanhar a natureza do resultado: regras verificáveis, segurança, fatos, estado e contratos permanecem determinísticos quando possível; decisões semânticas, criativas ou persuasivas preservam flexibilidade controlada da IA.
-• Não antecipar deterministicamente uma decisão que o workload existe justamente para a IA tomar.
-• A stack e a arquitetura adotadas são o padrão vigente; o produto permanece aberto à avaliação de recursos tecnológicos com caso de uso e valor plausível.
-• Todo recurso candidato deve ser classificado quanto à relação com a stack e a arquitetura — complementar, sobreposto, substituto ou incompatível — e avaliado por benefício, maturidade das fontes, custo, complexidade, segurança, manutenção e horizonte de adoção.
-• Incompatibilidade pode justificar descarte. Recursos sobrepostos ou substitutos só devem permanecer como condicionais quando houver hipótese concreta de superioridade e gatilho objetivo para comparação ou adoção.
-• A simplicidade do MVP limita a implementação do momento, não o radar tecnológico nem a preservação de diferenciais estratégicos para a evolução dos planos.
-• O WhatsApp é canal comercial prioritário para aquisição, atendimento, qualificação, venda e nutrição; suas capacidades oficiais de mensageria, automação e IA devem permanecer no radar e ser distribuídas progressivamente entre os planos, sem autorizar adoção antecipada.
-• Avaliação ou catalogação não autoriza implementação, mudança de stack, nova infraestrutura nem ampliação de escopo.
-• Em `Supervisão: Autônomo`, a escolha humana delega ao Estrategista Autônomo autoridade contínua e integral para decidir e conduzir o plano até a conclusão sem nova intervenção humana, preservando a V1 aprovada e o escopo negativo; em `Semiautomático`, decisões de produto ou escopo fora do contrato permanecem humanas. A materialidade, isoladamente, não constitui bloqueio.
+• O MVP prioriza simplicidade sem fragilidade: a stack base permanece Next.js, Supabase e TypeScript, e o runtime não pode depender de objetos ou comportamentos de banco ainda não aplicados e validados no ambiente alvo.
+• IA, automações, tools e agentes só avançam por problema real e benefício proporcional; adotar a menor complexidade suficiente, mantendo determinísticos segurança, fatos, estado e contratos quando possível e sem antecipar deterministicamente decisões que pertencem à IA.
+• A stack e a arquitetura vigentes são o padrão. Todo recurso candidato deve ser classificado como complementar, sobreposto, substituto ou incompatível e avaliado por benefício, maturidade, custo, complexidade, segurança, manutenção e horizonte; incompatíveis podem ser descartados, e sobrepostos ou substitutos só avançam com hipótese concreta de superioridade e gatilho objetivo.
+• A simplicidade limita a implementação atual, não o radar tecnológico nem diferenciais futuros; o WhatsApp permanece canal comercial prioritário e suas capacidades evoluem progressivamente entre os planos, sem adoção antecipada. Avaliação ou catalogação não autoriza implementação, mudança de stack, nova infraestrutura nem ampliação de escopo.
+• Contratos e instruções operacionais devem usar o menor número de regras curtas, inequívocas e não redundantes capaz de preservar o comportamento necessário; antes de acrescentar regra, consolidar ou remover as existentes.
+• Em `Supervisão: Autônomo`, a escolha humana autoriza o Estrategista Autônomo a conduzir o plano até a conclusão sem nova intervenção humana, dentro da V1 aprovada e do escopo negativo; em `Semiautomático`, decisões de produto ou escopo fora do contrato permanecem humanas. Materialidade isolada não constitui bloqueio.
 
 1.5. Modelo de oferta
 • Planos em camadas (Starter → Lite → Pro → Ultra), com capacidades escalando ao longo do tempo.
