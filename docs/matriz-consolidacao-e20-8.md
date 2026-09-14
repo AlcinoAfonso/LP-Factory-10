@@ -19,8 +19,8 @@
 
 - Os pareceres originais dos Gestores Estrutural, de Updates e de Automações foram recuperados dos mesmos agentes que avaliaram o blob imutável da V1; não houve reavaliação ou novo especialista.
 - A Passagem 1 e sua revisão delta foram recuperadas do mesmo Analista e permanecem integralmente registradas na lousa.
-- A conclusão `aprovado para merge do plano-base v2` de `13cd5084` encerrou somente a revisão delta dos sete achados da Passagem 1. Ela não substitui a Passagem 2 obrigatória com pareceres integrais e esta matriz.
-- Até a conclusão da Passagem 2, reconciliação do roadmap e respectiva revisão delta, o trailer `LP-Factory-Stage: plan-v2-approved` anterior não constitui o gate completo exigido pelo workflow Complexo.
+- A conclusão `aprovado para merge do plano-base v2` de `13cd5084` encerrou somente a revisão delta dos sete achados da Passagem 1. Ela não substituiu a Passagem 2 obrigatória com pareceres integrais e esta matriz.
+- A Passagem 2 auditou os pareceres integrais e esta matriz, solicitou dois fechamentos documentais e aprovou o delta no mesmo Analista. A revisão do roadmap ainda deve concluir antes do novo checkpoint `LP-Factory-Stage: plan-v2-approved`.
 - Nenhum achado abaixo amplia o resultado funcional da V1. Cada tratamento é classificado como `derivação técnica da V1`, `modernização técnica justificada` ou `não incorporado`.
 
 ## 3. Parecer do Gestor Estrutural — derivação inicial
@@ -120,5 +120,21 @@
 - Parecer de Updates original: Gestor `updates_e20_8`, 14/09/2026 12:42, conclusão `updates aplicáveis com patches autossuficientes`.
 - Parecer de Automações original: Gestor `automacoes_e20_8`, 14/09/2026 12:40, conclusão `automação aplicável com patches autossuficientes`.
 - Passagem 1 original: Analista `analista_p1_e20_8`, 14/09/2026 12:53, conclusão `aprovado com correções obrigatórias`; revisão delta de 14/09/2026 13:01 encerrou os sete itens.
-- Os outputs integrais permanecem preservados na task original e devem ser entregues, sem resumo substitutivo, ao mesmo Analista na Passagem 2 juntamente com esta matriz.
-- Próximo gate: versionar esta matriz, executar a Passagem 2 no mesmo Analista de plano e tratar apenas achados objetivos novos. Depois, executar o ABC de planejamento e a revisão delta do roadmap, inclusive se o resultado for `SEM ALTERAÇÕES NECESSÁRIAS`.
+- Os outputs integrais permanecem preservados na task original e foram entregues, sem resumo substitutivo, ao mesmo Analista na Passagem 2 juntamente com esta matriz.
+- Próximo gate: revisão delta do roadmap pelo mesmo Analista; não reabrir especialistas nem antecipar implementação.
+
+## 9. Passagem 2 e ABC de planejamento
+
+- Passagem 2 (`auditoria_consolidacao`): executada pelo mesmo Analista em 14/09/2026 15:39 sobre o plano blob `17b579fee6962a98ec2b95ea0fbb58579ffbe61e` e a matriz blob `9e6870825e89b794fbfccab6a346ac18bc55a468`; conclusão `aprovado com correções obrigatórias`.
+- Achados: explicitar na V2 a negativa de telemetria/métrica de tempo ou clique de `prod#14`; registrar na V2 e matriz o confronto do prompt greenfield com `docs/template-prompts.md` e `docs/template-prompts-gpt-5-6.md` para `GA-E20.8-01`.
+- Delta corretivo: commit `cc0c330a74ba0bd40d4f76dced9cfd99d1f8a8d2`, plano blob `643f81033df64898e3ef205fe6d6e7899fb82e3e`, matriz blob `2d753148aaf6adbf8c7c587acaf3ae2232b0aa8e`.
+- Revisão delta da Passagem 2: executada pelo mesmo Analista em 14/09/2026 15:41; os dois achados foram encerrados, nenhuma regressão material foi identificada e a conclusão formal foi `aprovado para merge do plano-base v2`.
+- Snapshot-base do roadmap: `origin/main@806bf0f8cf13d5222537953eef175fbde355c0fb`, blob `f948e5fd2c3ebc9f2dd2fa6ed987fdff36ee2eb2`.
+- Roadmap resultante vigente: `docs/roadmap.md`, blob `e5a88cf6f393b57768c226c078555514aa883eba`.
+- O ABC de planejamento verificou que as duas correções da Passagem 2 pertencem ao contrato técnico do plano/matriz e não exigem novo conteúdo estrutural no roadmap. A seção 20.8 vigente já preserva objetivo, recortes, dependências, limites e estado do cutover sem duplicar templates de prompt ou criar telemetria.
+
+```txt
+14/09/2026 15:42 — ABC (DELTA-ONLY) para docs/roadmap.md
+DOC_ALVO: docs/roadmap.md
+SEM ALTERAÇÕES NECESSÁRIAS
+```
