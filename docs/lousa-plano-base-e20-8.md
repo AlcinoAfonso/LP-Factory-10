@@ -288,3 +288,161 @@
 - Ampliação de escopo incorporada: nenhuma.
 - Oportunidade condicional não implementada: matriz RLS ampliada com ferramenta comunitária (`supa#63`), somente em futuro recorte com lacuna demonstrável nos testes SQL focais.
 - Rejeitado no recorte: coluna gerada de normalização (`supa#52`), pois duplicaria a identidade canônica `fieldKey` e seu índice sem ganho líquido.
+
+## Evidência do Analista — Passagem 1 independente
+
+14/09/2026 12:53
+
+# Passagem 1 — Avaliação independente
+
+## Versões e caso avaliados
+
+- Modo: `passagem_independente`.
+- Caso: E20.8 — Substituição greenfield e simplificação terminal da E20.
+- Repositório: `AlcinoAfonso/LP-Factory-10`.
+- Worktree: `C:\Users\alcin\.codex\worktrees\0518\LP-Factory-10`.
+- Branch: `codex-app/e20-8-greenfield`.
+- PR #939: aberto, draft, base `main`.
+- V1 imutável: commit `84534bdbf674859b388009bea3c11f74ced5e3e6`, blob `a598addc9ad1a52085ecbe5ef34e8a7e683b34c1`.
+- V2 candidata: commit/HEAD local `0e46babf8117a5b61a12ceb83d28acec37b1192d`, blob `b2cbb1c0269db6311ef94326a3900266818dca4d`, com trailer `LP-Factory-Stage: plan-v2`.
+- Base: `origin/main@806bf0f8cf13d5222537953eef175fbde355c0fb`.
+- Roadmap: blob `f948e5fd2c3ebc9f2dd2fa6ed987fdff36ee2eb2`.
+- O PR remoto ainda aponta para a V1; a V2 está um commit à frente apenas no worktree local.
+- Nenhum arquivo foi alterado. `npm ci` e `npm run check`: não aplicáveis à passagem read-only.
+
+## Fontes consultadas
+
+- V1 e V2 integrais pelos blobs imutáveis indicados.
+- `docs/roadmap.md` integral no snapshot-base indicado.
+- Debate 12B integral, revisão Google Docs `ANLCKQlS1g0vTyO0uq0_zzt2ja9G3M0cvnxl6Tv3IEbh6Fhgn4jc_11VJVA3seGJeMrS9fbACTgVzpCDbi5eWkFnBzJYiiylX4qsQMmh8rA`, especialmente decisões 3.1–3.16 e PB 1.
+- No snapshot-base: `README.md`, `docs/base-tecnica.md`, `docs/schema.md`, `docs/platform-config.md`, `docs/automations.md`, `docs/design-system.md` e `docs/openai-model-snapshot.md`.
+- Inventário read-only do código, migrations, testes, snippets, workflows e consumidores atuais dos boundaries E20/E21.
+- Metadados atuais do PR #939 via GitHub.
+- Nenhum parecer, confronto ou matriz foi consultado.
+
+## Aderência ao plano conceitual ou N/A
+
+N/A confirmado. O Debate 12B é a própria fonte funcional competente e não referencia plano conceitual separado.
+
+A cadeia verificável é `Debate 12B, decisões 3.1–3.16 → V1 congelada → V2 candidata`. A V1 reproduz o PB 1 aprovado sem perda material, e a V2 preserva o resultado funcional greenfield.
+
+## Cobertura funcional da v1
+
+A cobertura é integral:
+
+- substituição in place da E20 vigente;
+- Supabase como autoridade factual única;
+- eliminação de versões, planos, `allowedPlans`, revisão por versão e publisher repo-only;
+- cinco escopos factuais preservados;
+- `fieldKey` globalmente único, sem override ou shadowing;
+- herança Universal → Segmento → Nicho → Ultranicho;
+- lifecycle ativo/inativo com reativação;
+- gestão estruturada em uma página principal;
+- liberação humana independente de IA;
+- avaliação por IA opcional, transitória e sem mutação;
+- retirada da E20.7 dormente;
+- ausência de coordenação retroativa de consumidores;
+- reconciliação terminal das fontes canônicas.
+
+Os casos adjacentes foram reconhecidos: E18.4, resíduos físicos E19, E20.5, responsabilidades humanas e consultivas E20.6 e governança Workloads/Costs da E21.
+
+## Derivação técnica e executabilidade
+
+Classificação dos acréscimos:
+
+- `derivação técnica da v1`: substituição do boundary existente, persistência Supabase, resolver puro, adapters, CRUD administrativo, compare-and-set, liberação humana, adaptação do workload consultivo, retirada da E20.7, cutover, testes e reconciliação documental;
+- `modernização técnica justificada`: snippet SQL read-only reexecutável e critérios proporcionais de reconhecibilidade/acessibilidade. Há ganho verificável de diagnóstico e QA, baixo impacto estrutural e nenhuma ampliação funcional;
+- `ampliação de escopo`: nenhuma identificada.
+
+A solução é tecnicamente plausível e evita serviço, agente, fila, cache, engine ou infraestrutura nova. Os critérios de aceite cobrem domínio, banco, segurança, paginação, concorrência, UI, IA, regressões, QA hospedado e validação pós-apply.
+
+A executabilidade ainda não está completa nos pontos objetivos abaixo.
+
+## Complexidade não justificada
+
+Não foi identificada complexidade funcional excedente. O detalhamento de IA preserva um workload já vigente e restringe sua operação.
+
+O principal risco de complexidade está na tentativa de realizar criação, carga, repontamento e remoção física em um único cutover sem uma sequência operacional segura e comprovável. Isso não exige decisão de produto, mas fechamento técnico explícito.
+
+## Lacunas, contradições e riscos residuais
+
+1. A V2 cria `field_key text primary key`, mas a convenção normativa de novas entidades exige `id uuid primary key default gen_random_uuid()`. Falta adotar `id` como PK e `field_key` como `UNIQUE`, ou registrar justificativa técnica competente para a exceção.
+
+2. `created_by` e `updated_by` são `NOT NULL` e referenciam `auth.users`, mas a carga inicial deriva do registry v6 e não possui ator humano canônico. A migration não tem como inventar esse UUID. O contrato deve definir metadado nulo para bootstrap, ator técnico já autorizado ou outra solução compatível.
+
+3. Falta a decisão explícita exigida para auditoria e participação da nova tabela no Trigger Hub. RLS e grants estão definidos, mas segurança não substitui essa decisão.
+
+4. A forma de `definition jsonb` permanece sem shape técnico fechado: nomes canônicos das propriedades, enums, obrigatoriedade, condições e validações não estão suficientemente definidos para migration, schema runtime, carga inicial e snippet produzirem o mesmo contrato.
+
+5. O cutover não ordena de forma segura deploy e apply. O push na `main` dispara automaticamente tanto Production Vercel quanto o apply Supabase; criar a tabela e remover a tabela/coluna antigas na mesma migration pode atingir o runtime anterior antes da entrada do novo deployment. A previsão de “indisponibilidade explícita” cobre o runtime novo antes do objeto, mas não protege o runtime antigo depois do DROP.
+
+6. A carga “somente fields ativos da v6” precisa declarar transformação determinística, cardinalidade esperada e tratamento de qualquer definição incompatível com unicidade global/residência única. Sem isso, migration e verificador podem concordar entre si sobre uma carga incompleta.
+
+7. A retirada da E20.7 precisa distinguir explicitamente allowlist/runtime corrente de linhas históricas append-only da E21. O padrão vigente permite que unidades retiradas permaneçam históricas e ignoradas pela allowlist; “remover configuração operacional” não pode ser interpretado como apagar revisões, ativações ou evidência financeira preservada.
+
+## Correções candidatas
+
+- Alinhar a identidade da tabela à convenção de PK UUID ou justificar formalmente a exceção, mantendo `field_key` globalmente único.
+- Resolver o ator da carga inicial e explicitar auditoria/Trigger Hub.
+- Fechar o schema canônico de `definition` e a transformação exata da v6, incluindo cardinalidade e negativas verificáveis.
+- Substituir o cutover atômico ambíguo por sequência expand/cutover/contract dentro da E20.8, sem dual-read, dual-write ou compatibilidade operacional: preservar temporariamente objetos antigos apenas enquanto o runtime anterior puder estar ativo; remover fisicamente somente após o novo SHA estar implantado e validado.
+- Declarar gates de parada para cada transição, inclusive proteção contra apply automático antes do deployment compatível.
+- Preservar revisões, ativações e custos históricos da E20.7 como estado inerte; retirar somente consumidores, allowlists e capacidade de tracking novo.
+- Manter todos os demais limites da V2, sem introduzir novo subcaso, serviço ou autoridade.
+
+Conclusão desta passagem: `aprovado com correções obrigatórias`.
+
+## Próximo passo mínimo e seguro
+
+Corrigir exclusivamente a V2 nos pontos acima, preservar esta Passagem 1 sem reescrita e somente então seguir para consolidação e Passagem 2. Não iniciar implementação nem liberar merge do plano enquanto essas correções objetivas permanecerem.
+
+## Evidência do Analista — Revisão delta da Passagem 1
+
+14/09/2026 13:01
+
+# Revisão delta — Passagem 1
+
+## Versões e caso avaliados
+
+- Modo: `revisao_delta`
+- Caso: E20.8 — Substituição greenfield e simplificação terminal da E20
+- Repositório: `AlcinoAfonso/LP-Factory-10`
+- Branch: `codex-app/e20-8-greenfield`
+- Base: `806bf0f8cf13d5222537953eef175fbde355c0fb`
+- V1 congelada: `84534bdbf674859b388009bea3c11f74ced5e3e6`
+- V2 anterior: `0e46babf8117a5b61a12ceb83d28acec37b1192d`
+- V2 corrigida: `4cd8efa7c3e4db2cb75d4458f159328cf04207cd`
+- Arquivo: `docs/lousa-plano-base-e20-8.md`
+
+A Passagem 1 anterior foi preservada sem reinterpretação.
+
+## Fontes consultadas
+
+- Diff integral entre as duas versões da V2.
+- V2 corrigida no blob `731cb32376c238b0dba2048b1395c8c129600625`.
+- Referências imutáveis da V1, base e roadmap já fixadas para a Passagem 1.
+- Metadados do commit corrigido e validação `git diff --check`.
+
+Nenhum parecer, matriz ou artefato de auditoria foi consultado.
+
+## Verificação das correções obrigatórias
+
+1. **Identidade da nova tabela:** atendida. A tabela passou a ter PK UUID e `field_key` único.
+2. **Atores no carregamento inicial:** atendida. `created_by` e `updated_by` admitem `null` no bootstrap, enquanto mutações posteriores exigem identidade autenticada.
+3. **Auditoria e Trigger Hub:** atendida. A V2 registra explicitamente a não participação funcional de ambos, com boundary compatível com a V1.
+4. **Contrato de `definition jsonb`:** atendida. Propriedades, enums, uniões, restrições e validação Zod foram especificados.
+5. **Cutover seguro:** atendida. A aplicação automática da migration é suspensa, o runtime do mesmo SHA é publicado primeiro e a migration destrutiva somente é aplicada depois, evitando que o `DROP` alcance o runtime antigo.
+6. **Transformação determinística da registry v6:** atendida. A cardinalidade de 25 entradas, sua residência por camada, remoções e condições de aborto diante de divergência foram explicitadas.
+7. **Preservação histórica de E20.7/E21:** atendida. Revisões, ativações e eventos históricos permanecem append-only, enquanto consumidores, allowlists e tracking ativos são removidos.
+
+## Regressões ou bloqueios residuais
+
+Não foi identificado bloqueio residual objetivo. O delta permanece restrito ao plano-base, não amplia o resultado funcional da V1 e não introduz questão material nova que exija decisão humana ou nova rodada especializada.
+
+## Conclusão final
+
+`aprovado para merge do plano-base v2`
+
+## Próximo passo mínimo e seguro
+
+Registrar o fechamento das sete pendências e prosseguir ao gate subsequente previsto pela orquestração, sem reabrir a Passagem 1 e sem antecipar avaliação da implementação.
