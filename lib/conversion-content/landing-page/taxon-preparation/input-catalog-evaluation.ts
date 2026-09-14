@@ -1,4 +1,4 @@
-import type { LoadSelectedEndCustomerResearchResult, InputCatalogEvaluationContext, InputCatalogEvaluationMode, InputCatalogEvaluationPrompt, InputCatalogEvaluationSourceState, InputCatalogEvaluationSourceStrategy } from "./contracts";
+import type { LoadSelectedEndCustomerResearchResult, InputCatalogEvaluationContext, InputCatalogEvaluationMode, InputCatalogEvaluationOutput, InputCatalogEvaluationPrompt, InputCatalogEvaluationSourceState, InputCatalogEvaluationSourceStrategy } from "./contracts";
 import type { ResolvedFactualCoverage } from "../input-catalog";
 
 export const INPUT_CATALOG_EVALUATION_PROMPT_VERSION = "e20.8.7-factual-coverage-evaluation-v1" as const;
@@ -35,6 +35,21 @@ export function buildInputCatalogEvaluationPrompt(input: Readonly<{ context: Inp
     focalHypothesis: hypothesis,
   };
   return { version: INPUT_CATALOG_EVALUATION_PROMPT_VERSION, instructions, input: `<FACTUAL_COVERAGE_DATA>\n${JSON.stringify(safeCoverage)}\n</FACTUAL_COVERAGE_DATA>` };
+}
+
+export function validateInputCatalogEvaluationBinding(input: Readonly<{
+  context: InputCatalogEvaluationContext;
+  output: InputCatalogEvaluationOutput;
+  allowedSourceUrls: ReadonlySet<string>;
+}>): Readonly<{ ok: true }> | Readonly<{ ok: false; code: "CONTEXT_BINDING_INVALID" | "SOURCE_PROVENANCE_INVALID"; message: string }> {
+  if (input.output.mode !== input.context.mode || input.output.sourceStrategy !== input.context.sourceStrategy || input.output.sourceState !== input.context.sourceState) {
+    return { ok: false, code: "CONTEXT_BINDING_INVALID", message: "A resposta não corresponde ao contexto canônico solicitado." };
+  }
+  const citedUrls = [...input.output.summarySourceUrls, ...input.output.candidates.flatMap((candidate) => candidate.sourceUrls)];
+  if (citedUrls.some((url) => !input.allowedSourceUrls.has(url))) {
+    return { ok: false, code: "SOURCE_PROVENANCE_INVALID", message: "A resposta citou fonte não comprovada pelo provider." };
+  }
+  return { ok: true };
 }
 
 function deriveSource(mode: InputCatalogEvaluationMode, selected: LoadSelectedEndCustomerResearchResult): Readonly<{ sourceStrategy: InputCatalogEvaluationSourceStrategy; sourceState: InputCatalogEvaluationSourceState }> {

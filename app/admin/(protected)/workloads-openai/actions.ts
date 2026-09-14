@@ -9,7 +9,6 @@ import {
   type OpenAiManagedWorkloadEnvironment,
   type OpenAiProductWorkloadId,
   type OpenAiReasoningEffort,
-  type OpenAiWorkloadId,
   type ResolvedOpenAiProductWorkload,
 } from "@/openai-workloads";
 import {

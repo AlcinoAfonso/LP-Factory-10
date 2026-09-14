@@ -19,7 +19,7 @@ export function buildFactualTaxonChain(selected: FactualTaxonIdentity, taxons: r
     else ultraNiche = cursor;
     cursor = cursor.parentId ? byId.get(cursor.parentId) : undefined;
   }
-  if (!segment || (niche && niche.parentId !== segment.id) || (ultraNiche && ultraNiche.parentId !== niche?.id)) return invalid("A hierarquia esperada Segmento → Nicho → Ultranicho não foi comprovada.");
+  if (!segment || segment.parentId !== null || (niche && niche.parentId !== segment.id) || (ultraNiche && ultraNiche.parentId !== niche?.id)) return invalid("A hierarquia esperada Segmento → Nicho → Ultranicho não foi comprovada.");
   if (selected.level === "segment" && (niche || ultraNiche)) return invalid("A cadeia excede o taxon selecionado.");
   if (selected.level === "niche" && (!niche || ultraNiche)) return invalid("A cadeia não corresponde ao Nicho selecionado.");
   if (selected.level === "ultra_niche" && !ultraNiche) return invalid("A cadeia não corresponde ao Ultranicho selecionado.");

@@ -13,6 +13,9 @@ const niche = taxon("10000000-0000-4000-8000-000000000002", "niche", segment.id)
 const ultra = taxon("10000000-0000-4000-8000-000000000003", "ultra_niche", niche.id);
 const built = buildFactualTaxonChain(ultra, [segment, niche, ultra]);
 assert.ok(built.ok);
+assert.ok(buildFactualTaxonChain(segment, [segment]).ok);
+assert.ok(buildFactualTaxonChain(niche, [segment, niche]).ok);
+assert.ok(!buildFactualTaxonChain({ ...segment, parentId: ultra.id }, [segment, niche, ultra]).ok);
 
 const rows = [row("business_name", null), row("segment_fact", segment.id), row("niche_fact", niche.id), row("ultra_fact", ultra.id)];
 const resolved = resolveFactualCoverage({ taxonChain: built.value, rows });
@@ -21,11 +24,31 @@ assert.deepEqual(resolved.value.fields.map((field) => field.fieldKey), ["busines
 assert.deepEqual(resolved.value.fields.map((field) => field.ownership), ["inherited", "inherited", "inherited", "own"]);
 assert.deepEqual(resolved.value.appliedLayers.map((layer) => layer.level), ["universal", "segment", "niche", "ultra_niche"]);
 
+const empty = resolveFactualCoverage({ taxonChain: built.value, rows: [] });
+assert.ok(empty.ok);
+assert.deepEqual(empty.value.fields, []);
+
 assert.ok(!buildFactualTaxonChain(ultra, [segment, ultra]).ok);
-assert.ok(!resolveFactualCoverage({ taxonChain: built.value, rows: [...rows, { ...rows[0], id: randomUUID() }] }).ok);
-assert.ok(!resolveFactualCoverage({ taxonChain: built.value, rows: [row("foreign", "10000000-0000-4000-8000-000000000099")] }).ok);
-assert.ok(resolveFactualCoverage({ taxonChain: built.value, rows: [{ ...row("inactive", null), isActive: false }] }).ok);
-assert.ok(resolveFactualCoverage({ taxonChain: built.value, rows: [{ ...row("inactive", null), isActive: false }], includeInactive: true }).ok);
+const duplicate = resolveFactualCoverage({ taxonChain: built.value, rows: [...rows, { ...rows[0], id: randomUUID() }] });
+assert.ok(!duplicate.ok);
+assert.equal(duplicate.error.code, "DUPLICATE_FIELD_KEY");
+const outside = resolveFactualCoverage({ taxonChain: built.value, rows: [row("foreign", "10000000-0000-4000-8000-000000000099")] });
+assert.ok(!outside.ok);
+assert.equal(outside.error.code, "FIELD_OUTSIDE_CHAIN");
+const invalidRow = resolveFactualCoverage({ taxonChain: built.value, rows: [{ ...row("invalid", null), createdAt: "invalid" }] });
+assert.ok(!invalidRow.ok);
+assert.equal(invalidRow.error.code, "INVALID_FIELD_ROW");
+const conditional = row("conditional", null);
+const missingReference = resolveFactualCoverage({ taxonChain: built.value, rows: [{ ...conditional, definition: { ...conditional.definition, obligation: "conditional", requiredWhen: { fieldKey: "absent", operator: "equals", value: true } } }] });
+assert.ok(!missingReference.ok);
+assert.equal(missingReference.error.code, "MISSING_CONDITION_REFERENCE");
+const inactive = resolveFactualCoverage({ taxonChain: built.value, rows: [{ ...row("inactive", null), isActive: false }] });
+assert.ok(inactive.ok);
+assert.equal(inactive.value.fields.length, 0);
+const inactiveIncluded = resolveFactualCoverage({ taxonChain: built.value, rows: [{ ...row("inactive", null), isActive: false }], includeInactive: true });
+assert.ok(inactiveIncluded.ok);
+assert.equal(inactiveIncluded.value.fields.length, 1);
+assert.equal(inactiveIncluded.value.fields[0].isActive, false);
 assert.ok(!factualFieldDefinitionSchema.safeParse({ ...row("x", null).definition, unknown: true }).success);
 
 const manyRows = Array.from({ length: 501 }, (_, index) => row(`field_${index}`, null));

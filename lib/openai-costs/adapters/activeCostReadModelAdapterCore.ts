@@ -9,6 +9,7 @@ import type {
   OpenAiCostAttributionStatus,
   OpenAiCostEnvironment,
   OpenAiCostExecutionOrigin,
+  OpenAiCostReadWorkloadId,
   OpenAiCostEconomicEvent,
   OpenAiEconomicDimensionStatus,
   OpenAiCostResult,
@@ -26,10 +27,14 @@ import {
   openAiOperationalWorkloadIds,
   openAiProductWorkloadIds,
   openAiReasoningEfforts,
-  type OpenAiWorkloadId,
 } from "../../openai-workloads";
+import { OPENAI_RETIRED_COST_WORKLOAD_IDS } from "../active-contracts";
 
-const openAiWorkloadIds = [...openAiProductWorkloadIds, ...openAiOperationalWorkloadIds, "landing_page_dynamic_market_research"] as const;
+const openAiWorkloadIds = [
+  ...openAiProductWorkloadIds,
+  ...openAiOperationalWorkloadIds,
+  ...OPENAI_RETIRED_COST_WORKLOAD_IDS,
+] as const;
 const openAiConfigurationSources = ["repo_catalog", "supabase_operational"] as const;
 
 export const OPENAI_ACTIVE_COST_PAGE_SIZE = 500;
@@ -228,7 +233,7 @@ type MutableGroup = {
   universe: OpenAiCostUniverse;
   attributionStatus: OpenAiCostAttributionStatus;
   accountId: string | null;
-  workload: OpenAiWorkloadId;
+  workload: OpenAiCostReadWorkloadId;
   total: DecimalValue;
   executionCount: number;
   operationCount: number;
@@ -518,8 +523,8 @@ function decimal(value: unknown): string | null | undefined {
 function nullableResult(value: unknown): OpenAiCostResult | null | undefined {
   return value === null ? null : value === "success" || value === "failure" ? value : undefined;
 }
-function workloadId(value: unknown): OpenAiWorkloadId | null {
-  return typeof value === "string" && (openAiWorkloadIds as readonly string[]).includes(value) ? value as OpenAiWorkloadId : null;
+function workloadId(value: unknown): OpenAiCostReadWorkloadId | null {
+  return typeof value === "string" && (openAiWorkloadIds as readonly string[]).includes(value) ? value as OpenAiCostReadWorkloadId : null;
 }
 function oneOf<const T extends readonly string[]>(value: unknown, values: T): T[number] | null {
   return typeof value === "string" && (values as readonly string[]).includes(value) ? value as T[number] : null;

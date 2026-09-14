@@ -27,7 +27,7 @@ const operational = translateOperationalConfigurationRows(
 assert.ok(operational.ok);
 assert.equal(operational.value.workload, "taxon_input_catalog_sufficiency_evaluation");
 const removedOperational = translateOperationalConfigurationRows(
-  { environment: "preview", workload: "landing_page_dynamic_market_research" },
+  { environment: "preview", workload: "landing_page_dynamic_market_research" as never },
   { data: [{ environment: "preview", workload: "landing_page_dynamic_market_research", modality: "responses_text", active_revision_id: "r2" }], error: null },
   { data: [{ id: "r2", environment: "preview", workload: "landing_page_dynamic_market_research", modality: "responses_text", model: "gpt-5.6-terra", reasoning_effort: "low", quality: null, revision_number: 2 }], error: null },
 );

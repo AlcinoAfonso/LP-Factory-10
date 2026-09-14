@@ -25,7 +25,7 @@ export function resolveFactualCoverage(input: Readonly<{ taxonChain: FactualTaxo
 }
 
 function validChain(taxons: readonly FactualTaxonIdentity[]): boolean {
-  return taxons[0]?.level === "segment" && taxons.every((taxon, index) => index === 0 || taxon.parentId === taxons[index - 1].id) && taxons.map((taxon) => taxon.level).join(",") === ["segment", "niche", "ultra_niche"].slice(0, taxons.length).join(",");
+  return taxons[0]?.level === "segment" && taxons[0].parentId === null && taxons.every((taxon, index) => index === 0 || taxon.parentId === taxons[index - 1].id) && taxons.map((taxon) => taxon.level).join(",") === ["segment", "niche", "ultra_niche"].slice(0, taxons.length).join(",");
 }
 function layerRank(level: ResolvedFactualField["originLayer"]): number { return level === "universal" ? 0 : level === "segment" ? 1 : level === "niche" ? 2 : 3; }
 function invalid(code: FactualCoverageErrorCode, message: string): ResolveFactualCoverageResult { return { ok: false, error: { code, message } }; }

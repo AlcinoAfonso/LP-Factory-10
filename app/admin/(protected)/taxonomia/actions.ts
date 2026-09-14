@@ -8,7 +8,7 @@ import { requirePlatformAdmin } from "@/lib/access/guards";
 import { reconstructCanonicalInputCatalogEvaluationContext } from "@/conversion-content/adapters/inputCatalogEvaluationContextAdapter";
 import { evaluateInputCatalogWithOpenAi } from "@/conversion-content/adapters/inputCatalogEvaluationOpenAiAdapter";
 import { resolveInputCatalogEvaluationRuntimeReadiness } from "@/conversion-content/adapters/inputCatalogEvaluationRuntimeGate";
-import { buildInputCatalogEvaluationPrompt, inputCatalogEvaluationOutputJsonSchema, parseInputCatalogEvaluationOutput, type InputCatalogEvaluationMode, type InputCatalogEvaluationOutput } from "@/conversion-content/landing-page/taxon-preparation";
+import { buildInputCatalogEvaluationPrompt, inputCatalogEvaluationOutputJsonSchema, parseInputCatalogEvaluationOutput, validateInputCatalogEvaluationBinding, type InputCatalogEvaluationMode, type InputCatalogEvaluationOutput } from "@/conversion-content/landing-page/taxon-preparation";
 import { addAdminTaxonAlias, createAdminTaxon, deleteAdminTaxon, deleteAdminTaxonAlias, releaseAdminTaxon, selectAdminEndCustomerResearchVersion, updateAdminTaxon } from "@/lib/admin/adapters/adminReadOnlyAdapter";
 
 export type CreateTaxonActionState = { error: string | null };
@@ -36,8 +36,8 @@ export async function evaluateInputCatalogAction(input: Readonly<{ taxonId: stri
   const parsed = parseInputCatalogEvaluationOutput(provider.output);
   if (!parsed.ok) return { ok: false, code: parsed.error.code, message: parsed.error.message };
   const allowedUrls = new Set(provider.provenance?.webSources.map((source) => source.url) ?? []);
-  const citedUrls = [ ...parsed.value.summarySourceUrls, ...parsed.value.candidates.flatMap((candidate) => candidate.sourceUrls) ];
-  if (citedUrls.some((url) => !allowedUrls.has(url))) return { ok: false, code: "SOURCE_PROVENANCE_INVALID", message: "A resposta citou fonte não comprovada pelo provider." };
+  const binding = validateInputCatalogEvaluationBinding({ context: context.value, output: parsed.value, allowedSourceUrls: allowedUrls });
+  if (!binding.ok) return { ok: false, code: binding.code, message: binding.message };
   return { ok: true, output: parsed.value };
 }
 
