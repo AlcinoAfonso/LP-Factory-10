@@ -816,6 +816,16 @@ const cases: readonly ValidationCase[] = [
         schemaRecord(schemaRecord(candidate.properties).relatedFields).maxItems,
         16,
       );
+      assert.equal(
+        schemaRecord(schemaRecord(properties.summarySourceUrls).items).format,
+        undefined,
+      );
+      assert.equal(
+        schemaRecord(
+          schemaRecord(schemaRecord(candidate.properties).sourceUrls).items,
+        ).format,
+        undefined,
+      );
     },
   },
   {

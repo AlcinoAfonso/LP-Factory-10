@@ -28,7 +28,11 @@ const MAX_SOURCE_URLS = 16;
 
 const text = (maximum: number) => z.string().trim().min(1).max(maximum);
 const nullableText = (maximum: number) => text(maximum).nullable();
-const sourceUrls = z.array(z.url().max(2_048)).max(MAX_SOURCE_URLS);
+// Structured Outputs does not support format: uri. The semantic parser below
+// still requires HTTPS URLs without credentials in provider evidence.
+const sourceUrls = z
+  .array(text(2_048))
+  .max(MAX_SOURCE_URLS);
 
 export const inputCatalogEvaluationCandidateSchema = z
   .object({
