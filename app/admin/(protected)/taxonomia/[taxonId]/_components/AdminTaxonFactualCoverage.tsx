@@ -154,12 +154,12 @@ export function AdminTaxonFactualCoverage({
               <ul className="mt-3 grid gap-3" aria-label={`Fields de ${humanize(layer.level)}`}>
                 {layer.fields.map((field) => (
                   <li
-                    className="min-w-0 rounded-md border border-border bg-background px-4 py-3"
+                    className="min-w-0 rounded-md border border-border bg-background px-4 py-3 [overflow-wrap:anywhere]"
                     key={field.fieldKey}
                   >
                     <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                       <div>
-                        <p className="text-sm font-semibold text-foreground [overflow-wrap:anywhere]">{field.fieldKey}</p>
+                        <p className="text-sm font-semibold text-foreground">{field.fieldKey}</p>
                         <p className="mt-1 text-sm text-muted-foreground">{field.purpose}</p>
                       </div>
                       <span className="inline-flex w-fit rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
