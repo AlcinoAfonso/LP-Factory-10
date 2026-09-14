@@ -5,7 +5,7 @@ import { buildInputCatalogEvaluationContext, buildInputCatalogEvaluationPrompt, 
 import { inputCatalogEvaluationOutputJsonSchema, parseInputCatalogEvaluationOutput } from "./input-catalog-evaluation-schema";
 import type { LoadSelectedEndCustomerResearchResult } from "./contracts";
 import type { ResolvedFactualCoverage } from "../input-catalog";
-import { evaluateInputCatalogWithOpenAi } from "../../adapters/inputCatalogEvaluationOpenAiAdapter";
+import { evaluateInputCatalogWithOpenAi, parseEvaluationResponse } from "../../adapters/inputCatalogEvaluationOpenAiAdapter";
 import { resolveInputCatalogEvaluationRuntimeReadinessCore } from "../../adapters/inputCatalogEvaluationRuntimeGateCore";
 import { executeAdminTaxonFactualReleaseCore } from "../../../admin/adapters/adminTaxonFactualReleaseCore";
 import { resolveOpenAiProductWorkload } from "../../../openai-workloads";
@@ -50,6 +50,9 @@ assert.equal(sourceMismatch.code, "CONTEXT_BINDING_INVALID");
 const inventedSource = validateInputCatalogEvaluationBinding({ context: e205Context, output: { ...parsed.value, summarySourceUrls: ["https://invented.example/"] }, allowedSourceUrls: new Set() });
 assert.ok(!inventedSource.ok);
 assert.equal(inventedSource.code, "SOURCE_PROVENANCE_INVALID");
+const missingRequiredWebSource = parseEvaluationResponse({ output_text: JSON.stringify(parsed.value), output: [] }, "web_search_fallback");
+assert.ok(!missingRequiredWebSource.ok);
+assert.equal(missingRequiredWebSource.reason, "openai_web_search_call_count_invalid");
 
 let resolvedWhileOff = false;
 const gateOff = await resolveInputCatalogEvaluationRuntimeReadinessCore({ environment: "development", rolloutGateValue: "false" }, { resolveConfiguration: async () => { resolvedWhileOff = true; return resolveOpenAiProductWorkload("taxon_input_catalog_sufficiency_evaluation", "development"); } });
@@ -73,6 +76,9 @@ const releasePorts = (overrides: Readonly<{ fingerprint?: string; activated?: bo
   verifyIdentity: async () => overrides.verified === undefined ? { ...inactiveIdentity, isActive: true } : overrides.verified,
 });
 assert.deepEqual(await executeAdminTaxonFactualReleaseCore({ taxonId: inactiveIdentity.id, coverageFingerprint: fingerprint }, releasePorts()), { ok: true, taxonId: inactiveIdentity.id });
+const humanReleaseWhileAiGateOff = await executeAdminTaxonFactualReleaseCore({ taxonId: inactiveIdentity.id, coverageFingerprint: fingerprint }, releasePorts());
+assert.ok(!gateOff.ok);
+assert.deepEqual(humanReleaseWhileAiGateOff, { ok: true, taxonId: inactiveIdentity.id });
 assert.ok(!(await executeAdminTaxonFactualReleaseCore({ taxonId: inactiveIdentity.id, coverageFingerprint: fingerprint }, releasePorts({ fingerprint: "b".repeat(64) }))).ok);
 assert.ok(!(await executeAdminTaxonFactualReleaseCore({ taxonId: inactiveIdentity.id, coverageFingerprint: fingerprint }, releasePorts({ activated: false }))).ok);
 assert.ok(!(await executeAdminTaxonFactualReleaseCore({ taxonId: inactiveIdentity.id, coverageFingerprint: fingerprint }, releasePorts({ verified: inactiveIdentity }))).ok);
