@@ -1740,7 +1740,7 @@
 - PR #871 tornou a geração antiga inalcançável, PR #872 retirou sua orquestração, o SV-PR03 retirou o produto operacional e o SV-PR04 eliminou as duas fronteiras administrativas residuais.
 20. E20 — Catálogo factual, pesquisa opcional e revisão de taxons
 - Objetivo: manter fields factuais correntes por cadeia taxonômica, fonte de pesquisa opcional e decisão humana de liberação, sem versão, plano, draft, segunda autoridade ou coordenação de consumidores.
-- Status: substituição greenfield E20.8 implementada e aprovada nos gates de código 20.8.3–20.8.7; ABC canônico 20.8.8 concluído no branch e candidato ao gate documental. Merge, apply, snippet, Security Controls e QA hospedado permanecem sob gate posterior do supervisor.
+- Status: substituição greenfield E20.8 implementada e aprovada nos gates 20.8.3–20.8.8 no branch dedicado. Merge, apply, snippet, Security Controls e QA hospedado permanecem sob gate posterior do supervisor.
 
 20.2 Catálogo de entradas por taxon
 
@@ -1854,7 +1854,7 @@
 
 20.8.1 Objetivo e status
 - Objetivo: substituir in place o catálogo versionado por uma autoridade factual única no Supabase, preservar liberação humana e assistência consultiva estrita e remover integralmente a E20.7 corrente.
-- Status: implementação de repositório e gates do Analista para 20.8.3–20.8.7 aprovados no branch dedicado. O cutover hospedado permanece pendente de merge humano, sequência segura de apply, snippet, Security Controls e QA.
+- Status: implementação de repositório e ABC aprovados pelo Analista no branch dedicado. O cutover hospedado permanece pendente de merge humano, sequência segura de apply, snippet, Security Controls e QA.
 
 20.8.2 Registros do recorte
 - Banco:
@@ -1964,7 +1964,7 @@
   - pesquisa E20.5 e Web Search são opcionais; contexto e fontes ficam vinculados ao provider, e a resposta transitória não muta ou persiste fields, taxon ou decisão.
 
 20.8.8 Cutover e limpeza terminal
-- Status: ABC concluído no branch; merge, apply e validações hospedadas pendentes do supervisor.
+- Status: ABC aprovado no branch; merge, apply e validações hospedadas pendentes do supervisor.
 - Conteúdo:
   - antes do merge autorizado, o supervisor fecha temporariamente `SUPABASE_APPLY_MIGRATIONS_ENABLED` e comprova o apply automático como `skipped`;
   - após Production do mesmo SHA ficar `READY`, o supervisor restaura o gate, dispara manualmente a migration em `main` e executa snippet, Security Controls e recuperação dinâmica do runtime;
