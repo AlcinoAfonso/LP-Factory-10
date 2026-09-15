@@ -135,7 +135,7 @@ Quando houver impacto em banco:
 
 - investigue primeiro o estado real por recurso read-only autorizado e confronte-o com `docs/schema.md`;
 - não use inspeção para escrita, migration, secret ou operação administrativa;
-- crie alteração de schema por migration canônica em `supabase/migrations/<timestamp>_<nome>.sql` e, quando disponível, valide-a em ambiente local ou isolado;
+- crie alteração de schema por migration canônica em `supabase/migrations/<timestamp>_<nome>.sql`; antes do merge, execute a migration integral em PostgreSQL compatível com o ambiente alvo, por transação efêmera com rollback ou ambiente isolado autorizado, e execute os testes SQL necessários para provar parsing e os comportamentos positivos e negativos afetados; essa prova não pode persistir mudança no projeto remoto alvo, e dry-run ou validação estática não a substituem quando o resultado depende do PostgreSQL;
 - antes do merge, quando aplicável e autorizado, permitir no projeto remoto apenas inspeção read-only, `supabase migration list --linked` e `supabase db push --linked --dry-run`;
 - não executar alteração remota de schema ou histórico de migrations fora do fluxo aprovado, inclusive `apply_migration`, SQL mutável, `migration repair` ou `supabase db push --linked` sem `--dry-run`;
 - manter migration aplicada imutável e fazer correção ou reversão por nova migration incremental;
