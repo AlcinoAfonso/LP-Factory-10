@@ -228,6 +228,58 @@ assert.equal(resolvedWhileOff, false);
 const configuration = await resolveOpenAiProductWorkload("taxon_input_catalog_sufficiency_evaluation", "development");
 assert.ok(configuration.ok);
 const providerInput = { configuration: configuration.value, environment: "development" as const, requestId: "10000000-0000-4000-8000-000000000009", safetyIdentifier: "platform_admin_test", request: { mode: "systematic" as const, sourceStrategy: "e20_5" as const, prompt, outputSchema: inputCatalogEvaluationOutputJsonSchema } };
+let providerAuthorization: string | null = null;
+let providerRequest: Record<string, unknown> = {};
+const providerCompleted = await evaluateInputCatalogWithOpenAi(
+  {
+    ...providerInput,
+    apiKey: "server-only-test-key",
+    request: { ...providerInput.request, sourceStrategy: "web_search_fallback" as const },
+  },
+  {
+    fetchImpl: async (_input, init) => {
+      providerAuthorization = new Headers(init?.headers).get("Authorization");
+      providerRequest = JSON.parse(String(init?.body)) as Record<string, unknown>;
+      return new Response(JSON.stringify({
+        id: "resp_e20_8_key_wiring",
+        output_text: JSON.stringify({
+          ...parsed.value,
+          sourceStrategy: "web_search_fallback",
+          sourceState: "not_selected",
+          summarySourceUrls: ["https://example.com/source"],
+        }),
+        output: [{
+          type: "web_search_call",
+          status: "completed",
+          action: { sources: [{ title: "Fonte verificável", url: "https://example.com/source" }] },
+        }],
+      }), { status: 200, headers: { "Content-Type": "application/json" } });
+    },
+  },
+);
+assert.equal(providerCompleted.status, "completed");
+if (providerCompleted.status !== "completed") throw new Error("provider regression did not complete");
+const providerOutput = parseInputCatalogEvaluationOutput(providerCompleted.output);
+assert.ok(providerOutput.ok);
+if (!providerOutput.ok) throw new Error("provider regression returned invalid structured output");
+assert.deepEqual(
+  validateInputCatalogEvaluationBinding({
+    context: systematic,
+    output: providerOutput.value,
+    allowedSourceUrls: new Set(providerCompleted.provenance?.webSources.map((source) => source.url) ?? []),
+  }),
+  { ok: true },
+);
+assert.equal(providerAuthorization, "Bearer server-only-test-key");
+assert.equal(providerRequest.model, configuration.value.model);
+assert.deepEqual(providerRequest.reasoning, { effort: configuration.value.reasoningEffort });
+assert.equal(providerRequest.store, false);
+assert.equal(providerRequest.background, false);
+assert.equal(providerRequest.tool_choice, "required");
+assert.equal(providerRequest.max_tool_calls, 2);
+assert.deepEqual(providerRequest.include, ["web_search_call.action.sources"]);
+assert.deepEqual((providerRequest.text as { format: Record<string, unknown> }).format.type, "json_schema");
+assert.equal((providerRequest.text as { format: Record<string, unknown> }).format.strict, true);
 const unavailable = await evaluateInputCatalogWithOpenAi({ ...providerInput, apiKey: "test" }, { fetchImpl: async () => { throw new Error("provider unavailable"); } });
 assert.equal(unavailable.status, "failure");
 const timeout = await evaluateInputCatalogWithOpenAi({ ...providerInput, apiKey: "test", request: { ...providerInput.request, deadlineAtMs: 1 } }, { now: () => 2 });
@@ -291,7 +343,9 @@ assert.match(releaseAdapterSource, /chain\.value\.selected/);
 const actionSource = readFileSync(new URL("../../../../app/admin/(protected)/taxonomia/actions.ts", import.meta.url), "utf8");
 const uiSource = readFileSync(new URL("../../../../app/admin/(protected)/taxonomia/[taxonId]/_components/AdminTaxonInputCatalogEvaluation.tsx", import.meta.url), "utf8");
 assert.match(actionSource, /requirePlatformAdmin/);
+assert.match(actionSource, /apiKey:\s*process\.env\.OPENAI_API_KEY/);
 assert.doesNotMatch(actionSource, /confirmInputCatalog|rejectInputCatalog|acknowledgeInputCatalog|decisionToken/);
+assert.doesNotMatch(uiSource, /OPENAI_API_KEY/);
 assert.match(uiSource, /A IA apenas recomenda/);
 assert.match(uiSource, /Abrir gestão humana de fields/);
 
