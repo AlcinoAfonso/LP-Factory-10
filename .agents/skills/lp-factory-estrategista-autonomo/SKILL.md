@@ -1,19 +1,19 @@
 ---
 name: lp-factory-estrategista-autonomo
-description: "Supervisionar autonomamente, após o Debate, planos aprovados da LP Factory 10 até a conclusão, usando a task técnica competente e preservando V1, escopo negativo, dependências, gates e autoridade do fluxo. Usar somente quando o handoff definir explicitamente Supervisão: Autônomo."
+description: "Supervisionar autonomamente, após o Debate, planos aprovados da LP Factory 10 até conclusão positiva ou inviabilidade comprovada, usando a task técnica competente e preservando V1, escopo negativo, dependências, gates e autoridade do fluxo. Usar somente quando o handoff definir explicitamente Supervisão: Autônomo."
 ---
 
 # Supervisionar planos no modo Autônomo
 
-Conduzir cada plano aprovado até a conclusão sem substituir o Executor, workflow técnico, especialistas ou Analista.
+Conduzir cada plano aprovado até sucesso comprovado ou inviabilidade comprovada, sem substituir o Executor, workflow técnico, especialistas ou Analista.
 
 ## Entrada e autoridade
 
 - Receber identificação inequívoca do plano, referência ao Debate/V1 aprovada, execução `Light` ou `Complexa`, supervisão `Autônomo` e dependência somente quando realmente existir.
 - Não exigir V1 repetida, path, task, branch, PR, modelo, esforço, QA, merge ou briefing intermediário. Resolver dados indispensáveis pelas fontes e mecanismos autorizados disponíveis.
 - Aplicar `README.md` para visão e limites, `docs/pipeline-plano-base.md` para roteamento, `AGENTS.md` para operação, `$lp-factory-executar-plano` no Light e `$lp-factory-conduzir-plano-completo` na Complexa.
-- A V1 e o escopo negativo limitam o resultado. Exigir do fluxo técnico a menor solução suficiente; legado, conveniência, materialidade ou efeito transversal não autorizam ampliação de escopo nem complexidade sem necessidade factual. Se uma alternativa alterar V1, resultado funcional ou escopo negativo, rejeitá-la e conduzir solução compatível.
-- `Supervisão: Autônomo` concede autoridade contínua até a conclusão. Não criar parada humana por cautela, materialidade, Production, migration, merge, dúvida técnica, falta de evidência ou indisponibilidade temporária. A única parada humana admissível é bloqueio externo real, explícito e incontornável imposto pela plataforma ou ferramenta, depois de esgotados os caminhos autorizados; nesse caso, preservar o plano e a task e informar somente a ação externa exigida.
+- A V1 e o escopo negativo limitam o resultado. Exigir a menor solução suficiente; legado, conveniência, materialidade ou efeito transversal não autorizam ampliação de escopo nem complexidade sem necessidade factual. Se uma alternativa alterar V1, resultado funcional ou escopo negativo, rejeitá-la e conduzir solução compatível.
+- `Supervisão: Autônomo` é a autorização contínua do projeto para conduzir o plano dentro dos mecanismos já autorizados. Não solicitar nova aprovação humana para continuação técnica, branch/PR corretivo, liberação de merge, pós-merge ou QA. Só interromper por ordem humana explícita, válida e mais recente para parar, pausar ou cancelar a mesma execução.
 
 ## Modelo e esforço
 
@@ -23,25 +23,26 @@ Conduzir cada plano aprovado até a conclusão sem substituir o Executor, workfl
 ## Condução
 
 1. Confirmar plano, execução e dependências. Bloquear somente o plano dependente; planos independentes podem seguir em paralelo. Reavaliar ativamente dependências externas pelas fontes competentes até sua comprovação.
-2. Para cada plano liberado, criar exatamente uma task/thread técnica independente com o contrato competente: `Light` → `$lp-factory-executar-plano`; `Complexa` → `$lp-factory-conduzir-plano-completo`. Subagente interno não substitui essa task.
+2. Para cada plano liberado, criar exatamente uma task/thread técnica independente com o contrato competente: `Light` → `$lp-factory-executar-plano`; `Complexa` → `$lp-factory-conduzir-plano-completo`. Não rotear essa task novamente pelo Estrategista Autônomo, não reescrever a V1 nem criar briefing intermediário; subagente interno não substitui a task técnica.
 3. Primeira tentativa de criação aceita ou qualquer evidência de task/thread, preparação, worktree ou branch significa que a task já existe. Nunca criar segunda task para o mesmo plano. Repetir a criação somente após erro explícito e confirmação de que não restou task/thread, worktree ou branch associada; nos demais casos, recuperar, aguardar ou invocar a mesma task.
-4. A task técnica materializa e congela o contrato aprovado pelo fluxo competente. Correções e QA pré-merge retornam à mesma task e ao mesmo PR.
-5. Bloqueio técnico, dúvida, falta de evidência ou indisponibilidade temporária são tratados pelos contratos, fontes e mecanismos autorizados, retomando a mesma task. Não presumir necessidade de autorização humana por o ato envolver Production, migration ou merge.
+4. A task técnica materializa e congela o contrato aprovado pelo fluxo competente. Correções e QA retornam à mesma task e ao mesmo plano; após merge, correção de código pode usar nova branch/PR conforme `AGENTS.md`, sem recriar a task.
+5. Bloqueio técnico, dúvida, falta de evidência ou indisponibilidade de ferramenta são tratados pelos contratos, fontes e mecanismos autorizados. Retomar automaticamente a mesma task quando houver caminho disponível, sem exigir `prossiga` ou nova aprovação humana.
 
-## Avaliar entrega e liberar merge
+## Avaliar entrega, merge e conclusão
 
 1. Consultar diretamente PR, diff, checks, validações, QA, evidências, reviews e threads aplicáveis ao `head SHA` avaliado.
-2. Confrontar a entrega com o contrato aprovado e exigir somente o delta necessário. Não repetir especialista ou gate já satisfeito sem questão material nova.
-3. Liberar o merge somente quando os reviews aplicáveis já disparados tiverem resultado e não houver correção, QA, check, evidência ou decisão material pendente.
-4. A liberação do Estrategista Autônomo é a autorização do fluxo; não pedir segunda autorização humana. Devolver a ordem à mesma task para o Executor executar o merge remoto conforme `AGENTS.md`, realizar validações pós-merge e atualizar o Debate.
-5. O Estrategista Autônomo não executa o merge. Aguardar e conferir o recibo final com PR, merge commit, validações pós-merge e Debate atualizado.
-6. Falha pós-merge mantém o plano aberto e exige somente o delta competente. Se houver correção de código, preservar a mesma task e seguir `AGENTS.md` para a branch/PR corretiva.
-7. Concluir o plano somente após recibo final sem pendência material; então liberar dependentes. Concluir o conjunto somente quando todos os planos aplicáveis estiverem encerrados.
+2. Confrontar a entrega com o contrato aprovado e rastrear toda alteração material até origem legítima. Exigir somente o delta necessário e não repetir especialista ou gate já satisfeito sem questão material nova.
+3. Achado material de review deve ser corrigido ou explicitamente rejeitado com justificativa antes do merge. Todo review aplicável já disparado, inclusive automático, deve ter resultado; falha, cancelamento ou ausência de resultado não satisfazem o gate.
+4. Liberar o merge somente quando não houver correção, check, evidência, teste ou QA obrigatório pendente. A liberação do Estrategista Autônomo é a autorização do fluxo; devolver a ordem à mesma task para o Executor executar merge, validações pós-merge e atualização do Debate conforme os contratos competentes.
+5. Falha de merge, migration, Production, validação pós-merge ou QA mantém o plano aberto. Coordenar somente o delta necessário pela mesma task e preservar a autoridade Autônoma até novo gate aprovado.
+6. Concluir com sucesso somente após todos os critérios, gates, checks, testes e QA obrigatórios aplicáveis estarem aprovados, o pós-merge exigido estar concluído e o recibo final confirmar PR, merge commit, evidências e Debate atualizado.
+7. Concluir como `inviável no contrato aprovado` somente quando evidência verificável demonstrar que nenhuma solução autorizada e compatível consegue cumprir a V1 sem violar V1, escopo negativo ou restrição factual do projeto, após esgotar as alternativas técnicas razoáveis e fontes competentes. Falha de uma abordagem, teste, ferramenta ou mecanismo isolado não prova inviabilidade.
+8. Enquanto nenhum estado terminal estiver comprovado, continuar a condução. Depois de sucesso ou inviabilidade comprovada, liberar dependentes quando o contrato de dependência permitir.
 
 ## Devolução
 
-Entregar resumo objetivo por plano com estado, task, PR, correções, QA, checks, merge, validações pós-merge, atualização do Debate, conclusão e eventual pendência material ainda em tratamento.
+Entregar resumo objetivo por plano com estado, task, PR, correções, QA, checks, evidências, merge, validações pós-merge, atualização do Debate e conclusão. Em inviabilidade, registrar a prova e as alternativas descartadas.
 
 ## Limites
 
-Não conduzir novo Debate; alterar V1; implementar; produzir V2; substituir task técnica, Executor, especialista ou Analista; criar segunda task para o mesmo plano; usar subagente interno como task responsável; liberar dependência antes da conclusão exigida; executar merge remoto ou local.
+Não conduzir novo Debate; alterar V1; implementar; produzir V2; substituir task técnica, Executor, especialista ou Analista; criar segunda task para o mesmo plano; usar subagente interno como task responsável; liberar dependência antes da condição exigida; executar merge remoto ou local.
