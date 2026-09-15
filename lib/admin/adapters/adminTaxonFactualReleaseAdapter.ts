@@ -2,7 +2,8 @@ import "server-only";
 
 import { createHash } from "node:crypto";
 
-import { readFactualCoverageForTaxon } from "@/conversion-content/adapters/factualFieldsAdapter";
+import { readFactualCoverage } from "@/conversion-content/adapters/factualFieldsAdapter";
+import { readCompleteTaxonChainForTaxon } from "@/conversion-content/adapters/taxonChainAdapter";
 import { type FactualTaxonIdentity } from "@/conversion-content/landing-page/input-catalog";
 import { createServiceClient } from "@/lib/supabase/service";
 import type {
@@ -11,6 +12,7 @@ import type {
 } from "./adminReadOnlyTypes";
 import {
   executeAdminTaxonFactualReleaseCore,
+  isAdminTaxonFactualReleaseReadConsistent,
   type AdminTaxonFactualReleaseCoreResult,
 } from "./adminTaxonFactualReleaseCore";
 
@@ -58,14 +60,29 @@ async function readFactualReleaseSnapshot(
   const identity = await readTaxonIdentity(supabase, taxonId);
   if (!identity.ok) return { ok: false, error: identity.error };
 
-  const coverage = await readFactualCoverageForTaxon(taxonId, { allowInactiveSelected: true });
+  const chain = await readCompleteTaxonChainForTaxon(taxonId, {
+    allowInactiveSelected: true,
+  });
+  if (!chain.ok) {
+    return {
+      ok: false,
+      error: readFailed("FACTUAL_COVERAGE_READ_FAILED", chain.error.message),
+    };
+  }
+  const coverage = await readFactualCoverage(chain.value.chain);
   if (!coverage.ok) {
     return {
       ok: false,
       error: readFailed("FACTUAL_COVERAGE_READ_FAILED", coverage.error.message),
     };
   }
-  if (!sameTaxonIdentity(coverage.value.servedTaxon, identity.value)) {
+  if (
+    !isAdminTaxonFactualReleaseReadConsistent(
+      identity.value,
+      chain.value.selected,
+      coverage.value.servedTaxon,
+    )
+  ) {
     return {
       ok: false,
       error: readFailed(
@@ -220,20 +237,6 @@ function isTaxonRow(value: unknown): value is Readonly<{
     typeof value.name === "string" &&
     typeof value.slug === "string" &&
     typeof value.is_active === "boolean"
-  );
-}
-
-function sameTaxonIdentity(
-  left: FactualTaxonIdentity,
-  right: FactualTaxonIdentity,
-): boolean {
-  return (
-    left.id === right.id &&
-    left.parentId === right.parentId &&
-    left.level === right.level &&
-    left.name === right.name &&
-    left.slug === right.slug &&
-    left.isActive === right.isActive
   );
 }
 

@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useState } from "react";
 
 import type { AdminTaxonDetail } from "@/lib/admin/adapters/adminReadOnlyTypes";
+import { hasPendingTaxonIdentityChanges } from "./adminTaxonManageFormState";
 
 type ManageTaxonActionState = {
   error: string | null;
@@ -44,6 +45,11 @@ export function AdminTaxonManageForm({
     if (!slugEdited) setSlug(slugify(name));
   }, [name, slugEdited]);
 
+  const hasPendingChanges = hasPendingTaxonIdentityChanges(
+    { name, slug },
+    { name: taxon.name, slug: taxon.slug },
+  );
+
   return (
     <div className="space-y-6">
       <form action={updateFormAction} className="rounded-lg border border-border bg-card p-5 shadow-card">
@@ -55,7 +61,7 @@ export function AdminTaxonManageForm({
           </div>
           <button
             className="inline-flex min-h-11 items-center justify-center rounded-md bg-brand-600 px-4 text-sm font-medium text-white outline-none transition hover:bg-brand-700 focus-visible:ring-4 focus-visible:ring-brand-600/30 disabled:cursor-not-allowed disabled:opacity-60"
-            disabled={updatePending}
+            disabled={updatePending || !hasPendingChanges}
           >
             {updatePending ? "Salvando..." : "Salvar dados do taxon"}
           </button>
