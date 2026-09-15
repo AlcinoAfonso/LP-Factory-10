@@ -100,7 +100,7 @@ No Light:
 - não use gates de implementação específicos da Complexa;
 - não refaça na task principal a avaliação devolvida por Updates ou pelo Analista.
 
-Se investigação, fontes ou Updates demonstrarem necessidade real de derivação estrutural especializada, detalhamento técnico material de automação ou outra coordenação especializada para tornar a solução executável, pare e reporte ao supervisor que a classificação Light ficou incompatível; não transforme o Light em uma Complexa parcial.
+Se investigação, fontes ou Updates demonstrarem necessidade real de derivação estrutural especializada, detalhamento técnico material de automação ou outra coordenação especializada para tornar a solução executável, devolva somente essa incompatibilidade ao supervisor competente; não transforme o Light em uma Complexa parcial.
 
 ### 3.3 Consolidar V2 mínima
 
@@ -154,9 +154,8 @@ A validação deve provar os critérios de aceite do contrato. O Executor não p
 - trate recurso marcado como disponível ou operacional na plataforma indicada como utilizável pelo consumidor autorizado, ainda que o valor de secret ou credencial técnica por referência não seja legível no sandbox; não solicite, copie, revele ou recrie esse valor;
 - priorize o Preview da branch quando aplicável e reutilize consumidor ou workflow autorizado já existente em vez de improvisar outro caminho de browser, rede ou mutação;
 - evidência produzida por GitHub Actions, Vercel, Supabase ou outro consumidor autorizado é válida para o aceite quando estiver vinculada ao mesmo código, Preview ou estado relevante e comprovar o critério correspondente;
-- participação humana condicional, delimitada e explicitamente aprovada pela V1, quando não restringida pelo contrato técnico aplicável, pode integrar a jornada daquele cenário e não caracteriza, por si só, falha de autonomia, bloqueio do pipeline ou obrigação de automatizá-la; fora da participação prevista pela V1, intervenção humana permanece fallback excepcional;
-- antes de recorrer a participação humana prevista pela V1, use qualquer caminho autorizado já disponível que cumpra integralmente o mesmo critério sem intervenção humana;
-- no `Autônomo`, quando ainda parecer necessária participação humana, não a solicite diretamente: registre o critério, a evidência, os caminhos autorizados avaliados e a menor intervenção sugerida e devolva o ponto ao Estrategista Autônomo; a decisão de escalar ao humano pertence ao supervisor;
+- participação humana condicional, delimitada e explicitamente aprovada pela V1, quando não restringida pelo contrato técnico aplicável, pode integrar a jornada daquele cenário e não caracteriza, por si só, falha de autonomia, bloqueio do pipeline ou obrigação de automatizá-la;
+- no `Autônomo`, participação humana fora da V1 não é fallback do Executor: registrar o critério, a evidência e os caminhos autorizados avaliados e devolver o ponto ao Estrategista Autônomo, sem solicitar intervenção ao usuário;
 - registre por critério a evidência objetiva obtida e, quando houver frontend, valide as superfícies e viewports definidos no plano;
 - não declare funcionamento, prontidão ou conclusão enquanto houver critério obrigatório sem evidência suficiente.
 
@@ -179,12 +178,12 @@ Quando invocada por `$lp-factory-conduzir-plano-completo`:
 
 ### 7.2 Preparar
 
-1. confirmar repositório, worktree, branch, estado Git limpo, plano, SHA e caso; na execução independente, confirmar que o plano está na `main` atualizada; no handoff interno, confirmar o checkpoint `plan-v2-approved` no PR único;
+1. confirmar repositório, estado Git limpo, plano, SHA e caso; na execução independente, confirmar que o plano está na `main` atualizada; no handoff interno, reutilizar o contexto confirmado em 7.1;
 2. ler o plano integral, a seção competente de `docs/roadmap.md` e somente as fontes condicionais exigidas pela subseção atual;
 3. no handoff interno, preservar `docs/matriz-consolidacao-<caso>.md` até o encerramento definitivo do recorte pelo supervisor competente;
 4. validar que cada fase executável use exatamente o identificador do roadmap, como `E18.5.3 — título`; rejeitar aliases ordinais como `Fase 1` e agrupamentos de subseções independentes;
-5. no handoff interno, reutilizar a branch e o PR existentes; na execução independente, usar a branch e o PR draft únicos definidos em 1.3;
-6. registrar o SHA do plano aprovado vigente como contrato imutável; se houver execução anterior, identificar o último checkpoint pelo trailer `LP-Factory-Phase: <identificador>`. No handoff interno, em toda retomada, confrontar os checkpoints com os deltas aprovados e seus impactos registrados na V2/matriz; não executar delta candidato ainda não liberado pelo workflow. Determinar a primeira subseção pendente na ordem do roadmap, incluindo as afetadas sem novo checkpoint aprovado contra a correção correspondente; revalidá-las pelos gates existentes e reutilizar as não afetadas ou já revalidadas. Sem delta, manter a retomada pelo último checkpoint. Se não for possível determinar unicamente a próxima subseção, parar e pedir o identificador.
+5. na execução independente, usar a branch e o PR draft únicos definidos em 1.3; no handoff interno, não criar novos branch ou PR;
+6. registrar o SHA do plano aprovado vigente como contrato imutável; se houver execução anterior, identificar o último checkpoint pelo trailer `LP-Factory-Phase: <identificador>`. No handoff interno, em toda retomada, confrontar os checkpoints com os deltas aprovados e seus impactos registrados na V2/matriz; não executar delta candidato ainda não liberado pelo workflow. Determinar a primeira subseção pendente na ordem do roadmap, incluindo as afetadas sem novo checkpoint aprovado contra a correção correspondente; revalidá-las pelos gates existentes e reutilizar as não afetadas ou já revalidadas. Sem delta, manter a retomada pelo último checkpoint. Se não for possível determinar unicamente a próxima subseção, devolver ao supervisor competente somente o identificador faltante.
 
 ### 7.3 Executar uma subseção
 
@@ -201,9 +200,9 @@ Para a próxima subseção ainda não aprovada:
 9. tratar `aprovado para avançar` como checkpoint e commitar com o trailer `LP-Factory-Phase: <identificador>`; o checkpoint pode permanecer local e código, título e resumo do mesmo PR draft só devem refletir esse estado quando ele for efetivamente publicado;
 10. tratar `aprovado com correções obrigatórias` corrigindo somente o delta indicado e retornando ao mesmo Analista em `revisao_delta_implementacao`;
 11. tratar `requer evidência de QA` aplicando a seção 6 e retornando ao mesmo Analista com a evidência obtida; se um critério continuar sem prova após os caminhos autorizados, devolver antes da entrega final somente esse bloqueio ao supervisor competente e, recebida a decisão ou o recurso necessário, retornar ao mesmo Analista;
-12. tratar `bloqueado por decisão humana` parando e devolvendo ao supervisor competente apenas a decisão necessária.
+12. tratar `bloqueado por decisão humana` devolvendo ao supervisor competente apenas o ponto necessário; no `Autônomo`, não solicitar a decisão ao usuário.
 
-Não executar `git push` por rotina antes ou depois de cada gate. Checkpoints aprovados podem acumular localmente. Publicar o estado acumulado somente quando houver necessidade real de estado remoto, como Preview/QA hospedado, validação na Vercel, review, evidência que dependa do GitHub remoto, entrega ou parada necessária para retomada segura.
+Checkpoints aprovados podem acumular localmente; publicação segue `AGENTS.md` e ocorre somente quando um gate depender de estado remoto.
 
 Alterações ainda não aprovadas pelo Analista não recebem trailer `LP-Factory-Phase`, não constituem checkpoint aprovado e não autorizam avanço ou merge.
 
@@ -251,8 +250,8 @@ No `Autônomo`, devolva a entrega a `$lp-factory-estrategista-autonomo`. A liber
 
 Depois de receber a liberação do supervisor competente:
 
-1. confirmar que a liberação corresponde ao mesmo plano, PR e `head SHA` já avaliados; registrar esse SHA e confirmar, para esse mesmo SHA, evidência explícita de conclusão com resultado disponível de todo review aplicável já disparado e de toda revisão automática configurada para evento já ocorrido nesse PR; falha, cancelamento, ausência de resultado ou ausência temporária de registro/thread enquanto a revisão esperada não estiver comprovadamente concluída não autorizam merge; somente então revalidar que não surgiu alteração material, check obrigatório falhando ou review thread material pendente; resolver antes do merge o Debate correspondente e um caminho autorizado de escrita; se o Debate ou o caminho de escrita não puderem ser comprovados, parar antes do merge;
-2. executar o merge remoto exclusivamente por GitHub Web ou ferramenta GitHub conectada e autorizada conforme `AGENTS.md`, exigindo atomicamente o mesmo `head SHA` registrado no passo anterior (`gh pr merge --match-head-commit <SHA>` ou guarda equivalente, como `expected_head_sha`); merge local pela `main` permanece proibido;
+1. confirmar que a liberação corresponde ao mesmo plano, PR e `head SHA` já avaliados; registrar esse SHA e confirmar, para esse mesmo SHA, evidência explícita de conclusão com resultado disponível de todo review aplicável já disparado e de toda revisão automática configurada para evento já ocorrido nesse PR; falha, cancelamento, ausência de resultado ou ausência temporária de registro/thread enquanto a revisão esperada não estiver comprovadamente concluída não autorizam merge; somente então revalidar que não surgiu alteração material, check obrigatório falhando ou review thread material pendente; resolver antes do merge o Debate correspondente e um caminho autorizado de escrita; se isso não puder ser comprovado, não executar o merge e devolver somente a pendência ao supervisor competente;
+2. executar o merge remoto conforme `AGENTS.md`, exigindo atomicamente o mesmo `head SHA` registrado no passo anterior por guarda equivalente disponível; merge local pela `main` permanece proibido;
 3. obter o merge commit e executar ou confirmar somente as validações pós-merge exigidas pelo contrato e pelas fontes competentes;
 4. atualizar o Debate correspondente no Google Drive com a conclusão final da entrega, PR, merge commit e evidências, preservando a V1 aprovada e o histórico do Debate;
 5. devolver ao mesmo supervisor um recibo final com PR, merge commit, validações pós-merge, registro efetuado no Debate e qualquer pendência material.
