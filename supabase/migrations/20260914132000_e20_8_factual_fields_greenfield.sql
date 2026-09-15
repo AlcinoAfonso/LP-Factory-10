@@ -43,10 +43,10 @@ begin
     or jsonb_typeof(input->'purpose') <> 'string' or btrim(input->>'purpose') = ''
     or input->>'valueType' not in ('string','phone','email','url','enum','string_list','boolean','number_range','keyword_map','asset_reference','color_palette','offering_scope')
     or input->>'valueScope' not in ('account','business','offer','campaign','landing_page')
-    or input->>'expectedValueOrigin' <> case input->>'valueScope'
+    or input->>'expectedValueOrigin' <> (case input->>'valueScope'
       when 'account' then 'account_provided' when 'business' then 'business_provided'
       when 'offer' then 'offer_provided' when 'campaign' then 'campaign_provided'
-      when 'landing_page' then 'landing_page_provided' end
+      when 'landing_page' then 'landing_page_provided' end)
     or input->>'obligation' not in ('required','optional','conditional')
     or ((input->>'obligation' = 'conditional') <> (input ? 'requiredWhen')) then
     return false;
@@ -80,13 +80,13 @@ begin
 
   validation := input->'validation';
   if jsonb_typeof(validation) <> 'object' or jsonb_typeof(validation->'kind') <> 'string' then return false; end if;
-  if not case input->>'valueType'
+  if not (case input->>'valueType'
     when 'string' then validation->>'kind' = 'type_only'
     when 'boolean' then validation->>'kind' = 'type_only'
     when 'phone' then validation->>'kind' = 'e164'
     when 'email' then validation->>'kind' = 'email'
     when 'url' then validation->>'kind' = 'https_url'
-    else validation->>'kind' = input->>'valueType' end then return false;
+    else validation->>'kind' = input->>'valueType' end) then return false;
   end if;
 
   if validation->>'kind' in ('type_only','e164','email','https_url','keyword_map','asset_reference','color_palette','offering_scope') then
