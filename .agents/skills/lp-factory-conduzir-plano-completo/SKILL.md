@@ -1,11 +1,11 @@
 ---
 name: lp-factory-conduzir-plano-completo
-description: "Conduzir end-to-end um plano-base Complexo da LP Factory 10 a partir de uma V1 funcional aprovada: quando ela já estiver congelada, retomar pelo PR existente; quando vier apenas por handoff curto com Debate + plano, materializá-la e congelá-la no PR único antes do workflow técnico. Produzir e aprovar V2, reconciliar o roadmap e executar todas as subseções na mesma branch e no mesmo PR, usando especialistas antes da V2 e o Analista nos gates."
+description: "Conduzir end-to-end um plano-base Complexo da LP Factory 10 a partir de uma V1 funcional aprovada: quando ela já estiver congelada, retomar pelo PR existente; quando vier apenas por handoff curto com Debate + plano, materializá-la e congelá-la no PR único antes do workflow técnico. Produzir e aprovar V2, reconciliar o roadmap e entregar a execução ao Executor na mesma task, branch e PR, usando especialistas antes da V2 e o Analista nos gates."
 ---
 
 # Conduzir plano-base Complexo end-to-end
 
-Conduzir materialização inicial quando necessária, revisão, V2 técnica e implementação no PR único do plano. A task técnica coordena o workflow até a aprovação da V2 e então assume o contrato do Executor; custom agents apenas avaliam em modo read-only.
+Conduzir materialização inicial quando necessária, revisão e V2 técnica no PR único. Após a aprovação da V2, a mesma task segue o contrato do Executor; custom agents apenas avaliam em modo read-only.
 
 ## Entrada e invariantes
 
@@ -67,9 +67,9 @@ Se o estágio não for inequívoco, pedir apenas a referência faltante; nunca r
 5. Acionar o Gestor de Updates sobre a mesma V1, entregando a derivação estrutural inicial como baseline comparativa.
 6. Para cada update com impacto estrutural material, acionar o Gestor Estrutural em `confronto_modernizacao`, limitado ao candidato; não repetir a derivação completa.
 7. Acionar o Gestor de Automações quando a V1 identificar automação aplicável e não registrar dispensa humana da avaliação formal. Quando houver dispensa, registrar `N/A — avaliação formal dispensada na V1`; quando a decisão ou o recorte automatizado estiver ambíguo, pedir somente o esclarecimento necessário.
-8. Aplicar as regras de conclusão e completude das skills especializadas. Não refazer avaliações na task principal nem completar patch que exija escolha técnica.
+8. Aplicar integralmente as regras das skills especializadas; não refazer suas avaliações na task principal.
 
-Parar somente diante de handoff incompleto, investigação necessária ou decisão material sem autoridade. Questão material nova segue ao domínio indicado pelo Analista; não repetir especialista por precaução.
+Handoff incompleto, investigação necessária ou decisão material sem autoridade retornam somente o ponto necessário ao supervisor competente. Questão material nova segue ao domínio indicado pelo Analista.
 
 ## 3. Produzir V2 técnica e matriz
 
@@ -84,7 +84,7 @@ Parar somente diante de handoff incompleto, investigação necessária ou decis�
 1. Executar a Passagem 1 com V1, V2, plano conceitual quando existente ou `N/A`, decisões e fontes do caso, sem pareceres, confrontos ou matriz.
 2. Preservar a resposta, gravar e versionar `docs/matriz-consolidacao-<caso>.md` e continuar no mesmo Analista.
 3. Executar a Passagem 2 com os pareceres integrais, confrontos estruturais aplicáveis e a matriz.
-4. Em correções objetivas, inclusive conflito resolvido por fonte ou invariante e validação exclusivamente pós-merge, atualizar V2 e matriz e pedir `revisao_delta` ao mesmo Analista. Antes de parar por decisão humana, exigir ausência de fonte determinante e, para precedência de banco, prova de que migration compatível, feature flag ou expand/contract não evita PR precursor. Retornar a especialista somente por questão material nova ou conclusão especializada alterada.
+4. Em correções objetivas, inclusive conflito resolvido por fonte ou invariante e validação exclusivamente pós-merge, atualizar V2 e matriz e pedir `revisao_delta` ao mesmo Analista. Antes de devolver decisão ao supervisor, aplicar os critérios do próprio Analista; retorno a especialista ocorre somente por questão material nova ou conclusão especializada alterada.
 5. Avançar apenas com `aprovado para merge do plano-base v2`.
 
 ## 5. Reconciliar roadmap e atualizar o PR
@@ -97,10 +97,10 @@ Parar somente diante de handoff incompleto, investigação necessária ou decis�
 ## 6. Handoff ao Executor no mesmo PR
 
 1. No checkpoint `LP-Factory-Stage: plan-v2-approved`, invocar internamente `$lp-factory-executar-plano`, preservando a mesma task, branch, worktree e PR e entregando a V2 aprovada, a matriz, os pareceres pertinentes e os identificadores canônicos do roadmap.
-2. A partir desse checkpoint, execução por subseções, validações e QA, ABC, gates do Analista de implementação, checkpoints, publicação, entrega, correções, retomada após liberação do supervisor, merge remoto, validações pós-merge e registro final no Debate seguem exclusivamente `$lp-factory-executar-plano`; este workflow não replica nem redefine essas regras.
-3. Preservar somente as invariantes de continuidade da orquestração: mesmo PR/branch/worktree, nenhum especialista repetido salvo o retorno focal do item 4 e matriz disponível ao Executor até o supervisor declarar o recorte definitivamente concluído.
-4. Se, antes da entrega técnica completa, o Executor devolver evidência material que questione a estrutura da própria V2 ou exija crescimento estrutural material não previsto, acionar `lp-factory-avaliar-plano-estrutura` em `revisao_focal_implementacao` com o contexto recebido, na mesma task, worktree, branch e PR. Esse retorno não depende de nova conclusão do Analista de implementação. Para as demais questões materiais, seguir a escalada prevista no Executor; não reiniciar a derivação nem repetir especialista por precaução. Tratar o parecer pelas conclusões e regras de completude já existentes:
-   - Se a V2 precisar mudar, aplicar somente o patch autossuficiente do Gestor e registrar na V2/matriz existentes o delta e as subseções/checkpoints afetados e preservados, mantendo as referências anteriores no histórico. Versionar a V2/matriz candidatas antes de entregar ao mesmo Analista de plano a referência anterior, a nova referência, o parecer focal e o delta. Reutilizar a revisão `revisao_delta` da seção 4 e a reconciliação do roadmap da seção 5, inclusive com `SEM ALTERAÇÕES NECESSÁRIAS`, antes do novo `plan-v2-approved`; não repetir as duas passagens ou os demais especialistas. A retomada e os gates de implementação permanecem com o Executor.
+2. A partir desse checkpoint, implementação e encerramento seguem exclusivamente `$lp-factory-executar-plano`; este workflow não replica nem redefine essas regras.
+3. Preservar as invariantes de continuidade: nenhum especialista repetido salvo o retorno focal do item 4 e matriz disponível ao Executor até o supervisor declarar o recorte definitivamente concluído.
+4. Se, antes da entrega técnica completa, o Executor devolver evidência material que questione a estrutura da própria V2 ou exija crescimento estrutural material não previsto, acionar `lp-factory-avaliar-plano-estrutura` em `revisao_focal_implementacao` com o contexto recebido. Esse retorno não depende de nova conclusão do Analista de implementação. Para as demais questões materiais, seguir a escalada prevista no Executor. Tratar o parecer pelas conclusões e regras de completude já existentes:
+   - Se a V2 precisar mudar, aplicar somente o patch autossuficiente do Gestor e registrar na V2/matriz existentes o delta e as subseções/checkpoints afetados e preservados, mantendo as referências anteriores no histórico. Versionar a V2/matriz candidatas antes de entregar ao mesmo Analista de plano a referência anterior, a nova referência, o parecer focal e o delta. Reutilizar a revisão `revisao_delta` da seção 4 e a reconciliação do roadmap da seção 5 antes do novo `plan-v2-approved`; não repetir as duas passagens ou os demais especialistas. A retomada e os gates de implementação permanecem com o Executor.
    - Se a V2 continuar suficiente e não houver condicionante ou investigação pendente, preservá-la com a matriz e devolver o ponto ao Executor para derivar a correção ordinária e seguir o gate de implementação aplicável; não criar novo checkpoint de aprovação de plano.
    - Handoff incompleto, investigação, condicionante pendente, rejeição por conflito com fonte competente ou decisão sem autoridade mantêm o ponto suspenso, pelo tratamento vigente; não inventar patch nem transformar a revisão focal em autorização de produto ou merge.
 
