@@ -23,4 +23,4 @@ export {
   listLandingPageRootVersions,
   resolveLandingPageRootParameters,
 } from "./root-resolver";
-export * as knowledgeResolution from "./knowledge-resolution";
+export * as factualFields from "./input-catalog";

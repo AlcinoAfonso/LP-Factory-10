@@ -41,30 +41,8 @@ const productIds = [
 
 const taxonInputCatalogEvaluationWorkloadId =
   "taxon_input_catalog_sufficiency_evaluation" as const;
-const dynamicMarketResearchWorkloadId =
-  "landing_page_dynamic_market_research" as const;
 
 const cases = [
-  {
-    name: "dynamic research active reader preserves environment, revision and unknown-workload rejection",
-    run: () => {
-      for (const environment of ["preview", "production"] as const) {
-        const workload = dynamicMarketResearchWorkloadId;
-        const unit = { environment, workload, modality: "responses_text", active_revision_id: "revision-2" };
-        const revision = { id: "revision-2", environment, workload, modality: "responses_text", revision_number: 2, model: "gpt-5.6-luna", reasoning_effort: "high", quality: null };
-        const read = (unitValue: unknown, revisionValue: unknown, workloadValue: string = workload) =>
-          translateOperationalConfigurationRows({ environment, workload: workloadValue }, { data: [unitValue], error: null }, { data: [revisionValue], error: null });
-        const valid = read(unit, revision);
-        assert.equal(valid.ok, true);
-        if (!valid.ok) throw new Error("Expected dynamic configuration");
-        assert.deepEqual(valid.value, { environment, workload, apiKind: "responses_text", model: "gpt-5.6-luna", reasoningEffort: "high", revision: "2" });
-        assert.equal(read(unit, { ...revision, environment: "development" }).ok, false);
-        assert.equal(read(unit, { ...revision, id: "other" }).ok, false);
-        assert.equal(read(unit, { ...revision, quality: "medium" }).ok, false);
-        assert.equal(read({ ...unit, workload: "unknown" }, { ...revision, workload: "unknown" }, "unknown").ok, false);
-      }
-    },
-  },
   {
     name: "niche request uses resolved model and effort with deterministic transport",
     run: async () => {
@@ -211,17 +189,16 @@ const cases = [
     },
   },
   {
-    name: "inventory exposes five unique canonical workloads",
+    name: "inventory exposes four unique canonical workloads",
     run: () => {
       const inventory = listOpenAiWorkloadInventory();
-      assert.equal(inventory.length, 5);
-      assert.equal(new Set(inventory.map((item) => item.id)).size, 5);
+      assert.equal(inventory.length, 4);
+      assert.equal(new Set(inventory.map((item) => item.id)).size, 4);
       assert.deepEqual(
         inventory.map((item) => item.id),
         [
           ...productIds,
           taxonInputCatalogEvaluationWorkloadId,
-          dynamicMarketResearchWorkloadId,
           "supabase_inspect",
         ],
       );
@@ -243,20 +220,6 @@ const cases = [
         assert.equal(result.value.configurationKind, "effective");
         assert.equal(result.value.effectiveConfigurationVerified, true);
       }
-    },
-  },
-  {
-    name: "dynamic market research resolves only the approved initial Luna high configuration",
-    run: async () => {
-      const result = await resolveOpenAiProductWorkload(
-        dynamicMarketResearchWorkloadId,
-        "development",
-      );
-      assert.equal(result.ok, true);
-      assert.equal(result.value.model, "gpt-5.6-luna");
-      assert.equal(result.value.reasoningEffort, "high");
-      assert.equal(result.value.source, "repo_catalog");
-      assert.equal(result.value.revision, "v1");
     },
   },
   {
@@ -363,7 +326,6 @@ const cases = [
           "niche_resolution",
           "commercial_activation_draft_generation",
           "taxon_input_catalog_sufficiency_evaluation",
-          "landing_page_dynamic_market_research",
         ],
       );
       assert.equal(Object.isFrozen(projection), true);
@@ -376,12 +338,11 @@ const cases = [
       }
       const niche = projection.find((item) => item.workload === "niche_resolution");
       assert.equal(niche?.name, "Resolução de nicho");
-      const landingPage = projection.filter((item) => item.visualGroup === "landing_page");
-      assert.equal(landingPage.length, 1);
-      assert.equal(
-        landingPage.some((item) => item.roadmapReference === "E20.7.4"),
-        true,
+      const taxonEvaluation = projection.find(
+        (item) => item.workload === taxonInputCatalogEvaluationWorkloadId,
       );
+      assert.equal(taxonEvaluation?.roadmapReference, "E20.8.7");
+      assert.equal(taxonEvaluation?.visualGroup, null);
       assert.throws(() => {
         (projection as unknown[]).push({});
       }, TypeError);
@@ -847,7 +808,7 @@ const cases = [
     },
   },
   {
-    name: "administrative read model accepts only the complete eight-unit aggregate state",
+    name: "administrative read model accepts only the complete six-unit aggregate state",
     run: () => {
       const fixture = administrativeConfigurationFixture();
       const result = translateOpenAiAdministrativeConfigurationRows(
@@ -856,7 +817,7 @@ const cases = [
         { data: fixture.activations, error: null },
       );
       assert.equal(result.ok, true);
-      assert.equal(result.value.length, 8);
+      assert.equal(result.value.length, 6);
       assert.equal(Object.isFrozen(result), true);
       assert.equal(Object.isFrozen(result.value), true);
       assert.equal(Object.isFrozen(result.value[0]), true);
@@ -955,7 +916,6 @@ const cases = [
         "niche_resolution",
         "commercial_activation_draft_generation",
         "taxon_input_catalog_sufficiency_evaluation",
-        "landing_page_dynamic_market_research",
       ] as const) {
         for (const configuration of textConfigurations) {
           const result = await resolveOpenAiProductWorkload(
@@ -1345,7 +1305,6 @@ function administrativeConfigurationFixture(): Readonly<{
     "niche_resolution",
     "commercial_activation_draft_generation",
     "taxon_input_catalog_sufficiency_evaluation",
-    "landing_page_dynamic_market_research",
   ] as const;
   const units: Record<string, unknown>[] = [];
   const revisions: Record<string, unknown>[] = [];
@@ -1356,19 +1315,13 @@ function administrativeConfigurationFixture(): Readonly<{
     for (const workload of workloads) {
       const inputCatalogEvaluation =
         workload === "taxon_input_catalog_sufficiency_evaluation";
-      const dynamicMarketResearch =
-        workload === "landing_page_dynamic_market_research";
       const modality = "responses_text";
       const baselineModel = inputCatalogEvaluation
-          ? "gpt-5.6-terra"
-        : dynamicMarketResearch
-          ? "gpt-5.6-luna"
-          : "gpt-5.4-mini";
+        ? "gpt-5.6-terra"
+        : "gpt-5.4-mini";
       const baselineReasoning = inputCatalogEvaluation
-          ? "low"
-          : dynamicMarketResearch
-              ? "high"
-            : "none";
+        ? "low"
+        : "none";
       const baselineRevisionId = administrativeUuid(sequence++);
       const bootstrapActivationId = administrativeUuid(sequence++);
 

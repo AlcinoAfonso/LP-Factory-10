@@ -1,57 +1,29 @@
-import type {
-  LandingPageInputCatalogTaxonChain,
-  LandingPageInputCatalogTaxonIdentity,
-} from "./contracts";
+import type { BuildFactualTaxonChainResult, FactualTaxonChain, FactualTaxonIdentity } from "./contracts";
+import { factualTaxonIdentitySchema } from "./schema";
 
-export type BuildLandingPageInputCatalogTaxonChainResult =
-  | Readonly<{ ok: true; value: LandingPageInputCatalogTaxonChain }>
-  | Readonly<{
-      ok: false;
-      error: Readonly<{
-        code: "INVALID_TAXON_CHAIN";
-        message: string;
-      }>;
-    }>;
-
-export function buildLandingPageInputCatalogTaxonChain(
-  selected: LandingPageInputCatalogTaxonIdentity,
-  taxons: readonly LandingPageInputCatalogTaxonIdentity[],
-): BuildLandingPageInputCatalogTaxonChainResult {
+export function buildFactualTaxonChain(selected: FactualTaxonIdentity, taxons: readonly FactualTaxonIdentity[]): BuildFactualTaxonChainResult {
+  if (!factualTaxonIdentitySchema.safeParse(selected).success) return invalid("O taxon selecionado é inválido.");
+  if (new Set(taxons.map((taxon) => taxon.id)).size !== taxons.length || taxons.some((taxon) => !factualTaxonIdentitySchema.safeParse(taxon).success)) return invalid("A taxonomia contém identidades inválidas ou duplicadas.");
   const byId = new Map(taxons.map((taxon) => [taxon.id, taxon]));
-
-  if (!selected.isActive) return invalid("O taxon selecionado precisa estar ativo.");
-  if (selected.level === "segment") {
-    return selected.parentId === null
-      ? { ok: true, value: { segment: selected } }
-      : invalid("O segmento não pode possuir taxon pai.");
+  byId.set(selected.id, selected);
+  let segment: FactualTaxonIdentity | undefined;
+  let niche: FactualTaxonIdentity | undefined;
+  let ultraNiche: FactualTaxonIdentity | undefined;
+  let cursor: FactualTaxonIdentity | undefined = selected;
+  const visited = new Set<string>();
+  while (cursor) {
+    if (visited.has(cursor.id)) return invalid("A cadeia taxonômica contém ciclo.");
+    visited.add(cursor.id);
+    if (cursor.level === "segment") segment = cursor;
+    else if (cursor.level === "niche") niche = cursor;
+    else ultraNiche = cursor;
+    cursor = cursor.parentId ? byId.get(cursor.parentId) : undefined;
   }
-
-  const parent = selected.parentId ? byId.get(selected.parentId) : undefined;
-  if (!parent?.isActive) return invalid("O taxon pai ativo não foi encontrado.");
-
-  if (selected.level === "niche") {
-    return parent.level === "segment" && parent.parentId === null
-      ? { ok: true, value: { segment: parent, niche: selected } }
-      : invalid("A cadeia taxonômica do nicho é inválida.");
-  }
-
-  const segment = parent.parentId ? byId.get(parent.parentId) : undefined;
-  if (
-    parent.level !== "niche" ||
-    !segment?.isActive ||
-    segment.level !== "segment" ||
-    segment.parentId !== null ||
-    new Set([selected.id, parent.id, segment.id]).size !== 3
-  ) {
-    return invalid("A cadeia taxonômica do ultranicho é inválida.");
-  }
-
-  return {
-    ok: true,
-    value: { segment, niche: parent, ultraNiche: selected },
-  };
+  if (!segment || segment.parentId !== null || (niche && niche.parentId !== segment.id) || (ultraNiche && ultraNiche.parentId !== niche?.id)) return invalid("A hierarquia esperada Segmento → Nicho → Ultranicho não foi comprovada.");
+  if (selected.level === "segment" && (niche || ultraNiche)) return invalid("A cadeia excede o taxon selecionado.");
+  if (selected.level === "niche" && (!niche || ultraNiche)) return invalid("A cadeia não corresponde ao Nicho selecionado.");
+  if (selected.level === "ultra_niche" && !ultraNiche) return invalid("A cadeia não corresponde ao Ultranicho selecionado.");
+  return { ok: true, value: Object.freeze({ segment, niche, ultraNiche }) };
 }
 
-function invalid(message: string): BuildLandingPageInputCatalogTaxonChainResult {
-  return { ok: false, error: { code: "INVALID_TAXON_CHAIN", message } };
-}
+function invalid(message: string): BuildFactualTaxonChainResult { return { ok: false, error: { code: "INVALID_TAXON_CHAIN", message } }; }

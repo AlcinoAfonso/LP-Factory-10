@@ -10,43 +10,10 @@ import {
   type OpenAiCandidateProofDependencies,
 } from "./proofCore";
 import { parseCommercialProof } from "./commercialProof";
-import { proveDynamicMarketResearch } from "./dynamicResearchProof";
 
 type Case = Readonly<{ name: string; run: () => void | Promise<void> }>;
 
 const cases: readonly Case[] = [
-  {
-    name: "dynamic canary shares real request and parser without claiming a runtime revision",
-    run: async () => {
-      const resolved = await resolveOpenAiProductWorkload("landing_page_dynamic_market_research", "development");
-      assert.ok(resolved.ok);
-      const candidate = { ...resolved.value, source: "supabase_operational" as const, revision: "1" };
-      let calls = 0;
-      const result = await proveDynamicMarketResearch(candidate, "preview", "synthetic-key", "request-proof", {
-        emitEvent: () => undefined,
-        fetchImpl: async (_url, init) => {
-          calls += 1;
-          const request = JSON.parse(String(init?.body));
-          assert.equal(request.max_output_tokens, 4000);
-          assert.equal(request.max_tool_calls, 2);
-          assert.equal(request.tool_choice, "required");
-          assert.equal(request.store, false);
-          return new Response(JSON.stringify({ id: "resp_proof", status: "completed", output: [
-            { type: "web_search_call", status: "completed", action: { sources: [{ type: "url", url: "https://example.org/proof" }] } },
-            { type: "message", content: [{ type: "output_text", text: JSON.stringify({ schemaVersion: 1, status: "no_material_delta", summary: "Sem delta material", supplement: null }) }] },
-          ] }), { status: 200, headers: { "x-request-id": "provider-proof" } });
-        },
-      });
-      assert.equal(result.ok, true);
-      assert.equal(calls, 1);
-      assert.equal(candidate.revision, "1");
-      assert.equal(candidate.source, "supabase_operational");
-      const missing = await runOpenAiCandidateProofCore(candidate, "preview", "synthetic-key", "request-proof", { ...proofDependencies([]), dynamicMarketResearch: undefined });
-      assert.deepEqual(missing, { ok: false, code: "configuration" });
-      const invalid = await proveDynamicMarketResearch({ ...candidate, reasoningEffort: "low" }, "preview", "synthetic-key", "request-proof");
-      assert.deepEqual(invalid, { ok: false, code: "configuration" });
-    },
-  },
   {
     name: "commercial proof parses the raw Responses API output content shape",
     run: () => {
@@ -190,7 +157,6 @@ const cases: readonly Case[] = [
         "resolveNicheWithOpenAi",
         "requestCommercialActivationOpenAi",
         "evaluateInputCatalogWithOpenAi",
-        "proveDynamicMarketResearch",
       ]) {
         assert.equal(proof.includes(transport), true);
       }
@@ -209,7 +175,6 @@ async function resolvedWorkloads() {
       "commercial_activation_draft_generation",
       "development",
     ),
-    resolveOpenAiProductWorkload("landing_page_dynamic_market_research", "development"),
     resolveOpenAiProductWorkload(
       "taxon_input_catalog_sufficiency_evaluation",
       "development",
@@ -247,7 +212,6 @@ function proofDependencies(
     niche: product,
     commercial: product,
     inputCatalogEvaluation: product,
-    dynamicMarketResearch: product,
   };
 }
 

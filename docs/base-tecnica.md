@@ -2,8 +2,8 @@
 
 0.1 Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.90
-• Data: 13/09/2026
+• Versão: v2.0.91
+• Data: 14/09/2026
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -266,27 +266,21 @@
 • Evolução deve preservar a precedência `raiz → módulo → variante`; APIs removidas não podem ser reutilizadas.
 
 3.15.4 Catálogo de entradas de `landing_page`
-• Boundary canônico: `lib/conversion-content/landing-page/input-catalog/`; registry, contracts, schema e resolver são fontes executáveis.
-• O resolver é puro e repo-only, sem consultar Supabase, Stripe, assinatura, entitlement ou valores operacionais.
-• As versões publicadas e a declaração explícita da versão atual permanecem repo-only; consumidores operacionais não podem inferir `latest`, maior chave ou outra versão por fallback.
-• A API operacional corrente seleciona internamente a versão declarada como atual, recebe somente a cadeia taxonômica e devolve um catálogo factual plan-neutral único; versão histórica, plano comercial e `allowedPlans` não atravessam esse contrato. O resolver histórico explícito por versão e plano permanece restrito a leituras históricas e capacidades dormentes.
-• Persistência administrativa pode guardar somente o próximo draft sequencial, mutável e não operacional. O draft aceita apenas cobertura factual comum aos quatro planos; subset ou especialização de `allowedPlans` é inválido. Publicação exige materialização imutável no registry, validação, revisão, merge e deploy antes de a declaração repo-only da versão atual produzir efeito.
-• Resolução segue `universal → segmento → nicho → ultranicho`; especializações só podem restringir e devem preservar identidade, tipo, origem, condições e evidência.
-• O lifecycle calcula e exibe antes da confirmação o diff exato por field, atributos e valores alterados e alcance taxonômico. Salvar e confirmar são decisões separadas; a confirmação humana fica vinculada à revisão, ao fingerprint do conteúdo e ao fingerprint do contexto taxonômico exibidos e falha diante de conteúdo ou alcance obsoleto. Adição exige novo `fieldKey` na versão-alvo; edição preserva chave, residência e `createdInVersion`; mudança de `valueScope`, residência ou significado factual exige nova chave. Alterações de tipo, obrigação, condições, validação ou descrição sob a mesma identidade exigem confirmação explícita de que o fato permanece o mesmo.
-• Evolução forward-only inativa um field publicado somente com `retiredInVersion` igual à nova versão e pode reativá-lo apenas em versão posterior removendo esse marcador, sempre preservando identidade, residência, criação e versões anteriores resolvíveis.
-• Referências condicionais devem existir e permanecer válidas após o filtro de plano; avaliação dos valores concretos pertence ao consumidor.
-• A saída deve ser determinística, rastreável e profundamente imutável.
+• Boundary canônico: `lib/conversion-content/landing-page/input-catalog/`; contracts, schema, cadeia e resolver puro são fontes executáveis. A autoridade factual corrente e única é `public.taxon_factual_fields`, lida integralmente pelos adapters server-only.
+• Não existem versão corrente, registry publicado, plano, `allowedPlans`, draft, snapshot, publisher, reconciliação, override ou segunda autoridade, nem API de compatibilidade para esses contratos.
+• Cada field possui identidade globalmente única, residência Universal ou vinculada a um taxon, definição fechada, estado ativo/inativo e autoria operacional; o contrato físico completo pertence a `docs/schema.md`.
+• A cadeia válida segue `universal → segmento → nicho → ultranicho`; Segmento é raiz, cada descendente aponta para o ancestral imediato e a resolução rejeita ciclo, duplicidade, row inválida, field fora da cadeia ou referência condicional ausente.
+• O adapter prova paginação completa antes de resolver. Falha de leitura, resposta inválida ou cobertura vazia são estados explícitos; não há fallback para catálogo repo-only.
+• A administração usa mutações estruturadas no mesmo agregado, preserva a identidade factual e trata mudança de residência, escopo ou significado como outro fato. Autorização, validação integral, concorrência otimista e confirmação do estado persistido são obrigatórias nas bordas de escrita.
+• Referências condicionais devem existir na cobertura ativa. A saída resolvida é determinística, imutável e distingue fields próprios e herdados; valores concretos continuam responsabilidade do consumidor.
 
 3.15.7 Preparação factual do taxon para `landing_page`
 • Boundary canônico: `lib/conversion-content/landing-page/taxon-preparation/`; a derivação permanece pura e não persiste estado de prontidão.
-• A preparação factual corrente recebe a cadeia taxonômica e o catálogo E20.2 plan-neutral atual. Para liberação humana, admite o taxon focal inativo com ancestrais ativos; atividade do focal, pesquisa selecionada e marcador de versão revisada não autorizam nem bloqueiam a cobertura factual.
+• A preparação factual corrente recebe a cadeia taxonômica e a cobertura ativa da autoridade Supabase. Para liberação humana, admite o taxon focal inativo com ancestrais ativos; atividade do focal e pesquisa selecionada não autorizam nem bloqueiam a cobertura factual.
 • A avaliação consultiva opcional reconstrói a fonte no servidor: pesquisa selecionada válida sustenta a análise sistemática sem Web Search; ausência de seleção ou feature desabilitada autoriza o fallback web limitado; hipótese humana focal exige exatamente uma busca, com a pesquisa válida apenas como complemento. Falhas de identidade, banco, arquivo, conteúdo ou schema encerram somente a assistência.
-• Readers por versão e plano, comparações de compatibilidade, `reviewed_input_catalog_version`, carry-forward e apresentações de registrar ou reabrir revisão pertencem apenas ao histórico preservado. Não há Server Action, export administrativo de mutação nem consumidor operacional corrente que os use como autoridade.
-• Consumidores correntes usam a API plan-neutral que seleciona internamente a versão atual declarada; maior versão, `latest`, versão ou plano fornecido pelo consumidor e qualquer fallback implícito são proibidos.
-• O lifecycle administrativo lê integralmente somente a identidade taxonômica necessária ao alcance ancestral e ancora separadamente conteúdo e contexto; atividade, pesquisa selecionada, evidência e marcador por taxon não participam da validade do draft nem da publicação.
-• Validar e preparar publicação não dependem de blocker, contagem, compatibilidade ou decisão individual por taxon. Após o deploy publicar o conteúdo repo-only exato, a reconciliação confirma registry e contexto e encerra somente o draft, sem gravar `reviewed_input_catalog_version` nem alterar `business_taxons.is_active`.
+• Readers por versão e plano, comparações de compatibilidade, `reviewed_input_catalog_version`, carry-forward, draft, publicação e reconciliação foram removidos do runtime. Não existe caminho corrente que os use como autoridade.
 • A avaliação semântica usa o workload OpenAI comum somente por ação explícita de `platform_admin`: uma única Responses API foreground, Structured Output estrito, `store=false`, sem conversation, background, retry, Agents SDK ou fallback para Codex e com deadline total limitado pelo servidor. Quando há Web Search, somente URLs HTTPS presentes na metadata autenticada do provider podem sustentar o resumo e cada candidato; fonte ausente, inventada ou incompleta falha fechado.
-• A recomendação permanece consultiva e transitória. Rejeitar ou ignorar candidatos não grava estado; candidatos aceitos e sugestões humanas formam apenas handoff revalidado ao lifecycle E20.2, sem publicar field, ativar taxon ou substituir a liberação humana sem IA. Taxon ativo pode iniciar voluntariamente o mesmo fluxo e permanece ativo durante avaliação, evolução e publicação; indisponibilidade do provider nunca altera esse estado nem bloqueia o caminho humano.
+• A recomendação permanece consultiva e transitória. Rejeitar, ignorar ou considerar candidatos não grava estado nem cria handoff automático; qualquer mudança de field ocorre depois, por ação humana no CRUD factual. Taxon ativo pode iniciar voluntariamente a mesma avaliação e permanece ativo; indisponibilidade do provider nunca altera esse estado nem bloqueia o caminho humano.
 
 3.15.8 Liberação factual administrativa de taxon
 • Taxon novo nasce inativo e só pode ser ativado por ação humana administrativa focal depois da leitura da cadeia e da cobertura factual corrente; o CRUD genérico não realiza a transição de inativo para ativo.
@@ -296,28 +290,8 @@
 3.15.9 Estado residual do antigo produto de `landing_page`
 • O Account Dashboard não possui criação, onboarding operacional, workspace, configuração operacional, histórico, Preview, renderer, aprovação, readers de materialização ou assinatura de assets do produto legado.
 • Tabelas, RPCs, migrations, ponteiro de aprovação, dados históricos e o bucket privado permanecem fisicamente preservados e inertes; nenhum runtime corrente os usa para leitura, escrita, reprodução, entrega de revisão ou compatibilidade do catálogo.
-• O lifecycle administrativo E20 não lê contas, entitlement, `account_taxonomy`, LPs ou configurações antigas para determinar operacionalidade, compatibilidade ou bloqueio de publicação.
+• A administração factual corrente não lê contas, entitlement, `account_taxonomy`, LPs ou configurações antigas para determinar cobertura, mutações de field ou liberação de taxon.
 • Eventual limpeza destrutiva de banco, dados ou Storage exige recorte próprio; o contrato físico continua inventariado em `docs/schema.md`.
-
-3.15.10 Resolução determinística de conhecimento de `landing_page`
-• Boundary canônico: `lib/conversion-content/landing-page/knowledge-resolution/`; contratos, equivalência factual e resolver puro são fontes executáveis, exportadas pela API pública de `lib/conversion-content/`.
-• A entrada `landing_page_offering_scope` preserva os modos `single | multiple | portfolio`; shape inválido falha fechado, enquanto ausência, ambiguidade ou sinal fraco de matching não recusa nem invalida a oferta.
-• A API pública de `lib/onboarding/niche-resolution/` separa candidatos de falha operacional e concentra a classificação de `matchSource`. `specialized_deep` só pode ser autorizado quando a fonte contiver `alias_exact`, `alias_normalized`, `taxon_name_exact` ou `taxon_name_normalized`; resultado apoiado apenas em `fts`, `trgm` ou `taxon_slug_normalized` exige complemento dinâmico.
-• Candidatos preservam `matchSource` e `matchedAliases`, são limitados a descendentes ativos do taxon servido e só selecionam pesquisa especializada quando houver unicidade, confiança canônica, preparação E20.5/E20.6 e equivalência factual conservadora.
-• A equivalência resolve os quatro planos E20.2 para taxon servido e candidato; ignora somente identidade e proveniência taxonômicas que naturalmente diferem e trata mudança de field, finalidade, tipo, scope, obrigação, condição ou validação como material.
-• A leitura integral de `business_taxons` pertence à operação server-only compartilhada em `lib/conversion-content/adapters/taxonChainAdapter.ts`, com páginas de 500, ordem por `id`, término canônico `416/PGRST103`, validação de todas as identidades e falhas tipadas. Preparação E20.5/E20.6, avaliação E20.6.5 e E20.7 reutilizam essa operação, sem paginações privadas paralelas.
-• `multiple` requer um único complemento sobre o conjunto; `portfolio` permanece `base_only`. A saída imutável da fase determinística distingue `specialized_deep | base_only | dynamic_required`, sem IA, persistência própria, integração E19 ou mudança em geração, snapshot, materialização e renderer.
-• `CURRENT=6` autoriza implementação repo-side e testes determinísticos; a reconciliação operacional para `reviewed_input_catalog_version=6` permanece gate somente antes de prova hospedada ou ativação.
-
-3.15.11 Complemento dinâmico controlado de conhecimento de `landing_page`
-• O boundary canônico permanece `lib/conversion-content/landing-page/knowledge-resolution/`; prompt, schema, parser, orçamento conservador e composição do resultado são fontes executáveis próprias, exportadas pela API pública de `lib/conversion-content/`.
-• Somente uma saída determinística `dynamic_required` pode solicitar o complemento. O transporte server-side executa uma única Responses API foreground com apenas Web Search hospedado, `tool_choice = required`, uma ou duas chamadas concluídas, Structured Output estrito, `store = false`, sem conversation, background, retry ou fallback.
-• Política de Web Search é code-owned e imutável por workload: tamanho de contexto, máximo de chamadas e teto efetivo de 128k tokens não vêm do Supabase. O orçamento integral reserva busca, reasoning e saída antes do transporte e falha sem truncar; modelo e reasoning effort continuam resolvidos pelos boundaries E21.1/E21.2.
-• A decisão humana vigente fixa a configuração inicial de `landing_page_dynamic_market_research` em `gpt-5.6-luna + high`. Registry, bootstrap e transições `save`/`promote` aceitam somente esse par para o workload; `low`, `max` e a matriz comparativa anterior não são configurações operacionais autorizadas.
-• Entrada funcional é conteúdo não confiável e nunca pode alterar instruções, schema ou limites. Toda finding material exige URL HTTPS presente nas fontes devolvidas pelo provider; chamada incompleta, fonte ausente, URL inventada ou evidência insuficiente falha tecnicamente.
-• O resultado distingue materialidade comprovada de ausência de materialidade e carrega fontes, instante de busca, proveniência da configuração, versões de prompt/contrato, IDs técnicos, usage, latência e contagens de busca. Não contém copy, layout, wireframe, CTA, promessa comercial nem mutação da E20.2.
-• Falha técnica ou ausência de evidência não recusa nem invalida a oferta. A conclusão funcional pode acrescentar complemento à base ou preservar somente a base; integração com geração, persistência e validação semântica de oferta permanece fora deste recorte.
-• Development pode usar o baseline repo-only para testes determinísticos. Preview e Production falham fechado antes do provider enquanto não houver fonte `supabase_operational` ativa em revisão `2` ou posterior e reconciliação do taxon para `reviewed_input_catalog_version=6`.
 
 3.16 Configuração e observabilidade de workloads OpenAI
 • O boundary transversal canônico é `lib/openai-workloads/`; consumidores de produto usam somente sua API pública para resolver modelo e reasoning effort, sem ler variáveis de modelo nem acessar o registry interno.

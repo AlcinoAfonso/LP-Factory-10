@@ -1,6 +1,7 @@
 import type {
   OpenAiActiveCostExecution,
   OpenAiActiveCostReadModel,
+  OpenAiCostReadWorkloadId,
   OpenAiCostUniverse,
   OpenAiEconomicDimensionStatus,
 } from "./active-contracts";
@@ -15,12 +16,11 @@ import {
   formatDecimal,
   type DecimalValue,
 } from "./decimal";
-import type { OpenAiWorkloadId } from "../openai-workloads";
 
 export type OpenAiEconomicSource = "active" | "legacy" | "active_and_legacy";
 
 export type OpenAiEconomicWorkload = Readonly<{
-  workload: OpenAiWorkloadId | OpenAiLpCostWorkloadSummary["workload"];
+  workload: OpenAiCostReadWorkloadId | OpenAiLpCostWorkloadSummary["workload"];
   label: string;
   source: "active" | "legacy";
   calculatedCostUsd: string;
@@ -422,8 +422,8 @@ function eventLabel(execution: OpenAiActiveCostExecution) {
   return execution.taxonName ?? `${workloadLabel(execution.workload)} — ${execution.startedAt}`;
 }
 
-function workloadLabel(workload: OpenAiWorkloadId) {
-  const labels: Record<OpenAiWorkloadId, string> = {
+function workloadLabel(workload: OpenAiCostReadWorkloadId) {
+  const labels: Record<OpenAiCostReadWorkloadId, string> = {
     niche_resolution: "Resolução de nicho",
     commercial_activation_draft_generation: "Draft de ativação comercial",
     taxon_input_catalog_sufficiency_evaluation: "Suficiência factual do catálogo",

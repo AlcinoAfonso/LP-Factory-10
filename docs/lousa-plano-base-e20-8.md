@@ -1,0 +1,448 @@
+# Plano-base E20.8 — Substituição greenfield e simplificação terminal da E20
+
+## V1 funcional aprovada
+
+- Estado: V1 funcional concluída; execução Complexa e supervisão Autônoma definidas; pronta para handoff técnico.
+
+### 4.1.1 Problema e resultado funcional
+
+- Problema: a E20 acumulou versionamento, política comercial residual, preparação por versão revisada, duas autoridades de publicação, gates e capacidades sem consumidor, tornando uma necessidade factual simples excessivamente cara para o MVP.
+- Resultado: uma E20 mínima, corrente e administrável no Supabase, independente de planos e consumidores, sem versionamento de catálogo e com herança taxonômica simples.
+- Usuário principal: `platform_admin` responsável por administrar taxons e fields factuais.
+
+### 4.1.2 Comportamento esperado
+
+- Administrador usa uma única página principal no Admin para consultar a cobertura factual corrente de qualquer taxon na ordem Universal → Segmento → Nicho → Ultranicho quando aplicável, com distinção clara entre fields herdados e próprios e detalhes técnicos em segundo nível.
+- Novo taxon inicia inativo; humano pode liberá-lo sem IA quando a cobertura for suficiente.
+- Field novo é criado diretamente na camada competente e passa a integrar novos usos imediatamente após validação e confirmação.
+- Field pode ser editado enquanto continuar representando o mesmo fato; mudança material exige novo fieldKey.
+- Field pode ser inativado e reativado sem versionamento global.
+- IA pode sugerir possível gap, mas qualquer mutação continua humana.
+- Consumidores leem apenas a cobertura factual corrente quando precisarem; não existe coordenação retroativa.
+
+### 4.1.3 Limites e escopo negativo
+
+- Não preservar mecanismo de versionamento antigo.
+- Não preservar planos comerciais dentro da E20.
+- Não criar bridge de compatibilidade com registry, versões ou review markers anteriores.
+- Não reconstruir E20.7 ou outra capacidade sem consumidor aprovado.
+- Não criar infraestrutura nova além da menor persistência necessária na stack vigente.
+- Não alterar estruturas compartilhadas de outros casos sem demonstrar o impacto e preservar sua responsabilidade vigente.
+- Escopo negativo vinculante: a V2 não pode reintroduzir com outro nome mecanismo equivalente aos contratos abaixo.
+- Não criar versão, revision, draft, snapshot, rollback, histórico funcional ou trilha própria da E20.
+- Não criar registry paralelo, dual-write, sincronização, replicação ou segunda autoridade factual.
+- Não criar `CURRENT_VERSION`, `catalog_version`, reviewed version, marker de suficiência ou equivalente operacional.
+- Não criar plano comercial, entitlement, capability comercial, `allowedPlans` ou projeção por plano dentro da E20.
+- Não coordenar, invalidar, reabrir, migrar ou atualizar consumidores quando field ou taxon mudar.
+- Não criar override, specialization, shadowing ou herança condicional de field por plano, conta ou consumidor.
+- Não criar publisher por Git, PR ou deploy para administrar fields correntes.
+- Não criar fingerprint de publicação, handoff ou reconciliação entre autoridades.
+- Não criar sessão, cache, fila, job, worker, event sourcing, engine ou serviço novo para a E20.
+- Não persistir resultado, decisão, estado ou histórico da avaliação por IA como lifecycle da E20.
+- Não tornar pesquisa E20.5, Web Search ou qualquer fonte externa requisito para liberação humana ou gestão de fields.
+- Não reconstruir E20.7 nem capacidade dormente sem consumidor real aprovado.
+- Não migrar versões antigas nem manter código legado apenas para conservar histórico ou compatibilidade de dados de desenvolvimento.
+- Não manter contrato E20-only em consumidor antigo quando não houver responsabilidade independente a preservar.
+- Não alterar responsabilidade pertencente a outro caso sem identificar previamente o impacto e obter a autorização exigida pelo contrato do projeto.
+
+### 4.1.4 Posição planejada no roadmap
+
+- Criar `E20.8 — Substituição greenfield e simplificação terminal da E20` como plano executável deste Debate.
+- Ao concluir o plano, reconsolidar o caso macro E20 para que a documentação canônica descreva somente a arquitetura vigente; contratos superseded permanecem recuperáveis pelo histórico Git, não como obrigação atual.
+- A E20.8 é o recorte de transição e fechamento da reconstrução; não autoriza multiplicar novos subcasos para preservar mecanismos antigos.
+
+### 4.1.5 Fases
+
+- `20.8.3 — Demolição controlada da E20 vigente`: retirar do runtime e dos contratos correntes registry/versionamento, planos e `allowedPlans`, reviewed version, review gates, publisher repo-only, fingerprints/handoffs/reconciliação, capacidades dormentes e testes/documentação que existam somente para a arquitetura abandonada; manter a branch íntegra e não fazer merge de estado intermediário quebrado.
+- `20.8.4 — Autoridade factual única`: estabelecer no Supabase a residência mínima dos fields factuais correntes e a administração autorizada, sem versionamento do catálogo ou segunda autoridade.
+- `20.8.5 — Herança e resolução factual`: resolver deterministicamente Universal → Segmento → Nicho → Ultranicho e devolver a cobertura corrente sem plano comercial, conta ou consumidor.
+- `20.8.6 — Gestão administrativa simples`: concentrar a gestão em uma única página principal no Admin, organizada por Universal → Segmento → Nicho → Ultranicho quando aplicável, distinguindo fields herdados e próprios e permitindo adicionar, editar, inativar ou reativar fields, sem páginas/abas separadas por camada, editor JSON técnico ou publicação por repositório.
+- `20.8.7 — Liberação humana e apoio opcional por IA`: preservar taxon novo inativo, liberação humana sem IA, revisão voluntária de taxon ativo e IA consultiva com decisão humana final.
+- `20.8.8 — Cutover e limpeza terminal`: retirar dependências remanescentes da arquitetura antiga, reinicializar dados de desenvolvimento quando necessário e reconciliar roadmap, base técnica, schema e demais fontes canônicas com a nova E20.
+
+### 4.1.6 Classificação
+
+- Execução: Complexa.
+- Motivo: substituição destrutiva de um contrato transversal já materializado, mudança de autoridade factual, limpeza de dependências e necessidade de provar que responsabilidades de outros casos não foram removidas por acidente.
+
+### 4.1.7 Automação
+
+- Não há nova automação a decidir neste Debate.
+- A avaliação por IA já aprovada anteriormente permanece apenas se continuar necessária no contrato greenfield; qualquer detalhe técnico é derivado na V2.
+- A liberação humana e a administração dos fields não dependem de IA.
+
+### 4.1.8 Critérios funcionais de aceite
+
+- Zero referência operacional a Starter/Lite/Pro/Ultra, `allowedPlans`, entitlement ou plano comercial dentro da E20.
+- Zero versionamento operacional da E20: sem `CURRENT_VERSION`, versões publicadas, reviewed version, carry-forward ou gate por versão.
+- Zero dependência operacional do registry repo-only da E20 antiga.
+- Zero publisher administrativo dependente de PR/deploy/reconciliação entre duas autoridades.
+- Supabase é a única autoridade factual corrente da E20.
+- Resolver atual recebe dados factuais e cadeia taxonômica e aplica apenas herança aprovada.
+- Novo taxon pode ser liberado por humano sem IA.
+- A gestão de fields ocorre em uma única página principal no Admin, com visão Universal → Segmento → Nicho → Ultranicho quando aplicável, distinção entre herdados e próprios e ações simples de criar, editar, inativar e reativar; detalhes técnicos ficam em segundo nível.
+- IA não muta estado por decisão própria.
+- Taxon ativo não é reaberto automaticamente por mudança de field.
+- Nenhum consumidor ou estrutura compartilhada de outro caso perde responsabilidade funcional sem prova e autorização correspondente.
+- Documentação canônica final não apresenta contratos E20 antigos como vigentes.
+- O delta final deve representar redução arquitetural material; código novo só é aceito quando substituir responsabilidade necessária com menos complexidade total.
+- A nova E20 não mantém histórico funcional, revisão, draft, snapshot ou rollback próprio além de metadados operacionais genéricos sem função de lifecycle.
+- `fieldKey` é globalmente único e não existe override, shadowing ou specialization por camada.
+- Pesquisa E20.5, Web Search ou outra fonte externa é opcional para a IA e nunca bloqueia a operação humana.
+- Contrato antigo existente somente por causa da E20 não permanece no runtime ou consumidor corrente sem responsabilidade independente comprovada.
+- O lifecycle funcional de field é somente ativo/inativo, com reativação; operações destrutivas não fazem parte do uso normal do produto.
+
+### 4.1.9 Evidências esperadas
+
+- Prova do fluxo administrativo real de criação de field por taxon/camada até sua leitura corrente.
+- Prova de herança Universal → Segmento → Nicho → Ultranicho.
+- Prova de liberação humana sem IA.
+- Prova de que termos e contratos de plano/versionamento antigos não atravessam o runtime novo.
+- Prova de que dados legados não são necessários para operar a nova E20.
+- QA hospedado em desktop e mobile da página administrativa única, comprovando leitura clara das camadas Universal → Segmento → Nicho → Ultranicho quando aplicável, distinção entre fields herdados e próprios e ausência de navegação separada por camada.
+- Auditoria de dependências externas removidas/preservadas antes do merge.
+
+### 4.1.10 Supervisão
+
+- Supervisão: Autônomo.
+
+## Referência da fonte aprovada
+
+- Documento: “Debate 12B — Substituição greenfield e simplificação terminal da E20 — LP Factory 10”.
+- Seção: 4.1 — PB 1 — E20.8 Substituição greenfield e simplificação terminal da E20.
+- URL: https://docs.google.com/document/d/1ClohATV14m-jABtL8YGu0s-2L8mgN4WemK9gOyiHti4/edit
+- Documento consultado em: 14/09/2026.
+
+## V2 técnica
+
+### 1. Contrato, referências imutáveis e estado de partida
+
+- Execução: Complexa. Supervisão: Autônomo.
+- V1 congelada no commit `84534bdbf674859b388009bea3c11f74ced5e3e6`, blob `a598addc9ad1a52085ecbe5ef34e8a7e683b34c1`, neste mesmo path.
+- Base técnica e snapshot do roadmap: `origin/main@806bf0f8cf13d5222537953eef175fbde355c0fb`; blob `f948e5fd2c3ebc9f2dd2fa6ed987fdff36ee2eb2` de `docs/roadmap.md`.
+- PR único: `#939`, draft, base `main`, branch `codex-app/e20-8-greenfield`.
+- Plano conceitual: N/A. O Debate 12B contém a V1 funcional aprovada e não referencia outro plano conceitual competente para o recorte.
+- O estado Supabase inspecionado antes desta V2 mantém `business_taxons`, `landing_page_input_catalog_drafts` e `reviewed_input_catalog_version`; o runtime corrente ainda seleciona o registry repo-only v6. Nenhum desses mecanismos é preservado como autoridade ou compatibilidade da E20 nova.
+
+### 2. Boundary greenfield e invariantes transversais
+
+- Substituir o conteúdo do boundary `lib/conversion-content/landing-page/input-catalog/` sem criar boundary paralelo. A API pública final representa somente fields factuais correntes, cadeia taxonômica e cobertura resolvida.
+- O domínio puro não acessa Supabase. O adapter operacional lê a autoridade factual, normaliza rows e entrega ao resolver somente os fields e a cadeia necessários.
+- `fieldKey` é globalmente único. A residência é Universal ou exatamente um taxon; não existe override, shadowing, specialization ou redefinição de uma chave herdada.
+- Permanecem exatamente os escopos factuais `account`, `business`, `offer`, `campaign` e `landing_page`.
+- Field ativo integra a cobertura corrente de novos usos; field inativo permanece administrável, mas não é devolvido a consumidores. A cobertura vazia é resultado válido e distinto de falha de leitura ou contrato.
+- Mudança de finalidade, residência, `valueScope` ou significado material exige novo `fieldKey`. Edição sob a mesma chave exige confirmação de que o fato permanece o mesmo.
+- Não manter fallback ao registry, dual-read, dual-write, alias, stub, feature flag de compatibilidade ou segunda autoridade durante o cutover.
+- Preservar E18.4, a pesquisa opcional E20.5, a liberação humana e assistência consultiva E20.6, a governança transversal E21 e os objetos residuais E19 que tenham responsabilidade independente.
+- Os objetos E19 que ainda possuam `catalog_version` ou snapshot permanecem resíduos de outro caso e não integram a busca de zero referência operacional da E20 nova.
+- Adapters falham fechados com erro próprio quando o objeto Supabase ainda não tiver sido aplicado; não retornam catálogo antigo ou aproximação. O apply continua pós-merge pelo workflow canônico.
+
+### 3. Persistência e segurança
+
+- Criar `public.taxon_factual_fields` com:
+  - `id uuid primary key default gen_random_uuid()`, conforme a convenção transversal de entidade nova;
+  - `field_key text not null unique`, com `CHECK` de snake_case e identidade global;
+  - `taxon_id uuid null references public.business_taxons(id) on update cascade on delete restrict`, sendo `null` a residência Universal;
+  - `definition jsonb not null`, com exatamente `purpose`, `valueType`, `valueScope`, `expectedValueOrigin`, `obligation`, `requiredWhen` opcional, `applicableWhen` opcional e `validation`; propriedades desconhecidas são rejeitadas;
+  - `is_active boolean not null default true`;
+  - `created_by uuid null references auth.users(id) on update cascade on delete set null`, `updated_by uuid null references auth.users(id) on update cascade on delete set null`, `created_at timestamptz not null default now()` e `updated_at timestamptz not null default now()`;
+  - trigger canônico para `updated_at` e índice operacional somente quando necessário às leituras por `taxon_id`.
+- O contrato fechado de `definition` usa nomes camelCase iguais no banco e no domínio:
+  - `purpose`: texto aparado não vazio;
+  - `valueType`: `string | phone | email | url | enum | string_list | boolean | number_range | keyword_map | asset_reference | color_palette | offering_scope`;
+  - `valueScope`: `account | business | offer | campaign | landing_page`;
+  - `expectedValueOrigin`: `account_provided | business_provided | offer_provided | campaign_provided | landing_page_provided`, sempre correspondente ao `valueScope`;
+  - `obligation`: `required | optional | conditional`; somente `conditional` exige `requiredWhen` e as demais não podem declará-lo;
+  - `requiredWhen` e `applicableWhen`: quando presentes, objeto estrito `{ fieldKey, operator, value }`, com `operator = equals` para escalar textual/booleano e `operator = in` para array textual não vazio;
+  - `validation`: união discriminada estrita por `kind`: `type_only`; `enum` com `allowedValues` textual não vazio e sem duplicatas; `string_list` com `allowedValues` opcional e limites inteiros positivos coerentes; `number_range` com `currency = BRL` e limites finitos não negativos coerentes; ou `e164 | email | https_url | keyword_map | asset_reference | color_palette | offering_scope` sem propriedades extras;
+  - a migration protege chaves, tipos, enums e invariantes estruturais com constraints JSONB; o schema Zod aplica o mesmo contrato e a compatibilidade `valueType`/`validation` antes de qualquer row entrar no domínio ou ser gravada.
+- Autoria do bootstrap: as 25 rows da carga inicial usam `created_by = null` e `updated_by = null`, ausência explicitamente reservada à materialização técnica sem ator humano. Toda criação ou edição posterior exige `auth.uid()` obtido pela Server Action autorizada; criação preenche ambos e edição preserva `created_by` e atualiza `updated_by`.
+- Decisões de governança da tabela: segurança `RLS enabled`; acesso somente por `service_role` atrás de `requirePlatformAdmin()` ou adapter server-only; auditoria funcional `não`; participação no Trigger Hub `não`. A V1 proíbe histórico/lifecycle próprio, portanto não se criam eventos ou `audit_logs` da E20; timestamps e autoria são somente metadados operacionais genéricos.
+- Não criar coluna, tabela ou objeto para version, revision, draft, snapshot, rollback, histórico funcional, plano, entitlement, `allowedPlans`, retirement por versão, registry, specialization, fingerprint, handoff, reconciliação, sessão, cache, fila, job ou evento da E20.
+- A migration forward-only deve criar a tabela e carregar por manifesto SQL explícito exatamente 25 fields ativos da v6 corrente: 16 Universais, quatro residentes no Segmento `imobiliario` (`f9ba36cd-fcd9-478b-9823-c2f003cf037a`), cinco no Nicho `corretor-imoveis` (`c7952d16-678c-4615-9483-a003e57d94aa`) e zero no Ultranicho. A transformação preserva somente `fieldKey` e as oito propriedades permitidas de `definition`; remove `version`, `originLayer`, `originTaxon`, `allowedPlans`, `snapshotPolicy`, `landingPageSubstitutionPolicy`, `capabilityBindings`, `evidence`, `createdInVersion` e `retiredInVersion`; não copia v1–v5, `primary_service_or_offer`, `primary_service_or_offer_description`, fields aposentados ou histórico.
+- A unicidade global e a residência desses 25 fields são provadas antes do insert. A v6 corrente não contém chave ativa duplicada nem specialization; qualquer divergência de cardinalidade, chave, residência ou taxon aborta a transação em vez de escolher precedência ou criar override.
+- Antes da carga, a migration valida IDs, slugs, níveis e relações dos taxons específicos referenciados; qualquer divergência aborta a transação inteira.
+- Na mesma migration, após a carga válida, remover `public.landing_page_input_catalog_drafts` e `public.business_taxons.reviewed_input_catalog_version`. Essa migration só pode ser aplicada depois que o novo SHA estiver implantado, pelo gate operacional explícito da seção 10; migrations históricas permanecem imutáveis.
+- Habilitar RLS sem policies públicas; revogar `PUBLIC`, `anon`, `authenticated` e `ai_readonly`; conceder a `service_role` somente `SELECT`, `INSERT` e `UPDATE`, sem `DELETE` ou `TRUNCATE`.
+- Versionar migration, teste SQL transacional e `supabase/snippets/e20_8_factual_fields_verify.sql`. O snippet é estritamente read-only e deve falhar se schema, constraints, FK, índice, trigger, RLS, grants, carga inicial ou ausência dos contratos removidos divergirem.
+- Após o apply, confrontar também o Security Controls como evidência complementar; essa inspeção não substitui migration, teste ou snippet.
+
+### 4. Contrato de domínio e adapters
+
+- Substituir no boundary atual:
+  - `contracts.ts`: identidades de taxon, cadeia, definição do field, row factual, cobertura e erros sem plano ou versão;
+  - `schema.ts`: validação estrita da definição e rejeição de propriedades desconhecidas;
+  - `resolver.ts`: resolução pura da cobertura corrente;
+  - `taxon-chain.ts`: validação da ordem Universal → Segmento → Nicho → Ultranicho;
+  - `index.ts`: única API pública greenfield;
+  - `validation-cases.ts`: casos do contrato novo.
+- Remover `registry.ts`, `lifecycle.ts`, `draft.ts`, `current-resolver.ts` e, se ficar sem consumidor após a retirada da E20.7, `offering-scope.ts`.
+- O resolver recebe rows factuais já normalizadas e a cadeia completa, rejeita chaves duplicadas e residências fora da cadeia, valida referências condicionais contra a cobertura efetiva, ordena deterministicamente as camadas e deriva a proveniência da residência.
+- Criar `lib/conversion-content/adapters/factualFieldsAdapterCore.ts` com portas injetáveis para paginação completa e `lib/conversion-content/adapters/factualFieldsAdapter.ts` server-only para Supabase e reuso de `taxonChainAdapter`.
+- O adapter lê apenas Universal e os IDs da cadeia selecionada, distingue `READ_FAILED`, resposta inválida e ausência legítima e nunca consulta plano, conta, consumidor, pesquisa ou estado de suficiência.
+- Repontar somente consumidores que ainda tenham responsabilidade vigente. Não adicionar a leitura factual a adapters de pesquisa, OpenAI ou taxonomia por conveniência.
+
+### 5. `20.8.3 — Demolição controlada da E20 vigente`
+
+- Inventariar antes da exclusão imports, exports, actions, DTOs, validators, scripts, migrations correntes, documentação e consumidores de input-catalog, taxon-preparation, knowledge-resolution, Admin, E21 Workloads e E21 Costs.
+- Classificar cada alvo como removido E20-only, responsabilidade preservada ou histórico inerte. Consumidor necessário fora da classificação suspende somente o ponto afetado antes da exclusão.
+- Remover integralmente a capacidade E20.7: `lib/conversion-content/landing-page/knowledge-resolution/`, adapters exclusivos, exports públicos, provas/actions administrativas, validators e scripts exclusivos.
+- Remover `landing_page_dynamic_market_research` de contracts, registry, apresentação, allowlists, configuração operacional e UI correntes da E21; não manter alias, stub, flag, bridge ou código dormente.
+- Preservar, como histórico append-only e inerte da E21, revisões, ativações, eventos de custo e cobertura financeira já existentes para `landing_page_dynamic_market_research`; eles não autorizam nova ativação, resolução operacional ou tracking. Remover o literal dos workloads ativos, allowlists de configuração, resolvers, UI operacional e portas de escrita. Separar no boundary `lib/openai-costs/` o literal retirado como tipo aceito exclusivamente pelo read model histórico; entradas de tracking aceitam somente workloads ativos.
+- Preservar `taxon_input_catalog_sufficiency_evaluation`, E20.5, E18.4, o taxon chain compartilhado, a liberação humana e os contratos E21 comuns.
+- Este checkpoint pode retirar E20.7 e preparar o mapa de substituição, mas não pode publicar um estado que sobreponha ou deixe simultaneamente necessárias as duas autoridades factuais.
+
+### 6. `20.8.4 — Autoridade factual única`
+
+- Criar migration, teste SQL e snippet da seção 3.
+- Gerar a carga inicial por transformação explícita dos fields ativos v6, removendo `version`, planos, `allowedPlans`, provenance histórica, retirement, fingerprints e qualquer propriedade de lifecycle.
+- Implementar o adapter factual paginado e fail-closed sem fallback ao registry.
+- Repontar a leitura operacional para `public.taxon_factual_fields` e remover na mesma unidade lógica as dependências executáveis da autoridade repo-only.
+- Manter migration, repontamento e remoção do registry como mudança atômica no PR; nenhum checkpoint intermediário publicado pode depender de duas autoridades.
+- Não aplicar schema remoto antes do merge. O runtime publicado sem objeto aplicado deve exibir indisponibilidade explícita e não aproximar dados. O apply automático é bloqueado durante o merge pela sequência operacional da seção 10, impedindo que a remoção física alcance o runtime antigo.
+
+### 7. `20.8.5 — Herança e resolução factual`
+
+- Implementar o contrato puro e os validators da seção 4.
+- Resolver exclusivamente Universal → Segmento → Nicho → Ultranicho quando as camadas existirem na cadeia selecionada.
+- Fields próprios e herdados preservam uma única definição; a proveniência é derivada de `taxon_id`, nunca armazenada como histórico de overrides.
+- Consumidores recebem somente fields ativos e os metadados necessários para solicitar fatos. Nenhum plano, conta, LP, versão ou estado de consumidor integra a entrada ou a saída.
+- Cobrir por teste: cada nível, cadeia parcial/completa, field Universal, próprio e herdado, ativos/inativos, chave duplicada, residência fora da cadeia, condição sem referência, resposta vazia, paginação acima de uma página, `READ_FAILED` e row inválida.
+
+### 8. `20.8.6 — Gestão administrativa simples`
+
+- Reutilizar `/admin/estrutura-lp?view=entradas` como única página principal dos fields e preservar a visão `Parâmetros` da E18.4. Não criar rota, página ou aba separada por camada.
+- Substituir `AdminInputCatalogLifecycle`, seu editor JSON e as actions de draft/publicação/reconciliação por `AdminFactualFields`, `adminFactualFieldsAdapter` e Server Actions finas no mesmo boundary administrativo.
+- Listar taxons ativos e inativos, permitir selecionar a cadeia e mostrar Universal → Segmento → Nicho → Ultranicho quando aplicável, agrupando fields por camada e distinguindo visual e textualmente próprio de herdado.
+- Manter finalidade, tipo, escopo, obrigação, condição e validação em detalhe secundário com `<details>` ou padrão equivalente.
+- Usar formulários estruturados para criar, editar, inativar e reativar. Não oferecer editor JSON, exclusão funcional, mudança de residência ou mudança de `fieldKey` durante edição.
+- Criar diretamente na camada escolhida; editar somente o mesmo fato e exigir confirmação humana explícita; rejeitar alteração de residência ou `valueScope` sob a mesma chave.
+- Usar `updated_at` como token de concorrência otimista sem convertê-lo em version ou revision funcional.
+- Cada Server Action reexecuta `requirePlatformAdmin()`, revalida payload, row e identidade, aplica compare-and-set e confirma o estado final antes de revalidar a página.
+- O administrador deve reconhecer, sem abrir detalhes técnicos, a camada de origem, a condição próprio/herdado e a próxima ação humana disponível. Esse critério de reconhecibilidade não cria telemetria nem métricas de tempo ou clique.
+- Validar WCAG 2.2 proporcional: teclado, foco visível e previsível, labels e erros associados, anúncio textual de sucesso/erro, contraste, alvos de toque de pelo menos 44 px e nenhuma ação exclusiva por hover. Combinar inspeção automática e manual sem alegar conformidade integral.
+
+### 9. `20.8.7 — Liberação humana e apoio opcional por IA`
+
+- Preservar `adminTaxonFactualReleaseCore.ts` e adaptar `adminTaxonFactualReleaseAdapter.ts` para a cobertura Supabase corrente. Remover dos DTOs `currentInputCatalogVersion`, reviewed marker e qualquer identidade de versão.
+- O fingerprint da cobertura é permitido somente como token efêmero contra drift entre leitura e confirmação da liberação; não é persistido e não constitui publicação, reconciliação ou histórico.
+- Taxon novo continua inativo. A liberação humana altera somente `business_taxons.is_active` por compare-and-set e confirma a identidade final. Taxon ativo permanece ativo durante revisão voluntária.
+- Preservar `taxon_input_catalog_sufficiency_evaluation` como único workload OpenAI da E20 e adaptar input, contexto, prompt, schema, UI e testes à cadeia e cobertura correntes no Supabase, sem versão, plano, registry, draft, marker, token de decisão ou handoff ao lifecycle antigo.
+- A avaliação é iniciada somente por ação explícita de `platform_admin`, server-side, e produz recomendação transitória. Selecionar uma sugestão apenas abre ou preenche o mesmo formulário humano de criação/edição; nenhuma saída de IA muta ou persiste estado.
+- Preservar a configuração E21 vigente `gpt-5.6-terra + low`; não trocar modelo neste recorte. Executar uma Responses API foreground, Structured Output estrito, `store:false`, `background:false`, limite total de 45 segundos e zero retry.
+- Web Search é opcional: exatamente uma chamada para hipótese focal ou no máximo duas para fallback autorizado. Aceitar como fonte somente URLs HTTPS presentes na metadata do provider.
+- Não usar Agents SDK, agent, conversation, sessão, job, fila, cache, background, crawler, RAG ou fallback Codex.
+- Separar instruções estáveis de dados não confiáveis; não enviar conta, oferta concreta, PII ou secrets. Telemetria sanitizada registra somente metadados técnicos, configuração, IDs de request/provider, resultado, latência, usage, custo e contagens de busca/fontes, sem prompt, resposta integral ou conteúdo de fontes.
+- Falha, recusa, timeout, indisponibilidade ou resultado inconclusivo tornam somente a assistência indisponível. CRUD e liberação humana sem IA permanecem completos.
+- Remover preparação/revisão por versão, `input-catalog-review`, gap handoff e tokens/decisões exclusivos do fluxo antigo, `adminTaxonomyReviewPolicy`, `inputCatalogReview` dos DTOs e toda leitura/escrita de `reviewed_input_catalog_version`.
+- Versionar prompt/contrato greenfield próximo ao consumidor, confrontá-lo explicitamente com `docs/template-prompts.md` e `docs/template-prompts-gpt-5-6.md` e validar casos típicos, limites, drift, concorrência, schema inválido, prompt injection, fonte ausente/inventada, provider indisponível e operação humana com o gate desligado.
+
+### 10. `20.8.8 — Cutover e limpeza terminal`
+
+- Remover resíduos executáveis da E20 antiga somente depois que os consumidores preservados apontarem para a autoridade nova; nenhuma compatibilidade permanece no runtime final.
+- O merge exige janela de manutenção curta e a seguinte sequência indivisível sob controle do supervisor, usando apenas mecanismos já existentes:
+  1. confirmar PR, `main`, head SHA aprovado, deployment atual e workflow `Pipeline Supabase — Apply Migrations` sem run concorrente;
+  2. definir temporariamente `SUPABASE_APPLY_MIGRATIONS_ENABLED != true` antes do merge, registrar a mudança e confirmar que o apply automático ficará `skipped`;
+  3. autorizar e executar o merge do PR único; aguardar o deployment Vercel de Production do mesmo SHA ficar `READY` e fazer smoke das rotas não E20; a E20 permanece fail-closed e explicitamente indisponível enquanto a tabela ainda não existe;
+  4. somente com o novo SHA implantado, restaurar `SUPABASE_APPLY_MIGRATIONS_ENABLED = true` e disparar manualmente o workflow canônico em `main` no mesmo SHA; a migration então cria/carga a autoridade nova e remove fisicamente draft e reviewed marker sem atingir runtime antigo;
+  5. confirmar run verde, executar snippet read-only e Security Controls, validar recuperação dinâmica da E20 no mesmo deployment e redeployar o mesmo SHA apenas se houver evidência de cache incompatível;
+  6. concluir QA hospedado e registrar que o gate voltou ao estado operacional `true`. Falha em qualquer passo para a progressão, preserva o estado conhecido e exige diagnóstico; não se ativa fallback nem se antecipa o contract step.
+- A mudança temporária do gate não integra o PR e não altera o workflow. É uma ação operacional pós-autorização de merge; este Executor não a realiza antes da liberação do supervisor.
+- Atualizar scripts do `package.json`: substituir validators antigos pelos casos greenfield e retirar comandos exclusivos da E20.7 e do lifecycle abandonado.
+- Executar auditoria final de imports e busca de termos proibidos limitada ao runtime E20 novo. Migrations históricas, planos encerrados e read model financeiro histórico podem manter referências inertes justificadas.
+- Reconciliar por ABC `docs/roadmap.md`, `docs/base-tecnica.md`, `docs/schema.md`, `docs/automations.md`, `docs/platform-config.md` e `docs/openai-model-snapshot.md` para descrever somente a arquitetura vigente. `docs/services.md` não recebe registro porque nenhum service novo é criado.
+- Em `docs/automations.md`, substituir o contrato E20.6 pelo apoio corrente E20.8.7 e retirar E20.7.4. Em `docs/platform-config.md`, preservar somente o gate/configuração do workload de suficiência e retirar a capacidade E20.7 corrente. Em `docs/openai-model-snapshot.md`, manter o workload de suficiência atual e tratar E20.7 somente como histórico encerrado quando necessário.
+- Resolver por fonte operacional competente qualquer divergência factual de Preview/Production no momento do cutover; não usar documentação antiga para afirmar estado hospedado.
+- Preservar Next.js `16.3.3` ou baseline corrigida superior já aprovada; não introduzir Cache Components, nova política de cache ou upgrade adicional.
+- Executar `npm ci`, validators focais, `npm run check`, testes SQL, `git diff --check`, auditoria de dependências e busca terminal.
+- Após merge e apply canônico, executar o snippet read-only, confrontar Security Controls e validar o runtime no mesmo SHA conforme a sequência acima.
+- Executar QA hospedado com `platform_admin` em desktop `1440×900` e mobile `320×844` e `390×844`, cobrindo cadeia, próprios/herdados, criação, edição, inativação, reativação, estado vazio, erro, concorrência, liberação sem IA e assistência indisponível.
+- A evidência de QA deve identificar deployment/ambiente, papel, viewport, fluxo/estado e resultado. Runs e logs são suplementares e expiráveis; PR, commits e documentos canônicos preservam a prova durável.
+
+### 11. Arquivos e residências prováveis
+
+- Substituir ou ajustar: `lib/conversion-content/landing-page/input-catalog/`, `lib/conversion-content/adapters/taxonChainAdapter*`, `lib/admin/adapters/adminLandingPageStructureAdapter.ts`, `lib/admin/adapters/adminTaxonFactualRelease*`, `lib/admin/adapters/adminTaxonomyAdapter.ts`, `lib/admin/adapters/adminReadOnlyTypes.ts`, `app/admin/(protected)/estrutura-lp/`, `app/admin/(protected)/taxonomia/`, `lib/conversion-content/landing-page/taxon-preparation/`, `lib/openai-workloads/`, `lib/openai-costs/`, `app/admin/(protected)/workloads-openai/`, `package.json` e `package-lock.json` somente quando o script graph exigir.
+- Criar: `lib/conversion-content/adapters/factualFieldsAdapterCore.ts`, `lib/conversion-content/adapters/factualFieldsAdapter.ts`, `lib/admin/adapters/adminFactualFieldsAdapter.ts`, `app/admin/(protected)/estrutura-lp/_components/AdminFactualFields.tsx`, migration, teste SQL e snippet E20.8.
+- Remover: registry/lifecycle/draft/current resolver antigos, lifecycle administrativo de catálogo, componentes e contratos de review/handoff por versão, boundary/adapters/provas/validators E20.7 e demais arquivos que a auditoria confirmar como exclusivamente ligados ao contrato abandonado.
+- Documentação canônica é alterada somente por operações literais do ABC competente.
+
+### 12. Critérios técnicos de aceite e parada
+
+- Banco, domínio, adapter e Admin não contêm versão, plano, registry, draft, snapshot, publisher, reconciliação, override ou segunda autoridade da E20.
+- A carga inicial contém somente fields ativos correntes, sem propriedades proibidas, e a migration aborta diante de taxonomia incompatível.
+- A tabela usa `id` UUID como PK, `field_key` UNIQUE, autoria nula somente no bootstrap, decisão explícita de não auditar/não participar do Trigger Hub e `definition` fechado pelo mesmo contrato no banco e no domínio.
+- RLS, revogações e grants mínimos estão comprovados por teste, snippet e inspeção complementar.
+- Resolver e adapter provam herança, unicidade global, ativo/inativo, cobertura vazia, paginação completa e falhas explícitas.
+- Admin prova CRUD lógico estruturado, concorrência, guard `platform_admin`, hierarquia e distinção próprio/herdado em viewports desktop/mobile.
+- Liberação humana funciona sem IA; taxon ativo não reabre por mudança de field; IA não possui caminho de mutação ou persistência.
+- E20.7 não possui consumidor, registry, provider, proof, action, validator, script ou configuração corrente; histórico financeiro preservado não aceita tracking novo nem reaparece como workload ativo.
+- E18.4, E20.5, E20.6 humano/consultivo, E21 comum e responsabilidades de outros casos permanecem aprovados nos validadores e na auditoria de imports.
+- `npm ci`, validators focais, `npm run check`, `git diff --check`, testes SQL, snippet pós-apply, Security Controls e QA hospedado estão aprovados no gate correspondente.
+- Qualquer evidência de consumidor necessário não classificado, necessidade de mudança material da estrutura aprovada ou responsabilidade de outro caso afetada suspende apenas o ponto e retorna ao workflow competente; não se inventa compatibilidade.
+- O merge é bloqueado se o supervisor não puder executar o gate de cutover da seção 10; não se aplica a migration destrutiva enquanto o runtime antigo puder receber tráfego.
+
+### 13. Classificação dos acréscimos técnicos
+
+- Derivação técnica da V1: substituição in place do boundary, tabela única, migration/carga/cutover, resolver puro, adapters, Admin estruturado, liberação humana, preservação consultiva da IA, demolição E20.7, segurança, validações e reconciliação documental.
+- Modernização técnica justificada: snippet read-only reexecutável (`supa#40`) e critérios proporcionais de reconhecibilidade e WCAG 2.2 (`prod#14` e `prod#17`), todos de impacto estrutural baixo e sem alteração funcional.
+- Ampliação de escopo incorporada: nenhuma.
+- Oportunidade condicional não implementada: matriz RLS ampliada com ferramenta comunitária (`supa#63`), somente em futuro recorte com lacuna demonstrável nos testes SQL focais.
+- Rejeitado no recorte: coluna gerada de normalização (`supa#52`), pois duplicaria a identidade canônica `fieldKey` e seu índice sem ganho líquido.
+
+## Evidência do Analista — Passagem 1 independente
+
+14/09/2026 12:53
+
+# Passagem 1 — Avaliação independente
+
+## Versões e caso avaliados
+
+- Modo: `passagem_independente`.
+- Caso: E20.8 — Substituição greenfield e simplificação terminal da E20.
+- Repositório: `AlcinoAfonso/LP-Factory-10`.
+- Worktree: `C:\Users\alcin\.codex\worktrees\0518\LP-Factory-10`.
+- Branch: `codex-app/e20-8-greenfield`.
+- PR #939: aberto, draft, base `main`.
+- V1 imutável: commit `84534bdbf674859b388009bea3c11f74ced5e3e6`, blob `a598addc9ad1a52085ecbe5ef34e8a7e683b34c1`.
+- V2 candidata: commit/HEAD local `0e46babf8117a5b61a12ceb83d28acec37b1192d`, blob `b2cbb1c0269db6311ef94326a3900266818dca4d`, com trailer `LP-Factory-Stage: plan-v2`.
+- Base: `origin/main@806bf0f8cf13d5222537953eef175fbde355c0fb`.
+- Roadmap: blob `f948e5fd2c3ebc9f2dd2fa6ed987fdff36ee2eb2`.
+- O PR remoto ainda aponta para a V1; a V2 está um commit à frente apenas no worktree local.
+- Nenhum arquivo foi alterado. `npm ci` e `npm run check`: não aplicáveis à passagem read-only.
+
+## Fontes consultadas
+
+- V1 e V2 integrais pelos blobs imutáveis indicados.
+- `docs/roadmap.md` integral no snapshot-base indicado.
+- Debate 12B integral, revisão Google Docs `ANLCKQlS1g0vTyO0uq0_zzt2ja9G3M0cvnxl6Tv3IEbh6Fhgn4jc_11VJVA3seGJeMrS9fbACTgVzpCDbi5eWkFnBzJYiiylX4qsQMmh8rA`, especialmente decisões 3.1–3.16 e PB 1.
+- No snapshot-base: `README.md`, `docs/base-tecnica.md`, `docs/schema.md`, `docs/platform-config.md`, `docs/automations.md`, `docs/design-system.md` e `docs/openai-model-snapshot.md`.
+- Inventário read-only do código, migrations, testes, snippets, workflows e consumidores atuais dos boundaries E20/E21.
+- Metadados atuais do PR #939 via GitHub.
+- Nenhum parecer, confronto ou matriz foi consultado.
+
+## Aderência ao plano conceitual ou N/A
+
+N/A confirmado. O Debate 12B é a própria fonte funcional competente e não referencia plano conceitual separado.
+
+A cadeia verificável é `Debate 12B, decisões 3.1–3.16 → V1 congelada → V2 candidata`. A V1 reproduz o PB 1 aprovado sem perda material, e a V2 preserva o resultado funcional greenfield.
+
+## Cobertura funcional da v1
+
+A cobertura é integral:
+
+- substituição in place da E20 vigente;
+- Supabase como autoridade factual única;
+- eliminação de versões, planos, `allowedPlans`, revisão por versão e publisher repo-only;
+- cinco escopos factuais preservados;
+- `fieldKey` globalmente único, sem override ou shadowing;
+- herança Universal → Segmento → Nicho → Ultranicho;
+- lifecycle ativo/inativo com reativação;
+- gestão estruturada em uma página principal;
+- liberação humana independente de IA;
+- avaliação por IA opcional, transitória e sem mutação;
+- retirada da E20.7 dormente;
+- ausência de coordenação retroativa de consumidores;
+- reconciliação terminal das fontes canônicas.
+
+Os casos adjacentes foram reconhecidos: E18.4, resíduos físicos E19, E20.5, responsabilidades humanas e consultivas E20.6 e governança Workloads/Costs da E21.
+
+## Derivação técnica e executabilidade
+
+Classificação dos acréscimos:
+
+- `derivação técnica da v1`: substituição do boundary existente, persistência Supabase, resolver puro, adapters, CRUD administrativo, compare-and-set, liberação humana, adaptação do workload consultivo, retirada da E20.7, cutover, testes e reconciliação documental;
+- `modernização técnica justificada`: snippet SQL read-only reexecutável e critérios proporcionais de reconhecibilidade/acessibilidade. Há ganho verificável de diagnóstico e QA, baixo impacto estrutural e nenhuma ampliação funcional;
+- `ampliação de escopo`: nenhuma identificada.
+
+A solução é tecnicamente plausível e evita serviço, agente, fila, cache, engine ou infraestrutura nova. Os critérios de aceite cobrem domínio, banco, segurança, paginação, concorrência, UI, IA, regressões, QA hospedado e validação pós-apply.
+
+A executabilidade ainda não está completa nos pontos objetivos abaixo.
+
+## Complexidade não justificada
+
+Não foi identificada complexidade funcional excedente. O detalhamento de IA preserva um workload já vigente e restringe sua operação.
+
+O principal risco de complexidade está na tentativa de realizar criação, carga, repontamento e remoção física em um único cutover sem uma sequência operacional segura e comprovável. Isso não exige decisão de produto, mas fechamento técnico explícito.
+
+## Lacunas, contradições e riscos residuais
+
+1. A V2 cria `field_key text primary key`, mas a convenção normativa de novas entidades exige `id uuid primary key default gen_random_uuid()`. Falta adotar `id` como PK e `field_key` como `UNIQUE`, ou registrar justificativa técnica competente para a exceção.
+
+2. `created_by` e `updated_by` são `NOT NULL` e referenciam `auth.users`, mas a carga inicial deriva do registry v6 e não possui ator humano canônico. A migration não tem como inventar esse UUID. O contrato deve definir metadado nulo para bootstrap, ator técnico já autorizado ou outra solução compatível.
+
+3. Falta a decisão explícita exigida para auditoria e participação da nova tabela no Trigger Hub. RLS e grants estão definidos, mas segurança não substitui essa decisão.
+
+4. A forma de `definition jsonb` permanece sem shape técnico fechado: nomes canônicos das propriedades, enums, obrigatoriedade, condições e validações não estão suficientemente definidos para migration, schema runtime, carga inicial e snippet produzirem o mesmo contrato.
+
+5. O cutover não ordena de forma segura deploy e apply. O push na `main` dispara automaticamente tanto Production Vercel quanto o apply Supabase; criar a tabela e remover a tabela/coluna antigas na mesma migration pode atingir o runtime anterior antes da entrada do novo deployment. A previsão de “indisponibilidade explícita” cobre o runtime novo antes do objeto, mas não protege o runtime antigo depois do DROP.
+
+6. A carga “somente fields ativos da v6” precisa declarar transformação determinística, cardinalidade esperada e tratamento de qualquer definição incompatível com unicidade global/residência única. Sem isso, migration e verificador podem concordar entre si sobre uma carga incompleta.
+
+7. A retirada da E20.7 precisa distinguir explicitamente allowlist/runtime corrente de linhas históricas append-only da E21. O padrão vigente permite que unidades retiradas permaneçam históricas e ignoradas pela allowlist; “remover configuração operacional” não pode ser interpretado como apagar revisões, ativações ou evidência financeira preservada.
+
+## Correções candidatas
+
+- Alinhar a identidade da tabela à convenção de PK UUID ou justificar formalmente a exceção, mantendo `field_key` globalmente único.
+- Resolver o ator da carga inicial e explicitar auditoria/Trigger Hub.
+- Fechar o schema canônico de `definition` e a transformação exata da v6, incluindo cardinalidade e negativas verificáveis.
+- Substituir o cutover atômico ambíguo por sequência expand/cutover/contract dentro da E20.8, sem dual-read, dual-write ou compatibilidade operacional: preservar temporariamente objetos antigos apenas enquanto o runtime anterior puder estar ativo; remover fisicamente somente após o novo SHA estar implantado e validado.
+- Declarar gates de parada para cada transição, inclusive proteção contra apply automático antes do deployment compatível.
+- Preservar revisões, ativações e custos históricos da E20.7 como estado inerte; retirar somente consumidores, allowlists e capacidade de tracking novo.
+- Manter todos os demais limites da V2, sem introduzir novo subcaso, serviço ou autoridade.
+
+Conclusão desta passagem: `aprovado com correções obrigatórias`.
+
+## Próximo passo mínimo e seguro
+
+Corrigir exclusivamente a V2 nos pontos acima, preservar esta Passagem 1 sem reescrita e somente então seguir para consolidação e Passagem 2. Não iniciar implementação nem liberar merge do plano enquanto essas correções objetivas permanecerem.
+
+## Evidência do Analista — Revisão delta da Passagem 1
+
+14/09/2026 13:01
+
+# Revisão delta — Passagem 1
+
+## Versões e caso avaliados
+
+- Modo: `revisao_delta`
+- Caso: E20.8 — Substituição greenfield e simplificação terminal da E20
+- Repositório: `AlcinoAfonso/LP-Factory-10`
+- Branch: `codex-app/e20-8-greenfield`
+- Base: `806bf0f8cf13d5222537953eef175fbde355c0fb`
+- V1 congelada: `84534bdbf674859b388009bea3c11f74ced5e3e6`
+- V2 anterior: `0e46babf8117a5b61a12ceb83d28acec37b1192d`
+- V2 corrigida: `4cd8efa7c3e4db2cb75d4458f159328cf04207cd`
+- Arquivo: `docs/lousa-plano-base-e20-8.md`
+
+A Passagem 1 anterior foi preservada sem reinterpretação.
+
+## Fontes consultadas
+
+- Diff integral entre as duas versões da V2.
+- V2 corrigida no blob `731cb32376c238b0dba2048b1395c8c129600625`.
+- Referências imutáveis da V1, base e roadmap já fixadas para a Passagem 1.
+- Metadados do commit corrigido e validação `git diff --check`.
+
+Nenhum parecer, matriz ou artefato de auditoria foi consultado.
+
+## Verificação das correções obrigatórias
+
+1. **Identidade da nova tabela:** atendida. A tabela passou a ter PK UUID e `field_key` único.
+2. **Atores no carregamento inicial:** atendida. `created_by` e `updated_by` admitem `null` no bootstrap, enquanto mutações posteriores exigem identidade autenticada.
+3. **Auditoria e Trigger Hub:** atendida. A V2 registra explicitamente a não participação funcional de ambos, com boundary compatível com a V1.
+4. **Contrato de `definition jsonb`:** atendida. Propriedades, enums, uniões, restrições e validação Zod foram especificados.
+5. **Cutover seguro:** atendida. A aplicação automática da migration é suspensa, o runtime do mesmo SHA é publicado primeiro e a migration destrutiva somente é aplicada depois, evitando que o `DROP` alcance o runtime antigo.
+6. **Transformação determinística da registry v6:** atendida. A cardinalidade de 25 entradas, sua residência por camada, remoções e condições de aborto diante de divergência foram explicitadas.
+7. **Preservação histórica de E20.7/E21:** atendida. Revisões, ativações e eventos históricos permanecem append-only, enquanto consumidores, allowlists e tracking ativos são removidos.
+
+## Regressões ou bloqueios residuais
+
+Não foi identificado bloqueio residual objetivo. O delta permanece restrito ao plano-base, não amplia o resultado funcional da V1 e não introduz questão material nova que exija decisão humana ou nova rodada especializada.
+
+## Conclusão final
+
+`aprovado para merge do plano-base v2`
+
+## Próximo passo mínimo e seguro
+
+Registrar o fechamento das sete pendências e prosseguir ao gate subsequente previsto pela orquestração, sem reabrir a Passagem 1 e sem antecipar avaliação da implementação.

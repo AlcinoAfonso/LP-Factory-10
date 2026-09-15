@@ -1,7 +1,7 @@
 import {
-  buildLandingPageInputCatalogTaxonChain,
-  type LandingPageInputCatalogTaxonChain,
-  type LandingPageInputCatalogTaxonIdentity,
+  buildFactualTaxonChain,
+  type FactualTaxonChain,
+  type FactualTaxonIdentity,
 } from "../landing-page/input-catalog";
 
 export const TAXON_CHAIN_PAGE_SIZE = 500;
@@ -17,9 +17,9 @@ export type CompleteTaxonChainResult =
   | Readonly<{
       ok: true;
       value: Readonly<{
-        selected: LandingPageInputCatalogTaxonIdentity;
-        taxons: readonly LandingPageInputCatalogTaxonIdentity[];
-        chain: LandingPageInputCatalogTaxonChain;
+        selected: FactualTaxonIdentity;
+        taxons: readonly FactualTaxonIdentity[];
+        chain: FactualTaxonChain;
       }>;
     }>
   | Readonly<{
@@ -50,7 +50,7 @@ export async function readCompleteTaxonChainFromPages(
     return failure("TAXON_IDENTITY_INVALID", "O identificador do taxon é inválido.");
   }
 
-  const taxons: LandingPageInputCatalogTaxonIdentity[] = [];
+  const taxons: FactualTaxonIdentity[] = [];
   let offset = 0;
   while (true) {
     let response: Awaited<ReturnType<ReadTaxonChainPage>>;
@@ -89,7 +89,7 @@ export async function readCompleteTaxonChainFromPages(
         "A cadeia taxonômica contém identidade inválida.",
       );
     }
-    taxons.push(...(page as LandingPageInputCatalogTaxonIdentity[]));
+    taxons.push(...(page as FactualTaxonIdentity[]));
     if (response.data.length < TAXON_CHAIN_PAGE_SIZE) break;
     offset += response.data.length;
   }
@@ -115,7 +115,7 @@ export async function readCompleteTaxonChainFromPages(
   const resolutionTaxons = selected.isActive
     ? taxons
     : taxons.map((taxon) => taxon.id === selected.id ? resolutionSelected : taxon);
-  const chain = buildLandingPageInputCatalogTaxonChain(resolutionSelected, resolutionTaxons);
+  const chain = buildFactualTaxonChain(resolutionSelected, resolutionTaxons);
   if (!chain.ok) {
     return failure("INVALID_TAXON_CHAIN", chain.error.message);
   }
@@ -131,7 +131,7 @@ export async function readCompleteTaxonChainFromPages(
 
 function normalizeTaxonIdentity(
   value: unknown,
-): LandingPageInputCatalogTaxonIdentity | null {
+): FactualTaxonIdentity | null {
   if (!isRecord(value)) return null;
   if (
     typeof value.id !== "string" ||
@@ -160,7 +160,7 @@ function normalizeTaxonIdentity(
 }
 
 function hasStrictDeterministicIdentityOrder(
-  taxons: readonly LandingPageInputCatalogTaxonIdentity[],
+  taxons: readonly FactualTaxonIdentity[],
 ): boolean {
   return taxons.every(
     (taxon, index) => index === 0 || taxons[index - 1].id < taxon.id,

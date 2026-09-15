@@ -4,15 +4,7 @@ import {
   listLandingPageRootVersions,
   resolveLandingPageRootParameters,
 } from "@/conversion-content/landing-page";
-import {
-  landingPageInputCatalogPlans,
-  buildLandingPageInputCatalogTaxonChain,
-  CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION,
-  listLandingPageInputCatalogVersions,
-  resolveLandingPageInputCatalog,
-  type LandingPageInputCatalogPlan,
-  type LandingPageInputCatalogTaxonIdentity,
-} from "@/conversion-content/landing-page/input-catalog";
+import { readFactualCoverageForTaxon } from "@/conversion-content/adapters/factualFieldsAdapter";
 import { createServiceClient } from "@/lib/supabase/service";
 import type { AdminTaxonSummary } from "./adminReadOnlyTypes";
 
@@ -78,55 +70,27 @@ function readRootParameters(query: StructureQuery) {
 }
 
 async function readInputs(query: StructureQuery) {
-  const taxonRead = await readActiveTaxons();
-  const versions = listLandingPageInputCatalogVersions();
-  const requestedVersion = parseInteger(query.catalogVersion);
-  const version =
-    requestedVersion !== null && versions.includes(requestedVersion)
-      ? requestedVersion
-      : CURRENT_LANDING_PAGE_INPUT_CATALOG_VERSION;
-  const plan = landingPageInputCatalogPlans.includes(
-    query.plan as LandingPageInputCatalogPlan,
-  )
-    ? (query.plan as LandingPageInputCatalogPlan)
-    : "starter";
+  const taxonRead = await readTaxons();
   const selectedTaxon = selectTaxon(taxonRead.taxons, query.taxon);
 
-  if (taxonRead.error || version === null || !selectedTaxon) {
+  if (taxonRead.error || !selectedTaxon) {
     return {
       taxons: taxonRead.taxons,
       taxonError: taxonRead.error,
-      versions,
-      version,
-      plans: landingPageInputCatalogPlans,
-      plan,
       selectedTaxon,
-      chain: null,
       result: null,
     };
   }
 
-  const inputCatalogTaxons = taxonRead.taxons.map(toInputCatalogTaxonIdentity);
-  const chain = buildLandingPageInputCatalogTaxonChain(
-    toInputCatalogTaxonIdentity(selectedTaxon),
-    inputCatalogTaxons,
-  );
   return {
     taxons: taxonRead.taxons,
     taxonError: null,
-    versions,
-    version,
-    plans: landingPageInputCatalogPlans,
-    plan,
     selectedTaxon,
-    chain,
-    result: chain.ok
-      ? resolveLandingPageInputCatalog({ version, plan, taxonChain: chain.value })
-      : null,
+    result: await readFactualCoverageForTaxon(selectedTaxon.id, { allowInactiveSelected: true, includeInactive: true }),
   };
 }
 
-async function readActiveTaxons(): Promise<{
+async function readTaxons(): Promise<{
   taxons: StructureTaxon[];
   error: string | null;
 }> {
@@ -138,7 +102,6 @@ async function readActiveTaxons(): Promise<{
     const { data, error } = await supabase
       .from("business_taxons")
       .select("id,parent_id,level,name,slug,is_active")
-      .eq("is_active", true)
       .in("level", ["segment", "niche", "ultra_niche"])
       .order("level", { ascending: true })
       .order("name", { ascending: true })
@@ -182,19 +145,6 @@ function selectTaxon(
   return taxons.find((taxon) => taxon.id === taxonId) ?? taxons[0] ?? null;
 }
 
-function toInputCatalogTaxonIdentity(
-  taxon: StructureTaxon,
-): LandingPageInputCatalogTaxonIdentity {
-  return {
-    id: taxon.id,
-    parentId: taxon.parentId,
-    level: taxon.level,
-    name: taxon.name,
-    slug: taxon.slug,
-    isActive: taxon.isActive,
-  };
-}
-
 function parseInteger(value: string | undefined): number | null {
   if (!value || !/^\d+$/.test(value)) return null;
   const parsed = Number(value);
@@ -207,7 +157,7 @@ function isStructureTaxonRow(value: unknown): value is {
   level: "segment" | "niche" | "ultra_niche";
   name: string;
   slug: string;
-  is_active: true;
+  is_active: boolean;
 } {
   if (typeof value !== "object" || value === null) return false;
   const row = value as Record<string, unknown>;
@@ -217,6 +167,6 @@ function isStructureTaxonRow(value: unknown): value is {
     (row.level === "segment" || row.level === "niche" || row.level === "ultra_niche") &&
     typeof row.name === "string" &&
     typeof row.slug === "string" &&
-    row.is_active === true
+    typeof row.is_active === "boolean"
   );
 }

@@ -3,9 +3,8 @@
 import { useActionState, useEffect, useRef, useState, type ReactNode } from "react";
 
 import { AdminStatusBadge } from "@/components/admin/AdminStatusBadge";
-import type { OpenAiActiveCostReadModel } from "@/openai-costs/active-contracts";
+import type { OpenAiActiveCostReadModel, OpenAiCostReadWorkloadId } from "@/openai-costs/active-contracts";
 import type { OpenAiCostsFinancialComposition } from "@/openai-costs/dashboard";
-import type { OpenAiWorkloadId } from "@/openai-workloads";
 import { refreshOpenAiCostsAction, type OpenAiCostsActionState } from "../actions";
 import {
   OpenAiCostExecutionDetails,
@@ -28,7 +27,7 @@ const WORKLOAD_OPTIONS = [
   "taxon_input_catalog_sufficiency_evaluation",
   "landing_page_dynamic_market_research",
   "supabase_inspect",
-] as const satisfies readonly OpenAiWorkloadId[];
+] as const satisfies readonly OpenAiCostReadWorkloadId[];
 const controlClassName = "min-h-11 rounded-md border border-input bg-background px-3 text-sm outline-none focus-visible:ring-4 focus-visible:ring-brand-600/30 disabled:cursor-not-allowed disabled:opacity-60";
 
 export function OpenAiCostsDashboard({ startDate, endDate }: Props) {
@@ -206,7 +205,7 @@ function TableCell({ children }: Readonly<{ children: ReactNode }>) { return <td
 function countRetries(model: OpenAiActiveCostReadModel) { return model.executions.reduce((total, execution) => total + execution.operations.filter((operation) => operation.retryOfOperationId !== null).length, 0); }
 function universeLabel(universe: "client" | "lp_factory") { return universe === "client" ? "Cliente" : "LP Factory"; }
 function environmentLabel(environment: "production" | "preview" | "development") { return environment === "production" ? "Produção" : environment === "preview" ? "Preview" : "Desenvolvimento"; }
-function workloadLabel(workload: OpenAiWorkloadId) { const labels: Record<OpenAiWorkloadId, string> = { niche_resolution: "Resolução de nicho", commercial_activation_draft_generation: "Draft de ativação comercial", taxon_input_catalog_sufficiency_evaluation: "Suficiência factual do catálogo", landing_page_dynamic_market_research: "Pesquisa dinâmica de mercado", supabase_inspect: "Supabase Inspect" }; return labels[workload]; }
+function workloadLabel(workload: OpenAiCostReadWorkloadId) { const labels: Record<OpenAiCostReadWorkloadId, string> = { niche_resolution: "Resolução de nicho", commercial_activation_draft_generation: "Draft de ativação comercial", taxon_input_catalog_sufficiency_evaluation: "Suficiência factual do catálogo", landing_page_dynamic_market_research: "Pesquisa dinâmica de mercado", supabase_inspect: "Supabase Inspect" }; return labels[workload]; }
 function formatTimestamp(value: string) { return new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "medium", timeZone: "America/Sao_Paulo" }).format(new Date(value)); }
 function formatUsd(value: string) { const negative = value.startsWith("-"); const unsigned = negative ? value.slice(1) : value; const [integer, fraction = ""] = unsigned.split("."); const grouped = integer.replace(/\B(?=(\d{3})+(?!\d))/g, "."); return `US$ ${negative ? "−" : ""}${grouped}${fraction ? `,${fraction}` : ",00"}`; }
 function formatDate(value: string) { const [year, month, day] = value.split("-"); return `${day}/${month}/${year}`; }

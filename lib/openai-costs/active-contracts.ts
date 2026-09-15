@@ -8,6 +8,10 @@ import type {
 } from "../openai-workloads";
 
 export const OPENAI_ACTIVE_COST_CONTRACT_VERSION = "e21.5.6-v2";
+export const OPENAI_RETIRED_COST_WORKLOAD_IDS = ["landing_page_dynamic_market_research"] as const;
+
+export type OpenAiRetiredCostWorkloadId = (typeof OPENAI_RETIRED_COST_WORKLOAD_IDS)[number];
+export type OpenAiCostReadWorkloadId = OpenAiWorkloadId | OpenAiRetiredCostWorkloadId;
 
 export type OpenAiCostEnvironment = Exclude<OpenAiWorkloadEnvironment, "unknown">;
 export type OpenAiCostExecutionOrigin = "runtime" | "administrative_proof";
@@ -127,7 +131,7 @@ export type OpenAiActiveCostOperation = Readonly<{
 
 export type OpenAiActiveCostExecution = Readonly<{
   executionId: string;
-  workload: OpenAiWorkloadId;
+  workload: OpenAiCostReadWorkloadId;
   environment: OpenAiCostEnvironment;
   executionOrigin: OpenAiCostExecutionOrigin;
   universe: OpenAiCostUniverse;
@@ -153,7 +157,7 @@ export type OpenAiActiveCostGroup = Readonly<{
   universe: OpenAiCostUniverse;
   attributionStatus: OpenAiCostAttributionStatus;
   accountId: string | null;
-  workload: OpenAiWorkloadId;
+  workload: OpenAiCostReadWorkloadId;
   calculatedCostUsd: string;
   executionCount: number;
   operationCount: number;
@@ -163,7 +167,7 @@ export type OpenAiActiveCostGroup = Readonly<{
 
 export type OpenAiActiveCostCoverage = Readonly<{
   environment: OpenAiCostEnvironment;
-  workload: OpenAiWorkloadId;
+  workload: OpenAiCostReadWorkloadId;
   activatedAt: string;
   contractVersion: string;
 }>;
@@ -195,7 +199,7 @@ export type OpenAiActiveCostReadResult =
 export type OpenAiActiveCostFilters = Readonly<{
   universe?: OpenAiCostUniverse | null;
   accountId?: string | null;
-  workload?: OpenAiWorkloadId | null;
+  workload?: OpenAiCostReadWorkloadId | null;
 }>;
 
 export function clientOpenAiCostContext(

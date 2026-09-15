@@ -1,8 +1,8 @@
-import type { LandingPageInputCatalogTaxonIdentity } from "@/conversion-content/landing-page/input-catalog";
+import type { FactualTaxonIdentity } from "@/conversion-content/landing-page/input-catalog";
 
 export type AdminTaxonFactualReleaseSnapshot = Readonly<{
   coverageFingerprint: string;
-  identity: LandingPageInputCatalogTaxonIdentity;
+  identity: FactualTaxonIdentity;
 }>;
 
 export type AdminTaxonFactualReleaseCoreResult =
@@ -16,10 +16,10 @@ type AdminTaxonFactualReleasePorts = Readonly<{
     | Readonly<{ ok: true; value: AdminTaxonFactualReleaseSnapshot }>
     | Readonly<{ ok: false; message: string }>
   >;
-  activate: (identity: LandingPageInputCatalogTaxonIdentity) => Promise<boolean>;
+  activate: (identity: FactualTaxonIdentity) => Promise<boolean>;
   verifyIdentity: (
     taxonId: string,
-  ) => Promise<LandingPageInputCatalogTaxonIdentity | null>;
+  ) => Promise<FactualTaxonIdentity | null>;
 }>;
 
 export async function executeAdminTaxonFactualReleaseCore(
@@ -69,8 +69,8 @@ export async function executeAdminTaxonFactualReleaseCore(
 }
 
 function sameTaxonIdentity(
-  left: LandingPageInputCatalogTaxonIdentity,
-  right: LandingPageInputCatalogTaxonIdentity,
+  left: FactualTaxonIdentity,
+  right: FactualTaxonIdentity,
 ): boolean {
   return (
     left.id === right.id &&

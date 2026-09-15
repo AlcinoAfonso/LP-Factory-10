@@ -48,8 +48,8 @@ export const openAiWorkloadRegistry = deepFreeze([
     displayName: "Avaliação de suficiência factual do catálogo por taxon",
     classification: "product_runtime",
     configurationKind: "effective",
-    consumer: "E20.6.5 — avaliação administrativa da suficiência factual E20.2",
-    fallback: "Falhar fechado sem registrar suficiência",
+    consumer: "E20.8.7 — avaliação consultiva da cobertura factual corrente",
+    fallback: "Falhar fechado sem mutação nem bloqueio da operação humana",
     webSearch: {
       externalWebAccess: true,
       searchContextSize: "medium",
@@ -62,27 +62,6 @@ export const openAiWorkloadRegistry = deepFreeze([
       reasoningEffort: "low",
       source: "repo_catalog",
       revision,
-    },
-  },
-  {
-    id: "landing_page_dynamic_market_research",
-    displayName: "Pesquisa dinâmica de mercado para landing page",
-    classification: "product_runtime",
-    configurationKind: "effective",
-    consumer: "E20.7.4 — complemento consultivo de conhecimento de mercado",
-    fallback: "Falhar a resolução técnica sem invalidar a oferta",
-    webSearch: {
-      externalWebAccess: true,
-      searchContextSize: "medium",
-      maxToolCalls: 2,
-      contextWindowTokenBudget: 128000,
-    },
-    configuration: {
-      apiKind: "responses_text",
-      model: "gpt-5.6-luna",
-      reasoningEffort: "high",
-      source: "repo_catalog",
-      revision: "v1",
     },
   },
   {
@@ -119,14 +98,8 @@ const workloadPresentations = deepFreeze([
   {
     workload: "taxon_input_catalog_sufficiency_evaluation",
     name: "Avaliação de suficiência factual do catálogo por taxon",
-    roadmapReference: "E20.6.5",
+    roadmapReference: "E20.8.7",
     visualGroup: null,
-  },
-  {
-    workload: "landing_page_dynamic_market_research",
-    name: "Pesquisa dinâmica de mercado para landing page",
-    roadmapReference: "E20.7.4",
-    visualGroup: "landing_page",
   },
 ] satisfies readonly OpenAiWorkloadPresentation[]);
 

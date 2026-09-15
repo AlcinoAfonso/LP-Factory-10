@@ -96,8 +96,7 @@ function isTextWorkload(
   return (
     value === "niche_resolution" ||
     value === "commercial_activation_draft_generation" ||
-    value === "taxon_input_catalog_sufficiency_evaluation" ||
-    value === "landing_page_dynamic_market_research"
+    value === "taxon_input_catalog_sufficiency_evaluation"
   );
 }
 
@@ -157,7 +156,6 @@ const managedWorkloads = [
   "niche_resolution",
   "commercial_activation_draft_generation",
   "taxon_input_catalog_sufficiency_evaluation",
-  "landing_page_dynamic_market_research",
 ] as const satisfies readonly ManagedWorkload[];
 
 const unitRowKeys = [
