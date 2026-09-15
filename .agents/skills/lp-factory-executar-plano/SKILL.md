@@ -155,6 +155,7 @@ A validação deve provar os critérios de aceite do contrato. O Executor não p
 - priorize o Preview da branch quando aplicável e reutilize consumidor ou workflow autorizado já existente em vez de improvisar outro caminho de browser, rede ou mutação;
 - evidência produzida por GitHub Actions, Vercel, Supabase ou outro consumidor autorizado é válida para o aceite quando estiver vinculada ao mesmo código, Preview ou estado relevante e comprovar o critério correspondente;
 - participação humana condicional, delimitada e explicitamente aprovada pela V1, quando não restringida pelo contrato técnico aplicável, pode integrar a jornada daquele cenário e não caracteriza, por si só, falha de autonomia, bloqueio do pipeline ou obrigação de automatizá-la;
+- antes de recorrer a participação humana prevista pela V1, use qualquer caminho autorizado já disponível que cumpra integralmente o mesmo critério sem intervenção humana;
 - no `Autônomo`, participação humana fora da V1 não é fallback do Executor: registrar o critério, a evidência e os caminhos autorizados avaliados e devolver o ponto ao Estrategista Autônomo, sem solicitar intervenção ao usuário;
 - registre por critério a evidência objetiva obtida e, quando houver frontend, valide as superfícies e viewports definidos no plano;
 - não declare funcionamento, prontidão ou conclusão enquanto houver critério obrigatório sem evidência suficiente.
