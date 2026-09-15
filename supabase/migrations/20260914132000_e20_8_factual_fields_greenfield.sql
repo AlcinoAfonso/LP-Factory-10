@@ -174,14 +174,14 @@ create table public.taxon_factual_fields (
     (not (definition ? 'requiredWhen') or (
       jsonb_typeof(definition->'requiredWhen') = 'object'
       and definition->'requiredWhen' ?& array['fieldKey','operator','value']
-      and (definition->'requiredWhen' - array['fieldKey','operator','value']::text[]) = '{}'::jsonb
+      and ((definition->'requiredWhen') - array['fieldKey','operator','value']::text[]) = '{}'::jsonb
       and definition->'requiredWhen'->>'fieldKey' ~ '^[a-z][a-z0-9_]*$'
       and definition->'requiredWhen'->>'operator' in ('equals','in')
     ))
     and (not (definition ? 'applicableWhen') or (
       jsonb_typeof(definition->'applicableWhen') = 'object'
       and definition->'applicableWhen' ?& array['fieldKey','operator','value']
-      and (definition->'applicableWhen' - array['fieldKey','operator','value']::text[]) = '{}'::jsonb
+      and ((definition->'applicableWhen') - array['fieldKey','operator','value']::text[]) = '{}'::jsonb
       and definition->'applicableWhen'->>'fieldKey' ~ '^[a-z][a-z0-9_]*$'
       and definition->'applicableWhen'->>'operator' in ('equals','in')
     ))
