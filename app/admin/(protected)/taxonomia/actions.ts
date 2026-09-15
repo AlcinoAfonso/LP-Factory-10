@@ -28,6 +28,7 @@ export async function evaluateInputCatalogAction(input: Readonly<{ taxonId: stri
   try { prompt = buildInputCatalogEvaluationPrompt({ context: context.value, focalHypothesis: input.focalHypothesis }); }
   catch { return { ok: false, code: "INVALID_HYPOTHESIS", message: "Informe uma hipótese focal válida." }; }
   const provider = await evaluateInputCatalogWithOpenAi({
+    apiKey: process.env.OPENAI_API_KEY,
     configuration: runtime.configuration, environment: runtime.environment, requestId: randomUUID(),
     safetyIdentifier: `platform_admin_${gate.actorUserId.replace(/-/g, "").slice(0, 32)}`,
     request: { mode: input.mode, sourceStrategy: context.value.sourceStrategy, deadlineAtMs: Date.now() + 45_000, prompt, outputSchema: inputCatalogEvaluationOutputJsonSchema },
