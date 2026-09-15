@@ -34,7 +34,7 @@ with table_columns as (
       where c.oid = 'public.taxon_factual_fields'::regclass and a.grantee = 0
         and a.privilege_type in ('SELECT','INSERT','UPDATE','DELETE','TRUNCATE')
     ) as public_denied,
-    (select array_agg(attname order by attnum) = array['id','field_key','taxon_id','definition','is_active','created_by','updated_by','created_at','updated_at']
+    (select array_agg(attname::text order by attnum) = array['id','field_key','taxon_id','definition','is_active','created_by','updated_by','created_at','updated_at']
       and bool_and(case attname
         when 'id' then data_type = 'uuid' and attnotnull and default_expression = 'gen_random_uuid()'
         when 'field_key' then data_type = 'text' and attnotnull and default_expression is null

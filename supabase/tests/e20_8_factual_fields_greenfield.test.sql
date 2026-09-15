@@ -35,7 +35,13 @@ declare
     '{"purpose":"Teste","valueType":"string","valueScope":"business","expectedValueOrigin":"business_provided","obligation":"required","validation":{"kind":"type_only","extra":true}}'::jsonb,
     '{"purpose":"Teste","valueType":"string_list","valueScope":"business","expectedValueOrigin":"business_provided","obligation":"required","validation":{"kind":"string_list","minItems":3,"maxItems":2}}'::jsonb,
     '{"purpose":"Teste","valueType":"number_range","valueScope":"offer","expectedValueOrigin":"offer_provided","obligation":"optional","validation":{"kind":"number_range","currency":"BRL","minimum":-1,"maximum":-2}}'::jsonb,
-    '{"purpose":"Teste","valueType":"string","valueScope":"business","expectedValueOrigin":"business_provided","obligation":"conditional","requiredWhen":{"fieldKey":"other_field","operator":"in","value":"wrong"},"validation":{"kind":"type_only"}}'::jsonb
+    '{"purpose":"Teste","valueType":"string","valueScope":"business","expectedValueOrigin":"business_provided","obligation":"conditional","requiredWhen":{"fieldKey":"other_field","operator":"in","value":"wrong"},"validation":{"kind":"type_only"}}'::jsonb,
+    '{"purpose":"Teste","valueType":null,"valueScope":"business","expectedValueOrigin":"business_provided","obligation":"required","validation":{"kind":"type_only"}}'::jsonb,
+    '{"purpose":"Teste","valueType":"string","valueScope":null,"expectedValueOrigin":"business_provided","obligation":"required","validation":{"kind":"type_only"}}'::jsonb,
+    '{"purpose":"Teste","valueType":"string","valueScope":"business","expectedValueOrigin":null,"obligation":"required","validation":{"kind":"type_only"}}'::jsonb,
+    '{"purpose":"Teste","valueType":"string","valueScope":"business","expectedValueOrigin":"business_provided","obligation":null,"validation":{"kind":"type_only"}}'::jsonb,
+    '{"purpose":"Teste","valueType":"string","valueScope":"business","expectedValueOrigin":"business_provided","obligation":"conditional","requiredWhen":{"fieldKey":"other_field","operator":null,"value":["x"]},"validation":{"kind":"type_only"}}'::jsonb,
+    '{"purpose":"Teste","valueType":"number_range","valueScope":"offer","expectedValueOrigin":"offer_provided","obligation":"optional","validation":{"kind":"number_range"}}'::jsonb
   ];
   invalid_definition jsonb;
   case_number integer := 0;
