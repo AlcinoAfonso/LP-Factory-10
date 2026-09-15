@@ -11,8 +11,9 @@ import type { ResolvedFactualCoverage } from "../input-catalog";
 import { evaluateInputCatalogWithOpenAi, parseEvaluationResponse } from "../../adapters/inputCatalogEvaluationOpenAiAdapter";
 import { resolveInputCatalogEvaluationRuntimeReadinessCore } from "../../adapters/inputCatalogEvaluationRuntimeGateCore";
 import { loadSelectedEndCustomerResearchFromClient, type SelectedEndCustomerResearchReadClient } from "../../adapters/selectedEndCustomerResearchAdapterCore";
-import { executeAdminTaxonFactualReleaseCore } from "../../../admin/adapters/adminTaxonFactualReleaseCore";
+import { executeAdminTaxonFactualReleaseCore, isAdminTaxonFactualReleaseReadConsistent } from "../../../admin/adapters/adminTaxonFactualReleaseCore";
 import { resolveOpenAiProductWorkload } from "../../../openai-workloads";
+import { hasPendingTaxonChanges, syncTaxonActiveDraft } from "../../../../components/admin/adminTaxonManageFormState";
 
 const VALID_INPUT: LoadEndCustomerResearchCandidateInput = {
   taxon: { slug: "corretor-imoveis", isActive: true },
@@ -234,6 +235,30 @@ assert.equal(timeout.status, "timeout");
 
 const fingerprint = "a".repeat(64);
 const inactiveIdentity = { ...coverage.servedTaxon, isActive: false };
+assert.equal(
+  isAdminTaxonFactualReleaseReadConsistent(
+    inactiveIdentity,
+    inactiveIdentity,
+    { ...inactiveIdentity, isActive: true },
+  ),
+  true,
+);
+assert.equal(
+  isAdminTaxonFactualReleaseReadConsistent(
+    inactiveIdentity,
+    { ...inactiveIdentity, isActive: true },
+    { ...inactiveIdentity, isActive: true },
+  ),
+  false,
+);
+assert.equal(
+  isAdminTaxonFactualReleaseReadConsistent(
+    inactiveIdentity,
+    inactiveIdentity,
+    { ...inactiveIdentity, name: "Outro taxon", isActive: true },
+  ),
+  false,
+);
 const releasePorts = (overrides: Readonly<{ fingerprint?: string; activated?: boolean; verified?: typeof inactiveIdentity | null }> = {}) => ({
   readSnapshot: async () => ({ ok: true as const, value: { coverageFingerprint: overrides.fingerprint ?? fingerprint, identity: inactiveIdentity } }),
   activate: async () => overrides.activated ?? true,
@@ -246,6 +271,22 @@ assert.deepEqual(humanReleaseWhileAiGateOff, { ok: true, taxonId: inactiveIdenti
 assert.ok(!(await executeAdminTaxonFactualReleaseCore({ taxonId: inactiveIdentity.id, coverageFingerprint: fingerprint }, releasePorts({ fingerprint: "b".repeat(64) }))).ok);
 assert.ok(!(await executeAdminTaxonFactualReleaseCore({ taxonId: inactiveIdentity.id, coverageFingerprint: fingerprint }, releasePorts({ activated: false }))).ok);
 assert.ok(!(await executeAdminTaxonFactualReleaseCore({ taxonId: inactiveIdentity.id, coverageFingerprint: fingerprint }, releasePorts({ verified: inactiveIdentity }))).ok);
+
+const persistedTaxonFields = { name: "Corretor Imóveis", slug: "corretor-imoveis", isActive: true };
+assert.equal(hasPendingTaxonChanges(persistedTaxonFields, persistedTaxonFields), false);
+assert.equal(hasPendingTaxonChanges({ ...persistedTaxonFields, name: "  Corretor   Imóveis  " }, persistedTaxonFields), false);
+assert.equal(hasPendingTaxonChanges({ ...persistedTaxonFields, name: "Corretor de Imóveis" }, persistedTaxonFields), true);
+assert.equal(hasPendingTaxonChanges({ ...persistedTaxonFields, slug: "corretor" }, persistedTaxonFields), true);
+assert.equal(hasPendingTaxonChanges({ ...persistedTaxonFields, isActive: false }, persistedTaxonFields), true);
+assert.equal(hasPendingTaxonChanges({ name: "Corretor de Imóveis", slug: "corretor-de-imoveis", isActive: false }, { name: "Corretor de Imóveis", slug: "corretor-de-imoveis", isActive: false }), false);
+
+const inactiveDraft = syncTaxonActiveDraft({ persisted: true, current: false }, false);
+assert.deepEqual(inactiveDraft, { persisted: false, current: false });
+assert.deepEqual(syncTaxonActiveDraft(inactiveDraft, true), { persisted: true, current: true });
+
+const releaseAdapterSource = readFileSync(new URL("../../../admin/adapters/adminTaxonFactualReleaseAdapter.ts", import.meta.url), "utf8");
+assert.match(releaseAdapterSource, /readCompleteTaxonChainForTaxon/);
+assert.match(releaseAdapterSource, /chain\.value\.selected/);
 
 const actionSource = readFileSync(new URL("../../../../app/admin/(protected)/taxonomia/actions.ts", import.meta.url), "utf8");
 const uiSource = readFileSync(new URL("../../../../app/admin/(protected)/taxonomia/[taxonId]/_components/AdminTaxonInputCatalogEvaluation.tsx", import.meta.url), "utf8");

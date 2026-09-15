@@ -9,6 +9,20 @@ export type AdminTaxonFactualReleaseCoreResult =
   | Readonly<{ ok: true; taxonId: string }>
   | Readonly<{ ok: false; error: string }>;
 
+export function isAdminTaxonFactualReleaseReadConsistent(
+  persistedIdentity: FactualTaxonIdentity,
+  selectedIdentity: FactualTaxonIdentity,
+  resolvedIdentity: FactualTaxonIdentity,
+): boolean {
+  const resolutionIdentity = selectedIdentity.isActive
+    ? selectedIdentity
+    : { ...selectedIdentity, isActive: true };
+  return (
+    sameTaxonIdentity(persistedIdentity, selectedIdentity) &&
+    sameTaxonIdentity(resolutionIdentity, resolvedIdentity)
+  );
+}
+
 type AdminTaxonFactualReleasePorts = Readonly<{
   readSnapshot: (
     taxonId: string,

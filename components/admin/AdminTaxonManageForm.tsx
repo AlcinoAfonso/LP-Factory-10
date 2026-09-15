@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useState } from "react";
 
 import type { AdminTaxonDetail } from "@/lib/admin/adapters/adminReadOnlyTypes";
+import { hasPendingTaxonChanges, syncTaxonActiveDraft } from "./adminTaxonManageFormState";
 
 type ManageTaxonActionState = {
   error: string | null;
@@ -36,13 +37,29 @@ export function AdminTaxonManageForm({
   const [deleteState, deleteFormAction, deletePending] = useActionState(deleteAction, initialState);
   const [name, setName] = useState(taxon.name);
   const [slug, setSlug] = useState(taxon.slug);
+  const [activeDraft, setActiveDraft] = useState({
+    persisted: taxon.isActive,
+    current: taxon.isActive,
+  });
   const [slugEdited, setSlugEdited] = useState(false);
   const [confirmSlug, setConfirmSlug] = useState("");
   const [aliasToConfirm, setAliasToConfirm] = useState<string | null>(null);
 
   useEffect(() => {
+    setActiveDraft((current) => syncTaxonActiveDraft(current, taxon.isActive));
+  }, [taxon.isActive]);
+
+  useEffect(() => {
     if (!slugEdited) setSlug(slugify(name));
   }, [name, slugEdited]);
+
+  const isActive = activeDraft.persisted === taxon.isActive
+    ? activeDraft.current
+    : taxon.isActive;
+  const hasPendingChanges = hasPendingTaxonChanges(
+    { name, slug, isActive },
+    { name: taxon.name, slug: taxon.slug, isActive: taxon.isActive },
+  );
 
   return (
     <div className="space-y-6">
@@ -55,7 +72,7 @@ export function AdminTaxonManageForm({
           </div>
           <button
             className="inline-flex min-h-11 items-center justify-center rounded-md bg-brand-600 px-4 text-sm font-medium text-white outline-none transition hover:bg-brand-700 focus-visible:ring-4 focus-visible:ring-brand-600/30 disabled:cursor-not-allowed disabled:opacity-60"
-            disabled={updatePending}
+            disabled={updatePending || !hasPendingChanges}
           >
             {updatePending ? "Salvando..." : "Salvar dados do taxon"}
           </button>
@@ -94,9 +111,13 @@ export function AdminTaxonManageForm({
             <label className="flex min-h-11 cursor-pointer items-center gap-2 rounded-md px-2 text-sm text-muted-foreground outline-none ring-brand-600/20 focus-within:ring-4">
               <input
                 className="h-4 w-4 rounded border-border text-brand-600"
+                checked={isActive}
                 name="isActive"
+                onChange={(event) => setActiveDraft({
+                  persisted: taxon.isActive,
+                  current: event.target.checked,
+                })}
                 type="checkbox"
-                defaultChecked={taxon.isActive}
               />
               Manter ativo
             </label>
