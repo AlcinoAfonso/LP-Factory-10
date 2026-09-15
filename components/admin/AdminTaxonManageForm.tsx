@@ -3,7 +3,7 @@
 import { useActionState, useEffect, useState } from "react";
 
 import type { AdminTaxonDetail } from "@/lib/admin/adapters/adminReadOnlyTypes";
-import { hasPendingTaxonChanges } from "./adminTaxonManageFormState";
+import { hasPendingTaxonChanges, syncTaxonActiveDraft } from "./adminTaxonManageFormState";
 
 type ManageTaxonActionState = {
   error: string | null;
@@ -44,6 +44,10 @@ export function AdminTaxonManageForm({
   const [slugEdited, setSlugEdited] = useState(false);
   const [confirmSlug, setConfirmSlug] = useState("");
   const [aliasToConfirm, setAliasToConfirm] = useState<string | null>(null);
+
+  useEffect(() => {
+    setActiveDraft((current) => syncTaxonActiveDraft(current, taxon.isActive));
+  }, [taxon.isActive]);
 
   useEffect(() => {
     if (!slugEdited) setSlug(slugify(name));

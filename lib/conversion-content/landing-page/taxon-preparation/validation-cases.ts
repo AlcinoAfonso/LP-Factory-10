@@ -13,7 +13,7 @@ import { resolveInputCatalogEvaluationRuntimeReadinessCore } from "../../adapter
 import { loadSelectedEndCustomerResearchFromClient, type SelectedEndCustomerResearchReadClient } from "../../adapters/selectedEndCustomerResearchAdapterCore";
 import { executeAdminTaxonFactualReleaseCore, isAdminTaxonFactualReleaseReadConsistent } from "../../../admin/adapters/adminTaxonFactualReleaseCore";
 import { resolveOpenAiProductWorkload } from "../../../openai-workloads";
-import { hasPendingTaxonChanges } from "../../../../components/admin/adminTaxonManageFormState";
+import { hasPendingTaxonChanges, syncTaxonActiveDraft } from "../../../../components/admin/adminTaxonManageFormState";
 
 const VALID_INPUT: LoadEndCustomerResearchCandidateInput = {
   taxon: { slug: "corretor-imoveis", isActive: true },
@@ -279,6 +279,10 @@ assert.equal(hasPendingTaxonChanges({ ...persistedTaxonFields, name: "Corretor d
 assert.equal(hasPendingTaxonChanges({ ...persistedTaxonFields, slug: "corretor" }, persistedTaxonFields), true);
 assert.equal(hasPendingTaxonChanges({ ...persistedTaxonFields, isActive: false }, persistedTaxonFields), true);
 assert.equal(hasPendingTaxonChanges({ name: "Corretor de Imóveis", slug: "corretor-de-imoveis", isActive: false }, { name: "Corretor de Imóveis", slug: "corretor-de-imoveis", isActive: false }), false);
+
+const inactiveDraft = syncTaxonActiveDraft({ persisted: true, current: false }, false);
+assert.deepEqual(inactiveDraft, { persisted: false, current: false });
+assert.deepEqual(syncTaxonActiveDraft(inactiveDraft, true), { persisted: true, current: true });
 
 const releaseAdapterSource = readFileSync(new URL("../../../admin/adapters/adminTaxonFactualReleaseAdapter.ts", import.meta.url), "utf8");
 assert.match(releaseAdapterSource, /readCompleteTaxonChainForTaxon/);
