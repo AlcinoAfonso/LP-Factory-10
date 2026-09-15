@@ -13,7 +13,7 @@ import { resolveInputCatalogEvaluationRuntimeReadinessCore } from "../../adapter
 import { loadSelectedEndCustomerResearchFromClient, type SelectedEndCustomerResearchReadClient } from "../../adapters/selectedEndCustomerResearchAdapterCore";
 import { executeAdminTaxonFactualReleaseCore, isAdminTaxonFactualReleaseReadConsistent } from "../../../admin/adapters/adminTaxonFactualReleaseCore";
 import { resolveOpenAiProductWorkload } from "../../../openai-workloads";
-import { hasPendingTaxonIdentityChanges } from "../../../../components/admin/adminTaxonManageFormState";
+import { hasPendingTaxonChanges } from "../../../../components/admin/adminTaxonManageFormState";
 
 const VALID_INPUT: LoadEndCustomerResearchCandidateInput = {
   taxon: { slug: "corretor-imoveis", isActive: true },
@@ -272,12 +272,13 @@ assert.ok(!(await executeAdminTaxonFactualReleaseCore({ taxonId: inactiveIdentit
 assert.ok(!(await executeAdminTaxonFactualReleaseCore({ taxonId: inactiveIdentity.id, coverageFingerprint: fingerprint }, releasePorts({ activated: false }))).ok);
 assert.ok(!(await executeAdminTaxonFactualReleaseCore({ taxonId: inactiveIdentity.id, coverageFingerprint: fingerprint }, releasePorts({ verified: inactiveIdentity }))).ok);
 
-const persistedIdentityFields = { name: "Corretor Imóveis", slug: "corretor-imoveis" };
-assert.equal(hasPendingTaxonIdentityChanges(persistedIdentityFields, persistedIdentityFields), false);
-assert.equal(hasPendingTaxonIdentityChanges({ ...persistedIdentityFields, name: "  Corretor   Imóveis  " }, persistedIdentityFields), false);
-assert.equal(hasPendingTaxonIdentityChanges({ ...persistedIdentityFields, name: "Corretor de Imóveis" }, persistedIdentityFields), true);
-assert.equal(hasPendingTaxonIdentityChanges({ ...persistedIdentityFields, slug: "corretor" }, persistedIdentityFields), true);
-assert.equal(hasPendingTaxonIdentityChanges({ name: "Corretor de Imóveis", slug: "corretor-de-imoveis" }, { name: "Corretor de Imóveis", slug: "corretor-de-imoveis" }), false);
+const persistedTaxonFields = { name: "Corretor Imóveis", slug: "corretor-imoveis", isActive: true };
+assert.equal(hasPendingTaxonChanges(persistedTaxonFields, persistedTaxonFields), false);
+assert.equal(hasPendingTaxonChanges({ ...persistedTaxonFields, name: "  Corretor   Imóveis  " }, persistedTaxonFields), false);
+assert.equal(hasPendingTaxonChanges({ ...persistedTaxonFields, name: "Corretor de Imóveis" }, persistedTaxonFields), true);
+assert.equal(hasPendingTaxonChanges({ ...persistedTaxonFields, slug: "corretor" }, persistedTaxonFields), true);
+assert.equal(hasPendingTaxonChanges({ ...persistedTaxonFields, isActive: false }, persistedTaxonFields), true);
+assert.equal(hasPendingTaxonChanges({ name: "Corretor de Imóveis", slug: "corretor-de-imoveis", isActive: false }, { name: "Corretor de Imóveis", slug: "corretor-de-imoveis", isActive: false }), false);
 
 const releaseAdapterSource = readFileSync(new URL("../../../admin/adapters/adminTaxonFactualReleaseAdapter.ts", import.meta.url), "utf8");
 assert.match(releaseAdapterSource, /readCompleteTaxonChainForTaxon/);

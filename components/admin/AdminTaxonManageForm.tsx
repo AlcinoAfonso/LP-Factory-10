@@ -3,7 +3,7 @@
 import { useActionState, useEffect, useState } from "react";
 
 import type { AdminTaxonDetail } from "@/lib/admin/adapters/adminReadOnlyTypes";
-import { hasPendingTaxonIdentityChanges } from "./adminTaxonManageFormState";
+import { hasPendingTaxonChanges } from "./adminTaxonManageFormState";
 
 type ManageTaxonActionState = {
   error: string | null;
@@ -37,6 +37,10 @@ export function AdminTaxonManageForm({
   const [deleteState, deleteFormAction, deletePending] = useActionState(deleteAction, initialState);
   const [name, setName] = useState(taxon.name);
   const [slug, setSlug] = useState(taxon.slug);
+  const [activeDraft, setActiveDraft] = useState({
+    persisted: taxon.isActive,
+    current: taxon.isActive,
+  });
   const [slugEdited, setSlugEdited] = useState(false);
   const [confirmSlug, setConfirmSlug] = useState("");
   const [aliasToConfirm, setAliasToConfirm] = useState<string | null>(null);
@@ -45,9 +49,12 @@ export function AdminTaxonManageForm({
     if (!slugEdited) setSlug(slugify(name));
   }, [name, slugEdited]);
 
-  const hasPendingChanges = hasPendingTaxonIdentityChanges(
-    { name, slug },
-    { name: taxon.name, slug: taxon.slug },
+  const isActive = activeDraft.persisted === taxon.isActive
+    ? activeDraft.current
+    : taxon.isActive;
+  const hasPendingChanges = hasPendingTaxonChanges(
+    { name, slug, isActive },
+    { name: taxon.name, slug: taxon.slug, isActive: taxon.isActive },
   );
 
   return (
@@ -100,9 +107,13 @@ export function AdminTaxonManageForm({
             <label className="flex min-h-11 cursor-pointer items-center gap-2 rounded-md px-2 text-sm text-muted-foreground outline-none ring-brand-600/20 focus-within:ring-4">
               <input
                 className="h-4 w-4 rounded border-border text-brand-600"
+                checked={isActive}
                 name="isActive"
+                onChange={(event) => setActiveDraft({
+                  persisted: taxon.isActive,
+                  current: event.target.checked,
+                })}
                 type="checkbox"
-                defaultChecked={taxon.isActive}
               />
               Manter ativo
             </label>
