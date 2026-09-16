@@ -341,9 +341,15 @@ assert.match(releaseAdapterSource, /readCompleteTaxonChainForTaxon/);
 assert.match(releaseAdapterSource, /chain\.value\.selected/);
 
 const actionSource = readFileSync(new URL("../../../../app/admin/(protected)/taxonomia/actions.ts", import.meta.url), "utf8");
+const evaluationAdapterSource = readFileSync(new URL("../../adapters/inputCatalogEvaluationOpenAiAdapter.ts", import.meta.url), "utf8");
+const sharedOpenAiAdapterSource = readFileSync(new URL("../../adapters/openAiResponsesAdapter.ts", import.meta.url), "utf8");
 const uiSource = readFileSync(new URL("../../../../app/admin/(protected)/taxonomia/[taxonId]/_components/AdminTaxonInputCatalogEvaluation.tsx", import.meta.url), "utf8");
 assert.match(actionSource, /requirePlatformAdmin/);
 assert.match(actionSource, /apiKey:\s*process\.env\.OPENAI_API_KEY/);
+assert.doesNotMatch(actionSource, /deadlineAtMs|45_000|120_000/);
+assert.doesNotMatch(evaluationAdapterSource, /INPUT_CATALOG_EVALUATION_TIMEOUT_MS|45_000|120_000/);
+assert.match(evaluationAdapterSource, /const timeoutMs = remainingDeadlineMs === undefined\s*\? input\.request\.timeoutMs/);
+assert.match(sharedOpenAiAdapterSource, /const DEFAULT_TIMEOUT_MS = 120_000/);
 assert.doesNotMatch(actionSource, /confirmInputCatalog|rejectInputCatalog|acknowledgeInputCatalog|decisionToken/);
 assert.doesNotMatch(uiSource, /OPENAI_API_KEY/);
 assert.match(uiSource, /A IA apenas recomenda/);
