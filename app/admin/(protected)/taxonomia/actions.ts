@@ -31,7 +31,7 @@ export async function evaluateInputCatalogAction(input: Readonly<{ taxonId: stri
     apiKey: process.env.OPENAI_API_KEY,
     configuration: runtime.configuration, environment: runtime.environment, requestId: randomUUID(),
     safetyIdentifier: `platform_admin_${gate.actorUserId.replace(/-/g, "").slice(0, 32)}`,
-    request: { mode: input.mode, sourceStrategy: context.value.sourceStrategy, deadlineAtMs: Date.now() + 45_000, prompt, outputSchema: inputCatalogEvaluationOutputJsonSchema },
+    request: { mode: input.mode, sourceStrategy: context.value.sourceStrategy, prompt, outputSchema: inputCatalogEvaluationOutputJsonSchema },
   });
   if (provider.status !== "completed") return { ok: false, code: provider.status.toUpperCase(), message: "A assistência por IA está indisponível; a operação humana permanece liberada." };
   const parsed = parseInputCatalogEvaluationOutput(provider.output);

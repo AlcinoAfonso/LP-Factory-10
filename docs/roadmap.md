@@ -1960,7 +1960,7 @@
 - Status: concluída e validada no repositório; QA hospedado pendente do cutover.
 - Conteúdo:
   - taxon novo permanece inativo até liberação humana explícita, que relê identidade e cobertura, usa compare-and-set e funciona sem pesquisa ou IA;
-  - `taxon_input_catalog_sufficiency_evaluation` permanece como único workload OpenAI da E20, com `gpt-5.6-terra + low`, Responses API foreground, Structured Output estrito, `store:false`, `background:false`, deadline de 45 s e zero retry;
+  - `taxon_input_catalog_sufficiency_evaluation` permanece como único workload OpenAI da E20, resolvendo a configuração ativa e elegível pelo lifecycle E21, sem fixar nem alterar modelo ou reasoning effort, com Responses API foreground, Structured Output estrito, `store:false`, `background:false`, timeout compartilhado de 120 s e zero retry;
   - pesquisa E20.5 e Web Search são opcionais; contexto e fontes ficam vinculados ao provider, e a resposta transitória não muta ou persiste fields, taxon ou decisão.
 
 20.8.8 Cutover e limpeza terminal

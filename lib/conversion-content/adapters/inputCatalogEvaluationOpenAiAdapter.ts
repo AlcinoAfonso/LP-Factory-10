@@ -15,8 +15,6 @@ import {
   lpFactoryOpenAiEventCostContext,
 } from "../../openai-costs";
 
-export const INPUT_CATALOG_EVALUATION_TIMEOUT_MS = 45_000;
-
 export type InputCatalogEvaluationOpenAiInput = Readonly<{
   apiKey?: string;
   configuration: ResolvedOpenAiProductWorkload;
@@ -55,15 +53,12 @@ export async function evaluateInputCatalogWithOpenAi(
   }
 
   const remainingDeadlineMs = input.request.deadlineAtMs === undefined
-    ? INPUT_CATALOG_EVALUATION_TIMEOUT_MS
+    ? undefined
     : Math.floor(input.request.deadlineAtMs - (dependencies.now ?? Date.now)());
-  const requestedTimeoutMs = input.request.timeoutMs ?? INPUT_CATALOG_EVALUATION_TIMEOUT_MS;
-  const timeoutMs = Math.min(
-    INPUT_CATALOG_EVALUATION_TIMEOUT_MS,
-    requestedTimeoutMs,
-    remainingDeadlineMs,
-  );
-  if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) {
+  const timeoutMs = remainingDeadlineMs === undefined
+    ? input.request.timeoutMs
+    : Math.min(input.request.timeoutMs ?? remainingDeadlineMs, remainingDeadlineMs);
+  if (timeoutMs !== undefined && (!Number.isFinite(timeoutMs) || timeoutMs <= 0)) {
     return { status: "timeout", message: "openai_deadline_expired" };
   }
 
