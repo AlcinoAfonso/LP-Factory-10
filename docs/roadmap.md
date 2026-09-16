@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 14/09/2026
-• Versão: v1.5.234
+• Data: 16/09/2026
+• Versão: v1.5.235
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2329,6 +2329,7 @@
   - `docs/matriz-consolidacao-e21-5.md`
   - Plano aprovado da E21.5.6: `docs/lousa-plano-base-e21-5-6.md` — seções 2–16.
   - Matriz de consolidação da E21.5.6: `docs/matriz-consolidacao-e21-5-6.md` — seções 2–7.
+  - Plano Light da E21.5.7: `docs/lousa-plano-base-e21-5-7.md` — seções 1–2.
 
 21.5.3 Atribuição e evidência por execução
 - Status: concluída e ativa nos ambientes comprovados pelo fluxo pós-merge.
@@ -2362,6 +2363,13 @@
   - a composição pura usa decimal lossless, agrega ativo e legado, preserva custos indisponíveis e prioriza nomes humanos de conta, Landing Page e taxon;
   - a extensão forward-only do ledger cria RPCs v2 e mantém as v1 como ponte estrita somente para ausência exata das RPCs novas durante rollout não atômico, com estado explícito `v2_active | v1_fallback` e sem backfill;
   - testes focais e o gate completo do repositório aprovam contratos, correlação, negativas, paginação, soma, fallback e acessibilidade; a prova SQL hospedada e o QA positivo/negativo permanecem no gate pós-merge.
+
+21.5.7 Correlação econômica da avaliação de suficiência do catálogo
+- Status: implementação focal E21.5.7.3 validada no repositório e publicada em PR draft; prova positiva hospedada da avaliação real e da leitura econômica ainda pendente.
+- Conteúdo:
+  - a ação administrativa, depois de validar o contexto canônico e o prompt, cria uma identidade de evento própria para cada avaliação efetiva e a associa ao taxon canônico antes de chamar o adapter existente;
+  - o contrato financeiro E21.5.6 recebe o evento interno LP Factory, mantendo `requestId` e execução financeira distintos, sem alterar prova administrativa, banco, pricing, dashboard, histórico ou reconciliação;
+  - a fase E21.5.7.3 exige comprovar no ambiente hospedado a avaliação real, o vínculo no ledger e a leitura no drill-down existente, com evidência sanitizada e proteção de acesso.
 
 22. E22 — Retirada controlada de ativos históricos
 - Objetivo: reduzir superfícies, dados, documentos e infraestrutura sem consumidor vigente, após auditoria explícita de dependências e sem criar substitutos antecipados.
