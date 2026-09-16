@@ -1,7 +1,7 @@
 import type { LoadSelectedEndCustomerResearchResult, InputCatalogEvaluationContext, InputCatalogEvaluationMode, InputCatalogEvaluationOutput, InputCatalogEvaluationPrompt, InputCatalogEvaluationSourceState, InputCatalogEvaluationSourceStrategy } from "./contracts";
 import type { ResolvedFactualCoverage } from "../input-catalog";
 
-export const INPUT_CATALOG_EVALUATION_PROMPT_VERSION = "e20.8.7-factual-coverage-evaluation-v1" as const;
+export const INPUT_CATALOG_EVALUATION_PROMPT_VERSION = "e20.8.7-factual-coverage-evaluation-v2" as const;
 const instructions = [
   "Papel: avaliador consultivo da suficiência dos fields factuais correntes de um taxon.",
   "Resultado: classifique a cobertura como sufficient, candidate_gaps ou inconclusive e produza somente o objeto do Structured Output fornecido.",
@@ -12,7 +12,7 @@ const instructions = [
   "Priorize covered ou refine_existing_field antes de possible_new_field; não invente fieldKey nem mutação.",
   "No modo hypothesis avalie exatamente uma hipótese focal; achados adicionais são incidental. No systematic, candidatos são systematic.",
   "Na estratégia e20_5 não use Web Search. Em web_search_focal use exatamente uma busca. Em web_search_fallback use uma busca focal e no máximo uma segunda busca somente se a primeira for insuficiente.",
-  "Cite somente URLs HTTPS presentes na metadata do provider; nunca invente URL. Fonte insuficiente ou contraditória exige inconclusive.",
+  "Quando sourceStrategy usar Web Search, preencha summarySourceUrls e sourceUrls de cada candidato com ao menos uma URL HTTPS presente na metadata do provider; nunca invente URL. Com sourceStrategy e20_5, mantenha summarySourceUrls e todos os candidate.sourceUrls vazios. Fonte insuficiente ou contraditória exige inconclusive.",
   "Não inclua PII, conta, oferta concreta, secrets, prompt, cadeia de raciocínio ou decisão administrativa.",
   "A resposta é recomendação transitória: não libera taxon e não cria, edita ou inativa field.",
 ].join("\n");

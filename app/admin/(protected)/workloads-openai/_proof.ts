@@ -164,7 +164,7 @@ async function proveInputCatalogEvaluation(
       mode: "systematic",
       sourceStrategy: "e20_5",
       prompt: {
-        version: "e20.8.7-factual-coverage-evaluation-v1",
+        version: "e20.8.7-factual-coverage-evaluation-v2",
         instructions: "Retorne somente o objeto JSON solicitado para a prova técnica segura.",
         input: "Confirme o contrato do transporte com o valor approved.",
       },
