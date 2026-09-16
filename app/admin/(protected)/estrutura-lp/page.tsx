@@ -10,7 +10,7 @@ import {
   type AdminLandingPageStructureView,
 } from "@/lib/admin/adapters/adminLandingPageStructureAdapter";
 import { cn } from "@/lib/utils";
-import { parseEvaluationSuggestionHandoff } from "@/lib/admin/evaluationSuggestionHandoff";
+import { parseEvaluationRefinementHandoff, parseEvaluationSuggestionHandoff } from "@/lib/admin/evaluationSuggestionHandoff";
 import { AdminFactualFields } from "./_components/AdminFactualFields";
 
 export const dynamic = "force-dynamic";
@@ -39,7 +39,7 @@ export default async function AdminLandingPageStructurePage({ searchParams }: Pa
         ))}
       </nav>
       {structure.view === "parametros" ? <RootView data={structure.data} /> : null}
-      {structure.view === "entradas" ? <AdminFactualFields data={structure.data} suggestion={query.taxon === structure.data.selectedTaxon?.id ? parseEvaluationSuggestionHandoff(query) : null} /> : null}
+      {structure.view === "entradas" ? <AdminFactualFields data={structure.data} suggestion={query.taxon === structure.data.selectedTaxon?.id ? parseEvaluationSuggestionHandoff(query) : null} refineFieldKey={query.taxon === structure.data.selectedTaxon?.id ? parseEvaluationRefinementHandoff(query) : null} /> : null}
     </div>
   );
 }

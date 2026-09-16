@@ -14,7 +14,7 @@ import { loadSelectedEndCustomerResearchFromClient, type SelectedEndCustomerRese
 import { executeAdminTaxonFactualReleaseCore, isAdminTaxonFactualReleaseReadConsistent } from "../../../admin/adapters/adminTaxonFactualReleaseCore";
 import { resolveOpenAiProductWorkload } from "../../../openai-workloads";
 import { hasPendingTaxonChanges, syncTaxonActiveDraft } from "../../../../components/admin/adminTaxonManageFormState";
-import { buildEvaluationSuggestionHref, parseEvaluationSuggestionHandoff } from "../../../admin/evaluationSuggestionHandoff";
+import { buildEvaluationRefinementHref, buildEvaluationSuggestionHref, parseEvaluationRefinementHandoff, parseEvaluationSuggestionHandoff, resolveRefinementTarget, resolveSuggestedResidence } from "../../../admin/evaluationSuggestionHandoff";
 
 const VALID_INPUT: LoadEndCustomerResearchCandidateInput = {
   taxon: { slug: "corretor-imoveis", isActive: true },
@@ -228,6 +228,21 @@ assert.equal(suggestionUrl.searchParams.get("taxon"), VALID_TAXON_ID);
 assert.deepEqual(parseEvaluationSuggestionHandoff(Object.fromEntries(suggestionUrl.searchParams)), { name: "Preço & comissão", description: "Faixa de comissão praticada para o serviço.", layer: "niche" });
 assert.equal(parseEvaluationSuggestionHandoff({ suggestionName: "Nome", suggestionDescription: "Descrição", suggestionLayer: "unknown" }), null);
 assert.equal(parseEvaluationSuggestionHandoff({ suggestionName: "", suggestionDescription: "Descrição" }), null);
+assert.equal(resolveSuggestedResidence("universal", coverage.appliedLayers), "universal");
+assert.equal(resolveSuggestedResidence("universal", []), null);
+assert.equal(resolveSuggestedResidence("niche", coverage.appliedLayers), coverage.servedTaxon.id);
+assert.equal(resolveSuggestedResidence("niche", coverage.appliedLayers.slice(0, 2)), null);
+assert.equal(resolveSuggestedResidence(null, coverage.appliedLayers), null);
+const refinementHref = buildEvaluationRefinementHref(VALID_TAXON_ID, "business_name");
+const refinementUrl = new URL(refinementHref, "https://example.test");
+assert.equal(refinementUrl.hash, "#field-business_name");
+assert.equal(refinementUrl.searchParams.get("taxon"), VALID_TAXON_ID);
+assert.equal(parseEvaluationRefinementHandoff(Object.fromEntries(refinementUrl.searchParams)), "business_name");
+assert.equal(parseEvaluationRefinementHandoff({ refineFieldKey: "" }), null);
+assert.equal(parseEvaluationRefinementHandoff({ refineFieldKey: "x".repeat(101) }), null);
+assert.equal(resolveRefinementTarget("business_name", coverage.fields)?.id, coverage.fields[0].id);
+assert.equal(resolveRefinementTarget("missing", coverage.fields), null);
+assert.equal(resolveRefinementTarget("business_name", [coverage.fields[0], coverage.fields[0]]), null);
 const e205Context = { ...systematic, sourceStrategy: "e20_5" as const, sourceState: "e20_5_valid" as const };
 assert.ok(validateInputCatalogEvaluationBinding({ context: e205Context, output: parsed.value, allowedSourceUrls: new Set() }).ok);
 const modeMismatch = validateInputCatalogEvaluationBinding({ context: { ...e205Context, mode: "hypothesis" }, output: parsed.value, allowedSourceUrls: new Set() });
@@ -379,10 +394,15 @@ assert.doesNotMatch(uiSource, /OPENAI_API_KEY/);
 assert.match(uiSource, /A IA apenas recomenda/);
 assert.match(uiSource, /Abrir gestão humana de fields/);
 assert.match(uiSource, /Adicionar campo/);
-assert.match(uiSource, /Revisar field existente/);
+assert.match(uiSource, /buildEvaluationRefinementHref\(taxonId, fieldKey\)/);
 assert.match(uiSource, /Descartar sugestão/);
 assert.match(uiSource, /Ver evidências e detalhes/);
 assert.doesNotMatch(uiSource, /mutateFactualFieldAction|createAdminFactualField/);
+const fieldUiSource = readFileSync(new URL("../../../../app/admin/(protected)/estrutura-lp/_components/AdminFactualFields.tsx", import.meta.url), "utf8");
+assert.match(fieldUiSource, /open=\{targeted\}/);
+assert.match(fieldUiSource, /unresolvedLayer/);
+const fieldActionSource = readFileSync(new URL("../../../../app/admin/(protected)/estrutura-lp/actions.ts", import.meta.url), "utf8");
+assert.match(fieldActionSource, /if \(!residence\) return complete/);
 
 console.log("ok - E20.8 optional AI is transient, prompt-safe, strict and human-controlled");
 }

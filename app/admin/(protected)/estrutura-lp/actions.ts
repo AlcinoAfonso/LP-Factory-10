@@ -25,6 +25,7 @@ export async function mutateFactualFieldAction(previous: FactualFieldActionState
     if (!definition) return complete(previous, "Preencha uma definição factual válida.", null);
     if (operation === "create") {
       const residence = String(formData.get("taxonId") ?? "");
+      if (!residence) return complete(previous, "Selecione uma residência factual válida.", null);
       result = await createAdminFactualField({ actorUserId: gate.actorUserId, fieldKey: String(formData.get("fieldKey") ?? ""), taxonId: residence === "universal" ? null : residence, definition });
     } else if (operation === "update") {
       result = await updateAdminFactualField({ actorUserId: gate.actorUserId, id: String(formData.get("id") ?? ""), expectedUpdatedAt: String(formData.get("expectedUpdatedAt") ?? ""), sameFactConfirmed: formData.get("sameFactConfirmed") === "on", definition });

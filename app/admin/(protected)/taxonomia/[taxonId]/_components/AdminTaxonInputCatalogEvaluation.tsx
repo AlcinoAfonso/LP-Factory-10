@@ -5,7 +5,7 @@ import { useState, useTransition } from "react";
 
 import { AdminStatusBadge } from "@/components/admin/AdminStatusBadge";
 import type { InputCatalogEvaluationMode, InputCatalogEvaluationOutput, InputCatalogEvaluationTaxonomicLayer } from "@/conversion-content/landing-page/taxon-preparation";
-import { buildEvaluationSuggestionHref } from "@/lib/admin/evaluationSuggestionHandoff";
+import { buildEvaluationRefinementHref, buildEvaluationSuggestionHref } from "@/lib/admin/evaluationSuggestionHandoff";
 
 type EvaluationResult = Readonly<{ ok: true; output: InputCatalogEvaluationOutput }> | Readonly<{ ok: false; code: string; message: string }>;
 const layerLabels = { universal: "Universal", segment: "Segmento", niche: "Nicho", ultra_niche: "Ultranicho" } as const;
@@ -96,7 +96,7 @@ function EvaluationOutput({ output, taxonId, appliedLayers }: Readonly<{ output:
               <p className="mt-2 text-sm text-muted-foreground">Camada sugerida: {suggestedLayerLabel(candidate.suggestedTaxonomyLayer, appliedLayers)}</p>
               <div className="mt-3 flex flex-wrap gap-2">
                 {candidate.conclusion === "possible_new_field" ? <Link className="inline-flex min-h-11 items-center rounded-md bg-brand-600 px-4 text-sm font-medium text-white outline-none hover:bg-brand-700 focus-visible:ring-4 focus-visible:ring-brand-600/30" href={buildEvaluationSuggestionHref(taxonId, candidate)}>Adicionar campo</Link> : null}
-                {candidate.conclusion === "refine_existing_field" ? <Link className="inline-flex min-h-11 items-center rounded-md bg-brand-600 px-4 text-sm font-medium text-white outline-none hover:bg-brand-700 focus-visible:ring-4 focus-visible:ring-brand-600/30" href={`/admin/estrutura-lp?view=entradas&taxon=${taxonId}`}>Revisar field existente</Link> : null}
+                {candidate.conclusion === "refine_existing_field" ? candidate.relatedFields.length > 0 ? candidate.relatedFields.map((fieldKey) => <Link className="inline-flex min-h-11 items-center rounded-md bg-brand-600 px-4 text-sm font-medium text-white outline-none hover:bg-brand-700 focus-visible:ring-4 focus-visible:ring-brand-600/30" href={buildEvaluationRefinementHref(taxonId, fieldKey)} key={fieldKey}>Revisar {fieldKey}</Link>) : <p className="text-sm text-muted-foreground">Nenhum field relacionado foi identificado para edição.</p> : null}
                 <button className="min-h-11 rounded-md border border-border px-4 text-sm font-medium text-foreground outline-none hover:bg-muted focus-visible:ring-4 focus-visible:ring-brand-600/30" onClick={() => setDiscarded((current) => new Set(current).add(index))} type="button">Descartar sugestão</button>
               </div>
               <details className="mt-3 rounded-md border border-border p-3">
