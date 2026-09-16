@@ -193,6 +193,8 @@ assert.match(contextAdapterSource, /return \{ ok: false, error:/);
 const prompt = buildInputCatalogEvaluationPrompt({ context: systematic });
 assert.equal(prompt.version, "e20.8.7-factual-coverage-evaluation-v1");
 assert.match(prompt.instructions, /não cria, edita ou inativa field/i);
+assert.match(prompt.instructions, /sourceStrategy usar Web Search, preencha summarySourceUrls e sourceUrls de cada candidato com ao menos uma URL HTTPS presente na metadata do provider/i);
+assert.match(prompt.instructions, /sourceStrategy e20_5, mantenha summarySourceUrls e todos os candidate\.sourceUrls vazios/i);
 assert.match(prompt.input, /FACTUAL_COVERAGE_DATA/);
 assert.doesNotMatch(prompt.input, /allowedPlans|reviewedInputCatalogVersion|landingPageSubstitutionPolicy/);
 
