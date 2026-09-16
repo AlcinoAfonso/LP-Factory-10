@@ -2365,11 +2365,11 @@
   - testes focais e o gate completo do repositório aprovam contratos, correlação, negativas, paginação, soma, fallback e acessibilidade; a prova SQL hospedada e o QA positivo/negativo permanecem no gate pós-merge.
 
 21.5.7 Correlação econômica da avaliação de suficiência do catálogo
-- Status: implementação focal E21.5.7.3 validada no repositório e publicada em PR draft; prova positiva hospedada da avaliação real e da leitura econômica ainda pendente.
+- Status: implementação focal E21.5.7.3 validada no repositório e em Preview; PR draft aguarda avaliação do Estrategista e merge.
 - Conteúdo:
   - a ação administrativa, depois de validar o contexto canônico e o prompt, cria uma identidade de evento própria para cada avaliação efetiva e a associa ao taxon canônico antes de chamar o adapter existente;
   - o contrato financeiro E21.5.6 recebe o evento interno LP Factory, mantendo `requestId` e execução financeira distintos, sem alterar prova administrativa, banco, pricing, dashboard, histórico ou reconciliação;
-  - a fase E21.5.7.3 exige comprovar no ambiente hospedado a avaliação real, o vínculo no ledger e a leitura no drill-down existente, com evidência sanitizada e proteção de acesso.
+  - a fase E21.5.7.3 comprovou em Preview a avaliação real, o vínculo explícito no ledger e a leitura por evento, workload, execução e operação no drill-down existente, com acesso administrativo protegido e evidência sanitizada.
 
 22. E22 — Retirada controlada de ativos históricos
 - Objetivo: reduzir superfícies, dados, documentos e infraestrutura sem consumidor vigente, após auditoria explícita de dependências e sem criar substitutos antecipados.
