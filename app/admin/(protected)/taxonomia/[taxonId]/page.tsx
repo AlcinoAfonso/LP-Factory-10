@@ -120,6 +120,7 @@ export default async function AdminTaxonDetailPage({ params }: AdminTaxonDetailP
           isActive={taxon.isActive}
           evaluateAction={evaluateInputCatalogAction}
           taxonId={taxon.id}
+          appliedLayers={taxon.factualRelease.status === "available" ? taxon.factualRelease.appliedLayers : []}
         />
       ) : null}
 

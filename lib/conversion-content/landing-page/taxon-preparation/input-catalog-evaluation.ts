@@ -1,7 +1,7 @@
 import type { LoadSelectedEndCustomerResearchResult, InputCatalogEvaluationContext, InputCatalogEvaluationMode, InputCatalogEvaluationOutput, InputCatalogEvaluationPrompt, InputCatalogEvaluationSourceState, InputCatalogEvaluationSourceStrategy } from "./contracts";
 import type { ResolvedFactualCoverage } from "../input-catalog";
 
-export const INPUT_CATALOG_EVALUATION_PROMPT_VERSION = "e20.8.7-factual-coverage-evaluation-v2" as const;
+export const INPUT_CATALOG_EVALUATION_PROMPT_VERSION = "e20.8.7-factual-coverage-evaluation-v3" as const;
 const instructions = [
   "Papel: avaliador consultivo da suficiência dos fields factuais correntes de um taxon.",
   "Resultado: classifique a cobertura como sufficient, candidate_gaps ou inconclusive e produza somente o objeto do Structured Output fornecido.",
@@ -11,6 +11,7 @@ const instructions = [
   "Copy, narrativa, preferência editorial, plano comercial, versão, ausência de camada própria ou conhecimento geral não são gaps factuais.",
   "Priorize covered ou refine_existing_field antes de possible_new_field; não invente fieldKey nem mutação.",
   "No modo hypothesis avalie exatamente uma hipótese focal; achados adicionais são incidental. No systematic, candidatos são systematic.",
+  "Para cada candidato, dê um name humano claro e curto e uma shortDescription breve, compreensível sem abrir evidências. O name não é fieldKey nem autoriza criar um field; para possible_new_field, descreva apenas o fato proposto para decisão humana.",
   "Na estratégia e20_5 não use Web Search. Em web_search_focal use exatamente uma busca. Em web_search_fallback use uma busca focal e no máximo uma segunda busca somente se a primeira for insuficiente.",
   "Quando sourceStrategy usar Web Search, preencha summarySourceUrls e sourceUrls de cada candidato com ao menos uma URL HTTPS presente na metadata do provider; nunca invente URL. Com sourceStrategy e20_5, mantenha summarySourceUrls e todos os candidate.sourceUrls vazios. Fonte insuficiente ou contraditória exige inconclusive.",
   "Não inclua PII, conta, oferta concreta, secrets, prompt, cadeia de raciocínio ou decisão administrativa.",

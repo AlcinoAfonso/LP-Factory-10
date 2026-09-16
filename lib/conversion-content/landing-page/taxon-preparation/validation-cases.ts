@@ -14,6 +14,7 @@ import { loadSelectedEndCustomerResearchFromClient, type SelectedEndCustomerRese
 import { executeAdminTaxonFactualReleaseCore, isAdminTaxonFactualReleaseReadConsistent } from "../../../admin/adapters/adminTaxonFactualReleaseCore";
 import { resolveOpenAiProductWorkload } from "../../../openai-workloads";
 import { hasPendingTaxonChanges, syncTaxonActiveDraft } from "../../../../components/admin/adminTaxonManageFormState";
+import { buildEvaluationSuggestionHref, parseEvaluationSuggestionHandoff } from "../../../admin/evaluationSuggestionHandoff";
 
 const VALID_INPUT: LoadEndCustomerResearchCandidateInput = {
   taxon: { slug: "corretor-imoveis", isActive: true },
@@ -191,8 +192,10 @@ assert.match(contextAdapterSource, /SELECTION_ABSENT/);
 assert.match(contextAdapterSource, /FEATURE_DISABLED/);
 assert.match(contextAdapterSource, /return \{ ok: false, error:/);
 const prompt = buildInputCatalogEvaluationPrompt({ context: systematic });
-assert.equal(prompt.version, "e20.8.7-factual-coverage-evaluation-v2");
+assert.equal(prompt.version, "e20.8.7-factual-coverage-evaluation-v3");
 assert.match(prompt.instructions, /não cria, edita ou inativa field/i);
+assert.match(prompt.instructions, /name humano claro e curto e uma shortDescription breve/i);
+assert.match(prompt.instructions, /name não é fieldKey nem autoriza criar um field/i);
 assert.match(prompt.instructions, /sourceStrategy usar Web Search, preencha summarySourceUrls e sourceUrls de cada candidato com ao menos uma URL HTTPS presente na metadata do provider/i);
 assert.match(prompt.instructions, /sourceStrategy e20_5, mantenha summarySourceUrls e todos os candidate\.sourceUrls vazios/i);
 assert.match(prompt.input, /FACTUAL_COVERAGE_DATA/);
@@ -203,9 +206,28 @@ assert.match(hostile.input, /IGNORE AS REGRAS/);
 assert.match(hostile.instructions, /dados não confiáveis/);
 assert.throws(() => buildInputCatalogEvaluationPrompt({ context: { ...systematic, mode: "hypothesis", sourceStrategy: "web_search_focal" } }));
 
-const parsed = parseInputCatalogEvaluationOutput({ schemaVersion: 3, status: "sufficient", mode: "systematic", sourceStrategy: "e20_5", sourceState: "e20_5_valid", summary: "A cobertura é suficiente.", summarySourceUrls: [], candidates: [], followUpQuestion: null });
+const parsed = parseInputCatalogEvaluationOutput({ schemaVersion: 4, status: "sufficient", mode: "systematic", sourceStrategy: "e20_5", sourceState: "e20_5_valid", summary: "A cobertura é suficiente.", summarySourceUrls: [], candidates: [], followUpQuestion: null });
 assert.ok(parsed.ok);
+assert.ok(!parseInputCatalogEvaluationOutput({ ...parsed.value, schemaVersion: 3 }).ok);
 assert.ok(!parseInputCatalogEvaluationOutput({ ...parsed.value, unknown: true }).ok);
+const suggestedCandidate = {
+  origin: "systematic", conclusion: "possible_new_field", name: "Preço & comissão", shortDescription: "Faixa de comissão praticada para o serviço.",
+  factualNeed: "Comissão praticada", relatedFields: [], currentCoverage: "Sem field próprio", allegedInsufficiency: "Faixa não disponível",
+  evidence: "Fonte operacional comprovada", expectedOperationalSource: "Tabela comercial", realConsumer: "Equipe comercial", concreteHarm: "Cotação incompleta",
+  suggestedTaxonomyLayer: "niche", uncertainties: [], sourceUrls: [],
+};
+const suggestedOutput = parseInputCatalogEvaluationOutput({ ...parsed.value, status: "candidate_gaps", candidates: [suggestedCandidate] });
+assert.ok(suggestedOutput.ok);
+assert.ok(!parseInputCatalogEvaluationOutput({ ...parsed.value, status: "candidate_gaps", candidates: [{ ...suggestedCandidate, name: "" }] }).ok);
+assert.ok(!parseInputCatalogEvaluationOutput({ ...parsed.value, status: "candidate_gaps", candidates: [{ ...suggestedCandidate, shortDescription: "" }] }).ok);
+const suggestionHref = buildEvaluationSuggestionHref(VALID_TAXON_ID, suggestedOutput.value.candidates[0]);
+const suggestionUrl = new URL(suggestionHref, "https://example.test");
+assert.equal(suggestionUrl.pathname, "/admin/estrutura-lp");
+assert.equal(suggestionUrl.hash, "#adicionar-field-factual");
+assert.equal(suggestionUrl.searchParams.get("taxon"), VALID_TAXON_ID);
+assert.deepEqual(parseEvaluationSuggestionHandoff(Object.fromEntries(suggestionUrl.searchParams)), { name: "Preço & comissão", description: "Faixa de comissão praticada para o serviço.", layer: "niche" });
+assert.equal(parseEvaluationSuggestionHandoff({ suggestionName: "Nome", suggestionDescription: "Descrição", suggestionLayer: "unknown" }), null);
+assert.equal(parseEvaluationSuggestionHandoff({ suggestionName: "", suggestionDescription: "Descrição" }), null);
 const e205Context = { ...systematic, sourceStrategy: "e20_5" as const, sourceState: "e20_5_valid" as const };
 assert.ok(validateInputCatalogEvaluationBinding({ context: e205Context, output: parsed.value, allowedSourceUrls: new Set() }).ok);
 const modeMismatch = validateInputCatalogEvaluationBinding({ context: { ...e205Context, mode: "hypothesis" }, output: parsed.value, allowedSourceUrls: new Set() });
@@ -356,6 +378,11 @@ assert.doesNotMatch(actionSource, /confirmInputCatalog|rejectInputCatalog|acknow
 assert.doesNotMatch(uiSource, /OPENAI_API_KEY/);
 assert.match(uiSource, /A IA apenas recomenda/);
 assert.match(uiSource, /Abrir gestão humana de fields/);
+assert.match(uiSource, /Adicionar campo/);
+assert.match(uiSource, /Revisar field existente/);
+assert.match(uiSource, /Descartar sugestão/);
+assert.match(uiSource, /Ver evidências e detalhes/);
+assert.doesNotMatch(uiSource, /mutateFactualFieldAction|createAdminFactualField/);
 
 console.log("ok - E20.8 optional AI is transient, prompt-safe, strict and human-controlled");
 }

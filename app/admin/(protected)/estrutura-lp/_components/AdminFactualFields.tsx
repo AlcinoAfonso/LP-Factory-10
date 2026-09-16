@@ -3,17 +3,18 @@
 import { useActionState } from "react";
 
 import { factualFieldObligations, factualFieldValueScopes, factualFieldValueTypes, type ResolvedFactualCoverage, type ResolvedFactualField } from "@/conversion-content/landing-page/input-catalog";
+import type { EvaluationSuggestionHandoff } from "@/lib/admin/evaluationSuggestionHandoff";
 import { mutateFactualFieldAction, type FactualFieldActionState } from "../actions";
 
 type Taxon = Readonly<{ id: string; name: string; level: string; parentName: string | null; isActive: boolean }>;
-type Props = Readonly<{ data: Readonly<{
+type Props = Readonly<{ suggestion: EvaluationSuggestionHandoff | null; data: Readonly<{
   taxons: readonly Taxon[]; taxonError: string | null; selectedTaxon: Taxon | null;
   result: Readonly<{ ok: true; value: ResolvedFactualCoverage }> | Readonly<{ ok: false; error: Readonly<{ message: string }> }> | null;
 }> }>;
 const initialState: FactualFieldActionState = { error: null, message: null, revision: 0 };
 const validationKinds = ["type_only", "enum", "string_list", "number_range", "e164", "email", "https_url", "keyword_map", "asset_reference", "color_palette", "offering_scope"] as const;
 
-export function AdminFactualFields({ data }: Props) {
+export function AdminFactualFields({ data, suggestion }: Props) {
   const [state, action, pending] = useActionState(mutateFactualFieldAction, initialState);
   const coverage = data.result?.ok ? data.result.value : null;
   return (
@@ -48,7 +49,7 @@ export function AdminFactualFields({ data }: Props) {
             </ol>
           </section>
 
-          <CreateForm action={action} pending={pending} taxons={data.taxons} selectedTaxonId={data.selectedTaxon?.id ?? ""} />
+          <CreateForm action={action} pending={pending} taxons={data.taxons} selectedTaxonId={data.selectedTaxon?.id ?? ""} coverage={coverage} suggestion={suggestion} />
 
           <div className="space-y-4">
             {coverage.appliedLayers.map((layer) => {
@@ -67,13 +68,17 @@ export function AdminFactualFields({ data }: Props) {
   );
 }
 
-function CreateForm({ action, pending, taxons, selectedTaxonId }: { action: (payload: FormData) => void; pending: boolean; taxons: readonly Taxon[]; selectedTaxonId: string }) {
+function CreateForm({ action, pending, taxons, selectedTaxonId, coverage, suggestion }: { action: (payload: FormData) => void; pending: boolean; taxons: readonly Taxon[]; selectedTaxonId: string; coverage: ResolvedFactualCoverage; suggestion: EvaluationSuggestionHandoff | null }) {
+  const suggestedTaxonId = suggestion?.layer === "universal"
+    ? "universal"
+    : coverage.appliedLayers.find((layer) => layer.level === suggestion?.layer)?.taxon?.id;
   return (
-    <details className="rounded-lg border border-border bg-card p-4">
+    <details className="rounded-lg border border-border bg-card p-4" id="adicionar-field-factual" open={Boolean(suggestion)}>
       <summary className="flex min-h-11 cursor-pointer items-center font-semibold outline-none focus-visible:ring-4 focus-visible:ring-brand-600/20">Adicionar field factual</summary>
+      {suggestion ? <div className="mt-3 rounded-md border border-brand-200 bg-brand-50 p-3 text-sm text-brand-900"><p className="font-medium">Sugestão consultiva: {suggestion.name}</p><p className="mt-1">{suggestion.description}</p><p className="mt-2">Camada sugerida: {suggestion.layer ? layerLabel(suggestion.layer) : "não definida"}. Revise a residência e todos os demais dados.</p><p className="mt-2">Nada foi criado pela IA; somente “Criar field” envia sua decisão.</p></div> : null}
       <form action={action} className="mt-4 space-y-4"><input type="hidden" name="operation" value="create" />
-        <div className="grid gap-3 sm:grid-cols-2"><Text name="fieldKey" label="fieldKey novo" required /><label className="space-y-1"><span className="text-sm font-medium">Residência</span><select name="taxonId" defaultValue={selectedTaxonId || "universal"} className={control}><option value="universal">Universal</option>{taxons.map((taxon) => <option key={taxon.id} value={taxon.id}>{layerLabel(taxon.level)} · {taxon.name}</option>)}</select></label></div>
-        <DefinitionFields />
+        <div className="grid gap-3 sm:grid-cols-2"><Text name="fieldKey" label="fieldKey novo" required /><label className="space-y-1"><span className="text-sm font-medium">Residência</span><select name="taxonId" defaultValue={suggestedTaxonId ?? (selectedTaxonId || "universal")} className={control}><option value="universal">Universal</option>{taxons.map((taxon) => <option key={taxon.id} value={taxon.id}>{layerLabel(taxon.level)} · {taxon.name}</option>)}</select></label></div>
+        <DefinitionFields suggestedPurpose={suggestion?.description} />
         <ActionButton pending={pending}>Criar field</ActionButton>
       </form>
     </details>
@@ -97,10 +102,10 @@ function FieldCard({ action, field, pending }: { action: (payload: FormData) => 
   );
 }
 
-function DefinitionFields({ field }: { field?: ResolvedFactualField }) {
+function DefinitionFields({ field, suggestedPurpose }: { field?: ResolvedFactualField; suggestedPurpose?: string }) {
   const validation = field?.validation;
   return <div className="grid gap-3 sm:grid-cols-2">
-    <Text name="purpose" label="Finalidade" required defaultValue={field?.purpose} className="sm:col-span-2" />
+    <Text name="purpose" label="Finalidade" required defaultValue={field?.purpose ?? suggestedPurpose} className="sm:col-span-2" />
     <Choice name="valueType" label="Tipo" defaultValue={field?.valueType ?? "string"} values={factualFieldValueTypes} />
     <Choice name="valueScope" label="Escopo" defaultValue={field?.valueScope ?? "business"} values={factualFieldValueScopes} />
     <Choice name="obligation" label="Obrigação" defaultValue={field?.obligation ?? "required"} values={factualFieldObligations} />
