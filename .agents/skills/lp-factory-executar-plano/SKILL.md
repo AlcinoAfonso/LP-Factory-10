@@ -124,7 +124,6 @@ Implemente somente o contrato aprovado: V2 mínima no Light ou V2 aprovada na Co
 - evite refatoração ampla, mecanismo novo ou alteração não relacionada;
 - use os recursos autorizados disponíveis no ambiente atual;
 - execute as fases na ordem e com os mesmos identificadores definidos no roadmap;
-- aplique observabilidade proporcional quando necessária para operar ou validar;
 - para documento canônico, use `docs/prompt-abc.md`; não faça edição direta.
 
 Granularidade por subseções, checkpoints, matriz e gates específicos da Complexa não se aplica ao Light.
@@ -148,8 +147,7 @@ Ausência de ambiente ou confirmação externa é pendência de validação ou a
 
 A validação deve provar os critérios de aceite do contrato. O Executor não precisa reproduzir manualmente no próprio sandbox uma jornada que possa ser comprovada por recurso autorizado externo.
 
-- execute as validações aplicáveis definidas pelo contrato, pelas fontes competentes e pelo `AGENTS.md`;
-- derive dos critérios de aceite somente as evidências necessárias e realize smoke ou QA funcional proporcional ao comportamento alterado;
+- execute somente as validações necessárias e produza as evidências dos critérios de aceite, conforme contrato, fontes competentes e `AGENTS.md`, com smoke/QA proporcional; em alteração de runtime, registre observabilidade `aplicável` ou `N/A`; se aplicável, siga o contrato de Observabilidade em `docs/base-tecnica.md` e valide sinais mínimos de resultado e falha;
 - quando o QA depender de Preview, conta ou identidade de teste, mailbox, secret por referência, banco read-only, browser automatizado ou outro recurso externo, consulte primeiro `docs/platform-config.md` e, se houver automação operacional aplicável, `docs/automations.md`;
 - trate recurso marcado como disponível ou operacional na plataforma indicada como utilizável pelo consumidor autorizado, ainda que o valor de secret ou credencial técnica por referência não seja legível no sandbox; não solicite, copie, revele ou recrie esse valor;
 - priorize o Preview da branch quando aplicável e reutilize consumidor ou workflow autorizado já existente em vez de improvisar outro caminho de browser, rede ou mutação;
@@ -193,7 +191,7 @@ Para a próxima subseção ainda não aprovada:
 1. delimitar a próxima subseção pela V2 aprovada, com objetivo, arquivos prováveis, escopo negativo e critérios de aceite;
 2. quando a subseção criar ou alterar prompt consumido por IA, invocar `$lp-factory-criar-prompt` como subfluxo somente leitura antes de editar o artefato e validar os casos representativos definidos por ele;
 3. implementar somente o necessário para essa subseção; não antecipar a próxima; no handoff interno, diante da evidência estrutural prevista em 7.1, item 6, seguir esse retorno antes de implementar o ponto afetado;
-4. executar as validações aplicáveis; para código, executar `npm ci` uma vez no início do lote contínuo e repeti-lo somente se `package-lock.json`, dependências ou o estado de instalação mudarem; executar a validação própria e `npm run check` antes de cada gate; para alteração exclusivamente documental, justificar esses comandos como não aplicáveis; quando aplicável, incluir no gate do Analista evidências de observabilidade mínima e smoke ou QA funcional;
+4. executar as validações aplicáveis; para código, executar `npm ci` uma vez no início do lote contínuo e repeti-lo somente se `package-lock.json`, dependências ou o estado de instalação mudarem; executar a validação própria e `npm run check` antes de cada gate; para alteração exclusivamente documental, justificar esses comandos como não aplicáveis; incluir no gate as evidências aplicáveis;
 5. na última subseção, executar também as validações integradas e corrigir regressões; evidência de QA obrigatória pendente deve ser resolvida antes do ABC de consolidação final;
 6. antes do gate, identificar os documentos canônicos potencialmente afetados; nas subseções não finais, considerar os documentos da subseção atual; na última, incluir todos os documentos canônicos afetados ao longo do recorte;
 7. para cada documento, preparar um relatório factual da implementação, preservar snapshot anterior e executar `$lp-factory-abc`: `ETAPA: intermediária` nas subseções não finais e `ETAPA: consolidação final` na última; aplicar somente operações literais emitidas; se o resultado for `SEM ALTERAÇÕES NECESSÁRIAS`, não editar o documento;
