@@ -16,6 +16,8 @@ import {
 const MAX_SERIALIZED_OUTPUT_LENGTH = 100_000;
 const MAX_SUMMARY_LENGTH = 2_000;
 const MAX_CANDIDATES = 8;
+const MAX_CANDIDATE_NAME_LENGTH = 120;
+const MAX_SHORT_DESCRIPTION_LENGTH = 300;
 const MAX_FACTUAL_NEED_LENGTH = 500;
 const MAX_RELATED_FIELDS = 16;
 const MAX_FIELD_KEY_LENGTH = 100;
@@ -38,6 +40,8 @@ export const inputCatalogEvaluationCandidateSchema = z
   .object({
     origin: z.enum(inputCatalogEvaluationCandidateOrigins),
     conclusion: z.enum(inputCatalogEvaluationCandidateConclusions),
+    name: text(MAX_CANDIDATE_NAME_LENGTH),
+    shortDescription: text(MAX_SHORT_DESCRIPTION_LENGTH),
     factualNeed: text(MAX_FACTUAL_NEED_LENGTH),
     relatedFields: z
       .array(text(MAX_FIELD_KEY_LENGTH))

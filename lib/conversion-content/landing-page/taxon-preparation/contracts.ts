@@ -1,7 +1,7 @@
 import type { FactualTaxonIdentity, ResolvedFactualCoverage } from "../input-catalog";
 
 export const END_CUSTOMER_RESEARCH_AUDIENCE_SCOPE = "end_customer" as const;
-export const INPUT_CATALOG_EVALUATION_SCHEMA_VERSION = 3 as const;
+export const INPUT_CATALOG_EVALUATION_SCHEMA_VERSION = 4 as const;
 export const inputCatalogEvaluationSourceStrategies = ["e20_5", "web_search_fallback", "web_search_focal"] as const;
 export const inputCatalogEvaluationSourceStates = ["e20_5_valid", "not_selected", "feature_disabled"] as const;
 export const inputCatalogEvaluationModes = ["systematic", "hypothesis"] as const;
@@ -27,7 +27,7 @@ export type InputCatalogEvaluationSourceStrategy = (typeof inputCatalogEvaluatio
 export type InputCatalogEvaluationSourceState = (typeof inputCatalogEvaluationSourceStates)[number];
 
 export type InputCatalogEvaluationCandidate = Readonly<{
-  origin: InputCatalogEvaluationCandidateOrigin; conclusion: InputCatalogEvaluationCandidateConclusion; factualNeed: string;
+  origin: InputCatalogEvaluationCandidateOrigin; conclusion: InputCatalogEvaluationCandidateConclusion; name: string; shortDescription: string; factualNeed: string;
   relatedFields: readonly string[]; currentCoverage: string; allegedInsufficiency: string | null; evidence: string;
   expectedOperationalSource: string | null; realConsumer: string | null; concreteHarm: string | null;
   suggestedTaxonomyLayer: InputCatalogEvaluationTaxonomicLayer | null; uncertainties: readonly string[]; sourceUrls: readonly string[];
@@ -43,7 +43,7 @@ export type InputCatalogEvaluationContext = Readonly<{
   taxon: FactualTaxonIdentity; coverage: ResolvedFactualCoverage; research: EndCustomerResearchContent | null;
   mode: InputCatalogEvaluationMode; sourceStrategy: InputCatalogEvaluationSourceStrategy; sourceState: InputCatalogEvaluationSourceState;
 }>;
-export type InputCatalogEvaluationPrompt = Readonly<{ version: "e20.8.7-factual-coverage-evaluation-v2"; instructions: string; input: string }>;
+export type InputCatalogEvaluationPrompt = Readonly<{ version: "e20.8.7-factual-coverage-evaluation-v3"; instructions: string; input: string }>;
 export type InputCatalogEvaluationProviderRequest = Readonly<{ mode: InputCatalogEvaluationMode; sourceStrategy: InputCatalogEvaluationSourceStrategy; deadlineAtMs?: number; timeoutMs?: number; prompt: InputCatalogEvaluationPrompt; outputSchema: Readonly<Record<string, unknown>> }>;
 export type InputCatalogEvaluationProviderProvenance = Readonly<{ webSearchCallCount: number; webSources: readonly Readonly<{ title: string | null; url: string }>[] }>;
 export type InputCatalogEvaluationProviderResult = Readonly<{ status: "completed"; output: unknown; provenance?: InputCatalogEvaluationProviderProvenance }> | Readonly<{ status: "refusal" | "incomplete" | "timeout" | "failure"; message: string }>;
