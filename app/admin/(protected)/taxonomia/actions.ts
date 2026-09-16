@@ -30,6 +30,7 @@ export async function evaluateInputCatalogAction(input: Readonly<{ taxonId: stri
   const provider = await evaluateInputCatalogWithOpenAi({
     apiKey: process.env.OPENAI_API_KEY,
     configuration: runtime.configuration, environment: runtime.environment, requestId: randomUUID(),
+    economicEvent: { eventId: randomUUID(), taxonId: context.value.taxon.id },
     safetyIdentifier: `platform_admin_${gate.actorUserId.replace(/-/g, "").slice(0, 32)}`,
     request: { mode: input.mode, sourceStrategy: context.value.sourceStrategy, prompt, outputSchema: inputCatalogEvaluationOutputJsonSchema },
   });
