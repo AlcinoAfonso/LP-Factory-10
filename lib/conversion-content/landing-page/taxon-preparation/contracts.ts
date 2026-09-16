@@ -43,7 +43,7 @@ export type InputCatalogEvaluationContext = Readonly<{
   taxon: FactualTaxonIdentity; coverage: ResolvedFactualCoverage; research: EndCustomerResearchContent | null;
   mode: InputCatalogEvaluationMode; sourceStrategy: InputCatalogEvaluationSourceStrategy; sourceState: InputCatalogEvaluationSourceState;
 }>;
-export type InputCatalogEvaluationPrompt = Readonly<{ version: "e20.8.7-factual-coverage-evaluation-v1"; instructions: string; input: string }>;
+export type InputCatalogEvaluationPrompt = Readonly<{ version: "e20.8.7-factual-coverage-evaluation-v2"; instructions: string; input: string }>;
 export type InputCatalogEvaluationProviderRequest = Readonly<{ mode: InputCatalogEvaluationMode; sourceStrategy: InputCatalogEvaluationSourceStrategy; deadlineAtMs?: number; timeoutMs?: number; prompt: InputCatalogEvaluationPrompt; outputSchema: Readonly<Record<string, unknown>> }>;
 export type InputCatalogEvaluationProviderProvenance = Readonly<{ webSearchCallCount: number; webSources: readonly Readonly<{ title: string | null; url: string }>[] }>;
 export type InputCatalogEvaluationProviderResult = Readonly<{ status: "completed"; output: unknown; provenance?: InputCatalogEvaluationProviderProvenance }> | Readonly<{ status: "refusal" | "incomplete" | "timeout" | "failure"; message: string }>;

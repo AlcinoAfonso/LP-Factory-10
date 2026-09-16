@@ -1,7 +1,7 @@
 import type { LoadSelectedEndCustomerResearchResult, InputCatalogEvaluationContext, InputCatalogEvaluationMode, InputCatalogEvaluationOutput, InputCatalogEvaluationPrompt, InputCatalogEvaluationSourceState, InputCatalogEvaluationSourceStrategy } from "./contracts";
 import type { ResolvedFactualCoverage } from "../input-catalog";
 
-export const INPUT_CATALOG_EVALUATION_PROMPT_VERSION = "e20.8.7-factual-coverage-evaluation-v1" as const;
+export const INPUT_CATALOG_EVALUATION_PROMPT_VERSION = "e20.8.7-factual-coverage-evaluation-v2" as const;
 const instructions = [
   "Papel: avaliador consultivo da suficiência dos fields factuais correntes de um taxon.",
   "Resultado: classifique a cobertura como sufficient, candidate_gaps ou inconclusive e produza somente o objeto do Structured Output fornecido.",
