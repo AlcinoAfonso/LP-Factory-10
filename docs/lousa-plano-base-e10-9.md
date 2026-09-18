@@ -131,4 +131,3 @@
 ### 4.1.8 Supervisão
 
 - Supervisão: Autônomo. O fluxo técnico pode conduzir o PB1 sem supervisão rotineira do Estrategista Original, preservando integralmente a V1; decisões que ultrapassem a autoridade concedida devem ser escaladas conforme o Prompt Estrategista.
-
