@@ -2,9 +2,9 @@
 
 - Fonte aprovada: Debate 15, PB1, seção 4.1 — https://docs.google.com/document/d/1m9F0VigPWpGzDHwThkgVWGsRQCpvQ0NMgPK1SENbxy0/edit?usp=drivesdk
 - Revisão da fonte: `ANLCKQnpD68OzFv5chYFO0RpAnspyFmDn5s_y9eXDUDNIvn0F7IArGLT_cOjsKNDiMZ3sNzrb4tDtq4MFuQh8hTUSXc7NIVEutLmYGKYkK8`
-- Estado: V1 funcional aprovada; aguardando derivação técnica.
+- Estado: V2 técnica candidata à avaliação do Analista; V1 funcional preservada no commit `f40248a69002483f8fb378f470ca73afd34475dd`.
 
-## 4.1 PB1 — Pending Setup pré-comercial conversacional — V1
+## 4.1 PB1 — Pending Setup pré-comercial conversacional — V2 técnica
 
 ### 4.1.1 Problema e resultado funcional
 
@@ -13,6 +13,8 @@
 - Resultado: após confirmar o acesso por e-mail, o lead é recebido de forma humana, identificado pelo nome preferido, tem o negócio compreendido com o menor diálogo necessário, chega a uma resolução segura do nicho/taxon ou a um fallback explícito e segue para a experiência comercial sem receber entitlement por essa transição.
 
 - O histórico da conversa permanece associado à mesma relação usuário/conta para retomada futura dentro da LP Factory.
+
+**Derivação técnica da V1:** o caso usa a rota `/a/[account]` e a primeira conta criada pelo fluxo autorizado. A conta só passa ao comercial depois de uma conclusão persistida: identidade mínima, entendimento operacional do negócio e taxon oficial seguro ou fallback explícito. A conclusão não escreve entitlement. A conversa é dado funcional do produto e não substitui `audit_logs`, `audit_context_event` ou `account_niche_resolutions`.
 
 ### 4.1.2 Atores e comportamento esperado
 
@@ -29,6 +31,8 @@
 - Se nenhum taxon oficial representar corretamente o negócio, o entendimento operacional é preservado em texto, a resolução oficial fica pendente e o lead pode seguir para a experiência comercial genérica.
 
 - Se houver conversão sem taxon oficial competente, o onboarding factual permanece bloqueado até a resolução oficial.
+
+**Derivação técnica da V1:** `account-journey-loader.ts` entrega o novo componente conversacional somente para conta `pending_setup` com membership ativo e papel `owner`. Cada Server Action repete a checagem de usuário, conta, membership, papel e status antes de ler ou gravar. A entrada recupera um nome preferido válido já associado ao `user_id`; se ausente, faz a pergunta humana e o salva por usuário. Em seguida faz a pergunta aberta de negócio. O servidor aceita no máximo uma resposta nova por turno, decide o próximo estado e apresenta no máximo uma pergunta de esclarecimento. Estados explícitos: `awaiting_name`, `awaiting_business`, `awaiting_clarification`, `awaiting_confirmation`, `ready_official`, `ready_fallback` e `completed`; são estado de UI/domínio, não nova autoridade taxonômica. A retomada deriva o estado persistido e mantém a ação seguinte compreensível.
 
 ### 4.1.3 Decisões de produto, preservação e escopo negativo
 
@@ -62,6 +66,10 @@
 
 - A conclusão válida da nova experiência promove pending_setup para active sem conceder entitlement; active não pode ser reinterpretado como compra, trial concedido ou acesso produtivo.
 
+**Derivação técnica da V1 — boundaries e substituição:** criar `lib/onboarding/pending-setup/` restrito a contratos, provider da jornada e adapters da conversa; criar componente e Server Actions focais em `app/a/[account]/`. O provider consome os adapters atuais de taxonomia e de conta, sem transferir para eles o transcript. `accounts.name` mantém o valor provisório não vazio criado pelo fluxo da primeira conta; nome de negócio mencionado espontaneamente pode ser candidato a atualização competente, sem pergunta obrigatória. `account_profiles.whatsapp` recebe apenas gravação parcial, quando houver número válido informado; ausência de novo valor não apaga o anterior e não altera `preferred_channel` ou `site_url`. A pergunta opcional de WhatsApp aparece somente depois de demonstração inicial de valor e não impede a conclusão.
+
+**Derivação técnica da V1 — prova anterior à remoção:** mapear, por busca de consumidores e testes, cada contrato preservado: Auth, membership, account status, perfil e WhatsApp, matching, confiança, resolução operacional, vínculo oficial e primário único, workload E21, comercial genérico/personalizado, checkout, entitlement e dados históricos. Substituir o caminho de `PendingSetupFirstSteps`, `validateE10_4SetupForm` e `saveSetupAndContinueAction` depois da prova; remover código exclusivo da jornada antiga que ficar órfão. `NicheResolutionCard` não integra o novo Pending Setup; preservá-lo somente se houver consumidor independente real de contas `active` históricas, condicionado para não reaparecer após a nova conversa. Não apagar coluna, migration ou dado histórico.
+
 ### 4.1.4 Automação e IA
 
 - Automação: sim. Natureza: automação com IA em fluxo controlado. Ambiente principal: runtime da LP Factory.
@@ -75,6 +83,10 @@
 - A V1 não altera modelo nem reasoning effort do workload vigente. Mudança futura deve seguir a governança E21 e comparação representativa por workload.
 
 - Falha ou indisponibilidade da IA não autoriza inventar taxon e deve preservar os caminhos determinístico, humano e de fallback aprovados.
+
+**Derivação técnica da V1 — decisão controlada:** usar `matchBusinessTaxonsDeterministic`, `evaluateDeterministicTaxonMatch`, `account_niche_resolutions` e o adapter de `account_taxonomy` atuais como autoridades distintas. Match oficial único com alta confiança pode gravar primário pelo adapter existente; inferência material exige confirmação na própria conversa; ambiguidade produz uma pergunta necessária por turno; ausência de taxon oficial adequado mantém texto operacional e pendência oficial, liberando apenas comercial genérico. Texto livre e saída da IA não criam taxon, alias ou vínculo oficial. Preservar a cardinalidade de no máximo um primário ativo e falhar fechado em conflito.
+
+**Derivação técnica da V1 — IA:** a semântica usa Responses API direta, Structured Outputs de schema estrito e apenas a configuração pública vigente do workload `niche_resolution`, sem troca de modelo ou `reasoning.effort`. Enviar candidatos oficiais e contexto validado mínimo do turno; usar `store:false`, sem tools, Agents SDK, Conversations obrigatórias ou retry em loop. Versionar o prompt junto ao consumidor, separando instruções estáveis de dados delimitados. Validar IDs e saída no servidor. Recusa, resposta incompleta, schema inválido, timeout ou indisponibilidade geram falha tipada e continuação humana ou fallback explícito, sem taxon inventado. Registrar resultado, categoria de falha, latência, configuração e usage disponíveis com telemetria sanitizada, sem prompt, transcript ou PII; preservar captura financeira E21 aplicável.
 
 ### 4.1.5 Posição planejada no roadmap e fases
 
@@ -92,6 +104,8 @@
 
 - 10.9.2 Registros do recorte somente será materializado pelo fluxo técnico com artefatos realmente criados, ajustados ou excluídos.
 
+**Derivação técnica da V1 — ordem executável:** implementar `10.9.3` (entrada, autorização e identidade por usuário), `10.9.4` (conversa, matching e resolução), `10.9.5` (histórico persistido e retomada) e `10.9.6` (conclusão e passagem comercial), cada qual com gate e evidência próprios. A migration necessária ao histórico pode ser preparada antes do runtime, mas o roadmap mantém os identificadores e a ordem acima. Na reconciliação de planejamento, `10.9.1` fica planejada; `10.9.2` é omitida até haver artefatos reais. Na execução, o ABC registra apenas artefatos efetivamente criados, ajustados ou excluídos.
+
 ### 4.1.6 Classificação e riscos materiais
 
 - Classificação: Complexa.
@@ -101,6 +115,10 @@
 - Riscos principais: adaptar excessivamente o legado e recriar complexidade; manter caminhos paralelos ou compatibilizadores sem consumidor; remover contrato ainda necessário; aumentar fricção; resolver taxon incorreto; perder contexto; confundir active com entitlement; transformar histórico em autoridade factual; ampliar inadvertidamente para CRM/omnichannel.
 
 - A complexidade não decorre de necessidade de arquitetura agentic; essa alternativa foi explicitamente excluída.
+
+**Derivação técnica da V1 — persistência e acesso:** criar migration focal para (1) preferência de nome com chave `user_id` referenciando `auth.users`, para não transformar identidade da pessoa em atributo da conta; (2) cabeçalho de conversa 1:1 por `account_id`, com `owner_user_id` e timestamps; (3) turnos associados à conversa, com ID estável do turno, fala da pessoa, resposta/estado do produto e timestamps. A separação do nome por usuário corrige a tensão entre o cabeçalho por conta sugerido no parecer estrutural e a V1 4.1.2; o Analista deve avaliar esse ponto. Unicidade por conta e turno protege retry, e índice `(account_id, created_at, id)` atende à retomada ordenada. Persistir a fala antes da chamada de IA; completar o mesmo turno com resposta ou falha recuperável. Erro de persistência impede resposta que aparente conclusão salva. A conversa permanece vinculada à mesma conta após `active` e conversão, sem entidade paralela de lead.
+
+**Derivação técnica da V1 — segurança da migration:** definir PK, FK com ações `ON UPDATE`/`ON DELETE`, checks de tamanho/conteúdo, timestamps, índices, RLS e decisão explícita de auditoria/Trigger Hub; `service_role` recebe apenas os grants necessários via adapter server-only após guard. Não conceder acesso direto a `anon`, `authenticated` ou `public`; revogar `SELECT` herdado por `ai_readonly` nas tabelas pessoais. Provar separadamente RLS, grants e negação pela Data API. Não criar view, service ou infraestrutura genérica. Atualizar `docs/schema.md` pelo ABC da implementação. Aplicar e verificar a migration no ambiente alvo antes de habilitar runtime que dependa das tabelas.
 
 ### 4.1.7 Critérios de aceite e evidências esperadas
 
@@ -127,6 +145,10 @@
 - QA visual comprova experiência progressiva e legível em viewport móvel e desktop, sem aparência de formulário longo, sem overflow e com estados de carregamento, erro, retomada e confirmação compreensíveis.
 
 - Evidência técnica deve demonstrar: novo caminho único do Pending Setup; ausência de dependência indevida do formulário/orquestração antigos; equivalência funcional item a item antes de remover contratos existentes; remoção de código antigo exclusivamente órfão quando a substituição estiver comprovada; preservação de dados históricos; testes focais dos fluxos novos; e ausência de regressão nos gates de acesso, membership, account status, entitlement, taxonomia e comercial.
+
+**Derivação técnica da V1 — validação por fase:** em `10.9.3`, testar nome conhecido/ausente, identidade por usuário, owner/membership e ausência de campos herdados; em `10.9.4`, testar match único, inferência confirmada, ambiguidade, taxon inexistente, recusa/timeout/schema inválido e nenhum vínculo falso; em `10.9.5`, testar saída/retorno, retry, concorrência, isolamento entre contas e preservação de fala quando a IA falha; em `10.9.6`, testar transição condicional idempotente, comercial genérico/personalizado, ausência de entitlement, checkout e entrada factual condicionada ao taxon oficial. Cada fase executa `npm ci`, `npm run check` e testes focais aplicáveis; executar prova SQL de isolamento/ACL e QA visual móvel/desktop quando o runtime estiver disponível. O histórico e WhatsApp existentes não sofrem limpeza destrutiva. `docs/automations.md` deve refletir o novo gatilho conversacional; `docs/base-tecnica.md`, `docs/schema.md` e `docs/roadmap.md` recebem somente o delta factual competente via ABC após implementação; `docs/platform-config.md` muda apenas se configuração efetivamente mudar.
+
+**Modernização técnica justificada — `prod#17`:** a experiência permite entrada, resposta, confirmação, erro, retomada e conclusão por teclado, com ordem e indicação de foco coerentes; controles e mensagens têm identificação acessível, contraste e alvos de toque adequados. Validar os critérios WCAG 2.2 pertinentes manualmente em Preview móvel e desktop, com ferramenta automática quando útil, sem declarar conformidade integral.
 
 ### 4.1.8 Supervisão
 
