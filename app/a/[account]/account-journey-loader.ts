@@ -14,6 +14,10 @@ import { readUserIdentityPreference } from "../../../lib/onboarding/pending-setu
 import { isConversationalPendingSetupEnabled } from "../../../lib/onboarding/pending-setup/config";
 import { loadPendingSetupBusinessSnapshot } from "../../../lib/onboarding/pending-setup/businessConversationProvider";
 import { decideAccountJourney } from "./_components/onboarding-journey-policy";
+import {
+  canShowHistoricalNicheResolution,
+  loadPendingSetupCompletionState,
+} from "./account-journey-loader-state";
 
 type DashState = "auth" | "onboarding" | "public";
 
@@ -81,16 +85,18 @@ export async function loadAccountJourney({
     }
 
     const accountId = (ctx?.account?.id ?? ctx?.account_id ?? null) as string | null;
-    const [commercialEntitlement, nicheResolution, primaryTaxon, completionMode] = accountId
+    const [commercialEntitlement, nicheResolution, primaryTaxon, completion] = accountId
       ? await Promise.all([
           getCommercialEntitlementSignal({ accountId }),
           getActionableNicheResolutionForAccount({ accountId, accountStatus }),
           getActivePrimaryAccountTaxon({ accountId }),
           isConversationalPendingSetupEnabled()
-            ? readPendingSetupConversationCompletion(accountId)
-            : Promise.resolve(null),
+            ? loadPendingSetupCompletionState(() =>
+                readPendingSetupConversationCompletion(accountId),
+              )
+            : Promise.resolve({ status: "known" as const, mode: null }),
         ])
-      : [null, null, null, null];
+      : [null, null, null, { status: "known" as const, mode: null }];
     const actorRole = ctx?.role ?? "viewer";
     const isCommerciallyEligible =
       commercialEntitlement?.isCommerciallyEligible === true;
@@ -109,8 +115,11 @@ export async function loadAccountJourney({
         })
       : null;
     const presentation = resolveCompletedAccountPresentation({
-      completionMode,
-      hasActionableNicheResolution: Boolean(nicheResolution),
+      completionMode: completion.mode,
+      hasActionableNicheResolution: canShowHistoricalNicheResolution(
+        completion,
+        Boolean(nicheResolution),
+      ),
       hasPrimaryTaxon: Boolean(primaryTaxon),
       personalizedBundleReady:
         commercialActivation?.status === "ready" && Boolean(commercialActivation.bundle),
