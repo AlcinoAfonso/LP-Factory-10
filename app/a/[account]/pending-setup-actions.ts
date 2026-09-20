@@ -9,6 +9,7 @@ import { clientOpenAiCostContext } from "../../../lib/openai-costs";
 import { confirmAiSuggestedTaxonForAccount } from "../../../lib/onboarding/niche-resolution/adapters/accountNicheResolutionUserAdapter";
 import {
   appendBusinessContext,
+  buildPendingSetupAiProjection,
   validateBusinessContext,
   validatePreferredName,
 } from "../../../lib/onboarding/pending-setup";
@@ -164,6 +165,10 @@ export async function continuePendingSetupConversationAction(
     const resolution = await orchestratePendingSetupNicheTurn({
       accountId: actor.accountId,
       businessContext: businessContextText,
+      aiContextProjection: buildPendingSetupAiProjection({
+        messages: conversation.messages,
+        currentAnswer: validated.value,
+      }),
       apiKey: process.env.OPENAI_API_KEY,
       financialContext: clientOpenAiCostContext(actor.accountId, {
         kind: "niche_resolution",

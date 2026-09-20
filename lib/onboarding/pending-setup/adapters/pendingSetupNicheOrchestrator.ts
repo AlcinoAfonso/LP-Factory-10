@@ -50,6 +50,7 @@ type Dependencies = Readonly<{
 export async function orchestratePendingSetupNicheTurn(input: {
   accountId: string;
   businessContext: string;
+  aiContextProjection: string;
   apiKey?: string;
   financialContext: OpenAiCostEconomicContext;
 }, dependencies: Dependencies = {}): Promise<PendingSetupNicheTurnResult> {
@@ -113,7 +114,7 @@ export async function orchestratePendingSetupNicheTurn(input: {
 
   const resolveAi = dependencies.resolveAi ?? resolveNicheWithOpenAi;
   const aiResult = await resolveAi({
-    rawInput: input.businessContext,
+    rawInput: input.aiContextProjection,
     decision,
     candidates,
     apiKey: input.apiKey,

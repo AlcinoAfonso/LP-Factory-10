@@ -12,6 +12,10 @@ import {
   decidePendingSetupAiTurn,
   shouldUseAutomaticOfficialPath,
 } from "./turn-policy";
+import {
+  buildPendingSetupAiProjection,
+  pendingSetupAiProjectionPolicy,
+} from "./context-projection";
 import { resolveNicheWithOpenAi } from "../niche-resolution/adapters/openAiResolver";
 import type { TaxonMatchCandidate } from "../niche-resolution/contracts";
 
@@ -72,6 +76,10 @@ const loader = readFileSync(
   new URL("../../../app/a/[account]/account-journey-loader.ts", import.meta.url),
   "utf8",
 );
+const conversationAdapter = readFileSync(
+  new URL("./adapters/pendingSetupConversationAdapter.ts", import.meta.url),
+  "utf8",
+);
 
 for (const requiredContract of [
   "account_pending_setup_conversations",
@@ -89,6 +97,12 @@ assert.doesNotMatch(migration, /create policy/i);
 assert.match(page, /PendingSetupConversation/);
 assert.doesNotMatch(page, /PendingSetupFirstSteps/);
 assert.match(loader, /loadPendingSetupConversation/);
+assert.match(loader, /accountStatus === "pending_setup"/);
+assert.match(conversationAdapter, /\.eq\("account_id", input\.accountId\)/);
+assert.match(conversationAdapter, /\.eq\("user_id", input\.userId\)/);
+assert.match(conversationAdapter, /\.eq\("conversation_id", conversationId\)/);
+assert.doesNotMatch(migration, /update\s+public\.account_pending_setup_messages/i);
+assert.doesNotMatch(migration, /delete\s+from\s+public\.account_pending_setup_messages/i);
 
 const candidate: TaxonMatchCandidate = {
   taxonId: "10000000-0000-4000-8000-000000000001",
@@ -112,6 +126,20 @@ const highDecision = {
 };
 assert.equal(shouldUseAutomaticOfficialPath(highDecision), true);
 assert.equal(appendBusinessContext("consultoria", "para restaurantes"), "consultoria | para restaurantes");
+
+const longHistory = Array.from({ length: 12 }, (_, index) => ({
+  role: index % 2 === 0 ? "assistant" as const : "user" as const,
+  content: `turno-${index} ${"x".repeat(500)}`,
+}));
+const projection = buildPendingSetupAiProjection({
+  messages: longHistory,
+  currentAnswer: "Contato ana@example.com, https://example.com, +55 (21) 97965-8483",
+});
+assert.ok(projection.length <= pendingSetupAiProjectionPolicy.maxProjectionLength);
+assert.doesNotMatch(projection, /turno-[0-5]\b/);
+assert.match(projection, /turno-11\b/);
+assert.doesNotMatch(projection, /ana@example\.com|example\.com|97965/);
+assert.match(projection, /\[email removido\]|\[url removida\]|\[telefone removido\]/);
 
 let deterministicTransportCalls = 0;
 const deterministicAi = await resolveNicheWithOpenAi({
