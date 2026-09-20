@@ -35,7 +35,7 @@ Ler `docs/pipeline-plano-base.md` somente para roteamento e seguir os contratos 
 - `lp-factory-avaliar-plano-automacoes`, quando a V1 identificar automação aplicável e não registrar dispensa humana explícita da avaliação formal;
 - `lp-factory-avaliar-plano-analista`;
 - `lp-factory-executar-plano`;
-- `lp-factory-avaliar-implementacao-analista` nas revisões focal e final definidas pelo Executor.
+- `lp-factory-avaliar-implementacao-analista` na revisão focal definida pelo Executor.
 
 ## Retomar antes de repetir
 
