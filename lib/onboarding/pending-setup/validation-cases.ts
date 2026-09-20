@@ -37,7 +37,7 @@ function processPendingSetupBusinessTurn(
   dependencies: PendingSetupBusinessDependencies,
 ) {
   return processPendingSetupBusinessTurnCore(
-    { ...input, turnId: TEST_TURN_ID },
+    { ...input, turnId: TEST_TURN_ID, leaseVersion: 1 },
     dependencies,
   );
 }
@@ -492,6 +492,51 @@ async function runBusinessConversationCases(): Promise<void> {
     ),
   );
   assert.deepEqual(result, { ok: false, reason: "result_persist_failed" });
+  assert.deepEqual(events, [
+    "match",
+    "persist_resolution",
+    "resolve_ai",
+    "persist_ai_result",
+  ]);
+}
+
+{
+  const events: string[] = [];
+  const result = await processPendingSetupBusinessTurn(
+    { accountId: "account-1", rawInput: "consultoria" },
+    dependenciesFor(
+      { ok: true, candidates: [] },
+      events,
+      {
+        persistResolution: async (input) => {
+          events.push("persist_resolution");
+          assert.equal(input.leaseVersion, 1);
+          return "lease_lost";
+        },
+      },
+    ),
+  );
+  assert.deepEqual(result, { ok: false, reason: "lease_lost" });
+  assert.deepEqual(events, ["match", "persist_resolution"]);
+}
+
+{
+  const events: string[] = [];
+  const result = await processPendingSetupBusinessTurn(
+    { accountId: "account-1", rawInput: "consultoria" },
+    dependenciesFor(
+      { ok: true, candidates: [] },
+      events,
+      {
+        persistAiResult: async (input) => {
+          events.push("persist_ai_result");
+          assert.equal(input.leaseVersion, 1);
+          return "turn_not_current";
+        },
+      },
+    ),
+  );
+  assert.deepEqual(result, { ok: false, reason: "turn_not_current" });
   assert.deepEqual(events, [
     "match",
     "persist_resolution",

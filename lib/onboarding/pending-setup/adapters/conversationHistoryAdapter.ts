@@ -9,12 +9,24 @@ import type {
 } from "../contracts";
 
 type BeginTurnResult =
-  | { ok: true; status: "created" | "resumed" | "completed" | "in_progress" }
+  | { ok: true; status: "created" | "resumed"; leaseVersion: number }
+  | {
+      ok: true;
+      status: "completed" | "in_progress" | "stale_context" | "turn_not_current";
+      leaseVersion: null;
+    }
   | { ok: false; reason: string };
+
+export type PendingSetupTurnWriteResult =
+  | "saved"
+  | "lease_lost"
+  | "turn_not_current"
+  | "failed";
 
 type CompleteTurnInput = {
   accountId: string;
   turnId: string;
+  leaseVersion: number;
   status: "completed" | "failed";
   productState: PendingSetupConversationProductState;
   productMessage: string;
@@ -42,6 +54,7 @@ export async function beginPendingSetupConversationTurn(input: {
   turnId: string;
   userMessage: string;
   turnKind: PendingSetupConversationTurnKind;
+  expectedResolutionUpdatedAt: string | null;
 }): Promise<BeginTurnResult> {
   const supabase = createServiceClient();
   try {
@@ -51,17 +64,33 @@ export async function beginPendingSetupConversationTurn(input: {
       p_turn_id: input.turnId,
       p_user_message: input.userMessage,
       p_turn_kind: input.turnKind,
+      p_expected_resolution_updated_at: input.expectedResolutionUpdatedAt,
     });
     if (error) return { ok: false, reason: "turn_start_failed" };
-    if (
-      data === "created" ||
-      data === "resumed" ||
-      data === "completed" ||
-      data === "in_progress"
-    ) {
-      return { ok: true, status: data };
+    if (!data || typeof data !== "object") {
+      return { ok: false, reason: "turn_start_failed" };
     }
-    return { ok: false, reason: typeof data === "string" ? data : "turn_start_failed" };
+    const row = data as Record<string, unknown>;
+    if (
+      (row.status === "created" || row.status === "resumed") &&
+      typeof row.lease_version === "number" &&
+      Number.isSafeInteger(row.lease_version) &&
+      row.lease_version > 0
+    ) {
+      return { ok: true, status: row.status, leaseVersion: row.lease_version };
+    }
+    if (
+      row.status === "completed" ||
+      row.status === "in_progress" ||
+      row.status === "stale_context" ||
+      row.status === "turn_not_current"
+    ) {
+      return { ok: true, status: row.status, leaseVersion: null };
+    }
+    return {
+      ok: false,
+      reason: typeof row.status === "string" ? row.status : "turn_start_failed",
+    };
   } catch {
     return { ok: false, reason: "turn_start_failed" };
   }
@@ -69,20 +98,25 @@ export async function beginPendingSetupConversationTurn(input: {
 
 export async function completePendingSetupConversationTurn(
   input: CompleteTurnInput,
-): Promise<boolean> {
+): Promise<PendingSetupTurnWriteResult> {
   const supabase = createServiceClient();
   try {
     const { data, error } = await supabase.rpc("complete_pending_setup_conversation_turn", {
       p_account_id: input.accountId,
       p_turn_id: input.turnId,
+      p_lease_version: input.leaseVersion,
       p_status: input.status,
       p_product_state: input.productState,
       p_product_message: input.productMessage,
       p_failure_code: input.failureCode,
     });
-    return !error && data === "saved";
+    if (error) return "failed";
+    if (data === "saved" || data === "lease_lost" || data === "turn_not_current") {
+      return data;
+    }
+    return "failed";
   } catch {
-    return false;
+    return "failed";
   }
 }
 

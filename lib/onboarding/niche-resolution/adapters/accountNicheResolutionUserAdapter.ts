@@ -39,6 +39,7 @@ type ResolutionRow = {
   user_resolution_status: UserNicheResolutionStatus | null;
   user_selected_taxon_id: string | null;
   user_rewrite_input: string | null;
+  updated_at: string;
 };
 
 type TaxonRow = {
@@ -86,6 +87,7 @@ export async function readActionablePendingSetupNicheResolutionForAccount(input:
       ok: true;
       resolution: ActionableNicheResolution | null;
       recoverableRawInput: string | null;
+      expectedResolutionUpdatedAt: string | null;
     }
   | { ok: false; reason: string }
 > {
@@ -98,15 +100,26 @@ export async function readActionablePendingSetupNicheResolutionForAccount(input:
       ok: true,
       resolution: validated.context.actionable,
       recoverableRawInput: null,
+      expectedResolutionUpdatedAt: validated.context.resolution.updated_at,
     };
   }
   if (validated.reason === "resolution_not_found") {
-    return { ok: true, resolution: null, recoverableRawInput: null };
+    return {
+      ok: true,
+      resolution: null,
+      recoverableRawInput: null,
+      expectedResolutionUpdatedAt: null,
+    };
   }
   if (validated.reason === "resolution_not_resolved") {
     const persisted = await readRecoverableRawInput(input.accountId);
     return persisted.ok
-      ? { ok: true, resolution: null, recoverableRawInput: persisted.rawInput }
+      ? {
+          ok: true,
+          resolution: null,
+          recoverableRawInput: persisted.rawInput,
+          expectedResolutionUpdatedAt: validated.resolution?.updated_at ?? null,
+        }
       : persisted;
   }
   if (validated.resolution) {
@@ -120,7 +133,12 @@ export async function readActionablePendingSetupNicheResolutionForAccount(input:
         usableActivePrimaryTaxonId: primary.taxonId,
       })
     ) {
-      return { ok: true, resolution: null, recoverableRawInput: null };
+      return {
+        ok: true,
+        resolution: null,
+        recoverableRawInput: null,
+        expectedResolutionUpdatedAt: validated.resolution.updated_at,
+      };
     }
   }
   return { ok: false, reason: validated.reason };
@@ -129,6 +147,7 @@ export async function readActionablePendingSetupNicheResolutionForAccount(input:
 export async function confirmPendingSetupAiSuggestedTaxonForAccount(input: {
   accountId: string;
   turnId: string;
+  leaseVersion: number;
 }): Promise<NicheResolutionUserActionResult> {
   const validated = await getValidatedActionContext({
     accountId: input.accountId,
@@ -144,6 +163,7 @@ export async function confirmPendingSetupAiSuggestedTaxonForAccount(input: {
   return confirmPendingSetupTaxonForAccount({
     accountId: input.accountId,
     turnId: input.turnId,
+    leaseVersion: input.leaseVersion,
     taxonId,
   });
 }
@@ -151,6 +171,7 @@ export async function confirmPendingSetupAiSuggestedTaxonForAccount(input: {
 export async function confirmPendingSetupAiOptionForAccount(input: {
   accountId: string;
   turnId: string;
+  leaseVersion: number;
   taxonId: string | null;
   optionName: string | null;
 }): Promise<NicheResolutionUserActionResult> {
@@ -170,12 +191,14 @@ export async function confirmPendingSetupAiOptionForAccount(input: {
     return confirmPendingSetupTaxonForAccount({
       accountId: input.accountId,
       turnId: input.turnId,
+      leaseVersion: input.leaseVersion,
       taxonId: option.taxonId,
     });
   }
   return confirmPendingSetupOperationalChoice(
     input.accountId,
     input.turnId,
+    input.leaseVersion,
     option.name,
   );
 }
@@ -281,6 +304,7 @@ export async function rewriteAiNicheResolutionForAccount(input: {
 export async function confirmPendingSetupFallbackForAccount(input: {
   accountId: string;
   turnId: string;
+  leaseVersion: number;
   rewriteInput: string;
 }): Promise<NicheResolutionUserActionResult> {
   const rewriteInput = validateOperationalChoiceLabel(
@@ -298,6 +322,7 @@ export async function confirmPendingSetupFallbackForAccount(input: {
   return confirmPendingSetupOperationalChoice(
     input.accountId,
     input.turnId,
+    input.leaseVersion,
     rewriteInput.value,
   );
 }
@@ -406,14 +431,20 @@ async function confirmValidatedTaxon(
 export async function confirmPendingSetupTaxonForAccount(input: {
   accountId: string;
   turnId: string;
+  leaseVersion: number;
   taxonId: string;
 }): Promise<NicheResolutionUserActionResult> {
-  const { accountId, turnId, taxonId } = input;
+  const { accountId, turnId, leaseVersion, taxonId } = input;
   const supabase = createServiceClient();
   try {
     const { data, error } = await supabase.rpc(
       "confirm_pending_setup_niche_resolution_taxon",
-      { p_account_id: accountId, p_turn_id: turnId, p_taxon_id: taxonId },
+      {
+        p_account_id: accountId,
+        p_turn_id: turnId,
+        p_lease_version: leaseVersion,
+        p_taxon_id: taxonId,
+      },
     );
     if (error) {
       console.error("confirmPendingSetupTaxonForAccount failed:", {
@@ -437,6 +468,7 @@ export async function confirmPendingSetupTaxonForAccount(input: {
 async function confirmPendingSetupOperationalChoice(
   accountId: string,
   turnId: string,
+  leaseVersion: number,
   label: string,
 ): Promise<NicheResolutionUserActionResult> {
   const normalizedLabel = validateOperationalChoiceLabel(
@@ -452,6 +484,7 @@ async function confirmPendingSetupOperationalChoice(
       {
         p_account_id: accountId,
         p_turn_id: turnId,
+        p_lease_version: leaseVersion,
         p_label: normalizedLabel.value,
       },
     );
@@ -520,7 +553,7 @@ async function getValidatedActionContext(input: {
   const { data: resolution, error: resolutionError } = await supabase
     .from("account_niche_resolutions")
     .select(
-      "account_id,raw_input,ai_status,ai_result_json,ai_ux_mode,ai_suggested_taxon_id,user_resolution_status,user_selected_taxon_id,user_rewrite_input",
+      "account_id,raw_input,ai_status,ai_result_json,ai_ux_mode,ai_suggested_taxon_id,user_resolution_status,user_selected_taxon_id,user_rewrite_input,updated_at",
     )
     .eq("account_id", input.accountId)
     .limit(1)
@@ -537,11 +570,16 @@ async function getValidatedActionContext(input: {
   if (!resolution) return { ok: false, reason: "resolution_not_found" };
 
   const row = resolution as ResolutionRow;
+  if (typeof row.updated_at !== "string") {
+    return { ok: false, reason: "resolution_lookup_failed" };
+  }
 
   if (row.user_resolution_status && FINAL_USER_STATUSES.has(row.user_resolution_status)) {
     return { ok: false, reason: "already_finalized", resolution: row };
   }
-  if (row.ai_status !== "resolved") return { ok: false, reason: "resolution_not_resolved" };
+  if (row.ai_status !== "resolved") {
+    return { ok: false, reason: "resolution_not_resolved", resolution: row };
+  }
   if (!row.ai_ux_mode || !ACTIONABLE_UX_MODES.has(row.ai_ux_mode)) {
     return { ok: false, reason: "ux_mode_not_actionable" };
   }

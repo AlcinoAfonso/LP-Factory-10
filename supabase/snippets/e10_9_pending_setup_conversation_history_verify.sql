@@ -31,6 +31,21 @@ with tables as (
       'begin_pending_setup_conversation_turn',
       'complete_pending_setup_conversation_turn'
     )
+), lock_order_functions as (
+  select
+    procedure.proname,
+    lower(pg_get_functiondef(procedure.oid)) as definition
+  from pg_proc procedure
+  join pg_namespace namespace on namespace.oid = procedure.pronamespace
+  where namespace.nspname = 'public'
+    and procedure.proname in (
+      'begin_pending_setup_conversation_turn',
+      'upsert_pending_setup_niche_resolution_for_turn',
+      'update_pending_setup_niche_resolution_ai_for_turn',
+      'confirm_pending_setup_operational_choice_for_turn',
+      'confirm_pending_setup_niche_resolution_taxon',
+      'complete_pending_setup_conversation'
+    )
 ), required_columns as (
   select table_name, column_name
   from information_schema.columns
@@ -41,7 +56,7 @@ with tables as (
       ))
       or (table_name = 'pending_setup_conversation_turns' and column_name in (
         'account_id', 'id', 'user_message', 'turn_kind', 'status', 'product_state',
-        'product_message', 'failure_code', 'attempted_at', 'created_at', 'completed_at'
+        'product_message', 'failure_code', 'lease_version', 'attempted_at', 'created_at', 'completed_at'
       ))
     )
 ), checks as (
@@ -60,7 +75,7 @@ with tables as (
 
   select
     'required_columns',
-    case when count(*) = 17 then 'ok' else 'unexpected' end
+    case when count(*) = 18 then 'ok' else 'unexpected' end
   from required_columns
 
   union all
@@ -72,6 +87,7 @@ with tables as (
         and bool_and(prosecdef = false)
         and bool_and(proconfig @> array['search_path=""'])
         and bool_and(definition ilike '%for update%')
+        and bool_and(definition ilike '%lease_version%')
         and bool_and(has_function_privilege('service_role', oid, 'EXECUTE'))
         and bool_and(not has_function_privilege('anon', oid, 'EXECUTE'))
         and bool_and(not has_function_privilege('authenticated', oid, 'EXECUTE'))
@@ -85,6 +101,30 @@ with tables as (
       else 'unexpected'
     end
   from functions
+
+  union all
+
+  select
+    'canonical_lock_order',
+    case
+      when count(*) = 6
+        and bool_and(
+          case
+            when proname in (
+              'begin_pending_setup_conversation_turn',
+              'complete_pending_setup_conversation'
+            ) then strpos(definition, 'pending_setup_conversation_turns') > 0
+              and strpos(definition, 'pending_setup_conversation_turns')
+                < strpos(definition, 'account_niche_resolutions')
+            else strpos(definition, 'lock_current_pending_setup_turn') > 0
+              and strpos(definition, 'lock_current_pending_setup_turn')
+                < strpos(definition, 'account_niche_resolutions')
+          end
+        )
+      then 'ok'
+      else 'unexpected'
+    end
+  from lock_order_functions
 
   union all
 

@@ -85,6 +85,7 @@ export type PersistedAiNicheResolutionStatus = "skipped" | "resolved" | "failed"
 export type UpdateAccountNicheResolutionAiResultInput = {
   accountId: string;
   turnId: string;
+  leaseVersion: number;
   expectedRawInput: string;
   status: PersistedAiNicheResolutionStatus;
   errorCode: string | null;
@@ -107,6 +108,7 @@ export type AccountNicheResolutionStatus =
 export type UpsertAccountNicheResolutionInput = {
   accountId: string;
   turnId: string;
+  leaseVersion: number;
   rawInput: string;
   selectedTaxonId: string | null;
   confidence: DeterministicMatchConfidence;

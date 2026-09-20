@@ -27,7 +27,7 @@ export function mapDecisionToResolutionStatus(
 
 export async function upsertAccountNicheResolution(
   input: UpsertAccountNicheResolutionInput,
-): Promise<boolean> {
+): Promise<boolean | "lease_lost" | "turn_not_current"> {
   const supabase = createServiceClient();
 
   try {
@@ -36,6 +36,7 @@ export async function upsertAccountNicheResolution(
       {
         p_account_id: input.accountId,
         p_turn_id: input.turnId,
+        p_lease_version: input.leaseVersion,
         p_raw_input: input.rawInput,
         p_selected_taxon_id: input.selectedTaxonId,
         p_confidence: input.confidence,
@@ -58,6 +59,7 @@ export async function upsertAccountNicheResolution(
       return false;
     }
 
+    if (data === "lease_lost" || data === "turn_not_current") return data;
     return data === "saved";
   } catch (error) {
     console.error("upsertAccountNicheResolution failed:", {
@@ -70,7 +72,7 @@ export async function upsertAccountNicheResolution(
 
 export async function updateAccountNicheResolutionAiResult(
   input: UpdateAccountNicheResolutionAiResultInput,
-): Promise<boolean> {
+): Promise<boolean | "lease_lost" | "turn_not_current"> {
   const supabase = createServiceClient();
 
   try {
@@ -79,6 +81,7 @@ export async function updateAccountNicheResolutionAiResult(
       {
         p_account_id: input.accountId,
         p_turn_id: input.turnId,
+        p_lease_version: input.leaseVersion,
         p_expected_raw_input: input.expectedRawInput,
         p_ai_status: input.status,
         p_ai_error_code: input.errorCode,
@@ -102,6 +105,7 @@ export async function updateAccountNicheResolutionAiResult(
       return false;
     }
 
+    if (data === "lease_lost" || data === "turn_not_current") return data;
     return data === "saved";
   } catch (error) {
     console.error("updateAccountNicheResolutionAiResult failed:", {

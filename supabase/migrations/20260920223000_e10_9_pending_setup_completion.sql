@@ -14,6 +14,7 @@ declare
   v_conversation record;
   v_resolution record;
   v_latest_turn record;
+  v_latest_turn_found boolean;
   v_primary_taxon_id uuid;
   v_completion_mode text;
   v_updated_count integer;
@@ -66,6 +67,15 @@ begin
     return 'account_not_pending_setup';
   end if;
 
+  select status, product_state
+  into v_latest_turn
+  from public.pending_setup_conversation_turns
+  where account_id = p_account_id
+  order by created_at desc, id desc
+  limit 1
+  for update;
+  v_latest_turn_found := found;
+
   select
     user_resolution_status,
     user_selected_taxon_id,
@@ -79,15 +89,7 @@ begin
     return 'resolution_not_ready';
   end if;
 
-  select status, product_state
-  into v_latest_turn
-  from public.pending_setup_conversation_turns
-  where account_id = p_account_id
-  order by created_at desc, id desc
-  limit 1
-  for update;
-
-  if not found
+  if not v_latest_turn_found
     or v_latest_turn.status <> 'completed'
     or v_latest_turn.product_state not in ('ready_official', 'ready_fallback')
   then

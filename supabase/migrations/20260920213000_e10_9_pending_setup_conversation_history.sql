@@ -24,6 +24,7 @@ create table public.pending_setup_conversation_turns (
   product_state text null,
   product_message text null,
   failure_code text null,
+  lease_version bigint not null default 1,
   attempted_at timestamptz not null default now(),
   created_at timestamptz not null default now(),
   completed_at timestamptz null,
@@ -38,6 +39,8 @@ create table public.pending_setup_conversation_turns (
     check (turn_kind in ('business_description', 'clarification', 'official_confirmation', 'operational_confirmation', 'fallback_confirmation')),
   constraint pending_setup_conversation_turns_status_chk
     check (status in ('pending', 'completed', 'failed')),
+  constraint pending_setup_conversation_turns_lease_version_chk
+    check (lease_version > 0),
   constraint pending_setup_conversation_turns_product_state_chk
     check (product_state is null or product_state in ('awaiting_confirmation', 'ready_official', 'ready_fallback', 'failure')),
   constraint pending_setup_conversation_turns_failure_shape_chk
@@ -81,9 +84,10 @@ create or replace function public.begin_pending_setup_conversation_turn(
   p_owner_user_id uuid,
   p_turn_id uuid,
   p_user_message text,
-  p_turn_kind text
+  p_turn_kind text,
+  p_expected_resolution_updated_at timestamptz
 )
-returns text
+returns jsonb
 language plpgsql
 security invoker
 set search_path = ''
@@ -91,7 +95,10 @@ as $$
 declare
   v_account record;
   v_conversation_owner uuid;
-  v_inserted_count integer;
+  v_expected_message text := btrim(p_user_message);
+  v_latest_turn_found boolean;
+  v_lease_version bigint;
+  v_resolution_updated_at timestamptz;
   v_turn record;
 begin
   select owner_user_id, status
@@ -104,7 +111,7 @@ begin
     or v_account.status is distinct from 'pending_setup'
     or v_account.owner_user_id is distinct from p_owner_user_id
   then
-    return 'account_not_allowed';
+    return jsonb_build_object('status', 'account_not_allowed');
   end if;
 
   insert into public.pending_setup_conversations (account_id, owner_user_id)
@@ -118,93 +125,112 @@ begin
   for update;
 
   if v_conversation_owner is distinct from p_owner_user_id then
-    return 'conversation_owner_mismatch';
+    return jsonb_build_object('status', 'conversation_owner_mismatch');
   end if;
 
-  update public.pending_setup_conversation_turns
-  set
-    status = 'failed',
-    product_state = 'failure',
-    product_message = 'Não foi possível concluir este turno. Você pode tentar novamente.',
-    failure_code = 'stale_turn_superseded',
-    completed_at = now()
+  select id, user_message, turn_kind, status, lease_version, attempted_at
+  into v_turn
+  from public.pending_setup_conversation_turns
   where account_id = p_account_id
-    and id <> p_turn_id
-    and status = 'pending'
-    and attempted_at <= now() - interval '60 seconds';
+  order by created_at desc, id desc
+  limit 1
+  for update;
+  v_latest_turn_found := found;
+
+  if v_latest_turn_found and v_turn.id = p_turn_id then
+    if v_turn.user_message is distinct from v_expected_message
+      or v_turn.turn_kind is distinct from p_turn_kind
+    then
+      return jsonb_build_object('status', 'turn_id_reused');
+    end if;
+    if v_turn.status = 'completed' then
+      return jsonb_build_object('status', 'completed');
+    end if;
+    if v_turn.status = 'pending'
+      and v_turn.attempted_at > now() - interval '60 seconds'
+    then
+      return jsonb_build_object('status', 'in_progress');
+    end if;
+
+    update public.pending_setup_conversation_turns
+    set
+      status = 'pending',
+      product_state = null,
+      product_message = null,
+      failure_code = null,
+      lease_version = lease_version + 1,
+      attempted_at = now(),
+      completed_at = null
+    where account_id = p_account_id
+      and id = p_turn_id
+    returning lease_version into v_lease_version;
+
+    return jsonb_build_object('status', 'resumed', 'lease_version', v_lease_version);
+  end if;
 
   if exists (
     select 1
     from public.pending_setup_conversation_turns
     where account_id = p_account_id
-      and id <> p_turn_id
-      and status = 'pending'
+      and id = p_turn_id
   ) then
-    return 'in_progress';
+    return jsonb_build_object('status', 'turn_id_reused');
+  end if;
+
+  if v_latest_turn_found
+    and v_turn.status = 'pending'
+    and v_turn.attempted_at > now() - interval '60 seconds'
+  then
+    return jsonb_build_object('status', 'in_progress');
+  end if;
+
+  if v_latest_turn_found and v_turn.status = 'pending' then
+    update public.pending_setup_conversation_turns
+    set
+      status = 'failed',
+      product_state = 'failure',
+      product_message = 'Não foi possível concluir este turno. Você pode tentar novamente.',
+      failure_code = 'stale_turn_superseded',
+      completed_at = now()
+    where account_id = p_account_id
+      and id = v_turn.id;
+  end if;
+
+  select updated_at
+  into v_resolution_updated_at
+  from public.account_niche_resolutions
+  where account_id = p_account_id
+  for update;
+
+  if v_resolution_updated_at is distinct from p_expected_resolution_updated_at then
+    return jsonb_build_object('status', 'stale_context');
   end if;
 
   insert into public.pending_setup_conversation_turns (
     account_id,
     id,
     user_message,
-    turn_kind
+    turn_kind,
+    lease_version
   )
   values (
     p_account_id,
     p_turn_id,
-    btrim(p_user_message),
-    p_turn_kind
-  )
-  on conflict (account_id, id) do nothing;
+    v_expected_message,
+    p_turn_kind,
+    1
+  );
 
-  get diagnostics v_inserted_count = row_count;
-  if v_inserted_count = 1 then
-    return 'created';
-  end if;
-
-  select user_message, turn_kind, status, attempted_at
-  into v_turn
-  from public.pending_setup_conversation_turns
-  where account_id = p_account_id
-    and id = p_turn_id
-  for update;
-
-  if v_turn.user_message is distinct from btrim(p_user_message)
-    or v_turn.turn_kind is distinct from p_turn_kind
-  then
-    return 'turn_id_reused';
-  end if;
-
-  if v_turn.status = 'completed' then
-    return 'completed';
-  end if;
-
-  if v_turn.status = 'pending'
-    and v_turn.attempted_at > now() - interval '60 seconds'
-  then
-    return 'in_progress';
-  end if;
-
-  update public.pending_setup_conversation_turns
-  set
-    status = 'pending',
-    product_state = null,
-    product_message = null,
-    failure_code = null,
-    attempted_at = now(),
-    completed_at = null
-  where account_id = p_account_id
-    and id = p_turn_id;
-
-  return 'resumed';
+  return jsonb_build_object('status', 'created', 'lease_version', 1);
 end;
 $$;
 
 create or replace function public.lock_current_pending_setup_turn(
   p_account_id uuid,
-  p_turn_id uuid
+  p_turn_id uuid,
+  p_lease_version bigint
 )
-returns boolean
+returns text
 language plpgsql
 security invoker
 set search_path = ''
@@ -217,10 +243,10 @@ begin
   where account_id = p_account_id
   for update;
   if not found then
-    return false;
+    return 'turn_not_current';
   end if;
 
-  select id, status
+  select id, status, lease_version
   into v_turn
   from public.pending_setup_conversation_turns
   where account_id = p_account_id
@@ -228,15 +254,23 @@ begin
   limit 1
   for update;
 
-  return found
-    and v_turn.id = p_turn_id
-    and v_turn.status = 'pending';
+  if not found
+    or v_turn.id is distinct from p_turn_id
+    or v_turn.status is distinct from 'pending'
+  then
+    return 'turn_not_current';
+  end if;
+  if v_turn.lease_version is distinct from p_lease_version then
+    return 'lease_lost';
+  end if;
+  return 'current';
 end;
 $$;
 
 create or replace function public.upsert_pending_setup_niche_resolution_for_turn(
   p_account_id uuid,
   p_turn_id uuid,
+  p_lease_version bigint,
   p_raw_input text,
   p_selected_taxon_id uuid,
   p_confidence text,
@@ -259,6 +293,7 @@ declare
   v_existing_resolution record;
   v_primary_taxon_id uuid;
   v_primary_taxon_is_active boolean;
+  v_turn_guard text;
   v_updated_count integer;
 begin
   select status
@@ -270,8 +305,13 @@ begin
   if v_account_status is distinct from 'pending_setup' then
     return 'account_not_pending_setup';
   end if;
-  if not public.lock_current_pending_setup_turn(p_account_id, p_turn_id) then
-    return 'turn_not_current';
+  v_turn_guard := public.lock_current_pending_setup_turn(
+    p_account_id,
+    p_turn_id,
+    p_lease_version
+  );
+  if v_turn_guard <> 'current' then
+    return v_turn_guard;
   end if;
 
   select user_resolution_status, user_selected_taxon_id
@@ -426,6 +466,7 @@ $$;
 create or replace function public.update_pending_setup_niche_resolution_ai_for_turn(
   p_account_id uuid,
   p_turn_id uuid,
+  p_lease_version bigint,
   p_expected_raw_input text,
   p_ai_status text,
   p_ai_error_code text,
@@ -446,6 +487,7 @@ set search_path = ''
 as $$
 declare
   v_account_status text;
+  v_turn_guard text;
   v_updated_count integer;
 begin
   select status
@@ -457,8 +499,13 @@ begin
   if v_account_status is distinct from 'pending_setup' then
     return 'account_not_pending_setup';
   end if;
-  if not public.lock_current_pending_setup_turn(p_account_id, p_turn_id) then
-    return 'turn_not_current';
+  v_turn_guard := public.lock_current_pending_setup_turn(
+    p_account_id,
+    p_turn_id,
+    p_lease_version
+  );
+  if v_turn_guard <> 'current' then
+    return v_turn_guard;
   end if;
 
   update public.account_niche_resolutions
@@ -487,6 +534,7 @@ $$;
 create or replace function public.confirm_pending_setup_operational_choice_for_turn(
   p_account_id uuid,
   p_turn_id uuid,
+  p_lease_version bigint,
   p_label text
 )
 returns text
@@ -498,6 +546,7 @@ declare
   v_account_status text;
   v_resolution record;
   v_label text := btrim(p_label);
+  v_turn_guard text;
   v_updated_count integer;
 begin
   select status
@@ -509,8 +558,13 @@ begin
   if v_account_status is distinct from 'pending_setup' then
     return 'account_not_pending_setup';
   end if;
-  if not public.lock_current_pending_setup_turn(p_account_id, p_turn_id) then
-    return 'turn_not_current';
+  v_turn_guard := public.lock_current_pending_setup_turn(
+    p_account_id,
+    p_turn_id,
+    p_lease_version
+  );
+  if v_turn_guard <> 'current' then
+    return v_turn_guard;
   end if;
   if v_label = '' or char_length(v_label) > 500 then
     return 'invalid_label';
@@ -581,6 +635,7 @@ $$;
 create or replace function public.complete_pending_setup_conversation_turn(
   p_account_id uuid,
   p_turn_id uuid,
+  p_lease_version bigint,
   p_status text,
   p_product_state text,
   p_product_message text,
@@ -592,28 +647,26 @@ security invoker
 set search_path = ''
 as $$
 declare
-  v_turn record;
+  v_account_status text;
+  v_turn_guard text;
 begin
-  select status, product_state, product_message, failure_code
-  into v_turn
-  from public.pending_setup_conversation_turns
-  where account_id = p_account_id
-    and id = p_turn_id
+  select status
+  into v_account_status
+  from public.accounts
+  where id = p_account_id
   for update;
 
-  if not found then
-    return 'turn_not_found';
+  if v_account_status is distinct from 'pending_setup' then
+    return 'account_not_pending_setup';
   end if;
 
-  if v_turn.status <> 'pending' then
-    if v_turn.status = p_status
-      and v_turn.product_state is not distinct from p_product_state
-      and v_turn.product_message is not distinct from btrim(p_product_message)
-      and v_turn.failure_code is not distinct from p_failure_code
-    then
-      return 'saved';
-    end if;
-    return 'already_finalized';
+  v_turn_guard := public.lock_current_pending_setup_turn(
+    p_account_id,
+    p_turn_id,
+    p_lease_version
+  );
+  if v_turn_guard <> 'current' then
+    return v_turn_guard;
   end if;
 
   update public.pending_setup_conversation_turns
@@ -635,6 +688,7 @@ drop function public.confirm_pending_setup_niche_resolution_taxon(uuid, uuid);
 create or replace function public.confirm_pending_setup_niche_resolution_taxon(
   p_account_id uuid,
   p_turn_id uuid,
+  p_lease_version bigint,
   p_taxon_id uuid
 )
 returns text
@@ -648,6 +702,7 @@ declare
   v_link_source_type text;
   v_resolution record;
   v_selected_option_is_valid boolean := false;
+  v_turn_guard text;
   v_updated_count integer;
 begin
   select status
@@ -659,8 +714,13 @@ begin
   if v_account_status is distinct from 'pending_setup' then
     return 'account_not_pending_setup';
   end if;
-  if not public.lock_current_pending_setup_turn(p_account_id, p_turn_id) then
-    return 'turn_not_current';
+  v_turn_guard := public.lock_current_pending_setup_turn(
+    p_account_id,
+    p_turn_id,
+    p_lease_version
+  );
+  if v_turn_guard <> 'current' then
+    return v_turn_guard;
   end if;
 
   select
@@ -780,38 +840,38 @@ begin
 end;
 $$;
 
-alter function public.begin_pending_setup_conversation_turn(uuid, uuid, uuid, text, text) owner to postgres;
-alter function public.complete_pending_setup_conversation_turn(uuid, uuid, text, text, text, text) owner to postgres;
-alter function public.lock_current_pending_setup_turn(uuid, uuid) owner to postgres;
-alter function public.upsert_pending_setup_niche_resolution_for_turn(uuid, uuid, text, uuid, text, boolean, boolean, text, boolean, text, text, text, numeric) owner to postgres;
-alter function public.update_pending_setup_niche_resolution_ai_for_turn(uuid, uuid, text, text, text, text, text, jsonb, text, uuid, text, boolean, boolean, text) owner to postgres;
-alter function public.confirm_pending_setup_operational_choice_for_turn(uuid, uuid, text) owner to postgres;
-alter function public.confirm_pending_setup_niche_resolution_taxon(uuid, uuid, uuid) owner to postgres;
-revoke all on function public.begin_pending_setup_conversation_turn(uuid, uuid, uuid, text, text) from public, anon, authenticated;
-revoke all on function public.complete_pending_setup_conversation_turn(uuid, uuid, text, text, text, text) from public, anon, authenticated;
-revoke all on function public.lock_current_pending_setup_turn(uuid, uuid) from public, anon, authenticated;
-revoke all on function public.upsert_pending_setup_niche_resolution_for_turn(uuid, uuid, text, uuid, text, boolean, boolean, text, boolean, text, text, text, numeric) from public, anon, authenticated;
-revoke all on function public.update_pending_setup_niche_resolution_ai_for_turn(uuid, uuid, text, text, text, text, text, jsonb, text, uuid, text, boolean, boolean, text) from public, anon, authenticated;
-revoke all on function public.confirm_pending_setup_operational_choice_for_turn(uuid, uuid, text) from public, anon, authenticated;
-revoke all on function public.confirm_pending_setup_niche_resolution_taxon(uuid, uuid, uuid) from public, anon, authenticated;
-grant execute on function public.begin_pending_setup_conversation_turn(uuid, uuid, uuid, text, text) to service_role;
-grant execute on function public.complete_pending_setup_conversation_turn(uuid, uuid, text, text, text, text) to service_role;
-grant execute on function public.lock_current_pending_setup_turn(uuid, uuid) to service_role;
-grant execute on function public.upsert_pending_setup_niche_resolution_for_turn(uuid, uuid, text, uuid, text, boolean, boolean, text, boolean, text, text, text, numeric) to service_role;
-grant execute on function public.update_pending_setup_niche_resolution_ai_for_turn(uuid, uuid, text, text, text, text, text, jsonb, text, uuid, text, boolean, boolean, text) to service_role;
-grant execute on function public.confirm_pending_setup_operational_choice_for_turn(uuid, uuid, text) to service_role;
-grant execute on function public.confirm_pending_setup_niche_resolution_taxon(uuid, uuid, uuid) to service_role;
+alter function public.begin_pending_setup_conversation_turn(uuid, uuid, uuid, text, text, timestamptz) owner to postgres;
+alter function public.complete_pending_setup_conversation_turn(uuid, uuid, bigint, text, text, text, text) owner to postgres;
+alter function public.lock_current_pending_setup_turn(uuid, uuid, bigint) owner to postgres;
+alter function public.upsert_pending_setup_niche_resolution_for_turn(uuid, uuid, bigint, text, uuid, text, boolean, boolean, text, boolean, text, text, text, numeric) owner to postgres;
+alter function public.update_pending_setup_niche_resolution_ai_for_turn(uuid, uuid, bigint, text, text, text, text, text, jsonb, text, uuid, text, boolean, boolean, text) owner to postgres;
+alter function public.confirm_pending_setup_operational_choice_for_turn(uuid, uuid, bigint, text) owner to postgres;
+alter function public.confirm_pending_setup_niche_resolution_taxon(uuid, uuid, bigint, uuid) owner to postgres;
+revoke all on function public.begin_pending_setup_conversation_turn(uuid, uuid, uuid, text, text, timestamptz) from public, anon, authenticated;
+revoke all on function public.complete_pending_setup_conversation_turn(uuid, uuid, bigint, text, text, text, text) from public, anon, authenticated;
+revoke all on function public.lock_current_pending_setup_turn(uuid, uuid, bigint) from public, anon, authenticated;
+revoke all on function public.upsert_pending_setup_niche_resolution_for_turn(uuid, uuid, bigint, text, uuid, text, boolean, boolean, text, boolean, text, text, text, numeric) from public, anon, authenticated;
+revoke all on function public.update_pending_setup_niche_resolution_ai_for_turn(uuid, uuid, bigint, text, text, text, text, text, jsonb, text, uuid, text, boolean, boolean, text) from public, anon, authenticated;
+revoke all on function public.confirm_pending_setup_operational_choice_for_turn(uuid, uuid, bigint, text) from public, anon, authenticated;
+revoke all on function public.confirm_pending_setup_niche_resolution_taxon(uuid, uuid, bigint, uuid) from public, anon, authenticated;
+grant execute on function public.begin_pending_setup_conversation_turn(uuid, uuid, uuid, text, text, timestamptz) to service_role;
+grant execute on function public.complete_pending_setup_conversation_turn(uuid, uuid, bigint, text, text, text, text) to service_role;
+grant execute on function public.lock_current_pending_setup_turn(uuid, uuid, bigint) to service_role;
+grant execute on function public.upsert_pending_setup_niche_resolution_for_turn(uuid, uuid, bigint, text, uuid, text, boolean, boolean, text, boolean, text, text, text, numeric) to service_role;
+grant execute on function public.update_pending_setup_niche_resolution_ai_for_turn(uuid, uuid, bigint, text, text, text, text, text, jsonb, text, uuid, text, boolean, boolean, text) to service_role;
+grant execute on function public.confirm_pending_setup_operational_choice_for_turn(uuid, uuid, bigint, text) to service_role;
+grant execute on function public.confirm_pending_setup_niche_resolution_taxon(uuid, uuid, bigint, uuid) to service_role;
 
 do $$
 begin
   if to_regrole('ai_readonly') is not null then
-    execute 'revoke all on function public.begin_pending_setup_conversation_turn(uuid, uuid, uuid, text, text) from ai_readonly';
-    execute 'revoke all on function public.complete_pending_setup_conversation_turn(uuid, uuid, text, text, text, text) from ai_readonly';
-    execute 'revoke all on function public.lock_current_pending_setup_turn(uuid, uuid) from ai_readonly';
-    execute 'revoke all on function public.upsert_pending_setup_niche_resolution_for_turn(uuid, uuid, text, uuid, text, boolean, boolean, text, boolean, text, text, text, numeric) from ai_readonly';
-    execute 'revoke all on function public.update_pending_setup_niche_resolution_ai_for_turn(uuid, uuid, text, text, text, text, text, jsonb, text, uuid, text, boolean, boolean, text) from ai_readonly';
-    execute 'revoke all on function public.confirm_pending_setup_operational_choice_for_turn(uuid, uuid, text) from ai_readonly';
-    execute 'revoke all on function public.confirm_pending_setup_niche_resolution_taxon(uuid, uuid, uuid) from ai_readonly';
+    execute 'revoke all on function public.begin_pending_setup_conversation_turn(uuid, uuid, uuid, text, text, timestamptz) from ai_readonly';
+    execute 'revoke all on function public.complete_pending_setup_conversation_turn(uuid, uuid, bigint, text, text, text, text) from ai_readonly';
+    execute 'revoke all on function public.lock_current_pending_setup_turn(uuid, uuid, bigint) from ai_readonly';
+    execute 'revoke all on function public.upsert_pending_setup_niche_resolution_for_turn(uuid, uuid, bigint, text, uuid, text, boolean, boolean, text, boolean, text, text, text, numeric) from ai_readonly';
+    execute 'revoke all on function public.update_pending_setup_niche_resolution_ai_for_turn(uuid, uuid, bigint, text, text, text, text, text, jsonb, text, uuid, text, boolean, boolean, text) from ai_readonly';
+    execute 'revoke all on function public.confirm_pending_setup_operational_choice_for_turn(uuid, uuid, bigint, text) from ai_readonly';
+    execute 'revoke all on function public.confirm_pending_setup_niche_resolution_taxon(uuid, uuid, bigint, uuid) from ai_readonly';
   end if;
 end
 $$;

@@ -10,7 +10,6 @@ import {
   confirmPendingSetupFallbackForAccount,
   confirmPendingSetupAiOptionForAccount,
   confirmPendingSetupAiSuggestedTaxonForAccount,
-  getActionablePendingSetupNicheResolutionForAccount,
   readActionablePendingSetupNicheResolutionForAccount,
 } from "../../../lib/onboarding/niche-resolution/adapters/accountNicheResolutionUserAdapter";
 import {
@@ -110,21 +109,32 @@ export async function continuePendingSetupConversationAction(
             turnId: retryTurn.id,
             userMessage: retryTurn.userMessage,
             turnKind: retryTurn.turnKind,
+            expectedResolutionUpdatedAt: null,
           });
           if (!resumed.ok) return { ...previous, ok: false, error: GENERIC_ERROR };
+          if (isTechnicalTurnStatus(resumed.status)) {
+            return loadConversationState(allowed, true);
+          }
           if (resumed.status !== "completed") {
+            if (resumed.leaseVersion === null) {
+              return { ...previous, ok: false, error: GENERIC_ERROR };
+            }
             const reconciled = await reconcilePendingSetupTurnRetry(
               retryTurn,
               business,
               async (presentation) => completePendingSetupConversationTurn({
                 accountId: allowed.accountId,
                 turnId: retryTurn.id,
+                leaseVersion: resumed.leaseVersion,
                 status: "completed",
                 productState: presentation.state,
                 productMessage: presentation.message,
                 failureCode: null,
               }),
             );
+            if (reconciled === "lease_lost" || reconciled === "turn_not_current") {
+              return loadConversationState(allowed, true);
+            }
             if (reconciled !== "completed") {
               return { ...previous, ok: false, error: GENERIC_ERROR };
             }
@@ -213,7 +223,12 @@ export async function continuePendingSetupConversationAction(
       resumed.kind === "resumed" &&
       canReconcilePendingSetupTurn(resumed.turn, resumed.business)
     ) {
-      return reconcileRecordedTurn(allowed, resumed.turn, resumed.business);
+      return reconcileRecordedTurn(
+        allowed,
+        resumed.turn,
+        resumed.business,
+        resumed.leaseVersion,
+      );
     }
 
     const resolutionLookup = await readActionablePendingSetupNicheResolutionForAccount({
@@ -233,6 +248,7 @@ export async function continuePendingSetupConversationAction(
       : appendBusinessClarification(resolutionLookup.recoverableRawInput, parsed.value);
     if (!description.ok) return { ...previous, ok: false, error: description.error };
 
+    let leaseVersion: number;
     if (resumed.kind === "none") {
       const started = await beginPendingSetupConversationTurn({
         accountId: allowed.accountId,
@@ -240,35 +256,56 @@ export async function continuePendingSetupConversationAction(
         turnId,
         userMessage: parsed.value,
         turnKind: recordedKind,
+        expectedResolutionUpdatedAt: resolutionLookup.expectedResolutionUpdatedAt,
       });
-      if (!started.ok || started.status === "in_progress") {
+      if (!started.ok) {
         return { ...previous, ok: false, error: GENERIC_ERROR };
       }
+      if (isTechnicalTurnStatus(started.status)) return loadConversationState(allowed, true);
       if (started.status === "completed") return loadConversationState(allowed, true);
+      if (started.leaseVersion === null) {
+        return { ...previous, ok: false, error: GENERIC_ERROR };
+      }
+      leaseVersion = started.leaseVersion;
+    } else {
+      leaseVersion = resumed.leaseVersion;
     }
 
     try {
       const result = await processPendingSetupBusiness({
         accountId: allowed.accountId,
         turnId,
+        leaseVersion,
         rawInput: description.value,
       });
+      if (!result.ok && isTechnicalTurnStatus(result.reason)) {
+        return loadConversationState(allowed, true);
+      }
       if (!result.ok) {
-        return failRecordedTurn(allowed, turnId, result.reason, previous);
+        return failRecordedTurn(allowed, turnId, leaseVersion, result.reason, previous);
       }
 
       const business = await loadPendingSetupBusinessSnapshot(allowed.accountId);
-      if (!(await completeRecordedTurn(
+      const completed = await completeRecordedTurn(
         allowed.accountId,
         correlationTurn(resumed, turnId, parsed.value, recordedKind),
         business,
-      ))) {
-        return failRecordedTurn(allowed, turnId, "turn_completion_failed", previous);
+        leaseVersion,
+      );
+      if (isTechnicalTurnStatus(completed)) return loadConversationState(allowed, true);
+      if (completed !== "completed") {
+        return failRecordedTurn(
+          allowed,
+          turnId,
+          leaseVersion,
+          "turn_completion_failed",
+          previous,
+        );
       }
       revalidatePath(allowed.route);
       return loadConversationState(allowed, true, business);
     } catch {
-      return failRecordedTurn(allowed, turnId, "business_turn_failed", previous);
+      return failRecordedTurn(allowed, turnId, leaseVersion, "business_turn_failed", previous);
     }
   }
 
@@ -284,15 +321,38 @@ export async function continuePendingSetupConversationAction(
       resumed.kind === "resumed" &&
       canReconcilePendingSetupTurn(resumed.turn, resumed.business)
     ) {
-      return reconcileRecordedTurn(allowed, resumed.turn, resumed.business);
+      return reconcileRecordedTurn(
+        allowed,
+        resumed.turn,
+        resumed.business,
+        resumed.leaseVersion,
+      );
     }
 
-    const resolution = await getActionablePendingSetupNicheResolutionForAccount({
+    const resolutionLookup = await readActionablePendingSetupNicheResolutionForAccount({
       accountId: allowed.accountId,
     });
+    if (!resolutionLookup.ok) {
+      return resumed.kind === "resumed"
+        ? failRecordedTurn(
+            allowed,
+            turnId,
+            resumed.leaseVersion,
+            resolutionLookup.reason,
+            previous,
+          )
+        : { ...previous, ok: false, error: GENERIC_ERROR };
+    }
+    const resolution = resolutionLookup.resolution;
     if (!resolution) {
       return resumed.kind === "resumed"
-        ? failRecordedTurn(allowed, turnId, "confirmation_state_missing", previous)
+        ? failRecordedTurn(
+            allowed,
+            turnId,
+            resumed.leaseVersion,
+            "confirmation_state_missing",
+            previous,
+          )
         : { ...previous, ok: false, error: GENERIC_ERROR };
     }
 
@@ -317,6 +377,7 @@ export async function continuePendingSetupConversationAction(
     ) {
       return { ...previous, ok: false, error: GENERIC_ERROR };
     }
+    let leaseVersion: number;
     if (resumed.kind === "none") {
       const started = await beginPendingSetupConversationTurn({
         accountId: allowed.accountId,
@@ -324,11 +385,19 @@ export async function continuePendingSetupConversationAction(
         turnId,
         userMessage: selectedOption.name,
         turnKind: selectedTurnKind,
+        expectedResolutionUpdatedAt: resolutionLookup.expectedResolutionUpdatedAt,
       });
-      if (!started.ok || started.status === "in_progress") {
+      if (!started.ok) {
         return { ...previous, ok: false, error: GENERIC_ERROR };
       }
+      if (isTechnicalTurnStatus(started.status)) return loadConversationState(allowed, true);
       if (started.status === "completed") return loadConversationState(allowed, true);
+      if (started.leaseVersion === null) {
+        return { ...previous, ok: false, error: GENERIC_ERROR };
+      }
+      leaseVersion = started.leaseVersion;
+    } else {
+      leaseVersion = resumed.leaseVersion;
     }
 
     try {
@@ -336,27 +405,49 @@ export async function continuePendingSetupConversationAction(
         ? await confirmPendingSetupAiSuggestedTaxonForAccount({
             accountId: allowed.accountId,
             turnId,
+            leaseVersion,
           })
         : await confirmPendingSetupAiOptionForAccount({
             accountId: allowed.accountId,
             turnId,
+            leaseVersion,
             taxonId,
             optionName,
           });
-      if (!result.ok) return failRecordedTurn(allowed, turnId, result.reason, previous);
+      if (!result.ok && isTechnicalTurnStatus(result.reason)) {
+        return loadConversationState(allowed, true);
+      }
+      if (!result.ok) {
+        return failRecordedTurn(allowed, turnId, leaseVersion, result.reason, previous);
+      }
 
       const business = await loadPendingSetupBusinessSnapshot(allowed.accountId);
-      if (!(await completeRecordedTurn(
+      const completed = await completeRecordedTurn(
         allowed.accountId,
         correlationTurn(resumed, turnId, selectedOption.name, selectedTurnKind),
         business,
-      ))) {
-        return failRecordedTurn(allowed, turnId, "turn_completion_failed", previous);
+        leaseVersion,
+      );
+      if (isTechnicalTurnStatus(completed)) return loadConversationState(allowed, true);
+      if (completed !== "completed") {
+        return failRecordedTurn(
+          allowed,
+          turnId,
+          leaseVersion,
+          "turn_completion_failed",
+          previous,
+        );
       }
       revalidatePath(allowed.route);
       return loadConversationState(allowed, true, business);
     } catch {
-      return failRecordedTurn(allowed, turnId, "confirmation_turn_failed", previous);
+      return failRecordedTurn(
+        allowed,
+        turnId,
+        leaseVersion,
+        "confirmation_turn_failed",
+        previous,
+      );
     }
   }
 
@@ -371,15 +462,38 @@ export async function continuePendingSetupConversationAction(
       resumed.kind === "resumed" &&
       canReconcilePendingSetupTurn(resumed.turn, resumed.business)
     ) {
-      return reconcileRecordedTurn(allowed, resumed.turn, resumed.business);
+      return reconcileRecordedTurn(
+        allowed,
+        resumed.turn,
+        resumed.business,
+        resumed.leaseVersion,
+      );
     }
 
-    const resolution = await getActionablePendingSetupNicheResolutionForAccount({
+    const resolutionLookup = await readActionablePendingSetupNicheResolutionForAccount({
       accountId: allowed.accountId,
     });
+    if (!resolutionLookup.ok) {
+      return resumed.kind === "resumed"
+        ? failRecordedTurn(
+            allowed,
+            turnId,
+            resumed.leaseVersion,
+            resolutionLookup.reason,
+            previous,
+          )
+        : { ...previous, ok: false, error: GENERIC_ERROR };
+    }
+    const resolution = resolutionLookup.resolution;
     if (!resolution || resolution.uxMode !== "fallback_review" || !resolution.rawInput) {
       return resumed.kind === "resumed"
-        ? failRecordedTurn(allowed, turnId, "fallback_state_missing", previous)
+        ? failRecordedTurn(
+            allowed,
+            turnId,
+            resumed.leaseVersion,
+            "fallback_state_missing",
+            previous,
+          )
         : { ...previous, ok: false, error: GENERIC_ERROR };
     }
 
@@ -389,6 +503,7 @@ export async function continuePendingSetupConversationAction(
     ) {
       return { ...previous, ok: false, error: GENERIC_ERROR };
     }
+    let leaseVersion: number;
     if (resumed.kind === "none") {
       const started = await beginPendingSetupConversationTurn({
         accountId: allowed.accountId,
@@ -396,33 +511,62 @@ export async function continuePendingSetupConversationAction(
         turnId,
         userMessage: resolution.rawInput,
         turnKind: "fallback_confirmation",
+        expectedResolutionUpdatedAt: resolutionLookup.expectedResolutionUpdatedAt,
       });
-      if (!started.ok || started.status === "in_progress") {
+      if (!started.ok) {
         return { ...previous, ok: false, error: GENERIC_ERROR };
       }
+      if (isTechnicalTurnStatus(started.status)) return loadConversationState(allowed, true);
       if (started.status === "completed") return loadConversationState(allowed, true);
+      if (started.leaseVersion === null) {
+        return { ...previous, ok: false, error: GENERIC_ERROR };
+      }
+      leaseVersion = started.leaseVersion;
+    } else {
+      leaseVersion = resumed.leaseVersion;
     }
 
     try {
       const result = await confirmPendingSetupFallbackForAccount({
         accountId: allowed.accountId,
         turnId,
+        leaseVersion,
         rewriteInput: resolution.rawInput,
       });
-      if (!result.ok) return failRecordedTurn(allowed, turnId, result.reason, previous);
+      if (!result.ok && isTechnicalTurnStatus(result.reason)) {
+        return loadConversationState(allowed, true);
+      }
+      if (!result.ok) {
+        return failRecordedTurn(allowed, turnId, leaseVersion, result.reason, previous);
+      }
 
       const business = await loadPendingSetupBusinessSnapshot(allowed.accountId);
-      if (!(await completeRecordedTurn(
+      const completed = await completeRecordedTurn(
         allowed.accountId,
         correlationTurn(resumed, turnId, resolution.rawInput, "fallback_confirmation"),
         business,
-      ))) {
-        return failRecordedTurn(allowed, turnId, "turn_completion_failed", previous);
+        leaseVersion,
+      );
+      if (isTechnicalTurnStatus(completed)) return loadConversationState(allowed, true);
+      if (completed !== "completed") {
+        return failRecordedTurn(
+          allowed,
+          turnId,
+          leaseVersion,
+          "turn_completion_failed",
+          previous,
+        );
       }
       revalidatePath(allowed.route);
       return loadConversationState(allowed, true, business);
     } catch {
-      return failRecordedTurn(allowed, turnId, "fallback_turn_failed", previous);
+      return failRecordedTurn(
+        allowed,
+        turnId,
+        leaseVersion,
+        "fallback_turn_failed",
+        previous,
+      );
     }
   }
 
@@ -489,6 +633,7 @@ type ExistingTurnResume =
   | {
       kind: "resumed";
       business: PendingSetupBusinessSnapshot;
+      leaseVersion: number;
       turn: PendingSetupConversationTurn;
     }
   | { kind: "response"; state: PendingSetupConversationState };
@@ -519,18 +664,26 @@ async function resumeExistingRecordedTurn(
     turnId,
     userMessage: turn.userMessage,
     turnKind: turn.turnKind,
+    expectedResolutionUpdatedAt: null,
   });
-  if (!started.ok || started.status === "in_progress" || started.status === "created") {
+  if (!started.ok || started.status === "created") {
     return { kind: "response", state: { ok: false, error: GENERIC_ERROR } };
+  }
+  if (isTechnicalTurnStatus(started.status)) {
+    return { kind: "response", state: await loadConversationState(allowed, true) };
   }
   if (started.status === "completed") {
     return { kind: "response", state: await loadConversationState(allowed, true) };
+  }
+  if (started.leaseVersion === null) {
+    return { kind: "response", state: { ok: false, error: GENERIC_ERROR } };
   }
 
   try {
     return {
       kind: "resumed",
       business: await loadPendingSetupBusinessSnapshot(allowed.accountId),
+      leaseVersion: started.leaseVersion,
       turn,
     };
   } catch {
@@ -542,6 +695,7 @@ async function reconcileRecordedTurn(
   allowed: AllowedPendingSetupContext,
   turn: PendingSetupConversationTurn,
   business: PendingSetupBusinessSnapshot,
+  leaseVersion: number,
 ): Promise<PendingSetupConversationState> {
   const result = await reconcilePendingSetupTurnRetry(
     turn,
@@ -549,12 +703,16 @@ async function reconcileRecordedTurn(
     async (presentation) => completePendingSetupConversationTurn({
       accountId: allowed.accountId,
       turnId: turn.id,
+      leaseVersion,
       status: "completed",
       productState: presentation.state,
       productMessage: presentation.message,
       failureCode: null,
     }),
   );
+  if (result === "lease_lost" || result === "turn_not_current") {
+    return loadConversationState(allowed, true);
+  }
   if (result !== "completed") return { ok: false, error: GENERIC_ERROR };
   revalidatePath(allowed.route);
   return loadConversationState(allowed, true, business);
@@ -594,19 +752,21 @@ async function completeRecordedTurn(
   accountId: string,
   turn: PendingSetupTurnCorrelation,
   business: PendingSetupBusinessSnapshot,
-): Promise<boolean> {
-  return await reconcilePendingSetupTurnRetry(
+  leaseVersion: number,
+): Promise<"completed" | "not_ready" | "persist_failed" | "lease_lost" | "turn_not_current"> {
+  return reconcilePendingSetupTurnRetry(
     turn,
     business,
     async (presentation) => completePendingSetupConversationTurn({
       accountId,
       turnId: turn.id,
+      leaseVersion,
       status: "completed",
       productState: presentation.state,
       productMessage: presentation.message,
       failureCode: null,
     }),
-  ) === "completed";
+  );
 }
 
 function correlationTurn(
@@ -623,17 +783,22 @@ function correlationTurn(
 async function failRecordedTurn(
   allowed: AllowedPendingSetupContext,
   turnId: string,
+  leaseVersion: number,
   failureCode: string,
   previous: PendingSetupConversationState,
 ): Promise<PendingSetupConversationState> {
-  await completePendingSetupConversationTurn({
+  const failed = await completePendingSetupConversationTurn({
     accountId: allowed.accountId,
     turnId,
+    leaseVersion,
     status: "failed",
     productState: "failure",
     productMessage: "Não foi possível concluir este turno. Você pode tentar novamente.",
     failureCode: failureCode.slice(0, 80),
   });
+  if (failed === "lease_lost" || failed === "turn_not_current") {
+    return loadConversationState(allowed, true);
+  }
   let history = previous.history;
   try {
     history = await readPendingSetupConversationHistory({
@@ -649,4 +814,11 @@ async function failRecordedTurn(
     history,
     error: GENERIC_ERROR,
   };
+}
+
+function isTechnicalTurnStatus(value: string): value is "in_progress" | "stale_context" | "lease_lost" | "turn_not_current" {
+  return value === "in_progress" ||
+    value === "stale_context" ||
+    value === "lease_lost" ||
+    value === "turn_not_current";
 }

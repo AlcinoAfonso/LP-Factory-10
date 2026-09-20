@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data da última atualização: 20/09/2026
-• Documento: LP Factory 10 — Schema (DB Contract) v1.0.69
+• Documento: LP Factory 10 — Schema (DB Contract) v1.0.70
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -610,8 +610,8 @@
 • account_niche_resolutions_ai_suggested_taxon_id_idx
 
 1.19.5 Confirmação oficial no Pending Setup
-• `public.confirm_pending_setup_niche_resolution_taxon(uuid, uuid)` confirma em uma única transação a resolução operacional acionável e o vínculo primário oficial da conta ainda `pending_setup`.
-• A função usa `SECURITY INVOKER`, `search_path` fechado e lock das linhas de conta, resolução e vínculo primário; valida taxon ativo e opção oficial persistida e falha fechado diante de conflito ou concorrência.
+• `public.confirm_pending_setup_niche_resolution_taxon(uuid, uuid, bigint, uuid)` confirma em uma única transação a resolução operacional acionável e o vínculo primário oficial da conta ainda `pending_setup`, exigindo o turno e a versão corrente do lease.
+• A função usa `SECURITY INVOKER`, `search_path` fechado e a ordem canônica de locks conta → conversa → turno → resolução → vínculo primário; valida taxon ativo e opção oficial persistida e falha fechado diante de conflito, `lease_lost` ou `turn_not_current`.
 • EXECUTE restrito a `service_role`; `public`, `anon`, `authenticated` e `ai_readonly` não possuem acesso.
 
 1.20 content_template_compositions
@@ -1111,13 +1111,13 @@
 1.40 pending_setup_conversation_turns
 1.40.1 Chaves, constraints e relacionamentos
 • PK composta: (account_id, id); account_id referencia pending_setup_conversations(account_id), com ON UPDATE CASCADE e ON DELETE CASCADE.
-• Cada turno preserva a fala, o tipo, o estado pending/completed/failed, a resposta ou estado do produto, falha recuperável e timestamps, com checks de forma e tamanho.
+• Cada turno preserva a fala, o tipo, o estado pending/completed/failed, a resposta ou estado do produto, falha recuperável, `lease_version bigint NOT NULL DEFAULT 1` positiva e timestamps, com checks de forma e tamanho.
 • O índice pending_setup_conversation_turns_account_created_idx ordena retomada por (account_id, created_at, id).
 1.40.2 Segurança e estado operacional
 • RLS habilitado, sem policies de acesso direto; public, anon, authenticated e ai_readonly permanecem sem privilégios.
 • service_role possui somente SELECT, INSERT e UPDATE.
 • Migration candidata das seções 1.39 e 1.40: `supabase/migrations/20260920213000_e10_9_pending_setup_conversation_history.sql`.
-• Teste transacional: `supabase/tests/e10_9_pending_setup_conversation_history.test.sql`; verificador read-only: `supabase/snippets/e10_9_pending_setup_conversation_history_verify.sql`.
+• Testes transacionais: `supabase/tests/e10_9_pending_setup_conversation_history.test.sql` e `supabase/tests/e10_9_stale_resolution_recovery.test.sql`; verificador read-only: `supabase/snippets/e10_9_pending_setup_conversation_history_verify.sql`.
 • Estado: contrato repo-only; apply hospedado e verificação read-only permanecem pendentes do fluxo pós-merge.
 
 2. Views
@@ -1421,9 +1421,11 @@
 • Teste transacional E21.5.6: `supabase/tests/e21_5_6_openai_cost_event_hierarchy.test.sql`; verificador read-only: `supabase/snippets/e21_5_6_openai_economic_events_verify.sql`.
 
 3.12 Histórico conversacional do Pending Setup
-• `public.begin_pending_setup_conversation_turn(uuid, uuid, uuid, text, text)` valida conta pending_setup e owner, cria o cabeçalho quando necessário e inicia ou retoma o turno sob lock, com unicidade por conta e ID.
-• `public.complete_pending_setup_conversation_turn(uuid, uuid, text, text, text, text)` conclui sob lock o mesmo turno com resposta ou falha recuperável e aceita repetição idempotente do mesmo resultado.
-• Ambas usam SECURITY INVOKER, search_path fechado e EXECUTE restrito a service_role; public, anon, authenticated e ai_readonly não possuem acesso.
+• `public.begin_pending_setup_conversation_turn(uuid, uuid, uuid, text, text, timestamptz)` valida conta pending_setup e owner, cria o cabeçalho quando necessário e abre turno novo por CAS nullable de `account_niche_resolutions.updated_at`; `stale_context` e `in_progress` não inserem turno nem entregam lease. Retry correlacionado do mesmo turno não repete o CAS, incrementa `lease_version` atomicamente e invalida a tentativa anterior; supersession alcança somente turno diferente expirado.
+• `public.lock_current_pending_setup_turn(uuid, uuid, bigint)` retorna `current`, `lease_lost` ou `turn_not_current` depois de validar sob lock o turno mais recente, pending, com o mesmo ID e lease.
+• `public.upsert_pending_setup_niche_resolution_for_turn`, `public.update_pending_setup_niche_resolution_ai_for_turn`, `public.confirm_pending_setup_operational_choice_for_turn` e `public.confirm_pending_setup_niche_resolution_taxon` exigem `turn_id + lease_version` antes de qualquer write de resolução.
+• `public.complete_pending_setup_conversation_turn(uuid, uuid, bigint, text, text, text, text)` conclui ou falha somente o turno e lease correntes; tentativa antiga ou turno não corrente não escreve.
+• As funções usam a ordem canônica de locks conta → conversa → turno → resolução quando aplicável, `SECURITY INVOKER`, `search_path` fechado e EXECUTE restrito a service_role; public, anon, authenticated e ai_readonly não possuem acesso.
 
 3.13 Conclusão transacional do Pending Setup
 • `public.complete_pending_setup_conversation(uuid, uuid)` valida owner e membership ativa, serializa conta e conversa, exige resolução confirmada e turno final coerente e grava atomicamente `pending_setup_conversations.completed_at/completion_mode` e `accounts.status/setup_completed_at`.

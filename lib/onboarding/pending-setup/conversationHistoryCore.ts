@@ -13,17 +13,21 @@ export type PendingSetupTurnCorrelation = Pick<
 type CompleteTurn = (input: {
   state: PendingSetupConversationProductState;
   message: string;
-}) => Promise<boolean>;
+}) => Promise<boolean | "saved" | "lease_lost" | "turn_not_current" | "failed">;
 
 export async function reconcilePendingSetupTurnRetry(
   turn: PendingSetupTurnCorrelation,
   business: PendingSetupBusinessSnapshot,
   complete: CompleteTurn,
-): Promise<"completed" | "not_ready" | "persist_failed"> {
+): Promise<
+  "completed" | "not_ready" | "persist_failed" | "lease_lost" | "turn_not_current"
+> {
   if (!canReconcilePendingSetupTurn(turn, business)) return "not_ready";
   const presentation = presentPendingSetupBusinessTurn(business);
   if (!presentation) return "not_ready";
-  return await complete(presentation) ? "completed" : "persist_failed";
+  const result = await complete(presentation);
+  if (result === "lease_lost" || result === "turn_not_current") return result;
+  return result === true || result === "saved" ? "completed" : "persist_failed";
 }
 
 export function selectPendingSetupCompletionRetryTurn(

@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 20/09/2026
-• Versão: v1.5.238
+• Versão: v1.5.239
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -976,13 +976,13 @@
 
 10.9.1 Objetivo e status
 - Objetivo: receber o usuário após a confirmação do acesso, preservar sua identidade preferida, compreender o negócio por conversa progressiva, resolver o nicho com segurança ou fallback explícito e preparar a passagem para a experiência comercial.
-- Status: implementação-base concluída no repositório; correção estrutural de concorrência e posse de tentativa aprovada e pendente; rollout hospedado, migrations, provas SQL e QA permanecem pendentes do fluxo pós-merge.
+- Status: implementação concluída no repositório, incluindo a correção estrutural de concorrência e posse de tentativa; rollout hospedado, apply das migrations e QA permanecem pendentes do fluxo pós-merge.
 
 10.9.2 Registros do recorte
 - Banco:
-  - Criados: `public.user_identity_preferences`; `public.pending_setup_conversations`; `public.pending_setup_conversation_turns`; `user_identity_preferences_set_updated_at`; `pending_setup_conversations_set_updated_at`; `public.confirm_pending_setup_niche_resolution_taxon(uuid, uuid, uuid)`; `public.begin_pending_setup_conversation_turn(uuid, uuid, uuid, text, text)`; `public.complete_pending_setup_conversation_turn(uuid, uuid, text, text, text, text)`; `public.complete_pending_setup_conversation(uuid, uuid)`.
+  - Criados: `public.user_identity_preferences`; `public.pending_setup_conversations`; `public.pending_setup_conversation_turns`; `user_identity_preferences_set_updated_at`; `pending_setup_conversations_set_updated_at`; `public.confirm_pending_setup_niche_resolution_taxon(uuid, uuid, bigint, uuid)`; `public.begin_pending_setup_conversation_turn(uuid, uuid, uuid, text, text, timestamptz)`; `public.complete_pending_setup_conversation_turn(uuid, uuid, bigint, text, text, text, text)`; `public.complete_pending_setup_conversation(uuid, uuid)`.
 - Repositório:
-  - Criados: `app/a/[account]/_components/PendingSetupConversation.tsx`; `app/a/[account]/pending-setup-actions.ts`; `lib/onboarding/pending-setup/`; `supabase/migrations/20260920150000_e10_9_user_identity_preferences.sql`; `supabase/migrations/20260920203000_e10_9_pending_setup_niche_confirmation.sql`; `supabase/migrations/20260920213000_e10_9_pending_setup_conversation_history.sql`; `supabase/migrations/20260920223000_e10_9_pending_setup_completion.sql`; `supabase/snippets/e10_9_user_identity_preferences_verify.sql`; `supabase/snippets/e10_9_pending_setup_niche_confirmation_verify.sql`; `supabase/snippets/e10_9_pending_setup_conversation_history_verify.sql`; `supabase/snippets/e10_9_pending_setup_completion_verify.sql`; `supabase/tests/e10_9_pending_setup_conversation_history.test.sql`; `supabase/tests/e10_9_pending_setup_completion.test.sql`.
+  - Criados: `app/a/[account]/_components/PendingSetupConversation.tsx`; `app/a/[account]/pending-setup-actions.ts`; `lib/onboarding/pending-setup/`; `supabase/migrations/20260920150000_e10_9_user_identity_preferences.sql`; `supabase/migrations/20260920203000_e10_9_pending_setup_niche_confirmation.sql`; `supabase/migrations/20260920213000_e10_9_pending_setup_conversation_history.sql`; `supabase/migrations/20260920223000_e10_9_pending_setup_completion.sql`; `supabase/snippets/e10_9_user_identity_preferences_verify.sql`; `supabase/snippets/e10_9_pending_setup_niche_confirmation_verify.sql`; `supabase/snippets/e10_9_pending_setup_conversation_history_verify.sql`; `supabase/snippets/e10_9_pending_setup_completion_verify.sql`; `supabase/tests/e10_9_pending_setup_conversation_history.test.sql`; `supabase/tests/e10_9_stale_resolution_recovery.test.sql`; `supabase/tests/e10_9_pending_setup_completion.test.sql`.
   - Ajustados: `app/a/[account]/account-journey-loader.ts`; `app/a/[account]/page.tsx`; `app/a/[account]/actions.ts`; `app/a/[account]/_components/PendingSetupConversation.tsx`; `app/a/[account]/pending-setup-actions.ts`; `lib/access/types.ts`; `lib/onboarding/niche-resolution/adapters/accountNicheResolutionAdapter.ts`; `lib/onboarding/niche-resolution/adapters/accountNicheResolutionUserAdapter.ts`; `lib/onboarding/niche-resolution/adapters/openAiResolver.ts`; `lib/onboarding/niche-resolution/contracts.ts`; `lib/onboarding/pending-setup/adapters/conversationHistoryAdapter.ts`; `lib/onboarding/pending-setup/contracts.ts`; `lib/onboarding/pending-setup/validation-cases.ts`; `lib/openai-costs/active-validation-cases.ts`; `lib/openai-workloads/validation-cases.ts`; `tsconfig.json`.
   - Excluídos: `app/a/[account]/_components/PendingSetupFirstSteps.tsx`; `lib/onboarding/e10_4_setup_validation.ts`.
 - Referências:
@@ -1010,10 +1010,10 @@
   - A execução usa Responses API direta, Structured Outputs, `store: false` e a configuração vigente do workload `niche_resolution`; Agents SDK, agente autônomo, tool, job, fila, novo service e Conversations ficam fora.
 
 10.9.5 Histórico conversacional e retomada
-- Status: implementação-base concluída no repositório; correção estrutural de concorrência, lease, supersession, retry e recovery aprovada e pendente; apply da migration, prova SQL e QA hospedado permanecem pendentes do rollout.
+- Status: implementado no repositório; migrations e testes focais aprovados em transação hospedada com rollback externo; apply da migration e QA hospedado permanecem pendentes do rollout.
 - Conteúdo:
   - O histórico canônico fica associado ao mesmo owner e à mesma conta, com cabeçalho 1:1 e turnos ordenados por identificador estável, para retomada após saída, ativação e eventual conversão.
-  - A fala é persistida antes do processamento do turno; `turn_id` identifica a fala, enquanto a tentativa corrente usa lease monotônico e CAS da revisão server-side para rejeitar contexto ou writes obsoletos sem criar falha funcional.
+  - A fala é persistida antes do processamento do turno; `turn_id` identifica a fala, enquanto `lease_version` identifica a tentativa corrente. Turno novo usa CAS da revisão server-side, retry incrementa o lease e contexto ou writer obsoleto recarrega o estado autoritativo sem criar falha funcional.
   - A leitura server-side valida o owner e entrega à interface somente os vinte turnos mais recentes; o histórico integral não é enviado à IA.
   - Texto livre e histórico conversacional não substituem `account_taxonomy`, não se tornam fato oficial e não ampliam o recorte para CRM ou omnichannel.
 

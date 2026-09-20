@@ -65,11 +65,14 @@ values
 
 do $$
 declare
+  v_begin_result jsonb;
+  v_expected_revision timestamptz;
   v_result text;
 begin
   v_result := public.upsert_pending_setup_niche_resolution_for_turn(
     'e1097000-0000-4000-8000-000000000013',
     'e1097000-0000-4000-8000-000000000023',
+    1,
     'tentativa indevida', null, 'low', false, true,
     'suggest_new_taxon_for_review', true, 'low_confidence_insufficient_score',
     'unclassified', 'none', null
@@ -95,6 +98,7 @@ begin
   v_result := public.upsert_pending_setup_niche_resolution_for_turn(
     'e1097000-0000-4000-8000-000000000011',
     'e1097000-0000-4000-8000-000000000021',
+    1,
     'descricao substituta oficial', 'e1097000-0000-4000-8000-000000000032',
     'high', true, false, 'none', false, 'high_confidence_strong_match',
     'deterministic_high_confidence', 'exact_alias', 1
@@ -105,6 +109,7 @@ begin
   v_result := public.confirm_pending_setup_niche_resolution_taxon(
     'e1097000-0000-4000-8000-000000000011',
     'e1097000-0000-4000-8000-000000000021',
+    1,
     'e1097000-0000-4000-8000-000000000032'
   );
   if v_result <> 'saved' then
@@ -114,6 +119,7 @@ begin
   v_result := public.upsert_pending_setup_niche_resolution_for_turn(
     'e1097000-0000-4000-8000-000000000012',
     'e1097000-0000-4000-8000-000000000022',
+    1,
     'descricao substituta fallback', null, 'low', false, true,
     'suggest_new_taxon_for_review', true, 'low_confidence_insufficient_score',
     'unclassified', 'none', null
@@ -124,6 +130,7 @@ begin
   v_result := public.update_pending_setup_niche_resolution_ai_for_turn(
     'e1097000-0000-4000-8000-000000000012',
     'e1097000-0000-4000-8000-000000000022',
+    1,
     'descricao substituta fallback', 'resolved', null, 'test-model', '1',
     jsonb_build_object('mode', 'fallback_review'), 'fallback_review', null, null,
     true, true, 'fallback_review_required'
@@ -134,6 +141,7 @@ begin
   v_result := public.confirm_pending_setup_operational_choice_for_turn(
     'e1097000-0000-4000-8000-000000000012',
     'e1097000-0000-4000-8000-000000000022',
+    1,
     'descricao substituta fallback'
   );
   if v_result <> 'saved' then
@@ -155,20 +163,26 @@ begin
     raise exception 'stale primary links must remain retired';
   end if;
 
-  v_result := public.begin_pending_setup_conversation_turn(
+  select updated_at into v_expected_revision
+  from public.account_niche_resolutions
+  where account_id = 'e1097000-0000-4000-8000-000000000014';
+
+  v_begin_result := public.begin_pending_setup_conversation_turn(
     'e1097000-0000-4000-8000-000000000014',
     'e1097000-0000-4000-8000-000000000001',
     'e1097000-0000-4000-8000-000000000025',
     'turno atual',
-    'clarification'
+    'clarification',
+    v_expected_revision
   );
-  if v_result <> 'created' then
-    raise exception 'a truly abandoned turn must be superseded, got %', v_result;
+  if v_begin_result ->> 'status' <> 'created' then
+    raise exception 'a truly abandoned turn must be superseded, got %', v_begin_result;
   end if;
 
   v_result := public.upsert_pending_setup_niche_resolution_for_turn(
     'e1097000-0000-4000-8000-000000000014',
     'e1097000-0000-4000-8000-000000000024',
+    1,
     'mutacao obsoleta', null, 'low', false, true,
     'suggest_new_taxon_for_review', true, 'low_confidence_insufficient_score',
     'unclassified', 'none', null
@@ -179,6 +193,7 @@ begin
   v_result := public.update_pending_setup_niche_resolution_ai_for_turn(
     'e1097000-0000-4000-8000-000000000014',
     'e1097000-0000-4000-8000-000000000024',
+    1,
     'estado preservado', 'resolved', null, 'stale-model', '1', '{}'::jsonb,
     'fallback_review', null, null, true, true, 'stale_write'
   );
@@ -188,6 +203,7 @@ begin
   v_result := public.confirm_pending_setup_operational_choice_for_turn(
     'e1097000-0000-4000-8000-000000000014',
     'e1097000-0000-4000-8000-000000000024',
+    1,
     'estado preservado'
   );
   if v_result <> 'turn_not_current' then
@@ -196,6 +212,7 @@ begin
   v_result := public.confirm_pending_setup_niche_resolution_taxon(
     'e1097000-0000-4000-8000-000000000014',
     'e1097000-0000-4000-8000-000000000024',
+    1,
     'e1097000-0000-4000-8000-000000000032'
   );
   if v_result <> 'turn_not_current' then
@@ -214,6 +231,7 @@ begin
   v_result := public.upsert_pending_setup_niche_resolution_for_turn(
     'e1097000-0000-4000-8000-000000000014',
     'e1097000-0000-4000-8000-000000000025',
+    1,
     'turno atual', null, 'low', false, true,
     'suggest_new_taxon_for_review', true, 'low_confidence_insufficient_score',
     'unclassified', 'none', null

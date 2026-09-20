@@ -27,8 +27,12 @@ export type PendingSetupBusinessTurnResult =
         | "invalid_input"
         | "resolution_persist_failed"
         | "official_link_failed"
-        | "result_persist_failed";
+        | "result_persist_failed"
+        | "lease_lost"
+        | "turn_not_current";
     };
+
+type PendingSetupLeaseGuardFailure = "lease_lost" | "turn_not_current";
 
 type AiResolutionResult =
   | { ok: true; model: string; output: AiNicheResolutionOutput }
@@ -42,13 +46,17 @@ type OfficialLinkResult =
       taxonId: string;
       existingPrimaryTaxonId: string;
     }
+  | { status: PendingSetupLeaseGuardFailure; taxonId: string | null }
   | { status: "failed"; taxonId: string | null };
 
 export type PendingSetupBusinessDependencies = {
   match: (rawInput: string, limit: number) => Promise<MatchBusinessTaxonsResult>;
-  persistResolution: (input: UpsertAccountNicheResolutionInput) => Promise<boolean>;
+  persistResolution: (
+    input: UpsertAccountNicheResolutionInput,
+  ) => Promise<boolean | PendingSetupLeaseGuardFailure>;
   linkOfficial: (input: {
     accountId: string;
+    leaseVersion: number;
     decision: DeterministicMatchDecision;
   }) => Promise<OfficialLinkResult>;
   resolveWithAi: (input: {
@@ -56,7 +64,9 @@ export type PendingSetupBusinessDependencies = {
     decision: DeterministicMatchDecision;
     candidates: TaxonMatchCandidate[];
   }) => Promise<AiResolutionResult>;
-  persistAiResult: (input: UpdateAccountNicheResolutionAiResultInput) => Promise<boolean>;
+  persistAiResult: (
+    input: UpdateAccountNicheResolutionAiResultInput,
+  ) => Promise<boolean | PendingSetupLeaseGuardFailure>;
 };
 
 export function validateBusinessDescription(input: unknown):
@@ -91,7 +101,7 @@ export function appendBusinessClarification(
 }
 
 export async function processPendingSetupBusinessTurn(
-  input: { accountId: string; turnId: string; rawInput: unknown },
+  input: { accountId: string; turnId: string; leaseVersion: number; rawInput: unknown },
   dependencies: PendingSetupBusinessDependencies,
 ): Promise<PendingSetupBusinessTurnResult> {
   const parsed = validateBusinessDescription(input.rawInput);
@@ -105,6 +115,7 @@ export async function processPendingSetupBusinessTurn(
   const resolutionPersisted = await dependencies.persistResolution({
     accountId: input.accountId,
     turnId: input.turnId,
+    leaseVersion: input.leaseVersion,
     rawInput: parsed.value,
     selectedTaxonId: selected?.taxonId ?? null,
     confidence: decision.confidence,
@@ -123,6 +134,9 @@ export async function processPendingSetupBusinessTurn(
     score: selected?.score ?? null,
     resetUserResolution: true,
   });
+  if (resolutionPersisted === "lease_lost" || resolutionPersisted === "turn_not_current") {
+    return { ok: false, reason: resolutionPersisted };
+  }
   if (!resolutionPersisted) return { ok: false, reason: "resolution_persist_failed" };
 
   if (!match.ok) {
@@ -130,6 +144,7 @@ export async function processPendingSetupBusinessTurn(
       dependencies,
       input.accountId,
       input.turnId,
+      input.leaseVersion,
       parsed.value,
       fallbackOutput("deterministic_match_failed"),
       null,
@@ -140,8 +155,12 @@ export async function processPendingSetupBusinessTurn(
   if (shouldCreateOfficialLink(decision, candidates) && selected) {
     const linked = await dependencies.linkOfficial({
       accountId: input.accountId,
+      leaseVersion: input.leaseVersion,
       decision,
     });
+    if (linked.status === "lease_lost" || linked.status === "turn_not_current") {
+      return { ok: false, reason: linked.status };
+    }
     return linked.status === "saved"
       ? { ok: true, status: "ready_official", taxonId: linked.taxonId }
       : { ok: false, reason: "official_link_failed" };
@@ -152,6 +171,7 @@ export async function processPendingSetupBusinessTurn(
       dependencies,
       input.accountId,
       input.turnId,
+      input.leaseVersion,
       parsed.value,
       aliasConfirmationOutput(selected),
       null,
@@ -172,6 +192,7 @@ export async function processPendingSetupBusinessTurn(
     dependencies,
     input.accountId,
     input.turnId,
+    input.leaseVersion,
     parsed.value,
     output,
     aiResult.model,
@@ -196,6 +217,7 @@ async function persistActionableResult(
   dependencies: PendingSetupBusinessDependencies,
   accountId: string,
   turnId: string,
+  leaseVersion: number,
   expectedRawInput: string,
   output: AiNicheResolutionOutput,
   model: string | null,
@@ -214,6 +236,7 @@ async function persistActionableResult(
   const persisted = await dependencies.persistAiResult({
     accountId,
     turnId,
+    leaseVersion,
     expectedRawInput,
     status: "resolved",
     errorCode,
@@ -228,6 +251,9 @@ async function persistActionableResult(
     reason: actionableOutput.reason,
   });
 
+  if (persisted === "lease_lost" || persisted === "turn_not_current") {
+    return { ok: false, reason: persisted };
+  }
   if (!persisted) return { ok: false, reason: "result_persist_failed" };
   return {
     ok: true,

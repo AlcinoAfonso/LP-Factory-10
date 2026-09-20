@@ -121,6 +121,7 @@ begin
   v_result := public.confirm_pending_setup_niche_resolution_taxon(
     'e1096000-0000-4000-8000-000000000011',
     'e1096000-0000-4000-8000-000000000021',
+    1,
     'e1096000-0000-4000-8000-000000000031'
   );
   if v_result <> 'saved' then
@@ -147,6 +148,7 @@ begin
   v_result := public.complete_pending_setup_conversation_turn(
     'e1096000-0000-4000-8000-000000000011',
     'e1096000-0000-4000-8000-000000000021',
+    1,
     'completed',
     'ready_official',
     'Entendimento confirmado: Consultoria E10.9.6.',

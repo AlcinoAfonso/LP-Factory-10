@@ -20,19 +20,24 @@ import type { PendingSetupBusinessSnapshot } from "./contracts";
 export async function processPendingSetupBusiness(input: {
   accountId: string;
   turnId: string;
+  leaseVersion: number;
   rawInput: unknown;
 }) {
   return processPendingSetupBusinessTurn(input, {
     match: matchBusinessTaxonsDeterministic,
     persistResolution: upsertAccountNicheResolution,
-    linkOfficial: async ({ accountId, decision }) => {
+    linkOfficial: async ({ accountId, leaseVersion, decision }) => {
       const taxonId = decision.selectedCandidate?.taxonId ?? null;
       if (!taxonId) return { status: "skipped_not_high_confidence" as const, taxonId };
       const result = await confirmPendingSetupTaxonForAccount({
         accountId,
         turnId: input.turnId,
+        leaseVersion,
         taxonId,
       });
+      if (!result.ok && (result.reason === "lease_lost" || result.reason === "turn_not_current")) {
+        return { status: result.reason, taxonId };
+      }
       return result.ok
         ? { status: "saved" as const, taxonId }
         : { status: "failed" as const, taxonId };
