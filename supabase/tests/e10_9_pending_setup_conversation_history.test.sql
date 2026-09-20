@@ -302,6 +302,59 @@ begin
     raise exception 'technical stale contexts must not create failed turns';
   end if;
 
+  select updated_at into expected_revision
+  from public.account_niche_resolutions
+  where account_id = 'e1095000-0000-4000-8000-000000000011';
+
+  begin_result := public.begin_pending_setup_conversation_turn(
+    'e1095000-0000-4000-8000-000000000011',
+    'e1095000-0000-4000-8000-000000000001',
+    'e1095000-0000-4000-8000-000000000033',
+    'turno ainda em processamento',
+    'clarification',
+    expected_revision
+  );
+  if begin_result ->> 'status' <> 'created'
+    or (begin_result ->> 'lease_version')::bigint <> 1
+  then
+    raise exception 'pending turn for stale-context preservation must start, got %', begin_result;
+  end if;
+
+  update public.pending_setup_conversation_turns
+  set attempted_at = now() - interval '61 seconds'
+  where account_id = 'e1095000-0000-4000-8000-000000000011'
+    and id = 'e1095000-0000-4000-8000-000000000033';
+
+  begin_result := public.begin_pending_setup_conversation_turn(
+    'e1095000-0000-4000-8000-000000000011',
+    'e1095000-0000-4000-8000-000000000001',
+    'e1095000-0000-4000-8000-000000000034',
+    'contexto antigo contra turno expirado',
+    'clarification',
+    expected_revision - interval '1 millisecond'
+  );
+  if begin_result ->> 'status' <> 'stale_context' then
+    raise exception 'stale context against an expired pending turn must reload, got %', begin_result;
+  end if;
+  if not exists (
+    select 1 from public.pending_setup_conversation_turns as turn_row
+    where turn_row.account_id = 'e1095000-0000-4000-8000-000000000011'
+      and turn_row.id = 'e1095000-0000-4000-8000-000000000033'
+      and turn_row.status = 'pending'
+      and turn_row.lease_version = 1
+      and turn_row.failure_code is null
+      and turn_row.completed_at is null
+  ) then
+    raise exception 'stale context must preserve the expired pending turn and its lease';
+  end if;
+  if exists (
+    select 1 from public.pending_setup_conversation_turns
+    where account_id = 'e1095000-0000-4000-8000-000000000011'
+      and id = 'e1095000-0000-4000-8000-000000000034'
+  ) then
+    raise exception 'stale context against an expired pending turn must not create a replacement';
+  end if;
+
   begin_result := public.begin_pending_setup_conversation_turn(
     'e1095000-0000-4000-8000-000000000012',
     'e1095000-0000-4000-8000-000000000001',

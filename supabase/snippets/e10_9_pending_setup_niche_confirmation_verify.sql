@@ -12,7 +12,7 @@ with function_state as (
   join pg_namespace namespace on namespace.oid = procedure.pronamespace
   where namespace.nspname = 'public'
     and procedure.proname = 'confirm_pending_setup_niche_resolution_taxon'
-    and pg_get_function_identity_arguments(procedure.oid) = 'p_account_id uuid, p_turn_id uuid, p_taxon_id uuid'
+    and pg_get_function_identity_arguments(procedure.oid) = 'p_account_id uuid, p_turn_id uuid, p_lease_version bigint, p_taxon_id uuid'
 ), checks as (
   select
     'function_contract'::text as check_name,

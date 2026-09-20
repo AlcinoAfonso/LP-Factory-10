@@ -137,6 +137,16 @@ begin
   for update;
   v_latest_turn_found := found;
 
+  select updated_at
+  into v_resolution_updated_at
+  from public.account_niche_resolutions
+  where account_id = p_account_id
+  for update;
+
+  if v_resolution_updated_at is distinct from p_expected_resolution_updated_at then
+    return jsonb_build_object('status', 'stale_context');
+  end if;
+
   if v_latest_turn_found and v_turn.id = p_turn_id then
     if v_turn.user_message is distinct from v_expected_message
       or v_turn.turn_kind is distinct from p_turn_kind
@@ -194,16 +204,6 @@ begin
       completed_at = now()
     where account_id = p_account_id
       and id = v_turn.id;
-  end if;
-
-  select updated_at
-  into v_resolution_updated_at
-  from public.account_niche_resolutions
-  where account_id = p_account_id
-  for update;
-
-  if v_resolution_updated_at is distinct from p_expected_resolution_updated_at then
-    return jsonb_build_object('status', 'stale_context');
   end if;
 
   insert into public.pending_setup_conversation_turns (
