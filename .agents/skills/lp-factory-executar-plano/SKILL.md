@@ -171,7 +171,7 @@ Quando invocada por `$lp-factory-conduzir-plano-completo`:
 1. confirmar que branch, worktree e PR são os mesmos usados para produzir a V2;
 2. confirmar o checkpoint `plan-v2-approved`, a matriz versionada no mesmo PR e usar esse commit como contrato imutável;
 3. não criar branch, PR ou pedido de merge intermediário;
-4. não acionar Gestor Estrutural, Gestor de Updates ou Gestor de Automações; usar somente o Analista nos gates de implementação;
+4. não acionar Gestor Estrutural, Gestor de Updates ou Gestor de Automações; usar o Analista somente nas revisões previstas em 7.3 e 7.4;
 5. reutilizar checkpoints `LP-Factory-Phase: <identificador>` e continuar na próxima subseção pendente;
 6. antes da entrega técnica completa, se evidência factual questionar materialmente a estrutura da própria V2 ou exigir crescimento estrutural material não previsto, suspender somente o ponto afetado e devolvê-lo a `$lp-factory-conduzir-plano-completo`, conforme a seção 6 daquele contrato, com a identidade da execução, as referências imutáveis e conteúdos de V1/V2, o ponto/subseção suspensa, a evidência, os checkpoints e as fontes pertinentes; não escolher arquitetura, exigir correção tentada ou candidato nem acionar especialista diretamente. Aguardar a liberação do ponto pelo workflow; se a V2 continuar suficiente, derivar a correção ordinária e seguir o gate aplicável; se houver delta aprovado, retomar conforme a seção 7.2. Nas demais mudanças materiais fora da V2, encaminhar ao Analista e, se necessário, ao supervisor competente; não reiniciar especialistas.
 
@@ -191,19 +191,16 @@ Para a próxima subseção ainda não aprovada:
 1. delimitar a próxima subseção pela V2 aprovada, com objetivo, arquivos prováveis, escopo negativo e critérios de aceite;
 2. quando a subseção criar ou alterar prompt consumido por IA, invocar `$lp-factory-criar-prompt` como subfluxo somente leitura antes de editar o artefato e validar os casos representativos definidos por ele;
 3. implementar somente o necessário para essa subseção; não antecipar a próxima; no handoff interno, diante da evidência estrutural prevista em 7.1, item 6, seguir esse retorno antes de implementar o ponto afetado;
-4. executar as validações aplicáveis; para código, executar `npm ci` uma vez no início do lote contínuo e repeti-lo somente se `package-lock.json`, dependências ou o estado de instalação mudarem; executar a validação própria e `npm run check` antes de cada gate; para alteração exclusivamente documental, justificar esses comandos como não aplicáveis; incluir no gate as evidências aplicáveis;
+4. executar as validações aplicáveis; para código, executar `npm ci` uma vez no início do lote contínuo e repeti-lo somente se `package-lock.json`, dependências ou o estado de instalação mudarem; executar a validação própria e `npm run check` antes de cada checkpoint; para alteração exclusivamente documental, justificar esses comandos como não aplicáveis; incluir as evidências aplicáveis;
 5. na última subseção, executar também as validações integradas e corrigir regressões; evidência de QA obrigatória pendente deve ser resolvida antes do ABC de consolidação final;
-6. antes do gate, identificar os documentos canônicos potencialmente afetados; nas subseções não finais, considerar os documentos da subseção atual; na última, incluir todos os documentos canônicos afetados ao longo do recorte;
+6. antes do checkpoint, identificar os documentos canônicos potencialmente afetados; nas subseções não finais, considerar os documentos da subseção atual; na última, incluir todos os documentos canônicos afetados ao longo do recorte;
 7. para cada documento, preparar um relatório factual da implementação, preservar snapshot anterior e executar `$lp-factory-abc`: `ETAPA: intermediária` nas subseções não finais e `ETAPA: consolidação final` na última; aplicar somente operações literais emitidas; se o resultado for `SEM ALTERAÇÕES NECESSÁRIAS`, não editar o documento;
-8. invocar `$lp-factory-avaliar-implementacao-analista` com plano, identificador, diff, evidências, matriz, pareceres pertinentes e, para cada documento canônico, snapshot anterior, relatório factual, resultado integral do ABC e documento resultante;
-9. tratar `aprovado para avançar` como checkpoint e commitar com o trailer `LP-Factory-Phase: <identificador>`; o checkpoint pode permanecer local e código, título e resumo do mesmo PR draft só devem refletir esse estado quando ele for efetivamente publicado;
-10. tratar `aprovado com correções obrigatórias` corrigindo somente o delta indicado e retornando ao mesmo Analista em `revisao_delta_implementacao`;
-11. tratar `requer evidência de QA` aplicando a seção 6 e retornando ao mesmo Analista com a evidência obtida; se um critério continuar sem prova após os caminhos autorizados, devolver antes da entrega final somente esse bloqueio ao supervisor competente e, recebida a decisão ou o recurso necessário, retornar ao mesmo Analista;
-12. tratar `bloqueado por decisão humana` devolvendo ao supervisor competente apenas o ponto necessário; no `Autônomo`, não solicitar a decisão ao usuário.
+8. antes do checkpoint, acionar `$lp-factory-avaliar-implementacao-analista` somente diante de risco material, dúvida de escopo ou critério, evidência insuficiente ou conflito técnico que exija avaliação independente; tratar suas conclusões pela própria skill e avançar apenas quando não houver pendência;
+9. com as validações da subseção satisfeitas e nenhuma revisão focal pendente, commitar o checkpoint com `LP-Factory-Phase: <identificador>`; ele pode permanecer local e só deve refletir no PR quando publicado.
 
-Checkpoints aprovados podem acumular localmente; publicação segue `AGENTS.md` e ocorre somente quando um gate depender de estado remoto.
+Checkpoints podem acumular localmente; publicação segue `AGENTS.md` e ocorre somente quando um gate depender de estado remoto.
 
-Alterações ainda não aprovadas pelo Analista não recebem trailer `LP-Factory-Phase`, não constituem checkpoint aprovado e não autorizam avanço ou merge.
+Validação obrigatória, evidência de QA ou revisão focal pendente impedem checkpoint e avanço.
 
 No modo `experimental`, parar somente nos checkpoints solicitados pelo humano. No fluxo normal `end-to-end`, avançar para a próxima subseção aprovada.
 
@@ -211,13 +208,12 @@ No modo `experimental`, parar somente nos checkpoints solicitados pelo humano. N
 
 Depois do último checkpoint, sem repetir validações ou ABC:
 
-1. atualizar o PR com checkpoints, arquivos, validações, evidências de QA, matriz, pendências e, por documento, os ABCs executados e o resultado `delta aplicado` ou `SEM ALTERAÇÕES NECESSÁRIAS`; declarar a entrega técnica completa e parar aguardando avaliação do supervisor;
-2. depois dessa declaração, não acionar `revisao_final_implementacao`, `revisao_delta_implementacao` nem qualquer outro gate do Analista;
-3. devolver a entrega ao supervisor competente;
-4. se o supervisor devolver correções, tratar o retorno como delta pós-entrega: confirmar de forma mínima objetivo, fontes, limites, boundary afetado e validação esperada; não reiniciar preparação, especialistas, changelog ou validações de plataforma sem impacto demonstrado; usar fontes condicionais, inclusive Supabase, somente quando o estado remoto for necessário para decidir ou validar a correção; sem essa necessidade, não investigar nem afirmar como concluído ou pendente estado remoto não verificado; quando necessário, obter somente a evidência mínima da fonte competente; em delta de código, preservar `npm ci`, `npm run check` e testes focais aplicáveis; aplicar somente esse delta no mesmo PR;
-5. se o supervisor liberar o merge, retomar a mesma task e seguir exclusivamente o ciclo de merge e conclusão da seção 9, sem novo Analista ou nova derivação;
-6. se validação obrigatória pós-merge revelar defeito, registrar a falha e devolvê-la ao supervisor como exceção material; não criar ou selecionar nova branch ou PR por inferência. O supervisor define o fluxo corretivo competente; atualizar a entrega e parar novamente, sem Analista;
-7. manter a matriz disponível durante o ciclo externo de avaliação e não removê-la antes de o supervisor declarar o recorte definitivamente concluído; a limpeza posterior é documental, preserva a rastreabilidade no resumo e no histórico do PR e não aciona Analista nem especialistas.
+1. acionar `$lp-factory-avaliar-implementacao-analista` em `revisao_final_implementacao` com checkpoints, diff acumulado, validações integradas, QA, delta documental, matriz e pareceres preservados; corrigir somente o delta indicado, usar `revisao_delta_implementacao` quando necessário e avançar apenas com `aprovado para merge da implementação`;
+2. atualizar o PR com checkpoints, arquivos, validações, evidências de QA, matriz, pendências e, por documento, os ABCs executados e o resultado `delta aplicado` ou `SEM ALTERAÇÕES NECESSÁRIAS`; declarar a entrega técnica completa e devolvê-la ao supervisor competente;
+3. se o supervisor devolver correções, tratar o retorno como delta pós-entrega: confirmar de forma mínima objetivo, fontes, limites, boundary afetado e validação esperada; não reiniciar preparação, especialistas ou validações sem impacto demonstrado; em delta de código, preservar `npm ci`, `npm run check` e testes focais aplicáveis e retornar ao mesmo Analista em `revisao_delta_implementacao` somente se a implementação aprovada tiver mudado;
+4. se o supervisor liberar o merge, retomar a mesma task e seguir exclusivamente o ciclo de merge e conclusão da seção 9, sem nova derivação;
+5. se validação obrigatória pós-merge revelar defeito, registrar a falha e devolvê-la ao supervisor como exceção material; não criar ou selecionar nova branch ou PR por inferência. O supervisor define o fluxo corretivo competente; atualizar a entrega e parar novamente, sem Analista;
+6. manter a matriz disponível durante o ciclo externo de avaliação e não removê-la antes de o supervisor declarar o recorte definitivamente concluído; a limpeza posterior é documental, preserva a rastreabilidade no resumo e no histórico do PR e não aciona Analista nem especialistas.
 
 O resumo do PR deve refletir sempre o checkpoint publicado e a entrega técnica completa. A liberação do merge ocorre fora desta skill; depois de recebida, a execução do merge e o encerramento pós-merge pertencem ao Executor conforme a seção 9.
 
@@ -268,6 +264,6 @@ Não substitua supervisor, Estrategista, especialista ou Analista; o Executor ex
 - no Light, não importar especialistas, matriz, segunda passagem ou gates da Complexa;
 - na Complexa, não iniciar a fase seguinte sem checkpoint aprovado;
 - na Complexa, não recriar ou ampliar a V2, repetir especialistas, criar PR empilhado, criar segundo PR no handoff interno ou recriar a matriz sem correção de rastreabilidade exigida;
-- na Complexa, não acionar o Analista depois de declarar a entrega técnica completa;
+- na Complexa, após a entrega técnica completa, usar o Analista somente para revisar delta material devolvido pelo supervisor;
 - na Complexa, não acionar o supervisor antes da entrega técnica completa, exceto para bloqueio de QA ou decisão humana já previstos pelo contrato; no Light, aplicar as escaladas previstas nas seções 2 e 3;
 - não ignorar evidência de QA pendente nem decisão material exigida.
