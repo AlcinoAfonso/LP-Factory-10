@@ -12,7 +12,7 @@ with function_state as (
   join pg_namespace namespace on namespace.oid = procedure.pronamespace
   where namespace.nspname = 'public'
     and procedure.proname = 'confirm_pending_setup_niche_resolution_taxon'
-    and pg_get_function_identity_arguments(procedure.oid) = 'p_account_id uuid, p_taxon_id uuid'
+    and pg_get_function_identity_arguments(procedure.oid) = 'p_account_id uuid, p_turn_id uuid, p_taxon_id uuid'
 ), checks as (
   select
     'function_contract'::text as check_name,
@@ -37,7 +37,12 @@ with function_state as (
         and bool_and(has_function_privilege('service_role', oid, 'EXECUTE'))
         and bool_and(not has_function_privilege('anon', oid, 'EXECUTE'))
         and bool_and(not has_function_privilege('authenticated', oid, 'EXECUTE'))
-        and bool_and(not has_function_privilege('ai_readonly', oid, 'EXECUTE'))
+        and bool_and(
+          case
+            when to_regrole('ai_readonly') is null then true
+            else not has_function_privilege(to_regrole('ai_readonly'), oid, 'EXECUTE')
+          end
+        )
       then 'ok'
       else 'unexpected'
     end

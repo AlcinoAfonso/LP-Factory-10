@@ -9,7 +9,10 @@ with tables as (
     has_table_privilege('service_role', class.oid, 'SELECT,INSERT,UPDATE') as service_access,
     has_table_privilege('anon', class.oid, 'SELECT') as anon_read,
     has_table_privilege('authenticated', class.oid, 'SELECT') as authenticated_read,
-    has_table_privilege('ai_readonly', class.oid, 'SELECT') as ai_readonly_read
+    case
+      when to_regrole('ai_readonly') is null then false
+      else has_table_privilege(to_regrole('ai_readonly'), class.oid, 'SELECT')
+    end as ai_readonly_read
   from pg_class class
   join pg_namespace namespace on namespace.oid = class.relnamespace
   where namespace.nspname = 'public'
@@ -72,7 +75,12 @@ with tables as (
         and bool_and(has_function_privilege('service_role', oid, 'EXECUTE'))
         and bool_and(not has_function_privilege('anon', oid, 'EXECUTE'))
         and bool_and(not has_function_privilege('authenticated', oid, 'EXECUTE'))
-        and bool_and(not has_function_privilege('ai_readonly', oid, 'EXECUTE'))
+        and bool_and(
+          case
+            when to_regrole('ai_readonly') is null then true
+            else not has_function_privilege(to_regrole('ai_readonly'), oid, 'EXECUTE')
+          end
+        )
       then 'ok'
       else 'unexpected'
     end
