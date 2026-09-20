@@ -15,6 +15,7 @@ import {
   PENDING_SETUP_OPERATIONAL_CHOICE_LIMIT,
   validateOperationalChoiceLabel,
 } from "../operationalChoice";
+import { canRecoverStalePendingSetupResolution } from "../../pending-setup/businessResolutionRecoveryCore";
 import { linkPrimaryAccountTaxonomyFromUserConfirmedAi } from "./accountTaxonomyAdapter";
 
 const ACTIONABLE_UX_MODES = new Set<AiNicheResolutionUxMode>([
@@ -36,6 +37,7 @@ type ResolutionRow = {
   ai_ux_mode: AiNicheResolutionUxMode | null;
   ai_suggested_taxon_id: string | null;
   user_resolution_status: UserNicheResolutionStatus | null;
+  user_selected_taxon_id: string | null;
   user_rewrite_input: string | null;
 };
 
@@ -106,6 +108,20 @@ export async function readActionablePendingSetupNicheResolutionForAccount(input:
     return persisted.ok
       ? { ok: true, resolution: null, recoverableRawInput: persisted.rawInput }
       : persisted;
+  }
+  if (validated.resolution) {
+    const primary = await readUsableActivePrimaryTaxonId(input.accountId);
+    if (!primary.ok) return { ok: false, reason: primary.reason };
+    if (
+      canRecoverStalePendingSetupResolution({
+        validationFailureReason: validated.reason,
+        userResolutionStatus: validated.resolution.user_resolution_status,
+        userSelectedTaxonId: validated.resolution.user_selected_taxon_id,
+        usableActivePrimaryTaxonId: primary.taxonId,
+      })
+    ) {
+      return { ok: true, resolution: null, recoverableRawInput: null };
+    }
   }
   return { ok: false, reason: validated.reason };
 }
@@ -445,14 +461,14 @@ async function getValidatedActionContext(input: {
   requireUxMode: AiNicheResolutionUxMode | null;
 }): Promise<
   | { ok: true; context: ValidatedActionContext }
-  | { ok: false; reason: string }
+  | { ok: false; reason: string; resolution?: ResolutionRow }
 > {
   const supabase = createServiceClient();
 
   const { data: resolution, error: resolutionError } = await supabase
     .from("account_niche_resolutions")
     .select(
-      "account_id,raw_input,ai_status,ai_result_json,ai_ux_mode,ai_suggested_taxon_id,user_resolution_status,user_rewrite_input",
+      "account_id,raw_input,ai_status,ai_result_json,ai_ux_mode,ai_suggested_taxon_id,user_resolution_status,user_selected_taxon_id,user_rewrite_input",
     )
     .eq("account_id", input.accountId)
     .limit(1)
@@ -478,7 +494,7 @@ async function getValidatedActionContext(input: {
     return { ok: false, reason: "unexpected_ux_mode" };
   }
   if (row.user_resolution_status && FINAL_USER_STATUSES.has(row.user_resolution_status)) {
-    return { ok: false, reason: "already_finalized" };
+    return { ok: false, reason: "already_finalized", resolution: row };
   }
   if (row.user_resolution_status && row.user_resolution_status !== "pending_confirmation") {
     return { ok: false, reason: "user_status_not_actionable" };
@@ -516,8 +532,9 @@ async function getValidatedActionContext(input: {
     new Set([row.ai_suggested_taxon_id, ...optionTaxonIds].filter((id): id is string => Boolean(id))),
   );
 
-  const taxons = await getActiveTaxonsByIds(taxonIds);
-  const taxonMap = new Map(taxons.map((taxon) => [taxon.id, taxon]));
+  const taxonLookup = await getActiveTaxonsByIds(taxonIds);
+  if (!taxonLookup.ok) return { ok: false, reason: taxonLookup.reason };
+  const taxonMap = new Map(taxonLookup.taxons.map((taxon) => [taxon.id, taxon]));
 
   const suggestedTaxon = row.ai_suggested_taxon_id
     ? taxonToOption(taxonMap.get(row.ai_suggested_taxon_id) ?? null)
@@ -538,10 +555,10 @@ async function getValidatedActionContext(input: {
     .filter((option): option is ActionableNicheResolutionOption => Boolean(option));
 
   if (row.ai_ux_mode === "confirm_single" && !suggestedTaxon) {
-    return { ok: false, reason: "missing_suggested_taxon" };
+    return { ok: false, reason: "missing_suggested_taxon", resolution: row };
   }
   if (row.ai_ux_mode === "choose_from_options" && options.length === 0) {
-    return { ok: false, reason: "missing_options" };
+    return { ok: false, reason: "missing_options", resolution: row };
   }
 
   return {
@@ -559,8 +576,47 @@ async function getValidatedActionContext(input: {
   };
 }
 
-async function getActiveTaxonsByIds(ids: string[]): Promise<TaxonRow[]> {
-  if (ids.length === 0) return [];
+async function readUsableActivePrimaryTaxonId(accountId: string): Promise<
+  | { ok: true; taxonId: string | null }
+  | { ok: false; reason: "primary_lookup_failed" }
+> {
+  const supabase = createServiceClient();
+  const { data: primary, error: primaryError } = await supabase
+    .from("account_taxonomy")
+    .select("taxon_id")
+    .eq("account_id", accountId)
+    .eq("is_primary", true)
+    .eq("status", "active")
+    .limit(1)
+    .maybeSingle();
+  if (primaryError) return { ok: false, reason: "primary_lookup_failed" };
+  if (!primary) return { ok: true, taxonId: null };
+
+  const taxonId = (primary as { taxon_id?: unknown }).taxon_id;
+  if (typeof taxonId !== "string" || !taxonId) {
+    return { ok: false, reason: "primary_lookup_failed" };
+  }
+
+  const { data: taxon, error: taxonError } = await supabase
+    .from("business_taxons")
+    .select("id")
+    .eq("id", taxonId)
+    .eq("is_active", true)
+    .limit(1)
+    .maybeSingle();
+  if (taxonError) return { ok: false, reason: "primary_lookup_failed" };
+  if (!taxon) return { ok: true, taxonId: null };
+
+  return (taxon as { id?: unknown }).id === taxonId
+    ? { ok: true, taxonId }
+    : { ok: false, reason: "primary_lookup_failed" };
+}
+
+async function getActiveTaxonsByIds(ids: string[]): Promise<
+  | { ok: true; taxons: TaxonRow[] }
+  | { ok: false; reason: "taxon_lookup_failed" }
+> {
+  if (ids.length === 0) return { ok: true, taxons: [] };
 
   const supabase = createServiceClient();
   const { data, error } = await supabase
@@ -574,10 +630,10 @@ async function getActiveTaxonsByIds(ids: string[]): Promise<TaxonRow[]> {
       code: (error as any)?.code,
       message: (error as any)?.message ?? String(error),
     });
-    return [];
+    return { ok: false, reason: "taxon_lookup_failed" };
   }
 
-  return (data ?? []) as TaxonRow[];
+  return { ok: true, taxons: (data ?? []) as TaxonRow[] };
 }
 
 async function readRecoverableRawInput(accountId: string): Promise<

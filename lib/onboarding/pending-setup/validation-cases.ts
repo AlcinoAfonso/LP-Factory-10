@@ -16,6 +16,7 @@ import {
   type PendingSetupBusinessDependencies,
   validateBusinessDescription,
 } from "./businessConversationCore";
+import { canRecoverStalePendingSetupResolution } from "./businessResolutionRecoveryCore";
 import {
   reconcilePendingSetupTurnRetry,
   selectPendingSetupCompletionRetryTurn,
@@ -131,6 +132,60 @@ assert.deepEqual(appendBusinessClarification("consultoria", "CONSULTORIA"), {
   ok: true,
   value: "CONSULTORIA",
 });
+assert.equal(
+  canRecoverStalePendingSetupResolution({
+    validationFailureReason: "missing_suggested_taxon",
+    userResolutionStatus: "pending_confirmation",
+    userSelectedTaxonId: null,
+    usableActivePrimaryTaxonId: null,
+  }),
+  true,
+);
+assert.equal(
+  canRecoverStalePendingSetupResolution({
+    validationFailureReason: "missing_options",
+    userResolutionStatus: "pending_confirmation",
+    userSelectedTaxonId: null,
+    usableActivePrimaryTaxonId: null,
+  }),
+  true,
+);
+assert.equal(
+  canRecoverStalePendingSetupResolution({
+    validationFailureReason: "already_finalized",
+    userResolutionStatus: "confirmed",
+    userSelectedTaxonId: "taxon-desativado",
+    usableActivePrimaryTaxonId: null,
+  }),
+  true,
+);
+assert.equal(
+  canRecoverStalePendingSetupResolution({
+    validationFailureReason: "already_finalized",
+    userResolutionStatus: "confirmed",
+    userSelectedTaxonId: "taxon-ativo",
+    usableActivePrimaryTaxonId: "taxon-ativo",
+  }),
+  false,
+);
+assert.equal(
+  canRecoverStalePendingSetupResolution({
+    validationFailureReason: "taxon_lookup_failed",
+    userResolutionStatus: "pending_confirmation",
+    userSelectedTaxonId: null,
+    usableActivePrimaryTaxonId: null,
+  }),
+  false,
+);
+assert.equal(
+  canRecoverStalePendingSetupResolution({
+    validationFailureReason: "already_finalized",
+    userResolutionStatus: "dismissed",
+    userSelectedTaxonId: null,
+    usableActivePrimaryTaxonId: null,
+  }),
+  false,
+);
 
 const officialCandidate: TaxonMatchCandidate = {
   taxonId: "taxon-consultoria",
