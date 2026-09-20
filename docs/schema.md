@@ -1097,6 +1097,29 @@
 • Migration candidata: `supabase/migrations/20260920150000_e10_9_user_identity_preferences.sql`.
 • Estado: contrato repo-only; apply hospedado e verificação read-only permanecem pendentes do fluxo pós-merge.
 
+1.39 pending_setup_conversations
+1.39.1 Chaves, constraints e relacionamentos
+• PK/FK: account_id uuid → accounts(id), com ON UPDATE CASCADE e ON DELETE CASCADE; mantém um cabeçalho por conta.
+• owner_user_id: uuid NOT NULL → auth.users(id), com ON UPDATE CASCADE e ON DELETE RESTRICT.
+• completed_at e completion_mode formam par opcional; completion_mode aceita somente official ou fallback.
+• Timestamps: created_at e updated_at timestamptz NOT NULL, com default now().
+1.39.2 Segurança e estado operacional
+• RLS habilitado, sem policies de acesso direto; public, anon, authenticated e ai_readonly permanecem sem privilégios.
+• service_role possui somente SELECT, INSERT e UPDATE.
+• `pending_setup_conversations_set_updated_at` mantém updated_at por `public.tg_set_updated_at()`, fora do Trigger Hub e sem evento de auditoria.
+
+1.40 pending_setup_conversation_turns
+1.40.1 Chaves, constraints e relacionamentos
+• PK composta: (account_id, id); account_id referencia pending_setup_conversations(account_id), com ON UPDATE CASCADE e ON DELETE CASCADE.
+• Cada turno preserva a fala, o tipo, o estado pending/completed/failed, a resposta ou estado do produto, falha recuperável e timestamps, com checks de forma e tamanho.
+• O índice pending_setup_conversation_turns_account_created_idx ordena retomada por (account_id, created_at, id).
+1.40.2 Segurança e estado operacional
+• RLS habilitado, sem policies de acesso direto; public, anon, authenticated e ai_readonly permanecem sem privilégios.
+• service_role possui somente SELECT, INSERT e UPDATE.
+• Migration candidata das seções 1.39 e 1.40: `supabase/migrations/20260920213000_e10_9_pending_setup_conversation_history.sql`.
+• Teste transacional: `supabase/tests/e10_9_pending_setup_conversation_history.test.sql`; verificador read-only: `supabase/snippets/e10_9_pending_setup_conversation_history_verify.sql`.
+• Estado: contrato repo-only; apply hospedado e verificação read-only permanecem pendentes do fluxo pós-merge.
+
 2. Views
 
 2.1 v_access_context_v2
@@ -1397,6 +1420,11 @@
 • Migration E21.5.6 repo-only, ainda pendente do merge humano e do apply canônico: `supabase/migrations/20260912215000_e21_5_6_openai_cost_event_correlation.sql`.
 • Teste transacional E21.5.6: `supabase/tests/e21_5_6_openai_cost_event_hierarchy.test.sql`; verificador read-only: `supabase/snippets/e21_5_6_openai_economic_events_verify.sql`.
 
+3.12 Histórico conversacional do Pending Setup
+• `public.begin_pending_setup_conversation_turn(uuid, uuid, uuid, text, text)` valida conta pending_setup e owner, cria o cabeçalho quando necessário e inicia ou retoma o turno sob lock, com unicidade por conta e ID.
+• `public.complete_pending_setup_conversation_turn(uuid, uuid, text, text, text, text)` conclui sob lock o mesmo turno com resposta ou falha recuperável e aceita repetição idempotente do mesmo resultado.
+• Ambas usam SECURITY INVOKER, search_path fechado e EXECUTE restrito a service_role; public, anon, authenticated e ai_readonly não possuem acesso.
+
 4. Triggers
 
 4.1 Trigger Hub (governança)
@@ -1424,6 +1452,7 @@
 • openai_lp_cost_coverage_prevent_mutation: rejeita UPDATE e DELETE da data de corte histórica.
 • openai_cost_executions_guard: preserva a identidade técnica, econômica e de baseline da execução, rejeita DELETE, segunda finalização e mutação após o terminal.
 • user_identity_preferences_set_updated_at: mantém updated_at em user_identity_preferences, sem evento de auditoria.
+• pending_setup_conversations_set_updated_at: mantém updated_at em pending_setup_conversations, sem evento de auditoria.
 
 5. Tipos canônicos
 • Fonte única: PATH: lib/types/status.ts

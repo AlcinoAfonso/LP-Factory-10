@@ -175,6 +175,15 @@ export async function getConfirmedOperationalNicheResolutionLabel(input: {
   return label || null;
 }
 
+export async function readPersistedNicheResolutionRawInputForAccount(input: {
+  accountId: string;
+}): Promise<string | null> {
+  const persisted = await readRecoverableRawInput(input.accountId);
+  if (persisted.ok) return persisted.rawInput;
+  if (persisted.reason === "resolution_not_found") return null;
+  throw new Error(persisted.reason);
+}
+
 export async function confirmAiSuggestedTaxonForAccount(input: {
   accountId: string;
 }): Promise<NicheResolutionUserActionResult> {

@@ -172,6 +172,7 @@ Execução server-side durante `continuePendingSetupConversationAction`, após g
 Como funciona:
 - Executa primeiro o matching determinístico e a avaliação tipada de confiança.
 - Persiste a descrição operacional antes de qualquer chamada à IA e reinicia explicitamente somente o estado de confirmação da resolução corrente.
+- Persiste a fala no histórico funcional antes de processar o turno e conclui o mesmo registro com resposta ou falha recuperável; o histórico integral não compõe a chamada à IA.
 - Chama a Responses API somente quando a decisão determinística exige escalonamento.
 - Produz saída estruturada com modo de UX, mensagem, até três opções, sinais de confirmação ou revisão e motivo, usando `store: false` e a configuração vigente do workload `niche_resolution`.
 - Persiste o resultado operacional, o modelo, a versão do schema e o estado da execução em `account_niche_resolutions`.

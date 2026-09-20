@@ -979,17 +979,18 @@
 
 10.9.1 Objetivo e status
 - Objetivo: receber o usuário após a confirmação do acesso, preservar sua identidade preferida, compreender o negócio por conversa progressiva, resolver o nicho com segurança ou fallback explícito e preparar a passagem para a experiência comercial.
-- Status: em implementação; 10.9.3 e 10.9.4 estão materializadas no repositório com rollout hospedado pendente, enquanto 10.9.5 e 10.9.6 permanecem planejadas.
+- Status: em implementação; 10.9.3, 10.9.4 e 10.9.5 estão materializadas no repositório com rollout hospedado pendente, enquanto 10.9.6 permanece planejada.
 
 10.9.2 Registros do recorte
 - Banco:
-  - Criados: `public.user_identity_preferences`; `user_identity_preferences_set_updated_at`; `public.confirm_pending_setup_niche_resolution_taxon(uuid, uuid)`.
+  - Criados: `public.user_identity_preferences`; `public.pending_setup_conversations`; `public.pending_setup_conversation_turns`; `user_identity_preferences_set_updated_at`; `pending_setup_conversations_set_updated_at`; `public.confirm_pending_setup_niche_resolution_taxon(uuid, uuid)`; `public.begin_pending_setup_conversation_turn(uuid, uuid, uuid, text, text)`; `public.complete_pending_setup_conversation_turn(uuid, uuid, text, text, text, text)`.
 - Repositório:
-  - Criados: `app/a/[account]/_components/PendingSetupConversation.tsx`; `app/a/[account]/pending-setup-actions.ts`; `lib/onboarding/pending-setup/`; `supabase/migrations/20260920150000_e10_9_user_identity_preferences.sql`; `supabase/migrations/20260920203000_e10_9_pending_setup_niche_confirmation.sql`; `supabase/snippets/e10_9_user_identity_preferences_verify.sql`; `supabase/snippets/e10_9_pending_setup_niche_confirmation_verify.sql`.
+  - Criados: `app/a/[account]/_components/PendingSetupConversation.tsx`; `app/a/[account]/pending-setup-actions.ts`; `lib/onboarding/pending-setup/`; `supabase/migrations/20260920150000_e10_9_user_identity_preferences.sql`; `supabase/migrations/20260920203000_e10_9_pending_setup_niche_confirmation.sql`; `supabase/migrations/20260920213000_e10_9_pending_setup_conversation_history.sql`; `supabase/snippets/e10_9_user_identity_preferences_verify.sql`; `supabase/snippets/e10_9_pending_setup_niche_confirmation_verify.sql`; `supabase/snippets/e10_9_pending_setup_conversation_history_verify.sql`; `supabase/tests/e10_9_pending_setup_conversation_history.test.sql`.
   - Ajustados: `app/a/[account]/account-journey-loader.ts`; `app/a/[account]/page.tsx`; `lib/access/types.ts`; `lib/onboarding/niche-resolution/adapters/accountNicheResolutionAdapter.ts`; `lib/onboarding/niche-resolution/adapters/accountNicheResolutionUserAdapter.ts`; `lib/onboarding/niche-resolution/adapters/openAiResolver.ts`; `lib/onboarding/niche-resolution/contracts.ts`; `lib/openai-workloads/validation-cases.ts`.
 - Referências:
   - Contrato de identidade preferida: `docs/schema.md` — 1.38 user_identity_preferences.
   - Confirmação taxonômica transacional: `docs/schema.md` — 1.19.5 Confirmação oficial no Pending Setup.
+  - Histórico conversacional: `docs/schema.md` — 1.39 pending_setup_conversations, 1.40 pending_setup_conversation_turns e 3.12 Histórico conversacional do Pending Setup.
   - Gate e cutover hospedado: `docs/platform-config.md` — 3.5 Secrets e variáveis server-side no Vercel.
 
 10.9.3 Entrada e identidade sem fricção
@@ -1010,8 +1011,12 @@
   - A execução usa Responses API direta, Structured Outputs, `store: false` e a configuração vigente do workload `niche_resolution`; Agents SDK, agente autônomo, tool, job, fila, novo service e Conversations ficam fora.
 
 10.9.5 Histórico conversacional e retomada
-- O histórico canônico permanece associado ao mesmo usuário e à mesma conta para retomada após saída, ativação e eventual conversão.
-- Texto livre e histórico conversacional não substituem `account_taxonomy`, não se tornam fato oficial e não ampliam o recorte para CRM ou omnichannel.
+- Status: implementado no repositório; apply da migration, prova SQL e QA hospedado permanecem pendentes do rollout.
+- Conteúdo:
+  - O histórico canônico fica associado ao mesmo owner e à mesma conta, com cabeçalho 1:1 e turnos ordenados por identificador estável, para retomada após saída, ativação e eventual conversão.
+  - A fala é persistida antes do processamento do turno; resposta ou falha recuperável conclui o mesmo registro, e retry concorrente é serializado sem duplicar turnos.
+  - A leitura server-side valida o owner e entrega à interface somente os vinte turnos mais recentes; o histórico integral não é enviado à IA.
+  - Texto livre e histórico conversacional não substituem `account_taxonomy`, não se tornam fato oficial e não ampliam o recorte para CRM ou omnichannel.
 
 10.9.6 Conclusão e passagem ao comercial
 - A conclusão válida promove `pending_setup` para `active` sem conceder entitlement; checkout, papel, membership e demais gates comerciais permanecem vigentes.

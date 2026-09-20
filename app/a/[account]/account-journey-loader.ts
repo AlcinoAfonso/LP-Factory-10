@@ -5,6 +5,7 @@ import { getCommercialActivationHierarchicalBundle } from "@/conversion-content"
 import { getCommercialEntitlementSignal } from "../../../lib/commercial-entitlements";
 import { getActionableNicheResolutionForAccount } from "../../../lib/onboarding/niche-resolution/adapters/accountNicheResolutionUserAdapter";
 import { getActivePrimaryAccountTaxon } from "../../../lib/onboarding/niche-resolution/adapters/accountTaxonomyAdapter";
+import { readPendingSetupConversationHistory } from "../../../lib/onboarding/pending-setup/adapters/conversationHistoryAdapter";
 import { readUserIdentityPreference } from "../../../lib/onboarding/pending-setup/adapters/userIdentityPreferenceAdapter";
 import { isConversationalPendingSetupEnabled } from "../../../lib/onboarding/pending-setup/config";
 import { loadPendingSetupBusinessSnapshot } from "../../../lib/onboarding/pending-setup/businessConversationProvider";
@@ -54,13 +55,20 @@ export async function loadAccountJourney({
         return { view: "pending_setup_rollout_pending" as const };
       }
       const identity = await readUserIdentityPreference(ctx.member.userId);
-      const business = identity
-        ? await loadPendingSetupBusinessSnapshot(ctx.account_id)
-        : null;
+      const [business, history] = identity
+        ? await Promise.all([
+            loadPendingSetupBusinessSnapshot(ctx.account_id),
+            readPendingSetupConversationHistory({
+              accountId: ctx.account_id,
+              ownerUserId: ctx.member.userId,
+            }),
+          ])
+        : [null, []];
       return {
         view: "pending_setup_conversation" as const,
         preferredName: identity?.preferredName ?? null,
         business,
+        history,
       };
     }
 

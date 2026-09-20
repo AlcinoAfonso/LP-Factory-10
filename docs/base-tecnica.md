@@ -241,8 +241,9 @@
 • IA não cria taxon ou alias, não grava vínculo oficial e não substitui decisão determinística de alta confiança.
 • `account_niche_resolutions` representa a resolução operacional; `account_taxonomy` representa o vínculo oficial e só pode ser gravado quando o contrato de alta confiança permitir, sem substituir automaticamente vínculo primário diferente.
 • No fluxo histórico que já conclui o setup antes da resolução, falhas de matching, IA ou persistência da resolução não bloqueiam ativação, revalidação ou redirect.
-• No boundary conversacional de `pending_setup`, falhas de matching ou IA devem preservar a descrição e produzir fallback operacional recuperável, sem vínculo oficial; falha de persistência interrompe a mutação e permite nova tentativa sem avançar estado incompleto.
-• Logs, eventos e telemetria não devem conter prompt, payload bruto, nicho bruto, aliases, candidatos completos, formulário ou PII; a descrição informada pode residir somente na persistência funcional autorizada, cujos objetos e campos exatos pertencem a `docs/schema.md`.
+• No boundary conversacional de `pending_setup`, a fala deve ser persistida antes do processamento e o mesmo turno deve terminar com resposta ou falha recuperável; falhas de matching ou IA preservam a descrição e produzem fallback operacional recuperável, sem vínculo oficial, enquanto falha de persistência impede avanço aparente.
+• O histórico conversacional é persistência funcional da relação entre owner e conta, permanece separado das autoridades taxonômicas e não deve ser enviado integralmente à IA; seus objetos e campos exatos pertencem a `docs/schema.md`.
+• Logs, eventos e telemetria não devem conter prompt, payload bruto, nicho bruto, aliases, candidatos completos, formulário ou PII.
 
 3.15 Conteúdo composicional de `commercial_activation`
 • Boundary canônico: `lib/conversion-content/commercial-activation/`; registry, schemas, resolver e renderer são fontes do contrato executável.

@@ -4,6 +4,7 @@ import { clientOpenAiCostContext } from "../../openai-costs";
 import {
   getActionablePendingSetupNicheResolutionForAccount,
   getConfirmedOperationalNicheResolutionLabel,
+  readPersistedNicheResolutionRawInputForAccount,
 } from "../niche-resolution/adapters/accountNicheResolutionUserAdapter";
 import {
   updateAccountNicheResolutionAiResult,
@@ -51,7 +52,11 @@ export async function loadPendingSetupBusinessSnapshot(
   accountId: string,
 ): Promise<PendingSetupBusinessSnapshot> {
   const primary = await getActivePrimaryAccountTaxon({ accountId });
-  if (primary) return { kind: "ready_official", taxonName: primary.name };
+  if (primary) {
+    const rawInput = await readPersistedNicheResolutionRawInputForAccount({ accountId });
+    if (!rawInput) throw new Error("pending_setup_official_raw_input_missing");
+    return { kind: "ready_official", rawInput, taxonName: primary.name };
+  }
 
   const operationalDescription = await getConfirmedOperationalNicheResolutionLabel({
     accountId,

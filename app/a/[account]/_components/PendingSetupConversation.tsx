@@ -8,7 +8,10 @@ import { FormField, FormFieldLabel } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import type { ActionableNicheResolution } from "../../../../lib/onboarding/niche-resolution/contracts";
-import type { PendingSetupBusinessSnapshot } from "../../../../lib/onboarding/pending-setup/contracts";
+import type {
+  PendingSetupBusinessSnapshot,
+  PendingSetupConversationTurn,
+} from "../../../../lib/onboarding/pending-setup/contracts";
 import {
   continuePendingSetupConversationAction,
   type PendingSetupConversationState,
@@ -17,14 +20,21 @@ import {
 export function PendingSetupConversation({
   accountSubdomain,
   business,
+  history,
   preferredName,
 }: {
   accountSubdomain: string;
   business: PendingSetupBusinessSnapshot | null;
+  history: PendingSetupConversationTurn[];
   preferredName: string | null;
 }) {
   const initialState: PendingSetupConversationState = preferredName
-    ? { ok: true, preferredName, business: business ?? { kind: "awaiting_business" } }
+    ? {
+        ok: true,
+        preferredName,
+        business: business ?? { kind: "awaiting_business" },
+        history,
+      }
     : { ok: false };
   const [state, action, pending] = useActionState(
     continuePendingSetupConversationAction,
@@ -34,6 +44,7 @@ export function PendingSetupConversation({
   const businessRef = useRef<HTMLTextAreaElement>(null);
   const resolvedName = state.preferredName ?? preferredName;
   const resolvedBusiness = state.business ?? business ?? { kind: "awaiting_business" as const };
+  const resolvedHistory = state.history ?? history;
 
   useEffect(() => {
     if (!state.error) return;
@@ -61,6 +72,10 @@ export function PendingSetupConversation({
             ? "Vamos entender seu negócio com uma pergunta de cada vez."
             : "Vamos começar por você. O nome fica ligado à sua identidade e pode ser reutilizado nas próximas conversas."}
         </p>
+
+        {resolvedHistory.length > 0 ? (
+          <ConversationHistory turns={resolvedHistory} />
+        ) : null}
 
         {state.error ? (
           <FeedbackMessage className="mt-6" tone="error">
@@ -168,19 +183,12 @@ function BusinessStep({
           label="Que detalhe ajudaria a entender melhor seu negócio?"
           turnKind="clarification"
         />
-        <form action={action}>
-          <ConversationIntent
-            accountSubdomain={accountSubdomain}
-            intent="confirm_fallback"
-          />
-          <Button
-            className="bg-white text-ink-900 ring-1 ring-surface-border hover:bg-graytech-50"
-            disabled={pending}
-            type="submit"
-          >
-            Seguir com “{resolution.rawInput}”
-          </Button>
-        </form>
+        <FallbackConfirmationForm
+          accountSubdomain={accountSubdomain}
+          action={action}
+          disabled={pending}
+          rawInput={resolution.rawInput}
+        />
       </div>
     );
   }
@@ -247,12 +255,15 @@ function BusinessDescriptionForm({
   label: string;
   turnKind: "initial" | "clarification";
 }) {
+  const [turnId] = useState(() => crypto.randomUUID());
+
   return (
     <form action={action} className="mt-6 space-y-4">
       <ConversationIntent
         accountSubdomain={accountSubdomain}
         intent="describe_business"
       />
+      <input name="turn_id" type="hidden" value={turnId} />
       <input name="business_turn_kind" type="hidden" value={turnKind} />
       <FormField>
         <FormFieldLabel htmlFor="business_description">{label}</FormFieldLabel>
@@ -284,12 +295,15 @@ function ResolutionOptionForm({
   disabled: boolean;
   option: ActionableNicheResolution["options"][number];
 }) {
+  const [turnId] = useState(() => crypto.randomUUID());
+
   return (
     <form action={action}>
       <ConversationIntent
         accountSubdomain={accountSubdomain}
         intent="confirm_option"
       />
+      <input name="turn_id" type="hidden" value={turnId} />
       {option.isOfficial && option.taxonId ? (
         <input name="taxon_id" type="hidden" value={option.taxonId} />
       ) : (
@@ -299,6 +313,56 @@ function ResolutionOptionForm({
         {option.name}
       </Button>
     </form>
+  );
+}
+
+function FallbackConfirmationForm({
+  accountSubdomain,
+  action,
+  disabled,
+  rawInput,
+}: {
+  accountSubdomain: string;
+  action: (payload: FormData) => void;
+  disabled: boolean;
+  rawInput: string;
+}) {
+  const [turnId] = useState(() => crypto.randomUUID());
+
+  return (
+    <form action={action}>
+      <ConversationIntent
+        accountSubdomain={accountSubdomain}
+        intent="confirm_fallback"
+      />
+      <input name="turn_id" type="hidden" value={turnId} />
+      <Button
+        className="bg-white text-ink-900 ring-1 ring-surface-border hover:bg-graytech-50"
+        disabled={disabled}
+        type="submit"
+      >
+        Seguir com “{rawInput}”
+      </Button>
+    </form>
+  );
+}
+
+function ConversationHistory({ turns }: { turns: PendingSetupConversationTurn[] }) {
+  return (
+    <ol aria-label="Histórico da conversa" className="mt-6 space-y-4">
+      {turns.map((turn) => (
+        <li className="space-y-2" key={turn.id}>
+          <div className="ml-auto max-w-[88%] rounded-xl bg-brand-50 px-4 py-3 text-sm leading-6 text-ink-900">
+            <span className="sr-only">Você: </span>
+            {turn.userMessage}
+          </div>
+          <div className="max-w-[88%] rounded-xl bg-graytech-50 px-4 py-3 text-sm leading-6 text-graytech-700">
+            <span className="sr-only">LP Factory: </span>
+            {turn.productMessage ?? "Turno salvo. Continue para concluir."}
+          </div>
+        </li>
+      ))}
+    </ol>
   );
 }
 
@@ -332,7 +396,9 @@ function businessSnapshotKey(business: PendingSetupBusinessSnapshot): string {
   if (business.kind === "awaiting_confirmation") {
     return `${business.kind}:${business.resolution.rawInput}`;
   }
-  if (business.kind === "ready_official") return `${business.kind}:${business.taxonName}`;
+  if (business.kind === "ready_official") {
+    return `${business.kind}:${business.rawInput}:${business.taxonName}`;
+  }
   if (business.kind === "ready_fallback") return `${business.kind}:${business.description}`;
   return business.kind;
 }

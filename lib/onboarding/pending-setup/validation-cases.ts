@@ -11,7 +11,13 @@ import {
   type PendingSetupBusinessDependencies,
   validateBusinessDescription,
 } from "./businessConversationCore";
-import { validatePreferredName } from "./contracts";
+import { reconcilePendingSetupTurnRetry } from "./conversationHistoryCore";
+import {
+  type PendingSetupConversationTurn,
+  presentPendingSetupBusinessTurn,
+  validatePendingSetupTurnId,
+  validatePreferredName,
+} from "./contracts";
 
 assert.deepEqual(validatePreferredName("  Alcino   Afonso  "), {
   ok: true,
@@ -19,6 +25,29 @@ assert.deepEqual(validatePreferredName("  Alcino   Afonso  "), {
 });
 assert.equal(validatePreferredName("   ").ok, false);
 assert.equal(validatePreferredName("x".repeat(81)).ok, false);
+assert.equal(
+  validatePendingSetupTurnId("d9428888-122b-4c2e-941f-70a76fb55e37"),
+  "d9428888-122b-4c2e-941f-70a76fb55e37",
+);
+assert.equal(validatePendingSetupTurnId("d9428888-122b-1c2e-941f-70a76fb55e37"), null);
+assert.equal(validatePendingSetupTurnId("not-a-turn-id"), null);
+const maximumFallbackDescription = "x".repeat(500);
+assert.deepEqual(
+  presentPendingSetupBusinessTurn({
+    kind: "ready_fallback",
+    description: maximumFallbackDescription,
+  }),
+  {
+    state: "ready_fallback",
+    message: `Entendimento operacional confirmado: ${maximumFallbackDescription}.`,
+  },
+);
+assert.ok(
+  presentPendingSetupBusinessTurn({
+    kind: "ready_fallback",
+    description: maximumFallbackDescription,
+  })!.message.length <= 600,
+);
 
 assert.deepEqual(validateBusinessDescription("  consultoria   financeira  "), {
   ok: true,
@@ -279,9 +308,221 @@ async function runBusinessConversationCases(): Promise<void> {
 
 }
 
-runBusinessConversationCases()
+async function runConversationHistoryRetryCases(): Promise<void> {
+  const scenarios = [
+    {
+      name: "business description",
+      turnKind: "business_description" as const,
+      userMessage: "consultoria",
+      business: {
+        kind: "awaiting_confirmation" as const,
+        resolution: {
+          accountId: "account-1",
+          uxMode: "fallback_review" as const,
+          options: [],
+          suggestedTaxon: null,
+          rawInput: "consultoria",
+        },
+      },
+    },
+    {
+      name: "clarification",
+      turnKind: "clarification" as const,
+      userMessage: "para clínicas",
+      business: {
+        kind: "awaiting_confirmation" as const,
+        resolution: {
+          accountId: "account-1",
+          uxMode: "fallback_review" as const,
+          options: [],
+          suggestedTaxon: null,
+          rawInput: "consultoria. para clínicas",
+        },
+      },
+    },
+    {
+      name: "business description auto-link",
+      turnKind: "business_description" as const,
+      userMessage: "agência digital",
+      business: {
+        kind: "ready_official" as const,
+        rawInput: "agência digital",
+        taxonName: "Agência de marketing digital",
+      },
+    },
+    {
+      name: "official confirmation",
+      turnKind: "official_confirmation" as const,
+      userMessage: "Consultoria financeira",
+      business: {
+        kind: "ready_official" as const,
+        rawInput: "consultoria para clínicas",
+        taxonName: "Consultoria financeira",
+      },
+    },
+    {
+      name: "operational confirmation",
+      turnKind: "operational_confirmation" as const,
+      userMessage: "Consultoria artesanal",
+      business: { kind: "ready_fallback" as const, description: "Consultoria artesanal" },
+    },
+    {
+      name: "fallback confirmation",
+      turnKind: "fallback_confirmation" as const,
+      userMessage: "Serviço artesanal",
+      business: { kind: "ready_fallback" as const, description: "Serviço artesanal" },
+    },
+  ];
+
+  for (const [index, scenario] of scenarios.entries()) {
+    const turn: PendingSetupConversationTurn = {
+      id: `d9428888-122b-4c2e-941f-70a76fb55e3${index}`,
+      userMessage: scenario.userMessage,
+      turnKind: scenario.turnKind,
+      status: "pending",
+      productState: null,
+      productMessage: null,
+      createdAt: "2026-09-20T12:00:00.000Z",
+      completedAt: null,
+    };
+    const finalizedTurnIds = new Set<string>();
+    let completionAttempts = 0;
+    const complete = async () => {
+      completionAttempts += 1;
+      if (completionAttempts === 1) return false;
+      finalizedTurnIds.add(turn.id);
+      return true;
+    };
+
+    assert.equal(
+      await reconcilePendingSetupTurnRetry(turn, scenario.business, complete),
+      "persist_failed",
+      `${scenario.name}: first history completion must remain retryable`,
+    );
+    assert.equal(
+      await reconcilePendingSetupTurnRetry(turn, scenario.business, complete),
+      "completed",
+      `${scenario.name}: retry must reconcile from canonical state`,
+    );
+    assert.equal(finalizedTurnIds.size, 1, `${scenario.name}: exactly one turn must finish`);
+  }
+
+  let prematureCompletion = false;
+  const confirmationBeforeMutation: PendingSetupConversationTurn = {
+    id: "d9428888-122b-4c2e-941f-70a76fb55e39",
+    userMessage: "Consultoria financeira",
+    turnKind: "official_confirmation",
+    status: "pending",
+    productState: null,
+    productMessage: null,
+    createdAt: "2026-09-20T12:00:00.000Z",
+    completedAt: null,
+  };
+  assert.equal(
+    await reconcilePendingSetupTurnRetry(
+      confirmationBeforeMutation,
+      scenarios[0].business,
+      async () => {
+        prematureCompletion = true;
+        return true;
+      },
+    ),
+    "not_ready",
+  );
+  assert.equal(prematureCompletion, false);
+
+  const crossedStates = [
+    {
+      turn: { ...confirmationBeforeMutation, turnKind: "official_confirmation" as const },
+      business: { kind: "ready_fallback" as const, description: "Consultoria" },
+    },
+    {
+      turn: { ...confirmationBeforeMutation, turnKind: "operational_confirmation" as const },
+      business: {
+        kind: "ready_official" as const,
+        rawInput: "consultoria",
+        taxonName: "Consultoria",
+      },
+    },
+    {
+      turn: { ...confirmationBeforeMutation, turnKind: "fallback_confirmation" as const },
+      business: {
+        kind: "ready_official" as const,
+        rawInput: "consultoria",
+        taxonName: "Consultoria",
+      },
+    },
+    {
+      turn: { ...confirmationBeforeMutation, turnKind: "business_description" as const },
+      business: { kind: "ready_fallback" as const, description: "Consultoria" },
+    },
+    {
+      turn: { ...confirmationBeforeMutation, turnKind: "clarification" as const },
+      business: { kind: "ready_fallback" as const, description: "Consultoria" },
+    },
+  ];
+  for (const crossed of crossedStates) {
+    assert.equal(
+      await reconcilePendingSetupTurnRetry(crossed.turn, crossed.business, async () => true),
+      "not_ready",
+      `${crossed.turn.turnKind} must not consume another operation's canonical state`,
+    );
+  }
+
+  const divergentSameKindStates = [
+    {
+      turn: { ...confirmationBeforeMutation, turnKind: "official_confirmation" as const },
+      business: {
+        kind: "ready_official" as const,
+        rawInput: "consultoria financeira",
+        taxonName: "Contabilidade",
+      },
+    },
+    {
+      turn: { ...confirmationBeforeMutation, turnKind: "operational_confirmation" as const },
+      business: { kind: "ready_fallback" as const, description: "Contabilidade" },
+    },
+    {
+      turn: { ...confirmationBeforeMutation, turnKind: "fallback_confirmation" as const },
+      business: { kind: "ready_fallback" as const, description: "Contabilidade" },
+    },
+    {
+      turn: {
+        ...confirmationBeforeMutation,
+        turnKind: "business_description" as const,
+        userMessage: "consultoria financeira",
+      },
+      business: {
+        kind: "ready_official" as const,
+        rawInput: "contabilidade",
+        taxonName: "Contabilidade",
+      },
+    },
+    {
+      turn: {
+        ...confirmationBeforeMutation,
+        turnKind: "clarification" as const,
+        userMessage: "para clínicas",
+      },
+      business: {
+        kind: "ready_official" as const,
+        rawInput: "consultoria. para varejo",
+        taxonName: "Consultoria",
+      },
+    },
+  ];
+  for (const divergent of divergentSameKindStates) {
+    assert.equal(
+      await reconcilePendingSetupTurnRetry(divergent.turn, divergent.business, async () => true),
+      "not_ready",
+      `${divergent.turn.turnKind} must correlate the same canonical mutation`,
+    );
+  }
+}
+
+Promise.all([runBusinessConversationCases(), runConversationHistoryRetryCases()])
   .then(() => {
-    console.log("ok - E10.9.3 identity and E10.9.4 business conversation contracts");
+    console.log("ok - E10.9.3 to E10.9.5 pending setup contracts");
   })
   .catch((error) => {
     console.error(error);

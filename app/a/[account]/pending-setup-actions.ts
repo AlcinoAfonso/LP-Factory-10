@@ -13,6 +13,12 @@ import {
   rewriteAiNicheResolutionForAccount,
 } from "../../../lib/onboarding/niche-resolution/adapters/accountNicheResolutionUserAdapter";
 import {
+  beginPendingSetupConversationTurn,
+  completePendingSetupConversationTurn,
+  readPendingSetupConversationHistory,
+  readPendingSetupConversationTurn,
+} from "../../../lib/onboarding/pending-setup/adapters/conversationHistoryAdapter";
+import {
   readUserIdentityPreference,
   saveUserIdentityPreference,
 } from "../../../lib/onboarding/pending-setup/adapters/userIdentityPreferenceAdapter";
@@ -24,9 +30,17 @@ import {
   appendBusinessClarification,
   validateBusinessDescription,
 } from "../../../lib/onboarding/pending-setup/businessConversationCore";
+import {
+  canReconcilePendingSetupTurn,
+  reconcilePendingSetupTurnRetry,
+} from "../../../lib/onboarding/pending-setup/conversationHistoryCore";
 import { isConversationalPendingSetupEnabled } from "../../../lib/onboarding/pending-setup/config";
 import {
   type PendingSetupBusinessSnapshot,
+  type PendingSetupConversationTurn,
+  type PendingSetupConversationTurnKind,
+  presentPendingSetupBusinessTurn,
+  validatePendingSetupTurnId,
   validatePreferredName,
 } from "../../../lib/onboarding/pending-setup/contracts";
 
@@ -34,6 +48,7 @@ export type PendingSetupConversationState = {
   ok: boolean;
   preferredName?: string;
   business?: PendingSetupBusinessSnapshot;
+  history?: PendingSetupConversationTurn[];
   error?: string;
 };
 
@@ -64,11 +79,19 @@ export async function continuePendingSetupConversationAction(
         userId: allowed.userId,
         preferredName: parsed.value,
       });
+      const [business, history] = await Promise.all([
+        loadPendingSetupBusinessSnapshot(allowed.accountId),
+        readPendingSetupConversationHistory({
+          accountId: allowed.accountId,
+          ownerUserId: allowed.userId,
+        }),
+      ]);
       revalidatePath(allowed.route);
       return {
         ok: true,
         preferredName: saved.preferredName,
-        business: await loadPendingSetupBusinessSnapshot(allowed.accountId),
+        business,
+        history,
       };
     } catch {
       return { ...previous, ok: false, error: "Não foi possível salvar seu nome agora." };
@@ -83,12 +106,36 @@ export async function continuePendingSetupConversationAction(
     const parsed = validateBusinessDescription(formData.get("business_description"));
     if (!parsed.ok) return { ...previous, ok: false, error: parsed.error };
 
+    const turnKind = String(formData.get("business_turn_kind") ?? "");
+    if (turnKind !== "initial" && turnKind !== "clarification") {
+      return { ...previous, ok: false, error: GENERIC_ERROR };
+    }
+    const recordedKind: PendingSetupConversationTurnKind = turnKind === "clarification"
+      ? "clarification"
+      : "business_description";
+    const turnId = validatePendingSetupTurnId(formData.get("turn_id"));
+    if (!turnId) return { ...previous, ok: false, error: GENERIC_ERROR };
+
+    const resumed = await resumeExistingRecordedTurn(allowed, turnId, [recordedKind]);
+    if (resumed.kind === "response") return resumed.state;
+    if (
+      resumed.kind === "resumed" &&
+      normalizeComparable(resumed.turn.userMessage) !== normalizeComparable(parsed.value)
+    ) {
+      return { ...previous, ok: false, error: GENERIC_ERROR };
+    }
+    if (
+      resumed.kind === "resumed" &&
+      canReconcilePendingSetupTurn(resumed.turn, resumed.business)
+    ) {
+      return reconcileRecordedTurn(allowed, resumed.turn, resumed.business);
+    }
+
     const resolutionLookup = await readActionablePendingSetupNicheResolutionForAccount({
       accountId: allowed.accountId,
     });
     if (!resolutionLookup.ok) return { ...previous, ok: false, error: GENERIC_ERROR };
 
-    const turnKind = String(formData.get("business_turn_kind") ?? "");
     const currentResolution = resolutionLookup.resolution;
     if (turnKind === "initial" && currentResolution) {
       return { ...previous, ok: false, error: GENERIC_ERROR };
@@ -96,72 +143,184 @@ export async function continuePendingSetupConversationAction(
     if (turnKind === "clarification" && !currentResolution) {
       return { ...previous, ok: false, error: GENERIC_ERROR };
     }
-    if (turnKind !== "initial" && turnKind !== "clarification") {
-      return { ...previous, ok: false, error: GENERIC_ERROR };
-    }
-
     const description = turnKind === "clarification"
       ? appendBusinessClarification(currentResolution!.rawInput, parsed.value)
       : appendBusinessClarification(resolutionLookup.recoverableRawInput, parsed.value);
     if (!description.ok) return { ...previous, ok: false, error: description.error };
 
-    const result = await processPendingSetupBusiness({
-      accountId: allowed.accountId,
-      rawInput: description.value,
-    });
-    if (!result.ok) return { ...previous, ok: false, error: GENERIC_ERROR };
+    if (resumed.kind === "none") {
+      const started = await beginPendingSetupConversationTurn({
+        accountId: allowed.accountId,
+        ownerUserId: allowed.userId,
+        turnId,
+        userMessage: parsed.value,
+        turnKind: recordedKind,
+      });
+      if (!started.ok || started.status === "in_progress") {
+        return { ...previous, ok: false, error: GENERIC_ERROR };
+      }
+      if (started.status === "completed") return loadConversationState(allowed, true);
+    }
 
-    revalidatePath(allowed.route);
-    return {
-      ok: true,
-      preferredName: allowed.preferredName,
-      business: await loadPendingSetupBusinessSnapshot(allowed.accountId),
-    };
+    try {
+      const result = await processPendingSetupBusiness({
+        accountId: allowed.accountId,
+        rawInput: description.value,
+      });
+      if (!result.ok) {
+        return failRecordedTurn(allowed, turnId, result.reason, previous);
+      }
+
+      const business = await loadPendingSetupBusinessSnapshot(allowed.accountId);
+      if (!(await completeRecordedTurn(allowed.accountId, turnId, business))) {
+        return failRecordedTurn(allowed, turnId, "turn_completion_failed", previous);
+      }
+      revalidatePath(allowed.route);
+      return loadConversationState(allowed, true, business);
+    } catch {
+      return failRecordedTurn(allowed, turnId, "business_turn_failed", previous);
+    }
   }
 
   if (intent === "confirm_option") {
+    const turnId = validatePendingSetupTurnId(formData.get("turn_id"));
+    if (!turnId) return { ...previous, ok: false, error: GENERIC_ERROR };
+    const resumed = await resumeExistingRecordedTurn(allowed, turnId, [
+      "official_confirmation",
+      "operational_confirmation",
+    ]);
+    if (resumed.kind === "response") return resumed.state;
+    if (
+      resumed.kind === "resumed" &&
+      canReconcilePendingSetupTurn(resumed.turn, resumed.business)
+    ) {
+      return reconcileRecordedTurn(allowed, resumed.turn, resumed.business);
+    }
+
     const resolution = await getActionablePendingSetupNicheResolutionForAccount({
       accountId: allowed.accountId,
     });
-    if (!resolution) return { ...previous, ok: false, error: GENERIC_ERROR };
+    if (!resolution) {
+      return resumed.kind === "resumed"
+        ? failRecordedTurn(allowed, turnId, "confirmation_state_missing", previous)
+        : { ...previous, ok: false, error: GENERIC_ERROR };
+    }
 
-    const result = resolution.uxMode === "confirm_single"
-      ? await confirmPendingSetupAiSuggestedTaxonForAccount({ accountId: allowed.accountId })
-      : await confirmPendingSetupAiOptionForAccount({
-          accountId: allowed.accountId,
-          taxonId: normalizeOptional(formData.get("taxon_id")),
-          optionName: normalizeOptional(formData.get("option_name")),
-        });
-    if (!result.ok) return { ...previous, ok: false, error: GENERIC_ERROR };
+    const taxonId = normalizeOptional(formData.get("taxon_id"));
+    const optionName = normalizeOptional(formData.get("option_name"));
+    const selectedOption = resolution.uxMode === "confirm_single"
+      ? resolution.suggestedTaxon
+      : resolution.options.find((option) =>
+          taxonId
+            ? option.isOfficial && option.taxonId === taxonId
+            : !option.isOfficial && normalizeComparable(option.name) === normalizeComparable(optionName),
+        ) ?? null;
+    if (!selectedOption) return { ...previous, ok: false, error: GENERIC_ERROR };
 
-    revalidatePath(allowed.route);
-    return {
-      ok: true,
-      preferredName: allowed.preferredName,
-      business: await loadPendingSetupBusinessSnapshot(allowed.accountId),
-    };
+    const selectedTurnKind: PendingSetupConversationTurnKind = selectedOption.isOfficial
+      ? "official_confirmation"
+      : "operational_confirmation";
+    if (
+      resumed.kind === "resumed" &&
+      (resumed.turn.turnKind !== selectedTurnKind ||
+        normalizeComparable(resumed.turn.userMessage) !== normalizeComparable(selectedOption.name))
+    ) {
+      return { ...previous, ok: false, error: GENERIC_ERROR };
+    }
+    if (resumed.kind === "none") {
+      const started = await beginPendingSetupConversationTurn({
+        accountId: allowed.accountId,
+        ownerUserId: allowed.userId,
+        turnId,
+        userMessage: selectedOption.name,
+        turnKind: selectedTurnKind,
+      });
+      if (!started.ok || started.status === "in_progress") {
+        return { ...previous, ok: false, error: GENERIC_ERROR };
+      }
+      if (started.status === "completed") return loadConversationState(allowed, true);
+    }
+
+    try {
+      const result = resolution.uxMode === "confirm_single"
+        ? await confirmPendingSetupAiSuggestedTaxonForAccount({ accountId: allowed.accountId })
+        : await confirmPendingSetupAiOptionForAccount({
+            accountId: allowed.accountId,
+            taxonId,
+            optionName,
+          });
+      if (!result.ok) return failRecordedTurn(allowed, turnId, result.reason, previous);
+
+      const business = await loadPendingSetupBusinessSnapshot(allowed.accountId);
+      if (!(await completeRecordedTurn(allowed.accountId, turnId, business))) {
+        return failRecordedTurn(allowed, turnId, "turn_completion_failed", previous);
+      }
+      revalidatePath(allowed.route);
+      return loadConversationState(allowed, true, business);
+    } catch {
+      return failRecordedTurn(allowed, turnId, "confirmation_turn_failed", previous);
+    }
   }
 
   if (intent === "confirm_fallback") {
+    const turnId = validatePendingSetupTurnId(formData.get("turn_id"));
+    if (!turnId) return { ...previous, ok: false, error: GENERIC_ERROR };
+    const resumed = await resumeExistingRecordedTurn(allowed, turnId, [
+      "fallback_confirmation",
+    ]);
+    if (resumed.kind === "response") return resumed.state;
+    if (
+      resumed.kind === "resumed" &&
+      canReconcilePendingSetupTurn(resumed.turn, resumed.business)
+    ) {
+      return reconcileRecordedTurn(allowed, resumed.turn, resumed.business);
+    }
+
     const resolution = await getActionablePendingSetupNicheResolutionForAccount({
       accountId: allowed.accountId,
     });
     if (!resolution || resolution.uxMode !== "fallback_review" || !resolution.rawInput) {
-      return { ...previous, ok: false, error: GENERIC_ERROR };
+      return resumed.kind === "resumed"
+        ? failRecordedTurn(allowed, turnId, "fallback_state_missing", previous)
+        : { ...previous, ok: false, error: GENERIC_ERROR };
     }
 
-    const result = await rewriteAiNicheResolutionForAccount({
-      accountId: allowed.accountId,
-      rewriteInput: resolution.rawInput,
-    });
-    if (!result.ok) return { ...previous, ok: false, error: GENERIC_ERROR };
+    if (
+      resumed.kind === "resumed" &&
+      normalizeComparable(resumed.turn.userMessage) !== normalizeComparable(resolution.rawInput)
+    ) {
+      return { ...previous, ok: false, error: GENERIC_ERROR };
+    }
+    if (resumed.kind === "none") {
+      const started = await beginPendingSetupConversationTurn({
+        accountId: allowed.accountId,
+        ownerUserId: allowed.userId,
+        turnId,
+        userMessage: resolution.rawInput,
+        turnKind: "fallback_confirmation",
+      });
+      if (!started.ok || started.status === "in_progress") {
+        return { ...previous, ok: false, error: GENERIC_ERROR };
+      }
+      if (started.status === "completed") return loadConversationState(allowed, true);
+    }
 
-    revalidatePath(allowed.route);
-    return {
-      ok: true,
-      preferredName: allowed.preferredName,
-      business: await loadPendingSetupBusinessSnapshot(allowed.accountId),
-    };
+    try {
+      const result = await rewriteAiNicheResolutionForAccount({
+        accountId: allowed.accountId,
+        rewriteInput: resolution.rawInput,
+      });
+      if (!result.ok) return failRecordedTurn(allowed, turnId, result.reason, previous);
+
+      const business = await loadPendingSetupBusinessSnapshot(allowed.accountId);
+      if (!(await completeRecordedTurn(allowed.accountId, turnId, business))) {
+        return failRecordedTurn(allowed, turnId, "turn_completion_failed", previous);
+      }
+      revalidatePath(allowed.route);
+      return loadConversationState(allowed, true, business);
+    } catch {
+      return failRecordedTurn(allowed, turnId, "fallback_turn_failed", previous);
+    }
   }
 
   return { ...previous, ok: false, error: GENERIC_ERROR };
@@ -213,4 +372,162 @@ async function getAllowedPendingSetupContext(
 function normalizeOptional(value: FormDataEntryValue | null): string | null {
   const normalized = String(value ?? "").trim();
   return normalized || null;
+}
+
+function normalizeComparable(value: string | null): string {
+  return String(value ?? "").trim().replace(/\s+/g, " ").toLocaleLowerCase("pt-BR");
+}
+
+type ExistingTurnResume =
+  | { kind: "none" }
+  | {
+      kind: "resumed";
+      business: PendingSetupBusinessSnapshot;
+      turn: PendingSetupConversationTurn;
+    }
+  | { kind: "response"; state: PendingSetupConversationState };
+
+async function resumeExistingRecordedTurn(
+  allowed: AllowedPendingSetupContext,
+  turnId: string,
+  allowedKinds: PendingSetupConversationTurnKind[],
+): Promise<ExistingTurnResume> {
+  let turn: PendingSetupConversationTurn | null;
+  try {
+    turn = await readPendingSetupConversationTurn({
+      accountId: allowed.accountId,
+      ownerUserId: allowed.userId,
+      turnId,
+    });
+  } catch {
+    return { kind: "response", state: { ok: false, error: GENERIC_ERROR } };
+  }
+  if (!turn) return { kind: "none" };
+  if (!allowedKinds.includes(turn.turnKind)) {
+    return { kind: "response", state: { ok: false, error: GENERIC_ERROR } };
+  }
+
+  const started = await beginPendingSetupConversationTurn({
+    accountId: allowed.accountId,
+    ownerUserId: allowed.userId,
+    turnId,
+    userMessage: turn.userMessage,
+    turnKind: turn.turnKind,
+  });
+  if (!started.ok || started.status === "in_progress" || started.status === "created") {
+    return { kind: "response", state: { ok: false, error: GENERIC_ERROR } };
+  }
+  if (started.status === "completed") {
+    return { kind: "response", state: await loadConversationState(allowed, true) };
+  }
+
+  try {
+    return {
+      kind: "resumed",
+      business: await loadPendingSetupBusinessSnapshot(allowed.accountId),
+      turn,
+    };
+  } catch {
+    return { kind: "response", state: { ok: false, error: GENERIC_ERROR } };
+  }
+}
+
+async function reconcileRecordedTurn(
+  allowed: AllowedPendingSetupContext,
+  turn: PendingSetupConversationTurn,
+  business: PendingSetupBusinessSnapshot,
+): Promise<PendingSetupConversationState> {
+  const result = await reconcilePendingSetupTurnRetry(
+    turn,
+    business,
+    async (presentation) => completePendingSetupConversationTurn({
+      accountId: allowed.accountId,
+      turnId: turn.id,
+      status: "completed",
+      productState: presentation.state,
+      productMessage: presentation.message,
+      failureCode: null,
+    }),
+  );
+  if (result !== "completed") return { ok: false, error: GENERIC_ERROR };
+  revalidatePath(allowed.route);
+  return loadConversationState(allowed, true, business);
+}
+
+async function loadConversationState(
+  allowed: AllowedPendingSetupContext,
+  ok: boolean,
+  business?: PendingSetupBusinessSnapshot,
+): Promise<PendingSetupConversationState> {
+  try {
+    const [resolvedBusiness, history] = await Promise.all([
+      business
+        ? Promise.resolve(business)
+        : loadPendingSetupBusinessSnapshot(allowed.accountId),
+      readPendingSetupConversationHistory({
+        accountId: allowed.accountId,
+        ownerUserId: allowed.userId,
+      }),
+    ]);
+    return {
+      ok,
+      preferredName: allowed.preferredName ?? undefined,
+      business: resolvedBusiness,
+      history,
+    };
+  } catch {
+    return {
+      ok: false,
+      preferredName: allowed.preferredName ?? undefined,
+      error: GENERIC_ERROR,
+    };
+  }
+}
+
+async function completeRecordedTurn(
+  accountId: string,
+  turnId: string,
+  business: PendingSetupBusinessSnapshot,
+): Promise<boolean> {
+  const presentation = presentPendingSetupBusinessTurn(business);
+  if (!presentation) return false;
+  return completePendingSetupConversationTurn({
+    accountId,
+    turnId,
+    status: "completed",
+    productState: presentation.state,
+    productMessage: presentation.message,
+    failureCode: null,
+  });
+}
+
+async function failRecordedTurn(
+  allowed: AllowedPendingSetupContext,
+  turnId: string,
+  failureCode: string,
+  previous: PendingSetupConversationState,
+): Promise<PendingSetupConversationState> {
+  await completePendingSetupConversationTurn({
+    accountId: allowed.accountId,
+    turnId,
+    status: "failed",
+    productState: "failure",
+    productMessage: "Não foi possível concluir este turno. Você pode tentar novamente.",
+    failureCode: failureCode.slice(0, 80),
+  });
+  let history = previous.history;
+  try {
+    history = await readPendingSetupConversationHistory({
+      accountId: allowed.accountId,
+      ownerUserId: allowed.userId,
+    });
+  } catch {
+    // Preserve the retryable form state even when the refreshed history is unavailable.
+  }
+  return {
+    ...previous,
+    ok: false,
+    history,
+    error: GENERIC_ERROR,
+  };
 }

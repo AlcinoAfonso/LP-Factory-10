@@ -19,6 +19,7 @@ export default async function Page({ params }: PageProps) {
       <PendingSetupConversation
         accountSubdomain={accountSubdomain}
         business={journey.business}
+        history={journey.history}
         preferredName={journey.preferredName}
       />
     );
