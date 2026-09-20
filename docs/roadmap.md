@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 16/09/2026
-• Versão: v1.5.235
+• Data: 20/09/2026
+• Versão: v1.5.236
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -735,7 +735,7 @@
 10. E10 — Account Dashboard e jornada da conta
 
 - Objetivo: consolidar a experiência pós-login por conta, da navegação multi-conta e do setup inicial à resolução de nicho e à apresentação comercial, preservando decisões server-side de acesso, papel, entitlement e estado operacional.
-- Status: os fluxos principais estão implementados; permanecem como lacunas do E10 a ação inefetiva de criar outra conta no switcher, a ausência dos eventos específicos do switcher e a edição manual de copy da página comercial personalizada.
+- Status: os fluxos principais estão implementados; permanecem como lacunas do E10 a ação inefetiva de criar outra conta no switcher, a ausência dos eventos específicos do switcher, a edição manual de copy da página comercial personalizada e a substituição planejada do Pending Setup pela jornada E10.9.
 
 10.3 Navegação multi-conta e cabeçalho
 
@@ -974,6 +974,28 @@
 - E20.5 e E20.6 preservam a seleção e a avaliação da pesquisa integral `end_customer`, sem consumidor no fluxo retirado de Landing Pages.
 - Os objetos `taxon_market_research` e `taxon_market_research_items` e seus consumidores independentes permanecem preservados.
 - O inventário material da retirada reside em E22.1.2.
+
+10.9 Pending Setup pré-comercial e continuidade conversacional
+
+10.9.1 Objetivo e status
+- Objetivo: substituir a experiência E10.4 por uma jornada conversacional pré-comercial que receba a pessoa, compreenda o negócio, resolva ou preserve operacionalmente o nicho, mantenha histórico por relação usuário/conta e promova `pending_setup` para `active` sem criar entitlement.
+- Status: planejado; plano-base v2 aprovado, implementação ainda não iniciada.
+
+10.9.3 Entrada e identidade sem fricção
+- Status: planejado.
+- Conteúdo: criar entrada única após confirmação de e-mail, reutilizar nome preferido válido ou perguntar uma vez quando ausente e iniciar a conversa por pergunta aberta, sem exigir Site/LP, canal preferido ou “Nome do projeto”.
+
+10.9.4 Conversa adaptativa e resolução do nicho
+- Status: planejado.
+- Conteúdo: executar matching determinístico antes da IA, usar o workload `niche_resolution` somente quando houver ambiguidade, exigir confirmação humana de sugestão oficial e manter fallback operacional sem inventar taxon.
+
+10.9.5 Histórico conversacional e retomada
+- Status: planejado.
+- Conteúdo: persistir turnos e estado por relação usuário/conta, permitir retomada executável enquanto a conta estiver `pending_setup` e preservar o histórico, sem chat executável, após a promoção para `active`.
+
+10.9.6 Conclusão, cutover e passagem ao comercial
+- Status: planejado.
+- Conteúdo: concluir de forma transacional e idempotente, promover a conta sem entitlement, preservar gates comerciais e retirar a entrada executável E10.4 no mesmo cutover após equivalência funcional e ordem segura entre migration e Production.
 
 11. E11 — Gestão de membros e autoridade comercial
 
