@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 16/09/2026
-• Versão: v1.5.235
+• Data: 20/09/2026
+• Versão: v1.5.236
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -974,6 +974,32 @@
 - E20.5 e E20.6 preservam a seleção e a avaliação da pesquisa integral `end_customer`, sem consumidor no fluxo retirado de Landing Pages.
 - Os objetos `taxon_market_research` e `taxon_market_research_items` e seus consumidores independentes permanecem preservados.
 - O inventário material da retirada reside em E22.1.2.
+
+10.9 Pending Setup pré-comercial e continuidade conversacional
+
+10.9.1 Objetivo e status
+- Objetivo: receber o usuário após a confirmação do acesso, preservar sua identidade preferida, compreender o negócio por conversa progressiva, resolver o nicho com segurança ou fallback explícito e preparar a passagem para a experiência comercial.
+- Status: planejado; execução ainda não iniciada.
+
+10.9.3 Entrada e identidade sem fricção
+- A experiência ocorre na primeira conta `pending_setup`, antes de trial ou compra, e pergunta o nome preferido somente quando ele não estiver disponível para o usuário.
+- Site/LP, canal preferido e “Nome do projeto” não são perguntas obrigatórias; `accounts.name`, dados históricos e WhatsApp informado permanecem preservados.
+
+10.9.4 Conversa adaptativa e resolução do nicho
+- A conversa começa com uma pergunta aberta sobre o negócio e acrescenta no máximo uma pergunta por turno, somente quando necessária para reduzir ambiguidade.
+- Matching e confiança determinísticos precedem a IA; resolução automática exige taxon oficial único e seguro, inferência material exige confirmação e ambiguidade relevante mantém o diálogo.
+- Quando nenhum taxon oficial representar o negócio, o entendimento operacional permanece em texto e a conta pode seguir para o comercial genérico sem vínculo oficial inventado.
+- Responses API direta e Structured Outputs permanecem no workload `niche_resolution`; Agents SDK, agente autônomo, job, fila, novo service e dependência obrigatória de Conversations ficam fora.
+
+10.9.5 Histórico conversacional e retomada
+- O histórico canônico permanece associado ao mesmo usuário e à mesma conta para retomada após saída, ativação e eventual conversão.
+- Texto livre e histórico conversacional não substituem `account_taxonomy`, não se tornam fato oficial e não ampliam o recorte para CRM ou omnichannel.
+
+10.9.6 Conclusão e passagem ao comercial
+- A conclusão válida promove `pending_setup` para `active` sem conceder entitlement; checkout, papel, membership e demais gates comerciais permanecem vigentes.
+- A experiência comercial usa personalização somente com taxon oficial competente e mantém o fallback genérico quando ele não existir.
+- Onboarding factual permanece fora deste recorte e, após conversão, depende de taxon oficial competente.
+- A jornada antiga só pode ser removida depois de prova de equivalência dos contratos preservados; schema, migrations e dados históricos não recebem limpeza destrutiva neste recorte.
 
 11. E11 — Gestão de membros e autoridade comercial
 
