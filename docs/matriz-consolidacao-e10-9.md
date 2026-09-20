@@ -2,9 +2,9 @@
 
 - Caso: Pending Setup pré-comercial conversacional.
 - V1: `f40248a69002483f8fb378f470ca73afd34475dd`, blob `48fb3e8c81b78369485fc43d0e2bc86c2b0cafc0`.
-- V2 candidata: `4e7ec3f6950dce04c324a40d53a226486a9f6903`, blob `29a7fdf32001868699784a5bc5b04c40ae40b165`.
+- V2 corrigida: `103ed07edaebece5d2f819c5b99a30acee12671b`, blob `7efea17fae416aa92bd6cd6ca1c3925fdc9c156c`.
 - Roadmap base: `b63241e62b79a51855f906e8cb80589f1d499930`, blob `3845dd92026e273ef3e7b64d9a5459802d1b3bce`.
-- Passagem 1 independente: `aprovado com correções obrigatórias`; quatro correções objetivas registradas abaixo, ainda não incorporadas.
+- Passagens 1 e 2: `aprovado com correções obrigatórias`; correções objetivas incorporadas na V2 candidata posterior e rastreadas abaixo para revisão delta.
 - Pareceres integrais: Gestor Estrutural `derivacao_inicial`, Gestor de Updates e Gestor de Automações, preservados no histórico desta task. Confronto estrutural de modernização: N/A, pois `prod#17` tem impacto estrutural baixo.
 
 | ID | Origem | Classe | Tratamento | Localização e evidência na V2 candidata | Destino / confronto |
@@ -51,10 +51,12 @@
 | vercel#29 | update; catálogo Vercel | ampliação de escopo | Não alterar cache/prefetch sem atraso medido | 4.1.7; passagem comercial preservada | Futuro condicionado a latência reproduzível; confronto N/A |
 | prod#3 | update; catálogo Produto | ampliação de escopo | Não criar gate de Speed Insights sem tráfego | 4.1.7; QA focal | Futuro condicionado a medição e responsável; confronto N/A |
 | prod#23 | update; catálogo Produto | ampliação de escopo | Não criar integração WhatsApp/Business Agent | Escopo negativo v1 4.1.3; V2 só preserva dado comercial | Futuro condicionado a recorte de canal; confronto N/A |
-| P1-01 | invariante técnico de autorização | derivação técnica da v1 | Correção obrigatória pendente: confirmação ainda em `pending_setup`, sem ação antiga exposta | V2 4.1.4 e `accountNicheResolutionUserAdapter.ts` | Revisão delta após Passagem 2 |
-| P1-02 | v1 4.1.3; consumidor histórico | derivação técnica da v1 | Correção obrigatória pendente: discriminador de conversa concluída no loader | V2 4.1.3; `NicheResolutionCard` | Revisão delta após Passagem 2 |
-| P1-03 | invariante técnico de falhas | derivação técnica da v1 | Correção obrigatória pendente: separar falha de transcript de falha de resolução automática | V2 4.1.1/4.1.4/4.1.6; `docs/base-tecnica.md` 3.14.5 | Revisão delta após Passagem 2 |
-| P1-04 | invariante técnico de rollout | derivação técnica da v1 | Correção obrigatória pendente: cutover entre migration aplicada e runtime novo | V2 4.1.6; migration e deploy | Revisão delta após Passagem 2 |
+| P1-01 | invariante técnico de autorização | derivação técnica da v1 | Operação focal permite confirmação em `pending_setup` sob guard completo; action histórica continua restrita a `active` | V2 4.1.4, “confirmação durante o Pending Setup” | Revisão delta |
+| P1-02 | v1 4.1.3; consumidor histórico | derivação técnica da v1 | `completed_at` + `completion_mode` suprimem card novo; ausência de conclusão mantém consumidor histórico acionável | V2 4.1.6, “discriminador e falhas” | Revisão delta |
+| P1-03 | invariante técnico de falhas | derivação técnica da v1 | Persistência de turno/conclusão falha fechada; matching/IA admite continuação ou fallback persistido | V2 4.1.6, “discriminador e falhas”; ABC de `docs/base-tecnica.md` | Revisão delta |
+| P1-04 | invariante técnico de rollout | derivação técnica da v1 | Migration aditiva, flag server-side desligada, apply/prova e redeploy do mesmo SHA antes da leitura nova | V2 4.1.6, “rollout”; `docs/platform-config.md` | Revisão delta |
+| P2-05 | condicionante factual estrutural | derivação técnica da v1 | Repetir busca por consumidor de onboarding factual; registrar ausência atual ou testar exigência de taxon oficial se surgir consumidor | V2 4.1.7, “validação por fase” | Revisão delta |
+| P2-06 | gate do Analista | derivação técnica da v1 | Atualizar matriz com tratamento e localização verificável de P1-01–04 e P2-05 | Linhas P1-01–04 e P2-05 desta matriz | Revisão delta |
 
 ## Ponto de residência de nome
 
