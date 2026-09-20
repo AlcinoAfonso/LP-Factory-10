@@ -171,7 +171,7 @@ Quando invocada por `$lp-factory-conduzir-plano-completo`:
 1. confirmar que branch, worktree e PR são os mesmos usados para produzir a V2;
 2. confirmar o checkpoint `plan-v2-approved`, a matriz versionada no mesmo PR e usar esse commit como contrato imutável;
 3. não criar branch, PR ou pedido de merge intermediário;
-4. não acionar Gestor Estrutural, Gestor de Updates ou Gestor de Automações; usar o Analista somente nas revisões previstas em 7.3 e 7.4;
+4. não acionar Gestor Estrutural, Gestor de Updates ou Gestor de Automações; usar o Analista somente na revisão focal prevista em 7.3;
 5. reutilizar checkpoints `LP-Factory-Phase: <identificador>` e continuar na próxima subseção pendente;
 6. antes da entrega técnica completa, se evidência factual questionar materialmente a estrutura da própria V2 ou exigir crescimento estrutural material não previsto, suspender somente o ponto afetado e devolvê-lo a `$lp-factory-conduzir-plano-completo`, conforme a seção 6 daquele contrato, com a identidade da execução, as referências imutáveis e conteúdos de V1/V2, o ponto/subseção suspensa, a evidência, os checkpoints e as fontes pertinentes; não escolher arquitetura, exigir correção tentada ou candidato nem acionar especialista diretamente. Aguardar a liberação do ponto pelo workflow; se a V2 continuar suficiente, derivar a correção ordinária e seguir o gate aplicável; se houver delta aprovado, retomar conforme a seção 7.2. Nas demais mudanças materiais fora da V2, encaminhar ao Analista e, se necessário, ao supervisor competente; não reiniciar especialistas.
 
