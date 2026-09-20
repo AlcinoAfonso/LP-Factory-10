@@ -150,7 +150,11 @@ export async function confirmPendingSetupAiOptionForAccount(input: {
       taxonId: option.taxonId,
     });
   }
-  return confirmOperationalChoice(input.accountId, option.name);
+  return confirmOperationalChoice(
+    input.accountId,
+    option.name,
+    PENDING_SETUP_OPERATIONAL_CHOICE_LIMIT,
+  );
 }
 
 export async function getConfirmedOperationalNicheResolutionLabel(input: {
