@@ -5,6 +5,7 @@ import type {
   DeterministicMatchDecision,
   TaxonMatchCandidate,
 } from "../contracts";
+import { z } from "zod";
 import { AI_NICHE_RESOLUTION_SCHEMA_VERSION } from "../contracts";
 import {
   createOpenAiWorkloadFailureEvent,
@@ -28,6 +29,8 @@ import {
 } from "../../../openai-costs";
 
 const OPENAI_RESPONSES_ENDPOINT = "https://api.openai.com/v1/responses";
+export const AI_NICHE_RESOLUTION_PROMPT_VERSION = "e10.9-pending-setup-v1";
+const OPENAI_TIMEOUT_MS = 20_000;
 const MAX_AI_OPTIONS = 3;
 
 const UX_MODES = new Set<AiNicheResolutionUxMode>([
@@ -66,6 +69,7 @@ export type ResolveAiNicheResolutionResult =
 
 type ResponsesApiResponse = {
   id?: unknown;
+  status?: unknown;
   usage?: unknown;
   output_text?: unknown;
   output?: Array<{
@@ -112,6 +116,7 @@ const AI_NICHE_RESOLUTION_SCHEMA = {
     message: { type: "string" },
     options: {
       type: "array",
+      maxItems: MAX_AI_OPTIONS,
       items: {
         type: "object",
         additionalProperties: false,
@@ -133,6 +138,24 @@ const AI_NICHE_RESOLUTION_SCHEMA = {
     reason: { type: "string" },
   },
 } as const;
+
+const STRICT_AI_NICHE_RESOLUTION_OUTPUT = z.object({
+  uxMode: z.enum(["none", "confirm_single", "choose_from_options", "fallback_review"]),
+  message: z.string(),
+  options: z.array(z.object({
+    taxonId: z.string().nullable(),
+    name: z.string(),
+    slug: z.string().nullable(),
+    confidence: z.enum(["high", "medium", "low"]),
+    reason: z.string(),
+    isOfficial: z.boolean(),
+  }).strict()).max(MAX_AI_OPTIONS),
+  needsAdminReview: z.boolean(),
+  needsUserConfirmation: z.boolean(),
+  shouldCreateOfficialLink: z.literal(false),
+  suggestedNewTaxonLabel: z.string().nullable(),
+  reason: z.string(),
+}).strict();
 
 const SYSTEM_PROMPT = [
   "You resolve onboarding business niche ambiguity for LP Factory.",
@@ -206,6 +229,8 @@ export async function resolveNicheWithOpenAi(input: {
     model: workload.model,
     reasoningEffort: workload.reasoningEffort,
     environment,
+    promptVersion: AI_NICHE_RESOLUTION_PROMPT_VERSION,
+    contractVersion: 1,
   } as const;
   const emitEvent = dependencies.emitEvent ?? emitOpenAiWorkloadEvent;
 
@@ -282,6 +307,7 @@ export async function resolveNicheWithOpenAi(input: {
       },
       body: JSON.stringify({
         model: workload.model,
+        store: false,
         reasoning: { effort: workload.reasoningEffort },
         input: [
           { role: "system", content: SYSTEM_PROMPT },
@@ -297,6 +323,7 @@ export async function resolveNicheWithOpenAi(input: {
         },
         max_output_tokens: 700,
       }),
+      signal: AbortSignal.timeout(OPENAI_TIMEOUT_MS),
     });
 
     if (!response.ok) {
@@ -349,7 +376,7 @@ export async function resolveNicheWithOpenAi(input: {
 
     const data = payload as ResponsesApiResponse;
 
-    if (data.error) {
+    if (data.error || data.status === "incomplete") {
       emitEvent(createOpenAiWorkloadFailureEvent({
         ...eventContext,
         responseId: data.id,
@@ -362,7 +389,9 @@ export async function resolveNicheWithOpenAi(input: {
         status: "failed",
         model: workload.model,
         schemaVersion: AI_NICHE_RESOLUTION_SCHEMA_VERSION,
-        reason: data.error.type ?? "openai_response_error",
+        reason: data.status === "incomplete"
+          ? "openai_incomplete"
+          : data.error?.type ?? "openai_response_error",
       };
     }
 
@@ -406,6 +435,24 @@ export async function resolveNicheWithOpenAi(input: {
       };
     }
 
+    const structuredOutput = validateStructuredAiOutput(parsed);
+    if (!structuredOutput) {
+      emitEvent(createOpenAiWorkloadFailureEvent({
+        ...eventContext,
+        responseId: data.id,
+        latencyMs: now() - startedAt,
+        usage: data.usage,
+      }, "invalid_response"));
+      await finishFinancial("failure", "invalid_response", data);
+      return {
+        ok: false,
+        status: "failed",
+        model: workload.model,
+        schemaVersion: AI_NICHE_RESOLUTION_SCHEMA_VERSION,
+        reason: "invalid_output_schema",
+      };
+    }
+
     emitEvent(createOpenAiWorkloadSuccessEvent({
       ...eventContext,
       responseId: data.id,
@@ -419,10 +466,12 @@ export async function resolveNicheWithOpenAi(input: {
       status: "resolved",
       model: workload.model,
       schemaVersion: AI_NICHE_RESOLUTION_SCHEMA_VERSION,
-      output: normalizeAiOutput(parsed, input.decision, input.candidates),
+      output: normalizeAiOutput(structuredOutput, input.decision, input.candidates),
     };
   } catch (error) {
-    const failureCategory = error instanceof Error && error.name === "AbortError"
+    const timedOut = error instanceof Error &&
+      (error.name === "AbortError" || error.name === "TimeoutError");
+    const failureCategory = timedOut
       ? "timeout"
       : "transport_error";
     emitEvent(createOpenAiWorkloadFailureEvent({
@@ -435,7 +484,9 @@ export async function resolveNicheWithOpenAi(input: {
       status: "failed",
       model: workload.model,
       schemaVersion: AI_NICHE_RESOLUTION_SCHEMA_VERSION,
-      reason: error instanceof Error ? error.name : "openai_resolver_error",
+      reason: timedOut
+        ? "openai_timeout"
+        : error instanceof Error ? error.name : "openai_resolver_error",
     };
   }
 }
@@ -497,8 +548,15 @@ function parseJsonObject(value: string): Record<string, unknown> | null {
   }
 }
 
+function validateStructuredAiOutput(
+  value: Record<string, unknown>,
+): AiNicheResolutionOutput | null {
+  const parsed = STRICT_AI_NICHE_RESOLUTION_OUTPUT.safeParse(value);
+  return parsed.success ? parsed.data : null;
+}
+
 function normalizeAiOutput(
-  raw: Record<string, unknown>,
+  raw: AiNicheResolutionOutput,
   decision: DeterministicMatchDecision,
   candidates: TaxonMatchCandidate[],
 ): AiNicheResolutionOutput {

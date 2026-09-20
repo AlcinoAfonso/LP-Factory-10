@@ -7,6 +7,7 @@ import { getActionableNicheResolutionForAccount } from "../../../lib/onboarding/
 import { getActivePrimaryAccountTaxon } from "../../../lib/onboarding/niche-resolution/adapters/accountTaxonomyAdapter";
 import { readUserIdentityPreference } from "../../../lib/onboarding/pending-setup/adapters/userIdentityPreferenceAdapter";
 import { isConversationalPendingSetupEnabled } from "../../../lib/onboarding/pending-setup/config";
+import { loadPendingSetupBusinessSnapshot } from "../../../lib/onboarding/pending-setup/businessConversationProvider";
 import { decideAccountJourney } from "./_components/onboarding-journey-policy";
 
 type DashState = "auth" | "onboarding" | "public";
@@ -53,9 +54,13 @@ export async function loadAccountJourney({
         return { view: "pending_setup_rollout_pending" as const };
       }
       const identity = await readUserIdentityPreference(ctx.member.userId);
+      const business = identity
+        ? await loadPendingSetupBusinessSnapshot(ctx.account_id)
+        : null;
       return {
         view: "pending_setup_conversation" as const,
         preferredName: identity?.preferredName ?? null,
+        business,
       };
     }
 

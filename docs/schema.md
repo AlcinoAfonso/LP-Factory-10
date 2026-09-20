@@ -609,6 +609,11 @@
 1.19.4 Índices
 • account_niche_resolutions_ai_suggested_taxon_id_idx
 
+1.19.5 Confirmação oficial no Pending Setup
+• `public.confirm_pending_setup_niche_resolution_taxon(uuid, uuid)` confirma em uma única transação a resolução operacional acionável e o vínculo primário oficial da conta ainda `pending_setup`.
+• A função usa `SECURITY INVOKER`, `search_path` fechado e lock das linhas de conta, resolução e vínculo primário; valida taxon ativo e opção oficial persistida e falha fechado diante de conflito ou concorrência.
+• EXECUTE restrito a `service_role`; `public`, `anon`, `authenticated` e `ai_readonly` não possuem acesso.
+
 1.20 content_template_compositions
 
 1.20.1 Chaves, constraints e relacionamentos

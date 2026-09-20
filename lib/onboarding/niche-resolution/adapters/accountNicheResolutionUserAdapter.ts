@@ -26,6 +26,7 @@ const REWRITE_LIMIT = 120;
 
 type ResolutionRow = {
   account_id: string;
+  raw_input: string;
   ai_status: string | null;
   ai_result_json: unknown;
   ai_ux_mode: AiNicheResolutionUxMode | null;
@@ -59,6 +60,90 @@ export async function getActionableNicheResolutionForAccount(input: {
   if (!validated.ok) return null;
 
   return validated.context.actionable;
+}
+
+export async function getActionablePendingSetupNicheResolutionForAccount(input: {
+  accountId: string;
+}): Promise<ActionableNicheResolution | null> {
+  const validated = await getValidatedActionContext({
+    accountId: input.accountId,
+    requireUxMode: null,
+  });
+
+  return validated.ok ? validated.context.actionable : null;
+}
+
+export async function readActionablePendingSetupNicheResolutionForAccount(input: {
+  accountId: string;
+}): Promise<
+  | {
+      ok: true;
+      resolution: ActionableNicheResolution | null;
+      recoverableRawInput: string | null;
+    }
+  | { ok: false; reason: string }
+> {
+  const validated = await getValidatedActionContext({
+    accountId: input.accountId,
+    requireUxMode: null,
+  });
+  if (validated.ok) {
+    return {
+      ok: true,
+      resolution: validated.context.actionable,
+      recoverableRawInput: null,
+    };
+  }
+  if (validated.reason === "resolution_not_found") {
+    return { ok: true, resolution: null, recoverableRawInput: null };
+  }
+  if (validated.reason === "resolution_not_resolved") {
+    const persisted = await readRecoverableRawInput(input.accountId);
+    return persisted.ok
+      ? { ok: true, resolution: null, recoverableRawInput: persisted.rawInput }
+      : persisted;
+  }
+  return { ok: false, reason: validated.reason };
+}
+
+export async function confirmPendingSetupAiSuggestedTaxonForAccount(input: {
+  accountId: string;
+}): Promise<NicheResolutionUserActionResult> {
+  const validated = await getValidatedActionContext({
+    accountId: input.accountId,
+    requireUxMode: "confirm_single",
+  });
+  if (!validated.ok) return { ok: false, reason: validated.reason };
+
+  const taxonId = validated.context.resolution.ai_suggested_taxon_id;
+  const suggestedTaxonId = validated.context.actionable.suggestedTaxon?.taxonId ?? null;
+  if (!taxonId || taxonId !== suggestedTaxonId) {
+    return { ok: false, reason: "invalid_suggested_taxon" };
+  }
+  return confirmPendingSetupValidatedTaxon(input.accountId, taxonId);
+}
+
+export async function confirmPendingSetupAiOptionForAccount(input: {
+  accountId: string;
+  taxonId: string | null;
+  optionName: string | null;
+}): Promise<NicheResolutionUserActionResult> {
+  const validated = await getValidatedActionContext({
+    accountId: input.accountId,
+    requireUxMode: "choose_from_options",
+  });
+  if (!validated.ok) return { ok: false, reason: validated.reason };
+
+  const option = findSelectedOption(
+    validated.context.actionable.options,
+    input.taxonId,
+    input.optionName,
+  );
+  if (!option) return { ok: false, reason: "invalid_option" };
+  if (option.isOfficial && option.taxonId) {
+    return confirmPendingSetupValidatedTaxon(input.accountId, option.taxonId);
+  }
+  return confirmOperationalChoice(input.accountId, option.name);
 }
 
 export async function getConfirmedOperationalNicheResolutionLabel(input: {
@@ -246,6 +331,35 @@ async function confirmValidatedTaxon(
   return { ok: true, status: "confirmed" };
 }
 
+async function confirmPendingSetupValidatedTaxon(
+  accountId: string,
+  taxonId: string,
+): Promise<NicheResolutionUserActionResult> {
+  const supabase = createServiceClient();
+  try {
+    const { data, error } = await supabase.rpc(
+      "confirm_pending_setup_niche_resolution_taxon",
+      { p_account_id: accountId, p_taxon_id: taxonId },
+    );
+    if (error) {
+      console.error("confirmPendingSetupValidatedTaxon failed:", {
+        code: (error as any)?.code,
+        message: (error as any)?.message ?? String(error),
+      });
+      return { ok: false, reason: "update_failed" };
+    }
+    return data === "saved"
+      ? { ok: true, status: "confirmed" }
+      : { ok: false, reason: typeof data === "string" ? data : "update_failed" };
+  } catch (error) {
+    console.error("confirmPendingSetupValidatedTaxon failed:", {
+      code: error instanceof Error ? error.name : undefined,
+      message: error instanceof Error ? error.message : String(error),
+    });
+    return { ok: false, reason: "update_failed" };
+  }
+}
+
 async function confirmOperationalChoice(
   accountId: string,
   label: string,
@@ -303,7 +417,7 @@ async function getValidatedActionContext(input: {
   const { data: resolution, error: resolutionError } = await supabase
     .from("account_niche_resolutions")
     .select(
-      "account_id,ai_status,ai_result_json,ai_ux_mode,ai_suggested_taxon_id,user_resolution_status,user_rewrite_input",
+      "account_id,raw_input,ai_status,ai_result_json,ai_ux_mode,ai_suggested_taxon_id,user_resolution_status,user_rewrite_input",
     )
     .eq("account_id", input.accountId)
     .limit(1)
@@ -401,6 +515,7 @@ async function getValidatedActionContext(input: {
       resolution: row,
       actionable: {
         accountId: input.accountId,
+        rawInput: normalizeOperationalLabel(row.raw_input),
         uxMode: row.ai_ux_mode as ActionableNicheResolution["uxMode"],
         suggestedTaxon,
         options,
@@ -428,6 +543,26 @@ async function getActiveTaxonsByIds(ids: string[]): Promise<TaxonRow[]> {
   }
 
   return (data ?? []) as TaxonRow[];
+}
+
+async function readRecoverableRawInput(accountId: string): Promise<
+  | { ok: true; rawInput: string }
+  | { ok: false; reason: string }
+> {
+  const supabase = createServiceClient();
+  const { data, error } = await supabase
+    .from("account_niche_resolutions")
+    .select("raw_input")
+    .eq("account_id", accountId)
+    .limit(1)
+    .maybeSingle();
+  if (error) return { ok: false, reason: "resolution_lookup_failed" };
+  const rawInput = normalizeOperationalLabel(
+    (data as { raw_input?: string | null } | null)?.raw_input,
+  );
+  return rawInput
+    ? { ok: true, rawInput }
+    : { ok: false, reason: "resolution_not_found" };
 }
 
 function taxonToOption(taxon: TaxonRow | null): ActionableNicheResolutionOption | null {

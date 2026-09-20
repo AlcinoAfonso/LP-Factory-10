@@ -979,16 +979,17 @@
 
 10.9.1 Objetivo e status
 - Objetivo: receber o usuário após a confirmação do acesso, preservar sua identidade preferida, compreender o negócio por conversa progressiva, resolver o nicho com segurança ou fallback explícito e preparar a passagem para a experiência comercial.
-- Status: em implementação; 10.9.3 está materializada no repositório com rollout hospedado pendente, enquanto 10.9.4–10.9.6 permanecem planejadas.
+- Status: em implementação; 10.9.3 e 10.9.4 estão materializadas no repositório com rollout hospedado pendente, enquanto 10.9.5 e 10.9.6 permanecem planejadas.
 
 10.9.2 Registros do recorte
 - Banco:
-  - Criados: `public.user_identity_preferences`; `user_identity_preferences_set_updated_at`.
+  - Criados: `public.user_identity_preferences`; `user_identity_preferences_set_updated_at`; `public.confirm_pending_setup_niche_resolution_taxon(uuid, uuid)`.
 - Repositório:
-  - Criados: `app/a/[account]/_components/PendingSetupConversation.tsx`; `app/a/[account]/pending-setup-actions.ts`; `lib/onboarding/pending-setup/`; `supabase/migrations/20260920150000_e10_9_user_identity_preferences.sql`; `supabase/snippets/e10_9_user_identity_preferences_verify.sql`.
-  - Ajustados: `app/a/[account]/account-journey-loader.ts`; `app/a/[account]/page.tsx`; `lib/access/types.ts`.
+  - Criados: `app/a/[account]/_components/PendingSetupConversation.tsx`; `app/a/[account]/pending-setup-actions.ts`; `lib/onboarding/pending-setup/`; `supabase/migrations/20260920150000_e10_9_user_identity_preferences.sql`; `supabase/migrations/20260920203000_e10_9_pending_setup_niche_confirmation.sql`; `supabase/snippets/e10_9_user_identity_preferences_verify.sql`; `supabase/snippets/e10_9_pending_setup_niche_confirmation_verify.sql`.
+  - Ajustados: `app/a/[account]/account-journey-loader.ts`; `app/a/[account]/page.tsx`; `lib/access/types.ts`; `lib/onboarding/niche-resolution/adapters/accountNicheResolutionAdapter.ts`; `lib/onboarding/niche-resolution/adapters/accountNicheResolutionUserAdapter.ts`; `lib/onboarding/niche-resolution/adapters/openAiResolver.ts`; `lib/onboarding/niche-resolution/contracts.ts`; `lib/openai-workloads/validation-cases.ts`.
 - Referências:
   - Contrato de identidade preferida: `docs/schema.md` — 1.38 user_identity_preferences.
+  - Confirmação taxonômica transacional: `docs/schema.md` — 1.19.5 Confirmação oficial no Pending Setup.
   - Gate e cutover hospedado: `docs/platform-config.md` — 3.5 Secrets e variáveis server-side no Vercel.
 
 10.9.3 Entrada e identidade sem fricção
@@ -1000,10 +1001,13 @@
   - Com o gate desligado, o loader não consulta os objetos E10.9 e apresenta estado temporário controlado, sem retornar ao formulário antigo.
 
 10.9.4 Conversa adaptativa e resolução do nicho
-- A conversa começa com uma pergunta aberta sobre o negócio e acrescenta no máximo uma pergunta por turno, somente quando necessária para reduzir ambiguidade.
-- Matching e confiança determinísticos precedem a IA; resolução automática exige taxon oficial único e seguro, inferência material exige confirmação e ambiguidade relevante mantém o diálogo.
-- Quando nenhum taxon oficial representar o negócio, o entendimento operacional permanece em texto e a conta pode seguir para o comercial genérico sem vínculo oficial inventado.
-- Responses API direta e Structured Outputs permanecem no workload `niche_resolution`; Agents SDK, agente autônomo, job, fila, novo service e dependência obrigatória de Conversations ficam fora.
+- Status: implementado no repositório; validação hospedada permanece pendente do rollout.
+- Conteúdo:
+  - A conversa começa com uma pergunta aberta sobre o negócio e acrescenta no máximo uma pergunta por turno, somente quando necessária para reduzir ambiguidade.
+  - A descrição é persistida antes de qualquer chamada à IA; matching e confiança determinísticos precedem o escalonamento, e nova resposta reinicia de forma explícita apenas o estado de confirmação daquela conta.
+  - Resolução automática exige taxon oficial único e seguro; alias ou inferência material exige confirmação baseada no estado persistido, e ambiguidade relevante mantém o diálogo.
+  - Falha de matching ou IA produz fallback operacional confirmável; quando nenhum taxon oficial representar o negócio, o entendimento permanece em texto sem vínculo oficial inventado.
+  - A execução usa Responses API direta, Structured Outputs, `store: false` e a configuração vigente do workload `niche_resolution`; Agents SDK, agente autônomo, tool, job, fila, novo service e Conversations ficam fora.
 
 10.9.5 Histórico conversacional e retomada
 - O histórico canônico permanece associado ao mesmo usuário e à mesma conta para retomada após saída, ativação e eventual conversão.

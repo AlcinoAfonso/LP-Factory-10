@@ -147,12 +147,12 @@ Objetivo:
 Interpretar o nicho bruto informado no `pending_setup` quando o matching determinístico não resolver com segurança e preparar uma saída estruturada para confirmação, escolha ou revisão, sem criar taxon, alias ou vínculo oficial.
 
 Status:
-Implementada e integrada ao fluxo server-side do onboarding.
+Implementada no repositório e integrada à conversa server-side do `pending_setup`; ativação hospedada pendente do rollout E10.9.
 
 Recurso utilizado:
 - Responses API
 - Structured Outputs com JSON Schema estrito
-- Server Action existente do `pending_setup`
+- Server Action da conversa `pending_setup`
 
 Natureza:
 - Automação com IA em fluxo controlado.
@@ -164,19 +164,20 @@ Plataforma dependente:
 - OpenAI Platform.
 
 Participação humana:
-- Gatilho no salvamento do `pending_setup` e confirmação, escolha ou revisão posterior quando indicada; sem intervenção durante a execução.
+- Gatilho ao responder à pergunta aberta sobre o negócio e confirmação, escolha ou fallback posterior quando indicado; sem intervenção durante a execução.
 
 Acesso:
-Execução server-side durante `saveSetupAndContinueAction`, após validação e persistência do onboarding.
+Execução server-side durante `continuePendingSetupConversationAction`, após gate fail-closed e revalidação de conta `pending_setup`, membership ativa e papel `owner`.
 
 Como funciona:
 - Executa primeiro o matching determinístico e a avaliação tipada de confiança.
+- Persiste a descrição operacional antes de qualquer chamada à IA e reinicia explicitamente somente o estado de confirmação da resolução corrente.
 - Chama a Responses API somente quando a decisão determinística exige escalonamento.
-- Produz saída estruturada com modo de UX, mensagem, até três opções, sinais de confirmação ou revisão e motivo.
+- Produz saída estruturada com modo de UX, mensagem, até três opções, sinais de confirmação ou revisão e motivo, usando `store: false` e a configuração vigente do workload `niche_resolution`.
 - Persiste o resultado operacional, o modelo, a versão do schema e o estado da execução em `account_niche_resolutions`.
 - Mantém a criação do vínculo oficial em `account_taxonomy` restrita à alta confiança determinística; a saída da IA nunca cria vínculo oficial.
 - Registra logs estruturados com status, contagens e correlação, sem registrar prompt ou resposta completa nos logs.
-- Ausência de configuração ou falha da IA é registrada como `skipped` ou `failed` e não bloqueia a conclusão do setup.
+- Falha de matching ou IA produz fallback operacional confirmável; falha de persistência mantém o turno recuperável sem avançar estado incompleto.
 
 Limites:
 - Não cria nem aprova taxon ou alias.
@@ -186,12 +187,14 @@ Limites:
 - Não substitui o matching determinístico nem o contrato funcional da E10.5.6.
 
 Aplicação funcional no roadmap:
-- `docs/roadmap.md` — E10.5.6.5, dentro do recorte E10.5.6.
+- `docs/roadmap.md` — E10.9.4.
 
 Referências / dependências:
 Regra técnica: `docs/base-tecnica.md`
 Configuração de modelo: `docs/platform-config.md`
-Action consumidora: `app/a/[account]/actions.ts`
+Action consumidora: `app/a/[account]/pending-setup-actions.ts`
+Orquestração server-side: `lib/onboarding/pending-setup/businessConversationProvider.ts`
+Contrato executável: `lib/onboarding/pending-setup/businessConversationCore.ts`
 Adapter OpenAI: `lib/onboarding/niche-resolution/adapters/openAiResolver.ts`
 Persistência operacional: `lib/onboarding/niche-resolution/adapters/accountNicheResolutionAdapter.ts`
 Decisão determinística: `lib/onboarding/niche-resolution/deterministicConfidence.ts`

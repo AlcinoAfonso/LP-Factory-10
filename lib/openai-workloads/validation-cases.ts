@@ -123,8 +123,8 @@ const cases = [
         apiKind: "responses_text",
         attemptId: null,
         requestId: null,
-        promptVersion: null,
-        contractVersion: null,
+        promptVersion: "e10.9-pending-setup-v1",
+        contractVersion: 1,
         environment: "development",
         configurationSource: "repo_catalog",
         configurationRevision: "v2",
@@ -165,6 +165,73 @@ const cases = [
       });
       assert.equal(invalidResponse.ok, false);
       assert.equal(invalidResponseEvents[0]?.failureCategory, "invalid_response");
+
+      const providerFailures = [
+        {
+          expectedCategory: "provider_error",
+          expectedReason: "openai_incomplete",
+          fetchImpl: async () => new Response(JSON.stringify({
+            id: "resp_incomplete",
+            status: "incomplete",
+          }), { status: 200 }),
+        },
+        {
+          expectedCategory: "refusal",
+          expectedReason: "openai_refusal",
+          fetchImpl: async () => new Response(JSON.stringify({
+            id: "resp_refusal",
+            output: [{ content: [{ type: "refusal" }] }],
+          }), { status: 200 }),
+        },
+        {
+          expectedCategory: "invalid_response",
+          expectedReason: "invalid_output_schema",
+          fetchImpl: async () => new Response(JSON.stringify({
+            id: "resp_invalid_schema",
+            output_text: JSON.stringify({ uxMode: "confirm_single" }),
+          }), { status: 200 }),
+        },
+        {
+          expectedCategory: "timeout",
+          expectedReason: "openai_timeout",
+          fetchImpl: async () => {
+            const timeout = new Error("timed out");
+            timeout.name = "TimeoutError";
+            throw timeout;
+          },
+        },
+        {
+          expectedCategory: "timeout",
+          expectedReason: "openai_timeout",
+          fetchImpl: async () => {
+            const abort = new Error("aborted");
+            abort.name = "AbortError";
+            throw abort;
+          },
+        },
+      ] as const;
+
+      for (const providerFailure of providerFailures) {
+        const failureEvents: OpenAiWorkloadEvent[] = [];
+        const failure = await resolveNicheWithOpenAi({
+          rawInput: "corretor",
+          decision,
+          candidates: [candidate],
+          apiKey: "test-key",
+          financialContext: lpfCostContext,
+        }, {
+          environment: "development",
+          fetchImpl: providerFailure.fetchImpl,
+          emitEvent: (event) => failureEvents.push(event),
+        });
+        assert.equal(failure.ok, false);
+        if (failure.ok) throw new Error("expected provider failure");
+        assert.equal(failure.reason, providerFailure.expectedReason);
+        assert.equal(
+          failureEvents[0]?.failureCategory,
+          providerFailure.expectedCategory,
+        );
+      }
 
       let transportCalls = 0;
       const invalidEvents: OpenAiWorkloadEvent[] = [];
@@ -1021,11 +1088,14 @@ const cases = [
       assert.equal(result.ok, true);
       const capturedRequest = requestBody as unknown as Record<string, unknown>;
       assert.equal(capturedRequest.model, "gpt-5.6-luna");
+      assert.equal(capturedRequest.store, false);
       assert.deepEqual(capturedRequest.reasoning, { effort: "low" });
       assert.equal(events.length, 1);
       assert.equal(events[0]?.environment, "preview");
       assert.equal(events[0]?.configurationSource, "supabase_operational");
       assert.equal(events[0]?.configurationRevision, "11");
+      assert.equal(events[0]?.promptVersion, "e10.9-pending-setup-v1");
+      assert.equal(events[0]?.contractVersion, 1);
     },
   },
   {

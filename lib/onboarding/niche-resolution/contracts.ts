@@ -115,6 +115,7 @@ export type UpsertAccountNicheResolutionInput = {
   resolutionStatus: AccountNicheResolutionStatus;
   matchSource: string | null;
   score: number | null;
+  resetUserResolution?: boolean;
 };
 
 export type UserNicheResolutionStatus =
@@ -133,6 +134,7 @@ export type ActionableNicheResolutionOption = {
 
 export type ActionableNicheResolution = {
   accountId: string;
+  rawInput: string;
   uxMode: Extract<AiNicheResolutionUxMode, "confirm_single" | "choose_from_options" | "fallback_review">;
   suggestedTaxon: ActionableNicheResolutionOption | null;
   options: ActionableNicheResolutionOption[];

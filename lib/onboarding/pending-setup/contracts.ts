@@ -1,3 +1,5 @@
+import type { ActionableNicheResolution } from "../niche-resolution/contracts";
+
 export const PREFERRED_NAME_MAX_LENGTH = 80;
 
 export type PreferredNameValidation =
@@ -15,3 +17,9 @@ export function validatePreferredName(input: unknown): PreferredNameValidation {
   }
   return { ok: true, value };
 }
+
+export type PendingSetupBusinessSnapshot =
+  | { kind: "awaiting_business" }
+  | { kind: "awaiting_confirmation"; resolution: ActionableNicheResolution }
+  | { kind: "ready_official"; taxonName: string }
+  | { kind: "ready_fallback"; description: string };
