@@ -2,7 +2,7 @@
 
 - Caso: Pending Setup pré-comercial conversacional.
 - V1: `f40248a69002483f8fb378f470ca73afd34475dd`, blob `48fb3e8c81b78369485fc43d0e2bc86c2b0cafc0`.
-- V2 corrigida: `103ed07edaebece5d2f819c5b99a30acee12671b`, blob `7efea17fae416aa92bd6cd6ca1c3925fdc9c156c`.
+- V2 aprovada anterior: `03b173968fa2027aeeba1d77dec4c427d5c8e928`, blob `7efea17fae416aa92bd6cd6ca1c3925fdc9c156c`.
 - Roadmap base: `b63241e62b79a51855f906e8cb80589f1d499930`, blob `3845dd92026e273ef3e7b64d9a5459802d1b3bce`.
 - Passagens 1 e 2: `aprovado com correções obrigatórias`; correções objetivas incorporadas na V2 candidata posterior e rastreadas abaixo para revisão delta.
 - Pareceres integrais: Gestor Estrutural `derivacao_inicial`, Gestor de Updates e Gestor de Automações, preservados no histórico desta task. Confronto estrutural de modernização: N/A, pois `prod#17` tem impacto estrutural baixo.
@@ -57,6 +57,10 @@
 | P1-04 | invariante técnico de rollout | derivação técnica da v1 | Migration aditiva, flag server-side desligada, apply/prova e redeploy do mesmo SHA antes da leitura nova | V2 4.1.6, “rollout”; `docs/platform-config.md` | Revisão delta |
 | P2-05 | condicionante factual estrutural | derivação técnica da v1 | Repetir busca por consumidor de onboarding factual; registrar ausência atual ou testar exigência de taxon oficial se surgir consumidor | V2 4.1.7, “validação por fase” | Revisão delta |
 | P2-06 | gate do Analista | derivação técnica da v1 | Atualizar matriz com tratamento e localização verificável de P1-01–04 e P2-05 | Linhas P1-01–04 e P2-05 desta matriz | Revisão delta |
+| RF-IMP-01 | parecer focal estrutural `revisao_focal_implementacao`; concorrência, lease, supersession, retry e recovery | derivação técnica da v1 | Tratar `turn_id` como identidade da fala; abrir turno novo por CAS da revisão server-side; versionar a tentativa no próprio turno; exigir `turn_id + lease_version` em todo write; recarregar estado autoritativo em `stale_context`, `in_progress` ou `lease_lost` sem criar falha | V2 4.1.6, “persistência e acesso” e versão monotônica; V2 4.1.7, cenários focais de 10.9.5 | Revisão delta do mesmo Analista; afeta 10.9.4–10.9.6 sem reabrir especialistas ou demais gates |
+| RF-IMP-02 | ajuste vinculante do supervisor; ordem de locks | derivação técnica da v1 | Todas as RPCs afetadas usam a mesma ordem canônica vigente entre conta, conversa, turno e resolução; ordem divergente e locks adicionais sem necessidade comprovada são proibidos | V2 4.1.6, versão monotônica | Revisão delta do mesmo Analista |
+| RF-IMP-03 | ajuste vinculante do supervisor; contenção de escopo | governança de execução | As residências citadas no parecer são limite máximo de investigação; alterar somente arquivos estritamente necessários ao patch comprovado | Implementação posterior à aprovação desta V2 | Gate de diff e revisão focal |
+| RF-IMP-04 | ajuste vinculante do supervisor; critério de parada | governança de execução | Executar uma correção estrutural e solicitar um único novo review; novo P1/P2 material no mesmo núcleo de concorrência, lease, supersession, retry ou recovery retorna ao Estrategista sem novo patch | Implementação e review posteriores à aprovação desta V2 | Parada obrigatória sem segunda correção |
 
 ## Ponto de residência de nome
 
