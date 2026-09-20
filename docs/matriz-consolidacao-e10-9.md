@@ -4,7 +4,7 @@
 
 - Caso: `E10.9 — Pending Setup pré-comercial e continuidade conversacional`.
 - PR de trabalho: `#954`; branch: `codex-app/e10-9-pb1-greenfield-rederive`; base: `main@304a2d23448207bd77da7d7f93c2f1324072d072`.
-- V1 funcional aprovada: `docs/lousa-plano-base-e10-9.md` no commit `75c2f03513b3ec750b76098d73d1d87db155776a`, blob `59dd541ab41b3c169ebdd66a1f982021f62402a4`.
+- V1 funcional aprovada: `docs/lousa-plano-base-e10-9.md` no commit `75c2f035bbd60ef6fa197b9449df0c12375c7d6e`, blob `59ddda9c32c76b5bfc027ed57cb1fafffc8bd180`.
 - V2 técnica candidata: mesmo arquivo no commit `a3da1cc60e3fc8f1dcf5c270e7f94711f4a46734`, blob `5871ecb21c54079a5d5fc11ecf41e3a8392e9862`.
 - Debate 15: a seção funcional recebida do Google Drive foi comparada com a V1 congelada e não apresentou diferença semântica.
 - Especialistas: Gestor Estrutural, Gestor de Automações e Gestor de Updates, todos em modo read-only e sem editar a solução.
