@@ -208,12 +208,11 @@ No modo `experimental`, parar somente nos checkpoints solicitados pelo humano. N
 
 Depois do último checkpoint, sem repetir validações ou ABC:
 
-1. acionar `$lp-factory-avaliar-implementacao-analista` em `revisao_final_implementacao` com checkpoints, diff acumulado, validações integradas, QA, delta documental, matriz e pareceres preservados; se houver correção, aplicar somente o delta, usar `revisao_delta_implementacao` e repetir a revisão final após o delta aprovado; avançar apenas com `aprovado para merge da implementação`;
-2. atualizar o PR com checkpoints, arquivos, validações, evidências de QA, matriz, pendências e, por documento, os ABCs executados e o resultado `delta aplicado` ou `SEM ALTERAÇÕES NECESSÁRIAS`; declarar a entrega técnica completa e devolvê-la ao supervisor competente;
-3. se o supervisor devolver correções, tratar o retorno como delta pós-entrega: confirmar de forma mínima objetivo, fontes, limites, boundary afetado e validação esperada; não reiniciar preparação, especialistas ou validações sem impacto demonstrado; em delta de código, preservar `npm ci`, `npm run check` e testes focais aplicáveis e, se a implementação aprovada mudar, repetir somente as revisões delta/final antes da nova entrega;
-4. se o supervisor liberar o merge, retomar a mesma task e seguir exclusivamente o ciclo de merge e conclusão da seção 9, sem nova derivação;
-5. se validação obrigatória pós-merge revelar defeito, registrar a falha e devolvê-la ao supervisor como exceção material; não criar ou selecionar nova branch ou PR por inferência. O supervisor define o fluxo corretivo competente; atualizar a entrega e parar novamente, sem Analista;
-6. manter a matriz disponível durante o ciclo externo de avaliação e não removê-la antes de o supervisor declarar o recorte definitivamente concluído; a limpeza posterior é documental, preserva a rastreabilidade no resumo e no histórico do PR e não aciona Analista nem especialistas.
+1. atualizar o PR com checkpoints, arquivos, validações, evidências de QA, matriz, pendências e, por documento, os ABCs executados e o resultado `delta aplicado` ou `SEM ALTERAÇÕES NECESSÁRIAS`; declarar a entrega técnica completa e devolvê-la ao supervisor competente;
+2. se o supervisor devolver correções, tratar o retorno como delta pós-entrega: confirmar de forma mínima objetivo, fontes, limites, boundary afetado e validação esperada; não reiniciar preparação, especialistas ou validações sem impacto demonstrado; em delta de código, preservar `npm ci`, `npm run check` e testes focais aplicáveis;
+3. se o supervisor liberar o merge, retomar a mesma task e seguir exclusivamente o ciclo de merge e conclusão da seção 9, sem nova derivação;
+4. se validação obrigatória pós-merge revelar defeito, registrar a falha e devolvê-la ao supervisor como exceção material; não criar ou selecionar nova branch ou PR por inferência. O supervisor define o fluxo corretivo competente; atualizar a entrega e parar novamente, sem Analista;
+5. manter a matriz disponível durante o ciclo externo de avaliação e não removê-la antes de o supervisor declarar o recorte definitivamente concluído; a limpeza posterior é documental, preserva a rastreabilidade no resumo e no histórico do PR e não aciona Analista nem especialistas.
 
 O resumo do PR deve refletir sempre o checkpoint publicado e a entrega técnica completa. A liberação do merge ocorre fora desta skill; depois de recebida, a execução do merge e o encerramento pós-merge pertencem ao Executor conforme a seção 9.
 
@@ -264,6 +263,6 @@ Não substitua supervisor, Estrategista, especialista ou Analista; o Executor ex
 - no Light, não importar especialistas, matriz, segunda passagem ou gates da Complexa;
 - na Complexa, não iniciar a fase seguinte sem checkpoint aprovado;
 - na Complexa, não recriar ou ampliar a V2, repetir especialistas, criar PR empilhado, criar segundo PR no handoff interno ou recriar a matriz sem correção de rastreabilidade exigida;
-- na Complexa, após a entrega técnica completa, usar o Analista somente para revisar delta material devolvido pelo supervisor;
+- na Complexa, não acionar o Analista depois de declarar a entrega técnica completa;
 - na Complexa, não acionar o supervisor antes da entrega técnica completa, exceto para bloqueio de QA ou decisão humana já previstos pelo contrato; no Light, aplicar as escaladas previstas nas seções 2 e 3;
 - não ignorar evidência de QA pendente nem decisão material exigida.
