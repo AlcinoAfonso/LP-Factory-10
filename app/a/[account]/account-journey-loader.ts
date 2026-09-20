@@ -5,7 +5,11 @@ import { getCommercialActivationHierarchicalBundle } from "@/conversion-content"
 import { getCommercialEntitlementSignal } from "../../../lib/commercial-entitlements";
 import { getActionableNicheResolutionForAccount } from "../../../lib/onboarding/niche-resolution/adapters/accountNicheResolutionUserAdapter";
 import { getActivePrimaryAccountTaxon } from "../../../lib/onboarding/niche-resolution/adapters/accountTaxonomyAdapter";
-import { readPendingSetupConversationHistory } from "../../../lib/onboarding/pending-setup/adapters/conversationHistoryAdapter";
+import {
+  readPendingSetupConversationCompletion,
+  readPendingSetupConversationHistory,
+} from "../../../lib/onboarding/pending-setup/adapters/conversationHistoryAdapter";
+import { resolveCompletedAccountPresentation } from "../../../lib/onboarding/pending-setup/completionCore";
 import { readUserIdentityPreference } from "../../../lib/onboarding/pending-setup/adapters/userIdentityPreferenceAdapter";
 import { isConversationalPendingSetupEnabled } from "../../../lib/onboarding/pending-setup/config";
 import { loadPendingSetupBusinessSnapshot } from "../../../lib/onboarding/pending-setup/businessConversationProvider";
@@ -77,13 +81,16 @@ export async function loadAccountJourney({
     }
 
     const accountId = (ctx?.account?.id ?? ctx?.account_id ?? null) as string | null;
-    const [commercialEntitlement, nicheResolution, primaryTaxon] = accountId
+    const [commercialEntitlement, nicheResolution, primaryTaxon, completionMode] = accountId
       ? await Promise.all([
           getCommercialEntitlementSignal({ accountId }),
           getActionableNicheResolutionForAccount({ accountId, accountStatus }),
           getActivePrimaryAccountTaxon({ accountId }),
+          isConversationalPendingSetupEnabled()
+            ? readPendingSetupConversationCompletion(accountId)
+            : Promise.resolve(null),
         ])
-      : [null, null, null];
+      : [null, null, null, null];
     const actorRole = ctx?.role ?? "viewer";
     const isCommerciallyEligible =
       commercialEntitlement?.isCommerciallyEligible === true;
@@ -101,12 +108,19 @@ export async function loadAccountJourney({
           taxonId: primaryTaxon.taxonId,
         })
       : null;
+    const presentation = resolveCompletedAccountPresentation({
+      completionMode,
+      hasActionableNicheResolution: Boolean(nicheResolution),
+      hasPrimaryTaxon: Boolean(primaryTaxon),
+      personalizedBundleReady:
+        commercialActivation?.status === "ready" && Boolean(commercialActivation.bundle),
+    });
     return {
       view: "commercial" as const,
-      bundle: commercialActivation?.status === "ready" && commercialActivation.bundle
+      bundle: presentation.commercialMode === "personalized" && commercialActivation?.bundle
         ? commercialActivation.bundle
         : null,
-      nicheResolution,
+      nicheResolution: presentation.showHistoricalNicheResolution ? nicheResolution : null,
       showFinancialActions: accountJourney.showFinancialActions,
     };
   }

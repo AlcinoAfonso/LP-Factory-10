@@ -2,6 +2,7 @@ import "server-only";
 
 import { createServiceClient } from "@/lib/supabase/service";
 import type {
+  PendingSetupCompletionMode,
   PendingSetupConversationProductState,
   PendingSetupConversationTurn,
   PendingSetupConversationTurnKind,
@@ -83,6 +84,57 @@ export async function completePendingSetupConversationTurn(
   } catch {
     return false;
   }
+}
+
+export async function completePendingSetupConversation(input: {
+  accountId: string;
+  ownerUserId: string;
+}): Promise<"saved" | "already_completed" | "not_ready" | "failed"> {
+  const supabase = createServiceClient();
+  try {
+    const { data, error } = await supabase.rpc("complete_pending_setup_conversation", {
+      p_account_id: input.accountId,
+      p_owner_user_id: input.ownerUserId,
+    });
+    if (error) return "failed";
+    if (data === "saved" || data === "already_completed") return data;
+    if (
+      data === "conversation_not_found" ||
+      data === "resolution_not_ready" ||
+      data === "turn_not_ready" ||
+      data === "official_taxon_not_ready" ||
+      data === "fallback_not_ready"
+    ) {
+      return "not_ready";
+    }
+    return "failed";
+  } catch {
+    return "failed";
+  }
+}
+
+export async function readPendingSetupConversationCompletion(
+  accountId: string,
+): Promise<PendingSetupCompletionMode | null> {
+  const supabase = createServiceClient();
+  const { data, error } = await supabase
+    .from("pending_setup_conversations")
+    .select("completed_at,completion_mode")
+    .eq("account_id", accountId)
+    .limit(1)
+    .maybeSingle();
+  if (error) throw new Error("pending_setup_conversation_completion_lookup_failed");
+  if (!data) return null;
+
+  const row = data as { completed_at?: unknown; completion_mode?: unknown };
+  if (row.completed_at === null && row.completion_mode === null) return null;
+  if (
+    typeof row.completed_at === "string" &&
+    (row.completion_mode === "official" || row.completion_mode === "fallback")
+  ) {
+    return row.completion_mode;
+  }
+  throw new Error("pending_setup_conversation_completion_invalid");
 }
 
 export async function readPendingSetupConversationHistory(input: {

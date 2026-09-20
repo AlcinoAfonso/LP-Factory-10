@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 20/09/2026
-• Versão: v1.5.236
+• Versão: v1.5.237
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -776,8 +776,8 @@
 10.4 Primeiros passos com status `pending_setup`
 
 10.4.1 Objetivo e status
-- Objetivo: coletar o perfil mínimo da conta, persistir os dados validados e promover a conta de `pending_setup` para `active`.
-- Status: implementado ponta a ponta em `/a/[account]`.
+- Objetivo histórico: coletar o perfil mínimo da conta, persistir os dados validados e promover a conta de `pending_setup` para `active`.
+- Status: substituído no runtime pela experiência conversacional E10.9; `account_profiles` e dados históricos permanecem preservados, sem caminho de entrada por este formulário.
 
 10.4.2 Registros do recorte
 - Banco:
@@ -786,8 +786,6 @@
 - Repositório:
   - Criados:
     - `lib/access/adapters/accountProfileAdapter.ts`
-    - `lib/onboarding/e10_4_setup_validation.ts`
-    - `app/a/[account]/_components/PendingSetupFirstSteps.tsx`
   - Ajustados:
     - `app/a/[account]/actions.ts`
     - `app/a/[account]/page.tsx`
@@ -796,18 +794,17 @@
     - `lib/access/getAccessContext.ts`
 - Referências:
   - Contrato de banco: `docs/schema.md` — seção 1.8.
+  - Substituição da jornada: E10.9.
 
 10.4.3 Campos e validação compartilhada
-- `name` e `niche` são obrigatórios após `trim`.
-- `preferred_channel` é opcional e assume `email`; `whatsapp` se torna obrigatório quando esse canal é escolhido e aceita de 10 a 15 dígitos.
-- `site_url` é opcional, aceita domínio sem esquema e é normalizado para URL HTTPS quando necessário.
-- UI e Server Action usam `validateE10_4SetupForm`; erros preservam valores válidos e direcionam o foco para o primeiro campo inválido.
+- Status: contrato histórico substituído pela E10.9.
+- O formulário `PendingSetupFirstSteps`, sua validação compartilhada e sua Server Action exclusiva foram removidos; não são fallback do runtime conversacional.
+- `account_profiles`, WhatsApp e demais dados históricos não receberam limpeza destrutiva.
 
 10.4.4 Persistência e transição
-- `accounts.name` permanece no core e o perfil v1 é persistido em `account_profiles` na relação 1:1.
-- A promoção `pending_setup → active` é condicional e idempotente.
-- Após salvar, o mesmo fluxo inicia a resolução de nicho descrita em 10.5 sem transformar uma falha dessa resolução em falha do setup.
-- `setup_completed_at` e `account_setup_completed_at` permanecem legados no banco e não participam do runtime, do gating, do fluxo nem dos logs.
+- `accounts.name`, `account_profiles` e seus consumidores independentes permanecem preservados.
+- A promoção vigente `pending_setup → active` reside em E10.9.6 e grava conta e conclusão conversacional em uma única transação idempotente, sem conceder entitlement.
+- `setup_completed_at` é marcador write-once dessa conclusão e `account_setup_completed_at` continua sua projeção de leitura, sem autoridade comercial própria.
 
 10.5 Taxonomia, pesquisa de mercado e resolução de nicho
 
@@ -979,18 +976,20 @@
 
 10.9.1 Objetivo e status
 - Objetivo: receber o usuário após a confirmação do acesso, preservar sua identidade preferida, compreender o negócio por conversa progressiva, resolver o nicho com segurança ou fallback explícito e preparar a passagem para a experiência comercial.
-- Status: em implementação; 10.9.3, 10.9.4 e 10.9.5 estão materializadas no repositório com rollout hospedado pendente, enquanto 10.9.6 permanece planejada.
+- Status: implementação concluída no repositório; rollout hospedado, migrations, provas SQL e QA permanecem pendentes do fluxo pós-merge.
 
 10.9.2 Registros do recorte
 - Banco:
-  - Criados: `public.user_identity_preferences`; `public.pending_setup_conversations`; `public.pending_setup_conversation_turns`; `user_identity_preferences_set_updated_at`; `pending_setup_conversations_set_updated_at`; `public.confirm_pending_setup_niche_resolution_taxon(uuid, uuid)`; `public.begin_pending_setup_conversation_turn(uuid, uuid, uuid, text, text)`; `public.complete_pending_setup_conversation_turn(uuid, uuid, text, text, text, text)`.
+  - Criados: `public.user_identity_preferences`; `public.pending_setup_conversations`; `public.pending_setup_conversation_turns`; `user_identity_preferences_set_updated_at`; `pending_setup_conversations_set_updated_at`; `public.confirm_pending_setup_niche_resolution_taxon(uuid, uuid)`; `public.begin_pending_setup_conversation_turn(uuid, uuid, uuid, text, text)`; `public.complete_pending_setup_conversation_turn(uuid, uuid, text, text, text, text)`; `public.complete_pending_setup_conversation(uuid, uuid)`.
 - Repositório:
-  - Criados: `app/a/[account]/_components/PendingSetupConversation.tsx`; `app/a/[account]/pending-setup-actions.ts`; `lib/onboarding/pending-setup/`; `supabase/migrations/20260920150000_e10_9_user_identity_preferences.sql`; `supabase/migrations/20260920203000_e10_9_pending_setup_niche_confirmation.sql`; `supabase/migrations/20260920213000_e10_9_pending_setup_conversation_history.sql`; `supabase/snippets/e10_9_user_identity_preferences_verify.sql`; `supabase/snippets/e10_9_pending_setup_niche_confirmation_verify.sql`; `supabase/snippets/e10_9_pending_setup_conversation_history_verify.sql`; `supabase/tests/e10_9_pending_setup_conversation_history.test.sql`.
-  - Ajustados: `app/a/[account]/account-journey-loader.ts`; `app/a/[account]/page.tsx`; `lib/access/types.ts`; `lib/onboarding/niche-resolution/adapters/accountNicheResolutionAdapter.ts`; `lib/onboarding/niche-resolution/adapters/accountNicheResolutionUserAdapter.ts`; `lib/onboarding/niche-resolution/adapters/openAiResolver.ts`; `lib/onboarding/niche-resolution/contracts.ts`; `lib/openai-workloads/validation-cases.ts`.
+  - Criados: `app/a/[account]/_components/PendingSetupConversation.tsx`; `app/a/[account]/pending-setup-actions.ts`; `lib/onboarding/pending-setup/`; `supabase/migrations/20260920150000_e10_9_user_identity_preferences.sql`; `supabase/migrations/20260920203000_e10_9_pending_setup_niche_confirmation.sql`; `supabase/migrations/20260920213000_e10_9_pending_setup_conversation_history.sql`; `supabase/migrations/20260920223000_e10_9_pending_setup_completion.sql`; `supabase/snippets/e10_9_user_identity_preferences_verify.sql`; `supabase/snippets/e10_9_pending_setup_niche_confirmation_verify.sql`; `supabase/snippets/e10_9_pending_setup_conversation_history_verify.sql`; `supabase/snippets/e10_9_pending_setup_completion_verify.sql`; `supabase/tests/e10_9_pending_setup_conversation_history.test.sql`; `supabase/tests/e10_9_pending_setup_completion.test.sql`.
+  - Ajustados: `app/a/[account]/account-journey-loader.ts`; `app/a/[account]/page.tsx`; `app/a/[account]/actions.ts`; `app/a/[account]/_components/PendingSetupConversation.tsx`; `app/a/[account]/pending-setup-actions.ts`; `lib/access/types.ts`; `lib/onboarding/niche-resolution/adapters/accountNicheResolutionAdapter.ts`; `lib/onboarding/niche-resolution/adapters/accountNicheResolutionUserAdapter.ts`; `lib/onboarding/niche-resolution/adapters/openAiResolver.ts`; `lib/onboarding/niche-resolution/contracts.ts`; `lib/onboarding/pending-setup/adapters/conversationHistoryAdapter.ts`; `lib/onboarding/pending-setup/contracts.ts`; `lib/onboarding/pending-setup/validation-cases.ts`; `lib/openai-costs/active-validation-cases.ts`; `lib/openai-workloads/validation-cases.ts`; `tsconfig.json`.
+  - Excluídos: `app/a/[account]/_components/PendingSetupFirstSteps.tsx`; `lib/onboarding/e10_4_setup_validation.ts`.
 - Referências:
   - Contrato de identidade preferida: `docs/schema.md` — 1.38 user_identity_preferences.
   - Confirmação taxonômica transacional: `docs/schema.md` — 1.19.5 Confirmação oficial no Pending Setup.
   - Histórico conversacional: `docs/schema.md` — 1.39 pending_setup_conversations, 1.40 pending_setup_conversation_turns e 3.12 Histórico conversacional do Pending Setup.
+  - Conclusão transacional: `docs/schema.md` — 3.13 Conclusão transacional do Pending Setup.
   - Gate e cutover hospedado: `docs/platform-config.md` — 3.5 Secrets e variáveis server-side no Vercel.
 
 10.9.3 Entrada e identidade sem fricção
@@ -1019,10 +1018,12 @@
   - Texto livre e histórico conversacional não substituem `account_taxonomy`, não se tornam fato oficial e não ampliam o recorte para CRM ou omnichannel.
 
 10.9.6 Conclusão e passagem ao comercial
-- A conclusão válida promove `pending_setup` para `active` sem conceder entitlement; checkout, papel, membership e demais gates comerciais permanecem vigentes.
-- A experiência comercial usa personalização somente com taxon oficial competente e mantém o fallback genérico quando ele não existir.
-- Onboarding factual permanece fora deste recorte e, após conversão, depende de taxon oficial competente.
-- A jornada antiga só pode ser removida depois de prova de equivalência dos contratos preservados; schema, migrations e dados históricos não recebem limpeza destrutiva neste recorte.
+- Status: implementado no repositório; apply da migration, prova SQL, cutover e QA hospedado permanecem pendentes do rollout pós-merge.
+- Conteúdo:
+  - A conclusão válida promove `pending_setup` para `active` em transação única com o discriminador official ou fallback, preserva `setup_completed_at` como write-once e não cria entitlement; checkout, papel, membership e demais gates comerciais permanecem vigentes.
+  - Qualquer conclusão E10.9 suprime o card histórico de resolução; a experiência comercial usa personalização somente quando existe taxon oficial primário e bundle publicado, mantendo o fallback genérico nos demais casos.
+  - A busca final não encontrou entrada executável de onboarding factual por conta; `account_taxonomy` permanece a autoridade futura e o runtime inexistente não foi inventado.
+  - O formulário e a action exclusivos da jornada antiga foram removidos após a equivalência dos contratos preservados; schema, migrations, dados históricos, WhatsApp e consumidores independentes permanecem intactos.
 
 11. E11 — Gestão de membros e autoridade comercial
 
@@ -1445,19 +1446,19 @@
 - Referências:
   - Contrato técnico: `docs/base-tecnica.md` — seções 5.1.1 e 5.4.
   - Contrato de banco: `docs/schema.md` — seção 1.1.
-  - Setup da conta: E10.4.
+  - Setup da conta: E10.9.
   - Entitlement comercial: E9.1.
 
 16.1.3 Estados vigentes
-- `pending_setup`: setup mínimo incompleto; `/a/[account]` apresenta “Primeiros passos”.
+- `pending_setup`: experiência pré-comercial incompleta; `/a/[account]` apresenta a conversa progressiva da E10.9 quando o rollout está habilitado e um estado temporário controlado quando está desligado.
 - `active`: setup operacional concluído; a rota apresenta a experiência comercial preservada conforme papel e entitlement, sem desvio ao produto legado de Landing Pages.
 - `inactive`: bloqueio operacional reversível; o guard impede a seção privada e envia para a tela pública de conta inativa.
 - `suspended`: bloqueio administrativo; o guard impede a seção privada e envia para a tela pública de conta suspensa.
 - O status da conta é independente do status de cada membership: ambos precisam permitir a operação solicitada.
 
 16.1.4 Transição implementada
-- `pending_setup → active` ocorre após o salvamento válido do onboarding mínimo da E10.4.
-- A mutação usa update condicional por estado e é idempotente.
+- `pending_setup → active` ocorre após a conclusão válida da conversa E10.9, com owner e membership ativa, resolução confirmada e turno final coerente.
+- A mutação é transacional e idempotente, grava o discriminador de conclusão e `setup_completed_at` e não cria entitlement.
 - Não existe no Admin atual ação geral de `active → inactive`, `inactive → active`, suspensão ou retirada de suspensão.
 - Billing, trial, plano, pagamento e entitlement não alteram `accounts.status`; sua autoridade reside em E9.
 

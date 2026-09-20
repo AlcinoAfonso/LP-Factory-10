@@ -3,6 +3,7 @@
 import "server-only";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 
 import { getAccessContext } from "@/lib/access/getAccessContext";
 import {
@@ -14,6 +15,7 @@ import {
 } from "../../../lib/onboarding/niche-resolution/adapters/accountNicheResolutionUserAdapter";
 import {
   beginPendingSetupConversationTurn,
+  completePendingSetupConversation,
   completePendingSetupConversationTurn,
   readPendingSetupConversationHistory,
   readPendingSetupConversationTurn,
@@ -54,6 +56,7 @@ export type PendingSetupConversationState = {
 
 type AllowedPendingSetupContext = {
   accountId: string;
+  accountStatus: "active" | "pending_setup";
   preferredName: string | null;
   route: string;
   userId: string;
@@ -65,10 +68,37 @@ export async function continuePendingSetupConversationAction(
   previous: PendingSetupConversationState,
   formData: FormData,
 ): Promise<PendingSetupConversationState> {
-  const allowed = await getAllowedPendingSetupContext(formData);
+  const intent = String(formData.get("intent") ?? "");
+  const allowed = await getAllowedPendingSetupContext(
+    formData,
+    intent === "complete_setup",
+  );
   if (!allowed) return { ...previous, ok: false, error: GENERIC_ERROR };
 
-  const intent = String(formData.get("intent") ?? "");
+  if (intent === "complete_setup") {
+    if (!allowed.preferredName) {
+      return { ...previous, ok: false, error: "Salve seu nome antes de continuar." };
+    }
+    const completion = await completePendingSetupConversation({
+      accountId: allowed.accountId,
+      ownerUserId: allowed.userId,
+    });
+    if (completion === "saved" || completion === "already_completed") {
+      revalidatePath(allowed.route);
+      redirect(allowed.route);
+    }
+    return {
+      ...previous,
+      ok: false,
+      error: completion === "not_ready"
+        ? "Conclua o entendimento do seu negócio antes de continuar."
+        : GENERIC_ERROR,
+    };
+  }
+
+  if (allowed.accountStatus !== "pending_setup") {
+    return { ...previous, ok: false, error: GENERIC_ERROR };
+  }
 
   if (intent === "save_name") {
     const parsed = validatePreferredName(formData.get("preferred_name"));
@@ -328,6 +358,7 @@ export async function continuePendingSetupConversationAction(
 
 async function getAllowedPendingSetupContext(
   formData: FormData,
+  allowCompletedAccount = false,
 ): Promise<AllowedPendingSetupContext | null> {
   if (!isConversationalPendingSetupEnabled()) return null;
 
@@ -346,7 +377,8 @@ async function getAllowedPendingSetupContext(
   if (
     !ctx ||
     ctx.blocked ||
-    ctx.account?.status !== "pending_setup" ||
+    (ctx.account?.status !== "pending_setup" &&
+      !(allowCompletedAccount && ctx.account?.status === "active")) ||
     ctx.member?.status !== "active" ||
     ctx.role !== "owner" ||
     !accountId ||
@@ -363,6 +395,7 @@ async function getAllowedPendingSetupContext(
   }
   return {
     accountId,
+    accountStatus: ctx.account.status,
     preferredName: identity?.preferredName ?? null,
     route,
     userId,

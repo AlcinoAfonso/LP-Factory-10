@@ -44,6 +44,8 @@ export type PendingSetupConversationProductState =
   | "ready_fallback"
   | "failure";
 
+export type PendingSetupCompletionMode = "official" | "fallback";
+
 export type PendingSetupConversationTurn = {
   id: string;
   userMessage: string;

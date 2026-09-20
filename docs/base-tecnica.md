@@ -2,8 +2,8 @@
 
 0.1 Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.91
-• Data: 14/09/2026
+• Versão: v2.0.92
+• Data: 20/09/2026
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -240,7 +240,8 @@
 • IA complementar só pode ser usada quando o resultado determinístico for insuficiente, com Structured Outputs e configuração operacional em `docs/platform-config.md`.
 • IA não cria taxon ou alias, não grava vínculo oficial e não substitui decisão determinística de alta confiança.
 • `account_niche_resolutions` representa a resolução operacional; `account_taxonomy` representa o vínculo oficial e só pode ser gravado quando o contrato de alta confiança permitir, sem substituir automaticamente vínculo primário diferente.
-• No fluxo histórico que já conclui o setup antes da resolução, falhas de matching, IA ou persistência da resolução não bloqueiam ativação, revalidação ou redirect.
+• A conclusão conversacional do Pending Setup deve validar owner, membership, resolução e turno final e promover conta e cabeçalho em uma única transação idempotente; ativação não cria entitlement, e checkout preserva seus gates próprios.
+• Conta `active` com cabeçalho conversacional concluído não exibe o card histórico de resolução; a página comercial usa personalização somente com taxon oficial primário e bundle competente, mantendo apresentação genérica quando esse contexto não existe.
 • No boundary conversacional de `pending_setup`, a fala deve ser persistida antes do processamento e o mesmo turno deve terminar com resposta ou falha recuperável; falhas de matching ou IA preservam a descrição e produzem fallback operacional recuperável, sem vínculo oficial, enquanto falha de persistência impede avanço aparente.
 • O histórico conversacional é persistência funcional da relação entre owner e conta, permanece separado das autoridades taxonômicas e não deve ser enviado integralmente à IA; seus objetos e campos exatos pertencem a `docs/schema.md`.
 • Logs, eventos e telemetria não devem conter prompt, payload bruto, nicho bruto, aliases, candidatos completos, formulário ou PII.

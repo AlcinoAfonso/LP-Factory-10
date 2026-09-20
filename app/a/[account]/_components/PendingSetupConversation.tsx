@@ -1,6 +1,13 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState, type RefObject } from "react";
+import {
+  useActionState,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+  type RefObject,
+} from "react";
 
 import { Button } from "@/components/ui/button";
 import { FeedbackMessage } from "@/components/ui/feedback-message";
@@ -154,17 +161,17 @@ function BusinessStep({
 
   if (business.kind === "ready_official") {
     return (
-      <FeedbackMessage className="mt-6" tone="success">
-        Entendimento confirmado: {business.taxonName}. A passagem para a experiência comercial será concluída na etapa final.
-      </FeedbackMessage>
+      <CompletionForm accountSubdomain={accountSubdomain} action={action} disabled={pending}>
+        Entendimento confirmado: {business.taxonName}. Sua experiência comercial pode usar essa categoria oficial.
+      </CompletionForm>
     );
   }
 
   if (business.kind === "ready_fallback") {
     return (
-      <FeedbackMessage className="mt-6" tone="success">
-        Entendimento salvo como “{business.description}”, sem criar uma categoria oficial. A passagem para a experiência comercial será concluída na etapa final.
-      </FeedbackMessage>
+      <CompletionForm accountSubdomain={accountSubdomain} action={action} disabled={pending}>
+        Entendimento salvo como “{business.description}”, sem criar uma categoria oficial. Você seguirá para a experiência comercial geral.
+      </CompletionForm>
     );
   }
 
@@ -347,6 +354,30 @@ function FallbackConfirmationForm({
   );
 }
 
+function CompletionForm({
+  accountSubdomain,
+  action,
+  children,
+  disabled,
+}: {
+  accountSubdomain: string;
+  action: (payload: FormData) => void;
+  children: ReactNode;
+  disabled: boolean;
+}) {
+  return (
+    <div className="mt-6 space-y-4">
+      <FeedbackMessage tone="success">{children}</FeedbackMessage>
+      <form action={action}>
+        <ConversationIntent accountSubdomain={accountSubdomain} intent="complete_setup" />
+        <Button disabled={disabled} type="submit">
+          {disabled ? "Concluindo..." : "Continuar para a experiência comercial"}
+        </Button>
+      </form>
+    </div>
+  );
+}
+
 function ConversationHistory({ turns }: { turns: PendingSetupConversationTurn[] }) {
   return (
     <ol aria-label="Histórico da conversa" className="mt-6 space-y-4">
@@ -371,7 +402,12 @@ function ConversationIntent({
   intent,
 }: {
   accountSubdomain: string;
-  intent: "save_name" | "describe_business" | "confirm_option" | "confirm_fallback";
+  intent:
+    | "save_name"
+    | "describe_business"
+    | "confirm_option"
+    | "confirm_fallback"
+    | "complete_setup";
 }) {
   return (
     <>

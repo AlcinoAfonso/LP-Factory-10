@@ -12,6 +12,7 @@ import {
   validateBusinessDescription,
 } from "./businessConversationCore";
 import { reconcilePendingSetupTurnRetry } from "./conversationHistoryCore";
+import { resolveCompletedAccountPresentation } from "./completionCore";
 import {
   type PendingSetupConversationTurn,
   presentPendingSetupBusinessTurn,
@@ -47,6 +48,43 @@ assert.ok(
     kind: "ready_fallback",
     description: maximumFallbackDescription,
   })!.message.length <= 600,
+);
+
+assert.deepEqual(
+  resolveCompletedAccountPresentation({
+    completionMode: "official",
+    hasActionableNicheResolution: true,
+    hasPrimaryTaxon: true,
+    personalizedBundleReady: true,
+  }),
+  { commercialMode: "personalized", showHistoricalNicheResolution: false },
+);
+assert.deepEqual(
+  resolveCompletedAccountPresentation({
+    completionMode: "fallback",
+    hasActionableNicheResolution: true,
+    hasPrimaryTaxon: false,
+    personalizedBundleReady: false,
+  }),
+  { commercialMode: "generic", showHistoricalNicheResolution: false },
+);
+assert.deepEqual(
+  resolveCompletedAccountPresentation({
+    completionMode: null,
+    hasActionableNicheResolution: true,
+    hasPrimaryTaxon: false,
+    personalizedBundleReady: false,
+  }),
+  { commercialMode: "generic", showHistoricalNicheResolution: true },
+);
+assert.deepEqual(
+  resolveCompletedAccountPresentation({
+    completionMode: "official",
+    hasActionableNicheResolution: false,
+    hasPrimaryTaxon: true,
+    personalizedBundleReady: false,
+  }),
+  { commercialMode: "generic", showHistoricalNicheResolution: false },
 );
 
 assert.deepEqual(validateBusinessDescription("  consultoria   financeira  "), {
@@ -522,7 +560,7 @@ async function runConversationHistoryRetryCases(): Promise<void> {
 
 Promise.all([runBusinessConversationCases(), runConversationHistoryRetryCases()])
   .then(() => {
-    console.log("ok - E10.9.3 to E10.9.5 pending setup contracts");
+    console.log("ok - E10.9.3 to E10.9.6 pending setup contracts");
   })
   .catch((error) => {
     console.error(error);

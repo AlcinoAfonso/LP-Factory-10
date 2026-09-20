@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data da última atualização: 14/09/2026
-• Documento: LP Factory 10 — Schema (DB Contract) v1.0.68
+• Data da última atualização: 20/09/2026
+• Documento: LP Factory 10 — Schema (DB Contract) v1.0.69
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -26,7 +26,7 @@
 • UNIQUE: subdomain, domain, slug
 • Status: active | inactive | suspended | pending_setup
 • Coluna status: text; CHECK accounts_status_chk; NOT NULL; DEFAULT 'pending_setup'::text
-• Coluna setup_completed_at: timestamptz; NULL (marcador técnico de setup concluído; write-once no MVP: set NULL → timestamp; sem overwrite; deprecated sem uso no gating/fluxo)
+• Coluna setup_completed_at: timestamptz; NULL (marcador técnico write-once da conclusão do Pending Setup; a RPC canônica preserva valor existente e não concede entitlement)
 • FK: plan_id → plans; owner_user_id → auth.users
 
 1.1.2 Índices
@@ -1129,7 +1129,7 @@
 • account_id, account_key, account_name, account_status
 • user_id, member_role, member_status
 • allow, reason
-• account_setup_completed_at (alias de accounts.setup_completed_at; deprecated sem uso no gating/fluxo)
+• account_setup_completed_at (alias de accounts.setup_completed_at; marcador informativo da conclusão, sem autoridade de entitlement)
 
 2.1.3 Assunções e filtros
 • allow=true só para conta active/pending_setup + membro ativo
@@ -1424,6 +1424,13 @@
 • `public.begin_pending_setup_conversation_turn(uuid, uuid, uuid, text, text)` valida conta pending_setup e owner, cria o cabeçalho quando necessário e inicia ou retoma o turno sob lock, com unicidade por conta e ID.
 • `public.complete_pending_setup_conversation_turn(uuid, uuid, text, text, text, text)` conclui sob lock o mesmo turno com resposta ou falha recuperável e aceita repetição idempotente do mesmo resultado.
 • Ambas usam SECURITY INVOKER, search_path fechado e EXECUTE restrito a service_role; public, anon, authenticated e ai_readonly não possuem acesso.
+
+3.13 Conclusão transacional do Pending Setup
+• `public.complete_pending_setup_conversation(uuid, uuid)` valida owner e membership ativa, serializa conta e conversa, exige resolução confirmada e turno final coerente e grava atomicamente `pending_setup_conversations.completed_at/completion_mode` e `accounts.status/setup_completed_at`.
+• O modo `official` exige taxon oficial primário ativo coerente com a resolução; o modo `fallback` exige descrição operacional confirmada e ausência de vínculo primário. Repetição do mesmo resultado após ativação retorna `already_completed`.
+• A função não lê nem escreve entitlement; usa SECURITY INVOKER, search_path fechado e EXECUTE restrito a service_role, sem acesso para public, anon, authenticated ou ai_readonly.
+• Migration candidata: `supabase/migrations/20260920223000_e10_9_pending_setup_completion.sql`; teste transacional: `supabase/tests/e10_9_pending_setup_completion.test.sql`; verificador read-only: `supabase/snippets/e10_9_pending_setup_completion_verify.sql`.
+• Estado: contrato repo-only; apply hospedado e verificação read-only permanecem pendentes do fluxo pós-merge.
 
 4. Triggers
 
