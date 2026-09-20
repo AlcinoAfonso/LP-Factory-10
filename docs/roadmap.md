@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 20/09/2026
-• Versão: v1.5.237
+• Versão: v1.5.238
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -976,7 +976,7 @@
 
 10.9.1 Objetivo e status
 - Objetivo: receber o usuário após a confirmação do acesso, preservar sua identidade preferida, compreender o negócio por conversa progressiva, resolver o nicho com segurança ou fallback explícito e preparar a passagem para a experiência comercial.
-- Status: implementação concluída no repositório; rollout hospedado, migrations, provas SQL e QA permanecem pendentes do fluxo pós-merge.
+- Status: implementação-base concluída no repositório; correção estrutural de concorrência e posse de tentativa aprovada e pendente; rollout hospedado, migrations, provas SQL e QA permanecem pendentes do fluxo pós-merge.
 
 10.9.2 Registros do recorte
 - Banco:
@@ -1010,10 +1010,10 @@
   - A execução usa Responses API direta, Structured Outputs, `store: false` e a configuração vigente do workload `niche_resolution`; Agents SDK, agente autônomo, tool, job, fila, novo service e Conversations ficam fora.
 
 10.9.5 Histórico conversacional e retomada
-- Status: implementado no repositório; apply da migration, prova SQL e QA hospedado permanecem pendentes do rollout.
+- Status: implementação-base concluída no repositório; correção estrutural de concorrência, lease, supersession, retry e recovery aprovada e pendente; apply da migration, prova SQL e QA hospedado permanecem pendentes do rollout.
 - Conteúdo:
   - O histórico canônico fica associado ao mesmo owner e à mesma conta, com cabeçalho 1:1 e turnos ordenados por identificador estável, para retomada após saída, ativação e eventual conversão.
-  - A fala é persistida antes do processamento do turno; resposta ou falha recuperável conclui o mesmo registro, e retry concorrente é serializado sem duplicar turnos.
+  - A fala é persistida antes do processamento do turno; `turn_id` identifica a fala, enquanto a tentativa corrente usa lease monotônico e CAS da revisão server-side para rejeitar contexto ou writes obsoletos sem criar falha funcional.
   - A leitura server-side valida o owner e entrega à interface somente os vinte turnos mais recentes; o histórico integral não é enviado à IA.
   - Texto livre e histórico conversacional não substituem `account_taxonomy`, não se tornam fato oficial e não ampliam o recorte para CRM ou omnichannel.
 
