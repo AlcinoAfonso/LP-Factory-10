@@ -1,4 +1,4 @@
-import { PendingSetupFirstSteps } from "./_components/PendingSetupFirstSteps";
+import { PendingSetupConversation } from "./_components/PendingSetupConversation";
 import { NicheResolutionCard } from "./_components/NicheResolutionCard";
 import { GenericCommercialPage } from "./_components/commercial-page/GenericCommercialPage";
 import { PublishedCommercialActivationPage } from "./_components/commercial-page/PublishedCommercialActivationPage";
@@ -14,8 +14,27 @@ export default async function Page({ params }: PageProps) {
 
   const journey = await loadAccountJourney({ accountSubdomain });
 
-  if (journey.view === "pending_setup") {
-    return <PendingSetupFirstSteps accountSubdomain={accountSubdomain} ctx={journey.ctx} />;
+  if (journey.view === "pending_setup_conversation") {
+    return (
+      <PendingSetupConversation
+        accountSubdomain={accountSubdomain}
+        preferredName={journey.preferredName}
+      />
+    );
+  }
+  if (journey.view === "pending_setup_rollout_pending") {
+    return (
+      <main className="mx-auto flex min-h-[60vh] max-w-3xl items-center px-4 py-10 sm:px-6">
+        <section className="w-full rounded-2xl border border-surface-border bg-white p-6 shadow-card sm:p-10">
+          <h1 className="text-2xl font-bold tracking-tight text-ink-900">
+            Estamos preparando sua experiência
+          </h1>
+          <p className="mt-3 text-sm leading-6 text-graytech-600">
+            A configuração conversacional será liberada assim que a atualização segura dos dados for concluída.
+          </p>
+        </section>
+      </main>
+    );
   }
   if (journey.view === "account_unavailable") {
     return (

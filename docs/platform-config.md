@@ -135,6 +135,14 @@
 • Observação: é variável pública, mas deve ser registrada com mínimo necessário.
 
 3.5 Secrets e variáveis server-side no Vercel
+• `E10_9_PENDING_SETUP_CONVERSATIONAL_ENABLED`
+• Finalidade: gate server-side do Pending Setup conversacional da E10.9.
+• Escopo aprovado: Preview e Production do projeto Core, com configuração independente por ambiente.
+• Habilitação: somente o literal `true` libera a leitura e a escrita dos objetos E10.9; ausência, vazio ou qualquer outro valor mantém o fluxo fechado em estado temporário controlado, sem executar o formulário antigo como fallback.
+• Estado atual: não configurada nem validada nos ambientes hospedados; deve permanecer desligada até o cutover pós-merge.
+• Cutover aprovado: aguardar Production READY no mesmo SHA, aplicar a migration pelo workflow canônico, validar schema, RLS, grants e negações, configurar `true`, redeployar o mesmo SHA e executar QA autenticado. Falha em qualquer prova mantém o gate desligado.
+• Classificação: Config, não Secret.
+
 • `E11_MEMBERS_ENABLED`
 • Finalidade: gate operacional da gestão de membros e convites.
 • Escopo: Production e Preview.

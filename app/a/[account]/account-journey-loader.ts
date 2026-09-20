@@ -5,6 +5,8 @@ import { getCommercialActivationHierarchicalBundle } from "@/conversion-content"
 import { getCommercialEntitlementSignal } from "../../../lib/commercial-entitlements";
 import { getActionableNicheResolutionForAccount } from "../../../lib/onboarding/niche-resolution/adapters/accountNicheResolutionUserAdapter";
 import { getActivePrimaryAccountTaxon } from "../../../lib/onboarding/niche-resolution/adapters/accountTaxonomyAdapter";
+import { readUserIdentityPreference } from "../../../lib/onboarding/pending-setup/adapters/userIdentityPreferenceAdapter";
+import { isConversationalPendingSetupEnabled } from "../../../lib/onboarding/pending-setup/config";
 import { decideAccountJourney } from "./_components/onboarding-journey-policy";
 
 type DashState = "auth" | "onboarding" | "public";
@@ -40,7 +42,21 @@ export async function loadAccountJourney({
       | null;
 
     if (accountStatus === "pending_setup") {
-      return { view: "pending_setup" as const, ctx };
+      if (
+        ctx?.member?.status !== "active" ||
+        ctx?.role !== "owner" ||
+        !ctx.member.userId
+      ) {
+        return { view: "account_unavailable" as const };
+      }
+      if (!isConversationalPendingSetupEnabled()) {
+        return { view: "pending_setup_rollout_pending" as const };
+      }
+      const identity = await readUserIdentityPreference(ctx.member.userId);
+      return {
+        view: "pending_setup_conversation" as const,
+        preferredName: identity?.preferredName ?? null,
+      };
     }
 
     if (accountStatus !== "active") {

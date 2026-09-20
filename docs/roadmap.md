@@ -979,11 +979,25 @@
 
 10.9.1 Objetivo e status
 - Objetivo: receber o usuário após a confirmação do acesso, preservar sua identidade preferida, compreender o negócio por conversa progressiva, resolver o nicho com segurança ou fallback explícito e preparar a passagem para a experiência comercial.
-- Status: planejado; execução ainda não iniciada.
+- Status: em implementação; 10.9.3 está materializada no repositório com rollout hospedado pendente, enquanto 10.9.4–10.9.6 permanecem planejadas.
+
+10.9.2 Registros do recorte
+- Banco:
+  - Criados: `public.user_identity_preferences`; `user_identity_preferences_set_updated_at`.
+- Repositório:
+  - Criados: `app/a/[account]/_components/PendingSetupConversation.tsx`; `app/a/[account]/pending-setup-actions.ts`; `lib/onboarding/pending-setup/`; `supabase/migrations/20260920150000_e10_9_user_identity_preferences.sql`; `supabase/snippets/e10_9_user_identity_preferences_verify.sql`.
+  - Ajustados: `app/a/[account]/account-journey-loader.ts`; `app/a/[account]/page.tsx`; `lib/access/types.ts`.
+- Referências:
+  - Contrato de identidade preferida: `docs/schema.md` — 1.38 user_identity_preferences.
+  - Gate e cutover hospedado: `docs/platform-config.md` — 3.5 Secrets e variáveis server-side no Vercel.
 
 10.9.3 Entrada e identidade sem fricção
-- A experiência ocorre na primeira conta `pending_setup`, antes de trial ou compra, e pergunta o nome preferido somente quando ele não estiver disponível para o usuário.
-- Site/LP, canal preferido e “Nome do projeto” não são perguntas obrigatórias; `accounts.name`, dados históricos e WhatsApp informado permanecem preservados.
+- Status: implementado no repositório; apply da migration, configuração do gate e QA hospedado permanecem pendentes do rollout pós-merge.
+- Conteúdo:
+  - A experiência ocorre na primeira conta `pending_setup`, antes de trial ou compra, exige membership ativa e papel `owner` e pergunta o nome preferido somente quando ele não estiver disponível para o usuário.
+  - A preferência permanece associada ao `user_id`, com leitura e escrita server-side e validação fechada de 1 a 80 caracteres.
+  - Site/LP, canal preferido e “Nome do projeto” não são perguntas obrigatórias; `accounts.name`, dados históricos e WhatsApp informado permanecem preservados.
+  - Com o gate desligado, o loader não consulta os objetos E10.9 e apresenta estado temporário controlado, sem retornar ao formulário antigo.
 
 10.9.4 Conversa adaptativa e resolução do nicho
 - A conversa começa com uma pergunta aberta sobre o negócio e acrescenta no máximo uma pergunta por turno, somente quando necessária para reduzir ambiguidade.

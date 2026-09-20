@@ -36,6 +36,7 @@ export interface Account {
   status?: AccountStatus | null;
 }
 export interface Member {
+  userId?: string;
   role?: Role | null;
   status?: MemberStatus | null;
 }

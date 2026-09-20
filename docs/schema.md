@@ -1078,6 +1078,20 @@
 • O trigger `openai_lp_cost_coverage_prevent_mutation` rejeita UPDATE e DELETE.
 • A única linha registrada em Production permanece congelada; `register_openai_lp_cost_coverage_v1` foi preservada historicamente sem EXECUTE para papéis externos.
 
+1.38 user_identity_preferences
+1.38.1 Chaves, constraints e relacionamentos
+• PK/FK: user_id uuid → auth.users(id), com ON UPDATE CASCADE e ON DELETE CASCADE.
+• preferred_name: text NOT NULL, sem espaços nas extremidades e com comprimento entre 1 e 80 caracteres.
+• Timestamps: created_at e updated_at timestamptz NOT NULL, com default now().
+1.38.2 Segurança
+• RLS: habilitado, sem policies de acesso direto.
+• `public`, `anon`, `authenticated` e `ai_readonly` permanecem sem privilégios.
+• `service_role` possui somente SELECT, INSERT e UPDATE; DELETE permanece negado.
+1.38.3 Trigger e estado operacional
+• `user_identity_preferences_set_updated_at`: mantém updated_at por `public.tg_set_updated_at()`, fora do Trigger Hub e sem evento de auditoria.
+• Migration candidata: `supabase/migrations/20260920150000_e10_9_user_identity_preferences.sql`.
+• Estado: contrato repo-only; apply hospedado e verificação read-only permanecem pendentes do fluxo pós-merge.
+
 2. Views
 
 2.1 v_access_context_v2
@@ -1404,6 +1418,7 @@
 • openai_lp_cost_events_prevent_mutation: rejeita UPDATE e DELETE dos eventos financeiros históricos congelados.
 • openai_lp_cost_coverage_prevent_mutation: rejeita UPDATE e DELETE da data de corte histórica.
 • openai_cost_executions_guard: preserva a identidade técnica, econômica e de baseline da execução, rejeita DELETE, segunda finalização e mutação após o terminal.
+• user_identity_preferences_set_updated_at: mantém updated_at em user_identity_preferences, sem evento de auditoria.
 
 5. Tipos canônicos
 • Fonte única: PATH: lib/types/status.ts
