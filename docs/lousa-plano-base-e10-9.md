@@ -1,8 +1,12 @@
 # Plano-base E10.9 — Pending Setup pré-comercial conversacional
 
-## PB1 — Pending Setup pré-comercial conversacional — V1
+## PB1 — Pending Setup pré-comercial conversacional — V2 técnica candidata
 
 Fonte funcional: Debate 15 — Pending Setup: recepção, identidade do usuário e resolução conversacional do nicho — LP Factory 10.
+
+V1 congelada: commit `75c2f035bbd60ef6fa197b9449df0c12375c7d6e`, blob `59ddda9c32c76b5bfc027ed57cb1fafffc8bd180`.
+
+Base técnica: `main` em `304a2d23448207bd77da7d7f93c2f1324072d072`.
 
 Execução: Complexa.
 
@@ -14,6 +18,13 @@ Supervisão: Autônomo.
 - Resultado: após confirmar o acesso por e-mail, o lead é recebido de forma humana, identificado pelo nome preferido, tem o negócio compreendido com o menor diálogo necessário, chega a uma resolução segura do nicho/taxon ou a um fallback explícito e segue para a experiência comercial sem receber entitlement por essa transição.
 - O histórico da conversa permanece associado à mesma relação usuário/conta para retomada futura dentro da LP Factory.
 
+#### Derivação técnica da V2
+
+- `/a/[account]` permanece a entrada única da conta. `app/a/[account]/account-journey-loader.ts` continua decidindo a jornada a partir do Access Context e entrega a nova experiência somente quando a conta está `pending_setup`, o usuário autenticado possui membership ativo e papel `owner`.
+- A nova responsabilidade reside em `lib/onboarding/pending-setup/`, com contratos fechados, política pura de transição, projeção limitada de contexto e adapter único de persistência. Esse boundary não substitui `lib/onboarding/niche-resolution/` e não se torna engine ou framework genérico.
+- A UI reside em `app/a/[account]/_components/PendingSetupConversation.tsx`; as server actions focais residem em `app/a/[account]/pending-setup-actions.ts`. Estados de carregamento, erro, confirmação, retomada e conclusão permanecem route-local.
+- A conclusão é uma transição server-side, autorizada, idempotente e transacional. Ela somente ocorre após resolução oficial segura, confirmação humana ou fallback operacional explícito e nunca cria entitlement, trial, plano ou pagamento.
+
 ### 4.1.2 Atores e comportamento esperado
 
 - Ator principal: usuário autenticado que recebe a primeira conta `pending_setup` pelo fluxo autorizado e atua como owner dessa conta.
@@ -23,6 +34,13 @@ Supervisão: Autônomo.
 - Resolução automática é permitida quando houver um único taxon oficial suficientemente claro; inferência material exige confirmação; ambiguidade relevante exige continuar a conversa.
 - Se nenhum taxon oficial representar corretamente o negócio, o entendimento operacional é preservado em texto, a resolução oficial fica pendente e o lead pode seguir para a experiência comercial genérica.
 - Se houver conversão sem taxon oficial competente, o onboarding factual permanece bloqueado até a resolução oficial.
+
+#### Contrato técnico da conversa
+
+- O estado fechado da jornada distingue: recepção/nome, descrição inicial, esclarecimento, confirmação, resultado pronto e conclusão. O servidor decide a transição válida; o client não escolhe status, taxon, vínculo ou ativação.
+- Cada turno aceita uma única resposta do usuário e produz no máximo uma pergunta ou ação primária. Resposta duplicada ou concorrente usa versão otimista e idempotência; conflito recarrega o estado canônico sem duplicar mensagem nem avançar duas vezes.
+- Alta confiança determinística pode formar a resolução operacional e o vínculo oficial sem etapa redundante. Inferência material persiste somente o estado pendente e exige confirmação. Ambiguidade relevante produz uma pergunta. Ausência de taxon competente exige confirmação explícita do fallback operacional.
+- Em cada estado executável há uma única pergunta ou ação primária claramente reconhecível. Resposta, confirmação, erro, retomada e fallback indicam o próximo passo sem CTAs concorrentes e sem exigir conhecimento da taxonomia interna.
 
 ### 4.1.3 Decisões de produto, preservação e escopo negativo
 
@@ -42,6 +60,13 @@ Supervisão: Autônomo.
 - Não apagar tabela, coluna, migration ou dado histórico para simplificar a implementação. Limpeza destrutiva de schema/dados fica fora do PB salvo decisão humana posterior específica.
 - A conclusão válida da nova experiência promove `pending_setup` para `active` sem conceder entitlement; `active` não pode ser reinterpretado como compra, trial concedido ou acesso produtivo.
 
+#### Contratos preservados e cutover do legado
+
+- `account_profiles` e seus dados permanecem fisicamente intactos. O novo fluxo não chama `upsertAccountProfileV1`, não sobrescreve `whatsapp`, `preferred_channel` ou `site_url` e não transforma descrição do negócio em `accounts.name`.
+- O matching, a confiança, `account_niche_resolutions`, `accountTaxonomyAdapter`, o transporte OpenAI e a contabilização do workload `niche_resolution` continuam no boundary competente; a nova jornada os orquestra sem duplicar autoridade.
+- Auditoria read-only do projeto hospedado em 20/09/2026 encontrou exatamente uma conta `active`, sem primário ativo e com resolução ainda acionável pelos predicados do adapter vigente. Portanto, `NicheResolutionCard`, suas actions e leituras permanecem exclusivamente para esse consumidor independente `active`, nunca são renderizados no novo Pending Setup e não autorizam um segundo fluxo de setup.
+- Após equivalência funcional comprovada, o mesmo cutover substitui a entrada de `PendingSetupFirstSteps` e remove `saveSetupAndContinueAction`, `validateE10_4SetupForm`, helpers E10.4 e adapters exclusivamente órfãos. `renameAccountAction`, `renameAccountNoStatus` e contratos não relacionados ficam fora da limpeza.
+
 ### 4.1.4 Automação e IA
 
 - Automação: sim. Natureza: automação com IA em fluxo controlado. Ambiente principal: runtime da LP Factory.
@@ -50,6 +75,15 @@ Supervisão: Autônomo.
 - O histórico canônico da conversa pertence à LP Factory; preservar histórico não significa enviá-lo integralmente a cada chamada de IA.
 - A V1 não altera modelo nem reasoning effort do workload vigente. Mudança futura deve seguir a governança E21 e comparação representativa por workload.
 - Falha ou indisponibilidade da IA não autoriza inventar taxon e deve preservar os caminhos determinístico, humano e de fallback aprovados.
+
+#### Contrato técnico da automação
+
+- Recepção, identidade, persistência, retomada e conclusão são determinísticas e server-side. Saudação e primeira pergunta são code-owned. Nome, e-mail, WhatsApp e demais identificadores pessoais não integram payload OpenAI nem logs.
+- O runtime executa matching e confiança determinísticos antes de qualquer chamada. Alta confiança suficientemente única encerra sem OpenAI. Ambiguidade pode gerar no máximo uma chamada foreground por turno e no máximo uma próxima pergunta.
+- A chamada reutiliza o workload `niche_resolution` e sua configuração E21 vigente, sem alterar modelo ou reasoning effort. Usa Responses API direta, Structured Outputs estrito, `store:false`, `background:false`, deadline server-side e nenhuma tool, `previous_response_id`, Conversation, retry automático, loop, Agents SDK, job, fila ou service.
+- O input contém somente a descrição de negócio, estado operacional, candidatos oficiais permitidos e projeção conversacional limitada. O output distingue `resolved_official`, `confirm_official`, `ask_clarifying_question` e `unresolved_fallback`; todo ID oficial é revalidado contra os candidatos fornecidos pelo servidor.
+- Recusa, timeout, configuração ausente, resposta incompleta ou schema inválido preservam correção, continuação humana e fallback, sem criar taxon, alias, vínculo, status ou entitlement.
+- Telemetria E21 registra workload, ambiente, configuração/revisão, resultado, categoria segura de falha, latência, response ID e usage, além do ledger de custos vigente. Não registra nome, contatos, descrição bruta, transcript, prompt ou resposta integral.
 
 ### 4.1.5 Posição planejada no roadmap e fases
 
@@ -61,12 +95,39 @@ Supervisão: Autônomo.
 - 10.9.6 — Conclusão, cutover e passagem ao comercial: promover `pending_setup` para `active` sem entitlement, preservar gates vigentes, retirar no mesmo cutover a entrada executável do runtime E10.4 antigo após comprovar a substituição funcional, sem manter fluxo paralelo nem criar janela de produção sem experiência válida, e encaminhar ao comercial genérico ou personalizado conforme o contexto disponível.
 - 10.9.2 Registros do recorte somente será materializado pelo fluxo técnico com artefatos realmente criados, ajustados ou excluídos.
 
+#### Sequência técnica executável
+
+- `10.9.1` é estado documental planejado e não cria runtime. `10.9.2` permanece reservado ao ABC de consolidação final; não é checkpoint antecipado.
+- `10.9.3 — Entrada e identidade sem fricção`: criar o boundary focal, a migration canônica, contratos de persistência e o início idempotente da conversa; ler nome explicitamente presente em Auth sem inferi-lo do e-mail; perguntar uma vez quando ausente; implementar a recepção e a primeira pergunta code-owned. A migration é fundação indispensável das subseções seguintes e não antecipa seus comportamentos de UI.
+- `10.9.4 — Conversa adaptativa e resolução do nicho`: implementar política de turno e server action versionada, reusar matching/confiança/resolução oficiais, adequar o consumidor do resolver OpenAI sob `$lp-factory-criar-prompt`, cobrir os três caminhos e o fallback e garantir uma única ação principal por estado.
+- `10.9.5 — Histórico conversacional e retomada`: carregar transcript e estado canônicos por relação usuário/conta, retomar o ponto exato após saída/retorno e após `active`, montar projeção limitada para IA e provar isolamento entre contas e truncamento do contexto.
+- `10.9.6 — Conclusão, cutover e passagem ao comercial`: concluir de forma transacional e idempotente, promover a conta sem entitlement, preservar o card apenas para o consumidor histórico `active`, substituir a entrada E10.4, remover somente código órfão comprovado e validar a passagem comercial genérica ou personalizada.
+- Cada subseção recebe `LP-Factory-Phase: <identificador exato>` somente após validações próprias e `npm run check`. A última subseção executa validação integrada, QA e ABCs finais antes da entrega técnica.
+
 ### 4.1.6 Classificação e riscos materiais
 
 - Classificação: Complexa.
 - Motivo: o plano altera materialmente a ordem da jornada, cria uma nova experiência/orquestração greenfield sobre contratos preservados, combina conversa com resolução de nicho, introduz continuidade histórica funcional e exige substituir o caminho antigo sem regressão dos gates e autoridades existentes.
 - Riscos principais: adaptar excessivamente o legado e recriar complexidade; manter caminhos paralelos ou compatibilizadores sem consumidor; remover contrato ainda necessário; aumentar fricção; resolver taxon incorreto; perder contexto; confundir `active` com entitlement; transformar histórico em autoridade factual; ampliar inadvertidamente para CRM/omnichannel.
 - A complexidade não decorre de necessidade de arquitetura agentic; essa alternativa foi explicitamente excluída.
+
+#### Persistência, segurança e risco operacional
+
+- A migration cria `public.account_pending_setup_conversations` com `id`, `account_id`, `user_id`, `preferred_name`, `business_context_text`, `stage`, `resolution_outcome`, `version`, `created_at`, `updated_at` e `completed_at`; `(account_id,user_id)` é único e referencia a membership por FK composta com `ON UPDATE CASCADE ON DELETE RESTRICT`, preservando o histórico quando a membership mudar.
+- A migration cria `public.account_pending_setup_messages` com `id`, `conversation_id`, ordinal único por conversa, `role` fechado em `user|assistant`, `content` e `created_at`; a FK usa `ON UPDATE CASCADE ON DELETE RESTRICT` e turnos não recebem update/delete operacional.
+- RPCs focais e não genéricas garantem o início idempotente e executam append/transição/conclusão com versão otimista. Na conclusão `official`, exigem primário ativo em `account_taxonomy`; na conclusão `operational_fallback`, exigem resolução operacional confirmada sem vínculo oficial; a mesma transação promove `accounts.status` de `pending_setup` para `active` e não toca entitlement.
+- As duas tabelas usam RLS, nenhuma policy direta para `anon` ou `authenticated`, `REVOKE` explícito de `PUBLIC`, `anon`, `authenticated` e `ai_readonly` e privilégios mínimos para `service_role`: conversa `SELECT/INSERT/UPDATE`, mensagens `SELECT/INSERT` e execução somente das RPCs necessárias. RPCs usam `search_path` fixo e não são API pública.
+- O adapter server-only é a única residência de acesso às novas tabelas/RPCs. Client, adapter de taxonomia, adapter de perfil e boundary de access não acessam a persistência conversacional diretamente.
+- O Supabase hospedado usa PostgreSQL 17 e o novo comportamento de exposição exige grants explícitos; RLS e grant são camadas distintas. Testes verificam ambos e impedem exposição acidental pela Data API.
+- Risco de cutover: o workflow de migration e o deploy Production são independentes e o projeto Vercel está com auto-assign habilitado. O runtime novo não pode receber tráfego no domínio de Production antes do apply e da verificação da migration.
+
+#### Gate operacional de migration e Production
+
+- Imediatamente antes do merge já liberado pelo Estrategista Autônomo, confirmar ausência de merge concorrente e desabilitar `Auto-Assign Custom Production Domains` no ambiente Production do projeto Vercel `lp-factory-10`; essa mudança não ocorre durante planejamento ou implementação ordinária.
+- O merge gera, para o mesmo merge SHA, um deployment Production em estado staged e o workflow `Pipeline Supabase — Apply Migrations`. O domínio vigente continua apontando para o deployment anterior; não há fallback para o formulário antigo dentro do novo runtime.
+- Somente após o workflow de migration concluir com sucesso, a lista de migrations e a consulta read-only pós-apply confirmarem objetos, RPCs, RLS, grants e invariantes, o Executor confirma que o staged deployment corresponde ao mesmo merge SHA e o promove ao domínio de Production.
+- Após promoção, executar smoke autenticado mínimo e conferir logs de erro; então restaurar o auto-assign para o estado operacional anterior. Falha em apply, verificação, identidade do SHA, deployment ou smoke impede promoção e mantém o deployment anterior servindo.
+- O fluxo não cria flag de produto, caminho paralelo, workflow novo, deploy hook ou service. A guarda é operacional, temporária e limitada ao cutover com migration acoplada.
 
 ### 4.1.7 Critérios de aceite e evidências esperadas
 
@@ -83,6 +144,24 @@ Supervisão: Autônomo.
 - QA visual comprova experiência progressiva e legível em viewport móvel e desktop, sem aparência de formulário longo, sem overflow e com estados de carregamento, erro, retomada e confirmação compreensíveis.
 - Evidência técnica deve demonstrar: novo caminho único do Pending Setup; runtime E10.4 antigo sem entrada executável após o cutover; ausência de janela de produção sem experiência válida para contas `pending_setup`; ausência de dependência indevida do formulário/orquestração antigos; equivalência funcional item a item antes de remover contratos existentes; remoção de código antigo exclusivamente órfão quando a substituição estiver comprovada; preservação de dados históricos; testes focais dos fluxos novos; e ausência de regressão nos gates de acesso, membership, account status, entitlement, taxonomia e comercial.
 
+#### Validação técnica e QA da V2
+
+- `npm ci` uma vez no lote contínuo; `npm run check` e validações focais antes de cada checkpoint; `git diff --check` antes de publicar.
+- Validator code-owned de `lib/onboarding/pending-setup/` cobre transições válidas/inválidas, nome conhecido/ausente, primeira pergunta, três caminhos, fallback, IA indisponível, idempotência, versão concorrente, retomada, histórico longo, isolamento entre contas e autorização owner.
+- Testes do resolver cobrem zero chamada no caminho determinístico, no máximo uma chamada por turno ambíguo, uma pergunta, `store:false`, `background:false`, deadline, recusa/timeout/incompletude/schema inválido e rejeição de ID não permitido. Validadores de workloads, custos, jornada comercial, checkout e onboarding existentes continuam verdes.
+- Teste SQL integral em PostgreSQL compatível e transação efêmera com rollback cobre parsing, FKs, checks, unicidade, RLS, ausência de policies públicas, grants/ACL, idempotência, concorrência, histórico após `active`, resultado oficial, fallback operacional e ativação sem entitlement. `supabase migration list --linked` e `supabase db push --linked --dry-run` completam a evidência pré-merge; nenhuma mutação remota ocorre antes do merge.
+- Busca e diff provam ausência de entrada executável de `PendingSetupFirstSteps`, `saveSetupAndContinueAction` e `validateE10_4SetupForm`, e preservação do `NicheResolutionCard` somente para o consumidor `active` comprovado.
+- QA autenticado no Preview cobre mobile e desktop, loading, erro, confirmação, fallback, saída/retorno e passagem comercial. Em todos os estados, há uma única próxima ação reconhecível.
+- Nos controles aplicáveis, validar operação integral por teclado, foco visível e previsível após envio/erro/confirmação/retomada, labels/instruções/erros associados, feedback textual anunciado, contraste, alvo mínimo de 44 px conforme Design System e ausência de interação exclusiva por hover. Combinar inspeção automática e QA manual sem declarar conformidade WCAG 2.2 integral.
+- Observabilidade: eventos sanitizados comprovam resultado e falha do fluxo e do workload, sem PII, descrição bruta, transcript, prompt ou resposta integral.
+- Gate final: migration aplicada e verificada antes da promoção do mesmo SHA staged; smoke de Production confirma a nova entrada, retomada, ausência de entitlement e passagem comercial sem erro visível.
+
 ### 4.1.8 Supervisão
 
 - Supervisão: Autônomo. O fluxo técnico pode conduzir o PB1 sem supervisão rotineira do Estrategista Original, preservando integralmente a V1; decisões que ultrapassem a autoridade concedida devem ser escaladas conforme o Prompt Estrategista.
+
+### 4.1.9 Classificação dos acréscimos técnicos
+
+- `derivação técnica da V1`: entrada/guard, boundary `pending-setup`, persistência relacional, RPCs transacionais, RLS/grants, política de turno, leitura de nome, reuso do boundary de nicho, continuidade, conclusão, limpeza órfã, validações e gate staged de cutover. Todos são necessários para executar resultados e invariantes já aprovados.
+- `modernização técnica justificada`: critérios `prod#14` de uma única próxima ação reconhecível e `prod#17` de teclado, foco, semântica, anúncio, contraste e alvo de toque. Ambos possuem impacto estrutural baixo, nenhum impacto funcional e não exigem confronto estrutural.
+- `ampliação de escopo`: nenhuma incorporada. Realtime, embeddings, filas, RLS automática ampla, AI Gateway, flags de produto, telemetria nova, programa de pesquisa, WhatsApp/omnichannel e demais oportunidades condicionais permanecem fora deste PB.
