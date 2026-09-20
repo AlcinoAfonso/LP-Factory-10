@@ -5,13 +5,18 @@ import type {
 } from "./contracts";
 import { presentPendingSetupBusinessTurn } from "./contracts";
 
+export type PendingSetupTurnCorrelation = Pick<
+  PendingSetupConversationTurn,
+  "id" | "status" | "turnKind" | "userMessage"
+>;
+
 type CompleteTurn = (input: {
   state: PendingSetupConversationProductState;
   message: string;
 }) => Promise<boolean>;
 
 export async function reconcilePendingSetupTurnRetry(
-  turn: PendingSetupConversationTurn,
+  turn: PendingSetupTurnCorrelation,
   business: PendingSetupBusinessSnapshot,
   complete: CompleteTurn,
 ): Promise<"completed" | "not_ready" | "persist_failed"> {
@@ -31,7 +36,7 @@ export function selectPendingSetupCompletionRetryTurn(
 }
 
 export function canReconcilePendingSetupTurn(
-  turn: PendingSetupConversationTurn,
+  turn: PendingSetupTurnCorrelation,
   business: PendingSetupBusinessSnapshot,
 ): boolean {
   if (turn.status === "completed" || business.kind === "awaiting_business") return false;
@@ -53,7 +58,7 @@ export function canReconcilePendingSetupTurn(
   return descriptionMatchesTurn(turn, business.resolution.rawInput);
 }
 
-function descriptionMatchesTurn(turn: PendingSetupConversationTurn, rawInput: string): boolean {
+function descriptionMatchesTurn(turn: PendingSetupTurnCorrelation, rawInput: string): boolean {
   const persistedInput = normalizeComparable(rawInput);
   const turnInput = normalizeComparable(turn.userMessage);
   if (turn.turnKind === "business_description") return persistedInput === turnInput;

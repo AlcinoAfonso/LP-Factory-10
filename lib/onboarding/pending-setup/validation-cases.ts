@@ -25,6 +25,7 @@ import {
   type PendingSetupConversationTurn,
   presentPendingSetupBusinessTurn,
   validatePendingSetupTurnId,
+  validateOptionalWhatsapp,
   validatePreferredName,
 } from "./contracts";
 
@@ -40,6 +41,11 @@ assert.equal(
 );
 assert.equal(validatePendingSetupTurnId("d9428888-122b-1c2e-941f-70a76fb55e37"), null);
 assert.equal(validatePendingSetupTurnId("not-a-turn-id"), null);
+assert.equal(validateOptionalWhatsapp(" 21979658483 "), "21979658483");
+assert.equal(validateOptionalWhatsapp("21979-658483"), null);
+assert.equal(validateOptionalWhatsapp("1".repeat(9)), null);
+assert.equal(validateOptionalWhatsapp("1".repeat(16)), null);
+assert.equal(validateOptionalWhatsapp(""), null);
 const maximumFallbackDescription = "x".repeat(500);
 assert.deepEqual(
   presentPendingSetupBusinessTurn({

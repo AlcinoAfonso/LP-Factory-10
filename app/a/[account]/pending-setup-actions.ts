@@ -20,6 +20,7 @@ import {
   readPendingSetupConversationHistory,
   readPendingSetupConversationTurn,
 } from "../../../lib/onboarding/pending-setup/adapters/conversationHistoryAdapter";
+import { savePendingSetupWhatsappForAccount } from "../../../lib/onboarding/pending-setup/adapters/accountProfileWhatsappAdapter";
 import {
   readUserIdentityPreference,
   saveUserIdentityPreference,
@@ -36,14 +37,15 @@ import {
   canReconcilePendingSetupTurn,
   reconcilePendingSetupTurnRetry,
   selectPendingSetupCompletionRetryTurn,
+  type PendingSetupTurnCorrelation,
 } from "../../../lib/onboarding/pending-setup/conversationHistoryCore";
 import { isConversationalPendingSetupEnabled } from "../../../lib/onboarding/pending-setup/config";
 import {
   type PendingSetupBusinessSnapshot,
   type PendingSetupConversationTurn,
   type PendingSetupConversationTurnKind,
-  presentPendingSetupBusinessTurn,
   validatePendingSetupTurnId,
+  validateOptionalWhatsapp,
   validatePreferredName,
 } from "../../../lib/onboarding/pending-setup/contracts";
 
@@ -79,6 +81,17 @@ export async function continuePendingSetupConversationAction(
   if (intent === "complete_setup") {
     if (!allowed.preferredName) {
       return { ...previous, ok: false, error: "Salve seu nome antes de continuar." };
+    }
+    const whatsapp = validateOptionalWhatsapp(formData.get("whatsapp"));
+    if (whatsapp) {
+      try {
+        await savePendingSetupWhatsappForAccount({
+          accountId: allowed.accountId,
+          whatsapp,
+        });
+      } catch {
+        // Optional profile enrichment never blocks Pending Setup completion.
+      }
     }
     if (allowed.accountStatus === "pending_setup") {
       try {
@@ -244,7 +257,11 @@ export async function continuePendingSetupConversationAction(
       }
 
       const business = await loadPendingSetupBusinessSnapshot(allowed.accountId);
-      if (!(await completeRecordedTurn(allowed.accountId, turnId, business))) {
+      if (!(await completeRecordedTurn(
+        allowed.accountId,
+        correlationTurn(resumed, turnId, parsed.value, recordedKind),
+        business,
+      ))) {
         return failRecordedTurn(allowed, turnId, "turn_completion_failed", previous);
       }
       revalidatePath(allowed.route);
@@ -324,7 +341,11 @@ export async function continuePendingSetupConversationAction(
       if (!result.ok) return failRecordedTurn(allowed, turnId, result.reason, previous);
 
       const business = await loadPendingSetupBusinessSnapshot(allowed.accountId);
-      if (!(await completeRecordedTurn(allowed.accountId, turnId, business))) {
+      if (!(await completeRecordedTurn(
+        allowed.accountId,
+        correlationTurn(resumed, turnId, selectedOption.name, selectedTurnKind),
+        business,
+      ))) {
         return failRecordedTurn(allowed, turnId, "turn_completion_failed", previous);
       }
       revalidatePath(allowed.route);
@@ -385,7 +406,11 @@ export async function continuePendingSetupConversationAction(
       if (!result.ok) return failRecordedTurn(allowed, turnId, result.reason, previous);
 
       const business = await loadPendingSetupBusinessSnapshot(allowed.accountId);
-      if (!(await completeRecordedTurn(allowed.accountId, turnId, business))) {
+      if (!(await completeRecordedTurn(
+        allowed.accountId,
+        correlationTurn(resumed, turnId, resolution.rawInput, "fallback_confirmation"),
+        business,
+      ))) {
         return failRecordedTurn(allowed, turnId, "turn_completion_failed", previous);
       }
       revalidatePath(allowed.route);
@@ -561,19 +586,32 @@ async function loadConversationState(
 
 async function completeRecordedTurn(
   accountId: string,
-  turnId: string,
+  turn: PendingSetupTurnCorrelation,
   business: PendingSetupBusinessSnapshot,
 ): Promise<boolean> {
-  const presentation = presentPendingSetupBusinessTurn(business);
-  if (!presentation) return false;
-  return completePendingSetupConversationTurn({
-    accountId,
-    turnId,
-    status: "completed",
-    productState: presentation.state,
-    productMessage: presentation.message,
-    failureCode: null,
-  });
+  return await reconcilePendingSetupTurnRetry(
+    turn,
+    business,
+    async (presentation) => completePendingSetupConversationTurn({
+      accountId,
+      turnId: turn.id,
+      status: "completed",
+      productState: presentation.state,
+      productMessage: presentation.message,
+      failureCode: null,
+    }),
+  ) === "completed";
+}
+
+function correlationTurn(
+  resumed: ExistingTurnResume,
+  turnId: string,
+  userMessage: string,
+  turnKind: PendingSetupConversationTurnKind,
+): PendingSetupTurnCorrelation {
+  return resumed.kind === "resumed"
+    ? resumed.turn
+    : { id: turnId, status: "pending", turnKind, userMessage };
 }
 
 async function failRecordedTurn(

@@ -368,8 +368,24 @@ function CompletionForm({
   return (
     <div className="mt-6 space-y-4">
       <FeedbackMessage tone="success">{children}</FeedbackMessage>
-      <form action={action}>
+      <form action={action} className="space-y-4">
         <ConversationIntent accountSubdomain={accountSubdomain} intent="complete_setup" />
+        <FormField>
+          <FormFieldLabel htmlFor="pending_setup_whatsapp">
+            Quer deixar seu WhatsApp? (opcional)
+          </FormFieldLabel>
+          <Input
+            autoComplete="tel"
+            disabled={disabled}
+            id="pending_setup_whatsapp"
+            inputMode="tel"
+            name="whatsapp"
+            placeholder="Somente dígitos, com DDD"
+          />
+          <p className="text-xs leading-5 text-graytech-600">
+            Se informar um número válido de 10 a 15 dígitos, ele ficará salvo no perfil.
+          </p>
+        </FormField>
         <Button disabled={disabled} type="submit">
           {disabled ? "Concluindo..." : "Continuar para a experiência comercial"}
         </Button>

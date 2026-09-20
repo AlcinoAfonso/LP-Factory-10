@@ -1,6 +1,8 @@
 import type { ActionableNicheResolution } from "../niche-resolution/contracts";
 
 export const PREFERRED_NAME_MAX_LENGTH = 80;
+export const OPTIONAL_WHATSAPP_MIN_LENGTH = 10;
+export const OPTIONAL_WHATSAPP_MAX_LENGTH = 15;
 
 export type PreferredNameValidation =
   | { ok: true; value: string }
@@ -16,6 +18,15 @@ export function validatePreferredName(input: unknown): PreferredNameValidation {
     };
   }
   return { ok: true, value };
+}
+
+export function validateOptionalWhatsapp(input: unknown): string | null {
+  const value = typeof input === "string" ? input.trim() : "";
+  return new RegExp(
+    `^\\d{${OPTIONAL_WHATSAPP_MIN_LENGTH},${OPTIONAL_WHATSAPP_MAX_LENGTH}}$`,
+  ).test(value)
+    ? value
+    : null;
 }
 
 export function validatePendingSetupTurnId(input: unknown): string | null {
