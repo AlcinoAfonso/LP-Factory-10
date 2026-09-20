@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 20/09/2026
-• Versão: v1.5.237
+• Versão: v1.5.238
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -735,7 +735,7 @@
 10. E10 — Account Dashboard e jornada da conta
 
 - Objetivo: consolidar a experiência pós-login por conta, da navegação multi-conta e do setup inicial à resolução de nicho e à apresentação comercial, preservando decisões server-side de acesso, papel, entitlement e estado operacional.
-- Status: os fluxos principais estão implementados e a substituição repo-side do Pending Setup pela jornada E10.9 foi concluída; permanecem como lacunas a ação inefetiva de criar outra conta no switcher, a ausência dos eventos específicos do switcher, a edição manual de copy da página comercial personalizada e os gates hospedados pós-merge da E10.9.
+- Status: os fluxos principais estão implementados e a substituição repo-side do Pending Setup pela jornada E10.9 foi concluída; permanecem como lacunas a ação inefetiva de criar outra conta no switcher, a ausência dos eventos específicos do switcher, a edição manual de copy da página comercial personalizada e os gates pré-merge e pós-merge ainda pendentes da E10.9.
 
 10.3 Navegação multi-conta e cabeçalho
 
@@ -979,7 +979,7 @@
 
 10.9.1 Objetivo e status
 - Objetivo: substituir a experiência E10.4 por uma jornada conversacional pré-comercial que receba a pessoa, compreenda o negócio, resolva ou preserve operacionalmente o nicho, mantenha histórico por relação usuário/conta e promova `pending_setup` para `active` sem criar entitlement.
-- Status: implementado no repositório; migration, QA autenticado e rollout hospedado permanecem gates pós-merge do fluxo operacional aprovado.
+- Status: implementado no repositório; prova SQL integral, `migration list --linked`, `db push --linked --dry-run` e QA autenticado de Preview permanecem gates pré-merge. O apply remoto, a verificação pós-apply de ACL/RLS/RPCs, a promoção do mesmo SHA staged, o smoke de Production e a restauração do auto-assign permanecem gates pós-merge.
 
 10.9.2 Registros do recorte
 - Banco:
