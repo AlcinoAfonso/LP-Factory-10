@@ -120,6 +120,12 @@ export async function readActionablePendingSetupNicheResolutionForAccount(input:
         usableActivePrimaryTaxonId: primary.taxonId,
       })
     ) {
+      if (
+        validated.reason === "already_finalized" &&
+        !(await retireStalePendingSetupPrimary(input.accountId))
+      ) {
+        return { ok: false, reason: "stale_primary_retirement_failed" };
+      }
       return { ok: true, resolution: null, recoverableRawInput: null };
     }
   }
@@ -574,6 +580,29 @@ async function getValidatedActionContext(input: {
       },
     },
   };
+}
+
+async function retireStalePendingSetupPrimary(accountId: string): Promise<boolean> {
+  const supabase = createServiceClient();
+  try {
+    const { data, error } = await supabase.rpc("retire_stale_pending_setup_primary", {
+      p_account_id: accountId,
+    });
+    if (error) {
+      console.error("retireStalePendingSetupPrimary failed:", {
+        code: (error as any)?.code,
+        message: (error as any)?.message ?? String(error),
+      });
+      return false;
+    }
+    return data === "retired" || data === "primary_not_found";
+  } catch (error) {
+    console.error("retireStalePendingSetupPrimary failed:", {
+      code: error instanceof Error ? error.name : undefined,
+      message: error instanceof Error ? error.message : String(error),
+    });
+    return false;
+  }
 }
 
 async function readUsableActivePrimaryTaxonId(accountId: string): Promise<
