@@ -1,6 +1,6 @@
 ---
 name: lp-factory-avaliar-implementacao-analista
-description: Avaliar uma subseção implementada ou a entrega final de um plano-base aprovado do LP Factory 10 com o custom agent analista em modo read-only. Usar antes de avançar para a próxima subseção, de abrir o gate de evidência de QA ou de liberar o PR final para merge.
+description: Avaliar focalmente uma subseção quando acionada por risco material e executar a revisão final integrada de um plano-base aprovado do LP Factory 10 com o custom agent analista read-only.
 ---
 
 # Avaliar implementação pelo Analista
@@ -9,9 +9,9 @@ Usar exatamente um custom agent `analista` read-only por revisão. O task princi
 
 ## Preparar
 
-1. Confirmar repositório, worktree, branch, estado Git, SHA do plano aprovado e identificador exato da subseção.
+1. Confirmar repositório, worktree, branch, estado Git, SHA do plano aprovado e, na revisão focal, o identificador exato da subseção.
 2. Entregar ao Analista o trecho integral da subseção, critérios de aceite, diff desde o checkpoint anterior, arquivos alterados, validações executadas e fontes técnicas necessárias. No handoff da orquestração, incluir a matriz e os pareceres especializados nela referenciados que forem pertinentes à subseção. Para cada documento canônico avaliado, incluir snapshot anterior, relatório factual, resultado integral do ABC e documento resultante.
-3. Para revisão final solicitada fora do fluxo automatizado, entregar todos os checkpoints, diff acumulado, resultados integrados, delta documental, matriz, pareceres especializados preservados e eventuais evidências de QA.
+3. Na revisão final, entregar checkpoints, diff acumulado, resultados integrados, delta documental, matriz, pareceres preservados e evidências de QA aplicáveis.
 4. Se plano, fase, diff ou evidência forem ambíguos, não delegar nem reconstruir o escopo por inferência; devolver ao chamador apenas a lacuna.
 
 ## Delegar
@@ -21,7 +21,7 @@ Usar exatamente um custom agent `analista` read-only por revisão. O task princi
 3. Quando houver documento canônico, auditar se o diff corresponde somente às operações emitidas pelo ABC e se `SEM ALTERAÇÕES NECESSÁRIAS` preservou o documento. Não refazer os critérios internos do contrato canônico.
 4. Preservar a resposta integral e o estado Git antes e depois da delegação.
 
-No fluxo de `$lp-factory-conduzir-plano-completo`, usar esta skill somente nos gates por subseção. Depois que o Executor declarar a entrega completa, não acionar nenhuma revisão do Analista; a avaliação seguinte pertence ao supervisor competente conforme o modo definido no Pipeline.
+No fluxo de `$lp-factory-conduzir-plano-completo`, `revisao_implementacao` é focal nas condições definidas pelo Executor; `revisao_final_implementacao` é obrigatória após o último checkpoint e antes da entrega técnica ao supervisor.
 
 ## Tratar a conclusão
 
