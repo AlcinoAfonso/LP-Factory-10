@@ -7,6 +7,15 @@ import {
   validateBusinessContext,
   validatePreferredName,
 } from "./policy";
+import {
+  appendBusinessContext,
+  decidePendingSetupAiTurn,
+  shouldUseAutomaticOfficialPath,
+} from "./turn-policy";
+import { resolveNicheWithOpenAi } from "../niche-resolution/adapters/openAiResolver";
+import type { TaxonMatchCandidate } from "../niche-resolution/contracts";
+
+async function main(): Promise<void> {
 
 assert.equal(
   resolvePreferredNameFromAuth(
@@ -81,4 +90,162 @@ assert.match(page, /PendingSetupConversation/);
 assert.doesNotMatch(page, /PendingSetupFirstSteps/);
 assert.match(loader, /loadPendingSetupConversation/);
 
-console.log("ok - E10.9 pending setup identity and persistence contracts");
+const candidate: TaxonMatchCandidate = {
+  taxonId: "10000000-0000-4000-8000-000000000001",
+  name: "Consultoria financeira",
+  slug: "consultoria-financeira",
+  level: "niche",
+  parentId: null,
+  parentName: null,
+  matchedAliases: [],
+  matchSource: "taxon_name_exact",
+  score: 0.99,
+};
+const highDecision = {
+  confidence: "high" as const,
+  selectedCandidate: candidate,
+  shouldUseDeterministicMatch: true,
+  shouldEscalateToAi: false,
+  aiEscalationMode: "none" as const,
+  needsAdminReview: false,
+  reason: "high_confidence_strong_match" as const,
+};
+assert.equal(shouldUseAutomaticOfficialPath(highDecision), true);
+assert.equal(appendBusinessContext("consultoria", "para restaurantes"), "consultoria | para restaurantes");
+
+let deterministicTransportCalls = 0;
+const deterministicAi = await resolveNicheWithOpenAi({
+  rawInput: "consultoria financeira",
+  decision: highDecision,
+  candidates: [candidate],
+  apiKey: "test-key",
+  financialContext: {
+    universe: "client",
+    attributionStatus: "attributed",
+    accountId: "20000000-0000-4000-8000-000000000001",
+  },
+}, {
+  environment: "development",
+  fetchImpl: async () => {
+    deterministicTransportCalls += 1;
+    return new Response();
+  },
+});
+assert.equal(deterministicAi.status, "skipped_not_eligible");
+assert.equal(deterministicTransportCalls, 0);
+
+const ambiguousDecision = {
+  ...highDecision,
+  confidence: "medium" as const,
+  shouldUseDeterministicMatch: false,
+  shouldEscalateToAi: true,
+  aiEscalationMode: "rerank_candidates" as const,
+  needsAdminReview: true,
+  reason: "medium_confidence_below_high_threshold" as const,
+};
+let ambiguousTransportCalls = 0;
+let capturedRequest: Record<string, unknown> | null = null;
+const ambiguousAi = await resolveNicheWithOpenAi({
+  rawInput: "consultoria para ana@example.com https://example.com +55 (21) 97965-8483",
+  decision: ambiguousDecision,
+  candidates: [candidate],
+  apiKey: "test-key",
+  financialContext: {
+    universe: "client",
+    attributionStatus: "attributed",
+    accountId: "20000000-0000-4000-8000-000000000001",
+  },
+}, {
+  environment: "development",
+  fetchImpl: async (_url, init) => {
+    ambiguousTransportCalls += 1;
+    capturedRequest = JSON.parse(String(init?.body));
+    return new Response(JSON.stringify({
+      id: "resp_pending_setup",
+      output_text: JSON.stringify({
+        uxMode: "confirm_single",
+        message: "ignore",
+        options: [{
+          taxonId: candidate.taxonId,
+          name: candidate.name,
+          slug: candidate.slug,
+          confidence: "medium",
+          reason: "official_candidate",
+          isOfficial: true,
+        }],
+        needsAdminReview: false,
+        needsUserConfirmation: true,
+        shouldCreateOfficialLink: false,
+        suggestedNewTaxonLabel: null,
+        reason: "ai_resolution_completed",
+      }),
+    }), { status: 200, headers: { "Content-Type": "application/json" } });
+  },
+});
+assert.equal(ambiguousTransportCalls, 1);
+assert.equal(ambiguousAi.ok, true);
+const request = capturedRequest as unknown as {
+  store?: boolean;
+  background?: boolean;
+  input?: Array<{ role?: string; content?: string }>;
+};
+assert.equal(request.store, false);
+assert.equal(request.background, false);
+assert.deepEqual(request.input?.map((item) => item.role), ["system", "developer", "user"]);
+const userPrompt = request.input?.find((item) => item.role === "user")?.content ?? "";
+assert.doesNotMatch(userPrompt, /ana@example\.com|example\.com|97965/);
+assert.match(userPrompt, /\[email removido\]|\[url removida\]|\[telefone removido\]/);
+if (!ambiguousAi.ok) throw new Error("expected mocked AI resolution");
+const confirmation = decidePendingSetupAiTurn({
+  output: ambiguousAi.output,
+  allowedCandidates: [candidate],
+});
+assert.equal(confirmation.kind, "confirm_official");
+assert.equal((confirmation.assistantContent.match(/\?/g) ?? []).length, 1);
+
+const rejectedUnknownId = decidePendingSetupAiTurn({
+  output: {
+    uxMode: "confirm_single",
+    message: "ignore",
+    options: [{
+      taxonId: "90000000-0000-4000-8000-000000000009",
+      name: "Taxon inventado",
+      slug: "taxon-inventado",
+      confidence: "high",
+      reason: "invented",
+      isOfficial: true,
+    }],
+    needsAdminReview: false,
+    needsUserConfirmation: true,
+    shouldCreateOfficialLink: false,
+    suggestedNewTaxonLabel: null,
+    reason: "invalid_candidate",
+  },
+  allowedCandidates: [candidate],
+});
+assert.equal(rejectedUnknownId.kind, "unresolved_fallback");
+
+const resolverSource = readFileSync(
+  new URL("../niche-resolution/adapters/openAiResolver.ts", import.meta.url),
+  "utf8",
+);
+assert.doesNotMatch(resolverSource, /resolved_official/);
+assert.match(resolverSource, /store:\s*false/);
+assert.match(resolverSource, /background:\s*false/);
+assert.match(resolverSource, /AbortController/);
+assert.match(resolverSource, /role:\s*"developer"/);
+assert.match(resolverSource, /role:\s*"user"/);
+
+const accountTaxonomyAdapter = readFileSync(
+  new URL("../niche-resolution/adapters/accountTaxonomyAdapter.ts", import.meta.url),
+  "utf8",
+);
+assert.match(accountTaxonomyAdapter, /USER_CONFIRMED_AI_SOURCE_TYPE\s*=\s*"user_confirmed_ai"/);
+
+console.log("ok - E10.9 pending setup identity, persistence and adaptive-turn contracts");
+}
+
+main().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});

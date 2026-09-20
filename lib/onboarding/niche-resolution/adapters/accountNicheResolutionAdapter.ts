@@ -55,6 +55,12 @@ export async function upsertAccountNicheResolution(
     ai_needs_admin_review: false,
     ai_reason: null,
     ai_processed_at: null,
+    user_resolution_status: null,
+    user_selected_taxon_id: null,
+    user_rewrite_input: null,
+    user_confirmed_at: null,
+    user_rejected_at: null,
+    user_dismissed_at: null,
   };
 
   try {

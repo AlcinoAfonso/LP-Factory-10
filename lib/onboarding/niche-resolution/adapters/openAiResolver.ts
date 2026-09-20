@@ -26,9 +26,11 @@ import {
   type OpenAiCostExecutionOrigin,
   type OpenAiCostRecorder,
 } from "../../../openai-costs";
+import { redactPotentialContactDetails } from "../../text-redaction";
 
 const OPENAI_RESPONSES_ENDPOINT = "https://api.openai.com/v1/responses";
 const MAX_AI_OPTIONS = 3;
+const OPENAI_FOREGROUND_DEADLINE_MS = 12_000;
 
 const UX_MODES = new Set<AiNicheResolutionUxMode>([
   "none",
@@ -89,6 +91,7 @@ type OpenAiResolverDependencies = Readonly<{
   costRecorder?: OpenAiCostRecorder;
   createId?: () => string;
   nowIso?: () => string;
+  timeoutMs?: number;
 }>;
 
 const AI_NICHE_RESOLUTION_SCHEMA = {
@@ -272,10 +275,17 @@ export async function resolveNicheWithOpenAi(input: {
     await recorder.finishExecution({ executionId, result, failureCategory, finishedAt });
   };
   const startedAt = now();
+  const abortController = new AbortController();
+  const deadline = setTimeout(
+    () => abortController.abort(),
+    dependencies.timeoutMs ?? OPENAI_FOREGROUND_DEADLINE_MS,
+  );
 
   try {
+    const promptPayload = buildPromptPayload(input);
     const response = await fetchImpl(OPENAI_RESPONSES_ENDPOINT, {
       method: "POST",
+      signal: abortController.signal,
       headers: {
         Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
@@ -285,7 +295,17 @@ export async function resolveNicheWithOpenAi(input: {
         reasoning: { effort: workload.reasoningEffort },
         input: [
           { role: "system", content: SYSTEM_PROMPT },
-          { role: "user", content: JSON.stringify(buildPromptPayload(input)) },
+          {
+            role: "developer",
+            content: JSON.stringify({
+              deterministic_decision: promptPayload.deterministic_decision,
+              official_candidates: promptPayload.official_candidates,
+            }),
+          },
+          {
+            role: "user",
+            content: JSON.stringify({ raw_input: promptPayload.raw_input }),
+          },
         ],
         text: {
           format: {
@@ -296,6 +316,8 @@ export async function resolveNicheWithOpenAi(input: {
           },
         },
         max_output_tokens: 700,
+        store: false,
+        background: false,
       }),
     });
 
@@ -437,6 +459,8 @@ export async function resolveNicheWithOpenAi(input: {
       schemaVersion: AI_NICHE_RESOLUTION_SCHEMA_VERSION,
       reason: error instanceof Error ? error.name : "openai_resolver_error",
     };
+  } finally {
+    clearTimeout(deadline);
   }
 }
 
@@ -446,7 +470,7 @@ function buildPromptPayload(input: {
   candidates: TaxonMatchCandidate[];
 }) {
   return {
-    raw_input: input.rawInput,
+    raw_input: redactPotentialContactDetails(input.rawInput).slice(0, 4000),
     deterministic_decision: {
       confidence: input.decision.confidence,
       selected_taxon_id: input.decision.selectedCandidate?.taxonId ?? null,

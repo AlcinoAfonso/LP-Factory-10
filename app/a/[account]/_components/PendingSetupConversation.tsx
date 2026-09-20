@@ -5,8 +5,10 @@ import { Button } from "@/components/ui/button";
 import { FeedbackMessage } from "@/components/ui/feedback-message";
 import { FormField, FormFieldError, FormFieldHint, FormFieldLabel } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import type { PendingSetupConversation as PendingSetupConversationContract } from "../../../../lib/onboarding/pending-setup";
 import {
+  continuePendingSetupConversationAction,
   savePendingSetupPreferredNameAction,
   type PendingSetupActionState,
 } from "../pending-setup-actions";
@@ -22,11 +24,20 @@ export function PendingSetupConversation({
     PendingSetupActionState,
     FormData
   >(savePendingSetupPreferredNameAction, { ok: true });
+  const [turnState, turnAction, isTurnPending] = useActionState<
+    PendingSetupActionState,
+    FormData
+  >(continuePendingSetupConversationAction, { ok: true });
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   useEffect(() => {
     if (state.fieldError) inputRef.current?.focus();
   }, [state.fieldError]);
+
+  useEffect(() => {
+    if (turnState.fieldError) textareaRef.current?.focus();
+  }, [turnState.fieldError]);
 
   if (!conversation) {
     return (
@@ -128,7 +139,112 @@ export function PendingSetupConversation({
             </div>
           </form>
         ) : null}
+
+        {conversation.stage === "business_understanding" ? (
+          <form action={turnAction} className="border-t border-surface-border px-5 py-5 sm:px-8">
+            <ConversationHiddenFields
+              accountSubdomain={accountSubdomain}
+              conversationId={conversation.id}
+              version={conversation.version}
+            />
+
+            {turnState.formError ? (
+              <FeedbackMessage tone="error" className="mb-4">
+                {turnState.formError}
+              </FeedbackMessage>
+            ) : null}
+
+            <FormField>
+              <FormFieldLabel htmlFor="business_context">Sua resposta</FormFieldLabel>
+              <Textarea
+                ref={textareaRef}
+                id="business_context"
+                name="business_context"
+                maxLength={4000}
+                disabled={isTurnPending}
+                aria-invalid={Boolean(turnState.fieldError)}
+                aria-describedby={turnState.fieldError ? "business-context-error" : "business-context-hint"}
+                placeholder="Ex.: faço consultoria financeira para pequenos restaurantes"
+                className="min-h-28"
+              />
+              {turnState.fieldError ? (
+                <FormFieldError id="business-context-error">{turnState.fieldError}</FormFieldError>
+              ) : (
+                <FormFieldHint id="business-context-hint">
+                  Não inclua telefone, e-mail ou endereço. Uma frase costuma bastar.
+                </FormFieldHint>
+              )}
+            </FormField>
+
+            <Button type="submit" disabled={isTurnPending} className="mt-5 min-h-11">
+              {isTurnPending ? "Entendendo…" : "Continuar"}
+            </Button>
+          </form>
+        ) : null}
+
+        {conversation.stage === "niche_confirmation" ? (
+          <form action={turnAction} className="border-t border-surface-border px-5 py-5 sm:px-8">
+            <ConversationHiddenFields
+              accountSubdomain={accountSubdomain}
+              conversationId={conversation.id}
+              version={conversation.version}
+            />
+
+            {turnState.formError ? (
+              <FeedbackMessage tone="error" className="mb-4">
+                {turnState.formError}
+              </FeedbackMessage>
+            ) : null}
+
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+              <Button
+                type="submit"
+                name="intent"
+                value="confirm"
+                disabled={isTurnPending}
+                className="min-h-11"
+              >
+                {isTurnPending ? "Confirmando…" : "Sim, está correto"}
+              </Button>
+              <Button
+                type="submit"
+                name="intent"
+                value="clarify"
+                disabled={isTurnPending}
+                className="min-h-11 bg-transparent text-ink-700 shadow-none hover:bg-surface-muted"
+              >
+                Não, quero explicar melhor
+              </Button>
+            </div>
+          </form>
+        ) : null}
+
+        {conversation.stage === "ready_to_complete" ? (
+          <div className="border-t border-surface-border px-5 py-5 sm:px-8">
+            <FeedbackMessage tone="success">
+              Entendimento concluído. Falta apenas confirmar a passagem para a próxima etapa.
+            </FeedbackMessage>
+          </div>
+        ) : null}
       </section>
     </main>
+  );
+}
+
+function ConversationHiddenFields({
+  accountSubdomain,
+  conversationId,
+  version,
+}: {
+  accountSubdomain: string;
+  conversationId: string;
+  version: number;
+}) {
+  return (
+    <>
+      <input type="hidden" name="account_subdomain" value={accountSubdomain} />
+      <input type="hidden" name="conversation_id" value={conversationId} />
+      <input type="hidden" name="expected_version" value={version} />
+    </>
   );
 }

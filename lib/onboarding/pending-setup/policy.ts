@@ -1,3 +1,7 @@
+import { redactPotentialContactDetails } from "../text-redaction";
+
+export { redactPotentialContactDetails } from "../text-redaction";
+
 const AUTH_PREFERRED_NAME_KEYS = ["preferred_name", "full_name", "name"] as const;
 const MAX_PREFERRED_NAME_LENGTH = 80;
 const MAX_BUSINESS_CONTEXT_LENGTH = 4000;
@@ -59,15 +63,6 @@ export function validateBusinessContext(input: unknown):
   if (!value) return { ok: false, reason: "empty" };
   if (value.length > MAX_BUSINESS_CONTEXT_LENGTH) return { ok: false, reason: "too_long" };
   return { ok: true, value };
-}
-
-export function redactPotentialContactDetails(input: string): string {
-  return input
-    .replace(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/giu, "[email removido]")
-    .replace(/\bhttps?:\/\/\S+|\bwww\.\S+/giu, "[url removida]")
-    .replace(/(?:\+?\d[\s().-]*){10,15}/gu, "[telefone removido]")
-    .replace(/\s+/g, " ")
-    .trim();
 }
 
 export const pendingSetupPolicy = {
