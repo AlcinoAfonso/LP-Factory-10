@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import type { PendingSetupConversation as PendingSetupConversationContract } from "../../../../lib/onboarding/pending-setup";
 import {
+  completePendingSetupAction,
   continuePendingSetupConversationAction,
   savePendingSetupPreferredNameAction,
   type PendingSetupActionState,
@@ -28,6 +29,10 @@ export function PendingSetupConversation({
     PendingSetupActionState,
     FormData
   >(continuePendingSetupConversationAction, { ok: true });
+  const [completionState, completionAction, isCompletionPending] = useActionState<
+    PendingSetupActionState,
+    FormData
+  >(completePendingSetupAction, { ok: true });
   const inputRef = useRef<HTMLInputElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
@@ -204,7 +209,11 @@ export function PendingSetupConversation({
                 disabled={isTurnPending}
                 className="min-h-11"
               >
-                {isTurnPending ? "Confirmando…" : "Sim, está correto"}
+                {isTurnPending
+                  ? "Confirmando…"
+                  : conversation.confirmationKind === "operational_fallback"
+                    ? "Usar minha descrição"
+                    : "Sim, está correto"}
               </Button>
               <Button
                 type="submit"
@@ -220,11 +229,24 @@ export function PendingSetupConversation({
         ) : null}
 
         {conversation.stage === "ready_to_complete" ? (
-          <div className="border-t border-surface-border px-5 py-5 sm:px-8">
+          <form action={completionAction} className="border-t border-surface-border px-5 py-5 sm:px-8">
+            <ConversationHiddenFields
+              accountSubdomain={accountSubdomain}
+              conversationId={conversation.id}
+              version={conversation.version}
+            />
             <FeedbackMessage tone="success">
               Entendimento concluído. Falta apenas confirmar a passagem para a próxima etapa.
             </FeedbackMessage>
-          </div>
+            {completionState.formError ? (
+              <FeedbackMessage tone="error" className="mt-4">
+                {completionState.formError}
+              </FeedbackMessage>
+            ) : null}
+            <Button type="submit" disabled={isCompletionPending} className="mt-5 min-h-11">
+              {isCompletionPending ? "Concluindo…" : "Continuar para a próxima etapa"}
+            </Button>
+          </form>
         ) : null}
       </section>
     </main>

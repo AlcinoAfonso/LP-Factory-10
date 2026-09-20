@@ -1,7 +1,7 @@
 0.1 Cabeçalho
-Data: 14/09/2026
-Versão: v1.31
-Status: Alinhado ao catálogo operacional vigente; assistência factual E20.8.7 preservada e automação E20.7 retirada
+Data: 20/09/2026
+Versão: v1.32
+Status: Alinhado ao catálogo operacional vigente; Pending Setup E10.9 integrado ao workload de nicho
 
 0.2 Função do documento
 Registrar a camada de automações operacionais do LP Factory 10 como referência para integrações, automações operacionais e componentes consumidores, sem expor segredos.
@@ -152,7 +152,7 @@ Implementada e integrada ao fluxo server-side do onboarding.
 Recurso utilizado:
 - Responses API
 - Structured Outputs com JSON Schema estrito
-- Server Action existente do `pending_setup`
+- Server Action versionada do Pending Setup E10.9
 
 Natureza:
 - Automação com IA em fluxo controlado.
@@ -164,19 +164,20 @@ Plataforma dependente:
 - OpenAI Platform.
 
 Participação humana:
-- Gatilho no salvamento do `pending_setup` e confirmação, escolha ou revisão posterior quando indicada; sem intervenção durante a execução.
+- Gatilho por turno ambíguo do Pending Setup e confirmação humana quando houver sugestão oficial ou fallback operacional legítimo; sem intervenção humana durante a chamada.
 
 Acesso:
-Execução server-side durante `saveSetupAndContinueAction`, após validação e persistência do onboarding.
+Execução server-side durante `continuePendingSetupConversationAction`, após autorização owner e reserva otimista do turno; o matching determinístico continua anterior à IA.
 
 Como funciona:
 - Executa primeiro o matching determinístico e a avaliação tipada de confiança.
 - Chama a Responses API somente quando a decisão determinística exige escalonamento.
-- Produz saída estruturada com modo de UX, mensagem, até três opções, sinais de confirmação ou revisão e motivo.
+- Produz saída estruturada transitória que o consumidor reduz a `confirm_official`, `ask_clarifying_question` ou `unresolved_fallback`, com no máximo uma pergunta code-owned por turno.
 - Persiste o resultado operacional, o modelo, a versão do schema e o estado da execução em `account_niche_resolutions`.
-- Mantém a criação do vínculo oficial em `account_taxonomy` restrita à alta confiança determinística; a saída da IA nunca cria vínculo oficial.
+- Mantém criação automática do vínculo oficial restrita à alta confiança determinística; sugestão da IA nunca cria vínculo diretamente e exige confirmação humana, revalidação do candidato ativo/permitido e `source_type = user_confirmed_ai`.
+- Envia projeção recente, limitada e sanitizada; a request usa `store:false`, `background:false`, deadline e não usa tools, conversation ou `previous_response_id`.
 - Registra logs estruturados com status, contagens e correlação, sem registrar prompt ou resposta completa nos logs.
-- Ausência de configuração ou falha da IA é registrada como `skipped` ou `failed` e não bloqueia a conclusão do setup.
+- Ausência de configuração, recusa, timeout ou falha da IA é registrada como `skipped` ou `failed` e mantém a conversa em estado não terminal para retry ou nova explicação; somente ausência semântica legítima de taxon pode oferecer fallback operacional, confirmado depois por ação humana inequívoca.
 
 Limites:
 - Não cria nem aprova taxon ou alias.

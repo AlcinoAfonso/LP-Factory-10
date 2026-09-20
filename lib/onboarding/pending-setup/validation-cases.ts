@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 
 import {
   redactPotentialContactDetails,
@@ -80,12 +80,30 @@ const conversationAdapter = readFileSync(
   new URL("./adapters/pendingSetupConversationAdapter.ts", import.meta.url),
   "utf8",
 );
+const pendingSetupActions = readFileSync(
+  new URL("../../../app/a/[account]/pending-setup-actions.ts", import.meta.url),
+  "utf8",
+);
+const nicheOrchestrator = readFileSync(
+  new URL("./adapters/pendingSetupNicheOrchestrator.ts", import.meta.url),
+  "utf8",
+);
+const legacyComponent = new URL(
+  "../../../app/a/[account]/_components/PendingSetupFirstSteps.tsx",
+  import.meta.url,
+);
+const legacyValidation = new URL("../e10_4_setup_validation.ts", import.meta.url);
+const sqlTest = new URL(
+  "../../../supabase/tests/e10_9_pending_setup_conversation.test.sql",
+  import.meta.url,
+);
 
 for (const requiredContract of [
   "account_pending_setup_conversations",
   "account_pending_setup_messages",
   "start_account_pending_setup_v1",
   "set_account_pending_setup_preferred_name_v1",
+  "claim_account_pending_setup_turn_v1",
   "append_account_pending_setup_turn_v1",
   "complete_account_pending_setup_v1",
   "enable row level security",
@@ -103,6 +121,23 @@ assert.match(conversationAdapter, /\.eq\("user_id", input\.userId\)/);
 assert.match(conversationAdapter, /\.eq\("conversation_id", conversationId\)/);
 assert.doesNotMatch(migration, /update\s+public\.account_pending_setup_messages/i);
 assert.doesNotMatch(migration, /delete\s+from\s+public\.account_pending_setup_messages/i);
+assert.match(pendingSetupActions, /completePendingSetupAction/);
+assert.match(pendingSetupActions, /completePendingSetup/);
+assert.ok(
+  pendingSetupActions.indexOf("claimPendingSetupTurn({")
+    < pendingSetupActions.indexOf("orchestratePendingSetupNicheTurn({"),
+  "the turn must be claimed before matching or OpenAI effects",
+);
+assert.match(pendingSetupActions, /confirmOperationalNicheForPendingSetup/);
+assert.match(pendingSetupActions, /fieldError:[\s\S]*Prefiro não informar/);
+assert.doesNotMatch(pendingSetupActions, /entitlement/i);
+assert.match(nicheOrchestrator, /if \(!matched\.ok\) \{[\s\S]*retryAfterTechnicalFailure\(\)/);
+assert.match(nicheOrchestrator, /if \(!aiResult\.ok\) \{[\s\S]*retryAfterTechnicalFailure\(\)/);
+assert.match(nicheOrchestrator, /confirmationKind: "operational_fallback"/);
+assert.doesNotMatch(nicheOrchestrator, /confirmOperationalNicheForPendingSetup/);
+assert.equal(existsSync(legacyComponent), false);
+assert.equal(existsSync(legacyValidation), false);
+assert.equal(existsSync(sqlTest), true);
 
 const candidate: TaxonMatchCandidate = {
   taxonId: "10000000-0000-4000-8000-000000000001",
@@ -185,6 +220,7 @@ const ambiguousAi = await resolveNicheWithOpenAi({
   },
 }, {
   environment: "development",
+  emitEvent: () => undefined,
   fetchImpl: async (_url, init) => {
     ambiguousTransportCalls += 1;
     capturedRequest = JSON.parse(String(init?.body));
@@ -230,6 +266,29 @@ const confirmation = decidePendingSetupAiTurn({
 });
 assert.equal(confirmation.kind, "confirm_official");
 assert.equal((confirmation.assistantContent.match(/\?/g) ?? []).length, 1);
+
+const timedOutAi = await resolveNicheWithOpenAi({
+  rawInput: "contexto ambíguo",
+  decision: ambiguousDecision,
+  candidates: [candidate],
+  apiKey: "test-key",
+  financialContext: {
+    universe: "client",
+    attributionStatus: "attributed",
+    accountId: "20000000-0000-4000-8000-000000000001",
+  },
+}, {
+  environment: "development",
+  timeoutMs: 1,
+  emitEvent: () => undefined,
+  fetchImpl: async (_url, init) => new Promise<Response>((_resolve, reject) => {
+    const rejectAsAborted = () => reject(new DOMException("Aborted", "AbortError"));
+    if (init?.signal?.aborted) rejectAsAborted();
+    else init?.signal?.addEventListener("abort", rejectAsAborted, { once: true });
+  }),
+});
+assert.equal(timedOutAi.ok, false);
+assert.equal(timedOutAi.reason, "AbortError");
 
 const rejectedUnknownId = decidePendingSetupAiTurn({
   output: {

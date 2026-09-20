@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import type {
   PendingSetupConversation,
+  PendingSetupConfirmationKind,
   PendingSetupMessage,
   PendingSetupResolutionOutcome,
   PendingSetupStage,
@@ -18,6 +19,7 @@ type ConversationRow = {
   preferred_name: string | null;
   business_context_text: string | null;
   stage: PendingSetupStage;
+  confirmation_kind: PendingSetupConfirmationKind | null;
   resolution_outcome: PendingSetupResolutionOutcome | null;
   version: number | string;
   created_at: string;
@@ -54,6 +56,7 @@ function mapConversation(
     preferredName: row.preferred_name,
     businessContextText: row.business_context_text,
     stage: row.stage,
+    confirmationKind: row.confirmation_kind,
     resolutionOutcome: row.resolution_outcome,
     version: Number(row.version),
     createdAt: row.created_at,
@@ -111,7 +114,7 @@ export async function loadPendingSetupConversation(input: {
       service
         .from("account_pending_setup_conversations")
         .select(
-          "id,account_id,user_id,preferred_name,business_context_text,stage,resolution_outcome,version,created_at,updated_at,completed_at",
+          "id,account_id,user_id,preferred_name,business_context_text,stage,confirmation_kind,resolution_outcome,version,created_at,updated_at,completed_at",
         )
         .eq("id", conversationId)
         .eq("account_id", input.accountId)
@@ -166,9 +169,11 @@ export async function appendPendingSetupTurn(input: {
   accountId: string;
   userId: string;
   expectedVersion: number;
+  turnToken: string;
   userContent: string;
   assistantContent: string;
   nextStage: Exclude<PendingSetupStage, "identity" | "completed">;
+  confirmationKind: PendingSetupConfirmationKind | null;
   businessContextText: string;
 }): Promise<PendingSetupWriteResult> {
   const service = createServiceClient();
@@ -177,10 +182,35 @@ export async function appendPendingSetupTurn(input: {
     p_account_id: input.accountId,
     p_user_id: input.userId,
     p_expected_version: input.expectedVersion,
+    p_turn_token: input.turnToken,
     p_user_content: input.userContent,
     p_assistant_content: input.assistantContent,
     p_next_stage: input.nextStage,
+    p_confirmation_kind: input.confirmationKind,
     p_business_context_text: input.businessContextText,
+  });
+
+  if (error) return writeFailure(error);
+  const version = Number(data);
+  return Number.isSafeInteger(version) && version >= 1
+    ? { ok: true, version }
+    : { ok: false, reason: "write_failed" };
+}
+
+export async function claimPendingSetupTurn(input: {
+  conversationId: string;
+  accountId: string;
+  userId: string;
+  expectedVersion: number;
+  turnToken: string;
+}): Promise<PendingSetupWriteResult> {
+  const service = createServiceClient();
+  const { data, error } = await service.rpc("claim_account_pending_setup_turn_v1", {
+    p_conversation_id: input.conversationId,
+    p_account_id: input.accountId,
+    p_user_id: input.userId,
+    p_expected_version: input.expectedVersion,
+    p_turn_token: input.turnToken,
   });
 
   if (error) return writeFailure(error);

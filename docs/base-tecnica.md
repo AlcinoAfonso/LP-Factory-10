@@ -2,8 +2,8 @@
 
 0.1 Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.91
-• Data: 14/09/2026
+• Versão: v2.0.92
+• Data: 20/09/2026
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -238,10 +238,18 @@
 • Boundary canônico: `lib/onboarding/niche-resolution/`; contratos, thresholds, reasons, schemas e adapters permanecem canônicos no código.
 • Matching, avaliação de confiança e persistência devem ocorrer server-side; UI, routes e actions não podem chamar RPC diretamente nem reimplementar thresholds ou decisões semânticas.
 • IA complementar só pode ser usada quando o resultado determinístico for insuficiente, com Structured Outputs e configuração operacional em `docs/platform-config.md`.
-• IA não cria taxon ou alias, não grava vínculo oficial e não substitui decisão determinística de alta confiança.
+• IA não cria taxon ou alias, não grava vínculo oficial diretamente e não substitui decisão determinística de alta confiança; sugestão oficial inferida só pode virar vínculo após confirmação humana e revalidação server-side do candidato permitido, com proveniência `user_confirmed_ai`.
 • `account_niche_resolutions` representa a resolução operacional; `account_taxonomy` representa o vínculo oficial e só pode ser gravado quando o contrato de alta confiança permitir, sem substituir automaticamente vínculo primário diferente.
-• Falhas de matching, IA ou persistência não podem bloquear setup, ativação, revalidação ou redirect.
-• Logs e persistência não devem conter prompt, payload bruto, nicho bruto, aliases, candidatos completos, formulário ou PII; objetos e campos exatos pertencem a `docs/schema.md`.
+• Falhas técnicas de matching ou IA mantêm o fluxo não terminal para retry ou correção; ausência semântica legítima de taxon pode oferecer entendimento operacional, mas sua confirmação exige ação humana inequívoca e nunca inventa vínculo oficial. Falha de persistência continua fail-closed e impede conclusão parcial.
+• Logs e telemetria do provider não devem conter prompt, resposta integral, payload bruto, aliases, candidatos completos, formulário ou PII. A persistência de domínio pode manter o contexto e a descrição estritamente necessários sob os limites, ACLs e campos exatos de `docs/schema.md`.
+
+3.14.6 Pending Setup conversacional
+• Boundary canônico: `lib/onboarding/pending-setup/`; client e boundaries de access, perfil ou taxonomia não acessam diretamente sua persistência.
+• `/a/[account]` entrega a conversa somente para conta `pending_setup`, membership ativa e owner autenticado; após `active`, transcript e vínculo permanecem preservados sem chat executável.
+• Turnos são append-only, versionados e isolados por relação conta/usuário. Uma reserva otimista com token precede matching, IA e mutações de nicho, impedindo efeitos externos duplicados da mesma versão; reserva interrompida expira de forma limitada para retomada idempotente. A projeção enviada à IA é code-owned, recente, limitada e sanitizada; memória ou persistência do provider não é autoridade.
+• Matching determinístico sempre precede IA. Cada turno ambíguo admite no máximo uma Responses API foreground, com Structured Outputs, `store:false`, `background:false`, deadline e sem tools ou continuidade stateful do provider.
+• Conclusão é transacional e idempotente: exige taxon primário oficial ativo ou fallback operacional confirmado, promove `pending_setup` para `active` e não cria entitlement.
+• O formulário E10.4 não é fallback paralelo. `account_profiles` permanece como dado histórico; o card de resolução de nicho permanece somente para seu consumidor real em contas `active`.
 
 3.15 Conteúdo composicional de `commercial_activation`
 • Boundary canônico: `lib/conversion-content/commercial-activation/`; registry, schemas, resolver e renderer são fontes do contrato executável.

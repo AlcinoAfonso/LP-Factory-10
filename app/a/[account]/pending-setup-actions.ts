@@ -6,7 +6,12 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getAccessContext } from "@/lib/access/getAccessContext";
 import { clientOpenAiCostContext } from "../../../lib/openai-costs";
-import { confirmAiSuggestedTaxonForAccount } from "../../../lib/onboarding/niche-resolution/adapters/accountNicheResolutionUserAdapter";
+import {
+  confirmAiSuggestedTaxonForAccount,
+  confirmOperationalNicheForPendingSetup,
+  getConfirmedOperationalNicheResolutionLabel,
+} from "../../../lib/onboarding/niche-resolution/adapters/accountNicheResolutionUserAdapter";
+import { getActivePrimaryAccountTaxon } from "../../../lib/onboarding/niche-resolution/adapters/accountTaxonomyAdapter";
 import {
   appendBusinessContext,
   buildPendingSetupAiProjection,
@@ -15,6 +20,8 @@ import {
 } from "../../../lib/onboarding/pending-setup";
 import {
   appendPendingSetupTurn,
+  claimPendingSetupTurn,
+  completePendingSetup,
   loadPendingSetupConversation,
   setPendingSetupPreferredName,
 } from "../../../lib/onboarding/pending-setup/adapters/pendingSetupConversationAdapter";
@@ -86,12 +93,14 @@ export async function savePendingSetupPreferredNameAction(
 
     const validated = validatePreferredName(formData.get("preferred_name"), user.email);
     if (!validated.ok) {
-      const fieldError = validated.reason === "too_long"
-        ? "Use no máximo 80 caracteres."
-        : validated.reason === "email_derived"
-          ? "Informe como prefere ser chamado, sem usar seu e-mail."
-          : "Informe um nome válido ou escolha continuar sem nome.";
-      return { ok: false, fieldError };
+      return {
+        ok: false,
+        fieldError: validated.reason === "too_long"
+          ? "Use no máximo 80 caracteres."
+          : validated.reason === "email_derived"
+            ? "Informe como prefere ser chamado, sem usar seu e-mail."
+            : "Informe um nome válido ou escolha “Prefiro não informar”.",
+      };
     }
     preferredName = validated.value;
   }
@@ -145,6 +154,7 @@ export async function continuePendingSetupConversationAction(
   let userContent: string;
   let assistantContent: string;
   let nextStage: "business_understanding" | "niche_confirmation" | "ready_to_complete";
+  let confirmationKind: "official" | "operational_fallback" | null = null;
   let businessContextText = conversation.businessContextText ?? "";
 
   if (conversation.stage === "business_understanding") {
@@ -162,36 +172,14 @@ export async function continuePendingSetupConversationAction(
       conversation.businessContextText,
       validated.value,
     );
-    const resolution = await orchestratePendingSetupNicheTurn({
-      accountId: actor.accountId,
-      businessContext: businessContextText,
-      aiContextProjection: buildPendingSetupAiProjection({
-        messages: conversation.messages,
-        currentAnswer: validated.value,
-      }),
-      apiKey: process.env.OPENAI_API_KEY,
-      financialContext: clientOpenAiCostContext(actor.accountId, {
-        kind: "niche_resolution",
-        eventId: crypto.randomUUID(),
-      }),
-    });
-    if (!resolution.ok) return { ok: false, formError: GENERIC_ERROR };
-    assistantContent = resolution.assistantContent;
-    nextStage = resolution.nextStage;
   } else if (conversation.stage === "niche_confirmation") {
     const intent = String(formData.get("intent") ?? "");
     if (intent === "confirm") {
-      const confirmed = await confirmAiSuggestedTaxonForAccount({
-        accountId: actor.accountId,
-      });
-      if (!confirmed.ok) return { ok: false, formError: GENERIC_ERROR };
-      userContent = "Sim, está correto.";
-      assistantContent = "Perfeito. Registrei essa categoria e já podemos seguir.";
-      nextStage = "ready_to_complete";
+      userContent = conversation.confirmationKind === "operational_fallback"
+        ? "Sim, use minha descrição como referência operacional."
+        : "Sim, está correto.";
     } else if (intent === "clarify") {
       userContent = "Não, quero explicar melhor.";
-      assistantContent = "Sem problema. Em uma frase, o que você oferece e para qual tipo de cliente?";
-      nextStage = "business_understanding";
     } else {
       return { ok: false, formError: GENERIC_ERROR };
     }
@@ -199,20 +187,172 @@ export async function continuePendingSetupConversationAction(
     return { ok: false, formError: GENERIC_ERROR };
   }
 
-  const written = await appendPendingSetupTurn({
+  const turnToken = crypto.randomUUID();
+  const claimed = await claimPendingSetupTurn({
     conversationId,
     accountId: actor.accountId,
     userId: actor.userId,
     expectedVersion,
+    turnToken,
+  });
+  if (!claimed.ok) {
+    return {
+      ok: false,
+      formError: claimed.reason === "conflict"
+        ? "Esta conversa foi atualizada em outra aba. Recarregue para continuar."
+        : GENERIC_ERROR,
+    };
+  }
+
+  if (conversation.stage === "business_understanding") {
+    const existingPrimary = await getActivePrimaryAccountTaxon({ accountId: actor.accountId });
+    if (existingPrimary) {
+      assistantContent = `Entendi: seu negócio se encaixa em ${existingPrimary.name}. Já podemos seguir.`;
+      nextStage = "ready_to_complete";
+    } else {
+      const resolution = await orchestratePendingSetupNicheTurn({
+        accountId: actor.accountId,
+        businessContext: businessContextText,
+        aiContextProjection: buildPendingSetupAiProjection({
+          messages: conversation.messages,
+          currentAnswer: userContent,
+        }),
+        apiKey: process.env.OPENAI_API_KEY,
+        financialContext: clientOpenAiCostContext(actor.accountId, {
+          kind: "niche_resolution",
+          eventId: crypto.randomUUID(),
+        }),
+      });
+      if (resolution.ok) {
+        assistantContent = resolution.assistantContent;
+        nextStage = resolution.nextStage;
+        confirmationKind = resolution.confirmationKind;
+      } else {
+        assistantContent = "Não consegui validar esse entendimento agora. Você pode tentar novamente ou explicar de outra forma.";
+        nextStage = "business_understanding";
+      }
+    }
+  } else {
+    const intent = String(formData.get("intent") ?? "");
+    if (intent === "clarify") {
+      assistantContent = "Sem problema. Em uma frase, o que você oferece e para qual tipo de cliente?";
+      nextStage = "business_understanding";
+    } else if (conversation.confirmationKind === "official") {
+      const existingPrimary = await getActivePrimaryAccountTaxon({ accountId: actor.accountId });
+      let confirmedPrimary = existingPrimary;
+      if (!confirmedPrimary) {
+        const confirmed = await confirmAiSuggestedTaxonForAccount({ accountId: actor.accountId });
+        if (confirmed.ok) {
+          confirmedPrimary = await getActivePrimaryAccountTaxon({ accountId: actor.accountId });
+        }
+      }
+      if (confirmedPrimary) {
+        assistantContent = "Perfeito. Registrei essa categoria e já podemos seguir.";
+        nextStage = "ready_to_complete";
+      } else {
+        assistantContent = "Não consegui confirmar essa categoria agora. Tente novamente ou explique de outra forma.";
+        nextStage = "niche_confirmation";
+        confirmationKind = "official";
+      }
+    } else if (conversation.confirmationKind === "operational_fallback") {
+      const existingLabel = await getConfirmedOperationalNicheResolutionLabel({
+        accountId: actor.accountId,
+      });
+      let confirmedLabel = existingLabel;
+      if (!confirmedLabel) {
+        const confirmed = await confirmOperationalNicheForPendingSetup({
+          accountId: actor.accountId,
+          label: businessContextText,
+        });
+        if (confirmed.ok) {
+          confirmedLabel = await getConfirmedOperationalNicheResolutionLabel({
+            accountId: actor.accountId,
+          });
+        }
+      }
+      if (confirmedLabel) {
+        assistantContent = "Perfeito. Vou usar sua descrição como referência operacional, sem vínculo oficial.";
+        nextStage = "ready_to_complete";
+      } else {
+        assistantContent = "Não consegui registrar essa escolha agora. Tente novamente ou explique de outra forma.";
+        nextStage = "niche_confirmation";
+        confirmationKind = "operational_fallback";
+      }
+    } else {
+      assistantContent = "Não consegui recuperar a confirmação pendente. Explique seu negócio novamente.";
+      nextStage = "business_understanding";
+    }
+  }
+
+  const written = await appendPendingSetupTurn({
+    conversationId,
+    accountId: actor.accountId,
+    userId: actor.userId,
+    expectedVersion: claimed.version,
+    turnToken,
     userContent,
     assistantContent,
     nextStage,
+    confirmationKind,
     businessContextText,
   });
   if (!written.ok) {
     return {
       ok: false,
       formError: written.reason === "conflict"
+        ? "Esta conversa foi atualizada em outra aba. Recarregue para continuar."
+        : GENERIC_ERROR,
+    };
+  }
+
+  revalidatePath(actor.route);
+  return { ok: true };
+}
+
+export async function completePendingSetupAction(
+  _previousState: PendingSetupActionState,
+  formData: FormData,
+): Promise<PendingSetupActionState> {
+  const actor = await getPendingSetupActor(formData);
+  if (!actor.ok) return { ok: false, formError: GENERIC_ERROR };
+
+  const conversationId = String(formData.get("conversation_id") ?? "").trim();
+  const expectedVersion = Number(formData.get("expected_version"));
+  const conversation = await loadPendingSetupConversation({
+    accountId: actor.accountId,
+    userId: actor.userId,
+  });
+  if (
+    !conversation ||
+    conversation.id !== conversationId ||
+    conversation.stage !== "ready_to_complete" ||
+    conversation.version !== expectedVersion
+  ) {
+    return { ok: false, formError: "Esta conversa mudou. Recarregue para continuar." };
+  }
+
+  const [primaryTaxon, operationalLabel] = await Promise.all([
+    getActivePrimaryAccountTaxon({ accountId: actor.accountId }),
+    getConfirmedOperationalNicheResolutionLabel({ accountId: actor.accountId }),
+  ]);
+  const resolutionOutcome = primaryTaxon
+    ? "official" as const
+    : operationalLabel
+      ? "operational_fallback" as const
+      : null;
+  if (!resolutionOutcome) return { ok: false, formError: GENERIC_ERROR };
+
+  const completed = await completePendingSetup({
+    conversationId,
+    accountId: actor.accountId,
+    userId: actor.userId,
+    expectedVersion,
+    resolutionOutcome,
+  });
+  if (!completed.ok) {
+    return {
+      ok: false,
+      formError: completed.reason === "conflict"
         ? "Esta conversa foi atualizada em outra aba. Recarregue para continuar."
         : GENERIC_ERROR,
     };

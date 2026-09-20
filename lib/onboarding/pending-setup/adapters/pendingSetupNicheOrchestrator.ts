@@ -16,7 +16,6 @@ import {
 } from "../../niche-resolution/adapters/accountNicheResolutionAdapter";
 import {
   confirmDeterministicNicheForPendingSetup,
-  confirmOperationalNicheForPendingSetup,
 } from "../../niche-resolution/adapters/accountNicheResolutionUserAdapter";
 import {
   linkAccountTaxonomyFromDeterministicDecision,
@@ -26,7 +25,7 @@ import {
   type ResolveAiNicheResolutionResult,
 } from "../../niche-resolution/adapters/openAiResolver";
 import { matchBusinessTaxonsDeterministic } from "../../niche-resolution/adapters/taxonMatchAdapter";
-import type { PendingSetupStage } from "../contracts";
+import type { PendingSetupConfirmationKind, PendingSetupStage } from "../contracts";
 import {
   buildAliasConfirmationOutput,
   decidePendingSetupAiTurn,
@@ -39,6 +38,7 @@ export type PendingSetupNicheTurnResult =
       nextStage: Extract<PendingSetupStage, "business_understanding" | "niche_confirmation" | "ready_to_complete">;
       assistantContent: string;
       resolutionOutcome: "official" | "operational_fallback" | null;
+      confirmationKind: PendingSetupConfirmationKind | null;
     }>
   | Readonly<{ ok: false; reason: string }>;
 
@@ -57,7 +57,7 @@ export async function orchestratePendingSetupNicheTurn(input: {
   const match = dependencies.match ?? matchBusinessTaxonsDeterministic;
   const matched = await match(input.businessContext, 10);
   if (!matched.ok) {
-    return persistOperationalFallback(input.accountId, input.businessContext);
+    return retryAfterTechnicalFailure();
   }
 
   const candidates = [...matched.candidates];
@@ -97,6 +97,7 @@ export async function orchestratePendingSetupNicheTurn(input: {
       nextStage: "ready_to_complete",
       assistantContent: `Entendi: seu negócio se encaixa em ${decision.selectedCandidate.name}. Já podemos seguir.`,
       resolutionOutcome: "official",
+      confirmationKind: null,
     };
   }
 
@@ -109,6 +110,7 @@ export async function orchestratePendingSetupNicheTurn(input: {
       nextStage: "niche_confirmation",
       assistantContent: `Pelo que entendi, seu negócio se encaixa em ${selected.name}. É isso mesmo?`,
       resolutionOutcome: null,
+      confirmationKind: "official",
     };
   }
 
@@ -124,7 +126,7 @@ export async function orchestratePendingSetupNicheTurn(input: {
 
   if (!aiResult.ok) {
     await persistAiFailure(input.accountId, aiResult);
-    return persistOperationalFallback(input.accountId, input.businessContext);
+    return retryAfterTechnicalFailure();
   }
 
   const aiDecision = decidePendingSetupAiTurn({
@@ -143,6 +145,7 @@ export async function orchestratePendingSetupNicheTurn(input: {
       nextStage: "niche_confirmation",
       assistantContent: aiDecision.assistantContent,
       resolutionOutcome: null,
+      confirmationKind: "official",
     };
   }
   if (aiDecision.kind === "ask_clarifying_question") {
@@ -151,9 +154,10 @@ export async function orchestratePendingSetupNicheTurn(input: {
       nextStage: "business_understanding",
       assistantContent: aiDecision.assistantContent,
       resolutionOutcome: null,
+      confirmationKind: null,
     };
   }
-  return persistOperationalFallback(input.accountId, input.businessContext);
+  return prepareOperationalFallback();
 }
 
 async function persistAiOutput(
@@ -198,19 +202,22 @@ async function persistAiFailure(
   });
 }
 
-async function persistOperationalFallback(
-  accountId: string,
-  businessContext: string,
-): Promise<PendingSetupNicheTurnResult> {
-  const confirmed = await confirmOperationalNicheForPendingSetup({
-    accountId,
-    label: businessContext,
-  });
-  if (!confirmed.ok) return { ok: false, reason: confirmed.reason };
+function retryAfterTechnicalFailure(): PendingSetupNicheTurnResult {
   return {
     ok: true,
-    nextStage: "ready_to_complete",
-    assistantContent: "Entendi o contexto. Vou preservar essa descrição sem associar um nicho oficial incorreto. Já podemos seguir.",
-    resolutionOutcome: "operational_fallback",
+    nextStage: "business_understanding",
+    assistantContent: "Não consegui validar esse entendimento agora. Você pode tentar novamente ou explicar de outra forma.",
+    resolutionOutcome: null,
+    confirmationKind: null,
+  };
+}
+
+function prepareOperationalFallback(): PendingSetupNicheTurnResult {
+  return {
+    ok: true,
+    nextStage: "niche_confirmation",
+    assistantContent: "Não encontrei uma categoria oficial segura. Quer usar sua descrição como referência operacional, sem criar um vínculo oficial?",
+    resolutionOutcome: null,
+    confirmationKind: "operational_fallback",
   };
 }
