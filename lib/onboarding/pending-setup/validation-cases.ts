@@ -12,7 +12,7 @@ import {
 } from "../niche-resolution/operationalChoice";
 import {
   appendBusinessClarification,
-  processPendingSetupBusinessTurn,
+  processPendingSetupBusinessTurn as processPendingSetupBusinessTurnCore,
   type PendingSetupBusinessDependencies,
   validateBusinessDescription,
 } from "./businessConversationCore";
@@ -29,6 +29,18 @@ import {
   validateOptionalWhatsapp,
   validatePreferredName,
 } from "./contracts";
+
+const TEST_TURN_ID = "e1099900-0000-4000-8000-000000000001";
+
+function processPendingSetupBusinessTurn(
+  input: { accountId: string; rawInput: unknown },
+  dependencies: PendingSetupBusinessDependencies,
+) {
+  return processPendingSetupBusinessTurnCore(
+    { ...input, turnId: TEST_TURN_ID },
+    dependencies,
+  );
+}
 
 assert.deepEqual(validatePreferredName("  Alcino   Afonso  "), {
   ok: true,
@@ -132,6 +144,10 @@ assert.deepEqual(appendBusinessClarification("consultoria", "CONSULTORIA"), {
   ok: true,
   value: "CONSULTORIA",
 });
+assert.deepEqual(
+  appendBusinessClarification("x".repeat(495), "consultoria médica"),
+  { ok: true, value: "consultoria médica" },
+);
 assert.equal(
   canRecoverStalePendingSetupResolution({
     validationFailureReason: "missing_suggested_taxon",

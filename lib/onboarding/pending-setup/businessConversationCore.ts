@@ -84,11 +84,14 @@ export function appendBusinessClarification(
   if (!current || current.toLocaleLowerCase("pt-BR") === next.toLocaleLowerCase("pt-BR")) {
     return validateBusinessDescription(next);
   }
-  return validateBusinessDescription(`${current}. ${next}`);
+  const combined = `${current}. ${next}`;
+  return validateBusinessDescription(
+    combined.length <= BUSINESS_DESCRIPTION_MAX_LENGTH ? combined : next,
+  );
 }
 
 export async function processPendingSetupBusinessTurn(
-  input: { accountId: string; rawInput: unknown },
+  input: { accountId: string; turnId: string; rawInput: unknown },
   dependencies: PendingSetupBusinessDependencies,
 ): Promise<PendingSetupBusinessTurnResult> {
   const parsed = validateBusinessDescription(input.rawInput);
@@ -101,6 +104,7 @@ export async function processPendingSetupBusinessTurn(
 
   const resolutionPersisted = await dependencies.persistResolution({
     accountId: input.accountId,
+    turnId: input.turnId,
     rawInput: parsed.value,
     selectedTaxonId: selected?.taxonId ?? null,
     confidence: decision.confidence,
@@ -125,6 +129,7 @@ export async function processPendingSetupBusinessTurn(
     return persistActionableResult(
       dependencies,
       input.accountId,
+      input.turnId,
       parsed.value,
       fallbackOutput("deterministic_match_failed"),
       null,
@@ -146,6 +151,7 @@ export async function processPendingSetupBusinessTurn(
     return persistActionableResult(
       dependencies,
       input.accountId,
+      input.turnId,
       parsed.value,
       aliasConfirmationOutput(selected),
       null,
@@ -165,6 +171,7 @@ export async function processPendingSetupBusinessTurn(
   return persistActionableResult(
     dependencies,
     input.accountId,
+    input.turnId,
     parsed.value,
     output,
     aiResult.model,
@@ -188,6 +195,7 @@ function shouldCreateOfficialLink(
 async function persistActionableResult(
   dependencies: PendingSetupBusinessDependencies,
   accountId: string,
+  turnId: string,
   expectedRawInput: string,
   output: AiNicheResolutionOutput,
   model: string | null,
@@ -205,6 +213,7 @@ async function persistActionableResult(
       : null;
   const persisted = await dependencies.persistAiResult({
     accountId,
+    turnId,
     expectedRawInput,
     status: "resolved",
     errorCode,

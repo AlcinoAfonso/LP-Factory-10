@@ -30,51 +30,25 @@ export async function upsertAccountNicheResolution(
 ): Promise<boolean> {
   const supabase = createServiceClient();
 
-  const payload = {
-    account_id: input.accountId,
-    raw_input: input.rawInput,
-    selected_taxon_id: input.selectedTaxonId,
-    confidence: input.confidence,
-    should_use_deterministic_match: input.shouldUseDeterministicMatch,
-    should_escalate_to_ai: input.shouldEscalateToAi,
-    ai_escalation_mode: input.aiEscalationMode,
-    needs_admin_review: input.needsAdminReview,
-    reason: input.reason,
-    resolution_status: input.resolutionStatus,
-    match_source: input.matchSource,
-    score: input.score,
-    ai_status: null,
-    ai_error_code: null,
-    ai_model: null,
-    ai_schema_version: null,
-    ai_result_json: null,
-    ai_ux_mode: null,
-    ai_suggested_taxon_id: null,
-    ai_suggested_new_taxon_label: null,
-    ai_needs_user_confirmation: false,
-    ai_needs_admin_review: false,
-    ai_reason: null,
-    ai_processed_at: null,
-    ...(input.resetUserResolution
-      ? {
-          user_resolution_status: "pending_confirmation",
-          user_selected_taxon_id: null,
-          user_rewrite_input: null,
-          user_confirmed_at: null,
-          user_rejected_at: null,
-          user_dismissed_at: null,
-        }
-      : {}),
-  };
-
   try {
-    let q: any = supabase
-      .from("account_niche_resolutions")
-      .upsert(payload, { onConflict: "account_id" });
-
-    if (typeof q?.maxAffected === "function") q = q.maxAffected(1);
-
-    const { error } = await q;
+    const { data, error } = await supabase.rpc(
+      "upsert_pending_setup_niche_resolution_for_turn",
+      {
+        p_account_id: input.accountId,
+        p_turn_id: input.turnId,
+        p_raw_input: input.rawInput,
+        p_selected_taxon_id: input.selectedTaxonId,
+        p_confidence: input.confidence,
+        p_should_use_deterministic_match: input.shouldUseDeterministicMatch,
+        p_should_escalate_to_ai: input.shouldEscalateToAi,
+        p_ai_escalation_mode: input.aiEscalationMode,
+        p_needs_admin_review: input.needsAdminReview,
+        p_reason: input.reason,
+        p_resolution_status: input.resolutionStatus,
+        p_match_source: input.matchSource,
+        p_score: input.score,
+      },
+    );
 
     if (error) {
       console.error("upsertAccountNicheResolution failed:", {
@@ -84,7 +58,7 @@ export async function upsertAccountNicheResolution(
       return false;
     }
 
-    return true;
+    return data === "saved";
   } catch (error) {
     console.error("upsertAccountNicheResolution failed:", {
       code: error instanceof Error ? error.name : undefined,
@@ -99,31 +73,26 @@ export async function updateAccountNicheResolutionAiResult(
 ): Promise<boolean> {
   const supabase = createServiceClient();
 
-  const payload = {
-    ai_status: input.status,
-    ai_error_code: input.errorCode,
-    ai_model: input.model,
-    ai_schema_version: input.schemaVersion,
-    ai_result_json: input.result,
-    ai_ux_mode: input.uxMode,
-    ai_suggested_taxon_id: input.suggestedTaxonId,
-    ai_suggested_new_taxon_label: input.suggestedNewTaxonLabel,
-    ai_needs_user_confirmation: input.needsUserConfirmation,
-    ai_needs_admin_review: input.needsAdminReview,
-    ai_reason: input.reason,
-    ai_processed_at: new Date().toISOString(),
-  };
-
   try {
-    let q: any = supabase
-      .from("account_niche_resolutions")
-      .update(payload)
-      .eq("account_id", input.accountId)
-      .eq("raw_input", input.expectedRawInput);
-
-    if (typeof q?.maxAffected === "function") q = q.maxAffected(1);
-
-    const { data, error } = await q.select("account_id").maybeSingle();
+    const { data, error } = await supabase.rpc(
+      "update_pending_setup_niche_resolution_ai_for_turn",
+      {
+        p_account_id: input.accountId,
+        p_turn_id: input.turnId,
+        p_expected_raw_input: input.expectedRawInput,
+        p_ai_status: input.status,
+        p_ai_error_code: input.errorCode,
+        p_ai_model: input.model,
+        p_ai_schema_version: input.schemaVersion,
+        p_ai_result_json: input.result,
+        p_ai_ux_mode: input.uxMode,
+        p_ai_suggested_taxon_id: input.suggestedTaxonId,
+        p_ai_suggested_new_taxon_label: input.suggestedNewTaxonLabel,
+        p_ai_needs_user_confirmation: input.needsUserConfirmation,
+        p_ai_needs_admin_review: input.needsAdminReview,
+        p_ai_reason: input.reason,
+      },
+    );
 
     if (error) {
       console.error("updateAccountNicheResolutionAiResult failed:", {
@@ -133,7 +102,7 @@ export async function updateAccountNicheResolutionAiResult(
       return false;
     }
 
-    return data !== null;
+    return data === "saved";
   } catch (error) {
     console.error("updateAccountNicheResolutionAiResult failed:", {
       code: error instanceof Error ? error.name : undefined,

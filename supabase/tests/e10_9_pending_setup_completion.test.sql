@@ -94,11 +94,11 @@ values
     'e1096000-0000-4000-8000-000000000021',
     'consultoria',
     'business_description',
-    'completed',
-    'ready_official',
-    'Entendimento confirmado: Consultoria E10.9.6.',
+    'pending',
     null,
-    now()
+    null,
+    null,
+    null
   ),
   (
     'e1096000-0000-4000-8000-000000000012',
@@ -110,17 +110,6 @@ values
     'Entendimento operacional confirmado: atendimento especializado.',
     null,
     now()
-  ),
-  (
-    'e1096000-0000-4000-8000-000000000011',
-    'e1096000-0000-4000-8000-000000000023',
-    'tentativa posterior',
-    'clarification',
-    'failed',
-    'failure',
-    'Não foi possível concluir este turno. Você pode tentar novamente.',
-    'provider_timeout',
-    now() + interval '1 second'
   );
 
 do $$
@@ -131,6 +120,7 @@ declare
 begin
   v_result := public.confirm_pending_setup_niche_resolution_taxon(
     'e1096000-0000-4000-8000-000000000011',
+    'e1096000-0000-4000-8000-000000000021',
     'e1096000-0000-4000-8000-000000000031'
   );
   if v_result <> 'saved' then
@@ -153,6 +143,33 @@ begin
   ) then
     raise exception 'deterministic confirmation must persist resolution and official taxonomy together';
   end if;
+
+  v_result := public.complete_pending_setup_conversation_turn(
+    'e1096000-0000-4000-8000-000000000011',
+    'e1096000-0000-4000-8000-000000000021',
+    'completed',
+    'ready_official',
+    'Entendimento confirmado: Consultoria E10.9.6.',
+    null
+  );
+  if v_result <> 'saved' then
+    raise exception 'confirmed official turn must complete, got %', v_result;
+  end if;
+
+  insert into public.pending_setup_conversation_turns (
+    account_id, id, user_message, turn_kind, status, product_state,
+    product_message, failure_code, completed_at
+  ) values (
+    'e1096000-0000-4000-8000-000000000011',
+    'e1096000-0000-4000-8000-000000000023',
+    'tentativa posterior',
+    'clarification',
+    'failed',
+    'failure',
+    'Não foi possível concluir este turno. Você pode tentar novamente.',
+    'provider_timeout',
+    now() + interval '1 second'
+  );
 
   select count(*) into v_entitlements_before
   from public.account_commercial_entitlements

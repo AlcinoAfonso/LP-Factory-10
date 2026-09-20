@@ -143,98 +143,16 @@ begin
 end;
 $$;
 
-create or replace function public.retire_stale_pending_setup_primary(
-  p_account_id uuid
-)
-returns text
-language plpgsql
-security invoker
-set search_path = ''
-as $$
-declare
-  v_account_status text;
-  v_resolution record;
-  v_primary_taxon_id uuid;
-  v_primary_taxon_is_active boolean;
-  v_updated_count integer;
-begin
-  select status
-  into v_account_status
-  from public.accounts
-  where id = p_account_id
-  for update;
-
-  if v_account_status is distinct from 'pending_setup' then
-    return 'account_not_pending_setup';
-  end if;
-
-  select user_resolution_status, user_selected_taxon_id
-  into v_resolution
-  from public.account_niche_resolutions
-  where account_id = p_account_id
-  for update;
-
-  if not found
-    or v_resolution.user_resolution_status is distinct from 'confirmed'
-    or v_resolution.user_selected_taxon_id is null
-  then
-    return 'resolution_not_recoverable';
-  end if;
-
-  select primary_link.taxon_id, taxon.is_active
-  into v_primary_taxon_id, v_primary_taxon_is_active
-  from public.account_taxonomy as primary_link
-  left join public.business_taxons as taxon on taxon.id = primary_link.taxon_id
-  where primary_link.account_id = p_account_id
-    and primary_link.is_primary = true
-    and primary_link.status = 'active'
-  for update of primary_link;
-
-  if not found then
-    return 'primary_not_found';
-  end if;
-  if v_primary_taxon_id is distinct from v_resolution.user_selected_taxon_id then
-    return 'conflicting_primary';
-  end if;
-  if v_primary_taxon_is_active is true then
-    return 'primary_still_usable';
-  end if;
-
-  update public.account_taxonomy
-  set
-    is_primary = false,
-    status = 'inactive',
-    updated_at = now()
-  where account_id = p_account_id
-    and taxon_id = v_primary_taxon_id
-    and is_primary = true
-    and status = 'active';
-
-  get diagnostics v_updated_count = row_count;
-  if v_updated_count <> 1 then
-    raise exception 'pending setup stale primary changed concurrently';
-  end if;
-
-  return 'retired';
-end;
-$$;
-
 alter function public.confirm_pending_setup_niche_resolution_taxon(uuid, uuid) owner to postgres;
-alter function public.retire_stale_pending_setup_primary(uuid) owner to postgres;
 revoke all on function public.confirm_pending_setup_niche_resolution_taxon(uuid, uuid) from public;
 revoke all on function public.confirm_pending_setup_niche_resolution_taxon(uuid, uuid) from anon;
 revoke all on function public.confirm_pending_setup_niche_resolution_taxon(uuid, uuid) from authenticated;
 grant execute on function public.confirm_pending_setup_niche_resolution_taxon(uuid, uuid) to service_role;
-revoke all on function public.retire_stale_pending_setup_primary(uuid) from public;
-revoke all on function public.retire_stale_pending_setup_primary(uuid) from anon;
-revoke all on function public.retire_stale_pending_setup_primary(uuid) from authenticated;
-grant execute on function public.retire_stale_pending_setup_primary(uuid) to service_role;
 
 do $$
 begin
   if to_regrole('ai_readonly') is not null then
     execute 'revoke all on function public.confirm_pending_setup_niche_resolution_taxon(uuid, uuid) from ai_readonly';
-    execute 'revoke all on function public.retire_stale_pending_setup_primary(uuid) from ai_readonly';
   end if;
 end
 $$;

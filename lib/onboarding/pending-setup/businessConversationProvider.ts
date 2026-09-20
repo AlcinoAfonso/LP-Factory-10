@@ -19,6 +19,7 @@ import type { PendingSetupBusinessSnapshot } from "./contracts";
 
 export async function processPendingSetupBusiness(input: {
   accountId: string;
+  turnId: string;
   rawInput: unknown;
 }) {
   return processPendingSetupBusinessTurn(input, {
@@ -27,7 +28,11 @@ export async function processPendingSetupBusiness(input: {
     linkOfficial: async ({ accountId, decision }) => {
       const taxonId = decision.selectedCandidate?.taxonId ?? null;
       if (!taxonId) return { status: "skipped_not_high_confidence" as const, taxonId };
-      const result = await confirmPendingSetupTaxonForAccount({ accountId, taxonId });
+      const result = await confirmPendingSetupTaxonForAccount({
+        accountId,
+        turnId: input.turnId,
+        taxonId,
+      });
       return result.ok
         ? { status: "saved" as const, taxonId }
         : { status: "failed" as const, taxonId };

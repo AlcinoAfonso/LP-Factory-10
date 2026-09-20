@@ -250,6 +250,7 @@ export async function continuePendingSetupConversationAction(
     try {
       const result = await processPendingSetupBusiness({
         accountId: allowed.accountId,
+        turnId,
         rawInput: description.value,
       });
       if (!result.ok) {
@@ -332,9 +333,13 @@ export async function continuePendingSetupConversationAction(
 
     try {
       const result = resolution.uxMode === "confirm_single"
-        ? await confirmPendingSetupAiSuggestedTaxonForAccount({ accountId: allowed.accountId })
+        ? await confirmPendingSetupAiSuggestedTaxonForAccount({
+            accountId: allowed.accountId,
+            turnId,
+          })
         : await confirmPendingSetupAiOptionForAccount({
             accountId: allowed.accountId,
+            turnId,
             taxonId,
             optionName,
           });
@@ -401,6 +406,7 @@ export async function continuePendingSetupConversationAction(
     try {
       const result = await confirmPendingSetupFallbackForAccount({
         accountId: allowed.accountId,
+        turnId,
         rewriteInput: resolution.rawInput,
       });
       if (!result.ok) return failRecordedTurn(allowed, turnId, result.reason, previous);

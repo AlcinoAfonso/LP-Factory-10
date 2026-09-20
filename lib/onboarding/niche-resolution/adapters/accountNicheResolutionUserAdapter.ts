@@ -120,12 +120,6 @@ export async function readActionablePendingSetupNicheResolutionForAccount(input:
         usableActivePrimaryTaxonId: primary.taxonId,
       })
     ) {
-      if (
-        validated.reason === "already_finalized" &&
-        !(await retireStalePendingSetupPrimary(input.accountId))
-      ) {
-        return { ok: false, reason: "stale_primary_retirement_failed" };
-      }
       return { ok: true, resolution: null, recoverableRawInput: null };
     }
   }
@@ -134,6 +128,7 @@ export async function readActionablePendingSetupNicheResolutionForAccount(input:
 
 export async function confirmPendingSetupAiSuggestedTaxonForAccount(input: {
   accountId: string;
+  turnId: string;
 }): Promise<NicheResolutionUserActionResult> {
   const validated = await getValidatedActionContext({
     accountId: input.accountId,
@@ -146,11 +141,16 @@ export async function confirmPendingSetupAiSuggestedTaxonForAccount(input: {
   if (!taxonId || taxonId !== suggestedTaxonId) {
     return { ok: false, reason: "invalid_suggested_taxon" };
   }
-  return confirmPendingSetupTaxonForAccount({ accountId: input.accountId, taxonId });
+  return confirmPendingSetupTaxonForAccount({
+    accountId: input.accountId,
+    turnId: input.turnId,
+    taxonId,
+  });
 }
 
 export async function confirmPendingSetupAiOptionForAccount(input: {
   accountId: string;
+  turnId: string;
   taxonId: string | null;
   optionName: string | null;
 }): Promise<NicheResolutionUserActionResult> {
@@ -169,13 +169,14 @@ export async function confirmPendingSetupAiOptionForAccount(input: {
   if (option.isOfficial && option.taxonId) {
     return confirmPendingSetupTaxonForAccount({
       accountId: input.accountId,
+      turnId: input.turnId,
       taxonId: option.taxonId,
     });
   }
-  return confirmOperationalChoice(
+  return confirmPendingSetupOperationalChoice(
     input.accountId,
+    input.turnId,
     option.name,
-    PENDING_SETUP_OPERATIONAL_CHOICE_LIMIT,
   );
 }
 
@@ -279,11 +280,25 @@ export async function rewriteAiNicheResolutionForAccount(input: {
 
 export async function confirmPendingSetupFallbackForAccount(input: {
   accountId: string;
+  turnId: string;
   rewriteInput: string;
 }): Promise<NicheResolutionUserActionResult> {
-  return rewriteOperationalNicheResolutionForAccount(
-    input,
+  const rewriteInput = validateOperationalChoiceLabel(
+    input.rewriteInput,
     PENDING_SETUP_OPERATIONAL_CHOICE_LIMIT,
+  );
+  if (!rewriteInput.ok) return rewriteInput;
+
+  const validated = await getValidatedActionContext({
+    accountId: input.accountId,
+    requireUxMode: "fallback_review",
+  });
+  if (!validated.ok) return { ok: false, reason: validated.reason };
+
+  return confirmPendingSetupOperationalChoice(
+    input.accountId,
+    input.turnId,
+    rewriteInput.value,
   );
 }
 
@@ -390,14 +405,15 @@ async function confirmValidatedTaxon(
 
 export async function confirmPendingSetupTaxonForAccount(input: {
   accountId: string;
+  turnId: string;
   taxonId: string;
 }): Promise<NicheResolutionUserActionResult> {
-  const { accountId, taxonId } = input;
+  const { accountId, turnId, taxonId } = input;
   const supabase = createServiceClient();
   try {
     const { data, error } = await supabase.rpc(
       "confirm_pending_setup_niche_resolution_taxon",
-      { p_account_id: accountId, p_taxon_id: taxonId },
+      { p_account_id: accountId, p_turn_id: turnId, p_taxon_id: taxonId },
     );
     if (error) {
       console.error("confirmPendingSetupTaxonForAccount failed:", {
@@ -414,6 +430,36 @@ export async function confirmPendingSetupTaxonForAccount(input: {
       code: error instanceof Error ? error.name : undefined,
       message: error instanceof Error ? error.message : String(error),
     });
+    return { ok: false, reason: "update_failed" };
+  }
+}
+
+async function confirmPendingSetupOperationalChoice(
+  accountId: string,
+  turnId: string,
+  label: string,
+): Promise<NicheResolutionUserActionResult> {
+  const normalizedLabel = validateOperationalChoiceLabel(
+    label,
+    PENDING_SETUP_OPERATIONAL_CHOICE_LIMIT,
+  );
+  if (!normalizedLabel.ok) return normalizedLabel;
+
+  const supabase = createServiceClient();
+  try {
+    const { data, error } = await supabase.rpc(
+      "confirm_pending_setup_operational_choice_for_turn",
+      {
+        p_account_id: accountId,
+        p_turn_id: turnId,
+        p_label: normalizedLabel.value,
+      },
+    );
+    if (error) return { ok: false, reason: "update_failed" };
+    return data === "saved"
+      ? { ok: true, status: "confirmed" }
+      : { ok: false, reason: typeof data === "string" ? data : "update_failed" };
+  } catch {
     return { ok: false, reason: "update_failed" };
   }
 }
@@ -492,15 +538,15 @@ async function getValidatedActionContext(input: {
 
   const row = resolution as ResolutionRow;
 
+  if (row.user_resolution_status && FINAL_USER_STATUSES.has(row.user_resolution_status)) {
+    return { ok: false, reason: "already_finalized", resolution: row };
+  }
   if (row.ai_status !== "resolved") return { ok: false, reason: "resolution_not_resolved" };
   if (!row.ai_ux_mode || !ACTIONABLE_UX_MODES.has(row.ai_ux_mode)) {
     return { ok: false, reason: "ux_mode_not_actionable" };
   }
   if (input.requireUxMode && row.ai_ux_mode !== input.requireUxMode) {
     return { ok: false, reason: "unexpected_ux_mode" };
-  }
-  if (row.user_resolution_status && FINAL_USER_STATUSES.has(row.user_resolution_status)) {
-    return { ok: false, reason: "already_finalized", resolution: row };
   }
   if (row.user_resolution_status && row.user_resolution_status !== "pending_confirmation") {
     return { ok: false, reason: "user_status_not_actionable" };
@@ -580,29 +626,6 @@ async function getValidatedActionContext(input: {
       },
     },
   };
-}
-
-async function retireStalePendingSetupPrimary(accountId: string): Promise<boolean> {
-  const supabase = createServiceClient();
-  try {
-    const { data, error } = await supabase.rpc("retire_stale_pending_setup_primary", {
-      p_account_id: accountId,
-    });
-    if (error) {
-      console.error("retireStalePendingSetupPrimary failed:", {
-        code: (error as any)?.code,
-        message: (error as any)?.message ?? String(error),
-      });
-      return false;
-    }
-    return data === "retired" || data === "primary_not_found";
-  } catch (error) {
-    console.error("retireStalePendingSetupPrimary failed:", {
-      code: error instanceof Error ? error.name : undefined,
-      message: error instanceof Error ? error.message : String(error),
-    });
-    return false;
-  }
 }
 
 async function readUsableActivePrimaryTaxonId(accountId: string): Promise<
