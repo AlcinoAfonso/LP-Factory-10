@@ -1,6 +1,6 @@
 ---
 name: lp-factory-conduzir-plano-completo
-description: "Conduzir end-to-end um plano-base Complexo da LP Factory 10 a partir de uma V1 funcional aprovada: quando ela já estiver congelada, retomar pelo PR existente; quando vier apenas por handoff curto com Debate + plano, materializá-la e congelá-la no PR único antes do workflow técnico. Produzir e aprovar V2, reconciliar o roadmap e entregar a execução ao Executor na mesma task, branch e PR, usando especialistas antes da V2 e o Analista nos gates."
+description: "Conduzir end-to-end um plano-base Complexo da LP Factory 10: materializar e congelar a V1 quando necessário, produzir e aprovar V2, reconciliar o roadmap e seguir com o Executor na mesma task, branch e PR, usando especialistas antes da V2 e Analista conforme o Executor."
 ---
 
 # Conduzir plano-base Complexo end-to-end
@@ -35,7 +35,7 @@ Ler `docs/pipeline-plano-base.md` somente para roteamento e seguir os contratos 
 - `lp-factory-avaliar-plano-automacoes`, quando a V1 identificar automação aplicável e não registrar dispensa humana explícita da avaliação formal;
 - `lp-factory-avaliar-plano-analista`;
 - `lp-factory-executar-plano`;
-- `lp-factory-avaliar-implementacao-analista` nos gates por subseção.
+- `lp-factory-avaliar-implementacao-analista` nas revisões focal e final definidas pelo Executor.
 
 ## Retomar antes de repetir
 
