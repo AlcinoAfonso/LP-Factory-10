@@ -2,6 +2,7 @@ import "server-only";
 
 import { clientOpenAiCostContext } from "../../openai-costs";
 import {
+  confirmPendingSetupTaxonForAccount,
   getActionablePendingSetupNicheResolutionForAccount,
   getConfirmedOperationalNicheResolutionLabel,
   readPersistedNicheResolutionRawInputForAccount,
@@ -10,10 +11,7 @@ import {
   updateAccountNicheResolutionAiResult,
   upsertAccountNicheResolution,
 } from "../niche-resolution/adapters/accountNicheResolutionAdapter";
-import {
-  getActivePrimaryAccountTaxon,
-  linkAccountTaxonomyFromDeterministicDecision,
-} from "../niche-resolution/adapters/accountTaxonomyAdapter";
+import { getActivePrimaryAccountTaxon } from "../niche-resolution/adapters/accountTaxonomyAdapter";
 import { matchBusinessTaxonsDeterministic } from "../niche-resolution/adapters/taxonMatchAdapter";
 import { resolveNicheWithOpenAi } from "../niche-resolution/adapters/openAiResolver";
 import { processPendingSetupBusinessTurn } from "./businessConversationCore";
@@ -26,7 +24,14 @@ export async function processPendingSetupBusiness(input: {
   return processPendingSetupBusinessTurn(input, {
     match: matchBusinessTaxonsDeterministic,
     persistResolution: upsertAccountNicheResolution,
-    linkOfficial: linkAccountTaxonomyFromDeterministicDecision,
+    linkOfficial: async ({ accountId, decision }) => {
+      const taxonId = decision.selectedCandidate?.taxonId ?? null;
+      if (!taxonId) return { status: "skipped_not_high_confidence" as const, taxonId };
+      const result = await confirmPendingSetupTaxonForAccount({ accountId, taxonId });
+      return result.ok
+        ? { status: "saved" as const, taxonId }
+        : { status: "failed" as const, taxonId };
+    },
     resolveWithAi: async ({ rawInput, decision, candidates }) => {
       const result = await resolveNicheWithOpenAi({
         rawInput,

@@ -6,12 +6,20 @@ import type {
   TaxonMatchCandidate,
 } from "../niche-resolution/contracts";
 import {
+  LEGACY_OPERATIONAL_CHOICE_LIMIT,
+  PENDING_SETUP_OPERATIONAL_CHOICE_LIMIT,
+  validateOperationalChoiceLabel,
+} from "../niche-resolution/operationalChoice";
+import {
   appendBusinessClarification,
   processPendingSetupBusinessTurn,
   type PendingSetupBusinessDependencies,
   validateBusinessDescription,
 } from "./businessConversationCore";
-import { reconcilePendingSetupTurnRetry } from "./conversationHistoryCore";
+import {
+  reconcilePendingSetupTurnRetry,
+  selectPendingSetupCompletionRetryTurn,
+} from "./conversationHistoryCore";
 import { resolveCompletedAccountPresentation } from "./completionCore";
 import {
   type PendingSetupConversationTurn,
@@ -91,8 +99,24 @@ assert.deepEqual(validateBusinessDescription("  consultoria   financeira  "), {
   ok: true,
   value: "consultoria financeira",
 });
+assert.deepEqual(validateBusinessDescription(maximumFallbackDescription), {
+  ok: true,
+  value: maximumFallbackDescription,
+});
 assert.equal(validateBusinessDescription("x").ok, false);
 assert.equal(validateBusinessDescription("x".repeat(501)).ok, false);
+assert.deepEqual(
+  validateOperationalChoiceLabel("x".repeat(500), PENDING_SETUP_OPERATIONAL_CHOICE_LIMIT),
+  { ok: true, value: "x".repeat(500) },
+);
+assert.deepEqual(
+  validateOperationalChoiceLabel("x".repeat(501), PENDING_SETUP_OPERATIONAL_CHOICE_LIMIT),
+  { ok: false, reason: "rewrite_too_long" },
+);
+assert.deepEqual(
+  validateOperationalChoiceLabel("x".repeat(121), LEGACY_OPERATIONAL_CHOICE_LIMIT),
+  { ok: false, reason: "rewrite_too_long" },
+);
 assert.deepEqual(
   appendBusinessClarification("consultoria", "  para   médicos "),
   { ok: true, value: "consultoria. para médicos" },
@@ -176,6 +200,25 @@ async function runBusinessConversationCases(): Promise<void> {
     status: "ready_official",
     taxonId: officialCandidate.taxonId,
   });
+  assert.deepEqual(events, ["match", "persist_resolution", "link_official"]);
+}
+
+{
+  const events: string[] = [];
+  const result = await processPendingSetupBusinessTurn(
+    { accountId: "account-1", rawInput: officialCandidate.name },
+    dependenciesFor(
+      { ok: true, candidates: [officialCandidate] },
+      events,
+      {
+        linkOfficial: async () => {
+          events.push("link_official");
+          return { status: "failed", taxonId: officialCandidate.taxonId };
+        },
+      },
+    ),
+  );
+  assert.deepEqual(result, { ok: false, reason: "official_link_failed" });
   assert.deepEqual(events, ["match", "persist_resolution", "link_official"]);
 }
 
@@ -411,6 +454,36 @@ async function runConversationHistoryRetryCases(): Promise<void> {
       business: { kind: "ready_fallback" as const, description: "Serviço artesanal" },
     },
   ];
+
+  const retryableLatestTurn: PendingSetupConversationTurn = {
+    id: "d9428888-122b-4c2e-941f-70a76fb55e30",
+    userMessage: "agência digital",
+    turnKind: "business_description",
+    status: "failed",
+    productState: "failure",
+    productMessage: "Não foi possível concluir este turno.",
+    createdAt: "2026-09-20T12:00:00.000Z",
+    completedAt: "2026-09-20T12:00:01.000Z",
+  };
+  const readyOfficial = scenarios[2].business;
+  assert.equal(
+    selectPendingSetupCompletionRetryTurn([retryableLatestTurn], readyOfficial)?.id,
+    retryableLatestTurn.id,
+  );
+  assert.equal(
+    selectPendingSetupCompletionRetryTurn(
+      [{ ...retryableLatestTurn, status: "completed" }],
+      readyOfficial,
+    ),
+    null,
+  );
+  assert.equal(
+    selectPendingSetupCompletionRetryTurn(
+      [{ ...retryableLatestTurn, userMessage: "outro negócio" }],
+      readyOfficial,
+    ),
+    null,
+  );
 
   for (const [index, scenario] of scenarios.entries()) {
     const turn: PendingSetupConversationTurn = {

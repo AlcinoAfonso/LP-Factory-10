@@ -21,6 +21,15 @@ export async function reconcilePendingSetupTurnRetry(
   return await complete(presentation) ? "completed" : "persist_failed";
 }
 
+export function selectPendingSetupCompletionRetryTurn(
+  turns: PendingSetupConversationTurn[],
+  business: PendingSetupBusinessSnapshot,
+): PendingSetupConversationTurn | null {
+  const latest = turns.at(-1);
+  if (!latest || latest.status === "completed") return null;
+  return canReconcilePendingSetupTurn(latest, business) ? latest : null;
+}
+
 export function canReconcilePendingSetupTurn(
   turn: PendingSetupConversationTurn,
   business: PendingSetupBusinessSnapshot,

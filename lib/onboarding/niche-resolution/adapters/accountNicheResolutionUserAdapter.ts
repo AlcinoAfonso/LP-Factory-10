@@ -9,6 +9,12 @@ import type {
   NicheResolutionUserActionResult,
   UserNicheResolutionStatus,
 } from "../contracts";
+import {
+  LEGACY_OPERATIONAL_CHOICE_LIMIT,
+  type OperationalChoiceLimit,
+  PENDING_SETUP_OPERATIONAL_CHOICE_LIMIT,
+  validateOperationalChoiceLabel,
+} from "../operationalChoice";
 import { linkPrimaryAccountTaxonomyFromUserConfirmedAi } from "./accountTaxonomyAdapter";
 
 const ACTIONABLE_UX_MODES = new Set<AiNicheResolutionUxMode>([
@@ -22,8 +28,6 @@ const FINAL_USER_STATUSES = new Set<UserNicheResolutionStatus>([
   "rewritten",
   "dismissed",
 ]);
-const REWRITE_LIMIT = 120;
-
 type ResolutionRow = {
   account_id: string;
   raw_input: string;
@@ -120,7 +124,7 @@ export async function confirmPendingSetupAiSuggestedTaxonForAccount(input: {
   if (!taxonId || taxonId !== suggestedTaxonId) {
     return { ok: false, reason: "invalid_suggested_taxon" };
   }
-  return confirmPendingSetupValidatedTaxon(input.accountId, taxonId);
+  return confirmPendingSetupTaxonForAccount({ accountId: input.accountId, taxonId });
 }
 
 export async function confirmPendingSetupAiOptionForAccount(input: {
@@ -141,7 +145,10 @@ export async function confirmPendingSetupAiOptionForAccount(input: {
   );
   if (!option) return { ok: false, reason: "invalid_option" };
   if (option.isOfficial && option.taxonId) {
-    return confirmPendingSetupValidatedTaxon(input.accountId, option.taxonId);
+    return confirmPendingSetupTaxonForAccount({
+      accountId: input.accountId,
+      taxonId: option.taxonId,
+    });
   }
   return confirmOperationalChoice(input.accountId, option.name);
 }
@@ -241,10 +248,25 @@ export async function rewriteAiNicheResolutionForAccount(input: {
   accountId: string;
   rewriteInput: string;
 }): Promise<NicheResolutionUserActionResult> {
-  const rewriteInput = normalizeOperationalLabel(input.rewriteInput);
+  return rewriteOperationalNicheResolutionForAccount(input, LEGACY_OPERATIONAL_CHOICE_LIMIT);
+}
 
-  if (!rewriteInput) return { ok: false, reason: "empty_rewrite" };
-  if (rewriteInput.length > REWRITE_LIMIT) return { ok: false, reason: "rewrite_too_long" };
+export async function confirmPendingSetupFallbackForAccount(input: {
+  accountId: string;
+  rewriteInput: string;
+}): Promise<NicheResolutionUserActionResult> {
+  return rewriteOperationalNicheResolutionForAccount(
+    input,
+    PENDING_SETUP_OPERATIONAL_CHOICE_LIMIT,
+  );
+}
+
+async function rewriteOperationalNicheResolutionForAccount(
+  input: { accountId: string; rewriteInput: string },
+  limit: OperationalChoiceLimit,
+): Promise<NicheResolutionUserActionResult> {
+  const rewriteInput = validateOperationalChoiceLabel(input.rewriteInput, limit);
+  if (!rewriteInput.ok) return rewriteInput;
 
   const validated = await getValidatedActionContext({
     accountId: input.accountId,
@@ -253,7 +275,7 @@ export async function rewriteAiNicheResolutionForAccount(input: {
 
   if (!validated.ok) return { ok: false, reason: validated.reason };
 
-  return confirmOperationalChoice(input.accountId, rewriteInput);
+  return confirmOperationalChoice(input.accountId, rewriteInput.value, limit);
 }
 
 export async function dismissAiNicheResolutionForAccount(input: {
@@ -340,10 +362,11 @@ async function confirmValidatedTaxon(
   return { ok: true, status: "confirmed" };
 }
 
-async function confirmPendingSetupValidatedTaxon(
-  accountId: string,
-  taxonId: string,
-): Promise<NicheResolutionUserActionResult> {
+export async function confirmPendingSetupTaxonForAccount(input: {
+  accountId: string;
+  taxonId: string;
+}): Promise<NicheResolutionUserActionResult> {
+  const { accountId, taxonId } = input;
   const supabase = createServiceClient();
   try {
     const { data, error } = await supabase.rpc(
@@ -351,7 +374,7 @@ async function confirmPendingSetupValidatedTaxon(
       { p_account_id: accountId, p_taxon_id: taxonId },
     );
     if (error) {
-      console.error("confirmPendingSetupValidatedTaxon failed:", {
+      console.error("confirmPendingSetupTaxonForAccount failed:", {
         code: (error as any)?.code,
         message: (error as any)?.message ?? String(error),
       });
@@ -361,7 +384,7 @@ async function confirmPendingSetupValidatedTaxon(
       ? { ok: true, status: "confirmed" }
       : { ok: false, reason: typeof data === "string" ? data : "update_failed" };
   } catch (error) {
-    console.error("confirmPendingSetupValidatedTaxon failed:", {
+    console.error("confirmPendingSetupTaxonForAccount failed:", {
       code: error instanceof Error ? error.name : undefined,
       message: error instanceof Error ? error.message : String(error),
     });
@@ -372,13 +395,12 @@ async function confirmPendingSetupValidatedTaxon(
 async function confirmOperationalChoice(
   accountId: string,
   label: string,
+  limit: OperationalChoiceLimit = LEGACY_OPERATIONAL_CHOICE_LIMIT,
 ): Promise<NicheResolutionUserActionResult> {
   const supabase = createServiceClient();
   const now = new Date().toISOString();
-  const normalizedLabel = normalizeOperationalLabel(label);
-
-  if (!normalizedLabel) return { ok: false, reason: "empty_rewrite" };
-  if (normalizedLabel.length > REWRITE_LIMIT) return { ok: false, reason: "rewrite_too_long" };
+  const normalizedLabel = validateOperationalChoiceLabel(label, limit);
+  if (!normalizedLabel.ok) return normalizedLabel;
 
   try {
     let query: any = supabase
@@ -386,7 +408,7 @@ async function confirmOperationalChoice(
       .update({
         user_resolution_status: "confirmed",
         user_selected_taxon_id: null,
-        user_rewrite_input: normalizedLabel,
+        user_rewrite_input: normalizedLabel.value,
         user_confirmed_at: now,
       })
       .eq("account_id", accountId)
@@ -574,6 +596,10 @@ async function readRecoverableRawInput(accountId: string): Promise<
     : { ok: false, reason: "resolution_not_found" };
 }
 
+function normalizeOperationalLabel(value: unknown): string {
+  return String(value ?? "").replace(/\s+/g, " ").trim();
+}
+
 function taxonToOption(taxon: TaxonRow | null): ActionableNicheResolutionOption | null {
   if (!taxon?.id || !taxon.name || !taxon.slug) return null;
   return { taxonId: taxon.id, name: taxon.name, slug: taxon.slug, isOfficial: true };
@@ -643,8 +669,4 @@ function parseAiResult(value: unknown): AiNicheResolutionOutput | null {
       typeof result.suggestedNewTaxonLabel === "string" ? result.suggestedNewTaxonLabel : null,
     reason: typeof result.reason === "string" ? result.reason : "",
   };
-}
-
-function normalizeOperationalLabel(value: unknown): string {
-  return String(value ?? "").replace(/\s+/g, " ").trim();
 }

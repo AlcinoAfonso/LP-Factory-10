@@ -21,18 +21,10 @@ values
 insert into public.business_taxons (id, parent_id, level, name, slug, is_active)
 values ('e1096000-0000-4000-8000-000000000031', null, 'niche', 'Consultoria E10.9.6', 'consultoria-e10-9-6', true);
 
-insert into public.account_taxonomy (account_id, taxon_id, is_primary, status, source_type)
-values (
-  'e1096000-0000-4000-8000-000000000011',
-  'e1096000-0000-4000-8000-000000000031',
-  true,
-  'active',
-  'user_confirmed_ai'
-);
-
 insert into public.account_niche_resolutions (
   account_id,
   raw_input,
+  selected_taxon_id,
   confidence,
   should_use_deterministic_match,
   should_escalate_to_ai,
@@ -49,6 +41,7 @@ values
   (
     'e1096000-0000-4000-8000-000000000011',
     'consultoria',
+    'e1096000-0000-4000-8000-000000000031',
     'high',
     true,
     false,
@@ -56,14 +49,15 @@ values
     false,
     'high_confidence_strong_match',
     'deterministic_high_confidence',
-    'confirmed',
-    'e1096000-0000-4000-8000-000000000031',
+    'pending_confirmation',
     null,
-    now()
+    null,
+    null
   ),
   (
     'e1096000-0000-4000-8000-000000000012',
     'atendimento especializado',
+    null,
     'low',
     false,
     true,
@@ -135,6 +129,31 @@ declare
   v_entitlements_after bigint;
   v_result text;
 begin
+  v_result := public.confirm_pending_setup_niche_resolution_taxon(
+    'e1096000-0000-4000-8000-000000000011',
+    'e1096000-0000-4000-8000-000000000031'
+  );
+  if v_result <> 'saved' then
+    raise exception 'deterministic official resolution must be confirmed atomically, got %', v_result;
+  end if;
+  if not exists (
+    select 1
+    from public.account_niche_resolutions
+    where account_id = 'e1096000-0000-4000-8000-000000000011'
+      and user_resolution_status = 'confirmed'
+      and user_selected_taxon_id = 'e1096000-0000-4000-8000-000000000031'
+  ) or not exists (
+    select 1
+    from public.account_taxonomy
+    where account_id = 'e1096000-0000-4000-8000-000000000011'
+      and taxon_id = 'e1096000-0000-4000-8000-000000000031'
+      and is_primary = true
+      and status = 'active'
+      and source_type = 'taxonomy_match'
+  ) then
+    raise exception 'deterministic confirmation must persist resolution and official taxonomy together';
+  end if;
+
   select count(*) into v_entitlements_before
   from public.account_commercial_entitlements
   where account_id in (

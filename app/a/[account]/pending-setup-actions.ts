@@ -7,11 +7,11 @@ import { redirect } from "next/navigation";
 
 import { getAccessContext } from "@/lib/access/getAccessContext";
 import {
+  confirmPendingSetupFallbackForAccount,
   confirmPendingSetupAiOptionForAccount,
   confirmPendingSetupAiSuggestedTaxonForAccount,
   getActionablePendingSetupNicheResolutionForAccount,
   readActionablePendingSetupNicheResolutionForAccount,
-  rewriteAiNicheResolutionForAccount,
 } from "../../../lib/onboarding/niche-resolution/adapters/accountNicheResolutionUserAdapter";
 import {
   beginPendingSetupConversationTurn,
@@ -35,6 +35,7 @@ import {
 import {
   canReconcilePendingSetupTurn,
   reconcilePendingSetupTurnRetry,
+  selectPendingSetupCompletionRetryTurn,
 } from "../../../lib/onboarding/pending-setup/conversationHistoryCore";
 import { isConversationalPendingSetupEnabled } from "../../../lib/onboarding/pending-setup/config";
 import {
@@ -78,6 +79,47 @@ export async function continuePendingSetupConversationAction(
   if (intent === "complete_setup") {
     if (!allowed.preferredName) {
       return { ...previous, ok: false, error: "Salve seu nome antes de continuar." };
+    }
+    if (allowed.accountStatus === "pending_setup") {
+      try {
+        const [business, history] = await Promise.all([
+          loadPendingSetupBusinessSnapshot(allowed.accountId),
+          readPendingSetupConversationHistory({
+            accountId: allowed.accountId,
+            ownerUserId: allowed.userId,
+          }),
+        ]);
+        const retryTurn = selectPendingSetupCompletionRetryTurn(history, business);
+        if (retryTurn) {
+          const resumed = await beginPendingSetupConversationTurn({
+            accountId: allowed.accountId,
+            ownerUserId: allowed.userId,
+            turnId: retryTurn.id,
+            userMessage: retryTurn.userMessage,
+            turnKind: retryTurn.turnKind,
+          });
+          if (!resumed.ok) return { ...previous, ok: false, error: GENERIC_ERROR };
+          if (resumed.status !== "completed") {
+            const reconciled = await reconcilePendingSetupTurnRetry(
+              retryTurn,
+              business,
+              async (presentation) => completePendingSetupConversationTurn({
+                accountId: allowed.accountId,
+                turnId: retryTurn.id,
+                status: "completed",
+                productState: presentation.state,
+                productMessage: presentation.message,
+                failureCode: null,
+              }),
+            );
+            if (reconciled !== "completed") {
+              return { ...previous, ok: false, error: GENERIC_ERROR };
+            }
+          }
+        }
+      } catch {
+        return { ...previous, ok: false, error: GENERIC_ERROR };
+      }
     }
     const completion = await completePendingSetupConversation({
       accountId: allowed.accountId,
@@ -336,7 +378,7 @@ export async function continuePendingSetupConversationAction(
     }
 
     try {
-      const result = await rewriteAiNicheResolutionForAccount({
+      const result = await confirmPendingSetupFallbackForAccount({
         accountId: allowed.accountId,
         rewriteInput: resolution.rawInput,
       });

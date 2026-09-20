@@ -12,6 +12,7 @@ as $$
 declare
   v_account_status text;
   v_existing_primary_taxon_id uuid;
+  v_link_source_type text;
   v_resolution record;
   v_selected_option_is_valid boolean := false;
   v_updated_count integer;
@@ -27,6 +28,11 @@ begin
   end if;
 
   select
+    selected_taxon_id,
+    confidence,
+    should_use_deterministic_match,
+    needs_admin_review,
+    resolution_status,
     ai_status,
     ai_result_json,
     ai_ux_mode,
@@ -37,17 +43,31 @@ begin
   where account_id = p_account_id
   for update;
 
-  if not found
-    or v_resolution.ai_status is distinct from 'resolved'
-    or v_resolution.ai_ux_mode not in ('confirm_single', 'choose_from_options')
-    or coalesce(v_resolution.user_resolution_status, 'pending_confirmation') <> 'pending_confirmation'
-  then
+  if not found or coalesce(v_resolution.user_resolution_status, 'pending_confirmation') <> 'pending_confirmation' then
     return 'resolution_not_actionable';
   end if;
 
-  if v_resolution.ai_ux_mode = 'confirm_single' then
+  if v_resolution.resolution_status = 'deterministic_high_confidence'
+    and v_resolution.confidence = 'high'
+    and v_resolution.should_use_deterministic_match = true
+    and v_resolution.needs_admin_review = false
+    and v_resolution.selected_taxon_id = p_taxon_id
+  then
+    v_selected_option_is_valid := true;
+    v_link_source_type := 'taxonomy_match';
+  elsif v_resolution.ai_status = 'resolved'
+    and v_resolution.ai_ux_mode in ('confirm_single', 'choose_from_options')
+  then
+    v_link_source_type := 'user_confirmed_ai';
+  else
+    return 'resolution_not_actionable';
+  end if;
+
+  if v_link_source_type = 'user_confirmed_ai' and v_resolution.ai_ux_mode = 'confirm_single' then
     v_selected_option_is_valid := v_resolution.ai_suggested_taxon_id = p_taxon_id;
-  elsif jsonb_typeof(v_resolution.ai_result_json -> 'options') = 'array' then
+  elsif v_link_source_type = 'user_confirmed_ai'
+    and jsonb_typeof(v_resolution.ai_result_json -> 'options') = 'array'
+  then
     select exists (
       select 1
       from jsonb_array_elements(v_resolution.ai_result_json -> 'options') as option_row
@@ -96,13 +116,13 @@ begin
     p_taxon_id,
     true,
     'active',
-    'user_confirmed_ai'
+    v_link_source_type
   )
   on conflict (account_id, taxon_id) do update
   set
     is_primary = true,
     status = 'active',
-    source_type = 'user_confirmed_ai',
+    source_type = v_link_source_type,
     updated_at = now();
 
   update public.account_niche_resolutions
@@ -127,7 +147,14 @@ alter function public.confirm_pending_setup_niche_resolution_taxon(uuid, uuid) o
 revoke all on function public.confirm_pending_setup_niche_resolution_taxon(uuid, uuid) from public;
 revoke all on function public.confirm_pending_setup_niche_resolution_taxon(uuid, uuid) from anon;
 revoke all on function public.confirm_pending_setup_niche_resolution_taxon(uuid, uuid) from authenticated;
-revoke all on function public.confirm_pending_setup_niche_resolution_taxon(uuid, uuid) from ai_readonly;
 grant execute on function public.confirm_pending_setup_niche_resolution_taxon(uuid, uuid) to service_role;
+
+do $$
+begin
+  if to_regrole('ai_readonly') is not null then
+    execute 'revoke all on function public.confirm_pending_setup_niche_resolution_taxon(uuid, uuid) from ai_readonly';
+  end if;
+end
+$$;
 
 commit;
