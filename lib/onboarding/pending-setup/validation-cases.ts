@@ -197,6 +197,42 @@ function dependenciesFor(
 async function runBusinessConversationCases(): Promise<void> {
 {
   const events: string[] = [];
+  let canonicalRawInput = "";
+  const result = await processPendingSetupBusinessTurn(
+    { accountId: "account-1", rawInput: "consultoria A" },
+    dependenciesFor(
+      { ok: true, candidates: [] },
+      events,
+      {
+        persistResolution: async (input) => {
+          events.push("persist_resolution");
+          canonicalRawInput = input.rawInput;
+          return true;
+        },
+        resolveWithAi: async () => {
+          events.push("resolve_ai");
+          canonicalRawInput = "consultoria B";
+          return { ok: true, model: "test-model", output: aiConfirmation };
+        },
+        persistAiResult: async (input) => {
+          events.push("persist_ai_result");
+          return input.expectedRawInput === canonicalRawInput;
+        },
+      },
+    ),
+  );
+  assert.deepEqual(result, { ok: false, reason: "result_persist_failed" });
+  assert.equal(canonicalRawInput, "consultoria B");
+  assert.deepEqual(events, [
+    "match",
+    "persist_resolution",
+    "resolve_ai",
+    "persist_ai_result",
+  ]);
+}
+
+{
+  const events: string[] = [];
   const result = await processPendingSetupBusinessTurn(
     { accountId: "account-1", rawInput: officialCandidate.name },
     dependenciesFor({ ok: true, candidates: [officialCandidate] }, events),

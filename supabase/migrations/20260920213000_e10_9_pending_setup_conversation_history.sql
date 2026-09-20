@@ -121,6 +121,28 @@ begin
     return 'conversation_owner_mismatch';
   end if;
 
+  update public.pending_setup_conversation_turns
+  set
+    status = 'failed',
+    product_state = 'failure',
+    product_message = 'Não foi possível concluir este turno. Você pode tentar novamente.',
+    failure_code = 'stale_turn_superseded',
+    completed_at = now()
+  where account_id = p_account_id
+    and id <> p_turn_id
+    and status = 'pending'
+    and attempted_at <= now() - interval '60 seconds';
+
+  if exists (
+    select 1
+    from public.pending_setup_conversation_turns
+    where account_id = p_account_id
+      and id <> p_turn_id
+      and status = 'pending'
+  ) then
+    return 'in_progress';
+  end if;
+
   insert into public.pending_setup_conversation_turns (
     account_id,
     id,

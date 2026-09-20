@@ -125,6 +125,7 @@ export async function processPendingSetupBusinessTurn(
     return persistActionableResult(
       dependencies,
       input.accountId,
+      parsed.value,
       fallbackOutput("deterministic_match_failed"),
       null,
       match.error.code,
@@ -145,6 +146,7 @@ export async function processPendingSetupBusinessTurn(
     return persistActionableResult(
       dependencies,
       input.accountId,
+      parsed.value,
       aliasConfirmationOutput(selected),
       null,
       null,
@@ -163,6 +165,7 @@ export async function processPendingSetupBusinessTurn(
   return persistActionableResult(
     dependencies,
     input.accountId,
+    parsed.value,
     output,
     aiResult.model,
     aiResult.ok ? null : aiResult.reason,
@@ -185,6 +188,7 @@ function shouldCreateOfficialLink(
 async function persistActionableResult(
   dependencies: PendingSetupBusinessDependencies,
   accountId: string,
+  expectedRawInput: string,
   output: AiNicheResolutionOutput,
   model: string | null,
   errorCode: string | null,
@@ -201,6 +205,7 @@ async function persistActionableResult(
       : null;
   const persisted = await dependencies.persistAiResult({
     accountId,
+    expectedRawInput,
     status: "resolved",
     errorCode,
     model,

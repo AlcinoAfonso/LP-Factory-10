@@ -118,11 +118,12 @@ export async function updateAccountNicheResolutionAiResult(
     let q: any = supabase
       .from("account_niche_resolutions")
       .update(payload)
-      .eq("account_id", input.accountId);
+      .eq("account_id", input.accountId)
+      .eq("raw_input", input.expectedRawInput);
 
     if (typeof q?.maxAffected === "function") q = q.maxAffected(1);
 
-    const { error } = await q;
+    const { data, error } = await q.select("account_id").maybeSingle();
 
     if (error) {
       console.error("updateAccountNicheResolutionAiResult failed:", {
@@ -132,7 +133,7 @@ export async function updateAccountNicheResolutionAiResult(
       return false;
     }
 
-    return true;
+    return data !== null;
   } catch (error) {
     console.error("updateAccountNicheResolutionAiResult failed:", {
       code: error instanceof Error ? error.name : undefined,

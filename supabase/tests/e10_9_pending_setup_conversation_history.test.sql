@@ -37,6 +37,25 @@ begin
     raise exception 'concurrent retry must remain in progress, got %', result;
   end if;
 
+  result := public.begin_pending_setup_conversation_turn(
+    'e1095000-0000-4000-8000-000000000011',
+    'e1095000-0000-4000-8000-000000000001',
+    'e1095000-0000-4000-8000-000000000024',
+    'contabilidade para clínicas',
+    'business_description'
+  );
+  if result <> 'in_progress' then
+    raise exception 'a different concurrent turn must be serialized, got %', result;
+  end if;
+  if exists (
+    select 1
+    from public.pending_setup_conversation_turns
+    where account_id = 'e1095000-0000-4000-8000-000000000011'
+      and id = 'e1095000-0000-4000-8000-000000000024'
+  ) then
+    raise exception 'a serialized concurrent turn must not be persisted';
+  end if;
+
   result := public.complete_pending_setup_conversation_turn(
     'e1095000-0000-4000-8000-000000000011',
     'e1095000-0000-4000-8000-000000000021',
@@ -116,6 +135,32 @@ begin
   );
   if result <> 'created' then
     raise exception 'same turn id must remain isolated across accounts, got %', result;
+  end if;
+
+  update public.pending_setup_conversation_turns
+  set attempted_at = now() - interval '61 seconds'
+  where account_id = 'e1095000-0000-4000-8000-000000000012'
+    and id = 'e1095000-0000-4000-8000-000000000021';
+
+  result := public.begin_pending_setup_conversation_turn(
+    'e1095000-0000-4000-8000-000000000012',
+    'e1095000-0000-4000-8000-000000000002',
+    'e1095000-0000-4000-8000-000000000024',
+    'roupas sob medida',
+    'clarification'
+  );
+  if result <> 'created' then
+    raise exception 'a stale pending turn must be retired before a new turn, got %', result;
+  end if;
+  if not exists (
+    select 1
+    from public.pending_setup_conversation_turns
+    where account_id = 'e1095000-0000-4000-8000-000000000012'
+      and id = 'e1095000-0000-4000-8000-000000000021'
+      and status = 'failed'
+      and failure_code = 'stale_turn_superseded'
+  ) then
+    raise exception 'the stale pending turn must remain as failed history';
   end if;
 
   result := public.begin_pending_setup_conversation_turn(

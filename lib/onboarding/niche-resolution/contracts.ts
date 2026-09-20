@@ -84,6 +84,7 @@ export type PersistedAiNicheResolutionStatus = "skipped" | "resolved" | "failed"
 
 export type UpdateAccountNicheResolutionAiResultInput = {
   accountId: string;
+  expectedRawInput: string;
   status: PersistedAiNicheResolutionStatus;
   errorCode: string | null;
   model: string | null;
