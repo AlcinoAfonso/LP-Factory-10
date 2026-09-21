@@ -335,8 +335,14 @@ const pendingSetupConversationSource = readFileSync(
   new URL("../../../app/a/[account]/_components/PendingSetupConversation.tsx", import.meta.url),
   "utf8",
 );
-assert.equal((pendingSetupConversationSource.match(/!text-ink-700/g) ?? []).length, 2);
-assert.equal((pendingSetupConversationSource.match(/!bg-transparent/g) ?? []).length, 2);
+assert.equal((pendingSetupConversationSource.match(/variant="secondary"/g) ?? []).length, 2);
+
+const buttonSource = readFileSync(
+  new URL("../../../components/ui/button.tsx", import.meta.url),
+  "utf8",
+);
+assert.match(buttonSource, /variant === "primary"/);
+assert.match(buttonSource, /bg-transparent text-ink-800 shadow-none hover:bg-surface-app/);
 
 const resolverSource = readFileSync(
   new URL("../niche-resolution/adapters/openAiResolver.ts", import.meta.url),
