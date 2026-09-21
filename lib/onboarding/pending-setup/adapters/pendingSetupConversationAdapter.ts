@@ -69,7 +69,11 @@ function mapConversation(
 function writeFailure(error: unknown): PendingSetupWriteResult {
   const code = String((error as { code?: unknown } | null)?.code ?? "");
   const message = String((error as { message?: unknown } | null)?.message ?? "");
-  if (code === "40001" || message.includes("version_conflict")) {
+  if (
+    code === "40001"
+    || message.includes("version_conflict")
+    || message.includes("stage_not_claimable")
+  ) {
     return { ok: false, reason: "conflict" };
   }
   if (code === "42501" || message.includes("actor_not_allowed")) {
