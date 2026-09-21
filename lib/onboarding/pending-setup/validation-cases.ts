@@ -314,12 +314,12 @@ const rejectedUnknownId = decidePendingSetupAiTurn({
 assert.equal(rejectedUnknownId.kind, "unresolved_fallback");
 
 assert.equal(shouldFallbackAfterRepeatedClarification({
-  previousAssistantContent: "Para eu entender melhor, qual destas opções mais se aproxima?",
-  nextAssistantContent: "  Para eu entender melhor, qual destas opções mais se aproxima?  ",
+  previousAssistantContent: "Para eu entender melhor, qual destas opções mais se aproxima do seu negócio: Consultoria criativa, Criação artística ou Experiências sensoriais?",
+  nextAssistantContent: "Para eu entender melhor, qual destas opções mais se aproxima do seu negócio: Experiências sensoriais, Consultoria criativa ou Criação artística?",
 }), true);
 assert.equal(shouldFallbackAfterRepeatedClarification({
-  previousAssistantContent: "Qual destas opções mais se aproxima?",
-  nextAssistantContent: "Você pode detalhar o público atendido?",
+  previousAssistantContent: "Para eu entender melhor, qual destas opções mais se aproxima do seu negócio: Consultoria criativa ou Criação artística?",
+  nextAssistantContent: "Para eu entender melhor, qual destas opções mais se aproxima do seu negócio: Consultoria financeira ou Criação artística?",
 }), false);
 
 const pendingSetupConversationSource = readFileSync(

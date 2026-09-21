@@ -86,11 +86,12 @@ export function shouldFallbackAfterRepeatedClarification(input: {
   previousAssistantContent: string | null;
   nextAssistantContent: string;
 }): boolean {
-  const normalize = (value: string | null) => String(value ?? "")
-    .replace(/\s+/g, " ")
-    .trim();
-  const previous = normalize(input.previousAssistantContent);
-  return previous.length > 0 && previous === normalize(input.nextAssistantContent);
+  const previousOptions = parseClarificationOptions(input.previousAssistantContent);
+  const nextOptions = parseClarificationOptions(input.nextAssistantContent);
+  return previousOptions !== null
+    && nextOptions !== null
+    && previousOptions.length === nextOptions.length
+    && previousOptions.every((option, index) => option === nextOptions[index]);
 }
 
 export function shouldUseAutomaticOfficialPath(
@@ -119,4 +120,17 @@ function formatOptions(options: readonly string[]): string {
   if (options.length <= 1) return options[0] ?? "nenhuma das anteriores";
   if (options.length === 2) return `${options[0]} ou ${options[1]}`;
   return `${options.slice(0, -1).join(", ")} ou ${options.at(-1)}`;
+}
+
+function parseClarificationOptions(content: string | null): readonly string[] | null {
+  const prefix = "Para eu entender melhor, qual destas opções mais se aproxima do seu negócio: ";
+  const normalized = String(content ?? "").replace(/\s+/g, " ").trim();
+  if (!normalized.startsWith(prefix) || !normalized.endsWith("?")) return null;
+  const options = normalized
+    .slice(prefix.length, -1)
+    .split(/,\s+|\s+ou\s+/)
+    .map((option) => option.trim().toLocaleLowerCase("pt-BR"))
+    .filter(Boolean)
+    .sort();
+  return options.length > 0 ? options : null;
 }
