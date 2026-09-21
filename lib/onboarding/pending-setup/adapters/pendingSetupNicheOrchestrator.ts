@@ -25,38 +25,34 @@ import {
   type ResolveAiNicheResolutionResult,
 } from "../../niche-resolution/adapters/openAiResolver";
 import { matchBusinessTaxonsDeterministic } from "../../niche-resolution/adapters/taxonMatchAdapter";
-import type { PendingSetupConfirmationKind, PendingSetupStage } from "../contracts";
+import { claimPendingSetupOpenAiCall } from "./pendingSetupConversationAdapter";
+import {
+  resolvePendingSetupAiTurn,
+  type PendingSetupNicheTurnResult,
+} from "../niche-turn-core";
 import {
   buildAliasConfirmationOutput,
-  currentPendingSetupOpenAiCallReachesLimit,
-  decidePendingSetupAiTurn,
-  hasReachedPendingSetupOpenAiCallLimit,
-  PENDING_SETUP_OPENAI_RETRY_MESSAGE,
-  PENDING_SETUP_TERMINAL_FALLBACK_MESSAGE,
-  shouldFallbackFromRepeatedClarification,
   shouldUseAutomaticOfficialPath,
 } from "../turn-policy";
 
-export type PendingSetupNicheTurnResult =
-  | Readonly<{
-      ok: true;
-      nextStage: Extract<PendingSetupStage, "business_understanding" | "niche_confirmation" | "ready_to_complete">;
-      assistantContent: string;
-      resolutionOutcome: "official" | "operational_fallback" | null;
-      confirmationKind: PendingSetupConfirmationKind | null;
-    }>
-  | Readonly<{ ok: false; reason: string }>;
+export type { PendingSetupNicheTurnResult } from "../niche-turn-core";
 
 type Dependencies = Readonly<{
   match?: (query: string, limit: number) => Promise<MatchBusinessTaxonsResult>;
   resolveAi?: typeof resolveNicheWithOpenAi;
+  reserveOpenAiCall?: typeof claimPendingSetupOpenAiCall;
 }>;
 
 export async function orchestratePendingSetupNicheTurn(input: {
   accountId: string;
+  conversationId: string;
+  userId: string;
+  expectedVersion: number;
+  turnToken: string;
   businessContext: string;
   aiContextProjection: string;
   previousAssistantContents: readonly string[];
+  openAiCallCount: number | null;
   apiKey?: string;
   financialContext: OpenAiCostEconomicContext;
 }, dependencies: Dependencies = {}): Promise<PendingSetupNicheTurnResult> {
@@ -120,70 +116,33 @@ export async function orchestratePendingSetupNicheTurn(input: {
     };
   }
 
-  if (hasReachedPendingSetupOpenAiCallLimit(input.previousAssistantContents)) {
-    return prepareOperationalFallback();
-  }
-
-  const currentOpenAiCallReachesLimit = currentPendingSetupOpenAiCallReachesLimit(
-    input.previousAssistantContents,
-  );
-
   const resolveAi = dependencies.resolveAi ?? resolveNicheWithOpenAi;
-  const aiResult = await resolveAi({
-    rawInput: input.aiContextProjection,
+  const reserveOpenAiCall = dependencies.reserveOpenAiCall ?? claimPendingSetupOpenAiCall;
+  return resolvePendingSetupAiTurn({
+    aiContextProjection: input.aiContextProjection,
     decision,
     candidates,
+    previousAssistantContents: input.previousAssistantContents,
+    openAiCallCount: input.openAiCallCount,
     apiKey: input.apiKey,
     financialContext: input.financialContext,
-    executionOrigin: "runtime",
+  }, {
+    resolveAi,
+    reserveOpenAiCall: () => reserveOpenAiCall({
+      conversationId: input.conversationId,
+      accountId: input.accountId,
+      userId: input.userId,
+      expectedVersion: input.expectedVersion,
+      turnToken: input.turnToken,
+    }),
+    persistAiOutput: (output, model, suggestedTaxonId) => persistAiOutput(
+      input.accountId,
+      output,
+      model,
+      suggestedTaxonId,
+    ),
+    persistAiFailure: (result) => persistAiFailure(input.accountId, result),
   });
-
-  if (!aiResult.ok) {
-    await persistAiFailure(input.accountId, aiResult);
-    return currentOpenAiCallReachesLimit
-      ? prepareOperationalFallback()
-      : retryAfterOpenAiFailure();
-  }
-
-  const aiDecision = decidePendingSetupAiTurn({
-    output: aiResult.output,
-    allowedCandidates: candidates,
-  });
-  const singleOfficialId = aiDecision.kind === "confirm_official"
-    ? aiDecision.candidate.taxonId
-    : null;
-  const persisted = await persistAiOutput(input.accountId, aiResult.output, aiResult.model, singleOfficialId);
-  if (!persisted) {
-    return currentOpenAiCallReachesLimit
-      ? prepareOperationalFallback()
-      : { ok: false, reason: "ai_resolution_write_failed" };
-  }
-
-  if (aiDecision.kind === "confirm_official") {
-    return {
-      ok: true,
-      nextStage: "niche_confirmation",
-      assistantContent: aiDecision.assistantContent,
-      resolutionOutcome: null,
-      confirmationKind: "official",
-    };
-  }
-  if (aiDecision.kind === "ask_clarifying_question") {
-    if (currentOpenAiCallReachesLimit || shouldFallbackFromRepeatedClarification({
-      previousAssistantContents: input.previousAssistantContents,
-      nextAssistantContent: aiDecision.assistantContent,
-    })) {
-      return prepareOperationalFallback();
-    }
-    return {
-      ok: true,
-      nextStage: "business_understanding",
-      assistantContent: aiDecision.assistantContent,
-      resolutionOutcome: null,
-      confirmationKind: null,
-    };
-  }
-  return prepareOperationalFallback();
 }
 
 async function persistAiOutput(
@@ -235,25 +194,5 @@ function retryAfterTechnicalFailure(): PendingSetupNicheTurnResult {
     assistantContent: "Não consegui consultar as categorias agora. Você pode tentar novamente em instantes.",
     resolutionOutcome: null,
     confirmationKind: null,
-  };
-}
-
-function retryAfterOpenAiFailure(): PendingSetupNicheTurnResult {
-  return {
-    ok: true,
-    nextStage: "business_understanding",
-    assistantContent: PENDING_SETUP_OPENAI_RETRY_MESSAGE,
-    resolutionOutcome: null,
-    confirmationKind: null,
-  };
-}
-
-function prepareOperationalFallback(): PendingSetupNicheTurnResult {
-  return {
-    ok: true,
-    nextStage: "niche_confirmation",
-    assistantContent: PENDING_SETUP_TERMINAL_FALLBACK_MESSAGE,
-    resolutionOutcome: null,
-    confirmationKind: "operational_fallback",
   };
 }

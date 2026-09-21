@@ -15,7 +15,7 @@ import { getActivePrimaryAccountTaxon } from "../../../lib/onboarding/niche-reso
 import {
   appendBusinessContext,
   buildPendingSetupAiProjection,
-  isPendingSetupTerminalFallbackMessage,
+  hasPendingSetupTerminalFallback,
   PENDING_SETUP_OPENAI_RETRY_MESSAGE,
   PENDING_SETUP_TERMINAL_FALLBACK_MESSAGE,
   selectOperationalFallbackLabel,
@@ -155,7 +155,6 @@ export async function continuePendingSetupConversationAction(
   ) {
     return { ok: false, formError: "Esta conversa mudou. Recarregue para continuar." };
   }
-
   let userContent: string;
   let assistantContent: string;
   let nextStage: "business_understanding" | "niche_confirmation" | "ready_to_complete";
@@ -180,15 +179,15 @@ export async function continuePendingSetupConversationAction(
     );
   } else if (conversation.stage === "niche_confirmation") {
     const intent = String(formData.get("intent") ?? "");
-    const isTerminalFallback = conversation.confirmationKind === "operational_fallback"
-      && isPendingSetupTerminalFallbackMessage(
-        conversation.messages.at(-1)?.content ?? null,
-      );
+    const isTerminalFallback = hasPendingSetupTerminalFallback({
+      confirmationKind: conversation.confirmationKind,
+      assistantContents: conversation.messages
+        .filter((message) => message.role === "assistant")
+        .map((message) => message.content),
+    });
     shouldUseTerminalFallbackAfterRejection =
       shouldUseTerminalFallbackAfterRejectedAiConfirmation({
-        previousAssistantContents: conversation.messages
-          .filter((message) => message.role === "assistant")
-          .map((message) => message.content),
+        openAiCallCount: conversation.openAiCallCount,
         confirmationKind: conversation.confirmationKind,
         intent,
       });
@@ -230,6 +229,10 @@ export async function continuePendingSetupConversationAction(
     } else {
       const resolution = await orchestratePendingSetupNicheTurn({
         accountId: actor.accountId,
+        conversationId,
+        userId: actor.userId,
+        expectedVersion: claimed.version,
+        turnToken,
         businessContext: businessContextText,
         aiContextProjection: buildPendingSetupAiProjection({
           messages: conversation.messages,
@@ -238,6 +241,7 @@ export async function continuePendingSetupConversationAction(
         previousAssistantContents: conversation.messages
           .filter((message) => message.role === "assistant")
           .map((message) => message.content),
+        openAiCallCount: conversation.openAiCallCount,
         apiKey: process.env.OPENAI_API_KEY,
         financialContext: clientOpenAiCostContext(actor.accountId, {
           kind: "niche_resolution",
@@ -304,7 +308,7 @@ export async function continuePendingSetupConversationAction(
         assistantContent = "Perfeito. Vou usar sua descrição como referência operacional, sem vínculo oficial.";
         nextStage = "ready_to_complete";
       } else {
-        assistantContent = "Não consegui registrar essa escolha agora. Tente novamente ou explique de outra forma.";
+        assistantContent = "Não consegui registrar essa escolha agora. Tente confirmar novamente.";
         nextStage = "niche_confirmation";
         confirmationKind = "operational_fallback";
       }

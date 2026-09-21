@@ -7,7 +7,7 @@ import { FormField, FormFieldError, FormFieldHint, FormFieldLabel } from "@/comp
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  isPendingSetupTerminalFallbackMessage,
+  hasPendingSetupTerminalFallback,
   type PendingSetupConversation as PendingSetupConversationContract,
 } from "../../../../lib/onboarding/pending-setup";
 import {
@@ -38,10 +38,14 @@ export function PendingSetupConversation({
   >(completePendingSetupAction, { ok: true });
   const inputRef = useRef<HTMLInputElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
-  const isTerminalFallback = conversation?.confirmationKind === "operational_fallback"
-    && isPendingSetupTerminalFallbackMessage(
-      conversation.messages.at(-1)?.content ?? null,
-    );
+  const isTerminalFallback = conversation
+    ? hasPendingSetupTerminalFallback({
+        confirmationKind: conversation.confirmationKind,
+        assistantContents: conversation.messages
+          .filter((message) => message.role === "assistant")
+          .map((message) => message.content),
+      })
+    : false;
 
   useEffect(() => {
     if (state.fieldError) inputRef.current?.focus();

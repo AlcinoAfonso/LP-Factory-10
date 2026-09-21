@@ -88,31 +88,10 @@ export function decidePendingSetupAiTurn(input: {
   };
 }
 
-export function countPendingSetupOpenAiCalls(
-  previousAssistantContents: readonly string[],
-): number {
-  return previousAssistantContents
-    .filter((content) => (
-      parseClarificationOptions(content) !== null
-      || isPendingSetupAiOfficialConfirmation(content)
-      || normalizeAssistantContent(content) === PENDING_SETUP_OPENAI_RETRY_MESSAGE
-      || isPendingSetupTerminalFallbackMessage(content)
-    ))
-    .length;
-}
-
 export function hasReachedPendingSetupOpenAiCallLimit(
-  previousAssistantContents: readonly string[],
+  openAiCallCount: number | null,
 ): boolean {
-  return countPendingSetupOpenAiCalls(previousAssistantContents)
-    >= PENDING_SETUP_MAX_OPENAI_CALLS;
-}
-
-export function currentPendingSetupOpenAiCallReachesLimit(
-  previousAssistantContents: readonly string[],
-): boolean {
-  return countPendingSetupOpenAiCalls(previousAssistantContents) + 1
-    >= PENDING_SETUP_MAX_OPENAI_CALLS;
+  return normalizeOpenAiCallCount(openAiCallCount) >= PENDING_SETUP_MAX_OPENAI_CALLS;
 }
 
 export function isPendingSetupTerminalFallbackMessage(
@@ -122,14 +101,22 @@ export function isPendingSetupTerminalFallbackMessage(
     === PENDING_SETUP_TERMINAL_FALLBACK_MESSAGE;
 }
 
+export function hasPendingSetupTerminalFallback(input: {
+  confirmationKind: "official" | "operational_fallback" | null;
+  assistantContents: readonly string[];
+}): boolean {
+  return input.confirmationKind === "operational_fallback"
+    && input.assistantContents.some(isPendingSetupTerminalFallbackMessage);
+}
+
 export function shouldUseTerminalFallbackAfterRejectedAiConfirmation(input: {
-  previousAssistantContents: readonly string[];
+  openAiCallCount: number | null;
   confirmationKind: "official" | "operational_fallback" | null;
   intent: string;
 }): boolean {
   return input.intent === "clarify"
     && input.confirmationKind === "official"
-    && hasReachedPendingSetupOpenAiCallLimit(input.previousAssistantContents);
+    && hasReachedPendingSetupOpenAiCallLimit(input.openAiCallCount);
 }
 
 export function shouldFallbackFromRepeatedClarification(input: {
@@ -199,12 +186,12 @@ function parseClarificationOptions(content: string | null): readonly string[] | 
   return options.length > 0 ? options : null;
 }
 
-function isPendingSetupAiOfficialConfirmation(content: string | null): boolean {
-  const normalized = normalizeAssistantContent(content);
-  return normalized.startsWith("Pelo que entendi, seu negócio se encaixa em ")
-    && normalized.endsWith(". É isso mesmo?");
-}
-
 function normalizeAssistantContent(content: string | null): string {
   return String(content ?? "").replace(/\s+/g, " ").trim();
+}
+
+function normalizeOpenAiCallCount(value: number | null): number {
+  return Number.isSafeInteger(value) && Number(value) >= 0
+    ? Number(value)
+    : PENDING_SETUP_MAX_OPENAI_CALLS;
 }
