@@ -29,6 +29,8 @@ import type { PendingSetupConfirmationKind, PendingSetupStage } from "../contrac
 import {
   buildAliasConfirmationOutput,
   decidePendingSetupAiTurn,
+  hasReachedPendingSetupClarificationLimit,
+  shouldFallbackFromRepeatedClarification,
   shouldUseAutomaticOfficialPath,
 } from "../turn-policy";
 
@@ -51,6 +53,7 @@ export async function orchestratePendingSetupNicheTurn(input: {
   accountId: string;
   businessContext: string;
   aiContextProjection: string;
+  previousAssistantContents: readonly string[];
   apiKey?: string;
   financialContext: OpenAiCostEconomicContext;
 }, dependencies: Dependencies = {}): Promise<PendingSetupNicheTurnResult> {
@@ -114,6 +117,10 @@ export async function orchestratePendingSetupNicheTurn(input: {
     };
   }
 
+  if (hasReachedPendingSetupClarificationLimit(input.previousAssistantContents)) {
+    return prepareOperationalFallback();
+  }
+
   const resolveAi = dependencies.resolveAi ?? resolveNicheWithOpenAi;
   const aiResult = await resolveAi({
     rawInput: input.aiContextProjection,
@@ -149,6 +156,12 @@ export async function orchestratePendingSetupNicheTurn(input: {
     };
   }
   if (aiDecision.kind === "ask_clarifying_question") {
+    if (shouldFallbackFromRepeatedClarification({
+      previousAssistantContents: input.previousAssistantContents,
+      nextAssistantContent: aiDecision.assistantContent,
+    })) {
+      return prepareOperationalFallback();
+    }
     return {
       ok: true,
       nextStage: "business_understanding",

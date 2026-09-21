@@ -10,6 +10,9 @@ import {
 import {
   appendBusinessContext,
   decidePendingSetupAiTurn,
+  hasReachedPendingSetupClarificationLimit,
+  selectOperationalFallbackLabel,
+  shouldFallbackFromRepeatedClarification,
   shouldUseAutomaticOfficialPath,
 } from "./turn-policy";
 import {
@@ -311,6 +314,44 @@ const rejectedUnknownId = decidePendingSetupAiTurn({
   allowedCandidates: [candidate],
 });
 assert.equal(rejectedUnknownId.kind, "unresolved_fallback");
+
+assert.equal(shouldFallbackFromRepeatedClarification({
+  previousAssistantContents: ["Para eu entender melhor, qual destas opções mais se aproxima do seu negócio: Consultoria criativa, Criação artística ou Experiências sensoriais?"],
+  nextAssistantContent: "Para eu entender melhor, qual destas opções mais se aproxima do seu negócio: Experiências sensoriais, Consultoria criativa ou Criação artística?",
+}), true);
+assert.equal(shouldFallbackFromRepeatedClarification({
+  previousAssistantContents: ["Para eu entender melhor, qual destas opções mais se aproxima do seu negócio: Consultoria criativa ou Criação artística?"],
+  nextAssistantContent: "Para eu entender melhor, qual destas opções mais se aproxima do seu negócio: Consultoria financeira ou Criação artística?",
+}), false);
+assert.equal(hasReachedPendingSetupClarificationLimit([
+    "Para eu entender melhor, qual destas opções mais se aproxima do seu negócio: Consultoria criativa ou Criação artística?",
+    "Para eu entender melhor, qual destas opções mais se aproxima do seu negócio: Consultoria financeira ou Experiências sensoriais?",
+]), true);
+assert.equal(hasReachedPendingSetupClarificationLimit([
+  "Olá! Como você prefere ser chamado?",
+  "Para eu entender melhor, qual destas opções mais se aproxima do seu negócio: Consultoria criativa ou Criação artística?",
+]), false);
+assert.equal(selectOperationalFallbackLabel([
+  { role: "assistant", content: "Conte sobre seu negócio." },
+  { role: "user", content: "  Crio mapas olfativos para memórias de famílias.  " },
+  { role: "assistant", content: "Qual opção mais se aproxima?" },
+  { role: "user", content: "Nenhuma das opções." },
+], "Crio mapas olfativos para memórias de famílias. | Nenhuma das opções."),
+"Crio mapas olfativos para memórias de famílias.");
+assert.equal(selectOperationalFallbackLabel([], "  Descrição acumulada  "), "Descrição acumulada");
+
+const pendingSetupConversationSource = readFileSync(
+  new URL("../../../app/a/[account]/_components/PendingSetupConversation.tsx", import.meta.url),
+  "utf8",
+);
+assert.equal((pendingSetupConversationSource.match(/variant="secondary"/g) ?? []).length, 2);
+
+const buttonSource = readFileSync(
+  new URL("../../../components/ui/button.tsx", import.meta.url),
+  "utf8",
+);
+assert.match(buttonSource, /variant === "primary"/);
+assert.match(buttonSource, /bg-transparent text-ink-800 shadow-none hover:bg-surface-app/);
 
 const resolverSource = readFileSync(
   new URL("../niche-resolution/adapters/openAiResolver.ts", import.meta.url),

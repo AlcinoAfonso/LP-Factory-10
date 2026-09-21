@@ -82,6 +82,30 @@ export function decidePendingSetupAiTurn(input: {
   };
 }
 
+export function hasReachedPendingSetupClarificationLimit(
+  previousAssistantContents: readonly string[],
+): boolean {
+  return previousAssistantContents
+    .map(parseClarificationOptions)
+    .filter((options) => options !== null)
+    .length >= 2;
+}
+
+export function shouldFallbackFromRepeatedClarification(input: {
+  previousAssistantContents: readonly string[];
+  nextAssistantContent: string;
+}): boolean {
+  const previousClarifications = input.previousAssistantContents
+    .map(parseClarificationOptions)
+    .filter((options): options is readonly string[] => options !== null);
+  const previousOptions = previousClarifications.at(-1) ?? null;
+  const nextOptions = parseClarificationOptions(input.nextAssistantContent);
+  return previousOptions !== null
+    && nextOptions !== null
+    && previousOptions.length === nextOptions.length
+    && previousOptions.every((option, index) => option === nextOptions[index]);
+}
+
 export function shouldUseAutomaticOfficialPath(
   decision: DeterministicMatchDecision,
 ): decision is DeterministicMatchDecision & { selectedCandidate: TaxonMatchCandidate } {
@@ -104,8 +128,32 @@ export function appendBusinessContext(
   return joined.slice(-maxLength);
 }
 
+export function selectOperationalFallbackLabel(
+  messages: readonly Readonly<{ role: "user" | "assistant"; content: string }>[],
+  accumulatedBusinessContext: string,
+): string {
+  const firstBusinessDescription = messages.find((message) => message.role === "user")?.content;
+  return String(firstBusinessDescription ?? accumulatedBusinessContext)
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 4000);
+}
+
 function formatOptions(options: readonly string[]): string {
   if (options.length <= 1) return options[0] ?? "nenhuma das anteriores";
   if (options.length === 2) return `${options[0]} ou ${options[1]}`;
   return `${options.slice(0, -1).join(", ")} ou ${options.at(-1)}`;
+}
+
+function parseClarificationOptions(content: string | null): readonly string[] | null {
+  const prefix = "Para eu entender melhor, qual destas opções mais se aproxima do seu negócio: ";
+  const normalized = String(content ?? "").replace(/\s+/g, " ").trim();
+  if (!normalized.startsWith(prefix) || !normalized.endsWith("?")) return null;
+  const options = normalized
+    .slice(prefix.length, -1)
+    .split(/,\s+|\s+ou\s+/)
+    .map((option) => option.trim().toLocaleLowerCase("pt-BR"))
+    .filter(Boolean)
+    .sort();
+  return options.length > 0 ? options : null;
 }

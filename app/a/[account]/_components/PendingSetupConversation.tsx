@@ -134,10 +134,11 @@ export function PendingSetupConversation({
               </Button>
               <Button
                 type="submit"
+                variant="secondary"
                 name="intent"
                 value="skip"
                 disabled={isPending}
-                className="min-h-11 bg-transparent text-ink-700 shadow-none hover:bg-surface-muted"
+                className="min-h-11"
               >
                 Prefiro não informar
               </Button>
@@ -217,10 +218,11 @@ export function PendingSetupConversation({
               </Button>
               <Button
                 type="submit"
+                variant="secondary"
                 name="intent"
                 value="clarify"
                 disabled={isTurnPending}
-                className="min-h-11 bg-transparent text-ink-700 shadow-none hover:bg-surface-muted"
+                className="min-h-11"
               >
                 Não, quero explicar melhor
               </Button>

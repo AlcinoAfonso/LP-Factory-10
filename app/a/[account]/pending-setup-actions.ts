@@ -15,6 +15,7 @@ import { getActivePrimaryAccountTaxon } from "../../../lib/onboarding/niche-reso
 import {
   appendBusinessContext,
   buildPendingSetupAiProjection,
+  selectOperationalFallbackLabel,
   validateBusinessContext,
   validatePreferredName,
 } from "../../../lib/onboarding/pending-setup";
@@ -217,6 +218,9 @@ export async function continuePendingSetupConversationAction(
           messages: conversation.messages,
           currentAnswer: userContent,
         }),
+        previousAssistantContents: conversation.messages
+          .filter((message) => message.role === "assistant")
+          .map((message) => message.content),
         apiKey: process.env.OPENAI_API_KEY,
         financialContext: clientOpenAiCostContext(actor.accountId, {
           kind: "niche_resolution",
@@ -262,7 +266,10 @@ export async function continuePendingSetupConversationAction(
       if (!confirmedLabel) {
         const confirmed = await confirmOperationalNicheForPendingSetup({
           accountId: actor.accountId,
-          label: businessContextText,
+          label: selectOperationalFallbackLabel(
+            conversation.messages,
+            businessContextText,
+          ),
         });
         if (confirmed.ok) {
           confirmedLabel = await getConfirmedOperationalNicheResolutionLabel({
