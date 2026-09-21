@@ -28,8 +28,11 @@ import { matchBusinessTaxonsDeterministic } from "../../niche-resolution/adapter
 import type { PendingSetupConfirmationKind, PendingSetupStage } from "../contracts";
 import {
   buildAliasConfirmationOutput,
+  currentPendingSetupOpenAiCallReachesLimit,
   decidePendingSetupAiTurn,
-  hasReachedPendingSetupClarificationLimit,
+  hasReachedPendingSetupOpenAiCallLimit,
+  PENDING_SETUP_OPENAI_RETRY_MESSAGE,
+  PENDING_SETUP_TERMINAL_FALLBACK_MESSAGE,
   shouldFallbackFromRepeatedClarification,
   shouldUseAutomaticOfficialPath,
 } from "../turn-policy";
@@ -117,9 +120,13 @@ export async function orchestratePendingSetupNicheTurn(input: {
     };
   }
 
-  if (hasReachedPendingSetupClarificationLimit(input.previousAssistantContents)) {
+  if (hasReachedPendingSetupOpenAiCallLimit(input.previousAssistantContents)) {
     return prepareOperationalFallback();
   }
+
+  const currentOpenAiCallReachesLimit = currentPendingSetupOpenAiCallReachesLimit(
+    input.previousAssistantContents,
+  );
 
   const resolveAi = dependencies.resolveAi ?? resolveNicheWithOpenAi;
   const aiResult = await resolveAi({
@@ -133,7 +140,9 @@ export async function orchestratePendingSetupNicheTurn(input: {
 
   if (!aiResult.ok) {
     await persistAiFailure(input.accountId, aiResult);
-    return retryAfterTechnicalFailure();
+    return currentOpenAiCallReachesLimit
+      ? prepareOperationalFallback()
+      : retryAfterOpenAiFailure();
   }
 
   const aiDecision = decidePendingSetupAiTurn({
@@ -144,7 +153,11 @@ export async function orchestratePendingSetupNicheTurn(input: {
     ? aiDecision.candidate.taxonId
     : null;
   const persisted = await persistAiOutput(input.accountId, aiResult.output, aiResult.model, singleOfficialId);
-  if (!persisted) return { ok: false, reason: "resolution_write_failed" };
+  if (!persisted) {
+    return currentOpenAiCallReachesLimit
+      ? prepareOperationalFallback()
+      : { ok: false, reason: "ai_resolution_write_failed" };
+  }
 
   if (aiDecision.kind === "confirm_official") {
     return {
@@ -156,7 +169,7 @@ export async function orchestratePendingSetupNicheTurn(input: {
     };
   }
   if (aiDecision.kind === "ask_clarifying_question") {
-    if (shouldFallbackFromRepeatedClarification({
+    if (currentOpenAiCallReachesLimit || shouldFallbackFromRepeatedClarification({
       previousAssistantContents: input.previousAssistantContents,
       nextAssistantContent: aiDecision.assistantContent,
     })) {
@@ -219,7 +232,17 @@ function retryAfterTechnicalFailure(): PendingSetupNicheTurnResult {
   return {
     ok: true,
     nextStage: "business_understanding",
-    assistantContent: "Não consegui validar esse entendimento agora. Você pode tentar novamente ou explicar de outra forma.",
+    assistantContent: "Não consegui consultar as categorias agora. Você pode tentar novamente em instantes.",
+    resolutionOutcome: null,
+    confirmationKind: null,
+  };
+}
+
+function retryAfterOpenAiFailure(): PendingSetupNicheTurnResult {
+  return {
+    ok: true,
+    nextStage: "business_understanding",
+    assistantContent: PENDING_SETUP_OPENAI_RETRY_MESSAGE,
     resolutionOutcome: null,
     confirmationKind: null,
   };
@@ -229,7 +252,7 @@ function prepareOperationalFallback(): PendingSetupNicheTurnResult {
   return {
     ok: true,
     nextStage: "niche_confirmation",
-    assistantContent: "Não encontrei uma categoria oficial segura. Quer usar sua descrição como referência operacional, sem criar um vínculo oficial?",
+    assistantContent: PENDING_SETUP_TERMINAL_FALLBACK_MESSAGE,
     resolutionOutcome: null,
     confirmationKind: "operational_fallback",
   };

@@ -9,8 +9,14 @@ import {
 } from "./policy";
 import {
   appendBusinessContext,
+  countPendingSetupOpenAiCalls,
+  currentPendingSetupOpenAiCallReachesLimit,
   decidePendingSetupAiTurn,
-  hasReachedPendingSetupClarificationLimit,
+  hasReachedPendingSetupOpenAiCallLimit,
+  isPendingSetupTerminalFallbackMessage,
+  PENDING_SETUP_MAX_OPENAI_CALLS,
+  PENDING_SETUP_OPENAI_RETRY_MESSAGE,
+  PENDING_SETUP_TERMINAL_FALLBACK_MESSAGE,
   selectOperationalFallbackLabel,
   shouldFallbackFromRepeatedClarification,
   shouldUseAutomaticOfficialPath,
@@ -87,6 +93,10 @@ const pendingSetupActions = readFileSync(
   new URL("../../../app/a/[account]/pending-setup-actions.ts", import.meta.url),
   "utf8",
 );
+const pendingSetupConversationSource = readFileSync(
+  new URL("../../../app/a/[account]/_components/PendingSetupConversation.tsx", import.meta.url),
+  "utf8",
+);
 const nicheOrchestrator = readFileSync(
   new URL("./adapters/pendingSetupNicheOrchestrator.ts", import.meta.url),
   "utf8",
@@ -135,8 +145,16 @@ assert.match(pendingSetupActions, /confirmOperationalNicheForPendingSetup/);
 assert.match(pendingSetupActions, /fieldError:[\s\S]*Prefiro não informar/);
 assert.doesNotMatch(pendingSetupActions, /entitlement/i);
 assert.match(nicheOrchestrator, /if \(!matched\.ok\) \{[\s\S]*retryAfterTechnicalFailure\(\)/);
-assert.match(nicheOrchestrator, /if \(!aiResult\.ok\) \{[\s\S]*retryAfterTechnicalFailure\(\)/);
+assert.match(nicheOrchestrator, /if \(!aiResult\.ok\) \{[\s\S]*retryAfterOpenAiFailure\(\)/);
 assert.match(nicheOrchestrator, /confirmationKind: "operational_fallback"/);
+assert.match(nicheOrchestrator, /currentOpenAiCallReachesLimit \|\| shouldFallbackFromRepeatedClarification/);
+assert.match(nicheOrchestrator, /assistantContent: PENDING_SETUP_TERMINAL_FALLBACK_MESSAGE/);
+assert.match(nicheOrchestrator, /!persisted\) \{[\s\S]*currentOpenAiCallReachesLimit[\s\S]*prepareOperationalFallback/);
+assert.match(pendingSetupActions, /assistantContent = resolution\.assistantContent/);
+assert.match(pendingSetupActions, /resolution\.reason === "ai_resolution_write_failed"[\s\S]*PENDING_SETUP_OPENAI_RETRY_MESSAGE/);
+assert.match(pendingSetupActions, /appendPendingSetupTurn\([\s\S]*assistantContent,/);
+assert.match(pendingSetupActions, /intent === "clarify" && !isTerminalFallback/);
+assert.match(pendingSetupConversationSource, /!isTerminalFallback \? \(/);
 assert.doesNotMatch(nicheOrchestrator, /confirmOperationalNicheForPendingSetup/);
 assert.equal(existsSync(legacyComponent), false);
 assert.equal(existsSync(legacyValidation), false);
@@ -323,14 +341,34 @@ assert.equal(shouldFallbackFromRepeatedClarification({
   previousAssistantContents: ["Para eu entender melhor, qual destas opções mais se aproxima do seu negócio: Consultoria criativa ou Criação artística?"],
   nextAssistantContent: "Para eu entender melhor, qual destas opções mais se aproxima do seu negócio: Consultoria financeira ou Criação artística?",
 }), false);
-assert.equal(hasReachedPendingSetupClarificationLimit([
+const twoPreviousOpenAiCalls = [
     "Para eu entender melhor, qual destas opções mais se aproxima do seu negócio: Consultoria criativa ou Criação artística?",
     "Para eu entender melhor, qual destas opções mais se aproxima do seu negócio: Consultoria financeira ou Experiências sensoriais?",
+];
+assert.equal(PENDING_SETUP_MAX_OPENAI_CALLS, 3);
+assert.equal(countPendingSetupOpenAiCalls(twoPreviousOpenAiCalls), 2);
+assert.equal(hasReachedPendingSetupOpenAiCallLimit(twoPreviousOpenAiCalls), false);
+assert.equal(currentPendingSetupOpenAiCallReachesLimit(twoPreviousOpenAiCalls), true);
+assert.equal(hasReachedPendingSetupOpenAiCallLimit([
+  ...twoPreviousOpenAiCalls,
+  PENDING_SETUP_TERMINAL_FALLBACK_MESSAGE,
 ]), true);
-assert.equal(hasReachedPendingSetupClarificationLimit([
+assert.equal(countPendingSetupOpenAiCalls([
   "Olá! Como você prefere ser chamado?",
   "Para eu entender melhor, qual destas opções mais se aproxima do seu negócio: Consultoria criativa ou Criação artística?",
-]), false);
+  PENDING_SETUP_OPENAI_RETRY_MESSAGE,
+]), 2);
+assert.equal(countPendingSetupOpenAiCalls([
+  "Não consegui consultar as categorias agora. Você pode tentar novamente em instantes.",
+]), 0);
+assert.equal(
+  PENDING_SETUP_TERMINAL_FALLBACK_MESSAGE,
+  "Ainda não consegui identificar seu nicho com segurança. Vou preservar o que você me contou para seguirmos sem associar uma categoria incorreta.",
+);
+assert.equal(
+  isPendingSetupTerminalFallbackMessage(PENDING_SETUP_TERMINAL_FALLBACK_MESSAGE),
+  true,
+);
 assert.equal(selectOperationalFallbackLabel([
   { role: "assistant", content: "Conte sobre seu negócio." },
   { role: "user", content: "  Crio mapas olfativos para memórias de famílias.  " },
@@ -340,10 +378,6 @@ assert.equal(selectOperationalFallbackLabel([
 "Crio mapas olfativos para memórias de famílias.");
 assert.equal(selectOperationalFallbackLabel([], "  Descrição acumulada  "), "Descrição acumulada");
 
-const pendingSetupConversationSource = readFileSync(
-  new URL("../../../app/a/[account]/_components/PendingSetupConversation.tsx", import.meta.url),
-  "utf8",
-);
 assert.equal((pendingSetupConversationSource.match(/variant="secondary"/g) ?? []).length, 2);
 
 const buttonSource = readFileSync(

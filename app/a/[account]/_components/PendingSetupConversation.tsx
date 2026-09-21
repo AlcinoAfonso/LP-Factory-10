@@ -6,7 +6,10 @@ import { FeedbackMessage } from "@/components/ui/feedback-message";
 import { FormField, FormFieldError, FormFieldHint, FormFieldLabel } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import type { PendingSetupConversation as PendingSetupConversationContract } from "../../../../lib/onboarding/pending-setup";
+import {
+  isPendingSetupTerminalFallbackMessage,
+  type PendingSetupConversation as PendingSetupConversationContract,
+} from "../../../../lib/onboarding/pending-setup";
 import {
   completePendingSetupAction,
   continuePendingSetupConversationAction,
@@ -35,6 +38,10 @@ export function PendingSetupConversation({
   >(completePendingSetupAction, { ok: true });
   const inputRef = useRef<HTMLInputElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const isTerminalFallback = conversation?.confirmationKind === "operational_fallback"
+    && isPendingSetupTerminalFallbackMessage(
+      conversation.messages.at(-1)?.content ?? null,
+    );
 
   useEffect(() => {
     if (state.fieldError) inputRef.current?.focus();
@@ -216,16 +223,18 @@ export function PendingSetupConversation({
                     ? "Usar minha descrição"
                     : "Sim, está correto"}
               </Button>
-              <Button
-                type="submit"
-                variant="secondary"
-                name="intent"
-                value="clarify"
-                disabled={isTurnPending}
-                className="min-h-11"
-              >
-                Não, quero explicar melhor
-              </Button>
+              {!isTerminalFallback ? (
+                <Button
+                  type="submit"
+                  variant="secondary"
+                  name="intent"
+                  value="clarify"
+                  disabled={isTurnPending}
+                  className="min-h-11"
+                >
+                  Não, quero explicar melhor
+                </Button>
+              ) : null}
             </div>
           </form>
         ) : null}

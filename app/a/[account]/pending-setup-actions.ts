@@ -15,6 +15,8 @@ import { getActivePrimaryAccountTaxon } from "../../../lib/onboarding/niche-reso
 import {
   appendBusinessContext,
   buildPendingSetupAiProjection,
+  isPendingSetupTerminalFallbackMessage,
+  PENDING_SETUP_OPENAI_RETRY_MESSAGE,
   selectOperationalFallbackLabel,
   validateBusinessContext,
   validatePreferredName,
@@ -175,11 +177,15 @@ export async function continuePendingSetupConversationAction(
     );
   } else if (conversation.stage === "niche_confirmation") {
     const intent = String(formData.get("intent") ?? "");
+    const isTerminalFallback = conversation.confirmationKind === "operational_fallback"
+      && isPendingSetupTerminalFallbackMessage(
+        conversation.messages.at(-1)?.content ?? null,
+      );
     if (intent === "confirm") {
       userContent = conversation.confirmationKind === "operational_fallback"
         ? "Sim, use minha descrição como referência operacional."
         : "Sim, está correto.";
-    } else if (intent === "clarify") {
+    } else if (intent === "clarify" && !isTerminalFallback) {
       userContent = "Não, quero explicar melhor.";
     } else {
       return { ok: false, formError: GENERIC_ERROR };
@@ -232,7 +238,9 @@ export async function continuePendingSetupConversationAction(
         nextStage = resolution.nextStage;
         confirmationKind = resolution.confirmationKind;
       } else {
-        assistantContent = "Não consegui validar esse entendimento agora. Você pode tentar novamente ou explicar de outra forma.";
+        assistantContent = resolution.reason === "ai_resolution_write_failed"
+          ? PENDING_SETUP_OPENAI_RETRY_MESSAGE
+          : "Não consegui concluir esse entendimento agora. Você pode tentar novamente em instantes.";
         nextStage = "business_understanding";
       }
     }
