@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 16/09/2026
-• Versão: v1.5.235
+• Data: 20/09/2026
+• Versão: v1.5.238
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -735,7 +735,7 @@
 10. E10 — Account Dashboard e jornada da conta
 
 - Objetivo: consolidar a experiência pós-login por conta, da navegação multi-conta e do setup inicial à resolução de nicho e à apresentação comercial, preservando decisões server-side de acesso, papel, entitlement e estado operacional.
-- Status: os fluxos principais estão implementados; permanecem como lacunas do E10 a ação inefetiva de criar outra conta no switcher, a ausência dos eventos específicos do switcher e a edição manual de copy da página comercial personalizada.
+- Status: os fluxos principais estão implementados e a substituição repo-side do Pending Setup pela jornada E10.9 foi concluída; permanecem como lacunas a ação inefetiva de criar outra conta no switcher, a ausência dos eventos específicos do switcher, a edição manual de copy da página comercial personalizada e os gates pré-merge e pós-merge ainda pendentes da E10.9.
 
 10.3 Navegação multi-conta e cabeçalho
 
@@ -974,6 +974,59 @@
 - E20.5 e E20.6 preservam a seleção e a avaliação da pesquisa integral `end_customer`, sem consumidor no fluxo retirado de Landing Pages.
 - Os objetos `taxon_market_research` e `taxon_market_research_items` e seus consumidores independentes permanecem preservados.
 - O inventário material da retirada reside em E22.1.2.
+
+10.9 Pending Setup pré-comercial e continuidade conversacional
+
+10.9.1 Objetivo e status
+- Objetivo: substituir a experiência E10.4 por uma jornada conversacional pré-comercial que receba a pessoa, compreenda o negócio, resolva ou preserve operacionalmente o nicho, mantenha histórico por relação usuário/conta e promova `pending_setup` para `active` sem criar entitlement.
+- Status: implementado no repositório; prova SQL integral, `migration list --linked`, `db push --linked --dry-run` e QA autenticado de Preview permanecem gates pré-merge. O apply remoto, a verificação pós-apply de ACL/RLS/RPCs, a promoção do mesmo SHA staged, o smoke de Production e a restauração do auto-assign permanecem gates pós-merge.
+
+10.9.2 Registros do recorte
+- Banco:
+  - Criados no repositório:
+    - `public.account_pending_setup_conversations`;
+    - `public.account_pending_setup_messages`;
+    - RPCs versionadas de início, identidade, reserva de turno, append e conclusão;
+    - RLS sem policies públicas, grants mínimos e teste SQL transacional com rollback.
+  - Estado operacional: migration ainda não aplicada ao projeto hospedado.
+- Código:
+  - Criados:
+    - `lib/onboarding/pending-setup/`;
+    - `app/a/[account]/_components/PendingSetupConversation.tsx`;
+    - `app/a/[account]/pending-setup-actions.ts`.
+  - Ajustados:
+    - loader e página da jornada da conta;
+    - resolver e persistência de nicho;
+    - validator de custos OpenAI e checks da jornada.
+  - Removidos após prova de ausência de consumidor:
+    - `PendingSetupFirstSteps`;
+    - `saveSetupAndContinueAction` e sua validação E10.4;
+    - adapter runtime órfão de `account_profiles`.
+- Preservações:
+  - tabela e dados históricos `account_profiles`;
+  - `NicheResolutionCard` no consumidor repo-side da conta `active`;
+  - gates comerciais, checkout e entitlement existentes.
+- Referências:
+  - plano aprovado: `docs/lousa-plano-base-e10-9.md`;
+  - matriz: `docs/matriz-consolidacao-e10-9.md`;
+  - migration: `supabase/migrations/20260920223653_e10_9_pending_setup_conversation.sql`;
+  - teste SQL: `supabase/tests/e10_9_pending_setup_conversation.test.sql`.
+
+10.9.3 Entrada e identidade sem fricção
+- Status: implementado no repositório.
+- Conteúdo: criar entrada única após confirmação de e-mail, reutilizar nome preferido válido ou perguntar uma vez quando ausente e iniciar a conversa por pergunta aberta, sem exigir Site/LP, canal preferido ou “Nome do projeto”.
+
+10.9.4 Conversa adaptativa e resolução do nicho
+- Status: implementado no repositório.
+- Conteúdo: reservar a versão antes de qualquer efeito, executar matching determinístico antes da IA, usar o workload `niche_resolution` somente quando houver ambiguidade, manter falha técnica em estado tentável e exigir confirmação humana tanto da sugestão oficial quanto do fallback operacional legítimo, sem inventar taxon.
+
+10.9.5 Histórico conversacional e retomada
+- Status: implementado no repositório.
+- Conteúdo: persistir turnos e estado por relação usuário/conta, permitir retomada executável enquanto a conta estiver `pending_setup` e preservar o histórico, sem chat executável, após a promoção para `active`.
+
+10.9.6 Conclusão, cutover e passagem ao comercial
+- Status: implementado no repositório; execução PostgreSQL compatível e QA visual/autenticado permanecem pendentes por indisponibilidade local de Docker/Podman e configuração runtime reutilizável.
+- Conteúdo: concluir de forma transacional e idempotente, promover a conta sem entitlement, preservar gates comerciais e retirar a entrada executável E10.4 no mesmo cutover após equivalência funcional e ordem segura entre migration e Production.
 
 11. E11 — Gestão de membros e autoridade comercial
 

@@ -199,6 +199,29 @@ export async function dismissAiNicheResolutionForAccount(input: {
   return { ok: true, status: "dismissed" };
 }
 
+export async function confirmDeterministicNicheForPendingSetup(input: {
+  accountId: string;
+  taxonId: string;
+}): Promise<NicheResolutionUserActionResult> {
+  return markPendingSetupResolutionConfirmed(input.accountId, {
+    taxonId: input.taxonId,
+    operationalLabel: null,
+  });
+}
+
+export async function confirmOperationalNicheForPendingSetup(input: {
+  accountId: string;
+  label: string;
+}): Promise<NicheResolutionUserActionResult> {
+  const label = normalizeOperationalLabel(input.label);
+  if (!label) return { ok: false, reason: "empty_rewrite" };
+  if (label.length > 4000) return { ok: false, reason: "rewrite_too_long" };
+  return markPendingSetupResolutionConfirmed(input.accountId, {
+    taxonId: null,
+    operationalLabel: label,
+  });
+}
+
 async function confirmValidatedTaxon(
   accountId: string,
   taxonId: string,
@@ -289,6 +312,32 @@ async function confirmOperationalChoice(
     });
     return { ok: false, reason: "update_failed" };
   }
+}
+
+async function markPendingSetupResolutionConfirmed(
+  accountId: string,
+  selection: Readonly<{ taxonId: string | null; operationalLabel: string | null }>,
+): Promise<NicheResolutionUserActionResult> {
+  const supabase = createServiceClient();
+  let query: any = supabase
+    .from("account_niche_resolutions")
+    .update({
+      user_resolution_status: "confirmed",
+      user_selected_taxon_id: selection.taxonId,
+      user_rewrite_input: selection.operationalLabel,
+      user_confirmed_at: new Date().toISOString(),
+    })
+    .eq("account_id", accountId);
+  if (typeof query?.maxAffected === "function") query = query.maxAffected(1);
+  const { error } = await query;
+  if (error) {
+    console.error("markPendingSetupResolutionConfirmed failed:", {
+      code: (error as any)?.code,
+      message: (error as any)?.message ?? String(error),
+    });
+    return { ok: false, reason: "update_failed" };
+  }
+  return { ok: true, status: "confirmed" };
 }
 
 async function getValidatedActionContext(input: {

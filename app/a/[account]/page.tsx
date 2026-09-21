@@ -1,4 +1,4 @@
-import { PendingSetupFirstSteps } from "./_components/PendingSetupFirstSteps";
+import { PendingSetupConversation } from "./_components/PendingSetupConversation";
 import { NicheResolutionCard } from "./_components/NicheResolutionCard";
 import { GenericCommercialPage } from "./_components/commercial-page/GenericCommercialPage";
 import { PublishedCommercialActivationPage } from "./_components/commercial-page/PublishedCommercialActivationPage";
@@ -15,7 +15,12 @@ export default async function Page({ params }: PageProps) {
   const journey = await loadAccountJourney({ accountSubdomain });
 
   if (journey.view === "pending_setup") {
-    return <PendingSetupFirstSteps accountSubdomain={accountSubdomain} ctx={journey.ctx} />;
+    return (
+      <PendingSetupConversation
+        accountSubdomain={accountSubdomain}
+        conversation={journey.conversation}
+      />
+    );
   }
   if (journey.view === "account_unavailable") {
     return (

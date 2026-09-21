@@ -42,6 +42,10 @@ assert.doesNotMatch(
   page,
   /LandingPageWorkspace|OnboardingConfigurationJourney|OnboardingCompletionJourney|workspace_|edit_onboarding/,
 );
+assert.match(page, /PendingSetupConversation/);
+assert.match(page, /NicheResolutionCard/);
+assert.doesNotMatch(page, /PendingSetupFirstSteps/);
+assert.doesNotMatch(loader, /loadPendingSetupConversation[\s\S]*accountStatus !== "active"[\s\S]*loadPendingSetupConversation/);
 assert.equal(existsSync(legacyDetailRoute), false);
 assert.equal(existsSync(legacyPreviewRoute), false);
 

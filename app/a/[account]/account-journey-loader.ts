@@ -5,6 +5,7 @@ import { getCommercialActivationHierarchicalBundle } from "@/conversion-content"
 import { getCommercialEntitlementSignal } from "../../../lib/commercial-entitlements";
 import { getActionableNicheResolutionForAccount } from "../../../lib/onboarding/niche-resolution/adapters/accountNicheResolutionUserAdapter";
 import { getActivePrimaryAccountTaxon } from "../../../lib/onboarding/niche-resolution/adapters/accountTaxonomyAdapter";
+import { loadPendingSetupConversation } from "../../../lib/onboarding/pending-setup/adapters/pendingSetupConversationAdapter";
 import { decideAccountJourney } from "./_components/onboarding-journey-policy";
 
 type DashState = "auth" | "onboarding" | "public";
@@ -40,7 +41,14 @@ export async function loadAccountJourney({
       | null;
 
     if (accountStatus === "pending_setup") {
-      return { view: "pending_setup" as const, ctx };
+      const accountId = (ctx?.account?.id ?? ctx?.account_id ?? null) as string | null;
+      const userId = (
+        (ctx?.member as { userId?: string } | null | undefined)?.userId ?? null
+      ) as string | null;
+      const conversation = accountId && userId
+        ? await loadPendingSetupConversation({ accountId, userId })
+        : null;
+      return { view: "pending_setup" as const, conversation };
     }
 
     if (accountStatus !== "active") {

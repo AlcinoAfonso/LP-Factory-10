@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data da última atualização: 14/09/2026
-• Documento: LP Factory 10 — Schema (DB Contract) v1.0.68
+• Data da última atualização: 20/09/2026
+• Documento: LP Factory 10 — Schema (DB Contract) v1.0.69
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -609,6 +609,36 @@
 1.19.4 Índices
 • account_niche_resolutions_ai_suggested_taxon_id_idx
 
+1.19A account_pending_setup_conversations
+
+1.19A.1 Chaves, constraints e relacionamentos
+• PK: id uuid; UNIQUE: (account_id, user_id).
+• FK composta: (account_id, user_id) → account_users(account_id, user_id) ON UPDATE CASCADE ON DELETE RESTRICT.
+• stage: identity | business_understanding | niche_confirmation | ready_to_complete | completed.
+• confirmation_kind: official | operational_fallback somente em niche_confirmation; NULL nos demais stages.
+• resolution_outcome: NULL antes de completed; official | operational_fallback na conclusão.
+• pending_turn_token e pending_turn_started_at são ambos NULL ou ambos preenchidos apenas durante reserva de turno em business_understanding/niche_confirmation; lease de 2 minutos permite retomada após interrupção.
+• preferred_name: NULL ou 1–80 caracteres sem controle ou `@`; business_context_text: NULL ou 1–4.000 caracteres; version >= 1.
+• created_at <= updated_at; completed_at é NULL antes de completed e obrigatório/coerente na conclusão.
+
+1.19A.2 Segurança
+• Trigger Hub: não; somente evento app-level sanitizado de conclusão.
+• RLS ativo, sem policies; acesso direto revogado de public, anon, authenticated e ai_readonly.
+• service_role: SELECT, INSERT e UPDATE.
+• Migration repo-only: `20260920223653_e10_9_pending_setup_conversation.sql`; apply hospedado permanece pós-merge.
+
+1.19B account_pending_setup_messages
+
+1.19B.1 Chaves, constraints e relacionamentos
+• PK: id uuid; UNIQUE: (conversation_id, ordinal); ordinal >= 1.
+• FK: conversation_id → account_pending_setup_conversations(id) ON UPDATE CASCADE ON DELETE RESTRICT.
+• role: user | assistant; content: 1–4.000 caracteres após trim.
+
+1.19B.2 Segurança
+• Append-only operacional; Trigger Hub: não; sem update/delete de conteúdo ou auditoria row-level.
+• RLS ativo, sem policies; acesso direto revogado de public, anon, authenticated e ai_readonly.
+• service_role: SELECT e INSERT.
+
 1.20 content_template_compositions
 
 1.20.1 Chaves, constraints e relacionamentos
@@ -1168,6 +1198,14 @@
 • search_path: public (obrigatório)
 • Efeito: slug temporário acc-{uuid8}
 
+3.1.2 Pending Setup E10.9
+• `start_account_pending_setup_v1(uuid, uuid, text) → uuid`: início idempotente por relação conta/usuário e primeira pergunta code-owned.
+• `set_account_pending_setup_preferred_name_v1(uuid, uuid, uuid, text, bigint) → bigint`: persiste nome opcional e avança para entendimento do negócio com versão otimista.
+• `claim_account_pending_setup_turn_v1(uuid, uuid, uuid, bigint, uuid) → bigint`: reserva a versão antes de matching, IA ou mutação de nicho; tentativa concorrente falha antes dos efeitos externos e lease expirado pode ser retomado.
+• `append_account_pending_setup_turn_v1(uuid, uuid, uuid, bigint, uuid, text, text, text, text, text) → bigint`: exige a reserva exata, faz append atômico do par usuário/assistente, fecha a transição origem/destino e limpa a reserva.
+• `complete_account_pending_setup_v1(uuid, uuid, uuid, bigint, text) → boolean`: exige conta ainda pending_setup, estado terminal válido e sem reserva; official requer taxon primário ativo, enquanto operational_fallback exige confirmação, ausência de seleção/vínculo oficial e descrição operacional; conclui a conversa e promove `accounts.status` para active na mesma transação, sem tocar entitlement. Idempotência em conta active vale somente para conversa já completed.
+• As cinco RPCs são SECURITY DEFINER, usam search_path vazio, validam owner/membership/conta, têm EXECUTE exclusivo de service_role e revogam public, anon, authenticated e ai_readonly.
+
 3.2 Limites de Plano
 3.2.1 get_account_effective_limits(account_id uuid) → SETOF record
 • Segurança: invoker (TBD confirmar)
@@ -1399,6 +1437,7 @@
 • partners: sem trigger hub
 • account_commercial_entitlements_set_updated_at: trigger de atualização de updated_at em account_commercial_entitlements
 • account_niche_resolutions_set_updated_at: trigger de atualização de updated_at em account_niche_resolutions
+• account_pending_setup_conversations_set_updated_at: trigger de atualização de updated_at em account_pending_setup_conversations
 • openai_workload_configuration_revisions_append_only: rejeita UPDATE e DELETE de revisões validadas.
 • openai_workload_configuration_activations_append_only: rejeita UPDATE e DELETE de eventos de ativação/rollback.
 • openai_lp_cost_events_prevent_mutation: rejeita UPDATE e DELETE dos eventos financeiros históricos congelados.
@@ -1421,6 +1460,7 @@
 • Rollback: não remove automaticamente a extensão, pois pode ser reutilizada por outros recursos
 
 99. Changelog
+v1.0.69 (20/09/2026) — E10.9 PB1: registradas as duas residências conversacionais repo-only, constraints, RLS sem policies, ACLs mínimas, trigger de updated_at e cinco RPCs SECURITY DEFINER para início, identidade, reserva, append e conclusão transacional sem entitlement; apply hospedado permanece pós-merge.
 v1.0.65 (02/09/2026) — SV-PR03: marcado o agregado físico E19.5 como infraestrutura herdada; configurações continuam lidas pelo lifecycle administrativo do catálogo e os demais RPCs, materializações, aprovação e Storage permanecem inertes, sem DDL, migration, dado ou ACL alterado.
 v1.0.61 (29/08/2026) — E20.7.4: registrada a migration candidata que amplia o agregado E21.2 de dez para doze unidades com `landing_page_dynamic_market_research`, preserva as três tabelas, RLS e grants existentes e mantém apply e revisão operacional comprovada pendentes do merge humano.
 
