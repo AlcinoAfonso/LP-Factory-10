@@ -82,6 +82,17 @@ export function decidePendingSetupAiTurn(input: {
   };
 }
 
+export function shouldFallbackAfterRepeatedClarification(input: {
+  previousAssistantContent: string | null;
+  nextAssistantContent: string;
+}): boolean {
+  const normalize = (value: string | null) => String(value ?? "")
+    .replace(/\s+/g, " ")
+    .trim();
+  const previous = normalize(input.previousAssistantContent);
+  return previous.length > 0 && previous === normalize(input.nextAssistantContent);
+}
+
 export function shouldUseAutomaticOfficialPath(
   decision: DeterministicMatchDecision,
 ): decision is DeterministicMatchDecision & { selectedCandidate: TaxonMatchCandidate } {

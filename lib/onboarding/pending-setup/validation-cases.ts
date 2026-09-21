@@ -10,6 +10,7 @@ import {
 import {
   appendBusinessContext,
   decidePendingSetupAiTurn,
+  shouldFallbackAfterRepeatedClarification,
   shouldUseAutomaticOfficialPath,
 } from "./turn-policy";
 import {
@@ -311,6 +312,22 @@ const rejectedUnknownId = decidePendingSetupAiTurn({
   allowedCandidates: [candidate],
 });
 assert.equal(rejectedUnknownId.kind, "unresolved_fallback");
+
+assert.equal(shouldFallbackAfterRepeatedClarification({
+  previousAssistantContent: "Para eu entender melhor, qual destas opções mais se aproxima?",
+  nextAssistantContent: "  Para eu entender melhor, qual destas opções mais se aproxima?  ",
+}), true);
+assert.equal(shouldFallbackAfterRepeatedClarification({
+  previousAssistantContent: "Qual destas opções mais se aproxima?",
+  nextAssistantContent: "Você pode detalhar o público atendido?",
+}), false);
+
+const pendingSetupConversationSource = readFileSync(
+  new URL("../../../app/a/[account]/_components/PendingSetupConversation.tsx", import.meta.url),
+  "utf8",
+);
+assert.equal((pendingSetupConversationSource.match(/!text-ink-700/g) ?? []).length, 2);
+assert.equal((pendingSetupConversationSource.match(/!bg-transparent/g) ?? []).length, 2);
 
 const resolverSource = readFileSync(
   new URL("../niche-resolution/adapters/openAiResolver.ts", import.meta.url),

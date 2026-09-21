@@ -217,6 +217,9 @@ export async function continuePendingSetupConversationAction(
           messages: conversation.messages,
           currentAnswer: userContent,
         }),
+        previousAssistantContent: conversation.messages.findLast(
+          (message) => message.role === "assistant",
+        )?.content ?? null,
         apiKey: process.env.OPENAI_API_KEY,
         financialContext: clientOpenAiCostContext(actor.accountId, {
           kind: "niche_resolution",

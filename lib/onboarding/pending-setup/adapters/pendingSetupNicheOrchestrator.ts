@@ -29,6 +29,7 @@ import type { PendingSetupConfirmationKind, PendingSetupStage } from "../contrac
 import {
   buildAliasConfirmationOutput,
   decidePendingSetupAiTurn,
+  shouldFallbackAfterRepeatedClarification,
   shouldUseAutomaticOfficialPath,
 } from "../turn-policy";
 
@@ -51,6 +52,7 @@ export async function orchestratePendingSetupNicheTurn(input: {
   accountId: string;
   businessContext: string;
   aiContextProjection: string;
+  previousAssistantContent: string | null;
   apiKey?: string;
   financialContext: OpenAiCostEconomicContext;
 }, dependencies: Dependencies = {}): Promise<PendingSetupNicheTurnResult> {
@@ -149,6 +151,12 @@ export async function orchestratePendingSetupNicheTurn(input: {
     };
   }
   if (aiDecision.kind === "ask_clarifying_question") {
+    if (shouldFallbackAfterRepeatedClarification({
+      previousAssistantContent: input.previousAssistantContent,
+      nextAssistantContent: aiDecision.assistantContent,
+    })) {
+      return prepareOperationalFallback();
+    }
     return {
       ok: true,
       nextStage: "business_understanding",
