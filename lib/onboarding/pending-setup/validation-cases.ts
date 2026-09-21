@@ -11,6 +11,7 @@ import {
   appendBusinessContext,
   decidePendingSetupAiTurn,
   hasReachedPendingSetupClarificationLimit,
+  selectOperationalFallbackLabel,
   shouldFallbackFromRepeatedClarification,
   shouldUseAutomaticOfficialPath,
 } from "./turn-policy";
@@ -330,6 +331,14 @@ assert.equal(hasReachedPendingSetupClarificationLimit([
   "Olá! Como você prefere ser chamado?",
   "Para eu entender melhor, qual destas opções mais se aproxima do seu negócio: Consultoria criativa ou Criação artística?",
 ]), false);
+assert.equal(selectOperationalFallbackLabel([
+  { role: "assistant", content: "Conte sobre seu negócio." },
+  { role: "user", content: "  Crio mapas olfativos para memórias de famílias.  " },
+  { role: "assistant", content: "Qual opção mais se aproxima?" },
+  { role: "user", content: "Nenhuma das opções." },
+], "Crio mapas olfativos para memórias de famílias. | Nenhuma das opções."),
+"Crio mapas olfativos para memórias de famílias.");
+assert.equal(selectOperationalFallbackLabel([], "  Descrição acumulada  "), "Descrição acumulada");
 
 const pendingSetupConversationSource = readFileSync(
   new URL("../../../app/a/[account]/_components/PendingSetupConversation.tsx", import.meta.url),

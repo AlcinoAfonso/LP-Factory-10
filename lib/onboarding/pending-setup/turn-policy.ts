@@ -128,6 +128,17 @@ export function appendBusinessContext(
   return joined.slice(-maxLength);
 }
 
+export function selectOperationalFallbackLabel(
+  messages: readonly Readonly<{ role: "user" | "assistant"; content: string }>[],
+  accumulatedBusinessContext: string,
+): string {
+  const firstBusinessDescription = messages.find((message) => message.role === "user")?.content;
+  return String(firstBusinessDescription ?? accumulatedBusinessContext)
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 4000);
+}
+
 function formatOptions(options: readonly string[]): string {
   if (options.length <= 1) return options[0] ?? "nenhuma das anteriores";
   if (options.length === 2) return `${options[0]} ou ${options[1]}`;

@@ -15,6 +15,7 @@ import { getActivePrimaryAccountTaxon } from "../../../lib/onboarding/niche-reso
 import {
   appendBusinessContext,
   buildPendingSetupAiProjection,
+  selectOperationalFallbackLabel,
   validateBusinessContext,
   validatePreferredName,
 } from "../../../lib/onboarding/pending-setup";
@@ -265,7 +266,10 @@ export async function continuePendingSetupConversationAction(
       if (!confirmedLabel) {
         const confirmed = await confirmOperationalNicheForPendingSetup({
           accountId: actor.accountId,
-          label: businessContextText,
+          label: selectOperationalFallbackLabel(
+            conversation.messages,
+            businessContextText,
+          ),
         });
         if (confirmed.ok) {
           confirmedLabel = await getConfirmedOperationalNicheResolutionLabel({
