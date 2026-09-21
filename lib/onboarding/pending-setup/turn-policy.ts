@@ -82,15 +82,22 @@ export function decidePendingSetupAiTurn(input: {
   };
 }
 
-export function shouldFallbackFromClarification(input: {
+export function hasReachedPendingSetupClarificationLimit(
+  previousAssistantContents: readonly string[],
+): boolean {
+  return previousAssistantContents
+    .map(parseClarificationOptions)
+    .filter((options) => options !== null)
+    .length >= 2;
+}
+
+export function shouldFallbackFromRepeatedClarification(input: {
   previousAssistantContents: readonly string[];
   nextAssistantContent: string;
 }): boolean {
   const previousClarifications = input.previousAssistantContents
     .map(parseClarificationOptions)
     .filter((options): options is readonly string[] => options !== null);
-  if (previousClarifications.length >= 2) return true;
-
   const previousOptions = previousClarifications.at(-1) ?? null;
   const nextOptions = parseClarificationOptions(input.nextAssistantContent);
   return previousOptions !== null

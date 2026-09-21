@@ -29,7 +29,8 @@ import type { PendingSetupConfirmationKind, PendingSetupStage } from "../contrac
 import {
   buildAliasConfirmationOutput,
   decidePendingSetupAiTurn,
-  shouldFallbackFromClarification,
+  hasReachedPendingSetupClarificationLimit,
+  shouldFallbackFromRepeatedClarification,
   shouldUseAutomaticOfficialPath,
 } from "../turn-policy";
 
@@ -116,6 +117,10 @@ export async function orchestratePendingSetupNicheTurn(input: {
     };
   }
 
+  if (hasReachedPendingSetupClarificationLimit(input.previousAssistantContents)) {
+    return prepareOperationalFallback();
+  }
+
   const resolveAi = dependencies.resolveAi ?? resolveNicheWithOpenAi;
   const aiResult = await resolveAi({
     rawInput: input.aiContextProjection,
@@ -151,7 +156,7 @@ export async function orchestratePendingSetupNicheTurn(input: {
     };
   }
   if (aiDecision.kind === "ask_clarifying_question") {
-    if (shouldFallbackFromClarification({
+    if (shouldFallbackFromRepeatedClarification({
       previousAssistantContents: input.previousAssistantContents,
       nextAssistantContent: aiDecision.assistantContent,
     })) {

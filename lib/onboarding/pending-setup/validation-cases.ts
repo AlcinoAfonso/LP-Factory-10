@@ -10,7 +10,8 @@ import {
 import {
   appendBusinessContext,
   decidePendingSetupAiTurn,
-  shouldFallbackFromClarification,
+  hasReachedPendingSetupClarificationLimit,
+  shouldFallbackFromRepeatedClarification,
   shouldUseAutomaticOfficialPath,
 } from "./turn-policy";
 import {
@@ -313,21 +314,22 @@ const rejectedUnknownId = decidePendingSetupAiTurn({
 });
 assert.equal(rejectedUnknownId.kind, "unresolved_fallback");
 
-assert.equal(shouldFallbackFromClarification({
+assert.equal(shouldFallbackFromRepeatedClarification({
   previousAssistantContents: ["Para eu entender melhor, qual destas opções mais se aproxima do seu negócio: Consultoria criativa, Criação artística ou Experiências sensoriais?"],
   nextAssistantContent: "Para eu entender melhor, qual destas opções mais se aproxima do seu negócio: Experiências sensoriais, Consultoria criativa ou Criação artística?",
 }), true);
-assert.equal(shouldFallbackFromClarification({
+assert.equal(shouldFallbackFromRepeatedClarification({
   previousAssistantContents: ["Para eu entender melhor, qual destas opções mais se aproxima do seu negócio: Consultoria criativa ou Criação artística?"],
   nextAssistantContent: "Para eu entender melhor, qual destas opções mais se aproxima do seu negócio: Consultoria financeira ou Criação artística?",
 }), false);
-assert.equal(shouldFallbackFromClarification({
-  previousAssistantContents: [
+assert.equal(hasReachedPendingSetupClarificationLimit([
     "Para eu entender melhor, qual destas opções mais se aproxima do seu negócio: Consultoria criativa ou Criação artística?",
     "Para eu entender melhor, qual destas opções mais se aproxima do seu negócio: Consultoria financeira ou Experiências sensoriais?",
-  ],
-  nextAssistantContent: "Para eu entender melhor, qual destas opções mais se aproxima do seu negócio: Serviços sensoriais ou Produção artística?",
-}), true);
+]), true);
+assert.equal(hasReachedPendingSetupClarificationLimit([
+  "Olá! Como você prefere ser chamado?",
+  "Para eu entender melhor, qual destas opções mais se aproxima do seu negócio: Consultoria criativa ou Criação artística?",
+]), false);
 
 const pendingSetupConversationSource = readFileSync(
   new URL("../../../app/a/[account]/_components/PendingSetupConversation.tsx", import.meta.url),
