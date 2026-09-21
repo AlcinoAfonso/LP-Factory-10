@@ -82,11 +82,16 @@ export function decidePendingSetupAiTurn(input: {
   };
 }
 
-export function shouldFallbackAfterRepeatedClarification(input: {
-  previousAssistantContent: string | null;
+export function shouldFallbackFromClarification(input: {
+  previousAssistantContents: readonly string[];
   nextAssistantContent: string;
 }): boolean {
-  const previousOptions = parseClarificationOptions(input.previousAssistantContent);
+  const previousClarifications = input.previousAssistantContents
+    .map(parseClarificationOptions)
+    .filter((options): options is readonly string[] => options !== null);
+  if (previousClarifications.length >= 2) return true;
+
+  const previousOptions = previousClarifications.at(-1) ?? null;
   const nextOptions = parseClarificationOptions(input.nextAssistantContent);
   return previousOptions !== null
     && nextOptions !== null
