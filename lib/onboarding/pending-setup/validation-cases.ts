@@ -19,6 +19,7 @@ import {
   PENDING_SETUP_TERMINAL_FALLBACK_MESSAGE,
   selectOperationalFallbackLabel,
   shouldFallbackFromRepeatedClarification,
+  shouldUseTerminalFallbackAfterRejectedAiConfirmation,
   shouldUseAutomaticOfficialPath,
 } from "./turn-policy";
 import {
@@ -154,6 +155,7 @@ assert.match(pendingSetupActions, /assistantContent = resolution\.assistantConte
 assert.match(pendingSetupActions, /resolution\.reason === "ai_resolution_write_failed"[\s\S]*PENDING_SETUP_OPENAI_RETRY_MESSAGE/);
 assert.match(pendingSetupActions, /appendPendingSetupTurn\([\s\S]*assistantContent,/);
 assert.match(pendingSetupActions, /intent === "clarify" && !isTerminalFallback/);
+assert.match(pendingSetupActions, /shouldUseTerminalFallbackAfterRejection\) \{[\s\S]*PENDING_SETUP_TERMINAL_FALLBACK_MESSAGE/);
 assert.match(pendingSetupConversationSource, /!isTerminalFallback \? \(/);
 assert.doesNotMatch(nicheOrchestrator, /confirmOperationalNicheForPendingSetup/);
 assert.equal(existsSync(legacyComponent), false);
@@ -361,6 +363,27 @@ assert.equal(countPendingSetupOpenAiCalls([
 assert.equal(countPendingSetupOpenAiCalls([
   "Não consegui consultar as categorias agora. Você pode tentar novamente em instantes.",
 ]), 0);
+const aiOfficialConfirmation =
+  "Pelo que entendi, seu negócio se encaixa em Consultoria financeira. É isso mesmo?";
+const deterministicAliasConfirmation =
+  "Encontrei uma correspondência oficial direta com Consultoria financeira. É isso mesmo?";
+assert.equal(countPendingSetupOpenAiCalls([aiOfficialConfirmation]), 1);
+assert.equal(countPendingSetupOpenAiCalls([deterministicAliasConfirmation]), 0);
+assert.equal(shouldUseTerminalFallbackAfterRejectedAiConfirmation({
+  previousAssistantContents: [...twoPreviousOpenAiCalls, aiOfficialConfirmation],
+  confirmationKind: "official",
+  intent: "clarify",
+}), true);
+assert.equal(shouldUseTerminalFallbackAfterRejectedAiConfirmation({
+  previousAssistantContents: [aiOfficialConfirmation],
+  confirmationKind: "official",
+  intent: "clarify",
+}), false);
+assert.equal(shouldUseTerminalFallbackAfterRejectedAiConfirmation({
+  previousAssistantContents: [...twoPreviousOpenAiCalls, deterministicAliasConfirmation],
+  confirmationKind: "official",
+  intent: "clarify",
+}), false);
 assert.equal(
   PENDING_SETUP_TERMINAL_FALLBACK_MESSAGE,
   "Ainda não consegui identificar seu nicho com segurança. Vou preservar o que você me contou para seguirmos sem associar uma categoria incorreta.",

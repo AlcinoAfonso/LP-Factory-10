@@ -114,7 +114,7 @@ export async function orchestratePendingSetupNicheTurn(input: {
     return {
       ok: true,
       nextStage: "niche_confirmation",
-      assistantContent: `Pelo que entendi, seu negócio se encaixa em ${selected.name}. É isso mesmo?`,
+      assistantContent: `Encontrei uma correspondência oficial direta com ${selected.name}. É isso mesmo?`,
       resolutionOutcome: null,
       confirmationKind: "official",
     };

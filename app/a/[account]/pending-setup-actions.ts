@@ -17,7 +17,9 @@ import {
   buildPendingSetupAiProjection,
   isPendingSetupTerminalFallbackMessage,
   PENDING_SETUP_OPENAI_RETRY_MESSAGE,
+  PENDING_SETUP_TERMINAL_FALLBACK_MESSAGE,
   selectOperationalFallbackLabel,
+  shouldUseTerminalFallbackAfterRejectedAiConfirmation,
   validateBusinessContext,
   validatePreferredName,
 } from "../../../lib/onboarding/pending-setup";
@@ -159,6 +161,7 @@ export async function continuePendingSetupConversationAction(
   let nextStage: "business_understanding" | "niche_confirmation" | "ready_to_complete";
   let confirmationKind: "official" | "operational_fallback" | null = null;
   let businessContextText = conversation.businessContextText ?? "";
+  let shouldUseTerminalFallbackAfterRejection = false;
 
   if (conversation.stage === "business_understanding") {
     const validated = validateBusinessContext(formData.get("business_context"));
@@ -181,6 +184,14 @@ export async function continuePendingSetupConversationAction(
       && isPendingSetupTerminalFallbackMessage(
         conversation.messages.at(-1)?.content ?? null,
       );
+    shouldUseTerminalFallbackAfterRejection =
+      shouldUseTerminalFallbackAfterRejectedAiConfirmation({
+        previousAssistantContents: conversation.messages
+          .filter((message) => message.role === "assistant")
+          .map((message) => message.content),
+        confirmationKind: conversation.confirmationKind,
+        intent,
+      });
     if (intent === "confirm") {
       userContent = conversation.confirmationKind === "operational_fallback"
         ? "Sim, use minha descrição como referência operacional."
@@ -246,7 +257,11 @@ export async function continuePendingSetupConversationAction(
     }
   } else {
     const intent = String(formData.get("intent") ?? "");
-    if (intent === "clarify") {
+    if (shouldUseTerminalFallbackAfterRejection) {
+      assistantContent = PENDING_SETUP_TERMINAL_FALLBACK_MESSAGE;
+      nextStage = "niche_confirmation";
+      confirmationKind = "operational_fallback";
+    } else if (intent === "clarify") {
       assistantContent = "Sem problema. Em uma frase, o que você oferece e para qual tipo de cliente?";
       nextStage = "business_understanding";
     } else if (conversation.confirmationKind === "official") {

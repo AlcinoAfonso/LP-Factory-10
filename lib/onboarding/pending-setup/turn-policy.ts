@@ -94,6 +94,7 @@ export function countPendingSetupOpenAiCalls(
   return previousAssistantContents
     .filter((content) => (
       parseClarificationOptions(content) !== null
+      || isPendingSetupAiOfficialConfirmation(content)
       || normalizeAssistantContent(content) === PENDING_SETUP_OPENAI_RETRY_MESSAGE
       || isPendingSetupTerminalFallbackMessage(content)
     ))
@@ -119,6 +120,16 @@ export function isPendingSetupTerminalFallbackMessage(
 ): boolean {
   return normalizeAssistantContent(content)
     === PENDING_SETUP_TERMINAL_FALLBACK_MESSAGE;
+}
+
+export function shouldUseTerminalFallbackAfterRejectedAiConfirmation(input: {
+  previousAssistantContents: readonly string[];
+  confirmationKind: "official" | "operational_fallback" | null;
+  intent: string;
+}): boolean {
+  return input.intent === "clarify"
+    && input.confirmationKind === "official"
+    && hasReachedPendingSetupOpenAiCallLimit(input.previousAssistantContents);
 }
 
 export function shouldFallbackFromRepeatedClarification(input: {
@@ -186,6 +197,12 @@ function parseClarificationOptions(content: string | null): readonly string[] | 
     .filter(Boolean)
     .sort();
   return options.length > 0 ? options : null;
+}
+
+function isPendingSetupAiOfficialConfirmation(content: string | null): boolean {
+  const normalized = normalizeAssistantContent(content);
+  return normalized.startsWith("Pelo que entendi, seu negócio se encaixa em ")
+    && normalized.endsWith(". É isso mesmo?");
 }
 
 function normalizeAssistantContent(content: string | null): string {
