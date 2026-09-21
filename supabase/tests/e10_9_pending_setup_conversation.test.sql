@@ -47,9 +47,13 @@ begin
   end if;
   if not has_function_privilege('service_role', 'public.start_account_pending_setup_v1(uuid,uuid,text)', 'execute')
      or not has_function_privilege('service_role', 'public.claim_account_pending_setup_turn_v1(uuid,uuid,uuid,bigint,uuid)', 'execute')
+     or not has_function_privilege('service_role', 'public.claim_account_pending_setup_openai_call_v1(uuid,uuid,uuid,bigint,uuid)', 'execute')
      or not has_function_privilege('service_role', 'public.append_account_pending_setup_turn_v1(uuid,uuid,uuid,bigint,uuid,text,text,text,text,text)', 'execute')
      or not has_function_privilege('service_role', 'public.complete_account_pending_setup_v1(uuid,uuid,uuid,bigint,text)', 'execute') then
     raise exception 'E10.9 service_role function privileges drifted';
+  end if;
+  if has_function_privilege('authenticated', 'public.claim_account_pending_setup_openai_call_v1(uuid,uuid,uuid,bigint,uuid)', 'execute') then
+    raise exception 'authenticated must not claim E10.9 OpenAI calls';
   end if;
 end;
 $$;
@@ -58,19 +62,22 @@ insert into auth.users (id, aud, role, email, created_at, updated_at)
 values
   ('e1090000-0000-4000-8000-000000000001', 'authenticated', 'authenticated', 'e10.9-one@example.com', now(), now()),
   ('e1090000-0000-4000-8000-000000000002', 'authenticated', 'authenticated', 'e10.9-two@example.com', now(), now()),
-  ('e1090000-0000-4000-8000-000000000003', 'authenticated', 'authenticated', 'e10.9-three@example.com', now(), now());
+  ('e1090000-0000-4000-8000-000000000003', 'authenticated', 'authenticated', 'e10.9-three@example.com', now(), now()),
+  ('e1090000-0000-4000-8000-000000000004', 'authenticated', 'authenticated', 'e10.9-counter@example.com', now(), now());
 
 insert into public.accounts (id, name, subdomain, slug, status)
 values
   ('e1090000-0000-4000-8000-000000000011', 'E10.9 official', 'e10-9-official', 'e10-9-official', 'pending_setup'),
   ('e1090000-0000-4000-8000-000000000012', 'E10.9 fallback', 'e10-9-fallback', 'e10-9-fallback', 'pending_setup'),
-  ('e1090000-0000-4000-8000-000000000013', 'E10.9 incomplete', 'e10-9-incomplete', 'e10-9-incomplete', 'pending_setup');
+  ('e1090000-0000-4000-8000-000000000013', 'E10.9 incomplete', 'e10-9-incomplete', 'e10-9-incomplete', 'pending_setup'),
+  ('e1090000-0000-4000-8000-000000000014', 'E10.9 counter', 'e10-9-counter', 'e10-9-counter', 'pending_setup');
 
 insert into public.account_users (account_id, user_id, role, status)
 values
   ('e1090000-0000-4000-8000-000000000011', 'e1090000-0000-4000-8000-000000000001', 'owner', 'active'),
   ('e1090000-0000-4000-8000-000000000012', 'e1090000-0000-4000-8000-000000000002', 'owner', 'active'),
-  ('e1090000-0000-4000-8000-000000000013', 'e1090000-0000-4000-8000-000000000003', 'owner', 'active');
+  ('e1090000-0000-4000-8000-000000000013', 'e1090000-0000-4000-8000-000000000003', 'owner', 'active'),
+  ('e1090000-0000-4000-8000-000000000014', 'e1090000-0000-4000-8000-000000000004', 'owner', 'active');
 
 do $$
 begin
@@ -117,10 +124,16 @@ declare
   official_conversation uuid;
   repeated_conversation uuid;
   fallback_conversation uuid;
+  counter_conversation uuid;
   official_version bigint;
   fallback_version bigint;
+  counter_version bigint;
+  counter_value smallint;
   official_token uuid := 'e1090000-0000-4000-8000-000000000031';
   fallback_token uuid := 'e1090000-0000-4000-8000-000000000032';
+  counter_token_1 uuid := 'e1090000-0000-4000-8000-000000000033';
+  counter_token_2 uuid := 'e1090000-0000-4000-8000-000000000034';
+  counter_token_3 uuid := 'e1090000-0000-4000-8000-000000000035';
 begin
   official_conversation := public.start_account_pending_setup_v1(
     'e1090000-0000-4000-8000-000000000011',
@@ -311,6 +324,139 @@ begin
     'operational_fallback'
   ) then
     raise exception 'E10.9 operational fallback completion failed';
+  end if;
+
+  counter_conversation := public.start_account_pending_setup_v1(
+    'e1090000-0000-4000-8000-000000000014',
+    'e1090000-0000-4000-8000-000000000004',
+    'Cris'
+  );
+  if (select openai_call_count from public.account_pending_setup_conversations where id = counter_conversation) <> 0 then
+    raise exception 'E10.9 OpenAI counter must start at zero';
+  end if;
+
+  counter_version := public.claim_account_pending_setup_turn_v1(
+    counter_conversation,
+    'e1090000-0000-4000-8000-000000000014',
+    'e1090000-0000-4000-8000-000000000004',
+    1,
+    counter_token_1
+  );
+  counter_value := public.claim_account_pending_setup_openai_call_v1(
+    counter_conversation,
+    'e1090000-0000-4000-8000-000000000014',
+    'e1090000-0000-4000-8000-000000000004',
+    counter_version,
+    counter_token_1
+  );
+  if counter_value <> 1
+     or (select version from public.account_pending_setup_conversations where id = counter_conversation) <> counter_version then
+    raise exception 'E10.9 first OpenAI claim must persist without changing version';
+  end if;
+  counter_version := public.append_account_pending_setup_turn_v1(
+    counter_conversation,
+    'e1090000-0000-4000-8000-000000000014',
+    'e1090000-0000-4000-8000-000000000004',
+    counter_version,
+    counter_token_1,
+    'Entrada ambígua 1',
+    'Pergunta de esclarecimento 1',
+    'business_understanding',
+    null,
+    'Entrada ambígua 1'
+  );
+
+  counter_version := public.claim_account_pending_setup_turn_v1(
+    counter_conversation,
+    'e1090000-0000-4000-8000-000000000014',
+    'e1090000-0000-4000-8000-000000000004',
+    counter_version,
+    counter_token_2
+  );
+  counter_value := public.claim_account_pending_setup_openai_call_v1(
+    counter_conversation,
+    'e1090000-0000-4000-8000-000000000014',
+    'e1090000-0000-4000-8000-000000000004',
+    counter_version,
+    counter_token_2
+  );
+  begin
+    perform public.append_account_pending_setup_turn_v1(
+      counter_conversation,
+      'e1090000-0000-4000-8000-000000000014',
+      'e1090000-0000-4000-8000-000000000004',
+      counter_version,
+      counter_token_2,
+      '', 'invalid', 'business_understanding', null, 'Entrada ambígua 2'
+    );
+    raise exception 'E10.9 invalid append should fail';
+  exception when invalid_parameter_value then
+    null;
+  end;
+  if counter_value <> 2
+     or (select openai_call_count from public.account_pending_setup_conversations where id = counter_conversation) <> 2 then
+    raise exception 'E10.9 append failure must not roll back an earlier OpenAI claim';
+  end if;
+  counter_version := public.append_account_pending_setup_turn_v1(
+    counter_conversation,
+    'e1090000-0000-4000-8000-000000000014',
+    'e1090000-0000-4000-8000-000000000004',
+    counter_version,
+    counter_token_2,
+    'Entrada ambígua 2',
+    'Tente novamente',
+    'business_understanding',
+    null,
+    'Entrada ambígua 1 Entrada ambígua 2'
+  );
+
+  counter_version := public.claim_account_pending_setup_turn_v1(
+    counter_conversation,
+    'e1090000-0000-4000-8000-000000000014',
+    'e1090000-0000-4000-8000-000000000004',
+    counter_version,
+    counter_token_3
+  );
+  counter_value := public.claim_account_pending_setup_openai_call_v1(
+    counter_conversation,
+    'e1090000-0000-4000-8000-000000000014',
+    'e1090000-0000-4000-8000-000000000004',
+    counter_version,
+    counter_token_3
+  );
+  if counter_value <> 3 then
+    raise exception 'E10.9 third OpenAI claim must return three';
+  end if;
+  begin
+    perform public.claim_account_pending_setup_openai_call_v1(
+      counter_conversation,
+      'e1090000-0000-4000-8000-000000000014',
+      'e1090000-0000-4000-8000-000000000004',
+      counter_version,
+      counter_token_3
+    );
+    raise exception 'E10.9 fourth OpenAI claim must fail';
+  exception when invalid_parameter_value then
+    null;
+  end;
+  counter_version := public.append_account_pending_setup_turn_v1(
+    counter_conversation,
+    'e1090000-0000-4000-8000-000000000014',
+    'e1090000-0000-4000-8000-000000000004',
+    counter_version,
+    counter_token_3,
+    'Entrada ambígua 3',
+    'Ainda não consegui identificar seu nicho com segurança. Vou preservar o que você me contou para seguirmos sem associar uma categoria incorreta.',
+    'niche_confirmation',
+    'operational_fallback',
+    'Entrada ambígua 1 Entrada ambígua 2 Entrada ambígua 3'
+  );
+  if (select openai_call_count from public.account_pending_setup_conversations where id = counter_conversation) <> 3 then
+    raise exception 'E10.9 OpenAI counter must survive append and reload';
+  end if;
+
+  if (select openai_call_count from public.account_pending_setup_conversations where id = official_conversation) <> 0 then
+    raise exception 'E10.9 deterministic path must not increment the OpenAI counter';
   end if;
 
   repeated_conversation := public.start_account_pending_setup_v1(

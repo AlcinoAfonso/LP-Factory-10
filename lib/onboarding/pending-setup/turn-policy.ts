@@ -19,6 +19,12 @@ export type PendingSetupAiTurnDecision =
       assistantContent: string;
     }>;
 
+export const PENDING_SETUP_MAX_OPENAI_CALLS = 3;
+export const PENDING_SETUP_OPENAI_RETRY_MESSAGE =
+  "Não consegui validar esse entendimento agora. Você pode tentar novamente ou explicar de outra forma.";
+export const PENDING_SETUP_TERMINAL_FALLBACK_MESSAGE =
+  "Ainda não consegui identificar seu nicho com segurança. Vou preservar o que você me contou para seguirmos sem associar uma categoria incorreta.";
+
 export function buildAliasConfirmationOutput(
   candidate: TaxonMatchCandidate,
 ): AiNicheResolutionOutput {
@@ -82,13 +88,35 @@ export function decidePendingSetupAiTurn(input: {
   };
 }
 
-export function hasReachedPendingSetupClarificationLimit(
-  previousAssistantContents: readonly string[],
+export function hasReachedPendingSetupOpenAiCallLimit(
+  openAiCallCount: number | null,
 ): boolean {
-  return previousAssistantContents
-    .map(parseClarificationOptions)
-    .filter((options) => options !== null)
-    .length >= 2;
+  return normalizeOpenAiCallCount(openAiCallCount) >= PENDING_SETUP_MAX_OPENAI_CALLS;
+}
+
+export function isPendingSetupTerminalFallbackMessage(
+  content: string | null,
+): boolean {
+  return normalizeAssistantContent(content)
+    === PENDING_SETUP_TERMINAL_FALLBACK_MESSAGE;
+}
+
+export function hasPendingSetupTerminalFallback(input: {
+  confirmationKind: "official" | "operational_fallback" | null;
+  assistantContents: readonly string[];
+}): boolean {
+  return input.confirmationKind === "operational_fallback"
+    && input.assistantContents.some(isPendingSetupTerminalFallbackMessage);
+}
+
+export function shouldUseTerminalFallbackAfterRejectedAiConfirmation(input: {
+  openAiCallCount: number | null;
+  confirmationKind: "official" | "operational_fallback" | null;
+  intent: string;
+}): boolean {
+  return input.intent === "clarify"
+    && input.confirmationKind === "official"
+    && hasReachedPendingSetupOpenAiCallLimit(input.openAiCallCount);
 }
 
 export function shouldFallbackFromRepeatedClarification(input: {
@@ -147,7 +175,7 @@ function formatOptions(options: readonly string[]): string {
 
 function parseClarificationOptions(content: string | null): readonly string[] | null {
   const prefix = "Para eu entender melhor, qual destas opções mais se aproxima do seu negócio: ";
-  const normalized = String(content ?? "").replace(/\s+/g, " ").trim();
+  const normalized = normalizeAssistantContent(content);
   if (!normalized.startsWith(prefix) || !normalized.endsWith("?")) return null;
   const options = normalized
     .slice(prefix.length, -1)
@@ -156,4 +184,14 @@ function parseClarificationOptions(content: string | null): readonly string[] | 
     .filter(Boolean)
     .sort();
   return options.length > 0 ? options : null;
+}
+
+function normalizeAssistantContent(content: string | null): string {
+  return String(content ?? "").replace(/\s+/g, " ").trim();
+}
+
+function normalizeOpenAiCallCount(value: number | null): number {
+  return Number.isSafeInteger(value) && Number(value) >= 0
+    ? Number(value)
+    : PENDING_SETUP_MAX_OPENAI_CALLS;
 }

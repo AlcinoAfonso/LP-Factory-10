@@ -27,6 +27,7 @@ export type PendingSetupConversation = Readonly<{
   stage: PendingSetupStage;
   confirmationKind: PendingSetupConfirmationKind | null;
   resolutionOutcome: PendingSetupResolutionOutcome | null;
+  openAiCallCount: number;
   version: number;
   createdAt: string;
   updatedAt: string;
@@ -39,4 +40,11 @@ export type PendingSetupWriteResult =
   | Readonly<{
       ok: false;
       reason: "not_found" | "conflict" | "forbidden" | "invalid" | "write_failed";
+    }>;
+
+export type PendingSetupOpenAiCallClaimResult =
+  | Readonly<{ ok: true; count: number }>
+  | Readonly<{
+      ok: false;
+      reason: "limit_reached" | "conflict" | "forbidden" | "invalid" | "write_failed";
     }>;

@@ -10,17 +10,30 @@ import {
 import {
   appendBusinessContext,
   decidePendingSetupAiTurn,
-  hasReachedPendingSetupClarificationLimit,
+  hasPendingSetupTerminalFallback,
+  hasReachedPendingSetupOpenAiCallLimit,
+  isPendingSetupTerminalFallbackMessage,
+  PENDING_SETUP_MAX_OPENAI_CALLS,
+  PENDING_SETUP_OPENAI_RETRY_MESSAGE,
+  PENDING_SETUP_TERMINAL_FALLBACK_MESSAGE,
   selectOperationalFallbackLabel,
   shouldFallbackFromRepeatedClarification,
+  shouldUseTerminalFallbackAfterRejectedAiConfirmation,
   shouldUseAutomaticOfficialPath,
 } from "./turn-policy";
 import {
   buildPendingSetupAiProjection,
   pendingSetupAiProjectionPolicy,
 } from "./context-projection";
-import { resolveNicheWithOpenAi } from "../niche-resolution/adapters/openAiResolver";
-import type { TaxonMatchCandidate } from "../niche-resolution/contracts";
+import { resolvePendingSetupAiTurn } from "./niche-turn-core";
+import {
+  resolveNicheWithOpenAi,
+  type ResolveAiNicheResolutionResult,
+} from "../niche-resolution/adapters/openAiResolver";
+import {
+  AI_NICHE_RESOLUTION_SCHEMA_VERSION,
+  type TaxonMatchCandidate,
+} from "../niche-resolution/contracts";
 
 async function main(): Promise<void> {
 
@@ -71,6 +84,13 @@ const migration = readFileSync(
   ),
   "utf8",
 );
+const counterMigration = readFileSync(
+  new URL(
+    "../../../supabase/migrations/20260921170115_e10_9_pending_setup_openai_call_counter.sql",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const page = readFileSync(
   new URL("../../../app/a/[account]/page.tsx", import.meta.url),
   "utf8",
@@ -87,8 +107,16 @@ const pendingSetupActions = readFileSync(
   new URL("../../../app/a/[account]/pending-setup-actions.ts", import.meta.url),
   "utf8",
 );
+const pendingSetupConversationSource = readFileSync(
+  new URL("../../../app/a/[account]/_components/PendingSetupConversation.tsx", import.meta.url),
+  "utf8",
+);
 const nicheOrchestrator = readFileSync(
   new URL("./adapters/pendingSetupNicheOrchestrator.ts", import.meta.url),
+  "utf8",
+);
+const nicheTurnCoreSource = readFileSync(
+  new URL("./niche-turn-core.ts", import.meta.url),
   "utf8",
 );
 const legacyComponent = new URL(
@@ -115,6 +143,14 @@ for (const requiredContract of [
   assert.match(migration, new RegExp(requiredContract));
 }
 assert.doesNotMatch(migration, /create policy/i);
+assert.match(counterMigration, /openai_call_count smallint not null default 0/);
+assert.match(counterMigration, /check \(openai_call_count between 0 and 3\)/);
+assert.match(counterMigration, /claim_account_pending_setup_openai_call_v1/);
+assert.match(counterMigration, /for update/);
+assert.match(counterMigration, /pending_turn_token is distinct from p_turn_token/);
+assert.match(counterMigration, /openai_call_count = openai_call_count \+ 1/);
+assert.doesNotMatch(counterMigration, /version = version \+ 1/);
+assert.match(counterMigration, /to service_role/);
 assert.match(page, /PendingSetupConversation/);
 assert.doesNotMatch(page, /PendingSetupFirstSteps/);
 assert.match(loader, /loadPendingSetupConversation/);
@@ -122,6 +158,9 @@ assert.match(loader, /accountStatus === "pending_setup"/);
 assert.match(conversationAdapter, /\.eq\("account_id", input\.accountId\)/);
 assert.match(conversationAdapter, /\.eq\("user_id", input\.userId\)/);
 assert.match(conversationAdapter, /\.eq\("conversation_id", conversationId\)/);
+assert.match(conversationAdapter, /claim_account_pending_setup_openai_call_v1/);
+assert.match(conversationAdapter, /openai_call_count/);
+assert.doesNotMatch(conversationAdapter, /openai_cost_executions/);
 assert.doesNotMatch(migration, /update\s+public\.account_pending_setup_messages/i);
 assert.doesNotMatch(migration, /delete\s+from\s+public\.account_pending_setup_messages/i);
 assert.match(pendingSetupActions, /completePendingSetupAction/);
@@ -135,8 +174,32 @@ assert.match(pendingSetupActions, /confirmOperationalNicheForPendingSetup/);
 assert.match(pendingSetupActions, /fieldError:[\s\S]*Prefiro não informar/);
 assert.doesNotMatch(pendingSetupActions, /entitlement/i);
 assert.match(nicheOrchestrator, /if \(!matched\.ok\) \{[\s\S]*retryAfterTechnicalFailure\(\)/);
-assert.match(nicheOrchestrator, /if \(!aiResult\.ok\) \{[\s\S]*retryAfterTechnicalFailure\(\)/);
-assert.match(nicheOrchestrator, /confirmationKind: "operational_fallback"/);
+assert.ok(
+  nicheOrchestrator.indexOf("if (shouldUseAutomaticOfficialPath(decision))")
+    < nicheOrchestrator.indexOf("return resolvePendingSetupAiTurn({"),
+  "deterministic resolution must run before the OpenAI turn core",
+);
+assert.match(nicheTurnCoreSource, /if \(!aiResult\.ok\) \{[\s\S]*retryAfterOpenAiFailure\(\)/);
+assert.match(nicheTurnCoreSource, /confirmationKind: "operational_fallback"/);
+assert.match(nicheTurnCoreSource, /currentOpenAiCallReachesLimit \|\| shouldFallbackFromRepeatedClarification/);
+assert.match(nicheTurnCoreSource, /assistantContent: PENDING_SETUP_TERMINAL_FALLBACK_MESSAGE/);
+assert.match(nicheTurnCoreSource, /!persisted\) \{[\s\S]*currentOpenAiCallReachesLimit[\s\S]*prepareOperationalFallback/);
+assert.ok(
+  nicheTurnCoreSource.indexOf("await dependencies.reserveOpenAiCall()")
+    < nicheTurnCoreSource.indexOf("await dependencies.resolveAi({"),
+  "the persisted counter must be claimed before the provider call",
+);
+assert.match(pendingSetupActions, /assistantContent = resolution\.assistantContent/);
+assert.match(pendingSetupActions, /resolution\.reason === "ai_resolution_write_failed"[\s\S]*PENDING_SETUP_OPENAI_RETRY_MESSAGE/);
+assert.match(pendingSetupActions, /appendPendingSetupTurn\([\s\S]*assistantContent,/);
+assert.match(pendingSetupActions, /intent === "clarify" && !isTerminalFallback/);
+assert.match(pendingSetupActions, /shouldUseTerminalFallbackAfterRejection\) \{[\s\S]*PENDING_SETUP_TERMINAL_FALLBACK_MESSAGE/);
+assert.match(pendingSetupActions, /eventId: crypto\.randomUUID\(\)/);
+assert.doesNotMatch(pendingSetupActions, /countPendingSetupOpenAiExecutions/);
+assert.match(pendingSetupActions, /Tente confirmar novamente\./);
+assert.doesNotMatch(pendingSetupActions, /Não consegui registrar essa escolha agora\. Tente novamente ou explique de outra forma\./);
+assert.match(pendingSetupConversationSource, /!isTerminalFallback \? \(/);
+assert.match(pendingSetupConversationSource, /hasPendingSetupTerminalFallback/);
 assert.doesNotMatch(nicheOrchestrator, /confirmOperationalNicheForPendingSetup/);
 assert.equal(existsSync(legacyComponent), false);
 assert.equal(existsSync(legacyValidation), false);
@@ -323,14 +386,173 @@ assert.equal(shouldFallbackFromRepeatedClarification({
   previousAssistantContents: ["Para eu entender melhor, qual destas opções mais se aproxima do seu negócio: Consultoria criativa ou Criação artística?"],
   nextAssistantContent: "Para eu entender melhor, qual destas opções mais se aproxima do seu negócio: Consultoria financeira ou Criação artística?",
 }), false);
-assert.equal(hasReachedPendingSetupClarificationLimit([
-    "Para eu entender melhor, qual destas opções mais se aproxima do seu negócio: Consultoria criativa ou Criação artística?",
-    "Para eu entender melhor, qual destas opções mais se aproxima do seu negócio: Consultoria financeira ou Experiências sensoriais?",
-]), true);
-assert.equal(hasReachedPendingSetupClarificationLimit([
-  "Olá! Como você prefere ser chamado?",
-  "Para eu entender melhor, qual destas opções mais se aproxima do seu negócio: Consultoria criativa ou Criação artística?",
-]), false);
+assert.equal(PENDING_SETUP_MAX_OPENAI_CALLS, 3);
+assert.equal(hasReachedPendingSetupOpenAiCallLimit(2), false);
+assert.equal(hasReachedPendingSetupOpenAiCallLimit(3), true);
+assert.equal(hasReachedPendingSetupOpenAiCallLimit(null), true);
+
+const mixedAiResults: ResolveAiNicheResolutionResult[] = [
+  {
+    ok: true,
+    status: "resolved",
+    model: "test-model",
+    schemaVersion: AI_NICHE_RESOLUTION_SCHEMA_VERSION,
+    output: {
+      uxMode: "choose_from_options",
+      message: "ignore",
+      options: [{
+        taxonId: null,
+        name: "Consultoria criativa",
+        slug: null,
+        confidence: "low",
+        reason: "semantic_option",
+        isOfficial: false,
+      }],
+      needsAdminReview: true,
+      needsUserConfirmation: true,
+      shouldCreateOfficialLink: false,
+      suggestedNewTaxonLabel: null,
+      reason: "first_call",
+    },
+  },
+  {
+    ok: false,
+    status: "failed",
+    model: "test-model",
+    schemaVersion: AI_NICHE_RESOLUTION_SCHEMA_VERSION,
+    reason: "AbortError",
+  },
+  {
+    ok: true,
+    status: "resolved",
+    model: "test-model",
+    schemaVersion: AI_NICHE_RESOLUTION_SCHEMA_VERSION,
+    output: {
+      uxMode: "confirm_single",
+      message: "ignore",
+      options: [{
+        taxonId: candidate.taxonId,
+        name: candidate.name,
+        slug: candidate.slug,
+        confidence: "medium",
+        reason: "official_candidate",
+        isOfficial: true,
+      }],
+      needsAdminReview: false,
+      needsUserConfirmation: true,
+      shouldCreateOfficialLink: false,
+      suggestedNewTaxonLabel: null,
+      reason: "third_call",
+    },
+  },
+];
+let injectedResolverCalls = 0;
+let injectedReservationCalls = 0;
+const callOrder: string[] = [];
+const injectedResolver = async () => {
+  callOrder.push("provider");
+  const result = mixedAiResults[injectedResolverCalls];
+  injectedResolverCalls += 1;
+  if (!result) throw new Error("unexpected fourth OpenAI call");
+  return result;
+};
+const aiTurnBase = {
+  aiContextProjection: "contexto ambíguo",
+  decision: ambiguousDecision,
+  candidates: [candidate],
+  previousAssistantContents: [] as string[],
+  apiKey: "test-key",
+  financialContext: {
+    universe: "client" as const,
+    attributionStatus: "attributed" as const,
+    accountId: "20000000-0000-4000-8000-000000000001",
+  },
+};
+const aiTurnDependencies = {
+  resolveAi: injectedResolver,
+  reserveOpenAiCall: async () => {
+    injectedReservationCalls += 1;
+    callOrder.push("reserve");
+    return { ok: true as const, count: injectedReservationCalls };
+  },
+  persistAiOutput: async () => true,
+  persistAiFailure: async () => undefined,
+};
+const firstMixedTurn = await resolvePendingSetupAiTurn({
+  ...aiTurnBase,
+  openAiCallCount: 0,
+}, aiTurnDependencies);
+assert.equal(firstMixedTurn.ok && firstMixedTurn.nextStage, "business_understanding");
+const secondMixedTurn = await resolvePendingSetupAiTurn({
+  ...aiTurnBase,
+  openAiCallCount: 1,
+}, aiTurnDependencies);
+assert.equal(secondMixedTurn.ok && secondMixedTurn.assistantContent, PENDING_SETUP_OPENAI_RETRY_MESSAGE);
+const thirdMixedTurn = await resolvePendingSetupAiTurn({
+  ...aiTurnBase,
+  openAiCallCount: 2,
+}, aiTurnDependencies);
+assert.equal(thirdMixedTurn.ok && thirdMixedTurn.confirmationKind, "official");
+assert.equal(injectedResolverCalls, 3);
+assert.equal(injectedReservationCalls, 3);
+assert.deepEqual(callOrder, [
+  "reserve", "provider",
+  "reserve", "provider",
+  "reserve", "provider",
+]);
+
+for (const scenario of ["reload", "append_failure", "retry"] as const) {
+  const blockedTurn = await resolvePendingSetupAiTurn({
+    ...aiTurnBase,
+    aiContextProjection: scenario,
+    openAiCallCount: 3,
+  }, aiTurnDependencies);
+  assert.equal(blockedTurn.ok && blockedTurn.confirmationKind, "operational_fallback");
+  assert.equal(blockedTurn.ok && blockedTurn.assistantContent, PENDING_SETUP_TERMINAL_FALLBACK_MESSAGE);
+}
+assert.equal(injectedResolverCalls, 3);
+assert.equal(injectedReservationCalls, 3);
+
+const rejectedReservation = await resolvePendingSetupAiTurn({
+  ...aiTurnBase,
+  openAiCallCount: 2,
+}, {
+  ...aiTurnDependencies,
+  reserveOpenAiCall: async () => ({ ok: false, reason: "limit_reached" }),
+});
+assert.equal(rejectedReservation.ok && rejectedReservation.confirmationKind, "operational_fallback");
+assert.equal(injectedResolverCalls, 3);
+
+assert.equal(shouldUseTerminalFallbackAfterRejectedAiConfirmation({
+  openAiCallCount: 3,
+  confirmationKind: "official",
+  intent: "clarify",
+}), true);
+assert.equal(shouldUseTerminalFallbackAfterRejectedAiConfirmation({
+  openAiCallCount: 2,
+  confirmationKind: "official",
+  intent: "clarify",
+}), false);
+assert.equal(shouldUseTerminalFallbackAfterRejectedAiConfirmation({
+  openAiCallCount: 3,
+  confirmationKind: "operational_fallback",
+  intent: "clarify",
+}), false);
+assert.equal(
+  PENDING_SETUP_TERMINAL_FALLBACK_MESSAGE,
+  "Ainda não consegui identificar seu nicho com segurança. Vou preservar o que você me contou para seguirmos sem associar uma categoria incorreta.",
+);
+assert.equal(
+  isPendingSetupTerminalFallbackMessage(PENDING_SETUP_TERMINAL_FALLBACK_MESSAGE),
+  true,
+);
+assert.equal(hasPendingSetupTerminalFallback({
+  confirmationKind: "operational_fallback",
+  assistantContents: [
+    PENDING_SETUP_TERMINAL_FALLBACK_MESSAGE,
+    "Não consegui registrar essa escolha agora. Tente confirmar novamente.",
+  ],
+}), true);
 assert.equal(selectOperationalFallbackLabel([
   { role: "assistant", content: "Conte sobre seu negócio." },
   { role: "user", content: "  Crio mapas olfativos para memórias de famílias.  " },
@@ -340,10 +562,6 @@ assert.equal(selectOperationalFallbackLabel([
 "Crio mapas olfativos para memórias de famílias.");
 assert.equal(selectOperationalFallbackLabel([], "  Descrição acumulada  "), "Descrição acumulada");
 
-const pendingSetupConversationSource = readFileSync(
-  new URL("../../../app/a/[account]/_components/PendingSetupConversation.tsx", import.meta.url),
-  "utf8",
-);
 assert.equal((pendingSetupConversationSource.match(/variant="secondary"/g) ?? []).length, 2);
 
 const buttonSource = readFileSync(

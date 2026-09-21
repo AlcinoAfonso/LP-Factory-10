@@ -617,6 +617,7 @@
 • stage: identity | business_understanding | niche_confirmation | ready_to_complete | completed.
 • confirmation_kind: official | operational_fallback somente em niche_confirmation; NULL nos demais stages.
 • resolution_outcome: NULL antes de completed; official | operational_fallback na conclusão.
+• openai_call_count: smallint obrigatório, default 0 e domínio 0–3; contador autoritativo da conversa, reservado transacionalmente antes de cada chamada OpenAI e independente do ledger financeiro.
 • pending_turn_token e pending_turn_started_at são ambos NULL ou ambos preenchidos apenas durante reserva de turno em business_understanding/niche_confirmation; lease de 2 minutos permite retomada após interrupção.
 • preferred_name: NULL ou 1–80 caracteres sem controle ou `@`; business_context_text: NULL ou 1–4.000 caracteres; version >= 1.
 • created_at <= updated_at; completed_at é NULL antes de completed e obrigatório/coerente na conclusão.
@@ -625,7 +626,7 @@
 • Trigger Hub: não; somente evento app-level sanitizado de conclusão.
 • RLS ativo, sem policies; acesso direto revogado de public, anon, authenticated e ai_readonly.
 • service_role: SELECT, INSERT e UPDATE.
-• Migration repo-only: `20260920223653_e10_9_pending_setup_conversation.sql`; apply hospedado permanece pós-merge.
+• Migrations repo-only: `20260920223653_e10_9_pending_setup_conversation.sql` e `20260921170115_e10_9_pending_setup_openai_call_counter.sql`; apply hospedado permanece pós-merge.
 
 1.19B account_pending_setup_messages
 
@@ -1202,9 +1203,10 @@
 • `start_account_pending_setup_v1(uuid, uuid, text) → uuid`: início idempotente por relação conta/usuário e primeira pergunta code-owned.
 • `set_account_pending_setup_preferred_name_v1(uuid, uuid, uuid, text, bigint) → bigint`: persiste nome opcional e avança para entendimento do negócio com versão otimista.
 • `claim_account_pending_setup_turn_v1(uuid, uuid, uuid, bigint, uuid) → bigint`: reserva a versão antes de matching, IA ou mutação de nicho; tentativa concorrente falha antes dos efeitos externos e lease expirado pode ser retomado.
+• `claim_account_pending_setup_openai_call_v1(uuid, uuid, uuid, bigint, uuid) → smallint`: sob lock da conversa e reserva exata do turno, incrementa o contador 0–3 imediatamente antes da chamada ao provedor sem alterar a versão; falha fechada quando o limite foi atingido.
 • `append_account_pending_setup_turn_v1(uuid, uuid, uuid, bigint, uuid, text, text, text, text, text) → bigint`: exige a reserva exata, faz append atômico do par usuário/assistente, fecha a transição origem/destino e limpa a reserva.
 • `complete_account_pending_setup_v1(uuid, uuid, uuid, bigint, text) → boolean`: exige conta ainda pending_setup, estado terminal válido e sem reserva; official requer taxon primário ativo, enquanto operational_fallback exige confirmação, ausência de seleção/vínculo oficial e descrição operacional; conclui a conversa e promove `accounts.status` para active na mesma transação, sem tocar entitlement. Idempotência em conta active vale somente para conversa já completed.
-• As cinco RPCs são SECURITY DEFINER, usam search_path vazio, validam owner/membership/conta, têm EXECUTE exclusivo de service_role e revogam public, anon, authenticated e ai_readonly.
+• As seis RPCs são SECURITY DEFINER, usam search_path vazio, validam owner/membership/conta, têm EXECUTE exclusivo de service_role e revogam public, anon, authenticated e ai_readonly.
 
 3.2 Limites de Plano
 3.2.1 get_account_effective_limits(account_id uuid) → SETOF record

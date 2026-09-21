@@ -15,7 +15,11 @@ import { getActivePrimaryAccountTaxon } from "../../../lib/onboarding/niche-reso
 import {
   appendBusinessContext,
   buildPendingSetupAiProjection,
+  hasPendingSetupTerminalFallback,
+  PENDING_SETUP_OPENAI_RETRY_MESSAGE,
+  PENDING_SETUP_TERMINAL_FALLBACK_MESSAGE,
   selectOperationalFallbackLabel,
+  shouldUseTerminalFallbackAfterRejectedAiConfirmation,
   validateBusinessContext,
   validatePreferredName,
 } from "../../../lib/onboarding/pending-setup";
@@ -151,12 +155,12 @@ export async function continuePendingSetupConversationAction(
   ) {
     return { ok: false, formError: "Esta conversa mudou. Recarregue para continuar." };
   }
-
   let userContent: string;
   let assistantContent: string;
   let nextStage: "business_understanding" | "niche_confirmation" | "ready_to_complete";
   let confirmationKind: "official" | "operational_fallback" | null = null;
   let businessContextText = conversation.businessContextText ?? "";
+  let shouldUseTerminalFallbackAfterRejection = false;
 
   if (conversation.stage === "business_understanding") {
     const validated = validateBusinessContext(formData.get("business_context"));
@@ -175,11 +179,23 @@ export async function continuePendingSetupConversationAction(
     );
   } else if (conversation.stage === "niche_confirmation") {
     const intent = String(formData.get("intent") ?? "");
+    const isTerminalFallback = hasPendingSetupTerminalFallback({
+      confirmationKind: conversation.confirmationKind,
+      assistantContents: conversation.messages
+        .filter((message) => message.role === "assistant")
+        .map((message) => message.content),
+    });
+    shouldUseTerminalFallbackAfterRejection =
+      shouldUseTerminalFallbackAfterRejectedAiConfirmation({
+        openAiCallCount: conversation.openAiCallCount,
+        confirmationKind: conversation.confirmationKind,
+        intent,
+      });
     if (intent === "confirm") {
       userContent = conversation.confirmationKind === "operational_fallback"
         ? "Sim, use minha descrição como referência operacional."
         : "Sim, está correto.";
-    } else if (intent === "clarify") {
+    } else if (intent === "clarify" && !isTerminalFallback) {
       userContent = "Não, quero explicar melhor.";
     } else {
       return { ok: false, formError: GENERIC_ERROR };
@@ -213,6 +229,10 @@ export async function continuePendingSetupConversationAction(
     } else {
       const resolution = await orchestratePendingSetupNicheTurn({
         accountId: actor.accountId,
+        conversationId,
+        userId: actor.userId,
+        expectedVersion: claimed.version,
+        turnToken,
         businessContext: businessContextText,
         aiContextProjection: buildPendingSetupAiProjection({
           messages: conversation.messages,
@@ -221,6 +241,7 @@ export async function continuePendingSetupConversationAction(
         previousAssistantContents: conversation.messages
           .filter((message) => message.role === "assistant")
           .map((message) => message.content),
+        openAiCallCount: conversation.openAiCallCount,
         apiKey: process.env.OPENAI_API_KEY,
         financialContext: clientOpenAiCostContext(actor.accountId, {
           kind: "niche_resolution",
@@ -232,13 +253,19 @@ export async function continuePendingSetupConversationAction(
         nextStage = resolution.nextStage;
         confirmationKind = resolution.confirmationKind;
       } else {
-        assistantContent = "Não consegui validar esse entendimento agora. Você pode tentar novamente ou explicar de outra forma.";
+        assistantContent = resolution.reason === "ai_resolution_write_failed"
+          ? PENDING_SETUP_OPENAI_RETRY_MESSAGE
+          : "Não consegui concluir esse entendimento agora. Você pode tentar novamente em instantes.";
         nextStage = "business_understanding";
       }
     }
   } else {
     const intent = String(formData.get("intent") ?? "");
-    if (intent === "clarify") {
+    if (shouldUseTerminalFallbackAfterRejection) {
+      assistantContent = PENDING_SETUP_TERMINAL_FALLBACK_MESSAGE;
+      nextStage = "niche_confirmation";
+      confirmationKind = "operational_fallback";
+    } else if (intent === "clarify") {
       assistantContent = "Sem problema. Em uma frase, o que você oferece e para qual tipo de cliente?";
       nextStage = "business_understanding";
     } else if (conversation.confirmationKind === "official") {
@@ -281,7 +308,7 @@ export async function continuePendingSetupConversationAction(
         assistantContent = "Perfeito. Vou usar sua descrição como referência operacional, sem vínculo oficial.";
         nextStage = "ready_to_complete";
       } else {
-        assistantContent = "Não consegui registrar essa escolha agora. Tente novamente ou explique de outra forma.";
+        assistantContent = "Não consegui registrar essa escolha agora. Tente confirmar novamente.";
         nextStage = "niche_confirmation";
         confirmationKind = "operational_fallback";
       }

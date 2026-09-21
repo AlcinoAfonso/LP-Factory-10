@@ -6,6 +6,7 @@ import type {
   PendingSetupConversation,
   PendingSetupConfirmationKind,
   PendingSetupMessage,
+  PendingSetupOpenAiCallClaimResult,
   PendingSetupResolutionOutcome,
   PendingSetupStage,
   PendingSetupWriteResult,
@@ -21,6 +22,7 @@ type ConversationRow = {
   stage: PendingSetupStage;
   confirmation_kind: PendingSetupConfirmationKind | null;
   resolution_outcome: PendingSetupResolutionOutcome | null;
+  openai_call_count: number;
   version: number | string;
   created_at: string;
   updated_at: string;
@@ -58,6 +60,7 @@ function mapConversation(
     stage: row.stage,
     confirmationKind: row.confirmation_kind,
     resolutionOutcome: row.resolution_outcome,
+    openAiCallCount: Number(row.openai_call_count),
     version: Number(row.version),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -118,7 +121,7 @@ export async function loadPendingSetupConversation(input: {
       service
         .from("account_pending_setup_conversations")
         .select(
-          "id,account_id,user_id,preferred_name,business_context_text,stage,confirmation_kind,resolution_outcome,version,created_at,updated_at,completed_at",
+          "id,account_id,user_id,preferred_name,business_context_text,stage,confirmation_kind,resolution_outcome,openai_call_count,version,created_at,updated_at,completed_at",
         )
         .eq("id", conversationId)
         .eq("account_id", input.accountId)
@@ -221,6 +224,42 @@ export async function claimPendingSetupTurn(input: {
   const version = Number(data);
   return Number.isSafeInteger(version) && version >= 1
     ? { ok: true, version }
+    : { ok: false, reason: "write_failed" };
+}
+
+export async function claimPendingSetupOpenAiCall(input: {
+  conversationId: string;
+  accountId: string;
+  userId: string;
+  expectedVersion: number;
+  turnToken: string;
+}): Promise<PendingSetupOpenAiCallClaimResult> {
+  const service = createServiceClient();
+  const { data, error } = await service.rpc("claim_account_pending_setup_openai_call_v1", {
+    p_conversation_id: input.conversationId,
+    p_account_id: input.accountId,
+    p_user_id: input.userId,
+    p_expected_version: input.expectedVersion,
+    p_turn_token: input.turnToken,
+  });
+
+  if (error) {
+    const message = String((error as { message?: unknown } | null)?.message ?? "");
+    if (message.includes("pending_setup_openai_call_limit_reached")) {
+      return { ok: false, reason: "limit_reached" };
+    }
+    const failure = writeFailure(error);
+    return !failure.ok
+      ? {
+          ok: false,
+          reason: failure.reason === "not_found" ? "write_failed" : failure.reason,
+        }
+      : { ok: false, reason: "write_failed" };
+  }
+
+  const count = Number(data);
+  return Number.isSafeInteger(count) && count >= 1 && count <= 3
+    ? { ok: true, count }
     : { ok: false, reason: "write_failed" };
 }
 
