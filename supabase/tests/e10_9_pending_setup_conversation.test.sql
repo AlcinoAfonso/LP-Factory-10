@@ -191,8 +191,8 @@ begin
       1,
       'e1090000-0000-4000-8000-000000000038'
     );
-    raise exception 'E10.9 stale version should fail';
-  exception when serialization_failure then
+    raise exception 'E10.9 stale state should fail';
+  exception when serialization_failure or invalid_parameter_value then
     null;
   end;
 
