@@ -77,23 +77,21 @@ A natureza da solução e o ambiente de execução são dimensões diferentes. T
 * Definir fallback e distinguir falha técnica de ausência de informação.
 * A existência de recurso novo não autoriza implementação.
 
-### 3.1 Consulta obrigatória à OpenAI
+### 3.1 Consulta focal à OpenAI
 
-Quando houver hipótese concreta e material de uso da OpenAI, o Gestor deve consultar a documentação oficial atual antes de concluir o parecer.
+Quando houver hipótese concreta e material de uso da OpenAI, o Gestor deve consumir primeiro as capacidades identificadas em `docs/openai-model-snapshot.md` pelo workflow semanal e consultar a documentação oficial atual somente para validar o necessário à decisão do caso.
 
-* No Codex, usar preferencialmente a OpenAI Docs skill, quando disponível.
-* Se a skill não estiver disponível ou não resolver a consulta, usar diretamente a documentação oficial da OpenAI.
-* Iniciar pela página oficial `Model guidance`, para descobrir modelos, recursos, formas de orquestração e capacidades atuais potencialmente aplicáveis: `https://developers.openai.com/api/docs/guides/latest-model`.
-* Consultar também o catálogo oficial `Models`, para confirmar disponibilidade, ferramentas suportadas, limites e preços: `https://developers.openai.com/api/docs/models`.
-* Abrir a documentação oficial específica de cada recurso materialmente relevante identificado.
-* Não limitar a avaliação aos recursos já conhecidos, ao modelo já configurado ou aos recursos citados no briefing.
-* Confirmar status, superfície aplicável, limitações, requisitos, custo e impacto operacional.
+* No Codex, usar preferencialmente a OpenAI Docs skill, quando disponível; se ela não resolver a consulta focal, usar diretamente a documentação oficial da OpenAI.
+* Selecionar no snapshot somente os itens relacionados ao problema e confirmar nas fontes oficiais específicas sua disponibilidade, status, superfície aplicável, limitações, requisitos e guardrails.
+* Não repetir a descoberta ampla do workflow de updates, não pesquisar novidades sem necessidade concreta e não transformar disponibilidade em autorização de adoção.
+* Quando faltar no snapshot uma capacidade indispensável ou houver sinal material de defasagem, registrar a lacuna e a investigação necessária; não ampliar silenciosamente a avaliação para uma varredura geral.
+* Confirmar impacto operacional e custo relevante somente quando materiais ao caso. Conteúdo financeiro não reside no snapshot.
 * Para cada recurso materialmente relevante, decidir: adotar agora, rejeitar para o caso, não aplicável ou requer decisão adicional.
 * Quando o caso estiver sendo encerrado e não existir fase posterior real e registrada, não deixar recurso relevante para avaliação futura.
 * “Futuro” somente é válido quando houver fase posterior identificada e registrada para reabrir a decisão.
 * Registrar no parecer as fontes oficiais efetivamente consultadas.
 * Quando a recomendação envolver workload OpenAI de produto, identificar explicitamente o workload afetado e respeitar a governança transversal estabelecida em `E21.1 — Fundação, normalização e leitura dos workloads OpenAI` de `docs/roadmap.md`; consultar o contrato técnico vigente em `docs/base-tecnica.md` e a configuração operacional correspondente em `docs/platform-config.md`, sem duplicar neste documento catálogo, modelo, reasoning effort, configuração efetiva ou estado de implementação.
-* Quando a decisão envolver seleção, comparação ou revisão de modelo ou `reasoning.effort`, consultar também `docs/openai-model-snapshot.md` como fotografia interna datada de custo-desempenho e protocolo de comparação por workload; reconfirmar preços, capacidades e parâmetros nas fontes oficiais atuais antes de concluir e atualizar o snapshot quando houver mudança material. O snapshot apoia a decisão, mas não substitui `docs/platform-config.md` como fonte da configuração efetiva nem autoriza mudança por si só.
+* Quando a decisão envolver seleção, comparação ou revisão de modelo ou `reasoning.effort`, usar o snapshot como fotografia técnica itemizada de capacidades, aplicabilidade e maturidade; a atualização ampla do snapshot pertence ao workflow semanal. O snapshot não substitui `docs/platform-config.md` como fonte da configuração efetiva nem autoriza mudança por si só.
 * Quando a solução com OpenAI depender de prompt consumido no runtime, consultar `docs/template-prompts.md` e o complemento específico do modelo quando existir e for aplicável, atualmente `docs/template-prompts-gpt-5-6.md` para GPT-5.6, e verificar aderência ao contrato vigente de prompt de runtime antes de concluir o parecer.
 * Ao avaliar comportamento de um workload, considerar o prompt efetivamente aplicado junto com `workload + modelo + reasoning effort`, sem alterar a unidade de configuração criada pela E21.1. Prompt não substitui autorização, validação, regras de negócio ou guardrails que devam permanecer determinísticos no LP Factory.
 

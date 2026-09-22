@@ -1,5 +1,5 @@
 22/07/2026 — Workflow de Atualização dos Catálogos de Updates
-Atualizado em 05/09/2026
+Atualizado em 22/09/2026
 
 Fontes: chat, repositório e documentos indicados nos itens 2 e 3
 
@@ -11,11 +11,15 @@ Referência de estrutura: `docs/template-prompts.md`, com abordagem outcome-firs
 
 Ao final de uma única execução:
 
-- os quatro catálogos foram analisados na ordem do item 2;
-- cada catálogo foi concluído da leitura ao relatório e ao draft PR ou à justificativa antes do início da análise do seguinte, sem processamento em lote ou paralelo;
-- cada ajuste real está em branch própria criada do mesmo SHA inicial de `main`, alterando somente o documento-alvo;
+- os quatro catálogos foram analisados na ordem do item 2 e a cobertura OpenAI foi concluída na quinta etapa, sem criar novo catálogo;
+- cada alvo foi concluído da leitura ao relatório e ao draft PR ou à justificativa antes do início da análise do seguinte, sem processamento em lote ou paralelo;
+- a execução usa um único identificador `updates-AAAA-MM-DD-rNN`, presente nas branches e nos títulos dos draft PRs da rodada;
+- drafts abertos de rodadas anteriores e do mesmo identificador foram detectados antes de qualquer publicação, e nenhum segundo draft foi criado para o mesmo alvo e rodada;
+- cada ajuste real está em branch própria criada do mesmo SHA inicial de `main`, alterando somente o documento-alvo e sem mudança artificial quando não houver delta;
 - todos os IDs publicados continuam localizáveis no catálogo, sem renumeração, reutilização ou desaparecimento físico;
-- itens implementados, parcialmente implementados, absorvidos, superados ou rejeitados preservam registro histórico e referências;
+- todo transversal ativo informa estado, ação pendente, prioridade, motivo da permanência, gatilho e critério de encerramento;
+- itens integralmente implementados e validados deixam a parte ativa e permanecem somente no histórico compacto; itens parciais permanecem ativos apenas pelo saldo;
+- nenhuma recomendação transversal ultrapassa zero custo incremental nos planos vigentes; gratuidade não comprovada, upgrade ou cobrança adicional mantêm o recurso no radar;
 - ausências de ajuste, bloqueios e exceções foram registradas;
 - existe um relatório final curto que consolida o que foi feito, orienta a prioridade dos updates, reapresenta os recursos transversais ainda ativos e, quando houver ação transversal recomendada para o momento atual, pede autorização direta para criar o próximo Debate em `LP Factory/Debates`;
 - nenhum PR foi mergeado nem a catalogação transformada em implementação.
@@ -24,14 +28,15 @@ Ao final de uma única execução:
 
 - Manter os catálogos de updates atuais, úteis, rastreáveis e baseados em fontes oficiais, sem aprovação humana intermediária entre eles.
 
-## 2. Documentos-alvo e ordem
+## 2. Alvos e ordem
 
 1. `docs/supa-up.md`
 2. `docs/vercel-up.md`
 3. `docs/github-up.md`
 4. `docs/prod-up.md`
+5. `docs/openai-model-snapshot.md`
 
-Os demais catálogos podem ser consultados para detectar duplicações, absorções e referências cruzadas. Isso não inicia sua análise completa.
+Os quatro primeiros alvos são os catálogos obrigatórios. O quinto é a fotografia técnica OpenAI existente e não constitui catálogo novo. Os demais catálogos podem ser consultados para detectar duplicações, absorções e referências cruzadas. Isso não inicia sua análise completa.
 
 ## 3. Fontes
 
@@ -44,7 +49,9 @@ Consultar, para o catálogo em execução:
 - os relatórios e diffs dos catálogos anteriores já concluídos nesta execução;
 - fontes oficiais externas correspondentes.
 
-Para Supabase, usar documentação, changelog e blog oficiais. Para Vercel, usar fontes oficiais da Vercel, Next.js e React. Para GitHub e produto, seguir as fontes prioritárias definidas nos próprios catálogos.
+Para Supabase, usar documentação, changelog e blog oficiais; `supa#60` confirma a consulta manual dessas fontes e não autoriza consumidor RSS ou Markdown. Para Vercel, usar fontes oficiais da Vercel, Next.js e React. Para GitHub e produto, seguir as fontes prioritárias definidas nos próprios catálogos.
+
+Para OpenAI, usar a documentação oficial atual e as fontes oficiais já rastreadas no snapshot. Pesquisar modelos, reasoning efforts, limites técnicos, APIs, tools, recursos agentic, aplicabilidade e maturidade. Não registrar preços, fórmulas, gráfico, protocolo financeiro ou laboratório de custo no snapshot. A descoberta oficial ampla pertence a este workflow; o Gestor de Automações recebe as capacidades identificadas e faz somente a validação factual focal necessária ao caso concreto.
 
 Para cada pilar ou canal declarado estratégico no `README.md`, pesquisar explicitamente as fontes oficiais aplicáveis e registrar também quando não houver novidade relevante. O WhatsApp deve ser coberto por fontes oficiais da WhatsApp Business Platform ou Meta Business Messaging.
 
@@ -52,8 +59,12 @@ Fontes secundárias podem apoiar, mas não substituir a fonte oficial.
 
 ## 4. Execução
 
-1. Congelar o SHA inicial de `main` e confirmar o `README.md` e os quatro documentos-alvo.
-2. Para cada catálogo, na ordem do item 2, concluir todo o ciclo antes de iniciar a análise do seguinte:
+1. Preparar a rodada:
+   - congelar o SHA inicial de `main` e confirmar o `README.md` e os cinco alvos;
+   - definir `updates-AAAA-MM-DD-rNN`, usando a data da execução e o primeiro `NN` de dois dígitos ainda não usado naquela data;
+   - listar draft PRs abertos cujas branches ou títulos contenham um identificador `updates-AAAA-MM-DD-rNN`, registrar os pertencentes a rodadas anteriores e detectar os do identificador atual;
+   - para o mesmo alvo e identificador, continuar o draft existente quando ele corresponder ao mesmo SHA inicial e escopo; diante de divergência de base, escopo ou autoria, registrar o conflito e não criar duplicata.
+2. Para cada um dos quatro catálogos, na ordem do item 2, concluir todo o ciclo antes de iniciar a análise do seguinte:
    - ler as fontes aplicáveis e as regras do catálogo;
    - identificar o maior ID histórico, preservar todos os IDs publicados e atribuir novo ID somente acima do maior já utilizado;
    - executar gate de rastreabilidade antes de reclassificar qualquer item:
@@ -70,6 +81,8 @@ Fontes secundárias podem apoiar, mas não substituir a fonte oficial.
      - transversal quando o recurso afetar stack, segurança, operação ou governança do projeto como um todo e exigir avaliação técnica ou operacional própria antes de eventual implementação;
    - exigir hipótese de superioridade e gatilho objetivo para recurso sobreposto ou substituto;
    - classificar itens existentes como manter, ajustar ou arquivar/absorver, e recursos pesquisados como adicionar, não adicionar ou não validado;
+   - para todo item transversal ativo, registrar estado atual, ação pendente, prioridade, motivo da permanência, gatilho e critério de encerramento;
+   - antes de recomendar implementação transversal, confirmar que ela tem zero custo incremental nos planos vigentes; se exigir upgrade ou cobrança adicional, ou se a gratuidade não estiver validada, manter o recurso atualizado no radar e não recomendar implementação;
    - nunca apagar um ID publicado; quando o item sair do catálogo ativo, manter registro histórico compacto com título original, estado final, evidências, recortes e eventual substituto;
    - manter item parcialmente implementado no catálogo ativo, com os recortes aplicados e o escopo ainda não implementado;
    - retirar item do catálogo ativo somente após implementação integral e validação, rejeição formal ou superação comprovada, preservando o ID em registro histórico compacto com a evidência e as referências competentes;
@@ -79,11 +92,18 @@ Fontes secundárias podem apoiar, mas não substituir a fonte oficial.
    - arquivar como incompatível, duplicado, absorvido, deprecado, superado, sem valor concreto ou com custo ou risco desproporcional somente com evidência e preservação do registro;
    - classificar como não validado quando faltar fonte oficial ou evidência suficiente;
    - produzir o relatório obrigatório;
-   - quando houver ajuste, criar branch do SHA inicial, alterar somente o documento-alvo, validar o diff e abrir draft PR com o relatório;
+   - quando houver ajuste, usar branch `docs/<identificador>-<alvo>` criada do SHA inicial, alterar somente o documento-alvo, validar o diff e abrir draft PR cujo título comece por `[<identificador>]`;
    - quando não houver ajuste, registrar a justificativa sem criar alteração artificial;
    - confirmar documento, IDs, referências, resultado do diff e URL do PR ou justificativa antes de seguir.
 3. Seguir automaticamente ao próximo catálogo, sem aguardar aprovação ou merge.
-4. Ao final, conferir a sequência executada, a base comum, os arquivos alterados, a cobertura dos canais estratégicos, os IDs e o estado dos PRs. Se houver divergência, informá-la e não declarar execução integralmente aderente.
+4. Concluir a cobertura OpenAI depois dos quatro catálogos:
+   - ler o snapshot vigente no SHA inicial e as fontes oficiais aplicáveis;
+   - confrontar capacidades identificadas com o repositório e as decisões vigentes somente quando isso for necessário para classificar aplicabilidade e maturidade;
+   - manter registros itemizados e rastreáveis de modelos, reasoning efforts, limites técnicos, APIs, tools, recursos agentic, aplicabilidade, maturidade, fontes e data da fotografia;
+   - não registrar conteúdo financeiro nem converter disponibilidade, novidade ou capacidade em autorização de adoção;
+   - quando houver mudança técnica material, usar branch `docs/<identificador>-openai`, alterar somente `docs/openai-model-snapshot.md`, validar o diff e abrir draft PR cujo título comece por `[<identificador>]`;
+   - quando não houver mudança material, registrar a justificativa sem atualizar data, regravar o snapshot ou criar PR artificial.
+5. Ao final, conferir a sequência executada, o identificador, a base comum, os arquivos alterados, a cobertura dos canais estratégicos e OpenAI, os IDs, os drafts anteriores detectados e o estado dos PRs. Se houver divergência ou duplicata, informá-la e não declarar execução integralmente aderente.
 
 ## 5. Relatório obrigatório
 
@@ -136,8 +156,12 @@ Os itens 1 a 10 compõem o relatório de cada catálogo. O item 11 é produzido 
    - confirmar a busca por referências explícitas e implementação semântica antes de cada arquivamento;
    - confirmar aderência ao `README.md`;
    - confirmar que novidade, modernidade ou distância do MVP não determinaram isoladamente a decisão.
+   - confirmar o gate de zero custo incremental para cada recomendação transversal.
 11. Fechamento consolidado da execução:
+   - informar o identificador da rodada e o SHA inicial comum;
+   - listar drafts anteriores detectados e confirmar que não foi criado segundo draft para o mesmo alvo e rodada;
    - entregar um resumo curto do que foi feito, com catálogos analisados, alterações, draft PRs ou justificativas, bloqueios, lacunas e conclusão geral;
+   - resumir a cobertura OpenAI, as fontes oficiais consultadas, as capacidades técnicas alteradas ou a justificativa de ausência de delta no snapshot;
    - separar os updates novos ou materialmente ajustados entre dependentes de recorte e transversais ao projeto, indicando prioridade atual, relação com o caminho crítico, momento ou gatilho recomendado e fluxo competente para avaliação;
    - reapresentar todos os recursos transversais ainda ativos nos catálogos resultantes, mesmo quando não forem novos nem tiverem mudado na rodada, deixando de reapresentá-los somente depois que saírem do catálogo ativo conforme a regra do item 4.2;
    - informar, para cada pendência transversal, ID e título, estado atual, ação pendente, prioridade, motivo da permanência, momento ou gatilho recomendado, mudança desde a rodada anterior — registrando `permanece pendente, sem mudança de prioridade` quando nada tiver mudado — e critério de encerramento;
@@ -158,5 +182,7 @@ Os itens 1 a 10 compõem o relatório de cada catálogo. O item 11 é produzido 
 - Não criar catálogo, seção permanente ou controle paralelo de pendências transversais; os catálogos permanecem como fonte.
 - Criar um Debate pontual sobre ações transversais somente após autorização humana explícita, conforme o item 5.11, sem tratá-lo como nova fonte do catálogo nem como autorização de implementação.
 - Não adicionar item sem fonte oficial, valor concreto e compatibilidade com o `README.md`.
+- Não criar catálogo OpenAI, consumidor de RSS/Markdown, controle paralelo, documento financeiro substituto ou segunda varredura ampla pelo Gestor de Automações.
+- Não recomendar implementação transversal com custo incremental, gratuidade não validada, upgrade ou cobrança adicional; manter esses recursos somente no radar competente.
 - Não realizar merge dos PRs.
 - Quando faltar fonte obrigatória, houver conflito material ou faltar permissão, informar exatamente o bloqueio e parar.
