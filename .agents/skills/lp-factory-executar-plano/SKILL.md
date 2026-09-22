@@ -95,8 +95,7 @@ Use somente as skills previstas para o Light; não chame custom agents diretamen
 
 No Light:
 
-- não acione Gestor Estrutural nem Gestor de Automações;
-- não crie matriz;
+- não acione Gestor Estrutural nem Gestor de Automações nem crie matriz;
 - não use gates de implementação específicos da Complexa;
 - não refaça na task principal a avaliação devolvida por Updates ou pelo Analista.
 
@@ -124,7 +123,7 @@ Implemente somente o contrato aprovado: V2 mínima no Light ou V2 aprovada na Co
 - evite refatoração ampla, mecanismo novo ou alteração não relacionada;
 - use os recursos autorizados disponíveis no ambiente atual;
 - execute as fases na ordem e com os mesmos identificadores definidos no roadmap;
-- para documento canônico, use `docs/prompt-abc.md`; não faça edição direta.
+- para documento canônico, use `docs/prompt-abc.md`; no Light, quando o resultado implementado puder alterar contrato canônico reutilizável além do caso atual, execute antes da entrega a triagem final sobre os documentos potencialmente afetados e aplique somente os deltas emitidos, preservando `SEM ALTERAÇÕES NECESSÁRIAS`; não faça edição direta.
 
 Granularidade por subseções, checkpoints, matriz e gates específicos da Complexa não se aplica ao Light.
 
