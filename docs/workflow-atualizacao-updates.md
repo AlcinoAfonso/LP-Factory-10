@@ -13,7 +13,7 @@ Ao final de uma única execução:
 
 - os quatro catálogos foram analisados na ordem do item 2 e a cobertura OpenAI foi concluída na quinta etapa, sem criar novo catálogo;
 - cada alvo foi concluído da leitura ao relatório e ao draft PR ou à justificativa antes do início da análise do seguinte, sem processamento em lote ou paralelo;
-- a execução usa um único identificador `updates-AAAA-MM-DD-rNN`, presente nas branches e nos títulos dos draft PRs da rodada;
+- a execução usa um único identificador `updates-AAAA-MM-DD-rNN`, presente nas branches e nos títulos dos draft PRs da rodada, sempre acompanhado pelo alvo que distingue cada PR;
 - drafts abertos de rodadas anteriores e do mesmo identificador foram detectados antes de qualquer publicação, e nenhum segundo draft foi criado para o mesmo alvo e rodada;
 - cada ajuste real está em branch própria criada do mesmo SHA inicial de `main`, alterando somente o documento-alvo e sem mudança artificial quando não houver delta;
 - todos os IDs publicados continuam localizáveis no catálogo, sem renumeração, reutilização ou desaparecimento físico;
@@ -62,7 +62,8 @@ Fontes secundárias podem apoiar, mas não substituir a fonte oficial.
 1. Preparar a rodada:
    - congelar o SHA inicial de `main` e confirmar o `README.md` e os cinco alvos;
    - definir o prefixo `updates-AAAA-MM-DD` com a data da execução, listar em todos os estados os PRs e as referências remotas que contenham esse prefixo e extrair os números de rodada já usados;
-   - definir `updates-AAAA-MM-DD-rNN` com o primeiro `NN` de dois dígitos ainda não usado naquela data, incluindo rodadas fechadas ou mergeadas;
+   - antes de alocar novo número, identificar se existe exatamente uma rodada aberta e incompleta compatível com o mesmo SHA inicial e escopo; quando existir, reutilizar seu identificador e continuar seus drafts; diante de múltiplas candidatas ou divergência de base, escopo ou autoria, registrar o conflito e não criar nova rodada;
+   - somente quando não houver rodada aberta compatível, definir `updates-AAAA-MM-DD-rNN` com o primeiro `NN` de dois dígitos ainda não usado naquela data, incluindo rodadas fechadas ou mergeadas;
    - listar draft PRs abertos cujas branches ou títulos contenham um identificador `updates-AAAA-MM-DD-rNN`, registrar os pertencentes a rodadas anteriores e detectar os do identificador atual;
    - para o mesmo alvo e identificador, continuar o draft existente quando ele corresponder ao mesmo SHA inicial e escopo; diante de divergência de base, escopo ou autoria, registrar o conflito e não criar duplicata.
 2. Para cada um dos quatro catálogos, na ordem do item 2, concluir todo o ciclo antes de iniciar a análise do seguinte:
@@ -93,7 +94,7 @@ Fontes secundárias podem apoiar, mas não substituir a fonte oficial.
    - arquivar como incompatível, duplicado, absorvido, deprecado, superado, sem valor concreto ou com custo ou risco desproporcional somente com evidência e preservação do registro;
    - classificar como não validado quando faltar fonte oficial ou evidência suficiente;
    - produzir o relatório obrigatório;
-   - quando houver ajuste, usar branch `docs/<identificador>-<alvo>` criada do SHA inicial, alterar somente o documento-alvo, validar o diff e abrir draft PR cujo título comece por `[<identificador>]`;
+   - quando houver ajuste, usar branch `docs/<identificador>-<alvo>` criada do SHA inicial, alterar somente o documento-alvo, validar o diff e abrir draft PR cujo título comece por `[<identificador>][<alvo>]`;
    - quando não houver ajuste, registrar a justificativa sem criar alteração artificial;
    - confirmar documento, IDs, referências, resultado do diff e URL do PR ou justificativa antes de seguir.
 3. Seguir automaticamente ao próximo catálogo, sem aguardar aprovação ou merge.
@@ -102,7 +103,7 @@ Fontes secundárias podem apoiar, mas não substituir a fonte oficial.
    - confrontar capacidades identificadas com o repositório e as decisões vigentes somente quando isso for necessário para classificar aplicabilidade e maturidade;
    - manter registros itemizados e rastreáveis de modelos, reasoning efforts, limites técnicos, APIs, tools, recursos agentic, aplicabilidade, maturidade, fontes e data da fotografia;
    - não registrar conteúdo financeiro nem converter disponibilidade, novidade ou capacidade em autorização de adoção;
-   - quando houver mudança técnica material, usar branch `docs/<identificador>-openai`, alterar somente `docs/openai-model-snapshot.md`, validar o diff e abrir draft PR cujo título comece por `[<identificador>]`;
+   - quando houver mudança técnica material, usar branch `docs/<identificador>-openai`, alterar somente `docs/openai-model-snapshot.md`, validar o diff e abrir draft PR cujo título comece por `[<identificador>][openai]`;
    - quando não houver mudança material, registrar a justificativa sem atualizar data, regravar o snapshot ou criar PR artificial.
 5. Ao final, conferir a sequência executada, o identificador, a base comum, os arquivos alterados, a cobertura dos canais estratégicos e OpenAI, os IDs, os drafts anteriores detectados e o estado dos PRs. Se houver divergência ou duplicata, informá-la e não declarar execução integralmente aderente.
 
