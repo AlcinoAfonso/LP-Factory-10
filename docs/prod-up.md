@@ -880,7 +880,7 @@ Avaliar somente quando houver:
 
 ### Itens avaliados e não adicionados
 
-- GPT-6 Astra: maior capacidade, contexto, ferramentas e novos controles não provam superioridade nos workloads reais; preço, qualidade, latência e compatibilidade devem ser comparados em `docs/openai-model-snapshot.md` e no lifecycle por workload.
+- GPT-6 Astra: maior capacidade, contexto, ferramentas e novos controles não provam superioridade nos workloads reais; qualidade, latência e compatibilidade devem ser comparadas contra a fotografia técnica de `docs/openai-model-snapshot.md` e o lifecycle por workload. Preço listado deve ser capturado da fonte oficial da OpenAI no momento da avaliação focal, e custo real observado deve usar a autoridade vigente da E21.5, sem persistir conteúdo financeiro no snapshot.
 - OpenAI mTLS/X.509: segurança de infraestrutura sem caso de produto ou identidade de workload aprovada.
 - Deprecações de transcrição: não há workload de áudio/transcrição no projeto.
 - Fundo transparente no `gpt-image-2`: o caminho atual gera imagem landscape WebP integral; não existe caso aprovado de asset transparente ou compositor.

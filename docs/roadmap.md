@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 20/09/2026
-• Versão: v1.5.238
+• Data: 22/09/2026
+• Versão: v1.5.239
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -1979,7 +1979,7 @@
   - Contrato de banco: `docs/schema.md` — seção 1.35.
   - Configuração externa: `docs/platform-config.md` — seções 3.1, 3.5 e 3.6.
   - Automação consultiva: `docs/automations.md` — seção 3.10.
-  - Modelos correntes: `docs/openai-model-snapshot.md` — seção 4.2.
+  - Modelos correntes: `docs/openai-model-snapshot.md` — seção 3.
 
 20.8.3 Demolição controlada da E20 vigente
 - Status: concluída no repositório.
@@ -2181,7 +2181,8 @@
 
 21.3.2 Registros do recorte
 - Referências:
-  - Critérios e snapshots decisórios: `docs/openai-model-snapshot.md`.
+  - Critérios técnicos e fotografia corrente, sem conteúdo financeiro: `docs/openai-model-snapshot.md`.
+  - Preço listado: fonte oficial da OpenAI capturada como evidência focal no momento de eventual retomada; custo real observado: autoridade vigente da E21.5.
   - Contratos de telemetria e configuração: `docs/base-tecnica.md` — seção 3.16.
 
 21.3.3 Condições de retomada
@@ -2756,3 +2757,45 @@
 - PR, commit, roadmap e documentos canônicos competentes preservam a conclusão durável; não há armazenamento externo, exportação recorrente, arquivo paralelo, job, agente ou nova automação.
 - A E22.6 comprova a regra: o PR #905, os commits do recorte e a seção 22.6 mantêm a retirada rastreável mesmo após a futura expiração do check, run, status e logs correspondentes.
 - Exigência futura de preservar evidência bruta além da janela interrompe este contrato e exige nova decisão com o Gestor de Automações e o humano.
+
+24. E24 — Governança e compatibilidade transversal de updates
+- Objetivo: tornar o ciclo semanal de updates rastreável, economicamente delimitado e coerente entre fornecedores, preservando ações operacionais em recortes independentes.
+- Status: E24.1 implementada e validada no repositório; entrega técnica sob supervisão Autônoma.
+
+24.1 Governança e cobertura do workflow de updates
+
+24.1.1 Objetivo e status
+- Objetivo: aplicar de forma uniforme ciclo de vida, gate de zero custo incremental, identificação de rodadas e cobertura técnica OpenAI ao workflow semanal existente.
+- Status: implementada e validada no repositório, sem novo catálogo, agente, job, automação, infraestrutura ou alteração do runtime do produto.
+
+24.1.2 Registros do recorte
+- Repositório:
+  - Ajustados:
+    - `.codex/agents/gestor-automacoes.toml`
+    - `.codex/agents/gestor-updates.toml`
+- Referências:
+  - Plano-base V1 e V2 Light: `docs/lousa-plano-base-e24-1.md` — seções 1 a 6.
+  - Contrato da rodada semanal: `docs/workflow-atualizacao-updates.md` — seções 1 a 6.
+  - Fotografia técnica OpenAI: `docs/openai-model-snapshot.md` — seções 1 a 6.
+  - Governança do Gestor de Automações: `docs/gestor-automations.md` — seção 3.1.
+
+24.1.3 Ciclo de vida, gate econômico, campos e identificador
+- Cada execução usa um identificador único `updates-AAAA-MM-DD-rNN`, compartilhado pelas branches e pelos títulos dos draft PRs da rodada.
+- Drafts anteriores e do mesmo identificador são detectados antes da publicação; o mesmo alvo e rodada não recebem segundo draft. O estado `open` ou `completed` fica persistido nos corpos dos drafts; uma rodada concluída sem drafts reserva o identificador por tag anotado remoto `<identificador>-completed` no SHA inicial, sem criar mudança artificial.
+- Todo transversal ativo registra estado, ação pendente, prioridade, motivo da permanência, gatilho e critério de encerramento. Implementação integral validada permanece somente no histórico compacto; implementação parcial permanece ativa apenas pelo saldo.
+- Toda recomendação de implementação, dependente de recorte ou transversal, exige zero custo incremental comprovado nos planos vigentes. Upgrade, cobrança adicional ou gratuidade não validada mantêm o recurso no radar sem autorização de implementação.
+
+24.1.4 Cobertura semanal OpenAI e responsabilidades
+- Os quatro catálogos obrigatórios preservam sua ordem, seguidos pela cobertura técnica OpenAI no snapshot existente; não foi criado quinto catálogo.
+- O workflow faz a descoberta oficial ampla. O Gestor de Updates consulta o snapshot quando o recorte envolver capacidade OpenAI, sem mantê-lo; o Gestor de Automações consome as capacidades identificadas e limita a consulta oficial à validação factual focal do caso.
+- `supa#60` permanece apenas como referência da consulta manual ao changelog oficial, sem consumidor RSS ou feed Markdown.
+
+24.1.5 Snapshot técnico OpenAI
+- O snapshot mantém registros itemizados e rastreáveis de workloads, modelos, reasoning efforts, limites técnicos, APIs, tools, recursos agentic, aplicabilidade, maturidade, fontes e data da fotografia.
+- Valores, fórmulas, gráfico, protocolo e laboratório financeiros foram retirados sem documento ou mecanismo substituto; o asset exclusivo do gráfico também foi removido.
+- A configuração efetiva permanece em `docs/platform-config.md`, e nenhuma capacidade registrada autoriza adoção ou mudança operacional.
+
+24.1.6 Validação do workflow atualizado
+- Inspeções estáticas aprovaram os contratos de rodada, ciclo de vida, gate econômico, cobertura OpenAI e divisão de responsabilidades.
+- Os dois contratos TOML permanecem sintaticamente válidos, sem mudança de modelo, reasoning effort ou sandbox dos custom agents.
+- O snapshot não mantém conteúdo financeiro e preserva as capacidades técnicas exigidas; nenhum draft aberto de rodada `updates-*` ou PR concorrente da E24.1 foi encontrado.
