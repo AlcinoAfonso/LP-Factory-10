@@ -123,7 +123,7 @@ Implemente somente o contrato aprovado: V2 mínima no Light ou V2 aprovada na Co
 - evite refatoração ampla, mecanismo novo ou alteração não relacionada;
 - use os recursos autorizados disponíveis no ambiente atual;
 - execute as fases na ordem e com os mesmos identificadores definidos no roadmap;
-- para documento canônico, use `docs/prompt-abc.md`; no Light, quando o resultado implementado puder alterar contrato canônico reutilizável além do caso atual, execute antes da entrega a triagem final sobre os documentos potencialmente afetados e aplique somente os deltas emitidos, preservando `SEM ALTERAÇÕES NECESSÁRIAS`; não faça edição direta.
+- para documento canônico, use `docs/prompt-abc.md`; não faça edição direta.
 
 Granularidade por subseções, checkpoints, matriz e gates específicos da Complexa não se aplica ao Light.
 
@@ -158,6 +158,8 @@ A validação deve provar os critérios de aceite do contrato. O Executor não p
 - não declare funcionamento, prontidão ou conclusão enquanto houver critério obrigatório sem evidência suficiente.
 
 Se um critério obrigatório continuar sem prova depois da consulta às fontes e recursos autorizados, não crie nova automação, infraestrutura, conta privilegiada ou mutação remota por inferência. Registre exatamente o critério não coberto, os caminhos autorizados tentados e o bloqueio; no `Autônomo`, devolva-o ao Estrategista Autônomo sem solicitar intervenção humana por conta própria; nos demais modos, escale ao supervisor competente somente o que realmente exigir decisão humana ou recurso inexistente ou não autorizado.
+
+No `Light`, depois de concluir todas as validações e QA aplicáveis e incorporar as correções decorrentes, quando o resultado final puder alterar contrato canônico reutilizável além do caso atual, execute a triagem final de `docs/prompt-abc.md` sobre os documentos potencialmente afetados; aplique somente os deltas emitidos e preserve `SEM ALTERAÇÕES NECESSÁRIAS` antes da entrega.
 
 ## 7. Complexa — controles preservados
 
