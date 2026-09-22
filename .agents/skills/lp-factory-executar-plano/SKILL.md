@@ -159,8 +159,6 @@ A validação deve provar os critérios de aceite do contrato. O Executor não p
 
 Se um critério obrigatório continuar sem prova depois da consulta às fontes e recursos autorizados, não crie nova automação, infraestrutura, conta privilegiada ou mutação remota por inferência. Registre exatamente o critério não coberto, os caminhos autorizados tentados e o bloqueio; no `Autônomo`, devolva-o ao Estrategista Autônomo sem solicitar intervenção humana por conta própria; nos demais modos, escale ao supervisor competente somente o que realmente exigir decisão humana ou recurso inexistente ou não autorizado.
 
-No `Light`, depois de concluir todas as validações e QA aplicáveis e incorporar as correções decorrentes, identifique os documentos canônicos potencialmente afetados pelo estado final e execute a triagem final de `docs/prompt-abc.md`; aplique somente os deltas emitidos e preserve `SEM ALTERAÇÕES NECESSÁRIAS` antes da entrega.
-
 ## 7. Complexa — controles preservados
 
 Subseções são checkpoints internos; nunca criam PRs ou merges intermediários.
@@ -225,6 +223,8 @@ Antes da entrega, confronte o contrato aprovado com o diff final.
 - remova alteração sem rastreabilidade ou justifique sua necessidade factual;
 - legado e parecer técnico não autorizam ampliação funcional, arquitetural ou de escopo;
 - se a melhor solução exigir decisão fora do contrato, devolva o ponto ao supervisor competente.
+
+No `Light`, depois das validações/QA, das correções decorrentes e deste gate de aderência, identifique os documentos canônicos potencialmente afetados pelo estado final e execute `$lp-factory-abc` com `ETAPA: consolidação final`; aplique somente os deltas emitidos e preserve `SEM ALTERAÇÕES NECESSÁRIAS` antes da entrega.
 
 ## 9. Entrega, merge e conclusão
 
