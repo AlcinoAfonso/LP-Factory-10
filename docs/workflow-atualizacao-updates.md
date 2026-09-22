@@ -20,7 +20,7 @@ Ao final de uma única execução:
 - cada ajuste real está em branch própria criada do mesmo SHA inicial de `main`, alterando somente o documento-alvo e sem mudança artificial quando não houver delta;
 - todos os IDs publicados continuam localizáveis no catálogo, sem renumeração, reutilização ou desaparecimento físico;
 - todo transversal ativo informa estado, ação pendente, prioridade, motivo da permanência, gatilho e critério de encerramento;
-- itens integralmente implementados e validados deixam a parte ativa e permanecem somente no histórico compacto; itens parciais permanecem ativos apenas pelo saldo;
+- itens integralmente implementados e validados deixam a parte ativa após a reconciliação documental competente pelo Prompt ABC e permanecem somente no histórico compacto; itens parciais permanecem ativos apenas pelo saldo;
 - nenhuma recomendação de implementação, dependente de recorte ou transversal, ultrapassa zero custo incremental nos planos vigentes; gratuidade não comprovada, upgrade ou cobrança adicional mantêm o recurso no radar;
 - ausências de ajuste, bloqueios e exceções foram registradas;
 - existe um relatório final curto que consolida o que foi feito, orienta a prioridade dos updates, reapresenta os recursos transversais ainda ativos e, quando houver ação transversal recomendada para o momento atual, pede autorização direta para criar o próximo Debate em `LP Factory/Debates`;
@@ -90,8 +90,8 @@ Fontes secundárias podem apoiar, mas não substituir a fonte oficial.
    - antes de qualquer recomendação de implementação, dependente de recorte ou transversal, confirmar zero custo incremental nos planos vigentes; se exigir upgrade ou cobrança adicional, ou se a gratuidade não estiver validada, manter o recurso atualizado no radar e não recomendar implementação;
    - nunca apagar um ID publicado; quando o item sair do catálogo ativo, manter registro histórico compacto com título original, estado final, evidências, recortes e eventual substituto;
    - manter item parcialmente implementado no catálogo ativo, com os recortes aplicados e o escopo ainda não implementado;
-   - retirar item do catálogo ativo somente após implementação integral e validação, rejeição formal ou superação comprovada, preservando o ID em registro histórico compacto com a evidência e as referências competentes;
-   - manter item com uso real sem registro no documento técnico competente como lacuna documental;
+   - retirar item do catálogo ativo somente após implementação integral, validação e reconciliação documental competente pelo Prompt ABC, ou após rejeição formal ou superação comprovada, preservando o ID em registro histórico compacto com a evidência e as referências competentes;
+   - manter item com uso real sem registro no documento técnico competente como lacuna documental; após confirmar a implementação transversal na `main`, executar o Prompt ABC sobre os documentos afetados e, se houver delta, abrir PR documental próprio para incorporá-lo antes de encerrar o item no catálogo; se não houver delta, registrar `SEM ALTERAÇÕES NECESSÁRIAS`. Esse PR é independente dos PRs da rodada, sem alterar outros documentos durante a catalogação;
    - adicionar somente recurso compatível com o `README.md`, com fonte oficial, valor concreto e horizonte plausível; recurso futuro ou condicional pode entrar sem autorizar implementação;
    - não rejeitar nem arquivar um recurso somente por estar fora do Starter ou do MVP atual;
    - arquivar como incompatível, duplicado, absorvido, deprecado, superado, sem valor concreto ou com custo ou risco desproporcional somente com evidência e preservação do registro;
