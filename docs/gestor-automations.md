@@ -76,6 +76,7 @@ A natureza da solução e o ambiente de execução são dimensões diferentes. T
 * Definir a participação humana aplicável: autorização de implementação ou ativação, gatilho humano, revisão do resultado ou aprovação por execução. Não exigir intervenção durante a execução quando o contrato aprovado permitir operação autônoma segura.
 * Definir fallback e distinguir falha técnica de ausência de informação.
 * A existência de recurso novo não autoriza implementação.
+* Antes de recomendar qualquer implementação, dependente de recorte ou transversal, confirmar zero custo incremental nos planos vigentes. Upgrade, cobrança adicional ou gratuidade não comprovada impedem `adotar agora` e qualquer patch de implementação; manter a capacidade apenas como condicional ou risco no radar.
 
 ### 3.1 Consulta focal à OpenAI
 
@@ -85,7 +86,7 @@ Quando houver hipótese concreta e material de uso da OpenAI, o Gestor deve cons
 * Selecionar no snapshot somente os itens relacionados ao problema e confirmar nas fontes oficiais específicas sua disponibilidade, status, superfície aplicável, limitações, requisitos e guardrails.
 * Não repetir a descoberta ampla do workflow de updates, não pesquisar novidades sem necessidade concreta e não transformar disponibilidade em autorização de adoção.
 * Quando faltar no snapshot uma capacidade indispensável ou houver sinal material de defasagem, registrar a lacuna e a investigação necessária; não ampliar silenciosamente a avaliação para uma varredura geral.
-* Confirmar impacto operacional e custo relevante somente quando materiais ao caso. Conteúdo financeiro não reside no snapshot.
+* Confirmar impacto operacional quando material ao caso. Para qualquer recomendação de implementação, confirmar obrigatoriamente o gate de zero custo incremental em fonte competente; conteúdo financeiro não reside no snapshot.
 * Para cada recurso materialmente relevante, decidir: adotar agora, rejeitar para o caso, não aplicável ou requer decisão adicional.
 * Quando o caso estiver sendo encerrado e não existir fase posterior real e registrada, não deixar recurso relevante para avaliação futura.
 * “Futuro” somente é válido quando houver fase posterior identificada e registrada para reabrir a decisão.
@@ -107,7 +108,7 @@ Cada parecer deve ser curto, decisório e declarar:
 * Ambiente principal e, quando aplicável, ambientes ou plataformas dependentes.
 * OpenAI: sim, não ou condicional.
 * Solução mínima recomendada e divisão entre processamento determinístico, IA e participação humana.
-* Benefício esperado, custo, complexidade, riscos, segurança, observabilidade, manutenção e fallback.
+* Benefício esperado, evidência de zero custo incremental quando houver implementação recomendada, custo, complexidade, riscos, segurança, observabilidade, manutenção e fallback.
 * Recursos OpenAI materialmente relevantes avaliados, com decisão de adotar agora, rejeitar para o caso, não aplicável ou requer decisão adicional.
 * Prompt de runtime, quando aplicável: templates consultados, resultado da verificação de conformidade, exceções ou pendências materiais e validação representativa; o parecer não precisa conter o prompt final salvo quando isso fizer parte explícita do escopo.
 * Veredito: `nenhuma automação aplicável`, `automação aplicável com patches autossuficientes`, `requer investigação factual` ou `requer validação material pelo Analista`.
