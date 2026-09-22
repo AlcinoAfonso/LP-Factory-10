@@ -15,6 +15,7 @@ Ao final de uma única execução:
 - cada alvo foi concluído da leitura ao relatório e ao draft PR ou à justificativa antes do início da análise do seguinte, sem processamento em lote ou paralelo;
 - a execução usa um único identificador `updates-AAAA-MM-DD-rNN`, presente nas branches e nos títulos dos draft PRs da rodada, sempre acompanhado pelo alvo que distingue cada PR;
 - cada draft PR da rodada mantém no corpo o marcador durável `<!-- updates-round:v1 id=<identificador> state=<open|completed> base=<sha-inicial> -->`; somente `state=open` identifica rodada interrompida e retomável, enquanto `state=completed` impede sua reutilização mesmo que os drafts permaneçam abertos;
+- quando a rodada completa não produzir nenhum draft PR, seu identificador é reservado por um tag anotado remoto `<identificador>-completed`, apontado para o SHA inicial e contendo estado, base, escopo, horário UTC e referência do relatório final, sem criar diff artificial;
 - drafts abertos de rodadas anteriores e do mesmo identificador foram detectados antes de qualquer publicação, e nenhum segundo draft foi criado para o mesmo alvo e rodada;
 - cada ajuste real está em branch própria criada do mesmo SHA inicial de `main`, alterando somente o documento-alvo e sem mudança artificial quando não houver delta;
 - todos os IDs publicados continuam localizáveis no catálogo, sem renumeração, reutilização ou desaparecimento físico;
@@ -64,7 +65,7 @@ Fontes secundárias podem apoiar, mas não substituir a fonte oficial.
    - congelar o SHA inicial de `main` e confirmar o `README.md` e os cinco alvos;
    - definir o prefixo `updates-AAAA-MM-DD` com a data da execução, listar em todos os estados os PRs e as referências remotas que contenham esse prefixo e extrair os números de rodada já usados;
    - antes de alocar novo número, ler o marcador durável no corpo de todos os PRs encontrados e identificar se existe exatamente uma rodada com `state=open` compatível com o mesmo SHA inicial e escopo; quando existir, reutilizar seu identificador e continuar seus drafts; `state=completed` nunca é retomável, e marcador ausente, malformado ou divergente entre PRs da mesma rodada constitui conflito a registrar sem criar nova rodada;
-   - somente quando não houver rodada aberta compatível, definir `updates-AAAA-MM-DD-rNN` com o primeiro `NN` de dois dígitos ainda não usado naquela data, incluindo rodadas fechadas ou mergeadas;
+   - somente quando não houver rodada aberta compatível, definir `updates-AAAA-MM-DD-rNN` com o primeiro `NN` de dois dígitos ainda não usado naquela data, incluindo rodadas fechadas, mergeadas ou reservadas por tag `<identificador>-completed`;
    - listar draft PRs abertos cujas branches ou títulos contenham um identificador `updates-AAAA-MM-DD-rNN`, registrar os pertencentes a rodadas anteriores e detectar os do identificador atual;
    - para o mesmo alvo e identificador, continuar o draft existente quando ele corresponder ao mesmo SHA inicial e escopo e seu marcador estiver em `state=open`; diante de divergência de base, escopo, autoria ou estado, registrar o conflito e não criar duplicata.
 2. Para cada um dos quatro catálogos, na ordem do item 2, concluir todo o ciclo antes de iniciar a análise do seguinte:
@@ -106,7 +107,10 @@ Fontes secundárias podem apoiar, mas não substituir a fonte oficial.
    - não registrar conteúdo financeiro nem converter disponibilidade, novidade ou capacidade em autorização de adoção;
    - quando houver mudança técnica material, usar branch `docs/<identificador>-openai`, alterar somente `docs/openai-model-snapshot.md`, validar o diff e abrir draft PR cujo título comece por `[<identificador>][openai]` e cujo corpo contenha o marcador durável da rodada em `state=open`;
    - quando não houver mudança material, registrar a justificativa sem atualizar data, regravar o snapshot ou criar PR artificial.
-5. Ao final, conferir a sequência executada, o identificador, a base comum, os arquivos alterados, a cobertura dos canais estratégicos e OpenAI, os IDs, os drafts anteriores detectados e o estado dos PRs. Depois da auditoria e da produção do relatório final, substituir o marcador de todos os draft PRs da rodada por `state=completed`, preservando identificador, base e restante do corpo, acrescentar a mesma referência de conclusão e o mesmo horário UTC em todos eles e reler os corpos publicados. Se qualquer PR permanecer em `state=open`, tiver marcador ausente ou divergir dos demais, informar o conflito e não declarar execução integralmente aderente.
+5. Ao final, conferir a sequência executada, o identificador, a base comum, os arquivos alterados, a cobertura dos canais estratégicos e OpenAI, os IDs, os drafts anteriores detectados e o estado dos PRs. Depois da auditoria e da produção do relatório final:
+   - quando houver draft PR, substituir o marcador de todos os drafts da rodada por `state=completed`, preservando identificador, base e restante do corpo, acrescentar a mesma referência de conclusão e o mesmo horário UTC em todos eles e reler os corpos publicados;
+   - quando nenhum draft PR tiver sido criado, confirmar que `<identificador>-completed` ainda não existe, criar um tag anotado com esse nome apontado exatamente para o SHA inicial, registrar na mensagem `updates-round:v1`, `id`, `state=completed`, `base`, `scope`, `completed_at` em UTC e `report`, publicar somente esse tag e relê-lo no remoto;
+   - se qualquer PR permanecer em `state=open`, tiver marcador ausente ou divergir dos demais, ou se o tag esperado estiver ausente ou apontar para outro SHA, informar o conflito e não declarar execução integralmente aderente.
 
 ## 5. Relatório obrigatório
 
@@ -162,7 +166,7 @@ Os itens 1 a 10 compõem o relatório de cada catálogo. O item 11 é produzido 
    - confirmar o gate de zero custo incremental para cada recomendação transversal.
 11. Fechamento consolidado da execução:
    - informar o identificador da rodada e o SHA inicial comum;
-   - informar o estado final persistido da rodada, o horário UTC e a referência de conclusão gravados nos corpos de todos os draft PRs, ou justificar que nenhum draft foi criado;
+   - informar o estado final persistido da rodada, o horário UTC e a referência de conclusão gravados nos corpos de todos os draft PRs ou, quando nenhum draft existir, no tag anotado remoto `<identificador>-completed`;
    - listar drafts anteriores detectados e confirmar que não foi criado segundo draft para o mesmo alvo e rodada;
    - entregar um resumo curto do que foi feito, com catálogos analisados, alterações, draft PRs ou justificativas, bloqueios, lacunas e conclusão geral;
    - resumir a cobertura OpenAI, as fontes oficiais consultadas, as capacidades técnicas alteradas ou a justificativa de ausência de delta no snapshot;
