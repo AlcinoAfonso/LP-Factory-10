@@ -99,7 +99,7 @@ No Light:
 - não use gates de implementação específicos da Complexa;
 - não refaça na task principal a avaliação devolvida por Updates ou pelo Analista.
 
-Se investigação, fontes ou Updates demonstrarem necessidade real de derivação estrutural especializada, detalhamento técnico material de automação ou outra coordenação especializada para tornar a solução executável, devolva somente essa incompatibilidade ao supervisor competente; não transforme o Light em uma Complexa parcial.
+Se investigação, fontes ou Updates demonstrarem necessidade real de derivação estrutural especializada, detalhamento técnico material de automação ou outra coordenação especializada para tornar a solução executável, ou se implementação, validação ou review demonstrarem crescimento estrutural material não previsto na V2 Light ou correções sucessivas ampliarem a solução em vez de convergir, suspenda somente o ponto afetado e devolva a incompatibilidade ao supervisor competente para simplificação ou reclassificação; não amplie a V2, não acione especialistas diretamente nem transforme o Light em uma Complexa parcial.
 
 ### 3.3 Consolidar V2 mínima
 
