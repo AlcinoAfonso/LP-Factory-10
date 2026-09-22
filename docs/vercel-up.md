@@ -726,18 +726,18 @@ Catalogado em 2026-09-05
 
 ---
 
-## 33 — Retenção reduzida de deployments no plano Hobby *(🟦 Mudança operacional; absorção documental pendente)*
+## 33 — Retenção reduzida de deployments no plano Hobby *(⚪ Registro histórico — incorporado pela E24.2)*
 
 2026-09-16
 Catalogado em 2026-09-22
 
 ### Status no Projeto
 
-- Status: regra da plataforma aplicável ao projeto Core no plano Hobby; absorção no documento técnico competente ainda pendente.
-- Evidência: `docs/platform-config.md` registra o Core `lp-factory-10` na Vercel, e a rodada anterior confirmou o plano Hobby; o projeto usa Previews para QA, mas não possui regra explícita sobre a nova retenção reduzida.
+- Status: regra da plataforma incorporada pela E24.2 à política de evidências e à configuração operacional competente.
+- Evidência: Preview e deployment histórico ficaram classificados como evidência suplementar e expirável; PR, commit, roadmap e documentos canônicos competentes preservam a prova durável sem storage paralelo.
 - Natureza de uso: governança transversal de deployments e evidências temporárias.
 - Relação com a stack: mudança operacional da hospedagem vigente; não altera runtime, código ou processo de deploy por si só.
-- Horizonte: Starter, para o próximo ajuste documental da política de evidências ou quando um Preview antigo precisar ser consultado.
+- Horizonte: incorporado pela E24.2.
 
 ### Descrição
 
@@ -749,11 +749,11 @@ No plano Hobby, a Vercel passou a preservar, além do deployment de produção a
 - Reforça que PR, diff, commit e documentos canônicos devem preservar a prova necessária após o QA.
 - Reduz surpresa operacional quando um Preview antigo deixar de estar disponível.
 
-### Aplicação recomendada
+### Aplicação concluída
 
-1. Absorver no documento técnico competente que Preview e deployment histórico são evidências suplementares e expirais.
-2. Manter no PR ou documento canônico o resultado necessário para provar o encerramento do recorte.
-3. Não preservar deployments por rotina nem contratar plano superior somente por causa desta mudança.
+1. A política técnica passou a tratar Preview e deployment histórico como evidências suplementares e expiráveis.
+2. A configuração operacional registra a retenção Hobby vigente e exige reconfirmação quando uma janela específica for material.
+3. Nenhum plano, deployment, alias, configuração, retenção ou storage foi alterado; não foi criado armazenamento paralelo.
 
 ### Dependências, riscos e limite
 
@@ -764,7 +764,7 @@ No plano Hobby, a Vercel passou a preservar, além do deployment de produção a
 
 ### Critério de encerramento
 
-- A natureza expirável dos Previews estiver registrada no documento técnico competente e aplicada aos próximos recortes; depois, preservar o ID como histórico compacto.
+- Encerrado pela E24.2: a natureza expirável dos Previews foi incorporada aos documentos competentes, e o ID permanece como registro histórico.
 
 ### Fonte Oficial
 

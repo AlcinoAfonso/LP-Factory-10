@@ -2,8 +2,8 @@
 
 0.1 Cabeçalho
 • Documento: LP Factory 10 — Platform Config
-• Versão: v0.1.48
-• Data: 14/09/2026
+• Versão: v0.1.49
+• Data: 22/09/2026
 
 0.2 Contrato do documento
 • O QUE É: snapshot operacional e fonte única das configurações de plataformas externas do LP Factory 10, refletindo o estado conhecido/cadastrado nas plataformas conforme indicado.
@@ -105,6 +105,9 @@
 • Deploy automático via Git: o `vercel.json` da raiz desabilita somente branches abrangidas pelo padrão minimatch `docs/**`; branches não abrangidas preservam o default `true`, incluindo Preview de implementação e Production da `main`.
 • Domínio oficial atual do app em produção: `https://lp-factory-10.vercel.app`
 • Base URL das API routes do app: `https://lp-factory-10.vercel.app/api`
+• Plano operacional confirmado: Hobby.
+• Retenção vigente no Hobby: além do deployment de produção atual e das demais exceções da plataforma, permanecem os três deployments de produção mais recentes e os três deployments mais recentes de qualquer tipo; Previews não possuem proteção própria.
+• Preview e deployment histórico são evidências suplementares e expiráveis. Não preservar deployment por rotina, contratar upgrade ou criar storage paralelo para evidências; reconfirmar as exceções vigentes quando uma retenção específica for material.
 
 3.2 Projeto de serviços
 • Projeto Vercel: `lpf-10-services`
@@ -348,6 +351,15 @@
 • Configuração aprovada: privado, limite de 5 MB e MIME permitido somente `image/webp`.
 • Acesso do produto: não há consumidor runtime; nenhuma policy direta para anon ou authenticated foi alterada.
 • Limpeza do bucket ou de objetos depende de recorte destrutivo próprio.
+
+4.9 Health Check Advisors
+• Projeto alvo: `LP-Factory-10`.
+• Acesso manual: Supabase Studio → Advisors → Health.
+• Procedimento: executar o refresh manual e registrar data/hora e os estados de Data API/PostgREST, Auth, Storage e Edge Functions.
+• Semântica: resultado vazio significa verificações executadas sem achados; `advisor_check_unavailable` significa verificação indisponível e nunca estado saudável.
+• Uso: achado é sinal de investigação a correlacionar com horário, release, logs seguros e comportamento observado; não prova causa nem autoriza correção.
+• Baseline observado em 22/09/2026 19:31, America/Sao_Paulo: `0 errors`, `0 warnings` e `0 suggestions`, sem `advisor_check_unavailable`.
+• Limite: leitura manual somente; não criar token, chamar Management API, executar SQL ou correção, nem criar monitor, job, agente ou automação sem recorte futuro aprovado.
 
 5. Resend
 

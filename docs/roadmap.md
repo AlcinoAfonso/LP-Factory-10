@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 22/09/2026
-• Versão: v1.5.239
+• Versão: v1.5.240
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2760,7 +2760,7 @@
 
 24. E24 — Governança e compatibilidade transversal de updates
 - Objetivo: tornar o ciclo semanal de updates rastreável, economicamente delimitado e coerente entre fornecedores, preservando ações operacionais em recortes independentes.
-- Status: E24.1 implementada e validada no repositório; entrega técnica sob supervisão Autônoma.
+- Status: E24.1 concluída; E24.2 implementada e validada no repositório, com entrega técnica sob supervisão Autônoma.
 
 24.1 Governança e cobertura do workflow de updates
 
@@ -2799,3 +2799,39 @@
 - Inspeções estáticas aprovaram os contratos de rodada, ciclo de vida, gate econômico, cobertura OpenAI e divisão de responsabilidades.
 - Os dois contratos TOML permanecem sintaticamente válidos, sem mudança de modelo, reasoning effort ou sandbox dos custom agents.
 - O snapshot não mantém conteúdo financeiro e preserva as capacidades técnicas exigidas; nenhum draft aberto de rodada `updates-*` ou PR concorrente da E24.1 foi encontrado.
+
+24.2 Compatibilidade operacional e evidências temporárias
+
+24.2.1 Objetivo e status
+- Objetivo: validar a compatibilidade operacional com Ubuntu 26.04, incorporar a retenção reduzida dos deployments Hobby à política de evidências e estabelecer a leitura manual dos Health Check Advisors, sempre sem custo incremental.
+- Status: implementada e validada no repositório, sem alteração permanente de workflow, runner, runtime, banco, dependência, deployment, plano, configuração ou infraestrutura.
+
+24.2.2 Registros do recorte
+- Updates:
+  - Aplicados:
+    - `github#15`
+    - `vercel#33`
+    - `supa#71`
+- Referências:
+  - Plano-base V1 e V2 Light: `docs/lousa-plano-base-e24-2.md` — seções 1 a 6.
+  - Política técnica de evidências expiráveis: `docs/base-tecnica.md` — seção 3.4.
+  - Retenção Vercel Hobby e procedimento Supabase: `docs/platform-config.md` — seções 3.1 e 4.9.
+
+24.2.3 Compatibilidade representativa no Ubuntu 26.04
+- O run `35792488457`, job `106964020544`, aprovou na imagem hospedada `ubuntu-26.04` as classes dependentes do runner presentes nos cinco workflows: Bash/grep, checkout, Node 20 nas duas automações, Node 22 com instalação, checks e build do Core, e Supabase CLI `2.106.0`.
+- A prova não usou secrets nem executou OpenAI, acesso Supabase remoto, migrations, criação de PR, commit, push, alteração de dependências ou armazenamento adicional.
+- O harness foi efêmero e não permanece no diff final; `ubuntu-latest` foi preservado sem pin preventivo.
+
+24.2.4 Evidências temporárias da Vercel
+- Preview e deployment histórico são evidências operacionais suplementares e expiráveis; nenhum encerramento depende exclusivamente de sua disponibilidade.
+- A prova durável permanece no PR, no commit, no roadmap e nos documentos canônicos competentes, sem storage paralelo, proteção rotineira de deployment ou upgrade de plano.
+
+24.2.5 Leitura manual dos Health Check Advisors
+- O procedimento vigente usa somente Supabase Studio → Advisors → Health, com refresh manual e registro dos estados de Data API/PostgREST, Auth, Storage e Edge Functions.
+- A baseline de 22/09/2026 19:31, America/Sao_Paulo, apresentou `0 errors`, `0 warnings` e `0 suggestions`, sem `advisor_check_unavailable`.
+- Resultado vazio significa verificações executadas sem achados; indisponibilidade não equivale a saúde, e qualquer achado permanece sinal de investigação sem correção automática.
+
+24.2.6 Ciclo de vida dos itens da rodada
+- `github#15`, `vercel#33` e `supa#71` foram encerrados como registros históricos após a comprovação dos respectivos critérios.
+- `vercel#21` permaneceu fora do recorte por criar storage paralelo, e `supa#70` permaneceu futuro e condicionado à recorrência e superioridade comprovadas.
+- Nenhum recurso com custo incremental foi contratado, ativado ou consumido.
