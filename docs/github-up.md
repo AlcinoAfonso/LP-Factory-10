@@ -247,21 +247,25 @@ O Dependabot passou a aguardar por padrão três dias após a publicação de um
 
 ---
 
-## github#10 — Workflow execution protections por ator e evento *(🧪 Public preview; adoção condicional)*
+## github#10 — Workflow execution protections por ator, evento e workflow *(🟩 GA; adoção transversal condicional)*
 
 2026-06-18
-Verificado em 2026-07-22
+Atualizado em 2026-09-22
 
 ### Status no Projeto
 
-- Status: Não implementado — disponibilidade e configuração pendentes de validação.
+- Status: não implementado; o recurso está geralmente disponível, mas a configuração efetiva e a adequação ao repositório permanecem pendentes de validação.
 - Evidência: o repositório possui workflows acionados por `pull_request` e `workflow_dispatch`, incluindo `pipeline-docs-apply-report.yml` com permissões de escrita; não há registro de Actions policy ou workflow execution protection configurada.
+- Natureza de uso: segurança e governança transversal do CI.
+- Horizonte: Starter, quando houver revisão aprovada das políticas do Actions ou antes de ampliar workflows com escrita/secrets.
 
 ### Descrição
 
-As workflow execution protections permitem criar uma allow list para controlar quais atores podem iniciar GitHub Actions e quais eventos podem disparar workflows. As primeiras regras cobrem atores — usuários, papéis, GitHub Apps, Copilot e Dependabot — e eventos como `push`, `pull_request`, `pull_request_target` e `workflow_dispatch`.
+As workflow execution protections permitem criar uma allow list para controlar quais atores podem iniciar GitHub Actions e quais eventos podem disparar workflows. As regras cobrem atores — usuários, papéis, GitHub Apps, Copilot e Dependabot — e eventos como `push`, `pull_request`, `pull_request_target` e `workflow_dispatch`.
 
-O recurso usa a estrutura de rulesets e oferece modo de avaliação antes da aplicação obrigatória.
+Na disponibilidade geral de 17/09/2026, o GitHub acrescentou escopo por arquivo de workflow, Insights e REST API. O modo de avaliação continua permitindo observar o efeito antes de bloquear runs.
+
+Para repositórios públicos sem policy aplicável, o GitHub também iniciou uma regra padrão em modo de avaliação para desabilitar `pull_request_target`, com enforcement previsto para 02/11/2026. O LP Factory 10 não possui esse trigger no estado atual, portanto a mudança padrão não exige alteração de workflow.
 
 ### Valor para o Projeto
 
@@ -276,8 +280,8 @@ O recurso usa a estrutura de rulesets e oferece modo de avaliação antes da apl
 
 ### Limites
 
-- Recurso em public preview e sujeito a mudanças.
-- A disponibilidade depende do nível de configuração, do plano e da visibilidade do repositório; deve ser confirmada novamente se o repositório se tornar privado.
+- A disponibilidade geral não prova que uma policy específica esteja configurada nem que toda combinação de plano/escopo ofereça a mesma administração.
+- O estado ao vivo das policies e dos Insights não foi lido nesta rodada.
 - Não bloquear eventos ou atores antes de testar em modo de avaliação e mapear os workflows legítimos.
 - O registro não autoriza criar ruleset, alterar workflow, permissões, secrets ou plano do GitHub.
 
@@ -285,21 +289,22 @@ O recurso usa a estrutura de rulesets e oferece modo de avaliação antes da apl
 
 Avaliar configuração somente quando:
 
-1. a opção estiver disponível na conta e no repositório;
+1. a opção e o escopo pretendido estiverem confirmados na conta e no repositório;
 2. os eventos e atores legítimos estiverem inventariados;
 3. o efeito sobre PRs humanos, PRs de bot, Dependabot e `workflow_dispatch` estiver documentado;
 4. houver modo de avaliação ou teste reversível antes da aplicação obrigatória.
 
 ### Ações Recomendadas
 
-1. Verificar a disponibilidade em Settings → Actions → Policies.
-2. Se disponível, mapear primeiro atores e eventos atuais sem alterar o comportamento.
+1. Verificar o estado efetivo em Settings → Actions → Policies.
+2. Mapear primeiro atores, eventos e workflows atuais sem alterar o comportamento.
 3. Usar modo de avaliação antes de qualquer bloqueio.
-4. Revalidar plano e disponibilidade após eventual mudança do repositório para privado.
+4. Não criar exceção para `pull_request_target`; o projeto não usa esse evento e o default seguro deve permanecer.
 
 ### Fontes Oficiais
 
 - [GitHub Changelog — Control who and what triggers GitHub Actions workflows](https://github.blog/changelog/2026-06-18-control-who-and-what-triggers-github-actions-workflows/)
+- [GitHub Changelog — Workflow execution protections in GitHub Actions generally available](https://github.blog/changelog/2026-09-17-workflow-execution-protections-in-github-actions-generally-available/)
 - [GitHub Docs — About Actions policies](https://docs.github.com/en/enterprise-cloud@latest/admin/enforcing-policies/enforcing-policies-for-your-enterprise/actions-policies/about-actions-policies)
 
 ## github#11 — Aprovação de workflows potencialmente maliciosos *(🟩 Proteção automática em repositórios públicos)*
@@ -487,6 +492,53 @@ A E23.3 confirmou que nenhuma evidência bruta inventariada precisa sobreviver a
 
 ---
 
+## github#15 — Migração de `ubuntu-latest` para Ubuntu 26.04 *(🟨 Mudança agendada; validação transversal pendente)*
+
+2026-09-17
+Catalogado em 2026-09-22
+
+### Status no Projeto
+
+- Status: impacto potencial confirmado; validação ainda não executada.
+- Evidência: os cinco workflows vigentes usam `runs-on: ubuntu-latest`; o GitHub migrará esse label de Ubuntu 24.04 para 26.04 gradualmente entre 19/10/2026 e 19/11/2026.
+- Natureza de uso: compatibilidade transversal do CI e das automações.
+- Relação com a stack: mudança no runner hospedado existente, sem nova infraestrutura; pode afetar ferramentas ou versões preinstaladas usadas implicitamente.
+- Horizonte: Starter, com validação antes de 19/10/2026.
+
+### Descrição
+
+O runner Ubuntu 26.04 está geralmente disponível em x64 e arm64. Durante a janela oficial de migração, workflows com `ubuntu-latest` passarão automaticamente de Ubuntu 24.04 para 26.04. A nova imagem atualiza e remove ferramentas e versões preinstaladas, podendo quebrar jobs que dependam implicitamente do ambiente.
+
+### Valor para o Projeto
+
+- Permite detectar incompatibilidade antes que o label móvel altere os cinco workflows em produção.
+- Evita pin preventivo permanente sem evidência e preserva a opção de continuar recebendo a imagem suportada mais recente.
+- Concentra a decisão em um teste compatível com os jobs reais, sem redesenhar Actions.
+
+### Ação e gatilho
+
+1. Antes de 19/10/2026, executar os cinco workflows ou uma matriz representativa com `ubuntu-26.04` em recorte técnico próprio.
+2. Se todos passarem, manter `ubuntu-latest` e registrar a validação.
+3. Se houver incompatibilidade que não possa ser corrigida com segurança antes da migração, pin temporariamente `ubuntu-24.04`, com prazo e critério de remoção.
+4. Não alterar runners apenas por antecipação sem reproduzir os jobs relevantes.
+
+### Dependências, riscos e limite
+
+- O teste pode consumir Actions e alcançar secrets conforme o workflow; deve respeitar eventos, ambientes e permissões atuais.
+- Aprovação local de `npm ci` ou scripts não substitui jobs que dependem da imagem hospedada.
+- Pin temporário reduz surpresa, mas transfere a migração e precisa de data de saída.
+- Não alterar workflow, runner, secret, permissão ou configuração nesta rodada.
+
+### Critério de encerramento
+
+- Os cinco workflows ou cobertura representativa aprovada concluíram no Ubuntu 26.04, ou existe pin temporário documentado com correção e data de remoção; depois, preservar o ID como histórico compacto.
+
+### Fonte Oficial
+
+- [GitHub Changelog — Ubuntu 26 generally available and latest migration](https://github.blog/changelog/2026-09-17-ubuntu-26-generally-available-and-latest-migration/)
+
+---
+
 ## Registro da rodada — GitHub Update — 10/08/2026
 
 ### Updates ajustados ou incorporados
@@ -559,3 +611,49 @@ A E23.3 confirmou que nenhuma evidência bruta inventariada precisa sobreviver a
 - A busca por referências explícitas e implementação semântica precedeu a classificação; nenhum item foi arquivado nesta rodada.
 - Nenhum workflow, setting, secret, regra, app, dependência, artefato ou infraestrutura foi criado ou alterado.
 - O catálogo registra a avaliação; não autoriza exportação, mudança de retenção, implementação, contratação ou merge.
+
+---
+
+## Registro da rodada — GitHub Update — 22/09/2026
+
+### Updates ajustados ou incorporados
+
+- `github#10` foi atualizado de public preview para disponibilidade geral, incorporando escopo por arquivo de workflow, Insights, REST API e o default seguro futuro para `pull_request_target` em repositórios públicos.
+- `github#15` foi adicionado para registrar a migração agendada de `ubuntu-latest` para Ubuntu 26.04 e a validação necessária antes de 19/10/2026.
+
+### Updates avaliados e não adicionados
+
+- `cache-mode`: geralmente disponível e útil contra cache poisoning, mas nenhum dos cinco workflows usa `actions/cache`, cache declarado em `setup-node` ou outro consumidor explícito do cache do Actions; os defaults seguros permanecem suficientes no estado atual.
+- Regra de ruleset que bloqueia merge com secret scanning alert: requer GitHub Secret Protection ou Advanced Security, está em public preview e não substitui a push protection já coberta por `github#13`; disponibilidade efetiva e caso adicional não foram validados.
+- Stage-only npm tokens, trusted publishing e acesso do Dependabot a registries hospedados: o projeto não publica pacote npm nem consome registry privado em Dependabot.
+- CodeQL, AI Scan, Code Quality e configurações Advanced Security: o workflow vigente executa checks próprios e não há licença ou recorte aprovado que demonstre ganho líquido.
+- Atualizações de Copilot, modelos, review e métricas: permanecem sem consumidor e absorvidas pelos gates de `github#5` e `github#8`.
+- Página renovada de PRs, exports Enterprise e demais mudanças administrativas não alteram o fluxo ou o plano atuais.
+- Nenhum recurso foi rejeitado apenas por estar fora do Starter ou do MVP.
+
+### Cobertura estratégica desta atualização
+
+- Actions, runners, workflows, caches, rulesets, PRs, Dependabot, secret scanning, code scanning, supply chain, Copilot e governança foram pesquisados nas fontes oficiais GitHub.
+- Landing pages, Instagram, WhatsApp e e-mail foram confrontados com as novidades aplicáveis; nenhuma mudança do período alterou diretamente os quatro canais.
+- Os impactos materiais são transversais ao CI e à segurança operacional, não capacidades de produto.
+
+### IDs preservados por rastreabilidade
+
+- Todos os IDs publicados de `github#4` a `github#14`, inclusive registros históricos, permanecem localizáveis e sem renumeração ou reutilização.
+- `github#15` foi atribuído acima do maior ID histórico anterior.
+
+### Pontos não validados e lacunas documentais
+
+- `github#10`: o estado ao vivo de Actions policies e Insights não foi inspecionado.
+- `github#15`: compatibilidade real dos cinco workflows com Ubuntu 26.04 ainda não foi testada.
+- A disponibilidade da regra paga de resolução de secret scanning em PR não foi confirmada no repositório.
+
+### Validação de IDs e rastreabilidade
+
+- Antes do ajuste e da adição, foram buscados `github#10`, todos os `runs-on`, `ubuntu-latest`, caches, `pull_request_target`, permissions, secrets, E23 e artefatos relacionados em documentos, workflows, código e histórico.
+- Nenhum item foi arquivado ou superado nesta rodada; `github#14` permanece histórico e concluído pela E23.3.
+- O catálogo foi concluído antes do início do ciclo Produto e permanece aderente ao `README.md`; novidade ou distância do MVP não determinaram isoladamente a decisão.
+
+### Limite da rodada
+
+- Nenhum workflow, runner, setting, ruleset, cache, secret, permissão, app, dependência ou infraestrutura foi criado ou alterado; a catalogação não autoriza implementação nem merge.
