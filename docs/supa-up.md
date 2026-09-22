@@ -2051,6 +2051,67 @@ Avaliar somente quando houver:
 
 ---
 
+## 71 — Health Check Advisors para taxas de erro dos serviços *(🟦 Disponível; adoção transversal simples)*
+
+2026-09-18
+Catalogado em 2026-09-22
+
+### Status no Projeto
+
+- Status: disponível na plataforma; consulta e rotina operacional ainda não validadas no projeto.
+- Evidência: o repositório não contém consumidor da Management API de Advisors nem registro de leitura do novo painel Health; o `pipeline-supabase-inspect` consulta o banco por conexão read-only e não consome esses sinais de serviço.
+- Natureza de uso: observabilidade operacional transversal, inicialmente manual e sem IA.
+- Relação com a stack: complementar a `supa#5`, `supa#33` e `supa#46`; fornece sinais nativos que podem alimentar futuramente o `supa#70`, mas não exige agente, MCP, Log Drain ou infraestrutura própria.
+- Horizonte: Starter, antes do go-live com tráfego real ou no primeiro incidente que exija separar falha da aplicação de falha em serviço Supabase.
+
+### Descrição
+
+O Supabase Advisors passou a incluir uma área Health com verificações de taxa elevada de erros em quatro serviços: Data API/PostgREST, Auth, Storage e Edge Functions. O resultado vazio significa que as verificações foram executadas sem achados; `advisor_check_unavailable` distingue uma verificação indisponível de um estado saudável.
+
+Os resultados podem ser vistos no Studio ou obtidos pela Management API. A primeira versão cobre taxas de erro; probes de conectividade do banco e saúde da instância permanecem anunciados apenas como evolução futura.
+
+### Valor para o Projeto
+
+- Oferece triagem inicial simples para localizar em qual serviço ocorreu uma elevação de erros.
+- Reduz a necessidade de criar consulta, dashboard ou agente próprio antes de existir volume operacional que justifique automação.
+- Pode melhorar diagnóstico de Auth e Data API nas jornadas críticas sem registrar payloads, prompts ou dados pessoais.
+- Cria uma fonte nativa e estruturada para eventual monitor read-only de `supa#70`, se o gatilho daquele item ocorrer.
+
+### Gatilho e aplicação
+
+1. Antes do primeiro go-live com tráfego real, confirmar manualmente a presença do painel Advisors → Health e estabelecer uma leitura de referência.
+2. Em incidente de API, Auth, Storage ou Edge Functions, consultar o sinal antes de propor instrumentação adicional.
+3. Só avaliar consumo programático quando a leitura manual se tornar recorrente, houver responsável e os limiares produzirem ação útil.
+4. Tratar resultado como sinal de investigação, não como causa provada nem autorização de correção.
+
+### Dependências, riscos e limites
+
+- Taxa elevada é um sinal amplo; exige correlação com horário, release, logs seguros e comportamento observado.
+- A ausência de achado não substitui checks da aplicação, banco, dependências externas ou experiência do usuário.
+- A Management API exige credencial e tratamento seguro; não criar token, rota, job ou automação nesta rodada.
+- Não confundir `advisor_check_unavailable` com estado saudável.
+- Não executar correção automática, alterar configuração ou ampliar coleta de dados por causa deste registro.
+
+### Ações Recomendadas
+
+1. Adotar primeiro a leitura manual do painel quando o gatilho ocorrer.
+2. Manter automação e agente condicionados à prova de recorrência e superioridade exigida em `supa#70`.
+3. Reavaliar o item quando o Supabase disponibilizar probes adicionais oficialmente ou quando houver uso operacional real.
+
+### Fonte Oficial
+
+- [Supabase Changelog — Health Check Advisors](https://supabase.com/changelog/health-check-advisors)
+
+### Registro (Tipo C — Observabilidade transversal)
+
+- Status: PENDENTE
+- Verificado em: 2026-09-22
+- Ambiente futuro: Supabase Studio; Management API somente se houver recorte aprovado
+- Evidência: fonte oficial e busca semântica no repositório no SHA inicial `94df808289ee2c26f171aaf15a67441dae8d3438`.
+- Observação: o registro não autoriza integração, automação, agente nem alteração de plataforma.
+
+---
+
 ## Registro da rodada — Supabase Update August 2026 — 10/08/2026
 
 ### Updates ajustados ou incorporados
@@ -2187,3 +2248,44 @@ Avaliar somente quando houver:
 - Nenhuma configuração do projeto Supabase nem runtime foi alterada.
 - O catálogo recomenda avaliação futura; não autoriza implementação, agendamento, contratação ou mudança de stack.
 
+---
+
+## Registro da rodada — Supabase Update September 2026 — 22/09/2026
+
+### Updates ajustados ou incorporados
+
+- `supa#71` foi adicionado para registrar os Health Check Advisors nativos, priorizando leitura manual e triagem simples antes de qualquer monitor por agente.
+- `supa#70` permanece ativo e condicionado; a nova capacidade fornece uma fonte oficial adicional, mas não demonstra necessidade de agente, agendamento ou substituição do `pipeline-supabase-inspect`.
+
+### Updates avaliados e não adicionados nesta atualização
+
+- A publicação oficial “Observability on Auto-Pilot” de 13/09/2026 confirma `query_logs`, skills e os quatro papéis de monitor já cobertos por `supa#70`; não cria capacidade separada nem altera seu gatilho.
+- A remoção do endpoint Management API `logs.all`, prevista para 23/09/2026, não atinge o projeto: não foi localizado consumidor desse endpoint no código, workflows ou automações.
+- A mudança de localização de Read Replicas no Dashboard não altera `supa#50`, pois o projeto não usa réplica e a capacidade técnica permanece a mesma.
+- Nenhum recurso foi excluído somente por estar fora do Starter ou do MVP.
+
+### Cobertura estratégica desta atualização
+
+- Banco, Auth, Storage e Edge Functions: changelog e documentação oficiais Supabase; o novo impacto material foi registrado em `supa#71`.
+- IA, agentes e automações controladas: a publicação de 13/09 foi confrontada com `supa#59` e `supa#70`; permaneceu absorvida por esses itens.
+- Landing pages, dashboard, WhatsApp, Instagram e e-mail: nenhuma publicação Supabase posterior a 05/09 criou capacidade de canal nova ou alterou os recortes existentes.
+
+### IDs preservados por rastreabilidade
+
+- Todos os IDs publicados de `supa#2` a `supa#70`, inclusive registros históricos e intervalos não utilizados, permanecem sem renumeração, reutilização ou desaparecimento.
+- `supa#71` foi atribuído acima do maior ID histórico anterior.
+
+### Pontos não validados e lacunas documentais
+
+- `supa#71`: a presença do painel no projeto, resultados atuais, cache da Management API e utilidade operacional ainda não foram inspecionados em ambiente autenticado.
+- `supa#70`: continua sem baseline de falsos positivos, custo por execução, autorização de agendamento ou prova de superioridade sobre a inspeção atual.
+
+### Validação de IDs e rastreabilidade
+
+- Antes da adição, foram buscados `supa#5`, `supa#33`, `supa#46`, `supa#59`, `supa#70`, Advisors, Health, `query_logs`, `get_advisors`, taxas de erro e os artefatos relacionados em documentos, código, workflows e histórico.
+- Nenhum item foi arquivado, absorvido ou superado nesta rodada; portanto, não houve retirada do catálogo ativo.
+- O catálogo foi concluído antes do início do ciclo Vercel e permanece aderente ao `README.md`; novidade ou distância do MVP não determinaram isoladamente a decisão.
+
+### Limite da rodada
+
+- Nenhuma configuração, credencial, API, MCP, agente, automação, service, SQL, dependency, migration, plano ou ambiente foi alterado; a catalogação não autoriza implementação.
