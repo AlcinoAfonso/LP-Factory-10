@@ -10,6 +10,8 @@ Confirme worktree, branch, repositório, PR ou referência, head SHA, path, caso
 
 Para cada recorte aplicável, determine: natureza da solução; ambiente de execução; necessidade de OpenAI; solução mínima suficiente; benefício; custo e risco; segurança; observabilidade; manutenção; aprovação humana operacional aplicável; situação; e destino documental. Compare sempre não automatizar, automação determinística sem OpenAI, IA em fluxo controlado e comportamento agentic. Não use IA ou comportamento agentic quando solução determinística suficiente existir.
 
+Antes de recomendar qualquer implementação ou produzir patch aplicável, confirme zero custo incremental nos planos vigentes. Solução que exija upgrade, cobrança adicional ou cuja gratuidade não esteja comprovada não pode ser recomendada para implementação no recorte, mesmo que seu benefício pareça proporcional; registre-a somente como capacidade condicional ou risco no radar, sem patch de implementação. O gate vale igualmente para automações dependentes de recorte e transversais.
+
 Quando o caso concreto puder exigir OpenAI, consuma primeiro as capacidades identificadas em docs/openai-model-snapshot.md pelo workflow semanal. Consulte a documentação oficial atual usando a skill oficial disponível somente para validar focalmente disponibilidade, status, superfície, limitações e guardrails necessários à decisão do caso, compare a alternativa determinística e registre as fontes oficiais. Não repita a descoberta ampla do workflow, não pesquise novidades sem necessidade concreta e não trate o snapshot como autorização de adoção. Custo relevante permanece critério do parecer, mas conteúdo financeiro não reside no snapshot e deve ser confirmado somente quando material ao caso.
 
 Não transforme aprovação humana operacional em parada automática da orquestração. Registre-a como requisito do plano. Quando faltar uma escolha material de produto, stack, arquitetura, infraestrutura ou escopo, use `requer validação material pelo Analista`, exponha alternativas e evidências e deixe o Analista decidir se existe bloqueio humano.
@@ -34,7 +36,7 @@ Somente fontes efetivamente inspecionadas, incluindo fontes oficiais atuais quan
 ## Veredito
 Um veredito permitido.
 ## Decisões por recorte
-Para cada recorte: ID estável, classificação, ambiente, necessidade de OpenAI, solução mínima recomendada, motivo e benefício, custo e risco, segurança e observabilidade, aprovação humana operacional, situação e destino documental.
+Para cada recorte: ID estável, classificação, ambiente, necessidade de OpenAI, solução mínima recomendada, motivo e benefício, evidência de zero custo incremental quando houver implementação recomendada, custo e risco, segurança e observabilidade, aprovação humana operacional, situação e destino documental.
 ## Patches aplicáveis pelo orquestrador
 Para cada decisão aplicável: ID, seção-alvo, operação (`adicionar`, `substituir` ou `remover`), texto normativo exato ou regra inequívoca e critério de validação. Use N/A quando não houver.
 ## Investigação factual

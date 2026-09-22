@@ -12,7 +12,9 @@ A v1 define o resultado funcional, não congela tecnologia. Um update pode propo
 
 Liste como preliminarmente elegíveis somente updates relacionados ao recorte. Para cada um, registre relação com a stack e a arquitetura (`complementar`, `sobreposto`, `substituto` ou `incompatível`), horizonte (`atual`, `futuro` ou `condicional`) e um destino: `aplicar agora`, `usar como referência, validação ou trava`, `preservar como oportunidade estratégica condicional` ou `não aplicável ao recorte`.
 
-Para cada `aplicar agora`, compare explicitamente `solução sem update` × `solução com update` e registre: ganho esperado; qualidade, latência, custo, segurança, confiabilidade, manutenção, código próprio, componentes, maturidade e lock-in quando relevantes; complexidade adicionada e removida; impacto estrutural (`baixo` ou `material`); impacto funcional (`nenhum` ou `potencial`). O ganho pode ser qualitativo quando não houver métrica disponível, mas deve ser concreto e verificável o bastante para distinguir modernização de sofisticação gratuita.
+Antes de usar `aplicar agora` ou produzir qualquer patch de implementação, confirme que a proposta tem zero custo incremental nos planos vigentes. Recurso que exija upgrade, cobrança adicional ou cuja gratuidade não esteja comprovada não pode ser recomendado para implementação no recorte, ainda que o benefício pareça proporcional; mantenha-o somente como referência, trava ou oportunidade estratégica condicional com gatilho objetivo. Esse gate vale para updates dependentes de recorte e transversais.
+
+Para cada `aplicar agora`, compare explicitamente `solução sem update` × `solução com update` e registre: evidência de zero custo incremental; ganho esperado; qualidade, latência, custo, segurança, confiabilidade, manutenção, código próprio, componentes, maturidade e lock-in quando relevantes; complexidade adicionada e removida; impacto estrutural (`baixo` ou `material`); impacto funcional (`nenhum` ou `potencial`). O ganho pode ser qualitativo quando não houver métrica disponível, mas deve ser concreto e verificável o bastante para distinguir modernização de sofisticação gratuita.
 
 Use `aplicar agora` somente com caso real no escopo e benefício proporcional ao custo, risco e complexidade líquida. Impacto estrutural baixo + impacto funcional nenhum pode gerar patch técnico diretamente elegível. Impacto estrutural material continua elegível, mas deve ser marcado para confronto focal obrigatório do Gestor Estrutural antes do gate do Analista. Impacto funcional potencial nunca autoriza ampliação silenciosa: descreva exatamente o possível desvio para arbitragem do Analista e eventual decisão humana.
 
@@ -42,7 +44,7 @@ Um veredito permitido.
 ## Updates preliminarmente elegíveis
 Para cada item: ID, relação com a stack e a arquitetura, horizonte, relação objetiva com o recorte e destino; use N/A quando não houver.
 ## Updates aprovados
-Para cada update: ID, tipo de uso, local de aplicação, motivo, limite de escopo, solução sem update, solução com update, ganho esperado, complexidade adicionada/removida, impacto estrutural e impacto funcional; use N/A quando não houver.
+Para cada update: ID, tipo de uso, local de aplicação, motivo, limite de escopo, solução sem update, solução com update, evidência de zero custo incremental, ganho esperado, complexidade adicionada/removida, impacto estrutural e impacto funcional; use N/A quando não houver.
 ## Candidatos a confronto estrutural
 Liste cada update com impacto estrutural material e a pergunta focal que o Gestor Estrutural deve responder; use N/A quando não houver.
 ## Candidatos a arbitragem funcional
