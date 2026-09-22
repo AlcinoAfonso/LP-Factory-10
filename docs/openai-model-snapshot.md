@@ -18,6 +18,7 @@
   - `https://developers.openai.com/api/docs/models/gpt-5.6-sol`
   - `https://developers.openai.com/api/docs/guides/reasoning`
   - `https://developers.openai.com/api/docs/guides/tools-web-search`
+  - `https://openai.com/api-fast-mode/`
   - `https://openai.github.io/openai-agents-js/`
   - `https://openai.com/pt-BR/index/gpt-5-6/`
 
@@ -157,6 +158,14 @@
 - Maturidade: documentada; não existe workload de imagem vigente.
 - Limite: disponibilidade de `gpt-image-2` e parâmetros não autoriza ativação.
 - Fontes: catálogo Models, `lib/openai-workloads/adapters/modelCatalogAdapter.ts` e `supabase/migrations/20260823144334_e21_2_5_openai_model_catalog.sql`.
+
+### `OAI-C12` — Fast mode para `gpt-5.6-sol`
+
+- Natureza: tier de processamento de menor latência, separado do modelo e do `reasoning.effort`, com até 2,5 vezes a velocidade do processamento Standard e sem mudança de inteligência.
+- Aplicabilidade: comparação focal de workload sensível a latência quando o mesmo modelo e effort já forem candidatos tecnicamente adequados.
+- Maturidade: documentada; `service_tier=fast` e o alias retrocompatível `service_tier=priority` são aceitos por requisição.
+- Limites: não é padrão nem autorização de adoção; compartilha rate limits com os demais tiers e pode sofrer fallback para Standard diante dos limites de aceleração de tráfego. Reconfirmar disponibilidade, comportamento e elegibilidade na fonte oficial antes de qualquer avaliação.
+- Fonte: página oficial Fast mode for API Customers.
 
 ## 5. Aplicabilidade e registro de decisões
 
