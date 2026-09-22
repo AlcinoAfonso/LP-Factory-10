@@ -2051,18 +2051,18 @@ Avaliar somente quando houver:
 
 ---
 
-## 71 — Health Check Advisors para taxas de erro dos serviços *(🟦 Disponível; adoção transversal simples)*
+## 71 — Health Check Advisors para taxas de erro dos serviços *(⚪ Registro histórico — procedimento manual estabelecido pela E24.2)*
 
 2026-09-18
 Catalogado em 2026-09-22
 
 ### Status no Projeto
 
-- Status: disponível na plataforma; consulta e rotina operacional ainda não validadas no projeto.
-- Evidência: o repositório não contém consumidor da Management API de Advisors nem registro de leitura do novo painel Health; o `pipeline-supabase-inspect` consulta o banco por conexão read-only e não consome esses sinais de serviço.
+- Status: disponível e validado manualmente no projeto; procedimento operacional incorporado pela E24.2.
+- Evidência: em 22/09/2026 19:31, America/Sao_Paulo, o refresh manual de Advisors → Health no projeto `LP-Factory-10` apresentou `0 errors`, `0 warnings` e `0 suggestions`, sem `advisor_check_unavailable`. Nenhum token, Management API, SQL, monitor, job, agente, automação ou correção foi usado.
 - Natureza de uso: observabilidade operacional transversal, inicialmente manual e sem IA.
 - Relação com a stack: complementar a `supa#5`, `supa#33` e `supa#46`; fornece sinais nativos que podem alimentar futuramente o `supa#70`, mas não exige agente, MCP, Log Drain ou infraestrutura própria.
-- Horizonte: Starter, antes do go-live com tráfego real ou no primeiro incidente que exija separar falha da aplicação de falha em serviço Supabase.
+- Horizonte: incorporado pela E24.2; a leitura permanece disponível para incidentes e verificações manuais proporcionais.
 
 ### Descrição
 
@@ -2077,12 +2077,12 @@ Os resultados podem ser vistos no Studio ou obtidos pela Management API. A prime
 - Pode melhorar diagnóstico de Auth e Data API nas jornadas críticas sem registrar payloads, prompts ou dados pessoais.
 - Cria uma fonte nativa e estruturada para eventual monitor read-only de `supa#70`, se o gatilho daquele item ocorrer.
 
-### Gatilho e aplicação
+### Procedimento manual vigente
 
-1. Antes do primeiro go-live com tráfego real, confirmar manualmente a presença do painel Advisors → Health e estabelecer uma leitura de referência.
-2. Em incidente de API, Auth, Storage ou Edge Functions, consultar o sinal antes de propor instrumentação adicional.
-3. Só avaliar consumo programático quando a leitura manual se tornar recorrente, houver responsável e os limiares produzirem ação útil.
-4. Tratar resultado como sinal de investigação, não como causa provada nem autorização de correção.
+1. Abrir o projeto no Supabase Studio e acessar Advisors → Health.
+2. Executar o refresh manual e registrar data/hora e os estados de Data API/PostgREST, Auth, Storage e Edge Functions.
+3. Interpretar resultado vazio como verificações executadas sem achados e `advisor_check_unavailable` como verificação indisponível, nunca como estado saudável.
+4. Tratar achado como sinal de investigação a correlacionar com horário, release, logs seguros e comportamento observado, sem inferir causa ou autorização de correção.
 
 ### Dependências, riscos e limites
 
@@ -2092,11 +2092,11 @@ Os resultados podem ser vistos no Studio ou obtidos pela Management API. A prime
 - Não confundir `advisor_check_unavailable` com estado saudável.
 - Não executar correção automática, alterar configuração ou ampliar coleta de dados por causa deste registro.
 
-### Ações Recomendadas
+### Aplicação concluída
 
-1. Adotar primeiro a leitura manual do painel quando o gatilho ocorrer.
-2. Manter automação e agente condicionados à prova de recorrência e superioridade exigida em `supa#70`.
-3. Reavaliar o item quando o Supabase disponibilizar probes adicionais oficialmente ou quando houver uso operacional real.
+1. O painel foi confirmado e a leitura de referência foi estabelecida manualmente.
+2. Automação e agente permanecem condicionados à prova de recorrência e superioridade exigida em `supa#70`.
+3. O procedimento não substitui checks da aplicação nem autoriza correção ou instrumentação adicional.
 
 ### Fonte Oficial
 
@@ -2104,11 +2104,11 @@ Os resultados podem ser vistos no Studio ou obtidos pela Management API. A prime
 
 ### Registro (Tipo C — Observabilidade transversal)
 
-- Status: PENDENTE
+- Status: IMPLEMENTADO
 - Verificado em: 2026-09-22
-- Ambiente futuro: Supabase Studio; Management API somente se houver recorte aprovado
-- Evidência: fonte oficial e busca semântica no repositório no SHA inicial `94df808289ee2c26f171aaf15a67441dae8d3438`.
-- Observação: o registro não autoriza integração, automação, agente nem alteração de plataforma.
+- Ambiente: Supabase Studio; Management API somente se houver recorte futuro aprovado
+- Evidência: leitura manual no projeto `LP-Factory-10` em 22/09/2026 19:31, America/Sao_Paulo, sem achados nem verificação indisponível.
+- Observação: o registro não autoriza integração, automação, agente, monitor, correção nem alteração de plataforma.
 
 ---
 

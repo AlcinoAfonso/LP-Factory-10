@@ -492,18 +492,18 @@ A E23.3 confirmou que nenhuma evidência bruta inventariada precisa sobreviver a
 
 ---
 
-## github#15 — Migração de `ubuntu-latest` para Ubuntu 26.04 *(🟨 Mudança agendada; validação transversal pendente)*
+## github#15 — Migração de `ubuntu-latest` para Ubuntu 26.04 *(⚪ Registro histórico — validado pela E24.2)*
 
 2026-09-17
 Catalogado em 2026-09-22
 
 ### Status no Projeto
 
-- Status: impacto potencial confirmado; validação ainda não executada.
-- Evidência: os cinco workflows vigentes usam `runs-on: ubuntu-latest`; o GitHub migrará esse label de Ubuntu 24.04 para 26.04 gradualmente entre 19/10/2026 e 19/11/2026.
+- Status: compatibilidade representativa validada pela E24.2; manter `ubuntu-latest` sem pin preventivo.
+- Evidência: o run `35792488457`, job `106964020544`, concluiu com sucesso na imagem hospedada `ubuntu-26.04` sobre o head `c14f25f00479ce79ba72c0d07b6b5fc91dedec3a`. A cobertura aprovou Bash/grep, checkout, Node 20 nas duas automações, Node 22 com instalação, checks e build do Core, e Supabase CLI `2.106.0`, sem secrets ou efeitos externos; o harness efêmero foi removido do diff final.
 - Natureza de uso: compatibilidade transversal do CI e das automações.
 - Relação com a stack: mudança no runner hospedado existente, sem nova infraestrutura; pode afetar ferramentas ou versões preinstaladas usadas implicitamente.
-- Horizonte: Starter, com validação antes de 19/10/2026.
+- Horizonte: incorporado pela E24.2; a migração automática permanece agendada entre 19/10/2026 e 19/11/2026.
 
 ### Descrição
 
@@ -515,12 +515,11 @@ O runner Ubuntu 26.04 está geralmente disponível em x64 e arm64. Durante a jan
 - Evita pin preventivo permanente sem evidência e preserva a opção de continuar recebendo a imagem suportada mais recente.
 - Concentra a decisão em um teste compatível com os jobs reais, sem redesenhar Actions.
 
-### Ação e gatilho
+### Aplicação concluída
 
-1. Antes de 19/10/2026, executar os cinco workflows ou uma matriz representativa com `ubuntu-26.04` em recorte técnico próprio.
-2. Se todos passarem, manter `ubuntu-latest` e registrar a validação.
-3. Se houver incompatibilidade que não possa ser corrigida com segurança antes da migração, pin temporariamente `ubuntu-24.04`, com prazo e critério de remoção.
-4. Não alterar runners apenas por antecipação sem reproduzir os jobs relevantes.
+1. A E24.2 executou cobertura representativa hospedada com `ubuntu-26.04` sobre todas as classes dependentes do runner presentes nos cinco workflows.
+2. Todas as classes passaram; `ubuntu-latest` foi preservado e nenhum workflow, runner, secret, permissão ou configuração permaneceu alterado.
+3. O run registrou aviso não bloqueante de que actions v4 com runtime Node 20 são executadas com Node 24, sem incompatibilidade observada neste recorte e sem correção incorporada.
 
 ### Dependências, riscos e limite
 
@@ -531,7 +530,7 @@ O runner Ubuntu 26.04 está geralmente disponível em x64 e arm64. Durante a jan
 
 ### Critério de encerramento
 
-- Os cinco workflows ou cobertura representativa aprovada concluíram no Ubuntu 26.04, ou existe pin temporário documentado com correção e data de remoção; depois, preservar o ID como histórico compacto.
+- Encerrado pela E24.2: a cobertura representativa aprovada concluiu no Ubuntu 26.04, `ubuntu-latest` foi preservado e o ID permanece como registro histórico.
 
 ### Fonte Oficial
 

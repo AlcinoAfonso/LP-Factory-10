@@ -109,3 +109,47 @@ Status: derivado da V1 congelada no commit `110ee5c345b1ca8680d76b08df7209f17ccd
 - Preparar relatório factual consolidado e executar `$lp-factory-abc` em `ETAPA: consolidação final` para todos os documentos canônicos potencialmente afetados, no mínimo `docs/roadmap.md`, `docs/base-tecnica.md`, `docs/platform-config.md`, `docs/automations.md`, `docs/services.md`, `docs/schema.md` e `docs/design-system.md`.
 - Aplicar somente operações literais emitidas pelo ABC no documento competente e registrar `SEM ALTERAÇÕES NECESSÁRIAS` para cada documento sem delta.
 - Não alterar `docs/base-tecnica.md` antes ou fora do ABC; só aplicar delta se a triagem identificar regra técnica durável e reutilizável.
+
+## 7. Implementação e evidências
+
+### 7.1. E24.2.3 — Ubuntu 26.04
+
+- PR de execução: #966.
+- Evidência hospedada: run `35792488457`, job `106964020544`, head `c14f25f00479ce79ba72c0d07b6b5fc91dedec3a`.
+- Resultado: aprovado na imagem `ubuntu-26.04` versão `20260920.143.1`, sistema Ubuntu 26.04.1 LTS.
+- Cobertura aprovada: Bash/grep; checkout; Node 20 com instalação e checks nas duas automações; Node 22 com instalação, `npm run check` e build do Core; Supabase CLI `2.106.0` sem acesso remoto.
+- Limites comprovados: nenhum secret de aplicação, OpenAI, acesso Supabase remoto, migration, PR automático, commit, push, alteração de dependência, artifact ou cache adicional foi usado pelo harness.
+- O harness efêmero foi removido e não permanece no diff final. `ubuntu-latest` foi preservado sem pin.
+- Aviso não bloqueante observado: actions v4 com runtime Node 20 foram executadas com Node 24 pela plataforma; nenhuma incompatibilidade ocorreu e nenhuma correção foi incorporada ao PB-B.
+
+### 7.2. E24.2.4 — Vercel Hobby
+
+- A política técnica passou a classificar URLs de Preview e deployments históricos da Vercel como evidências suplementares e expiráveis.
+- A configuração operacional registra a retenção Hobby vigente e a necessidade de reconfirmar exceções quando uma janela específica for material.
+- Nenhum plano, deployment, alias, retenção, configuração ou storage foi alterado; nenhum armazenamento paralelo foi criado.
+
+### 7.3. E24.2.5 — Health Check Advisors
+
+- Leitura manual final executada em 22/09/2026 19:31, America/Sao_Paulo, no Supabase Studio do projeto `LP-Factory-10`.
+- Resultado após refresh: `0 errors`, `0 warnings` e `0 suggestions`, sem `advisor_check_unavailable`.
+- O procedimento foi registrado com a semântica de resultado vazio, indisponibilidade e uso de achados como sinal de investigação.
+- Nenhum token, Management API, MCP, SQL, monitor, job, agente, automação ou correção foi criado ou executado.
+
+### 7.4. E24.2.6 — Ciclo de vida
+
+- `github#15`, `vercel#33` e `supa#71` foram reconciliados como registros históricos encerrados, preservando os IDs e as fontes oficiais.
+- `vercel#21` permaneceu fora do recorte por exigir storage paralelo; `supa#70` permaneceu futuro e condicional.
+- Custo incremental confirmado: zero em todas as ações.
+
+### 7.5. Triagem ABC final
+
+- `docs/roadmap.md`: delta aplicado.
+- `docs/base-tecnica.md`: delta aplicado; a regra de evidência operacional expirável foi considerada durável, transversal e reutilizável.
+- `docs/platform-config.md`: delta aplicado.
+- `docs/automations.md`: `SEM ALTERAÇÕES NECESSÁRIAS`.
+- `docs/services.md`: `SEM ALTERAÇÕES NECESSÁRIAS`.
+- `docs/schema.md`: `SEM ALTERAÇÕES NECESSÁRIAS`.
+- `docs/design-system.md`: `SEM ALTERAÇÕES NECESSÁRIAS`.
+- `npm ci`: não aplicável ao diff final exclusivamente documental; executado no run hospedado Ubuntu 26.04 para a cobertura focal aprovada.
+- `npm run check`: não aplicável como validação local do diff final exclusivamente documental; aprovado no run hospedado Ubuntu 26.04 para a cobertura focal aprovada.
+- Observabilidade de runtime e QA visual: N/A, sem alteração de runtime ou interface.
