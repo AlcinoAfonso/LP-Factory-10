@@ -1,0 +1,78 @@
+name: E24.2 — Ubuntu 26.04 Validation
+
+on:
+  pull_request:
+    branches: ["main"]
+
+permissions:
+  contents: read
+
+jobs:
+  representative-coverage:
+    runs-on: ubuntu-26.04
+    steps:
+      - name: Confirm Ubuntu 26.04 runner
+        shell: bash
+        run: |
+          set -euo pipefail
+          . /etc/os-release
+          printf 'NAME=%s\nVERSION_ID=%s\n' "$NAME" "$VERSION_ID"
+          test "$VERSION_ID" = "26.04"
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate Bash and grep class
+        shell: bash
+        run: |
+          set -euo pipefail
+          TARGETS=()
+          [ -d "src" ] && TARGETS+=("src")
+          [ -d "app" ] && TARGETS+=("app")
+          if [ ${#TARGETS[@]} -eq 0 ]; then
+            exit 0
+          fi
+          OFFENDERS="$(
+            (
+              grep -R -n -E "access_token|refresh_token|setSession\(|getSessionFromUrl\(" "${TARGETS[@]}" || true
+            ) | grep -v "app/auth/confirm/" || true
+          )"
+          test -z "$OFFENDERS"
+          OTP_OFFENDERS="$(grep -R -n "verifyOtp(" "${TARGETS[@]}" | grep -v "app/auth/confirm/" || true)"
+          test -z "$OTP_OFFENDERS"
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Validate docs automation
+        working-directory: automations/docs-apply-report
+        run: |
+          npm ci
+          npm run check
+
+      - name: Validate Supabase inspector without external execution
+        working-directory: automations/supabase-inspect
+        run: |
+          npm ci
+          npm run check
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Validate Core
+        run: |
+          npm ci
+          npm run check
+          npm run build
+
+      - name: Setup pinned Supabase CLI
+        uses: supabase/setup-cli@3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf
+        with:
+          version: 2.106.0
+
+      - name: Validate Supabase CLI availability without remote access
+        run: supabase --version
