@@ -61,7 +61,8 @@ Fontes secundárias podem apoiar, mas não substituir a fonte oficial.
 
 1. Preparar a rodada:
    - congelar o SHA inicial de `main` e confirmar o `README.md` e os cinco alvos;
-   - definir `updates-AAAA-MM-DD-rNN`, usando a data da execução e o primeiro `NN` de dois dígitos ainda não usado naquela data;
+   - definir o prefixo `updates-AAAA-MM-DD` com a data da execução, listar em todos os estados os PRs e as referências remotas que contenham esse prefixo e extrair os números de rodada já usados;
+   - definir `updates-AAAA-MM-DD-rNN` com o primeiro `NN` de dois dígitos ainda não usado naquela data, incluindo rodadas fechadas ou mergeadas;
    - listar draft PRs abertos cujas branches ou títulos contenham um identificador `updates-AAAA-MM-DD-rNN`, registrar os pertencentes a rodadas anteriores e detectar os do identificador atual;
    - para o mesmo alvo e identificador, continuar o draft existente quando ele corresponder ao mesmo SHA inicial e escopo; diante de divergência de base, escopo ou autoria, registrar o conflito e não criar duplicata.
 2. Para cada um dos quatro catálogos, na ordem do item 2, concluir todo o ciclo antes de iniciar a análise do seguinte:

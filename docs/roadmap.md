@@ -1979,7 +1979,7 @@
   - Contrato de banco: `docs/schema.md` — seção 1.35.
   - Configuração externa: `docs/platform-config.md` — seções 3.1, 3.5 e 3.6.
   - Automação consultiva: `docs/automations.md` — seção 3.10.
-  - Modelos correntes: `docs/openai-model-snapshot.md` — seção 4.2.
+  - Modelos correntes: `docs/openai-model-snapshot.md` — seção 3.
 
 20.8.3 Demolição controlada da E20 vigente
 - Status: concluída no repositório.

@@ -151,7 +151,7 @@
 - Aplicabilidade: workload de imagem futuro autorizado por recorte próprio.
 - Maturidade: documentada; não existe workload de imagem vigente.
 - Limite: disponibilidade de `gpt-image-2` e parâmetros não autoriza ativação.
-- Fonte: catálogo Models e `lib/openai-model-catalog.ts`.
+- Fontes: catálogo Models, `lib/openai-workloads/adapters/modelCatalogAdapter.ts` e `supabase/migrations/20260823144334_e21_2_5_openai_model_catalog.sql`.
 
 ## 5. Aplicabilidade e registro de decisões
 
