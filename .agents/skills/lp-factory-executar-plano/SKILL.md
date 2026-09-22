@@ -159,7 +159,7 @@ A validação deve provar os critérios de aceite do contrato. O Executor não p
 
 Se um critério obrigatório continuar sem prova depois da consulta às fontes e recursos autorizados, não crie nova automação, infraestrutura, conta privilegiada ou mutação remota por inferência. Registre exatamente o critério não coberto, os caminhos autorizados tentados e o bloqueio; no `Autônomo`, devolva-o ao Estrategista Autônomo sem solicitar intervenção humana por conta própria; nos demais modos, escale ao supervisor competente somente o que realmente exigir decisão humana ou recurso inexistente ou não autorizado.
 
-No `Light`, depois de concluir todas as validações e QA aplicáveis e incorporar as correções decorrentes, quando o resultado final puder alterar contrato canônico reutilizável além do caso atual, execute a triagem final de `docs/prompt-abc.md` sobre os documentos potencialmente afetados; aplique somente os deltas emitidos e preserve `SEM ALTERAÇÕES NECESSÁRIAS` antes da entrega.
+No `Light`, depois de concluir todas as validações e QA aplicáveis e incorporar as correções decorrentes, identifique os documentos canônicos potencialmente afetados pelo estado final e execute a triagem final de `docs/prompt-abc.md`; aplique somente os deltas emitidos e preserve `SEM ALTERAÇÕES NECESSÁRIAS` antes da entrega.
 
 ## 7. Complexa — controles preservados
 
