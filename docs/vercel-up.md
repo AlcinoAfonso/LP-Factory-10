@@ -570,20 +570,20 @@ Avaliar quando um cliente necessário exigir o protocolo `2026-07-28`, ou quando
 
 ---
 
-## 29 — Next.js 16.3: performance de desenvolvimento e navegação instantânea *(🟨 Upgrade agora condicionado à correção de segurança)*
+## 29 — Next.js 16.3: performance de desenvolvimento e navegação instantânea *(🟨 Implementação parcial; recursos opt-in condicionados)*
 
 2026-08-03  
 Catalogado em 2026-08-10  
-Atualizado em 2026-09-05
+Atualizado em 2026-09-22
 
 ### Status no Projeto
 
-- Status: não implementado; o projeto permanece em `next` e `eslint-config-next` `16.2.11`.
-- Evidência: `package.json` e `package-lock.json`; não há `instant()`, `next-cache-components-optimizer` nem Cache Components habilitado.
-- Mudança material: `16.2.11` está abaixo da versão corrigida `16.3.3` indicada pela August 2026 Security Release; a necessidade de patch é registrada em `vercel#31`.
+- Status: parcialmente implementado; o baseline foi atualizado para `next` e `eslint-config-next` `16.3.3` na E23.1, mas não há `instant()`, `next-cache-components-optimizer` nem Cache Components habilitado.
+- Evidência: `package.json`, `package-lock.json` e `docs/roadmap.md` 23.1; instalação limpa, checks, Security Checks, build hospedado e Preview foram aprovados no recorte.
+- Mudança material: o patch de segurança foi concluído e preservado historicamente em `vercel#31`; permanecem ativos somente os recursos opt-in de performance e navegação que exigem rota-alvo e medição.
 - Natureza de uso: evolução direta da stack Next.js atual.
 - Relação com a stack: o upgrade mínimo seguro deixou de ser decisão apenas de performance; recursos opt-in de navegação continuam dependentes de caso e medição.
-- Horizonte: Starter para o patch de segurança; Lite, Pro ou indefinido para Instant Navigations e otimizações adicionais.
+- Horizonte: Lite, Pro ou indefinido para Instant Navigations e otimizações adicionais.
 
 ### Descrição
 
@@ -600,7 +600,7 @@ O upgrade técnico necessário para `16.3.3` ou superior não autoriza habilitar
 
 ### Gatilho de aplicação
 
-- Upgrade mínimo: executar em recorte técnico prioritário para `16.3.3` ou versão corrigida superior compatível, conforme `vercel#31`.
+- Upgrade mínimo: concluído pela E23.1 em `16.3.3`; futuras versões seguem o fluxo normal de dependências e segurança.
 - Instant Navigations: avaliar somente quando uma rota real apresentar atraso perceptível ou métrica insuficiente, começando pelos defaults do framework e por teste reproduzível.
 
 ### Dependências, riscos e limite
@@ -612,9 +612,9 @@ O upgrade técnico necessário para `16.3.3` ou superior não autoriza habilitar
 
 ### Ações Recomendadas
 
-1. Não preservar `16.2.11` como baseline segura; encaminhar o patch mínimo de `vercel#31` ao fluxo técnico competente.
-2. Separar a correção de segurança da adoção de Cache Components ou Instant Navigations.
-3. Medir memória, check, build autorizado e Preview antes e depois do upgrade.
+1. Preservar a atualização concluída sem habilitar recursos opt-in por rotina.
+2. Avaliar Cache Components ou Instant Navigations somente diante de rota lenta e baseline reproduzível.
+3. Medir navegação, Web Vitals, build autorizado e Preview antes e depois de qualquer otimização.
 4. Usar `instant()` ou o skill oficial apenas diante de rota-alvo e sem escrita irrestrita por agente.
 
 ### Fontes Oficiais
@@ -683,51 +683,19 @@ Avaliar somente quando houver:
 
 ---
 
-## 31 — Next.js August 2026 Security Release *(🔴 Crítico; correção pendente)*
+## 31 — Next.js August 2026 Security Release *(⚪ Registro histórico — implementado integralmente)*
 
 2026-08-25  
 Catalogado em 2026-09-05
 
-### Status no Projeto
+### Estado e rastreabilidade
 
-- Status: correção não implementada; `next` e `eslint-config-next` permanecem em `16.2.11`.
-- Evidência: `package.json`, `package-lock.json` e ausência de PR ou commit com `16.3.3`.
-- Natureza de uso: segurança transversal da stack.
-- Relação com a stack: atualização direta e necessária do framework vigente; não é nova infraestrutura nem mudança de arquitetura.
-- Horizonte: Starter, prioridade imediata no fluxo técnico competente.
-
-### Descrição
-
-A versão `16.3.3` corrige duas vulnerabilidades críticas divulgadas em 25/08/2026:
-
-- execução remota não autenticada na Image Optimization API ao processar AVIF malicioso; o advisory classifica versões Next.js anteriores a `16.3.3` como afetadas;
-- execução remota não autenticada em servidores Windows quando a aplicação combina Pages Router e App Router sem Cache Components.
-
-O repositório não contém diretório `pages/`, import de `next/image` nem arquivo AVIF, e a hospedagem Vercel não usa filesystem Windows. Essas evidências reduzem a exposição conhecida ao segundo cenário e ao uso normal do primeiro, mas não tornam `16.2.11` uma dependência corrigida.
-
-### Valor para o Projeto
-
-- Remove uma dependência classificada oficialmente como afetada por vulnerabilidade crítica de RCE.
-- Evita manter como baseline uma versão que já não recebe a correção da linha Active LTS publicada.
-- Permite tratar segurança sem habilitar recursos opcionais de Next.js 16.3.
-
-### Ações Recomendadas
-
-1. Abrir recorte técnico prioritário e mínimo para atualizar `next` e `eslint-config-next` para `16.3.3` ou versão corrigida superior compatível.
-2. Não acoplar Cache Components, Instant Navigations, `vercel.ts` ou outra modernização ao patch.
-3. Validar `npm ci`, `npm run check`, build no CI/Vercel e Preview das jornadas críticas.
-4. Confirmar o lockfile e o deployment corrigidos antes de encerrar o item.
-
-### Dependências, riscos e limite
-
-- O upgrade cruza a linha `16.2` → `16.3` e pode revelar incompatibilidades; exige teste completo e rollback simples.
-- A ausência atual de AVIF e Pages Router não substitui o patch.
-- Não alterar dependências, código, configuração, rota ou deployment nesta rodada.
-- A catalogação não autoriza implementação nem merge.
-
-### Critério de encerramento
-
-- `package.json` e lockfile em versão corrigida, checks aprovados e Preview hospedado validado; depois, preservar o ID como registro histórico com evidência.
+- Estado final: implementado integralmente pela E23.1.
+- Evidência: `package.json` e `package-lock.json` mantêm `next` e `eslint-config-next` alinhados em `16.3.3`; `docs/roadmap.md` 23.1 registra instalação limpa, checks, Security Checks, build hospedado e Preview aprovados.
+- Recorte: E23.1 — Atualização de segurança do Next.js.
+- Resultado: as vulnerabilidades críticas da linha anterior foram corrigidas sem habilitar Cache Components, Instant Navigations, `vercel.ts` ou outra mudança funcional intencional.
+- Continuidade: capacidades opcionais do Next.js 16.3 permanecem ativas em `vercel#29`; futuras correções de segurança seguem o fluxo normal de dependências.
+- O ID permanece histórico e não pode ser reutilizado.
 
 ### Fontes Oficiais
 
@@ -737,58 +705,70 @@ O repositório não contém diretório `pages/`, import de `next/image` nem arqu
 
 ---
 
-## 32 — Variáveis Vercel com tipos Config e Secret *(🟩 Disponível; avaliação transversal de segurança)*
+## 32 — Variáveis Vercel com tipos Config e Secret *(⚪ Registro histórico — aplicado e absorvido)*
 
-2026-08-24  
+2026-08-24
 Catalogado em 2026-09-05
 
-### Status no Projeto
+### Estado e rastreabilidade
 
-- Status: mudança da plataforma disponível; classificação efetiva das variáveis existentes não validada nesta rodada.
-- Evidência: `docs/platform-config.md` separa variáveis públicas e server-side por finalidade, mas não registra o tipo Vercel `Config` ou `Secret`; a conta Vercel possui somente o Core `lp-factory-10` no plano Hobby.
-- Natureza de uso: segurança e configuração transversal.
-- Relação com a stack: complementar à governança de secrets existente; não altera nomes, valores, consumidores ou ambientes.
-- Horizonte: Starter, no próximo recorte de revisão de variáveis ou segurança.
-
-### Descrição
-
-A Vercel substituiu o toggle Sensitive pelos tipos:
-
-- `Config`: valor permanece legível para membros autorizados e serve para configuração não sensível;
-- `Secret`: valor continua disponível ao deployment, mas não pode ser lido ou recuperado por membros após ser salvo.
-
-Variáveis antes marcadas como Sensitive são tratadas automaticamente como Secret, sem migração. A plataforma também introduziu uma policy para exigir valor de produção distinto dos demais ambientes; disponibilidade e adequação dessa policy ainda não foram validadas para a conta atual.
-
-### Valor para o Projeto
-
-- Torna explícita a diferença entre configuração pública/inspecionável e credencial write-only.
-- Pode reduzir exposição operacional de API keys, tokens e senhas.
-- Oferece um critério simples para revisar novas variáveis sem registrar seus valores.
-
-### Gatilho e aplicação
-
-Avaliar no próximo cadastro, alteração ou revisão de variáveis:
-
-1. classificar URLs e valores públicos necessários como `Config`;
-2. classificar passwords, API keys, tokens e credenciais como `Secret`;
-3. conferir escopo de Production, Preview, Development e branches sem copiar valores entre ambientes;
-4. avaliar a policy de separação de Secrets de Production somente se estiver disponível e sem quebrar consumidores aprovados.
-
-### Dependências, riscos e limite
-
-- Alterar tipo ou valor no Dashboard pode exigir redeploy e afetar runtime; executar somente em recorte operacional aprovado.
-- O tipo `Secret` não substitui menor privilégio, rotação, escopo por ambiente ou proteção contra exposição no client.
-- Variável com prefixo público de framework não pode receber segredo.
-- Não ler, copiar, imprimir, reclassificar ou substituir valores nesta rodada.
-- Não alterar Vercel, `docs/platform-config.md`, runtime ou deployment por causa deste registro.
-
-### Critério de encerramento
-
-- Regra absorvida no documento competente e classificação dos nomes existentes confirmada sem expor valores; depois, preservar o ID como histórico compacto.
+- Estado final: aplicado e absorvido pela E23.2.
+- Evidência: `docs/roadmap.md` 23.2 e `docs/platform-config.md` 3.6 registram inventário read-only por nome, tipo, ambiente e branch scope, sem leitura ou substituição de valores.
+- Resultado: credenciais confirmadas permanecem `Secret`; configurações confirmadas permanecem `Config`; seis ocorrências sem consumidor foram removidas e 45 entradas ativas foram preservadas.
+- Decisão conservadora: 22 configurações sobreclassificadas como `Secret` e quatro branch scopes legados permanecem enquanto não houver risco ou impacto funcional material comprovado.
+- Validação: Preview pós-remoção ficou `READY` e o smoke de login retornou HTTP 200; nenhum redeploy de Production foi executado.
+- Documento competente: `docs/platform-config.md` 3.6 mantém o estado operacional; novas variáveis seguem essa governança.
+- O ID permanece histórico e não pode ser reutilizado.
 
 ### Fonte Oficial
 
 - [Vercel — Environment variables now use Config and Secret types](https://vercel.com/changelog/environment-variables-now-use-config-and-secret-types)
+
+---
+
+## 33 — Retenção reduzida de deployments no plano Hobby *(🟦 Mudança operacional; absorção documental pendente)*
+
+2026-09-16
+Catalogado em 2026-09-22
+
+### Status no Projeto
+
+- Status: regra da plataforma aplicável ao projeto Core no plano Hobby; absorção no documento técnico competente ainda pendente.
+- Evidência: `docs/platform-config.md` registra o Core `lp-factory-10` na Vercel, e a rodada anterior confirmou o plano Hobby; o projeto usa Previews para QA, mas não possui regra explícita sobre a nova retenção reduzida.
+- Natureza de uso: governança transversal de deployments e evidências temporárias.
+- Relação com a stack: mudança operacional da hospedagem vigente; não altera runtime, código ou processo de deploy por si só.
+- Horizonte: Starter, para o próximo ajuste documental da política de evidências ou quando um Preview antigo precisar ser consultado.
+
+### Descrição
+
+No plano Hobby, a Vercel passou a preservar, além do deployment de produção atual e de outras exceções, os três deployments de produção mais recentes e os três deployments mais recentes de qualquer tipo, independentemente da idade. Previews deixaram de possuir proteção própria. Quando a equipe ultrapassa os 10 GB de Deployment Storage, deployments fora das exceções podem ser apagados imediatamente, em vez de aguardar 30 dias.
+
+### Valor para o Projeto
+
+- Evita tratar URL de Preview como evidência durável de encerramento.
+- Reforça que PR, diff, commit e documentos canônicos devem preservar a prova necessária após o QA.
+- Reduz surpresa operacional quando um Preview antigo deixar de estar disponível.
+
+### Aplicação recomendada
+
+1. Absorver no documento técnico competente que Preview e deployment histórico são evidências suplementares e expirais.
+2. Manter no PR ou documento canônico o resultado necessário para provar o encerramento do recorte.
+3. Não preservar deployments por rotina nem contratar plano superior somente por causa desta mudança.
+
+### Dependências, riscos e limite
+
+- As exceções da plataforma podem mudar e devem ser reconfirmadas quando uma retenção específica for material.
+- Deployment protegido por alias ou branch ativa não equivale a arquivo permanente.
+- A exclusão automática pode ocorrer sem mudança no repositório e não deve ser confundida com regressão do código.
+- Não alterar plano, aliases, retenção, deploy, storage ou configuração nesta rodada.
+
+### Critério de encerramento
+
+- A natureza expirável dos Previews estiver registrada no documento técnico competente e aplicada aos próximos recortes; depois, preservar o ID como histórico compacto.
+
+### Fonte Oficial
+
+- [Vercel — Hobby projects now retain fewer deployments to free up storage](https://vercel.com/changelog/hobby-projects-now-retain-fewer-deployments-to-free-up-storage)
 
 ---
 
@@ -925,3 +905,51 @@ Avaliar no próximo cadastro, alteração ou revisão de variáveis:
 - Nenhum deployment ou redeploy foi executado.
 - O catálogo recomenda prioridades e avaliações; não autoriza implementação, upgrade, alteração de plataforma ou merge.
 
+---
+
+## Registro da rodada — Vercel + Next.js Update — 22/09/2026
+
+### Updates ajustados ou incorporados
+
+- `vercel#29` foi reclassificado como parcialmente implementado: o baseline `16.3.3` foi concluído pela E23.1, enquanto Instant Navigations, Cache Components e otimizações continuam condicionados a rota-alvo e medição.
+- `vercel#31` saiu do catálogo ativo e foi preservado como histórico após implementação integral e validação pela E23.1.
+- `vercel#32` saiu do catálogo ativo e foi preservado como histórico após aplicação e absorção operacional pela E23.2 e por `docs/platform-config.md` 3.6.
+- `vercel#33` foi adicionado para registrar a retenção reduzida de deployments no plano Hobby e a necessidade de tratar Previews como evidência suplementar e expirável.
+
+### Updates avaliados e não adicionados
+
+- WebMCP no `mcp-handler`: o alvo técnico de `vercel#28` foi removido pela E22.3; `prod#18` já preserva eventual produto distribuível, sem caso atual para reintroduzir handler ou service.
+- OpenAI Agents API no Vercel, memória persistente do eve, harnesses, Sandbox regional/maior e Terminal-Bench: não existe workload aprovado que demonstre superioridade sobre a stack atual; melhorias de Sandbox permanecem absorvidas por `vercel#1`.
+- Novos modelos, ferramentas de busca e promoções do AI Gateway: disponibilidade ou desconto isolado não altera o gate de `vercel#1` nem a seleção governada por workload.
+- Proteção de Production por Vercel Authentication: exigiria bloquear visitantes não membros e não possui recorte aprovado para o domínio público do produto.
+- Vercel Connect para Teams: Teams não é canal estratégico atual e não há operação aprovada.
+- Deployments estáticos sub-second, build machines Turbo, métricas de CPU/billable duration e Spend Management Enterprise: não resolvem dor atual comprovada do Core Hobby.
+- Nenhum recurso foi rejeitado apenas por estar fora do Starter ou do MVP.
+
+### Cobertura estratégica desta atualização
+
+- Landing pages, dashboard e performance: Next.js 16.3, deployments, retenção e segurança foram confrontados com dependências, roadmap e configuração atuais.
+- IA, agentes e automações: AI Gateway, Agents API, eve, harnesses, Sandbox, WebMCP e Vercel Agent foram pesquisados nas fontes oficiais.
+- Instagram: `vercel#30` permanece sem alteração; nenhuma novidade substituiu o adapter ou seu gate.
+- WhatsApp e e-mail: nenhuma novidade Vercel, Next.js ou React do período criou capacidade específica e material para os fluxos atuais; as fontes oficiais aplicáveis foram pesquisadas.
+
+### IDs preservados por rastreabilidade
+
+- Todos os IDs publicados de `vercel#1` a `vercel#32`, inclusive registros históricos e intervalos não utilizados, permanecem localizáveis e sem reutilização.
+- `vercel#33` foi atribuído acima do maior ID histórico anterior.
+
+### Pontos não validados e lacunas documentais
+
+- `vercel#29`: não há rota-alvo, baseline nem necessidade aprovada para Instant Navigations ou Cache Components.
+- `vercel#33`: o consumo atual de Deployment Storage, os deployments que hoje se enquadram nas exceções e uma eventual exclusão real não foram inspecionados.
+- `vercel#30`: elegibilidade da conta Instagram, permissões, custo e comparação com integração direta permanecem dependentes de recorte.
+
+### Validação de IDs e rastreabilidade
+
+- Antes de reclassificar, foram buscados `vercel#29`, `vercel#31`, `vercel#32`, E23.1, E23.2, versões Next.js, variáveis Vercel, Previews, deployments e evidências técnicas em documentos, código, lockfile, configurações e histórico.
+- A implementação integral e validação dos itens 31 e 32 foram confirmadas antes de sua retirada do catálogo ativo; títulos, estados finais, fontes, recortes e substitutos documentais foram preservados.
+- O catálogo foi concluído antes do início do ciclo GitHub e permanece aderente ao `README.md`; novidade ou distância do MVP não determinaram isoladamente a decisão.
+
+### Limite da rodada
+
+- Nenhuma dependência, variável, secret, configuração, rota, deployment, alias, plano, service, agente, workflow ou infraestrutura foi criada ou alterada; a catalogação não autoriza implementação nem merge.
