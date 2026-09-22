@@ -2783,7 +2783,7 @@
 - Cada execução usa um identificador único `updates-AAAA-MM-DD-rNN`, compartilhado pelas branches e pelos títulos dos draft PRs da rodada.
 - Drafts anteriores e do mesmo identificador são detectados antes da publicação; o mesmo alvo e rodada não recebem segundo draft. O estado `open` ou `completed` fica persistido nos corpos dos drafts; uma rodada concluída sem drafts reserva o identificador por tag anotado remoto `<identificador>-completed` no SHA inicial, sem criar mudança artificial.
 - Todo transversal ativo registra estado, ação pendente, prioridade, motivo da permanência, gatilho e critério de encerramento. Implementação integral validada permanece somente no histórico compacto; implementação parcial permanece ativa apenas pelo saldo.
-- Recomendação transversal exige zero custo incremental comprovado nos planos vigentes. Upgrade, cobrança adicional ou gratuidade não validada mantêm o recurso no radar sem autorização de implementação.
+- Toda recomendação de implementação, dependente de recorte ou transversal, exige zero custo incremental comprovado nos planos vigentes. Upgrade, cobrança adicional ou gratuidade não validada mantêm o recurso no radar sem autorização de implementação.
 
 24.1.4 Cobertura semanal OpenAI e responsabilidades
 - Os quatro catálogos obrigatórios preservam sua ordem, seguidos pela cobertura técnica OpenAI no snapshot existente; não foi criado quinto catálogo.

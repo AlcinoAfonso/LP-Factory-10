@@ -21,7 +21,7 @@ Ao final de uma única execução:
 - todos os IDs publicados continuam localizáveis no catálogo, sem renumeração, reutilização ou desaparecimento físico;
 - todo transversal ativo informa estado, ação pendente, prioridade, motivo da permanência, gatilho e critério de encerramento;
 - itens integralmente implementados e validados deixam a parte ativa e permanecem somente no histórico compacto; itens parciais permanecem ativos apenas pelo saldo;
-- nenhuma recomendação transversal ultrapassa zero custo incremental nos planos vigentes; gratuidade não comprovada, upgrade ou cobrança adicional mantêm o recurso no radar;
+- nenhuma recomendação de implementação, dependente de recorte ou transversal, ultrapassa zero custo incremental nos planos vigentes; gratuidade não comprovada, upgrade ou cobrança adicional mantêm o recurso no radar;
 - ausências de ajuste, bloqueios e exceções foram registradas;
 - existe um relatório final curto que consolida o que foi feito, orienta a prioridade dos updates, reapresenta os recursos transversais ainda ativos e, quando houver ação transversal recomendada para o momento atual, pede autorização direta para criar o próximo Debate em `LP Factory/Debates`;
 - nenhum PR foi mergeado nem a catalogação transformada em implementação.
@@ -62,10 +62,10 @@ Fontes secundárias podem apoiar, mas não substituir a fonte oficial.
 ## 4. Execução
 
 1. Preparar a rodada:
-   - congelar o SHA inicial de `main` e confirmar o `README.md` e os cinco alvos;
    - definir o prefixo `updates-AAAA-MM-DD` com a data da execução, listar em todos os estados os PRs e as referências remotas que contenham esse prefixo e extrair os números de rodada já usados;
-   - antes de alocar novo número, ler o marcador durável no corpo de todos os PRs encontrados e identificar se existe exatamente uma rodada com `state=open`, mesmo `base` e `scope` textualmente idêntico ao valor normalizado do item 1.1; quando existir, reutilizar seu identificador e continuar seus drafts; `state=completed` nunca é retomável, e marcador ausente, malformado ou divergente entre PRs da mesma rodada constitui conflito a registrar sem criar nova rodada;
-   - somente quando não houver rodada aberta compatível, definir `updates-AAAA-MM-DD-rNN` com o primeiro `NN` de dois dígitos ainda não usado naquela data, incluindo rodadas fechadas, mergeadas ou reservadas por tag `<identificador>-completed`;
+   - antes de congelar uma nova base, ler o marcador durável no corpo de todos os PRs encontrados e identificar se existe exatamente uma rodada com `state=open` e `scope` textualmente idêntico ao valor normalizado do item 1.1; quando existir, reutilizar seu identificador e o `base` armazenado, confirmar que esse commit continua disponível e continuar seus drafts; o avanço isolado de `main` não invalida nem sincroniza a rodada retomada;
+   - diante de múltiplas rodadas abertas, marcador ausente ou malformado, divergência interna de base, escopo ou autoria, base indisponível, conflito real ou dependência material de contrato mais novo da `main`, registrar o conflito e parar sem criar outra rodada;
+   - somente quando não houver rodada aberta compatível, congelar o SHA inicial da `main` corrente, confirmar o `README.md` e os cinco alvos e definir `updates-AAAA-MM-DD-rNN` com o primeiro `NN` de dois dígitos ainda não usado naquela data, incluindo rodadas fechadas, mergeadas ou reservadas por tag `<identificador>-completed`;
    - listar draft PRs abertos cujas branches ou títulos contenham um identificador `updates-AAAA-MM-DD-rNN`, registrar os pertencentes a rodadas anteriores e detectar os do identificador atual;
    - para o mesmo alvo e identificador, continuar o draft existente quando ele corresponder ao mesmo SHA inicial e escopo e seu marcador estiver em `state=open`; diante de divergência de base, escopo, autoria ou estado, registrar o conflito e não criar duplicata.
 2. Para cada um dos quatro catálogos, na ordem do item 2, concluir todo o ciclo antes de iniciar a análise do seguinte:
@@ -86,7 +86,7 @@ Fontes secundárias podem apoiar, mas não substituir a fonte oficial.
    - exigir hipótese de superioridade e gatilho objetivo para recurso sobreposto ou substituto;
    - classificar itens existentes como manter, ajustar ou arquivar/absorver, e recursos pesquisados como adicionar, não adicionar ou não validado;
    - para todo item transversal ativo, registrar estado atual, ação pendente, prioridade, motivo da permanência, gatilho e critério de encerramento;
-   - antes de recomendar implementação transversal, confirmar que ela tem zero custo incremental nos planos vigentes; se exigir upgrade ou cobrança adicional, ou se a gratuidade não estiver validada, manter o recurso atualizado no radar e não recomendar implementação;
+   - antes de qualquer recomendação de implementação, dependente de recorte ou transversal, confirmar zero custo incremental nos planos vigentes; se exigir upgrade ou cobrança adicional, ou se a gratuidade não estiver validada, manter o recurso atualizado no radar e não recomendar implementação;
    - nunca apagar um ID publicado; quando o item sair do catálogo ativo, manter registro histórico compacto com título original, estado final, evidências, recortes e eventual substituto;
    - manter item parcialmente implementado no catálogo ativo, com os recortes aplicados e o escopo ainda não implementado;
    - retirar item do catálogo ativo somente após implementação integral e validação, rejeição formal ou superação comprovada, preservando o ID em registro histórico compacto com a evidência e as referências competentes;
@@ -163,7 +163,7 @@ Os itens 1 a 10 compõem o relatório de cada catálogo. O item 11 é produzido 
    - confirmar a busca por referências explícitas e implementação semântica antes de cada arquivamento;
    - confirmar aderência ao `README.md`;
    - confirmar que novidade, modernidade ou distância do MVP não determinaram isoladamente a decisão.
-   - confirmar o gate de zero custo incremental para cada recomendação transversal.
+   - confirmar o gate de zero custo incremental para cada recomendação de implementação, dependente de recorte ou transversal.
 11. Fechamento consolidado da execução:
    - informar o identificador da rodada e o SHA inicial comum;
    - informar o estado final persistido da rodada, o horário UTC e a referência de conclusão gravados nos corpos de todos os draft PRs ou, quando nenhum draft existir, no tag anotado remoto `<identificador>-completed`;
@@ -191,6 +191,6 @@ Os itens 1 a 10 compõem o relatório de cada catálogo. O item 11 é produzido 
 - Criar um Debate pontual sobre ações transversais somente após autorização humana explícita, conforme o item 5.11, sem tratá-lo como nova fonte do catálogo nem como autorização de implementação.
 - Não adicionar item sem fonte oficial, valor concreto e compatibilidade com o `README.md`.
 - Não criar catálogo OpenAI, consumidor de RSS/Markdown, controle paralelo, documento financeiro substituto ou segunda varredura ampla pelo Gestor de Automações.
-- Não recomendar implementação transversal com custo incremental, gratuidade não validada, upgrade ou cobrança adicional; manter esses recursos somente no radar competente.
+- Não recomendar implementação, dependente de recorte ou transversal, com custo incremental, gratuidade não validada, upgrade ou cobrança adicional; manter esses recursos somente no radar competente.
 - Não realizar merge dos PRs.
 - Quando faltar fonte obrigatória, houver conflito material ou faltar permissão, informar exatamente o bloqueio e parar.
