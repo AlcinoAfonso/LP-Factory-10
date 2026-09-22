@@ -2759,7 +2759,7 @@
 
 24. E24 — Governança e compatibilidade transversal de updates
 - Objetivo: tornar o ciclo semanal de updates rastreável, economicamente delimitado e coerente entre fornecedores, preservando ações operacionais em recortes independentes.
-- Status: E24.1 implementada e validada no repositório; entrega técnica sob supervisão Autônoma. E24.2 permanece dependente da conclusão de E24.1.
+- Status: E24.1 implementada e validada no repositório; entrega técnica sob supervisão Autônoma.
 
 24.1 Governança e cobertura do workflow de updates
 
