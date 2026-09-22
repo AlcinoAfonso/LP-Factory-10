@@ -11,6 +11,7 @@
 - Fontes oficiais rastreadas:
   - `https://developers.openai.com/api/docs/guides/latest-model`
   - `https://developers.openai.com/api/docs/models`
+  - `https://developers.openai.com/api/docs/models/gpt-4.1-mini`
   - `https://developers.openai.com/api/docs/models/gpt-5.4-mini`
   - `https://developers.openai.com/api/docs/models/gpt-5.6-luna`
   - `https://developers.openai.com/api/docs/models/gpt-5.6-terra`
@@ -59,10 +60,12 @@
 | `OAI-M02` | `gpt-5.6-luna` | tarefas de alto volume que justifiquem comparação própria | 1,05M | 128k | `none`, `low`, `medium`, `high`, `xhigh`, `max` | documentada | documentação específica do modelo |
 | `OAI-M03` | `gpt-5.6-terra` | equilíbrio de capacidade para casos que justifiquem comparação própria | 1,05M | 128k | `none`, `low`, `medium`, `high`, `xhigh`, `max` | operacional em `OAI-W03` | documentação específica do modelo |
 | `OAI-M04` | `gpt-5.6-sol` | trabalho profissional complexo que justifique comparação própria | 1,05M | 128k | `none`, `low`, `medium`, `high`, `xhigh`, `max` | documentada | documentação específica do modelo |
+| `OAI-M05` | `gpt-4.1-mini` | referência externa do workflow `OAI-W04`; não é baseline de produto | 1.047.576 | 32.768 | não aplicável; modelo sem etapa de reasoning | referência operacional externa | documentação específica do modelo e `lib/openai-workloads/registry.ts` |
 
 - Luna, Terra e Sol documentam Responses API, function calling, Structured Outputs e reasoning tokens.
 - Em GPT-5.6, o effort padrão documentado é `medium` quando omitido; comparações devem registrar o valor explicitamente.
 - Para `gpt-5.4-mini`, o padrão documentado é `none` quando o parâmetro é omitido.
+- `gpt-4.1-mini` é um modelo não reasoning; a referência operacional externa `OAI-W04` não deve receber `reasoning.effort`.
 - Limites e capacidades são voláteis e devem ser reconfirmados na fonte oficial focal antes de uma decisão material.
 
 ## 4. APIs, tools e capacidades agentic
