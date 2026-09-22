@@ -95,8 +95,7 @@ Use somente as skills previstas para o Light; não chame custom agents diretamen
 
 No Light:
 
-- não acione Gestor Estrutural nem Gestor de Automações;
-- não crie matriz;
+- não acione Gestor Estrutural nem Gestor de Automações nem crie matriz;
 - não use gates de implementação específicos da Complexa;
 - não refaça na task principal a avaliação devolvida por Updates ou pelo Analista.
 
@@ -224,6 +223,8 @@ Antes da entrega, confronte o contrato aprovado com o diff final.
 - remova alteração sem rastreabilidade ou justifique sua necessidade factual;
 - legado e parecer técnico não autorizam ampliação funcional, arquitetural ou de escopo;
 - se a melhor solução exigir decisão fora do contrato, devolva o ponto ao supervisor competente.
+
+No `Light`, depois das validações/QA, das correções decorrentes e deste gate de aderência, identifique os documentos canônicos potencialmente afetados pelo estado final e execute `$lp-factory-abc` com `ETAPA: consolidação final`; aplique somente os deltas emitidos e preserve `SEM ALTERAÇÕES NECESSÁRIAS` antes da entrega.
 
 ## 9. Entrega, merge e conclusão
 
