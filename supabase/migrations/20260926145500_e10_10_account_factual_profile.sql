@@ -13,3 +13,37 @@ comment on column public.account_profiles.business_display_name is
   'E10.10: factual public name supplied or confirmed by the account; the sole factual readiness gate.';
 comment on column public.account_profiles.creci_registration is
   'E10.10: optional CRECI registration when the resolved factual coverage includes creci_registration.';
+
+-- Existing authenticated INSERT/UPDATE table grants and RLS remain intact for
+-- legacy profile columns. Factual answers are written only by the guarded
+-- server-side service client, including when a security-definer RPC is used.
+create function public.guard_account_profile_factual_values()
+returns trigger
+language plpgsql
+security invoker
+set search_path = ''
+as $$
+begin
+  if current_user = 'authenticated' or auth.role() = 'authenticated' then
+    if tg_op = 'INSERT' then
+      if new.business_display_name is not null or new.creci_registration is not null then
+        raise exception using
+          errcode = '42501',
+          message = 'Factual profile fields require the authorized server action';
+      end if;
+    elsif tg_op = 'UPDATE' then
+      if new.business_display_name is distinct from old.business_display_name or
+         new.creci_registration is distinct from old.creci_registration then
+        raise exception using
+          errcode = '42501',
+          message = 'Factual profile fields require the authorized server action';
+      end if;
+    end if;
+  end if;
+  return new;
+end;
+$$;
+
+create trigger account_profiles_guard_factual_values
+before insert or update on public.account_profiles
+for each row execute function public.guard_account_profile_factual_values();
