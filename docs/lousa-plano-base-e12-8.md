@@ -81,3 +81,28 @@ URL: https://docs.google.com/document/d/1mdrcgzzZs5PKblaq5CiF873AT8anf0AoPRoMRPi
 - Diff e testes de regressão demonstram preservação dos contratos existentes e ausência de banco, migration, RPC, job, agente, automação, infraestrutura ou biblioteca de grid nova.
 - O roadmap registra somente E12.8 e as fases efetivamente executadas; a adoção das demais áreas continua fora do PB 2.
 
+## V2 Light mínima — contrato técnico executável
+
+Referência da V1 congelada: commit `05e5d7c00f16fdc81a4829ee6a8b1f2d0be4ed9b`, neste arquivo. A escolha humana de supervisão `Autônomo` veio no handoff desta execução e resolve somente a pendência textual de 4.2.10. Base técnica: `main` no merge commit `107b7326d6ee5561471abdbd6e63eb467fe08803` do PR #974. Updates: parecer read-only, `nenhum update aplicável`; `prod#14`, `prod#16` e `prod#17` orientam a validação já exigida.
+
+### Limite de implementação
+
+Somente a apresentação e a interação das rotas existentes `/admin/taxonomia`, `/admin/taxonomia/[taxonId]` e a visão `Entradas` de `/admin/estrutura-lp`, que já é a subtarefa humana factual da jornada. Conservar ações, adapters, payloads, autoridade, validação de domínio, IA e demais visões. Não criar rota, dependência, banco, migration, RPC, job, agente, automação ou infraestrutura. Observar o escopo negativo integral da V1.
+
+### 12.8.3 — Taxonomia como piloto de coleção e detalhe
+
+- Em `app/admin/(protected)/taxonomia/page.tsx`, preservar a busca e os filtros `level` e `status` por seus mesmos parâmetros. Manter busca global acima da lista; apresentar nível e status junto aos respectivos cabeçalhos no desktop, com acesso compacto aos mesmos filtros no mobile. Usar cabeçalho como primeira linha visual, registros compactos consecutivos, nome humano como identidade, nível/hierarquia e estado legíveis, diagnóstico e abertura explícita. Não adicionar ordenação sem necessidade demonstrada.
+- Em `app/admin/(protected)/taxonomia/[taxonId]/page.tsx`, manter retorno, identidade, estado, cobertura e ações humanas antes de IA opcional; pôr `slug` e identificadores técnicos no bloco progressivo existente. Preservar aliases, pesquisa, gestão, diagnóstico e demais ações existentes. Se ajustar componente compartilhado, comprovar ausência de impacto nas áreas fora do piloto.
+
+### 12.8.4 — Cobertura factual e subtarefas como piloto de interação
+
+- Em `AdminTaxonFactualCoverage.tsx`, apresentar propósito humano do field e origem/estado como informação primária; conservar `fieldKey`, escopo, obrigação, validação e condições em detalhes progressivos. Manter liberação humana sem IA e seus feedbacks.
+- Na visão `Entradas` em `AdminFactualFields.tsx`, preservar CRUD, inativação, reativação e semântica das Server Actions. Usar rótulos humanos para `fieldKey`, `valueType`, `valueScope`, `obligation` e `validationKind`, mantendo a chave técnica editável e explicada. Mostrar opções, limites e condições apenas quando aplicáveis. Manter valores de controles temporariamente ocultos durante alternância na mesma edição e avisar/confirmar descarte material antes de submeter alteração que os substituiria; nunca remover validação vigente por um ocultamento acidental. Preservar a confirmação de "mesmo fato" da edição.
+- Usar o `taxon` já presente na URL da subtarefa para retorno contextual ao detalhe do taxon e à cobertura; feedback de criação/edição informa o resultado e a próxima ação. Sugestão IA apenas prepara o formulário atual; falha ou indisponibilidade afeta somente a assistência, sem impedir criação, edição ou liberação humanas.
+
+### Validação e evidência
+
+- `npm ci`, `npm run check`, verificações focais existentes, `git diff --check` e revisão de `main..HEAD`/`main...HEAD`.
+- Inventário antes/depois de ações, estados, filtros, validações e capacidades preservadas. QA autenticado no Preview da mesma branch/head cobrindo jornada, IA disponível e indisponível, desktop/mobile, teclado, foco, labels, feedback, controles condicionais e overflow. Evidência insuficiente impede declarar a entrega técnica completa.
+- Observabilidade de runtime: N/A para novo sinal; as Server Actions e a assistência preservam seus sinais e tratamentos existentes, sem novo workload ou boundary.
+- Após validar o estado final, executar ABC de consolidação final para cada documento canônico afetado, especialmente `docs/roadmap.md`; editar somente deltas literais emitidos. `docs/design-system.md` já é o contrato consumido e só recebe delta se a implementação comprovar lacuna canônica real.
