@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data da última atualização: 26/09/2026
-• Documento: LP Factory 10 — Schema (DB Contract) v1.0.70
+• Documento: LP Factory 10 — Schema (DB Contract) v1.0.71
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -1059,7 +1059,7 @@
 • Migration forward-only: `supabase/migrations/20260823144334_e21_2_5_openai_model_catalog.sql`.
 • Teste transacional: `supabase/tests/e21_2_5_openai_model_catalog.test.sql`; verificador read-only: `supabase/snippets/e21_2_5_openai_model_catalog_verify.sql`.
 • Estado atual: migration aplicada no ambiente hospedado pelo fluxo canônico; o verificador read-only aprovou 8/8 verificações e o Security Controls não apresentou alerta incompatível com as tabelas, constraints, RLS, policies, ACLs, RPCs ou triggers do catálogo. O INFO de RLS sem policy é esperado e compatível com acesso exclusivo por service_role.
-• Delta E21.2.6: `supabase/migrations/20260926111926_e21_2_6_openai_model_catalog_identity.sql` e `supabase/tests/e21_2_6_openai_model_catalog_identity.test.sql`. Migration integral e teste com rollback passaram em PostgreSQL 17 isolado com fixture focal E21.2.5; o apply no projeto hospedado permanece pendente.
+• Delta E21.2.6: `supabase/migrations/20260926111926_e21_2_6_openai_model_catalog_identity.sql` e `supabase/tests/e21_2_6_openai_model_catalog_identity.test.sql`. Migration integral e teste com rollback passaram em PostgreSQL 17 isolado com fixture focal E21.2.5; o apply no projeto hospedado foi concluído pelo workflow canônico, com RPCs, grants e estado das identidades confirmados por leitura após o apply.
 
 1.35 taxon_factual_fields
 1.35.1 Função e autoridade
