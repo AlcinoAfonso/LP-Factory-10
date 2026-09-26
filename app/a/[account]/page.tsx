@@ -36,6 +36,21 @@ export default async function Page({ params }: PageProps) {
     );
   }
   if (journey.view === "waiting") return <CommercialWaitingState />;
+  if (journey.view === "factual_unavailable") {
+    return (
+      <main className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-12">
+        <section className="rounded-2xl border border-surface-border bg-white p-6 shadow-card sm:p-9">
+          <h1 className="text-2xl font-bold tracking-tight text-ink-900">Dados essenciais indisponíveis</h1>
+          <p role="alert" className="mt-4 text-sm leading-6 text-graytech-600 sm:text-base">
+            Não foi possível carregar seus dados essenciais agora. Tente novamente em instantes.
+          </p>
+          <a href={`/a/${encodeURIComponent(accountSubdomain)}`} className="mt-6 inline-flex min-h-11 items-center rounded-lg bg-brand-700 px-5 py-3 text-sm font-semibold text-white hover:bg-brand-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-700 focus-visible:ring-offset-2">
+            Tentar novamente
+          </a>
+        </section>
+      </main>
+    );
+  }
   if (journey.view === "factual") {
     return (
       <FactualOnboarding

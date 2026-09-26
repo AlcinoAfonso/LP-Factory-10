@@ -79,6 +79,7 @@ export async function loadAccountJourney({
     if (isCommerciallyEligible && primaryTaxon) {
       const factual = await loadFactualOnboarding(accountSubdomain);
       if (factual.status === "available") return { view: "factual" as const, factual };
+      return { view: "factual_unavailable" as const };
     }
 
     const commercialActivation = primaryTaxon

@@ -44,6 +44,9 @@ assert.doesNotMatch(
 );
 assert.match(page, /PendingSetupConversation/);
 assert.match(page, /NicheResolutionCard/);
+assert.match(loader, /if \(factual\.status === "available"\) return \{ view: "factual" as const, factual \};\s*return \{ view: "factual_unavailable" as const \};/);
+assert.match(page, /journey\.view === "factual_unavailable"/);
+assert.match(page, /Tentar novamente/);
 assert.doesNotMatch(page, /PendingSetupFirstSteps/);
 assert.doesNotMatch(loader, /loadPendingSetupConversation[\s\S]*accountStatus !== "active"[\s\S]*loadPendingSetupConversation/);
 assert.equal(existsSync(legacyDetailRoute), false);
