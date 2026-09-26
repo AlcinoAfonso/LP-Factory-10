@@ -735,7 +735,7 @@
 10. E10 — Account Dashboard e jornada da conta
 
 - Objetivo: consolidar a experiência pós-login por conta, da navegação multi-conta e do setup inicial à resolução de nicho e à apresentação comercial, preservando decisões server-side de acesso, papel, entitlement e estado operacional.
-- Status: os fluxos principais estão implementados; a substituição repo-side do Pending Setup pela jornada E10.9 e o onboarding factual E10.10 estão materializados no repositório, com gates de publicação e QA ainda pendentes. Permanecem as lacunas da ação de criar outra conta no switcher, dos eventos específicos do switcher e da edição manual de copy da página comercial personalizada.
+- Status: os fluxos principais estão implementados e a substituição repo-side do Pending Setup pela jornada E10.9 foi concluída; permanecem como lacunas a ação inefetiva de criar outra conta no switcher, a ausência dos eventos específicos do switcher, a edição manual de copy da página comercial personalizada e os gates pré-merge e pós-merge ainda pendentes da E10.9. O onboarding factual E10.10 está materializado no repositório, com apply e QA hospedado ainda pendentes.
 
 10.3 Navegação multi-conta e cabeçalho
 

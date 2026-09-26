@@ -221,6 +221,7 @@
 • account_profiles_select_member_or_platform (SELECT to public): is_platform_admin() OU membro ativo do tenant (account_users.account_id = account_profiles.account_id; account_users.user_id = auth.uid(); account_users.status='active')
 • account_profiles_insert_owner_admin_or_platform (INSERT to public): is_platform_admin() OU owner/admin ativo do tenant (account_users.role IN ('owner','admin'); status='active')
 • account_profiles_update_owner_admin_or_platform (UPDATE to public): is_platform_admin() OU owner/admin ativo do tenant (USING + WITH CHECK)
+• Migration candidata E10.10: `supabase/migrations/20260926145500_e10_10_account_factual_profile.sql`; parsing e comportamento de escrita direta/serviço provados em PostgreSQL compatível isolado, apply hospedado pendente.
 
 1.9 account_landing_pages
 1.9.1 Função
