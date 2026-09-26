@@ -1,4 +1,5 @@
 import { PendingSetupConversation } from "./_components/PendingSetupConversation";
+import { FactualOnboarding } from "./_components/FactualOnboarding";
 import { NicheResolutionCard } from "./_components/NicheResolutionCard";
 import { GenericCommercialPage } from "./_components/commercial-page/GenericCommercialPage";
 import { PublishedCommercialActivationPage } from "./_components/commercial-page/PublishedCommercialActivationPage";
@@ -35,6 +36,19 @@ export default async function Page({ params }: PageProps) {
     );
   }
   if (journey.view === "waiting") return <CommercialWaitingState />;
+  if (journey.view === "factual") {
+    return (
+      <FactualOnboarding
+        accountSubdomain={journey.factual.accountSubdomain}
+        email={journey.factual.email}
+        taxonName={journey.factual.taxonName}
+        canEdit={journey.factual.canEdit}
+        creciApplicable={journey.factual.creciApplicable}
+        values={journey.factual.values}
+        isReady={journey.factual.isReady}
+      />
+    );
+  }
   if (journey.view === "commercial") {
     const commercialPage =
       journey.bundle ? (

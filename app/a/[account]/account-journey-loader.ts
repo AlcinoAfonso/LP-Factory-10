@@ -3,6 +3,7 @@ import "server-only";
 import { getAccessContext } from "@/lib/access/getAccessContext";
 import { getCommercialActivationHierarchicalBundle } from "@/conversion-content";
 import { getCommercialEntitlementSignal } from "../../../lib/commercial-entitlements";
+import { loadFactualOnboarding } from "../../../lib/onboarding/factual/adapters/accountFactualOnboardingAdapter";
 import { getActionableNicheResolutionForAccount } from "../../../lib/onboarding/niche-resolution/adapters/accountNicheResolutionUserAdapter";
 import { getActivePrimaryAccountTaxon } from "../../../lib/onboarding/niche-resolution/adapters/accountTaxonomyAdapter";
 import { loadPendingSetupConversation } from "../../../lib/onboarding/pending-setup/adapters/pendingSetupConversationAdapter";
@@ -73,6 +74,11 @@ export async function loadAccountJourney({
 
     if (accountJourney.mode === "waiting") {
       return { view: "waiting" as const };
+    }
+
+    if (isCommerciallyEligible && primaryTaxon) {
+      const factual = await loadFactualOnboarding(accountSubdomain);
+      if (factual.status === "available") return { view: "factual" as const, factual };
     }
 
     const commercialActivation = primaryTaxon

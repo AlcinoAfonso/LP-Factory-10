@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "check": "npm run lint && npm run typecheck && npm run validate:commercial-capabilities && npm run validate:openai-workloads && npm run validate:admin-openai-workloads && npm run validate:openai-costs && npm run validate:openai-active-costs && npm run validate:openai-active-costs-read-model && npm run validate:supabase-inspect && npm run validate:openai-costs-dashboard && npm run validate:commercial-activation && npm run validate:landing-page-root && npm run validate:landing-page-input-catalog && npm run validate:taxon-preparation && npm run validate:account-members && npm run validate:e11-checkout && npm run validate:e11-commercial-experience && npm run validate:admin-landing-page-structure && npm run validate:pending-setup && npm run validate:account-onboarding-journey",
+    "check": "npm run lint && npm run typecheck && npm run validate:commercial-capabilities && npm run validate:openai-workloads && npm run validate:admin-openai-workloads && npm run validate:openai-costs && npm run validate:openai-active-costs && npm run validate:openai-active-costs-read-model && npm run validate:supabase-inspect && npm run validate:openai-costs-dashboard && npm run validate:commercial-activation && npm run validate:landing-page-root && npm run validate:landing-page-input-catalog && npm run validate:taxon-preparation && npm run validate:account-members && npm run validate:e11-checkout && npm run validate:e11-commercial-experience && npm run validate:admin-landing-page-structure && npm run validate:pending-setup && npm run validate:account-onboarding-journey && npm run validate:factual-onboarding",
     "validate:account-members": "tsx lib/access/account-members/validation-cases.ts",
     "validate:pending-setup": "tsx lib/onboarding/pending-setup/validation-cases.ts",
     "validate:e11-checkout": "tsx app/a/[account]/_components/commercial-page/checkout-validation-cases.ts",
@@ -26,7 +26,8 @@
     "validate:landing-page-input-catalog": "tsx lib/conversion-content/landing-page/input-catalog/validation-cases.ts",
     "validate:admin-landing-page-structure": "tsx \"app/admin/(protected)/estrutura-lp/validation-cases.ts\"",
     "validate:taxon-preparation": "tsx lib/conversion-content/landing-page/taxon-preparation/validation-cases.ts",
-    "validate:account-onboarding-journey": "tsx app/a/[account]/_components/onboarding-journey-validation-cases.ts"
+    "validate:account-onboarding-journey": "tsx app/a/[account]/_components/onboarding-journey-validation-cases.ts",
+    "validate:factual-onboarding": "tsx lib/onboarding/factual/validation-cases.ts"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "1.1.7",

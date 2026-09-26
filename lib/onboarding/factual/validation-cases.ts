@@ -1,7 +1,17 @@
 import assert from "node:assert/strict";
 
 import type { ResolvedFactualCoverage } from "../../conversion-content/landing-page/input-catalog";
-import { assessFactualCoverage, canEditFactualValues, isFactualReady, validateFactualInput } from "./policy";
+import { assessFactualCoverage, buildFactualProfileWrite, canEditFactualValues, hasFactualCatalogCutover, isFactualReady, validateFactualInput } from "./policy";
+
+const activeCatalog = [
+  { field_key: "business_display_name", definition: { obligation: "required", valueType: "string" } },
+  { field_key: "creci_registration", definition: { obligation: "optional", valueType: "string" } },
+];
+assert.equal(hasFactualCatalogCutover(activeCatalog, 2), true);
+assert.equal(hasFactualCatalogCutover(activeCatalog, 26), false);
+assert.equal(hasFactualCatalogCutover([...activeCatalog, { field_key: "professional_regulatory_credential", definition: {} }], 3), false);
+assert.equal(hasFactualCatalogCutover([activeCatalog[0], { ...activeCatalog[1], definition: { obligation: "required", valueType: "string" } }], 2), false);
+assert.equal(hasFactualCatalogCutover(activeCatalog, null), false);
 
 const business = {
   fieldKey: "business_display_name",
@@ -15,12 +25,17 @@ const creci = {
   obligation: "optional",
   valueType: "string",
 };
-const coverage = (fields: unknown[]) => ({ fields }) as unknown as ResolvedFactualCoverage;
+const coverage = (fields: unknown[], isCorretor = false) => ({
+  fields,
+  appliedLayers: [{ taxon: isCorretor ? { slug: "corretor-imoveis" } : { slug: "outro-nicho" } }],
+}) as unknown as ResolvedFactualCoverage;
 
 assert.deepEqual(assessFactualCoverage(coverage([business])), { ok: true, creciApplicable: false });
-assert.deepEqual(assessFactualCoverage(coverage([business, creci])), { ok: true, creciApplicable: true });
-assert.deepEqual(assessFactualCoverage(coverage([business, { ...creci, obligation: "required" }])), { ok: false });
-assert.deepEqual(assessFactualCoverage(coverage([business, creci, { fieldKey: "professional_regulatory_credential" }])), { ok: false });
+assert.deepEqual(assessFactualCoverage(coverage([business, creci], true)), { ok: true, creciApplicable: true });
+assert.deepEqual(assessFactualCoverage(coverage([business], true)), { ok: false });
+assert.deepEqual(assessFactualCoverage(coverage([business, creci])), { ok: false });
+assert.deepEqual(assessFactualCoverage(coverage([business, { ...creci, obligation: "required" }], true)), { ok: false });
+assert.deepEqual(assessFactualCoverage(coverage([business, creci, { fieldKey: "professional_regulatory_credential" }], true)), { ok: false });
 assert.deepEqual(assessFactualCoverage(coverage([])), { ok: false });
 
 for (const role of ["owner", "admin", "editor"] as const) assert.equal(canEditFactualValues(role), true);
@@ -45,5 +60,9 @@ assert.equal(validateFactualInput({ businessDisplayName: "Ana", whatsapp: "", cr
 
 assert.equal(isFactualReady({ businessDisplayName: "Ana", whatsapp: null, creciRegistration: null }), true);
 assert.equal(isFactualReady({ businessDisplayName: " ", whatsapp: "11", creciRegistration: "123" }), false);
+const noCreciWrite = buildFactualProfileWrite("account-id", { businessDisplayName: "Ana", whatsapp: null, creciRegistration: null }, false);
+assert.equal(Object.hasOwn(noCreciWrite, "creci_registration"), false);
+const withCreciWrite = buildFactualProfileWrite("account-id", { businessDisplayName: "Ana", whatsapp: null, creciRegistration: "12345-F" }, true);
+assert.equal(withCreciWrite.creci_registration, "12345-F");
 
 console.log("ok - E10.10 factual coverage, roles, input and readiness");
