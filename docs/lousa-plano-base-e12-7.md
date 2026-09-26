@@ -37,3 +37,24 @@
 - O Design System deve explicitar cabeçalho mínimo; lista tabular como primeira opção; identidade; filtros e ordenação condicionais; abertura do detalhe; linguagem humana; mobile; cards como exceção funcional; estados; acessibilidade; preservação funcional; e tecnologia em aberto, sem duplicar domínio.
 - O roadmap registra somente E12.7 e os registros/fases efetivamente materializados. Nenhum arquivo de código, runtime ou configuração operacional muda; o recorte amplo não é declarado concluído.
 - Evidência: diff restrito ao contrato canônico e ao roadmap, leitura final coerente com a V1 e ausência de alterações em código, componentes, rotas, banco, automações, infraestrutura e `docs/platform-config.md`.
+
+## V2 técnica mínima — Light
+
+### Fonte e alcance
+
+- V1 congelada: commit `3cf4e21de60306bae67d0681edfa04776c519765`.
+- Parecer obrigatório do Gestor de Updates: `prod#17` aplicável como referência normativa documental; `prod#16` como trava para validação de futuras superfícies; sem candidato a confronto estrutural ou arbitragem funcional. `vercel#15` é oportunidade condicional sem implementação; `supa#10` não se aplica.
+- Fase única mantida: **12.7.3**. A entrega modifica somente este plano, `docs/design-system.md` e `docs/roadmap.md`.
+
+### Delta executável
+
+1. Em `docs/design-system.md`, incorporar o contrato mínimo aprovado da seção 3.15 do Debate 13 para **novas** páginas e recortes do Admin. Ajustar a regra vigente de cards apenas para admitir sua exceção funcional de coleção; preservar a aplicação atual das demais regras e a autoridade dos contratos de domínio.
+2. Declarar WCAG 2.2 como baseline de acessibilidade para novas páginas administrativas, com critérios relevantes ao fluxo, inspeção automática e validação manual proporcionais; não declarar conformidade integral sem auditoria, escopo e evidências próprias. Não executar auditoria ou QA de UI neste PB documental.
+3. Em `docs/roadmap.md`, registrar E12.7 após E12.6 conforme `docs/template-roadmap.md`, com objetivo/status, referências materiais a este plano e ao Design System, `prod#17` em Updates aplicados e conteúdo restrito ao contrato canônico entregue. Não registrar artefatos de código ou fase não executada.
+4. Reconciliar cada documento canônico pelo `docs/prompt-abc.md` antes da edição. A implementação não muda código, frontend, banco, configuração operacional ou comportamento de páginas existentes.
+
+### Validação e aceite
+
+- Conferir por leitura o contrato canônico contra a V1 e o Debate 13: cabeçalho, coleção, identidade, exploração condicional, detalhe, linguagem humana, mobile, cards condicionais, estados, acessibilidade, preservação funcional e escolha tecnológica aberta.
+- Conferir `docs/roadmap.md` contra o template e comprovar que registra somente a fase 12.7.3 materializada; confirmar `git diff --check` e diff documental restrito aos três arquivos previstos.
+- `npm ci`, `npm run check`, `npm run dev` e QA de Preview não se aplicam ao delta exclusivamente documental. A adoção em futuras páginas requer validação própria conforme o respectivo recorte.
