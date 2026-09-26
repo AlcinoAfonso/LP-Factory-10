@@ -1,6 +1,6 @@
 name = "gestor-automacoes"
 description = "Avalia automações, fluxos com IA, agentes, workflows, jobs, rotinas, integrações e services previstos em planos-base do LP Factory 10."
-model = "gpt-5.6-sol"
+model = "gpt-6-sol"
 model_reasoning_effort = "high"
 sandbox_mode = "read-only"
 developer_instructions = """
