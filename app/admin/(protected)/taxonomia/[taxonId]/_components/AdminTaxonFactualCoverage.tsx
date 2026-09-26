@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState } from "react";
 
 import type {
@@ -84,6 +85,12 @@ export function AdminTaxonFactualCoverage({
           <p className="mt-1 text-sm text-muted-foreground">
             Informações usadas neste taxon e herdadas das categorias superiores.
           </p>
+          <Link
+            className="mt-3 inline-flex min-h-11 items-center rounded-md bg-brand-600 px-4 text-sm font-medium text-white outline-none hover:bg-brand-700 focus-visible:ring-4 focus-visible:ring-brand-600/30"
+            href={`/admin/estrutura-lp?view=entradas&taxon=${taxonId}`}
+          >
+            Adicionar ou editar campos
+          </Link>
         </div>
         <span
           className={`inline-flex w-fit rounded-full px-3 py-1 text-xs font-medium ${
@@ -110,7 +117,7 @@ export function AdminTaxonFactualCoverage({
               }`}
               key={`${layer.level}:${layer.taxonName ?? "universal"}`}
             >
-              {humanize(layer.level)}
+              {layerLabel(layer.level)}
               {layer.taxonName ? ` — ${layer.taxonName}` : ""}
               {layer.served ? <span className="sr-only">, taxon servido</span> : null}
             </li>
@@ -139,7 +146,7 @@ export function AdminTaxonFactualCoverage({
           >
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h3 className="text-base font-semibold text-foreground" id={`factual-layer-${layerIndex}`}>
-                {humanize(layer.level)}
+                {layerLabel(layer.level)}
                 {layer.taxonName ? ` — ${layer.taxonName}` : ""}
               </h3>
               <span className="text-xs font-medium text-muted-foreground">
@@ -149,7 +156,7 @@ export function AdminTaxonFactualCoverage({
             {layer.fields.length === 0 ? (
               <p className="mt-3 text-sm text-muted-foreground">Nenhum campo começa nesta camada.</p>
             ) : (
-              <ul className="mt-3 grid gap-3" aria-label={`Campos de ${humanize(layer.level)}`}>
+              <ul className="mt-3 grid gap-3" aria-label={`Campos de ${layerLabel(layer.level)}`}>
                 {layer.fields.map((field) => (
                   <li
                     className="min-w-0 rounded-md border border-border bg-background px-4 py-3 [overflow-wrap:anywhere]"
@@ -157,8 +164,7 @@ export function AdminTaxonFactualCoverage({
                   >
                     <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                       <div>
-                        <p className="text-sm font-semibold text-foreground">{humanize(field.fieldKey)}</p>
-                        <p className="mt-1 text-sm text-muted-foreground">{field.purpose}</p>
+                        <p className="text-sm font-semibold text-foreground">{field.purpose}</p>
                       </div>
                       <span className="inline-flex w-fit rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
                         {field.ownership === "own" ? "Próprio" : "Herdado"}
@@ -237,7 +243,7 @@ function Detail({ label, value }: Readonly<{ label: string; value: string }>) {
 }
 
 function formatOrigin(field: AdminFactualCoverageField): string {
-  const layer = humanize(field.originLayer);
+  const layer = layerLabel(field.originLayer);
   return field.originTaxonName ? `${layer} — ${field.originTaxonName}` : layer;
 }
 
@@ -282,4 +288,8 @@ function humanize(value: string): string {
   return value
     .replace(/[._-]/g, " ")
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function layerLabel(value: string): string {
+  return ({ universal: "Universal", segment: "Segmento", niche: "Nicho", ultra_niche: "Ultranicho" } as Record<string, string>)[value] ?? humanize(value);
 }
