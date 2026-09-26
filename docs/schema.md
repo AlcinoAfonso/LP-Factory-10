@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data da última atualização: 20/09/2026
-• Documento: LP Factory 10 — Schema (DB Contract) v1.0.69
+• Data da última atualização: 26/09/2026
+• Documento: LP Factory 10 — Schema (DB Contract) v1.0.70
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -1038,12 +1038,14 @@
 • `available_for_selection boolean not null default false`; `catalog_version bigint not null default 1` e positivo.
 • `updated_by uuid null` referencia `auth.users(id)` com ON UPDATE/DELETE RESTRICT; `created_at` e `updated_at` são timestamptz não nulos e monotônicos.
 • Modelo novo nasce indisponível e deve possuir ao menos um parâmetro associado na mesma transação; o bootstrap idempotente cria Mini, Luna, Terra, Sol e GPT Image 2 disponíveis sem alterar lifecycle existente.
+• O RPC de criação rejeita outra identidade na mesma modalidade que difira apenas por caixa, sob advisory lock transacional na identidade comparada. A PK e a grafia original permanecem exatas; identidades históricas não são renomeadas nem fundidas.
 
 1.33.2 Segurança e imutabilidade de identidade
 • RLS habilitado e nenhuma policy.
 • public, anon, authenticated e ai_readonly: sem grants.
 • service_role: SELECT, INSERT e UPDATE; sem DELETE ou TRUNCATE.
 • O trigger `openai_model_catalog_models_prevent_delete` rejeita DELETE; o constraint trigger diferido `openai_model_catalog_model_has_parameter` impede modelo sem parâmetro.
+• A migration E21.2.6 retira `GPT-6-Sol` das novas seleções e o RPC de disponibilidade impede redisponibilizar `GPT-6-Sol` ou `GPT-6-luna`. `gpt-6-luna` só é criada pela reconciliação focal após validação externa server-side e nasce indisponível com `xhigh` indisponível; a variante histórica é indisponibilizada na mesma transação.
 
 1.34 openai_model_catalog_parameters
 1.34.1 Função, chave e shape
@@ -1057,6 +1059,7 @@
 • Migration forward-only: `supabase/migrations/20260823144334_e21_2_5_openai_model_catalog.sql`.
 • Teste transacional: `supabase/tests/e21_2_5_openai_model_catalog.test.sql`; verificador read-only: `supabase/snippets/e21_2_5_openai_model_catalog_verify.sql`.
 • Estado atual: migration aplicada no ambiente hospedado pelo fluxo canônico; o verificador read-only aprovou 8/8 verificações e o Security Controls não apresentou alerta incompatível com as tabelas, constraints, RLS, policies, ACLs, RPCs ou triggers do catálogo. O INFO de RLS sem policy é esperado e compatível com acesso exclusivo por service_role.
+• Delta E21.2.6: `supabase/migrations/20260926111926_e21_2_6_openai_model_catalog_identity.sql` e `supabase/tests/e21_2_6_openai_model_catalog_identity.test.sql`. Migration integral e teste com rollback passaram em PostgreSQL 17 isolado com fixture focal E21.2.5; o apply no projeto hospedado permanece pendente.
 
 1.35 taxon_factual_fields
 1.35.1 Função e autoridade
@@ -1312,8 +1315,10 @@
 
 3.7 Configuração operacional dos workloads OpenAI
 3.7.1 RPCs versionadas
-• `add_openai_model_catalog_model_v1(text, text, text, text[], uuid) → table`: adiciona modelo indisponível e conjunto inicial não vazio de parâmetros conhecidos.
-• `set_openai_model_catalog_model_availability_v1(text, text, boolean, uuid, bigint) → bigint`: altera disponibilidade do modelo com versão otimista.
+• `add_openai_model_catalog_model_v1(text, text, text, text[], uuid) → table`: adiciona modelo indisponível e conjunto inicial não vazio de parâmetros conhecidos; rejeita variantes de caixa sob lock transacional.
+• `add_openai_model_catalog_reasoning_effort_v1(text, text, bigint, uuid) → bigint`: anexa effort tipado indisponível a modelo textual existente, com lock da linha e versão otimista.
+• `reconcile_openai_model_catalog_luna_v1(bigint, uuid) → bigint`: cria somente `gpt-6-luna` com `xhigh` indisponível e indisponibiliza `GPT-6-luna` no mesmo commit, exigindo versão histórica esperada; a confirmação OpenAI ocorre antes, na Server Action.
+• `set_openai_model_catalog_model_availability_v1(text, text, boolean, uuid, bigint) → bigint`: altera disponibilidade do modelo com versão otimista; recusa redisponibilizar as duas variantes históricas protegidas.
 • `set_openai_model_catalog_parameter_availability_v1(text, text, text, text, boolean, uuid, bigint) → bigint`: altera disponibilidade do parâmetro sob locks modelo → parâmetro.
 • `check_openai_model_catalog_configuration_available_v1(text, text, bigint) → table`: revalida em snapshot read-only a candidata vigente imediatamente antes da prova, sem manter lock durante o transporte.
 • `save_openai_workload_configuration_candidate_v1(text, text, text, text, text, uuid, bigint) → bigint`: salva ou edita candidata elegível no catálogo e retorna o novo configuration_version.
@@ -1324,6 +1329,7 @@
 
 3.7.2 Concorrência e segurança
 • Save e promoção bloqueiam primeiro a unidade `(environment, workload)` e depois modelo e parâmetro exatos; mutações do catálogo serializam sobre as mesmas linhas em ordem determinística. Ativação e rollback não consultam disponibilidade corrente.
+• Cadastro comum e reconciliação Luna serializam pelo mesmo advisory lock transacional de modalidade e identidade comparada. Acréscimo posterior de effort bloqueia o modelo exato; ambos preservam revisões e ativações existentes.
 • RPCs com token otimista comparam a versão esperada e falham integralmente para token stale ou transição incompatível.
 • Todas usam SECURITY INVOKER e search_path fixado em pg_catalog; cada referência de tabela é schema-qualified.
 • EXECUTE é exclusivo de service_role; PUBLIC, anon, authenticated e ai_readonly não executam as RPCs.
