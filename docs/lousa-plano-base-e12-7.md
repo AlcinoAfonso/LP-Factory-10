@@ -58,3 +58,28 @@
 - Conferir por leitura o contrato canônico contra a V1 e o Debate 13: cabeçalho, coleção, identidade, exploração condicional, detalhe, linguagem humana, mobile, cards condicionais, estados, acessibilidade, preservação funcional e escolha tecnológica aberta.
 - Conferir `docs/roadmap.md` contra o template e comprovar que registra somente a fase 12.7.3 materializada; confirmar `git diff --check` e diff documental restrito aos três arquivos previstos.
 - `npm ci`, `npm run check`, `npm run dev` e QA de Preview não se aplicam ao delta exclusivamente documental. A adoção em futuras páginas requer validação própria conforme o respectivo recorte.
+
+## V1 complementar aprovada — fase 12.7.4
+
+- Fonte: Debate 13, seção 4.1.13, revisão `ANLCKQkZalkilVUshz7fIBe2SCiBiKLwYGstan10BNAtUhFlajX0X-xOpC69mwXky42Oe-iKuoLULtBmF6tEqKGQgShD3jdRPwgNdkGfuSY`.
+- Natureza: complemento aditivo do PB 1 aprovado após a fase 12.7.3. A V1 original congelada, o PR #967 e a conclusão histórica da primeira fase permanecem preservados.
+- Motivo: explicitar composição e responsividade que pertencem ao contrato canônico, e não apenas ao piloto PB 2.
+- Fase: **12.7.4 — Refinamento canônico de composição e responsividade**. Execução: Light. Automação: não. Supervisão: Autônomo.
+
+### Resultado funcional aprovado
+
+- O padrão rege páginas operacionais de dashboard no Admin Dashboard e no Account Dashboard; o Partner Dashboard o herda quando ganhar superfície funcional própria. Páginas públicas e landing pages comerciais ficam fora do contrato operacional.
+- Em coleções, a primeira opção é lista tabular compacta, com cabeçalho de colunas como primeira linha visual, registros em linhas consecutivas e acesso explícito ao detalhe.
+- Linhas não assumem formato de card nem altura excessiva por padrão. Informação secundária ocupa segunda linha curta somente quando necessária.
+- Quando um atributo permitir filtrar ou ordenar, os controles ficam associados ao cabeçalho da respectiva coluna no desktop. Controles globais acima da coleção servem ao que não pertence naturalmente a uma coluna.
+- Quando uma área contiver dois ou mais objetos de trabalho principais equivalentes, abas horizontais próximas ao topo mostram apenas a visão selecionada. Seletores internos de estado ou ambiente ficam na aba correspondente.
+- No mobile, a mesma coleção preserva identidade, estado, informação essencial e ação. Colunas secundárias podem ser condensadas, ocultadas, expandidas ou acessadas por rolagem controlada. Se o cabeçalho da coluna deixar de ser visível, seus filtros e ordenação podem migrar para controles compactos acima da lista.
+- Cards permanecem exceção funcional quando tarefa, conteúdo ou viewport produzirem UX comprovadamente melhor, sem virar alternativa estética livre à lista tabular.
+- Detalhes e formulários continuam orientados à tarefa; não viram tabela apenas por uniformidade visual.
+- O complemento não escolhe HTML table, CSS Grid, AG Grid, MUI Data Grid ou outra biblioteca. A implementação futura usa a menor solução suficiente e compatível com o Design System.
+
+### Limites, aceite e evidência
+
+- Esta fase não altera páginas existentes, componentes, rotas, banco, runtime, automações, infraestrutura ou contratos de domínio. Atualiza somente o contrato canônico para futuras implementações e pilotos.
+- Aceite: `docs/design-system.md` expressa inequivocamente lista tabular compacta, cabeçalhos com filtros/ordenação, abas para visões irmãs e adaptação mobile, preservando exceções funcionais e tecnologia em aberto.
+- Evidência: delta documental restrito ao Design System, a esta lousa e ao roadmap competente; a conclusão da 12.7.3 fica intacta e nenhuma superfície executável muda.
