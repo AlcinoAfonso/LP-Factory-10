@@ -6,7 +6,7 @@ import { getCommercialEntitlementSignal } from "../../../commercial-entitlements
 import { createServiceClient } from "@/lib/supabase/service";
 import { readFactualCoverageForTaxon } from "../../../conversion-content/adapters/factualFieldsAdapter";
 import { getActivePrimaryAccountTaxon } from "../../niche-resolution/adapters/accountTaxonomyAdapter";
-import { assessFactualCoverage, buildFactualProfileWrite, canEditFactualValues, hasFactualCatalogCutover, isFactualReady, type FactualValues } from "../policy";
+import { assessFactualCoverage, buildFactualProfileWrite, canEditFactualValues, hasSupportedFactualCatalog, isFactualReady, supportedFactualFieldKeys, type FactualValues } from "../policy";
 
 export type AvailableFactualOnboarding = Readonly<{
   status: "available";
@@ -60,10 +60,10 @@ async function readFactualOnboarding(accountSubdomain: string): Promise<FactualO
 
   const activeCatalog = await createServiceClient()
     .from("taxon_factual_fields")
-    .select("field_key,definition", { count: "exact" })
+    .select("field_key,definition")
     .eq("is_active", true)
-    .limit(4);
-  if (activeCatalog.error || !hasFactualCatalogCutover(activeCatalog.data, activeCatalog.count)) {
+    .in("field_key", [...supportedFactualFieldKeys]);
+  if (activeCatalog.error || !hasSupportedFactualCatalog(activeCatalog.data)) {
     return { status: "unavailable" };
   }
 

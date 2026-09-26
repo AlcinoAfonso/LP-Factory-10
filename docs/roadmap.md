@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 26/09/2026
-• Versão: v1.5.243
+• Versão: v1.5.244
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -1059,7 +1059,7 @@
 
 10.10.3 Recorte factual e cutover
 - Status: migration candidata provada em PostgreSQL compatível isolado; apply hospedado pendente do fluxo pós-merge.
-- Conteúdo: exatamente `business_display_name` universal required, `creci_registration` opcional no nicho `corretor-imoveis` e `professional_regulatory_credential` opcional no segmento `servicos-profissionais` permanecem ativos; os outros 23 fields são inativados e preservados fisicamente. O baseline versionado de 25 rows converge com o estado hospedado de 26 sem apagar dados nem manter referências condicionais órfãs.
+- Conteúdo: no cutover inicial, exatamente `business_display_name` universal required, `creci_registration` opcional no nicho `corretor-imoveis` e `professional_regulatory_credential` opcional no segmento `servicos-profissionais` permanecem ativos; os outros 23 fields são inativados e preservados fisicamente. O baseline versionado de 25 rows converge com o estado hospedado de 26 sem apagar dados nem manter referências condicionais órfãs. A cardinalidade do cutover não é gate permanente do runtime: a jornada valida os três fields suportados por chave e semântica e não apresenta nem usa fields adicionais legítimos na prontidão, preservando a resolução integral E20.8.
 
 10.10.4 UX factual e prontidão para a Base
 - Status: implementada no repositório; QA hospedado em desktop e mobile pendente.

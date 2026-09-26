@@ -4,19 +4,22 @@ import { randomUUID } from "node:crypto";
 import type { ResolvedFactualCoverage } from "../../conversion-content/landing-page/input-catalog";
 import type { FactualFieldRow, FactualTaxonIdentity } from "../../conversion-content/landing-page/input-catalog/contracts";
 import { resolveFactualCoverage } from "../../conversion-content/landing-page/input-catalog/resolver";
-import { assessFactualCoverage, buildFactualProfileWrite, canEditFactualValues, hasFactualCatalogCutover, isFactualReady, validateFactualInput } from "./policy";
+import { assessFactualCoverage, buildFactualProfileWrite, canEditFactualValues, hasSupportedFactualCatalog, isFactualReady, supportedFactualFieldKeys, validateFactualInput } from "./policy";
 
 const activeCatalog = [
   { field_key: "business_display_name", definition: { obligation: "required", valueType: "string" } },
   { field_key: "creci_registration", definition: { obligation: "optional", valueType: "string" } },
   { field_key: "professional_regulatory_credential", definition: { obligation: "optional", valueType: "string" } },
 ];
-assert.equal(hasFactualCatalogCutover(activeCatalog, 3), true);
-assert.equal(hasFactualCatalogCutover(activeCatalog, 26), false);
-assert.equal(hasFactualCatalogCutover(activeCatalog.slice(0, 2), 2), false);
-assert.equal(hasFactualCatalogCutover([...activeCatalog, { field_key: "unexpected", definition: {} }], 4), false);
-assert.equal(hasFactualCatalogCutover([activeCatalog[0], { ...activeCatalog[1], definition: { obligation: "required", valueType: "string" } }, activeCatalog[2]], 3), false);
-assert.equal(hasFactualCatalogCutover(activeCatalog, null), false);
+assert.deepEqual(supportedFactualFieldKeys, ["business_display_name", "creci_registration", "professional_regulatory_credential"]);
+assert.equal(hasSupportedFactualCatalog(activeCatalog), true);
+const futureActiveCatalog = [...activeCatalog, { field_key: "future_structured_field", definition: { obligation: "required", valueType: "string" } }];
+assert.equal(hasSupportedFactualCatalog(futureActiveCatalog.filter((field) => supportedFactualFieldKeys.includes(field.field_key as typeof supportedFactualFieldKeys[number]))), true);
+assert.equal(hasSupportedFactualCatalog(activeCatalog.slice(0, 2)), false);
+assert.equal(hasSupportedFactualCatalog([...activeCatalog, { field_key: "unexpected", definition: {} }]), false);
+assert.equal(hasSupportedFactualCatalog([activeCatalog[0], { ...activeCatalog[1], definition: { obligation: "required", valueType: "string" } }, activeCatalog[2]]), false);
+assert.equal(hasSupportedFactualCatalog([activeCatalog[0], { ...activeCatalog[1], definition: { ...activeCatalog[1].definition, applicableWhen: { fieldKey: "business_display_name", operator: "equals", value: "Ana" } } }, activeCatalog[2]]), false);
+assert.equal(hasSupportedFactualCatalog(null), false);
 
 const business = { fieldKey: "business_display_name", originLayer: "universal", obligation: "required", valueType: "string" };
 const creci = { fieldKey: "creci_registration", originLayer: "niche", originTaxon: { slug: "corretor-imoveis" }, obligation: "optional", valueType: "string" };
@@ -39,7 +42,7 @@ assert.deepEqual(assessFactualCoverage(coverage([business, credential])), { ok: 
 assert.deepEqual(assessFactualCoverage(coverage([business, creci])), { ok: false });
 assert.deepEqual(assessFactualCoverage(coverage([business, { ...credential, obligation: "required" }], "servicos-profissionais")), { ok: false });
 assert.deepEqual(assessFactualCoverage(coverage([business, { ...creci, obligation: "required" }], "imobiliario", "corretor-imoveis")), { ok: false });
-assert.deepEqual(assessFactualCoverage(coverage([business, { fieldKey: "unexpected" }])), { ok: false });
+assert.deepEqual(assessFactualCoverage(coverage([{ ...business, applicableWhen: { fieldKey: "future_structured_field", operator: "equals", value: "yes" } }])), { ok: false });
 assert.deepEqual(assessFactualCoverage(coverage([])), { ok: false });
 
 const taxon = (id: string, slug: string, level: FactualTaxonIdentity["level"], parentId: string | null): FactualTaxonIdentity =>
@@ -65,6 +68,15 @@ const rows: FactualFieldRow[] = [
       : inactive;
   }),
 ];
+const futureField = row("future_structured_field", null, "required");
+const futureConditionalBase = row("future_conditional_field", null, "optional");
+const futureConditional = {
+  ...futureConditionalBase,
+  definition: {
+    ...futureConditionalBase.definition,
+    applicableWhen: { fieldKey: "future_structured_field", operator: "equals" as const, value: "yes" },
+  },
+};
 for (const [taxonChain, expected] of [
   [{ segment: imobiliario, niche: corretor }, ["business_display_name", "creci_registration"]],
   [{ segment: profissionais, niche: advogado }, ["business_display_name", "professional_regulatory_credential"]],
@@ -75,7 +87,14 @@ for (const [taxonChain, expected] of [
   assert.ok(resolved.ok);
   assert.deepEqual(resolved.value.fields.map((field) => field.fieldKey), expected);
   assert.equal(assessFactualCoverage(resolved.value).ok, true);
+  const evolved = resolveFactualCoverage({ taxonChain, rows: [...applicable, futureField, futureConditional] });
+  assert.ok(evolved.ok);
+  assert.deepEqual(evolved.value.fields.map((field) => field.fieldKey).filter((key) => supportedFactualFieldKeys.includes(key as typeof supportedFactualFieldKeys[number])), expected);
+  assert.equal(assessFactualCoverage(evolved.value).ok, true);
+  assert.equal(isFactualReady({ businessDisplayName: "Ana", whatsapp: null, creciRegistration: null, professionalRegulatoryCredential: null }), true);
 }
+const invalidFutureReference = resolveFactualCoverage({ taxonChain: { segment: outro }, rows: [rows[0], { ...futureConditional, definition: { ...futureConditional.definition, applicableWhen: { fieldKey: "missing_field", operator: "equals", value: "yes" } } }] });
+assert.equal(invalidFutureReference.ok, false);
 
 for (const role of ["owner", "admin", "editor"] as const) assert.equal(canEditFactualValues(role), true);
 assert.equal(canEditFactualValues("viewer"), false);

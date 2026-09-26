@@ -21,15 +21,23 @@ export function canEditFactualValues(role: MemberRole): boolean {
   return role === "owner" || role === "admin" || role === "editor";
 }
 
-export function hasFactualCatalogCutover(rows: unknown, count: number | null): boolean {
-  if (count !== 3 || !Array.isArray(rows) || rows.length !== 3) return false;
+export const supportedFactualFieldKeys = [
+  "business_display_name",
+  "creci_registration",
+  "professional_regulatory_credential",
+] as const;
+
+export function hasSupportedFactualCatalog(rows: unknown): boolean {
+  if (!Array.isArray(rows) || rows.length !== supportedFactualFieldKeys.length) return false;
   const definitions = new Map<string, Record<string, unknown>>();
   for (const row of rows) {
     if (!row || typeof row !== "object" || typeof row.field_key !== "string" ||
         !row.definition || typeof row.definition !== "object" || Array.isArray(row.definition)) return false;
     definitions.set(row.field_key, row.definition as Record<string, unknown>);
   }
-  return definitions.size === 3 &&
+  const supported = supportedFactualFieldKeys.map((key) => definitions.get(key));
+  return definitions.size === supportedFactualFieldKeys.length &&
+    supported.every((definition) => definition && !("requiredWhen" in definition) && !("applicableWhen" in definition)) &&
     definitions.get("business_display_name")?.obligation === "required" &&
     definitions.get("business_display_name")?.valueType === "string" &&
     definitions.get("creci_registration")?.obligation === "optional" &&
@@ -47,13 +55,12 @@ export function assessFactualCoverage(
   const isCorretor = coverage.appliedLayers.some((layer) => layer.taxon?.slug === "corretor-imoveis");
   const isProfessionalServices = coverage.appliedLayers.some((layer) => layer.level === "segment" && layer.taxon?.slug === "servicos-profissionais");
   if (
-    coverage.fields.some((field) => !["business_display_name", "creci_registration", "professional_regulatory_credential"].includes(field.fieldKey)) ||
     !business || business.originLayer !== "universal" || business.obligation !== "required" ||
-    business.valueType !== "string" ||
+    business.valueType !== "string" || business.requiredWhen || business.applicableWhen ||
     Boolean(creci) !== isCorretor ||
-    (creci && (creci.originLayer !== "niche" || creci.originTaxon?.slug !== "corretor-imoveis" || creci.obligation !== "optional" || creci.valueType !== "string")) ||
+    (creci && (creci.originLayer !== "niche" || creci.originTaxon?.slug !== "corretor-imoveis" || creci.obligation !== "optional" || creci.valueType !== "string" || creci.requiredWhen || creci.applicableWhen)) ||
     Boolean(credential) !== isProfessionalServices ||
-    (credential && (credential.originLayer !== "segment" || credential.originTaxon?.slug !== "servicos-profissionais" || credential.obligation !== "optional" || credential.valueType !== "string"))
+    (credential && (credential.originLayer !== "segment" || credential.originTaxon?.slug !== "servicos-profissionais" || credential.obligation !== "optional" || credential.valueType !== "string" || credential.requiredWhen || credential.applicableWhen))
   ) return { ok: false };
   return { ok: true, creciApplicable: Boolean(creci), professionalCredentialApplicable: Boolean(credential) };
 }
