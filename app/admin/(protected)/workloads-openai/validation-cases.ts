@@ -10,7 +10,7 @@ import {
   type OpenAiCandidateProofDependencies,
 } from "./proofCore";
 import { parseCommercialProof } from "./commercialProof";
-import { confirmOpenAiModelIdentity } from "@/openai-workloads/adapters/openAiModelIdentity";
+import { confirmOpenAiModelIdentity } from "./openAiModelIdentity";
 
 type Case = Readonly<{ name: string; run: () => void | Promise<void> }>;
 

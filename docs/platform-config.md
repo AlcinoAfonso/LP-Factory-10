@@ -2,8 +2,8 @@
 
 0.1 Cabeçalho
 • Documento: LP Factory 10 — Platform Config
-• Versão: v0.1.49
-• Data: 22/09/2026
+• Versão: v0.1.50
+• Data: 26/09/2026
 
 0.2 Contrato do documento
 • O QUE É: snapshot operacional e fonte única das configurações de plataformas externas do LP Factory 10, refletindo o estado conhecido/cadastrado nas plataformas conforme indicado.
@@ -402,6 +402,7 @@
 
 6.3.1 Endpoint externo atual
 • Endpoint OpenAI Responses API: `https://api.openai.com/v1/responses`
+• Endpoint OpenAI Models API: `GET https://api.openai.com/v1/models/{id}`; consulta síncrona do cadastro administrativo de identidade, exclusivamente server-side no Core com a `OPENAI_API_KEY` compartilhada de Preview e Production. Falha ou ID divergente bloqueia o cadastro.
 • Endpoint OpenAI Costs API: `https://api.openai.com/v1/organization/costs`
 • Atalho oficial OpenAI Usage: `https://platform.openai.com/usage`
 • Atalho oficial OpenAI faturamento e créditos: `https://platform.openai.com/settings/organization/billing/overview`

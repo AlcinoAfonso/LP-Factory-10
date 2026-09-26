@@ -10,7 +10,7 @@ import {
   setOpenAiModelCatalogModelAvailability,
   setOpenAiModelCatalogParameterAvailability,
 } from "@/openai-workloads/adapters/modelCatalogAdapter";
-import { confirmOpenAiModelIdentity } from "@/openai-workloads/adapters/openAiModelIdentity";
+import { confirmOpenAiModelIdentity } from "./openAiModelIdentity";
 import { openAiImageQualities, openAiReasoningEfforts } from "@/openai-workloads";
 
 const ADMIN_PATH = "/admin/workloads-openai";
