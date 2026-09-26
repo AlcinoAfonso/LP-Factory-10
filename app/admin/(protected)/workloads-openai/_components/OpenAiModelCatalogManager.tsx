@@ -11,6 +11,8 @@ import {
 } from "@/openai-workloads/contracts";
 import {
   addOpenAiModelCatalogModelAction,
+  addOpenAiModelCatalogReasoningEffortAction,
+  reconcileOpenAiModelCatalogLunaAction,
   setOpenAiModelCatalogModelAvailabilityAction,
   setOpenAiModelCatalogParameterAvailabilityAction,
   type OpenAiModelCatalogActionState,
@@ -180,6 +182,11 @@ function ModelConfiguration({ id, model }: Readonly<{ id: string; model: OpenAiM
   return (
     <div id={id} className="space-y-4 border-t border-border bg-card p-4">
       <ModelAvailabilityForm model={model} />
+      {model.apiKind === "responses_text" &&
+        model.model !== "GPT-6-Sol" && model.model !== "GPT-6-luna"
+        ? <AddReasoningEffortForm model={model} /> : null}
+      {model.apiKind === "responses_text" && model.model === "GPT-6-luna"
+        ? <ReconcileLunaForm model={model} /> : null}
       <div>
         <h4 className="text-sm font-semibold text-foreground">Parâmetros suportados</h4>
         <p className="mt-1 text-xs leading-5 text-muted-foreground">Uma combinação só é elegível quando modelo e parâmetro estão disponíveis.</p>
@@ -195,9 +202,54 @@ function ModelConfiguration({ id, model }: Readonly<{ id: string; model: OpenAiM
   );
 }
 
+function AddReasoningEffortForm({ model }: Readonly<{ model: OpenAiModelCatalogModel }>) {
+  const [state, formAction, pending] = useActionState(addOpenAiModelCatalogReasoningEffortAction, initialState);
+  const missing = openAiReasoningEfforts.filter((effort) =>
+    !model.parameters.some((parameter) => parameter.kind === "reasoning_effort" && parameter.value === effort),
+  );
+  if (missing.length === 0) return null;
+  return (
+    <form action={formAction} className="rounded-md border border-border bg-background p-3">
+      <input type="hidden" name="model" value={model.model} />
+      <input type="hidden" name="expectedVersion" value={model.version} />
+      <label htmlFor={`add-effort-${safeId(model.model)}`} className="text-sm font-medium text-foreground">
+        Acrescentar reasoning effort
+      </label>
+      <p className="mt-1 text-xs text-muted-foreground">O novo effort nasce indisponível para seleção.</p>
+      <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+        <select id={`add-effort-${safeId(model.model)}`} name="reasoningEffort" required disabled={pending} className={fieldClassName}>
+          <option value="">Selecione um effort</option>
+          {missing.map((effort) => <option key={effort} value={effort}>{parameterLabel("reasoning_effort", effort)}</option>)}
+        </select>
+        <button type="submit" className={buttonClassName} disabled={pending}>
+          {pending ? "Adicionando…" : "Acrescentar effort"}
+        </button>
+      </div>
+      <CatalogActionFeedback state={state} successTitle="Effort acrescentado" />
+    </form>
+  );
+}
+
+function ReconcileLunaForm({ model }: Readonly<{ model: OpenAiModelCatalogModel }>) {
+  const [state, formAction, pending] = useActionState(reconcileOpenAiModelCatalogLunaAction, initialState);
+  return (
+    <form action={formAction} className="rounded-md border border-amber-300 bg-amber-50 p-3">
+      <input type="hidden" name="expectedVersion" value={model.version} />
+      <p className="text-sm font-medium text-foreground">Reconciliar identidade histórica Luna</p>
+      <p className="mt-1 text-xs text-muted-foreground">Confirma gpt-6-luna na OpenAI, cria a identidade canônica indisponível e retira esta variante das novas seleções em uma operação.</p>
+      <button type="submit" className={`${buttonClassName} mt-2`} disabled={pending}>
+        {pending ? "Reconciliando…" : "Reconciliar gpt-6-luna"}
+      </button>
+      <CatalogActionFeedback state={state} successTitle="Luna reconciliado" />
+    </form>
+  );
+}
+
 function ModelAvailabilityForm({ model }: Readonly<{ model: OpenAiModelCatalogModel }>) {
   const [state, formAction, pending] = useActionState(setOpenAiModelCatalogModelAvailabilityAction, initialState);
   const next = !model.availableForSelection;
+  const historicalVariant = model.apiKind === "responses_text" &&
+    (model.model === "GPT-6-Sol" || model.model === "GPT-6-luna");
   return (
     <form action={formAction} className="rounded-md border border-border bg-background p-3">
       <input type="hidden" name="apiKind" value={model.apiKind} />
@@ -208,8 +260,11 @@ function ModelAvailabilityForm({ model }: Readonly<{ model: OpenAiModelCatalogMo
         <div>
           <p className="text-sm font-medium text-foreground">Disponibilidade do modelo</p>
           <p className="mt-1 text-xs text-muted-foreground">{model.availableForSelection ? "Disponível para novas candidatas." : "Indisponível para novas candidatas."}</p>
+          {historicalVariant && !model.availableForSelection ? (
+            <p className="mt-1 text-xs text-muted-foreground">Identidade histórica preservada; novas seleções usam o identificador canônico.</p>
+          ) : null}
         </div>
-        <button type="submit" className={buttonClassName} disabled={pending}>
+        <button type="submit" className={buttonClassName} disabled={pending || (historicalVariant && next)}>
           {pending ? "Atualizando…" : next ? "Disponibilizar modelo" : "Indisponibilizar modelo"}
         </button>
       </div>
@@ -284,5 +339,5 @@ function parameterLabel(kind: "reasoning_effort" | "quality", value: string) {
 }
 
 function safeId(value: string) {
-  return value.replace(/[^a-z0-9_-]+/gi, "-").replace(/^-|-$/g, "").toLowerCase();
+  return value.replace(/[^a-z0-9_-]+/gi, "-").replace(/^-|-$/g, "");
 }
