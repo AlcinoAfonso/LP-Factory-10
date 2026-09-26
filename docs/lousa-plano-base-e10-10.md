@@ -2,12 +2,12 @@
 
 Status: V1 funcional consolidada e liberada para handoff; execução Light; supervisão Autônoma.
 
-Fonte aprovada: [Debate 14 — Jornada pós-compra/trial e Base de Comunicação — LP Factory 10](https://docs.google.com/document/d/1ZRz72PBFwWPz-ZGrIPtkydtpElUjeGoHdjnuQdOKgk0/edit), seção 4.1, revisão `ANLCKQnpnFYKvewq7l1j9EWaxYCn-A-Mk8U5CKUHRdBRlaHivSBCuInR1igN2ODKtT_pEnl5p7iHqdRD_l1V-qUVK9ogwQrCXRQwHKUxd38`, consultada em 26/09/2026.
+Fonte aprovada: [Debate 14 — Jornada pós-compra/trial e Base de Comunicação — LP Factory 10](https://docs.google.com/document/d/1ZRz72PBFwWPz-ZGrIPtkydtpElUjeGoHdjnuQdOKgk0/edit), seções 3.23 e 4.1, revisão corrigida `ANLCKQng0e7hHvSR9gRlAydyR_ynD-oC4XMCgtQuMvLJtG3YqCNoWcOOwu1PAK7ABD19MEBIVj2tCiIHoiwpSP_CURnGtezPb1mpz7FelxU`, consultada em 26/09/2026. A V1 original permanece preservada no commit `572052958520a2883a9bf5ae80a5ccbacb672ee8`; este checkpoint corrige somente o recorte factual pela decisão explícita posterior.
 
 ## 1. Problema e resultado
 
 - Problema: após a entrada comercial válida, obter e confirmar o mínimo factual aplicável sem repetir o Pending Setup, sem questionário extenso e sem obrigar IA.
-- Resultado: `business_display_name` válido é o único gate factual; `creci_registration` permanece ativo e opcional quando aplicável ao nicho `corretor-imoveis`; os demais 23 fields atuais ficam inativos e preservados fisicamente.
+- Resultado: `business_display_name` válido é o único gate factual; `creci_registration` e `professional_regulatory_credential` permanecem ativos e opcionais quando aplicáveis, respectivamente ao nicho `corretor-imoveis` e ao segmento `servicos-profissionais`; os demais 23 fields atuais ficam inativos e preservados fisicamente.
 
 ## 2. Atores e UX
 
@@ -15,6 +15,7 @@ Fonte aprovada: [Debate 14 — Jornada pós-compra/trial e Base de Comunicação
 - E-mail autenticado e nicho/taxon confirmado aparecem pré-preenchidos e somente leitura.
 - `business_display_name` é pré-preenchido quando houver valor legítimo e permanece editável.
 - WhatsApp é reaproveitado quando existir e permanece editável.
+- CRECI e credencial regulatória profissional podem ser informados ou corrigidos apenas quando seus fields forem aplicáveis; sua ausência não bloqueia a prontidão factual.
 
 ## 3. Dependências, limites e escopo negativo
 
@@ -25,7 +26,7 @@ Fonte aprovada: [Debate 14 — Jornada pós-compra/trial e Base de Comunicação
 ## 4. Posição planejada e fases
 
 - Roadmap planejado: `E10.10 — Onboarding factual pós-compra/trial`.
-- `10.10.3 — Recorte factual e cutover`: manter ativos `business_display_name` e `creci_registration` conforme a V1, inativar os demais 23 fields e comprovar cobertura válida, sem referências condicionais órfãs nem regressão dos consumidores vigentes.
+- `10.10.3 — Recorte factual e cutover`: manter ativos `business_display_name`, `creci_registration` e `professional_regulatory_credential` conforme a V1 corrigida, inativar os demais 23 fields e comprovar cobertura válida, sem referências condicionais órfãs nem regressão dos consumidores vigentes.
 - `10.10.4 — UX factual e passagem à Base`: apresentar/reaproveitar os dados conforme a V1, aplicar edição/leitura por papel e permitir seguir imediatamente para PB2 quando o mínimo factual estiver satisfeito.
 
 ## 5. Classificação e automação
@@ -38,10 +39,10 @@ Fonte aprovada: [Debate 14 — Jornada pós-compra/trial e Base de Comunicação
 ## 6. Critérios de aceite e evidências
 
 - Uma conta elegível com taxon resolvido conclui o PB1 sem responder novamente dado válido já disponível e sem chamada obrigatória de IA.
-- `business_display_name` é o único blocker factual; ausência de WhatsApp ou de `creci_registration` não bloqueia a passagem à Base.
+- `business_display_name` é o único blocker factual; ausência de WhatsApp, de `creci_registration` ou de `professional_regulatory_credential` não bloqueia a prontidão factual para a Base.
 - E-mail e nicho aparecem somente leitura; nome do negócio e WhatsApp, quando aplicável, podem ser corrigidos.
-- A cobertura ativa da E20.8 resolve corretamente com os dois fields definidos e sem `MISSING_CONDITION_REFERENCE`; os 23 inativos não são solicitados.
-- QA representativa cobre ao menos: conta com dados reaproveitados, conta sem WhatsApp, `corretor-imoveis` com e sem CRECI e conta de outro taxon.
+- A cobertura ativa da E20.8 resolve corretamente com os três fields definidos e sem `MISSING_CONDITION_REFERENCE`; os 23 inativos não são solicitados.
+- QA representativa cobre ao menos: conta com dados reaproveitados, conta sem WhatsApp, `corretor-imoveis` com e sem CRECI, `servicos-profissionais` com e sem credencial regulatória e conta de outro taxon.
 - Evidência esperada: testes automatizados da cobertura/validação aplicável e QA hospedado da jornada e dos estados visuais essenciais.
 
 ## 7. Estado da V1
@@ -49,6 +50,7 @@ Fonte aprovada: [Debate 14 — Jornada pós-compra/trial e Base de Comunicação
 - V1 funcional aprovada.
 - Execução: Light.
 - Supervisão: Autônomo.
+- Correção explícita posterior à V1 original: preservar três fields ativos entre as 26 rows hospedadas; `professional_regulatory_credential` é opcional no segmento `servicos-profissionais` e não constitui blocker adicional.
 
 ## 8. V2 técnica mínima candidata — decisão pendente
 
