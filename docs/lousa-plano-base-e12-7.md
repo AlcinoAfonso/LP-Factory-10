@@ -83,3 +83,23 @@
 - Esta fase não altera páginas existentes, componentes, rotas, banco, runtime, automações, infraestrutura ou contratos de domínio. Atualiza somente o contrato canônico para futuras implementações e pilotos.
 - Aceite: `docs/design-system.md` expressa inequivocamente lista tabular compacta, cabeçalhos com filtros/ordenação, abas para visões irmãs e adaptação mobile, preservando exceções funcionais e tecnologia em aberto.
 - Evidência: delta documental restrito ao Design System, a esta lousa e ao roadmap competente; a conclusão da 12.7.3 fica intacta e nenhuma superfície executável muda.
+
+## V2 técnica mínima — fase 12.7.4
+
+- Contrato funcional congelado: commit `8f73855205aab7a9767db078913d07dd2dd93e0e`, seção “V1 complementar aprovada — fase 12.7.4”. A V1 e V2 originais da 12.7.3 permanecem históricas e inalteradas.
+- Gestor de Updates: nenhum update aplicável agora; `prod#17` e `prod#16` seguem como referências já vigentes para acessibilidade e QA de futuras superfícies; `vercel#15` fica condicional e fora desta fase. Sem confronto estrutural ou arbitragem funcional.
+- Consolidar somente o delta documental da fase **12.7.4** em `docs/design-system.md` e `docs/roadmap.md`, reconciliado por `docs/prompt-abc.md`.
+
+### Delta executável
+
+1. No Design System, explicitar a aplicação do contrato às páginas operacionais Admin e Account, com herança pelo Partner quando funcional; excluir páginas públicas e landing pages comerciais. Preservar o conteúdo válido da 12.7.3 e os contratos de domínio.
+2. Ajustar a regra de coleção para lista tabular compacta, cabeçalho de colunas na primeira linha visual, linhas consecutivas e segunda linha curta apenas quando necessária. Vincular controles por atributo aos cabeçalhos no desktop; reservar a área acima da lista ao que for global.
+3. Adicionar a regra de abas para visões irmãs equivalentes, uma visão visível por vez, com seletores internos no contexto da aba. Detalhes e formulários seguem orientados à tarefa.
+4. Completar a regra mobile para preservar mesma coleção, identidade, estado, informação essencial e ação, com adaptação de colunas e possível deslocamento de filtros e ordenação para controles compactos quando o cabeçalho correspondente ficar oculto.
+5. Manter cards como exceção funcional e a escolha tecnológica aberta. No roadmap, registrar a 12.7.4 como complemento documental concluído e atualizar apenas status, referência e versão/data que se tornarem necessários, preservando literalmente a subseção histórica 12.7.3.
+
+### Validação
+
+- Leitura comparativa da V1 complementar, do Design System e do roadmap; verificar presença inequívoca dos critérios de aceite e ausência de novas regras de domínio ou de aplicação a páginas públicas e landing pages comerciais.
+- `git diff --check` e `origin/main..HEAD` / `origin/main...HEAD` devem comprovar delta somente nos três documentos previstos, sem código, componentes, rotas, banco, runtime ou configuração operacional.
+- `npm ci`, `npm run check`, `npm run dev` e QA de Preview não se aplicam ao delta exclusivamente documental.
