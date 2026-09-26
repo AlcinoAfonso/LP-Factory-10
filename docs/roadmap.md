@@ -2122,6 +2122,8 @@
     - `public.prevent_openai_model_catalog_delete_v1`
     - `public.assert_openai_model_catalog_model_has_parameter_v1`
     - `public.add_openai_model_catalog_model_v1`
+    - `public.add_openai_model_catalog_reasoning_effort_v1`
+    - `public.reconcile_openai_model_catalog_luna_v1`
     - `public.set_openai_model_catalog_model_availability_v1`
     - `public.set_openai_model_catalog_parameter_availability_v1`
     - `public.check_openai_model_catalog_configuration_available_v1`
@@ -2132,6 +2134,7 @@
     - `lib/openai-workloads/adapters/operationalConfigurationAdapterCore.ts`
     - `lib/openai-workloads/adapters/modelCatalogAdapter.ts`
     - `lib/openai-workloads/adapters/modelCatalogAdapterCore.ts`
+    - `app/admin/(protected)/workloads-openai/openAiModelIdentity.ts`
     - `app/admin/(protected)/workloads-openai/_components/OpenAiConfigurationManager.tsx`
     - `app/admin/(protected)/workloads-openai/_components/OpenAiModelCatalogManager.tsx`
     - `app/admin/(protected)/workloads-openai/_components/OpenAiWorkloadDetail.tsx`
@@ -2146,11 +2149,13 @@
     - `supabase/migrations/20260820190422_e21_2_3_openai_workload_operational_configurations.sql`
     - `supabase/migrations/20260823144334_e21_2_5_openai_model_catalog.sql`
     - `supabase/migrations/20260827203000_postgrest_safe_application_conflicts.sql`
+    - `supabase/migrations/20260926111926_e21_2_6_openai_model_catalog_identity.sql`
     - `supabase/snippets/e21_2_3_openai_workload_operational_configurations_verify.sql`
     - `supabase/snippets/e21_2_5_openai_model_catalog_verify.sql`
     - `supabase/snippets/postgrest_safe_application_conflicts_verify.sql`
     - `supabase/tests/e21_2_3_openai_workload_operational_configurations.test.sql`
     - `supabase/tests/e21_2_5_openai_model_catalog.test.sql`
+    - `supabase/tests/e21_2_6_openai_model_catalog_identity.test.sql`
     - `supabase/tests/postgrest_safe_application_conflicts.test.sql`
   - Ajustados:
     - `lib/openai-workloads/contracts.ts`
@@ -2190,6 +2195,13 @@
 - A superfície administrativa combina catálogo, seletor Preview/Production, lista compacta e detalhe expandido. O catálogo de modelos preserva suporte independente à modalidade de imagem, ainda que não exista workload de imagem vigente.
 - Leituras são completas, ordenadas e fail-closed; paginação parcial ou resposta inválida não produz estado administrativo utilizável.
 - O papel sem `platform_admin` não recebe catálogo, configuração, provas ou controles de mutação.
+
+21.2.6 Correção e proteção do catálogo de modelos OpenAI
+- Status: implementada no repositório; migration e teste focal aprovados em PostgreSQL 17 isolado. Apply no projeto Supabase e QA administrativa hospedada permanecem pendentes; o PR segue draft.
+- O cadastro explícito de modelo exige confirmação ao vivo pela OpenAI do identificador técnico exato antes da persistência. Erro, ausência ou divergência falham fechado; o modelo nasce indisponível e os efforts são informados pelo administrador, sem inferência da resposta externa.
+- A criação bloqueia variantes de caixa sob lock transacional por modalidade e identidade comparada. Modelo textual existente pode receber novo reasoning effort tipado, inicialmente indisponível e sob versão otimista.
+- `gpt-6-sol` e `gpt-6-luna` são as identidades canônicas de novas escolhas. A migration retira `GPT-6-Sol` da seleção; a reconciliação explícita de Luna cadastra a identidade canônica e retira `GPT-6-luna` atomicamente após confirmação externa. As variantes históricas não podem ser redisponibilizadas, mas permanecem intactas para histórico e rollback.
+- Nenhuma revisão, ativação, configuração ativa ou prova operacional muda automaticamente. Não há sincronização periódica, descoberta automática de efforts ou nova infraestrutura.
 
 21.3 Evidências e avaliação de custo-benefício
 

@@ -5,9 +5,12 @@ import { revalidatePath } from "next/cache";
 import { requirePlatformAdmin } from "@/lib/access/guards";
 import {
   addOpenAiModelCatalogModel,
+  addOpenAiModelCatalogReasoningEffort,
+  reconcileOpenAiModelCatalogLuna,
   setOpenAiModelCatalogModelAvailability,
   setOpenAiModelCatalogParameterAvailability,
 } from "@/openai-workloads/adapters/modelCatalogAdapter";
+import { confirmOpenAiModelIdentity } from "./openAiModelIdentity";
 import { openAiImageQualities, openAiReasoningEfforts } from "@/openai-workloads";
 
 const ADMIN_PATH = "/admin/workloads-openai";
@@ -25,13 +28,23 @@ export async function addOpenAiModelCatalogModelAction(
   const actor = await authorizedActor();
   if (!actor.ok) return actor.state;
   const apiKind = parseApiKind(formData.get("apiKind"));
-  const model = parseTechnicalValue(formData.get("model"), 128);
+  const model = parseExactTechnicalValue(formData.get("model"), 128);
   const rawValues = formData.getAll("parameterValues");
   const parameterValues = apiKind
     ? parseParameterValues(apiKind, rawValues)
     : null;
   if (!apiKind || !model || !parameterValues?.length) {
     return validationFailure("Informe modalidade, modelo e ao menos um parâmetro suportado.");
+  }
+
+  const identity = await confirmOpenAiModelIdentity(model, process.env.OPENAI_API_KEY);
+  if (!identity.ok) {
+    return failure(
+      "identity",
+      identity.code === "configuration"
+        ? "A confirmação do modelo na OpenAI está indisponível. Nenhum cadastro foi gravado."
+        : "A OpenAI não confirmou o identificador exato para este projeto. Nenhum cadastro foi gravado.",
+    );
   }
 
   const { error } = await addOpenAiModelCatalogModel({
@@ -43,6 +56,60 @@ export async function addOpenAiModelCatalogModelAction(
   if (error) return databaseFailure(error);
   revalidatePath(ADMIN_PATH);
   return success("Modelo adicionado indisponível; revise os parâmetros antes de liberá-lo.");
+}
+
+export async function addOpenAiModelCatalogReasoningEffortAction(
+  _previous: OpenAiModelCatalogActionState,
+  formData: FormData,
+): Promise<OpenAiModelCatalogActionState> {
+  const actor = await authorizedActor();
+  if (!actor.ok) return actor.state;
+  const model = parseExactTechnicalValue(formData.get("model"), 128);
+  const effort = formData.get("reasoningEffort");
+  const expectedVersion = parsePositiveInteger(formData.get("expectedVersion"));
+  if (!model || typeof effort !== "string" ||
+      !openAiReasoningEfforts.includes(effort as never) || expectedVersion === null) {
+    return validationFailure("Modelo, effort ou versão do catálogo inválida.");
+  }
+  const { error } = await addOpenAiModelCatalogReasoningEffort({
+    model,
+    reasoningEffort: effort as (typeof openAiReasoningEfforts)[number],
+    expectedVersion,
+    actorUserId: actor.actorUserId,
+  });
+  if (error?.code === "23505") {
+    return validationFailure("Este effort já está cadastrado para o modelo.");
+  }
+  if (error) return databaseFailure(error);
+  revalidatePath(ADMIN_PATH);
+  return success("Effort adicionado indisponível; libere-o separadamente quando apropriado.");
+}
+
+export async function reconcileOpenAiModelCatalogLunaAction(
+  _previous: OpenAiModelCatalogActionState,
+  formData: FormData,
+): Promise<OpenAiModelCatalogActionState> {
+  const actor = await authorizedActor();
+  if (!actor.ok) return actor.state;
+  const expectedVersion = parsePositiveInteger(formData.get("expectedVersion"));
+  if (expectedVersion === null) return validationFailure("Versão do catálogo inválida.");
+
+  const identity = await confirmOpenAiModelIdentity(
+    "gpt-6-luna", process.env.OPENAI_API_KEY,
+  );
+  if (!identity.ok) {
+    return failure("identity", "A OpenAI não confirmou gpt-6-luna para este projeto. O catálogo não foi alterado.");
+  }
+  const { error } = await reconcileOpenAiModelCatalogLuna({
+    expectedVersion,
+    actorUserId: actor.actorUserId,
+  });
+  if (error?.code === "23505") {
+    return validationFailure("Luna já foi reconciliado ou existe outra variante desta identidade.");
+  }
+  if (error) return databaseFailure(error);
+  revalidatePath(ADMIN_PATH);
+  return success("Luna canônico cadastrado indisponível; a variante histórica saiu das novas seleções.");
 }
 
 export async function setOpenAiModelCatalogModelAvailabilityAction(
@@ -158,6 +225,13 @@ function parseTechnicalValue(value: FormDataEntryValue | null, maximum: number) 
     : null;
 }
 
+function parseExactTechnicalValue(value: FormDataEntryValue | null, maximum: number) {
+  return typeof value === "string" && value.length <= maximum &&
+    /^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(value)
+    ? value
+    : null;
+}
+
 function parseBoolean(value: FormDataEntryValue | null) {
   return value === "true" ? true : value === "false" ? false : null;
 }
@@ -175,6 +249,9 @@ function databaseFailure(error: Readonly<{ code?: string; message?: string }>) {
   }
   if (error.code === "23505" || message.includes("already_exists")) {
     return validationFailure("Este modelo já existe no catálogo.");
+  }
+  if (message.includes("identity_conflict") || message.includes("historical_variant")) {
+    return validationFailure("Esta identidade já possui uma variante histórica ou não pode voltar às novas seleções.");
   }
   if (error.code === "22023" || error.code === "22004") {
     return validationFailure("A alteração foi rejeitada pelo contrato do catálogo.");

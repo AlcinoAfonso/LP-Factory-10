@@ -2,8 +2,8 @@
 
 0.1 Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.93
-• Data: 22/09/2026
+• Versão: v2.0.94
+• Data: 26/09/2026
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -308,6 +308,7 @@
 • O registry mantém identidade, modalidade, apresentação code-owned, vocabulário tipado e baseline determinístico de Development; modelos elegíveis para novas candidatas não ficam hardcoded por workload. Resolvers recebem o ambiente explicitamente e retornam proveniência verificável: `repo_catalog` com revisão versionada ou `supabase_operational` com revisão decimal positiva.
 • Em Production e Preview, o gate server-side temporário aceita somente o literal `true`: desligado, preserva o baseline do repositório; ligado, lê a revisão ativa no Supabase em cada execução, sem cache, seleção automática de outra revisão ou fallback para o repositório após erro.
 • O catálogo global Supabase responde somente quais pares exatos `modelo + parâmetro tipado` podem ser escolhidos agora; o lifecycle separado por `ambiente + workload` responde qual revisão está ativa e preserva candidata, revisão pendente, ativações e histórico. Objetos físicos e estado de apply pertencem a `docs/schema.md`.
+• O cadastro administrativo de identidade nova confirma ao vivo o ID exato pela API de modelos da OpenAI antes da persistência; falha ou divergência bloqueia o cadastro. Essa confirmação não infere efforts nem substitui a prova operacional da combinação modelo + parâmetro. Identidades que diferem apenas por caixa não formam novas escolhas; variantes históricas preservam sua grafia e revisões anteriores.
 • Leituras administrativas de unidades, revisões e ativações delimitam o estado corrente pela allowlist de workloads vigente. Linhas físicas de workloads retirados permanecem históricas e inertes, sem compatibilizador por ID legado.
 • Somente criação/edição, prova e promoção de nova candidata consultam elegibilidade vigente. Save e promoção revalidam sob locks ordenados; a prova revalida fail-closed imediatamente antes do transporte e não mantém lock durante a chamada externa. Ativação de pendente já validada e rollback histórico não consultam o catálogo.
 • Revisões ativas, históricas e snapshots funcionais revalidam identidade do workload, origem, revisão, modalidade, identificador técnico do modelo e shape tipado do parâmetro, sem exigir disponibilidade atual nem presença do modelo em lista estática.
@@ -328,7 +329,7 @@
 • Leituras administrativas de catálogo, revisões e ativações paginam integralmente com ordem determinística; `416/PGRST103` terminal preserva páginas já acumuladas e qualquer erro ou resposta parcial produz estado tipado fail-closed.
 • `/admin/workloads-openai` separa catálogo global, seletor Preview/Production e lifecycle expansível; nomes e recortes dos workloads vigentes vêm de uma única matriz pública code-owned.
 • Candidata, prova, revisão validada pendente, ativação e rollback permanecem estados explícitos. A prova usa fixture segura nos transportes funcionais existentes, não persiste dados de negócio e somente promove a candidata após sucesso; a configuração ativa muda apenas por ação humana posterior.
-• `OPENAI_API_KEY` permanece server-only e restrita à prova operacional autorizada; não atravessa client, formulário, read model ou log. Falha, recusa ou metadado inseguro encerram a prova sem promover nem descartar a candidata.
+• `OPENAI_API_KEY` permanece server-only e restrita à validação explícita de identidade e à prova operacional autorizada; não atravessa client, formulário, read model ou log. Falha, recusa ou metadado inseguro encerram a prova sem promover nem descartar a candidata.
 
 4. DB Contract
 • `docs/schema.md` é a fonte única de tabelas, views, functions, RPCs, triggers, policies, constraints, grants e do estado exato do banco.

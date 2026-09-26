@@ -10,10 +10,64 @@ import {
   type OpenAiCandidateProofDependencies,
 } from "./proofCore";
 import { parseCommercialProof } from "./commercialProof";
+import { confirmOpenAiModelIdentity } from "./openAiModelIdentity";
 
 type Case = Readonly<{ name: string; run: () => void | Promise<void> }>;
 
 const cases: readonly Case[] = [
+  {
+    name: "model identity requires exact live OpenAI model id before persistence",
+    run: async () => {
+      const requests: string[] = [];
+      const fetchModel = (async (input: RequestInfo | URL, init?: RequestInit) => {
+        requests.push(String(input));
+        assert.equal(init?.method, "GET");
+        assert.equal(init?.cache, "no-store");
+        assert.equal(init?.headers && "Authorization" in init.headers, true);
+        return new Response(JSON.stringify({ object: "model", id: "gpt-6-sol" }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        });
+      }) as typeof fetch;
+      assert.deepEqual(
+        await confirmOpenAiModelIdentity("gpt-6-sol", "test-key", fetchModel),
+        { ok: true },
+      );
+      assert.deepEqual(
+        await confirmOpenAiModelIdentity("GPT-6-Sol", "test-key", fetchModel),
+        { ok: false, code: "not_confirmed" },
+      );
+      assert.deepEqual(requests, [
+        "https://api.openai.com/v1/models/gpt-6-sol",
+        "https://api.openai.com/v1/models/GPT-6-Sol",
+      ]);
+    },
+  },
+  {
+    name: "model identity fails closed on missing key, provider error and malformed response",
+    run: async () => {
+      let calls = 0;
+      const unavailable = (async () => {
+        calls += 1;
+        return new Response(null, { status: 404 });
+      }) as typeof fetch;
+      assert.deepEqual(
+        await confirmOpenAiModelIdentity("gpt-6-luna", undefined, unavailable),
+        { ok: false, code: "configuration" },
+      );
+      assert.equal(calls, 0);
+      assert.deepEqual(
+        await confirmOpenAiModelIdentity("gpt-6-luna", "test-key", unavailable),
+        { ok: false, code: "not_confirmed" },
+      );
+      assert.equal(calls, 1);
+      const malformed = (async () => new Response("not-json")) as typeof fetch;
+      assert.deepEqual(
+        await confirmOpenAiModelIdentity("gpt-6-luna", "test-key", malformed),
+        { ok: false, code: "not_confirmed" },
+      );
+    },
+  },
   {
     name: "commercial proof parses the raw Responses API output content shape",
     run: () => {
