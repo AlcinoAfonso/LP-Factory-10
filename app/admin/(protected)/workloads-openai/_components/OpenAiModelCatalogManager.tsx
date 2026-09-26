@@ -39,13 +39,15 @@ const fieldClassName =
 export function OpenAiModelCatalogManager({ models, readErrorCode = null }: Props) {
   const [openModelKey, setOpenModelKey] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
+  const primaryModels = models?.filter((model) => !isSecondaryModel(model)) ?? [];
+  const secondaryModels = models?.filter(isSecondaryModel) ?? [];
 
   return (
     <section className="rounded-lg border border-border bg-card shadow-card" aria-labelledby="model-catalog-title">
       <header className="flex flex-col gap-3 border-b border-border p-4 sm:flex-row sm:items-start sm:justify-between sm:p-5">
         <div>
           <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Catálogo global</p>
-          <h2 id="model-catalog-title" className="mt-1 text-lg font-semibold text-foreground">Modelos disponíveis para novas candidatas</h2>
+          <h2 id="model-catalog-title" className="mt-1 text-lg font-semibold text-foreground">Catálogo de modelos OpenAI</h2>
           <p className="mt-1 max-w-3xl text-sm leading-6 text-muted-foreground">
             A disponibilidade afeta somente novas escolhas. Revisões ativas, histórico e rollback permanecem preservados.
           </p>
@@ -80,60 +82,89 @@ export function OpenAiModelCatalogManager({ models, readErrorCode = null }: Prop
               Nenhum modelo foi retornado pelo catálogo.
             </p>
           ) : (
-            <div className="grid gap-4 xl:grid-cols-2">
-              {(["responses_text", "image_generation"] as const).map((apiKind) => {
-                const modalityModels = models.filter((model) => model.apiKind === apiKind);
-                if (modalityModels.length === 0) return null;
-                return (
-                  <section key={apiKind} aria-labelledby={`catalog-${apiKind}-title`} className="min-w-0 rounded-lg border border-border bg-background">
-                    <div className="sticky top-0 z-[1] border-b border-border bg-muted px-4 py-3">
-                      <h3 id={`catalog-${apiKind}-title`} className="text-sm font-semibold text-foreground">
-                        {apiKind === "responses_text" ? "Texto" : "Imagem"}
-                      </h3>
-                    </div>
-                    <ul className="divide-y divide-border">
-                      {modalityModels.map((model) => {
-                        const key = `${model.apiKind}:${model.model}`;
-                        const open = openModelKey === key;
-                        return (
-                          <li key={key}>
-                            <div className="flex min-w-0 flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
-                              <div className="min-w-0">
-                                <p className="break-all font-mono text-sm font-semibold text-foreground">{model.model}</p>
-                                <p className="mt-1 truncate text-xs text-muted-foreground">{parameterSummary(model)}</p>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <AdminStatusBadge tone={model.availableForSelection ? "success" : "neutral"}>
-                                  {model.availableForSelection ? "Disponível" : "Indisponível"}
-                                </AdminStatusBadge>
-                                <button
-                                  type="button"
-                                  className={buttonClassName}
-                                  aria-expanded={open}
-                                  aria-controls={`catalog-model-${safeId(key)}`}
-                                  onClick={() => {
-                                    setOpenModelKey(open ? null : key);
-                                    setAdding(false);
-                                  }}
-                                >
-                                  {open ? "Fechar" : "Configurar"}
-                                </button>
-                              </div>
-                            </div>
-                            {open ? <ModelConfiguration id={`catalog-model-${safeId(key)}`} model={model} /> : null}
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  </section>
-                );
-              })}
+            <div className="space-y-4">
+              <CatalogModelTable models={primaryModels} openModelKey={openModelKey} onToggle={(key) => {
+                setOpenModelKey(openModelKey === key ? null : key);
+                setAdding(false);
+              }} />
+              {secondaryModels.length > 0 ? (
+                <details className="overflow-hidden rounded-lg border border-border bg-background">
+                  <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-semibold text-foreground outline-none focus-visible:ring-4 focus-visible:ring-brand-600/30">
+                    <span>Identidades históricas e modelos 5.6 indisponíveis</span>
+                    <AdminStatusBadge tone="neutral">{secondaryModels.length}</AdminStatusBadge>
+                  </summary>
+                  <div className="border-t border-border">
+                    <CatalogModelTable models={secondaryModels} openModelKey={openModelKey} onToggle={(key) => {
+                      setOpenModelKey(openModelKey === key ? null : key);
+                      setAdding(false);
+                    }} />
+                  </div>
+                </details>
+              ) : null}
             </div>
           )}
         </div>
       )}
     </section>
   );
+}
+
+function CatalogModelTable({ models, openModelKey, onToggle }: Readonly<{
+  models: readonly OpenAiModelCatalogModel[];
+  openModelKey: string | null;
+  onToggle: (key: string) => void;
+}>) {
+  return (
+    <div className="overflow-hidden rounded-lg border border-border bg-background">
+      <div className="hidden grid-cols-[minmax(10rem,1.2fr)_minmax(4rem,.4fr)_minmax(6rem,.6fr)_minmax(12rem,1.5fr)_auto] gap-3 border-b border-border bg-muted px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground sm:grid">
+        <span>Modelo</span><span>Tipo</span><span>Estado</span><span>Níveis ou qualidades cadastrados</span><span className="text-right">Ação</span>
+      </div>
+      {models.length === 0 ? (
+        <p className="p-4 text-sm text-muted-foreground">Nenhum modelo canônico cadastrado.</p>
+      ) : (
+        <ul className="divide-y divide-border">
+          {models.map((model) => {
+            const key = `${model.apiKind}:${model.model}`;
+            const open = openModelKey === key;
+            return (
+              <li key={key}>
+                <div className={`grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-2 px-4 py-3 sm:grid-cols-[minmax(10rem,1.2fr)_minmax(4rem,.4fr)_minmax(6rem,.6fr)_minmax(12rem,1.5fr)_auto] sm:items-center ${open ? "bg-brand-50/40" : "bg-background"}`}>
+                  <p className="min-w-0 break-all font-mono text-sm font-semibold text-foreground">{model.model}</p>
+                  <div className="col-span-2 row-start-2 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2 sm:contents">
+                    <span className="text-xs text-foreground sm:text-sm">{model.apiKind === "responses_text" ? "Texto" : "Imagem"}</span>
+                    <AdminStatusBadge tone={model.availableForSelection ? "success" : "neutral"}>
+                      {model.availableForSelection ? "Disponível" : "Indisponível"}
+                    </AdminStatusBadge>
+                    <span className="min-w-0 text-xs leading-5 text-foreground sm:text-sm">
+                      <span className="text-muted-foreground sm:hidden">Cadastrados: </span>
+                      {model.parameters.length > 0
+                        ? model.parameters.map((parameter) => parameterLabel(parameter.kind, parameter.value)).join(" · ")
+                        : "Nenhum"}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    className={`${buttonClassName} col-start-2 row-start-1 sm:col-start-5`}
+                    aria-expanded={open}
+                    aria-controls={`catalog-model-${safeId(key)}`}
+                    onClick={() => onToggle(key)}
+                  >
+                    {open ? "Fechar" : "Configurar"}
+                  </button>
+                </div>
+                {open ? <ModelConfiguration id={`catalog-model-${safeId(key)}`} model={model} /> : null}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+function isSecondaryModel(model: OpenAiModelCatalogModel) {
+  return model.model === "GPT-6-Sol" || model.model === "GPT-6-luna" ||
+    (model.model.toLowerCase().startsWith("gpt-5.6-") && !model.availableForSelection);
 }
 
 function CreateModelForm() {
@@ -318,12 +349,6 @@ function catalogErrorTitle(code: string | null) {
   if (code === "unauthorized") return "Acesso não autorizado";
   if (code === "read") return "Leitura do catálogo falhou";
   return "Alteração do catálogo não concluída";
-}
-
-function parameterSummary(model: OpenAiModelCatalogModel) {
-  const available = model.parameters.filter((parameter) => parameter.availableForSelection).length;
-  const label = model.apiKind === "responses_text" ? "níveis de raciocínio" : "qualidades";
-  return `${available}/${model.parameters.length} ${label} disponíveis`;
 }
 
 function parameterLabel(kind: "reasoning_effort" | "quality", value: string) {
