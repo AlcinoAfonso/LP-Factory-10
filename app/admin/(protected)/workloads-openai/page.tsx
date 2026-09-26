@@ -14,6 +14,7 @@ import {
 import { projectOpenAiWorkloadConfigurationOptions } from "@/openai-workloads/adapters/modelCatalogAdapterCore";
 import { OpenAiConfigurationManager } from "./_components/OpenAiConfigurationManager";
 import { OpenAiModelCatalogManager } from "./_components/OpenAiModelCatalogManager";
+import { OpenAiWorkloadsTabs } from "./_components/OpenAiWorkloadsTabs";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -67,11 +68,14 @@ export default async function OpenAiWorkloadsPage() {
         meta={`${managedWorkloads.length} workloads técnicos`}
       />
 
-      <OpenAiModelCatalogManager
-        models={catalogModels}
-        readErrorCode={catalogRead.ok ? null : catalogRead.error.code}
-      />
-
+      <OpenAiWorkloadsTabs
+        models={
+          <OpenAiModelCatalogManager
+            models={catalogModels}
+            readErrorCode={catalogRead.ok ? null : catalogRead.error.code}
+          />
+        }
+        workloads={<>
       {configurationRead.ok ? (
         <OpenAiConfigurationManager
           units={configurationRead.value}
@@ -97,7 +101,7 @@ export default async function OpenAiWorkloadsPage() {
         </section>
       )}
 
-      <details className="rounded-lg border border-border bg-card shadow-card">
+      <details className="border-t border-border bg-card">
         <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 rounded-lg px-4 py-3 text-sm font-semibold text-foreground outline-none focus-visible:ring-4 focus-visible:ring-brand-600/30 sm:px-5">
           <span>Referência operacional · Supabase Inspect</span>
           <AdminStatusBadge tone="neutral">Somente leitura</AdminStatusBadge>
@@ -133,6 +137,8 @@ export default async function OpenAiWorkloadsPage() {
           )}
         </div>
       </details>
+        </>}
+      />
     </div>
   );
 }
