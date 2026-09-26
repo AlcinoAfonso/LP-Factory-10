@@ -49,3 +49,27 @@ Fonte aprovada: [Debate 14 — Jornada pós-compra/trial e Base de Comunicação
 - V1 funcional aprovada.
 - Execução: Light.
 - Supervisão: Autônomo.
+
+## 8. V2 técnica mínima candidata — decisão pendente
+
+Esta seção é candidata, não é a V2 consolidada nem libera o cutover. A V1 acima e seu commit de congelamento `572052958520a2883a9bf5ae80a5ccbacb672ee8` permanecem inalterados.
+
+### 8.1. 10.10.3 — Recorte factual e cutover
+
+- A definição competente dos fields continua em `public.taxon_factual_fields`, consumida pelo resolver E20.8. O resultado ativo pretendido pela V1 é somente `business_display_name` universal obrigatório e `creci_registration` opcional no taxon `corretor-imoveis`; os demais registros permanecem fisicamente preservados.
+- O estado hospedado inspecionado em 26/09/2026 contém 26 rows ativas, não as 25 implícitas na V1. `professional_regulatory_credential` é a row adicional. A decisão de incluí-la entre os inativos está pendente da supervisão; nenhuma migration candidata pode ser aplicada ao projeto hospedado por inferência.
+- Uma migration incremental candidata deve definir o recorte sem exclusão física e demonstrar, em PostgreSQL compatível e sem persistir no projeto alvo, contagem, obrigatoriedade, resolução dos taxons representativos e ausência de condições órfãs. Não alterar migration E20.8 já aplicada. A prova da migration integral e a decisão sobre a 26ª row são gates anteriores ao merge.
+- Para respostas por conta, estender `public.account_profiles` com `business_display_name` e `creci_registration` opcionais; `whatsapp` já reside nessa tabela. Não reutilizar `accounts.name`, texto livre do Pending Setup ou configuração legada de landing page como nome público sem origem factual comprovada. A escrita é server-side, limitada a conta elegível e papel `owner`/`admin`/`editor`; `viewer` somente lê. Preservar RLS e as políticas existentes.
+
+### 8.2. 10.10.4 — UX factual e prontidão para a Base
+
+- Na conta ativa com entitlement comercial válido, taxon primário ativo e cobertura E20.8 válida, apresentar e-mail autenticado e taxon confirmado somente leitura, nome público obrigatório e editável, WhatsApp opcional e editável, e CRECI opcional e editável apenas quando o field estiver na cobertura do taxon. Valor legítimo já persistido é pré-preenchido; ausência não é inventada nem substituída por IA.
+- A leitura e a gravação revalidam autorização, entitlement, taxon e cobertura no servidor. A gravação normaliza e valida entrada com limite de tamanho; somente o nome público vazio ou inválido bloqueia a prontidão factual. Falha de leitura, cobertura ou gravação não é tratada como conclusão.
+- E25.1 ainda não existe e depende da conclusão de E10.10. Assim, a conclusão factual produz estado explícito de prontidão para a Base, sem criar rota, conteúdo ou placeholder de PB2. A navegação real é dependência de E25.1, conforme orientação da supervisão.
+- Aplicar o patch de Updates `prod#17` proporcionalmente: labels persistentes, identificação de readonly, erro textual por campo, foco/teclado, feedback de salvamento e erro, alvo tátil e inspeção desktop/mobile. `prod#14` e `prod#16` são travas de validação, não novas features; não declarar conformidade WCAG integral.
+
+### 8.3. Prova e limites da candidata
+
+- Testes focais: cobertura universal e `corretor-imoveis`, CRECI ausente/presente, outro taxon, nome pré-existente, WhatsApp ausente/presente, papéis de leitura/escrita, elegibilidade negada, cobertura inválida e falha de persistência.
+- Validações de código na ordem `npm ci`, `npm run check`; migration integral em PostgreSQL compatível com rollback ou ambiente isolado autorizado; inspeção de diff, QA visual e funcional hospedado no Preview do mesmo head. Nenhuma dessas provas foi declarada concluída por esta seção.
+- Escopo negativo e critérios funcionais da V1 continuam vinculantes. Não iniciar E25.1, não aplicar SQL hospedado pré-merge e não solicitar merge antes da decisão sobre a row adicional e das evidências obrigatórias.
