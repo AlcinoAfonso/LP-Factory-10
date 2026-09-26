@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 26/09/2026
-• Versão: v1.5.242
+• Versão: v1.5.243
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -1354,23 +1354,27 @@
   - criação, edição do mesmo fato, inativação e reativação são ações humanas diretas na autoridade Supabase;
   - blockers, divisão por plano, coordenação de versão, draft e publicação não integram essa superfície.
 
-12.7 Contrato mínimo de apresentação para novas páginas do Admin
+12.7 Contrato de apresentação para páginas operacionais de dashboard
 
 12.7.1 Objetivo e status
-- Objetivo: tornar canônico o contrato mínimo de UX/UI para novas páginas e recortes administrativos.
-- Status: fase 12.7.3 materializada no Design System; a adoção transversal nas páginas existentes permanece fora deste recorte e em debate separado.
+- Objetivo: manter canônico o contrato de UX/UI para novas páginas e recortes operacionais do Admin e Account Dashboard, com herança pelo Partner Dashboard quando funcional.
+- Status: fase 12.7.3 concluída no PR #967; complemento documental 12.7.4 materializado no Design System. A adoção nas páginas existentes permanece fora deste recorte.
 
 12.7.2 Registros do recorte
 - Updates:
   - Aplicados:
     - `prod#17`
 - Referências:
-  - Plano do recorte: `docs/lousa-plano-base-e12-7.md` — fase 12.7.3.
-  - Contrato visual canônico: `docs/design-system.md` — Contrato mínimo para novas páginas do Admin.
+  - Plano do recorte: `docs/lousa-plano-base-e12-7.md` — fases 12.7.3–12.7.4.
+  - Contrato visual canônico: `docs/design-system.md` — Contrato de apresentação para páginas operacionais de dashboard.
 
 12.7.3 Materialização canônica do contrato mínimo
 - O Design System define o baseline de apresentação para novas páginas do Admin, preservando a autoridade funcional dos contratos de domínio e mantendo em aberto a tecnologia de listas.
 - Esta fase não altera páginas existentes, componentes, código, runtime ou configuração operacional; cada futura implementação valida sua própria superfície.
+
+12.7.4 Refinamento canônico de composição e responsividade
+- O Design System complementa o contrato com lista tabular compacta, controles por atributo nos cabeçalhos, abas para visões irmãs e adaptação mobile; cards seguem exceção funcional e a tecnologia permanece aberta.
+- O alcance operacional cobre Admin e Account Dashboard e o Partner Dashboard quando tiver superfície funcional. Páginas públicas e landing pages comerciais ficam fora do contrato; nenhuma superfície existente ou contrato de domínio foi alterado nesta fase.
 
 13. E13 — Partner Dashboard
 
