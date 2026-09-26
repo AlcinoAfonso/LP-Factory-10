@@ -99,7 +99,7 @@ export function OpenAiModelCatalogManager({ models, readErrorCode = null }: Prop
                           <li key={key}>
                             <div className="flex min-w-0 flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
                               <div className="min-w-0">
-                                <p className="truncate font-mono text-sm font-semibold text-foreground">{model.model}</p>
+                                <p className="break-all font-mono text-sm font-semibold text-foreground">{model.model}</p>
                                 <p className="mt-1 truncate text-xs text-muted-foreground">{parameterSummary(model)}</p>
                               </div>
                               <div className="flex items-center gap-2">
@@ -213,19 +213,19 @@ function AddReasoningEffortForm({ model }: Readonly<{ model: OpenAiModelCatalogM
       <input type="hidden" name="model" value={model.model} />
       <input type="hidden" name="expectedVersion" value={model.version} />
       <label htmlFor={`add-effort-${safeId(model.model)}`} className="text-sm font-medium text-foreground">
-        Acrescentar reasoning effort
+        Acrescentar nível de raciocínio
       </label>
-      <p className="mt-1 text-xs text-muted-foreground">O novo effort nasce indisponível para seleção.</p>
+      <p className="mt-1 text-xs text-muted-foreground">O novo nível nasce indisponível para seleção.</p>
       <div className="mt-2 flex flex-col gap-2 sm:flex-row">
         <select id={`add-effort-${safeId(model.model)}`} name="reasoningEffort" required disabled={pending} className={fieldClassName}>
-          <option value="">Selecione um effort</option>
+          <option value="">Selecione um nível</option>
           {missing.map((effort) => <option key={effort} value={effort}>{parameterLabel("reasoning_effort", effort)}</option>)}
         </select>
         <button type="submit" className={buttonClassName} disabled={pending}>
-          {pending ? "Adicionando…" : "Acrescentar effort"}
+          {pending ? "Adicionando…" : "Acrescentar nível"}
         </button>
       </div>
-      <CatalogActionFeedback state={state} successTitle="Effort acrescentado" />
+      <CatalogActionFeedback state={state} successTitle="Nível de raciocínio acrescentado" />
     </form>
   );
 }
@@ -322,7 +322,7 @@ function catalogErrorTitle(code: string | null) {
 
 function parameterSummary(model: OpenAiModelCatalogModel) {
   const available = model.parameters.filter((parameter) => parameter.availableForSelection).length;
-  const label = model.apiKind === "responses_text" ? "efforts" : "qualities";
+  const label = model.apiKind === "responses_text" ? "níveis de raciocínio" : "qualidades";
   return `${available}/${model.parameters.length} ${label} disponíveis`;
 }
 
