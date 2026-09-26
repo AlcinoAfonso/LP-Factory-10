@@ -37,10 +37,15 @@ const fieldClassName =
   "mt-1 min-h-11 w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus-visible:ring-4 focus-visible:ring-brand-600/30 disabled:cursor-not-allowed disabled:opacity-60";
 
 export function OpenAiModelCatalogManager({ models, readErrorCode = null }: Props) {
-  const [openModelKey, setOpenModelKey] = useState<string | null>(null);
+  const [openModelPlacement, setOpenModelPlacement] = useState<{ key: string; secondary: boolean } | null>(null);
   const [adding, setAdding] = useState(false);
-  const primaryModels = models?.filter((model) => !isSecondaryModel(model)) ?? [];
-  const secondaryModels = models?.filter(isSecondaryModel) ?? [];
+  const openModelKey = openModelPlacement?.key ?? null;
+  const belongsToSecondary = (model: OpenAiModelCatalogModel) => {
+    const key = `${model.apiKind}:${model.model}`;
+    return openModelPlacement?.key === key ? openModelPlacement.secondary : isSecondaryModel(model);
+  };
+  const primaryModels = models?.filter((model) => !belongsToSecondary(model)) ?? [];
+  const secondaryModels = models?.filter(belongsToSecondary) ?? [];
 
   return (
     <section className="rounded-lg border border-border bg-card shadow-card" aria-labelledby="model-catalog-title">
@@ -60,7 +65,7 @@ export function OpenAiModelCatalogManager({ models, readErrorCode = null }: Prop
           aria-controls="new-catalog-model-form"
           onClick={() => {
             setAdding((current) => !current);
-            setOpenModelKey(null);
+            setOpenModelPlacement(null);
           }}
         >
           {adding ? "Cancelar adição" : "Adicionar modelo"}
@@ -84,7 +89,7 @@ export function OpenAiModelCatalogManager({ models, readErrorCode = null }: Prop
           ) : (
             <div className="space-y-4">
               <CatalogModelTable models={primaryModels} openModelKey={openModelKey} onToggle={(key) => {
-                setOpenModelKey(openModelKey === key ? null : key);
+                setOpenModelPlacement((current) => current?.key === key ? null : { key, secondary: false });
                 setAdding(false);
               }} />
               {secondaryModels.length > 0 ? (
@@ -95,7 +100,7 @@ export function OpenAiModelCatalogManager({ models, readErrorCode = null }: Prop
                   </summary>
                   <div className="border-t border-border">
                     <CatalogModelTable models={secondaryModels} openModelKey={openModelKey} onToggle={(key) => {
-                      setOpenModelKey(openModelKey === key ? null : key);
+                      setOpenModelPlacement((current) => current?.key === key ? null : { key, secondary: true });
                       setAdding(false);
                     }} />
                   </div>
