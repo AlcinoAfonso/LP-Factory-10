@@ -58,11 +58,13 @@ begin
 
   foreach v_signature in array array[
     'public.activate_openai_workload_configuration_revision_v1(text,text,uuid,uuid,bigint)',
+    'public.add_openai_model_catalog_reasoning_effort_v1(text,text,bigint,uuid)',
     'public.append_account_landing_page_materialization_v2(uuid,uuid,uuid,jsonb,jsonb,uuid,bigint,bigint)',
     'public.check_openai_model_catalog_configuration_available_v1(text,text,bigint)',
     'public.discard_openai_workload_configuration_candidate_v1(text,text,uuid,bigint)',
     'public.promote_openai_workload_configuration_candidate_v1(text,text,jsonb,uuid,bigint)',
     'public.publish_content_artifact_draft(uuid)',
+    'public.reconcile_openai_model_catalog_luna_v1(bigint,uuid)',
     'public.rollback_openai_workload_configuration_revision_v1(text,text,uuid,uuid,bigint)',
     'public.save_account_landing_page_configuration_v1(uuid,uuid,jsonb,jsonb,bigint,bigint,integer,uuid,uuid)',
     'public.save_openai_workload_configuration_candidate_v1(text,text,text,text,text,uuid,bigint)',
@@ -93,9 +95,9 @@ begin
     and function_object.prosrc like
       '%public.raise_postgrest_safe_conflict_v1(%';
 
-  if v_patched_count <> 11 then
+  if v_patched_count <> 13 then
     raise exception
-      'postgrest-safe conflict target count drifted: expected 11, found %',
+      'postgrest-safe conflict target count drifted: expected 13, found %',
       v_patched_count;
   end if;
 

@@ -105,7 +105,7 @@ begin
     raise exception using errcode = 'P0002', message = 'openai_model_catalog_model_not_found';
   end if;
   if v_catalog_version <> p_expected_version then
-    raise exception using errcode = '40001', message = 'openai_model_catalog_stale_version';
+    perform public.raise_postgrest_safe_conflict_v1('openai_model_catalog_stale_version');
   end if;
   if p_available_for_selection and p_modality = 'responses_text'
      and p_model in ('GPT-6-Sol', 'GPT-6-luna') then
@@ -158,7 +158,7 @@ begin
     raise exception using errcode = 'P0002', message = 'openai_model_catalog_model_not_found';
   end if;
   if v_model_version <> p_expected_model_version then
-    raise exception using errcode = '40001', message = 'openai_model_catalog_stale_version';
+    perform public.raise_postgrest_safe_conflict_v1('openai_model_catalog_stale_version');
   end if;
   insert into public.openai_model_catalog_parameters (
     modality, model, parameter_kind, parameter_value,
@@ -203,7 +203,7 @@ begin
     raise exception using errcode = 'P0002', message = 'model_catalog_historical_variant_missing';
   end if;
   if v_legacy_version <> p_expected_legacy_version then
-    raise exception using errcode = '40001', message = 'openai_model_catalog_stale_version';
+    perform public.raise_postgrest_safe_conflict_v1('openai_model_catalog_stale_version');
   end if;
   if exists (
     select 1 from public.openai_model_catalog_models model
