@@ -48,7 +48,7 @@ export function OpenAiModelCatalogManager({ models, readErrorCode = null }: Prop
   const secondaryModels = models?.filter(belongsToSecondary) ?? [];
 
   return (
-    <section className="rounded-lg border border-border bg-card shadow-card" aria-labelledby="model-catalog-title">
+    <section aria-labelledby="model-catalog-title">
       <header className="flex flex-col gap-3 border-b border-border p-4 sm:flex-row sm:items-start sm:justify-between sm:p-5">
         <div>
           <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Catálogo global</p>
@@ -121,8 +121,8 @@ function CatalogModelTable({ models, openModelKey, onToggle }: Readonly<{
 }>) {
   return (
     <div className="overflow-hidden rounded-lg border border-border bg-background">
-      <div className="hidden grid-cols-[minmax(10rem,1.2fr)_minmax(4rem,.4fr)_minmax(6rem,.6fr)_minmax(12rem,1.5fr)_auto] gap-3 border-b border-border bg-muted px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground sm:grid">
-        <span>Modelo</span><span>Tipo</span><span>Estado</span><span>Níveis ou qualidades cadastrados</span><span className="text-right">Ação</span>
+      <div className="flex justify-between border-b border-border bg-muted px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        <span>Modelo e parâmetros cadastrados</span><span>Ação</span>
       </div>
       {models.length === 0 ? (
         <p className="p-4 text-sm text-muted-foreground">Nenhum modelo canônico cadastrado.</p>
@@ -133,15 +133,15 @@ function CatalogModelTable({ models, openModelKey, onToggle }: Readonly<{
             const open = openModelKey === key;
             return (
               <li key={key}>
-                <div className={`grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-2 px-4 py-3 sm:grid-cols-[minmax(10rem,1.2fr)_minmax(4rem,.4fr)_minmax(6rem,.6fr)_minmax(12rem,1.5fr)_auto] sm:items-center ${open ? "bg-brand-50/40" : "bg-background"}`}>
+                <div className={`grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-1 px-4 py-3 ${open ? "bg-brand-50/40" : "bg-background"}`}>
                   <p className="min-w-0 break-all font-mono text-sm font-semibold text-foreground">{model.model}</p>
-                  <div className="col-span-2 row-start-2 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2 sm:contents">
-                    <span className="text-xs text-foreground sm:text-sm">{model.apiKind === "responses_text" ? "Texto" : "Imagem"}</span>
+                  <div className="col-start-1 row-start-2 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+                    <span className="text-xs text-foreground">{model.apiKind === "responses_text" ? "Texto" : "Imagem"}</span>
                     <AdminStatusBadge tone={model.availableForSelection ? "success" : "neutral"}>
                       {model.availableForSelection ? "Disponível" : "Indisponível"}
                     </AdminStatusBadge>
-                    <span className="min-w-0 text-xs leading-5 text-foreground sm:text-sm">
-                      <span className="text-muted-foreground sm:hidden">Cadastrados: </span>
+                    <span className="min-w-0 text-xs leading-5 text-foreground">
+                      <span className="text-muted-foreground">Cadastrados: </span>
                       {model.parameters.length > 0
                         ? model.parameters.map((parameter) => parameterLabel(parameter.kind, parameter.value)).join(" · ")
                         : "Nenhum"}
@@ -149,7 +149,7 @@ function CatalogModelTable({ models, openModelKey, onToggle }: Readonly<{
                   </div>
                   <button
                     type="button"
-                    className={`${buttonClassName} col-start-2 row-start-1 sm:col-start-5`}
+                    className={`${buttonClassName} col-start-2 row-start-1 row-span-2 self-center`}
                     aria-expanded={open}
                     aria-controls={`catalog-model-${safeId(key)}`}
                     onClick={() => onToggle(key)}
