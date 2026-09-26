@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
+import { randomUUID } from "node:crypto";
 
 import type { ResolvedFactualCoverage } from "../../conversion-content/landing-page/input-catalog";
+import type { FactualFieldRow, FactualTaxonIdentity } from "../../conversion-content/landing-page/input-catalog/contracts";
+import { resolveFactualCoverage } from "../../conversion-content/landing-page/input-catalog/resolver";
 import { assessFactualCoverage, buildFactualProfileWrite, canEditFactualValues, hasFactualCatalogCutover, isFactualReady, validateFactualInput } from "./policy";
 
 const activeCatalog = [
@@ -38,6 +41,41 @@ assert.deepEqual(assessFactualCoverage(coverage([business, { ...credential, obli
 assert.deepEqual(assessFactualCoverage(coverage([business, { ...creci, obligation: "required" }], "imobiliario", "corretor-imoveis")), { ok: false });
 assert.deepEqual(assessFactualCoverage(coverage([business, { fieldKey: "unexpected" }])), { ok: false });
 assert.deepEqual(assessFactualCoverage(coverage([])), { ok: false });
+
+const taxon = (id: string, slug: string, level: FactualTaxonIdentity["level"], parentId: string | null): FactualTaxonIdentity =>
+  ({ id, slug, name: slug, level, parentId, isActive: true });
+const imobiliario = taxon(randomUUID(), "imobiliario", "segment", null);
+const corretor = taxon(randomUUID(), "corretor-imoveis", "niche", imobiliario.id);
+const profissionais = taxon(randomUUID(), "servicos-profissionais", "segment", null);
+const advogado = taxon(randomUUID(), "advogado", "niche", profissionais.id);
+const outro = taxon(randomUUID(), "outro-segmento", "segment", null);
+const row = (fieldKey: string, taxonId: string | null, obligation: "required" | "optional", isActive = true): FactualFieldRow => ({
+  id: randomUUID(), fieldKey, taxonId, isActive, createdBy: null, updatedBy: null,
+  createdAt: "2026-09-26T00:00:00.000Z", updatedAt: "2026-09-26T00:00:00.000Z",
+  definition: { purpose: fieldKey, valueType: "string", valueScope: "business", expectedValueOrigin: "business_provided", obligation, validation: { kind: "type_only" } },
+});
+const rows: FactualFieldRow[] = [
+  row("business_display_name", null, "required"),
+  row("creci_registration", corretor.id, "optional"),
+  row("professional_regulatory_credential", profissionais.id, "optional"),
+  ...Array.from({ length: 23 }, (_, index) => {
+    const inactive = row(`legacy_${index}`, null, "optional", false);
+    return index === 0
+      ? { ...inactive, definition: { ...inactive.definition, applicableWhen: { fieldKey: "traffic_source", operator: "equals" as const, value: "paid_search" } } }
+      : inactive;
+  }),
+];
+for (const [taxonChain, expected] of [
+  [{ segment: imobiliario, niche: corretor }, ["business_display_name", "creci_registration"]],
+  [{ segment: profissionais, niche: advogado }, ["business_display_name", "professional_regulatory_credential"]],
+  [{ segment: outro }, ["business_display_name"]],
+] as const) {
+  const applicable = rows.filter((field) => field.taxonId === null || field.taxonId === taxonChain.segment.id || field.taxonId === taxonChain.niche?.id);
+  const resolved = resolveFactualCoverage({ taxonChain, rows: applicable });
+  assert.ok(resolved.ok);
+  assert.deepEqual(resolved.value.fields.map((field) => field.fieldKey), expected);
+  assert.equal(assessFactualCoverage(resolved.value).ok, true);
+}
 
 for (const role of ["owner", "admin", "editor"] as const) assert.equal(canEditFactualValues(role), true);
 assert.equal(canEditFactualValues("viewer"), false);
