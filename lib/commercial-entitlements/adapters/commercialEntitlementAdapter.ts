@@ -16,12 +16,22 @@ type CommercialEntitlementEffectiveRow = {
 export async function getCommercialEntitlementSignal(
   input: GetCommercialEntitlementSignalInput,
 ): Promise<CommercialEntitlementSignal> {
-  const accountId = input.accountId.trim();
-  if (!accountId) return NO_COMMERCIAL_ENTITLEMENT_SIGNAL;
+  const result = await readCommercialEntitlementSignal(input);
+  return result.ok ? result.signal : NO_COMMERCIAL_ENTITLEMENT_SIGNAL;
+}
 
-  const supabase = await createClient();
+export type CommercialEntitlementReadResult =
+  | Readonly<{ ok: true; signal: CommercialEntitlementSignal }>
+  | Readonly<{ ok: false }>;
+
+export async function readCommercialEntitlementSignal(
+  input: GetCommercialEntitlementSignalInput,
+): Promise<CommercialEntitlementReadResult> {
+  const accountId = input.accountId.trim();
+  if (!accountId) return { ok: true, signal: NO_COMMERCIAL_ENTITLEMENT_SIGNAL };
 
   try {
+    const supabase = await createClient();
     const { data, error } = await supabase
       .from("v_account_commercial_entitlement_effective")
       .select("is_commercially_eligible,effective_status,plan_key")
@@ -29,17 +39,17 @@ export async function getCommercialEntitlementSignal(
       .limit(1)
       .maybeSingle();
 
-    if (error || !data) return NO_COMMERCIAL_ENTITLEMENT_SIGNAL;
+    if (error) return { ok: false };
+    if (!data) return { ok: true, signal: NO_COMMERCIAL_ENTITLEMENT_SIGNAL };
 
     const row = data as CommercialEntitlementEffectiveRow;
 
-    return {
+    return { ok: true, signal: {
       isCommerciallyEligible: row.is_commercially_eligible === true,
-      effectiveStatus:
-        typeof row.effective_status === "string" ? row.effective_status : null,
+      effectiveStatus: typeof row.effective_status === "string" ? row.effective_status : null,
       planKey: typeof row.plan_key === "string" ? row.plan_key : null,
-    };
+    } };
   } catch {
-    return NO_COMMERCIAL_ENTITLEMENT_SIGNAL;
+    return { ok: false };
   }
 }

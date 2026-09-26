@@ -4,24 +4,36 @@ import { existsSync, readFileSync } from "node:fs";
 import { decideAccountJourney } from "./onboarding-journey-policy";
 
 assert.deepEqual(
-  decideAccountJourney({ actorRole: "owner", isCommerciallyEligible: false }),
+  decideAccountJourney({ actorRole: "owner", isCommerciallyEligible: false, entitlementLookupStatus: "ok", taxonLookupStatus: "ok" }),
   { mode: "commercial", showFinancialActions: true },
 );
 assert.deepEqual(
-  decideAccountJourney({ actorRole: "admin", isCommerciallyEligible: false }),
+  decideAccountJourney({ actorRole: "admin", isCommerciallyEligible: false, entitlementLookupStatus: "ok", taxonLookupStatus: "ok" }),
   { mode: "waiting", showFinancialActions: false },
 );
 assert.deepEqual(
-  decideAccountJourney({ actorRole: "viewer", isCommerciallyEligible: false }),
+  decideAccountJourney({ actorRole: "viewer", isCommerciallyEligible: false, entitlementLookupStatus: "ok", taxonLookupStatus: "ok" }),
   { mode: "waiting", showFinancialActions: false },
 );
 
 for (const actorRole of ["owner", "admin", "editor", "viewer"] as const) {
   assert.deepEqual(
-    decideAccountJourney({ actorRole, isCommerciallyEligible: true }),
+    decideAccountJourney({ actorRole, isCommerciallyEligible: true, entitlementLookupStatus: "ok", taxonLookupStatus: "ok" }),
     { mode: "commercial", showFinancialActions: false },
   );
 }
+assert.deepEqual(
+  decideAccountJourney({ actorRole: "owner", isCommerciallyEligible: false, entitlementLookupStatus: "error", taxonLookupStatus: "ok" }),
+  { mode: "blocked", showFinancialActions: false },
+);
+assert.deepEqual(
+  decideAccountJourney({ actorRole: "admin", isCommerciallyEligible: true, entitlementLookupStatus: "ok", taxonLookupStatus: "error" }),
+  { mode: "blocked", showFinancialActions: false },
+);
+assert.deepEqual(
+  decideAccountJourney({ actorRole: "owner", isCommerciallyEligible: false, entitlementLookupStatus: "ok", taxonLookupStatus: "error" }),
+  { mode: "blocked", showFinancialActions: false },
+);
 
 const loader = readFileSync(new URL("../account-journey-loader.ts", import.meta.url), "utf8");
 const page = readFileSync(new URL("../page.tsx", import.meta.url), "utf8");
@@ -44,6 +56,10 @@ assert.doesNotMatch(
 );
 assert.match(page, /PendingSetupConversation/);
 assert.match(page, /NicheResolutionCard/);
+assert.match(loader, /accountJourney\.mode === "blocked"\) return \{ view: "factual_unavailable" as const \}/);
+assert.match(loader, /if \(factual\.status === "available"\) return \{ view: "factual" as const, factual \};\s*return \{ view: "factual_unavailable" as const \};/);
+assert.match(page, /journey\.view === "factual_unavailable"/);
+assert.match(page, /Tentar novamente/);
 assert.doesNotMatch(page, /PendingSetupFirstSteps/);
 assert.doesNotMatch(loader, /loadPendingSetupConversation[\s\S]*accountStatus !== "active"[\s\S]*loadPendingSetupConversation/);
 assert.equal(existsSync(legacyDetailRoute), false);

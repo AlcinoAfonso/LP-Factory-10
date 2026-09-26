@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 26/09/2026
-• Versão: v1.5.243
+• Versão: v1.5.245
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -735,7 +735,7 @@
 10. E10 — Account Dashboard e jornada da conta
 
 - Objetivo: consolidar a experiência pós-login por conta, da navegação multi-conta e do setup inicial à resolução de nicho e à apresentação comercial, preservando decisões server-side de acesso, papel, entitlement e estado operacional.
-- Status: os fluxos principais estão implementados e a substituição repo-side do Pending Setup pela jornada E10.9 foi concluída; permanecem como lacunas a ação inefetiva de criar outra conta no switcher, a ausência dos eventos específicos do switcher, a edição manual de copy da página comercial personalizada e os gates pré-merge e pós-merge ainda pendentes da E10.9.
+- Status: os fluxos principais estão implementados e a substituição repo-side do Pending Setup pela jornada E10.9 foi concluída; permanecem como lacunas a ação inefetiva de criar outra conta no switcher, a ausência dos eventos específicos do switcher, a edição manual de copy da página comercial personalizada e os gates pré-merge e pós-merge ainda pendentes da E10.9. O onboarding factual E10.10 está materializado no repositório, com apply e QA hospedado ainda pendentes.
 
 10.3 Navegação multi-conta e cabeçalho
 
@@ -1027,6 +1027,47 @@
 10.9.6 Conclusão, cutover e passagem ao comercial
 - Status: implementado no repositório; execução PostgreSQL compatível e QA visual/autenticado permanecem pendentes por indisponibilidade local de Docker/Podman e configuração runtime reutilizável.
 - Conteúdo: concluir de forma transacional e idempotente, promover a conta sem entitlement, preservar gates comerciais e retirar a entrada executável E10.4 no mesmo cutover após equivalência funcional e ordem segura entre migration e Production.
+
+10.10 Onboarding factual pós-compra/trial
+
+10.10.1 Objetivo e status
+- Objetivo: confirmar o mínimo factual aplicável após entitlement comercial válido e taxon primário resolvido, sem refazer o Pending Setup nem exigir IA.
+- Status: implementado no repositório; migrations hospedadas e QA autenticado de Preview permanecem pendentes. E25.1 depende da conclusão formal deste recorte e não foi iniciado.
+
+10.10.2 Registros do recorte
+- Banco:
+  - Ajustados:
+    - `public.account_profiles`
+    - `public.taxon_factual_fields`
+- Repositório:
+  - Criados:
+    - `lib/onboarding/factual/`
+    - `app/a/[account]/_components/FactualOnboarding.tsx`
+    - `app/a/[account]/factual-actions.ts`
+    - `supabase/migrations/20260926145500_e10_10_account_factual_profile.sql`
+    - `supabase/migrations/20260926171100_e10_10_factual_catalog_cutover.sql`
+  - Ajustados:
+    - `app/a/[account]/account-journey-loader.ts`
+    - `app/a/[account]/page.tsx`
+    - `app/a/[account]/_components/onboarding-journey-validation-cases.ts`
+    - `app/a/[account]/_components/onboarding-journey-policy.ts`
+    - `lib/commercial-entitlements/adapters/commercialEntitlementAdapter.ts`
+    - `lib/commercial-entitlements/index.ts`
+    - `lib/onboarding/niche-resolution/adapters/accountTaxonomyAdapter.ts`
+    - `package.json`
+- Updates:
+  - Aplicados: `prod#17`.
+- Referências:
+  - Plano funcional e técnico: `docs/lousa-plano-base-e10-10.md` — seções 1–8.
+  - Contrato de banco: `docs/schema.md` — seções 1.8 e 1.35.
+
+10.10.3 Recorte factual e cutover
+- Status: migration candidata provada em PostgreSQL compatível isolado; apply hospedado pendente do fluxo pós-merge.
+- Conteúdo: no cutover inicial, exatamente `business_display_name` universal required, `creci_registration` opcional no nicho `corretor-imoveis` e `professional_regulatory_credential` opcional no segmento `servicos-profissionais` permanecem ativos; os outros 23 fields são inativados e preservados fisicamente. O baseline versionado de 25 rows converge com o estado hospedado de 26 sem apagar dados nem manter referências condicionais órfãs. A cardinalidade do cutover não é gate permanente do runtime: a jornada valida os três fields suportados por chave e semântica e não apresenta nem usa fields adicionais legítimos na prontidão, preservando a resolução integral E20.8.
+
+10.10.4 UX factual e prontidão para a Base
+- Status: implementada no repositório; QA hospedado em desktop e mobile pendente.
+- Conteúdo: owner, admin e editor confirmam o nome público e podem corrigir WhatsApp e a credencial opcional aplicável; viewer somente lê. E-mail e taxon confirmado são somente leitura. Só o nome público válido bloqueia a prontidão factual; falha na leitura factual ou nos lookups de entitlement e taxon mantém a jornada bloqueada com opção de tentar novamente, sem liberar o conteúdo comercial. Ausência legítima de entitlement ou taxon preserva os caminhos existentes. E25.1 será responsável pela navegação real para a Base.
 
 11. E11 — Gestão de membros e autoridade comercial
 
