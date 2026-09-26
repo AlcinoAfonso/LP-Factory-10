@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState } from "react";
 
 import type {
@@ -74,7 +75,7 @@ export function AdminTaxonFactualCoverage({
     >
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">E20.8 · Supabase corrente</p>
+          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Informações para este taxon</p>
           <h2
             className="mt-1 text-lg font-semibold text-card-foreground"
             id="factual-coverage-title"
@@ -82,8 +83,14 @@ export function AdminTaxonFactualCoverage({
             Cobertura factual corrente
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Fields factuais correntes aplicados pela hierarquia selecionada.
+            Informações usadas neste taxon e herdadas das categorias superiores.
           </p>
+          <Link
+            className="mt-3 inline-flex min-h-11 items-center rounded-md bg-brand-600 px-4 text-sm font-medium text-white outline-none hover:bg-brand-700 focus-visible:ring-4 focus-visible:ring-brand-600/30"
+            href={`/admin/estrutura-lp?view=entradas&taxon=${taxonId}`}
+          >
+            Adicionar ou editar campos
+          </Link>
         </div>
         <span
           className={`inline-flex w-fit rounded-full px-3 py-1 text-xs font-medium ${
@@ -110,7 +117,7 @@ export function AdminTaxonFactualCoverage({
               }`}
               key={`${layer.level}:${layer.taxonName ?? "universal"}`}
             >
-              {humanize(layer.level)}
+              {layerLabel(layer.level)}
               {layer.taxonName ? ` — ${layer.taxonName}` : ""}
               {layer.served ? <span className="sr-only">, taxon servido</span> : null}
             </li>
@@ -119,14 +126,14 @@ export function AdminTaxonFactualCoverage({
       </div>
 
       <div
-        aria-label="Legenda de origem dos fields"
+        aria-label="Legenda de origem dos campos"
         className="mt-4 flex flex-wrap gap-2 text-xs text-muted-foreground"
       >
         <span className="rounded-full border border-brand-200 bg-brand-50 px-2.5 py-1 text-brand-800">
-          Próprio: origem no taxon servido
+          Próprio: definido neste taxon
         </span>
         <span className="rounded-full border border-border bg-muted px-2.5 py-1">
-          Herdado: origem em camada ancestral
+          Herdado: definido em categoria superior
         </span>
       </div>
 
@@ -139,17 +146,17 @@ export function AdminTaxonFactualCoverage({
           >
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h3 className="text-base font-semibold text-foreground" id={`factual-layer-${layerIndex}`}>
-                {humanize(layer.level)}
+                {layerLabel(layer.level)}
                 {layer.taxonName ? ` — ${layer.taxonName}` : ""}
               </h3>
               <span className="text-xs font-medium text-muted-foreground">
-                {layer.fields.length} field(s)
+                {layer.fields.length} {layer.fields.length === 1 ? "campo" : "campos"}
               </span>
             </div>
             {layer.fields.length === 0 ? (
-              <p className="mt-3 text-sm text-muted-foreground">Nenhum field tem origem nesta camada.</p>
+              <p className="mt-3 text-sm text-muted-foreground">Nenhum campo começa nesta camada.</p>
             ) : (
-              <ul className="mt-3 grid gap-3" aria-label={`Fields de ${humanize(layer.level)}`}>
+              <ul className="mt-3 grid gap-3" aria-label={`Campos de ${layerLabel(layer.level)}`}>
                 {layer.fields.map((field) => (
                   <li
                     className="min-w-0 rounded-md border border-border bg-background px-4 py-3 [overflow-wrap:anywhere]"
@@ -157,8 +164,7 @@ export function AdminTaxonFactualCoverage({
                   >
                     <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                       <div>
-                        <p className="text-sm font-semibold text-foreground">{field.fieldKey}</p>
-                        <p className="mt-1 text-sm text-muted-foreground">{field.purpose}</p>
+                        <p className="text-sm font-semibold text-foreground">{field.purpose}</p>
                       </div>
                       <span className="inline-flex w-fit rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
                         {field.ownership === "own" ? "Próprio" : "Herdado"}
@@ -166,9 +172,10 @@ export function AdminTaxonFactualCoverage({
                     </div>
                     <details className="mt-3 text-sm text-muted-foreground">
                       <summary className="flex min-h-11 cursor-pointer items-center rounded-md font-medium text-foreground outline-none focus-visible:ring-4 focus-visible:ring-brand-600/20">
-                        Ver detalhes do field
+                        Ver regras e detalhes técnicos
                       </summary>
                       <dl className="mt-3 grid gap-2 sm:grid-cols-2">
+                        <Detail label="Chave técnica" value={field.fieldKey} />
                         <Detail label="Camada de origem" value={formatOrigin(field)} />
                         <Detail label="Tipo" value={humanize(field.valueType)} />
                         <Detail label="Escopo do valor" value={humanize(field.valueScope)} />
@@ -236,7 +243,7 @@ function Detail({ label, value }: Readonly<{ label: string; value: string }>) {
 }
 
 function formatOrigin(field: AdminFactualCoverageField): string {
-  const layer = humanize(field.originLayer);
+  const layer = layerLabel(field.originLayer);
   return field.originTaxonName ? `${layer} — ${field.originTaxonName}` : layer;
 }
 
@@ -281,4 +288,8 @@ function humanize(value: string): string {
   return value
     .replace(/[._-]/g, " ")
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function layerLabel(value: string): string {
+  return ({ universal: "Universal", segment: "Segmento", niche: "Nicho", ultra_niche: "Ultranicho" } as Record<string, string>)[value] ?? humanize(value);
 }

@@ -70,10 +70,9 @@ export default async function AdminTaxonDetailPage({ params }: AdminTaxonDetailP
             {taxon.isActive ? "Ativo" : "Inativo"}
           </AdminStatusBadge>
         </div>
-        <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
-          <Detail label="Nível" value={taxon.level} />
-          <Detail label="Slug" value={taxon.slug} />
-          <Detail label="Pai" value={taxon.parentName ?? "Universal"} />
+        <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-3">
+          <Detail label="Nível" value={({ segment: "Segmento", niche: "Nicho", ultra_niche: "Ultranicho" } as Record<string, string>)[taxon.level] ?? taxon.level} />
+          <Detail label="Categoria superior" value={taxon.parentName ?? "Universal"} />
           <Detail label="Aliases" value={String(taxon.aliasCount)} />
         </dl>
       </section>
@@ -155,6 +154,7 @@ export default async function AdminTaxonDetailPage({ params }: AdminTaxonDetailP
             </h2>
             <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-3">
               <Detail label="Identificador técnico" value={taxon.id} />
+              <Detail label="Slug" value={taxon.slug} />
               <Detail label="Contas" value={String(taxon.usage.accountLinks)} />
               <Detail label="Resolução selecionada" value={String(taxon.usage.selectedResolutions)} />
               <Detail label="Sugestão IA" value={String(taxon.usage.aiSuggestedResolutions)} />

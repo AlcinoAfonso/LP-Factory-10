@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 26/09/2026
-• Versão: v1.5.245
+• Versão: v1.5.246
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -1416,6 +1416,37 @@
 12.7.4 Refinamento canônico de composição e responsividade
 - O Design System complementa o contrato com lista tabular compacta, controles por atributo nos cabeçalhos, abas para visões irmãs e adaptação mobile; cards seguem exceção funcional e a tecnologia permanece aberta.
 - O alcance operacional cobre Admin e Account Dashboard e o Partner Dashboard quando tiver superfície funcional. Páginas públicas e landing pages comerciais ficam fora do contrato; nenhuma superfície existente ou contrato de domínio foi alterado nesta fase.
+
+12.8 Piloto do padrão transversal no fluxo Taxonomia e cobertura factual
+
+12.8.1 Objetivo e status
+- Objetivo: aplicar o contrato visual da E12.7 ao fluxo existente de Taxonomia, cobertura e gestão factual, com linguagem humana e continuidade entre tarefas.
+- Status: fases 12.8.3 e 12.8.4 implementadas no Admin; a adoção nas demais áreas permanece fora deste piloto.
+
+12.8.2 Registros do recorte
+- Repositório:
+  - Ajustados:
+    - `app/admin/(protected)/taxonomia/page.tsx`
+    - `app/admin/(protected)/taxonomia/[taxonId]/page.tsx`
+    - `app/admin/(protected)/taxonomia/[taxonId]/_components/AdminTaxonFactualCoverage.tsx`
+    - `app/admin/(protected)/estrutura-lp/_components/AdminFactualFields.tsx`
+- Referências:
+  - Plano do recorte: `docs/lousa-plano-base-e12-8.md` — V1 aprovada e V2 Light mínima.
+  - Contrato visual: `docs/design-system.md` — Contrato de apresentação para páginas operacionais de dashboard.
+
+12.8.3 Taxonomia como piloto de coleção e detalhe
+- Status: implementado.
+- Conteúdo:
+  - a lista apresenta taxons em linhas compactas consecutivas, com identidade humana, nível, estado, diagnóstico e abertura explícita; busca global e filtros existentes de nível e estado são preservados;
+  - no desktop, os filtros de atributo acompanham os cabeçalhos correspondentes; no mobile, ficam em controles compactos acima da tabela com rolagem horizontal indicada;
+  - o detalhe prioriza identidade e estado, cobertura e ações humanas, com IA consultiva e detalhes técnicos em segundo nível.
+
+12.8.4 Cobertura factual e subtarefas como piloto de interação
+- Status: implementado.
+- Conteúdo:
+  - a cobertura prioriza finalidade, origem e estado dos campos, mantém detalhes técnicos acessíveis e oferece acesso direto à gestão humana na visão `Entradas`;
+  - o formulário usa rótulos humanos, mostra opções, limites e condições conforme a seleção atual, preserva valores temporariamente ocultos e exige confirmação antes de descartá-los ao salvar;
+  - criação, edição do mesmo fato, inativação e reativação mantêm feedback e retorno contextual ao taxon; IA permanece consultiva e a liberação humana segue independente, sob os contratos da E20.8.
 
 13. E13 — Partner Dashboard
 
