@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data da última atualização: 26/09/2026
-• Documento: LP Factory 10 — Schema (DB Contract) v1.0.70
+• Documento: LP Factory 10 — Schema (DB Contract) v1.0.71
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -205,15 +205,17 @@
 • PK: account_id uuid (constraint account_profiles_pkey)
 • FK: account_id → accounts(id) ON DELETE CASCADE (constraint account_profiles_account_id_fkey)
 • CHECK: account_profiles_preferred_channel_chk (preferred_channel IN ('email', 'whatsapp'))
+• Delta E10.10 pendente de apply hospedado: constraints de nome público, CRECI e credencial regulatória profissional aceitam nulo ou texto não vazio após trim, com limites respectivos de 120, 80 e 120 caracteres.
 1.8.2 Campos
 • niche text null
 • preferred_channel text not null default 'email'
 • whatsapp text null
 • site_url text null
+• Delta E10.10 pendente de apply hospedado: `business_display_name text null`, `creci_registration text null` e `professional_regulatory_credential text null`; apenas o nome público é gate factual de prontidão na aplicação.
 • created_at timestamptz not null default now()
 • updated_at timestamptz not null default now()
 1.8.3 Segurança
-• Trigger Hub: não (sem triggers)
+• Trigger Hub: não. Delta E10.10 pendente de apply hospedado: trigger `account_profiles_guard_factual_values` impede INSERT/UPDATE direto dos três novos campos pelo papel `authenticated`, inclusive sob RPC SECURITY DEFINER com JWT autenticado; preserva escrita das colunas legadas e escrita server-side por `service_role`.
 • RLS: ativo (enable row level security)
 1.8.4 Policies
 • account_profiles_select_member_or_platform (SELECT to public): is_platform_admin() OU membro ativo do tenant (account_users.account_id = account_profiles.account_id; account_users.user_id = auth.uid(); account_users.status='active')
@@ -1070,7 +1072,7 @@
 1.35.2 Contrato e carga inicial
 • `field_key` usa snake_case fechado. `definition` aceita somente finalidade, tipo, escopo, origem esperada, obrigação, condições opcionais e validação coerente; objetos, enums, listas, ranges e operadores são validados com equivalência ao schema Zod do domínio.
 • `public.e20_8_factual_field_definition_is_valid(jsonb)` é função IMMUTABLE, search_path vazio e acesso externo restrito ao `service_role`; a constraint estrita a usa e cinco constraints auxiliares mantêm fingerprint canônico do predicado.
-• A carga inicial aborta se as identidades `imobiliario` e `corretor-imoveis` divergirem e cria exatamente 25 rows ativas: 16 Universal, quatro Segmento, cinco Nicho e zero Ultranicho. `created_by` e `updated_by` nulos são permitidos somente nesse bootstrap.
+• A carga inicial aborta se as identidades `imobiliario` e `corretor-imoveis` divergirem e cria exatamente 25 rows ativas: 16 Universal, quatro Segmento, cinco Nicho e zero Ultranicho. `created_by` e `updated_by` nulos são permitidos em bootstrap ou migration de catálogo controlada, sem atribuir autoria humana fictícia.
 • Índices: `(taxon_id, field_key)`, `created_by` parcial não nulo e `updated_by` parcial não nulo. O trigger `taxon_factual_fields_set_updated_at` executa `public.tg_set_updated_at()` antes de UPDATE.
 
 1.35.3 Segurança, retirada e artefatos
@@ -1079,6 +1081,7 @@
 • A mesma migration remove `landing_page_input_catalog_drafts`, `business_taxons.reviewed_input_catalog_version` e as unidades mutáveis de `landing_page_dynamic_market_research`, preservando revisões, ativações e custos históricos.
 • Migration forward-only: `supabase/migrations/20260914132000_e20_8_factual_fields_greenfield.sql`; teste transacional: `supabase/tests/e20_8_factual_fields_greenfield.test.sql`; verificador read-only: `supabase/snippets/e20_8_factual_fields_verify.sql`.
 • Estado hospedado: apply, snippet e Security Controls permanecem gates pós-merge do cutover supervisionado; este contrato descreve o estado produzido pela migration, sem afirmar aplicação antecipada.
+• Delta E10.10 pendente de apply hospedado: `supabase/migrations/20260926171100_e10_10_factual_catalog_cutover.sql` preserva 26 rows e mantém exatamente três ativas — `business_display_name` required no Universal, `creci_registration` optional em `corretor-imoveis` e `professional_regulatory_credential` optional em `servicos-profissionais`. As outras 23 ficam inativas, sem condição ativa órfã. A migration aceita o baseline versionado de 25 rows criando apenas a credencial profissional faltante, ou o estado hospedado de 26 com ela já existente; demais estados falham fechado.
 
 1.36 openai_lp_cost_events
 1.36.1 Função e identidade

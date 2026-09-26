@@ -16,6 +16,7 @@ export type AvailableFactualOnboarding = Readonly<{
   taxonName: string;
   canEdit: boolean;
   creciApplicable: boolean;
+  professionalCredentialApplicable: boolean;
   values: FactualValues;
   isReady: boolean;
 }>;
@@ -26,6 +27,7 @@ type ProfileRow = {
   business_display_name: string | null;
   whatsapp: string | null;
   creci_registration: string | null;
+  professional_regulatory_credential: string | null;
 };
 
 export async function loadFactualOnboarding(accountSubdomain: string): Promise<FactualOnboardingLoad> {
@@ -60,7 +62,7 @@ async function readFactualOnboarding(accountSubdomain: string): Promise<FactualO
     .from("taxon_factual_fields")
     .select("field_key,definition", { count: "exact" })
     .eq("is_active", true)
-    .limit(3);
+    .limit(4);
   if (activeCatalog.error || !hasFactualCatalogCutover(activeCatalog.data, activeCatalog.count)) {
     return { status: "unavailable" };
   }
@@ -72,7 +74,7 @@ async function readFactualOnboarding(accountSubdomain: string): Promise<FactualO
 
   const { data, error } = await createServiceClient()
     .from("account_profiles")
-    .select("business_display_name,whatsapp,creci_registration")
+    .select("business_display_name,whatsapp,creci_registration,professional_regulatory_credential")
     .eq("account_id", accountId)
     .maybeSingle();
   if (error) {
@@ -84,6 +86,7 @@ async function readFactualOnboarding(accountSubdomain: string): Promise<FactualO
     businessDisplayName: profile?.business_display_name ?? null,
     whatsapp: profile?.whatsapp ?? null,
     creciRegistration: profile?.creci_registration ?? null,
+    professionalRegulatoryCredential: profile?.professional_regulatory_credential ?? null,
   };
   return {
     status: "available",
@@ -93,6 +96,7 @@ async function readFactualOnboarding(accountSubdomain: string): Promise<FactualO
     taxonName: taxon.name,
     canEdit: canEditFactualValues(ctx.role),
     creciApplicable: assessed.creciApplicable,
+    professionalCredentialApplicable: assessed.professionalCredentialApplicable,
     values,
     isReady: isFactualReady(values),
   };
@@ -102,6 +106,7 @@ export async function saveFactualProfile(input: Readonly<{
   accountId: string;
   values: FactualValues;
   creciApplicable: boolean;
+  professionalCredentialApplicable: boolean;
 }>): Promise<boolean> {
   try { return await writeFactualProfile(input); }
   catch (error) {
@@ -114,8 +119,9 @@ async function writeFactualProfile(input: Readonly<{
   accountId: string;
   values: FactualValues;
   creciApplicable: boolean;
+  professionalCredentialApplicable: boolean;
 }>): Promise<boolean> {
-  const payload = buildFactualProfileWrite(input.accountId, input.values, input.creciApplicable);
+  const payload = buildFactualProfileWrite(input.accountId, input.values, input.creciApplicable, input.professionalCredentialApplicable);
   const { account_id: accountId, ...changes } = payload;
   const supabase = createServiceClient();
   const updateExisting = async () => supabase

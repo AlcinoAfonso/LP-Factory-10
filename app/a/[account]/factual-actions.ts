@@ -26,13 +26,15 @@ export async function saveFactualOnboardingAction(
     businessDisplayName: readString(formData, "business_display_name"),
     whatsapp: readString(formData, "whatsapp"),
     creciRegistration: readString(formData, "creci_registration"),
-  }, current.creciApplicable);
+    professionalRegulatoryCredential: readString(formData, "professional_regulatory_credential"),
+  }, current.creciApplicable, current.professionalCredentialApplicable);
   if (!parsed.ok) return { status: "error", fieldErrors: parsed.errors };
 
   const saved = await saveFactualProfile({
     accountId: current.accountId,
     values: parsed.values,
     creciApplicable: current.creciApplicable,
+    professionalCredentialApplicable: current.professionalCredentialApplicable,
   });
   if (!saved) return { status: "error", formError: UNAVAILABLE };
 

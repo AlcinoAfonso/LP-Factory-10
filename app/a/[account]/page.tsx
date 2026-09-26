@@ -44,6 +44,7 @@ export default async function Page({ params }: PageProps) {
         taxonName={journey.factual.taxonName}
         canEdit={journey.factual.canEdit}
         creciApplicable={journey.factual.creciApplicable}
+        professionalCredentialApplicable={journey.factual.professionalCredentialApplicable}
         values={journey.factual.values}
         isReady={journey.factual.isReady}
       />

@@ -10,6 +10,7 @@ type Props = {
   taxonName: string;
   canEdit: boolean;
   creciApplicable: boolean;
+  professionalCredentialApplicable: boolean;
   values: FactualValues;
   isReady: boolean;
 };
@@ -27,7 +28,7 @@ export function FactualOnboarding(props: Props) {
         <p className="text-sm font-semibold uppercase tracking-[0.16em] text-brand-700">Após a ativação</p>
         <h1 className="mt-3 text-2xl font-bold tracking-tight text-ink-900 sm:text-3xl">Seus dados essenciais</h1>
         <p className="mt-3 text-sm leading-6 text-graytech-600 sm:text-base">
-          Confirme o nome público que será usado pela LP Factory. WhatsApp e CRECI, quando aplicável, são opcionais.
+          Confirme o nome público que será usado pela LP Factory. WhatsApp e credenciais aplicáveis são opcionais.
         </p>
 
         <div className="mt-7 grid gap-4 sm:grid-cols-2">
@@ -88,6 +89,22 @@ export function FactualOnboarding(props: Props) {
                 {state.fieldErrors?.creciRegistration ? <p id="factual-creci-error" className="mt-2 text-sm text-red-700">{state.fieldErrors.creciRegistration}</p> : null}
               </div>
             ) : null}
+            {props.professionalCredentialApplicable ? (
+              <div>
+                <label htmlFor="factual-professional-credential" className="block text-sm font-semibold text-ink-900">Credencial regulatória profissional (opcional)</label>
+                <input
+                  id="factual-professional-credential"
+                  name="professional_regulatory_credential"
+                  type="text"
+                  defaultValue={props.values.professionalRegulatoryCredential ?? ""}
+                  maxLength={120}
+                  aria-invalid={Boolean(state.fieldErrors?.professionalRegulatoryCredential)}
+                  aria-describedby={state.fieldErrors?.professionalRegulatoryCredential ? "factual-professional-credential-error" : undefined}
+                  className={inputClass}
+                />
+                {state.fieldErrors?.professionalRegulatoryCredential ? <p id="factual-professional-credential-error" className="mt-2 text-sm text-red-700">{state.fieldErrors.professionalRegulatoryCredential}</p> : null}
+              </div>
+            ) : null}
             {state.formError ? <p role="alert" className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-800">{state.formError}</p> : null}
             <button type="submit" disabled={isPending} className="inline-flex min-h-11 items-center justify-center rounded-lg bg-brand-700 px-5 py-3 text-sm font-semibold text-white hover:bg-brand-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-700 focus-visible:ring-offset-2 disabled:opacity-60">
               {isPending ? "Salvando…" : "Salvar dados"}
@@ -99,6 +116,7 @@ export function FactualOnboarding(props: Props) {
             <ReadOnlyValue label="Nome público" value={props.values.businessDisplayName} />
             <ReadOnlyValue label="WhatsApp" value={props.values.whatsapp} />
             {props.creciApplicable ? <ReadOnlyValue label="Registro CRECI" value={props.values.creciRegistration} /> : null}
+            {props.professionalCredentialApplicable ? <ReadOnlyValue label="Credencial regulatória profissional" value={props.values.professionalRegulatoryCredential} /> : null}
             <p className="text-sm text-graytech-600">Seu acesso é somente leitura. Um proprietário, administrador ou editor pode corrigir estes dados.</p>
           </div>
         )}

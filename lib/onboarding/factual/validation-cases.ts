@@ -6,63 +6,76 @@ import { assessFactualCoverage, buildFactualProfileWrite, canEditFactualValues, 
 const activeCatalog = [
   { field_key: "business_display_name", definition: { obligation: "required", valueType: "string" } },
   { field_key: "creci_registration", definition: { obligation: "optional", valueType: "string" } },
+  { field_key: "professional_regulatory_credential", definition: { obligation: "optional", valueType: "string" } },
 ];
-assert.equal(hasFactualCatalogCutover(activeCatalog, 2), true);
+assert.equal(hasFactualCatalogCutover(activeCatalog, 3), true);
 assert.equal(hasFactualCatalogCutover(activeCatalog, 26), false);
-assert.equal(hasFactualCatalogCutover([...activeCatalog, { field_key: "professional_regulatory_credential", definition: {} }], 3), false);
-assert.equal(hasFactualCatalogCutover([activeCatalog[0], { ...activeCatalog[1], definition: { obligation: "required", valueType: "string" } }], 2), false);
+assert.equal(hasFactualCatalogCutover(activeCatalog.slice(0, 2), 2), false);
+assert.equal(hasFactualCatalogCutover([...activeCatalog, { field_key: "unexpected", definition: {} }], 4), false);
+assert.equal(hasFactualCatalogCutover([activeCatalog[0], { ...activeCatalog[1], definition: { obligation: "required", valueType: "string" } }, activeCatalog[2]], 3), false);
 assert.equal(hasFactualCatalogCutover(activeCatalog, null), false);
 
-const business = {
-  fieldKey: "business_display_name",
-  originLayer: "universal",
-  obligation: "required",
-  valueType: "string",
-};
-const creci = {
-  fieldKey: "creci_registration",
-  originTaxon: { slug: "corretor-imoveis" },
-  obligation: "optional",
-  valueType: "string",
-};
-const coverage = (fields: unknown[], isCorretor = false) => ({
+const business = { fieldKey: "business_display_name", originLayer: "universal", obligation: "required", valueType: "string" };
+const creci = { fieldKey: "creci_registration", originLayer: "niche", originTaxon: { slug: "corretor-imoveis" }, obligation: "optional", valueType: "string" };
+const credential = { fieldKey: "professional_regulatory_credential", originLayer: "segment", originTaxon: { slug: "servicos-profissionais" }, obligation: "optional", valueType: "string" };
+const coverage = (fields: unknown[], segment = "outro-segmento", niche = "outro-nicho") => ({
   fields,
-  appliedLayers: [{ taxon: isCorretor ? { slug: "corretor-imoveis" } : { slug: "outro-nicho" } }],
+  appliedLayers: [
+    { level: "universal", taxon: null },
+    { level: "segment", taxon: { slug: segment } },
+    { level: "niche", taxon: { slug: niche } },
+  ],
 }) as unknown as ResolvedFactualCoverage;
 
-assert.deepEqual(assessFactualCoverage(coverage([business])), { ok: true, creciApplicable: false });
-assert.deepEqual(assessFactualCoverage(coverage([business, creci], true)), { ok: true, creciApplicable: true });
-assert.deepEqual(assessFactualCoverage(coverage([business], true)), { ok: false });
+assert.deepEqual(assessFactualCoverage(coverage([business])), { ok: true, creciApplicable: false, professionalCredentialApplicable: false });
+assert.deepEqual(assessFactualCoverage(coverage([business, creci], "imobiliario", "corretor-imoveis")), { ok: true, creciApplicable: true, professionalCredentialApplicable: false });
+assert.deepEqual(assessFactualCoverage(coverage([business, credential], "servicos-profissionais")), { ok: true, creciApplicable: false, professionalCredentialApplicable: true });
+assert.deepEqual(assessFactualCoverage(coverage([business], "servicos-profissionais")), { ok: false });
+assert.deepEqual(assessFactualCoverage(coverage([business], "imobiliario", "corretor-imoveis")), { ok: false });
+assert.deepEqual(assessFactualCoverage(coverage([business, credential])), { ok: false });
 assert.deepEqual(assessFactualCoverage(coverage([business, creci])), { ok: false });
-assert.deepEqual(assessFactualCoverage(coverage([business, { ...creci, obligation: "required" }], true)), { ok: false });
-assert.deepEqual(assessFactualCoverage(coverage([business, creci, { fieldKey: "professional_regulatory_credential" }], true)), { ok: false });
+assert.deepEqual(assessFactualCoverage(coverage([business, { ...credential, obligation: "required" }], "servicos-profissionais")), { ok: false });
+assert.deepEqual(assessFactualCoverage(coverage([business, { ...creci, obligation: "required" }], "imobiliario", "corretor-imoveis")), { ok: false });
+assert.deepEqual(assessFactualCoverage(coverage([business, { fieldKey: "unexpected" }])), { ok: false });
 assert.deepEqual(assessFactualCoverage(coverage([])), { ok: false });
 
 for (const role of ["owner", "admin", "editor"] as const) assert.equal(canEditFactualValues(role), true);
 assert.equal(canEditFactualValues("viewer"), false);
 
-assert.deepEqual(validateFactualInput({ businessDisplayName: "  Imobiliária Azul  ", whatsapp: "", creciRegistration: "" }, true), {
-  ok: true,
-  values: { businessDisplayName: "Imobiliária Azul", whatsapp: null, creciRegistration: null },
+const input = (changes: Partial<{ businessDisplayName: string; whatsapp: string; creciRegistration: string; professionalRegulatoryCredential: string }> = {}) => ({
+  businessDisplayName: "Ana", whatsapp: "", creciRegistration: "", professionalRegulatoryCredential: "", ...changes,
 });
-assert.deepEqual(validateFactualInput({ businessDisplayName: "Ana", whatsapp: " 11 99999-9999 ", creciRegistration: " 12345-F " }, true), {
+assert.deepEqual(validateFactualInput(input({ businessDisplayName: "  Imobiliária Azul  " }), true, false), {
   ok: true,
-  values: { businessDisplayName: "Ana", whatsapp: "11 99999-9999", creciRegistration: "12345-F" },
+  values: { businessDisplayName: "Imobiliária Azul", whatsapp: null, creciRegistration: null, professionalRegulatoryCredential: null },
 });
-assert.deepEqual(validateFactualInput({ businessDisplayName: "Ana", whatsapp: "", creciRegistration: "12345-F" }, false), {
+assert.deepEqual(validateFactualInput(input({ whatsapp: " 11 99999-9999 ", creciRegistration: " 12345-F " }), true, false), {
   ok: true,
-  values: { businessDisplayName: "Ana", whatsapp: null, creciRegistration: null },
+  values: { businessDisplayName: "Ana", whatsapp: "11 99999-9999", creciRegistration: "12345-F", professionalRegulatoryCredential: null },
 });
-assert.equal(validateFactualInput({ businessDisplayName: " ", whatsapp: "", creciRegistration: "" }, false).ok, false);
-assert.equal(validateFactualInput({ businessDisplayName: "x".repeat(121), whatsapp: "", creciRegistration: "" }, false).ok, false);
-assert.equal(validateFactualInput({ businessDisplayName: "Ana", whatsapp: "x".repeat(33), creciRegistration: "" }, false).ok, false);
-assert.equal(validateFactualInput({ businessDisplayName: "Ana", whatsapp: "", creciRegistration: "x".repeat(81) }, true).ok, false);
+assert.deepEqual(validateFactualInput(input({ professionalRegulatoryCredential: " OAB 12345 " }), false, true), {
+  ok: true,
+  values: { businessDisplayName: "Ana", whatsapp: null, creciRegistration: null, professionalRegulatoryCredential: "OAB 12345" },
+});
+assert.deepEqual(validateFactualInput(input({ creciRegistration: "ignored", professionalRegulatoryCredential: "ignored" }), false, false), {
+  ok: true,
+  values: { businessDisplayName: "Ana", whatsapp: null, creciRegistration: null, professionalRegulatoryCredential: null },
+});
+assert.equal(validateFactualInput(input({ businessDisplayName: " " }), false, false).ok, false);
+assert.equal(validateFactualInput(input({ businessDisplayName: "x".repeat(121) }), false, false).ok, false);
+assert.equal(validateFactualInput(input({ whatsapp: "x".repeat(33) }), false, false).ok, false);
+assert.equal(validateFactualInput(input({ creciRegistration: "x".repeat(81) }), true, false).ok, false);
+assert.equal(validateFactualInput(input({ professionalRegulatoryCredential: "x".repeat(121) }), false, true).ok, false);
 
-assert.equal(isFactualReady({ businessDisplayName: "Ana", whatsapp: null, creciRegistration: null }), true);
-assert.equal(isFactualReady({ businessDisplayName: " ", whatsapp: "11", creciRegistration: "123" }), false);
-const noCreciWrite = buildFactualProfileWrite("account-id", { businessDisplayName: "Ana", whatsapp: null, creciRegistration: null }, false);
-assert.equal(Object.hasOwn(noCreciWrite, "creci_registration"), false);
-const withCreciWrite = buildFactualProfileWrite("account-id", { businessDisplayName: "Ana", whatsapp: null, creciRegistration: "12345-F" }, true);
+const values = { businessDisplayName: "Ana", whatsapp: null, creciRegistration: null, professionalRegulatoryCredential: null };
+assert.equal(isFactualReady(values), true);
+assert.equal(isFactualReady({ ...values, businessDisplayName: " ", professionalRegulatoryCredential: "OAB" }), false);
+const noOptionalWrite = buildFactualProfileWrite("account-id", values, false, false);
+assert.equal(Object.hasOwn(noOptionalWrite, "creci_registration"), false);
+assert.equal(Object.hasOwn(noOptionalWrite, "professional_regulatory_credential"), false);
+const withCreciWrite = buildFactualProfileWrite("account-id", { ...values, creciRegistration: "12345-F" }, true, false);
 assert.equal(withCreciWrite.creci_registration, "12345-F");
+const withCredentialWrite = buildFactualProfileWrite("account-id", { ...values, professionalRegulatoryCredential: "OAB 12345" }, false, true);
+assert.equal(withCredentialWrite.professional_regulatory_credential, "OAB 12345");
 
-console.log("ok - E10.10 factual coverage, roles, input and readiness");
+console.log("ok - E10.10 three-field factual coverage, roles, input and readiness");
