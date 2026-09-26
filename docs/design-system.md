@@ -150,8 +150,21 @@ Este documento define o contrato visual vigente do produto, com foco em componen
 - Fluxos de detalhe que combinam cobertura, ação humana e assistência automatizada apresentam primeiro identidade e estado, depois o contexto de decisão e as ações humanas; recomendação automatizada e decisão permanecem visual e semanticamente separadas, enquanto diagnósticos e identificadores técnicos ficam sob revelação progressiva.
 - Estados assíncronos preservam conteúdo válido já exibido, anunciam feedback textual sem executar decisão pela renderização e mantêm ações humanas independentes disponíveis. Controles alterados devem preservar fluxo por teclado, foco visível e alvo mínimo de 44 px na superfície responsiva.
 - Estados vazios devem ser enxutos, sem ilustração e sem inventar métricas.
-- Cards devem ser usados apenas para blocos funcionais, detalhes ou estados vazios.
+- Cards devem ser usados para blocos funcionais, detalhes ou estados vazios; em novas coleções, a exceção funcional descrita abaixo também pode justificar seu uso.
 - O Admin não usa `AccountSwitcher` nem depende de conta ativa.
+
+## Contrato mínimo para novas páginas do Admin
+
+- Antes da implementação, toda nova página ou recorte administrativo deve confrontar sua arquitetura de apresentação com este contrato. As regras e operações específicas continuam nos contratos de domínio; escolhas visuais não podem remover, reduzir ou redistribuir regra, ação, validação, autorização, segurança, auditabilidade ou capacidade existente sem a autorização exigida.
+- O cabeçalho apresenta título humano da área ou tarefa. Descrição curta, contagem ou status agregado são opcionais; a ação principal aparece no topo somente quando houver ação primária real.
+- Em coleções, a primeira opção é lista com aparência tabular: registros em linhas, atributos essenciais em colunas e meio explícito de abrir o detalhe. A primeira coluna prioriza a identidade operacional do registro; informação secundária pode acompanhá-la se ajudar o reconhecimento sem poluir a lista.
+- Ordenação e filtros são acrescentados somente quando ajudarem a localizar, comparar ou restringir registros. A operação completa ocorre em página de detalhe orientada à tarefa; a lista não acumula edição, diagnóstico profundo ou contratos técnicos quando isso prejudica leitura e comparação.
+- Títulos, estados, filtros, ações e mensagens usam linguagem humana. Identificadores, enums, UUIDs, schemas, versões e outros contratos internos ficam em segundo nível quando necessários.
+- Mobile é considerado desde a definição da superfície, preservando identidade, estado, informação essencial e acesso ao detalhe. Colunas secundárias podem ser condensadas, ocultadas, expandidas ou apresentadas por rolagem controlada conforme a superfície.
+- Cards substituem a lista tabular somente quando tarefa, conteúdo ou restrição de viewport proporcionarem UX claramente melhor. O plano da nova página de coleção registra sucintamente a razão funcional da alternativa; preferência estética isolada não justifica a exceção.
+- Estados vazio, carregamento, erro e sucesso explicam o que acontece e o próximo passo seguro, preservando conteúdo válido já disponível. Teclado, foco visível, labels, alvos de interação e feedback textual seguem a baseline vigente deste Design System.
+- A acessibilidade das novas páginas administrativas segue WCAG 2.2 como baseline. Devem ser aplicados os critérios relevantes ao fluxo real e registrada evidência proporcional por inspeção automática e validação manual. Ferramenta automática isolada não comprova conformidade, e o produto não deve declarar conformidade WCAG integral sem auditoria, escopo e evidências próprios.
+- Este contrato não escolhe tabela HTML, CSS Grid, AG Grid, MUI Data Grid ou outra biblioteca. Cada implementação usa a menor solução compatível com o comportamento aprovado e valida sua própria superfície.
 
 ## Fora de escopo atual
 - Redesign amplo de dashboards

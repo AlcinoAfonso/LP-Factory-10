@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 22/09/2026
-• Versão: v1.5.240
+• Data: 26/09/2026
+• Versão: v1.5.241
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -1353,6 +1353,24 @@
   - a visão `Entradas` organiza a cobertura Universal → Segmento → Nicho → Ultranicho e distingue fields herdados e próprios;
   - criação, edição do mesmo fato, inativação e reativação são ações humanas diretas na autoridade Supabase;
   - blockers, divisão por plano, coordenação de versão, draft e publicação não integram essa superfície.
+
+12.7 Contrato mínimo de apresentação para novas páginas do Admin
+
+12.7.1 Objetivo e status
+- Objetivo: tornar canônico o contrato mínimo de UX/UI para novas páginas e recortes administrativos.
+- Status: fase 12.7.3 materializada no Design System; a adoção transversal nas páginas existentes permanece fora deste recorte e em debate separado.
+
+12.7.2 Registros do recorte
+- Updates:
+  - Aplicados:
+    - `prod#17`
+- Referências:
+  - Plano do recorte: `docs/lousa-plano-base-e12-7.md` — fase 12.7.3.
+  - Contrato visual canônico: `docs/design-system.md` — Contrato mínimo para novas páginas do Admin.
+
+12.7.3 Materialização canônica do contrato mínimo
+- O Design System define o baseline de apresentação para novas páginas do Admin, preservando a autoridade funcional dos contratos de domínio e mantendo em aberto a tecnologia de listas.
+- Esta fase não altera páginas existentes, componentes, código, runtime ou configuração operacional; cada futura implementação valida sua própria superfície.
 
 13. E13 — Partner Dashboard
 
