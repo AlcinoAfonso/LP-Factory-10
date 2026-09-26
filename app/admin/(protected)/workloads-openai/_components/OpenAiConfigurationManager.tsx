@@ -45,7 +45,7 @@ export function OpenAiConfigurationManager({
   );
 
   return (
-    <section className="space-y-4" aria-labelledby="managed-workloads-title">
+    <section className="space-y-4 p-4 sm:p-5" aria-labelledby="managed-workloads-title">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
@@ -89,17 +89,10 @@ export function OpenAiConfigurationManager({
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-lg border border-border bg-card shadow-card">
+      <div className="overflow-hidden rounded-lg border border-border bg-card">
         <div className="max-h-[72vh] overflow-y-auto overflow-x-hidden">
-          <div className="sticky top-0 z-10 border-b border-border bg-muted px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground sm:hidden">
-            Função e configuração atual
-          </div>
-          <div className="sticky top-0 z-10 hidden grid-cols-[minmax(12rem,2fr)_minmax(6rem,.65fr)_minmax(12rem,1.5fr)_minmax(4rem,.45fr)_auto] gap-3 border-b border-border bg-muted px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground sm:grid">
-            <span>Função</span>
-            <span>Recorte</span>
-            <span>Configuração atual</span>
-            <span>Imagem</span>
-            <span className="text-right">Ação</span>
+          <div className="sticky top-0 z-10 flex justify-between border-b border-border bg-muted px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            <span>Função e configuração atual</span><span>Ação</span>
           </div>
 
           {groups.length === 0 ? (
@@ -114,34 +107,25 @@ export function OpenAiConfigurationManager({
                 return (
                   <li key={group.key}>
                     <article
-                      className={`grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-2 px-4 py-3 sm:grid-cols-[minmax(12rem,2fr)_minmax(6rem,.65fr)_minmax(12rem,1.5fr)_minmax(4rem,.45fr)_auto] sm:items-center ${
+                      className={`grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-1 px-4 py-3 ${
                         open ? "bg-brand-50/40" : "bg-card"
                       }`}
                     >
                       <div className="min-w-0">
-                        <h3 className="truncate text-sm font-semibold text-foreground">
+                        <h3 className="text-sm font-semibold text-foreground">
                           {group.displayName}
                         </h3>
-                        <p className="mt-0.5 truncate font-mono text-[11px] text-muted-foreground sm:hidden">
-                          {group.units.map((unit) => unit.workload).join(" + ")}
-                        </p>
                       </div>
 
-                      <div className="col-span-2 row-start-2 grid min-w-0 grid-cols-[minmax(5rem,.65fr)_minmax(0,1.5fr)_minmax(4rem,.45fr)] items-center gap-3 sm:contents">
-                        <p className="text-xs text-foreground sm:text-sm">
-                          <span className="mr-1 text-muted-foreground sm:hidden">Recorte:</span>
-                          {group.roadmapReference}
-                        </p>
+                      <div className="col-start-1 row-start-2 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
                         <ConfigurationSummary units={group.units} />
-                        <p className="text-xs text-foreground sm:text-sm">
-                          <span className="mr-1 text-muted-foreground sm:hidden">Imagem:</span>
-                          Não
-                        </p>
+                        <span className="text-xs text-muted-foreground">Recorte: {group.roadmapReference}</span>
+                        <span className="text-xs text-muted-foreground">Imagem: Não</span>
                       </div>
 
                       <button
                         type="button"
-                        className="col-start-2 row-start-1 inline-flex min-h-11 items-center justify-center self-center rounded-md border border-border bg-background px-3 py-2 text-sm font-medium text-foreground outline-none transition hover:bg-muted focus-visible:ring-4 focus-visible:ring-brand-600/30 sm:col-start-5"
+                        className="col-start-2 row-start-1 row-span-2 inline-flex min-h-11 items-center justify-center self-center rounded-md border border-border bg-background px-3 py-2 text-sm font-medium text-foreground outline-none transition hover:bg-muted focus-visible:ring-4 focus-visible:ring-brand-600/30"
                         aria-expanded={open}
                         aria-controls={detailId}
                         onClick={() => setOpenGroupKey(open ? null : group.key)}
@@ -218,10 +202,10 @@ function ExpandedGroup({
 
 function ConfigurationSummary({ units }: Readonly<{ units: readonly OpenAiAdministrativeConfigurationUnit[] }>) {
   return (
-    <div className="min-w-0 text-xs text-foreground sm:text-sm">
-      <span className="mr-1 text-muted-foreground sm:hidden">Atual:</span>
+    <div className="min-w-0 text-xs text-foreground">
+      <span className="mr-1 text-muted-foreground">Atual:</span>
       {units.map((unit) => (
-        <span key={unit.workload} className="block truncate">
+        <span key={unit.workload} className="mr-2 inline-block max-w-full truncate align-bottom">
           {units.length > 1 ? `${unit.apiKind === "responses_text" ? "Texto" : "Imagem"}: ` : ""}
           {configurationLabel(unit)}
         </span>

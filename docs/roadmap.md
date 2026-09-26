@@ -2178,6 +2178,7 @@
     - `app/admin/(protected)/workloads-openai/openAiModelIdentity.ts`
     - `app/admin/(protected)/workloads-openai/_components/OpenAiConfigurationManager.tsx`
     - `app/admin/(protected)/workloads-openai/_components/OpenAiModelCatalogManager.tsx`
+    - `app/admin/(protected)/workloads-openai/_components/OpenAiWorkloadsTabs.tsx`
     - `app/admin/(protected)/workloads-openai/_components/OpenAiWorkloadDetail.tsx`
     - `app/admin/(protected)/workloads-openai/_proof.ts`
     - `app/admin/(protected)/workloads-openai/actions.ts`
@@ -2233,12 +2234,12 @@
 - O catálogo global controla quais combinações podem originar novas candidatas; save, prova e promoção revalidam a elegibilidade corrente.
 - Indisponibilidade do catálogo bloqueia novas candidatas e promoções, mas não invalida revisões já ativas nem impede rollback para revisão histórica válida.
 - Modelos e parâmetros ficam separados por modalidade e podem ser disponibilizados ou retirados da seleção sem apagar o histórico.
-- A superfície administrativa combina catálogo, seletor Preview/Production, lista compacta e detalhe expandido. O catálogo de modelos preserva suporte independente à modalidade de imagem, ainda que não exista workload de imagem vigente.
+- A superfície administrativa alterna as abas Modelos e Workloads, exibindo somente o assunto selecionado. Modelos apresenta identidades canônicas em linhas compactas com parâmetros cadastrados por nome e ação Configurar; identidades históricas e modelos 5.6 indisponíveis ficam acessíveis em segundo nível. Workloads apresenta função, configuração atual e ação Abrir, com seletor Preview/Production e lifecycle expansível; Supabase Inspect permanece somente nesse contexto. O catálogo preserva suporte independente à modalidade de imagem, ainda que não exista workload de imagem vigente.
 - Leituras são completas, ordenadas e fail-closed; paginação parcial ou resposta inválida não produz estado administrativo utilizável.
 - O papel sem `platform_admin` não recebe catálogo, configuração, provas ou controles de mutação.
 
 21.2.6 Correção e proteção do catálogo de modelos OpenAI
-- Status: implementada no repositório; migration e teste focal aprovados em PostgreSQL 17 isolado. Apply no projeto Supabase e QA administrativa hospedada permanecem pendentes; o PR segue draft.
+- Status: concluída e integrada à main. A migration foi aplicada pelo fluxo canônico; a QA administrativa hospedada confirmou cadastro e validação de IDs, acréscimo posterior de effort, reconciliação das variantes históricas e preservação das configurações dos workloads. A correção visual posterior foi integrada com QA de Preview em desktop e celular.
 - O cadastro explícito de modelo exige confirmação ao vivo pela OpenAI do identificador técnico exato antes da persistência. Erro, ausência ou divergência falham fechado; o modelo nasce indisponível e os efforts são informados pelo administrador, sem inferência da resposta externa.
 - A criação bloqueia variantes de caixa sob lock transacional por modalidade e identidade comparada. Modelo textual existente pode receber novo reasoning effort tipado, inicialmente indisponível e sob versão otimista.
 - `gpt-6-sol` e `gpt-6-luna` são as identidades canônicas de novas escolhas. A migration retira `GPT-6-Sol` da seleção; a reconciliação explícita de Luna cadastra a identidade canônica e retira `GPT-6-luna` atomicamente após confirmação externa. As variantes históricas não podem ser redisponibilizadas, mas permanecem intactas para histórico e rollback.
