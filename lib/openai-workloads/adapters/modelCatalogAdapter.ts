@@ -130,6 +130,32 @@ export async function addOpenAiModelCatalogModel(input: Readonly<{
   });
 }
 
+export async function addOpenAiModelCatalogReasoningEffort(input: Readonly<{
+  model: string;
+  reasoningEffort: OpenAiReasoningEffort;
+  expectedVersion: number;
+  actorUserId: string;
+}>) {
+  const supabase = createServiceClient();
+  return supabase.rpc("add_openai_model_catalog_reasoning_effort_v1", {
+    p_model: input.model,
+    p_reasoning_effort: input.reasoningEffort,
+    p_expected_model_version: input.expectedVersion,
+    p_actor_user_id: input.actorUserId,
+  });
+}
+
+export async function reconcileOpenAiModelCatalogLuna(input: Readonly<{
+  expectedVersion: number;
+  actorUserId: string;
+}>) {
+  const supabase = createServiceClient();
+  return supabase.rpc("reconcile_openai_model_catalog_luna_v1", {
+    p_expected_legacy_version: input.expectedVersion,
+    p_actor_user_id: input.actorUserId,
+  });
+}
+
 export async function setOpenAiModelCatalogModelAvailability(input: Readonly<{
   apiKind: "responses_text" | "image_generation";
   model: string;
