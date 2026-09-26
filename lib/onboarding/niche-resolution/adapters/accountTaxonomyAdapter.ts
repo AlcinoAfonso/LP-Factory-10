@@ -29,9 +29,20 @@ export type ActivePrimaryAccountTaxon = {
 export async function getActivePrimaryAccountTaxon(input: {
   accountId: string;
 }): Promise<ActivePrimaryAccountTaxon | null> {
-  const supabase = createServiceClient();
+  const result = await readActivePrimaryAccountTaxon(input);
+  return result.ok ? result.taxon : null;
+}
+
+export type ActivePrimaryAccountTaxonReadResult =
+  | Readonly<{ ok: true; taxon: ActivePrimaryAccountTaxon | null }>
+  | Readonly<{ ok: false }>;
+
+export async function readActivePrimaryAccountTaxon(input: {
+  accountId: string;
+}): Promise<ActivePrimaryAccountTaxonReadResult> {
 
   try {
+    const supabase = createServiceClient();
     const { data: primary, error: primaryError } = await supabase
       .from("account_taxonomy")
       .select("taxon_id")
@@ -45,11 +56,11 @@ export async function getActivePrimaryAccountTaxon(input: {
         code: (primaryError as any)?.code,
         message: (primaryError as any)?.message ?? String(primaryError),
       });
-      return null;
+      return { ok: false };
     }
 
     const taxonId = (primary as { taxon_id?: string | null } | null)?.taxon_id ?? null;
-    if (!taxonId) return null;
+    if (!taxonId) return { ok: true, taxon: null };
 
     const { data: taxon, error: taxonError } = await supabase
       .from("business_taxons")
@@ -64,19 +75,19 @@ export async function getActivePrimaryAccountTaxon(input: {
         code: (taxonError as any)?.code,
         message: (taxonError as any)?.message ?? String(taxonError),
       });
-      return null;
+      return { ok: false };
     }
 
     const row = taxon as { id?: string | null; name?: string | null; slug?: string | null } | null;
-    if (!row?.id || !row.name || !row.slug) return null;
+    if (!row?.id || !row.name || !row.slug) return { ok: false };
 
-    return { taxonId: row.id, name: row.name, slug: row.slug };
+    return { ok: true, taxon: { taxonId: row.id, name: row.name, slug: row.slug } };
   } catch (error) {
     console.error("getActivePrimaryAccountTaxon failed:", {
       code: error instanceof Error ? error.name : undefined,
       message: error instanceof Error ? error.message : String(error),
     });
-    return null;
+    return { ok: false };
   }
 }
 

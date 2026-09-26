@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 26/09/2026
-• Versão: v1.5.244
+• Versão: v1.5.245
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -1050,6 +1050,10 @@
     - `app/a/[account]/account-journey-loader.ts`
     - `app/a/[account]/page.tsx`
     - `app/a/[account]/_components/onboarding-journey-validation-cases.ts`
+    - `app/a/[account]/_components/onboarding-journey-policy.ts`
+    - `lib/commercial-entitlements/adapters/commercialEntitlementAdapter.ts`
+    - `lib/commercial-entitlements/index.ts`
+    - `lib/onboarding/niche-resolution/adapters/accountTaxonomyAdapter.ts`
     - `package.json`
 - Updates:
   - Aplicados: `prod#17`.
@@ -1063,7 +1067,7 @@
 
 10.10.4 UX factual e prontidão para a Base
 - Status: implementada no repositório; QA hospedado em desktop e mobile pendente.
-- Conteúdo: owner, admin e editor confirmam o nome público e podem corrigir WhatsApp e a credencial opcional aplicável; viewer somente lê. E-mail e taxon confirmado são somente leitura. Só o nome público válido bloqueia a prontidão factual; falha na leitura factual mantém a jornada bloqueada com opção de tentar novamente, sem liberar o conteúdo comercial. E25.1 será responsável pela navegação real para a Base.
+- Conteúdo: owner, admin e editor confirmam o nome público e podem corrigir WhatsApp e a credencial opcional aplicável; viewer somente lê. E-mail e taxon confirmado são somente leitura. Só o nome público válido bloqueia a prontidão factual; falha na leitura factual ou nos lookups de entitlement e taxon mantém a jornada bloqueada com opção de tentar novamente, sem liberar o conteúdo comercial. Ausência legítima de entitlement ou taxon preserva os caminhos existentes. E25.1 será responsável pela navegação real para a Base.
 
 11. E11 — Gestão de membros e autoridade comercial
 

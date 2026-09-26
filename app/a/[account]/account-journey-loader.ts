@@ -2,10 +2,10 @@ import "server-only";
 
 import { getAccessContext } from "@/lib/access/getAccessContext";
 import { getCommercialActivationHierarchicalBundle } from "@/conversion-content";
-import { getCommercialEntitlementSignal } from "../../../lib/commercial-entitlements";
+import { readCommercialEntitlementSignal } from "../../../lib/commercial-entitlements";
 import { loadFactualOnboarding } from "../../../lib/onboarding/factual/adapters/accountFactualOnboardingAdapter";
 import { getActionableNicheResolutionForAccount } from "../../../lib/onboarding/niche-resolution/adapters/accountNicheResolutionUserAdapter";
-import { getActivePrimaryAccountTaxon } from "../../../lib/onboarding/niche-resolution/adapters/accountTaxonomyAdapter";
+import { readActivePrimaryAccountTaxon } from "../../../lib/onboarding/niche-resolution/adapters/accountTaxonomyAdapter";
 import { loadPendingSetupConversation } from "../../../lib/onboarding/pending-setup/adapters/pendingSetupConversationAdapter";
 import { decideAccountJourney } from "./_components/onboarding-journey-policy";
 
@@ -57,25 +57,28 @@ export async function loadAccountJourney({
     }
 
     const accountId = (ctx?.account?.id ?? ctx?.account_id ?? null) as string | null;
-    const [commercialEntitlement, nicheResolution, primaryTaxon] = accountId
-      ? await Promise.all([
-          getCommercialEntitlementSignal({ accountId }),
-          getActionableNicheResolutionForAccount({ accountId, accountStatus }),
-          getActivePrimaryAccountTaxon({ accountId }),
-        ])
-      : [null, null, null];
+    if (!accountId) return { view: "factual_unavailable" as const };
+    const [entitlementRead, nicheResolution, taxonRead] = await Promise.all([
+      readCommercialEntitlementSignal({ accountId }),
+      getActionableNicheResolutionForAccount({ accountId, accountStatus }),
+      readActivePrimaryAccountTaxon({ accountId }),
+    ]);
     const actorRole = ctx?.role ?? "viewer";
     const isCommerciallyEligible =
-      commercialEntitlement?.isCommerciallyEligible === true;
+      entitlementRead.ok && entitlementRead.signal.isCommerciallyEligible;
     const accountJourney = decideAccountJourney({
       actorRole,
       isCommerciallyEligible,
+      entitlementLookupStatus: entitlementRead.ok ? "ok" : "error",
+      taxonLookupStatus: taxonRead.ok ? "ok" : "error",
     });
 
+    if (accountJourney.mode === "blocked") return { view: "factual_unavailable" as const };
     if (accountJourney.mode === "waiting") {
       return { view: "waiting" as const };
     }
 
+    const primaryTaxon = taxonRead.ok ? taxonRead.taxon : null;
     if (isCommerciallyEligible && primaryTaxon) {
       const factual = await loadFactualOnboarding(accountSubdomain);
       if (factual.status === "available") return { view: "factual" as const, factual };
