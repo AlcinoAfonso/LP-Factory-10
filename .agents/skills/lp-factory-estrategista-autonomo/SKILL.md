@@ -35,8 +35,8 @@ A V1 aprovada e o escopo negativo limitam o resultado funcional. Exigir a menor 
 
 ## Modelo e esforço
 
-- Estrategista Autônomo: `gpt-5.6-sol`, com esforço definido pelo humano entre `medium` e `high`; esse esforço não integra obrigatoriamente o handoff.
-- Cada task técnica usa `gpt-5.6-sol` com esforço pela classificação recebida: `Light` → `medium`; `Complexa` → `high`. O Estrategista Original não define modelo nem esforço no handoff.
+- Estrategista Autônomo: `gpt-6-sol`, com esforço definido pelo humano entre `medium` e `high`; esse esforço não integra obrigatoriamente o handoff.
+- Cada task técnica usa `gpt-6-sol` com esforço pela classificação recebida: `Light` → `medium`; `Complexa` → `high`. O Estrategista Original não define modelo nem esforço no handoff.
 
 ## Liberar e conduzir planos
 
