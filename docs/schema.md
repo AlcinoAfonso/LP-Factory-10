@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data da última atualização: 26/09/2026
-• Documento: LP Factory 10 — Schema (DB Contract) v1.0.71
+• Documento: LP Factory 10 — Schema (DB Contract) v1.0.72
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -1082,7 +1082,7 @@
 • A mesma migration remove `landing_page_input_catalog_drafts`, `business_taxons.reviewed_input_catalog_version` e as unidades mutáveis de `landing_page_dynamic_market_research`, preservando revisões, ativações e custos históricos.
 • Migration forward-only: `supabase/migrations/20260914132000_e20_8_factual_fields_greenfield.sql`; teste transacional: `supabase/tests/e20_8_factual_fields_greenfield.test.sql`; verificador read-only: `supabase/snippets/e20_8_factual_fields_verify.sql`.
 • Estado hospedado: apply, snippet e Security Controls permanecem gates pós-merge do cutover supervisionado; este contrato descreve o estado produzido pela migration, sem afirmar aplicação antecipada.
-• Delta E10.10 pendente de apply hospedado: `supabase/migrations/20260926171100_e10_10_factual_catalog_cutover.sql` preserva 26 rows e mantém exatamente três ativas — `business_display_name` required no Universal, `creci_registration` optional em `corretor-imoveis` e `professional_regulatory_credential` optional em `servicos-profissionais`. As outras 23 ficam inativas, sem condição ativa órfã. A migration aceita o baseline versionado de 25 rows criando apenas a credencial profissional faltante, ou o estado hospedado de 26 com ela já existente; demais estados falham fechado.
+• Delta E10.10 pendente de apply hospedado: `supabase/migrations/20260926171100_e10_10_factual_catalog_cutover.sql` mantém exatamente três fields ativos — `business_display_name` required no Universal, `creci_registration` optional em `corretor-imoveis` e `professional_regulatory_credential` optional em `servicos-profissionais`. Os outros 23 fields ativos do baseline ficam inativos, sem condição ativa órfã; rows preexistentes já inativas são preservadas sem atualização. A migration valida o conjunto de 25 chaves ativas da E20.8 e a credencial profissional ativa quando presente, criando-a apenas quando ausente; ativo desconhecido e semântica divergente dos três fields E10.10 falham fechado. O baseline versionado sem rows inativas converge para 26 rows, três ativas e 23 inativas; o estado hospedado com uma row QA já inativa converge para 27/3/24, sem exclusão física.
 
 1.36 openai_lp_cost_events
 1.36.1 Função e identidade
