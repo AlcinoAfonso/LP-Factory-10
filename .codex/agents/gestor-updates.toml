@@ -1,6 +1,6 @@
 name = "gestor-updates"
 description = "Avalia quais updates dos catálogos do LP Factory 10 melhoram tecnicamente um plano-base, fase ou recorte, conforme política tecnológica, ganho líquido e risco proporcional."
-model = "gpt-5.6-sol"
+model = "gpt-6-sol"
 model_reasoning_effort = "high"
 sandbox_mode = "read-only"
 developer_instructions = """
