@@ -120,6 +120,20 @@ export function CommunicationSectionEditor(props: Readonly<{
         <SubmitButton label="Salvar seção" pendingLabel="Salvando..." />
         <ActionFeedback state={state} />
       </form>
+      {definition.stage === 2 ? (
+        <div className="mt-4 border-t border-border pt-4">
+          <p className="text-xs leading-5 text-muted-foreground">
+            Quando disponível, esta ação revisará somente a sugestão de {definition.label}; as outras seções permanecerão como estão.
+          </p>
+          <button type="button" disabled aria-describedby={`${fieldId}-ai-unavailable`}
+            className="mt-3 inline-flex min-h-11 items-center justify-center rounded-lg border border-border px-5 py-2 text-sm font-semibold text-muted-foreground disabled:cursor-not-allowed disabled:opacity-70">
+            Revisar esta seção com IA
+          </button>
+          <p id={`${fieldId}-ai-unavailable`} role="status" className="mt-2 text-xs text-muted-foreground">
+            A revisão por IA ainda não está disponível. A edição manual acima continua disponível.
+          </p>
+        </div>
+      ) : null}
     </article>
   );
 }

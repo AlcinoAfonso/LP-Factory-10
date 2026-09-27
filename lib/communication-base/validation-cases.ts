@@ -4,7 +4,7 @@ import { communicationSections, getCommunicationSection } from "./registry";
 import { resolveCommunicationBaseAccess, type CommunicationBaseAccessDependencies } from "./access-policy";
 import { parseSectionValue, projectCommunicationBase, withSection } from "./policy";
 import { selectPendingSetupBusinessContext } from "./pending-setup-import";
-import { parseStageOneResponse, parseStageTwoResponse, stageOnePrompt, stageTwoPrompt } from "./ai-core";
+import { hasStageTwoContent, parseStageOneResponse, parseStageTwoResponse, stageOnePrompt, stageTwoPrompt } from "./ai-core";
 
 const keys = communicationSections.map((section) => section.key);
 assert.equal(new Set(keys).size, keys.length, "section keys must be unique");
@@ -70,12 +70,20 @@ assert.equal(parseStageOneResponse({ output_text: JSON.stringify({
 }), output: [{ type: "web_search_call", status: "completed" }] }).ok, false,
 "stage 1 must reject any web search call");
 
-const stageTwo = stageTwoPrompt(projected, true);
+const generalTarget = { kind: "general" } as const;
+const stageTwo = stageTwoPrompt(projected, generalTarget, true);
+assert.ok(stageTwo);
 const stageTwoInput = JSON.parse(stageTwo.input);
+assert.deepEqual(stageTwoInput.target, { kind: "general", keys: communicationSections
+  .filter((section) => section.stage === 2).map((section) => section.key) });
+assert.deepEqual(stageTwo.schema.properties.sections.required, stageTwoInput.target.keys);
 assert.deepEqual(Object.keys(stageTwoInput.confirmed_business_data), ["business_context"]);
 assert.equal(stageTwoInput.confirmed_business_data.business_context, "Consultoria");
-assert.equal(JSON.stringify(stageTwoInput).includes("Público em Recife"), false,
-"stage 2 must not send its own unconfirmed content as a fact");
+assert.deepEqual(stageTwoInput.existing_stage_two_draft, { audience: "Público em Recife" });
+assert.equal(JSON.stringify(stageTwoInput.confirmed_business_data).includes("Público em Recife"), false,
+"stage 2 must not send its own draft as a confirmed fact");
+assert.equal(hasStageTwoContent(projected), true);
+assert.equal(hasStageTwoContent({ ...projected, sections: { business_context: projected.sections.business_context } }), false);
 const stageTwoSections = Object.fromEntries(communicationSections
   .filter((section) => section.stage === 2)
   .map((section) => [section.key, {
@@ -85,8 +93,10 @@ const stageTwoSections = Object.fromEntries(communicationSections
     basis: section.key === "about" ? "confirmed_business_fact" : "strategic_hypothesis",
   }]));
 const stageTwoPayload = { output_text: JSON.stringify({ sections: stageTwoSections }), output: [] };
-assert.equal(parseStageTwoResponse(stageTwoPayload, false).ok, true);
-assert.equal(parseStageTwoResponse(stageTwoPayload, true).ok, false,
+const general = parseStageTwoResponse(stageTwoPayload, generalTarget, false);
+assert.equal(general.ok, true);
+if (general.ok) assert.equal(general.value.suggestions.length, 7);
+assert.equal(parseStageTwoResponse(stageTwoPayload, generalTarget, true).ok, false,
 "current/local research requires an actual web call");
 const searched = {
   ...stageTwoPayload,
@@ -94,15 +104,53 @@ const searched = {
     sources: [{ title: "Fonte", url: "https://example.org/mercado" }],
   } }],
 };
-const researched = parseStageTwoResponse(searched, true);
+const researched = parseStageTwoResponse(searched, generalTarget, true);
 assert.equal(researched.ok, true);
 if (researched.ok) assert.equal(researched.value.sources.length, 1);
 assert.equal(parseStageTwoResponse({ ...searched, output: [{
   type: "web_search_call", status: "completed", action: { sources: [{ url: "http://example.org" }] },
-}] }, true).ok, false, "insecure sources must fail closed");
+}] }, generalTarget, true).ok, false, "insecure sources must fail closed");
 assert.equal(parseStageTwoResponse({ ...stageTwoPayload, output_text: JSON.stringify({
   sections: { ...stageTwoSections, audience: { value: "Público", basis: "confirmed_business_fact" } },
-}) }, false).ok, false, "strategic hypotheses must remain distinct");
+}) }, generalTarget, false).ok, false, "strategic hypotheses must remain distinct");
+const sectionsBeforeLocalReview = structuredClone(projected.sections);
+for (const section of communicationSections.filter((item) => item.stage === 2)) {
+  const target = { kind: "section", key: section.key } as const;
+  const prompt = stageTwoPrompt(projected, target, false);
+  assert.ok(prompt);
+  const input = JSON.parse(prompt.input);
+  assert.deepEqual(input.target, { kind: "section", key: section.key });
+  assert.deepEqual(prompt.schema.properties.sections.required, [section.key]);
+  assert.deepEqual(Object.keys(prompt.schema.properties.sections.properties), [section.key]);
+  assert.deepEqual(input.existing_stage_two_draft,
+    section.key === "audience" ? { audience: "Público em Recife" } : {});
+  const localPayload = { output_text: JSON.stringify({ sections: { [section.key]: stageTwoSections[section.key] } }), output: [] };
+  const local = parseStageTwoResponse(localPayload, target, false);
+  assert.equal(local.ok, true, `local ${section.key} must be valid`);
+  if (local.ok) assert.deepEqual(local.value.suggestions.map((item) => item.key), [section.key]);
+  const researchedLocalPayload = { ...localPayload, output: searched.output };
+  assert.equal(parseStageTwoResponse(researchedLocalPayload, target, false).ok, false,
+    "web search must remain prohibited when not material, even for a local action");
+  assert.equal(parseStageTwoResponse(researchedLocalPayload, target, true).ok, true,
+    "web search may be required for a material local action");
+  assert.equal(parseStageTwoResponse(stageTwoPayload, target, false).ok, false,
+    `local ${section.key} must reject other stage 2 sections`);
+  assert.equal(parseStageTwoResponse({ ...localPayload, output_text: JSON.stringify({ sections: {
+    [section.key]: stageTwoSections[section.key], business_name: { value: "Invasão", basis: "confirmed_business_fact" },
+  } }) }, target, false).ok, false, "stage 1 keys must be rejected");
+  assert.equal(parseStageTwoResponse({ ...localPayload, output_text: JSON.stringify({ sections: {} }) },
+    target, false).ok, false, "missing target key must be rejected");
+}
+assert.deepEqual(projected.sections, sectionsBeforeLocalReview,
+  "a local suggestion must not silently mutate the current or other sections");
+assert.equal(parseStageTwoResponse({ ...stageTwoPayload, output_text: JSON.stringify({ sections: {
+  ...stageTwoSections, business_context: { value: "Invasão", basis: "confirmed_business_fact" },
+} }) }, generalTarget, false).ok, false, "general output must reject stage 1 keys");
+assert.equal(parseStageTwoResponse({ ...stageTwoPayload, output_text: JSON.stringify({ sections: {
+  ...stageTwoSections, faq: undefined,
+} }) }, generalTarget, false).ok, false, "general output must reject missing keys");
+assert.equal(stageTwoPrompt(projected, { kind: "section", key: "business_context" }, false), null);
+assert.equal(parseStageTwoResponse(stageTwoPayload, { kind: "section", key: "business_context" }, false).ok, false);
 assert.equal("future_section" in projected.sections, false);
 assert.equal(projectCommunicationBase({
   account_id: "00000000-0000-4000-8000-000000000001",
