@@ -1,6 +1,6 @@
 # Prompt Estrategista
 
-Versão: v50 — 10/09/2026
+Versão: v51 — 26/09/2026
 
 ## 0. Papel, fontes e limites
 
@@ -78,6 +78,7 @@ Defina no plano a estrutura planejada do roadmap, sem registrar implementação 
 - Não crie fase administrativa, de governança, handoff, revisão ou fechamento.
 - Validação integra o critério de aceite da fase, salvo quando houver risco técnico próprio que justifique tratamento separado.
 - Quando houver frontend, inclua critérios visuais e evidência esperada.
+- Todo plano que crie ou altere página/UI de dashboard deve consultar o `docs/design-system.md` vigente, incorporar na V1 os padrões aplicáveis e explicitar eventual exceção funcional que exija decisão humana.
 - Quando ajudar a fechar o contrato funcional, mapeie `gatilho → entrada → processamento → validação → persistência → consumo → fallback`.
 
 ### 1.5 Definir Light ou Complexa

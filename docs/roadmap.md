@@ -1399,7 +1399,7 @@
 
 12.7.1 Objetivo e status
 - Objetivo: manter canônico o contrato de UX/UI para novas páginas e recortes operacionais do Admin e Account Dashboard, com herança pelo Partner Dashboard quando funcional.
-- Status: fase 12.7.3 concluída no PR #967; complemento documental 12.7.4 materializado no Design System. A adoção nas páginas existentes permanece fora deste recorte.
+- Status: fases 12.7.3 e 12.7.4 concluídas nos PRs #967 e #974; complemento documental 12.7.5 materializa o enforcement transversal sem alterar superfícies existentes.
 
 12.7.2 Registros do recorte
 - Updates:
@@ -1407,7 +1407,10 @@
     - `prod#17`
 - Referências:
   - Plano do recorte: `docs/lousa-plano-base-e12-7.md` — fases 12.7.3–12.7.4.
+  - Debate 13 — seção 3.19 e complemento 12.7.5.
   - Contrato visual canônico: `docs/design-system.md` — Contrato de apresentação para páginas operacionais de dashboard.
+  - Gate de planejamento: `docs/prompt-estrategista.md`.
+  - Gate operacional: `AGENTS.md`.
 
 12.7.3 Materialização canônica do contrato mínimo
 - O Design System define o baseline de apresentação para novas páginas do Admin, preservando a autoridade funcional dos contratos de domínio e mantendo em aberto a tecnologia de listas.
@@ -1416,6 +1419,11 @@
 12.7.4 Refinamento canônico de composição e responsividade
 - O Design System complementa o contrato com lista tabular compacta, controles por atributo nos cabeçalhos, abas para visões irmãs e adaptação mobile; cards seguem exceção funcional e a tecnologia permanece aberta.
 - O alcance operacional cobre Admin e Account Dashboard e o Partner Dashboard quando tiver superfície funcional. Páginas públicas e landing pages comerciais ficam fora do contrato; nenhuma superfície existente ou contrato de domínio foi alterado nesta fase.
+
+12.7.5 Enforcement do contrato de apresentação
+- Planos que criem ou alterem página/UI de dashboard consultam o Design System vigente, incorporam na V1 os padrões aplicáveis e explicitam eventual exceção funcional.
+- Implementação, revisão e QA comprovam aderência aos padrões aplicáveis ou exceção funcional já autorizada pelo contrato do plano antes da conclusão.
+- O framework detalhado permanece somente em `docs/design-system.md`; este complemento não altera Executor, workflow Complexo, Estrategista Autônomo, Base Técnica ou páginas existentes.
 
 12.8 Piloto do padrão transversal no fluxo Taxonomia e cobertura factual
 

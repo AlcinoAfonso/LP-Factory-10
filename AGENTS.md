@@ -92,6 +92,8 @@ Para alterações exclusivamente documentais ou de texto, `npm ci` e `npm run ch
 
 Em alterações visuais/frontend, executar `npm run dev`, abrir a URL indicada e validar tela, comportamento e erros visíveis. Se a conexão falhar, confirmar se o servidor iniciou e em qual porta.
 
+Qualquer implementação, revisão ou QA que crie ou altere página/UI de dashboard deve consultar o `docs/design-system.md` vigente e comprovar aderência aos padrões aplicáveis ou exceção funcional já autorizada pelo contrato do plano antes de concluir.
+
 ## Entrega
 
 A resposta final deve informar:
