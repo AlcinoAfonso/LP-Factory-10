@@ -79,6 +79,13 @@ Revisão consultada: ANLCKQnMqGDQQFYBsO-oSWMG8npp-AQxApgjG3NLawodXiMe6-NgeCZ6sKl
 
 • Supervisão: Autônomo. Após o handoff, o fluxo técnico conduz o plano sem supervisão rotineira do Estrategista Original, preservando integralmente a V1 e seu escopo negativo; questões fora da autoridade concedida devem ser escaladas conforme o Prompt Estrategista.
 
+## 4.3 Reconciliação funcional superveniente
+
+- A seção 4.2 acima permanece como snapshot imutável da V1 congelada no commit `4ed0ea5a366d6d566a751fcc3487209b0068ec1a`. O Debate 14B §4.2 foi atualizado na revisão `ANLCKQmlbEEcm2twDgta6hrGLyt1QxWxCXmgtdaTTcBnTY0V4wkF5OVPBsby9_RZownj0HnaPVOXHTTnQma6_Qf-_jzQW3Ki-8Jm2UpVqwg`, consultada em 27/09/2026; esta revisão é a fonte funcional vigente para o delta abaixo.
+- Etapa 1: orientação, exemplo, placeholder e validação previsíveis permanecem determinísticos quando suficientes. IA só por ação explícita e ganho real para explicar, exemplificar, organizar, resumir ou reformular conteúdo fornecido; sem Web Search, inferência de valor ausente, confirmação em nome do cliente, chamada para repetir orientação ou disparo na edição manual. “Sugerir complementos” limita-se a orientar o que informar. Ausência de informação real gera pergunta localizada ou seção pendente; falha de IA preserva edição manual.
+- Etapa 2: IA é o motor central da interpretação de mercado e da produção de conteúdo comunicacional editável a partir de insumos confirmados pertinentes da Etapa 1. Web Search atual é exigido quando atualidade ou localidade forem materiais; hipótese estratégica permanece distinta de fato particular confirmado. Revisão e edição humanas seguem disponíveis sem aprovação por chamada, e falha de pesquisa não se apresenta como conhecimento atual.
+- Permanecem vigentes as demais decisões, fases, escopo negativo e dependências da V1. Nenhum checkpoint de implementação foi aprovado antes desta reconciliação.
+
 ## 5. V2 técnica candidata — derivação da V1
 
 ### 5.1 Estado, fronteira e fonte
