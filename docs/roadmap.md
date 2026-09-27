@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 26/09/2026
-• Versão: v1.5.246
+• Data: 27/09/2026
+• Versão: v1.5.247
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -1032,7 +1032,7 @@
 
 10.10.1 Objetivo e status
 - Objetivo: confirmar o mínimo factual aplicável após entitlement comercial válido e taxon primário resolvido, sem refazer o Pending Setup nem exigir IA.
-- Status: implementado no repositório; migrations hospedadas e QA autenticado de Preview permanecem pendentes. E25.1 depende da conclusão formal deste recorte e não foi iniciado.
+- Status: implementado no repositório; migrations hospedadas e QA autenticado de Preview permanecem pendentes.
 
 10.10.2 Registros do recorte
 - Banco:
@@ -2942,3 +2942,25 @@
 - `github#15`, `vercel#33` e `supa#71` foram encerrados como registros históricos após a comprovação dos respectivos critérios.
 - `vercel#21` permaneceu fora do recorte por criar storage paralelo, e `supa#70` permaneceu futuro e condicionado à recorrência e superioridade comprovadas.
 - Nenhum recurso com custo incremental foi contratado, ativado ou consumido.
+
+25. E25 — Base de Comunicação
+- Objetivo: disponibilizar um ativo persistente da conta que reúna a verdade da empresa e a inteligência de comunicação antes de existir Landing Page ou integração real de canal.
+- Status: E25.1 definido; implementação pendente.
+
+25.1 Base de Comunicação inicial
+
+25.1.1 Objetivo e status
+- Objetivo: entregar uma única Base atual por conta, consultável, editável e progressiva após autorização comercial válida, sem depender de E10.10, E20, taxon oficial, PB-B ou PB-C.
+- Status: V1 funcional e V2 técnica aprovadas; implementação pendente.
+
+25.1.3 Estrutura, governança e extensibilidade
+- Status: definido para implementação.
+- Conteúdo: a Base pertence somente à conta; owner, admin e editor preenchem e editam, enquanto viewer consulta. Access Context, membership e entitlement comercial vigente governam o acesso. Seções com formatos suportados podem ser acrescentadas a Bases existentes sem perda do conteúdo anterior. Pesquisa, conversa, taxon, LP, produto, Tarefa, campanha e canal não se tornam proprietários, vínculos persistentes ou dependências de leitura e edição. Não criar segunda autoridade factual, Base por insumo ou consumidor, versionamento funcional selecionável ou framework arbitrário de seções.
+
+25.1.4 Etapa 1 e aproveitamento inicial
+- Status: definido para implementação.
+- Conteúdo: a verdade da empresa começa com nome público do negócio ou profissional e entendimento operacional da atuação e evolui por Negócio, Ofertas, Atendimento, Provas/credenciais/resultados, Materiais/identidade e Preferências/limites, sem bloqueio global por seção incompleta. Contexto confirmado do Pending Setup pode ser copiado uma vez quando inequívoco, sem sincronização reversa. A IA opcional explica, organiza ou sugere como rascunho; fato particular só entra após confirmação do usuário, e o preenchimento manual permanece utilizável sem IA.
+
+25.1.5 Etapa 2 e inteligência de comunicação
+- Status: definido para implementação.
+- Conteúdo: IA combina a verdade confirmada da empresa com pesquisa atual via Web Search quando atualidade ou localidade forem materiais para elaborar Quem somos, Público/contexto, Dores/desejos/crenças/objeções, Proposta de valor, Benefícios, Diferenciais e FAQ. Distinguir fato da empresa de hipótese estratégica e manter o conteúdo revisável e editável. Falha de pesquisa material não é substituída silenciosamente por conhecimento paramétrico; a Base não depende de vínculo persistente com a pesquisa. Este recorte não gera LP ou outro produto, não integra canais nem altera Pending Setup, jornada E10, comercial ou trial, e não introduz Agents SDK, multiagente, job, fila ou infraestrutura antecipada.
