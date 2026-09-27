@@ -1,60 +1,60 @@
 0. Introdução
 0.1. Cabeçalho
 • Documento: README — LP Factory 10 (MVP)
-• Versão: 8 — 04/09/2026
-• Data: 04/09/2026
+• Versão: 9 — 27/09/2026
+• Data: 27/09/2026
 • Escopo: visão geral do produto + documentos de referência + pendências estratégicas
 
 1. Visão geral do produto
 1.1. Classificação do negócio
 • Segmento: Marketing digital.
-• Nicho: plataforma SaaS de comunicação comercial por nicho.
+• Nicho: serviços de comunicação comercial com IA, orientados a resultados.
 • Ultranicho: não usar agora.
 
 1.2. Descrição
-• LP Factory 10 é um hub de comunicação comercial por nicho, com IA, automações e agentes controlados para aquisição, venda e nutrição de leads.
-• O produto ajuda empresas a transformar pesquisa, dados e canais comerciais em comunicação pronta para venda.
-• O produto entrega canais de comunicação como landing pages, Instagram, WhatsApp e e-mail.
-• O dashboard prioriza automações internas, recursos de IA e agentes controlados para reduzir operação, validar processos e acelerar melhorias com revisão humana quando necessário.
+• LP Factory 10 é um hub de serviços de comunicação comercial com IA, orientado a entregar resultados sem exigir que o cliente domine ferramentas, APIs, integrações ou IA.
+• A Base de Comunicação é o núcleo reutilizável do negócio e serve de referência comum para os serviços contratados.
+• Os serviços podem incluir landing pages, WhatsApp, Instagram, TikTok, Google Meu Negócio e e-mail, conforme validação comercial e operacional.
+• A LP Factory pode configurar e operar a tecnologia necessária para cada serviço; o software apoia essa entrega e não é, por si só, o produto vendido.
 
 1.3. Proposta de valor
-• Oferecer comunicação comercial por nicho, com canais prontos para uso e acompanhamento contínuo de performance.
-• Reduzir esforço, tempo e dependência para criar, medir, ajustar e otimizar comunicação comercial.
-• Transformar pesquisa, dados de uso e conversão em ações práticas para venda e nutrição de leads.
-• Ajudar o cliente a evoluir sua comunicação comercial com mais clareza, automação e direção.
+• Transformar informações essenciais do negócio em uma Base de Comunicação reutilizável e consistente.
+• Entregar serviços de comunicação com IA sem transferir ao cliente a complexidade técnica necessária para operá-los.
+• Reutilizar a mesma base entre canais e serviços, reduzindo repetição, divergência e esforço operacional.
+• Evoluir o catálogo a partir de demanda real, resultado observado e capacidade de entrega simples e sustentável.
 
 1.4. Produto
 1.4.1. Prático
-• Templates por nicho e criação fácil.
+• Base de Comunicação mínima e reutilizável, evitando cadastros e descobertas repetidas entre serviços.
+• Serviços productizados: personalizar comunicação e conteúdo sem reinventar a solução técnica para cada cliente.
 
 1.4.2. Inteligente
-• Recursos orientados por dados, tracking, recomendações e automações internas com IA, em fluxos simples, seguros e mensuráveis.
-• Responses API como base programática preferencial dos workloads OpenAI, com recursos adicionais avaliados conforme o problema real e o custo-benefício demonstrado.
-• Agents SDK TypeScript quando houver benefício concreto em framework de orquestração agentic, como handoffs, sessions, guardrails, tracing ou workflows reutilizáveis; não é evolução automática da Responses API.
-• Sandbox Agent como camada de laboratório técnico para tarefas com arquivos, repositório, worktree, branch experimental, testes isolados ou geração de artefatos.
+• IA é meio de entrega e deve ser usada quando trouxer benefício concreto em qualidade, velocidade, custo ou resultado.
+• Automação deve surgir principalmente sobre operações já validadas e repetidas, não para antecipar necessidades futuras.
 
 1.4.3. Dashboard
-• Suporte para ajustes e testes guiados por dados.
+• Suporte somente à operação, acompanhamento e controles necessários para entregar e evoluir os serviços.
 
 1.4.4. Princípios de implementação
 • O MVP prioriza simplicidade, não fragilidade.
+• A menor solução segura capaz de entregar o resultado atual deve prevalecer sobre arquitetura mais sofisticada.
+• Não criar banco, rota, job, agente, automação, engine, service ou nova infraestrutura para uma necessidade futura, hipotética ou ainda não validada.
+• Nova camada técnica exige necessidade atual comprovada, benefício proporcional e ausência de alternativa mais simples já disponível.
+• Implementação que se torne desproporcional ao valor esperado pode ser interrompida, simplificada ou removida em vez de receber novas camadas para preservá-la.
+• Complexidade existente não ganha direito de permanência pelo esforço já investido; capacidades funcionais só são reduzidas ou removidas por decisão humana explícita.
+• O fluxo preferencial é: vender ou validar o serviço → executar da forma mais simples segura → automatizar o que se repetir → productizar o que demonstrar valor.
 • Runtime não pode depender de objetos ou comportamentos de banco ainda não aplicados e validados no ambiente alvo.
 • A stack base do MVP permanece Next.js, Supabase e TypeScript.
-• IA, automações e agentes devem evoluir incrementalmente, por problema real e benefício mensurável em qualidade, custo, latência, controle ou valor ao cliente; sofisticação tecnológica, isoladamente, não justifica adoção.
-• A escolha entre backend determinístico, chamadas de IA, tools e arquitetura agentic deve preservar a menor complexidade capaz de cumprir os gates, e o grau de determinismo deve acompanhar a natureza do resultado: regras verificáveis, segurança, fatos, estado e contratos permanecem determinísticos quando possível; decisões semânticas, criativas ou persuasivas preservam flexibilidade controlada da IA.
-• Não antecipar deterministicamente uma decisão que o workload existe justamente para a IA tomar.
-• A stack e a arquitetura adotadas são o padrão vigente; o produto permanece aberto à avaliação de recursos tecnológicos com caso de uso e valor plausível.
-• Todo recurso candidato deve ser classificado quanto à relação com a stack e a arquitetura — complementar, sobreposto, substituto ou incompatível — e avaliado por benefício, maturidade das fontes, custo, complexidade, segurança, manutenção e horizonte de adoção.
-• Incompatibilidade pode justificar descarte. Recursos sobrepostos ou substitutos só devem permanecer como condicionais quando houver hipótese concreta de superioridade e gatilho objetivo para comparação ou adoção.
-• A simplicidade do MVP limita a implementação do momento, não o radar tecnológico nem a preservação de diferenciais estratégicos para a evolução dos planos.
-• O WhatsApp é canal comercial prioritário para aquisição, atendimento, qualificação, venda e nutrição; suas capacidades oficiais de mensageria, automação e IA devem permanecer no radar e ser distribuídas progressivamente entre os planos, sem autorizar adoção antecipada.
-• Avaliação ou catalogação não autoriza implementação, mudança de stack, nova infraestrutura nem ampliação de escopo.
-• Em `Supervisão: Autônomo`, a escolha humana delega ao Estrategista Autônomo autoridade contínua e integral para decidir e conduzir o plano até a conclusão sem nova intervenção humana, preservando a V1 aprovada e o escopo negativo; em `Semiautomático`, decisões de produto ou escopo fora do contrato permanecem humanas. A materialidade, isoladamente, não constitui bloqueio.
+• Regras verificáveis, segurança, fatos, estado e contratos permanecem determinísticos quando possível; IA preserva flexibilidade controlada onde a natureza do resultado for semântica, criativa ou persuasiva.
+• Avaliação, radar tecnológico ou catalogação não autorizam implementação, mudança de stack, nova infraestrutura nem ampliação de escopo.
+• O WhatsApp permanece serviço prioritário para aquisição, atendimento, qualificação, venda e nutrição, sem autorizar antecipação de infraestrutura.
+• Em `Supervisão: Autônomo`, a escolha humana delega ao Estrategista Autônomo autoridade contínua para conduzir o plano dentro da V1 aprovada e do escopo negativo; em `Semiautomático`, decisões de produto ou escopo fora do contrato permanecem humanas.
 
 1.5. Modelo de oferta
-• Planos em camadas (Starter → Lite → Pro → Ultra), com capacidades escalando ao longo do tempo.
-• Capacidades futuras ou condicionais podem ser preservadas como diferenciais potenciais, sem representar promessa comercial, requisito imediato ou autorização técnica.
-• Capacidades de IA, automação e agentes podem compor diferenciais progressivos dos planos e, quando houver validação de demanda e operação, sustentar ofertas ou serviços especializados futuros, sem compromisso comercial adicional no MVP.
+• O MVP evolui de planos SaaS fixos para uma base simples acompanhada de serviços de IA contratáveis conforme a necessidade do cliente.
+• Cada serviço deve ter escopo e entrega claros, evitando customização técnica ilimitada por cliente.
+• Combos podem surgir posteriormente a partir de padrões reais de contratação e operação; não são requisito nem arquitetura antecipada do MVP.
+• O modelo pode evoluir em direção a Outcome-as-a-Service quando houver resultado mensurável e atribuição suficientemente confiável, sem exigir precificação por resultado no MVP.
 
 2. Documentos de referência
 • docs/base-tecnica.md — regras técnicas de runtime, implementação segura, arquitetura, adapters, imports, SSR, observability e anti-regressão.
@@ -67,7 +67,7 @@
 
 3. Pendências estratégicas (em aberto)
 3.1. Definições do MVP
-• Starter mínimo • Tracking mínimo • Atendimento no MVP
+• Base/assinatura mínima • Primeiro catálogo de serviços • Limites da operação gerenciada
 
 3.2. Padrões de entrega
-• Definir regra de “o que é uma LP entregue”, com checklist.
+• Definir entregável e critério de aceite dos serviços prioritários.
