@@ -33,15 +33,32 @@ async function main() {
   assert.equal(oneSearch.costUsd, "0.0949");
   assert.equal(twoSearch.costUsd, "0.1049");
   assert.equal(twoSearch.webSearchPricePerCallUsd, "0.01");
+  assert.equal(twoSearch.pricingVersion, "2026-09-11-standard-v1");
+  assert.equal(twoSearch.pricingEffectiveAt, "2026-09-11T00:00:00.000Z");
   const comparisonUsage = usage({ inputTokens: 1_000, outputTokens: 500, totalTokens: 1_500 });
-  assert.equal(calculateOpenAiOperationCost({
+  const lunaShort = calculateOpenAiOperationCost({
     model: "gpt-6-luna", startedAt: "2026-09-27T12:00:00Z", usage: comparisonUsage,
     webSearchCallCount: 1,
-  }).costUsd, "0.01035");
+  });
+  assert.equal(lunaShort.costUsd, "0.01035");
+  assert.equal(lunaShort.pricingVersion, "2026-09-27-standard-v2");
+  assert.equal(lunaShort.pricingEffectiveAt, "2026-09-27T00:00:00.000Z");
   assert.equal(calculateOpenAiOperationCost({
     model: "gpt-6-sol", startedAt: "2026-09-27T12:00:00Z", usage: comparisonUsage,
     webSearchCallCount: 1,
   }).costUsd, "0.017");
+  assert.equal(calculateOpenAiOperationCost({
+    model: "gpt-6-luna", startedAt: "2026-09-26T23:59:59Z", usage: comparisonUsage,
+  }).costUnavailableReason, "pricing_not_found");
+  const longComparisonUsage = usage({ inputTokens: 272_001, outputTokens: 1, totalTokens: 272_002 });
+  assert.equal(calculateOpenAiOperationCost({
+    model: "gpt-6-luna", startedAt: "2026-09-27T12:00:00Z", usage: longComparisonUsage,
+    webSearchCallCount: 1,
+  }).costUsd, "0.06440095");
+  assert.equal(calculateOpenAiOperationCost({
+    model: "gpt-6-sol", startedAt: "2026-09-27T12:00:00Z", usage: longComparisonUsage,
+    webSearchCallCount: 1,
+  }).costUsd, "1.098019");
   assert.deepEqual(twoSearch.pricingSnapshot && twoSearch.pricingSnapshot.webSearch, {
     toolVersion: "web-search-2026-09-11-v1",
     unit: "per_call",
@@ -59,7 +76,7 @@ async function main() {
   assert.equal(longContext.costUsd, "1.088022");
   assert.equal(longContext.pricingSnapshot?.contextBand, "long");
   const searchWithoutPrice = calculateOpenAiOperationCost({
-    model: "gpt-5.6-luna", startedAt: "2026-09-11T12:00:00Z",
+    model: "gpt-5.6-luna", startedAt: "2026-09-27T12:00:00Z",
     usage: usage({ inputTokens: 10, outputTokens: 5, totalTokens: 15 }),
     webSearchCallCount: 1,
   }, Object.freeze({ ...OPENAI_COST_PRICING_CATALOG, webSearch: null }));

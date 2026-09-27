@@ -10,8 +10,10 @@ import {
 } from "./decimal";
 
 export const OPENAI_COST_PRICING_VERSION = "2026-09-27-standard-v2";
-export const OPENAI_COST_PRICING_EFFECTIVE_AT = "2026-09-11T00:00:00.000Z";
+export const OPENAI_COST_PRICING_EFFECTIVE_AT = "2026-09-27T00:00:00.000Z";
 export const OPENAI_WEB_SEARCH_TOOL_VERSION = "web-search-2026-09-11-v1";
+const LEGACY_PRICING_VERSION = "2026-09-11-standard-v1";
+const LEGACY_PRICING_EFFECTIVE_AT = "2026-09-11T00:00:00.000Z";
 
 export type OpenAiModelPricingRule = Readonly<{
   model: "gpt-5.4-mini" | "gpt-5.6-terra" | "gpt-5.6-luna" | "gpt-6-luna" | "gpt-6-sol" | "gpt-4.1-mini";
@@ -49,23 +51,33 @@ export type OpenAiCostFinancialTerminal = Readonly<{
   webSearchPricePerCallUsd: string | null;
 }>;
 
-const RULES = Object.freeze([
+const LEGACY_RULES = Object.freeze([
   rule("gpt-5.4-mini", "0.75", "0.075", null, "4.50"),
   rule("gpt-5.6-terra", "2.00", "0.20", "2.50", "12.00", [272_000, "4.00", "0.40", "5.00", "18.00"]),
   rule("gpt-5.6-luna", "0.20", "0.02", "0.25", "1.20", [272_000, "0.40", "0.04", "0.50", "1.80"]),
-  rule("gpt-6-luna", "0.10", "0.01", "0.125", "0.50", [272_000, "0.20", "0.02", "0.25", "0.75"]),
-  rule("gpt-6-sol", "2.00", "0.20", "2.50", "10.00", [272_000, "4.00", "0.40", "5.00", "15.00"]),
   rule("gpt-4.1-mini", "0.40", "0.10", null, "1.60"),
 ] satisfies readonly OpenAiModelPricingRule[]);
+const RULES = Object.freeze([
+  ...LEGACY_RULES,
+  rule("gpt-6-luna", "0.10", "0.01", "0.125", "0.50", [272_000, "0.20", "0.02", "0.25", "0.75"]),
+  rule("gpt-6-sol", "2.00", "0.20", "2.50", "10.00", [272_000, "4.00", "0.40", "5.00", "15.00"]),
+] satisfies readonly OpenAiModelPricingRule[]);
+const WEB_SEARCH_PRICING = Object.freeze({
+  toolVersion: OPENAI_WEB_SEARCH_TOOL_VERSION,
+  pricePerCallUsd: "0.01",
+});
+const LEGACY_PRICING_CATALOG: OpenAiCostPricingCatalog = Object.freeze({
+  version: LEGACY_PRICING_VERSION,
+  effectiveAt: LEGACY_PRICING_EFFECTIVE_AT,
+  modelRules: LEGACY_RULES,
+  webSearch: WEB_SEARCH_PRICING,
+});
 
 export const OPENAI_COST_PRICING_CATALOG: OpenAiCostPricingCatalog = Object.freeze({
   version: OPENAI_COST_PRICING_VERSION,
   effectiveAt: OPENAI_COST_PRICING_EFFECTIVE_AT,
   modelRules: RULES,
-  webSearch: Object.freeze({
-    toolVersion: OPENAI_WEB_SEARCH_TOOL_VERSION,
-    pricePerCallUsd: "0.01",
-  }),
+  webSearch: WEB_SEARCH_PRICING,
 });
 
 export function calculateOpenAiOperationCost(input: Readonly<{
@@ -73,7 +85,7 @@ export function calculateOpenAiOperationCost(input: Readonly<{
   startedAt: string;
   usage?: OpenAiWorkloadUsage | null;
   webSearchCallCount?: number | null;
-}>, catalog: OpenAiCostPricingCatalog = OPENAI_COST_PRICING_CATALOG): OpenAiCostFinancialTerminal {
+}>, catalog: OpenAiCostPricingCatalog = selectPricingCatalog(input.startedAt)): OpenAiCostFinancialTerminal {
   const startedAt = timestamp(input.startedAt);
   if (!startedAt || startedAt < catalog.effectiveAt) {
     return unavailable("pricing_not_effective");
@@ -152,6 +164,13 @@ export function calculateOpenAiOperationCost(input: Readonly<{
     webSearchToolVersion: webSearchCalls > 0 ? webSearchRule?.toolVersion ?? null : null,
     webSearchPricePerCallUsd: webSearchCalls > 0 ? webSearchRule?.pricePerCallUsd ?? null : null,
   });
+}
+
+function selectPricingCatalog(startedAt: string): OpenAiCostPricingCatalog {
+  const normalized = timestamp(startedAt);
+  return normalized && normalized >= OPENAI_COST_PRICING_EFFECTIVE_AT
+    ? OPENAI_COST_PRICING_CATALOG
+    : LEGACY_PRICING_CATALOG;
 }
 
 export function unavailableOpenAiOperationCost(
