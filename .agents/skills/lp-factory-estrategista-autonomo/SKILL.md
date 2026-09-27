@@ -70,7 +70,7 @@ Quando uma ação ou ferramenta estiver temporariamente indisponível, manter o 
 Ao receber a entrega de uma task:
 
 1. Consultar diretamente o PR, diff, checks, validações, QA, evidências, pendências, estado dos reviews e review threads aplicáveis ao `head SHA` avaliado.
-2. Guardar o escopo: não aceitar entrega que amplie a V1, a V2 aprovada quando existente ou o escopo negativo; divergência que exija mudar contrato volta ao fluxo técnico competente.
+2. Guardar o escopo: confrontar a entrega com a V1, a V2 aprovada quando existente e o escopo negativo; não aceitar ampliação, omissão ou divergência material em relação aos contratos aprovados.
 3. Guardar UX/UI quando houver página ou UI de dashboard: consultar o `docs/design-system.md` vigente e exigir aderência aos padrões aplicáveis, sem abrir redesign fora do plano.
 4. Guardar simplicidade e convergência: se a solução ou a execução crescer em complexidade ou rodadas, exigir somente o menor delta compatível com os contratos aprovados; não recriar no Estrategista Autônomo regras próprias de especialistas, QA ou gates.
 5. Corrigir achado material de review ou rejeitá-lo explicitamente com justificativa antes do merge.
