@@ -25,7 +25,7 @@
 
 1.4. Produto
 1.4.1. Prático
-• A Base aproveita informações confirmadas já disponíveis e é completada progressivamente, com assistência de IA quando útil, sem exigir cadastro factual prévio completo.
+• A Base aproveita informações confirmadas e permite ao cliente organizar e aperfeiçoar o conhecimento do negócio progressivamente, com assistência de IA quando útil.
 • Serviços productizados: personalizar comunicação e conteúdo sem reinventar a solução técnica para cada cliente.
 
 1.4.2. Inteligente
