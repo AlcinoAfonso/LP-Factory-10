@@ -427,6 +427,8 @@ function workloadLabel(workload: OpenAiCostReadWorkloadId) {
     niche_resolution: "Resolução de nicho",
     commercial_activation_draft_generation: "Draft de ativação comercial",
     taxon_input_catalog_sufficiency_evaluation: "Suficiência factual do catálogo",
+    communication_base_stage1_assistance: "Assistência da Base — Etapa 1",
+    communication_base_stage2_intelligence: "Inteligência da Base — Etapa 2",
     landing_page_dynamic_market_research: "Pesquisa dinâmica de mercado",
     supabase_inspect: "Supabase Inspect",
   };

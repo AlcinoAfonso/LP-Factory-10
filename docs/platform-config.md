@@ -2,8 +2,8 @@
 
 0.1 Cabeçalho
 • Documento: LP Factory 10 — Platform Config
-• Versão: v0.1.50
-• Data: 26/09/2026
+• Versão: v0.1.51
+• Data: 27/09/2026
 
 0.2 Contrato do documento
 • O QUE É: snapshot operacional e fonte única das configurações de plataformas externas do LP Factory 10, refletindo o estado conhecido/cadastrado nas plataformas conforme indicado.
@@ -236,6 +236,12 @@
 • Progressão operacional concluída: Preview foi habilitado e aprovado antes de Production; apply, invariantes, Security Controls, smoke completo de Preview e smoke mínimo de Production foram aprovados.
 • Redeploy: a habilitação ou desabilitação do gate exige redeploy do ambiente afetado; alterações ordinárias da configuração ativa após o cutover não exigem redeploy.
 • Valor real por ambiente: não versionar neste documento.
+
+• `E25_1_COMMUNICATION_BASE_ENABLED`
+• Finalidade: gate server-only da Base de Comunicação E25.1, abrangendo rota, ações, navegação e futura assistência de IA.
+• Escopo: Preview e Production do projeto Core, independente por ambiente; somente o literal `true` habilita. Ausência ou qualquer outro valor mantém a Base indisponível sem consulta à sua tabela.
+• Estado em 27/09/2026: código e migration candidatos no PR draft E25.1; habilitação hospedada não realizada nem comprovada. Não definir `true` antes de merge autorizado, apply das migrations, verificação SQL, registro prospectivo da cobertura E21.5 e avaliação do workload de IA da Etapa 2.
+• Classificação: Config, não Secret. Valor real por ambiente não versionar.
 
 • `E20_6_5_INPUT_CATALOG_EVALUATION_PROVIDER_ENABLED`
 • Finalidade: gate server-side e de UI exclusivo do provider consultivo da avaliação factual E20.8.7.

@@ -4,6 +4,7 @@ import { communicationSections, getCommunicationSection } from "./registry";
 import { resolveCommunicationBaseAccess, type CommunicationBaseAccessDependencies } from "./access-policy";
 import { parseSectionValue, projectCommunicationBase, withSection } from "./policy";
 import { selectPendingSetupBusinessContext } from "./pending-setup-import";
+import { parseStageOneResponse, parseStageTwoResponse, stageOnePrompt, stageTwoPrompt } from "./ai-core";
 
 const keys = communicationSections.map((section) => section.key);
 assert.equal(new Set(keys).size, keys.length, "section keys must be unique");
@@ -53,6 +54,55 @@ const projected = projectCommunicationBase({
 assert.ok(projected);
 assert.equal(projected.sections.business_context?.origin, "pending_setup_confirmed");
 assert.equal(projected.sections.audience?.origin, "user_reviewed");
+const stageOne = stageOnePrompt("business_context", "Consultoria para pequenas empresas em Recife.");
+assert.ok(stageOne);
+assert.match(stageOne.instructions, /Nunca crie preço/);
+assert.deepEqual(JSON.parse(stageOne.input), {
+  section: { key: "business_context", label: "Atuação" },
+  user_text: "Consultoria para pequenas empresas em Recife.",
+});
+assert.equal(stageOnePrompt("audience", "texto"), null);
+assert.equal(parseStageOneResponse({ output_text: JSON.stringify({
+  suggestion: "Consultoria para pequenas empresas em Recife.", missing_question: "",
+}) }).ok, true);
+assert.equal(parseStageOneResponse({ output_text: JSON.stringify({
+  suggestion: "Sugestão", missing_question: "",
+}), output: [{ type: "web_search_call", status: "completed" }] }).ok, false,
+"stage 1 must reject any web search call");
+
+const stageTwo = stageTwoPrompt(projected, true);
+const stageTwoInput = JSON.parse(stageTwo.input);
+assert.deepEqual(Object.keys(stageTwoInput.confirmed_business_data), ["business_context"]);
+assert.equal(stageTwoInput.confirmed_business_data.business_context, "Consultoria");
+assert.equal(JSON.stringify(stageTwoInput).includes("Público em Recife"), false,
+"stage 2 must not send its own unconfirmed content as a fact");
+const stageTwoSections = Object.fromEntries(communicationSections
+  .filter((section) => section.stage === 2)
+  .map((section) => [section.key, {
+    value: section.format === "text" ? "Rascunho revisável" :
+      section.format === "faq" ? [{ question: "Pergunta?", answer: "Resposta revisável." }] :
+        ["Hipótese revisável"],
+    basis: section.key === "about" ? "confirmed_business_fact" : "strategic_hypothesis",
+  }]));
+const stageTwoPayload = { output_text: JSON.stringify({ sections: stageTwoSections }), output: [] };
+assert.equal(parseStageTwoResponse(stageTwoPayload, false).ok, true);
+assert.equal(parseStageTwoResponse(stageTwoPayload, true).ok, false,
+"current/local research requires an actual web call");
+const searched = {
+  ...stageTwoPayload,
+  output: [{ type: "web_search_call", status: "completed", action: {
+    sources: [{ title: "Fonte", url: "https://example.org/mercado" }],
+  } }],
+};
+const researched = parseStageTwoResponse(searched, true);
+assert.equal(researched.ok, true);
+if (researched.ok) assert.equal(researched.value.sources.length, 1);
+assert.equal(parseStageTwoResponse({ ...searched, output: [{
+  type: "web_search_call", status: "completed", action: { sources: [{ url: "http://example.org" }] },
+}] }, true).ok, false, "insecure sources must fail closed");
+assert.equal(parseStageTwoResponse({ ...stageTwoPayload, output_text: JSON.stringify({
+  sections: { ...stageTwoSections, audience: { value: "Público", basis: "confirmed_business_fact" } },
+}) }, false).ok, false, "strategic hypotheses must remain distinct");
 assert.equal("future_section" in projected.sections, false);
 assert.equal(projectCommunicationBase({
   account_id: "00000000-0000-4000-8000-000000000001",

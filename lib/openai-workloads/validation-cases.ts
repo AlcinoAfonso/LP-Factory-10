@@ -189,16 +189,18 @@ const cases = [
     },
   },
   {
-    name: "inventory exposes four unique canonical workloads",
+    name: "inventory exposes six unique canonical workloads",
     run: () => {
       const inventory = listOpenAiWorkloadInventory();
-      assert.equal(inventory.length, 4);
-      assert.equal(new Set(inventory.map((item) => item.id)).size, 4);
+      assert.equal(inventory.length, 6);
+      assert.equal(new Set(inventory.map((item) => item.id)).size, 6);
       assert.deepEqual(
         inventory.map((item) => item.id),
         [
           ...productIds,
           taxonInputCatalogEvaluationWorkloadId,
+          "communication_base_stage1_assistance",
+          "communication_base_stage2_intelligence",
           "supabase_inspect",
         ],
       );
@@ -326,6 +328,8 @@ const cases = [
           "niche_resolution",
           "commercial_activation_draft_generation",
           "taxon_input_catalog_sufficiency_evaluation",
+          "communication_base_stage1_assistance",
+          "communication_base_stage2_intelligence",
         ],
       );
       assert.equal(Object.isFrozen(projection), true);
@@ -808,7 +812,7 @@ const cases = [
     },
   },
   {
-    name: "administrative read model accepts only the complete six-unit aggregate state",
+    name: "administrative read model accepts only the complete ten-unit aggregate state",
     run: () => {
       const fixture = administrativeConfigurationFixture();
       const result = translateOpenAiAdministrativeConfigurationRows(
@@ -817,7 +821,7 @@ const cases = [
         { data: fixture.activations, error: null },
       );
       assert.equal(result.ok, true);
-      assert.equal(result.value.length, 6);
+      assert.equal(result.value.length, 10);
       assert.equal(Object.isFrozen(result), true);
       assert.equal(Object.isFrozen(result.value), true);
       assert.equal(Object.isFrozen(result.value[0]), true);
@@ -916,6 +920,8 @@ const cases = [
         "niche_resolution",
         "commercial_activation_draft_generation",
         "taxon_input_catalog_sufficiency_evaluation",
+        "communication_base_stage1_assistance",
+        "communication_base_stage2_intelligence",
       ] as const) {
         for (const configuration of textConfigurations) {
           const result = await resolveOpenAiProductWorkload(
@@ -1305,6 +1311,8 @@ function administrativeConfigurationFixture(): Readonly<{
     "niche_resolution",
     "commercial_activation_draft_generation",
     "taxon_input_catalog_sufficiency_evaluation",
+    "communication_base_stage1_assistance",
+    "communication_base_stage2_intelligence",
   ] as const;
   const units: Record<string, unknown>[] = [];
   const revisions: Record<string, unknown>[] = [];
@@ -1314,7 +1322,8 @@ function administrativeConfigurationFixture(): Readonly<{
   for (const environment of environments) {
     for (const workload of workloads) {
       const inputCatalogEvaluation =
-        workload === "taxon_input_catalog_sufficiency_evaluation";
+        workload === "taxon_input_catalog_sufficiency_evaluation" ||
+        workload === "communication_base_stage2_intelligence";
       const modality = "responses_text";
       const baselineModel = inputCatalogEvaluation
         ? "gpt-5.6-terra"

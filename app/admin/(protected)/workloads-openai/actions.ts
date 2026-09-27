@@ -32,6 +32,8 @@ const productWorkloads = [
   "niche_resolution",
   "commercial_activation_draft_generation",
   "taxon_input_catalog_sufficiency_evaluation",
+  "communication_base_stage1_assistance",
+  "communication_base_stage2_intelligence",
 ] as const;
 
 export type OpenAiOperationalActionState = Readonly<{
