@@ -62,6 +62,8 @@ assert.deepEqual(JSON.parse(stageOne.input), {
   user_text: "Consultoria para pequenas empresas em Recife.",
 });
 assert.equal(stageOnePrompt("audience", "texto"), null);
+assert.equal(stageOnePrompt("business_context", "OPENAI_API_KEY=placeholder-credential"), null,
+  "credential-like text must fail before stage 1 egress");
 assert.equal(parseStageOneResponse({ output_text: JSON.stringify({
   suggestion: "Consultoria para pequenas empresas em Recife.", missing_question: "",
 }) }).ok, true);
@@ -79,7 +81,8 @@ assert.deepEqual(stageTwoInput.target, { kind: "general", keys: communicationSec
 assert.deepEqual(stageTwo.schema.properties.sections.required, stageTwoInput.target.keys);
 assert.deepEqual(Object.keys(stageTwoInput.confirmed_business_data), ["business_context"]);
 assert.equal(stageTwoInput.confirmed_business_data.business_context, "Consultoria");
-assert.deepEqual(stageTwoInput.existing_stage_two_draft, { audience: "Público em Recife" });
+assert.deepEqual(stageTwoInput.existing_stage_two_draft, { audience: "Público em Recife" },
+  "general update sends only existing stage 2 target drafts");
 assert.equal(JSON.stringify(stageTwoInput.confirmed_business_data).includes("Público em Recife"), false,
 "stage 2 must not send its own draft as a confirmed fact");
 assert.equal(hasStageTwoContent(projected), true);
@@ -122,8 +125,9 @@ for (const section of communicationSections.filter((item) => item.stage === 2)) 
   assert.deepEqual(input.target, { kind: "section", key: section.key });
   assert.deepEqual(prompt.schema.properties.sections.required, [section.key]);
   assert.deepEqual(Object.keys(prompt.schema.properties.sections.properties), [section.key]);
-  assert.deepEqual(input.existing_stage_two_draft,
-    section.key === "audience" ? { audience: "Público em Recife" } : {});
+  assert.deepEqual(input.existing_stage_two_draft ?? {},
+    section.key === "audience" ? { audience: "Público em Recife" } : {},
+    `local ${section.key} must send only its own existing draft`);
   const localPayload = { output_text: JSON.stringify({ sections: { [section.key]: stageTwoSections[section.key] } }), output: [] };
   const local = parseStageTwoResponse(localPayload, target, false);
   assert.equal(local.ok, true, `local ${section.key} must be valid`);
@@ -143,6 +147,36 @@ for (const section of communicationSections.filter((item) => item.stage === 2)) 
 }
 assert.deepEqual(projected.sections, sectionsBeforeLocalReview,
   "a local suggestion must not silently mutate the current or other sections");
+const initialBase = { ...projected, sections: { business_context: projected.sections.business_context } };
+const firstGeneration = stageTwoPrompt(initialBase, generalTarget, false);
+assert.ok(firstGeneration);
+assert.equal("existing_stage_two_draft" in JSON.parse(firstGeneration.input), false,
+  "first generation sends only confirmed stage 1 data");
+const privateInput = withSection(withSection(initial, "service", "Contato privado 11 99999-9999", "user_confirmed")!,
+  "materials", ["Referência interna"], "user_confirmed");
+assert.ok(privateInput);
+const privateBase = projectCommunicationBase({
+  account_id: "00000000-0000-4000-8000-000000000001", version: 3, sections_json: privateInput,
+  created_at: "2026-09-27T00:00:00Z", updated_at: "2026-09-27T00:00:00Z",
+});
+assert.ok(privateBase);
+const aboutPayload = stageTwoPrompt(privateBase, { kind: "section", key: "about" }, false);
+assert.ok(aboutPayload);
+assert.deepEqual(JSON.parse(aboutPayload.input).confirmed_business_data, { business_context: "Consultoria" },
+  "about must not send unrelated contact or material fields");
+const faqPayload = stageTwoPrompt(privateBase, { kind: "section", key: "faq" }, false);
+assert.ok(faqPayload);
+assert.deepEqual(Object.keys(JSON.parse(faqPayload.input).confirmed_business_data), ["business_context", "service"],
+  "FAQ may receive the confirmed service field when pertinent");
+const secretSections = withSection(initial, "preferences", "OPENAI_API_KEY=placeholder-credential", "user_confirmed");
+assert.ok(secretSections);
+const secretBase = projectCommunicationBase({
+  account_id: "00000000-0000-4000-8000-000000000001", version: 3, sections_json: secretSections,
+  created_at: "2026-09-27T00:00:00Z", updated_at: "2026-09-27T00:00:00Z",
+});
+assert.ok(secretBase);
+assert.equal(stageTwoPrompt(secretBase, generalTarget, false), null,
+  "credential-like confirmed input must fail before stage 2 egress");
 assert.equal(parseStageTwoResponse({ ...stageTwoPayload, output_text: JSON.stringify({ sections: {
   ...stageTwoSections, business_context: { value: "Invasão", basis: "confirmed_business_fact" },
 } }) }, generalTarget, false).ok, false, "general output must reject stage 1 keys");

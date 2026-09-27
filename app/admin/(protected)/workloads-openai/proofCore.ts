@@ -33,6 +33,8 @@ export type OpenAiCandidateProofDependencies = Readonly<{
   niche: ProductProof;
   commercial: ProductProof;
   inputCatalogEvaluation: ProductProof;
+  communicationStageOne: ProductProof;
+  communicationStageTwo: ProductProof;
 }>;
 
 export async function runOpenAiCandidateProofCore(
@@ -75,6 +77,16 @@ export async function runOpenAiCandidateProofCore(
         environment,
         normalizedKey,
         normalizedRequestId,
+      );
+      break;
+    case "communication_base_stage1_assistance":
+      attempt = await dependencies.communicationStageOne(
+        workload, environment, normalizedKey, normalizedRequestId,
+      );
+      break;
+    case "communication_base_stage2_intelligence":
+      attempt = await dependencies.communicationStageTwo(
+        workload, environment, normalizedKey, normalizedRequestId,
       );
       break;
     default:

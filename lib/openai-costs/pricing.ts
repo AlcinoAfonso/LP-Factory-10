@@ -9,12 +9,12 @@ import {
   type DecimalValue,
 } from "./decimal";
 
-export const OPENAI_COST_PRICING_VERSION = "2026-09-11-standard-v1";
+export const OPENAI_COST_PRICING_VERSION = "2026-09-27-standard-v2";
 export const OPENAI_COST_PRICING_EFFECTIVE_AT = "2026-09-11T00:00:00.000Z";
 export const OPENAI_WEB_SEARCH_TOOL_VERSION = "web-search-2026-09-11-v1";
 
 export type OpenAiModelPricingRule = Readonly<{
-  model: "gpt-5.4-mini" | "gpt-5.6-terra" | "gpt-5.6-luna" | "gpt-4.1-mini";
+  model: "gpt-5.4-mini" | "gpt-5.6-terra" | "gpt-5.6-luna" | "gpt-6-luna" | "gpt-6-sol" | "gpt-4.1-mini";
   inputPerMillionUsd: string;
   cachedInputPerMillionUsd: string;
   cacheWritePerMillionUsd: string | null;
@@ -53,6 +53,8 @@ const RULES = Object.freeze([
   rule("gpt-5.4-mini", "0.75", "0.075", null, "4.50"),
   rule("gpt-5.6-terra", "2.00", "0.20", "2.50", "12.00", [272_000, "4.00", "0.40", "5.00", "18.00"]),
   rule("gpt-5.6-luna", "0.20", "0.02", "0.25", "1.20", [272_000, "0.40", "0.04", "0.50", "1.80"]),
+  rule("gpt-6-luna", "0.10", "0.01", "0.125", "0.50", [272_000, "0.20", "0.02", "0.25", "0.75"]),
+  rule("gpt-6-sol", "2.00", "0.20", "2.50", "10.00", [272_000, "4.00", "0.40", "5.00", "15.00"]),
   rule("gpt-4.1-mini", "0.40", "0.10", null, "1.60"),
 ] satisfies readonly OpenAiModelPricingRule[]);
 

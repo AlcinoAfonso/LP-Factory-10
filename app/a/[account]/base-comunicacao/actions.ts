@@ -3,19 +3,30 @@
 import { revalidatePath } from "next/cache";
 
 import { requireCommunicationBaseAccess } from "../../../../lib/communication-base/access";
+import { assistCommunicationSection, generateCommunicationIntelligence } from "../../../../lib/communication-base/adapters/communicationAiAdapter";
 import {
   createCommunicationBase,
+  readCommunicationBase,
   readPendingSetupBusinessContext,
   saveCommunicationSection,
 } from "../../../../lib/communication-base/adapters/communicationBaseAdapter";
 import { parseSectionValue, withSection } from "../../../../lib/communication-base/policy";
 import { getCommunicationSection } from "../../../../lib/communication-base/registry";
+import type { StageTwoDraft, StageTwoTarget } from "../../../../lib/communication-base/ai-core";
 import type { CommunicationSectionValue } from "../../../../lib/communication-base/contracts";
 
 export type CommunicationActionState = Readonly<{
   status: "idle" | "saved" | "error";
   message: string;
 }>;
+
+export type CommunicationStageOneAiResult =
+  | Readonly<{ ok: true; suggestion: string; missingQuestion: string }>
+  | Readonly<{ ok: false; message: string }>;
+
+export type CommunicationStageTwoAiResult =
+  | Readonly<{ ok: true; draft: StageTwoDraft }>
+  | Readonly<{ ok: false; message: string }>;
 
 const UNAVAILABLE = "Não foi possível salvar agora. Atualize a página e tente novamente.";
 
@@ -72,6 +83,71 @@ export async function saveCommunicationSectionAction(
 
   revalidatePath(`/a/${access.value.accountSubdomain}/base-comunicacao`);
   return { status: "saved", message: "Seção salva." };
+}
+
+export async function assistCommunicationSectionAction(input: Readonly<{
+  account: string;
+  key: string;
+  userText: string;
+  version: number;
+}>): Promise<CommunicationStageOneAiResult> {
+  const section = input && typeof input.key === "string" ? getCommunicationSection(input.key) : null;
+  if (!section || section.stage !== 1 || typeof input.account !== "string" ||
+      !Number.isSafeInteger(input.version) || input.version <= 0 ||
+      typeof input.userText !== "string" || !input.userText.trim() || input.userText.length > 10_000 ||
+      parseSectionValue(section, parseEditorValue(section.format, input.userText)) === null) {
+    return { ok: false, message: "Preencha esta seção com seus dados reais antes de pedir ajuda à IA." };
+  }
+  const access = await requireCommunicationBaseAccess(input.account, true);
+  if (!access.ok) return { ok: false, message: "A assistência não está disponível para este acesso." };
+  const base = await readCommunicationBase(access.value.accountId);
+  if (!base.ok || !base.value || base.value.version !== input.version) {
+    return { ok: false, message: "A Base mudou. Atualize a página antes de pedir ajuda à IA." };
+  }
+  const result = await assistCommunicationSection({
+    accountId: access.value.accountId,
+    key: input.key,
+    userText: input.userText,
+  });
+  return result.ok
+    ? { ok: true, suggestion: result.value.suggestion, missingQuestion: result.value.missingQuestion }
+    : { ok: false, message: "A assistência está indisponível agora. Você pode continuar a edição manual." };
+}
+
+export async function generateCommunicationIntelligenceAction(input: Readonly<{
+  account: string;
+  target: StageTwoTarget;
+  version: number;
+  requiresCurrentResearch: boolean;
+}>): Promise<CommunicationStageTwoAiResult> {
+  if (!input || typeof input.account !== "string" ||
+      !Number.isSafeInteger(input.version) || input.version <= 0 ||
+      typeof input.requiresCurrentResearch !== "boolean" ||
+      !input.target || typeof input.target !== "object" ||
+      (input.target.kind !== "general" &&
+        (input.target.kind !== "section" || getCommunicationSection(input.target.key)?.stage !== 2))) {
+    return { ok: false, message: "A solicitação é inválida. Atualize a página e tente novamente." };
+  }
+  const access = await requireCommunicationBaseAccess(input.account, true);
+  if (!access.ok) return { ok: false, message: "A geração não está disponível para este acesso." };
+  const base = await readCommunicationBase(access.value.accountId);
+  if (!base.ok || !base.value || base.value.version !== input.version) {
+    return { ok: false, message: "A Base mudou. Atualize a página antes de gerar sugestões." };
+  }
+  const hasConfirmedInput = Object.values(base.value.sections).some((section) => section &&
+    (section.origin === "user_confirmed" || section.origin === "pending_setup_confirmed"));
+  if (!hasConfirmedInput) {
+    return { ok: false, message: "Confirme primeiro ao menos um dado da Etapa 1." };
+  }
+  const result = await generateCommunicationIntelligence({
+    accountId: access.value.accountId,
+    base: base.value,
+    target: input.target,
+    requiresCurrentResearch: input.requiresCurrentResearch,
+  });
+  return result.ok
+    ? { ok: true, draft: result.value }
+    : { ok: false, message: "Não foi possível concluir a geração. Seus textos salvos continuam disponíveis." };
 }
 
 function parseEditorValue(

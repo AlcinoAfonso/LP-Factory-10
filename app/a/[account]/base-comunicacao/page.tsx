@@ -3,9 +3,8 @@ import { notFound } from "next/navigation";
 
 import { requireCommunicationBaseAccess } from "../../../../lib/communication-base/access";
 import { readCommunicationBase, readPendingSetupBusinessContext } from "../../../../lib/communication-base/adapters/communicationBaseAdapter";
-import { hasStageTwoContent } from "../../../../lib/communication-base/ai-core";
 import { communicationSections } from "../../../../lib/communication-base/registry";
-import { CommunicationSectionEditor, StartCommunicationBaseForm } from "./CommunicationSectionEditor";
+import { CommunicationSectionEditor, CommunicationStageTwo, StartCommunicationBaseForm } from "./CommunicationSectionEditor";
 
 type PageProps = Readonly<{ params: Promise<{ account: string }> }>;
 
@@ -70,32 +69,13 @@ export default async function CommunicationBasePage({ params }: PageProps) {
                 Seu acesso é somente leitura.
               </p>
             ) : null}
-            {([1, 2] as const).map((stage) => (
-              <section key={stage} aria-labelledby={`communication-stage-${stage}`} className="space-y-4">
+            <section aria-labelledby="communication-stage-1" className="space-y-4">
                 <div className="space-y-3">
-                  <p className="text-sm font-semibold text-brand-700">Etapa {stage}</p>
-                  <h2 id={`communication-stage-${stage}`} className="text-xl font-semibold">
-                    {stage === 1 ? "Verdade da empresa" : "Inteligência de comunicação"}
-                  </h2>
-                  {stage === 2 && access.value.canEdit ? (
-                    <div className="rounded-lg border border-border bg-white p-4">
-                      <p className="text-sm text-muted-foreground">
-                        {hasStageTwoContent(base)
-                          ? "Quando disponível, esta ação atualizará sugestões para as sete seções da Etapa 2. Revise cada sugestão antes de salvar."
-                          : "Quando disponível, esta ação gerará sugestões para as sete seções da Etapa 2. Revise cada sugestão antes de salvar."}
-                      </p>
-                      <button type="button" disabled aria-describedby="communication-ai-unavailable"
-                        className="mt-3 inline-flex min-h-11 items-center justify-center rounded-lg border border-border px-5 py-2 text-sm font-semibold text-muted-foreground disabled:cursor-not-allowed disabled:opacity-70">
-                        {hasStageTwoContent(base) ? "Atualizar Etapa 2 com IA" : "Gerar Etapa 2 com IA"}
-                      </button>
-                      <p id="communication-ai-unavailable" role="status" className="mt-2 text-xs text-muted-foreground">
-                        A revisão por IA ainda não está disponível. Você pode editar e salvar cada seção manualmente.
-                      </p>
-                    </div>
-                  ) : null}
+                  <p className="text-sm font-semibold text-brand-700">Etapa 1</p>
+                  <h2 id="communication-stage-1" className="text-xl font-semibold">Verdade da empresa</h2>
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2">
-                  {communicationSections.filter((section) => section.stage === stage).map((section) => (
+                  {communicationSections.filter((section) => section.stage === 1).map((section) => (
                     <CommunicationSectionEditor
                       key={`${section.key}-${base.version}`}
                       account={access.value.accountSubdomain}
@@ -106,8 +86,8 @@ export default async function CommunicationBasePage({ params }: PageProps) {
                     />
                   ))}
                 </div>
-              </section>
-            ))}
+            </section>
+            <CommunicationStageTwo account={access.value.accountSubdomain} base={base} canEdit={access.value.canEdit} />
           </div>
         )}
       </div>

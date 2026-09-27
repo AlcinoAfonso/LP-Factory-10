@@ -33,6 +33,15 @@ async function main() {
   assert.equal(oneSearch.costUsd, "0.0949");
   assert.equal(twoSearch.costUsd, "0.1049");
   assert.equal(twoSearch.webSearchPricePerCallUsd, "0.01");
+  const comparisonUsage = usage({ inputTokens: 1_000, outputTokens: 500, totalTokens: 1_500 });
+  assert.equal(calculateOpenAiOperationCost({
+    model: "gpt-6-luna", startedAt: "2026-09-27T12:00:00Z", usage: comparisonUsage,
+    webSearchCallCount: 1,
+  }).costUsd, "0.01035");
+  assert.equal(calculateOpenAiOperationCost({
+    model: "gpt-6-sol", startedAt: "2026-09-27T12:00:00Z", usage: comparisonUsage,
+    webSearchCallCount: 1,
+  }).costUsd, "0.017");
   assert.deepEqual(twoSearch.pricingSnapshot && twoSearch.pricingSnapshot.webSearch, {
     toolVersion: "web-search-2026-09-11-v1",
     unit: "per_call",

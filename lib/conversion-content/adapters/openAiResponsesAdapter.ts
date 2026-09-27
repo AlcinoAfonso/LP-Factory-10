@@ -50,6 +50,7 @@ export type OpenAiResponsesInput<T> = Readonly<{
   signal?: AbortSignal;
   financialContext: OpenAiCostEconomicContext;
   executionOrigin: OpenAiCostExecutionOrigin;
+  baselineReference?: string;
 }>;
 
 export type OpenAiResponsesDependencies = Readonly<{
@@ -139,6 +140,7 @@ export async function requestOpenAiResponses<T>(
       environment,
       executionOrigin: input.executionOrigin,
       economicContext: input.financialContext,
+      baselineReference: input.baselineReference,
       startedAt: financialStartedAt,
     });
     await recorder.startOperation({

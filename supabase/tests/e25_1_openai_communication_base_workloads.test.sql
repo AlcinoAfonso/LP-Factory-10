@@ -9,8 +9,8 @@ begin
     values
       ('production', 'communication_base_stage1_assistance', 'gpt-5.4-mini', 'none'),
       ('preview', 'communication_base_stage1_assistance', 'gpt-5.4-mini', 'none'),
-      ('production', 'communication_base_stage2_intelligence', 'gpt-5.6-terra', 'low'),
-      ('preview', 'communication_base_stage2_intelligence', 'gpt-5.6-terra', 'low')
+      ('production', 'communication_base_stage2_intelligence', 'gpt-6-luna', 'max'),
+      ('preview', 'communication_base_stage2_intelligence', 'gpt-6-luna', 'max')
   )
   select count(*) into v_expected_count
   from expected

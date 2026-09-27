@@ -1,14 +1,18 @@
 "use client";
 
-import { useActionState, useEffect } from "react";
+import { useActionState, useEffect, useState, useTransition } from "react";
 import { useFormStatus } from "react-dom";
 import { useRouter } from "next/navigation";
 
-import type { CommunicationSection } from "../../../../lib/communication-base/contracts";
+import type { CommunicationBase, CommunicationSection, CommunicationSectionValue } from "../../../../lib/communication-base/contracts";
+import { hasStageTwoContent, type WebSource } from "../../../../lib/communication-base/ai-core";
+import { communicationSections, type CommunicationSectionKey } from "../../../../lib/communication-base/registry";
 import type { CommunicationSectionDefinition } from "../../../../lib/communication-base/registry";
 import {
   saveCommunicationSectionAction,
   startCommunicationBaseAction,
+  assistCommunicationSectionAction,
+  generateCommunicationIntelligenceAction,
   type CommunicationActionState,
 } from "./actions";
 
@@ -69,9 +73,17 @@ export function CommunicationSectionEditor(props: Readonly<{
   definition: CommunicationSectionDefinition;
   current: CommunicationSection | undefined;
   canEdit: boolean;
+  suggestedValue?: CommunicationSectionValue;
 }>) {
-  const { account, version, definition, current, canEdit } = props;
+  const { account, version, definition, current, canEdit, suggestedValue } = props;
   const [state, action] = useActionState(saveCommunicationSectionAction, INITIAL_STATE);
+  const [draft, setDraft] = useState(editorText(current));
+  const [aiPending, startAiTransition] = useTransition();
+  const [aiMessage, setAiMessage] = useState("");
+  const [localSuggestion, setLocalSuggestion] = useState<CommunicationSectionValue | null>(null);
+  const [missingQuestion, setMissingQuestion] = useState("");
+  const [sources, setSources] = useState<readonly WebSource[]>([]);
+  const [requiresResearch, setRequiresResearch] = useState(false);
   const router = useRouter();
   useEffect(() => {
     if (state.status === "saved") router.refresh();
@@ -111,7 +123,8 @@ export function CommunicationSectionEditor(props: Readonly<{
           id={fieldId}
           name="value"
           rows={definition.format === "text" ? 5 : 6}
-          defaultValue={value}
+          value={draft}
+          onChange={(event) => setDraft(event.target.value)}
           placeholder={guidance ?? undefined}
           maxLength={definition.format === "text" ? 4000 : undefined}
           aria-describedby={hintId}
@@ -120,22 +133,163 @@ export function CommunicationSectionEditor(props: Readonly<{
         <SubmitButton label="Salvar seção" pendingLabel="Salvando..." />
         <ActionFeedback state={state} />
       </form>
-      {definition.stage === 2 ? (
+      {definition.stage === 1 ? (
         <div className="mt-4 border-t border-border pt-4">
           <p className="text-xs leading-5 text-muted-foreground">
-            Quando disponível, esta ação revisará somente a sugestão de {definition.label}; as outras seções permanecerão como estão.
+            A IA trabalha apenas com o texto desta seção que você enviar. Confira a sugestão antes de usá-la; salvar continua sendo sua decisão.
           </p>
-          <button type="button" disabled aria-describedby={`${fieldId}-ai-unavailable`}
-            className="mt-3 inline-flex min-h-11 items-center justify-center rounded-lg border border-border px-5 py-2 text-sm font-semibold text-muted-foreground disabled:cursor-not-allowed disabled:opacity-70">
-            Revisar esta seção com IA
+          <button type="button" disabled={aiPending || !draft.trim()}
+            onClick={() => startAiTransition(async () => {
+              setAiMessage("");
+              setLocalSuggestion(null);
+              setMissingQuestion("");
+              try {
+                const result = await assistCommunicationSectionAction({ account, key: definition.key, userText: draft, version });
+                if (result.ok) {
+                  setLocalSuggestion(result.suggestion);
+                  setMissingQuestion(result.missingQuestion);
+                } else setAiMessage(result.message);
+              } catch {
+                setAiMessage("A assistência está indisponível agora. Continue a edição manual.");
+              }
+            })}
+            className="mt-3 inline-flex min-h-11 items-center justify-center rounded-lg border border-border px-5 py-2 text-sm font-semibold text-foreground disabled:cursor-not-allowed disabled:opacity-60">
+            {aiPending ? "Preparando sugestão..." : "Ajudar com este texto usando IA"}
           </button>
-          <p id={`${fieldId}-ai-unavailable`} role="status" className="mt-2 text-xs text-muted-foreground">
-            A revisão por IA ainda não está disponível. A edição manual acima continua disponível.
-          </p>
+          {missingQuestion ? <p className="mt-3 text-sm">Informação a confirmar: {missingQuestion}</p> : null}
+          {localSuggestion !== null ? <Suggestion value={localSuggestion} format={definition.format}
+            onUse={() => setDraft(valueText(localSuggestion, definition.format))} /> : null}
+          {aiMessage ? <p role="alert" className="mt-2 text-sm text-state-error">{aiMessage}</p> : null}
         </div>
-      ) : null}
+      ) : (
+        <div className="mt-4 border-t border-border pt-4">
+          <p className="text-xs leading-5 text-muted-foreground">
+            A IA revisa apenas {definition.label} usando os dados confirmados pertinentes e o texto salvo desta seção. As demais seções permanecem como estão.
+          </p>
+          <label className="mt-3 flex min-h-11 items-center gap-3 text-sm">
+            <input type="checkbox" checked={requiresResearch} onChange={(event) => setRequiresResearch(event.target.checked)}
+              className="h-5 w-5 accent-brand-700" />
+            Preciso de pesquisa atual ou local para esta seção
+          </label>
+          <button type="button" disabled={aiPending}
+            onClick={() => startAiTransition(async () => {
+              setAiMessage("");
+              setLocalSuggestion(null);
+              setSources([]);
+              try {
+                const result = await generateCommunicationIntelligenceAction({
+                  account, target: { kind: "section", key: definition.key as CommunicationSectionKey }, version,
+                  requiresCurrentResearch: requiresResearch,
+                });
+                if (result.ok) {
+                  setLocalSuggestion(result.draft.suggestions[0]?.value ?? null);
+                  setSources(result.draft.sources);
+                } else setAiMessage(result.message);
+              } catch {
+                setAiMessage("A revisão está indisponível agora. Continue a edição manual.");
+              }
+            })}
+            className="mt-3 inline-flex min-h-11 items-center justify-center rounded-lg border border-border px-5 py-2 text-sm font-semibold text-foreground disabled:cursor-wait disabled:opacity-60">
+            {aiPending ? "Preparando sugestão..." : "Revisar esta seção com IA"}
+          </button>
+          {localSuggestion !== null ? <Suggestion value={localSuggestion} format={definition.format}
+            onUse={() => setDraft(valueText(localSuggestion, definition.format))} /> : suggestedValue !== undefined ?
+              <Suggestion value={suggestedValue} format={definition.format}
+                onUse={() => setDraft(valueText(suggestedValue, definition.format))} /> : null}
+          <Sources sources={sources} />
+          {aiMessage ? <p role="alert" className="mt-2 text-sm text-state-error">{aiMessage}</p> : null}
+        </div>
+      )}
     </article>
   );
+}
+
+export function CommunicationStageTwo({ account, base, canEdit }: Readonly<{
+  account: string;
+  base: CommunicationBase;
+  canEdit: boolean;
+}>) {
+  const [pending, startTransition] = useTransition();
+  const [message, setMessage] = useState("");
+  const [messageIsError, setMessageIsError] = useState(false);
+  const [requiresResearch, setRequiresResearch] = useState(false);
+  const [suggestions, setSuggestions] = useState<Partial<Record<string, CommunicationSectionValue>>>({});
+  const [sources, setSources] = useState<readonly WebSource[]>([]);
+  const stageTwo = communicationSections.filter((section) => section.stage === 2);
+  return (
+    <section aria-labelledby="communication-stage-2" className="space-y-4">
+      <div className="space-y-3">
+        <p className="text-sm font-semibold text-brand-700">Etapa 2</p>
+        <h2 id="communication-stage-2" className="text-xl font-semibold">Inteligência de comunicação</h2>
+        {canEdit ? <div className="rounded-lg border border-border bg-white p-4">
+          <p className="text-sm text-muted-foreground">
+            A ação geral prepara sugestões para as sete seções da Etapa 2. Confira cada uma antes de usá-la ou salvar.
+          </p>
+          <label className="mt-3 flex min-h-11 items-center gap-3 text-sm">
+            <input type="checkbox" checked={requiresResearch} onChange={(event) => setRequiresResearch(event.target.checked)}
+              className="h-5 w-5 accent-brand-700" />
+            Preciso de pesquisa atual ou local para esta geração
+          </label>
+          <button type="button" disabled={pending}
+            onClick={() => startTransition(async () => {
+              setMessage("");
+              setMessageIsError(false);
+              setSuggestions({});
+              setSources([]);
+              try {
+                const result = await generateCommunicationIntelligenceAction({
+                  account, target: { kind: "general" }, version: base.version, requiresCurrentResearch: requiresResearch,
+                });
+                if (result.ok) {
+                  setSuggestions(Object.fromEntries(result.draft.suggestions.map((item) => [item.key, item.value])));
+                  setSources(result.draft.sources);
+                  setMessage("Sugestões prontas para revisão. Nenhuma seção foi salva automaticamente.");
+                } else {
+                  setMessageIsError(true);
+                  setMessage(result.message);
+                }
+              } catch {
+                setMessageIsError(true);
+                setMessage("A geração está indisponível agora. Continue a edição manual.");
+              }
+            })}
+            className="mt-3 inline-flex min-h-11 items-center justify-center rounded-lg border border-border px-5 py-2 text-sm font-semibold text-foreground disabled:cursor-wait disabled:opacity-60">
+            {pending ? "Preparando sugestões..." : hasStageTwoContent(base) ? "Atualizar inteligência com IA" : "Gerar inteligência com IA"}
+          </button>
+          {message ? <p role={messageIsError ? "alert" : "status"} className="mt-2 text-sm">{message}</p> : null}
+          <Sources sources={sources} />
+        </div> : null}
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2">
+        {stageTwo.map((section) => <CommunicationSectionEditor key={`${section.key}-${base.version}`}
+          account={account} version={base.version} definition={section} current={base.sections[section.key]}
+          canEdit={canEdit} suggestedValue={suggestions[section.key]} />)}
+      </div>
+    </section>
+  );
+}
+
+function Suggestion({ value, format, onUse }: Readonly<{
+  value: CommunicationSectionValue;
+  format: CommunicationSectionDefinition["format"];
+  onUse: () => void;
+}>) {
+  return <div className="mt-3 rounded-lg border border-border bg-surface-50 p-3">
+    <p className="text-xs font-semibold">Sugestão da IA para revisar</p>
+    <p className="mt-2 whitespace-pre-wrap text-sm">{valueText(value, format) || "Sem conteúdo suficiente para sugerir."}</p>
+    {valueText(value, format).trim() ? <button type="button" onClick={onUse}
+      className="mt-3 inline-flex min-h-11 items-center rounded-lg border border-border px-4 text-sm font-semibold">
+      Usar no editor
+    </button> : null}
+  </div>;
+}
+
+function Sources({ sources }: Readonly<{ sources: readonly WebSource[] }>) {
+  if (!sources.length) return null;
+  return <div className="mt-3 text-xs"><p className="font-semibold">Fontes consultadas</p><ul className="mt-1 list-disc pl-5">
+    {sources.map((source) => <li key={source.url}><a href={source.url} target="_blank" rel="noopener noreferrer"
+      className="text-brand-700 underline">{source.title || source.url}</a></li>)}
+  </ul></div>;
 }
 
 function SubmitButton({ label, pendingLabel }: Readonly<{ label: string; pendingLabel: string }>) {
@@ -163,12 +317,14 @@ function ActionFeedback({ state }: Readonly<{ state: CommunicationActionState }>
 
 function editorText(section: CommunicationSection | undefined): string {
   if (!section) return "";
-  if (section.format === "text") return typeof section.value === "string" ? section.value : "";
-  if (section.format === "items") {
-    return Array.isArray(section.value) ? section.value.join("\n") : "";
-  }
-  return Array.isArray(section.value)
-    ? section.value.map((item) => typeof item === "object" && item !== null && "question" in item
+  return valueText(section.value, section.format);
+}
+
+function valueText(value: CommunicationSectionValue, format: CommunicationSectionDefinition["format"]): string {
+  if (typeof value === "string") return value;
+  if (format === "items") return Array.isArray(value) ? value.join("\n") : "";
+  return Array.isArray(value)
+    ? value.map((item) => typeof item === "object" && item !== null && "question" in item
       ? `${item.question} | ${item.answer}`
       : "").join("\n")
     : "";

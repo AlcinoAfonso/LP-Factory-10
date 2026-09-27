@@ -1321,16 +1321,13 @@ function administrativeConfigurationFixture(): Readonly<{
 
   for (const environment of environments) {
     for (const workload of workloads) {
-      const inputCatalogEvaluation =
-        workload === "taxon_input_catalog_sufficiency_evaluation" ||
-        workload === "communication_base_stage2_intelligence";
+      const inputCatalogEvaluation = workload === "taxon_input_catalog_sufficiency_evaluation";
+      const communicationStageTwo = workload === "communication_base_stage2_intelligence";
       const modality = "responses_text";
-      const baselineModel = inputCatalogEvaluation
-        ? "gpt-5.6-terra"
-        : "gpt-5.4-mini";
-      const baselineReasoning = inputCatalogEvaluation
-        ? "low"
-        : "none";
+      const baselineModel = communicationStageTwo ? "gpt-6-luna" :
+        inputCatalogEvaluation ? "gpt-5.6-terra" : "gpt-5.4-mini";
+      const baselineReasoning = communicationStageTwo ? "max" :
+        inputCatalogEvaluation ? "low" : "none";
       const baselineRevisionId = administrativeUuid(sequence++);
       const bootstrapActivationId = administrativeUuid(sequence++);
 

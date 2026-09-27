@@ -211,6 +211,8 @@ const cases: readonly Case[] = [
         "resolveNicheWithOpenAi",
         "requestCommercialActivationOpenAi",
         "evaluateInputCatalogWithOpenAi",
+        "assistCommunicationSection",
+        "generateCommunicationIntelligence",
       ]) {
         assert.equal(proof.includes(transport), true);
       }
@@ -233,6 +235,8 @@ async function resolvedWorkloads() {
       "taxon_input_catalog_sufficiency_evaluation",
       "development",
     ),
+    resolveOpenAiProductWorkload("communication_base_stage1_assistance", "development"),
+    resolveOpenAiProductWorkload("communication_base_stage2_intelligence", "development"),
   ]);
   for (const result of results) assert.equal(result.ok, true);
   return results.map((result) => {
@@ -266,6 +270,8 @@ function proofDependencies(
     niche: product,
     commercial: product,
     inputCatalogEvaluation: product,
+    communicationStageOne: product,
+    communicationStageTwo: product,
   };
 }
 
