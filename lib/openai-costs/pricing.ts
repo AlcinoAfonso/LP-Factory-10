@@ -85,6 +85,7 @@ export function calculateOpenAiOperationCost(input: Readonly<{
   startedAt: string;
   usage?: OpenAiWorkloadUsage | null;
   webSearchCallCount?: number | null;
+  webSearchRequested?: boolean;
 }>, catalog: OpenAiCostPricingCatalog = selectPricingCatalog(input.startedAt)): OpenAiCostFinancialTerminal {
   const startedAt = timestamp(input.startedAt);
   if (!startedAt || startedAt < catalog.effectiveAt) {
@@ -105,6 +106,9 @@ export function calculateOpenAiOperationCost(input: Readonly<{
   }
   if (cacheWrite > 0 && pricing.cacheWritePerMillionUsd === null) {
     return unavailable("cache_write_pricing_missing");
+  }
+  if (input.webSearchRequested && input.webSearchCallCount == null) {
+    return unavailable("web_search_usage_missing");
   }
   const webSearchCalls = input.webSearchCallCount ?? 0;
   if (!Number.isSafeInteger(webSearchCalls) || webSearchCalls < 0) {

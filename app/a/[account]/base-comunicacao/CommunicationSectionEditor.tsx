@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 
 import type { CommunicationBase, CommunicationSection, CommunicationSectionValue } from "../../../../lib/communication-base/contracts";
 import { hasStageTwoContent, type WebSource } from "../../../../lib/communication-base/ai-core";
+import { selectStageTwoSectionPresentation, type LocalStageTwoResult } from "../../../../lib/communication-base/stage-two-presentation";
 import { communicationSections, type CommunicationSectionKey } from "../../../../lib/communication-base/registry";
 import type { CommunicationSectionDefinition } from "../../../../lib/communication-base/registry";
 import {
@@ -74,15 +75,16 @@ export function CommunicationSectionEditor(props: Readonly<{
   current: CommunicationSection | undefined;
   canEdit: boolean;
   suggestedValue?: CommunicationSectionValue;
+  generalRevision?: number;
 }>) {
-  const { account, version, definition, current, canEdit, suggestedValue } = props;
+  const { account, version, definition, current, canEdit, suggestedValue, generalRevision = 0 } = props;
   const [state, action] = useActionState(saveCommunicationSectionAction, INITIAL_STATE);
   const [draft, setDraft] = useState(editorText(current));
   const [aiPending, startAiTransition] = useTransition();
   const [aiMessage, setAiMessage] = useState("");
   const [localSuggestion, setLocalSuggestion] = useState<CommunicationSectionValue | null>(null);
+  const [localStageTwoResult, setLocalStageTwoResult] = useState<LocalStageTwoResult | null>(null);
   const [missingQuestion, setMissingQuestion] = useState("");
-  const [sources, setSources] = useState<readonly WebSource[]>([]);
   const [requiresResearch, setRequiresResearch] = useState(false);
   const router = useRouter();
   useEffect(() => {
@@ -104,6 +106,8 @@ export function CommunicationSectionEditor(props: Readonly<{
   const fieldId = `communication-${definition.key}`;
   const hintId = `${fieldId}-hint`;
   const guidance = definition.stage === 1 ? STAGE_ONE_GUIDANCE[definition.key] : null;
+  const stageTwoPresentation = selectStageTwoSectionPresentation(localStageTwoResult, generalRevision, suggestedValue);
+  const stageTwoSuggestedValue = stageTwoPresentation.value;
   return (
     <article className="rounded-xl border border-border bg-white p-5 shadow-sm">
       <form action={action} className="space-y-3">
@@ -174,16 +178,18 @@ export function CommunicationSectionEditor(props: Readonly<{
           <button type="button" disabled={aiPending}
             onClick={() => startAiTransition(async () => {
               setAiMessage("");
-              setLocalSuggestion(null);
-              setSources([]);
+              setLocalStageTwoResult(null);
               try {
                 const result = await generateCommunicationIntelligenceAction({
                   account, target: { kind: "section", key: definition.key as CommunicationSectionKey }, version,
                   requiresCurrentResearch: requiresResearch,
                 });
                 if (result.ok) {
-                  setLocalSuggestion(result.draft.suggestions[0]?.value ?? null);
-                  setSources(result.draft.sources);
+                  setLocalStageTwoResult({
+                    generalRevision,
+                    value: result.draft.suggestions[0]?.value ?? null,
+                    sources: result.draft.sources,
+                  });
                 } else setAiMessage(result.message);
               } catch {
                 setAiMessage("A revisão está indisponível agora. Continue a edição manual.");
@@ -192,11 +198,9 @@ export function CommunicationSectionEditor(props: Readonly<{
             className="mt-3 inline-flex min-h-11 items-center justify-center rounded-lg border border-border px-5 py-2 text-sm font-semibold text-foreground disabled:cursor-wait disabled:opacity-60">
             {aiPending ? "Preparando sugestão..." : "Revisar esta seção com IA"}
           </button>
-          {localSuggestion !== null ? <Suggestion value={localSuggestion} format={definition.format}
-            onUse={() => setDraft(valueText(localSuggestion, definition.format))} /> : suggestedValue !== undefined ?
-              <Suggestion value={suggestedValue} format={definition.format}
-                onUse={() => setDraft(valueText(suggestedValue, definition.format))} /> : null}
-          <Sources sources={sources} />
+          {stageTwoSuggestedValue !== null ? <Suggestion value={stageTwoSuggestedValue} format={definition.format}
+            onUse={() => setDraft(valueText(stageTwoSuggestedValue, definition.format))} /> : null}
+          <Sources sources={stageTwoPresentation.sources} />
           {aiMessage ? <p role="alert" className="mt-2 text-sm text-state-error">{aiMessage}</p> : null}
         </div>
       )}
@@ -214,6 +218,7 @@ export function CommunicationStageTwo({ account, base, canEdit }: Readonly<{
   const [messageIsError, setMessageIsError] = useState(false);
   const [requiresResearch, setRequiresResearch] = useState(false);
   const [suggestions, setSuggestions] = useState<Partial<Record<string, CommunicationSectionValue>>>({});
+  const [generalRevision, setGeneralRevision] = useState(0);
   const [sources, setSources] = useState<readonly WebSource[]>([]);
   const stageTwo = communicationSections.filter((section) => section.stage === 2);
   return (
@@ -243,6 +248,7 @@ export function CommunicationStageTwo({ account, base, canEdit }: Readonly<{
                 if (result.ok) {
                   setSuggestions(Object.fromEntries(result.draft.suggestions.map((item) => [item.key, item.value])));
                   setSources(result.draft.sources);
+                  setGeneralRevision((current) => current + 1);
                   setMessage("Sugestões prontas para revisão. Nenhuma seção foi salva automaticamente.");
                 } else {
                   setMessageIsError(true);
@@ -263,7 +269,7 @@ export function CommunicationStageTwo({ account, base, canEdit }: Readonly<{
       <div className="grid gap-3 sm:grid-cols-2">
         {stageTwo.map((section) => <CommunicationSectionEditor key={`${section.key}-${base.version}`}
           account={account} version={base.version} definition={section} current={base.sections[section.key]}
-          canEdit={canEdit} suggestedValue={suggestions[section.key]} />)}
+          canEdit={canEdit} suggestedValue={suggestions[section.key]} generalRevision={generalRevision} />)}
       </div>
     </section>
   );

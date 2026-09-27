@@ -5,6 +5,10 @@ import { resolveCommunicationBaseAccess, type CommunicationBaseAccessDependencie
 import { parseSectionValue, projectCommunicationBase, withSection } from "./policy";
 import { selectPendingSetupBusinessContext } from "./pending-setup-import";
 import { hasStageTwoContent, parseStageOneResponse, parseStageTwoResponse, stageOnePrompt, stageTwoPrompt } from "./ai-core";
+import { selectStageTwoSectionPresentation } from "./stage-two-presentation";
+import { requestOpenAiResponses } from "../conversion-content/adapters/openAiResponsesAdapter";
+import { calculateOpenAiOperationCost, type OpenAiCostOperationTerminal, type OpenAiCostRecorder } from "../openai-costs";
+import { resolveOpenAiProductWorkload } from "../openai-workloads";
 
 const keys = communicationSections.map((section) => section.key);
 assert.equal(new Set(keys).size, keys.length, "section keys must be unique");
@@ -110,6 +114,13 @@ const searched = {
 const researched = parseStageTwoResponse(searched, generalTarget, true);
 assert.equal(researched.ok, true);
 if (researched.ok) assert.equal(researched.value.sources.length, 1);
+const localPresentation = { generalRevision: 0, value: "Revisão local", sources: [{ title: "Fonte local", url: "https://example.org/local" }] };
+assert.deepEqual(selectStageTwoSectionPresentation(localPresentation, 0, "Geração geral"), {
+  value: "Revisão local", sources: localPresentation.sources,
+});
+assert.deepEqual(selectStageTwoSectionPresentation(localPresentation, 1, "Geração geral"), {
+  value: "Geração geral", sources: [],
+}, "a later general result must replace the local suggestion and its sources");
 assert.equal(parseStageTwoResponse({ ...searched, output: [{
   type: "web_search_call", status: "completed", action: { sources: [{ url: "http://example.org" }] },
 }] }, generalTarget, true).ok, false, "insecure sources must fail closed");
@@ -281,6 +292,68 @@ async function runAccessCases() {
 }
 
 runAccessCases().then(
+  runProviderFailureAccountingCase,
+).then(
   () => console.log("communication-base validation cases: ok"),
   (error: unknown) => { console.error(error); process.exitCode = 1; },
 );
+
+async function runProviderFailureAccountingCase() {
+  const resolved = await resolveOpenAiProductWorkload("communication_base_stage2_intelligence", "development");
+  assert.equal(resolved.ok, true);
+  if (!resolved.ok) return;
+  const terminals: OpenAiCostOperationTerminal[] = [];
+  const recorder: OpenAiCostRecorder = {
+    startExecution: async () => {},
+    startOperation: async () => {},
+    finishOperation: async (terminal) => { terminals.push(terminal); },
+    finishExecution: async () => {},
+  };
+  const input = {
+    apiKey: "test-key",
+    configuration: resolved.value,
+    environment: "development" as const,
+    request: { tools: [{ type: "web_search" }] },
+    parseResponse: (payload: unknown) => parseStageTwoResponse(payload, { kind: "section", key: "audience" }, true),
+    financialContext: { universe: "client" as const, attributionStatus: "attributed" as const,
+      accountId: "00000000-0000-4000-8000-000000000001" },
+    executionOrigin: "administrative_proof" as const,
+  };
+  const usage = { input_tokens: 1000, output_tokens: 500, total_tokens: 1500 };
+  const withSearch = await requestOpenAiResponses(input, {
+    costRecorder: recorder,
+    emitEvent: () => {},
+    nowIso: () => "2026-09-27T23:00:00.000Z",
+    fetchImpl: async () => new Response(JSON.stringify({
+      id: "resp_failed_after_search", usage,
+      output_text: JSON.stringify({ sections: { audience: { value: "Rascunho", basis: "confirmed_business_fact" } } }),
+      output: [{ type: "web_search_call", status: "completed", action: {
+        sources: [{ title: "Fonte", url: "https://example.org/mercado" }],
+      } }],
+    }), { status: 200, headers: { "Content-Type": "application/json" } }),
+  });
+  assert.equal(withSearch.ok, false);
+  assert.equal(terminals[0]?.webSearchCallCount, 1, "a failed response must retain the observed Web Search call");
+  assert.equal(terminals[0]?.webSearchRequested, true);
+  assert.deepEqual(calculateOpenAiOperationCost({
+    model: resolved.value.model, startedAt: "2026-09-27T23:00:00.000Z",
+    usage: terminals[0]?.usage, webSearchCallCount: terminals[0]?.webSearchCallCount,
+    webSearchRequested: terminals[0]?.webSearchRequested,
+  }).pricingSnapshot?.webSearch, {
+    toolVersion: "web-search-2026-09-11-v1", unit: "per_call", pricePerCallUsd: "0.01", callCount: 1,
+  });
+  const withoutObservableOutput = await requestOpenAiResponses(input, {
+    costRecorder: recorder,
+    emitEvent: () => {},
+    nowIso: () => "2026-09-27T23:00:00.000Z",
+    fetchImpl: async () => new Response(JSON.stringify({ id: "resp_failed_without_output", usage, output_text: "{}" }),
+      { status: 200, headers: { "Content-Type": "application/json" } }),
+  });
+  assert.equal(withoutObservableOutput.ok, false);
+  assert.equal(terminals[1]?.webSearchCallCount, null);
+  assert.equal(calculateOpenAiOperationCost({
+    model: resolved.value.model, startedAt: "2026-09-27T23:00:00.000Z",
+    usage: terminals[1]?.usage, webSearchCallCount: terminals[1]?.webSearchCallCount,
+    webSearchRequested: terminals[1]?.webSearchRequested,
+  }).costUnavailableReason, "web_search_usage_missing");
+}

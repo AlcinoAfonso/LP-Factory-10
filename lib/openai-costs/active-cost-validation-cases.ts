@@ -49,6 +49,14 @@ async function main() {
   assert.equal(lunaShort.pricingVersion, "2026-09-27-standard-v2");
   assert.equal(lunaShort.pricingEffectiveAt, afterPricingCut);
   assert.equal(calculateOpenAiOperationCost({
+    model: "gpt-6-luna", startedAt: afterPricingCut, usage: comparisonUsage,
+    webSearchRequested: true, webSearchCallCount: null,
+  }).costUnavailableReason, "web_search_usage_missing");
+  assert.equal(calculateOpenAiOperationCost({
+    model: "gpt-6-luna", startedAt: afterPricingCut, usage: comparisonUsage,
+    webSearchRequested: true, webSearchCallCount: 0,
+  }).costUsd, "0.00035");
+  assert.equal(calculateOpenAiOperationCost({
     model: "gpt-6-sol", startedAt: afterPricingCut, usage: comparisonUsage,
     webSearchCallCount: 1,
   }).costUsd, "0.017");

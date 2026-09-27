@@ -56,6 +56,7 @@ export const activeCostTrackingAdapter: OpenAiCostTrackingAdapter = Object.freez
       startedAt: typeof row.started_at === "string" ? row.started_at : "",
       usage: input.usage,
       webSearchCallCount: input.webSearchCallCount,
+      webSearchRequested: input.webSearchRequested,
     });
     await invoke(client, "finish_openai_cost_operation_v2", operationFinishRpc(input, financial));
   },
