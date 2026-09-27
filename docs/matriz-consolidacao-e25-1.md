@@ -3,15 +3,17 @@
 ## 1. Referências e estado
 
 - V1: commit `4ed0ea5a366d6d566a751fcc3487209b0068ec1a`, blob `b4babf6f7224fe926f677d221a68bdfa074c3b71`, `docs/lousa-plano-base-e25-1.md`.
-- V2 candidata: commit `05d3dcbc3a629c99409fff26f99683fa99009608`, blob `75f86e59aca9bb555b1164bea9fbb44950266574`, mesmo path.
+- V2 candidata original: commit `05d3dcbc3a629c99409fff26f99683fa99009608`, blob `75f86e59aca9bb555b1164bea9fbb44950266574`; V2 corrigida candidata: commit `042961ce580c6a1284a46c17e64d79bb21f6eb4d`, blob `d86c9a00892c47dbc6f78a4e2091a840878f5585`, mesmo path.
 - Roadmap-base: `origin/main@b771bec758d8cd32a40174a064af39a334bdb03e`, blob `71dbda023094c12e6480ddc3e8e33aa52c89e6ad`.
-- Gestor Estrutural: `aprovado com condicionantes`, GE-E25-01 a GE-E25-06; quatro condicionantes verificáveis.
+- Gestor Estrutural inicial: `aprovado com condicionantes`, GE-E25-01 a GE-E25-06 e quatro condicionantes. Revisão focal pedida pela Passagem 2: `requer patch estrutural`, GE-E25-W01/W02; patch de escrita server-only incorporado à V2 corrigida.
 - Gestor de Updates: `updates aplicáveis com patches autossuficientes`; aplicar `prod#17`; demais itens são referências, travas ou oportunidades condicionais.
 - Confronto estrutural de modernização: N/A; o único update aplicável agora tem impacto estrutural baixo e nenhum impacto funcional.
-- Gestor de Automações: `requer validação material pelo Analista`; sem patch de implementação de IA por ausência de prova de custo incremental zero.
-- Analista Passagem 1: `aprovado com correções obrigatórias`; cinco correções candidatas ainda não declaradas concluídas.
+- Gestor de Automações: `requer validação material pelo Analista`; sem patch de recomendação de IA por ausência de prova de custo incremental zero. A V2 corrigida submete ao mesmo Analista a distinção entre recomendação de recurso candidato e execução da IA já aprovada na V1, sem alegar gratuidade.
+- Analista Passagem 1: `aprovado com correções obrigatórias` (cinco itens). Passagem 2: `requer nova rodada especializada`; revisão estrutural focal executada. Delta corrigido ainda aguarda `revisao_delta` do mesmo Analista.
 
 ## 2. Matriz
+
+A classe `ampliação de escopo` em updates não adotados descreve o efeito que sua adoção teria; nenhum deles integra a V2 atual.
 
 | ID | Origem | Classe | Achado | Tratamento | Localização e evidência | Destino do update / confronto |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -20,20 +22,22 @@
 | V1-03 | v1 | derivação técnica da v1 | Etapa 1 progressiva com importação confirmada e IA opcional. | Seções independentes, cópia inicial única e rascunho separado de fato. | V2 §5.3; prova em §5.5. | N/A |
 | V1-04 | v1 | derivação técnica da v1 | Etapa 2 usa IA e pesquisa atual quando material sem transformar hipótese em fato. | Workload próprio, saída validada, busca obrigatória quando material e falha fechada. Custo permanece pendente. | V2 §5.4; §5.5; fonte funcional V1 §4.2.2. | N/A |
 | V1-05 | v1 | derivação técnica da v1 | Nova seção em formato suportado preserva Base existente. | Registry fechado e chave ausente renderizada sem reescrever seções prévias. | V2 §5.2; prova em §5.5. | N/A |
-| V1-06 | v1 | ampliação de escopo | LP, canais, trial, E10/Pending Setup, E20, E10.10, Agents SDK, job, fila e framework arbitrário. | Excluídos expressamente do delta e da arquitetura. | V1 §4.2.2; V2 §§5.1–5.5. | N/A |
+| V1-06 | v1 | derivação técnica da v1 | Limite negativo aprovado: LP, canais, trial, E10/Pending Setup, E20, E10.10, Agents SDK, job, fila e framework arbitrário. | Preservar a proibição funcional; todos excluídos do delta e da arquitetura. | V1 §4.2.2; V2 §§5.1–5.5. | N/A |
 | GE-E25-01 | invariante técnico | derivação técnica da v1 | Loader atual depende de E10.10 e taxon. | Rota da Base e entrada próprias; não alterar loader. | V2 §5.2; código `account-journey-loader.ts`. | N/A |
 | GE-E25-02 | invariante técnico | derivação técnica da v1 | Evitar segunda decisão de acesso. | APIs de Access Context e entitlement existentes, revalidadas no servidor. | V2 §5.2; `lib/access/`, `lib/commercial-entitlements/`. | N/A |
 | GE-E25-03 | invariante técnico | derivação técnica da v1 | Adapter de Pending Setup inicia conversa e não serve à importação. | Leitura focal de completed, sem RPC de início e sem escrita reversa. | V2 §5.3; adapter vigente. | N/A |
 | GE-E25-04 | invariante técnico | derivação técnica da v1 | Não há persistência da Base no schema atual. | Nova tabela por conta com JSON por seção, versão e RLS. | V2 §5.2; `docs/schema.md` vigente. | N/A |
-| GE-E25-05 | invariante técnico | derivação técnica da v1 | Workloads E21 atuais são de outros domínios. | Registrar identidade própria sem reusar workload E20/E10. | V2 §5.4; `lib/openai-workloads/registry.ts`. | N/A |
+| GE-E25-05 | invariante técnico | derivação técnica da v1 | Workloads E21 atuais são de outros domínios. | Registrar dois workloads próprios, distintos por etapa, sem reusar E20/E10. | V2 §§5.3–5.4; `lib/openai-workloads/registry.ts`. | N/A |
 | GE-E25-06 | invariante técnico | derivação técnica da v1 | Roadmap diz depender de E10.10, contra V1. | ABC planejamento corrige somente dependência obsoleta e materializa E25.1. | V2 §5.1; roadmap-base §E10.10; ainda pendente. | N/A |
 | GE-C01 | invariante técnico | derivação técnica da v1 | Entrada direta sem taxon/E10.10. | Provar com conta de dogfooding E9.2 pela rota e acesso visível. | V2 §§5.2, 5.5. | N/A |
 | GE-C02 | invariante técnico | derivação técnica da v1 | Importação única e sem sync reversa. | Fonte completed inequívoca, criação idempotente, sem sobrescrever edição. | V2 §§5.3, 5.5. | N/A |
 | GE-C03 | invariante técnico | derivação técnica da v1 | Migration, ACL, concorrência e apply precisam de prova. | Testes SQL e gate hospedado pós-apply. | V2 §§5.2, 5.5. | N/A |
 | GE-C04 | invariante técnico | derivação técnica da v1 | Roadmap deve conter 25.1.1–25.1.5 e eliminar dependência de E10.10. | ABC de planejamento após aprovação V2. | V2 §§5.1, 5.5; ainda pendente. | N/A |
+| GE-E25-W01 | invariante técnico | derivação técnica da v1 | Data API com escrita authenticated contorna adapter. | Revogar escrita direta; Server Actions autorizam e adapter server-only usa service_role com validação/versão. | V2 §5.2 corrigida e gate §5.5; revisão focal estrutural. | N/A |
+| GE-E25-W02 | invariante técnico | derivação técnica da v1 | Client server-only e maxAffected já existem, sem duplicar registry no banco. | Reusar `createServiceClient()` somente no adapter; nenhuma RPC/trigger nova. | V2 §§5.2, 5.5; `lib/supabase/service.ts`. | N/A |
 | AUT-25.1.4-D | v1 | derivação técnica da v1 | Cópia de dado confirmado é determinística. | Incorporada; sem IA só para copiar, sem sincronização. | V2 §5.3. | N/A |
-| AUT-25.1.4-IA | v1 | derivação técnica da v1 | IA opcional organiza/sugere sem confirmar fato. | Contrato funcional preservado; patch de implementação suspenso até prova financeira. | V2 §§5.3–5.4; custo pendente. | N/A |
-| AUT-25.1.5-IA | v1 | derivação técnica da v1 | IA e Web Search material compõem Etapa 2. | Contrato funcional preservado; prova de custo zero ou decisão competente pendente, sem fasear a V1. | V2 §5.4; custo pendente. | N/A |
+| AUT-25.1.4-IA | v1 | derivação técnica da v1 | IA opcional organiza/sugere sem confirmar fato. | Contrato funcional preservado; workload próprio sem Web Search e fallback manual. Distinção do gate financeiro submetida ao Analista. | V2 §§5.3–5.4 corrigidas. | N/A |
+| AUT-25.1.5-IA | v1 | derivação técnica da v1 | IA e Web Search material compõem Etapa 2. | Contrato funcional preservado, workload próprio com busca material. Especialista não recomenda patch; V2 deriva da V1 aprovada e pede arbitragem do gate. | V2 §5.4 corrigida; revisão delta pendente. | N/A |
 | UP-prod-17 | update | modernização técnica justificada | QA WCAG 2.2 focal, automático mais manual. | Aplicar agora, sem alegação de conformidade integral. | V2 §§5.1, 5.5; ganho: labels, contraste, hover, foco e feedback verificáveis; custo de plataforma zero; impacto estrutural baixo/funcional nulo. | Destino E25.1 QA; confronto N/A. |
 | UP-prod-16 | update | derivação técnica da v1 | QA Preview desktop/mobile e estados já exigidos. | Usar como referência/trava, sem patch adicional. | V1 §4.2.5; V2 §5.5. | Destino validação E25.1; confronto N/A. |
 | UP-supa-63 | update | ampliação de escopo | Ferramenta beta de testes de RLS. | Não instalar; testes SQL focais são gate. | V2 §5.5; catálogo como referência. | Condicional em banco descartável e ganho demonstrado; confronto atual N/A. |
@@ -43,14 +47,14 @@
 | UP-vercel-29 | update | ampliação de escopo | Navegação instantânea pode alterar cache/frescor. | Não habilitar por rotina. | V2 §5.2 mantém guards dinâmicos. | Condicional a lentidão reproduzida e ganho medido; confronto atual N/A. |
 | UP-supa-69 | update | ampliação de escopo | Trace Context exigiria tracer/retensão. | Não instalar. | V2 §5.5 observabilidade focal. | Condicional a incidente que requestId não resolva, tracer aprovado e custo zero; confronto futuro se material. |
 | UP-github-10 | update | ampliação de escopo | Política Actions transversal. | Não alterar workflows/settings. | Escopo negativo V1 e diff atual. | Referência de governança separada; confronto N/A. |
-| A-P1-01 | invariante técnico | derivação técnica da v1 | Escrita direta em tabela exposta contorna adapter, validação e versão. | Correção obrigatória pendente: restringir escrita ao servidor ou impor invariantes no banco. | V2 §5.2 candidata insuficiente; Passagem 1 item 1. | N/A |
-| A-P1-02 | invariante técnico | derivação técnica da v1 | Gate financeiro de IA sem evidência competente. | Investigação factual obrigatória; não remover Etapa 2 nem ativar cobrança presumida. | V2 §5.4; Passagem 1 item 2; pendente. | N/A |
-| A-P1-03 | invariante técnico | derivação técnica da v1 | IA opcional da Etapa 1 sem identidade E21 explícita. | Correção obrigatória pendente: workload(s), Web Search, custo, fallback, observabilidade. | V2 §§5.3–5.4; Passagem 1 item 3. | N/A |
-| A-P1-04 | invariante técnico | derivação técnica da v1 | Fonte Pending Setup é por conta e usuário, Base é por conta. | Correção obrigatória pendente: seleção completed única e ambiguidade. | V2 §5.3; Passagem 1 item 4. | N/A |
-| A-P1-05 | invariante técnico | derivação técnica da v1 | Sequência runtime/deploy/apply ainda aberta. | Correção obrigatória pendente: fechamento executável sem PR precursor presumido. | V2 §§5.2, 5.5; Passagem 1 item 5. | N/A |
+| A-P1-01 | invariante técnico | derivação técnica da v1 | Escrita direta em tabela exposta contorna adapter, validação e versão. | Corrigido na V2 candidata via GE-E25-W01/W02: escrita server-only e ACL sem INSERT/UPDATE authenticated. | V2 §§5.2, 5.5 corrigidas; revisão delta pendente. | N/A |
+| A-P1-02 | invariante técnico | derivação técnica da v1 | Gate financeiro de IA sem evidência competente. | Distinção de autoridade submetida ao Analista: gate regula recomendação de recurso candidato; IA/Web Search da Etapa 2 já aprovados na V1. Não alegar gratuidade e preservar E21. | V2 §5.4 corrigida; `docs/workflow-atualizacao-updates.md` e `docs/gestor-automations.md`; revisão delta pendente. | N/A |
+| A-P1-03 | invariante técnico | derivação técnica da v1 | IA opcional da Etapa 1 sem identidade E21 explícita. | Corrigido: dois workloads E21, Etapa 1 sem busca/fallback manual, Etapa 2 busca material e falha fechada; ambos registram uso/custo. | V2 §§5.3–5.4 corrigidas; revisão delta pendente. | N/A |
+| A-P1-04 | invariante técnico | derivação técnica da v1 | Fonte Pending Setup é por conta e usuário, Base é por conta. | Corrigido: detectar no máximo dois completed por conta, importar só único texto direto inequívoco; ambiguidade não copia. | V2 §5.3 corrigida; revisão delta pendente. | N/A |
+| A-P1-05 | invariante técnico | derivação técnica da v1 | Sequência runtime/deploy/apply ainda aberta. | Corrigido na V2 candidata: gate off em Preview/Production, teste SQL isolado, merge+apply canônico, prova no alvo, habilitar gate e redeploy, QA positivo. | V2 §5.2 corrigida; revisão delta pendente. | N/A |
 
 ## 3. Pendências para auditoria
 
-- A matriz não declara resolvidos os cinco itens da Passagem 1. Correções objetivas de V2 e prova financeira serão submetidas ao mesmo Analista em `revisao_delta`.
-- O parecer de Automações não contém patch aplicável para chamadas pagas. A V1 continua exigindo a Etapa 2; condicionalidade não equivale a autorização para entregar somente a Etapa 1.
+- GE-E25-W01/W02 e os itens A-P1-01/03/04/05 têm correção candidata na V2; somente a revisão delta do mesmo Analista pode encerrar o gate.
+- A-P1-02 pede arbitragem sobre a residência do gate de custo; não se presume saldo, preço zero ou gratuidade. O parecer de Automações segue integral e sua ausência de patch de recomendação não autoriza fasear ou retirar a Etapa 2 da V1.
 - Roadmap ainda é snapshot anterior; ABC e revisão delta do roadmap só seguem após aprovação da V2.
