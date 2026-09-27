@@ -13,7 +13,7 @@
 
 1.2. Descrição
 • LP Factory 10 é um hub de serviços de comunicação comercial com IA, orientado a entregar resultados sem exigir que o cliente domine ferramentas, APIs, integrações ou IA.
-• A Base de Comunicação é o núcleo reutilizável do negócio e serve de referência comum para os serviços contratados.
+• A Base de Comunicação pertence à conta, é editável e evolutiva; os serviços consultam seu conteúdo pertinente sem governá-la nem exigir sincronização permanente.
 • Os serviços podem incluir landing pages, WhatsApp, Instagram, TikTok, Google Meu Negócio e e-mail, conforme validação comercial e operacional.
 • A LP Factory pode configurar e operar a tecnologia necessária para cada serviço; o software apoia essa entrega e não é, por si só, o produto vendido.
 
@@ -25,7 +25,7 @@
 
 1.4. Produto
 1.4.1. Prático
-• Base de Comunicação mínima e reutilizável, evitando cadastros e descobertas repetidas entre serviços.
+• A Base aproveita informações confirmadas já disponíveis e é completada progressivamente, com assistência de IA quando útil, sem exigir cadastro factual prévio completo.
 • Serviços productizados: personalizar comunicação e conteúdo sem reinventar a solução técnica para cada cliente.
 
 1.4.2. Inteligente
@@ -47,13 +47,12 @@
 • A stack base do MVP permanece Next.js, Supabase e TypeScript.
 • Regras verificáveis, segurança, fatos, estado e contratos permanecem determinísticos quando possível; IA preserva flexibilidade controlada onde a natureza do resultado for semântica, criativa ou persuasiva.
 • Avaliação, radar tecnológico ou catalogação não autorizam implementação, mudança de stack, nova infraestrutura nem ampliação de escopo.
-• O WhatsApp permanece serviço prioritário para aquisição, atendimento, qualificação, venda e nutrição, sem autorizar antecipação de infraestrutura.
-• Em `Supervisão: Autônomo`, a escolha humana delega ao Estrategista Autônomo autoridade contínua para conduzir o plano dentro da V1 aprovada e do escopo negativo; em `Semiautomático`, decisões de produto ou escopo fora do contrato permanecem humanas.
+• Em `Supervisão: Autônomo`, a escolha humana delega ao Estrategista Autônomo autoridade contínua e integral para decidir e conduzir o plano até a conclusão sem nova intervenção humana, preservando a V1 aprovada e o escopo negativo; em `Semiautomático`, decisões de produto ou escopo fora do contrato permanecem humanas. A materialidade, isoladamente, não constitui bloqueio.
 
 1.5. Modelo de oferta
-• O MVP evolui de planos SaaS fixos para uma base simples acompanhada de serviços de IA contratáveis conforme a necessidade do cliente.
+• A direção do modelo de oferta é uma base simples acompanhada de serviços de IA contratáveis conforme a necessidade do cliente.
 • Cada serviço deve ter escopo e entrega claros, evitando customização técnica ilimitada por cliente.
-• Combos podem surgir posteriormente a partir de padrões reais de contratação e operação; não são requisito nem arquitetura antecipada do MVP.
+• Combos podem surgir posteriormente a partir de padrões reais de contratação e operação; essa direção não altera automaticamente contratos comerciais vigentes, cuja mudança depende de recorte aprovado.
 • O modelo pode evoluir em direção a Outcome-as-a-Service quando houver resultado mensurável e atribuição suficientemente confiável, sem exigir precificação por resultado no MVP.
 
 2. Documentos de referência
@@ -67,7 +66,7 @@
 
 3. Pendências estratégicas (em aberto)
 3.1. Definições do MVP
-• Base/assinatura mínima • Primeiro catálogo de serviços • Limites da operação gerenciada
+• Modelo comercial mínimo • Serviços iniciais • Limites da operação gerenciada
 
 3.2. Padrões de entrega
 • Definir entregável e critério de aceite dos serviços prioritários.
