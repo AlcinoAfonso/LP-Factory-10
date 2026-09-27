@@ -58,9 +58,10 @@ export function parseStoredSections(raw: unknown): Record<string, unknown> | nul
     const definition = getCommunicationSection(key);
     if (!definition) continue;
     if (!isRecord(stored) || stored.format !== definition.format ||
-      (stored.origin !== "user_confirmed" &&
-        stored.origin !== "pending_setup_confirmed" &&
-        stored.origin !== "user_reviewed") ||
+      (definition.stage === 1
+        ? stored.origin !== "user_confirmed" &&
+          (stored.origin !== "pending_setup_confirmed" || key !== "business_context")
+        : stored.origin !== "user_reviewed") ||
       parseSectionValue(definition, stored.value) === null) {
       return null;
     }

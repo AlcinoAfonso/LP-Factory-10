@@ -42,6 +42,20 @@ assert.equal(projected.sections.audience?.origin, "user_reviewed");
 assert.equal("future_section" in projected.sections, false);
 assert.equal(projectCommunicationBase({
   account_id: "00000000-0000-4000-8000-000000000001",
+  version: 3,
+  sections_json: { ...evolved, audience: { format: "text", value: "Público", origin: "user_confirmed" } },
+  created_at: "2026-09-27T00:00:00Z",
+  updated_at: "2026-09-27T00:00:00Z",
+}), null, "stored stage 2 provenance must be rejected");
+assert.equal(projectCommunicationBase({
+  account_id: "00000000-0000-4000-8000-000000000001",
+  version: 3,
+  sections_json: { ...evolved, offers: { format: "items", value: ["Oferta"], origin: "pending_setup_confirmed" } },
+  created_at: "2026-09-27T00:00:00Z",
+  updated_at: "2026-09-27T00:00:00Z",
+}), null, "Pending Setup provenance applies only to business context");
+assert.equal(projectCommunicationBase({
+  account_id: "00000000-0000-4000-8000-000000000001",
   version: 0,
   sections_json: evolved,
   created_at: "2026-09-27T00:00:00Z",
