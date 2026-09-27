@@ -1,6 +1,6 @@
 0.1 Cabeçalho
-Data: 20/09/2026
-Versão: v1.32
+Data: 27/09/2026
+Versão: v1.33
 Status: Alinhado ao catálogo operacional vigente; Pending Setup E10.9 integrado ao workload de nicho
 
 0.2 Função do documento
@@ -197,22 +197,22 @@ Adapter OpenAI: `lib/onboarding/niche-resolution/adapters/openAiResolver.ts`
 Persistência operacional: `lib/onboarding/niche-resolution/adapters/accountNicheResolutionAdapter.ts`
 Decisão determinística: `lib/onboarding/niche-resolution/deterministicConfidence.ts`
 
-3.6 Apply automático de migrations no Supabase
+3.6 Apply versionado de migrations no Supabase
 
 Objetivo:
-Aplicar migrations versionadas do Supabase automaticamente após o merge autorizado para o modo vigente na `main`, substituindo o uso manual do SQL Editor para alterações de schema.
+Aplicar migrations versionadas do Supabase após merge e autorização, sem usar o SQL Editor para alterações de schema. O apply automático integral está suspenso durante o backlog E10.10.
 
 Status:
-Implementada e validada
+Implementada; fluxo integral suspenso e exceção manual E25.1 candidata no PR draft.
 
 Acesso:
 GitHub → Actions → workflow `pipeline-supabase-apply-migrations`
 
 Como usar:
-Criar migration em `supabase/migrations/<timestamp>_<nome>.sql`, validar no PR do plano e realizar o merge autorizado para o modo vigente conforme `AGENTS.md`. O push na `main` dispara o apply automático.
+Criar migration em `supabase/migrations/<timestamp>_<nome>.sql` e validar no PR do plano. Durante o backlog E10.10, o push na `main` não aplica automaticamente. Após merge e autorização operacional, somente a exceção manual E25.1 descrita em `docs/platform-config.md` pode aplicar as duas migrations E25 no escopo validado.
 
 Resumo de controle:
-A baseline oficial foi concluída, o histórico remoto foi alinhado e o smoke de criação/remoção foi validado. O gate `SUPABASE_APPLY_MIGRATIONS_ENABLED` permanece `true` no fluxo normal. O SQL Editor não faz parte do fluxo normal. Migration já aplicada não deve ser editada, apagada ou substituída; correções e reversões devem ser feitas por nova migration incremental.
+A baseline oficial foi concluída, o histórico remoto foi alinhado e o smoke de criação/remoção foi validado. O gate `SUPABASE_APPLY_MIGRATIONS_ENABLED` foi observado como `false` em 27/09/2026; permanece fechado fora da operação E25.1 autorizada. O fluxo integral não deve ser retomado até resolução separada de E10.10 ou revisão explícita do filtro canônico. Migration já aplicada não deve ser editada, apagada ou substituída; correções e reversões exigem nova migration incremental.
 
 Referências / dependências:
 `docs/base-tecnica.md`

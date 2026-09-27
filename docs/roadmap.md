@@ -1617,7 +1617,7 @@
 17.1.6 Pipelines operacionais
 - `pipeline-supabase-inspect` executa SQL read-only com saída em logs e Job Summary.
 - `pipeline-docs-apply-report` aplica report JSON em Markdown, cria branch e Pull Request e mantém revisão humana antes do merge.
-- `pipeline-supabase-apply-migrations` aplica migrations versionadas após o merge autorizado para o modo vigente na `main`, condicionado a `SUPABASE_APPLY_MIGRATIONS_ENABLED=true`.
+- `pipeline-supabase-apply-migrations` mantém o apply automático integral suspenso durante o backlog E10.10. Após merge e autorização operacional, somente a exceção manual E25.1 descrita em `docs/platform-config.md` pode aplicar as duas migrations E25 no escopo validado; o gate `SUPABASE_APPLY_MIGRATIONS_ENABLED` permanece fechado fora dessa operação.
 - Migration aplicada não é reescrita; correção ou reversão exige nova migration incremental.
 - SQL Editor não faz parte do fluxo normal de alteração de schema.
 
@@ -2964,3 +2964,4 @@
 25.1.5 Etapa 2 e inteligência de comunicação
 - Status: definido para implementação.
 - Conteúdo: a IA é o motor central da interpretação de sinais de mercado e da produção de conteúdo comunicacional editável usando somente os insumos confirmados pertinentes da Etapa 1. Usa pesquisa atual via Web Search quando atualidade ou localidade forem materiais para elaborar Quem somos, Público/contexto, Dores/desejos/crenças/objeções, Proposta de valor, Benefícios, Diferenciais e FAQ. Distinguir fato particular confirmado de hipótese estratégica; revisão e edição humanas permanecem disponíveis sem aprovação por chamada. Falha de pesquisa material não é substituída silenciosamente por conhecimento paramétrico; a Base não depende de vínculo persistente com a pesquisa. Este recorte não gera LP ou outro produto, não integra canais nem altera Pending Setup, jornada E10, comercial ou trial, e não introduz Agents SDK, multiagente, job, fila ou infraestrutura antecipada.
+- E25.1 não cria carteira, saldo, franquia ou bloqueio comercial de IA; o contrato transversal de créditos pertence ao Debate 10B.
