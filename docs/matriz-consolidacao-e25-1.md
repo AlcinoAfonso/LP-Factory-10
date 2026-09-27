@@ -13,7 +13,7 @@
 - Confronto estrutural de modernização: N/A; o único update aplicável agora tem impacto estrutural baixo e nenhum impacto funcional.
 - Gestor de Automações: `requer validação material pelo Analista`; sem patch de recomendação de IA por ausência de prova de custo incremental zero. A revisão delta do Analista resolve a distinção de autoridade: o gate rege recomendação de recurso candidato, enquanto IA e Web Search material já integram a V1, sem alegação de gratuidade.
 - Decisão humana superveniente de 27/09/2026 para PB-A: não implementar carteira, saldo, franquia ou bloqueio comercial de IA neste PR. E21 mantém a mensuração econômica; o dogfooding acumulará evidência observada de custo, frequência, qualidade e utilidade. O contrato transversal de créditos pertence ao Debate 10B.
-- Analista Passagem 1: `aprovado com correções obrigatórias` (cinco itens). Passagem 2: `requer nova rodada especializada`; revisão estrutural focal executada. Revisões delta anteriores e ABC do roadmap: `aprovado para merge do plano-base v2`; checkpoints de aprovação `7cc84b66` e `b3572b3d` preservados. A revisão delta do novo alcance E25.1.5 segue pendente; a implementação candidata ainda não recebeu checkpoint `LP-Factory-Phase`.
+- Analista Passagem 1: `aprovado com correções obrigatórias` (cinco itens). Passagem 2: `requer nova rodada especializada`; revisão estrutural focal executada. Revisões delta anteriores e ABC do roadmap: `aprovado para merge do plano-base v2`; checkpoints `7cc84b66` e `b3572b3d` preservados. A revisão delta do alcance E25.1.5 também foi `aprovado para merge do plano-base v2`, com checkpoint `de87d0aa`; a implementação candidata ainda não recebeu checkpoint `LP-Factory-Phase`.
 
 ## 2. Matriz
 
@@ -71,5 +71,5 @@ A classe `ampliação de escopo` em updates não adotados descreve o efeito que 
 ## 3. Pendências para auditoria
 
 - O plano anterior recebeu aprovação do mesmo Analista e o ABC de planejamento do roadmap foi aplicado; essas referências permanecem no histórico do PR.
-- A V2 candidata `6cdc9d650de558c31632730f3d68d6b53bf65efb` incorporou GE-E25-FI-01/02/03 e a fonte funcional superveniente; o mesmo Analista aprovou esse delta e o checkpoint `plan-v2-approved` vigente é `7cc84b66`. A revisão focal posterior GE-E25-AI01/02/03/04 amplia apenas o lifecycle E21 necessário à implementação de 25.1.3/.4/.5 e requer nova `revisao_delta` antes da implementação de IA.
-- A reconciliação focal anterior do roadmap foi aplicada e aprovada. O delta E21 atual exige verificar residência no roadmap via ABC após a nova aprovação; E25.1.3–.5 seguem sem checkpoint de implementação.
+- A V2 de E21 recebeu aprovação delta com checkpoint `b3572b3d`. O alcance geral/local da Etapa 2 foi incorporado na V2 candidata `0f2a1c51`, blobs `7aa99f9411774cf90f3a01009a59a7d6c401c118` e `c8e35cd34ea3dbf84f053eb132506ea3166dbfb2`, e aprovado pelo mesmo Analista no checkpoint `de87d0aa`.
+- A reconciliação focal anterior do roadmap foi aplicada e aprovada. O contrato offline, os controles indisponíveis da UI e os casos sintéticos do novo alcance estão no commit `79bddc26`; provider, QA visual/real e checkpoint de implementação permanecem pendentes dos gates respectivos.
