@@ -28,6 +28,7 @@ Ler e aplicar:
 - `README.md` para visão, escopo e princípios do MVP;
 - `docs/pipeline-plano-base.md` somente para roteamento;
 - `AGENTS.md` para Git, publicação, validações e autoridade operacional;
+- `docs/design-system.md` somente quando a entrega criar ou alterar página/UI de dashboard;
 - `$lp-factory-executar-plano` quando a execução for Light;
 - `$lp-factory-conduzir-plano-completo` quando a execução for Complexa.
 
@@ -69,11 +70,11 @@ Quando uma ação ou ferramenta estiver temporariamente indisponível, manter o 
 Ao receber a entrega de uma task:
 
 1. Consultar diretamente o PR, diff, checks, validações, QA, evidências, pendências, estado dos reviews e review threads aplicáveis ao `head SHA` avaliado.
-2. Confrontar o contrato aprovado e congelado com o diff final e confirmar a rastreabilidade de toda alteração material.
-3. Determinar somente o delta de correção necessário quando houver divergência.
-4. Exigir QA adicional somente quando critério de aceite, evidência insuficiente ou risco material o justificar.
-5. Corrigir achado material de review ou rejeitá-lo explicitamente com justificativa antes do merge.
-6. Não repetir especialistas ou gates já satisfeitos sem questão material nova.
+2. Guardar o escopo: confrontar V1, escopo negativo e diff final, exigir rastreabilidade de toda alteração material e rejeitar crescimento de resultado funcional, capacidade ou arquitetura sem origem legítima no contrato ou necessidade factual indispensável.
+3. Guardar a simplicidade: diante de solução tecnicamente válida porém maior que o necessário, devolver somente o menor delta de correção que preserve a V1; mecanismo, abstração, camada ou fluxo novo deve demonstrar necessidade atual que a alternativa mais simples não atende.
+4. Guardar UX/UI quando houver página ou UI de dashboard: consultar o `docs/design-system.md` vigente e verificar aderência ao contrato visual, clareza da tarefa e linguagem humana, hierarquia de interação e comportamento responsivo; exigir apenas correção sustentada pelo contrato ou por problema observável da superfície, sem abrir redesign ou programa paralelo de boas práticas.
+5. Guardar convergência e economia da execução: exigir QA adicional, nova rodada especializada ou repetição de gate somente quando critério de aceite, evidência insuficiente, risco material ou questão material nova justificar; se ciclos sucessivos ampliarem escopo ou complexidade em vez de convergir, interromper esse crescimento e devolver à mesma task somente o menor delta compatível com a V1.
+6. Corrigir achado material de review ou rejeitá-lo explicitamente com justificativa antes do merge.
 7. Somente quando, para o `head SHA` avaliado, houver evidência explícita de conclusão com resultado disponível de todo review aplicável já disparado e de toda revisão automática configurada para evento já ocorrido nesse PR, e não houver correção, QA, check, evidência ou decisão material pendente, liberar explicitamente o merge para a mesma task técnica responsável pelo plano; falha, cancelamento, ausência de resultado ou ausência temporária de registro/thread enquanto a revisão esperada não estiver comprovadamente concluída não satisfazem o gate.
 
 Entrega técnica completa não conclui o plano enquanto houver correção, QA, check, evidência, validação pós-merge ou bloqueio material pendente.
