@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { requireCommunicationBaseAccess } from "../../../../lib/communication-base/access";
-import { readCommunicationBase } from "../../../../lib/communication-base/adapters/communicationBaseAdapter";
+import { readCommunicationBase, readPendingSetupBusinessContext } from "../../../../lib/communication-base/adapters/communicationBaseAdapter";
 import { communicationSections } from "../../../../lib/communication-base/registry";
 import { CommunicationSectionEditor, StartCommunicationBaseForm } from "./CommunicationSectionEditor";
 
@@ -27,6 +27,9 @@ export default async function CommunicationBasePage({ params }: PageProps) {
 
   const result = await readCommunicationBase(access.value.accountId);
   const base = result.ok ? result.value : null;
+  const pendingSetupCandidate = result.ok && !base && access.value.canEdit
+    ? await readPendingSetupBusinessContext(access.value.accountId)
+    : null;
 
   return (
     <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-10">
@@ -49,7 +52,11 @@ export default async function CommunicationBasePage({ params }: PageProps) {
           </p>
         ) : !base ? (
           access.value.canEdit ? (
-            <StartCommunicationBaseForm account={access.value.accountSubdomain} />
+            <StartCommunicationBaseForm
+              account={access.value.accountSubdomain}
+              candidate={pendingSetupCandidate?.ok ? pendingSetupCandidate.value : null}
+              candidateReadFailed={pendingSetupCandidate !== null && !pendingSetupCandidate.ok}
+            />
           ) : (
             <p role="status" className="text-sm text-muted-foreground">
               A Base ainda não foi iniciada por um membro com permissão de edição.

@@ -5,9 +5,10 @@ import { revalidatePath } from "next/cache";
 import { requireCommunicationBaseAccess } from "../../../../lib/communication-base/access";
 import {
   createCommunicationBase,
+  readPendingSetupBusinessContext,
   saveCommunicationSection,
 } from "../../../../lib/communication-base/adapters/communicationBaseAdapter";
-import { parseSectionValue } from "../../../../lib/communication-base/policy";
+import { parseSectionValue, withSection } from "../../../../lib/communication-base/policy";
 import { getCommunicationSection } from "../../../../lib/communication-base/registry";
 import type { CommunicationSectionValue } from "../../../../lib/communication-base/contracts";
 
@@ -26,7 +27,18 @@ export async function startCommunicationBaseAction(
   const access = await requireCommunicationBaseAccess(account, true);
   if (!access.ok) return failure(UNAVAILABLE);
 
-  const result = await createCommunicationBase(access.value.accountId);
+  let initialSections: Record<string, unknown> = {};
+  if (formData.get("import_pending_setup") === "on") {
+    const candidate = await readPendingSetupBusinessContext(access.value.accountId);
+    if (!candidate.ok || !candidate.value) {
+      return failure("Não foi possível confirmar o contexto anterior. Atualize a página ou inicie sem importar.");
+    }
+    const imported = withSection({}, "business_context", candidate.value, "pending_setup_confirmed");
+    if (!imported) return failure("Não foi possível validar o contexto anterior.");
+    initialSections = imported;
+  }
+
+  const result = await createCommunicationBase(access.value.accountId, initialSections);
   if (!result.ok) return failure(errorMessage(result.error));
   revalidatePath(`/a/${access.value.accountSubdomain}/base-comunicacao`);
   return { status: "saved", message: "Base iniciada. Você pode preencher cada seção no seu ritmo." };

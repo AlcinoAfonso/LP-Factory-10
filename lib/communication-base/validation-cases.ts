@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { communicationSections, getCommunicationSection } from "./registry";
 import { resolveCommunicationBaseAccess, type CommunicationBaseAccessDependencies } from "./access-policy";
 import { parseSectionValue, projectCommunicationBase, withSection } from "./policy";
+import { selectPendingSetupBusinessContext } from "./pending-setup-import";
 
 const keys = communicationSections.map((section) => section.key);
 assert.equal(new Set(keys).size, keys.length, "section keys must be unique");
@@ -17,6 +18,19 @@ assert.equal(parseSectionValue(business, "  Atuo em Recife.  "), "Atuo em Recife
 assert.equal(parseSectionValue(business, "x".repeat(4001)), null);
 assert.equal(parseSectionValue(faq, [{ question: "Quem atende?", answer: "" }]), null);
 
+const completedConversation = {
+  stage: "completed",
+  completed_at: "2026-09-27T12:00:00Z",
+  business_context_text: "Atuo com consultoria em Recife.",
+};
+assert.equal(selectPendingSetupBusinessContext([completedConversation]), completedConversation.business_context_text);
+assert.equal(selectPendingSetupBusinessContext([]), null);
+assert.equal(selectPendingSetupBusinessContext([completedConversation, completedConversation]), null,
+  "more than one completed conversation is ambiguous");
+assert.equal(selectPendingSetupBusinessContext([{ ...completedConversation, stage: "in_progress" }]), null);
+assert.equal(selectPendingSetupBusinessContext([{ ...completedConversation, completed_at: "invalid" }]), null);
+assert.equal(selectPendingSetupBusinessContext([{ ...completedConversation, business_context_text: "  " }]), null);
+assert.equal(selectPendingSetupBusinessContext([{ ...completedConversation, business_context_text: "x".repeat(4001) }]), null);
 const future = { future_section: { format: "text", value: "Preservar", origin: "user_confirmed" } };
 const initial = withSection(future, "business_context", "Consultoria", "pending_setup_confirmed");
 assert.ok(initial);

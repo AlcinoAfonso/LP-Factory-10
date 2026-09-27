@@ -8,6 +8,7 @@ import type {
   CommunicationSection,
   CommunicationSectionValue,
 } from "../contracts";
+import { selectPendingSetupBusinessContext } from "../pending-setup-import";
 import {
   parseStoredSections,
   projectCommunicationBase,
@@ -40,6 +41,25 @@ export async function readCommunicationBase(
     if (!data) return { ok: true, value: null };
     const base = projectCommunicationBase(data as BaseRow);
     return base ? { ok: true, value: base } : { ok: false, error: "read_failed" };
+  } catch {
+    return { ok: false, error: "read_failed" };
+  }
+}
+
+export async function readPendingSetupBusinessContext(
+  accountId: string,
+): Promise<CommunicationBaseResult<string | null>> {
+  if (!accountId) return { ok: false, error: "invalid" };
+  try {
+    const { data, error } = await createServiceClient()
+      .from("account_pending_setup_conversations")
+      .select("business_context_text,stage,completed_at")
+      .eq("account_id", accountId)
+      .eq("stage", "completed")
+      .not("completed_at", "is", null)
+      .limit(2);
+    if (error) return { ok: false, error: "read_failed" };
+    return { ok: true, value: selectPendingSetupBusinessContext(data) };
   } catch {
     return { ok: false, error: "read_failed" };
   }
