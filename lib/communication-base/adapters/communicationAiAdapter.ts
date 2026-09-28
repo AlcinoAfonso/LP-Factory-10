@@ -50,7 +50,7 @@ export async function assistCommunicationSection(input: Readonly<{
     executionOrigin: input.executionOrigin ?? "runtime",
     baselineReference: `e25_1_stage1_${input.key}`,
     request: responseRequest(prompt, 2_500, input.accountId),
-    parseResponse: parseStageOneResponse,
+    parseResponse: (payload) => parseStageOneResponse(payload, input.key),
   });
   return result.ok ? { ok: true as const, value: result.value, responseId: result.responseId, latencyMs: result.latencyMs }
     : { ok: false as const, reason: "unavailable" as const };

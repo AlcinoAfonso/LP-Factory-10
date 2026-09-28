@@ -1,5 +1,6 @@
 import { communicationSections, getCommunicationSection, type CommunicationSectionKey } from "./registry";
 import { parseSectionValue } from "./policy";
+import { parseEditorValue } from "./editor-value";
 import type { CommunicationBase, CommunicationSectionValue } from "./contracts";
 
 export const COMMUNICATION_AI_PROMPT_VERSION = "e25_1_v3";
@@ -162,14 +163,17 @@ export function stageTwoPrompt(base: CommunicationBase, target: StageTwoTarget, 
   };
 }
 
-export function parseStageOneResponse(payload: unknown) {
+export function parseStageOneResponse(payload: unknown, key: string) {
+  const section = getCommunicationSection(key);
+  if (!section || section.stage !== 1) return invalid("invalid_stage_one_output");
   const extracted = extractOutput(payload);
   if (!extracted.ok) return extracted;
   if (extracted.webCalls.length) return invalid("unexpected_web_search");
   const parsed = parseJsonObject(extracted.text);
   const suggestion = typeof parsed?.suggestion === "string" ? parsed.suggestion.trim() : null;
   const missingQuestion = typeof parsed?.missing_question === "string" ? parsed.missing_question.trim() : null;
-  if (suggestion === null || suggestion.length > 4000 || missingQuestion === null || missingQuestion.length > 400) {
+  if (suggestion === null || parseSectionValue(section, parseEditorValue(section.format, suggestion)) === null ||
+    missingQuestion === null || missingQuestion.length > 400) {
     return invalid("invalid_stage_one_output");
   }
   return { ok: true as const, value: { suggestion, missingQuestion }, telemetry: { webSearchCallCount: 0, webSearchSourceCount: 0 } };

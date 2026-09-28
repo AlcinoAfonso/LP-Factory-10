@@ -160,11 +160,28 @@ assert.ok(stageOnePrompt("business_context", "Produzimos molho secreto artesanal
   "ordinary business language must remain eligible");
 assert.equal(parseStageOneResponse({ output_text: JSON.stringify({
   suggestion: "Consultoria para pequenas empresas em Recife.", missing_question: "",
-}) }).ok, true);
+}) }, "business_context").ok, true);
 assert.equal(parseStageOneResponse({ output_text: JSON.stringify({
   suggestion: "Sugestão", missing_question: "",
-}), output: [{ type: "web_search_call", status: "completed" }] }).ok, false,
+}), output: [{ type: "web_search_call", status: "completed" }] }, "business_context").ok, false,
 "stage 1 must reject any web search call");
+for (const key of ["offers", "proof", "materials"]) {
+  const response = (suggestion: string) => parseStageOneResponse({ output_text: JSON.stringify({
+    suggestion, missing_question: "",
+  }) }, key);
+  assert.equal(response(Array.from({ length: 20 }, () => "a".repeat(400)).join("\n")).ok, true,
+    `${key} must accept the largest savable item list`);
+  assert.equal(response(Array.from({ length: 21 }, () => "item").join("\n")).ok, false,
+    `${key} must reject more than 20 item lines`);
+  assert.equal(response("a".repeat(401)).ok, false,
+    `${key} must reject an item exceeding the save limit`);
+}
+assert.equal(parseStageOneResponse({ output_text: JSON.stringify({
+  suggestion: "a".repeat(4001), missing_question: "",
+}) }, "business_context").ok, false, "text suggestions must follow the save limit");
+assert.equal(parseStageOneResponse({ output_text: JSON.stringify({
+  suggestion: "item", missing_question: "",
+}) }, "audience").ok, false, "stage 2 keys must not be accepted for stage 1");
 
 const generalTarget = { kind: "general" } as const;
 const emptySections = withSection(withSection({}, "business_name", "   ", "user_confirmed")!,
