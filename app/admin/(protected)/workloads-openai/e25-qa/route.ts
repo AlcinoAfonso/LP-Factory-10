@@ -84,10 +84,30 @@ export async function GET() {
   if (!(await allowed())) return new Response("Indisponível", { status: 404 });
   const forms = (Object.keys(candidates) as Candidate[]).map((candidate) =>
     Object.entries(cases).map(([id, testCase]) =>
-      `<form method="post" target="qa_result"><input type="hidden" name="candidate" value="${candidate}"><input type="hidden" name="case" value="${id}"><button type="submit">${candidate.toUpperCase()} · ${testCase.label}</button></form>`,
+      `<form method="post"><input type="hidden" name="candidate" value="${candidate}"><input type="hidden" name="case" value="${id}"><button type="submit">${candidate.toUpperCase()} · ${testCase.label}</button></form>`,
     ).join("\n"),
   ).join("\n");
-  return new Response(`<!doctype html><html lang="pt-BR"><meta charset="utf-8"><title>QA E25.1 isolada</title><main><h1>QA E25.1 isolada</h1><p>Uma operação por envio. Execute Luna antes de Sol. Sem promoção nem persistência da resposta.</p>${forms}<iframe name="qa_result" title="Resultado da operação" style="width:100%;height:70vh"></iframe></main></html>`, {
+  return new Response(`<!doctype html><html lang="pt-BR"><meta charset="utf-8"><title>QA E25.1 isolada</title><main><h1>QA E25.1 isolada</h1><p>Uma operação por envio. Execute Luna antes de Sol. Sem promoção nem persistência da resposta.</p>${forms}<p id="qa_status" role="status">Pronto</p><pre id="qa_result"></pre></main><script>
+document.querySelectorAll('form').forEach(form => form.addEventListener('submit', async event => {
+  event.preventDefault();
+  const buttons = document.querySelectorAll('button');
+  buttons.forEach(button => button.disabled = true);
+  const status = document.getElementById('qa_status');
+  const result = document.getElementById('qa_result');
+  status.textContent = 'Executando ' + form.querySelector('button').textContent;
+  result.textContent = '';
+  try {
+    const response = await fetch(location.pathname, { method: 'POST', body: new FormData(form), credentials: 'same-origin' });
+    result.textContent = await response.text();
+    status.textContent = 'Concluído HTTP ' + response.status;
+  } catch (error) {
+    status.textContent = 'Falha de transporte';
+    result.textContent = String(error);
+  } finally {
+    buttons.forEach(button => button.disabled = false);
+  }
+}));
+</script></html>`, {
     headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" },
   });
 }
