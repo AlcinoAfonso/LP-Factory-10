@@ -1073,14 +1073,14 @@
 
 10.11.1 Objetivo e status
 - Objetivo: garantir nome público explícito e reaproveitamento inicial do contexto confirmado, preservando o comercial para contas sem autorização e encaminhando contas autorizadas diretamente à Base sem exigir taxon oficial.
-- Status: implementado no repositório sob gate desligado por padrão; prova SQL efêmera, QA autenticado e apply seletivo pós-merge permanecem pendentes. PB-C mantém a retirada terminal de E10.10.
+- Status: implementado no repositório sob gate desligado por padrão; prova SQL focal efêmera aprovada no PR #982 (run 36455776590). QA autenticado e apply seletivo pós-merge permanecem pendentes. PB-C mantém a retirada terminal de E10.10.
 
 10.11.2 Registros do recorte
 - Banco:
   - Ajustados: `public.account_pending_setup_conversations`.
   - Criados: `set_account_pending_setup_business_name_v1`, `complete_account_pending_setup_v2`.
 - Repositório:
-  - Criados: `supabase/migrations/20260928161504_e10_11_pending_setup_business_name.sql`, `supabase/tests/e10_11_pending_setup_business_name.test.sql`, `lib/onboarding/pending-setup/config.ts`.
+  - Criados: `supabase/migrations/20260928161504_e10_11_pending_setup_business_name.sql`, `supabase/tests/e10_11_pending_setup_business_name.test.sql`, `.github/workflows/e10-11-sql-proof.yml`, `lib/onboarding/pending-setup/config.ts`.
   - Ajustados: `.github/workflows/pipeline-supabase-apply-migrations.yml`, `lib/onboarding/pending-setup/`, `lib/communication-base/`, `app/a/[account]/`.
 - Referências:
   - Plano aprovado: `docs/lousa-plano-base-e10-11.md` — V1 e V2.
@@ -1088,7 +1088,7 @@
   - Configuração operacional: `docs/platform-config.md` — seções 2.3 e gate E10.11.
 
 10.11.3 Nome público e contexto de saída
-- Status: implementado no repositório; prova SQL hospedada pendente.
+- Status: implementado no repositório; prova SQL focal aprovada em PostgreSQL isolado no GitHub Actions, com casos positivos e negativos e `ROLLBACK`. A cadeia histórica integral não foi reproduzida no runner por conter gates de dados hospedados de outras etapas.
 - Conteúdo: coletar nome público ausente na conclusão da conversa sem confundi-lo com nome preferido, razão social ou nome da conta. Copiar nome confirmado de uma única conversa concluída ao iniciar a Base e contexto confirmado somente com consentimento; conversas históricas sem nome deixam a seção editável e vazia. A Base não sincroniza edições de volta.
 
 10.11.4 Gate e encaminhamento
@@ -1096,7 +1096,7 @@
 - Conteúdo: conta autorizada segue diretamente à Base, inclusive por liberação manual E9.2 e sem taxon oficial. Conta sem autorização conserva comercial E10.6/E10.7, papéis e ações financeiras vigentes. Falha de leitura de entitlement ou taxon exigido bloqueia a decisão. A rota ativa não encaminha ao onboarding factual E10.10 após o cutover.
 
 10.11.5 Continuidade e regressão
-- Status: `npm run check` aprovado; prova SQL efêmera, QA desktop/mobile e cutover hospedado pendentes.
+- Status: `npm run check` e prova SQL focal efêmera aprovados; QA desktop/mobile e cutover hospedado pendentes.
 - Conteúdo: manter matching e fallback de nicho, checkout, membership e entitlement intactos. Aplicar somente a migration E10.11 pelo escopo seletivo após merge autorizado; as migrations E10.10 continuam fora do apply e o fluxo automático integral permanece suspenso.
 
 11. E11 — Gestão de membros e autoridade comercial
