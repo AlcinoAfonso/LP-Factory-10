@@ -9,6 +9,7 @@ import { hasStageTwoContent, type WebSource } from "../../../../lib/communicatio
 import { selectStageTwoSectionPresentation, type LocalStageTwoResult } from "../../../../lib/communication-base/stage-two-presentation";
 import { communicationSections, type CommunicationSectionKey } from "../../../../lib/communication-base/registry";
 import type { CommunicationSectionDefinition } from "../../../../lib/communication-base/registry";
+import { formatEditorValue } from "../../../../lib/communication-base/editor-value";
 import {
   saveCommunicationSectionAction,
   startCommunicationBaseAction,
@@ -162,7 +163,7 @@ export function CommunicationSectionEditor(props: Readonly<{
           </button>
           {missingQuestion ? <p className="mt-3 text-sm">Informação a confirmar: {missingQuestion}</p> : null}
           {localSuggestion !== null ? <Suggestion value={localSuggestion} format={definition.format}
-            onUse={() => setDraft(valueText(localSuggestion, definition.format))} /> : null}
+            onUse={() => setDraft(formatEditorValue(localSuggestion, definition.format))} /> : null}
           {aiMessage ? <p role="alert" className="mt-2 text-sm text-state-error">{aiMessage}</p> : null}
         </div>
       ) : (
@@ -199,7 +200,7 @@ export function CommunicationSectionEditor(props: Readonly<{
             {aiPending ? "Preparando sugestão..." : "Revisar esta seção com IA"}
           </button>
           {stageTwoSuggestedValue !== null ? <Suggestion value={stageTwoSuggestedValue} format={definition.format}
-            onUse={() => setDraft(valueText(stageTwoSuggestedValue, definition.format))} /> : null}
+            onUse={() => setDraft(formatEditorValue(stageTwoSuggestedValue, definition.format))} /> : null}
           <Sources sources={stageTwoPresentation.sources} />
           {aiMessage ? <p role="alert" className="mt-2 text-sm text-state-error">{aiMessage}</p> : null}
         </div>
@@ -282,8 +283,8 @@ function Suggestion({ value, format, onUse }: Readonly<{
 }>) {
   return <div className="mt-3 rounded-lg border border-border bg-surface-50 p-3">
     <p className="text-xs font-semibold">Sugestão da IA para revisar</p>
-    <p className="mt-2 whitespace-pre-wrap text-sm">{valueText(value, format) || "Sem conteúdo suficiente para sugerir."}</p>
-    {valueText(value, format).trim() ? <button type="button" onClick={onUse}
+    <p className="mt-2 whitespace-pre-wrap text-sm">{formatEditorValue(value, format) || "Sem conteúdo suficiente para sugerir."}</p>
+    {formatEditorValue(value, format).trim() ? <button type="button" onClick={onUse}
       className="mt-3 inline-flex min-h-11 items-center rounded-lg border border-border px-4 text-sm font-semibold">
       Usar no editor
     </button> : null}
@@ -323,15 +324,5 @@ function ActionFeedback({ state }: Readonly<{ state: CommunicationActionState }>
 
 function editorText(section: CommunicationSection | undefined): string {
   if (!section) return "";
-  return valueText(section.value, section.format);
-}
-
-function valueText(value: CommunicationSectionValue, format: CommunicationSectionDefinition["format"]): string {
-  if (typeof value === "string") return value;
-  if (format === "items") return Array.isArray(value) ? value.join("\n") : "";
-  return Array.isArray(value)
-    ? value.map((item) => typeof item === "object" && item !== null && "question" in item
-      ? `${item.question} | ${item.answer}`
-      : "").join("\n")
-    : "";
+  return formatEditorValue(section.value, section.format);
 }

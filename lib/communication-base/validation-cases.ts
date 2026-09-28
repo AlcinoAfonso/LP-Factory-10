@@ -6,6 +6,7 @@ import { parseSectionValue, projectCommunicationBase, withSection } from "./poli
 import { selectPendingSetupBusinessContext } from "./pending-setup-import";
 import { hasConfirmedStageOneInput, hasStageTwoContent, parseStageOneResponse, parseStageTwoResponse, stageOnePrompt, stageTwoPrompt } from "./ai-core";
 import { selectStageTwoSectionPresentation } from "./stage-two-presentation";
+import { formatEditorValue, parseEditorValue } from "./editor-value";
 import { requestOpenAiResponses } from "../conversion-content/adapters/openAiResponsesAdapter";
 import { calculateOpenAiOperationCost, type OpenAiCostOperationTerminal, type OpenAiCostRecorder } from "../openai-costs";
 import { resolveOpenAiProductWorkload } from "../openai-workloads";
@@ -22,6 +23,22 @@ assert.ok(business && audience && faq);
 assert.equal(parseSectionValue(business, "  Atuo em Recife.  "), "Atuo em Recife.");
 assert.equal(parseSectionValue(business, "x".repeat(4001)), null);
 assert.equal(parseSectionValue(faq, [{ question: "Quem atende?", answer: "" }]), null);
+const marketInsights = getCommunicationSection("market_insights");
+assert.ok(marketInsights);
+const itemEditorText = formatEditorValue(["Primeira linha\ncontinuação", "Segundo item"], "items");
+assert.equal(itemEditorText, "Primeira linha continuação\nSegundo item");
+assert.deepEqual(parseSectionValue(marketInsights, parseEditorValue("items", itemEditorText)),
+  ["Primeira linha continuação", "Segundo item"], "one AI item must not become two editor items");
+const faqEditorText = formatEditorValue([
+  { question: "Pergunta\ncontinuação | detalhe?", answer: "Resposta\r\ncontinuação" },
+  { question: "Outra pergunta?", answer: "Outra resposta." },
+], "faq");
+assert.equal(faqEditorText, "Pergunta continuação / detalhe? | Resposta continuação\nOutra pergunta? | Outra resposta.");
+assert.deepEqual(parseSectionValue(faq, parseEditorValue("faq", faqEditorText)), [
+  { question: "Pergunta continuação / detalhe?", answer: "Resposta continuação" },
+  { question: "Outra pergunta?", answer: "Outra resposta." },
+], "FAQ line breaks and a question delimiter must not create an incomplete row");
+assert.equal(formatEditorValue("Texto\ncom parágrafo", "text"), "Texto\ncom parágrafo");
 
 const completedConversation = {
   stage: "completed",

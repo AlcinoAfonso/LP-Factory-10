@@ -87,7 +87,8 @@ export default async function CommunicationBasePage({ params }: PageProps) {
                   ))}
                 </div>
             </section>
-            <CommunicationStageTwo account={access.value.accountSubdomain} base={base} canEdit={access.value.canEdit} />
+            <CommunicationStageTwo key={base.version} account={access.value.accountSubdomain}
+              base={base} canEdit={access.value.canEdit} />
           </div>
         )}
       </div>

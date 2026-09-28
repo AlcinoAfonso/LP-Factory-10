@@ -11,9 +11,9 @@ import {
   saveCommunicationSection,
 } from "../../../../lib/communication-base/adapters/communicationBaseAdapter";
 import { parseSectionValue, withSection } from "../../../../lib/communication-base/policy";
+import { parseEditorValue } from "../../../../lib/communication-base/editor-value";
 import { getCommunicationSection } from "../../../../lib/communication-base/registry";
 import { hasConfirmedStageOneInput, type StageTwoDraft, type StageTwoTarget } from "../../../../lib/communication-base/ai-core";
-import type { CommunicationSectionValue } from "../../../../lib/communication-base/contracts";
 
 export type CommunicationActionState = Readonly<{
   status: "idle" | "saved" | "error";
@@ -146,20 +146,6 @@ export async function generateCommunicationIntelligenceAction(input: Readonly<{
   return result.ok
     ? { ok: true, draft: result.value }
     : { ok: false, message: "Não foi possível concluir a geração. Seus textos salvos continuam disponíveis." };
-}
-
-function parseEditorValue(
-  format: "text" | "items" | "faq",
-  raw: string,
-): CommunicationSectionValue {
-  if (format === "text") return raw;
-  if (format === "items") return raw.split(/\r?\n/);
-  return raw.split(/\r?\n/).filter((line) => line.trim()).map((line) => {
-    const separator = line.indexOf("|");
-    return separator < 0
-      ? { question: line.trim(), answer: "" }
-      : { question: line.slice(0, separator).trim(), answer: line.slice(separator + 1).trim() };
-  });
 }
 
 function readFormString(formData: FormData, key: string): string {
