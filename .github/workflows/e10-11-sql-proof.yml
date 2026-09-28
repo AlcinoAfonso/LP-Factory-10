@@ -77,7 +77,17 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          supabase --workdir "${{ steps.stage.outputs.project }}" start \
+          stage_project="${{ steps.stage.outputs.project }}"
+          deferred="$RUNNER_TEMP/e10-11-deferred-migrations"
+          mkdir -p "$deferred"
+          for staged_file in "$stage_project"/supabase/migrations/*.sql; do
+            name="${staged_file##*/}"
+            if [[ "$name" > "20260621194501_e10_7_normalize_lite_plan_name.sql" ]]; then
+              mv "$staged_file" "$deferred/$name"
+            fi
+          done
+          test "$(find "$stage_project/supabase/migrations" -maxdepth 1 -type f -name '*.sql' | wc -l)" -eq 11
+          supabase --workdir "$stage_project" start \
             -x gotrue,realtime,storage-api,imgproxy,kong,mailpit,postgrest,postgres-meta,studio,edge-runtime,logflare,vector,supavisor \
             > "$RUNNER_TEMP/e10-11-supabase-start.log" 2>&1 || {
               last_migration_line="$(grep -n 'Applying migration ' "$RUNNER_TEMP/e10-11-supabase-start.log" | tail -n 1 | cut -d: -f1 || true)"
@@ -86,6 +96,34 @@ jobs:
                   "$RUNNER_TEMP/e10-11-supabase-start.log"
               else
                 sed -n '1,25p' "$RUNNER_TEMP/e10-11-supabase-start.log"
+              fi | sed -E '/(SERVICE_ROLE|ANON_KEY|SECRET_KEY|JWT_SECRET|DB_PASSWORD|DATABASE_URL|PUBLISHABLE_KEY)/Id'
+              exit 1
+            }
+          mapfile -t db_containers < <(docker ps --format '{{.Names}}' | grep '^supabase_db_' || true)
+          test "${#db_containers[@]}" -eq 1
+          db_container="${db_containers[0]}"
+          docker exec -i "$db_container" psql -U postgres -d postgres -v ON_ERROR_STOP=1 \
+            <<'SQL'
+          insert into public.business_taxons (id, parent_id, level, name, slug, is_active)
+          values (
+            'e1011000-0000-4000-8000-000000000001',
+            null,
+            'segment',
+            'Corretor de imóveis de médio padrão',
+            'corretor-de-imoveis-de-medio-padrao',
+            true
+          );
+          SQL
+          mv "$deferred"/*.sql "$stage_project/supabase/migrations/"
+          test "$(find "$stage_project/supabase/migrations" -maxdepth 1 -type f -name '*.sql' | wc -l)" -eq 59
+          supabase --workdir "$stage_project" migration up --local \
+            > "$RUNNER_TEMP/e10-11-migration-up.log" 2>&1 || {
+              last_migration_line="$(grep -n 'Applying migration ' "$RUNNER_TEMP/e10-11-migration-up.log" | tail -n 1 | cut -d: -f1 || true)"
+              if [ -n "$last_migration_line" ]; then
+                sed -n "${last_migration_line},$((last_migration_line + 20))p" \
+                  "$RUNNER_TEMP/e10-11-migration-up.log"
+              else
+                sed -n '1,25p' "$RUNNER_TEMP/e10-11-migration-up.log"
               fi | sed -E '/(SERVICE_ROLE|ANON_KEY|SECRET_KEY|JWT_SECRET|DB_PASSWORD|DATABASE_URL|PUBLISHABLE_KEY)/Id'
               exit 1
             }
