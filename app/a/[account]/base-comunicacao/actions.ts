@@ -14,6 +14,7 @@ import { parseSectionValue, withSection } from "../../../../lib/communication-ba
 import { parseEditorValue } from "../../../../lib/communication-base/editor-value";
 import { getCommunicationSection } from "../../../../lib/communication-base/registry";
 import { hasConfirmedStageOneInput, type StageTwoDraft, type StageTwoTarget } from "../../../../lib/communication-base/ai-core";
+import { isCurrentGenerationVersion } from "../../../../lib/communication-base/generation-guard";
 
 export type CommunicationActionState = Readonly<{
   status: "idle" | "saved" | "error";
@@ -143,9 +144,14 @@ export async function generateCommunicationIntelligenceAction(input: Readonly<{
     target: input.target,
     requiresCurrentResearch: input.requiresCurrentResearch,
   });
-  return result.ok
-    ? { ok: true, draft: result.value }
-    : { ok: false, message: "Não foi possível concluir a geração. Seus textos salvos continuam disponíveis." };
+  if (!result.ok) {
+    return { ok: false, message: "Não foi possível concluir a geração. Seus textos salvos continuam disponíveis." };
+  }
+  const latest = await readCommunicationBase(access.value.accountId);
+  if (!latest.ok || !latest.value || !isCurrentGenerationVersion(input.version, latest.value.version)) {
+    return { ok: false, message: "A Base mudou. Atualize a página antes de gerar sugestões." };
+  }
+  return { ok: true, draft: result.value };
 }
 
 function readFormString(formData: FormData, key: string): string {

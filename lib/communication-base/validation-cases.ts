@@ -8,6 +8,7 @@ import { hasConfirmedStageOneInput, hasStageTwoContent, parseStageOneResponse, p
 import { selectStageTwoSectionPresentation, stageTwoBasisLabel } from "./stage-two-presentation";
 import { sectionStateKey, stageOneStateKey } from "./ui-state-keys";
 import { formatEditorValue, parseEditorValue } from "./editor-value";
+import { canInstallGeneralSuggestion, canStartGeneralGeneration, isCurrentGenerationVersion } from "./generation-guard";
 import { requestOpenAiResponses } from "../conversion-content/adapters/openAiResponsesAdapter";
 import { calculateOpenAiOperationCost, type OpenAiCostOperationTerminal, type OpenAiCostRecorder } from "../openai-costs";
 import { resolveOpenAiProductWorkload } from "../openai-workloads";
@@ -87,6 +88,18 @@ const stageTwoSecondSave = { ...stageTwoFirstSave, version: projected.version + 
 assert.equal(stageOneStateKey(stageTwoFirstSave), stageOneKey);
 assert.equal(stageOneStateKey(stageTwoSecondSave), stageOneKey,
   "sequential stage 2 saves must preserve the general suggestion batch");
+assert.equal(isCurrentGenerationVersion(projected.version, stageTwoFirstSave.version), false,
+  "the server must discard a provider result after a concurrent save");
+assert.equal(canInstallGeneralSuggestion(projected.version, projected.version, 0, 1), false,
+  "a save started while generation is in flight must discard its older result");
+assert.equal(canStartGeneralGeneration(1), false,
+  "a generation must not start while a stage 2 save is already in flight");
+assert.equal(canStartGeneralGeneration(0), true,
+  "a completed sequential save must not block a later generation");
+assert.equal(canInstallGeneralSuggestion(projected.version, stageTwoFirstSave.version, 0, 0), false,
+  "a refreshed version must discard the older result before installation");
+assert.equal(canInstallGeneralSuggestion(projected.version, projected.version, 0, 0), true,
+  "an unchanged request remains installable before later sequential saves");
 assert.equal(sectionStateKey(projected.sections.audience), sectionStateKey(stageTwoFirstSave.sections.audience),
   "saving another stage 2 section must preserve this editor's unsaved draft");
 assert.notEqual(sectionStateKey(stageTwoFirstSave.sections.audience), sectionStateKey(stageTwoSecondSave.sections.audience),

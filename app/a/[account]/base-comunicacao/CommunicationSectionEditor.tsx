@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useState, useTransition } from "react";
+import { useActionState, useEffect, useLayoutEffect, useRef, useState, useTransition } from "react";
 import { useFormStatus } from "react-dom";
 import { useRouter } from "next/navigation";
 
@@ -10,6 +10,7 @@ import { selectStageTwoSectionPresentation, stageTwoBasisLabel, type LocalStageT
 import { communicationSections, type CommunicationSectionKey } from "../../../../lib/communication-base/registry";
 import type { CommunicationSectionDefinition } from "../../../../lib/communication-base/registry";
 import { formatEditorValue } from "../../../../lib/communication-base/editor-value";
+import { canInstallGeneralSuggestion, canStartGeneralGeneration } from "../../../../lib/communication-base/generation-guard";
 import {
   saveCommunicationSectionAction,
   startCommunicationBaseAction,
@@ -77,9 +78,14 @@ export function CommunicationSectionEditor(props: Readonly<{
   canEdit: boolean;
   suggestedSuggestion?: CommunicationSuggestion;
   generalRevision?: number;
+  onStageTwoSaveStarted?: () => void;
+  onStageTwoSaveFinished?: () => void;
 }>) {
-  const { account, version, definition, current, canEdit, suggestedSuggestion, generalRevision = 0 } = props;
+  const { account, version, definition, current, canEdit, suggestedSuggestion, generalRevision = 0,
+    onStageTwoSaveStarted, onStageTwoSaveFinished } = props;
   const [state, action] = useActionState(saveCommunicationSectionAction, INITIAL_STATE);
+  const lastHandledSaveStateRef = useRef(state);
+  const startedSavesRef = useRef(0);
   const [draft, setDraft] = useState(editorText(current));
   const [aiPending, startAiTransition] = useTransition();
   const [aiMessage, setAiMessage] = useState("");
@@ -89,8 +95,14 @@ export function CommunicationSectionEditor(props: Readonly<{
   const [requiresResearch, setRequiresResearch] = useState(false);
   const router = useRouter();
   useEffect(() => {
+    if (state === lastHandledSaveStateRef.current) return;
+    lastHandledSaveStateRef.current = state;
+    if (startedSavesRef.current > 0) {
+      startedSavesRef.current -= 1;
+      onStageTwoSaveFinished?.();
+    }
     if (state.status === "saved") router.refresh();
-  }, [router, state.status]);
+  }, [router, state, onStageTwoSaveFinished]);
 
   const value = editorText(current);
   if (!canEdit) {
@@ -111,7 +123,10 @@ export function CommunicationSectionEditor(props: Readonly<{
   const stageTwoSuggestion = stageTwoPresentation.suggestion;
   return (
     <article className="rounded-xl border border-border bg-white p-5 shadow-sm">
-      <form action={action} className="space-y-3">
+      <form action={action} onSubmit={definition.stage === 2 ? () => {
+        startedSavesRef.current += 1;
+        onStageTwoSaveStarted?.();
+      } : undefined} className="space-y-3">
         <input type="hidden" name="account" value={account} />
         <input type="hidden" name="section_key" value={definition.key} />
         <input type="hidden" name="version" value={version} />
@@ -223,6 +238,11 @@ export function CommunicationStageTwo({ account, base, canEdit, sectionKeys }: R
   const [suggestions, setSuggestions] = useState<Partial<Record<string, CommunicationSuggestion>>>({});
   const [generalRevision, setGeneralRevision] = useState(0);
   const [sources, setSources] = useState<readonly WebSource[]>([]);
+  const [saveInFlightCount, setSaveInFlightCount] = useState(0);
+  const currentVersionRef = useRef(base.version);
+  const saveRevisionRef = useRef(0);
+  const pendingSavesRef = useRef(0);
+  useLayoutEffect(() => { currentVersionRef.current = base.version; }, [base.version]);
   const stageTwo = communicationSections.filter((section) => section.stage === 2);
   return (
     <section aria-labelledby="communication-stage-2" className="space-y-4">
@@ -238,30 +258,41 @@ export function CommunicationStageTwo({ account, base, canEdit, sectionKeys }: R
               className="h-5 w-5 accent-brand-700" />
             Preciso de pesquisa atual ou local para esta geração
           </label>
-          <button type="button" disabled={pending}
-            onClick={() => startTransition(async () => {
-              setMessage("");
-              setMessageIsError(false);
-              setSuggestions({});
-              setSources([]);
-              try {
-                const result = await generateCommunicationIntelligenceAction({
-                  account, target: { kind: "general" }, version: base.version, requiresCurrentResearch: requiresResearch,
-                });
-                if (result.ok) {
-                  setSuggestions(Object.fromEntries(result.draft.suggestions.map((item) => [item.key, item])));
-                  setSources(result.draft.sources);
-                  setGeneralRevision((current) => current + 1);
-                  setMessage("Sugestões prontas para revisão. Nenhuma seção foi salva automaticamente.");
-                } else {
+          <button type="button" disabled={pending || saveInFlightCount > 0}
+            onClick={() => {
+              if (!canStartGeneralGeneration(pendingSavesRef.current)) return;
+              const requestedVersion = base.version;
+              const requestSaveRevision = saveRevisionRef.current;
+              startTransition(async () => {
+                setMessage("");
+                setMessageIsError(false);
+                setSuggestions({});
+                setSources([]);
+                try {
+                  const result = await generateCommunicationIntelligenceAction({
+                    account, target: { kind: "general" }, version: requestedVersion, requiresCurrentResearch: requiresResearch,
+                  });
+                  if (!canInstallGeneralSuggestion(requestedVersion, currentVersionRef.current,
+                      requestSaveRevision, saveRevisionRef.current)) {
+                    setMessageIsError(true);
+                    setMessage("A Base mudou durante a geração. Atualize a página antes de gerar sugestões.");
+                    return;
+                  }
+                  if (result.ok) {
+                    setSuggestions(Object.fromEntries(result.draft.suggestions.map((item) => [item.key, item])));
+                    setSources(result.draft.sources);
+                    setGeneralRevision((current) => current + 1);
+                    setMessage("Sugestões prontas para revisão. Nenhuma seção foi salva automaticamente.");
+                  } else {
+                    setMessageIsError(true);
+                    setMessage(result.message);
+                  }
+                } catch {
                   setMessageIsError(true);
-                  setMessage(result.message);
+                  setMessage("A geração está indisponível agora. Continue a edição manual.");
                 }
-              } catch {
-                setMessageIsError(true);
-                setMessage("A geração está indisponível agora. Continue a edição manual.");
-              }
-            })}
+              });
+            }}
             className="mt-3 inline-flex min-h-11 items-center justify-center rounded-lg border border-border px-5 py-2 text-sm font-semibold text-foreground disabled:cursor-wait disabled:opacity-60">
             {pending ? "Preparando sugestões..." : hasStageTwoContent(base) ? "Atualizar inteligência com IA" : "Gerar inteligência com IA"}
           </button>
@@ -272,7 +303,16 @@ export function CommunicationStageTwo({ account, base, canEdit, sectionKeys }: R
       <div className="grid gap-3 sm:grid-cols-2">
         {stageTwo.map((section) => <CommunicationSectionEditor key={`${section.key}-${sectionKeys[section.key]}`}
           account={account} version={base.version} definition={section} current={base.sections[section.key]}
-          canEdit={canEdit} suggestedSuggestion={suggestions[section.key]} generalRevision={generalRevision} />)}
+          canEdit={canEdit} suggestedSuggestion={suggestions[section.key]} generalRevision={generalRevision}
+          onStageTwoSaveStarted={() => {
+            saveRevisionRef.current += 1;
+            pendingSavesRef.current += 1;
+            setSaveInFlightCount(pendingSavesRef.current);
+          }}
+          onStageTwoSaveFinished={() => {
+            pendingSavesRef.current = Math.max(0, pendingSavesRef.current - 1);
+            setSaveInFlightCount(pendingSavesRef.current);
+          }} />)}
       </div>
     </section>
   );
