@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 
 import { communicationSections, getCommunicationSection } from "./registry";
 import { resolveCommunicationBaseAccess, type CommunicationBaseAccessDependencies } from "./access-policy";
+import { accessUserIdFromAuthLookup } from "../access/auth-user-result";
 import { parseSectionValue, projectCommunicationBase, withSection } from "./policy";
 import { selectPendingSetupBusinessContext } from "./pending-setup-import";
 import { hasConfirmedStageOneInput, hasStageTwoContent, parseStageOneResponse, parseStageTwoResponse, stageOnePrompt, stageTwoPrompt } from "./ai-core";
@@ -390,6 +391,18 @@ assert.equal(projectCommunicationBase({
 }), null);
 
 async function runAccessCases() {
+  const authReadError = { data: { user: null }, error: { name: "AuthRetryableFetchError" } };
+  assert.throws(() => accessUserIdFromAuthLookup(authReadError, true), /access_auth_read_failed/,
+    "the Base must surface a transient auth lookup error as a read failure");
+  assert.equal(accessUserIdFromAuthLookup(authReadError), null,
+    "existing consumers keep their null result when auth lookup fails");
+  assert.equal(accessUserIdFromAuthLookup({ data: { user: null },
+    error: { name: "AuthSessionMissingError" } }, true), null,
+    "a missing session remains an access denial under the Base opt-in");
+  assert.equal(accessUserIdFromAuthLookup({ data: { user: null }, error: null }, true), null,
+    "a legitimate no-user result remains an access denial");
+  assert.equal(accessUserIdFromAuthLookup({ data: { user: { id: "valid-user" } }, error: null }, true),
+    "valid-user", "a valid authenticated user proceeds to the access read");
   const validAccess = {
     blocked: false,
     account: { id: "00000000-0000-4000-8000-000000000001", status: "active" },
@@ -454,6 +467,15 @@ async function runAccessCases() {
     loadAccess: async () => { throw new Error("access read failed"); },
     readEntitlement: async () => eligible,
   }), { ok: false, error: "read_failed" });
+  assert.deepEqual(await resolveCommunicationBaseAccess("empresa", true, {
+    enabled: true,
+    loadAccess: async () => {
+      accessUserIdFromAuthLookup(authReadError, true);
+      return validAccess;
+    },
+    readEntitlement: async () => eligible,
+  }), { ok: false, error: "read_failed" },
+    "the Base translates a propagated auth lookup error into retryable read failure");
   assert.deepEqual(await resolveCommunicationBaseAccess("empresa", true, {
     enabled: true,
     loadAccess: async () => validAccess,
