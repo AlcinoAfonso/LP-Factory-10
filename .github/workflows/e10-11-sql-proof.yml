@@ -36,6 +36,7 @@ jobs:
           test "${#all_migrations[@]}" -eq 61
           selected=(
             20260611172930_remote_public_baseline.sql
+            20260614124000_fix_audit_context_event_event_column.sql
             20260628184945_e9_commercial_entitlements.sql
             20260920223653_e10_9_pending_setup_conversation.sql
             20260921170115_e10_9_pending_setup_openai_call_counter.sql
@@ -46,12 +47,12 @@ jobs:
             test -f "supabase/migrations/$name"
             cp "supabase/migrations/$name" "$stage_project/supabase/migrations/$name"
           done
-          test "$(find "$stage_project/supabase/migrations" -maxdepth 1 -type f -name '*.sql' | wc -l)" -eq 6
+          test "$(find "$stage_project/supabase/migrations" -maxdepth 1 -type f -name '*.sql' | wc -l)" -eq 7
           for staged_file in "$stage_project"/supabase/migrations/*.sql; do
             cmp -s "$staged_file" "supabase/migrations/${staged_file##*/}"
           done
           echo "project=$stage_project" >> "$GITHUB_OUTPUT"
-          echo "Staged exact baseline, E9 entitlement, E10.9, E25.1 Base, and E10.11 SQL. Historical data-gated migrations and E10.10 are outside this focused proof." >> "$GITHUB_STEP_SUMMARY"
+          echo "Staged exact baseline, audit fix, E9 entitlement, E10.9, E25.1 Base, and E10.11 SQL. Historical data-gated migrations and E10.10 are outside this focused proof." >> "$GITHUB_STEP_SUMMARY"
 
       - name: Apply migrations to isolated local PostgreSQL
         shell: bash
@@ -78,7 +79,7 @@ jobs:
           mapfile -t db_containers < <(docker ps --format '{{.Names}}' | grep '^supabase_db_' || true)
           test "${#db_containers[@]}" -eq 1
           db_container="${db_containers[0]}"
-          history_ok="$(docker exec "$db_container" psql -U postgres -d postgres -At -v ON_ERROR_STOP=1 -c "select count(*) = 6 and count(*) filter (where version = '20260928161504') = 1 and count(*) filter (where version in ('20260926145500','20260926171100')) = 0 from supabase_migrations.schema_migrations")"
+          history_ok="$(docker exec "$db_container" psql -U postgres -d postgres -At -v ON_ERROR_STOP=1 -c "select count(*) = 7 and count(*) filter (where version = '20260928161504') = 1 and count(*) filter (where version in ('20260926145500','20260926171100')) = 0 from supabase_migrations.schema_migrations")"
           test "$history_ok" = t
           docker exec -i "$db_container" psql -U postgres -d postgres -v ON_ERROR_STOP=1 \
             < supabase/tests/e10_11_pending_setup_business_name.test.sql \
