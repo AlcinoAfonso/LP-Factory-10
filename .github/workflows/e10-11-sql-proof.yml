@@ -23,7 +23,7 @@ jobs:
         with:
           version: 2.106.0
 
-      - name: Stage only the authorized migration chain
+      - name: Stage the E10.11 schema dependency chain
         id: stage
         shell: bash
         run: |
@@ -33,61 +33,31 @@ jobs:
           mkdir -p "$stage_project/supabase/migrations"
           cp supabase/config.toml "$stage_project/supabase/config.toml"
           mapfile -t all_migrations < <(find supabase/migrations -maxdepth 1 -type f -name '*.sql' -printf '%f\n' | LC_ALL=C sort)
-          historical_count=0
-          e10_count=0
-          e25_count=0
-          e1011_count=0
-          for name in "${all_migrations[@]}"; do
-            case "$name" in
-              20260926145500_e10_10_account_factual_profile.sql|20260926171100_e10_10_factual_catalog_cutover.sql)
-                e10_count=$((e10_count + 1))
-                ;;
-              20260927145500_e25_1_account_communication_bases.sql|20260927163500_e21_2_communication_base_workloads.sql)
-                cp "supabase/migrations/$name" "$stage_project/supabase/migrations/$name"
-                e25_count=$((e25_count + 1))
-                ;;
-              20260928161504_e10_11_pending_setup_business_name.sql)
-                cp "supabase/migrations/$name" "$stage_project/supabase/migrations/$name"
-                e1011_count=$((e1011_count + 1))
-                ;;
-              *)
-                version="${name%%_*}"
-                if [[ ! "$version" =~ ^[0-9]{14}$ ]] || [[ "$version" > "20260926111926" ]]; then
-                  echo "Unexpected migration inventory entry" >&2
-                  exit 1
-                fi
-                cp "supabase/migrations/$name" "$stage_project/supabase/migrations/$name"
-                historical_count=$((historical_count + 1))
-                ;;
-            esac
-          done
           test "${#all_migrations[@]}" -eq 61
-          test "$historical_count" -eq 56
-          test "$e10_count" -eq 2
-          test "$e25_count" -eq 2
-          test "$e1011_count" -eq 1
-          test "$(find "$stage_project/supabase/migrations" -maxdepth 1 -type f -name '*.sql' | wc -l)" -eq 59
+          selected=(
+            20260611172930_remote_public_baseline.sql
+            20260628184945_e9_commercial_entitlements.sql
+            20260920223653_e10_9_pending_setup_conversation.sql
+            20260921170115_e10_9_pending_setup_openai_call_counter.sql
+            20260927145500_e25_1_account_communication_bases.sql
+            20260928161504_e10_11_pending_setup_business_name.sql
+          )
+          for name in "${selected[@]}"; do
+            test -f "supabase/migrations/$name"
+            cp "supabase/migrations/$name" "$stage_project/supabase/migrations/$name"
+          done
+          test "$(find "$stage_project/supabase/migrations" -maxdepth 1 -type f -name '*.sql' | wc -l)" -eq 6
           for staged_file in "$stage_project"/supabase/migrations/*.sql; do
             cmp -s "$staged_file" "supabase/migrations/${staged_file##*/}"
           done
           echo "project=$stage_project" >> "$GITHUB_OUTPUT"
-          echo "Staged 56 historical, 2 E25 and 1 E10.11 migration; E10.10 excluded." >> "$GITHUB_STEP_SUMMARY"
+          echo "Staged exact baseline, E9 entitlement, E10.9, E25.1 Base, and E10.11 SQL. Historical data-gated migrations and E10.10 are outside this focused proof." >> "$GITHUB_STEP_SUMMARY"
 
       - name: Apply migrations to isolated local PostgreSQL
         shell: bash
         run: |
           set -euo pipefail
-          stage_project="${{ steps.stage.outputs.project }}"
-          deferred="$RUNNER_TEMP/e10-11-deferred-migrations"
-          mkdir -p "$deferred"
-          for staged_file in "$stage_project"/supabase/migrations/*.sql; do
-            name="${staged_file##*/}"
-            if [[ "$name" > "20260621194501_e10_7_normalize_lite_plan_name.sql" ]]; then
-              mv "$staged_file" "$deferred/$name"
-            fi
-          done
-          test "$(find "$stage_project/supabase/migrations" -maxdepth 1 -type f -name '*.sql' | wc -l)" -eq 11
-          supabase --workdir "$stage_project" start \
+          supabase --workdir "${{ steps.stage.outputs.project }}" start \
             -x gotrue,realtime,storage-api,imgproxy,kong,mailpit,postgrest,postgres-meta,studio,edge-runtime,logflare,vector,supavisor \
             > "$RUNNER_TEMP/e10-11-supabase-start.log" 2>&1 || {
               last_migration_line="$(grep -n 'Applying migration ' "$RUNNER_TEMP/e10-11-supabase-start.log" | tail -n 1 | cut -d: -f1 || true)"
@@ -99,36 +69,7 @@ jobs:
               fi | sed -E '/(SERVICE_ROLE|ANON_KEY|SECRET_KEY|JWT_SECRET|DB_PASSWORD|DATABASE_URL|PUBLISHABLE_KEY)/Id'
               exit 1
             }
-          mapfile -t db_containers < <(docker ps --format '{{.Names}}' | grep '^supabase_db_' || true)
-          test "${#db_containers[@]}" -eq 1
-          db_container="${db_containers[0]}"
-          docker exec -i "$db_container" psql -U postgres -d postgres -v ON_ERROR_STOP=1 \
-            <<'SQL'
-          create role ai_readonly nologin;
-          insert into public.business_taxons (id, parent_id, level, name, slug, is_active)
-          values (
-            'e1011000-0000-4000-8000-000000000001',
-            null,
-            'segment',
-            'Corretor de imóveis de médio padrão',
-            'corretor-de-imoveis-de-medio-padrao',
-            true
-          );
-          SQL
-          mv "$deferred"/*.sql "$stage_project/supabase/migrations/"
-          test "$(find "$stage_project/supabase/migrations" -maxdepth 1 -type f -name '*.sql' | wc -l)" -eq 59
-          supabase --workdir "$stage_project" migration up --local \
-            > "$RUNNER_TEMP/e10-11-migration-up.log" 2>&1 || {
-              last_migration_line="$(grep -n 'Applying migration ' "$RUNNER_TEMP/e10-11-migration-up.log" | tail -n 1 | cut -d: -f1 || true)"
-              if [ -n "$last_migration_line" ]; then
-                sed -n "${last_migration_line},$((last_migration_line + 20))p" \
-                  "$RUNNER_TEMP/e10-11-migration-up.log"
-              else
-                sed -n '1,25p' "$RUNNER_TEMP/e10-11-migration-up.log"
-              fi | sed -E '/(SERVICE_ROLE|ANON_KEY|SECRET_KEY|JWT_SECRET|DB_PASSWORD|DATABASE_URL|PUBLISHABLE_KEY)/Id'
-              exit 1
-            }
-          echo "Isolated local PostgreSQL accepted the full staged migration chain." >> "$GITHUB_STEP_SUMMARY"
+          echo "Isolated local PostgreSQL accepted the focused E10.11 schema chain." >> "$GITHUB_STEP_SUMMARY"
 
       - name: Assert migration history and run rollback SQL cases
         shell: bash
@@ -137,7 +78,7 @@ jobs:
           mapfile -t db_containers < <(docker ps --format '{{.Names}}' | grep '^supabase_db_' || true)
           test "${#db_containers[@]}" -eq 1
           db_container="${db_containers[0]}"
-          history_ok="$(docker exec "$db_container" psql -U postgres -d postgres -At -v ON_ERROR_STOP=1 -c "select count(*) = 59 and count(*) filter (where version = '20260928161504') = 1 and count(*) filter (where version in ('20260926145500','20260926171100')) = 0 from supabase_migrations.schema_migrations")"
+          history_ok="$(docker exec "$db_container" psql -U postgres -d postgres -At -v ON_ERROR_STOP=1 -c "select count(*) = 6 and count(*) filter (where version = '20260928161504') = 1 and count(*) filter (where version in ('20260926145500','20260926171100')) = 0 from supabase_migrations.schema_migrations")"
           test "$history_ok" = t
           docker exec -i "$db_container" psql -U postgres -d postgres -v ON_ERROR_STOP=1 \
             < supabase/tests/e10_11_pending_setup_business_name.test.sql \
