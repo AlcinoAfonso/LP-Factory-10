@@ -852,6 +852,27 @@ const cases = [
     },
   },
   {
+    name: "administrative read model keeps six legacy units available before E25 bootstrap",
+    run: () => {
+      const fixture = preBootstrapAdministrativeConfigurationFixture();
+      const result = translateOpenAiAdministrativeConfigurationRows(
+        { data: fixture.units, error: null },
+        { data: fixture.revisions, error: null },
+        { data: fixture.activations, error: null },
+      );
+      assert.equal(result.ok, true);
+      assert.equal(result.value.length, 6);
+      assert.deepEqual(
+        [...new Set(result.value.map((unit) => unit.workload))],
+        [
+          "niche_resolution",
+          "commercial_activation_draft_generation",
+          "taxon_input_catalog_sufficiency_evaluation",
+        ],
+      );
+    },
+  },
+  {
     name: "administrative translation fails closed on read errors and invalid rows",
     run: () => {
       const readFailureFixture = administrativeConfigurationFixture();
@@ -867,6 +888,29 @@ const cases = [
         (() => {
           const fixture = administrativeConfigurationFixture();
           fixture.units.pop();
+          return fixture;
+        })(),
+        (() => {
+          const fixture = preBootstrapAdministrativeConfigurationFixture();
+          fixture.units.pop();
+          return fixture;
+        })(),
+        (() => {
+          const fixture = preBootstrapAdministrativeConfigurationFixture();
+          const newUnit = administrativeConfigurationFixture().units.find((unit) =>
+            unit.environment === "production" &&
+            unit.workload === "communication_base_stage1_assistance");
+          assert.ok(newUnit);
+          fixture.units.push(newUnit);
+          return fixture;
+        })(),
+        (() => {
+          const fixture = preBootstrapAdministrativeConfigurationFixture();
+          const newRevision = administrativeConfigurationFixture().revisions.find((revision) =>
+            revision.environment === "production" &&
+            revision.workload === "communication_base_stage1_assistance");
+          assert.ok(newRevision);
+          fixture.revisions.push(newRevision);
           return fixture;
         })(),
         (() => {
@@ -1421,6 +1465,18 @@ function administrativeConfigurationFixture(): Readonly<{
   }
 
   return { units, revisions, activations };
+}
+
+function preBootstrapAdministrativeConfigurationFixture() {
+  const fixture = administrativeConfigurationFixture();
+  const legacyWorkload = (row: Record<string, unknown>) =>
+    row.workload !== "communication_base_stage1_assistance" &&
+    row.workload !== "communication_base_stage2_intelligence";
+  return {
+    units: fixture.units.filter(legacyWorkload),
+    revisions: fixture.revisions.filter(legacyWorkload),
+    activations: fixture.activations.filter(legacyWorkload),
+  };
 }
 
 function administrativeUuid(sequence: number): string {
