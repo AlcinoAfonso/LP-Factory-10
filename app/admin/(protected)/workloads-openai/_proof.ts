@@ -52,7 +52,7 @@ export async function runOpenAiCandidateProof(
 
 async function proveCommunicationStageOne(
   workload: ResolvedOpenAiProductWorkload,
-  _environment: OpenAiManagedWorkloadEnvironment,
+  environment: OpenAiManagedWorkloadEnvironment,
   apiKey: string,
   _requestId: string,
 ): Promise<ProofAttempt> {
@@ -60,6 +60,7 @@ async function proveCommunicationStageOne(
     accountId: "10000000-0000-4000-8000-000000000001",
     key: "business_context",
     userText: "Ofereço manutenção de jardins para condomínios.",
+    environment,
     apiKey,
     configurationOverride: workload,
     financialContext: lpFactoryOpenAiCostContext,
@@ -72,7 +73,7 @@ async function proveCommunicationStageOne(
 
 async function proveCommunicationStageTwo(
   workload: ResolvedOpenAiProductWorkload,
-  _environment: OpenAiManagedWorkloadEnvironment,
+  environment: OpenAiManagedWorkloadEnvironment,
   apiKey: string,
   _requestId: string,
 ): Promise<ProofAttempt> {
@@ -93,6 +94,7 @@ async function proveCommunicationStageTwo(
     base,
     target: { kind: "section", key: "about" },
     requiresCurrentResearch: false,
+    environment,
     apiKey,
     configurationOverride: workload,
     financialContext: lpFactoryOpenAiCostContext,

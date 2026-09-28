@@ -7,6 +7,7 @@ import { clientOpenAiCostContext, type OpenAiCostEconomicContext } from "../../o
 import {
   resolveOpenAiProductWorkload,
   resolveOpenAiWorkloadEnvironment,
+  type OpenAiWorkloadEnvironment,
   type ResolvedOpenAiProductWorkload,
 } from "../../openai-workloads";
 import {
@@ -27,6 +28,7 @@ export async function assistCommunicationSection(input: Readonly<{
   accountId: string;
   key: string;
   userText: string;
+  environment?: OpenAiWorkloadEnvironment;
   apiKey?: string;
   configurationOverride?: ResolvedOpenAiProductWorkload;
   financialContext?: OpenAiCostEconomicContext;
@@ -39,6 +41,7 @@ export async function assistCommunicationSection(input: Readonly<{
   const result = await requestOpenAiResponses<Readonly<{ suggestion: string; missingQuestion: string }>>({
     apiKey: input.apiKey ?? process.env.OPENAI_API_KEY,
     configuration,
+    environment: input.environment,
     expectedWorkload: "communication_base_stage1_assistance",
     requestId: randomUUID(),
     promptVersion: COMMUNICATION_AI_PROMPT_VERSION,
@@ -58,6 +61,7 @@ export async function generateCommunicationIntelligence(input: Readonly<{
   base: CommunicationBase;
   target: StageTwoTarget;
   requiresCurrentResearch: boolean;
+  environment?: OpenAiWorkloadEnvironment;
   apiKey?: string;
   configurationOverride?: ResolvedOpenAiProductWorkload;
   financialContext?: OpenAiCostEconomicContext;
@@ -73,6 +77,7 @@ export async function generateCommunicationIntelligence(input: Readonly<{
   const result = await requestOpenAiResponses<StageTwoDraft>({
     apiKey: input.apiKey ?? process.env.OPENAI_API_KEY,
     configuration,
+    environment: input.environment,
     expectedWorkload: "communication_base_stage2_intelligence",
     requestId: randomUUID(),
     promptVersion: COMMUNICATION_AI_PROMPT_VERSION,

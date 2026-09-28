@@ -216,6 +216,13 @@ const cases: readonly Case[] = [
       ]) {
         assert.equal(proof.includes(transport), true);
       }
+      const communicationAdapter = readFileSync(new URL("../../../../lib/communication-base/adapters/communicationAiAdapter.ts", import.meta.url), "utf8");
+      for (const name of ["proveCommunicationStageOne", "proveCommunicationStageTwo"]) {
+        const call = proof.split(`async function ${name}(`)[1]?.split("\nasync function ")[0];
+        assert.ok(call && /\benvironment,\s*apiKey,/.test(call), `${name} must pass the selected environment`);
+      }
+      assert.equal((communicationAdapter.match(/environment: input\.environment/g) ?? []).length, 2,
+        "both communication transports must forward the selected environment to Responses");
       assert.doesNotMatch(
         proof,
         /generateLandingPageDraftCandidate|generateLandingPageDraftImage|LandingPageGenerationContextPackage/,

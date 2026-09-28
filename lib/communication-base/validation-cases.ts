@@ -68,6 +68,14 @@ assert.deepEqual(JSON.parse(stageOne.input), {
 assert.equal(stageOnePrompt("audience", "texto"), null);
 assert.equal(stageOnePrompt("business_context", "OPENAI_API_KEY=placeholder-credential"), null,
   "credential-like text must fail before stage 1 egress");
+for (const name of ["SUPABASE_SECRET_KEY", "SUPABASE_DB_PASSWORD", "STRIPE_WEBHOOK_SECRET", "GH_TOKEN"]) {
+  assert.equal(stageOnePrompt("business_context", `${name}=placeholder-value`), null,
+    `${name} must fail before stage 1 egress`);
+}
+assert.equal(stageOnePrompt("business_context", "SUPABASE_DB_URL_READONLY=postgresql://example.invalid/db"), null,
+  "the authenticated read-only database URL must fail before stage 1 egress");
+assert.ok(stageOnePrompt("business_context", "Produzimos molho secreto artesanal e atendimento humano."),
+  "ordinary business language must remain eligible");
 assert.equal(parseStageOneResponse({ output_text: JSON.stringify({
   suggestion: "Consultoria para pequenas empresas em Recife.", missing_question: "",
 }) }).ok, true);
@@ -202,6 +210,33 @@ const secretBase = projectCommunicationBase({
 assert.ok(secretBase);
 assert.equal(stageTwoPrompt(secretBase, generalTarget, false), null,
   "credential-like confirmed input must fail before stage 2 egress");
+const namedSecretSections = withSection(initial, "preferences", "SUPABASE_SECRET_KEY=placeholder-value", "user_confirmed");
+assert.ok(namedSecretSections);
+const namedSecretBase = projectCommunicationBase({
+  account_id: "00000000-0000-4000-8000-000000000001", version: 3, sections_json: namedSecretSections,
+  created_at: "2026-09-27T00:00:00Z", updated_at: "2026-09-27T00:00:00Z",
+});
+assert.ok(namedSecretBase);
+assert.equal(stageTwoPrompt(namedSecretBase, generalTarget, false), null,
+  "repository secret labels in confirmed stage 1 data must fail before stage 2 egress");
+const databaseUrlSections = withSection(initial, "preferences",
+  "SUPABASE_DB_URL_READONLY=postgresql://example.invalid/db", "user_confirmed");
+assert.ok(databaseUrlSections);
+const databaseUrlBase = projectCommunicationBase({
+  account_id: "00000000-0000-4000-8000-000000000001", version: 3, sections_json: databaseUrlSections,
+  created_at: "2026-09-27T00:00:00Z", updated_at: "2026-09-27T00:00:00Z",
+});
+assert.ok(databaseUrlBase);
+assert.equal(stageTwoPrompt(databaseUrlBase, generalTarget, false), null,
+  "the authenticated read-only database URL must fail before stage 2 egress");
+const secretDraftBase = { ...projected, sections: { ...projected.sections,
+  about: { format: "text" as const, value: "SUPABASE_DB_URL_READONLY=postgresql://example.invalid/db",
+    origin: "user_reviewed" as const },
+} };
+assert.equal(stageTwoPrompt(secretDraftBase, { kind: "section", key: "about" }, false), null,
+  "a secret label in the current target draft must fail before stage 2 egress");
+assert.ok(stageTwoPrompt(secretDraftBase, { kind: "section", key: "audience" }, false),
+  "a draft outside the local target must not enter its payload");
 assert.equal(parseStageTwoResponse({ ...stageTwoPayload, output_text: JSON.stringify({ sections: {
   ...stageTwoSections, business_context: { value: "Invasão", basis: "confirmed_business_fact" },
 } }) }, generalTarget, false).ok, false, "general output must reject stage 1 keys");
@@ -317,8 +352,10 @@ async function runProviderFailureAccountingCase() {
   assert.equal(resolved.ok, true);
   if (!resolved.ok) return;
   const terminals: OpenAiCostOperationTerminal[] = [];
+  const executionEnvironments: string[] = [];
+  const eventEnvironments: string[] = [];
   const recorder: OpenAiCostRecorder = {
-    startExecution: async () => {},
+    startExecution: async (execution) => { executionEnvironments.push(execution.environment); },
     startOperation: async () => {},
     finishOperation: async (terminal) => { terminals.push(terminal); },
     finishExecution: async () => {},
@@ -326,7 +363,7 @@ async function runProviderFailureAccountingCase() {
   const input = {
     apiKey: "test-key",
     configuration: resolved.value,
-    environment: "development" as const,
+    environment: "production" as const,
     request: { tools: [{ type: "web_search" }] },
     parseResponse: (payload: unknown) => parseStageTwoResponse(payload, { kind: "section", key: "audience" }, true),
     financialContext: { universe: "client" as const, attributionStatus: "attributed" as const,
@@ -336,7 +373,7 @@ async function runProviderFailureAccountingCase() {
   const usage = { input_tokens: 1000, output_tokens: 500, total_tokens: 1500 };
   const withSearch = await requestOpenAiResponses(input, {
     costRecorder: recorder,
-    emitEvent: () => {},
+    emitEvent: (event) => { eventEnvironments.push(event.environment); },
     nowIso: () => "2026-09-27T23:00:00.000Z",
     fetchImpl: async () => new Response(JSON.stringify({
       id: "resp_failed_after_search", usage,
@@ -347,6 +384,10 @@ async function runProviderFailureAccountingCase() {
     }), { status: 200, headers: { "Content-Type": "application/json" } }),
   });
   assert.equal(withSearch.ok, false);
+  assert.deepEqual(executionEnvironments, ["production"],
+    "the selected proof environment must reach the cost execution");
+  assert.deepEqual(eventEnvironments, ["production"],
+    "the selected proof environment must reach workload telemetry");
   assert.equal(terminals[0]?.webSearchCallCount, 1, "a failed response must retain the observed Web Search call");
   assert.equal(terminals[0]?.webSearchRequested, true);
   assert.deepEqual(calculateOpenAiOperationCost({
