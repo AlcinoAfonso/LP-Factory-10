@@ -178,6 +178,23 @@ assert.ok(stageOnePrompt("business_context", "Produzimos molho secreto artesanal
 assert.equal(parseStageOneResponse({ output_text: JSON.stringify({
   suggestion: "Consultoria para pequenas empresas em Recife.", missing_question: "",
 }) }, "business_context").ok, true);
+for (const [suggestion, missingQuestion] of [["", ""], [" \n ", " \t "]]) {
+  assert.equal(parseStageOneResponse({ output_text: JSON.stringify({
+    suggestion, missing_question: missingQuestion,
+  }) }, "business_context").ok, false, "stage 1 must reject an empty suggestion and question");
+}
+for (const [suggestion, missingQuestion] of [
+  ["  Sugestão útil  ", ""], ["", "  Qual informação falta?  "],
+  ["  Sugestão útil  ", "  Qual informação falta?  "],
+]) {
+  const parsed = parseStageOneResponse({ output_text: JSON.stringify({
+    suggestion, missing_question: missingQuestion,
+  }) }, "business_context");
+  assert.equal(parsed.ok, true, "stage 1 must retain useful suggestions or localized questions");
+  if (parsed.ok) assert.deepEqual(parsed.value, {
+    suggestion: suggestion.trim(), missingQuestion: missingQuestion.trim(),
+  });
+}
 assert.equal(parseStageOneResponse({ output_text: JSON.stringify({
   suggestion: "Sugestão", missing_question: "",
 }), output: [{ type: "web_search_call", status: "completed" }] }, "business_context").ok, false,

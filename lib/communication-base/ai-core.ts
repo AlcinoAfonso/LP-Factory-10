@@ -173,7 +173,8 @@ export function parseStageOneResponse(payload: unknown, key: string) {
   const suggestion = typeof parsed?.suggestion === "string" ? parsed.suggestion.trim() : null;
   const missingQuestion = typeof parsed?.missing_question === "string" ? parsed.missing_question.trim() : null;
   if (suggestion === null || parseSectionValue(section, parseEditorValue(section.format, suggestion)) === null ||
-    missingQuestion === null || missingQuestion.length > 400) {
+    missingQuestion === null || missingQuestion.length > 400 ||
+    (!suggestion && !missingQuestion)) {
     return invalid("invalid_stage_one_output");
   }
   return { ok: true as const, value: { suggestion, missingQuestion }, telemetry: { webSearchCallCount: 0, webSearchSourceCount: 0 } };
