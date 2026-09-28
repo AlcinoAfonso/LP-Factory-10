@@ -278,6 +278,9 @@ assert.equal(researchedAndOpened.ok, true,
 if (researchedAndOpened.ok) {
   assert.equal(researchedAndOpened.telemetry.webSearchCallCount, 2);
   assert.equal(researchedAndOpened.telemetry.webSearchSourceCount, 1);
+  assert.deepEqual(researchedAndOpened.value.sources, [{
+    title: "Fonte", url: "https://example.org/mercado",
+  }], "opening the same URL must preserve its search-result title");
 }
 assert.equal(parseStageTwoResponse({ ...searchedAndOpened, output: [{
   type: "web_search_call", status: "completed", action: { type: "search" },
