@@ -13,17 +13,18 @@ export default async function CommunicationBasePage({ params }: PageProps) {
   const { account } = await params;
   const access = await requireCommunicationBaseAccess(account);
   if (!access.ok) {
-    if (access.error === "unavailable") {
-      return (
-        <main className="mx-auto max-w-5xl px-4 py-10 sm:px-6">
-          <h1 className="text-2xl font-semibold">Base de Comunicação</h1>
-          <p role="status" className="mt-4 text-sm text-muted-foreground">
-            A Base de Comunicação ainda não está disponível. Tente novamente mais tarde.
-          </p>
-        </main>
-      );
-    }
-    notFound();
+    if (access.error === "forbidden") notFound();
+    return (
+      <main className="mx-auto max-w-5xl px-4 py-10 sm:px-6">
+        <h1 className="text-2xl font-semibold">Base de Comunicação</h1>
+        <p role={access.error === "read_failed" ? "alert" : "status"}
+          className="mt-4 text-sm text-muted-foreground">
+          {access.error === "read_failed"
+            ? "Não foi possível verificar seu acesso agora. Atualize a página e tente novamente."
+            : "A Base de Comunicação ainda não está disponível. Tente novamente mais tarde."}
+        </p>
+      </main>
+    );
   }
 
   const result = await readCommunicationBase(access.value.accountId);
@@ -78,7 +79,7 @@ export default async function CommunicationBasePage({ params }: PageProps) {
                 <div className="grid gap-3 sm:grid-cols-2">
                   {communicationSections.filter((section) => section.stage === 1).map((section) => (
                     <CommunicationSectionEditor
-                      key={`${section.key}-${base.version}`}
+                      key={`${section.key}-${sectionStateKey(base.sections[section.key])}`}
                       account={access.value.accountSubdomain}
                       version={base.version}
                       definition={section}

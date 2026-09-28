@@ -13,6 +13,7 @@ type Input = {
   userId?: string;
   route?: string;
   requestId?: string;
+  throwOnReadError?: boolean;
 };
 
 type AccessContextLegacy = Access.AccessContext & {
@@ -42,7 +43,7 @@ export async function getAccessContext(input?: Input): Promise<AccessContextLega
     userId = user.id;
   }
 
-  const pair = await readAccessContext(slugRaw ?? '');
+  const pair = await readAccessContext(slugRaw ?? '', { throwOnReadError: input?.throwOnReadError });
   if (!pair) return null;
 
   // Marcador removido do runtime: passamos null apenas por compat com mapAccountFromDB

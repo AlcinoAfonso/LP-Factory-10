@@ -17,7 +17,9 @@ export async function requireCommunicationBaseAccess(
 ): Promise<CommunicationBaseResult<CommunicationBaseAccess>> {
   return resolveCommunicationBaseAccess(rawAccountSubdomain, requireEdit, {
     enabled: isCommunicationBaseEnabled(),
-    loadAccess: (accountSubdomain) => getAccessContext({ params: { account: accountSubdomain } }),
+    loadAccess: (accountSubdomain) => getAccessContext({
+      params: { account: accountSubdomain }, throwOnReadError: true,
+    }),
     readEntitlement: (accountId) => readCommercialEntitlementSignal({ accountId }),
   });
 }

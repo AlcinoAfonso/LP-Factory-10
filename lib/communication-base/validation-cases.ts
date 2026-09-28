@@ -102,6 +102,17 @@ assert.equal(canInstallGeneralSuggestion(projected.version, projected.version, 0
   "an unchanged request remains installable before later sequential saves");
 assert.equal(sectionStateKey(projected.sections.audience), sectionStateKey(stageTwoFirstSave.sections.audience),
   "saving another stage 2 section must preserve this editor's unsaved draft");
+const stageOneSiblingSave = { ...projected, version: projected.version + 1, sections: { ...projected.sections,
+  offers: { format: "items" as const, value: ["Oferta confirmada"], origin: "user_confirmed" as const },
+} };
+assert.equal(sectionStateKey(projected.sections.business_context),
+  sectionStateKey(stageOneSiblingSave.sections.business_context),
+  "saving a sibling stage 1 section must preserve this editor's unsaved draft");
+assert.equal(sectionStateKey(projected.sections.business_context),
+  sectionStateKey(stageTwoFirstSave.sections.business_context),
+  "saving stage 2 must preserve an unrelated stage 1 draft");
+assert.notEqual(sectionStateKey(projected.sections.offers), sectionStateKey(stageOneSiblingSave.sections.offers),
+  "the saved stage 1 editor must refresh its own persisted state");
 assert.notEqual(sectionStateKey(stageTwoFirstSave.sections.audience), sectionStateKey(stageTwoSecondSave.sections.audience),
   "the saved editor must refresh its own state");
 const changedFacts = { ...projected, version: projected.version + 1, sections: { ...projected.sections,
