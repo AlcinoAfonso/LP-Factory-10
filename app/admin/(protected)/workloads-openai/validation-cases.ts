@@ -112,6 +112,12 @@ const cases: readonly Case[] = [
       assert.equal(isResearchedCommunicationStageTwoProof({ ...researched, sources: [] }), false);
       assert.equal(isResearchedCommunicationStageTwoProof({ ...researched, suggestions: [] }), false);
       assert.equal(isResearchedCommunicationStageTwoProof({ ...researched, suggestions: [
+        { key: "market_insights", value: [], basis: "strategic_hypothesis" },
+      ] }), false);
+      assert.equal(isResearchedCommunicationStageTwoProof({ ...researched, suggestions: [
+        { key: "market_insights", value: ["  "], basis: "strategic_hypothesis" },
+      ] }), false);
+      assert.equal(isResearchedCommunicationStageTwoProof({ ...researched, suggestions: [
         { key: "about", value: "Sobre", basis: "confirmed_business_fact" },
       ] }), false);
     },

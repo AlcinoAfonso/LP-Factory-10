@@ -3,6 +3,8 @@ import type {
   ResolvedOpenAiProductWorkload,
 } from "@/openai-workloads";
 import type { StageTwoDraft } from "@/communication-base/ai-core";
+import { parseSectionValue } from "@/communication-base/policy";
+import { getCommunicationSection } from "@/communication-base/registry";
 
 export type OpenAiCandidateProofMetadata = Readonly<{
   schema_version: 1;
@@ -24,8 +26,13 @@ export type OpenAiCandidateProofAttempt =
   | Readonly<{ ok: false; code: "configuration" | "provider" | "contract" }>;
 
 export function isResearchedCommunicationStageTwoProof(draft: StageTwoDraft): boolean {
+  const suggestion = draft.suggestions[0];
+  const section = getCommunicationSection("market_insights");
+  const normalizedValue = section && suggestion?.key === section.key
+    ? parseSectionValue(section, suggestion.value)
+    : null;
   return draft.researched && draft.suggestions.length === 1 &&
-    draft.suggestions[0]?.key === "market_insights" && draft.sources.length > 0;
+    draft.sources.length > 0 && Array.isArray(normalizedValue) && normalizedValue.length > 0;
 }
 
 type ProductProof = (
