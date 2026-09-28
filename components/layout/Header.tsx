@@ -142,8 +142,8 @@ function HeaderAccount({
               Membros
             </Link>
           ) : null}
-          <div className="hidden items-center gap-2 sm:flex">
-            <span className="text-sm text-foreground">
+          <div className="hidden min-w-0 max-w-40 items-center gap-2 sm:flex lg:max-w-64">
+            <span className="min-w-0 truncate text-sm text-foreground">
               {accountLabel}
               {primaryTaxonName ? <span className="text-muted-foreground"> · {primaryTaxonName}</span> : null}
             </span>
