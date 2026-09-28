@@ -10,6 +10,7 @@ import { selectStageTwoSectionPresentation, stageTwoBasisLabel, type LocalStageT
 import { communicationSections, type CommunicationSectionKey } from "../../../../lib/communication-base/registry";
 import type { CommunicationSectionDefinition } from "../../../../lib/communication-base/registry";
 import { formatEditorValue } from "../../../../lib/communication-base/editor-value";
+import { isCommunicationSectionSaveLocked } from "../../../../lib/communication-base/editor-save-guard";
 import { canInstallGeneralSuggestion, canStartGeneralGeneration } from "../../../../lib/communication-base/generation-guard";
 import {
   saveCommunicationSectionAction,
@@ -83,9 +84,10 @@ export function CommunicationSectionEditor(props: Readonly<{
 }>) {
   const { account, version, definition, current, canEdit, suggestedSuggestion, generalRevision = 0,
     onStageTwoSaveStarted, onStageTwoSaveFinished } = props;
-  const [state, action] = useActionState(saveCommunicationSectionAction, INITIAL_STATE);
+  const [state, action, savePending] = useActionState(saveCommunicationSectionAction, INITIAL_STATE);
   const lastHandledSaveStateRef = useRef(state);
   const startedSavesRef = useRef(0);
+  const [submittedVersion, setSubmittedVersion] = useState<number | null>(null);
   const [draft, setDraft] = useState(editorText(current));
   const [aiPending, startAiTransition] = useTransition();
   const [aiMessage, setAiMessage] = useState("");
@@ -94,6 +96,7 @@ export function CommunicationSectionEditor(props: Readonly<{
   const [missingQuestion, setMissingQuestion] = useState("");
   const [requiresResearch, setRequiresResearch] = useState(false);
   const router = useRouter();
+  const saveLocked = isCommunicationSectionSaveLocked(savePending, state.status, submittedVersion, version);
   useEffect(() => {
     if (state === lastHandledSaveStateRef.current) return;
     lastHandledSaveStateRef.current = state;
@@ -118,15 +121,19 @@ export function CommunicationSectionEditor(props: Readonly<{
 
   const fieldId = `communication-${definition.key}`;
   const hintId = `${fieldId}-hint`;
+  const saveLockHintId = `${fieldId}-save-lock`;
   const guidance = definition.stage === 1 ? STAGE_ONE_GUIDANCE[definition.key] : null;
   const stageTwoPresentation = selectStageTwoSectionPresentation(localStageTwoResult, generalRevision, suggestedSuggestion);
   const stageTwoSuggestion = stageTwoPresentation.suggestion;
   return (
     <article className="rounded-xl border border-border bg-white p-5 shadow-sm">
-      <form action={action} onSubmit={definition.stage === 2 ? () => {
-        startedSavesRef.current += 1;
-        onStageTwoSaveStarted?.();
-      } : undefined} className="space-y-3">
+      <form action={action} onSubmit={() => {
+        setSubmittedVersion(version);
+        if (definition.stage === 2) {
+          startedSavesRef.current += 1;
+          onStageTwoSaveStarted?.();
+        }
+      }} className="space-y-3">
         <input type="hidden" name="account" value={account} />
         <input type="hidden" name="section_key" value={definition.key} />
         <input type="hidden" name="version" value={version} />
@@ -145,12 +152,16 @@ export function CommunicationSectionEditor(props: Readonly<{
           rows={definition.format === "text" ? 5 : 6}
           value={draft}
           onChange={(event) => setDraft(event.target.value)}
+          readOnly={saveLocked}
           placeholder={guidance ?? undefined}
           maxLength={definition.format === "text" ? 4000 : undefined}
-          aria-describedby={hintId}
+          aria-describedby={`${hintId}${saveLocked ? ` ${saveLockHintId}` : ""}`}
           className="min-h-32 w-full rounded-lg border border-border bg-white px-3 py-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-700"
         />
-        <SubmitButton label="Salvar seção" pendingLabel="Salvando..." />
+        {saveLocked ? <p id={saveLockHintId} role="status" className="text-xs text-muted-foreground">
+          Salvando esta seção. Aguarde para continuar a edição.
+        </p> : null}
+        <SubmitButton label="Salvar seção" pendingLabel="Salvando..." disabled={saveLocked} />
         <ActionFeedback state={state} />
       </form>
       {definition.stage === 1 ? (
@@ -158,7 +169,7 @@ export function CommunicationSectionEditor(props: Readonly<{
           <p className="text-xs leading-5 text-muted-foreground">
             A IA trabalha apenas com o texto desta seção que você enviar. Confira a sugestão antes de usá-la; salvar continua sendo sua decisão.
           </p>
-          <button type="button" disabled={aiPending || !draft.trim()}
+          <button type="button" disabled={saveLocked || aiPending || !draft.trim()}
             onClick={() => startAiTransition(async () => {
               setAiMessage("");
               setLocalSuggestion(null);
@@ -178,7 +189,7 @@ export function CommunicationSectionEditor(props: Readonly<{
           </button>
           {missingQuestion ? <p className="mt-3 text-sm">Informação a confirmar: {missingQuestion}</p> : null}
           {localSuggestion !== null ? <Suggestion value={localSuggestion} format={definition.format}
-            onUse={() => setDraft(formatEditorValue(localSuggestion, definition.format))} /> : null}
+            disabled={saveLocked} onUse={() => setDraft(formatEditorValue(localSuggestion, definition.format))} /> : null}
           {aiMessage ? <p role="alert" className="mt-2 text-sm text-state-error">{aiMessage}</p> : null}
         </div>
       ) : (
@@ -187,11 +198,12 @@ export function CommunicationSectionEditor(props: Readonly<{
             A IA revisa apenas {definition.label} usando os dados confirmados pertinentes e o texto salvo desta seção. As demais seções permanecem como estão.
           </p>
           <label className="mt-3 flex min-h-11 items-center gap-3 text-sm">
-            <input type="checkbox" checked={requiresResearch} onChange={(event) => setRequiresResearch(event.target.checked)}
+            <input type="checkbox" checked={requiresResearch} disabled={saveLocked}
+              onChange={(event) => setRequiresResearch(event.target.checked)}
               className="h-5 w-5 accent-brand-700" />
             Preciso de pesquisa atual ou local para esta seção
           </label>
-          <button type="button" disabled={aiPending}
+          <button type="button" disabled={saveLocked || aiPending}
             onClick={() => startAiTransition(async () => {
               setAiMessage("");
               setLocalStageTwoResult(null);
@@ -216,7 +228,7 @@ export function CommunicationSectionEditor(props: Readonly<{
           </button>
           {stageTwoSuggestion !== null ? <Suggestion value={stageTwoSuggestion.value} format={definition.format}
             basis={stageTwoSuggestion.basis}
-            onUse={() => setDraft(formatEditorValue(stageTwoSuggestion.value, definition.format))} /> : null}
+            disabled={saveLocked} onUse={() => setDraft(formatEditorValue(stageTwoSuggestion.value, definition.format))} /> : null}
           <Sources sources={stageTwoPresentation.sources} />
           {aiMessage ? <p role="alert" className="mt-2 text-sm text-state-error">{aiMessage}</p> : null}
         </div>
@@ -318,18 +330,19 @@ export function CommunicationStageTwo({ account, base, canEdit, sectionKeys }: R
   );
 }
 
-function Suggestion({ value, format, basis, onUse }: Readonly<{
+function Suggestion({ value, format, basis, disabled = false, onUse }: Readonly<{
   value: CommunicationSectionValue;
   format: CommunicationSectionDefinition["format"];
   basis?: CommunicationSuggestion["basis"];
+  disabled?: boolean;
   onUse: () => void;
 }>) {
   return <div className="mt-3 rounded-lg border border-border bg-surface-50 p-3">
     <p className="text-xs font-semibold">Sugestão da IA para revisar</p>
     {basis ? <p className="mt-2 text-xs font-semibold text-brand-700">{stageTwoBasisLabel(basis)}</p> : null}
     <p className="mt-2 whitespace-pre-wrap text-sm">{formatEditorValue(value, format) || "Sem conteúdo suficiente para sugerir."}</p>
-    {formatEditorValue(value, format).trim() ? <button type="button" onClick={onUse}
-      className="mt-3 inline-flex min-h-11 items-center rounded-lg border border-border px-4 text-sm font-semibold">
+    {formatEditorValue(value, format).trim() ? <button type="button" onClick={onUse} disabled={disabled}
+      className="mt-3 inline-flex min-h-11 items-center rounded-lg border border-border px-4 text-sm font-semibold disabled:cursor-wait disabled:opacity-60">
       Usar no editor
     </button> : null}
   </div>;
@@ -343,15 +356,17 @@ function Sources({ sources }: Readonly<{ sources: readonly WebSource[] }>) {
   </ul></div>;
 }
 
-function SubmitButton({ label, pendingLabel }: Readonly<{ label: string; pendingLabel: string }>) {
+function SubmitButton({ label, pendingLabel, disabled = false }: Readonly<{
+  label: string; pendingLabel: string; disabled?: boolean;
+}>) {
   const { pending } = useFormStatus();
   return (
     <button
       type="submit"
-      disabled={pending}
+      disabled={pending || disabled}
       className="inline-flex min-h-11 items-center justify-center rounded-lg bg-brand-700 px-5 py-2 text-sm font-semibold text-white hover:bg-brand-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-700 focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-60"
     >
-      {pending ? pendingLabel : label}
+      {pending || disabled ? pendingLabel : label}
     </button>
   );
 }

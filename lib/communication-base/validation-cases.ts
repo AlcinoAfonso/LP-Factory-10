@@ -8,6 +8,7 @@ import { hasConfirmedStageOneInput, hasStageTwoContent, parseStageOneResponse, p
 import { selectStageTwoSectionPresentation, stageTwoBasisLabel } from "./stage-two-presentation";
 import { sectionStateKey, stageOneStateKey } from "./ui-state-keys";
 import { formatEditorValue, parseEditorValue } from "./editor-value";
+import { isCommunicationSectionSaveLocked } from "./editor-save-guard";
 import { canInstallGeneralSuggestion, canStartGeneralGeneration, isCurrentGenerationVersion } from "./generation-guard";
 import { requestOpenAiResponses } from "../conversion-content/adapters/openAiResponsesAdapter";
 import { calculateOpenAiOperationCost, type OpenAiCostOperationTerminal, type OpenAiCostRecorder } from "../openai-costs";
@@ -17,6 +18,20 @@ const keys = communicationSections.map((section) => section.key);
 assert.equal(new Set(keys).size, keys.length, "section keys must be unique");
 assert.equal(communicationSections.filter((section) => section.stage === 1).length, 7);
 assert.equal(communicationSections.filter((section) => section.stage === 2).length, 7);
+for (const key of ["business_context", "audience"] as const) {
+  assert.ok(getCommunicationSection(key), `${key} must be editable`);
+  assert.equal(isCommunicationSectionSaveLocked(false, "idle", null, 3), false);
+  assert.equal(isCommunicationSectionSaveLocked(true, "idle", 3, 3), true,
+    `${key} must lock while its save is pending`);
+  assert.equal(isCommunicationSectionSaveLocked(true, "idle", 3, 4), true,
+    `${key} must stay locked if a sibling refreshes during its save`);
+  assert.equal(isCommunicationSectionSaveLocked(false, "saved", 3, 3), true,
+    `${key} must stay locked until its successful refresh arrives`);
+  assert.equal(isCommunicationSectionSaveLocked(false, "saved", 3, 4), false,
+    `${key} must unlock after the refreshed version arrives`);
+  assert.equal(isCommunicationSectionSaveLocked(false, "error", 3, 3), false,
+    `${key} must unlock after a failed save`);
+}
 
 const business = getCommunicationSection("business_context");
 const audience = getCommunicationSection("audience");
