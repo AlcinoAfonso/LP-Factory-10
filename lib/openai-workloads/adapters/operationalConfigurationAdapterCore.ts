@@ -96,7 +96,9 @@ function isTextWorkload(
   return (
     value === "niche_resolution" ||
     value === "commercial_activation_draft_generation" ||
-    value === "taxon_input_catalog_sufficiency_evaluation"
+    value === "taxon_input_catalog_sufficiency_evaluation" ||
+    value === "communication_base_stage1_assistance" ||
+    value === "communication_base_stage2_intelligence"
   );
 }
 
@@ -152,10 +154,15 @@ function deepFreeze<T>(value: T): T {
 }
 
 const managedEnvironments = ["production", "preview"] as const;
-const managedWorkloads = [
+const preBootstrapManagedWorkloads = [
   "niche_resolution",
   "commercial_activation_draft_generation",
   "taxon_input_catalog_sufficiency_evaluation",
+] as const satisfies readonly ManagedWorkload[];
+const managedWorkloads = [
+  ...preBootstrapManagedWorkloads,
+  "communication_base_stage1_assistance",
+  "communication_base_stage2_intelligence",
 ] as const satisfies readonly ManagedWorkload[];
 
 const unitRowKeys = [
@@ -228,7 +235,9 @@ export function translateOpenAiAdministrativeConfigurationRows(
   const activations = exactRecords(activationRead.data, activationRowKeys);
   const workloads = units?.length === managedWorkloads.length * managedEnvironments.length
     ? managedWorkloads
-    : null;
+    : units?.length === preBootstrapManagedWorkloads.length * managedEnvironments.length
+      ? preBootstrapManagedWorkloads
+      : null;
   if (!units || !revisions || !activations || !workloads) {
     return invalidAdministrativeConfiguration();
   }

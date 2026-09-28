@@ -6,6 +6,7 @@ import { createClient } from '@/supabase/server';
 import type * as Access from './types';
 import { mapAccountFromDB, mapMemberFromDB, type AccountInfo, type MemberInfo } from './adapters/accountAdapter';
 import { readAccessContext } from './adapters/accessContextAdapter';
+import { accessUserIdFromAuthLookup } from './auth-user-result';
 
 type Input = {
   params?: { account?: string };
@@ -13,6 +14,7 @@ type Input = {
   userId?: string;
   route?: string;
   requestId?: string;
+  throwOnReadError?: boolean;
 };
 
 type AccessContextLegacy = Access.AccessContext & {
@@ -35,14 +37,11 @@ export async function getAccessContext(input?: Input): Promise<AccessContextLega
   let userId = input?.userId;
   if (!userId) {
     const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user?.id) return null;
-    userId = user.id;
+    userId = accessUserIdFromAuthLookup(await supabase.auth.getUser(), input?.throwOnReadError) ?? undefined;
+    if (!userId) return null;
   }
 
-  const pair = await readAccessContext(slugRaw ?? '');
+  const pair = await readAccessContext(slugRaw ?? '', { throwOnReadError: input?.throwOnReadError });
   if (!pair) return null;
 
   // Marcador removido do runtime: passamos null apenas por compat com mapAccountFromDB

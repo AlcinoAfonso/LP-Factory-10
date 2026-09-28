@@ -182,6 +182,36 @@
 - Quando houver teste real, registrar aqui somente o resumo necessário para reproduzir a decisão; evidência extensa permanece no PR ou artefato do recorte.
 - A decisão histórica de `gpt-5.6-luna + high` para `landing_page_dynamic_market_research` permanece rastreável nos commits e migrations E20.7, sem representar candidato, pendência ou configuração corrente após a E20.8.
 
+### 5.1. PB-A/E25.1 — comparação isolada da Etapa 2 em Preview (28/09/2026 UTC)
+
+- Workload: `communication_base_stage2_intelligence`. Comparação interna e temporária, em processamento Standard, na ordem `gpt-6-luna`/`max` e `gpt-6-sol`/`medium`. Ambos os pares estavam disponíveis no catálogo E21 (modelo v3, parâmetro v2). O override ficou restrito ao QA administrativo no Preview; nenhuma configuração operacional foi promovida.
+- Os quatro casos usaram a mesma Base sintética e imutável por caso: `general_initial` sem rascunho, `general_update` com as sete seções atuais, `local_about` e `local_market_web` com alcance de seção única. A saída de uma chamada não entrou na entrada da seguinte. Prompt `e25_1_v3`, contrato 2, schema e política Web iguais entre candidatos. Hashes SHA-256 do prompt por caso, idênticos nos dois pares: `825c48b6bf72fb0057d1f9628666f7ead0393f4faafac456df34059132fa451a`, `2472d78c206086d06c96627cee7932b466e2a7d1b631605ab6a483d488dd407a`, `79e3460b5072b305bd45376197caa56b069c55972749a2818f50ebae3e858a27`, `b6b01c27cf6e4b991d36e69c95ea64457061920b82a2b0ea5554a50129c58656`, respectivamente.
+- Validade e qualidade antes do custo: as oito operações capturadas concluíram com resposta do provider e contrato válido. As ações gerais retornaram sete seções; as locais, somente a seção alvo. `about` permaneceu derivado dos fatos confirmados; os demais campos foram marcados como hipóteses. Não foi observada invenção de preço, credencial, prova ou resultado particular na inspeção focal. Ambos foram adequados; Luna produziu hipóteses mais desenvolvidas e, no caso Web, ligou a recomendação à comunicação observada de prestadores, ressalvando que isso não prova demanda. Sol foi mais conciso e trouxe hipóteses sobre chuvas e intervenções em árvores, de utilidade menos direta para o posicionamento pedido. A fonte [Ficus Paisagismo em Recife](https://www.ficuspaisagismo.com.br/manutencao-de-jardins/) confirma que há comunicação pública de manutenção periódica, poda e limpeza; a amostra de fontes de ambos inclui URLs pouco pertinentes e requer curadoria na apresentação. Esta é avaliação técnica focal de um caso sintético, sem alegar estabilidade estatística ou avaliação humana cega concluída.
+
+| Caso | Validade A/B | Qualidade A/B | Utilidade A/B | Observação focal |
+|---|---|---|---|---|
+| Geração geral | válida / válida | adequada / adequada | boa / boa | As sete seções preservam fatos e hipóteses; A desenvolve mais a estratégia. |
+| Atualização geral | válida / válida | adequada / adequada | boa / boa | Ambas usam o rascunho como contexto sem elevá-lo a fato confirmado. |
+| Revisão `about` | válida / válida | adequada / adequada | boa / boa | Uma seção factual, com texto equivalente. |
+| Revisão `market_insights` | válida / válida | superior / adequada | boa / moderada | A ancora melhor a hipótese em comunicação observada; B inclui temas de chuva e poda arbórea de utilidade menos direta. |
+
+Na identificação interna, A corresponde a Luna/max e B a Sol/medium. Esta régua é uma avaliação técnica com identidade conhecida pelo executor; não representa avaliação humana cega E21.3. Não houve pontuação opaca nem generalização para outro workload.
+
+| Par | Caso | Input / cache read / cache write / output / reasoning | Web / fontes | Latência | Custo E21 USD |
+|---|---|---:|---:|---:|---:|
+| Luna/max | Geração geral | 692 / 0 / 0 / 5316 / 4785 | 0 / 0 | 41.772 ms | 0.0027272 |
+| Luna/max | Atualização geral | 818 / 0 / 0 / 3238 / 2773 | 0 / 0 | 25.466 ms | 0.0017008 |
+| Luna/max | Revisão `about` | 442 / 0 / 0 / 797 / 748 | 0 / 0 | 6.835 ms | 0.0004427 |
+| Luna/max | Revisão `market_insights` | 13456 / 4695 / 0 / 1945 / 1783 | 1 / 36 | 17.212 ms | 0.01189555 |
+| Sol/medium | Geração geral | 692 / 0 / 0 / 810 / 352 | 0 / 0 | 12.877 ms | 0.009484 |
+| Sol/medium | Atualização geral | 818 / 0 / 0 / 587 / 215 | 0 / 0 | 12.049 ms | 0.007506 |
+| Sol/medium | Revisão `about` | 442 / 0 / 0 / 187 / 138 | 0 / 0 | 3.764 ms | 0.002754 |
+| Sol/medium | Revisão `market_insights` | 15064 / 0 / 4695 / 455 / 274 | 2 / 38 | 12.554 ms | 0.0570255 |
+
+- Soma das quatro operações capturadas: Luna USD 0.01676625 e 91.285 ms; Sol USD 0.07676950 e 41.244 ms. Sol foi aproximadamente 2,2 vezes mais rápido; Luna custou aproximadamente 4,6 vezes menos neste recorte. O custo foi calculado pelo E21 sobre usage e chamadas Web reais, com tabela `2026-09-27-standard-v2`, coerente com as [tarifas oficiais Standard e Web Search](https://developers.openai.com/api/docs/pricing) consultadas em 28/09/2026 UTC. São custos atribuídos às operações capturadas, não extrato de cobrança.
+- Três envios anteriores pretendiam executar Sol, mas produziram somente registro de middleware, sem terminal, ID/usage ou resposta capturada; o middleware não comprova nem o candidato efetivo nem chamada ao provider. Outros envios do formulário antigo também ficaram sem terminal verificável. Todos permanecem inconclusivos, com custo potencial desconhecido, e não integram as oito linhas ou suas somas. O recorder E21 foi injetado em memória somente para esta prova: `hostedLedgerWritten=false`. Nenhum resultado, prompt ou resposta integral foi gravado no banco ou em logs; ainda não existe cobertura hospedada E21.5 para os novos workloads.
+- **Seleção técnica para o único par candidato da Etapa 2: `gpt-6-luna`/`max` Standard.** Ambos cumpriram a validade e a qualidade mínima observadas; a vantagem de latência de Sol não compensou o custo 4,6 vezes maior e o ganho de conteúdo não demonstrado neste caso. Esta seleção não ativa o workload. Candidata, prova, revisão validada e ativação humana continuam sob o lifecycle E21.2.5, após merge/apply autorizados, cobertura financeira prospectiva e QA hospedado. A UI do cliente oferece somente ações funcionais da Base, sem modelo, effort ou escolha de configuração.
+
 ## 6. Manutenção semanal e limites
 
 - O workflow semanal confronta esta fotografia com fontes oficiais e altera somente itens materialmente afetados.

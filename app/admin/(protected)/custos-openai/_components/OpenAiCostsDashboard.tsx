@@ -25,6 +25,8 @@ const WORKLOAD_OPTIONS = [
   "niche_resolution",
   "commercial_activation_draft_generation",
   "taxon_input_catalog_sufficiency_evaluation",
+  "communication_base_stage1_assistance",
+  "communication_base_stage2_intelligence",
   "landing_page_dynamic_market_research",
   "supabase_inspect",
 ] as const satisfies readonly OpenAiCostReadWorkloadId[];
@@ -205,7 +207,7 @@ function TableCell({ children }: Readonly<{ children: ReactNode }>) { return <td
 function countRetries(model: OpenAiActiveCostReadModel) { return model.executions.reduce((total, execution) => total + execution.operations.filter((operation) => operation.retryOfOperationId !== null).length, 0); }
 function universeLabel(universe: "client" | "lp_factory") { return universe === "client" ? "Cliente" : "LP Factory"; }
 function environmentLabel(environment: "production" | "preview" | "development") { return environment === "production" ? "Produção" : environment === "preview" ? "Preview" : "Desenvolvimento"; }
-function workloadLabel(workload: OpenAiCostReadWorkloadId) { const labels: Record<OpenAiCostReadWorkloadId, string> = { niche_resolution: "Resolução de nicho", commercial_activation_draft_generation: "Draft de ativação comercial", taxon_input_catalog_sufficiency_evaluation: "Suficiência factual do catálogo", landing_page_dynamic_market_research: "Pesquisa dinâmica de mercado", supabase_inspect: "Supabase Inspect" }; return labels[workload]; }
+function workloadLabel(workload: OpenAiCostReadWorkloadId) { const labels: Record<OpenAiCostReadWorkloadId, string> = { niche_resolution: "Resolução de nicho", commercial_activation_draft_generation: "Draft de ativação comercial", taxon_input_catalog_sufficiency_evaluation: "Suficiência factual do catálogo", communication_base_stage1_assistance: "Assistência da Base — Etapa 1", communication_base_stage2_intelligence: "Inteligência da Base — Etapa 2", landing_page_dynamic_market_research: "Pesquisa dinâmica de mercado", supabase_inspect: "Supabase Inspect" }; return labels[workload]; }
 function formatTimestamp(value: string) { return new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "medium", timeZone: "America/Sao_Paulo" }).format(new Date(value)); }
 function formatUsd(value: string) { const negative = value.startsWith("-"); const unsigned = negative ? value.slice(1) : value; const [integer, fraction = ""] = unsigned.split("."); const grouped = integer.replace(/\B(?=(\d{3})+(?!\d))/g, "."); return `US$ ${negative ? "−" : ""}${grouped}${fraction ? `,${fraction}` : ",00"}`; }
 function formatDate(value: string) { const [year, month, day] = value.split("-"); return `${day}/${month}/${year}`; }

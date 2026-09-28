@@ -2,8 +2,8 @@
 
 0.1 Cabeçalho
 • Documento: LP Factory 10 — Platform Config
-• Versão: v0.1.50
-• Data: 26/09/2026
+• Versão: v0.1.52
+• Data: 27/09/2026
 
 0.2 Contrato do documento
 • O QUE É: snapshot operacional e fonte única das configurações de plataformas externas do LP Factory 10, refletindo o estado conhecido/cadastrado nas plataformas conforme indicado.
@@ -45,7 +45,7 @@
 • `MAILBOX_PASSWORD`: senha/app password da mailbox preservada para o futuro Operador Institucional Autônomo de QA da E17.9.3; sem consumidor operacional vigente após a E22.6.
 • `SUPABASE_ACCESS_TOKEN`: token usado pelo workflow de apply de migrations Supabase.
 • `SUPABASE_DB_PASSWORD`: senha do banco usada pelo workflow de apply de migrations Supabase.
-• `SUPABASE_APPLY_MIGRATIONS_ENABLED`: variável de repositório usada como gate operacional; valor operacional atual `true`.
+• `SUPABASE_APPLY_MIGRATIONS_ENABLED`: variável de repositório usada como gate operacional; valor observado no GitHub em 27/09/2026: `false`.
 • Regra: valores reais de secrets não devem ser versionados.
 • Regra: secrets de mailbox devem existir apenas nos escopos necessários dos workflows que os consomem.
 • Regra: `SUPABASE_DB_URL_READONLY` deve autenticar com role/usuário read-only e usar preferencialmente session pooler.
@@ -58,20 +58,21 @@
 • `.github/workflows/security.yml`: checks de segurança.
 • `.github/workflows/pipeline-supabase-inspect.yml`: pipeline de inspeção Supabase read-only, com uso de `OPENAI_API_KEY` e `SUPABASE_DB_URL_READONLY`.
 • `.github/workflows/pipeline-docs-apply-report.yml`: aplicação automatizada de reports em documentos Markdown e criação de Pull Request automático.
-• `.github/workflows/pipeline-supabase-apply-migrations.yml`: workflow operacional para apply automático de migrations Supabase versionadas.
+• `.github/workflows/pipeline-supabase-apply-migrations.yml`: workflow canônico de migrations Supabase versionadas; o apply automático integral está suspenso durante o backlog E10.10.
 • Gatilhos: push em `main` com mudanças em `supabase/migrations/**` e execução manual por `workflow_dispatch`.
 • Setup: `supabase/setup-cli` v2.1.1 fixada pelo SHA completo `3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf`, com Supabase CLI `2.106.0`.
 • Motivo do pin por SHA: reprodutibilidade e proteção contra alteração futura da referência móvel `@v2`.
-• Gate: `SUPABASE_APPLY_MIGRATIONS_ENABLED = true` mantém o apply automático liberado no fluxo normal; valor diferente de `true` bloqueia o apply e deve ser usado apenas em incidente ou manutenção.
-• Cutover E20.8: antes do merge autorizado, o supervisor deve definir temporariamente valor diferente de `true`, comprovar o apply automático como `skipped` e aguardar Production do mesmo SHA em estado `READY`; somente então deve restaurar `true` e disparar manualmente o workflow de migration para a `main`, sem editar a migration candidata.
-• Fluxo normal: criar migration em `supabase/migrations/<timestamp>_<nome>.sql`, validar, abrir PR e realizar o merge autorizado para o modo vigente conforme `AGENTS.md`; o push resultante dispara o apply automático.
+• Gate: `SUPABASE_APPLY_MIGRATIONS_ENABLED = false` bloqueia instalação da CLI, link e push. Mesmo com `true`, o workflow candidato E25.1 bloqueia push automático integral; a exceção manual exige `workflow_dispatch` na `main`, escopo `e25_1_only` e SHA pós-merge exato.
+• Procedimento E20.8 registrado anteriormente: previa fechar o gate antes do merge, comprovar apply `skipped` e aguardar Production do mesmo SHA em estado `READY` antes de restaurar o gate e disparar manualmente a migration na `main`. O roadmap ainda registra esse cutover como pendente; não reutilizar o procedimento para a fila E10.10/E25.1.
+• Fluxo normal histórico: criar migration em `supabase/migrations/<timestamp>_<nome>.sql`, validar, abrir PR e realizar o merge autorizado conforme `AGENTS.md`; o push resultante disparava o apply automático. Durante o backlog E10.10, não reabrir esse fluxo integral sem resolução separada ou revisão explícita do filtro canônico.
+• Exceção E25.1 candidata no PR draft: depois de merge autorizado, o operador pode habilitar temporariamente o gate e disparar manualmente o workflow na `main` e no SHA aprovado. O job monta projeto temporário com 56 migrations históricas já aplicadas e as duas E25, exclui as duas E10.10, exige dry-run com exatamente as duas E25 e aplica no mesmo projeto. Após apply, comprovar por leitura 58 versões remotas e ausência das E10.10; retornar o gate a `false`. Falha parcial exige inspeção do histórico antes de nova tentativa.
 • Regra: não usar SQL Editor para alterações de schema no fluxo normal.
 • Regra: migration aplicada não pode ser editada, apagada, renomeada ou substituída; correções e reversões exigem nova migration.
 • Com o gate fechado, um passo separado sem secrets registra `skipped`; a CLI não é instalada e `supabase link` e `supabase db push` não são executados.
 • `Setup Supabase CLI` e `Apply migrations` possuem condição explícita de gate aberto.
 • Secrets exigidos somente para apply autorizado com gate aberto: `SUPABASE_ACCESS_TOKEN` e `SUPABASE_DB_PASSWORD`, disponíveis apenas no passo `Apply migrations`.
 • Projeto alvo: definido no workflow por `SUPABASE_PROJECT_REF`; o valor não é credencial, mas deve apontar somente para o projeto aprovado.
-• `workflow_dispatch` é recurso excepcional; o fluxo normal ocorre automaticamente após merge na `main`.
+• `workflow_dispatch` é recurso excepcional; durante o backlog E10.10, somente o recorte manual E25.1 descrito acima poderá aplicar, após merge e autorização operacional. O fluxo automático integral dependerá de decisão separada.
 • `.github/workflows/upgrade-next-16-1-1.yml`: manutenção de Next.js + lockfile.
 
 2.4 Mailbox operacional para automações
@@ -236,6 +237,12 @@
 • Progressão operacional concluída: Preview foi habilitado e aprovado antes de Production; apply, invariantes, Security Controls, smoke completo de Preview e smoke mínimo de Production foram aprovados.
 • Redeploy: a habilitação ou desabilitação do gate exige redeploy do ambiente afetado; alterações ordinárias da configuração ativa após o cutover não exigem redeploy.
 • Valor real por ambiente: não versionar neste documento.
+
+• `E25_1_COMMUNICATION_BASE_ENABLED`
+• Finalidade: gate server-only da Base de Comunicação E25.1, abrangendo rota, ações, navegação e futura assistência de IA.
+• Escopo: Preview e Production do projeto Core, independente por ambiente; somente o literal `true` habilita. Ausência ou qualquer outro valor mantém a Base indisponível sem consulta à sua tabela.
+• Estado em 27/09/2026: código e migration candidatos no PR draft E25.1; habilitação hospedada não realizada nem comprovada. Não definir `true` antes de merge autorizado, apply das migrations, verificação SQL, registro prospectivo da cobertura E21.5 e avaliação do workload de IA da Etapa 2.
+• Classificação: Config, não Secret. Valor real por ambiente não versionar.
 
 • `E20_6_5_INPUT_CATALOG_EVALUATION_PROVIDER_ENABLED`
 • Finalidade: gate server-side e de UI exclusivo do provider consultivo da avaliação factual E20.8.7.
@@ -553,6 +560,8 @@ Regra:
 • Configurações de plataformas, secrets por nome, workflows, ambientes e endpoints usados por automações devem ser registrados neste documento.
 
 99. Changelog
+v0.1.52 — 27/09/2026 — Reconciliado o gate de migrations observado como `false` e documentada a exceção E25.1 candidata, mantendo E10.10 fora do apply e o fluxo automático integral suspenso.
+
 v0.1.45 — 12/09/2026 — Reconciliada a configuração operacional concluída da E21.5: captura ativa validada em Preview e Production e ingresso assinado do `supabase_inspect` validado em Production, sem registrar valores de secrets.
 
 v0.1.44 — 07/09/2026 — Consolidado o fechamento da E23.2: seis ocorrências sem consumidor removidas da Vercel Core; 22 sobreclassificações como Secret e quatro branch scopes legados preservados por decisão funcional conservadora; Preview aprovado sem exposição ou substituição de valores.

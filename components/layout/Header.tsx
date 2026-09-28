@@ -9,9 +9,10 @@ type HeaderVariant = 'public' | 'authenticated' | 'account';
 interface HeaderProps {
   userEmail?: string | null;
   accountMembersEnabled?: boolean;
+  communicationBaseEnabled?: boolean;
 }
 
-export function Header({ userEmail, accountMembersEnabled = false }: HeaderProps) {
+export function Header({ userEmail, accountMembersEnabled = false, communicationBaseEnabled = false }: HeaderProps) {
   const ctx = useAccessContext();
 
   const variant = getVariant(ctx, userEmail);
@@ -28,6 +29,7 @@ export function Header({ userEmail, accountMembersEnabled = false }: HeaderProps
           userEmail={userEmail ?? undefined}
           role={(ctx?.member?.role ?? undefined) as string | undefined}
           membersEnabled={accountMembersEnabled}
+          communicationBaseEnabled={communicationBaseEnabled}
         />
       );
     case 'authenticated':
@@ -103,27 +105,39 @@ function HeaderAccount({
   userEmail,
   role,
   membersEnabled,
+  communicationBaseEnabled,
 }: {
   account: { name?: string | null; subdomain?: string | null; status?: string | null; primaryTaxonName?: string | null };
   userEmail?: string;
   role?: string;
   membersEnabled: boolean;
+  communicationBaseEnabled: boolean;
 }) {
   const accountLabel = account?.name ?? account?.subdomain ?? 'Minha conta';
   const primaryTaxonName = account?.primaryTaxonName?.trim();
 
   return (
     <header className="border-b border-border bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/85">
-      <div className="mx-auto flex h-14 max-w-6xl items-center px-4">
+      <div className="mx-auto flex h-14 max-w-6xl items-center px-3 sm:px-4">
         <BrandWordmark />
 
         <div className="flex-1" />
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1.5 sm:gap-3">
+          {communicationBaseEnabled ? (
+            <Link
+              href={`/a/${account.subdomain}/base-comunicacao`}
+              aria-label="Base de Comunicação"
+              className="inline-flex min-h-11 items-center whitespace-nowrap rounded-md border border-brand-600/30 bg-brand-50 px-2 py-2 text-sm font-medium text-brand-700 hover:bg-brand-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-700 focus-visible:ring-offset-2 sm:px-3"
+            >
+              <span className="sm:hidden" aria-hidden="true">Base</span>
+              <span className="hidden sm:inline" aria-hidden="true">Base de Comunicação</span>
+            </Link>
+          ) : null}
           {membersEnabled && (role === "owner" || role === "admin") ? (
             <Link
               href={`/a/${account.subdomain}/members`}
-              className="rounded-md border border-border bg-white px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+              className="inline-flex min-h-11 items-center whitespace-nowrap rounded-md border border-border bg-white px-2 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-accent sm:px-3"
             >
               Membros
             </Link>
@@ -135,7 +149,9 @@ function HeaderAccount({
             </span>
             <StatusChip status={account?.status} />
           </div>
-          <UserMenu userEmail={userEmail} userRole={role} />
+          <div className="[&>div>button]:h-11 [&>div>button]:w-11">
+            <UserMenu userEmail={userEmail} userRole={role} />
+          </div>
         </div>
       </div>
     </header>

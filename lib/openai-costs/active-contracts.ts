@@ -80,6 +80,7 @@ export type OpenAiCostOperationTerminal = Readonly<{
   providerErrorType?: string | null;
   usage?: OpenAiWorkloadUsage | null;
   webSearchCallCount?: number | null;
+  webSearchRequested?: boolean;
   finishedAt: string;
 }>;
 

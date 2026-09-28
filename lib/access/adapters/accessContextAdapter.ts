@@ -92,7 +92,10 @@ async function logDecision(input: LogInput) {
   }
 }
 
-export async function readAccessContext(subdomain: string): Promise<AccessContext | null> {
+export async function readAccessContext(
+  subdomain: string,
+  options?: Readonly<{ throwOnReadError?: boolean }>,
+): Promise<AccessContext | null> {
   const t0 = Date.now();
   const supabase = await createClient();
 
@@ -122,6 +125,7 @@ export async function readAccessContext(subdomain: string): Promise<AccessContex
       source: 'adapter_error',
       latency_ms: Date.now() - t0,
     });
+    if (options?.throwOnReadError) throw new Error('access_context_read_failed');
     return null;
   }
 

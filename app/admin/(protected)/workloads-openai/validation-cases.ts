@@ -7,6 +7,7 @@ import {
 } from "@/openai-workloads";
 import {
   runOpenAiCandidateProofCore,
+  isResearchedCommunicationStageTwoProof,
   type OpenAiCandidateProofDependencies,
 } from "./proofCore";
 import { parseCommercialProof } from "./commercialProof";
@@ -92,6 +93,33 @@ const cases: readonly Case[] = [
       });
 
       assert.deepEqual(result, { ok: true, value: true });
+    },
+  },
+  {
+    name: "stage 2 candidate proof requires researched market insights with sources",
+    run: () => {
+      const proof = readFileSync(new URL("_proof.ts", import.meta.url), "utf8");
+      const stageTwoCall = proof.split("async function proveCommunicationStageTwo(")[1]?.split("\nasync function ")[0];
+      assert.ok(stageTwoCall);
+      assert.match(stageTwoCall, /target: \{ kind: "section", key: "market_insights" \}/);
+      assert.match(stageTwoCall, /requiresCurrentResearch: true/);
+      assert.match(stageTwoCall, /isResearchedCommunicationStageTwoProof\(result\.value\)/);
+      const researched = { researched: true, suggestions: [{ key: "market_insights" as const,
+        value: ["Hipótese revisável"], basis: "strategic_hypothesis" as const }],
+        sources: [{ title: "Fonte", url: "https://example.org/mercado" }] };
+      assert.equal(isResearchedCommunicationStageTwoProof(researched), true);
+      assert.equal(isResearchedCommunicationStageTwoProof({ ...researched, researched: false }), false);
+      assert.equal(isResearchedCommunicationStageTwoProof({ ...researched, sources: [] }), false);
+      assert.equal(isResearchedCommunicationStageTwoProof({ ...researched, suggestions: [] }), false);
+      assert.equal(isResearchedCommunicationStageTwoProof({ ...researched, suggestions: [
+        { key: "market_insights", value: [], basis: "strategic_hypothesis" },
+      ] }), false);
+      assert.equal(isResearchedCommunicationStageTwoProof({ ...researched, suggestions: [
+        { key: "market_insights", value: ["  "], basis: "strategic_hypothesis" },
+      ] }), false);
+      assert.equal(isResearchedCommunicationStageTwoProof({ ...researched, suggestions: [
+        { key: "about", value: "Sobre", basis: "confirmed_business_fact" },
+      ] }), false);
     },
   },
   {
@@ -211,9 +239,18 @@ const cases: readonly Case[] = [
         "resolveNicheWithOpenAi",
         "requestCommercialActivationOpenAi",
         "evaluateInputCatalogWithOpenAi",
+        "assistCommunicationSection",
+        "generateCommunicationIntelligence",
       ]) {
         assert.equal(proof.includes(transport), true);
       }
+      const communicationAdapter = readFileSync(new URL("../../../../lib/communication-base/adapters/communicationAiAdapter.ts", import.meta.url), "utf8");
+      for (const name of ["proveCommunicationStageOne", "proveCommunicationStageTwo"]) {
+        const call = proof.split(`async function ${name}(`)[1]?.split("\nasync function ")[0];
+        assert.ok(call && /\benvironment,\s*apiKey,/.test(call), `${name} must pass the selected environment`);
+      }
+      assert.equal((communicationAdapter.match(/environment: input\.environment/g) ?? []).length, 2,
+        "both communication transports must forward the selected environment to Responses");
       assert.doesNotMatch(
         proof,
         /generateLandingPageDraftCandidate|generateLandingPageDraftImage|LandingPageGenerationContextPackage/,
@@ -233,6 +270,8 @@ async function resolvedWorkloads() {
       "taxon_input_catalog_sufficiency_evaluation",
       "development",
     ),
+    resolveOpenAiProductWorkload("communication_base_stage1_assistance", "development"),
+    resolveOpenAiProductWorkload("communication_base_stage2_intelligence", "development"),
   ]);
   for (const result of results) assert.equal(result.ok, true);
   return results.map((result) => {
@@ -266,6 +305,8 @@ function proofDependencies(
     niche: product,
     commercial: product,
     inputCatalogEvaluation: product,
+    communicationStageOne: product,
+    communicationStageTwo: product,
   };
 }
 

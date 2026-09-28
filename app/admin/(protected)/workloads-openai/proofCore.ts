@@ -2,6 +2,9 @@ import type {
   OpenAiManagedWorkloadEnvironment,
   ResolvedOpenAiProductWorkload,
 } from "@/openai-workloads";
+import type { StageTwoDraft } from "@/communication-base/ai-core";
+import { parseSectionValue } from "@/communication-base/policy";
+import { getCommunicationSection } from "@/communication-base/registry";
 
 export type OpenAiCandidateProofMetadata = Readonly<{
   schema_version: 1;
@@ -22,6 +25,16 @@ export type OpenAiCandidateProofAttempt =
     }>
   | Readonly<{ ok: false; code: "configuration" | "provider" | "contract" }>;
 
+export function isResearchedCommunicationStageTwoProof(draft: StageTwoDraft): boolean {
+  const suggestion = draft.suggestions[0];
+  const section = getCommunicationSection("market_insights");
+  const normalizedValue = section && suggestion?.key === section.key
+    ? parseSectionValue(section, suggestion.value)
+    : null;
+  return draft.researched && draft.suggestions.length === 1 &&
+    draft.sources.length > 0 && Array.isArray(normalizedValue) && normalizedValue.length > 0;
+}
+
 type ProductProof = (
   workload: ResolvedOpenAiProductWorkload,
   environment: OpenAiManagedWorkloadEnvironment,
@@ -33,6 +46,8 @@ export type OpenAiCandidateProofDependencies = Readonly<{
   niche: ProductProof;
   commercial: ProductProof;
   inputCatalogEvaluation: ProductProof;
+  communicationStageOne: ProductProof;
+  communicationStageTwo: ProductProof;
 }>;
 
 export async function runOpenAiCandidateProofCore(
@@ -75,6 +90,16 @@ export async function runOpenAiCandidateProofCore(
         environment,
         normalizedKey,
         normalizedRequestId,
+      );
+      break;
+    case "communication_base_stage1_assistance":
+      attempt = await dependencies.communicationStageOne(
+        workload, environment, normalizedKey, normalizedRequestId,
+      );
+      break;
+    case "communication_base_stage2_intelligence":
+      attempt = await dependencies.communicationStageTwo(
+        workload, environment, normalizedKey, normalizedRequestId,
       );
       break;
     default:

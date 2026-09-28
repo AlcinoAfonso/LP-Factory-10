@@ -50,6 +50,7 @@ export type OpenAiResponsesInput<T> = Readonly<{
   signal?: AbortSignal;
   financialContext: OpenAiCostEconomicContext;
   executionOrigin: OpenAiCostExecutionOrigin;
+  baselineReference?: string;
 }>;
 
 export type OpenAiResponsesDependencies = Readonly<{
@@ -127,6 +128,8 @@ export async function requestOpenAiResponses<T>(
   const nowIso = dependencies.nowIso ?? (() => new Date().toISOString());
   const recorder = dependencies.costRecorder ?? openAiCostRecorder;
   const createId = dependencies.createId ?? newOpenAiCostId;
+  const webSearchRequested = Array.isArray(input.request.tools) &&
+    input.request.tools.some((tool) => asRecord(tool)?.type === "web_search");
   const executionId = createId();
   const operationId = createId();
   const financialStartedAt = nowIso();
@@ -139,6 +142,7 @@ export async function requestOpenAiResponses<T>(
       environment,
       executionOrigin: input.executionOrigin,
       economicContext: input.financialContext,
+      baselineReference: input.baselineReference,
       startedAt: financialStartedAt,
     });
     await recorder.startOperation({
@@ -179,6 +183,7 @@ export async function requestOpenAiResponses<T>(
       providerErrorType: input.providerErrorType,
       usage: normalizeOpenAiResponseUsage(input.usage),
       webSearchCallCount: input.webSearchCallCount,
+      webSearchRequested,
       finishedAt,
     });
     await recorder.finishExecution({
@@ -249,6 +254,12 @@ export async function requestOpenAiResponses<T>(
     }
 
     const responseRecord = asRecord(payload);
+    const observedWebSearchCalls = Array.isArray(responseRecord?.output)
+      ? responseRecord.output.filter((item) => asRecord(item)?.type === "web_search_call").length
+      : null;
+    const webSearchCallCount = observedWebSearchCalls ?? (webSearchRequested ? null : 0);
+    const eventWebSearchCallCount = webSearchRequested || observedWebSearchCalls !== null
+      ? webSearchCallCount : undefined;
     const responseMetadata = {
       responseId: responseRecord?.id,
       providerRequestId,
@@ -262,6 +273,7 @@ export async function requestOpenAiResponses<T>(
         ...responseMetadata,
         providerErrorCode: providerError?.code,
         providerErrorType: providerError?.type,
+        webSearchCallCount: eventWebSearchCallCount,
       }, "provider_error"));
       await finishFinancial({
         result: "failure",
@@ -271,6 +283,7 @@ export async function requestOpenAiResponses<T>(
         providerErrorCode: nonEmptyString(providerError?.code),
         providerErrorType: nonEmptyString(providerError?.type),
         usage: responseRecord?.usage,
+        webSearchCallCount,
       });
       return {
         ok: false,
@@ -287,6 +300,7 @@ export async function requestOpenAiResponses<T>(
         ...eventContext,
         ...responseMetadata,
         ...parsed.telemetry,
+        webSearchCallCount: observedWebSearchCalls ?? parsed.telemetry?.webSearchCallCount ?? eventWebSearchCallCount,
       }, parsed.kind));
       await finishFinancial({
         result: "failure",
@@ -294,7 +308,7 @@ export async function requestOpenAiResponses<T>(
         responseId: nonEmptyString(responseRecord?.id),
         providerRequestId,
         usage: responseRecord?.usage,
-        webSearchCallCount: parsed.telemetry?.webSearchCallCount,
+        webSearchCallCount: observedWebSearchCalls ?? parsed.telemetry?.webSearchCallCount ?? webSearchCallCount,
       });
       return { ok: false, kind: parsed.kind, reason: parsed.reason };
     }
@@ -303,13 +317,14 @@ export async function requestOpenAiResponses<T>(
       ...eventContext,
       ...responseMetadata,
       ...("telemetry" in parsed ? parsed.telemetry : undefined),
+      webSearchCallCount: observedWebSearchCalls ?? parsed.telemetry?.webSearchCallCount ?? eventWebSearchCallCount,
     }));
     await finishFinancial({
       result: "success",
       responseId: nonEmptyString(responseRecord?.id),
       providerRequestId,
       usage: responseRecord?.usage,
-      webSearchCallCount: parsed.telemetry?.webSearchCallCount,
+      webSearchCallCount: observedWebSearchCalls ?? parsed.telemetry?.webSearchCallCount ?? webSearchCallCount,
     });
     return {
       ok: true,

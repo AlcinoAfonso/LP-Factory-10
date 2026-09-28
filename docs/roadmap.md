@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 26/09/2026
-• Versão: v1.5.246
+• Data: 27/09/2026
+• Versão: v1.5.248
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -1032,7 +1032,7 @@
 
 10.10.1 Objetivo e status
 - Objetivo: confirmar o mínimo factual aplicável após entitlement comercial válido e taxon primário resolvido, sem refazer o Pending Setup nem exigir IA.
-- Status: implementado no repositório; migrations hospedadas e QA autenticado de Preview permanecem pendentes. E25.1 depende da conclusão formal deste recorte e não foi iniciado.
+- Status: implementado no repositório; migrations hospedadas e QA autenticado de Preview permanecem pendentes.
 
 10.10.2 Registros do recorte
 - Banco:
@@ -1625,7 +1625,7 @@
 17.1.6 Pipelines operacionais
 - `pipeline-supabase-inspect` executa SQL read-only com saída em logs e Job Summary.
 - `pipeline-docs-apply-report` aplica report JSON em Markdown, cria branch e Pull Request e mantém revisão humana antes do merge.
-- `pipeline-supabase-apply-migrations` aplica migrations versionadas após o merge autorizado para o modo vigente na `main`, condicionado a `SUPABASE_APPLY_MIGRATIONS_ENABLED=true`.
+- `pipeline-supabase-apply-migrations` mantém o apply automático integral suspenso durante o backlog E10.10. Após merge e autorização operacional, somente a exceção manual E25.1 descrita em `docs/platform-config.md` pode aplicar as duas migrations E25 no escopo validado; o gate `SUPABASE_APPLY_MIGRATIONS_ENABLED` permanece fechado fora dessa operação.
 - Migration aplicada não é reescrita; correção ou reversão exige nova migration incremental.
 - SQL Editor não faz parte do fluxo normal de alteração de schema.
 
@@ -2950,3 +2950,26 @@
 - `github#15`, `vercel#33` e `supa#71` foram encerrados como registros históricos após a comprovação dos respectivos critérios.
 - `vercel#21` permaneceu fora do recorte por criar storage paralelo, e `supa#70` permaneceu futuro e condicionado à recorrência e superioridade comprovadas.
 - Nenhum recurso com custo incremental foi contratado, ativado ou consumido.
+
+25. E25 — Base de Comunicação
+- Objetivo: disponibilizar um ativo persistente da conta que reúna a verdade da empresa e a inteligência de comunicação antes de existir Landing Page ou integração real de canal.
+- Status: E25.1 definido; implementação pendente.
+
+25.1 Base de Comunicação inicial
+
+25.1.1 Objetivo e status
+- Objetivo: entregar uma única Base atual por conta, consultável, editável e progressiva após autorização comercial válida, sem depender de E10.10, E20, taxon oficial, PB-B ou PB-C.
+- Status: V1 funcional e V2 técnica aprovadas; implementação pendente.
+
+25.1.3 Estrutura, governança e extensibilidade
+- Status: definido para implementação.
+- Conteúdo: a Base pertence somente à conta; owner, admin e editor preenchem e editam, enquanto viewer consulta. Access Context, membership e entitlement comercial vigente governam o acesso. Seções com formatos suportados podem ser acrescentadas a Bases existentes sem perda do conteúdo anterior. Pesquisa, conversa, taxon, LP, produto, Tarefa, campanha e canal não se tornam proprietários, vínculos persistentes ou dependências de leitura e edição. Não criar segunda autoridade factual, Base por insumo ou consumidor, versionamento funcional selecionável ou framework arbitrário de seções.
+
+25.1.4 Etapa 1 e aproveitamento inicial
+- Status: definido para implementação.
+- Conteúdo: a verdade da empresa começa com nome público do negócio ou profissional e entendimento operacional da atuação e evolui por Negócio, Ofertas, Atendimento, Provas/credenciais/resultados, Materiais/identidade e Preferências/limites, sem bloqueio global por seção incompleta. Contexto confirmado do Pending Setup pode ser copiado uma vez quando inequívoco, sem sincronização reversa. Orientações, exemplos, placeholders e validações previsíveis permanecem determinísticos quando suficientes. A IA assistente só atua por ação explícita e ganho real para explicar, exemplificar, organizar, resumir ou reformular conteúdo fornecido; não usa Web Search, não propõe valor factual ausente, não confirma em nome do cliente nem dispara na edição manual. Sugestões orientam o que informar; valores reais são fornecidos ou confirmados pelo cliente, e informação ausente gera pergunta localizada ou seção pendente. Falha da IA preserva a edição manual.
+
+25.1.5 Etapa 2 e inteligência de comunicação
+- Status: definido para implementação.
+- Conteúdo: a IA é o motor central da interpretação de sinais de mercado e da produção de conteúdo comunicacional editável usando somente os insumos confirmados pertinentes da Etapa 1. Usa pesquisa atual via Web Search quando atualidade ou localidade forem materiais para elaborar Quem somos, Público/contexto, Dores/desejos/crenças/objeções, Proposta de valor, Benefícios, Diferenciais e FAQ. Distinguir fato particular confirmado de hipótese estratégica; revisão e edição humanas permanecem disponíveis sem aprovação por chamada. Falha de pesquisa material não é substituída silenciosamente por conhecimento paramétrico; a Base não depende de vínculo persistente com a pesquisa. Este recorte não gera LP ou outro produto, não integra canais nem altera Pending Setup, jornada E10, comercial ou trial, e não introduz Agents SDK, multiagente, job, fila ou infraestrutura antecipada.
+- E25.1 não cria carteira, saldo, franquia ou bloqueio comercial de IA; o contrato transversal de créditos pertence ao Debate 10B.

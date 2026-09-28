@@ -11,12 +11,15 @@ import type {
 } from "@/openai-workloads";
 import {
   runOpenAiCandidateProofCore,
+  isResearchedCommunicationStageTwoProof,
   type OpenAiCandidateProofAttempt as ProofAttempt,
   type OpenAiCandidateProofDependencies,
   type OpenAiCandidateProofMetadata,
 } from "./proofCore";
 import { parseCommercialProof } from "./commercialProof";
 import { lpFactoryOpenAiCostContext } from "@/openai-costs";
+import { assistCommunicationSection, generateCommunicationIntelligence } from "@/communication-base/adapters/communicationAiAdapter";
+import type { CommunicationBase } from "@/communication-base/contracts";
 
 export type { OpenAiCandidateProofMetadata } from "./proofCore";
 
@@ -40,8 +43,67 @@ export async function runOpenAiCandidateProof(
       commercial: dependencies.commercial ?? proveCommercialActivation,
       inputCatalogEvaluation:
         dependencies.inputCatalogEvaluation ?? proveInputCatalogEvaluation,
+      communicationStageOne:
+        dependencies.communicationStageOne ?? proveCommunicationStageOne,
+      communicationStageTwo:
+        dependencies.communicationStageTwo ?? proveCommunicationStageTwo,
     },
   );
+}
+
+async function proveCommunicationStageOne(
+  workload: ResolvedOpenAiProductWorkload,
+  environment: OpenAiManagedWorkloadEnvironment,
+  apiKey: string,
+  _requestId: string,
+): Promise<ProofAttempt> {
+  const result = await assistCommunicationSection({
+    accountId: "10000000-0000-4000-8000-000000000001",
+    key: "business_context",
+    userText: "Ofereço manutenção de jardins para condomínios.",
+    environment,
+    apiKey,
+    configurationOverride: workload,
+    financialContext: lpFactoryOpenAiCostContext,
+    executionOrigin: "administrative_proof",
+  });
+  return result.ok && (result.value.suggestion || result.value.missingQuestion)
+    ? { ok: true, providerRequestId: result.responseId, latencyMs: result.latencyMs }
+    : { ok: false, code: result.ok ? "contract" : "provider" };
+}
+
+async function proveCommunicationStageTwo(
+  workload: ResolvedOpenAiProductWorkload,
+  environment: OpenAiManagedWorkloadEnvironment,
+  apiKey: string,
+  _requestId: string,
+): Promise<ProofAttempt> {
+  const accountId = "10000000-0000-4000-8000-000000000001";
+  const base: CommunicationBase = {
+    accountId,
+    version: 1,
+    sections: {
+      business_context: {
+        format: "text", value: "Ofereço manutenção de jardins para condomínios em Recife.", origin: "user_confirmed",
+      },
+    },
+    createdAt: "2026-09-27T00:00:00.000Z",
+    updatedAt: "2026-09-27T00:00:00.000Z",
+  };
+  const result = await generateCommunicationIntelligence({
+    accountId,
+    base,
+    target: { kind: "section", key: "market_insights" },
+    requiresCurrentResearch: true,
+    environment,
+    apiKey,
+    configurationOverride: workload,
+    financialContext: lpFactoryOpenAiCostContext,
+    executionOrigin: "administrative_proof",
+  });
+  return result.ok && isResearchedCommunicationStageTwoProof(result.value)
+    ? { ok: true, providerRequestId: result.responseId, latencyMs: result.latencyMs }
+    : { ok: false, code: result.ok ? "contract" : "provider" };
 }
 
 async function proveNicheResolution(
