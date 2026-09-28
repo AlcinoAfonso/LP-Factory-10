@@ -3,10 +3,11 @@ import "server-only";
 import { createHash, randomUUID } from "node:crypto";
 
 import { requestOpenAiResponses } from "../../conversion-content/adapters/openAiResponsesAdapter";
-import { clientOpenAiCostContext, type OpenAiCostEconomicContext } from "../../openai-costs";
+import { clientOpenAiCostContext, type OpenAiCostEconomicContext, type OpenAiCostRecorder } from "../../openai-costs";
 import {
   resolveOpenAiProductWorkload,
   resolveOpenAiWorkloadEnvironment,
+  type OpenAiWorkloadEvent,
   type ResolvedOpenAiProductWorkload,
 } from "../../openai-workloads";
 import {
@@ -62,6 +63,8 @@ export async function generateCommunicationIntelligence(input: Readonly<{
   configurationOverride?: ResolvedOpenAiProductWorkload;
   financialContext?: OpenAiCostEconomicContext;
   executionOrigin?: "runtime" | "administrative_proof";
+  emitEvent?: (event: OpenAiWorkloadEvent) => void;
+  costRecorder?: OpenAiCostRecorder;
 }>) {
   const prompt = stageTwoPrompt(input.base, input.target, input.requiresCurrentResearch);
   if (!prompt) return { ok: false, reason: "invalid_input" } as AiFailure;
@@ -96,7 +99,7 @@ export async function generateCommunicationIntelligence(input: Readonly<{
       } : {}),
     },
     parseResponse: (payload) => parseStageTwoResponse(payload, input.target, input.requiresCurrentResearch),
-  });
+  }, { emitEvent: input.emitEvent, costRecorder: input.costRecorder });
   return result.ok ? { ok: true as const, value: result.value, usage: result.usage, latencyMs: result.latencyMs,
     responseId: result.responseId }
     : { ok: false as const, reason: "unavailable" as const };
