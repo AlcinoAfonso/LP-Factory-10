@@ -12,7 +12,7 @@ import {
 } from "../../../../lib/communication-base/adapters/communicationBaseAdapter";
 import { parseSectionValue, withSection } from "../../../../lib/communication-base/policy";
 import { getCommunicationSection } from "../../../../lib/communication-base/registry";
-import type { StageTwoDraft, StageTwoTarget } from "../../../../lib/communication-base/ai-core";
+import { hasConfirmedStageOneInput, type StageTwoDraft, type StageTwoTarget } from "../../../../lib/communication-base/ai-core";
 import type { CommunicationSectionValue } from "../../../../lib/communication-base/contracts";
 
 export type CommunicationActionState = Readonly<{
@@ -134,9 +134,7 @@ export async function generateCommunicationIntelligenceAction(input: Readonly<{
   if (!base.ok || !base.value || base.value.version !== input.version) {
     return { ok: false, message: "A Base mudou. Atualize a página antes de gerar sugestões." };
   }
-  const hasConfirmedInput = Object.values(base.value.sections).some((section) => section &&
-    (section.origin === "user_confirmed" || section.origin === "pending_setup_confirmed"));
-  if (!hasConfirmedInput) {
+  if (!hasConfirmedStageOneInput(base.value, input.target)) {
     return { ok: false, message: "Confirme primeiro ao menos um dado da Etapa 1." };
   }
   const result = await generateCommunicationIntelligence({

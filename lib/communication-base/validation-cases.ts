@@ -4,7 +4,7 @@ import { communicationSections, getCommunicationSection } from "./registry";
 import { resolveCommunicationBaseAccess, type CommunicationBaseAccessDependencies } from "./access-policy";
 import { parseSectionValue, projectCommunicationBase, withSection } from "./policy";
 import { selectPendingSetupBusinessContext } from "./pending-setup-import";
-import { hasStageTwoContent, parseStageOneResponse, parseStageTwoResponse, stageOnePrompt, stageTwoPrompt } from "./ai-core";
+import { hasConfirmedStageOneInput, hasStageTwoContent, parseStageOneResponse, parseStageTwoResponse, stageOnePrompt, stageTwoPrompt } from "./ai-core";
 import { selectStageTwoSectionPresentation } from "./stage-two-presentation";
 import { requestOpenAiResponses } from "../conversion-content/adapters/openAiResponsesAdapter";
 import { calculateOpenAiOperationCost, type OpenAiCostOperationTerminal, type OpenAiCostRecorder } from "../openai-costs";
@@ -77,6 +77,20 @@ assert.equal(parseStageOneResponse({ output_text: JSON.stringify({
 "stage 1 must reject any web search call");
 
 const generalTarget = { kind: "general" } as const;
+const emptySections = withSection(withSection({}, "business_name", "   ", "user_confirmed")!,
+  "offers", ["   "], "user_confirmed");
+assert.ok(emptySections);
+const emptyBase = projectCommunicationBase({
+  account_id: "00000000-0000-4000-8000-000000000001", version: 3, sections_json: emptySections,
+  created_at: "2026-09-27T00:00:00Z", updated_at: "2026-09-27T00:00:00Z",
+});
+assert.ok(emptyBase);
+for (const target of [generalTarget, { kind: "section", key: "about" } as const]) {
+  assert.equal(hasConfirmedStageOneInput(emptyBase, target), false,
+    "a saved empty stage 1 value must not unlock AI generation");
+  assert.equal(stageTwoPrompt(emptyBase, target, false), null,
+    "an empty confirmed value must not reach the provider");
+}
 const stageTwo = stageTwoPrompt(projected, generalTarget, true);
 assert.ok(stageTwo);
 const stageTwoInput = JSON.parse(stageTwo.input);

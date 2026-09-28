@@ -91,6 +91,27 @@ export function hasStageTwoContent(base: CommunicationBase): boolean {
   });
 }
 
+function confirmedStageOneData(base: CommunicationBase, target: StageTwoTarget) {
+  const keys = targetKeys(target);
+  if (!keys) return null;
+  const relevant = new Set(keys.flatMap((key) => relevantStageOne[key] ?? []));
+  const entries: [string, CommunicationSectionValue][] = [];
+  for (const section of communicationSections) {
+    if (section.stage !== 1 || !relevant.has(section.key)) continue;
+    const stored = base.sections[section.key];
+    if (stored?.origin !== "user_confirmed" && stored?.origin !== "pending_setup_confirmed") continue;
+    const value = parseSectionValue(section, stored.value);
+    if (value === null || (typeof value === "string" ? !value : value.length === 0)) continue;
+    entries.push([section.key, value]);
+  }
+  return Object.fromEntries(entries);
+}
+
+export function hasConfirmedStageOneInput(base: CommunicationBase, target: StageTwoTarget): boolean {
+  const confirmed = confirmedStageOneData(base, target);
+  return confirmed !== null && Object.keys(confirmed).length > 0;
+}
+
 export type CommunicationSuggestion = Readonly<{
   key: CommunicationSectionKey;
   value: CommunicationSectionValue;
@@ -118,13 +139,8 @@ export function stageOnePrompt(key: string, userText: string) {
 export function stageTwoPrompt(base: CommunicationBase, target: StageTwoTarget, requiresCurrentResearch: boolean) {
   const keys = targetKeys(target);
   if (!keys) return null;
-  const relevant = new Set(keys.flatMap((key) => relevantStageOne[key] ?? []));
-  const confirmed = Object.fromEntries(
-    communicationSections.filter((section) => section.stage === 1 && relevant.has(section.key) &&
-      ["user_confirmed", "pending_setup_confirmed"].includes(base.sections[section.key]?.origin ?? ""))
-      .map((section) => [section.key, base.sections[section.key]?.value]),
-  );
-  if (Object.keys(confirmed).length === 0) return null;
+  const confirmed = confirmedStageOneData(base, target);
+  if (!confirmed || Object.keys(confirmed).length === 0) return null;
   const existing = Object.fromEntries(keys.filter((key) => {
     const value = base.sections[key]?.value;
     return typeof value === "string" ? value.trim().length > 0 : Array.isArray(value) && value.length > 0;
