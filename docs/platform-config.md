@@ -64,6 +64,7 @@
 • Motivo do pin por SHA: reprodutibilidade e proteção contra alteração futura da referência móvel `@v2`.
 • Gate: `SUPABASE_APPLY_MIGRATIONS_ENABLED = false` bloqueia instalação da CLI, link e push. O fluxo automático integral permanece suspenso durante o backlog E10.10, mesmo com o gate aberto.
 • A exceção manual E25.1 foi executada na `main` pelo escopo `e25_1_only`, com SHA pós-merge exato, dry-run das duas migrations E25 e apply seletivo. O histórico remoto confirmou 58 versões e ausência das duas E10.10; o gate foi restaurado a `false`.
+• A E10.11 dispõe do escopo manual `e10_11_only`, reservado ao apply pós-merge da migration de nome público. Exige SHA exato da `main`, dry-run com somente essa migration e restauração do gate a `false` após o apply; as duas E10.10 permanecem excluídas. O apply E10.11 ainda não foi executado.
 • Novas migrations seguem PR e merge autorizados conforme `AGENTS.md`; não retomar apply integral sem resolução separada de E10.10 ou revisão explícita do filtro canônico.
 • Regra: não usar SQL Editor para alterações de schema no fluxo normal.
 • Regra: migration aplicada não pode ser editada, apagada, renomeada ou substituída; correções e reversões exigem nova migration.
@@ -71,7 +72,7 @@
 • `Setup Supabase CLI` e `Apply migrations` possuem condição explícita de gate aberto.
 • Secrets exigidos somente para apply autorizado com gate aberto: `SUPABASE_ACCESS_TOKEN` e `SUPABASE_DB_PASSWORD`, disponíveis apenas no passo `Apply migrations`.
 • Projeto alvo: definido no workflow por `SUPABASE_PROJECT_REF`; o valor não é credencial, mas deve apontar somente para o projeto aprovado.
-• `workflow_dispatch` permanece excepcional; a aplicação seletiva E25.1 está concluída e não autoriza novos applies. O fluxo automático integral depende de decisão separada.
+• `workflow_dispatch` permanece excepcional; a aplicação seletiva E25.1 está concluída. O escopo E10.11 exige sua própria autorização pós-merge; o fluxo automático integral depende de decisão separada.
 • `.github/workflows/upgrade-next-16-1-1.yml`: manutenção de Next.js + lockfile.
 
 2.4 Mailbox operacional para automações
@@ -241,6 +242,12 @@
 • Finalidade: gate server-only da Base de Comunicação E25.1, abrangendo rota, ações, navegação e assistência de IA.
 • Escopo: Preview e Production do projeto Core, independente por ambiente; somente o literal `true` habilita. Ausência ou qualquer outro valor mantém a Base indisponível sem consulta à sua tabela.
 • Estado operacional: `true` em Preview e Production, de forma independente, após apply seletivo das duas migrations E25, prova SQL, registro prospectivo das quatro coberturas E21.5 e ativação E21 da configuração avaliada. Os dois ambientes foram redeployados e passaram por QA autenticado; alterações do gate exigem novo redeploy do ambiente afetado.
+• Classificação: Config, não Secret. Valor real por ambiente não versionar.
+
+• `E10_11_PASSAGE_ENABLED`
+• Finalidade: gate server-only da coleta do nome público, conclusão versionada do Pending Setup e encaminhamento de conta autorizada à Base.
+• Escopo: Preview e Production do Core, independente por ambiente; somente o literal `true` ativa. Ausência ou outro valor preserva a conclusão e a rota anteriores, sem consulta à coluna nova.
+• Estado operacional: não configurado nem validado; habilitar somente após o apply seletivo E10.11 e validar Preview antes de Production. A alteração exige redeploy do ambiente afetado.
 • Classificação: Config, não Secret. Valor real por ambiente não versionar.
 
 • `E20_6_5_INPUT_CATALOG_EVALUATION_PROVIDER_ENABLED`

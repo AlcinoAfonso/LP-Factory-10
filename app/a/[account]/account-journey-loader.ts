@@ -7,6 +7,7 @@ import { loadFactualOnboarding } from "../../../lib/onboarding/factual/adapters/
 import { getActionableNicheResolutionForAccount } from "../../../lib/onboarding/niche-resolution/adapters/accountNicheResolutionUserAdapter";
 import { readActivePrimaryAccountTaxon } from "../../../lib/onboarding/niche-resolution/adapters/accountTaxonomyAdapter";
 import { loadPendingSetupConversation } from "../../../lib/onboarding/pending-setup/adapters/pendingSetupConversationAdapter";
+import { isE1011PassageEnabled } from "../../../lib/onboarding/pending-setup/config";
 import { decideAccountJourney } from "./_components/onboarding-journey-policy";
 
 type DashState = "auth" | "onboarding" | "public";
@@ -49,7 +50,7 @@ export async function loadAccountJourney({
       const conversation = accountId && userId
         ? await loadPendingSetupConversation({ accountId, userId })
         : null;
-      return { view: "pending_setup" as const, conversation };
+      return { view: "pending_setup" as const, conversation, passageEnabled: isE1011PassageEnabled() };
     }
 
     if (accountStatus !== "active") {
@@ -58,8 +59,14 @@ export async function loadAccountJourney({
 
     const accountId = (ctx?.account?.id ?? ctx?.account_id ?? null) as string | null;
     if (!accountId) return { view: "factual_unavailable" as const };
+    let checkedEntitlement: Awaited<ReturnType<typeof readCommercialEntitlementSignal>> | null = null;
+    if (isE1011PassageEnabled()) {
+      checkedEntitlement = await readCommercialEntitlementSignal({ accountId });
+      if (!checkedEntitlement.ok) return { view: "factual_unavailable" as const };
+      if (checkedEntitlement.signal.isCommerciallyEligible) return { view: "base" as const };
+    }
     const [entitlementRead, nicheResolution, taxonRead] = await Promise.all([
-      readCommercialEntitlementSignal({ accountId }),
+      checkedEntitlement ?? readCommercialEntitlementSignal({ accountId }),
       getActionableNicheResolutionForAccount({ accountId, accountStatus }),
       readActivePrimaryAccountTaxon({ accountId }),
     ]);

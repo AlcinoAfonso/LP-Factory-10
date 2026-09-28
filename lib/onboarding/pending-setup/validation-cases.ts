@@ -5,6 +5,7 @@ import {
   redactPotentialContactDetails,
   resolvePreferredNameFromAuth,
   validateBusinessContext,
+  validateBusinessDisplayName,
   validatePreferredName,
 } from "./policy";
 import {
@@ -70,6 +71,10 @@ assert.deepEqual(validateBusinessContext("  Consultoria   para pequenas empresas
 });
 assert.equal(validateBusinessContext(" ").ok, false);
 assert.equal(validateBusinessContext("x".repeat(4001)).ok, false);
+assert.deepEqual(validateBusinessDisplayName("  Studio   Aurora  "), { ok: true, value: "Studio Aurora" });
+assert.equal(validateBusinessDisplayName(" ").ok, false);
+assert.equal(validateBusinessDisplayName("x".repeat(121)).ok, false);
+assert.equal(validateBusinessDisplayName("Nome\u0000público").ok, false);
 
 const redacted = redactPotentialContactDetails(
   "Atendo por ana@example.com, https://example.com e +55 (21) 97965-8483.",
@@ -200,6 +205,8 @@ assert.match(pendingSetupActions, /Tente confirmar novamente\./);
 assert.doesNotMatch(pendingSetupActions, /Não consegui registrar essa escolha agora\. Tente novamente ou explique de outra forma\./);
 assert.match(pendingSetupConversationSource, /!isTerminalFallback \? \(/);
 assert.match(pendingSetupConversationSource, /hasPendingSetupTerminalFallback/);
+assert.match(pendingSetupConversationSource, /name="business_display_name"/);
+assert.match(conversationAdapter, /complete_account_pending_setup_v2/);
 assert.doesNotMatch(nicheOrchestrator, /confirmOperationalNicheForPendingSetup/);
 assert.equal(existsSync(legacyComponent), false);
 assert.equal(existsSync(legacyValidation), false);

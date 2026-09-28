@@ -60,7 +60,8 @@ export function parseStoredSections(raw: unknown): Record<string, unknown> | nul
     if (!isRecord(stored) || stored.format !== definition.format ||
       (definition.stage === 1
         ? stored.origin !== "user_confirmed" &&
-          (stored.origin !== "pending_setup_confirmed" || key !== "business_context")
+          (stored.origin !== "pending_setup_confirmed" ||
+            (key !== "business_context" && key !== "business_name"))
         : stored.origin !== "user_reviewed") ||
       parseSectionValue(definition, stored.value) === null) {
       return null;
@@ -109,7 +110,8 @@ export function withSection(
   if (normalized === null) return null;
   if (definition.stage === 1 && origin === "user_reviewed") return null;
   if (definition.stage === 2 && origin !== "user_reviewed") return null;
-  if (origin === "pending_setup_confirmed" && key !== "business_context") return null;
+  if (origin === "pending_setup_confirmed" &&
+      key !== "business_context" && key !== "business_name") return null;
   return {
     ...current,
     [key]: { format: definition.format, value: normalized, origin },

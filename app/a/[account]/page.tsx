@@ -4,6 +4,7 @@ import { NicheResolutionCard } from "./_components/NicheResolutionCard";
 import { GenericCommercialPage } from "./_components/commercial-page/GenericCommercialPage";
 import { PublishedCommercialActivationPage } from "./_components/commercial-page/PublishedCommercialActivationPage";
 import { loadAccountJourney } from "./account-journey-loader";
+import { redirect } from "next/navigation";
 
 type PageProps = {
   params: Promise<{ account: string }> | { account: string };
@@ -20,8 +21,12 @@ export default async function Page({ params }: PageProps) {
       <PendingSetupConversation
         accountSubdomain={accountSubdomain}
         conversation={journey.conversation}
+        passageEnabled={journey.passageEnabled}
       />
     );
+  }
+  if (journey.view === "base") {
+    redirect(`/a/${encodeURIComponent(accountSubdomain)}/base-comunicacao`);
   }
   if (journey.view === "account_unavailable") {
     return (

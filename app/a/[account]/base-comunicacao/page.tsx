@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { requireCommunicationBaseAccess } from "../../../../lib/communication-base/access";
-import { readCommunicationBase, readPendingSetupBusinessContext } from "../../../../lib/communication-base/adapters/communicationBaseAdapter";
+import { readCommunicationBase, readPendingSetupInitialContext } from "../../../../lib/communication-base/adapters/communicationBaseAdapter";
 import { communicationSections } from "../../../../lib/communication-base/registry";
 import { sectionStateKey, stageOneStateKey } from "../../../../lib/communication-base/ui-state-keys";
 import { CommunicationBaseTabs } from "./CommunicationBaseTabs";
@@ -31,7 +31,7 @@ export default async function CommunicationBasePage({ params }: PageProps) {
   const result = await readCommunicationBase(access.value.accountId);
   const base = result.ok ? result.value : null;
   const pendingSetupCandidate = result.ok && !base && access.value.canEdit
-    ? await readPendingSetupBusinessContext(access.value.accountId)
+    ? await readPendingSetupInitialContext(access.value.accountId)
     : null;
 
   return (

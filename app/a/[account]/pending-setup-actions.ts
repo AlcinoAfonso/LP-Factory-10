@@ -21,6 +21,7 @@ import {
   selectOperationalFallbackLabel,
   shouldUseTerminalFallbackAfterRejectedAiConfirmation,
   validateBusinessContext,
+  validateBusinessDisplayName,
   validatePreferredName,
 } from "../../../lib/onboarding/pending-setup";
 import {
@@ -29,8 +30,10 @@ import {
   completePendingSetup,
   loadPendingSetupConversation,
   setPendingSetupPreferredName,
+  setPendingSetupBusinessDisplayName,
 } from "../../../lib/onboarding/pending-setup/adapters/pendingSetupConversationAdapter";
 import { orchestratePendingSetupNicheTurn } from "../../../lib/onboarding/pending-setup/adapters/pendingSetupNicheOrchestrator";
+import { isE1011PassageEnabled } from "../../../lib/onboarding/pending-setup/config";
 
 export type PendingSetupActionState = Readonly<{
   ok: boolean;
@@ -364,6 +367,9 @@ export async function completePendingSetupAction(
   ) {
     return { ok: false, formError: "Esta conversa mudou. Recarregue para continuar." };
   }
+  if (isE1011PassageEnabled() && !conversation.businessDisplayName) {
+    return { ok: false, formError: "Informe o nome público antes de continuar." };
+  }
 
   const [primaryTaxon, operationalLabel] = await Promise.all([
     getActivePrimaryAccountTaxon({ accountId: actor.accountId }),
@@ -392,6 +398,40 @@ export async function completePendingSetupAction(
     };
   }
 
+  revalidatePath(actor.route);
+  return { ok: true };
+}
+
+export async function savePendingSetupBusinessDisplayNameAction(
+  _previousState: PendingSetupActionState,
+  formData: FormData,
+): Promise<PendingSetupActionState> {
+  if (!isE1011PassageEnabled()) return { ok: false, formError: GENERIC_ERROR };
+  const actor = await getPendingSetupActor(formData);
+  if (!actor.ok) return { ok: false, formError: GENERIC_ERROR };
+  const conversationId = String(formData.get("conversation_id") ?? "").trim();
+  const expectedVersion = Number(formData.get("expected_version"));
+  if (!conversationId || !Number.isSafeInteger(expectedVersion) || expectedVersion < 1) {
+    return { ok: false, formError: GENERIC_ERROR };
+  }
+  const validated = validateBusinessDisplayName(formData.get("business_display_name"));
+  if (!validated.ok) {
+    return { ok: false, fieldError: validated.reason === "too_long"
+      ? "Use no máximo 120 caracteres."
+      : "Informe um nome público válido para o negócio ou profissional." };
+  }
+  const result = await setPendingSetupBusinessDisplayName({
+    conversationId,
+    accountId: actor.accountId,
+    userId: actor.userId,
+    businessDisplayName: validated.value,
+    expectedVersion,
+  });
+  if (!result.ok) {
+    return { ok: false, formError: result.reason === "conflict"
+      ? "Esta conversa foi atualizada em outra aba. Recarregue para continuar."
+      : GENERIC_ERROR };
+  }
   revalidatePath(actor.route);
   return { ok: true };
 }

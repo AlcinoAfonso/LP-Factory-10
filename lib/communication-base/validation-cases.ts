@@ -4,7 +4,7 @@ import { communicationSections, getCommunicationSection } from "./registry";
 import { resolveCommunicationBaseAccess, type CommunicationBaseAccessDependencies } from "./access-policy";
 import { accessUserIdFromAuthLookup } from "../access/auth-user-result";
 import { parseSectionValue, projectCommunicationBase, withSection } from "./policy";
-import { selectPendingSetupBusinessContext } from "./pending-setup-import";
+import { selectPendingSetupBusinessContext, selectPendingSetupInitialContext } from "./pending-setup-import";
 import { hasConfirmedStageOneInput, hasStageTwoContent, parseStageOneResponse, parseStageTwoResponse, stageOnePrompt, stageTwoPrompt } from "./ai-core";
 import { selectStageTwoSectionPresentation, stageTwoBasisLabel } from "./stage-two-presentation";
 import { sectionStateKey, stageOneStateKey } from "./ui-state-keys";
@@ -61,6 +61,7 @@ assert.equal(formatEditorValue("Texto\ncom parágrafo", "text"), "Texto\ncom par
 const completedConversation = {
   stage: "completed",
   completed_at: "2026-09-27T12:00:00Z",
+  business_display_name: "Studio Aurora",
   business_context_text: "Atuo com consultoria em Recife.",
 };
 assert.equal(selectPendingSetupBusinessContext([completedConversation]), completedConversation.business_context_text);
@@ -71,9 +72,25 @@ assert.equal(selectPendingSetupBusinessContext([{ ...completedConversation, stag
 assert.equal(selectPendingSetupBusinessContext([{ ...completedConversation, completed_at: "invalid" }]), null);
 assert.equal(selectPendingSetupBusinessContext([{ ...completedConversation, business_context_text: "  " }]), null);
 assert.equal(selectPendingSetupBusinessContext([{ ...completedConversation, business_context_text: "x".repeat(4001) }]), null);
+assert.deepEqual(selectPendingSetupInitialContext([completedConversation]), {
+  businessName: "Studio Aurora", businessContext: completedConversation.business_context_text,
+});
+assert.equal(selectPendingSetupInitialContext([completedConversation, completedConversation]), null);
+assert.deepEqual(selectPendingSetupInitialContext([{ ...completedConversation, business_display_name: null }]), {
+  businessName: null, businessContext: completedConversation.business_context_text,
+});
 const future = { future_section: { format: "text", value: "Preservar", origin: "user_confirmed" } };
 const initial = withSection(future, "business_context", "Consultoria", "pending_setup_confirmed");
 assert.ok(initial);
+const named = withSection(initial, "business_name", "Studio Aurora", "pending_setup_confirmed");
+assert.ok(named);
+assert.equal(projectCommunicationBase({
+  account_id: "00000000-0000-4000-8000-000000000001",
+  version: 1,
+  sections_json: named,
+  created_at: "2026-09-27T00:00:00Z",
+  updated_at: "2026-09-27T00:00:00Z",
+})?.sections.business_name?.origin, "pending_setup_confirmed");
 assert.deepEqual(initial.future_section, future.future_section);
 assert.equal(withSection(initial, "offers", ["Oferta"], "pending_setup_confirmed"), null);
 assert.equal(withSection(initial, "audience", "Público", "user_confirmed"), null);
