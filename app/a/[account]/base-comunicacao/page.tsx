@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { requireCommunicationBaseAccess } from "../../../../lib/communication-base/access";
 import { readCommunicationBase, readPendingSetupBusinessContext } from "../../../../lib/communication-base/adapters/communicationBaseAdapter";
 import { communicationSections } from "../../../../lib/communication-base/registry";
+import { sectionStateKey, stageOneStateKey } from "../../../../lib/communication-base/ui-state-keys";
 import { CommunicationSectionEditor, CommunicationStageTwo, StartCommunicationBaseForm } from "./CommunicationSectionEditor";
 
 type PageProps = Readonly<{ params: Promise<{ account: string }> }>;
@@ -87,8 +88,10 @@ export default async function CommunicationBasePage({ params }: PageProps) {
                   ))}
                 </div>
             </section>
-            <CommunicationStageTwo key={base.version} account={access.value.accountSubdomain}
-              base={base} canEdit={access.value.canEdit} />
+            <CommunicationStageTwo key={stageOneStateKey(base)} account={access.value.accountSubdomain}
+              base={base} canEdit={access.value.canEdit}
+              sectionKeys={Object.fromEntries(communicationSections.filter((section) => section.stage === 2)
+                .map((section) => [section.key, sectionStateKey(base.sections[section.key])]))} />
           </div>
         )}
       </div>

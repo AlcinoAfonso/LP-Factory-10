@@ -5,7 +5,8 @@ import { resolveCommunicationBaseAccess, type CommunicationBaseAccessDependencie
 import { parseSectionValue, projectCommunicationBase, withSection } from "./policy";
 import { selectPendingSetupBusinessContext } from "./pending-setup-import";
 import { hasConfirmedStageOneInput, hasStageTwoContent, parseStageOneResponse, parseStageTwoResponse, stageOnePrompt, stageTwoPrompt } from "./ai-core";
-import { selectStageTwoSectionPresentation } from "./stage-two-presentation";
+import { selectStageTwoSectionPresentation, stageTwoBasisLabel } from "./stage-two-presentation";
+import { sectionStateKey, stageOneStateKey } from "./ui-state-keys";
 import { formatEditorValue, parseEditorValue } from "./editor-value";
 import { requestOpenAiResponses } from "../conversion-content/adapters/openAiResponsesAdapter";
 import { calculateOpenAiOperationCost, type OpenAiCostOperationTerminal, type OpenAiCostRecorder } from "../openai-costs";
@@ -75,6 +76,31 @@ const projected = projectCommunicationBase({
 assert.ok(projected);
 assert.equal(projected.sections.business_context?.origin, "pending_setup_confirmed");
 assert.equal(projected.sections.audience?.origin, "user_reviewed");
+const stageOneKey = stageOneStateKey(projected);
+const stageTwoFirstSave = { ...projected, version: projected.version + 1, sections: { ...projected.sections,
+  about: { format: "text" as const, value: "Primeira seção salva", origin: "user_reviewed" as const },
+} };
+const stageTwoSecondSave = { ...stageTwoFirstSave, version: projected.version + 2, sections: {
+  ...stageTwoFirstSave.sections,
+  audience: { format: "text" as const, value: "Segunda seção salva", origin: "user_reviewed" as const },
+} };
+assert.equal(stageOneStateKey(stageTwoFirstSave), stageOneKey);
+assert.equal(stageOneStateKey(stageTwoSecondSave), stageOneKey,
+  "sequential stage 2 saves must preserve the general suggestion batch");
+assert.equal(sectionStateKey(projected.sections.audience), sectionStateKey(stageTwoFirstSave.sections.audience),
+  "saving another stage 2 section must preserve this editor's unsaved draft");
+assert.notEqual(sectionStateKey(stageTwoFirstSave.sections.audience), sectionStateKey(stageTwoSecondSave.sections.audience),
+  "the saved editor must refresh its own state");
+const changedFacts = { ...projected, version: projected.version + 1, sections: { ...projected.sections,
+  business_context: { format: "text" as const, value: "Atuação alterada", origin: "user_confirmed" as const },
+} };
+assert.notEqual(stageOneStateKey(changedFacts), stageOneKey,
+  "a changed confirmed stage 1 fact must invalidate the suggestion batch");
+assert.equal(stageOneStateKey({ ...projected, sections: { ...projected.sections,
+  materials: { format: "items", value: ["Referência fora do alcance da Etapa 2"], origin: "user_confirmed" },
+} }), stageOneKey, "unrelated stage 1 material must not discard paid stage 2 suggestions");
+assert.notEqual(stageOneStateKey({ ...projected, accountId: "another-account" }), stageOneKey,
+  "suggestions must not survive switching accounts");
 const stageOne = stageOnePrompt("business_context", "Consultoria para pequenas empresas em Recife.");
 assert.ok(stageOne);
 assert.match(stageOne.instructions, /Nunca crie preço/);
@@ -153,13 +179,19 @@ const searched = {
 const researched = parseStageTwoResponse(searched, generalTarget, true);
 assert.equal(researched.ok, true);
 if (researched.ok) assert.equal(researched.value.sources.length, 1);
-const localPresentation = { generalRevision: 0, value: "Revisão local", sources: [{ title: "Fonte local", url: "https://example.org/local" }] };
-assert.deepEqual(selectStageTwoSectionPresentation(localPresentation, 0, "Geração geral"), {
-  value: "Revisão local", sources: localPresentation.sources,
+const generalSuggestion = { key: "audience" as const, value: "Geração geral", basis: "strategic_hypothesis" as const };
+const localSuggestion = { key: "audience" as const, value: "Revisão local", basis: "strategic_hypothesis" as const };
+const localPresentation = { generalRevision: 0, suggestion: localSuggestion,
+  sources: [{ title: "Fonte local", url: "https://example.org/local" }] };
+assert.deepEqual(selectStageTwoSectionPresentation(localPresentation, 0, generalSuggestion), {
+  suggestion: localSuggestion, sources: localPresentation.sources,
 });
-assert.deepEqual(selectStageTwoSectionPresentation(localPresentation, 1, "Geração geral"), {
-  value: "Geração geral", sources: [],
+assert.deepEqual(selectStageTwoSectionPresentation(localPresentation, 1, generalSuggestion), {
+  suggestion: generalSuggestion, sources: [],
 }, "a later general result must replace the local suggestion and its sources");
+assert.equal(stageTwoBasisLabel(localSuggestion.basis), "Hipótese estratégica — não é fato confirmado da empresa.");
+assert.equal(stageTwoBasisLabel("confirmed_business_fact"),
+  "Baseado nos dados confirmados da Etapa 1; revise antes de usar.");
 assert.equal(parseStageTwoResponse({ ...searched, output: [{
   type: "web_search_call", status: "completed", action: { sources: [{ url: "http://example.org" }] },
 }] }, generalTarget, true).ok, false, "insecure sources must fail closed");

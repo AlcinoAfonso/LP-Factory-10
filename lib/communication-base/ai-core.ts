@@ -91,7 +91,7 @@ export function hasStageTwoContent(base: CommunicationBase): boolean {
   });
 }
 
-function confirmedStageOneData(base: CommunicationBase, target: StageTwoTarget) {
+export function confirmedStageOneData(base: CommunicationBase, target: StageTwoTarget) {
   const keys = targetKeys(target);
   if (!keys) return null;
   const relevant = new Set(keys.flatMap((key) => relevantStageOne[key] ?? []));

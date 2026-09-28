@@ -5,8 +5,8 @@ import { useFormStatus } from "react-dom";
 import { useRouter } from "next/navigation";
 
 import type { CommunicationBase, CommunicationSection, CommunicationSectionValue } from "../../../../lib/communication-base/contracts";
-import { hasStageTwoContent, type WebSource } from "../../../../lib/communication-base/ai-core";
-import { selectStageTwoSectionPresentation, type LocalStageTwoResult } from "../../../../lib/communication-base/stage-two-presentation";
+import { hasStageTwoContent, type CommunicationSuggestion, type WebSource } from "../../../../lib/communication-base/ai-core";
+import { selectStageTwoSectionPresentation, stageTwoBasisLabel, type LocalStageTwoResult } from "../../../../lib/communication-base/stage-two-presentation";
 import { communicationSections, type CommunicationSectionKey } from "../../../../lib/communication-base/registry";
 import type { CommunicationSectionDefinition } from "../../../../lib/communication-base/registry";
 import { formatEditorValue } from "../../../../lib/communication-base/editor-value";
@@ -75,10 +75,10 @@ export function CommunicationSectionEditor(props: Readonly<{
   definition: CommunicationSectionDefinition;
   current: CommunicationSection | undefined;
   canEdit: boolean;
-  suggestedValue?: CommunicationSectionValue;
+  suggestedSuggestion?: CommunicationSuggestion;
   generalRevision?: number;
 }>) {
-  const { account, version, definition, current, canEdit, suggestedValue, generalRevision = 0 } = props;
+  const { account, version, definition, current, canEdit, suggestedSuggestion, generalRevision = 0 } = props;
   const [state, action] = useActionState(saveCommunicationSectionAction, INITIAL_STATE);
   const [draft, setDraft] = useState(editorText(current));
   const [aiPending, startAiTransition] = useTransition();
@@ -107,8 +107,8 @@ export function CommunicationSectionEditor(props: Readonly<{
   const fieldId = `communication-${definition.key}`;
   const hintId = `${fieldId}-hint`;
   const guidance = definition.stage === 1 ? STAGE_ONE_GUIDANCE[definition.key] : null;
-  const stageTwoPresentation = selectStageTwoSectionPresentation(localStageTwoResult, generalRevision, suggestedValue);
-  const stageTwoSuggestedValue = stageTwoPresentation.value;
+  const stageTwoPresentation = selectStageTwoSectionPresentation(localStageTwoResult, generalRevision, suggestedSuggestion);
+  const stageTwoSuggestion = stageTwoPresentation.suggestion;
   return (
     <article className="rounded-xl border border-border bg-white p-5 shadow-sm">
       <form action={action} className="space-y-3">
@@ -188,7 +188,7 @@ export function CommunicationSectionEditor(props: Readonly<{
                 if (result.ok) {
                   setLocalStageTwoResult({
                     generalRevision,
-                    value: result.draft.suggestions[0]?.value ?? null,
+                    suggestion: result.draft.suggestions[0] ?? null,
                     sources: result.draft.sources,
                   });
                 } else setAiMessage(result.message);
@@ -199,8 +199,9 @@ export function CommunicationSectionEditor(props: Readonly<{
             className="mt-3 inline-flex min-h-11 items-center justify-center rounded-lg border border-border px-5 py-2 text-sm font-semibold text-foreground disabled:cursor-wait disabled:opacity-60">
             {aiPending ? "Preparando sugestão..." : "Revisar esta seção com IA"}
           </button>
-          {stageTwoSuggestedValue !== null ? <Suggestion value={stageTwoSuggestedValue} format={definition.format}
-            onUse={() => setDraft(formatEditorValue(stageTwoSuggestedValue, definition.format))} /> : null}
+          {stageTwoSuggestion !== null ? <Suggestion value={stageTwoSuggestion.value} format={definition.format}
+            basis={stageTwoSuggestion.basis}
+            onUse={() => setDraft(formatEditorValue(stageTwoSuggestion.value, definition.format))} /> : null}
           <Sources sources={stageTwoPresentation.sources} />
           {aiMessage ? <p role="alert" className="mt-2 text-sm text-state-error">{aiMessage}</p> : null}
         </div>
@@ -209,16 +210,17 @@ export function CommunicationSectionEditor(props: Readonly<{
   );
 }
 
-export function CommunicationStageTwo({ account, base, canEdit }: Readonly<{
+export function CommunicationStageTwo({ account, base, canEdit, sectionKeys }: Readonly<{
   account: string;
   base: CommunicationBase;
   canEdit: boolean;
+  sectionKeys: Readonly<Record<string, string>>;
 }>) {
   const [pending, startTransition] = useTransition();
   const [message, setMessage] = useState("");
   const [messageIsError, setMessageIsError] = useState(false);
   const [requiresResearch, setRequiresResearch] = useState(false);
-  const [suggestions, setSuggestions] = useState<Partial<Record<string, CommunicationSectionValue>>>({});
+  const [suggestions, setSuggestions] = useState<Partial<Record<string, CommunicationSuggestion>>>({});
   const [generalRevision, setGeneralRevision] = useState(0);
   const [sources, setSources] = useState<readonly WebSource[]>([]);
   const stageTwo = communicationSections.filter((section) => section.stage === 2);
@@ -247,7 +249,7 @@ export function CommunicationStageTwo({ account, base, canEdit }: Readonly<{
                   account, target: { kind: "general" }, version: base.version, requiresCurrentResearch: requiresResearch,
                 });
                 if (result.ok) {
-                  setSuggestions(Object.fromEntries(result.draft.suggestions.map((item) => [item.key, item.value])));
+                  setSuggestions(Object.fromEntries(result.draft.suggestions.map((item) => [item.key, item])));
                   setSources(result.draft.sources);
                   setGeneralRevision((current) => current + 1);
                   setMessage("Sugestões prontas para revisão. Nenhuma seção foi salva automaticamente.");
@@ -268,21 +270,23 @@ export function CommunicationStageTwo({ account, base, canEdit }: Readonly<{
         </div> : null}
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
-        {stageTwo.map((section) => <CommunicationSectionEditor key={`${section.key}-${base.version}`}
+        {stageTwo.map((section) => <CommunicationSectionEditor key={`${section.key}-${sectionKeys[section.key]}`}
           account={account} version={base.version} definition={section} current={base.sections[section.key]}
-          canEdit={canEdit} suggestedValue={suggestions[section.key]} generalRevision={generalRevision} />)}
+          canEdit={canEdit} suggestedSuggestion={suggestions[section.key]} generalRevision={generalRevision} />)}
       </div>
     </section>
   );
 }
 
-function Suggestion({ value, format, onUse }: Readonly<{
+function Suggestion({ value, format, basis, onUse }: Readonly<{
   value: CommunicationSectionValue;
   format: CommunicationSectionDefinition["format"];
+  basis?: CommunicationSuggestion["basis"];
   onUse: () => void;
 }>) {
   return <div className="mt-3 rounded-lg border border-border bg-surface-50 p-3">
     <p className="text-xs font-semibold">Sugestão da IA para revisar</p>
+    {basis ? <p className="mt-2 text-xs font-semibold text-brand-700">{stageTwoBasisLabel(basis)}</p> : null}
     <p className="mt-2 whitespace-pre-wrap text-sm">{formatEditorValue(value, format) || "Sem conteúdo suficiente para sugerir."}</p>
     {formatEditorValue(value, format).trim() ? <button type="button" onClick={onUse}
       className="mt-3 inline-flex min-h-11 items-center rounded-lg border border-border px-4 text-sm font-semibold">
