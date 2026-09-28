@@ -192,10 +192,19 @@ export function parseStageTwoResponse(payload: unknown, target: StageTwoTarget, 
   const sources = new Map<string, WebSource>();
   for (const rawCall of extracted.webCalls) {
     const call = asRecord(rawCall);
-    const rawSources = asRecord(call?.action)?.sources;
-    if (call?.status !== "completed" || !Array.isArray(rawSources) || rawSources.length === 0) {
+    const action = asRecord(call?.action);
+    if (call?.status !== "completed" || !action ||
+        !["search", "open_page", "find_in_page"].includes(String(action.type))) {
       return invalid("web_sources_missing");
     }
+    if (action.type === "open_page" || action.type === "find_in_page") {
+      const visitedSource = normalizeSource({ url: action.url });
+      if (visitedSource) sources.set(visitedSource.url, visitedSource);
+      if (sources.size > 50) return invalid("web_sources_invalid");
+    }
+    const rawSources = action.sources;
+    if (rawSources === undefined) continue;
+    if (!Array.isArray(rawSources)) return invalid("web_sources_invalid");
     let usableInCall = 0;
     for (const rawSource of rawSources) {
       const source = normalizeSource(rawSource);
@@ -205,8 +214,9 @@ export function parseStageTwoResponse(payload: unknown, target: StageTwoTarget, 
       }
       if (sources.size > 50) return invalid("web_sources_invalid");
     }
-    if (!usableInCall) return invalid("web_sources_invalid");
+    if (rawSources.length > 0 && !usableInCall) return invalid("web_sources_invalid");
   }
+  if (requiresCurrentResearch && sources.size === 0) return invalid("web_sources_missing");
   const parsed = parseJsonObject(extracted.text);
   const sections = asRecord(parsed?.sections);
   if (!sections) return invalid("invalid_stage_two_output");
