@@ -9,7 +9,7 @@ import { selectStageTwoSectionPresentation, stageTwoBasisLabel } from "./stage-t
 import { sectionStateKey, stageOneStateKey } from "./ui-state-keys";
 import { formatEditorValue, parseEditorValue } from "./editor-value";
 import { isCommunicationSectionSaveLocked } from "./editor-save-guard";
-import { canInstallGeneralSuggestion, canStartGeneralGeneration, isCurrentGenerationVersion } from "./generation-guard";
+import { canInstallGeneralSuggestion, canStartGeneralGeneration, createStageTwoGenerationGate, isCurrentGenerationVersion } from "./generation-guard";
 import { requestOpenAiResponses } from "../conversion-content/adapters/openAiResponsesAdapter";
 import { calculateOpenAiOperationCost, type OpenAiCostOperationTerminal, type OpenAiCostRecorder } from "../openai-costs";
 import { resolveOpenAiProductWorkload } from "../openai-workloads";
@@ -111,6 +111,22 @@ assert.equal(canStartGeneralGeneration(1), false,
   "a generation must not start while a stage 2 save is already in flight");
 assert.equal(canStartGeneralGeneration(0), true,
   "a completed sequential save must not block a later generation");
+const generalFirstGate = createStageTwoGenerationGate();
+assert.equal(generalFirstGate.tryStart(), true, "general generation acquires the shared gate");
+assert.equal(generalFirstGate.tryStart(), false,
+  "local review cannot start while general generation is in flight");
+generalFirstGate.finish();
+assert.equal(generalFirstGate.tryStart(), true,
+  "local review can start after general generation completes or fails");
+generalFirstGate.finish();
+const localFirstGate = createStageTwoGenerationGate();
+assert.equal(localFirstGate.tryStart(), true, "local review acquires the shared gate");
+assert.equal(localFirstGate.tryStart(), false,
+  "general generation cannot start while local review is in flight");
+localFirstGate.finish();
+assert.equal(localFirstGate.tryStart(), true,
+  "general generation can start after local review completes or fails");
+localFirstGate.finish();
 assert.equal(canInstallGeneralSuggestion(projected.version, stageTwoFirstSave.version, 0, 0), false,
   "a refreshed version must discard the older result before installation");
 assert.equal(canInstallGeneralSuggestion(projected.version, projected.version, 0, 0), true,

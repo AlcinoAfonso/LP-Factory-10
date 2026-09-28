@@ -11,7 +11,7 @@ import { communicationSections, type CommunicationSectionKey } from "../../../..
 import type { CommunicationSectionDefinition } from "../../../../lib/communication-base/registry";
 import { formatEditorValue } from "../../../../lib/communication-base/editor-value";
 import { isCommunicationSectionSaveLocked } from "../../../../lib/communication-base/editor-save-guard";
-import { canInstallGeneralSuggestion, canStartGeneralGeneration } from "../../../../lib/communication-base/generation-guard";
+import { canInstallGeneralSuggestion, canStartGeneralGeneration, createStageTwoGenerationGate } from "../../../../lib/communication-base/generation-guard";
 import {
   saveCommunicationSectionAction,
   startCommunicationBaseAction,
@@ -79,10 +79,14 @@ export function CommunicationSectionEditor(props: Readonly<{
   canEdit: boolean;
   suggestedSuggestion?: CommunicationSuggestion;
   generalRevision?: number;
+  stageTwoGenerationInFlight?: boolean;
+  onStageTwoGenerationStart?: () => boolean;
+  onStageTwoGenerationFinished?: () => void;
   onStageTwoSaveStarted?: () => void;
   onStageTwoSaveFinished?: () => void;
 }>) {
   const { account, version, definition, current, canEdit, suggestedSuggestion, generalRevision = 0,
+    stageTwoGenerationInFlight = false, onStageTwoGenerationStart, onStageTwoGenerationFinished,
     onStageTwoSaveStarted, onStageTwoSaveFinished } = props;
   const [state, action, savePending] = useActionState(saveCommunicationSectionAction, INITIAL_STATE);
   const lastHandledSaveStateRef = useRef(state);
@@ -203,29 +207,40 @@ export function CommunicationSectionEditor(props: Readonly<{
               className="h-5 w-5 accent-brand-700" />
             Preciso de pesquisa atual ou local para esta seção
           </label>
-          <button type="button" disabled={saveLocked || aiPending}
-            onClick={() => startAiTransition(async () => {
-              setAiMessage("");
-              setLocalStageTwoResult(null);
-              try {
-                const result = await generateCommunicationIntelligenceAction({
-                  account, target: { kind: "section", key: definition.key as CommunicationSectionKey }, version,
-                  requiresCurrentResearch: requiresResearch,
-                });
-                if (result.ok) {
-                  setLocalStageTwoResult({
-                    generalRevision,
-                    suggestion: result.draft.suggestions[0] ?? null,
-                    sources: result.draft.sources,
-                  });
-                } else setAiMessage(result.message);
-              } catch {
-                setAiMessage("A revisão está indisponível agora. Continue a edição manual.");
+          <button type="button" disabled={saveLocked || aiPending || stageTwoGenerationInFlight}
+            onClick={() => {
+              if (!onStageTwoGenerationStart?.()) {
+                setAiMessage("Aguarde a geração em andamento antes de revisar esta seção.");
+                return;
               }
-            })}
+              startAiTransition(async () => {
+                setAiMessage("");
+                setLocalStageTwoResult(null);
+                try {
+                  const result = await generateCommunicationIntelligenceAction({
+                    account, target: { kind: "section", key: definition.key as CommunicationSectionKey }, version,
+                    requiresCurrentResearch: requiresResearch,
+                  });
+                  if (result.ok) {
+                    setLocalStageTwoResult({
+                      generalRevision,
+                      suggestion: result.draft.suggestions[0] ?? null,
+                      sources: result.draft.sources,
+                    });
+                  } else setAiMessage(result.message);
+                } catch {
+                  setAiMessage("A revisão está indisponível agora. Continue a edição manual.");
+                } finally {
+                  onStageTwoGenerationFinished?.();
+                }
+              });
+            }}
             className="mt-3 inline-flex min-h-11 items-center justify-center rounded-lg border border-border px-5 py-2 text-sm font-semibold text-foreground disabled:cursor-wait disabled:opacity-60">
             {aiPending ? "Preparando sugestão..." : "Revisar esta seção com IA"}
           </button>
+          {stageTwoGenerationInFlight && !aiPending ? <p role="status" className="mt-2 text-xs text-muted-foreground">
+            Aguarde a geração em andamento antes de revisar esta seção.
+          </p> : null}
           {stageTwoSuggestion !== null ? <Suggestion value={stageTwoSuggestion.value} format={definition.format}
             basis={stageTwoSuggestion.basis}
             disabled={saveLocked} onUse={() => setDraft(formatEditorValue(stageTwoSuggestion.value, definition.format))} /> : null}
@@ -251,9 +266,20 @@ export function CommunicationStageTwo({ account, base, canEdit, sectionKeys }: R
   const [generalRevision, setGeneralRevision] = useState(0);
   const [sources, setSources] = useState<readonly WebSource[]>([]);
   const [saveInFlightCount, setSaveInFlightCount] = useState(0);
+  const [generationInFlight, setGenerationInFlight] = useState(false);
+  const generationGateRef = useRef(createStageTwoGenerationGate());
   const currentVersionRef = useRef(base.version);
   const saveRevisionRef = useRef(0);
   const pendingSavesRef = useRef(0);
+  const tryStartStageTwoGeneration = () => {
+    if (!generationGateRef.current.tryStart()) return false;
+    setGenerationInFlight(true);
+    return true;
+  };
+  const finishStageTwoGeneration = () => {
+    generationGateRef.current.finish();
+    setGenerationInFlight(false);
+  };
   useLayoutEffect(() => { currentVersionRef.current = base.version; }, [base.version]);
   const stageTwo = communicationSections.filter((section) => section.stage === 2);
   return (
@@ -270,9 +296,14 @@ export function CommunicationStageTwo({ account, base, canEdit, sectionKeys }: R
               className="h-5 w-5 accent-brand-700" />
             Preciso de pesquisa atual ou local para esta geração
           </label>
-          <button type="button" disabled={pending || saveInFlightCount > 0}
+          <button type="button" disabled={pending || generationInFlight || saveInFlightCount > 0}
             onClick={() => {
               if (!canStartGeneralGeneration(pendingSavesRef.current)) return;
+              if (!tryStartStageTwoGeneration()) {
+                setMessageIsError(true);
+                setMessage("Aguarde a revisão em andamento antes de gerar sugestões para toda a Etapa 2.");
+                return;
+              }
               const requestedVersion = base.version;
               const requestSaveRevision = saveRevisionRef.current;
               startTransition(async () => {
@@ -302,12 +333,17 @@ export function CommunicationStageTwo({ account, base, canEdit, sectionKeys }: R
                 } catch {
                   setMessageIsError(true);
                   setMessage("A geração está indisponível agora. Continue a edição manual.");
+                } finally {
+                  finishStageTwoGeneration();
                 }
               });
             }}
             className="mt-3 inline-flex min-h-11 items-center justify-center rounded-lg border border-border px-5 py-2 text-sm font-semibold text-foreground disabled:cursor-wait disabled:opacity-60">
             {pending ? "Preparando sugestões..." : hasStageTwoContent(base) ? "Atualizar inteligência com IA" : "Gerar inteligência com IA"}
           </button>
+          {generationInFlight && !pending ? <p role="status" className="mt-2 text-xs text-muted-foreground">
+            Aguarde a revisão em andamento antes de gerar sugestões para toda a Etapa 2.
+          </p> : null}
           {message ? <p role={messageIsError ? "alert" : "status"} className="mt-2 text-sm">{message}</p> : null}
           <Sources sources={sources} />
         </div> : null}
@@ -316,6 +352,9 @@ export function CommunicationStageTwo({ account, base, canEdit, sectionKeys }: R
         {stageTwo.map((section) => <CommunicationSectionEditor key={`${section.key}-${sectionKeys[section.key]}`}
           account={account} version={base.version} definition={section} current={base.sections[section.key]}
           canEdit={canEdit} suggestedSuggestion={suggestions[section.key]} generalRevision={generalRevision}
+          stageTwoGenerationInFlight={generationInFlight}
+          onStageTwoGenerationStart={tryStartStageTwoGeneration}
+          onStageTwoGenerationFinished={finishStageTwoGeneration}
           onStageTwoSaveStarted={() => {
             saveRevisionRef.current += 1;
             pendingSavesRef.current += 1;

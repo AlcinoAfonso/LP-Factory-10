@@ -6,6 +6,20 @@ export function canStartGeneralGeneration(pendingSaves: number): boolean {
   return pendingSaves === 0;
 }
 
+export function createStageTwoGenerationGate() {
+  let inFlight = false;
+  return {
+    tryStart() {
+      if (inFlight) return false;
+      inFlight = true;
+      return true;
+    },
+    finish() {
+      inFlight = false;
+    },
+  };
+}
+
 export function canInstallGeneralSuggestion(
   requestedVersion: number,
   currentVersion: number,
