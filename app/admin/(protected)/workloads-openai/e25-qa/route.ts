@@ -84,10 +84,10 @@ export async function GET() {
   if (!(await allowed())) return new Response("Indisponível", { status: 404 });
   const forms = (Object.keys(candidates) as Candidate[]).map((candidate) =>
     Object.entries(cases).map(([id, testCase]) =>
-      `<form method="post"><input type="hidden" name="candidate" value="${candidate}"><input type="hidden" name="case" value="${id}"><button type="submit">${candidate.toUpperCase()} · ${testCase.label}</button></form>`,
+      `<form method="post" target="qa_result"><input type="hidden" name="candidate" value="${candidate}"><input type="hidden" name="case" value="${id}"><button type="submit">${candidate.toUpperCase()} · ${testCase.label}</button></form>`,
     ).join("\n"),
   ).join("\n");
-  return new Response(`<!doctype html><html lang="pt-BR"><meta charset="utf-8"><title>QA E25.1 isolada</title><main><h1>QA E25.1 isolada</h1><p>Uma operação por envio. Execute Luna antes de Sol. Sem promoção nem persistência da resposta.</p>${forms}</main></html>`, {
+  return new Response(`<!doctype html><html lang="pt-BR"><meta charset="utf-8"><title>QA E25.1 isolada</title><main><h1>QA E25.1 isolada</h1><p>Uma operação por envio. Execute Luna antes de Sol. Sem promoção nem persistência da resposta.</p>${forms}<iframe name="qa_result" title="Resultado da operação" style="width:100%;height:70vh"></iframe></main></html>`, {
     headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" },
   });
 }
