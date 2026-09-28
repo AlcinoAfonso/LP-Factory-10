@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 28/09/2026
-• Versão: v1.5.249
+• Versão: v1.5.250
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2983,13 +2983,13 @@
 
 25. E25 — Base de Comunicação
 - Objetivo: disponibilizar um ativo persistente da conta que reúna a verdade da empresa e a inteligência de comunicação antes de existir Landing Page ou integração real de canal.
-- Status: E25.1 implementado, com QA operacional em Preview e Production; PB-B e PB-C dependem do encerramento efetivo do PB-A.
+- Status: PB-A/E25.1 encerrado após QA operacional em Preview e Production e confirmação da Supervisão Autônomo; a dependência de PB-B em relação a PB-A está satisfeita. PB-C permanece dependente de PB-B.
 
 25.1 Base de Comunicação inicial
 
 25.1.1 Objetivo e status
 - Objetivo: entregar uma única Base atual por conta, consultável, editável e progressiva após autorização comercial válida, sem depender de E10.10, E20, taxon oficial, PB-B ou PB-C.
-- Status: implementado e operacional em Preview e Production sob gate independente por ambiente; QA provider-backed executado com cobertura e telemetria E21.
+- Status: encerrado e operacional em Preview e Production sob gate independente por ambiente; QA provider-backed concluído com cobertura e telemetria E21. Fontes Web pouco pertinentes são uma limitação de qualidade observada e aceita, sujeita a revisão humana.
 
 25.1.2 Registros do recorte
 - Banco:
