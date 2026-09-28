@@ -5,6 +5,7 @@ import { requireCommunicationBaseAccess } from "../../../../lib/communication-ba
 import { readCommunicationBase, readPendingSetupBusinessContext } from "../../../../lib/communication-base/adapters/communicationBaseAdapter";
 import { communicationSections } from "../../../../lib/communication-base/registry";
 import { sectionStateKey, stageOneStateKey } from "../../../../lib/communication-base/ui-state-keys";
+import { CommunicationBaseTabs } from "./CommunicationBaseTabs";
 import { CommunicationSectionEditor, CommunicationStageTwo, StartCommunicationBaseForm } from "./CommunicationSectionEditor";
 
 type PageProps = Readonly<{ params: Promise<{ account: string }> }>;
@@ -71,7 +72,7 @@ export default async function CommunicationBasePage({ params }: PageProps) {
                 Seu acesso é somente leitura.
               </p>
             ) : null}
-            <section aria-labelledby="communication-stage-1" className="space-y-4">
+            <CommunicationBaseTabs stageOne={<section aria-labelledby="communication-stage-1" className="space-y-4">
                 <div className="space-y-3">
                   <p className="text-sm font-semibold text-brand-700">Etapa 1</p>
                   <h2 id="communication-stage-1" className="text-xl font-semibold">Verdade da empresa</h2>
@@ -88,11 +89,10 @@ export default async function CommunicationBasePage({ params }: PageProps) {
                     />
                   ))}
                 </div>
-            </section>
-            <CommunicationStageTwo key={stageOneStateKey(base)} account={access.value.accountSubdomain}
+            </section>} stageTwo={<CommunicationStageTwo key={stageOneStateKey(base)} account={access.value.accountSubdomain}
               base={base} canEdit={access.value.canEdit}
               sectionKeys={Object.fromEntries(communicationSections.filter((section) => section.stage === 2)
-                .map((section) => [section.key, sectionStateKey(base.sections[section.key])]))} />
+                .map((section) => [section.key, sectionStateKey(base.sections[section.key])]))} />} />
           </div>
         )}
       </div>
