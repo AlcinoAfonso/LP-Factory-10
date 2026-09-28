@@ -104,6 +104,7 @@ jobs:
           db_container="${db_containers[0]}"
           docker exec -i "$db_container" psql -U postgres -d postgres -v ON_ERROR_STOP=1 \
             <<'SQL'
+          create role ai_readonly nologin;
           insert into public.business_taxons (id, parent_id, level, name, slug, is_active)
           values (
             'e1011000-0000-4000-8000-000000000001',
