@@ -1625,7 +1625,7 @@
 17.1.6 Pipelines operacionais
 - `pipeline-supabase-inspect` executa SQL read-only com saída em logs e Job Summary.
 - `pipeline-docs-apply-report` aplica report JSON em Markdown, cria branch e Pull Request e mantém revisão humana antes do merge.
-- `pipeline-supabase-apply-migrations` mantém o apply automático integral suspenso durante o backlog E10.10. Após merge e autorização operacional, somente a exceção manual E25.1 descrita em `docs/platform-config.md` pode aplicar as duas migrations E25 no escopo validado; o gate `SUPABASE_APPLY_MIGRATIONS_ENABLED` permanece fechado fora dessa operação.
+- `pipeline-supabase-apply-migrations` mantém o apply automático integral suspenso durante o backlog E10.10. A exceção manual E25.1 aplicou somente as duas migrations autorizadas; o gate `SUPABASE_APPLY_MIGRATIONS_ENABLED` voltou a `false`. Novos applies exigem decisão operacional própria, conforme `docs/platform-config.md`.
 - Migration aplicada não é reescrita; correção ou reversão exige nova migration incremental.
 - SQL Editor não faz parte do fluxo normal de alteração de schema.
 

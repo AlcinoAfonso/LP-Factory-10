@@ -1,6 +1,6 @@
 0.1 Cabeçalho
-Data: 27/09/2026
-Versão: v1.33
+Data: 28/09/2026
+Versão: v1.34
 Status: Alinhado ao catálogo operacional vigente; Pending Setup E10.9 integrado ao workload de nicho
 
 0.2 Função do documento
@@ -203,16 +203,16 @@ Objetivo:
 Aplicar migrations versionadas do Supabase após merge e autorização, sem usar o SQL Editor para alterações de schema. O apply automático integral está suspenso durante o backlog E10.10.
 
 Status:
-Implementada; fluxo integral suspenso e exceção manual E25.1 candidata no PR draft.
+Implementada; fluxo integral suspenso durante o backlog E10.10. A exceção manual E25.1 foi executada e encerrada.
 
 Acesso:
 GitHub → Actions → workflow `pipeline-supabase-apply-migrations`
 
 Como usar:
-Criar migration em `supabase/migrations/<timestamp>_<nome>.sql` e validar no PR do plano. Durante o backlog E10.10, o push na `main` não aplica automaticamente. Após merge e autorização operacional, somente a exceção manual E25.1 descrita em `docs/platform-config.md` pode aplicar as duas migrations E25 no escopo validado.
+Criar migration em `supabase/migrations/<timestamp>_<nome>.sql` e validar no PR do plano. Durante o backlog E10.10, o push na `main` não aplica automaticamente. Novo apply exige decisão operacional própria; a exceção E25.1 já usada não autoriza outras migrations.
 
 Resumo de controle:
-A baseline oficial foi concluída, o histórico remoto foi alinhado e o smoke de criação/remoção foi validado. O gate `SUPABASE_APPLY_MIGRATIONS_ENABLED` foi observado como `false` em 27/09/2026; permanece fechado fora da operação E25.1 autorizada. O fluxo integral não deve ser retomado até resolução separada de E10.10 ou revisão explícita do filtro canônico. Migration já aplicada não deve ser editada, apagada ou substituída; correções e reversões exigem nova migration incremental.
+A baseline oficial foi concluída, o histórico remoto foi alinhado e o smoke de criação/remoção foi validado. O apply seletivo E25.1 acrescentou as duas migrations autorizadas, preservando a ausência das E10.10. O gate `SUPABASE_APPLY_MIGRATIONS_ENABLED` voltou a `false`; o fluxo integral depende de resolução separada de E10.10 ou revisão explícita do filtro canônico. Migration já aplicada não deve ser editada, apagada ou substituída; correções e reversões exigem nova migration incremental.
 
 Referências / dependências:
 `docs/base-tecnica.md`

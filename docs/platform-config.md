@@ -62,17 +62,16 @@
 • Gatilhos: push em `main` com mudanças em `supabase/migrations/**` e execução manual por `workflow_dispatch`.
 • Setup: `supabase/setup-cli` v2.1.1 fixada pelo SHA completo `3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf`, com Supabase CLI `2.106.0`.
 • Motivo do pin por SHA: reprodutibilidade e proteção contra alteração futura da referência móvel `@v2`.
-• Gate: `SUPABASE_APPLY_MIGRATIONS_ENABLED = false` bloqueia instalação da CLI, link e push. Mesmo com `true`, o workflow candidato E25.1 bloqueia push automático integral; a exceção manual exige `workflow_dispatch` na `main`, escopo `e25_1_only` e SHA pós-merge exato.
-• Procedimento E20.8 registrado anteriormente: previa fechar o gate antes do merge, comprovar apply `skipped` e aguardar Production do mesmo SHA em estado `READY` antes de restaurar o gate e disparar manualmente a migration na `main`. O roadmap ainda registra esse cutover como pendente; não reutilizar o procedimento para a fila E10.10/E25.1.
-• Fluxo normal histórico: criar migration em `supabase/migrations/<timestamp>_<nome>.sql`, validar, abrir PR e realizar o merge autorizado conforme `AGENTS.md`; o push resultante disparava o apply automático. Durante o backlog E10.10, não reabrir esse fluxo integral sem resolução separada ou revisão explícita do filtro canônico.
-• Exceção E25.1 candidata no PR draft: depois de merge autorizado, o operador pode habilitar temporariamente o gate e disparar manualmente o workflow na `main` e no SHA aprovado. O job monta projeto temporário com 56 migrations históricas já aplicadas e as duas E25, exclui as duas E10.10, exige dry-run com exatamente as duas E25 e aplica no mesmo projeto. Após apply, comprovar por leitura 58 versões remotas e ausência das E10.10; retornar o gate a `false`. Falha parcial exige inspeção do histórico antes de nova tentativa.
+• Gate: `SUPABASE_APPLY_MIGRATIONS_ENABLED = false` bloqueia instalação da CLI, link e push. O fluxo automático integral permanece suspenso durante o backlog E10.10, mesmo com o gate aberto.
+• A exceção manual E25.1 foi executada na `main` pelo escopo `e25_1_only`, com SHA pós-merge exato, dry-run das duas migrations E25 e apply seletivo. O histórico remoto confirmou 58 versões e ausência das duas E10.10; o gate foi restaurado a `false`.
+• Novas migrations seguem PR e merge autorizados conforme `AGENTS.md`; não retomar apply integral sem resolução separada de E10.10 ou revisão explícita do filtro canônico.
 • Regra: não usar SQL Editor para alterações de schema no fluxo normal.
 • Regra: migration aplicada não pode ser editada, apagada, renomeada ou substituída; correções e reversões exigem nova migration.
 • Com o gate fechado, um passo separado sem secrets registra `skipped`; a CLI não é instalada e `supabase link` e `supabase db push` não são executados.
 • `Setup Supabase CLI` e `Apply migrations` possuem condição explícita de gate aberto.
 • Secrets exigidos somente para apply autorizado com gate aberto: `SUPABASE_ACCESS_TOKEN` e `SUPABASE_DB_PASSWORD`, disponíveis apenas no passo `Apply migrations`.
 • Projeto alvo: definido no workflow por `SUPABASE_PROJECT_REF`; o valor não é credencial, mas deve apontar somente para o projeto aprovado.
-• `workflow_dispatch` é recurso excepcional; durante o backlog E10.10, somente o recorte manual E25.1 descrito acima poderá aplicar, após merge e autorização operacional. O fluxo automático integral dependerá de decisão separada.
+• `workflow_dispatch` permanece excepcional; a aplicação seletiva E25.1 está concluída e não autoriza novos applies. O fluxo automático integral depende de decisão separada.
 • `.github/workflows/upgrade-next-16-1-1.yml`: manutenção de Next.js + lockfile.
 
 2.4 Mailbox operacional para automações
