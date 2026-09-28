@@ -8,7 +8,8 @@ import type {
   CommunicationSection,
   CommunicationSectionValue,
 } from "../contracts";
-import { selectPendingSetupBusinessContext } from "../pending-setup-import";
+import { selectPendingSetupBusinessContext, selectPendingSetupInitialContext, type PendingSetupInitialContext } from "../pending-setup-import";
+import { isE1011PassageEnabled } from "../../onboarding/pending-setup/config";
 import {
   parseStoredSections,
   projectCommunicationBase,
@@ -60,6 +61,31 @@ export async function readPendingSetupBusinessContext(
       .limit(2);
     if (error) return { ok: false, error: "read_failed" };
     return { ok: true, value: selectPendingSetupBusinessContext(data) };
+  } catch {
+    return { ok: false, error: "read_failed" };
+  }
+}
+
+export async function readPendingSetupInitialContext(
+  accountId: string,
+): Promise<CommunicationBaseResult<PendingSetupInitialContext | null>> {
+  if (!accountId) return { ok: false, error: "invalid" };
+  if (!isE1011PassageEnabled()) {
+    const legacy = await readPendingSetupBusinessContext(accountId);
+    return legacy.ok
+      ? { ok: true, value: legacy.value ? { businessName: null, businessContext: legacy.value } : null }
+      : legacy;
+  }
+  try {
+    const { data, error } = await createServiceClient()
+      .from("account_pending_setup_conversations")
+      .select("business_display_name,business_context_text,stage,completed_at")
+      .eq("account_id", accountId)
+      .eq("stage", "completed")
+      .not("completed_at", "is", null)
+      .limit(2);
+    if (error) return { ok: false, error: "read_failed" };
+    return { ok: true, value: selectPendingSetupInitialContext(data) };
   } catch {
     return { ok: false, error: "read_failed" };
   }

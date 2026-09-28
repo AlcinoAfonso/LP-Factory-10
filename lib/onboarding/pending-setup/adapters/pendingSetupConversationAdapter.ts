@@ -12,12 +12,14 @@ import type {
   PendingSetupWriteResult,
 } from "../contracts";
 import { resolvePreferredNameFromAuth } from "../policy";
+import { isE1011PassageEnabled } from "../config";
 
 type ConversationRow = {
   id: string;
   account_id: string;
   user_id: string;
   preferred_name: string | null;
+  business_display_name?: string | null;
   business_context_text: string | null;
   stage: PendingSetupStage;
   confirmation_kind: PendingSetupConfirmationKind | null;
@@ -56,6 +58,7 @@ function mapConversation(
     accountId: row.account_id,
     userId: row.user_id,
     preferredName: row.preferred_name,
+    businessDisplayName: row.business_display_name ?? null,
     businessContextText: row.business_context_text,
     stage: row.stage,
     confirmationKind: row.confirmation_kind,
@@ -100,6 +103,8 @@ export async function loadPendingSetupConversation(input: {
 
   const preferredName = resolvePreferredNameFromAuth(user.user_metadata, user.email);
   const service = createServiceClient();
+  const columns =
+    "id,account_id,user_id,preferred_name,business_context_text,stage,confirmation_kind,resolution_outcome,openai_call_count,version,created_at,updated_at,completed_at";
   const { data: conversationId, error: startError } = await service.rpc(
     "start_account_pending_setup_v1",
     {
@@ -120,9 +125,7 @@ export async function loadPendingSetupConversation(input: {
     await Promise.all([
       service
         .from("account_pending_setup_conversations")
-        .select(
-          "id,account_id,user_id,preferred_name,business_context_text,stage,confirmation_kind,resolution_outcome,openai_call_count,version,created_at,updated_at,completed_at",
-        )
+        .select(isE1011PassageEnabled() ? `${columns},business_display_name` : columns)
         .eq("id", conversationId)
         .eq("account_id", input.accountId)
         .eq("user_id", input.userId)
@@ -143,7 +146,7 @@ export async function loadPendingSetupConversation(input: {
   }
 
   return mapConversation(
-    conversation as ConversationRow,
+    conversation as unknown as ConversationRow,
     ((messages ?? []) as MessageRow[]),
   );
 }
@@ -164,6 +167,31 @@ export async function setPendingSetupPreferredName(input: {
     p_expected_version: input.expectedVersion,
   });
 
+  if (error) return writeFailure(error);
+  const version = Number(data);
+  return Number.isSafeInteger(version) && version >= 1
+    ? { ok: true, version }
+    : { ok: false, reason: "write_failed" };
+}
+
+export async function setPendingSetupBusinessDisplayName(input: {
+  conversationId: string;
+  accountId: string;
+  userId: string;
+  businessDisplayName: string;
+  expectedVersion: number;
+}): Promise<PendingSetupWriteResult> {
+  if (!isE1011PassageEnabled()) return { ok: false, reason: "forbidden" };
+  const { data, error } = await createServiceClient().rpc(
+    "set_account_pending_setup_business_name_v1",
+    {
+      p_conversation_id: input.conversationId,
+      p_account_id: input.accountId,
+      p_user_id: input.userId,
+      p_business_display_name: input.businessDisplayName,
+      p_expected_version: input.expectedVersion,
+    },
+  );
   if (error) return writeFailure(error);
   const version = Number(data);
   return Number.isSafeInteger(version) && version >= 1
@@ -271,7 +299,10 @@ export async function completePendingSetup(input: {
   resolutionOutcome: PendingSetupResolutionOutcome;
 }): Promise<PendingSetupWriteResult> {
   const service = createServiceClient();
-  const { data, error } = await service.rpc("complete_account_pending_setup_v1", {
+  const completionRpc = isE1011PassageEnabled()
+    ? "complete_account_pending_setup_v2"
+    : "complete_account_pending_setup_v1";
+  const { data, error } = await service.rpc(completionRpc, {
     p_conversation_id: input.conversationId,
     p_account_id: input.accountId,
     p_user_id: input.userId,

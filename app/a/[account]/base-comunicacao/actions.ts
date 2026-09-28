@@ -7,7 +7,7 @@ import { assistCommunicationSection, generateCommunicationIntelligence } from ".
 import {
   createCommunicationBase,
   readCommunicationBase,
-  readPendingSetupBusinessContext,
+  readPendingSetupInitialContext,
   saveCommunicationSection,
 } from "../../../../lib/communication-base/adapters/communicationBaseAdapter";
 import { parseSectionValue, withSection } from "../../../../lib/communication-base/policy";
@@ -15,6 +15,7 @@ import { parseEditorValue } from "../../../../lib/communication-base/editor-valu
 import { getCommunicationSection } from "../../../../lib/communication-base/registry";
 import { hasConfirmedStageOneInput, type StageTwoDraft, type StageTwoTarget } from "../../../../lib/communication-base/ai-core";
 import { isCurrentGenerationVersion } from "../../../../lib/communication-base/generation-guard";
+import { isE1011PassageEnabled } from "../../../../lib/onboarding/pending-setup/config";
 
 export type CommunicationActionState = Readonly<{
   status: "idle" | "saved" | "error";
@@ -40,12 +41,20 @@ export async function startCommunicationBaseAction(
   if (!access.ok) return failure(UNAVAILABLE);
 
   let initialSections: Record<string, unknown> = {};
+  const candidate = await readPendingSetupInitialContext(access.value.accountId);
+  if (!candidate.ok && (isE1011PassageEnabled() || formData.get("import_pending_setup") === "on")) {
+    return failure("Não foi possível consultar a conversa anterior. Atualize a página e tente novamente.");
+  }
+  if (candidate.ok && candidate.value?.businessName) {
+    const named = withSection(initialSections, "business_name", candidate.value.businessName, "pending_setup_confirmed");
+    if (!named) return failure("Não foi possível validar o nome público anterior.");
+    initialSections = named;
+  }
   if (formData.get("import_pending_setup") === "on") {
-    const candidate = await readPendingSetupBusinessContext(access.value.accountId);
-    if (!candidate.ok || !candidate.value) {
+    if (!candidate.ok || !candidate.value?.businessContext) {
       return failure("Não foi possível confirmar o contexto anterior. Atualize a página ou inicie sem importar.");
     }
-    const imported = withSection({}, "business_context", candidate.value, "pending_setup_confirmed");
+    const imported = withSection(initialSections, "business_context", candidate.value.businessContext, "pending_setup_confirmed");
     if (!imported) return failure("Não foi possível validar o contexto anterior.");
     initialSections = imported;
   }

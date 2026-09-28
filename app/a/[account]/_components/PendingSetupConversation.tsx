@@ -14,15 +14,18 @@ import {
   completePendingSetupAction,
   continuePendingSetupConversationAction,
   savePendingSetupPreferredNameAction,
+  savePendingSetupBusinessDisplayNameAction,
   type PendingSetupActionState,
 } from "../pending-setup-actions";
 
 export function PendingSetupConversation({
   accountSubdomain,
   conversation,
+  passageEnabled,
 }: {
   accountSubdomain: string;
   conversation: PendingSetupConversationContract | null;
+  passageEnabled: boolean;
 }) {
   const [state, action, isPending] = useActionState<
     PendingSetupActionState,
@@ -36,7 +39,12 @@ export function PendingSetupConversation({
     PendingSetupActionState,
     FormData
   >(completePendingSetupAction, { ok: true });
+  const [nameState, nameAction, isNamePending] = useActionState<
+    PendingSetupActionState,
+    FormData
+  >(savePendingSetupBusinessDisplayNameAction, { ok: true });
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const businessNameRef = useRef<HTMLInputElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const isTerminalFallback = conversation
     ? hasPendingSetupTerminalFallback({
@@ -54,6 +62,10 @@ export function PendingSetupConversation({
   useEffect(() => {
     if (turnState.fieldError) textareaRef.current?.focus();
   }, [turnState.fieldError]);
+
+  useEffect(() => {
+    if (nameState.fieldError) businessNameRef.current?.focus();
+  }, [nameState.fieldError]);
 
   if (!conversation) {
     return (
@@ -243,7 +255,46 @@ export function PendingSetupConversation({
           </form>
         ) : null}
 
-        {conversation.stage === "ready_to_complete" ? (
+        {conversation.stage === "ready_to_complete" && passageEnabled && !conversation.businessDisplayName ? (
+          <form action={nameAction} className="border-t border-surface-border px-5 py-5 sm:px-8">
+            <ConversationHiddenFields
+              accountSubdomain={accountSubdomain}
+              conversationId={conversation.id}
+              version={conversation.version}
+            />
+            <FeedbackMessage tone="success">
+              Entendimento concluído. Informe o nome que seus clientes devem ver.
+            </FeedbackMessage>
+            {nameState.formError ? (
+              <FeedbackMessage tone="error" className="mt-4">{nameState.formError}</FeedbackMessage>
+            ) : null}
+            <FormField className="mt-5">
+              <FormFieldLabel htmlFor="business_display_name">Nome público do negócio ou profissional</FormFieldLabel>
+              <Input
+                ref={businessNameRef}
+                id="business_display_name"
+                name="business_display_name"
+                maxLength={120}
+                autoComplete="organization"
+                required
+                disabled={isNamePending}
+                aria-invalid={Boolean(nameState.fieldError)}
+                aria-describedby={nameState.fieldError ? "business-name-error" : "business-name-hint"}
+                className="h-11"
+              />
+              {nameState.fieldError ? (
+                <FormFieldError id="business-name-error">{nameState.fieldError}</FormFieldError>
+              ) : (
+                <FormFieldHint id="business-name-hint">Use o nome pelo qual você quer ser conhecido pelos clientes.</FormFieldHint>
+              )}
+            </FormField>
+            <Button type="submit" disabled={isNamePending} className="mt-5 min-h-11">
+              {isNamePending ? "Salvando…" : "Salvar e continuar"}
+            </Button>
+          </form>
+        ) : null}
+
+        {conversation.stage === "ready_to_complete" && (!passageEnabled || conversation.businessDisplayName) ? (
           <form action={completionAction} className="border-t border-surface-border px-5 py-5 sm:px-8">
             <ConversationHiddenFields
               accountSubdomain={accountSubdomain}

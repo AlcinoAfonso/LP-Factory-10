@@ -33,7 +33,7 @@ const STAGE_ONE_GUIDANCE: Record<string, string> = {
 
 export function StartCommunicationBaseForm({ account, candidate, candidateReadFailed }: Readonly<{
   account: string;
-  candidate: string | null;
+  candidate: { businessName: string | null; businessContext: string | null } | null;
   candidateReadFailed: boolean;
 }>) {
   const [state, action] = useActionState(startCommunicationBaseAction, INITIAL_STATE);
@@ -48,13 +48,18 @@ export function StartCommunicationBaseForm({ account, candidate, candidateReadFa
       <p className="text-sm text-muted-foreground">
         Comece com o que já sabe sobre seu negócio. As demais seções podem ser preenchidas depois.
       </p>
-      {candidate ? (
+      {candidate?.businessName ? (
+        <p className="mt-4 rounded-lg border border-border p-4 text-sm">
+          Nome público confirmado: <strong>{candidate.businessName}</strong>. Ele será copiado ao iniciar a Base e poderá ser editado depois.
+        </p>
+      ) : null}
+      {candidate?.businessContext ? (
         <div className="mt-4 rounded-lg border border-border p-4">
           <p className="text-sm font-medium">Contexto da conversa anterior</p>
           <p className="mt-1 text-xs text-muted-foreground">
             Confira se esse texto descreve sua atuação. Ele só será copiado se você confirmar.
           </p>
-          <blockquote className="mt-3 whitespace-pre-wrap text-sm">{candidate}</blockquote>
+          <blockquote className="mt-3 whitespace-pre-wrap text-sm">{candidate.businessContext}</blockquote>
           <label className="mt-3 flex min-h-11 items-center gap-3 text-sm">
             <input type="checkbox" name="import_pending_setup" className="h-5 w-5 accent-brand-700" />
             Confirmo que este contexto representa meu negócio e quero copiá-lo.

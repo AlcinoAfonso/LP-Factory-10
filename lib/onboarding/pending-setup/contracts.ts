@@ -23,6 +23,7 @@ export type PendingSetupConversation = Readonly<{
   accountId: string;
   userId: string;
   preferredName: string | null;
+  businessDisplayName: string | null;
   businessContextText: string | null;
   stage: PendingSetupStage;
   confirmationKind: PendingSetupConfirmationKind | null;

@@ -1067,7 +1067,37 @@
 
 10.10.4 UX factual e prontidão para a Base
 - Status: implementada no repositório; QA hospedado em desktop e mobile pendente.
-- Conteúdo: owner, admin e editor confirmam o nome público e podem corrigir WhatsApp e a credencial opcional aplicável; viewer somente lê. E-mail e taxon confirmado são somente leitura. Só o nome público válido bloqueia a prontidão factual; falha na leitura factual ou nos lookups de entitlement e taxon mantém a jornada bloqueada com opção de tentar novamente, sem liberar o conteúdo comercial. Ausência legítima de entitlement ou taxon preserva os caminhos existentes. E25.1 será responsável pela navegação real para a Base.
+- Conteúdo: owner, admin e editor confirmam o nome público e podem corrigir WhatsApp e a credencial opcional aplicável; viewer somente lê. E-mail e taxon confirmado são somente leitura. Só o nome público válido bloqueia a prontidão factual; falha na leitura factual ou nos lookups de entitlement e taxon mantém a jornada bloqueada com opção de tentar novamente, sem liberar o conteúdo comercial. Ausência legítima de entitlement ou taxon preserva os caminhos existentes. A passagem ativa à Base pertence à E10.11.
+
+10.11 Passagem mínima para a Base
+
+10.11.1 Objetivo e status
+- Objetivo: garantir nome público explícito e reaproveitamento inicial do contexto confirmado, preservando o comercial para contas sem autorização e encaminhando contas autorizadas diretamente à Base sem exigir taxon oficial.
+- Status: implementado no repositório sob gate desligado por padrão; prova SQL efêmera, QA autenticado e apply seletivo pós-merge permanecem pendentes. PB-C mantém a retirada terminal de E10.10.
+
+10.11.2 Registros do recorte
+- Banco:
+  - Ajustados: `public.account_pending_setup_conversations`.
+  - Criados: `set_account_pending_setup_business_name_v1`, `complete_account_pending_setup_v2`.
+- Repositório:
+  - Criados: `supabase/migrations/20260928161504_e10_11_pending_setup_business_name.sql`, `supabase/tests/e10_11_pending_setup_business_name.test.sql`, `lib/onboarding/pending-setup/config.ts`.
+  - Ajustados: `.github/workflows/pipeline-supabase-apply-migrations.yml`, `lib/onboarding/pending-setup/`, `lib/communication-base/`, `app/a/[account]/`.
+- Referências:
+  - Plano aprovado: `docs/lousa-plano-base-e10-11.md` — V1 e V2.
+  - Contrato de banco: `docs/schema.md` — seções 1.19A e 3.1.2.
+  - Configuração operacional: `docs/platform-config.md` — seções 2.3 e gate E10.11.
+
+10.11.3 Nome público e contexto de saída
+- Status: implementado no repositório; prova SQL hospedada pendente.
+- Conteúdo: coletar nome público ausente na conclusão da conversa sem confundi-lo com nome preferido, razão social ou nome da conta. Copiar nome confirmado de uma única conversa concluída ao iniciar a Base e contexto confirmado somente com consentimento; conversas históricas sem nome deixam a seção editável e vazia. A Base não sincroniza edições de volta.
+
+10.11.4 Gate e encaminhamento
+- Status: implementado no repositório, desligado por padrão; ativação Preview e Production pendente após apply autorizado.
+- Conteúdo: conta autorizada segue diretamente à Base, inclusive por liberação manual E9.2 e sem taxon oficial. Conta sem autorização conserva comercial E10.6/E10.7, papéis e ações financeiras vigentes. Falha de leitura de entitlement ou taxon exigido bloqueia a decisão. A rota ativa não encaminha ao onboarding factual E10.10 após o cutover.
+
+10.11.5 Continuidade e regressão
+- Status: `npm run check` aprovado; prova SQL efêmera, QA desktop/mobile e cutover hospedado pendentes.
+- Conteúdo: manter matching e fallback de nicho, checkout, membership e entitlement intactos. Aplicar somente a migration E10.11 pelo escopo seletivo após merge autorizado; as migrations E10.10 continuam fora do apply e o fluxo automático integral permanece suspenso.
 
 11. E11 — Gestão de membros e autoridade comercial
 
