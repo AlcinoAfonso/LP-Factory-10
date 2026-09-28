@@ -263,12 +263,55 @@ assert.equal(parseStageTwoResponse(stageTwoPayload, generalTarget, true).ok, fal
 const searched = {
   ...stageTwoPayload,
   output: [{ type: "web_search_call", status: "completed", action: {
-    sources: [{ title: "Fonte", url: "https://example.org/mercado" }],
+    type: "search", sources: [{ title: "Fonte", url: "https://example.org/mercado" }],
   } }],
 };
 const researched = parseStageTwoResponse(searched, generalTarget, true);
 assert.equal(researched.ok, true);
 if (researched.ok) assert.equal(researched.value.sources.length, 1);
+const searchedAndOpened = { ...searched, output: [...searched.output, {
+  type: "web_search_call", status: "completed", action: { type: "open_page", url: "https://example.org/mercado" },
+}] };
+const researchedAndOpened = parseStageTwoResponse(searchedAndOpened, generalTarget, true);
+assert.equal(researchedAndOpened.ok, true,
+  "a completed open_page call need not repeat the search call's sources");
+if (researchedAndOpened.ok) {
+  assert.equal(researchedAndOpened.telemetry.webSearchCallCount, 2);
+  assert.equal(researchedAndOpened.telemetry.webSearchSourceCount, 1);
+  assert.deepEqual(researchedAndOpened.value.sources, [{
+    title: "Fonte", url: "https://example.org/mercado",
+  }], "opening the same URL must preserve its search-result title");
+}
+for (const type of ["open_page", "find_in_page"] as const) {
+  for (const url of [undefined, "http://example.org/mercado", "https://user:pass@example.org/mercado", "invalid"]) {
+    assert.equal(parseStageTwoResponse({ ...searched, output: [searched.output[0], {
+      type: "web_search_call", status: "completed", action: { type, url },
+    }] }, generalTarget, true).ok, false,
+    `${type} with an invalid visited URL must fail despite an earlier valid search source`);
+  }
+}
+assert.equal(parseStageTwoResponse({ ...searchedAndOpened, output: [{
+  type: "web_search_call", status: "completed", action: { type: "search" },
+}, { type: "web_search_call", status: "completed", action: { type: "open_page", url: "http://example.org" } }] },
+generalTarget, true).ok, false,
+"research without any usable sources must fail closed");
+const openedWithoutSearchSources = parseStageTwoResponse({ ...searchedAndOpened, output: [{
+  type: "web_search_call", status: "completed", action: { type: "search" },
+}, searchedAndOpened.output[1]] }, generalTarget, true);
+assert.equal(openedWithoutSearchSources.ok, true,
+  "a visited HTTPS page is a usable source when the search action omits sources");
+if (openedWithoutSearchSources.ok) assert.deepEqual(openedWithoutSearchSources.value.sources, [{
+  title: null, url: "https://example.org/mercado",
+}]);
+assert.equal(parseStageTwoResponse({ ...searchedAndOpened, output: [searched.output[0], {
+  type: "web_search_call", status: "completed",
+  action: { type: "find_in_page", url: "https://example.org/mercado", pattern: "Recife" },
+}] }, generalTarget, true).ok, true,
+"a completed find_in_page call may also omit sources");
+assert.equal(parseStageTwoResponse({ ...searchedAndOpened, output: [searched.output[0], {
+  type: "web_search_call", status: "completed", action: { type: "open_page", sources: "invalid" },
+}] }, generalTarget, true).ok, false,
+"malformed sources in a later call must fail closed");
 const generalSuggestion = { key: "audience" as const, value: "Geração geral", basis: "strategic_hypothesis" as const };
 const localSuggestion = { key: "audience" as const, value: "Revisão local", basis: "strategic_hypothesis" as const };
 const localPresentation = { generalRevision: 0, suggestion: localSuggestion,
@@ -283,7 +326,7 @@ assert.equal(stageTwoBasisLabel(localSuggestion.basis), "Hipótese estratégica 
 assert.equal(stageTwoBasisLabel("confirmed_business_fact"),
   "Baseado nos dados confirmados da Etapa 1; revise antes de usar.");
 assert.equal(parseStageTwoResponse({ ...searched, output: [{
-  type: "web_search_call", status: "completed", action: { sources: [{ url: "http://example.org" }] },
+  type: "web_search_call", status: "completed", action: { type: "search", sources: [{ url: "http://example.org" }] },
 }] }, generalTarget, true).ok, false, "insecure sources must fail closed");
 assert.equal(parseStageTwoResponse({ ...stageTwoPayload, output_text: JSON.stringify({
   sections: { ...stageTwoSections, audience: { value: "Público", basis: "confirmed_business_fact" } },
@@ -539,7 +582,7 @@ async function runProviderFailureAccountingCase() {
       id: "resp_failed_after_search", usage,
       output_text: JSON.stringify({ sections: { audience: { value: "Rascunho", basis: "confirmed_business_fact" } } }),
       output: [{ type: "web_search_call", status: "completed", action: {
-        sources: [{ title: "Fonte", url: "https://example.org/mercado" }],
+        type: "search", sources: [{ title: "Fonte", url: "https://example.org/mercado" }],
       } }],
     }), { status: 200, headers: { "Content-Type": "application/json" } }),
   });
