@@ -80,7 +80,8 @@ jobs:
           supabase --workdir "${{ steps.stage.outputs.project }}" start \
             -x gotrue,realtime,storage-api,imgproxy,kong,mailpit,postgrest,postgres-meta,studio,edge-runtime,logflare,vector,supavisor \
             > "$RUNNER_TEMP/e10-11-supabase-start.log" 2>&1 || {
-              sed -n '/[Ee]rror\|[Ff]ail\|[Pp]anic/p' "$RUNNER_TEMP/e10-11-supabase-start.log" | tail -n 40
+              sed -E '/(SERVICE_ROLE|ANON_KEY|SECRET_KEY|JWT_SECRET|DB_PASSWORD|DATABASE_URL|PUBLISHABLE_KEY)/Id' \
+                "$RUNNER_TEMP/e10-11-supabase-start.log" | tail -n 100
               exit 1
             }
           echo "Isolated local PostgreSQL accepted the full staged migration chain." >> "$GITHUB_STEP_SUMMARY"
