@@ -2,6 +2,7 @@ import type {
   OpenAiManagedWorkloadEnvironment,
   ResolvedOpenAiProductWorkload,
 } from "@/openai-workloads";
+import type { StageTwoDraft } from "@/communication-base/ai-core";
 
 export type OpenAiCandidateProofMetadata = Readonly<{
   schema_version: 1;
@@ -21,6 +22,11 @@ export type OpenAiCandidateProofAttempt =
       latencyMs: number | null;
     }>
   | Readonly<{ ok: false; code: "configuration" | "provider" | "contract" }>;
+
+export function isResearchedCommunicationStageTwoProof(draft: StageTwoDraft): boolean {
+  return draft.researched && draft.suggestions.length === 1 &&
+    draft.suggestions[0]?.key === "market_insights" && draft.sources.length > 0;
+}
 
 type ProductProof = (
   workload: ResolvedOpenAiProductWorkload,

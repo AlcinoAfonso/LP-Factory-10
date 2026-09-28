@@ -7,6 +7,7 @@ import {
 } from "@/openai-workloads";
 import {
   runOpenAiCandidateProofCore,
+  isResearchedCommunicationStageTwoProof,
   type OpenAiCandidateProofDependencies,
 } from "./proofCore";
 import { parseCommercialProof } from "./commercialProof";
@@ -92,6 +93,27 @@ const cases: readonly Case[] = [
       });
 
       assert.deepEqual(result, { ok: true, value: true });
+    },
+  },
+  {
+    name: "stage 2 candidate proof requires researched market insights with sources",
+    run: () => {
+      const proof = readFileSync(new URL("_proof.ts", import.meta.url), "utf8");
+      const stageTwoCall = proof.split("async function proveCommunicationStageTwo(")[1]?.split("\nasync function ")[0];
+      assert.ok(stageTwoCall);
+      assert.match(stageTwoCall, /target: \{ kind: "section", key: "market_insights" \}/);
+      assert.match(stageTwoCall, /requiresCurrentResearch: true/);
+      assert.match(stageTwoCall, /isResearchedCommunicationStageTwoProof\(result\.value\)/);
+      const researched = { researched: true, suggestions: [{ key: "market_insights" as const,
+        value: ["Hipótese revisável"], basis: "strategic_hypothesis" as const }],
+        sources: [{ title: "Fonte", url: "https://example.org/mercado" }] };
+      assert.equal(isResearchedCommunicationStageTwoProof(researched), true);
+      assert.equal(isResearchedCommunicationStageTwoProof({ ...researched, researched: false }), false);
+      assert.equal(isResearchedCommunicationStageTwoProof({ ...researched, sources: [] }), false);
+      assert.equal(isResearchedCommunicationStageTwoProof({ ...researched, suggestions: [] }), false);
+      assert.equal(isResearchedCommunicationStageTwoProof({ ...researched, suggestions: [
+        { key: "about", value: "Sobre", basis: "confirmed_business_fact" },
+      ] }), false);
     },
   },
   {

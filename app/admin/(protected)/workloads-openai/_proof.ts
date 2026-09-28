@@ -11,6 +11,7 @@ import type {
 } from "@/openai-workloads";
 import {
   runOpenAiCandidateProofCore,
+  isResearchedCommunicationStageTwoProof,
   type OpenAiCandidateProofAttempt as ProofAttempt,
   type OpenAiCandidateProofDependencies,
   type OpenAiCandidateProofMetadata,
@@ -83,7 +84,7 @@ async function proveCommunicationStageTwo(
     version: 1,
     sections: {
       business_context: {
-        format: "text", value: "Ofereço manutenção de jardins para condomínios.", origin: "user_confirmed",
+        format: "text", value: "Ofereço manutenção de jardins para condomínios em Recife.", origin: "user_confirmed",
       },
     },
     createdAt: "2026-09-27T00:00:00.000Z",
@@ -92,15 +93,15 @@ async function proveCommunicationStageTwo(
   const result = await generateCommunicationIntelligence({
     accountId,
     base,
-    target: { kind: "section", key: "about" },
-    requiresCurrentResearch: false,
+    target: { kind: "section", key: "market_insights" },
+    requiresCurrentResearch: true,
     environment,
     apiKey,
     configurationOverride: workload,
     financialContext: lpFactoryOpenAiCostContext,
     executionOrigin: "administrative_proof",
   });
-  return result.ok && result.value.suggestions.length === 1
+  return result.ok && isResearchedCommunicationStageTwoProof(result.value)
     ? { ok: true, providerRequestId: result.responseId, latencyMs: result.latencyMs }
     : { ok: false, code: result.ok ? "contract" : "provider" };
 }
