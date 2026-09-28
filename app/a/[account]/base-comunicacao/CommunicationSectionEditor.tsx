@@ -391,7 +391,7 @@ function Sources({ sources }: Readonly<{ sources: readonly WebSource[] }>) {
   if (!sources.length) return null;
   return <div className="mt-3 text-xs"><p className="font-semibold">Fontes consultadas</p><ul className="mt-1 list-disc pl-5">
     {sources.map((source) => <li key={source.url}><a href={source.url} target="_blank" rel="noopener noreferrer"
-      className="text-brand-700 underline">{source.title || source.url}</a></li>)}
+      className="break-all text-brand-700 underline">{source.title || source.url}</a></li>)}
   </ul></div>;
 }
 

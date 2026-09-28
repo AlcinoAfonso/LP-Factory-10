@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 27/09/2026
-• Versão: v1.5.248
+• Data: 28/09/2026
+• Versão: v1.5.249
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -1625,7 +1625,7 @@
 17.1.6 Pipelines operacionais
 - `pipeline-supabase-inspect` executa SQL read-only com saída em logs e Job Summary.
 - `pipeline-docs-apply-report` aplica report JSON em Markdown, cria branch e Pull Request e mantém revisão humana antes do merge.
-- `pipeline-supabase-apply-migrations` mantém o apply automático integral suspenso durante o backlog E10.10. Após merge e autorização operacional, somente a exceção manual E25.1 descrita em `docs/platform-config.md` pode aplicar as duas migrations E25 no escopo validado; o gate `SUPABASE_APPLY_MIGRATIONS_ENABLED` permanece fechado fora dessa operação.
+- `pipeline-supabase-apply-migrations` mantém o apply automático integral suspenso durante o backlog E10.10. A exceção manual E25.1 aplicou somente as duas migrations autorizadas; o gate `SUPABASE_APPLY_MIGRATIONS_ENABLED` voltou a `false`. Novos applies exigem decisão operacional própria, conforme `docs/platform-config.md`.
 - Migration aplicada não é reescrita; correção ou reversão exige nova migration incremental.
 - SQL Editor não faz parte do fluxo normal de alteração de schema.
 
@@ -2953,23 +2953,36 @@
 
 25. E25 — Base de Comunicação
 - Objetivo: disponibilizar um ativo persistente da conta que reúna a verdade da empresa e a inteligência de comunicação antes de existir Landing Page ou integração real de canal.
-- Status: E25.1 definido; implementação pendente.
+- Status: E25.1 implementado, com QA operacional em Preview e Production; PB-B e PB-C dependem do encerramento efetivo do PB-A.
 
 25.1 Base de Comunicação inicial
 
 25.1.1 Objetivo e status
 - Objetivo: entregar uma única Base atual por conta, consultável, editável e progressiva após autorização comercial válida, sem depender de E10.10, E20, taxon oficial, PB-B ou PB-C.
-- Status: V1 funcional e V2 técnica aprovadas; implementação pendente.
+- Status: implementado e operacional em Preview e Production sob gate independente por ambiente; QA provider-backed executado com cobertura e telemetria E21.
+
+25.1.2 Registros do recorte
+- Banco:
+  - Criados: `account_communication_bases`.
+  - Ajustados: `openai_workload_configuration_revisions`, `openai_workload_operational_configurations`, `openai_workload_configuration_activations`, `openai_cost_executions`, `openai_cost_coverage`.
+- Repositório:
+  - Criados: `app/a/[account]/base-comunicacao/`, `lib/communication-base/`, `supabase/migrations/20260927145500_e25_1_account_communication_bases.sql`, `supabase/migrations/20260927163500_e21_2_communication_base_workloads.sql`, `supabase/tests/e25_1_account_communication_bases.test.sql`, `supabase/tests/e25_1_openai_communication_base_workloads.test.sql`.
+  - Ajustados: `app/a/[account]/layout.tsx`, `components/layout/Header.tsx`, `lib/openai-workloads/`, `lib/openai-costs/`, `.github/workflows/pipeline-supabase-apply-migrations.yml`.
+- Referências:
+  - Banco: `docs/schema.md` — 1.38 e 3.11.
+  - Configuração externa: `docs/platform-config.md` — gate E25.1.
+  - Comparação de modelos: `docs/openai-model-snapshot.md` — 5.1.
 
 25.1.3 Estrutura, governança e extensibilidade
-- Status: definido para implementação.
+- Status: implementado.
 - Conteúdo: a Base pertence somente à conta; owner, admin e editor preenchem e editam, enquanto viewer consulta. Access Context, membership e entitlement comercial vigente governam o acesso. Seções com formatos suportados podem ser acrescentadas a Bases existentes sem perda do conteúdo anterior. Pesquisa, conversa, taxon, LP, produto, Tarefa, campanha e canal não se tornam proprietários, vínculos persistentes ou dependências de leitura e edição. Não criar segunda autoridade factual, Base por insumo ou consumidor, versionamento funcional selecionável ou framework arbitrário de seções.
 
 25.1.4 Etapa 1 e aproveitamento inicial
-- Status: definido para implementação.
+- Status: implementado e validado com assistência provider-backed sem Web Search.
 - Conteúdo: a verdade da empresa começa com nome público do negócio ou profissional e entendimento operacional da atuação e evolui por Negócio, Ofertas, Atendimento, Provas/credenciais/resultados, Materiais/identidade e Preferências/limites, sem bloqueio global por seção incompleta. Contexto confirmado do Pending Setup pode ser copiado uma vez quando inequívoco, sem sincronização reversa. Orientações, exemplos, placeholders e validações previsíveis permanecem determinísticos quando suficientes. A IA assistente só atua por ação explícita e ganho real para explicar, exemplificar, organizar, resumir ou reformular conteúdo fornecido; não usa Web Search, não propõe valor factual ausente, não confirma em nome do cliente nem dispara na edição manual. Sugestões orientam o que informar; valores reais são fornecidos ou confirmados pelo cliente, e informação ausente gera pergunta localizada ou seção pendente. Falha da IA preserva a edição manual.
 
 25.1.5 Etapa 2 e inteligência de comunicação
-- Status: definido para implementação.
+- Status: implementado com `gpt-6-luna`/`max` como par operacional único após comparação isolada com `gpt-6-sol`/`medium`.
 - Conteúdo: a IA é o motor central da interpretação de sinais de mercado e da produção de conteúdo comunicacional editável usando somente os insumos confirmados pertinentes da Etapa 1. Usa pesquisa atual via Web Search quando atualidade ou localidade forem materiais para elaborar Quem somos, Público/contexto, Dores/desejos/crenças/objeções, Proposta de valor, Benefícios, Diferenciais e FAQ. Distinguir fato particular confirmado de hipótese estratégica; revisão e edição humanas permanecem disponíveis sem aprovação por chamada. Falha de pesquisa material não é substituída silenciosamente por conhecimento paramétrico; a Base não depende de vínculo persistente com a pesquisa. Este recorte não gera LP ou outro produto, não integra canais nem altera Pending Setup, jornada E10, comercial ou trial, e não introduz Agents SDK, multiagente, job, fila ou infraestrutura antecipada.
 - E25.1 não cria carteira, saldo, franquia ou bloqueio comercial de IA; o contrato transversal de créditos pertence ao Debate 10B.
+- A ação geral gera as sete seções quando vazias e atualiza o conjunto pertinente quando há conteúdo; cada seção tem revisão localizada. O conteúdo salvo da Etapa 2 entra somente no alvo da operação como contexto de revisão, sem autoridade factual. Sugestões não são salvas automaticamente, e a edição manual não dispara IA.

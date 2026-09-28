@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data da última atualização: 27/09/2026
-• Documento: LP Factory 10 — Schema (DB Contract) v1.0.72
+• Data da última atualização: 28/09/2026
+• Documento: LP Factory 10 — Schema (DB Contract) v1.0.73
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -918,8 +918,7 @@
 1.28.4 Índices, bootstrap e segurança
 • `openai_workload_operational_configurations_active_revision_idx`: btree em active_revision_id + unidade.
 • `openai_workload_operational_configurations_pending_revision_idx`: btree parcial em pending_revision_id + unidade quando não nulo.
-• Após o apply E20.8, o agregado físico mantém dez unidades: seis unidades correntes Production/Preview × três workloads de produto e quatro unidades antigas de drafts preservadas como história. As duas unidades mutáveis de `landing_page_dynamic_market_research` são removidas e não integram a allowlist corrente.
-• Candidata E25.1 ainda sem apply hospedado: `supabase/migrations/20260927163500_e21_2_communication_base_workloads.sql` estende as três allowlists de unidade/revisão/ativação com `communication_base_stage1_assistance` e `communication_base_stage2_intelligence` e cria quatro cadeias bootstrap Production/Preview. Após apply, serão quatorze unidades físicas, dez correntes. A configuração `gpt-6-luna`/`max` Standard da Etapa 2 é hipótese de bootstrap, sujeita à comparação provider-backed com `gpt-6-sol`/`medium` Standard antes de habilitar o runtime.
+• A migration aplicada `supabase/migrations/20260927163500_e21_2_communication_base_workloads.sql` estende as três allowlists de unidade/revisão/ativação com `communication_base_stage1_assistance` e `communication_base_stage2_intelligence` e cria quatro cadeias bootstrap Production/Preview. O agregado tem quatorze unidades físicas, dez correntes. A configuração ativa da Etapa 2 em Preview e Production é `gpt-6-luna`/`max` Standard, selecionada após comparação provider-backed com `gpt-6-sol`/`medium` Standard pelo lifecycle E21.
 • RLS habilitado e nenhuma policy.
 • public, anon, authenticated e ai_readonly: sem grants.
 • service_role: SELECT e UPDATE somente dos nove campos necessários às transições; sem INSERT, DELETE ou TRUNCATE.
@@ -1119,7 +1118,7 @@
 
 1.38 account_communication_bases
 1.38.1 Função e colunas
-• Candidata E25.1, ainda sem apply hospedado: `supabase/migrations/20260927145500_e25_1_account_communication_bases.sql`.
+• Migration E25.1 aplicada: `supabase/migrations/20260927145500_e25_1_account_communication_bases.sql`.
 • Uma Base atual por conta, independente de taxon, LP, conversa, pesquisa, produto, campanha ou canal.
 • account_id uuid primary key, FK para accounts(id) ON DELETE CASCADE; sections_json jsonb not null default objeto vazio; version integer positivo default 1; created_at e updated_at timestamptz not null default now().
 • sections_json exige objeto JSON. Chaves, formatos, proveniência e limites de cada seção são validados no boundary `lib/communication-base/`; nova chave em formato já suportado não reescreve as existentes.
@@ -1420,8 +1419,8 @@
 • `openai_cost_executions`: execução funcional por workload, ambiente, origem, universo e atribuição econômica explícita; conta é obrigatória somente para Cliente atribuído e nunca é inferida. A extensão repo-only E21.5.6 acrescenta `economic_event_kind`, `economic_event_id`, `landing_page_id` e `taxon_id`, todos nulos para linhas anteriores e sempre preenchidos como conjunto coerente quando houver correlação econômica comprovada na origem.
 • `openai_cost_operations`: uma linha por chamada cobrável, com sequência e retry anterior na mesma execução, configuração efetiva, IDs técnicos sanitizados, usage normalizado, Web Search, estado de custo e terminal imutável.
 • `openai_cost_coverage`: corte imutável por ambiente e workload, com versão do contrato financeiro.
-• A candidata E25.1 acrescenta os dois workloads da Base às allowlists de `openai_cost_executions` e `openai_cost_coverage`, sem criar cortes de cobertura na migration. Antes do primeiro uso, registrar prospectivamente por `register_openai_cost_coverage_v1` os quatro pares Production/Preview × Etapa 1/Etapa 2, sem backdate, após apply e avaliação operacional; o gate `E25_1_COMMUNICATION_BASE_ENABLED` permanece desligado até então.
-• A série `openai_lp_*` permanece independente, congelada e sem alteração pela migration candidata.
+• A migration E25.1 acrescentou os dois workloads da Base às allowlists de `openai_cost_executions` e `openai_cost_coverage`, sem criar cortes de cobertura. Os quatro pares Production/Preview × Etapa 1/Etapa 2 foram registrados prospectivamente por `register_openai_cost_coverage_v1` antes do primeiro uso; as execuções provider-backed das duas etapas registram usage e custo no ledger E21.
+• A série `openai_lp_*` permanece independente, congelada e sem alteração pela migration E25.1.
 • A correlação `landing_page` exige universo Cliente atribuído, conta presente, `economic_event_id = landing_page_id` e FK composta para `account_landing_pages(id, account_id)`; `niche_resolution` exige UUID econômico próprio sem LP ou taxon; `lp_factory_internal` exige universo LP Factory, conta nula e admite `taxon_id` comprovado por FK para `business_taxons(id)`.
 • O índice parcial `openai_cost_executions_economic_event_idx` cobre evento, início e execução somente nas linhas correlacionadas. Não há backfill, reclassificação retroativa, identidade inferida nem nova residência analítica.
 
