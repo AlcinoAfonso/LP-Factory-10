@@ -239,7 +239,7 @@
 • Valor real por ambiente: não versionar neste documento.
 
 • `E25_1_COMMUNICATION_BASE_ENABLED`
-• Finalidade: gate server-only da Base de Comunicação E25.1, abrangendo rota, ações, navegação e futura assistência de IA.
+• Finalidade: gate server-only da Base de Comunicação E25.1, abrangendo rota, ações, navegação e assistência de IA.
 • Escopo: Preview e Production do projeto Core, independente por ambiente; somente o literal `true` habilita. Ausência ou qualquer outro valor mantém a Base indisponível sem consulta à sua tabela.
 • Estado operacional: `true` em Preview e Production, de forma independente, após apply seletivo das duas migrations E25, prova SQL, registro prospectivo das quatro coberturas E21.5 e ativação E21 da configuração avaliada. Os dois ambientes foram redeployados e passaram por QA autenticado; alterações do gate exigem novo redeploy do ambiente afetado.
 • Classificação: Config, não Secret. Valor real por ambiente não versionar.
