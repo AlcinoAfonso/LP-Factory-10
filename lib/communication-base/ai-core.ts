@@ -199,7 +199,8 @@ export function parseStageTwoResponse(payload: unknown, target: StageTwoTarget, 
     }
     if (action.type === "open_page" || action.type === "find_in_page") {
       const visitedSource = normalizeSource({ url: action.url });
-      if (visitedSource && !sources.has(visitedSource.url)) sources.set(visitedSource.url, visitedSource);
+      if (!visitedSource) return invalid("web_sources_invalid");
+      if (!sources.has(visitedSource.url)) sources.set(visitedSource.url, visitedSource);
       if (sources.size > 50) return invalid("web_sources_invalid");
     }
     const rawSources = action.sources;

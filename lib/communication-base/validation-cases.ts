@@ -282,6 +282,14 @@ if (researchedAndOpened.ok) {
     title: "Fonte", url: "https://example.org/mercado",
   }], "opening the same URL must preserve its search-result title");
 }
+for (const type of ["open_page", "find_in_page"] as const) {
+  for (const url of [undefined, "http://example.org/mercado", "https://user:pass@example.org/mercado", "invalid"]) {
+    assert.equal(parseStageTwoResponse({ ...searched, output: [searched.output[0], {
+      type: "web_search_call", status: "completed", action: { type, url },
+    }] }, generalTarget, true).ok, false,
+    `${type} with an invalid visited URL must fail despite an earlier valid search source`);
+  }
+}
 assert.equal(parseStageTwoResponse({ ...searchedAndOpened, output: [{
   type: "web_search_call", status: "completed", action: { type: "search" },
 }, { type: "web_search_call", status: "completed", action: { type: "open_page", url: "http://example.org" } }] },
