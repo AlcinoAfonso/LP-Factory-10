@@ -2,11 +2,13 @@
 
 ## Execução
 
-Antes de executar, confirmar objetivo, fontes, limites, validação esperada e aderência de qualquer briefing ao caso, fase, branch e arquivos-alvo.
+Antes de executar, confirmar objetivo, fontes, limites e validação esperada.
 
-Não preencher lacunas críticas nem adaptar briefing de outro caso por inferência; se faltar dado necessário ou houver divergência/dúvida, parar, pedir exatamente o dado ausente ou reportar a incompatibilidade.
+Não completar lacunas críticas por suposição; se faltar informação necessária, parar e pedir exatamente o que falta.
 
-Fluxos auxiliares de GitHub obedecem este documento; divergências devem ser informadas.
+Antes de executar briefing recebido por chat, confirmar se ele pertence ao caso, fase, branch e arquivos-alvo atuais. Diante de divergência ou dúvida, parar e reportar a incompatibilidade; não adaptar briefing de outro caso por inferência.
+
+Fluxos auxiliares de GitHub devem respeitar estas regras. Em caso de divergência, seguir este documento e informar a incompatibilidade.
 
 ## Branch, worktree e publicação
 
@@ -51,27 +53,44 @@ Publicar com `git push`. Não alterar configurações SSH durante a tarefa; se o
 
 Ao alterar arquivo existente:
 
-1. Ler a versão atual no branch-alvo imediatamente antes da edição; usar seu `sha` em substituição integral quando exigido; preservar estrutura, ordem e conteúdo fora do trecho autorizado; preferir uma gravação.
-2. Revisar imediatamente o diff e confirmar só o autorizado; antes de nova gravação, reler e identificar o ajuste restante. Alteração inesperada: restaurar ou parar e informar; não fazer correções sucessivas nem reescrever a branch para ocultá-las.
-3. Ao alterar regra, contrato ou responsabilidade, reconciliar no mesmo delta apenas contratos operacionais vigentes afetados no escopo autorizado: ajustar, consolidar ou remover regra incompatível, redundante, defasada ou sem função; preservar registros/snapshots históricos, não sobrepor regra nova nem reduzir capacidade funcional sem autorização humana explícita.
-4. Em contratos e documentação operacional, preferir substituição/consolidação e delta líquido neutro ou negativo; crescimento exige necessidade atual demonstrável.
+1. Ler a versão atual no branch-alvo imediatamente antes da edição e usar seu `sha` quando a ferramenta exigir substituição integral.
+2. Preservar estrutura, ordem e conteúdo fora do trecho autorizado.
+3. Fazer uma única gravação por arquivo sempre que possível.
+4. Revisar imediatamente o diff e confirmar que contém apenas as alterações autorizadas.
+5. Antes de uma segunda gravação, reler o arquivo e identificar objetivamente o ajuste ainda necessário.
+6. Diante de alteração inesperada, restaurar a versão correta ou parar e informar o problema; não fazer correções sucessivas nem reescrever a branch para ocultá-las.
+7. Ao alterar regra, contrato ou responsabilidade, buscar referências e avaliar os contratos operacionais vigentes afetados; no mesmo delta e dentro do escopo autorizado, ajustar, consolidar ou remover regra incompatível, redundante, defasada ou sem função. Preservar registros/snapshots históricos e capacidade funcional salvo autorização humana explícita.
+8. Em contratos e documentação operacional, não aumentar texto sem necessidade atual; crescimento necessário é permitido. Não compactar, remover ou reescrever regra funcional apenas para compensar o texto acrescentado; simplificar somente redundância real sem perda funcional.
 
 Antes de publicar:
 
-* confirmar que commits/arquivos/diffs pertencem somente ao escopo atual; buscar referências à regra substituída e confirmar autoridade única, sem caminho concorrente ou defasado;
-* verificar alterações acidentais, secrets, `.env`, banco e workflows; executar ou justificar validações; revisar `main..HEAD` e `main...HEAD`, quando disponíveis.
+* confirmar que commits, arquivos e diffs pertencem somente ao escopo atual;
+* verificar alterações acidentais, secrets, `.env`, banco e workflows;
+* executar ou justificar as validações aplicáveis;
+* revisar `main..HEAD` e `main...HEAD`, quando disponíveis.
 
 ## GitHub CLI e fallbacks
 
-Para PRs, reviews, comentários, checks, Actions e diffs, usar primeiro comandos nativos `gh`, preferindo `gh pr`, `gh run`, `gh api`, JSON, `--jq` ou `--template`.
+Para PRs, reviews, comentários, checks, Actions e diffs, usar primeiro os comandos nativos da GitHub CLI (`gh`), preferindo `gh pr`, `gh run`, `gh api`, JSON, `--jq` ou `--template`.
 
-Falha do `gh` não interrompe branch, implementação, validações, diff, commit ou tentativa de `git push`; verificar autenticação só quando a operação remota exigir. Não usar Python, instalar runtimes, alterar `PATH`, aliases, página de código ou configurações do Windows apenas para processar GitHub, nem testar runtimes/caminhos sucessivos sem necessidade explícita; se auxiliar falhar, abandonar e usar `gh`.
+Falha ou indisponibilidade do `gh` não deve interromper criação da branch, implementação, validações, revisão do diff, commit local ou tentativa de `git push`. Verificar autenticação somente quando uma operação remota realmente exigir o `gh`.
 
-Se o `gh` não concluir, usar GitHub Plugin ou Web; se não for possível criar o PR, entregar o link de criação. Parar somente quando nenhum caminho aprovado concluir a operação remota, informando o erro exato.
+Não usar Python, instalar runtimes, alterar `PATH`, aliases, página de código ou configurações do Windows apenas para processar resultados do GitHub. Se um script auxiliar falhar, abandonar o script e usar recursos nativos do `gh`.
+
+Não testar runtimes ou caminhos alternativos sucessivamente sem necessidade explícita do caso.
+
+Se o `gh` não concluir a operação, usar GitHub Plugin ou GitHub Web como fallback. Se a criação do PR não estiver disponível, entregar o link de criação. Parar somente quando nenhum caminho aprovado permitir concluir a operação remota, informando o erro exato.
 
 ## Validações
 
-Para tarefas com impacto em código, rodar `npm ci` e depois `npm run check`; no sandbox do Codex, não incluir `npm run build` na rotina de check. Em alterações exclusivamente documentais/texto, os dois checks podem ser não aplicáveis.
+Para tarefas com impacto em código, rodar nesta ordem:
+
+1. `npm ci`
+2. `npm run check`
+
+No sandbox do Codex, não incluir `npm run build` na rotina de check.
+
+Para alterações exclusivamente documentais ou de texto, `npm ci` e `npm run check` podem ser considerados não aplicáveis.
 
 Em alterações visuais/frontend, executar `npm run dev`, abrir a URL indicada e validar tela, comportamento e erros visíveis. Se a conexão falhar, confirmar se o servidor iniciou e em qual porta.
 
@@ -79,4 +98,11 @@ Qualquer implementação, revisão ou QA que crie ou altere página/UI de dashbo
 
 ## Entrega
 
-A resposta final deve informar arquivos alterados, branch, PR/link de PR ou compare quando aplicável, estado de `npm ci` e `npm run check` (executado, não executado ou não aplicável) e bloqueios/fallbacks/riscos quando houver.
+A resposta final deve informar:
+
+* arquivos alterados;
+* branch usada;
+* PR ou link de PR/compare, quando aplicável;
+* `npm ci`: executado, não executado ou não aplicável;
+* `npm run check`: executado, não executado ou não aplicável;
+* bloqueios, fallbacks ou riscos, quando houver.
