@@ -772,6 +772,54 @@ No plano Hobby, a Vercel passou a preservar, além do deployment de produção a
 
 ---
 
+## 34 — Next.js September 2026: correção crítica e release agendado *(🟩 Patch disponível; nova release prevista)*
+
+2026-09-22
+Catalogado em 2026-09-29
+
+### Status no Projeto
+
+- Status: patch ainda não aplicado; `package.json` e `package-lock.json` fixam `next` e `eslint-config-next` em `16.3.3`. O release `16.3.6` corrige uma vulnerabilidade crítica na implementação Node.js de `ImageResponse` para versões `>=16.2.0 <16.3.6`.
+- Evidência de uso: busca no código versionado não encontrou `ImageResponse`, `next/og`, `@vercel/og` ou Satori. Isso reduz a exposição observável ao caminho descrito, mas não equivale a confirmar segurança de toda a dependência ou de futuros usos.
+- Natureza de uso: segurança transversal da stack Next.js atual.
+- Relação com a stack: patch da dependência existente; não requer nova infraestrutura, plano, serviço ou recurso opt-in.
+- Horizonte: Starter, revisão de segurança imediata. A release `16.3.7` está anunciada para 30/09/2026, mas ainda não estava disponível nesta fotografia.
+
+### Descrição
+
+O Next.js publicou em 22/09/2026 o patch fora do ciclo `16.3.6` para o problema crítico de execução remota de código em `ImageResponse` no runtime Node.js. Em 23/09 anunciou `16.3.7` para 30/09, com correções planejadas para nove vulnerabilidades; impacto e instruções completos só serão conhecidos quando a release sair.
+
+### Valor para o Projeto
+
+- Mantém a dependência principal fora da faixa afetada pelo problema já divulgado.
+- Separa o patch de segurança de Instant Navigations e Cache Components, que permanecem condicionados em `vercel#29`.
+- Permite planejar a release anunciada sem afirmar que uma versão futura já corrigiu o projeto.
+
+### Ações Recomendadas
+
+1. Avaliar em recorte de segurança a atualização mínima para `16.3.6` ou versão corrigida superior já publicada no momento da execução, alinhando `eslint-config-next` e lockfile.
+2. Conferir a publicação e os advisories de `16.3.7` em 30/09; decidir se o recorte deve incluir essa versão conforme o momento da execução, sem adiar indevidamente o patch já disponível.
+3. Validar instalação limpa, `npm run check`, Security Checks, build e Preview, com foco em rotas, Auth, SSR, imagens e navegação.
+4. Não ativar Cache Components, Instant Navigations ou outras capacidades opcionais como parte do patch.
+
+### Dependências, riscos e limite
+
+- O patch da dependência existente não exige custo incremental de plano ou serviço; o custo de execução técnica e teste precisa ser proporcional.
+- O impacto exato dos nove problemas anunciados para 30/09 ainda não foi publicado nesta fotografia.
+- Não alterar dependências, código, configuração, deployment ou plano nesta catalogação.
+- Este registro orienta prioridade, mas não autoriza implementação.
+
+### Critério de encerramento
+
+- Versão corrigida publicada aplicada e validada no projeto, com evidência de lockfile, checks e Preview; eventuais advisories posteriores tratados no recorte competente; reconciliação documental pelo Prompt ABC concluída na `main` quando houver delta.
+
+### Fontes Oficiais
+
+- [Next.js — Next.js Security Update for a Critical Upstream Issue (22/09/2026)](https://nextjs.org/blog/nextjs-security-update-september-22-2026)
+- [Next.js — Upcoming Next.js September Security Release (23/09/2026)](https://nextjs.org/blog/upcoming-nextjs-security-release-september-2026)
+
+---
+
 ## Registro da rodada — Vercel + Next.js Update — 10/08/2026
 
 ### Updates ajustados ou incorporados
@@ -953,3 +1001,30 @@ No plano Hobby, a Vercel passou a preservar, além do deployment de produção a
 ### Limite da rodada
 
 - Nenhuma dependência, variável, secret, configuração, rota, deployment, alias, plano, service, agente, workflow ou infraestrutura foi criada ou alterada; a catalogação não autoriza implementação nem merge.
+
+---
+
+## Registro da rodada — Vercel + Next.js Update — 29/09/2026
+
+### Updates ajustados ou incorporados
+
+- `vercel#34` foi adicionado acima do maior ID histórico para registrar o patch crítico `16.3.6` já disponível e a release `16.3.7` anunciada para 30/09. `vercel#29` continua restrito às otimizações opcionais; o histórico de `vercel#31` permanece encerrado para a correção de agosto.
+
+### Updates avaliados e não adicionados
+
+- Vercel Container Registry via GitHub OIDC, busca pública de domínios, observabilidade de memória do Sandbox e integração Vercel Connect/TanStack AI: não há container, registry, Sandbox de produção, cliente TanStack AI ou caso operacional correspondente no projeto.
+- Novos modelos do AI Gateway: disponibilidade isolada não altera o gate de workload de `vercel#1`.
+- React 19.3: a adoção de novas APIs não tem recorte ou problema comprovado; a stack atual permanece em React `19.2.1` até avaliação própria.
+- Nenhum recurso foi rejeitado somente por estar fora do MVP ou Starter.
+
+### Cobertura estratégica desta atualização
+
+- Segurança, Next.js, React, deploy, IA, agentes e observabilidade: blogs e changelogs oficiais consultados.
+- Landing pages e dashboard são alcançados pelo patch da stack. Não houve novidade específica e material para WhatsApp, Instagram, TikTok, Google Meu Negócio ou e-mail nas fontes Vercel, Next.js e React consultadas.
+
+### IDs, lacunas e limites
+
+- Todos os IDs publicados até `vercel#33` permanecem localizáveis; `vercel#34` é novo, sem renumeração ou reutilização. Nenhum item foi arquivado nesta rodada.
+- Pendente: validar a versão corrigida em recorte próprio; conferir os advisories de 30/09 somente após sua publicação.
+- Fontes: [patch Next.js de 22/09](https://nextjs.org/blog/nextjs-security-update-september-22-2026), [aviso Next.js de 23/09](https://nextjs.org/blog/upcoming-nextjs-security-release-september-2026), [Vercel Changelog](https://vercel.com/changelog) e [React Blog](https://react.dev/blog).
+- Nenhuma implementação, alteração de plano ou merge é autorizada por este registro.
