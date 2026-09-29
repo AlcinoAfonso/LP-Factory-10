@@ -40,7 +40,7 @@ Entregue:
 ## Plano e recorte avaliados
 Repositório, PR ou referência, head SHA, path, caso, recorte, branch e worktree; use N/A quando necessário.
 ## Fontes consultadas
-Somente fontes efetivamente inspecionadas.
+Somente fontes efetivamente inspecionadas; para fonte versionada no repositório, registre path e referência imutável recebida.
 ## Veredito
 Um veredito permitido.
 ## Updates preliminarmente elegíveis
