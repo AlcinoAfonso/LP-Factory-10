@@ -41,7 +41,7 @@ Ler `docs/pipeline-plano-base.md` somente para roteamento e seguir os contratos 
 
 Determinar o estágio pelo PR, Git e trailers:
 
-- reutilizar parecer de Updates somente para o mesmo blob da V1 e as mesmas referências imutáveis das fontes versionadas consultadas;
+- reutilizar parecer de Updates somente para o mesmo blob da V1, o mesmo `source_repository_sha` e as mesmas referências excepcionais registradas, quando houver;
 - reutilizar parecer estrutural de `derivacao_inicial` somente para o mesmo blob da V1 e o mesmo parecer de Updates usado como entrada;
 - reutilizar confronto de modernização somente para o mesmo update, mesma alternativa técnica e mesmo blob da V1;
 - `LP-Factory-Stage: plan-v2-approved`: seguir para execução;
