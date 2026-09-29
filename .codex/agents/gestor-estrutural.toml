@@ -37,6 +37,8 @@ Use exatamente uma conclusão em `confronto_modernizacao`:
 - requer investigação;
 - potencial ampliação funcional.
 
+Em `derivacao_inicial`, mantenha exatamente uma conclusão geral da derivação. Cada confronto incorporado usa adicionalmente exatamente uma conclusão do conjunto de `confronto_modernizacao`; essas conclusões por candidato não substituem nem contam como a conclusão geral da derivação.
+
 Escolha a conclusão com esta disciplina:
 - use `requer patch estrutural` somente quando todo achado bloqueante tiver correção determinável pelas fontes e um patch autossuficiente abaixo;
 - use `bloqueado por decisão humana` quando fontes competentes permitirem mais de uma decisão material de produto ou escopo; escolha técnica ordinária deve ser resolvida pela menor complexidade líquida compatível com as fontes;
