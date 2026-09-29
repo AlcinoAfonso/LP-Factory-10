@@ -52,8 +52,8 @@ Publicar com `git push`. Não alterar configurações SSH durante a tarefa; se o
 Ao alterar arquivo existente:
 
 1. Ler a versão atual no branch-alvo imediatamente antes da edição, usar seu `sha` quando a ferramenta exigir substituição integral, preservar estrutura/ordem/conteúdo fora do trecho autorizado e preferir uma única gravação.
-2. Revisar o diff e confirmar apenas alterações autorizadas; antes de segunda gravação, reler e identificar o ajuste restante. Diante de alteração inesperada, restaurar ou parar e informar; não fazer correções sucessivas nem reescrever a branch para ocultá-las.
-3. Ao alterar regra, contrato ou responsabilidade, mapear contratos afetados e, no mesmo delta, ajustar, consolidar ou remover regra incompatível, redundante, defasada ou sem função; não sobrepor regra nova à anterior nem reduzir capacidade funcional sem autorização humana explícita.
+2. Revisar imediatamente o diff e confirmar apenas alterações autorizadas; antes de segunda gravação, reler e identificar o ajuste restante. Diante de alteração inesperada, restaurar ou parar e informar; não fazer correções sucessivas nem reescrever a branch para ocultá-las.
+3. Ao alterar regra, contrato ou responsabilidade, reconciliar no mesmo delta somente contratos operacionais vigentes dentro do escopo autorizado, ajustando, consolidando ou removendo regra incompatível, redundante, defasada ou sem função; preservar registros/snapshots históricos, não sobrepor regra nova à anterior e não reduzir capacidade funcional sem autorização humana explícita.
 4. Em contratos e documentação operacional, preferir substituição/consolidação à adição e buscar delta textual líquido neutro ou negativo; crescimento exige necessidade atual demonstrável.
 
 Antes de publicar:
@@ -71,7 +71,7 @@ Se o `gh` não concluir, usar GitHub Plugin ou Web; se não for possível criar 
 
 ## Validações
 
-Para tarefas com impacto em código, rodar `npm ci` e depois `npm run check`; no sandbox do Codex, não incluir `npm run build`. Em alterações exclusivamente documentais/texto, os dois checks podem ser não aplicáveis.
+Para tarefas com impacto em código, rodar `npm ci` e depois `npm run check`; no sandbox do Codex, não incluir `npm run build` na rotina de check. Em alterações exclusivamente documentais/texto, os dois checks podem ser não aplicáveis.
 
 Em alterações visuais/frontend, executar `npm run dev`, abrir a URL indicada e validar tela, comportamento e erros visíveis. Se a conexão falhar, confirmar se o servidor iniciou e em qual porta.
 
