@@ -4,7 +4,7 @@
 
 Antes de executar, confirmar objetivo, fontes, limites, validação esperada e aderência de qualquer briefing ao caso, fase, branch e arquivos-alvo.
 
-Não preencher lacunas críticas nem adaptar briefing de outro caso por inferência; se faltar dado necessário ou houver divergência/dúvida, parar e pedir ou reportar exatamente o ponto.
+Não preencher lacunas críticas nem adaptar briefing de outro caso por inferência; se faltar dado necessário ou houver divergência/dúvida, parar, pedir exatamente o dado ausente ou reportar a incompatibilidade.
 
 Fluxos auxiliares de GitHub obedecem este documento; divergências devem ser informadas.
 
@@ -51,21 +51,21 @@ Publicar com `git push`. Não alterar configurações SSH durante a tarefa; se o
 
 Ao alterar arquivo existente:
 
-1. Ler a versão atual no branch-alvo, usar seu `sha` quando exigido, preservar estrutura/ordem/conteúdo fora do trecho autorizado e preferir uma única gravação.
-2. Revisar o diff; antes de segunda gravação, reler e identificar o ajuste restante. Diante de alteração inesperada, restaurar ou parar e informar; não fazer correções sucessivas nem reescrever a branch para ocultá-las.
+1. Ler a versão atual no branch-alvo imediatamente antes da edição, usar seu `sha` quando a ferramenta exigir substituição integral, preservar estrutura/ordem/conteúdo fora do trecho autorizado e preferir uma única gravação.
+2. Revisar o diff e confirmar apenas alterações autorizadas; antes de segunda gravação, reler e identificar o ajuste restante. Diante de alteração inesperada, restaurar ou parar e informar; não fazer correções sucessivas nem reescrever a branch para ocultá-las.
 3. Ao alterar regra, contrato ou responsabilidade, mapear contratos afetados e, no mesmo delta, ajustar, consolidar ou remover regra incompatível, redundante, defasada ou sem função; não sobrepor regra nova à anterior nem reduzir capacidade funcional sem autorização humana explícita.
 4. Em contratos e documentação operacional, preferir substituição/consolidação à adição e buscar delta textual líquido neutro ou negativo; crescimento exige necessidade atual demonstrável.
 
 Antes de publicar:
 
-* confirmar escopo de commits/arquivos/diffs; buscar referências à regra substituída e confirmar autoridade única, sem caminho concorrente ou defasado;
+* confirmar que commits/arquivos/diffs pertencem somente ao escopo atual; buscar referências à regra substituída e confirmar autoridade única, sem caminho concorrente ou defasado;
 * verificar alterações acidentais, secrets, `.env`, banco e workflows; executar ou justificar validações; revisar `main..HEAD` e `main...HEAD`, quando disponíveis.
 
 ## GitHub CLI e fallbacks
 
-Para PRs, reviews, comentários, checks, Actions e diffs, usar primeiro `gh`, preferindo `gh pr`, `gh run`, `gh api`, JSON, `--jq` ou `--template`.
+Para PRs, reviews, comentários, checks, Actions e diffs, usar primeiro comandos nativos `gh`, preferindo `gh pr`, `gh run`, `gh api`, JSON, `--jq` ou `--template`.
 
-Falha do `gh` não interrompe branch, implementação, validações, diff, commit ou tentativa de `git push`; verificar autenticação só quando a operação remota exigir. Não usar Python, instalar runtimes, alterar `PATH`, aliases, página de código ou configurações do Windows apenas para processar GitHub, nem testar caminhos sucessivos sem necessidade; se auxiliar falhar, abandonar e usar `gh`.
+Falha do `gh` não interrompe branch, implementação, validações, diff, commit ou tentativa de `git push`; verificar autenticação só quando a operação remota exigir. Não usar Python, instalar runtimes, alterar `PATH`, aliases, página de código ou configurações do Windows apenas para processar GitHub, nem testar runtimes/caminhos sucessivos sem necessidade explícita; se auxiliar falhar, abandonar e usar `gh`.
 
 Se o `gh` não concluir, usar GitHub Plugin ou Web; se não for possível criar o PR, entregar o link de criação. Parar somente quando nenhum caminho aprovado concluir a operação remota, informando o erro exato.
 
