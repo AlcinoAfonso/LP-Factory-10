@@ -79,7 +79,7 @@ Handoff incompleto, investigação necessária ou decisão material sem autorida
 
 ## 4. Gate do Analista
 
-1. Executar a Passagem 1 com V1, V2, plano conceitual quando existente ou `N/A`, decisões e fontes do caso, sem pareceres, confrontos ou matriz.
+1. Executar a Passagem 1 com V1, V2, plano conceitual quando existente ou `N/A`, decisões e fontes do caso, sem pareceres ou matriz.
 2. Preservar a resposta, gravar e versionar `docs/matriz-consolidacao-<caso>.md` e continuar no mesmo Analista.
 3. Executar a Passagem 2 com os pareceres integrais e a matriz.
 4. Em correções objetivas, inclusive conflito resolvido por fonte ou invariante e validação exclusivamente pós-merge, atualizar V2 e matriz e pedir `revisao_delta` ao mesmo Analista. Antes de devolver decisão ao supervisor, aplicar os critérios do próprio Analista; retorno a especialista ocorre somente por questão material nova ou conclusão especializada alterada.
