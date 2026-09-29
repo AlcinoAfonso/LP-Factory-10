@@ -28,7 +28,7 @@ Delegar uma avaliação read-only ao custom agent `gestor-estrutural` e devolver
 3. Em `confronto_modernizacao`, entregar modo e somente o contexto necessário ao candidato: referências da v1, parecer estrutural inicial, recomendação do Gestor de Updates, solução sem update, solução com update e fontes competentes pertinentes. Não pedir nova avaliação completa. Em `revisao_focal_implementacao`, entregar modo e todos os metadados e artefatos confirmados na preparação, com a avaliação delimitada ao ponto afetado.
 4. Não repetir critérios estruturais no handoff: o contrato runtime está em `.codex/agents/gestor-estrutural.toml`.
 5. Aguardar o parecer sem realizar avaliação estrutural paralela.
-6. Validar somente que o parecer contém as seções exigidas e uma conclusão permitida pelo contrato runtime do modo correspondente; na derivação Complexa, cada candidato de impacto estrutural material apontado por Updates deve ter confronto focal explícito na mesma resposta.
+6. Validar somente que o parecer contém as seções exigidas e uma conclusão geral permitida pelo contrato runtime do modo correspondente; na derivação Complexa, cada candidato de impacto estrutural material apontado por Updates deve ter confronto focal explícito na mesma resposta, com sua própria conclusão permitida de `confronto_modernizacao`, sem substituir a conclusão geral da derivação.
 7. Se o contrato estiver incompleto, devolver o conteúdo recebido e marcar o handoff como incompleto; não completar nem reinterpretar o parecer.
 8. Confirmar novamente o estado Git e distinguir alterações preexistentes.
 9. Exibir o parecer integral, seguido apenas de modo, plano/update avaliado, conclusão, agente acionado e confirmação de que o repositório permaneceu inalterado.
