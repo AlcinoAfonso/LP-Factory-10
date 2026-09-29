@@ -59,6 +59,8 @@ Ao alterar arquivo existente:
 4. Revisar imediatamente o diff e confirmar que contém apenas as alterações autorizadas.
 5. Antes de uma segunda gravação, reler o arquivo e identificar objetivamente o ajuste ainda necessário.
 6. Diante de alteração inesperada, restaurar a versão correta ou parar e informar o problema; não fazer correções sucessivas nem reescrever a branch para ocultá-las.
+7. Ao alterar regra, contrato ou responsabilidade, buscar referências e avaliar os contratos operacionais vigentes afetados; no mesmo delta e dentro do escopo autorizado, ajustar, consolidar ou remover regra incompatível, redundante, defasada ou sem função. Preservar registros/snapshots históricos e capacidade funcional salvo autorização humana explícita.
+8. Em contratos e documentação operacional, não aumentar texto sem necessidade atual; crescimento necessário é permitido. Não compactar, remover ou reescrever regra funcional apenas para compensar o texto acrescentado; simplificar somente redundância real sem perda funcional.
 
 Antes de publicar:
 
