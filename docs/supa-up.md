@@ -152,6 +152,7 @@ Atualizado em 2026-08-03
 - Status: Em uso parcial — logs estruturados existem no runtime; disponibilidade e uso do Unified Logs ainda não foram validados no projeto.
 - Evidência: `docs/base-tecnica.md` `5.3.3 exige logs estruturados com resultado, motivo seguro, `request_id` e latência; o registro anterior confirma uso do Logs Explorer clássico.
 - Lacuna: confirmar no Dashboard se o rollout do Unified Logs já alcançou o projeto.
+- Custo: desde 25/09/2026, ingestão e consultas de logs são medidas no painel de uso; a cobrança por uso ainda não é aplicada durante o período de transição anunciado até o início de 2027. O volume e o limite incluído efetivos deste projeto não foram verificados.
 
 ### Descrição
 
@@ -174,6 +175,7 @@ O recurso não deve ser descrito como AI Debugging e não substitui os logs estr
 - Open beta, sujeita a mudanças de interface e disponibilidade.
 - Não criar destino externo, agente ou automação apenas por causa do recurso.
 - Não registrar PII, secrets, tokens, prompts ou payloads brutos.
+- Antes de propor uso recorrente, monitor ou ampliação de logging, conferir os medidores e limites efetivos da conta; sem prova de custo incremental zero, manter apenas no radar.
 
 ### Ações Recomendadas
 
@@ -184,6 +186,7 @@ O recurso não deve ser descrito como AI Debugging e não substitui os logs estr
 ### Fonte Oficial
 
 - [Supabase Blog — Unified Logs is now in open beta](https://supabase.com/blog/unified-logs-open-beta)
+- [Supabase Changelog — Logs usage-based pricing (25/09/2026)](https://supabase.com/changelog/logs-usage-based-pricing)
 
 ### Registro (Tipo A — Plataforma)
 
@@ -2289,3 +2292,27 @@ Os resultados podem ser vistos no Studio ou obtidos pela Management API. A prime
 ### Limite da rodada
 
 - Nenhuma configuração, credencial, API, MCP, agente, automação, service, SQL, dependency, migration, plano ou ambiente foi alterado; a catalogação não autoriza implementação.
+
+---
+
+## Registro da rodada — Supabase Update September 2026 — 29/09/2026
+
+### Updates ajustados ou incorporados
+
+- `supa#5`: registrado o início da medição de ingestão e consultas de logs, com cobrança futura anunciada e limite efetivo do projeto ainda não verificado. A regra de custo incremental zero impede recomendar ampliação de logging ou monitor recorrente sem essa prova.
+
+### Updates avaliados e não adicionados
+
+- A atualização PostgreSQL 15.19/17.11 de 25/09 corrige 44 CVEs e pode exigir ação para índices `ltree`, índices `btree_gist` em colunas float com `NaN`, mensagens `pgcrypto` com cifras legadas e operadores customizados. Busca em migrations, código e schema versionados não encontrou uso desses recursos; o estado hospedado não foi inspecionado. A notícia permanece como verificação condicional antes de upgrade, sem novo ID ou autorização de upgrade, reindexação ou alteração de dados.
+- A mudança de nome da área Database → Replication para Pipelines, publicada em 21/09, não altera a capacidade catalogada em `supa#64` nem o projeto, que não usa esse pipeline.
+
+### Cobertura estratégica desta atualização
+
+- Banco, Auth, Storage, Edge Functions, logs, IA e automações: changelog e documentação oficiais Supabase consultados. O delta aplicável foi incorporado em `supa#5`; não apareceu capacidade nova específica para landing pages, WhatsApp, Instagram, TikTok, Google Meu Negócio ou e-mail.
+
+### IDs, lacunas e limites
+
+- Todos os IDs publicados até `supa#71` permanecem localizáveis, sem renumeração, reutilização ou desaparecimento. Nenhum item foi arquivado nesta rodada.
+- Pendente: verificar, em leitura autorizada, as extensões e índices efetivos do banco hospedado antes de eventual upgrade PostgreSQL; verificar medidores e limites de logs da conta antes de recomendar uso recorrente.
+- Fontes oficiais: [PostgreSQL 15.19/17.11 — breaking changes](https://supabase.com/changelog/postgres-15-19-17-11-breaking-changes) e [Logs usage-based pricing](https://supabase.com/changelog/logs-usage-based-pricing).
+- Este registro não autoriza implementação, configuração, upgrade, SQL mutável, mudança de plano ou contratação.
