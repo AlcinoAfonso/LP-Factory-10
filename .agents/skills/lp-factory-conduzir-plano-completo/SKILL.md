@@ -30,6 +30,7 @@ Ler `docs/pipeline-plano-base.md` somente para roteamento e seguir os contratos 
 
 - `lp-factory-avaliar-plano-updates`;
 - `lp-factory-avaliar-plano-estrutura` em `derivacao_inicial`, já com o parecer integral de Updates;
+- `lp-factory-avaliar-plano-estrutura` em `confronto_modernizacao`, preservado como capacidade focal; no fluxo Complexo normal, seu confronto é produzido dentro da própria derivação inicial quando houver update com impacto estrutural material;
 - `lp-factory-avaliar-plano-estrutura` em `revisao_focal_implementacao`, somente no retorno previsto na seção 6;
 - `lp-factory-avaliar-plano-automacoes`, quando a V1 identificar automação aplicável e não registrar dispensa humana explícita da avaliação formal;
 - `lp-factory-avaliar-plano-analista`;
@@ -40,8 +41,8 @@ Ler `docs/pipeline-plano-base.md` somente para roteamento e seguir os contratos 
 
 Determinar o estágio pelo PR, Git e trailers:
 
-- reutilizar parecer de Updates somente para o mesmo blob da V1;
-- reutilizar parecer estrutural somente para o mesmo blob da V1 e o mesmo parecer de Updates usado como entrada;
+- reutilizar parecer completo somente para o mesmo blob da V1;
+- reutilizar confronto de modernização somente para o mesmo update, mesma alternativa técnica e mesmo blob da V1;
 - `LP-Factory-Stage: plan-v2-approved`: seguir para execução;
 - `LP-Factory-Phase: <identificador>`: determinar a próxima subseção conforme a seção 7.2 do Executor;
 - V2 ou delta focal candidato sem aprovação ou roadmap: retomar nesse gate, sem usar a aprovação anterior para implementar o candidato.
@@ -63,8 +64,8 @@ Se o estágio não for inequívoco, pedir apenas a referência faltante; nunca r
 2. Obter plano conceitual somente por referência competente ou vínculo inequívoco com o recorte; se não existir, registrar `N/A` e continuar.
 3. Exigir em cada fase o identificador exato da subseção do roadmap; não usar aliases ordinais.
 4. Acionar o Gestor de Updates sobre a V1 congelada e preservar integralmente seu parecer.
-5. Acionar o Gestor Estrutural uma única vez em `derivacao_inicial` sobre a mesma V1, entregando o parecer integral de Updates. O parecer estrutural deve resolver na própria derivação os impactos estruturais dos updates aplicáveis, inclusive os materiais.
-6. Acionar o Gestor de Automações quando a V1 identificar automação aplicável e não registrar dispensa humana da avaliação formal. Quando houver dispensa, registrar `N/A — avaliação formal dispensada na V1`; quando a decisão ou o recorte automatizado estiver ambíguo, pedir somente o esclarecimento necessário.
+5. Acionar o Gestor Estrutural uma única vez em `derivacao_inicial` sobre a mesma V1, entregando o parecer integral de Updates. Para cada update com impacto estrutural material, essa mesma resposta deve incluir o confronto focal correspondente com os critérios e o formato do modo `confronto_modernizacao`; não abrir uma segunda chamada estrutural no fluxo normal.
+6. Acionar o Gestor de Automações quando a V1 identificar automação aplicável e não registrar dispensa humana explícita da avaliação formal. Quando houver dispensa, registrar `N/A — avaliação formal dispensada na V1`; quando a decisão ou o recorte automatizado estiver ambíguo, pedir somente o esclarecimento necessário.
 7. Aplicar integralmente as regras das skills especializadas; não refazer suas avaliações na task principal.
 
 Handoff incompleto, investigação necessária ou decisão material sem autoridade retornam somente o ponto necessário ao supervisor competente. Questão material nova segue ao domínio indicado pelo Analista.
@@ -73,15 +74,15 @@ Handoff incompleto, investigação necessária ou decisão material sem autorida
 
 1. Editar somente o plano na branch do plano e preservar objetivo, decisões funcionais válidas, ordem, hierarquia e granularidade da V1, acrescentando o detalhamento técnico necessário para torná-la executável.
 2. Classificar cada acréscimo técnico como `derivação técnica da V1`, `modernização técnica justificada` ou `ampliação de escopo`; não incorporar ampliação sem decisão humana ou novo recorte.
-3. Aplicar somente tratamentos autorizados pelos pareceres especializados. Modernização com impacto estrutural material só pode ser consolidada quando o parecer estrutural registrar tratamento compatível; oportunidade estratégica condicional não autoriza implementação atual.
-4. Preparar a matriz com origem, classe, tratamento, localização e evidência de cada achado; para updates, registrar também o destino e, quando houver impacto estrutural material, o tratamento estrutural correspondente.
+3. Aplicar somente tratamentos autorizados pelos pareceres especializados. Modernização com impacto estrutural material só pode ser consolidada após o confronto focal correspondente, produzido na derivação estrutural única do fluxo normal ou pelo modo `confronto_modernizacao` quando acionado focalmente; oportunidade estratégica condicional não autoriza implementação atual.
+4. Preparar a matriz com origem, classe, tratamento, localização e evidência de cada achado; para updates, registrar também o destino e a referência ao confronto estrutural quando aplicável.
 5. Antes da Passagem 1, não gravar nem expor matriz ou pareceres ao Analista. Validar a V2 e criar checkpoint `LP-Factory-Stage: plan-v2` somente com o plano.
 
 ## 4. Gate do Analista
 
-1. Executar a Passagem 1 com V1, V2, plano conceitual quando existente ou `N/A`, decisões e fontes do caso, sem pareceres ou matriz.
+1. Executar a Passagem 1 com V1, V2, plano conceitual quando existente ou `N/A`, decisões e fontes do caso, sem pareceres, confrontos ou matriz.
 2. Preservar a resposta, gravar e versionar `docs/matriz-consolidacao-<caso>.md` e continuar no mesmo Analista.
-3. Executar a Passagem 2 com os pareceres integrais e a matriz.
+3. Executar a Passagem 2 com os pareceres integrais, confrontos estruturais aplicáveis e a matriz.
 4. Em correções objetivas, inclusive conflito resolvido por fonte ou invariante e validação exclusivamente pós-merge, atualizar V2 e matriz e pedir `revisao_delta` ao mesmo Analista. Antes de devolver decisão ao supervisor, aplicar os critérios do próprio Analista; retorno a especialista ocorre somente por questão material nova ou conclusão especializada alterada.
 5. Avançar apenas com `aprovado para merge do plano-base v2`.
 
@@ -104,7 +105,7 @@ Handoff incompleto, investigação necessária ou decisão material sem autorida
 
 ## Devolução
 
-Informar referências de V1, worktree, branch, pareceres aplicáveis, Passagens 1 e 2, V2 aprovada, ABC e delta do roadmap, matriz, checkpoint `plan-v2-approved`, PR e pendências de derivação. Para implementação e encerramento, incorporar por referência a entrega e o recibo final produzidos por `$lp-factory-executar-plano`, sem reescrever seus relatórios.
+Informar referências de V1, worktree, branch, pareceres aplicáveis, confrontos estruturais quando houver, Passagens 1 e 2, V2 aprovada, ABC e delta do roadmap, matriz, checkpoint `plan-v2-approved`, PR e pendências de derivação. Para implementação e encerramento, incorporar por referência a entrega e o recibo final produzidos por `$lp-factory-executar-plano`, sem reescrever seus relatórios.
 
 ## Limites
 
