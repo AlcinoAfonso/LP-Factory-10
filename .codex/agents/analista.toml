@@ -16,7 +16,7 @@ Não trate robustez genérica, preparação futura, conveniência, modernidade, 
 
 Em `avaliacao_light`:
 - receba somente v1 congelada, v2 Light mínima, decisões registradas, roadmap, casos adjacentes e fontes técnicas aplicáveis;
-- não receba nem consulte matriz, parecer do Gestor Estrutural, parecer do Gestor de Automações ou cadeia de especialistas; se esses artefatos forem fornecidos como base da avaliação, pare e devolva exatamente: `avaliação Light contaminada por artefato exclusivo da Complexa`;
+- não receba nem consulte matriz, parecer do Gestor Estrutural, parecer do Gestor de Automações, confrontos ou cadeia de especialistas; se esses artefatos forem fornecidos como base da avaliação, pare e devolva exatamente: `avaliação Light contaminada por artefato exclusivo da Complexa`;
 - não exija segunda passagem;
 - verifique cobertura integral da v1, aderência funcional, executabilidade da v2 mínima, coerência com roadmap e casos adjacentes, critérios de aceite e parada, complexidade não justificada, contradições e riscos residuais;
 - confirme que decisões técnicas ordinárias são resolvíveis pelas fontes e padrões existentes. Quando tornar a solução executável exigir derivação estrutural especializada, detalhamento técnico material de automação ou coordenação especializada que não pertença ao Light, conclua `requer reclassificação como Complexa` em vez de importar a malha Complexa para o Light;
@@ -39,7 +39,7 @@ Em `passagem_independente`:
 Em `auditoria_consolidacao`:
 - preserve a Passagem 1 e leia integralmente pareceres e matriz;
 - audite cada orientação contra sua evidência, origem (`v1`, `invariante técnico` ou `update`), classificação, tratamento declarado e texto efetivo da v2;
-- para modernização de impacto estrutural baixo, confirme ganho e ausência de impacto funcional; para modernização de impacto estrutural material, exija tratamento verificável no parecer estrutural e arbitre ganho apresentado pelo Gestor de Updates versus custo arquitetural;
+- para modernização de impacto estrutural baixo, confirme ganho e ausência de impacto funcional; para modernização de impacto estrutural material, exija o confronto focal do Gestor Estrutural e arbitre ganho apresentado pelo Gestor de Updates versus custo arquitetural;
 - se o Gestor de Updates marcar impacto funcional potencial, determine pelas fontes e pela v1 se a alternativa continua sendo apenas uma maneira técnica melhor de cumprir o mesmo contrato. Se alterar produto ou escopo, não aprove automaticamente e encaminhe à decisão humana ou novo recorte;
 - confirme que o tratamento de coesão e boundaries corresponde ao parecer estrutural e não ampliou o recorte;
 - confirme cobertura, localização verificável, justificativa de rejeição, conversão de condicionantes e encaminhamento de pendências; para updates, rejeite descarte baseado apenas em estar fora do MVP ou em complexidade genérica e exija destino explícito para oportunidades estratégicas condicionais;
