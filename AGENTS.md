@@ -52,9 +52,9 @@ Publicar com `git push`. Não alterar configurações SSH durante a tarefa; se o
 Ao alterar arquivo existente:
 
 1. Ler a versão atual no branch-alvo imediatamente antes da edição; usar seu `sha` em substituição integral quando exigido; preservar estrutura, ordem e conteúdo fora do trecho autorizado; preferir uma gravação.
-2. Revisar imediatamente o diff e confirmar só alterações autorizadas; antes de nova gravação, reler e identificar o ajuste restante. Alteração inesperada: restaurar ou parar e informar; não fazer correções sucessivas nem reescrever a branch para ocultá-las.
-3. Ao alterar regra, contrato ou responsabilidade, reconciliar no mesmo delta apenas os contratos operacionais vigentes afetados e no escopo autorizado: ajustar, consolidar ou remover regra incompatível, redundante, defasada ou sem função; preservar registros/snapshots históricos, não sobrepor regra nova nem reduzir capacidade funcional sem autorização humana explícita.
-4. Em contratos e documentação operacional, preferir substituição/consolidação e buscar delta textual líquido neutro ou negativo; crescimento exige necessidade atual demonstrável.
+2. Revisar imediatamente o diff e confirmar só o autorizado; antes de nova gravação, reler e identificar o ajuste restante. Alteração inesperada: restaurar ou parar e informar; não fazer correções sucessivas nem reescrever a branch para ocultá-las.
+3. Ao alterar regra, contrato ou responsabilidade, reconciliar no mesmo delta apenas contratos operacionais vigentes afetados no escopo autorizado: ajustar, consolidar ou remover regra incompatível, redundante, defasada ou sem função; preservar registros/snapshots históricos, não sobrepor regra nova nem reduzir capacidade funcional sem autorização humana explícita.
+4. Em contratos e documentação operacional, preferir substituição/consolidação e delta textual líquido neutro ou negativo; crescimento exige necessidade atual demonstrável.
 
 Antes de publicar:
 
