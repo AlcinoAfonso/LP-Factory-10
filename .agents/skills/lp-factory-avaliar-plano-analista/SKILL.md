@@ -1,6 +1,6 @@
 ---
 name: lp-factory-avaliar-plano-analista
-description: Avaliar um plano-base v2 técnico do LP Factory 10 com o custom agent analista. No Light, executar uma avaliação independente sem matriz e sem segunda passagem. Na Complexa, preservar o gate existente em duas passagens com matriz, pareceres e confrontos aplicáveis.
+description: Avaliar um plano-base v2 técnico do LP Factory 10 com o custom agent analista. No Light, executar uma avaliação independente sem matriz e sem segunda passagem. Na Complexa, preservar o gate existente em duas passagens com matriz, pareceres e tratamento estrutural dos updates aplicáveis.
 ---
 
 # Avaliar plano-base v2 com o Analista
@@ -37,18 +37,17 @@ Roteie a avaliação pelo nível recebido sem misturar contratos.
    - plano conceitual somente quando houver referência competente ou vínculo inequívoco com o recorte; caso contrário, `N/A` confirmado sem bloquear o fluxo;
    - decisões humanas registradas, roadmap, casos adjacentes e fontes técnicas necessárias;
    - parecer integral de cada especialista incluído;
-   - confrontos estruturais focais de modernização quando exigidos pelo Gestor de Updates;
    - matriz de consolidação.
 3. Resolver versões em PR ou commit pelo SHA, nunca pela cópia local conveniente. Se v1 e v2 compartilharem path, diferenciá-las por referências imutáveis.
 4. Parar diante de artefato ausente, caso divergente ou fonte conceitual ambígua; não reconstruir por inferência.
-5. Exigir pareceres do Gestor Estrutural e do Gestor de Updates. Para cada update com impacto estrutural material, exigir também o confronto focal do Gestor Estrutural. Exigir o parecer do Gestor de Automações quando a v1 identificar uma entrega ou parte do plano sujeita a automação sem dispensa humana explícita da avaliação formal; com dispensa registrada, exigir `N/A — avaliação formal dispensada na v1`. Em planos anteriores sem esse registro, exigir o parecer.
+5. Exigir pareceres do Gestor de Updates e do Gestor Estrutural. Para cada update com impacto estrutural material, exigir que o parecer estrutural registre o tratamento correspondente. Exigir o parecer do Gestor de Automações quando a v1 identificar uma entrega ou parte do plano sujeita a automação sem dispensa humana explícita da avaliação formal; com dispensa registrada, exigir `N/A — avaliação formal dispensada na v1`. Em planos anteriores sem esse registro, exigir o parecer.
 6. Registrar o estado Git anterior à delegação.
 
 ## Validar a matriz
 
-Exigir uma linha por achado com identificação estável, origem (`v1`, `invariante técnico` ou `update`), classe (`derivação técnica da v1`, `modernização técnica justificada` ou `ampliação de escopo`), tratamento, localização/evidência e, para updates, os dados exigidos pelo contrato do Gestor de Updates e referência ao confronto estrutural quando aplicável.
+Exigir uma linha por achado com identificação estável, origem (`v1`, `invariante técnico` ou `update`), classe (`derivação técnica da v1`, `modernização técnica justificada` ou `ampliação de escopo`), tratamento, localização/evidência e, para updates, os dados exigidos pelo contrato do Gestor de Updates e o tratamento estrutural correspondente quando aplicável.
 
-Matriz incompleta, modernização material sem confronto ou linha sem correspondência verificável impede o handoff.
+Matriz incompleta, modernização material sem tratamento estrutural verificável ou linha sem correspondência verificável impede o handoff.
 
 ## Passagem 1
 
@@ -60,13 +59,13 @@ Matriz incompleta, modernização material sem confronto ou linha sem correspond
 ## Passagem 2
 
 1. Continuar no mesmo thread no modo `auditoria_consolidacao`.
-2. Entregar pareceres integrais, confrontos estruturais aplicáveis e matriz, sem reescrever achados.
+2. Entregar pareceres integrais e matriz, sem reescrever achados.
 3. Solicitar a auditoria conforme o contrato runtime de `.codex/agents/analista.toml`, preservando a Passagem 1.
 4. Aguardar a conclusão formal definida no contrato runtime.
 
 ## Devolver
 
-Apresentar sem reescrever Passagem 1, Passagem 2, conclusão, correções e eventuais rodadas especializadas ou decisões humanas. Acrescentar apenas versões avaliadas, pareceres/confrontos auditados, agente acionado e estado Git final.
+Apresentar sem reescrever Passagem 1, Passagem 2, conclusão, correções e eventuais rodadas especializadas ou decisões humanas. Acrescentar apenas versões avaliadas, pareceres auditados, agente acionado e estado Git final.
 
 Conferir o estado Git. Se faltar passagem ou conclusão, devolver o conteúdo e marcar o handoff como incompleto; não completar o parecer.
 
