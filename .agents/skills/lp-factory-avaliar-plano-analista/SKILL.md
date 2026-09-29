@@ -20,7 +20,7 @@ Roteie a avaliação pelo nível recebido sem misturar contratos.
 2. Obter referências imutáveis, paths e conteúdos integrais da V1 congelada e da V2 Light mínima. Se compartilharem o mesmo path, diferenciá-las pelos commits SHAs correspondentes.
 3. Não exigir nem receber matriz, parecer do Gestor Estrutural, parecer do Gestor de Automações ou cadeia de especialistas. Updates pode existir como origem técnica da V2, mas seu parecer não integra a entrada do Analista Light.
 4. Iniciar exatamente um subagent `analista` com `fork_turns=none`, quando disponível, no modo `avaliacao_light`.
-5. Entregar apenas V1, V2 Light, decisões registradas, caso, roadmap, casos adjacentes e fontes técnicas necessárias. Não entregar pareceres especializados, confrontos ou matriz.
+5. Entregar apenas V1, V2 Light, decisões registradas, caso, roadmap, casos adjacentes e fontes técnicas necessárias. Não entregar pareceres especializados ou matriz.
 6. Preservar integralmente a resposta e tratar somente uma conclusão permitida pelo contrato runtime:
    - `aprovado para implementar`: liberar a V2 Light para implementação;
    - `aprovado com correções obrigatórias`: devolver somente as correções objetivas; após o Executor ajustar a V2, continuar no mesmo Analista em `revisao_delta_light`;
@@ -53,7 +53,7 @@ Matriz incompleta, modernização material sem tratamento estrutural verificáve
 
 1. Iniciar exatamente um subagent `analista` com `fork_turns=none`, quando disponível, no modo `passagem_independente`.
 2. Entregar apenas v1, v2, plano conceitual quando existente ou `N/A`, decisões registradas, caso, roadmap, casos adjacentes e fontes técnicas.
-3. Não entregar, citar ou expor pareceres, confrontos ou matriz por prompt, histórico ou anexos.
+3. Não entregar, citar ou expor pareceres ou matriz por prompt, histórico ou anexos.
 4. Preservar integralmente a resposta. Se contaminada, descartá-la e reiniciar uma única instância limpa.
 
 ## Passagem 2
