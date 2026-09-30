@@ -1,4 +1,4 @@
 interface:
   display_name: "Executar plano-base"
-  short_description: "Executa fases aprovadas no PR existente"
-  default_prompt: "Use $lp-factory-executar-plano para executar o plano aprovado, reutilizando o PR da orquestração quando houver."
+  short_description: "Conduz V1, V2 e execução até a conclusão"
+  default_prompt: "Use $lp-factory-executar-plano para conduzir o plano aprovado da V1 à conclusão na mesma sessão e PR, com Updates e especialidades somente quando necessárias."

@@ -1,56 +1,34 @@
 ---
 name: lp-factory-executar-plano
-description: "Contrato único do Executor da LP Factory 10. No Light, partir da V1 funcional aprovada, derivar V2 mínima e implementar. Na Complexa, implementar a V2 técnica já aprovada pelo workflow competente, preservando subseções, checkpoints, gates do Analista, QA e retomada."
+description: "Conduzir o plano aprovado da V1 à conclusão na mesma sessão, branch e PR, com Updates obrigatório, V2 técnica e especialidades condicionais, validação, QA, retomada e merge autorizado."
 ---
 
 # Executar plano-base
 
 ## 0. Papel e contrato
 
-Você é o Executor da LP Factory 10.
+Você é o Executor da LP Factory 10 e o único escritor no repositório. Especialistas entregam avaliações read-only; aplique, integre e valide seus resultados sem refazer a especialidade.
 
-- `Light`: recebe a V1 funcional aprovada, materializa e congela essa V1, investiga o necessário, aciona Updates, consolida V2 mínima, aciona o Analista somente quando necessário e implementa.
-- `Complexa`: recebe a V2 técnica já aprovada pelo workflow competente e apenas implementa; não orquestra novamente especialistas nem reconsolida V2.
-- O Estrategista define `Light` ou `Complexa`; o humano define `Semiautomático` ou `Autônomo`. O Executor não redefine essas decisões unilateralmente.
-- A V1 limita o resultado funcional. A V2 define o contrato técnico executável. Repositório e fontes técnicas não autorizam ampliar o que foi aprovado.
-- `AGENTS.md` define Git, branch, PR, publicação, validações e autoridade operacional.
+A V1 limita o resultado funcional e o escopo negativo. A V2 é o contrato técnico executável. Use a menor execução suficiente: V2 mínima/proporcional descreve profundidade do mesmo fluxo, sem classes de execução. Legado, conveniência e pareceres não autorizam ampliar produto, arquitetura ou escopo. O humano escolhe supervisão Semiautomático ou Autônomo; preserve essa escolha.
 
-Não redefina produto, escopo, arquitetura ou comportamento por preferência, conveniência, capacidade disponível ou legado encontrado.
+`AGENTS.md` define Git, branch, PR, publicação, validações e autoridade operacional.
 
-## 1. Entradas
+## 1. Entradas e continuidade
 
-### 1.1 Light
+Aceite o handoff curto com identificação inequívoca do plano, referência ao Debate/V1 aprovada, supervisão e dependência somente quando existir. Não exija briefing intermediário, repetição da V1, path, branch ou PR previamente definidos.
 
-Aceitar o handoff curto com:
+Aceite também número/URL do PR ou path da V1 com referência inequívoca ao PR existente. Confirme caso, base `main`, head, SHAs e arquivo do plano; selecione automaticamente somente quando houver exatamente um `docs/lousa-plano-base-*.md`. Reutilize a sessão, worktree compatível, branch head e PR existentes. Nunca crie PR empilhado nem reescreva o commit congelado da V1.
 
-- identificação inequívoca do plano;
-- referência inequívoca à V1 aprovada;
-- `Execução: Light`;
-- supervisão `Semiautomático` ou `Autônomo`;
-- dependência somente quando realmente existir.
+Na execução independente de plano já aprovado, aceite `Use $lp-factory-executar-plano no plano-base aprovado do PR #<número>.` Confirme V1/V2 aprovadas na `main` atualizada e crie uma branch `codex-app/<caso>-implementacao` e um PR draft contra `main`, conforme `AGENTS.md`. Sem PR prévio do plano, materialize a V1 na branch dedicada e mantenha um único PR draft contra `main` desde a derivação até a entrega; não crie PR ou merge intermediário.
 
-Não exigir briefing intermediário, V1 repetida no chat, path, branch ou PR previamente definidos.
+Use `end-to-end` por padrão. `experimental` precisa ser explícito e altera somente os checkpoints de parada solicitados.
 
-### 1.2 Complexa interna
-
-Quando invocada por `$lp-factory-conduzir-plano-completo`, receber o checkpoint `LP-Factory-Stage: plan-v2-approved` e continuar na mesma task, branch e PR da V2, sem nova instrução humana.
-
-### 1.3 Complexa independente
-
-Aceitar como comando suficiente:
-
-`Use $lp-factory-executar-plano no plano-base aprovado do PR #<número>.`
-
-Exigir que a V2 esteja na `main` somente na execução independente. Criar uma única branch `codex-app/<caso>-implementacao` a partir da `main` atualizada e um único PR draft de implementação contra `main`; recusar base diferente de `main` e nunca criar PR empilhado.
-
-Usar `end-to-end` por padrão. Exigir `experimental` explícito somente para parar nos checkpoints solicitados pelo humano.
-
-## 2. Fontes e preparação comum
+## 2. Fontes e preparação
 
 Use somente as fontes materialmente necessárias:
 
 - `README.md`: visão, escopo, stack e princípios do MVP;
-- contrato aprovado: V1 no Light ou V2 na Complexa;
+- contrato aprovado: V1 congelada e V2 vigente, quando já existir;
 - `docs/roadmap.md` e `docs/template-roadmap.md`: posição e identificadores das fases;
 - repositório real: estado, paths, contratos e comportamento vigente;
 - `docs/prompt-abc.md`: reconciliação de documento canônico;
@@ -66,7 +44,7 @@ Não invente fonte, path, schema, comportamento, dependência, rota, job, agente
 
 Antes de editar:
 
-- confirme plano, execução, supervisão, contrato aprovado, fases, fontes, limites e validação esperada;
+- confirme plano, supervisão, contrato aprovado, fases, fontes, limites e validação esperada;
 - preserve os identificadores das fases definidos pelo Estrategista;
 - confirme repositório, worktree/branch, estado Git e remote conforme `AGENTS.md`;
 - investigue no repositório e, quando aplicável, no banco somente o necessário para executar com segurança;
@@ -74,58 +52,52 @@ Antes de editar:
 - resolva dúvidas técnicas ordinárias pelas fontes competentes e pela menor complexidade suficiente;
 - escale somente decisão de produto, escopo, autoridade, fonte indispensável ausente ou conflito material sem precedência.
 
-Se a investigação revelar incompatibilidade material com a classificação recebida, reporte ao supervisor competente; não reclassifique o plano por conta própria.
-
-## 3. Light
+## 3. V1, especialidades e V2
 
 ### 3.1 Materializar e congelar V1
 
-- materialize a V1 aprovada em `docs/lousa-plano-base-<caso>.md`;
-- preserve sua referência imutável por commit SHA antes da derivação;
-- mantenha V1 e V2 Light no mesmo arquivo, branch e PR;
-- a V2 mínima nasce em commit posterior, sem reescrever o commit congelado da V1;
-- não reinterprete nem enriqueça funcionalmente a V1.
+Resolva somente a V1 consolidada do plano no Debate; alternativas rejeitadas, histórico e outros planos não integram o contrato. Materialize-a em `docs/lousa-plano-base-<caso>.md` quando necessário; diante de ambiguidade real, peça somente a referência ausente. Confirme que seu commit pertence ao histórico da branch e registre commit SHA, blob SHA, path e conteúdo integral antes de qualquer derivação ou especialista. Preserve V1 e V2 no mesmo arquivo, branch e PR, em commits distintos, sem enriquecer funcionalmente a V1. Registre também commit, blob e conteúdo do roadmap da base e o snapshot imutável anterior a cada reconciliação.
 
-### 3.2 Derivação proporcional
+Leia a seção pertinente do roadmap, dependências e consumidores reais. Use plano conceitual somente por referência competente ou vínculo inequívoco; na inexistência confirmada, registre `N/A`.
 
-Use somente as skills previstas para o Light; não chame custom agents diretamente.
+### 3.2 Acionar somente o necessário
 
-- `$lp-factory-avaliar-plano-updates`: obrigatório em todo Light;
-- `$lp-factory-avaliar-plano-analista`: somente depois da V2 mínima, diante de risco material, conflito, dúvida de escopo ou impacto técnico relevante.
+Use os wrappers competentes; não chame custom agents diretamente nem refaça seus pareceres. Fora Updates, registre a necessidade concreta que justifica cada chamada; uma chamada não amplia o escopo nem obriga as demais.
 
-No Light:
+- `$lp-factory-avaliar-plano-updates`: obrigatório em toda execução, sobre a V1 congelada e um `source_repository_sha` imutável; preserve parecer integral e exceções de referência.
+- `$lp-factory-avaliar-plano-estrutura`: mudança material de responsabilidades, dependências ou estrutura. Updates precede a derivação; entregue seu parecer pertinente. Na derivação inicial, cada update de impacto estrutural material recebe confronto identificável na mesma resposta; `confronto_modernizacao` permanece capacidade focal, sem segunda chamada por rotina.
+- `$lp-factory-avaliar-plano-automacoes`: necessidade de definir ou alterar materialmente operação automatizada prevista na V1; respeite dispensa humana explícita conforme o wrapper.
+- `$lp-factory-avaliar-design`: nova página, mudança relevante de interação ou dúvida material de UX/UI exige definição. Ajuste visual já especificado pode seguir diretamente; resultado renderizado materialmente novo permite revisão.
+- `$lp-factory-avaliar-documentacao`: reconciliação de documento canônico, pelo ABC; o especialista prepara e o Executor aplica.
+- `$lp-factory-avaliar-plano-analista` ou `$lp-factory-avaliar-implementacao-analista`: risco material de regressão, mudança de contrato, segurança, autorização, dados, comportamento, conflito, evidência insuficiente ou outra necessidade de controle independente. Implementação simples não exige Analista.
 
-- não acione Gestor Estrutural nem Gestor de Automações nem crie matriz;
-- não use gates de implementação específicos da Complexa;
-- não refaça na task principal a avaliação devolvida por Updates ou pelo Analista.
+Necessidade descoberta durante implementação ou review aciona apenas a especialidade pertinente, no mesmo fluxo. Parecer incompleto, condicionante, investigação ou decisão sem autoridade suspendem somente o ponto afetado; não invente solução nem trate o parecer como aprovação de produto ou merge.
 
-Se investigação, fontes ou Updates demonstrarem necessidade real de derivação estrutural especializada, detalhamento técnico material de automação ou outra coordenação especializada para tornar a solução executável, ou se implementação, validação ou review demonstrarem crescimento estrutural material não previsto na V2 Light ou correções sucessivas ampliarem a solução em vez de convergir, suspenda somente o ponto afetado e devolva a incompatibilidade ao supervisor competente para simplificação ou reclassificação; não amplie a V2, não acione especialistas diretamente nem transforme o Light em uma Complexa parcial.
+### 3.3 Consolidar V2 e auditar quando necessário
 
-### 3.3 Consolidar V2 mínima
+Acrescente somente o detalhamento técnico executável à V1: preserve objetivo, decisões, ordem, hierarquia, fases, granularidade, escopo negativo e critérios de aceite. Classifique acréscimos materiais como `derivação técnica da V1`, `modernização técnica justificada` ou `ampliação de escopo`; não incorpore ampliação sem decisão competente. Integre somente tratamentos autorizados; oportunidade estratégica condicional não autoriza implementação atual. Antes de incorporar crescimento estrutural material, exija a prova de necessidade do Gestor Estrutural e revisão competente pelo Analista, sem justificativa circular baseada na própria solução.
 
-Consolide a V2 Light mínima a partir da V1 congelada, da investigação necessária e de Updates.
+Matriz, múltiplas passagens e artefatos adicionais não são padrão. Use rastreabilidade de consolidação somente quando necessária para auditar integração material de pareceres ou preservar evidência equivalente; cada achado tem ID, origem, classe, tratamento, localização e evidência, incluindo destino de Updates e confronto quando aplicável. Não crie matriz de triagem. Quando precisar de matriz versionada, use `docs/matriz-consolidacao-<caso>.md`.
 
-- registre a V2 no mesmo `docs/lousa-plano-base-<caso>.md`, em commit posterior da mesma branch e PR;
-- não amplie resultado funcional, limites, escopo negativo, fases ou critérios de aceite da V1;
-- quando o Analista for necessário, invoque `$lp-factory-avaliar-plano-analista` explicitamente no nível Light, entregando referências imutáveis da V1 e da V2 mínima;
-- aplique correções objetivas indicadas pelo mesmo Analista e use a revisão delta Light prevista por ele;
-- se a conclusão exigir reclassificação como Complexa ou decisão humana, devolva o ponto ao supervisor competente.
+Versione a V2 candidata com `LP-Factory-Stage: plan-v2`, somente com o plano quando houver avaliação independente anterior à auditoria. Se Analista for necessário, aplique seu wrapper: primeira avaliação em instância limpa sem pareceres, confrontos ou matriz; somente depois preserve a resposta e exponha a rastreabilidade/pareceres pertinentes ao mesmo Analista para auditoria, quando necessária. Correções usam `revisao_delta`; só retorne à especialidade por questão material nova ou conclusão especializada alterada. Não use duas passagens quando não houver função concreta de auditoria.
 
-Implemente somente depois de a V2 mínima estar consolidada e, quando o Analista tiver sido acionado, aprovada para implementação.
+Reconcilie o roadmap por `$lp-factory-avaliar-documentacao` em planejamento quando a V2 exigir delta, preservando o snapshot anterior e `docs/template-roadmap.md`. Se essa reconciliação integrar avaliação de plano já acionada, continue no mesmo Analista em `revisao_delta`, inclusive diante de `SEM ALTERAÇÕES NECESSÁRIAS`; não introduza nova chamada quando nenhum risco ou auditoria a exigir.
 
-## 4. Implementação comum
+Consolidada a V2 e satisfeitas as revisões/condicionantes aplicáveis, registre a referência imutável vigente em `LP-Factory-Stage: plan-v2-approved`, com roadmap e rastreabilidade apenas quando aplicáveis. Esse checkpoint permite implementar; não autoriza merge. Sem Analista necessário, o Executor consolida a V2 mínima diretamente, com Updates e validações aplicáveis.
 
-Implemente somente o contrato aprovado: V2 mínima no Light ou V2 aprovada na Complexa.
+## 4. Implementação
+
+Implemente somente a V2 vigente consolidada e liberada pelos gates aplicáveis.
 
 - produza o menor delta suficiente;
 - preserve padrões, boundaries, autoridades e comportamentos fora do recorte;
-- não remova, reduza, substitua ou redistribua comportamento funcional existente sem autorização correspondente no contrato aprovado;
+- não remova, reduza, substitua ou redistribua comportamento funcional sem autorização correspondente;
 - evite refatoração ampla, mecanismo novo ou alteração não relacionada;
-- use os recursos autorizados disponíveis no ambiente atual;
-- execute as fases na ordem e com os mesmos identificadores definidos no roadmap;
-- para documento canônico, use `docs/prompt-abc.md`; não faça edição direta.
-
-Granularidade por subseções, checkpoints, matriz e gates específicos da Complexa não se aplica ao Light.
+- use os recursos autorizados disponíveis;
+- execute as fases na ordem e pelos identificadores canônicos do roadmap, rejeitando aliases ordinais e agrupamento de fases independentes;
+- para prompt consumido por IA, use `$lp-factory-criar-prompt` como subfluxo somente leitura antes da edição e valide seus casos representativos;
+- em frontend/dashboard, consulte `docs/design-system.md`, valide aderência e evidência renderizada; solicite Design pelos critérios de 3.2;
+- para documento canônico, solicite o delta pela especialidade documental e aplique literalmente o ABC; não faça reconciliação direta.
 
 ## 5. Supabase e migrations
 
@@ -159,80 +131,46 @@ A validação deve provar os critérios de aceite do contrato. O Executor não p
 
 Se um critério obrigatório continuar sem prova depois da consulta às fontes e recursos autorizados, não crie nova automação, infraestrutura, conta privilegiada ou mutação remota por inferência. Registre exatamente o critério não coberto, os caminhos autorizados tentados e o bloqueio; no `Autônomo`, devolva-o ao Estrategista Autônomo sem solicitar intervenção humana por conta própria; nos demais modos, escale ao supervisor competente somente o que realmente exigir decisão humana ou recurso inexistente ou não autorizado.
 
-## 7. Complexa — controles preservados
+## 7. Checkpoints, revisão focal e retomada
 
-Subseções são checkpoints internos; nunca criam PRs ou merges intermediários.
+### 7.1 Executar e registrar o recorte
 
-### 7.1 Handoff interno
+Delimite a fase/recorte atual por objetivo, arquivos, escopo negativo e aceite. Checkpoints são proporcionais ao trabalho e à necessidade de retomada; subseções não criam PRs nem merges intermediários. Não antecipe fase fora do contrato.
 
-Quando invocada por `$lp-factory-conduzir-plano-completo`:
+Execute validações aplicáveis conforme `AGENTS.md`; para código, `npm ci` uma vez no início do lote e novamente somente se instalação/dependências mudarem, validação focal e `npm run check` antes do checkpoint. Para delta exclusivamente documental, justifique N/A. No encerramento, cubra integrações, transições e consumidores materialmente afetados e confirme execução efetiva dos validadores necessários ao aceite; não repita validações sem impacto novo.
 
-1. confirmar que branch, worktree e PR são os mesmos usados para produzir a V2;
-2. confirmar o checkpoint `plan-v2-approved`, a matriz versionada no mesmo PR e usar esse commit como contrato imutável;
-3. não criar branch, PR ou pedido de merge intermediário;
-4. não acionar Gestor Estrutural, Gestor de Updates ou Gestor de Automações; usar o Analista somente na revisão focal prevista em 7.3;
-5. reutilizar checkpoints `LP-Factory-Phase: <identificador>` e continuar na próxima subseção pendente;
-6. antes da entrega técnica completa, se evidência factual questionar materialmente a estrutura da própria V2 ou exigir crescimento estrutural material não previsto, suspender somente o ponto afetado e devolvê-lo a `$lp-factory-conduzir-plano-completo`, conforme a seção 6 daquele contrato, com a identidade da execução, as referências imutáveis e conteúdos de V1/V2, o ponto/subseção suspensa, a evidência, os checkpoints e as fontes pertinentes; não escolher arquitetura, exigir correção tentada ou candidato nem acionar especialista diretamente. Aguardar a liberação do ponto pelo workflow; se a V2 continuar suficiente, derivar a correção ordinária e seguir o gate aplicável; se houver delta aprovado, retomar conforme a seção 7.2. Nas demais mudanças materiais fora da V2, encaminhar ao Analista e, se necessário, ao supervisor competente; não reiniciar especialistas.
+Identifique os documentos canônicos afetados ao longo do recorte. Antecipe reconciliação somente quando necessária para decidir, executar ou validar continuidade; preserve snapshot e relatório factual e solicite `$lp-factory-avaliar-documentacao` com `ETAPA: intermediária`. Na consolidação final, após QA obrigatório e correções, inclua todos os documentos realmente afetados, com estado e diff acumulados, `ETAPA: consolidação final`; sem documento afetado, registre N/A sem criar chamada ou artefato. Aplique apenas operações literais emitidas ou preserve `SEM ALTERAÇÕES NECESSÁRIAS`.
 
-### 7.2 Preparar
+Acione revisão focal de implementação somente pelos critérios de 3.2; quando acionada, corrija e retorne ao mesmo Analista em delta, avançando apenas com sua conclusão própria. `aprovado para avançar` não autoriza merge nem dispensa validação obrigatória pendente.
 
-1. confirmar repositório, estado Git limpo, plano, SHA e caso; na execução independente, confirmar que o plano está na `main` atualizada; no handoff interno, reutilizar o contexto confirmado em 7.1;
-2. ler o plano integral, a seção competente de `docs/roadmap.md` e somente as fontes condicionais exigidas pela subseção atual;
-3. no handoff interno, preservar `docs/matriz-consolidacao-<caso>.md` até o encerramento definitivo do recorte pelo supervisor competente;
-4. validar que cada fase executável use exatamente o identificador do roadmap, como `E18.5.3 — título`; rejeitar aliases ordinais como `Fase 1` e agrupamentos de subseções independentes;
-5. na execução independente, usar a branch e o PR draft únicos definidos em 1.3; no handoff interno, não criar novos branch ou PR;
-6. registrar o SHA do plano aprovado vigente como contrato imutável; se houver execução anterior, identificar o último checkpoint pelo trailer `LP-Factory-Phase: <identificador>`. No handoff interno, em toda retomada, confrontar os checkpoints com os deltas aprovados e seus impactos registrados na V2/matriz; não executar delta candidato ainda não liberado pelo workflow. Determinar a primeira subseção pendente na ordem do roadmap, incluindo as afetadas sem novo checkpoint aprovado contra a correção correspondente; revalidá-las pelos gates existentes e reutilizar as não afetadas ou já revalidadas. Sem delta, manter a retomada pelo último checkpoint. Se não for possível determinar unicamente a próxima subseção, devolver ao supervisor competente somente o identificador faltante.
+Com aceite/validações satisfeitos e nenhuma revisão focal pendente, registre `LP-Factory-Phase: <identificador>` quando houver fase/checkpoint de implementação. Validação obrigatória, QA ou revisão focal pendente impedem checkpoint e avanço do ponto dependente. Publicação ocorre nos gates remotos conforme `AGENTS.md`; checkpoints podem acumular localmente. No `experimental`, pare somente nos checkpoints solicitados; no `end-to-end`, prossiga.
 
-### 7.3 Executar uma subseção
+### 7.2 Rever somente o ponto afetado
 
-Para a próxima subseção ainda não aprovada:
+Se evidência material questionar a estrutura da V2, exigir crescimento não previsto ou mostrar correções aumentando complexidade sem convergir, suspenda somente o ponto afetado e reexamine a solução original com `$lp-factory-avaliar-plano-estrutura` em `revisao_focal_implementacao`. Entregue identidade da sessão/repositório/worktree/branch/PR/head, V1/V2 imutáveis e conteúdos, evidência, ponto suspenso, checkpoints e fontes; correção tentada ou arquitetura candidata não são pré-requisitos. Não escolha arquitetura antes da avaliação nem espere um Analista de implementação para solicitar esse retorno.
 
-1. delimitar a próxima subseção pela V2 aprovada, com objetivo, arquivos prováveis, escopo negativo e critérios de aceite;
-2. quando a subseção criar ou alterar prompt consumido por IA, invocar `$lp-factory-criar-prompt` como subfluxo somente leitura antes de editar o artefato e validar os casos representativos definidos por ele;
-3. implementar somente o necessário para essa subseção; não antecipar a próxima; no handoff interno, diante da evidência estrutural prevista em 7.1, item 6, seguir esse retorno antes de implementar o ponto afetado;
-4. executar as validações aplicáveis; para código, executar `npm ci` uma vez no início do lote contínuo e repeti-lo somente se `package-lock.json`, dependências ou o estado de instalação mudarem; executar a validação própria e `npm run check` antes de cada checkpoint; para alteração exclusivamente documental, justificar esses comandos como não aplicáveis; incluir as evidências aplicáveis;
-5. na última subseção, antes da entrega técnica e de review integrado solicitado pela task, executar as validações integradas do recorte, cobrindo também transições entre fases, invariantes transversais e consumidores preservados materialmente afetados; confirmar que validadores automatizados necessários à evidência final são efetivamente executados pelo gate aplicável; corrigir regressões; evidência de QA obrigatória pendente deve ser resolvida antes do ABC de consolidação final;
-6. antes do checkpoint, identificar os documentos canônicos potencialmente afetados e preservar sua rastreabilidade; nas subseções não finais, selecionar para ABC somente documento cuja versão reconciliada seja necessária para decidir, executar ou validar a continuidade; na última, incluir todos os documentos canônicos afetados ao longo do recorte;
-7. para cada documento selecionado no item 6, preparar relatório factual da implementação, preservar snapshot anterior e executar `$lp-factory-abc`: `ETAPA: intermediária` quando antecipado e `ETAPA: consolidação final` na última subseção; aplicar somente operações literais emitidas; se o resultado for `SEM ALTERAÇÕES NECESSÁRIAS`, não editar o documento;
-8. antes do checkpoint, acionar `$lp-factory-avaliar-implementacao-analista` somente diante de risco material, dúvida de escopo ou critério, evidência insuficiente ou conflito técnico que exija avaliação independente; tratar suas conclusões pela própria skill e, quando acionado, avançar apenas com `aprovado para avançar`;
-9. com as validações da subseção satisfeitas e nenhuma revisão focal pendente, commitar o checkpoint com `LP-Factory-Phase: <identificador>`; ele pode permanecer local e só deve refletir no PR quando publicado.
+Se a V2 precisar mudar, aplique somente o patch autossuficiente, registre delta, checkpoints afetados/preservados na V2 e rastreabilidade existente e versione o candidato. Entregue referências anterior/nova, parecer focal e delta ao mesmo Analista de plano em `revisao_delta`; se ainda não houver Analista, acione a avaliação competente com independência preservada. Reconcilie roadmap se afetado e registre novo `plan-v2-approved` apenas após liberação aplicável, sem repetir especialistas ou passagens já satisfeitas. Preserve a V2 anterior no histórico.
 
-Checkpoints podem acumular localmente; publicação segue `AGENTS.md` e ocorre somente quando um gate depender de estado remoto.
+Se a V2 continuar suficiente e não houver condicionante/investigação, derive a correção ordinária e siga o gate de implementação; não crie nova aprovação de plano. Para outras questões materiais, acione somente o domínio pertinente e, quando necessário, Analista/supervisor competente. Handoff incompleto ou decisão sem autoridade mantém o ponto suspenso e trabalho válido preservado.
 
-Validação obrigatória, evidência de QA ou revisão focal pendente impedem checkpoint e avanço.
+### 7.3 Retomar e encerrar
 
-No modo `experimental`, parar somente nos checkpoints solicitados pelo humano. No fluxo normal `end-to-end`, avançar para a próxima subseção aprovada.
+Determine estágio pelo Git, PR e trailers `plan-v2`, `plan-v2-approved` e `LP-Factory-Phase`, com referências vinculadas. Não use aprovação antiga para executar candidato ainda não liberado. Confronte delta aprovado com checkpoints: não afetados permanecem válidos; revalide somente fases atingidas sem checkpoint correspondente à correção. Sem delta, continue da primeira fase pendente na ordem do roadmap. Se ambíguo, peça somente o identificador/ref indispensável.
 
-### 7.4 Encerrar o recorte Complexo
+Reutilize Updates apenas para mesmo blob da V1, `source_repository_sha` e referências excepcionais; derivação estrutural também exige mesmo parecer de Updates; confronto exige mesmo update, alternativa e V1. Não repita especialista por precaução; fato material novo limita a nova avaliação ao ponto necessário.
 
-Depois do último checkpoint, sem repetir validações ou ABC:
-
-1. atualizar o PR com checkpoints, arquivos, validações, evidências de QA, matriz, pendências e, por documento, os ABCs executados e o resultado `delta aplicado` ou `SEM ALTERAÇÕES NECESSÁRIAS`; declarar a entrega técnica completa e devolvê-la ao supervisor competente;
-2. se o supervisor devolver correções, tratar o retorno como delta pós-entrega: confirmar de forma mínima objetivo, fontes, limites, boundary afetado e validação esperada; não reiniciar preparação, especialistas ou validações sem impacto demonstrado; em delta de código, preservar `npm ci`, `npm run check` e testes focais aplicáveis;
-3. se o supervisor liberar o merge, retomar a mesma task e seguir exclusivamente o ciclo de merge e conclusão da seção 9, sem nova derivação;
-4. se validação obrigatória pós-merge revelar defeito, registrar a falha e devolvê-la ao supervisor como exceção material; não criar ou selecionar nova branch ou PR por inferência. O supervisor define o fluxo corretivo competente; atualizar a entrega e parar novamente, sem Analista;
-5. manter a matriz disponível durante o ciclo externo de avaliação e não removê-la antes de o supervisor declarar o recorte definitivamente concluído; a limpeza posterior é documental, preserva a rastreabilidade no resumo e no histórico do PR e não aciona Analista nem especialistas.
-
-O resumo do PR deve refletir sempre o checkpoint publicado e a entrega técnica completa. A liberação do merge ocorre fora desta skill; depois de recebida, a execução do merge e o encerramento pós-merge pertencem ao Executor conforme a seção 9.
+Mantenha rastreabilidade/matriz existente durante avaliação externa até conclusão definitiva pelo supervisor; limpeza posterior preserva resumo e histórico e não exige nova especialidade. Atualize o PR ao checkpoint publicado com arquivos, validações, QA, pareceres pertinentes, ABC por documento e pendências. Correções pós-entrega ficam na mesma sessão/branch/PR, como delta focal; não reinicie preparação ou avaliações sem impacto demonstrado. Depois da entrega completa, correções seguem os gates competentes, sem Analista por rotina.
 
 ## 8. Gate de aderência
 
-Antes da entrega, confronte o contrato aprovado com o diff final.
-
-- todo arquivo alterado, mecanismo novo ou decisão técnica material deve ser rastreável ao contrato ou a dependência factual indispensável;
-- remova alteração sem rastreabilidade ou justifique sua necessidade factual;
-- legado e parecer técnico não autorizam ampliação funcional, arquitetural ou de escopo;
-- se a melhor solução exigir decisão fora do contrato, devolva o ponto ao supervisor competente.
-
-No `Light`, depois das validações/QA, das correções decorrentes e deste gate de aderência, identifique os documentos canônicos potencialmente afetados pelo estado final e execute `$lp-factory-abc` com `ETAPA: consolidação final`; aplique somente os deltas emitidos e preserve `SEM ALTERAÇÕES NECESSÁRIAS` antes da entrega.
+Confronte contrato e diff final: todo arquivo, mecanismo e decisão material deve ter origem no contrato ou dependência factual indispensável. Remova alteração sem rastreabilidade ou demonstre a necessidade; legado e parecer não ampliam escopo. Decisão fora do contrato retorna ao supervisor competente. Conclua QA obrigatório e reconciliação documental de 7.1 antes da entrega, sem repeti-los no encerramento.
 
 ## 9. Entrega, merge e conclusão
 
 Na entrega técnica ao supervisor, informe:
 
 - contrato executado e referência imutável;
-- no Light, referências imutáveis da V1 e da V2 mínima e skills acionadas;
-- na Complexa, V2, checkpoints e matriz aplicáveis;
+- referências imutáveis da V1 e V2 vigente, skills acionadas por necessidade concreta, checkpoints e rastreabilidade/matriz quando aplicáveis;
 - fases e arquivos alterados;
 - validações, observabilidade e QA com evidências;
 - documentação canônica avaliada e resultado do ABC;
@@ -241,7 +179,7 @@ Na entrega técnica ao supervisor, informe:
 
 No `Semiautomático`, devolva a entrega ao humano para avaliação do Estrategista Original. A liberação do Estrategista Original, transportada pelo humano de volta à mesma task, é a autorização definida pelo fluxo e não exige autorização humana separada adicional.
 
-No `Autônomo`, devolva a entrega a `$lp-factory-estrategista-autonomo`. A liberação do Estrategista Autônomo é a autorização definida pelo fluxo e não exige segunda autorização humana rotineira.
+No `Autônomo`, a mesma sessão exerce o papel `$lp-factory-estrategista-autonomo` para avaliar a entrega e liberar merge após gates e revisões independentes aplicáveis. A autoridade permanece separada da escrita: ser único escritor não aprova a própria entrega. A liberação competente não exige segunda autorização humana rotineira; depois dela, a sessão retoma o papel Executor.
 
 Depois de receber a liberação do supervisor competente:
 
@@ -259,11 +197,4 @@ Não substitua supervisor, Estrategista, especialista ou Analista; o Executor ex
 
 ## 10. Limites
 
-- não editar nem commitar diretamente na `main`; não fazer merge sem liberação do supervisor competente e nunca fazer merge local pela `main`;
-- não executar fase fora do plano ou fora da ordem do roadmap;
-- no Light, não importar especialistas, matriz, segunda passagem ou gates da Complexa;
-- na Complexa, não iniciar a fase seguinte sem checkpoint aprovado;
-- na Complexa, não recriar ou ampliar a V2, repetir especialistas, criar PR empilhado, criar segundo PR no handoff interno ou recriar a matriz sem correção de rastreabilidade exigida;
-- na Complexa, não acionar o Analista depois de declarar a entrega técnica completa;
-- na Complexa, não acionar o supervisor antes da entrega técnica completa, exceto para bloqueio de QA ou decisão humana já previstos pelo contrato; no Light, aplicar as escaladas previstas nas seções 2 e 3;
-- não ignorar evidência de QA pendente nem decisão material exigida.
+Não editar/commitar na main, fazer merge local ou remoto sem liberação competente; alterar V1 por inferência; executar fase fora do contrato/ordem; repetir especialistas ou invalidar trabalho não afetado por rotina; criar PR empilhado ou segundo PR no ciclo corrente; permitir escrita por especialista; executar delta candidato não liberado; ignorar QA, evidência ou decisão material pendente. Exceção pós-merge segue o supervisor e `AGENTS.md`, na mesma sessão, sem branch/PR corretivo por inferência.

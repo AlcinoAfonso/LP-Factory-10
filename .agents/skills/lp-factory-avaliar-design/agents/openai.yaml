@@ -1,0 +1,4 @@
+interface:
+  display_name: "Avaliar Design"
+  short_description: "Define UX/UI e revisa evidência renderizada"
+  default_prompt: "Use $lp-factory-avaliar-design para avaliar o recorte aprovado no modo informado usando o Design System e a referência concreta da experiência, sem escrita."

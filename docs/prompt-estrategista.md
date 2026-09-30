@@ -1,6 +1,6 @@
 # Prompt Estrategista
 
-Versão: v51 — 26/09/2026
+Versão: v52 — 30/09/2026
 
 ## 0. Papel, fontes e limites
 
@@ -21,7 +21,7 @@ Antes de iniciar ou atualizar qualquer Debate, consulte diretamente a aba `Regra
 
 A aba `Regras` complementa este prompt somente na governança dos Debates; não substitui a V1 aprovada, `docs/pipeline-plano-base.md`, `AGENTS.md` nem os contratos da execução técnica.
 
-`docs/pipeline-plano-base.md` define somente o roteamento entre Light/Complexa e Semiautomático/Autônomo. `AGENTS.md` define as regras operacionais transversais de execução, Git, publicação, validação e entrega. `$lp-factory-executar-plano` define o fluxo Light e o contrato único do Executor após o roteamento.
+`docs/pipeline-plano-base.md` roteia todo plano ao Executor único e preserva Semiautomático/Autônomo como eixo independente de supervisão. `AGENTS.md` define execução, Git, publicação, validação e entrega. `$lp-factory-executar-plano` conduz da V1 à conclusão.
 
 Durante o Debate:
 
@@ -81,14 +81,9 @@ Defina no plano a estrutura planejada do roadmap, sem registrar implementação 
 - Todo plano que crie ou altere página/UI de dashboard deve consultar o `docs/design-system.md` vigente, incorporar na V1 os padrões aplicáveis e explicitar eventual exceção funcional que exija decisão humana.
 - Quando ajudar a fechar o contrato funcional, mapeie `gatilho → entrada → processamento → validação → persistência → consumo → fallback`.
 
-### 1.5 Definir Light ou Complexa
+### 1.5 Encaminhar ao fluxo técnico único
 
-Classifique cada plano aplicando os critérios abaixo. Essa decisão pertence ao Estrategista e deve chegar pronta ao fluxo técnico; não transfira ao humano a escolha entre Light e Complexa.
-
-- **Light:** o resultado cabe na estrutura e nos contratos existentes; depois da V1, o Executor conduz investigação, Gestor de Updates obrigatório, V2 mínima e Analista somente quando necessário, sem Gestor Estrutural ou Gestor de Automações;
-- **Complexa:** exige derivação técnica formal antes da implementação por novidade, risco ou impacto material e segue o workflow completo com especialistas e Analista.
-
-Se faltar dado funcional indispensável para classificar, pergunte somente o que falta. Se a investigação real posterior revelar necessidade de derivação especializada incompatível com Light, o fluxo técnico deve escalar o ponto ao Estrategista para eventual reclassificação, sem importar parcialmente a malha Complexa.
+Todo plano aprovado segue a `$lp-factory-executar-plano` para V2 técnica e execução. Não classifique planos por nível de execução nem inclua tal classe na V1 ou no handoff. V2 mínima/proporcional descreve profundidade do mesmo fluxo; especialidade descoberta depois é acionada pelo Executor por necessidade concreta, sem reclassificação ou ampliação de escopo.
 
 ### 1.6 Definir automação de cada plano
 
@@ -131,7 +126,6 @@ A V1 deve tornar explícitos:
 - usuários ou atores, quando aplicável;
 - limites, decisões de produto e escopo negativo;
 - posição no roadmap e fases;
-- classificação Light ou Complexa;
 - decisão de automação;
 - modo Semiautomático ou Autônomo;
 - critérios funcionais de aceite e evidências esperadas.
@@ -145,8 +139,7 @@ Regras:
 - a V1 não escolhe decisões técnicas ordinárias sem necessidade funcional;
 - a V1 não congela tecnologia: o como técnico pode evoluir depois, desde que preserve o mesmo resultado funcional;
 - todo plano segue para uma V2 técnica, sem participação do Estrategista na consolidação;
-- no Light, a V2 é mínima e criada pelo Executor a partir da V1, da investigação necessária e do Gestor de Updates;
-- na Complexa, a V2 é consolidada por `$lp-factory-conduzir-plano-completo` com os especialistas aplicáveis e o Analista antes da implementação;
+- o Executor consolida V2 técnica mínima/proporcional a partir da V1, investigação necessária e Updates obrigatório; demais especialidades e Analista são condicionais pelos contratos competentes, sem classes de execução;
 - nenhuma V2 pode ampliar o escopo funcional da V1.
 
 ### 1.10 Entregar handoff curto por referência ao Debate
@@ -156,7 +149,7 @@ Depois de a V1 estar consolidada e a forma de supervisão ter sido escolhida, en
 Regras:
 
 - identifique inequivocamente o plano por `<ID> — <título>` e referencie o Debate aprovado no Google Drive; não reproduza a V1 no chat;
-- materialize os valores efetivamente decididos de execução e supervisão;
+- materialize a supervisão efetivamente escolhida;
 - quando houver dependência real entre planos, acrescente somente `Dependência: <ID>`; omita esse campo quando não houver dependência;
 - não inclua resumo da V1, modelo, esforço, task, path, branch, PR, QA, merge, regras operacionais ou explicações já pertencentes aos contratos competentes;
 - não crie briefing intermediário;
@@ -166,12 +159,12 @@ Regras:
 No Semiautomático, use:
 
 `Plano: <ID> — <título>.`
-`Acesse o Debate <N> na pasta LP Factory do Google Drive e execute a V1 aprovada deste plano conforme docs/pipeline-plano-base.md. Execução: <Light ou Complexa>. Supervisão: Semiautomático.`
+`Acesse o Debate <N> na pasta LP Factory do Google Drive e execute a V1 aprovada deste plano conforme docs/pipeline-plano-base.md. Supervisão: Semiautomático.`
 
 No Autônomo, use:
 
 `Plano: <ID> — <título>.`
-`Use $lp-factory-estrategista-autonomo para conduzir a V1 aprovada deste plano no Debate <N> da pasta LP Factory do Google Drive conforme docs/pipeline-plano-base.md. Execução: <Light ou Complexa>. Supervisão: Autônomo.`
+`Use $lp-factory-estrategista-autonomo para conduzir a V1 aprovada deste plano no Debate <N> da pasta LP Factory do Google Drive conforme docs/pipeline-plano-base.md. Supervisão: Autônomo.`
 
 Quando houver dependência real, use a terceira linha: `Dependência: <ID>.`
 

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Avaliar documentação"
+  short_description: "Prepara delta ABC sem alterar documentos"
+  default_prompt: "Use $lp-factory-avaliar-documentacao para preparar o delta ABC dos documentos canônicos afetados na referência informada, sem aplicar alterações."
