@@ -507,7 +507,7 @@ Atualizado em 2026-08-20
 ## 20 — Search Generative AI Performance no Search Console *(🟩 Disponível globalmente; uso condicional)*
 
 2026-06-03  
-Atualizado em 2026-09-05
+Atualizado em 2026-09-29
 
 ### Status no Projeto
 
@@ -522,12 +522,15 @@ Relatórios dedicados do Search Console mostram visibilidade de URLs em recursos
 
 A disponibilidade global elimina a espera pelo rollout, mas não comprova que uma propriedade específica tenha impressões, que o projeto possua acesso ao Search Console ou que exista causalidade entre visibilidade e conversão.
 
+Desde 24/09/2026, o Search Console também começou a incluir buscas multimodais da web nos relatórios de desempenho geral e de recursos generativos. Um filtro de tipo de busca permite isolar consultas iniciadas por imagem, incluindo Lens, Circle to Search, upload de imagem e busca por imagem no Chrome. A presença de dados depende de tráfego real dessa origem; o rollout global não cria métricas para propriedades sem essas consultas.
+
 ### Valor para o Projeto
 
 - Cria uma fonte oficial para avaliar presença de LPs e conteúdos em AI Overviews, AI Mode e experiências generativas do Discover.
 - Permite separar mensuração real de alegações genéricas de AEO/GEO.
 - Pode apoiar análise consultiva futura sem exigir tracking próprio da LP.
 - Passa a permitir validação imediata de elegibilidade/acesso quando existir propriedade real, sem aguardar rollout.
+- Permite isolar consultas iniciadas por imagem nos relatórios de desempenho, independentemente do conteúdo visual da página de destino e sem instrumentação própria; a interpretação depende de propriedade autorizada e tráfego real dessa origem.
 
 ### Valor para o Usuário
 
@@ -539,11 +542,13 @@ A disponibilidade global elimina a espera pelo rollout, mas não comprova que um
 2. Se houver dados, registrar baseline e usar o relatório como fonte complementar ao desempenho geral do Search Console.
 3. Interpretar impressões como visibilidade, não como lead, conversão, ranking ou receita.
 4. Só propor dashboard, exportação ou automação quando a leitura manual for insuficiente para uma decisão recorrente.
+5. Na mesma leitura manual, verificar o filtro multimodal quando houver propriedade Search Console autorizada; interpretar os dados como consultas iniciadas por imagem, independentemente do conteúdo visual da página de destino, e comparar com o desempenho geral antes de atribuir valor comercial.
 
 ### Limites
 
 - Disponibilidade global não garante impressões, dados históricos ou acesso à propriedade específica.
 - O relatório não informa ranking interno, prompts completos nem causalidade de conversão.
+- A ausência de dados multimodais pode significar falta de tráfego dessa origem; não demonstra que as imagens da LP sejam inadequadas.
 - Não substitui Search Console geral, analytics da LP ou dados de campanha.
 - Não conectar conta, ler propriedade, criar credencial, integração, dashboard ou promessa comercial nesta rodada.
 
@@ -554,6 +559,7 @@ A disponibilidade global elimina a espera pelo rollout, mas não comprova que um
 ### Fonte Oficial
 
 - [Google Search Central — Search Generative AI performance reports](https://developers.google.com/search/blog/2026/06/gen-ai-performance-reports)
+- [Google Search Central — Web multimodal Search performance reporting (24/09/2026)](https://developers.google.com/search/blog/2026/09/web-multimodal-in-sc)
 
 ---
 
@@ -903,3 +909,31 @@ Avaliar somente quando houver:
 - Antes dos ajustes, foram buscadas referências explícitas e implementação semântica de MCP/plugin, Search Console generativo, modelos, imagens, mensageria, e-mail, monetização e canais.
 - As referências e os gatilhos de `prod#18` e `prod#20` foram preservados; nenhuma capacidade foi removida.
 - A atualização segue o `README.md`, separa plataforma de estado no projeto e não autoriza código, configuração, conexão de conta, campanha, nova infraestrutura, adoção de modelo ou decisão final de plano.
+
+---
+
+## Registro da rodada de 2026-09-29
+
+### Veredito e itens
+
+- `prod#20` foi ajustado para registrar o novo filtro de buscas multimodais do Search Console, disponível em rollout global desde 24/09. O uso permanece dependente de propriedade autorizada, LP indexada e dados reais. Nenhum ID novo, arquivamento ou mudança de horizonte.
+
+### Cobertura estratégica e fontes oficiais
+
+- Landing pages, SEO e imagens: [Google Search Central](https://developers.google.com/search/blog/2026/09/web-multimodal-in-sc) trouxe o único delta material desta rodada, absorvido em `prod#20`.
+- WhatsApp, Instagram e mensageria comercial: [Meta Newsroom WhatsApp](https://about.fb.com/news/category/whatsapp/) e fontes oficiais de Business Messaging consultadas; nenhuma novidade verificada altera os gatilhos de `prod#23` ou `prod#24`.
+- E-mail: [Resend Changelog](https://resend.com/changelog) trouxe recursos de Broadcast, webhook e provisionamento sem aplicação ao SMTP transacional atual.
+- Monetização: [Stripe Changelog](https://stripe.com/changelog) não alterou os contratos vigentes de checkout, billing ou entitlements internos.
+- Acessibilidade: [W3C WAI News](https://www.w3.org/WAI/news/) divulgou rascunho WCAG 3 e conteúdo editorial, sem substituir o baseline WCAG 2.2 de `prod#17`.
+- Google Meu Negócio, TikTok, Google Ads e Meta Ads: não foi identificada mudança oficial com caso de uso validado que altere o catálogo atual. OpenAI é coberta separadamente no snapshot da quinta etapa.
+
+### Avaliados e não adicionados
+
+- Filtro multimodal: absorvido em `prod#20`, pois integra o mesmo relatório e não justifica ID separado.
+- Novidades Resend, Stripe e W3C acima: sem uso atual ou mudança de baseline; não foram excluídas apenas por distância do Starter ou MVP.
+
+### Lacunas, IDs e limite
+
+- `prod#20`: acesso à propriedade Search Console e presença de dados generativos ou multimodais não foram inspecionados.
+- Todos os IDs publicados até `prod#24` permanecem localizáveis, sem renumeração, reutilização ou desaparecimento; busca explícita e semântica de Search Console, filtros, LPs e imagens antecedeu o ajuste.
+- Nenhuma conta, campanha, integração, código, configuração, modelo ou plano foi alterado. O registro não autoriza implementação nem merge.
