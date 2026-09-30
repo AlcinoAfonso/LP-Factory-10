@@ -2,8 +2,7 @@
 
 ## 1. Autoridade, validade e fontes
 
-- Data da fotografia técnica preservada: 14/09/2026.
-- Reorganizado em 22/09/2026 para a cobertura semanal da E24.1.
+- Data da fotografia técnica: 29/09/2026; baseline anterior de 14/09/2026, reorganizado em 22/09/2026.
 - Objetivo: manter uma fotografia técnica itemizada e rastreável das capacidades OpenAI relevantes ao LP Factory 10.
 - Este documento não define sozinho modelo, `reasoning.effort`, tool, arquitetura ou configuração de produção e não autoriza adoção.
 - A configuração efetiva permanece em `docs/platform-config.md`; a governança das decisões por workload permanece em `docs/gestor-automations.md` e no caso competente do roadmap.
@@ -16,6 +15,15 @@
   - `https://developers.openai.com/api/docs/models/gpt-5.6-luna`
   - `https://developers.openai.com/api/docs/models/gpt-5.6-terra`
   - `https://developers.openai.com/api/docs/models/gpt-5.6-sol`
+  - `https://developers.openai.com/api/docs/models/gpt-6-luna`
+  - `https://developers.openai.com/api/docs/models/gpt-6-sol`
+  - `https://developers.openai.com/api/docs/models/gpt-6-astra`
+  - `https://developers.openai.com/api/docs/changelog`
+  - `https://developers.openai.com/api/docs/guides/agents-api/overview`
+  - `https://developers.openai.com/api/docs/guides/latest-model?model=gpt-6-astra`
+  - `https://developers.openai.com/api/docs/guides/async-tool-calling`
+  - `https://developers.openai.com/api/docs/guides/steering`
+  - `https://developers.openai.com/api/docs/guides/prompt-caching/diagnostics`
   - `https://developers.openai.com/api/docs/guides/reasoning`
   - `https://developers.openai.com/api/docs/guides/tools-web-search`
   - `https://openai.com/api-fast-mode/`
@@ -40,11 +48,14 @@
 | `OAI-W03` | `taxon_input_catalog_sufficiency_evaluation` | `gpt-5.6-terra + low` | operacional | `lib/openai-workloads/registry.ts`, E20.8.7 e `docs/platform-config.md` |
 | `OAI-W04` | `supabase_inspect` | `gpt-4.1-mini + not_applicable` | referência operacional externa | `lib/openai-workloads/registry.ts`, `docs/automations.md` e `docs/platform-config.md` |
 | `OAI-W05` | `landing_page_dynamic_market_research` | configuração encerrada pela E20.8 | histórica | commits e migrations da E20.7 |
+| `OAI-W06` | `communication_base_stage1_assistance` | `gpt-5.4-mini + none` operacional em Preview e Production sob E21/E25.1 | operacional | `lib/openai-workloads/registry.ts`, `docs/platform-config.md`, `docs/roadmap.md` 25.1.4 e `docs/schema.md` 1.28.4 |
+| `OAI-W07` | `communication_base_stage2_intelligence` | `gpt-6-luna + max`, Web Search até duas chamadas, operacional em Preview e Production após E21/E25.1 | operacional | `lib/openai-workloads/registry.ts`, `docs/platform-config.md`, `docs/roadmap.md` 25.1.5 e `docs/schema.md` 1.28.4 |
 
 - O registry usa fonte `repo_catalog` no baseline e revisão própria por workload, conforme a governança da E21.1.
 - `supabase_inspect` é uma referência de inventário para workflow operacional separado do Core, com fonte `github_actions_default_reference`; não é baseline de workload de produto nem autorização para alterar o workflow.
 - `landing_page_dynamic_market_research` não integra o registry nem a configuração efetiva corrente; seus registros anteriores permanecem somente como histórico.
 - Variáveis legadas de modelo não são fonte runtime atual; seu estado operacional permanece exclusivamente em `docs/platform-config.md`.
+- O registry registra identidade e configuração de referência; a ativação hospedada deve ser confirmada nas fontes operacionais. `OAI-W06` e `OAI-W07` estão operacionais em Preview e Production conforme `docs/platform-config.md`, `docs/roadmap.md` 25.1.4–25.1.5 e `docs/schema.md` 1.28.4.
 
 ### 2.2. Regra de baseline
 
@@ -62,12 +73,16 @@
 | `OAI-M03` | `gpt-5.6-terra` | equilíbrio de capacidade para casos que justifiquem comparação própria | 1,05M | 128k | `none`, `low`, `medium`, `high`, `xhigh`, `max` | operacional em `OAI-W03` | documentação específica do modelo |
 | `OAI-M04` | `gpt-5.6-sol` | trabalho profissional complexo que justifique comparação própria | 1,05M | 128k | `none`, `low`, `medium`, `high`, `xhigh`, `max` | documentada | documentação específica do modelo |
 | `OAI-M05` | `gpt-4.1-mini` | referência externa do workflow `OAI-W04`; não é baseline de produto | 1.047.576 | 32.768 | não aplicável; modelo sem etapa de reasoning | referência operacional externa | documentação específica do modelo e `lib/openai-workloads/registry.ts` |
+| `OAI-M06` | `gpt-6-luna` | configuração operacional de `OAI-W07` em Preview e Production | 1,05M | 128k | `none`, `low`, `medium`, `high`, `xhigh`, `max` | operacional em `OAI-W07` | documentação específica do modelo, registry e fontes operacionais do projeto |
+| `OAI-M07` | `gpt-6-sol` | alternativa técnica avaliada focalmente para `OAI-W07` | 1,05M | 128k | `none`, `low`, `medium`, `high`, `xhigh`, `max` | documentada | documentação específica do modelo e PR #978 |
+| `OAI-M08` | `gpt-6-astra` | tarefas complexas somente mediante comparação própria | 1,05M | 128k | `low`, `medium`, `high`, `xhigh`, `max` | documentada | documentação específica do modelo |
 
 - Luna, Terra e Sol documentam Responses API, function calling, Structured Outputs e reasoning tokens.
 - Em GPT-5.6, o effort padrão documentado é `medium` quando omitido; comparações devem registrar o valor explicitamente.
 - Para `gpt-5.4-mini`, o padrão documentado é `none` quando o parâmetro é omitido.
 - `gpt-4.1-mini` é um modelo não reasoning; a referência operacional externa `OAI-W04` não deve receber `reasoning.effort`.
 - Limites e capacidades são voláteis e devem ser reconfirmados na fonte oficial focal antes de uma decisão material.
+- A documentação da família GPT-6 indica entrada textual e visual, saída textual e limite máximo de entrada de 922k tokens; capacidade técnica não altera os gates de cada workload.
 
 ## 4. APIs, tools e capacidades agentic
 
@@ -75,7 +90,7 @@
 
 - Natureza: API de execução textual e multimodal usada como base programática preferencial do projeto.
 - Aplicabilidade: workloads server-side com contrato e guardrails definidos pelo recorte.
-- Maturidade: operacional em `OAI-W01`, `OAI-W02` e `OAI-W03`.
+- Maturidade: operacional em `OAI-W01`, `OAI-W02`, `OAI-W03`, `OAI-W06` e `OAI-W07`.
 - Limite: não substitui regras de negócio determinísticas, autorização ou persistência verificável.
 - Fontes: Model guidance, catálogo Models e contratos vigentes do projeto.
 
@@ -99,7 +114,7 @@
 
 - Natureza: tool hospedada de pesquisa web.
 - Aplicabilidade: fallback ou hipótese focal autorizada quando fonte externa atual é indispensável.
-- Maturidade: operacional de forma delimitada em `OAI-W03`.
+- Maturidade: operacional de forma delimitada em `OAI-W03` e `OAI-W07` em Preview e Production, sob os controles E21/E25.1.
 - Limite: não substitui fonte competente, não amplia escopo e deve preservar URLs comprovadas pela metadata do provider.
 - Fonte: guia oficial Web search.
 
@@ -167,6 +182,30 @@
 - Limites: não é padrão nem autorização de adoção; compartilha rate limits com os demais tiers e pode sofrer fallback para Standard diante dos limites de aceleração de tráfego. Reconfirmar disponibilidade, comportamento e elegibilidade na fonte oficial antes de qualquer avaliação.
 - Fonte: página oficial Fast mode for API Customers.
 
+### `OAI-C13` — Agents API
+
+- Natureza: API gerenciada de sessões, execução e observabilidade de agentes, distinta do Agents SDK.
+- Aplicabilidade: somente recorte agentic com necessidade comprovada de estado ou orquestração gerenciada.
+- Maturidade: documentada em beta público; não registrada como workload do projeto.
+- Limite: não autoriza substituir Responses API nem criar fluxo autônomo sem contrato, governança e avaliação próprios.
+- Fonte: changelog e guia oficial Agents API, lançamento de 10/09/2026.
+
+### `OAI-C14` — Async tool calling e mid-turn steering
+
+- Natureza: recursos documentados para chamada assíncrona de tools e direcionamento de uma resposta ainda em curso na família GPT-6.
+- Aplicabilidade: fluxos longos com tools ou intervenção durante a execução, se um caso próprio demonstrar benefício.
+- Maturidade: documentada; sem uso identificado nos workloads registrados.
+- Limite: não implica paralelismo, delegação ou mutação autorizada no projeto.
+- Fontes: guia Using GPT-6, Async tool calling e Mid-turn steering.
+
+### `OAI-C15` — Prompt cache diagnostics
+
+- Natureza: diagnósticos oficiais de acertos e perdas do cache de prompt para modelos elegíveis.
+- Aplicabilidade: análise focal de workloads com prefixos repetidos e telemetria suficiente.
+- Maturidade: documentada como GA em 08/09/2026; sem adoção registrada no projeto.
+- Limite: observabilidade de cache não substitui avaliação de qualidade nem autoriza mudança de configuração.
+- Fonte: changelog e guia oficial Prompt cache diagnostics.
+
 ## 5. Aplicabilidade e registro de decisões
 
 | Workload | Baseline | Candidatos técnicos rastreados | Estado da comparação |
@@ -174,6 +213,8 @@
 | resolvedor IA de nicho | `gpt-5.4-mini + none` | `OAI-M02`, `OAI-M03` e `OAI-M04`, com effort focal | não comparado nesta fotografia |
 | ativação comercial | `gpt-5.4-mini + none` | `OAI-M02`, `OAI-M03` e `OAI-M04`, com effort focal | não comparado nesta fotografia |
 | suficiência factual do catálogo por taxon | `gpt-5.6-terra + low` | modelos e efforts que o recorte competente justificar | configuração própria da E20.8.7/E21.2 |
+| Base de Comunicação, Etapa 1 | `gpt-5.4-mini + none` ativo em Preview e Production | sem candidato comparado nesta fotografia | operacional após E21/E25.1 |
+| Base de Comunicação, Etapa 2 | `gpt-6-luna + max` ativo em Preview e Production | `gpt-6-sol + medium` comparado focalmente | comparação concluída; `gpt-6-luna + max` operacional após E21/E25.1 |
 
 - Preservar o baseline atual até existir evidência suficiente e autorização no recorte competente.
 - Usar o mesmo conjunto de tarefas representativas e os mesmos gates ao comparar candidatos.
@@ -184,9 +225,9 @@
 
 ### 5.1. PB-A/E25.1 — comparação isolada da Etapa 2 em Preview (28/09/2026 UTC)
 
-- Workload: `communication_base_stage2_intelligence`. Comparação interna e temporária, em processamento Standard, na ordem `gpt-6-luna`/`max` e `gpt-6-sol`/`medium`. Ambos os pares estavam disponíveis no catálogo E21 (modelo v3, parâmetro v2). O override ficou restrito ao QA administrativo no Preview; nenhuma configuração operacional foi promovida.
+- Workload: `communication_base_stage2_intelligence`. Comparação interna e temporária, em processamento Standard, na ordem `gpt-6-luna`/`max` e `gpt-6-sol`/`medium`. Ambos os pares estavam disponíveis no catálogo E21 (modelo v3, parâmetro v2). Na comparação de 28/09, o override ficou restrito ao QA administrativo no Preview; essa prova não promoveu configuração operacional.
 - Os quatro casos usaram a mesma Base sintética e imutável por caso: `general_initial` sem rascunho, `general_update` com as sete seções atuais, `local_about` e `local_market_web` com alcance de seção única. A saída de uma chamada não entrou na entrada da seguinte. Prompt `e25_1_v3`, contrato 2, schema e política Web iguais entre candidatos. Hashes SHA-256 do prompt por caso, idênticos nos dois pares: `825c48b6bf72fb0057d1f9628666f7ead0393f4faafac456df34059132fa451a`, `2472d78c206086d06c96627cee7932b466e2a7d1b631605ab6a483d488dd407a`, `79e3460b5072b305bd45376197caa56b069c55972749a2818f50ebae3e858a27`, `b6b01c27cf6e4b991d36e69c95ea64457061920b82a2b0ea5554a50129c58656`, respectivamente.
-- Validade e qualidade antes do custo: as oito operações capturadas concluíram com resposta do provider e contrato válido. As ações gerais retornaram sete seções; as locais, somente a seção alvo. `about` permaneceu derivado dos fatos confirmados; os demais campos foram marcados como hipóteses. Não foi observada invenção de preço, credencial, prova ou resultado particular na inspeção focal. Ambos foram adequados; Luna produziu hipóteses mais desenvolvidas e, no caso Web, ligou a recomendação à comunicação observada de prestadores, ressalvando que isso não prova demanda. Sol foi mais conciso e trouxe hipóteses sobre chuvas e intervenções em árvores, de utilidade menos direta para o posicionamento pedido. A fonte [Ficus Paisagismo em Recife](https://www.ficuspaisagismo.com.br/manutencao-de-jardins/) confirma que há comunicação pública de manutenção periódica, poda e limpeza; a amostra de fontes de ambos inclui URLs pouco pertinentes e requer curadoria na apresentação. Esta é avaliação técnica focal de um caso sintético, sem alegar estabilidade estatística ou avaliação humana cega concluída.
+- Validade e qualidade: as oito operações capturadas concluíram com resposta do provider e contrato válido. As ações gerais retornaram sete seções; as locais, somente a seção alvo. `about` permaneceu derivado dos fatos confirmados; os demais campos foram marcados como hipóteses. Não foi observada invenção de preço, credencial, prova ou resultado particular na inspeção focal. Ambos foram adequados; Luna produziu hipóteses mais desenvolvidas e, no caso Web, ligou a recomendação à comunicação observada de prestadores, ressalvando que isso não prova demanda. Sol foi mais conciso e trouxe hipóteses sobre chuvas e intervenções em árvores, de utilidade menos direta para o posicionamento pedido. A fonte [Ficus Paisagismo em Recife](https://www.ficuspaisagismo.com.br/manutencao-de-jardins/) confirma que há comunicação pública de manutenção periódica, poda e limpeza; a amostra de fontes de ambos inclui URLs pouco pertinentes e requer curadoria na apresentação. Esta é avaliação técnica focal de um caso sintético, sem alegar estabilidade estatística ou avaliação humana cega concluída.
 
 | Caso | Validade A/B | Qualidade A/B | Utilidade A/B | Observação focal |
 |---|---|---|---|---|
@@ -197,20 +238,20 @@
 
 Na identificação interna, A corresponde a Luna/max e B a Sol/medium. Esta régua é uma avaliação técnica com identidade conhecida pelo executor; não representa avaliação humana cega E21.3. Não houve pontuação opaca nem generalização para outro workload.
 
-| Par | Caso | Input / cache read / cache write / output / reasoning | Web / fontes | Latência | Custo E21 USD |
-|---|---|---:|---:|---:|---:|
-| Luna/max | Geração geral | 692 / 0 / 0 / 5316 / 4785 | 0 / 0 | 41.772 ms | 0.0027272 |
-| Luna/max | Atualização geral | 818 / 0 / 0 / 3238 / 2773 | 0 / 0 | 25.466 ms | 0.0017008 |
-| Luna/max | Revisão `about` | 442 / 0 / 0 / 797 / 748 | 0 / 0 | 6.835 ms | 0.0004427 |
-| Luna/max | Revisão `market_insights` | 13456 / 4695 / 0 / 1945 / 1783 | 1 / 36 | 17.212 ms | 0.01189555 |
-| Sol/medium | Geração geral | 692 / 0 / 0 / 810 / 352 | 0 / 0 | 12.877 ms | 0.009484 |
-| Sol/medium | Atualização geral | 818 / 0 / 0 / 587 / 215 | 0 / 0 | 12.049 ms | 0.007506 |
-| Sol/medium | Revisão `about` | 442 / 0 / 0 / 187 / 138 | 0 / 0 | 3.764 ms | 0.002754 |
-| Sol/medium | Revisão `market_insights` | 15064 / 0 / 4695 / 455 / 274 | 2 / 38 | 12.554 ms | 0.0570255 |
+| Par | Caso | Input / cache read / cache write / output / reasoning | Web / fontes | Latência |
+|---|---|---:|---:|---:|
+| Luna/max | Geração geral | 692 / 0 / 0 / 5316 / 4785 | 0 / 0 | 41.772 ms |
+| Luna/max | Atualização geral | 818 / 0 / 0 / 3238 / 2773 | 0 / 0 | 25.466 ms |
+| Luna/max | Revisão `about` | 442 / 0 / 0 / 797 / 748 | 0 / 0 | 6.835 ms |
+| Luna/max | Revisão `market_insights` | 13456 / 4695 / 0 / 1945 / 1783 | 1 / 36 | 17.212 ms |
+| Sol/medium | Geração geral | 692 / 0 / 0 / 810 / 352 | 0 / 0 | 12.877 ms |
+| Sol/medium | Atualização geral | 818 / 0 / 0 / 587 / 215 | 0 / 0 | 12.049 ms |
+| Sol/medium | Revisão `about` | 442 / 0 / 0 / 187 / 138 | 0 / 0 | 3.764 ms |
+| Sol/medium | Revisão `market_insights` | 15064 / 0 / 4695 / 455 / 274 | 2 / 38 | 12.554 ms |
 
-- Soma das quatro operações capturadas: Luna USD 0.01676625 e 91.285 ms; Sol USD 0.07676950 e 41.244 ms. Sol foi aproximadamente 2,2 vezes mais rápido; Luna custou aproximadamente 4,6 vezes menos neste recorte. O custo foi calculado pelo E21 sobre usage e chamadas Web reais, com tabela `2026-09-27-standard-v2`, coerente com as [tarifas oficiais Standard e Web Search](https://developers.openai.com/api/docs/pricing) consultadas em 28/09/2026 UTC. São custos atribuídos às operações capturadas, não extrato de cobrança.
-- Três envios anteriores pretendiam executar Sol, mas produziram somente registro de middleware, sem terminal, ID/usage ou resposta capturada; o middleware não comprova nem o candidato efetivo nem chamada ao provider. Outros envios do formulário antigo também ficaram sem terminal verificável. Todos permanecem inconclusivos, com custo potencial desconhecido, e não integram as oito linhas ou suas somas. O recorder E21 foi injetado em memória somente para esta prova: `hostedLedgerWritten=false`. Nenhum resultado, prompt ou resposta integral foi gravado no banco ou em logs; ainda não existe cobertura hospedada E21.5 para os novos workloads.
-- **Seleção técnica para o único par candidato da Etapa 2: `gpt-6-luna`/`max` Standard.** Ambos cumpriram a validade e a qualidade mínima observadas; a vantagem de latência de Sol não compensou o custo 4,6 vezes maior e o ganho de conteúdo não demonstrado neste caso. Esta seleção não ativa o workload. Candidata, prova, revisão validada e ativação humana continuam sob o lifecycle E21.2.5, após merge/apply autorizados, cobertura financeira prospectiva e QA hospedado. A UI do cliente oferece somente ações funcionais da Base, sem modelo, effort ou escolha de configuração.
+- As quatro operações capturadas totalizaram 91.285 ms para Luna e 41.244 ms para Sol. Essa amostra focal não estabelece estabilidade estatística. A evidência completa da decisão permanece no PR #978.
+- Três envios anteriores pretendiam executar Sol, mas produziram somente registro de middleware, sem terminal, ID/usage ou resposta capturada; não integram as oito operações conclusivas. O recorder E21 foi injetado em memória somente para esta prova: `hostedLedgerWritten=false`; portanto, os casos desta comparação não escreveram eventos no ledger. Isso descreve a prova comparativa isolada de 28/09, não a cobertura operacional posterior dos workloads E25.1 em Preview e Production, registrada em `docs/roadmap.md` 25.1.4–25.1.5 e `docs/schema.md` 1.28.4.
+- **Seleção técnica registrada para o único par candidato da Etapa 2: `gpt-6-luna`/`max` Standard.** Ambos cumpriram a validade e a qualidade mínima observadas; Luna apresentou melhor desenvolvimento das hipóteses neste recorte, enquanto Sol teve menor latência. A decisão integral permanece no PR #978. A comparação de 28/09 não ativou o workload. No estado posterior registrado nesta fotografia, `OAI-W06` (`gpt-5.4-mini`/`none`) e `OAI-W07` (`gpt-6-luna`/`max`) estão operacionais em Preview e Production após os gates E21/E25.1, a ativação e o QA hospedado; ver `docs/platform-config.md`, `docs/roadmap.md` 25.1.4–25.1.5 e `docs/schema.md` 1.28.4.
 
 ## 6. Manutenção semanal e limites
 
