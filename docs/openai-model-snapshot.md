@@ -46,14 +46,14 @@
 | `OAI-W03` | `taxon_input_catalog_sufficiency_evaluation` | `gpt-5.6-terra + low` | operacional | `lib/openai-workloads/registry.ts`, E20.8.7 e `docs/platform-config.md` |
 | `OAI-W04` | `supabase_inspect` | `gpt-4.1-mini + not_applicable` | referência operacional externa | `lib/openai-workloads/registry.ts`, `docs/automations.md` e `docs/platform-config.md` |
 | `OAI-W05` | `landing_page_dynamic_market_research` | configuração encerrada pela E20.8 | histórica | commits e migrations da E20.7 |
-| `OAI-W06` | `communication_base_stage1_assistance` | `gpt-5.4-mini + none` registrado; ativação sujeita ao gate E25.1 | registrada; ativação condicional | `lib/openai-workloads/registry.ts`, E25.1 e `docs/platform-config.md` |
-| `OAI-W07` | `communication_base_stage2_intelligence` | `gpt-6-luna + max`, Web Search até duas chamadas, registrado; ativação sujeita ao gate E25.1 e lifecycle E21 | registrada; ativação condicional | `lib/openai-workloads/registry.ts`, E25.1 e `docs/platform-config.md` |
+| `OAI-W06` | `communication_base_stage1_assistance` | `gpt-5.4-mini + none` operacional em Preview e Production sob E21/E25.1 | operacional | `lib/openai-workloads/registry.ts`, `docs/platform-config.md`, `docs/roadmap.md` 25.1.4 e `docs/schema.md` 1.28.4 |
+| `OAI-W07` | `communication_base_stage2_intelligence` | `gpt-6-luna + max`, Web Search até duas chamadas, operacional em Preview e Production após E21/E25.1 | operacional | `lib/openai-workloads/registry.ts`, `docs/platform-config.md`, `docs/roadmap.md` 25.1.5 e `docs/schema.md` 1.28.4 |
 
 - O registry usa fonte `repo_catalog` no baseline e revisão própria por workload, conforme a governança da E21.1.
 - `supabase_inspect` é uma referência de inventário para workflow operacional separado do Core, com fonte `github_actions_default_reference`; não é baseline de workload de produto nem autorização para alterar o workflow.
 - `landing_page_dynamic_market_research` não integra o registry nem a configuração efetiva corrente; seus registros anteriores permanecem somente como histórico.
 - Variáveis legadas de modelo não são fonte runtime atual; seu estado operacional permanece exclusivamente em `docs/platform-config.md`.
-- O registry confirma a configuração de `OAI-W06` e `OAI-W07`; isso não comprova ativação hospedada nem promoção automática fora dos gates E25.1/E21.
+- O registry registra identidade e configuração de referência; a ativação hospedada deve ser confirmada nas fontes operacionais. `OAI-W06` e `OAI-W07` estão operacionais em Preview e Production conforme `docs/platform-config.md`, `docs/roadmap.md` 25.1.4–25.1.5 e `docs/schema.md` 1.28.4.
 
 ### 2.2. Regra de baseline
 
@@ -71,7 +71,7 @@
 | `OAI-M03` | `gpt-5.6-terra` | equilíbrio de capacidade para casos que justifiquem comparação própria | 1,05M | 128k | `none`, `low`, `medium`, `high`, `xhigh`, `max` | operacional em `OAI-W03` | documentação específica do modelo |
 | `OAI-M04` | `gpt-5.6-sol` | trabalho profissional complexo que justifique comparação própria | 1,05M | 128k | `none`, `low`, `medium`, `high`, `xhigh`, `max` | documentada | documentação específica do modelo |
 | `OAI-M05` | `gpt-4.1-mini` | referência externa do workflow `OAI-W04`; não é baseline de produto | 1.047.576 | 32.768 | não aplicável; modelo sem etapa de reasoning | referência operacional externa | documentação específica do modelo e `lib/openai-workloads/registry.ts` |
-| `OAI-M06` | `gpt-6-luna` | par registrado para `OAI-W07`, sob gates E25.1/E21 | 1,05M | 128k | `none`, `low`, `medium`, `high`, `xhigh`, `max` | registrada; ativação condicional | documentação específica do modelo e registry |
+| `OAI-M06` | `gpt-6-luna` | configuração operacional de `OAI-W07` em Preview e Production | 1,05M | 128k | `none`, `low`, `medium`, `high`, `xhigh`, `max` | operacional em `OAI-W07` | documentação específica do modelo, registry e fontes operacionais do projeto |
 | `OAI-M07` | `gpt-6-sol` | alternativa técnica avaliada focalmente para `OAI-W07` | 1,05M | 128k | `none`, `low`, `medium`, `high`, `xhigh`, `max` | documentada | documentação específica do modelo e PR #978 |
 | `OAI-M08` | `gpt-6-astra` | tarefas complexas somente mediante comparação própria | 1,05M | 128k | `low`, `medium`, `high`, `xhigh`, `max` | documentada | documentação específica do modelo |
 
@@ -211,7 +211,7 @@
 | resolvedor IA de nicho | `gpt-5.4-mini + none` | `OAI-M02`, `OAI-M03` e `OAI-M04`, com effort focal | não comparado nesta fotografia |
 | ativação comercial | `gpt-5.4-mini + none` | `OAI-M02`, `OAI-M03` e `OAI-M04`, com effort focal | não comparado nesta fotografia |
 | suficiência factual do catálogo por taxon | `gpt-5.6-terra + low` | modelos e efforts que o recorte competente justificar | configuração própria da E20.8.7/E21.2 |
-| Base de Comunicação, Etapa 2 | `gpt-6-luna + max` registrado | `gpt-6-sol + medium` comparado focalmente | decisão E25.1 registrada; ativação depende dos gates E21/E25.1 |
+| Base de Comunicação, Etapa 2 | `gpt-6-luna + max` ativo em Preview e Production | `gpt-6-sol + medium` comparado focalmente | comparação concluída; `gpt-6-luna + max` operacional após E21/E25.1 |
 
 - Preservar o baseline atual até existir evidência suficiente e autorização no recorte competente.
 - Usar o mesmo conjunto de tarefas representativas e os mesmos gates ao comparar candidatos.
@@ -222,7 +222,7 @@
 
 ### 5.1. PB-A/E25.1 — comparação isolada da Etapa 2 em Preview (28/09/2026 UTC)
 
-- Workload: `communication_base_stage2_intelligence`. Comparação interna e temporária, em processamento Standard, na ordem `gpt-6-luna`/`max` e `gpt-6-sol`/`medium`. Ambos os pares estavam disponíveis no catálogo E21 (modelo v3, parâmetro v2). O override ficou restrito ao QA administrativo no Preview; nenhuma configuração operacional foi promovida.
+- Workload: `communication_base_stage2_intelligence`. Comparação interna e temporária, em processamento Standard, na ordem `gpt-6-luna`/`max` e `gpt-6-sol`/`medium`. Ambos os pares estavam disponíveis no catálogo E21 (modelo v3, parâmetro v2). Na comparação de 28/09, o override ficou restrito ao QA administrativo no Preview; essa prova não promoveu configuração operacional.
 - Os quatro casos usaram a mesma Base sintética e imutável por caso: `general_initial` sem rascunho, `general_update` com as sete seções atuais, `local_about` e `local_market_web` com alcance de seção única. A saída de uma chamada não entrou na entrada da seguinte. Prompt `e25_1_v3`, contrato 2, schema e política Web iguais entre candidatos. Hashes SHA-256 do prompt por caso, idênticos nos dois pares: `825c48b6bf72fb0057d1f9628666f7ead0393f4faafac456df34059132fa451a`, `2472d78c206086d06c96627cee7932b466e2a7d1b631605ab6a483d488dd407a`, `79e3460b5072b305bd45376197caa56b069c55972749a2818f50ebae3e858a27`, `b6b01c27cf6e4b991d36e69c95ea64457061920b82a2b0ea5554a50129c58656`, respectivamente.
 - Validade e qualidade: as oito operações capturadas concluíram com resposta do provider e contrato válido. As ações gerais retornaram sete seções; as locais, somente a seção alvo. `about` permaneceu derivado dos fatos confirmados; os demais campos foram marcados como hipóteses. Não foi observada invenção de preço, credencial, prova ou resultado particular na inspeção focal. Ambos foram adequados; Luna produziu hipóteses mais desenvolvidas e, no caso Web, ligou a recomendação à comunicação observada de prestadores, ressalvando que isso não prova demanda. Sol foi mais conciso e trouxe hipóteses sobre chuvas e intervenções em árvores, de utilidade menos direta para o posicionamento pedido. A fonte [Ficus Paisagismo em Recife](https://www.ficuspaisagismo.com.br/manutencao-de-jardins/) confirma que há comunicação pública de manutenção periódica, poda e limpeza; a amostra de fontes de ambos inclui URLs pouco pertinentes e requer curadoria na apresentação. Esta é avaliação técnica focal de um caso sintético, sem alegar estabilidade estatística ou avaliação humana cega concluída.
 
@@ -248,7 +248,7 @@ Na identificação interna, A corresponde a Luna/max e B a Sol/medium. Esta rég
 
 - As quatro operações capturadas totalizaram 91.285 ms para Luna e 41.244 ms para Sol. Essa amostra focal não estabelece estabilidade estatística. A evidência completa da decisão permanece no PR #978.
 - Três envios anteriores pretendiam executar Sol, mas produziram somente registro de middleware, sem terminal, ID/usage ou resposta capturada; não integram as oito operações conclusivas. O recorder E21 foi injetado em memória somente para esta prova: `hostedLedgerWritten=false`. Ainda não existe cobertura hospedada E21.5 para os novos workloads.
-- **Seleção técnica registrada para o único par candidato da Etapa 2: `gpt-6-luna`/`max` Standard.** Ambos cumpriram a validade e a qualidade mínima observadas; Luna apresentou melhor desenvolvimento das hipóteses neste recorte, enquanto Sol teve menor latência. A decisão integral permanece no PR #978. Esta fotografia não ativa o workload: candidata, prova, revisão validada e ativação humana seguem o lifecycle E21.2.5, após os gates competentes e QA hospedado.
+- **Seleção técnica registrada para o único par candidato da Etapa 2: `gpt-6-luna`/`max` Standard.** Ambos cumpriram a validade e a qualidade mínima observadas; Luna apresentou melhor desenvolvimento das hipóteses neste recorte, enquanto Sol teve menor latência. A decisão integral permanece no PR #978. A comparação de 28/09 não ativou o workload. No estado posterior registrado nesta fotografia, `OAI-W06` (`gpt-5.4-mini`/`none`) e `OAI-W07` (`gpt-6-luna`/`max`) estão operacionais em Preview e Production após os gates E21/E25.1, a ativação e o QA hospedado; ver `docs/platform-config.md`, `docs/roadmap.md` 25.1.4–25.1.5 e `docs/schema.md` 1.28.4.
 
 ## 6. Manutenção semanal e limites
 
