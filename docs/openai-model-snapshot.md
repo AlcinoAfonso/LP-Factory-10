@@ -112,7 +112,7 @@
 
 - Natureza: tool hospedada de pesquisa web.
 - Aplicabilidade: fallback ou hipótese focal autorizada quando fonte externa atual é indispensável.
-- Maturidade: operacional de forma delimitada em `OAI-W03`; registrada, mas sujeita a ativação em `OAI-W07`.
+- Maturidade: operacional de forma delimitada em `OAI-W03` e `OAI-W07` em Preview e Production, sob os controles E21/E25.1.
 - Limite: não substitui fonte competente, não amplia escopo e deve preservar URLs comprovadas pela metadata do provider.
 - Fonte: guia oficial Web search.
 
@@ -247,7 +247,7 @@ Na identificação interna, A corresponde a Luna/max e B a Sol/medium. Esta rég
 | Sol/medium | Revisão `market_insights` | 15064 / 0 / 4695 / 455 / 274 | 2 / 38 | 12.554 ms |
 
 - As quatro operações capturadas totalizaram 91.285 ms para Luna e 41.244 ms para Sol. Essa amostra focal não estabelece estabilidade estatística. A evidência completa da decisão permanece no PR #978.
-- Três envios anteriores pretendiam executar Sol, mas produziram somente registro de middleware, sem terminal, ID/usage ou resposta capturada; não integram as oito operações conclusivas. O recorder E21 foi injetado em memória somente para esta prova: `hostedLedgerWritten=false`. Ainda não existe cobertura hospedada E21.5 para os novos workloads.
+- Três envios anteriores pretendiam executar Sol, mas produziram somente registro de middleware, sem terminal, ID/usage ou resposta capturada; não integram as oito operações conclusivas. O recorder E21 foi injetado em memória somente para esta prova: `hostedLedgerWritten=false`; portanto, os casos desta comparação não escreveram eventos no ledger. Isso descreve a prova comparativa isolada de 28/09, não a cobertura operacional posterior dos workloads E25.1 em Preview e Production, registrada em `docs/roadmap.md` 25.1.4–25.1.5 e `docs/schema.md` 1.28.4.
 - **Seleção técnica registrada para o único par candidato da Etapa 2: `gpt-6-luna`/`max` Standard.** Ambos cumpriram a validade e a qualidade mínima observadas; Luna apresentou melhor desenvolvimento das hipóteses neste recorte, enquanto Sol teve menor latência. A decisão integral permanece no PR #978. A comparação de 28/09 não ativou o workload. No estado posterior registrado nesta fotografia, `OAI-W06` (`gpt-5.4-mini`/`none`) e `OAI-W07` (`gpt-6-luna`/`max`) estão operacionais em Preview e Production após os gates E21/E25.1, a ativação e o QA hospedado; ver `docs/platform-config.md`, `docs/roadmap.md` 25.1.4–25.1.5 e `docs/schema.md` 1.28.4.
 
 ## 6. Manutenção semanal e limites
