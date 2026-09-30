@@ -21,7 +21,7 @@ Delegar uma avaliação read-only ao custom agent `gestor-updates` e devolver se
 ## Delegar e devolver
 
 1. Iniciar exatamente um subagent `gestor-updates`.
-2. Entregar worktree, branch, metadados da fonte, path, conteúdo integral, caso, recorte e `source_repository_sha`; incluir referência própria somente para eventual fonte versionada deliberadamente fora desse SHA. No workflow Complexo, o parecer de Updates antecede a derivação estrutural e não depende de baseline estrutural prévio.
+2. Entregar worktree, branch, metadados da fonte, path, conteúdo integral, caso, recorte e `source_repository_sha`; incluir referência própria somente para eventual fonte versionada deliberadamente fora desse SHA. Quando a especialidade Estrutural for necessária, Updates a precede e seu parecer é entregue como entrada pertinente; não exige baseline estrutural prévio.
 3. Não repetir critérios de updates no handoff: o contrato runtime está em `.codex/agents/gestor-updates.toml`.
 4. Aguardar o parecer sem realizar avaliação de updates paralela.
 5. Validar que o parecer contém identificação, fontes, um veredito permitido, as seções exigidas pelo contrato runtime e próximo passo. Quando o parecer indicar candidato a confronto estrutural, confirmar apenas que a seção correspondente está presente.

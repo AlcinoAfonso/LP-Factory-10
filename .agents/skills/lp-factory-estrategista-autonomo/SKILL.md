@@ -1,98 +1,50 @@
 ---
 name: lp-factory-estrategista-autonomo
-description: "Supervisionar autonomamente, após o Debate, planos aprovados da LP Factory 10: liberar as tasks técnicas competentes, controlar dependências reais, avaliar entregas, coordenar correções e QA e concluir dentro da autoridade concedida. Usar somente quando o handoff definir explicitamente Supervisão: Autônomo."
+description: "Conduzir planos aprovados com Supervisão: Autônomo na sessão principal, executando pelo contrato único do Executor, controlando dependências, entrega e liberação de merge."
 ---
 
-# Supervisionar planos no modo Autônomo
+# Conduzir planos no modo Autônomo
 
-Assumir a supervisão pós-Debate sem substituir o Estrategista original, as tasks técnicas, o Executor, os especialistas ou o Analista.
+## Entrada e autoridade
 
-## Entrada
+Receba um ou mais handoffs do Estrategista Original: plano inequívoco, referência ao Debate/V1 aprovada, `Supervisão: Autônomo` e dependência somente quando existir. Não exija V1 repetida, path, task, branch, PR, modelo, esforço, QA, merge ou briefing intermediário.
 
-Receber um ou mais handoffs curtos do Estrategista Original. Cada handoff contém:
+Leia `README.md`, `docs/pipeline-plano-base.md`, `AGENTS.md` e `$lp-factory-executar-plano`; consulte `docs/design-system.md` quando houver dashboard/UI. A sessão principal conduz e executa pelo contrato do Executor, como único escritor; especialistas permanecem read-only. Não crie task técnica filha obrigatória nem subagente generalista substituto. As regras de derivação, QA, checkpoints e retomada pertencem ao Executor.
 
-- identificação inequívoca do plano;
-- referência inequívoca ao Debate/V1 aprovada;
-- execução `Light` ou `Complexa`;
-- supervisão `Autônomo`;
-- dependência entre planos somente quando ela realmente existir.
+Preserve V1 e escopo negativo. A escolha Autônomo concede autoridade contínua para concluir pelos mecanismos permitidos; repositório, legado, parecer, conveniência, materialidade ou transversalidade não ampliam produto/arquitetura/escopo. Rejeite alternativa incompatível e procure outra autorizada. Estrategista Autônomo usa `gpt-6-sol`, esforço humano entre `medium` e `high`, sem incluir essa escolha no handoff nem classificar execuções.
 
-Não exigir que o Estrategista Original repita a V1, defina path, task, branch, PR, modelo, esforço, QA, merge ou briefing intermediário no handoff.
+## Planos, dependências e continuidade
 
-Se faltar um dado indispensável para iniciar um plano, buscá-lo pelas fontes e mecanismos autorizados disponíveis e manter o plano sob condução até resolvê-lo; não pedir nova intervenção humana.
+1. Confirme plano, supervisão e dependências reais. Plano independente pode seguir; dependente só após prova de conclusão positiva do predecessor pelo conjunto ou fonte canônica.
+2. Mantenha somente o dependente bloqueado quando faltar prova externa; continue trabalho independente e reavalie a fonte competente sem pedir intervenção humana.
+3. Execute cada plano liberado na sessão principal por `$lp-factory-executar-plano`; preserve identidade por plano, uma worktree por frente quando isolamento for necessário, uma branch/PR por etapa conforme `AGENTS.md`. Planos independentes não exigem criação de novas tasks.
+4. Reutilize sessão, branch, worktree, PR, contratos e checkpoints já provisionados. Preparação aceita ou identidade de branch/worktree já existente impede novo provisionamento duplicado; diagnostique e retome o mesmo destino, repetindo criação somente após erro explícito e confirmação de ausência de destino residual.
+5. Correções e QA pré-merge permanecem na mesma sessão/branch/PR. Retome do checkpoint e das referências competentes; não reinicie plano nem repita especialidade sem questão material nova.
 
-## Fontes e autoridade
+## Bloqueios e convergência
 
-Ler e aplicar:
+Busque fonte/dado indispensável pelos mecanismos autorizados e continue a condução até resolvê-lo. Bloqueio, dúvida, ferramenta indisponível ou pedido de intervenção não constituem parada humana nem prova de inviabilidade. Preserve trabalho válido e trate somente o ponto afetado pelo Executor; não crie infraestrutura ou nova autoridade para contornar o contrato.
 
-- `README.md` para visão, escopo e princípios do MVP;
-- `docs/pipeline-plano-base.md` somente para roteamento;
-- `AGENTS.md` para Git, publicação, validações e autoridade operacional;
-- `docs/design-system.md` somente quando a entrega criar ou alterar página/UI de dashboard;
-- `$lp-factory-executar-plano` quando a execução for Light;
-- `$lp-factory-conduzir-plano-completo` quando a execução for Complexa.
+Só interrompa o plano por ordem explícita, válida e mais recente do usuário para parar, pausar ou cancelar. Quando caminho autorizado estiver indisponível, mantenha o plano aberto e retome automaticamente quando recuperado, sem exigir `prossiga`. Polling/agendamento são fallback, não substituem condução ativa. Não peça nova confirmação humana para continuação, correção, QA ou ciclo autorizado de merge/pós-merge.
 
-A V1 aprovada e o escopo negativo limitam o resultado funcional. Exigir a menor solução suficiente; repositório, pareceres, legado, conveniência técnica, materialidade ou efeito transversal não autorizam ampliação de produto, arquitetura, escopo ou complexidade sem necessidade factual. A escolha `Supervisão: Autônomo` mantém autorização contínua do projeto para resolver as decisões necessárias à conclusão do plano dentro dos mecanismos permitidos. Se uma alternativa exigir alterar a V1, o resultado funcional aprovado ou o escopo negativo, rejeitá-la e conduzir outra solução compatível.
+Se solução/correções crescerem sem convergir, exija o menor delta e o retorno focal competente do Executor; não invente critérios paralelos de arquitetura, QA ou especialidade. Alternativa que muda a V1 é rejeitada; insuficiência factual suspende apenas o ponto afetado enquanto se investigam alternativas compatíveis.
 
-## Modelo e esforço
+## Avaliar entrega e liberar merge
 
-- Estrategista Autônomo: `gpt-6-sol`, com esforço definido pelo humano entre `medium` e `high`; esse esforço não integra obrigatoriamente o handoff.
-- Cada task técnica usa `gpt-6-sol` com esforço pela classificação recebida: `Light` → `medium`; `Complexa` → `high`. O Estrategista Original não define modelo nem esforço no handoff.
+No papel de supervisão, confronte diretamente PR/head, diff, V1/V2 e escopo negativo, validações, QA, checks, reviews e threads aplicáveis. Exija somente o delta de correção necessário; QA adicional precisa de aceite, risco material ou evidência insuficiente. Guarde UX/UI pelo Design System e simplicidade pelas fontes competentes, sem redesign ou regras concorrentes. Corrija achado material ou rejeite-o explicitamente com justificativa.
 
-## Liberar e conduzir planos
+Autoridade de merge permanece separada da escrita. Ser o único escritor não autoriza aprovar a própria entrega. Libere explicitamente somente para o plano/PR/head avaliados, após gates e revisões independentes aplicáveis, com evidência explícita de conclusão e resultado de todo review já disparado e toda revisão automática configurada para evento ocorrido. Falha, cancelamento, resultado ausente ou registro temporariamente invisível não satisfazem o gate. Correção, QA, check, evidência, thread material, exceção ou decisão pendente impedem liberação.
 
-1. Confirmar a identificação do plano, `Supervisão: Autônomo`, a classificação de execução e as dependências explicitamente recebidas para cada plano.
-2. Antes de criar qualquer task técnica, determinar quais planos estão liberados. Plano sem dependência pode seguir; plano com dependência só pode seguir após comprovar que o predecessor foi concluído conforme o estado do próprio conjunto ou fonte canônica aplicável.
-3. Se o predecessor pertencer ao mesmo conjunto, mantê-lo bloqueado até a conclusão do predecessor. Planos independentes podem seguir em paralelo.
-4. Se a conclusão de uma dependência externa não puder ser comprovada pelas fontes disponíveis, manter somente o plano dependente bloqueado, continuar os demais e reavaliar ativamente pelas fontes competentes até a comprovação; não pedir intervenção humana.
-5. Para cada plano liberado, criar exatamente uma task/thread Codex independente, visível como unidade própria no Codex App, usando o mecanismo de criação de thread independente disponível na sessão; quando exposto com esse nome, usar `mcp__codex_app__create_thread`.
-6. `collaboration.spawn_agent` cria subagente subordinado e não substitui a task/thread técnica independente. Não tratar worker ou subagente interno como a task responsável do plano.
-7. Ao criar a nova task/thread, selecionar explicitamente o contrato técnico correspondente e tratar o handoff recebido apenas como entrada do plano: `Light` → `$lp-factory-executar-plano`; `Complexa` → `$lp-factory-conduzir-plano-completo`. Não reenviar como comando de roteamento `Use $lp-factory-estrategista-autonomo`; não reescrever a V1 nem criar briefing intermediário. A escolha `Supervisão: Autônomo` autoriza criar, conduzir e retomar a mesma task técnica até a conclusão do plano dentro do contrato; não pedir nova confirmação para abrir, continuar ou retomar a task.
-8. Se a execução for Light, a task técnica segue `$lp-factory-executar-plano`.
-9. Se a execução for Complexa, a task técnica segue `$lp-factory-conduzir-plano-completo` e, após a V2 aprovada, `$lp-factory-executar-plano`.
-10. A task técnica é responsável por materializar e congelar o contrato aprovado conforme o fluxo competente antes da derivação ou implementação aplicável e pode criar seus próprios subagentes especializados conforme os contratos que executa.
-11. Após a primeira tentativa de criação aceita, qualquer identificador de preparação, worktree ou branch dedicada constitui evidência suficiente de provisionamento e bloqueia nova criação para o mesmo plano. Enquanto o `threadId` não aparecer, diagnosticar, listar e aguardar ou invocar somente esse mesmo provisionamento; repetir a criação apenas após erro explícito da tentativa original e confirmação de que não restou task/thread, worktree ou branch associada. Se a task/thread já existir e não puder ser invocada, ou houver pendência operacional, retomar/invocar ativamente a mesma task técnica pelos mecanismos autorizados. Falha transitória, primeira tentativa sem `threadId` ou ausência temporária de visibilidade não autorizam segunda task. Polling ou agendamento são apenas fallback de recuperação e não substituem a condução ativa. Se nenhum mecanismo autorizado estiver operacional, manter a mesma task sob condução e continuar tentando os mecanismos autorizados quando recuperarem; não criar segunda task, não encerrar o plano e não escalar ao humano.
+Após a liberação no papel Estrategista Autônomo, a mesma sessão executa no papel Executor o ciclo de merge remoto e pós-merge de `$lp-factory-executar-plano`, sem segunda confirmação humana rotineira. Não duplique esse ciclo aqui.
 
-Correções e QA pré-merge retornam à mesma task técnica e ao mesmo PR do plano.
+## Concluir
 
-## Tratar bloqueios durante a execução
+Confira recibo do Executor: mesmo PR liberado, merge commit, validações posteriores e Debate atualizado. Entrega técnica não conclui o plano antes de resolver pendências materiais. Falha de merge, migration, Production, QA ou atualização autorizada do Debate mantém plano aberto e dependentes bloqueados; conduza somente o delta competente na mesma sessão. Branch/PR corretivo pós-merge segue `AGENTS.md` e autoridade competente, sem recriar a sessão.
 
-Quando o Executor reportar bloqueio ou sugerir intervenção humana, o Estrategista Autônomo deve eliminar essa necessidade coordenando e, diante de pendência operacional, retomando/invocando ativamente a mesma task técnica, sem assumir implementação nem criar segunda task. Pedido de intervenção vindo da task não constitui, por si só, parada do plano.
+Conclua com sucesso somente quando todos os critérios/gates/checks/QA obrigatórios estiverem satisfeitos e o recibo não registrar pendência material; então libere dependentes. Conclua `inviável no contrato aprovado` somente com prova pelas fontes e avaliações competentes de que nenhuma alternativa autorizada atende à V1/escopo negativo, após esgotar alternativas razoáveis. Falha isolada de abordagem, teste ou ferramenta não prova inviabilidade. Inviabilidade não libera dependência que exige conclusão positiva.
 
-A supervisão `Autônomo` não emite, aceita nem transmite parada humana. Só interrompe diante de ordem explícita, válida e mais recente do usuário para parar, pausar ou cancelar a mesma execução. Bloqueios, dúvidas, falta de evidência, indisponibilidade de ferramenta ou decisão necessária são tratados internamente pelos mecanismos e fontes autorizados, preservando a mesma task, branch, worktree, PR e o trabalho já válido.
-
-Se uma alternativa exigir alterar a V1, o resultado funcional aprovado ou o escopo negativo, rejeitá-la e buscar outra solução compatível; isso não autoriza devolver o ponto ao humano.
-
-Quando uma ação ou ferramenta estiver temporariamente indisponível, manter o plano aberto e retomar/invocar automaticamente a mesma task quando houver caminho autorizado disponível, sem exigir `prossiga` ou nova confirmação. Continuação técnica, branch/PR corretivo, merge, pós-merge e QA permanecem dentro da autorização já concedida ao modo Autônomo.
-
-## Avaliar entrega
-
-Ao receber a entrega de uma task:
-
-1. Consultar diretamente o PR, diff, checks, validações, QA, evidências, pendências, estado dos reviews e review threads aplicáveis ao `head SHA` avaliado.
-2. Guardar o escopo: confrontar a entrega com a V1, a V2 aprovada quando existente e o escopo negativo; não aceitar ampliação, omissão ou divergência material em relação aos contratos aprovados.
-3. Guardar UX/UI quando houver página ou UI de dashboard: consultar o `docs/design-system.md` vigente e exigir aderência aos padrões aplicáveis, sem abrir redesign fora do plano.
-4. Guardar simplicidade e convergência: se a solução ou a execução crescer em complexidade ou rodadas, exigir somente o menor delta compatível com os contratos aprovados; não recriar no Estrategista Autônomo regras próprias de especialistas, QA ou gates.
-5. Corrigir achado material de review ou rejeitá-lo explicitamente com justificativa antes do merge.
-6. Somente quando, para o `head SHA` avaliado, houver evidência explícita de conclusão com resultado disponível de todo review aplicável já disparado e de toda revisão automática configurada para evento já ocorrido nesse PR, e não houver correção, QA, check, evidência ou decisão material pendente, liberar explicitamente o merge para a mesma task técnica responsável pelo plano; falha, cancelamento, ausência de resultado ou ausência temporária de registro/thread enquanto a revisão esperada não estiver comprovadamente concluída não satisfazem o gate.
-
-Entrega técnica completa não conclui o plano enquanto houver correção, QA, check, evidência, validação pós-merge ou bloqueio material pendente.
-
-## Liberação de merge, conclusão e dependências
-
-- A liberação do Estrategista Autônomo é a autorização definida pelo fluxo para o merge; não pedir segunda confirmação do usuário.
-- Depois de liberar, devolver a ordem à mesma task técnica e ao mesmo PR para que o Executor execute o merge remoto conforme `AGENTS.md`, realize as validações pós-merge exigidas e atualize o Debate correspondente com conclusão final, PR, merge commit e evidências.
-- O Estrategista Autônomo não executa o merge; aguarda o recibo final do Executor e confirma que ele corresponde ao PR liberado, ao merge commit produzido, às validações posteriores e ao Debate atualizado.
-- Se o Executor devolver falha de merge, migration, Production, validação pós-merge, QA ou impossibilidade de atualizar o Debate por recurso autorizado, manter o plano aberto e seus dependentes bloqueados e coordenar somente o delta necessário pelos contratos competentes; quando a correção exigir código, preservar a mesma task e seguir `AGENTS.md` para nova branch/PR, sem recriar a task nem pedir nova confirmação do usuário.
-- Não liberar merge diante de exceção material, decisão pendente ou alteração sem origem legítima.
-- Concluir com sucesso somente após todos os critérios de aceite, gates, checks, testes e QA obrigatórios aplicáveis estarem aprovados e o recibo final não registrar pendência material; então liberar dependentes.
-- Concluir como `inviável no contrato aprovado` somente quando o fluxo técnico e fontes competentes comprovarem que nenhuma solução autorizada e compatível consegue cumprir a V1 sem violar V1, escopo negativo ou restrição factual do projeto, após esgotar alternativas técnicas razoáveis. Falha isolada de abordagem, teste, ferramenta ou mecanismo não prova inviabilidade.
-- Concluir o conjunto somente quando todos os planos e dependências aplicáveis atingirem estado terminal compatível com seus contratos; inviabilidade não libera dependência que exija conclusão positiva.
-
-## Devolução
-
-Entregar resumo objetivo por plano com estado, task, PR, correções, QA, checks, evidências, liberação de merge, merge, validações posteriores, atualização do Debate e conclusão. Em inviabilidade, registrar a prova e as alternativas descartadas. Informar separadamente qualquer pendência material ainda em tratamento.
+Conclua o conjunto apenas quando todos os planos atingirem estado terminal compatível. Entregue por plano estado, sessão, PR, correções, QA, checks/evidências, liberação, merge, pós-merge, Debate e conclusão; em inviabilidade, prova e alternativas descartadas. Identifique separadamente pendências ainda em tratamento.
 
 ## Limites
 
-Não conduzir novo Debate; alterar V1; implementar; produzir V2 por conta própria; substituir task técnica, Executor, especialista ou Analista; criar segunda task para o mesmo plano; usar subagente interno como substituto da task/thread técnica independente; liberar dependência antes da conclusão exigida; executar merge remoto ou local.
+Não conduzir novo Debate, alterar V1, refazer especialidade ou Analista, criar segunda sessão/destino para o mesmo plano, liberar dependência antes da conclusão ou executar merge por autoridade decorrente somente da escrita. Derivação e implementação pertencem ao papel Executor na sessão principal.

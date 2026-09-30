@@ -2,8 +2,7 @@
 
 ## 1. Roteamento
 
-- `Light` → `$lp-factory-executar-plano`
-- `Complexa` → `$lp-factory-conduzir-plano-completo`
+- Todo plano aprovado → `$lp-factory-executar-plano`, da V1 à conclusão
 - `Semiautomático` → Estrategista Original
 - `Autônomo` → `$lp-factory-estrategista-autonomo`
 

@@ -1,85 +1,39 @@
 ---
 name: lp-factory-avaliar-plano-analista
-description: Avaliar um plano-base v2 técnico do LP Factory 10 com o custom agent analista. No Light, executar uma avaliação independente sem matriz e sem segunda passagem. Na Complexa, preservar o gate existente em duas passagens com matriz, pareceres e confrontos aplicáveis.
+description: Avaliar independentemente V1 e V2 pelo Analista read-only quando risco material exigir; auditar incorporação de pareceres, revisar delta ou reconciliação somente quando pertinente.
 ---
 
-# Avaliar plano-base v2 com o Analista
-
-Roteie a avaliação pelo nível recebido sem misturar contratos.
-
-## Roteamento
-
-1. Confirmar se o nível é `Light` ou `Complexa` a partir do handoff competente. Quando a invocação vier de `$lp-factory-conduzir-plano-completo`, tratar como `Complexa` sem exigir nova entrada.
-2. No `Light`, executar somente o fluxo da seção `Fluxo Light` e não exigir matriz, parecer estrutural, parecer de Automações ou segunda passagem.
-3. Na `Complexa`, preservar integralmente o fluxo existente a partir de `Preparar`, inclusive matriz, duas passagens, revisões delta e reconciliação do roadmap.
-4. Se o nível não puder ser determinado sem inferência, pedir somente essa informação.
-
-## Fluxo Light
-
-1. Confirmar worktree, branch, repositório, caso e estado Git.
-2. Obter referências imutáveis, paths e conteúdos integrais da V1 congelada e da V2 Light mínima. Se compartilharem o mesmo path, diferenciá-las pelos commits SHAs correspondentes.
-3. Não exigir nem receber matriz, parecer do Gestor Estrutural, parecer do Gestor de Automações ou cadeia de especialistas. Updates pode existir como origem técnica da V2, mas seu parecer não integra a entrada do Analista Light.
-4. Iniciar exatamente um subagent `analista` com `fork_turns=none`, quando disponível, no modo `avaliacao_light`.
-5. Entregar apenas V1, V2 Light, decisões registradas, caso, roadmap, casos adjacentes e fontes técnicas necessárias. Não entregar pareceres especializados, confrontos ou matriz.
-6. Preservar integralmente a resposta e tratar somente uma conclusão permitida pelo contrato runtime:
-   - `aprovado para implementar`: liberar a V2 Light para implementação;
-   - `aprovado com correções obrigatórias`: devolver somente as correções objetivas; após o Executor ajustar a V2, continuar no mesmo Analista em `revisao_delta_light`;
-   - `requer reclassificação como Complexa`: parar e devolver a necessidade de reclassificação ao supervisor competente;
-   - `bloqueado por decisão humana`: parar e devolver somente a decisão necessária.
-7. Em `revisao_delta_light`, entregar a referência anterior, a nova referência ou diff e as correções solicitadas. Verificar apenas o delta e seus efeitos regressivos. Liberar somente após `aprovado para implementar`.
-8. Confirmar novamente o estado Git e distinguir alterações preexistentes. O Analista permanece read-only.
+# Avaliar plano-base V2 com o Analista
 
 ## Preparar
 
-1. Confirmar worktree, branch, repositório, caso e estado Git.
-2. Obter:
-   - referências imutáveis, paths e conteúdos integrais de v1 e v2;
-   - plano conceitual somente quando houver referência competente ou vínculo inequívoco com o recorte; caso contrário, `N/A` confirmado sem bloquear o fluxo;
-   - decisões humanas registradas, roadmap, casos adjacentes e fontes técnicas necessárias;
-   - parecer integral de cada especialista incluído;
-   - confrontos estruturais focais de modernização quando exigidos pelo Gestor de Updates;
-   - matriz de consolidação.
-3. Resolver versões em PR ou commit pelo SHA, nunca pela cópia local conveniente. Se v1 e v2 compartilharem path, diferenciá-las por referências imutáveis.
-4. Parar diante de artefato ausente, caso divergente ou fonte conceitual ambígua; não reconstruir por inferência.
-5. Exigir pareceres do Gestor Estrutural e do Gestor de Updates. Para cada update com impacto estrutural material, exigir também o confronto focal do Gestor Estrutural. Exigir o parecer do Gestor de Automações quando a v1 identificar uma entrega ou parte do plano sujeita a automação sem dispensa humana explícita da avaliação formal; com dispensa registrada, exigir `N/A — avaliação formal dispensada na v1`. Em planos anteriores sem esse registro, exigir o parecer.
-6. Registrar o estado Git anterior à delegação.
+1. Confirme finalidade, caso, repositório, worktree, branch e estado Git. Esta skill é condicional pelos critérios do Executor; implementação simples não exige chamada.
+2. Obtenha paths, referências imutáveis e conteúdos integrais da V1 e V2, decisões registradas, roadmap/casos adjacentes e fontes técnicas pertinentes. Resolva PR/commit pelo SHA; mesmo path distingue versões por commits. Plano conceitual exige referência competente/vínculo inequívoco; na inexistência confirmada, use `N/A`.
+3. Para auditoria de integração material, preserve pareceres integrais realmente acionados, confrontos estruturais exigidos por Updates e matriz/rastreabilidade pertinente. Não exija especialista, matriz ou segunda passagem sem essa finalidade.
+4. Confirme completude e identidade; fonte ausente/divergente volta como lacuna, sem reconstrução por inferência. Registre Git antes/depois.
 
-## Validar a matriz
+## Avaliação independente
 
-Exigir uma linha por achado com identificação estável, origem (`v1`, `invariante técnico` ou `update`), classe (`derivação técnica da v1`, `modernização técnica justificada` ou `ampliação de escopo`), tratamento, localização/evidência e, para updates, os dados exigidos pelo contrato do Gestor de Updates e referência ao confronto estrutural quando aplicável.
+Inicie exatamente um subagent `analista` com `fork_turns=none`, quando disponível, em `passagem_independente`. Entregue somente V1, V2, plano conceitual ou N/A, decisões, roadmap e fontes técnicas. Não entregue, cite ou exponha pareceres, confrontos ou matriz por prompt, histórico ou anexos; em contaminação, descarte a resposta e reinicie uma única instância limpa.
 
-Matriz incompleta, modernização material sem confronto ou linha sem correspondência verificável impede o handoff.
+Preserve integralmente a avaliação e conclusão. Sem necessidade de auditoria posterior, essa avaliação suficiente libera implementação somente com `aprovado para implementar` ou a conclusão de compatibilidade abaixo.
 
-## Passagem 1
+## Auditoria da incorporação de pareceres
 
-1. Iniciar exatamente um subagent `analista` com `fork_turns=none`, quando disponível, no modo `passagem_independente`.
-2. Entregar apenas v1, v2, plano conceitual quando existente ou `N/A`, decisões registradas, caso, roadmap, casos adjacentes e fontes técnicas.
-3. Não entregar, citar ou expor pareceres, confrontos ou matriz por prompt, histórico ou anexos.
-4. Preservar integralmente a resposta. Se contaminada, descartá-la e reiniciar uma única instância limpa.
+Somente após preservar a primeira avaliação, solicite ao Executor, único escritor, a gravação e o versionamento da matriz/rastreabilidade necessária. Receba e confira as referências imutáveis produzidas; só então continue no mesmo Analista em `auditoria_consolidacao`, entregando pareceres integrais, confrontos aplicáveis e rastreabilidade sem reescrever achados.
 
-## Passagem 2
+Confira formalmente uma linha por achado: ID, origem (V1, invariante técnico ou update), classe, tratamento, localização/evidência e destino/confronto de Updates quando aplicável. Rastreabilidade incompleta, modernização material sem confronto ou achado sem correspondência verificável impede o handoff; não complete a avaliação especializada. Aguarde conclusão própria do contrato `.codex/agents/analista.toml`; só com `aprovado para implementar` ou a conclusão de compatibilidade abaixo avance.
 
-1. Continuar no mesmo thread no modo `auditoria_consolidacao`.
-2. Entregar pareceres integrais, confrontos estruturais aplicáveis e matriz, sem reescrever achados.
-3. Solicitar a auditoria conforme o contrato runtime de `.codex/agents/analista.toml`, preservando a Passagem 1.
-4. Aguardar a conclusão formal definida no contrato runtime.
+Para plano já iniciado cujo contrato vigente exija literalmente `aprovado para merge do plano-base v2`, informe essa exigência e sua referência imutável ao Analista. Receba essa conclusão somente como aprovação técnica equivalente a `aprovado para implementar`, preservando reconciliação, revisão delta e checkpoint exigidos pelo plano. O nome legado não autoriza merge nem recria classes de execução; não reescreva lousas ou aprovações históricas.
 
-## Devolver
+## Revisar correções e reconciliação
 
-Apresentar sem reescrever Passagem 1, Passagem 2, conclusão, correções e eventuais rodadas especializadas ou decisões humanas. Acrescentar apenas versões avaliadas, pareceres/confrontos auditados, agente acionado e estado Git final.
+Use `revisao_delta` no mesmo Analista, entregando versões anterior/nova ou diff, correções solicitadas e fontes pertinentes. Verifique apenas delta/regressões. Nova rodada especializada somente por questão material nova ou conclusão alterada; não reabra avaliações satisfeitas.
 
-Conferir o estado Git. Se faltar passagem ou conclusão, devolver o conteúdo e marcar o handoff como incompleto; não completar o parecer.
+Quando o alvo for reconciliação de roadmap pertinente à avaliação acionada, entregue V2 aprovada, snapshot imutável anterior, ABC integral preparado pela especialidade documental, resultado e `docs/prompt-abc.md`/`docs/template-roadmap.md`; exija leitura integral e auditoria focal pelo runtime. Com `SEM ALTERAÇÕES NECESSÁRIAS`, confirme correspondência do snapshot. Não introduza auditoria universal para execução simples.
 
-## Revisar correções
+## Devolver e limites
 
-Usar `revisao_delta` no mesmo Analista, entregando versões ou diff e correções solicitadas. Retornar ao especialista somente diante de questão material nova ou conclusão especializada alterada. Liberar o gate apenas após `aprovado para merge do plano-base v2`.
+Preserve avaliação, auditoria quando aplicável, conclusão, correções e rodadas/decisões integralmente; acrescente somente versões, fontes/pareceres/confrontos, agente e Git final. `aprovado com correções obrigatórias` exige delta; `requer nova rodada especializada` aciona o domínio pertinente sem reclassificação; `bloqueado por decisão humana` devolve somente a decisão sem autoridade ao supervisor competente.
 
-## Revisar o roadmap final
-
-Após a primeira aprovação da v2, continuar no mesmo Analista em `revisao_delta`. Entregar a v2 aprovada, o snapshot imutável do roadmap anterior, o ABC emitido por `$lp-factory-abc`, o roadmap resultante e os contratos `docs/prompt-abc.md` e `docs/template-roadmap.md`; exigir leitura integral desses contratos antes da conclusão.
-
-Auditar somente se o roadmap corresponde à estrutura planejada da v2, se o delta é mínimo, se respeita a hierarquia e a residência documental e se não registra implementação ou evidência operacional. Quando o ABC indicar `SEM ALTERAÇÕES NECESSÁRIAS`, confirmar que o snapshot já corresponde à v2. Liberar a publicação somente após nova conclusão `aprovado para merge do plano-base v2`.
-
-## Limites
-
-Não editar artefatos, criar branch/commit/PR, consolidar v2, refazer especialidade, acionar outros especialistas, avaliar implementação ou autorizar merge com pendência. No Light, não exigir nem produzir artefato exclusivo da Complexa. Na Complexa, não reduzir, substituir ou pular matriz, passagem ou gate existente.
+Retorno incompleto fica marcado incompleto, sem complementação pelo wrapper. Não escrever artefatos, criar branch/commit/PR, consolidar V2, refazer especialidade, acionar outro especialista ou avaliar implementação por este wrapper. Aprovação técnica permite avançar/implementar; merge exige autoridade competente e gates próprios do Executor.
