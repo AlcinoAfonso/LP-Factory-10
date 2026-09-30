@@ -14,6 +14,8 @@ Fluxos auxiliares de GitHub devem respeitar estas regras. Em caso de divergênci
 
 Não editar nem commitar na `main`; usar branch dedicada por tarefa ou etapa. Ao usar a `main` local como base, atualizar com `git pull --ff-only`. Não executar merge sem a autorização definida pelo fluxo responsável. Quando autorizado, usar GitHub Web ou ferramenta GitHub conectada e autorizada. Merge local pela `main` permanece proibido.
 
+Toda implementação publicada em PR deve passar por Code Review independente do `HEAD` corrente antes de ser considerada elegível para merge. Se qualquer correção posterior alterar o `HEAD`, repetir o Code Review no novo SHA. Achado material pendente impede merge.
+
 Branches e PRs já abertos não precisam ser sincronizados, rebaseados ou atualizados com a `main` apenas porque ela avançou. Em frentes paralelas, essa divergência é normal. Sincronizar somente quando houver conflito apontado pelo GitHub, quando a tarefa depender materialmente de contrato, arquivo ou dependência alterado na `main`, ou por solicitação humana explícita. Não fazer sincronização preventiva por rotina.
 
 Commits internos podem permanecer granulares. Não executar `git push` em cada checkpoint por rotina; agrupar a publicação até um gate que dependa de estado remoto, como review remoto, Preview/QA hospedado ou entrega.
