@@ -530,7 +530,7 @@ Desde 24/09/2026, o Search Console também começou a incluir buscas multimodais
 - Permite separar mensuração real de alegações genéricas de AEO/GEO.
 - Pode apoiar análise consultiva futura sem exigir tracking próprio da LP.
 - Passa a permitir validação imediata de elegibilidade/acesso quando existir propriedade real, sem aguardar rollout.
-- Quando houver LP com imagens indexadas e tráfego suficiente, permite distinguir a descoberta por imagem da visibilidade textual, sem instrumentação própria.
+- Permite isolar consultas iniciadas por imagem nos relatórios de desempenho, independentemente do conteúdo visual da página de destino e sem instrumentação própria; a interpretação depende de propriedade autorizada e tráfego real dessa origem.
 
 ### Valor para o Usuário
 
@@ -542,7 +542,7 @@ Desde 24/09/2026, o Search Console também começou a incluir buscas multimodais
 2. Se houver dados, registrar baseline e usar o relatório como fonte complementar ao desempenho geral do Search Console.
 3. Interpretar impressões como visibilidade, não como lead, conversão, ranking ou receita.
 4. Só propor dashboard, exportação ou automação quando a leitura manual for insuficiente para uma decisão recorrente.
-5. Na mesma leitura manual, verificar o filtro multimodal somente se houver propriedade e conteúdo visual relevante; comparar os dados com o desempenho geral antes de atribuir valor comercial.
+5. Na mesma leitura manual, verificar o filtro multimodal quando houver propriedade Search Console autorizada; interpretar os dados como consultas iniciadas por imagem, independentemente do conteúdo visual da página de destino, e comparar com o desempenho geral antes de atribuir valor comercial.
 
 ### Limites
 
