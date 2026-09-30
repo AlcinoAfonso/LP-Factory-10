@@ -16,13 +16,15 @@ description: Avaliar independentemente V1 e V2 pelo Analista read-only quando ri
 
 Inicie exatamente um subagent `analista` com `fork_turns=none`, quando disponível, em `passagem_independente`. Entregue somente V1, V2, plano conceitual ou N/A, decisões, roadmap e fontes técnicas. Não entregue, cite ou exponha pareceres, confrontos ou matriz por prompt, histórico ou anexos; em contaminação, descarte a resposta e reinicie uma única instância limpa.
 
-Preserve integralmente a avaliação e conclusão. Sem necessidade de auditoria posterior, essa avaliação suficiente libera implementação somente com `aprovado para implementar`.
+Preserve integralmente a avaliação e conclusão. Sem necessidade de auditoria posterior, essa avaliação suficiente libera implementação somente com `aprovado para implementar` ou a conclusão de compatibilidade abaixo.
 
 ## Auditoria da incorporação de pareceres
 
-Somente após preservar a primeira avaliação, versione a matriz/rastreabilidade necessária e continue no mesmo Analista em `auditoria_consolidacao`. Entregue pareceres integrais, confrontos aplicáveis e rastreabilidade sem reescrever achados.
+Somente após preservar a primeira avaliação, solicite ao Executor, único escritor, a gravação e o versionamento da matriz/rastreabilidade necessária. Receba e confira as referências imutáveis produzidas; só então continue no mesmo Analista em `auditoria_consolidacao`, entregando pareceres integrais, confrontos aplicáveis e rastreabilidade sem reescrever achados.
 
-Confira formalmente uma linha por achado: ID, origem (V1, invariante técnico ou update), classe, tratamento, localização/evidência e destino/confronto de Updates quando aplicável. Rastreabilidade incompleta, modernização material sem confronto ou achado sem correspondência verificável impede o handoff; não complete a avaliação especializada. Aguarde conclusão própria do contrato `.codex/agents/analista.toml`; só com `aprovado para implementar` avance.
+Confira formalmente uma linha por achado: ID, origem (V1, invariante técnico ou update), classe, tratamento, localização/evidência e destino/confronto de Updates quando aplicável. Rastreabilidade incompleta, modernização material sem confronto ou achado sem correspondência verificável impede o handoff; não complete a avaliação especializada. Aguarde conclusão própria do contrato `.codex/agents/analista.toml`; só com `aprovado para implementar` ou a conclusão de compatibilidade abaixo avance.
+
+Para plano já iniciado cujo contrato vigente exija literalmente `aprovado para merge do plano-base v2`, informe essa exigência e sua referência imutável ao Analista. Receba essa conclusão somente como aprovação técnica equivalente a `aprovado para implementar`, preservando reconciliação, revisão delta e checkpoint exigidos pelo plano. O nome legado não autoriza merge nem recria classes de execução; não reescreva lousas ou aprovações históricas.
 
 ## Revisar correções e reconciliação
 

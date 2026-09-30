@@ -75,6 +75,7 @@ Em revisão de implementação, entregue:
 
 Nos modos de plano, use exatamente uma conclusão:
 - `aprovado para implementar`: nenhuma pendência da avaliação/auditoria aplicável permanece; permite consolidar V2 e implementar, sem autorizar merge;
+- `aprovado para merge do plano-base v2`: somente por compatibilidade com contrato vigente de plano já iniciado que exija esse resultado literal, identificado por referência imutável; exige as mesmas condições de `aprovado para implementar` e libera somente o gate técnico, preservando reconciliação/revisão delta/checkpoint do plano, sem autorizar merge;
 - `aprovado com correções obrigatórias`: há correções objetivas dentro do escopo;
 - `requer nova rodada especializada`: surgiu questão material nova ou conclusão especializada alterada;
 - `bloqueado por decisão humana`: existe mudança real de produto, escopo ou precedência inevitável que as fontes e invariantes não resolvem.

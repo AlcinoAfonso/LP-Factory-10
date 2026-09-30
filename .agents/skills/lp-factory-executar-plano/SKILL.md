@@ -83,6 +83,8 @@ Versione a V2 candidata com `LP-Factory-Stage: plan-v2`, somente com o plano qua
 
 Reconcilie o roadmap por `$lp-factory-avaliar-documentacao` em planejamento quando a V2 exigir delta, preservando o snapshot anterior e `docs/template-roadmap.md`. Se essa reconciliação integrar avaliação de plano já acionada, continue no mesmo Analista em `revisao_delta`, inclusive diante de `SEM ALTERAÇÕES NECESSÁRIAS`; não introduza nova chamada quando nenhum risco ou auditoria a exigir.
 
+Em retomada de plano já iniciado cujo contrato vigente exija literalmente `aprovado para merge do plano-base v2`, entregue ao wrapper do Analista a exigência e sua referência imutável. Essa conclusão de compatibilidade equivale à aprovação técnica para implementar; preserve reconciliação, revisão delta e checkpoint exigidos pelo plano, sem mudar lousas históricas, criar classes de execução ou inferir liberação de merge.
+
 Consolidada a V2 e satisfeitas as revisões/condicionantes aplicáveis, registre a referência imutável vigente em `LP-Factory-Stage: plan-v2-approved`, com roadmap e rastreabilidade apenas quando aplicáveis. Esse checkpoint permite implementar; não autoriza merge. Sem Analista necessário, o Executor consolida a V2 mínima diretamente, com Updates e validações aplicáveis.
 
 ## 4. Implementação
