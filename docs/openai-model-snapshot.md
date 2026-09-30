@@ -19,6 +19,8 @@
   - `https://developers.openai.com/api/docs/models/gpt-6-sol`
   - `https://developers.openai.com/api/docs/models/gpt-6-astra`
   - `https://developers.openai.com/api/docs/changelog`
+  - `https://developers.openai.com/api/docs/guides/agents-api/overview`
+  - `https://developers.openai.com/api/docs/guides/latest-model?model=gpt-6-astra`
   - `https://developers.openai.com/api/docs/guides/async-tool-calling`
   - `https://developers.openai.com/api/docs/guides/steering`
   - `https://developers.openai.com/api/docs/guides/prompt-caching/diagnostics`
@@ -88,7 +90,7 @@
 
 - Natureza: API de execução textual e multimodal usada como base programática preferencial do projeto.
 - Aplicabilidade: workloads server-side com contrato e guardrails definidos pelo recorte.
-- Maturidade: operacional em `OAI-W01`, `OAI-W02` e `OAI-W03`.
+- Maturidade: operacional em `OAI-W01`, `OAI-W02`, `OAI-W03`, `OAI-W06` e `OAI-W07`.
 - Limite: não substitui regras de negócio determinísticas, autorização ou persistência verificável.
 - Fontes: Model guidance, catálogo Models e contratos vigentes do projeto.
 
@@ -211,6 +213,7 @@
 | resolvedor IA de nicho | `gpt-5.4-mini + none` | `OAI-M02`, `OAI-M03` e `OAI-M04`, com effort focal | não comparado nesta fotografia |
 | ativação comercial | `gpt-5.4-mini + none` | `OAI-M02`, `OAI-M03` e `OAI-M04`, com effort focal | não comparado nesta fotografia |
 | suficiência factual do catálogo por taxon | `gpt-5.6-terra + low` | modelos e efforts que o recorte competente justificar | configuração própria da E20.8.7/E21.2 |
+| Base de Comunicação, Etapa 1 | `gpt-5.4-mini + none` ativo em Preview e Production | sem candidato comparado nesta fotografia | operacional após E21/E25.1 |
 | Base de Comunicação, Etapa 2 | `gpt-6-luna + max` ativo em Preview e Production | `gpt-6-sol + medium` comparado focalmente | comparação concluída; `gpt-6-luna + max` operacional após E21/E25.1 |
 
 - Preservar o baseline atual até existir evidência suficiente e autorização no recorte competente.
