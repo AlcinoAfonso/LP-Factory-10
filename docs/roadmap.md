@@ -3091,3 +3091,23 @@
 - Conteúdo: a IA é o motor central da interpretação de sinais de mercado e da produção de conteúdo comunicacional editável usando somente os insumos confirmados pertinentes da Etapa 1. Usa pesquisa atual via Web Search quando atualidade ou localidade forem materiais para elaborar Quem somos, Público/contexto, Dores/desejos/crenças/objeções, Proposta de valor, Benefícios, Diferenciais e FAQ. Distinguir fato particular confirmado de hipótese estratégica; revisão e edição humanas permanecem disponíveis sem aprovação por chamada. Falha de pesquisa material não é substituída silenciosamente por conhecimento paramétrico; a Base não depende de vínculo persistente com a pesquisa. Este recorte não gera LP ou outro produto, não integra canais nem altera Pending Setup, jornada E10, comercial ou trial, e não introduz Agents SDK, multiagente, job, fila ou infraestrutura antecipada.
 - E25.1 não cria carteira, saldo, franquia ou bloqueio comercial de IA; o contrato transversal de créditos pertence ao Debate 10B.
 - A ação geral gera as sete seções quando vazias e atualiza o conjunto pertinente quando há conteúdo; cada seção tem revisão localizada. O conteúdo salvo da Etapa 2 entra somente no alvo da operação como contexto de revisão, sem autoridade factual. Sugestões não são salvas automaticamente, e a edição manual não dispara IA.
+
+25.2 Experiência de cliente da Base de Comunicação
+
+25.2.1 Objetivo e status
+- Objetivo: tornar a Base compreensível, fluida, profissional e confiável para o cliente, com foco claro na tarefa e preservação dos contratos funcionais vigentes.
+- Status: planejado; solução de experiência definida. Supervisão: Autônomo.
+
+25.2.3 Arquitetura de experiência, foco e edição da Base
+- Status: planejado.
+- Conteúdo:
+  - Manter as abas “Verdade da empresa” e “Inteligência de comunicação”, exibir uma etapa por vez e oferecer seleção compacta das sete seções da etapa ativa com um editor visível; no desktop, usar navegação lateral; no mobile, seletor nativo acima do editor.
+  - O editor apresenta orientação, conteúdo, estado, campo rotulado, feedback e ações Salvar/Cancelar. Salvar exige alteração material válida; Cancelar restaura o conteúdo salvo. Trocar seção ou etapa, cancelar ou sair com rascunho não salvo exige confirmação; recusar preserva rascunho e contexto. Falha ao salvar também preserva o rascunho.
+  - Owner, Admin e Editor mantêm edição; Viewer mantém somente leitura. Preservar domínio e autoridade por conta, persistência, permissões, entitlement, membership, Pending Setup e contratos E10.11/E25.1. Não criar infraestrutura, automação, rota, banco ou domínio; não alterar o Design System nem redesenhar outros dashboards.
+
+25.2.4 Estados, assistência por IA, responsividade e validação da experiência
+- Status: planejado.
+- Conteúdo:
+  - A assistência existente permanece contextual à tarefa e sob os contratos vigentes; pesquisa, metodologia e qualidade do conteúdo da Etapa 2 permanecem sob o Debate 14D. Sugestões e fontes ficam distintas do conteúdo do cliente, não são salvas automaticamente e só alteram o rascunho da seção-alvo por ação explícita; substituir rascunho não salvo exige confirmação.
+  - Preservar conteúdo salvo e sugestões/fontes válidas durante espera ou falha. Após mudança nos insumos factuais pertinentes, sugestões anteriores da Etapa 2 não são apresentadas como atuais, sem remover o conteúdo salvo.
+  - Estados de edição, salvamento, saída sem salvar e assistência devem ser compreensíveis e acessíveis conforme o Design System vigente. O aceite exige evidência renderizada e observação da jornada como cliente em desktop e mobile; inspeção isolada de código não comprova o aceite visual.
