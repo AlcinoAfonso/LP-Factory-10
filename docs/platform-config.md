@@ -2,8 +2,8 @@
 
 0.1 Cabeçalho
 • Documento: LP Factory 10 — Platform Config
-• Versão: v0.1.53
-• Data: 28/09/2026
+• Versão: v0.1.54
+• Data: 30/09/2026
 
 0.2 Contrato do documento
 • O QUE É: snapshot operacional e fonte única das configurações de plataformas externas do LP Factory 10, refletindo o estado conhecido/cadastrado nas plataformas conforme indicado.
@@ -45,7 +45,7 @@
 • `MAILBOX_PASSWORD`: senha/app password da mailbox preservada para o futuro Operador Institucional Autônomo de QA da E17.9.3; sem consumidor operacional vigente após a E22.6.
 • `SUPABASE_ACCESS_TOKEN`: token usado pelo workflow de apply de migrations Supabase.
 • `SUPABASE_DB_PASSWORD`: senha do banco usada pelo workflow de apply de migrations Supabase.
-• `SUPABASE_APPLY_MIGRATIONS_ENABLED`: variável de repositório usada como gate operacional; valor observado no GitHub em 27/09/2026: `false`.
+• `SUPABASE_APPLY_MIGRATIONS_ENABLED`: variável de repositório usada como gate operacional; valor observado no GitHub em 30/09/2026: `false`.
 • Regra: valores reais de secrets não devem ser versionados.
 • Regra: secrets de mailbox devem existir apenas nos escopos necessários dos workflows que os consomem.
 • Regra: `SUPABASE_DB_URL_READONLY` deve autenticar com role/usuário read-only e usar preferencialmente session pooler.
@@ -63,16 +63,14 @@
 • Setup: `supabase/setup-cli` v2.1.1 fixada pelo SHA completo `3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf`, com Supabase CLI `2.106.0`.
 • Motivo do pin por SHA: reprodutibilidade e proteção contra alteração futura da referência móvel `@v2`.
 • Gate: `SUPABASE_APPLY_MIGRATIONS_ENABLED = false` bloqueia instalação da CLI, link e push. O fluxo automático integral permanece suspenso durante o backlog E10.10, mesmo com o gate aberto.
-• A exceção manual E25.1 foi executada na `main` pelo escopo `e25_1_only`, com SHA pós-merge exato, dry-run das duas migrations E25 e apply seletivo. O histórico remoto confirmou 58 versões e ausência das duas E10.10; o gate foi restaurado a `false`.
-• A E10.11 dispõe do escopo manual `e10_11_only`, reservado ao apply pós-merge da migration de nome público. Exige SHA exato da `main`, dry-run com somente essa migration e restauração do gate a `false` após o apply; as duas E10.10 permanecem excluídas. O apply E10.11 ainda não foi executado.
-• Novas migrations seguem PR e merge autorizados conforme `AGENTS.md`; não retomar apply integral sem resolução separada de E10.10 ou revisão explícita do filtro canônico.
+• Os applies seletivos E25.1 e E10.11 foram concluídos sob autorizações próprias; o escopo `e10_11_only` aplicou somente uma vez a migration E10.11 após merge na `main` com SHA exato e dry-run seletivo, mantendo as duas migrations E10.10 excluídas e restaurando o gate a `false`.
+• Novas migrations seguem PR e merge autorizados conforme `AGENTS.md`; `workflow_dispatch` permanece excepcional e cada apply exige decisão operacional própria. O fluxo automático integral segue suspenso até resolução separada de E10.10 ou revisão explícita do filtro canônico.
 • Regra: não usar SQL Editor para alterações de schema no fluxo normal.
 • Regra: migration aplicada não pode ser editada, apagada, renomeada ou substituída; correções e reversões exigem nova migration.
 • Com o gate fechado, um passo separado sem secrets registra `skipped`; a CLI não é instalada e `supabase link` e `supabase db push` não são executados.
 • `Setup Supabase CLI` e `Apply migrations` possuem condição explícita de gate aberto.
 • Secrets exigidos somente para apply autorizado com gate aberto: `SUPABASE_ACCESS_TOKEN` e `SUPABASE_DB_PASSWORD`, disponíveis apenas no passo `Apply migrations`.
 • Projeto alvo: definido no workflow por `SUPABASE_PROJECT_REF`; o valor não é credencial, mas deve apontar somente para o projeto aprovado.
-• `workflow_dispatch` permanece excepcional; a aplicação seletiva E25.1 está concluída. O escopo E10.11 exige sua própria autorização pós-merge; o fluxo automático integral depende de decisão separada.
 • `.github/workflows/upgrade-next-16-1-1.yml`: manutenção de Next.js + lockfile.
 
 2.4 Mailbox operacional para automações
@@ -247,7 +245,7 @@
 • `E10_11_PASSAGE_ENABLED`
 • Finalidade: gate server-only da coleta do nome público, conclusão versionada do Pending Setup e encaminhamento de conta autorizada à Base.
 • Escopo: Preview e Production do Core, independente por ambiente; somente o literal `true` ativa. Ausência ou outro valor preserva a conclusão e a rota anteriores, sem consulta à coluna nova.
-• Estado operacional: não configurado nem validado; habilitar somente após o apply seletivo E10.11 e validar Preview antes de Production. A alteração exige redeploy do ambiente afetado.
+• Estado operacional: `true` em Preview e Production, de forma independente, após o apply seletivo E10.11; ambos os ambientes foram redeployados e passaram por QA autenticado. A alteração exige novo redeploy do ambiente afetado.
 • Classificação: Config, não Secret. Valor real por ambiente não versionar.
 
 • `E20_6_5_INPUT_CATALOG_EVALUATION_PROVIDER_ENABLED`

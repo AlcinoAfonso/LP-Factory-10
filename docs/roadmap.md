@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 28/09/2026
-• Versão: v1.5.250
+• Data: 30/09/2026
+• Versão: v1.5.251
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -1073,7 +1073,7 @@
 
 10.11.1 Objetivo e status
 - Objetivo: garantir nome público explícito e reaproveitamento inicial do contexto confirmado, preservando o comercial para contas sem autorização e encaminhando contas autorizadas diretamente à Base sem exigir taxon oficial.
-- Status: implementado no repositório sob gate desligado por padrão; prova SQL focal efêmera aprovada no PR #982 (run 36455776590). QA autenticado e apply seletivo pós-merge permanecem pendentes. PB-C mantém a retirada terminal de E10.10.
+- Status: implementado; apply seletivo pós-merge concluído. PB-C/E22.7 permanece não iniciado e depende do recibo final de E10.11; a retirada terminal de E10.10 está reservada a essa etapa.
 
 10.11.2 Registros do recorte
 - Banco:
@@ -1088,16 +1088,16 @@
   - Configuração operacional: `docs/platform-config.md` — seções 2.3 e gate E10.11.
 
 10.11.3 Nome público e contexto de saída
-- Status: implementado no repositório; prova SQL focal aprovada em PostgreSQL isolado no GitHub Actions, com casos positivos e negativos e `ROLLBACK`. A cadeia histórica integral não foi reproduzida no runner por conter gates de dados hospedados de outras etapas.
+- Status: implementado; prova SQL focal aprovada.
 - Conteúdo: coletar nome público ausente na conclusão da conversa sem confundi-lo com nome preferido, razão social ou nome da conta. Copiar nome confirmado de uma única conversa concluída ao iniciar a Base e contexto confirmado somente com consentimento; conversas históricas sem nome deixam a seção editável e vazia. A Base não sincroniza edições de volta.
 
 10.11.4 Gate e encaminhamento
-- Status: implementado no repositório, desligado por padrão; ativação Preview e Production pendente após apply autorizado.
+- Status: implementado; `E10_11_PASSAGE_ENABLED` habilitado independentemente em Preview e Production, com redeploys concluídos e QA autenticado aprovado.
 - Conteúdo: conta autorizada segue diretamente à Base, inclusive por liberação manual E9.2 e sem taxon oficial. Conta sem autorização conserva comercial E10.6/E10.7, papéis e ações financeiras vigentes. Falha de leitura de entitlement ou taxon exigido bloqueia a decisão. A rota ativa não encaminha ao onboarding factual E10.10 após o cutover.
 
 10.11.5 Continuidade e regressão
-- Status: `npm run check` e prova SQL focal efêmera aprovados; QA desktop/mobile e cutover hospedado pendentes.
-- Conteúdo: manter matching e fallback de nicho, checkout, membership e entitlement intactos. Aplicar somente a migration E10.11 pelo escopo seletivo após merge autorizado; as migrations E10.10 continuam fora do apply e o fluxo automático integral permanece suspenso.
+- Status: continuidade e regressão validadas em Preview e Production.
+- Conteúdo: manter matching e fallback de nicho, checkout, membership e entitlement intactos. O apply seletivo pós-merge deste recorte aplicou somente a migration E10.11; as migrations E10.10 continuam fora do apply e o fluxo automático integral permanece suspenso.
 
 11. E11 — Gestão de membros e autoridade comercial
 
