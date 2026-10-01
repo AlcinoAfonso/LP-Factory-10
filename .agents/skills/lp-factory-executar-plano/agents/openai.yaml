@@ -1,4 +1,4 @@
 interface:
   display_name: "Executar plano-base"
   short_description: "Conduz V1, V2 e execução até a conclusão"
-  default_prompt: "Use $lp-factory-executar-plano para conduzir o plano aprovado da V1 à conclusão na mesma sessão e PR, com Updates obrigatório e demais especialidades somente quando necessárias."
+  default_prompt: "Use $lp-factory-executar-plano para conduzir o plano aprovado da V1 à conclusão na mesma sessão e PR, com Updates prioritário e demais especialidades somente quando necessárias."
