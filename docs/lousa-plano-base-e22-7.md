@@ -40,7 +40,7 @@ As classificações históricas abaixo pertencem ao registro literal da V1; a ex
 • Supervisão: Autônomo. Após o handoff, o fluxo técnico conduz o plano sem supervisão rotineira do Estrategista Original, preservando integralmente a V1 e seu escopo negativo; questões fora da autoridade concedida devem ser escaladas conforme o Prompt Estrategista.
 
 
-## V2 técnica candidata
+## V2 técnica aprovada
 
 ### Identidade e autoridade
 
@@ -111,3 +111,10 @@ Provar ausência dos três gates E20 no runtime corrente Production, no Preview 
 - Reconciliação documental via ABC literal, somente nos documentos/trechos realmente afetados. Planejamento: roadmap recebe apenas posição/fases planejadas quando necessário, sem antecipar execução. Consolidação final: roadmap, schema, base técnica, platform-config, automations e outras fontes efetivamente contraditas pelo delta; SEM ALTERAÇÕES NECESSÁRIAS quando não houver delta competente. Preservar proveniência histórica.
 - Manter PR draft enquanto aceite, QA, correção, documento ou review aplicável estiver pendente. Antes do merge, concluir reviews já disparados e revisão automática configurada, sem threads materiais pendentes; supervisão libera somente o head avaliado.
 - Conclusão positiva somente após merge, migration seletiva, gates exclusivos retirados, QA pós-merge obrigatório, documentos canônicos coerentes e recibo D14B atualizado, preservando a V1 literal. Pendência mantém o plano aberto; insuficiência de um recurso suspende apenas o ponto afetado e não encerra a condução autorizada.
+
+
+### Checkpoint — planejamento aprovado e inventário anterior à retirada
+
+V2 corrigida no commit `733b9bc8947f58d047fec9ea40a0ba0ca502e2ed`, blob `7eefead8d5a387e0e35b3e28a59716348c629f86`: Analista aprovou para implementar. Reconciliação planejada do roadmap via ABC literal do gestor-documentacao em contexto nativo read-only atualizado; resultado no commit `13b5002c7af5bd0cd87786f0f096827a5292a732`, blob roadmap `f4e06f8643832d2f0322fda1e2b017114b9579ac`: revisão delta independente aprovou para implementar em 01/10/2026 07:18. Não há autorização de merge neste checkpoint.
+
+Fase 22.7.3: inventário anterior à retirada em `docs/matriz-consolidacao-e22-7.md`, blob `98df9998f2b3a1dc2ec05543d31331c50f076a01`, com destinos de consumidores, dados e configuração. Buscas devem ser reconfirmadas antes de cada exclusão. Nenhum código, objeto hospedado ou configuração foi removido até este checkpoint. Validação deste delta documental: `git diff --check`; npm ci/check não aplicáveis. O npm ci do lote técnico já foi executado com êxito; check técnico permanece pendente da implementação.
