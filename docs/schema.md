@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data da última atualização: 01/10/2026
-• Documento: LP Factory 10 — Schema (DB Contract) v1.0.75
+• Documento: LP Factory 10 — Schema (DB Contract) v1.0.76
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -300,7 +300,7 @@
 1.11.3 Segurança
 • Trigger Hub: não
 • RLS: ativo (enable row level security)
-• service_role: SELECT; sem UPDATE da tabela inteira; UPDATE somente em is_active, name, selected_end_customer_research_version e slug
+• service_role: SELECT; sem UPDATE da tabela inteira; UPDATE somente em is_active, name e slug
 • anon/authenticated: sem UPDATE em selected_end_customer_research_version
 
 1.11.4 Policies
@@ -885,7 +885,7 @@
 • `environment` aceita somente `production | preview`; Development permanece fora desta residência dinâmica.
 • A PK composta `(environment, workload)` é o lock canônico das RPCs e impede mais de uma unidade para a mesma combinação.
 • A migration forward-only `supabase/migrations/20260820190422_e21_2_3_openai_workload_operational_configurations.sql` está aplicada no ambiente hospedado; o snippet read-only aprovou 10/10 verificações e o Security Controls não apresentou alerta incompatível com o agregado ou suas RPCs.
-• A migration incremental forward-only `supabase/migrations/20260820213900_e21_2_taxon_input_catalog_sufficiency_workload.sql` também está aplicada no ambiente hospedado e estende o mesmo agregado com `taxon_input_catalog_sufficiency_evaluation`, sem nova entidade ou tabela de negócio; os testes SQL, snippets read-only e invariantes pós-apply foram aprovados, e o Security Controls reportou para as três tabelas apenas o INFO esperado de RLS sem policy, compatível com a residência service-only sem grants públicos.
+• A migration incremental forward-only `supabase/migrations/20260820213900_e21_2_taxon_input_catalog_sufficiency_workload.sql` introduziu `taxon_input_catalog_sufficiency_evaluation` no agregado; após o apply E22.7, suas duas unidades mutáveis não permanecem na tabela. Os CHECKs `openai_workload_operational_configurations_workload_chk` e `openai_workload_operational_configurations_modality_chk` admitem somente `niche_resolution`, `commercial_activation_draft_generation`, `landing_page_draft_generation`, `landing_page_draft_image_generation`, `communication_base_stage1_assistance` e `communication_base_stage2_intelligence`; a modalidade é `image_generation` somente para `landing_page_draft_image_generation` e `responses_text` para os demais. Revisões e ativações permanecem históricas e inertes.
 • A migration histórica `supabase/migrations/20260829171107_e20_7_4_dynamic_market_research_workload.sql` introduziu `landing_page_dynamic_market_research`; a migration E20.8 remove suas linhas mutáveis deste agregado. Revisões e ativações append-only permanecem históricas e inertes.
 
 1.28.2 Colunas
@@ -1063,23 +1063,22 @@
 
 1.35 taxon_factual_fields
 1.35.1 Função e autoridade
-• Tabela física histórica do catálogo factual E20.8; o runtime versionado da E22.7 não mantém consumidor factual corrente e a tabela e suas linhas permanecem preservadas até o apply autorizado da migration E22.7.
+• Tabela física histórica do catálogo factual E20.8, sem autoridade ou consumidor factual corrente; o apply E22.7 preservou a tabela e suas linhas históricas.
 • `id uuid primary key default gen_random_uuid()`; `field_key text not null unique`; `taxon_id uuid null`; `definition jsonb not null`; `is_active boolean not null default true`; `created_by` e `updated_by` uuid null; timestamps não nulos com `now()`.
-• `taxon_id` nulo representa Universal; valor não nulo referencia `business_taxons(id)` com ON UPDATE CASCADE e ON DELETE RESTRICT. `created_by` e `updated_by` referenciam `auth.users(id)` com ON UPDATE CASCADE e ON DELETE SET NULL.
+• `taxon_id` nulo representa Universal; valores não nulos permanecem como dados históricos sem FK para `business_taxons`, removida pela migration E22.7. `created_by` e `updated_by` continuam referenciando `auth.users(id)` com ON UPDATE CASCADE e ON DELETE SET NULL.
 
 1.35.2 Contrato e carga inicial
 • `field_key` usa snake_case fechado. `definition` aceita somente finalidade, tipo, escopo, origem esperada, obrigação, condições opcionais e validação coerente; objetos, enums, listas, ranges e operadores são validados com equivalência ao schema Zod do domínio.
-• `public.e20_8_factual_field_definition_is_valid(jsonb)` é função IMMUTABLE, search_path vazio e acesso externo restrito ao `service_role`; a constraint estrita a usa e cinco constraints auxiliares mantêm fingerprint canônico do predicado.
+• `public.e20_8_factual_field_definition_is_valid(jsonb)` permanece IMMUTABLE e com search_path vazio; a migration E22.7 revogou EXECUTE para `public`, `anon`, `authenticated`, `service_role` e `ai_readonly`. A constraint estrita ainda a usa e cinco constraints auxiliares mantêm o fingerprint canônico do predicado.
 • A carga inicial aborta se as identidades `imobiliario` e `corretor-imoveis` divergirem e cria exatamente 25 rows ativas: 16 Universal, quatro Segmento, cinco Nicho e zero Ultranicho. `created_by` e `updated_by` nulos são permitidos em bootstrap ou migration de catálogo controlada, sem atribuir autoria humana fictícia.
 • Índices: `(taxon_id, field_key)`, `created_by` parcial não nulo e `updated_by` parcial não nulo. O trigger `taxon_factual_fields_set_updated_at` executa `public.tg_set_updated_at()` antes de UPDATE.
 
 1.35.3 Segurança, retirada e artefatos
-• RLS habilitado e nenhuma policy. public, anon, authenticated e ai_readonly não possuem grants; service_role possui somente SELECT, INSERT e UPDATE, sem DELETE ou TRUNCATE.
+• RLS habilitado e nenhuma policy. `public`, `anon`, `authenticated`, `service_role` e `ai_readonly` não possuem grants de SELECT, INSERT ou UPDATE na tabela ou em suas colunas.
 • A tabela não participa do Trigger Hub nem possui trilha de auditoria própria. A retirada E22.7 preserva suas linhas físicas, sem consumidor runtime no REF.
 • A mesma migration remove `landing_page_input_catalog_drafts`, `business_taxons.reviewed_input_catalog_version` e as unidades mutáveis de `landing_page_dynamic_market_research`, preservando revisões, ativações e custos históricos.
 • Migration forward-only: `supabase/migrations/20260914132000_e20_8_factual_fields_greenfield.sql`; teste transacional: `supabase/tests/e20_8_factual_fields_greenfield.test.sql`; verificador read-only: `supabase/snippets/e20_8_factual_fields_verify.sql`.
-• Estado hospedado: apply, snippet e Security Controls permanecem gates pós-merge do cutover supervisionado; este contrato descreve o estado produzido pela migration, sem afirmar aplicação antecipada.
-• Delta E22.7 versionado, sem apply hospedado até esta referência: `supabase/migrations/20261001030000_e22_7_retire_factual_authority.sql` preserva as linhas de `taxon_factual_fields`, revisões e ativações históricas; remove a FK factual, revoga os grants da tabela e o EXECUTE da função `public.e20_8_factual_field_definition_is_valid(jsonb)`, revoga UPDATE de `selected_end_customer_research_version`, retira as duas unidades mutáveis de `taxon_input_catalog_sufficiency_evaluation` somente sem revisão pendente e restringe os CHECKs de workload/modalidade. A prova integral ocorreu em PostgreSQL 17 isolado; o apply remoto não ocorreu.
+• Apply E22.7 concluído: `supabase/migrations/20261001030000_e22_7_retire_factual_authority.sql` foi aplicada após o merge da PR #994; o ledger hospedado avançou de 59 para 60. A validação read-only confirmou a preservação dos dados factuais, revisões e ativações históricas e os efeitos de retirada registrados nesta seção.
 
 1.36 openai_lp_cost_events
 1.36.1 Função e identidade

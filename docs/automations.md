@@ -1,6 +1,6 @@
 0.1 Cabeçalho
 Data: 01/10/2026
-Versão: v1.36
+Versão: v1.37
 Status: Alinhado ao catálogo operacional vigente; Pending Setup E10.9 integrado ao workload de nicho
 
 0.2 Função do documento
@@ -203,7 +203,7 @@ Objetivo:
 Aplicar migrations versionadas do Supabase após merge e autorização, sem usar o SQL Editor para alterações de schema. O apply automático integral está suspenso durante o backlog E10.10.
 
 Status:
-Implementada; o apply seletivo E10.11 foi concluído sob autorização própria. O escopo seletivo `e22_7_only` está versionado no REF E22.7 e aguarda merge e decisão operacional própria; nenhum apply E22.7 foi executado. As duas migrations E10.10 permanecem excluídas e não serão aplicadas pelo escopo E22.7; o fluxo automático integral permanece suspenso.
+Implementada; os applies seletivos E10.11 e E22.7 foram concluídos sob autorizações próprias. O escopo `e22_7_only` aplicou com sucesso somente a migration `20261001030000_e22_7_retire_factual_authority.sql` após o merge. As duas migrations E10.10 permanecem excluídas e não serão aplicadas pelo escopo E22.7; o fluxo automático integral permanece suspenso.
 
 Acesso:
 GitHub → Actions → workflow `pipeline-supabase-apply-migrations`

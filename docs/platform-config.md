@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Documento: LP Factory 10 — Platform Config
-• Versão: v0.1.55
+• Versão: v0.1.56
 • Data: 01/10/2026
 
 0.2 Contrato do documento
@@ -64,7 +64,7 @@
 • Motivo do pin por SHA: reprodutibilidade e proteção contra alteração futura da referência móvel `@v2`.
 • Gate: `SUPABASE_APPLY_MIGRATIONS_ENABLED = false` bloqueia instalação da CLI, link e push. O fluxo automático integral permanece suspenso durante o backlog E10.10, mesmo com o gate aberto.
 • Os applies seletivos E25.1 e E10.11 foram concluídos sob autorizações próprias; o escopo `e10_11_only` aplicou somente uma vez a migration E10.11 após merge na `main` com SHA exato e dry-run seletivo, mantendo as duas migrations E10.10 excluídas e restaurando o gate a `false`.
-• Escopo seletivo E22.7 `e22_7_only` versionado no REF `b2f4f6441b3385673f16aa3ed0857317ab0956db`: exige SHA exato da `main`, inventário de 62 migrations, exclui as duas migrations E10.10 e preserva o gate fechado e o dry-run. O escopo ainda não está disponível na `main` e nenhum apply E22.7 foi executado.
+• Escopo seletivo E22.7 `e22_7_only` mergeado e aplicado com sucesso na `main` no SHA `362842f41fc9ee1c11315565d7647b1c61b51058`; exige SHA exato, inventário de 62 migrations, exclui as duas migrations E10.10 e preserva o gate fechado e o dry-run. Somente `supabase/migrations/20261001030000_e22_7_retire_factual_authority.sql` foi aplicada; o ledger avançou de 59 para 60 e `SUPABASE_APPLY_MIGRATIONS_ENABLED` foi restaurado a `false`.
 • Novas migrations seguem PR e merge autorizados conforme `AGENTS.md`; `workflow_dispatch` permanece excepcional e cada apply exige decisão operacional própria. O fluxo automático integral segue suspenso até resolução separada de E10.10 ou revisão explícita do filtro canônico.
 • Regra: não usar SQL Editor para alterações de schema no fluxo normal.
 • Regra: migration aplicada não pode ser editada, apagada, renomeada ou substituída; correções e reversões exigem nova migration.
@@ -145,9 +145,9 @@
 • Estado operacional: PR #656 mergeado, redeploy de Production concluído e smoke final aprovado em 30/07/2026.
 
 • `E20_5_SELECTED_RESEARCH_ENABLED`
-• Finalidade histórica: gate da seleção e consumo da pesquisa `end_customer` por taxon, retirados do runtime E20 pela E22.7.
-• Estado na referência pré-merge: sem consumidor no runtime versionado. O relatório confirma três nomes de gates E20 e sete entradas Vercel ainda presentes; IDs e escopos precisam ser reconfirmados antes da retirada autorizada após o cutover.
-• Regra operacional: não reativar nem criar consumidor; retirar a configuração somente após o cutover autorizado e a reconfirmação de IDs e escopos, sem registrar valores.
+• Finalidade histórica: gate da seleção e consumo da pesquisa `end_customer` por taxon, retirado do runtime E20 pela E22.7.
+• Estado pós-cutover: todas as entradas dessa variável foram removidas da Vercel Core após autorização humana; não há consumidor no runtime vigente.
+• Regra operacional: não recriar nem reutilizar a variável sem decisão operacional própria.
 
 • `E19_5_WORKSPACE_ENABLED`
 • Finalidade histórica: gate server-only do workspace operacional de landing pages retirado no SV-PR03.
@@ -249,13 +249,13 @@
 
 • `E20_6_5_INPUT_CATALOG_EVALUATION_PROVIDER_ENABLED`
 • Finalidade histórica: gate do provider consultivo E20.8.7, removido com o workload factual pela E22.7.
-• Estado na referência pré-merge: sem consumidor no runtime versionado; a entrada externa permanece entre as sete entradas dos três gates E20 descritas em `E20_5_SELECTED_RESEARCH_ENABLED`.
-• Regra operacional: reconfirmar IDs e escopos e retirar somente após o cutover autorizado; não reutilizar o gate para habilitar outro workload.
+• Estado pós-cutover: todas as entradas dessa variável foram removidas da Vercel Core após autorização humana; não há consumidor no runtime vigente.
+• Regra operacional: não recriar nem reutilizar a variável sem decisão operacional própria.
 
 • `E20_6_INPUT_CATALOG_REVIEW_ENABLED`
-• Finalidade histórica: gate de revisão do catálogo factual E20, sem consumidor no runtime versionado da E22.7.
-• Estado na referência pré-merge: a entrada externa permanece entre as sete entradas dos três gates E20 descritas em `E20_5_SELECTED_RESEARCH_ENABLED`; IDs e escopo precisam ser reconfirmados antes da retirada.
-• Regra operacional: retirar somente após o cutover autorizado; não reutilizar como gate de outro comportamento.
+• Finalidade histórica: gate de revisão do catálogo factual E20, sem consumidor no runtime vigente da E22.7.
+• Estado pós-cutover: todas as entradas dessa variável foram removidas da Vercel Core após autorização humana; não há consumidor no runtime vigente.
+• Regra operacional: não recriar nem reutilizar a variável para outro comportamento sem decisão operacional própria.
 
 • Configuração efetiva dos workloads OpenAI de produto
 • Fonte canônica: `lib/openai-workloads/registry.ts` mantém identidade, baseline local e allowlist; Development usa `repo_catalog` revisão `v2`, e Preview/Production usam exclusivamente `supabase_operational` com revisão decimal ativa.
@@ -263,7 +263,7 @@
 • Workload retirado: `landing_page_dynamic_market_research` não integra registry, allowlist, configuração administrativa ou transporte corrente. Após o apply E20.8, suas unidades mutáveis deixam o agregado; revisões, ativações e custos históricos permanecem inertes e não autorizam novo consumo.
 • Validação operacional: `niche_resolution` e `commercial_activation_draft_generation` foram executados uma única vez em Production em 10/08/2026; os Runtime Logs confirmaram sucesso e telemetria sanitizada, sem prompt, resposta integral, credencial ou dado pessoal.
 • Estado dos workloads antigos: quatro unidades hospedadas dos workloads de draft permanecem como história física; as duas unidades mutáveis da E20.7 foram removidas após o apply E20.8.
-• Workload factual retirado pela E22.7: as duas unidades de configuração de `taxon_input_catalog_sufficiency_evaluation` permanecem no Supabase até o apply autorizado da migration E22.7; não há consumidor na allowlist runtime do REF. Revisões e ativações permanecem históricas.
+• Workload factual retirado pela E22.7: as duas unidades Preview/Production de `taxon_input_catalog_sufficiency_evaluation` foram removidas no apply autorizado; não há consumidor na allowlist runtime. Revisões e ativações permanecem históricas e inertes.
 • Validação do cutover E21.2: Preview e Production permanecem em `supabase_operational`; registros históricos fora da allowlist vigente não alteram a cardinalidade nem invalidam a leitura corrente.
 • Duração da Function: o segmento produtivo permanece configurado com `maxDuration = 300`; deployment READY e duas execuções integradas completas sem timeout incompatível corroboraram operacionalmente o gate.
 • Variáveis legadas de modelo na Vercel
@@ -284,12 +284,13 @@
 • Inspeção metadata-only confirmada em 07/09/2026 no projeto `lp-factory-10`: das 51 entradas inicialmente inventariadas por combinação de nome, ambiente e branch scope, seis ocorrências sem consumidor foram removidas e 45 permanecem ativas; nenhum valor foi lido, recuperado, copiado, reinserido ou substituído.
 • Regra: `Secret` é reservado a credenciais, tokens, senhas, chaves privadas e material de assinatura ou autenticação; `Config` é usado para URLs, chaves publishable, flags, gates, IDs e demais configurações não sensíveis, inclusive server-side. Toda variável `NEXT_PUBLIC_*` deve permanecer `Config`.
 • Classificações conformes de credenciais: `INVITE_STATE_SECRET`, `SUPABASE_SECRET_KEY`, `OPENAI_API_KEY`, `OPENAI_ADMIN_KEY`, `STRIPE_SECRET_KEY` e `STRIPE_WEBHOOK_SECRET` estão como `Secret` nos ambientes cadastrados.
-• Classificações conformes de configuração: `ACCESS_CONTEXT_ENFORCED`, `ACCESS_CTX_USE_V2`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` e `OPENAI_LP_COST_TRACKING_ENABLED` estão como `Config`; `E11_MEMBERS_ENABLED`, `E20_5_SELECTED_RESEARCH_ENABLED`, `E20_6_5_INPUT_CATALOG_EVALUATION_PROVIDER_ENABLED` e `OPENAI_OPERATIONAL_CONFIG_ENABLED` possuem ao menos uma entrada geral conforme e outras divergências listadas abaixo.
-• Estado conservador aprovado: 22 configurações permanecem sobreclassificadas como `Secret` — `E11_MEMBERS_ENABLED` no branch scope legado, duas entradas Preview de `E20_5_SELECTED_RESEARCH_ENABLED`, `E20_6_5_INPUT_CATALOG_EVALUATION_PROVIDER_ENABLED` em Preview, `E20_6_INPUT_CATALOG_REVIEW_ENABLED`, `OPENAI_OPERATIONAL_CONFIG_ENABLED` em Preview e os 16 nomes `STRIPE_TEST_*_PRODUCT_ID`/`STRIPE_TEST_*_PRICE_ID`. A Vercel mantém secrets salvos como write-only; não houve substituição ou reinserção de valor.
-• Branch scopes preservados por decisão funcional: `codex-app/e11-11-1-7`, `codex-app/e20-5-pos-merge`, `codex-app/e20-6-5-post-apply-corrections` e `codex-app/e11-2-orquestracao`; os dois primeiros grupos se sobrepõem a duas das 22 sobreclassificações. Não há impacto material comprovado no runtime.
+• Classificações conformes de configuração: `ACCESS_CONTEXT_ENFORCED`, `ACCESS_CTX_USE_V2`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` e `OPENAI_LP_COST_TRACKING_ENABLED` estão como `Config`; `E11_MEMBERS_ENABLED` e `OPENAI_OPERATIONAL_CONFIG_ENABLED` possuem ao menos uma entrada geral conforme e outras divergências listadas abaixo.
+• Estado conservador aprovado: 18 configurações permanecem sobreclassificadas como `Secret` — `E11_MEMBERS_ENABLED` no branch scope legado, `OPENAI_OPERATIONAL_CONFIG_ENABLED` em Preview e os 16 nomes `STRIPE_TEST_*_PRODUCT_ID`/`STRIPE_TEST_*_PRICE_ID`. A Vercel mantém secrets salvos como write-only; não houve substituição ou reinserção de valor.
+• Branch scopes preservados por decisão funcional: `codex-app/e11-11-1-7`, `codex-app/e20-5-pos-merge`, `codex-app/e20-6-5-post-apply-corrections` e `codex-app/e11-2-orquestracao`; as entradas scoped dos gates E20 foram retiradas, sem alterar as configurações independentes preservadas. Não há impacto material comprovado no runtime.
 • Remoções concluídas: duas ocorrências de `E19_5_WORKSPACE_ENABLED` e uma ocorrência de cada nome `MCP_SUPABASE_INSPECT_URL`, `LPF_MCP_SECRET`, `SUPABASE_DB_URL_READONLY` e `E7_ONBOARD_SERVICE_ONLY` foram removidas somente da Vercel Core. O secret GitHub homônimo `SUPABASE_DB_URL_READONLY` e seu consumidor permanecem preservados.
-• Estado da reconciliação: 21 entradas conformes e 24 entradas únicas preservadas por decisão funcional conservadora, totalizando 45 ativas. Não há reclassificação nem remoção de branch scope pendente neste recorte; nova correção exige risco ou impacto funcional material comprovado e decisão própria.
-• Validação operacional: o Preview gerado após as remoções ficou `READY`, e o smoke proporcional confirmou HTTP 200 na rota de login. Nenhum redeploy de Production foi executado.
+• Estado da reconciliação: após a remoção das sete entradas dos gates E20, 38 configurações permanecem ativas. Não houve reclassificação nem outras remoções neste recorte; nova correção exige risco ou impacto funcional material comprovado e decisão própria.
+• Registro histórico da E23.2 (07/09/2026): o Preview gerado após as remoções ficou `READY` e o smoke proporcional confirmou HTTP 200 na rota de login; Production não foi redeployada naquele recorte.
+• Estado pós-E22.7: Production `dpl_33SZh5rQtLd65323GXrBBHSyr68N` ficou `READY` após redeploy de `main` no SHA `362842f41fc9ee1c11315565d7647b1c61b51058`; Preview `dpl_D3hNnNi7LRUiYFXxXZVGXtQGHFWK` ficou `READY` após redeploy do branch `codex-app/e22-7-retirada-terminal` no SHA `5591b593277eb8a143917f79a5c88fabfc9e0723`. QA autenticado pós-apply/redeploy concluído com sucesso.
 
 4. Supabase
 
