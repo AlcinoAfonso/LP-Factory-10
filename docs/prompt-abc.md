@@ -39,6 +39,7 @@ Gerar um ABC humano, curto, delta-only e executável.
 4. Comparar com o documento atual aplicando a Regra de reconciliação.
 5. Aplicar o gate específico do DOC_ALVO antes de emitir qualquer operação.
 6. Emitir somente o menor delta necessário.
+7. Em `ETAPA: consolidação final` de trabalho já validado, tratar o RELATÓRIO como limite do fechamento factual: corrigir somente conteúdo que tenha ficado contraditório ou defasado pelo estado final e metadados exigidos pela fonte estrutural do DOC_ALVO. Não usar o fechamento para melhorar redação, reorganizar conteúdo correto, atualizar observações não materiais ou consolidar histórico sem relação direta com o recorte.
 
 ## 5. Residência documental
 
