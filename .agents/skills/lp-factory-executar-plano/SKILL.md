@@ -161,7 +161,7 @@ Determine estágio pelo Git, PR e trailers `plan-v2`, `plan-v2-approved` e `LP-F
 
 Quando houver parecer de Updates, reutilize-o apenas para mesmo blob da V1, `source_repository_sha` e referências excepcionais; na derivação estrutural, use o mesmo parecer quando aplicável; confronto de modernização baseado em update exige o mesmo update, alternativa e V1. Não repita especialista por precaução; fato material novo limita a nova avaliação ao ponto necessário.
 
-Mantenha rastreabilidade/matriz existente durante avaliação externa até conclusão definitiva pelo supervisor; limpeza posterior preserva resumo e histórico e não exige nova especialidade. Atualize o PR ao checkpoint publicado com arquivos, validações, QA, pareceres pertinentes, ABC por documento e pendências. Correções pós-entrega ficam na mesma sessão/branch/PR, como delta focal; não reinicie preparação ou avaliações sem impacto demonstrado. Depois da entrega completa, correções seguem os gates competentes, sem Analista por rotina.
+Mantenha rastreabilidade/matriz existente durante avaliação externa até conclusão definitiva pelo supervisor; limpeza posterior preserva resumo e histórico e não exige nova especialidade. Atualize o PR ao checkpoint publicado com arquivos, validações, QA, pareceres pertinentes, resultado documental por documento — ABC quando acionado ou correção factual direta registrada — e pendências. Correções pós-entrega ficam na mesma sessão/branch/PR, como delta focal; não reinicie preparação ou avaliações sem impacto demonstrado. Depois da entrega completa, correções seguem os gates competentes, sem Analista por rotina.
 
 ## 8. Gate de aderência
 
@@ -175,7 +175,7 @@ Na entrega técnica ao supervisor, informe:
 - referências imutáveis da V1 e V2 vigente, skills acionadas por necessidade concreta, checkpoints e rastreabilidade/matriz quando aplicáveis;
 - fases e arquivos alterados;
 - validações, observabilidade e QA com evidências;
-- documentação canônica avaliada e resultado do ABC;
+- documentação canônica avaliada e resultado documental correspondente — ABC ou correção factual direta permitida;
 - riscos, limitações, fallbacks e bloqueios;
 - estado final e decisão ainda exigida do supervisor, quando houver.
 
