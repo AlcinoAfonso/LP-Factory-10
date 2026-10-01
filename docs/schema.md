@@ -1078,7 +1078,6 @@
 • A tabela não participa do Trigger Hub nem possui trilha de auditoria própria. A retirada E22.7 preserva suas linhas físicas, sem consumidor runtime no REF.
 • A mesma migration remove `landing_page_input_catalog_drafts`, `business_taxons.reviewed_input_catalog_version` e as unidades mutáveis de `landing_page_dynamic_market_research`, preservando revisões, ativações e custos históricos.
 • Migration forward-only: `supabase/migrations/20260914132000_e20_8_factual_fields_greenfield.sql`; teste transacional: `supabase/tests/e20_8_factual_fields_greenfield.test.sql`; verificador read-only: `supabase/snippets/e20_8_factual_fields_verify.sql`.
-• Estado hospedado: apply, snippet e Security Controls permanecem gates pós-merge do cutover supervisionado; este contrato descreve o estado produzido pela migration, sem afirmar aplicação antecipada.
 • Apply E22.7 concluído: `supabase/migrations/20261001030000_e22_7_retire_factual_authority.sql` foi aplicada após o merge da PR #994; o ledger hospedado avançou de 59 para 60. A validação read-only confirmou a preservação dos dados factuais, revisões e ativações históricas e os efeitos de retirada registrados nesta seção.
 
 1.36 openai_lp_cost_events

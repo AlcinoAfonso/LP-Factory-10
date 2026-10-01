@@ -45,7 +45,7 @@
 |---|---|---|---|---|
 | `OAI-W01` | `niche_resolution` | `gpt-5.4-mini + none` | operacional | `lib/openai-workloads/registry.ts` e `docs/platform-config.md` |
 | `OAI-W02` | `commercial_activation_draft_generation` | `gpt-5.4-mini + none` | operacional | `lib/openai-workloads/registry.ts` e `docs/platform-config.md` |
-| `OAI-W03` | `taxon_input_catalog_sufficiency_evaluation` | `gpt-5.6-terra + low` | operacional | `lib/openai-workloads/registry.ts`, E20.8.7 e `docs/platform-config.md` |
+| `OAI-W03` | `taxon_input_catalog_sufficiency_evaluation` | histórico: `gpt-5.6-terra + low` (retirado pela E22.7) | histórica | E20.8.7 (histórico), `docs/platform-config.md` e `docs/roadmap.md` 22.7.4 |
 | `OAI-W04` | `supabase_inspect` | `gpt-4.1-mini + not_applicable` | referência operacional externa | `lib/openai-workloads/registry.ts`, `docs/automations.md` e `docs/platform-config.md` |
 | `OAI-W05` | `landing_page_dynamic_market_research` | configuração encerrada pela E20.8 | histórica | commits e migrations da E20.7 |
 | `OAI-W06` | `communication_base_stage1_assistance` | `gpt-5.4-mini + none` operacional em Preview e Production sob E21/E25.1 | operacional | `lib/openai-workloads/registry.ts`, `docs/platform-config.md`, `docs/roadmap.md` 25.1.4 e `docs/schema.md` 1.28.4 |
@@ -70,7 +70,7 @@
 |---|---|---|---:|---:|---|---|---|
 | `OAI-M01` | `gpt-5.4-mini` | baseline dos workloads `OAI-W01` e `OAI-W02` | 400k | 128k | `none`, `low`, `medium`, `high`, `xhigh` | operacional | documentação específica do modelo |
 | `OAI-M02` | `gpt-5.6-luna` | tarefas de alto volume que justifiquem comparação própria | 1,05M | 128k | `none`, `low`, `medium`, `high`, `xhigh`, `max` | documentada | documentação específica do modelo |
-| `OAI-M03` | `gpt-5.6-terra` | equilíbrio de capacidade para casos que justifiquem comparação própria | 1,05M | 128k | `none`, `low`, `medium`, `high`, `xhigh`, `max` | operacional em `OAI-W03` | documentação específica do modelo |
+| `OAI-M03` | `gpt-5.6-terra` | equilíbrio de capacidade para casos que justifiquem comparação própria | 1,05M | 128k | `none`, `low`, `medium`, `high`, `xhigh`, `max` | documentada | documentação específica do modelo |
 | `OAI-M04` | `gpt-5.6-sol` | trabalho profissional complexo que justifique comparação própria | 1,05M | 128k | `none`, `low`, `medium`, `high`, `xhigh`, `max` | documentada | documentação específica do modelo |
 | `OAI-M05` | `gpt-4.1-mini` | referência externa do workflow `OAI-W04`; não é baseline de produto | 1.047.576 | 32.768 | não aplicável; modelo sem etapa de reasoning | referência operacional externa | documentação específica do modelo e `lib/openai-workloads/registry.ts` |
 | `OAI-M06` | `gpt-6-luna` | configuração operacional de `OAI-W07` em Preview e Production | 1,05M | 128k | `none`, `low`, `medium`, `high`, `xhigh`, `max` | operacional em `OAI-W07` | documentação específica do modelo, registry e fontes operacionais do projeto |
@@ -90,7 +90,7 @@
 
 - Natureza: API de execução textual e multimodal usada como base programática preferencial do projeto.
 - Aplicabilidade: workloads server-side com contrato e guardrails definidos pelo recorte.
-- Maturidade: operacional em `OAI-W01`, `OAI-W02`, `OAI-W03`, `OAI-W06` e `OAI-W07`.
+- Maturidade: operacional em `OAI-W01`, `OAI-W02`, `OAI-W06` e `OAI-W07`.
 - Limite: não substitui regras de negócio determinísticas, autorização ou persistência verificável.
 - Fontes: Model guidance, catálogo Models e contratos vigentes do projeto.
 
@@ -114,7 +114,7 @@
 
 - Natureza: tool hospedada de pesquisa web.
 - Aplicabilidade: fallback ou hipótese focal autorizada quando fonte externa atual é indispensável.
-- Maturidade: operacional de forma delimitada em `OAI-W03` e `OAI-W07` em Preview e Production, sob os controles E21/E25.1.
+- Maturidade: operacional de forma delimitada em `OAI-W07` em Preview e Production, sob os controles E21/E25.1.
 - Limite: não substitui fonte competente, não amplia escopo e deve preservar URLs comprovadas pela metadata do provider.
 - Fonte: guia oficial Web search.
 
@@ -212,7 +212,7 @@
 |---|---|---|---|
 | resolvedor IA de nicho | `gpt-5.4-mini + none` | `OAI-M02`, `OAI-M03` e `OAI-M04`, com effort focal | não comparado nesta fotografia |
 | ativação comercial | `gpt-5.4-mini + none` | `OAI-M02`, `OAI-M03` e `OAI-M04`, com effort focal | não comparado nesta fotografia |
-| suficiência factual do catálogo por taxon | `gpt-5.6-terra + low` | modelos e efforts que o recorte competente justificar | configuração própria da E20.8.7/E21.2 |
+| suficiência factual do catálogo por taxon (`OAI-W03`) | histórico: `gpt-5.6-terra + low` | — | workload retirado pela E22.7; sem aplicabilidade operacional corrente |
 | Base de Comunicação, Etapa 1 | `gpt-5.4-mini + none` ativo em Preview e Production | sem candidato comparado nesta fotografia | operacional após E21/E25.1 |
 | Base de Comunicação, Etapa 2 | `gpt-6-luna + max` ativo em Preview e Production | `gpt-6-sol + medium` comparado focalmente | comparação concluída; `gpt-6-luna + max` operacional após E21/E25.1 |
 
