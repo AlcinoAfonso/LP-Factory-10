@@ -2164,7 +2164,7 @@
 
 21.1.1 Objetivo e status
 - Objetivo: centralizar identidades, modalidades, baselines locais, resolução e telemetria segura dos workloads OpenAI, mantendo prompts, schemas e regras funcionais nos domínios consumidores.
-- Status: implementada e vigente. O catálogo estrutural contém três workloads textuais de produto mais a referência operacional read-only do Supabase Inspect; não há workload de imagem ativo.
+- Status: implementada e vigente. O catálogo estrutural contém quatro workloads textuais de produto mais a referência operacional read-only do Supabase Inspect; não há workload de imagem ativo.
 
 21.1.2 Registros do recorte
 - Repositório:
@@ -2209,8 +2209,8 @@
 - Variáveis legadas de seleção de modelo não são consumidas pelos workloads ativos.
 
 21.1.5 Inventário administrativo
-- A rota protegida `/admin/workloads-openai` projeta os quatro itens vigentes do registry para `platform_admin`.
-- Os três workloads de produto exibem modalidade, configuração, origem, revisão, consumidor e fallback; o Supabase Inspect permanece diferenciado como referência não verificada nessa superfície.
+- A rota protegida `/admin/workloads-openai` projeta os cinco itens vigentes do registry para `platform_admin`.
+- Os quatro workloads de produto exibem modalidade, configuração, origem, revisão, consumidor e fallback; o Supabase Inspect permanece diferenciado como referência não verificada nessa superfície.
 - A leitura não consulta OpenAI, GitHub ou Vercel em runtime e não expõe secrets, prompts, respostas ou payloads funcionais.
 - O inventário é a entrada para a gestão operacional da E21.2, sem duplicar registry ou resolver no Admin.
 
@@ -2218,7 +2218,7 @@
 
 21.2.1 Objetivo e status
 - Objetivo: administrar configuração por `ambiente + workload` com candidata, prova, promoção, ativação e rollback humano, permitindo mudanças ordinárias em Preview e Production sem novo deploy de código.
-- Status: implementada e ativa. Preview e Production usam `supabase_operational`; Development permanece em `repo_catalog`. Após o apply E20.8, a leitura corrente seleciona por allowlist seis unidades vigentes — três workloads de produto em cada ambiente —, ignora quatro unidades antigas de drafts e não mantém unidade mutável da E20.7.
+- Status: implementada e ativa. Preview e Production usam `supabase_operational`; Development permanece em `repo_catalog`. Após o apply E22.7, a leitura corrente seleciona por allowlist oito unidades vigentes — quatro workloads de produto em cada ambiente —, ignora quatro unidades antigas de drafts e não mantém unidades mutáveis da E20.7 nem do workload factual retirado pela E22.7.
 
 21.2.2 Registros do recorte
 - Banco:
