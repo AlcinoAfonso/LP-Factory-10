@@ -1,6 +1,6 @@
 ---
 name: lp-factory-avaliar-plano-estrutura
-description: Avaliar estruturalmente um plano-base do LP Factory 10 por meio do custom agent gestor-estrutural, incluindo confronto focal de modernização material proposta pelo Gestor de Updates. Quando acionada, a derivação inicial recebe Updates e incorpora os confrontos pertinentes na mesma chamada. Usar quando o humano ou orquestrador pedir derivação técnica, revisão estrutural ou confronto de modernização.
+description: Avaliar estruturalmente um plano-base do LP Factory 10 por meio do custom agent gestor-estrutural, incluindo confronto focal de modernização material proposta pelo Gestor de Updates quando houver parecer pertinente. Na derivação inicial, incorpora os confrontos aplicáveis quando Updates tiver sido acionado pelo Executor. Usar quando o humano ou orquestrador pedir derivação técnica, revisão estrutural ou confronto de modernização.
 ---
 
 # Avaliar estrutura do plano-base
@@ -11,20 +11,20 @@ Delegar uma avaliação read-only ao custom agent `gestor-estrutural` e devolver
 
 1. Confirmar o repositório, a worktree, a branch e o estado Git atual.
 2. Determinar o modo:
-   - `derivacao_inicial`: padrão para avaliar a v1 completa e produzir a solução técnica mínima; recebe também o parecer integral de Updates quando pertinente ao ponto estrutural e incorpora, na mesma chamada, os confrontos exigidos pelos candidatos de impacto estrutural material;
+   - `derivacao_inicial`: padrão para avaliar a v1 completa e produzir a solução técnica mínima; recebe o parecer integral de Updates quando o Executor o tiver acionado e incorpora, na mesma chamada, os confrontos exigidos pelos candidatos de impacto estrutural material;
    - `confronto_modernizacao`: somente quando o orquestrador fornecer um update com impacto estrutural material, a solução técnica de referência e o parecer estrutural inicial;
    - `revisao_focal_implementacao`: retorno do workflow com evidência material da implementação sobre a v2 aprovada.
 3. Em `derivacao_inicial`, resolver a fonte informada sem inferir outro caso:
    - PR: confirmar número, URL, base, head, head SHA e estado; selecionar automaticamente apenas quando houver exatamente um `docs/lousa-plano-base-*.md`; obter seu conteúdo integral pelo head SHA;
    - path local: confirmar existência e coerência entre path, conteúdo e caso.
-4. Em `derivacao_inicial`, receber o parecer integral do Gestor de Updates já produzido sobre a mesma v1 quando pertinente ao ponto estrutural. Em `confronto_modernizacao`, exigir referência imutável da mesma v1, parecer estrutural inicial, recomendação integral do update candidato, alternativa sem update e alternativa com update. Não exigir nova seleção de plano quando essas referências já vierem do orquestrador. Em `revisao_focal_implementacao`, confirmar a identidade da execução recebida (task, repositório, worktree, branch, PR, head SHA, paths e caso), as referências imutáveis e conteúdos da mesma v1 e da v2 vigente, o ponto/subseção suspensa, a evidência factual, os checkpoints e as fontes pertinentes; correção tentada ou candidato são opcionais. Reutilizar a seleção existente.
-5. Parar e pedir somente o dado ausente se a seleção, o parecer de Updates exigido, o confronto ou a revisão focal continuar incompleto.
+4. Em `derivacao_inicial`, receber o parecer integral do Gestor de Updates já produzido sobre a mesma v1 quando o Executor o tiver acionado; se o Executor tiver registrado a dispensa permitida, seguir sem parecer de Updates. Em `confronto_modernizacao`, exigir referência imutável da mesma v1, parecer estrutural inicial, recomendação integral do update candidato, alternativa sem update e alternativa com update. Não exigir nova seleção de plano quando essas referências já vierem do orquestrador. Em `revisao_focal_implementacao`, confirmar a identidade da execução recebida (task, repositório, worktree, branch, PR, head SHA, paths e caso), as referências imutáveis e conteúdos da mesma v1 e da v2 vigente, o ponto/subseção suspensa, a evidência factual, os checkpoints e as fontes pertinentes; correção tentada ou candidato são opcionais. Reutilizar a seleção existente.
+5. Parar e pedir somente o dado ausente se a seleção, o parecer de Updates quando aplicável, o confronto ou a revisão focal continuar incompleto.
 6. Registrar o estado Git anterior à delegação.
 
 ## Delegar e devolver
 
 1. Iniciar exatamente um subagent `gestor-estrutural`.
-2. Em `derivacao_inicial`, entregar modo, worktree, branch, metadados da fonte, path, conteúdo integral, caso e pedido de avaliação do plano completo; entregar também o parecer integral pertinente do Gestor de Updates e exigir os confrontos estruturais aplicáveis na mesma resposta.
+2. Em `derivacao_inicial`, entregar modo, worktree, branch, metadados da fonte, path, conteúdo integral, caso e pedido de avaliação do plano completo; quando houver parecer de Updates, entregá-lo integralmente e exigir os confrontos estruturais aplicáveis na mesma resposta.
 3. Em `confronto_modernizacao`, entregar modo e somente o contexto necessário ao candidato: referências da v1, parecer estrutural inicial, recomendação do Gestor de Updates, solução sem update, solução com update e fontes competentes pertinentes. Não pedir nova avaliação completa. Em `revisao_focal_implementacao`, entregar modo e todos os metadados e artefatos confirmados na preparação, com a avaliação delimitada ao ponto afetado.
 4. Não repetir critérios estruturais no handoff: o contrato runtime está em `.codex/agents/gestor-estrutural.toml`.
 5. Aguardar o parecer sem realizar avaliação estrutural paralela.
