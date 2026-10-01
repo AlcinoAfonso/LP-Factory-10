@@ -137,3 +137,7 @@ EST-E22.7-09, revisão focal estrutural em 01/10/2026 07:32: candidata salva int
 Revisões factuais: 8, digest 70c7ab111ef6d820a9600662b2ae520b. Ativações factuais: 8, digest 4c8cce5bfbe24e1fa22857b6c473b20e. Permanecem intactas. Factual: 27 linhas, digest c6a03bdf03f5936217f5f18d540b2bf7. Ledger 59, E10.10 zero, E22.7 zero.
 
 Prova imediatamente anterior à retirada do código: resolução TypeScript de imports/exports/dynamic imports em 318 fontes; 37 arquivos exclusivos, 78 arestas internas, zero consumidores externos remanescentes. O core do RuntimeGate foi incluído pelo fecho direto comprovado. Busca integral nos consumidores correntes após desacoplamento encontrou zero leitura dos três gates, da tabela factual ou da coluna de seleção. Dados brutos, pesquisas estruturadas, migrations, snippets e testes históricos permaneceram preservados.
+
+## Fecho de leitura financeira observado no QA
+
+Em `00138329`, a consulta autenticada do filtro factual retornou `INVALID_FILTERS`: `lib/openai-costs/dashboard.ts` ainda validava somente IDs correntes. Destino antes da correção: preservar o consumidor financeiro, incluindo a união histórica existente no parser de filtros; não restabelecer execução/provider/configuração factual. `app/admin/(protected)/custos-openai/validation-cases.tsx` prova a ação real com ambos IDs históricos, total filtrado e total oficial global preservados; rejeição de ID desconhecido permanece.
