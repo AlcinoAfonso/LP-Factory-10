@@ -5,7 +5,7 @@ description: Gerar ABCs delta-only para documentos canônicos do LP Factory 10 a
 
 # LP Factory ABC v2
 
-Usar `docs/prompt-abc.md` como contrato canônico na referência competente. Carregá-lo integralmente quando o contrato ainda não estiver disponível no contexto da avaliação; em revisão focal na mesma referência, reutilizar o contrato já carregado. Não duplicar, substituir nem flexibilizar suas regras nesta skill.
+Usar `docs/prompt-abc.md` como contrato canônico e lê-lo integralmente antes de cada execução. Não duplicar, substituir nem flexibilizar suas regras nesta skill.
 
 ## Preparar
 
@@ -13,8 +13,8 @@ Usar `docs/prompt-abc.md` como contrato canônico na referência competente. Car
 2. Resolver `REF`; usar `main` quando não for informado.
 3. Confirmar `DOC_ALVO` ou executar a triagem prevista no contrato canônico.
 4. Confirmar o `RELATÓRIO`, que deve representar o estado final competente.
-5. No `DOC_ALVO`, localizar primeiro as ocorrências/seções relacionadas aos fatos e identificadores do `RELATÓRIO` e ler somente o contexto necessário; ampliar a leitura apenas pelos critérios do fluxo canônico de `docs/prompt-abc.md`.
-6. Para `docs/roadmap.md`, consultar também `docs/template-roadmap.md` na mesma referência somente no recorte estrutural aplicável; planejamento que exigir snapshot integral preserva a regra específica abaixo.
+5. Ler o `DOC_ALVO` na referência indicada e a fonte estrutural aplicável.
+6. Para `docs/roadmap.md`, ler também `docs/template-roadmap.md` na mesma referência.
 7. Parar e pedir somente a entrada ausente quando não for possível resolvê-la sem inferência.
 
 ## Selecionar o modo da fonte
