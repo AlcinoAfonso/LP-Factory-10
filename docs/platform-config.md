@@ -2,8 +2,8 @@
 
 0.1 Cabeçalho
 • Documento: LP Factory 10 — Platform Config
-• Versão: v0.1.54
-• Data: 30/09/2026
+• Versão: v0.1.55
+• Data: 01/10/2026
 
 0.2 Contrato do documento
 • O QUE É: snapshot operacional e fonte única das configurações de plataformas externas do LP Factory 10, refletindo o estado conhecido/cadastrado nas plataformas conforme indicado.
@@ -64,6 +64,7 @@
 • Motivo do pin por SHA: reprodutibilidade e proteção contra alteração futura da referência móvel `@v2`.
 • Gate: `SUPABASE_APPLY_MIGRATIONS_ENABLED = false` bloqueia instalação da CLI, link e push. O fluxo automático integral permanece suspenso durante o backlog E10.10, mesmo com o gate aberto.
 • Os applies seletivos E25.1 e E10.11 foram concluídos sob autorizações próprias; o escopo `e10_11_only` aplicou somente uma vez a migration E10.11 após merge na `main` com SHA exato e dry-run seletivo, mantendo as duas migrations E10.10 excluídas e restaurando o gate a `false`.
+• Escopo seletivo E22.7 `e22_7_only` versionado no REF `b2f4f6441b3385673f16aa3ed0857317ab0956db`: exige SHA exato da `main`, inventário de 62 migrations, exclui as duas migrations E10.10 e preserva o gate fechado e o dry-run. O escopo ainda não está disponível na `main` e nenhum apply E22.7 foi executado.
 • Novas migrations seguem PR e merge autorizados conforme `AGENTS.md`; `workflow_dispatch` permanece excepcional e cada apply exige decisão operacional própria. O fluxo automático integral segue suspenso até resolução separada de E10.10 ou revisão explícita do filtro canônico.
 • Regra: não usar SQL Editor para alterações de schema no fluxo normal.
 • Regra: migration aplicada não pode ser editada, apagada, renomeada ou substituída; correções e reversões exigem nova migration.
@@ -144,11 +145,9 @@
 • Estado operacional: PR #656 mergeado, redeploy de Production concluído e smoke final aprovado em 30/07/2026.
 
 • `E20_5_SELECTED_RESEARCH_ENABLED`
-• Finalidade: gate server-only e fail-closed da leitura, seleção administrativa e consumo da pesquisa integral `end_customer` selecionada por taxon.
-• Escopo: Preview e Production do projeto Core, com configuração independente por ambiente.
-• Estado atual: `true` em Production; a ativação gate-on foi validada em Preview e Production em 15/08/2026. Ausência ou valor diferente do literal `true` desabilita todo acesso à nova coluna e sua interface, sem fallback de banco.
-• Estado operacional: migration aplicada pelo workflow canônico, snippet SQL read-only aprovado, redeploy concluído e smokes autenticados gate-on aprovados em Preview e Production.
-• Regra operacional: validar primeiro em Preview autenticado; Production só pode ser habilitada após as evidências aplicáveis, sem registrar valor sensível ou branch override como estado canônico.
+• Finalidade histórica: gate da seleção e consumo da pesquisa `end_customer` por taxon, retirados do runtime E20 pela E22.7.
+• Estado na referência pré-merge: sem consumidor no runtime versionado. O relatório confirma três nomes de gates E20 e sete entradas Vercel ainda presentes; IDs e escopos precisam ser reconfirmados antes da retirada autorizada após o cutover.
+• Regra operacional: não reativar nem criar consumidor; retirar a configuração somente após o cutover autorizado e a reconfirmação de IDs e escopos, sem registrar valores.
 
 • `E19_5_WORKSPACE_ENABLED`
 • Finalidade histórica: gate server-only do workspace operacional de landing pages retirado no SV-PR03.
@@ -249,27 +248,22 @@
 • Classificação: Config, não Secret. Valor real por ambiente não versionar.
 
 • `E20_6_5_INPUT_CATALOG_EVALUATION_PROVIDER_ENABLED`
-• Finalidade: gate server-side e de UI exclusivo do provider consultivo da avaliação factual E20.8.7.
-• Escopo: Preview e Production do projeto Core, com configuração independente por ambiente.
-• Habilitação: somente o literal `true` autoriza a tentativa; ausente, vazio ou qualquer outro valor produz `ROLLOUT_GATE_OFF` e deixa somente a assistência indisponível. O caminho humano permanece ativo, sem handoff Codex ou registro legado.
-• Condição adicional hospedada: mesmo com este gate ligado, Preview e Production recusam `repo_catalog` e a revisão bootstrap `1`; exigem resolução efetiva `supabase_operational` de revisão `2` ou posterior, já promovida com prova operacional aprovada e ativada pelo lifecycle E21.2. `OPENAI_OPERATIONAL_CONFIG_ENABLED=false` nunca constitui provider-off. Falha dessa comprovação retorna `OPERATIONAL_CONFIGURATION_UNPROVEN` e bloqueia a tentativa do provider, sem escrita, fallback Codex ou rotulagem gate-off.
-• Estado operacional do gate: habilitado no Preview do rollout corrente, com redeploy e QA hospedado autenticado concluídos; o estado em Production não foi validado nem alterado neste recorte e permanece pendente de rollout controlado após merge autorizado.
-• Pré-condição operacional: `OPENAI_OPERATIONAL_CONFIG_ENABLED=true` já está ativo em Preview e Production e deve permanecer ativo durante todo o rollout da E20.8.7; este recorte apenas verifica essa condição e não volta a habilitar o gate da E21.2.
-• Progressão operacional: o Preview resolveu `supabase_operational` revisão `3` de `taxon_input_catalog_sufficiency_evaluation` e concluiu com sucesso uma avaliação provider-backed em Structured Output v2. Production preserva a revisão operacional `2` já ativa, mas o estado do gate, o redeploy e o QA do provider nesse ambiente não foram comprovados neste recorte.
-• Regra de credencial: reutilizar a `OPENAI_API_KEY` compartilhada já autorizada para o provider; não criar chave específica da avaliação factual.
+• Finalidade histórica: gate do provider consultivo E20.8.7, removido com o workload factual pela E22.7.
+• Estado na referência pré-merge: sem consumidor no runtime versionado; a entrada externa permanece entre as sete entradas dos três gates E20 descritas em `E20_5_SELECTED_RESEARCH_ENABLED`.
+• Regra operacional: reconfirmar IDs e escopos e retirar somente após o cutover autorizado; não reutilizar o gate para habilitar outro workload.
 
 • `E20_6_INPUT_CATALOG_REVIEW_ENABLED`
-• Estado hospedado confirmado em 14/09/2026: uma entrada classificada como `Secret`, com escopo Production e Preview, permanece no projeto Core; nenhum valor foi revelado.
-• Estado no candidato E20.8: resíduo de configuração sem consumidor no runtime novo; não autoriza revisão, versão, liberação ou qualquer comportamento corrente.
-• Regra operacional: preservar até o cutover supervisionado para não alterar o runtime anterior fora do PR; a retirada posterior exige confirmação de que o mesmo SHA E20.8 está implantado e não altera a autoridade factual.
+• Finalidade histórica: gate de revisão do catálogo factual E20, sem consumidor no runtime versionado da E22.7.
+• Estado na referência pré-merge: a entrada externa permanece entre as sete entradas dos três gates E20 descritas em `E20_5_SELECTED_RESEARCH_ENABLED`; IDs e escopo precisam ser reconfirmados antes da retirada.
+• Regra operacional: retirar somente após o cutover autorizado; não reutilizar como gate de outro comportamento.
 
 • Configuração efetiva dos workloads OpenAI de produto
 • Fonte canônica: `lib/openai-workloads/registry.ts` mantém identidade, baseline local e allowlist; Development usa `repo_catalog` revisão `v2`, e Preview/Production usam exclusivamente `supabase_operational` com revisão decimal ativa.
 • Workloads textuais validados operacionalmente: `niche_resolution` e `commercial_activation_draft_generation`, com modelo `gpt-5.4-mini` e esforço de raciocínio `none`.
-• Workload textual de avaliação factual: `taxon_input_catalog_sufficiency_evaluation`, com baseline repo-side `gpt-5.6-terra + low` e lifecycle hospedado próprio descrito acima.
 • Workload retirado: `landing_page_dynamic_market_research` não integra registry, allowlist, configuração administrativa ou transporte corrente. Após o apply E20.8, suas unidades mutáveis deixam o agregado; revisões, ativações e custos históricos permanecem inertes e não autorizam novo consumo.
 • Validação operacional: `niche_resolution` e `commercial_activation_draft_generation` foram executados uma única vez em Production em 10/08/2026; os Runtime Logs confirmaram sucesso e telemetria sanitizada, sem prompt, resposta integral, credencial ou dado pessoal.
-• Estado das unidades retiradas: quatro unidades hospedadas dos workloads antigos de draft permanecem como história física. Após o apply E20.8, a leitura corrente por allowlist administra somente seis registros dos três workloads de produto vigentes em Preview e Production; as duas unidades mutáveis da E20.7 são removidas.
+• Estado dos workloads antigos: quatro unidades hospedadas dos workloads de draft permanecem como história física; as duas unidades mutáveis da E20.7 foram removidas após o apply E20.8.
+• Workload factual retirado pela E22.7: as duas unidades de configuração de `taxon_input_catalog_sufficiency_evaluation` permanecem no Supabase até o apply autorizado da migration E22.7; não há consumidor na allowlist runtime do REF. Revisões e ativações permanecem históricas.
 • Validação do cutover E21.2: Preview e Production permanecem em `supabase_operational`; registros históricos fora da allowlist vigente não alteram a cardinalidade nem invalidam a leitura corrente.
 • Duração da Function: o segmento produtivo permanece configurado com `maxDuration = 300`; deployment READY e duas execuções integradas completas sem timeout incompatível corroboraram operacionalmente o gate.
 • Variáveis legadas de modelo na Vercel

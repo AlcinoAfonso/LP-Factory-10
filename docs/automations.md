@@ -1,6 +1,6 @@
 0.1 Cabeçalho
-Data: 30/09/2026
-Versão: v1.35
+Data: 01/10/2026
+Versão: v1.36
 Status: Alinhado ao catálogo operacional vigente; Pending Setup E10.9 integrado ao workload de nicho
 
 0.2 Função do documento
@@ -203,7 +203,7 @@ Objetivo:
 Aplicar migrations versionadas do Supabase após merge e autorização, sem usar o SQL Editor para alterações de schema. O apply automático integral está suspenso durante o backlog E10.10.
 
 Status:
-Implementada; o apply seletivo E10.11 foi concluído sob autorização própria. O fluxo automático integral permanece suspenso enquanto as migrations E10.10 seguem fora do apply.
+Implementada; o apply seletivo E10.11 foi concluído sob autorização própria. O escopo seletivo `e22_7_only` está versionado no REF E22.7 e aguarda merge e decisão operacional própria; nenhum apply E22.7 foi executado. As duas migrations E10.10 permanecem excluídas e não serão aplicadas pelo escopo E22.7; o fluxo automático integral permanece suspenso.
 
 Acesso:
 GitHub → Actions → workflow `pipeline-supabase-apply-migrations`
@@ -274,42 +274,17 @@ Adapter de geração: `lib/conversion-content/commercial-activation/draft-genera
 Snippet de validação: `supabase/snippets/e10_7_phase_2_draft_verify.sql`
 
 3.10 E20.8.7 — avaliação assistida da suficiência factual corrente por taxon
-
 Objetivo:
-Avaliar, por ação administrativa explícita, se os fields ativos correntes cobrem as necessidades factuais do taxon e produzir recomendação transitória para decisão humana.
+Manter a âncora histórica da automação retirada, referenciada pelo registro histórico E20.8.7 no roadmap.
 
 Status:
-Implementada no boundary E20.8 e validada deterministicamente no repositório; a disponibilidade hospedada continua condicionada ao gate e à configuração operacional registrados em `docs/platform-config.md`.
+Retirada no REF pré-merge da E22.7 em 01/10/2026; sem consumidor operacional corrente.
 
-Recurso utilizado:
-- Responses API com Structured Output estrito;
-- Web Search hospedado somente no fallback autorizado ou na hipótese focal;
-- configuração, telemetria e custos compartilhados da E21.
+Motivo:
+A avaliação factual assistida e o workload correspondente foram removidos do runtime pela E22.7.
 
-Natureza:
-- Automação com IA em fluxo controlado.
-
-Ambiente principal:
-- Admin do Core, com execução server-side.
-
-Participação humana:
-- `platform_admin` inicia a avaliação e decide, fora da resposta da IA, se editará algum field pelo CRUD factual. A liberação humana sem IA permanece independente do provider; em taxon ativo, a avaliação é voluntária.
-
-Como usar:
-- Executar a avaliação sistemática para o taxon ou informar uma única hipótese focal.
-- Com pesquisa E20.5 válida, a avaliação sistemática não consulta a web; ausência de seleção ou feature desabilitada autoriza fallback de uma ou duas buscas; hipótese focal executa exatamente uma busca.
-- Tratar `suficiente`, `gaps candidatos` ou `inconclusivo` como recomendação transitória; a resposta não cria handoff, draft, versão ou mutação automática.
-
-Resultado esperado:
-- Recomendação estruturada com contexto corrente e, quando houver busca, URLs HTTPS comprovadas pela metadata do provider, sem persistência do relatório da IA.
-
-Limites:
-- Não altera `taxon_factual_fields`, não ativa nem desativa taxon, não grava suficiência e não bloqueia a decisão humana; também não usa Codex, agente, Agents SDK, job, fila ou execução recorrente como fallback.
-
-Referências / dependências:
-Fluxo funcional: `docs/roadmap.md` — E20.8.7.
-Configuração do gate: `docs/platform-config.md` — seção 3.5.
-Contrato técnico: `docs/base-tecnica.md` — seção 3.15.7.
+Destino canônico:
+`docs/roadmap.md` — E22.7.4; `docs/platform-config.md` — seções 2.3 e 3.5.
 
 4. Aprendizados operacionais
 
