@@ -71,7 +71,7 @@ Use os wrappers competentes; não chame custom agents diretamente nem refaça se
 - `$lp-factory-avaliar-documentacao`: reconciliação de documento canônico, pelo ABC; o especialista prepara e o Executor aplica.
 - `$lp-factory-avaliar-plano-analista` ou `$lp-factory-avaliar-implementacao-analista`: risco material de regressão, mudança de contrato, segurança, autorização, dados, comportamento, conflito, evidência insuficiente ou outra necessidade de controle independente. Implementação simples não exige Analista.
 
-Necessidade descoberta durante implementação ou review aciona apenas a especialidade pertinente, no mesmo fluxo. Parecer incompleto, condicionante, investigação ou decisão sem autoridade suspendem somente o ponto afetado; não invente solução nem trate o parecer como aprovação de produto ou merge.
+Necessidade descoberta durante implementação ou review aciona apenas a especialidade pertinente, no mesmo fluxo. Após a entrega de uma especialidade, correção factual focal e inequívoca apontada por review é feita diretamente pelo Executor no mesmo PR; só retorne à especialidade se surgir questão material nova que exija novo julgamento dela. Parecer incompleto, condicionante, investigação ou decisão sem autoridade suspendem somente o ponto afetado; não invente solução nem trate o parecer como aprovação de produto ou merge.
 
 ### 3.3 Consolidar V2 e auditar quando necessário
 
@@ -99,7 +99,7 @@ Implemente somente a V2 vigente consolidada e liberada pelos gates aplicáveis.
 - execute as fases na ordem e pelos identificadores canônicos do roadmap, rejeitando aliases ordinais e agrupamento de fases independentes;
 - para prompt consumido por IA, use `$lp-factory-criar-prompt` como subfluxo somente leitura antes da edição e valide seus casos representativos;
 - em frontend/dashboard, consulte `docs/design-system.md`, valide aderência e evidência renderizada; solicite Design pelos critérios de 3.2;
-- para documento canônico, solicite o delta pela especialidade documental e aplique literalmente o ABC; não faça reconciliação direta.
+- para documento canônico, solicite o delta pela especialidade documental e aplique literalmente o ABC; após essa entrega, correção factual focal e inequívoca apontada por review segue a regra de 3.2, sem nova chamada documental.
 
 ## 5. Supabase e migrations
 
