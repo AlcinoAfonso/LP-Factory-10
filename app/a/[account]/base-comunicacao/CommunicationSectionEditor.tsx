@@ -22,6 +22,8 @@ import {
 
 import { Button } from "../../../../components/ui/button";
 import { Textarea } from "../../../../components/ui/textarea";
+import { FeedbackMessage } from "../../../../components/ui/feedback-message";
+import { LoadingState } from "../../../../components/ui/loading-state";
 import { FormField, FormFieldLabel, FormFieldHint, FormFieldError } from "../../../../components/ui/form-field";
 import { useCommunicationDraft, useCommunicationDraftGuard } from "./_components/CommunicationDraftGuard";
 import { CommunicationSectionNavigation } from "./_components/CommunicationBaseExperience";
@@ -72,9 +74,9 @@ export function StartCommunicationBaseForm({ account, candidate, candidateReadFa
           </label>
         </div>
       ) : candidateReadFailed ? (
-        <p role="alert" className="mt-4 text-sm text-state-error">
+        <FeedbackMessage tone="warning" className="mt-4">
           Não foi possível consultar a conversa anterior. Você pode iniciar sem importar.
-        </p>
+        </FeedbackMessage>
       ) : null}
       <div className="mt-4"><SubmitButton label="Iniciar minha Base" pendingLabel="Iniciando..." /></div>
       <ActionFeedback state={state} />
@@ -204,9 +206,9 @@ export function CommunicationSectionEditor(props: Readonly<{
           {definition.format === "faq" ? "Informe pergunta e resposta em cada linha e respeite os limites indicados." : "Revise a quantidade e o tamanho dos itens conforme os limites indicados."}
         </FormFieldError> : null}
         </FormField>
-        {saveLocked ? <p id={saveLockHintId} role="status" className="text-xs text-muted-foreground">
-          Salvando esta seção. Aguarde para continuar a edição.
-        </p> : null}
+        {saveLocked ? <div id={saveLockHintId}>
+          <LoadingState label="Salvando esta seção. Aguarde para continuar a edição." />
+        </div> : null}
         <div className="flex flex-wrap gap-2">
           <SubmitButton label="Salvar seção" pendingLabel="Salvando..." disabled={saveLocked || !draftState.dirty || !draftState.valid} />
           <Button variant="secondary" className="min-h-11" disabled={saveLocked || !draftState.dirty}
@@ -215,15 +217,14 @@ export function CommunicationSectionEditor(props: Readonly<{
         {!draftState.dirty || state.status === "error" ? <ActionFeedback state={state} /> : null}
       </form>
       {definition.stage === 1 ? (
-        <div className="mt-4 border-t border-border pt-4">
+        <details className="mt-4 border-t border-border pt-4">
+          <summary className="mb-3 min-h-11 cursor-pointer rounded-md px-2 py-3 text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-700">Assistência por IA para esta seção</summary>
           <p className="text-xs leading-5 text-muted-foreground">
             A IA trabalha apenas com o texto desta seção que você enviar. Confira a sugestão antes de usá-la; salvar continua sendo sua decisão.
           </p>
-          <button type="button" disabled={saveLocked || aiPending || !draft.trim()}
+          <Button type="button" variant="secondary" disabled={saveLocked || aiPending || !draft.trim()}
             onClick={() => startAiTransition(async () => {
               setAiMessage("");
-              setLocalSuggestion(null);
-              setMissingQuestion("");
               try {
                 const result = await assistCommunicationSectionAction({ account, key: definition.key, userText: draft, version });
                 if (result.ok) {
@@ -234,16 +235,18 @@ export function CommunicationSectionEditor(props: Readonly<{
                 setAiMessage("A assistência está indisponível agora. Continue a edição manual.");
               }
             })}
-            className="mt-3 inline-flex min-h-11 items-center justify-center rounded-lg border border-border px-5 py-2 text-sm font-semibold text-foreground disabled:cursor-not-allowed disabled:opacity-60">
+            className="mt-3 min-h-11 h-auto whitespace-normal">
             {aiPending ? "Preparando sugestão..." : "Ajudar com este texto usando IA"}
-          </button>
+          </Button>
+          {aiPending ? <LoadingState className="mt-2" label="Preparando uma sugestão para você revisar." /> : null}
           {missingQuestion ? <p className="mt-3 text-sm">Informação a confirmar: {missingQuestion}</p> : null}
           {localSuggestion !== null ? <Suggestion value={localSuggestion} format={definition.format}
             disabled={saveLocked} onUse={() => applySuggestion(localSuggestion)} /> : null}
-          {aiMessage ? <p role="alert" className="mt-2 text-sm text-state-error">{aiMessage}</p> : null}
-        </div>
+          {aiMessage ? <FeedbackMessage tone="error" className="mt-2">{aiMessage}</FeedbackMessage> : null}
+        </details>
       ) : (
-        <div className="mt-4 border-t border-border pt-4">
+        <details className="mt-4 border-t border-border pt-4">
+          <summary className="mb-3 min-h-11 cursor-pointer rounded-md px-2 py-3 text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-700">Assistência por IA para esta seção</summary>
           <p className="text-xs leading-5 text-muted-foreground">
             A IA revisa apenas {definition.label} usando os dados confirmados pertinentes e o texto salvo desta seção. As demais seções permanecem como estão.
           </p>
@@ -253,7 +256,7 @@ export function CommunicationSectionEditor(props: Readonly<{
               className="h-5 w-5 accent-brand-700" />
             Preciso de pesquisa atual ou local para esta seção
           </label>
-          <button type="button" disabled={saveLocked || aiPending || stageTwoGenerationInFlight}
+          <Button type="button" variant="secondary" disabled={saveLocked || aiPending || stageTwoGenerationInFlight}
             onClick={() => {
               if (!onStageTwoGenerationStart?.()) {
                 setAiMessage("Aguarde a geração em andamento antes de revisar esta seção.");
@@ -261,7 +264,6 @@ export function CommunicationSectionEditor(props: Readonly<{
               }
               startAiTransition(async () => {
                 setAiMessage("");
-                setLocalStageTwoResult(null);
                 try {
                   const result = await generateCommunicationIntelligenceAction({
                     account, target: { kind: "section", key: definition.key as CommunicationSectionKey }, version,
@@ -281,9 +283,10 @@ export function CommunicationSectionEditor(props: Readonly<{
                 }
               });
             }}
-            className="mt-3 inline-flex min-h-11 items-center justify-center rounded-lg border border-border px-5 py-2 text-sm font-semibold text-foreground disabled:cursor-wait disabled:opacity-60">
+            className="mt-3 min-h-11 h-auto whitespace-normal">
             {aiPending ? "Preparando sugestão..." : "Revisar esta seção com IA"}
-          </button>
+          </Button>
+          {aiPending ? <LoadingState className="mt-2" label="Revisando esta seção. Aguarde a nova sugestão." /> : null}
           {stageTwoGenerationInFlight && !aiPending ? <p role="status" className="mt-2 text-xs text-muted-foreground">
             Aguarde a geração em andamento antes de revisar esta seção.
           </p> : null}
@@ -291,8 +294,8 @@ export function CommunicationSectionEditor(props: Readonly<{
             basis={stageTwoSuggestion.basis}
             disabled={saveLocked} onUse={() => applySuggestion(stageTwoSuggestion.value)} /> : null}
           <Sources sources={stageTwoPresentation.sources} />
-          {aiMessage ? <p role="alert" className="mt-2 text-sm text-state-error">{aiMessage}</p> : null}
-        </div>
+          {aiMessage ? <FeedbackMessage tone="error" className="mt-2">{aiMessage}</FeedbackMessage> : null}
+        </details>
       )}
     </article>
   );
@@ -342,7 +345,7 @@ export function CommunicationStageTwo({ account, base, canEdit, sectionKeys }: R
               className="h-5 w-5 accent-brand-700" />
             Preciso de pesquisa atual ou local para esta geração
           </label>
-          <button type="button" disabled={pending || generationInFlight || saveInFlightCount > 0}
+          <Button type="button" variant="secondary" disabled={pending || generationInFlight || saveInFlightCount > 0}
             onClick={() => {
               if (!canStartGeneralGeneration(pendingSavesRef.current)) return;
               if (!tryStartStageTwoGeneration()) {
@@ -355,8 +358,6 @@ export function CommunicationStageTwo({ account, base, canEdit, sectionKeys }: R
               startTransition(async () => {
                 setMessage("");
                 setMessageIsError(false);
-                setSuggestions({});
-                setSources([]);
                 try {
                   const result = await generateCommunicationIntelligenceAction({
                     account, target: { kind: "general" }, version: requestedVersion, requiresCurrentResearch: requiresResearch,
@@ -384,13 +385,14 @@ export function CommunicationStageTwo({ account, base, canEdit, sectionKeys }: R
                 }
               });
             }}
-            className="mt-3 inline-flex min-h-11 items-center justify-center rounded-lg border border-border px-5 py-2 text-sm font-semibold text-foreground disabled:cursor-wait disabled:opacity-60">
+            className="mt-3 min-h-11 h-auto whitespace-normal">
             {pending ? "Preparando sugestões..." : hasStageTwoContent(base) ? "Atualizar inteligência com IA" : "Gerar inteligência com IA"}
-          </button>
+          </Button>
+          {pending ? <LoadingState className="mt-2" label="Preparando sugestões para as sete seções. Você poderá revisar cada uma." /> : null}
           {generationInFlight && !pending ? <p role="status" className="mt-2 text-xs text-muted-foreground">
             Aguarde a revisão em andamento antes de gerar sugestões para toda a Etapa 2.
           </p> : null}
-          {message ? <p role={messageIsError ? "alert" : "status"} className="mt-2 text-sm">{message}</p> : null}
+          {message ? <FeedbackMessage tone={messageIsError ? "error" : "success"} className="mt-2">{message}</FeedbackMessage> : null}
           <Sources sources={sources} />
         </div> : null}
       </div>
@@ -426,10 +428,10 @@ function Suggestion({ value, format, basis, disabled = false, onUse }: Readonly<
     <p className="text-xs font-semibold">Sugestão da IA para revisar</p>
     {basis ? <p className="mt-2 text-xs font-semibold text-brand-700">{stageTwoBasisLabel(basis)}</p> : null}
     <p className="mt-2 whitespace-pre-wrap text-sm">{formatEditorValue(value, format) || "Sem conteúdo suficiente para sugerir."}</p>
-    {formatEditorValue(value, format).trim() ? <button type="button" onClick={onUse} disabled={disabled}
-      className="mt-3 inline-flex min-h-11 items-center rounded-lg border border-border px-4 text-sm font-semibold disabled:cursor-wait disabled:opacity-60">
+    {formatEditorValue(value, format).trim() ? <Button type="button" variant="secondary" onClick={onUse} disabled={disabled}
+      className="mt-3 min-h-11 h-auto whitespace-normal">
       Usar no editor
-    </button> : null}
+    </Button> : null}
   </div>;
 }
 
@@ -446,23 +448,22 @@ function SubmitButton({ label, pendingLabel, disabled = false }: Readonly<{
 }>) {
   const { pending } = useFormStatus();
   return (
-    <button
+    <Button
       type="submit"
       disabled={pending || disabled}
-      className="inline-flex min-h-11 items-center justify-center rounded-lg bg-brand-700 px-5 py-2 text-sm font-semibold text-white hover:bg-brand-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-700 focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-60"
+      className="min-h-11 h-auto whitespace-normal"
     >
       {pending ? pendingLabel : label}
-    </button>
+    </Button>
   );
 }
 
 function ActionFeedback({ state }: Readonly<{ state: CommunicationActionState }>) {
   if (state.status === "idle") return null;
   return (
-    <p role={state.status === "error" ? "alert" : "status"}
-      className={`text-sm ${state.status === "error" ? "text-state-error" : "text-state-success"}`}>
+    <FeedbackMessage tone={state.status === "error" ? "error" : "success"}>
       {state.message}
-    </p>
+    </FeedbackMessage>
   );
 }
 
