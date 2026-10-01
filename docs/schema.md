@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data da última atualização: 28/09/2026
-• Documento: LP Factory 10 — Schema (DB Contract) v1.0.73
+• Data da última atualização: 30/09/2026
+• Documento: LP Factory 10 — Schema (DB Contract) v1.0.74
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -629,7 +629,7 @@
 • Trigger Hub: não; somente evento app-level sanitizado de conclusão.
 • RLS ativo, sem policies; acesso direto revogado de public, anon, authenticated e ai_readonly.
 • service_role: SELECT, INSERT e UPDATE.
-• Migrations: `20260920223653_e10_9_pending_setup_conversation.sql`, `20260921170115_e10_9_pending_setup_openai_call_counter.sql` e `20260928161504_e10_11_pending_setup_business_name.sql`; a E10.11 permanece repo-only até o apply pós-merge.
+• Migrations: `20260920223653_e10_9_pending_setup_conversation.sql`, `20260921170115_e10_9_pending_setup_openai_call_counter.sql` e `20260928161504_e10_11_pending_setup_business_name.sql`; a migration E10.11 foi aplicada uma vez pelo escopo seletivo autorizado.
 
 1.19B account_pending_setup_messages
 

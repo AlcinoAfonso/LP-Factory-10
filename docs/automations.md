@@ -1,6 +1,6 @@
 0.1 Cabeçalho
-Data: 28/09/2026
-Versão: v1.34
+Data: 30/09/2026
+Versão: v1.35
 Status: Alinhado ao catálogo operacional vigente; Pending Setup E10.9 integrado ao workload de nicho
 
 0.2 Função do documento
@@ -203,16 +203,16 @@ Objetivo:
 Aplicar migrations versionadas do Supabase após merge e autorização, sem usar o SQL Editor para alterações de schema. O apply automático integral está suspenso durante o backlog E10.10.
 
 Status:
-Implementada; fluxo integral suspenso durante o backlog E10.10. A exceção manual E25.1 foi executada e encerrada. O escopo seletivo E10.11 está preparado e aguarda merge e autorização próprios.
+Implementada; o apply seletivo E10.11 foi concluído sob autorização própria. O fluxo automático integral permanece suspenso enquanto as migrations E10.10 seguem fora do apply.
 
 Acesso:
 GitHub → Actions → workflow `pipeline-supabase-apply-migrations`
 
 Como usar:
-Criar migration em `supabase/migrations/<timestamp>_<nome>.sql` e validar no PR do plano. Durante o backlog E10.10, o push na `main` não aplica automaticamente. Novo apply exige decisão operacional própria. O escopo `e10_11_only` aplica somente a migration E10.11 após merge autorizado, SHA exato e dry-run seletivo; o gate deve voltar a `false`.
+Criar migration em `supabase/migrations/<timestamp>_<nome>.sql` e validar no PR do plano. Durante a pendência E10.10, o push na `main` não aplica automaticamente. Todo apply exige PR e merge autorizados e decisão operacional própria; configurações de ambiente, gates e escopos de filtro pertencem a `docs/platform-config.md`.
 
 Resumo de controle:
-A baseline oficial foi concluída, o histórico remoto foi alinhado e o smoke de criação/remoção foi validado. O apply seletivo E25.1 acrescentou as duas migrations autorizadas, preservando a ausência das E10.10. O gate `SUPABASE_APPLY_MIGRATIONS_ENABLED` voltou a `false`; o fluxo integral depende de resolução separada de E10.10 ou revisão explícita do filtro canônico. Migration já aplicada não deve ser editada, apagada ou substituída; correções e reversões exigem nova migration incremental.
+As migrations E10.10 permanecem excluídas e o fluxo automático integral segue suspenso enquanto a pendência não for resolvida ou o filtro canônico não for explicitamente revisado; novas execuções exigem decisão operacional própria. Migration já aplicada não pode ser editada, apagada ou substituída; correções e reversões exigem nova migration incremental.
 
 Referências / dependências:
 `docs/base-tecnica.md`
