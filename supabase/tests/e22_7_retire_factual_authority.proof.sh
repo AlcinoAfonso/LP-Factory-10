@@ -35,6 +35,12 @@ sed -n '/^alter table public.openai_workload_configuration_revisions/,/^alter ta
   supabase/migrations/20260927163500_e21_2_communication_base_workloads.sql > "$log_root/e25-aggregate-ddl.sql"
 grep -q 'communication_base_stage2_intelligence' "$log_root/e25-aggregate-ddl.sql"
 run_file "$log_root/e25-aggregate-ddl.sql" e25-aggregate-ddl
+# The hosted E21.2.5 shape supports the inspected luna/xhigh candidate and Base models.
+# Reuse its exact constraint DDL, without catalog seed data or a historical ledger claim.
+sed -n '/^alter table public.openai_workload_configuration_revisions/,/^create or replace function public.add_openai_model_catalog_model_v1/{ /^create or replace function/!p; }' \
+  supabase/migrations/20260823144334_e21_2_5_openai_model_catalog.sql > "$log_root/e21-current-shape-ddl.sql"
+grep -q 'openai_workload_operational_configurations_candidate_completeness_chk' "$log_root/e21-current-shape-ddl.sql"
+run_file "$log_root/e21-current-shape-ddl.sql" e21-current-shape-ddl
 run_file supabase/tests/e22_7_retire_factual_authority.fixture.sql fixture
 
 # Optimistic version drift must abort before any ACL/FK/configuration retirement.
