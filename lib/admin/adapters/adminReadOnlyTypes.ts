@@ -1,12 +1,4 @@
 import type { AccountStatus } from "@/lib/types/status";
-import type {
-  FactualFieldCondition,
-  FactualFieldExpectedOrigin,
-  FactualFieldObligation,
-  FactualFieldValidation,
-  FactualFieldValueScope,
-  FactualFieldValueType,
-} from "@/conversion-content/landing-page/input-catalog";
 
 export type AdminAccountListItem = {
   id: string;
@@ -93,40 +85,6 @@ export type AdminTaxonUsage = {
   marketResearch: number;
 };
 
-export type AdminEndCustomerResearchSelection =
-  | { status: "disabled" }
-  | { status: "read_failed"; message: string }
-  | { status: "available"; selectedVersion: number | null };
-
-export type AdminFactualCoverageField = Readonly<{
-  fieldKey: string;
-  purpose: string;
-  ownership: "own" | "inherited";
-  originLayer: string;
-  originTaxonName: string | null;
-  valueType: FactualFieldValueType;
-  valueScope: FactualFieldValueScope;
-  expectedValueOrigin: FactualFieldExpectedOrigin;
-  obligation: FactualFieldObligation;
-  requiredWhen: FactualFieldCondition | null;
-  applicableWhen: FactualFieldCondition | null;
-  validation: FactualFieldValidation;
-}>;
-
-export type AdminTaxonFactualRelease =
-  | { status: "read_failed"; errorCode: string; message: string }
-  | {
-      status: "available";
-      coverageFingerprint: string;
-      isActive: boolean;
-      appliedLayers: readonly Readonly<{
-        level: string;
-        taxonName: string | null;
-        served: boolean;
-      }>[];
-      fields: readonly AdminFactualCoverageField[];
-    };
-
 export type AdminTaxonDetail = AdminTaxonListItem & {
   aliases: Array<{
     id: string;
@@ -137,8 +95,6 @@ export type AdminTaxonDetail = AdminTaxonListItem & {
   usage: AdminTaxonUsage;
   deleteBlockers: string[];
   canDelete: boolean;
-  endCustomerResearchSelection: AdminEndCustomerResearchSelection;
-  factualRelease: AdminTaxonFactualRelease;
 };
 
 export type AdminNicheResolutionListItem = {

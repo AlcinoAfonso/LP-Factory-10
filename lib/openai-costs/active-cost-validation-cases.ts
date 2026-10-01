@@ -190,6 +190,16 @@ async function main() {
   assert.equal(translated.value.executions[0]?.operations[0]?.webSearchPricePerCallUsd, "0.01");
   assert.equal(translated.value.executions[0]?.operations[1]?.retryOfOperationId, "40000000-0000-4000-8000-000000000001");
 
+  const factualHistory = translateOpenAiActiveCostRows({
+    period,
+    rows: rows.map((row) => ({ ...row, workload: "taxon_input_catalog_sufficiency_evaluation" })),
+    coverageRows: coverageRows.map((row) => ({ ...row, workload: "taxon_input_catalog_sufficiency_evaluation" })),
+  });
+  assert.ok(factualHistory.ok, "retired factual financial history must remain readable");
+  assert.equal(factualHistory.value.totalCalculatedUsd, translated.value.totalCalculatedUsd);
+  assert.equal(factualHistory.value.executionCount, translated.value.executionCount);
+  assert.ok(factualHistory.value.executions.every((item) => item.workload === "taxon_input_catalog_sufficiency_evaluation"));
+
   const correlated = translateOpenAiActiveCostRows({
     period,
     coverageRows,

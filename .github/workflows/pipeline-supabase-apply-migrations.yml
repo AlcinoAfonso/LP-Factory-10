@@ -15,6 +15,7 @@ on:
         options:
           - e25_1_only
           - e10_11_only
+          - e22_7_only
       expected_main_sha:
         description: "SHA exato da main apos merge autorizado"
         required: true
@@ -92,7 +93,7 @@ jobs:
           staged_migrations=""
           apply_enabled="${SUPABASE_APPLY_MIGRATIONS_ENABLED:-false}"
 
-          if [ "$GITHUB_EVENT_NAME" != "workflow_dispatch" ] || [ "$GITHUB_REF_NAME" != "main" ] || { [ "$APPLY_SCOPE" != "e25_1_only" ] && [ "$APPLY_SCOPE" != "e10_11_only" ]; } || [[ ! "$EXPECTED_MAIN_SHA" =~ ^[0-9a-f]{40}$ ]] || [ "$EXPECTED_MAIN_SHA" != "$GITHUB_SHA" ]; then
+          if [ "$GITHUB_EVENT_NAME" != "workflow_dispatch" ] || [ "$GITHUB_REF_NAME" != "main" ] || { [ "$APPLY_SCOPE" != "e25_1_only" ] && [ "$APPLY_SCOPE" != "e10_11_only" ] && [ "$APPLY_SCOPE" != "e22_7_only" ]; } || [[ ! "$EXPECTED_MAIN_SHA" =~ ^[0-9a-f]{40}$ ]] || [ "$EXPECTED_MAIN_SHA" != "$GITHUB_SHA" ]; then
             status="failure"
             failure_step="manual scope, main ref, or exact post-merge SHA"
           fi
@@ -143,6 +144,7 @@ jobs:
             e10_count=0
             e25_count=0
             e1011_count=0
+            e227_count=0
             for name in "${all_migrations[@]}"; do
               case "$name" in
                 20260926145500_e10_10_account_factual_profile.sql|20260926171100_e10_10_factual_catalog_cutover.sql)
@@ -153,10 +155,16 @@ jobs:
                   e25_count=$((e25_count + 1))
                   ;;
                 20260928161504_e10_11_pending_setup_business_name.sql)
-                  if [ "$APPLY_SCOPE" = "e10_11_only" ]; then
+                  if [ "$APPLY_SCOPE" = "e10_11_only" ] || [ "$APPLY_SCOPE" = "e22_7_only" ]; then
                     cp "$SUPABASE_MIGRATIONS_DIR/$name" "$stage_project/supabase/migrations/$name"
                   fi
                   e1011_count=$((e1011_count + 1))
+                  ;;
+                20261001030000_e22_7_retire_factual_authority.sql)
+                  if [ "$APPLY_SCOPE" = "e22_7_only" ]; then
+                    cp "$SUPABASE_MIGRATIONS_DIR/$name" "$stage_project/supabase/migrations/$name"
+                  fi
+                  e227_count=$((e227_count + 1))
                   ;;
                 *)
                   version="${name%%_*}"
@@ -170,9 +178,9 @@ jobs:
                   ;;
               esac
             done
-            if [ "${#all_migrations[@]}" -ne 61 ] || [ "$historical_count" -ne 56 ] || [ "$e10_count" -ne 2 ] || [ "$e25_count" -ne 2 ] || [ "$e1011_count" -ne 1 ]; then
+            if [ "${#all_migrations[@]}" -ne 62 ] || [ "$historical_count" -ne 56 ] || [ "$e10_count" -ne 2 ] || [ "$e25_count" -ne 2 ] || [ "$e1011_count" -ne 1 ] || [ "$e227_count" -ne 1 ]; then
               status="failure"
-              failure_step="selective migration inventory differs from 56 historical + 2 E10.10 + 2 E25 + 1 E10.11"
+              failure_step="selective migration inventory differs from 56 historical + 2 E10.10 + 2 E25 + 1 E10.11 + 1 E22.7"
             fi
             if [ "$status" = "success" ]; then
               for name in "${all_migrations[@]}"; do
@@ -185,6 +193,7 @@ jobs:
               staged_migrations="$(find "$stage_project/supabase/migrations" -maxdepth 1 -type f -name '*.sql' -printf '%f\n' | LC_ALL=C sort)"
               expected_staged_count=58
               if [ "$APPLY_SCOPE" = "e10_11_only" ]; then expected_staged_count=59; fi
+              if [ "$APPLY_SCOPE" = "e22_7_only" ]; then expected_staged_count=60; fi
               if [ "$(printf '%s\n' "$staged_migrations" | wc -l)" -ne "$expected_staged_count" ]; then
                 status="failure"
                 failure_step="staged migration count"
@@ -204,6 +213,8 @@ jobs:
               dry_run_migrations="$(printf '%s\n' "$dry_run_output" | sed -n -E 's/^[[:space:]]*•[[:space:]]*([0-9]{14}_[[:alnum:]_]+\.sql)$/\1/p')"
               if [ "$APPLY_SCOPE" = "e10_11_only" ]; then
                 expected_migrations='20260928161504_e10_11_pending_setup_business_name.sql'
+              elif [ "$APPLY_SCOPE" = "e22_7_only" ]; then
+                expected_migrations='20261001030000_e22_7_retire_factual_authority.sql'
               else
                 expected_migrations="$(printf '%s\n%s' '20260927145500_e25_1_account_communication_bases.sql' '20260927163500_e21_2_communication_base_workloads.sql')"
               fi
@@ -249,7 +260,7 @@ jobs:
             printf '%s\n' "$dry_run_migrations"
             echo '```'
             echo ""
-            echo "- staging: 56 migrations historicas + 2 E25, mais E10.11 somente no escopo e10_11_only; as 2 E10.10 foram excluidas."
+            echo "- staging: 56 migrations historicas + 2 E25; E10.11 nos escopos e10_11_only/e22_7_only e E22.7 somente em e22_7_only; as 2 E10.10 foram excluidas."
             echo "- apply posterior integral permanece suspenso ate resolucao separada de E10.10."
           } >> "$GITHUB_STEP_SUMMARY"
 

@@ -80,6 +80,7 @@ A relação abaixo inclui consumidores mistos, contratos preservados e o fecho d
 | `lib/conversion-content/adapters/inputCatalogEvaluationContextAdapter.ts` | removível | Contexto/provider/gate chamados somente pela avaliação factual Admin e prova do workload retirado; nenhum consumidor independente encontrado |
 | `lib/conversion-content/adapters/inputCatalogEvaluationOpenAiAdapter.ts` | removível | Contexto/provider/gate chamados somente pela avaliação factual Admin e prova do workload retirado; nenhum consumidor independente encontrado |
 | `lib/conversion-content/adapters/inputCatalogEvaluationRuntimeGate.ts` | removível | Contexto/provider/gate chamados somente pela avaliação factual Admin e prova do workload retirado; nenhum consumidor independente encontrado |
+| `lib/conversion-content/adapters/inputCatalogEvaluationRuntimeGateCore.ts` | removível | Fecho direto do RuntimeGate e de taxon-preparation/validation-cases; auditoria de resolução de imports confirma ausência de consumidor independente |
 | `lib/conversion-content/adapters/selectedEndCustomerResearchAdapter.ts` | removível | Fecho exclusivo de cobertura/avaliação/liberação factual ou onboarding rejeitado; consumidores externos mistos serão desacoplados antes da exclusão |
 | `lib/conversion-content/adapters/selectedEndCustomerResearchAdapterCore.ts` | removível | Fecho exclusivo de cobertura/avaliação/liberação factual ou onboarding rejeitado; consumidores externos mistos serão desacoplados antes da exclusão |
 | `lib/conversion-content/adapters/taxonChainAdapter.ts` | removível | Fecho exclusivo de cobertura/avaliação/liberação factual ou onboarding rejeitado; consumidores externos mistos serão desacoplados antes da exclusão |
@@ -118,3 +119,17 @@ A relação abaixo inclui consumidores mistos, contratos preservados e o fecho d
 | `.github/workflows/e10-11-sql-proof.yml` | preservado e estendido focalmente | Facilitador existente recebe caso isolado E22.7; cadeia e prova E10.11 independentes preservadas |
 | `.github/workflows/pipeline-supabase-apply-migrations.yml` | preservado e estendido focalmente | Apply seletivo existente recebe somente migration/scope E22.7; gates, scopes prévios e exclusão E10.10 preservados |
 | `app/admin/(protected)/workloads-openai/_proof.ts` | desacoplado | Import/provider e dependência inputCatalogEvaluation exclusivos da prova E20; preservar provas de nicho, comercial e duas etapas da Base |
+
+
+## Recibo técnico anterior ao apply E22.7
+
+EST-E22.7-09, revisão focal estrutural em 01/10/2026 07:32: candidata salva integra a unidade mutável retirada; não é revisão validada/pending. V2 suficiente, sem patch de plano. A migration confere os campos abaixo sob lock e aborta por drift ou revisão pendente. Metadados reconfirmados read-only antes da redação; reconfirmar antes do apply.
+
+| Ambiente | configuration_version | active_revision_id | pending_revision_id | Candidata salva | Autor / salvamento |
+| --- | --- | --- | --- | --- | --- |
+| Preview | 10 | 7175d0e9-68fd-4941-808a-774631643864 | null | gpt-5.6-luna / xhigh / quality null | ce899cd2-5360-478e-817e-ee3690aabecd / 2026-09-16T00:16:37.179443+00:00 |
+| Production | 13 | ab47d48c-2b37-462a-955b-147d65adb4c2 | null | todos os campos candidate_* null | null |
+
+Revisões factuais: 8, digest 70c7ab111ef6d820a9600662b2ae520b. Ativações factuais: 8, digest 4c8cce5bfbe24e1fa22857b6c473b20e. Permanecem intactas. Factual: 27 linhas, digest c6a03bdf03f5936217f5f18d540b2bf7. Ledger 59, E10.10 zero, E22.7 zero.
+
+Prova imediatamente anterior à retirada do código: resolução TypeScript de imports/exports/dynamic imports em 318 fontes; 37 arquivos exclusivos, 78 arestas internas, zero consumidores externos remanescentes. O core do RuntimeGate foi incluído pelo fecho direto comprovado. Busca integral nos consumidores correntes após desacoplamento encontrou zero leitura dos três gates, da tabela factual ou da coluna de seleção. Dados brutos, pesquisas estruturadas, migrations, snippets e testes históricos permaneceram preservados.

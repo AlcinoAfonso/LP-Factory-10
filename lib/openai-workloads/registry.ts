@@ -44,27 +44,6 @@ export const openAiWorkloadRegistry = deepFreeze([
     },
   },
   {
-    id: "taxon_input_catalog_sufficiency_evaluation",
-    displayName: "Avaliação de suficiência factual do catálogo por taxon",
-    classification: "product_runtime",
-    configurationKind: "effective",
-    consumer: "E20.8.7 — avaliação consultiva da cobertura factual corrente",
-    fallback: "Falhar fechado sem mutação nem bloqueio da operação humana",
-    webSearch: {
-      externalWebAccess: true,
-      searchContextSize: "medium",
-      maxToolCalls: 2,
-      contextWindowTokenBudget: 128000,
-    },
-    configuration: {
-      apiKind: "responses_text",
-      model: "gpt-5.6-terra",
-      reasoningEffort: "low",
-      source: "repo_catalog",
-      revision,
-    },
-  },
-  {
     id: "communication_base_stage1_assistance",
     displayName: "Assistência da Etapa 1 da Base de Comunicação",
     classification: "product_runtime",
@@ -130,12 +109,6 @@ const workloadPresentations = deepFreeze([
     workload: "commercial_activation_draft_generation",
     name: "Geração de draft de ativação comercial",
     roadmapReference: "E10.7.3",
-    visualGroup: null,
-  },
-  {
-    workload: "taxon_input_catalog_sufficiency_evaluation",
-    name: "Avaliação de suficiência factual do catálogo por taxon",
-    roadmapReference: "E20.8.7",
     visualGroup: null,
   },
   {

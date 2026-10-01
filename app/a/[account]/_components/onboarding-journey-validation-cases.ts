@@ -56,11 +56,14 @@ assert.doesNotMatch(
 );
 assert.match(page, /PendingSetupConversation/);
 assert.match(page, /NicheResolutionCard/);
-assert.match(loader, /accountJourney\.mode === "blocked"\) return \{ view: "factual_unavailable" as const \}/);
-assert.match(loader, /if \(checkedEntitlement\.signal\.isCommerciallyEligible\) return \{ view: "base" as const \}/);
+assert.match(loader, /accountJourney\.mode === "blocked"\) return \{ view: "journey_unavailable" as const \}/);
+assert.match(loader, /if \(entitlementRead\.signal\.isCommerciallyEligible\) return \{ view: "base" as const \}/);
 assert.match(page, /journey\.view === "base"/);
-assert.match(loader, /if \(factual\.status === "available"\) return \{ view: "factual" as const, factual \};\s*return \{ view: "factual_unavailable" as const \};/);
-assert.match(page, /journey\.view === "factual_unavailable"/);
+assert.ok(loader.indexOf("const entitlementRead = await readCommercialEntitlementSignal") < loader.indexOf("const [nicheResolution, taxonRead]"));
+assert.ok(loader.indexOf('signal.isCommerciallyEligible) return { view: "base"') < loader.indexOf("const [nicheResolution, taxonRead]"));
+assert.doesNotMatch(loader, /if \(isE1011PassageEnabled\(\)\)/);
+assert.doesNotMatch(loader + page, /loadFactualOnboarding|FactualOnboarding|factual_unavailable/);
+assert.match(page, /journey\.view === "journey_unavailable"/);
 assert.match(page, /Tentar novamente/);
 assert.doesNotMatch(page, /PendingSetupFirstSteps/);
 assert.doesNotMatch(loader, /loadPendingSetupConversation[\s\S]*accountStatus !== "active"[\s\S]*loadPendingSetupConversation/);
