@@ -23,11 +23,11 @@ Preserve V1 e escopo negativo. A escolha Autônomo concede autoridade contínua 
 
 ## Bloqueios e convergência
 
-Busque fonte/dado indispensável pelos mecanismos autorizados e continue a condução até resolvê-lo. Bloqueio, dúvida, ferramenta indisponível ou pedido de intervenção não constituem parada humana nem prova de inviabilidade. Preserve trabalho válido e trate somente o ponto afetado pelo Executor; não crie infraestrutura ou nova autoridade para contornar o contrato.
+Após o handoff, conduza o plano continuamente até estado terminal. Bloqueios, dúvidas, indisponibilidades, insuficiência factual e retornos de Executor ou especialistas suspendem somente o ponto afetado; preserve o trabalho válido e continue o que puder prosseguir. Divergência sobre plano, fase, branch ou arquivos-alvo segue `AGENTS.md` e bloqueia apenas esse ponto até reconciliação.
 
-Só interrompa o plano por ordem explícita, válida e mais recente do usuário para parar, pausar ou cancelar. Quando caminho autorizado estiver indisponível, mantenha o plano aberto e retome automaticamente quando recuperado, sem exigir `prossiga`. Polling/agendamento são fallback, não substituem condução ativa. Não peça nova confirmação humana para continuação, correção, QA ou ciclo autorizado de merge/pós-merge.
+Pergunta, comentário ou pedido de explicação do usuário não interrompem a execução; responda brevemente e continue sem exigir `prossiga` ou nova confirmação. Caminho indisponível deve ser retomado automaticamente quando recuperado; polling ou agendamento é apenas fallback e não substitui condução ativa.
 
-Se solução/correções crescerem sem convergir, exija o menor delta e o retorno focal competente do Executor; não invente critérios paralelos de arquitetura, QA ou especialidade. Alternativa que muda a V1 é rejeitada; insuficiência factual suspende apenas o ponto afetado enquanto se investigam alternativas compatíveis.
+Se a solução deixar de convergir, exija o menor delta e o retorno focal competente, sem alterar V1 nem criar nova infraestrutura, autoridade ou critérios paralelos. Só devolva o controle ao usuário por ordem explícita para parar, pausar ou cancelar ou por decisão material fora da V1 que nenhuma autoridade vigente possa resolver.
 
 ## Avaliar entrega e liberar merge
 
