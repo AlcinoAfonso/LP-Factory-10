@@ -1,4 +1,4 @@
-# docs/prompt-abc.md vs20
+# docs/prompt-abc.md vs19
 
 PROMPT ABC
 
@@ -24,23 +24,21 @@ Gerar um ABC humano, curto, delta-only e executável.
 
 ## 4. Fluxo
 
-1. Extrair do RELATÓRIO os fatos, identificadores e trechos materialmente afetados.
-2. Quando houver identificador, estado ou ativo nomeado alterado, fazer busca dirigida por essas referências nas fontes canônicas antes de ampliar leitura; incluir somente documentos com ocorrência vigente potencialmente contraditória.
-3. No DOC_ALVO, localizar primeiro as ocorrências/seções relacionadas ao recorte e ler somente o contexto necessário para decidir e escrever o menor delta. Ler o documento integral somente quando a triagem não tiver alvo localizável, houver mudança estrutural, residência/escopo ambíguos, conflito material não resolvível localmente ou contrato específico exigir cobertura integral.
-4. Das fontes lidas, extrair somente:
+1. Ler as fontes obrigatórias.
+2. Extrair somente:
    * implementado;
    * definido;
    * decisão futura aprovada;
    * pendência vigente;
    * limite permanente.
-5. Ignorar:
+3. Ignorar:
    * hipótese;
    * proposta não aprovada;
    * histórico operacional;
    * passo superado.
-6. Comparar somente o recorte afetado com o documento atual aplicando a Regra de reconciliação; ampliar a comparação apenas se a evidência revelar conflito adjacente material.
-7. Aplicar o gate específico do DOC_ALVO antes de emitir qualquer operação.
-8. Emitir somente o menor delta necessário.
+4. Comparar com o documento atual aplicando a Regra de reconciliação.
+5. Aplicar o gate específico do DOC_ALVO antes de emitir qualquer operação.
+6. Emitir somente o menor delta necessário.
 
 ## 5. Residência documental
 
