@@ -1073,7 +1073,7 @@
 
 10.11.1 Objetivo e status
 - Objetivo: garantir nome público explícito e reaproveitamento inicial do contexto confirmado, preservando o comercial para contas sem autorização e encaminhando contas autorizadas diretamente à Base sem exigir taxon oficial.
-- Status: implementado; apply seletivo pós-merge concluído. A implementação, o merge, o apply seletivo, a retirada dos gates E20 e o QA pós-apply/redeploy do recorte PB-C/E22.7 foram concluídos; resta a reconciliação documental canônica e o recibo D14B§5.6.
+- Status: implementado; apply seletivo pós-merge concluído. A implementação, o merge, o apply seletivo, a retirada dos gates E20 e o QA pós-apply/redeploy do recorte PB-C/E22.7 foram concluídos.
 
 10.11.2 Registros do recorte
 - Banco:
@@ -2572,7 +2572,7 @@
 
 22. E22 — Retirada controlada de ativos históricos
 - Objetivo: reduzir superfícies, dados, documentos e infraestrutura sem consumidor vigente, após auditoria explícita de dependências e sem criar substitutos antecipados.
-- Status: E22.1, E22.2, E22.3, E22.4, E22.5 e E22.6 concluídas. O produto operacional, o `lp-builder`, sua apresentação, workloads exclusivos, compatibilidade E19, write-side de custos e os facilitadores legados Validador Final e Niche Runtime Tests foram retirados; Core, taxonomia, pesquisas estruturadas compartilhadas, capacidades independentes E10/E9/E11, automações GitHub com consumidores vigentes, mailbox institucional e resíduos físicos deliberadamente inertes permanecem preservados. E22.7 — retirada terminal da E20 e E10.10 — teve implementação, merge, apply seletivo, retirada dos gates externos e QA pós-apply/redeploy concluídos; permanecem pendentes somente a reconciliação documental canônica deste recorte e o recibo D14B§5.6. Também permanece pendente a decisão futura sobre reduzir Previews produzidos por pushes intermediários em branches não documentais.
+- Status: E22.1, E22.2, E22.3, E22.4, E22.5 e E22.6 concluídas. O produto operacional, o `lp-builder`, sua apresentação, workloads exclusivos, compatibilidade E19, write-side de custos e os facilitadores legados Validador Final e Niche Runtime Tests foram retirados; Core, taxonomia, pesquisas estruturadas compartilhadas, capacidades independentes E10/E9/E11, automações GitHub com consumidores vigentes, mailbox institucional e resíduos físicos deliberadamente inertes permanecem preservados. E22.7 — retirada terminal da E20 e E10.10 — teve implementação, merge, apply seletivo, retirada dos gates externos e QA pós-apply/redeploy concluídos. Também permanece pendente a decisão futura sobre reduzir Previews produzidos por pushes intermediários em branches não documentais.
 
 22.1 Retirada de ativos históricos do domínio de Landing Page
 
@@ -2829,7 +2829,7 @@
 
 22.7.1 Objetivo e status
 - Objetivo: retirar terminal e auditavelmente a E20 e a E10.10, sem segunda autoridade factual ou consumidor ativo do onboarding rejeitado e sem dano às capacidades independentes da E10, E9, E11, taxonomia, pesquisas compartilhadas e comercial.
-- Status: implementação e validações pré-merge concluídas; V2 técnica corrigida aprovada pelo Analista e implementada; V1 funcional permanece aprovada e congelada; dependência E10.11 concluída positivamente. PR #994 foi mergeado em `main` no SHA `362842f41fc9ee1c11315565d7647b1c61b51058`; o apply seletivo `e22_7_only`, a retirada autorizada das sete entradas dos três gates E20 na Vercel e o QA autenticado pós-apply/redeploy foram concluídos com sucesso. Resta a reconciliação documental canônica e o recibo D14B§5.6.
+- Status: implementação e validações pré-merge concluídas; V2 técnica corrigida aprovada pelo Analista e implementada; V1 funcional permanece aprovada e congelada; dependência E10.11 concluída positivamente. PR #994 foi mergeado em `main` no SHA `362842f41fc9ee1c11315565d7647b1c61b51058`; o apply seletivo `e22_7_only`, a retirada autorizada das sete entradas dos três gates E20 na Vercel e o QA autenticado pós-apply/redeploy foram concluídos com sucesso.
 
 22.7.2 Registros do recorte
 - Banco:
@@ -2892,7 +2892,7 @@
   - Não redesenhar E10, comercial, taxonomia, Base, billing, trial ou LP; não criar domínio substituto, compatibilidade paralela, archive funcional, snapshot vivo ou nova infraestrutura; não remover capacidade, dado ou objeto apenas por associação à E20/E10.10 nem refatorar, modernizar ou reorganizar domínios preservados.
 
 22.7.5 Retirada material residual de banco e configuração
-- Status: migration E22.7 aplicada; retirada dos gates E20 e QA autenticado pós-apply/redeploy concluídos. A reconciliação documental canônica e o recibo D14B§5.6 permanecem pendentes.
+- Status: migration E22.7 aplicada; retirada dos gates E20 e QA autenticado pós-apply/redeploy concluídos.
 - Conteúdo:
   - O apply da migration E22.7 preservou os dados factuais, revisões e ativações históricas; removeu a FK factual e os acessos exclusivos, revogou UPDATE da coluna de seleção e retirou as duas unidades mutáveis do workload factual sob as guardas versionadas, sem apagar linhas históricas.
   - As sete entradas dos três gates E20 foram removidas da Vercel após autorização humana. Os redeploys de Production e Preview pós-retirada ficaram `READY` e o QA autenticado pós-apply/redeploy foi concluído com sucesso.
