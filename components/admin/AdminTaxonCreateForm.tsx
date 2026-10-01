@@ -139,7 +139,7 @@ export function AdminTaxonCreateForm({ action, parentOptions }: AdminTaxonCreate
           </label>
 
           <div className="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-            O novo taxon será criado inativo e só poderá ser liberado após a revisão humana da cobertura E20.2.
+            O novo taxon será criado inativo. Você poderá ativá-lo na edição administrativa após conferir sua identidade e hierarquia.
           </div>
 
           <label className="space-y-1 lg:col-span-2">

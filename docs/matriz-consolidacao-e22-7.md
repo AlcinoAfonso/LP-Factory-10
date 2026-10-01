@@ -121,6 +121,10 @@ A relação abaixo inclui consumidores mistos, contratos preservados e o fecho d
 | `app/admin/(protected)/workloads-openai/_proof.ts` | desacoplado | Import/provider e dependência inputCatalogEvaluation exclusivos da prova E20; preservar provas de nicho, comercial e duas etapas da Base |
 
 
+## Fecho da superfície de criação
+
+Antes da edição, busca integral encontrou em `components/admin/AdminTaxonCreateForm.tsx` o único texto corrente que ainda condicionava criação à cobertura E20.2. Destino: desacoplar somente essa instrução; preservar formulário, default inativo, aliases e hierarquia. `lib/openai-costs/active-cost-validation-cases.ts` preserva a leitura histórica com caso positivo do ID factual retirado.
+
 ## Recibo técnico anterior ao apply E22.7
 
 EST-E22.7-09, revisão focal estrutural em 01/10/2026 07:32: candidata salva integra a unidade mutável retirada; não é revisão validada/pending. V2 suficiente, sem patch de plano. A migration confere os campos abaixo sob lock e aborta por drift ou revisão pendente. Metadados reconfirmados read-only antes da redação; reconfirmar antes do apply.
