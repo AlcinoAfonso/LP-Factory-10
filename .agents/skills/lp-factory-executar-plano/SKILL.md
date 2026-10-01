@@ -1,6 +1,6 @@
 ---
 name: lp-factory-executar-plano
-description: "Conduzir o plano aprovado da V1 à conclusão na mesma sessão, branch e PR, com Updates obrigatório, V2 técnica e especialidades condicionais, validação, QA, retomada e merge autorizado."
+description: "Conduzir o plano aprovado da V1 à conclusão na mesma sessão, branch e PR, com Updates prioritário, V2 técnica e especialidades condicionais, validação, QA, retomada e merge autorizado."
 ---
 
 # Executar plano-base
@@ -62,10 +62,10 @@ Leia a seção pertinente do roadmap, dependências e consumidores reais. Use pl
 
 ### 3.2 Acionar somente o necessário
 
-Use os wrappers competentes; não chame custom agents diretamente nem refaça seus pareceres. Fora Updates, registre a necessidade concreta que justifica cada chamada; uma chamada não amplia o escopo nem obriga as demais.
+Use os wrappers competentes; não chame custom agents diretamente nem refaça seus pareceres. Registre a necessidade concreta que justifica cada chamada; uma chamada não amplia o escopo nem obriga as demais.
 
-- `$lp-factory-avaliar-plano-updates`: obrigatório em toda execução, sobre a V1 congelada e um `source_repository_sha` imutável; preserve parecer integral e exceções de referência.
-- `$lp-factory-avaliar-plano-estrutura`: mudança material de responsabilidades, dependências ou estrutura. Updates precede a derivação; entregue seu parecer pertinente. Na derivação inicial, cada update de impacto estrutural material recebe confronto identificável na mesma resposta; `confronto_modernizacao` permanece capacidade focal, sem segunda chamada por rotina.
+- `$lp-factory-avaliar-plano-updates`: prioritário por padrão e obrigatório no `Semiautomático`. No `Autônomo`, dispense somente quando concluir objetivamente que mudanças tecnológicas recentes não podem alterar materialmente a melhor forma de cumprir a V1; havendo relevância possível ou dúvida, acione. Registre dispensa breve como `Updates: N/A — <motivo>`. Quando acionado, use a V1 congelada e um `source_repository_sha` imutável; preserve parecer integral e exceções de referência.
+- `$lp-factory-avaliar-plano-estrutura`: mudança material de responsabilidades, dependências ou estrutura. Quando Updates tiver sido acionado, ele precede a derivação e seu parecer pertinente é entregue. Na derivação inicial, cada update de impacto estrutural material recebe confronto identificável na mesma resposta; `confronto_modernizacao` permanece capacidade focal, sem segunda chamada por rotina.
 - `$lp-factory-avaliar-plano-automacoes`: necessidade de definir ou alterar materialmente operação automatizada prevista na V1; respeite dispensa humana explícita conforme o wrapper.
 - `$lp-factory-avaliar-design`: nova página, mudança relevante de interação ou dúvida material de UX/UI exige definição. Ajuste visual já especificado pode seguir diretamente; resultado renderizado materialmente novo permite revisão.
 - `$lp-factory-avaliar-documentacao`: reconciliação de documento canônico, pelo ABC; o especialista prepara e o Executor aplica.
@@ -85,7 +85,7 @@ Reconcilie o roadmap por `$lp-factory-avaliar-documentacao` em planejamento quan
 
 Em retomada de plano já iniciado cujo contrato vigente exija literalmente `aprovado para merge do plano-base v2`, entregue ao wrapper do Analista a exigência e sua referência imutável. Essa conclusão de compatibilidade equivale à aprovação técnica para implementar; preserve reconciliação, revisão delta e checkpoint exigidos pelo plano, sem mudar lousas históricas, criar classes de execução ou inferir liberação de merge.
 
-Consolidada a V2 e satisfeitas as revisões/condicionantes aplicáveis, registre a referência imutável vigente em `LP-Factory-Stage: plan-v2-approved`, com roadmap e rastreabilidade apenas quando aplicáveis. Esse checkpoint permite implementar; não autoriza merge. Sem Analista necessário, o Executor consolida a V2 mínima diretamente, com Updates e validações aplicáveis.
+Consolidada a V2 e satisfeitas as revisões/condicionantes aplicáveis, registre a referência imutável vigente em `LP-Factory-Stage: plan-v2-approved`, com roadmap e rastreabilidade apenas quando aplicáveis. Esse checkpoint permite implementar; não autoriza merge. Sem Analista necessário, o Executor consolida a V2 mínima diretamente, com Updates acionado ou dispensa registrada quando permitida, e validações aplicáveis.
 
 ## 4. Implementação
 
@@ -159,7 +159,7 @@ Se a V2 continuar suficiente e não houver condicionante/investigação, derive 
 
 Determine estágio pelo Git, PR e trailers `plan-v2`, `plan-v2-approved` e `LP-Factory-Phase`, com referências vinculadas. Não use aprovação antiga para executar candidato ainda não liberado. Confronte delta aprovado com checkpoints: não afetados permanecem válidos; revalide somente fases atingidas sem checkpoint correspondente à correção. Sem delta, continue da primeira fase pendente na ordem do roadmap. Se ambíguo, peça somente o identificador/ref indispensável.
 
-Reutilize Updates apenas para mesmo blob da V1, `source_repository_sha` e referências excepcionais; derivação estrutural também exige mesmo parecer de Updates; confronto exige mesmo update, alternativa e V1. Não repita especialista por precaução; fato material novo limita a nova avaliação ao ponto necessário.
+Quando houver parecer de Updates, reutilize-o apenas para mesmo blob da V1, `source_repository_sha` e referências excepcionais; na derivação estrutural, use o mesmo parecer quando aplicável; confronto de modernização baseado em update exige o mesmo update, alternativa e V1. Não repita especialista por precaução; fato material novo limita a nova avaliação ao ponto necessário.
 
 Mantenha rastreabilidade/matriz existente durante avaliação externa até conclusão definitiva pelo supervisor; limpeza posterior preserva resumo e histórico e não exige nova especialidade. Atualize o PR ao checkpoint publicado com arquivos, validações, QA, pareceres pertinentes, ABC por documento e pendências. Correções pós-entrega ficam na mesma sessão/branch/PR, como delta focal; não reinicie preparação ou avaliações sem impacto demonstrado. Depois da entrega completa, correções seguem os gates competentes, sem Analista por rotina.
 
