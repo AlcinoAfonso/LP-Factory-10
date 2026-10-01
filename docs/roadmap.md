@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 01/10/2026
-• Versão: v1.5.252
+• Versão: v1.5.253
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -735,7 +735,7 @@
 10. E10 — Account Dashboard e jornada da conta
 
 - Objetivo: consolidar a experiência pós-login por conta, da navegação multi-conta e do setup inicial à resolução de nicho e à apresentação comercial, preservando decisões server-side de acesso, papel, entitlement e estado operacional.
-- Status: os fluxos principais estão implementados e a substituição repo-side do Pending Setup pela jornada E10.9 foi concluída; permanecem como lacunas a ação inefetiva de criar outra conta no switcher, a ausência dos eventos específicos do switcher, a edição manual de copy da página comercial personalizada e os gates pré-merge e pós-merge ainda pendentes da E10.9. O onboarding factual E10.10 está materializado no repositório, com apply e QA hospedado ainda pendentes.
+- Status: os fluxos principais estão implementados e a substituição repo-side do Pending Setup pela jornada E10.9 foi concluída; permanecem como lacunas a ação inefetiva de criar outra conta no switcher, a ausência dos eventos específicos do switcher, a edição manual de copy da página comercial personalizada e os gates pré-merge e pós-merge ainda pendentes da E10.9. O onboarding factual E10.10 foi retirado funcionalmente pela E22.7; suas migrations permanecem não aplicadas e excluídas do apply.
 
 10.3 Navegação multi-conta e cabeçalho
 
@@ -1032,7 +1032,7 @@
 
 10.10.1 Objetivo e status
 - Objetivo: confirmar o mínimo factual aplicável após entitlement comercial válido e taxon primário resolvido, sem refazer o Pending Setup nem exigir IA.
-- Status: implementado no repositório; migrations hospedadas e QA autenticado de Preview permanecem pendentes.
+- Status: E10.10 foi retirada funcionalmente pela E22.7; suas migrations permanecem não aplicadas.
 
 10.10.2 Registros do recorte
 - Banco:
@@ -1062,18 +1062,18 @@
   - Contrato de banco: `docs/schema.md` — seções 1.8 e 1.35.
 
 10.10.3 Recorte factual e cutover
-- Status: migration candidata provada em PostgreSQL compatível isolado; apply hospedado pendente do fluxo pós-merge.
+- Status: as migrations E10.10 permanecem não aplicadas e excluídas do apply seletivo E22.7.
 - Conteúdo: no cutover inicial, exatamente `business_display_name` universal required, `creci_registration` opcional no nicho `corretor-imoveis` e `professional_regulatory_credential` opcional no segmento `servicos-profissionais` permanecem ativos; os outros 23 fields são inativados e preservados fisicamente. O baseline versionado de 25 rows converge com o estado hospedado de 26 sem apagar dados nem manter referências condicionais órfãs. A cardinalidade do cutover não é gate permanente do runtime: a jornada valida os três fields suportados por chave e semântica e não apresenta nem usa fields adicionais legítimos na prontidão, preservando a resolução integral E20.8.
 
 10.10.4 UX factual e prontidão para a Base
-- Status: implementada no repositório; QA hospedado em desktop e mobile pendente.
+- Status: UX factual E10.10 retirada pela E22.7; o QA autenticado pós-apply/redeploy aprovou os fluxos correntes sem essa superfície.
 - Conteúdo: owner, admin e editor confirmam o nome público e podem corrigir WhatsApp e a credencial opcional aplicável; viewer somente lê. E-mail e taxon confirmado são somente leitura. Só o nome público válido bloqueia a prontidão factual; falha na leitura factual ou nos lookups de entitlement e taxon mantém a jornada bloqueada com opção de tentar novamente, sem liberar o conteúdo comercial. Ausência legítima de entitlement ou taxon preserva os caminhos existentes. A passagem ativa à Base pertence à E10.11.
 
 10.11 Passagem mínima para a Base
 
 10.11.1 Objetivo e status
 - Objetivo: garantir nome público explícito e reaproveitamento inicial do contexto confirmado, preservando o comercial para contas sem autorização e encaminhando contas autorizadas diretamente à Base sem exigir taxon oficial.
-- Status: implementado; apply seletivo pós-merge concluído. PB-C/E22.7 permanece não iniciado e depende do recibo final de E10.11; a retirada terminal de E10.10 está reservada a essa etapa.
+- Status: implementado; apply seletivo pós-merge concluído. A implementação, o merge, o apply seletivo, a retirada dos gates E20 e o QA pós-apply/redeploy do recorte PB-C/E22.7 foram concluídos; resta a reconciliação documental canônica e o recibo D14B§5.6.
 
 10.11.2 Registros do recorte
 - Banco:
@@ -2572,7 +2572,7 @@
 
 22. E22 — Retirada controlada de ativos históricos
 - Objetivo: reduzir superfícies, dados, documentos e infraestrutura sem consumidor vigente, após auditoria explícita de dependências e sem criar substitutos antecipados.
-- Status: E22.1, E22.2, E22.3, E22.4, E22.5 e E22.6 concluídas. O produto operacional, o `lp-builder`, sua apresentação, workloads exclusivos, compatibilidade E19, write-side de custos e os facilitadores legados Validador Final e Niche Runtime Tests foram retirados; Core, taxonomia, pesquisas estruturadas compartilhadas, capacidades independentes E10/E9/E11, automações GitHub com consumidores vigentes, mailbox institucional e resíduos físicos deliberadamente inertes permanecem preservados. E22.7 — retirada terminal da E20 e E10.10 — está implementada e validada no REF `b2f4f6441b3385673f16aa3ed0857317ab0956db`, ainda sem merge; apply E22.7, retirada das entradas externas Vercel e QA pós-merge/Production permanecem pendentes. Também permanece pendente a decisão futura sobre reduzir Previews produzidos por pushes intermediários em branches não documentais.
+- Status: E22.1, E22.2, E22.3, E22.4, E22.5 e E22.6 concluídas. O produto operacional, o `lp-builder`, sua apresentação, workloads exclusivos, compatibilidade E19, write-side de custos e os facilitadores legados Validador Final e Niche Runtime Tests foram retirados; Core, taxonomia, pesquisas estruturadas compartilhadas, capacidades independentes E10/E9/E11, automações GitHub com consumidores vigentes, mailbox institucional e resíduos físicos deliberadamente inertes permanecem preservados. E22.7 — retirada terminal da E20 e E10.10 — teve implementação, merge, apply seletivo, retirada dos gates externos e QA pós-apply/redeploy concluídos; permanecem pendentes somente a reconciliação documental canônica deste recorte e o recibo D14B§5.6. Também permanece pendente a decisão futura sobre reduzir Previews produzidos por pushes intermediários em branches não documentais.
 
 22.1 Retirada de ativos históricos do domínio de Landing Page
 
@@ -2829,9 +2829,16 @@
 
 22.7.1 Objetivo e status
 - Objetivo: retirar terminal e auditavelmente a E20 e a E10.10, sem segunda autoridade factual ou consumidor ativo do onboarding rejeitado e sem dano às capacidades independentes da E10, E9, E11, taxonomia, pesquisas compartilhadas e comercial.
-- Status: implementação e validações pré-merge concluídas no REF `b2f4f6441b3385673f16aa3ed0857317ab0956db`; V2 técnica corrigida aprovada pelo Analista e implementada; V1 funcional permanece aprovada e congelada; dependência E10.11 concluída positivamente. Merge, apply E22.7, retirada das entradas externas Vercel e QA pós-merge/Production permanecem pendentes.
+- Status: implementação e validações pré-merge concluídas; V2 técnica corrigida aprovada pelo Analista e implementada; V1 funcional permanece aprovada e congelada; dependência E10.11 concluída positivamente. PR #994 foi mergeado em `main` no SHA `362842f41fc9ee1c11315565d7647b1c61b51058`; o apply seletivo `e22_7_only`, a retirada autorizada das sete entradas dos três gates E20 na Vercel e o QA autenticado pós-apply/redeploy foram concluídos com sucesso. Resta a reconciliação documental canônica e o recibo D14B§5.6.
 
 22.7.2 Registros do recorte
+- Banco:
+  - Ajustados:
+    - `public.business_taxons`
+    - `public.openai_workload_operational_configurations`
+    - `public.taxon_factual_fields`
+  - Excluídos:
+    - `public.taxon_factual_fields_taxon_id_fkey`
 - Repositório:
   - Criados:
     - `supabase/migrations/20261001030000_e22_7_retire_factual_authority.sql`
@@ -2869,13 +2876,13 @@
   - Apply de migrations: `docs/automations.md` — seção 3.6.
 
 22.7.3 Auditoria de consumidores e fronteiras preservadas
-- Status: concluída no REF, com validação pré-merge.
+- Status: auditoria concluída e confirmada na entrega mergeada; QA autenticado obrigatório pós-apply/redeploy concluído com sucesso.
 - Conteúdo:
   - A auditoria percorreu 318 fontes TypeScript e 78 arestas internas, sem consumidor externo dos ativos exclusivos; capacidades compartilhadas foram classificadas como preservadas, desacopladas ou removíveis.
   - Pending Setup e a conclusão E10.11 permaneceram preservados, assim como os consumidores independentes de taxonomia, pesquisas estruturadas e comercial.
 
 22.7.4 Retirada dos caminhos funcionais
-- Status: implementada no REF; merge pendente.
+- Status: implementação mergeada; QA autenticado pós-apply/redeploy concluído com sucesso.
 - Conteúdo:
   - E10.10 foi retirado como caminho funcional e a E20 factual foi encerrada como domínio de produto, incluindo catálogo, cobertura, seleção, avaliação assistida, liberação e workload exclusivos.
   - A conta `active` resolve entitlement antes da taxonomia: erro de entitlement falha fechado; conta autorizada segue para a Base sem exigir taxon; conta não autorizada segue para comercial ou `waiting`.
@@ -2885,10 +2892,10 @@
   - Não redesenhar E10, comercial, taxonomia, Base, billing, trial ou LP; não criar domínio substituto, compatibilidade paralela, archive funcional, snapshot vivo ou nova infraestrutura; não remover capacidade, dado ou objeto apenas por associação à E20/E10.10 nem refatorar, modernizar ou reorganizar domínios preservados.
 
 22.7.5 Retirada material residual de banco e configuração
-- Status: migration E22.7 versionada e provada em PostgreSQL 17 isolado; sem apply hospedado, merge ou QA pós-merge/Production.
+- Status: migration E22.7 aplicada; retirada dos gates E20 e QA autenticado pós-apply/redeploy concluídos. A reconciliação documental canônica e o recibo D14B§5.6 permanecem pendentes.
 - Conteúdo:
-  - A migration E22.7 preserva os dados factuais, revisões e ativações históricas; sua aplicação remove somente a FK factual e os acessos exclusivos, e retira as duas unidades mutáveis do workload factual sob as guardas versionadas, sem apagar as linhas históricas.
-  - As três configurações externas de gates E20, totalizando sete entradas observadas na Vercel, permanecem presentes. Reconfirmar IDs e escopos e retirar somente após o cutover autorizado; não afirmar retirada externa nesta etapa.
+  - O apply da migration E22.7 preservou os dados factuais, revisões e ativações históricas; removeu a FK factual e os acessos exclusivos, revogou UPDATE da coluna de seleção e retirou as duas unidades mutáveis do workload factual sob as guardas versionadas, sem apagar linhas históricas.
+  - As sete entradas dos três gates E20 foram removidas da Vercel após autorização humana. Os redeploys de Production e Preview pós-retirada ficaram `READY` e o QA autenticado pós-apply/redeploy foi concluído com sucesso.
   - As duas migrations E10.10 não aplicadas permanecem excluídas do apply e não serão aplicadas; migrations históricas permanecem imutáveis.
   - Dados históricos inertes e objetos compartilhados podem permanecer quando a limpeza não for indispensável; limpeza destrutiva não necessária exige decisão própria.
 
