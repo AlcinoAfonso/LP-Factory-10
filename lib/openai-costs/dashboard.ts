@@ -1,3 +1,4 @@
+import { OPENAI_RETIRED_COST_WORKLOAD_IDS } from "./active-contracts";
 import type {
   OpenAiActiveCostFilters,
   OpenAiActiveCostReadModel,
@@ -28,6 +29,7 @@ const MAX_CUSTOM_PERIOD_DAYS = 180;
 const OPENAI_COST_WORKLOAD_IDS = [
   ...openAiProductWorkloadIds,
   ...openAiOperationalWorkloadIds,
+  ...OPENAI_RETIRED_COST_WORKLOAD_IDS,
 ] as const;
 
 export type OpenAiCostsPeriodSelection = Readonly<{

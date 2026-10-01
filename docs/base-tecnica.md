@@ -2,8 +2,8 @@
 
 0.1 Cabeçalho
 • Documento: Base Técnica LP Factory 10
-• Versão: v2.0.94
-• Data: 26/09/2026
+• Versão: v2.0.95
+• Data: 01/10/2026
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -242,6 +242,7 @@
 • `account_niche_resolutions` representa a resolução operacional; `account_taxonomy` representa o vínculo oficial e só pode ser gravado quando o contrato de alta confiança permitir, sem substituir automaticamente vínculo primário diferente.
 • Falhas técnicas de matching ou IA mantêm o fluxo não terminal para retry ou correção; ausência semântica legítima de taxon pode oferecer entendimento operacional, mas sua confirmação exige ação humana inequívoca e nunca inventa vínculo oficial. Falha de persistência continua fail-closed e impede conclusão parcial.
 • Logs e telemetria do provider não devem conter prompt, resposta integral, payload bruto, aliases, candidatos completos, formulário ou PII. A persistência de domínio pode manter o contexto e a descrição estritamente necessários sob os limites, ACLs e campos exatos de `docs/schema.md`.
+• Taxons novos nascem inativos; a ativação pelo CRUD administrativo exige guard `platform_admin`, pai ativo e concorrência otimista, sem cobertura factual E20 como pré-condição.
 
 3.14.6 Pending Setup conversacional
 • Boundary canônico: `lib/onboarding/pending-setup/`; client e boundaries de access, perfil ou taxonomia não acessam diretamente sua persistência.
@@ -274,31 +275,26 @@
 • Evolução deve preservar a precedência `raiz → módulo → variante`; APIs removidas não podem ser reutilizadas.
 
 3.15.4 Catálogo de entradas de `landing_page`
-• Boundary canônico: `lib/conversion-content/landing-page/input-catalog/`; contracts, schema, cadeia e resolver puro são fontes executáveis. A autoridade factual corrente e única é `public.taxon_factual_fields`, lida integralmente pelos adapters server-only.
-• Não existem versão corrente, registry publicado, plano, `allowedPlans`, draft, snapshot, publisher, reconciliação, override ou segunda autoridade, nem API de compatibilidade para esses contratos.
-• Cada field possui identidade globalmente única, residência Universal ou vinculada a um taxon, definição fechada, estado ativo/inativo e autoria operacional; o contrato físico completo pertence a `docs/schema.md`.
-• A cadeia válida segue `universal → segmento → nicho → ultranicho`; Segmento é raiz, cada descendente aponta para o ancestral imediato e a resolução rejeita ciclo, duplicidade, row inválida, field fora da cadeia ou referência condicional ausente.
-• O adapter prova paginação completa antes de resolver. Falha de leitura, resposta inválida ou cobertura vazia são estados explícitos; não há fallback para catálogo repo-only.
-• A administração usa mutações estruturadas no mesmo agregado, preserva a identidade factual e trata mudança de residência, escopo ou significado como outro fato. Autorização, validação integral, concorrência otimista e confirmação do estado persistido são obrigatórias nas bordas de escrita.
-• Referências condicionais devem existir na cobertura ativa. A saída resolvida é determinística, imutável e distingue fields próprios e herdados; valores concretos continuam responsabilidade do consumidor.
+• Status: Deprecada em 01/10/2026 no REF pré-merge da E22.7.
+• Motivo: a E22.7 retirou o catálogo factual E20.8 e seus consumidores do runtime.
+• Destino canônico: `docs/roadmap.md` — E22.7.4; `docs/schema.md` — seção 1.35.
+• A âncora é mantida para resolver referências históricas à E20.8 no roadmap.
 
 3.15.7 Preparação factual do taxon para `landing_page`
-• Boundary canônico: `lib/conversion-content/landing-page/taxon-preparation/`; a derivação permanece pura e não persiste estado de prontidão.
-• A preparação factual corrente recebe a cadeia taxonômica e a cobertura ativa da autoridade Supabase. Para liberação humana, admite o taxon focal inativo com ancestrais ativos; atividade do focal e pesquisa selecionada não autorizam nem bloqueiam a cobertura factual.
-• A avaliação consultiva opcional reconstrói a fonte no servidor: pesquisa selecionada válida sustenta a análise sistemática sem Web Search; ausência de seleção ou feature desabilitada autoriza o fallback web limitado; hipótese humana focal exige exatamente uma busca, com a pesquisa válida apenas como complemento. Falhas de identidade, banco, arquivo, conteúdo ou schema encerram somente a assistência.
-• Readers por versão e plano, comparações de compatibilidade, `reviewed_input_catalog_version`, carry-forward, draft, publicação e reconciliação foram removidos do runtime. Não existe caminho corrente que os use como autoridade.
-• A avaliação semântica usa o workload OpenAI comum somente por ação explícita de `platform_admin`: uma única Responses API foreground, Structured Output estrito, `store=false`, sem conversation, background, retry, Agents SDK ou fallback para Codex e com deadline total limitado pelo servidor. Quando há Web Search, somente URLs HTTPS presentes na metadata autenticada do provider podem sustentar o resumo e cada candidato; fonte ausente, inventada ou incompleta falha fechado.
-• A recomendação permanece consultiva e transitória. Rejeitar, ignorar ou considerar candidatos não grava estado nem cria handoff automático; qualquer mudança de field ocorre depois, por ação humana no CRUD factual. Taxon ativo pode iniciar voluntariamente a mesma avaliação e permanece ativo; indisponibilidade do provider nunca altera esse estado nem bloqueia o caminho humano.
+• Status: Deprecada em 01/10/2026 no REF pré-merge da E22.7.
+• Motivo: a preparação factual e a avaliação assistida E20.8 foram retiradas do runtime.
+• Destino canônico: `docs/roadmap.md` — E22.7.4; `docs/schema.md` — seção 1.35.
+• A âncora é mantida para resolver referências históricas à E20.8 no roadmap.
 
 3.15.8 Liberação factual administrativa de taxon
-• Taxon novo nasce inativo e só pode ser ativado por ação humana administrativa focal depois da leitura da cadeia e da cobertura factual corrente; o CRUD genérico não realiza a transição de inativo para ativo.
-• A leitura admite somente o taxon servido inativo e exige ancestrais aplicados ativos. A liberação relê identidade e cobertura, falha diante de drift ou concorrência e usa compare-and-set para alterar exclusivamente `is_active`.
-• Pesquisa, IA, justificativa textual e marcador de versão revisada não são pré-condições nem writes da liberação; componentes client recebem somente o DTO mínimo e a Server Action reautoriza `platform_admin`.
+• Status: Deprecada em 01/10/2026 no REF pré-merge da E22.7.
+• Motivo: a liberação baseada em cobertura factual foi retirada; a ativação atual pertence ao CRUD independente de taxonomia.
+• Destino canônico: `docs/roadmap.md` — E22.7.4; seção 3.14.5 desta Base Técnica.
+• A âncora é mantida para resolver referências históricas à E20.8 no roadmap.
 
 3.15.9 Estado residual do antigo produto de `landing_page`
 • O Account Dashboard não possui criação, onboarding operacional, workspace, configuração operacional, histórico, Preview, renderer, aprovação, readers de materialização ou assinatura de assets do produto legado.
 • Tabelas, RPCs, migrations, ponteiro de aprovação, dados históricos e o bucket privado permanecem fisicamente preservados e inertes; nenhum runtime corrente os usa para leitura, escrita, reprodução, entrega de revisão ou compatibilidade do catálogo.
-• A administração factual corrente não lê contas, entitlement, `account_taxonomy`, LPs ou configurações antigas para determinar cobertura, mutações de field ou liberação de taxon.
 • Eventual limpeza destrutiva de banco, dados ou Storage exige recorte próprio; o contrato físico continua inventariado em `docs/schema.md`.
 
 3.16 Configuração e observabilidade de workloads OpenAI

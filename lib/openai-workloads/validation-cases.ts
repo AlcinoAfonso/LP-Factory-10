@@ -39,9 +39,6 @@ const productIds = [
   "commercial_activation_draft_generation",
 ] as const;
 
-const taxonInputCatalogEvaluationWorkloadId =
-  "taxon_input_catalog_sufficiency_evaluation" as const;
-
 const cases = [
   {
     name: "niche request uses resolved model and effort with deterministic transport",
@@ -189,16 +186,15 @@ const cases = [
     },
   },
   {
-    name: "inventory exposes six unique canonical workloads",
+    name: "inventory exposes five unique canonical workloads",
     run: () => {
       const inventory = listOpenAiWorkloadInventory();
-      assert.equal(inventory.length, 6);
-      assert.equal(new Set(inventory.map((item) => item.id)).size, 6);
+      assert.equal(inventory.length, 5);
+      assert.equal(new Set(inventory.map((item) => item.id)).size, 5);
       assert.deepEqual(
         inventory.map((item) => item.id),
         [
           ...productIds,
-          taxonInputCatalogEvaluationWorkloadId,
           "communication_base_stage1_assistance",
           "communication_base_stage2_intelligence",
           "supabase_inspect",
@@ -225,36 +221,18 @@ const cases = [
     },
   },
   {
-    name: "taxon evaluation keeps its development baseline while operational history remains typed",
+    name: "retired factual workload cannot resolve or read operational configuration",
     run: async () => {
-      const baseline = await resolveOpenAiProductWorkload(
-        taxonInputCatalogEvaluationWorkloadId,
-        "development",
-      );
-      assert.equal(baseline.ok, true);
-      assert.equal(baseline.value.model, "gpt-5.6-terra");
-      assert.equal(baseline.value.reasoningEffort, "low");
-
-      const historical = await resolveOpenAiProductWorkload(
-        taxonInputCatalogEvaluationWorkloadId,
-        "preview",
-        {
+      for (const environment of ["development", "preview", "production"] as const) {
+        let reads = 0;
+        const result = await resolveOpenAiProductWorkload("taxon_input_catalog_sufficiency_evaluation", environment, {
           operationalConfigurationEnabled: "true",
-          readOperationalConfiguration: async (input) => ({
-            ok: true,
-            value: {
-              environment: input.environment,
-              workload: taxonInputCatalogEvaluationWorkloadId,
-              apiKind: "responses_text",
-              model: "gpt-5.6-terra",
-              reasoningEffort: "medium",
-              revision: "2",
-            },
-          }),
-        },
-      );
-      assert.equal(historical.ok, true);
-      assert.equal(historical.value.reasoningEffort, "medium");
+          readOperationalConfiguration: async () => { reads += 1; return { ok: false, error: { code: "READ_FAILED", message: "Must not be called" } }; },
+        });
+        assert.equal(result.ok, false);
+        assert.equal(result.error.code, "UNKNOWN_WORKLOAD");
+        assert.equal(reads, 0);
+      }
     },
   },
   {
@@ -327,7 +305,6 @@ const cases = [
         [
           "niche_resolution",
           "commercial_activation_draft_generation",
-          "taxon_input_catalog_sufficiency_evaluation",
           "communication_base_stage1_assistance",
           "communication_base_stage2_intelligence",
         ],
@@ -342,11 +319,6 @@ const cases = [
       }
       const niche = projection.find((item) => item.workload === "niche_resolution");
       assert.equal(niche?.name, "Resolução de nicho");
-      const taxonEvaluation = projection.find(
-        (item) => item.workload === taxonInputCatalogEvaluationWorkloadId,
-      );
-      assert.equal(taxonEvaluation?.roadmapReference, "E20.8.7");
-      assert.equal(taxonEvaluation?.visualGroup, null);
       assert.throws(() => {
         (projection as unknown[]).push({});
       }, TypeError);
@@ -821,7 +793,7 @@ const cases = [
         { data: fixture.activations, error: null },
       );
       assert.equal(result.ok, true);
-      assert.equal(result.value.length, 10);
+      assert.equal(result.value.length, 8);
       assert.equal(Object.isFrozen(result), true);
       assert.equal(Object.isFrozen(result.value), true);
       assert.equal(Object.isFrozen(result.value[0]), true);
@@ -861,13 +833,12 @@ const cases = [
         { data: fixture.activations, error: null },
       );
       assert.equal(result.ok, true);
-      assert.equal(result.value.length, 6);
+      assert.equal(result.value.length, 4);
       assert.deepEqual(
         [...new Set(result.value.map((unit) => unit.workload))],
         [
           "niche_resolution",
           "commercial_activation_draft_generation",
-          "taxon_input_catalog_sufficiency_evaluation",
         ],
       );
     },
@@ -963,7 +934,6 @@ const cases = [
       for (const workload of [
         "niche_resolution",
         "commercial_activation_draft_generation",
-        "taxon_input_catalog_sufficiency_evaluation",
         "communication_base_stage1_assistance",
         "communication_base_stage2_intelligence",
       ] as const) {
@@ -1354,7 +1324,6 @@ function administrativeConfigurationFixture(): Readonly<{
   const workloads = [
     "niche_resolution",
     "commercial_activation_draft_generation",
-    "taxon_input_catalog_sufficiency_evaluation",
     "communication_base_stage1_assistance",
     "communication_base_stage2_intelligence",
   ] as const;
@@ -1365,13 +1334,10 @@ function administrativeConfigurationFixture(): Readonly<{
 
   for (const environment of environments) {
     for (const workload of workloads) {
-      const inputCatalogEvaluation = workload === "taxon_input_catalog_sufficiency_evaluation";
       const communicationStageTwo = workload === "communication_base_stage2_intelligence";
       const modality = "responses_text";
-      const baselineModel = communicationStageTwo ? "gpt-6-luna" :
-        inputCatalogEvaluation ? "gpt-5.6-terra" : "gpt-5.4-mini";
-      const baselineReasoning = communicationStageTwo ? "max" :
-        inputCatalogEvaluation ? "low" : "none";
+      const baselineModel = communicationStageTwo ? "gpt-6-luna" : "gpt-5.4-mini";
+      const baselineReasoning = communicationStageTwo ? "max" : "none";
       const baselineRevisionId = administrativeUuid(sequence++);
       const bootstrapActivationId = administrativeUuid(sequence++);
 

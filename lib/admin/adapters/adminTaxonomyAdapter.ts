@@ -1,9 +1,5 @@
 import "server-only";
 
-import {
-  isEndCustomerResearchSelectionEnabled,
-  loadEndCustomerResearchCandidate,
-} from "@/conversion-content/landing-page/taxon-preparation";
 import { createServiceClient } from "@/lib/supabase/service";
 import {
   ADMIN_PAGE_SIZE,
@@ -27,7 +23,6 @@ import {
   readAdminCommercialActivationOverview,
   type AdminCommercialActivationListItem,
 } from "./adminCommercialActivationTemplatesAdapter";
-import { readAdminTaxonFactualRelease } from "./adminTaxonFactualReleaseAdapter";
 
 type CreateAdminTaxonInput = {
   name: string;
@@ -49,15 +44,6 @@ type UpdateAdminTaxonInput = {
   slug?: string;
   isActive: boolean;
 };
-
-type SelectAdminEndCustomerResearchInput = {
-  taxonId: string;
-  researchVersion: number;
-};
-
-type SelectAdminEndCustomerResearchResult =
-  | { ok: true; taxonId: string; selectedVersion: number }
-  | { ok: false; error: string };
 
 type AddAdminTaxonAliasInput = {
   taxonId: string;
@@ -147,8 +133,6 @@ export async function getAdminTaxonDetail(taxonId: string): Promise<AdminTaxonDe
     contentTemplateLinks,
     marketResearch,
     diagnostics,
-    endCustomerResearchSelection,
-    factualRelease,
   ] = await Promise.all([
     supabase.from("business_taxon_aliases").select("id,alias_text,is_active").eq("taxon_id", taxonId).order("alias_text", { ascending: true }).limit(100),
     supabase.from("business_taxons").select("id,parent_id,level,name,slug,is_active").eq("parent_id", taxonId).order("name", { ascending: true }).limit(100),
@@ -165,8 +149,6 @@ export async function getAdminTaxonDetail(taxonId: string): Promise<AdminTaxonDe
         new Map(),
       ),
     ]),
-    readAdminEndCustomerResearchSelection(supabase, taxonId),
-    readAdminTaxonFactualRelease(taxonId),
   ]);
 
   const parentNames = new Map(Array.from(parentTaxons.entries()).map(([id, row]) => [id, row.name]));
@@ -196,42 +178,7 @@ export async function getAdminTaxonDetail(taxonId: string): Promise<AdminTaxonDe
     usage,
     deleteBlockers,
     canDelete: deleteBlockers.length === 0,
-    endCustomerResearchSelection,
-    factualRelease,
   };
-}
-
-async function readAdminEndCustomerResearchSelection(
-  supabase: ReturnType<typeof createServiceClient>,
-  taxonId: string,
-): Promise<AdminTaxonDetail["endCustomerResearchSelection"]> {
-  if (!isEndCustomerResearchSelectionEnabled()) return { status: "disabled" };
-
-  const { data, error } = await supabase
-    .from("business_taxons")
-    .select("selected_end_customer_research_version")
-    .eq("id", taxonId)
-    .maybeSingle();
-
-  if (error || !data) {
-    return {
-      status: "read_failed",
-      message: "Não foi possível ler a seleção da pesquisa integral.",
-    };
-  }
-
-  const selectedVersion = data.selected_end_customer_research_version;
-  if (
-    selectedVersion !== null &&
-    (!Number.isSafeInteger(selectedVersion) || selectedVersion <= 0)
-  ) {
-    return {
-      status: "read_failed",
-      message: "A seleção persistida da pesquisa integral é inválida.",
-    };
-  }
-
-  return { status: "available", selectedVersion };
 }
 
 async function readAdminTaxonDiagnostics(
@@ -414,16 +361,15 @@ export async function updateAdminTaxon(input: UpdateAdminTaxonInput): Promise<Ad
 
   const { data: currentData, error: currentError } = await (supabase as any)
     .from("business_taxons")
-    .select("id,level,name,slug,is_active")
+    .select("id,parent_id,level,name,slug,is_active")
     .eq("id", input.id)
     .maybeSingle();
   const current = currentData as any;
   if (currentError || !current) return { ok: false, error: "Taxon nao encontrado." };
   if (!current.is_active && input.isActive) {
-    return {
-      ok: false,
-      error: "Use a liberação E20.6 para ativar um taxon novo após revisar a cobertura herdada.",
-    };
+    if (!isCreateTaxonLevel(current.level)) return { ok: false, error: "Nivel do taxon invalido." };
+    const parentValidation = await validateTaxonParent(current.level, current.parent_id);
+    if (!parentValidation.ok) return parentValidation;
   }
   const { data: existingSlug, error: slugError } = await supabase
     .from("business_taxons")
@@ -439,13 +385,16 @@ export async function updateAdminTaxon(input: UpdateAdminTaxonInput): Promise<Ad
 
   if (existingSlug) return { ok: false, error: "Ja existe outro taxon com este slug." };
 
-  const mutationQuery: any = supabase
+  let mutationQuery: any = supabase
     .from("business_taxons")
     .update({ name, slug, is_active: input.isActive })
     .eq("id", input.id)
     .eq("name", current.name)
     .eq("slug", current.slug)
     .eq("is_active", current.is_active);
+  mutationQuery = current.parent_id === null
+    ? mutationQuery.is("parent_id", null)
+    : mutationQuery.eq("parent_id", current.parent_id);
   const { data: updated, error } = await mutationQuery
     .select("id")
     .maxAffected(1)
@@ -457,90 +406,6 @@ export async function updateAdminTaxon(input: UpdateAdminTaxonInput): Promise<Ad
   }
 
   return { ok: true, taxonId: input.id };
-}
-
-export async function selectAdminEndCustomerResearchVersion(
-  input: SelectAdminEndCustomerResearchInput,
-): Promise<SelectAdminEndCustomerResearchResult> {
-  if (!isEndCustomerResearchSelectionEnabled()) {
-    return { ok: false, error: "A seleção de pesquisa integral está desabilitada." };
-  }
-  if (!input.taxonId) return { ok: false, error: "Taxon não informado." };
-  if (!Number.isSafeInteger(input.researchVersion) || input.researchVersion <= 0) {
-    return { ok: false, error: "Informe uma versão inteira positiva." };
-  }
-
-  const supabase = createServiceClient();
-  const { data: taxonData, error: taxonError } = await (supabase as any)
-    .from("business_taxons")
-    .select("id,slug,is_active,selected_end_customer_research_version")
-    .eq("id", input.taxonId)
-    .maybeSingle();
-  const taxon = taxonData as any;
-
-  if (taxonError) {
-    console.error("selectAdminEndCustomerResearchVersion read failed:", {
-      code: taxonError.code,
-      message: taxonError.message,
-      taxonId: input.taxonId,
-    });
-    return { ok: false, error: "Não foi possível ler o taxon agora." };
-  }
-  if (!taxon) return { ok: false, error: "Taxon não encontrado." };
-  const candidate = await loadEndCustomerResearchCandidate({
-    taxon: { slug: taxon.slug, isActive: true },
-    researchVersion: input.researchVersion,
-  });
-  if (!candidate.ok) {
-    return {
-      ok: false,
-      error: candidate.error.code === "FILE_NOT_FOUND"
-        ? "A versão candidata não está arquivada."
-        : "A versão candidata não possui uma pesquisa integral válida.",
-    };
-  }
-
-  if (taxon.selected_end_customer_research_version === input.researchVersion) {
-    return { ok: true, taxonId: taxon.id, selectedVersion: input.researchVersion };
-  }
-
-  let updateQuery: any = supabase
-    .from("business_taxons")
-    .update({ selected_end_customer_research_version: input.researchVersion })
-    .eq("id", taxon.id)
-    .eq("slug", taxon.slug)
-    .eq("is_active", taxon.is_active);
-  updateQuery = taxon.selected_end_customer_research_version === null
-    ? updateQuery.is("selected_end_customer_research_version", null)
-    : updateQuery.eq(
-        "selected_end_customer_research_version",
-        taxon.selected_end_customer_research_version,
-      );
-  const { data: updated, error: updateError } = await updateQuery
-    .select("id")
-    .maxAffected(1)
-    .maybeSingle();
-
-  if (updateError) {
-    console.error("selectAdminEndCustomerResearchVersion update failed:", {
-      code: updateError.code,
-      message: updateError.message,
-      taxonId: input.taxonId,
-    });
-    return { ok: false, error: "Não foi possível salvar a seleção agora." };
-  }
-  if (!updated) {
-    return {
-      ok: false,
-      error: "O taxon mudou durante a seleção. Recarregue a página e tente novamente.",
-    };
-  }
-
-  return {
-    ok: true,
-    taxonId: taxon.id,
-    selectedVersion: input.researchVersion,
-  };
 }
 
 export async function addAdminTaxonAlias(input: AddAdminTaxonAliasInput): Promise<AdminTaxonActionResult> {

@@ -8,7 +8,7 @@ import type {
 } from "../openai-workloads";
 
 export const OPENAI_ACTIVE_COST_CONTRACT_VERSION = "e21.5.6-v2";
-export const OPENAI_RETIRED_COST_WORKLOAD_IDS = ["landing_page_dynamic_market_research"] as const;
+export const OPENAI_RETIRED_COST_WORKLOAD_IDS = ["landing_page_dynamic_market_research", "taxon_input_catalog_sufficiency_evaluation"] as const;
 
 export type OpenAiRetiredCostWorkloadId = (typeof OPENAI_RETIRED_COST_WORKLOAD_IDS)[number];
 export type OpenAiCostReadWorkloadId = OpenAiWorkloadId | OpenAiRetiredCostWorkloadId;

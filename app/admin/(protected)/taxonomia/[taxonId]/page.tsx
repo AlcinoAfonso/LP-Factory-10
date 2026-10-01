@@ -5,22 +5,15 @@ import type { ReactNode } from "react";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminStatusBadge } from "@/components/admin/AdminStatusBadge";
 import { AdminTaxonManageForm } from "@/components/admin/AdminTaxonManageForm";
-import { AdminTaxonResearchSelectionForm } from "@/components/admin/AdminTaxonResearchSelectionForm";
 import { EmptyState } from "@/components/ui/empty-state";
 import { getAdminTaxonDetail } from "@/lib/admin/adapters/adminReadOnlyAdapter";
-import { resolveInputCatalogEvaluationRuntimeReadiness } from "@/conversion-content/adapters/inputCatalogEvaluationRuntimeGate";
 import type { AdminOperationalDiagnosticItem } from "@/lib/admin/adapters/adminReadOnlyTypes";
 import {
   addTaxonAliasAction,
   deleteTaxonAction,
   deleteTaxonAliasAction,
-  selectEndCustomerResearchAction,
   updateTaxonAction,
-  releaseTaxonAction,
-  evaluateInputCatalogAction,
 } from "../actions";
-import { AdminTaxonInputCatalogEvaluation } from "./_components/AdminTaxonInputCatalogEvaluation";
-import { AdminTaxonFactualCoverage } from "./_components/AdminTaxonFactualCoverage";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -34,10 +27,6 @@ export default async function AdminTaxonDetailPage({ params }: AdminTaxonDetailP
   const taxon = await getAdminTaxonDetail(taxonId);
 
   if (!taxon) notFound();
-  const inputCatalogEvaluationAvailable = taxon.factualRelease.status === "available";
-  const inputCatalogEvaluationRuntime = inputCatalogEvaluationAvailable
-    ? await resolveInputCatalogEvaluationRuntimeReadiness()
-    : null;
 
   return (
     <div className="space-y-6">
@@ -50,7 +39,7 @@ export default async function AdminTaxonDetailPage({ params }: AdminTaxonDetailP
 
       <AdminPageHeader
         title={taxon.name}
-        description="Cobertura factual corrente, decisões humanas e apoio opcional organizados em um único fluxo administrativo."
+        description="Identidade, hierarquia e gestão administrativa do taxon."
       />
 
       <section
@@ -77,12 +66,6 @@ export default async function AdminTaxonDetailPage({ params }: AdminTaxonDetailP
         </dl>
       </section>
 
-      <AdminTaxonFactualCoverage
-        release={taxon.factualRelease}
-        releaseAction={releaseTaxonAction}
-        taxonId={taxon.id}
-      />
-
       <section aria-labelledby="taxon-human-actions-title" className="space-y-4">
         <div className="rounded-lg border border-border bg-card p-5 shadow-card">
           <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
@@ -92,7 +75,7 @@ export default async function AdminTaxonDetailPage({ params }: AdminTaxonDetailP
             Gestão administrativa
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Edite o taxon, seus aliases e a fonte factual sem depender da recomendação da IA.
+            Edite o taxon e seus aliases, preservando a hierarquia e os vínculos existentes.
           </p>
         </div>
 
@@ -104,43 +87,7 @@ export default async function AdminTaxonDetailPage({ params }: AdminTaxonDetailP
           deleteAction={deleteTaxonAction}
         />
 
-        {taxon.endCustomerResearchSelection.status === "disabled" ? null : (
-          <AdminTaxonResearchSelectionForm
-            action={selectEndCustomerResearchAction}
-            isActive={taxon.isActive}
-            selection={taxon.endCustomerResearchSelection}
-            taxonId={taxon.id}
-          />
-        )}
       </section>
-
-      {inputCatalogEvaluationAvailable && inputCatalogEvaluationRuntime?.ok ? (
-        <AdminTaxonInputCatalogEvaluation
-          isActive={taxon.isActive}
-          evaluateAction={evaluateInputCatalogAction}
-          taxonId={taxon.id}
-          appliedLayers={taxon.factualRelease.status === "available" ? taxon.factualRelease.appliedLayers : []}
-        />
-      ) : null}
-
-      {inputCatalogEvaluationAvailable && inputCatalogEvaluationRuntime && !inputCatalogEvaluationRuntime.ok ? (
-        <section className="rounded-lg border border-border bg-card p-5 shadow-card">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            Apoio opcional por IA
-          </p>
-          <h2 className="mt-1 text-lg font-semibold text-card-foreground">
-            {taxon.isActive
-              ? "Revisão factual voluntária dos fields correntes"
-              : "Avaliação factual dos fields correntes"}
-          </h2>
-          <p className="mt-2 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-            {inputCatalogEvaluationRuntime.message}
-            {taxon.isActive
-              ? " O taxon permanece ativo; apenas as sugestões por IA estão indisponíveis."
-              : " A liberação humana sem IA acima permanece disponível; apenas as sugestões por IA estão indisponíveis."}
-          </p>
-        </section>
-      ) : null}
 
       <details className="rounded-lg border border-border bg-card shadow-card">
         <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 rounded-lg px-5 py-4 text-sm font-semibold text-card-foreground outline-none focus-visible:ring-4 focus-visible:ring-brand-600/30">

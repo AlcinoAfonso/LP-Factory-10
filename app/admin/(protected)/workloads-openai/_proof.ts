@@ -1,7 +1,6 @@
 import "server-only";
 
 import { requestCommercialActivationOpenAi } from "@/conversion-content/adapters/commercialActivationOpenAiAdapter";
-import { evaluateInputCatalogWithOpenAi } from "@/conversion-content/adapters/inputCatalogEvaluationOpenAiAdapter";
 import { resolveNicheWithOpenAi } from "@/onboarding/niche-resolution/adapters/openAiResolver";
 import type {
   OpenAiOperationalConfigurationReader,
@@ -41,8 +40,6 @@ export async function runOpenAiCandidateProof(
     {
       niche: dependencies.niche ?? proveNicheResolution,
       commercial: dependencies.commercial ?? proveCommercialActivation,
-      inputCatalogEvaluation:
-        dependencies.inputCatalogEvaluation ?? proveInputCatalogEvaluation,
       communicationStageOne:
         dependencies.communicationStageOne ?? proveCommunicationStageOne,
       communicationStageTwo:
@@ -209,42 +206,6 @@ async function proveCommercialActivation(
     : { ok: false, code: result.ok ? "contract" : "provider" };
 }
 
-async function proveInputCatalogEvaluation(
-  workload: ResolvedOpenAiProductWorkload,
-  environment: OpenAiManagedWorkloadEnvironment,
-  apiKey: string,
-  requestId: string,
-): Promise<ProofAttempt> {
-  const result = await evaluateInputCatalogWithOpenAi({
-    apiKey,
-    configuration: workload,
-    environment,
-    requestId,
-    safetyIdentifier: "platform_admin_operational_proof",
-    executionOrigin: "administrative_proof",
-    request: {
-      mode: "systematic",
-      sourceStrategy: "e20_5",
-      prompt: {
-        version: "e20.8.7-factual-coverage-evaluation-v3",
-        instructions: "Retorne somente o objeto JSON solicitado para a prova técnica segura.",
-        input: "Confirme o contrato do transporte com o valor approved.",
-      },
-      outputSchema: {
-        type: "object",
-        additionalProperties: false,
-        properties: { proof: { type: "string", const: "approved" } },
-        required: ["proof"],
-      },
-    },
-  });
-  return result.status === "completed" &&
-    isRecord(result.output) &&
-    result.output.proof === "approved"
-    ? { ok: true, providerRequestId: null, latencyMs: null }
-    : { ok: false, code: result.status === "completed" ? "contract" : "provider" };
-}
-
 function proofResolver(
   workload: ResolvedOpenAiProductWorkload,
   environment: OpenAiManagedWorkloadEnvironment,
@@ -265,8 +226,4 @@ function proofResolver(
     operationalConfigurationEnabled: "true",
     readOperationalConfiguration,
   } as const;
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
 }

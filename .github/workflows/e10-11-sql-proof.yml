@@ -6,6 +6,8 @@ on:
       - '.github/workflows/e10-11-sql-proof.yml'
       - 'supabase/migrations/20260928161504_e10_11_pending_setup_business_name.sql'
       - 'supabase/tests/e10_11_pending_setup_business_name.test.sql'
+      - 'supabase/migrations/20261001030000_e22_7_retire_factual_authority.sql'
+      - 'supabase/tests/e22_7_retire_factual_authority.*'
 
 permissions:
   contents: read
@@ -89,3 +91,61 @@ jobs:
             }
           grep -qx 'ROLLBACK' "$RUNNER_TEMP/e10-11-sql-test.log"
           echo "E10.11 positive/negative SQL cases passed and rolled back." >> "$GITHUB_STEP_SUMMARY"
+
+  e22-7-sql-proof:
+    name: E22.7 terminal SQL proof
+    if: ${{ github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'codex-app/e22-7-retirada-terminal' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install pinned Supabase CLI
+        uses: supabase/setup-cli@3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf # v2.1.1
+        with:
+          version: 2.106.0
+      - name: Stage the canonical E21 dependency chain
+        id: stage
+        shell: bash
+        run: |
+          set -euo pipefail
+          stage_root="$(mktemp -d "$RUNNER_TEMP/e22-7-sql.XXXXXX")"
+          stage_project="$stage_root/project"
+          mkdir -p "$stage_project/supabase/migrations"
+          cp supabase/config.toml "$stage_project/supabase/config.toml"
+          test "$(find supabase/migrations -maxdepth 1 -type f -name '*.sql' | wc -l)" -eq 62
+          selected=(
+            20260611172930_remote_public_baseline.sql
+            20260614124000_fix_audit_context_event_event_column.sql
+            20260820190422_e21_2_3_openai_workload_operational_configurations.sql
+            20260820213900_e21_2_taxon_input_catalog_sufficiency_workload.sql
+          )
+          for name in "${selected[@]}"; do
+            cp "supabase/migrations/$name" "$stage_project/supabase/migrations/$name"
+            cmp -s "supabase/migrations/$name" "$stage_project/supabase/migrations/$name"
+          done
+          test "$(find "$stage_project/supabase/migrations" -maxdepth 1 -type f -name '*.sql' | wc -l)" -eq 4
+          echo "project=$stage_project" >> "$GITHUB_OUTPUT"
+          echo "Four exact canonical dependencies staged. E22.7 is tested integrally after a disposable fixture; no E10.10 migration is staged or applied." >> "$GITHUB_STEP_SUMMARY"
+      - name: Start isolated PostgreSQL 17
+        shell: bash
+        run: |
+          set -euo pipefail
+          supabase --workdir "${{ steps.stage.outputs.project }}" start \
+            -x gotrue,realtime,storage-api,imgproxy,kong,mailpit,postgrest,postgres-meta,studio,edge-runtime,logflare,vector,supavisor \
+            > "$RUNNER_TEMP/e22-7-supabase-start.log" 2>&1 || {
+              last_migration_line="$(grep -n 'Applying migration ' "$RUNNER_TEMP/e22-7-supabase-start.log" | tail -n 1 | cut -d: -f1 || true)"
+              if [ -n "$last_migration_line" ]; then
+                sed -n "${last_migration_line},$((last_migration_line + 20))p" "$RUNNER_TEMP/e22-7-supabase-start.log"
+              else
+                sed -n '1,25p' "$RUNNER_TEMP/e22-7-supabase-start.log"
+              fi | sed -E '/(SERVICE_ROLE|ANON_KEY|SECRET_KEY|JWT_SECRET|DB_PASSWORD|DATABASE_URL|PUBLISHABLE_KEY)/Id'
+              exit 1
+            }
+      - name: Execute full migration and terminal rollback cases
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t db_containers < <(docker ps --format '{{.Names}}' | grep '^supabase_db_' || true)
+          test "${#db_containers[@]}" -eq 1
+          test "$(docker exec "${db_containers[0]}" psql -U postgres -d postgres -At -c 'select current_setting('"'"'server_version_num'"'"')::int / 10000 = 17')" = t
+          bash supabase/tests/e22_7_retire_factual_authority.proof.sh "${db_containers[0]}"

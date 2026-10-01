@@ -1,17 +1,11 @@
-import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { EmptyState } from "@/components/ui/empty-state";
 import {
-  adminLandingPageStructureViews,
   normalizeAdminLandingPageStructureView,
   readAdminLandingPageStructure,
-  type AdminLandingPageStructureView,
 } from "@/lib/admin/adapters/adminLandingPageStructureAdapter";
-import { cn } from "@/lib/utils";
-import { parseEvaluationRefinementHandoff, parseEvaluationSuggestionHandoff } from "@/lib/admin/evaluationSuggestionHandoff";
-import { AdminFactualFields } from "./_components/AdminFactualFields";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -19,8 +13,6 @@ export const revalidate = 0;
 type PageProps = { searchParams?: Promise<Record<string, string | string[] | undefined>> };
 type StructureRead = Awaited<ReturnType<typeof readAdminLandingPageStructure>>;
 type RootData = Extract<StructureRead, { view: "parametros" }>["data"];
-
-const viewLabels: Record<AdminLandingPageStructureView, string> = { parametros: "Parâmetros", entradas: "Entradas" };
 
 export default async function AdminLandingPageStructurePage({ searchParams }: PageProps) {
   const rawParams = (await searchParams) ?? {};
@@ -30,16 +22,7 @@ export default async function AdminLandingPageStructurePage({ searchParams }: Pa
   return (
     <div className="space-y-4">
       <AdminPageHeader eyebrow="Contrato estrutural corrente" title="Estrutura da LP" />
-      <nav aria-label="Visões da estrutura da LP" className="-mb-px flex gap-1 overflow-x-auto border-b border-border">
-        {adminLandingPageStructureViews.map((candidate) => (
-          <Link key={candidate} href={`/admin/estrutura-lp?view=${candidate}`} aria-current={candidate === view ? "page" : undefined}
-            className={cn("min-h-11 shrink-0 border-b-2 px-3 py-2 text-sm font-medium outline-none transition focus-visible:rounded-sm focus-visible:ring-4 focus-visible:ring-brand-600/20", candidate === view ? "border-brand-600 text-brand-700" : "border-transparent text-muted-foreground hover:border-border hover:text-foreground")}>
-            {viewLabels[candidate]}
-          </Link>
-        ))}
-      </nav>
       {structure.view === "parametros" ? <RootView data={structure.data} /> : null}
-      {structure.view === "entradas" ? <AdminFactualFields data={structure.data} suggestion={query.taxon === structure.data.selectedTaxon?.id ? parseEvaluationSuggestionHandoff(query) : null} refineFieldKey={query.taxon === structure.data.selectedTaxon?.id ? parseEvaluationRefinementHandoff(query) : null} /> : null}
     </div>
   );
 }

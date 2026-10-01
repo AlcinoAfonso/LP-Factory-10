@@ -96,7 +96,6 @@ function isTextWorkload(
   return (
     value === "niche_resolution" ||
     value === "commercial_activation_draft_generation" ||
-    value === "taxon_input_catalog_sufficiency_evaluation" ||
     value === "communication_base_stage1_assistance" ||
     value === "communication_base_stage2_intelligence"
   );
@@ -157,7 +156,6 @@ const managedEnvironments = ["production", "preview"] as const;
 const preBootstrapManagedWorkloads = [
   "niche_resolution",
   "commercial_activation_draft_generation",
-  "taxon_input_catalog_sufficiency_evaluation",
 ] as const satisfies readonly ManagedWorkload[];
 const managedWorkloads = [
   ...preBootstrapManagedWorkloads,

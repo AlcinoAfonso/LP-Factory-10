@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 30/09/2026
-• Versão: v1.5.251
+• Data: 01/10/2026
+• Versão: v1.5.252
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -2572,7 +2572,7 @@
 
 22. E22 — Retirada controlada de ativos históricos
 - Objetivo: reduzir superfícies, dados, documentos e infraestrutura sem consumidor vigente, após auditoria explícita de dependências e sem criar substitutos antecipados.
-- Status: E22.1, E22.2, E22.3, E22.4, E22.5 e E22.6 concluídas. O produto operacional, o `lp-builder`, sua apresentação, workloads exclusivos, compatibilidade E19, write-side de custos e os facilitadores legados Validador Final e Niche Runtime Tests foram retirados; Core, capacidades E20 independentes, automações GitHub com consumidores vigentes, mailbox institucional e resíduos físicos deliberadamente inertes permanecem preservados. Permanece somente a decisão futura sobre reduzir Previews produzidos por pushes intermediários em branches não documentais.
+- Status: E22.1, E22.2, E22.3, E22.4, E22.5 e E22.6 concluídas. O produto operacional, o `lp-builder`, sua apresentação, workloads exclusivos, compatibilidade E19, write-side de custos e os facilitadores legados Validador Final e Niche Runtime Tests foram retirados; Core, taxonomia, pesquisas estruturadas compartilhadas, capacidades independentes E10/E9/E11, automações GitHub com consumidores vigentes, mailbox institucional e resíduos físicos deliberadamente inertes permanecem preservados. E22.7 — retirada terminal da E20 e E10.10 — está implementada e validada no REF `b2f4f6441b3385673f16aa3ed0857317ab0956db`, ainda sem merge; apply E22.7, retirada das entradas externas Vercel e QA pós-merge/Production permanecem pendentes. Também permanece pendente a decisão futura sobre reduzir Previews produzidos por pushes intermediários em branches não documentais.
 
 22.1 Retirada de ativos históricos do domínio de Landing Page
 
@@ -2824,6 +2824,73 @@
 - Os dois workflows, os dois subprojetos e o verificador Supabase exclusivo foram removidos conjuntamente; o restante de `automations/supabase-inspect/`, seus consumidores e os demais workflows permanecem preservados.
 - Usuários, contas, memberships, sessões, dados Supabase e evidências existentes não foram alterados nem excluídos.
 - Runs, checks, statuses, logs e artifacts do GitHub Actions são evidência suplementar e expirável; o diff/PR e os documentos canônicos preservam a prova durável da retirada.
+
+22.7 Retirada terminal da E20 e E10.10
+
+22.7.1 Objetivo e status
+- Objetivo: retirar terminal e auditavelmente a E20 e a E10.10, sem segunda autoridade factual ou consumidor ativo do onboarding rejeitado e sem dano às capacidades independentes da E10, E9, E11, taxonomia, pesquisas compartilhadas e comercial.
+- Status: implementação e validações pré-merge concluídas no REF `b2f4f6441b3385673f16aa3ed0857317ab0956db`; V2 técnica corrigida aprovada pelo Analista e implementada; V1 funcional permanece aprovada e congelada; dependência E10.11 concluída positivamente. Merge, apply E22.7, retirada das entradas externas Vercel e QA pós-merge/Production permanecem pendentes.
+
+22.7.2 Registros do recorte
+- Repositório:
+  - Criados:
+    - `supabase/migrations/20261001030000_e22_7_retire_factual_authority.sql`
+    - `supabase/snippets/e22_7_terminal_retirement_verify.sql`
+    - `supabase/tests/e22_7_retire_factual_authority.fixture.sql`
+    - `supabase/tests/e22_7_retire_factual_authority.proof.sh`
+    - `supabase/tests/e22_7_retire_factual_authority.test.sql`
+  - Ajustados:
+    - `.github/workflows/e10-11-sql-proof.yml`
+    - `.github/workflows/pipeline-supabase-apply-migrations.yml`
+    - `app/a/[account]/account-journey-loader.ts`
+    - `app/a/[account]/page.tsx`
+    - `app/admin/(protected)/estrutura-lp/`
+    - `app/admin/(protected)/taxonomia/`
+    - `components/admin/`
+    - `lib/admin/`
+    - `lib/conversion-content/`
+    - `lib/openai-costs/`
+    - `lib/openai-workloads/`
+    - `package.json`
+  - Excluídos:
+    - `app/a/[account]/_components/FactualOnboarding.tsx`
+    - `app/a/[account]/factual-actions.ts`
+    - `app/admin/(protected)/estrutura-lp/_components/AdminFactualFields.tsx`
+    - `app/admin/(protected)/taxonomia/[taxonId]/_components/AdminTaxonFactualCoverage.tsx`
+    - `app/admin/(protected)/taxonomia/[taxonId]/_components/AdminTaxonInputCatalogEvaluation.tsx`
+    - `components/admin/AdminTaxonResearchSelectionForm.tsx`
+    - `lib/conversion-content/landing-page/input-catalog/`
+    - `lib/conversion-content/landing-page/taxon-preparation/`
+    - `lib/onboarding/factual/`
+- Referências:
+  - Plano-base E22.7: `docs/lousa-plano-base-e22-7.md` — V1 e V2.
+  - Contrato de banco: `docs/schema.md` — seções 1.11, 1.28 e 1.35.
+  - Workflow e gates externos: `docs/platform-config.md` — seções 2.3 e 3.5.
+  - Apply de migrations: `docs/automations.md` — seção 3.6.
+
+22.7.3 Auditoria de consumidores e fronteiras preservadas
+- Status: concluída no REF, com validação pré-merge.
+- Conteúdo:
+  - A auditoria percorreu 318 fontes TypeScript e 78 arestas internas, sem consumidor externo dos ativos exclusivos; capacidades compartilhadas foram classificadas como preservadas, desacopladas ou removíveis.
+  - Pending Setup e a conclusão E10.11 permaneceram preservados, assim como os consumidores independentes de taxonomia, pesquisas estruturadas e comercial.
+
+22.7.4 Retirada dos caminhos funcionais
+- Status: implementada no REF; merge pendente.
+- Conteúdo:
+  - E10.10 foi retirado como caminho funcional e a E20 factual foi encerrada como domínio de produto, incluindo catálogo, cobertura, seleção, avaliação assistida, liberação e workload exclusivos.
+  - A conta `active` resolve entitlement antes da taxonomia: erro de entitlement falha fechado; conta autorizada segue para a Base sem exigir taxon; conta não autorizada segue para comercial ou `waiting`.
+  - Preservar `business_taxons`, aliases, resolução de nicho, `account_taxonomy`, E10.3, E10.5, E10.9, E10.6/E10.7, E9, E11 e pesquisas, objetos e insumos compartilhados enquanto houver consumidor independente real, especialmente E10.7.
+  - A taxonomia preservada permite ativação pelo CRUD administrativo com guard de plataforma, pai ativo e concorrência otimista; novos taxons permanecem inativos por padrão.
+  - A preservação de recursos compartilhados não mantém catálogo factual, cobertura, herança, liberação ou autoridade da E20 nem transfere pesquisas para a Base.
+  - Não redesenhar E10, comercial, taxonomia, Base, billing, trial ou LP; não criar domínio substituto, compatibilidade paralela, archive funcional, snapshot vivo ou nova infraestrutura; não remover capacidade, dado ou objeto apenas por associação à E20/E10.10 nem refatorar, modernizar ou reorganizar domínios preservados.
+
+22.7.5 Retirada material residual de banco e configuração
+- Status: migration E22.7 versionada e provada em PostgreSQL 17 isolado; sem apply hospedado, merge ou QA pós-merge/Production.
+- Conteúdo:
+  - A migration E22.7 preserva os dados factuais, revisões e ativações históricas; sua aplicação remove somente a FK factual e os acessos exclusivos, e retira as duas unidades mutáveis do workload factual sob as guardas versionadas, sem apagar as linhas históricas.
+  - As três configurações externas de gates E20, totalizando sete entradas observadas na Vercel, permanecem presentes. Reconfirmar IDs e escopos e retirar somente após o cutover autorizado; não afirmar retirada externa nesta etapa.
+  - As duas migrations E10.10 não aplicadas permanecem excluídas do apply e não serão aplicadas; migrations históricas permanecem imutáveis.
+  - Dados históricos inertes e objetos compartilhados podem permanecer quando a limpeza não for indispensável; limpeza destrutiva não necessária exige decisão própria.
 
 23. E23 — Segurança e governança transversal da plataforma
 - Objetivo: remover riscos prioritários de segurança e governança da plataforma por recortes independentes e controlados.

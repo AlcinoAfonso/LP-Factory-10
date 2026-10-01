@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data da última atualização: 30/09/2026
-• Documento: LP Factory 10 — Schema (DB Contract) v1.0.74
+• Data da última atualização: 01/10/2026
+• Documento: LP Factory 10 — Schema (DB Contract) v1.0.75
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -205,23 +205,20 @@
 • PK: account_id uuid (constraint account_profiles_pkey)
 • FK: account_id → accounts(id) ON DELETE CASCADE (constraint account_profiles_account_id_fkey)
 • CHECK: account_profiles_preferred_channel_chk (preferred_channel IN ('email', 'whatsapp'))
-• Delta E10.10 pendente de apply hospedado: constraints de nome público, CRECI e credencial regulatória profissional aceitam nulo ou texto não vazio após trim, com limites respectivos de 120, 80 e 120 caracteres.
 1.8.2 Campos
 • niche text null
 • preferred_channel text not null default 'email'
 • whatsapp text null
 • site_url text null
-• Delta E10.10 pendente de apply hospedado: `business_display_name text null`, `creci_registration text null` e `professional_regulatory_credential text null`; apenas o nome público é gate factual de prontidão na aplicação.
 • created_at timestamptz not null default now()
 • updated_at timestamptz not null default now()
 1.8.3 Segurança
-• Trigger Hub: não. Delta E10.10 pendente de apply hospedado: trigger `account_profiles_guard_factual_values` impede INSERT/UPDATE direto dos três novos campos pelo papel `authenticated`, inclusive sob RPC SECURITY DEFINER com JWT autenticado; preserva escrita das colunas legadas e escrita server-side por `service_role`.
+• Trigger Hub: não.
 • RLS: ativo (enable row level security)
 1.8.4 Policies
 • account_profiles_select_member_or_platform (SELECT to public): is_platform_admin() OU membro ativo do tenant (account_users.account_id = account_profiles.account_id; account_users.user_id = auth.uid(); account_users.status='active')
 • account_profiles_insert_owner_admin_or_platform (INSERT to public): is_platform_admin() OU owner/admin ativo do tenant (account_users.role IN ('owner','admin'); status='active')
 • account_profiles_update_owner_admin_or_platform (UPDATE to public): is_platform_admin() OU owner/admin ativo do tenant (USING + WITH CHECK)
-• Migration candidata E10.10: `supabase/migrations/20260926145500_e10_10_account_factual_profile.sql`; parsing e comportamento de escrita direta/serviço provados em PostgreSQL compatível isolado, apply hospedado pendente.
 
 1.9 account_landing_pages
 1.9.1 Função
@@ -1066,7 +1063,7 @@
 
 1.35 taxon_factual_fields
 1.35.1 Função e autoridade
-• Autoridade factual corrente e única do catálogo de entradas E20.8, sem versão, plano, registry, draft, snapshot, publisher, reconciliação, override ou segunda residência.
+• Tabela física histórica do catálogo factual E20.8; o runtime versionado da E22.7 não mantém consumidor factual corrente e a tabela e suas linhas permanecem preservadas até o apply autorizado da migration E22.7.
 • `id uuid primary key default gen_random_uuid()`; `field_key text not null unique`; `taxon_id uuid null`; `definition jsonb not null`; `is_active boolean not null default true`; `created_by` e `updated_by` uuid null; timestamps não nulos com `now()`.
 • `taxon_id` nulo representa Universal; valor não nulo referencia `business_taxons(id)` com ON UPDATE CASCADE e ON DELETE RESTRICT. `created_by` e `updated_by` referenciam `auth.users(id)` com ON UPDATE CASCADE e ON DELETE SET NULL.
 
@@ -1078,11 +1075,11 @@
 
 1.35.3 Segurança, retirada e artefatos
 • RLS habilitado e nenhuma policy. public, anon, authenticated e ai_readonly não possuem grants; service_role possui somente SELECT, INSERT e UPDATE, sem DELETE ou TRUNCATE.
-• A E20.8 não participa do Trigger Hub e não cria trilha de auditoria própria. CRUD lógico usa `is_active`; remoção física operacional não é autorizada.
+• A tabela não participa do Trigger Hub nem possui trilha de auditoria própria. A retirada E22.7 preserva suas linhas físicas, sem consumidor runtime no REF.
 • A mesma migration remove `landing_page_input_catalog_drafts`, `business_taxons.reviewed_input_catalog_version` e as unidades mutáveis de `landing_page_dynamic_market_research`, preservando revisões, ativações e custos históricos.
 • Migration forward-only: `supabase/migrations/20260914132000_e20_8_factual_fields_greenfield.sql`; teste transacional: `supabase/tests/e20_8_factual_fields_greenfield.test.sql`; verificador read-only: `supabase/snippets/e20_8_factual_fields_verify.sql`.
 • Estado hospedado: apply, snippet e Security Controls permanecem gates pós-merge do cutover supervisionado; este contrato descreve o estado produzido pela migration, sem afirmar aplicação antecipada.
-• Delta E10.10 pendente de apply hospedado: `supabase/migrations/20260926171100_e10_10_factual_catalog_cutover.sql` preserva 26 rows e mantém exatamente três ativas — `business_display_name` required no Universal, `creci_registration` optional em `corretor-imoveis` e `professional_regulatory_credential` optional em `servicos-profissionais`. As outras 23 ficam inativas, sem condição ativa órfã. A migration aceita o baseline versionado de 25 rows criando apenas a credencial profissional faltante, ou o estado hospedado de 26 com ela já existente; demais estados falham fechado.
+• Delta E22.7 versionado, sem apply hospedado até esta referência: `supabase/migrations/20261001030000_e22_7_retire_factual_authority.sql` preserva as linhas de `taxon_factual_fields`, revisões e ativações históricas; remove a FK factual, revoga os grants da tabela e o EXECUTE da função `public.e20_8_factual_field_definition_is_valid(jsonb)`, revoga UPDATE de `selected_end_customer_research_version`, retira as duas unidades mutáveis de `taxon_input_catalog_sufficiency_evaluation` somente sem revisão pendente e restringe os CHECKs de workload/modalidade. A prova integral ocorreu em PostgreSQL 17 isolado; o apply remoto não ocorreu.
 
 1.36 openai_lp_cost_events
 1.36.1 Função e identidade

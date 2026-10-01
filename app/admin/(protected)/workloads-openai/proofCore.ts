@@ -45,7 +45,6 @@ type ProductProof = (
 export type OpenAiCandidateProofDependencies = Readonly<{
   niche: ProductProof;
   commercial: ProductProof;
-  inputCatalogEvaluation: ProductProof;
   communicationStageOne: ProductProof;
   communicationStageTwo: ProductProof;
 }>;
@@ -78,14 +77,6 @@ export async function runOpenAiCandidateProofCore(
       break;
     case "commercial_activation_draft_generation":
       attempt = await dependencies.commercial(
-        workload,
-        environment,
-        normalizedKey,
-        normalizedRequestId,
-      );
-      break;
-    case "taxon_input_catalog_sufficiency_evaluation":
-      attempt = await dependencies.inputCatalogEvaluation(
         workload,
         environment,
         normalizedKey,

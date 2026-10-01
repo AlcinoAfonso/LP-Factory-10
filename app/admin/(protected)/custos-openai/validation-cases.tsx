@@ -299,6 +299,38 @@ assert.equal(allowed.dashboard?.activeFilters.accountId, null);
 assert.equal(allowed.dashboard?.globalReconciliationUsd, "0.7");
 assert.deepEqual(allowedCalls.sort(), ["active", "legacy", "official"]);
 
+for (const workload of ["taxon_input_catalog_sufficiency_evaluation", "landing_page_dynamic_market_research"] as const) {
+  const historicalForm = new FormData();
+  historicalForm.set("periodMode", "custom");
+  historicalForm.set("startDate", "2026-08-01");
+  historicalForm.set("endDate", "2026-08-28");
+  historicalForm.set("universe", "lp_factory");
+  historicalForm.set("workload", workload);
+  const historicalModel = {
+    ...activeModel,
+    groups: activeModel.groups.map(group => ({ ...group, universe: "lp_factory" as const, accountId: null, workload })),
+    coverage: activeModel.coverage.map(coverage => ({ ...coverage, workload })),
+    executions: activeModel.executions.map(execution => ({
+      ...execution,
+      workload,
+      universe: "lp_factory" as const,
+      accountId: null,
+      accountName: null,
+      economicEvent: { kind: "lp_factory_internal" as const, eventId: execution.economicEvent.eventId, taxonId: null },
+    })),
+  };
+  const historical = await refreshOpenAiCostsActionCore(historicalForm, {
+    authorize: async () => ({ allowed: true }),
+    readOfficial: async period => ({ ok: true, value: { currency: "usd", totalUsd: "1", startTime: period.startTime, endTime: period.endTime, bucketCount: 1, pageCount: 1, fetchedAt: "2026-08-29T00:00:00.000Z" } }),
+    readActive: async () => ({ ok: true, value: historicalModel }),
+    readLegacy: async () => internal,
+  });
+  assert.equal(historical.status, "success", "retired history must remain readable through the dashboard action");
+  assert.equal(historical.dashboard?.activeFilters.workload, workload);
+  assert.equal(historical.dashboard?.filteredActive?.totalCalculatedUsd, "0.05");
+  assert.equal(historical.dashboard?.officialTotalUsd, "1", "history filters must not change the global official cost");
+}
+
 let pageCalls = 0;
 const paged = await readOpenAiLpCostPages({
   period: current.period,

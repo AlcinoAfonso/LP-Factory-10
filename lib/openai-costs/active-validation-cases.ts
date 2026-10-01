@@ -243,7 +243,6 @@ async function main() {
   const sources = [
     "lib/conversion-content/adapters/openAiResponsesAdapter.ts",
     "lib/conversion-content/adapters/commercialActivationOpenAiAdapter.ts",
-    "lib/conversion-content/adapters/inputCatalogEvaluationOpenAiAdapter.ts",
     "lib/onboarding/niche-resolution/adapters/openAiResolver.ts",
     "automations/supabase-inspect/run.mjs",
     "automations/supabase-inspect/costRecorder.mjs",
@@ -252,10 +251,10 @@ async function main() {
   for (const workload of [
     "niche_resolution",
     "commercial_activation_draft_generation",
-    "taxon_input_catalog_sufficiency_evaluation",
     "supabase_inspect",
   ]) assert.ok(sources.includes(workload), `missing producer ${workload}`);
   assert.equal(sources.includes("landing_page_dynamic_market_research"), false, "E20.7 producer must remain removed");
+  assert.equal(sources.includes("taxon_input_catalog_sufficiency_evaluation"), false, "E22.7 factual producer must remain removed");
   assert.match(sources, /kind:\s*["']niche_resolution["']/);
   assert.match(sources, /kind:\s*["']lp_factory_internal["']/);
   for (const forbidden of ["trace_id", "traceparent", "tracestate", "baggage"]) {

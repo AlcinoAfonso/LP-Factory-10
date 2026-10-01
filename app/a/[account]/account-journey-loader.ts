@@ -3,7 +3,6 @@ import "server-only";
 import { getAccessContext } from "@/lib/access/getAccessContext";
 import { getCommercialActivationHierarchicalBundle } from "@/conversion-content";
 import { readCommercialEntitlementSignal } from "../../../lib/commercial-entitlements";
-import { loadFactualOnboarding } from "../../../lib/onboarding/factual/adapters/accountFactualOnboardingAdapter";
 import { getActionableNicheResolutionForAccount } from "../../../lib/onboarding/niche-resolution/adapters/accountNicheResolutionUserAdapter";
 import { readActivePrimaryAccountTaxon } from "../../../lib/onboarding/niche-resolution/adapters/accountTaxonomyAdapter";
 import { loadPendingSetupConversation } from "../../../lib/onboarding/pending-setup/adapters/pendingSetupConversationAdapter";
@@ -58,15 +57,11 @@ export async function loadAccountJourney({
     }
 
     const accountId = (ctx?.account?.id ?? ctx?.account_id ?? null) as string | null;
-    if (!accountId) return { view: "factual_unavailable" as const };
-    let checkedEntitlement: Awaited<ReturnType<typeof readCommercialEntitlementSignal>> | null = null;
-    if (isE1011PassageEnabled()) {
-      checkedEntitlement = await readCommercialEntitlementSignal({ accountId });
-      if (!checkedEntitlement.ok) return { view: "factual_unavailable" as const };
-      if (checkedEntitlement.signal.isCommerciallyEligible) return { view: "base" as const };
-    }
-    const [entitlementRead, nicheResolution, taxonRead] = await Promise.all([
-      checkedEntitlement ?? readCommercialEntitlementSignal({ accountId }),
+    if (!accountId) return { view: "journey_unavailable" as const };
+    const entitlementRead = await readCommercialEntitlementSignal({ accountId });
+    if (!entitlementRead.ok) return { view: "journey_unavailable" as const };
+    if (entitlementRead.signal.isCommerciallyEligible) return { view: "base" as const };
+    const [nicheResolution, taxonRead] = await Promise.all([
       getActionableNicheResolutionForAccount({ accountId, accountStatus }),
       readActivePrimaryAccountTaxon({ accountId }),
     ]);
@@ -80,18 +75,12 @@ export async function loadAccountJourney({
       taxonLookupStatus: taxonRead.ok ? "ok" : "error",
     });
 
-    if (accountJourney.mode === "blocked") return { view: "factual_unavailable" as const };
+    if (accountJourney.mode === "blocked") return { view: "journey_unavailable" as const };
     if (accountJourney.mode === "waiting") {
       return { view: "waiting" as const };
     }
 
     const primaryTaxon = taxonRead.ok ? taxonRead.taxon : null;
-    if (isCommerciallyEligible && primaryTaxon) {
-      const factual = await loadFactualOnboarding(accountSubdomain);
-      if (factual.status === "available") return { view: "factual" as const, factual };
-      return { view: "factual_unavailable" as const };
-    }
-
     const commercialActivation = primaryTaxon
       ? await getCommercialActivationHierarchicalBundle({
           taxonId: primaryTaxon.taxonId,

@@ -107,25 +107,19 @@ export function AdminTaxonManageForm({
             />
           </label>
 
-          {taxon.isActive ? (
-            <label className="flex min-h-11 cursor-pointer items-center gap-2 rounded-md px-2 text-sm text-muted-foreground outline-none ring-brand-600/20 focus-within:ring-4">
-              <input
-                className="h-4 w-4 rounded border-border text-brand-600"
-                checked={isActive}
-                name="isActive"
-                onChange={(event) => setActiveDraft({
-                  persisted: taxon.isActive,
-                  current: event.target.checked,
-                })}
-                type="checkbox"
-              />
-              Manter ativo
-            </label>
-          ) : (
-            <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
-              A ativação é feita somente pela liberação E20.6 após a leitura da cobertura factual corrente.
-            </p>
-          )}
+          <label className="flex min-h-11 cursor-pointer items-center gap-2 rounded-md px-2 text-sm text-muted-foreground outline-none ring-brand-600/20 focus-within:ring-4">
+            <input
+              className="h-4 w-4 rounded border-border text-brand-600"
+              checked={isActive}
+              name="isActive"
+              onChange={(event) => setActiveDraft({
+                persisted: taxon.isActive,
+                current: event.target.checked,
+              })}
+              type="checkbox"
+            />
+            Ativo
+          </label>
         </div>
       </form>
 

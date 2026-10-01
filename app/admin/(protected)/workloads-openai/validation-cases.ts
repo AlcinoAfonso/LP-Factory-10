@@ -238,7 +238,6 @@ const cases: readonly Case[] = [
       for (const transport of [
         "resolveNicheWithOpenAi",
         "requestCommercialActivationOpenAi",
-        "evaluateInputCatalogWithOpenAi",
         "assistCommunicationSection",
         "generateCommunicationIntelligence",
       ]) {
@@ -264,10 +263,6 @@ async function resolvedWorkloads() {
     resolveOpenAiProductWorkload("niche_resolution", "development"),
     resolveOpenAiProductWorkload(
       "commercial_activation_draft_generation",
-      "development",
-    ),
-    resolveOpenAiProductWorkload(
-      "taxon_input_catalog_sufficiency_evaluation",
       "development",
     ),
     resolveOpenAiProductWorkload("communication_base_stage1_assistance", "development"),
@@ -304,7 +299,6 @@ function proofDependencies(
   return {
     niche: product,
     commercial: product,
-    inputCatalogEvaluation: product,
     communicationStageOne: product,
     communicationStageTwo: product,
   };

@@ -23,4 +23,3 @@ export {
   listLandingPageRootVersions,
   resolveLandingPageRootParameters,
 } from "./root-resolver";
-export * as factualFields from "./input-catalog";
