@@ -2572,7 +2572,7 @@
 
 22. E22 — Retirada controlada de ativos históricos
 - Objetivo: reduzir superfícies, dados, documentos e infraestrutura sem consumidor vigente, após auditoria explícita de dependências e sem criar substitutos antecipados.
-- Status: E22.1, E22.2, E22.3, E22.4, E22.5 e E22.6 concluídas. O produto operacional, o `lp-builder`, sua apresentação, workloads exclusivos, compatibilidade E19, write-side de custos e os facilitadores legados Validador Final e Niche Runtime Tests foram retirados; Core, capacidades E20 independentes, automações GitHub com consumidores vigentes, mailbox institucional e resíduos físicos deliberadamente inertes permanecem preservados. Permanece somente a decisão futura sobre reduzir Previews produzidos por pushes intermediários em branches não documentais.
+- Status: E22.1, E22.2, E22.3, E22.4, E22.5 e E22.6 concluídas. O produto operacional, o `lp-builder`, sua apresentação, workloads exclusivos, compatibilidade E19, write-side de custos e os facilitadores legados Validador Final e Niche Runtime Tests foram retirados; Core, capacidades E20 independentes, automações GitHub com consumidores vigentes, mailbox institucional e resíduos físicos deliberadamente inertes permanecem preservados. E22.7 — retirada terminal da E20 e E10.10 — está planejada pela V1 funcional aprovada e congelada; a V2 técnica corrigida foi aprovada pelo Analista para implementação, mas a implementação ainda não foi iniciada. Também permanece pendente a decisão futura sobre reduzir Previews produzidos por pushes intermediários em branches não documentais.
 
 22.1 Retirada de ativos históricos do domínio de Landing Page
 
@@ -2824,6 +2824,32 @@
 - Os dois workflows, os dois subprojetos e o verificador Supabase exclusivo foram removidos conjuntamente; o restante de `automations/supabase-inspect/`, seus consumidores e os demais workflows permanecem preservados.
 - Usuários, contas, memberships, sessões, dados Supabase e evidências existentes não foram alterados nem excluídos.
 - Runs, checks, statuses, logs e artifacts do GitHub Actions são evidência suplementar e expirável; o diff/PR e os documentos canônicos preservam a prova durável da retirada.
+
+22.7 Retirada terminal da E20 e E10.10
+
+22.7.1 Objetivo e status
+- Objetivo: retirar terminal e auditavelmente a E20 e a E10.10, sem segunda autoridade factual ou consumidor ativo do onboarding rejeitado e sem dano às capacidades independentes da E10, E9, E11, taxonomia, pesquisas compartilhadas e comercial.
+- Status: V2 técnica corrigida aprovada pelo Analista para implementação; V1 funcional permanece aprovada e congelada; dependência E10.11 concluída positivamente; implementação da E22.7 não iniciada.
+
+22.7.3 Auditoria de consumidores e fronteiras preservadas
+- Status: planejado.
+- Conteúdo:
+  - Antes de remover ativos, classificar consumidores reais e comprovar o destino de cada capacidade compartilhada como preservada, desacoplada ou removível; antiguidade, prefixo ou localização não bastam para autorizar retirada.
+
+22.7.4 Retirada dos caminhos funcionais
+- Status: planejado.
+- Conteúdo:
+  - Retirar E10.10 integralmente como caminho funcional e encerrar E20 como domínio funcional, incluindo autoridades, superfícies, workloads, gates e contratos exclusivos sem responsabilidade independente comprovada.
+  - Preservar `business_taxons`, aliases, resolução de nicho, `account_taxonomy`, E10.3, E10.5, E10.9, E10.6/E10.7, E9, E11 e pesquisas, objetos e insumos compartilhados enquanto houver consumidor independente real, especialmente E10.7.
+  - A preservação de recursos compartilhados não mantém catálogo factual, cobertura, herança, liberação ou autoridade da E20 nem transfere pesquisas para a Base.
+  - Não redesenhar E10, comercial, taxonomia, Base, billing, trial ou LP; não criar domínio substituto, compatibilidade paralela, archive funcional, snapshot vivo ou nova infraestrutura; não remover capacidade, dado ou objeto apenas por associação à E20/E10.10 nem refatorar, modernizar ou reorganizar domínios preservados.
+
+22.7.5 Retirada material residual de banco e configuração
+- Status: planejado.
+- Conteúdo:
+  - Tratar banco, configuração e resíduos exclusivos somente após comprovar ausência de consumidor independente. Remoções físicas necessárias serão forward-only e sem CASCADE indiscriminado.
+  - As migrations E10.10 ainda não aplicadas não serão aplicadas para concluir a camada rejeitada; migrations históricas permanecem imutáveis no Git quando necessárias à rastreabilidade.
+  - Dados históricos inertes e objetos compartilhados podem permanecer quando a limpeza não for indispensável; limpeza destrutiva não necessária exige decisão própria.
 
 23. E23 — Segurança e governança transversal da plataforma
 - Objetivo: remover riscos prioritários de segurança e governança da plataforma por recortes independentes e controlados.

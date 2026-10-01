@@ -117,3 +117,4 @@ A relação abaixo inclui consumidores mistos, contratos preservados e o fecho d
 | `lib/openai-costs/active-contracts.ts` | desacoplado | União de workloads históricos já existente recebe ID factual; contratos de execução corrente seguem sem esse ID |
 | `.github/workflows/e10-11-sql-proof.yml` | preservado e estendido focalmente | Facilitador existente recebe caso isolado E22.7; cadeia e prova E10.11 independentes preservadas |
 | `.github/workflows/pipeline-supabase-apply-migrations.yml` | preservado e estendido focalmente | Apply seletivo existente recebe somente migration/scope E22.7; gates, scopes prévios e exclusão E10.10 preservados |
+| `app/admin/(protected)/workloads-openai/_proof.ts` | desacoplado | Import/provider e dependência inputCatalogEvaluation exclusivos da prova E20; preservar provas de nicho, comercial e duas etapas da Base |
