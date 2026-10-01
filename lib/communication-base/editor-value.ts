@@ -1,5 +1,6 @@
 import type { CommunicationSectionValue } from "./contracts";
 import type { CommunicationSectionDefinition } from "./registry";
+import { parseSectionValue } from "./policy";
 
 export function parseEditorValue(
   format: CommunicationSectionDefinition["format"],
@@ -28,6 +29,20 @@ export function formatEditorValue(
       ? `${oneLine(item.question).replaceAll("|", "/")} | ${oneLine(item.answer)}`
       : "").join("\n")
     : "";
+}
+
+export function inspectCommunicationDraft(
+  definition: CommunicationSectionDefinition,
+  raw: string,
+  savedText: string,
+) {
+  const value = parseSectionValue(definition, parseEditorValue(definition.format, raw));
+  const saved = parseSectionValue(definition, parseEditorValue(definition.format, savedText));
+  return {
+    value,
+    valid: value !== null,
+    dirty: raw !== savedText && (value === null || JSON.stringify(value) !== JSON.stringify(saved)),
+  };
 }
 
 function oneLine(value: string): string {

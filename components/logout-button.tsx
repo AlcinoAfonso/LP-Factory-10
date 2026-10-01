@@ -7,9 +7,12 @@ export function LogoutButton() {
   const router = useRouter()
   
   const logout = async () => {
+    const intent = new CustomEvent("communication-base:leave", { cancelable: true, detail: { documentNavigation: false } })
+    if (!window.dispatchEvent(intent)) return
     const supabase = createClient()
     await supabase.auth.signOut()
-    router.push('/a/home')
+    if (intent.detail.documentNavigation) window.location.assign('/a/home')
+    else router.push('/a/home')
   }
   
   return (

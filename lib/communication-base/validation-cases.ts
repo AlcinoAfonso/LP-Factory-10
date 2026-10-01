@@ -8,7 +8,7 @@ import { selectPendingSetupBusinessContext, selectPendingSetupInitialContext } f
 import { hasConfirmedStageOneInput, hasStageTwoContent, parseStageOneResponse, parseStageTwoResponse, stageOnePrompt, stageTwoPrompt } from "./ai-core";
 import { selectStageTwoSectionPresentation, stageTwoBasisLabel } from "./stage-two-presentation";
 import { sectionStateKey, stageOneStateKey } from "./ui-state-keys";
-import { formatEditorValue, parseEditorValue } from "./editor-value";
+import { formatEditorValue, parseEditorValue, inspectCommunicationDraft } from "./editor-value";
 import { isCommunicationSectionSaveLocked } from "./editor-save-guard";
 import { canInstallGeneralSuggestion, canStartGeneralGeneration, createStageTwoGenerationGate, isCurrentGenerationVersion } from "./generation-guard";
 import { requestOpenAiResponses } from "../conversion-content/adapters/openAiResponsesAdapter";
@@ -57,6 +57,22 @@ assert.deepEqual(parseSectionValue(faq, parseEditorValue("faq", faqEditorText)),
   { question: "Outra pergunta?", answer: "Outra resposta." },
 ], "FAQ line breaks and a question delimiter must not create an incomplete row");
 assert.equal(formatEditorValue("Texto\ncom parágrafo", "text"), "Texto\ncom parágrafo");
+
+assert.equal(inspectCommunicationDraft(business, "  Atuo em Recife.  ", "Atuo em Recife.").dirty, false,
+  "normalization-only edits must not enable Save or warn on exit");
+assert.equal(inspectCommunicationDraft(business, "Atuo em Olinda.", "Atuo em Recife.").dirty, true);
+assert.equal(inspectCommunicationDraft(marketInsights, "Primeiro\n Segundo ", "Primeiro\nSegundo").dirty, false);
+assert.equal(inspectCommunicationDraft(marketInsights, "x".repeat(401), "Item salvo").valid, false);
+assert.equal(inspectCommunicationDraft(marketInsights, "x".repeat(401), "Item salvo").dirty, true,
+  "invalid changed content must still receive discard protection");
+assert.equal(inspectCommunicationDraft(marketInsights, Array(21).fill("Item").join("\n"), "Item").valid, false);
+assert.equal(inspectCommunicationDraft(faq, "Pergunta sem resposta", "Pergunta? | Resposta.").valid, false);
+assert.equal(inspectCommunicationDraft(faq, "Pergunta?  | Resposta. ", "Pergunta? | Resposta.").dirty, false);
+assert.equal(inspectCommunicationDraft(faq, faqEditorText, faqEditorText).dirty, false,
+  "the formatted stored representation must start clean even when formatting is lossy");
+assert.equal(inspectCommunicationDraft(business, "", "Conteúdo salvo").dirty, true,
+  "explicitly clearing saved content is a material valid edit");
+assert.equal(inspectCommunicationDraft(business, "", "Conteúdo salvo").valid, true);
 
 const completedConversation = {
   stage: "completed",

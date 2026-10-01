@@ -2,6 +2,8 @@
 
 import { useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 
+import { useCommunicationDraftGuard } from "./_components/CommunicationDraftGuard";
+
 type Stage = 0 | 1;
 
 export function CommunicationBaseTabs({ stageOne, stageTwo }: Readonly<{
@@ -9,8 +11,18 @@ export function CommunicationBaseTabs({ stageOne, stageTwo }: Readonly<{
   stageTwo: ReactNode;
 }>) {
   const [selected, setSelected] = useState<Stage>(0);
+  const { confirmDiscard } = useCommunicationDraftGuard();
   const firstTabRef = useRef<HTMLButtonElement>(null);
   const secondTabRef = useRef<HTMLButtonElement>(null);
+
+  function selectStage(next: Stage) {
+    if (next !== selected && !confirmDiscard()) {
+      (selected === 0 ? firstTabRef : secondTabRef).current?.focus();
+      return false;
+    }
+    setSelected(next);
+    return true;
+  }
 
   function onTabKeyDown(event: KeyboardEvent<HTMLButtonElement>, current: Stage) {
     let next: Stage;
@@ -29,8 +41,7 @@ export function CommunicationBaseTabs({ stageOne, stageTwo }: Readonly<{
         return;
     }
     event.preventDefault();
-    setSelected(next);
-    (next === 0 ? firstTabRef : secondTabRef).current?.focus();
+    if (selectStage(next)) (next === 0 ? firstTabRef : secondTabRef).current?.focus();
   }
 
   return (
@@ -38,7 +49,7 @@ export function CommunicationBaseTabs({ stageOne, stageTwo }: Readonly<{
       <div role="tablist" aria-label="Etapas da Base de Comunicação" className="grid grid-cols-2 border-b border-border">
         <button ref={firstTabRef} type="button" role="tab" id="communication-stage-1-tab"
           aria-controls="communication-stage-1-panel" aria-selected={selected === 0}
-          tabIndex={selected === 0 ? 0 : -1} onClick={() => setSelected(0)}
+          tabIndex={selected === 0 ? 0 : -1} onClick={() => selectStage(0)}
           onKeyDown={(event) => onTabKeyDown(event, 0)}
           className={`min-h-11 min-w-0 border-b-2 px-3 py-3 text-center text-sm font-semibold leading-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-700 focus-visible:ring-inset ${selected === 0
             ? "border-brand-700 text-brand-700"
@@ -47,7 +58,7 @@ export function CommunicationBaseTabs({ stageOne, stageTwo }: Readonly<{
         </button>
         <button ref={secondTabRef} type="button" role="tab" id="communication-stage-2-tab"
           aria-controls="communication-stage-2-panel" aria-selected={selected === 1}
-          tabIndex={selected === 1 ? 0 : -1} onClick={() => setSelected(1)}
+          tabIndex={selected === 1 ? 0 : -1} onClick={() => selectStage(1)}
           onKeyDown={(event) => onTabKeyDown(event, 1)}
           className={`min-h-11 min-w-0 border-b-2 px-3 py-3 text-center text-sm font-semibold leading-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-700 focus-visible:ring-inset ${selected === 1
             ? "border-brand-700 text-brand-700"

@@ -191,7 +191,10 @@ export function useAccountSwitcher() {
       return;
     }
 
+    const intent = new CustomEvent("communication-base:leave", { cancelable: true, detail: { documentNavigation: false } });
+    if (!window.dispatchEvent(intent)) return;
     setOpen(false);
+    if (intent.detail.documentNavigation) { window.location.assign(nextUrl); return; }
     router.push(nextUrl);
 
     // Fallback hard caso algo impeça a navegação client-side
@@ -204,7 +207,10 @@ export function useAccountSwitcher() {
 
   // ----- criar conta -----
   const handleCreate = () => {
+    const intent = new CustomEvent("communication-base:leave", { cancelable: true, detail: { documentNavigation: false } });
+    if (!window.dispatchEvent(intent)) return;
     setOpen(false);
+    if (intent.detail.documentNavigation) { window.location.assign("/a/home?consultive=1"); return; }
     router.push("/a/home?consultive=1");
   };
 
