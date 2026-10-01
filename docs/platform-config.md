@@ -289,7 +289,8 @@
 • Branch scopes preservados por decisão funcional: `codex-app/e11-11-1-7`, `codex-app/e20-5-pos-merge`, `codex-app/e20-6-5-post-apply-corrections` e `codex-app/e11-2-orquestracao`; as entradas scoped dos gates E20 foram retiradas, sem alterar as configurações independentes preservadas. Não há impacto material comprovado no runtime.
 • Remoções concluídas: duas ocorrências de `E19_5_WORKSPACE_ENABLED` e uma ocorrência de cada nome `MCP_SUPABASE_INSPECT_URL`, `LPF_MCP_SECRET`, `SUPABASE_DB_URL_READONLY` e `E7_ONBOARD_SERVICE_ONLY` foram removidas somente da Vercel Core. O secret GitHub homônimo `SUPABASE_DB_URL_READONLY` e seu consumidor permanecem preservados.
 • Estado da reconciliação: após a remoção das sete entradas dos gates E20, 38 configurações permanecem ativas. Não houve reclassificação nem outras remoções neste recorte; nova correção exige risco ou impacto funcional material comprovado e decisão própria.
-• Validação operacional: o Preview gerado após as remoções ficou `READY`, e o smoke proporcional confirmou HTTP 200 na rota de login. Nenhum redeploy de Production foi executado.
+• Registro histórico da E23.2 (07/09/2026): o Preview gerado após as remoções ficou `READY` e o smoke proporcional confirmou HTTP 200 na rota de login; Production não foi redeployada naquele recorte.
+• Estado pós-E22.7: Production `dpl_33SZh5rQtLd65323GXrBBHSyr68N` ficou `READY` após redeploy de `main` no SHA `362842f41fc9ee1c11315565d7647b1c61b51058`; Preview `dpl_D3hNnNi7LRUiYFXxXZVGXtQGHFWK` ficou `READY` após redeploy do branch `codex-app/e22-7-retirada-terminal` no SHA `5591b593277eb8a143917f79a5c88fabfc9e0723`. QA autenticado pós-apply/redeploy concluído com sucesso.
 
 4. Supabase
 

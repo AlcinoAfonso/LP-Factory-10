@@ -1925,7 +1925,7 @@
 - PR #871 tornou a geração antiga inalcançável, PR #872 retirou sua orquestração, o SV-PR03 retirou o produto operacional e o SV-PR04 eliminou as duas fronteiras administrativas residuais.
 20. E20 — Catálogo factual, pesquisa opcional e revisão de taxons
 - Objetivo: manter fields factuais correntes por cadeia taxonômica, fonte de pesquisa opcional e decisão humana de liberação, sem versão, plano, draft, segunda autoridade ou coordenação de consumidores.
-- Status: substituição greenfield E20.8 implementada e aprovada nos gates 20.8.3–20.8.8 no branch dedicado. Merge, apply, snippet, Security Controls e QA hospedado permanecem sob gate posterior do supervisor.
+- Status: histórico; a retirada funcional da E22.7 removeu a autoridade factual e os consumidores E20 associados. Os status e contratos das subseções 20.x preservam o registro de cada recorte à época, sem representar autoridade, consumidor, gate ou pendência vigente; os gates ainda pendentes da E20.8 não são considerados executados por esta retirada. Os contratos remanescentes de E10, E21 e E25 permanecem nos respectivos recortes independentes.
 
 20.2 Catálogo de entradas por taxon
 
@@ -2193,7 +2193,8 @@
 - Os workloads de produto vigentes são:
   - `niche_resolution`;
   - `commercial_activation_draft_generation`;
-  - `taxon_input_catalog_sufficiency_evaluation`;
+  - `communication_base_stage1_assistance`;
+  - `communication_base_stage2_intelligence`;
 - `supabase_inspect` permanece referência operacional externa, sem ser aceito pelo resolver de produto.
 - O resolver de workloads de produto aceita somente `responses_text` e rejeita identidade, modalidade ou ambiente desconhecidos; a modalidade de imagem permanece apenas no catálogo independente de modelos.
 - Development usa o baseline versionado no repositório. Preview e Production podem resolver a revisão ativa do Supabase pelo gate operacional da E21.2, sem fallback silencioso quando esse gate está ligado.
