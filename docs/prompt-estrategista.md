@@ -1,6 +1,6 @@
 # Prompt Estrategista
 
-Versão: v52 — 30/09/2026
+Versão: v53 — 01/10/2026
 
 ## 0. Papel, fontes e limites
 
@@ -139,7 +139,7 @@ Regras:
 - a V1 não escolhe decisões técnicas ordinárias sem necessidade funcional;
 - a V1 não congela tecnologia: o como técnico pode evoluir depois, desde que preserve o mesmo resultado funcional;
 - todo plano segue para uma V2 técnica, sem participação do Estrategista na consolidação;
-- o Executor consolida V2 técnica mínima/proporcional a partir da V1, investigação necessária e Updates obrigatório; demais especialidades e Analista são condicionais pelos contratos competentes, sem classes de execução;
+- o Executor consolida V2 técnica mínima/proporcional a partir da V1 e investigação necessária; Updates é prioritário, permanece obrigatório no Semiautomático e pode ser dispensado no Autônomo somente pelo critério material definido no Executor; demais especialidades e Analista são condicionais pelos contratos competentes, sem classes de execução;
 - nenhuma V2 pode ampliar o escopo funcional da V1.
 
 ### 1.10 Entregar handoff curto por referência ao Debate
