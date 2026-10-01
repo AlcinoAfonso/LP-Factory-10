@@ -2798,7 +2798,7 @@
 22.5.3 Capacidades preservadas
 - Registry, versionamento, fingerprints e classificações da E20.2 foram preservados neste recorte histórico e posteriormente substituídos pela autoridade E20.8.
 - E20.5 mantém a pesquisa integral selecionada; a decisão humana e a avaliação assistida foram preservadas sobre E20.8; E20.7 foi retirada.
-- O framework OpenAI compartilhado, os três workloads textuais de produto vigentes, `supabase_inspect` e o catálogo de modelos de imagem permanecem preservados.
+- Na E22.6, o framework OpenAI compartilhado, os três workloads textuais de produto então vigentes, `supabase_inspect` e o catálogo de modelos de imagem foram preservados; o inventário corrente após a E22.7 está em 21.1.3.
 - Objetos físicos e registros históricos E19 permanecem deliberadamente inertes; qualquer limpeza posterior exige recorte próprio.
 
 22.6 Remoção do Validador Final e automações adjacentes
