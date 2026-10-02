@@ -1,6 +1,6 @@
 # Prompt Estrategista
 
-Versão: v53 — 01/10/2026
+Versão: v54 — 02/10/2026
 
 ## 0. Papel, fontes e limites
 
