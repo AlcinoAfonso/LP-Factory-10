@@ -1,6 +1,6 @@
 ---
 name: lp-factory-avaliar-implementacao-analista
-description: Avaliar focalmente um recorte implementado ou sua entrega final quando risco material, dúvida ou evidência insuficiente exigir revisão independente pelo custom agent analista read-only.
+description: Avaliar focalmente um recorte implementado quando risco material, dúvida ou evidência insuficiente exigir revisão independente pelo custom agent analista read-only.
 ---
 
 # Avaliar implementação pelo Analista
@@ -9,13 +9,13 @@ Usar exatamente um custom agent `analista` read-only por revisão. O task princi
 
 ## Preparar
 
-1. Confirmar repositório, worktree, branch, estado Git, SHA do plano aprovado e identificador exato da fase/recorte e finalidade focal, delta ou final.
+1. Confirmar repositório, worktree, branch, estado Git, SHA do plano aprovado e identificador exato da fase/recorte e finalidade focal ou delta.
 2. Entregar ao Analista o trecho integral do recorte, critérios de aceite, diff desde o checkpoint anterior, arquivos alterados, validações executadas e fontes técnicas necessárias. Incluir matriz/rastreabilidade e pareceres somente quando existirem e forem pertinentes ao recorte; não exigir artefatos ou especialidades adicionais por rotina.
 3. Se plano, fase, diff ou evidência forem ambíguos, não delegar nem reconstruir o escopo por inferência; devolver ao chamador apenas a lacuna.
 
 ## Delegar
 
-1. Acionar o `analista` em `revisao_implementacao`, `revisao_delta_implementacao` ou `revisao_final_implementacao` conforme a finalidade necessária; a revisão final não é universal.
+1. Acionar o `analista` em `revisao_implementacao` ou `revisao_delta_implementacao` conforme a finalidade necessária.
 2. Usar rastreabilidade existente como índice e expor somente pareceres de plano pertinentes ao recorte.
 3. Preservar a resposta integral e o estado Git antes e depois da delegação.
 
@@ -28,7 +28,6 @@ Usar esta skill somente quando os critérios condicionais do Executor exigirem a
 - `requer evidência de QA`: obter a evidência pelo método aplicável ao modo e retornar ao mesmo Analista; a conclusão não escolhe quem executa o teste.
 - `bloqueado por decisão humana`: devolver somente o ponto ao supervisor competente; no `Autônomo`, não solicitar decisão ao usuário.
 
-- `aprovado para merge da implementação`: somente em revisão final, sem pendências; é parecer técnico favorável, ainda condicionado à liberação competente e aos gates de merge do Executor.
 
 ## Limites
 
