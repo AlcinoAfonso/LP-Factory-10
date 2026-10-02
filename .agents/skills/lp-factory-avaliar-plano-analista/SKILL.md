@@ -1,6 +1,6 @@
 ---
 name: lp-factory-avaliar-plano-analista
-description: Avaliar independentemente V1 e V2 pelo Analista read-only quando risco material exigir; auditar incorporação de pareceres, revisar delta ou reconciliação somente quando pertinente.
+description: Avaliar independentemente V1 e V2 pelo Analista read-only quando risco material exigir; auditar incorporação de pareceres e revisar delta quando pertinente.
 ---
 
 # Avaliar plano-base V2 com o Analista
@@ -24,13 +24,11 @@ Somente após preservar a primeira avaliação, solicite ao Executor, único esc
 
 Confira formalmente uma linha por achado: ID, origem (V1, invariante técnico ou update), classe, tratamento, localização/evidência e destino/confronto de Updates quando aplicável. Rastreabilidade incompleta, modernização material sem confronto ou achado sem correspondência verificável impede o handoff; não complete a avaliação especializada. Aguarde conclusão própria do contrato `.codex/agents/analista.toml`; só com `aprovado para implementar` ou a conclusão de compatibilidade abaixo avance.
 
-Para plano já iniciado cujo contrato vigente exija literalmente `aprovado para merge do plano-base v2`, informe essa exigência e sua referência imutável ao Analista. Receba essa conclusão somente como aprovação técnica equivalente a `aprovado para implementar`, preservando reconciliação, revisão delta e checkpoint exigidos pelo plano. O nome legado não autoriza merge nem recria classes de execução; não reescreva lousas ou aprovações históricas.
+Para plano já iniciado cujo contrato vigente exija literalmente `aprovado para merge do plano-base v2`, informe essa exigência e sua referência imutável ao Analista. Receba essa conclusão somente como aprovação técnica equivalente a `aprovado para implementar`, preservando os demais checkpoints e gates técnicos exigidos pelo plano. O nome legado não autoriza merge nem recria classes de execução; não reescreva lousas ou aprovações históricas.
 
-## Revisar correções e reconciliação
+## Revisar correções
 
 Use `revisao_delta` no mesmo Analista, entregando versões anterior/nova ou diff, correções solicitadas e fontes pertinentes. Verifique apenas delta/regressões. Nova rodada especializada somente por questão material nova ou conclusão alterada; não reabra avaliações satisfeitas.
-
-Quando o alvo for reconciliação de roadmap pertinente à avaliação acionada, entregue V2 aprovada, snapshot imutável anterior, ABC integral preparado pela especialidade documental, resultado e `docs/prompt-abc.md`/`docs/template-roadmap.md`; exija leitura integral e auditoria focal pelo runtime. Com `SEM ALTERAÇÕES NECESSÁRIAS`, confirme correspondência do snapshot. Não introduza auditoria universal para execução simples.
 
 ## Devolver e limites
 
