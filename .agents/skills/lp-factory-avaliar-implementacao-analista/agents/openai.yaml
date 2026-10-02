@@ -1,4 +1,4 @@
 interface:
   display_name: "Avaliar implementacao"
-  short_description: "Revisa recorte ou entrega final quando necessário"
-  default_prompt: "Use $lp-factory-avaliar-implementacao-analista para revisar o recorte implementado ou entrega final na finalidade informada, somente quando houver necessidade de avaliação independente."
+  short_description: "Revisa recorte focal ou delta quando necessário"
+  default_prompt: "Use $lp-factory-avaliar-implementacao-analista para revisar o recorte implementado na finalidade focal ou delta informada, somente quando houver necessidade de avaliação independente."
