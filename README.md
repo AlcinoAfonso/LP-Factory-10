@@ -1,8 +1,8 @@
 0. Introdução
 0.1. Cabeçalho
 • Documento: README — LP Factory 10 (MVP)
-• Versão: 9 — 27/09/2026
-• Data: 27/09/2026
+• Versão: 10 — 02/10/2026
+• Data: 02/10/2026
 • Escopo: visão geral do produto + documentos de referência + pendências estratégicas
 
 1. Visão geral do produto
