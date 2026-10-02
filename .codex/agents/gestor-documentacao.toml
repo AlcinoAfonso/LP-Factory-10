@@ -1,7 +1,7 @@
 name = "gestor-documentacao"
 description = "Prepara deltas ABC para documentos canônicos sem aplicar alterações."
-model = "gpt-6-luna"
-model_reasoning_effort = "max"
+model = "gpt-6.1-sol"
+model_reasoning_effort = "medium"
 sandbox_mode = "read-only"
 
 developer_instructions = """
