@@ -36,16 +36,16 @@ export default async function CommunicationBasePage({ params }: PageProps) {
     : null;
 
   return (
-    <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-10">
-      <div className="space-y-7">
-        <header className="space-y-3">
+    <main className="mx-auto max-w-5xl px-4 py-4 sm:px-6 sm:py-6">
+      <div className="space-y-3">
+        <header className="space-y-1">
           <Link
             href={`/a/${encodeURIComponent(access.value.accountSubdomain)}`}
             className="inline-flex min-h-11 items-center text-sm font-medium text-brand-700 underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-700"
           >
             Voltar à conta
           </Link>
-          <h1 className="text-3xl font-semibold tracking-tight text-ink-900">Base de Comunicação</h1>
+          <h1 className="text-2xl font-semibold tracking-tight text-ink-900">Base de Comunicação</h1>
           <p className="max-w-3xl text-sm leading-6 text-muted-foreground">
             Reúna a verdade da empresa e desenvolva sua inteligência de comunicação no seu ritmo.
           </p>
@@ -65,7 +65,7 @@ export default async function CommunicationBasePage({ params }: PageProps) {
             <EmptyState title="A Base ainda não foi iniciada." description="Um membro com permissão de edição pode iniciar a Base desta conta." />
           )
         ) : (
-          <div className="space-y-8">
+          <div className="space-y-4">
             {!access.value.canEdit ? (
               <p role="status" className="text-sm text-muted-foreground">
                 Seu acesso é somente leitura.

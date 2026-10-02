@@ -93,29 +93,29 @@ function SectionRow({ definition, hasContent, hasSuggestion, renderDetail }: Rea
           dialogRef.current?.showModal(); dialogRef.current?.querySelector<HTMLTextAreaElement>("textarea")?.focus({ preventScroll: true });
         }}>Abrir</Button>
       <dialog ref={dialogRef} aria-labelledby={titleId}
-        className="m-auto max-h-[calc(100dvh-1rem)] w-[calc(100%-1rem)] max-w-2xl overflow-y-auto overscroll-contain rounded-xl border border-border bg-background p-0 text-left text-foreground shadow-xl backdrop:bg-black/40"
+        className="m-auto max-h-[calc(100dvh-1rem)] w-[calc(100%-1rem)] max-w-xl overflow-y-auto overscroll-contain rounded-xl border border-border bg-background p-0 text-left text-foreground shadow-xl backdrop:bg-black/40"
         onCancel={(event) => { event.preventDefault(); requestClose(); }}
         onClick={(event) => {
           if (event.target !== event.currentTarget) return;
           const rect = event.currentTarget.getBoundingClientRect();
           if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) requestClose();
         }}>
-        <header className="sticky top-0 z-10 flex items-start justify-between gap-3 border-b border-border bg-background px-4 py-3 sm:px-6">
+        <header className="sticky top-0 z-10 flex items-start justify-between gap-2 border-b border-border bg-background px-3 py-2 sm:px-4">
           <div><p className="text-xs text-muted-foreground">{definition.stage === 1 ? "Verdade da empresa" : "Inteligência de comunicação"}</p>
             <h2 id={titleId} className="mt-1 text-lg font-semibold leading-6">{definition.label}</h2></div>
           <Button variant="secondary" className="min-h-11 shrink-0 px-3" aria-label={`Fechar ${definition.label}`} onClick={requestClose}>Fechar</Button>
         </header>
-        <div className="px-4 py-5 sm:px-6">
+        <div className="px-3 py-3 sm:px-4">
           {closingMessage ? <FeedbackMessage tone="warning" className="mb-4">{closingMessage}</FeedbackMessage> : null}
           <SectionDetailContent definition={definition} controls={{ resetRevision, onCancel: requestClose, onEditorStateChange }} renderDetail={renderDetail} />
         </div>
       </dialog>
       <dialog ref={discardRef} aria-labelledby={discardTitleId}
-        className="m-auto w-[calc(100%-2rem)] max-w-md rounded-xl border border-border bg-background p-5 text-left text-foreground shadow-xl backdrop:bg-black/40"
+        className="m-auto w-[calc(100%-2rem)] max-w-md rounded-xl border border-border bg-background p-4 text-left text-foreground shadow-xl backdrop:bg-black/40"
         onCancel={(event) => { event.preventDefault(); discardRef.current?.close(); }}>
         <h2 id={discardTitleId} className="text-lg font-semibold">Descartar alterações?</h2>
         <p className="mt-2 text-sm text-muted-foreground">O texto não salvo desta seção será perdido.</p>
-        <div className="mt-5 flex flex-wrap gap-2">
+        <div className="mt-3 flex flex-wrap gap-2">
           <Button className="min-h-11 !bg-brand-700 hover:!bg-brand-700/95" onClick={() => discardRef.current?.close()}>Continuar editando</Button>
           <Button variant="secondary" className="min-h-11" onClick={closeDetail}>Descartar alterações</Button>
         </div>
