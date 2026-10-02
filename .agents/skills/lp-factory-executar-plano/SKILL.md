@@ -19,7 +19,7 @@ Aceite o handoff curto com identificação inequívoca do plano, referência ao 
 
 Aceite também número/URL do PR ou path da V1 com referência inequívoca ao PR existente. Confirme caso, base `main`, head, SHAs e arquivo do plano; selecione automaticamente somente quando houver exatamente um `docs/lousa-plano-base-*.md`. Reutilize a sessão, worktree compatível, branch head e PR existentes. Nunca crie PR empilhado nem reescreva o commit congelado da V1.
 
-Na execução independente de plano já aprovado, aceite `Use $lp-factory-executar-plano no plano-base aprovado do PR #<número>.` Confirme V1/V2 aprovadas na `main` atualizada e crie uma branch `codex-app/<caso>-implementacao` e um PR draft contra `main`, conforme `AGENTS.md`. Sem PR prévio do plano, materialize a V1 na branch dedicada e mantenha um único PR draft contra `main` desde a derivação até a entrega; não crie PR ou merge intermediário.
+Se `$lp-factory-executar-plano` for invocado diretamente para iniciar um plano aprovado, não inicie a execução: redirecione para `$lp-factory-estrategista-autonomo`, que conduz a sessão pelo contrato do Executor conforme `docs/pipeline-plano-base.md`.
 
 Use `end-to-end` por padrão. `experimental` precisa ser explícito e altera somente os checkpoints de parada solicitados.
 
