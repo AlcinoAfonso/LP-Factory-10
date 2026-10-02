@@ -2,7 +2,7 @@
 
 0.1 Cabeçalho
 • Data: 01/10/2026
-• Versão: v1.5.253
+• Versão: v1.5.254
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -3096,18 +3096,35 @@
 
 25.2.1 Objetivo e status
 - Objetivo: tornar a Base compreensível, fluida, profissional e confiável para o cliente, com foco claro na tarefa e preservação dos contratos funcionais vigentes.
-- Status: planejado; solução de experiência definida. Supervisão: Autônomo.
+- Status: implementado e QA validado no Preview pré-merge; teste humano final e decisão de merge pendentes por escolha explícita do titular. Production não validada. Supervisão: Autônomo.
+
+25.2.2 Registros do recorte
+- Repositório:
+  - Criados:
+    - `app/a/[account]/base-comunicacao/_components/CommunicationBaseExperience.tsx`
+    - `app/a/[account]/base-comunicacao/_components/CommunicationDraftGuard.tsx`
+  - Ajustados:
+    - `app/a/[account]/base-comunicacao/CommunicationBaseTabs.tsx`
+    - `app/a/[account]/base-comunicacao/CommunicationSectionEditor.tsx`
+    - `app/a/[account]/base-comunicacao/page.tsx`
+    - `components/features/account-switcher/useAccountSwitcher.ts`
+    - `components/logout-button.tsx`
+    - `lib/communication-base/editor-value.ts`
+    - `lib/communication-base/validation-cases.ts`
+- Referências:
+  - Plano-base: `docs/lousa-plano-base-e25-2.md` — V1 funcional e V2 técnica aprovadas.
+  - Contrato visual: `docs/design-system.md` — Contrato de apresentação para páginas operacionais de dashboard.
 
 25.2.3 Arquitetura de experiência, foco e edição da Base
-- Status: planejado.
+- Status: implementado.
 - Conteúdo:
   - Manter as abas “Verdade da empresa” e “Inteligência de comunicação”, exibir uma etapa por vez e oferecer seleção compacta das sete seções da etapa ativa com um editor visível; no desktop, usar navegação lateral; no mobile, seletor nativo acima do editor.
   - O editor apresenta orientação, conteúdo, estado, campo rotulado, feedback e ações Salvar/Cancelar. Salvar exige alteração material válida; Cancelar restaura o conteúdo salvo. Trocar seção ou etapa, cancelar ou sair com rascunho não salvo exige confirmação; recusar preserva rascunho e contexto. Falha ao salvar também preserva o rascunho.
   - Owner, Admin e Editor mantêm edição; Viewer mantém somente leitura. Preservar domínio e autoridade por conta, persistência, permissões, entitlement, membership, Pending Setup e contratos E10.11/E25.1. Não criar infraestrutura, automação, rota, banco ou domínio; não alterar o Design System nem redesenhar outros dashboards.
 
 25.2.4 Estados, assistência por IA, responsividade e validação da experiência
-- Status: planejado.
+- Status: implementado e QA validado no Preview pré-merge.
 - Conteúdo:
   - A assistência existente permanece contextual à tarefa e sob os contratos vigentes; pesquisa, metodologia e qualidade do conteúdo da Etapa 2 permanecem sob o Debate 14D. Sugestões e fontes ficam distintas do conteúdo do cliente, não são salvas automaticamente e só alteram o rascunho da seção-alvo por ação explícita; substituir rascunho não salvo exige confirmação.
   - Preservar conteúdo salvo e sugestões/fontes válidas durante espera ou falha. Após mudança nos insumos factuais pertinentes, sugestões anteriores da Etapa 2 não são apresentadas como atuais, sem remover o conteúdo salvo.
-  - Estados de edição, salvamento, saída sem salvar e assistência devem ser compreensíveis e acessíveis conforme o Design System vigente. O aceite exige evidência renderizada e observação da jornada como cliente em desktop e mobile; inspeção isolada de código não comprova o aceite visual.
+  - Estados de edição, salvamento, saída sem salvar e assistência devem ser compreensíveis e acessíveis conforme o Design System vigente. QA funcional e renderizado real no Preview validou os fluxos positivos em desktop (1440×900) e mobile (390×844), com inspeção adicional a 320 px sem overflow horizontal observado; a revisão renderizada complementar da Etapa 2 não encontrou desvio material. Os cenários negativos e de falha permanecem evidência simulada, sem validação ao vivo. O aceite visual exige evidência renderizada e observação da jornada como cliente; inspeção isolada de código não o comprova.
