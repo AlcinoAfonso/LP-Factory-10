@@ -1,8 +1,8 @@
 0. Introdução
 0.1. Cabeçalho
 • Documento: README — LP Factory 10 (MVP)
-• Versão: 9 — 27/09/2026
-• Data: 27/09/2026
+• Versão: 10 — 02/10/2026
+• Data: 02/10/2026
 • Escopo: visão geral do produto + documentos de referência + pendências estratégicas
 
 1. Visão geral do produto
@@ -47,7 +47,7 @@
 • A stack base do MVP permanece Next.js, Supabase e TypeScript.
 • Regras verificáveis, segurança, fatos, estado e contratos permanecem determinísticos quando possível; IA preserva flexibilidade controlada onde a natureza do resultado for semântica, criativa ou persuasiva.
 • Avaliação, radar tecnológico ou catalogação não autorizam implementação, mudança de stack, nova infraestrutura nem ampliação de escopo.
-• Em `Supervisão: Autônomo`, a escolha humana delega ao Estrategista Autônomo autoridade contínua e integral para decidir e conduzir o plano até a conclusão sem nova intervenção humana, preservando a V1 aprovada e o escopo negativo; em `Semiautomático`, decisões de produto ou escopo fora do contrato permanecem humanas. A materialidade, isoladamente, não constitui bloqueio.
+• Em `Supervisão: Autônomo`, o handoff delega ao Estrategista Autônomo autoridade contínua e integral para decidir e conduzir o plano até a conclusão sem nova intervenção humana rotineira, preservando a V1 aprovada e o escopo negativo; decisões de produto ou escopo fora da autoridade concedida permanecem sob decisão humana competente. A materialidade, isoladamente, não constitui bloqueio.
 
 1.5. Modelo de oferta
 • A direção do modelo de oferta é uma base simples acompanhada de serviços de IA contratáveis conforme a necessidade do cliente.
