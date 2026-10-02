@@ -3,6 +3,13 @@
 import { useActionState, useEffect, useLayoutEffect, useRef, useState, useTransition } from "react";
 import { useFormStatus } from "react-dom";
 import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { FormField, FormFieldLabel, FormFieldHint, FormFieldError } from "@/components/ui/form-field";
+import { FeedbackMessage } from "@/components/ui/feedback-message";
+import { EmptyState } from "@/components/ui/empty-state";
+import { CommunicationSectionCollection, type SectionDetailControls } from "./_components/CommunicationSectionCollection";
+import { sectionEditState } from "./_components/section-edit-state";
 
 import type { CommunicationBase, CommunicationSection, CommunicationSectionValue } from "../../../../lib/communication-base/contracts";
 import { hasStageTwoContent, type CommunicationSuggestion, type WebSource } from "../../../../lib/communication-base/ai-core";
@@ -43,7 +50,7 @@ export function StartCommunicationBaseForm({ account, candidate, candidateReadFa
   }, [router, state.status]);
 
   return (
-    <form action={action} className="rounded-xl border border-border bg-white p-5 shadow-sm">
+    <form action={action} className="rounded-xl border border-border bg-background p-5">
       <input type="hidden" name="account" value={account} />
       <p className="text-sm text-muted-foreground">
         Comece com o que já sabe sobre seu negócio. As demais seções podem ser preenchidas depois.
@@ -89,15 +96,21 @@ export function CommunicationSectionEditor(props: Readonly<{
   onStageTwoGenerationFinished?: () => void;
   onStageTwoSaveStarted?: () => void;
   onStageTwoSaveFinished?: () => void;
-}>) {
+}> & SectionDetailControls) {
   const { account, version, definition, current, canEdit, suggestedSuggestion, generalRevision = 0,
     stageTwoGenerationInFlight = false, onStageTwoGenerationStart, onStageTwoGenerationFinished,
-    onStageTwoSaveStarted, onStageTwoSaveFinished } = props;
+    onStageTwoSaveStarted, onStageTwoSaveFinished, resetRevision, onEditorStateChange, onCancel } = props;
   const [state, action, savePending] = useActionState(saveCommunicationSectionAction, INITIAL_STATE);
   const lastHandledSaveStateRef = useRef(state);
   const startedSavesRef = useRef(0);
   const [submittedVersion, setSubmittedVersion] = useState<number | null>(null);
   const [draft, setDraft] = useState(editorText(current));
+  const [dismissedState, setDismissedState] = useState(INITIAL_STATE);
+  const priorResetRef = useRef(resetRevision);
+  const priorPersistedRef = useRef(editorText(current));
+  const lastSyncedSaveRef = useRef(INITIAL_STATE);
+  const localRequestRevisionRef = useRef(0);
+  const localVersionRef = useRef(version);
   const [aiPending, startAiTransition] = useTransition();
   const [aiMessage, setAiMessage] = useState("");
   const [localSuggestion, setLocalSuggestion] = useState<CommunicationSectionValue | null>(null);
@@ -106,6 +119,31 @@ export function CommunicationSectionEditor(props: Readonly<{
   const [requiresResearch, setRequiresResearch] = useState(false);
   const router = useRouter();
   const saveLocked = isCommunicationSectionSaveLocked(savePending, state.status, submittedVersion, version);
+  const editState = sectionEditState(definition, current, draft);
+  useLayoutEffect(() => {
+    onEditorStateChange(canEdit && editState.dirty, saveLocked);
+  }, [canEdit, editState.dirty, saveLocked, onEditorStateChange]);
+  useLayoutEffect(() => {
+    localVersionRef.current = version;
+    const persisted = editorText(current);
+    const reset = priorResetRef.current !== resetRevision;
+    const savedRefresh = state.status === "saved" && state !== lastSyncedSaveRef.current &&
+      !savePending && submittedVersion !== null && version > submittedVersion;
+    const previouslyClean = !sectionEditState(definition, { format: definition.format,
+      value: priorPersistedRef.current, origin: "user_reviewed" }, draft).dirty;
+    if (reset || savedRefresh || (persisted !== priorPersistedRef.current && previouslyClean)) setDraft(persisted);
+    if (reset) setDismissedState(state);
+    if (savedRefresh) lastSyncedSaveRef.current = state;
+    if (reset || savedRefresh) {
+      localRequestRevisionRef.current += 1;
+      setLocalSuggestion(null);
+      setLocalStageTwoResult(null);
+      setMissingQuestion("");
+      setAiMessage("");
+    }
+    priorResetRef.current = resetRevision;
+    priorPersistedRef.current = persisted;
+  }, [current, definition, draft, resetRevision, savePending, state, submittedVersion, version]);
   useEffect(() => {
     if (state === lastHandledSaveStateRef.current) return;
     lastHandledSaveStateRef.current = state;
@@ -119,11 +157,9 @@ export function CommunicationSectionEditor(props: Readonly<{
   const value = editorText(current);
   if (!canEdit) {
     return (
-      <article className="rounded-xl border border-border bg-white p-5 shadow-sm">
-        <h3 className="font-medium">{definition.label}</h3>
-        <p className="mt-2 whitespace-pre-wrap text-sm text-muted-foreground">
-          {value || "Ainda não preenchido."}
-        </p>
+      <article>
+        {value ? <p className="whitespace-pre-wrap break-words text-sm leading-6">{value}</p>
+          : <EmptyState title="Esta seção ainda não foi preenchida." />}
       </article>
     );
   }
@@ -135,8 +171,10 @@ export function CommunicationSectionEditor(props: Readonly<{
   const stageTwoPresentation = selectStageTwoSectionPresentation(localStageTwoResult, generalRevision, suggestedSuggestion);
   const stageTwoSuggestion = stageTwoPresentation.suggestion;
   return (
-    <article className="rounded-xl border border-border bg-white p-5 shadow-sm">
-      <form action={action} onSubmit={() => {
+    <article>
+      <form action={action} onSubmit={(event) => {
+        if (saveLocked || !editState.valid || !editState.dirty) { event.preventDefault(); return; }
+        localRequestRevisionRef.current += 1;
         setSubmittedVersion(version);
         if (definition.stage === 2) {
           startedSavesRef.current += 1;
@@ -146,16 +184,17 @@ export function CommunicationSectionEditor(props: Readonly<{
         <input type="hidden" name="account" value={account} />
         <input type="hidden" name="section_key" value={definition.key} />
         <input type="hidden" name="version" value={version} />
-        <label htmlFor={fieldId} className="block font-medium">{definition.label}</label>
+        <FormField>
+        <FormFieldLabel htmlFor={fieldId}>Conteúdo da seção</FormFieldLabel>
         {guidance ? <p className="text-sm text-muted-foreground">{guidance}</p> : null}
-        <p id={hintId} className="text-xs leading-5 text-muted-foreground">
+        <FormFieldHint id={hintId} className="leading-5">
           {definition.format === "items"
             ? "Escreva um item por linha, até 20 itens de 400 caracteres."
             : definition.format === "faq"
               ? "Escreva uma pergunta e resposta por linha, separadas por |. Até 15 pares."
               : "Até 4.000 caracteres. Você pode voltar e complementar depois."}
-        </p>
-        <textarea
+        </FormFieldHint>
+        <Textarea
           id={fieldId}
           name="value"
           rows={definition.format === "text" ? 5 : 6}
@@ -164,14 +203,20 @@ export function CommunicationSectionEditor(props: Readonly<{
           readOnly={saveLocked}
           placeholder={guidance ?? undefined}
           maxLength={definition.format === "text" ? 4000 : undefined}
-          aria-describedby={`${hintId}${saveLocked ? ` ${saveLockHintId}` : ""}`}
-          className="min-h-32 w-full rounded-lg border border-border bg-white px-3 py-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-700"
+          aria-invalid={!editState.valid}
+          aria-describedby={`${hintId}${!editState.valid ? ` ${fieldId}-error` : ""}${saveLocked ? ` ${saveLockHintId}` : ""}`}
+          className="min-h-40 resize-y text-sm"
         />
+        {!editState.valid ? <FormFieldError id={`${fieldId}-error`}>Confira o formato e os limites indicados antes de salvar.</FormFieldError> : null}
+        </FormField>
         {saveLocked ? <p id={saveLockHintId} role="status" className="text-xs text-muted-foreground">
           Salvando esta seção. Aguarde para continuar a edição.
         </p> : null}
-        <SubmitButton label="Salvar seção" pendingLabel="Salvando..." disabled={saveLocked} />
-        <ActionFeedback state={state} />
+        <div className="sticky bottom-0 flex flex-wrap gap-2 border-t border-border bg-background py-3">
+          <SubmitButton label="Salvar" pendingLabel="Salvando..." disabled={saveLocked || !editState.dirty || !editState.valid} busy={saveLocked} />
+          <Button variant="secondary" className="min-h-11" disabled={saveLocked} onClick={onCancel}>Cancelar</Button>
+        </div>
+        {!savePending && state !== dismissedState ? <ActionFeedback state={state} /> : null}
       </form>
       {definition.stage === 1 ? (
         <div className="mt-4 border-t border-border pt-4">
@@ -180,17 +225,21 @@ export function CommunicationSectionEditor(props: Readonly<{
           </p>
           <button type="button" disabled={saveLocked || aiPending || !draft.trim()}
             onClick={() => startAiTransition(async () => {
+              const requestRevision = ++localRequestRevisionRef.current;
+              const isCurrent = () => canInstallGeneralSuggestion(version, localVersionRef.current,
+                requestRevision, localRequestRevisionRef.current);
               setAiMessage("");
               setLocalSuggestion(null);
               setMissingQuestion("");
               try {
                 const result = await assistCommunicationSectionAction({ account, key: definition.key, userText: draft, version });
+                if (!isCurrent()) return;
                 if (result.ok) {
                   setLocalSuggestion(result.suggestion);
                   setMissingQuestion(result.missingQuestion);
                 } else setAiMessage(result.message);
               } catch {
-                setAiMessage("A assistência está indisponível agora. Continue a edição manual.");
+                if (isCurrent()) setAiMessage("A assistência está indisponível agora. Continue a edição manual.");
               }
             })}
             className="mt-3 inline-flex min-h-11 items-center justify-center rounded-lg border border-border px-5 py-2 text-sm font-semibold text-foreground disabled:cursor-not-allowed disabled:opacity-60">
@@ -219,6 +268,9 @@ export function CommunicationSectionEditor(props: Readonly<{
                 return;
               }
               startAiTransition(async () => {
+                const requestRevision = ++localRequestRevisionRef.current;
+                const isCurrent = () => canInstallGeneralSuggestion(version, localVersionRef.current,
+                  requestRevision, localRequestRevisionRef.current);
                 setAiMessage("");
                 setLocalStageTwoResult(null);
                 try {
@@ -226,6 +278,7 @@ export function CommunicationSectionEditor(props: Readonly<{
                     account, target: { kind: "section", key: definition.key as CommunicationSectionKey }, version,
                     requiresCurrentResearch: requiresResearch,
                   });
+                  if (!isCurrent()) return;
                   if (result.ok) {
                     setLocalStageTwoResult({
                       generalRevision,
@@ -234,7 +287,7 @@ export function CommunicationSectionEditor(props: Readonly<{
                     });
                   } else setAiMessage(result.message);
                 } catch {
-                  setAiMessage("A revisão está indisponível agora. Continue a edição manual.");
+                  if (isCurrent()) setAiMessage("A revisão está indisponível agora. Continue a edição manual.");
                 } finally {
                   onStageTwoGenerationFinished?.();
                 }
@@ -257,11 +310,19 @@ export function CommunicationSectionEditor(props: Readonly<{
   );
 }
 
-export function CommunicationStageTwo({ account, base, canEdit, sectionKeys }: Readonly<{
+export function CommunicationStageOne({ account, base, canEdit }: Readonly<{
+  account: string; base: CommunicationBase; canEdit: boolean;
+}>) {
+  return <CommunicationSectionCollection definitions={communicationSections.filter((section) => section.stage === 1)} base={base}
+    renderDetail={(definition, controls) => <CommunicationSectionEditor {...controls}
+      account={account} version={base.version} definition={definition}
+      current={base.sections[definition.key as CommunicationSectionKey]} canEdit={canEdit} />} />;
+}
+
+export function CommunicationStageTwo({ account, base, canEdit }: Readonly<{
   account: string;
   base: CommunicationBase;
   canEdit: boolean;
-  sectionKeys: Readonly<Record<string, string>>;
 }>) {
   const [pending, startTransition] = useTransition();
   const [message, setMessage] = useState("");
@@ -288,11 +349,9 @@ export function CommunicationStageTwo({ account, base, canEdit, sectionKeys }: R
   useLayoutEffect(() => { currentVersionRef.current = base.version; }, [base.version]);
   const stageTwo = communicationSections.filter((section) => section.stage === 2);
   return (
-    <section aria-labelledby="communication-stage-2" className="space-y-4">
+    <section aria-label="Inteligência de comunicação" className="space-y-4">
       <div className="space-y-3">
-        <p className="text-sm font-semibold text-brand-700">Etapa 2</p>
-        <h2 id="communication-stage-2" className="text-xl font-semibold">Inteligência de comunicação</h2>
-        {canEdit ? <div className="rounded-lg border border-border bg-white p-4">
+        {canEdit ? <div className="rounded-lg border border-border bg-background p-4">
           <p className="text-sm text-muted-foreground">
             A ação geral prepara sugestões para as sete seções da Etapa 2. Confira cada uma antes de usá-la ou salvar.
           </p>
@@ -353,9 +412,9 @@ export function CommunicationStageTwo({ account, base, canEdit, sectionKeys }: R
           <Sources sources={sources} />
         </div> : null}
       </div>
-      <div className="grid gap-3 sm:grid-cols-2">
-        {stageTwo.map((section) => <CommunicationSectionEditor key={`${section.key}-${sectionKeys[section.key]}`}
-          account={account} version={base.version} definition={section} current={base.sections[section.key]}
+      <CommunicationSectionCollection definitions={stageTwo} base={base} suggestedKeys={Object.keys(suggestions)}
+        renderDetail={(section, controls) => <CommunicationSectionEditor {...controls}
+          account={account} version={base.version} definition={section} current={base.sections[section.key as CommunicationSectionKey]}
           canEdit={canEdit} suggestedSuggestion={suggestions[section.key]} generalRevision={generalRevision}
           stageTwoGenerationInFlight={generationInFlight}
           onStageTwoGenerationStart={tryStartStageTwoGeneration}
@@ -368,8 +427,7 @@ export function CommunicationStageTwo({ account, base, canEdit, sectionKeys }: R
           onStageTwoSaveFinished={() => {
             pendingSavesRef.current = Math.max(0, pendingSavesRef.current - 1);
             setSaveInFlightCount(pendingSavesRef.current);
-          }} />)}
-      </div>
+          }} />} />
     </section>
   );
 }
@@ -381,7 +439,7 @@ function Suggestion({ value, format, basis, disabled = false, onUse }: Readonly<
   disabled?: boolean;
   onUse: () => void;
 }>) {
-  return <div className="mt-3 rounded-lg border border-border bg-surface-50 p-3">
+  return <div className="mt-3 rounded-lg border border-border bg-muted/30 p-3">
     <p className="text-xs font-semibold">Sugestão da IA para revisar</p>
     {basis ? <p className="mt-2 text-xs font-semibold text-brand-700">{stageTwoBasisLabel(basis)}</p> : null}
     <p className="mt-2 whitespace-pre-wrap text-sm">{formatEditorValue(value, format) || "Sem conteúdo suficiente para sugerir."}</p>
@@ -394,34 +452,33 @@ function Suggestion({ value, format, basis, disabled = false, onUse }: Readonly<
 
 function Sources({ sources }: Readonly<{ sources: readonly WebSource[] }>) {
   if (!sources.length) return null;
-  return <div className="mt-3 text-xs"><p className="font-semibold">Fontes consultadas</p><ul className="mt-1 list-disc pl-5">
+  return <details className="mt-3 text-xs"><summary className="flex min-h-11 cursor-pointer items-center font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Fontes consultadas ({sources.length})</summary><ul className="mt-1 list-disc pl-5">
     {sources.map((source) => <li key={source.url}><a href={source.url} target="_blank" rel="noopener noreferrer"
-      className="break-all text-brand-700 underline">{source.title || source.url}</a></li>)}
-  </ul></div>;
+      className="inline-block min-h-11 break-all py-2 text-brand-700 underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{source.title || source.url}</a></li>)}
+  </ul></details>;
 }
 
-function SubmitButton({ label, pendingLabel, disabled = false }: Readonly<{
-  label: string; pendingLabel: string; disabled?: boolean;
+function SubmitButton({ label, pendingLabel, disabled = false, busy = false }: Readonly<{
+  label: string; pendingLabel: string; disabled?: boolean; busy?: boolean;
 }>) {
   const { pending } = useFormStatus();
   return (
-    <button
+    <Button
       type="submit"
       disabled={pending || disabled}
-      className="inline-flex min-h-11 items-center justify-center rounded-lg bg-brand-700 px-5 py-2 text-sm font-semibold text-white hover:bg-brand-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-700 focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-60"
+      className="min-h-11 !bg-brand-700 hover:!bg-brand-700/95"
     >
-      {pending || disabled ? pendingLabel : label}
-    </button>
+      {pending || busy ? pendingLabel : label}
+    </Button>
   );
 }
 
 function ActionFeedback({ state }: Readonly<{ state: CommunicationActionState }>) {
   if (state.status === "idle") return null;
   return (
-    <p role={state.status === "error" ? "alert" : "status"}
-      className={`text-sm ${state.status === "error" ? "text-state-error" : "text-state-success"}`}>
+    <FeedbackMessage tone={state.status === "error" ? "error" : "success"}>
       {state.message}
-    </p>
+    </FeedbackMessage>
   );
 }
 
