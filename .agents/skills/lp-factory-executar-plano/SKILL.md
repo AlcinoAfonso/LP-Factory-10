@@ -71,7 +71,7 @@ Use os wrappers competentes; não chame custom agents diretamente nem refaça se
 - `$lp-factory-avaliar-documentacao`: acione quando a reconciliação de documento canônico exigir julgamento documental — conflito, interpretação normativa, decisão de residência canônica, reestruturação/consolidação ou formulação materialmente ambígua — ou quando o plano/contrato vigente exigir explicitamente ABC ou cobertura documental especializada. Fora desses casos, atualização factual focal e inequívoca sustentada por fonte competente, como status comprovado, path, PR/SHA, referência, contagem ou fato operacional, é feita diretamente pelo Executor. Tamanho do delta, sozinho, não decide o roteamento.
 - `$lp-factory-avaliar-plano-analista` ou `$lp-factory-avaliar-implementacao-analista`: risco material de regressão, mudança de contrato, segurança, autorização, dados, comportamento, conflito, evidência insuficiente ou outra necessidade de controle independente. Implementação simples não exige Analista.
 
-Necessidade descoberta durante implementação ou review aciona apenas a especialidade pertinente, no mesmo fluxo. Após a entrega de uma especialidade, correção factual focal e inequívoca apontada por review é feita diretamente pelo Executor no mesmo PR; só retorne à especialidade se surgir questão material nova que exija novo julgamento dela. Parecer incompleto, condicionante, investigação ou decisão sem autoridade suspendem somente o ponto afetado; não invente solução nem trate o parecer como aprovação de produto ou merge.
+Necessidade descoberta durante implementação ou review aciona apenas a especialidade pertinente, no mesmo fluxo. Após a entrega de uma especialidade, correção factual focal e inequívoca apontada por review é feita diretamente pelo Executor no mesmo PR quando nenhum contrato vigente exigir retorno à especialidade; retorno obrigatório previsto no contrato permanece. Fora desses retornos obrigatórios, só retorne à especialidade se surgir questão material nova que exija novo julgamento dela. Parecer incompleto, condicionante, investigação ou decisão sem autoridade suspendem somente o ponto afetado; não invente solução nem trate o parecer como aprovação de produto ou merge.
 
 ### 3.3 Consolidar V2 e auditar quando necessário
 
@@ -99,7 +99,7 @@ Implemente somente a V2 vigente consolidada e liberada pelos gates aplicáveis.
 - execute as fases na ordem e pelos identificadores canônicos do roadmap, rejeitando aliases ordinais e agrupamento de fases independentes;
 - para prompt consumido por IA, use `$lp-factory-criar-prompt` como subfluxo somente leitura antes da edição e valide seus casos representativos;
 - em frontend/dashboard, consulte `docs/design-system.md`, valide aderência e evidência renderizada; solicite Design pelos critérios de 3.2;
-- para documento canônico, siga o roteamento de 3.2; quando houver especialidade documental, aplique literalmente o ABC. Após essa entrega, correção factual focal e inequívoca apontada por review segue a regra de 3.2, sem nova chamada documental.
+- para documento canônico, siga o roteamento de 3.2; quando houver especialidade documental, aplique literalmente o ABC.
 
 ## 5. Supabase e migrations
 
