@@ -3,10 +3,11 @@ import { notFound } from "next/navigation";
 
 import { requireCommunicationBaseAccess } from "../../../../lib/communication-base/access";
 import { readCommunicationBase, readPendingSetupInitialContext } from "../../../../lib/communication-base/adapters/communicationBaseAdapter";
-import { communicationSections } from "../../../../lib/communication-base/registry";
-import { sectionStateKey, stageOneStateKey } from "../../../../lib/communication-base/ui-state-keys";
+import { stageOneStateKey } from "../../../../lib/communication-base/ui-state-keys";
+import { FeedbackMessage } from "@/components/ui/feedback-message";
+import { EmptyState } from "@/components/ui/empty-state";
 import { CommunicationBaseTabs } from "./CommunicationBaseTabs";
-import { CommunicationSectionEditor, CommunicationStageTwo, StartCommunicationBaseForm } from "./CommunicationSectionEditor";
+import { CommunicationStageOne, CommunicationStageTwo, StartCommunicationBaseForm } from "./CommunicationSectionEditor";
 
 type PageProps = Readonly<{ params: Promise<{ account: string }> }>;
 
@@ -50,9 +51,9 @@ export default async function CommunicationBasePage({ params }: PageProps) {
           </p>
         </header>
         {!result.ok ? (
-          <p role="alert" className="rounded-lg border border-state-error/30 bg-state-error/5 p-4 text-sm">
+          <FeedbackMessage tone="error">
             Não foi possível carregar a Base agora. Atualize a página e tente novamente.
-          </p>
+          </FeedbackMessage>
         ) : !base ? (
           access.value.canEdit ? (
             <StartCommunicationBaseForm
@@ -61,9 +62,7 @@ export default async function CommunicationBasePage({ params }: PageProps) {
               candidateReadFailed={pendingSetupCandidate !== null && !pendingSetupCandidate.ok}
             />
           ) : (
-            <p role="status" className="text-sm text-muted-foreground">
-              A Base ainda não foi iniciada por um membro com permissão de edição.
-            </p>
+            <EmptyState title="A Base ainda não foi iniciada." description="Um membro com permissão de edição pode iniciar a Base desta conta." />
           )
         ) : (
           <div className="space-y-8">
@@ -72,27 +71,10 @@ export default async function CommunicationBasePage({ params }: PageProps) {
                 Seu acesso é somente leitura.
               </p>
             ) : null}
-            <CommunicationBaseTabs stageOne={<section aria-labelledby="communication-stage-1" className="space-y-4">
-                <div className="space-y-3">
-                  <p className="text-sm font-semibold text-brand-700">Etapa 1</p>
-                  <h2 id="communication-stage-1" className="text-xl font-semibold">Verdade da empresa</h2>
-                </div>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  {communicationSections.filter((section) => section.stage === 1).map((section) => (
-                    <CommunicationSectionEditor
-                      key={`${section.key}-${sectionStateKey(base.sections[section.key])}`}
-                      account={access.value.accountSubdomain}
-                      version={base.version}
-                      definition={section}
-                      current={base.sections[section.key]}
-                      canEdit={access.value.canEdit}
-                    />
-                  ))}
-                </div>
-            </section>} stageTwo={<CommunicationStageTwo key={stageOneStateKey(base)} account={access.value.accountSubdomain}
-              base={base} canEdit={access.value.canEdit}
-              sectionKeys={Object.fromEntries(communicationSections.filter((section) => section.stage === 2)
-                .map((section) => [section.key, sectionStateKey(base.sections[section.key])]))} />} />
+            <CommunicationBaseTabs stageOne={<CommunicationStageOne account={access.value.accountSubdomain}
+              base={base} canEdit={access.value.canEdit} />}
+              stageTwo={<CommunicationStageTwo key={stageOneStateKey(base)} account={access.value.accountSubdomain}
+                base={base} canEdit={access.value.canEdit} />} />
           </div>
         )}
       </div>
