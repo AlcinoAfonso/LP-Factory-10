@@ -23,9 +23,9 @@ export function CommunicationSectionCollection({ definitions, base, suggestedKey
   return <table className="w-full table-fixed text-left text-sm">
     <caption className="sr-only">Seções da {definitions[0]?.stage === 1 ? "Verdade da empresa" : "Inteligência de comunicação"}</caption>
     <thead className="border-b border-border text-xs text-muted-foreground"><tr>
-      <th scope="col" className="w-[48%] py-3 pr-2 font-medium sm:w-auto">Seção</th>
-      <th scope="col" className="py-3 pr-2 font-medium sm:w-48">Estado</th>
-      <th scope="col" className="w-20 py-3 text-right font-medium sm:w-24">Ação</th>
+      <th scope="col" className="w-[48%] py-2 pr-2 font-medium sm:w-auto">Seção</th>
+      <th scope="col" className="py-2 pr-2 font-medium sm:w-48">Estado</th>
+      <th scope="col" className="w-20 py-2 text-right font-medium sm:w-24">Ação</th>
     </tr></thead>
     <tbody className="divide-y divide-border">{definitions.map((definition) => <SectionRow key={definition.key}
       definition={definition} hasContent={hasSectionContent(base.sections[definition.key as keyof typeof base.sections]?.value)}
@@ -84,9 +84,9 @@ function SectionRow({ definition, hasContent, hasSuggestion, renderDetail }: Rea
   }, []);
 
   return <tr>
-    <th scope="row" className="break-words py-2 pr-3 font-medium leading-5">{definition.label}</th>
-    <td className="py-2 pr-2 text-xs leading-5 text-muted-foreground">{hasSuggestion ? "Sugestão disponível" : hasContent ? "Com conteúdo" : "Ainda não preenchida"}</td>
-    <td className="py-1 text-right">
+    <th scope="row" className="break-words py-1 pr-3 font-medium leading-5">{definition.label}</th>
+    <td className="py-1 pr-2 text-xs leading-5 text-muted-foreground">{hasSuggestion ? "Sugestão disponível" : hasContent ? "Com conteúdo" : "Ainda não preenchida"}</td>
+    <td className="py-0 text-right">
       <Button ref={triggerRef} variant="secondary" className="min-h-11 px-3 !text-brand-700" aria-label={`Abrir ${definition.label}`}
         onClick={() => {
           window.history.pushState({ ...window.history.state }, "", window.location.href); historyEntryRef.current = true;
