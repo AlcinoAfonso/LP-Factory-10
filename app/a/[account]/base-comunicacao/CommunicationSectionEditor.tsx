@@ -109,6 +109,8 @@ export function CommunicationSectionEditor(props: Readonly<{
   const priorResetRef = useRef(resetRevision);
   const priorPersistedRef = useRef(editorText(current));
   const lastSyncedSaveRef = useRef(INITIAL_STATE);
+  const localRequestRevisionRef = useRef(0);
+  const localVersionRef = useRef(version);
   const [aiPending, startAiTransition] = useTransition();
   const [aiMessage, setAiMessage] = useState("");
   const [localSuggestion, setLocalSuggestion] = useState<CommunicationSectionValue | null>(null);
@@ -122,6 +124,7 @@ export function CommunicationSectionEditor(props: Readonly<{
     onEditorStateChange(canEdit && editState.dirty, saveLocked);
   }, [canEdit, editState.dirty, saveLocked, onEditorStateChange]);
   useLayoutEffect(() => {
+    localVersionRef.current = version;
     const persisted = editorText(current);
     const reset = priorResetRef.current !== resetRevision;
     const savedRefresh = state.status === "saved" && state !== lastSyncedSaveRef.current &&
@@ -130,11 +133,13 @@ export function CommunicationSectionEditor(props: Readonly<{
       value: priorPersistedRef.current, origin: "user_reviewed" }, draft).dirty;
     if (reset || savedRefresh || (persisted !== priorPersistedRef.current && previouslyClean)) setDraft(persisted);
     if (reset) setDismissedState(state);
-    if (savedRefresh) {
-      lastSyncedSaveRef.current = state;
+    if (savedRefresh) lastSyncedSaveRef.current = state;
+    if (reset || savedRefresh) {
+      localRequestRevisionRef.current += 1;
       setLocalSuggestion(null);
       setLocalStageTwoResult(null);
       setMissingQuestion("");
+      setAiMessage("");
     }
     priorResetRef.current = resetRevision;
     priorPersistedRef.current = persisted;
@@ -169,6 +174,7 @@ export function CommunicationSectionEditor(props: Readonly<{
     <article>
       <form action={action} onSubmit={(event) => {
         if (saveLocked || !editState.valid || !editState.dirty) { event.preventDefault(); return; }
+        localRequestRevisionRef.current += 1;
         setSubmittedVersion(version);
         if (definition.stage === 2) {
           startedSavesRef.current += 1;
@@ -210,7 +216,7 @@ export function CommunicationSectionEditor(props: Readonly<{
           <SubmitButton label="Salvar" pendingLabel="Salvando..." disabled={saveLocked || !editState.dirty || !editState.valid} busy={saveLocked} />
           <Button variant="secondary" className="min-h-11" disabled={saveLocked} onClick={onCancel}>Cancelar</Button>
         </div>
-        {state !== dismissedState ? <ActionFeedback state={state} /> : null}
+        {!savePending && state !== dismissedState ? <ActionFeedback state={state} /> : null}
       </form>
       {definition.stage === 1 ? (
         <div className="mt-4 border-t border-border pt-4">
@@ -219,17 +225,21 @@ export function CommunicationSectionEditor(props: Readonly<{
           </p>
           <button type="button" disabled={saveLocked || aiPending || !draft.trim()}
             onClick={() => startAiTransition(async () => {
+              const requestRevision = ++localRequestRevisionRef.current;
+              const isCurrent = () => canInstallGeneralSuggestion(version, localVersionRef.current,
+                requestRevision, localRequestRevisionRef.current);
               setAiMessage("");
               setLocalSuggestion(null);
               setMissingQuestion("");
               try {
                 const result = await assistCommunicationSectionAction({ account, key: definition.key, userText: draft, version });
+                if (!isCurrent()) return;
                 if (result.ok) {
                   setLocalSuggestion(result.suggestion);
                   setMissingQuestion(result.missingQuestion);
                 } else setAiMessage(result.message);
               } catch {
-                setAiMessage("A assistência está indisponível agora. Continue a edição manual.");
+                if (isCurrent()) setAiMessage("A assistência está indisponível agora. Continue a edição manual.");
               }
             })}
             className="mt-3 inline-flex min-h-11 items-center justify-center rounded-lg border border-border px-5 py-2 text-sm font-semibold text-foreground disabled:cursor-not-allowed disabled:opacity-60">
@@ -258,6 +268,9 @@ export function CommunicationSectionEditor(props: Readonly<{
                 return;
               }
               startAiTransition(async () => {
+                const requestRevision = ++localRequestRevisionRef.current;
+                const isCurrent = () => canInstallGeneralSuggestion(version, localVersionRef.current,
+                  requestRevision, localRequestRevisionRef.current);
                 setAiMessage("");
                 setLocalStageTwoResult(null);
                 try {
@@ -265,6 +278,7 @@ export function CommunicationSectionEditor(props: Readonly<{
                     account, target: { kind: "section", key: definition.key as CommunicationSectionKey }, version,
                     requiresCurrentResearch: requiresResearch,
                   });
+                  if (!isCurrent()) return;
                   if (result.ok) {
                     setLocalStageTwoResult({
                       generalRevision,
@@ -273,7 +287,7 @@ export function CommunicationSectionEditor(props: Readonly<{
                     });
                   } else setAiMessage(result.message);
                 } catch {
-                  setAiMessage("A revisão está indisponível agora. Continue a edição manual.");
+                  if (isCurrent()) setAiMessage("A revisão está indisponível agora. Continue a edição manual.");
                 } finally {
                   onStageTwoGenerationFinished?.();
                 }
