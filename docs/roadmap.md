@@ -3091,3 +3091,22 @@
 - Conteúdo: a IA é o motor central da interpretação de sinais de mercado e da produção de conteúdo comunicacional editável usando somente os insumos confirmados pertinentes da Etapa 1. Usa pesquisa atual via Web Search quando atualidade ou localidade forem materiais para elaborar Quem somos, Público/contexto, Dores/desejos/crenças/objeções, Proposta de valor, Benefícios, Diferenciais e FAQ. Distinguir fato particular confirmado de hipótese estratégica; revisão e edição humanas permanecem disponíveis sem aprovação por chamada. Falha de pesquisa material não é substituída silenciosamente por conhecimento paramétrico; a Base não depende de vínculo persistente com a pesquisa. Este recorte não gera LP ou outro produto, não integra canais nem altera Pending Setup, jornada E10, comercial ou trial, e não introduz Agents SDK, multiagente, job, fila ou infraestrutura antecipada.
 - E25.1 não cria carteira, saldo, franquia ou bloqueio comercial de IA; o contrato transversal de créditos pertence ao Debate 10B.
 - A ação geral gera as sete seções quando vazias e atualiza o conjunto pertinente quando há conteúdo; cada seção tem revisão localizada. O conteúdo salvo da Etapa 2 entra somente no alvo da operação como contexto de revisão, sem autoridade factual. Sugestões não são salvas automaticamente, e a edição manual não dispara IA.
+
+25.2 Experiência de cliente da Base de Comunicação
+
+25.2.1 Objetivo e status
+- Objetivo: tornar a consulta e a edição da Base claras e progressivas, preservando os contratos funcionais existentes.
+- Status: implementada e validada funcionalmente em Preview no PR #1008, com supervisão Autônomo; sem alteração de acesso, persistência, conteúdo/metodologia de D14D ou infraestrutura.
+
+25.2.2 Registros do recorte
+- Repositório:
+  - Criados: `app/a/[account]/base-comunicacao/_components/CommunicationSectionCollection.tsx`, `app/a/[account]/base-comunicacao/_components/section-edit-state.ts`, `app/a/[account]/base-comunicacao/_components/section-edit-state.validation.ts`, `docs/lousa-plano-base-e25-2.md`.
+  - Ajustados: `app/a/[account]/base-comunicacao/page.tsx`, `app/a/[account]/base-comunicacao/CommunicationSectionEditor.tsx`.
+
+25.2.3 Coleção tabular, abertura de detalhe e edição da Base
+- Status: implementado.
+- Conteúdo: as duas abas superiores exibem somente sua coleção tabular de sete seções, com identidade, estado e ação Abrir. O dialog apresenta uma seção por vez e já abre editável para Owner/Admin/Editor, com Salvar e Cancelar; Viewer recebe leitura. Comparação pelo parser protege alterações materiais e rascunhos inválidos; saída com perda possível exige confirmação. Salvamento mantém locks e versões, sucesso permanece no detalhe e conflito preserva o rascunho. Cancelar, Fechar, Escape, backdrop e Voltar preservam o contexto da coleção e devolvem o foco.
+
+25.2.4 Estados, assistência por IA, responsividade e validação da experiência
+- Status: implementado e validado em Preview.
+- Conteúdo: feedback próximo da ação, sugestões separadas do conteúdo salvo, instalação somente no rascunho e fontes sob revelação progressiva. Assistências e exclusão mútua existentes foram preservadas; revisão/versão impede reinstalar respostas locais superadas por descarte ou salvamento. QA autenticado cobriu IA provider-backed, sucesso, conflito, descarte, teclado físico, foco, alvos de 44 px e reflow em 320, 390 e 1280 px. Viewport com altura reduzida comprovou ações alcançáveis, sem representar prova de teclado virtual real ou conformidade WCAG integral. Permissões permaneceram cobertas pelos validadores existentes; as contas Viewer catalogadas sem entitlement não tiveram acesso ampliado para QA. A prova durável está no PR #1008 e em seus commits.
