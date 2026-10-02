@@ -30,7 +30,7 @@ Para plano já iniciado cujo contrato vigente exija literalmente `aprovado para 
 
 Use `revisao_delta` no mesmo Analista, entregando versões anterior/nova ou diff, correções solicitadas e fontes pertinentes. Verifique apenas delta/regressões. Nova rodada especializada somente por questão material nova ou conclusão alterada; não reabra avaliações satisfeitas.
 
-Quando o alvo for reconciliação de roadmap pertinente à avaliação acionada, entregue V2 aprovada, snapshot imutável anterior, resultado e `docs/template-roadmap.md`. Se houver especialidade documental, inclua ABC integral e `docs/prompt-abc.md`, exigindo auditoria focal do resultado e, com `SEM ALTERAÇÕES NECESSÁRIAS`, correspondência do snapshot. Se a atualização tiver sido factual direta pelo Executor, entregue fonte factual e diff e audite somente sua correspondência factual e a ausência de julgamento documental. Não exija ABC nem introduza auditoria universal apenas pela presença do roadmap.
+Quando o alvo for reconciliação de roadmap pertinente à avaliação acionada, entregue V2 aprovada, snapshot imutável anterior, ABC integral preparado pela especialidade documental, resultado e `docs/prompt-abc.md`/`docs/template-roadmap.md`; exija leitura integral e auditoria focal pelo runtime. Com `SEM ALTERAÇÕES NECESSÁRIAS`, confirme correspondência do snapshot. Não introduza auditoria universal para execução simples.
 
 ## Devolver e limites
 
