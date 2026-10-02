@@ -50,3 +50,36 @@ Baseline: main `bcc55ceea461d21bef62ae8830323d24015f5e60`. PR #1004 fechado sem 
 • Desktop e mobile preservam operação, contexto e ações essenciais, com teclado, foco, labels e acessibilidade aplicáveis conforme o Design System.
 • O QA inclui evidência renderizada e observação da jornada como cliente em desktop e mobile; inspeção de código isolada não comprova o aceite visual.
 • Nenhuma mudança funcional de D14D, E25.1, E10.11, shell global, acesso, banco ou infraestrutura é necessária para considerar este plano concluído.
+
+## V2 técnica candidata
+
+Derivação técnica da V1; nenhum acréscimo funcional. Referência V1: commit `16abf1b4244bb2ca94b8817247918922fac62356`, blob `9d5b8a4dd32f6a5ba2a02c483e51cb2b12eb07e8`. Roadmap da base: commit `bcc55ceea461d21bef62ae8830323d24015f5e60`, blob `04baeb1f4212bbcaa79fff570b39ef51e6ddc02b`. Plano conceitual separado: N/A; o vínculo competente é PB-A do Debate 14C.
+
+### 25.2.1 — Objetivo e status
+
+Executar a V1 revisada na branch `codex-app/e25-2-colecao-detalhe`, PR único #1008 contra main, na mesma sessão e worktree. E25.1 está encerrado na fonte canônica; nenhuma dependência externa adicional consta na V1. Estado: derivação candidata, implementação e QA pendentes. PR #1004 não será reaberto nem usado como baseline.
+
+### 25.2.2 — Registros do recorte e boundaries
+
+- Alterações limitadas a `app/a/[account]/base-comunicacao/page.tsx`, componentes client da própria Base e validação focal de seu estado de apresentação; `docs/lousa-plano-base-e25-2.md` e registro factual E25.2 em `docs/roadmap.md`.
+- Reutilizar registry, formatos/parser, Server Actions, adapters, access/membership/entitlement, versões, guards de geração/salvamento, precedência de sugestões e ui-state-keys. Não alterar esses contratos de domínio, prompts, workloads ou shell; testes focais podem reutilizar seus exports públicos.
+- Nenhum novo pacote, rota, engine, workflow, banco ou infraestrutura. Componente local de coleção/dialog encapsula somente apresentação e retorno à coleção; não assume responsabilidade de domínio.
+- Updates avaliou os quatro catálogos no SHA V1: `nenhum update aplicável`; `prod#16` e `prod#17` apenas reforçam QA/acessibilidade já exigidos. Nenhuma oportunidade condicional será implementada. Design em `definicao`: `solucao definida`, com baseline/renderização pendentes.
+- Estrutura: N/A — responsabilidades de domínio, boundaries, dependências e persistência permanecem; o delta é composição local da UI. Automação: N/A — não há operação automatizada nova/alterada. Analista de plano necessário pelo risco de regressão do ciclo edição/salvamento/IA e proteção contra perda; avaliação independente da candidata antes da implementação.
+
+### 25.2.3 — Coleção tabular, abertura de detalhe e edição da Base
+
+- Preservar abas superiores e navegação acessível por setas/Home/End. Cada painel mostra sete seções na ordem e com labels do registry. Tabela HTML simples com `Seção`, `Estado` e `Ação`; linhas consecutivas, `Abrir` com nome acessível próprio, sem filtro/ordenação desnecessários. Estado deriva de conteúdo salvo e sugestão transitória disponível, sem nova métrica ou status de domínio.
+- `Abrir` usa dialog nativo na rota existente, uma seção visível por vez, com título/aba, fechamento explícito, fundo inerte, foco contido e devolvido ao acionador. Mobile preserva tabela e identidade/estado/ação; dialog quase integral, conteúdo rolável, ações alcançáveis. Nenhum editor completo permanece visível na coleção.
+- Detalhe inicia em leitura; Owner/Admin/Editor têm `Editar`, Viewer não recebe edição/IA. Ao editar, rascunho parte do persistido; `Salvar` disponível somente com alteração material válida pelos formatos/parser existentes e fora do lock de salvamento. `Cancelar` restaura persistido sem mutação. Usar componentes base e tokens semânticos, sem novo padrão visual.
+- Comparação material normaliza pelo parser vigente; rascunho inválido diferente do persistido também fica protegido. Sucesso só retorna à leitura após resposta e refresh coerentes; erro/conflito preserva rascunho. Preservar versionamento e locks existentes; não usar refresh ou remount de coleção como descarte implícito.
+- Saída por Cancelar, Fechar, Escape, backdrop, retorno/navegação aplicável requer confirmação se houver perda possível; continuar mantém texto/contexto, descartar retorna ao persistido/coleção. Modal impede troca de aba ao fundo. Proteção local de navegação/histórico e beforeunload cobre volta/saída da rota e fechamento do navegador sem alterar shell global. Salvamento em andamento não pode ser apresentado como operação reversível por Cancelar; aguardar sua conclusão.
+
+### 25.2.4 — Estados, assistência por IA, responsividade e validação
+
+- Preservar entrada sem Base e confirmação de importação do Pending Setup. Aplicar EmptyState/LoadingState/FeedbackMessage às finalidades pertinentes. Conteúdo válido permanece durante operações assíncronas; mensagens ficam próximas da ação com anúncio textual apropriado.
+- Na aba Inteligência, ação geral explícita e opção de pesquisa mantêm alcance atual; resultado marca sugestões nas linhas. No detalhe, assistência local preserva insumos/alvo e informação a confirmar, fato versus hipótese e fontes correspondentes sob revelação progressiva. `Usar no editor` instala rascunho e entra em edição, sem salvar. IA geral/local, exclusão mútua, precedência, revisão e versões continuam nos guards existentes. Alternar/abrir/fechar não dispara IA nem gravação. Resultados transitórios não se confundem com conteúdo persistido.
+- QA real autenticado no Preview do código corrente, com contas exclusivas catalogadas e acesso vigente, sem criar conta nem alterar entitlement para viabilizar o plano. Capturar baseline anterior e resultado em desktop/mobile; falta de acesso/evidência mantém somente o gate de QA aberto. Não reproduzir credenciais nos artefatos. `npm run dev` e inspeção local complementam Preview conforme recursos locais aprovados; não materializar secrets técnicos novos.
+- Provar 320, 390 e 1280 px sem overflow horizontal; sete linhas e uma coleção ativa; dialog individual, leitura/edição, parser/validade, salvar sem alteração, sucesso/erro/conflito, permanecer/descartar, retorno com aba/rolagem/foco, navegador/volta, loading/sugestão/fontes e ausência de autosave. Papéis preservados por QA permitido e validadores de acesso existentes. Combinar inspeção automática e manual de teclado/foco/labels/anúncios/alvos >=44px/contraste/reflow; não declarar conformidade WCAG integral.
+- `npm ci` executado; validar focalmente estados/transições de apresentação e guards existentes, depois `npm run check`, `git diff --check`, diff da base e QA renderizado. Observabilidade: N/A para nova instrumentação; execução IA conserva telemetria E21 existente e feedback de falha.
+- Reconciliação final factual focal do roadmap preserva versão/data e registros históricos; julgamento documental material, se necessário, segue wrapper competente. Após QA e correções, review independente do HEAD publicado e conclusão explícita de toda revisão automática disparada; threads materiais/checks pendentes impedem liberação. Merge remoto somente por supervisão competente, com guarda atômica do SHA. Confirmar Production e registrar recibo/PR/merge/evidências no Debate 14C preservando V1 e histórico antes de concluir.
