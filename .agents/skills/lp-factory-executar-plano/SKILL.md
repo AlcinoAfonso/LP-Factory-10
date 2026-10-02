@@ -21,7 +21,6 @@ Aceite também número/URL do PR ou path da V1 com referência inequívoca ao PR
 
 Se `$lp-factory-executar-plano` for invocado diretamente para iniciar um plano aprovado, não inicie a execução: redirecione para `$lp-factory-estrategista-autonomo`, que conduz a sessão pelo contrato do Executor conforme `docs/pipeline-plano-base.md`.
 
-
 ## 2. Fontes e preparação
 
 Use somente as fontes materialmente necessárias:
