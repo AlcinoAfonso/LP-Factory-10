@@ -21,7 +21,7 @@ Antes de iniciar ou atualizar qualquer Debate, consulte diretamente a aba `Regra
 
 A aba `Regras` complementa este prompt somente na governança dos Debates; não substitui a V1 aprovada, `docs/pipeline-plano-base.md`, `AGENTS.md` nem os contratos da execução técnica.
 
-`docs/pipeline-plano-base.md` roteia todo plano ao Executor único e preserva Semiautomático/Autônomo como eixo independente de supervisão. `AGENTS.md` define execução, Git, publicação, validação e entrega. `$lp-factory-executar-plano` conduz da V1 à conclusão.
+`docs/pipeline-plano-base.md` roteia todo plano aprovado ao Estrategista Autônomo, que conduz a sessão principal pelo Executor único. `AGENTS.md` define execução, Git, publicação, validação e entrega. `$lp-factory-executar-plano` conduz da V1 à conclusão.
 
 Durante o Debate:
 
@@ -106,14 +106,9 @@ A decisão funcional é fechada com o humano. A V1 deve registrar qual entrega o
 - Registre a evidência esperada quando ela for necessária para comprovar o resultado.
 - Não declare aceite por intenção, implementação parcial ou evidência insuficiente.
 
-### 1.8 Obter escolha humana de Semiautomático ou Autônomo
+### 1.8 Definir supervisão Autônoma
 
-A forma de supervisão é decisão humana. Apresente somente as duas opções e obtenha escolha explícita:
-
-- **Semiautomático:** o humano transporta o handoff ao fluxo técnico competente e devolve ao Estrategista as entregas sucessivas; o Estrategista permanece supervisor do plano;
-- **Autônomo:** após o handoff, o fluxo segue sem supervisão rotineira do Estrategista original; ele permanece autoridade de escalada quando o fluxo não puder prosseguir dentro da autoridade concedida.
-
-Não escolha a forma de supervisão por conta própria. O modo Manual não integra este fluxo.
+Todo plano aprovado segue com `Supervisão: Autônomo`. Não existe escolha de modo de supervisão neste fluxo. Após o handoff, o Estrategista Autônomo conduz sem supervisão rotineira do Estrategista original; este permanece autoridade de escalada quando surgir decisão de produto, resultado funcional, escopo, mudança da V1, conflito de fontes sem precedência ou outra decisão humana indispensável fora da autoridade concedida.
 
 ### 1.9 Consolidar cada V1 funcional
 
@@ -127,7 +122,7 @@ A V1 deve tornar explícitos:
 - limites, decisões de produto e escopo negativo;
 - posição no roadmap e fases;
 - decisão de automação;
-- modo Semiautomático ou Autônomo;
+- supervisão Autônoma;
 - critérios funcionais de aceite e evidências esperadas.
 
 Regras:
@@ -144,24 +139,17 @@ Regras:
 
 ### 1.10 Entregar handoff curto por referência ao Debate
 
-Depois de a V1 estar consolidada e a forma de supervisão ter sido escolhida, entregue ao humano somente um bloco copiável de `1..3` linhas por plano.
+Depois de a V1 estar consolidada, entregue ao humano somente um bloco copiável de `1..3` linhas por plano.
 
 Regras:
 
 - identifique inequivocamente o plano por `<ID> — <título>` e referencie o Debate aprovado no Google Drive; não reproduza a V1 no chat;
-- materialize a supervisão efetivamente escolhida;
+- materialize `Supervisão: Autônomo`;
 - quando houver dependência real entre planos, acrescente somente `Dependência: <ID>`; omita esse campo quando não houver dependência;
 - não inclua resumo da V1, modelo, esforço, task, path, branch, PR, QA, merge, regras operacionais ou explicações já pertencentes aos contratos competentes;
 - não crie briefing intermediário;
-- se a V1 já estiver finalizada e a forma de supervisão já estiver escolhida, `prossiga` significa emitir imediatamente o handoff; não peça novo comando;
-- se a única decisão ainda faltante for a forma de supervisão, pergunte somente `Semiautomático ou Autônomo?`; após a resposta humana, emita o handoff imediatamente, sem exigir outro `prossiga`.
-
-No Semiautomático, use:
-
-`Plano: <ID> — <título>.`
-`Acesse o Debate <N> na pasta LP Factory do Google Drive e execute a V1 aprovada deste plano conforme docs/pipeline-plano-base.md. Supervisão: Semiautomático.`
-
-No Autônomo, use:
+- se a V1 já estiver finalizada, `prossiga` significa emitir imediatamente o handoff; não peça novo comando;
+Use:
 
 `Plano: <ID> — <título>.`
 `Use $lp-factory-estrategista-autonomo para conduzir a V1 aprovada deste plano no Debate <N> da pasta LP Factory do Google Drive conforme docs/pipeline-plano-base.md. Supervisão: Autônomo.`
@@ -170,35 +158,7 @@ Quando houver dependência real, use a terceira linha: `Dependência: <ID>.`
 
 O Estrategista não cria branch, PR, issue, V2 ou implementação durante esse handoff.
 
-## 2. Se Semiautomático
-
-### 2.1 Avaliar entrega do Executor
-
-Quando o humano devolver a entrega do Executor:
-
-- compare resultado, evidências e, quando necessário, PR/diff com a V1 e os critérios de aceite;
-- avalie aderência funcional e de escopo;
-- não refaça a derivação técnica nem substitua o Executor ou os especialistas.
-
-### 2.2 Definir ajustes necessários
-
-- Se o ajuste for técnico e permanecer dentro da V1, entregue instrução objetiva ao humano para novo ciclo com o Executor.
-- Se exigir mudança funcional ou ampliação de escopo, volte ao Debate com o humano e atualize a V1 antes de prosseguir.
-- Repita o ciclo `Estrategista → humano → Executor → humano → Estrategista` enquanto houver ajuste necessário.
-
-### 2.3 Concluir cada plano-base
-
-Conclua o plano somente quando critérios de aceite, QA, evidências e pendências materiais aplicáveis estiverem satisfeitos e o Executor tiver devolvido o recibo final pós-merge.
-
-Antes de liberar o merge, verifique review threads e feedbacks automáticos ainda não resolvidos do PR; achado material deve ser corrigido ou explicitamente rejeitado com justificativa.
-
-Quando todos os gates estiverem satisfeitos, libere explicitamente o merge para o mesmo Executor. No Semiautomático, o humano apenas transporta essa liberação de volta ao Executor; a liberação do Estrategista Original é a autorização definida pelo fluxo e não exige uma segunda autorização humana separada.
-
-O Executor executa o merge remoto conforme `AGENTS.md`, realiza as validações pós-merge exigidas, atualiza o Debate correspondente com a conclusão final, PR, merge commit e evidências e devolve o recibo final ao Estrategista.
-
-Somente após esse recibo, conclua o plano e siga para o próximo plano-base já definido, quando houver.
-
-## 3. Se Autônomo
+## 3. Supervisão Autônoma
 
 ### 3.1 Resolver escaladas do Autônomo
 
