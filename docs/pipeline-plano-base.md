@@ -2,11 +2,10 @@
 
 ## 1. Roteamento
 
-- Todo plano aprovado → `$lp-factory-executar-plano`, da V1 à conclusão
-- `Semiautomático` → Estrategista Original
-- `Autônomo` → `$lp-factory-estrategista-autonomo`
+- Todo plano aprovado → `$lp-factory-estrategista-autonomo`
+- A sessão principal executa pelo contrato `$lp-factory-executar-plano`, da V1 à conclusão
 
-Execução e supervisão são eixos independentes.
+A supervisão operacional é Autônoma.
 
 ## 2. Limite
 
