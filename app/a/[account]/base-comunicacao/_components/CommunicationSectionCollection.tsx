@@ -87,7 +87,7 @@ function SectionRow({ definition, hasContent, hasSuggestion, renderDetail }: Rea
     <th scope="row" className="break-words py-2 pr-3 font-medium leading-5">{definition.label}</th>
     <td className="py-2 pr-2 text-xs leading-5 text-muted-foreground">{hasSuggestion ? "Sugestão disponível" : hasContent ? "Com conteúdo" : "Ainda não preenchida"}</td>
     <td className="py-1 text-right">
-      <Button ref={triggerRef} variant="secondary" className="min-h-11 px-3 text-primary" aria-label={`Abrir ${definition.label}`}
+      <Button ref={triggerRef} variant="secondary" className="min-h-11 px-3 !text-brand-700" aria-label={`Abrir ${definition.label}`}
         onClick={() => {
           window.history.pushState({ ...window.history.state }, "", window.location.href); historyEntryRef.current = true;
           dialogRef.current?.showModal(); dialogRef.current?.querySelector<HTMLTextAreaElement>("textarea")?.focus({ preventScroll: true });
@@ -116,7 +116,7 @@ function SectionRow({ definition, hasContent, hasSuggestion, renderDetail }: Rea
         <h2 id={discardTitleId} className="text-lg font-semibold">Descartar alterações?</h2>
         <p className="mt-2 text-sm text-muted-foreground">O texto não salvo desta seção será perdido.</p>
         <div className="mt-5 flex flex-wrap gap-2">
-          <Button className="min-h-11" onClick={() => discardRef.current?.close()}>Continuar editando</Button>
+          <Button className="min-h-11 !bg-brand-700 hover:!bg-brand-700/95" onClick={() => discardRef.current?.close()}>Continuar editando</Button>
           <Button variant="secondary" className="min-h-11" onClick={closeDetail}>Descartar alterações</Button>
         </div>
       </dialog>

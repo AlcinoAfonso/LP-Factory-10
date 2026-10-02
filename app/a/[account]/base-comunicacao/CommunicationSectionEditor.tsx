@@ -454,7 +454,7 @@ function Sources({ sources }: Readonly<{ sources: readonly WebSource[] }>) {
   if (!sources.length) return null;
   return <details className="mt-3 text-xs"><summary className="flex min-h-11 cursor-pointer items-center font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Fontes consultadas ({sources.length})</summary><ul className="mt-1 list-disc pl-5">
     {sources.map((source) => <li key={source.url}><a href={source.url} target="_blank" rel="noopener noreferrer"
-      className="inline-block min-h-11 break-all py-2 text-primary underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{source.title || source.url}</a></li>)}
+      className="inline-block min-h-11 break-all py-2 text-brand-700 underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{source.title || source.url}</a></li>)}
   </ul></details>;
 }
 
@@ -466,7 +466,7 @@ function SubmitButton({ label, pendingLabel, disabled = false, busy = false }: R
     <Button
       type="submit"
       disabled={pending || disabled}
-      className="min-h-11"
+      className="min-h-11 !bg-brand-700 hover:!bg-brand-700/95"
     >
       {pending || busy ? pendingLabel : label}
     </Button>
