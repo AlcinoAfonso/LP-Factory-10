@@ -64,7 +64,7 @@ Executar a V1 revisada na branch `codex-app/e25-2-colecao-detalhe`, PR único #1
 - Alterações limitadas a `app/a/[account]/base-comunicacao/page.tsx`, componentes client da própria Base e validação focal de seu estado de apresentação; `docs/lousa-plano-base-e25-2.md` e registro factual E25.2 em `docs/roadmap.md`.
 - Reutilizar registry, formatos/parser, Server Actions, adapters, access/membership/entitlement, versões, guards de geração/salvamento, precedência de sugestões e ui-state-keys. Não alterar esses contratos de domínio, prompts, workloads ou shell; testes focais podem reutilizar seus exports públicos.
 - Nenhum novo pacote, rota, engine, workflow, banco ou infraestrutura. Componente local de coleção/dialog encapsula somente apresentação e retorno à coleção; não assume responsabilidade de domínio.
-- Updates avaliou os quatro catálogos no SHA V1: `nenhum update aplicável`; `prod#16` e `prod#17` apenas reforçam QA/acessibilidade já exigidos. Nenhuma oportunidade condicional será implementada. Design em `definicao`: `solucao definida`, com baseline/renderização pendentes.
+- QA/acessibilidade derivam dos critérios de aceite da V1 e do Design System vigente. Nenhuma modernização tecnológica ou oportunidade condicional integra a implementação. Baseline/renderização permanecem pendentes.
 - Estrutura: N/A — responsabilidades de domínio, boundaries, dependências e persistência permanecem; o delta é composição local da UI. Automação: N/A — não há operação automatizada nova/alterada. Analista de plano necessário pelo risco de regressão do ciclo edição/salvamento/IA e proteção contra perda; avaliação independente da candidata antes da implementação.
 
 ### 25.2.3 — Coleção tabular, abertura de detalhe e edição da Base
