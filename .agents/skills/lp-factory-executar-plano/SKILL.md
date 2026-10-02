@@ -21,8 +21,6 @@ Aceite também número/URL do PR ou path da V1 com referência inequívoca ao PR
 
 Se `$lp-factory-executar-plano` for invocado diretamente para iniciar um plano aprovado, não inicie a execução: redirecione para `$lp-factory-estrategista-autonomo`, que conduz a sessão pelo contrato do Executor conforme `docs/pipeline-plano-base.md`.
 
-Use `end-to-end` por padrão. `experimental` precisa ser explícito e altera somente os checkpoints de parada solicitados.
-
 ## 2. Fontes e preparação
 
 Use somente as fontes materialmente necessárias:
@@ -46,7 +44,6 @@ Antes de editar:
 
 - confirme plano, supervisão, contrato aprovado, fases, fontes, limites e validação esperada;
 - preserve os identificadores das fases definidos pelo Estrategista;
-- confirme repositório, worktree/branch, estado Git e remote conforme `AGENTS.md`;
 - investigue no repositório e, quando aplicável, no banco somente o necessário para executar com segurança;
 - identifique dependências factuais indispensáveis e riscos de regressão;
 - resolva dúvidas técnicas ordinárias pelas fontes competentes e pela menor complexidade suficiente;
@@ -139,13 +136,13 @@ Se um critério obrigatório continuar sem prova depois da consulta às fontes e
 
 Delimite a fase/recorte atual por objetivo, arquivos, escopo negativo e aceite. Checkpoints são proporcionais ao trabalho e à necessidade de retomada; subseções não criam PRs nem merges intermediários. Não antecipe fase fora do contrato.
 
-Execute validações aplicáveis conforme `AGENTS.md`; para código, `npm ci` uma vez no início do lote e novamente somente se instalação/dependências mudarem, validação focal e `npm run check` antes do checkpoint. Para delta exclusivamente documental, justifique N/A. No encerramento, cubra integrações, transições e consumidores materialmente afetados e confirme execução efetiva dos validadores necessários ao aceite; não repita validações sem impacto novo.
+Execute as validações aplicáveis conforme `AGENTS.md` e os critérios do contrato. Para delta exclusivamente documental, justifique N/A. No encerramento, cubra integrações, transições e consumidores materialmente afetados e confirme os validadores necessários ao aceite; não repita validações sem impacto novo.
 
 Identifique os documentos canônicos afetados ao longo do recorte. Antecipe reconciliação somente quando necessária para decidir, executar ou validar continuidade; preserve snapshot e relatório factual e siga o roteamento de 3.2. Quando esse roteamento exigir `$lp-factory-avaliar-documentacao`, use `ETAPA: intermediária` e envie um handoff focal com caso, referência, fatos comprovados, documentos/seções potencialmente afetados e referências indispensáveis; não reproduza documentos, provas ou históricos integrais por rotina quando o especialista puder consultá-los na referência informada, ampliando o material somente se o contrato exigir ou o especialista apontar necessidade concreta. Na consolidação final, após QA obrigatório e correções, aplique o mesmo roteamento; não use o fechamento para limpeza editorial, reorganização de conteúdo correto ou consolidação histórica não necessária ao aceite. Sem documento afetado, registre N/A sem criar chamada ou artefato. Quando houver ABC, aplique apenas operações literais emitidas ou preserve `SEM ALTERAÇÕES NECESSÁRIAS`. Fechamento exclusivamente documental não deve ser promovido a implementação nem receber gate adicional que `AGENTS.md` não exija.
 
 Acione revisão focal de implementação somente pelos critérios de 3.2; quando acionada, corrija e retorne ao mesmo Analista em delta, avançando apenas com sua conclusão própria. `aprovado para avançar` não autoriza merge nem dispensa validação obrigatória pendente.
 
-Com aceite/validações satisfeitos e nenhuma revisão focal pendente, registre `LP-Factory-Phase: <identificador>` quando houver fase/checkpoint de implementação. Validação obrigatória, QA ou revisão focal pendente impedem checkpoint e avanço do ponto dependente. Publicação ocorre nos gates remotos conforme `AGENTS.md`; checkpoints podem acumular localmente. No `experimental`, pare somente nos checkpoints solicitados; no `end-to-end`, prossiga.
+Com aceite/validações satisfeitos e nenhuma revisão focal pendente, registre `LP-Factory-Phase: <identificador>` quando houver fase/checkpoint de implementação. Validação obrigatória, QA ou revisão focal pendente impedem checkpoint e avanço do ponto dependente. Publicação ocorre nos gates remotos conforme `AGENTS.md`; checkpoints podem acumular localmente.
 
 ### 7.2 Rever somente o ponto afetado
 
@@ -159,7 +156,7 @@ Se a V2 continuar suficiente e não houver condicionante/investigação, derive 
 
 Determine estágio pelo Git, PR e trailers `plan-v2`, `plan-v2-approved` e `LP-Factory-Phase`, com referências vinculadas. Não use aprovação antiga para executar candidato ainda não liberado. Confronte delta aprovado com checkpoints: não afetados permanecem válidos; revalide somente fases atingidas sem checkpoint correspondente à correção. Sem delta, continue da primeira fase pendente na ordem do roadmap. Se ambíguo, peça somente o identificador/ref indispensável.
 
-Quando houver parecer de Updates, reutilize-o apenas para mesmo blob da V1, `source_repository_sha` e referências excepcionais; na derivação estrutural, use o mesmo parecer quando aplicável; confronto de modernização baseado em update exige o mesmo update, alternativa e V1. Não repita especialista por precaução; fato material novo limita a nova avaliação ao ponto necessário.
+Quando houver parecer de Updates, reutilize-o apenas para mesmo blob da V1, `source_repository_sha` e referências excepcionais; na derivação estrutural, use o mesmo parecer quando aplicável; confronto de modernização baseado em update exige o mesmo update, alternativa e V1.
 
 Mantenha rastreabilidade/matriz existente durante avaliação externa até conclusão definitiva pelo supervisor; limpeza posterior preserva resumo e histórico e não exige nova especialidade. Atualize o PR ao checkpoint publicado com arquivos, validações, QA, pareceres pertinentes, resultado documental por documento e pendências. Correções pós-entrega ficam na mesma sessão/branch/PR, como delta focal; não reinicie preparação ou avaliações sem impacto demonstrado. Depois da entrega completa, correções seguem os gates competentes, sem Analista por rotina.
 
@@ -197,4 +194,4 @@ Não substitua supervisor, Estrategista, especialista ou Analista; o Executor ex
 
 ## 10. Limites
 
-Não editar/commitar na main, fazer merge local ou remoto sem liberação competente; alterar V1 por inferência; executar fase fora do contrato/ordem; repetir especialistas ou invalidar trabalho não afetado por rotina; criar PR empilhado ou segundo PR no ciclo corrente; permitir escrita por especialista; executar delta candidato não liberado; ignorar QA, evidência ou decisão material pendente. Exceção pós-merge segue o supervisor e `AGENTS.md`, na mesma sessão, sem branch/PR corretivo por inferência.
+Não editar/commitar na main, fazer merge local ou remoto sem liberação competente; alterar V1 por inferência; executar fase fora do contrato/ordem; invalidar trabalho não afetado por rotina; criar PR empilhado ou segundo PR no ciclo corrente; permitir escrita por especialista; executar delta candidato não liberado; ignorar QA, evidência ou decisão material pendente. Exceção pós-merge segue o supervisor e `AGENTS.md`, na mesma sessão, sem branch/PR corretivo por inferência.
