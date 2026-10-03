@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { requireCommunicationBaseAccess } from "../../../../lib/communication-base/access";
 import { readCommunicationBase, readPendingSetupInitialContext } from "../../../../lib/communication-base/adapters/communicationBaseAdapter";
 import { stageOneStateKey } from "../../../../lib/communication-base/ui-state-keys";
+import { readActivePrimaryAccountTaxon } from "../../../../lib/onboarding/niche-resolution/adapters/accountTaxonomyAdapter";
 import { FeedbackMessage } from "@/components/ui/feedback-message";
 import { EmptyState } from "@/components/ui/empty-state";
 import { CommunicationBaseTabs } from "./CommunicationBaseTabs";
@@ -29,8 +30,16 @@ export default async function CommunicationBasePage({ params }: PageProps) {
     );
   }
 
-  const result = await readCommunicationBase(access.value.accountId);
+  const [result, taxonomy] = await Promise.all([
+    readCommunicationBase(access.value.accountId),
+    readActivePrimaryAccountTaxon({ accountId: access.value.accountId }),
+  ]);
   const base = result.ok ? result.value : null;
+  const savedBusinessName = base?.sections.business_name?.value;
+  const businessName = typeof savedBusinessName === "string" ? savedBusinessName.trim() : "";
+  const nicheLabel = !taxonomy.ok
+    ? "Não foi possível carregar o nicho agora."
+    : taxonomy.taxon?.name ?? "Nicho ainda não definido";
   const pendingSetupCandidate = result.ok && !base && access.value.canEdit
     ? await readPendingSetupInitialContext(access.value.accountId)
     : null;
@@ -45,7 +54,13 @@ export default async function CommunicationBasePage({ params }: PageProps) {
           >
             Voltar à conta
           </Link>
-          <h1 className="text-2xl font-semibold tracking-tight text-ink-900">Base de Comunicação</h1>
+          <h1 className="text-2xl font-semibold tracking-tight text-ink-900 [overflow-wrap:anywhere]">
+            {businessName || "Base de Comunicação"}
+          </h1>
+          {businessName ? <p className="text-sm font-medium text-ink-900">Base de Comunicação</p> : null}
+          <p className="text-sm text-muted-foreground [overflow-wrap:anywhere]">
+            {taxonomy.ok && taxonomy.taxon ? `Nicho: ${nicheLabel}` : nicheLabel}
+          </p>
           <p className="max-w-3xl text-sm leading-6 text-muted-foreground">
             Reúna a verdade da empresa e desenvolva sua inteligência de comunicação no seu ritmo.
           </p>
