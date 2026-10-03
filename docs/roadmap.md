@@ -2902,7 +2902,7 @@
 
 23. E23 — Segurança e governança transversal da plataforma
 - Objetivo: remover riscos prioritários de segurança e governança da plataforma por recortes independentes e controlados.
-- Status: E23.1 concluída no repositório e no Preview; E23.2 concluída operacionalmente sob decisão funcional conservadora, com seu merge e a correção pós-merge concluídos; E23.3 concluída documentalmente; E23.4 planejada, com V2 em avaliação independente.
+- Status: E23.1 concluída no repositório e no Preview; E23.2 concluída operacionalmente sob decisão funcional conservadora, com seu merge e a correção pós-merge concluídos; E23.3 concluída documentalmente; E23.4 planejada, com V2 aprovada para implementação.
 
 23.1 Atualização de segurança do Next.js
 
@@ -2982,7 +2982,7 @@
 
 23.4.1 Objetivo e status
 - Objetivo: atualizar o Core para a release de segurança Next.js `16.3.8`, alinhando `next`, `eslint-config-next` e o lockfile, com as jornadas e comportamentos atuais preservados.
-- Status: PB 18B.1 aprovado pelo titular; a V2 técnica está em avaliação independente. A fase `23.4.3` está planejada e ainda não declara implementação ou validação.
+- Status: PB 18B.1 e V2 técnica aprovados; a fase `23.4.3` está planejada e ainda não declara implementação ou validação.
 
 23.4.3 Atualização e validação do Core
 - Status: planejada, sujeita à conclusão dos gates técnicos do PB 18B.1.

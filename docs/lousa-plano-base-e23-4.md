@@ -81,5 +81,22 @@ Fonte funcional aprovada: [Debate 18B, seção 4.3](https://docs.google.com/docu
 
 ### 3.5 Estado da V2
 
-- V2 técnica candidata, derivada da V1 congelada; aguarda avaliação independente do Analista antes da implementação.
+- V2 técnica aprovada para implementar após avaliação independente do Analista, sem correções obrigatórias; candidata avaliada no commit `8556e2515260c09cd0f9fb8b6e09fc6c26ef7855`, blob `a32030bdde877eff710356794760a503134bf8a4`.
 - Supervisão Autônoma; execução mínima e proporcional, sem categoria Light/Complexa conforme o Pipeline vigente.
+
+## 4. Avaliações e checkpoint de implementação
+
+### 4.1 Gestor de Updates
+
+- Avaliação read-only concluída no commit da V1 `0e04c8ef5dc81d4bc9bf6373f691d5b5b478feaf`; `source_repository_sha` único: o mesmo commit.
+- Veredito: `updates aplicáveis com patches autossuficientes`.
+- `vercel#34`: aplicar agora somente aos pins `next` e `eslint-config-next` e ao lockfile; impacto estrutural baixo, sem impacto funcional planejado e sem custo incremental.
+- `vercel#29`: preservar como oportunidade condicional, sem habilitar recursos opt-in neste recorte. `vercel#27` e `vercel#31`: não aplicáveis ao patch atual.
+- Sem confronto estrutural, arbitragem funcional, decisão humana ou investigação bloqueante. Reconciliar `vercel#34` com as fontes oficiais e mantê-lo ativo pelas duas vulnerabilidades ainda pendentes.
+
+### 4.2 Analista independente — passagem 1
+
+- Parecer read-only em `passagem_independente`, no plano candidato `8556e2515260c09cd0f9fb8b6e09fc6c26ef7855` e blob `a32030bdde877eff710356794760a503134bf8a4`.
+- Conclusão: `aprovado para implementar`; nenhuma correção obrigatória, lacuna material, contradição ou risco residual sem tratamento.
+- A V2 cobre a V1, está coerente com E23.4 e E23.4.3, é suficiente para execução e mantém os gates de CI, Preview, Code Review independente, merge e validação pós-merge.
+- A aprovação técnica libera implementar; não substitui os gates do Executor nem, por si só, libera merge.
