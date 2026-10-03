@@ -1,6 +1,6 @@
 # Template geral de prompts — LP Factory 10
 
-A abordagem de prompts do LP Factory 10 é outcome-first: começar pelo resultado esperado, informar fontes e contexto, definir critérios de sucesso, declarar limites e especificar a entrega esperada. Este é um template geral, independente do modelo. Regras específicas de um modelo devem permanecer em documentos complementares. O fluxo deve parar quando faltar fonte, autoridade ou escopo aprovado.
+A abordagem de prompts do LP Factory 10 é outcome-first: começar pelo resultado esperado, informar fontes e contexto, definir critérios de sucesso, declarar limites e especificar a entrega esperada. Este é um template geral, independente do modelo. Orientações específicas de modelo ou snapshot devem ser consultadas na documentação oficial vigente da OpenAI e validadas no workload correspondente. O fluxo deve parar quando faltar fonte, autoridade ou escopo aprovado.
 
 Fontes conceituais:
 
