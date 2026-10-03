@@ -1,14 +1,6 @@
 # Template geral de prompts — LP Factory 10
 
-A abordagem de prompts do LP Factory 10 é outcome-first: começar pelo resultado esperado, informar fontes e contexto, definir critérios de sucesso, declarar limites e especificar a entrega esperada. Este é um template geral, independente do modelo. Orientações específicas de modelo ou snapshot devem ser consultadas na documentação oficial vigente da OpenAI e validadas no workload correspondente. O fluxo deve parar quando faltar fonte, autoridade ou escopo aprovado.
-
-Fontes conceituais:
-
-- https://developers.openai.com/api/docs/guides/latest-model
-- https://developers.openai.com/api/docs/guides/prompting
-- https://developers.openai.com/api/docs/guides/prompt-engineering
-- https://developers.openai.com/api/docs/guides/structured-outputs
-- https://developers.openai.com/api/docs/guides/evaluation-best-practices
+A abordagem de prompts do LP Factory 10 é outcome-first: começar pelo resultado esperado, informar fontes e contexto, definir critérios de sucesso, declarar limites e especificar a entrega esperada. Este é um template geral, independente do modelo. O fluxo deve parar quando faltar fonte, autoridade ou escopo aprovado.
 
 ## 1. Papel / função
 
@@ -72,7 +64,7 @@ Defina o formato final, o nível de detalhe e o conteúdo obrigatório:
 - checklist
 - decisão
 
-Quando o prompt fizer parte do runtime e o consumidor exigir saída estruturada, prefira Structured Outputs com schema suportado quando disponível. Use o schema para garantir forma e tipos e o prompt para semântica, critérios e limites; não repita no texto restrições de formato já garantidas pelo schema. Validação, autorização e regras de negócio que possam ser comprovadas deterministicamente permanecem sob responsabilidade do código, não do prompt.
+Quando o prompt fizer parte do runtime e o consumidor exigir saída estruturada, defina sempre o contrato de saída. Prefira Structured Outputs com schema suportado quando disponível; quando não estiver disponível, use o fallback compatível e valide a saída no código. Use o schema para garantir forma e tipos e o prompt para semântica, critérios e limites; não repita no texto restrições de formato já garantidas pelo schema. Validação, autorização e regras de negócio que possam ser comprovadas deterministicamente permanecem sob responsabilidade do código, não do prompt.
 
 ## 8. Regras de parada
 
