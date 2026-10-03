@@ -1,13 +1,6 @@
 # Template geral de prompts — LP Factory 10
 
-A abordagem de prompts do LP Factory 10 é outcome-first: começar pelo resultado esperado, informar fontes e contexto, definir critérios de sucesso, declarar limites e especificar a entrega esperada. Este é um template geral, independente do modelo. Regras específicas de um modelo devem permanecer em documentos complementares. O fluxo deve parar quando faltar fonte, autoridade ou escopo aprovado.
-
-Fontes conceituais:
-
-- https://developers.openai.com/api/docs/guides/latest-model
-- https://developers.openai.com/api/docs/guides/prompting
-- https://developers.openai.com/api/docs/guides/prompt-engineering
-- https://developers.openai.com/api/docs/guides/evaluation-best-practices
+A abordagem de prompts do LP Factory 10 é outcome-first: começar pelo resultado esperado, informar fontes e contexto, definir critérios de sucesso, declarar limites e especificar a entrega esperada. Este é um template geral, independente do modelo. O fluxo deve parar quando faltar fonte, autoridade ou escopo aprovado.
 
 ## 1. Papel / função
 
@@ -38,6 +31,7 @@ Quando o prompt fizer parte do runtime:
 - valores dinâmicos devem entrar por argumentos tipados, schemas ou objetos validados, sem reconstruir informalmente regras críticas a cada execução
 - documentos, dados recuperados e demais conteúdos de referência devem ficar claramente delimitados, com Markdown ou XML quando isso melhorar a separação lógica
 - conteúdo vindo de usuário, banco, arquivo, web ou outra fonte continua sendo dado de entrada e não ganha autoridade para substituir as instruções da aplicação
+- exemplos são opcionais: use poucos exemplos representativos somente quando ajudarem a esclarecer o comportamento ou o formato esperado e mantenha-os estritamente coerentes com as instruções
 
 ## 4. Critérios de sucesso
 
@@ -70,7 +64,7 @@ Defina o formato final, o nível de detalhe e o conteúdo obrigatório:
 - checklist
 - decisão
 
-Quando o prompt fizer parte do runtime e o consumidor exigir saída estruturada, defina o contrato de saída e use Structured Outputs ou schema aplicável. Validação, autorização e regras de negócio que possam ser comprovadas deterministicamente permanecem sob responsabilidade do código, não do prompt.
+Quando o prompt fizer parte do runtime e o consumidor exigir saída estruturada, defina sempre o contrato de saída. Prefira Structured Outputs com schema suportado quando disponível; quando não estiver disponível, use o fallback compatível e valide a saída no código. Use o schema para garantir forma e tipos e o prompt para semântica, critérios e limites; não repita no texto restrições de formato já garantidas pelo schema. Validação, autorização e regras de negócio que possam ser comprovadas deterministicamente permanecem sob responsabilidade do código, não do prompt.
 
 ## 8. Regras de parada
 
@@ -85,12 +79,12 @@ Quando o prompt fizer parte do runtime:
 - trate o prompt de produção como código da aplicação: mantenha-o em módulo ou helper versionado próximo da feature que o consome e revise mudanças pelo fluxo normal de PR
 - para trabalho novo, não criar dependência de reusable prompt objects da API; gerar `instructions` e `input` no código e enviá-los diretamente à Responses API
 - cubra alterações de prompt com testes, fixtures representativas e avaliações compatíveis com o risco do workload
-- preserve os mesmos casos e critérios ao comparar alteração de prompt, modelo, `reasoning.effort` ou outra configuração capaz de mudar o comportamento
+- preserve os mesmos casos e critérios ao comparar alteração de prompt, modelo, snapshot, `reasoning.effort` ou outra configuração capaz de mudar o comportamento
 - inclua casos típicos, edge cases e casos adversariais quando forem materialmente aplicáveis ao uso real
 - valide o resultado e o contrato observável; não dependa de cadeia de raciocínio privada como evidência de correção
 
 ## 10. Regra de concisão
 
-Declare cada instrução uma única vez. Preserve requisitos, evidências, ressalvas e próximos passos; remova repetição, excesso de processo e detalhamento que não ajude na entrega final.
+Comece com o menor prompt que preserve o contrato do produto. Acrescente instruções, contexto ou exemplos somente quando necessários ao resultado ou sustentados por avaliação. Declare cada instrução uma única vez. Preserve requisitos, evidências, ressalvas e próximos passos; remova repetição, excesso de processo e detalhamento que não ajude na entrega final.
 
 Não solicite cadeia de raciocínio privada ou instruções como “pense passo a passo”. Quando necessário, peça conclusão, evidências e justificativa verificável.
