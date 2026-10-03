@@ -349,15 +349,15 @@ export function CommunicationStageTwo({ account, base, canEdit }: Readonly<{
   useLayoutEffect(() => { currentVersionRef.current = base.version; }, [base.version]);
   const stageTwo = communicationSections.filter((section) => section.stage === 2);
   return (
-    <section aria-label="Inteligência de comunicação" className="space-y-3">
+    <section aria-label="Inteligência de comunicação" className="space-y-2">
       <div className="space-y-2">
-        {canEdit ? <div className="rounded-lg border border-border bg-background p-3">
-          <p className="text-sm text-muted-foreground">
-            A ação geral prepara sugestões para as sete seções da Etapa 2. Confira cada uma antes de usá-la ou salvar.
+        {canEdit ? <div className="rounded-lg border border-border bg-background px-3 py-2">
+          <p className="text-xs leading-5 text-muted-foreground">
+            Sugestões para as sete seções da Etapa 2. Revise cada uma antes de usar ou salvar.
           </p>
-          <label className="mt-2 flex min-h-11 items-center gap-2 text-sm">
+          <label className="mt-0.5 flex min-h-11 items-center gap-2 text-sm sm:inline-flex">
             <input type="checkbox" checked={requiresResearch} onChange={(event) => setRequiresResearch(event.target.checked)}
-              className="h-5 w-5 accent-brand-700" />
+              className="h-5 w-5 shrink-0 accent-brand-700" />
             Preciso de pesquisa atual ou local para esta geração
           </label>
           <button type="button" disabled={pending || generationInFlight || saveInFlightCount > 0}
@@ -402,7 +402,7 @@ export function CommunicationStageTwo({ account, base, canEdit }: Readonly<{
                 }
               });
             }}
-            className="mt-2 inline-flex min-h-11 items-center justify-center rounded-lg border border-border px-3 py-1 text-sm font-medium text-foreground disabled:cursor-wait disabled:opacity-60">
+            className="mt-0.5 inline-flex min-h-11 items-center justify-center rounded-lg border border-border px-2 py-1 text-xs font-medium leading-4 text-foreground disabled:cursor-wait disabled:opacity-60 sm:ml-3 sm:mt-0">
             {pending ? "Preparando sugestões..." : hasStageTwoContent(base) ? "Atualizar inteligência com IA" : "Gerar inteligência com IA"}
           </button>
           {generationInFlight && !pending ? <p role="status" className="mt-2 text-xs text-muted-foreground">
