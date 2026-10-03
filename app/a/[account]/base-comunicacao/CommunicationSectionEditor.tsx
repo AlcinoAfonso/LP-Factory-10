@@ -180,11 +180,11 @@ export function CommunicationSectionEditor(props: Readonly<{
           startedSavesRef.current += 1;
           onStageTwoSaveStarted?.();
         }
-      }} className="space-y-3">
+      }} className="space-y-2">
         <input type="hidden" name="account" value={account} />
         <input type="hidden" name="section_key" value={definition.key} />
         <input type="hidden" name="version" value={version} />
-        <FormField>
+        <FormField className="gap-1.5">
         <FormFieldLabel htmlFor={fieldId}>Conteúdo da seção</FormFieldLabel>
         {guidance ? <p className="text-sm text-muted-foreground">{guidance}</p> : null}
         <FormFieldHint id={hintId} className="leading-5">
@@ -212,14 +212,14 @@ export function CommunicationSectionEditor(props: Readonly<{
         {saveLocked ? <p id={saveLockHintId} role="status" className="text-xs text-muted-foreground">
           Salvando esta seção. Aguarde para continuar a edição.
         </p> : null}
-        <div className="sticky bottom-0 flex flex-wrap gap-2 border-t border-border bg-background py-3">
+        <div className="sticky bottom-0 flex flex-wrap gap-2 border-t border-border bg-background py-2 [&>button]:px-3 [&>button]:py-1">
           <SubmitButton label="Salvar" pendingLabel="Salvando..." disabled={saveLocked || !editState.dirty || !editState.valid} busy={saveLocked} />
           <Button variant="secondary" className="min-h-11" disabled={saveLocked} onClick={onCancel}>Cancelar</Button>
         </div>
         {!savePending && state !== dismissedState ? <ActionFeedback state={state} /> : null}
       </form>
       {definition.stage === 1 ? (
-        <div className="mt-4 border-t border-border pt-4">
+        <div className="mt-3 border-t border-border pt-3">
           <p className="text-xs leading-5 text-muted-foreground">
             A IA trabalha apenas com o texto desta seção que você enviar. Confira a sugestão antes de usá-la; salvar continua sendo sua decisão.
           </p>
@@ -242,7 +242,7 @@ export function CommunicationSectionEditor(props: Readonly<{
                 if (isCurrent()) setAiMessage("A assistência está indisponível agora. Continue a edição manual.");
               }
             })}
-            className="mt-3 inline-flex min-h-11 items-center justify-center rounded-lg border border-border px-5 py-2 text-sm font-semibold text-foreground disabled:cursor-not-allowed disabled:opacity-60">
+            className="mt-2 inline-flex min-h-11 items-center justify-center rounded-lg border border-border px-3 py-1 text-sm font-medium text-foreground disabled:cursor-not-allowed disabled:opacity-60">
             {aiPending ? "Preparando sugestão..." : "Ajudar com este texto usando IA"}
           </button>
           {missingQuestion ? <p className="mt-3 text-sm">Informação a confirmar: {missingQuestion}</p> : null}
@@ -251,11 +251,11 @@ export function CommunicationSectionEditor(props: Readonly<{
           {aiMessage ? <p role="alert" className="mt-2 text-sm text-state-error">{aiMessage}</p> : null}
         </div>
       ) : (
-        <div className="mt-4 border-t border-border pt-4">
+        <div className="mt-3 border-t border-border pt-3">
           <p className="text-xs leading-5 text-muted-foreground">
             A IA revisa apenas {definition.label} usando os dados confirmados pertinentes e o texto salvo desta seção. As demais seções permanecem como estão.
           </p>
-          <label className="mt-3 flex min-h-11 items-center gap-3 text-sm">
+          <label className="mt-2 flex min-h-11 items-center gap-2 text-sm">
             <input type="checkbox" checked={requiresResearch} disabled={saveLocked}
               onChange={(event) => setRequiresResearch(event.target.checked)}
               className="h-5 w-5 accent-brand-700" />
@@ -293,7 +293,7 @@ export function CommunicationSectionEditor(props: Readonly<{
                 }
               });
             }}
-            className="mt-3 inline-flex min-h-11 items-center justify-center rounded-lg border border-border px-5 py-2 text-sm font-semibold text-foreground disabled:cursor-wait disabled:opacity-60">
+            className="mt-2 inline-flex min-h-11 items-center justify-center rounded-lg border border-border px-3 py-1 text-sm font-medium text-foreground disabled:cursor-wait disabled:opacity-60">
             {aiPending ? "Preparando sugestão..." : "Revisar esta seção com IA"}
           </button>
           {stageTwoGenerationInFlight && !aiPending ? <p role="status" className="mt-2 text-xs text-muted-foreground">
@@ -349,15 +349,15 @@ export function CommunicationStageTwo({ account, base, canEdit }: Readonly<{
   useLayoutEffect(() => { currentVersionRef.current = base.version; }, [base.version]);
   const stageTwo = communicationSections.filter((section) => section.stage === 2);
   return (
-    <section aria-label="Inteligência de comunicação" className="space-y-4">
-      <div className="space-y-3">
-        {canEdit ? <div className="rounded-lg border border-border bg-background p-4">
-          <p className="text-sm text-muted-foreground">
-            A ação geral prepara sugestões para as sete seções da Etapa 2. Confira cada uma antes de usá-la ou salvar.
+    <section aria-label="Inteligência de comunicação" className="space-y-2">
+      <div className="space-y-2">
+        {canEdit ? <div className="rounded-lg border border-border bg-background px-3 py-2">
+          <p className="text-xs leading-5 text-muted-foreground">
+            Sugestões para as sete seções da Etapa 2. Revise cada uma antes de usar ou salvar.
           </p>
-          <label className="mt-3 flex min-h-11 items-center gap-3 text-sm">
+          <label className="mt-0.5 flex min-h-11 items-center gap-2 text-sm sm:inline-flex">
             <input type="checkbox" checked={requiresResearch} onChange={(event) => setRequiresResearch(event.target.checked)}
-              className="h-5 w-5 accent-brand-700" />
+              className="h-5 w-5 shrink-0 accent-brand-700" />
             Preciso de pesquisa atual ou local para esta geração
           </label>
           <button type="button" disabled={pending || generationInFlight || saveInFlightCount > 0}
@@ -402,7 +402,7 @@ export function CommunicationStageTwo({ account, base, canEdit }: Readonly<{
                 }
               });
             }}
-            className="mt-3 inline-flex min-h-11 items-center justify-center rounded-lg border border-border px-5 py-2 text-sm font-semibold text-foreground disabled:cursor-wait disabled:opacity-60">
+            className="mt-0.5 inline-flex min-h-11 items-center justify-center rounded-lg border border-border px-2 py-1 text-xs font-medium leading-4 text-foreground disabled:cursor-wait disabled:opacity-60 sm:ml-3 sm:mt-0">
             {pending ? "Preparando sugestões..." : hasStageTwoContent(base) ? "Atualizar inteligência com IA" : "Gerar inteligência com IA"}
           </button>
           {generationInFlight && !pending ? <p role="status" className="mt-2 text-xs text-muted-foreground">
