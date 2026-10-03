@@ -27,7 +27,7 @@ Delegar uma avaliação read-only ao custom agent `gestor-automacoes` e devolver
 2. Entregar worktree, branch, metadados da fonte, path, conteúdo integral, caso e recortes aplicáveis.
 3. Não repetir critérios de automação no handoff: o contrato runtime está em `.codex/agents/gestor-automacoes.toml` e a governança em `docs/gestor-automations.md`.
 4. Aguardar o parecer sem realizar avaliação paralela.
-5. Validar identificação, fontes, um veredito permitido, classificação, ambiente, necessidade de OpenAI, decisão, patches e próximo passo.
+5. Validar identificação, fontes, um veredito permitido, classificação, ambiente, necessidade de OpenAI, decisão, patches e próximo passo. Quando houver OpenAI com prompt consumido no runtime, validar também que o parecer registre `docs/template-prompts.md` e o complemento específico aplicável entre as fontes efetivamente consultadas, a conclusão de aderência ao contrato vigente e a validação representativa exigida por `docs/gestor-automations.md`; ausência de qualquer desses elementos torna o handoff incompleto.
 6. Em `automação aplicável com patches autossuficientes`, exigir patch completo para cada decisão aprovada. Em `requer investigação factual`, exigir evidência faltante e forma de obtê-la. Em `requer validação material pelo Analista`, exigir decisão material e alternativas verificáveis, sem abrir gate humano neste estágio.
 7. Se o contrato estiver incompleto, devolver o conteúdo recebido e marcar o handoff como incompleto; não completar nem reinterpretar o parecer.
 8. Confirmar novamente o estado Git e distinguir alterações preexistentes.
