@@ -185,7 +185,7 @@
   - carregamento, vazio, erro, geração, sucesso e aceite compreensíveis;
   - modo read-only coerente para viewer;
   - ausência de scroll horizontal obrigatório no mobile.
-- O framework permanente de UX deve residir em `docs/design-system.md`; `docs/prompt-estrategista.md` deve receber apenas regra curta de enforcement do gate, sem duplicar o framework integral.
+- Este recorte consome `docs/design-system.md` e `docs/prompt-estrategista.md` vigentes como fontes aplicáveis; não os atualiza.
 
 ## 3. Fases e próxima ação
 
@@ -202,7 +202,7 @@
   - preview com `Aceitar esta versão`;
   - feedback e navegação da geração vigente;
   - estados auxiliares completos;
-  - atualização proporcional do framework de UX em `docs/design-system.md` e do enforcement em `docs/prompt-estrategista.md` pelo fluxo ABC;
+  - aderência aos contratos vigentes de `docs/design-system.md` e `docs/prompt-estrategista.md`, sem atualizá-los neste recorte;
   - reconciliação com a `main` vigente e com o resultado do PR #814 antes de tocar consumidores E20.2.
 - Critérios de aceite:
   - contrato das seções 1 e 2 atendido sem ampliação funcional;
