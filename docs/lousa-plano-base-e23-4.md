@@ -48,7 +48,7 @@ Fonte funcional aprovada: [Debate 18B, seção 4.3](https://docs.google.com/docu
 - V1 congelada: commit `0e04c8ef5dc81d4bc9bf6373f691d5b5b478feaf`, blob `1189740a69ea869375c150f95e7476464050419b`, path `docs/lousa-plano-base-e23-4.md`, seções 1–2.
 - Base `main` usada pelo recorte: commit `6acc3b1027e1f197203a0f196eaf8503fabf7fac`.
 - Snapshot imutável de `docs/roadmap.md` antes de reconciliar E23.4: commit `6acc3b1027e1f197203a0f196eaf8503fabf7fac`, blob `ae8446498be5540ec6c2a28725eee5c75187acbd`. O estado E23.1–E23.3 e seu conteúdo completo permanecem recuperáveis nesse path, commit e blob; a E23.4 será acrescentada sem reabrir recortes concluídos.
-- `source_repository_sha` da avaliação de Updates: `0e04c8ef5dc81d4bc9bf6373f691d5b5b478feaf`, o commit da V1 congelada e dos quatro catálogos examinados.
+- Referência imutável do repositório e dos catálogos usados para derivar a V2: `0e04c8ef5dc81d4bc9bf6373f691d5b5b478feaf`.
 - Plano conceitual separado: N/A; a fonte funcional competente é o Debate 18B, seção 4.3.
 - Roadmap vigente na base: macro E23 com E23.1, E23.2 e E23.3 concluídas; E23.4 é o próximo recorte disponível.
 
@@ -77,10 +77,9 @@ Fonte funcional aprovada: [Debate 18B, seção 4.3](https://docs.google.com/docu
 - Após validação e merge, preencher 23.4.2 com os arquivos efetivamente ajustados (`package.json`, `package-lock.json`, catálogo `docs/vercel-up.md` e registros do plano, quando aplicáveis) e atualizar 23.4.3 para o estado comprovado, sem alterar E23.1–E23.3.
 - Reconciliar `vercel#34` com as fontes oficiais: a release `16.3.8` foi publicada em 30/09/2026 e inclui sete correções; duas vulnerabilidades (uma crítica e uma alta) aguardam coordenação upstream. Registrar `https://nextjs.org/blog/upcoming-nextjs-security-release-september-2026` e `https://github.com/vercel/next.js/releases/tag/v16.3.8`. O item continua ativo para as duas pendências.
 - Se `npm ci`, `npm run check`, Security Checks, build ou smoke falhar, corrigir somente incompatibilidade técnica dentro da V1 e repetir o gate afetado no novo HEAD. Se a correção exigir mudança funcional, dependências fora do escopo, custo, upgrade de plano ou alteração operacional, parar e devolver a decisão ao titular.
-- Não criar matriz de consolidação: Updates concluiu patches autossuficientes, sem confronto estrutural, arbitragem funcional ou investigação bloqueante.
+- Não é necessária matriz ou artefato adicional de consolidação para este delta restrito a dois pins e ao lockfile.
 
 ### 3.5 Estado da V2
 
-- V2 técnica candidata, derivada da V1 congelada e do parecer read-only do Gestor de Updates; aguarda avaliação independente do Analista antes da implementação.
-- A avaliação de Updates apontou aplicação direta de `vercel#34`, preservação condicional de `vercel#29` e não aplicabilidade de `vercel#27`/`vercel#31` a este recorte. Não há confronto estrutural ou arbitragem funcional.
+- V2 técnica candidata, derivada da V1 congelada; aguarda avaliação independente do Analista antes da implementação.
 - Supervisão Autônoma; execução mínima e proporcional, sem categoria Light/Complexa conforme o Pipeline vigente.
