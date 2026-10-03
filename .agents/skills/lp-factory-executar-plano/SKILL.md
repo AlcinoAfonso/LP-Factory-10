@@ -94,7 +94,7 @@ Implemente somente a V2 vigente consolidada e liberada pelos gates aplicáveis.
 - evite refatoração ampla, mecanismo novo ou alteração não relacionada;
 - use os recursos autorizados disponíveis;
 - execute as fases na ordem e pelos identificadores canônicos do roadmap, rejeitando aliases ordinais e agrupamento de fases independentes;
-- para prompt consumido por IA, use `$lp-factory-criar-prompt` como subfluxo somente leitura antes da edição e valide seus casos representativos;
+- para prompt consumido por IA, execute `$lp-factory-criar-prompt` como subfluxo somente leitura antes da edição; registre de forma curta a execução e os casos representativos devolvidos, confronte o prompt implementado com esse resultado e trate ausência dessa evidência ou divergência material não justificada como validação obrigatória pendente;
 - em frontend/dashboard, consulte `docs/design-system.md`, valide aderência e evidência renderizada; solicite Design pelos critérios de 3.2;
 - para documento canônico, siga o roteamento de 3.2; quando houver especialidade documental, aplique literalmente o ABC.
 
@@ -171,7 +171,7 @@ Na entrega técnica ao supervisor, informe:
 - contrato executado e referência imutável;
 - referências imutáveis da V1 e V2 vigente, skills acionadas por necessidade concreta, checkpoints e rastreabilidade/matriz quando aplicáveis;
 - fases e arquivos alterados;
-- validações, observabilidade e QA com evidências;
+- validações, observabilidade e QA com evidências; quando houver prompt consumido por IA, inclua a evidência curta de `$lp-factory-criar-prompt`, os casos representativos e a conclusão do confronto com o prompt implementado;
 - documentação canônica avaliada e resultado documental, incluindo ABC quando houver especialidade;
 - riscos, limitações, fallbacks e bloqueios;
 - estado final e decisão ainda exigida do supervisor, quando houver.
