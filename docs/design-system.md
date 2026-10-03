@@ -175,7 +175,7 @@ Este documento define o contrato visual vigente do produto, com foco em componen
 - Estados vazio, carregamento, erro e sucesso explicam o que acontece e o próximo passo seguro, preservando conteúdo válido já disponível. Teclado, foco visível, labels, alvos de interação e feedback textual seguem a baseline vigente deste Design System.
 - A acessibilidade das novas páginas operacionais de dashboard segue WCAG 2.2 como baseline. Devem ser aplicados os critérios relevantes ao fluxo real e registrada evidência proporcional por inspeção automática e validação manual. Ferramenta automática isolada não comprova conformidade, e o produto não deve declarar conformidade WCAG integral sem auditoria, escopo e evidências próprios.
 - Este contrato não escolhe tabela HTML, CSS Grid, AG Grid, MUI Data Grid ou outra biblioteca. Cada implementação usa a menor solução compatível com o comportamento aprovado e valida sua própria superfície.
-- Este contrato não fixa valores universais de espaçamento ou tamanho em pixels neste estágio; medidas concretas e tokens podem evoluir quando houver repetição suficiente entre superfícies.
+- Este contrato não fixa valores universais de espaçamento ou tamanho visual em pixels neste estágio; medidas concretas e tokens podem evoluir quando houver repetição suficiente entre superfícies. Limites mínimos de acessibilidade já definidos permanecem normativos, inclusive o alvo mínimo de interação de 44 px.
 
 ## Fora de escopo atual
 - Redesign amplo de dashboards
