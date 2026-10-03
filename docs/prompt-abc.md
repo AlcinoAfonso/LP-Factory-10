@@ -1,4 +1,4 @@
-# docs/prompt-abc.md vs20
+# docs/prompt-abc.md vs21
 
 PROMPT ABC
 
@@ -9,6 +9,8 @@ Regra de reconciliação: antes de adicionar, avaliar nesta ordem: remover; ajus
 * REPO: `AlcinoAfonso/LP-Factory-10`.
 * REF: `main`, branch ou commit; padrão: `main`.
 * DOC_ALVO: documento a atualizar, quando informado.
+* DOC_ALVO autorizado: somente documento listado na seção 5 e coberto por gate específico na seção 6; qualquer outro documento está fora do escopo do ABC e não recebe operações.
+* Esta restrição vale somente para o Prompt ABC e não limita a manutenção, pelo fluxo competente, de planos-base, matrizes ou outros artefatos fora do seu escopo.
 * RELATÓRIO: fonte do estado final.
 * ETAPA: `única`, `intermediária` ou `consolidação final`; padrão: `única`.
 
