@@ -211,7 +211,7 @@
 - Contratos/adapters: `lib/openai-costs/active-contracts.ts`, `adapters/activeCostTrackingAdapterCore.ts`, `adapters/activeCostTrackingAdapter.ts`, `adapters/activeCostReadModelAdapterCore.ts`, `adapters/activeCostReadModelAdapter.ts`, `economic-hierarchy.ts`, `dashboard.ts` e `index.ts`.
 - Produtores: `app/a/[account]/actions.ts`, `app/admin/(protected)/taxonomia/actions.ts`, `inputCatalogEvaluationOpenAiAdapter.ts`, `commercial-activation/draft-generation.ts` e `commercialActivationOpenAiAdapter.ts`.
 - UI: `OpenAiEconomicHierarchy.tsx`, `OpenAiCostsDashboard.tsx` e validadores focais existentes atualizados somente onde o contrato novo exigir.
-- Docs: `docs/schema.md` e `docs/roadmap.md`; `base-tecnica.md`, `platform-config.md` e `automations.md` somente se o ABC emitir operação literal.
+- Docs: `docs/schema.md` e `docs/roadmap.md`; `base-tecnica.md`, `platform-config.md`, `design-system.md` e `automations.md` somente se o ABC emitir operação literal.
 
 ## 13. Execução e validações da fase E21.5.6
 
@@ -231,7 +231,7 @@
 
 ## 14. Reconciliação documental e gates
 
-- Antes do gate da implementação, preparar relatório factual e executar `$lp-factory-abc` em `ETAPA: consolidação final` para cada documento canônico potencialmente afetado e coberto pelo Prompt ABC vigente.
+- Antes do gate da implementação, preparar relatório factual e executar `$lp-factory-abc` em `ETAPA: consolidação final` para cada documento canônico potencialmente afetado.
 - Aplicar somente operações literais emitidas; `SEM ALTERAÇÕES NECESSÁRIAS` preserva o documento.
 - O delta de planejamento do roadmap registra E21.5.6 como planejada antes da implementação e não afirma código, apply ou QA ainda inexistentes.
 - `docs/schema.md` corrige o drift objetivo de E21.5.3/E21.5.4/lossless a partir de evidência competente e registra E21.5.6 somente conforme estado efetivamente aplicado.
