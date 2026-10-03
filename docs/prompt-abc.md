@@ -1,4 +1,4 @@
-# docs/prompt-abc.md vs19
+# docs/prompt-abc.md vs20
 
 PROMPT ABC
 
@@ -45,7 +45,6 @@ Gerar um ABC humano, curto, delta-only e executável.
 * `docs/roadmap.md`: casos, estado, decisões, pendências e artefatos.
 * `docs/base-tecnica.md`: regras técnicas duráveis para implementações futuras.
 * `docs/schema.md`: contrato real de banco.
-* `docs/design-system.md`: contrato visual.
 * `docs/platform-config.md`: configurações externas.
 * `docs/services.md`: services implantáveis.
 * `docs/automations.md`: automações operacionais.
@@ -83,13 +82,6 @@ Um assunto deve ter uma única residência. Não duplicar fonte canônica.
 ### 6.3 Schema
 
 * Só gerar delta com alteração real de banco e evidência.
-
-### 6.4 Design System
-
-* Só gerar delta para contrato visual aprovado ou implementado: identidade, tipografia, tokens, componentes reutilizáveis, estados, superfícies e acessibilidade.
-* Não registrar inventário de telas ou rotas, adoção pontual, API ou valor exato já canônico no código ou configuração; manter somente regra visual durável e referência necessária.
-* Não registrar regra de negócio, runtime, banco, plataforma ou status de caso.
-* Sem mudança visual durável, emitir `SEM ALTERAÇÕES NECESSÁRIAS`.
 
 ### 6.5 Platform Config
 
