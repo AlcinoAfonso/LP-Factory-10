@@ -90,3 +90,37 @@ Fonte: https://docs.google.com/document/d/1Xv9iSHESAkMGs3TczBbhwyUl5emy2DyY6lMrr
 - Conferir cobertura item a item do contrato anterior, referências operacionais residuais e classificação das ocorrências históricas. Revisar `main..HEAD`, `main...HEAD`, escopo dos commits/arquivos e `git diff --check`.
 - `npm ci` e `npm run check`: não aplicáveis ao delta exclusivamente textual/contratual. Não executar build ou QA de produto sem impacto correspondente.
 - Publicar no mesmo PR; marcar para revisão e aguardar resultado explícito do Code Review automático do HEAD final e dos checks aplicáveis; corrigir e repetir review em novo SHA se necessário. Entregar PR tecnicamente pronto e aberto, sem merge e sem declarar PB-A concluído.
+
+## Decisões aprovadas — Prioridade 2
+
+Fonte: Debate 3D, seção 3.3, consultada em 04/10/2026. Baseline operacional: merge #1021, `8464ba44ca0fd129e2782534751978b772797d71`. A V1 e a V2 da Prioridade 1 acima permanecem como registros anteriores.
+
+3.3. Registros, V1/V2, checkpoints e aprovações intermediárias
+
+• Esta frente vem imediatamente após a unificação do Executor e antes da revisão dos especialistas.
+• A execução da Prioridade 1/PR #1021 é a evidência empírica desta frente: mostrou repetição de V1/V2, referências, checkpoints, pareceres e recibos, sem transformar esse histórico em novo artefato normativo.
+• O critério de simplificação é distinguir: o que precisa ser decidido, o que precisa ser comprovado e o que está apenas sendo repetido.
+• Para cada decisão, preservar uma referência recuperável suficiente; não reproduzir integralmente a mesma informação em cada passagem quando a fonte puder ser resolvida de forma inequívoca.
+• V2 e checkpoints devem ser proporcionais ao delta, ao risco e à necessidade real de retomada; não expandir por rotina um recorte pequeno em contrato ou sequência maior do que a execução exige.
+• Reavaliar marcos que apenas repetem aprovação já existente, inclusive o uso de `plan-v2-approved` por commit vazio; manter marco separado somente quando ele cumprir função própria de prova imutável, liberação ou retomada.
+• Não exigir snapshots, SHAs ou identificadores adicionais quando a mesma versão já for recuperável de forma inequívoca pelo Git e o registro extra não cumprir função própria.
+• O recibo final deve ser compacto e preservar somente as evidências essenciais da entrega, como HEAD avaliado, resultado de review, merge, validações aplicáveis e pendências materiais.
+• Informação necessária deve permanecer em sua residência competente; documento canônico não fica automaticamente fora da avaliação de redundância, mas seu conteúdo necessário não pode ser perdido.
+• Preservar explicitamente os controles que demonstraram valor na Prioridade 1: Code Review independente do HEAD corrente, guarda do SHA, busca de consumidores legados ainda ativos, fechamento comprovado de achados materiais e restrições humanas explícitas.
+• Quando uma decisão desta prioridade tornar uma regra diretamente dependente obsoleta ou contraditória, o ajuste correspondente deve ocorrer no mesmo delta autorizado.
+• Incluído no Plano Base — PB-A, Prioridade 2.
+
+## V2 técnica — Prioridade 2
+
+- Executar somente P2, em `codex-app/d3d-p2-registros-proporcionais`, base `8464ba44ca0fd129e2782534751978b772797d71`. V1 PB-A e decisões de P2: este arquivo em `761bbe7dd37d034f13b4d347941f28d97c0bdc44`; posição/plano conceitual N/A. P1 permanece histórica; P3 não será iniciada.
+- Derivação técnica da V1: uma referência recuperável suficiente por decisão/versão, com conteúdo integral lido pelo consumidor; transportar cópia somente quando a referência não puder ser resolvida ou o julgamento exigir recebê-la. Fonte externa sem recuperação durável exige preservar o conteúdo aprovado indispensável em residência existente; URL ou revisão temporária não substitui essa prova.
+- No Executor, ajustar entradas e §§3.1, 3.3, 7.1–7.3 e 9: V1 preservada, V2 proporcional, aprovação vinculada ao candidato exato, checkpoints apenas por função de prova/liberação/retomada e recibo compacto. Git/PR/parecer competente bastam quando permitem recuperar a decisão; ausência de trailer não equivale a ausência de aprovação, nem presença de trailer substitui gate.
+- Marcos separados e `plan-v2-approved` não serão exigidos por rotina nem por commit vazio. Conservar exigências literais de planos já iniciados e consumidores ativos, incluindo E21.2.5, E21.5.6 e checkpoints de E10.9; aprovação antiga não libera V2 alterada e checkpoint não afetado permanece válido.
+- Reconciliar somente transporte/referências nos wrappers de Plano Analista, Implementação Analista, Estrutura, Updates, Automações e ABC. O wrapper de implementação também exige entregar trecho integral e é consumidor direto de P2. Manter leitura integral pertinente, acesso confirmado, primeira passagem limpa, critérios de acionamento, modos, conclusões e retornos técnicos; manter comparação do roadmap anterior/atual no ABC. Não alterar runtime dos agentes ou regime de P3.
+- Preservar integralmente autonomia de P1, restrições humanas, Code Review independente do HEAD corrente, resultado explícito dos reviews aplicáveis, correções e fechamento comprovado de achados, guarda atômica do SHA e pós-merge. Buscar consumidores legados ativos antes de dispensar registro; fonte ambígua/indisponível suspende apenas o ponto dependente.
+- Escopo provável: contrato do Executor, seis wrappers e esta lousa existente. Não criar caso E*, documento de prova, matriz, agente, workflow, infra ou PR adicional de limpeza; não reescrever snapshots/lousas históricos nem documentos canônicos não afetados.
+- Updates, Automações, Design, QA de produto e observabilidade: N/A para esta entrega textual. ABC canônico: N/A, pois nenhum documento da seção 5 do Prompt ABC precisa de delta; seu wrapper recebe apenas a reconciliação de transporte diretamente dependente.
+- Validar por recuperação Git e inspeção dos cenários: V1/V2 no mesmo arquivo; fonte externa mutável; destinatário sem acesso; aprovação com/sem Analista; nova V2 com aprovação antiga; legado com marcador obrigatório; retomada sem trailer; checkpoint afetado/não afetado; review ausente ou novo HEAD; merge limitado pelo humano. Conferir preservação dos gatilhos de P3, diff `main..HEAD`/`main...HEAD`, `git diff --check` e review independente do HEAD final.
+- `npm ci` e `npm run check`: N/A para texto/contratos. Publicar em um PR da P2, tratar review/checks/threads no mesmo fluxo, concluir merge remoto autorizado e fechamento factual de P2; PB-A e P3 permanecem abertos.
+
+Aprovação técnica da V2 P2: Analista em passagem independente — aprovado para implementar; candidato identificado por 0b7dd479fe52899325caee0863deb711662f6fc7, seção V2 técnica — Prioridade 2. Não libera merge nem P3.

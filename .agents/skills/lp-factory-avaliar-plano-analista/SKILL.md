@@ -8,7 +8,7 @@ description: Avaliar independentemente V1 e V2 pelo Analista read-only quando ri
 ## Preparar
 
 1. Confirme finalidade, caso, repositório, worktree, branch e estado Git. Esta skill é condicional pelos critérios do Executor; implementação simples não exige chamada.
-2. Obtenha paths, referências imutáveis e conteúdos integrais da V1 e V2, decisões registradas, roadmap/casos adjacentes e fontes técnicas pertinentes. Resolva PR/commit pelo SHA; mesmo path distingue versões por commits. Plano conceitual exige referência competente/vínculo inequívoco; na inexistência confirmada, use `N/A`.
+2. Obtenha referências recuperáveis da V1/V2 e decisões registradas, roadmap/casos adjacentes e fontes técnicas pertinentes; mesmo path distingue versões por commits. Confirme acesso à versão indicada; leia integralmente as fontes pertinentes por referência, transportando conteúdo somente se o destinatário não conseguir resolvê-la ou se o julgamento exigir recebê-lo. Fonte mutável sem recuperação durável exige preservar antes o conteúdo aprovado indispensável, conforme 3.1 do Executor. Plano conceitual exige referência competente/vínculo inequívoco; na inexistência confirmada, use `N/A`.
 3. Para auditoria de integração material, preserve pareceres integrais realmente acionados, confrontos estruturais exigidos por Updates e matriz/rastreabilidade pertinente. Não exija especialista, matriz ou segunda passagem sem essa finalidade.
 4. Confirme completude e identidade; fonte ausente/divergente volta como lacuna, sem reconstrução por inferência. Registre Git antes/depois.
 
@@ -20,7 +20,7 @@ Preserve integralmente a avaliação e conclusão. Sem necessidade de auditoria 
 
 ## Auditoria da incorporação de pareceres
 
-Somente após preservar a primeira avaliação, solicite ao Executor, único escritor, a gravação e o versionamento da matriz/rastreabilidade necessária. Receba e confira as referências imutáveis produzidas; só então continue no mesmo Analista em `auditoria_consolidacao`, entregando pareceres integrais, confrontos aplicáveis e rastreabilidade sem reescrever achados.
+Somente após preservar a primeira avaliação, solicite ao Executor, único escritor, a gravação e o versionamento da matriz/rastreabilidade necessária. Receba e confira as referências imutáveis produzidas; só então continue no mesmo Analista em `auditoria_consolidacao`, disponibilizando as referências recuperáveis dos pareceres originais, confrontos aplicáveis e rastreabilidade, com acesso e leitura integral conforme a preparação, sem reescrever achados.
 
 Confira formalmente uma linha por achado: ID, origem (V1, invariante técnico ou update), classe, tratamento, localização/evidência e destino/confronto de Updates quando aplicável. Rastreabilidade incompleta, modernização material sem confronto ou achado sem correspondência verificável impede o handoff; não complete a avaliação especializada. Aguarde conclusão própria do contrato `.codex/agents/analista.toml`; só com `aprovado para implementar` ou a conclusão de compatibilidade abaixo avance.
 

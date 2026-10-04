@@ -10,7 +10,7 @@ Usar exatamente um custom agent `analista` read-only por revisão. O task princi
 ## Preparar
 
 1. Confirmar repositório, worktree, branch, estado Git, SHA do plano aprovado e identificador exato da fase/recorte e finalidade focal ou delta.
-2. Entregar ao Analista o trecho integral do recorte, critérios de aceite, diff desde o checkpoint anterior, arquivos alterados, validações executadas e fontes técnicas necessárias. Incluir matriz/rastreabilidade e pareceres somente quando existirem e forem pertinentes ao recorte; não exigir artefatos ou especialidades adicionais por rotina.
+2. Entregar referências recuperáveis do recorte integral e critérios de aceite, diff desde o checkpoint pertinente, arquivos alterados, validações executadas e fontes técnicas necessárias. Confirme acesso à versão indicada; leia integralmente as fontes pertinentes por referência, transportando conteúdo somente se o destinatário não conseguir resolvê-la ou se o julgamento exigir recebê-lo. Fonte mutável sem recuperação durável exige preservar antes o conteúdo aprovado indispensável, conforme 3.1 do Executor. Incluir matriz/rastreabilidade e pareceres somente quando existirem e forem pertinentes ao recorte; não exigir artefatos ou especialidades adicionais por rotina.
 3. Se plano, fase, diff ou evidência forem ambíguos, não delegar nem reconstruir o escopo por inferência; devolver ao chamador apenas a lacuna.
 
 ## Delegar
