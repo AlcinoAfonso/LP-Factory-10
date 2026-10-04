@@ -199,7 +199,7 @@ Com liberação registrada e merge autorizado:
 2. executar o merge remoto conforme `AGENTS.md`, exigindo atomicamente o mesmo `head SHA` registrado no passo anterior por guarda equivalente disponível; merge local pela `main` permanece proibido;
 3. obter o merge commit e executar ou confirmar somente as validações pós-merge exigidas pelo contrato e pelas fontes competentes;
 4. atualizar o Debate correspondente no Google Drive com a conclusão final da entrega, PR, merge commit e evidências, preservando a V1 aprovada e o histórico do Debate;
-5. conferir e entregar recibo compacto do mesmo PR com HEAD revisado, resultado de reviews e fechamento de achados, merge commit, validações/QA pós-merge aplicáveis, registro efetuado no Debate e pendências materiais; referenciar a prova recuperável sem retranscrever contratos ou pareceres;
+5. conferir e entregar recibo compacto do mesmo PR com todos os campos da entrega técnica acima, acrescido de merge commit, validações/QA pós-merge aplicáveis, registro efetuado no Debate e pendências materiais; referenciar a prova recuperável sem retranscrever contratos ou pareceres;
 
 Entrega técnica não conclui o plano antes de resolver pendências materiais. Falha de merge, migration, Production, QA ou atualização autorizada do Debate mantém plano aberto e dependentes bloqueados; registre o bloqueio e conduza somente o delta competente na mesma sessão. Branch/PR corretivo pós-merge segue `AGENTS.md` e autoridade competente, sem recriar sessão nem nova automação ou infraestrutura por inferência.
 
