@@ -27,6 +27,8 @@ Confirme plano, supervisão e dependências reais. Plano independente pode segui
 
 Preserve identidade por plano, uma worktree por frente quando isolamento for necessário e uma branch/PR por etapa conforme `AGENTS.md`; planos independentes não exigem novas tasks. Reutilize sessão, branch, worktree, PR, contratos e checkpoints provisionados. Preparação aceita ou destino existente impede provisionamento duplicado; diagnostique e retome o mesmo destino, repetindo criação somente após erro explícito e confirmação de ausência de destino residual. Correções e QA pré-merge permanecem na mesma sessão/branch/PR.
 
+Em planos já iniciados, referências operacionais legadas ao Estrategista Autônomo ou ao Estrategista como condutor, avaliador da entrega ou liberador de merge resolvem-se no Executor, dentro da autoridade Autônoma concedida. Preserve os gates, checkpoints, QA, migração e restrições humanas do plano; a troca de responsável não prova satisfação nem liberação. Referências ao Estrategista original ou ao humano para decisões fora dessa autoridade permanecem vigentes; preserve os registros históricos.
+
 ## 2. Fontes e preparação
 
 Use somente as fontes materialmente necessárias:
