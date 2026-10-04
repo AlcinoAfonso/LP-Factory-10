@@ -124,3 +124,23 @@ Fonte: Debate 3D, seção 3.3, consultada em 04/10/2026. Baseline operacional: m
 - `npm ci` e `npm run check`: N/A para texto/contratos. Publicar em um PR da P2, tratar review/checks/threads no mesmo fluxo, concluir merge remoto autorizado e fechamento factual de P2; PB-A e P3 permanecem abertos.
 
 Aprovação técnica da V2 P2: Analista em passagem independente — aprovado para implementar; candidato identificado por 0b7dd479fe52899325caee0863deb711662f6fc7, seção V2 técnica — Prioridade 2. Não libera merge nem P3.
+
+## Definição aprovada — Prioridade 3
+
+3.4. Especialistas por necessidade concreta
+
+• Especialistas continuam read-only e são acionados por necessidade material própria, não para cumprir frequência, sequência, quantidade pré-definida ou segunda opinião por precaução.
+• Regra geral: na ausência de questão material específica que exija julgamento especializado, o Executor não aciona especialista.
+• Gestor Estrutural: acionar somente diante de questão real sobre responsabilidades, boundaries, dependências, consumidores, solução técnica ou crescimento estrutural. Mudança local suficientemente determinada não exige chamada. Havendo questão, produzir uma avaliação suficiente; novo retorno somente quando surgir questão material nova que exija novo julgamento.
+• Gestor de Updates: deixa de ser prioritário por padrão. O gatilho é existir uma decisão da implementação que dependa de informação tecnológica atual ainda não suficientemente estabelecida nas fontes do projeto.
+• Gestor de Updates não possui teto numérico de chamadas; não há retorno por rotina, mas retorno focal é permitido diante de informação tecnológica nova material ou quando a recomendação anterior se mostrar inaplicável.
+• Analista: o padrão é não acionar. Só acionar quando o Executor identificar uma questão material específica ainda não resolvida pelas fontes competentes, validações determinísticas, especialista de domínio aplicável ou Code Review, e essa questão exigir julgamento independente capaz de alterar uma decisão.
+• Antes de acionar o Analista, o Executor deve conseguir registrar objetivamente: qual é a questão que precisa de julgamento; por que os controles e fontes já existentes não a resolvem; e que decisão pode mudar conforme a avaliação. Sem essas três respostas, não há chamada.
+• Avaliação de V2 e avaliação de implementação são capacidades independentes e condicionais; cada uma somente se torna gate quando seu próprio critério material de acionamento estiver presente. O acionamento de uma não torna a outra obrigatória, e parecer do Gestor Estrutural não cria necessidade automática de Analista.
+• Não constituem, isoladamente, gatilho suficiente para Analista: materialidade do delta, mudança de contrato, tamanho da alteração, existência de V2, passagem anterior por especialista, mudança de HEAD, existência de Code Review, desejo genérico de controle independente, correção textual/contratual inequívoca ou simples confirmação de que uma correção objetiva foi aplicada.
+• Retorno ao mesmo especialista ocorre somente para fechar achado, condicionante ou evidência solicitada por ele; avaliar evidência material nova; mudança material da solução; ou novo impacto no domínio que exija julgamento próprio.
+• Achado do Code Review não aciona nem reabre Analista por si só. Quando a correção for focal, inequívoca, permanecer dentro do contrato aprovado e não criar questão especializada nova, o Executor corrige, valida e segue diretamente para novo Code Review do HEAD corrente.
+• Revisões genéricas, repetitivas ou sem função própria devem ser dispensadas; a frequência não é critério de qualidade e não existe teto artificial de chamadas quando surgir necessidade concreta.
+• Permanecem obrigatórios os controles independentes que demonstraram função própria: Code Review independente do HEAD corrente, repetição do Code Review após mudança do HEAD, fechamento comprovado de achados materiais, guarda do SHA, validações aplicáveis, busca de consumidores afetados quando pertinente e restrições humanas explícitas.
+• A alteração do regime de Updates é decisão nova deste Debate 3D e não é tratada como limpeza já autorizada pelo Debate 3C.
+• Incluído no Plano Base — PB-A, Prioridade 3.
