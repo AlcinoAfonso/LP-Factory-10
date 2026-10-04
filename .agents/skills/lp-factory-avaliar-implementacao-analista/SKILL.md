@@ -1,6 +1,6 @@
 ---
 name: lp-factory-avaliar-implementacao-analista
-description: Avaliar focalmente um recorte implementado quando risco material, dúvida ou evidência insuficiente exigir revisão independente pelo custom agent analista read-only.
+description: Avaliar focalmente um recorte implementado quando questão material residual exigir julgamento independente capaz de alterar decisão pelo custom agent analista read-only.
 ---
 
 # Avaliar implementação pelo Analista
@@ -9,7 +9,7 @@ Usar exatamente um custom agent `analista` read-only por revisão. O task princi
 
 ## Preparar
 
-1. Confirmar repositório, worktree, branch, estado Git, SHA do plano aprovado e identificador exato da fase/recorte e finalidade focal ou delta.
+1. Confirmar repositório, worktree, branch, estado Git, SHA do plano aprovado, fase/recorte e finalidade. Receber questão material específica, insuficiência das fontes/controles existentes e decisão alterável conforme 3.2 do Executor, ou exigência literal aplicável de plano iniciado; sem esse critério, não delegar. Avaliação anterior de V2 não cria este gate.
 2. Entregar referências recuperáveis do recorte integral e critérios de aceite, diff desde o checkpoint pertinente, arquivos alterados, validações executadas e fontes técnicas necessárias. Confirme acesso à versão indicada; leia integralmente as fontes pertinentes por referência, transportando conteúdo somente se o destinatário não conseguir resolvê-la ou se o julgamento exigir recebê-lo. Fonte mutável sem recuperação durável exige preservar antes o conteúdo aprovado indispensável, conforme 3.1 do Executor. Incluir matriz/rastreabilidade e pareceres somente quando existirem e forem pertinentes ao recorte; não exigir artefatos ou especialidades adicionais por rotina.
 3. Se plano, fase, diff ou evidência forem ambíguos, não delegar nem reconstruir o escopo por inferência; devolver ao chamador apenas a lacuna.
 
@@ -19,7 +19,7 @@ Usar exatamente um custom agent `analista` read-only por revisão. O task princi
 2. Usar rastreabilidade existente como índice e expor somente pareceres de plano pertinentes ao recorte.
 3. Preservar a resposta integral e o estado Git antes e depois da delegação.
 
-Usar esta skill somente quando os critérios condicionais do Executor exigirem avaliação independente. Implementação simples não exige chamada.
+Retornos seguem 3.2 do Executor para fechar pendência própria ou obter julgamento novo necessário. Achado de Code Review, novo HEAD e confirmação de correção objetiva não acionam nem reabrem esta avaliação por si; correção focal inequívoca dentro do contrato segue validação e novo Code Review.
 
 ## Tratar a conclusão
 

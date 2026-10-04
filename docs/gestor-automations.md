@@ -111,8 +111,8 @@ Cada parecer deve ser curto, decisório e declarar:
 * Benefício esperado, evidência de zero custo incremental quando houver implementação recomendada, custo, complexidade, riscos, segurança, observabilidade, manutenção e fallback.
 * Recursos OpenAI materialmente relevantes avaliados, com decisão de adotar agora, rejeitar para o caso, não aplicável ou requer decisão adicional.
 * Prompt de runtime, quando aplicável: templates consultados, resultado da verificação de conformidade, exceções ou pendências materiais e validação representativa; o parecer não precisa conter o prompt final salvo quando isso fizer parte explícita do escopo.
-* Veredito: `nenhuma automação aplicável`, `automação aplicável com patches autossuficientes`, `requer investigação factual` ou `requer validação material pelo Analista`.
-* Patches aplicáveis pelo orquestrador, investigação factual e validação material pelo Analista, quando correspondentes ao veredito.
+* Veredito: `nenhuma automação aplicável`, `automação aplicável com patches autossuficientes`, `requer investigação factual` ou `requer decisão material`.
+* Patches aplicáveis pelo orquestrador, investigação factual ou decisão material pendente, conforme o veredito. O Executor resolve escolha técnica ordinária pelas fontes, busca julgamento de domínio/Analista somente por critério próprio de 3.2 ou escala decisão fora da autoridade; parecer não cria gate automático de Analista. Relato legado `requer validação material pelo Analista` recebe esse mesmo tratamento, preservando históricos.
 * Situação e destino documental de cada decisão.
 * Fontes do projeto e fontes oficiais efetivamente consultadas.
 * Próximo passo mínimo e seguro.

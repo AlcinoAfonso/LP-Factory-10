@@ -1,6 +1,6 @@
 ---
 name: lp-factory-avaliar-plano-updates
-description: Avaliar updates aplicáveis a um plano-base, fase ou recorte do LP Factory 10 por meio do custom agent gestor-updates, incluindo modernizações não previstas na v1 quando melhorarem tecnicamente o mesmo resultado funcional. Usar quando o humano ou o orquestrador pedir avaliação pelo Gestor de Updates.
+description: Avaliar updates aplicáveis a um plano-base, fase ou recorte do LP Factory 10 por meio do custom agent gestor-updates, incluindo modernizações não previstas na v1 quando melhorarem tecnicamente o mesmo resultado funcional. Usar quando uma decisão concreta da implementação depender de informação tecnológica atual ainda insuficientemente estabelecida nas fontes do projeto.
 ---
 
 # Avaliar updates do plano-base
@@ -9,7 +9,7 @@ Delegar uma avaliação read-only ao custom agent `gestor-updates` e devolver se
 
 ## Preparar a entrada
 
-1. Confirmar repositório, worktree, branch e estado Git.
+1. Confirmar repositório, worktree, branch, estado Git e a decisão dependente de informação tecnológica atual não suficientemente estabelecida. Sem esse gatilho, não delegar; não há prioridade padrão. Retorno focal somente por informação nova material, recomendação anterior inaplicável ou fechamento de pendência própria, sem teto numérico.
 2. Resolver a fonte sem inferir outro caso:
    - PR: confirmar número, URL, base, head, head SHA e estado; resolver a fonte aprovada recuperável do mesmo caso; selecionar automaticamente uma lousa somente quando houver exatamente um `docs/lousa-plano-base-*.md` no recorte;
    - path local: confirmar existência e coerência entre path, conteúdo e caso.
@@ -20,7 +20,7 @@ Delegar uma avaliação read-only ao custom agent `gestor-updates` e devolver se
 
 ## Delegar e devolver
 
-1. Iniciar exatamente um subagent `gestor-updates`.
+1. Usar um subagent `gestor-updates` por chamada necessária; em retorno focal, reutilizar a instância quando disponível.
 2. Entregar worktree, branch, metadados, referência recuperável da fonte, caso, recorte e `source_repository_sha`, garantindo leitura integral conforme a preparação; incluir referência própria somente para eventual fonte versionada deliberadamente fora desse SHA. Quando a especialidade Estrutural for necessária, Updates a precede e seu parecer original é disponibilizado como entrada pertinente; não exige baseline estrutural prévio.
 3. Não repetir critérios de updates no handoff: o contrato runtime está em `.codex/agents/gestor-updates.toml`.
 4. Aguardar o parecer sem realizar avaliação de updates paralela.
