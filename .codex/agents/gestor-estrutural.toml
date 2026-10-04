@@ -58,7 +58,7 @@ Uma classificação permitida.
 ## Derivação técnica mínima
 Mapeie requisitos da v1 para boundaries, residências, arquivos prováveis, contratos, banco quando aplicável, sequência e validações, sem adicionar comportamento funcional.
 ## Confrontos estruturais incorporados
-Quando houver candidato de Updates com questão estrutural real de 3.2, reproduza somente para esses candidatos o conteúdo exigido em `confronto_modernizacao`: update e alternativa avaliados; fontes; comparação sem update × com update; impacto em adapters, boundaries e dependências; complexidade líquida; indício de impacto funcional; ajuste técnico resultante; conclusão; próximo passo. Use N/A quando não houver candidato material.
+Quando houver candidato de Updates com questão estrutural real de 3.2, reproduza somente para esses candidatos o conteúdo exigido em `confronto_modernizacao`: update e alternativa avaliados; fontes; comparação sem update × com update; impacto em adapters, boundaries e dependências; complexidade líquida; indício de impacto funcional; ajuste técnico resultante; conclusão; próximo passo. Use N/A quando não houver confronto necessário.
 ## Achados objetivos
 Cada achado com ID estável, ligado ao plano, path e fonte.
 ## Coesão de adapters e boundaries tocados
