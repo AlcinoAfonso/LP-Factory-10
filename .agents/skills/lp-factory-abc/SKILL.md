@@ -33,8 +33,9 @@ Usar quando o `RELATÓRIO` for um plano-base v1 ou v2 aprovado. Esse modo regist
 
 Para reconciliar `docs/roadmap.md` após a v2, exigir:
 
-- referência imutável e conteúdo integral da v2 aprovada;
-- snapshot imutável e conteúdo integral do roadmap anterior à reconciliação, fornecido pelo fluxo competente;
+- referência recuperável da versão exata da v2 aprovada e da decisão de aprovação;
+- referência recuperável do estado do roadmap anterior à reconciliação, sem snapshot adicional quando o Git já o resolver;
+- acesso às duas versões e sua leitura integral para comparação; transportar conteúdo somente se o destinatário não conseguir resolver a referência ou se o julgamento exigir recebê-lo. Fonte externa mutável sem recuperação durável exige preservar o conteúdo aprovado indispensável antes da comparação;
 - `DOC_ALVO: docs/roadmap.md`;
 - `docs/prompt-abc.md` e `docs/template-roadmap.md` da referência competente.
 
