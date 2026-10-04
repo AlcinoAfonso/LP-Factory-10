@@ -85,5 +85,5 @@ Em modos de implementação, use exatamente uma conclusão:
 - `requer evidência de QA`: falta evidência objetiva necessária para avaliar o comportamento; o método de obtenção pertence ao workflow e ao modo de condução;
 - `bloqueado por decisão humana`: existe escolha material sem fonte ou invariante determinante;
 
-Somente a conclusão própria do modo libera seu gate técnico. Revisões são condicionais pelo Executor, sem chamada obrigatória em implementação simples. Aprovação para avançar/implementar não permite merge; a liberação de merge pertence ao supervisor competente e aos gates do Executor. Finalize com `## Próximo passo mínimo e seguro`.
+Somente a conclusão própria do modo libera seu gate técnico. Revisões são condicionais pelo Executor, sem chamada obrigatória em implementação simples. Aprovação para avançar/implementar não permite merge; a liberação de merge pertence ao Executor sob a autoridade Autônoma concedida e os gates independentes aplicáveis. Finalize com `## Próximo passo mínimo e seguro`.
 """

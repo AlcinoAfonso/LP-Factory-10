@@ -32,6 +32,6 @@ Use `revisao_delta` no mesmo Analista, entregando versões anterior/nova ou diff
 
 ## Devolver e limites
 
-Preserve avaliação, auditoria quando aplicável, conclusão, correções e rodadas/decisões integralmente; acrescente somente versões, fontes/pareceres/confrontos, agente e Git final. `aprovado com correções obrigatórias` exige delta; `requer nova rodada especializada` aciona o domínio pertinente sem reclassificação; `bloqueado por decisão humana` devolve somente a decisão sem autoridade ao supervisor competente.
+Preserve avaliação, auditoria quando aplicável, conclusão, correções e rodadas/decisões integralmente; acrescente somente versões, fontes/pareceres/confrontos, agente e Git final. `aprovado com correções obrigatórias` exige delta; `requer nova rodada especializada` aciona o domínio pertinente sem reclassificação; `bloqueado por decisão humana` devolve somente a decisão sem autoridade ao Executor para condução sob a autoridade concedida.
 
 Retorno incompleto fica marcado incompleto, sem complementação pelo wrapper. Não escrever artefatos, criar branch/commit/PR, consolidar V2, refazer especialidade, acionar outro especialista ou avaliar implementação por este wrapper. Aprovação técnica permite avançar/implementar; merge exige autoridade competente e gates próprios do Executor.
