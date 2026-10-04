@@ -24,14 +24,14 @@ Delegar uma avaliação read-only ao custom agent `gestor-estrutural` e devolver
 ## Delegar e devolver
 
 1. Iniciar exatamente um subagent `gestor-estrutural`.
-2. Em `derivacao_inicial`, entregar modo, worktree, branch, metadados, referência recuperável da fonte, caso e pedido de avaliação do plano completo; quando houver parecer de Updates, disponibilizar sua referência original, garantir leitura integral conforme a preparação e exigir os confrontos estruturais aplicáveis na mesma resposta.
+2. Em `derivacao_inicial`, entregar modo, worktree, branch, metadados, referência recuperável da fonte, caso e pedido de avaliação do plano completo; quando houver parecer de Updates, disponibilizar o original integral ou sua referência durável com acesso comprovado, garantir leitura integral conforme a preparação e exigir os confrontos estruturais aplicáveis na mesma resposta.
 3. Em `confronto_modernizacao`, entregar modo e somente o contexto necessário ao candidato: referências da v1, parecer estrutural inicial, recomendação do Gestor de Updates, solução sem update, solução com update e fontes competentes pertinentes. Não pedir nova avaliação completa. Em `revisao_focal_implementacao`, entregar modo e todos os metadados e artefatos confirmados na preparação, com a avaliação delimitada ao ponto afetado.
 4. Não repetir critérios estruturais no handoff: o contrato runtime está em `.codex/agents/gestor-estrutural.toml`.
 5. Aguardar o parecer sem realizar avaliação estrutural paralela.
 6. Validar somente que o parecer contém as seções exigidas e uma conclusão geral permitida pelo contrato runtime do modo correspondente; na derivação inicial, cada candidato de impacto estrutural material apontado por Updates deve ter confronto focal explícito na mesma resposta, com sua própria conclusão permitida de `confronto_modernizacao`, sem substituir a conclusão geral da derivação.
 7. Se o contrato estiver incompleto, devolver o conteúdo recebido e marcar o handoff como incompleto; não completar nem reinterpretar o parecer.
 8. Confirmar novamente o estado Git e distinguir alterações preexistentes.
-9. Devolver referência recuperável ao parecer original completo e informar modo, plano/update avaliado, conclusão, agente acionado e confirmação de que o repositório permaneceu inalterado. Exibir o conteúdo integral somente pela necessidade de acesso/julgamento definida na preparação.
+9. Preservar e devolver ao Executor o parecer integral, salvo quando o escritor autorizado já tiver preservado duravelmente o original completo e o acesso pelos próximos consumidores estiver comprovado. Nesse caso, devolver a referência recuperável, sem retranscrever o parecer, respeitando a necessidade de acesso/julgamento da preparação. Informar modo, plano/update avaliado, conclusão, agente acionado e confirmação de que o repositório permaneceu inalterado.
 
 ## Limites
 

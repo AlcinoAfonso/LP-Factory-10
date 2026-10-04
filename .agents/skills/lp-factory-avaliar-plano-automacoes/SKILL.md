@@ -31,7 +31,7 @@ Delegar uma avaliação read-only ao custom agent `gestor-automacoes` e devolver
 6. Em `automação aplicável com patches autossuficientes`, exigir patch completo para cada decisão aprovada. Em `requer investigação factual`, exigir evidência faltante e forma de obtê-la. Em `requer validação material pelo Analista`, exigir decisão material e alternativas verificáveis, sem abrir gate humano neste estágio.
 7. Se o contrato estiver incompleto, devolver o conteúdo recebido e marcar o handoff como incompleto; não completar nem reinterpretar o parecer.
 8. Confirmar novamente o estado Git e distinguir alterações preexistentes.
-9. Devolver referência recuperável ao parecer original completo e informar plano e recortes avaliados, veredito, agente acionado e confirmação de que o repositório permaneceu inalterado. Exibir o conteúdo integral somente pela necessidade de acesso/julgamento definida na preparação.
+9. Preservar e devolver ao Executor o parecer integral, salvo quando o escritor autorizado já tiver preservado duravelmente o original completo e o acesso pelos próximos consumidores estiver comprovado. Nesse caso, devolver a referência recuperável, sem retranscrever o parecer, respeitando a necessidade de acesso/julgamento da preparação. Informar plano e recortes avaliados, veredito, agente acionado e confirmação de que o repositório permaneceu inalterado.
 
 ## Limites
 

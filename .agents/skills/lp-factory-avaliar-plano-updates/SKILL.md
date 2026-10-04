@@ -27,7 +27,7 @@ Delegar uma avaliação read-only ao custom agent `gestor-updates` e devolver se
 5. Validar que o parecer contém identificação, fontes, um veredito permitido, as seções exigidas pelo contrato runtime e próximo passo. Quando o parecer indicar candidato a confronto estrutural, confirmar apenas que a seção correspondente está presente.
 6. Se o contrato estiver incompleto, devolver o conteúdo recebido e marcar o handoff como incompleto; não completar nem reinterpretar o parecer.
 7. Confirmar novamente o estado Git e distinguir alterações preexistentes.
-8. Devolver referência recuperável ao parecer original completo e informar plano avaliado, veredito, `source_repository_sha`, eventuais referências excepcionais, agente acionado e confirmação de que o repositório permaneceu inalterado. Exibir o conteúdo integral somente pela necessidade de acesso/julgamento definida na preparação.
+8. Preservar e devolver ao Executor o parecer integral, salvo quando o escritor autorizado já tiver preservado duravelmente o original completo e o acesso pelos próximos consumidores estiver comprovado. Nesse caso, devolver a referência recuperável, sem retranscrever o parecer, respeitando a necessidade de acesso/julgamento da preparação. Informar plano avaliado, veredito, `source_repository_sha`, eventuais referências excepcionais, agente acionado e confirmação de que o repositório permaneceu inalterado.
 
 ## Limites
 
