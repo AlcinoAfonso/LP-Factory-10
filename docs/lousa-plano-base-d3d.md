@@ -90,4 +90,3 @@ Fonte: https://docs.google.com/document/d/1Xv9iSHESAkMGs3TczBbhwyUl5emy2DyY6lMrr
 - Conferir cobertura item a item do contrato anterior, referências operacionais residuais e classificação das ocorrências históricas. Revisar `main..HEAD`, `main...HEAD`, escopo dos commits/arquivos e `git diff --check`.
 - `npm ci` e `npm run check`: não aplicáveis ao delta exclusivamente textual/contratual. Não executar build ou QA de produto sem impacto correspondente.
 - Publicar no mesmo PR; marcar para revisão e aguardar resultado explícito do Code Review automático do HEAD final e dos checks aplicáveis; corrigir e repetir review em novo SHA se necessário. Entregar PR tecnicamente pronto e aberto, sem merge e sem declarar PB-A concluído.
-
