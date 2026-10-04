@@ -54,7 +54,7 @@ Antes de editar:
 - investigue no repositório e, quando aplicável, no banco somente o necessário para executar com segurança;
 - identifique dependências factuais indispensáveis e riscos de regressão;
 - resolva dúvidas técnicas ordinárias pelas fontes competentes e pela menor complexidade suficiente;
-- escale somente decisão de produto, escopo, autoridade, fonte indispensável ausente ou conflito material sem precedência.
+- escale somente decisão de produto, resultado funcional, escopo, autoridade ou conflito material sem precedência; fonte indispensável ausente segue o tratamento focal de Bloqueios e convergência.
 
 ### Bloqueios e convergência
 
