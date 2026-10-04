@@ -90,3 +90,23 @@ Fonte: https://docs.google.com/document/d/1Xv9iSHESAkMGs3TczBbhwyUl5emy2DyY6lMrr
 - Conferir cobertura item a item do contrato anterior, referências operacionais residuais e classificação das ocorrências históricas. Revisar `main..HEAD`, `main...HEAD`, escopo dos commits/arquivos e `git diff --check`.
 - `npm ci` e `npm run check`: não aplicáveis ao delta exclusivamente textual/contratual. Não executar build ou QA de produto sem impacto correspondente.
 - Publicar no mesmo PR; marcar para revisão e aguardar resultado explícito do Code Review automático do HEAD final e dos checks aplicáveis; corrigir e repetir review em novo SHA se necessário. Entregar PR tecnicamente pronto e aberto, sem merge e sem declarar PB-A concluído.
+
+## Decisões aprovadas — Prioridade 2
+
+Fonte: Debate 3D, seção 3.3, consultada em 04/10/2026. Baseline operacional: merge #1021, `8464ba44ca0fd129e2782534751978b772797d71`. A V1 e a V2 da Prioridade 1 acima permanecem como registros anteriores.
+
+3.3. Registros, V1/V2, checkpoints e aprovações intermediárias
+
+• Esta frente vem imediatamente após a unificação do Executor e antes da revisão dos especialistas.
+• A execução da Prioridade 1/PR #1021 é a evidência empírica desta frente: mostrou repetição de V1/V2, referências, checkpoints, pareceres e recibos, sem transformar esse histórico em novo artefato normativo.
+• O critério de simplificação é distinguir: o que precisa ser decidido, o que precisa ser comprovado e o que está apenas sendo repetido.
+• Para cada decisão, preservar uma referência recuperável suficiente; não reproduzir integralmente a mesma informação em cada passagem quando a fonte puder ser resolvida de forma inequívoca.
+• V2 e checkpoints devem ser proporcionais ao delta, ao risco e à necessidade real de retomada; não expandir por rotina um recorte pequeno em contrato ou sequência maior do que a execução exige.
+• Reavaliar marcos que apenas repetem aprovação já existente, inclusive o uso de `plan-v2-approved` por commit vazio; manter marco separado somente quando ele cumprir função própria de prova imutável, liberação ou retomada.
+• Não exigir snapshots, SHAs ou identificadores adicionais quando a mesma versão já for recuperável de forma inequívoca pelo Git e o registro extra não cumprir função própria.
+• O recibo final deve ser compacto e preservar somente as evidências essenciais da entrega, como HEAD avaliado, resultado de review, merge, validações aplicáveis e pendências materiais.
+• Informação necessária deve permanecer em sua residência competente; documento canônico não fica automaticamente fora da avaliação de redundância, mas seu conteúdo necessário não pode ser perdido.
+• Preservar explicitamente os controles que demonstraram valor na Prioridade 1: Code Review independente do HEAD corrente, guarda do SHA, busca de consumidores legados ainda ativos, fechamento comprovado de achados materiais e restrições humanas explícitas.
+• Quando uma decisão desta prioridade tornar uma regra diretamente dependente obsoleta ou contraditória, o ajuste correspondente deve ocorrer no mesmo delta autorizado.
+• Incluído no Plano Base — PB-A, Prioridade 2.
+
