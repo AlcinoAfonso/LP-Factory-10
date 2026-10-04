@@ -61,3 +61,33 @@ Fonte: https://docs.google.com/document/d/1Xv9iSHESAkMGs3TczBbhwyUl5emy2DyY6lMrr
 • Cada prioridade deve apresentar no próprio PR evidência proporcional de preservação das responsabilidades afetadas, diff limitado ao recorte, validações aplicáveis e Code Review independente do HEAD corrente.
 • O PB-A só é concluído quando a conferência final comprovar ausência de referência órfã, regra contraditória, responsabilidade sem dono ou gate necessário perdido.
 • Nenhuma economia de crédito ou melhora de qualidade será declarada como fato apenas pela mudança arquitetural; esses benefícios permanecem hipótese operacional a observar nas execuções posteriores.
+
+## V2 técnica — Prioridade 1
+
+### Recorte e autoridade
+
+- Executar exclusivamente a Prioridade 1 do PB-A, com Supervisão: Autônomo, nesta sessão e no PR #1021 contra `main`.
+- V1 imutável: commit `aa4dedeae6cc0897bdb5c5db0a383eb77fcc74fe`, blob `d67245f9554ecb69ff84c8b768903eba04516894`, neste arquivo. Base: `16e6ec4e0ae58aba68abbf7bdf41c7036199ba9a`; roadmap anterior: blob `ae8446498be5540ec6c2a28725eee5c75187acbd`. Posição e plano conceitual: N/A.
+- Exceção humana desta execução: não executar merge. Concluir a preparação técnica do PR com validações, Code Review independente do HEAD, correções e threads tratadas; entregar para avaliação humana. Merge, pós-merge, conclusão do PB-A e prioridades seguintes permanecem pendentes.
+- Todos os ajustes abaixo são derivação técnica da V1. Não alterar regime de especialistas, registros, V1/V2, checkpoints, controles não substituídos, runtime, produto, UI, banco, workflows ou nomenclatura geral.
+
+### Derivação executável
+
+1. Concentrar em `.agents/skills/lp-factory-executar-plano/SKILL.md` a condução da entrada à conclusão: autoridade Autônoma e limites da V1, modelo `gpt-6-sol`/esforço humano `medium` a `high`, dependências com prova positiva, trabalho independente, continuidade, retomada sem duplicar destino, preservação de checkpoints válidos, bloqueios focais, convergência e inviabilidade somente após prova competente e alternativas razoáveis esgotadas.
+2. Substituir o redirecionamento inicial e a alternância de identidade pela atuação direta do Executor. Preservar escalada ao Estrategista original/humano competente apenas por produto, resultado funcional, escopo, mudança da V1, conflito sem precedência ou outra decisão fora da autoridade concedida. Falta de fonte indispensável impede o ponto afetado; não autoriza inferência nem abandono do trabalho independente.
+3. Absorver avaliação da entrega e liberação competente vinculadas ao mesmo plano/PR/HEAD: comparar V1/V2, escopo negativo, diff, aceite, QA, checks, reviews e threads; corrigir achado material ou rejeitá-lo com justificativa. QA adicional exige aceite, risco material ou evidência insuficiente. Code Review independente do HEAD corrente e resultado explícito de todo review disparado/automático aplicável são obrigatórios; falha, cancelamento, ausência de resultado ou registro temporariamente invisível não satisfazem o gate. Escrita não substitui revisão independente.
+4. Preservar no contrato permanente a autoridade de merge remoto após gates, guarda atômica do HEAD, proibição de merge local, resolução prévia do Debate/caminho autorizado de escrita, merge commit, validações pós-merge, atualização do Debate e recibo. Respeitar instrução humana que limite ou suspenda merge. Conclusão positiva e liberação de dependentes só após ausência de pendência material; falha de merge, migration, Production, QA ou Debate mantém plano aberto e exige somente delta competente, na mesma sessão, com branch/PR corretivo conforme AGENTS.md.
+5. Harmonizar `README.md`, `docs/pipeline-plano-base.md`, `docs/prompt-estrategista.md` e `.agents/skills/lp-factory-executar-plano/agents/openai.yaml` para entrada e autoridade diretas do Executor. Remover `.agents/skills/lp-factory-estrategista-autonomo/SKILL.md` e seu `agents/openai.yaml` somente após transferência integral.
+6. Ajustar apenas as referências diretamente dependentes a supervisor/liberação e retorno em `.codex/agents/analista.toml`, `.agents/skills/lp-factory-avaliar-plano-analista/SKILL.md` e `.agents/skills/lp-factory-avaliar-implementacao-analista/SKILL.md`, preservando independência, modos, gatilhos, conclusões e retornos técnicos do Analista.
+7. Preservar referências históricas em lousas, matrizes, `docs/roadmap.md` e `docs/gestor-codex.md`. Não criar caso E*, matriz ou documento permanente de prova. Registrar comparação item a item e evidências proporcionais no PR.
+
+### Validação e gates
+
+- Updates: N/A — transferência de contratos operacionais sem decisão tecnológica recente capaz de alterar materialmente a implementação. Automações, Design e observabilidade runtime: N/A.
+- Estrutura: derivação inicial necessária por transferência material de responsabilidades. Analista: avaliação independente da V2 e revisão focal de implementação por alteração material de autoridade e contratos.
+- Reconciliação ABC: N/A — nenhum documento da seção 5 de `docs/prompt-abc.md` exige delta; os contratos operacionais acima seguem sua manutenção competente.
+- Executar `$lp-factory-criar-prompt` como subfluxo somente leitura antes de editar os contratos consumidos por IA, preservando estrutura e ordem; confrontar o resultado com o delta e validar cenários de entrada direta, dependência sem prova, bloqueio recuperável, explicação durante execução, decisão fora da V1, falta de evidência de QA, review incompleto/HEAD alterado, merge limitado pelo humano, falha pós-merge e inviabilidade não comprovada.
+- Conferir cobertura item a item do contrato anterior, referências operacionais residuais e classificação das ocorrências históricas. Revisar `main..HEAD`, `main...HEAD`, escopo dos commits/arquivos e `git diff --check`.
+- `npm ci` e `npm run check`: não aplicáveis ao delta exclusivamente textual/contratual. Não executar build ou QA de produto sem impacto correspondente.
+- Publicar no mesmo PR; marcar para revisão e aguardar resultado explícito do Code Review automático do HEAD final e dos checks aplicáveis; corrigir e repetir review em novo SHA se necessário. Entregar PR tecnicamente pronto e aberto, sem merge e sem declarar PB-A concluído.
+
