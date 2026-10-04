@@ -9,7 +9,7 @@ Delegar uma avaliação read-only ao custom agent `gestor-updates` e devolver se
 
 ## Preparar a entrada
 
-1. Confirmar repositório, worktree, branch, estado Git e a decisão dependente de informação tecnológica atual não suficientemente estabelecida. Sem esse gatilho, não delegar; não há prioridade padrão. Retorno focal somente por informação nova material, recomendação anterior inaplicável ou fechamento de pendência própria, sem teto numérico.
+1. Confirmar repositório, worktree, branch, estado Git e a decisão dependente de informação tecnológica atual não suficientemente estabelecida. Sem esse gatilho, não delegar; não há prioridade padrão. Retorno focal pelos critérios gerais de 3.2 do Executor, incluindo informação nova material, recomendação anterior inaplicável, fechamento de pendência própria, mudança material da solução ou novo impacto no domínio que exija julgamento próprio, sem teto numérico.
 2. Resolver a fonte sem inferir outro caso:
    - PR: confirmar número, URL, base, head, head SHA e estado; resolver a fonte aprovada recuperável do mesmo caso; selecionar automaticamente uma lousa somente quando houver exatamente um `docs/lousa-plano-base-*.md` no recorte;
    - path local: confirmar existência e coerência entre path, conteúdo e caso.

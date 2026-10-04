@@ -147,6 +147,8 @@ Aprovação técnica da V2 P2: Analista em passagem independente — aprovado pa
 
 ## V2 técnica — Prioridade 3
 
+- Restrição humana superveniente desta execução: não executar merge do PR #1023; concluir correções, validações e Code Review independente do HEAD corrente e entregar o PR tecnicamente pronto para avaliação humana. P3 e PB-A permanecem abertos até merge e fechamento autorizados.
+
 - Recorte: somente P3 e conferência de coerência final de PB-A, Supervisão Autônoma, nesta sessão/branch/PR. Base vigente: `a3dddbdcf639b60fa51ae5ab5af9926bcf1c3a7e` (#1022). V1 e definição P3 recuperáveis em `796372806e1e8d98336153c4cb3da571992ac1f2`, neste arquivo; P1/P2 permanecem históricas. Roadmap/posição/plano conceitual: N/A.
 - Todos os ajustes são derivação técnica da V1/3.4. No Executor, trocar prioridade padrão de Updates por decisão dependente de informação tecnológica atual insuficiente; Estrutural somente por questão real de responsabilidades, boundaries, dependências, consumidores, solução ou crescimento. Crescimento material mantém prova de origem, alternativa mais simples, insuficiência factual e complexidade líquida, sem parecer por rotina quando as fontes determinarem a solução.
 - Analista: padrão não acionar; registrar antes da chamada a questão material específica, a insuficiência dos controles/fontes existentes e a decisão alterável. V2 e implementação são capacidades/gates condicionais independentes. Materialidade, contrato, tamanho, V2, especialista anterior, HEAD novo, Code Review ou confirmação de correção objetiva não bastam isoladamente.
