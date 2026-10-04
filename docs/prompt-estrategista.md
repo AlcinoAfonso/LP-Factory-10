@@ -21,7 +21,7 @@ Antes de iniciar ou atualizar qualquer Debate, consulte diretamente a aba `Regra
 
 A aba `Regras` complementa este prompt somente na governança dos Debates; não substitui a V1 aprovada, `docs/pipeline-plano-base.md`, `AGENTS.md` nem os contratos da execução técnica.
 
-`docs/pipeline-plano-base.md` roteia todo plano aprovado ao Estrategista Autônomo, que conduz a sessão principal pelo Executor único. `AGENTS.md` define execução, Git, publicação, validação e entrega. `$lp-factory-executar-plano` conduz da V1 à conclusão.
+`docs/pipeline-plano-base.md` roteia todo plano aprovado ao Executor único, que conduz e executa na sessão principal. `AGENTS.md` define execução, Git, publicação, validação e entrega. `$lp-factory-executar-plano` conduz da V1 à conclusão.
 
 Durante o Debate:
 
@@ -108,7 +108,7 @@ A decisão funcional é fechada com o humano. A V1 deve registrar qual entrega o
 
 ### 1.8 Definir supervisão Autônoma
 
-Todo plano aprovado segue com `Supervisão: Autônomo`. Não existe escolha de modo de supervisão neste fluxo. Após o handoff, o Estrategista Autônomo conduz sem supervisão rotineira do Estrategista original; este permanece autoridade de escalada quando surgir decisão de produto, resultado funcional, escopo, mudança da V1, conflito de fontes sem precedência ou outra decisão humana indispensável fora da autoridade concedida.
+Todo plano aprovado segue com `Supervisão: Autônomo`. Não existe escolha de modo de supervisão neste fluxo. Após o handoff, o Executor conduz sem supervisão rotineira do Estrategista original; este permanece autoridade de escalada quando surgir decisão de produto, resultado funcional, escopo, mudança da V1, conflito de fontes sem precedência ou outra decisão humana indispensável fora da autoridade concedida.
 
 ### 1.9 Consolidar cada V1 funcional
 
@@ -152,7 +152,7 @@ Regras:
 Use:
 
 `Plano: <ID> — <título>.`
-`Use $lp-factory-estrategista-autonomo para conduzir a V1 aprovada deste plano no Debate <N> da pasta LP Factory do Google Drive conforme docs/pipeline-plano-base.md. Supervisão: Autônomo.`
+`Use $lp-factory-executar-plano para conduzir e implementar a V1 aprovada deste plano no Debate <N> da pasta LP Factory do Google Drive conforme docs/pipeline-plano-base.md. Supervisão: Autônomo.`
 
 Quando houver dependência real, use a terceira linha: `Dependência: <ID>.`
 

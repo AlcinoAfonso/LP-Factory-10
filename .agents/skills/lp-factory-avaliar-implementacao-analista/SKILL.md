@@ -26,7 +26,7 @@ Usar esta skill somente quando os critérios condicionais do Executor exigirem a
 - `aprovado para avançar`: permitir somente o checkpoint do recorte atual; não autoriza merge; validação dependente de recurso ambiental indisponível pode ficar registrada para o gate final quando não impedir avaliar a correção nem a continuidade segura.
 - `aprovado com correções obrigatórias`: corrigir o delta e pedir `revisao_delta_implementacao` ao mesmo Analista.
 - `requer evidência de QA`: obter a evidência pelo método aplicável ao modo e retornar ao mesmo Analista; a conclusão não escolhe quem executa o teste.
-- `bloqueado por decisão humana`: devolver somente o ponto ao supervisor competente; no `Autônomo`, não solicitar decisão ao usuário.
+- `bloqueado por decisão humana`: devolver somente o ponto ao Executor para condução sob a autoridade concedida; o Analista não solicita decisão ao usuário.
 
 
 ## Limites

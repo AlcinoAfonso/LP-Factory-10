@@ -1,4 +1,4 @@
 interface:
   display_name: "Executar plano-base"
   short_description: "Conduz V1, V2 e execução até a conclusão"
-  default_prompt: "Para iniciar um plano aprovado, use $lp-factory-estrategista-autonomo; ele conduz a sessão pelo contrato $lp-factory-executar-plano conforme o Pipeline vigente."
+  default_prompt: "Use $lp-factory-executar-plano para conduzir e implementar a V1 aprovada na sessão principal, conforme o Pipeline vigente, preservando autonomia, dependências e gates independentes."
