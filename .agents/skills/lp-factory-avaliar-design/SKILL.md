@@ -5,7 +5,7 @@ description: Definir UI/UX e revisar resultado renderizado com gestor-design rea
 
 # Avaliar Design
 
-Na execução, receba a chamada decidida pelo Executor (§3.2); valide a entrada sem refazer o roteamento. Consultas pré-V1 e pedidos humanos autorizados permanecem aceitos. No retorno, confira questão focal, parecer/contexto anterior, delta e evidências pertinentes.
+Na execução, receba a chamada decidida pelo Executor (§3.2); valide a entrada sem refazer o roteamento. Pedidos humanos e demais entradas autorizadas fora da execução permanecem sujeitos aos contratos competentes. No retorno, confira questão focal, parecer/contexto anterior, delta e evidências pertinentes.
 
 1. Confirme modo `definicao` ou `revisao_resultado`, caso, repositório, referência, V1/V2 pertinentes, superfície/estados, estado Git e referência concreta visual/da experiência. Na revisão, exija evidência renderizada com versão e viewport; não substitua por inferência do código.
 2. Confira compatibilidade do recorte com o modo recebido e completude da referência visual/da experiência; não substitua evidência renderizada da revisão por leitura de código.

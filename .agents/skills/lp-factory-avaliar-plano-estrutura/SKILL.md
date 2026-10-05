@@ -5,7 +5,7 @@ description: Avaliar estruturalmente um plano-base do LP Factory 10 por meio do 
 
 # Avaliar estrutura do plano-base
 
-Na execução, receba a chamada decidida pelo Executor (§3.2); valide a entrada sem refazer o roteamento. Consultas pré-V1 e pedidos humanos autorizados permanecem aceitos. No retorno, confira questão focal, parecer/contexto anterior, delta e evidências pertinentes.
+Na execução, receba a chamada decidida pelo Executor (§3.2); valide a entrada sem refazer o roteamento. Pedidos humanos e demais entradas autorizadas fora da execução permanecem sujeitos aos contratos competentes. No retorno, confira questão focal, parecer/contexto anterior, delta e evidências pertinentes.
 
 Delegar uma avaliação read-only ao custom agent `gestor-estrutural` e devolver seu parecer integral.
 
