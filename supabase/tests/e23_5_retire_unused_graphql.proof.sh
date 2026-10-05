@@ -35,4 +35,4 @@ run_file "$migration" idempotent-resume
 sql -At < supabase/tests/e23_5_retire_unused_graphql.snapshot.sql > "$log_root/after-resume"
 cmp "$log_root/before" "$log_root/after-resume"
 test "$(sql -Atc "select count(*)=2 and count(*) filter(where version in('20260926145500','20260926171100'))=0 from supabase_migrations.schema_migrations")" = t
-echo 'E23.5: PostgreSQL 17 / pg_graphql 1.5.11 initial state reproduced; external dependency blocked; complete unchanged migration and idempotent resume accepted; anon/authenticated GraphQL denied, REST/RLS/Auth preserved; non-GraphQL metadata identical; cases rolled back; no E10.10.' >> "$GITHUB_STEP_SUMMARY"
+echo 'E23.5: PostgreSQL 17 / pg_graphql 1.5.11 initial state reproduced; external dependency blocked; complete unchanged migration and idempotent resume accepted; anon/authenticated/service_role GraphQL without data, disabled stub; REST/RLS/Auth preserved; managed GraphQL schema ACLs and non-GraphQL metadata identical; cases rolled back; no E10.10.' >> "$GITHUB_STEP_SUMMARY"

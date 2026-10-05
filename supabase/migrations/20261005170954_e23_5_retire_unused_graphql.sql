@@ -5,18 +5,13 @@ set local lock_timeout = '5s';
 
 drop extension if exists pg_graphql restrict;
 
--- Preserve Supabase-managed schemas, helpers and the disabled placeholder.
--- Revoke only access to GraphQL; REST/public, Auth and their ACLs are unchanged.
-revoke usage on schema graphql, graphql_public
-  from public, anon, authenticated, service_role;
+-- Preserve Supabase-managed schemas, grants, helpers and disabled placeholder.
+-- The resolver is removed; REST/public, Auth and their ACLs are unchanged.
 
 do $$
 begin
   if exists (select 1 from pg_extension where extname = 'pg_graphql')
-    or to_regprocedure('graphql.resolve(text,jsonb,text,jsonb)') is not null
-    or has_schema_privilege('anon', 'graphql_public', 'USAGE')
-    or has_schema_privilege('authenticated', 'graphql_public', 'USAGE')
-    or has_schema_privilege('service_role', 'graphql_public', 'USAGE') then
+    or to_regprocedure('graphql.resolve(text,jsonb,text,jsonb)') is not null then
     raise exception 'E23_5_GRAPHQL_RETIREMENT_INCOMPLETE';
   end if;
 end;

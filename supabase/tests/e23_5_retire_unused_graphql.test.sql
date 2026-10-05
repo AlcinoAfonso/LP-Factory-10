@@ -20,11 +20,10 @@ begin
   if (select count(*) from public.e23_5_rest_probe) <> 1 then
     raise exception 'E23_5_ANON_REST_RLS_REGRESSION';
   end if;
-  begin
-    perform graphql_public.graphql(query => '{ __typename }');
-    raise exception 'E23_5_ANON_GRAPHQL_ACCESS_RETAINED';
-  exception when insufficient_privilege then null;
-  end;
+  if graphql_public.graphql(query => '{ __typename }') is distinct from
+    '{"errors":[{"message":"pg_graphql extension is not enabled."}]}'::jsonb then
+    raise exception 'E23_5_ANON_GRAPHQL_STILL_FUNCTIONAL';
+  end if;
 end;
 $$;
 reset role;
@@ -37,11 +36,10 @@ begin
     or auth.uid() is distinct from '00000000-0000-4000-8000-000000000001'::uuid then
     raise exception 'E23_5_AUTH_REST_RLS_REGRESSION';
   end if;
-  begin
-    perform graphql_public.graphql(query => '{ __typename }');
-    raise exception 'E23_5_AUTHENTICATED_GRAPHQL_ACCESS_RETAINED';
-  exception when insufficient_privilege then null;
-  end;
+  if graphql_public.graphql(query => '{ __typename }') is distinct from
+    '{"errors":[{"message":"pg_graphql extension is not enabled."}]}'::jsonb then
+    raise exception 'E23_5_AUTHENTICATED_GRAPHQL_STILL_FUNCTIONAL';
+  end if;
 end;
 $$;
 reset role;
@@ -52,11 +50,10 @@ begin
   if (select count(*) from public.e23_5_rest_probe) <> 2 then
     raise exception 'E23_5_SERVICE_REST_REGRESSION';
   end if;
-  begin
-    perform graphql_public.graphql(query => '{ __typename }');
-    raise exception 'E23_5_SERVICE_GRAPHQL_ACCESS_RETAINED';
-  exception when insufficient_privilege then null;
-  end;
+  if graphql_public.graphql(query => '{ __typename }') is distinct from
+    '{"errors":[{"message":"pg_graphql extension is not enabled."}]}'::jsonb then
+    raise exception 'E23_5_SERVICE_GRAPHQL_STILL_FUNCTIONAL';
+  end if;
 end;
 $$;
 reset role;

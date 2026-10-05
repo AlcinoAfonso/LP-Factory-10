@@ -3,6 +3,8 @@ with namespaces as (
   select oid from pg_namespace where nspname in ('public','auth','storage','extensions')
 )
 select md5(jsonb_build_object(
+  'graphql_schema_acls',(select jsonb_agg(jsonb_build_array(nspname,nspowner,nspacl) order by nspname)
+    from pg_namespace where nspname in ('graphql','graphql_public')),
   'namespaces',(select jsonb_agg(to_jsonb(n) order by n.oid)
     from pg_namespace n where n.oid in(select oid from namespaces)),
   'relations',(select jsonb_agg(jsonb_build_array(c.oid,c.relname,c.relkind,
