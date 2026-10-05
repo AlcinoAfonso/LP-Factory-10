@@ -14,7 +14,7 @@ description: Avaliar independentemente V1 e V2 pelo Analista read-only quando qu
 
 ## Avaliação independente
 
-Inicie exatamente um subagent `analista` com `fork_turns=none`, quando disponível, em `passagem_independente`. Entregue somente V1, V2, plano conceitual ou N/A, decisões, roadmap e fontes técnicas. Não entregue, cite ou exponha pareceres, confrontos ou matriz por prompt, histórico ou anexos; em contaminação, descarte a resposta e reinicie uma única instância limpa.
+Inicie exatamente um subagent `analista` com `fork_turns=none`, quando disponível, em `passagem_independente`. Entregue a questão, a insuficiência dos controles/fontes, a decisão alterável e o escopo delimitado, com V1, V2, plano conceitual ou N/A, decisões, roadmap e fontes técnicas como contexto integral. Avaliação e gate cobrem somente a questão e suas dependências necessárias; revisão completa somente por exigência literal recuperável de plano legado, entregue explicitamente. Não entregue, cite ou exponha pareceres, confrontos ou matriz por prompt, histórico ou anexos; em contaminação, descarte a resposta e reinicie uma única instância limpa.
 
 Preserve integralmente a avaliação e conclusão. Sem necessidade de auditoria posterior, essa avaliação suficiente libera implementação somente com `aprovado para implementar` ou a conclusão de compatibilidade abaixo.
 
@@ -22,7 +22,7 @@ Preserve integralmente a avaliação e conclusão. Sem necessidade de auditoria 
 
 Somente após preservar a primeira avaliação, solicite ao Executor, único escritor, a gravação e o versionamento da matriz/rastreabilidade necessária. Receba e confira as referências imutáveis produzidas; só então continue no mesmo Analista em `auditoria_consolidacao`, disponibilizando as referências recuperáveis dos pareceres originais, confrontos aplicáveis e rastreabilidade, com acesso e leitura integral conforme a preparação, sem reescrever achados.
 
-Confira formalmente uma linha por achado: ID, origem (V1, invariante técnico ou update), classe, tratamento, localização/evidência e destino/confronto de Updates quando aplicável. Rastreabilidade incompleta, modernização material sem prova estrutural suficiente ou sem confronto exigido por 3.2, ou achado sem correspondência verificável impede o handoff; não complete a avaliação especializada. Aguarde conclusão própria do contrato `.codex/agents/analista.toml`; só com `aprovado para implementar` ou a conclusão de compatibilidade abaixo avance.
+Confira formalmente uma linha por achado pertinente ao escopo avaliado: ID, origem (V1, invariante técnico ou update), classe, tratamento, localização/evidência e destino/confronto de Updates quando aplicável. Rastreabilidade incompleta, modernização material sem prova estrutural suficiente ou sem confronto exigido por 3.2, ou achado sem correspondência verificável impede o handoff; não complete a avaliação especializada. Aguarde conclusão própria do contrato `.codex/agents/analista.toml`; só com `aprovado para implementar` ou a conclusão de compatibilidade abaixo avance.
 
 Para plano já iniciado cujo contrato vigente exija literalmente `aprovado para merge do plano-base v2`, informe essa exigência e sua referência imutável ao Analista. Receba essa conclusão somente como aprovação técnica equivalente a `aprovado para implementar`, preservando os demais checkpoints e gates técnicos exigidos pelo plano. O nome legado não autoriza merge nem recria classes de execução; não reescreva lousas ou aprovações históricas.
 
