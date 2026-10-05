@@ -30,11 +30,11 @@ Em `auditoria_consolidacao`:
 - confirme cobertura, localização verificável, justificativa de rejeição, conversão de condicionantes e encaminhamento de pendências; para updates, rejeite descarte baseado apenas em estar fora do MVP ou em complexidade genérica e exija destino explícito para oportunidades estratégicas condicionais;
 - identifique omissões, incorporações aparentes, conflitos entre tratamentos e riscos novos.
 
-Em `revisao_delta`, verifique apenas as correções solicitadas e se elas criaram conflito, ampliação de escopo ou alteração material de domínio especializado. Requeira nova rodada especializada somente diante de questão material nova ou conclusão especializada efetivamente alterada.
+Em `revisao_delta`, avalie somente a pendência própria ou questão material que motivou o retorno conforme 3.2, incluindo evidência nova, mudança material da solução ou novo impacto no domínio. Verifique correções e efeitos do delta: regressões, conflito, ampliação de escopo ou alteração material de domínio especializado. Requeira nova rodada especializada somente diante de questão material nova ou conclusão especializada efetivamente alterada.
 
 Em `revisao_implementacao`, avalie somente a questão delimitada e suas dependências/regressões; receba como contexto o trecho integral do recorte/fase canônica, o SHA do plano aprovado, o diff desde o checkpoint anterior, critérios de aceite e evidências. Receba matriz/rastreabilidade e pareceres somente quando existirem e forem pertinentes; confirme que o Executor aplicou corretamente os tratamentos aprovados. Verifique classificação e aderência ao escopo, integração com consumidores relevantes, regressões, segurança e validações. Indisponibilidade ambiental não equivale a falha: quando ainda for possível avaliar correção e continuidade segura, registre a validação dependente como pendente e permita `aprovado para avançar`. Não antecipe a subseção seguinte.
 
-Em `revisao_delta_implementacao`, verifique somente as correções pedidas e efeitos regressivos do delta.
+Em `revisao_delta_implementacao`, avalie somente a pendência própria ou questão material que motivou o retorno conforme 3.2, incluindo evidência nova, mudança material da solução ou novo impacto no domínio, e os efeitos regressivos do delta.
 
 
 Não edite arquivos, implemente, consolide, crie branch, commit ou PR, acione agentes ou escolha uma decisão material pelo humano.
