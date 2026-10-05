@@ -5,6 +5,8 @@ description: Avaliar updates aplicáveis a um plano-base, fase ou recorte do LP 
 
 # Avaliar updates do plano-base
 
+Na execução, receba a chamada decidida pelo Executor (§3.2); valide a entrada sem refazer o roteamento. Consultas pré-V1 e pedidos humanos autorizados permanecem aceitos. No retorno, confira questão focal, parecer/contexto anterior, delta e evidências pertinentes.
+
 Delegar uma avaliação read-only ao custom agent `gestor-updates` e devolver seu parecer integral.
 
 ## Preparar a entrada
@@ -21,10 +23,10 @@ Delegar uma avaliação read-only ao custom agent `gestor-updates` e devolver se
 ## Delegar e devolver
 
 1. Iniciar exatamente um subagent `gestor-updates`.
-2. Entregar worktree, branch, metadados, referência recuperável da fonte, caso, recorte e `source_repository_sha`, garantindo leitura integral conforme a preparação; incluir referência própria somente para eventual fonte versionada deliberadamente fora desse SHA. Quando a especialidade Estrutural for necessária, Updates a precede e seu parecer original é disponibilizado como entrada pertinente; não exige baseline estrutural prévio.
+2. Entregar worktree, branch, metadados, referência recuperável da fonte, caso, recorte e `source_repository_sha`, garantindo leitura integral conforme a preparação; incluir referência própria somente para eventual fonte versionada deliberadamente fora desse SHA. No retorno, entregar também parecer anterior, questão, delta e evidências tecnológicas pertinentes; não exigir baseline estrutural prévio.
 3. Não repetir critérios de updates no handoff: o contrato runtime está em `.codex/agents/gestor-updates.toml`.
 4. Aguardar o parecer sem realizar avaliação de updates paralela.
-5. Validar que o parecer contém identificação, fontes, um veredito permitido, as seções exigidas pelo contrato runtime e próximo passo. Quando o parecer indicar candidato a confronto estrutural, confirmar apenas que a seção correspondente está presente.
+5. Validar que o parecer contém identificação, fontes, um veredito permitido, as seções exigidas pelo contrato runtime e próximo passo. Conferir a seção de impacto e pendências estruturais quando houver candidato material, sem decidir outra chamada.
 6. Se o contrato estiver incompleto, devolver o conteúdo recebido e marcar o handoff como incompleto; não completar nem reinterpretar o parecer.
 7. Confirmar novamente o estado Git e distinguir alterações preexistentes.
 8. Preservar e devolver ao Executor o parecer integral, salvo quando o escritor autorizado já tiver preservado duravelmente o original completo e o acesso pelos próximos consumidores estiver comprovado. Nesse caso, devolver a referência recuperável, sem retranscrever o parecer, respeitando a necessidade de acesso/julgamento da preparação. Informar plano avaliado, veredito, `source_repository_sha`, eventuais referências excepcionais, agente acionado e confirmação de que o repositório permaneceu inalterado.

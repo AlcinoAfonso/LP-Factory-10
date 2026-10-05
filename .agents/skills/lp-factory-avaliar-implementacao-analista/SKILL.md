@@ -1,9 +1,11 @@
 ---
 name: lp-factory-avaliar-implementacao-analista
-description: Avaliar focalmente um recorte implementado quando risco material, dúvida ou evidência insuficiente exigir revisão independente pelo custom agent analista read-only.
+description: Avaliar focalmente a questão recebida de um recorte implementado pelo custom agent analista read-only.
 ---
 
 # Avaliar implementação pelo Analista
+
+Na execução, receba a chamada decidida pelo Executor (§3.2); valide a entrada sem refazer o roteamento. Consultas pré-V1 e pedidos humanos autorizados permanecem aceitos. No retorno, confira questão focal, parecer/contexto anterior, delta e evidências pertinentes.
 
 Usar exatamente um custom agent `analista` read-only por revisão. O task principal preserva a implementação, trata correções e mantém o mesmo PR de execução.
 
@@ -15,17 +17,15 @@ Usar exatamente um custom agent `analista` read-only por revisão. O task princi
 
 ## Delegar
 
-1. Acionar o `analista` em `revisao_implementacao` ou `revisao_delta_implementacao` conforme a finalidade necessária.
+1. Acionar o `analista` em `revisao_implementacao` ou `revisao_delta_implementacao` conforme a finalidade recebida; entregar a questão, entradas e evidências preparadas, incluindo contexto anterior e delta no retorno.
 2. Usar rastreabilidade existente como índice e expor somente pareceres de plano pertinentes ao recorte.
 3. Preservar a resposta integral e o estado Git antes e depois da delegação.
-
-Usar esta skill somente quando os critérios condicionais do Executor exigirem avaliação independente. Implementação simples não exige chamada.
 
 ## Tratar a conclusão
 
 - `aprovado para avançar`: permitir somente o checkpoint do recorte atual; não autoriza merge; validação dependente de recurso ambiental indisponível pode ficar registrada para o gate final quando não impedir avaliar a correção nem a continuidade segura.
-- `aprovado com correções obrigatórias`: corrigir o delta e pedir `revisao_delta_implementacao` ao mesmo Analista.
-- `requer evidência de QA`: obter a evidência pelo método aplicável ao modo e retornar ao mesmo Analista; a conclusão não escolhe quem executa o teste.
+- `aprovado com correções obrigatórias`: devolver as correções e sua pendência; em retorno recebido, usar `revisao_delta_implementacao` no mesmo Analista.
+- `requer evidência de QA`: devolver a evidência faltante; conferir a prova em retorno recebido no mesmo Analista, sem escolher quem executa o teste.
 - `bloqueado por decisão humana`: devolver somente o ponto ao Executor para condução sob a autoridade concedida; o Analista não solicita decisão ao usuário.
 
 
