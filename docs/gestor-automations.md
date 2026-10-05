@@ -3,7 +3,7 @@
 ## 1. Objetivo
 
 Este documento orienta decisões sobre automações, uso de IA e comportamento agentic no LP Factory 10.
-O Gestor atua normalmente em dois momentos: antes do plano-base v1, recomenda se o caso deve ser automatizado, sua natureza e ambiente; na avaliação formal da v1, detalha a solução mínima suficiente dentro da categoria aprovada. Essa segunda avaliação pode ser dispensada por decisão humana explícita conforme `docs/prompt-estrategista.md` quando o debate já tiver fechado materialmente o necessário.
+Antes do plano-base v1, o Gestor recomenda se o caso deve ser automatizado, sua natureza e ambiente. Na execução da v1 aprovada, recebe o recorte e detalha a solução mínima suficiente dentro da categoria aprovada; acionamento e retorno pertencem ao Executor (§3.2 de `lp-factory-executar-plano`).
 A adoção e a categoria são submetidas ao humano no fluxo do Estrategista, e eventual mudança de categoria exige nova decisão humana.
 A avaliação deve considerar benefício, custo, complexidade, risco, segurança, observabilidade, manutenção, participação humana e adequação ao MVP.
 Deve começar pela alternativa mais simples, preservar a stack e os contratos aprovados, evitar overengineering e não transformar recurso novo em autorização automática de implementação.
@@ -111,8 +111,8 @@ Cada parecer deve ser curto, decisório e declarar:
 * Benefício esperado, evidência de zero custo incremental quando houver implementação recomendada, custo, complexidade, riscos, segurança, observabilidade, manutenção e fallback.
 * Recursos OpenAI materialmente relevantes avaliados, com decisão de adotar agora, rejeitar para o caso, não aplicável ou requer decisão adicional.
 * Prompt de runtime, quando aplicável: templates consultados, resultado da verificação de conformidade, exceções ou pendências materiais e validação representativa; o parecer não precisa conter o prompt final salvo quando isso fizer parte explícita do escopo.
-* Veredito: `nenhuma automação aplicável`, `automação aplicável com patches autossuficientes`, `requer investigação factual` ou `requer validação material pelo Analista`.
-* Patches aplicáveis pelo orquestrador, investigação factual e validação material pelo Analista, quando correspondentes ao veredito.
+* Veredito: `nenhuma automação aplicável`, `automação aplicável com patches autossuficientes`, `requer investigação factual` ou `requer decisão material`.
+* Patches aplicáveis pelo orquestrador, investigação factual e decisão material pendente, quando correspondentes ao veredito.
 * Situação e destino documental de cada decisão.
 * Fontes do projeto e fontes oficiais efetivamente consultadas.
 * Próximo passo mínimo e seguro.
