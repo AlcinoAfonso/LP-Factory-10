@@ -1,5 +1,5 @@
 22/07/2026 — Workflow de Atualização dos Catálogos de Updates
-Atualizado em 22/09/2026
+Atualizado em 05/10/2026
 
 Fontes: chat, repositório e documentos indicados nos itens 2 e 3
 
@@ -14,21 +14,21 @@ Ao final de uma única execução:
 - os quatro catálogos foram analisados na ordem do item 2 e a cobertura OpenAI foi concluída na quinta etapa, sem criar novo catálogo;
 - cada alvo foi concluído da leitura ao relatório e ao draft PR ou à justificativa antes do início da análise do seguinte, sem processamento em lote ou paralelo;
 - a execução usa um único identificador `updates-AAAA-MM-DD-rNN`, presente nas branches e nos títulos dos draft PRs da rodada, sempre acompanhado pelo alvo que distingue cada PR;
-- cada draft PR da rodada mantém no corpo o marcador durável `<!-- updates-round:v1 id=<identificador> state=<open|completed> base=<sha-inicial> scope=supa-up,vercel-up,github-up,prod-up,openai-model-snapshot -->`; o `scope` usa exatamente os cinco tokens nessa ordem, sem espaços, e sua comparação é textual e integral; somente `state=open` identifica rodada interrompida e retomável, enquanto `state=completed` impede sua reutilização mesmo que os drafts permaneçam abertos;
+- cada draft PR da rodada mantém no corpo o marcador durável `<!-- updates-round:v1 id=<identificador> state=<open|completed> base=<sha-inicial> scope=supa-up,vercel-up,github-up,prod-up,openai-model-snapshot -->`; o `scope` usa exatamente os cinco tokens nessa ordem, sem espaços, e sua comparação é textual e integral; `state=open` identifica rodada ainda pendente de conclusão, inclusive com PRs já mergeados; `state=completed` só é gravado após a auditoria e a confirmação de todos os merges da rodada e impede sua reutilização; drafts de rodadas antigas já marcadas como concluídas permanecem fora da autorização de merge desta execução;
 - quando a rodada completa não produzir nenhum draft PR, seu identificador é reservado por um tag anotado remoto `<identificador>-completed`, apontado para o SHA inicial e contendo estado, base, escopo, horário UTC e referência do relatório final, sem criar diff artificial;
-- drafts abertos de rodadas anteriores e do mesmo identificador foram detectados antes de qualquer publicação, e nenhum segundo draft foi criado para o mesmo alvo e rodada;
+- PRs de rodadas anteriores e do mesmo identificador foram detectados antes de qualquer publicação, e nenhum segundo PR foi criado para o mesmo alvo e rodada;
 - cada ajuste real está em branch própria criada do mesmo SHA inicial de `main`, alterando somente o documento-alvo e sem mudança artificial quando não houver delta;
 - todos os IDs publicados continuam localizáveis no catálogo, sem renumeração, reutilização ou desaparecimento físico;
 - todo transversal ativo informa estado, ação pendente, prioridade, motivo da permanência, gatilho e critério de encerramento;
 - itens integralmente implementados e validados deixam a parte ativa e permanecem somente no histórico compacto; para os transversais, o encerramento por implementação exige também a reconciliação documental competente pelo Prompt ABC; itens parciais permanecem ativos apenas pelo saldo;
 - nenhuma recomendação de implementação, dependente de recorte ou transversal, ultrapassa zero custo incremental nos planos vigentes; gratuidade não comprovada, upgrade ou cobrança adicional mantêm o recurso no radar;
 - ausências de ajuste, bloqueios e exceções foram registradas;
-- existe um relatório final curto que consolida o que foi feito, orienta a prioridade dos updates, reapresenta os recursos transversais ainda ativos e, quando houver ação transversal recomendada para o momento atual, pede autorização direta para criar o próximo Debate em `LP Factory/Debates`;
-- nenhum PR foi mergeado nem a catalogação transformada em implementação.
+- existe um relatório final curto que consolida o que foi feito, orienta a prioridade dos updates, reapresenta os recursos transversais ainda ativos e, quando houver ação transversal recomendada para o momento atual, informa o Debate da família 18 criado ou atualizado em `LP Factory/Debates`, com número, título, link e encaminhamento;
+- todos os PRs documentais da rodada com ajuste real foram revisados, corrigidos quando necessário, mergeados remotamente e conferidos na `main`, ou o bloqueio exato permanece registrado sem declarar a rodada concluída; a catalogação não foi transformada em implementação.
 
 ### 1.2. Papel
 
-- Manter os catálogos de updates atuais, úteis, rastreáveis e baseados em fontes oficiais, sem aprovação humana intermediária entre eles.
+- Manter os catálogos de updates atuais, úteis, rastreáveis e baseados em fontes oficiais, com autoridade para revisar, corrigir e mergear os PRs documentais da rodada após os gates, sem nova aprovação humana rotineira. Essa autoridade cobre somente os cinco alvos do item 2; não abrange implementação dos recursos, PRs de rodadas anteriores concluídas nem PRs separados do Prompt ABC.
 
 ## 2. Alvos e ordem
 
@@ -49,6 +49,7 @@ Consultar, para o catálogo em execução:
 - `docs/roadmap.md`, Base Técnica, schema, configurações de plataforma, matrizes e lousas relacionadas;
 - código, migrations, testes, workflows, dependências e histórico de PRs ou commits quando necessários para confirmar implementação;
 - os relatórios e diffs dos catálogos anteriores já concluídos nesta execução;
+- para o encaminhamento de ações transversais ao Debate, `docs/prompt-estrategista.md`, as abas `Regras` e `Debates` do Controle de Debates oficial e os documentos pertinentes da família 18 no Google Drive;
 - fontes oficiais externas correspondentes.
 
 Para Supabase, usar documentação, changelog e blog oficiais; `supa#60` confirma a consulta manual dessas fontes e não autoriza consumidor RSS ou Markdown. Para Vercel, usar fontes oficiais da Vercel, Next.js e React. Para GitHub e produto, seguir as fontes prioritárias definidas nos próprios catálogos.
@@ -64,11 +65,11 @@ Fontes secundárias podem apoiar, mas não substituir a fonte oficial.
 1. Preparar a rodada:
    - definir o prefixo `updates-AAAA-MM-DD` com a data da execução, listar em todos os estados os PRs e as referências remotas que contenham esse prefixo e extrair os números de rodada já usados;
    - cruzar cada branch remota `docs/<identificador>-<alvo>` com um PR correspondente; branch de rodada sem PR é execução interrompida e constitui conflito: preservar a branch, concluir a criação do PR pelo fallback aprovado e não alocar nem publicar outro identificador enquanto o conflito existir;
-   - antes de congelar uma nova base, ler o marcador durável e o estado real de todos os PRs encontrados e identificar se existe exatamente uma rodada cujos PRs com `state=open` continuam todos abertos e em draft, com `scope` textualmente idêntico ao valor normalizado do item 1.1; quando existir, reutilizar seu identificador e o `base` armazenado, confirmar que esse commit continua disponível e continuar seus drafts; o avanço isolado de `main` não invalida nem sincroniza a rodada retomada;
-   - tratar como conflito qualquer `state=open` em PR fechado, mergeado ou que não esteja mais em draft; diante desse estado obsoleto, de múltiplas rodadas abertas, marcador ausente ou malformado, divergência interna de base, escopo ou autoria, base indisponível, conflito real ou dependência material de contrato mais novo da `main`, registrar o conflito e parar sem criar outra rodada;
+   - antes de congelar uma nova base, ler o marcador durável e o estado real de todos os PRs encontrados e identificar se existe exatamente uma rodada com pelo menos um PR em `state=open`, com `scope` textualmente idêntico ao valor normalizado do item 1.1 e demais PRs abertos (draft ou prontos para revisão) ou já mergeados; aceitar `state=completed` nos PRs mergeados dessa mesma rodada somente quando todos os PRs da rodada já estiverem mergeados e faltar apenas concluir a gravação dos marcadores; quando existir, reutilizar seu identificador e o `base` armazenado, confirmar que esse commit continua disponível, conferir os merges realizados e continuar somente as etapas pendentes; o avanço isolado de `main` não invalida nem sincroniza a rodada retomada;
+   - tratar como conflito PR fechado sem merge em rodada `state=open`, `state=completed` incompatível com a retomada acima na rodada candidata, múltiplas rodadas abertas, marcador ausente ou malformado, divergência interna de base, escopo ou autoria ou base indisponível; registrar o conflito e parar sem criar outra rodada. Conflito real de merge ou dependência material de contrato mais novo da `main` exige ajuste na branch afetada, conforme `AGENTS.md`, seguido de nova validação e review; não sincronizar apenas pelo avanço da `main`;
    - somente quando não houver rodada aberta compatível, congelar o SHA inicial da `main` corrente, confirmar o `README.md` e os cinco alvos e definir `updates-AAAA-MM-DD-rNN` com o primeiro `NN` de dois dígitos ainda não usado naquela data, incluindo rodadas fechadas, mergeadas ou reservadas por tag `<identificador>-completed`;
    - listar draft PRs abertos cujas branches ou títulos contenham um identificador `updates-AAAA-MM-DD-rNN`, registrar os pertencentes a rodadas anteriores e detectar os do identificador atual;
-   - para o mesmo alvo e identificador, continuar o draft existente quando ele corresponder ao mesmo SHA inicial e escopo e seu marcador estiver em `state=open`; diante de divergência de base, escopo, autoria ou estado, registrar o conflito e não criar duplicata.
+   - para o mesmo alvo e identificador, continuar o PR existente quando ele corresponder ao mesmo SHA inicial e escopo e seu marcador estiver em `state=open`; se já estiver mergeado, conferir o resultado na `main` e não recriar nem alterar o alvo por rotina. Durante o fechamento interrompido, aplicar a exceção de `state=completed` acima. Diante de divergência de base, escopo, autoria ou estado, registrar o conflito e não criar duplicata.
 2. Para cada um dos quatro catálogos, na ordem do item 2, concluir todo o ciclo antes de iniciar a análise do seguinte:
    - ler as fontes aplicáveis e as regras do catálogo;
    - identificar o maior ID histórico, preservar todos os IDs publicados e atribuir novo ID somente acima do maior já utilizado;
@@ -100,7 +101,7 @@ Fontes secundárias podem apoiar, mas não substituir a fonte oficial.
    - quando houver ajuste, usar branch `docs/<identificador>-<alvo>` criada do SHA inicial, alterar somente o documento-alvo, validar o diff e abrir draft PR cujo título comece por `[<identificador>][<alvo>]` e cujo corpo contenha o marcador durável da rodada em `state=open`;
    - quando não houver ajuste, registrar a justificativa sem criar alteração artificial;
    - confirmar documento, IDs, referências, resultado do diff e URL do PR ou justificativa antes de seguir.
-3. Seguir automaticamente ao próximo catálogo, sem aguardar aprovação ou merge.
+3. Seguir automaticamente ao próximo catálogo, sem aguardar aprovação; os merges ocorrem no fechamento do item 5.
 4. Concluir a cobertura OpenAI depois dos quatro catálogos:
    - ler o snapshot vigente no SHA inicial e as fontes oficiais aplicáveis;
    - confrontar capacidades identificadas com o repositório e as decisões vigentes somente quando isso for necessário para classificar aplicabilidade e maturidade;
@@ -108,14 +109,19 @@ Fontes secundárias podem apoiar, mas não substituir a fonte oficial.
    - não registrar conteúdo financeiro nem converter disponibilidade, novidade ou capacidade em autorização de adoção;
    - quando houver mudança técnica material, usar branch `docs/<identificador>-openai`, alterar somente `docs/openai-model-snapshot.md`, validar o diff e abrir draft PR cujo título comece por `[<identificador>][openai]` e cujo corpo contenha o marcador durável da rodada em `state=open`;
    - quando não houver mudança material, registrar a justificativa sem atualizar data, regravar o snapshot ou criar PR artificial.
-5. Ao final, conferir a sequência executada, o identificador, a base comum, os arquivos alterados, a cobertura dos canais estratégicos e OpenAI, os IDs, os drafts anteriores detectados e o estado dos PRs. Depois da auditoria e da produção do relatório final:
-   - quando houver draft PR, substituir o marcador de todos os drafts da rodada por `state=completed`, preservando identificador, base e restante do corpo, acrescentar a mesma referência de conclusão e o mesmo horário UTC em todos eles e reler os corpos publicados;
-   - quando nenhum draft PR tiver sido criado, confirmar que `<identificador>-completed` ainda não existe, criar um tag anotado com esse nome apontado exatamente para o SHA inicial, registrar na mensagem `updates-round:v1`, `id`, `state=completed`, `base`, `scope=supa-up,vercel-up,github-up,prod-up,openai-model-snapshot`, `completed_at` em UTC e `report`, publicar somente esse tag e relê-lo no remoto;
+5. Ao final, conferir a sequência executada, o identificador, a base comum, os arquivos alterados, a cobertura dos canais estratégicos e OpenAI, os IDs, os PRs anteriores detectados e o estado dos PRs. Depois da auditoria, concluir os PRs da rodada na ordem do item 2:
+   - fazer a última revisão de fontes, classificações, IDs, histórico, referências e diff, confirmando alteração somente no documento-alvo; corrigir achados documentais no mesmo PR, sem adotar o recurso catalogado nem ampliar o escopo;
+   - obter Code Review independente do `HEAD` corrente e resultado explícito de todo review disparado ou automático aplicável; tratar achados e resolver threads materiais. Toda correção que alterar o `HEAD` exige nova validação e review independente do novo SHA, conforme `AGENTS.md`;
+   - imediatamente antes de cada merge, reler o documento-alvo na `main` e comparar com a versão-base usada na revisão, conferindo IDs e classificações. Mudança material exige sincronizar a branch afetada, revalidar o documento resultante e obter novo review independente do `HEAD`; repetir a conferência antes de mergear. O avanço da `main` sem mudança material pertinente não exige sincronização;
+   - confirmar checks aplicáveis aprovados, ausência de achados materiais pendentes e elegibilidade de merge; `npm ci` e `npm run check` podem ser não aplicáveis para escopo exclusivamente documental. Retirar o draft quando elegível e mergear pelo GitHub conectado ou Web, com guarda atômica do SHA revisado; merge local e bypass de gates são proibidos;
+   - reler o estado remoto, registrar o SHA revisado e o merge commit e conferir o documento resultante na `main`. Em retomada, verificar os PRs já mergeados e continuar os restantes; falha de review, check, permissão, merge ou conferência mantém a rodada aberta, com bloqueio exato e sem duplicação;
+   - quando todos os PRs da rodada estiverem mergeados e conferidos, concluir o encaminhamento ao Debate conforme o item 5.11 quando aplicável, produzir o relatório final e substituir o marcador de todos eles por `state=completed`, preservando identificador, base e restante do corpo, acrescentar a mesma referência de conclusão e o mesmo horário UTC em todos eles e reler os corpos publicados;
+   - quando nenhum draft PR tiver sido criado, concluir e verificar o encaminhamento ao Debate conforme o item 5.11 quando aplicável e produzir o relatório final antes de confirmar que `<identificador>-completed` ainda não existe e criar um tag anotado com esse nome apontado exatamente para o SHA inicial, registrar na mensagem `updates-round:v1`, `id`, `state=completed`, `base`, `scope=supa-up,vercel-up,github-up,prod-up,openai-model-snapshot`, `completed_at` em UTC e `report`, publicar somente esse tag e relê-lo no remoto;
    - se qualquer PR permanecer em `state=open`, tiver marcador ausente ou divergir dos demais, ou se o tag esperado estiver ausente ou apontar para outro SHA, informar o conflito e não declarar execução integralmente aderente.
 
 ## 5. Relatório obrigatório
 
-Os itens 1 a 10 compõem o relatório de cada catálogo. O item 11 é produzido uma única vez, após a conclusão e a auditoria dos quatro ciclos, no mesmo fechamento entregue ao usuário.
+Os itens 1 a 10 compõem o relatório de cada catálogo. O item 11 é produzido uma única vez, após os quatro ciclos, a cobertura OpenAI, a auditoria e a confirmação dos merges na `main` ou da ausência de delta, no fechamento entregue ao usuário.
 
 1. Veredito.
 2. Fontes consultadas.
@@ -159,28 +165,34 @@ Os itens 1 a 10 compõem o relatório de cada catálogo. O item 11 é produzido 
    - forma de validação.
 10. Validação:
    - confirmar que o catálogo foi concluído antes do início da análise do seguinte;
-   - informar branch e draft PR ou justificar a ausência de alteração;
+   - informar branch e PR ou justificar a ausência de alteração; o resultado de review e merge integra o fechamento consolidado;
    - confirmar que nenhum ID desapareceu, foi renumerado ou reutilizado;
    - confirmar a busca por referências explícitas e implementação semântica antes de cada arquivamento;
    - confirmar aderência ao `README.md`;
    - confirmar que novidade, modernidade ou distância do MVP não determinaram isoladamente a decisão.
    - confirmar o gate de zero custo incremental para cada recomendação de implementação, dependente de recorte ou transversal.
 11. Fechamento consolidado da execução:
+   - organizar o relatório final em dois capítulos numerados, preservando os requisitos de conteúdo abaixo:
+     - `1. Atualizações incorporadas`: apresentar o que mudou nos catálogos e no snapshot OpenAI, por ID quando aplicável e PR mergeado, incluindo ajustes, adições, arquivamentos e justificativas de ausência de delta; reunir neste capítulo as evidências e o estado da rodada;
+     - `2. Pendências transversais e ações recomendadas`: reapresentar todas as pendências transversais ativas, inclusive as anteriores, indicando o que se recomenda implementar, configurar ou revisar, motivo, prioridade, dependências e momento ou gatilho; separar ações recomendadas agora das condicionais ou ainda não validadas, sem autorizar implementação nem dispensar o gate econômico; informar os Debates criados, atualizados ou já responsáveis pelos itens, com número, título, link e resultado verificado. Quando não houver pendências transversais, registrar objetivamente essa ausência;
    - informar o identificador da rodada e o SHA inicial comum;
-   - informar o estado final persistido da rodada, o horário UTC e a referência de conclusão gravados nos corpos de todos os draft PRs ou, quando nenhum draft existir, no tag anotado remoto `<identificador>-completed`;
+   - informar o estado final persistido da rodada, o horário UTC e a referência de conclusão gravados nos corpos de todos os PRs ou, quando nenhum PR existir, no tag anotado remoto `<identificador>-completed`;
    - listar drafts anteriores detectados e confirmar que não foi criado segundo draft para o mesmo alvo e rodada;
-   - entregar um resumo curto do que foi feito, com catálogos analisados, alterações, draft PRs ou justificativas, bloqueios, lacunas e conclusão geral;
+   - entregar um resumo curto do que foi feito, com catálogos analisados, alterações, URLs dos PRs, SHAs revisados, resultados dos reviews e checks, merges confirmados na `main` ou justificativas de ausência de delta, bloqueios, lacunas e conclusão geral;
    - resumir a cobertura OpenAI, as fontes oficiais consultadas, as capacidades técnicas alteradas ou a justificativa de ausência de delta no snapshot;
    - separar os updates novos ou materialmente ajustados entre dependentes de recorte e transversais ao projeto, indicando prioridade atual, relação com o caminho crítico, momento ou gatilho recomendado e fluxo competente para avaliação;
    - reapresentar todos os recursos transversais ainda ativos nos catálogos resultantes, mesmo quando não forem novos nem tiverem mudado na rodada, deixando de reapresentá-los somente depois que saírem do catálogo ativo conforme a regra do item 4.2;
    - informar, para cada pendência transversal, ID e título, estado atual, ação pendente, prioridade, motivo da permanência, momento ou gatilho recomendado, mudança desde a rodada anterior — registrando `permanece pendente, sem mudança de prioridade` quando nada tiver mudado — e critério de encerramento;
    - deixar explícito que a orientação de prioridade não autoriza implementação;
    - concluir explicitamente se existe implementação, configuração ou revisão operacional transversal recomendada para o momento atual, separando ação imediata ou temporal de capacidade ainda condicional;
-- quando existir ação transversal recomendada agora, encerrar o relatório com um pedido direto e destacado de autorização para criar o próximo Debate na pasta `LP Factory/Debates` do Google Drive; não substituir esse pedido por convite genérico ao debate;
-- informar no pedido o título proposto, o escopo, as prioridades, as dependências, a ordem sugerida, os critérios de conclusão, os riscos, os limites e os itens que não devem ser implementados;
-- após autorização humana explícita, criar o Debate com a proposta e o plano das implementações, configurações ou revisões necessárias, podendo fazê-lo na mesma interação em que a autorização for concedida, e entregar o link para análise;
-- quando nenhuma ação transversal for recomendada para o momento atual, declarar objetivamente que não há motivo para criar novo Debate;
-- deixar explícito que a criação ou aprovação do Debate não autoriza implementação, alteração de plataforma, merge ou ampliação de escopo;
+- quando existir ação transversal recomendada agora, criar ou atualizar o Debate competente em `LP Factory/Debates` sem nova aprovação humana rotineira, sob a autorização permanente deste workflow limitada à abertura e ao registro de propostas para discussão;
+- antes de escrever, consultar o `docs/prompt-estrategista.md` vigente e diretamente as abas `Regras` e `Debates` do Controle de Debates oficial; aplicar somente regras com `Status=Vigente`, ler os Debates pertinentes e confirmar pasta, objetivo, IDs e vínculo com a rodada;
+- manter os encaminhamentos na família temática 18. Se a pendência já estiver coberta por Debate existente, preservar seu número e link; atualizar somente propostas ou contexto factual pertinente, sem alterar decisões aprovadas, V1, planos-base, objetivo ou status de implementação. Não duplicar pendência em novo Debate nem reabrir Debate concluído por rotina;
+- para novo recorte, conferir números usados na planilha e no Drive, incluindo Debates concluídos, e usar o próximo sufixo de letras livre da família 18, sem reutilizar identificadores nem criar outro número-base. Registrar a origem no Debate 18 e os vínculos pertinentes com seus recortes; se as fontes divergirem ou a decisão exigir mudar objetivo ou plano aprovado, registrar o bloqueio e pedir exatamente a decisão necessária;
+- estruturar o novo Debate conforme o Prompt Estrategista e as regras vigentes, com objetivo, propostas, prioridades, dependências, ordem sugerida, critérios de conclusão, riscos, limites e itens fora do escopo. Manter as recomendações como propostas, sem declarar decisões ou V1 aprovadas nem autorizar implementação; registrar o novo Debate no Controle com status `Aguardando` e verificar documento, pasta, linha e link após a escrita;
+- no capítulo 2, informar o número, título e link de cada Debate criado, atualizado ou já responsável, os IDs encaminhados e o próximo ponto de decisão humana. Em retomada, localizar o vínculo de rodada/IDs no Drive e no Controle antes de escrever para evitar duplicação;
+- quando nenhuma ação transversal for recomendada para o momento atual, não criar Debate por rotina; apresentar as pendências condicionais e seus vínculos existentes, ou declarar ausência de pendências;
+- a criação ou atualização do Debate não autoriza implementação, alteração de plataforma, merge de implementação ou ampliação de escopo. Falha de acesso ou escrita mantém o encaminhamento pendente, exige informar o bloqueio exato e impede declarar a rodada integralmente concluída, mesmo que os PRs documentais já estejam mergeados;
 - encerrar também com até três melhorias observadas durante a própria execução.
 
 ## 6. Limites e parada
@@ -189,9 +201,9 @@ Os itens 1 a 10 compõem o relatório de cada catálogo. O item 11 é produzido 
 - Não transformar catalogação em implementação, mudança de stack, nova infraestrutura ou novo escopo do MVP.
 - Não decidir aplicação final em plano-base, fase ou recorte; o Gestor de Updates recomenda horizonte e o Estrategista consolida no fluxo competente.
 - Não criar catálogo, seção permanente ou controle paralelo de pendências transversais; os catálogos permanecem como fonte.
-- Criar um Debate pontual sobre ações transversais somente após autorização humana explícita, conforme o item 5.11, sem tratá-lo como nova fonte do catálogo nem como autorização de implementação.
+- Criar ou atualizar Debates da família 18 somente nos limites da autorização permanente do item 5.11 e conforme o Prompt Estrategista e as regras vigentes; os catálogos permanecem como fonte técnica e a decisão de implementação permanece humana.
 - Não adicionar item sem fonte oficial, valor concreto e compatibilidade com o `README.md`.
 - Não criar catálogo OpenAI, consumidor de RSS/Markdown, controle paralelo, documento financeiro substituto ou segunda varredura ampla pelo Gestor de Automações.
 - Não recomendar implementação, dependente de recorte ou transversal, com custo incremental, gratuidade não validada, upgrade ou cobrança adicional; manter esses recursos somente no radar competente.
-- Não realizar merge dos PRs.
+- Mergear somente os PRs documentais da rodada, após os gates do item 4.5; não mergear PRs separados do Prompt ABC nem PRs de rodadas anteriores concluídas sem autorização própria. Respeitar instrução humana que suspenda ou limite o merge.
 - Quando faltar fonte obrigatória, houver conflito material ou faltar permissão, informar exatamente o bloqueio e parar.
