@@ -9,7 +9,7 @@ Produzir um briefing objetivo e executável para o Codex, sem executar a tarefa 
 
 ## Roteamento obrigatório
 
-1. Usar esta skill quando o produto final solicitado for um briefing ou handoff para uma task técnica no Codex trabalhar sobre o repositório, com ou sem mutação.
+1. Usar esta skill quando o produto final solicitado for um briefing ou handoff para uma task técnica no Codex trabalhar sobre o repositório, com ou sem mutação. O handoff normal de Plano Base segue `docs/prompt-estrategista.md` §1.10 e não usa esta skill nem vira briefing intermediário.
 2. Esta skill tem precedência sobre `$lp-factory-criar-prompt` quando o pedido for produzir esse briefing ou handoff, inclusive para investigação, auditoria ou mapeamento read-only.
 3. Para prompt ou instrução destinada a outro papel ou IA, sem ser handoff para uma task técnica Codex sobre o repositório, usar `$lp-factory-criar-prompt` e não continuar nesta skill.
 4. Se o pedido for ambíguo, resolver pelo produto final e destinatário. Perguntar somente quando não for possível determinar se o usuário quer um briefing para task técnica Codex ou um prompt para outro papel/IA.
@@ -21,7 +21,7 @@ Antes de produzir o briefing:
 1. Ler `README.md`.
 2. Ler `AGENTS.md` na versão vigente.
 3. Ler `docs/template-briefing-codex.md` na versão vigente.
-4. Usar `docs/template-prompts.md` apenas como princípio outcome-first, sem substituir a estrutura específica do briefing. Quando o recorte criar ou alterar prompt consumido por IA, tratá-lo também como contrato do artefato e incluir `docs/template-prompts-gpt-5-6.md` somente se GPT-5.6 estiver em avaliação ou aprovado.
+4. Quando o recorte criar ou alterar prompt consumido por IA, usar `$lp-factory-criar-prompt` como subfluxo somente leitura para preparar o artefato e seus casos representativos; fora desse caso, não exigir leitura de `docs/template-prompts.md`.
 5. Ler os documentos, arquivos, código, PRs e decisões diretamente relacionados ao recorte.
 6. Consultar o GitHub antes de declarar ausência de documentação do projeto.
 
@@ -29,18 +29,7 @@ Não usar cópia incorporada ou memória como substituta das fontes canônicas d
 
 ## Preparar o briefing
 
-Confirmar no material disponível:
-
-1. fonte ou estado atual;
-2. problema ou necessidade;
-3. resultado esperado;
-4. critérios de sucesso;
-5. arquivos-alvo a criar, alterar ou consultar, conforme o recorte;
-6. arquivos, áreas e comportamentos que não podem ser alterados;
-7. impacto visual ou frontend, somente quando aplicável;
-8. limites e regras de parada;
-9. validações aplicáveis;
-10. evidências exigidas na entrega final.
+Confirmar nas fontes materiais o conteúdo necessário para preencher o template e os critérios/evidências próprios do recorte.
 
 Confirmar que o briefing pertence ao caso, fase, branch e arquivos-alvo corretos. Não adaptar briefing de outro caso por inferência.
 
@@ -53,8 +42,8 @@ Se faltar fonte, permissão, decisão ou contexto indispensável, parar e pedir 
 3. Descrever o resultado esperado, sem prescrever implementação não sustentada pelas fontes.
 4. Informar paths concretos quando forem conhecidos.
 5. Preencher a seção visual somente quando houver impacto visual ou frontend.
-6. Referenciar `AGENTS.md` para regras operacionais, Git e publicação; não duplicar seu conteúdo no briefing.
-7. Exigir apenas validações aplicáveis ao recorte e justificar as não aplicáveis; quando houver prompt consumido por IA, exigir `$lp-factory-criar-prompt` como subfluxo somente leitura antes da edição do artefato e validar seus casos representativos.
+6. Referenciar `AGENTS.md` para regras operacionais, Git, validações padrão e entrega; não duplicar seu conteúdo no briefing.
+7. Incluir somente validações adicionais próprias do recorte quando existirem; para prompt consumido por IA, incorporar o resultado do subfluxo competente e exigir sua execução somente leitura antes da edição do artefato e a validação dos casos representativos.
 8. Incluir regras de parada específicas quando a tarefa depender de fonte, permissão ou decisão ainda ausente.
 9. Preservar estrutura, numeração e ordem de documentos existentes quando o briefing determinar sua alteração.
 10. Não inventar branch, rota, banco, job, agente, automação, engine ou infraestrutura.
