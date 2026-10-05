@@ -9,7 +9,7 @@ Na execução, receba a chamada decidida pelo Executor (§3.2); valide a entrada
 
 ## Preparar
 
-1. Confirme finalidade, caso, repositório, worktree, branch e estado Git. Confira a finalidade e a questão recebida, sem reavaliar a conveniência da chamada.
+1. Confirme finalidade e questão recebidas, caso, repositório, worktree, branch e estado Git.
 2. Obtenha referências recuperáveis da V1/V2 e decisões registradas, roadmap/casos adjacentes e fontes técnicas pertinentes; mesmo path distingue versões por commits. Confirme acesso à versão indicada; leia integralmente as fontes pertinentes por referência, transportando conteúdo somente se o destinatário não conseguir resolvê-la ou se o julgamento exigir recebê-lo. Fonte mutável sem recuperação durável exige preservar antes o conteúdo aprovado indispensável, conforme 3.1 do Executor. Plano conceitual exige referência competente/vínculo inequívoco; na inexistência confirmada, use `N/A`.
 3. Para auditoria de integração material, preserve pareceres integrais realmente acionados, tratamentos estruturais e confrontos pertinentes à finalidade recebida e matriz/rastreabilidade pertinente. Não exija especialista, matriz ou segunda passagem sem essa finalidade.
 4. Confirme completude e identidade; fonte ausente/divergente volta como lacuna, sem reconstrução por inferência. Registre Git antes/depois.
