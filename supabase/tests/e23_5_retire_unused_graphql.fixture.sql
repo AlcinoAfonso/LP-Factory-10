@@ -1,5 +1,5 @@
 -- Disposable PostgreSQL 17 fixture: reproduce the hosted GraphQL lifecycle.
--- Managed helper definitions were inspected read-only on 05/10/2026.
+-- Reuse the image's managed helpers; never overwrite their ownership.
 do $$
 begin
   if current_setting('server_version_num')::int / 10000 <> 17
@@ -9,104 +9,6 @@ begin
   end if;
 end;
 $$;
-CREATE OR REPLACE FUNCTION extensions.grant_pg_graphql_access()
- RETURNS event_trigger
- LANGUAGE plpgsql
- SET search_path TO ''
-AS $function$
-begin
-    if not exists (
-        select 1
-        from pg_catalog.pg_event_trigger_ddl_commands() ev
-        join pg_catalog.pg_extension e on ev.objid = e.oid
-        where e.extname = 'pg_graphql'
-    ) then
-        return;
-    end if;
-
-    drop function if exists graphql_public.graphql;
-    create or replace function graphql_public.graphql(
-        "operationName" text default null,
-        query text default null,
-        variables jsonb default null,
-        extensions jsonb default null
-    )
-        returns jsonb
-        language sql
-    as $$
-        select graphql.resolve(
-            query := query,
-            variables := coalesce(variables, '{}'),
-            "operationName" := "operationName",
-            extensions := extensions
-        );
-    $$;
-
-    -- Attach the wrapper to the extension so DROP EXTENSION cascades to it,
-    -- which in turn triggers set_graphql_placeholder to reinstall the "not enabled" stub.
-    alter extension pg_graphql add function graphql_public.graphql(text, text, jsonb, jsonb);
-
-    grant usage on schema graphql to postgres, anon, authenticated, service_role;
-    grant execute on function graphql.resolve to postgres, anon, authenticated, service_role;
-    grant usage on schema graphql to postgres with grant option;
-    grant usage on schema graphql_public to postgres with grant option;
-end;
-$function$;
-
-CREATE OR REPLACE FUNCTION extensions.set_graphql_placeholder()
- RETURNS event_trigger
- LANGUAGE plpgsql
- SET search_path TO ''
-AS $function$
-    DECLARE
-    graphql_is_dropped bool;
-    BEGIN
-    graphql_is_dropped = (
-        SELECT ev.schema_name = 'graphql_public'
-        FROM pg_event_trigger_dropped_objects() AS ev
-        WHERE ev.schema_name = 'graphql_public'
-    );
-
-    IF graphql_is_dropped
-    THEN
-        create or replace function graphql_public.graphql(
-            "operationName" text default null,
-            query text default null,
-            variables jsonb default null,
-            extensions jsonb default null
-        )
-            returns jsonb
-            language plpgsql
-            set search_path to ''
-        as $$
-            DECLARE
-                server_version float;
-            BEGIN
-                server_version = (SELECT (SPLIT_PART((select version()), ' ', 2))::float);
-
-                IF server_version >= 14 THEN
-                    RETURN jsonb_build_object(
-                        'errors', jsonb_build_array(
-                            jsonb_build_object(
-                                'message', 'pg_graphql extension is not enabled.'
-                            )
-                        )
-                    );
-                ELSE
-                    RETURN jsonb_build_object(
-                        'errors', jsonb_build_array(
-                            jsonb_build_object(
-                                'message', 'pg_graphql is only available on projects running Postgres 14 onwards.'
-                            )
-                        )
-                    );
-                END IF;
-            END;
-        $$;
-    END IF;
-
-    END;
-$function$;
 
 drop extension if exists pg_graphql restrict;
 create extension pg_graphql version '1.5.11' schema graphql;
