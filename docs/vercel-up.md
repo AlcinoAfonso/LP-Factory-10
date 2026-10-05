@@ -772,7 +772,7 @@ No plano Hobby, a Vercel passou a preservar, além do deployment de produção a
 
 ---
 
-## 34 — Next.js setembro de 2026: sete correções e advisories upstream pendentes *(🟨 Patch em implementação; acompanhamento ativo)*
+## 34 — Next.js setembro de 2026: sete correções e advisories upstream pendentes *(🟨 Patch aplicado; acompanhamento ativo)*
 
 2026-09-22
 Catalogado em 2026-09-29
@@ -780,11 +780,11 @@ Atualizado em 2026-10-05
 
 ### Status no Projeto
 
-- Status: a branch do PB 18B.1 fixa `next` e `eslint-config-next` em `16.3.8`; `npm ci`, confirmação das versões e `npm run check` passaram localmente. O PR e os gates remotos ainda estão pendentes. A release `16.3.8` corrige sete vulnerabilidades divulgadas em setembro. Duas vulnerabilidades adicionais — uma crítica e uma alta — seguem pendentes de coordenação upstream.
+- Status: patch `16.3.8` aplicado pelo PB 18B.1 / E23.4, PR [#1029](https://github.com/AlcinoAfonso/LP-Factory-10/pull/1029), merge `bd3b8186501384945954be9fd255d9d6c5d42c8f`. `npm ci`, versões, `npm run check`, Security Checks, build/Preview, smoke autenticado e Code Reviews passaram no HEAD `bf03cc827160d04abac9843493f16843a47844b1`; Production `Ready` no merge e smoke pós-merge aprovados. A release corrige sete vulnerabilidades divulgadas em setembro. Duas vulnerabilidades adicionais — uma crítica e uma alta — seguem pendentes de coordenação upstream.
 - Evidência de uso: busca no código versionado não encontrou `ImageResponse`, `next/og`, `@vercel/og` ou Satori. Isso reduz a exposição observável ao caminho descrito, mas não equivale a confirmar segurança de toda a dependência ou de futuros usos.
 - Natureza de uso: segurança transversal da stack Next.js atual.
 - Relação com a stack: patch da dependência existente; não requer nova infraestrutura, plano, serviço ou recurso opt-in.
-- Horizonte: Starter, revisão de segurança imediata; a atualização permanece sujeita aos checks, Preview e Code Review independente previstos no PB 18B.1.
+- Horizonte: Starter, acompanhamento de segurança da dependência existente após conclusão dos gates do PB 18B.1.
 
 ### Descrição
 
@@ -798,9 +798,8 @@ Em 30/09/2026, o Next.js publicou `16.3.8` para a linha 16.3, junto da `15.5.27`
 
 ### Ações Recomendadas
 
-1. Concluir o PB 18B.1 na mesma branch e PR: checks de segurança, build/Preview hospedados, smoke proporcional e Code Review independente no HEAD exato; depois do merge, confirmar o deploy Production já configurado.
-2. Manter ativos os advisories adicionais até publicação upstream de correções e avaliação no catálogo; não afirmar remediação total por causa do patch `16.3.8`.
-3. Não ativar Cache Components, Instant Navigations ou outras capacidades opcionais como parte do patch.
+1. Manter ativos os advisories adicionais até publicação upstream de correções e avaliação no catálogo; não afirmar remediação total por causa do patch `16.3.8`.
+2. Não ativar Cache Components, Instant Navigations ou outras capacidades opcionais como parte do patch.
 
 ### Dependências, riscos e limite
 
