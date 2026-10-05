@@ -2902,7 +2902,7 @@
 
 23. E23 — Segurança e governança transversal da plataforma
 - Objetivo: remover riscos prioritários de segurança e governança da plataforma por recortes independentes e controlados.
-- Status: E23.1 concluída no repositório e no Preview; E23.2 concluída operacionalmente sob decisão funcional conservadora, com seu merge e a correção pós-merge concluídos; E23.3 concluída documentalmente; E23.4 em implementação no repositório, com validações locais aprovadas e gates remotos pendentes.
+- Status: E23.1 concluída no repositório e no Preview; E23.2 concluída operacionalmente sob decisão funcional conservadora, com seu merge e a correção pós-merge concluídos; E23.3 concluída documentalmente; E23.4 concluída, com gates locais/remotos, Preview e Production aprovados.
 
 23.1 Atualização de segurança do Next.js
 
@@ -2982,14 +2982,27 @@
 
 23.4.1 Objetivo e status
 - Objetivo: atualizar o Core para a release de segurança Next.js `16.3.8`, alinhando `next`, `eslint-config-next` e o lockfile, com as jornadas e comportamentos atuais preservados.
-- Status: PB 18B.1 e V2 técnica aprovados; a fase `23.4.3` está em implementação. A validação local foi aprovada; PR, checks remotos, Preview e Code Review independente permanecem pendentes.
+- Status: PB 18B.1 concluído pelo PR [#1029](https://github.com/AlcinoAfonso/LP-Factory-10/pull/1029), HEAD avaliado `bf03cc827160d04abac9843493f16843a47844b1`, merge `bd3b8186501384945954be9fd255d9d6c5d42c8f`. Histórico recuperado preservado; gates e Production aprovados.
+
+23.4.2 Registros do recorte
+- Repositório:
+  - Ajustados:
+    - `package.json`
+    - `package-lock.json`
+- Updates:
+  - Aplicados:
+    - `vercel#34`
+- Referências:
+  - Contrato aprovado: `docs/lousa-plano-base-e23-4.md` — seções 1–4.
+  - Patch aplicado e acompanhamento upstream: `docs/vercel-up.md` — `vercel#34`.
+  - Evidências e reviews: [PR #1029](https://github.com/AlcinoAfonso/LP-Factory-10/pull/1029).
 
 23.4.3 Atualização e validação do Core
-- Status: implementação local concluída na branch `codex/e23-4-nextjs-security-20261003`; `npm ci`, resolução de `next`/`eslint-config-next` em `16.3.8` e `npm run check` aprovados. PR e gates remotos ainda pendentes.
+- Status: concluída na branch `codex/e23-4-nextjs-security-20261003`; `npm ci`, resolução de `next`/`eslint-config-next` em `16.3.8`, `npm run check`, Security Checks, build/Preview e smoke autenticado aprovados no HEAD do PR. Code Reviews independente e remoto concluídos sem achados materiais. Production `Ready` no merge, com smoke público e proteção de rota aprovados.
 - Conteúdo:
-  - Atualizar somente `next` e `eslint-config-next` de `16.3.3` para `16.3.8`, com as resoluções necessárias no `package-lock.json`; não alterar React, outras dependências, código de produto ou recursos opcionais.
+  - `next` e `eslint-config-next` atualizados de `16.3.3` para `16.3.8`, com as resoluções necessárias no `package-lock.json`; React, demais dependências, código de produto e recursos opcionais preservados.
   - A release oficial de `16.3.8` inclui sete correções de segurança. Duas outras vulnerabilidades, uma crítica e uma alta, seguem pendentes de coordenação upstream; `vercel#34` permanece ativo para acompanhamento e não representa remediação total.
-  - Validar instalação limpa, checks existentes, build hospedado e Preview proporcional, sem workflow, infraestrutura ou custo incremental novo.
+  - Instalação limpa, checks existentes, build hospedado e Preview proporcional validados, sem workflow, infraestrutura ou custo incremental novo. Imagem: N/A nas superfícies disponíveis; nenhuma instrumentação nova de observabilidade.
 
 24. E24 — Governança e compatibilidade transversal de updates
 - Objetivo: tornar o ciclo semanal de updates rastreável, economicamente delimitado e coerente entre fornecedores, preservando ações operacionais em recortes independentes.
