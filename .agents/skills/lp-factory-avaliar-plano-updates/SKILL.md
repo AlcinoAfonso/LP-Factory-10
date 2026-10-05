@@ -13,7 +13,7 @@ Delegar uma avaliação read-only ao custom agent `gestor-updates` e devolver se
 
 1. Confirmar repositório, worktree, branch e estado Git.
 2. Resolver a fonte sem inferir outro caso:
-   - PR: confirmar número, URL, base, head, head SHA e estado; resolver a fonte aprovada recuperável do mesmo caso; selecionar automaticamente uma lousa somente quando houver exatamente um `docs/lousa-plano-base-*.md` no recorte;
+   - PR: confirmar número, URL, base, head, head SHA e estado; resolver a fonte aprovada recuperável do mesmo caso no PR/Git, conforme 3.1 do Executor;
    - path local: confirmar existência e coerência entre path, conteúdo e caso.
 3. Confirmar o plano completo como recorte padrão; aceitar fase ou recorte parcial somente quando informado explicitamente. Confirme acesso à versão indicada; leia integralmente as fontes pertinentes por referência, transportando conteúdo somente se o destinatário não conseguir resolvê-la ou se o julgamento exigir recebê-lo. Fonte mutável sem recuperação durável exige preservar antes o conteúdo aprovado indispensável, conforme 3.1 do Executor.
 4. Confirmar a existência dos quatro catálogos obrigatórios — `docs/supa-up.md`, `docs/vercel-up.md`, `docs/github-up.md` e `docs/prod-up.md` — e registrar um único `source_repository_sha` imutável do estado do repositório usado para todas as fontes versionadas consultadas pelo Gestor de Updates. Toda fonte versionada deve ser lida nesse SHA; se alguma fonte for deliberadamente fornecida por outra referência, registrar essa exceção explicitamente.

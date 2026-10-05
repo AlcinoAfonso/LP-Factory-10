@@ -13,7 +13,7 @@ Delegar uma avaliação read-only ao custom agent `gestor-automacoes` e devolver
 
 1. Confirmar repositório, worktree, branch e estado Git.
 2. Resolver a fonte sem inferir outro caso:
-   - PR: confirmar número, URL, base, head, head SHA e estado; resolver a fonte aprovada recuperável do mesmo caso; selecionar automaticamente uma lousa somente quando houver exatamente um `docs/lousa-plano-base-*.md` no recorte;
+   - PR: confirmar número, URL, base, head, head SHA e estado; resolver a fonte aprovada recuperável do mesmo caso no PR/Git, conforme 3.1 do Executor;
    - path local: confirmar existência e coerência entre path, conteúdo e caso.
 3. Confirme acesso à versão indicada; leia integralmente as fontes pertinentes por referência, transportando conteúdo somente se o destinatário não conseguir resolvê-la ou se o julgamento exigir recebê-lo. Fonte mutável sem recuperação durável exige preservar antes o conteúdo aprovado indispensável, conforme 3.1 do Executor. Identificar pelo contrato funcional quais entregas ou partes do plano serão automatizadas, sem depender de marcador literal ou posição fixa.
 4. Conferir compatibilidade da entrada com eventual dispensa humana da avaliação formal; chamada de execução incompatível e sem novo pedido humano devolve `Gestor de Automações: N/A — avaliação formal dispensada na v1`, sem iniciar o agente.
