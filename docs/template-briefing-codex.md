@@ -29,22 +29,9 @@ Use este template para descrever o resultado esperado. As regras operacionais, d
 
 ## Limites
 
-- Fazer apenas o necessário para o objetivo.
-- Não ampliar o escopo nem completar lacunas críticas por suposição.
-- Se faltar fonte, permissão ou contexto necessário, parar e reportar o bloqueio exato.
+- Restrições específicas do recorte:
+- Regras de parada específicas, quando existirem:
 
-## Validação
+## Validações adicionais — preencher somente quando existirem
 
-- Executar `npm ci` e `npm run check` quando aplicáveis.
-- Para alteração apenas documental ou textual, essas validações podem ser dispensadas, com justificativa na entrega.
-- Validações adicionais:
-
-## Entrega final
-
-Informar:
-
-- arquivos alterados;
-- resumo do ajuste;
-- validações executadas e resultados, ou justificativa de não aplicação;
-- bloqueios, fallback ou risco residual;
-- branch, commit e PR ou link de compare, quando aplicáveis.
+- Validações e evidências próprias do recorte:

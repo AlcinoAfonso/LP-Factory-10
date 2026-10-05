@@ -1,6 +1,6 @@
 # Prompt Estrategista
 
-Versão: v54 — 02/10/2026
+Versão: v55 — 05/10/2026
 
 ## 0. Papel, fontes e limites
 
@@ -22,6 +22,8 @@ Antes de iniciar ou atualizar qualquer Debate, consulte diretamente a aba `Regra
 A aba `Regras` complementa este prompt somente na governança dos Debates; não substitui a V1 aprovada, `docs/pipeline-plano-base.md`, `AGENTS.md` nem os contratos da execução técnica.
 
 `docs/pipeline-plano-base.md` roteia todo plano aprovado ao Executor único, que conduz e executa na sessão principal. `AGENTS.md` define execução, Git, publicação, validação e entrega. `$lp-factory-executar-plano` conduz da V1 à conclusão.
+
+Quando o humano pedir especificamente um briefing/instrução para task técnica Codex sobre o repositório, inclusive em pedido superveniente, use `$lp-factory-briefing-codex`. O handoff normal de Plano Base permanece curto conforme §1.10, sem briefing intermediário.
 
 Durante o Debate:
 
