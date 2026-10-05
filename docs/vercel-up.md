@@ -772,51 +772,52 @@ No plano Hobby, a Vercel passou a preservar, além do deployment de produção a
 
 ---
 
-## 34 — Next.js September 2026: correção crítica e release agendado *(🟩 Patch disponível; nova release prevista)*
+## 34 — Next.js setembro de 2026: sete correções e advisories upstream pendentes *(🟨 Patch em implementação; acompanhamento ativo)*
 
 2026-09-22
 Catalogado em 2026-09-29
+Atualizado em 2026-10-05
 
 ### Status no Projeto
 
-- Status: patch ainda não aplicado; `package.json` e `package-lock.json` fixam `next` e `eslint-config-next` em `16.3.3`. O release `16.3.6` corrige uma vulnerabilidade crítica na implementação Node.js de `ImageResponse` para versões `>=16.2.0 <16.3.6`.
+- Status: a branch do PB 18B.1 fixa `next` e `eslint-config-next` em `16.3.8`; `npm ci`, confirmação das versões e `npm run check` passaram localmente. O PR e os gates remotos ainda estão pendentes. A release `16.3.8` corrige sete vulnerabilidades divulgadas em setembro. Duas vulnerabilidades adicionais — uma crítica e uma alta — seguem pendentes de coordenação upstream.
 - Evidência de uso: busca no código versionado não encontrou `ImageResponse`, `next/og`, `@vercel/og` ou Satori. Isso reduz a exposição observável ao caminho descrito, mas não equivale a confirmar segurança de toda a dependência ou de futuros usos.
 - Natureza de uso: segurança transversal da stack Next.js atual.
 - Relação com a stack: patch da dependência existente; não requer nova infraestrutura, plano, serviço ou recurso opt-in.
-- Horizonte: Starter, revisão de segurança imediata. A release `16.3.7` está anunciada para 30/09/2026, mas ainda não estava disponível nesta fotografia.
+- Horizonte: Starter, revisão de segurança imediata; a atualização permanece sujeita aos checks, Preview e Code Review independente previstos no PB 18B.1.
 
 ### Descrição
 
-O Next.js publicou em 22/09/2026 o patch fora do ciclo `16.3.6` para o problema crítico de execução remota de código em `ImageResponse` no runtime Node.js. Em 23/09 anunciou `16.3.7` para 30/09, com correções planejadas para nove vulnerabilidades; impacto e instruções completos só serão conhecidos quando a release sair.
+Em 30/09/2026, o Next.js publicou `16.3.8` para a linha 16.3, junto da `15.5.27` para a linha 15.5. A release lista sete correções de segurança: uma alta, cinco médias e uma baixa. O aviso oficial informa que duas vulnerabilidades adicionais — uma crítica e uma alta — ainda aguardam coordenação upstream; a atualização deste item não representa remediação total.
 
 ### Valor para o Projeto
 
-- Mantém a dependência principal fora da faixa afetada pelo problema já divulgado.
+- Aplica à dependência existente as sete correções incluídas na release `16.3.8`.
 - Separa o patch de segurança de Instant Navigations e Cache Components, que permanecem condicionados em `vercel#29`.
-- Permite planejar a release anunciada sem afirmar que uma versão futura já corrigiu o projeto.
+- Mantém explícitas as duas vulnerabilidades ainda pendentes de correção upstream.
 
 ### Ações Recomendadas
 
-1. Avaliar em recorte de segurança a atualização mínima para `16.3.6` ou versão corrigida superior já publicada no momento da execução, alinhando `eslint-config-next` e lockfile.
-2. Conferir a publicação e os advisories de `16.3.7` em 30/09; decidir se o recorte deve incluir essa versão conforme o momento da execução, sem adiar indevidamente o patch já disponível.
-3. Validar instalação limpa, `npm run check`, Security Checks, build e Preview, com foco em rotas, Auth, SSR, imagens e navegação.
-4. Não ativar Cache Components, Instant Navigations ou outras capacidades opcionais como parte do patch.
+1. Concluir o PB 18B.1 na mesma branch e PR: checks de segurança, build/Preview hospedados, smoke proporcional e Code Review independente no HEAD exato; depois do merge, confirmar o deploy Production já configurado.
+2. Manter ativos os advisories adicionais até publicação upstream de correções e avaliação no catálogo; não afirmar remediação total por causa do patch `16.3.8`.
+3. Não ativar Cache Components, Instant Navigations ou outras capacidades opcionais como parte do patch.
 
 ### Dependências, riscos e limite
 
 - O patch da dependência existente não exige custo incremental de plano ou serviço; o custo de execução técnica e teste precisa ser proporcional.
-- O impacto exato dos nove problemas anunciados para 30/09 ainda não foi publicado nesta fotografia.
-- Não alterar dependências, código, configuração, deployment ou plano nesta catalogação.
-- Este registro orienta prioridade, mas não autoriza implementação.
+- Permanecem duas vulnerabilidades aguardando coordenação upstream; o escopo do PB 18B.1 não as fecha.
+- `Security Checks` valida padrões de fluxo no código e não prova, isoladamente, a remediação de advisories de dependências.
+- O item orienta o acompanhamento; a autorização de implementação está registrada no Debate 18B, seção 3.2.
 
 ### Critério de encerramento
 
-- Versão corrigida publicada aplicada e validada no projeto, com evidência de lockfile, checks e Preview; eventuais advisories posteriores tratados no recorte competente; reconciliação documental pelo Prompt ABC concluída na `main` quando houver delta.
+- Patch `16.3.8` mergeado e validado pelos gates do PB 18B.1, com Preview e deploy Production prontos; registro do merge e das evidências no Debate e no roadmap. Manter os dois advisories upstream identificados como pendentes até avaliação própria.
 
 ### Fontes Oficiais
 
 - [Next.js — Next.js Security Update for a Critical Upstream Issue (22/09/2026)](https://nextjs.org/blog/nextjs-security-update-september-22-2026)
-- [Next.js — Upcoming Next.js September Security Release (23/09/2026)](https://nextjs.org/blog/upcoming-nextjs-security-release-september-2026)
+- [Next.js — Upcoming Next.js September Security Release (atualizado em 30/09/2026)](https://nextjs.org/blog/upcoming-nextjs-security-release-september-2026)
+- [Next.js — release 16.3.8](https://github.com/vercel/next.js/releases/tag/v16.3.8)
 
 ---
 

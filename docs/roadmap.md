@@ -2902,7 +2902,7 @@
 
 23. E23 — Segurança e governança transversal da plataforma
 - Objetivo: remover riscos prioritários de segurança e governança da plataforma por recortes independentes e controlados.
-- Status: E23.1 concluída no repositório e no Preview; E23.2 concluída operacionalmente sob decisão funcional conservadora, com seu merge e a correção pós-merge concluídos; E23.3 concluída documentalmente; E23.4 planejada, com V2 aprovada para implementação.
+- Status: E23.1 concluída no repositório e no Preview; E23.2 concluída operacionalmente sob decisão funcional conservadora, com seu merge e a correção pós-merge concluídos; E23.3 concluída documentalmente; E23.4 em implementação no repositório, com validações locais aprovadas e gates remotos pendentes.
 
 23.1 Atualização de segurança do Next.js
 
@@ -2982,10 +2982,10 @@
 
 23.4.1 Objetivo e status
 - Objetivo: atualizar o Core para a release de segurança Next.js `16.3.8`, alinhando `next`, `eslint-config-next` e o lockfile, com as jornadas e comportamentos atuais preservados.
-- Status: PB 18B.1 e V2 técnica aprovados; a fase `23.4.3` está planejada e ainda não declara implementação ou validação.
+- Status: PB 18B.1 e V2 técnica aprovados; a fase `23.4.3` está em implementação. A validação local foi aprovada; PR, checks remotos, Preview e Code Review independente permanecem pendentes.
 
 23.4.3 Atualização e validação do Core
-- Status: planejada, sujeita à conclusão dos gates técnicos do PB 18B.1.
+- Status: implementação local concluída na branch `codex/e23-4-nextjs-security-20261003`; `npm ci`, resolução de `next`/`eslint-config-next` em `16.3.8` e `npm run check` aprovados. PR e gates remotos ainda pendentes.
 - Conteúdo:
   - Atualizar somente `next` e `eslint-config-next` de `16.3.3` para `16.3.8`, com as resoluções necessárias no `package-lock.json`; não alterar React, outras dependências, código de produto ou recursos opcionais.
   - A release oficial de `16.3.8` inclui sete correções de segurança. Duas outras vulnerabilidades, uma crítica e uma alta, seguem pendentes de coordenação upstream; `vercel#34` permanece ativo para acompanhamento e não representa remediação total.
