@@ -3004,6 +3004,16 @@
   - A release oficial de `16.3.8` inclui sete correções de segurança. Duas outras vulnerabilidades, uma crítica e uma alta, seguem pendentes de coordenação upstream; `vercel#34` permanece ativo para acompanhamento e não representa remediação total.
   - Instalação limpa, checks existentes, build hospedado e Preview proporcional validados, sem workflow, infraestrutura ou custo incremental novo. Imagem: N/A nas superfícies disponíveis; nenhuma instrumentação nova de observabilidade.
 
+23.5 Retirada da capacidade GraphQL não utilizada
+
+23.5.1 Objetivo e status
+- Objetivo: retirar a capacidade GraphQL não utilizada do ambiente, preservando REST/Data API, Auth, banco, RLS/policies e jornadas atuais.
+- Status: PB 18B.2 aprovado no Debate 18B, seção 4.4, sob Supervisão Autônoma; preparação em andamento, sem retirada aplicada.
+
+23.5.3 Retirar e validar a capacidade GraphQL não utilizada
+- Status: pendente de implementação, validação e aplicação pelo fluxo seguro vigente.
+- Conteúdo: comprovar ausência de consumidor e dependência material antes da retirada; validar indisponibilidade pública do GraphQL e preservação das jornadas representativas após a aplicação, sem remoção colateral, custo incremental ou infraestrutura nova.
+
 24. E24 — Governança e compatibilidade transversal de updates
 - Objetivo: tornar o ciclo semanal de updates rastreável, economicamente delimitado e coerente entre fornecedores, preservando ações operacionais em recortes independentes.
 - Status: E24.1 concluída; E24.2 implementada e validada no repositório, com entrega técnica sob supervisão Autônoma.
