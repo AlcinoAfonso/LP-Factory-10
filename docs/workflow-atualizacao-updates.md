@@ -120,7 +120,7 @@ Fontes secundárias podem apoiar, mas não substituir a fonte oficial.
 
 ## 5. Relatório obrigatório
 
-Os itens 1 a 10 compõem o relatório de cada catálogo. O item 11 é produzido uma única vez, após a conclusão e a auditoria dos quatro ciclos, no mesmo fechamento entregue ao usuário.
+Os itens 1 a 10 compõem o relatório de cada catálogo. O item 11 é produzido uma única vez, após os quatro ciclos, a cobertura OpenAI, a auditoria e a confirmação dos merges na `main` ou da ausência de delta, no fechamento entregue ao usuário.
 
 1. Veredito.
 2. Fontes consultadas.
@@ -171,6 +171,9 @@ Os itens 1 a 10 compõem o relatório de cada catálogo. O item 11 é produzido 
    - confirmar que novidade, modernidade ou distância do MVP não determinaram isoladamente a decisão.
    - confirmar o gate de zero custo incremental para cada recomendação de implementação, dependente de recorte ou transversal.
 11. Fechamento consolidado da execução:
+   - organizar o relatório final em dois capítulos numerados, preservando os requisitos de conteúdo abaixo:
+     - `1. Atualizações incorporadas`: apresentar o que mudou nos catálogos e no snapshot OpenAI, por ID quando aplicável e PR mergeado, incluindo ajustes, adições, arquivamentos e justificativas de ausência de delta; reunir neste capítulo as evidências e o estado da rodada;
+     - `2. Pendências transversais e ações recomendadas`: reapresentar todas as pendências transversais ativas, inclusive as anteriores, indicando o que se recomenda implementar, configurar ou revisar, motivo, prioridade, dependências e momento ou gatilho; separar ações recomendadas agora das condicionais ou ainda não validadas, sem autorizar implementação nem dispensar o gate econômico. Quando não houver pendências transversais, registrar objetivamente essa ausência;
    - informar o identificador da rodada e o SHA inicial comum;
    - informar o estado final persistido da rodada, o horário UTC e a referência de conclusão gravados nos corpos de todos os PRs ou, quando nenhum PR existir, no tag anotado remoto `<identificador>-completed`;
    - listar drafts anteriores detectados e confirmar que não foi criado segundo draft para o mesmo alvo e rodada;
