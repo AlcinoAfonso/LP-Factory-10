@@ -18,7 +18,7 @@ Na execução, receba a chamada decidida pelo Executor (§3.2); valide a entrada
 
 Inicie exatamente um subagent `analista` com `fork_turns=none`, quando disponível, em `passagem_independente`. Entregue a questão e a finalidade recebidas e somente as fontes permitidas: V1, V2, plano conceitual ou N/A, decisões, roadmap e fontes técnicas. Não entregue, cite ou exponha pareceres, confrontos ou matriz por prompt, histórico ou anexos; em contaminação, descarte a resposta e reinicie uma única instância limpa.
 
-Preserve integralmente a avaliação e conclusão. Sem necessidade de auditoria posterior, essa avaliação suficiente libera implementação somente com `aprovado para implementar` ou a conclusão de compatibilidade abaixo.
+Preserve integralmente a avaliação e conclusão. A conclusão não amplia o recorte efetivamente avaliado nem dispensa os gates restantes; avaliação focal não aprova a V2 integral. Sem necessidade de auditoria posterior, avance nesse recorte somente com `aprovado para implementar` ou a conclusão de compatibilidade abaixo.
 
 ## Auditoria da incorporação de pareceres
 
