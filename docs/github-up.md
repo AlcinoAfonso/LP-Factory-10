@@ -549,6 +549,12 @@ O runner Ubuntu 26.04 está geralmente disponível em x64 e arm64. Durante a jan
 - Natureza de uso: detecção de credencial Supabase exposta em código ou histórico público.
 - Relação com a stack: complemento específico de `github#13`; este item trata de alertas de secret scanning para tokens Supabase e não presume bloqueio pela push protection.
 - Horizonte: Starter, se a correspondência do padrão for confirmada no estado público atual.
+- Estado atual: detecção oficialmente disponível; aplicabilidade exata ao segredo e à configuração do repositório ainda não confirmada.
+- Ação pendente: executar a verificação read-only delimitada no Debate 18C, sem acessar o valor do segredo nem alterar Settings, workflow ou credencial.
+- Prioridade: média; a verificação é recomendada no ciclo atual por ser de segurança e não exigir implementação, mas não há evidência de exposição ou incidente.
+- Motivo da permanência: o repositório usa um token Supabase e a correspondência aos novos padrões não pode ser inferida pelo nome do secret.
+- Gatilho: disponibilidade dos detectores no repositório público e autorização do Debate 18C para inspecionar somente metadados de configuração e alertas.
+- Critério de encerramento: confirmar e registrar, sem revelar o segredo, se o Secret Scanning está ativo e se os novos padrões são aplicáveis; reconciliar a decisão no documento competente pelo Prompt ABC, ou arquivar o item com evidência de inaplicabilidade.
 
 ### Descrição
 
