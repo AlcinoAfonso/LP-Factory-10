@@ -750,51 +750,14 @@ Reavaliado em 2026-08-04
 
 ---
 
-## 39 — Retirada de `pg_graphql` não utilizado *(🟦 Estável; correção pendente)*
+## 39 — Retirada de `pg_graphql` não utilizado *(Histórico; retirado do catálogo ativo)*
 
 2026-02-15  
 Atualizado em 2026-08-03
 
-### Status no Projeto
-
-- Status: Ausência de consumidor confirmada no repositório; retirada do ambiente ainda pendente.
-- Evidência: busca no SHA inicial por `/graphql/v1`, `graphql_public`, `pg_graphql`, GraphiQL, Relay e codegen não encontrou consumidor de runtime; as ocorrências restantes estão no próprio catálogo, em configuração e inventário/baseline.
-- Estado conhecido: o levantamento anterior encontrou `pg_graphql` 1.5.11 e `graphql_public.graphql` no projeto Supabase.
-- Lacuna documental: a remoção deve ser executada em fase própria e depois refletida em `docs/schema.md` e `docs/platform-config.md`.
-
-### Descrição
-
-`pg_graphql` fornece a Data API GraphQL do Supabase. O projeto usa PostgREST/Data API REST e não possui consumidor GraphQL. A mudança de introspecção da versão 1.6.0 não cria motivo para manter a extensão.
-
-### Valor para o Projeto
-
-- Reduz superfície exposta e dependência sem uso.
-- Evita drift entre configuração local, inventário e ambiente remoto.
-
-### Limites desta rodada
-
-- Não alterar banco, migration, schema, configuração ou runtime.
-- Não considerar a extensão removida até apply e validação no ambiente alvo.
-- Não reutilizar o ID após a retirada futura do catálogo.
-
-### Ações Recomendadas
-
-1. Tratar a retirada em recorte técnico próprio com nova migration versionada.
-2. Revisar `supabase/config.toml`, inventário e documentação no mesmo recorte.
-3. Após apply e validação, remover o item do catálogo ativo preservando a lacuna `supa#39`.
-
-### Fontes Oficiais
-
-- [Supabase Changelog — pg_graphql 1.6.0: introspection disabled by default](https://supabase.com/changelog)
-- [Supabase Features — Auto-generated GraphQL API](https://supabase.com/features)
-
-### Registro (Tipo A — Plataforma)
-
-- Status: CORREÇÃO PENDENTE
-- Verificado em: 2026-08-03
-- Ambiente: repositório no SHA inicial + estado Supabase registrado na rodada anterior.
-- Evidência: busca de uso concluída; mutação não autorizada neste workflow.
-- Observação: a catalogação não implementa a retirada.
+- Estado final: capacidade retirada e validada no PB 18B.2 / E23.5, pelo [PR #1031](https://github.com/AlcinoAfonso/LP-Factory-10/pull/1031) e apply seletivo concluído. REST/Data API, Auth e RLS preservados.
+- Residência vigente: `docs/schema.md` — seção 6.2; `docs/platform-config.md` — seções 2.3 e 4.1; `docs/roadmap.md` — seção 23.5.
+- Rastreabilidade: o levantamento anterior identificou `pg_graphql` 1.5.11 sem consumidor. O item sai do catálogo ativo; a lacuna `supa#39` permanece identificável e não pode ser reutilizada. Registros das rodadas anteriores permanecem históricos.
 
 ---
 

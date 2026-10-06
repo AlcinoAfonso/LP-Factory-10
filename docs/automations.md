@@ -203,7 +203,7 @@ Objetivo:
 Aplicar migrations versionadas do Supabase após merge e autorização, sem usar o SQL Editor para alterações de schema. O apply automático integral está suspenso durante o backlog E10.10.
 
 Status:
-Implementada; os applies seletivos E10.11 e E22.7 foram concluídos sob autorizações próprias. O escopo `e22_7_only` aplicou com sucesso somente a migration `20261001030000_e22_7_retire_factual_authority.sql` após o merge. As duas migrations E10.10 permanecem excluídas e não serão aplicadas pelo escopo E22.7; o fluxo automático integral permanece suspenso.
+Implementada; os applies seletivos E25.1, E10.11, E22.7 e E23.5 foram concluídos sob autorizações próprias. O escopo `e23_5_only` aplicou somente a migration E23.5 após merge e dry-run seletivo, com gate restaurado a `false`; SHA, run e ledger final constam em `docs/platform-config.md` — seção 2.3. As duas migrations E10.10 permanecem excluídas; o fluxo automático integral permanece suspenso.
 
 Acesso:
 GitHub → Actions → workflow `pipeline-supabase-apply-migrations`

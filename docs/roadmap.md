@@ -3008,11 +3008,39 @@
 
 23.5.1 Objetivo e status
 - Objetivo: retirar a capacidade GraphQL não utilizada do ambiente, preservando REST/Data API, Auth, banco, RLS/policies e jornadas atuais.
-- Status: PB 18B.2 aprovado no Debate 18B, seção 4.4, sob Supervisão Autônoma; preparação em andamento, sem retirada aplicada.
+- Status: PB 18B.2 concluído pelo PR [#1031](https://github.com/AlcinoAfonso/LP-Factory-10/pull/1031), HEAD avaliado `06ddd2a8f9f940f7abfcb1cd2aabb7a752b4bf8b`, merge `a220a39e94759c471fdb679dc11909203748bc13`; apply seletivo e Production aprovados sob Supervisão Autônoma.
+
+23.5.2 Registros do recorte
+- Banco:
+  - Excluídos:
+    - `pg_graphql`
+    - `graphql.resolve`
+  - Ajustados:
+    - `graphql_public.graphql`
+- Repositório:
+  - Criados:
+    - `supabase/migrations/20261005170954_e23_5_retire_unused_graphql.sql`
+    - `supabase/tests/e23_5_retire_unused_graphql.fixture.sql`
+    - `supabase/tests/e23_5_retire_unused_graphql.proof.sh`
+    - `supabase/tests/e23_5_retire_unused_graphql.snapshot.sql`
+    - `supabase/tests/e23_5_retire_unused_graphql.test.sql`
+  - Ajustados:
+    - `supabase/config.toml`
+    - `.github/workflows/e10-11-sql-proof.yml`
+    - `.github/workflows/pipeline-supabase-apply-migrations.yml`
+- Updates:
+  - Aplicados:
+    - `supa#39`
+- Referências:
+  - Contrato aprovado: Debate 18B — seção 4.4, congelada no commit `b8d37845be7ae89932f5f10a6f3aa3d410dc8445`.
+  - Estado do banco: `docs/schema.md` — seção 6.2.
+  - Apply seletivo e plataforma: `docs/platform-config.md` — seções 2.3 e 4.1; `docs/automations.md` — seção 3.6.
+  - Update retirado do catálogo ativo: `docs/supa-up.md` — `supa#39`.
+  - Pareceres, V2, gates e provas: [PR #1031](https://github.com/AlcinoAfonso/LP-Factory-10/pull/1031).
 
 23.5.3 Retirar e validar a capacidade GraphQL não utilizada
-- Status: pendente de implementação, validação e aplicação pelo fluxo seguro vigente.
-- Conteúdo: comprovar ausência de consumidor e dependência material antes da retirada; validar indisponibilidade pública do GraphQL e preservação das jornadas representativas após a aplicação, sem remoção colateral, custo incremental ou infraestrutura nova.
+- Status: concluída; instalação limpa, check, Security Checks, prova SQL, guardas de apply, Preview/smoke autenticado e Code Review independente aprovados no HEAD corrente; Production `Ready` e smoke Auth/REST aprovados após o apply.
+- Conteúdo: ausência de consumidor e dependência externa comprovada; retirada transacional com bloqueio atômico de dependente inesperado e retomada idempotente. Os papéis públicos recebem somente o stub desabilitado, sem dados GraphQL; owners/grants dos schemas gerenciados, metadados, policies e ACLs fora do GraphQL ficaram equivalentes. Sem nova automação, job, infraestrutura ou custo incremental.
 
 24. E24 — Governança e compatibilidade transversal de updates
 - Objetivo: tornar o ciclo semanal de updates rastreável, economicamente delimitado e coerente entre fornecedores, preservando ações operacionais em recortes independentes.
