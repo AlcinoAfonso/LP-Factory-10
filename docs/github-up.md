@@ -538,6 +538,49 @@ O runner Ubuntu 26.04 está geralmente disponível em x64 e arm64. Durante a jan
 
 ---
 
+## github#16 — Detectores do GitHub Secret Scanning para tokens Supabase *(🟨 Detecção disponível; aplicabilidade exata pendente)*
+
+2026-10-05
+
+### Status no Projeto
+
+- Status: potencialmente aplicável ao repositório público; correspondência do segredo atual e configuração efetiva do Secret Scanning ainda não foram validadas.
+- Evidência: `docs/platform-config.md` registra `SUPABASE_ACCESS_TOKEN` como segredo usado somente pelo workflow de apply de migrations; `.github/workflows/pipeline-supabase-apply-migrations.yml` o injeta no passo de apply. O valor real e sua classe de token não foram inspecionados.
+- Natureza de uso: detecção de credencial Supabase exposta em código ou histórico público.
+- Relação com a stack: complemento específico de `github#13`; este item trata de alertas de secret scanning para tokens Supabase e não presume bloqueio pela push protection.
+- Horizonte: Starter, se a correspondência do padrão for confirmada no estado público atual.
+
+### Descrição
+
+Em 05/10/2026, o GitHub adicionou detectores para `supabase_oauth_access_token` e `supabase_scoped_personal_access_token`. O changelog descreve detecção automática desses tipos no repositório; não confirma que esses padrões estejam cobertos por push protection. No LP Factory 10 há um secret chamado `SUPABASE_ACCESS_TOKEN`, mas o nome não comprova que seu valor pertença a uma das duas classes detectadas.
+
+### Valor para o Projeto
+
+- Pode gerar alerta se um token Supabase compatível vazar para o repositório público.
+- Aproveita capacidade de detecção da plataforma, sem instalar scanner, workflow ou dependência.
+- Mantém explícita a diferença entre alerta pós-detecção e bloqueio preventivo de push.
+
+### Ações Recomendadas
+
+1. Manter o token apenas no secret store do GitHub e nos passos explicitamente autorizados.
+2. Em revisão read-only de segurança, confirmar se o Secret Scanning está ativo e se a configuração reconhece esses padrões, sem revelar nem testar o valor do segredo.
+3. Se ocorrer exposição, revogar/rotacionar o token pela fonte autorizada e tratar o incidente; remoção do commit, isoladamente, não basta.
+
+### Dependências, riscos e limites
+
+- A correspondência depende do formato do token efetivamente armazenado, que não foi examinado.
+- Detecção não comprova bloqueio pré-push, nem substitui permissões mínimas, rotação ou proteção do secret store.
+- O changelog informa alertas para secrets de usuário em repositórios públicos ou privados; repositório público permite secret scanning sem custo incremental de plano.
+- Não criar credencial, testar com valor real ou fictício, alterar Settings ou modificar workflow nesta rodada.
+
+### Fonte Oficial
+
+- [GitHub Changelog — Secret scanning adds detectors for Lovable, Supabase, and more (05/10/2026)](https://github.blog/changelog/2026-10-05-secret-scanning-adds-detectors-for-lovable-supabase-and-more)
+- [GitHub Docs — Secret scanning](https://docs.github.com/en/code-security/concepts/secret-security/secret-scanning)
+- [GitHub Docs — Supported secret scanning patterns](https://docs.github.com/en/code-security/reference/secret-security/supported-secret-scanning-patterns)
+
+---
+
 ## Registro da rodada — GitHub Update — 10/08/2026
 
 ### Updates ajustados ou incorporados
