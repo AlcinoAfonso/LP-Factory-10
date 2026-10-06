@@ -234,7 +234,7 @@ Value Rules permitem informar ao sistema de anúncios diferenças de valor por c
 
 ---
 
-## 9 — Google Ads Text Guidelines *(🧪 Beta; migração para AI Max anunciada)*
+## 9 — Google Ads Text Guidelines *(🧪 Beta; migração AI Max anunciada desde set/2026; status da conta não validado)*
 2025-10-14  
 Atualizado em 2026-08-10
 
@@ -247,7 +247,7 @@ Atualizado em 2026-08-10
 ### Descrição  
 Recurso em beta no nível da campanha para orientar assets criados exclusivamente por Text Customization em campanhas Performance Max e Search, incluindo restrições de termos, mensagens e tom. Text Customization precisa estar habilitado para que as diretrizes tenham efeito.
 
-Em Search, Text Customization passa a operar dentro de AI Max. A migração anunciada exige revisar a configuração completa da campanha: desabilitar Text Customization interrompe os assets gerados e também desabilita Final URL Expansion quando esta estiver ativa.
+Em Search, Text Customization é uma configuração dentro de AI Max. A migração automática anunciada para setembro de 2026 torna atual a necessidade de verificar, em conta real autorizada, se uma campanha elegível já migrou. Desabilitar Text Customization interrompe os assets gerados e também desabilita Final URL Expansion quando esta estiver ativa.
 
 ### Valor para o Projeto  
 - Pode preservar restrições de marca em campanhas que usem geração automática de texto.
@@ -259,7 +259,7 @@ Em Search, Text Customization passa a operar dentro de AI Max. A migração anun
 ### Ações Recomendadas
 
 1. Usar somente em campanha real com Text Customization habilitado.
-2. Antes de setembro de 2026, auditar campanhas Search existentes que usem a capacidade e revisar explicitamente o upgrade para AI Max, incluindo Final URL Expansion.
+2. Desde setembro de 2026, se houver campanha Search real com Text Customization, confirmar o estado da migração para AI Max e revisar explicitamente Text Customization e Final URL Expansion; não presumir que o rollout atingiu uma campanha específica.
 3. Validar no relatório de assets o texto efetivamente veiculado e remover variações inadequadas; não tratar automação, guidelines ou avaliação de força do anúncio como substitutos de revisão humana.
 4. Não tratar o beta como contrato garantido nem como recurso da landing page.
 5. Não habilitar AI Max, alterar campanha ou ampliar escopo por causa deste registro.
@@ -792,6 +792,58 @@ Avaliar somente quando houver:
 
 - [Vercel Changelog — Chat SDK adds Instagram adapter](https://vercel.com/changelog/chat-sdk-adds-instagram-adapter)
 - [Meta for Developers — Instagram Messaging API](https://developers.facebook.com/docs/instagram-platform/instagram-api-with-instagram-login/messaging-api/)
+
+---
+
+## 25 — Agente pessoal de IA para operação de pequenas empresas *(🟨 Avaliação condicional; disponibilidade regional pendente)*
+
+2026-09-29
+Catalogado em 2026-10-06
+
+### Status no Projeto
+
+- Status: não implementado; oportunidade externa condicional para apoiar a operação e o marketing de pequenos negócios.
+- Evidência: o repositório não contém referência, conector, integração ou fluxo para Muse; não há conta Meta de cliente conectada neste ciclo.
+- Natureza de uso: dependente de recorte de serviço e canal, como alternativa externa que pode complementar ou competir com serviços de comunicação gerenciada.
+- Relação com a stack e o produto: distinto de `prod#23`, que trata de agentes voltados a conversas com clientes via canais Meta; Muse é um agente para o próprio operador do negócio, com conectores a ferramentas de trabalho, contas sociais e anúncios.
+- Horizonte sugerido: Pro ou Ultra, sujeito à decisão do Estrategista; elegibilidade regional e planos precisam ser confirmados.
+
+### Descrição
+
+A Meta anunciou Muse for Small Business em 29/09/2026. O agente recebe objetivos de negócio, pode analisar contas profissionais do Instagram, Facebook Pages e contas de anúncios Meta, e conecta ferramentas externas como Canva, QuickBooks, Shopify, Stripe, Slack e outras. A Meta informa que a oferta inicial de Muse está disponível nos Estados Unidos e Canadá; a maior parte do uso é gratuita, com planos pagos para necessidades adicionais. Publicar, enviar ou gastar exige aprovação da pessoa usuária.
+
+### Valor para o Projeto
+
+- Oferece um benchmark oficial de agente pessoal conectado à base de trabalho de pequenos negócios.
+- Pode complementar serviços gerenciados de planejamento, análise de campanhas e preparação de conteúdo, se houver disponibilidade no mercado atendido.
+- Ajuda a comparar operação assistida no ambiente do cliente com comunicação preparada pela LP Factory, sem duplicar o agente de atendimento a clientes de `prod#23`.
+
+### Gatilho futuro de avaliação
+
+Avaliar apenas quando:
+
+1. a oferta estiver oficialmente disponível no mercado e região dos clientes-alvo;
+2. um serviço aprovado exigir análise recorrente de contas sociais, campanhas ou ferramentas de negócio;
+3. permissões, fontes de dados, retenção, custos e aprovação humana para publicar, enviar ou gastar estiverem claros;
+4. uma comparação concreta mostrar vantagem sobre os fluxos manuais e serviços existentes.
+
+### Dependências, riscos e limites
+
+- Depende da disponibilidade regional, dos conectores e das condições comerciais da Meta, que podem mudar.
+- A conexão de contas pode compartilhar dados comerciais e de clientes com um fornecedor externo; escopos e retenção exigem avaliação própria.
+- Planos pagos existem para usos adicionais; gratuidade e custo incremental para cada cliente não foram validados.
+- A aprovação humana descrita pela Meta não substitui autorização, revisão e responsabilidade definidas pela LP Factory.
+- Não conectar conta, criar integração, campanha, agente ou automação por causa deste registro.
+
+### Ações Recomendadas
+
+1. Manter como alternativa e referência de mercado condicional; sem ação operacional agora.
+2. Reavaliar quando houver disponibilidade comprovada no Brasil e demanda de cliente por agente de operação de negócio.
+3. Comparar com `prod#23` sem fundir os escopos: agente interno do operador versus agente externo de atendimento a clientes.
+
+### Fonte Oficial
+
+- [Meta — The Future Is for Everyone: Muse for Small Business (29/09/2026)](https://about.fb.com/news/2026/09/introducing-muse-small-business/)
 
 ---
 
