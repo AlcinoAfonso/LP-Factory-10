@@ -1482,6 +1482,12 @@
 • Migration de origem: supabase/migrations/0009__e10_5_6_deterministic_taxon_matching.sql
 • Rollback: não remove automaticamente a extensão, pois pode ser reutilizada por outros recursos
 
+6.2 GraphQL desabilitado
+• `pg_graphql` e `graphql.resolve` ausentes após aplicação de `supabase/migrations/20261005170954_e23_5_retire_unused_graphql.sql`.
+• Schemas `graphql` e `graphql_public`, seus owners/grants e os helpers gerenciados `extensions.grant_pg_graphql_access` e `extensions.set_graphql_placeholder` preservados.
+• `graphql_public.graphql` permanece como stub gerenciado: `anon`, `authenticated` e `service_role` recebem somente `pg_graphql extension is not enabled.`, sem dados GraphQL.
+• Metadados, funções, policies e ACLs de `public`, `auth`, `storage` e `extensions` preservados; REST/Data API e Auth permanecem funcionais.
+
 99. Changelog
 v1.0.69 (20/09/2026) — E10.9 PB1: registradas as duas residências conversacionais repo-only, constraints, RLS sem policies, ACLs mínimas, trigger de updated_at e cinco RPCs SECURITY DEFINER para início, identidade, reserva, append e conclusão transacional sem entitlement; apply hospedado permanece pós-merge.
 v1.0.65 (02/09/2026) — SV-PR03: marcado o agregado físico E19.5 como infraestrutura herdada; configurações continuam lidas pelo lifecycle administrativo do catálogo e os demais RPCs, materializações, aprovação e Storage permanecem inertes, sem DDL, migration, dado ou ACL alterado.
