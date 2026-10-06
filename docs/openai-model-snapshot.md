@@ -2,7 +2,7 @@
 
 ## 1. Autoridade, validade e fontes
 
-- Data da fotografia técnica: 29/09/2026; baseline anterior de 14/09/2026, reorganizado em 22/09/2026.
+- Data da fotografia técnica: 06/10/2026; baseline anterior de 14/09/2026, reorganizado em 22/09/2026.
 - Objetivo: manter uma fotografia técnica itemizada e rastreável das capacidades OpenAI relevantes ao LP Factory 10.
 - Este documento não define sozinho modelo, `reasoning.effort`, tool, arquitetura ou configuração de produção e não autoriza adoção.
 - A configuração efetiva permanece em `docs/platform-config.md`; a governança das decisões por workload permanece em `docs/gestor-automations.md` e no caso competente do roadmap.
@@ -18,6 +18,7 @@
   - `https://developers.openai.com/api/docs/models/gpt-6-luna`
   - `https://developers.openai.com/api/docs/models/gpt-6-sol`
   - `https://developers.openai.com/api/docs/models/gpt-6-astra`
+  - `https://developers.openai.com/api/docs/models/gpt-6.1-sol`
   - `https://developers.openai.com/api/docs/changelog`
   - `https://developers.openai.com/api/docs/guides/agents-api/overview`
   - `https://developers.openai.com/api/docs/guides/latest-model?model=gpt-6-astra`
@@ -76,11 +77,13 @@
 | `OAI-M06` | `gpt-6-luna` | configuração operacional de `OAI-W07` em Preview e Production | 1,05M | 128k | `none`, `low`, `medium`, `high`, `xhigh`, `max` | operacional em `OAI-W07` | documentação específica do modelo, registry e fontes operacionais do projeto |
 | `OAI-M07` | `gpt-6-sol` | alternativa técnica avaliada focalmente para `OAI-W07` | 1,05M | 128k | `none`, `low`, `medium`, `high`, `xhigh`, `max` | documentada | documentação específica do modelo e PR #978 |
 | `OAI-M08` | `gpt-6-astra` | tarefas complexas somente mediante comparação própria | 1,05M | 128k | `low`, `medium`, `high`, `xhigh`, `max` | documentada | documentação específica do modelo |
+| `OAI-M09` | `gpt-6.1-sol` | trabalho profissional complexo; candidato ainda não comparado para `OAI-W07` | 1,05M | 128k | `low`, `medium`, `high`, `xhigh`, `max` | documentada; `medium` é o padrão | documentação específica do modelo e Model guidance |
 
 - Luna, Terra e Sol documentam Responses API, function calling, Structured Outputs e reasoning tokens.
 - Em GPT-5.6, o effort padrão documentado é `medium` quando omitido; comparações devem registrar o valor explicitamente.
 - Para `gpt-5.4-mini`, o padrão documentado é `none` quando o parâmetro é omitido.
 - `gpt-4.1-mini` é um modelo não reasoning; a referência operacional externa `OAI-W04` não deve receber `reasoning.effort`.
+- `gpt-6.1-sol` requer Responses API para tool calling; Chat Completions não oferece tools para esse modelo. Não suporta `none` nem `minimal`; preservar o effort atual e comparar somente em recorte autorizado.
 - Limites e capacidades são voláteis e devem ser reconfirmados na fonte oficial focal antes de uma decisão material.
 - A documentação da família GPT-6 indica entrada textual e visual, saída textual e limite máximo de entrada de 922k tokens; capacidade técnica não altera os gates de cada workload.
 
@@ -162,9 +165,9 @@
 
 - Natureza: decomposição de trabalho complexo em frentes independentes com síntese.
 - Aplicabilidade: tarefas realmente separáveis que se beneficiem de execução paralela.
-- Maturidade: condicional.
-- Limite: não presumir ganho quando as etapas forem fortemente dependentes.
-- Fontes: Model guidance e documentação Agents SDK.
+- Maturidade: condicional; o `gpt-6.1-sol` passou a oferecer delegação multi-agent em beta via Responses API, sem uso registrado no projeto.
+- Limite: não presumir ganho quando as etapas forem fortemente dependentes; disponibilidade beta exige comparação e validação próprias.
+- Fontes: Model guidance, documentação Agents SDK e changelog oficial (lançamento de 29/09/2026 do GPT-6.1 Sol).
 
 ### `OAI-C11` — Geração de imagem
 
@@ -214,7 +217,7 @@
 | ativação comercial | `gpt-5.4-mini + none` | `OAI-M02`, `OAI-M03` e `OAI-M04`, com effort focal | não comparado nesta fotografia |
 | suficiência factual do catálogo por taxon (`OAI-W03`) | histórico: `gpt-5.6-terra + low` | — | workload retirado pela E22.7; sem aplicabilidade operacional corrente |
 | Base de Comunicação, Etapa 1 | `gpt-5.4-mini + none` ativo em Preview e Production | sem candidato comparado nesta fotografia | operacional após E21/E25.1 |
-| Base de Comunicação, Etapa 2 | `gpt-6-luna + max` ativo em Preview e Production | `gpt-6-sol + medium` comparado focalmente | comparação concluída; `gpt-6-luna + max` operacional após E21/E25.1 |
+| Base de Comunicação, Etapa 2 | `gpt-6-luna + max` ativo em Preview e Production | `gpt-6-sol + medium` comparado focalmente; `OAI-M09` ainda não comparado | comparação anterior concluída para `gpt-6-sol`; novo candidato `gpt-6.1-sol` não comparado nesta fotografia; `gpt-6-luna + max` permanece operacional |
 
 - Preservar o baseline atual até existir evidência suficiente e autorização no recorte competente.
 - Usar o mesmo conjunto de tarefas representativas e os mesmos gates ao comparar candidatos.
