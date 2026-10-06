@@ -574,13 +574,13 @@ Avaliar quando um cliente necessário exigir o protocolo `2026-07-28`, ou quando
 
 2026-08-03  
 Catalogado em 2026-08-10  
-Atualizado em 2026-09-22
+Atualizado em 2026-10-06
 
 ### Status no Projeto
 
-- Status: parcialmente implementado; o baseline foi atualizado para `next` e `eslint-config-next` `16.3.3` na E23.1, mas não há `instant()`, `next-cache-components-optimizer` nem Cache Components habilitado.
-- Evidência: `package.json`, `package-lock.json` e `docs/roadmap.md` 23.1; instalação limpa, checks, Security Checks, build hospedado e Preview foram aprovados no recorte.
-- Mudança material: o patch de segurança foi concluído e preservado historicamente em `vercel#31`; permanecem ativos somente os recursos opt-in de performance e navegação que exigem rota-alvo e medição.
+- Status: parcialmente implementado; o baseline operacional foi atualizado para `next` e `eslint-config-next` `16.3.8` na E23.4 / PR #1029, mas não há `instant()`, `next-cache-components-optimizer` nem Cache Components habilitado.
+- Evidência: `package.json` e `package-lock.json` no SHA inicial, mais `docs/roadmap.md` 23.1 e 23.4 e PR #1029; instalação limpa, checks, Security Checks, build hospedado e Preview foram aprovados nos recortes correspondentes.
+- Mudança material: E23.4 atualizou a dependência existente para `16.3.8` e registrou sete correções de segurança; duas vulnerabilidades adicionais continuam em acompanhamento ativo em `vercel#34`. Permanecem condicionados os recursos opt-in que exigem rota-alvo e medição.
 - Natureza de uso: evolução direta da stack Next.js atual.
 - Relação com a stack: o upgrade mínimo seguro deixou de ser decisão apenas de performance; recursos opt-in de navegação continuam dependentes de caso e medição.
 - Horizonte: Lite, Pro ou indefinido para Instant Navigations e otimizações adicionais.
@@ -589,7 +589,7 @@ Atualizado em 2026-09-22
 
 Next.js 16.3 foi lançado de forma estável com redução de uso de memória em sessões longas de desenvolvimento, cache persistente para builds repetidos e melhorias de renderização e tooling. O release também consolida as ferramentas de Instant Navigations, incluindo prefetch parcial, teste `instant()` e o skill `next-cache-components-optimizer` para diagnosticar rotas lentas.
 
-O upgrade técnico necessário para `16.3.3` ou superior não autoriza habilitar Cache Components, mudar fetch/cache, introduzir prefetch customizado ou reescrever rotas. Esses recursos continuam exigindo uma navegação-alvo e medição próprias.
+O upgrade mínimo para `16.3.3` foi feito na E23.1; a versão operacional foi posteriormente atualizada para `16.3.8` na E23.4. Essas atualizações não autorizam habilitar Cache Components, mudar fetch/cache, introduzir prefetch customizado ou reescrever rotas. Recursos opt-in continuam exigindo uma navegação-alvo e medição próprias.
 
 ### Valor para o Projeto
 
@@ -600,7 +600,7 @@ O upgrade técnico necessário para `16.3.3` ou superior não autoriza habilitar
 
 ### Gatilho de aplicação
 
-- Upgrade mínimo: concluído pela E23.1 em `16.3.3`; futuras versões seguem o fluxo normal de dependências e segurança.
+- Upgrade mínimo: concluído pela E23.1 em `16.3.3` e atualizado para `16.3.8` pela E23.4 / PR #1029; versões futuras seguem o fluxo normal de dependências e segurança.
 - Instant Navigations: avaliar somente quando uma rota real apresentar atraso perceptível ou métrica insuficiente, começando pelos defaults do framework e por teste reproduzível.
 
 ### Dependências, riscos e limite
