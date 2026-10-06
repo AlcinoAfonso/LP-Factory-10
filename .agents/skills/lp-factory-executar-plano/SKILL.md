@@ -1,6 +1,6 @@
 ---
 name: lp-factory-executar-plano
-description: "Conduzir o plano aprovado da V1 à conclusão na mesma sessão, branch e PR, com roteamento centralizado, V2 técnica e especialidades condicionais, validação, QA, retomada e merge autorizado."
+description: "Conduzir o plano aprovado da V1 à conclusão na mesma sessão e, por padrão, na mesma branch/PR, ressalvada a exceção pós-merge do §10, com roteamento centralizado, V2 técnica e especialidades condicionais, validação, QA, retomada e merge autorizado."
 ---
 
 # Executar plano-base
