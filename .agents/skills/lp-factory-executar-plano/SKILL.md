@@ -1,6 +1,6 @@
 ---
 name: lp-factory-executar-plano
-description: "Conduzir o plano aprovado da V1 à conclusão na mesma sessão, branch e PR, com roteamento centralizado, V2 técnica e especialidades condicionais, validação, QA, retomada e merge autorizado."
+description: "Conduzir o plano aprovado da V1 à conclusão na mesma sessão e, por padrão, na mesma branch/PR, ressalvada a exceção pós-merge do §10, com roteamento centralizado, V2 técnica e especialidades condicionais, validação, QA, retomada e merge autorizado."
 ---
 
 # Executar plano-base
@@ -215,4 +215,4 @@ Não substitua o Estrategista original, o humano competente, especialistas ou Co
 
 ## 10. Limites
 
-Não editar/commitar na main, fazer merge local ou remoto sem liberação competente; alterar V1 por inferência; executar fase fora do contrato/ordem; invalidar trabalho não afetado por rotina; criar PR empilhado ou segundo PR no ciclo corrente; permitir escrita por especialista; executar delta candidato não liberado; ignorar QA, evidência ou decisão material pendente. Não conduzir novo Debate, refazer especialidade ou Analista, criar segunda sessão/destino para o mesmo plano, liberar dependência antes da conclusão ou executar merge por autoridade decorrente somente da escrita. Exceção pós-merge segue a autoridade concedida e `AGENTS.md`, na mesma sessão, sem branch/PR corretivo por inferência.
+Não editar/commitar na main, fazer merge local ou remoto sem liberação competente; alterar V1 por inferência; executar fase fora do contrato/ordem; invalidar trabalho não afetado por rotina; criar PR empilhado ou segundo PR no ciclo corrente; permitir escrita por especialista; executar delta candidato não liberado; ignorar QA, evidência ou decisão material pendente. Não conduzir novo Debate, refazer especialidade ou Analista, criar segunda sessão/destino para o mesmo plano, liberar dependência antes da conclusão ou executar merge por autoridade decorrente somente da escrita. Exceção pós-merge segue a autoridade concedida e `AGENTS.md`, na mesma sessão; segundo PR só cabe quando correção necessária ou fato canônico obrigatório só puder existir após merge/apply, nunca por rotina nem por inferência.
