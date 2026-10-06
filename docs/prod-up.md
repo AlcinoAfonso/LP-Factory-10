@@ -237,6 +237,7 @@ Value Rules permitem informar ao sistema de anúncios diferenças de valor por c
 ## 9 — Google Ads Text Guidelines *(🧪 Beta; migração AI Max anunciada desde set/2026; status da conta não validado)*
 2025-10-14  
 Atualizado em 2026-08-10
+Atualizado em 2026-10-06  
 
 ### Status no Projeto
 
