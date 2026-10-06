@@ -8,6 +8,8 @@ on:
       - 'supabase/tests/e10_11_pending_setup_business_name.test.sql'
       - 'supabase/migrations/20261001030000_e22_7_retire_factual_authority.sql'
       - 'supabase/tests/e22_7_retire_factual_authority.*'
+      - 'supabase/migrations/20261005170954_e23_5_retire_unused_graphql.sql'
+      - 'supabase/tests/e23_5_retire_unused_graphql.*'
 
 permissions:
   contents: read
@@ -93,8 +95,8 @@ jobs:
           echo "E10.11 positive/negative SQL cases passed and rolled back." >> "$GITHUB_STEP_SUMMARY"
 
   e22-7-sql-proof:
-    name: E22.7 terminal SQL proof
-    if: ${{ github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'codex-app/e22-7-retirada-terminal' }}
+    name: ${{ github.event.pull_request.head.ref == 'codex-app/e23-5-retirada-graphql' && 'E23.5 GraphQL SQL proof' || 'E22.7 terminal SQL proof' }}
+    if: ${{ github.event.pull_request.head.repo.full_name == github.repository && (github.event.pull_request.head.ref == 'codex-app/e22-7-retirada-terminal' || github.event.pull_request.head.ref == 'codex-app/e23-5-retirada-graphql') }}
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
@@ -104,6 +106,7 @@ jobs:
         with:
           version: 2.106.0
       - name: Stage the canonical E21 dependency chain
+        if: ${{ github.event.pull_request.head.ref == 'codex-app/e22-7-retirada-terminal' }}
         id: stage
         shell: bash
         run: |
@@ -127,6 +130,7 @@ jobs:
           echo "project=$stage_project" >> "$GITHUB_OUTPUT"
           echo "Four exact canonical dependencies staged. E22.7 is tested integrally after a disposable fixture; no E10.10 migration is staged or applied." >> "$GITHUB_STEP_SUMMARY"
       - name: Start isolated PostgreSQL 17
+        if: ${{ github.event.pull_request.head.ref == 'codex-app/e22-7-retirada-terminal' }}
         shell: bash
         run: |
           set -euo pipefail
@@ -142,6 +146,7 @@ jobs:
               exit 1
             }
       - name: Execute full migration and terminal rollback cases
+        if: ${{ github.event.pull_request.head.ref == 'codex-app/e22-7-retirada-terminal' }}
         shell: bash
         run: |
           set -euo pipefail
@@ -149,3 +154,44 @@ jobs:
           test "${#db_containers[@]}" -eq 1
           test "$(docker exec "${db_containers[0]}" psql -U postgres -d postgres -At -c 'select current_setting('"'"'server_version_num'"'"')::int / 10000 = 17')" = t
           bash supabase/tests/e22_7_retire_factual_authority.proof.sh "${db_containers[0]}"
+
+      - name: Stage the E23.5 isolated schema baseline
+        if: ${{ github.event.pull_request.head.ref == 'codex-app/e23-5-retirada-graphql' }}
+        id: stage_graphql
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(find supabase/migrations -maxdepth 1 -type f -name '*.sql' | wc -l)" -eq 63
+          stage_root="$(mktemp -d "$RUNNER_TEMP/e23-5-sql.XXXXXX")"
+          stage_project="$stage_root/project"
+          mkdir -p "$stage_project/supabase/migrations"
+          cp supabase/config.toml "$stage_project/supabase/config.toml"
+          for name in 20260611172930_remote_public_baseline.sql 20260614124000_fix_audit_context_event_event_column.sql; do
+            cp "supabase/migrations/$name" "$stage_project/supabase/migrations/$name"
+            cmp -s "supabase/migrations/$name" "$stage_project/supabase/migrations/$name"
+          done
+          test "$(find "$stage_project/supabase/migrations" -maxdepth 1 -type f -name '*.sql' | wc -l)" -eq 2
+          echo "project=$stage_project" >> "$GITHUB_OUTPUT"
+          echo "E23.5: two canonical baseline files staged; full candidate tested separately; no E10.10 or hosted connection." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Start E23.5 isolated PostgreSQL
+        if: ${{ github.event.pull_request.head.ref == 'codex-app/e23-5-retirada-graphql' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          supabase --workdir "${{ steps.stage_graphql.outputs.project }}" start \
+            -x gotrue,realtime,storage-api,imgproxy,kong,mailpit,postgrest,postgres-meta,studio,edge-runtime,logflare,vector,supavisor \
+            > "$RUNNER_TEMP/e23-5-supabase-start.log" 2>&1 || {
+              tail -n 30 "$RUNNER_TEMP/e23-5-supabase-start.log" \
+                | sed -E '/(SERVICE_ROLE|ANON_KEY|SECRET_KEY|JWT_SECRET|DB_PASSWORD|DATABASE_URL|PUBLISHABLE_KEY)/Id'
+              exit 1
+            }
+
+      - name: Prove GraphQL retirement and preservation
+        if: ${{ github.event.pull_request.head.ref == 'codex-app/e23-5-retirada-graphql' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t db_containers < <(docker ps --format '{{.Names}}' | grep '^supabase_db_' || true)
+          test "${#db_containers[@]}" -eq 1
+          bash supabase/tests/e23_5_retire_unused_graphql.proof.sh "${db_containers[0]}"
