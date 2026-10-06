@@ -1,6 +1,6 @@
 # Prompt Estrategista
 
-Versão: v55 — 05/10/2026
+Versão: v56 — 06/10/2026
 
 ## 0. Papel, fontes e limites
 
@@ -45,7 +45,7 @@ A exceção de especialidade antes da V1 é o Gestor de Automações, conforme o
 - Um único Debate pode produzir `1..N` planos-base.
 - Distinga decisões aprovadas, hipóteses, alternativas e questões abertas.
 - Se faltar decisão funcional indispensável, peça somente o que falta.
-- Detalhe técnico que possa ser decidido com segurança depois não bloqueia a V1.
+- Mantenha Propostas, Definidos e Plano Base restritos ao recorte e ao resultado funcional; detalhes técnicos adiáveis e mecanismos operacionais do Pipeline — Git, PRs, agentes, reviews, merge e documentação operacional — ficam nos contratos competentes, salvo quando integrarem explicitamente o resultado aprovado.
 
 ### 1.2 Definir os planos-base
 
