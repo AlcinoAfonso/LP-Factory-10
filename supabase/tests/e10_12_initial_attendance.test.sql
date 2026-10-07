@@ -53,8 +53,20 @@ select pg_temp.assert_true(not exists(select 1 from information_schema.columns w
 select pg_temp.assert_true(not exists(select 1 from pg_constraint where conrelid in
  ('public.account_dialogues'::regclass,'public.account_context_summaries'::regclass)
  and confrelid='public.account_communication_bases'::regclass),'no context relationship to Base');
-select pg_temp.assert_true((select count(*)=3 from public.account_dialogues
+select pg_temp.assert_true((select count(*)=4 from public.account_dialogues
  where account_id::text like 'e1012bac-%'),'legacy dialogue identity backfilled');
+
+select pg_temp.assert_true((select stage='completed' and preferred_name is null and version=7
+ and created_at='2026-09-21T00:00:00Z'::timestamptz
+ and updated_at='2026-09-22T00:00:00Z'::timestamptz and completed_at=updated_at
+ from public.account_pending_setup_conversations where id='e1012bac-0000-4000-8000-000000000014'),
+ 'completed unnamed legacy conversation remains untouched by refusal backfill');
+select pg_temp.assert_true((select d.ended_at='2026-09-22T00:00:00Z'::timestamptz
+ and s.summary='Entendimento histórico confirmado.' and s.updated_at=d.ended_at
+ and s.source_dialogue_id=d.id and s.source_user_id=d.user_id
+ from public.account_dialogues d join public.account_context_summaries s on s.account_id=d.account_id
+ where d.id='e1012bac-0000-4000-8000-000000000014'),
+ 'completed unnamed legacy dialogue and memory are seeded without rewriting history');
 
 -- Historical backfill and the legacy writer continue to preserve refusal with the gate OFF.
 select pg_temp.assert_true((select s.summary='Descrição útil confirmada no legado.'
@@ -389,10 +401,10 @@ begin
   where taxon_id=leaf and alias_text='E1012 Expressão equivalente' and is_active),'equivalent alias created once');
 end $alias_only$;
 
--- ON failure -> OFF legacy progress -> ON cannot resume an obsolete confirmation.
-do $gate_takeover$
+-- Gate OFF suspends an initiated attendance instead of switching to the legacy motor.
+do $gate_boundary$
 declare a uuid:='e10125a0-0000-4000-8000-000000000025';
- u uuid:='e1012000-0000-4000-8000-000000000001'; c uuid; v bigint; old_version bigint;
+ u uuid:='e1012000-0000-4000-8000-000000000001'; c uuid; v bigint; old_version bigint; before_state jsonb; message_count integer;
  old_token uuid:=gen_random_uuid(); legacy_token uuid:=gen_random_uuid(); fresh_token uuid:=gen_random_uuid();
  proposal jsonb:='{"kind":"operational_fallback","taxonId":null,"chain":[],"aliases":[],"evidence":"","sources":[]}';
 begin
@@ -403,29 +415,32 @@ begin
  v:=public.claim_account_pending_setup_turn_v2(c,a,u,1,old_token,'Descrição inicial.','message');
  v:=public.commit_account_pending_setup_turn_v2(c,a,u,v,old_token,'Confirma entendimento?',
   'Descrição inicial.',null,'niche_confirmation',proposal,false);
+ perform pg_temp.expect_error(format('select public.start_account_pending_setup_v1(%L,%L,null)',a,u),'55000');
  old_token:=gen_random_uuid();
  v:=public.claim_account_pending_setup_turn_v2(c,a,u,v,old_token,'Sim antigo.','confirm');
  old_version:=v;
  v:=public.release_account_pending_setup_turn_v2(c,a,u,v,old_token);
- perform pg_temp.assert_true((select pending_turn_intent='confirm' from public.account_pending_setup_conversations where id=c),'failure initially preserves retry');
- v:=public.claim_account_pending_setup_turn_v1(c,a,u,v,legacy_token);
- perform pg_temp.assert_true((select pending_turn_intent is null and pending_turn_ordinal is null
-  and attendance_proposal is null from public.account_pending_setup_conversations where id=c),'legacy claim supersedes obsolete intent and proposal');
- v:=public.append_account_pending_setup_turn_v1(c,a,u,v,legacy_token,'Nova descrição no legado.',
-  'Continuamos com a descrição nova.','business_understanding',null,'Nova descrição no legado.');
- perform pg_temp.assert_true((select pending_turn_token is null and pending_turn_intent is null
-  and pending_turn_ordinal is null and attendance_proposal is null from public.account_pending_setup_conversations where id=c),'legacy append leaves no attendance resume metadata');
+ select to_jsonb(s) into before_state from public.account_pending_setup_conversations s where id=c;
+ select count(*) into message_count from public.account_pending_setup_messages where conversation_id=c;
+ perform pg_temp.expect_error(format('select public.claim_account_pending_setup_turn_v1(%L,%L,%L,%s,%L)',c,a,u,v,legacy_token),'55000');
+ perform pg_temp.expect_error(format(
+  'select public.append_account_pending_setup_turn_v1(%L,%L,%L,%s,%L,%L,%L,%L,null,%L)',
+  c,a,u,v,legacy_token,'Entrada do legado.','Resposta do legado.','business_understanding','Descrição do legado.'),'55000');
+ perform pg_temp.assert_true((select to_jsonb(s)=before_state from public.account_pending_setup_conversations s where id=c)
+  and (select count(*)=message_count from public.account_pending_setup_messages where conversation_id=c),
+  'legacy cannot alter attendance state, proposal, intention or transcript');
  perform public.start_account_pending_setup_v2(a,u,null);
  perform pg_temp.expect_error(format(
   'select public.commit_account_pending_setup_turn_v2(%L,%L,%L,%s,%L,%L,%L,null,%L,null,true)',
   c,a,u,old_version,old_token,'Confirmação antiga.','Descrição inicial.','ready_to_complete'),'40001');
- perform pg_temp.assert_true(not exists(select 1 from public.account_taxonomy where account_id=a),'obsolete confirmation produces no link');
- v:=public.claim_account_pending_setup_turn_v2(c,a,u,v,fresh_token,'Resposta atual depois do retorno.','message');
- perform pg_temp.assert_true((select count(*)=1 from public.account_pending_setup_messages
-  where conversation_id=c and content='Resposta atual depois do retorno.'),'return ON claims a fresh entry once');
- perform public.release_account_pending_setup_turn_v2(c,a,u,v,fresh_token);
+ perform pg_temp.assert_true(not exists(select 1 from public.account_taxonomy where account_id=a),'suspension produces no classification or false success');
+ v:=public.claim_account_pending_setup_turn_v2(c,a,u,v,fresh_token,null,'confirm');
+ perform pg_temp.assert_true((select count(*)=message_count from public.account_pending_setup_messages where conversation_id=c),
+  'same attendance motor resumes the persisted entry without replay or new confirmation');
+ perform public.commit_account_pending_setup_turn_v2(c,a,u,v,fresh_token,'Entendimento confirmado.',
+  'Descrição inicial.',null,'ready_to_complete',null,true);
 
- -- Identity takeover also clears a failed initial greeting before the legacy name writer.
+ -- A failed initial greeting also remains suspended; legacy identity cannot take over.
  a:='e10125a0-0000-4000-8000-000000000026';
  insert into public.accounts(id,name,subdomain,slug,status)
  values(a,'Identity takeover','e1012-identity-takeover','e1012-identity-takeover','pending_setup');
@@ -434,11 +449,31 @@ begin
  fresh_token:=gen_random_uuid();
  v:=public.claim_account_pending_setup_turn_v2(c,a,u,1,fresh_token,null,'initialize');
  v:=public.release_account_pending_setup_turn_v2(c,a,u,v,fresh_token);
- v:=public.set_account_pending_setup_preferred_name_v1(c,a,u,'Ana',v);
- perform pg_temp.assert_true((select pending_turn_intent is null and pending_turn_ordinal is null
-  and pending_turn_token is null and stage='business_understanding'
-  from public.account_pending_setup_conversations where id=c),'legacy identity progress supersedes failed initialization');
- perform pg_temp.assert_true((select count(*)=1 from public.account_pending_setup_messages where conversation_id=c),'identity takeover preserves one legacy greeting');
-end $gate_takeover$;
+ select to_jsonb(s) into before_state from public.account_pending_setup_conversations s where id=c;
+ perform pg_temp.expect_error(format('select public.start_account_pending_setup_v1(%L,%L,null)',a,u),'55000');
+ perform pg_temp.expect_error(format('select public.set_account_pending_setup_preferred_name_v1(%L,%L,%L,%L,%s)',c,a,u,'Ana',v),'55000');
+ perform pg_temp.assert_true((select to_jsonb(s)=before_state from public.account_pending_setup_conversations s where id=c)
+  and not exists(select 1 from public.account_pending_setup_messages where conversation_id=c),
+  'failed initialization stays intact without a legacy greeting or metadata reset');
+
+ -- The gate still preserves legacy conversations that have not started an attendance turn.
+ a:='e10125a0-0000-4000-8000-000000000027';
+ insert into public.accounts(id,name,subdomain,slug,status)
+ values(a,'Legacy retained','e1012-legacy-retained','e1012-legacy-retained','pending_setup');
+ insert into public.account_users(account_id,user_id,role,status) values(a,u,'owner','active');
+ c:=public.start_account_pending_setup_v1(a,u,'Ana');
+ legacy_token:=gen_random_uuid(); v:=public.claim_account_pending_setup_turn_v1(c,a,u,1,legacy_token);
+ v:=public.append_account_pending_setup_turn_v1(c,a,u,v,legacy_token,'Descrição do legado.',
+  'Seguimos no legado.','business_understanding',null,'Descrição do legado.');
+ perform pg_temp.assert_true((select last_attendance_turn_token is null and pending_turn_intent is null
+  from public.account_pending_setup_conversations where id=c),'ordinary legacy stays usable');
+ perform public.start_account_pending_setup_v2(a,u,null);
+ fresh_token:=gen_random_uuid();
+ v:=public.claim_account_pending_setup_turn_v2(c,a,u,v,fresh_token,'Primeiro turno IA.','message');
+ perform public.release_account_pending_setup_turn_v2(c,a,u,v,fresh_token);
+ perform pg_temp.expect_error(format('select public.start_account_pending_setup_v1(%L,%L,null)',a,u),'55000');
+ perform pg_temp.assert_true((select count(*)=4 from public.account_pending_setup_messages where conversation_id=c),
+  'one-way activation preserves the previous legacy transcript');
+end $gate_boundary$;
 
 rollback;

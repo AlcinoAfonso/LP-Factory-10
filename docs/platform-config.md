@@ -250,6 +250,7 @@
 
 • `E10_12_ATTENDANCE_ENABLED`
 • Finalidade: gate server-only do atendimento inicial por IA.
+• Desligamento suspende conversas já iniciadas por IA; não as encaminha ao legado nem limpa proposta ou intenção. Conversas sem turno IA iniciado continuam no fluxo legado.
 • Plataforma e escopo aprovados: Vercel Core, Preview e Production, com configuração independente por ambiente; habilitação somente pelo literal `true`.
 • Estado: desligado; configuração e ativação hospedadas ainda não validadas. Habilitação depende de apply validado, prova empírica e configuração elegível do workload pela governança E21 e QA do ambiente.
 • Classificação: Config, não Secret. Alteração exige redeploy do ambiente afetado.

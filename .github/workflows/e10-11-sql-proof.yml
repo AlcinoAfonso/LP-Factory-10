@@ -200,7 +200,7 @@ jobs:
 
   e10-12-sql-proof:
     name: E10.12 PostgreSQL 17 proof
-    if: ${{ github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'codex-app/e10-12-contexto-conta' }}
+    if: ${{ github.event.pull_request.head.repo.full_name == github.repository && (github.event.pull_request.head.ref == 'codex-app/e10-12-contexto-conta' || github.event.pull_request.head.ref == 'codex-app/e10-12-correcao-apply') }}
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
