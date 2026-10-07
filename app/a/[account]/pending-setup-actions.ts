@@ -440,6 +440,14 @@ export async function savePendingSetupBusinessDisplayNameAction(
       ? "Use no máximo 120 caracteres."
       : "Informe um nome público válido para o negócio ou profissional." };
   }
+  const conversation = await loadPendingSetupConversation({
+    accountId: actor.accountId,
+    userId: actor.userId,
+  });
+  if (!conversation || conversation.id !== conversationId ||
+    conversation.stage !== "ready_to_complete" || conversation.version !== expectedVersion) {
+    return { ok: false, formError: "Esta conversa mudou. Recarregue para continuar." };
+  }
   const result = await setPendingSetupBusinessDisplayName({
     conversationId,
     accountId: actor.accountId,

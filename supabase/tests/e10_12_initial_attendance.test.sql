@@ -433,6 +433,9 @@ begin
   'same attendance motor resumes the persisted entry without replay or new confirmation');
  perform public.commit_account_pending_setup_turn_v2(c,a,u,v,fresh_token,'Entendimento confirmado.',
   'Descrição inicial.',null,'ready_to_complete',null,true);
+ perform pg_temp.expect_error(format('select public.start_account_pending_setup_v1(%L,%L,null)',a,u),'55000');
+ perform pg_temp.assert_true((select stage='ready_to_complete' and business_display_name is null
+  from public.account_pending_setup_conversations where id=c),'suspended name form cannot load through the legacy boundary');
 
  -- A failed initial greeting also remains suspended; legacy identity cannot take over.
  a:='e10125a0-0000-4000-8000-000000000026';
