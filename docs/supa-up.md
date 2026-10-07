@@ -1313,8 +1313,8 @@ Atualizado em 2026-10-07
 
 ### Status no Projeto
 
-- Status: Push protection ativa no repositório, conforme Debate 18C e `github#16`; configuração individual do usuário e bloqueio local de `supabase_secret_key` não validados por ocorrência real.
-- Evidência: `docs/github-up.md`, item `github#16`, registra a confirmação do setting do repositório pelas capturas do titular no Debate 18C. A ativação global não comprova o bloqueio de toda credencial Supabase nem a classe do `SUPABASE_ACCESS_TOKEN`.
+- Status: Push protection ativa no repositório; cobertura padrão de `supabase_secret_key` confirmada por fonte oficial e pelo setting verificado no Debate 18C. Configuração individual do usuário e ocorrência real de bloqueio não foram inspecionadas.
+- Evidência: `docs/github-up.md`, item `github#16`, registra a confirmação do setting do repositório pelas capturas do titular no Debate 18C. O [changelog GitHub de março de 2026](https://github.blog/changelog/2026-03-10-secret-scanning-pattern-updates-march-2026/) inclui `supabase_secret_key` na push protection padrão para repositórios com Secret Scanning ativo. Essa cobertura não identifica a classe do `SUPABASE_ACCESS_TOKEN` nem garante proteção de toda credencial Supabase.
 
 
 ### Descrição  
@@ -1337,15 +1337,15 @@ Recurso de segurança/governança para bloquear push acidental de chaves secreta
 
 2. Reavaliar somente diante de nova evidência de desativação, bypass ou incidente; mudança de setting exige recorte próprio aprovado.  
 
-3. Somente após validar a cobertura específica de `supabase_secret_key`, refletir o controle no onboarding técnico e na documentação interna de segredos; a ativação confirmada não garante essa cobertura, e não se deve testar com credencial real.  
+3. Refletir a cobertura padrão confirmada de `supabase_secret_key` no onboarding técnico e na documentação interna de segredos, preservando os limites de formatos e versões reconhecidos. Não exigir ocorrência real nem testar com credencial.  
 
 ### Registro (Tipo A — Plataforma)
 
-- Status: ATIVAÇÃO NO REPOSITÓRIO CONFIRMADA; configuração individual e bloqueio específico não validados.
+- Status: ATIVAÇÃO NO REPOSITÓRIO E COBERTURA PADRÃO DE `supabase_secret_key` CONFIRMADAS; configuração individual e ocorrência real de bloqueio não inspecionadas.
 - Verificado em: 07/10/2026
 - Ambiente: GitHub / Secret Scanning / Push Protection
 - Evidência: Debate 18C concluído; confirmação do setting registrada em `github#16`.
-- Observação: a inspeção do repositório foi encerrada com seus limites documentados; o saldo não presume controle desativado nem autoriza mudança de setting.
+- Observação: cobertura padrão confirmada sem smoke com segredo. Push protection cobre somente as versões recentes reconhecidas com confiança, conforme [GitHub Docs](https://docs.github.com/en/code-security/reference/secret-security/supported-secret-scanning-patterns); isso não garante bloqueio de todo token, formato legado ou valor transformado. A inspeção foi encerrada e não autoriza mudança de setting.
 
 ---
 
