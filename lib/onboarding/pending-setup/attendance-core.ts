@@ -115,9 +115,11 @@ export function validateAttendanceOutput(raw: unknown, context: AttendanceContex
   const value = parsed.data;
   if (value.preferredName !== null && (!validatePreferredName(value.preferredName, null).ok || value.preferredNameDeclined)) return null;
   if (context.preferredNameDeclined && !value.preferredNameDeclined && value.preferredName === null) return null;
+  if (context.preferredName && value.preferredNameDeclined) return null; // AI output cannot erase an existing user preference.
   const sourced = new Set(actualSources.filter(validHttpsSource));
   if (value.evidenceUrls.some(url => !sourced.has(url))) return null;
   if (value.aliases.some(alias => alias.evidenceUrls.some(url => !sourced.has(url)))) return null;
+  if (new Set([...value.evidenceUrls, ...value.aliases.flatMap(alias => alias.evidenceUrls)]).size > 8) return null;
   if (value.action !== "propose" && (value.chain.length || value.aliases.length)) return null;
   if (value.action !== "existing" && value.existingTaxonId !== null) return null;
   if (["existing", "propose", "pending"].includes(value.action) && (!value.sufficientUnderstanding || !value.summary)) return null;
@@ -178,7 +180,9 @@ export function attendanceProposal(output: AttendanceOutput, sources: readonly s
   if (output.action === "existing") return { kind: "existing", taxonId: output.existingTaxonId,
     chain: [], aliases: [], evidence: output.evidence, sources: [] };
   if (output.action === "propose") return { kind: "new", taxonId: null, chain: output.chain,
-    aliases: output.aliases, evidence: output.evidence, sources: sources.filter(url => output.evidenceUrls.includes(url)) };
+    aliases: output.aliases, evidence: output.evidence,
+    sources: [...new Set(sources.filter(url => output.evidenceUrls.includes(url)
+      || output.aliases.some(alias => alias.evidenceUrls.includes(url))))] };
   if (output.action === "pending") return { kind: "operational_fallback", taxonId: null,
     chain: [], aliases: [], evidence: "", sources: [] };
   return null;

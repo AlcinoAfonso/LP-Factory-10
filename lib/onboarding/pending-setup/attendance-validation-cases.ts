@@ -66,6 +66,10 @@ async function main() {
   assert.equal(validateAttendanceOutput({ ...base, summary: "" }, context, []), null);
   assert.equal(validateAttendanceOutput({ ...base, grantTrial: true }, context, []), null);
   assert.equal(validateAttendanceOutput({ ...base, preferredName: "ana@example.com" }, context, []), null);
+  assert.equal(validateAttendanceOutput({ ...base, preferredName: null, preferredNameDeclined: true }, context, []), null);
+  assert.equal(validateAttendanceOutput({ ...base, preferredName: null, preferredNameDeclined: false }, context, [])?.preferredName, null);
+  assert.equal(validateAttendanceOutput({ ...base, preferredName: null, preferredNameDeclined: true },
+    { ...context, preferredName: null }, [])?.preferredNameDeclined, true);
   assert.equal(validateAttendanceOutput(market, context, [source]), null);
   assert.equal(validateAttendanceOutput(market, { ...context, research: true }, []) , null);
   assert.equal(validateAttendanceOutput(market, { ...context, research: true }, [source])?.action, "propose");
@@ -80,6 +84,17 @@ async function main() {
   const equivalent = { text: "Terapia física", equivalentTo: "Fisioterapia", equivalence: "proven" as const,
     justification: "Equivalência comprovada pela fonte observada.", evidenceUrls: [source] };
   assert.equal(validateAttendanceOutput({ ...market, aliases: [equivalent] }, { ...context, research: true }, [source])?.action, "propose");
+  const aliasSource = "https://example.com/physical-therapy";
+  const separateAliasEvidence = { ...market, aliases: [{ ...equivalent, evidenceUrls: [aliasSource] }] };
+  assert.equal(validateAttendanceOutput(separateAliasEvidence, { ...context, research: true }, [source, aliasSource])?.action, "propose");
+  const sourcedProposal = attendanceProposal(separateAliasEvidence, [source, aliasSource, source]);
+  assert.deepEqual(sourcedProposal?.sources, [source, aliasSource]);
+  assert.ok(validateStoredAttendanceProposal(sourcedProposal));
+  assert.equal(sourcedProposal?.aliases[0].evidenceUrls.every(url => sourcedProposal.sources.includes(url)), true);
+  const topSources = Array.from({ length: 8 }, (_, i) => "https://example.com/source-" + i);
+  assert.equal(validateAttendanceOutput({ ...separateAliasEvidence, evidenceUrls: topSources },
+    { ...context, research: true }, [...topSources, aliasSource]), null);
+  assert.equal(validateAttendanceOutput(separateAliasEvidence, { ...context, research: true }, [source]), null);
   assert.equal(validateAttendanceOutput({ ...market, aliases: [{ ...equivalent, equivalence: "related" }] }, { ...context, research: true }, [source]), null);
   assert.equal(validateAttendanceOutput({ ...market, aliases: [{ ...equivalent, equivalence: "ambiguous" }] }, { ...context, research: true }, [source]), null);
   const inactiveCollision = { ...context, research: true, catalog: context.catalog.map(taxon =>
@@ -99,6 +114,8 @@ async function main() {
   assert.ok(proposal);
   assert.equal(validateAttendanceOutput({ ...base, action: "confirm", existingTaxonId: null },
     { ...context, confirmedProposal: proposal }, [])?.action, "confirm");
+  assert.equal(validateAttendanceOutput({ ...base, action: "confirm", existingTaxonId: null,
+    preferredName: null, preferredNameDeclined: true }, { ...context, confirmedProposal: proposal }, []), null);
   const declinedContext = { ...context, preferredName: null, preferredNameDeclined: true };
   assert.equal(validateAttendanceOutput({ ...base, preferredName: null }, declinedContext, []), null);
   assert.equal(validateAttendanceOutput({ ...base, preferredName: null, preferredNameDeclined: true }, declinedContext, [])?.preferredNameDeclined, true);
