@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState, useEffect, useRef } from "react";
+import { startTransition, useActionState, useEffect, useRef, useState } from "react";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { FeedbackMessage } from "@/components/ui/feedback-message";
 import { FormField, FormFieldError, FormFieldHint, FormFieldLabel } from "@/components/ui/form-field";
@@ -43,6 +44,10 @@ export function PendingSetupConversation({
     PendingSetupActionState,
     FormData
   >(savePendingSetupBusinessDisplayNameAction, { ok: true });
+  const attendanceButtonClass = conversation?.attendanceEnabled ? "!bg-brand-700 !text-white hover:!bg-brand-700/90" : "";
+  const needsAttendanceProposal = conversation?.attendanceEnabled && conversation.stage === "niche_confirmation" && !conversation.attendanceProposal;
+  const [clarificationText, setClarificationText] = useState("");
+  const initializedRef = useRef(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const businessNameRef = useRef<HTMLInputElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -66,6 +71,21 @@ export function PendingSetupConversation({
   useEffect(() => {
     if (nameState.fieldError) businessNameRef.current?.focus();
   }, [nameState.fieldError]);
+
+  useEffect(() => {
+    if (!conversation?.attendanceEnabled || conversation.messages.length || initializedRef.current) return;
+    initializedRef.current = true;
+    const formData = new FormData();
+    formData.set("account_subdomain", accountSubdomain);
+    formData.set("conversation_id", conversation.id);
+    formData.set("expected_version", String(conversation.version));
+    formData.set("intent", conversation.attendanceTurnIntent ? "resume" : "initialize");
+    startTransition(() => turnAction(formData));
+  }, [accountSubdomain, conversation, turnAction]);
+
+  useEffect(() => {
+    if (turnState.ok && !isTurnPending) setClarificationText("");
+  }, [turnState.ok, isTurnPending]);
 
   if (!conversation) {
     return (
@@ -117,7 +137,52 @@ export function PendingSetupConversation({
           ))}
         </div>
 
-        {conversation.stage === "identity" ? (
+        {conversation.attendanceEnabled && (!conversation.messages.length || conversation.attendanceTurnIntent) ? (
+          <form action={turnAction} className="border-t border-surface-border px-5 py-5 sm:px-8">
+            <ConversationHiddenFields accountSubdomain={accountSubdomain} conversationId={conversation.id} version={conversation.version} />
+            <input type="hidden" name="intent" value={conversation.attendanceTurnIntent ? "resume" : "initialize"} />
+            {turnState.formError ? <FeedbackMessage tone="error" className="mb-4">{turnState.formError}</FeedbackMessage> : null}
+            <p className="mb-4 text-sm text-graytech-600" role="status">
+              {isTurnPending ? "Preparando sua resposta…" : conversation.messages.length ? "Sua resposta está preservada." : "Vamos começar seu atendimento."}
+            </p>
+            <Button type="submit" disabled={isTurnPending} className={cn("min-h-11", attendanceButtonClass)}>
+              {isTurnPending ? "Atendendo…" : "Retomar atendimento"}
+            </Button>
+          </form>
+        ) : null}
+
+        {conversation.attendanceEnabled && conversation.stage === "niche_confirmation" && conversation.attendanceProposal ? (
+          <div className="space-y-3 px-5 pb-5 sm:px-8">
+            <div className="text-sm leading-6 text-ink-900">
+              <p className="font-semibold">Entendimento do negócio</p>
+              <p className="mt-1 whitespace-pre-wrap break-words">{conversation.businessContextText}</p>
+            </div>
+            {conversation.attendanceProposal.kind === "new" ? (
+              <div className="text-sm leading-6 text-ink-900">
+                <p className="font-semibold">Classificação proposta</p>
+                <p className="mt-1 break-words">{conversation.attendanceProposal.chain.map(node => node.name).join(" › ")}</p>
+              </div>
+            ) : null}
+            {conversation.attendanceProposal.kind === "operational_fallback" ? (
+              <FeedbackMessage tone="warning" className="!text-ink-900">
+                Seu negócio foi compreendido. A classificação oficial permanece pendente; você pode confirmar sua descrição para continuar.
+              </FeedbackMessage>
+            ) : null}
+            {conversation.attendanceProposal.sources.length ? (
+              <div className="text-sm text-graytech-600">
+                <p className="font-medium">Referências da classificação de mercado</p>
+                <ul className="mt-2 space-y-1">
+                  {conversation.attendanceProposal.sources.map((source) => (
+                    <li key={source}><a href={source} target="_blank" rel="noopener noreferrer"
+                      className="inline-flex min-h-11 items-center break-all text-brand-700 underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{new URL(source).hostname}</a></li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+
+        {conversation.stage === "identity" && !conversation.attendanceEnabled ? (
           <form action={action} className="border-t border-surface-border px-5 py-5 sm:px-8">
             <input type="hidden" name="account_subdomain" value={accountSubdomain} />
             <input type="hidden" name="conversation_id" value={conversation.id} />
@@ -152,7 +217,7 @@ export function PendingSetupConversation({
             </FormField>
 
             <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center">
-              <Button type="submit" name="intent" value="save" disabled={isPending} className="min-h-11">
+              <Button type="submit" name="intent" value="save" disabled={isPending} className={cn("min-h-11", attendanceButtonClass)}>
                 {isPending ? "Continuando…" : "Continuar"}
               </Button>
               <Button
@@ -169,7 +234,7 @@ export function PendingSetupConversation({
           </form>
         ) : null}
 
-        {conversation.stage === "business_understanding" ? (
+        {(conversation.stage === "business_understanding" || (conversation.attendanceEnabled && conversation.stage === "identity")) && !conversation.attendanceTurnIntent && (!conversation.attendanceEnabled || conversation.messages.length > 0) ? (
           <form action={turnAction} className="border-t border-surface-border px-5 py-5 sm:px-8">
             <ConversationHiddenFields
               accountSubdomain={accountSubdomain}
@@ -186,6 +251,8 @@ export function PendingSetupConversation({
             <FormField>
               <FormFieldLabel htmlFor="business_context">Sua resposta</FormFieldLabel>
               <Textarea
+                value={conversation.attendanceEnabled ? clarificationText : undefined}
+                onChange={conversation.attendanceEnabled ? event => setClarificationText(event.target.value) : undefined}
                 ref={textareaRef}
                 id="business_context"
                 name="business_context"
@@ -205,13 +272,13 @@ export function PendingSetupConversation({
               )}
             </FormField>
 
-            <Button type="submit" disabled={isTurnPending} className="mt-5 min-h-11">
+            <Button type="submit" disabled={isTurnPending} className={cn("mt-5 min-h-11", attendanceButtonClass)}>
               {isTurnPending ? "Entendendo…" : "Continuar"}
             </Button>
           </form>
         ) : null}
 
-        {conversation.stage === "niche_confirmation" ? (
+        {conversation.stage === "niche_confirmation" && !conversation.attendanceTurnIntent ? (
           <form action={turnAction} className="border-t border-surface-border px-5 py-5 sm:px-8">
             <ConversationHiddenFields
               accountSubdomain={accountSubdomain}
@@ -225,21 +292,24 @@ export function PendingSetupConversation({
               </FeedbackMessage>
             ) : null}
 
+            {conversation.attendanceEnabled && conversation.attendanceProposal ? (
+              <p className="mb-3 text-sm text-ink-900">Esse entendimento descreve seu negócio?</p>
+            ) : null}
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
               <Button
                 type="submit"
                 name="intent"
-                value="confirm"
+                value={needsAttendanceProposal ? "clarify" : "confirm"}
                 disabled={isTurnPending}
-                className="min-h-11"
+                className={cn("min-h-11", attendanceButtonClass)}
               >
                 {isTurnPending
-                  ? "Confirmando…"
-                  : conversation.confirmationKind === "operational_fallback"
+                  ? needsAttendanceProposal ? "Atendendo…" : "Confirmando…"
+                  : needsAttendanceProposal ? "Retomar atendimento" : conversation.confirmationKind === "operational_fallback"
                     ? "Usar minha descrição"
                     : "Sim, está correto"}
               </Button>
-              {!isTerminalFallback ? (
+              {!isTerminalFallback && !needsAttendanceProposal ? (
                 <Button
                   type="submit"
                   variant="secondary"
@@ -288,7 +358,7 @@ export function PendingSetupConversation({
                 <FormFieldHint id="business-name-hint">Use o nome pelo qual você quer ser conhecido pelos clientes.</FormFieldHint>
               )}
             </FormField>
-            <Button type="submit" disabled={isNamePending} className="mt-5 min-h-11">
+            <Button type="submit" disabled={isNamePending} className={cn("mt-5 min-h-11", attendanceButtonClass)}>
               {isNamePending ? "Salvando…" : "Salvar e continuar"}
             </Button>
           </form>
@@ -309,7 +379,7 @@ export function PendingSetupConversation({
                 {completionState.formError}
               </FeedbackMessage>
             ) : null}
-            <Button type="submit" disabled={isCompletionPending} className="mt-5 min-h-11">
+            <Button type="submit" disabled={isCompletionPending} className={cn("mt-5 min-h-11", attendanceButtonClass)}>
               {isCompletionPending ? "Concluindo…" : "Continuar para a próxima etapa"}
             </Button>
           </form>

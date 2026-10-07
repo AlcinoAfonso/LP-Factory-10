@@ -10,7 +10,7 @@ import {
   type OpenAiWorkloadFailureCategory,
   type OpenAiWorkloadUsage,
   type ResolvedOpenAiProductWorkload,
-} from "../../openai-workloads";
+} from "../openai-workloads";
 import {
   newOpenAiCostId,
   openAiCostRecorder,
@@ -18,7 +18,7 @@ import {
   type OpenAiCostEconomicContext,
   type OpenAiCostExecutionOrigin,
   type OpenAiCostRecorder,
-} from "../../openai-costs";
+} from "../openai-costs";
 
 export type OpenAiResponsesParser<T> = (
   payload: unknown,

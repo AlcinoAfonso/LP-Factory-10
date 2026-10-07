@@ -241,7 +241,7 @@ async function main() {
   }), { ok: false, code: "operation_context_invalid" });
 
   const sources = [
-    "lib/conversion-content/adapters/openAiResponsesAdapter.ts",
+    "lib/openai-responses/openAiResponsesAdapter.ts",
     "lib/conversion-content/adapters/commercialActivationOpenAiAdapter.ts",
     "lib/onboarding/niche-resolution/adapters/openAiResolver.ts",
     "automations/supabase-inspect/run.mjs",

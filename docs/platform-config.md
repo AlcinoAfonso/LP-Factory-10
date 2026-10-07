@@ -248,6 +248,12 @@
 • Estado operacional: `true` em Preview e Production, de forma independente, após o apply seletivo E10.11; ambos os ambientes foram redeployados e passaram por QA autenticado. A alteração exige novo redeploy do ambiente afetado.
 • Classificação: Config, não Secret. Valor real por ambiente não versionar.
 
+• `E10_12_ATTENDANCE_ENABLED`
+• Finalidade: gate server-only do atendimento inicial por IA.
+• Plataforma e escopo aprovados: Vercel Core, Preview e Production, com configuração independente por ambiente; habilitação somente pelo literal `true`.
+• Estado: desligado; configuração e ativação hospedadas ainda não validadas. Habilitação depende de apply validado, prova empírica e configuração elegível do workload pela governança E21 e QA do ambiente.
+• Classificação: Config, não Secret. Alteração exige redeploy do ambiente afetado.
+
 • `E20_6_5_INPUT_CATALOG_EVALUATION_PROVIDER_ENABLED`
 • Finalidade histórica: gate do provider consultivo E20.8.7, removido com o workload factual pela E22.7.
 • Estado pós-cutover: todas as entradas dessa variável foram removidas da Vercel Core após autorização humana; não há consumidor no runtime vigente.

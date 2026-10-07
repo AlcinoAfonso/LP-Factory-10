@@ -203,7 +203,7 @@ assert.match(pendingSetupActions, /eventId: crypto\.randomUUID\(\)/);
 assert.doesNotMatch(pendingSetupActions, /countPendingSetupOpenAiExecutions/);
 assert.match(pendingSetupActions, /Tente confirmar novamente\./);
 assert.doesNotMatch(pendingSetupActions, /Não consegui registrar essa escolha agora\. Tente novamente ou explique de outra forma\./);
-assert.match(pendingSetupConversationSource, /!isTerminalFallback \? \(/);
+assert.match(pendingSetupConversationSource, /!isTerminalFallback && !needsAttendanceProposal \? \(/);
 assert.match(pendingSetupConversationSource, /hasPendingSetupTerminalFallback/);
 assert.match(pendingSetupConversationSource, /name="business_display_name"/);
 assert.match(conversationAdapter, /complete_account_pending_setup_v2/);

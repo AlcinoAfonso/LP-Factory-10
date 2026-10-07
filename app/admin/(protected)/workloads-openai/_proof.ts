@@ -20,6 +20,9 @@ import { lpFactoryOpenAiCostContext } from "@/openai-costs";
 import { assistCommunicationSection, generateCommunicationIntelligence } from "@/communication-base/adapters/communicationAiAdapter";
 import type { CommunicationBase } from "@/communication-base/contracts";
 
+import { requestAttendance } from "@/onboarding/pending-setup/attendance-provider";
+import type { AttendanceContext } from "@/onboarding/pending-setup/attendance-core";
+
 export type { OpenAiCandidateProofMetadata } from "./proofCore";
 
 export async function runOpenAiCandidateProof(
@@ -39,6 +42,7 @@ export async function runOpenAiCandidateProof(
     requestId,
     {
       niche: dependencies.niche ?? proveNicheResolution,
+      attendance: dependencies.attendance ?? proveAttendance,
       commercial: dependencies.commercial ?? proveCommercialActivation,
       communicationStageOne:
         dependencies.communicationStageOne ?? proveCommunicationStageOne,
@@ -226,4 +230,39 @@ function proofResolver(
     operationalConfigurationEnabled: "true",
     readOperationalConfiguration,
   } as const;
+}
+
+async function proveAttendance(
+  workload: ResolvedOpenAiProductWorkload,
+  environment: OpenAiManagedWorkloadEnvironment,
+  apiKey: string,
+  _requestId: string,
+): Promise<ProofAttempt> {
+  const accountId = "10000000-0000-4000-8000-000000000001";
+  const segmentId = "10000000-0000-4000-8000-000000000002";
+  const nicheId = "10000000-0000-4000-8000-000000000003";
+  const catalog: AttendanceContext["catalog"] = [
+    { id: segmentId, name: "Serviços", level: "segment", parentId: null, active: true, inactiveAliases: [], aliases: [] },
+    { id: nicheId, name: "Manutenção de jardins", level: "niche", parentId: segmentId, active: true, inactiveAliases: [], aliases: ["Jardinagem"] },
+  ];
+  const contexts: AttendanceContext[] = [
+    { preferredName: null, summary: null, recent: [], catalog, research: false },
+    { preferredName: "Ana", summary: null, recent: [{ role: "user", content: "Trabalho com serviços." }], catalog, research: false },
+    { preferredName: "Ana", summary: "Faço manutenção de jardins para condomínios.",
+      recent: [{ role: "user", content: "Faço manutenção de jardins para condomínios." }], catalog, research: false },
+    { preferredName: "Ana", summary: "Atuo como fisioterapeuta, com reabilitação física de adultos.",
+      recent: [{ role: "user", content: "Atuo como fisioterapeuta, com reabilitação física de adultos." }],
+      catalog, research: true },
+  ];
+  const results = await Promise.all(contexts.map(context => requestAttendance({
+    accountId, context, configurationOverride: workload, environment, apiKey,
+    financialContext: lpFactoryOpenAiCostContext, executionOrigin: "administrative_proof",
+  })));
+  if (results.some(result => !result.ok)) return { ok: false, code: "provider" };
+  const [reception, insufficient, existing, market] = results;
+  if (!reception.ok || !insufficient.ok || !existing.ok || !market.ok ||
+    reception.output.action !== "ask" || insufficient.output.action !== "ask" ||
+    existing.output.action !== "existing" || existing.output.existingTaxonId !== nicheId ||
+    market.output.action !== "propose" || !market.sources.length) return { ok: false, code: "contract" };
+  return { ok: true, providerRequestId: market.responseId, latencyMs: Math.max(...results.map(result => result.ok ? result.latencyMs ?? 0 : 0)) };
 }

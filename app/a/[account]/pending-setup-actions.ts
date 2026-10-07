@@ -33,7 +33,9 @@ import {
   setPendingSetupBusinessDisplayName,
 } from "../../../lib/onboarding/pending-setup/adapters/pendingSetupConversationAdapter";
 import { orchestratePendingSetupNicheTurn } from "../../../lib/onboarding/pending-setup/adapters/pendingSetupNicheOrchestrator";
-import { isE1011PassageEnabled } from "../../../lib/onboarding/pending-setup/config";
+import { isE1011PassageEnabled, isE1012AttendanceEnabled } from "../../../lib/onboarding/pending-setup/config";
+
+import { conductAttendanceTurn } from "../../../lib/onboarding/pending-setup/attendance-coordinator";
 
 export type PendingSetupActionState = Readonly<{
   ok: boolean;
@@ -157,6 +159,24 @@ export async function continuePendingSetupConversationAction(
     conversation.version !== expectedVersion
   ) {
     return { ok: false, formError: "Esta conversa mudou. Recarregue para continuar." };
+  }
+  if (isE1012AttendanceEnabled()) {
+    const intent = String(formData.get("intent") ?? "message");
+    if (!["initialize", "message", "confirm", "clarify", "resume"].includes(intent))
+      return { ok: false, formError: GENERIC_ERROR };
+    const validated = intent === "message" ? validateBusinessContext(formData.get("business_context")) : null;
+    if (validated && !validated.ok) return { ok: false, fieldError: "Informe sua resposta com até 4.000 caracteres." };
+    const content = validated?.ok ? validated.value : intent === "confirm"
+      ? "Sim, o entendimento está correto." : intent === "clarify"
+        ? conversation.stage === "niche_confirmation" && !conversation.attendanceProposal
+          ? "Vamos retomar o atendimento a partir do contexto já informado." : "Quero explicar melhor." : null;
+    const result = await conductAttendanceTurn({ accountId: actor.accountId, userId: actor.userId,
+      conversationId, expectedVersion, content,
+      intent: intent as "initialize" | "message" | "confirm" | "clarify" | "resume" });
+    revalidatePath(actor.route);
+    return result.ok ? { ok: true } : { ok: false, formError: result.reason === "conflict"
+      ? "Esta conversa mudou ou está sendo atendida em outra aba. Atualize para continuar."
+      : "Não consegui concluir este atendimento agora. Sua resposta está preservada; tente novamente." };
   }
   let userContent: string;
   let assistantContent: string;
