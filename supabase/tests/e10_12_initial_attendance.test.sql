@@ -298,4 +298,32 @@ begin
  perform pg_temp.expect_error(format('select public.recover_account_pending_setup_primary_conflict_v2(%L,%L,%L,%s,%L)',c,a,
   'e1012000-0000-4000-8000-000000000002',v,token),'P0002');
 end $$;
+
+-- Same-named niches in distinct hierarchies retain scoped identity and unique global slugs.
+do $homonym$
+declare u uuid:='e1012000-0000-4000-8000-000000000001'; a uuid; c uuid; v bigint; token uuid; proposal jsonb; i integer;
+begin
+ for i in 1..2 loop
+  a:=(case when i=1 then 'e10125a0-0000-4000-8000-000000000021' else 'e10125a0-0000-4000-8000-000000000022' end)::uuid;
+  insert into public.accounts(id,name,subdomain,slug,status)
+   values(a,'E1012 Homonym '||i,'e1012-homonym-'||i,'e1012-homonym-'||i,'pending_setup');
+  insert into public.account_users(account_id,user_id,role,status) values(a,u,'owner','active');
+  c:=public.start_account_pending_setup_v2(a,u,null);
+  select version into v from public.account_pending_setup_conversations where id=c;
+  token:=gen_random_uuid(); v:=public.claim_account_pending_setup_turn_v2(c,a,u,v,token,'Atividade confirmada com hierarquia própria.','message');
+  proposal:=jsonb_build_object('kind','new','taxonId',null,'chain',jsonb_build_array(
+   jsonb_build_object('level','segment','name','E1012 Homonym Parent '||i,'existingId',null),
+   jsonb_build_object('level','niche','name','E1012 Scoped Homonym','existingId',null)),
+   'aliases','[]'::jsonb,'evidence','Categoria comprovada.','sources',jsonb_build_array('https://example.com/market'));
+  v:=public.commit_account_pending_setup_turn_v2(c,a,u,v,token,'Confirma entendimento?','Contexto confirmado.',null,'niche_confirmation',proposal,false);
+  token:=gen_random_uuid(); v:=public.claim_account_pending_setup_turn_v2(c,a,u,v,token,'Sim.','confirm');
+  v:=public.commit_account_pending_setup_turn_v2(c,a,u,v,token,'Entendimento confirmado.','Contexto confirmado.',null,'ready_to_complete',null,true);
+  perform pg_temp.assert_true(v=public.commit_account_pending_setup_turn_v2(c,a,u,v,token,'Replay.','Contexto confirmado.',null,'ready_to_complete',null,true),'homonym confirmation replay idempotent');
+ end loop;
+ perform pg_temp.assert_true((select count(*)=2 and count(distinct parent_id)=2 and count(distinct slug)=2 and bool_and(is_active)
+  from public.business_taxons where name='E1012 Scoped Homonym'),'homonyms retain distinct parents and unique slugs');
+ perform pg_temp.assert_true((select count(*)=2 and count(distinct taxon_id)=2 from public.account_taxonomy
+  where account_id in ('e10125a0-0000-4000-8000-000000000021','e10125a0-0000-4000-8000-000000000022') and is_primary and status='active'),'homonyms bind the respective hierarchy');
+end $homonym$;
+
 rollback;

@@ -116,6 +116,9 @@ export function validateAttendanceOutput(raw: unknown, context: AttendanceContex
   if (value.preferredName !== null && (!validatePreferredName(value.preferredName, null).ok || value.preferredNameDeclined)) return null;
   if (context.preferredNameDeclined && !value.preferredNameDeclined && value.preferredName === null) return null;
   if (context.preferredName && value.preferredNameDeclined) return null; // AI output cannot erase an existing user preference.
+  if (value.preferredName !== null && (context.preferredNameDeclined
+    || (context.preferredName !== null && value.preferredName !== context.preferredName))
+    && !explicitPreferredNameChange(context, value.preferredName)) return null;
   const sourced = new Set(actualSources.filter(validHttpsSource));
   if (value.evidenceUrls.some(url => !sourced.has(url))) return null;
   if (value.aliases.some(alias => alias.evidenceUrls.some(url => !sourced.has(url)))) return null;
@@ -128,7 +131,7 @@ export function validateAttendanceOutput(raw: unknown, context: AttendanceContex
     (value.action === "existing" && value.existingTaxonId !== context.currentPrimaryTaxonId) ||
     ["research", "propose"].includes(value.action))) return null;
   if (context.confirmedProposal && value.action !== "confirm") return null;
-  if (value.action === "confirm" && context.confirmedProposal?.kind === "operational_fallback") {
+  if (value.action === "confirm") {
     const confirmedSummary = context.summary?.trim();
     if (!confirmedSummary) return null;
     value.summary = confirmedSummary; // Confirm the understanding already persisted for this proposal.
@@ -167,6 +170,15 @@ export function validateAttendanceOutput(raw: unknown, context: AttendanceContex
     }
   }
   return value;
+}
+
+function explicitPreferredNameChange(context: AttendanceContext, name: string): boolean {
+  if (context.confirmedProposal) return false;
+  const current = context.recent.at(-1);
+  if (current?.role !== "user") return false;
+  const direct = /^(?:me chame de|pode me chamar de|prefiro ser chamad[oa] de|quero ser chamad[oa] de|meu nome é)\s+(.+?)[.!]?$/iu.exec(current.content.trim());
+  const declared = direct ? validatePreferredName(direct[1], null) : null;
+  return Boolean(declared?.ok && declared.value === name);
 }
 
 function activeAncestors(taxon: AttendanceTaxon, catalog: readonly AttendanceTaxon[]): boolean {

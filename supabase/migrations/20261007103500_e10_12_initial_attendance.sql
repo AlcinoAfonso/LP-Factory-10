@@ -254,11 +254,13 @@ begin
           raise exception 'pending_setup_alias_collision' using errcode='23514';
         end if;
         v_slug:=regexp_replace(public.normalize_taxon_match_text(v_name),'[^a-z0-9]+','-','g');
+        v_id:=gen_random_uuid();
         if exists(select 1 from public.business_taxons where slug=v_slug) then
-          raise exception 'pending_setup_slug_collision' using errcode='23505';
+          -- Scoped names may be homonyms; the new node ID disambiguates the global slug.
+          v_slug:=concat_ws('-',v_slug,v_level,v_id::text);
         end if;
-        insert into public.business_taxons(parent_id,level,name,slug,is_active)
-          values(v_parent,v_level,v_name,v_slug,false) returning id into v_id;
+        insert into public.business_taxons(id,parent_id,level,name,slug,is_active)
+          values(v_id,v_parent,v_level,v_name,v_slug,false);
         update public.business_taxons set is_active=true where id=v_id;
       end if;
       v_parent:=v_id; v_index:=v_index+1;

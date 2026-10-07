@@ -119,7 +119,16 @@ async function main() {
   const declinedContext = { ...context, preferredName: null, preferredNameDeclined: true };
   assert.equal(validateAttendanceOutput({ ...base, preferredName: null }, declinedContext, []), null);
   assert.equal(validateAttendanceOutput({ ...base, preferredName: null, preferredNameDeclined: true }, declinedContext, [])?.preferredNameDeclined, true);
-  assert.equal(validateAttendanceOutput(base, declinedContext, [])?.preferredName, "Ana");
+  assert.equal(validateAttendanceOutput(base, declinedContext, []), null);
+  assert.equal(validateAttendanceOutput(base, { ...declinedContext,
+    recent: [{ role: "user", content: "Me chame de Ana." }] }, [])?.preferredName, "Ana");
+  assert.equal(validateAttendanceOutput({ ...base, preferredName: "Bia" }, context, []), null);
+  assert.equal(validateAttendanceOutput({ ...base, preferredName: "Bia" }, { ...context,
+    recent: [{ role: "user", content: "Me chame de Bia." }] }, [])?.preferredName, "Bia");
+  assert.equal(validateAttendanceOutput({ ...base, preferredName: "Bia" }, { ...context,
+    recent: [{ role: "user", content: "Minha cliente Bia precisa de jardins." }] }, []), null);
+  assert.equal(validateAttendanceOutput({ ...base, preferredName: "Bia", action: "confirm", existingTaxonId: null },
+    { ...context, confirmedProposal: proposal, recent: [{ role: "user", content: "Me chame de Bia." }] }, []), null);
   const fallbackConfirmation: AttendanceContext = { ...context, confirmedProposal: { kind: "operational_fallback",
     taxonId: null, chain: [], aliases: [], evidence: "", sources: [] } };
   const confirmWithoutSummary = { ...base, action: "confirm" as const, existingTaxonId: null, summary: "" };
@@ -128,7 +137,12 @@ async function main() {
   const parsedFallback = parseAttendanceResponse(response(confirmWithoutSummary), fallbackConfirmation);
   assert.equal(parsedFallback.ok, true);
   if (parsedFallback.ok) assert.equal(parsedFallback.value.output.summary, context.summary);
-  assert.equal(validateAttendanceOutput(confirmWithoutSummary, { ...context, confirmedProposal: proposal }, [])?.summary, "");
+  assert.equal(validateAttendanceOutput(confirmWithoutSummary, { ...context, confirmedProposal: proposal }, [])?.summary, context.summary);
+  for (const confirmedProposal of [proposal, attendanceProposal(base, [])]) {
+    assert.equal(validateAttendanceOutput({ ...confirmWithoutSummary, summary: "Fatos não confirmados pelo lead." },
+      { ...context, confirmedProposal }, [])?.summary, context.summary);
+    assert.equal(validateAttendanceOutput(confirmWithoutSummary, { ...context, summary: null, confirmedProposal }, []), null);
+  }
   const projection = attendanceProjection(conversation, context.catalog);
   assert.equal(projection.recent.length, 8);
   assert.equal(projection.preferredNameDeclined, true);
