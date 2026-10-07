@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { attendanceProjection, attendancePrompt, attendanceProposal, validateAttendanceOutput,
-  type AttendanceContext, type AttendanceOutput } from "./attendance-core";
+  validateStoredAttendanceProposal, type AttendanceContext, type AttendanceOutput } from "./attendance-core";
 
 import type { AttendanceDependencies } from "./attendance-coordinator";
 import nodeModule from "node:module";
@@ -72,12 +72,20 @@ async function main() {
   assert.equal(validateAttendanceOutput({ ...market, chain: [{ level: "ultra_niche", name: "Serviço ocasional",
     existingId: null }] }, { ...context, research: true }, [source]), null);
   assert.equal(validateAttendanceOutput({ ...market, aliases: [{ text: "Ofertas relacionadas",
-    equivalentTo: "Jardinagem", justification: "Tem relação", evidenceUrls: [source] }] },
+    equivalentTo: "Jardinagem", equivalence: "related", justification: "Tem relação", evidenceUrls: [source] }] },
     { ...context, research: true }, [source]), null);
   assert.equal(validateAttendanceOutput({ ...market, evidenceUrls: ["https://invented.example.com"] },
     { ...context, research: true }, [source]), null);
   assert.equal(validateAttendanceOutput({ ...base, action: "confirm", existingTaxonId: null }, context, []), null);
+  const equivalent = { text: "Terapia física", equivalentTo: "Fisioterapia", equivalence: "proven" as const,
+    justification: "Equivalência comprovada pela fonte observada.", evidenceUrls: [source] };
+  assert.equal(validateAttendanceOutput({ ...market, aliases: [equivalent] }, { ...context, research: true }, [source])?.action, "propose");
+  assert.equal(validateAttendanceOutput({ ...market, aliases: [{ ...equivalent, equivalence: "related" }] }, { ...context, research: true }, [source]), null);
+  assert.equal(validateAttendanceOutput({ ...market, aliases: [{ ...equivalent, equivalence: "ambiguous" }] }, { ...context, research: true }, [source]), null);
   const proposal = attendanceProposal(market, [source]);
+  assert.ok(validateStoredAttendanceProposal(proposal));
+  assert.equal(validateStoredAttendanceProposal({ ...proposal, sources: ["javascript:alert(1)"] }), null);
+  assert.equal(validateStoredAttendanceProposal({ ...proposal, sources: ["malformed"] }), null);
   assert.ok(proposal);
   assert.equal(validateAttendanceOutput({ ...base, action: "confirm", existingTaxonId: null },
     { ...context, confirmedProposal: proposal }, [])?.action, "confirm");
@@ -139,4 +147,3 @@ async function main() {
   console.log("ok - E10.12 prompt/transport, selective Web, memory, fencing and no false success");
 }
 main().catch(error => { console.error(error); process.exitCode = 1; });
-

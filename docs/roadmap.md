@@ -1103,10 +1103,48 @@
 
 10.12.1 Objetivo e status
 - Objetivo: atender o lead por IA desde a recepção, compreender atuação, ofertas e público, reutilizar ou ampliar com segurança a taxonomia compartilhada e preservar contexto útil para retomada, com fechamento breve e sem conceder acesso comercial.
-- Status: V1 funcional aprovada e V2 técnica definida; execução autorizada sob supervisão Autônomo. A substituição funcional do atendimento vigente depende de implementação, validações, prova SQL integral, configuração elegível E21, QA e reviews aplicáveis.
+- Status: implementado no repositório sob supervisão Autônomo; atendimento novo desabilitado. Validações locais e QA renderizado com fixtures executados; prova integral PostgreSQL 17 com concorrência, prova empírica E21, revisão Design, QA hospedado, checks e reviews do HEAD permanecem gates de liberação. Merge, apply seletivo e habilitação não ocorreram.
+
+10.12.2 Registros do recorte
+- Repositório:
+  - Criados:
+    - `lib/onboarding/pending-setup/adapters/pendingSetupAttendanceAdapter.ts`
+    - `lib/onboarding/pending-setup/attendance-coordinator.ts`
+    - `lib/onboarding/pending-setup/attendance-core.ts`
+    - `lib/onboarding/pending-setup/attendance-provider.ts`
+    - `lib/onboarding/pending-setup/attendance-validation-cases.ts`
+    - `lib/openai-responses/openAiResponsesAdapter.ts`
+    - `supabase/migrations/20261007103500_e10_12_initial_attendance.sql`
+    - `supabase/tests/e10_12_initial_attendance.test.sql`
+    - `supabase/tests/e10_12_initial_attendance.concurrency.sql`
+    - `supabase/tests/e10_12_initial_attendance.commit-a.sql`
+    - `supabase/tests/e10_12_initial_attendance.commit-b.sql`
+  - Ajustados:
+    - `lib/onboarding/pending-setup/adapters/pendingSetupConversationAdapter.ts`
+    - `lib/onboarding/pending-setup/config.ts`
+    - `lib/onboarding/pending-setup/contracts.ts`
+    - `lib/openai-workloads/`
+    - `lib/openai-costs/`
+    - `lib/communication-base/adapters/communicationAiAdapter.ts`
+    - `lib/communication-base/validation-cases.ts`
+    - `lib/conversion-content/adapters/commercialActivationOpenAiAdapter.ts`
+    - `app/a/[account]/pending-setup-actions.ts`
+    - `app/a/[account]/_components/PendingSetupConversation.tsx`
+    - `app/admin/(protected)/workloads-openai/`
+    - `app/admin/(protected)/custos-openai/_components/OpenAiCostsDashboard.tsx`
+    - `app/admin/(protected)/custos-openai/_components/OpenAiEconomicHierarchy.tsx`
+    - `.github/workflows/e10-11-sql-proof.yml`
+    - `.github/workflows/pipeline-supabase-apply-migrations.yml`
+    - `package.json`
+  - Excluídos:
+    - `lib/conversion-content/adapters/openAiResponsesAdapter.ts`
+- Referências:
+  - Evolução versionada do banco: `docs/schema.md` — seções 1.11.5, 1.19A.3, 1.28.5, 3.1.2A e 3.11.1.
+  - Configuração e apply seletivo: `docs/platform-config.md` — seções 2.3 e 3.5.
+  - Automação do atendimento: `docs/automations.md` — seção 3.11.
 
 10.12.3 Atendimento e memória contextual
-- Status: definido; implementação planejada.
+- Status: implementado no repositório; validação hospedada pendente.
 - Conteúdo:
   - a IA conduz a comunicação desde a recepção, pergunta o nome preferido quando necessário, respeita a opção de não informá-lo e esclarece uma lacuna útil por vez;
   - nicho conhecido mantém comunicação por IA; o atendimento não herda o teto vitalício de três chamadas e continua somente enquanto houver avanço útil;
@@ -1116,7 +1154,7 @@
   - consulta futura dessa memória pela Base pertence ao recorte competente; esta execução não altera a Base nem cria sincronização ou escrita reversa.
 
 10.12.4 Pesquisa seletiva e classificação
-- Status: definido; implementação e avaliação do candidato planejadas.
+- Status: implementado no repositório; candidato inicial ainda sem prova empírica E21 ou ativação operacional.
 - Conteúdo:
   - consultar categorias, aliases e equivalências semânticas antes da pesquisa; reutilizar categoria ativa seguramente adequada sem investigação ou perguntas redundantes;
   - usar esclarecimento focal e Web Search somente quando necessários para sustentar classificação real de mercado, sem Pesquisa Integral/Profunda ou dependência de E20.5;
@@ -1126,7 +1164,7 @@
   - manter o comportamento E10.9/E10.11 até a habilitação segura do novo atendimento.
 
 10.12.5 Taxonomia sob demanda
-- Status: definido; implementação planejada.
+- Status: implementado no repositório; migration não aplicada ao projeto hospedado e prova integral PostgreSQL 17 com concorrência pendente. Execução SQL suplementar em PostgreSQL 18 não substitui esse gate.
 - Conteúdo:
   - manter uma única taxonomia compartilhada e criar somente categorias reais de mercado sustentadas por evidência pertinente suficiente, sem quantidade fixa de fontes ou ambiguidade material;
   - confirmar com o lead o entendimento antes de novo cadastro, sem transferir autoridade administrativa sobre hierarquia, pais ou aliases;
@@ -1137,7 +1175,7 @@
   - preservar autorização, isolamento e políticas de acesso; cadastro taxonômico não concede entitlement.
 
 10.12.6 Conclusão e experiência
-- Status: definido; implementação e QA planejados.
+- Status: implementado no repositório; QA renderizado local com fixtures executado em desktop e mobile. Revisão Design, QA autenticado hospedado e validação pós-habilitação permanecem pendentes.
 - Conteúdo:
   - encerrar quando houver compreensão suficiente e classificação concluída ou reconhecidamente pendente; anunciar vínculo somente depois de persistência confirmada;
   - distinguir pendência classificatória de erro técnico, preservar contexto e permitir retomada; fallback operacional exige confirmação e suas condições vigentes;

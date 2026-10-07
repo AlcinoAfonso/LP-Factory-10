@@ -30,7 +30,7 @@ export async function readAttendanceCatalog(): Promise<readonly AttendanceTaxon[
   }
   const catalog = taxons.map(row => ({
     id: row.id, name: row.name, level: row.level, parentId: row.parent_id, active: row.is_active,
-    aliases: aliases.filter(alias => alias.taxon_id === row.id).map(alias => alias.alias_text),
+    aliases: aliases.filter(alias => alias.taxon_id === row.id && alias.is_active).map(alias => alias.alias_text),
   }));
   // A partial catalog must never authorize Web research or a new category.
   return JSON.stringify(catalog).length <= 80_000 ? catalog : null;
@@ -73,4 +73,3 @@ export async function releaseAttendanceTurn(input: AttendanceTurnIdentity) {
   const { data, error } = await createServiceClient().rpc("release_account_pending_setup_turn_v2", identity(input));
   return result(data, error);
 }
-

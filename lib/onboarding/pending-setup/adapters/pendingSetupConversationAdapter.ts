@@ -11,6 +11,7 @@ import type {
   PendingSetupStage,
   PendingSetupWriteResult,
 } from "../contracts";
+import { validateStoredAttendanceProposal } from "../attendance-core";
 import { resolvePreferredNameFromAuth } from "../policy";
 import { isE1011PassageEnabled, isE1012AttendanceEnabled } from "../config";
 
@@ -156,6 +157,11 @@ export async function loadPendingSetupConversation(input: {
     return null;
   }
 
+  if (isE1012AttendanceEnabled() && (conversation as unknown as ConversationRow).attendance_proposal &&
+    !validateStoredAttendanceProposal((conversation as unknown as ConversationRow).attendance_proposal)) {
+    console.error("pendingSetupConversation read failed", { conversation_code: "proposal_invalid" });
+    return null;
+  }
   return mapConversation(
     conversation as unknown as ConversationRow,
     ((messages ?? []) as MessageRow[]),

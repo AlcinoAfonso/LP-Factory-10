@@ -60,4 +60,3 @@ export async function conductAttendanceTurn(input: Readonly<{
     return { ok: false as const, reason: "unavailable" as const };
   }
 }
-

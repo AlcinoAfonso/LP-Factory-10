@@ -11,6 +11,21 @@ begin
   end if;
 end $$;
 
+-- Direct SQL retains 40001; a Data API domain conflict is PGRST with HTTP409 and body code40001.
+do $proof$
+declare v_state text; v_message text; v_detail text;
+begin
+  perform set_config('request.method','POST',true);
+  begin
+    perform public.raise_postgrest_safe_conflict_v1('pending_setup_version_conflict');
+  exception when others then
+    get stacked diagnostics v_state=returned_sqlstate,v_message=message_text,v_detail=pg_exception_detail;
+  end;
+  perform pg_temp.assert_true(v_state='PGRST' and (v_message::jsonb)->>'code'='40001'
+    and (v_detail::jsonb)->>'status'='409','PostgREST conflict transported safely');
+  perform set_config('request.method','',true);
+end $proof$;
+
 select pg_temp.assert_true(has_function_privilege('service_role',
   'public.commit_account_pending_setup_turn_v2(uuid,uuid,uuid,bigint,uuid,text,text,text,text,jsonb,boolean,boolean)','execute'),'service commit');
 select pg_temp.assert_true(not has_function_privilege('service_role',
@@ -87,7 +102,10 @@ begin
  proposal:=jsonb_build_object('kind','new','taxonId',null,'chain',jsonb_build_array(
    jsonb_build_object('level','segment','name','E1012 Serviços locais','existingId',null),
    jsonb_build_object('level','niche','name','E1012 Manutenção de jardins','existingId',null)),
-   'aliases','[]'::jsonb,'evidence','Categoria real demonstrada pela referência pertinente.',
+   'aliases',jsonb_build_array(jsonb_build_object('text','E1012 Cuidado de jardins',
+     'equivalentTo','E1012 Manutenção de jardins','equivalence','proven',
+     'justification','Equivalência da manutenção e cuidado contínuo de jardins.',
+     'evidenceUrls',jsonb_build_array('https://example.com/market-gardens'))),'evidence','Categoria real demonstrada pela referência pertinente.',
    'sources',jsonb_build_array('https://example.com/market-gardens'));
  token:=gen_random_uuid(); v:=public.claim_account_pending_setup_turn_v2(c,a,u,v2,token,
    'Faço manutenção de jardins para condomínios.','message');
@@ -100,6 +118,8 @@ begin
  select taxon_id into saved_taxon from public.account_taxonomy where account_id=a and is_primary and status='active';
  perform pg_temp.assert_true(saved_taxon is not null,'official link committed');
  perform pg_temp.assert_true((select count(*)=2 and bool_and(is_active) from public.business_taxons where name like 'E1012 %'),'minimal hierarchy active');
+ perform pg_temp.assert_true((select count(*)=1 from public.business_taxon_aliases where taxon_id=saved_taxon
+   and alias_text='E1012 Cuidado de jardins' and is_active),'proven alias committed once');
  perform pg_temp.assert_true((select parent.level='segment' from public.business_taxons leaf
    join public.business_taxons parent on parent.id=leaf.parent_id where leaf.id=saved_taxon),'parent-first hierarchy');
  perform pg_temp.assert_true((select status='pending_setup' from public.accounts where id=a),'taxonomy grants no account promotion');
@@ -147,12 +167,17 @@ begin
  perform pg_temp.expect_error(format('select public.commit_account_pending_setup_turn_v2(%L,%L,%L,%s,%L,%L,%L,%L,%L,null,true)',
    cd,d,u,v,token,'Wrong','Atividade confirmada.','Dora','ready_to_complete'),'23514');
  bad:=jsonb_set(proposal,'{aliases}',jsonb_build_array(jsonb_build_object(
-   'text','E1012 Oferta relacionada','equivalentTo','Outra categoria','justification','Apenas relacionada.',
+   'text','E1012 Oferta relacionada','equivalentTo','Outra categoria','equivalence','related','justification','Apenas relacionada.',
    'evidenceUrls',jsonb_build_array('https://example.com/market-gardens'))));
  update public.account_pending_setup_conversations set attendance_proposal=bad where id=cd;
  perform pg_temp.expect_error(format('select public.commit_account_pending_setup_turn_v2(%L,%L,%L,%s,%L,%L,%L,%L,%L,null,true)',
    cd,d,u,v,token,'Wrong','Atividade confirmada.','Dora','ready_to_complete'),'23514');
  perform pg_temp.assert_true(not exists(select 1 from public.business_taxon_aliases where alias_text='E1012 Oferta relacionada'),'related alias rejected');
+ bad:=jsonb_set(jsonb_set(bad,'{aliases,0,equivalentTo}',to_jsonb('E1012 Manutenção de jardins'::text)),
+   '{aliases,0,equivalence}',to_jsonb('ambiguous'::text));
+ update public.account_pending_setup_conversations set attendance_proposal=bad where id=cd;
+ perform pg_temp.expect_error(format('select public.commit_account_pending_setup_turn_v2(%L,%L,%L,%s,%L,%L,%L,%L,%L,null,true)',
+   cd,d,u,v,token,'Wrong','Atividade confirmada.','Dora','ready_to_complete'),'23514');
 
  -- Expired provider is fenced even with the old token; recovered claim does not duplicate input.
  update public.account_pending_setup_conversations set pending_turn_started_at=clock_timestamp()-interval '7 minutes' where id=cd;
@@ -182,4 +207,3 @@ begin
    values(''segment'',''  e1012 serviços LOCAIS  '',''e1012-duplicate-slug'',true)','23505');
 end $$;
 rollback;
-

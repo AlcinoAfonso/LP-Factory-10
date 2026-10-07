@@ -187,12 +187,12 @@ Limites:
 - Não substitui o matching determinístico nem o contrato funcional da E10.5.6.
 
 Aplicação funcional no roadmap:
-- `docs/roadmap.md` — E10.5.6.5, dentro do recorte E10.5.6.
+- `docs/roadmap.md` — E10.9.4; comportamento preservado enquanto o atendimento E10.12 estiver desabilitado.
 
 Referências / dependências:
 Regra técnica: `docs/base-tecnica.md`
 Configuração de modelo: `docs/platform-config.md`
-Action consumidora: `app/a/[account]/actions.ts`
+Action consumidora: `app/a/[account]/pending-setup-actions.ts`
 Adapter OpenAI: `lib/onboarding/niche-resolution/adapters/openAiResolver.ts`
 Persistência operacional: `lib/onboarding/niche-resolution/adapters/accountNicheResolutionAdapter.ts`
 Decisão determinística: `lib/onboarding/niche-resolution/deterministicConfidence.ts`
@@ -285,6 +285,36 @@ A avaliação factual assistida e o workload correspondente foram removidos do r
 
 Destino canônico:
 `docs/roadmap.md` — E22.7.4; `docs/platform-config.md` — seções 2.3 e 3.5.
+
+3.11 Atendimento inicial por IA e taxonomia sob demanda
+
+Objetivo:
+Conduzir o atendimento desde a recepção, compreender o negócio e reutilizar ou propor classificação de mercado, preservando contexto confirmado e efetivação determinística da taxonomia.
+
+Status:
+Implementada no repositório e desabilitada; apply, prova empírica E21 e QA hospedado permanecem pendentes.
+
+Natureza e ambiente:
+Automação com comportamento agentic delimitado no runtime server-side do Core, dependente da OpenAI Platform; sem agente autônomo, Agents SDK, job, fila ou infraestrutura adicional.
+
+Acesso e modo de uso:
+Owner autenticado com membership ativo e conta pending_setup inicia ou continua a conversa. O servidor reserva o turno antes do provider; confirmação do lead utiliza somente a proposta persistida.
+
+Resultado esperado:
+Resposta útil por vez, memória compacta e classificação por categoria ativa ou proposta fundamentada. Pesquisa Web é focal e posterior à consulta do catálogo; novo cadastro exige confirmação do entendimento. Cadastro, ativação e vínculo são transacionais, sem aprovação individual do fundador no caminho seguro e sem anúncio de sucesso antes da gravação.
+
+Controles e limites:
+A IA interpreta e propõe; autorização, isolamento, concorrência, hierarquia, deduplicação e escrita permanecem determinísticos. Categoria inativa não é reativada nem duplicada. Falha preserva entrada recuperável e impede falsa conclusão; fallback operacional exige confirmação. Informações Web não viram fatos do lead. O atendimento não herda o contador legado de três chamadas e não cria entitlement, sincronização com a Base ou retorno assíncrono.
+
+Consumidores e dependências:
+Coordenação: `lib/onboarding/pending-setup/attendance-coordinator.ts`
+Provider e contrato: `lib/onboarding/pending-setup/attendance-provider.ts`, `lib/onboarding/pending-setup/attendance-core.ts`
+Persistência: `lib/onboarding/pending-setup/adapters/pendingSetupAttendanceAdapter.ts`
+Transporte compartilhado: `lib/openai-responses/openAiResponsesAdapter.ts`
+Workload, configuração e custos: E21; configurações externas em `docs/platform-config.md`, contrato físico em `docs/schema.md`.
+
+Aplicação funcional no roadmap:
+- `docs/roadmap.md` — E10.12.3–E10.12.6.
 
 4. Aprendizados operacionais
 

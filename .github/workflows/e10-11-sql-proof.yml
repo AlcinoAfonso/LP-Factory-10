@@ -251,6 +251,10 @@ jobs:
           test "${#db_containers[@]}" -eq 1
           db_container="${db_containers[0]}"
           test "$(docker exec "$db_container" psql -U postgres -d postgres -At -c "select current_setting('server_version_num')::int / 10000 = 17")" = t
+          # Exact canonical helper only; unrelated historical patch targets are outside this isolated fixture.
+          awk '/^do \$migration\$/ { blocks++; if (blocks == 2) exit } { print }' \
+            supabase/migrations/20260827203000_postgrest_safe_application_conflicts.sql \
+            | docker exec -i "$db_container" psql -U postgres -d postgres -v ON_ERROR_STOP=1
           docker exec -i "$db_container" psql -U postgres -d postgres -v ON_ERROR_STOP=1 \
             < supabase/tests/e10_12_initial_attendance.test.sql > "$RUNNER_TEMP/e10-12-test.log" 2>&1 || {
               tail -n 60 "$RUNNER_TEMP/e10-12-test.log"; exit 1;

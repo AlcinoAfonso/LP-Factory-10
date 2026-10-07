@@ -1,6 +1,7 @@
 "use client";
 
 import { startTransition, useActionState, useEffect, useRef } from "react";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { FeedbackMessage } from "@/components/ui/feedback-message";
 import { FormField, FormFieldError, FormFieldHint, FormFieldLabel } from "@/components/ui/form-field";
@@ -43,6 +44,7 @@ export function PendingSetupConversation({
     PendingSetupActionState,
     FormData
   >(savePendingSetupBusinessDisplayNameAction, { ok: true });
+  const attendanceButtonClass = conversation?.attendanceEnabled ? "bg-brand-700 text-white hover:bg-brand-700/90" : "";
   const initializedRef = useRef(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const businessNameRef = useRef<HTMLInputElement | null>(null);
@@ -137,7 +139,7 @@ export function PendingSetupConversation({
             <p className="mb-4 text-sm text-graytech-600" role="status">
               {isTurnPending ? "Preparando sua resposta…" : conversation.messages.length ? "Sua resposta está preservada." : "Vamos começar seu atendimento."}
             </p>
-            <Button type="submit" disabled={isTurnPending} className="min-h-11">
+            <Button type="submit" disabled={isTurnPending} className={cn("min-h-11", attendanceButtonClass)}>
               {isTurnPending ? "Atendendo…" : "Retomar atendimento"}
             </Button>
           </form>
@@ -146,7 +148,7 @@ export function PendingSetupConversation({
         {conversation.attendanceEnabled && conversation.attendanceProposal ? (
           <div className="space-y-3 px-5 pb-5 sm:px-8">
             {conversation.attendanceProposal.kind === "operational_fallback" ? (
-              <FeedbackMessage tone="warning">
+              <FeedbackMessage tone="warning" className="text-ink-900">
                 Seu negócio foi compreendido. A classificação oficial permanece pendente; você pode confirmar sua descrição para continuar.
               </FeedbackMessage>
             ) : null}
@@ -199,7 +201,7 @@ export function PendingSetupConversation({
             </FormField>
 
             <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center">
-              <Button type="submit" name="intent" value="save" disabled={isPending} className="min-h-11">
+              <Button type="submit" name="intent" value="save" disabled={isPending} className={cn("min-h-11", attendanceButtonClass)}>
                 {isPending ? "Continuando…" : "Continuar"}
               </Button>
               <Button
@@ -252,7 +254,7 @@ export function PendingSetupConversation({
               )}
             </FormField>
 
-            <Button type="submit" disabled={isTurnPending} className="mt-5 min-h-11">
+            <Button type="submit" disabled={isTurnPending} className={cn("mt-5 min-h-11", attendanceButtonClass)}>
               {isTurnPending ? "Entendendo…" : "Continuar"}
             </Button>
           </form>
@@ -278,7 +280,7 @@ export function PendingSetupConversation({
                 name="intent"
                 value="confirm"
                 disabled={isTurnPending}
-                className="min-h-11"
+                className={cn("min-h-11", attendanceButtonClass)}
               >
                 {isTurnPending
                   ? "Confirmando…"
@@ -335,7 +337,7 @@ export function PendingSetupConversation({
                 <FormFieldHint id="business-name-hint">Use o nome pelo qual você quer ser conhecido pelos clientes.</FormFieldHint>
               )}
             </FormField>
-            <Button type="submit" disabled={isNamePending} className="mt-5 min-h-11">
+            <Button type="submit" disabled={isNamePending} className={cn("mt-5 min-h-11", attendanceButtonClass)}>
               {isNamePending ? "Salvando…" : "Salvar e continuar"}
             </Button>
           </form>
@@ -356,7 +358,7 @@ export function PendingSetupConversation({
                 {completionState.formError}
               </FeedbackMessage>
             ) : null}
-            <Button type="submit" disabled={isCompletionPending} className="mt-5 min-h-11">
+            <Button type="submit" disabled={isCompletionPending} className={cn("mt-5 min-h-11", attendanceButtonClass)}>
               {isCompletionPending ? "Concluindo…" : "Continuar para a próxima etapa"}
             </Button>
           </form>

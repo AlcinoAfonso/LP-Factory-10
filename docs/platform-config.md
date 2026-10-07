@@ -67,6 +67,8 @@
 • Escopo seletivo E22.7 `e22_7_only` mergeado e aplicado com sucesso na `main` no SHA `362842f41fc9ee1c11315565d7647b1c61b51058`; exige SHA exato, inventário de 62 migrations, exclui as duas migrations E10.10 e preserva o gate fechado e o dry-run. Somente `supabase/migrations/20261001030000_e22_7_retire_factual_authority.sql` foi aplicada; o ledger avançou de 59 para 60 e `SUPABASE_APPLY_MIGRATIONS_ENABLED` foi restaurado a `false`.
 • Novas migrations seguem PR e merge autorizados conforme `AGENTS.md`; `workflow_dispatch` permanece excepcional e cada apply exige decisão operacional própria. O fluxo automático integral segue suspenso até resolução separada de E10.10 ou revisão explícita do filtro canônico.
 • Escopo seletivo E23.5 `e23_5_only` concluído no SHA de merge `a220a39e94759c471fdb679dc11909203748bc13`, pelo run [37406266349](https://github.com/AlcinoAfonso/LP-Factory-10/actions/runs/37406266349). Inventário fechado de 63 migrations e staging de 61, com as duas E10.10 excluídas; o dry-run e o apply incluíram somente `20261005170954_e23_5_retire_unused_graphql.sql`. Ledger final: 61; gate restaurado a `false`.
+• Escopo seletivo E10.12 `e10_12_only`: definido no workflow e ainda não executado. Exige dispatch na `main` após merge autorizado, `expected_main_sha` exato, inventário de 64 migrations e staging de 62, excluindo as duas E10.10. O dry-run deve conter somente `20261007103500_e10_12_initial_attendance.sql`; o apply seletivo não libera o fluxo automático integral e exige restauração do gate a `false`.
+• `.github/workflows/e10-11-sql-proof.yml`: inclui job focal `E10.12 PostgreSQL 17 proof` para o PR da branch `codex-app/e10-12-atendimento-ia`, com banco isolado, migration integral, casos com rollback e duas sessões concorrentes; execução remota ainda pendente, sem conexão ao projeto hospedado.
 • Regra: não usar SQL Editor para alterações de schema no fluxo normal.
 • Regra: migration aplicada não pode ser editada, apagada, renomeada ou substituída; correções e reversões exigem nova migration.
 • Com o gate fechado, um passo separado sem secrets registra `skipped`; a CLI não é instalada e `supabase link` e `supabase db push` não são executados.
@@ -246,6 +248,13 @@
 • Finalidade: gate server-only da coleta do nome público, conclusão versionada do Pending Setup e encaminhamento de conta autorizada à Base.
 • Escopo: Preview e Production do Core, independente por ambiente; somente o literal `true` ativa. Ausência ou outro valor preserva a conclusão e a rota anteriores, sem consulta à coluna nova.
 • Estado operacional: `true` em Preview e Production, de forma independente, após o apply seletivo E10.11; ambos os ambientes foram redeployados e passaram por QA autenticado. A alteração exige novo redeploy do ambiente afetado.
+• Classificação: Config, não Secret. Valor real por ambiente não versionar.
+
+• `E10_12_ATTENDANCE_ENABLED`
+• Finalidade: gate server-only do atendimento inicial por IA e da taxonomia sob demanda no Pending Setup.
+• Escopo aprovado: Preview e Production do Core, independente por ambiente; somente o literal `true` habilita.
+• Estado: habilitação ainda não executada; ausência ou outro valor preserva o atendimento E10.9/E10.11. Cadastro efetivo da variável na Vercel não foi confirmado.
+• Habilitação condicionada ao apply seletivo, configuração elegível e prova empírica E21, com validação sequencial Preview → Production. Alteração exige redeploy do ambiente afetado.
 • Classificação: Config, não Secret. Valor real por ambiente não versionar.
 
 • `E20_6_5_INPUT_CATALOG_EVALUATION_PROVIDER_ENABLED`

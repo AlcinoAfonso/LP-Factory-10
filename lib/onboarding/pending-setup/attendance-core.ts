@@ -14,6 +14,7 @@ const nodeSchema = z.object({
 const aliasSchema = z.object({
   text: z.string().trim().min(1).max(120),
   equivalentTo: z.string().trim().min(1).max(120),
+  equivalence: z.enum(["proven", "related", "ambiguous"]),
   justification: z.string().trim().min(1).max(500),
   evidenceUrls: z.array(z.url()).max(8),
 }).strict();
@@ -40,6 +41,16 @@ export type AttendanceProposal = Readonly<{
   taxonId: string | null; chain: AttendanceOutput["chain"];
   aliases: AttendanceOutput["aliases"]; evidence: string; sources: readonly string[];
 }>;
+const storedProposalSchema = z.object({
+  kind: z.enum(["existing", "new", "operational_fallback"]),
+  taxonId: z.uuid().nullable(), chain: z.array(nodeSchema).max(3),
+  aliases: z.array(aliasSchema).max(4), evidence: z.string().max(2000),
+  sources: z.array(z.url()).max(8),
+}).strict();
+export function validateStoredAttendanceProposal(raw: unknown): AttendanceProposal | null {
+  const parsed = storedProposalSchema.safeParse(raw);
+  return parsed.success && parsed.data.sources.every(validHttpsSource) ? parsed.data : null;
+}
 export type AttendanceContext = Readonly<{
   preferredName: string | null; summary: string | null; preferredNameDeclined?: boolean;
   recent: readonly Readonly<{ role: "user" | "assistant"; content: string }>[];
@@ -51,7 +62,7 @@ Use o contexto confirmado, a entrada recente e o catálogo compartilhado forneci
 Consulte categorias e aliases fornecidos antes de pedir pesquisa. Reutilize uma categoria ativa seguramente equivalente, mantendo comunicação por IA; nunca afirme associação já concluída: sua resposta precede a transação. Ativos e inativos distintos: inativo nunca pode ser reativado ou contornado por duplicação.
 Peça Web somente quando uma categoria de mercado nova ou equivalência real precisar de evidência; pesquisa focal, sem pesquisa integral E20. Se Web já estiver disponível, use evidência real e explique sua suficiência, sem inventar URL ou impor número fixo de fontes. Fatos de mercado não viram fatos do lead.
 Proponha uma cadeia mínima segmento>nicho>ultranicho só quando a atividade principal é entendida e a evidência é suficiente, sem ambiguidade material. Reuse pais existentes; segmento não tem pai, nicho exige segmento, ultranicho exige nicho+segmento. Não crie ultranicho para serviço ocasional. Antes de novo cadastro, apresente o entendimento para confirmação do lead, sem pedir decisão administrativa de hierarquia.
-Alias exige equivalência semântica real demonstrada com justificativa/evidência; termo relacionado, amplo ou ambíguo não é sinônimo. Sem lotes de aliases.
+Alias exige equivalência semântica real demonstrada com justificativa/evidência e equivalence proven; related ou ambiguous nunca são cadastrados; termo relacionado, amplo ou ambíguo não é sinônimo. Sem lotes de aliases.
 Mantenha business_context_text como síntese compacta útil de fatos confirmados de atividade/ofertas/público, separando dúvidas e pesquisa; não invente nome público, serviços, preços ou resultados. Nome preferido é distinto do nome público.
 Quando o entendimento basta e a classificação não é segura, encerre como pendente e proponha confirmar a descrição operacional; não empilhe perguntas nem prometa vínculo/cadastro. Sem teto vitalício de chamadas: prossiga apenas enquanto há progresso útil.
 Explicação e fechamento comercial são breves e contextuais, sobre capacidades reais de organizar conhecimento e apoiar comunicação; D17 governa objeções/recomendações profundas. Não conceda acesso/trial/entitlement, não gere LP, canais, integrações, pós-venda ou followup.
@@ -132,7 +143,7 @@ export function validateAttendanceOutput(raw: unknown, context: AttendanceContex
     const names = new Set<string>();
     for (const alias of value.aliases) {
       const normalized = normalizedTaxonText(alias.text);
-      if (normalizedTaxonText(alias.equivalentTo) !== normalizedTaxonText(leaf.name) ||
+      if (alias.equivalence !== "proven" || normalizedTaxonText(alias.equivalentTo) !== normalizedTaxonText(leaf.name) ||
         normalized === normalizedTaxonText(leaf.name) || names.has(normalized) ||
         !alias.evidenceUrls.length ||
         context.catalog.some(taxon => normalizedTaxonText(taxon.name) === normalized ||
@@ -159,4 +170,3 @@ export function attendanceProposal(output: AttendanceOutput, sources: readonly s
     chain: [], aliases: [], evidence: "", sources: [] };
   return null;
 }
-

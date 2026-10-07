@@ -82,4 +82,3 @@ export function parseAttendanceResponse(payload: unknown, context: AttendanceCon
   return validated ? { ok: true as const, value: { output: validated, sources: [...sources] },
     telemetry: { webSearchCallCount, webSearchSourceCount: sources.size } } : invalid;
 }
-

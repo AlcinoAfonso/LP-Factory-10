@@ -315,6 +315,7 @@
 • business_taxons_name_slug_fts_gin_idx (GIN em to_tsvector('portuguese', normalize_taxon_match_text(name) + slug normalizado))
 • business_taxons_name_normalized_trgm_gin_idx (GIN trigram em normalize_taxon_match_text(name))
 • business_taxons_slug_normalized_trgm_gin_idx (GIN trigram em slug normalizado)
+• Evolução repo-only ainda não aplicada: `business_taxons_level_parent_name_uidx`, UNIQUE em `(level, parent_id, public.normalize_taxon_match_text(name))` com NULLS NOT DISTINCT; a migration E10.12 rejeita colisões preexistentes antes da criação.
 
 1.12 business_taxon_aliases
 
@@ -610,6 +611,7 @@
 • account_niche_resolutions_ai_suggested_taxon_id_idx
 
 1.19A account_pending_setup_conversations
+• As seções 1.19A.1 e 1.19A.2 descrevem o contrato hospedado anterior à evolução repo-only da seção 1.19A.3.
 
 1.19A.1 Chaves, constraints e relacionamentos
 • PK: id uuid; UNIQUE: (account_id, user_id).
@@ -627,6 +629,16 @@
 • RLS ativo, sem policies; acesso direto revogado de public, anon, authenticated e ai_readonly.
 • service_role: SELECT, INSERT e UPDATE.
 • Migrations: `20260920223653_e10_9_pending_setup_conversation.sql`, `20260921170115_e10_9_pending_setup_openai_call_counter.sql` e `20260928161504_e10_11_pending_setup_business_name.sql`; a migration E10.11 foi aplicada uma vez pelo escopo seletivo autorizado.
+
+1.19A.3 Evolução versionada do atendimento inicial
+• Migration repo-only: `supabase/migrations/20261007103500_e10_12_initial_attendance.sql`; não aplicada ao projeto hospedado.
+• Acrescenta `attendance_proposal jsonb` nullable, limitado a objeto de até 16.000 bytes; `preferred_name_declined boolean NOT NULL DEFAULT false`; `pending_turn_ordinal integer`, `pending_turn_intent text` e `last_attendance_turn_token uuid`, todos nullable.
+• `(id, pending_turn_ordinal)` referencia `account_pending_setup_messages(conversation_id, ordinal)`; intenção admite `initialize | message | confirm | clarify`.
+• O CHECK da reserva passa a admitir também `identity`, preservando a exigência de token e instante ambos nulos ou ambos preenchidos. As novas RPCs usam lease de seis minutos; os contratos legados permanecem preservados.
+• Claim persiste uma entrada do usuário antes do provider; recuperação conserva ordinal e intenção para evitar novo append. Release limpa token e instante, preservando a entrada recuperável.
+• Commit revalida versão, token, lease e ator sob lock; atualiza proposta, recusa de nome e memória compacta em `business_context_text`, anexa a resposta e limpa a reserva atomicamente. Confirmação utiliza a proposta persistida.
+• `openai_call_count` e seu domínio legado 0–3 permanecem fisicamente preservados; as novas RPCs de atendimento não usam esse contador.
+• Nenhuma tabela de memória, alteração de grants diretos ou policy nova integra essa evolução; transcript bruto permanece append-only.
 
 1.19B account_pending_setup_messages
 
@@ -919,6 +931,12 @@
 • RLS habilitado e nenhuma policy.
 • public, anon, authenticated e ai_readonly: sem grants.
 • service_role: SELECT e UPDATE somente dos nove campos necessários às transições; sem INSERT, DELETE ou TRUNCATE.
+
+1.28.5 Extensão versionada do workload de atendimento
+• A migration E10.12, ainda não aplicada, acrescenta `pending_setup_conversation` às allowlists de configuração, revisão e ativação, com modalidade `responses_text`, preservando as expressões anteriores e sem restaurar workloads retirados.
+• Cria uma cadeia bootstrap por ambiente Preview/Production, revisão 1, modelo `gpt-6-luna`, reasoning effort `xhigh`, quality e validated_by nulos, com metadados `proof_kind = bootstrap` e `source = repo_catalog`.
+• Bootstrap registra o ponto inicial de configuração e não comprova avaliação empírica. Nenhuma prova operacional ou ativação decorrente de prova real foi confirmada para esse workload.
+• PKs, relacionamentos, RLS, policies e ACLs existentes permanecem preservados.
 
 1.29 openai_workload_configuration_revisions
 1.29.1 Função e colunas
@@ -1225,6 +1243,17 @@
 • `complete_account_pending_setup_v2(uuid, uuid, uuid, bigint, text) → boolean`: preserva o contrato de conclusão v1 e exige nome público persistido na transição ainda pending_setup; conversa histórica completed mantém idempotência sem backfill.
 • As oito RPCs são SECURITY DEFINER, usam search_path vazio, validam owner/membership/conta, têm EXECUTE exclusivo de service_role e revogam public, anon, authenticated e ai_readonly.
 
+3.1.2A Atendimento inicial por IA — evolução versionada
+• Contrato repo-only da migration E10.12; apply hospedado pendente.
+• `start_account_pending_setup_v2(uuid, uuid, text) → uuid`: início idempotente sem saudação fixa, preservando uma conversa por relação conta/usuário.
+• `claim_account_pending_setup_turn_v2(uuid, uuid, uuid, bigint, uuid, text, text) → bigint`: reserva versionada com entrada append-only, intenção persistida e recuperação após lease de seis minutos sem duplicar a entrada.
+• `commit_account_pending_setup_turn_v2(uuid, uuid, uuid, bigint, uuid, text, text, text, text, jsonb, boolean, boolean) → bigint`: efetiva resposta, memória, preferência de nome e transição sob fence; confirmação usa proposta persistida e efetivação taxonômica ocorre na mesma transação.
+• `release_account_pending_setup_turn_v2(uuid, uuid, uuid, bigint, uuid) → bigint`: libera a reserva exata, preservando intenção e ordinal para retomada.
+• As quatro RPCs são SECURITY DEFINER, têm search_path vazio, revalidam conta pending_setup e owner com membership ativo e concedem EXECUTE somente a service_role.
+• Helpers `assert_pending_setup_actor_v2(uuid, uuid)` e `effect_pending_setup_taxonomy_v1(uuid, jsonb, boolean, text)` são SECURITY DEFINER com search_path vazio, sem EXECUTE externo, inclusive para service_role; a efetivação é alcançada pelo commit autorizado.
+• A efetivação reconsulta taxons ativos/inativos, hierarquia e aliases sob locks; cria somente níveis ausentes, inicialmente inativos, ativa os necessários e grava o vínculo `user_confirmed_ai` sem substituir outro primário. Categoria inativa, colisão, pai inválido ou falha impedem conclusão e provocam rollback.
+• Novo cadastro exige confirmação, cadeia válida e evidência com fontes HTTPS; aliases exigem justificativa, equivalência declarada ao taxon final, fontes pertencentes à proposta e ausência de colisão. Fallback operacional confirmado não cria vínculo oficial.
+
 3.2 Limites de Plano
 3.2.1 get_account_effective_limits(account_id uuid) → SETOF record
 • Segurança: invoker (TBD confirmar)
@@ -1417,6 +1446,7 @@
 • `openai_cost_executions`: execução funcional por workload, ambiente, origem, universo e atribuição econômica explícita; conta é obrigatória somente para Cliente atribuído e nunca é inferida. A extensão repo-only E21.5.6 acrescenta `economic_event_kind`, `economic_event_id`, `landing_page_id` e `taxon_id`, todos nulos para linhas anteriores e sempre preenchidos como conjunto coerente quando houver correlação econômica comprovada na origem.
 • `openai_cost_operations`: uma linha por chamada cobrável, com sequência e retry anterior na mesma execução, configuração efetiva, IDs técnicos sanitizados, usage normalizado, Web Search, estado de custo e terminal imutável.
 • `openai_cost_coverage`: corte imutável por ambiente e workload, com versão do contrato financeiro.
+• A migration E10.12, ainda não aplicada, acrescenta `pending_setup_conversation` às allowlists de `openai_cost_executions` e `openai_cost_coverage` e prevê cortes prospectivos Preview, Production e Development, com `contract_version = e21.5.6-v2` e metadata `source = e10_12_prospective`. Não cria dimensão econômica nova nem comprova execução ou custo real.
 • A migration E25.1 acrescentou os dois workloads da Base às allowlists de `openai_cost_executions` e `openai_cost_coverage`, sem criar cortes de cobertura. Os quatro pares Production/Preview × Etapa 1/Etapa 2 foram registrados prospectivamente por `register_openai_cost_coverage_v1` antes do primeiro uso; as execuções provider-backed das duas etapas registram usage e custo no ledger E21.
 • A série `openai_lp_*` permanece independente, congelada e sem alteração pela migration E25.1.
 • A correlação `landing_page` exige universo Cliente atribuído, conta presente, `economic_event_id = landing_page_id` e FK composta para `account_landing_pages(id, account_id)`; `niche_resolution` exige UUID econômico próprio sem LP ou taxon; `lp_factory_internal` exige universo LP Factory, conta nula e admite `taxon_id` comprovado por FK para `business_taxons(id)`.

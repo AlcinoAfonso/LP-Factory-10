@@ -73,12 +73,12 @@ begin
   if p_expected_version is null or c.version<>p_expected_version or
     c.stage not in ('identity','business_understanding','niche_confirmation') or
     (c.pending_turn_token is not null and c.pending_turn_started_at > clock_timestamp()-interval '6 minutes') then
-    raise exception 'pending_setup_version_conflict' using errcode='40001';
+    perform public.raise_postgrest_safe_conflict_v1('pending_setup_version_conflict');
   end if;
   if c.pending_turn_intent is null then
     if p_intent='initialize' then
       if exists(select 1 from public.account_pending_setup_messages where conversation_id=c.id) then
-        raise exception 'pending_setup_already_initialized' using errcode='40001';
+        perform public.raise_postgrest_safe_conflict_v1('pending_setup_already_initialized');
       end if;
     else
       if p_user_content is null or char_length(btrim(p_user_content)) not between 1 and 4000 or
@@ -107,7 +107,7 @@ declare v_id uuid; v_parent uuid; v_existing uuid; v_level text; v_name text;
   v_node jsonb; v_alias jsonb; v_index integer:=0; v_primary uuid; v_slug text;
 begin
   if p_proposal is null or p_confirmed is null or
-    p_proposal->>'kind' not in ('existing','new','operational_fallback') then
+    coalesce(p_proposal->>'kind','') not in ('existing','new','operational_fallback') then
     raise exception 'pending_setup_proposal_invalid' using errcode='22023';
   end if;
   lock table public.business_taxons,public.business_taxon_aliases in share row exclusive mode;
@@ -136,7 +136,7 @@ begin
       raise exception 'pending_setup_market_evidence_missing' using errcode='23514';
     end if;
     if exists(select 1 from jsonb_array_elements_text(p_proposal->'sources') s
-      where s !~ '^https://[^/@[:space:]]+([/:][^[:space:]]*)?$') then
+      where s is null or s !~ '^https://[^/@[:space:]]+([/:][^[:space:]]*)?$') then
       raise exception 'pending_setup_market_source_invalid' using errcode='22023';
     end if;
     for v_node in select value from jsonb_array_elements(p_proposal->'chain') loop
@@ -172,7 +172,8 @@ begin
       v_parent:=v_id; v_index:=v_index+1;
     end loop;
     for v_alias in select value from jsonb_array_elements(p_proposal->'aliases') loop
-      if char_length(btrim(v_alias->>'text')) not between 1 and 120 or
+      if v_alias->>'equivalence' is distinct from 'proven' or
+        nullif(btrim(v_alias->>'text'),'') is null or char_length(btrim(v_alias->>'text')) not between 1 and 120 or
         nullif(btrim(v_alias->>'justification'),'') is null or
         public.normalize_taxon_match_text(v_alias->>'equivalentTo') is distinct from public.normalize_taxon_match_text(v_name) or
         public.normalize_taxon_match_text(v_alias->>'text')=public.normalize_taxon_match_text(v_name) or
@@ -204,7 +205,7 @@ begin
   select taxon_id into v_primary from public.account_taxonomy
     where account_id=p_account_id and is_primary and status='active' for update;
   if v_primary is not null and v_primary<>v_id then
-    raise exception 'pending_setup_primary_conflict' using errcode='40001';
+    perform public.raise_postgrest_safe_conflict_v1('pending_setup_primary_conflict');
   end if;
   insert into public.account_taxonomy(account_id,taxon_id,is_primary,status,source_type)
     values(p_account_id,v_id,true,'active','user_confirmed_ai')
@@ -227,7 +228,7 @@ begin
   if p_turn_token is null or p_expected_version is null or c.version<>p_expected_version or
     c.pending_turn_token is distinct from p_turn_token or
     c.pending_turn_started_at < clock_timestamp()-interval '6 minutes' then
-    raise exception 'pending_setup_version_conflict' using errcode='40001';
+    perform public.raise_postgrest_safe_conflict_v1('pending_setup_version_conflict');
   end if;
   if p_assistant_content is null or char_length(btrim(p_assistant_content)) not between 1 and 4000 or
     p_next_stage is null or p_next_stage not in ('identity','business_understanding','niche_confirmation','ready_to_complete') or
@@ -243,7 +244,7 @@ begin
   elsif v_stage='ready_to_complete' then
     raise exception 'pending_setup_taxonomy_not_committed' using errcode='23514';
   elsif v_proposal is not null then
-    if v_proposal->>'kind' not in ('new','operational_fallback') or v_stage<>'niche_confirmation' then
+    if coalesce(v_proposal->>'kind','') not in ('new','operational_fallback') or v_stage<>'niche_confirmation' then
       raise exception 'pending_setup_proposal_invalid' using errcode='22023';
     end if;
     v_confirm_kind:=case when v_proposal->>'kind'='new' then 'official' else 'operational_fallback' end;
@@ -274,7 +275,7 @@ begin
   perform public.assert_pending_setup_actor_v2(p_account_id,p_user_id);
   if p_expected_version is null or c.version<>p_expected_version or p_turn_token is null or
     c.pending_turn_token is distinct from p_turn_token then
-    raise exception 'pending_setup_version_conflict' using errcode='40001';
+    perform public.raise_postgrest_safe_conflict_v1('pending_setup_version_conflict');
   end if;
   update public.account_pending_setup_conversations set pending_turn_token=null,pending_turn_started_at=null,
     version=version+1,updated_at=clock_timestamp() where id=c.id returning version into v_version;
@@ -337,4 +338,3 @@ insert into public.openai_cost_coverage(environment,workload,activated_at,contra
 select environment,'pending_setup_conversation',now(),'e21.5.6-v2','{"source":"e10_12_prospective"}'::jsonb
 from (values('preview'),('production'),('development')) e(environment);
 commit;
-
