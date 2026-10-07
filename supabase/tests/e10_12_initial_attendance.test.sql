@@ -389,4 +389,56 @@ begin
   where taxon_id=leaf and alias_text='E1012 Expressão equivalente' and is_active),'equivalent alias created once');
 end $alias_only$;
 
+-- ON failure -> OFF legacy progress -> ON cannot resume an obsolete confirmation.
+do $gate_takeover$
+declare a uuid:='e10125a0-0000-4000-8000-000000000025';
+ u uuid:='e1012000-0000-4000-8000-000000000001'; c uuid; v bigint; old_version bigint;
+ old_token uuid:=gen_random_uuid(); legacy_token uuid:=gen_random_uuid(); fresh_token uuid:=gen_random_uuid();
+ proposal jsonb:='{"kind":"operational_fallback","taxonId":null,"chain":[],"aliases":[],"evidence":"","sources":[]}';
+begin
+ insert into public.accounts(id,name,subdomain,slug,status)
+ values(a,'Gate takeover','e1012-gate-takeover','e1012-gate-takeover','pending_setup');
+ insert into public.account_users(account_id,user_id,role,status) values(a,u,'owner','active');
+ c:=public.start_account_pending_setup_v2(a,u,'Ana');
+ v:=public.claim_account_pending_setup_turn_v2(c,a,u,1,old_token,'Descrição inicial.','message');
+ v:=public.commit_account_pending_setup_turn_v2(c,a,u,v,old_token,'Confirma entendimento?',
+  'Descrição inicial.',null,'niche_confirmation',proposal,false);
+ old_token:=gen_random_uuid();
+ v:=public.claim_account_pending_setup_turn_v2(c,a,u,v,old_token,'Sim antigo.','confirm');
+ old_version:=v;
+ v:=public.release_account_pending_setup_turn_v2(c,a,u,v,old_token);
+ perform pg_temp.assert_true((select pending_turn_intent='confirm' from public.account_pending_setup_conversations where id=c),'failure initially preserves retry');
+ v:=public.claim_account_pending_setup_turn_v1(c,a,u,v,legacy_token);
+ perform pg_temp.assert_true((select pending_turn_intent is null and pending_turn_ordinal is null
+  and attendance_proposal is null from public.account_pending_setup_conversations where id=c),'legacy claim supersedes obsolete intent and proposal');
+ v:=public.append_account_pending_setup_turn_v1(c,a,u,v,legacy_token,'Nova descrição no legado.',
+  'Continuamos com a descrição nova.','business_understanding',null,'Nova descrição no legado.');
+ perform pg_temp.assert_true((select pending_turn_token is null and pending_turn_intent is null
+  and pending_turn_ordinal is null and attendance_proposal is null from public.account_pending_setup_conversations where id=c),'legacy append leaves no attendance resume metadata');
+ perform public.start_account_pending_setup_v2(a,u,null);
+ perform pg_temp.expect_error(format(
+  'select public.commit_account_pending_setup_turn_v2(%L,%L,%L,%s,%L,%L,%L,null,%L,null,true)',
+  c,a,u,old_version,old_token,'Confirmação antiga.','Descrição inicial.','ready_to_complete'),'40001');
+ perform pg_temp.assert_true(not exists(select 1 from public.account_taxonomy where account_id=a),'obsolete confirmation produces no link');
+ v:=public.claim_account_pending_setup_turn_v2(c,a,u,v,fresh_token,'Resposta atual depois do retorno.','message');
+ perform pg_temp.assert_true((select count(*)=1 from public.account_pending_setup_messages
+  where conversation_id=c and content='Resposta atual depois do retorno.'),'return ON claims a fresh entry once');
+ perform public.release_account_pending_setup_turn_v2(c,a,u,v,fresh_token);
+
+ -- Identity takeover also clears a failed initial greeting before the legacy name writer.
+ a:='e10125a0-0000-4000-8000-000000000026';
+ insert into public.accounts(id,name,subdomain,slug,status)
+ values(a,'Identity takeover','e1012-identity-takeover','e1012-identity-takeover','pending_setup');
+ insert into public.account_users(account_id,user_id,role,status) values(a,u,'owner','active');
+ c:=public.start_account_pending_setup_v2(a,u,null);
+ fresh_token:=gen_random_uuid();
+ v:=public.claim_account_pending_setup_turn_v2(c,a,u,1,fresh_token,null,'initialize');
+ v:=public.release_account_pending_setup_turn_v2(c,a,u,v,fresh_token);
+ v:=public.set_account_pending_setup_preferred_name_v1(c,a,u,'Ana',v);
+ perform pg_temp.assert_true((select pending_turn_intent is null and pending_turn_ordinal is null
+  and pending_turn_token is null and stage='business_understanding'
+  from public.account_pending_setup_conversations where id=c),'legacy identity progress supersedes failed initialization');
+ perform pg_temp.assert_true((select count(*)=1 from public.account_pending_setup_messages where conversation_id=c),'identity takeover preserves one legacy greeting');
+end $gate_takeover$;
+
 rollback;

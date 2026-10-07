@@ -143,6 +143,12 @@ begin
   set preferred_name = v_preferred_name,
       preferred_name_declined = (v_preferred_name IS NULL),
       stage = 'business_understanding',
+      attendance_proposal = null,
+      pending_turn_token = null,
+      pending_turn_started_at = null,
+      pending_turn_ordinal = null,
+      pending_turn_intent = null,
+      last_attendance_turn_token = null,
       version = version + 1
   where id = p_conversation_id
   returning version into v_new_version;
@@ -164,6 +170,29 @@ begin
 end;
 $$;
 
+
+-- Gate OFF advancing the legacy flow supersedes an interrupted attendance turn.
+-- Preserve the deployed legacy definitions, including conflict transport and ACLs.
+do $legacy_takeover$
+declare v_signature text; v_definition text; v_anchor text; v_replacement text;
+begin
+  for v_signature, v_anchor, v_replacement in
+    select * from (values
+      ('public.claim_account_pending_setup_turn_v1(uuid,uuid,uuid,bigint,uuid)',
+       'set pending_turn_token = p_turn_token,',
+       'set attendance_proposal = null, pending_turn_ordinal = null, pending_turn_intent = null, last_attendance_turn_token = null, pending_turn_token = p_turn_token,'),
+      ('public.append_account_pending_setup_turn_v1(uuid,uuid,uuid,bigint,uuid,text,text,text,text,text)',
+       'pending_turn_started_at = null,',
+       'pending_turn_started_at = null, attendance_proposal = null, pending_turn_ordinal = null, pending_turn_intent = null, last_attendance_turn_token = null,')
+    ) patch(signature, anchor, replacement)
+  loop
+    v_definition := pg_get_functiondef(v_signature::regprocedure);
+    if strpos(v_definition, v_anchor) = 0 then
+      raise exception 'pending_setup_legacy_takeover_patch_missing: %', v_signature;
+    end if;
+    execute replace(v_definition, v_anchor, v_replacement);
+  end loop;
+end $legacy_takeover$;
 
 create function public.assert_pending_setup_actor_v2(p_account_id uuid, p_user_id uuid)
 returns void language plpgsql security definer set search_path = '' as $$
