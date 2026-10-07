@@ -184,7 +184,7 @@ async function main() {
   assert.equal(projection.recent.length, 8);
   assert.equal(projection.preferredNameDeclined, true);
   assert.equal(projection.summary, conversation.accountContext?.summary);
-  assert.equal(projection.legacyContext, conversation.businessContextText);
+  assert.equal("legacyContext" in projection, false);
   assert.equal(JSON.stringify(projection).includes("ana@example.com"), false);
   assert.equal(parseAttendanceResponse(response(base), context).ok, true);
   assert.equal(parseAttendanceResponse(response(market), { ...context, research: true }).ok, false);
@@ -243,12 +243,12 @@ async function main() {
   assert.equal((await conductAttendanceTurn({ ...input, intent: "clarify",
     content: "Vamos retomar o atendimento a partir do contexto já informado." }, {
     ...dependencies,
-    request: async ({ context: legacyContext }) => {
-      assert.equal(legacyContext.summary, current.accountContext?.summary);
-      assert.equal(legacyContext.legacyContext, current.businessContextText);
-      assert.equal(legacyContext.confirmedProposal, null);
+    request: async ({ context: currentContext }) => {
+      assert.equal(currentContext.summary, current.accountContext?.summary);
+      assert.equal("legacyContext" in currentContext, false);
+      assert.equal(currentContext.confirmedProposal, null);
       return { ok: true, output: { ...base, action: "pending", existingTaxonId: null },
-        sources: [], responseId: "resp_legacy_adoption", latencyMs: 1 };
+        sources: [], responseId: "resp_current_dialogue", latencyMs: 1 };
     },
     commit: async (write) => {
       assert.equal(write.confirm, false);

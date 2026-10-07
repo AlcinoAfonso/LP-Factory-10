@@ -35,16 +35,6 @@ do $$ begin
     revoke all on public.account_dialogues,public.account_context_summaries from ai_readonly;
   end if;
 end $$;
-insert into public.account_dialogues(id,account_id,user_id,origin,started_at,ended_at)
-select id,account_id,user_id,'pending_setup',created_at,completed_at
-from public.account_pending_setup_conversations on conflict(id) do nothing;
--- Deterministic seed from a confirmed legacy understanding; no automatic merge of users' claims.
-insert into public.account_context_summaries(account_id,summary,source_dialogue_id,source_user_id,updated_at)
-select distinct on(account_id) account_id,btrim(business_context_text),id,user_id,updated_at
-from public.account_pending_setup_conversations
-where stage in ('ready_to_complete','completed') and nullif(btrim(business_context_text),'') is not null
-order by account_id,updated_at desc,id desc on conflict(account_id) do nothing;
-
 
 do $$
 begin
@@ -75,9 +65,6 @@ alter table public.account_pending_setup_conversations
     or (pending_turn_token is not null and pending_turn_started_at is not null
       and stage in ('identity','business_understanding','niche_confirmation')));
 
--- Infer refusal only from legacy transitions before the new attendance gate.
-update public.account_pending_setup_conversations set preferred_name_declined=true
-  where preferred_name is null and stage<>'identity';
 -- Preserve the legacy signature, ACLs and flow across apply, gate OFF and rollback.
 create or replace function public.set_account_pending_setup_preferred_name_v1(
   p_conversation_id uuid,
@@ -126,6 +113,10 @@ begin
     and c.user_id = p_user_id
   for update;
 
+  if v_conversation.pending_turn_intent is not null or v_conversation.last_attendance_turn_token is not null then
+    raise exception 'pending_setup_attendance_requires_enabled_gate' using errcode = '55000';
+  end if;
+
   if v_conversation.stage <> 'identity' then
     return v_conversation.version;
   end if;
@@ -143,12 +134,6 @@ begin
   set preferred_name = v_preferred_name,
       preferred_name_declined = (v_preferred_name IS NULL),
       stage = 'business_understanding',
-      attendance_proposal = null,
-      pending_turn_token = null,
-      pending_turn_started_at = null,
-      pending_turn_ordinal = null,
-      pending_turn_intent = null,
-      last_attendance_turn_token = null,
       version = version + 1
   where id = p_conversation_id
   returning version into v_new_version;
@@ -171,28 +156,34 @@ end;
 $$;
 
 
--- Gate OFF advancing the legacy flow supersedes an interrupted attendance turn.
--- Preserve the deployed legacy definitions, including conflict transport and ACLs.
-do $legacy_takeover$
-declare v_signature text; v_definition text; v_anchor text; v_replacement text;
+-- Activation is one-way for an initiated attendance: gate OFF cannot switch its motor.
+-- Existing intent or persisted attendance token suffices; no extra state or metadata reset.
+-- Preserve deployed legacy definitions and ACLs; ordinary legacy conversations stay usable.
+do $legacy_boundary$
+declare v_signature text; v_definition text; v_anchor text; v_guard text;
 begin
-  for v_signature, v_anchor, v_replacement in
-    select * from (values
-      ('public.claim_account_pending_setup_turn_v1(uuid,uuid,uuid,bigint,uuid)',
-       'set pending_turn_token = p_turn_token,',
-       'set attendance_proposal = null, pending_turn_ordinal = null, pending_turn_intent = null, last_attendance_turn_token = null, pending_turn_token = p_turn_token,'),
-      ('public.append_account_pending_setup_turn_v1(uuid,uuid,uuid,bigint,uuid,text,text,text,text,text)',
-       'pending_turn_started_at = null,',
-       'pending_turn_started_at = null, attendance_proposal = null, pending_turn_ordinal = null, pending_turn_intent = null, last_attendance_turn_token = null,')
-    ) patch(signature, anchor, replacement)
+  v_anchor := E'  for update;\n';
+  v_guard := E'\n  if v_conversation.pending_turn_intent is not null or v_conversation.last_attendance_turn_token is not null then\n    raise exception ''pending_setup_attendance_requires_enabled_gate'' using errcode = ''55000'';\n  end if;\n';
+  foreach v_signature in array array[
+    'public.claim_account_pending_setup_turn_v1(uuid,uuid,uuid,bigint,uuid)',
+    'public.append_account_pending_setup_turn_v1(uuid,uuid,uuid,bigint,uuid,text,text,text,text,text)'
+  ]
   loop
     v_definition := pg_get_functiondef(v_signature::regprocedure);
-    if strpos(v_definition, v_anchor) = 0 then
-      raise exception 'pending_setup_legacy_takeover_patch_missing: %', v_signature;
+    if (length(v_definition)-length(replace(v_definition,v_anchor,'')))/length(v_anchor) <> 1 then
+      raise exception 'pending_setup_legacy_boundary_patch_missing: %', v_signature;
     end if;
-    execute replace(v_definition, v_anchor, v_replacement);
+    execute replace(v_definition, v_anchor, v_anchor || v_guard);
   end loop;
-end $legacy_takeover$;
+  v_signature := 'public.start_account_pending_setup_v1(uuid,uuid,text)';
+  v_definition := pg_get_functiondef(v_signature::regprocedure);
+  v_anchor := E'  return v_conversation_id;\nend;';
+  if strpos(v_definition,v_anchor)=0 then
+    raise exception 'pending_setup_legacy_boundary_patch_missing: %',v_signature;
+  end if;
+  v_guard := E'  if exists(select 1 from public.account_pending_setup_conversations c where c.id=v_conversation_id\n    and (c.pending_turn_intent is not null or c.last_attendance_turn_token is not null)) then\n    raise exception ''pending_setup_attendance_requires_enabled_gate'' using errcode = ''55000'';\n  end if;\n';
+  execute replace(v_definition,v_anchor,v_guard || v_anchor);
+end $legacy_boundary$;
 
 create function public.assert_pending_setup_actor_v2(p_account_id uuid, p_user_id uuid)
 returns void language plpgsql security definer set search_path = '' as $$
@@ -206,20 +197,25 @@ end $$;
 create function public.start_account_pending_setup_v2(p_account_id uuid,p_user_id uuid,
   p_preferred_name text default null)
 returns uuid language plpgsql security definer set search_path = '' as $$
-declare v_id uuid;
+declare v_id uuid; v_started_at timestamptz;
 begin
   perform public.assert_pending_setup_actor_v2(p_account_id,p_user_id);
   insert into public.account_pending_setup_conversations(account_id,user_id,preferred_name,stage)
     values(p_account_id,p_user_id,nullif(btrim(p_preferred_name),''),
       case when nullif(btrim(p_preferred_name),'') is null then 'identity' else 'business_understanding' end)
-    on conflict(account_id,user_id) do nothing returning id into v_id;
+    on conflict(account_id,user_id) do nothing returning id,created_at into v_id,v_started_at;
   if v_id is null then
-    select id into strict v_id from public.account_pending_setup_conversations
-      where account_id=p_account_id and user_id=p_user_id;
+    select c.id into v_id from public.account_pending_setup_conversations c
+      join public.account_dialogues d on d.id=c.id and d.account_id=c.account_id and d.user_id=c.user_id
+      where c.account_id=p_account_id and c.user_id=p_user_id;
+    if v_id is null then
+      raise exception 'pending_setup_legacy_conversation_not_supported' using errcode='55000';
+    end if;
+    return v_id;
   end if;
+  -- Only a newly created attendance initializes contextual account structures.
   insert into public.account_dialogues(id,account_id,user_id,origin,started_at,ended_at)
-    select id,account_id,user_id,'pending_setup',created_at,completed_at
-    from public.account_pending_setup_conversations where id=v_id on conflict(id) do nothing;
+    values(v_id,p_account_id,p_user_id,'pending_setup',v_started_at,null);
   insert into public.account_context_summaries(account_id) values(p_account_id)
     on conflict(account_id) do nothing;
   return v_id;
