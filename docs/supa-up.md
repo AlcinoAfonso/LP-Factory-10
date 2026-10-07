@@ -1337,7 +1337,7 @@ Recurso de segurança/governança para bloquear push acidental de chaves secreta
 
 2. Reavaliar somente diante de nova evidência de desativação, bypass ou incidente; mudança de setting exige recorte próprio aprovado.  
 
-3. Não converter a ativação confirmada em garantia de cobertura de `supabase_secret_key` sem evidência específica; não testar com credencial real.  
+3. Somente após validar a cobertura específica de `supabase_secret_key`, refletir o controle no onboarding técnico e na documentação interna de segredos; a ativação confirmada não garante essa cobertura, e não se deve testar com credencial real.  
 
 ### Registro (Tipo A — Plataforma)
 
