@@ -1099,6 +1099,55 @@
 - Status: continuidade e regressão validadas em Preview e Production.
 - Conteúdo: manter matching e fallback de nicho, checkout, membership e entitlement intactos. O apply seletivo pós-merge deste recorte aplicou somente a migration E10.11; as migrations E10.10 continuam fora do apply e o fluxo automático integral permanece suspenso.
 
+10.12 Atendimento inicial por IA e taxonomia sob demanda
+
+10.12.1 Objetivo e status
+- Objetivo: atender o lead por IA desde a recepção, compreender atuação, ofertas e público, reutilizar ou ampliar com segurança a taxonomia compartilhada e preservar contexto útil para retomada, com fechamento breve e sem conceder acesso comercial.
+- Status: V1 funcional aprovada e V2 técnica definida; execução autorizada sob supervisão Autônomo. A substituição funcional do atendimento vigente depende de implementação, validações, prova SQL integral, configuração elegível E21, QA e reviews aplicáveis.
+
+10.12.3 Atendimento e memória contextual
+- Status: definido; implementação planejada.
+- Conteúdo:
+  - a IA conduz a comunicação desde a recepção, pergunta o nome preferido quando necessário, respeita a opção de não informá-lo e esclarece uma lacuna útil por vez;
+  - nicho conhecido mantém comunicação por IA; o atendimento não herda o teto vitalício de três chamadas e continua somente enquanto houver avanço útil;
+  - memória compacta própria da relação conta/usuário consolida fatos confirmados e sustenta retomada com contexto recente limitado; o histórico bruto permanece append-only, sem reenvio rotineiro integral;
+  - reserva versionada, idempotência e revalidação do ator protegem turnos, retomadas e gravação, inclusive contra respostas atrasadas e duas abas;
+  - informações Web sustentam classificação de mercado e não se tornam automaticamente fatos do lead;
+  - consulta futura dessa memória pela Base pertence ao recorte competente; esta execução não altera a Base nem cria sincronização ou escrita reversa.
+
+10.12.4 Pesquisa seletiva e classificação
+- Status: definido; implementação e avaliação do candidato planejadas.
+- Conteúdo:
+  - consultar categorias, aliases e equivalências semânticas antes da pesquisa; reutilizar categoria ativa seguramente adequada sem investigação ou perguntas redundantes;
+  - usar esclarecimento focal e Web Search somente quando necessários para sustentar classificação real de mercado, sem Pesquisa Integral/Profunda ou dependência de E20.5;
+  - tratar ausência de categoria separadamente da compreensão do negócio; entendimento suficiente com classificação insegura permanece preservado e pendente;
+  - avaliar inicialmente `gpt-6-luna + xhigh` no workload focal `pending_setup_conversation`, sob elegibilidade, prova real, ativação e medição de custos E21; essa configuração ainda não está validada;
+  - preservar os pareceres de Automações incorporados à V1 e o custo incremental de IA/Web autorizado; nova avaliação formal por esse mesmo ponto está dispensada;
+  - manter o comportamento E10.9/E10.11 até a habilitação segura do novo atendimento.
+
+10.12.5 Taxonomia sob demanda
+- Status: definido; implementação planejada.
+- Conteúdo:
+  - manter uma única taxonomia compartilhada e criar somente categorias reais de mercado sustentadas por evidência pertinente suficiente, sem quantidade fixa de fontes ou ambiguidade material;
+  - confirmar com o lead o entendimento antes de novo cadastro, sem transferir autoridade administrativa sobre hierarquia, pais ou aliases;
+  - reutilizar pais ativos e dos níveis corretos; criar somente níveis ausentes, do pai para o filho, sem forçar ultranicho para serviço ocasional;
+  - cadastrar somente aliases úteis e comprovadamente equivalentes; termos apenas relacionados, amplos ou ambíguos não autorizam equivalência;
+  - reconsultar categorias, aliases e pais antes de gravar, impedir duplicação concorrente e reutilizar cadastro já criado; categoria inativa não é reativada nem contornada por duplicata;
+  - validações determinísticas e efetivação transacional controlam cadastro, ativação e vínculo no caminho seguro, sem aprovação individual do fundador; falha provoca rollback e impede anúncio de sucesso;
+  - preservar autorização, isolamento e políticas de acesso; cadastro taxonômico não concede entitlement.
+
+10.12.6 Conclusão e experiência
+- Status: definido; implementação e QA planejados.
+- Conteúdo:
+  - encerrar quando houver compreensão suficiente e classificação concluída ou reconhecidamente pendente; anunciar vínculo somente depois de persistência confirmada;
+  - distinguir pendência classificatória de erro técnico, preservar contexto e permitir retomada; fallback operacional exige confirmação e suas condições vigentes;
+  - preservar conclusão E10.11, nome público distinto do nome preferido, identidade, WhatsApp, acesso, membership, entitlement, checkout e trial;
+  - oferecer fechamento persuasivo breve sobre capacidades reais da LP Factory; objeções e recomendação comercial aprofundadas pertencem ao D17;
+  - manter experiência em uma coluna, feedback próximo à ação, estados compreensíveis, teclado, foco e alvos mínimos de 44 px em desktop e mobile;
+  - validar reutilização, pesquisa seletiva, criação segura, aliases, inativos, concorrência, falhas, retomada e isolamento, além da regressão do atendimento vigente;
+  - ficam fora geração de produtos, CRM, pós-venda, integração automática de canais, alterações comerciais, fields factuais autônomos e promessa de retorno assíncrono.
+
+
 11. E11 — Gestão de membros e autoridade comercial
 
 - Objetivo: permitir gestão segura de membros não-owner por conta e tornar explícitas as regras de papel e entitlement para checkout, novos convites e manutenção de vínculos.

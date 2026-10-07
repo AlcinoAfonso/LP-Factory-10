@@ -5,6 +5,8 @@ on:
     paths:
       - '.github/workflows/e10-11-sql-proof.yml'
       - 'supabase/migrations/20260928161504_e10_11_pending_setup_business_name.sql'
+      - 'supabase/migrations/20261007103500_e10_12_initial_attendance.sql'
+      - 'supabase/tests/e10_12_initial_attendance.*'
       - 'supabase/tests/e10_11_pending_setup_business_name.test.sql'
       - 'supabase/migrations/20261001030000_e22_7_retire_factual_authority.sql'
       - 'supabase/tests/e22_7_retire_factual_authority.*'
@@ -195,3 +197,75 @@ jobs:
           mapfile -t db_containers < <(docker ps --format '{{.Names}}' | grep '^supabase_db_' || true)
           test "${#db_containers[@]}" -eq 1
           bash supabase/tests/e23_5_retire_unused_graphql.proof.sh "${db_containers[0]}"
+
+  e10-12-sql-proof:
+    name: E10.12 PostgreSQL 17 proof
+    if: ${{ github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'codex-app/e10-12-atendimento-ia' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install pinned Supabase CLI
+        uses: supabase/setup-cli@3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf # v2.1.1
+        with:
+          version: 2.106.0
+      - name: Stage exact E10.12 dependency chain
+        id: e1012
+        shell: bash
+        run: |
+          set -euo pipefail
+          stage_project="$(mktemp -d "$RUNNER_TEMP/e10-12-sql.XXXXXX")"
+          mkdir -p "$stage_project/supabase/migrations"
+          cp supabase/config.toml "$stage_project/supabase/config.toml"
+          selected=(
+            20260611172930_remote_public_baseline.sql
+            20260614124000_fix_audit_context_event_event_column.sql
+            20260628184945_e9_commercial_entitlements.sql
+            20260820190422_e21_2_3_openai_workload_operational_configurations.sql
+            20260823144334_e21_2_5_openai_model_catalog.sql
+            20260911150000_e21_5_3_openai_active_cost_tracking.sql
+            20260920223653_e10_9_pending_setup_conversation.sql
+            20260921170115_e10_9_pending_setup_openai_call_counter.sql
+            20260927145500_e25_1_account_communication_bases.sql
+            20260927163500_e21_2_communication_base_workloads.sql
+            20260928161504_e10_11_pending_setup_business_name.sql
+            20261007103500_e10_12_initial_attendance.sql
+          )
+          for name in "${selected[@]}"; do
+            cp "supabase/migrations/$name" "$stage_project/supabase/migrations/$name"
+            cmp -s "supabase/migrations/$name" "$stage_project/supabase/migrations/$name"
+          done
+          test "$(find "$stage_project/supabase/migrations" -name '*.sql' | wc -l)" -eq 12
+          echo "project=$stage_project" >> "$GITHUB_OUTPUT"
+      - name: Apply integral SQL to isolated PostgreSQL 17
+        shell: bash
+        run: |
+          set -euo pipefail
+          supabase --workdir "${{ steps.e1012.outputs.project }}" start \
+            -x gotrue,realtime,storage-api,imgproxy,kong,mailpit,postgrest,postgres-meta,studio,edge-runtime,logflare,vector,supavisor \
+            > "$RUNNER_TEMP/e10-12-start.log" 2>&1 || {
+              sed -E '/(SERVICE_ROLE|ANON_KEY|SECRET_KEY|JWT_SECRET|DB_PASSWORD|DATABASE_URL|PUBLISHABLE_KEY)/Id' "$RUNNER_TEMP/e10-12-start.log" | tail -n 35
+              exit 1
+            }
+          mapfile -t db_containers < <(docker ps --format '{{.Names}}' | grep '^supabase_db_')
+          test "${#db_containers[@]}" -eq 1
+          db_container="${db_containers[0]}"
+          test "$(docker exec "$db_container" psql -U postgres -d postgres -At -c "select current_setting('server_version_num')::int / 10000 = 17")" = t
+          docker exec -i "$db_container" psql -U postgres -d postgres -v ON_ERROR_STOP=1 \
+            < supabase/tests/e10_12_initial_attendance.test.sql > "$RUNNER_TEMP/e10-12-test.log" 2>&1 || {
+              tail -n 60 "$RUNNER_TEMP/e10-12-test.log"; exit 1;
+            }
+          grep -qx 'ROLLBACK' "$RUNNER_TEMP/e10-12-test.log"
+          docker exec -i "$db_container" psql -U postgres -d postgres -v ON_ERROR_STOP=1 \
+            < supabase/tests/e10_12_initial_attendance.concurrency.sql
+          for suffix in a b; do
+            docker exec -i "$db_container" psql -U postgres -d postgres -v ON_ERROR_STOP=1 \
+              < "supabase/tests/e10_12_initial_attendance.commit-$suffix.sql" \
+              > "$RUNNER_TEMP/e10-12-race-$suffix.log" 2>&1 &
+            if [ "$suffix" = a ]; then pid_a=$!; else pid_b=$!; fi
+          done
+          wait "$pid_a" || { cat "$RUNNER_TEMP/e10-12-race-a.log"; exit 1; }
+          wait "$pid_b" || { cat "$RUNNER_TEMP/e10-12-race-b.log"; exit 1; }
+          test "$(docker exec "$db_container" psql -U postgres -d postgres -At -v ON_ERROR_STOP=1 -c "select count(*)=2 from public.business_taxons where name like 'E1012 Race %'")" = t
+          test "$(docker exec "$db_container" psql -U postgres -d postgres -At -v ON_ERROR_STOP=1 -c "select count(*)=2 and count(distinct taxon_id)=1 from public.account_taxonomy where account_id in ('e1012ace-0000-4000-8000-000000000011','e1012ace-0000-4000-8000-000000000012')")" = t
+          echo "E10.12: integral migration, rollback cases and two simultaneous PostgreSQL sessions passed on PostgreSQL 17; no hosted connection or target writes." >> "$GITHUB_STEP_SUMMARY"

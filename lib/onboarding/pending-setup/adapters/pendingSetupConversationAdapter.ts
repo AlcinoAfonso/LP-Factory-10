@@ -12,7 +12,7 @@ import type {
   PendingSetupWriteResult,
 } from "../contracts";
 import { resolvePreferredNameFromAuth } from "../policy";
-import { isE1011PassageEnabled } from "../config";
+import { isE1011PassageEnabled, isE1012AttendanceEnabled } from "../config";
 
 type ConversationRow = {
   id: string;
@@ -24,6 +24,9 @@ type ConversationRow = {
   stage: PendingSetupStage;
   confirmation_kind: PendingSetupConfirmationKind | null;
   resolution_outcome: PendingSetupResolutionOutcome | null;
+  preferred_name_declined?: boolean;
+  attendance_proposal?: PendingSetupConversation["attendanceProposal"];
+  pending_turn_intent?: PendingSetupConversation["attendanceTurnIntent"];
   openai_call_count: number;
   version: number | string;
   created_at: string;
@@ -63,6 +66,10 @@ function mapConversation(
     stage: row.stage,
     confirmationKind: row.confirmation_kind,
     resolutionOutcome: row.resolution_outcome,
+    attendanceEnabled: isE1012AttendanceEnabled(),
+    preferredNameDeclined: row.preferred_name_declined ?? false,
+    attendanceProposal: row.attendance_proposal ?? null,
+    attendanceTurnIntent: row.pending_turn_intent ?? null,
     openAiCallCount: Number(row.openai_call_count),
     version: Number(row.version),
     createdAt: row.created_at,
@@ -106,7 +113,7 @@ export async function loadPendingSetupConversation(input: {
   const columns =
     "id,account_id,user_id,preferred_name,business_context_text,stage,confirmation_kind,resolution_outcome,openai_call_count,version,created_at,updated_at,completed_at";
   const { data: conversationId, error: startError } = await service.rpc(
-    "start_account_pending_setup_v1",
+    isE1012AttendanceEnabled() ? "start_account_pending_setup_v2" : "start_account_pending_setup_v1",
     {
       p_account_id: input.accountId,
       p_user_id: input.userId,
@@ -125,7 +132,11 @@ export async function loadPendingSetupConversation(input: {
     await Promise.all([
       service
         .from("account_pending_setup_conversations")
-        .select(isE1011PassageEnabled() ? `${columns},business_display_name` : columns)
+        .select([
+          columns,
+          ...(isE1011PassageEnabled() ? ["business_display_name"] : []),
+          ...(isE1012AttendanceEnabled() ? ["attendance_proposal,pending_turn_intent,preferred_name_declined"] : []),
+        ].join(","))
         .eq("id", conversationId)
         .eq("account_id", input.accountId)
         .eq("user_id", input.userId)

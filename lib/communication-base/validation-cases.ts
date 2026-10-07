@@ -11,7 +11,7 @@ import { sectionStateKey, stageOneStateKey } from "./ui-state-keys";
 import { formatEditorValue, parseEditorValue } from "./editor-value";
 import { isCommunicationSectionSaveLocked } from "./editor-save-guard";
 import { canInstallGeneralSuggestion, canStartGeneralGeneration, createStageTwoGenerationGate, isCurrentGenerationVersion } from "./generation-guard";
-import { requestOpenAiResponses } from "../conversion-content/adapters/openAiResponsesAdapter";
+import { requestOpenAiResponses } from "../openai-responses/openAiResponsesAdapter";
 import { calculateOpenAiOperationCost, type OpenAiCostOperationTerminal, type OpenAiCostRecorder } from "../openai-costs";
 import { resolveOpenAiProductWorkload } from "../openai-workloads";
 

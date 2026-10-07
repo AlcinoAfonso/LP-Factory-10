@@ -6,7 +6,7 @@ import {
   requestOpenAiResponses,
   type OpenAiResponsesDependencies,
   type OpenAiResponsesParser,
-} from "./openAiResponsesAdapter";
+} from "../../openai-responses/openAiResponsesAdapter";
 import {
   lpFactoryOpenAiCostContext,
   lpFactoryOpenAiEventCostContext,

@@ -425,6 +425,7 @@ function eventLabel(execution: OpenAiActiveCostExecution) {
 function workloadLabel(workload: OpenAiCostReadWorkloadId) {
   const labels: Record<OpenAiCostReadWorkloadId, string> = {
     niche_resolution: "Resolução de nicho",
+    pending_setup_conversation: "Atendimento inicial por IA",
     commercial_activation_draft_generation: "Draft de ativação comercial",
     taxon_input_catalog_sufficiency_evaluation: "Suficiência factual do catálogo",
     communication_base_stage1_assistance: "Assistência da Base — Etapa 1",

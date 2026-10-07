@@ -261,6 +261,7 @@ const cases: readonly Case[] = [
 async function resolvedWorkloads() {
   const results = await Promise.all([
     resolveOpenAiProductWorkload("niche_resolution", "development"),
+    resolveOpenAiProductWorkload("pending_setup_conversation", "development"),
     resolveOpenAiProductWorkload(
       "commercial_activation_draft_generation",
       "development",
@@ -298,6 +299,7 @@ function proofDependencies(
   };
   return {
     niche: product,
+    attendance: product,
     commercial: product,
     communicationStageOne: product,
     communicationStageTwo: product,

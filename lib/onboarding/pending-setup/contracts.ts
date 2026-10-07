@@ -1,3 +1,4 @@
+import type { AttendanceProposal } from "./attendance-core";
 export const PENDING_SETUP_STAGES = [
   "identity",
   "business_understanding",
@@ -28,6 +29,10 @@ export type PendingSetupConversation = Readonly<{
   stage: PendingSetupStage;
   confirmationKind: PendingSetupConfirmationKind | null;
   resolutionOutcome: PendingSetupResolutionOutcome | null;
+  attendanceEnabled?: boolean;
+  preferredNameDeclined?: boolean;
+  attendanceProposal?: AttendanceProposal | null;
+  attendanceTurnIntent?: "initialize" | "message" | "confirm" | "clarify" | null;
   openAiCallCount: number;
   version: number;
   createdAt: string;

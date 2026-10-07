@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useRef } from "react";
+import { startTransition, useActionState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { FeedbackMessage } from "@/components/ui/feedback-message";
 import { FormField, FormFieldError, FormFieldHint, FormFieldLabel } from "@/components/ui/form-field";
@@ -43,6 +43,7 @@ export function PendingSetupConversation({
     PendingSetupActionState,
     FormData
   >(savePendingSetupBusinessDisplayNameAction, { ok: true });
+  const initializedRef = useRef(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const businessNameRef = useRef<HTMLInputElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -66,6 +67,17 @@ export function PendingSetupConversation({
   useEffect(() => {
     if (nameState.fieldError) businessNameRef.current?.focus();
   }, [nameState.fieldError]);
+
+  useEffect(() => {
+    if (!conversation?.attendanceEnabled || conversation.messages.length || initializedRef.current) return;
+    initializedRef.current = true;
+    const formData = new FormData();
+    formData.set("account_subdomain", accountSubdomain);
+    formData.set("conversation_id", conversation.id);
+    formData.set("expected_version", String(conversation.version));
+    formData.set("intent", conversation.attendanceTurnIntent ? "resume" : "initialize");
+    startTransition(() => turnAction(formData));
+  }, [accountSubdomain, conversation, turnAction]);
 
   if (!conversation) {
     return (
@@ -117,7 +129,42 @@ export function PendingSetupConversation({
           ))}
         </div>
 
-        {conversation.stage === "identity" ? (
+        {conversation.attendanceEnabled && (!conversation.messages.length || conversation.attendanceTurnIntent) ? (
+          <form action={turnAction} className="border-t border-surface-border px-5 py-5 sm:px-8">
+            <ConversationHiddenFields accountSubdomain={accountSubdomain} conversationId={conversation.id} version={conversation.version} />
+            <input type="hidden" name="intent" value={conversation.attendanceTurnIntent ? "resume" : "initialize"} />
+            {turnState.formError ? <FeedbackMessage tone="error" className="mb-4">{turnState.formError}</FeedbackMessage> : null}
+            <p className="mb-4 text-sm text-graytech-600" role="status">
+              {isTurnPending ? "Preparando sua resposta…" : conversation.messages.length ? "Sua resposta está preservada." : "Vamos começar seu atendimento."}
+            </p>
+            <Button type="submit" disabled={isTurnPending} className="min-h-11">
+              {isTurnPending ? "Atendendo…" : "Retomar atendimento"}
+            </Button>
+          </form>
+        ) : null}
+
+        {conversation.attendanceEnabled && conversation.attendanceProposal ? (
+          <div className="space-y-3 px-5 pb-5 sm:px-8">
+            {conversation.attendanceProposal.kind === "operational_fallback" ? (
+              <FeedbackMessage tone="warning">
+                Seu negócio foi compreendido. A classificação oficial permanece pendente; você pode confirmar sua descrição para continuar.
+              </FeedbackMessage>
+            ) : null}
+            {conversation.attendanceProposal.sources.length ? (
+              <div className="text-sm text-graytech-600">
+                <p className="font-medium">Referências da classificação de mercado</p>
+                <ul className="mt-2 space-y-1">
+                  {conversation.attendanceProposal.sources.map((source) => (
+                    <li key={source}><a href={source} target="_blank" rel="noopener noreferrer"
+                      className="inline-flex min-h-11 items-center break-all text-brand-700 underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{new URL(source).hostname}</a></li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+
+        {conversation.stage === "identity" && !conversation.attendanceEnabled ? (
           <form action={action} className="border-t border-surface-border px-5 py-5 sm:px-8">
             <input type="hidden" name="account_subdomain" value={accountSubdomain} />
             <input type="hidden" name="conversation_id" value={conversation.id} />
@@ -169,7 +216,7 @@ export function PendingSetupConversation({
           </form>
         ) : null}
 
-        {conversation.stage === "business_understanding" ? (
+        {(conversation.stage === "business_understanding" || (conversation.attendanceEnabled && conversation.stage === "identity")) && !conversation.attendanceTurnIntent && (!conversation.attendanceEnabled || conversation.messages.length > 0) ? (
           <form action={turnAction} className="border-t border-surface-border px-5 py-5 sm:px-8">
             <ConversationHiddenFields
               accountSubdomain={accountSubdomain}
@@ -211,7 +258,7 @@ export function PendingSetupConversation({
           </form>
         ) : null}
 
-        {conversation.stage === "niche_confirmation" ? (
+        {conversation.stage === "niche_confirmation" && !conversation.attendanceTurnIntent ? (
           <form action={turnAction} className="border-t border-surface-border px-5 py-5 sm:px-8">
             <ConversationHiddenFields
               accountSubdomain={accountSubdomain}

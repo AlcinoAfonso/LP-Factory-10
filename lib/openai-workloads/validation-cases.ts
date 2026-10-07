@@ -186,14 +186,15 @@ const cases = [
     },
   },
   {
-    name: "inventory exposes five unique canonical workloads",
+    name: "inventory exposes six unique canonical workloads",
     run: () => {
       const inventory = listOpenAiWorkloadInventory();
-      assert.equal(inventory.length, 5);
-      assert.equal(new Set(inventory.map((item) => item.id)).size, 5);
+      assert.equal(inventory.length, 6);
+      assert.equal(new Set(inventory.map((item) => item.id)).size, 6);
       assert.deepEqual(
         inventory.map((item) => item.id),
         [
+          "pending_setup_conversation",
           ...productIds,
           "communication_base_stage1_assistance",
           "communication_base_stage2_intelligence",
@@ -303,6 +304,7 @@ const cases = [
       assert.deepEqual(
         projection.map((item) => item.workload),
         [
+          "pending_setup_conversation",
           "niche_resolution",
           "commercial_activation_draft_generation",
           "communication_base_stage1_assistance",
@@ -793,7 +795,7 @@ const cases = [
         { data: fixture.activations, error: null },
       );
       assert.equal(result.ok, true);
-      assert.equal(result.value.length, 8);
+      assert.equal(result.value.length, 10);
       assert.equal(Object.isFrozen(result), true);
       assert.equal(Object.isFrozen(result.value), true);
       assert.equal(Object.isFrozen(result.value[0]), true);
@@ -1326,6 +1328,7 @@ function administrativeConfigurationFixture(): Readonly<{
     "commercial_activation_draft_generation",
     "communication_base_stage1_assistance",
     "communication_base_stage2_intelligence",
+    "pending_setup_conversation",
   ] as const;
   const units: Record<string, unknown>[] = [];
   const revisions: Record<string, unknown>[] = [];
@@ -1336,8 +1339,8 @@ function administrativeConfigurationFixture(): Readonly<{
     for (const workload of workloads) {
       const communicationStageTwo = workload === "communication_base_stage2_intelligence";
       const modality = "responses_text";
-      const baselineModel = communicationStageTwo ? "gpt-6-luna" : "gpt-5.4-mini";
-      const baselineReasoning = communicationStageTwo ? "max" : "none";
+      const baselineModel = communicationStageTwo || workload === "pending_setup_conversation" ? "gpt-6-luna" : "gpt-5.4-mini";
+      const baselineReasoning = workload === "pending_setup_conversation" ? "xhigh" : communicationStageTwo ? "max" : "none";
       const baselineRevisionId = administrativeUuid(sequence++);
       const bootstrapActivationId = administrativeUuid(sequence++);
 
@@ -1437,7 +1440,7 @@ function preBootstrapAdministrativeConfigurationFixture() {
   const fixture = administrativeConfigurationFixture();
   const legacyWorkload = (row: Record<string, unknown>) =>
     row.workload !== "communication_base_stage1_assistance" &&
-    row.workload !== "communication_base_stage2_intelligence";
+    row.workload !== "communication_base_stage2_intelligence" && row.workload !== "pending_setup_conversation";
   return {
     units: fixture.units.filter(legacyWorkload),
     revisions: fixture.revisions.filter(legacyWorkload),
