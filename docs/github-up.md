@@ -397,10 +397,11 @@ Verificar a opção em Settings → Advanced security → Dependabot quando houv
 ## github#13 — Push protection padrão para chaves Resend e outros provedores *(🟩 Disponível em repositórios públicos)*
 
 2026-08-07
+Atualizado em 2026-10-07
 
 ### Status no Projeto
 
-- Status: aplicável globalmente por plataforma; bloqueio local e configuração do usuário ainda não validados por ocorrência real.
+- Status: Push protection ativa no repositório, confirmada pelo Debate 18C e registrada em `github#16`; bloqueio local por ocorrência real e configuração individual do usuário ainda não validados.
 - Evidência: o repositório `AlcinoAfonso/LP-Factory-10` é público e `docs/platform-config.md` registra Resend como provedor SMTP do Supabase Auth; não existe SDK Resend nem chave versionada no repositório.
 - Natureza de uso: prevenção de vazamento de credenciais no GitHub, sem alterar o runtime do SaaS.
 - Relação com a stack: complementar às regras de secrets, ao armazenamento em plataformas e ao registro específico de `supa#56`.
@@ -421,7 +422,7 @@ Para o LP Factory 10, a cobertura de Resend é concreta porque o provedor já op
 ### Limites
 
 - O detector não substitui armazenamento correto, rotação, revisão de diff ou resposta a incidente.
-- Push protection para usuário pode ser desabilitada ou sofrer bypass; o estado efetivo da conta não foi inspecionado nesta atualização.
+- Push protection do repositório foi confirmada ativa no Debate 18C; a configuração individual do usuário não foi inspecionada. Desativação e bypass continuam possíveis.
 - A proteção cobre formatos reconhecidos e versões recentes do token; não garante detecção de toda credencial, valor transformado ou secret genérico.
 - Se uma chave chegar ao GitHub, ela deve ser revogada e rotacionada; remover apenas o commit não é remediação suficiente.
 - Não testar com credencial real nem inserir valor fictício semelhante a um token nesta rodada.
@@ -430,7 +431,7 @@ Para o LP Factory 10, a cobertura de Resend é concreta porque o provedor já op
 
 1. Manter secrets somente nos provedores e ambientes autorizados.
 2. Quando ocorrer bloqueio real, não fazer bypass por conveniência; remover o valor, revisar a origem e registrar o incidente se houver exposição.
-3. Confirmar o estado de push protection do usuário/repositório em uma revisão operacional de segurança, sem bloquear o MVP por ausência de smoke destrutivo.
+3. Preservar a confirmação do repositório registrada em `github#16`; eventual revisão da configuração individual do usuário permanece distinta e não bloqueia o MVP por ausência de smoke destrutivo.
 
 ### Fontes Oficiais
 
