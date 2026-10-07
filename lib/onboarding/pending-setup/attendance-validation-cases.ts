@@ -89,6 +89,19 @@ async function main() {
   assert.ok(proposal);
   assert.equal(validateAttendanceOutput({ ...base, action: "confirm", existingTaxonId: null },
     { ...context, confirmedProposal: proposal }, [])?.action, "confirm");
+  const declinedContext = { ...context, preferredName: null, preferredNameDeclined: true };
+  assert.equal(validateAttendanceOutput({ ...base, preferredName: null }, declinedContext, []), null);
+  assert.equal(validateAttendanceOutput({ ...base, preferredName: null, preferredNameDeclined: true }, declinedContext, [])?.preferredNameDeclined, true);
+  assert.equal(validateAttendanceOutput(base, declinedContext, [])?.preferredName, "Ana");
+  const fallbackConfirmation: AttendanceContext = { ...context, confirmedProposal: { kind: "operational_fallback",
+    taxonId: null, chain: [], aliases: [], evidence: "", sources: [] } };
+  const confirmWithoutSummary = { ...base, action: "confirm" as const, existingTaxonId: null, summary: "" };
+  assert.equal(validateAttendanceOutput(confirmWithoutSummary, fallbackConfirmation, [])?.summary, context.summary);
+  assert.equal(validateAttendanceOutput(confirmWithoutSummary, { ...fallbackConfirmation, summary: null }, []), null);
+  const parsedFallback = parseAttendanceResponse(response(confirmWithoutSummary), fallbackConfirmation);
+  assert.equal(parsedFallback.ok, true);
+  if (parsedFallback.ok) assert.equal(parsedFallback.value.output.summary, context.summary);
+  assert.equal(validateAttendanceOutput(confirmWithoutSummary, { ...context, confirmedProposal: proposal }, [])?.summary, "");
   const projection = attendanceProjection(conversation, context.catalog);
   assert.equal(projection.recent.length, 8);
   assert.equal(projection.preferredNameDeclined, true);
@@ -144,6 +157,26 @@ async function main() {
   } })).ok, true);
   assert.equal(researched, true);
   assert.deepEqual(effects, ["claim", "commit"]);
+  current = { ...current, version: 1, stage: "niche_confirmation", confirmationKind: "operational_fallback",
+    attendanceProposal: null }; effects.length = 0;
+  assert.equal((await conductAttendanceTurn({ ...input, intent: "clarify",
+    content: "Vamos retomar o atendimento a partir do contexto já informado." }, {
+    ...dependencies,
+    request: async ({ context: legacyContext }) => {
+      assert.equal(legacyContext.summary, current.businessContextText);
+      assert.equal(legacyContext.confirmedProposal, null);
+      return { ok: true, output: { ...base, action: "pending", existingTaxonId: null },
+        sources: [], responseId: "resp_legacy_adoption", latencyMs: 1 };
+    },
+    commit: async (write) => {
+      assert.equal(write.confirm, false);
+      assert.equal(write.proposal?.kind, "operational_fallback");
+      effects.push("commit");
+      return { ok: true, version: 3 };
+    },
+  })).ok, true);
+  assert.deepEqual(effects, ["claim", "commit"]);
+
   console.log("ok - E10.12 prompt/transport, selective Web, memory, fencing and no false success");
 }
 main().catch(error => { console.error(error); process.exitCode = 1; });

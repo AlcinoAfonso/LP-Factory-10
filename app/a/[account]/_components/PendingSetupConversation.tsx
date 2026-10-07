@@ -45,6 +45,7 @@ export function PendingSetupConversation({
     FormData
   >(savePendingSetupBusinessDisplayNameAction, { ok: true });
   const attendanceButtonClass = conversation?.attendanceEnabled ? "!bg-brand-700 !text-white hover:!bg-brand-700/90" : "";
+  const needsAttendanceProposal = conversation?.attendanceEnabled && conversation.stage === "niche_confirmation" && !conversation.attendanceProposal;
   const initializedRef = useRef(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const businessNameRef = useRef<HTMLInputElement | null>(null);
@@ -278,17 +279,17 @@ export function PendingSetupConversation({
               <Button
                 type="submit"
                 name="intent"
-                value="confirm"
+                value={needsAttendanceProposal ? "clarify" : "confirm"}
                 disabled={isTurnPending}
                 className={cn("min-h-11", attendanceButtonClass)}
               >
                 {isTurnPending
-                  ? "Confirmando…"
-                  : conversation.confirmationKind === "operational_fallback"
+                  ? needsAttendanceProposal ? "Atendendo…" : "Confirmando…"
+                  : needsAttendanceProposal ? "Retomar atendimento" : conversation.confirmationKind === "operational_fallback"
                     ? "Usar minha descrição"
                     : "Sim, está correto"}
               </Button>
-              {!isTerminalFallback ? (
+              {!isTerminalFallback && !needsAttendanceProposal ? (
                 <Button
                   type="submit"
                   variant="secondary"

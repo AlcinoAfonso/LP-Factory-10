@@ -112,6 +112,7 @@ export function validateAttendanceOutput(raw: unknown, context: AttendanceContex
   if (!parsed.success) return null;
   const value = parsed.data;
   if (value.preferredName !== null && (!validatePreferredName(value.preferredName, null).ok || value.preferredNameDeclined)) return null;
+  if (context.preferredNameDeclined && !value.preferredNameDeclined && value.preferredName === null) return null;
   const sourced = new Set(actualSources.filter(validHttpsSource));
   if (value.evidenceUrls.some(url => !sourced.has(url))) return null;
   if (value.aliases.some(alias => alias.evidenceUrls.some(url => !sourced.has(url)))) return null;
@@ -120,6 +121,11 @@ export function validateAttendanceOutput(raw: unknown, context: AttendanceContex
   if (["existing", "propose", "pending"].includes(value.action) && (!value.sufficientUnderstanding || !value.summary)) return null;
   if (value.action === "confirm" && !context.confirmedProposal) return null;
   if (context.confirmedProposal && value.action !== "confirm") return null;
+  if (value.action === "confirm" && context.confirmedProposal?.kind === "operational_fallback") {
+    const confirmedSummary = context.summary?.trim();
+    if (!confirmedSummary) return null;
+    value.summary = confirmedSummary; // Confirm the understanding already persisted for this proposal.
+  }
   if (value.action === "research" && (!value.sufficientUnderstanding || context.confirmedProposal)) return null;
   if (value.action === "existing") {
     const target = context.catalog.find(taxon => taxon.id === value.existingTaxonId);
