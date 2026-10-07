@@ -1309,12 +1309,12 @@ Generated columns do PostgreSQL permitem manter **colunas derivadas automaticame
 ## 56 — Push Protection para `supabase_secret_key` *(🟦 Estável)*  
 
 2026-04-20  
-Atualizado em 2026-08-20  
+Atualizado em 2026-10-07  
 
 ### Status no Projeto
 
-- Status: estado operacional não validado; não presumir que o controle esteja desativado.
-- Evidência: não há registro no repositório de política operacional formalizada de push protection específica para `supabase_secret_key`; essa ausência comprova lacuna documental, não o estado efetivo do setting no GitHub.
+- Status: Push protection ativa no repositório, conforme Debate 18C e `github#16`; configuração individual do usuário e bloqueio local de `supabase_secret_key` não validados por ocorrência real.
+- Evidência: `docs/github-up.md`, item `github#16`, registra a confirmação do setting do repositório pelas capturas do titular no Debate 18C. A ativação global não comprova o bloqueio de toda credencial Supabase nem a classe do `SUPABASE_ACCESS_TOKEN`.
 
 
 ### Descrição  
@@ -1333,19 +1333,19 @@ Recurso de segurança/governança para bloquear push acidental de chaves secreta
 
 ### Ações Recomendadas  
 
-1. Validar, em revisão operacional read-only, o estado efetivo do push protection no repositório e na conta, sem testar com credencial real.  
+1. Preservar a confirmação do setting do repositório registrada em `github#16`, sem repetir a inspeção encerrada no Debate 18C; eventual revisão da conta do usuário permanece distinta.  
 
-2. Se o controle já estiver ativo, registrar a evidência no documento operacional competente; se estiver desativado, submeter a mudança de setting a recorte próprio aprovado.  
+2. Reavaliar somente diante de nova evidência de desativação, bypass ou incidente; mudança de setting exige recorte próprio aprovado.  
 
-3. Somente após a validação, refletir o controle no onboarding técnico e na documentação interna de segredos.  
+3. Não converter a ativação confirmada em garantia de cobertura de `supabase_secret_key` sem evidência específica; não testar com credencial real.  
 
 ### Registro (Tipo A — Plataforma)
 
-- Status: VERIFICAÇÃO PENDENTE
-- Verificado em: —
+- Status: ATIVAÇÃO NO REPOSITÓRIO CONFIRMADA; configuração individual e bloqueio específico não validados.
+- Verificado em: 07/10/2026
 - Ambiente: GitHub / Secret Scanning / Push Protection
-- Evidência: ausência de registro documental; estado do setting não inspecionado.
-- Observação: a pendência é validar o controle global existente ou identificar necessidade de configuração; este registro não autoriza mudança de setting.
+- Evidência: Debate 18C concluído; confirmação do setting registrada em `github#16`.
+- Observação: a inspeção do repositório foi encerrada com seus limites documentados; o saldo não presume controle desativado nem autoriza mudança de setting.
 
 ---
 
