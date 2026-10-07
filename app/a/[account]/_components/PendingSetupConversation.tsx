@@ -180,7 +180,7 @@ export function PendingSetupConversation({
               A categoria da conta mudou durante o atendimento. Seu contexto está preservado. A classificação precisa ser reavaliada.
             </FeedbackMessage>
             <p className="mb-4 text-sm text-graytech-600" role="status">
-              {isTurnPending ? "Reavaliando…" : "A classificação permanece pendente e precisa de correção administrativa. Seu contexto está preservado."}
+              {isTurnPending ? "Reavaliando…" : "A classificação permanece pendente."}
             </p>
             {turnState.formError ? <FeedbackMessage tone="error" className="mb-4">{turnState.formError}</FeedbackMessage> : null}
             <FormField className="mb-5">
