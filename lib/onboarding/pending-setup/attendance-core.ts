@@ -117,7 +117,7 @@ export function validateAttendanceOutput(raw: unknown, context: AttendanceContex
   if (context.preferredNameDeclined && !value.preferredNameDeclined && value.preferredName === null) return null;
   if (context.preferredName && value.preferredNameDeclined) return null; // AI output cannot erase an existing user preference.
   if (value.preferredName !== null && (context.preferredNameDeclined
-    || (context.preferredName !== null && value.preferredName !== context.preferredName))
+    || value.preferredName !== context.preferredName)
     && !explicitPreferredNameChange(context, value.preferredName)) return null;
   const sourced = new Set(actualSources.filter(validHttpsSource));
   if (value.evidenceUrls.some(url => !sourced.has(url))) return null;
@@ -144,9 +144,14 @@ export function validateAttendanceOutput(raw: unknown, context: AttendanceContex
   if (value.action === "propose") {
     if (!context.research || !value.evidence || !value.evidenceUrls.length || !value.chain.length) return null;
     const levels = ["segment", "niche", "ultra_niche"];
+    let scopedParent: string | null | undefined = null;
     for (let index = 0; index < value.chain.length; index++) {
       const node = value.chain[index];
       if (node.level !== levels[index] || /[@\u0000-\u001f]/.test(node.name)) return null;
+      const canonical: AttendanceTaxon | undefined = scopedParent === undefined ? undefined : context.catalog.find(taxon =>
+        taxon.level === node.level && taxon.parentId === scopedParent &&
+        normalizedTaxonText(taxon.name) === normalizedTaxonText(node.name));
+      if (!node.existingId && canonical && !canonical.active) return null;
       if (!node.existingId && context.catalog.some(taxon =>
         [...taxon.aliases, ...taxon.inactiveAliases].some(text => normalizedTaxonText(text) === normalizedTaxonText(node.name)))) return null;
       if (node.existingId) {
@@ -155,6 +160,7 @@ export function validateAttendanceOutput(raw: unknown, context: AttendanceContex
           normalizedTaxonText(target.name) !== normalizedTaxonText(node.name) ||
           target.parentId !== (index ? value.chain[index - 1].existingId : null)) return null;
       }
+      scopedParent = node.existingId ?? canonical?.id;
     }
     if (value.chain.every(node => node.existingId)) return null; // Existing category must be reused.
     const leaf = value.chain[value.chain.length - 1];
@@ -178,7 +184,13 @@ function explicitPreferredNameChange(context: AttendanceContext, name: string): 
   if (current?.role !== "user") return false;
   const direct = /^(?:me chame de|pode me chamar de|prefiro ser chamad[oa] de|quero ser chamad[oa] de|meu nome é)\s+(.+?)[.!]?$/iu.exec(current.content.trim());
   const declared = direct ? validatePreferredName(direct[1], null) : null;
-  return Boolean(declared?.ok && declared.value === name);
+  if (declared?.ok && declared.value === name) return true;
+  const preceding = context.recent.at(-2);
+  const askedName = preceding?.role === "assistant"
+    && /(?:como[\s\S]*?(?:prefere|gostaria|quer)[\s\S]*?(?:chamad|chamasse|chame|tratad)|qual[\s\S]*?nome)/iu.test(preceding.content);
+  const answer = validatePreferredName(current.content.replace(/[.!]$/u, ""), null);
+  return Boolean(!context.preferredName && !context.preferredNameDeclined && askedName
+    && answer.ok && answer.value === name);
 }
 
 function activeAncestors(taxon: AttendanceTaxon, catalog: readonly AttendanceTaxon[]): boolean {

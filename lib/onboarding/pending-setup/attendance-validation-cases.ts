@@ -97,6 +97,19 @@ async function main() {
   assert.equal(validateAttendanceOutput(separateAliasEvidence, { ...context, research: true }, [source]), null);
   assert.equal(validateAttendanceOutput({ ...market, aliases: [{ ...equivalent, equivalence: "related" }] }, { ...context, research: true }, [source]), null);
   assert.equal(validateAttendanceOutput({ ...market, aliases: [{ ...equivalent, equivalence: "ambiguous" }] }, { ...context, research: true }, [source]), null);
+  const inactiveCanonical = { ...context, research: true, catalog: [...context.catalog,
+    { id: accountId, name: "Fisioterapia", level: "niche" as const, parentId: segmentId,
+      active: false, aliases: [], inactiveAliases: [] }] };
+  assert.equal(validateAttendanceOutput(market, inactiveCanonical, [source]), null);
+  assert.equal(validateAttendanceOutput({ ...market, chain: [{ ...market.chain[0], existingId: null },
+    market.chain[1]] }, inactiveCanonical, [source]), null); // Requery resolves an existing parent by name.
+  assert.equal(validateAttendanceOutput({ ...market, chain: [{ level: "segment", name: "Novo segmento",
+    existingId: null }, market.chain[1]] }, inactiveCanonical, [source])?.action, "propose");
+  assert.equal(validateAttendanceOutput(market, { ...inactiveCanonical, catalog: inactiveCanonical.catalog.map(taxon =>
+    taxon.id === accountId ? { ...taxon, parentId: nicheId } : taxon) }, [source])?.action, "propose");
+  assert.equal(validateAttendanceOutput({ ...market, chain: [{ level: "segment", name: "Serviços",
+    existingId: null }, market.chain[1]] }, { ...context, research: true,
+    catalog: context.catalog.map(taxon => taxon.id === segmentId ? { ...taxon, active: false } : taxon) }, [source]), null);
   const inactiveCollision = { ...context, research: true, catalog: context.catalog.map(taxon =>
     taxon.id === nicheId ? { ...taxon, inactiveAliases: ["Fisioterapia", "Terapia física"] } : taxon) };
   assert.equal(validateAttendanceOutput(market, inactiveCollision, [source]), null);
@@ -116,6 +129,20 @@ async function main() {
     { ...context, confirmedProposal: proposal }, [])?.action, "confirm");
   assert.equal(validateAttendanceOutput({ ...base, action: "confirm", existingTaxonId: null,
     preferredName: null, preferredNameDeclined: true }, { ...context, confirmedProposal: proposal }, []), null);
+  const unknownName = { ...context, preferredName: null, preferredNameDeclined: false };
+  assert.equal(validateAttendanceOutput(base, unknownName, []), null);
+  assert.equal(validateAttendanceOutput({ ...base, preferredName: "Bia" }, { ...unknownName,
+    recent: [{ role: "user", content: "Minha cliente Bia precisa de jardins." }] }, []), null);
+  assert.equal(validateAttendanceOutput(base, { ...unknownName,
+    recent: [{ role: "user", content: "Me chame de Ana." }] }, [])?.preferredName, "Ana");
+  const nameQuestion = { role: "assistant" as const, content: "Olá! Como você prefere ser chamado?" };
+  assert.equal(validateAttendanceOutput(base, { ...unknownName,
+    recent: [nameQuestion, { role: "user", content: "Ana." }] }, [])?.preferredName, "Ana");
+  assert.equal(validateAttendanceOutput({ ...base, preferredName: "Bia" }, { ...unknownName,
+    recent: [nameQuestion, { role: "user", content: "Minha cliente Bia precisa de jardins." }] }, []), null);
+  assert.equal(validateAttendanceOutput({ ...base, action: "confirm", existingTaxonId: null },
+    { ...unknownName, confirmedProposal: proposal,
+      recent: [nameQuestion, { role: "user", content: "Ana." }] }, []), null);
   const declinedContext = { ...context, preferredName: null, preferredNameDeclined: true };
   assert.equal(validateAttendanceOutput({ ...base, preferredName: null }, declinedContext, []), null);
   assert.equal(validateAttendanceOutput({ ...base, preferredName: null, preferredNameDeclined: true }, declinedContext, [])?.preferredNameDeclined, true);
