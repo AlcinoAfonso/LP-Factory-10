@@ -397,10 +397,11 @@ Verificar a opção em Settings → Advanced security → Dependabot quando houv
 ## github#13 — Push protection padrão para chaves Resend e outros provedores *(🟩 Disponível em repositórios públicos)*
 
 2026-08-07
+Atualizado em 2026-10-07
 
 ### Status no Projeto
 
-- Status: aplicável globalmente por plataforma; bloqueio local e configuração do usuário ainda não validados por ocorrência real.
+- Status: Push protection ativa no repositório, confirmada pelo Debate 18C e registrada em `github#16`; bloqueio local por ocorrência real e configuração individual do usuário ainda não validados.
 - Evidência: o repositório `AlcinoAfonso/LP-Factory-10` é público e `docs/platform-config.md` registra Resend como provedor SMTP do Supabase Auth; não existe SDK Resend nem chave versionada no repositório.
 - Natureza de uso: prevenção de vazamento de credenciais no GitHub, sem alterar o runtime do SaaS.
 - Relação com a stack: complementar às regras de secrets, ao armazenamento em plataformas e ao registro específico de `supa#56`.
@@ -421,7 +422,7 @@ Para o LP Factory 10, a cobertura de Resend é concreta porque o provedor já op
 ### Limites
 
 - O detector não substitui armazenamento correto, rotação, revisão de diff ou resposta a incidente.
-- Push protection para usuário pode ser desabilitada ou sofrer bypass; o estado efetivo da conta não foi inspecionado nesta atualização.
+- Push protection do repositório foi confirmada ativa no Debate 18C; a configuração individual do usuário não foi inspecionada. Desativação e bypass continuam possíveis.
 - A proteção cobre formatos reconhecidos e versões recentes do token; não garante detecção de toda credencial, valor transformado ou secret genérico.
 - Se uma chave chegar ao GitHub, ela deve ser revogada e rotacionada; remover apenas o commit não é remediação suficiente.
 - Não testar com credencial real nem inserir valor fictício semelhante a um token nesta rodada.
@@ -430,7 +431,7 @@ Para o LP Factory 10, a cobertura de Resend é concreta porque o provedor já op
 
 1. Manter secrets somente nos provedores e ambientes autorizados.
 2. Quando ocorrer bloqueio real, não fazer bypass por conveniência; remover o valor, revisar a origem e registrar o incidente se houver exposição.
-3. Confirmar o estado de push protection do usuário/repositório em uma revisão operacional de segurança, sem bloquear o MVP por ausência de smoke destrutivo.
+3. Preservar a confirmação do repositório registrada em `github#16`; eventual revisão da configuração individual do usuário permanece distinta e não bloqueia o MVP por ausência de smoke destrutivo.
 
 ### Fontes Oficiais
 
@@ -541,20 +542,21 @@ O runner Ubuntu 26.04 está geralmente disponível em x64 e arm64. Durante a jan
 ## github#16 — Detectores do GitHub Secret Scanning para tokens Supabase *(🟨 Detecção disponível; aplicabilidade exata pendente)*
 
 2026-10-05
+Atualizado em 2026-10-07
 
 ### Status no Projeto
 
-- Status: potencialmente aplicável ao repositório público; correspondência do segredo atual e configuração efetiva do Secret Scanning ainda não foram validadas.
-- Evidência: `docs/platform-config.md` registra `SUPABASE_ACCESS_TOKEN` como segredo usado somente pelo workflow de apply de migrations; `.github/workflows/pipeline-supabase-apply-migrations.yml` o injeta no passo de apply. O valor real e sua classe de token não foram inspecionados.
+- Status: Secret Scanning e Push protection ativos no repositório; correspondência do `SUPABASE_ACCESS_TOKEN` aos dois novos detectores ainda não comprovada.
+- Evidência: `docs/platform-config.md` registra `SUPABASE_ACCESS_TOKEN` como segredo usado somente pelo workflow de apply de migrations; `.github/workflows/pipeline-supabase-apply-migrations.yml` o injeta no passo de apply. O [Debate 18C](https://docs.google.com/document/d/1kFKgpHfdy6qJdIoKr539XJZfKoPWXfFj8vVHYiFDhus/edit), concluído em 07/10/2026, registra capturas do titular: Overview com `Secret scanning alerts: Enabled` e Advanced Security com botões `Disable` em Secret Protection e Push protection. Nenhum valor de segredo foi lido; sua classe não pôde ser comprovada pelos metadados disponíveis.
 - Natureza de uso: detecção de credencial Supabase exposta em código ou histórico público.
 - Relação com a stack: complemento específico de `github#13`; este item trata de alertas de secret scanning para tokens Supabase e não presume bloqueio pela push protection.
 - Horizonte: Starter, se a correspondência do padrão for confirmada no estado público atual.
-- Estado atual: detecção oficialmente disponível; aplicabilidade exata ao segredo e à configuração do repositório ainda não confirmada.
-- Ação pendente: executar a verificação read-only delimitada no Debate 18C, sem acessar o valor do segredo nem alterar Settings, workflow ou credencial.
-- Prioridade: média; a verificação é recomendada no ciclo atual por ser de segurança e não exigir implementação, mas não há evidência de exposição ou incidente.
+- Estado atual: verificação read-only do Debate 18C concluída com limitação documentada; proteções ativas, sem comprovação da cobertura específica do token nem do bloqueio pré-push dos dois novos padrões.
+- Ação pendente: nenhuma inspeção ou decisão humana pendente no Debate 18C; reavaliar somente a correspondência do token quando houver metadado não secreto suficiente.
+- Prioridade: condicional ao gatilho abaixo; a inspeção autorizada já foi encerrada, sem evidência de exposição ou incidente.
 - Motivo da permanência: o repositório usa um token Supabase e a correspondência aos novos padrões não pode ser inferida pelo nome do secret.
-- Gatilho: disponibilidade dos detectores no repositório público e autorização do Debate 18C para inspecionar somente metadados de configuração e alertas.
-- Critério de encerramento: confirmar e registrar, sem revelar o segredo, se o Secret Scanning está ativo e se os novos padrões são aplicáveis; reconciliar a decisão no documento competente pelo Prompt ABC, ou arquivar o item com evidência de inaplicabilidade.
+- Gatilho: disponibilidade de metadado não secreto que identifique a classe do `SUPABASE_ACCESS_TOKEN` e permita confrontá-la com os padrões oficiais.
+- Critério de encerramento: a inspeção do Debate 18C está encerrada; o saldo do catálogo permanece até confirmar a aplicabilidade dos padrões por metadados não secretos e reconciliar o resultado, ou arquivar o item com evidência de inaplicabilidade.
 
 ### Descrição
 
@@ -569,7 +571,7 @@ Em 05/10/2026, o GitHub adicionou detectores para `supabase_oauth_access_token` 
 ### Ações Recomendadas
 
 1. Manter o token apenas no secret store do GitHub e nos passos explicitamente autorizados.
-2. Em revisão read-only de segurança, confirmar se o Secret Scanning está ativo e se a configuração reconhece esses padrões, sem revelar nem testar o valor do segredo.
+2. Reavaliar a cobertura específica somente diante do gatilho registrado; não repetir a inspeção de ativação já concluída no Debate 18C nem revelar ou testar o valor do segredo.
 3. Se ocorrer exposição, revogar/rotacionar o token pela fonte autorizada e tratar o incidente; remoção do commit, isoladamente, não basta.
 
 ### Dependências, riscos e limites

@@ -1309,12 +1309,12 @@ Generated columns do PostgreSQL permitem manter **colunas derivadas automaticame
 ## 56 — Push Protection para `supabase_secret_key` *(🟦 Estável)*  
 
 2026-04-20  
-Atualizado em 2026-08-20  
+Atualizado em 2026-10-07  
 
 ### Status no Projeto
 
-- Status: estado operacional não validado; não presumir que o controle esteja desativado.
-- Evidência: não há registro no repositório de política operacional formalizada de push protection específica para `supabase_secret_key`; essa ausência comprova lacuna documental, não o estado efetivo do setting no GitHub.
+- Status: Push protection ativa no repositório; cobertura padrão de `supabase_secret_key` confirmada por fonte oficial e pelo setting verificado no Debate 18C. Configuração individual do usuário e ocorrência real de bloqueio não foram inspecionadas.
+- Evidência: `docs/github-up.md`, item `github#16`, registra a confirmação do setting do repositório pelas capturas do titular no Debate 18C. O [changelog GitHub de março de 2026](https://github.blog/changelog/2026-03-10-secret-scanning-pattern-updates-march-2026/) inclui `supabase_secret_key` na push protection padrão para repositórios com Secret Scanning ativo. Essa cobertura não identifica a classe do `SUPABASE_ACCESS_TOKEN` nem garante proteção de toda credencial Supabase.
 
 
 ### Descrição  
@@ -1333,19 +1333,19 @@ Recurso de segurança/governança para bloquear push acidental de chaves secreta
 
 ### Ações Recomendadas  
 
-1. Validar, em revisão operacional read-only, o estado efetivo do push protection no repositório e na conta, sem testar com credencial real.  
+1. Preservar a confirmação do setting do repositório registrada em `github#16`, sem repetir a inspeção encerrada no Debate 18C; eventual revisão da conta do usuário permanece distinta.  
 
-2. Se o controle já estiver ativo, registrar a evidência no documento operacional competente; se estiver desativado, submeter a mudança de setting a recorte próprio aprovado.  
+2. Reavaliar somente diante de nova evidência de desativação, bypass ou incidente; mudança de setting exige recorte próprio aprovado.  
 
-3. Somente após a validação, refletir o controle no onboarding técnico e na documentação interna de segredos.  
+3. Refletir a cobertura padrão confirmada de `supabase_secret_key` no onboarding técnico e na documentação interna de segredos, preservando os limites de formatos e versões reconhecidos. Não exigir ocorrência real nem testar com credencial.  
 
 ### Registro (Tipo A — Plataforma)
 
-- Status: VERIFICAÇÃO PENDENTE
-- Verificado em: —
+- Status: ATIVAÇÃO NO REPOSITÓRIO E COBERTURA PADRÃO DE `supabase_secret_key` CONFIRMADAS; configuração individual e ocorrência real de bloqueio não inspecionadas.
+- Verificado em: 07/10/2026
 - Ambiente: GitHub / Secret Scanning / Push Protection
-- Evidência: ausência de registro documental; estado do setting não inspecionado.
-- Observação: a pendência é validar o controle global existente ou identificar necessidade de configuração; este registro não autoriza mudança de setting.
+- Evidência: Debate 18C concluído; confirmação do setting registrada em `github#16`.
+- Observação: cobertura padrão confirmada sem smoke com segredo. Push protection cobre somente as versões recentes reconhecidas com confiança, conforme [GitHub Docs](https://docs.github.com/en/code-security/reference/secret-security/supported-secret-scanning-patterns); isso não garante bloqueio de todo token, formato legado ou valor transformado. A inspeção foi encerrada e não autoriza mudança de setting.
 
 ---
 
