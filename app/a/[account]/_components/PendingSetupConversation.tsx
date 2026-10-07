@@ -44,7 +44,7 @@ export function PendingSetupConversation({
     PendingSetupActionState,
     FormData
   >(savePendingSetupBusinessDisplayNameAction, { ok: true });
-  const attendanceButtonClass = conversation?.attendanceEnabled ? "bg-brand-700 text-white hover:bg-brand-700/90" : "";
+  const attendanceButtonClass = conversation?.attendanceEnabled ? "!bg-brand-700 !text-white hover:!bg-brand-700/90" : "";
   const initializedRef = useRef(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const businessNameRef = useRef<HTMLInputElement | null>(null);
@@ -148,7 +148,7 @@ export function PendingSetupConversation({
         {conversation.attendanceEnabled && conversation.attendanceProposal ? (
           <div className="space-y-3 px-5 pb-5 sm:px-8">
             {conversation.attendanceProposal.kind === "operational_fallback" ? (
-              <FeedbackMessage tone="warning" className="text-ink-900">
+              <FeedbackMessage tone="warning" className="!text-ink-900">
                 Seu negócio foi compreendido. A classificação oficial permanece pendente; você pode confirmar sua descrição para continuar.
               </FeedbackMessage>
             ) : null}
