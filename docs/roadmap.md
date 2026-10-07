@@ -735,7 +735,7 @@
 10. E10 — Account Dashboard e jornada da conta
 
 - Objetivo: consolidar a experiência pós-login por conta, da navegação multi-conta e do setup inicial à resolução de nicho e à apresentação comercial, preservando decisões server-side de acesso, papel, entitlement e estado operacional.
-- Status: os fluxos principais estão implementados e a substituição repo-side do Pending Setup pela jornada E10.9 foi concluída; permanecem como lacunas a ação inefetiva de criar outra conta no switcher, a ausência dos eventos específicos do switcher, a edição manual de copy da página comercial personalizada e os gates pré-merge e pós-merge ainda pendentes da E10.9. O onboarding factual E10.10 foi retirado funcionalmente pela E22.7; suas migrations permanecem não aplicadas e excluídas do apply.
+- Status: os fluxos principais estão implementados e a substituição repo-side do Pending Setup pela jornada E10.9 foi concluída; permanecem como lacunas a ação inefetiva de criar outra conta no switcher, a ausência dos eventos específicos do switcher, a edição manual de copy da página comercial personalizada; a E10.9 está concluída em Production. O onboarding factual E10.10 foi retirado funcionalmente pela E22.7; suas migrations permanecem não aplicadas e excluídas do apply.
 
 10.3 Navegação multi-conta e cabeçalho
 
@@ -979,7 +979,7 @@
 
 10.9.1 Objetivo e status
 - Objetivo: substituir a experiência E10.4 por uma jornada conversacional pré-comercial que receba a pessoa, compreenda o negócio, resolva ou preserve operacionalmente o nicho, mantenha histórico por relação usuário/conta e promova `pending_setup` para `active` sem criar entitlement.
-- Status: implementado no repositório; prova SQL integral, `migration list --linked`, `db push --linked --dry-run` e QA autenticado de Preview permanecem gates pré-merge. O apply remoto, a verificação pós-apply de ACL/RLS/RPCs, a promoção do mesmo SHA staged, o smoke de Production e a restauração do auto-assign permanecem gates pós-merge.
+- Status: concluído após merge dos PRs #954–#957, migration aplicada em Production, validação SQL e QA pós-merge aprovados, conforme Debate 15 §§5.2–5.3; sem pendência ligada ao objetivo.
 
 10.9.2 Registros do recorte
 - Banco:
@@ -988,7 +988,7 @@
     - `public.account_pending_setup_messages`;
     - RPCs versionadas de início, identidade, reserva de turno, append e conclusão;
     - RLS sem policies públicas, grants mínimos e teste SQL transacional com rollback.
-  - Estado operacional: migration ainda não aplicada ao projeto hospedado.
+  - Estado operacional: migration aplicada em Production; validação SQL e verificação pós-apply aprovadas no fechamento do PR #957.
 - Código:
   - Criados:
     - `lib/onboarding/pending-setup/`;
@@ -1025,7 +1025,7 @@
 - Conteúdo: persistir turnos e estado por relação usuário/conta, permitir retomada executável enquanto a conta estiver `pending_setup` e preservar o histórico, sem chat executável, após a promoção para `active`.
 
 10.9.6 Conclusão, cutover e passagem ao comercial
-- Status: implementado no repositório; execução PostgreSQL compatível e QA visual/autenticado permanecem pendentes por indisponibilidade local de Docker/Podman e configuração runtime reutilizável.
+- Status: concluído em Production; execução SQL em transação isolada com rollback e QA autenticado pós-merge aprovados em desktop 1280×720 e mobile 390×844, conforme Debate 15 §5.3.
 - Conteúdo: concluir de forma transacional e idempotente, promover a conta sem entitlement, preservar gates comerciais e retirar a entrada executável E10.4 no mesmo cutover após equivalência funcional e ordem segura entre migration e Production.
 
 10.10 Onboarding factual pós-compra/trial

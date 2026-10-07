@@ -1,6 +1,6 @@
 "use client";
 
-import { startTransition, useActionState, useEffect, useRef } from "react";
+import { startTransition, useActionState, useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { FeedbackMessage } from "@/components/ui/feedback-message";
@@ -46,6 +46,8 @@ export function PendingSetupConversation({
   >(savePendingSetupBusinessDisplayNameAction, { ok: true });
   const attendanceButtonClass = conversation?.attendanceEnabled ? "!bg-brand-700 !text-white hover:!bg-brand-700/90" : "";
   const needsAttendanceProposal = conversation?.attendanceEnabled && conversation.stage === "niche_confirmation" && !conversation.attendanceProposal;
+  const hasPrimaryConflict = Boolean(conversation?.attendanceEnabled && conversation.attendancePrimaryConflictTaxonId);
+  const [clarificationText, setClarificationText] = useState("");
   const initializedRef = useRef(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const businessNameRef = useRef<HTMLInputElement | null>(null);
@@ -81,6 +83,10 @@ export function PendingSetupConversation({
     formData.set("intent", conversation.attendanceTurnIntent ? "resume" : "initialize");
     startTransition(() => turnAction(formData));
   }, [accountSubdomain, conversation, turnAction]);
+
+  useEffect(() => {
+    if (turnState.ok && !isTurnPending) setClarificationText("");
+  }, [turnState.ok, isTurnPending]);
 
   if (!conversation) {
     return (
@@ -132,7 +138,7 @@ export function PendingSetupConversation({
           ))}
         </div>
 
-        {conversation.attendanceEnabled && (!conversation.messages.length || conversation.attendanceTurnIntent) ? (
+        {conversation.attendanceEnabled && !hasPrimaryConflict && (!conversation.messages.length || conversation.attendanceTurnIntent) ? (
           <form action={turnAction} className="border-t border-surface-border px-5 py-5 sm:px-8">
             <ConversationHiddenFields accountSubdomain={accountSubdomain} conversationId={conversation.id} version={conversation.version} />
             <input type="hidden" name="intent" value={conversation.attendanceTurnIntent ? "resume" : "initialize"} />
@@ -146,7 +152,7 @@ export function PendingSetupConversation({
           </form>
         ) : null}
 
-        {conversation.attendanceEnabled && conversation.attendanceProposal ? (
+        {conversation.attendanceEnabled && conversation.attendanceProposal && !hasPrimaryConflict ? (
           <div className="space-y-3 px-5 pb-5 sm:px-8">
             {conversation.attendanceProposal.kind === "operational_fallback" ? (
               <FeedbackMessage tone="warning" className="!text-ink-900">
@@ -165,6 +171,38 @@ export function PendingSetupConversation({
               </div>
             ) : null}
           </div>
+        ) : null}
+
+        {hasPrimaryConflict ? (
+          <form action={turnAction} className="border-t border-surface-border px-5 py-5 sm:px-8">
+            <ConversationHiddenFields accountSubdomain={accountSubdomain} conversationId={conversation.id} version={conversation.version} />
+            <FeedbackMessage tone="warning" className="mb-4 !text-ink-900">
+              A categoria da conta mudou durante o atendimento. Seu contexto está preservado. A classificação precisa ser reavaliada.
+            </FeedbackMessage>
+            <p className="mb-4 text-sm text-graytech-600" role="status">
+              {isTurnPending ? "Reavaliando…" : "A classificação permanece pendente e precisa de correção administrativa. Seu contexto está preservado."}
+            </p>
+            {turnState.formError ? <FeedbackMessage tone="error" className="mb-4">{turnState.formError}</FeedbackMessage> : null}
+            <FormField className="mb-5">
+              <FormFieldLabel htmlFor="business_context">Complementar entendimento (opcional)</FormFieldLabel>
+              <Textarea ref={textareaRef} id="business_context" name="business_context" maxLength={4000}
+                value={clarificationText} onChange={(event) => setClarificationText(event.target.value)}
+                disabled={isTurnPending || Boolean(conversation.attendanceTurnIntent)}
+                aria-invalid={Boolean(turnState.fieldError)}
+                aria-describedby={turnState.fieldError ? "business-context-error" : "business-context-hint"}
+                className="min-h-28" />
+              {turnState.fieldError ? <FormFieldError id="business-context-error">{turnState.fieldError}</FormFieldError> : (
+                <FormFieldHint id="business-context-hint">
+                  Você não precisa repetir sua descrição. Acrescente apenas algo necessário para esclarecer sua atividade.
+                  {" "}Não inclua telefone, e-mail ou endereço.
+                </FormFieldHint>
+              )}
+            </FormField>
+            <Button type="submit" name="intent" value={conversation.attendanceTurnIntent ? "resume" : "clarify"}
+              disabled={isTurnPending} className={cn("min-h-11", attendanceButtonClass)}>
+              {isTurnPending ? "Reavaliando…" : "Reavaliar classificação"}
+            </Button>
+          </form>
         ) : null}
 
         {conversation.stage === "identity" && !conversation.attendanceEnabled ? (
@@ -219,7 +257,7 @@ export function PendingSetupConversation({
           </form>
         ) : null}
 
-        {(conversation.stage === "business_understanding" || (conversation.attendanceEnabled && conversation.stage === "identity")) && !conversation.attendanceTurnIntent && (!conversation.attendanceEnabled || conversation.messages.length > 0) ? (
+        {(conversation.stage === "business_understanding" || (conversation.attendanceEnabled && conversation.stage === "identity")) && !conversation.attendanceTurnIntent && !hasPrimaryConflict && (!conversation.attendanceEnabled || conversation.messages.length > 0) ? (
           <form action={turnAction} className="border-t border-surface-border px-5 py-5 sm:px-8">
             <ConversationHiddenFields
               accountSubdomain={accountSubdomain}
@@ -261,7 +299,7 @@ export function PendingSetupConversation({
           </form>
         ) : null}
 
-        {conversation.stage === "niche_confirmation" && !conversation.attendanceTurnIntent ? (
+        {conversation.stage === "niche_confirmation" && !conversation.attendanceTurnIntent && !hasPrimaryConflict ? (
           <form action={turnAction} className="border-t border-surface-border px-5 py-5 sm:px-8">
             <ConversationHiddenFields
               accountSubdomain={accountSubdomain}
@@ -305,7 +343,7 @@ export function PendingSetupConversation({
           </form>
         ) : null}
 
-        {conversation.stage === "ready_to_complete" && passageEnabled && !conversation.businessDisplayName ? (
+        {conversation.stage === "ready_to_complete" && !hasPrimaryConflict && passageEnabled && !conversation.businessDisplayName ? (
           <form action={nameAction} className="border-t border-surface-border px-5 py-5 sm:px-8">
             <ConversationHiddenFields
               accountSubdomain={accountSubdomain}
@@ -344,7 +382,7 @@ export function PendingSetupConversation({
           </form>
         ) : null}
 
-        {conversation.stage === "ready_to_complete" && (!passageEnabled || conversation.businessDisplayName) ? (
+        {conversation.stage === "ready_to_complete" && !hasPrimaryConflict && (!passageEnabled || conversation.businessDisplayName) ? (
           <form action={completionAction} className="border-t border-surface-border px-5 py-5 sm:px-8">
             <ConversationHiddenFields
               accountSubdomain={accountSubdomain}

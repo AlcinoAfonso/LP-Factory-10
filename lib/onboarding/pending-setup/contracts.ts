@@ -32,6 +32,7 @@ export type PendingSetupConversation = Readonly<{
   attendanceEnabled?: boolean;
   preferredNameDeclined?: boolean;
   attendanceProposal?: AttendanceProposal | null;
+  attendancePrimaryConflictTaxonId?: string | null;
   attendanceTurnIntent?: "initialize" | "message" | "confirm" | "clarify" | null;
   openAiCallCount: number;
   version: number;

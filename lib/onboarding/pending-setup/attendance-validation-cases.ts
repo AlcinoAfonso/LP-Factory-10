@@ -14,8 +14,8 @@ const context: AttendanceContext = {
   preferredName: "Ana", summary: "Manutenção de jardins para condomínios.", research: false,
   recent: [{ role: "user", content: "Faço manutenção de jardins para condomínios." }],
   catalog: [
-    { id: segmentId, name: "Serviços", level: "segment", parentId: null, active: true, aliases: [] },
-    { id: nicheId, name: "Jardinagem", level: "niche", parentId: segmentId, active: true, aliases: ["Manutenção de jardins"] },
+    { id: segmentId, name: "Serviços", level: "segment", parentId: null, active: true, inactiveAliases: [], aliases: [] },
+    { id: nicheId, name: "Jardinagem", level: "niche", parentId: segmentId, active: true, inactiveAliases: [], aliases: ["Manutenção de jardins"] },
   ],
 };
 const base: AttendanceOutput = { reply: "Entendi seu negócio.", preferredName: "Ana", preferredNameDeclined: false,
@@ -82,6 +82,16 @@ async function main() {
   assert.equal(validateAttendanceOutput({ ...market, aliases: [equivalent] }, { ...context, research: true }, [source])?.action, "propose");
   assert.equal(validateAttendanceOutput({ ...market, aliases: [{ ...equivalent, equivalence: "related" }] }, { ...context, research: true }, [source]), null);
   assert.equal(validateAttendanceOutput({ ...market, aliases: [{ ...equivalent, equivalence: "ambiguous" }] }, { ...context, research: true }, [source]), null);
+  const inactiveCollision = { ...context, research: true, catalog: context.catalog.map(taxon =>
+    taxon.id === nicheId ? { ...taxon, inactiveAliases: ["Fisioterapia", "Terapia física"] } : taxon) };
+  assert.equal(validateAttendanceOutput(market, inactiveCollision, [source]), null);
+  assert.equal(validateAttendanceOutput({ ...market, aliases: [equivalent] }, {
+    ...inactiveCollision, catalog: inactiveCollision.catalog.map(taxon =>
+      ({ ...taxon, inactiveAliases: ["Terapia física"] })) }, [source]), null);
+  assert.equal(validateAttendanceOutput(base, { ...context, currentPrimaryTaxonId: segmentId }, []), null);
+  assert.equal(validateAttendanceOutput(market, { ...context, research: true, currentPrimaryTaxonId: nicheId }, [source]), null);
+  assert.equal(validateAttendanceOutput(base, { ...context, currentPrimaryTaxonId: nicheId,
+    primaryConflictTaxonId: nicheId }, [])?.action, "existing");
   const proposal = attendanceProposal(market, [source]);
   assert.ok(validateStoredAttendanceProposal(proposal));
   assert.equal(validateStoredAttendanceProposal({ ...proposal, sources: ["javascript:alert(1)"] }), null);
@@ -130,6 +140,8 @@ async function main() {
   const dependencies: AttendanceDependencies = {
     load: async () => current,
     catalog: async () => context.catalog,
+    primary: async () => null,
+    recover: async () => { effects.push("recover"); return { ok: true, version: 3 }; },
     claim: async () => { effects.push("claim"); current = { ...current, version: 2 }; return { ok: true, version: 2 }; },
     request: async () => ({ ok: true, output: base, sources: [], responseId: "resp_fixture", latencyMs: 1 }),
     commit: async () => { effects.push("commit"); return { ok: true, version: 3 }; },
@@ -177,6 +189,35 @@ async function main() {
   })).ok, true);
   assert.deepEqual(effects, ["claim", "commit"]);
 
+  current = { ...current, version: 1, attendanceProposal: proposal, attendancePrimaryConflictTaxonId: null };
+  effects.length = 0;
+  assert.equal((await conductAttendanceTurn({ ...input, intent: "confirm" }, {
+    ...dependencies,
+    request: async () => ({ ok: true, output: { ...base, action: "confirm", existingTaxonId: null },
+      sources: [], responseId: "resp_conflict", latencyMs: 1 }),
+    commit: async () => { effects.push("commit"); return { ok: false, reason: "primary_conflict" }; },
+  })).ok, true);
+  assert.deepEqual(effects, ["claim", "commit", "recover"]);
+  current = { ...current, version: 1, attendancePrimaryConflictTaxonId: nicheId, attendanceTurnIntent: null };
+  effects.length = 0;
+  assert.equal((await conductAttendanceTurn({ ...input, intent: "confirm" }, dependencies)).ok, false);
+  assert.equal(effects.length, 0);
+  assert.equal((await conductAttendanceTurn({ ...input, intent: "clarify" }, {
+    ...dependencies, primary: async () => nicheId,
+    request: async ({ context: reevaluation }) => {
+      assert.equal(reevaluation.currentPrimaryTaxonId, nicheId);
+      assert.equal(reevaluation.primaryConflictTaxonId, nicheId);
+      assert.equal(reevaluation.confirmedProposal, null);
+      return { ok: true, output: { ...base, reply: "Essa categoria descreve sua atividade?" },
+        sources: [], responseId: "resp_reassessment", latencyMs: 1 };
+    },
+    commit: async write => {
+      assert.equal(write.confirm, false); assert.equal(write.reassessment, true);
+      assert.equal(write.observedPrimaryTaxonId, nicheId); assert.equal(write.proposal?.kind, "existing");
+      effects.push("commit"); return { ok: true, version: 3 };
+    },
+  })).ok, true);
+  assert.deepEqual(effects, ["claim", "commit"]);
   console.log("ok - E10.12 prompt/transport, selective Web, memory, fencing and no false success");
 }
 main().catch(error => { console.error(error); process.exitCode = 1; });

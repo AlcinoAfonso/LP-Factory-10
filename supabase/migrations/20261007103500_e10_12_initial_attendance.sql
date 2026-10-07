@@ -13,6 +13,7 @@ create unique index business_taxons_level_parent_name_uidx on public.business_ta
 
 alter table public.account_pending_setup_conversations
   add column attendance_proposal jsonb,
+  add column attendance_primary_conflict_taxon_id uuid references public.business_taxons(id),
   add column preferred_name_declined boolean not null default false,
   add column pending_turn_ordinal integer,
   add column pending_turn_intent text,
@@ -29,6 +30,96 @@ alter table public.account_pending_setup_conversations
     (pending_turn_token is null and pending_turn_started_at is null)
     or (pending_turn_token is not null and pending_turn_started_at is not null
       and stage in ('identity','business_understanding','niche_confirmation')));
+
+-- Infer refusal only from legacy transitions before the new attendance gate.
+update public.account_pending_setup_conversations set preferred_name_declined=true
+  where preferred_name is null and stage<>'identity';
+-- Preserve the legacy signature, ACLs and flow across apply, gate OFF and rollback.
+create or replace function public.set_account_pending_setup_preferred_name_v1(
+  p_conversation_id uuid,
+  p_account_id uuid,
+  p_user_id uuid,
+  p_preferred_name text,
+  p_expected_version bigint
+)
+returns bigint
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_conversation public.account_pending_setup_conversations%rowtype;
+  v_preferred_name text := nullif(btrim(p_preferred_name), '');
+  v_next_ordinal integer;
+  v_new_version bigint;
+begin
+  if not exists (
+    select 1
+    from public.accounts a
+    join public.account_users au
+      on au.account_id = a.id
+     and au.user_id = p_user_id
+    where a.id = p_account_id
+      and a.status = 'pending_setup'
+      and au.status = 'active'
+      and au.role = 'owner'
+  ) then
+    raise exception 'pending_setup_actor_not_allowed' using errcode = '42501';
+  end if;
+
+  if v_preferred_name is not null and (
+    char_length(v_preferred_name) > 80
+    or v_preferred_name ~ '[[:cntrl:]@]'
+  ) then
+    raise exception 'pending_setup_preferred_name_invalid' using errcode = '22023';
+  end if;
+
+  select c.*
+  into strict v_conversation
+  from public.account_pending_setup_conversations c
+  where c.id = p_conversation_id
+    and c.account_id = p_account_id
+    and c.user_id = p_user_id
+  for update;
+
+  if v_conversation.stage <> 'identity' then
+    return v_conversation.version;
+  end if;
+
+  if v_conversation.version <> p_expected_version then
+    raise exception 'pending_setup_version_conflict' using errcode = '40001';
+  end if;
+
+  select coalesce(max(m.ordinal), 0) + 1
+  into v_next_ordinal
+  from public.account_pending_setup_messages m
+  where m.conversation_id = p_conversation_id;
+
+  update public.account_pending_setup_conversations
+  set preferred_name = v_preferred_name,
+      preferred_name_declined = (v_preferred_name IS NULL),
+      stage = 'business_understanding',
+      version = version + 1
+  where id = p_conversation_id
+  returning version into v_new_version;
+
+  insert into public.account_pending_setup_messages (
+    conversation_id,
+    ordinal,
+    role,
+    content
+  )
+  values (
+    p_conversation_id,
+    v_next_ordinal,
+    'assistant',
+    'Para começar, conte em poucas palavras: com o que você trabalha e para quem?'
+  );
+
+  return v_new_version;
+end;
+$$;
+
 
 create function public.assert_pending_setup_actor_v2(p_account_id uuid, p_user_id uuid)
 returns void language plpgsql security definer set search_path = '' as $$
@@ -82,7 +173,8 @@ begin
       end if;
     else
       if p_user_content is null or char_length(btrim(p_user_content)) not between 1 and 4000 or
-        (p_intent='confirm' and (c.stage<>'niche_confirmation' or c.attendance_proposal is null)) then
+        (p_intent='confirm' and (c.stage<>'niche_confirmation' or c.attendance_proposal is null
+          or c.attendance_primary_conflict_taxon_id is not null)) then
         raise exception 'pending_setup_input_invalid' using errcode='22023';
       end if;
       select coalesce(max(ordinal),0)+1 into v_ordinal from public.account_pending_setup_messages where conversation_id=c.id;
@@ -110,7 +202,7 @@ begin
     coalesce(p_proposal->>'kind','') not in ('existing','new','operational_fallback') then
     raise exception 'pending_setup_proposal_invalid' using errcode='22023';
   end if;
-  lock table public.business_taxons,public.business_taxon_aliases in share row exclusive mode;
+  lock table public.business_taxons,public.business_taxon_aliases,public.account_taxonomy in share row exclusive mode;
   if p_proposal->>'kind'='operational_fallback' then
     if not p_confirmed or nullif(btrim(p_operational_label),'') is null or exists(
       select 1 from public.account_taxonomy where account_id=p_account_id and is_primary and status='active') then
@@ -207,6 +299,7 @@ begin
   if v_primary is not null and v_primary<>v_id then
     perform public.raise_postgrest_safe_conflict_v1('pending_setup_primary_conflict');
   end if;
+  if v_primary=v_id then return v_id; end if; -- Preserve administrative provenance.
   insert into public.account_taxonomy(account_id,taxon_id,is_primary,status,source_type)
     values(p_account_id,v_id,true,'active','user_confirmed_ai')
     on conflict(account_id,taxon_id) do update set is_primary=true,status='active',source_type='user_confirmed_ai';
@@ -216,10 +309,12 @@ end $$;
 create function public.commit_account_pending_setup_turn_v2(p_conversation_id uuid,p_account_id uuid,
   p_user_id uuid,p_expected_version bigint,p_turn_token uuid,p_assistant_content text,
   p_summary text,p_preferred_name text,p_next_stage text,p_proposal jsonb,p_confirm boolean,
-  p_preferred_name_declined boolean default false)
+  p_preferred_name_declined boolean default false,p_reassessment boolean default false,
+  p_observed_primary_taxon_id uuid default null)
 returns bigint language plpgsql security definer set search_path = '' as $$
 declare c public.account_pending_setup_conversations%rowtype; v_proposal jsonb; v_version bigint;
-  v_ordinal integer; v_stage text:=p_next_stage; v_confirm_kind text;
+  v_ordinal integer; v_stage text:=p_next_stage; v_confirm_kind text; v_primary uuid;
+  v_conflict uuid; v_keep_proposal boolean:=false;
 begin
   select * into strict c from public.account_pending_setup_conversations
     where id=p_conversation_id and account_id=p_account_id and user_id=p_user_id for update;
@@ -237,17 +332,44 @@ begin
     (not p_confirm and c.pending_turn_intent='confirm') then
     raise exception 'pending_setup_turn_invalid' using errcode='22023';
   end if;
+  if p_reassessment is null or (p_confirm and c.attendance_primary_conflict_taxon_id is not null) then
+    raise exception 'pending_setup_confirmation_blocked' using errcode='22023';
+  end if;
+  -- Also serialize the absence of a primary against administrative inserts.
+  lock table public.business_taxons,public.business_taxon_aliases,public.account_taxonomy in share row exclusive mode;
+  select taxon_id into v_primary from public.account_taxonomy
+    where account_id=p_account_id and is_primary and status='active';
+  if v_primary is distinct from p_observed_primary_taxon_id then
+    perform public.raise_postgrest_safe_conflict_v1('pending_setup_primary_conflict');
+  end if;
+  v_conflict:=c.attendance_primary_conflict_taxon_id;
   v_proposal:=case when p_confirm then c.attendance_proposal else p_proposal end;
-  if p_confirm or v_proposal->>'kind'='existing' then
+  if p_reassessment and v_primary is not null then
+    if v_proposal->>'kind'='existing' and v_proposal->>'taxonId'=v_primary::text and v_stage='niche_confirmation' then
+      if not exists(select 1 from public.business_taxons where id=v_primary and is_active) then
+        raise exception 'pending_setup_inactive_taxon' using errcode='23514';
+      end if;
+      v_conflict:=null; -- New current proposal still requires a new lead confirmation.
+      v_confirm_kind:='official';
+    elsif v_proposal is null and v_stage='business_understanding' then
+      v_proposal:=c.attendance_proposal; v_conflict:=v_primary; v_keep_proposal:=true;
+    else
+      raise exception 'pending_setup_reassessment_invalid' using errcode='23514';
+    end if;
+  elsif p_reassessment then
+    v_conflict:=null; -- Primary removed; only newly validated output can advance.
+  end if;
+  if p_confirm or (v_proposal->>'kind'='existing' and v_stage='ready_to_complete') then
     perform public.effect_pending_setup_taxonomy_v1(p_account_id,v_proposal,p_confirm,p_summary);
     v_stage:='ready_to_complete'; v_proposal:=null;
   elsif v_stage='ready_to_complete' then
     raise exception 'pending_setup_taxonomy_not_committed' using errcode='23514';
-  elsif v_proposal is not null then
-    if coalesce(v_proposal->>'kind','') not in ('new','operational_fallback') or v_stage<>'niche_confirmation' then
+  elsif v_proposal is not null and not v_keep_proposal then
+    if coalesce(v_proposal->>'kind','') not in ('new','existing','operational_fallback') or v_stage<>'niche_confirmation'
+      or (v_proposal->>'kind'='existing' and (not p_reassessment or v_primary is null or v_proposal->>'taxonId'<>v_primary::text)) then
       raise exception 'pending_setup_proposal_invalid' using errcode='22023';
     end if;
-    v_confirm_kind:=case when v_proposal->>'kind'='new' then 'official' else 'operational_fallback' end;
+    v_confirm_kind:=case when v_proposal->>'kind' in ('new','existing') then 'official' else 'operational_fallback' end;
   elsif v_stage='niche_confirmation' then
     raise exception 'pending_setup_proposal_missing' using errcode='23514';
   end if;
@@ -257,8 +379,10 @@ begin
   update public.account_pending_setup_conversations set
     preferred_name=case when p_preferred_name_declined then null else coalesce(nullif(btrim(p_preferred_name),''),preferred_name) end,
     preferred_name_declined=p_preferred_name_declined,
-    business_context_text=coalesce(nullif(btrim(p_summary),''),c.business_context_text),stage=v_stage,confirmation_kind=v_confirm_kind,
-    attendance_proposal=v_proposal,pending_turn_token=null,pending_turn_started_at=null,
+    business_context_text=case when v_keep_proposal then c.business_context_text
+      else coalesce(nullif(btrim(p_summary),''),c.business_context_text) end,stage=v_stage,confirmation_kind=v_confirm_kind,
+    attendance_proposal=v_proposal,attendance_primary_conflict_taxon_id=v_conflict,
+    pending_turn_token=null,pending_turn_started_at=null,
     pending_turn_ordinal=null,pending_turn_intent=null,last_attendance_turn_token=p_turn_token,
     version=version+1,updated_at=clock_timestamp()
     where id=c.id returning version into v_version;
@@ -282,6 +406,36 @@ begin
   -- Preserve ordinal and intent for retry without a second user message.
   return v_version;
 end $$;
+create function public.recover_account_pending_setup_primary_conflict_v2(p_conversation_id uuid,p_account_id uuid,
+  p_user_id uuid,p_expected_version bigint,p_turn_token uuid)
+returns bigint language plpgsql security definer set search_path = '' as $$
+declare c public.account_pending_setup_conversations%rowtype; v_primary uuid; v_target uuid; v_version bigint;
+begin
+  select * into strict c from public.account_pending_setup_conversations
+    where id=p_conversation_id and account_id=p_account_id and user_id=p_user_id for update;
+  perform public.assert_pending_setup_actor_v2(p_account_id,p_user_id);
+  if p_turn_token is not null and c.last_attendance_turn_token=p_turn_token and c.pending_turn_token is null then
+    return c.version;
+  end if;
+  if p_expected_version is null or c.version<>p_expected_version or p_turn_token is null or
+    c.pending_turn_token is distinct from p_turn_token or
+    c.pending_turn_started_at < clock_timestamp()-interval '6 minutes' then
+    perform public.raise_postgrest_safe_conflict_v1('pending_setup_version_conflict');
+  end if;
+  lock table public.business_taxons,public.business_taxon_aliases,public.account_taxonomy in share row exclusive mode;
+  select taxon_id into v_primary from public.account_taxonomy
+    where account_id=p_account_id and is_primary and status='active';
+  if c.attendance_proposal->>'kind'='existing' then v_target:=(c.attendance_proposal->>'taxonId')::uuid; end if;
+  update public.account_pending_setup_conversations set
+    attendance_primary_conflict_taxon_id=case when v_primary is distinct from v_target then v_primary else null end,
+    stage='business_understanding',confirmation_kind=null,
+    pending_turn_token=null,pending_turn_started_at=null,pending_turn_ordinal=null,pending_turn_intent=null,
+    last_attendance_turn_token=p_turn_token,version=version+1,updated_at=clock_timestamp()
+    where id=c.id returning version into v_version;
+  -- Preserve the original proposal, confirmed summary and append-only user confirmation.
+  return v_version;
+end $$;
+
 -- Service-only; helper effect cannot be called outside the fenced turn by service consumers.
 do $$
 declare r record;
@@ -289,7 +443,8 @@ begin
   for r in select p.oid::regprocedure as signature,p.proname from pg_proc p join pg_namespace n on n.oid=p.pronamespace
     where n.nspname='public' and p.proname in ('assert_pending_setup_actor_v2',
       'start_account_pending_setup_v2','claim_account_pending_setup_turn_v2',
-      'effect_pending_setup_taxonomy_v1','commit_account_pending_setup_turn_v2','release_account_pending_setup_turn_v2') loop
+      'effect_pending_setup_taxonomy_v1','commit_account_pending_setup_turn_v2','release_account_pending_setup_turn_v2',
+      'recover_account_pending_setup_primary_conflict_v2') loop
     execute format('revoke all on function %s from public,anon,authenticated,service_role',r.signature);
     if to_regrole('ai_readonly') is not null then execute format('revoke all on function %s from ai_readonly',r.signature); end if;
     if r.proname not in ('effect_pending_setup_taxonomy_v1','assert_pending_setup_actor_v2') then

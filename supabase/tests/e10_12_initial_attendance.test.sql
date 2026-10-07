@@ -27,7 +27,7 @@ begin
 end $proof$;
 
 select pg_temp.assert_true(has_function_privilege('service_role',
-  'public.commit_account_pending_setup_turn_v2(uuid,uuid,uuid,bigint,uuid,text,text,text,text,jsonb,boolean,boolean)','execute'),'service commit');
+  'public.commit_account_pending_setup_turn_v2(uuid,uuid,uuid,bigint,uuid,text,text,text,text,jsonb,boolean,boolean,boolean,uuid)','execute'),'service commit');
 select pg_temp.assert_true(not has_function_privilege('service_role',
   'public.effect_pending_setup_taxonomy_v1(uuid,jsonb,boolean,text)','execute'),'helper cannot bypass fence');
 select pg_temp.assert_true(not has_function_privilege('authenticated',
@@ -44,6 +44,30 @@ select pg_temp.assert_true((select count(*)=2 from public.openai_workload_config
   where workload='pending_setup_conversation' and model='gpt-6-luna' and reasoning_effort='xhigh'
   and proof_metadata->>'proof_kind'='bootstrap'),'candidate is not an empirical proof');
 
+-- Historical backfill and the legacy writer continue to preserve refusal with the gate OFF.
+select pg_temp.assert_true((select preferred_name_declined and preferred_name is null and stage='business_understanding'
+ from public.account_pending_setup_conversations where account_id='e1012bac-0000-4000-8000-000000000011'),'pre-apply refusal preserved');
+select pg_temp.assert_true((select not preferred_name_declined and stage='identity'
+ from public.account_pending_setup_conversations where account_id='e1012bac-0000-4000-8000-000000000012'),'unknown identity is not refusal');
+select pg_temp.assert_true((select not preferred_name_declined and preferred_name='Bia'
+ from public.account_pending_setup_conversations where account_id='e1012bac-0000-4000-8000-000000000013'),'known name is not refusal');
+do $$
+declare c uuid; v bigint; u uuid:='e1012bac-0000-4000-8000-000000000001';
+begin
+ select id,version into c,v from public.account_pending_setup_conversations where account_id='e1012bac-0000-4000-8000-000000000012';
+ perform public.set_account_pending_setup_preferred_name_v1(c,'e1012bac-0000-4000-8000-000000000012',u,null,v);
+ perform pg_temp.assert_true((select preferred_name_declined from public.account_pending_setup_conversations where id=c),'post-apply gate OFF refusal preserved');
+ -- A legacy valid-name transition writes false, even after a previously recorded refusal.
+ update public.account_pending_setup_conversations set stage='identity',preferred_name_declined=true where id=c;
+ select version into v from public.account_pending_setup_conversations where id=c;
+ perform public.set_account_pending_setup_preferred_name_v1(c,'e1012bac-0000-4000-8000-000000000012',u,'Ana',v);
+ perform pg_temp.assert_true((select not preferred_name_declined and preferred_name='Ana' from public.account_pending_setup_conversations where id=c),'post-apply valid name clears refusal');
+end $$;
+select pg_temp.assert_true(has_function_privilege('service_role',
+ 'public.recover_account_pending_setup_primary_conflict_v2(uuid,uuid,uuid,bigint,uuid)','execute'),'service recovery allowed');
+select pg_temp.assert_true(not has_function_privilege('authenticated',
+ 'public.recover_account_pending_setup_primary_conflict_v2(uuid,uuid,uuid,bigint,uuid)','execute'),'authenticated recovery denied');
+
 insert into auth.users(id,aud,role,email,created_at,updated_at) values
   ('e1012000-0000-4000-8000-000000000001','authenticated','authenticated','e1012-owner@example.com',now(),now()),
   ('e1012000-0000-4000-8000-000000000002','authenticated','authenticated','e1012-viewer@example.com',now(),now());
@@ -53,7 +77,7 @@ insert into public.accounts(id,name,subdomain,slug,status) values
   ('e1012000-0000-4000-8000-000000000013','E1012 C','e1012-c','e1012-c','pending_setup'),
   ('e1012000-0000-4000-8000-000000000014','E1012 D','e1012-d','e1012-d','pending_setup');
 insert into public.account_users(account_id,user_id,role,status)
-select id,'e1012000-0000-4000-8000-000000000001','owner','active' from public.accounts where subdomain like 'e1012-%';
+select id,'e1012000-0000-4000-8000-000000000001','owner','active' from public.accounts where id::text like 'e1012000-%';
 insert into public.account_users(account_id,user_id,role,status)
 values('e1012000-0000-4000-8000-000000000011','e1012000-0000-4000-8000-000000000002','viewer','active');
 
@@ -205,5 +229,73 @@ begin
  -- Normalized null-parent uniqueness is global and cannot be bypassed with a new slug.
  perform pg_temp.expect_error('insert into public.business_taxons(level,name,slug,is_active)
    values(''segment'',''  e1012 serviços LOCAIS  '',''e1012-duplicate-slug'',true)','23505');
+end $$;
+-- A primary assigned after claim consumes the original confirmation once and requires a new one.
+do $$
+declare u uuid:='e1012000-0000-4000-8000-000000000001';
+ a uuid:='e1012000-0000-4000-8000-000000000013'; c uuid; v bigint; v2 bigint;
+ token uuid:=gen_random_uuid(); old_token uuid; target uuid; primary_id uuid; proposal jsonb; original jsonb; n bigint;
+begin
+ select id into target from public.business_taxons where name='E1012 Manutenção de jardins';
+ insert into public.business_taxons(level,name,slug,is_active)
+ values('segment','E1012 Administrativo','e1012-admin-primary',true) returning id into primary_id;
+ c:=public.start_account_pending_setup_v2(a,u,'Clara');
+ proposal:=jsonb_build_object('kind','existing','taxonId',target,'chain','[]'::jsonb,'aliases','[]'::jsonb,'evidence','','sources','[]'::jsonb);
+ -- Privileged fixture prepares a previously proposed understanding; no client has this permission.
+ update public.account_pending_setup_conversations set stage='niche_confirmation',attendance_proposal=proposal,
+  business_context_text='Contexto confirmado original.',confirmation_kind='official' where id=c;
+ v:=public.claim_account_pending_setup_turn_v2(c,a,u,1,token,'Sim original','confirm');
+ select count(*) into n from public.account_pending_setup_messages where conversation_id=c;
+ insert into public.account_taxonomy(account_id,taxon_id,is_primary,status,source_type)
+ values(a,primary_id,true,'active','taxonomy_match');
+ perform pg_temp.expect_error(format('select public.commit_account_pending_setup_turn_v2(%L,%L,%L,%s,%L,%L,%L,%L,%L,null,true)',
+  c,a,u,v,token,'Sucesso proibido','Contexto confirmado original.','Clara','ready_to_complete'),'40001');
+ v2:=public.recover_account_pending_setup_primary_conflict_v2(c,a,u,v,token);
+ perform pg_temp.assert_true(public.recover_account_pending_setup_primary_conflict_v2(c,a,u,v,token)=v2,'recovery idempotent');
+ perform pg_temp.assert_true((select attendance_primary_conflict_taxon_id=primary_id and attendance_proposal=proposal
+  and business_context_text='Contexto confirmado original.' and pending_turn_intent is null and pending_turn_ordinal is null
+  from public.account_pending_setup_conversations where id=c),'blocked proposal and context preserved');
+ perform pg_temp.assert_true((select count(*)=n from public.account_pending_setup_messages where conversation_id=c),'original confirmation append once no success');
+ perform pg_temp.expect_error(format('select public.claim_account_pending_setup_turn_v2(%L,%L,%L,%s,%L,''Sim antigo'',''confirm'')',
+  c,a,u,v2,gen_random_uuid()),'22023');
+ old_token:=token; token:=gen_random_uuid();
+ v:=public.claim_account_pending_setup_turn_v2(c,a,u,v2,token,'Reavaliar','clarify');
+ v2:=public.commit_account_pending_setup_turn_v2(c,a,u,v,token,'Classificação pendente de correção administrativa.',
+  'Resumo não deve substituir contexto confirmado.','Clara','business_understanding',null,false,false,true,primary_id);
+ perform pg_temp.assert_true((select attendance_primary_conflict_taxon_id=primary_id and attendance_proposal=proposal
+  and business_context_text='Contexto confirmado original.' from public.account_pending_setup_conversations where id=c),'incompatible reassessment no overwrite/fallback');
+ perform pg_temp.assert_true(not exists(select 1 from public.account_niche_resolutions where account_id=a),'no fallback with primary');
+ -- Safe equivalence presents a new existing proposal but does not commit the earlier Sim.
+ token:=gen_random_uuid(); v:=public.claim_account_pending_setup_turn_v2(c,a,u,v2,token,'Esclarecimento focal','message');
+ original:=proposal;
+ proposal:=jsonb_set(proposal,'{taxonId}',to_jsonb(primary_id));
+ v2:=public.commit_account_pending_setup_turn_v2(c,a,u,v,token,'Essa categoria atual descreve sua atividade?',
+  'Entendimento confirmado.','Clara','niche_confirmation',proposal,false,false,true,primary_id);
+ perform pg_temp.assert_true((select attendance_primary_conflict_taxon_id is null and stage='niche_confirmation'
+  and attendance_proposal=proposal from public.account_pending_setup_conversations where id=c),'new confirmation required');
+ perform pg_temp.assert_true((select source_type='taxonomy_match' from public.account_taxonomy where account_id=a),'provenance unchanged before new Sim');
+ token:=gen_random_uuid(); v:=public.claim_account_pending_setup_turn_v2(c,a,u,v2,token,'Sim novo','confirm');
+ v2:=public.commit_account_pending_setup_turn_v2(c,a,u,v,token,'Podemos continuar.',
+  'Entendimento confirmado.','Clara','ready_to_complete',null,true,false,false,primary_id);
+ perform pg_temp.assert_true((select source_type='taxonomy_match' and taxon_id=primary_id from public.account_taxonomy where account_id=a),'new Sim preserves admin source');
+ -- Recreate a blocked fixture to prove removal, inactivity and expired recovery independently.
+ update public.account_pending_setup_conversations set stage='business_understanding',attendance_proposal=original,
+  attendance_primary_conflict_taxon_id=primary_id where id=c;
+ token:=gen_random_uuid(); v:=public.claim_account_pending_setup_turn_v2(c,a,u,v2,token,'Reavaliar','clarify');
+ update public.business_taxons set is_active=false where id=primary_id;
+ perform pg_temp.expect_error(format('select public.commit_account_pending_setup_turn_v2(%L,%L,%L,%s,%L,%L,%L,%L,%L,%L::jsonb,false,false,true,%L)',
+  c,a,u,v,token,'Wrong','Contexto','Clara','niche_confirmation',proposal,primary_id),'23514');
+ delete from public.account_taxonomy where account_id=a;
+ v2:=public.commit_account_pending_setup_turn_v2(c,a,u,v,token,'Revalidamos a categoria original.',
+  'Entendimento confirmado.','Clara','ready_to_complete',original,false,false,true,null);
+ perform pg_temp.assert_true((select attendance_primary_conflict_taxon_id is null and stage='ready_to_complete'
+  from public.account_pending_setup_conversations where id=c),'removed primary allows fresh validated classification');
+ perform pg_temp.assert_true((select taxon_id=target from public.account_taxonomy where account_id=a),'revalidated target linked after removal');
+ update public.account_pending_setup_conversations set stage='business_understanding' where id=c;
+ token:=gen_random_uuid(); v:=public.claim_account_pending_setup_turn_v2(c,a,u,v2,token,'Reavaliar','clarify');
+ update public.account_pending_setup_conversations set pending_turn_started_at=clock_timestamp()-interval '7 minutes' where id=c;
+ perform pg_temp.expect_error(format('select public.recover_account_pending_setup_primary_conflict_v2(%L,%L,%L,%s,%L)',c,a,u,v,token),'40001');
+ perform pg_temp.expect_error(format('select public.recover_account_pending_setup_primary_conflict_v2(%L,%L,%L,%s,%L)',c,a,
+  'e1012000-0000-4000-8000-000000000002',v,token),'P0002');
 end $$;
 rollback;

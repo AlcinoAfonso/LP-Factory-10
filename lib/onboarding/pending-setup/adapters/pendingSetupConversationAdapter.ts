@@ -27,6 +27,7 @@ type ConversationRow = {
   resolution_outcome: PendingSetupResolutionOutcome | null;
   preferred_name_declined?: boolean;
   attendance_proposal?: PendingSetupConversation["attendanceProposal"];
+  attendance_primary_conflict_taxon_id?: string | null;
   pending_turn_intent?: PendingSetupConversation["attendanceTurnIntent"];
   openai_call_count: number;
   version: number | string;
@@ -70,6 +71,7 @@ function mapConversation(
     attendanceEnabled: isE1012AttendanceEnabled(),
     preferredNameDeclined: row.preferred_name_declined ?? false,
     attendanceProposal: row.attendance_proposal ?? null,
+    attendancePrimaryConflictTaxonId: row.attendance_primary_conflict_taxon_id ?? null,
     attendanceTurnIntent: row.pending_turn_intent ?? null,
     openAiCallCount: Number(row.openai_call_count),
     version: Number(row.version),
@@ -136,7 +138,7 @@ export async function loadPendingSetupConversation(input: {
         .select([
           columns,
           ...(isE1011PassageEnabled() ? ["business_display_name"] : []),
-          ...(isE1012AttendanceEnabled() ? ["attendance_proposal,pending_turn_intent,preferred_name_declined"] : []),
+          ...(isE1012AttendanceEnabled() ? ["attendance_proposal,pending_turn_intent,preferred_name_declined,attendance_primary_conflict_taxon_id"] : []),
         ].join(","))
         .eq("id", conversationId)
         .eq("account_id", input.accountId)

@@ -229,13 +229,12 @@ jobs:
             20260927145500_e25_1_account_communication_bases.sql
             20260927163500_e21_2_communication_base_workloads.sql
             20260928161504_e10_11_pending_setup_business_name.sql
-            20261007103500_e10_12_initial_attendance.sql
           )
           for name in "${selected[@]}"; do
             cp "supabase/migrations/$name" "$stage_project/supabase/migrations/$name"
             cmp -s "supabase/migrations/$name" "$stage_project/supabase/migrations/$name"
           done
-          test "$(find "$stage_project/supabase/migrations" -name '*.sql' | wc -l)" -eq 12
+          test "$(find "$stage_project/supabase/migrations" -name '*.sql' | wc -l)" -eq 11
           echo "project=$stage_project" >> "$GITHUB_OUTPUT"
       - name: Apply integral SQL to isolated PostgreSQL 17
         shell: bash
@@ -255,6 +254,10 @@ jobs:
           awk '/^do \$migration\$/ { blocks++; if (blocks == 2) exit } { print }' \
             supabase/migrations/20260827203000_postgrest_safe_application_conflicts.sql \
             | docker exec -i "$db_container" psql -U postgres -d postgres -v ON_ERROR_STOP=1
+          docker exec -i "$db_container" psql -U postgres -d postgres -v ON_ERROR_STOP=1 \
+            < supabase/tests/e10_12_initial_attendance.pre-migration.sql
+          docker exec -i "$db_container" psql -U postgres -d postgres -v ON_ERROR_STOP=1 \
+            < supabase/migrations/20261007103500_e10_12_initial_attendance.sql
           docker exec -i "$db_container" psql -U postgres -d postgres -v ON_ERROR_STOP=1 \
             < supabase/tests/e10_12_initial_attendance.test.sql > "$RUNNER_TEMP/e10-12-test.log" 2>&1 || {
               tail -n 60 "$RUNNER_TEMP/e10-12-test.log"; exit 1;

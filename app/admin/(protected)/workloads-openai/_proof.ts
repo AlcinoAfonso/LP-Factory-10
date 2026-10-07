@@ -242,8 +242,8 @@ async function proveAttendance(
   const segmentId = "10000000-0000-4000-8000-000000000002";
   const nicheId = "10000000-0000-4000-8000-000000000003";
   const catalog: AttendanceContext["catalog"] = [
-    { id: segmentId, name: "Serviços", level: "segment", parentId: null, active: true, aliases: [] },
-    { id: nicheId, name: "Manutenção de jardins", level: "niche", parentId: segmentId, active: true, aliases: ["Jardinagem"] },
+    { id: segmentId, name: "Serviços", level: "segment", parentId: null, active: true, inactiveAliases: [], aliases: [] },
+    { id: nicheId, name: "Manutenção de jardins", level: "niche", parentId: segmentId, active: true, inactiveAliases: [], aliases: ["Jardinagem"] },
   ];
   const contexts: AttendanceContext[] = [
     { preferredName: null, summary: null, recent: [], catalog, research: false },
