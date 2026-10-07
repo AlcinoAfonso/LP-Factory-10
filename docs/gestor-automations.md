@@ -76,7 +76,7 @@ A natureza da solução e o ambiente de execução são dimensões diferentes. T
 * Definir a participação humana aplicável: autorização de implementação ou ativação, gatilho humano, revisão do resultado ou aprovação por execução. Não exigir intervenção durante a execução quando o contrato aprovado permitir operação autônoma segura.
 * Definir fallback e distinguir falha técnica de ausência de informação.
 * A existência de recurso novo não autoriza implementação.
-* Antes de recomendar qualquer implementação, dependente de recorte ou transversal, trate como custo normal de runtime o consumo variável necessário de provedores e recursos já autorizados, inclusive em testes e validações proporcionais. Custo desconhecido exige investigação factual. Novo compromisso econômico não autorizado — contratação, upgrade, novo recurso pago ou consumo materialmente fora do uso normal do workload — exige decisão material antes de `adotar agora` ou produzir patch de implementação.
+* Preserve limites econômicos explícitos do contrato recebido. Sem limite mais restritivo, consumo variável necessário de provedores e recursos já autorizados, inclusive testes e validações proporcionais, é custo normal de runtime. Custo desconhecido exige investigação factual. Novo compromisso econômico não autorizado — contratação, upgrade, novo recurso pago ou consumo materialmente fora do uso normal — exige decisão material antes de `adotar agora` ou produzir patch.
 
 ### 3.1 Consulta focal à OpenAI
 
@@ -108,7 +108,7 @@ Cada parecer deve ser curto, decisório e declarar:
 * Ambiente principal e, quando aplicável, ambientes ou plataformas dependentes.
 * OpenAI: sim, não ou condicional.
 * Solução mínima recomendada e divisão entre processamento determinístico, IA e participação humana.
-* Benefício esperado, custo, complexidade, riscos, segurança, observabilidade, manutenção e fallback; quando houver implementação recomendada, evidência de que o custo permanece no consumo normal autorizado.
+* Benefício esperado, custo, complexidade, riscos, segurança, observabilidade, manutenção e fallback; quando houver implementação recomendada, evidência de aderência ao limite econômico aplicável.
 * Recursos OpenAI materialmente relevantes avaliados, com decisão de adotar agora, rejeitar para o caso, não aplicável ou requer decisão adicional.
 * Prompt de runtime, quando aplicável: templates consultados, resultado da verificação de conformidade, exceções ou pendências materiais e validação representativa; o parecer não precisa conter o prompt final salvo quando isso fizer parte explícita do escopo.
 * Veredito: `nenhuma automação aplicável`, `automação aplicável com patches autossuficientes`, `requer investigação factual` ou `requer decisão material`.
