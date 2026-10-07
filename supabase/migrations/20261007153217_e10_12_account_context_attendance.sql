@@ -35,16 +35,6 @@ do $$ begin
     revoke all on public.account_dialogues,public.account_context_summaries from ai_readonly;
   end if;
 end $$;
-insert into public.account_dialogues(id,account_id,user_id,origin,started_at,ended_at)
-select id,account_id,user_id,'pending_setup',created_at,completed_at
-from public.account_pending_setup_conversations on conflict(id) do nothing;
--- Deterministic seed from a confirmed legacy understanding; no automatic merge of users' claims.
-insert into public.account_context_summaries(account_id,summary,source_dialogue_id,source_user_id,updated_at)
-select distinct on(account_id) account_id,btrim(business_context_text),id,user_id,updated_at
-from public.account_pending_setup_conversations
-where stage in ('ready_to_complete','completed') and nullif(btrim(business_context_text),'') is not null
-order by account_id,updated_at desc,id desc on conflict(account_id) do nothing;
-
 
 do $$
 begin
@@ -75,9 +65,6 @@ alter table public.account_pending_setup_conversations
     or (pending_turn_token is not null and pending_turn_started_at is not null
       and stage in ('identity','business_understanding','niche_confirmation')));
 
--- Infer refusal for open legacy flows; completed history must keep its timestamps.
-update public.account_pending_setup_conversations set preferred_name_declined=true
-  where preferred_name is null and stage in ('business_understanding','niche_confirmation','ready_to_complete');
 -- Preserve the legacy signature, ACLs and flow across apply, gate OFF and rollback.
 create or replace function public.set_account_pending_setup_preferred_name_v1(
   p_conversation_id uuid,
@@ -210,20 +197,25 @@ end $$;
 create function public.start_account_pending_setup_v2(p_account_id uuid,p_user_id uuid,
   p_preferred_name text default null)
 returns uuid language plpgsql security definer set search_path = '' as $$
-declare v_id uuid;
+declare v_id uuid; v_started_at timestamptz;
 begin
   perform public.assert_pending_setup_actor_v2(p_account_id,p_user_id);
   insert into public.account_pending_setup_conversations(account_id,user_id,preferred_name,stage)
     values(p_account_id,p_user_id,nullif(btrim(p_preferred_name),''),
       case when nullif(btrim(p_preferred_name),'') is null then 'identity' else 'business_understanding' end)
-    on conflict(account_id,user_id) do nothing returning id into v_id;
+    on conflict(account_id,user_id) do nothing returning id,created_at into v_id,v_started_at;
   if v_id is null then
-    select id into strict v_id from public.account_pending_setup_conversations
-      where account_id=p_account_id and user_id=p_user_id;
+    select c.id into v_id from public.account_pending_setup_conversations c
+      join public.account_dialogues d on d.id=c.id and d.account_id=c.account_id and d.user_id=c.user_id
+      where c.account_id=p_account_id and c.user_id=p_user_id;
+    if v_id is null then
+      raise exception 'pending_setup_legacy_conversation_not_supported' using errcode='55000';
+    end if;
+    return v_id;
   end if;
+  -- Only a newly created attendance initializes contextual account structures.
   insert into public.account_dialogues(id,account_id,user_id,origin,started_at,ended_at)
-    select id,account_id,user_id,'pending_setup',created_at,completed_at
-    from public.account_pending_setup_conversations where id=v_id on conflict(id) do nothing;
+    values(v_id,p_account_id,p_user_id,'pending_setup',v_started_at,null);
   insert into public.account_context_summaries(account_id) values(p_account_id)
     on conflict(account_id) do nothing;
   return v_id;

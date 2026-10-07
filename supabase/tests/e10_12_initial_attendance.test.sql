@@ -53,28 +53,18 @@ select pg_temp.assert_true(not exists(select 1 from information_schema.columns w
 select pg_temp.assert_true(not exists(select 1 from pg_constraint where conrelid in
  ('public.account_dialogues'::regclass,'public.account_context_summaries'::regclass)
  and confrelid='public.account_communication_bases'::regclass),'no context relationship to Base');
-select pg_temp.assert_true((select count(*)=4 from public.account_dialogues
- where account_id::text like 'e1012bac-%'),'legacy dialogue identity backfilled');
+select pg_temp.assert_true(not exists(select 1 from public.account_dialogues)
+ and not exists(select 1 from public.account_context_summaries),'apply copies no historical dialogue or summary');
 
 select pg_temp.assert_true((select stage='completed' and preferred_name is null and version=7
  and created_at='2026-09-21T00:00:00Z'::timestamptz
  and updated_at='2026-09-22T00:00:00Z'::timestamptz and completed_at=updated_at
  from public.account_pending_setup_conversations where id='e1012bac-0000-4000-8000-000000000014'),
- 'completed unnamed legacy conversation remains untouched by refusal backfill');
-select pg_temp.assert_true((select d.ended_at='2026-09-22T00:00:00Z'::timestamptz
- and s.summary='Entendimento histórico confirmado.' and s.updated_at=d.ended_at
- and s.source_dialogue_id=d.id and s.source_user_id=d.user_id
- from public.account_dialogues d join public.account_context_summaries s on s.account_id=d.account_id
- where d.id='e1012bac-0000-4000-8000-000000000014'),
- 'completed unnamed legacy dialogue and memory are seeded without rewriting history');
+ 'completed unnamed legacy conversation remains untouched by apply');
 
--- Historical backfill and the legacy writer continue to preserve refusal with the gate OFF.
-select pg_temp.assert_true((select s.summary='Descrição útil confirmada no legado.'
- and d.user_id=s.source_user_id and d.account_id=s.account_id
- from public.account_context_summaries s join public.account_dialogues d on d.id=s.source_dialogue_id
- where s.account_id='e1012bac-0000-4000-8000-000000000013'),'confirmed legacy memory seeded with scoped provenance');
-select pg_temp.assert_true((select preferred_name_declined and preferred_name is null and stage='business_understanding'
- from public.account_pending_setup_conversations where account_id='e1012bac-0000-4000-8000-000000000011'),'pre-apply refusal preserved');
+-- Apply does not infer old refusals; future legacy transitions still record them with the gate OFF.
+select pg_temp.assert_true((select not preferred_name_declined and preferred_name is null and stage='business_understanding'
+ from public.account_pending_setup_conversations where account_id='e1012bac-0000-4000-8000-000000000011'),'no historical refusal inference');
 select pg_temp.assert_true((select not preferred_name_declined and stage='identity'
  from public.account_pending_setup_conversations where account_id='e1012bac-0000-4000-8000-000000000012'),'unknown identity is not refusal');
 select pg_temp.assert_true((select not preferred_name_declined and preferred_name='Bia'
@@ -90,6 +80,10 @@ begin
  select version into v from public.account_pending_setup_conversations where id=c;
  perform public.set_account_pending_setup_preferred_name_v1(c,'e1012bac-0000-4000-8000-000000000012',u,'Ana',v);
  perform pg_temp.assert_true((select not preferred_name_declined and preferred_name='Ana' from public.account_pending_setup_conversations where id=c),'post-apply valid name clears refusal');
+ perform pg_temp.expect_error(format('select public.start_account_pending_setup_v2(%L,%L,null)',
+  'e1012bac-0000-4000-8000-000000000011',u),'55000');
+ perform pg_temp.assert_true(not exists(select 1 from public.account_dialogues)
+  and not exists(select 1 from public.account_context_summaries),'legacy start creates no contextual copy');
 end $$;
 select pg_temp.assert_true(has_function_privilege('service_role',
  'public.discard_account_pending_setup_proposal_v2(uuid,uuid,uuid,bigint,uuid)','execute'),'service discard allowed');
@@ -467,13 +461,14 @@ begin
   'Seguimos no legado.','business_understanding',null,'Descrição do legado.');
  perform pg_temp.assert_true((select last_attendance_turn_token is null and pending_turn_intent is null
   from public.account_pending_setup_conversations where id=c),'ordinary legacy stays usable');
- perform public.start_account_pending_setup_v2(a,u,null);
- fresh_token:=gen_random_uuid();
- v:=public.claim_account_pending_setup_turn_v2(c,a,u,v,fresh_token,'Primeiro turno IA.','message');
- perform public.release_account_pending_setup_turn_v2(c,a,u,v,fresh_token);
- perform pg_temp.expect_error(format('select public.start_account_pending_setup_v1(%L,%L,null)',a,u),'55000');
- perform pg_temp.assert_true((select count(*)=4 from public.account_pending_setup_messages where conversation_id=c),
-  'one-way activation preserves the previous legacy transcript');
+ select to_jsonb(s) into before_state from public.account_pending_setup_conversations s where id=c;
+ select count(*) into message_count from public.account_pending_setup_messages where conversation_id=c;
+ perform pg_temp.expect_error(format('select public.start_account_pending_setup_v2(%L,%L,null)',a,u),'55000');
+ perform pg_temp.assert_true((select to_jsonb(s)=before_state from public.account_pending_setup_conversations s where id=c)
+  and (select count(*)=message_count from public.account_pending_setup_messages where conversation_id=c)
+  and not exists(select 1 from public.account_dialogues where account_id=a)
+  and not exists(select 1 from public.account_context_summaries where account_id=a),
+  'legacy conversation is neither converted nor reconstructed');
 end $gate_boundary$;
 
 rollback;

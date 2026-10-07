@@ -56,7 +56,7 @@ export type AttendanceContext = Readonly<{
   recent: readonly Readonly<{ role: "user" | "assistant"; content: string }>[];
   catalog: readonly AttendanceTaxon[]; research: boolean; confirmedProposal?: AttendanceProposal | null;
   currentPrimaryTaxonId?: string | null; publicName?: string | null;
-  confirmedUnderstanding?: string | null; legacyContext?: string | null;
+  confirmedUnderstanding?: string | null;
 }>;
 
 export const ATTENDANCE_INSTRUCTIONS = `Atenda o lead da LP Factory 10 desde a recepção com uma resposta breve e útil por vez. Compreenda atividade, ofertas e público apenas no nível necessário para classificar o negócio e encerre com uma explicação de valor e fechamento breve sobre as capacidades reais de organizar conhecimento e apoiar comunicação.
@@ -95,9 +95,6 @@ export function attendanceProjection(conversation: PendingSetupConversation, cat
     summary: conversation.accountContext?.summary ? redactPotentialContactDetails(conversation.accountContext.summary) : null,
     publicName: conversation.businessDisplayName,
     confirmedUnderstanding: conversation.attendanceProposal && conversation.businessContextText
-      ? redactPotentialContactDetails(conversation.businessContextText) : null,
-    legacyContext: conversation.businessContextText && (!conversation.accountContext?.summary
-      || conversation.updatedAt > conversation.accountContext.updatedAt)
       ? redactPotentialContactDetails(conversation.businessContextText) : null,
     recent: conversation.messages.slice(-8).map(({ role, content }) => ({
       role, content: redactPotentialContactDetails(content).slice(0, 1200),
