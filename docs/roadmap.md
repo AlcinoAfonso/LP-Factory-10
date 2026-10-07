@@ -735,7 +735,7 @@
 10. E10 — Account Dashboard e jornada da conta
 
 - Objetivo: consolidar a experiência pós-login por conta, da navegação multi-conta e do setup inicial à resolução de nicho e à apresentação comercial, preservando decisões server-side de acesso, papel, entitlement e estado operacional.
-- Status: os fluxos principais estão implementados e a substituição repo-side do Pending Setup pela jornada E10.9 foi concluída; permanecem como lacunas a ação inefetiva de criar outra conta no switcher, a ausência dos eventos específicos do switcher, a edição manual de copy da página comercial personalizada e os gates pré-merge e pós-merge ainda pendentes da E10.9. O onboarding factual E10.10 foi retirado funcionalmente pela E22.7; suas migrations permanecem não aplicadas e excluídas do apply.
+- Status: os fluxos principais estão implementados e a substituição do Pending Setup pela jornada E10.9 foi concluída e validada em Production; permanecem como lacunas a ação inefetiva de criar outra conta no switcher, a ausência dos eventos específicos do switcher e a edição manual de copy da página comercial personalizada. O onboarding factual E10.10 foi retirado funcionalmente pela E22.7; suas migrations permanecem não aplicadas e excluídas do apply.
 
 10.3 Navegação multi-conta e cabeçalho
 
@@ -979,16 +979,15 @@
 
 10.9.1 Objetivo e status
 - Objetivo: substituir a experiência E10.4 por uma jornada conversacional pré-comercial que receba a pessoa, compreenda o negócio, resolva ou preserve operacionalmente o nicho, mantenha histórico por relação usuário/conta e promova `pending_setup` para `active` sem criar entitlement.
-- Status: implementado no repositório; prova SQL integral, `migration list --linked`, `db push --linked --dry-run` e QA autenticado de Preview permanecem gates pré-merge. O apply remoto, a verificação pós-apply de ACL/RLS/RPCs, a promoção do mesmo SHA staged, o smoke de Production e a restauração do auto-assign permanecem gates pós-merge.
+- Status: concluído; PR #957 mergeado, migration aplicada em Production, validação SQL e QA pós-merge aprovados. Permanece vigente até substituição funcional segura pelo E10.12.
 
 10.9.2 Registros do recorte
 - Banco:
-  - Criados no repositório:
+  - Criados:
     - `public.account_pending_setup_conversations`;
     - `public.account_pending_setup_messages`;
     - RPCs versionadas de início, identidade, reserva de turno, append e conclusão;
     - RLS sem policies públicas, grants mínimos e teste SQL transacional com rollback.
-  - Estado operacional: migration ainda não aplicada ao projeto hospedado.
 - Código:
   - Criados:
     - `lib/onboarding/pending-setup/`;
@@ -1025,7 +1024,7 @@
 - Conteúdo: persistir turnos e estado por relação usuário/conta, permitir retomada executável enquanto a conta estiver `pending_setup` e preservar o histórico, sem chat executável, após a promoção para `active`.
 
 10.9.6 Conclusão, cutover e passagem ao comercial
-- Status: implementado no repositório; execução PostgreSQL compatível e QA visual/autenticado permanecem pendentes por indisponibilidade local de Docker/Podman e configuração runtime reutilizável.
+- Status: concluído; validação SQL e QA pós-merge aprovados em Production.
 - Conteúdo: concluir de forma transacional e idempotente, promover a conta sem entitlement, preservar gates comerciais e retirar a entrada executável E10.4 no mesmo cutover após equivalência funcional e ordem segura entre migration e Production.
 
 10.10 Onboarding factual pós-compra/trial
@@ -1098,6 +1097,29 @@
 10.11.5 Continuidade e regressão
 - Status: continuidade e regressão validadas em Preview e Production.
 - Conteúdo: manter matching e fallback de nicho, checkout, membership e entitlement intactos. O apply seletivo pós-merge deste recorte aplicou somente a migration E10.11; as migrations E10.10 continuam fora do apply e o fluxo automático integral permanece suspenso.
+
+10.12 Atendimento inicial por IA e taxonomia sob demanda
+
+10.12.1 Objetivo e status
+- Objetivo: compreender atuação, ofertas e público por atendimento inicial de IA, concluir classificação segura existente ou sob demanda e preservar contexto útil sem conceder acesso comercial.
+- Status: V1 revisada e aprovada em 07/10/2026, com V2 técnica definida e implementação em andamento; substituição funcional, aplicação e validação hospedadas ainda não concluídas. E10.9 permanece vigente até substituição segura.
+- Fase definida: `10.12.2 — Registros do recorte`, materializados somente pela execução.
+
+10.12.3 Atendimento, Diálogo da conta e Resumo da conta
+- Status: definido.
+- Conteúdo: IA conduz recepção, compreensão e retomada enquanto houver avanço útil, sem herdar o teto de três chamadas. Diálogo preserva histórico com conta e usuário participante identificados; Resumo permanece único por conta, compacto e contextual, sem autoridade ou versionamento funcional próprio. Fontes oficiais prevalecem sobre ambos.
+
+10.12.4 Pesquisa seletiva e classificação
+- Status: definido.
+- Conteúdo: consultar primeiro categorias e aliases ativos; equivalência segura reutiliza classificação sem pesquisa classificatória ou esclarecimento redundante. Lacuna material gera pergunta focal; Web entra quando necessária para classificação real de mercado. Evidência insuficiente mantém classificação pendente e entendimento preservado.
+
+10.12.5 Taxonomia sob demanda
+- Status: definido.
+- Conteúdo: confirmar entendimento antes de novo cadastro, reconsultar para deduplicar e criar somente categorias reais e níveis ausentes, com pais ativos e válidos. Aliases exigem equivalência comprovada; categoria inativa não é reativada nem contornada por duplicata. Escrita atômica e determinística protege isolamento e vínculo primário diferente; sucesso só é anunciado após persistência.
+
+10.12.6 Conclusão e experiência
+- Status: definido.
+- Conteúdo: preservar requisitos de conclusão E10.11, identidade, WhatsApp, histórico e fronteiras comerciais, com fechamento persuasivo breve. Falha mantém contexto útil; alteração externa impede sobrescrita e falso sucesso sem reconstruir proposta ou exigir reavaliação e nova confirmação automáticas. Não criar relacionamento operacional com a Base, sincronização de fontes oficiais, engine genérica, consumidores futuros ou continuidade assíncrona. Após conclusão correta, Pending Setup não governa mudanças posteriores da conta.
 
 11. E11 — Gestão de membros e autoridade comercial
 

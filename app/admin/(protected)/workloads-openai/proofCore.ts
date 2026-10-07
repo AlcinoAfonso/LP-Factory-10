@@ -44,6 +44,7 @@ type ProductProof = (
 
 export type OpenAiCandidateProofDependencies = Readonly<{
   niche: ProductProof;
+  attendance: ProductProof;
   commercial: ProductProof;
   communicationStageOne: ProductProof;
   communicationStageTwo: ProductProof;
@@ -67,6 +68,9 @@ export async function runOpenAiCandidateProofCore(
 
   let attempt: OpenAiCandidateProofAttempt;
   switch (workload.id) {
+    case "pending_setup_conversation":
+      attempt = await dependencies.attendance(workload, environment, normalizedKey, normalizedRequestId);
+      break;
     case "niche_resolution":
       attempt = await dependencies.niche(
         workload,

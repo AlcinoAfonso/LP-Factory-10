@@ -2,7 +2,7 @@ import "server-only";
 
 import { createHash, randomUUID } from "node:crypto";
 
-import { requestOpenAiResponses } from "../../conversion-content/adapters/openAiResponsesAdapter";
+import { requestOpenAiResponses } from "../../openai-responses/openAiResponsesAdapter";
 import { clientOpenAiCostContext, type OpenAiCostEconomicContext } from "../../openai-costs";
 import {
   resolveOpenAiProductWorkload,

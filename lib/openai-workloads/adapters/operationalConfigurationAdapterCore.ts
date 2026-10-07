@@ -94,6 +94,7 @@ function isTextWorkload(
   value: string,
 ): value is OpenAiProductWorkloadId {
   return (
+    value === "pending_setup_conversation" ||
     value === "niche_resolution" ||
     value === "commercial_activation_draft_generation" ||
     value === "communication_base_stage1_assistance" ||
@@ -157,11 +158,13 @@ const preBootstrapManagedWorkloads = [
   "niche_resolution",
   "commercial_activation_draft_generation",
 ] as const satisfies readonly ManagedWorkload[];
-const managedWorkloads = [
+const e25ManagedWorkloads = [
   ...preBootstrapManagedWorkloads,
   "communication_base_stage1_assistance",
   "communication_base_stage2_intelligence",
 ] as const satisfies readonly ManagedWorkload[];
+
+const managedWorkloads = [...e25ManagedWorkloads, "pending_setup_conversation"] as const satisfies readonly ManagedWorkload[];
 
 const unitRowKeys = [
   "environment",
@@ -233,7 +236,9 @@ export function translateOpenAiAdministrativeConfigurationRows(
   const activations = exactRecords(activationRead.data, activationRowKeys);
   const workloads = units?.length === managedWorkloads.length * managedEnvironments.length
     ? managedWorkloads
-    : units?.length === preBootstrapManagedWorkloads.length * managedEnvironments.length
+    : units?.length === e25ManagedWorkloads.length * managedEnvironments.length
+      ? e25ManagedWorkloads
+      : units?.length === preBootstrapManagedWorkloads.length * managedEnvironments.length
       ? preBootstrapManagedWorkloads
       : null;
   if (!units || !revisions || !activations || !workloads) {

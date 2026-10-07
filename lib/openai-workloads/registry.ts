@@ -12,6 +12,27 @@ const revision = "v2";
 
 export const openAiWorkloadRegistry = deepFreeze([
   {
+    id: "pending_setup_conversation",
+    displayName: "Atendimento inicial por IA",
+    classification: "product_runtime",
+    configurationKind: "effective",
+    consumer: "Conversa inicial e classificação sob demanda do Pending Setup",
+    fallback: "Preservar contexto e deixar classificação pendente sem sucesso falso",
+    webSearch: {
+      externalWebAccess: true,
+      searchContextSize: "medium",
+      maxToolCalls: 2,
+      contextWindowTokenBudget: 128000,
+    },
+    configuration: {
+      apiKind: "responses_text",
+      model: "gpt-6-luna",
+      reasoningEffort: "xhigh",
+      source: "repo_catalog",
+      revision,
+    },
+  },
+  {
     id: "niche_resolution",
     displayName: "Resolução de nicho",
     classification: "product_runtime",
@@ -99,6 +120,12 @@ export const openAiWorkloadRegistry = deepFreeze([
 assertValidRegistry(openAiWorkloadRegistry);
 
 const workloadPresentations = deepFreeze([
+  {
+    workload: "pending_setup_conversation",
+    name: "Atendimento inicial por IA",
+    roadmapReference: "E10.12.4",
+    visualGroup: null,
+  },
   {
     workload: "niche_resolution",
     name: "Resolução de nicho",

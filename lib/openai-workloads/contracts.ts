@@ -1,5 +1,6 @@
 export const openAiProductWorkloadIds = [
   "niche_resolution",
+  "pending_setup_conversation",
   "commercial_activation_draft_generation",
   "communication_base_stage1_assistance",
   "communication_base_stage2_intelligence",
