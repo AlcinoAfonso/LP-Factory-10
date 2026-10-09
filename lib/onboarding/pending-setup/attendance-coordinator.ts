@@ -1,15 +1,19 @@
 import "server-only";
-import { attendanceProjection, attendanceProposal } from "./attendance-core";
+import { attendanceProjection, attendanceProposal, attendanceSummary } from "./attendance-core";
 import { requestAttendance } from "./attendance-provider";
 import { loadPendingSetupConversation } from "./adapters/pendingSetupConversationAdapter";
-import { claimAttendanceTurn, commitAttendanceTurn, readAttendanceCatalog, releaseAttendanceTurn,
+import { claimAttendanceTurn, commitAttendanceTurn, releaseAttendanceTurn,
   readAttendancePrimary, discardAttendanceProposal,
   type AttendanceTurnIdentity } from "./adapters/pendingSetupAttendanceAdapter";
+
+import { readAttendanceCatalog, readAttendanceMarketContext } from "./adapters/pendingSetupCatalogContextAdapter";
+import { getConfirmedOperationalNicheResolutionLabel } from "../niche-resolution/adapters/accountNicheResolutionUserAdapter";
 
 const attendanceDependencies = {
   load: loadPendingSetupConversation, catalog: readAttendanceCatalog, claim: claimAttendanceTurn,
   request: requestAttendance, commit: commitAttendanceTurn, release: releaseAttendanceTurn,
   primary: readAttendancePrimary, discard: discardAttendanceProposal,
+  market: readAttendanceMarketContext, operational: getConfirmedOperationalNicheResolutionLabel,
 };
 export type AttendanceDependencies = typeof attendanceDependencies;
 
@@ -38,19 +42,23 @@ export async function conductAttendanceTurn(input: Readonly<{
     if (currentPrimaryTaxonId === undefined) throw new Error("primary_read_failed");
     const confirmation = intent === "confirm";
     if (!reserved.accountContext) throw new Error("account_context_read_failed");
-    const context = { ...attendanceProjection(reserved, catalog),
+    const operational = await dependencies.operational({ accountId: input.accountId });
+    const marketContext = await dependencies.market(reserved.businessContextText ?? input.content ?? "", catalog,
+      currentPrimaryTaxonId ?? reserved.attendanceProposal?.taxonId ?? null);
+    if (marketContext === null) throw new Error("market_context_read_failed");
+    const context = { ...attendanceProjection(reserved, catalog), marketContext,
+      confirmedOperationalUnderstanding: Boolean(operational),
       confirmedProposal: confirmation ? reserved.attendanceProposal ?? null : null, currentPrimaryTaxonId };
     if (confirmation && !context.confirmedProposal) throw new Error("confirmation_proposal_missing");
-    let answer = await dependencies.request({ accountId: input.accountId, context });
-    if (answer.ok && answer.output.action === "research" && !confirmation) {
-      answer = await dependencies.request({ accountId: input.accountId, context: { ...context, research: true } });
-      // One focal research pass per turn; subsequent useful conversation is unrestricted.
-      if (answer.ok && answer.output.action === "research") throw new Error("research_unresolved");
-    }
+    const answer = await dependencies.request({ accountId: input.accountId, context });
     if (!answer.ok || (confirmation && answer.output.action !== "confirm")) throw new Error("provider_unavailable");
     const written = await dependencies.commit({
       ...fence, output: answer.output, confirm: confirmation, observedPrimaryTaxonId: currentPrimaryTaxonId,
-      proposal: confirmation ? null : attendanceProposal(answer.output, answer.sources),
+      proposal: confirmation ? null : attendanceProposal(answer.output, catalog),
+      summary: confirmation ? context.summary?.replace(/^Classificação confirmada:.*$/m,
+        "Classificação confirmada: " + (context.confirmedProposal?.taxonName ?? "Não identificada."))
+        ?? attendanceSummary(answer.output, null, context.confirmedProposal)
+        : attendanceSummary(answer.output, catalog.find(taxon => taxon.id === currentPrimaryTaxonId)?.name ?? null, null),
     });
     if (!written.ok) {
       if (written.reason === "primary_conflict" || (confirmation && written.reason === "invalid")) {

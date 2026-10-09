@@ -21,7 +21,7 @@ import { assistCommunicationSection, generateCommunicationIntelligence } from "@
 import type { CommunicationBase } from "@/communication-base/contracts";
 
 import { requestAttendance } from "@/onboarding/pending-setup/attendance-provider";
-import type { AttendanceContext } from "@/onboarding/pending-setup/attendance-core";
+import { attendanceProposal, attendanceSummary, type AttendanceContext } from "@/onboarding/pending-setup/attendance-core";
 
 export type { OpenAiCandidateProofMetadata } from "./proofCore";
 
@@ -242,27 +242,53 @@ async function proveAttendance(
   const segmentId = "10000000-0000-4000-8000-000000000002";
   const nicheId = "10000000-0000-4000-8000-000000000003";
   const catalog: AttendanceContext["catalog"] = [
-    { id: segmentId, name: "Serviços", level: "segment", parentId: null, active: true, inactiveAliases: [], aliases: [] },
-    { id: nicheId, name: "Manutenção de jardins", level: "niche", parentId: segmentId, active: true, inactiveAliases: [], aliases: ["Jardinagem"] },
+    { id: segmentId, name: "Serviços", level: "segment", parentId: null, active: true, aliases: [] },
+    { id: nicheId, name: "Manutenção de jardins", level: "niche", parentId: segmentId, active: true, aliases: ["Jardinagem"] },
   ];
-  const contexts: AttendanceContext[] = [
-    { preferredName: null, summary: null, recent: [], catalog, research: false },
-    { preferredName: "Ana", summary: null, recent: [{ role: "user", content: "Trabalho com serviços." }], catalog, research: false },
-    { preferredName: "Ana", summary: "Faço manutenção de jardins para condomínios.",
-      recent: [{ role: "user", content: "Faço manutenção de jardins para condomínios." }], catalog, research: false },
-    { preferredName: "Ana", summary: "Atuo como fisioterapeuta, com reabilitação física de adultos.",
-      recent: [{ role: "user", content: "Atuo como fisioterapeuta, com reabilitação física de adultos." }],
-      catalog, research: true },
-  ];
-  const results = await Promise.all(contexts.map(context => requestAttendance({
-    accountId, context, configurationOverride: workload, environment, apiKey,
-    financialContext: lpFactoryOpenAiCostContext, executionOrigin: "administrative_proof",
-  })));
-  if (results.some(result => !result.ok)) return { ok: false, code: "provider" };
-  const [reception, insufficient, existing, market] = results;
-  if (!reception.ok || !insufficient.ok || !existing.ok || !market.ok ||
-    reception.output.action !== "ask" || insufficient.output.action !== "ask" ||
-    existing.output.action !== "existing" || existing.output.existingTaxonId !== nicheId ||
-    market.output.action !== "propose" || !market.sources.length) return { ok: false, code: "contract" };
-  return { ok: true, providerRequestId: market.responseId, latencyMs: Math.max(...results.map(result => result.ok ? result.latencyMs ?? 0 : 0)) };
+  // Disposable conversations exercise the useful completion, without any business writes.
+  const runConversation = async (identified: boolean): Promise<ProofAttempt> => {
+    let context: AttendanceContext = {
+      preferredName: "Ana", summary: null, catalog, currentPrimaryTaxonId: null,
+      recent: [{ role: "user", content: identified
+        ? "Faço manutenção de jardins para condomínios. Quero explicar meu serviço e tenho dúvidas sobre comunicação. Essa categoria já pode ser proposta para eu confirmar, mas ainda preciso de orientação."
+        : "Sou fisioterapeuta de adultos. Quero comunicar minha atuação. Esse catálogo não tem minha categoria; podemos confirmar meu entendimento e continuar a orientação." }],
+      marketContext: identified ? [{ taxonId: nicheId, researchId: segmentId, version: 1, updatedAt: "2024-06-01",
+        items: [{ key: "limitation", text: "Repertório histórico: pode ser útil esclarecer frequência de manutenção, conforme o negócio.", notes: "Hipótese a validar, sem promessa de resultado." }] }] : [],
+    };
+    let latencyMs = 0;
+    let providerRequestId: string | null = null;
+    for (let turn = 0; turn < 3; turn++) {
+      const result = await requestAttendance({ accountId, context, configurationOverride: workload, environment, apiKey,
+        financialContext: lpFactoryOpenAiCostContext, executionOrigin: "administrative_proof" });
+      if (!result.ok) return { ok: false, code: "provider" };
+      const output = result.output;
+      latencyMs += result.latencyMs ?? 0;
+      providerRequestId = result.responseId;
+      if (turn === 0) {
+        if (output.action !== (identified ? "existing" : "pending") ||
+          (identified && output.existingTaxonId !== nicheId) || output.readyToComplete) return { ok: false, code: "contract" };
+        context = { ...context, confirmedProposal: attendanceProposal(output, catalog),
+          confirmedUnderstanding: output.businessUnderstanding,
+          summary: attendanceSummary(output, null, null),
+          recent: [...context.recent, { role: "assistant", content: output.reply },
+            { role: "user", content: "Sim, confirmo. Ainda quero entender como apresentar meu serviço." }] };
+      } else if (turn === 1) {
+        if (output.action !== "confirm") return { ok: false, code: "contract" };
+        context = { ...context, confirmedProposal: null,
+          currentPrimaryTaxonId: identified ? nicheId : null,
+          confirmedOperationalUnderstanding: !identified,
+          summary: attendanceSummary(output, identified ? "Manutenção de jardins" : null, context.confirmedProposal ?? null),
+          recent: [...context.recent, { role: "assistant", content: output.reply },
+            { role: "user", content: "Minha necessidade é apresentar claramente meu serviço ao público informado. A orientação de organizar o conhecimento e apoiar a comunicação já me ajudou. Entendi que serviços, preços e prazos específicos precisam de confirmação. Não tenho mais dúvidas; quero seguir à etapa comercial." }] };
+      } else if (output.action !== "ask" || !output.readyToComplete || !output.sufficientUnderstanding) {
+        return { ok: false, code: "contract" };
+      }
+    }
+    return { ok: true, providerRequestId, latencyMs };
+  };
+  const results = await Promise.all([runConversation(true), runConversation(false)]);
+  if (!results[0].ok) return results[0];
+  if (!results[1].ok) return results[1];
+  return { ok: true, providerRequestId: results[1].providerRequestId,
+    latencyMs: Math.max(results[0].latencyMs ?? 0, results[1].latencyMs ?? 0) };
 }

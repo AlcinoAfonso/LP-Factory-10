@@ -9,10 +9,13 @@ select id,'e1012ace-0000-4000-8000-000000000001','owner','active' from public.ac
 select public.start_account_pending_setup_v2(
  ('e1012ace-0000-4000-8000-00000000001'||n)::uuid,
  'e1012ace-0000-4000-8000-000000000001',null) from generate_series(1,2) n;
+insert into public.business_taxons(id,level,name,slug,is_active,parent_id) values
+ ('e1012ace-0000-4000-8000-000000000021','segment','E1012 Race Serviços','e1012-race-services',true,null),
+ ('e1012ace-0000-4000-8000-000000000022','niche','E1012 Race Jardinagem','e1012-race-gardens',true,'e1012ace-0000-4000-8000-000000000021');
 -- Prepare a proposal in newly initialized E10.12 dialogues, without adopting legacy rows.
 update public.account_pending_setup_conversations set stage='niche_confirmation',confirmation_kind='official',
 business_context_text='Jardinagem para condomínios.',attendance_proposal=
-'{"kind":"new","taxonId":null,"chain":[{"level":"segment","name":"E1012 Race Serviços","existingId":null},{"level":"niche","name":"E1012 Race Jardinagem","existingId":null}],"aliases":[],"evidence":"Categoria real de mercado comprovada na fixture.","sources":["https://example.com/race"]}'::jsonb
+'{"kind":"existing","taxonId":"e1012ace-0000-4000-8000-000000000022","taxonName":"E1012 Race Jardinagem"}'::jsonb
 where account_id::text like 'e1012ace-%';
 select public.claim_account_pending_setup_turn_v2(
 (select id from public.account_pending_setup_conversations where account_id=('e1012ace-0000-4000-8000-00000000001'||n)::uuid),
