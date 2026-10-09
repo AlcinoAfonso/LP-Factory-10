@@ -54,7 +54,7 @@ Para cada plano, defina somente o necessário ao contrato funcional:
 - problema e objetivo;
 - resultado funcional e comportamento esperado;
 - usuários ou atores, quando aplicável;
-- limites e escopo negativo, sem backfill de contas QA/teste declaradas descartáveis por padrão;
+- limites e escopo negativo, sem backfill de contas QA/teste descartáveis por padrão;
 - riscos funcionais materiais;
 - dependências reais, somente quando existirem.
 
