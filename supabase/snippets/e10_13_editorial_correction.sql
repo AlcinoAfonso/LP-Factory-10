@@ -3770,7 +3770,7 @@ declare
     },
     {
       "id": "21881e18-4719-5412-b14b-a7ca34ec99b3",
-      "item_text": "Fonte histórica: Veículos e Transportes.pdf, p.1, 2025-06-26; conteúdo sem validação independente. Maturidade alta: sites robustos, CRM integrado e investimento em Google e redes sociais para anúncios. O documento cita a digitalização destacada em cursos da Fenabrave; essa referência não é medição independente de adoção nem demonstra o processo de uma loja.",
+      "item_text": "Fonte histórica: Veículos e Transportes.pdf, p.1, 2025-06-26; conteúdo sem validação independente. Maturidade alta: sites robustos, CRM integrado e investimento em Google e redes sociais para anúncios. O documento cita a digitalização destacada em cursos da Fenabrave; essa referência não é medição independente de adoção nem demonstra o processo de uma loja. Entre os cinco nichos do PDF, o autor prioriza concessionárias de carros e lojas de pneus, seguidas por concessionárias de lanchas; é opinião comercial relativa de 2025, sem ranking atual nem verba de cliente comprovada.",
       "notes": "Acervo do titular: Veículos e Transportes.pdf, p.1, 2025-06-26; recorte: Concessionárias de carros; SHA-256 PDF: dde9d34ab21dd2bd00d9e60259bb1e1fdd1b5fc8796699e8f3c2059f5a63e4d6. Correção editorial PB-A/E10.13 do conteúdo carregado no PR #1048. Descrição e indicadores históricos atribuídos ao acervo, sem validação independente; períodos não indicados não são inferidos. Avaliações de prontidão/rankings e projeções pertencem ao autor. Oportunidades são hipóteses estratégicas condicionais, não características de cliente; atualização factual cabe ao PB-B."
     },
     {
@@ -3830,7 +3830,7 @@ declare
     },
     {
       "id": "12573af5-58c8-5794-87c8-3d6128f9979d",
-      "item_text": "Fonte histórica: Serviços Profissionais Consultoria.pdf, p.1, 2025-06-26; conteúdo sem validação independente. Maturidade moderada: consultorias completas usam conteúdo e newsletters, enquanto autônomos dependem mais de relacionamentos offline; o quadro cita 60% com newsletter e 83% dos autônomos apoiados no offline, sem base/período próprios. Blogs, LinkedIn, webinars e SEO/site aparecem como canais B2B; consultorias em expansão são alvo comercial condicional.",
+      "item_text": "Fonte histórica: Serviços Profissionais Consultoria.pdf, p.1, 2025-06-26; conteúdo sem validação independente. Maturidade moderada, em rápida evolução: grandes consultorias combinam sites robustos, SEO e conteúdo; o quadro atribui envio de newsletters a 60% das consultorias full-service. Descreve os consultores autônomos como 83% do mercado, ainda em digitalização, com muitos dependentes de networking offline. As duas porcentagens não têm base/período próprios. Blogs, LinkedIn e webinars apoiam visibilidade e contatos B2B; a disposição a contratar agência é destacada para consultorias médias que querem crescer, sem provar verba ou prontidão individual.",
       "notes": "Acervo do titular: Serviços Profissionais Consultoria.pdf, p.1, 2025-06-26; recorte: Consultorias Empresariais; SHA-256 PDF: e1689e90ec84e6bc4715b94220ec6953bc8470496c244a2b6ebae7e8f3909472. Correção editorial PB-A/E10.13 do conteúdo carregado no PR #1048. Descrição e indicadores históricos atribuídos ao acervo, sem validação independente; períodos não indicados não são inferidos. Avaliações de prontidão/rankings e projeções pertencem ao autor. Oportunidades são hipóteses estratégicas condicionais, não características de cliente; atualização factual cabe ao PB-B."
     },
     {
@@ -3875,7 +3875,7 @@ declare
     },
     {
       "id": "fa9263e5-d3c8-5a34-97ed-529f9cbb7e5e",
-      "item_text": "Fonte histórica: Educação.pdf, p.1, 2025-06-25; conteúdo sem validação independente. Maturidade muito alta: o documento associa cada ciclo de matrícula a forte dependência de marketing e urgência comercial. A posição no ranking do autor e sua expectativa de retorno são hipóteses comerciais, não prova de retorno de campanhas ou resultados de uma escola.",
+      "item_text": "Fonte histórica: Educação.pdf, p.1, 2025-06-25; conteúdo sem validação independente. Maturidade muito alta: o documento associa cada ciclo de matrícula a forte dependência de marketing e urgência comercial. A posição Top 3 no ranking do autor e sua expectativa de retorno são hipóteses comerciais, não prova de retorno de campanhas ou resultados de uma escola.",
       "notes": "Acervo do titular: Educação.pdf, p.1, 2025-06-25; recorte: Cursinhos (Vestibular/Concurso); SHA-256 PDF: fb9403295b3428205f0fd128ce0c7cf4f4fb83e2437faade03e1ebfcd05d1291. Correção editorial PB-A/E10.13 do conteúdo carregado no PR #1048. Descrição e indicadores históricos atribuídos ao acervo, sem validação independente; períodos não indicados não são inferidos. Avaliações de prontidão/rankings e projeções pertencem ao autor. Oportunidades são hipóteses estratégicas condicionais, não características de cliente; atualização factual cabe ao PB-B."
     },
     {
@@ -4070,7 +4070,7 @@ declare
     },
     {
       "id": "421653da-eb41-5b3d-a0f1-c7b6cf7b616a",
-      "item_text": "Fonte histórica: Educação.pdf, p.1, 2025-06-25; conteúdo sem validação independente. Maturidade muito alta: inbound, anúncios e CRM já fazem parte da captação. A posição de destaque no ranking comercial do autor decorre de volume, recorrência e cultura de investimento; é opinião de prospecção do acervo, não comprovação de verba disponível em cada instituição.",
+      "item_text": "Fonte histórica: Educação.pdf, p.1, 2025-06-25; conteúdo sem validação independente. Maturidade muito alta: inbound, anúncios e CRM já fazem parte da captação. A posição Top 1 no ranking comercial do autor decorre de volume, recorrência e cultura de investimento; é opinião de prospecção do acervo, não comprovação de verba disponível em cada instituição.",
       "notes": "Acervo do titular: Educação.pdf, p.1, 2025-06-25; recorte: Faculdades Privadas; SHA-256 PDF: fb9403295b3428205f0fd128ce0c7cf4f4fb83e2437faade03e1ebfcd05d1291. Correção editorial PB-A/E10.13 do conteúdo carregado no PR #1048. Descrição e indicadores históricos atribuídos ao acervo, sem validação independente; períodos não indicados não são inferidos. Avaliações de prontidão/rankings e projeções pertencem ao autor. Oportunidades são hipóteses estratégicas condicionais, não características de cliente; atualização factual cabe ao PB-B."
     },
     {
@@ -4145,7 +4145,7 @@ declare
     },
     {
       "id": "0d77c61d-a9ad-591e-b9ff-1fb8e4175060",
-      "item_text": "Fonte histórica: Hotelaria e Turismo.pdf, p.1, 2025-06-26; conteúdo sem validação independente. Maturidade moderada e heterogênea: redes maiores já exploram IA; pequenos hotéis ainda digitalizam. Booking e outras OTAs, site próprio, SEO/SEM/Google, redes e e-mail compõem a distribuição. A indicação de marketing em torno de 4–5% ou mais da receita nas operações médias/grandes é histórica e não prova orçamento individual. Reservas diretas e dependência de intermediários têm custos diferentes.",
+      "item_text": "Fonte histórica: Hotelaria e Turismo.pdf, p.1, 2025-06-26; conteúdo sem validação independente. Maturidade moderada e heterogênea: redes maiores já exploram IA; pequenos hotéis ainda digitalizam. Booking e outras OTAs, site próprio, SEO/SEM/Google, redes e e-mail compõem a distribuição. A indicação de marketing em torno de 4–5% ou mais da receita nas operações médias/grandes é histórica e não prova orçamento individual. Reservas diretas e dependência de intermediários têm custos diferentes. Na comparação do PDF, o autor prioriza hotéis e motéis frente a agências de turismo; é julgamento comercial relativo de 2025, sem ranking atual ou capacidade de contratação individual comprovada.",
       "notes": "Acervo do titular: Hotelaria e Turismo.pdf, p.1, 2025-06-26; recorte: Hotéis (Hotelaria); SHA-256 PDF: 25a0041b2f0ce6848cbcd950f26a94025c0fcbe0b0845cccfad160f0035f7817. Correção editorial PB-A/E10.13 do conteúdo carregado no PR #1048. Descrição e indicadores históricos atribuídos ao acervo, sem validação independente; períodos não indicados não são inferidos. Avaliações de prontidão/rankings e projeções pertencem ao autor. Oportunidades são hipóteses estratégicas condicionais, não características de cliente; atualização factual cabe ao PB-B."
     },
     {
@@ -4325,7 +4325,7 @@ declare
     },
     {
       "id": "af371107-844e-5ba3-a5eb-3435bb3043af",
-      "item_text": "Fonte histórica: Veículos e Transportes.pdf, p.1, 2025-06-26; conteúdo sem validação independente. Maturidade alta nas redes, com e-commerce e anúncios intensivos; o acervo cita Pneu Store/Cantu como exemplo histórico. Pequenas lojas usam redes e SEO local. A prontidão comercial das redes difere de uma revenda pequena, mesmo num setor com grande volume.",
+      "item_text": "Fonte histórica: Veículos e Transportes.pdf, p.1, 2025-06-26; conteúdo sem validação independente. Maturidade alta nas redes, com e-commerce e anúncios intensivos; o acervo cita Pneu Store/Cantu como exemplo histórico. Pequenas lojas usam redes e SEO local. A prontidão comercial das redes difere de uma revenda pequena, mesmo num setor com grande volume. Entre os cinco nichos do PDF, o autor prioriza concessionárias de carros e lojas de pneus, seguidas por concessionárias de lanchas; é opinião comercial relativa de 2025, sem ranking atual nem verba de cliente comprovada.",
       "notes": "Acervo do titular: Veículos e Transportes.pdf, p.1, 2025-06-26; recorte: Lojas de pneus; SHA-256 PDF: dde9d34ab21dd2bd00d9e60259bb1e1fdd1b5fc8796699e8f3c2059f5a63e4d6. Correção editorial PB-A/E10.13 do conteúdo carregado no PR #1048. Descrição e indicadores históricos atribuídos ao acervo, sem validação independente; períodos não indicados não são inferidos. Avaliações de prontidão/rankings e projeções pertencem ao autor. Oportunidades são hipóteses estratégicas condicionais, não características de cliente; atualização factual cabe ao PB-B."
     },
     {
@@ -4370,7 +4370,7 @@ declare
     },
     {
       "id": "111d05bf-3686-5ba0-95d5-08aa648bde4f",
-      "item_text": "Fonte histórica: Hotelaria e Turismo.pdf, p.1, 2025-06-26; conteúdo sem validação independente. Maturidade baixa/média: Instagram/Facebook, Guia de Motéis, Google local, parcerias, promoções e CRM começam a profissionalizar divulgação e relacionamento. O autor vê um setor menos atendido por agências e interesse crescente, sem comprovar contratação ou verba em qualquer operação.",
+      "item_text": "Fonte histórica: Hotelaria e Turismo.pdf, p.1, 2025-06-26; conteúdo sem validação independente. Maturidade baixa/média: Instagram/Facebook, Guia de Motéis, Google local, parcerias, promoções e CRM começam a profissionalizar divulgação e relacionamento. O autor vê um setor menos atendido por agências e interesse crescente, sem comprovar contratação ou verba em qualquer operação. Na comparação do PDF, o autor prioriza hotéis e motéis frente a agências de turismo; é julgamento comercial relativo de 2025, sem ranking atual ou capacidade de contratação individual comprovada.",
       "notes": "Acervo do titular: Hotelaria e Turismo.pdf, p.1, 2025-06-26; recorte: Motéis (Motelaria); SHA-256 PDF: 25a0041b2f0ce6848cbcd950f26a94025c0fcbe0b0845cccfad160f0035f7817. Correção editorial PB-A/E10.13 do conteúdo carregado no PR #1048. Descrição e indicadores históricos atribuídos ao acervo, sem validação independente; períodos não indicados não são inferidos. Avaliações de prontidão/rankings e projeções pertencem ao autor. Oportunidades são hipóteses estratégicas condicionais, não características de cliente; atualização factual cabe ao PB-B."
     },
     {
@@ -4490,7 +4490,7 @@ declare
     },
     {
       "id": "c9a5c432-6d12-551e-985b-a4a844af5fcf",
-      "item_text": "Fonte histórica: Alimentação e Gastronomia.pdf, p.1, 2025-06-26; conteúdo sem validação independente. Adoção alta no quadro; o percentual de 46% que priorizaria marketing não tem base e período individualizados. Redes sociais, aplicativos de entrega e fidelização coexistem; a conclusão cita Google, Instagram, TikTok, fotos/vídeos de pratos, indicação e influenciadores gastronômicos. Visibilidade local e relacionamento ajudam a preencher mesas e gerar recorrência, sem retorno garantido.",
+      "item_text": "Fonte histórica: Alimentação e Gastronomia.pdf, p.1, 2025-06-26; conteúdo sem validação independente. Adoção alta no quadro; o percentual de 46% que priorizaria marketing não tem base e período individualizados. Redes sociais, aplicativos de entrega e fidelização coexistem; a conclusão cita Google, Instagram, TikTok, fotos/vídeos de pratos, indicação e influenciadores gastronômicos. Visibilidade local e relacionamento ajudam a preencher mesas e gerar recorrência, sem retorno garantido. Na comparação dos cinco nichos do PDF, o autor escolhe restaurantes e bares como os mais promissores para agência; é julgamento relativo de 2025, sem ranking atual nem prontidão presumida de um estabelecimento.",
       "notes": "Acervo do titular: Alimentação e Gastronomia.pdf, p.1, 2025-06-26; recorte: Restaurantes/Bares; SHA-256 PDF: aee99dbe347f7111f2cd54ca5cc1c85f61fdd0128ac43a3e92e9d9096f195c7a. Correção editorial PB-A/E10.13 do conteúdo carregado no PR #1048. Descrição e indicadores históricos atribuídos ao acervo, sem validação independente; períodos não indicados não são inferidos. Avaliações de prontidão/rankings e projeções pertencem ao autor. Oportunidades são hipóteses estratégicas condicionais, não características de cliente; atualização factual cabe ao PB-B."
     },
     {

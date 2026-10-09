@@ -80,7 +80,7 @@ Depois: Fonte histórica: Alimentação e Gastronomia.pdf, p.1, 2025-06-26; cont
 
 Antes: A pesquisa de 2025 cita redes sociais, aplicativos de entrega e fidelização; a intensidade de uso não foi aferida agora.
 
-Depois: Fonte histórica: Alimentação e Gastronomia.pdf, p.1, 2025-06-26; conteúdo sem validação independente. Adoção alta no quadro; o percentual de 46% que priorizaria marketing não tem base e período individualizados. Redes sociais, aplicativos de entrega e fidelização coexistem; a conclusão cita Google, Instagram, TikTok, fotos/vídeos de pratos, indicação e influenciadores gastronômicos. Visibilidade local e relacionamento ajudam a preencher mesas e gerar recorrência, sem retorno garantido.
+Depois: Fonte histórica: Alimentação e Gastronomia.pdf, p.1, 2025-06-26; conteúdo sem validação independente. Adoção alta no quadro; o percentual de 46% que priorizaria marketing não tem base e período individualizados. Redes sociais, aplicativos de entrega e fidelização coexistem; a conclusão cita Google, Instagram, TikTok, fotos/vídeos de pratos, indicação e influenciadores gastronômicos. Visibilidade local e relacionamento ajudam a preencher mesas e gerar recorrência, sem retorno garantido. Na comparação dos cinco nichos do PDF, o autor escolhe restaurantes e bares como os mais promissores para agência; é julgamento relativo de 2025, sem ranking atual nem prontidão presumida de um estabelecimento.
 
 **communication_opportunity** — `7cab6fa4-48a8-5b19-ba39-d47a7696c799`
 
@@ -120,7 +120,7 @@ Depois: Fonte histórica: Hotelaria e Turismo.pdf, p.1, 2025-06-26; conteúdo se
 
 Antes: O acervo de 2025 cita portais de reserva, site, busca e redes, com adoção desigual.
 
-Depois: Fonte histórica: Hotelaria e Turismo.pdf, p.1, 2025-06-26; conteúdo sem validação independente. Maturidade moderada e heterogênea: redes maiores já exploram IA; pequenos hotéis ainda digitalizam. Booking e outras OTAs, site próprio, SEO/SEM/Google, redes e e-mail compõem a distribuição. A indicação de marketing em torno de 4–5% ou mais da receita nas operações médias/grandes é histórica e não prova orçamento individual. Reservas diretas e dependência de intermediários têm custos diferentes.
+Depois: Fonte histórica: Hotelaria e Turismo.pdf, p.1, 2025-06-26; conteúdo sem validação independente. Maturidade moderada e heterogênea: redes maiores já exploram IA; pequenos hotéis ainda digitalizam. Booking e outras OTAs, site próprio, SEO/SEM/Google, redes e e-mail compõem a distribuição. A indicação de marketing em torno de 4–5% ou mais da receita nas operações médias/grandes é histórica e não prova orçamento individual. Reservas diretas e dependência de intermediários têm custos diferentes. Na comparação do PDF, o autor prioriza hotéis e motéis frente a agências de turismo; é julgamento comercial relativo de 2025, sem ranking atual ou capacidade de contratação individual comprovada.
 
 **communication_opportunity** — `59929fbb-3a71-5f7f-b48c-35987fc0f6be`
 
@@ -169,7 +169,7 @@ e corrigidos, são recuperáveis no SQL por ID.
 | Concessionárias de lanchas | O quadro registra 4,5 mil embarcações em 2020 e faturamento setorial de R$2 bilhões em 2021; dobrar volume e chegar a R$4 bilhões em 2025 são projeções históricas, sem confirmação de realização. | Maturidade média: sites especializados, eventos náuticos e anúncios Google/Meta para público de lazer coexistem com atendimento personalizado. | Corrigir conteúdo; preservar limitações. |
 | Confeitarias | O quadro situa a confeitaria dentro da panificação: participação de cerca de 16% na receita e bolos estimados em R$15 bilhões/ano, sem período individualizado. | Maturidade alta no quadro, apoiada em apelo visual, Instagram, WhatsApp e indicação online. | Corrigir conteúdo; preservar limitações. |
 | Construtoras e incorporadoras | O quadro registra crescimento de 4,3% no PIB da construção em 2024, cerca de 400 mil unidades novas vendidas nesse ano e alta de 43% nas vendas do Minha Casa Minha Vida. | Maturidade alta: campanhas combinam Google, social, portais e CRM, com contratação frequente de agências e marketing ligado à venda de empreendimentos. | Corrigir conteúdo; preservar limitações. |
-| Consultorias empresariais | O quadro estima 161 mil empresas e US$14,4 bilhões de mercado em 2021, com crescimento de 14% naquele ano. | Maturidade moderada: consultorias completas usam conteúdo e newsletters, enquanto autônomos dependem mais de relacionamentos offline; o quadro cita 60% com newsletter e 83% dos autônomos apoiados no offline, sem base/período próprios. | Corrigir conteúdo; preservar limitações. |
+| Consultorias empresariais | O quadro estima 161 mil empresas e US$14,4 bilhões de mercado em 2021, com crescimento de 14% naquele ano. | Maturidade moderada, em rápida evolução: newsletters em 60% das consultorias full-service; autônomos representam 83% do mercado e muitos dependem de networking offline. Bases/períodos não individualizados. | Corrigir conteúdo; preservar limitações. |
 | Consultório médico | O quadro menciona aproximadamente 500 mil médicos e expansão de clínicas populares. | Maturidade média/alta no quadro: sites, SEO e anúncios aparecem em especialidades com competição por pacientes particulares. | Corrigir conteúdo; preservar limitações. |
 | Corretor Imóveis | O quadro cita mais de 630 mil corretores em 2024, aumento de 23% frente a 2023 e alta de 15% nas vendas de imóveis em 2024. | Maturidade muito alta: portais, Google Ads, Facebook/Instagram e WhatsApp; o quadro cita 85% valorizando resposta rápida no WhatsApp, sem base/período próprios. | Corrigir conteúdo; preservar limitações. |
 | Cursos preparatórios | O quadro descreve demanda média/alta, porém cíclica, vinculada a vestibulares e concursos; aponta ticket de R$400–2.000 e margem de 15–25%, sem unidade temporal ou período próprios. | Maturidade muito alta: o documento associa cada ciclo de matrícula a forte dependência de marketing e urgência comercial. | Corrigir conteúdo; preservar limitações. |
@@ -217,6 +217,20 @@ e corrigidos, são recuperáveis no SQL por ID.
 | Salões de beleza | O quadro situa os salões em um universo de aproximadamente 1,33 milhão de negócios de beleza, que não deve ser confundido com número exclusivo de salões. | Maturidade moderada: Instagram como portfólio, WhatsApp para relacionamento e retenção e uso limitado de mídia paga entre pequenos negócios. | Corrigir conteúdo; preservar limitações. |
 | Spas | O quadro estima o mercado brasileiro em US$680 milhões e menciona crescimento global de 9% ao ano, sem informar períodos próprios; a taxa global não descreve o Brasil. | Maturidade moderada: Instagram, influenciadores e parcerias apoiam marca e experiência; spas de luxo investem mais. | Corrigir conteúdo; preservar limitações. |
 | Supermercados | O quadro cita aproximadamente 90 mil estabelecimentos, R$1 trilhão de faturamento em 2024, 3 milhões de empregos e participação de 9% no PIB, com período próprio não explicitado para as duas últimas medidas. | Maturidade baixa/média nas operações tradicionais, com WhatsApp, entrega e aplicativos em adoção desigual; grandes redes têm outra estrutura. | Corrigir conteúdo; preservar limitações. |
+
+## Comparações históricas e denominadores
+
+Os rankings são julgamentos comerciais relativos dos autores em 2025, sem validação
+independente: Educação coloca Faculdades em Top 1, Idiomas em Top 2 e Cursinhos em
+Top 3; Alimentação prioriza Restaurantes/Bares entre seus cinco nichos; Hotelaria
+prioriza Hotéis e Motéis frente a Agências de Turismo; Veículos prioriza
+Concessionárias de carros e Lojas de pneus, seguidas por Concessionárias de lanchas.
+Essas posições foram mantidas como opinião histórica do acervo, sem atualidade,
+garantia de retorno ou atribuição de orçamento/prontidão ao cliente.
+
+Em Consultorias, 60% se refere às full-service que enviam newsletters; 83% é a
+participação dos autônomos no mercado. O PDF afirma apenas que muitos autônomos
+dependem de networking offline, sem atribuir a essa dependência o percentual de 83%.
 
 ## Ambiguidades preservadas e lacunas reais do PB-B
 
