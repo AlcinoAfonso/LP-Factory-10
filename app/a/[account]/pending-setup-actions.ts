@@ -168,8 +168,8 @@ export async function continuePendingSetupConversationAction(
     if (validated && !validated.ok) return { ok: false, fieldError: "Informe sua resposta com até 4.000 caracteres." };
     const content = validated?.ok ? validated.value : intent === "confirm"
       ? conversation.attendanceProposal?.kind === "existing"
-        ? `Sim, confirmo a categoria ${conversation.attendanceProposal.taxonName}.`
-        : "Sim, use minha descrição como referência operacional." : intent === "clarify"
+        ? `Sim, confirmo o entendimento exibido e a categoria ${conversation.attendanceProposal.taxonName}.`
+        : "Sim, confirmo o entendimento exibido como referência operacional." : intent === "clarify"
         ? conversation.stage === "niche_confirmation" && !conversation.attendanceProposal
           ? "Vamos retomar o atendimento a partir do contexto já informado." : "Quero explicar melhor." : null;
     const result = await conductAttendanceTurn({ accountId: actor.accountId, userId: actor.userId,

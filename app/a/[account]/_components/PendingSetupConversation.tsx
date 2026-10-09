@@ -154,7 +154,7 @@ export function PendingSetupConversation({
         {conversation.attendanceEnabled && conversation.stage === "niche_confirmation" && conversation.attendanceProposal ? (
           <div className="space-y-3 px-5 pb-5 sm:px-8">
             <div className="text-sm leading-6 text-ink-900">
-              <p className="font-semibold">Entendimento do negócio</p>
+              <p className="font-semibold">Entendimento proposto do negócio</p>
               <p className="mt-1 whitespace-pre-wrap break-words">{conversation.businessContextText}</p>
             </div>
             {conversation.attendanceProposal.kind === "existing" ? (
@@ -282,7 +282,7 @@ export function PendingSetupConversation({
             ) : null}
 
             {conversation.attendanceEnabled && conversation.attendanceProposal ? (
-              <p className="mb-3 text-sm text-ink-900">{conversation.attendanceProposal.kind === "existing" ? "Essa categoria corresponde ao seu negócio?" : "Esse entendimento descreve seu negócio?"}</p>
+              <p className="mb-3 text-sm text-ink-900">{conversation.attendanceProposal.kind === "existing" ? "Esse entendimento e essa categoria correspondem ao seu negócio?" : "Esse entendimento descreve seu negócio?"}</p>
             ) : null}
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
               <Button
@@ -295,8 +295,8 @@ export function PendingSetupConversation({
                 {isTurnPending
                   ? needsAttendanceProposal ? "Atendendo…" : "Confirmando…"
                   : needsAttendanceProposal ? "Retomar atendimento" : conversation.confirmationKind === "operational_fallback"
-                    ? "Usar minha descrição"
-                    : conversation.attendanceEnabled ? "Sim, confirmar categoria" : "Sim, está correto"}
+                    ? conversation.attendanceEnabled ? "Sim, confirmar entendimento" : "Usar minha descrição"
+                    : conversation.attendanceEnabled ? "Sim, confirmar entendimento e categoria" : "Sim, está correto"}
               </Button>
               {!isTerminalFallback && !needsAttendanceProposal ? (
                 <Button

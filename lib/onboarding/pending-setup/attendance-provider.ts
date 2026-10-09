@@ -62,7 +62,7 @@ export function parseAttendanceResponse(payload: unknown, context: AttendanceCon
     console.warn("pending_setup_attendance_contract_failed", {
       schemaValid: parsed.success, action: parsed.success ? parsed.data.action : null,
       hasTaxonId: parsed.success && parsed.data.existingTaxonId !== null,
-      confirmation: Boolean(context.confirmedProposal), hasUnderstanding: Boolean(context.confirmedUnderstanding),
+      confirmation: Boolean(context.confirmedProposal), hasUnderstanding: Boolean(context.displayedUnderstanding),
       readyToComplete: parsed.success && parsed.data.readyToComplete,
       sufficientUnderstanding: parsed.success && parsed.data.sufficientUnderstanding,
       nameChanged: parsed.success && parsed.data.preferredName !== null && parsed.data.preferredName !== context.preferredName,

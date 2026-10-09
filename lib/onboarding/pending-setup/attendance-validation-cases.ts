@@ -8,8 +8,8 @@ const accountId = "10000000-0000-4000-8000-000000000001";
 const segmentId = "10000000-0000-4000-8000-000000000002";
 const nicheId = "10000000-0000-4000-8000-000000000003";
 const context: AttendanceContext = {
-  preferredName: "Ana", summary: 'Fatos declarados pelo lead: ["Faço manutenção de jardins para condomínios e quero explicar meu serviço."]\nClassificação confirmada: Não identificada.\nSugestões: validar comunicação.',
-  confirmedUnderstanding: "Manutenção de jardins para condomínios.",
+  preferredName: "Ana", summary: null,
+  displayedUnderstanding: "Manutenção de jardins para condomínios.",
   recent: [{ role: "user", content: "Faço manutenção de jardins para condomínios e quero explicar meu serviço." }],
   catalog: [
     { id: segmentId, name: "Serviços", level: "segment", parentId: null, active: true, aliases: [] },
@@ -18,7 +18,7 @@ const context: AttendanceContext = {
 };
 const base: AttendanceOutput = {
   reply: "Jardinagem corresponde ao seu negócio?", preferredName: "Ana", preferredNameDeclined: false,
-  businessUnderstanding: "Manutenção de jardins para condomínios.", declaredFacts: ["Faço manutenção de jardins para condomínios e quero explicar meu serviço."],
+  businessUnderstanding: "Manutenção de jardins para condomínios.",
   suggestions: ["Pode ser útil explicar a frequência do serviço."], sufficientUnderstanding: true,
   readyToComplete: false, action: "existing", existingTaxonId: nicheId,
 };
@@ -66,12 +66,12 @@ async function main() {
   for (const confirmedProposal of [proposal, fallback]) {
     const confirmation = { ...context, confirmedProposal };
     const accepted = validateAttendanceOutput(confirm, confirmation);
-    assert.equal(accepted?.businessUnderstanding, context.confirmedUnderstanding);
+    assert.equal(accepted?.businessUnderstanding, context.displayedUnderstanding);
     assert.equal(accepted?.readyToComplete, false); // confirmation may continue useful sales.
     assert.equal(validateAttendanceOutput({ ...confirm, readyToComplete: true }, confirmation)?.readyToComplete, true);
     assert.equal(validateAttendanceOutput(base, confirmation), null);
     assert.equal(validateAttendanceOutput({ ...confirm, existingTaxonId: nicheId }, confirmation), null);
-    assert.equal(validateAttendanceOutput(confirm, { ...confirmation, confirmedUnderstanding: null }), null);
+    assert.equal(validateAttendanceOutput(confirm, { ...confirmation, displayedUnderstanding: null }), null);
   }
   const finishing = { ...base, action: "ask" as const, existingTaxonId: null, readyToComplete: true };
   assert.equal(validateAttendanceOutput(finishing, context), null);
@@ -82,63 +82,45 @@ async function main() {
   assert.ok(validateAttendanceOutput({ ...base, preferredName: "Bia" }, { ...context, recent: [{ role: "user", content: "Me chame de Bia." }] }));
   assert.equal(validateAttendanceOutput({ ...base, preferredName: null, preferredNameDeclined: true }, context), null);
   assert.ok(validateAttendanceOutput({ ...base, preferredName: null, preferredNameDeclined: true }, { ...context, preferredName: null }));
-  const summary = attendanceSummary(base, null, null);
-  assert.match(summary, /Fatos declarados pelo lead: \["Faço manutenção de jardins para condomínios e quero explicar meu serviço./);
-  const unsupportedFact = "Possui equipe especializada e atendimento diário.";
-  assert.deepEqual(validateAttendanceOutput({ ...base, declaredFacts: [unsupportedFact],
-    businessUnderstanding: unsupportedFact, suggestions: [unsupportedFact] }, context)?.declaredFacts, []);
-  assert.deepEqual(validateAttendanceOutput({ ...base, declaredFacts: [unsupportedFact] }, { ...context,
-    recent: [{ role: "assistant", content: unsupportedFact }],
-    summary: "Fatos declarados pelo lead: Jardins.\nClassificação confirmada: Não identificada.\nSugestões e oportunidades (não são fatos do negócio): " + unsupportedFact,
-    confirmedUnderstanding: unsupportedFact })?.declaredFacts, []);
-  assert.ok(validateAttendanceOutput(base, { ...context, recent: [{ role: "user", content: "Quero continuar." }] }));
-  assert.deepEqual(validateAttendanceOutput(base, { ...context, summary: null, recent: [] })?.declaredFacts, []);
-  const negated = { ...context, summary: null, recent: [{ role: "user" as const, content: "Não ofereço consultoria." }] };
-  const groundedNegative = validateAttendanceOutput({ ...base, declaredFacts: ["ofereço consultoria"] }, negated);
-  assert.deepEqual(groundedNegative?.declaredFacts, ["Não ofereço consultoria."]);
-  assert.match(attendanceSummary(groundedNegative!, null, null), /Fatos declarados pelo lead: \["Não ofereço consultoria/);
-  assert.deepEqual(validateAttendanceOutput({ ...base, declaredFacts: ["manutenção de jardins"] }, context)?.declaredFacts,
-    ["Faço manutenção de jardins para condomínios e quero explicar meu serviço."]);
-  assert.ok(validateAttendanceOutput({ ...base, declaredFacts: ["Não ofereço consultoria."] }, negated));
-  assert.deepEqual(validateAttendanceOutput({ ...base, declaredFacts: ["Ofereço consultoria"] }, { ...negated,
-    recent: [{ role: "user", content: "Ofereço consultoria?" }] })?.declaredFacts, []);
-  for (const question of ["“Ofereço consultoria?”", "Ofereço consultoria? 🙂"]) {
-    assert.deepEqual(validateAttendanceOutput({ ...base, declaredFacts: [question] }, { ...negated,
-      recent: [{ role: "user", content: question }] })?.declaredFacts, []);
+  // Interpretations remain proposals until the existing explicit confirmation.
+  assert.equal(validateAttendanceOutput({ ...base, declaredFacts: [] }, context), null);
+  const draft = JSON.parse(attendanceSummary(base, null, null));
+  assert.equal(draft.contextualUnderstanding, base.businessUnderstanding);
+  assert.equal(draft.confirmedUnderstanding, null);
+  assert.equal(draft.classification, "Não identificada.");
+  assert.deepEqual(draft.suggestions, base.suggestions);
+  const accepted = validateAttendanceOutput(confirm, { ...context, confirmedProposal: proposal })!;
+  const remembered = attendanceSummary(accepted, null, proposal);
+  assert.equal(JSON.parse(remembered).confirmedUnderstanding, context.displayedUnderstanding);
+  assert.equal(JSON.parse(remembered).classification, "Jardinagem");
+  const later = { ...base, action: "ask" as const, existingTaxonId: null, businessUnderstanding: "Também quer comunicar planos mensais." };
+  const evolving = JSON.parse(attendanceSummary(later, "Jardinagem", null, remembered));
+  assert.equal(evolving.contextualUnderstanding, later.businessUnderstanding);
+  assert.equal(evolving.confirmedUnderstanding, context.displayedUnderstanding);
+  assert.deepEqual(evolving.suggestions, base.suggestions);
+  const socialContext: AttendanceContext = { ...context, summary: remembered, recent: [{ role: "user", content: "Eu sou flamenguista." }] };
+  const noBusinessNews = validateAttendanceOutput({ ...later, businessUnderstanding: "", suggestions: [], readyToComplete: false }, socialContext)!;
+  const retained = attendanceSummary(noBusinessNews, "Jardinagem", null, remembered);
+  assert.equal(retained, remembered); // The literal social message is never automatically imported.
+  assert.equal(retained.includes("flamenguista"), false);
+  for (const malformed of ["not JSON", '{"contextualUnderstanding":"unaccepted"}']) {
+    assert.equal(JSON.parse(attendanceSummary(later, null, null, malformed)).confirmedUnderstanding, null);
   }
-  assert.deepEqual(validateAttendanceOutput({ ...base, declaredFacts: ["ofereço consultoria"] }, { ...negated,
-    recent: [{ role: "user", content: "Não ofereço consultoria. Talvez ofereço consultoria futuramente." }] })?.declaredFacts, []);
-  for (const statement of ['Ofereço consultoria; somente para clientes anuais.', 'Não\nofereço consultoria.', 'Ofereço "consultoria";\nsomente para clientes anuais.']) {
-    const fullStatement = statement.replaceAll("\\n", "\n");
-    const selection = fullStatement.includes('"') ? 'consultoria' : 'ofereço consultoria';
-    const preserved = validateAttendanceOutput({ ...base, declaredFacts: [selection] }, { ...context,
-      summary: null, recent: [{ role: "user", content: fullStatement }] });
-    assert.deepEqual(preserved?.declaredFacts, [fullStatement]);
-    const remembered = attendanceSummary(preserved!, null, null);
-    assert.deepEqual(validateAttendanceOutput({ ...base, declaredFacts: [selection] }, { ...context,
-      summary: remembered, recent: [] })?.declaredFacts, [fullStatement]);
-    const retainedAgain = attendanceSummary({ ...base, declaredFacts: [] }, null, null, remembered);
-    assert.deepEqual(validateAttendanceOutput({ ...base, declaredFacts: [selection] }, { ...context,
-      summary: retainedAgain, recent: [] })?.declaredFacts, [fullStatement]);
-  }
-  const escapedFacts = Array.from({ length: 6 }, (_, index) => `${index}: ${'"'.repeat(490)}`);
-  const bounded = attendanceSummary({ ...base, declaredFacts: escapedFacts, suggestions: ["a".repeat(300), "b".repeat(300)] }, null, null);
+  // Whole-field budgeting keeps accepted wording exact, including escaping overhead.
+  const lengthyAccepted = { ...accepted, businessUnderstanding: "a".repeat(3000), suggestions: ["b".repeat(300), "c".repeat(300)] };
+  const bounded = attendanceSummary(lengthyAccepted, "Jardinagem", proposal);
   assert.ok(bounded.length <= 4000);
-  const boundedFacts: string[] = JSON.parse(bounded.split("\n")[0].slice("Fatos declarados pelo lead: ".length));
-  assert.ok(boundedFacts.length > 0 && boundedFacts.length < 6);
-  assert.deepEqual(boundedFacts, escapedFacts.slice(0, boundedFacts.length));
-  const retained = attendanceSummary({ ...base, declaredFacts: [] }, null, null, context.summary);
-  assert.match(retained, /Faço manutenção de jardins para condomínios/);
-  assert.ok(validateAttendanceOutput(base, { ...context, summary: retained, recent: [] }));
-  const merged = attendanceSummary({ ...base, declaredFacts: ["Também atendo residências."] }, null, null, retained);
-  assert.match(merged, /Também atendo residências/);
-  assert.match(merged, /Faço manutenção de jardins para condomínios/);
-  assert.equal(attendanceSummary(base, null, null, context.summary).split("Faço manutenção").length - 1, 1);
-  assert.match(attendanceSummary({ ...base, declaredFacts: [], businessUnderstanding: unsupportedFact }, null, null),
-    /^Fatos declarados pelo lead: Ainda não informados\./);
-  assert.match(summary, /Sugestões e oportunidades \(não são fatos do negócio\): Pode ser útil/);
-  assert.equal(base.businessUnderstanding.includes(base.suggestions[0]), false);
-  assert.match(attendanceSummary(confirm, null, proposal), /Classificação confirmada: Jardinagem/);
+  assert.equal(JSON.parse(bounded).confirmedUnderstanding, lengthyAccepted.businessUnderstanding);
+  assert.equal(JSON.parse(bounded).contextualUnderstanding, null);
+  const nearLimit = JSON.stringify({ contextualUnderstanding: null, confirmedUnderstanding: "a".repeat(3800), classification: "Curta", suggestions: [] });
+  assert.ok(nearLimit.length <= 4000);
+  assert.equal(attendanceSummary(noBusinessNews, "c".repeat(120), null, nearLimit), nearLimit);
+  for (const oversized of ["a".repeat(4000), '"'.repeat(2000)]) {
+    const result = attendanceSummary({ ...accepted, businessUnderstanding: oversized }, "Jardinagem", proposal);
+    assert.ok(result.length <= 4000);
+    assert.equal(JSON.parse(result).confirmedUnderstanding, null); // Full text remains in the dialogue/conversation.
+  }
+  assert.equal(attendanceProjection(conversation, context.catalog).displayedUnderstanding, conversation.businessContextText);
   assert.equal(JSON.stringify(attendanceProjection(conversation, context.catalog)).includes("ana@example.com"), false);
   assert.deepEqual(catalogAdapter.projectAttendanceMarketContext([], []), []);
   const market = catalogAdapter.projectAttendanceMarketContext([{ id: accountId, taxon_id: nicheId, updated_at: "2026-06-01" }],
@@ -171,6 +153,22 @@ async function main() {
   const input = { accountId, userId: accountId, conversationId: accountId, expectedVersion: 1, content: "Jardins", intent: "message" as const };
   assert.equal((await conductAttendanceTurn(input, deps)).ok, true);
   assert.deepEqual(effects, ["claim", "commit"]); // old lifetime call counter is irrelevant.
+  for (const acceptedProposal of [proposal, fallback]) {
+    current = { ...conversation, attendanceProposal: acceptedProposal, stage: "niche_confirmation" };
+    assert.equal((await conductAttendanceTurn({ ...input, intent: "confirm", content: "Sim, confirmo o entendimento exibido." }, {
+      ...deps,
+      request: async ({ context: shown }) => {
+        assert.equal(shown.displayedUnderstanding, conversation.businessContextText);
+        return { ok: true, output: validateAttendanceOutput(confirm, shown)!, responseId: "accepted", latencyMs: 1 };
+      },
+      commit: async input => {
+        assert.equal(input.confirm, true); assert.equal(input.proposal, null);
+        assert.equal(input.output.businessUnderstanding, conversation.businessContextText);
+        assert.equal(JSON.parse(input.summary).confirmedUnderstanding, conversation.businessContextText);
+        return { ok: true, version: 3 };
+      },
+    })).ok, true);
+  }
   for (const resume of [false, true]) {
     current = { ...conversation, businessContextText: "Serviços para condomínios.",
       attendanceTurnIntent: resume ? "message" : null,

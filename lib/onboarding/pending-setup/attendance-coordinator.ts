@@ -57,10 +57,8 @@ export async function conductAttendanceTurn(input: Readonly<{
     const written = await dependencies.commit({
       ...fence, output: answer.output, confirm: confirmation, observedPrimaryTaxonId: currentPrimaryTaxonId,
       proposal: confirmation ? null : attendanceProposal(answer.output, catalog),
-      summary: confirmation ? context.summary?.replace(/^Classificação confirmada:.*$/m,
-        "Classificação confirmada: " + (context.confirmedProposal?.taxonName ?? "Não identificada."))
-        ?? attendanceSummary(answer.output, null, context.confirmedProposal)
-        : attendanceSummary(answer.output, catalog.find(taxon => taxon.id === currentPrimaryTaxonId)?.name ?? null, null, context.summary),
+      summary: attendanceSummary(answer.output, catalog.find(taxon => taxon.id === currentPrimaryTaxonId)?.name ?? null,
+        context.confirmedProposal, context.summary),
     });
     if (!written.ok) {
       if (written.reason === "primary_conflict" || (confirmation && written.reason === "invalid")) {

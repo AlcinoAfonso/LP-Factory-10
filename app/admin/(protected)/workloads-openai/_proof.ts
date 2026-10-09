@@ -250,7 +250,7 @@ async function proveAttendance(
     let context: AttendanceContext = {
       preferredName: "Ana", summary: null, catalog, currentPrimaryTaxonId: null,
       recent: [{ role: "user", content: identified
-        ? "Faço manutenção de jardins para condomínios. Quero explicar meu serviço e tenho dúvidas sobre comunicação. Essa categoria já pode ser proposta para eu confirmar, mas ainda preciso de orientação."
+        ? "Faço manutenção de jardins para condomínios. Quero explicar meu serviço e tenho dúvidas sobre comunicação. Essa categoria já pode ser proposta para eu confirmar, mas ainda preciso de orientação. Por falar em outra coisa, sou flamenguista; isso não tem relação com meu serviço."
         : "Sou fisioterapeuta de adultos. Quero comunicar minha atuação. Esse catálogo não tem minha categoria; podemos confirmar meu entendimento e continuar a orientação." }],
       marketContext: identified ? [{ taxonId: nicheId, researchId: segmentId, version: 1, updatedAt: "2024-06-01",
         items: [{ key: "limitation", text: "Repertório histórico: pode ser útil esclarecer frequência de manutenção, conforme o negócio.", notes: "Hipótese a validar, sem promessa de resultado." }] }] : [],
@@ -266,14 +266,20 @@ async function proveAttendance(
       providerRequestId = result.responseId;
       if (turn === 0) {
         if (output.action !== (identified ? "existing" : "pending") ||
-          (identified && output.existingTaxonId !== nicheId) || !output.declaredFacts.length || output.readyToComplete) return { ok: false, code: "contract" };
+          (identified && output.existingTaxonId !== nicheId) || !output.businessUnderstanding || output.readyToComplete) return { ok: false, code: "contract" };
+        const proposedSummary = JSON.parse(attendanceSummary(output, null, null));
+        if (proposedSummary.confirmedUnderstanding !== null || !proposedSummary.contextualUnderstanding ||
+          (identified && /flamenguista/i.test(proposedSummary.contextualUnderstanding))) return { ok: false, code: "contract" };
         context = { ...context, confirmedProposal: attendanceProposal(output, catalog),
-          confirmedUnderstanding: output.businessUnderstanding,
+          displayedUnderstanding: output.businessUnderstanding,
           summary: attendanceSummary(output, null, null, context.summary),
           recent: [...context.recent, { role: "assistant", content: output.reply },
-            { role: "user", content: "Sim, confirmo. Ainda quero entender como apresentar meu serviço." }] };
+            { role: "user", content: "Sim, confirmo o entendimento exibido e a categoria quando identificada. Ainda quero entender como apresentar meu serviço." }] };
       } else if (turn === 1) {
-        if (output.action !== "confirm") return { ok: false, code: "contract" };
+        if (output.action !== "confirm" || output.businessUnderstanding !== context.displayedUnderstanding) return { ok: false, code: "contract" };
+        const acceptedSummary = JSON.parse(attendanceSummary(output, identified ? "Manutenção de jardins" : null,
+          context.confirmedProposal, context.summary));
+        if (acceptedSummary.confirmedUnderstanding !== context.displayedUnderstanding) return { ok: false, code: "contract" };
         context = { ...context, confirmedProposal: null,
           currentPrimaryTaxonId: identified ? nicheId : null,
           confirmedOperationalUnderstanding: !identified,
