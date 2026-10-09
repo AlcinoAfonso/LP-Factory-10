@@ -252,8 +252,9 @@
 • Finalidade: gate server-only do atendimento inicial por IA.
 • Desligamento suspende conversas já iniciadas por IA; não as encaminha ao legado nem limpa proposta ou intenção. O novo atendimento exige conversa nova, sem conversão do histórico legado; seu QA usa conta/conversa nova de teste.
 • Plataforma e escopo aprovados: Vercel Core, Preview e Production, com configuração independente por ambiente; habilitação somente pelo literal `true`.
-• Estado: desligado; configuração e ativação hospedadas ainda não validadas. Habilitação depende de apply validado, prova empírica e configuração elegível do workload pela governança E21 e QA do ambiente.
+• Estado: `true` em Production e em Preview somente para a branch `codex-app/e10-12-rpc-acl`; redeploys e QA autenticado aprovados nos dois ambientes após apply seletivo validado. O gate de apply `SUPABASE_APPLY_MIGRATIONS_ENABLED` foi restaurado em `false`.
 • Classificação: Config, não Secret. Alteração exige redeploy do ambiente afetado.
+• Workload `pending_setup_conversation`: `gpt-6-luna`/`xhigh`, prompt `e10_12_sales_context_v8` e contrato 3; revisões E21 ativas 8 em Preview e 2 em Production, com provas operacionais independentes e sem Web Search. Evidências de apply, ativação e QA: PRs #1050 e #1053.
 
 • `E20_6_5_INPUT_CATALOG_EVALUATION_PROVIDER_ENABLED`
 • Finalidade histórica: gate do provider consultivo E20.8.7, removido com o workload factual pela E22.7.

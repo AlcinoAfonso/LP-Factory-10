@@ -315,6 +315,7 @@
 • business_taxons_name_slug_fts_gin_idx (GIN em to_tsvector('portuguese', normalize_taxon_match_text(name) + slug normalizado))
 • business_taxons_name_normalized_trgm_gin_idx (GIN trigram em normalize_taxon_match_text(name))
 • business_taxons_slug_normalized_trgm_gin_idx (GIN trigram em slug normalizado)
+• business_taxons_level_parent_name_uidx: UNIQUE em (level, parent_id, normalize_taxon_match_text(name)), com NULLS NOT DISTINCT; impede duplicação de nome normalizado no mesmo nível e pai, inclusive na raiz. Criado pela migration aplicada 20261007153217_e10_12_account_context_attendance.sql.
 
 1.12 business_taxon_aliases
 
@@ -618,8 +619,13 @@
 • confirmation_kind: official | operational_fallback somente em niche_confirmation; NULL nos demais stages.
 • resolution_outcome: NULL antes de completed; official | operational_fallback na conclusão.
 • openai_call_count: smallint obrigatório, default 0 e domínio 0–3; contador autoritativo da conversa, reservado transacionalmente antes de cada chamada OpenAI e independente do ledger financeiro.
-• pending_turn_token e pending_turn_started_at são ambos NULL ou ambos preenchidos apenas durante reserva de turno em business_understanding/niche_confirmation; lease de 2 minutos permite retomada após interrupção.
+• pending_turn_token e pending_turn_started_at são ambos NULL ou ambos preenchidos apenas durante reserva de turno em identity/business_understanding/niche_confirmation. A reserva legada usa lease de 2 minutos; as RPCs do atendimento conversacional usam 6 minutos.
 • preferred_name: NULL ou 1–80 caracteres sem controle ou `@`; business_display_name: NULL ou nome público explícito de 1–120 caracteres sem controle; business_context_text: NULL ou 1–4.000 caracteres; version >= 1.
+• attendance_proposal: jsonb nullable; CHECK account_pending_setup_attendance_proposal_chk permite NULL ou objeto JSON com até 16.000 bytes na representação textual.
+• preferred_name_declined: boolean NOT NULL DEFAULT false.
+• pending_turn_ordinal: integer nullable; FK account_pending_setup_attendance_ordinal_fk em (id, pending_turn_ordinal) → account_pending_setup_messages(conversation_id, ordinal), com ON UPDATE NO ACTION e ON DELETE NO ACTION.
+• pending_turn_intent: text nullable; CHECK account_pending_setup_attendance_intent_chk admite initialize | message | confirm | clarify quando não nulo.
+• last_attendance_turn_token: uuid nullable, usado pela idempotência dos efeitos concluídos.
 • created_at <= updated_at; completed_at é NULL antes de completed e obrigatório/coerente na conclusão.
 
 1.19A.2 Segurança
@@ -639,6 +645,37 @@
 • Append-only operacional; Trigger Hub: não; sem update/delete de conteúdo ou auditoria row-level.
 • RLS ativo, sem policies; acesso direto revogado de public, anon, authenticated e ai_readonly.
 • service_role: SELECT e INSERT.
+
+1.19C account_dialogues
+
+1.19C.1 Chaves, campos e relacionamentos
+• PK: id uuid, sem default; UNIQUE auxiliar: (id, account_id, user_id).
+• account_id e user_id: uuid NOT NULL; FK composta → account_users(account_id, user_id) ON UPDATE CASCADE ON DELETE RESTRICT.
+• origin: text NOT NULL, CHECK restrito a pending_setup.
+• started_at: timestamptz NOT NULL DEFAULT now(); ended_at: timestamptz nullable, com CHECK ended_at IS NULL OR ended_at >= started_at.
+• O atendimento utiliza o mesmo id da conversa; as mensagens permanecem em account_pending_setup_messages vinculadas à conversa, sem nova tabela de mensagens ou FK para account_dialogues.
+• Índice account_dialogues_account_user_started_idx em (account_id, user_id, started_at).
+
+1.19C.2 Segurança
+• RLS ativo, sem policies; PUBLIC, anon, authenticated e ai_readonly sem grants.
+• service_role: SELECT, INSERT e UPDATE; sem DELETE.
+• Sem participação no Trigger Hub ou trigger próprio.
+• Migration aplicada: 20261007153217_e10_12_account_context_attendance.sql.
+
+1.19D account_context_summaries
+
+1.19D.1 Chaves, campos e relacionamentos
+• account_id: uuid PK e FK → accounts(id), ON UPDATE NO ACTION e ON DELETE RESTRICT; resumo único por conta.
+• summary: text nullable; CHECK permite NULL ou 1–4.000 caracteres após trim.
+• source_dialogue_id e source_user_id: uuid nullable; CHECK exige ambos nulos ou ambos preenchidos.
+• FK composta (source_dialogue_id, account_id, source_user_id) → account_dialogues(id, account_id, user_id) ON UPDATE CASCADE ON DELETE RESTRICT.
+• updated_at: timestamptz NOT NULL DEFAULT now(), atualizado explicitamente pela RPC; sem trigger próprio.
+
+1.19D.2 Segurança
+• RLS ativo, sem policies; PUBLIC, anon, authenticated e ai_readonly sem grants.
+• service_role: SELECT, INSERT e UPDATE; sem DELETE.
+• Sem participação no Trigger Hub.
+• Migration aplicada: 20261007153217_e10_12_account_context_attendance.sql.
 
 1.20 content_template_compositions
 
@@ -885,7 +922,7 @@
 • `environment` aceita somente `production | preview`; Development permanece fora desta residência dinâmica.
 • A PK composta `(environment, workload)` é o lock canônico das RPCs e impede mais de uma unidade para a mesma combinação.
 • A migration forward-only `supabase/migrations/20260820190422_e21_2_3_openai_workload_operational_configurations.sql` está aplicada no ambiente hospedado; o snippet read-only aprovou 10/10 verificações e o Security Controls não apresentou alerta incompatível com o agregado ou suas RPCs.
-• A migration incremental forward-only `supabase/migrations/20260820213900_e21_2_taxon_input_catalog_sufficiency_workload.sql` introduziu `taxon_input_catalog_sufficiency_evaluation` no agregado; após o apply E22.7, suas duas unidades mutáveis não permanecem na tabela. Os CHECKs `openai_workload_operational_configurations_workload_chk` e `openai_workload_operational_configurations_modality_chk` admitem somente `niche_resolution`, `commercial_activation_draft_generation`, `landing_page_draft_generation`, `landing_page_draft_image_generation`, `communication_base_stage1_assistance` e `communication_base_stage2_intelligence`; a modalidade é `image_generation` somente para `landing_page_draft_image_generation` e `responses_text` para os demais. Revisões e ativações permanecem históricas e inertes.
+• A migration incremental forward-only `supabase/migrations/20260820213900_e21_2_taxon_input_catalog_sufficiency_workload.sql` introduziu `taxon_input_catalog_sufficiency_evaluation` no agregado; após o apply E22.7, suas duas unidades mutáveis não permanecem na tabela. Os CHECKs `openai_workload_operational_configurations_workload_chk` e `openai_workload_operational_configurations_modality_chk` admitem somente `niche_resolution`, `commercial_activation_draft_generation`, `landing_page_draft_generation`, `landing_page_draft_image_generation`, `communication_base_stage1_assistance`, `communication_base_stage2_intelligence` e `pending_setup_conversation`; a modalidade é `image_generation` somente para `landing_page_draft_image_generation` e `responses_text` para os demais. Revisões e ativações permanecem históricas e inertes.
 • A migration histórica `supabase/migrations/20260829171107_e20_7_4_dynamic_market_research_workload.sql` introduziu `landing_page_dynamic_market_research`; a migration E20.8 remove suas linhas mutáveis deste agregado. Revisões e ativações append-only permanecem históricas e inertes.
 
 1.28.2 Colunas
@@ -915,7 +952,7 @@
 1.28.4 Índices, bootstrap e segurança
 • `openai_workload_operational_configurations_active_revision_idx`: btree em active_revision_id + unidade.
 • `openai_workload_operational_configurations_pending_revision_idx`: btree parcial em pending_revision_id + unidade quando não nulo.
-• A migration aplicada `supabase/migrations/20260927163500_e21_2_communication_base_workloads.sql` estende as três allowlists de unidade/revisão/ativação com `communication_base_stage1_assistance` e `communication_base_stage2_intelligence` e cria quatro cadeias bootstrap Production/Preview. O agregado tem quatorze unidades físicas, dez correntes. A configuração ativa da Etapa 2 em Preview e Production é `gpt-6-luna`/`max` Standard, selecionada após comparação provider-backed com `gpt-6-sol`/`medium` Standard pelo lifecycle E21.
+• A migration aplicada `supabase/migrations/20260927163500_e21_2_communication_base_workloads.sql` estende as três allowlists de unidade/revisão/ativação com `communication_base_stage1_assistance` e `communication_base_stage2_intelligence` e cria quatro cadeias bootstrap Production/Preview. A migration aplicada `20261007153217_e10_12_account_context_attendance.sql` estende as allowlists de unidade, revisão e ativação com `pending_setup_conversation` na modalidade `responses_text` e cria suas duas cadeias bootstrap Preview/Production, sem substituir a prova operacional exigida pelo lifecycle. A configuração ativa da Etapa 2 em Preview e Production é `gpt-6-luna`/`max` Standard, selecionada após comparação provider-backed com `gpt-6-sol`/`medium` Standard pelo lifecycle E21.
 • RLS habilitado e nenhuma policy.
 • public, anon, authenticated e ai_readonly: sem grants.
 • service_role: SELECT e UPDATE somente dos nove campos necessários às transições; sem INSERT, DELETE ou TRUNCATE.
@@ -1224,6 +1261,25 @@
 • `set_account_pending_setup_business_name_v1(uuid, uuid, uuid, text, bigint) → bigint`: persiste nome público explícito na conversa pronta para conclusão, com owner ativo, conta pending_setup e controle otimista de versão.
 • `complete_account_pending_setup_v2(uuid, uuid, uuid, bigint, text) → boolean`: preserva o contrato de conclusão v1 e exige nome público persistido na transição ainda pending_setup; conversa histórica completed mantém idempotência sem backfill.
 • As oito RPCs são SECURITY DEFINER, usam search_path vazio, validam owner/membership/conta, têm EXECUTE exclusivo de service_role e revogam public, anon, authenticated e ai_readonly.
+• A migration aplicada 20261007153217_e10_12_account_context_attendance.sql preserva assinaturas e ACLs legadas e acrescenta guard a start_account_pending_setup_v1, set_account_pending_setup_preferred_name_v1, claim_account_pending_setup_turn_v1 e append_account_pending_setup_turn_v1: presença de pending_turn_intent ou last_attendance_turn_token rejeita execução pelo motor legado. Conversas legadas comuns permanecem utilizáveis; set_account_pending_setup_preferred_name_v1 também persiste preferred_name_declined conforme ausência do nome.
+
+3.1.3 Atendimento conversacional e confirmação pelo catálogo
+• `commit_account_pending_setup_turn_v3(uuid, uuid, uuid, bigint, uuid, text, text, text, text, text, jsonb, boolean, boolean, uuid) → bigint`: recebe conversa, conta, usuário, versão esperada, token, mensagem do assistente, resumo, entendimento do negócio, nome preferido, próximo estágio, proposta, confirmação, recusa do nome e primário observado, nessa ordem.
+• SECURITY DEFINER, proprietário `postgres`, search_path vazio. Revalida owner/membership/conta, bloqueia a conversa e exige versão, token e reserva válida de até seis minutos. Token já concluído permite retorno idempotente. Divergência do primário observado, inclusive mudança de ausência para presença, impede a gravação.
+• Grava atomicamente mensagem, resumo contextual com proveniência, entendimento e estado da conversa, efeito oficial quando confirmado, liberação da reserva e incremento de versão. Resumo e entendimento são argumentos distintos, limitados a 4.000 caracteres; a confirmação utiliza a proposta e o entendimento já persistidos, preservando o texto exibido. Proposta não confirmada permanece em `niche_confirmation`, sem alterar o vínculo oficial; confirmação pode retornar a `business_understanding` ou avançar a `ready_to_complete`.
+• `effect_pending_setup_taxonomy_v1(uuid, jsonb, boolean, text) → uuid`: helper privado SECURITY DEFINER, com search_path vazio, restrito a proposta confirmada `existing` ou `operational_fallback`. Rejeita propriedades fora de `kind`, `taxonId` e `taxonName`; não cria, ativa, reativa ou mantém taxons ou aliases. Categoria existente exige hierarquia ativa e não substitui primário diferente; vínculo idêntico conserva sua proveniência. Fallback exige entendimento não vazio e ausência de primário ativo, registrando confirmação operacional em `account_niche_resolutions`, sem inventar classificação.
+• EXECUTE da v3 é exclusivo de `service_role`, além do proprietário `postgres`; PUBLIC, anon, authenticated, ai_readonly e readonly, quando existentes, não executam. `commit_account_pending_setup_turn_v2(uuid, uuid, uuid, bigint, uuid, text, text, text, text, jsonb, boolean, boolean, uuid)` permanece no banco com execução revogada dos consumidores, inclusive service_role. O helper de efeito também não possui EXECUTE para service_role ou papéis externos.
+• Definições aplicadas pelas migrations `20261007153217_e10_12_account_context_attendance.sql` e `20261009171607_e10_12_sales_attendance.sql`; a migration corretiva `20261009204000_e10_12_restrict_attendance_commit_acl.sql` revoga da v3 o EXECUTE herdado por ai_readonly, sem alterar default privileges globais. Não há backfill, conversão ou atualização de conversas históricas.
+
+3.1.4 Início, reserva, retomada e conclusão do atendimento
+• `assert_pending_setup_actor_v2(uuid, uuid) → void`: helper privado que exige conta pending_setup e membership owner ativa, com locks compartilhados na conta e no vínculo.
+• `start_account_pending_setup_v2(uuid, uuid, text) → uuid`: cria atomicamente conversa, Diálogo correspondente e Resumo inicialmente vazio quando ausente. Reentrada é idempotente somente quando já existe Diálogo da mesma conta/usuário; conversa legada sem Diálogo é rejeitada, sem conversão ou cópia histórica.
+• `claim_account_pending_setup_turn_v2(uuid, uuid, uuid, bigint, uuid, text, text) → bigint`: reserva o turno sob lock, versão e token; aceita initialize | message | confirm | clarify. Persiste a entrada do usuário e sua ordinal antes da chamada externa; retomada preserva a intenção e reutiliza a entrada persistida. Reserva válida do mesmo token retorna a versão corrente; reserva concorrente válida ou versão divergente impede efeitos.
+• `release_account_pending_setup_turn_v2(uuid, uuid, uuid, bigint, uuid) → bigint`: exige reserva exata, limpa token e instante, incrementa a versão e preserva ordinal e intenção para retry sem duplicar mensagem.
+• `discard_account_pending_setup_proposal_v2(uuid, uuid, uuid, bigint, uuid) → bigint`: exige reserva vigente ou reconhece token já concluído; registra mensagem de conflito, descarta proposta, retorna a business_understanding e limpa reserva e intenção, preservando entendimento e histórico.
+• `complete_account_pending_setup_attendance_v1(uuid, uuid, uuid, bigint, text, boolean) → boolean`: delega à conclusão v2 quando o último argumento habilita a passagem, ou à v1 caso contrário; no mesmo sucesso transacional preenche ended_at do Diálogo, sem alterar valor já existente. Ausência do Diálogo provoca rollback.
+• Todas são SECURITY DEFINER com search_path vazio. start, claim, release, discard e complete possuem EXECUTE somente para service_role, além do proprietário; PUBLIC, anon, authenticated e ai_readonly não executam. assert_pending_setup_actor_v2 não possui EXECUTE para service_role ou papéis externos.
+• Origem: migration aplicada 20261007153217_e10_12_account_context_attendance.sql. A versão v2 desses nomes não corresponde ao commit v2 revogado; o commit vigente é o v3 descrito em 3.1.3.
 
 3.2 Limites de Plano
 3.2.1 get_account_effective_limits(account_id uuid) → SETOF record
@@ -1417,6 +1473,7 @@
 • `openai_cost_executions`: execução funcional por workload, ambiente, origem, universo e atribuição econômica explícita; conta é obrigatória somente para Cliente atribuído e nunca é inferida. A extensão repo-only E21.5.6 acrescenta `economic_event_kind`, `economic_event_id`, `landing_page_id` e `taxon_id`, todos nulos para linhas anteriores e sempre preenchidos como conjunto coerente quando houver correlação econômica comprovada na origem.
 • `openai_cost_operations`: uma linha por chamada cobrável, com sequência e retry anterior na mesma execução, configuração efetiva, IDs técnicos sanitizados, usage normalizado, Web Search, estado de custo e terminal imutável.
 • `openai_cost_coverage`: corte imutável por ambiente e workload, com versão do contrato financeiro.
+• A migration aplicada 20261007153217_e10_12_account_context_attendance.sql acrescenta pending_setup_conversation às allowlists de openai_cost_executions e openai_cost_coverage e registra cortes prospectivos nos ambientes preview, production e development com contract_version e21.5.6-v2, sem backfill financeiro.
 • A migration E25.1 acrescentou os dois workloads da Base às allowlists de `openai_cost_executions` e `openai_cost_coverage`, sem criar cortes de cobertura. Os quatro pares Production/Preview × Etapa 1/Etapa 2 foram registrados prospectivamente por `register_openai_cost_coverage_v1` antes do primeiro uso; as execuções provider-backed das duas etapas registram usage e custo no ledger E21.
 • A série `openai_lp_*` permanece independente, congelada e sem alteração pela migration E25.1.
 • A correlação `landing_page` exige universo Cliente atribuído, conta presente, `economic_event_id = landing_page_id` e FK composta para `account_landing_pages(id, account_id)`; `niche_resolution` exige UUID econômico próprio sem LP ou taxon; `lp_factory_internal` exige universo LP Factory, conta nula e admite `taxon_id` comprovado por FK para `business_taxons(id)`.

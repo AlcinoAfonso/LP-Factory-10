@@ -292,7 +292,7 @@ Objetivo:
 Compreender o negócio e as necessidades do lead, oferecer orientação comercial pertinente aos serviços comprovadamente disponíveis, confirmar classificação existente quando segura e consolidar contexto útil para continuidade comercial.
 
 Status:
-Aprovada; implementação e validações em andamento, sem ativação hospedada comprovada. O fluxo vigente permanece operacional até substituição segura.
+Implementada e ativa em Preview e Production após apply seletivo, provas E21 independentes e QA autenticado aprovados; PRs #1050 e #1053. Conversas legadas permanecem preservadas, sem backfill ou conversão histórica.
 
 Modo de uso e consumidores:
 Pending Setup da conta, server-side, após autorização do owner e reserva do turno. O lead confirma a categoria existente proposta ou o entendimento operacional quando não houver correspondência segura. Confirmar classificação não encerra automaticamente o atendimento.

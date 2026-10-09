@@ -979,7 +979,7 @@
 
 10.9.1 Objetivo e status
 - Objetivo: substituir a experiência E10.4 por uma jornada conversacional pré-comercial que receba a pessoa, compreenda o negócio, resolva ou preserve operacionalmente o nicho, mantenha histórico por relação usuário/conta e promova `pending_setup` para `active` sem criar entitlement.
-- Status: concluído; PR #957 mergeado, migration aplicada em Production, validação SQL e QA pós-merge aprovados. Permanece vigente até substituição funcional segura pelo E10.12.
+- Status: concluído; PR #957 mergeado, migration aplicada em Production, validação SQL e QA pós-merge aprovados. E10.12 substitui o atendimento para novas conversas; conversas legadas conservam o contrato E10.9, sem conversão histórica.
 
 10.9.2 Registros do recorte
 - Banco:
@@ -1102,23 +1102,23 @@
 
 10.12.1 Objetivo e status
 - Objetivo: compreender o negócio, as necessidades e o interesse do lead, oferecer orientação comercial pertinente aos serviços efetivamente disponíveis e concluir com próximo passo claro, preservando contexto e confirmando classificação existente quando houver correspondência segura.
-- Status: V1 funcional aprovada em 09/10/2026; adaptação técnica, validação e ativação do novo contrato ainda não concluídas. A nova V1 substitui o contrato funcional anterior de pesquisa classificatória e taxonomia sob demanda. E10.9 permanece vigente até substituição funcional segura.
-- Dependência: E10.13/PB-A disponibiliza o catálogo e a inteligência de mercado necessários antes da ativação e do QA completo.
+- Status: concluído; V1 funcional aprovada em 09/10/2026 implementada pelo PR #1050, com correção de ACL pelo PR #1053. Migrations aplicadas seletivamente, PostgreSQL 17, checks, Code Reviews independentes e QA autenticado aprovados; atendimento habilitado em Preview e Production após provas e ativações E21 independentes. O novo contrato substitui pesquisa classificatória e taxonomia sob demanda; conversas legadas E10.9 permanecem preservadas.
+- Dependência: E10.13/PB-A concluída; catálogo e inteligência de mercado disponíveis e utilizados na ativação e no QA.
 
 10.12.3 Atendimento, Diálogo da conta e Resumo da conta
-- Status: definido.
+- Status: implementado e validado em Preview e Production.
 - Conteúdo: o agente adapta perguntas, orientação e conclusão enquanto houver avanço útil, sem herdar o teto de três chamadas. Diálogo preserva histórico com conta e usuário participante identificados; Resumo permanece único por conta, compacto e contextual, sem autoridade ou versionamento funcional próprio. Distinguir síntese contextual proposta pela IA, entendimento explicitamente aceito pelo lead, classificação confirmada, sugestões ou oportunidades do vendedor e ausência de identificação. Fontes oficiais prevalecem sobre ambos.
 
 10.12.4 Identificação pelo catálogo
-- Status: definido.
+- Status: implementado e validado em Preview e Production.
 - Conteúdo: consultar categorias ativas e repertório pertinente do D21, comparar semanticamente o entendimento e fazer pergunta focal quando necessário. Apresentar categoria existente ao lead; somente confirmação e validação determinística permitem alterar o vínculo oficial. Não executar pesquisa Web classificatória nem criar, ativar, reativar ou manter taxons ou aliases. Sem correspondência segura, explicitar ausência de identificação, preservar entendimento operacional e permitir continuidade comercial sem inventar classificação.
 
 10.12.5 Repertório do nicho e apoio à venda
-- Status: definido.
+- Status: implementado e validado em Preview e Production.
 - Conteúdo: usar conteúdo de mercado efetivamente disponível do D21 para orientação pertinente, sem transformá-lo em fala obrigatória, característica declarada pelo cliente ou promessa de resultado. Apresentar serviço, condição, prazo ou disponibilidade como efetivos somente com fonte comercial vigente competente; conteúdo ilustrativo e visão estratégica não comprovam oferta. Na ausência dessa fonte, não inventar disponibilidade. D21 mantém cadastro, manutenção, pesquisa do catálogo e política global de aliases.
 
 10.12.6 Conclusão e experiência
-- Status: definido.
+- Status: implementado e validado em Preview e Production.
 - Conteúdo: concluir quando negócio e necessidades estiverem suficientemente compreendidos, a orientação pertinente tiver sido entregue e o próximo passo comercial estiver claro, com classificação confirmada ou ausência de identificação explicitada. Confirmar categoria não encerra automaticamente o atendimento. Preservar requisitos de conclusão E10.11, identidade, WhatsApp, histórico, acesso e fronteiras comerciais. Ausência de taxon oficial não impede continuidade comercial nem bloqueia posteriormente a Base com entendimento operacional suficiente; não concede entitlement, acesso pago, trial ou contratação.
 - Limites: D17 conserva objeções, comparação/recomendação e encaminhamento aprofundado à contratação enquanto sua absorção não for explicitamente aprovada. Não criar relacionamento operacional com a Base, sincronização de fontes oficiais, engine genérica, consumidores futuros ou continuidade assíncrona. Falha preserva contexto válido para retomada; alteração externa impede sobrescrita, duplicação e falso sucesso sem reconstruir proposta ou exigir reavaliação e nova confirmação automáticas. Após conclusão correta, Pending Setup não governa mudanças posteriores da conta.
 
@@ -2225,7 +2225,7 @@
 
 21.1.1 Objetivo e status
 - Objetivo: centralizar identidades, modalidades, baselines locais, resolução e telemetria segura dos workloads OpenAI, mantendo prompts, schemas e regras funcionais nos domínios consumidores.
-- Status: implementada e vigente. O catálogo estrutural contém quatro workloads textuais de produto mais a referência operacional read-only do Supabase Inspect; não há workload de imagem ativo.
+- Status: implementada e vigente. O catálogo estrutural contém cinco workloads textuais de produto mais a referência operacional read-only do Supabase Inspect; não há workload de imagem ativo.
 
 21.1.2 Registros do recorte
 - Repositório:
@@ -2270,8 +2270,8 @@
 - Variáveis legadas de seleção de modelo não são consumidas pelos workloads ativos.
 
 21.1.5 Inventário administrativo
-- A rota protegida `/admin/workloads-openai` projeta os cinco itens vigentes do registry para `platform_admin`.
-- Os quatro workloads de produto exibem modalidade, configuração, origem, revisão, consumidor e fallback; o Supabase Inspect permanece diferenciado como referência não verificada nessa superfície.
+- A rota protegida `/admin/workloads-openai` projeta os seis itens vigentes do registry para `platform_admin`.
+- Os cinco workloads de produto exibem modalidade, configuração, origem, revisão, consumidor e fallback; o Supabase Inspect permanece diferenciado como referência não verificada nessa superfície.
 - A leitura não consulta OpenAI, GitHub ou Vercel em runtime e não expõe secrets, prompts, respostas ou payloads funcionais.
 - O inventário é a entrada para a gestão operacional da E21.2, sem duplicar registry ou resolver no Admin.
 
@@ -2279,7 +2279,7 @@
 
 21.2.1 Objetivo e status
 - Objetivo: administrar configuração por `ambiente + workload` com candidata, prova, promoção, ativação e rollback humano, permitindo mudanças ordinárias em Preview e Production sem novo deploy de código.
-- Status: implementada e ativa. Preview e Production usam `supabase_operational`; Development permanece em `repo_catalog`. Após o apply E22.7, a leitura corrente seleciona por allowlist oito unidades vigentes — quatro workloads de produto em cada ambiente —, ignora quatro unidades antigas de drafts e não mantém unidades mutáveis da E20.7 nem do workload factual retirado pela E22.7.
+- Status: implementada e ativa. Preview e Production usam `supabase_operational`; Development permanece em `repo_catalog`. Após os applies E22.7 e E10.12, a leitura corrente seleciona por allowlist dez unidades vigentes — cinco workloads de produto em cada ambiente —, ignora quatro unidades antigas de drafts e não mantém unidades mutáveis da E20.7 nem do workload factual retirado pela E22.7.
 
 21.2.2 Registros do recorte
 - Banco:
