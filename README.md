@@ -1,8 +1,8 @@
 0. Introdução
 0.1. Cabeçalho
 • Documento: README — LP Factory 10 (MVP)
-• Versão: 10 — 02/10/2026
-• Data: 02/10/2026
+• Versão: 11 — 09/10/2026
+• Data: 09/10/2026
 • Escopo: visão geral do produto + documentos de referência + pendências estratégicas
 
 1. Visão geral do produto
@@ -46,12 +46,12 @@
 • Runtime não pode depender de objetos ou comportamentos de banco ainda não aplicados e validados no ambiente alvo.
 • A stack base do MVP permanece Next.js, Supabase e TypeScript.
 • Regras verificáveis, segurança, fatos, estado e contratos permanecem determinísticos quando possível; IA preserva flexibilidade controlada onde a natureza do resultado for semântica, criativa ou persuasiva.
-• Avaliação, radar tecnológico ou catalogação não autorizam implementação, mudança de stack, nova infraestrutura nem ampliação de escopo.
+• Avaliação, radar tecnológico, catalogação ou possibilidade de comercialização independente de agentes não autorizam implementação, mudança de stack, nova infraestrutura nem ampliação de escopo.
 • Em `Supervisão: Autônomo`, o handoff delega ao Executor autoridade contínua e integral para decidir e conduzir o plano até a conclusão sem nova intervenção humana rotineira, preservando a V1 aprovada e o escopo negativo; decisões de produto ou escopo fora da autoridade concedida permanecem sob decisão humana competente. A materialidade, isoladamente, não constitui bloqueio.
 
 1.5. Modelo de oferta
-• A direção do modelo de oferta é uma base simples acompanhada de serviços de IA contratáveis conforme a necessidade do cliente.
-• Cada serviço deve ter escopo e entrega claros, evitando customização técnica ilimitada por cliente.
+• A direção do modelo de oferta é uma base simples acompanhada de serviços com IA organizados em agentes, contratáveis individualmente ou em conjunto conforme a necessidade do cliente e a validação comercial.
+• Cada serviço deve ter responsabilidade, escopo, entrega e limites claros, sem customização técnica ilimitada por cliente. Nos agentes, separar a competência do contexto da empresa atendida e evitar dependências desnecessárias de telas ou jornadas; contratação individual não pressupõe execução fora da plataforma.
 • Combos podem surgir posteriormente a partir de padrões reais de contratação e operação; essa direção não altera automaticamente contratos comerciais vigentes, cuja mudança depende de recorte aprovado.
 • O modelo pode evoluir em direção a Outcome-as-a-Service quando houver resultado mensurável e atribuição suficientemente confiável, sem exigir precificação por resultado no MVP.
 
