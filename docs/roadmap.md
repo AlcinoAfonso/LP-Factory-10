@@ -1098,28 +1098,29 @@
 - Status: continuidade e regressão validadas em Preview e Production.
 - Conteúdo: manter matching e fallback de nicho, checkout, membership e entitlement intactos. O apply seletivo pós-merge deste recorte aplicou somente a migration E10.11; as migrations E10.10 continuam fora do apply e o fluxo automático integral permanece suspenso.
 
-10.12 Atendimento inicial por IA e taxonomia sob demanda
+10.12 Atendimento inicial por IA e agente vendedor
 
 10.12.1 Objetivo e status
-- Objetivo: compreender atuação, ofertas e público por atendimento inicial de IA, concluir classificação segura existente ou sob demanda e preservar contexto útil sem conceder acesso comercial.
-- Status: V1 revisada e aprovada em 07/10/2026, com V2 técnica definida e implementação em andamento; substituição funcional, aplicação e validação hospedadas ainda não concluídas. E10.9 permanece vigente até substituição segura.
-- Fase definida: `10.12.2 — Registros do recorte`, materializados somente pela execução.
+- Objetivo: compreender o negócio, as necessidades e o interesse do lead, oferecer orientação comercial pertinente aos serviços efetivamente disponíveis e concluir com próximo passo claro, preservando contexto e confirmando classificação existente quando houver correspondência segura.
+- Status: V1 funcional aprovada em 09/10/2026; adaptação técnica, validação e ativação do novo contrato ainda não concluídas. A nova V1 substitui o contrato funcional anterior de pesquisa classificatória e taxonomia sob demanda. E10.9 permanece vigente até substituição funcional segura.
+- Dependência: E10.13/PB-A disponibiliza o catálogo e a inteligência de mercado necessários antes da ativação e do QA completo.
 
 10.12.3 Atendimento, Diálogo da conta e Resumo da conta
 - Status: definido.
-- Conteúdo: IA conduz recepção, compreensão e retomada enquanto houver avanço útil, sem herdar o teto de três chamadas. Diálogo preserva histórico com conta e usuário participante identificados; Resumo permanece único por conta, compacto e contextual, sem autoridade ou versionamento funcional próprio. Fontes oficiais prevalecem sobre ambos.
+- Conteúdo: o agente adapta perguntas, orientação e conclusão enquanto houver avanço útil, sem herdar o teto de três chamadas. Diálogo preserva histórico com conta e usuário participante identificados; Resumo permanece único por conta, compacto e contextual, sem autoridade ou versionamento funcional próprio. Distinguir síntese contextual proposta pela IA, entendimento explicitamente aceito pelo lead, classificação confirmada, sugestões ou oportunidades do vendedor e ausência de identificação. Fontes oficiais prevalecem sobre ambos.
 
-10.12.4 Pesquisa seletiva e classificação
+10.12.4 Identificação pelo catálogo
 - Status: definido.
-- Conteúdo: consultar primeiro categorias e aliases ativos; equivalência segura reutiliza classificação sem pesquisa classificatória ou esclarecimento redundante. Lacuna material gera pergunta focal; Web entra quando necessária para classificação real de mercado. Evidência insuficiente mantém classificação pendente e entendimento preservado.
+- Conteúdo: consultar categorias ativas e repertório pertinente do D21, comparar semanticamente o entendimento e fazer pergunta focal quando necessário. Apresentar categoria existente ao lead; somente confirmação e validação determinística permitem alterar o vínculo oficial. Não executar pesquisa Web classificatória nem criar, ativar, reativar ou manter taxons ou aliases. Sem correspondência segura, explicitar ausência de identificação, preservar entendimento operacional e permitir continuidade comercial sem inventar classificação.
 
-10.12.5 Taxonomia sob demanda
+10.12.5 Repertório do nicho e apoio à venda
 - Status: definido.
-- Conteúdo: confirmar entendimento antes de novo cadastro, reconsultar para deduplicar e criar somente categorias reais e níveis ausentes, com pais ativos e válidos. Aliases exigem equivalência comprovada; categoria inativa não é reativada nem contornada por duplicata. Escrita atômica e determinística protege isolamento e vínculo primário diferente; sucesso só é anunciado após persistência.
+- Conteúdo: usar conteúdo de mercado efetivamente disponível do D21 para orientação pertinente, sem transformá-lo em fala obrigatória, característica declarada pelo cliente ou promessa de resultado. Apresentar serviço, condição, prazo ou disponibilidade como efetivos somente com fonte comercial vigente competente; conteúdo ilustrativo e visão estratégica não comprovam oferta. Na ausência dessa fonte, não inventar disponibilidade. D21 mantém cadastro, manutenção, pesquisa do catálogo e política global de aliases.
 
 10.12.6 Conclusão e experiência
 - Status: definido.
-- Conteúdo: preservar requisitos de conclusão E10.11, identidade, WhatsApp, histórico e fronteiras comerciais, com fechamento persuasivo breve. Falha mantém contexto útil; alteração externa impede sobrescrita e falso sucesso sem reconstruir proposta ou exigir reavaliação e nova confirmação automáticas. Não criar relacionamento operacional com a Base, sincronização de fontes oficiais, engine genérica, consumidores futuros ou continuidade assíncrona. Após conclusão correta, Pending Setup não governa mudanças posteriores da conta.
+- Conteúdo: concluir quando negócio e necessidades estiverem suficientemente compreendidos, a orientação pertinente tiver sido entregue e o próximo passo comercial estiver claro, com classificação confirmada ou ausência de identificação explicitada. Confirmar categoria não encerra automaticamente o atendimento. Preservar requisitos de conclusão E10.11, identidade, WhatsApp, histórico, acesso e fronteiras comerciais. Ausência de taxon oficial não impede continuidade comercial nem bloqueia posteriormente a Base com entendimento operacional suficiente; não concede entitlement, acesso pago, trial ou contratação.
+- Limites: D17 conserva objeções, comparação/recomendação e encaminhamento aprofundado à contratação enquanto sua absorção não for explicitamente aprovada. Não criar relacionamento operacional com a Base, sincronização de fontes oficiais, engine genérica, consumidores futuros ou continuidade assíncrona. Falha preserva contexto válido para retomada; alteração externa impede sobrescrita, duplicação e falso sucesso sem reconstruir proposta ou exigir reavaliação e nova confirmação automáticas. Após conclusão correta, Pending Setup não governa mudanças posteriores da conta.
 
 10.13 Cadastro inicial de taxonomia e inteligência de mercado
 

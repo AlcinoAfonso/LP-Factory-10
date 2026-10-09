@@ -109,9 +109,9 @@ export function PendingSetupConversation({
           </p>
           <h1
             id="pending-setup-title"
-            className="mt-2 text-2xl font-bold tracking-tight text-ink-900 sm:text-3xl"
+            className={cn("mt-2 font-bold tracking-tight text-ink-900", conversation.attendanceEnabled ? "text-xl" : "text-2xl sm:text-3xl")}
           >
-            Vamos entender seu negócio
+            {conversation.attendanceEnabled ? "Vamos entender seu negócio e suas necessidades" : "Vamos entender seu negócio"}
           </h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-graytech-600">
             Uma pergunta por vez. Você poderá revisar o entendimento antes de continuar.
@@ -127,8 +127,8 @@ export function PendingSetupConversation({
               <div
                 className={
                   message.role === "user"
-                    ? "max-w-[88%] rounded-2xl rounded-br-md bg-brand-700 px-4 py-3 text-sm leading-6 text-white sm:max-w-[75%]"
-                    : "max-w-[88%] rounded-2xl rounded-bl-md bg-surface-muted px-4 py-3 text-sm leading-6 text-ink-900 sm:max-w-[75%]"
+                    ? "max-w-[88%] rounded-2xl rounded-br-md bg-brand-700 px-4 py-3 text-sm break-words whitespace-pre-wrap leading-6 text-white sm:max-w-[75%]"
+                    : "max-w-[88%] rounded-2xl rounded-bl-md bg-surface-muted px-4 py-3 text-sm break-words whitespace-pre-wrap leading-6 text-ink-900 sm:max-w-[75%]"
                 }
               >
                 {message.content}
@@ -154,32 +154,21 @@ export function PendingSetupConversation({
         {conversation.attendanceEnabled && conversation.stage === "niche_confirmation" && conversation.attendanceProposal ? (
           <div className="space-y-3 px-5 pb-5 sm:px-8">
             <div className="text-sm leading-6 text-ink-900">
-              <p className="font-semibold">Entendimento do negócio</p>
+              <p className="font-semibold">Entendimento proposto do negócio</p>
               <p className="mt-1 whitespace-pre-wrap break-words">{conversation.businessContextText}</p>
             </div>
-            {conversation.attendanceProposal.kind === "new" ? (
+            {conversation.attendanceProposal.kind === "existing" ? (
               <div className="text-sm leading-6 text-ink-900">
                 <p className="font-semibold">Classificação proposta</p>
-                <p className="mt-1 break-words">{conversation.attendanceProposal.chain.map(node => node.name).join(" › ")}</p>
+                <p className="mt-1 break-words">{conversation.attendanceProposal.taxonName}</p>
               </div>
             ) : null}
             {conversation.attendanceProposal.kind === "operational_fallback" ? (
-              <FeedbackMessage tone="warning" className="!text-ink-900">
-                Seu negócio foi compreendido. A classificação oficial permanece pendente; você pode confirmar sua descrição para continuar.
-              </FeedbackMessage>
+              <p className="text-sm leading-6 text-ink-900">
+                Não identificamos uma categoria segura no catálogo. Podemos continuar com o entendimento do seu negócio.
+              </p>
             ) : null}
-            {conversation.attendanceProposal.sources.length ? (
-              <div className="text-sm text-graytech-600">
-                <p className="font-medium">Referências da classificação de mercado</p>
-                <ul className="mt-2 space-y-1">
-                  {conversation.attendanceProposal.sources.map((source) => (
-                    <li key={source}><a href={source} target="_blank" rel="noopener noreferrer"
-                      className="inline-flex min-h-11 items-center break-all text-brand-700 underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{new URL(source).hostname}</a></li>
-                  ))}
-                </ul>
-              </div>
-            ) : null}
-          </div>
+        </div>
         ) : null}
 
         {conversation.stage === "identity" && !conversation.attendanceEnabled ? (
@@ -267,13 +256,13 @@ export function PendingSetupConversation({
                 <FormFieldError id="business-context-error">{turnState.fieldError}</FormFieldError>
               ) : (
                 <FormFieldHint id="business-context-hint">
-                  Não inclua telefone, e-mail ou endereço. Uma frase costuma bastar.
+                  {conversation.attendanceEnabled ? "Responda à pergunta acima. Não inclua telefone, e-mail ou endereço." : "Não inclua telefone, e-mail ou endereço. Uma frase costuma bastar."}
                 </FormFieldHint>
               )}
             </FormField>
 
             <Button type="submit" disabled={isTurnPending} className={cn("mt-5 min-h-11", attendanceButtonClass)}>
-              {isTurnPending ? "Entendendo…" : "Continuar"}
+              {isTurnPending ? conversation.attendanceEnabled ? "Preparando resposta…" : "Entendendo…" : conversation.attendanceEnabled ? "Enviar resposta" : "Continuar"}
             </Button>
           </form>
         ) : null}
@@ -293,7 +282,7 @@ export function PendingSetupConversation({
             ) : null}
 
             {conversation.attendanceEnabled && conversation.attendanceProposal ? (
-              <p className="mb-3 text-sm text-ink-900">Esse entendimento descreve seu negócio?</p>
+              <p className="mb-3 text-sm text-ink-900">{conversation.attendanceProposal.kind === "existing" ? "Esse entendimento e essa categoria correspondem ao seu negócio?" : "Esse entendimento descreve seu negócio?"}</p>
             ) : null}
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
               <Button
@@ -306,8 +295,8 @@ export function PendingSetupConversation({
                 {isTurnPending
                   ? needsAttendanceProposal ? "Atendendo…" : "Confirmando…"
                   : needsAttendanceProposal ? "Retomar atendimento" : conversation.confirmationKind === "operational_fallback"
-                    ? "Usar minha descrição"
-                    : "Sim, está correto"}
+                    ? conversation.attendanceEnabled ? "Sim, confirmar entendimento" : "Usar minha descrição"
+                    : conversation.attendanceEnabled ? "Sim, confirmar entendimento e categoria" : "Sim, está correto"}
               </Button>
               {!isTerminalFallback && !needsAttendanceProposal ? (
                 <Button
@@ -318,7 +307,7 @@ export function PendingSetupConversation({
                   disabled={isTurnPending}
                   className="min-h-11"
                 >
-                  Não, quero explicar melhor
+                  {conversation.attendanceEnabled ? "Quero explicar melhor" : "Não, quero explicar melhor"}
                 </Button>
               ) : null}
             </div>
@@ -380,7 +369,7 @@ export function PendingSetupConversation({
               </FeedbackMessage>
             ) : null}
             <Button type="submit" disabled={isCompletionPending} className={cn("mt-5 min-h-11", attendanceButtonClass)}>
-              {isCompletionPending ? "Concluindo…" : "Continuar para a próxima etapa"}
+              {isCompletionPending ? "Concluindo…" : conversation.attendanceEnabled ? "Continuar para a etapa comercial" : "Continuar para a próxima etapa"}
             </Button>
           </form>
         ) : null}

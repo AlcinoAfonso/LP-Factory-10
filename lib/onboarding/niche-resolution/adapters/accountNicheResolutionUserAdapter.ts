@@ -63,6 +63,7 @@ export async function getActionableNicheResolutionForAccount(input: {
 
 export async function getConfirmedOperationalNicheResolutionLabel(input: {
   accountId: string;
+  throwOnReadError?: boolean;
 }): Promise<string | null> {
   const supabase = createServiceClient();
 
@@ -80,6 +81,7 @@ export async function getConfirmedOperationalNicheResolutionLabel(input: {
       code: (error as any)?.code,
       message: (error as any)?.message ?? String(error),
     });
+    if (input.throwOnReadError) throw new Error("operational_resolution_read_failed");
     return null;
   }
 

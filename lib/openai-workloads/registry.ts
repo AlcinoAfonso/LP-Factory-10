@@ -16,14 +16,9 @@ export const openAiWorkloadRegistry = deepFreeze([
     displayName: "Atendimento inicial por IA",
     classification: "product_runtime",
     configurationKind: "effective",
-    consumer: "Conversa inicial e classificação sob demanda do Pending Setup",
-    fallback: "Preservar contexto e deixar classificação pendente sem sucesso falso",
-    webSearch: {
-      externalWebAccess: true,
-      searchContextSize: "medium",
-      maxToolCalls: 2,
-      contextWindowTokenBudget: 128000,
-    },
+    consumer: "Atendimento inicial e orientação comercial pelo catálogo curado",
+    fallback: "Preservar entendimento e continuar sem inventar classificação ou oferta",
+    webSearch: null,
     configuration: {
       apiKind: "responses_text",
       model: "gpt-6-luna",
