@@ -61,6 +61,10 @@ async function main() {
   assert.ok(fallback);
   assert.equal(validateAttendanceOutput(pending, { ...context, currentPrimaryTaxonId: nicheId }), null);
   assert.equal(validateAttendanceOutput(pending, { ...context, confirmedOperationalUnderstanding: true }), null);
+  for (const proposed of [base, pending]) {
+    assert.equal(validateAttendanceOutput({ ...proposed, businessUnderstanding: "" }, context)?.businessUnderstanding, context.displayedUnderstanding);
+    assert.equal(validateAttendanceOutput({ ...proposed, businessUnderstanding: "" }, { ...context, displayedUnderstanding: null }), null);
+  }
   const confirm = { ...base, action: "confirm" as const, existingTaxonId: null, businessUnderstanding: "Inventado pelo modelo." };
   assert.equal(validateAttendanceOutput(confirm, context), null);
   for (const confirmedProposal of [proposal, fallback]) {
@@ -77,6 +81,10 @@ async function main() {
   assert.equal(validateAttendanceOutput(finishing, context), null);
   assert.ok(validateAttendanceOutput(finishing, { ...context, currentPrimaryTaxonId: nicheId }));
   assert.ok(validateAttendanceOutput(finishing, { ...context, confirmedOperationalUnderstanding: true }));
+  for (const authority of [{ currentPrimaryTaxonId: nicheId }, { confirmedOperationalUnderstanding: true }]) {
+    assert.equal(validateAttendanceOutput({ ...finishing, businessUnderstanding: "" }, { ...context, ...authority })?.businessUnderstanding, context.displayedUnderstanding);
+    assert.equal(validateAttendanceOutput({ ...finishing, businessUnderstanding: "" }, { ...context, ...authority, displayedUnderstanding: null }), null);
+  }
   assert.equal(validateAttendanceOutput({ ...base, preferredName: "ana@example.com" }, context), null);
   assert.equal(validateAttendanceOutput({ ...base, preferredName: "Bia" }, context), null);
   assert.ok(validateAttendanceOutput({ ...base, preferredName: "Bia" }, { ...context, recent: [{ role: "user", content: "Me chame de Bia." }] }));
@@ -100,6 +108,7 @@ async function main() {
   assert.deepEqual(evolving.suggestions, base.suggestions);
   const socialContext: AttendanceContext = { ...context, summary: remembered, recent: [{ role: "user", content: "Eu sou flamenguista." }] };
   const noBusinessNews = validateAttendanceOutput({ ...later, businessUnderstanding: "", suggestions: [], readyToComplete: false }, socialContext)!;
+  assert.equal(noBusinessNews.businessUnderstanding, "");
   const retained = attendanceSummary(noBusinessNews, "Jardinagem", null, remembered);
   assert.equal(retained, remembered); // The literal social message is never automatically imported.
   assert.equal(retained.includes("flamenguista"), false);
@@ -160,6 +169,21 @@ async function main() {
   assert.equal((await conductAttendanceTurn(input, deps)).ok, true);
   assert.deepEqual(effects, ["claim", "commit"]); // old lifetime call counter is irrelevant.
   const exactDisplayed = "Manutenção  de jardins.\n\nReferência: https://example.com";
+  for (const proposed of [base, pending, finishing]) {
+    current = { ...conversation, businessContextText: exactDisplayed };
+    assert.equal((await conductAttendanceTurn({ ...input, content: proposed.readyToComplete ? "Podemos seguir." : "Ana" }, {
+      ...deps, primary: async () => proposed.readyToComplete ? nicheId : null,
+      request: async ({ context: shown }) => ({ ok: true,
+        output: validateAttendanceOutput({ ...proposed, businessUnderstanding: "" }, shown)!, responseId: "reused", latencyMs: 1 }),
+      commit: async input => {
+        assert.equal(input.confirm, false);
+        assert.equal(input.output.businessUnderstanding, exactDisplayed);
+        assert.equal(input.proposal?.kind ?? null, proposed.readyToComplete ? null : proposed.action === "existing" ? "existing" : "operational_fallback");
+        assert.equal(JSON.parse(input.summary).confirmedUnderstanding, null);
+        return { ok: true, version: 3 };
+      },
+    })).ok, true);
+  }
   for (const acceptedProposal of [proposal, fallback]) {
     current = { ...conversation, businessContextText: exactDisplayed, attendanceProposal: acceptedProposal, stage: "niche_confirmation" };
     assert.equal((await conductAttendanceTurn({ ...input, intent: "confirm", content: "Sim, confirmo o entendimento exibido." }, {

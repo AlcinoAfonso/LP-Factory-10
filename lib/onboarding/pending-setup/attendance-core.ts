@@ -93,6 +93,8 @@ export function validateAttendanceOutput(raw: unknown, context: AttendanceContex
   const parsed = attendanceOutputSchema.safeParse(raw);
   if (!parsed.success) return null;
   const value = parsed.data;
+  if (!value.businessUnderstanding && (value.action !== "ask" || value.readyToComplete))
+    value.businessUnderstanding = context.displayedUnderstanding ?? "";
   if (value.preferredName !== null && (!validatePreferredName(value.preferredName, null).ok || value.preferredNameDeclined)) return null;
   if (context.preferredNameDeclined && !value.preferredNameDeclined && value.preferredName === null) return null;
   if (context.preferredName && value.preferredNameDeclined) return null;

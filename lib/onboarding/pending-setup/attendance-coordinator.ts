@@ -54,7 +54,8 @@ export async function conductAttendanceTurn(input: Readonly<{
     if (confirmation && (!context.confirmedProposal || !reserved.businessContextText?.trim())) throw new Error("confirmation_proposal_missing");
     const answer = await dependencies.request({ accountId: input.accountId, context });
     if (!answer.ok || (confirmation && answer.output.action !== "confirm")) throw new Error("provider_unavailable");
-    const output = confirmation ? { ...answer.output, businessUnderstanding: reserved.businessContextText! } : answer.output;
+    const output = confirmation || answer.output.businessUnderstanding === context.displayedUnderstanding
+      ? { ...answer.output, businessUnderstanding: reserved.businessContextText! } : answer.output;
     const written = await dependencies.commit({
       ...fence, output, confirm: confirmation, observedPrimaryTaxonId: currentPrimaryTaxonId,
       proposal: confirmation ? null : attendanceProposal(output, catalog),
