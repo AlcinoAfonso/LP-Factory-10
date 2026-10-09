@@ -85,19 +85,29 @@ async function main() {
   const summary = attendanceSummary(base, null, null);
   assert.match(summary, /Fatos declarados pelo lead: Faço manutenção de jardins para condomínios e quero explicar meu serviço./);
   const unsupportedFact = "Possui equipe especializada e atendimento diário.";
-  assert.equal(validateAttendanceOutput({ ...base, declaredFacts: [unsupportedFact],
-    businessUnderstanding: unsupportedFact, suggestions: [unsupportedFact] }, context), null);
-  assert.equal(validateAttendanceOutput({ ...base, declaredFacts: [unsupportedFact] }, { ...context,
+  assert.deepEqual(validateAttendanceOutput({ ...base, declaredFacts: [unsupportedFact],
+    businessUnderstanding: unsupportedFact, suggestions: [unsupportedFact] }, context)?.declaredFacts, []);
+  assert.deepEqual(validateAttendanceOutput({ ...base, declaredFacts: [unsupportedFact] }, { ...context,
     recent: [{ role: "assistant", content: unsupportedFact }],
     summary: "Fatos declarados pelo lead: Jardins.\nClassificação confirmada: Não identificada.\nSugestões e oportunidades (não são fatos do negócio): " + unsupportedFact,
-    confirmedUnderstanding: unsupportedFact }), null);
+    confirmedUnderstanding: unsupportedFact })?.declaredFacts, []);
   assert.ok(validateAttendanceOutput(base, { ...context, recent: [{ role: "user", content: "Quero continuar." }] }));
-  assert.equal(validateAttendanceOutput(base, { ...context, summary: null, recent: [] }), null);
+  assert.deepEqual(validateAttendanceOutput(base, { ...context, summary: null, recent: [] })?.declaredFacts, []);
   const negated = { ...context, summary: null, recent: [{ role: "user" as const, content: "Não ofereço consultoria." }] };
-  assert.equal(validateAttendanceOutput({ ...base, declaredFacts: ["ofereço consultoria"] }, negated), null);
+  const groundedNegative = validateAttendanceOutput({ ...base, declaredFacts: ["ofereço consultoria"] }, negated);
+  assert.deepEqual(groundedNegative?.declaredFacts, ["Não ofereço consultoria."]);
+  assert.match(attendanceSummary(groundedNegative!, null, null), /Fatos declarados pelo lead: Não ofereço consultoria/);
+  assert.deepEqual(validateAttendanceOutput({ ...base, declaredFacts: ["manutenção de jardins"] }, context)?.declaredFacts,
+    ["Faço manutenção de jardins para condomínios e quero explicar meu serviço."]);
   assert.ok(validateAttendanceOutput({ ...base, declaredFacts: ["Não ofereço consultoria."] }, negated));
-  assert.equal(validateAttendanceOutput({ ...base, declaredFacts: ["Ofereço consultoria"] }, { ...negated,
-    recent: [{ role: "user", content: "Ofereço consultoria?" }] }), null);
+  assert.deepEqual(validateAttendanceOutput({ ...base, declaredFacts: ["Ofereço consultoria"] }, { ...negated,
+    recent: [{ role: "user", content: "Ofereço consultoria?" }] })?.declaredFacts, []);
+  for (const question of ["“Ofereço consultoria?”", "Ofereço consultoria? 🙂"]) {
+    assert.deepEqual(validateAttendanceOutput({ ...base, declaredFacts: [question] }, { ...negated,
+      recent: [{ role: "user", content: question }] })?.declaredFacts, []);
+  }
+  assert.deepEqual(validateAttendanceOutput({ ...base, declaredFacts: ["ofereço consultoria"] }, { ...negated,
+    recent: [{ role: "user", content: "Não ofereço consultoria. Talvez ofereço consultoria futuramente." }] })?.declaredFacts, []);
   const retained = attendanceSummary({ ...base, declaredFacts: [] }, null, null, context.summary);
   assert.match(retained, /Faço manutenção de jardins para condomínios/);
   assert.ok(validateAttendanceOutput(base, { ...context, summary: retained, recent: [] }));

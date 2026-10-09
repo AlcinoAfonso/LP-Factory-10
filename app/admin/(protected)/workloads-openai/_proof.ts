@@ -266,7 +266,7 @@ async function proveAttendance(
       providerRequestId = result.responseId;
       if (turn === 0) {
         if (output.action !== (identified ? "existing" : "pending") ||
-          (identified && output.existingTaxonId !== nicheId) || output.readyToComplete) return { ok: false, code: "contract" };
+          (identified && output.existingTaxonId !== nicheId) || !output.declaredFacts.length || output.readyToComplete) return { ok: false, code: "contract" };
         context = { ...context, confirmedProposal: attendanceProposal(output, catalog),
           confirmedUnderstanding: output.businessUnderstanding,
           summary: attendanceSummary(output, null, null, context.summary),

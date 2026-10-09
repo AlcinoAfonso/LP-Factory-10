@@ -2,7 +2,7 @@ import { z } from "zod";
 import { redactPotentialContactDetails, validatePreferredName } from "./policy";
 import type { PendingSetupConversation } from "./contracts";
 
-export const ATTENDANCE_PROMPT_VERSION = "e10_12_sales_context_v5";
+export const ATTENDANCE_PROMPT_VERSION = "e10_12_sales_context_v6";
 export const ATTENDANCE_CONTRACT_VERSION = 2;
 export const ATTENDANCE_LEASE_SECONDS = 360;
 
@@ -91,11 +91,17 @@ export function validateAttendanceOutput(raw: unknown, context: AttendanceContex
   const parsed = attendanceOutputSchema.safeParse(raw);
   if (!parsed.success) return null;
   const value = parsed.data;
-  const factualSources = [...context.recent.filter(message => message.role === "user")
+  const factualSources = [...new Map([...context.recent.filter(message => message.role === "user")
     .flatMap(message => message.content.split(/(?<=[.!?;])\s+|\n+/u)), ...summaryFacts(context.summary)]
-    .filter(sentence => !sentence.trim().endsWith("?"))
-    .map(normalizedFact);
-  if (value.declaredFacts.some(fact => !factualSources.includes(normalizedFact(fact)))) return null;
+    .filter(sentence => !sentence.includes("?") && sentence.trim().length <= 500)
+    .map(sentence => [normalizedFact(sentence), sentence.trim()])).values()];
+  const groundedFacts: string[] = [];
+  for (const fact of value.declaredFacts) {
+    const matches = factualSources.filter(sentence => normalizedFact(sentence).includes(normalizedFact(fact)));
+    if (matches.length !== 1) continue; // An ungrounded entry never becomes a declared fact.
+    groundedFacts.push(matches[0]); // Persist the whole source, including negation and conditions, never the model's fragment.
+  }
+  value.declaredFacts = groundedFacts;
   if (value.preferredName !== null && (!validatePreferredName(value.preferredName, null).ok || value.preferredNameDeclined)) return null;
   if (context.preferredNameDeclined && !value.preferredNameDeclined && value.preferredName === null) return null;
   if (context.preferredName && value.preferredNameDeclined) return null;
