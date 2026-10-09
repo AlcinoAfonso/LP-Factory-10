@@ -269,7 +269,7 @@ async function proveAttendance(
           (identified && output.existingTaxonId !== nicheId) || output.readyToComplete) return { ok: false, code: "contract" };
         context = { ...context, confirmedProposal: attendanceProposal(output, catalog),
           confirmedUnderstanding: output.businessUnderstanding,
-          summary: attendanceSummary(output, null, null),
+          summary: attendanceSummary(output, null, null, context.summary),
           recent: [...context.recent, { role: "assistant", content: output.reply },
             { role: "user", content: "Sim, confirmo. Ainda quero entender como apresentar meu serviço." }] };
       } else if (turn === 1) {
@@ -277,7 +277,7 @@ async function proveAttendance(
         context = { ...context, confirmedProposal: null,
           currentPrimaryTaxonId: identified ? nicheId : null,
           confirmedOperationalUnderstanding: !identified,
-          summary: attendanceSummary(output, identified ? "Manutenção de jardins" : null, context.confirmedProposal ?? null),
+          summary: attendanceSummary(output, identified ? "Manutenção de jardins" : null, context.confirmedProposal ?? null, context.summary),
           recent: [...context.recent, { role: "assistant", content: output.reply },
             { role: "user", content: "Minha necessidade é apresentar claramente meu serviço ao público informado. A orientação de organizar o conhecimento e apoiar a comunicação já me ajudou. Entendi que serviços, preços e prazos específicos precisam de confirmação. Não tenho mais dúvidas; quero seguir à etapa comercial." }] };
       } else if (output.action !== "ask" || !output.readyToComplete || !output.sufficientUnderstanding) {

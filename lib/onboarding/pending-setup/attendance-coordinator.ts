@@ -60,7 +60,7 @@ export async function conductAttendanceTurn(input: Readonly<{
       summary: confirmation ? context.summary?.replace(/^Classificação confirmada:.*$/m,
         "Classificação confirmada: " + (context.confirmedProposal?.taxonName ?? "Não identificada."))
         ?? attendanceSummary(answer.output, null, context.confirmedProposal)
-        : attendanceSummary(answer.output, catalog.find(taxon => taxon.id === currentPrimaryTaxonId)?.name ?? null, null),
+        : attendanceSummary(answer.output, catalog.find(taxon => taxon.id === currentPrimaryTaxonId)?.name ?? null, null, context.summary),
     });
     if (!written.ok) {
       if (written.reason === "primary_conflict" || (confirmation && written.reason === "invalid")) {
