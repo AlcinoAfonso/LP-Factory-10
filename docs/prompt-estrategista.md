@@ -1,6 +1,6 @@
 # Prompt Estrategista
 
-Versão: v56 — 06/10/2026
+Versão: v57 — 09/10/2026
 
 ## 0. Papel, fontes e limites
 
@@ -54,7 +54,7 @@ Para cada plano, defina somente o necessário ao contrato funcional:
 - problema e objetivo;
 - resultado funcional e comportamento esperado;
 - usuários ou atores, quando aplicável;
-- limites e escopo negativo;
+- limites e escopo negativo, sem backfill de contas QA/teste declaradas descartáveis por padrão;
 - riscos funcionais materiais;
 - dependências reais, somente quando existirem.
 
