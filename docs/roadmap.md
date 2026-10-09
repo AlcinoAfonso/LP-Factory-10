@@ -1,8 +1,8 @@
 0. Introdução
 
 0.1 Cabeçalho
-• Data: 01/10/2026
-• Versão: v1.5.253
+• Data: 09/10/2026
+• Versão: v1.5.254
 
 0.2 Contrato do documento (consulta)
 • Esta seção define o objetivo do documento e quando/como a IA deve consultá-lo.
@@ -1125,10 +1125,22 @@
 
 10.13.1 Objetivo e status
 - Objetivo: reconciliar integralmente o Nichos.zip e a pasta original com o catálogo compartilhado, cadastrar e ativar somente segmentos e nichos válidos e ausentes e disponibilizar a inteligência de mercado aproveitável pelas estruturas existentes.
-- Status: V1 aprovada em 09/10/2026 e V2 técnica consolidada; execução em preparação sob Supervisão Autônomo, sem carga ou disponibilidade comprovadas. O recorte preserva E10.5 e E10.12 e não depende de PB-B.
+- Status: carga inicial e disponibilidade operacional concluídas, com QA aprovado sob Supervisão Autônomo. O recorte preserva E10.5 e E10.12 e não depende de PB-B.
+
+10.13.2 Registros do recorte
+- Banco:
+  - Ajustados:
+    - `public.business_taxons`
+    - `public.taxon_market_research`
+    - `public.taxon_market_research_items`
+- Repositório:
+  - Criados:
+    - `supabase/snippets/e10_13_source_inventory.csv`
+    - `supabase/snippets/e10_13_initial_catalog.sql`
+    - `supabase/snippets/e10_13_initial_catalog_verify.sql`
 
 10.13.3 Reconciliação e carga da taxonomia
-- Status: definido; implementação pendente.
+- Status: concluído e verificado; inventário de 150 ocorrências em 11 PDFs, com inserção de nove segmentos e 63 nichos ativos. Registros preexistentes e 22 aliases preservados; cinco ocorrências de quatro rótulos ambíguos permanecem justificadamente pendentes, sem impedir o aceite previsto na V1.
 - Conteúdo:
   - inventariar todas as entradas do acervo e justificar cada destino como reutilizado, nova categoria, especialização/contexto, duplicado ou pendente, sem cota de nichos;
   - confrontar o catálogo completo, incluindo aliases e categorias inativas, reutilizando a hierarquia e inserindo apenas segmentos e nichos semanticamente seguros e ausentes, com pais ativos e válidos;
@@ -1136,7 +1148,7 @@
   - preservar registros existentes, abortar integralmente colisões ou concorrência e comprovar hierarquia, estados e ausência de duplicações por comparação antes/depois e leitura separada após a escrita; ambiguidades permanecem justificadas sem bloquear os itens seguros.
 
 10.13.4 Adaptação e disponibilidade do conteúdo
-- Status: definido; implementação pendente.
+- Status: concluído e verificado; 60 pesquisas e 243 itens de inteligência de mercado persistidos, com leitura autorizada independente após o COMMIT e amostras representativas conferidas. Fontes, períodos, caráter histórico e limitações identificados; 24 pesquisas e 379 itens preexistentes preservados. Oito novos nichos sem pesquisa específica e as limitações dos conteúdos permanecem identificados para PB-B, sem iniciar sua execução.
 - Conteúdo:
   - adaptar o material aproveitável ao taxon correto, com panorama, tendências, maturidade digital pertinente, oportunidades de comunicação e diferenciação condicional, sem tamanho uniforme ou pesquisa extensa por nicho;
   - distinguir fontes, períodos, dados históricos, incertezas e limitações; indicadores exigem fonte e período, e hipóteses não podem ser atribuídas à empresa;
