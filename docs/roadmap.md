@@ -2256,6 +2256,7 @@
   - `commercial_activation_draft_generation`;
   - `communication_base_stage1_assistance`;
   - `communication_base_stage2_intelligence`;
+  - `pending_setup_conversation`;
 - `supabase_inspect` permanece referência operacional externa, sem ser aceito pelo resolver de produto.
 - O resolver de workloads de produto aceita somente `responses_text` e rejeita identidade, modalidade ou ambiente desconhecidos; a modalidade de imagem permanece apenas no catálogo independente de modelos.
 - Development usa o baseline versionado no repositório. Preview e Production podem resolver a revisão ativa do Supabase pelo gate operacional da E21.2, sem fallback silencioso quando esse gate está ligado.

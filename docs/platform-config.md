@@ -45,7 +45,7 @@
 • `MAILBOX_PASSWORD`: senha/app password da mailbox preservada para o futuro Operador Institucional Autônomo de QA da E17.9.3; sem consumidor operacional vigente após a E22.6.
 • `SUPABASE_ACCESS_TOKEN`: token usado pelo workflow de apply de migrations Supabase.
 • `SUPABASE_DB_PASSWORD`: senha do banco usada pelo workflow de apply de migrations Supabase.
-• `SUPABASE_APPLY_MIGRATIONS_ENABLED`: variável de repositório usada como gate operacional; valor reconfirmado no GitHub em 05/10/2026 após o apply E23.5: `false`.
+• `SUPABASE_APPLY_MIGRATIONS_ENABLED`: variável de repositório usada como gate operacional; valor reconfirmado no GitHub em 09/10/2026 após os applies E10.12: `false`.
 • Regra: valores reais de secrets não devem ser versionados.
 • Regra: secrets de mailbox devem existir apenas nos escopos necessários dos workflows que os consomem.
 • Regra: `SUPABASE_DB_URL_READONLY` deve autenticar com role/usuário read-only e usar preferencialmente session pooler.
@@ -67,6 +67,7 @@
 • Escopo seletivo E22.7 `e22_7_only` mergeado e aplicado com sucesso na `main` no SHA `362842f41fc9ee1c11315565d7647b1c61b51058`; exige SHA exato, inventário de 62 migrations, exclui as duas migrations E10.10 e preserva o gate fechado e o dry-run. Somente `supabase/migrations/20261001030000_e22_7_retire_factual_authority.sql` foi aplicada; o ledger avançou de 59 para 60 e `SUPABASE_APPLY_MIGRATIONS_ENABLED` foi restaurado a `false`.
 • Novas migrations seguem PR e merge autorizados conforme `AGENTS.md`; `workflow_dispatch` permanece excepcional e cada apply exige decisão operacional própria. O fluxo automático integral segue suspenso até resolução separada de E10.10 ou revisão explícita do filtro canônico.
 • Escopo seletivo E23.5 `e23_5_only` concluído no SHA de merge `a220a39e94759c471fdb679dc11909203748bc13`, pelo run [37406266349](https://github.com/AlcinoAfonso/LP-Factory-10/actions/runs/37406266349). Inventário fechado de 63 migrations e staging de 61, com as duas E10.10 excluídas; o dry-run e o apply incluíram somente `20261005170954_e23_5_retire_unused_graphql.sql`. Ledger final: 61; gate restaurado a `false`.
+• Escopo seletivo E10.12 `e10_12_only`: migration `20261007153217_e10_12_account_context_attendance.sql` aplicada, seguida de `20261009171607_e10_12_sales_attendance.sql` pelo run [37988035081](https://github.com/AlcinoAfonso/LP-Factory-10/actions/runs/37988035081) no merge `6c4906ab8676f9e7543b45bc52d19cf1f28be777` e de `20261009204000_e10_12_restrict_attendance_commit_acl.sql` pelo run [37989176683](https://github.com/AlcinoAfonso/LP-Factory-10/actions/runs/37989176683) no merge `d6f80293583ee12717e1e2d87d55ae0dc5a2e5a6`. Inventário final de 66 migrations, staging/ledger de 64, duas E10.10 excluídas e gate restaurado a `false`; sem backfill histórico.
 • Regra: não usar SQL Editor para alterações de schema no fluxo normal.
 • Regra: migration aplicada não pode ser editada, apagada, renomeada ou substituída; correções e reversões exigem nova migration.
 • Com o gate fechado, um passo separado sem secrets registra `skipped`; a CLI não é instalada e `supabase link` e `supabase db push` não são executados.

@@ -632,7 +632,7 @@
 • Trigger Hub: não; somente evento app-level sanitizado de conclusão.
 • RLS ativo, sem policies; acesso direto revogado de public, anon, authenticated e ai_readonly.
 • service_role: SELECT, INSERT e UPDATE.
-• Migrations: `20260920223653_e10_9_pending_setup_conversation.sql`, `20260921170115_e10_9_pending_setup_openai_call_counter.sql` e `20260928161504_e10_11_pending_setup_business_name.sql`; a migration E10.11 foi aplicada uma vez pelo escopo seletivo autorizado.
+• Migrations aplicadas: `20260920223653_e10_9_pending_setup_conversation.sql`, `20260921170115_e10_9_pending_setup_openai_call_counter.sql`, `20260928161504_e10_11_pending_setup_business_name.sql` e `20261007153217_e10_12_account_context_attendance.sql`; esta última acrescenta os campos e constraints do atendimento conversacional.
 
 1.19B account_pending_setup_messages
 
