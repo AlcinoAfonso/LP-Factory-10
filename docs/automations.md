@@ -203,7 +203,7 @@ Objetivo:
 Aplicar migrations versionadas do Supabase após merge e autorização, sem usar o SQL Editor para alterações de schema. O apply automático integral está suspenso durante o backlog E10.10.
 
 Status:
-Implementada; os applies seletivos E25.1, E10.11, E22.7 e E23.5 foram concluídos sob autorizações próprias. O escopo `e23_5_only` aplicou somente a migration E23.5 após merge e dry-run seletivo, com gate restaurado a `false`; SHA, run e ledger final constam em `docs/platform-config.md` — seção 2.3. As duas migrations E10.10 permanecem excluídas; o fluxo automático integral permanece suspenso.
+Implementada; os applies seletivos E25.1, E10.11, E22.7, E23.5 e E10.12 foram concluídos sob autorizações próprias. Os escopos `e23_5_only` e `e10_12_only` aplicaram somente suas migrations autorizadas após merge com SHA exato e dry-run seletivo, com gate restaurado a `false`; SHAs, runs e ledger final constam em `docs/platform-config.md` — seção 2.3. As duas migrations E10.10 permanecem excluídas; o fluxo automático integral permanece suspenso.
 
 Acesso:
 GitHub → Actions → workflow `pipeline-supabase-apply-migrations`
@@ -292,7 +292,7 @@ Objetivo:
 Compreender o negócio e as necessidades do lead, oferecer orientação comercial pertinente aos serviços comprovadamente disponíveis, confirmar classificação existente quando segura e consolidar contexto útil para continuidade comercial.
 
 Status:
-Aprovada; implementação e validações em andamento, sem ativação hospedada comprovada. O fluxo vigente permanece operacional até substituição segura.
+Implementada e ativa em Preview e Production após apply seletivo, provas E21 independentes e QA autenticado aprovados; PRs #1050 e #1053. Conversas legadas permanecem preservadas, sem backfill ou conversão histórica.
 
 Modo de uso e consumidores:
 Pending Setup da conta, server-side, após autorização do owner e reserva do turno. O lead confirma a categoria existente proposta ou o entendimento operacional quando não houver correspondência segura. Confirmar classificação não encerra automaticamente o atendimento.
