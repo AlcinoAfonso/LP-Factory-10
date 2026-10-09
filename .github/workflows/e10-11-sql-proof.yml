@@ -9,6 +9,7 @@ on:
       - 'supabase/tests/e10_12_initial_attendance.*'
       - 'supabase/tests/e10_12_sales_attendance.*'
       - 'supabase/migrations/20261009171607_e10_12_sales_attendance.sql'
+      - 'supabase/migrations/20261009204000_e10_12_restrict_attendance_commit_acl.sql'
       - 'supabase/tests/e10_11_pending_setup_business_name.test.sql'
       - 'supabase/migrations/20261001030000_e22_7_retire_factual_authority.sql'
       - 'supabase/tests/e22_7_retire_factual_authority.*'
@@ -202,7 +203,7 @@ jobs:
 
   e10-12-sql-proof:
     name: E10.12 PostgreSQL 17 proof
-    if: ${{ github.event.pull_request.head.repo.full_name == github.repository && (github.event.pull_request.head.ref == 'codex-app/e10-12-contexto-conta' || github.event.pull_request.head.ref == 'codex-app/e10-12-correcao-apply' || github.event.pull_request.head.ref == 'codex-app/e10-12-agente-vendedor') }}
+    if: ${{ github.event.pull_request.head.repo.full_name == github.repository && (github.event.pull_request.head.ref == 'codex-app/e10-12-contexto-conta' || github.event.pull_request.head.ref == 'codex-app/e10-12-correcao-apply' || github.event.pull_request.head.ref == 'codex-app/e10-12-agente-vendedor' || github.event.pull_request.head.ref == 'codex-app/e10-12-rpc-acl') }}
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
@@ -265,9 +266,15 @@ jobs:
               tail -n 60 "$RUNNER_TEMP/e10-12-test.log"; exit 1;
             }
           grep -qx 'ROLLBACK' "$RUNNER_TEMP/e10-12-test.log"
-          # Applied historical contract remains immutable; revised V1 starts with this incremental delta.
+          # Reproduce the hosted default privilege that the incremental RPC inherited.
+          docker exec -i "$db_container" psql -U postgres -d postgres -v ON_ERROR_STOP=1 \
+            -c "create role ai_readonly; alter default privileges for role postgres in schema public grant execute on functions to ai_readonly;"
+          # Applied migrations remain immutable; the ACL correction is forward-only.
           docker exec -i "$db_container" psql -U postgres -d postgres -v ON_ERROR_STOP=1 \
             < supabase/migrations/20261009171607_e10_12_sales_attendance.sql
+          test "$(docker exec "$db_container" psql -U postgres -d postgres -At -c "select has_function_privilege('ai_readonly','public.commit_account_pending_setup_turn_v3(uuid,uuid,uuid,bigint,uuid,text,text,text,text,text,jsonb,boolean,boolean,uuid)','execute')")" = t
+          docker exec -i "$db_container" psql -U postgres -d postgres -v ON_ERROR_STOP=1 \
+            < supabase/migrations/20261009204000_e10_12_restrict_attendance_commit_acl.sql
           docker exec -i "$db_container" psql -U postgres -d postgres -v ON_ERROR_STOP=1 \
             < supabase/tests/e10_12_sales_attendance.test.sql > "$RUNNER_TEMP/e10-12-sales-test.log" 2>&1 || {
               tail -n 70 "$RUNNER_TEMP/e10-12-sales-test.log"; exit 1;

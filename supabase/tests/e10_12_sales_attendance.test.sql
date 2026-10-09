@@ -18,6 +18,9 @@ select pg_temp.assert_true(not has_function_privilege('authenticated',
  and not has_function_privilege('anon',
  'public.commit_account_pending_setup_turn_v3(uuid,uuid,uuid,bigint,uuid,text,text,text,text,text,jsonb,boolean,boolean,uuid)','execute')
  and not has_function_privilege('service_role','public.effect_pending_setup_taxonomy_v1(uuid,jsonb,boolean,text)','execute'),'no fence bypass');
+select pg_temp.assert_true(not has_function_privilege('ai_readonly',
+ 'public.commit_account_pending_setup_turn_v3(uuid,uuid,uuid,bigint,uuid,text,text,text,text,text,jsonb,boolean,boolean,uuid)','execute'),
+ 'operational read role cannot commit even with hosted default EXECUTE grants');
 select pg_temp.assert_true(not exists(select 1 from public.account_dialogues)
  and not exists(select 1 from public.account_context_summaries),'no historical conversion');
 select pg_temp.assert_true((select stage='completed' and version=7 and preferred_name is null
