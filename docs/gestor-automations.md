@@ -12,7 +12,7 @@ Deve começar pela alternativa mais simples, preservar a stack e os contratos ap
 
 ### 2.1 Natureza da solução
 
-Todo parecer deve classificar o caso em uma das seguintes naturezas:
+Todo parecer deve classificar o caso em uma das seguintes naturezas. Para agentes de produto, usar a identidade funcional/comercial definida no README.md sem transformar cada prompt, chamada ou workload em agente. Essa identidade não cria quinta natureza nem exige, por si só, autonomia adicional, SDK ou coordenação multiagente.
 
 #### 2.1.1 Não automatizar
 
@@ -64,17 +64,17 @@ A natureza da solução e o ambiente de execução são dimensões diferentes. T
 
 ## 3. Regra obrigatória de avaliação
 
-* Confirmar o problema real, o recorte, as fontes do projeto e a evidência disponível.
+* Confirmar o problema real, o recorte, as fontes do projeto e a evidência disponível; para agente de produto, conferir no recorte funcional tarefa, entrega, contexto autorizado, ações e limites de leitura/escrita e critérios de conclusão e qualidade.
 * Comparar as quatro naturezas da seção 2 e escolher uma única classificação.
 * Identificar o ambiente principal de execução e, quando aplicável, ambientes ou plataformas dependentes.
 * Começar por não automatizar ou por solução determinística sem OpenAI.
 * Usar IA somente onde interpretação, geração, classificação, extração, revisão ou estruturação trouxer benefício comprovável.
 * Considerar comportamento agentic somente quando decisão adaptativa, coordenação de ferramentas ou revisão dinâmica forem realmente necessárias.
 * Separar o que pertence à IA do que deve permanecer determinístico no LP Factory.
-* Avaliar benefício, custo, complexidade, risco, segurança, observabilidade, manutenção e adequação ao MVP.
+* Avaliar benefício, qualidade da entrega, latência, custo, complexidade, risco, segurança, observabilidade, manutenção e adequação ao MVP.
 * Preferir a solução mais simples, segura, mensurável, reversível e compatível com a stack aprovada.
 * Definir a participação humana aplicável: autorização de implementação ou ativação, gatilho humano, revisão do resultado ou aprovação por execução. Não exigir intervenção durante a execução quando o contrato aprovado permitir operação autônoma segura.
-* Definir fallback e distinguir falha técnica de ausência de informação.
+* Definir fallback e distinguir falha técnica de ausência de informação; nos agentes de produto, explicitar retomada e preservação do contexto pertinente quando aplicáveis.
 * A existência de recurso novo não autoriza implementação.
 * Preserve limites econômicos explícitos do contrato recebido. Sem limite mais restritivo, consumo variável necessário de provedores e recursos já autorizados, inclusive testes e validações proporcionais, é custo normal de runtime. Custo desconhecido exige investigação factual. Novo compromisso econômico não autorizado — contratação, upgrade, novo recurso pago ou consumo materialmente fora do uso normal — exige decisão material antes de `adotar agora` ou produzir patch.
 
@@ -107,7 +107,7 @@ Cada parecer deve ser curto, decisório e declarar:
 * Classificação: uma das quatro naturezas da seção 2.
 * Ambiente principal e, quando aplicável, ambientes ou plataformas dependentes.
 * OpenAI: sim, não ou condicional.
-* Solução mínima recomendada e divisão entre processamento determinístico, IA e participação humana.
+* Solução mínima recomendada e divisão entre processamento determinístico, IA e participação humana; para agente de produto, registrar aderência ao contrato funcional avaliado na seção 3, sem duplicá-lo.
 * Benefício esperado, custo, complexidade, riscos, segurança, observabilidade, manutenção e fallback; quando houver implementação recomendada, evidência de aderência ao limite econômico aplicável.
 * Recursos OpenAI materialmente relevantes avaliados, com decisão de adotar agora, rejeitar para o caso, não aplicável ou requer decisão adicional.
 * Prompt de runtime, quando aplicável: templates consultados, resultado da verificação de conformidade, exceções ou pendências materiais e validação representativa; o parecer não precisa conter o prompt final salvo quando isso fizer parte explícita do escopo.
@@ -128,5 +128,5 @@ O parecer não autoriza implementação por si só.
 * Variáveis, modelos configurados, secrets por nome, ambientes e configuração operacional → `docs/platform-config.md`.
 * Contratos técnicos, implementação, validação e guardrails estáveis → `docs/base-tecnica.md`.
 * OpenAI Docs skill, OpenAI Developers plugin e outros recursos do ambiente Codex → `docs/gestor-codex.md`.
-* Funcionalidade visível ao cliente → gestor de produto ou `docs/roadmap.md`.
+* Funcionalidade visível ao cliente, incluindo o contrato funcional de cada agente de produto → gestor de produto ou `docs/roadmap.md`.
 * Caso híbrido → registrar cada parte no documento correspondente, com referências cruzadas curtas e sem duplicação.
