@@ -51,14 +51,15 @@ export async function conductAttendanceTurn(input: Readonly<{
     const context = { ...attendanceProjection(reserved, catalog), marketContext,
       confirmedOperationalUnderstanding: Boolean(operational),
       confirmedProposal: confirmation ? reserved.attendanceProposal ?? null : null, currentPrimaryTaxonId };
-    if (confirmation && !context.confirmedProposal) throw new Error("confirmation_proposal_missing");
+    if (confirmation && (!context.confirmedProposal || !reserved.businessContextText?.trim())) throw new Error("confirmation_proposal_missing");
     const answer = await dependencies.request({ accountId: input.accountId, context });
     if (!answer.ok || (confirmation && answer.output.action !== "confirm")) throw new Error("provider_unavailable");
+    const output = confirmation ? { ...answer.output, businessUnderstanding: reserved.businessContextText! } : answer.output;
     const written = await dependencies.commit({
-      ...fence, output: answer.output, confirm: confirmation, observedPrimaryTaxonId: currentPrimaryTaxonId,
-      proposal: confirmation ? null : attendanceProposal(answer.output, catalog),
-      summary: attendanceSummary(answer.output, catalog.find(taxon => taxon.id === currentPrimaryTaxonId)?.name ?? null,
-        context.confirmedProposal, context.summary),
+      ...fence, output, confirm: confirmation, observedPrimaryTaxonId: currentPrimaryTaxonId,
+      proposal: confirmation ? null : attendanceProposal(output, catalog),
+      summary: attendanceSummary(output, catalog.find(taxon => taxon.id === currentPrimaryTaxonId)?.name ?? null,
+        context.confirmedProposal, reserved.accountContext.summary),
     });
     if (!written.ok) {
       if (written.reason === "primary_conflict" || (confirmation && written.reason === "invalid")) {

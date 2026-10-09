@@ -122,6 +122,12 @@ async function main() {
   }
   assert.equal(attendanceProjection(conversation, context.catalog).displayedUnderstanding, conversation.businessContextText);
   assert.equal(JSON.stringify(attendanceProjection(conversation, context.catalog)).includes("ana@example.com"), false);
+  const urlSummary = JSON.stringify({ ...draft, confirmedUnderstanding: "Atendo em https://example.com", suggestions: ["Conheça https://example.com"] });
+  const projected = attendanceProjection({ ...conversation, accountContext: { summary: urlSummary, updatedAt: conversation.updatedAt } }, context.catalog);
+  assert.equal(projected.summary?.includes("https://"), false);
+  assert.equal(JSON.parse(projected.summary!).classification, draft.classification);
+  assert.equal(JSON.parse(projected.summary!).suggestions.length, 1);
+  assert.equal(JSON.parse(attendanceSummary(noBusinessNews, null, null, urlSummary)).confirmedUnderstanding, JSON.parse(urlSummary).confirmedUnderstanding);
   assert.deepEqual(catalogAdapter.projectAttendanceMarketContext([], []), []);
   const market = catalogAdapter.projectAttendanceMarketContext([{ id: accountId, taxon_id: nicheId, updated_at: "2026-06-01" }],
     [{ research_id: accountId, item_key: "limitation", item_text: "Pesquisa histórica; validar aplicabilidade.", notes: "Período 2024." }]);
@@ -153,18 +159,20 @@ async function main() {
   const input = { accountId, userId: accountId, conversationId: accountId, expectedVersion: 1, content: "Jardins", intent: "message" as const };
   assert.equal((await conductAttendanceTurn(input, deps)).ok, true);
   assert.deepEqual(effects, ["claim", "commit"]); // old lifetime call counter is irrelevant.
+  const exactDisplayed = "Manutenção  de jardins.\n\nReferência: https://example.com";
   for (const acceptedProposal of [proposal, fallback]) {
-    current = { ...conversation, attendanceProposal: acceptedProposal, stage: "niche_confirmation" };
+    current = { ...conversation, businessContextText: exactDisplayed, attendanceProposal: acceptedProposal, stage: "niche_confirmation" };
     assert.equal((await conductAttendanceTurn({ ...input, intent: "confirm", content: "Sim, confirmo o entendimento exibido." }, {
       ...deps,
       request: async ({ context: shown }) => {
-        assert.equal(shown.displayedUnderstanding, conversation.businessContextText);
+        assert.equal(shown.displayedUnderstanding?.includes("\n"), false);
+        assert.equal(shown.displayedUnderstanding?.includes("https://"), false);
         return { ok: true, output: validateAttendanceOutput(confirm, shown)!, responseId: "accepted", latencyMs: 1 };
       },
       commit: async input => {
         assert.equal(input.confirm, true); assert.equal(input.proposal, null);
-        assert.equal(input.output.businessUnderstanding, conversation.businessContextText);
-        assert.equal(JSON.parse(input.summary).confirmedUnderstanding, conversation.businessContextText);
+        assert.equal(input.output.businessUnderstanding, exactDisplayed);
+        assert.equal(JSON.parse(input.summary).confirmedUnderstanding, exactDisplayed);
         return { ok: true, version: 3 };
       },
     })).ok, true);

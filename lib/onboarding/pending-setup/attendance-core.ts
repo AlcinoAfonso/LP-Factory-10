@@ -64,9 +64,12 @@ export function attendancePrompt(context: AttendanceContext) {
   return { instructions: ATTENDANCE_INSTRUCTIONS, input: JSON.stringify({ data: context }), schema };
 }
 export function attendanceProjection(conversation: PendingSetupConversation, catalog: readonly AttendanceTaxon[]): AttendanceContext {
+  const summary = readAccountSummary(conversation.accountContext?.summary);
+  const projectedSummary = summary ? Object.fromEntries(Object.entries(summary).map(([key, value]) =>
+    [key, Array.isArray(value) ? value.map(redactPotentialContactDetails) : value === null ? null : redactPotentialContactDetails(value)])) : null;
   return {
     preferredName: conversation.preferredName, preferredNameDeclined: conversation.preferredNameDeclined ?? false,
-    summary: conversation.accountContext?.summary ? redactPotentialContactDetails(conversation.accountContext.summary) : null,
+    summary: projectedSummary ? JSON.stringify(projectedSummary) : null,
     publicName: conversation.businessDisplayName,
     displayedUnderstanding: conversation.businessContextText ? redactPotentialContactDetails(conversation.businessContextText) : null,
     recent: conversation.messages.slice(-8).map(({ role, content }) => ({
@@ -131,13 +134,15 @@ const accountSummarySchema = z.object({
   classification: z.string().max(120),
   suggestions: attendanceOutputSchema.shape.suggestions,
 }).strict();
+function readAccountSummary(raw: string | null | undefined) {
+  try {
+    const parsed = accountSummarySchema.safeParse(JSON.parse(raw ?? "null"));
+    return parsed.success && raw && raw.length <= 4000 ? parsed.data : null;
+  } catch { return null; } // Invalid memory never promotes an interpretation to confirmed.
+}
 export function attendanceSummary(output: AttendanceOutput, primary: string | null, proposal: AttendanceProposal | null | undefined,
   priorSummary?: string | null): string {
-  let prior: z.infer<typeof accountSummarySchema> | null = null;
-  try {
-    const parsed = accountSummarySchema.safeParse(JSON.parse(priorSummary ?? "null"));
-    if (parsed.success && priorSummary && priorSummary.length <= 4000) prior = parsed.data;
-  } catch { /* A malformed memory never promotes an interpretation to confirmed. */ }
+  const prior = readAccountSummary(priorSummary);
   const summary = {
     contextualUnderstanding: output.businessUnderstanding || prior?.contextualUnderstanding || null,
     confirmedUnderstanding: output.action === "confirm" ? output.businessUnderstanding : prior?.confirmedUnderstanding ?? null,
