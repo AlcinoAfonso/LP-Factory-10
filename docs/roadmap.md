@@ -1138,6 +1138,9 @@
     - `supabase/snippets/e10_13_source_inventory.csv`
     - `supabase/snippets/e10_13_initial_catalog.sql`
     - `supabase/snippets/e10_13_initial_catalog_verify.sql`
+    - `supabase/snippets/e10_13_editorial_correction.sql`
+    - `supabase/snippets/e10_13_editorial_correction_verify.sql`
+    - `supabase/snippets/e10_13_editorial_review.md`
 
 10.13.3 Reconciliação e carga da taxonomia
 - Status: concluído e verificado; inventário de 150 ocorrências em 11 PDFs, com inserção de nove segmentos e 63 nichos ativos. Registros preexistentes e 22 aliases preservados; cinco ocorrências de quatro rótulos ambíguos permanecem justificadamente pendentes, sem impedir o aceite previsto na V1.
@@ -1148,7 +1151,7 @@
   - preservar registros existentes, abortar integralmente colisões ou concorrência e comprovar hierarquia, estados e ausência de duplicações por comparação antes/depois e leitura separada após a escrita; ambiguidades permanecem justificadas sem bloquear os itens seguros.
 
 10.13.4 Adaptação e disponibilidade do conteúdo
-- Status: concluído e verificado; 60 pesquisas e 243 itens de inteligência de mercado persistidos, com leitura autorizada independente após o COMMIT e amostras representativas conferidas. Fontes, períodos, caráter histórico e limitações identificados; 24 pesquisas e 379 itens preexistentes preservados. Oito novos nichos sem pesquisa específica e as limitações dos conteúdos permanecem identificados para PB-B, sem iniciar sua execução.
+- Status: concluído e verificado; 60 pesquisas e 243 itens de inteligência de mercado persistidos. A correção editorial posterior confrontou os 60 nichos com os PDFs e recuperou conhecimento comercial em 183 itens, preservando os 60 itens de limitações e os textos anteriores de forma recuperável. Leitura autorizada independente após o COMMIT confirmou conteúdos, vínculos e preservação dos demais dados; 24 pesquisas e 379 itens anteriores ao PB-A permanecem intactos. Oito novos nichos sem pesquisa específica e lacunas de validação e atualização continuam identificados para PB-B, sem iniciar sua execução.
 - Conteúdo:
   - adaptar o material aproveitável ao taxon correto, com panorama, tendências, maturidade digital pertinente, oportunidades de comunicação e diferenciação condicional, sem tamanho uniforme ou pesquisa extensa por nicho;
   - distinguir fontes, períodos, dados históricos, incertezas e limitações; indicadores exigem fonte e período, e hipóteses não podem ser atribuídas à empresa;
