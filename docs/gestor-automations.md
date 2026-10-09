@@ -3,8 +3,7 @@
 ## 1. Objetivo
 
 Este documento orienta decisões sobre automações, uso de IA e comportamento agentic no LP Factory 10.
-Antes do plano-base v1, o Gestor recomenda se o caso deve ser automatizado, sua natureza e ambiente. Na execução da v1 aprovada, recebe o recorte e detalha a solução mínima suficiente dentro da categoria aprovada; acionamento e retorno pertencem ao Executor (§3.2 de `lp-factory-executar-plano`).
-A adoção e a categoria são submetidas ao humano no fluxo do Estrategista, e eventual mudança de categoria exige nova decisão humana.
+O Gestor atua quando o Executor ou pedido humano autorizado apresenta questão concreta de automação/execução ainda não resolvida pelas fontes. Agentes de produto chegam com identidade funcional/comercial definida pela V1; a especialidade decide apenas o ponto técnico/operacional necessário, sem reabrir produto.
 A avaliação deve considerar benefício, custo, complexidade, risco, segurança, observabilidade, manutenção, participação humana e adequação ao MVP.
 Deve começar pela alternativa mais simples, preservar a stack e os contratos aprovados, evitar overengineering e não transformar recurso novo em autorização automática de implementação.
 
@@ -12,7 +11,7 @@ Deve começar pela alternativa mais simples, preservar a stack e os contratos ap
 
 ### 2.1 Natureza da solução
 
-Todo parecer deve classificar o caso em uma das seguintes naturezas. Para agentes de produto, usar a identidade funcional/comercial definida no README.md sem transformar cada prompt, chamada ou workload em agente. Essa identidade não cria quinta natureza nem exige, por si só, autonomia adicional, SDK ou coordenação multiagente.
+Quando a questão exigir escolher ou rever a natureza técnica, classifique entre as opções abaixo. Para agentes de produto, preserve a identidade funcional/comercial definida no README.md sem transformar cada prompt, chamada ou workload em agente. Essa identidade não cria quinta natureza nem exige, por si só, autonomia adicional, SDK ou coordenação multiagente.
 
 #### 2.1.1 Não automatizar
 
@@ -39,7 +38,7 @@ Todo parecer deve classificar o caso em uma das seguintes naturezas. Para agente
 
 ### 2.2 Ambiente de execução
 
-A natureza da solução e o ambiente de execução são dimensões diferentes. Todo parecer deve identificar o ambiente principal e, quando aplicável, ambientes ou plataformas dependentes. Codex é ambiente, não natureza de automação.
+A natureza da solução e o ambiente de execução são dimensões diferentes. Identifique o ambiente principal somente quando material à questão. Codex é ambiente, não natureza de automação.
 
 #### 2.2.1 Runtime do LP Factory
 
@@ -65,13 +64,13 @@ A natureza da solução e o ambiente de execução são dimensões diferentes. T
 ## 3. Regra obrigatória de avaliação
 
 * Confirmar o problema real, o recorte, as fontes do projeto e a evidência disponível; para agente de produto, conferir no recorte funcional tarefa, entrega, contexto autorizado, ações e limites de leitura/escrita e critérios de conclusão e qualidade.
-* Comparar as quatro naturezas da seção 2 e escolher uma única classificação.
-* Identificar o ambiente principal de execução e, quando aplicável, ambientes ou plataformas dependentes.
+* Quando a natureza técnica estiver em decisão, comparar as quatro naturezas da seção 2 e escolher uma classificação.
+* Identificar ambiente e plataformas dependentes quando materiais à questão.
 * Começar por não automatizar ou por solução determinística sem OpenAI.
 * Usar IA somente onde interpretação, geração, classificação, extração, revisão ou estruturação trouxer benefício comprovável.
 * Considerar comportamento agentic somente quando decisão adaptativa, coordenação de ferramentas ou revisão dinâmica forem realmente necessárias.
 * Separar o que pertence à IA do que deve permanecer determinístico no LP Factory.
-* Avaliar benefício, qualidade da entrega, latência, custo, complexidade, risco, segurança, observabilidade, manutenção e adequação ao MVP.
+* Avaliar somente nas dimensões materiais à questão: benefício, qualidade, latência, custo, complexidade, risco, segurança, observabilidade, manutenção e adequação ao MVP.
 * Preferir a solução mais simples, segura, mensurável, reversível e compatível com a stack aprovada.
 * Definir a participação humana aplicável: autorização de implementação ou ativação, gatilho humano, revisão do resultado ou aprovação por execução. Não exigir intervenção durante a execução quando o contrato aprovado permitir operação autônoma segura.
 * Definir fallback e distinguir falha técnica de ausência de informação; nos agentes de produto, explicitar retomada e preservação do contexto pertinente quando aplicáveis.
@@ -100,22 +99,14 @@ Este documento não mantém catálogo permanente de modelos, preços, parâmetro
 
 ## 4. Entrega e destino da decisão
 
-Cada parecer deve ser curto, decisório e declarar:
+Cada parecer deve ser curto, decisório e declarar somente o necessário à questão recebida:
 
-* Plano e fases avaliados, com referência, path, branch e head SHA quando aplicáveis.
-* Automação: sim ou não.
-* Classificação: uma das quatro naturezas da seção 2.
-* Ambiente principal e, quando aplicável, ambientes ou plataformas dependentes.
-* OpenAI: sim, não ou condicional.
-* Solução mínima recomendada e divisão entre processamento determinístico, IA e participação humana; para agente de produto, registrar aderência ao contrato funcional avaliado na seção 3, sem duplicá-lo.
-* Benefício esperado, custo, complexidade, riscos, segurança, observabilidade, manutenção e fallback; quando houver implementação recomendada, evidência de aderência ao limite econômico aplicável.
-* Recursos OpenAI materialmente relevantes avaliados, com decisão de adotar agora, rejeitar para o caso, não aplicável ou requer decisão adicional.
-* Prompt de runtime, quando aplicável: templates consultados, resultado da verificação de conformidade, exceções ou pendências materiais e validação representativa; o parecer não precisa conter o prompt final salvo quando isso fizer parte explícita do escopo.
+* Plano/recorte, referência, branch e head SHA quando aplicáveis, questão focal e dimensões efetivamente avaliadas.
+* Classificação, ambiente e OpenAI somente quando materiais à decisão.
+* Solução mínima e, quando aplicável, divisão entre determinístico, IA e participação humana, com benefício, custo/risco, segurança, observabilidade, manutenção e fallback pertinentes.
+* Recursos OpenAI e prompt de runtime somente quando aplicáveis, preservando as verificações da seção 3.1.
 * Veredito: `nenhuma automação aplicável`, `automação aplicável com patches autossuficientes`, `requer investigação factual` ou `requer decisão material`.
-* Patches aplicáveis pelo orquestrador, investigação factual e decisão material pendente, quando correspondentes ao veredito.
-* Situação e destino documental de cada decisão.
-* Fontes do projeto e fontes oficiais efetivamente consultadas.
-* Próximo passo mínimo e seguro.
+* Patches, investigação factual ou decisão material pendente conforme o veredito, além de destino documental, fontes consultadas e próximo passo mínimo.
 
 O parecer não autoriza implementação por si só.
 
