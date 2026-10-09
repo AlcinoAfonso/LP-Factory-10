@@ -118,6 +118,18 @@ async function main() {
   const input = { accountId, userId: accountId, conversationId: accountId, expectedVersion: 1, content: "Jardins", intent: "message" as const };
   assert.equal((await conductAttendanceTurn(input, deps)).ok, true);
   assert.deepEqual(effects, ["claim", "commit"]); // old lifetime call counter is irrelevant.
+  for (const resume of [false, true]) {
+    current = { ...conversation, businessContextText: "Serviços para condomínios.",
+      attendanceTurnIntent: resume ? "message" : null,
+      messages: [{ ...conversation.messages[0], content: "Agora esclareço: manutenção de jardins." }] };
+    const result = await conductAttendanceTurn({ ...input, content: resume ? null : "Agora esclareço: manutenção de jardins.",
+      intent: resume ? "resume" : "message" }, { ...deps, market: async query => {
+        assert.match(query, /^Agora esclareço: manutenção de jardins\./);
+        assert.match(query, /Serviços para condomínios\./);
+        return [];
+      } });
+    assert.equal(result.ok, true);
+  }
   for (const overrides of [
     { request: async () => ({ ok: false as const }) },
     { commit: async () => ({ ok: false as const, reason: "write_failed" as const }) },

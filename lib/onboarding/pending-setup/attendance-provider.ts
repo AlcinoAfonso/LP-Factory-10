@@ -5,7 +5,7 @@ import { clientOpenAiCostContext, type OpenAiCostEconomicContext } from "../../o
 import { resolveOpenAiProductWorkload, resolveOpenAiWorkloadEnvironment,
   type ResolvedOpenAiProductWorkload, type OpenAiWorkloadEnvironment } from "../../openai-workloads";
 import { ATTENDANCE_PROMPT_VERSION, ATTENDANCE_CONTRACT_VERSION, attendancePrompt,
-  validateAttendanceOutput, type AttendanceContext, type AttendanceOutput } from "./attendance-core";
+  attendanceOutputSchema, validateAttendanceOutput, type AttendanceContext, type AttendanceOutput } from "./attendance-core";
 
 export async function requestAttendance(input: Readonly<{
   accountId: string; context: AttendanceContext;
@@ -57,6 +57,18 @@ export function parseAttendanceResponse(payload: unknown, context: AttendanceCon
   let output: unknown;
   try { output = JSON.parse(chunks.join("") || String(data.output_text ?? "")); } catch { return invalid; }
   const validated = validateAttendanceOutput(output, context);
+  if (!validated) {
+    const parsed = attendanceOutputSchema.safeParse(output);
+    console.warn("pending_setup_attendance_contract_failed", {
+      schemaValid: parsed.success, action: parsed.success ? parsed.data.action : null,
+      hasTaxonId: parsed.success && parsed.data.existingTaxonId !== null,
+      confirmation: Boolean(context.confirmedProposal), hasUnderstanding: Boolean(context.confirmedUnderstanding),
+      readyToComplete: parsed.success && parsed.data.readyToComplete,
+      sufficientUnderstanding: parsed.success && parsed.data.sufficientUnderstanding,
+      nameChanged: parsed.success && parsed.data.preferredName !== null && parsed.data.preferredName !== context.preferredName,
+      nameDeclined: parsed.success && parsed.data.preferredNameDeclined,
+    });
+  }
   return validated ? { ok: true as const, value: { output: validated },
     telemetry: { webSearchCallCount: 0, webSearchSourceCount: 0 } } : invalid;
 }

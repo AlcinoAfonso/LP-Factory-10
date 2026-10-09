@@ -43,7 +43,9 @@ export async function conductAttendanceTurn(input: Readonly<{
     const confirmation = intent === "confirm";
     if (!reserved.accountContext) throw new Error("account_context_read_failed");
     const operational = await dependencies.operational({ accountId: input.accountId });
-    const marketContext = await dependencies.market(reserved.businessContextText ?? input.content ?? "", catalog,
+    const latestAnswer = input.content ?? reserved.messages.filter(message => message.role === "user").at(-1)?.content;
+    const marketQuery = [latestAnswer, reserved.businessContextText].filter(Boolean).join("\n");
+    const marketContext = await dependencies.market(marketQuery, catalog,
       currentPrimaryTaxonId ?? reserved.attendanceProposal?.taxonId ?? null);
     if (marketContext === null) throw new Error("market_context_read_failed");
     const context = { ...attendanceProjection(reserved, catalog), marketContext,

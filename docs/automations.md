@@ -289,22 +289,22 @@ Destino canônico:
 3.11 Atendimento inicial por IA
 
 Objetivo:
-Compreender o negócio, reutilizar classificação segura ou propor cadastro taxonômico necessário, consolidar contexto útil e concluir o atendimento pré-comercial.
+Compreender o negócio e as necessidades do lead, oferecer orientação comercial pertinente aos serviços comprovadamente disponíveis, confirmar classificação existente quando segura e consolidar contexto útil para continuidade comercial.
 
 Status:
 Aprovada; implementação e validações em andamento, sem ativação hospedada comprovada. O fluxo vigente permanece operacional até substituição segura.
 
 Modo de uso e consumidores:
-Pending Setup da conta, server-side, após autorização do owner e reserva do turno. O lead confirma o entendimento necessário ao novo cadastro; administração humana permanece para correções e exceções.
+Pending Setup da conta, server-side, após autorização do owner e reserva do turno. O lead confirma a categoria existente proposta ou o entendimento operacional quando não houver correspondência segura. Confirmar classificação não encerra automaticamente o atendimento.
 
 Resultado esperado:
-Classificação persistida ou pendência explícita, com histórico atribuível ao participante e resumo contextual único da conta. Falha de gravação não produz anúncio de sucesso.
+Entendimento suficiente, orientação pertinente e próximo passo comercial claro, com classificação confirmada ou ausência de identificação explícita. Histórico atribuível ao participante e resumo contextual único da conta distinguem fatos declarados de sugestões, sem substituir fontes oficiais. Ausência de categoria não impede continuidade comercial nem concede acesso ou entitlement. Falha de gravação não produz anúncio de sucesso.
 
 Dependências:
-OpenAI Responses API, Structured Outputs e Web Search focal quando material; workload `pending_setup_conversation` sob governança E21. Bootstrap de configuração não substitui prova empírica nem autoriza ativação.
+OpenAI Responses API, Structured Outputs e catálogo ativo com repertório de mercado disponibilizado pelo D21/E10.13; workload `pending_setup_conversation` sob governança E21. Bootstrap de configuração não substitui prova empírica nem autoriza ativação.
 
 Limites:
-Interpretação por IA não concede autoridade administrativa. Atomicidade, deduplicação, hierarquia, categorias inativas e proteção do primário permanecem determinísticas. Não há relacionamento operacional com a Base, consumidor futuro, engine genérica, job, fila ou retorno assíncrono.
+Interpretação por IA não concede autoridade administrativa. O atendimento não executa pesquisa Web classificatória nem cria, ativa, reativa ou mantém taxons ou aliases. Atomicidade, deduplicação, hierarquia, categorias inativas e proteção do primário permanecem determinísticas. Sem fonte comercial competente, não inventa serviço, condição, prazo ou disponibilidade; o aprofundamento comercial permanece no D17. Não há relacionamento operacional com a Base, consumidor futuro, engine genérica, job, fila ou retorno assíncrono.
 
 Aplicação funcional no roadmap:
 `docs/roadmap.md` — E10.12.
