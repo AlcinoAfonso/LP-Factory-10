@@ -70,6 +70,7 @@ async function main() {
     assert.equal(accepted?.readyToComplete, false); // confirmation may continue useful sales.
     assert.equal(validateAttendanceOutput({ ...confirm, readyToComplete: true }, confirmation)?.readyToComplete, true);
     assert.equal(validateAttendanceOutput(base, confirmation), null);
+    assert.equal(validateAttendanceOutput({ ...confirm, existingTaxonId: nicheId }, confirmation), null);
     assert.equal(validateAttendanceOutput(confirm, { ...confirmation, confirmedUnderstanding: null }), null);
   }
   const finishing = { ...base, action: "ask" as const, existingTaxonId: null, readyToComplete: true };

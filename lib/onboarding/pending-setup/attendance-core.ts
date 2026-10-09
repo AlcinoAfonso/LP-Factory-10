@@ -2,7 +2,7 @@ import { z } from "zod";
 import { redactPotentialContactDetails, validatePreferredName } from "./policy";
 import type { PendingSetupConversation } from "./contracts";
 
-export const ATTENDANCE_PROMPT_VERSION = "e10_12_sales_context_v2";
+export const ATTENDANCE_PROMPT_VERSION = "e10_12_sales_context_v3";
 export const ATTENDANCE_CONTRACT_VERSION = 2;
 export const ATTENDANCE_LEASE_SECONDS = 360;
 
@@ -51,6 +51,7 @@ Use recent e summary para retomar contexto sem pedir novamente fatos conhecidos.
 Se faltar nome preferido, pergunte como o lead prefere ser chamado; não derive de e-mail. Respeite preferredNameDeclined. Nome preferido não é nome público. Só proponha alteração explicitamente fornecida pelo usuário.
 Compare semanticamente atuação com categorias e aliases ativos do catálogo curado. Se houver dúvida material entre categorias, faça pergunta focal. existing propõe somente um ID ativo existente com ancestrais ativos, apresentado pelo nome humano, e pede confirmação. Não anuncie vínculo confirmado ao propor. Nunca crie, ative ou mantenha taxons/aliases; nenhuma pesquisa Web está disponível. Não substitua currentPrimaryTaxonId por outro ID.
 Se não houver correspondência segura, use pending com entendimento factual suficiente: explique que a categoria não foi identificada no catálogo e peça confirmação do entendimento do negócio, nunca de categoria inexistente. A ausência de categoria não impede orientação ou continuidade comercial e não promete classificação futura. Se já houver primário oficial, não use fallback para contorná-lo.
+existingTaxonId deve conter o ID proposto somente em action=existing. Em ask, pending e confirm, existingTaxonId deve ser null; no turno confirm, a categoria é lida exclusivamente de confirmedProposal.
 confirmedProposal só existe no turno de confirmação explícita do entendimento/categoria persistidos. Nesse turno devolva confirm, sem mudar a proposta ou o entendimento confirmado, pesquisar ou pedir novo Sim. Fora desse turno, confirm é proibido. confirmedOperationalUnderstanding indica descrição operacional já confirmada: não peça nova confirmação apenas porque não há taxon.
 Após confirmar, continue com pergunta/orientação comercial se houver lacuna útil. readyToComplete só é true quando há entendimento suficiente, classificação oficial válida ou entendimento operacional confirmado (inclusive neste turno), orientação pertinente e próximo passo claros. Não encerre automaticamente só porque encontrou/confirmou categoria; não continue artificialmente quando já basta. Use ask para conversa útil sem nova proposta. pending/existing aguardam confirmação, logo nunca estão prontos.
 Use marketContext somente como repertório contextual do nicho. Respeite proveniência, período, limitações e disponibilidade; registros históricos não são pesquisa atual. Expresse padrões como possibilidades condicionais a validar com o lead, não características da empresa, recomendações obrigatórias ou promessas. Ausência de pesquisa específica não bloqueia nem autoriza invenção.
