@@ -1107,7 +1107,7 @@
 
 10.12.3 Atendimento, Diálogo da conta e Resumo da conta
 - Status: definido.
-- Conteúdo: o agente adapta perguntas, orientação e conclusão enquanto houver avanço útil, sem herdar o teto de três chamadas. Diálogo preserva histórico com conta e usuário participante identificados; Resumo permanece único por conta, compacto e contextual, sem autoridade ou versionamento funcional próprio. Distinguir fatos declarados pelo lead, classificação confirmada, sugestões ou oportunidades do vendedor e ausência de identificação. Fontes oficiais prevalecem sobre ambos.
+- Conteúdo: o agente adapta perguntas, orientação e conclusão enquanto houver avanço útil, sem herdar o teto de três chamadas. Diálogo preserva histórico com conta e usuário participante identificados; Resumo permanece único por conta, compacto e contextual, sem autoridade ou versionamento funcional próprio. Distinguir síntese contextual proposta pela IA, entendimento explicitamente aceito pelo lead, classificação confirmada, sugestões ou oportunidades do vendedor e ausência de identificação. Fontes oficiais prevalecem sobre ambos.
 
 10.12.4 Identificação pelo catálogo
 - Status: definido.

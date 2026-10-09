@@ -298,7 +298,7 @@ Modo de uso e consumidores:
 Pending Setup da conta, server-side, após autorização do owner e reserva do turno. O lead confirma a categoria existente proposta ou o entendimento operacional quando não houver correspondência segura. Confirmar classificação não encerra automaticamente o atendimento.
 
 Resultado esperado:
-Entendimento suficiente, orientação pertinente e próximo passo comercial claro, com classificação confirmada ou ausência de identificação explícita. Histórico atribuível ao participante e resumo contextual único da conta distinguem fatos declarados de sugestões, sem substituir fontes oficiais. Ausência de categoria não impede continuidade comercial nem concede acesso ou entitlement. Falha de gravação não produz anúncio de sucesso.
+Entendimento suficiente, orientação pertinente e próximo passo comercial claro, com classificação confirmada ou ausência de identificação explícita. Histórico atribuível ao participante e resumo contextual único da conta distinguem síntese contextual proposta pela IA, entendimento explicitamente aceito pelo lead, classificação e sugestões, sem substituir fontes oficiais. Ausência de categoria não impede continuidade comercial nem concede acesso ou entitlement. Falha de gravação não produz anúncio de sucesso.
 
 Dependências:
 OpenAI Responses API, Structured Outputs e catálogo ativo com repertório de mercado disponibilizado pelo D21/E10.13; workload `pending_setup_conversation` sob governança E21. Bootstrap de configuração não substitui prova empírica nem autoriza ativação.
