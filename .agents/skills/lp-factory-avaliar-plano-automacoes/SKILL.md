@@ -1,11 +1,11 @@
 ---
 name: lp-factory-avaliar-plano-automacoes
-description: Avaliar automações, fluxos com IA, agentes, workflows, jobs, rotinas recorrentes, integrações e services previstos em um plano-base do LP Factory 10 por meio do custom agent gestor-automacoes. Receber recorte de execução, consulta pré-V1 ou pedido humano autorizado para o domínio.
+description: Avaliar automações, fluxos com IA, agentes, workflows, jobs, rotinas recorrentes, integrações e services previstos em um plano-base do LP Factory 10 por meio do custom agent gestor-automacoes. Receber recorte de execução ou pedido humano autorizado para o domínio.
 ---
 
 # Avaliar automações do plano-base
 
-Na execução, receba a chamada decidida pelo Executor (§3.2); valide a entrada sem refazer o roteamento. Consultas pré-V1 e pedidos humanos autorizados permanecem aceitos. No retorno, confira questão focal, parecer/contexto anterior, delta e evidências pertinentes.
+Na execução, receba a chamada decidida pelo Executor (§3.2); valide a entrada sem refazer o roteamento. Pedidos humanos autorizados permanecem aceitos. No retorno, confira questão focal, parecer/contexto anterior, delta e evidências pertinentes.
 
 Delegar uma avaliação read-only ao custom agent `gestor-automacoes` e devolver seu parecer integral.
 
@@ -16,12 +16,11 @@ Delegar uma avaliação read-only ao custom agent `gestor-automacoes` e devolver
    - PR: confirmar número, URL, base, head, head SHA e estado; resolver a fonte aprovada recuperável do mesmo caso no PR/Git, conforme 3.1 do Executor;
    - path local: confirmar existência e coerência entre path, conteúdo e caso.
 3. Confirme acesso à versão indicada; leia integralmente as fontes pertinentes por referência, transportando conteúdo somente se o destinatário não conseguir resolvê-la ou se o julgamento exigir recebê-lo. Fonte mutável sem recuperação durável exige preservar antes o conteúdo aprovado indispensável, conforme 3.1 do Executor. Identificar pelo contrato funcional quais entregas ou partes do plano serão automatizadas, sem depender de marcador literal ou posição fixa.
-4. Conferir compatibilidade da entrada com eventual dispensa humana da avaliação formal; chamada de execução incompatível e sem novo pedido humano devolve `Gestor de Automações: N/A — avaliação formal dispensada na v1`, sem iniciar o agente.
-5. Conferir se a entrada de execução conflita com exclusão explícita de automação na v1; sem consulta pré-V1 ou pedido humano compatível, devolver `Gestor de Automações: N/A — plano sem automação aplicável`, sem iniciar o agente.
-6. Para cada recorte aplicável, registrar identificador quando existir, objetivo, escopo, limites, critérios de aceite e automações, integrações ou services mencionados.
-7. Confirmar `docs/gestor-automations.md`; deixar ao agente a seleção das demais fontes competentes.
-8. Parar e pedir somente o dado ausente se a seleção do plano ou das fases continuar ambígua.
-9. Registrar o estado Git anterior à delegação.
+4. Conferir se a entrada de execução conflita com exclusão explícita de automação na v1; sem pedido humano compatível, devolver `Gestor de Automações: N/A — plano sem automação aplicável`, sem iniciar o agente.
+5. Para cada recorte aplicável, registrar identificador quando existir, objetivo, escopo, limites, critérios de aceite e automações, integrações ou services mencionados.
+6. Confirmar `docs/gestor-automations.md`; deixar ao agente a seleção das demais fontes competentes.
+7. Parar e pedir somente o dado ausente se a seleção do plano ou das fases continuar ambígua.
+8. Registrar o estado Git anterior à delegação.
 
 ## Delegar e devolver
 

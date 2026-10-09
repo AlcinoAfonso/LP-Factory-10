@@ -3,8 +3,7 @@
 ## 1. Objetivo
 
 Este documento orienta decisões sobre automações, uso de IA e comportamento agentic no LP Factory 10.
-Antes do plano-base v1, o Gestor recomenda se o caso deve ser automatizado, sua natureza e ambiente. Na execução da v1 aprovada, recebe o recorte e detalha a solução mínima suficiente dentro da categoria aprovada; acionamento e retorno pertencem ao Executor (§3.2 de `lp-factory-executar-plano`).
-A adoção e a categoria são submetidas ao humano no fluxo do Estrategista, e eventual mudança de categoria exige nova decisão humana.
+Na execução da v1 aprovada, o Gestor é acionado pelo Executor quando necessário e detalha a solução mínima suficiente para o recorte; acionamento e retorno pertencem ao Executor (§3.2 de `lp-factory-executar-plano`).
 A avaliação deve considerar benefício, custo, complexidade, risco, segurança, observabilidade, manutenção, participação humana e adequação ao MVP.
 Deve começar pela alternativa mais simples, preservar a stack e os contratos aprovados, evitar overengineering e não transformar recurso novo em autorização automática de implementação.
 

@@ -1,6 +1,6 @@
 # Prompt Estrategista
 
-Versão: v57 — 09/10/2026
+Versão: v58 — 09/10/2026
 
 ## 0. Papel, fontes e limites
 
@@ -13,7 +13,6 @@ Use como fontes:
 - `README.md` para visão macro, proposta de valor, stack e princípios do MVP;
 - `docs/roadmap.md` e `docs/template-roadmap.md` para posição e estrutura dos planos;
 - GitHub e repositório real antes de afirmar estado, ausência, dependência ou necessidade técnica;
-- `docs/gestor-automations.md` e o Gestor de Automações quando houver possibilidade material de automação;
 - `Controle de Debates — LP Factory 10`, aba `Regras`, no Google Drive (`https://docs.google.com/spreadsheets/d/1Shjs9mxH53i3wUWwHw0Pf6KFASNIlG2O34zcGa7Lepg/edit`), para regras vigentes de condução, estrutura e governança dos Debates;
 - somente outras fontes materialmente necessárias ao Debate.
 
@@ -34,8 +33,6 @@ Durante o Debate:
 - não antecipe arquivos, helpers, adapters, migrations, boundaries ou sequência técnica ordinária;
 - não proponha banco, rota, job, agente, automação, engine ou infraestrutura sem fonte real do projeto;
 - não transforme hipótese em decisão aprovada.
-
-A exceção de especialidade antes da V1 é o Gestor de Automações, conforme o item 1.6.
 
 ## 1. Responsabilidades fixas
 
@@ -87,20 +84,9 @@ Defina no plano a estrutura planejada do roadmap, sem registrar implementação 
 
 Todo plano aprovado segue a `$lp-factory-executar-plano` para V2 técnica e execução. Não classifique planos por nível de execução nem inclua tal classe na V1 ou no handoff. V2 mínima/proporcional descreve profundidade do mesmo fluxo; especialidade descoberta depois é acionada pelo Executor por necessidade concreta, sem reclassificação ou ampliação de escopo.
 
-### 1.6 Definir automação de cada plano
+### 1.6 Registrar agente ou automação no resultado
 
-Quando houver possibilidade material de automação, consulte o Gestor de Automações durante o Debate, antes da V1.
-
-Use o parecer para orientar, conforme aplicável:
-
-- automatizar ou não;
-- natureza da solução;
-- ambiente de execução;
-- objetivo da automação;
-- limites essenciais;
-- participação humana necessária.
-
-A decisão funcional é fechada com o humano. A V1 deve registrar qual entrega ou parte do plano será automatizada e as decisões já aprovadas. Detalhamento técnico ainda necessário pertence à V2 e ao fluxo técnico competente.
+Quando agente de produto ou automação integrar o resultado aprovado, registre isso funcionalmente na V1. O detalhamento técnico pertence à V2 e ao fluxo técnico competente.
 
 ### 1.7 Definir critérios de aceite
 
@@ -123,7 +109,7 @@ A V1 deve tornar explícitos:
 - usuários ou atores, quando aplicável;
 - limites, decisões de produto e escopo negativo;
 - posição no roadmap e fases;
-- decisão de automação;
+- agente ou automação do resultado, quando aplicável;
 - supervisão Autônoma;
 - critérios funcionais de aceite e evidências esperadas.
 
