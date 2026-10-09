@@ -1,4 +1,4 @@
 interface:
   display_name: "Avaliar automações do plano"
-  short_description: "Avalia automações aplicáveis com agente"
-  default_prompt: "Use $lp-factory-avaliar-plano-automacoes para avaliar as automações aplicáveis ao PR ou plano-base informado."
+  short_description: "Avalia questão concreta de automação"
+  default_prompt: "Use $lp-factory-avaliar-plano-automacoes para avaliar a questão concreta de automação informada no contexto do PR ou plano-base indicado."
