@@ -8,7 +8,7 @@ const accountId = "10000000-0000-4000-8000-000000000001";
 const segmentId = "10000000-0000-4000-8000-000000000002";
 const nicheId = "10000000-0000-4000-8000-000000000003";
 const context: AttendanceContext = {
-  preferredName: "Ana", summary: "Fatos declarados pelo lead: Jardins.\nClassificação confirmada: Não identificada.\nSugestões: validar comunicação.",
+  preferredName: "Ana", summary: "Fatos declarados pelo lead: manutenção de jardins para condomínios\nClassificação confirmada: Não identificada.\nSugestões: validar comunicação.",
   confirmedUnderstanding: "Manutenção de jardins para condomínios.",
   recent: [{ role: "user", content: "Faço manutenção de jardins para condomínios e quero explicar meu serviço." }],
   catalog: [
@@ -18,7 +18,7 @@ const context: AttendanceContext = {
 };
 const base: AttendanceOutput = {
   reply: "Jardinagem corresponde ao seu negócio?", preferredName: "Ana", preferredNameDeclined: false,
-  businessUnderstanding: "Manutenção de jardins para condomínios.", declaredFacts: ["Atende condomínios."],
+  businessUnderstanding: "Manutenção de jardins para condomínios.", declaredFacts: ["manutenção de jardins para condomínios"],
   suggestions: ["Pode ser útil explicar a frequência do serviço."], sufficientUnderstanding: true,
   readyToComplete: false, action: "existing", existingTaxonId: nicheId,
 };
@@ -83,7 +83,18 @@ async function main() {
   assert.equal(validateAttendanceOutput({ ...base, preferredName: null, preferredNameDeclined: true }, context), null);
   assert.ok(validateAttendanceOutput({ ...base, preferredName: null, preferredNameDeclined: true }, { ...context, preferredName: null }));
   const summary = attendanceSummary(base, null, null);
-  assert.match(summary, /Fatos declarados pelo lead: Atende condomínios/);
+  assert.match(summary, /Fatos declarados pelo lead: manutenção de jardins para condomínios/);
+  const unsupportedFact = "Possui equipe especializada e atendimento diário.";
+  assert.equal(validateAttendanceOutput({ ...base, declaredFacts: [unsupportedFact],
+    businessUnderstanding: unsupportedFact, suggestions: [unsupportedFact] }, context), null);
+  assert.equal(validateAttendanceOutput({ ...base, declaredFacts: [unsupportedFact] }, { ...context,
+    recent: [{ role: "assistant", content: unsupportedFact }],
+    summary: "Fatos declarados pelo lead: Jardins.\nClassificação confirmada: Não identificada.\nSugestões e oportunidades (não são fatos do negócio): " + unsupportedFact,
+    confirmedUnderstanding: unsupportedFact }), null);
+  assert.ok(validateAttendanceOutput(base, { ...context, recent: [{ role: "user", content: "Quero continuar." }] }));
+  assert.equal(validateAttendanceOutput(base, { ...context, summary: null, recent: [] }), null);
+  assert.match(attendanceSummary({ ...base, declaredFacts: [], businessUnderstanding: unsupportedFact }, null, null),
+    /^Fatos declarados pelo lead: Ainda não informados\./);
   assert.match(summary, /Sugestões e oportunidades \(não são fatos do negócio\): Pode ser útil/);
   assert.equal(base.businessUnderstanding.includes(base.suggestions[0]), false);
   assert.match(attendanceSummary(confirm, null, proposal), /Classificação confirmada: Jardinagem/);
