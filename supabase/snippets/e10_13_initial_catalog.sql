@@ -3231,6 +3231,11 @@ begin
     or (select count(*) from public.business_taxon_aliases) <> (payload #>> '{baseline_aliases,count}')::integer then
     raise exception 'D21: aliases divergiram do inventário; reinspecionar sem escrever';
   end if;
+  -- Snapshot integral aprovado: mudanças externas exigem nova reconciliação sem carga.
+  if cardinality(original_taxons) <> 15
+    or original_taxons_hash <> '1d6c7429363a9ea70dfcb9f88ea278ab' then
+    raise exception 'D21: catálogo completo divergiu do inventário; reinspecionar sem escrever';
+  end if;
   -- Confere os registros preexistentes, inclusive inativos; não os atualiza.
   for row_data in select value from jsonb_array_elements(payload->'baseline_taxons') loop
     if not exists (
