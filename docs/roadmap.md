@@ -1121,6 +1121,29 @@
 - Status: definido.
 - Conteúdo: preservar requisitos de conclusão E10.11, identidade, WhatsApp, histórico e fronteiras comerciais, com fechamento persuasivo breve. Falha mantém contexto útil; alteração externa impede sobrescrita e falso sucesso sem reconstruir proposta ou exigir reavaliação e nova confirmação automáticas. Não criar relacionamento operacional com a Base, sincronização de fontes oficiais, engine genérica, consumidores futuros ou continuidade assíncrona. Após conclusão correta, Pending Setup não governa mudanças posteriores da conta.
 
+10.13 Cadastro inicial de taxonomia e inteligência de mercado
+
+10.13.1 Objetivo e status
+- Objetivo: reconciliar integralmente o Nichos.zip e a pasta original com o catálogo compartilhado, cadastrar e ativar somente segmentos e nichos válidos e ausentes e disponibilizar a inteligência de mercado aproveitável pelas estruturas existentes.
+- Status: V1 aprovada em 09/10/2026 e V2 técnica consolidada; execução em preparação sob Supervisão Autônomo, sem carga ou disponibilidade comprovadas. O recorte preserva E10.5 e E10.12 e não depende de PB-B.
+
+10.13.3 Reconciliação e carga da taxonomia
+- Status: definido; implementação pendente.
+- Conteúdo:
+  - inventariar todas as entradas do acervo e justificar cada destino como reutilizado, nova categoria, especialização/contexto, duplicado ou pendente, sem cota de nichos;
+  - confrontar o catálogo completo, incluindo aliases e categorias inativas, reutilizando a hierarquia e inserindo apenas segmentos e nichos semanticamente seguros e ausentes, com pais ativos e válidos;
+  - não criar ultranichos ou aliases, reativar categorias, duplicar inativos ou transformar oferta, público, localidade ou atributo do cliente em nicho artificial;
+  - preservar registros existentes, abortar integralmente colisões ou concorrência e comprovar hierarquia, estados e ausência de duplicações por comparação antes/depois e leitura separada após a escrita; ambiguidades permanecem justificadas sem bloquear os itens seguros.
+
+10.13.4 Adaptação e disponibilidade do conteúdo
+- Status: definido; implementação pendente.
+- Conteúdo:
+  - adaptar o material aproveitável ao taxon correto, com panorama, tendências, maturidade digital pertinente, oportunidades de comunicação e diferenciação condicional, sem tamanho uniforme ou pesquisa extensa por nicho;
+  - distinguir fontes, períodos, dados históricos, incertezas e limitações; indicadores exigem fonte e período, e hipóteses não podem ser atribuídas à empresa;
+  - persistir conteúdo aditivo nas estruturas compartilhadas existentes, preservando pesquisas válidas, e comprovar vínculos, amostras representativas e leitura autorizada; escrita isolada não comprova disponibilização;
+  - identificar lacunas por nicho para PB-B, sem iniciar pesquisa complementar de rotina ou manutenção periódica; integração conversacional pertence ao D15B, e dores, crenças, copy e particularidades da empresa pertencem ao D14D;
+  - preservar contas, Bases, produtos publicados, entitlement, busca e consumidores existentes; não criar interface, runtime, schema, permissões, infraestrutura, job, agente operacional, automação ou contato automático com leads.
+
 11. E11 — Gestão de membros e autoridade comercial
 
 - Objetivo: permitir gestão segura de membros não-owner por conta e tornar explícitas as regras de papel e entitlement para checkout, novos convites e manutenção de vínculos.
