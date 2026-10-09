@@ -8,7 +8,7 @@ const accountId = "10000000-0000-4000-8000-000000000001";
 const segmentId = "10000000-0000-4000-8000-000000000002";
 const nicheId = "10000000-0000-4000-8000-000000000003";
 const context: AttendanceContext = {
-  preferredName: "Ana", summary: "Fatos declarados pelo lead: Faço manutenção de jardins para condomínios e quero explicar meu serviço.\nClassificação confirmada: Não identificada.\nSugestões: validar comunicação.",
+  preferredName: "Ana", summary: 'Fatos declarados pelo lead: ["Faço manutenção de jardins para condomínios e quero explicar meu serviço."]\nClassificação confirmada: Não identificada.\nSugestões: validar comunicação.',
   confirmedUnderstanding: "Manutenção de jardins para condomínios.",
   recent: [{ role: "user", content: "Faço manutenção de jardins para condomínios e quero explicar meu serviço." }],
   catalog: [
@@ -83,7 +83,7 @@ async function main() {
   assert.equal(validateAttendanceOutput({ ...base, preferredName: null, preferredNameDeclined: true }, context), null);
   assert.ok(validateAttendanceOutput({ ...base, preferredName: null, preferredNameDeclined: true }, { ...context, preferredName: null }));
   const summary = attendanceSummary(base, null, null);
-  assert.match(summary, /Fatos declarados pelo lead: Faço manutenção de jardins para condomínios e quero explicar meu serviço./);
+  assert.match(summary, /Fatos declarados pelo lead: \["Faço manutenção de jardins para condomínios e quero explicar meu serviço./);
   const unsupportedFact = "Possui equipe especializada e atendimento diário.";
   assert.deepEqual(validateAttendanceOutput({ ...base, declaredFacts: [unsupportedFact],
     businessUnderstanding: unsupportedFact, suggestions: [unsupportedFact] }, context)?.declaredFacts, []);
@@ -96,7 +96,7 @@ async function main() {
   const negated = { ...context, summary: null, recent: [{ role: "user" as const, content: "Não ofereço consultoria." }] };
   const groundedNegative = validateAttendanceOutput({ ...base, declaredFacts: ["ofereço consultoria"] }, negated);
   assert.deepEqual(groundedNegative?.declaredFacts, ["Não ofereço consultoria."]);
-  assert.match(attendanceSummary(groundedNegative!, null, null), /Fatos declarados pelo lead: Não ofereço consultoria/);
+  assert.match(attendanceSummary(groundedNegative!, null, null), /Fatos declarados pelo lead: \["Não ofereço consultoria/);
   assert.deepEqual(validateAttendanceOutput({ ...base, declaredFacts: ["manutenção de jardins"] }, context)?.declaredFacts,
     ["Faço manutenção de jardins para condomínios e quero explicar meu serviço."]);
   assert.ok(validateAttendanceOutput({ ...base, declaredFacts: ["Não ofereço consultoria."] }, negated));
@@ -108,6 +108,25 @@ async function main() {
   }
   assert.deepEqual(validateAttendanceOutput({ ...base, declaredFacts: ["ofereço consultoria"] }, { ...negated,
     recent: [{ role: "user", content: "Não ofereço consultoria. Talvez ofereço consultoria futuramente." }] })?.declaredFacts, []);
+  for (const statement of ['Ofereço consultoria; somente para clientes anuais.', 'Não\nofereço consultoria.', 'Ofereço "consultoria";\nsomente para clientes anuais.']) {
+    const fullStatement = statement.replaceAll("\\n", "\n");
+    const selection = fullStatement.includes('"') ? 'consultoria' : 'ofereço consultoria';
+    const preserved = validateAttendanceOutput({ ...base, declaredFacts: [selection] }, { ...context,
+      summary: null, recent: [{ role: "user", content: fullStatement }] });
+    assert.deepEqual(preserved?.declaredFacts, [fullStatement]);
+    const remembered = attendanceSummary(preserved!, null, null);
+    assert.deepEqual(validateAttendanceOutput({ ...base, declaredFacts: [selection] }, { ...context,
+      summary: remembered, recent: [] })?.declaredFacts, [fullStatement]);
+    const retainedAgain = attendanceSummary({ ...base, declaredFacts: [] }, null, null, remembered);
+    assert.deepEqual(validateAttendanceOutput({ ...base, declaredFacts: [selection] }, { ...context,
+      summary: retainedAgain, recent: [] })?.declaredFacts, [fullStatement]);
+  }
+  const escapedFacts = Array.from({ length: 6 }, (_, index) => `${index}: ${'"'.repeat(490)}`);
+  const bounded = attendanceSummary({ ...base, declaredFacts: escapedFacts, suggestions: ["a".repeat(300), "b".repeat(300)] }, null, null);
+  assert.ok(bounded.length <= 4000);
+  const boundedFacts: string[] = JSON.parse(bounded.split("\n")[0].slice("Fatos declarados pelo lead: ".length));
+  assert.ok(boundedFacts.length > 0 && boundedFacts.length < 6);
+  assert.deepEqual(boundedFacts, escapedFacts.slice(0, boundedFacts.length));
   const retained = attendanceSummary({ ...base, declaredFacts: [] }, null, null, context.summary);
   assert.match(retained, /Faço manutenção de jardins para condomínios/);
   assert.ok(validateAttendanceOutput(base, { ...context, summary: retained, recent: [] }));
@@ -174,6 +193,17 @@ async function main() {
     assert.equal((await conductAttendanceTurn(input, { ...deps, ...overrides })).ok, false);
     assert.deepEqual(effects, ["claim", "release"]);
   }
+  current = { ...conversation }; effects.length = 0;
+  let providerCallsAfterReadFailure = 0;
+  assert.equal((await conductAttendanceTurn(input, { ...deps,
+    operational: async options => {
+      assert.equal(options.throwOnReadError, true);
+      throw new Error("operational_resolution_read_failed");
+    },
+    request: async () => { providerCallsAfterReadFailure++; return { ok: true, output: base, responseId: "unexpected", latencyMs: 1 }; },
+  })).ok, false);
+  assert.equal(providerCallsAfterReadFailure, 0);
+  assert.deepEqual(effects, ["claim", "release"]);
   current = { ...conversation, attendanceTurnIntent: "message" }; effects.length = 0;
   assert.equal((await conductAttendanceTurn(input, deps)).ok, false); assert.deepEqual(effects, []);
   assert.equal((await conductAttendanceTurn({ ...input, intent: "resume", content: null }, deps)).ok, true);
