@@ -23,7 +23,7 @@ Delegar uma avaliação read-only ao custom agent `gestor-automacoes` e devolver
 ## Delegar e devolver
 
 1. Iniciar exatamente um subagent `gestor-automacoes`.
-2. Entregar worktree, branch, metadados, referência recuperável da fonte, caso e recortes aplicáveis, garantindo leitura integral conforme a preparação.
+2. Entregar questão focal, worktree, branch, metadados, referência recuperável da fonte, caso e recortes aplicáveis, garantindo leitura integral conforme a preparação.
 3. Não repetir critérios de automação no handoff: o contrato runtime está em `.codex/agents/gestor-automacoes.toml` e a governança em `docs/gestor-automations.md`.
 4. Aguardar o parecer sem realizar avaliação paralela.
 5. Validar identificação, fontes, questão focal, um veredito permitido, decisões/dimensões aplicáveis, patches e próximo passo. Quando houver OpenAI com prompt consumido no runtime, validar também que o parecer registre `docs/template-prompts.md` e o complemento específico aplicável entre as fontes efetivamente consultadas, a conclusão de aderência ao contrato vigente e a validação representativa exigida por `docs/gestor-automations.md`; ausência de qualquer desses elementos torna o handoff incompleto.
