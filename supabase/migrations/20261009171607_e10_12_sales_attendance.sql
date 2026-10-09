@@ -154,11 +154,26 @@ begin
 end $$;
 
 revoke all on function public.commit_account_pending_setup_turn_v2(uuid,uuid,uuid,bigint,uuid,text,text,text,text,jsonb,boolean,boolean,uuid)
-  from public, anon, authenticated, service_role, readonly;
+  from public, anon, authenticated, service_role;
 revoke all on function public.commit_account_pending_setup_turn_v3(uuid,uuid,uuid,bigint,uuid,text,text,text,text,text,jsonb,boolean,boolean,uuid)
-  from public, anon, authenticated, readonly;
+  from public, anon, authenticated;
 grant execute on function public.commit_account_pending_setup_turn_v3(uuid,uuid,uuid,bigint,uuid,text,text,text,text,text,jsonb,boolean,boolean,uuid) to service_role;
 revoke all on function public.effect_pending_setup_taxonomy_v1(uuid,jsonb,boolean,text)
-  from public, anon, authenticated, service_role, readonly;
+  from public, anon, authenticated, service_role;
+
+-- Optional operational read role is not provisioned in isolated environments.
+do $acl$
+declare signature text;
+begin
+ if exists(select 1 from pg_roles where rolname='readonly') then
+  foreach signature in array array[
+   'public.commit_account_pending_setup_turn_v2(uuid,uuid,uuid,bigint,uuid,text,text,text,text,jsonb,boolean,boolean,uuid)',
+   'public.commit_account_pending_setup_turn_v3(uuid,uuid,uuid,bigint,uuid,text,text,text,text,text,jsonb,boolean,boolean,uuid)',
+   'public.effect_pending_setup_taxonomy_v1(uuid,jsonb,boolean,text)'
+  ] loop
+   execute format('revoke all on function %s from readonly',signature);
+  end loop;
+ end if;
+end $acl$;
 
 commit;
