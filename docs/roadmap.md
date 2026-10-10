@@ -3184,7 +3184,7 @@
 
 25. E25 — Base de Comunicação
 - Objetivo: disponibilizar um ativo persistente da conta que reúna a verdade da empresa e a inteligência de comunicação antes de existir Landing Page ou integração real de canal.
-- Status: PB-A/E25.1 encerrado após QA operacional em Preview e Production e confirmação da Supervisão Autônomo; a dependência de PB-B em relação a PB-A está satisfeita. PB-C permanece dependente de PB-B.
+- Status: PB-A/E25.1 encerrado e E25.2 implementada e validada em Preview. PB1/D14D está em execução isolada na E25.3, com implementação candidata e validação operacional pendente; PB2 e PB3 permanecem em definição, sem implementação autorizada.
 
 25.1 Base de Comunicação inicial
 
@@ -3236,3 +3236,67 @@
 25.2.4 Estados, assistência por IA, responsividade e validação da experiência
 - Status: implementado e validado em Preview.
 - Conteúdo: feedback próximo da ação, sugestões separadas do conteúdo salvo, instalação somente no rascunho e fontes sob revelação progressiva. Assistências e exclusão mútua existentes foram preservadas; revisão/versão impede reinstalar respostas locais superadas por descarte ou salvamento. QA autenticado cobriu IA provider-backed, sucesso, conflito, descarte, teclado físico, foco, alvos de 44 px e reflow em 320, 390 e 1280 px. Viewport com altura reduzida comprovou ações alcançáveis, sem representar prova de teclado virtual real ou conformidade WCAG integral. Permissões permaneceram cobertas pelos validadores existentes; as contas Viewer catalogadas sem entitlement não tiveram acesso ampliado para QA. A prova durável está no PR #1008 e em seus commits.
+
+25.3 Recursos das três categorias da Base de Comunicação
+
+25.3.1 Objetivo e status
+- Objetivo: entregar os recursos manuais de Dados do negócio, Materiais de comunicação e Inteligência e copy em uma única Base por conta, preservando conteúdo legado, acesso comercial, papéis, concorrência, revisão humana e assistências de IA existentes.
+- Status: PB1/D14D com V1 funcional aprovada em 10/10/2026 e implementação candidata no repositório, sob Supervisão Autônomo. Instalação limpa, check e validadores locais aprovados; prova da migration integral e testes SQL de rollback, ACL, ordem, edição obsoleta e contrato do payload de erro PostgREST com status 409 aprovados em Supabase PostgreSQL 17 isolado, sem emulação de Auth, Storage ou UI hospedada. O gate de Code Review independente do HEAD corrente é acompanhado no PR do recorte; QA autenticado dos novos recursos em desktop/mobile permanece pendente. Nenhuma migration ou configuração externa foi aplicada; o gate E25.3 permanece desabilitado por padrão. A exceção de sequência foi expressamente aprovada pelo humano; merge permanece condicionado aos checks e ao Code Review do HEAD final sem achado material pendente e à comprovação dos recursos E25.3 desligados nos dois ambientes. Apply, ativação e QA permanecem não executados, seguindo a progressão operacional autorizada; PB1 só será concluído após todos os critérios de aceite.
+- Limites: PB2 e PB3 permanecem em definição. Este recorte não entrega novos agentes, rotinas de IA, pesquisa, processamento de mídia, transcrição, publicação automática ou integração com canais; não reabre E25.1/PB-A nem E25.2.
+
+25.3.2 Registros do recorte
+- Repositório:
+  - Criados:
+    - `app/a/[account]/base-comunicacao/_components/BusinessFactsFields.tsx`
+    - `app/a/[account]/base-comunicacao/_components/CommunicationMaterials.tsx`
+    - `app/a/[account]/base-comunicacao/_components/StructuredSectionFields.tsx`
+    - `app/a/[account]/base-comunicacao/material-actions.ts`
+    - `app/admin/(protected)/base-comunicacao/CommunicationCatalogEditor.tsx`
+    - `app/admin/(protected)/base-comunicacao/actions.ts`
+    - `app/admin/(protected)/base-comunicacao/page.tsx`
+    - `lib/communication-base/adapters/communicationCatalogAdapter.ts`
+    - `lib/communication-base/adapters/communicationMaterialAdapter.ts`
+    - `lib/communication-base/catalog.ts`
+    - `lib/communication-base/manual-editor-value.ts`
+    - `lib/communication-base/materials.ts`
+    - `lib/communication-base/resource-validation-cases.ts`
+    - `supabase/migrations/20261010202505_e25_3_communication_resources.sql`
+    - `supabase/tests/e25_3_communication_resources.test.sql`
+  - Ajustados:
+    - `.github/workflows/e10-11-sql-proof.yml`
+    - `.github/workflows/pipeline-supabase-apply-migrations.yml`
+    - `app/a/[account]/base-comunicacao/CommunicationBaseTabs.tsx`
+    - `app/a/[account]/base-comunicacao/CommunicationSectionEditor.tsx`
+    - `app/a/[account]/base-comunicacao/_components/CommunicationSectionCollection.tsx`
+    - `app/a/[account]/base-comunicacao/_components/section-edit-state.ts`
+    - `app/a/[account]/base-comunicacao/actions.ts`
+    - `app/a/[account]/base-comunicacao/page.tsx`
+    - `components/admin/adminNavigation.ts`
+    - `lib/communication-base/adapters/communicationBaseAdapter.ts`
+    - `lib/communication-base/ai-core.ts`
+    - `lib/communication-base/config.ts`
+    - `lib/communication-base/contracts.ts`
+    - `lib/communication-base/policy.ts`
+    - `lib/communication-base/registry.ts`
+    - `lib/communication-base/ui-state-keys.ts`
+    - `lib/communication-base/validation-cases.ts`
+    - `next.config.js`
+- Referências:
+  - V1 aprovada: Debate 14D — seção 4.2, preservada no commit `d342d06c3cedf6d5a49aad2d1f11a165c74ea78e`.
+  - Derivação técnica, implementação candidata e evidências: commit `da729fa1d272f545c27673202a75af9dcb643dac`.
+  - Facilitador de prova SQL isolada: commit `0f8ba51f946c83b29c9190cd9cca1038cc6a619c`.
+  - Prova SQL PostgreSQL 17: [run 38086017816, job 114312550569](https://github.com/AlcinoAfonso/LP-Factory-10/actions/runs/38086017816/job/114312550569), HEAD `0bdee64216af82d5b0ef288b077150b85d1f5630`.
+  - Gates e Code Review do HEAD corrente: [PR #1055](https://github.com/AlcinoAfonso/LP-Factory-10/pull/1055).
+  - Exceção de sequência, apply seletivo e ativação por ambiente: `docs/platform-config.md` — seções 2.3 e 3.5.
+
+25.3.3 Dados do negócio e Inteligência e copy
+- Status: implementação candidata; aceite operacional pendente.
+- Conteúdo: Dados do negócio permitem linhas opcionais de rótulo e valor dentro das seções, preservando o nome público canônico utilizado no cabeçalho. A apresentação inicial passa a Identificação e dados do negócio. As sete seções de Inteligência e copy mantêm seus formatos e conteúdos; a edição estruturada de itens e FAQ preserva parágrafos, quebras e delimitadores internos. As assistências existentes conservam seleção, revisão, versionamento e ausência de salvamento automático; novas seções são manuais. O aceite exige comparação de conteúdo antes/depois, consulta e edição em Bases antigas e novas, descarte, conflito, isolamento e papéis.
+
+25.3.4 Materiais de comunicação
+- Status: implementação candidata; armazenamento e operações reais ainda não validados no ambiente autorizado.
+- Conteúdo: acervo organizado inicialmente em Identidade visual, Fotos, vídeos e áudios e Depoimentos e provas sociais. Cadastro comum admite identificação, contexto, autoria e autorização quando pertinentes; imagens/logotipos usam upload ou link, vídeos/áudios somente link e depoimentos escritos usam texto. Consulta, edição, substituição e retirada preservam conteúdo legado e não alteram produtos publicados. O armazenamento previsto é privado, separado do bucket legado, com validação de imagens no servidor e acesso temporário após autorização vigente. O aceite permanece condicionado a operações reais com arquivos e links válidos, rejeição segura de arquivo inválido, tratamento de link indisponível e preservação dos dados existentes.
+
+25.3.5 Gestão administrativa de seções
+- Status: implementação candidata; progressão operacional autorizada e aceite global pendente.
+- Conteúdo: página simples no Admin Dashboard para adicionar, renomear e reordenar seções nas três categorias, com autorização administrativa central. Identidades, categorias, formatos e conteúdos salvos permanecem preservados; novas seções são vazias e opcionais em Bases antigas e futuras, sem retroescrita ou exclusão de seção. O gate independente mantém o runtime anterior quando desabilitado; sua habilitação depende do schema necessário e de validação autorizada. O filtro seletivo candidato não autoriza apply nem reativa o fluxo integral suspenso. O aceite exige refletir inclusão, título e ordem em Bases antigas e novas, rejeitar ações sem autorização e comprovar conteúdo anterior recuperável, com UI autenticada de conta e Admin aderente ao Design System.

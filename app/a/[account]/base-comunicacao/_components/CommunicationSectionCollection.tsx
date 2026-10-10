@@ -21,14 +21,14 @@ export function CommunicationSectionCollection({ definitions, base, suggestedKey
   renderDetail: DetailRenderer;
 }>) {
   return <table className="w-full table-fixed text-left text-sm">
-    <caption className="sr-only">Seções da {definitions[0]?.stage === 1 ? "Verdade da empresa" : "Inteligência de comunicação"}</caption>
+    <caption className="sr-only">Seções da {definitions[0]?.group ?? "Base de Comunicação"}</caption>
     <thead className="border-b border-border text-xs text-muted-foreground"><tr>
       <th scope="col" className="w-[48%] py-2 pr-2 font-medium sm:w-auto">Seção</th>
       <th scope="col" className="py-2 pr-2 font-medium sm:w-48">Estado</th>
       <th scope="col" className="w-20 py-2 text-right font-medium sm:w-24">Ação</th>
     </tr></thead>
     <tbody className="divide-y divide-border">{definitions.map((definition) => <SectionRow key={definition.key}
-      definition={definition} hasContent={hasSectionContent(base.sections[definition.key as keyof typeof base.sections]?.value)}
+      definition={definition} hasContent={hasSectionContent(base.sections[definition.key]?.value) || Boolean(base.sections[definition.key]?.facts?.length)}
       hasSuggestion={suggestedKeys.includes(definition.key)} renderDetail={renderDetail} />)}</tbody>
   </table>;
 }
@@ -90,7 +90,7 @@ function SectionRow({ definition, hasContent, hasSuggestion, renderDetail }: Rea
       <Button ref={triggerRef} variant="secondary" className="min-h-11 px-3 !text-brand-700" aria-label={`Abrir ${definition.label}`}
         onClick={() => {
           window.history.pushState({ ...window.history.state }, "", window.location.href); historyEntryRef.current = true;
-          dialogRef.current?.showModal(); dialogRef.current?.querySelector<HTMLTextAreaElement>("textarea")?.focus({ preventScroll: true });
+          dialogRef.current?.showModal(); dialogRef.current?.querySelector<HTMLElement>("input:not([type=hidden]),textarea,button")?.focus({ preventScroll: true });
         }}>Abrir</Button>
       <dialog ref={dialogRef} aria-labelledby={titleId}
         className="m-auto max-h-[calc(100dvh-1rem)] w-[calc(100%-1rem)] max-w-xl overflow-y-auto overscroll-contain rounded-xl border border-border bg-background p-0 text-left text-foreground shadow-xl backdrop:bg-black/40"
@@ -101,7 +101,7 @@ function SectionRow({ definition, hasContent, hasSuggestion, renderDetail }: Rea
           if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) requestClose();
         }}>
         <header className="sticky top-0 z-10 flex items-start justify-between gap-2 border-b border-border bg-background px-3 py-2 sm:px-4">
-          <div><p className="text-xs text-muted-foreground">{definition.stage === 1 ? "Verdade da empresa" : "Inteligência de comunicação"}</p>
+          <div><p className="text-xs text-muted-foreground">{definition.group}</p>
             <h2 id={titleId} className="mt-1 text-lg font-semibold leading-6">{definition.label}</h2></div>
           <Button variant="secondary" className="min-h-11 shrink-0 px-3" aria-label={`Fechar ${definition.label}`} onClick={requestClose}>Fechar</Button>
         </header>
@@ -114,7 +114,7 @@ function SectionRow({ definition, hasContent, hasSuggestion, renderDetail }: Rea
         className="m-auto w-[calc(100%-2rem)] max-w-md rounded-xl border border-border bg-background p-4 text-left text-foreground shadow-xl backdrop:bg-black/40"
         onCancel={(event) => { event.preventDefault(); discardRef.current?.close(); }}>
         <h2 id={discardTitleId} className="text-lg font-semibold">Descartar alterações?</h2>
-        <p className="mt-2 text-sm text-muted-foreground">O texto não salvo desta seção será perdido.</p>
+        <p className="mt-2 text-sm text-muted-foreground">As alterações não salvas desta seção serão perdidas.</p>
         <div className="mt-3 flex flex-wrap gap-2">
           <Button className="min-h-11 !bg-brand-700 hover:!bg-brand-700/95" onClick={() => discardRef.current?.close()}>Continuar editando</Button>
           <Button variant="secondary" className="min-h-11" onClick={closeDetail}>Descartar alterações</Button>

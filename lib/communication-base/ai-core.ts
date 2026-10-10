@@ -1,7 +1,7 @@
 import { communicationSections, getCommunicationSection, type CommunicationSectionKey } from "./registry";
-import { parseSectionValue } from "./policy";
+import { parseCommunicationFacts, parseSectionValue } from "./policy";
 import { parseEditorValue } from "./editor-value";
-import type { CommunicationBase, CommunicationSectionValue } from "./contracts";
+import type { CommunicationBase, CommunicationFact, CommunicationSectionValue } from "./contracts";
 
 export const COMMUNICATION_AI_PROMPT_VERSION = "e25_1_v3";
 export const COMMUNICATION_AI_CONTRACT_VERSION = 2;
@@ -96,14 +96,20 @@ export function confirmedStageOneData(base: CommunicationBase, target: StageTwoT
   const keys = targetKeys(target);
   if (!keys) return null;
   const relevant = new Set(keys.flatMap((key) => relevantStageOne[key] ?? []));
-  const entries: [string, CommunicationSectionValue][] = [];
+  const entries: [string, CommunicationSectionValue | Readonly<{ value: CommunicationSectionValue; facts: readonly CommunicationFact[] } >][] = [];
   for (const section of communicationSections) {
     if (section.stage !== 1 || !relevant.has(section.key)) continue;
     const stored = base.sections[section.key];
     if (stored?.origin !== "user_confirmed" && stored?.origin !== "pending_setup_confirmed") continue;
     const value = parseSectionValue(section, stored.value);
-    if (value === null || (typeof value === "string" ? !value : value.length === 0)) continue;
-    entries.push([section.key, value]);
+    if (value === null) continue;
+    const facts = stored.facts === undefined ? [] : parseCommunicationFacts(stored.facts);
+    if (facts === null) return null;
+    if (facts.length > 0) {
+      entries.push([section.key, { value, facts }]);
+    } else if (typeof value === "string" ? Boolean(value) : value.length > 0) {
+      entries.push([section.key, value]);
+    }
   }
   return Object.fromEntries(entries);
 }
@@ -146,7 +152,11 @@ export function stageTwoPrompt(base: CommunicationBase, target: StageTwoTarget, 
     const value = base.sections[key]?.value;
     return typeof value === "string" ? value.trim().length > 0 : Array.isArray(value) && value.length > 0;
   }).map((key) => [key, base.sections[key]?.value]));
-  if (CREDENTIAL_PATTERN.test(JSON.stringify(confirmed)) || CREDENTIAL_PATTERN.test(JSON.stringify(existing))) {
+  const factualText = Object.values(confirmed).flatMap((entry) =>
+    typeof entry === "object" && "facts" in entry
+      ? entry.facts.map((fact) => fact.label + ": " + fact.value) : []).join("\n");
+  if (CREDENTIAL_PATTERN.test(JSON.stringify(confirmed)) || CREDENTIAL_PATTERN.test(factualText) ||
+    CREDENTIAL_PATTERN.test(JSON.stringify(existing))) {
     return null;
   }
   return {

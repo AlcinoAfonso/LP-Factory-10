@@ -15,6 +15,8 @@ on:
       - 'supabase/tests/e22_7_retire_factual_authority.*'
       - 'supabase/migrations/20261005170954_e23_5_retire_unused_graphql.sql'
       - 'supabase/tests/e23_5_retire_unused_graphql.*'
+      - 'supabase/migrations/20261010202505_e25_3_communication_resources.sql'
+      - 'supabase/tests/e25_3_communication_resources.test.sql'
 
 permissions:
   contents: read
@@ -293,3 +295,57 @@ jobs:
           test "$(docker exec "$db_container" psql -U postgres -d postgres -At -v ON_ERROR_STOP=1 -c "select count(*)=2 from public.business_taxons where name like 'E1012 Race %'")" = t
           test "$(docker exec "$db_container" psql -U postgres -d postgres -At -v ON_ERROR_STOP=1 -c "select count(*)=2 and count(distinct taxon_id)=1 from public.account_taxonomy where account_id in ('e1012ace-0000-4000-8000-000000000011','e1012ace-0000-4000-8000-000000000012')")" = t
           echo "E10.12: integral migration, rollback cases and two simultaneous PostgreSQL sessions passed on PostgreSQL 17; no hosted connection or target writes." >> "$GITHUB_STEP_SUMMARY"
+
+  e25-3-sql-proof:
+    name: PB1 PostgreSQL 17 proof
+    if: ${{ github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'codex-app/e25-3-d14d-pb1' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install pinned Supabase CLI
+        uses: supabase/setup-cli@3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf # v2.1.1
+        with:
+          version: 2.106.0
+      - name: Stage isolated Supabase project
+        id: stage
+        shell: bash
+        run: |
+          set -euo pipefail
+          stage_project="$(mktemp -d "$RUNNER_TEMP/e25-3-sql.XXXXXX")"
+          mkdir -p "$stage_project/supabase/migrations"
+          cp supabase/config.toml "$stage_project/supabase/config.toml"
+          echo "project=$stage_project" >> "$GITHUB_OUTPUT"
+      - name: Start isolated PostgreSQL and execute exact PB1 migration
+        shell: bash
+        run: |
+          set -euo pipefail
+          supabase --workdir "${{ steps.stage.outputs.project }}" start \
+            -x gotrue,realtime,storage-api,imgproxy,kong,mailpit,postgrest,postgres-meta,studio,edge-runtime,logflare,vector,supavisor \
+            > "$RUNNER_TEMP/e25-3-start.log" 2>&1 || {
+              tail -n 35 "$RUNNER_TEMP/e25-3-start.log" | sed -E '/(SERVICE_ROLE|ANON_KEY|SECRET_KEY|JWT_SECRET|DB_PASSWORD|DATABASE_URL|PUBLISHABLE_KEY)/Id'
+              exit 1
+            }
+          mapfile -t db_containers < <(docker ps --format '{{.Names}}' | grep '^supabase_db_')
+          test "${#db_containers[@]}" -eq 1
+          db_container="${db_containers[0]}"
+          test "$(docker exec "$db_container" psql -U postgres -d postgres -At -c "select current_setting('server_version_num')::int / 10000 = 17")" = t
+          docker exec "$db_container" psql -U postgres -d postgres -v ON_ERROR_STOP=1 \
+            -c "create role ai_readonly; alter default privileges in schema public grant all on tables to service_role;"
+          # Exact canonical helper; unrelated historical patch targets are outside this isolated fixture.
+          awk '/^do \$migration\$/ { blocks++; if (blocks == 2) exit } { print }' \
+            supabase/migrations/20260827203000_postgrest_safe_application_conflicts.sql \
+            | docker exec -i "$db_container" psql -U postgres -d postgres -v ON_ERROR_STOP=1
+          docker exec -i "$db_container" psql -U postgres -d postgres -v ON_ERROR_STOP=1 \
+            < supabase/migrations/20261010202505_e25_3_communication_resources.sql
+          docker exec -i "$db_container" psql -U postgres -d postgres -v ON_ERROR_STOP=1 \
+            < supabase/tests/e25_3_communication_resources.test.sql > "$RUNNER_TEMP/e25-3-test.log" 2>&1 || {
+              tail -n 60 "$RUNNER_TEMP/e25-3-test.log"
+              exit 1
+            }
+          grep -qx 'ROLLBACK' "$RUNNER_TEMP/e25-3-test.log"
+          echo "Exact PB1 migration and rollback cases passed on isolated Supabase PostgreSQL 17: catalog ACL, identity, order, stale edit, private bucket metadata. Auth/Storage services and UI are not emulated." >> "$GITHUB_STEP_SUMMARY"
+      - name: Stop disposable database
+        if: ${{ always() && steps.stage.outputs.project != '' }}
+        shell: bash
+        run: supabase --workdir "${{ steps.stage.outputs.project }}" stop --no-backup

@@ -1,3 +1,4 @@
+import "./resource-validation-cases";
 import assert from "node:assert/strict";
 
 import { communicationSections, getCommunicationSection } from "./registry";

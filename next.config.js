@@ -1,6 +1,7 @@
 /** @type {import('next').NextConfig} */
 
 const nextConfig = {
+  experimental: { serverActions: { bodySizeLimit: "5mb" } },
   outputFileTracingIncludes: {
     '/admin/taxonomia/[taxonId]': [
       './docs/pesquisas-brutas/**/end_customer/v*.md',

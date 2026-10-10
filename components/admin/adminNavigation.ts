@@ -10,6 +10,13 @@ export type AdminArea = {
 
 export const adminAreas: AdminArea[] = [
   {
+    title: 'Base de Comunicação',
+    href: '/admin/base-comunicacao',
+    description: 'Organização global das seções da Base de Comunicação.',
+    status: 'Disponível',
+    scope: ['Adicionar seções opcionais', 'Renomear e ordenar títulos sem alterar conteúdos'],
+  },
+  {
     title: 'Contas',
     href: '/admin/contas',
     description: 'Leitura e acompanhamento read-only de contas reais.',
