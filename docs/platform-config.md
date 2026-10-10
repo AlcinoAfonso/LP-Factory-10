@@ -253,9 +253,9 @@
 • Finalidade: gate server-only do atendimento inicial por IA.
 • Desligamento suspende conversas já iniciadas por IA; não as encaminha ao legado nem limpa proposta ou intenção. O novo atendimento exige conversa nova, sem conversão do histórico legado; seu QA usa conta/conversa nova de teste.
 • Plataforma e escopo aprovados: Vercel Core, Preview e Production, com configuração independente por ambiente; habilitação somente pelo literal `true`.
-• Estado: `true` em Production e em Preview somente para a branch `codex-app/e10-12-rpc-acl`; redeploys e QA autenticado aprovados nos dois ambientes após apply seletivo validado. O gate de apply `SUPABASE_APPLY_MIGRATIONS_ENABLED` foi restaurado em `false`.
+• Estado: `true` em Production e em Preview para as branches `codex-app/e10-12-rpc-acl` e `codex-app/e10-12-encerramento-economia`; redeploys e QA autenticado aprovados nos dois ambientes após apply seletivo validado. O gate de apply `SUPABASE_APPLY_MIGRATIONS_ENABLED` foi restaurado em `false`.
 • Classificação: Config, não Secret. Alteração exige redeploy do ambiente afetado.
-• Workload `pending_setup_conversation`: `gpt-6-luna`/`xhigh`, prompt `e10_12_sales_context_v8` e contrato 3; revisões E21 ativas 8 em Preview e 2 em Production, com provas operacionais independentes e sem Web Search. Evidências de apply, ativação e QA: PRs #1050 e #1053.
+• Workload `pending_setup_conversation`: `gpt-6-luna`/`xhigh`, prompt `e10_12_sales_context_v9` e contrato 4; revisões E21 ativas 9 em Preview e 3 em Production, com provas operacionais independentes e sem Web Search. Evidências de apply, ativação e QA: PRs #1050 e #1053; prova do delta semântico: PR #1056.
 
 • `E20_6_5_INPUT_CATALOG_EVALUATION_PROVIDER_ENABLED`
 • Finalidade histórica: gate do provider consultivo E20.8.7, removido com o workload factual pela E22.7.
