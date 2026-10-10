@@ -3241,7 +3241,7 @@
 
 25.3.1 Objetivo e status
 - Objetivo: entregar os recursos manuais de Dados do negócio, Materiais de comunicação e Inteligência e copy em uma única Base por conta, preservando conteúdo legado, acesso comercial, papéis, concorrência, revisão humana e assistências de IA existentes.
-- Status: PB1/D14D com V1 funcional aprovada em 10/10/2026 e implementação candidata no repositório, sob Supervisão Autônomo. Instalação limpa, check e validadores locais aprovados; prova SQL suplementar executada em PostgreSQL 18.3, distinta do Supabase alvo em PostgreSQL 17.6 e sem emulação de Auth, Storage ou UI hospedada. Code Review independente e QA autenticado dos novos recursos em desktop/mobile permanecem pendentes. Nenhuma migration ou configuração externa foi aplicada; o gate E25.3 permanece desabilitado por padrão. A decisão humana sobre ambiente isolado para QA pré-merge ou exceção explícita de sequência continua necessária e impede prontidão e merge.
+- Status: PB1/D14D com V1 funcional aprovada em 10/10/2026 e implementação candidata no repositório, sob Supervisão Autônomo. Instalação limpa, check e validadores locais aprovados; prova da migration integral e testes SQL de rollback, ACL, ordem, edição obsoleta e HTTP 409 aprovados em Supabase PostgreSQL 17 isolado, sem emulação de Auth, Storage ou UI hospedada. O gate de Code Review independente do HEAD corrente é acompanhado no PR do recorte; QA autenticado dos novos recursos em desktop/mobile permanece pendente. Nenhuma migration ou configuração externa foi aplicada; o gate E25.3 permanece desabilitado por padrão. A decisão humana sobre ambiente isolado para QA pré-merge ou exceção explícita de sequência continua necessária e impede prontidão e merge.
 - Limites: PB2 e PB3 permanecem em definição. Este recorte não entrega novos agentes, rotinas de IA, pesquisa, processamento de mídia, transcrição, publicação automática ou integração com canais; não reabre E25.1/PB-A nem E25.2.
 
 25.3.2 Registros do recorte
@@ -3284,6 +3284,8 @@
   - V1 aprovada: Debate 14D — seção 4.2, preservada no commit `d342d06c3cedf6d5a49aad2d1f11a165c74ea78e`.
   - Derivação técnica, implementação candidata e evidências: commit `da729fa1d272f545c27673202a75af9dcb643dac`.
   - Facilitador de prova SQL isolada: commit `0f8ba51f946c83b29c9190cd9cca1038cc6a619c`.
+  - Prova SQL PostgreSQL 17: [run 38086017816, job 114312550569](https://github.com/AlcinoAfonso/LP-Factory-10/actions/runs/38086017816/job/114312550569), HEAD `0bdee64216af82d5b0ef288b077150b85d1f5630`.
+  - Gates e Code Review do HEAD corrente: [PR #1055](https://github.com/AlcinoAfonso/LP-Factory-10/pull/1055).
 
 25.3.3 Dados do negócio e Inteligência e copy
 - Status: implementação candidata; aceite operacional pendente.
