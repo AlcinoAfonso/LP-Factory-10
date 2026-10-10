@@ -20,7 +20,7 @@ const base: AttendanceOutput = {
   reply: "Jardinagem corresponde ao seu negócio?", preferredName: "Ana", preferredNameDeclined: false,
   businessUnderstanding: "Manutenção de jardins para condomínios.",
   suggestions: ["Pode ser útil explicar a frequência do serviço."], sufficientUnderstanding: true,
-  readyToComplete: false, action: "existing", existingTaxonId: nicheId,
+  readyToComplete: false, closureReason: null, action: "existing", existingTaxonId: nicheId,
 };
 const conversation: PendingSetupConversation = {
   id: accountId, accountId, userId: accountId, preferredName: "Ana", preferredNameDeclined: false,
@@ -112,6 +112,20 @@ async function main() {
   const retained = attendanceSummary(noBusinessNews, "Jardinagem", null, remembered);
   assert.equal(retained, remembered); // The literal social message is never automatically imported.
   assert.equal(retained.includes("flamenguista"), false);
+  const closing = { ...noBusinessNews, reply: "Sem avanço neste momento, encerro por aqui. Obrigado pela conversa.",
+    closureReason: "Não houve avanço útil para esclarecer a necessidade comercial." };
+  assert.ok(validateAttendanceOutput(closing, socialContext));
+  for (const invalid of [{ ...closing, readyToComplete: true }, { ...base, closureReason: closing.closureReason },
+    { ...confirm, closureReason: closing.closureReason }]) assert.equal(validateAttendanceOutput(invalid, socialContext), null);
+  const closedSummary = attendanceSummary(closing, "Jardinagem", null, remembered);
+  assert.equal(JSON.parse(closedSummary).pendingReason, closing.closureReason);
+  assert.equal(JSON.parse(closedSummary).confirmedUnderstanding, context.displayedUnderstanding);
+  assert.equal(closedSummary.includes("flamenguista"), false);
+  assert.equal(JSON.parse(attendanceSummary(later, "Jardinagem", null, closedSummary)).pendingReason, null);
+  const closedProjection = attendanceProjection({ ...conversation, accountContext: {
+    summary: closedSummary, updatedAt: conversation.updatedAt,
+  } }, context.catalog);
+  assert.equal(JSON.parse(closedProjection.summary!).pendingReason, closing.closureReason);
   for (const malformed of ["not JSON", '{"contextualUnderstanding":"unaccepted"}']) {
     assert.equal(JSON.parse(attendanceSummary(later, null, null, malformed)).confirmedUnderstanding, null);
   }
@@ -124,6 +138,32 @@ async function main() {
   const nearLimit = JSON.stringify({ contextualUnderstanding: null, confirmedUnderstanding: "a".repeat(3800), classification: "Curta", suggestions: [] });
   assert.ok(nearLimit.length <= 4000);
   assert.equal(attendanceSummary(noBusinessNews, "c".repeat(120), null, nearLimit), nearLimit);
+  const fullMemory = JSON.stringify({ contextualUnderstanding: null, confirmedUnderstanding: "a".repeat(3865),
+    classification: "Curta", suggestions: [] });
+  assert.ok(fullMemory.length <= 4000);
+  const boundedClosure = attendanceSummary({ ...closing, closureReason: "p".repeat(160) }, "c".repeat(120), null, fullMemory);
+  assert.ok(boundedClosure.length <= 4000);
+  assert.equal(JSON.parse(boundedClosure).confirmedUnderstanding, JSON.parse(fullMemory).confirmedUnderstanding);
+  assert.equal(JSON.parse(boundedClosure).classification, "Curta");
+  assert.equal(JSON.parse(boundedClosure).pendingReason, "Sem avanço útil.");
+  const resumedProjection = attendanceProjection({ ...conversation, accountContext: {
+    summary: boundedClosure, updatedAt: conversation.updatedAt,
+  } }, context.catalog);
+  assert.equal(JSON.parse(resumedProjection.summary!).pendingReason, "Sem avanço útil.");
+  for (const escaped of [false, true]) {
+    const minimal = { confirmedUnderstanding: "", classification: "Curta", pendingReason: "Sem avanço útil." };
+    const budget = 4000 - JSON.stringify(minimal).length;
+    minimal.confirmedUnderstanding = escaped ? '"\n'.repeat(Math.floor(budget / 4)) + "a".repeat(budget % 4) : "a".repeat(budget);
+    const atLimit = JSON.stringify(minimal);
+    assert.equal(atLimit.length, 4000);
+    const closedAgain = attendanceSummary({ ...closing, closureReason: "p".repeat(160) }, "c".repeat(120), null, atLimit);
+    assert.equal(closedAgain, atLimit);
+    assert.equal(JSON.parse(attendanceProjection({ ...conversation, accountContext: {
+      summary: closedAgain, updatedAt: conversation.updatedAt,
+    } }, context.catalog).summary!).pendingReason, minimal.pendingReason);
+    const partial = JSON.stringify({ ...minimal, pendingReason: "outro motivo" });
+    assert.equal(JSON.parse(attendanceSummary(noBusinessNews, null, null, partial)).confirmedUnderstanding, null);
+  }
   for (const oversized of ["a".repeat(4000), '"'.repeat(2000)]) {
     const result = attendanceSummary({ ...accepted, businessUnderstanding: oversized }, "Jardinagem", proposal);
     assert.ok(result.length <= 4000);
@@ -168,6 +208,25 @@ async function main() {
   const input = { accountId, userId: accountId, conversationId: accountId, expectedVersion: 1, content: "Jardins", intent: "message" as const };
   assert.equal((await conductAttendanceTurn(input, deps)).ok, true);
   assert.deepEqual(effects, ["claim", "commit"]); // old lifetime call counter is irrelevant.
+  current = { ...conversation, accountContext: { summary: closedSummary, updatedAt: conversation.updatedAt } };
+  assert.equal((await conductAttendanceTurn(input, { ...deps,
+    request: async ({ context: resumed }) => {
+      assert.equal(JSON.parse(resumed.summary!).pendingReason, closing.closureReason);
+      return { ok: true, output: base, responseId: "resumed", latencyMs: 1 };
+    },
+  })).ok, true); // Cordial closure creates no operational stop or reset.
+  current = { ...conversation, preferredName: null, preferredNameDeclined: false };
+  assert.equal((await conductAttendanceTurn(input, { ...deps,
+    request: async () => ({ ok: true, output: { ...closing, preferredName: null, preferredNameDeclined: false }, responseId: "closed", latencyMs: 1 }),
+    commit: async input => {
+      assert.equal(input.output.businessUnderstanding, conversation.businessContextText);
+      assert.equal(input.confirm, false); assert.equal(input.proposal, null);
+      assert.equal(input.output.readyToComplete, false);
+      assert.equal(JSON.parse(input.summary).pendingReason, closing.closureReason);
+      assert.equal(JSON.parse(input.summary).confirmedUnderstanding, null);
+      return { ok: true, version: 3 };
+    },
+  })).ok, true);
   const exactDisplayed = "Manutenção  de jardins.\n\nReferência: https://example.com";
   for (const proposed of [base, pending, finishing]) {
     current = { ...conversation, businessContextText: exactDisplayed };

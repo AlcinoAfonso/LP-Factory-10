@@ -2,8 +2,8 @@ import { z } from "zod";
 import { redactPotentialContactDetails, validatePreferredName } from "./policy";
 import type { PendingSetupConversation } from "./contracts";
 
-export const ATTENDANCE_PROMPT_VERSION = "e10_12_sales_context_v8";
-export const ATTENDANCE_CONTRACT_VERSION = 3;
+export const ATTENDANCE_PROMPT_VERSION = "e10_12_sales_context_v9";
+export const ATTENDANCE_CONTRACT_VERSION = 4;
 export const ATTENDANCE_LEASE_SECONDS = 360;
 
 export const attendanceOutputSchema = z.object({
@@ -14,6 +14,7 @@ export const attendanceOutputSchema = z.object({
   suggestions: z.array(z.string().trim().min(1).max(300)).max(2),
   sufficientUnderstanding: z.boolean(),
   readyToComplete: z.boolean(),
+  closureReason: z.string().trim().min(1).max(160).nullable(),
   action: z.enum(["ask", "existing", "pending", "confirm"]),
   existingTaxonId: z.uuid().nullable(),
 }).strict();
@@ -53,6 +54,7 @@ Se não houver correspondência segura, use pending com entendimento contextual 
 existingTaxonId deve conter o ID proposto somente em action=existing. Em ask, pending e confirm, existingTaxonId deve ser null; no turno confirm, a categoria é lida exclusivamente de confirmedProposal.
 confirmedProposal só existe no turno de confirmação explícita do entendimento/categoria persistidos. Nesse turno devolva confirm e mantenha exatamente displayedUnderstanding, sem mudar a proposta, pesquisar ou pedir novo Sim. O mesmo aceite confirma o entendimento exibido e a categoria quando houver, ou somente o entendimento no fallback. Fora desse turno, confirm é proibido. confirmedOperationalUnderstanding indica descrição operacional já confirmada: não peça nova confirmação apenas porque não há taxon.
 Após confirmar, continue com pergunta/orientação comercial se houver lacuna útil. readyToComplete só é true quando há entendimento suficiente, classificação oficial válida ou entendimento operacional confirmado (inclusive neste turno), orientação pertinente e próximo passo claros. Não encerre automaticamente só porque encontrou/confirmou categoria; não continue artificialmente quando já basta. Use ask para conversa útil sem nova proposta. pending/existing aguardam confirmação, logo nunca estão prontos.
+Diante de assunto lateral ocasional, responda brevemente e com naturalidade quando útil, depois redirecione ao negócio e às necessidades comerciais. Se o histórico mostrar que já tentou redirecionar e o lead insistir no desvio sem avanço útil, explicite cordialmente seu papel e encerre sem nova pergunta. Reconheça também repetição, dúvidas circulares ou falta de perspectiva de conclusão: quando não houver avanço útil, encerre cordialmente, sem exigir quantidade de mensagens, chamadas ou tempo. Não encerre prematuramente uma conversa útil ou por dúvida pontual. No encerramento inconclusivo, closureReason resume em uma frase curta a pendência comercial ou a ausência de avanço que impediu a conclusão; businessUnderstanding mantém somente contexto comercial relevante e suggestions continua separada. Use action=ask, existingTaxonId=null e readyToComplete=false: encerramento inconclusivo não confirma entendimento/categoria, não concede acesso e não é conclusão bem-sucedida. No turno de confirmação explícita, preserve o contrato confirm vigente. Não prometa análise posterior, prazo, retorno automático ou novo contato. Fora de encerramento inconclusivo, closureReason é null. Uma nova mensagem útil pode retomar normalmente o atendimento a partir do contexto e da pendência no Resumo.
 Use marketContext somente como repertório contextual do nicho. Respeite proveniência, período, limitações e disponibilidade; registros históricos não são pesquisa atual. Expresse padrões como possibilidades condicionais a validar com o lead, não características da empresa, recomendações obrigatórias ou promessas. Ausência de pesquisa específica não bloqueia nem autoriza invenção.
 A fonte comercial competente disponível neste recorte confirma somente a proposta de valor geral: organizar conhecimento do negócio e apoiar sua comunicação. Não há oferta específica de serviço, preço, prazo, disponibilidade ou condição comercial comprovada no contexto. Diga explicitamente que esses detalhes precisam de confirmação e encaminhe a continuidade competente, sem inventá-los. Exemplos, telas e serviços ilustrativos não são oferta disponível. D17 conserva objeções, comparações, recomendação e contratação aprofundadas.
 Não conceda trial, entitlement ou acesso pago; não gere LP/produto, conteúdo da Base, CRM, canais, integrações, pós-venda ou followup. Não crie dependência Pending Setup–Base, sincronização, reconstrução ou governança de mudanças externas futuras.
@@ -93,6 +95,7 @@ export function validateAttendanceOutput(raw: unknown, context: AttendanceContex
   const parsed = attendanceOutputSchema.safeParse(raw);
   if (!parsed.success) return null;
   const value = parsed.data;
+  if (value.closureReason !== null && (value.action !== "ask" || value.readyToComplete)) return null;
   if (!value.businessUnderstanding && (value.action !== "ask" || value.readyToComplete))
     value.businessUnderstanding = context.displayedUnderstanding ?? "";
   if (value.preferredName !== null && (!validatePreferredName(value.preferredName, null).ok || value.preferredNameDeclined)) return null;
@@ -130,16 +133,21 @@ export function attendanceProposal(output: AttendanceOutput, catalog: readonly A
   }
   return output.action === "pending" ? { kind: "operational_fallback", taxonId: null, taxonName: null } : null;
 }
-const accountSummarySchema = z.object({
+const fullAccountSummarySchema = z.object({
   contextualUnderstanding: z.string().max(4000).nullable(),
   confirmedUnderstanding: z.string().max(4000).nullable(),
   classification: z.string().max(120),
   suggestions: attendanceOutputSchema.shape.suggestions,
+  pendingReason: z.string().max(160).nullable().optional(),
 }).strict();
+const accountSummarySchema = z.union([fullAccountSummarySchema,
+  fullAccountSummarySchema.omit({ contextualUnderstanding: true, suggestions: true })
+    .extend({ pendingReason: z.literal("Sem avanço útil.") }).strict(),
+]);
 function readAccountSummary(raw: string | null | undefined) {
   try {
     const parsed = accountSummarySchema.safeParse(JSON.parse(raw ?? "null"));
-    return parsed.success && raw && raw.length <= 4000 ? parsed.data : null;
+    return parsed.success && raw && raw.length <= 4000 ? { contextualUnderstanding: null, suggestions: [], ...parsed.data } : null;
   } catch { return null; } // Invalid memory never promotes an interpretation to confirmed.
 }
 export function attendanceSummary(output: AttendanceOutput, primary: string | null, proposal: AttendanceProposal | null | undefined,
@@ -150,11 +158,18 @@ export function attendanceSummary(output: AttendanceOutput, primary: string | nu
     confirmedUnderstanding: output.action === "confirm" ? output.businessUnderstanding : prior?.confirmedUnderstanding ?? null,
     classification: (output.action === "confirm" && proposal?.kind === "existing" ? proposal.taxonName : primary) || "Não identificada.",
     suggestions: output.suggestions.length ? output.suggestions : prior?.suggestions ?? [],
+    pendingReason: output.closureReason ?? (output.businessUnderstanding ? null : prior?.pendingReason ?? null),
   };
   // Bound whole fields, never invent an abbreviated version of what the user accepted.
   if (JSON.stringify(summary).length > 4000) summary.suggestions = [];
   if (JSON.stringify(summary).length > 4000) summary.contextualUnderstanding = null;
-  if (JSON.stringify(summary).length > 4000 && output.action !== "confirm" && prior?.confirmedUnderstanding && priorSummary) return priorSummary;
+  if (JSON.stringify(summary).length > 4000 && output.action !== "confirm" && prior?.confirmedUnderstanding && priorSummary) {
+    if (output.closureReason) return JSON.stringify({
+      confirmedUnderstanding: prior.confirmedUnderstanding, classification: prior.classification,
+      pendingReason: "Sem avanço útil.",
+    }); // Preserve accepted wording; the detailed reason remains in the dialogue.
+    return priorSummary;
+  }
   if (JSON.stringify(summary).length > 4000) summary.confirmedUnderstanding = null;
   return JSON.stringify(summary);
 }

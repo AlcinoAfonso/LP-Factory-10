@@ -55,7 +55,9 @@ export async function conductAttendanceTurn(input: Readonly<{
     const answer = await dependencies.request({ accountId: input.accountId, context });
     if (!answer.ok || (confirmation && answer.output.action !== "confirm")) throw new Error("provider_unavailable");
     const output = confirmation || answer.output.businessUnderstanding === context.displayedUnderstanding
-      ? { ...answer.output, businessUnderstanding: reserved.businessContextText! } : answer.output;
+      ? { ...answer.output, businessUnderstanding: reserved.businessContextText! }
+      : answer.output.closureReason && !answer.output.businessUnderstanding
+        ? { ...answer.output, businessUnderstanding: reserved.businessContextText ?? "" } : answer.output;
     const written = await dependencies.commit({
       ...fence, output, confirm: confirmation, observedPrimaryTaxonId: currentPrimaryTaxonId,
       proposal: confirmation ? null : attendanceProposal(output, catalog),

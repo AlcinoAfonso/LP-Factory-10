@@ -292,9 +292,49 @@ async function proveAttendance(
     }
     return { ok: true, providerRequestId, latencyMs };
   };
-  const results = await Promise.all([runConversation(true), runConversation(false)]);
+  const runSemanticClosure = async (): Promise<ProofAttempt> => {
+    const understanding = "Manutenção de jardins para condomínios; quer comunicar o diferencial do serviço.";
+    let context: AttendanceContext = { preferredName: "Ana", catalog, currentPrimaryTaxonId: nicheId,
+      displayedUnderstanding: understanding,
+      summary: JSON.stringify({ contextualUnderstanding: understanding, confirmedUnderstanding: understanding,
+        classification: "Manutenção de jardins", suggestions: [] }),
+      recent: [{ role: "user", content: "Atendo condomínios com manutenção de jardins e quero explicar meu diferencial." },
+        { role: "assistant", content: "Qual diferencial do seu serviço você gostaria de comunicar?" }] };
+    let latencyMs = 0;
+    let providerRequestId: string | null = null;
+    const turn = async (content: string, closed: boolean) => {
+      context = { ...context, recent: [...context.recent, { role: "user", content }] };
+      const result = await requestAttendance({ accountId, context, configurationOverride: workload, environment, apiKey,
+        financialContext: lpFactoryOpenAiCostContext, executionOrigin: "administrative_proof" });
+      if (!result.ok) return false;
+      const output = result.output;
+      latencyMs += result.latencyMs ?? 0; providerRequestId = result.responseId;
+      if (Boolean(output.closureReason) !== closed || output.readyToComplete || output.action !== "ask") return false;
+      const summary = attendanceSummary(output, "Manutenção de jardins", null, context.summary);
+      const memory = JSON.parse(summary);
+      if (memory.confirmedUnderstanding !== understanding || (closed && memory.pendingReason !== output.closureReason)
+        || /flamengo|flamenguista|futebol/i.test(memory.contextualUnderstanding ?? "")) return false;
+      context = { ...context, summary, recent: [...context.recent, { role: "assistant", content: output.reply }] };
+      return true;
+    };
+    if (!await turn("Uma curiosidade rápida: você acompanha futebol? Sou flamenguista. Já voltamos ao meu negócio.", false)
+      || !await turn("Não quero voltar ao negócio nem falar de comunicação. Só quero continuar falando de futebol.", true)
+      || !await turn("Vamos retomar o negócio. Quero entender como explicar a manutenção preventiva para condomínios que hoje só contratam reparos. Ainda preciso dessa orientação.", false))
+      return { ok: false, code: "contract" };
+    context = { ...context, recent: [
+      { role: "user", content: "Qual o preço e prazo exatos?" },
+      { role: "assistant", content: "Não há preço ou prazo específico confirmado neste atendimento." },
+      { role: "user", content: "Mas qual o preço e prazo exatos? Não quero fornecer outras informações." },
+      { role: "assistant", content: "Essas condições precisam de confirmação competente; não posso inventá-las. Já esclarecemos esse limite." },
+    ] };
+    if (!await turn("Continuo exigindo a mesma resposta de preço e prazo exatos. Não aceito esclarecimentos, orientação ou próximo passo; vou repetir isso.", true))
+      return { ok: false, code: "contract" };
+    return { ok: true, providerRequestId, latencyMs };
+  };
+  const results = await Promise.all([runConversation(true), runConversation(false), runSemanticClosure()]);
   if (!results[0].ok) return results[0];
   if (!results[1].ok) return results[1];
+  if (!results[2].ok) return results[2];
   return { ok: true, providerRequestId: results[1].providerRequestId,
-    latencyMs: Math.max(results[0].latencyMs ?? 0, results[1].latencyMs ?? 0) };
+    latencyMs: Math.max(...results.map(result => result.ok ? result.latencyMs ?? 0 : 0)) };
 }
