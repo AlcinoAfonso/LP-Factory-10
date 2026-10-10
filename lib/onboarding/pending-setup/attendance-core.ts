@@ -142,7 +142,7 @@ const fullAccountSummarySchema = z.object({
 }).strict();
 const accountSummarySchema = z.union([fullAccountSummarySchema,
   fullAccountSummarySchema.omit({ contextualUnderstanding: true, suggestions: true })
-    .extend({ pendingReason: z.literal("Sem avanço útil.") }).strict(),
+    .extend({ pendingReason: z.literal("Sem avanço útil.").nullable() }).strict(),
 ]);
 function readAccountSummary(raw: string | null | undefined) {
   try {
@@ -164,9 +164,9 @@ export function attendanceSummary(output: AttendanceOutput, primary: string | nu
   if (JSON.stringify(summary).length > 4000) summary.suggestions = [];
   if (JSON.stringify(summary).length > 4000) summary.contextualUnderstanding = null;
   if (JSON.stringify(summary).length > 4000 && output.action !== "confirm" && prior?.confirmedUnderstanding && priorSummary) {
-    if (output.closureReason) return JSON.stringify({
+    if (output.closureReason || (output.businessUnderstanding && prior.pendingReason)) return JSON.stringify({
       confirmedUnderstanding: prior.confirmedUnderstanding, classification: prior.classification,
-      pendingReason: "Sem avanço útil.",
+      pendingReason: output.closureReason ? "Sem avanço útil." : null,
     }); // Preserve accepted wording; the detailed reason remains in the dialogue.
     return priorSummary;
   }
