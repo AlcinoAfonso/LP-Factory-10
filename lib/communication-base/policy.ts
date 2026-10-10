@@ -79,7 +79,7 @@ export function projectCommunicationBase(input: Readonly<{
   sections_json: unknown;
   created_at: unknown;
   updated_at: unknown;
-}>, definitions: readonly CommunicationSectionDefinition[] = communicationSections): CommunicationBase | null {
+}>, definitions: readonly CommunicationSectionDefinition[] = communicationSections, includeFacts = true): CommunicationBase | null {
   const sectionsJson = parseStoredSections(input.sections_json, definitions);
   if (typeof input.account_id !== "string" ||
       typeof input.version !== "number" ||
@@ -90,7 +90,11 @@ export function projectCommunicationBase(input: Readonly<{
   const sections: Partial<Record<string, CommunicationSection>> = {};
   for (const definition of definitions) {
     const entry = sectionsJson[definition.key];
-    if (entry !== undefined) sections[definition.key] = entry as CommunicationSection;
+    if (entry !== undefined) {
+      const section = { ...(entry as CommunicationSection) };
+      if (!includeFacts) delete section.facts;
+      sections[definition.key] = section;
+    }
   }
   return {
     accountId: input.account_id,

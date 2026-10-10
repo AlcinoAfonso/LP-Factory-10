@@ -3,6 +3,7 @@ import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import type { CommunicationSectionDefinition } from "../registry";
+import { isCommunicationResourcesEnabled } from "../config";
 import type {
   CommunicationBase,
   CommunicationBaseResult,
@@ -27,6 +28,10 @@ type BaseRow = Readonly<{
   updated_at: string;
 }>;
 
+function projectBaseRow(row: BaseRow, definitions?: readonly CommunicationSectionDefinition[]): CommunicationBase | null {
+  return projectCommunicationBase(row, definitions, isCommunicationResourcesEnabled());
+}
+
 export async function readCommunicationBase(
   accountId: string,
   definitions?: readonly CommunicationSectionDefinition[],
@@ -42,7 +47,7 @@ export async function readCommunicationBase(
       .maybeSingle();
     if (error) return { ok: false, error: "read_failed" };
     if (!data) return { ok: true, value: null };
-    const base = projectCommunicationBase(data as BaseRow, definitions);
+    const base = projectBaseRow(data as BaseRow, definitions);
     return base ? { ok: true, value: base } : { ok: false, error: "read_failed" };
   } catch {
     return { ok: false, error: "read_failed" };
@@ -114,7 +119,7 @@ export async function createCommunicationBase(
       }
       return { ok: false, error: "write_failed" };
     }
-    const base = projectCommunicationBase(data as BaseRow);
+    const base = projectBaseRow(data as BaseRow);
     return base ? { ok: true, value: base } : { ok: false, error: "read_failed" };
   } catch {
     return { ok: false, error: "write_failed" };
@@ -164,7 +169,7 @@ export async function saveCommunicationSection(input: Readonly<{
       .maybeSingle();
     if (error) return { ok: false, error: "write_failed" };
     if (!data) return { ok: false, error: "conflict" };
-    const base = projectCommunicationBase(data as BaseRow, input.definitions);
+    const base = projectBaseRow(data as BaseRow, input.definitions);
     return base ? { ok: true, value: base } : { ok: false, error: "read_failed" };
   } catch {
     return { ok: false, error: "write_failed" };
@@ -181,6 +186,6 @@ async function readWithService(
     .limit(1)
     .maybeSingle();
   if (error || !data) return null;
-  const base = projectCommunicationBase(data as BaseRow);
+  const base = projectBaseRow(data as BaseRow);
   return base ? { ok: true, value: base } : null;
 }
