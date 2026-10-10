@@ -10,8 +10,11 @@ import {
   readPendingSetupInitialContext,
   saveCommunicationSection,
 } from "../../../../lib/communication-base/adapters/communicationBaseAdapter";
-import { parseSectionValue, withSection } from "../../../../lib/communication-base/policy";
+import { parseCommunicationFacts, parseSectionValue, withSection } from "../../../../lib/communication-base/policy";
 import { parseEditorValue } from "../../../../lib/communication-base/editor-value";
+import { parseEditorDraft } from "../../../../lib/communication-base/manual-editor-value";
+import { isCommunicationResourcesEnabled } from "../../../../lib/communication-base/config";
+import { readCommunicationDefinitions } from "../../../../lib/communication-base/adapters/communicationCatalogAdapter";
 import { getCommunicationSection } from "../../../../lib/communication-base/registry";
 import { hasConfirmedStageOneInput, type StageTwoDraft, type StageTwoTarget } from "../../../../lib/communication-base/ai-core";
 import { isCurrentGenerationVersion } from "../../../../lib/communication-base/generation-guard";
@@ -73,20 +76,29 @@ export async function saveCommunicationSectionAction(
   const key = readFormString(formData, "section_key");
   const rawValue = readFormString(formData, "value");
   const version = Number(readFormString(formData, "version"));
-  const section = getCommunicationSection(key);
+  const access = await requireCommunicationBaseAccess(account, true);
+  if (!access.ok) return failure(UNAVAILABLE);
+  const definitions = await readCommunicationDefinitions();
+  if (!definitions.ok) return failure(UNAVAILABLE);
+  const section = definitions.value.find(section => section.key === key && section.stage !== 3);
   if (!section || !Number.isSafeInteger(version) || version <= 0) {
     return failure("Dados inválidos. Atualize a página e tente novamente.");
   }
-  const parsed = parseSectionValue(section, parseEditorValue(section.format, rawValue));
+  const parsed = parseSectionValue(section, parseEditorDraft(section.format, rawValue, isCommunicationResourcesEnabled() && formData.get("structured_value") === "true"));
+  let facts: unknown;
+  if (isCommunicationResourcesEnabled() && formData.has("facts")) {
+    try { facts = JSON.parse(readFormString(formData, "facts")); } catch { return failure("Revise os registros do negócio."); }
+    if (section.stage !== 1 || parseCommunicationFacts(facts) === null) return failure("Revise os rótulos, valores e limites dos registros.");
+  }
   if (parsed === null) return failure("Revise o conteúdo e respeite os limites indicados.");
 
-  const access = await requireCommunicationBaseAccess(account, true);
-  if (!access.ok) return failure(UNAVAILABLE);
   const result = await saveCommunicationSection({
     accountId: access.value.accountId,
     key,
     value: parsed,
     expectedVersion: version,
+    definitions: definitions.value,
+    facts,
     origin: section.stage === 1 ? "user_confirmed" : "user_reviewed",
   });
   if (!result.ok) return failure(errorMessage(result.error));

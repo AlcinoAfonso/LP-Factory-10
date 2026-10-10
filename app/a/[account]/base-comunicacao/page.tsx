@@ -1,3 +1,6 @@
+import { readCommunicationDefinitions } from "../../../../lib/communication-base/adapters/communicationCatalogAdapter";
+import { isCommunicationResourcesEnabled } from "../../../../lib/communication-base/config";
+import { CommunicationMaterials } from "./_components/CommunicationMaterials";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -30,8 +33,10 @@ export default async function CommunicationBasePage({ params }: PageProps) {
     );
   }
 
+  const definitions = await readCommunicationDefinitions();
+  const structured = isCommunicationResourcesEnabled();
   const [result, taxonomy] = await Promise.all([
-    readCommunicationBase(access.value.accountId),
+    definitions.ok ? readCommunicationBase(access.value.accountId, definitions.value) : Promise.resolve({ok:false as const,error:"read_failed" as const}),
     readActivePrimaryAccountTaxon({ accountId: access.value.accountId }),
   ]);
   const base = result.ok ? result.value : null;
@@ -87,9 +92,10 @@ export default async function CommunicationBasePage({ params }: PageProps) {
               </p>
             ) : null}
             <CommunicationBaseTabs stageOne={<CommunicationStageOne account={access.value.accountSubdomain}
-              base={base} canEdit={access.value.canEdit} />}
+              base={base} canEdit={access.value.canEdit} structured={structured} definitions={definitions.ok ? definitions.value : []} />}
               stageTwo={<CommunicationStageTwo key={stageOneStateKey(base)} account={access.value.accountSubdomain}
-                base={base} canEdit={access.value.canEdit} />} />
+                base={base} canEdit={access.value.canEdit} structured={structured} definitions={definitions.ok ? definitions.value : []} />}
+              materials={structured ? <CommunicationMaterials account={access.value.accountSubdomain} base={base} canEdit={access.value.canEdit} definitions={definitions.ok ? definitions.value : []} /> : undefined} />
           </div>
         )}
       </div>

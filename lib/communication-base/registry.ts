@@ -1,5 +1,5 @@
-export type CommunicationSectionFormat = "text" | "items" | "faq";
-export type CommunicationSectionStage = 1 | 2;
+export type CommunicationSectionFormat = "text" | "items" | "faq" | "material_items";
+export type CommunicationSectionStage = 1 | 2 | 3;
 
 export type CommunicationSectionDefinition = Readonly<{
   key: string;

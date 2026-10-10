@@ -8,7 +8,7 @@ export function stageOneStateKey(base: CommunicationBase): string {
 }
 
 export function sectionStateKey(section: CommunicationSection | undefined): string {
-  return fingerprint(section ? [section.format, section.origin, section.value] : null);
+  return fingerprint(section ? [section.format, section.origin, section.value, ...(section.facts ? [section.facts] : [])] : null);
 }
 
 function fingerprint(value: unknown): string {

@@ -2,6 +2,7 @@ import "server-only";
 
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import type { CommunicationSectionDefinition } from "../registry";
 import type {
   CommunicationBase,
   CommunicationBaseResult,
@@ -28,6 +29,7 @@ type BaseRow = Readonly<{
 
 export async function readCommunicationBase(
   accountId: string,
+  definitions?: readonly CommunicationSectionDefinition[],
 ): Promise<CommunicationBaseResult<CommunicationBase | null>> {
   if (!accountId) return { ok: false, error: "invalid" };
   try {
@@ -40,7 +42,7 @@ export async function readCommunicationBase(
       .maybeSingle();
     if (error) return { ok: false, error: "read_failed" };
     if (!data) return { ok: true, value: null };
-    const base = projectCommunicationBase(data as BaseRow);
+    const base = projectCommunicationBase(data as BaseRow, definitions);
     return base ? { ok: true, value: base } : { ok: false, error: "read_failed" };
   } catch {
     return { ok: false, error: "read_failed" };
@@ -125,6 +127,8 @@ export async function saveCommunicationSection(input: Readonly<{
   value: CommunicationSectionValue;
   expectedVersion: number;
   origin: CommunicationSection["origin"];
+  definitions?: readonly CommunicationSectionDefinition[];
+  facts?: unknown;
 }>): Promise<CommunicationBaseResult<CommunicationBase>> {
   if (!input.accountId || !Number.isInteger(input.expectedVersion) || input.expectedVersion <= 0) {
     return { ok: false, error: "invalid" };
@@ -141,9 +145,9 @@ export async function saveCommunicationSection(input: Readonly<{
     if (!current || current.version !== input.expectedVersion) {
       return { ok: false, error: "conflict" };
     }
-    const sections = parseStoredSections(current.sections_json);
+    const sections = parseStoredSections(current.sections_json, input.definitions);
     if (!sections) return { ok: false, error: "read_failed" };
-    const next = withSection(sections, input.key, input.value, input.origin);
+    const next = withSection(sections, input.key, input.value, input.origin, input.definitions, input.facts);
     if (!next) return { ok: false, error: "invalid" };
 
     const { data, error } = await service
@@ -160,7 +164,7 @@ export async function saveCommunicationSection(input: Readonly<{
       .maybeSingle();
     if (error) return { ok: false, error: "write_failed" };
     if (!data) return { ok: false, error: "conflict" };
-    const base = projectCommunicationBase(data as BaseRow);
+    const base = projectCommunicationBase(data as BaseRow, input.definitions);
     return base ? { ok: true, value: base } : { ok: false, error: "read_failed" };
   } catch {
     return { ok: false, error: "write_failed" };

@@ -1,0 +1,62 @@
+import assert from "node:assert/strict";
+import { communicationSections, type CommunicationSectionDefinition } from "./registry";
+import { parseCommunicationFacts, parseSectionValue, parseStoredSections, projectCommunicationBase, withSection } from "./policy";
+import { formatManualEditorValue, parseManualEditorValue } from "./manual-editor-value";
+import { COMMUNICATION_MATERIAL_BUCKET, imageExtension, ownsMaterialPath, parseCommunicationMaterials, safeMaterialLink } from "./materials";
+import { parseCommunicationCatalog } from "./catalog";
+import { sectionEditState } from "../../app/a/[account]/base-comunicacao/_components/section-edit-state";
+const faq=communicationSections.find(s=>s.key==="faq")!;
+const items=communicationSections.find(s=>s.key==="market_insights")!;
+for(const [definition,value] of [[faq,[{question:"Qual | opção?\nCom detalhes",answer:"Primeiro parágrafo.\n\nSegundo | parágrafo."}]],[items,["Dores\n\nUm parágrafo.","Desejos\nOutro texto."]]] as const) {
+  const stored={format:definition.format,value,origin:"user_reviewed" as const};
+  const draft=formatManualEditorValue(value,definition.format);
+  assert.deepEqual(parseSectionValue(definition,parseManualEditorValue(definition.format,draft)),value);
+  assert.equal(sectionEditState(definition,stored,draft,true).dirty,false);
+  assert.equal(sectionEditState(definition,stored,draft,true).valid,true);
+}
+assert.equal(parseCommunicationFacts([{label:"Telefone",value:""}]),null);
+assert.equal(parseCommunicationFacts([{label:"x".repeat(101),value:"v"}]),null);
+assert.deepEqual(parseCommunicationFacts([{label:" CNPJ ",value:" 123 "},{label:"",value:""}]),[{label:"CNPJ",value:"123"}]);
+const raw={business_name:{format:"text",value:"Nome público",origin:"user_confirmed",facts:[{label:"Razão social",value:"Empresa Ltda"}]},
+  future_key:{opaque:"preservado"}};
+const changed=withSection(raw,"business_name","Novo nome","user_confirmed");
+assert.deepEqual((changed?.business_name as {facts:unknown}).facts,raw.business_name.facts);
+assert.deepEqual(changed?.future_key,raw.future_key);
+assert.deepEqual(raw.business_name.value,"Nome público");
+const cleared=withSection(raw,"business_name","Nome público","user_confirmed",communicationSections,[]);
+assert.deepEqual((cleared?.business_name as {facts:unknown}).facts,[]);
+assert.equal(sectionEditState(communicationSections[0],raw.business_name as never,"Nome público",true,JSON.stringify([{label:"Razão social",value:"Outra"}])).dirty,true);
+assert.equal(withSection(raw,"missing","x","user_confirmed"),null);
+assert.equal(parseStoredSections({business_name:{...raw.business_name,facts:[{label:"sem valor",value:""}]}}),null);
+const extra:CommunicationSectionDefinition={key:"custom_fixed",label:"Extra",stage:1,format:"text",group:"Dados do negócio"};
+const dynamic=withSection(raw,extra.key,"Manual","user_confirmed",[...communicationSections,extra]);
+assert.ok(dynamic);
+assert.equal(withSection(raw,extra.key,"Manual","user_reviewed",[...communicationSections,extra]),null);
+const projection=projectCommunicationBase({account_id:"a",version:1,sections_json:dynamic,created_at:"t",updated_at:"t"},[...communicationSections,extra]);
+assert.equal(projection?.sections[extra.key]?.value,"Manual");
+
+const id="00000000-0000-4000-8000-000000000001",account="00000000-0000-4000-8000-000000000002",asset="00000000-0000-4000-8000-000000000003";
+const row={id,kind:"image",name:"Logo",context:"Uso institucional",author:"",authorization:"",source:{type:"link",url:"https://example.com/logo.png"}};
+assert.ok(parseCommunicationMaterials([row]));
+assert.equal(parseCommunicationMaterials([row,row]),null);
+assert.equal(parseCommunicationMaterials([{...row,source:{type:"link",url:"javascript:alert(1)"}}]),null);
+assert.equal(parseCommunicationMaterials([{...row,kind:"video",source:{type:"private",bucket:COMMUNICATION_MATERIAL_BUCKET,path:account+"/"+id+"/"+asset+".png",mime:"image/png"}}]),null);
+assert.ok(parseCommunicationMaterials([{...row,source:{type:"private",bucket:COMMUNICATION_MATERIAL_BUCKET,path:account+"/"+id+"/"+asset+".png",mime:"image/png"}}]));
+assert.equal(parseCommunicationMaterials([{...row,source:{type:"private",bucket:"landing-page-revision-assets",path:"x",mime:"image/png"}}]),null);
+assert.equal(parseCommunicationMaterials(Array.from({length:31},(_,i)=>({...row,id:"00000000-0000-4000-8000-"+String(i).padStart(12,"0")}))),null);
+assert.equal(parseCommunicationMaterials([{...row,kind:"testimonial",source:{type:"text",text:"Excelente.\n\nRecomendo."}}])?.[0].source.type,"text");
+assert.equal(safeMaterialLink("https://user:pass@example.com/a"),null);
+assert.equal(safeMaterialLink("data:text/html,a"),null);
+assert.equal(ownsMaterialPath(account,id,account+"/"+id+"/"+asset+".png"),true);
+assert.equal(ownsMaterialPath(asset,id,account+"/"+id+"/"+asset+".png"),false);
+assert.equal(imageExtension(new Uint8Array([137,80,78,71,13,10,26,10]),"image/png"),"png");
+assert.equal(imageExtension(new Uint8Array([137,80,78,71,13,10,26,10]),"image/jpeg"),null);
+assert.equal(imageExtension(new Uint8Array([60,115,118,103]),"image/png"),null);
+const catalogRows=[...communicationSections.map((s,i)=>({id:String(i),section_key:s.key,category:s.stage===1?"business":"intelligence",format:s.format,label:s.label,sort_order:i+1,updated_at:"t"})),
+  ...["visual_identity","media_library","testimonials"].map((key,i)=>({id:"m"+i,section_key:key,category:"materials",format:"material_items",label:key,sort_order:i+1,updated_at:"t"}))];
+assert.equal(parseCommunicationCatalog(catalogRows)?.length,17);
+assert.equal(parseCommunicationCatalog(catalogRows.slice(1)),null);
+assert.equal(parseCommunicationCatalog(catalogRows.map(r=>r.section_key==="business_name"?{...r,format:"faq"}:r)),null);
+assert.equal(parseCommunicationCatalog([...catalogRows,{...catalogRows[0],section_key:"custom_new",format:"faq"}]),null);
+assert.equal(parseCommunicationCatalog([...catalogRows,{...catalogRows[0],section_key:"custom_new",format:"text"}])?.length,18);
+console.log("PB1: multiline/FAQ round trips, factual preservation, dynamic definitions and material validation passed.");
