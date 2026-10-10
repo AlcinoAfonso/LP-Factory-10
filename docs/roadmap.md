@@ -3184,7 +3184,7 @@
 
 25. E25 — Base de Comunicação
 - Objetivo: disponibilizar um ativo persistente da conta que reúna a verdade da empresa e a inteligência de comunicação antes de existir Landing Page ou integração real de canal.
-- Status: PB-A/E25.1 encerrado e E25.2 implementada e validada em Preview. PB1/D14D está em execução isolada na E25.3, com implementação candidata e validação operacional pendente; PB2 e PB3 permanecem em definição, sem implementação autorizada.
+- Status: PB-A/E25.1 encerrado e E25.2 implementada e validada em Preview. PB1/D14D está em execução isolada na E25.3, com implementação mergeada, apply concluído e Preview habilitado, ainda sem aceite operacional; PB2 e PB3 permanecem em definição, sem implementação autorizada.
 
 25.1 Base de Comunicação inicial
 
@@ -3241,10 +3241,18 @@
 
 25.3.1 Objetivo e status
 - Objetivo: entregar os recursos manuais de Dados do negócio, Materiais de comunicação e Inteligência e copy em uma única Base por conta, preservando conteúdo legado, acesso comercial, papéis, concorrência, revisão humana e assistências de IA existentes.
-- Status: PB1/D14D com V1 funcional aprovada em 10/10/2026 e implementação candidata no repositório, sob Supervisão Autônomo. Instalação limpa, check e validadores locais aprovados; prova da migration integral e testes SQL de rollback, ACL, ordem, edição obsoleta e contrato do payload de erro PostgREST com status 409 aprovados em Supabase PostgreSQL 17 isolado, sem emulação de Auth, Storage ou UI hospedada. O gate de Code Review independente do HEAD corrente é acompanhado no PR do recorte; QA autenticado dos novos recursos em desktop/mobile permanece pendente. Nenhuma migration ou configuração externa foi aplicada; o gate E25.3 permanece desabilitado por padrão. A exceção de sequência foi expressamente aprovada pelo humano; merge permanece condicionado aos checks e ao Code Review do HEAD final sem achado material pendente e à comprovação dos recursos E25.3 desligados nos dois ambientes. Apply, ativação e QA permanecem não executados, seguindo a progressão operacional autorizada; PB1 só será concluído após todos os critérios de aceite.
+- Status: PB1/D14D implementado e mergeado sob Supervisão Autônomo e exceção de sequência expressamente aprovada. Instalação limpa, check, validadores, prova SQL PostgreSQL 17 e Code Review independente do HEAD final aprovados. Apply seletivo concluído e invariantes do catálogo, ACL/RLS, RPC e bucket confirmados no projeto hospedado. Preview habilitado e redeployado, ainda sem QA autenticado; Production permanece desligada. PB1 segue aberto até aprovação do QA de Preview, posterior ativação e QA de Production e atendimento de todos os critérios de aceite. Falha material interrompe a progressão; a prova SQL não substitui validação de Auth, Storage e UI.
 - Limites: PB2 e PB3 permanecem em definição. Este recorte não entrega novos agentes, rotinas de IA, pesquisa, processamento de mídia, transcrição, publicação automática ou integração com canais; não reabre E25.1/PB-A nem E25.2.
 
 25.3.2 Registros do recorte
+
+- Banco:
+  - Criados:
+    - `communication_base_sections`
+    - `touch_communication_base_section`
+    - `communication_base_section_updated`
+    - `save_communication_base_section`
+    - `communication-base-assets`
 - Repositório:
   - Criados:
     - `app/a/[account]/base-comunicacao/_components/BusinessFactsFields.tsx`
@@ -3288,15 +3296,18 @@
   - Prova SQL PostgreSQL 17: [run 38086017816, job 114312550569](https://github.com/AlcinoAfonso/LP-Factory-10/actions/runs/38086017816/job/114312550569), HEAD `0bdee64216af82d5b0ef288b077150b85d1f5630`.
   - Gates e Code Review do HEAD corrente: [PR #1055](https://github.com/AlcinoAfonso/LP-Factory-10/pull/1055).
   - Exceção de sequência, apply seletivo e ativação por ambiente: `docs/platform-config.md` — seções 2.3 e 3.5.
+  - Catálogo, segurança, RPC e Storage aplicados: `docs/schema.md` — seção 1.39.
+  - Liberação e merge: [PR #1055](https://github.com/AlcinoAfonso/LP-Factory-10/pull/1055#issuecomment-6102545448), HEAD avaliado `2c8b93d05b0787696ee52600d3a383b42d1dd16f`, merge `d86538971c1464d711c894572c4f995f35450429`.
+  - Recibo de apply e verificação hospedada: [PR #1055](https://github.com/AlcinoAfonso/LP-Factory-10/pull/1055#issuecomment-6102564539).
 
 25.3.3 Dados do negócio e Inteligência e copy
-- Status: implementação candidata; aceite operacional pendente.
+- Status: implementado e disponível em Preview; aceite operacional pendente.
 - Conteúdo: Dados do negócio permitem linhas opcionais de rótulo e valor dentro das seções, preservando o nome público canônico utilizado no cabeçalho. A apresentação inicial passa a Identificação e dados do negócio. As sete seções de Inteligência e copy mantêm seus formatos e conteúdos; a edição estruturada de itens e FAQ preserva parágrafos, quebras e delimitadores internos. As assistências existentes conservam seleção, revisão, versionamento e ausência de salvamento automático; novas seções são manuais. O aceite exige comparação de conteúdo antes/depois, consulta e edição em Bases antigas e novas, descarte, conflito, isolamento e papéis.
 
 25.3.4 Materiais de comunicação
-- Status: implementação candidata; armazenamento e operações reais ainda não validados no ambiente autorizado.
-- Conteúdo: acervo organizado inicialmente em Identidade visual, Fotos, vídeos e áudios e Depoimentos e provas sociais. Cadastro comum admite identificação, contexto, autoria e autorização quando pertinentes; imagens/logotipos usam upload ou link, vídeos/áudios somente link e depoimentos escritos usam texto. Consulta, edição, substituição e retirada preservam conteúdo legado e não alteram produtos publicados. O armazenamento previsto é privado, separado do bucket legado, com validação de imagens no servidor e acesso temporário após autorização vigente. O aceite permanece condicionado a operações reais com arquivos e links válidos, rejeição segura de arquivo inválido, tratamento de link indisponível e preservação dos dados existentes.
+- Status: implementado, com bucket aplicado e recursos habilitados em Preview; operações reais e aceite funcional pendentes.
+- Conteúdo: acervo organizado inicialmente em Identidade visual, Fotos, vídeos e áudios e Depoimentos e provas sociais. Cadastro comum admite identificação, contexto, autoria e autorização quando pertinentes; imagens/logotipos usam upload ou link, vídeos/áudios somente link e depoimentos escritos usam texto. Consulta, edição, substituição e retirada preservam conteúdo legado e não alteram produtos publicados. O armazenamento aplicado é privado, separado do bucket legado, com validação de imagens no servidor e acesso temporário após autorização vigente. O aceite permanece condicionado a operações reais com arquivos e links válidos, rejeição segura de arquivo inválido, tratamento de link indisponível e preservação dos dados existentes.
 
 25.3.5 Gestão administrativa de seções
-- Status: implementação candidata; progressão operacional autorizada e aceite global pendente.
-- Conteúdo: página simples no Admin Dashboard para adicionar, renomear e reordenar seções nas três categorias, com autorização administrativa central. Identidades, categorias, formatos e conteúdos salvos permanecem preservados; novas seções são vazias e opcionais em Bases antigas e futuras, sem retroescrita ou exclusão de seção. O gate independente mantém o runtime anterior quando desabilitado; sua habilitação depende do schema necessário e de validação autorizada. O filtro seletivo candidato não autoriza apply nem reativa o fluxo integral suspenso. O aceite exige refletir inclusão, título e ordem em Bases antigas e novas, rejeitar ações sem autorização e comprovar conteúdo anterior recuperável, com UI autenticada de conta e Admin aderente ao Design System.
+- Status: implementado, com catálogo aplicado e Admin habilitado em Preview; aceite global pendente.
+- Conteúdo: página simples no Admin Dashboard para adicionar, renomear e reordenar seções nas três categorias, com autorização administrativa central. Identidades, categorias, formatos e conteúdos salvos permanecem preservados; novas seções são vazias e opcionais em Bases antigas e futuras, sem retroescrita ou exclusão de seção. O gate independente mantém o runtime anterior quando desabilitado; a progressão entre ambientes segue a autorização operacional vigente. O apply seletivo executado não reativa o fluxo integral suspenso. O aceite exige refletir inclusão, título e ordem em Bases antigas e novas, rejeitar ações sem autorização e comprovar conteúdo anterior recuperável, com UI autenticada de conta e Admin aderente ao Design System.
