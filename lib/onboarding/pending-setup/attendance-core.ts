@@ -158,13 +158,13 @@ export function attendanceSummary(output: AttendanceOutput, primary: string | nu
     confirmedUnderstanding: output.action === "confirm" ? output.businessUnderstanding : prior?.confirmedUnderstanding ?? null,
     classification: (output.action === "confirm" && proposal?.kind === "existing" ? proposal.taxonName : primary) || "Não identificada.",
     suggestions: output.suggestions.length ? output.suggestions : prior?.suggestions ?? [],
-    pendingReason: output.closureReason ?? (output.businessUnderstanding ? null : prior?.pendingReason ?? null),
+    pendingReason: output.closureReason,
   };
   // Bound whole fields, never invent an abbreviated version of what the user accepted.
   if (JSON.stringify(summary).length > 4000) summary.suggestions = [];
   if (JSON.stringify(summary).length > 4000) summary.contextualUnderstanding = null;
   if (JSON.stringify(summary).length > 4000 && output.action !== "confirm" && prior?.confirmedUnderstanding && priorSummary) {
-    if (output.closureReason || (output.businessUnderstanding && prior.pendingReason)) return JSON.stringify({
+    if (output.closureReason || prior.pendingReason) return JSON.stringify({
       confirmedUnderstanding: prior.confirmedUnderstanding, classification: prior.classification,
       pendingReason: output.closureReason ? "Sem avanço útil." : null,
     }); // Preserve accepted wording; the detailed reason remains in the dialogue.

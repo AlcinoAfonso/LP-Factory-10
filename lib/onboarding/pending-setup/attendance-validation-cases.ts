@@ -122,6 +122,7 @@ async function main() {
   assert.equal(JSON.parse(closedSummary).confirmedUnderstanding, context.displayedUnderstanding);
   assert.equal(closedSummary.includes("flamenguista"), false);
   assert.equal(JSON.parse(attendanceSummary(later, "Jardinagem", null, closedSummary)).pendingReason, null);
+  assert.equal(JSON.parse(attendanceSummary(noBusinessNews, "Jardinagem", null, closedSummary)).pendingReason, null);
   const closedProjection = attendanceProjection({ ...conversation, accountContext: {
     summary: closedSummary, updatedAt: conversation.updatedAt,
   } }, context.catalog);
@@ -161,16 +162,18 @@ async function main() {
     assert.equal(JSON.parse(attendanceProjection({ ...conversation, accountContext: {
       summary: closedAgain, updatedAt: conversation.updatedAt,
     } }, context.catalog).summary!).pendingReason, minimal.pendingReason);
-    const usefulResumption = attendanceSummary(later, "c".repeat(120), null, atLimit);
-    assert.ok(usefulResumption.length <= 4000);
-    assert.equal(JSON.parse(usefulResumption).confirmedUnderstanding, minimal.confirmedUnderstanding);
-    assert.equal(JSON.parse(usefulResumption).classification, minimal.classification);
-    assert.equal(JSON.parse(usefulResumption).pendingReason, null);
-    assert.equal(JSON.parse(attendanceProjection({ ...conversation, accountContext: {
-      summary: usefulResumption, updatedAt: conversation.updatedAt,
-    } }, context.catalog).summary!).pendingReason, null);
-    assert.equal(attendanceSummary(noBusinessNews, "c".repeat(120), null, usefulResumption), usefulResumption);
-    assert.equal(attendanceSummary(closing, "c".repeat(120), null, usefulResumption), atLimit);
+    for (const resumption of [later, noBusinessNews]) {
+      const usefulResumption = attendanceSummary(resumption, "c".repeat(120), null, atLimit);
+      assert.ok(usefulResumption.length <= 4000);
+      assert.equal(JSON.parse(usefulResumption).confirmedUnderstanding, minimal.confirmedUnderstanding);
+      assert.equal(JSON.parse(usefulResumption).classification, minimal.classification);
+      assert.equal(JSON.parse(usefulResumption).pendingReason, null);
+      assert.equal(JSON.parse(attendanceProjection({ ...conversation, accountContext: {
+        summary: usefulResumption, updatedAt: conversation.updatedAt,
+      } }, context.catalog).summary!).pendingReason, null);
+      assert.equal(attendanceSummary(noBusinessNews, "c".repeat(120), null, usefulResumption), usefulResumption);
+      assert.equal(attendanceSummary(closing, "c".repeat(120), null, usefulResumption), atLimit);
+    }
     const partial = JSON.stringify({ ...minimal, pendingReason: "outro motivo" });
     assert.equal(JSON.parse(attendanceSummary(noBusinessNews, null, null, partial)).confirmedUnderstanding, null);
   }
