@@ -332,6 +332,10 @@ jobs:
           test "$(docker exec "$db_container" psql -U postgres -d postgres -At -c "select current_setting('server_version_num')::int / 10000 = 17")" = t
           docker exec "$db_container" psql -U postgres -d postgres -v ON_ERROR_STOP=1 \
             -c "create role ai_readonly; alter default privileges in schema public grant all on tables to service_role;"
+          # Exact canonical helper; unrelated historical patch targets are outside this isolated fixture.
+          awk '/^do \$migration\$/ { blocks++; if (blocks == 2) exit } { print }' \
+            supabase/migrations/20260827203000_postgrest_safe_application_conflicts.sql \
+            | docker exec -i "$db_container" psql -U postgres -d postgres -v ON_ERROR_STOP=1
           docker exec -i "$db_container" psql -U postgres -d postgres -v ON_ERROR_STOP=1 \
             < supabase/migrations/20261010202505_e25_3_communication_resources.sql
           docker exec -i "$db_container" psql -U postgres -d postgres -v ON_ERROR_STOP=1 \

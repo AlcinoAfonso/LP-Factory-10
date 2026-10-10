@@ -17,7 +17,7 @@ begin
 end $$;
 set local role service_role;
 do $$
-declare v_id uuid; v_key text; v_stamp timestamptz; v_current timestamptz; v_name text;
+declare v_id uuid; v_key text; v_stamp timestamptz; v_current timestamptz; v_name text; v_detail text;
 begin
   select id,updated_at,section_key into v_id,v_stamp,v_key from public.communication_base_sections where section_key='business_name';
   perform public.save_communication_base_section(v_id,'business','Cadastro do negócio',7,v_stamp);
@@ -31,6 +31,15 @@ begin
     perform public.save_communication_base_section(v_id,'materials','Move',1,v_current);
     raise exception 'Category move accepted';
   exception when serialization_failure then null; end;
+  perform set_config('request.method','POST',true);
+  begin
+    perform public.save_communication_base_section(v_id,'business','Stale API',1,v_stamp);
+    raise exception 'Stale API edit accepted';
+  exception when sqlstate 'PGRST' then
+    get stacked diagnostics v_detail=pg_exception_detail;
+    if (sqlerrm::jsonb)->>'code'<>'40001' or (v_detail::jsonb)->>'status'<>'409' then raise exception 'Unsafe API conflict'; end if;
+  end;
+  perform set_config('request.method','',true);
   begin
     delete from public.communication_base_sections where id=v_id;
     raise exception 'Delete accepted';

@@ -70,7 +70,7 @@ begin
   else
     select * into v_old from public.communication_base_sections where id=p_id;
     if not found or v_old.category<>p_category or p_expected_updated_at is null or v_old.updated_at<>p_expected_updated_at then
-      raise exception 'Section changed' using errcode='40001';
+      perform public.raise_postgrest_safe_conflict_v1('Section changed');
     end if;
     if p_position < 1 or p_position > v_count then raise exception 'Invalid position' using errcode='22023'; end if;
     update public.communication_base_sections set sort_order=sort_order+
