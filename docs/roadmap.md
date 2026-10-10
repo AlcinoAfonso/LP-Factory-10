@@ -3241,7 +3241,7 @@
 
 25.3.1 Objetivo e status
 - Objetivo: entregar os recursos manuais de Dados do negócio, Materiais de comunicação e Inteligência e copy em uma única Base por conta, preservando conteúdo legado, acesso comercial, papéis, concorrência, revisão humana e assistências de IA existentes.
-- Status: PB1/D14D com V1 funcional aprovada em 10/10/2026 e implementação candidata no repositório, sob Supervisão Autônomo. Instalação limpa, check e validadores locais aprovados; prova da migration integral e testes SQL de rollback, ACL, ordem, edição obsoleta e HTTP 409 aprovados em Supabase PostgreSQL 17 isolado, sem emulação de Auth, Storage ou UI hospedada. O gate de Code Review independente do HEAD corrente é acompanhado no PR do recorte; QA autenticado dos novos recursos em desktop/mobile permanece pendente. Nenhuma migration ou configuração externa foi aplicada; o gate E25.3 permanece desabilitado por padrão. A decisão humana sobre ambiente isolado para QA pré-merge ou exceção explícita de sequência continua necessária e impede prontidão e merge.
+- Status: PB1/D14D com V1 funcional aprovada em 10/10/2026 e implementação candidata no repositório, sob Supervisão Autônomo. Instalação limpa, check e validadores locais aprovados; prova da migration integral e testes SQL de rollback, ACL, ordem, edição obsoleta e contrato do payload de erro PostgREST com status 409 aprovados em Supabase PostgreSQL 17 isolado, sem emulação de Auth, Storage ou UI hospedada. O gate de Code Review independente do HEAD corrente é acompanhado no PR do recorte; QA autenticado dos novos recursos em desktop/mobile permanece pendente. Nenhuma migration ou configuração externa foi aplicada; o gate E25.3 permanece desabilitado por padrão. A decisão humana sobre ambiente isolado para QA pré-merge ou exceção explícita de sequência continua necessária e impede prontidão e merge.
 - Limites: PB2 e PB3 permanecem em definição. Este recorte não entrega novos agentes, rotinas de IA, pesquisa, processamento de mídia, transcrição, publicação automática ou integração com canais; não reabre E25.1/PB-A nem E25.2.
 
 25.3.2 Registros do recorte
@@ -3273,6 +3273,7 @@
     - `app/a/[account]/base-comunicacao/page.tsx`
     - `components/admin/adminNavigation.ts`
     - `lib/communication-base/adapters/communicationBaseAdapter.ts`
+    - `lib/communication-base/ai-core.ts`
     - `lib/communication-base/config.ts`
     - `lib/communication-base/contracts.ts`
     - `lib/communication-base/policy.ts`

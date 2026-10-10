@@ -1,4 +1,7 @@
 import assert from "node:assert/strict";
+import type { CommunicationBase } from "./contracts";
+import { confirmedStageOneData, hasConfirmedStageOneInput, stageTwoPrompt } from "./ai-core";
+import { stageOneStateKey } from "./ui-state-keys";
 import { communicationSections, type CommunicationSectionDefinition } from "./registry";
 import { parseCommunicationFacts, parseSectionValue, parseStoredSections, projectCommunicationBase, withSection } from "./policy";
 import { formatManualEditorValue, parseManualEditorValue } from "./manual-editor-value";
@@ -60,3 +63,27 @@ assert.equal(parseCommunicationCatalog(catalogRows.map(r=>r.section_key==="busin
 assert.equal(parseCommunicationCatalog([...catalogRows,{...catalogRows[0],section_key:"custom_new",format:"faq"}]),null);
 assert.equal(parseCommunicationCatalog([...catalogRows,{...catalogRows[0],section_key:"custom_new",format:"text"}])?.length,18);
 console.log("PB1: multiline/FAQ round trips, factual preservation, dynamic definitions and material validation passed.");
+
+const aiBase: CommunicationBase = {accountId:account,version:1,sections:{business_name:raw.business_name as never},createdAt:"t",updatedAt:"t"};
+const aiLegacy: CommunicationBase = {...aiBase,sections:{business_name:{format:"text",value:"Nome público",origin:"user_confirmed"}}};
+const general={kind:"general"} as const;
+assert.deepEqual(confirmedStageOneData(aiLegacy,general),{business_name:"Nome público"});
+assert.equal(stageOneStateKey(aiLegacy),stageOneStateKey({...aiLegacy,sections:{business_name:{...aiLegacy.sections.business_name!,facts:[]}}}));
+const onlyFacts: CommunicationBase={...aiBase,sections:{business_name:{...aiBase.sections.business_name!,value:""}}};
+assert.equal(hasConfirmedStageOneInput(onlyFacts,general),true);
+const factsPrompt=stageTwoPrompt(onlyFacts,general,false);
+assert.ok(factsPrompt);
+assert.deepEqual(JSON.parse(factsPrompt.input).confirmed_business_data,{business_name:{value:"",facts:raw.business_name.facts}});
+assert.deepEqual(confirmedStageOneData(aiBase,general),{business_name:{value:"Nome público",facts:raw.business_name.facts}});
+const aiChanged: CommunicationBase={...aiBase,sections:{business_name:{...aiBase.sections.business_name!,facts:[{label:"Razão social",value:"Outra empresa"}]}}};
+assert.notEqual(stageOneStateKey(aiBase),stageOneStateKey(aiChanged));
+assert.deepEqual(confirmedStageOneData(aiBase,{kind:"section",key:"audience"}),{});
+assert.equal(stageOneStateKey({...aiLegacy,sections:{...aiLegacy.sections,materials:{format:"items",value:[],origin:"user_confirmed",facts:raw.business_name.facts}}}),stageOneStateKey(aiLegacy));
+assert.equal(stageOneStateKey({...aiLegacy,sections:{...aiLegacy.sections,custom_fixed:{format:"text",value:"Manual",origin:"user_confirmed",facts:raw.business_name.facts}}}),stageOneStateKey(aiLegacy));
+const unconfirmed: CommunicationBase={...onlyFacts,sections:{business_name:{...onlyFacts.sections.business_name!,origin:"user_reviewed"}}};
+assert.equal(hasConfirmedStageOneInput(unconfirmed,general),false);
+const invalidFacts: CommunicationBase={...onlyFacts,sections:{business_name:{...onlyFacts.sections.business_name!,facts:[{label:"Sem valor",value:""}]}}};
+assert.equal(stageTwoPrompt(invalidFacts,general,false),null);
+const unsafeFacts: CommunicationBase={...onlyFacts,sections:{business_name:{...onlyFacts.sections.business_name!,facts:[{label:"senha",value:"secret-test-value"}]}}};
+assert.equal(stageTwoPrompt(unsafeFacts,general,false),null);
+console.log("PB1: confirmed factual inputs, legacy equivalence, selection and suggestion invalidation passed.");
