@@ -180,7 +180,7 @@ function explicitPreferredNameChange(context: AttendanceContext, name: string): 
   if (current?.role !== "user") return false;
   // Validate only the already interpreted candidate, never capture the rest of a compound answer.
   const escapedName = name.replace(/[.*+?^\x24{}()|[\]\\]/g, "\\$&");
-  const end = "(?=\\s*(?:\\p{P}|$))";
+  const end = "(?=\\s*(?:[.,;:!?](?:\\s|$)|$))";
   const direct = new RegExp("^(?:me chame de|pode me chamar de|prefiro ser chamad[oa] de|quero ser chamad[oa] de|meu nome é)\\s+"
     + escapedName + end, "iu").test(current.content.trimStart());
   if (direct) return true;

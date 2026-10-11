@@ -175,6 +175,16 @@ async function main() {
   assert.equal(validateAttendanceOutput({ ...compoundOutput, preferredName: "Pedro" }, nameContext), null);
   assert.equal(validateAttendanceOutput({ ...compoundOutput, preferredName: "Jo" }, nameContext), null);
   assert.equal(validateAttendanceOutput({ ...compoundOutput, preferredName: "joao@example.com" }, nameContext), null);
+  for (const identifier of ["Ana@example.com", "Ana.silva@example.com", "Ana/123", "Ana_123"]) {
+    assert.equal(validateAttendanceOutput({ ...compoundOutput, preferredName: "Ana" }, { ...nameContext, recent: [
+      nameContext.recent[0], { role: "user", content: identifier }] }), null);
+    assert.equal(validateAttendanceOutput({ ...compoundOutput, preferredName: "Ana" }, { ...nameContext, preferredName: "João", recent: [
+      { role: "user", content: "Pode me chamar de " + identifier }] }), null);
+  }
+  for (const separator of [". ", ", ", "; ", ": ", "! ", "? "]) {
+    assert.equal(validateAttendanceOutput(compoundOutput, { ...nameContext, recent: [
+      nameContext.recent[0], { role: "user", content: "João" + separator + "Tenho uma clínica." }] })?.preferredName, "João");
+  }
   assert.equal(validateAttendanceOutput(compoundOutput, { ...nameContext, preferredNameDeclined: true }), null);
   assert.equal(validateAttendanceOutput(compoundOutput, { ...nameContext, preferredName: "Ana" }), null);
   const businessOnlyAnswer = { ...nameContext, recent: [nameContext.recent[0],
