@@ -183,6 +183,12 @@ async function main() {
   assert.ok(validateAttendanceOutput({ ...compoundOutput, preferredName: null, preferredNameDeclined: true }, businessOnlyAnswer));
   assert.equal(validateAttendanceOutput(compoundOutput, { ...nameContext, preferredName: "Ana", recent: [
     { role: "user", content: "Pode me chamar de João." }] })?.preferredName, "João");
+  const renamed = validateAttendanceOutput(compoundOutput, { ...nameContext, preferredName: "Ana", recent: [
+    { role: "user", content: "Pode me chamar de João. Também administro uma clínica." }] });
+  assert.equal(renamed?.preferredName, "João");
+  assert.equal(renamed?.businessUnderstanding, compoundOutput.businessUnderstanding);
+  assert.equal(validateAttendanceOutput({ ...compoundOutput, preferredName: "Jo" }, { ...nameContext, preferredName: "Ana", recent: [
+    { role: "user", content: "Pode me chamar de João. Também administro uma clínica." }] }), null);
   const longMessage = compound + " Temos atendimento presencial.".repeat(60) + " Atendemos adultos e queremos explicar implantes.";
   const integral = attendanceProjection({ ...conversation, preferredName: null, messages: [
     { ...conversation.messages[0], role: "assistant", content: "Como prefere ser chamado?" },

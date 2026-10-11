@@ -2,7 +2,7 @@ import { z } from "zod";
 import { redactPotentialContactDetails, validatePreferredName } from "./policy";
 import type { PendingSetupConversation } from "./contracts";
 
-export const ATTENDANCE_PROMPT_VERSION = "e10_12_sales_context_v10";
+export const ATTENDANCE_PROMPT_VERSION = "e10_12_sales_context_v11";
 export const ATTENDANCE_CONTRACT_VERSION = 5;
 export const ATTENDANCE_LEASE_SECONDS = 360;
 
@@ -54,6 +54,7 @@ Compare semanticamente atuação com categorias e aliases ativos do catálogo cu
 Se não houver correspondência segura, use pending com entendimento contextual suficiente: explique que a categoria não foi identificada no catálogo e peça confirmação do entendimento do negócio, nunca de categoria inexistente. A ausência de categoria não impede orientação ou continuidade comercial e não promete classificação futura. Se já houver primário oficial, não use fallback para contorná-lo.
 existingTaxonId deve conter o ID proposto somente em action=existing. Em ask, pending e confirm, existingTaxonId deve ser null; no turno confirm, a categoria é lida exclusivamente de confirmedProposal.
 confirmedProposal só existe no turno de confirmação explícita do entendimento/categoria persistidos. Nesse turno devolva confirm e mantenha exatamente displayedUnderstanding, sem mudar a proposta, pesquisar ou pedir novo Sim. O mesmo aceite confirma o entendimento exibido e a categoria quando houver, ou somente o entendimento no fallback. Fora desse turno, confirm é proibido. confirmedOperationalUnderstanding indica descrição operacional já confirmada: não peça nova confirmação apenas porque não há taxon.
+sufficientUnderstanding indica que o negócio está suficientemente compreendido para propor ou confirmar o entendimento/classificação, não que a orientação comercial já terminou. Em existing, pending e confirm, sufficientUnderstanding é true; readyToComplete decide separadamente se o atendimento está pronto para concluir.
 Após confirmar, continue com pergunta/orientação comercial se houver lacuna útil. readyToComplete só é true quando há entendimento suficiente, classificação oficial válida ou entendimento operacional confirmado (inclusive neste turno), orientação pertinente e próximo passo claros. Não encerre automaticamente só porque encontrou/confirmou categoria; não continue artificialmente quando já basta. Use ask para conversa útil sem nova proposta. pending/existing aguardam confirmação, logo nunca estão prontos.
 Diante de assunto lateral ocasional, responda brevemente e com naturalidade quando útil, depois redirecione ao negócio e às necessidades comerciais. Se o histórico mostrar que já tentou redirecionar e o lead insistir no desvio sem avanço útil, explicite cordialmente seu papel e encerre sem nova pergunta. Reconheça também repetição, dúvidas circulares ou falta de perspectiva de conclusão: quando não houver avanço útil, encerre cordialmente, sem exigir quantidade de mensagens, chamadas ou tempo. Não encerre prematuramente uma conversa útil ou por dúvida pontual. No encerramento inconclusivo, closureReason resume em uma frase curta a pendência comercial ou a ausência de avanço que impediu a conclusão; businessUnderstanding mantém somente contexto comercial relevante e suggestions continua separada. Use action=ask, existingTaxonId=null e readyToComplete=false: encerramento inconclusivo não confirma entendimento/categoria, não concede acesso e não é conclusão bem-sucedida. No turno de confirmação explícita, preserve o contrato confirm vigente. Não prometa análise posterior, prazo, retorno automático ou novo contato. Fora de encerramento inconclusivo, closureReason é null. Uma nova mensagem útil pode retomar normalmente o atendimento a partir do contexto e da pendência no Resumo.
 Use marketContext somente como repertório contextual do nicho. Respeite proveniência, período, limitações e disponibilidade; registros históricos não são pesquisa atual. Expresse padrões como possibilidades condicionais a validar com o lead, não características da empresa, recomendações obrigatórias ou promessas. Ausência de pesquisa específica não bloqueia nem autoriza invenção.
@@ -177,15 +178,15 @@ function explicitPreferredNameChange(context: AttendanceContext, name: string): 
   if (context.confirmedProposal) return false;
   const current = context.recent.at(-1);
   if (current?.role !== "user") return false;
-  const direct = /^(?:me chame de|pode me chamar de|prefiro ser chamad[oa] de|quero ser chamad[oa] de|meu nome é)\s+(.+?)[.!]?$/iu.exec(current.content.trim());
-  const declared = direct ? validatePreferredName(direct[1], null) : null;
-  if (declared?.ok && declared.value === name) return true;
+  // Validate only the already interpreted candidate, never capture the rest of a compound answer.
+  const escapedName = name.replace(/[.*+?^\x24{}()|[\]\\]/g, "\\$&");
+  const end = "(?=\\s*(?:\\p{P}|$))";
+  const direct = new RegExp("^(?:me chame de|pode me chamar de|prefiro ser chamad[oa] de|quero ser chamad[oa] de|meu nome é)\\s+"
+    + escapedName + end, "iu").test(current.content.trimStart());
+  if (direct) return true;
   const preceding = context.recent.at(-2);
   const askedName = preceding?.role === "assistant"
     && /(?:como[\s\S]*?(?:prefere|gostaria|quer)[\s\S]*?(?:chamad|chamasse|chame|tratad)|qual[\s\S]*?nome)/iu.test(preceding.content);
-  // A name answer starts with the validated candidate; never mine an internal business-name token.
-  const escapedName = name.replace(/[.*+?^\x24{}()|[\]\\]/g, "\\$&");
-  const sourced = new RegExp("^\\s*" + escapedName + "(?=\\s*(?:\\p{P}|$))", "iu")
-    .test(current.content);
+  const sourced = new RegExp("^\\s*" + escapedName + end, "iu").test(current.content);
   return Boolean(!context.preferredName && !context.preferredNameDeclined && askedName && sourced);
 }

@@ -382,8 +382,9 @@ async function proveAttendance(
   const results = await Promise.all([runConversation(true), runConversation(false), runSemanticClosure(), runWholeMessage()]);
   for (const [scenario, result] of results.entries()) if (!result.ok) {
     console.warn("pending_setup_attendance_proof_failed", { scenario, code: result.code });
-    return result;
   }
+  const failure = results.find(result => !result.ok);
+  if (failure) return failure;
   return { ok: true, providerRequestId: results[1].ok ? results[1].providerRequestId : null,
     latencyMs: Math.max(...results.map(result => result.ok ? result.latencyMs ?? 0 : 0)) };
 }
