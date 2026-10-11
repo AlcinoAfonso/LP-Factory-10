@@ -109,6 +109,9 @@ export function validateAttendanceOutput(raw: unknown, context: AttendanceContex
   if (context.preferredName && value.preferredNameDeclined) return null;
   if (value.preferredName !== null && (context.preferredNameDeclined || value.preferredName !== context.preferredName)
     && !explicitPreferredNameChange(context, value.preferredName)) return null;
+  const needsName = !context.preferredName && !context.preferredNameDeclined && !value.preferredName && !value.preferredNameDeclined;
+  if (needsName && !context.confirmedProposal && !value.closureReason
+    && (value.reply !== PREFERRED_NAME_QUESTION || value.action !== "ask" || value.readyToComplete)) return null;
   if (value.action !== "existing" && value.existingTaxonId !== null) return null;
   if (["existing", "pending", "confirm"].includes(value.action) &&
     (!value.sufficientUnderstanding || (!value.businessUnderstanding && !context.displayedUnderstanding))) return null;

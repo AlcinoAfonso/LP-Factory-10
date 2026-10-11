@@ -192,11 +192,18 @@ async function main() {
       { role: "assistant", content: question }, { role: "user", content: "Clínica Sorriso. Fazemos implantes." }] };
     const businessNameOutput = { ...compoundOutput, preferredName: "Clínica Sorriso", businessUnderstanding: "Clínica Sorriso oferece implantes." };
     assert.equal(validateAttendanceOutput(businessNameOutput, businessNameContext), null);
-    const safeBusiness = validateAttendanceOutput({ ...businessNameOutput, preferredName: null }, businessNameContext);
+    const safeBusiness = validateAttendanceOutput({ ...businessNameOutput, preferredName: null,
+      reply: "Como prefere ser chamado?", action: "ask", existingTaxonId: null }, businessNameContext);
     assert.equal(safeBusiness?.businessUnderstanding, businessNameOutput.businessUnderstanding);
   }
   assert.equal(validateAttendanceOutput(compoundOutput, { ...nameContext, recent: [
     { role: "assistant", content: "  Como prefere ser chamado?  " }, nameContext.recent[1]] })?.preferredName, "João");
+  const nameRequest = { ...base, preferredName: null, reply: "Como prefere ser chamado?", action: "ask", existingTaxonId: null };
+  assert.ok(validateAttendanceOutput(nameRequest, nameContext));
+  assert.equal(validateAttendanceOutput({ ...nameRequest, reply: "Como gostaria de ser chamado?" }, nameContext), null);
+  assert.equal(validateAttendanceOutput({ ...nameRequest, action: "existing", existingTaxonId: base.existingTaxonId }, nameContext), null);
+  assert.ok(validateAttendanceOutput({ ...nameRequest, reply: "Encerramos por aqui; podemos retomar o objetivo comercial quando desejar.",
+    closureReason: "Desvio persistente sem avanço útil." }, nameContext));
   const businessOnlyAnswer = { ...nameContext, recent: [nameContext.recent[0],
     { role: "user" as const, content: "Minha empresa se chama Clínica Ana; prefiro não informar meu nome" }] };
   assert.equal(validateAttendanceOutput({ ...compoundOutput, preferredName: "Ana" }, businessOnlyAnswer), null);
