@@ -41,13 +41,14 @@ function MaterialSection({account,base,definition,canEdit,resetRevision,onEditor
   const saved=useRef(state);
   const formRef=useRef<HTMLFormElement>(null);
   const addRef=useRef<HTMLButtonElement>(null);
-  // React 19.2 drops synthetic onReset during automatic Form Action resets.
+  const editing=draft!==null&&canEdit;
+  // Keep the native listener attached through Form Action mutation/reset commits.
   useLayoutEffect(()=>{
     const form=formRef.current;if(!form)return;
     const preventReset=(event:Event)=>event.preventDefault();
     form.addEventListener("reset",preventReset);
     return()=>form.removeEventListener("reset",preventReset);
-  });
+  },[editing]);
   useLayoutEffect(()=>{onEditorStateChange(dirty,locked);},[dirty,locked,onEditorStateChange]);
   useEffect(()=>{
     if(reset.current!==resetRevision || (state.status==="saved"&&state!==saved.current&&!locked)){
