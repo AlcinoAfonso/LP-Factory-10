@@ -1161,6 +1161,27 @@
 • service_role possui SELECT, INSERT e UPDATE, sem DELETE. A Server Action verifica Access Context, papel de edição e entitlement antes de escrever.
 • A escrita por versão esperada incrementa version e preserva chaves desconhecidas; divergência de versão falha sem sobrescrever a Base.
 
+1.39 communication_base_sections
+1.39.1 Função, colunas e constraints
+• Catálogo global de seções da Base de Comunicação, aplicado por `supabase/migrations/20261010202505_e25_3_communication_resources.sql`, sem reescrever conteúdo de account_communication_bases.
+• id uuid primary key default gen_random_uuid(); section_key text not null unique; category, format e label text not null; sort_order integer positivo; created_at e updated_at timestamptz not null default now().
+• category aceita business | materials | intelligence. Materials exige material_items; business e intelligence admitem text | items | faq. Label exige 1–120 caracteres após trim.
+• A carga inicial contém 17 identidades: sete business, sete intelligence e três materials. Identidade, categoria e formato não são alteráveis pelos grants operacionais.
+
+1.39.2 Segurança e atualização
+• RLS habilitado, sem policies; public, anon, authenticated e ai_readonly sem grants.
+• service_role possui SELECT e INSERT; UPDATE somente em label e sort_order, sem DELETE ou TRUNCATE.
+• O trigger communication_base_section_updated executa touch_communication_base_section() antes de UPDATE e atualiza updated_at com clock_timestamp(); helper SECURITY INVOKER, search_path vazio e sem EXECUTE para public, anon, authenticated e ai_readonly.
+
+1.39.3 Escrita administrativa serializada
+• save_communication_base_section(uuid, text, text, integer, timestamptz) → uuid: SECURITY INVOKER, search_path vazio, EXECUTE somente para postgres e service_role; a autorização administrativa pertence ao boundary server-side.
+• Advisory lock transacional serializa inclusão, renomeação e reordenação. Inclusão respeita o limite global de 150 seções, cria section_key derivada de UUID e formato text ou material_items conforme a categoria.
+• Edição exige identidade, categoria e updated_at esperado; divergência usa raise_postgrest_safe_conflict_v1. Mudança de posição ajusta as demais posições da categoria na mesma transação; não há exclusão de seção.
+
+1.39.4 Storage dos materiais
+• Bucket communication-base-assets privado, aplicado pela mesma migration, com file_size_limit de 4194304 bytes e MIME permitido image/png, image/jpeg e image/webp.
+• Nenhuma policy de cliente foi criada para o bucket. Upload e acesso aos objetos passam pelo boundary server-side autorizado por conta e material; a identidade persistida usa bucket/path, sem URL assinada persistente.
+
 2. Views
 
 2.1 v_access_context_v2

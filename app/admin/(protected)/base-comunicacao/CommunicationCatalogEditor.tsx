@@ -43,6 +43,14 @@ export function CommunicationCatalogEditor({sections}:Readonly<{sections:readonl
     window.addEventListener("beforeunload",beforeUnload);window.addEventListener("popstate",back);
     return()=>{window.removeEventListener("beforeunload",beforeUnload);window.removeEventListener("popstate",back);};
   },[dirty,locked]);
+  const formRef=useRef<HTMLFormElement>(null);
+  // Use the native event: React 19.2 drops synthetic onReset for Form Actions.
+  useLayoutEffect(()=>{
+    const form=formRef.current;if(!form)return;
+    const preventReset=(event:Event)=>event.preventDefault();
+    form.addEventListener("reset",preventReset);
+    return()=>form.removeEventListener("reset",preventReset);
+  },[]);
   const tabs=useRef<(HTMLButtonElement|null)[]>([]);
   return <div className="space-y-3">
     <div role="tablist" aria-label="Categorias de seções" className="grid grid-cols-3 border-b border-border">
@@ -68,7 +76,7 @@ export function CommunicationCatalogEditor({sections}:Readonly<{sections:readonl
       }}>
       <div className="flex items-center justify-between gap-2"><h2 id="catalog-editor-title" className="text-lg font-semibold">{selection?"Editar seção":"Adicionar seção"}</h2><Button variant="secondary" className="min-h-11" disabled={locked} onClick={requestClose}>Fechar</Button></div>
       <p className="mt-2 text-sm text-muted-foreground">{communicationCategoryLabels[category]}</p>
-      <form action={action} onSubmit={e=>{if(locked||!dirty){e.preventDefault();return;}setSubmittedSections(sections);setSubmitted(true);}} className="mt-3 space-y-3">
+      <form ref={formRef} action={action} onSubmit={e=>{if(locked||!dirty){e.preventDefault();return;}setSubmittedSections(sections);setSubmitted(true);}} className="mt-3 space-y-3">
         <input type="hidden" name="id" value={selection?.id??""}/><input type="hidden" name="category" value={category}/><input type="hidden" name="updated_at" value={selection?.updatedAt??""}/>
         <label className="block text-sm">Título<Input name="label" required maxLength={120} value={label} disabled={locked} onChange={e=>setLabel(e.target.value)}/></label>
         <label className="block text-sm">Posição<select name="position" value={position} disabled={locked} onChange={e=>setPosition(Number(e.target.value))} className="mt-1 min-h-11 w-full rounded-md border border-border bg-background px-3">
