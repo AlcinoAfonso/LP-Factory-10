@@ -1102,12 +1102,31 @@
 
 10.12.1 Objetivo e status
 - Objetivo: compreender o negócio, as necessidades e o interesse do lead, oferecer orientação comercial pertinente aos serviços efetivamente disponíveis e concluir com próximo passo claro, preservando contexto e confirmando classificação existente quando houver correspondência segura.
-- Status: concluído; V1 funcional aprovada em 09/10/2026 implementada pelo PR #1050, com correção de ACL pelo PR #1053. Migrations aplicadas seletivamente, PostgreSQL 17, checks, Code Reviews independentes e QA autenticado aprovados; atendimento habilitado em Preview e Production após provas e ativações E21 independentes. O novo contrato substitui pesquisa classificatória e taxonomia sob demanda; conversas legadas E10.9 permanecem preservadas.
+- Status: baseline vigente dos PRs #1050, #1053, #1054 e #1056 preservado, com atendimento habilitado em Preview e Production após migrations seletivas, provas E21 e QA aprovados. Delta aprovado em 11/10/2026 em implementação: interpretação da mensagem inteira e memória comercial evolutiva com teto global de 6.000 caracteres; apply, provas E21 e QA desse delta ainda não concluídos. O atendimento substitui pesquisa classificatória e taxonomia sob demanda; conversas legadas E10.9 permanecem preservadas.
 - Dependência: E10.13/PB-A concluída; catálogo e inteligência de mercado disponíveis e utilizados na ativação e no QA.
 
+10.12.2 Registros do recorte
+- Repositório:
+  - Criados:
+    - `supabase/migrations/20261011121811_e10_12_summary_capacity.sql`
+    - `supabase/rollbacks/20261011121811_e10_12_summary_capacity.rollback.sql`
+    - `supabase/tests/e10_12_summary_capacity.test.sql`
+  - Ajustados:
+    - `.github/workflows/e10-11-sql-proof.yml`
+    - `.github/workflows/pipeline-supabase-apply-migrations.yml`
+    - `app/admin/(protected)/workloads-openai/_proof.ts`
+    - `lib/onboarding/pending-setup/attendance-core.ts`
+    - `lib/onboarding/pending-setup/attendance-validation-cases.ts`
+- Referências:
+  - Memória contextual e autoridades: `docs/base-tecnica.md` — seção 3.14.6.
+  - Contrato de banco aplicado: `docs/schema.md` — seções 1.19D e 3.1.3.
+  - Apply, reversão e configuração operacional: `docs/platform-config.md` — seções 2.3 e 3.5.
+
 10.12.3 Atendimento, Diálogo da conta e Resumo da conta
-- Status: implementado e validado em Preview e Production.
-- Conteúdo: o agente adapta perguntas, orientação e conclusão enquanto houver avanço útil, sem herdar o teto de três chamadas. Diálogo preserva histórico com conta e usuário participante identificados; Resumo permanece único por conta, compacto e contextual, sem autoridade ou versionamento funcional próprio. Distinguir síntese contextual proposta pela IA, entendimento explicitamente aceito pelo lead, classificação confirmada, sugestões ou oportunidades do vendedor e ausência de identificação. Fontes oficiais prevalecem sobre ambos.
+- Status: baseline implementado e validado em Preview e Production; evolução aprovada em 11/10/2026 em implementação.
+- Conteúdo: o agente adapta perguntas, orientação e conclusão enquanto houver avanço útil, sem herdar o teto de três chamadas. Diálogo preserva histórico integral com conta e usuário participante identificados; Resumo permanece único por conta, compacto, evolutivo e contextual, sem autoridade ou versionamento funcional próprio. Distinguir síntese contextual proposta pela IA, entendimento explicitamente aceito pelo lead, classificação confirmada, sugestões ou oportunidades do vendedor e ausência de identificação. Fontes oficiais prevalecem sobre ambos.
+- Delta aprovado: interpretar a mensagem inteira, preservando contexto comercial antecipado sem exigir repetição. Na resposta composta de nome, negócio e ofertas, persistir somente o nome preferido validado no campo competente; nome do negócio permanece contextual até confirmação competente de nome público. A memória pode compactar semanticamente conteúdo anteriormente confirmado e incorporar correções posteriores, preservando significado comercial ainda vigente sem transformar sugestões em fatos. Teto global do Resumo: 6.000 caracteres, sem meta de preenchimento; entendimento individual permanece limitado a 4.000. Histórico integral permanece no Diálogo, e a confirmação do turno conserva o entendimento exibido e persistido.
+- Limites: nenhuma nova tabela, estado, memória paralela, parser frase a frase, formulário oculto ou infraestrutura; demais campos mantêm seus limites. Falha de leitura operacional ou excesso ao contrato físico falha fechado, sem anúncio de sucesso.
 
 10.12.4 Identificação pelo catálogo
 - Status: implementado e validado em Preview e Production.
@@ -1120,6 +1139,7 @@
 10.12.6 Conclusão e experiência
 - Status: implementado e validado em Preview e Production.
 - Conteúdo: concluir quando negócio e necessidades estiverem suficientemente compreendidos, a orientação pertinente tiver sido entregue e o próximo passo comercial estiver claro, com classificação confirmada ou ausência de identificação explicitada. Confirmar categoria não encerra automaticamente o atendimento. Preservar requisitos de conclusão E10.11, identidade, WhatsApp, histórico, acesso e fronteiras comerciais. Ausência de taxon oficial não impede continuidade comercial nem bloqueia posteriormente a Base com entendimento operacional suficiente; não concede entitlement, acesso pago, trial ou contratação.
+- Encerramento inconclusivo: a IA responde naturalmente a desvio ocasional e redireciona; diante de desvio persistente, repetição, dúvidas circulares ou ausência de avanço útil, encerra cordialmente e preserva contexto comercial e pendência no Resumo. Não promete análise posterior, prazo, retorno automático ou novo contato; retomada útil permanece possível, sem contador de chamadas, tempo fixo ou failsafe econômico.
 - Limites: D17 conserva objeções, comparação/recomendação e encaminhamento aprofundado à contratação enquanto sua absorção não for explicitamente aprovada. Não criar relacionamento operacional com a Base, sincronização de fontes oficiais, engine genérica, consumidores futuros ou continuidade assíncrona. Falha preserva contexto válido para retomada; alteração externa impede sobrescrita, duplicação e falso sucesso sem reconstruir proposta ou exigir reavaliação e nova confirmação automáticas. Após conclusão correta, Pending Setup não governa mudanças posteriores da conta.
 
 10.13 Cadastro inicial de taxonomia e inteligência de mercado

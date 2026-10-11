@@ -8,6 +8,9 @@ on:
       - 'supabase/migrations/20261007153217_e10_12_account_context_attendance.sql'
       - 'supabase/tests/e10_12_initial_attendance.*'
       - 'supabase/tests/e10_12_sales_attendance.*'
+      - 'supabase/tests/e10_12_summary_capacity.test.sql'
+      - 'supabase/migrations/20261011121811_e10_12_summary_capacity.sql'
+      - 'supabase/rollbacks/20261011121811_e10_12_summary_capacity.rollback.sql'
       - 'supabase/migrations/20261009171607_e10_12_sales_attendance.sql'
       - 'supabase/migrations/20261009204000_e10_12_restrict_attendance_commit_acl.sql'
       - 'supabase/tests/e10_11_pending_setup_business_name.test.sql'
@@ -205,7 +208,7 @@ jobs:
 
   e10-12-sql-proof:
     name: E10.12 PostgreSQL 17 proof
-    if: ${{ github.event.pull_request.head.repo.full_name == github.repository && (github.event.pull_request.head.ref == 'codex-app/e10-12-contexto-conta' || github.event.pull_request.head.ref == 'codex-app/e10-12-correcao-apply' || github.event.pull_request.head.ref == 'codex-app/e10-12-agente-vendedor' || github.event.pull_request.head.ref == 'codex-app/e10-12-rpc-acl') }}
+    if: ${{ github.event.pull_request.head.repo.full_name == github.repository && (github.event.pull_request.head.ref == 'codex-app/e10-12-contexto-conta' || github.event.pull_request.head.ref == 'codex-app/e10-12-correcao-apply' || github.event.pull_request.head.ref == 'codex-app/e10-12-agente-vendedor' || github.event.pull_request.head.ref == 'codex-app/e10-12-rpc-acl' || github.event.pull_request.head.ref == 'codex-app/e10-12-mensagem-integral') }}
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
@@ -282,6 +285,15 @@ jobs:
               tail -n 70 "$RUNNER_TEMP/e10-12-sales-test.log"; exit 1;
             }
           grep -qx 'ROLLBACK' "$RUNNER_TEMP/e10-12-sales-test.log"
+          docker exec -i "$db_container" psql -U postgres -d postgres -v ON_ERROR_STOP=1 \
+            < supabase/migrations/20261011121811_e10_12_summary_capacity.sql
+          docker exec -i "$db_container" psql -U postgres -d postgres -v ON_ERROR_STOP=1 \
+            < supabase/tests/e10_12_summary_capacity.test.sql
+          docker exec -i "$db_container" psql -U postgres -d postgres -v ON_ERROR_STOP=1 \
+            < supabase/rollbacks/20261011121811_e10_12_summary_capacity.rollback.sql
+          test "$(docker exec "$db_container" psql -U postgres -d postgres -At -c "select pg_get_constraintdef(oid) like '%4000%' from pg_constraint where conname='account_context_summaries_summary_check'")" = t
+          docker exec -i "$db_container" psql -U postgres -d postgres -v ON_ERROR_STOP=1 \
+            < supabase/migrations/20261011121811_e10_12_summary_capacity.sql
           docker exec -i "$db_container" psql -U postgres -d postgres -v ON_ERROR_STOP=1 \
             < supabase/tests/e10_12_initial_attendance.concurrency.sql
           for suffix in a b; do
