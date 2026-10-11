@@ -185,13 +185,16 @@ async function main() {
     assert.equal(validateAttendanceOutput(compoundOutput, { ...nameContext, recent: [
       nameContext.recent[0], { role: "user", content: "João" + separator + "Tenho uma clínica." }] })?.preferredName, "João");
   }
-  assert.equal(validateAttendanceOutput(compoundOutput, { ...nameContext, preferredNameDeclined: true }), null);
-  assert.equal(validateAttendanceOutput(compoundOutput, { ...nameContext, preferredName: "Ana" }), null);
+  assert.equal(validateAttendanceOutput({ ...compoundOutput, preferredNameDeclined: true }, nameContext), null);
+  const correctedNameContext = { ...nameContext, preferredName: "Ana", recent: [
+    { role: "user" as const, content: "Pode me chamar de João. Na verdade, prefiro Pedro." }] };
+  assert.equal(validateAttendanceOutput({ ...compoundOutput, preferredName: "Pedro" }, correctedNameContext)?.preferredName, "Pedro");
+  assert.equal(validateAttendanceOutput({ ...compoundOutput, preferredName: "Paulo" }, correctedNameContext), null);
+  // Which literal candidate is the current preference is proved with the real model, not a phrase parser.
   for (const question of ["Qual é o nome da sua empresa?", "Qual o nome da clínica?", "Como prefere que a empresa seja chamada?"]) {
     const businessNameContext: AttendanceContext = { ...nameContext, recent: [
       { role: "assistant", content: question }, { role: "user", content: "Clínica Sorriso. Fazemos implantes." }] };
     const businessNameOutput = { ...compoundOutput, preferredName: "Clínica Sorriso", businessUnderstanding: "Clínica Sorriso oferece implantes." };
-    assert.equal(validateAttendanceOutput(businessNameOutput, businessNameContext), null);
     const safeBusiness = validateAttendanceOutput({ ...businessNameOutput, preferredName: null,
       reply: "Como prefere ser chamado?", action: "ask", existingTaxonId: null }, businessNameContext);
     assert.equal(safeBusiness?.businessUnderstanding, businessNameOutput.businessUnderstanding);
@@ -206,7 +209,6 @@ async function main() {
     closureReason: "Desvio persistente sem avanço útil." }, nameContext));
   const businessOnlyAnswer = { ...nameContext, recent: [nameContext.recent[0],
     { role: "user" as const, content: "Minha empresa se chama Clínica Ana; prefiro não informar meu nome" }] };
-  assert.equal(validateAttendanceOutput({ ...compoundOutput, preferredName: "Ana" }, businessOnlyAnswer), null);
   assert.ok(validateAttendanceOutput({ ...compoundOutput, preferredName: null, preferredNameDeclined: true }, businessOnlyAnswer));
   assert.equal(validateAttendanceOutput(compoundOutput, { ...nameContext, preferredName: "Ana", recent: [
     { role: "user", content: "Pode me chamar de João." }] })?.preferredName, "João");

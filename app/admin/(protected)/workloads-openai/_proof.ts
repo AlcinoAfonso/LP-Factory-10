@@ -392,7 +392,29 @@ async function proveAttendance(
     }
     return { ok: true, providerRequestId, latencyMs };
   };
-  const results = await Promise.all([runConversation(true), runConversation(false), runSemanticClosure(), runWholeMessage()]);
+  const runNameSemantics = async (): Promise<ProofAttempt> => {
+    const cases = [
+      { preferredName: "Ana", content: "Pode me chamar de João. Na verdade, prefiro Pedro. Faço manutenção de jardins para condomínios e quero divulgar meu serviço.", expectedName: "Pedro", declined: false },
+      { preferredName: null, content: "Minha empresa se chama Jardins Ana; prefiro não informar meu nome. Fazemos manutenção de jardins para condomínios e quero comunicar isso.", expectedName: null, declined: true },
+    ];
+    let latencyMs = 0;
+    let providerRequestId: string | null = null;
+    for (const test of cases) {
+      const result = await requestAttendance({ accountId, context: { preferredName: test.preferredName,
+        summary: null, catalog, publicName: null, recent: [{ role: "user", content: test.content }] },
+        configurationOverride: workload, environment, apiKey,
+        financialContext: lpFactoryOpenAiCostContext, executionOrigin: "administrative_proof" });
+      if (!result.ok) return { ok: false, code: "provider" };
+      if (result.output.preferredName !== test.expectedName || result.output.preferredNameDeclined !== test.declined
+        || !/jardin/i.test(result.output.businessUnderstanding) || result.output.closureReason) {
+        console.warn("pending_setup_attendance_proof_failed", { scenario: 4, check: test.declined ? "business_name_refusal" : "name_correction", code: "contract" });
+        return { ok: false, code: "contract" };
+      }
+      latencyMs += result.latencyMs ?? 0; providerRequestId = result.responseId;
+    }
+    return { ok: true, providerRequestId, latencyMs };
+  };
+  const results = await Promise.all([runConversation(true), runConversation(false), runSemanticClosure(), runWholeMessage(), runNameSemantics()]);
   for (const [scenario, result] of results.entries()) if (!result.ok) {
     console.warn("pending_setup_attendance_proof_failed", { scenario, code: result.code });
   }
