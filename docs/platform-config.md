@@ -248,7 +248,7 @@
 • Finalidade: gate server-only dos recursos manuais das três categorias da Base e da gestão global de seções no Admin; separado do gate E25.1 da Base existente.
 • Plataforma e escopo aprovados: Vercel Core `lp-factory-10`, Preview e Production, com configuração independente por ambiente.
 • Habilitação: somente o literal `true`; ausência ou qualquer outro valor mantém os recursos E25.3 desligados. Classificação: Config, não Secret.
-• Estado confirmado em 10/10/2026 após apply seletivo: Config criada com `true` somente em Preview; Production permanece sem a variável e desligada. Preview redeployado em `dpl_fiU68CYmMkjbAxSkccbFKwQQDtxF`, estado READY, Git SHA `2c8b93d05b0787696ee52600d3a383b42d1dd16f`, URL `https://lp-factory-10-3kch5jcbc-alcino-afonsos-projects.vercel.app`.
+• Estado confirmado em 11/10/2026: Config com `true` somente em Preview; Production permanece sem a variável e desligada, sem entrada Shared. Preview corrente `dpl_tmeB2psazTwZEFX8MBCs7rBRriq4`, estado READY, Git SHA `41ca53d2e7fe454b24ed4774dc0299574c9d8111`; aceite integral de Preview ainda pendente.
 • Progressão autorizada pendente: executar QA autenticado de Admin, contas, permissões, Storage, conflitos e UI desktop/mobile em Preview. Somente após aprovação de Preview, habilitar e redeployar Production e executar seu QA. READY não comprova aceite funcional; falha material interrompe a progressão.
 • Redeploy: habilitar ou desabilitar exige novo deployment do ambiente afetado; desligar este gate preserva a Base E25.1 e os dados persistidos.
 
