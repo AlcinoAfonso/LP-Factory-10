@@ -177,6 +177,12 @@ async function main() {
   assert.equal(validateAttendanceOutput({ ...compoundOutput, preferredName: "joao@example.com" }, nameContext), null);
   assert.equal(validateAttendanceOutput(compoundOutput, { ...nameContext, preferredNameDeclined: true }), null);
   assert.equal(validateAttendanceOutput(compoundOutput, { ...nameContext, preferredName: "Ana" }), null);
+  const businessOnlyAnswer = { ...nameContext, recent: [nameContext.recent[0],
+    { role: "user" as const, content: "Minha empresa se chama Clínica Ana; prefiro não informar meu nome" }] };
+  assert.equal(validateAttendanceOutput({ ...compoundOutput, preferredName: "Ana" }, businessOnlyAnswer), null);
+  assert.ok(validateAttendanceOutput({ ...compoundOutput, preferredName: null, preferredNameDeclined: true }, businessOnlyAnswer));
+  assert.equal(validateAttendanceOutput(compoundOutput, { ...nameContext, preferredName: "Ana", recent: [
+    { role: "user", content: "Pode me chamar de João." }] })?.preferredName, "João");
   const longMessage = compound + " Temos atendimento presencial.".repeat(60) + " Atendemos adultos e queremos explicar implantes.";
   const integral = attendanceProjection({ ...conversation, preferredName: null, messages: [
     { ...conversation.messages[0], role: "assistant", content: "Como prefere ser chamado?" },

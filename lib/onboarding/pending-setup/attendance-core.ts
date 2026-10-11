@@ -183,9 +183,9 @@ function explicitPreferredNameChange(context: AttendanceContext, name: string): 
   const preceding = context.recent.at(-2);
   const askedName = preceding?.role === "assistant"
     && /(?:como[\s\S]*?(?:prefere|gostaria|quer)[\s\S]*?(?:chamad|chamasse|chame|tratad)|qual[\s\S]*?nome)/iu.test(preceding.content);
-  // Check provenance of the model-interpreted name, without parsing the rest of the answer.
+  // A name answer starts with the validated candidate; never mine an internal business-name token.
   const escapedName = name.replace(/[.*+?^\x24{}()|[\]\\]/g, "\\$&");
-  const sourced = new RegExp("(?:^|[^\\p{L}\\p{N}])" + escapedName + "(?=$|[^\\p{L}\\p{N}])", "iu")
+  const sourced = new RegExp("^\\s*" + escapedName + "(?=\\s*(?:\\p{P}|$))", "iu")
     .test(current.content);
   return Boolean(!context.preferredName && !context.preferredNameDeclined && askedName && sourced);
 }

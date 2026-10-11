@@ -380,10 +380,10 @@ async function proveAttendance(
     return { ok: true, providerRequestId, latencyMs };
   };
   const results = await Promise.all([runConversation(true), runConversation(false), runSemanticClosure(), runWholeMessage()]);
-  if (!results[0].ok) return results[0];
-  if (!results[1].ok) return results[1];
-  if (!results[2].ok) return results[2];
-  if (!results[3].ok) return results[3];
-  return { ok: true, providerRequestId: results[1].providerRequestId,
+  for (const [scenario, result] of results.entries()) if (!result.ok) {
+    console.warn("pending_setup_attendance_proof_failed", { scenario, code: result.code });
+    return result;
+  }
+  return { ok: true, providerRequestId: results[1].ok ? results[1].providerRequestId : null,
     latencyMs: Math.max(...results.map(result => result.ok ? result.latencyMs ?? 0 : 0)) };
 }
