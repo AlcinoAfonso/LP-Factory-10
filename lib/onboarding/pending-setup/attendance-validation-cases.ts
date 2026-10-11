@@ -187,6 +187,16 @@ async function main() {
   }
   assert.equal(validateAttendanceOutput(compoundOutput, { ...nameContext, preferredNameDeclined: true }), null);
   assert.equal(validateAttendanceOutput(compoundOutput, { ...nameContext, preferredName: "Ana" }), null);
+  for (const question of ["Qual é o nome da sua empresa?", "Qual o nome da clínica?", "Como prefere que a empresa seja chamada?"]) {
+    const businessNameContext: AttendanceContext = { ...nameContext, recent: [
+      { role: "assistant", content: question }, { role: "user", content: "Clínica Sorriso. Fazemos implantes." }] };
+    const businessNameOutput = { ...compoundOutput, preferredName: "Clínica Sorriso", businessUnderstanding: "Clínica Sorriso oferece implantes." };
+    assert.equal(validateAttendanceOutput(businessNameOutput, businessNameContext), null);
+    const safeBusiness = validateAttendanceOutput({ ...businessNameOutput, preferredName: null }, businessNameContext);
+    assert.equal(safeBusiness?.businessUnderstanding, businessNameOutput.businessUnderstanding);
+  }
+  assert.equal(validateAttendanceOutput(compoundOutput, { ...nameContext, recent: [
+    { role: "assistant", content: "  Como prefere ser chamado?  " }, nameContext.recent[1]] })?.preferredName, "João");
   const businessOnlyAnswer = { ...nameContext, recent: [nameContext.recent[0],
     { role: "user" as const, content: "Minha empresa se chama Clínica Ana; prefiro não informar meu nome" }] };
   assert.equal(validateAttendanceOutput({ ...compoundOutput, preferredName: "Ana" }, businessOnlyAnswer), null);
