@@ -341,6 +341,10 @@ async function proveAttendance(
         { role: "user", content: "João. Tenho a Clínica Sorriso e fazemos clareamento, tratamento de canal e implantes. Sou flamenguista, mas futebol não tem relação com o negócio." }] };
     let latencyMs = 0;
     let providerRequestId: string | null = null;
+    const contractFailure = (check: string): ProofAttempt => {
+      console.warn("pending_setup_attendance_proof_failed", { scenario: 3, check, code: "contract" });
+      return { ok: false, code: "contract" };
+    };
     for (let turn = 0; turn < 4; turn++) {
       const result = await requestAttendance({ accountId, context, configurationOverride: workload, environment, apiKey,
         financialContext: lpFactoryOpenAiCostContext, executionOrigin: "administrative_proof" });
@@ -349,18 +353,18 @@ async function proveAttendance(
       latencyMs += result.latencyMs ?? 0; providerRequestId = result.responseId;
       const summary = attendanceSummary(output, turn >= 2 ? "Odontologia" : null, context.confirmedProposal, context.summary);
       const memory = JSON.parse(summary);
-      if (/flamenguista|flamengo|futebol/i.test(JSON.stringify(memory))) return { ok: false, code: "contract" };
+      if (/flamenguista|flamengo|futebol/i.test(JSON.stringify(memory))) return contractFailure("social");
       if (turn === 0) {
         if (output.preferredName !== "João" || output.action !== "existing" || output.existingTaxonId !== dentistryId
           || !/clínica sorriso/i.test(output.businessUnderstanding) || !/clareamento/i.test(output.businessUnderstanding)
           || !/canal/i.test(output.businessUnderstanding) || !/implant/i.test(output.businessUnderstanding)
-          || memory.confirmedUnderstanding !== null) return { ok: false, code: "contract" };
+          || memory.confirmedUnderstanding !== null) return contractFailure("initial");
         context = { ...context, preferredName: output.preferredName, summary,
           displayedUnderstanding: output.businessUnderstanding, confirmedProposal: attendanceProposal(output, dentalCatalog),
           recent: [...context.recent, { role: "assistant", content: output.reply },
             { role: "user", content: "Sim, confirmo esse entendimento e essa categoria. Ainda preciso de orientação comercial." }] };
       } else if (turn === 1) {
-        if (output.action !== "confirm" || memory.confirmedUnderstanding !== context.displayedUnderstanding) return { ok: false, code: "contract" };
+        if (output.action !== "confirm" || memory.confirmedUnderstanding !== context.displayedUnderstanding) return contractFailure("confirmation");
         context = { ...context, summary, confirmedProposal: null, currentPrimaryTaxonId: dentistryId,
           recent: [...context.recent, { role: "assistant", content: output.reply },
             { role: "user", content: "Correção: não fazemos mais canal. Continuamos com clareamento e implantes, atendemos adultos e queremos comunicar essas ofertas. Ainda tenho dúvidas sobre como apresentá-las." }] };
@@ -368,13 +372,13 @@ async function proveAttendance(
         if (output.action !== "ask" || output.closureReason || output.readyToComplete
           || !/clareamento/i.test(memory.contextualUnderstanding ?? "") || !/implant/i.test(memory.contextualUnderstanding ?? "")
           || !/adult/i.test(memory.contextualUnderstanding ?? "") || /canal/i.test(memory.confirmedUnderstanding ?? "")
-          || /adult/i.test(memory.confirmedUnderstanding ?? "")) return { ok: false, code: "contract" };
+          || /adult/i.test(memory.confirmedUnderstanding ?? "")) return contractFailure("correction");
         // Resume from the consolidated memory with the original messages outside the recent window.
         context = { ...context, summary, displayedUnderstanding: output.businessUnderstanding,
           recent: [{ role: "assistant", content: output.reply },
             { role: "user", content: "Voltei. Como podemos comunicar melhor as ofertas que já informei? Ainda preciso dessa orientação." }] };
       } else if (!/clareamento/i.test(output.reply) || !/implant/i.test(output.reply) || output.closureReason) {
-        return { ok: false, code: "contract" };
+        return contractFailure("resume");
       }
     }
     return { ok: true, providerRequestId, latencyMs };
