@@ -312,7 +312,7 @@ async function proveAttendance(
       if (Boolean(output.closureReason) !== closed || output.readyToComplete || output.action !== "ask") return false;
       const summary = attendanceSummary(output, "Manutenção de jardins", null, context.summary);
       const memory = JSON.parse(summary);
-      if (memory.confirmedUnderstanding !== understanding || (closed && memory.pendingReason !== output.closureReason)
+      if (!memory.confirmedUnderstanding || !/jardi/i.test(memory.confirmedUnderstanding) || (closed && memory.pendingReason !== output.closureReason)
         || /flamengo|flamenguista|futebol/i.test(memory.contextualUnderstanding ?? "")) return false;
       context = { ...context, summary, recent: [...context.recent, { role: "assistant", content: output.reply }] };
       return true;
@@ -331,10 +331,59 @@ async function proveAttendance(
       return { ok: false, code: "contract" };
     return { ok: true, providerRequestId, latencyMs };
   };
-  const results = await Promise.all([runConversation(true), runConversation(false), runSemanticClosure()]);
+  const runWholeMessage = async (): Promise<ProofAttempt> => {
+    const dentistryId = "10000000-0000-4000-8000-000000000004";
+    const dentalCatalog: AttendanceContext["catalog"] = [catalog[0], {
+      id: dentistryId, name: "Odontologia", level: "niche", parentId: segmentId, active: true, aliases: [],
+    }];
+    let context: AttendanceContext = { preferredName: null, summary: null, catalog: dentalCatalog,
+      recent: [{ role: "assistant", content: "Como prefere ser chamado?" },
+        { role: "user", content: "João. Tenho a Clínica Sorriso e fazemos clareamento, tratamento de canal e implantes. Sou flamenguista, mas futebol não tem relação com o negócio." }] };
+    let latencyMs = 0;
+    let providerRequestId: string | null = null;
+    for (let turn = 0; turn < 4; turn++) {
+      const result = await requestAttendance({ accountId, context, configurationOverride: workload, environment, apiKey,
+        financialContext: lpFactoryOpenAiCostContext, executionOrigin: "administrative_proof" });
+      if (!result.ok) return { ok: false, code: "provider" };
+      const output = result.output;
+      latencyMs += result.latencyMs ?? 0; providerRequestId = result.responseId;
+      const summary = attendanceSummary(output, turn >= 2 ? "Odontologia" : null, context.confirmedProposal, context.summary);
+      const memory = JSON.parse(summary);
+      if (/flamenguista|flamengo|futebol/i.test(JSON.stringify(memory))) return { ok: false, code: "contract" };
+      if (turn === 0) {
+        if (output.preferredName !== "João" || output.action !== "existing" || output.existingTaxonId !== dentistryId
+          || !/clínica sorriso/i.test(output.businessUnderstanding) || !/clareamento/i.test(output.businessUnderstanding)
+          || !/canal/i.test(output.businessUnderstanding) || !/implant/i.test(output.businessUnderstanding)
+          || memory.confirmedUnderstanding !== null) return { ok: false, code: "contract" };
+        context = { ...context, preferredName: output.preferredName, summary,
+          displayedUnderstanding: output.businessUnderstanding, confirmedProposal: attendanceProposal(output, dentalCatalog),
+          recent: [...context.recent, { role: "assistant", content: output.reply },
+            { role: "user", content: "Sim, confirmo esse entendimento e essa categoria. Ainda preciso de orientação comercial." }] };
+      } else if (turn === 1) {
+        if (output.action !== "confirm" || memory.confirmedUnderstanding !== context.displayedUnderstanding) return { ok: false, code: "contract" };
+        context = { ...context, summary, confirmedProposal: null, currentPrimaryTaxonId: dentistryId,
+          recent: [...context.recent, { role: "assistant", content: output.reply },
+            { role: "user", content: "Correção: não fazemos mais canal. Continuamos com clareamento e implantes, atendemos adultos e queremos comunicar essas ofertas. Ainda tenho dúvidas sobre como apresentá-las." }] };
+      } else if (turn === 2) {
+        if (output.action !== "ask" || output.closureReason || output.readyToComplete
+          || !/clareamento/i.test(memory.contextualUnderstanding ?? "") || !/implant/i.test(memory.contextualUnderstanding ?? "")
+          || !/adult/i.test(memory.contextualUnderstanding ?? "") || /canal/i.test(memory.confirmedUnderstanding ?? "")
+          || /adult/i.test(memory.confirmedUnderstanding ?? "")) return { ok: false, code: "contract" };
+        // Resume from the consolidated memory with the original messages outside the recent window.
+        context = { ...context, summary, displayedUnderstanding: output.businessUnderstanding,
+          recent: [{ role: "assistant", content: output.reply },
+            { role: "user", content: "Voltei. Como podemos comunicar melhor as ofertas que já informei? Ainda preciso dessa orientação." }] };
+      } else if (!/clareamento/i.test(output.reply) || !/implant/i.test(output.reply) || output.closureReason) {
+        return { ok: false, code: "contract" };
+      }
+    }
+    return { ok: true, providerRequestId, latencyMs };
+  };
+  const results = await Promise.all([runConversation(true), runConversation(false), runSemanticClosure(), runWholeMessage()]);
   if (!results[0].ok) return results[0];
   if (!results[1].ok) return results[1];
   if (!results[2].ok) return results[2];
+  if (!results[3].ok) return results[3];
   return { ok: true, providerRequestId: results[1].providerRequestId,
     latencyMs: Math.max(...results.map(result => result.ok ? result.latencyMs ?? 0 : 0)) };
 }

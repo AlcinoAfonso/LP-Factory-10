@@ -18,7 +18,7 @@ const context: AttendanceContext = {
 };
 const base: AttendanceOutput = {
   reply: "Jardinagem corresponde ao seu negócio?", preferredName: "Ana", preferredNameDeclined: false,
-  businessUnderstanding: "Manutenção de jardins para condomínios.",
+  businessUnderstanding: "Manutenção de jardins para condomínios.", confirmedUnderstanding: null,
   suggestions: ["Pode ser útil explicar a frequência do serviço."], sufficientUnderstanding: true,
   readyToComplete: false, closureReason: null, action: "existing", existingTaxonId: nicheId,
 };
@@ -104,7 +104,7 @@ async function main() {
   const later = { ...base, action: "ask" as const, existingTaxonId: null, businessUnderstanding: "Também quer comunicar planos mensais." };
   const evolving = JSON.parse(attendanceSummary(later, "Jardinagem", null, remembered));
   assert.equal(evolving.contextualUnderstanding, later.businessUnderstanding);
-  assert.equal(evolving.confirmedUnderstanding, context.displayedUnderstanding);
+  assert.equal(evolving.confirmedUnderstanding, null); // No automatic promotion of the new interpretation.
   assert.deepEqual(evolving.suggestions, base.suggestions);
   const socialContext: AttendanceContext = { ...context, summary: remembered, recent: [{ role: "user", content: "Eu sou flamenguista." }] };
   const noBusinessNews = validateAttendanceOutput({ ...later, businessUnderstanding: "", suggestions: [], readyToComplete: false }, socialContext)!;
@@ -130,58 +130,60 @@ async function main() {
   for (const malformed of ["not JSON", '{"contextualUnderstanding":"unaccepted"}']) {
     assert.equal(JSON.parse(attendanceSummary(later, null, null, malformed)).confirmedUnderstanding, null);
   }
-  // Whole-field budgeting keeps accepted wording exact, including escaping overhead.
-  const lengthyAccepted = { ...accepted, businessUnderstanding: "a".repeat(3000), suggestions: ["b".repeat(300), "c".repeat(300)] };
+  // Global Summary capacity changes; individual understanding and reply limits do not.
+  const lengthyAccepted = { ...accepted, businessUnderstanding: "a".repeat(2500) };
   const bounded = attendanceSummary(lengthyAccepted, "Jardinagem", proposal);
-  assert.ok(bounded.length <= 4000);
+  assert.ok(bounded.length > 4000 && bounded.length <= 6000);
   assert.equal(JSON.parse(bounded).confirmedUnderstanding, lengthyAccepted.businessUnderstanding);
-  assert.equal(JSON.parse(bounded).contextualUnderstanding, null);
-  const nearLimit = JSON.stringify({ contextualUnderstanding: null, confirmedUnderstanding: "a".repeat(3800), classification: "Curta", suggestions: [] });
-  assert.ok(nearLimit.length <= 4000);
-  assert.equal(attendanceSummary(noBusinessNews, "c".repeat(120), null, nearLimit), nearLimit);
-  const fullMemory = JSON.stringify({ contextualUnderstanding: null, confirmedUnderstanding: "a".repeat(3865),
+  assert.equal(JSON.parse(attendanceProjection({ ...conversation, accountContext: {
+    summary: bounded, updatedAt: conversation.updatedAt,
+  } }, context.catalog).summary!).confirmedUnderstanding, lengthyAccepted.businessUnderstanding);
+  const atOldLimit = JSON.stringify({ contextualUnderstanding: null, confirmedUnderstanding: "a".repeat(3865),
     classification: "Curta", suggestions: [] });
-  assert.ok(fullMemory.length <= 4000);
-  const boundedClosure = attendanceSummary({ ...closing, closureReason: "p".repeat(160) }, "c".repeat(120), null, fullMemory);
-  assert.ok(boundedClosure.length <= 4000);
-  assert.equal(JSON.parse(boundedClosure).confirmedUnderstanding, JSON.parse(fullMemory).confirmedUnderstanding);
-  assert.equal(JSON.parse(boundedClosure).classification, "Curta");
-  assert.equal(JSON.parse(boundedClosure).pendingReason, "Sem avanço útil.");
-  const resumedProjection = attendanceProjection({ ...conversation, accountContext: {
-    summary: boundedClosure, updatedAt: conversation.updatedAt,
-  } }, context.catalog);
-  assert.equal(JSON.parse(resumedProjection.summary!).pendingReason, "Sem avanço útil.");
-  for (const escaped of [false, true]) {
-    const minimal = { confirmedUnderstanding: "", classification: "Curta", pendingReason: "Sem avanço útil." };
-    const budget = 4000 - JSON.stringify(minimal).length;
-    minimal.confirmedUnderstanding = escaped ? '"\n'.repeat(Math.floor(budget / 4)) + "a".repeat(budget % 4) : "a".repeat(budget);
-    const atLimit = JSON.stringify(minimal);
-    assert.equal(atLimit.length, 4000);
-    const closedAgain = attendanceSummary({ ...closing, closureReason: "p".repeat(160) }, "c".repeat(120), null, atLimit);
-    assert.equal(closedAgain, atLimit);
-    assert.equal(JSON.parse(attendanceProjection({ ...conversation, accountContext: {
-      summary: closedAgain, updatedAt: conversation.updatedAt,
-    } }, context.catalog).summary!).pendingReason, minimal.pendingReason);
-    for (const resumption of [later, noBusinessNews]) {
-      const usefulResumption = attendanceSummary(resumption, "c".repeat(120), null, atLimit);
-      assert.ok(usefulResumption.length <= 4000);
-      assert.equal(JSON.parse(usefulResumption).confirmedUnderstanding, minimal.confirmedUnderstanding);
-      assert.equal(JSON.parse(usefulResumption).classification, minimal.classification);
-      assert.equal(JSON.parse(usefulResumption).pendingReason, null);
-      assert.equal(JSON.parse(attendanceProjection({ ...conversation, accountContext: {
-        summary: usefulResumption, updatedAt: conversation.updatedAt,
-      } }, context.catalog).summary!).pendingReason, null);
-      assert.equal(attendanceSummary(noBusinessNews, "c".repeat(120), null, usefulResumption), usefulResumption);
-      assert.equal(attendanceSummary(closing, "c".repeat(120), null, usefulResumption), atLimit);
-    }
-    const partial = JSON.stringify({ ...minimal, pendingReason: "outro motivo" });
-    assert.equal(JSON.parse(attendanceSummary(noBusinessNews, null, null, partial)).confirmedUnderstanding, null);
-  }
+  const updated = attendanceSummary({ ...later, confirmedUnderstanding: "Conteúdo anterior semanticamente compacto.",
+    businessUnderstanding: "Conteúdo anterior semanticamente compacto. Também oferece implantes." }, "Jardinagem", null, atOldLimit);
+  assert.match(JSON.parse(updated).contextualUnderstanding, /implantes/);
+  assert.equal(JSON.parse(updated).confirmedUnderstanding, "Conteúdo anterior semanticamente compacto.");
   for (const oversized of ["a".repeat(4000), '"'.repeat(2000)]) {
     const result = attendanceSummary({ ...accepted, businessUnderstanding: oversized }, "Jardinagem", proposal);
-    assert.ok(result.length <= 4000);
-    assert.equal(JSON.parse(result).confirmedUnderstanding, null); // Full text remains in the dialogue/conversation.
+    assert.ok(result.length <= 6000);
+    assert.equal(JSON.parse(result).confirmedUnderstanding, oversized);
+    assert.equal(JSON.parse(result).contextualUnderstanding, null); // Only the identical duplicate was removed.
   }
+  assert.throws(() => attendanceSummary({ ...later, businessUnderstanding: "a".repeat(4000),
+    confirmedUnderstanding: "b".repeat(4000) }, "Jardinagem", null), /attendance_summary_too_long/);
+  assert.throws(() => attendanceSummary({ ...accepted, businessUnderstanding: '"'.repeat(4000) }, "Jardinagem", proposal), /attendance_summary_too_long/);
+  for (const field of ["reply", "businessUnderstanding", "confirmedUnderstanding"])
+    assert.equal(validateAttendanceOutput({ ...base, [field]: "a".repeat(4001) }, context), null);
+  assert.equal(validateAttendanceOutput({ ...base, confirmedUnderstanding: "Inventado como confirmado." }, context), null);
+  const acceptedContext = { ...context, summary: remembered };
+  const corrected = { ...later, businessUnderstanding: "Clínica Sorriso oferece clareamento e implantes; não oferece mais canal.",
+    confirmedUnderstanding: "Clínica Sorriso oferece clareamento e implantes." };
+  assert.ok(validateAttendanceOutput(corrected, acceptedContext));
+  const correctedMemory = attendanceSummary(corrected, "Jardinagem", null, remembered);
+  assert.equal(JSON.parse(correctedMemory).confirmedUnderstanding, corrected.confirmedUnderstanding);
+  assert.equal(JSON.parse(correctedMemory).contextualUnderstanding, corrected.businessUnderstanding);
+  assert.equal(JSON.parse(attendanceProjection({ ...conversation, accountContext: {
+    summary: correctedMemory, updatedAt: conversation.updatedAt,
+  } }, context.catalog).summary!).contextualUnderstanding, corrected.businessUnderstanding);
+  const compound = "João. Tenho a Clínica Sorriso e fazemos clareamento, tratamento de canal e implantes.";
+  const nameContext: AttendanceContext = { ...context, preferredName: null, recent: [
+    { role: "assistant", content: "Como prefere ser chamado?" }, { role: "user", content: compound },
+  ] };
+  const compoundOutput = { ...base, preferredName: "João", businessUnderstanding: "Clínica Sorriso oferece clareamento, tratamento de canal e implantes." };
+  assert.equal(validateAttendanceOutput(compoundOutput, nameContext)?.preferredName, "João");
+  assert.equal(validateAttendanceOutput({ ...compoundOutput, preferredName: "Pedro" }, nameContext), null);
+  assert.equal(validateAttendanceOutput({ ...compoundOutput, preferredName: "Jo" }, nameContext), null);
+  assert.equal(validateAttendanceOutput({ ...compoundOutput, preferredName: "joao@example.com" }, nameContext), null);
+  assert.equal(validateAttendanceOutput(compoundOutput, { ...nameContext, preferredNameDeclined: true }), null);
+  assert.equal(validateAttendanceOutput(compoundOutput, { ...nameContext, preferredName: "Ana" }), null);
+  const longMessage = compound + " Temos atendimento presencial.".repeat(60) + " Atendemos adultos e queremos explicar implantes.";
+  const integral = attendanceProjection({ ...conversation, preferredName: null, messages: [
+    { ...conversation.messages[0], role: "assistant", content: "Como prefere ser chamado?" },
+    { ...conversation.messages[0], id: "2", role: "user", content: longMessage },
+  ] }, context.catalog);
+  assert.equal(integral.recent.at(-1)?.content, longMessage);
+  assert.equal(integral.publicName, null);
   assert.equal(attendanceProjection(conversation, context.catalog).displayedUnderstanding, conversation.businessContextText);
   assert.equal(JSON.stringify(attendanceProjection(conversation, context.catalog)).includes("ana@example.com"), false);
   const urlSummary = JSON.stringify({ ...draft, confirmedUnderstanding: "Atendo em https://example.com", suggestions: ["Conheça https://example.com"] });
@@ -230,7 +232,7 @@ async function main() {
   })).ok, true); // Cordial closure creates no operational stop or reset.
   current = { ...conversation, preferredName: null, preferredNameDeclined: false };
   assert.equal((await conductAttendanceTurn(input, { ...deps,
-    request: async () => ({ ok: true, output: { ...closing, preferredName: null, preferredNameDeclined: false }, responseId: "closed", latencyMs: 1 }),
+    request: async () => ({ ok: true, output: { ...closing, preferredName: null, preferredNameDeclined: false, confirmedUnderstanding: null }, responseId: "closed", latencyMs: 1 }),
     commit: async input => {
       assert.equal(input.output.businessUnderstanding, conversation.businessContextText);
       assert.equal(input.confirm, false); assert.equal(input.proposal, null);
@@ -290,6 +292,8 @@ async function main() {
     { commit: async () => ({ ok: false as const, reason: "write_failed" as const }) },
     { catalog: async () => null },
     { market: async () => null },
+    { request: async () => ({ ok: true as const, output: { ...base, businessUnderstanding: "a".repeat(4000),
+      confirmedUnderstanding: "b".repeat(4000) }, responseId: "too-long", latencyMs: 1 }) },
   ]) {
     current = { ...conversation }; effects.length = 0;
     assert.equal((await conductAttendanceTurn(input, { ...deps, ...overrides })).ok, false);
