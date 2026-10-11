@@ -249,8 +249,8 @@
 • Finalidade: gate server-only dos recursos manuais das três categorias da Base e da gestão global de seções no Admin; separado do gate E25.1 da Base existente.
 • Plataforma e escopo aprovados: Vercel Core `lp-factory-10`, Preview e Production, com configuração independente por ambiente.
 • Habilitação: somente o literal `true`; ausência ou qualquer outro valor mantém os recursos E25.3 desligados. Classificação: Config, não Secret.
-• Estado confirmado em 11/10/2026: Config com `true` somente em Preview; Production permanece sem a variável e desligada, sem entrada Shared. Preview corrente `dpl_tmeB2psazTwZEFX8MBCs7rBRriq4`, estado READY, Git SHA `41ca53d2e7fe454b24ed4774dc0299574c9d8111`; aceite integral de Preview ainda pendente.
-• Progressão autorizada pendente: executar QA autenticado de Admin, contas, permissões, Storage, conflitos e UI desktop/mobile em Preview. Somente após aprovação de Preview, habilitar e redeployar Production e executar seu QA. READY não comprova aceite funcional; falha material interrompe a progressão.
+• Estado confirmado em 11/10/2026: Config com `false` em Preview; Production permanece sem a variável e desligada, sem entrada Shared. O [aceite de Preview](https://github.com/AlcinoAfonso/LP-Factory-10/pull/1057#issuecomment-6109993430) foi concluído antes da desativação. O deployment de QA READY no SHA `ed6bb00092f809754edf185461a5311338ff223e` foi criado com o gate habilitado; a configuração atual exige redeploy e comprovação de desligamento efetivo antes do merge.
+• Progressão autorizada pendente: após os gates finais do PR #1057 e merge com os recursos comprovadamente desligados em Preview e Production, habilitar e redeployar Production e executar seu QA obrigatório. O aceite de Preview não substitui essa validação; falha material interrompe a progressão.
 • Redeploy: habilitar ou desabilitar exige novo deployment do ambiente afetado; desligar este gate preserva a Base E25.1 e os dados persistidos.
 
 • `E10_11_PASSAGE_ENABLED`
