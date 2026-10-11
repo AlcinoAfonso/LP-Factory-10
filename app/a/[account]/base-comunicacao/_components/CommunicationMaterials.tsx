@@ -41,6 +41,13 @@ function MaterialSection({account,base,definition,canEdit,resetRevision,onEditor
   const saved=useRef(state);
   const formRef=useRef<HTMLFormElement>(null);
   const addRef=useRef<HTMLButtonElement>(null);
+  // React 19.2 drops synthetic onReset during automatic Form Action resets.
+  useLayoutEffect(()=>{
+    const form=formRef.current;if(!form)return;
+    const preventReset=(event:Event)=>event.preventDefault();
+    form.addEventListener("reset",preventReset);
+    return()=>form.removeEventListener("reset",preventReset);
+  });
   useLayoutEffect(()=>{onEditorStateChange(dirty,locked);},[dirty,locked,onEditorStateChange]);
   useEffect(()=>{
     if(reset.current!==resetRevision || (state.status==="saved"&&state!==saved.current&&!locked)){
@@ -50,7 +57,7 @@ function MaterialSection({account,base,definition,canEdit,resetRevision,onEditor
   },[resetRevision,state,locked]);
   useEffect(()=>{if(state.status==="saved")router.refresh();},[state,router]);
   const update=(key:keyof Draft,value:string)=>setDraft(current=>current?{...current,[key]:value}:null);
-  if(draft && canEdit) return <form ref={formRef} action={action} onReset={event=>event.preventDefault()} className="space-y-3" onSubmit={event=>{
+  if(draft && canEdit) return <form ref={formRef} action={action} className="space-y-3" onSubmit={event=>{
     if(locked || !dirty){event.preventDefault();return;}setSubmittedVersion(base.version);
   }}>
     <input type="hidden" name="account" value={account}/><input type="hidden" name="section_key" value={definition.key}/>
